@@ -97,6 +97,16 @@ App cũng hiện IP trong nhà và IP Tailscale của TV để đọc cho ngư�
 
 ---
 
+**D. Điều khiển bằng điện thoại Android: app TV Remote**
+
+`phoneapp/tv-remote.apk` là app remote cho điện thoại Android, không cần máy tính và không cần dòng lệnh. Cài APK, mở lên rồi:
+- **Cùng Wi-Fi với TV:** bấm *Quét Wi-Fi* và chọn TV, hoặc gõ IP của TV.
+- **Khác mạng:** bật Tailscale trên cả điện thoại và TV, gõ IP `100.x` của TV.
+
+Lần đầu TV hỏi "Cho phép gỡ lỗi USB?": tích **Luôn cho phép** rồi OK. App hiện hình trực tiếp của TV (chạm vào hình = bấm trên TV), các nút điều khiển (giữ nút = nhấn giữ), ô gõ chữ, danh sách app, và dùng được nút âm lượng của điện thoại. TV chỉ cần bật "Gỡ lỗi ADB" (mục 2). Nhiều máy điều khiển cùng lúc được, nhưng mỗi máy đang xem hình làm TV tốn thêm CPU.
+
+---
+
 ## 5. Dùng hằng ngày
 
 Bấm đúp `start.command` / `start.cmd` → trình duyệt mở `http://127.0.0.1:8765` với TV dùng lần trước.
@@ -174,6 +184,7 @@ app/       server.py   trang web + API (aiohttp, chỉ 127.0.0.1)      web/     
 scripts/   tv_new.py, tv_setup.py   thêm TV, tối ưu TV bằng dòng lệnh (.sh / .cmd là vỏ gọi vào đây)
            pair.py ghép remote · tvctl.py dòng lệnh (info | key HOME | app <gói|link>) · wake.py Wake-on-LAN
 tvapp/     app Android TV "TV Setup" (Java thuần, build.sh không cần Gradle) + tv-setup.apk đã build
+phoneapp/  app remote cho điện thoại Android (Java thuần, build.sh không cần Gradle) + tv-remote.apk đã build
 vendor/    scrcpy-server-v5.0.1 (Genymobile/scrcpy, Apache-2.0, checksum ghim trong server.py)
 tvs.json, cert.pem, key.pem, .cache/, tools/   dữ liệu riêng của máy bạn, không đưa lên git
 ```

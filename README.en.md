@@ -97,6 +97,16 @@ It also shows the TV's home-network IP and Tailscale IP, to read out to whoever 
 
 ---
 
+**D. Control from an Android phone: the TV Remote app**
+
+`phoneapp/tv-remote.apk` is a remote for Android phones; no computer and no command line. Install the APK, open it, then:
+- **Same Wi-Fi as the TV:** press *Scan the Wi-Fi* and choose the TV, or type its IP.
+- **Another network:** turn on Tailscale on both the phone and the TV and type the TV's `100.x` IP.
+
+The first time, the TV asks "Allow USB debugging?": tick **Always allow**, then OK. The app shows the TV's live picture (touch it to tap on the TV), remote buttons (hold = long press), a text box, the app list, and the phone's volume buttons control the TV. The TV only needs "ADB debugging" on (section 2). Several devices can control at once, but each one watching the picture costs the TV more CPU.
+
+---
+
 ## 5. Everyday use
 
 Double-click `start.command` / `start.cmd` → the browser opens `http://127.0.0.1:8765` with the TV you used last. The page itself is in Vietnamese; the tab names below are as shown on screen.
@@ -174,6 +184,7 @@ app/       server.py   web page + API (aiohttp, 127.0.0.1 only)      web/       
 scripts/   tv_new.py, tv_setup.py   add a TV, optimise a TV from the command line (.sh / .cmd are thin wrappers)
            pair.py remote pairing · tvctl.py command line (info | key HOME | app <pkg|url>) · wake.py Wake-on-LAN
 tvapp/     the Android TV app "TV Setup" (plain Java, build.sh needs no Gradle) + the built tv-setup.apk
+phoneapp/  the remote app for Android phones (plain Java, build.sh needs no Gradle) + the built tv-remote.apk
 vendor/    scrcpy-server-v5.0.1 (Genymobile/scrcpy, Apache-2.0, checksum pinned in server.py)
 tvs.json, cert.pem, key.pem, .cache/, tools/   your own machine's data, kept out of git
 ```

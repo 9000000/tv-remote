@@ -13,3 +13,5 @@ start-*.cmd
 tvapp/build/
 tvapp/signing.jks
 tvs.json
+phoneapp/build/
+phoneapp/signing.jks
