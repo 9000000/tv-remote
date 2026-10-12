@@ -84,11 +84,11 @@ async function loadSteps() {
         act('Đã bật, kết nối', async () => { await api('/api/adb/connect', {}); await loadSteps(); }, 'primary')));
   // 2. Tailscale
   if (!ready) out.push(step(2, 'todo', 'Tailscale (để điều khiển khi không ở nhà)', 'Làm sau khi ADB đã kết nối. Chỉ dùng trong cùng Wi-Fi thì bỏ qua bước này được.'));
-  else if (s.tailscale_ip) out.push(step(2, 'ok', 'Tailscale đã đăng nhập', 'IP Tailscale của TV: ' + s.tailscale_ip));
+  else if (s.tailscale_ip) out.push(step(2, 'ok', 'Tailscale đã vào mạng', 'IP Tailscale của TV: ' + s.tailscale_ip + '. ' + 'Nên làm thêm: trong trang quản trị Tailscale, mở menu ⋯ của TV → Disable key expiry, để TV không bị đăng xuất sau khoảng 180 ngày.'));
   else if (!s.tailscale_installed) out.push(step(2, 'todo', 'Cài Tailscale lên TV', 'Để điều khiển TV khi không ở cùng mạng. Tải bản chính thức (khoảng 100 MB), có kiểm checksum. Chỉ dùng trong cùng Wi-Fi thì bỏ qua được.',
     act('Cài Tailscale', async () => { const j = await api('/api/tailscale/install', {}); if (j) { await trackJob(j, 'Cài Tailscale'); await loadSteps(); } }, 'primary')));
-  else out.push(step(2, 'wait', 'Đăng nhập Tailscale trên TV', 'Mở Tailscale trên TV, xem màn hình TV ngay tại đây rồi bấm chuột chọn Get started / Sign in. TV hiện mã QR: quét bằng điện thoại và đăng nhập tài khoản Tailscale của bạn.',
-    act('Mở Tailscale trên TV', async () => { if (await api('/api/tailscale/open', {})) { showTab('remote'); if (!screenOn) startScreen(); } }, 'primary'), act('Đã đăng nhập, kiểm tra', loadSteps)));
+  else out.push(step(2, 'wait', 'Thêm TV vào Tailscale của bạn', 'Mở Tailscale trên TV rồi xem màn hình TV ngay tại đây: TV hiện một mã (và mã QR). Không cần gõ tài khoản trên TV: mở login.tailscale.com/admin/machines trên máy này hoặc điện thoại → Add device → nhập mã đó (hoặc quét QR bằng điện thoại).',
+    act('Mở Tailscale trên TV', async () => { if (await api('/api/tailscale/open', {})) { showTab('remote'); if (!screenOn) startScreen(); } }, 'primary'), act('Đã thêm, kiểm tra', loadSteps)));
   // 3. remote pairing
   const r = s.remote;
   if (r.connected) out.push(step(3, 'ok', 'Nút remote đã ghép', 'Các nút điều khiển dùng được.'));

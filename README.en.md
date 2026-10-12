@@ -51,7 +51,7 @@ Menu names differ a little between brands; these are Sony's.
    - Press **Quét mạng** (Scan) to find TVs on the same Wi-Fi (and Android devices on your Tailscale network), or type the TV's IP and press **Chọn** (Choose).
    - **Cài đặt lần đầu** (First-time setup) lists each step with its button; finished steps get a ✓:
      1. **ADB** – the TV shows "Allow USB debugging?" → tick **Always allow from this computer** → OK.
-     2. **Tailscale** – press *Cài Tailscale* (official build, checksum verified), then *Mở Tailscale trên TV*: the page switches to the live TV screen, you click *Sign in*; the TV shows a **QR code** → scan it with your phone and sign in to your own Tailscale account. Skip this step if you only use the TV on the same Wi-Fi.
+     2. **Tailscale** – press *Cài Tailscale* (official build, checksum verified), then *Mở Tailscale trên TV*: the page switches to the live TV screen and the TV shows **a code** (and a QR code). No account typing on the TV: open the [Tailscale admin console](https://login.tailscale.com/admin/machines) → **Add device** → enter that code (or scan the QR with a phone). Then open the TV's ⋯ menu there → **Disable key expiry**, otherwise the TV is signed out after about 180 days. Skip this step if you only use the TV on the same Wi-Fi.
      3. **Pair the remote buttons** – press *Ghép*, the TV shows a 6-character code, type it into the page.
      4. **Save** – name it and save. If the TV has a Tailscale IP the page connects through that from now on, so it also works away from home.
      5. **Optimise the TV** – optional, see section 6.
@@ -72,7 +72,7 @@ The web page needs a computer to run on (it uses Python, `adb`, `ffmpeg`), so **
 
 The person next to the TV, using just the TV remote and a phone:
 1. On the TV open **Google Play** → find and install **Tailscale**.
-2. Open Tailscale on the TV → *Sign in* → the TV shows a QR code → scan it with the phone and sign in to **the helper's Tailscale account** (or to their own account, then share the device with the helper in the Tailscale admin console).
+2. Open Tailscale on the TV → it shows a code (and a QR code) → read the code to the helper; they enter it in the Tailscale admin console (*Add device*), so nobody types an account on the TV. The TV joins **the helper's Tailscale account** (or to their own account, then share the device with the helper in the Tailscale admin console).
 3. Turn on **ADB debugging** as in section 2.
 
 The helper, on a computer with Tailscale running:
@@ -91,7 +91,7 @@ You do not need this tool: use the **Google TV** app (Android/iPhone) → *Remot
 
 `tvapp/tv-setup.apk` is a small app installed on the TV itself. After turning on "ADB debugging" (section 2), open it, choose "Always allow" when the TV asks, then use the TV remote:
 - **⚡ Tối ưu TV** (Optimise) / **Hoàn tác** (Undo) – the same as section 6, run on the TV.
-- **Tailscale** – opens Tailscale's Google Play page, or opens Tailscale to sign in if it is already installed.
+- **Tailscale** – opens Tailscale's Google Play page, or opens Tailscale to get the code that adds the TV, if it is already installed.
 
 It also shows the TV's home-network IP and Tailscale IP, to read out to whoever is helping. Get the APK onto the TV with a USB stick or the Downloader app. It has only been run on a Sony BRAVIA with Android 9; it needs the TV to open ADB on port 5555, so newer TVs that only offer pairing-code "Wireless debugging" (some Google TV devices on Android 12+) may not work.
 

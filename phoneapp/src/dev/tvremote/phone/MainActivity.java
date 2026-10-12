@@ -292,8 +292,8 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         lp.leftMargin = dp(8);
         line.addView(go, lp);
         picker.addView(line, gap(6));
-        picker.addView(note(t("Cùng Wi-Fi: dùng IP trong nhà của TV (Cài đặt → Mạng và Internet → tên Wi-Fi).\nKhác mạng: bật Tailscale trên cả điện thoại và TV, dùng IP 100.x của TV (xem trong app Tailscale).\nTV cần bật “Gỡ lỗi ADB”; lần đầu TV sẽ hỏi cho phép.",
-                "Same Wi-Fi: use the TV’s home IP (Settings → Network & Internet → the Wi-Fi name).\nOther network: turn on Tailscale on both the phone and the TV and use the TV’s 100.x IP (see the Tailscale app).\nThe TV needs “ADB debugging” on; the first time it asks for permission.")), gap(10));
+        picker.addView(note(t("Cùng Wi-Fi: dùng IP trong nhà của TV (Cài đặt → Mạng và Internet → tên Wi-Fi).\nKhác mạng: bật Tailscale trên cả điện thoại và TV, dùng IP 100.x của TV (xem trong app Tailscale). TV chưa vào Tailscale: mở Tailscale trên TV, nó hiện một mã; nhập mã đó ở login.tailscale.com/admin/machines → Add device, không cần gõ tài khoản trên TV.\nTV cần bật “Gỡ lỗi ADB”; lần đầu TV sẽ hỏi cho phép.",
+                "Same Wi-Fi: use the TV’s home IP (Settings → Network & Internet → the Wi-Fi name).\nOther network: turn on Tailscale on both the phone and the TV and use the TV’s 100.x IP (see the Tailscale app). TV not on Tailscale yet: open Tailscale on the TV, it shows a code; enter it at login.tailscale.com/admin/machines → Add device, no account typing on the TV.\nThe TV needs “ADB debugging” on; the first time it asks for permission.")), gap(10));
     }
 
     // ---------------------------------------------------------------- remote screen

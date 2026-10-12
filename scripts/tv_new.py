@@ -9,7 +9,7 @@ The one thing no script can do is switch on ADB debugging; a person at the TV do
 
 After that this script installs Tailscale (official APK, checksum verified), opens this remote in your browser pointed
 at the TV so you can see its screen and click it with the mouse, waits while you sign the TV in to YOUR Tailscale
-account (the TV shows a QR code / link; scan it from the browser picture), pairs the remote keys, optionally runs
+account (the TV shows a code; enter it in the Tailscale admin console, no typing on the TV), pairs the remote keys, optionally runs
 tv_setup.py, and saves the TV so start.command / start.cmd opens it.
 
 The web page does the same under its "TV" tab; this script is the command-line way.
@@ -74,23 +74,23 @@ def main(ip):
     server = None
     try:
         if not ts_ip():
-            print("== 3/5 Đăng nhập Tailscale trên TV", flush=True)
+            print("== 3/5 Thêm TV vào Tailscale của bạn", flush=True)
             sh("monkey -p com.tailscale.ipn -c android.intent.category.LEANBACK_LAUNCHER 1 >/dev/null 2>&1 || "
                "monkey -p com.tailscale.ipn -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1")
             server = subprocess.Popen([sys.executable, "app/server.py", "--tv", ip, "--port", str(PORT)], cwd=BASE,
                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             time.sleep(2); url = f"http://127.0.0.1:{PORT}/?view=1"; webbrowser.open(url)
-            print(f"   Trình duyệt vừa mở màn hình TV ({url}). Bấm chuột lên hình để chọn Get started / Sign in.")
-            print("   TV sẽ hiện mã QR hoặc đường link: quét bằng điện thoại và đăng nhập tài khoản Tailscale CỦA BẠN để thêm TV vào.")
+            print(f"   Trình duyệt vừa mở màn hình TV ({url}). TV hiện một mã (và mã QR), bấm chuột lên hình nếu cần chọn Get started.")
+            print("   Không cần gõ tài khoản trên TV: mở https://login.tailscale.com/admin/machines -> Add device -> nhập mã đó (hoặc quét QR bằng điện thoại).")
             print("   Nếu TV hỏi cho phép tạo kết nối VPN thì chọn OK. (đang chờ TV vào mạng Tailscale, tối đa 15 phút...)", flush=True)
             for _ in range(180):
                 if ts_ip():
                     break
                 time.sleep(5)
             else:
-                print("   Chưa thấy TV vào Tailscale. Chạy lại script này sau khi đăng nhập xong."); return 1
+                print("   Chưa thấy TV vào Tailscale. Chạy lại script này sau khi thêm TV xong."); return 1
         else:
-            print("== 3/5 TV đã đăng nhập Tailscale")
+            print("== 3/5 TV đã vào Tailscale")
         ts = ts_ip()
         print(f"   IP Tailscale của TV: {ts}", flush=True)
 

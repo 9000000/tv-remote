@@ -51,7 +51,7 @@ Tên menu khác nhau chút ít tùy hãng; dưới đây là trên Sony.
    - Bấm **Quét mạng** để tìm TV trong cùng Wi-Fi (và các thiết bị Android trong Tailscale của bạn), hoặc gõ IP của TV rồi bấm **Chọn**.
    - Mục **Cài đặt lần đầu** hiện từng bước kèm nút bấm, bước nào xong thì có dấu ✓:
      1. **ADB** – TV hiện hộp "Cho phép gỡ lỗi USB?" → tích **Luôn cho phép từ máy tính này** → OK.
-     2. **Tailscale** – bấm *Cài Tailscale* (bản chính thức, có kiểm checksum), rồi *Mở Tailscale trên TV*: trang chuyển sang xem màn hình TV, bạn bấm chuột chọn *Sign in*; TV hiện **mã QR** → quét bằng điện thoại, đăng nhập tài khoản Tailscale của bạn. Chỉ dùng trong cùng Wi-Fi thì bỏ qua bước này.
+     2. **Tailscale** – bấm *Cài Tailscale* (bản chính thức, có kiểm checksum), rồi *Mở Tailscale trên TV*: trang chuyển sang xem màn hình TV, TV hiện **một mã** (và mã QR). Không cần gõ tài khoản trên TV: mở [trang quản trị Tailscale](https://login.tailscale.com/admin/machines) → **Add device** → nhập mã đó (hoặc quét QR bằng điện thoại). Xong thì mở menu ⋯ của TV trong trang đó → **Disable key expiry**, nếu không khoảng 180 ngày sau TV bị đăng xuất. Chỉ dùng trong cùng Wi-Fi thì bỏ qua bước này.
      3. **Ghép nút remote** – bấm *Ghép*, TV hiện mã 6 ký tự, gõ mã vào trang.
      4. **Lưu** – đặt tên và lưu. Nếu TV đã có IP Tailscale, từ nay trang kết nối qua IP đó nên dùng được cả khi không ở nhà.
      5. **Tối ưu TV** – tùy chọn, xem mục 6.
@@ -72,7 +72,7 @@ Trang web này cần một máy tính để chạy (nó dùng Python, `adb`, `ff
 
 Người ở cạnh TV làm, chỉ cần remote TV và điện thoại:
 1. Trên TV mở **Google Play** → tìm và cài **Tailscale**.
-2. Mở Tailscale trên TV → *Sign in* → TV hiện mã QR → quét bằng điện thoại, đăng nhập **tài khoản Tailscale của người hỗ trợ** (hoặc tài khoản riêng rồi chia sẻ thiết bị cho người hỗ trợ trong trang quản trị Tailscale).
+2. Mở Tailscale trên TV → TV hiện một mã (và mã QR) → đọc mã cho người hỗ trợ; họ nhập ở trang quản trị Tailscale (*Add device*) nên không ai phải gõ tài khoản trên TV. TV vào **tài khoản Tailscale của người hỗ trợ** (hoặc tài khoản riêng rồi chia sẻ thiết bị cho người hỗ trợ trong trang quản trị Tailscale).
 3. Bật **Gỡ lỗi ADB** như mục 2.
 
 Người hỗ trợ ở xa, trên máy tính đã bật Tailscale:
@@ -91,7 +91,7 @@ Không cần công cụ này: dùng app **Google TV** (Android/iPhone) → nút 
 
 `tvapp/tv-setup.apk` là một app nhỏ cài thẳng lên TV. Sau khi bật "Gỡ lỗi ADB" (mục 2), mở app, chọn "Luôn cho phép" khi TV hỏi, rồi dùng remote bấm:
 - **⚡ Tối ưu TV** / **Hoàn tác** – giống mục 6, chạy ngay trên TV.
-- **Tailscale** – mở trang cài Tailscale trong Google Play, hoặc mở Tailscale để đăng nhập nếu đã cài.
+- **Tailscale** – mở trang cài Tailscale trong Google Play, hoặc mở Tailscale để lấy mã thêm TV nếu đã cài.
 
 App cũng hiện IP trong nhà và IP Tailscale của TV để đọc cho người hỗ trợ. Đưa APK lên TV bằng USB, hoặc bằng app Downloader trên TV. App này mới chạy thử trên Sony BRAVIA Android 9; nó cần TV mở ADB ở cổng 5555, nên các TV đời mới chỉ có "Gỡ lỗi không dây" kiểu ghép mã (một số Google TV Android 12+) có thể không dùng được.
 

@@ -100,7 +100,7 @@ public final class MainActivity extends Activity {
         ui(() -> {
             status.setTextColor(Color.rgb(70, 210, 131));
             status.setText(name + "\nIP trong nhà: " + (lan.isEmpty() ? "?" : lan) + "   ·   IP Tailscale: "
-                    + (!ts.isEmpty() ? ts : tsInstalled ? "chưa đăng nhập" : "chưa cài"));
+                    + (!ts.isEmpty() ? ts : tsInstalled ? "chưa vào mạng" : "chưa cài"));
         });
     }
 
@@ -122,17 +122,17 @@ public final class MainActivity extends Activity {
         }).start();
     }
 
-    /** Installed: open it so the person can sign in (it shows a QR code). Not installed: its Play Store page. */
+    /** Installed: open it so it shows its code, which the person enters in the Tailscale admin console. Not installed: its Play Store page. */
     private void tailscale() {
         run(() -> {
             if (setup.has(Setup.TS_PKG)) {
                 Intent i = getPackageManager().getLeanbackLaunchIntentForPackage(Setup.TS_PKG);
                 if (i == null) i = getPackageManager().getLaunchIntentForPackage(Setup.TS_PKG);
                 if (i == null) { log("✗ Không mở được Tailscale"); return; }
-                log("Mở Tailscale: chọn Sign in, quét mã QR bằng điện thoại (hoặc mở link trên máy khác) để đăng nhập.");
+                log("Mở Tailscale: TV hiện một mã. Không cần gõ tài khoản trên TV: trên máy tính/điện thoại mở login.tailscale.com/admin/machines, chọn Add device rồi nhập mã đó (hoặc quét mã QR). Xong thì vào menu của TV trong trang đó, chọn Disable key expiry.");
                 startActivity(i);
             } else {
-                log("Mở Google Play: chọn Cài đặt (Install), xong quay lại đây bấm \"Tailscale\" lần nữa để đăng nhập.");
+                log("Mở Google Play: chọn Cài đặt (Install), xong quay lại đây bấm \"Tailscale\" lần nữa để lấy mã thêm TV.");
                 try {
                     startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + Setup.TS_PKG)));
                 } catch (Exception e) {
