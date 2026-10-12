@@ -1,0 +1,15 @@
+# secrets: these pair this machine with the TV, never commit
+cert.pem
+key.pem
+*.pem
+venv/
+__pycache__/
+*.log
+.DS_Store
+.cache/
+start-*.command
+tools/
+start-*.cmd
+tvapp/build/
+tvapp/signing.jks
+tvs.json

@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TV Remote</title>
+<link rel="stylesheet" href="/web/style.css">
+</head>
+<body>
+<main class="wide">
+  <header class="card top">
+    <div>
+      <h1 id="name">Sony TV</h1>
+      <div class="sub" id="info">đang kết nối...</div>
+    </div>
+    <div class="chips" aria-live="polite">
+      <span class="chip" id="chipTv"><i></i><span>TV: ...</span></span>
+      <span class="chip" id="chipAdb"><i></i><span>ADB: ...</span></span>
+      <button class="small" id="lang" title="Tiếng Việt / English">EN</button>
+      <button class="small danger" id="quit" title="Dừng chương trình trên máy tính này (TV không bị ảnh hưởng)">⏻ Tắt</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="remote" aria-selected="true">Remote</button>
+    <button role="tab" data-tab="apps" aria-selected="false">Ứng dụng<span class="needs">cần ADB</span></button>
+    <button role="tab" data-tab="files" aria-selected="false">Tệp<span class="needs">cần ADB</span></button>
+    <button role="tab" data-tab="install" aria-selected="false">Tải / Cài<span class="needs">cần ADB</span></button>
+    <button role="tab" data-tab="tv" aria-selected="false">TV<span class="needs">thêm · cài đặt</span></button>
+  </nav>
+
+  <!-- ============ Remote ============ -->
+  <div class="panel" data-panel="remote">
+    <div class="remote-grid">
+      <div class="col">
+        <section class="card" id="screencard" aria-label="Màn hình TV">
+          <div class="card-head">
+            <h2>Màn hình TV <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
+            <div class="tools">
+              <select id="screenmode" aria-label="Chế độ xem"><option value="live">Trực tiếp · nhẹ</option><option value="hd">Trực tiếp · nét</option><option value="snap">Ảnh chụp</option></select>
+              <button class="small iconbtn" id="screenfull" aria-label="Toàn màn hình" title="Toàn màn hình">⛶</button>
+              <button class="small primary" id="screenbtn">Xem</button>
+              <button class="small" id="pipback" hidden>Về Remote</button>
+            </div>
+          </div>
+          <div class="screenbox" id="screenbox"><img id="screen" alt="Màn hình TV" hidden><div class="ph" id="screenph"></div></div>
+          <div class="muted" id="screeninfo"></div>
+        </section>
+        <div data-adb-banner></div>
+        <section class="card wide-only">
+          <h2>Mở ứng dụng <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
+          <div class="tiles" id="quick"><div class="muted">Danh sách app hiện khi ADB sẵn sàng.</div></div>
+        </section>
+      </div>
+
+      <div class="col">
+        <section class="card" aria-label="Điều hướng">
+          <div class="dpad">
+            <button data-k="MENU" aria-label="Menu">☰</button><button data-k="UP" aria-label="Lên">▲</button><button data-k="SETTINGS" aria-label="Cài đặt nhanh">⚙</button>
+            <button data-k="LEFT" aria-label="Trái">◀</button><button class="ok" data-k="OK">OK</button><button data-k="RIGHT" aria-label="Phải">▶</button>
+            <button data-k="BACK" aria-label="Quay lại">↩</button><button data-k="DOWN" aria-label="Xuống">▼</button><button data-k="HOME" aria-label="Home">⌂</button>
+          </div>
+          <div class="muted" style="text-align:center;margin-top:8px">Giữ nút = nhấn giữ trên TV · Bàn phím máy tính gõ thẳng lên TV: chữ, ⌫ xóa, mũi tên, Enter, Esc = Back</div>
+          <div class="vol" aria-label="Âm lượng">
+            <button data-k="MUTE" id="mute" aria-label="Tắt tiếng" title="Tắt / bật tiếng">🔇</button>
+            <button data-k="VOL_DOWN" aria-label="Giảm âm lượng">−</button>
+            <input type="range" id="volr" min="0" max="100" value="0" aria-label="Âm lượng">
+            <button data-k="VOL_UP" aria-label="Tăng âm lượng">+</button>
+            <output id="volv" for="volr">–</output>
+          </div>
+          <div class="row">
+            <button class="power" data-k="POWER">⏻ Nguồn</button>
+            <button id="wake" title="Wake-on-LAN khi TV standby sâu">☀ Đánh thức</button>
+            <button data-k="INPUT">Input</button>
+          </div>
+          <div class="row"><button data-k="PREV" aria-label="Bài trước">⏮</button><button data-k="PLAY_PAUSE" aria-label="Phát/Dừng">⏯</button><button data-k="NEXT" aria-label="Bài sau">⏭</button></div>
+        </section>
+
+        <section class="card">
+          <h2>Bàn phím <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
+          <form class="line" id="textf" style="margin-top:0"><input id="text" placeholder="Bấm vào đây rồi gõ, chữ hiện ngay trên TV" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="primary" title="Gửi phím Enter">↵</button><button type="button" id="del" aria-label="Xóa ký tự">⌫</button></form>
+          <p class="muted" style="margin:6px 0 0">Không cần bấm vào ô này: cứ gõ là chữ lên TV (TV phải đang ở một ô nhập chữ). Ô này dành cho gõ tiếng Việt có dấu. Bàn phím ảo trên TV không bấm bằng chuột được, hãy gõ từ đây.</p>
+          <h2 style="margin-top:14px">Mở link trên TV <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
+          <form class="line" id="linkf" style="margin-top:0"><input id="link" placeholder="youtube.com/watch?v=..." autocomplete="off" inputmode="url"><button class="primary">Mở</button></form>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Apps ============ -->
+  <div class="panel" data-panel="apps" hidden>
+    <div data-adb-banner></div>
+    <section class="card" data-adb-gated>
+      <div class="card-head"><h2>Ứng dụng đã cài</h2><button class="small" id="appsreload">Tải lại</button></div>
+      <form class="line" id="appsf"><input type="search" id="appsq" placeholder="Tìm theo tên app" autocomplete="off"></form>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px;color:var(--muted);cursor:pointer"><input type="checkbox" id="appssys"> Hiện cả app hệ thống</label>
+      <div class="list" id="appslist"></div>
+    </section>
+  </div>
+
+  <!-- ============ Files ============ -->
+  <div class="panel" data-panel="files" hidden>
+    <div data-adb-banner></div>
+    <section class="card" data-adb-gated id="filescard">
+      <div class="places" id="places"></div>
+      <div class="crumbs" id="crumbs"></div>
+      <div class="ftools">
+        <input type="search" id="filesq" placeholder="Lọc trong thư mục này" autocomplete="off">
+        <select id="filessort" aria-label="Sắp xếp"><option value="name">Theo tên</option><option value="new">Mới nhất</option><option value="big">Lớn nhất</option></select>
+        <button class="small" id="mkdir">＋ Thư mục</button>
+        <button class="small iconbtn" id="filesreload" aria-label="Tải lại" title="Tải lại">↻</button>
+      </div>
+      <div class="muted" id="space" style="margin-top:8px"></div>
+      <div class="list" id="fileslist"></div>
+      <label class="drop"><input type="file" id="upfile" multiple>＋ Kéo thả file vào đây, hoặc bấm để chọn file gửi lên thư mục này</label>
+    </section>
+  </div>
+
+  <!-- ============ Install ============ -->
+  <div class="panel" data-panel="install" hidden>
+    <div data-adb-banner></div>
+    <div class="two-up" data-adb-gated>
+      <section class="card">
+        <h2>Tải file từ link về TV</h2>
+        <form class="line" id="fetchf" style="margin-top:0"><input id="fetchurl" placeholder="https://.../file.zip" inputmode="url" autocomplete="off"><button class="primary">Tải</button></form>
+        <p class="muted" style="margin:8px 0 0">Lưu vào thư mục Download của TV. Máy này tải về trước rồi đẩy sang TV.</p>
+      </section>
+      <section class="card">
+        <h2>Cài APK</h2>
+        <form class="line" id="instf" style="margin-top:0"><input id="insturl" placeholder="Link tới file .apk" inputmode="url" autocomplete="off"><button class="primary">Cài</button></form>
+        <label class="drop"><input type="file" id="apkfile" accept=".apk,application/vnd.android.package-archive">Hoặc chọn file .apk từ máy này</label>
+        <p class="muted" style="margin:8px 0 0">Chỉ cài APK bạn tin tưởng. Cài đè bản cũ được (giữ dữ liệu). File .apk đã nằm trên TV thì cài từ tab Tệp.</p>
+      </section>
+    </div>
+  </div>
+  <div class="panel" data-panel="install" hidden>
+    <section class="card" data-adb-gated>
+      <h2>Tối ưu TV</h2>
+      <p class="muted" style="margin:0 0 10px">Một lần bấm, chạy lại bao nhiêu lần cũng được, không gỡ cài đặt gì:</p>
+      <ul class="muted" style="margin:0 0 12px;padding-left:18px">
+        <li>Giữ Tailscale sống qua standby và khởi động lại</li>
+        <li>Giảm hiệu ứng chuyển cảnh còn một nửa cho TV nhanh hơn</li>
+        <li>Thay màn hình chính Google bằng FLauncher (chỉ lưới app, nhẹ CPU)</li>
+        <li>Tắt app hệ thống không dùng (chế độ khách sạn/trưng bày của Sony, Samba, Sony Select, Play Games, Play Movies, YouTube Music)</li>
+      </ul>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="primary" id="setupapply" style="padding:0 18px">⚡ Tối ưu TV</button>
+        <button id="setupundo" style="padding:0 18px">Hoàn tác</button>
+      </div>
+      <pre id="setuplog" hidden style="margin:12px 0 0;padding:10px;background:var(--bg);border:1px solid var(--line);border-radius:10px;font-size:12px;max-height:260px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere"></pre>
+    </section>
+  </div>
+  <!-- ============ TVs: saved, discovery, first-time setup ============ -->
+  <div class="panel" data-panel="tv" hidden>
+    <div class="two-up">
+      <section class="card">
+        <h2>TV đã lưu</h2>
+        <div class="list" id="tvlist" style="margin-top:0"></div>
+      </section>
+      <section class="card">
+        <div class="card-head"><h2>Tìm TV</h2><button class="small primary" id="scan">Quét mạng</button></div>
+        <p class="muted" id="scaninfo" style="margin:8px 0 0">Tìm TV trong cùng Wi-Fi với máy này và các thiết bị Android trong Tailscale của bạn.</p>
+        <div class="list" id="scanlist"></div>
+        <form class="line" id="ipf"><input id="ipin" placeholder="Hoặc nhập IP của TV, vd 192.168.1.88" autocomplete="off" inputmode="decimal"><button class="primary">Chọn</button></form>
+        <p class="muted" style="margin:8px 0 0">Xem IP trên TV: Cài đặt → Mạng và Internet → bấm vào tên Wi-Fi đang kết nối.</p>
+      </section>
+    </div>
+    <section class="card">
+      <div class="card-head"><h2>Cài đặt lần đầu · <span id="setuphost" style="text-transform:none;letter-spacing:0"></span></h2><button class="small" id="setuprefresh">Kiểm tra lại</button></div>
+      <div id="steps"></div>
+    </section>
+  </div>
+
+  <details class="card help" id="help">
+    <summary>Chức năng nào cần ADB (cổng 5555)?</summary>
+    <div class="cols">
+      <div>
+        <h3>✅ Không cần ADB, chỉ cần Remote (cổng 6466)</h3>
+        <ul>
+          <li>Các nút điều khiển: mũi tên, OK, Back, Home, nguồn, tắt tiếng</li>
+          <li>Âm lượng (không có ADB thì thanh trượt chỉnh từng nấc, chậm hơn)</li>
+          <li>Đánh thức TV khi standby (Wake-on-LAN qua laptop ở nhà)</li>
+        </ul>
+      </div>
+      <div>
+        <h3>🔌 Cần ADB, mất khi ADB đóng</h3>
+        <ul>
+          <li>Xem màn hình TV (trực tiếp và ảnh chụp)</li>
+          <li>Chuột trên hình (bấm, kéo, cuộn; chuột phải = Back) và gõ bằng bàn phím máy tính</li>
+          <li>Mở app, mở link (TV này bỏ qua lệnh mở app gửi qua Remote)</li>
+          <li>Danh sách app kèm logo, dừng / gỡ app</li>
+          <li>Duyệt, tải về, đổi tên, xóa tệp trên TV; mở tệp trên TV</li>
+          <li>Tải file từ link về TV, cài APK</li>
+        </ul>
+      </div>
+    </div>
+    <p><b>ADB đóng khi nào?</b> TV tắt hẳn hoặc đang standby sâu (mất Wi-Fi), TV vừa khởi động lại và chưa mở lại cổng, hoặc đã tắt “Gỡ lỗi ADB”. Chức năng Remote vẫn dùng được nếu TV còn mạng.</p>
+    <p><b>Bật lại:</b> Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng” → Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB”. Lần đầu TV hỏi cho phép thì chọn “Luôn cho phép”.</p>
+  </details>
+  <section class="card" id="jobscard" hidden><h2>Tiến trình tải lên / cài đặt</h2><div id="jobs"></div></section>
+</main>
+<div id="pipslot"></div>
+<dialog id="preview"><img alt="Xem trước"></dialog>
+<div id="toast" role="status"></div>
+
+<script src="/web/js/i18n.js"></script>
+<script src="/web/js/core.js"></script>
+<script src="/web/js/remote.js"></script>
+<script src="/web/js/screen.js"></script>
+<script src="/web/js/apps.js"></script>
+<script src="/web/js/files.js"></script>
+<script src="/web/js/setup.js"></script>
+</body>
+</html>
