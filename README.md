@@ -8,6 +8,75 @@
 
 ---
 
+## Nhìn nhanh: nó hoạt động thế nào
+
+**Ai nói chuyện với ai**
+
+```mermaid
+flowchart LR
+    subgraph C["Máy điều khiển (một hoặc nhiều máy cùng lúc)"]
+        PC["💻 Máy tính<br/>start.command → trang web 127.0.0.1:8765"]
+        PH["📱 Điện thoại Android<br/>app TV Remote"]
+    end
+    subgraph T["📺 Android TV / Google TV"]
+        R["Dịch vụ remote của Google<br/>cổng 6466"]
+        A["ADB<br/>cổng 5555"]
+        S["scrcpy-server<br/>hình trực tiếp + chuột, phím"]
+        A --> S
+    end
+    PC -- "nút remote, âm lượng" --> R
+    PC -- "hình, chuột, phím, app, tệp, cài APK" --> A
+    PH -- "hình, chạm, nút, chữ, app" --> A
+```
+
+Mọi kết nối đi thẳng từ máy của bạn tới TV, qua Wi-Fi trong nhà hoặc qua Tailscale. Không có máy chủ nào ở giữa.
+
+**Cùng mạng hay khác mạng?**
+
+```mermaid
+flowchart TD
+    Q{"Máy điều khiển có cùng Wi-Fi với TV không?"}
+    Q -- "Có" --> L1["Quét mạng là thấy TV<br/>dùng IP trong nhà 192.168.x.x"]
+    Q -- "Không" --> T1["Cài Tailscale trên TV và trên máy điều khiển"]
+    T1 --> T2["TV hiện một mã → nhập ở trang quản trị Tailscale<br/>(Add device), không gõ tài khoản trên TV"]
+    T2 --> T3["Dùng IP Tailscale 100.x.x.x của TV"]
+    L1 --> OK["Lần đầu: TV hỏi “Cho phép gỡ lỗi USB?”<br/>→ Luôn cho phép"]
+    T3 --> OK
+    OK --> GO["✅ Điều khiển được"]
+```
+
+**Cài lần đầu (máy tính)**
+
+```mermaid
+flowchart TD
+    A0["Trên TV: bật “Gỡ lỗi ADB”<br/>(mục 2, làm bằng remote của TV)"] --> A1["Bấm đúp start.command / start.cmd<br/>→ trang web mở tab TV"]
+    A1 --> A2{"Tìm TV"}
+    A2 -- "cùng Wi-Fi" --> A3["Quét mạng → Chọn"]
+    A2 -- "khác mạng" --> A4["Nhập IP Tailscale của TV"]
+    A3 --> A5["TV: Luôn cho phép → ADB ✓"]
+    A4 --> A5
+    A5 --> A6["Ghép nút remote: gõ mã 6 ký tự TV hiện → ✓<br/>Lưu TV"]
+    A6 --> A7["✅ Từ nay chỉ cần bấm đúp file start"]
+```
+
+**Xem màn hình và bấm chuột lên TV**
+
+```mermaid
+sequenceDiagram
+    participant U as Bạn (trình duyệt)
+    participant W as Trang web trên máy bạn
+    participant TV as TV
+    U->>W: Bấm “Xem”
+    W->>TV: ADB: chạy scrcpy-server
+    TV-->>W: Video H.264 (960px, 8 khung/giây)
+    W-->>U: Hình trực tiếp
+    U->>W: Bấm chuột / gõ phím
+    W->>TV: Lệnh chạm / phím qua scrcpy
+    Note over TV: TV phản hồi như có người bấm
+```
+
+---
+
 ## 1. Cần có gì
 
 **TV**

@@ -8,6 +8,75 @@ Used for real with a Sony BRAVIA (Android 9) from macOS and Windows 11. Other TV
 
 ---
 
+## At a glance: how it works
+
+**Who talks to whom**
+
+```mermaid
+flowchart LR
+    subgraph C["Controllers (one or several at once)"]
+        PC["💻 Computer<br/>start.command → web page 127.0.0.1:8765"]
+        PH["📱 Android phone<br/>TV Remote app"]
+    end
+    subgraph T["📺 Android TV / Google TV"]
+        R["Google's remote service<br/>port 6466"]
+        A["ADB<br/>port 5555"]
+        S["scrcpy-server<br/>live picture + mouse, keys"]
+        A --> S
+    end
+    PC -- "remote keys, volume" --> R
+    PC -- "picture, mouse, keyboard, apps, files, APK installs" --> A
+    PH -- "picture, touch, keys, text, apps" --> A
+```
+
+Every connection goes straight from your device to the TV, over the home Wi-Fi or over Tailscale. There is no server in between.
+
+**Same network or not?**
+
+```mermaid
+flowchart TD
+    Q{"Is the controller on the TV's Wi-Fi?"}
+    Q -- "Yes" --> L1["A scan finds the TV<br/>use its home IP 192.168.x.x"]
+    Q -- "No" --> T1["Install Tailscale on the TV and on the controller"]
+    T1 --> T2["The TV shows a code → enter it in the Tailscale admin console<br/>(Add device), no account typing on the TV"]
+    T2 --> T3["Use the TV's Tailscale IP 100.x.x.x"]
+    L1 --> OK["First time: the TV asks “Allow USB debugging?”<br/>→ Always allow"]
+    T3 --> OK
+    OK --> GO["✅ You are in control"]
+```
+
+**First-time setup (computer)**
+
+```mermaid
+flowchart TD
+    A0["On the TV: turn on “ADB debugging”<br/>(section 2, with the TV's own remote)"] --> A1["Double-click start.command / start.cmd<br/>→ the web page opens on the TV tab"]
+    A1 --> A2{"Find the TV"}
+    A2 -- "same Wi-Fi" --> A3["Scan → Choose"]
+    A2 -- "other network" --> A4["Type the TV's Tailscale IP"]
+    A3 --> A5["TV: Always allow → ADB ✓"]
+    A4 --> A5
+    A5 --> A6["Pair the remote keys: type the 6-character code the TV shows → ✓<br/>Save the TV"]
+    A6 --> A7["✅ From now on just double-click the start file"]
+```
+
+**Watching the screen and clicking on the TV**
+
+```mermaid
+sequenceDiagram
+    participant U as You (browser)
+    participant W as Web page on your computer
+    participant TV as TV
+    U->>W: Press “View”
+    W->>TV: ADB: start scrcpy-server
+    TV-->>W: H.264 video (960px, 8 fps)
+    W-->>U: Live picture
+    U->>W: Click / type
+    W->>TV: Touch / key events through scrcpy
+    Note over TV: The TV reacts as if someone pressed it
+```
+
+---
+
 ## 1. What you need
 
 **TV**
