@@ -12,7 +12,7 @@
 
   const EN = {
     // header, tabs
-    'đang kết nối...': 'connecting...', '⏻ Tắt': '⏻ Quit', 'Dừng chương trình trên máy tính này (TV không bị ảnh hưởng)': 'Stop the program on this computer (the TV is not affected)',
+    'đang kết nối...': 'connecting...', 'Tắt': 'Quit', 'Dừng chương trình trên máy tính này (TV không bị ảnh hưởng)': 'Stop the program on this computer (the TV is not affected)',
     'Ứng dụng': 'Apps', 'Tệp': 'Files', 'Tải / Cài': 'Download / Install', 'cần ADB': 'needs ADB', '· cần ADB': '· needs ADB', 'thêm': 'add', 'cài đặt': 'setup',
     'ADB: sẵn sàng': 'ADB: ready', 'ADB: chờ TV cho phép': 'ADB: waiting for the TV', 'ADB: cổng đóng': 'ADB: port closed', 'ADB: lỗi': 'ADB: error',
     'Server tắt': 'Server stopped', 'Không gọi được server. Chạy lại start.command.': 'Cannot reach the server. Run start.command again.', 'Không gọi được server': 'Cannot reach the server',
@@ -30,6 +30,7 @@
     'Mở ứng dụng': 'Open an app', 'Danh sách app hiện khi ADB sẵn sàng.': 'Apps appear when ADB is ready.', 'Điều hướng': 'Navigation', 'Lên': 'Up', 'Xuống': 'Down', 'Trái': 'Left', 'Phải': 'Right',
     'Cài đặt nhanh': 'Quick settings', 'Quay lại': 'Back', 'Âm lượng': 'Volume', 'Tắt tiếng': 'Mute', 'Tắt / bật tiếng': 'Mute / unmute', 'Đang tắt tiếng, bấm để bật': 'Muted, press to unmute',
     'Giảm âm lượng': 'Volume down', 'Tăng âm lượng': 'Volume up', '⏻ Nguồn': '⏻ Power', '☀ Đánh thức': '☀ Wake', 'Wake-on-LAN khi TV standby sâu': 'Wake-on-LAN when the TV is in deep standby',
+    'Tắt TV?\nNếu TV tắt cả mạng thì chỉ mở lại được bằng nút Đánh thức (cần một máy ở nhà đang bật) hoặc remote của TV.': 'Turn the TV off?\nIf its network goes off too, only Wake (needs a computer at home that is on) or the TV’s own remote can turn it back on.',
     'Bài trước': 'Previous', 'Phát/Dừng': 'Play/Pause', 'Bài sau': 'Next', 'Bàn phím': 'Keyboard', 'Xóa ký tự': 'Delete a character', 'Gửi phím Enter': 'Send Enter',
     'Giữ nút = nhấn giữ trên TV · Bàn phím máy tính gõ thẳng lên TV: chữ, ⌫ xóa, mũi tên, Enter, Esc = Back': 'Hold a button = long press on the TV · The computer keyboard types straight onto the TV: letters, ⌫ delete, arrows, Enter, Esc = Back',
     'Bấm vào đây rồi gõ, chữ hiện ngay trên TV': 'Click here and type; the text appears on the TV',
@@ -145,6 +146,8 @@
   function core(k) {
     if (Object.prototype.hasOwnProperty.call(EN, k)) return EN[k];
     for (const [re, fn] of RULES) { const m = re.exec(k); if (m) return fn(m); }
+    const m = /^([^\p{L}\p{N}\s·“"(]+\s+)([\s\S]+)$/u.exec(k);         // "🔍 Quét mạng": keep the icon, translate the words
+    if (m) { const rest = core(m[2]); if (rest !== null) return m[1] + rest; }
     return null;
   }
   function tr(s) {

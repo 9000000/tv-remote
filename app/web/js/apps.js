@@ -64,13 +64,13 @@ function renderApps() {
   lazyMeta.disconnect();
   const rows = appsAll.filter((p) => !q || p.toLowerCase().includes(q) || appName(p).toLowerCase().includes(q))
     .sort((a, b) => appName(a).localeCompare(appName(b))).map((pkg) => {
-    const act = (name, label, cls = '') => el('button', { textContent: label, className: 'small ' + cls, onclick: async () => {
+    const act = (name, icon, label, cls = '') => setLabel(el('button', { title: label, className: 'small ' + cls, onclick: async () => {
       if (name === 'uninstall' && !confirm('Gỡ cài đặt ' + appName(pkg) + ' khỏi TV?')) return;
       const r = await api('/api/app/' + name, { pkg }); if (r) { toast(label + ': ' + appName(pkg)); if (name === 'uninstall') { quickLoaded = false; loadApps(); loadQuick(); } }
-    } });
+    } }), icon, label);
     const icon = appIcon(pkg), title = el('span', { textContent: pkg.split('.').pop() });
     const row = el('div', { className: 'item' }, icon, el('div', { className: 'name' }, title, el('small', { textContent: pkg })),
-      el('div', { className: 'acts' }, act('launch', 'Mở', 'primary'), act('stop', 'Dừng'), act('uninstall', 'Gỡ', 'danger')));
+      el('div', { className: 'acts' }, act('launch', '▶', 'Mở', 'primary'), act('stop', '⏹', 'Dừng'), act('uninstall', '🗑', 'Gỡ', 'danger')));
     row.loadMeta = () => onMeta(pkg, (m) => { icon.fill(m); if (m.label) title.textContent = m.label; });
     if (META.has(pkg)) row.loadMeta(); else lazyMeta.observe(row);
     return row;

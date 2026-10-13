@@ -3,7 +3,11 @@
 // Tap = one press. Hold (0.4 s) = the TV sees the key held down until you let go: fast scrolling, long-press menus.
 document.querySelectorAll('[data-k]').forEach((b) => {
   const k = b.dataset.k; let t = null, long = false, down = false;
-  const send = (dir) => api('/api/key', dir ? { key: k, dir } : { key: k });
+  const power = k === 'POWER';                                     // never a long press, and turning the TV off needs a yes
+  const send = (dir) => {
+    if (power && tvOn && !confirm('Tắt TV?\nNếu TV tắt cả mạng thì chỉ mở lại được bằng nút Đánh thức (cần một máy ở nhà đang bật) hoặc remote của TV.')) return;
+    return api('/api/key', dir ? { key: k, dir } : { key: k });
+  };
   const release = (tap) => {
     if (!down) return; down = false; clearTimeout(t);
     if (long) { long = false; b.classList.remove('held'); send('END_LONG'); } else if (tap) send();
@@ -11,7 +15,7 @@ document.querySelectorAll('[data-k]').forEach((b) => {
   };
   b.addEventListener('pointerdown', (e) => {
     if (e.button) return; down = true; long = false; try { b.setPointerCapture(e.pointerId); } catch {}
-    t = setTimeout(() => { long = true; b.classList.add('held'); send('START_LONG'); }, 400);
+    if (!power) t = setTimeout(() => { long = true; b.classList.add('held'); send('START_LONG'); }, 400);
   });
   b.addEventListener('pointerup', () => { release(true); b.blur(); });           // keep focus off the button so typing goes to the TV
   ['pointercancel', 'lostpointercapture'].forEach((ev) => b.addEventListener(ev, () => release(false)));

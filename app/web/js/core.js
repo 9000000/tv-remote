@@ -1,5 +1,7 @@
 // shared helpers, status chips, ADB gating
 const $ = (s) => document.querySelector(s);
+// icon + words as separate spans, so narrow screens can show the icon alone (see .lbl in style.css)
+const setLabel = (b, icon, text) => { b.replaceChildren(el('span', { className: 'ico', textContent: icon }), el('span', { className: 'lbl', textContent: ' ' + text })); if (!b.title) b.title = text; return b; };
 const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); kids.forEach((k) => k != null && e.append(k)); return e; };
 const fmtSize = (n) => n > 1e9 ? (n / 1e9).toFixed(1) + ' GB' : n > 1e6 ? (n / 1e6).toFixed(1) + ' MB' : n > 1e3 ? Math.round(n / 1e3) + ' KB' : n + ' B';
 const sleep = (ms) => new Promise((z) => setTimeout(z, ms));
@@ -27,10 +29,12 @@ const ADB_TEXT = {
 };
 function setChip(id, cls, text) { const c = $(id); c.className = 'chip ' + cls; c.lastElementChild.textContent = text; }
 
+let tvOn = false;                                                    // the power button asks before turning a TV that is on off
 let volHold = 0;                                                      // don't yank the slider while the user drags it
 async function refresh() {
   if (stopped) return;
   const s = await fetch('/api/state').then((r) => r.json()).catch(() => null);
+  tvOn = !!(s && s.connected && s.is_on);
   if (!s) { setChip('#chipTv', 'bad', 'Server tắt'); setChip('#chipAdb', '', 'ADB: ?'); $('#info').textContent = 'Không gọi được server. Chạy lại start.command.'; return; }
   setChip('#chipTv', s.connected && s.is_on ? 'ok' : s.connected ? 'warn' : 'bad', !s.connected ? 'TV: mất kết nối' : s.is_on ? 'TV: đang bật' : 'TV: màn hình tắt');
   ADB = s.adb || { state: 'unknown' };
@@ -57,14 +61,14 @@ const BANNERS = {
 let bannerKey = '';
 function buildBanner() {
   const [cls, title, text] = BANNERS[ADB.state] || BANNERS.unknown;
-  const retry = el('button', { className: 'small primary', textContent: 'Thử kết nối lại', onclick: async (e) => {
+  const retry = el('button', { className: 'small primary', textContent: '🔄 Thử kết nối lại', onclick: async (e) => {
     const b = e.currentTarget; b.disabled = true; b.textContent = 'Đang kết nối...';
     const r = await api('/api/adb/connect', {}); if (r) { ADB = r; bannerKey = ''; applyAdb(); refresh(); }
-    b.disabled = false; b.textContent = 'Thử kết nối lại';
+    b.disabled = false; b.textContent = '🔄 Thử kết nối lại';
   } });
   const loss = el('p'); loss.append(el('b', { textContent: 'Mất chức năng: ' }), 'xem màn hình, mở app/link, danh sách app, tệp, tải link về TV, cài APK.');
   return el('div', { className: 'banner ' + cls }, el('b', { textContent: title }), el('p', { textContent: text }), loss,
-    el('div', { className: 'actions' }, retry, el('button', { className: 'small', textContent: 'Cách bật ADB', onclick: () => { const h = $('#help'); h.open = true; h.scrollIntoView({ behavior: 'smooth', block: 'center' }); } })));
+    el('div', { className: 'actions' }, retry, el('button', { className: 'small', textContent: '❓ Cách bật ADB', onclick: () => { const h = $('#help'); h.open = true; h.scrollIntoView({ behavior: 'smooth', block: 'center' }); } })));
 }
 function applyAdb() {
   const ready = ADB.state === 'ready';

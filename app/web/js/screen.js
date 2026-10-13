@@ -10,7 +10,7 @@ function showFrame(blob) {
 }
 function stopScreen(msg) {
   screenOn = false; screenGen++; if (streamCtl) streamCtl.abort();
-  $('#screenbtn').textContent = 'Xem'; setScreenPlaceholder(msg); setScreenInfo(''); dockScreen();
+  setLabel($('#screenbtn'), '▶', 'Xem'); setScreenPlaceholder(msg); setScreenInfo(''); dockScreen();
 }
 async function snapOnce() {
   try {
@@ -68,7 +68,7 @@ $('#pipback').addEventListener('click', () => showTab('remote'));
 function startScreen() {
   screenOn = true; const gen = ++screenGen; if (streamCtl) streamCtl.abort();
   dockScreen();
-  $('#screenbtn').textContent = 'Dừng'; $('#screenph').textContent = 'Đang lấy hình...';
+  setLabel($('#screenbtn'), '⏹', 'Dừng'); $('#screenph').textContent = 'Đang lấy hình...';
   ($('#screenmode').value === 'snap' ? snapLoop : liveLoop)(gen);
 }
 setInterval(() => {

@@ -37,7 +37,7 @@ function renderFiles() {
     const full = join(i.name), [icon, kind] = kindOf(i);
     const btn = (text, title, fn, cls = '') => el('button', { textContent: text, title, ariaLabel: title, className: 'small ' + cls, onclick: (e) => { e.stopPropagation(); fn(); } });
     const acts = el('div', { className: 'acts' });
-    if (kind === 'apk') acts.append(btn('Cài', 'Cài APK này lên TV', () => { if (confirm('Cài ' + i.name + ' lên TV?')) startJob('/api/file/install', { path: full }, 'Cài ' + i.name); }, 'primary'));
+    if (kind === 'apk') acts.append(setLabel(btn('', 'Cài APK này lên TV', () => { if (confirm('Cài ' + i.name + ' lên TV?')) startJob('/api/file/install', { path: full }, 'Cài ' + i.name); }, 'primary'), '📦', 'Cài'));
     if (['video', 'audio', 'image'].includes(kind)) acts.append(btn('▶ TV', 'Mở trên TV', () => api('/api/file/open', { path: full }).then((r) => r && toast('Đã mở trên TV: ' + i.name))));
     if (!i.dir) acts.append(el('a', { className: 'linkbtn iconbtn', href: '/api/file?path=' + encodeURIComponent(full), textContent: '⬇', title: 'Tải về máy này', ariaLabel: 'Tải về máy này', onclick: (e) => e.stopPropagation() }));
     acts.append(btn('✎', 'Đổi tên', () => { const n = prompt('Tên mới:', i.name); if (n && n !== i.name) fileAct('/api/file/rename', { path: full, name: n }, 'Đã đổi tên'); }, 'iconbtn'));
