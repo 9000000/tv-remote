@@ -440,12 +440,13 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         waking = true
         val mac = pref("mac:$ip")
         val lan = pref("lan:$ip")
-        message(t("Đang đánh thức ", "Waking ") + title(ip) + t("... (tối đa 45 giây)", "... (up to 45 seconds)"), false)
+        message(t("Đang đánh thức ", "Waking ") + title(ip) + "...", false)
         Thread {
             var up = open(ip, 5555, 1500)
             var sent = 0
             var i = 0
-            while (i < 22 && !up) {
+            val hopeless = mac.isEmpty() || !Wol.sameNetwork(lan)     // no packet can reach the TV from here: say so at once instead of waiting
+            while (i < 22 && !up && !hopeless) {
                 if (i % 6 == 0 && mac.isNotEmpty()) sent += Wol.send(mac, lan)
                 try { Thread.sleep(1000) } catch (e: InterruptedException) { break }
                 up = open(ip, 5555, 600) || lan.isNotEmpty() && lan != ip && Wol.sameNetwork(lan) && open(lan, 5555, 400)
@@ -490,12 +491,15 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     // Each saved TV says whether it answers right now, so nobody has to tap it to find out; the wake button appears only when it does not.
     private val savedRows = HashMap<String, Pair<Button, View>>()
     private val reach = HashMap<String, Boolean>()                    // absent: not checked yet
+    private val awayFrom = HashMap<String, Boolean>()                 // a TV that is off can only be woken from its own Wi-Fi
     private val probe = object : Runnable {
         override fun run() {
             ui.removeCallbacks(this)
             if (host == null && !waking) for (ip in savedIps()) Thread {
                 val up = open(ip, 5555, 2500)
-                ui.post { reach[ip] = up; showReach(ip, up) }
+                val lan = pref("lan:$ip")
+                val away = lan.isNotEmpty() && !Wol.sameNetwork(lan)   // the phone is not on the TV's own Wi-Fi
+                ui.post { reach[ip] = up; awayFrom[ip] = away; showReach(ip, up) }
             }.start()
             ui.postDelayed(this, 8000)
         }
@@ -506,7 +510,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val status = when (up) {
             null -> t("đang kiểm tra...", "checking...")
             true -> t("● kết nối được", "● reachable")
-            false -> t("○ không thấy: TV tắt hoặc khác mạng", "○ no answer: off or on another network")
+            false -> if (awayFrom[ip] == true) t("○ không thấy · bạn đang ngoài Wi-Fi của TV nên không đánh thức từ đây được", "○ no answer · you are not on the TV’s Wi-Fi, so it cannot be woken from here")
+                else t("○ không thấy · TV đang tắt? bấm nút nguồn để đánh thức", "○ no answer · is the TV off? tap power to wake it")
         }
         val text = android.text.SpannableString((if (name(ip).isEmpty()) ip else name(ip) + "\n" + ip) + "\n" + status)
         val from = text.length - status.length

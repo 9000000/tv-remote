@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.3.3 - 2026-10-13
+
+Web 2.3.3 · app điện thoại 2.3.2 · app TV 2.3.2
+
+**Tiếng Việt**
+- App điện thoại: khi TV không trả lời, dòng trạng thái nói rõ lý do: đang ở ngoài Wi-Fi của TV (không đánh thức từ đây được) hay TV đang tắt (bấm nút nguồn để đánh thức). Bấm đánh thức ở ngoài mạng thì app báo ngay cách xử lý, không còn bắt chờ 20 giây.
+
+**English**
+- Phone app: when a TV does not answer, its status line says why: you are not on the TV's Wi-Fi (it cannot be woken from here) or the TV is off (tap power to wake it). Tapping wake from another network explains what to do at once instead of waiting 20 seconds.
+
 ## 2.3.2 - 2026-10-13
 
 Web 2.3.2 · app điện thoại 2.3.1 · app TV 2.3.2
