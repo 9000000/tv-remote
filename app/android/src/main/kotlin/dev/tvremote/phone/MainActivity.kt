@@ -49,6 +49,7 @@ import dev.tvremote.core.AdbLink
 import dev.tvremote.core.HttpServer
 import dev.tvremote.core.Manage
 import dev.tvremote.core.RemoteLabels
+import dev.tvremote.core.Atv
 import dev.tvremote.core.Tv
 import dev.tvremote.update.Release
 import org.json.JSONObject
@@ -104,6 +105,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     private val SHOT = -1                                             // not a key: the screenshot button in the extra keys
     private lateinit var stage: FrameLayout                           // the picture with the full screen button over it
     private var tv: Tv? = null
+    private var basic: Atv? = null                                    // keys only, for a TV whose ADB is still off (see Atv)
+    private lateinit var basicBar: Button
     private var host: String? = null                                  // the TV we want to be connected to, null on the picker
     private var wakeNext = false                                      // wakeNext: the next session turns the TV's screen on first
     private var waking = false
@@ -199,6 +202,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     @Suppress("DEPRECATION")
     private fun layoutRemote() {
+        val video = video && basic == null                            // keys only: there is no picture to show
+        videoBtn.visibility = if (basic == null) View.VISIBLE else View.GONE
+        basicBar.visibility = if (basic == null) View.GONE else View.VISIBLE
         val full = video && host != null && (fullscreen || resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)   // landscape: the picture fills the screen
         (controls.parent as View).visibility = if (full) View.GONE else View.VISIBLE
         (status.parent as View).visibility = if (full) View.GONE else View.VISIBLE
@@ -237,9 +243,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     /** The phone's volume buttons change the TV's volume while connected. */
     override fun dispatchKeyEvent(e: KeyEvent): Boolean {
         val c = e.keyCode
-        val tv = tv
-        if (tv != null && tv.ready() && (c == KeyEvent.KEYCODE_VOLUME_UP || c == KeyEvent.KEYCODE_VOLUME_DOWN)) {
-            if (e.action == KeyEvent.ACTION_DOWN) tv.press(c)
+        if (live() && (c == KeyEvent.KEYCODE_VOLUME_UP || c == KeyEvent.KEYCODE_VOLUME_DOWN)) {
+            if (e.action == KeyEvent.ACTION_DOWN) press(c)
             return true
         }
         return super.dispatchKeyEvent(e)
@@ -258,7 +263,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     private fun startSession() {
         val h = host
-        if (h == null || tv != null || video && !surfaceReady) return
+        if (h == null || tv != null || basic != null || video && !surfaceReady) return
         val dm = resources.displayMetrics
         tv = Tv(this, h, if (video) surface.holder.surface else null, prefs.getInt("quality", 1), maxOf(dm.widthPixels, dm.heightPixels), wakeNext, this)
         wakeNext = false
@@ -275,6 +280,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         clearBox()                                                    // the next TV has received nothing from the box
         managing.close()
         stopSession()
+        basic?.close()
+        basic = null
         host = null
         layoutRemote()                                                // also brings the system bars back
         show(false)
@@ -326,14 +333,148 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 else -> {
                     tv = null
                     disconnect(explain(detail))
+                    if (refused(detail)) offerBasic(h)                // ADB is off, but the TV may still take keys
                 }
             }
         }
     }
 
+    private fun refused(err: String?): Boolean {
+        val e = err?.lowercase(Locale.ROOT) ?: ""
+        return e.contains("refused") && !e.contains("refused:") || e.contains("econnrefused")
+    }
+
+    // ---------------------------------------------------------------- keys only, while the TV's ADB is off
+    private fun live(): Boolean = tv?.ready() == true || basic?.ready() == true
+
+    private fun press(code: Int) {
+        val tv = tv
+        if (tv != null) { if (tv.ready()) tv.press(code) } else basic?.key(code, Atv.SHORT)
+    }
+
+    private fun keyDown(code: Int, repeat: Int) {
+        val tv = tv
+        if (tv != null) tv.key(0, code, repeat, 0) else if (repeat == 0) basic?.key(code, Atv.DOWN)
+    }
+
+    private fun keyUp(code: Int) {
+        val tv = tv
+        if (tv != null) tv.key(1, code, 0, 0) else basic?.key(code, Atv.UP)
+    }
+
+    /** True, with a word of explanation, when the button needs ADB and there is only the keys-only connection. */
+    private fun needsAdb(): Boolean {
+        if (basic == null) return false
+        Toast.makeText(this, t("Cần bật Gỡ lỗi ADB trên TV cho chức năng này", "This needs ADB debugging turned on on the TV"), Toast.LENGTH_SHORT).show()
+        return true
+    }
+
+    /** ADB refused the connection. If the TV answers as an Android TV, offer the keys-only remote: enough to go and turn ADB on. */
+    private fun offerBasic(ip: String) {
+        Thread {
+            if (!open(ip, 6466, 1500)) return@Thread
+            ui.post {
+                if (isFinishing || host != null) return@post
+                if (prefs.getBoolean("atv:$ip", false)) startBasic(ip, false)
+                else AlertDialog.Builder(this).setTitle(t("TV chưa bật Gỡ lỗi ADB", "ADB debugging is off on this TV"))
+                    .setMessage(t("Vẫn bấm phím điều khiển được, sau khi ghép bằng mã hiện trên TV. Từ đó bạn mở Cài đặt của TV để bật ADB, rồi dùng đủ chức năng (xem hình, ứng dụng, tệp...).",
+                        "You can still press keys, after pairing with a code the TV shows. From there open the TV’s Settings to turn ADB on, then everything works (picture, apps, files...)."))
+                    .setPositiveButton(t("Ghép bằng mã", "Pair with a code")) { _, _ -> startBasic(ip, false) }
+                    .setNegativeButton(t("Đóng", "Close"), null).show()
+            }
+        }.start()
+    }
+
+    private fun startBasic(ip: String, justPaired: Boolean) {
+        message(t("Đang kết nối ", "Connecting to ") + ip + "...", false)
+        Thread {
+            val a = Atv(filesDir, ip)
+            try {
+                a.connect { ui.post { if (basic === a) disconnect(t("TV đã ngắt kết nối.", "The TV closed the connection.")) } }
+                ui.post {
+                    if (isFinishing || host != null) { a.close(); return@post }
+                    prefs.edit().putBoolean("atv:$ip", true).apply()
+                    basic = a
+                    host = ip
+                    save(ip, a.model)
+                    message(null, false)
+                    show(true)
+                    layoutRemote()
+                    status.text = title(ip) + " · " + t("chỉ bấm phím", "keys only")
+                }
+            } catch (e: Atv.NotPaired) {
+                a.close()
+                if (justPaired) ui.post { message(t("TV không nhận kết nối sau khi ghép. Thử lại.", "The TV did not accept the connection after pairing. Try again."), true) }
+                else pair(ip)
+            } catch (e: Exception) {
+                a.close()
+                ui.post { message(explain(e.message), true) }
+            }
+        }.start()
+    }
+
+    /** On a worker thread: the TV shows a code, the person types it here. */
+    private fun pair(ip: String) {
+        val p = Atv(filesDir, ip)
+        try { p.startPairing() } catch (e: Exception) {
+            p.close()
+            ui.post { message(t("Không ghép được với TV: ", "Could not pair with the TV: ") + e.message, true) }
+            return
+        }
+        ui.post {
+            message(null, false)
+            val code = input(t("Mã 6 ký tự trên TV", "The 6 characters on the TV"))
+            code.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            val wrap = FrameLayout(this)
+            wrap.setPadding(dp(20), dp(8), dp(20), 0)
+            wrap.addView(code)
+            AlertDialog.Builder(this).setTitle(t("Nhập mã đang hiện trên TV", "Type the code shown on the TV")).setView(wrap)
+                .setPositiveButton(t("Ghép", "Pair")) { _, _ ->
+                    val typed = code.text.toString()
+                    Thread {
+                        try {
+                            p.finishPairing(typed)
+                            ui.post { startBasic(ip, true) }
+                        } catch (e: Exception) {
+                            p.close()
+                            ui.post { message(t("Mã không đúng. Bấm vào TV trong danh sách để thử lại, TV sẽ hiện mã mới.", "Wrong code. Tap the TV in the list to try again: it will show a new code."), true) }
+                        }
+                    }.start()
+                }
+                .setNegativeButton(t("Hủy", "Cancel")) { _, _ -> p.close() }
+                .setOnCancelListener { p.close() }.show()
+        }
+    }
+
+    private fun adbHelp() {
+        AlertDialog.Builder(this).setTitle(t("Bật Gỡ lỗi ADB trên TV", "Turn on ADB debugging on the TV"))
+            .setMessage(t("1. Bấm “Mở Cài đặt TV” bên dưới (dùng khi màn hình chính của TV không có mục Cài đặt).\n2. Trên TV: Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng”.\n3. Quay lại, vào Tùy chọn nhà phát triển → bật “Gỡ lỗi USB” (hoặc “Gỡ lỗi ADB”).\n4. Bấm “Kết nối đầy đủ”, rồi trên TV tích “Luôn cho phép” và chọn OK.",
+                "1. Tap “Open TV Settings” below (for TVs whose home screen has no Settings entry).\n2. On the TV: Device Preferences → About → press OK 7 times on “Build”.\n3. Go back, open Developer options → turn on “USB debugging” (or “ADB debugging”).\n4. Tap “Full connection”, then on the TV tick “Always allow” and choose OK."))
+            .setPositiveButton(t("Mở Cài đặt TV", "Open TV Settings")) { _, _ -> tvSettings(); ui.postDelayed({ if (basic != null && !isFinishing) askSettingsOpened() }, 1500) }
+            .setNeutralButton(t("Kết nối đầy đủ", "Full connection")) { _, _ ->
+                val ip = host
+                disconnect(null)
+                if (ip != null) connect(ip)
+            }
+            .setNegativeButton(t("Đóng", "Close"), null).show()
+    }
+
+    /** The TV's own Settings screen, also where the home screen hides it. */
+    private fun tvSettings() {
+        basic?.key(176, Atv.SHORT)
+    }
+
+    /** Some operator boxes ignore the Settings key and hide Settings on their home screen; another home screen app from the store has a way in. */
+    private fun askSettingsOpened() {
+        AlertDialog.Builder(this).setMessage(t("TV có mở màn hình Cài đặt không?\n\nNếu không (vd. box FPT Play): cài một màn hình chính khác từ CH Play, trong đó có lối vào Cài đặt của TV. Lưu ý: vài box nhà mạng còn khóa Gỡ lỗi ADB bằng mật khẩu riêng; khi đó chỉ dùng được chế độ bấm phím này.",
+                "Did the TV open its Settings?\n\nIf not (some operator boxes): install another home screen app from the Play Store; it has a way into the TV’s Settings. Note: a few operator boxes also lock ADB debugging behind their own password; then only this keys-only mode works."))
+            .setPositiveButton(t("Có rồi", "Yes"), null)
+            .setNegativeButton(t("Không · Mở CH Play", "No · Open Play Store")) { _, _ -> basic?.launch("market://details?id=com.spocky.projengmenu") }.show()
+    }
+
     private fun explain(err: String?): String {
         val e = err?.lowercase(Locale.ROOT) ?: ""
-        if (e.contains("refused") && !e.contains("refused:") || e.contains("econnrefused"))
+        if (refused(err))
             return t("TV từ chối kết nối: chưa bật “Gỡ lỗi ADB”.\n\nTrên TV: Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng”. Rồi Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB” (hoặc “Gỡ lỗi USB”).",
                 "The TV refused the connection: “ADB debugging” is off.\n\nOn the TV: Settings → Device Preferences → About → press OK 7 times on “Build”. Then Developer options → turn on “ADB debugging” (or “USB debugging”).")
         if (e.contains("timed out") || e.contains("timeout") || e.contains("unreachable") || e.contains("no route") || e.contains("failed to connect"))
@@ -531,7 +672,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         override fun run() {
             ui.removeCallbacks(this)
             if (host == null && !waking) for (ip in savedIps()) Thread {
-                val up = open(ip, 5555, 2500)
+                val up = open(ip, 5555, 2500) || prefs.getBoolean("atv:$ip", false) && open(ip, 6466, 1500)
                 val lan = pref("lan:$ip")
                 val away = lan.isNotEmpty() && !Wol.sameNetwork(lan)   // the phone is not on the TV's own Wi-Fi
                 ui.post { reach[ip] = up; awayFrom[ip] = away; showReach(ip, up) }
@@ -785,6 +926,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     }
 
     private fun ask(sentence: String) {
+        if (needsAdb()) return
         Toast.makeText(this, t("Gửi cho TV: ", "Sent to the TV: ") + sentence, Toast.LENGTH_SHORT).show()
         val tv = tv
         if (tv != null && tv.ready()) tv.search(sentence) else pendingAsk = sentence
@@ -1023,6 +1165,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         status.setPadding(dp(14), dp(8), dp(8), dp(8))
         videoBtn = icon("@eye_off", "", BTN)
         videoBtn.setOnClickListener { toggleVideo() }
+        basicBar = button(t("Chỉ bấm phím · Bật ADB để dùng đủ chức năng  ›", "Keys only · Turn on ADB for everything  ›"), ACCENT)
+        basicBar.textSize = 13f
+        basicBar.setOnClickListener { adbHelp() }
         val bar = LinearLayout(this)
         bar.gravity = Gravity.CENTER_VERTICAL
         bar.addView(status, LinearLayout.LayoutParams(0, -2, 1f))
@@ -1093,9 +1238,13 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
         controls = col()
         controls.setPadding(dp(14), dp(12), dp(14), dp(20))
+        val bb = LinearLayout.LayoutParams(-1, dp(44))
+        bb.bottomMargin = dp(12)
+        controls.addView(basicBar, bb)
         val first = LinearLayout(this)
         val power = icon("@power", t("Nguồn", "Power"), BTN)
         power.setOnClickListener {
+            if (basic != null) { press(26); return@setOnClickListener }
             val tv = tv
             if (tv == null || !tv.ready()) return@setOnClickListener
             Thread {
@@ -1113,9 +1262,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         }
         first.addView(power, cell(52, false))
         val apps = icon("@apps", t("Ứng dụng", "Apps"), BTN)
-        apps.setOnClickListener { managing.open(host) }
+        apps.setOnClickListener { if (!needsAdb()) managing.open(host) }
         val mic = icon("@mic", t("Nói với TV", "Speak to the TV"), BTN)
-        mic.setOnClickListener { speak() }
+        mic.setOnClickListener { if (!needsAdb()) speak() }
         mic.setOnLongClickListener {                                  // the TV's own Assistant screen
             tv?.let { if (it.ready()) it.press(219) }
             true
@@ -1221,6 +1370,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     private fun sendText() {
         val s = textBox.text.toString()
+        if (needsAdb()) return
         val tv = tv
         if (tv == null || !tv.ready()) return
         if (live) {                                                   // everything is on the TV already: this is Enter
@@ -1294,6 +1444,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     /** Saves what is on the TV's screen as a picture in this phone's Download folder. */
     private fun shot() {
+        if (needsAdb()) return
         val tv = tv
         if (tv == null || !tv.ready()) return
         Toast.makeText(this, t("Đang chụp màn hình TV...", "Taking a screenshot of the TV..."), Toast.LENGTH_SHORT).show()
@@ -1326,6 +1477,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     /** Menu, Input, TV settings, Guide, Live TV: keys that should open something. When the TV's screen ignores one, say so, so it does not look like a dead button. */
     private fun opens(code: Int) {
+        if (basic != null) { if (code == 176) tvSettings() else press(code); return }
         val tv = tv
         if (tv == null || !tv.ready()) return
         Thread {
@@ -1376,7 +1528,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val again = object : Runnable {
             override fun run() {
                 if (!holding) return
-                tv?.key(0, code, ++count, 0)
+                keyDown(code, ++count)
                 ui.postDelayed(this, 80)
             }
         }
@@ -1386,7 +1538,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             if (holding) {
                 holding = false
                 ui.removeCallbacks(again)
-                tv?.key(1, code, 0, 0)
+                keyUp(code)
                 b.background = normal
             }
         }
@@ -1395,13 +1547,12 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             when (e.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     val go = Runnable {
-                        val tv = tv
-                        if (tv == null || !tv.ready()) return@Runnable
+                        if (!live()) return@Runnable
                         start = null
                         holding = true
                         count = 0
                         b.background = held
-                        tv.key(0, code, 0, 0)
+                        keyDown(code, 0)
                         ui.postDelayed(again, 80)
                     }
                     start = go
@@ -1412,9 +1563,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 MotionEvent.ACTION_UP -> {
                     val tap = start != null && inside                 // lifted on the button before it became a hold
                     stop()
-                    val tv = tv
-                    if (tap && tv != null && tv.ready()) {
-                        tv.press(code)
+                    if (tap && live()) {
+                        press(code)
                         flash(b, held)
                     }
                 }

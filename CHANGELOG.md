@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.6.1 - 2026-10-13
+
+Web 2.6.1 · app điện thoại 2.5.1 · app TV 2.6.0
+
+**Tiếng Việt**
+- **App điện thoại: điều khiển TV chưa bật ADB.** Khi TV từ chối ADB nhưng là Android TV, app đề nghị ghép bằng mã 6 ký tự hiện trên TV rồi cho bấm phím (D-pad, Home, Back, âm lượng, nguồn...). Có nút “Mở Cài đặt TV” cho các box mà màn hình chính giấu mục Cài đặt, kèm hướng dẫn bật ADB và nút “Kết nối đầy đủ”; nếu box bỏ qua phím Cài đặt (vd. FPT Play), app mở trang CH Play của một màn hình chính khác có lối vào Cài đặt. Chế độ này chỉ bấm phím: xem hình, ứng dụng, tệp, gõ chữ vẫn cần ADB. (Bản web trên máy tính đã có cách ghép mã này từ trước.)
+
+**English**
+- **Phone app: control a TV whose ADB is still off.** When the TV refuses ADB but is an Android TV, the app offers to pair with the 6-character code the TV shows and then sends keys (D-pad, Home, Back, volume, power...). An “Open TV Settings” button helps on boxes whose home screen hides Settings, with the steps to turn ADB on and a “Full connection” button; if the box ignores the Settings key, the app opens the Play Store page of another home screen that has a way into Settings. This mode is keys only: the picture, apps, files and typing still need ADB. (The computer web already paired this way.)
+
 ## 2.6.0 - 2026-10-13
 
 Web 2.6.0 · app điện thoại 2.5.0 · app TV 2.6.0
