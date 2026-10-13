@@ -49,7 +49,11 @@ class Tv(
          * used while the picture moves (a still picture sends almost nothing); the size mostly decides the load on the TV,
          * whose software encoder costs about 0.7 of 4 cores at 960 px and 2 Mbit/s, far more uncapped.
          */
-        val QUALITY = arrayOf(intArrayOf(480, 300_000, 8), intArrayOf(720, 800_000, 10), intArrayOf(960, 2_000_000, 10))
+        val QUALITY = arrayOf(intArrayOf(480, 300_000, 8), intArrayOf(720, 800_000, 10), intArrayOf(960, 2_000_000, 10),
+            intArrayOf(360, 200_000, 8), intArrayOf(240, 120_000, 8))   // added later, at the end: the index is what people have saved
+
+        /** The levels from lightest to sharpest, as indexes into QUALITY. */
+        val LEVELS = intArrayOf(4, 3, 0, 1, 2)
     }
 
     private val ctx: Context = ctx.applicationContext
@@ -65,7 +69,7 @@ class Tv(
 
     init {
         val q = QUALITY[quality.coerceIn(0, QUALITY.size - 1)]
-        video = "video_bit_rate=" + q[1] + " max_fps=" + q[2] + " max_size=" + maxOf(320, minOf(q[0], maxSide) / 8 * 8)
+        video = "video_bit_rate=" + q[1] + " max_fps=" + q[2] + " max_size=" + maxOf(160, minOf(q[0], maxSide) / 8 * 8)
         Thread({ run() }, "tv-session").apply { isDaemon = true }.start()
     }
 

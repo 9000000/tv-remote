@@ -222,7 +222,7 @@ const T = {
         on: 'đang bật', off: 'màn hình tắt', lost: 'mất kết nối tới TV', other: 'VI',
         term_note: 'Chạy lệnh với quyền shell của TV (như adb shell). Mỗi lệnh chạy riêng, tối đa 30 giây; lệnh chờ gõ tiếp như top, logcat không dùng được. Phím ↑ ↓ gọi lại lệnh cũ.', running: 'đang chạy...', cutoff: '[đã cắt: quá 30 giây hoặc quá dài]',
         t_apps: 'Ứng dụng', t_files: 'Tệp', t_install: 'Cài', t_health: 'Sức khỏe', sys: 'Hiện cả app hệ thống', search_app: 'Tìm app', open: 'Mở', stop: 'Dừng', remove: 'Gỡ', loading: 'Đang tải...',
-        ask_remove: 'Gỡ cài đặt {0} khỏi TV?', v_start: 'Đang mở hình TV...', v_q: 'Chất lượng hình (bấm để đổi): 480 mượt và nhẹ nhất, 960 nét nhất', v_fail: 'Không xem được hình TV trên trình duyệt này', v_end: 'Hình TV đã dừng. Bấm nút con mắt để xem lại', watch: 'Xem hình TV', ask_off: 'Đưa TV về chế độ chờ?', done: 'Xong', none: 'Không có gì.', folder: 'Thư mục', filter: 'Lọc trong thư mục này', upload: '＋ Chọn file để gửi lên thư mục này',
+        ask_remove: 'Gỡ cài đặt {0} khỏi TV?', v_start: 'Đang mở hình TV...', v_q: 'Chất lượng hình (bấm để đổi): 240 nhẹ nhất, 960 nét nhất', v_fail: 'Không xem được hình TV trên trình duyệt này', v_end: 'Hình TV đã dừng. Bấm nút con mắt để xem lại', watch: 'Xem hình TV', ask_off: 'Đưa TV về chế độ chờ?', done: 'Xong', none: 'Không có gì.', folder: 'Thư mục', filter: 'Lọc trong thư mục này', upload: '＋ Chọn file để gửi lên thư mục này',
         tvmem: 'Bộ nhớ TV', movies: 'Phim', pics: 'Ảnh', music: 'Nhạc', free: 'Còn trống {0} / {1} · {2} mục', items: '{0} mục', newname: 'Tên mới:', newfolder: 'Tên thư mục mới:',
         ask_del: 'Xóa {0}?', ask_deldir: 'Xóa thư mục {0} và mọi thứ bên trong?', ask_inst: 'Cài {0} lên TV?', dl: 'Tải về máy này', ren: 'Đổi tên', del: 'Xóa', onTv: 'Mở trên TV', inst: 'Cài', cancel: 'Hủy', more: 'Thao tác khác', opendir: 'Mở thư mục',
         inst_apk: 'Cài APK lên TV', pick_apk: 'Chọn file .apk từ máy này', inst_note: 'Dán link tới file .apk rồi bấm ✓, hoặc chọn file. Chỉ cài APK bạn tin tưởng.', apk_link: 'Link tới file .apk',
@@ -237,7 +237,7 @@ const T = {
         on: 'on', off: 'screen off', lost: 'lost the TV', other: 'EN',
         term_note: 'Runs commands as the TV’s shell user (like adb shell). Each command runs on its own, for at most 30 seconds; interactive ones such as top or logcat do not work. ↑ ↓ recall earlier commands.', running: 'running...', cutoff: '[cut: over 30 seconds or too long]',
         t_apps: 'Apps', t_files: 'Files', t_install: 'Install', t_health: 'Health', sys: 'Show system apps too', search_app: 'Search apps', open: 'Open', stop: 'Stop', remove: 'Uninstall', loading: 'Loading...',
-        ask_remove: 'Uninstall {0} from the TV?', v_start: 'Opening the TV picture...', v_q: 'Picture quality (tap to change): 480 is smoothest and lightest, 960 sharpest', v_fail: 'This browser cannot show the TV picture', v_end: 'The picture stopped. Tap the eye to watch again', watch: 'Show the TV picture', ask_off: 'Put the TV in standby?', done: 'Done', none: 'Nothing here.', folder: 'Folder', filter: 'Filter this folder', upload: '＋ Choose files to send to this folder',
+        ask_remove: 'Uninstall {0} from the TV?', v_start: 'Opening the TV picture...', v_q: 'Picture quality (tap to change): 240 is the lightest, 960 the sharpest', v_fail: 'This browser cannot show the TV picture', v_end: 'The picture stopped. Tap the eye to watch again', watch: 'Show the TV picture', ask_off: 'Put the TV in standby?', done: 'Done', none: 'Nothing here.', folder: 'Folder', filter: 'Filter this folder', upload: '＋ Choose files to send to this folder',
         tvmem: 'TV storage', movies: 'Movies', pics: 'Pictures', music: 'Music', free: '{0} free of {1} · {2} items', items: '{0} items', newname: 'New name:', newfolder: 'New folder name:',
         ask_del: 'Delete {0}?', ask_deldir: 'Delete the folder {0} and everything in it?', ask_inst: 'Install {0} on the TV?', dl: 'Download to this device', ren: 'Rename', del: 'Delete', onTv: 'Open on the TV', inst: 'Install', cancel: 'Cancel', more: 'More actions', opendir: 'Open folder',
         inst_apk: 'Install an APK on the TV', pick_apk: 'Choose an .apk file from this device', inst_note: 'Paste a link to an .apk file and press ✓, or choose a file. Only install APKs you trust.', apk_link: 'Link to an .apk file',
@@ -304,7 +304,8 @@ async function refresh() {
 }
 
 // ---------- the TV's picture: H.264 from the TV, made playable by JMuxer; touching the picture touches the TV ----------
-const QUAL = [[480, 8], [720, 10], [960, 10]];                         // longest side, frames per second: the same three levels as the phone app
+const QUAL = [[480, 8], [720, 10], [960, 10], [360, 8], [240, 8]];    // longest side, frames per second: the same levels and indexes as the phone app
+const LEVELS = [4, 3, 0, 1, 2];                                       // from lightest to sharpest
 let qual = 1; try { const q = localStorage.getItem('quality'); if (q !== null && QUAL[+q]) qual = +q; } catch {}
 let watching = null;                                                  // { stop() } while the picture is on
 const END = new Uint8Array([0, 0, 0, 1, 9, 0xf0]);                    // H.264 access unit delimiter
@@ -350,7 +351,7 @@ async function watch(on) {
   } catch (e) { if (watching === me) msg(t('v_fail')); }
 }
 $('#watch').addEventListener('click', () => watch(!watching));
-$('#tvq').addEventListener('click', () => { qual = (qual + 1) % QUAL.length; try { localStorage.setItem('quality', qual); } catch {} watch(true); });
+$('#tvq').addEventListener('click', () => { qual = LEVELS[(LEVELS.indexOf(qual) + 1) % LEVELS.length]; try { localStorage.setItem('quality', qual); } catch {} watch(true); });
 $('#tvfull').addEventListener('click', () => ($('#tvbox').requestFullscreen || $('#tvbox').webkitRequestFullscreen || (() => {})).call($('#tvbox')));
 $('#tvexit').addEventListener('click', () => document.exitFullscreen());
 { // a finger (or the mouse) on the picture

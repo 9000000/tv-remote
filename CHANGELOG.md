@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.5.4 - 2026-10-13
+
+Web 2.5.4 · app điện thoại 2.4.5 · app TV 2.5.4
+
+**Tiếng Việt**
+- Thêm hai mức hình nhẹ hơn: **360 px** và **240 px** (cạnh dài), trong Cài đặt của app điện thoại và ở nút chất lượng trên trang của TV. Ở 240 px chữ trên TV gần như không đọc được, chỉ đủ để thấy mình đang ở đâu.
+
+**English**
+- Two lighter picture levels: **360 px** and **240 px** (longest side), in the phone app's Settings and on the quality button of the TV's page. At 240 px text on the TV is barely readable; it is only enough to see where you are.
+
 ## 2.5.3 - 2026-10-13
 
 Web 2.5.3 · app điện thoại 2.4.4 · app TV 2.5.3

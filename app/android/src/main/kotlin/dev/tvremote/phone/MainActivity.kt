@@ -723,23 +723,25 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         }
 
         box.addView(head(t("CHẤT LƯỢNG HÌNH", "PICTURE QUALITY")), gap(18))
-        val levels = listOf("🪶  " + t("Tiết kiệm · 480 px · tối đa khoảng 40 KB/s", "Data saver · 480 px · up to about 40 KB/s"),
+        val levels = listOf("🪶  " + t("Tiết kiệm · 480 px · tối đa khoảng 40 KB/s", "Data saver · 480 px · up to about 40 KB/s"),   // in the order of Tv.QUALITY
             "⚖️  " + t("Vừa · 720 px · tối đa khoảng 100 KB/s", "Balanced · 720 px · up to about 100 KB/s"),
-            "🔍  " + t("Nét · 960 px · tối đa khoảng 250 KB/s", "Sharp · 960 px · up to about 250 KB/s"))
-        val qb = ArrayList<Button>()
+            "🔍  " + t("Nét · 960 px · tối đa khoảng 250 KB/s", "Sharp · 960 px · up to about 250 KB/s"),
+            "🐜  " + t("Nhẹ · 360 px · tối đa khoảng 25 KB/s", "Light · 360 px · up to about 25 KB/s"),
+            "🧱  " + t("Nhẹ nhất · 240 px · tối đa khoảng 15 KB/s, chữ khó đọc", "Lightest · 240 px · up to about 15 KB/s, text is hard to read"))
+        val qb = LinkedHashMap<Int, Button>()
         val marks = {
-            for ((i, b) in qb.withIndex()) {
+            for ((i, b) in qb) {
                 val on = prefs.getInt("quality", 1) == i
                 b.text = levels[i] + (if (on) "   ✓" else "")
                 b.setTextColor(if (on) ACCENT else TEXT)
             }
         }
-        for (level in levels.indices) {
+        for (level in Tv.LEVELS) {
             val b = row("") {
                 prefs.edit().putInt("quality", level).apply()
                 marks()
             }
-            qb.add(b)
+            qb[level] = b
             box.addView(b)
         }
         marks()
