@@ -4,6 +4,18 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.5.7 - 2026-10-13
+
+Web 2.5.7 · app điện thoại 2.4.8 · app TV 2.5.7
+
+**Tiếng Việt**
+- Trang quản lý (app điện thoại và trang trên TV): khi cuộn, nội dung không còn lộ ra ở khe phía trên thanh tab.
+- Sức khỏe: tên các dịch vụ hệ thống được rút gọn, ví dụ `android.hardware.graphics.composer@2.1-service` thành `graphics.composer`, nên không còn xuống ba dòng.
+
+**English**
+- Management page (phone app and the TV's page): scrolled content no longer shows in the gap above the tab bar.
+- Health: system service names are shortened, for example `android.hardware.graphics.composer@2.1-service` becomes `graphics.composer`, so they no longer wrap over three lines.
+
 ## 2.5.6 - 2026-10-13
 
 Web 2.5.6 · app điện thoại 2.4.7 · app TV 2.5.6

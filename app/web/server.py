@@ -914,7 +914,8 @@ def build(S):
         for line in part[8].splitlines():
             m = re.match(r"\s*([\d.]+)\s+([\d.]+)\s+(.+)", line)
             if m and not m[3].startswith("top -n"):
-                top.append({"cpu": float(m[1]), "mem": float(m[2]), "name": m[3].split()[0].strip("[]")})
+                name = re.sub(r"@[\d.]+-service.*$", "", re.sub(r"^(android|vendor\.\w+)\.hardware\.", "", m[3].split()[0].strip("[]")))   # system services: keep the part that says what it is
+                top.append({"cpu": float(m[1]), "mem": float(m[2]), "name": name})
         cores = props[7].split("-")
         return web.json_response({
             "ping_ms": ping, "maker": props[0], "model": props[1], "android": props[2], "sdk": props[3], "patch": props[4], "chip": props[5], "abi": props[6],

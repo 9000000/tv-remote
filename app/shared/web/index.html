@@ -50,6 +50,7 @@
   .pair form { max-width:300px; margin:0 auto; } .err { color:var(--bad); min-height:22px; font-size:14px; margin-top:10px; }
   .warn { background:rgba(245,158,11,.15); border-radius:14px; padding:10px 12px; font-size:13px; }
   nav { display:flex; gap:4px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:5px; position:sticky; top:8px; z-index:5; }
+  nav::before { content:''; position:absolute; left:-24px; right:-24px; top:-10px; height:10px; background:var(--bg); }   /* nothing scrolls past in the gap above the stuck tabs */
   nav button { flex:1; min-width:0; min-height:46px; background:transparent; border-radius:12px; font-size:11px; gap:2px; white-space:nowrap; } nav button .ic { width:20px; height:20px; }
   nav button[aria-selected=true] { background:var(--accent); color:var(--accent-ink); font-weight:700; }
   .panel { display:flex; flex-direction:column; gap:14px; }
