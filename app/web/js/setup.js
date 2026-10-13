@@ -125,5 +125,5 @@ async function loadSteps() {
 setInterval(() => { if (currentTab === 'tv' && !document.hidden && !stopped) loadSteps(); }, 6000);
 
 const startTab = location.hash.slice(1);
-if (['remote', 'apps', 'files', 'install', 'tv'].includes(startTab)) showTab(startTab);
+if (['remote', 'apps', 'files', 'install', 'health', 'tv'].includes(startTab)) showTab(startTab);
 applyAdb(); refresh(); setInterval(refresh, 4000);

@@ -73,6 +73,7 @@ function startScreen() {
 }
 setInterval(() => {
   if (screenOn && $('#screenmode').value !== 'snap' && streamCtl && !streamCtl.signal.aborted)
+    streamFps = frames;
     setScreenInfo((frames ? `Trực tiếp · ${frames} khung/giây` : 'Trực tiếp · đang chờ hình') + ($('#screenmode').value === 'hd' ? ' · chế độ nét làm TV chậm hơn rõ rệt' : ' · chế độ nhẹ cho TV'), true);
   frames = 0;
 }, 1000);
@@ -83,7 +84,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && scr
 setScreenPlaceholder();
 
 // ---------- tabs ----------
-let currentTab = 'remote';
+let currentTab = 'remote', streamFps = 0;
 function showTab(t) {
   currentTab = t; document.querySelector('main').classList.toggle('wide', t === 'remote');
   document.querySelectorAll('[data-tab]').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === t));
@@ -91,6 +92,7 @@ function showTab(t) {
   dockScreen();
   if (ADB.state === 'ready') { if (t === 'apps' && !appsLoaded) loadApps(); if (t === 'files' && !filesLoaded) loadFiles(cwd); }
   if (t === 'tv') { loadTvs(); loadSteps(); }
+  if (t === 'health') loadHealth();
 }
 document.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
 

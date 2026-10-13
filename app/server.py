@@ -844,6 +844,48 @@ def build(S):
                 pass
         return web.json_response({"host": tv.host, "adb": st, "remote": tv.state(), "saved": tvconfig.find(S.cfg, tv.host), **info})
 
+    HEALTH = ("getprop ro.product.manufacturer; getprop ro.product.model; getprop ro.build.version.release; getprop ro.build.version.sdk; "
+              "getprop ro.build.version.security_patch; getprop ro.board.platform; getprop ro.product.cpu.abi; cat /sys/devices/system/cpu/present; "
+              "echo '#'; head -1 /proc/stat; sleep 0.6; head -1 /proc/stat; echo '#'; grep -E '^(MemTotal|MemAvailable):' /proc/meminfo; echo '#'; df -k /data | tail -1; "
+              "echo '#'; cat /proc/uptime; echo '#'; wm size; wm density; dumpsys display | grep -m1 -o 'fps=[0-9.]*'; echo '#'; dumpsys wifi | grep -m1 mWifiInfo; "
+              "echo '#'; ip -o -4 addr show; echo '#'; top -n 1 -b -m 7 -o %CPU,%MEM,ARGS -s 1 | tail -7")
+
+    @routes.get("/api/health")
+    @adb_errors
+    async def health(_):
+        """A snapshot of the TV for the Health tab: hardware, load, memory, storage, Wi-Fi, and how long ADB takes to answer."""
+        t0 = time.monotonic()
+        await adb.shell(":")
+        ping = round((time.monotonic() - t0) * 1000)
+        part = [x.strip() for x in (await adb.shell(HEALTH, timeout=20)).split("#")] + [""] * 8
+        props = (part[0].splitlines() + [""] * 8)[:8]
+        cpu = None
+        stat = [[int(n) for n in line.split()[1:]] for line in part[1].splitlines() if line.startswith("cpu")]
+        if len(stat) == 2:
+            total, idle = sum(stat[1]) - sum(stat[0]), (stat[1][3] + stat[1][4]) - (stat[0][3] + stat[0][4])
+            cpu = round(100 * (total - idle) / total) if total > 0 else None
+        mem = {m[1]: int(m[2]) * 1024 for m in re.finditer(r"(?m)^(\w+):\s+(\d+) kB", part[2])}
+        df = part[3].split()
+        wifi = {k.strip(): v.strip() for k, v in (kv.split(":", 1) for kv in part[6].replace("mWifiInfo", "").split(",") if ":" in kv)}
+        num = lambda s: int(m[0]) if (m := re.search(r"-?\d+", s or "")) else None
+        top = []
+        for line in part[8].splitlines():
+            m = re.match(r"\s*([\d.]+)\s+([\d.]+)\s+(.+)", line)
+            if m and not m[3].startswith("top -n"):
+                top.append({"cpu": float(m[1]), "mem": float(m[2]), "name": m[3].split()[0].strip("[]")})
+        cores = props[7].split("-")
+        return web.json_response({
+            "ping_ms": ping, "maker": props[0], "model": props[1], "android": props[2], "sdk": props[3], "patch": props[4], "chip": props[5], "abi": props[6],
+            "cores": int(cores[-1]) + 1 if cores[-1].isdigit() else None, "cpu": cpu,
+            "mem_total": mem.get("MemTotal"), "mem_free": mem.get("MemAvailable"),
+            "disk_total": int(df[1]) * 1024 if len(df) > 3 and df[1].isdigit() else None, "disk_free": int(df[3]) * 1024 if len(df) > 3 and df[3].isdigit() else None,
+            "uptime": float(part[4].split()[0]) if part[4].split() else None,
+            "screen": (re.search(r"(\d+x\d+)", part[5]) or [""])[0], "density": num((re.search(r"density: (\d+)", part[5]) or ["", ""])[1]),
+            "fps": round(float(m[1])) if (m := re.search(r"fps=([\d.]+)", part[5])) else None,
+            "wifi": {"ssid": wifi.get("SSID", ""), "rssi": num(wifi.get("RSSI")), "speed": num(wifi.get("Link speed")), "freq": num(wifi.get("Frequency"))} if wifi.get("SSID") else None,
+            "ips": [{"if": m[1], "ip": m[2]} for m in re.finditer(r"(?m)^\d+: (\S+)\s+inet ([\d.]+)", part[7]) if m[1] != "lo"],
+            "top": top[:5], "remote": tv.state()})
+
     @routes.post("/api/tv/save")
     @adb_errors
     async def tv_save(request):
