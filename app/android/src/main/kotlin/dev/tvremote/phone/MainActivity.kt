@@ -1064,12 +1064,25 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         controls.setPadding(dp(14), dp(12), dp(14), dp(20))
         val first = keys(52, "@menu|Menu", 82)
         first.getChildAt(0).layoutParams = cell(52, true)
-        // power is a tap with a question, never a hold: a held power key opens the TV's power menu and picks "power off" there
+        // Power is a tap, never a hold: a held power key opens the TV's power menu and picks "power off" there.
+        // It looks at the TV first: asleep, it wakes it at once; awake, it asks before putting it to sleep (standby: the
+        // screen goes dark, the network stays on). The sleep and wake keys are used, so a tap can never do the opposite.
         val power = icon("@power", t("Nguồn", "Power"), BTN)
         power.setOnClickListener {
-            AlertDialog.Builder(this).setMessage(t("Tắt TV?", "Turn the TV off?"))
-                .setPositiveButton(t("Tắt", "Turn off")) { _, _ -> tv?.let { if (it.ready()) it.press(26) } }
-                .setNegativeButton(t("Hủy", "Cancel"), null).show()
+            val tv = tv
+            if (tv == null || !tv.ready()) return@setOnClickListener
+            Thread {
+                val awake = try { !tv.shell("dumpsys power | grep -m1 mWakefulness=").contains("Asleep") } catch (e: Exception) { true }
+                ui.post {
+                    if (isFinishing || this.tv !== tv) return@post
+                    if (!awake) {
+                        tv.press(224)
+                        Toast.makeText(this, t("Đang bật TV...", "Waking the TV..."), Toast.LENGTH_SHORT).show()
+                    } else AlertDialog.Builder(this).setMessage(t("Đưa TV về chế độ chờ?", "Put the TV in standby?"))
+                        .setPositiveButton(t("Chế độ chờ", "Standby")) { _, _ -> if (tv.ready()) tv.press(223) }
+                        .setNegativeButton(t("Hủy", "Cancel"), null).show()
+                }
+            }.start()
         }
         first.addView(power, 0, cell(52, false))
         val tvSettings = icon("@settings", t("Cài đặt của TV", "TV settings"), BTN)

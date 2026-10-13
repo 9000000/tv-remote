@@ -193,7 +193,9 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             "/api/key" -> {
                 val keyCode = KEYS[d.optString("key").uppercase(Locale.ROOT)] ?: return HttpServer.Response.error(400, "unknown key")
                 if (t == null || !t.ready()) return HttpServer.Response.error(503, "adb:$adbState")
-                if (keyCode == 176) { if (d.optString("action", "press") != "up") t.settings() }   // the key itself does nothing on many TVs
+                if (keyCode == 26) {                                  // sleep or wake by what the TV is doing now, so a tap never does the opposite
+                    if (d.optString("action", "press") != "up") t.press(if ((getSystemService(POWER_SERVICE) as android.os.PowerManager).isInteractive) 223 else 224)
+                } else if (keyCode == 176) { if (d.optString("action", "press") != "up") t.settings() }   // the key itself does nothing on many TVs
                 else key(t, keyCode, d.optString("action", "press"))
                 return ok()
             }

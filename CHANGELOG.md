@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.3.6 - 2026-10-13
+
+Web 2.3.6 · app điện thoại 2.3.5 · app TV 2.3.3
+
+**Tiếng Việt**
+- Nút nguồn xem TV đang làm gì trước: TV đang chờ thì bật lên ngay, không hỏi; TV đang bật thì hỏi "Đưa TV về chế độ chờ?" (trước đây luôn hỏi "Tắt TV?", kể cả khi bấm để bật). App điện thoại và trang trên TV giờ dùng phím ngủ / thức riêng, nên một lần bấm không bao giờ làm ngược ý.
+
+**English**
+- The power button looks at the TV first: in standby it wakes it at once, no question; when on it asks "Put the TV in standby?" (it used to ask "Turn the TV off?" even when tapped to turn it on). The phone app and the page on the TV now use the separate sleep / wake keys, so a tap never does the opposite.
+
 ## 2.3.5 - 2026-10-13
 
 Web 2.3.5 · app điện thoại 2.3.4 · app TV 2.3.2

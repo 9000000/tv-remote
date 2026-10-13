@@ -5,7 +5,7 @@ document.querySelectorAll('[data-k]').forEach((b) => {
   const k = b.dataset.k; let t = null, long = false, down = false;
   const power = k === 'POWER';                                     // never a long press, and turning the TV off needs a yes
   const send = (dir) => {
-    if (power && tvOn && !confirm('Tắt TV?\nNếu TV tắt cả mạng thì chỉ mở lại được bằng nút Đánh thức (cần một máy ở nhà đang bật) hoặc remote của TV.')) return;
+    if (power && tvOn && !confirm('Đưa TV về chế độ chờ?\nNếu TV tắt cả mạng thì chỉ mở lại được bằng nút Đánh thức (cần một máy ở nhà đang bật) hoặc remote của TV.')) return;
     return api('/api/key', dir ? { key: k, dir } : { key: k });
   };
   const release = (tap) => {
