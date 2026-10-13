@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.3.4 - 2026-10-13
+
+Web 2.3.4 · app điện thoại 2.3.3 · app TV 2.3.2
+
+**Tiếng Việt**
+- App điện thoại: nút **toàn màn hình** ở góc hình TV. Bấm vào thì màn hình xoay ngang, chỉ còn hình TV (vẫn chạm để bấm được) và một nút X mờ để thoát; phím Back cũng thoát.
+
+**English**
+- Phone app: a **full screen** button in the corner of the TV picture. It turns the screen sideways and leaves only the picture (touch still works) with a faint X to leave; Back leaves too.
+
 ## 2.3.3 - 2026-10-13
 
 Web 2.3.3 · app điện thoại 2.3.2 · app TV 2.3.2

@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.ContentValues
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageInstaller
 import android.content.res.Configuration
 import android.graphics.Color
@@ -96,6 +97,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     private var surfaceReady = false
     private var video = false                                         // video: show the TV picture (off = buttons only, no load on the TV)
     private lateinit var videoBtn: IconButton
+    private lateinit var fullBtn: IconButton
+    private lateinit var stage: FrameLayout                           // the picture with the full screen button over it
     private var tv: Tv? = null
     private var host: String? = null                                  // the TV we want to be connected to, null on the picker
     private var wakeNext = false                                      // wakeNext: the next session turns the TV's screen on first
@@ -181,12 +184,27 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         layoutRemote()
     }
 
+    private var fullscreen = false                                   // only the picture, sideways, with a faint button to leave
+
+    /** Full screen turns the phone's screen sideways and hides everything but the picture; leaving it goes back upright. */
+    private fun setFullscreen(on: Boolean) {
+        fullscreen = on
+        requestedOrientation = if (on) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        layoutRemote()
+    }
+
+    @Suppress("DEPRECATION")
     private fun layoutRemote() {
-        val full = video && resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE   // landscape: the picture fills the screen
+        val full = video && host != null && (fullscreen || resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)   // landscape: the picture fills the screen
         (controls.parent as View).visibility = if (full) View.GONE else View.VISIBLE
         (status.parent as View).visibility = if (full) View.GONE else View.VISIBLE
-        frame.layoutParams = LinearLayout.LayoutParams(-1, if (full) -1 else -2)
-        frame.visibility = if (video) View.VISIBLE else View.GONE
+        stage.layoutParams = LinearLayout.LayoutParams(-1, if (full) -1 else -2)
+        frame.layoutParams = FrameLayout.LayoutParams(-1, if (full) -1 else -2)
+        stage.visibility = if (video) View.VISIBLE else View.GONE
+        fullBtn.setIcon(if (full) "@close" else "@expand", TEXT)
+        fullBtn.contentDescription = if (full) t("Thoát toàn màn hình", "Leave full screen") else t("Toàn màn hình", "Full screen")
+        fullBtn.setOnClickListener { setFullscreen(!full) }
+        window.decorView.systemUiVisibility = if (full) View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY else 0
         videoBtn.setIcon(if (video) "@eye_off" else "@eye", TEXT)
         videoBtn.contentDescription = if (video) t("Ẩn hình TV", "Hide the TV picture") else t("Xem hình TV", "Show the TV picture")
     }
@@ -204,6 +222,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         if (managing.back()) return
+        if (fullscreen) { setFullscreen(false); return }
         if (about.visibility == View.VISIBLE) about.visibility = View.GONE
         else if (settings.visibility == View.VISIBLE) settings.visibility = View.GONE
         else if (host != null) disconnect(null)
@@ -246,9 +265,12 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     }
 
     private fun disconnect(message: String?) {
+        fullscreen = false
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         managing.close()
         stopSession()
         host = null
+        layoutRemote()                                                // also brings the system bars back
         show(false)
         message(message, true)
         refreshSaved()
@@ -1027,7 +1049,15 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             if (action >= 0) tv.touch(action, e.x / v.width, e.y / v.height)
             true
         }
-        remote.addView(frame, LinearLayout.LayoutParams(-1, -2))
+        stage = FrameLayout(this)
+        stage.setBackgroundColor(Color.BLACK)
+        stage.addView(frame, FrameLayout.LayoutParams(-1, -2))
+        fullBtn = icon("@expand", t("Toàn màn hình", "Full screen"), 0x66000000)
+        fullBtn.alpha = 0.6f                                          // faint, so it does not cover the picture
+        val fp = FrameLayout.LayoutParams(dp(42), dp(42), Gravity.TOP or Gravity.END)
+        fp.setMargins(dp(8), dp(8), dp(8), dp(8))
+        stage.addView(fullBtn, fp)
+        remote.addView(stage, LinearLayout.LayoutParams(-1, -2))
 
         controls = col()
         controls.setPadding(dp(14), dp(12), dp(14), dp(20))
