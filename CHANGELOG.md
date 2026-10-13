@@ -4,6 +4,22 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.8.1 - 2026-10-14
+
+Web 2.8.1 · app điện thoại 2.7.1 · app TV 2.6.9
+
+**Tiếng Việt**
+- Luồng “Tự động: cài TV Setup lên TV” (web và app điện thoại): nút **“Đã cài xong” chỉ nhận một lần bấm** rồi mờ đi kèm dòng “đang kiểm tra” cho tới khi kiểm tra xong. Trước đây bấm nhiều lần làm TV mở Downloader và nhận link nhiều lần.
+- Hộp thoại giữ nguyên kích thước khi đổi lời nhắn, nên nút không trượt đi dưới ngón tay. Trên điện thoại, chạm ra ngoài hộp không còn làm dừng cả quá trình.
+- Mỗi lúc chỉ một việc chạy trên TV: bấm lại “Mở Downloader”, “Mở TV Setup”, “Mở lại”... khi việc trước chưa xong thì được báo chờ, không gửi lệnh chồng lên nhau.
+- Web: đóng hộp thoại bằng cách nào (nút Đóng, phím Esc) cũng dừng việc đang chạy; bấm Dừng rồi chạy lại ngay vẫn được.
+
+**English**
+- “Automatic: install TV Setup on the TV” (web and phone app): the **“Installed” button takes one press**, then greys out with a “checking” line until the check is over. Before, pressing it repeatedly made the TV open Downloader and receive the link several times.
+- The box keeps its size as its words change, so the buttons do not slide from under a finger. On the phone, a tap beside the box no longer stops the whole run.
+- One job on the TV at a time: pressing “Open Downloader”, “Open TV Setup”, “Open again”... while the previous one is still running says to wait instead of piling commands up.
+- Web: closing the dialog in any way (Close, Esc) stops what was running; Stop followed at once by a new run works.
+
 ## 2.8.0 - 2026-10-14
 
 Web 2.8.0 · app điện thoại 2.7.0 · app TV 2.6.9

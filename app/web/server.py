@@ -1124,8 +1124,10 @@ def build(S):
                     await asyncio.sleep(0.2)
                 if stop():
                     break
-                assist["installed"] = False
+                assist["checking"] = True                             # one check at a time: more presses of "Installed" change nothing
+                say("Đang mở Downloader trên TV để kiểm tra...")
                 there = front() == DOWNLOADER or await open_on_tv(DOWNLOADER, stop)
+                assist.update(installed=False, checking=False)
             if stop():
                 assist.update(status="idle", msg=""); return
             if not direct:
@@ -1141,10 +1143,13 @@ def build(S):
             assist.update(status="failed", msg=f"Mất kết nối với TV giữa chừng, thử lại: {getattr(e, 'text', '') or e}")
         except asyncio.CancelledError:
             assist.update(status="idle", msg="")
+        finally:
+            assist["checking"] = False
 
     @routes.get("/api/assist")
     async def assist_state(_):
-        return web.json_response({"status": assist["status"], "msg": assist["msg"], "front": front(), "connected": tv.available})
+        return web.json_response({"status": assist["status"], "msg": assist["msg"], "front": front(), "connected": tv.available,
+                                  "checking": bool(assist.get("checking") or assist["installed"])})
 
     @routes.post("/api/assist")
     async def assist_do(request):
@@ -1154,12 +1159,22 @@ def build(S):
             assist["stop"] = True
             return web.json_response({"ok": True})
         if do == "installed":
-            assist["installed"] = True
+            if not assist.get("checking"):
+                assist["installed"] = True
             return web.json_response({"ok": True})
         tv.need()
+        if do in ("open", "settings") and (assist["status"] == "running" or assist.get("opening")):   # one job on the TV at a time
+            return web.json_response({"error": "TV đang làm việc vừa yêu cầu, chờ vài giây rồi bấm lại"}, status=409)
         if do == "setup":
+            old = assist.get("task")
+            if assist["status"] == "running" and assist["stop"] and old and not old.done():   # stopped a moment ago, still winding down
+                old.cancel()
+                try:
+                    await old
+                except (asyncio.CancelledError, Exception):
+                    pass
             if assist["status"] != "running":
-                assist.update(status="running", msg="", stop=False, installed=False)
+                assist.update(status="running", msg="", stop=False, installed=False, checking=False)
                 assist["task"] = asyncio.create_task(install_setup())
             return web.json_response({"ok": True})
         if do == "open":                                              # an app by package name, or any link
@@ -1171,7 +1186,11 @@ def build(S):
                 return web.json_response({"ok": True, "front": front()})
             if not PKG_RE.match(what):
                 raise web.HTTPBadRequest(text="not a package name")
-            return web.json_response({"ok": await open_on_tv(what), "front": front()})
+            assist["opening"] = True
+            try:
+                return web.json_response({"ok": await open_on_tv(what), "front": front()})
+            finally:
+                assist["opening"] = False
         if do == "settings":                                          # every way a TV may open its Settings when asked
             is_settings = lambda a: "settings" in a.lower()
             tries = [lambda: tv.need().send_key_command("SETTINGS"), lambda: send_link("android-app://com.android.tv.settings"),

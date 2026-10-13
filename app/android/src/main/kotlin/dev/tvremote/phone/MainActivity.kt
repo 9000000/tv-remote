@@ -636,6 +636,22 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         dialog = AlertDialog.Builder(this).setTitle(title).setView(sv).setNegativeButton(t("Đóng", "Close"), null).show()
     }
 
+    /**
+     * One job on the TV at a time. These jobs open apps and press keys there over several seconds; a second tap on the same
+     * button while one runs would send it all again and leave the TV in a muddle, so it is refused with a word of why.
+     */
+    private val tvBusy = java.util.concurrent.atomic.AtomicBoolean(false)
+    private fun tvFree(): Boolean {
+        if (tvBusy.compareAndSet(false, true)) return true
+        Toast.makeText(this, t("TV đang làm việc vừa yêu cầu. Chờ vài giây rồi bấm lại.", "The TV is still doing what was just asked. Wait a few seconds, then tap again."), Toast.LENGTH_SHORT).show()
+        return false
+    }
+    private fun tvJob(work: () -> Unit) {
+        if (!tvFree()) return
+        Toast.makeText(this, t("Đang làm trên TV...", "Working on the TV..."), Toast.LENGTH_SHORT).show()
+        Thread { try { work() } catch (ignored: Exception) { } finally { tvBusy.set(false) } }.start()
+    }
+
     /** Everything the keys-only mode can do towards turning ADB on, in the order one needs it. */
     private fun adbHelp() {
         menu(t("Bật ADB cho TV này", "Turn on ADB for this TV"), 0, listOf(
@@ -658,7 +674,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                     .setPositiveButton(t("Mở", "Open")) { _, _ ->
                         val what = box.text.toString().trim()
                         val b = basic
-                        if (what.isNotEmpty() && b != null) { if (what.contains(":")) b.launch(what) else Thread { openOnTv(b, what) { false } }.start() }
+                        if (what.isNotEmpty() && b != null) { if (what.contains(":")) b.launch(what) else tvJob { openOnTv(b, what) { false } } }
                     }
                     .setNegativeButton(t("Hủy", "Cancel"), null).show()
                 Unit
@@ -672,6 +688,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
      */
     private fun installSetup() {
         val a = basic ?: return
+        if (!tvFree()) return
         val link = "github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"
         val dl = "com.esaba.downloader"
         var stop = false
@@ -679,8 +696,15 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val box = AlertDialog.Builder(this).setTitle(t("Cài TV Setup lên TV", "Install TV Setup on the TV")).setMessage(t("Đang mở Downloader trên TV...", "Opening Downloader on the TV..."))
             .setNeutralButton(t("Đã cài xong", "Installed"), null)
             .setNegativeButton(t("Dừng", "Stop")) { _, _ -> stop = true }.setOnCancelListener { stop = true }.show()
-        box.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener { installed = true }   // set here so that the box stays open
+        val doneBtn = box.getButton(AlertDialog.BUTTON_NEUTRAL)
         val say = { vi: String, en: String -> ui.post { if (box.isShowing) box.setMessage(t(vi, en)) } }
+        // The box changes its words as it goes. It must not change its size with them, or the buttons slide away from under
+        // a finger that is still tapping, and a tap that lands beside the box must not close it and stop the whole thing.
+        box.setCanceledOnTouchOutside(false)
+        box.findViewById<TextView>(android.R.id.message)?.minLines = 7
+        // greyed out while the check runs; its words stay, or the buttons would shift under a finger that is still tapping
+        val checking = { on: Boolean -> ui.post { doneBtn.isEnabled = !on; doneBtn.alpha = if (on) 0.4f else 1f } }
+        doneBtn.setOnClickListener { if (!installed) { installed = true; checking(true); say("Đang kiểm tra trên TV, chờ khoảng nửa phút...", "Checking on the TV, about half a minute...") } }   // set here so that the box stays open; one check at a time
         // waits until the TV says [pkg] is in front; false when it does not within [seconds], or the person stopped it
         val front = { pkg: String, seconds: Int ->
             var ok = false
@@ -688,65 +712,74 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             ok
         }
         Thread {
-            if (a.app.isEmpty()) {                                    // this TV does not say what is on its screen: no way to follow along
-                ui.post { box.dismiss(); installSetupByHand() }
-                return@Thread
-            }
-            // The short way: hand the TV the link itself. A TV with an app that takes web links (Downloader, a browser) opens
-            // it there, after asking "Open with" when it has several; OK takes what is offered, and either of them downloads.
-            a.launch("https://$link")
-            for (i in 0 until 30) { if (stop || a.app == dl || a.app == "android") break; Thread.sleep(200) }
-            if (a.app == "android" && !stop) {
-                say("TV đang hỏi “Mở bằng”: app tự chọn giúp...", "The TV asks “Open with”: choosing for you...")
-                for (press in 0 until 3) {
-                    Thread.sleep(1500)
-                    if (a.app != "android" || stop) break
-                    a.pulse(23, 110)
+            try {
+                if (a.app.isEmpty()) {                                    // this TV does not say what is on its screen: no way to follow along
+                    ui.post { box.dismiss(); installSetupByHand() }
+                    return@Thread
                 }
-                Thread.sleep(1500)
-            }
-            val direct = !stop && a.app != "android" && a.app != "com.fptplay.launcher" && a.app.isNotEmpty() && (a.app == dl || a.app.contains("chrome") || a.app.contains("browser"))
-            var there = direct || openOnTv(a, dl) { stop }
-            if (!there && !stop && basic === a) {                     // its Play Store page was told to install it
-                say("TV chưa có Downloader: đang cài từ CH Play...\n\nNếu TV không tự cài, bấm “Cài đặt” trên màn hình TV. Khi TV báo cài xong, bấm “Đã cài xong” bên dưới.",
-                    "The TV has no Downloader yet: installing it from the Play Store...\n\nIf the TV does not start by itself, choose “Install” on its screen. When the TV says it is installed, tap “Installed” below.")
-                while (!stop && basic === a && !there) {
-                    for (i in 0 until 600) { if (stop || installed || a.app == dl) break; Thread.sleep(200) }
-                    if (stop || basic !== a) break
-                    installed = false
-                    there = a.app == dl || openOnTv(a, dl) { stop }
-                }
-            }
-            if (!there) {
-                ui.post { if (box.isShowing) box.dismiss(); if (!stop && basic === a) installSetupByHand() }
-                return@Thread
-            }
-            if (!direct) {                                            // Downloader is there now, so the TV has an app for the link
-                say("Đang đưa đường dẫn tải cho Downloader...", "Handing the download link to Downloader...")
-                Thread.sleep(3000)
+                // The short way: hand the TV the link itself. A TV with an app that takes web links (Downloader, a browser) opens
+                // it there, after asking "Open with" when it has several; OK takes what is offered, and either of them downloads.
                 a.launch("https://$link")
-                for (press in 0 until 3) {                            // "Open with", when a browser is installed too
+                for (i in 0 until 30) { if (stop || a.app == dl || a.app == "android") break; Thread.sleep(200) }
+                if (a.app == "android" && !stop) {
+                    say("TV đang hỏi “Mở bằng”: app tự chọn giúp...", "The TV asks “Open with”: choosing for you...")
+                    for (press in 0 until 3) {
+                        Thread.sleep(1500)
+                        if (a.app != "android" || stop) break
+                        a.pulse(23, 110)
+                    }
                     Thread.sleep(1500)
-                    if (a.app != "android" || stop) break
-                    a.pulse(23, 110)
                 }
-                Thread.sleep(2500)
-            }
-            val from = a.app
-            say("Đã nhập đường dẫn. Đang chờ TV tải xong...", "Link entered. Waiting for the TV to finish the download...")
-            for (i in 0 until 240) {                                  // up to 2 minutes, until the TV's installer (or its permission screen) comes up
-                if (stop || basic !== a || a.app != from) break
-                Thread.sleep(500)
-            }
-            ui.post {
-                if (box.isShowing) box.dismiss()
-                if (stop || basic !== a || isFinishing) return@post
-                AlertDialog.Builder(this).setTitle(t("Nhìn lên TV", "Look at the TV"))
-                    .setMessage(t("App đã nhập đường dẫn và cho Downloader tải.\n\n1. TV hỏi cài đặt: chọn Cài đặt (Install). Nếu TV hỏi quyền cài từ nguồn này: bật cho Downloader, bấm Quay lại, rồi chọn Install.\n2. Cài xong chọn Mở (hoặc bấm “Mở TV Setup” bên dưới).\n3. TV Setup tự mở Tùy chọn nhà phát triển: bật “Gỡ lỗi USB”.\n\nNếu TV vẫn đứng ở trang chủ Downloader: bấm “Làm từng bước”.",
-                        "The app has entered the link and Downloader is fetching it.\n\n1. The TV asks to install: choose Install. If it asks to allow installs from this source: allow Downloader, press Back, then choose Install.\n2. Then choose Open (or tap “Open TV Setup” below).\n3. TV Setup opens Developer options by itself: turn on “USB debugging”.\n\nIf the TV is still on Downloader’s home page: tap “Step by step”."))
-                    .setPositiveButton(t("Mở TV Setup", "Open TV Setup")) { _, _ -> Thread { openOnTv(a, "dev.tvremote.setup") { false } }.start() }
-                    .setNeutralButton(t("Làm từng bước", "Step by step")) { _, _ -> installSetupByHand() }
-                    .setNegativeButton(t("Đóng", "Close"), null).show()
+                val direct = !stop && a.app != "android" && a.app != "com.fptplay.launcher" && a.app.isNotEmpty() && (a.app == dl || a.app.contains("chrome") || a.app.contains("browser"))
+                var there = direct || openOnTv(a, dl) { stop }
+                if (!there && !stop && basic === a) {                     // its Play Store page was told to install it
+                    say("TV chưa có Downloader: đang cài từ CH Play...\n\nNếu TV không tự cài, bấm “Cài đặt” trên màn hình TV. Khi TV báo cài xong, bấm “Đã cài xong” bên dưới.",
+                        "The TV has no Downloader yet: installing it from the Play Store...\n\nIf the TV does not start by itself, choose “Install” on its screen. When the TV says it is installed, tap “Installed” below.")
+                    while (!stop && basic === a && !there) {
+                        for (i in 0 until 600) { if (stop || installed || a.app == dl) break; Thread.sleep(200) }
+                        if (stop || basic !== a) break
+                        checking(true)
+                        say("Đang mở Downloader trên TV để kiểm tra...", "Opening Downloader on the TV to check...")
+                        there = a.app == dl || openOnTv(a, dl) { stop }
+                        installed = false
+                        checking(false)
+                        if (!there) say("TV vẫn chưa có Downloader. Chọn “Cài đặt” trên màn hình TV; khi TV báo cài xong, bấm “Đã cài xong”.", "The TV still has no Downloader. Choose “Install” on its screen; when it says installed, tap “Installed”.")
+                    }
+                }
+                if (!there) {
+                    ui.post { if (box.isShowing) box.dismiss(); if (!stop && basic === a) installSetupByHand() }
+                    return@Thread
+                }
+                if (!direct) {                                            // Downloader is there now, so the TV has an app for the link
+                    say("Đang đưa đường dẫn tải cho Downloader...", "Handing the download link to Downloader...")
+                    Thread.sleep(3000)
+                    a.launch("https://$link")
+                    for (press in 0 until 3) {                            // "Open with", when a browser is installed too
+                        Thread.sleep(1500)
+                        if (a.app != "android" || stop) break
+                        a.pulse(23, 110)
+                    }
+                    Thread.sleep(2500)
+                }
+                val from = a.app
+                say("Đã nhập đường dẫn. Đang chờ TV tải xong...", "Link entered. Waiting for the TV to finish the download...")
+                for (i in 0 until 240) {                                  // up to 2 minutes, until the TV's installer (or its permission screen) comes up
+                    if (stop || basic !== a || a.app != from) break
+                    Thread.sleep(500)
+                }
+                ui.post {
+                    if (box.isShowing) box.dismiss()
+                    if (stop || basic !== a || isFinishing) return@post
+                    AlertDialog.Builder(this).setTitle(t("Nhìn lên TV", "Look at the TV"))
+                        .setMessage(t("App đã nhập đường dẫn và cho Downloader tải.\n\n1. TV hỏi cài đặt: chọn Cài đặt (Install). Nếu TV hỏi quyền cài từ nguồn này: bật cho Downloader, bấm Quay lại, rồi chọn Install.\n2. Cài xong chọn Mở (hoặc bấm “Mở TV Setup” bên dưới).\n3. TV Setup tự mở Tùy chọn nhà phát triển: bật “Gỡ lỗi USB”.\n\nNếu TV vẫn đứng ở trang chủ Downloader: bấm “Làm từng bước”.",
+                            "The app has entered the link and Downloader is fetching it.\n\n1. The TV asks to install: choose Install. If it asks to allow installs from this source: allow Downloader, press Back, then choose Install.\n2. Then choose Open (or tap “Open TV Setup” below).\n3. TV Setup opens Developer options by itself: turn on “USB debugging”.\n\nIf the TV is still on Downloader’s home page: tap “Step by step”."))
+                        .setPositiveButton(t("Mở TV Setup", "Open TV Setup")) { _, _ -> tvJob { openOnTv(a, "dev.tvremote.setup") { false } } }
+                        .setNeutralButton(t("Làm từng bước", "Step by step")) { _, _ -> installSetupByHand() }
+                        .setNegativeButton(t("Đóng", "Close"), null).show()
+                }
+            } catch (ignored: Exception) {
+            } finally {
+                tvBusy.set(false)
             }
         }.start()
     }
@@ -795,15 +828,15 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val link = "github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"   // lower case, no "https://": typed as key presses, and Downloader adds the rest
         menu(t("Cài TV Setup lên TV", "Install TV Setup on the TV"), -1, listOf(
             Triple(t("1. Mở Downloader trên TV", "1. Open Downloader on the TV"), t("Chưa cài thì TV mở trang CH Play của nó: bấm Cài đặt, rồi bấm lại mục này", "Not installed: the TV opens its Play Store page. Install it, then tap this again")) {
-                basic?.let { b -> Thread { openOnTv(b, "com.esaba.downloader") { false } }.start() }
+                basic?.let { b -> tvJob { openOnTv(b, "com.esaba.downloader") { false } } }
                 ui.postDelayed({ if (basic != null && !isFinishing) installSetupByHand() }, 600)
             },
             Triple(t("2. Nhập đường dẫn tải", "2. Enter the download link"), t("Khi TV đang ở trang chủ Downloader: app tự tới ô địa chỉ, gõ đường dẫn và cho tải. Mất khoảng 10 giây", "With Downloader’s home page on the TV: the app goes to the address field, types the link and starts the download. About 10 seconds")) {
-                basic?.let { b -> Thread { downloaderGo(b, link) }.start() }
+                basic?.let { b -> tvJob { downloaderGo(b, link) } }
                 Toast.makeText(this, t("Đang nhập đường dẫn trên TV...", "Entering the link on the TV..."), Toast.LENGTH_LONG).show()
                 ui.postDelayed({ if (basic != null && !isFinishing) installSetupByHand() }, 600)
             },
-            Triple(t("3. Mở TV Setup trên TV", "3. Open TV Setup on the TV"), t("Trong đó bấm “Tùy chọn nhà phát triển” rồi bật Gỡ lỗi USB", "There choose “Tùy chọn nhà phát triển” (Developer options) and turn on USB debugging")) { basic?.let { b -> Thread { openOnTv(b, "dev.tvremote.setup") { false } }.start() }; Unit },
+            Triple(t("3. Mở TV Setup trên TV", "3. Open TV Setup on the TV"), t("Trong đó bấm “Tùy chọn nhà phát triển” rồi bật Gỡ lỗi USB", "There choose “Tùy chọn nhà phát triển” (Developer options) and turn on USB debugging")) { basic?.let { b -> tvJob { openOnTv(b, "dev.tvremote.setup") { false } } }; Unit },
             Triple(t("Chép đường dẫn", "Copy the link"), link) {
                 (getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager).setPrimaryClip(android.content.ClipData.newPlainText("tv-setup", link))
                 Toast.makeText(this, t("Đã chép", "Copied"), Toast.LENGTH_SHORT).show()
@@ -815,23 +848,29 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     /** Tries the Settings key, then the links that open Settings on other TVs, watching which app the TV says is in front. */
     private fun findSettings() {
         val a = basic ?: return
+        if (!tvFree()) return
         Toast.makeText(this, t("Đang thử mở Cài đặt trên TV...", "Trying to open Settings on the TV..."), Toast.LENGTH_SHORT).show()
         Thread {
-            val tries = listOf<() -> Unit>({ a.key(176, Atv.SHORT) }, { a.launch("android-app://com.android.tv.settings") }, { a.launch("intent:#Intent;action=android.settings.SETTINGS;end") })
-            var ok = isSettings(a.app)
-            for (attempt in tries) {
-                if (ok) break
-                for (i in 0 until 30) { if (a.ready()) break; Thread.sleep(200) }   // the TV may have dropped us after the last try
-                attempt()
-                for (i in 0 until 12) { Thread.sleep(200); if (isSettings(a.app)) { ok = true; break } }
-            }
-            val blind = a.app.isEmpty()                                // this TV does not say what is on its screen
-            ui.post {
-                if (isFinishing || basic !== a) return@post
-                if (ok) adbSteps()
-                else if (blind) AlertDialog.Builder(this).setMessage(t("TV có mở màn hình Cài đặt không?", "Did the TV open its Settings?"))
-                    .setPositiveButton(t("Có", "Yes")) { _, _ -> adbSteps() }.setNegativeButton(t("Không", "No")) { _, _ -> lookOnHome() }.show()
-                else lookOnHome()
+            try {
+                val tries = listOf<() -> Unit>({ a.key(176, Atv.SHORT) }, { a.launch("android-app://com.android.tv.settings") }, { a.launch("intent:#Intent;action=android.settings.SETTINGS;end") })
+                var ok = isSettings(a.app)
+                for (attempt in tries) {
+                    if (ok) break
+                    for (i in 0 until 30) { if (a.ready()) break; Thread.sleep(200) }   // the TV may have dropped us after the last try
+                    attempt()
+                    for (i in 0 until 12) { Thread.sleep(200); if (isSettings(a.app)) { ok = true; break } }
+                }
+                val blind = a.app.isEmpty()                                // this TV does not say what is on its screen
+                ui.post {
+                    if (isFinishing || basic !== a) return@post
+                    if (ok) adbSteps()
+                    else if (blind) AlertDialog.Builder(this).setMessage(t("TV có mở màn hình Cài đặt không?", "Did the TV open its Settings?"))
+                        .setPositiveButton(t("Có", "Yes")) { _, _ -> adbSteps() }.setNegativeButton(t("Không", "No")) { _, _ -> lookOnHome() }.show()
+                    else lookOnHome()
+                }
+            } catch (ignored: Exception) {
+            } finally {
+                tvBusy.set(false)
             }
         }.start()
     }
@@ -849,11 +888,11 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val a = basic ?: return
         menu(t("Mở Cài đặt qua màn hình chính khác", "Reach Settings through another home screen"), -1, HOMES.map { (name, pkg) ->
             Triple(name, if (a.app == pkg) t("Đang mở trên TV", "Open on the TV now") else t("Đã cài thì mở, chưa cài thì mở trang CH Play", "Opens it, or its Play Store page")) {
-                Thread { openOnTv(a, pkg) { false } }.start()
+                tvJob { openOnTv(a, pkg) { false } }
                 AlertDialog.Builder(this).setTitle(name).setMessage(t("Nhìn lên TV.\n\n• Thấy trang CH Play: bấm Cài đặt, xong bấm “Mở lại” bên dưới.\n• CH Play báo không tương thích hoặc không tìm thấy: bấm “Chọn cái khác”.\n• Thấy màn hình chính mới: tìm biểu tượng bánh răng → Cài đặt Android, rồi bấm “Các bước bật ADB”.\n\nCH Play cần TV đã đăng nhập tài khoản Google.",
                         "Look at the TV.\n\n• A Play Store page: choose Install, then tap “Open again” below.\n• The store says it is incompatible or not found: tap “Pick another”.\n• The new home screen: find the gear icon → Android settings, then tap “ADB steps”.\n\nThe Play Store needs a Google account on the TV."))
                     .setPositiveButton(t("Các bước bật ADB", "ADB steps")) { _, _ -> adbSteps() }
-                    .setNeutralButton(t("Mở lại", "Open again")) { _, _ -> Thread { openOnTv(a, pkg) { false } }.start(); ui.postDelayed({ if (basic === a && !isFinishing) adbSteps() }, 800) }
+                    .setNeutralButton(t("Mở lại", "Open again")) { _, _ -> tvJob { openOnTv(a, pkg) { false } }; ui.postDelayed({ if (basic === a && !isFinishing) adbSteps() }, 800) }
                     .setNegativeButton(t("Chọn cái khác", "Pick another")) { _, _ -> otherHome() }.show()
                 Unit
             }
