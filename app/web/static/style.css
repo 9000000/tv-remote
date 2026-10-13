@@ -173,3 +173,6 @@
 
   /* health: one line of text until the first snapshot arrives, so the tab never looks empty or broken */
   #hwait { text-align:center; padding:18px 0; grid-column:1/-1; } .health.ready > #hwait, .health:not(.ready) > section { display:none; }
+  /* typing: ⚡ switches between live typing and type-then-send; 123 shows the number keys */
+  #live { padding:0 12px; } #live.on { background:var(--accent); color:var(--accent-ink); }
+  .numpad { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:300px; margin-top:8px; } .numpad[hidden] { display:none; }

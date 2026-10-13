@@ -34,6 +34,7 @@
     'Bài trước': 'Previous', 'Phát/Dừng': 'Play/Pause', 'Bài sau': 'Next', 'Bàn phím': 'Keyboard', 'Xóa ký tự': 'Delete a character', 'Gửi phím Enter': 'Send Enter',
     'Giữ nút = nhấn giữ trên TV · Bàn phím máy tính gõ thẳng lên TV: chữ, ⌫ xóa, mũi tên, Enter, Esc = Back': 'Hold a button = long press on the TV · The computer keyboard types straight onto the TV: letters, ⌫ delete, arrows, Enter, Esc = Back',
     'Bấm vào đây rồi gõ, chữ hiện ngay trên TV': 'Click here and type; the text appears on the TV',
+    'Gõ chữ rồi bấm Enter để gửi': 'Type, then press Enter to send', 'Gõ trực tiếp / gõ xong rồi gửi': 'Live typing / type then send', 'Bàn phím số': 'Number keys',
     'Không cần bấm vào ô này: cứ gõ là chữ lên TV (TV phải đang ở một ô nhập chữ). Ô này dành cho gõ tiếng Việt có dấu. Bàn phím ảo trên TV không bấm bằng chuột được, hãy gõ từ đây.': 'You do not need to click this box: just type and it goes to the TV (the TV must be in a text field). Use this box for accented text. The TV’s on-screen keyboard cannot be clicked with the mouse; type from here.',
     'Mở link trên TV': 'Open a link on the TV', 'Mở': 'Open', 'Cài đặt TV': 'TV settings', 'Cài đặt': 'Settings',
     'Đã gửi lệnh, nhưng ADB đang đóng nên TV có thể bỏ qua': 'Sent, but ADB is closed so the TV may ignore it',

@@ -21,7 +21,7 @@
   button:hover { background:var(--btn-hi); } button:active { transform:scale(.97); } button.held { background:#f59e0b !important; color:#1a1200 !important; }
   .ic { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
   .rc { display:flex; flex-direction:column; align-items:center; gap:16px; }
-  .rrow { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; width:100%; } .rrow.three { grid-template-columns:repeat(3,1fr); } .rrow.five { grid-template-columns:repeat(5,1fr); gap:8px; }
+  .rrow { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; width:100%; } .rrow.three { grid-template-columns:repeat(3,1fr); } .rrow.four { grid-template-columns:repeat(4,1fr); } #numpad[hidden] { display:none; } #live.on { background:var(--accent); color:var(--accent-ink); } .rrow.five { grid-template-columns:repeat(5,1fr); gap:8px; }
   button small { font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
   .power { color:var(--bad); } .play { background:var(--ink); color:var(--card); } .play:hover { background:var(--ink); }
   .dpad { position:relative; width:min(250px, 70vw); aspect-ratio:1; border-radius:50%; background:var(--btn); border:1px solid var(--line); box-shadow:inset 0 2px 12px rgba(0,0,0,.18); }
@@ -99,11 +99,10 @@
   <div class="panel two" data-panel="remote" hidden>
   <section class="card rc" id="remote">
     <div class="warn" id="adbwarn" hidden></div>
-    <div class="rrow">
+    <div class="rrow four">
       <button class="power" data-k="POWER"><svg class="ic"><use href="#i-power"/></svg></button>
-      <button data-k="MENU"><svg class="ic"><use href="#i-menu"/></svg></button>
-      <button data-k="SETTINGS"><svg class="ic"><use href="#i-settings"/></svg></button>
       <button data-k="INPUT"><svg class="ic"><use href="#i-input"/></svg></button>
+      <button data-k="SETTINGS"><svg class="ic"><use href="#i-settings"/></svg></button>
       <button data-k="ASSIST" title="Google Assistant"><svg class="ic"><use href="#i-mic"/></svg></button>
     </div>
     <div class="dpad">
@@ -116,9 +115,10 @@
     <div class="rrow three">
       <button data-k="BACK" style="min-height:60px"><svg class="ic"><use href="#i-back"/></svg><small data-t="back"></small></button>
       <button data-k="HOME" style="min-height:60px"><svg class="ic"><use href="#i-home"/></svg><small>Home</small></button>
-      <button data-k="MUTE" id="mute" style="min-height:60px"><svg class="ic"><use href="#i-mute"/></svg><small data-t="mute"></small></button>
+      <button data-k="MENU" style="min-height:60px"><svg class="ic"><use href="#i-menu"/></svg><small>Menu</small></button>
     </div>
     <div class="vol">
+      <button data-k="MUTE" id="mute"><svg class="ic"><use href="#i-mute"/></svg></button>
       <button data-k="VOL_DOWN"><svg class="ic"><use href="#i-minus"/></svg></button>
       <div class="bar"><i id="volbar"></i></div>
       <button data-k="VOL_UP"><svg class="ic"><use href="#i-plus"/></svg></button>
@@ -129,11 +129,14 @@
       <button class="play" data-k="PLAY_PAUSE"><svg class="ic"><use href="#i-play_pause"/></svg></button>
       <button data-k="NEXT"><svg class="ic"><use href="#i-next"/></svg></button>
     </div>
-    <form id="textf" style="width:100%"><input id="text" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="primary" id="textsend"><svg class="ic"><use href="#i-send"/></svg></button><button type="button" id="ask"><svg class="ic"><use href="#i-search"/></svg></button></form>
+    <form id="textf" style="width:100%"><button type="button" id="live">⚡</button><input id="text" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="primary" id="textsend"><svg class="ic"><use href="#i-send"/></svg></button><button type="button" id="ask"><svg class="ic"><use href="#i-search"/></svg></button></form>
     <div class="rrow three">
+      <button type="button" id="digits">123</button>
       <button data-k="DEL"><svg class="ic"><use href="#i-backspace"/></svg></button>
       <button data-k="ENTER"><svg class="ic"><use href="#i-enter"/></svg></button>
-      <button data-k="WAKE"><svg class="ic"><use href="#i-wake"/></svg></button>
+    </div>
+    <div class="rrow three" id="numpad" hidden>
+      <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><span></span><button data-k="0">0</button><span></span>
     </div>
   </section>
 
@@ -202,7 +205,7 @@
 const $ = (s) => document.querySelector(s);
 const T = {
   vi: { pair_title: 'Ghép với TV', pair_text: 'Bấm nút dưới đây, TV sẽ hiện một mã 6 số. Nhập mã đó vào đây để điều khiển TV từ thiết bị này. Chỉ cần làm một lần.', pair_show: 'Hiện mã trên TV',
-        wrong: 'Sai mã, thử lại.', expired: 'Mã đã hết hạn. Bấm “Hiện mã trên TV” lần nữa.', wait: 'Nhìn lên TV và nhập mã 6 số.', back: 'Quay lại', mute: 'Tắt tiếng', apps: 'Ứng dụng', text: 'Gõ chữ, hoặc câu hỏi rồi bấm kính lúp',
+        wrong: 'Sai mã, thử lại.', expired: 'Mã đã hết hạn. Bấm “Hiện mã trên TV” lần nữa.', wait: 'Nhìn lên TV và nhập mã 6 số.', back: 'Quay lại', mute: 'Tắt tiếng', apps: 'Ứng dụng', text: 'Gõ chữ rồi bấm gửi, hoặc câu hỏi rồi bấm kính lúp', text_live: 'Gõ trực tiếp: TV nhận từng chữ', live_on: 'Đang gõ trực tiếp. Bấm để chuyển sang gõ xong rồi gửi', live_off: 'Đang gõ xong rồi gửi. Bấm để chuyển sang gõ trực tiếp',
         on: 'đang bật', off: 'màn hình tắt', lost: 'mất kết nối tới TV', other: 'VI',
         term_note: 'Chạy lệnh với quyền shell của TV (như adb shell). Mỗi lệnh chạy riêng, tối đa 30 giây; lệnh chờ gõ tiếp như top, logcat không dùng được. Phím ↑ ↓ gọi lại lệnh cũ.', running: 'đang chạy...', cutoff: '[đã cắt: quá 30 giây hoặc quá dài]',
         t_apps: 'Ứng dụng', t_files: 'Tệp', t_install: 'Cài', t_health: 'Sức khỏe', sys: 'Hiện cả app hệ thống', search_app: 'Tìm app', open: 'Mở', stop: 'Dừng', remove: 'Gỡ', loading: 'Đang tải...',
@@ -217,7 +220,7 @@ const T = {
         adb_allow: 'TV đang hỏi “Cho phép gỡ lỗi USB?”: tích “Luôn cho phép” rồi chọn OK thì các nút mới chạy.',
         adb_off: 'Các nút chưa chạy: app trên TV chưa nối được ADB. Trên TV bật “Gỡ lỗi ADB” trong Tùy chọn nhà phát triển, rồi mở app TV Setup.' },
   en: { pair_title: 'Pair with the TV', pair_text: 'Press the button below; the TV shows a 6-digit code. Type it here to control the TV from this device. You only do this once.', pair_show: 'Show the code on the TV',
-        wrong: 'Wrong code, try again.', expired: 'The code expired. Press “Show the code on the TV” again.', wait: 'Look at the TV and type the 6-digit code.', back: 'Back', mute: 'Mute', apps: 'Apps', text: 'Type text, or a question then the magnifier',
+        wrong: 'Wrong code, try again.', expired: 'The code expired. Press “Show the code on the TV” again.', wait: 'Look at the TV and type the 6-digit code.', back: 'Back', mute: 'Mute', apps: 'Apps', text: 'Type then send, or a question then the magnifier', text_live: 'Live: the TV gets every letter', live_on: 'Live typing is on. Tap to type first, then send', live_off: 'Type-then-send is on. Tap for live typing',
         on: 'on', off: 'screen off', lost: 'lost the TV', other: 'EN',
         term_note: 'Runs commands as the TV’s shell user (like adb shell). Each command runs on its own, for at most 30 seconds; interactive ones such as top or logcat do not work. ↑ ↓ recall earlier commands.', running: 'running...', cutoff: '[cut: over 30 seconds or too long]',
         t_apps: 'Apps', t_files: 'Files', t_install: 'Install', t_health: 'Health', sys: 'Show system apps too', search_app: 'Search apps', open: 'Open', stop: 'Stop', remove: 'Uninstall', loading: 'Loading...',
@@ -239,7 +242,7 @@ const EMBED = new URLSearchParams(location.search).has('embed');   // inside the
 function applyLang() {
   document.documentElement.lang = lang;
   document.querySelectorAll('[data-t]').forEach((e) => { e.textContent = t(e.dataset.t); });
-  $('#text').placeholder = t('text'); $('#lang').textContent = lang === 'vi' ? 'EN' : 'VI';
+  $('#text').placeholder = t(window.liveOn ? 'text_live' : 'text'); $('#lang').textContent = lang === 'vi' ? 'EN' : 'VI';
   $('#appsq').placeholder = t('search_app'); $('#filesq').placeholder = t('filter'); $('#insturl').placeholder = t('apk_link');
 }
 $('#lang').addEventListener('click', () => { lang = lang === 'vi' ? 'en' : 'vi'; try { localStorage.setItem('lang', lang); } catch {} applyLang(); refresh(); showTab(tab); });
@@ -302,7 +305,31 @@ document.querySelectorAll('[data-k]').forEach((b) => {
   ['pointercancel', 'lostpointercapture'].forEach((ev) => b.addEventListener(ev, () => release(false)));
   b.addEventListener('contextmenu', (e) => e.preventDefault());
 });
-$('#textf').addEventListener('submit', async (e) => { e.preventDefault(); const v = $('#text').value; if (v) { await api('/api/text', { text: v }); $('#text').value = ''; } });
+// Two ways to type. Send: write here, then send it in one go. Live (⚡): the TV follows every letter and every deletion.
+let live = false, onTv = '', typeQ = Promise.resolve();
+const typeNow = (body) => { typeQ = typeQ.then(() => api('/api/text', body)); };   // one at a time, in order
+function setLive(on) {
+  live = window.liveOn = on; try { localStorage.setItem('live', on ? '1' : ''); } catch {}
+  $('#live').classList.toggle('on', on); $('#live').title = t(on ? 'live_on' : 'live_off');
+  $('#text').placeholder = t(on ? 'text_live' : 'text'); $('#text').value = onTv = '';
+}
+function syncText() {                                                 // send only the difference: backspaces, then the new end
+  if (!live) return;
+  const v = $('#text').value; let i = 0;
+  while (i < onTv.length && i < v.length && onTv[i] === v[i]) i++;
+  const del = [...onTv.slice(i)].length, text = v.slice(i); onTv = v;
+  if (del || text) typeNow({ del, text });
+}
+$('#live').addEventListener('click', () => setLive(!live));
+$('#text').addEventListener('input', (e) => { if (!e.isComposing) syncText(); });
+$('#text').addEventListener('compositionend', syncText);             // Vietnamese / IME input arrives when the syllable is done
+$('#textf').addEventListener('submit', (e) => {
+  e.preventDefault(); const v = $('#text').value;
+  if (live) { syncText(); typeNow({ enter: true }); } else if (v) typeNow({ text: v });
+  $('#text').value = onTv = '';
+});
+try { setLive(!!localStorage.getItem('live')); $('#numpad').hidden = !localStorage.getItem('numpad'); } catch { setLive(false); }
+$('#digits').addEventListener('click', () => { const p = $('#numpad'); p.hidden = !p.hidden; try { localStorage.setItem('numpad', p.hidden ? '' : '1'); } catch {} });
 // the magnifier hands the sentence to the TV's own search / Assistant instead of typing it
 $('#ask').addEventListener('click', async () => { const v = $('#text').value.trim(); if (v && (await api('/api/m/search', { query: v })).status === 200) $('#text').value = ''; });
 

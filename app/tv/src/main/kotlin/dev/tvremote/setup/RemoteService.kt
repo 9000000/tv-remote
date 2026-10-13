@@ -201,7 +201,9 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             }
             "/api/text" -> {
                 if (t == null || !t.ready()) return HttpServer.Response.error(503, "adb:$adbState")
+                repeat(minOf(d.optInt("del"), 500)) { t.press(67) }    // live typing: what changed is deleted, then typed again
                 if (d.optString("text").isNotEmpty()) t.text(d.optString("text"))
+                if (d.optBoolean("enter")) t.press(66)
                 return ok()
             }
             "/api/launch" -> {

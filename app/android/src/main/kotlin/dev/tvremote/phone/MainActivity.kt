@@ -1062,7 +1062,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
         controls = col()
         controls.setPadding(dp(14), dp(12), dp(14), dp(20))
-        val first = keys(52, "@menu|Menu", 82)
+        val first = keys(52, "@input|" + t("Nguồn vào", "Input"), 178)
         first.getChildAt(0).layoutParams = cell(52, true)
         // Power is a tap, never a hold: a held power key opens the TV's power menu and picks "power off" there.
         // It looks at the TV first: asleep, it wakes it at once; awake, it asks before putting it to sleep (standby: the
@@ -1100,9 +1100,10 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         first.addView(apps, cell(52, true))
         controls.addView(first)
         controls.addView(dpad(), gap(16))
-        controls.addView(keys(56, "@back|" + t("Quay lại", "Back"), 4, "@home|Home", 3, "@mute|" + t("Tắt tiếng", "Mute"), 164), gap(16))
-        controls.addView(keys(52, "@vol_down|" + t("Giảm âm lượng", "Volume down"), 25, "@prev|" + t("Bài trước", "Previous"), 88, "@play_pause|" + t("Phát / Dừng", "Play / Pause"), 85,
-            "@next|" + t("Bài sau", "Next"), 87, "@vol_up|" + t("Tăng âm lượng", "Volume up"), 24), gap(8))
+        controls.addView(keys(56, "@back|" + t("Quay lại", "Back"), 4, "@home|Home", 3, "@menu|Menu", 82), gap(16))
+        // the same rows, in the same order, as the two web remotes
+        controls.addView(keys(52, "@mute|" + t("Tắt tiếng", "Mute"), 164, "@vol_down|" + t("Giảm âm lượng", "Volume down"), 25, "@vol_up|" + t("Tăng âm lượng", "Volume up"), 24), gap(8))
+        controls.addView(keys(52, "@prev|" + t("Bài trước", "Previous"), 88, "@play_pause|" + t("Phát / Dừng", "Play / Pause"), 85, "@next|" + t("Bài sau", "Next"), 87), gap(8))
 
         val line = LinearLayout(this)
         liveBtn = button("⚡", BTN)

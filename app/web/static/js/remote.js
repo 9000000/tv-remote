@@ -48,10 +48,24 @@ function syncText() {                                                 // send on
   const del = [...typed.slice(i)].length, text = v.slice(i); typed = v;
   if (del || text) queue('/api/type', { del, text });
 }
-txt.addEventListener('input', (e) => { if (!e.isComposing) syncText(); });
-txt.addEventListener('compositionend', syncText);                     // Vietnamese / IME input arrives when the syllable is done
-$('#textf').addEventListener('submit', (e) => { e.preventDefault(); syncText(); queue('/api/type', { enter: true }); txt.value = typed = ''; });
-$('#del').addEventListener('click', () => { if (txt.value) { txt.value = [...txt.value].slice(0, -1).join(''); syncText(); } else queue('/api/type', { del: 1 }); });
+// Two ways to type, as in the phone app. Live (⚡ on): the TV follows every letter. Send: write first, then send it in one go.
+let live = true;
+function setLive(on) {
+  live = on; try { localStorage.setItem('live', on ? '1' : '0'); } catch {}
+  $('#live').classList.toggle('on', on);
+  txt.placeholder = tr(on ? 'Bấm vào đây rồi gõ, chữ hiện ngay trên TV' : 'Gõ chữ rồi bấm Enter để gửi'); txt.value = typed = '';
+}
+$('#live').addEventListener('click', () => setLive(!live));
+txt.addEventListener('input', (e) => { if (live && !e.isComposing) syncText(); });
+txt.addEventListener('compositionend', () => live && syncText());   // Vietnamese / IME input arrives when the syllable is done
+$('#textf').addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (live) { syncText(); queue('/api/type', { enter: true }); } else if (txt.value) queue('/api/type', { text: txt.value });
+  txt.value = typed = '';
+});
+$('#del').addEventListener('click', () => { if (txt.value) { txt.value = [...txt.value].slice(0, -1).join(''); if (live) syncText(); } else queue('/api/type', { del: 1 }); });
+$('#digits').addEventListener('click', () => { const p = $('#numpad'); p.hidden = !p.hidden; try { localStorage.setItem('numpad', p.hidden ? '' : '1'); } catch {} });
+try { setLive(localStorage.getItem('live') !== '0'); $('#numpad').hidden = !localStorage.getItem('numpad'); } catch { setLive(true); }
 
 // ---------- mouse: click, drag and scroll on the picture act as a finger on the TV screen ----------
 const scr = $('#screen'); scr.draggable = false;

@@ -61,10 +61,10 @@
         <section class="card rc" aria-label="Điều hướng">
           <div class="rrow">
             <button class="rb power" data-k="POWER" aria-label="Nguồn" title="Nguồn"><svg class="ic" aria-hidden="true"><use href="#i-power"/></svg></button>
-            <button class="rb" id="wake" aria-label="Đánh thức" title="Đánh thức TV (Wake-on-LAN khi TV standby sâu)"><svg class="ic" aria-hidden="true"><use href="#i-wake"/></svg></button>
             <button class="rb" data-k="INPUT" aria-label="Input" title="Input"><svg class="ic" aria-hidden="true"><use href="#i-input"/></svg></button>
             <button class="rb" data-k="SETTINGS" aria-label="Cài đặt của TV" title="Cài đặt của TV"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg></button>
             <button class="rb" data-k="ASSIST" aria-label="Google Assistant" title="Mở Google Assistant trên TV"><svg class="ic" aria-hidden="true"><use href="#i-mic"/></svg></button>
+            <button class="rb" id="wake" aria-label="Đánh thức" title="Đánh thức TV (Wake-on-LAN khi TV standby sâu)"><svg class="ic" aria-hidden="true"><use href="#i-wake"/></svg></button>
           </div>
           <div class="dpad">
             <button class="up" data-k="UP" aria-label="Lên"><svg class="ic" aria-hidden="true"><use href="#i-up"/></svg></button>
@@ -95,7 +95,8 @@
 
         <section class="card">
           <h2>⌨️ Bàn phím <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
-          <form class="line" id="textf" style="margin-top:0"><input id="text" placeholder="Bấm vào đây rồi gõ, chữ hiện ngay trên TV" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="primary" title="Gửi phím Enter">↵</button><button type="button" id="del" aria-label="Xóa ký tự">⌫</button></form>
+          <form class="line" id="textf" style="margin-top:0"><button type="button" id="live" title="Gõ trực tiếp / gõ xong rồi gửi">⚡</button><input id="text" placeholder="Bấm vào đây rồi gõ, chữ hiện ngay trên TV" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="primary" title="Gửi phím Enter">↵</button><button type="button" id="del" aria-label="Xóa ký tự">⌫</button><button type="button" id="digits" title="Bàn phím số">123</button></form>
+          <div class="numpad" id="numpad" hidden><button class="rb" data-k="1">1</button><button class="rb" data-k="2">2</button><button class="rb" data-k="3">3</button><button class="rb" data-k="4">4</button><button class="rb" data-k="5">5</button><button class="rb" data-k="6">6</button><button class="rb" data-k="7">7</button><button class="rb" data-k="8">8</button><button class="rb" data-k="9">9</button><span></span><button class="rb" data-k="0">0</button><span></span></div>
           <form class="line" id="askf"><input id="ask" placeholder="Hỏi / tìm trên TV, vd: mở YouTube" autocomplete="off"><button type="button" id="speak" title="Nói bằng micro của máy này" hidden>🎤</button><button class="primary" title="Gửi câu này cho Google Assistant của TV">🔍</button></form>
           <p class="muted" style="margin:6px 0 0">Không cần bấm vào ô này: cứ gõ là chữ lên TV (TV phải đang ở một ô nhập chữ). Ô này dành cho gõ tiếng Việt có dấu. Bàn phím ảo trên TV không bấm bằng chuột được, hãy gõ từ đây.</p>
           <h2 style="margin-top:14px">🔗 Mở link trên TV <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>

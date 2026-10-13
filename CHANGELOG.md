@@ -4,6 +4,20 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.4.0 - 2026-10-13
+
+Web 2.4.0 · app điện thoại 2.4.0 · app TV 2.4.0
+
+**Tiếng Việt**
+- **Ba nơi cùng một bố cục điều khiển** (app điện thoại, trang trên TV, web máy tính), theo thứ tự: Nguồn · Nguồn vào · Cài đặt TV · Assistant, vòng điều hướng, Quay lại · Home · Menu, Tắt tiếng · Âm lượng, Bài trước · Phát/Dừng · Bài sau, ô gõ chữ, bàn phím số.
+- Trang trên TV và web máy tính có thêm nút ⚡ (gõ trực tiếp / gõ xong rồi gửi) và bàn phím số 123 như app điện thoại. App điện thoại có thêm nút Nguồn vào (Input).
+- Khác biệt còn lại, có chủ ý: app điện thoại có nút mở Quản lý TV (hai trang web dùng tab); web máy tính có nút Đánh thức (nhờ máy ở nhà gửi giúp).
+
+**English**
+- **One control layout in all three places** (phone app, the page on the TV, web on the computer), in this order: Power · Input · TV settings · Assistant, the D-pad, Back · Home · Menu, Mute · Volume, Previous · Play/Pause · Next, the text box, the number pad.
+- The page on the TV and the web on the computer gain the ⚡ switch (live typing / type then send) and the 123 number pad the phone app has. The phone app gains the Input button.
+- Remaining differences, on purpose: the phone app has a button for TV management (the web pages use tabs); the web on the computer has Wake (relayed by a machine at home).
+
 ## 2.3.6 - 2026-10-13
 
 Web 2.3.6 · app điện thoại 2.3.5 · app TV 2.3.3
