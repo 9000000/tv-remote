@@ -86,12 +86,12 @@ setScreenPlaceholder();
 // ---------- tabs ----------
 let currentTab = 'remote', streamFps = 0;
 function showTab(t) {
-  currentTab = t; document.querySelector('main').classList.toggle('wide', t === 'remote');
+  currentTab = t; document.querySelector('main').classList.toggle('wide', t === 'remote' && !picking);
   document.querySelectorAll('[data-tab]').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === t));
   document.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== t; });
   dockScreen();
   if (ADB.state === 'ready') { if (t === 'apps' && !appsLoaded) loadApps(); if (t === 'files' && !filesLoaded) loadFiles(cwd); }
-  if (t === 'tv') { loadTvs(); loadSteps(); }
+  if (t === 'tv') loadSteps();
   if (t === 'health') loadHealth();
 }
 document.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));

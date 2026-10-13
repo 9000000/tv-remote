@@ -17,7 +17,22 @@ async function api(path, data, quiet) {
 }
 
 // ---------- status ----------
-let curHost = null, sentToSetup = false;
+let curHost = null;
+// The list of TVs comes first, as in the phone app: shown whenever no TV is chosen, or when "Change TV" asks for it.
+let picking = false, wantPick = false, justPicked = null, scannedOnce = false;
+function setPicking(on, tvName) {
+  const b = $('#pickback');
+  b.hidden = !tvName; if (tvName) b.textContent = '← ' + tr('Quay lại') + ' ' + tvName;
+  $('#picktitle').textContent = tr(tvName ? 'Chọn TV khác' : 'Chọn TV để điều khiển');
+  if (on === picking) return;
+  picking = on; document.querySelector('main').classList.toggle('picking', on);
+  if (on) {
+    if (screenOn) stopScreen();
+    document.querySelector('main').classList.remove('wide');
+    loadTvs();
+    if (!scannedOnce) { scannedOnce = true; $('#scan').click(); }       // look around without being asked, once
+  } else showTab(currentTab);
+}
 let ADB = { state: 'unknown' }, autoView = new URLSearchParams(location.search).has('view');
 const ADB_TEXT = {
   ready: ['ok', 'ADB: sẵn sàng'],
@@ -39,9 +54,14 @@ async function refresh() {
   setChip('#chipTv', s.connected && s.is_on ? 'ok' : s.connected ? 'warn' : 'bad', !s.connected ? 'TV: mất kết nối' : s.is_on ? 'TV: đang bật' : 'TV: màn hình tắt');
   ADB = s.adb || { state: 'unknown' };
   const [cls, txt] = ADB_TEXT[ADB.state] || ADB_TEXT.unknown; setChip('#chipAdb', cls, txt);
-  $('#name').textContent = s.name || (s.device && s.device.model) || (s.host ? 'TV ' + s.host : 'Chưa chọn TV');
-  $('#info').textContent = !s.host ? 'Mở tab “TV” để tìm và thêm TV' : [s.host, appName(s.app), s.paired === false ? 'chưa ghép remote (tab TV)' : s.error].filter(Boolean).join(' · ') || 'đã kết nối';
-  if (!s.host && !sentToSetup) { sentToSetup = true; showTab('tv'); }
+  const tvName = s.name || (s.device && s.device.model) || (s.host ? 'TV ' + s.host : '');
+  setPicking(!s.host || wantPick, tvName);
+  $('#name').textContent = picking ? 'TV Remote' : tvName;
+  $('#info').textContent = picking ? tr('Chưa chọn TV') : [s.host, appName(s.app), s.paired === false ? 'chưa ghép remote (tab Thiết lập)' : s.error].filter(Boolean).join(' · ') || 'đã kết nối';
+  if (justPicked && s.host === justPicked) {                          // straight to the remote when the TV is ready, to the first-time steps when it is not
+    justPicked = null;
+    showTab(s.connected || (s.adb && s.adb.state === 'ready') ? 'remote' : 'tv');
+  }
   if (s.host !== curHost) { const first = curHost === null; curHost = s.host; if (!first) tvChanged(); }
   if (s.volume && Date.now() > volHold) {
     $('#volr').max = s.volume.max || 100; $('#volr').value = s.volume.level; $('#volv').textContent = s.volume.level;

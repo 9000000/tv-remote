@@ -21,6 +21,11 @@
   .top { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
   .top .sub { color:var(--muted); font-size:13px; word-break:break-all; }
   .chips { display:flex; gap:8px; flex-wrap:wrap; }
+  /* Until a TV is chosen there is only the list of TVs: no tabs, no remote, nothing that needs a TV. */
+  main:not(.picking) #picker { display:none; }
+  main.picking > .tabs, main.picking > .panel, main.picking > #help, main.picking #chipTv, main.picking #chipAdb, main.picking #switchtv { display:none; }
+  #picker { display:flex; flex-direction:column; gap:14px; } .pickhead h2 { font-size:18px; text-transform:none; letter-spacing:0; }
+  #picker .item { cursor:pointer; } #picker .item:hover { background:var(--hover, rgba(127,127,127,.12)); }
   .chip { display:inline-flex; align-items:center; gap:7px; padding:6px 12px; border-radius:999px; font-size:13px; font-weight:600; background:var(--btn); color:var(--muted); }
   .chip i { width:8px; height:8px; border-radius:50%; background:currentColor; }
   .chip.ok { background:var(--ok-bg); color:var(--ok); } .chip.warn { background:var(--warn-bg); color:var(--warn); } .chip.bad { background:var(--bad-bg); color:var(--bad); }

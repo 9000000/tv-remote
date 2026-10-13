@@ -44,19 +44,22 @@ function tvChanged() {                                                // another
   quickLoaded = appsLoaded = filesLoaded = false; META.clear(); cwd = '/sdcard/Download'; bannerKey = '';
   $('#quick').replaceChildren(el('div', { className: 'muted', textContent: 'Danh sách app hiện khi ADB sẵn sàng.' }));
   $('#appslist').replaceChildren(); $('#fileslist').replaceChildren();
-  if (currentTab === 'tv') { loadTvs(); loadSteps(); }
+  if (currentTab === 'tv') loadSteps();
+  if (picking) loadTvs();
 }
 async function selectTv(host) {
   const r = await api('/api/tv/select', { host }); if (!r) return;
-  toast('Đang kết nối ' + host + '...'); await refresh(); loadTvs(); loadSteps();
+  toast('Đang kết nối ' + host + '...'); wantPick = false; justPicked = host; await sleep(1200); await refresh(); loadSteps();
 }
+$('#switchtv').addEventListener('click', () => { wantPick = true; refresh(); });
+$('#pickback').addEventListener('click', () => { wantPick = false; refresh(); });
 async function loadTvs() {
   const r = await api('/api/tvs', null, true); if (!r) return;
-  const rows = r.tvs.map((t) => el('div', { className: 'item' },
+  const rows = r.tvs.map((t) => el('div', { className: 'item', onclick: (e) => { if (e.target.closest('button')) return; if (t.host === r.current) { wantPick = false; refresh(); } else selectTv(t.host); } },
     el('div', { className: 'name' }, el('span', { textContent: t.name || t.host }), t.host === r.current ? el('span', { className: 'badge ok', textContent: 'đang dùng' }) : null,
       el('small', { textContent: t.host + (t.lan && t.lan !== t.host ? ' · trong nhà ' + t.lan : '') })),
     el('div', { className: 'acts' },
-      t.host === r.current ? null : setLabel(el('button', { className: 'small primary', onclick: () => selectTv(t.host) }), '✓', 'Dùng'),
+      setLabel(el('button', { className: 'small primary', onclick: () => { if (t.host === r.current) { wantPick = false; refresh(); } else selectTv(t.host); } }), '▶', 'Điều khiển'),
       setLabel(el('button', { className: 'small danger', onclick: async () => { if (confirm('Xóa "' + (t.name || t.host) + '" khỏi danh sách? (Không đổi gì trên TV)')) { await api('/api/tv/remove', { host: t.host }); await refresh(); loadTvs(); loadSteps(); } } }), '🗑', 'Xóa'))));
   $('#tvlist').replaceChildren(...(rows.length ? rows : [el('div', { className: 'muted', textContent: 'Chưa có TV nào. Bấm “Quét mạng” hoặc nhập IP ở bên cạnh.' })]));
 }
@@ -65,7 +68,7 @@ $('#scan').addEventListener('click', async () => {
   const r = await api('/api/discover');
   b.disabled = false; b.textContent = '🔍 Quét mạng'; if (!r) return;
   $('#scaninfo').textContent = (r.networks.length ? 'Đã quét ' + r.networks.join(', ') : 'Không thấy mạng nội bộ nào') + ' và Tailscale. ' + (r.found.length ? '' : 'Không thấy TV nào: TV có bật và cùng Wi-Fi với máy này không? Hoặc nhập IP bên dưới.');
-  $('#scanlist').replaceChildren(...r.found.map((f) => el('div', { className: 'item' },
+  $('#scanlist').replaceChildren(...r.found.map((f) => el('div', { className: 'item', onclick: (e) => { if (!e.target.closest('button')) selectTv(f.ip); } },
     el('div', { className: 'name' }, el('span', { textContent: f.name || f.ip }),
       el('span', { className: 'badge' + (f.remote ? ' ok' : ''), textContent: f.remote ? 'Android TV' : 'chỉ có ADB' }), f.adb ? el('span', { className: 'badge ok', textContent: 'ADB đã bật' }) : el('span', { className: 'badge', textContent: 'ADB chưa bật' }),
       el('small', { textContent: f.ip + (f.via === 'tailscale' ? ' · qua Tailscale' : ' · cùng mạng') })),
@@ -115,7 +118,7 @@ async function loadSteps() {
   else {
     const name = el('input', { placeholder: 'Tên gọi, vd TV phòng khách', value: (s.saved && s.saved.name) || s.model || '' });
     out.push(step(4, 'todo', move ? 'Lưu và chuyển sang IP Tailscale' : 'Lưu TV này', move ? 'TV đã có IP Tailscale ' + s.tailscale_ip + '. Lưu để từ nay kết nối qua IP đó, dùng được cả khi không ở nhà.' : 'Để lần sau mở lên là dùng ngay, không phải tìm lại.',
-      name, act('💾 Lưu', async () => { const x = await api('/api/tv/save', { name: name.value }); if (x) { toast(x.moved ? 'Đã lưu, chuyển sang ' + x.tv.host : 'Đã lưu'); await refresh(); loadTvs(); await loadSteps(); } }, 'primary')));
+      name, act('💾 Lưu', async () => { const x = await api('/api/tv/save', { name: name.value }); if (x) { toast(x.moved ? 'Đã lưu, chuyển sang ' + x.tv.host : 'Đã lưu'); await refresh(); await loadSteps(); } }, 'primary')));
   }
   // 5. optimise
   out.push(step(5, s.flauncher ? 'ok' : 'todo', 'Tối ưu TV (tùy chọn)', s.flauncher ? 'Đã có FLauncher. Chạy lại để áp dụng đủ các bước, hoặc Hoàn tác ở tab Tải / Cài.' : 'Giữ Tailscale sống, giảm hiệu ứng, thay màn hình chính bằng FLauncher, tắt app hệ thống không dùng. Hoàn tác được.',

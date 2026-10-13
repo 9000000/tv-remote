@@ -4,6 +4,18 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.7.3 - 2026-10-13
+
+Web 2.7.3 · app điện thoại 2.6.2 · app TV 2.6.8
+
+**Tiếng Việt**
+- Web trên máy tính: **màn “Chọn TV” đi trước**, như app điện thoại. Khi chưa chọn TV nào, trang chỉ hiện danh sách TV đã lưu, phần tìm TV (tự quét một lần khi mở) và ô nhập IP; các tab, remote và trạng thái ADB ẩn hết. Bấm vào một TV là vào điều khiển: TV sẵn sàng thì mở Remote, chưa thì mở các bước thiết lập lần đầu.
+- Nút **“Đổi TV”** trên đầu trang quay lại danh sách đó, có lối “Quay lại” TV đang dùng. Tab “TV” cũ đổi tên thành “Thiết lập” và chỉ còn các bước cài đặt lần đầu.
+
+**English**
+- Computer web: the **“Choose a TV” screen comes first**, as in the phone app. With no TV chosen the page shows only the saved TVs, the search (it scans once by itself) and the IP box; the tabs, the remote and the ADB status are hidden. Clicking a TV goes to it: the Remote when it is ready, the first-time steps when it is not.
+- A **“Change TV”** button in the header returns to that list, with a way back to the TV in use. The old “TV” tab is now “Set-up” and holds only the first-time steps.
+
 ## 2.7.2 - 2026-10-13
 
 Web 2.7.2 · app điện thoại 2.6.2 · app TV 2.6.8

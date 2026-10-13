@@ -17,11 +17,34 @@
     <div class="chips" aria-live="polite">
       <span class="chip" id="chipTv"><i></i><span>TV: ...</span></span>
       <span class="chip" id="chipAdb"><i></i><span>ADB: ...</span></span>
+      <button class="small" id="switchtv" title="Chọn TV khác, tìm TV mới"><span class="ico">📺</span><span class="lbl"> Đổi TV</span></button>
       <button class="small" id="lang" title="Tiếng Việt / English">🌐 EN</button>
       <button class="small" id="aboutbtn" title="Giới thiệu"><span class="ico">ℹ️</span><span class="lbl"> Giới thiệu</span></button>
       <button class="small danger" id="quit" title="Dừng chương trình trên máy tính này (TV không bị ảnh hưởng)"><span class="ico">⏻</span><span class="lbl"> Tắt</span></button>
     </div>
   </header>
+
+  <!-- ============ Choosing a TV: all there is to see until one is chosen ============ -->
+  <div id="picker">
+    <section class="card pickhead">
+      <h2 id="picktitle">Chọn TV để điều khiển</h2>
+      <p class="muted" id="pickhint" style="margin:6px 0 0">Bấm vào một TV bên dưới. Lần đầu: bấm “Quét mạng” để tìm TV trong cùng Wi-Fi, hoặc nhập IP của TV.</p>
+      <button class="small" id="pickback" hidden style="margin-top:10px"></button>
+    </section>
+    <div class="two-up">
+      <section class="card">
+        <h2>💾 TV đã lưu</h2>
+        <div class="list" id="tvlist" style="margin-top:0"></div>
+      </section>
+      <section class="card">
+        <div class="card-head"><h2>🔍 Tìm TV</h2><button class="small primary" id="scan">🔍 Quét mạng</button></div>
+        <p class="muted" id="scaninfo" style="margin:8px 0 0">Tìm TV trong cùng Wi-Fi với máy này và các thiết bị Android trong Tailscale của bạn.</p>
+        <div class="list" id="scanlist"></div>
+        <form class="line" id="ipf"><input id="ipin" placeholder="Hoặc nhập IP của TV, vd 192.168.1.88" autocomplete="off" inputmode="decimal"><button class="primary">✓ Chọn</button></form>
+        <p class="muted" style="margin:8px 0 0">Xem IP trên TV: Cài đặt → Mạng và Internet → bấm vào tên Wi-Fi đang kết nối.</p>
+      </section>
+    </div>
+  </div>
 
   <nav class="tabs" role="tablist">
     <button role="tab" data-tab="remote" aria-selected="true"><span class="ico">🎮</span><span class="lbl"> Remote</span></button>
@@ -30,7 +53,7 @@
     <button role="tab" data-tab="install" aria-selected="false"><span class="ico">⬇️</span><span class="lbl"> Tải / Cài</span><span class="needs">cần ADB</span></button>
     <button role="tab" data-tab="health" aria-selected="false"><span class="ico">🩺</span><span class="lbl"> Sức khỏe</span><span class="needs">cần ADB</span></button>
     <button role="tab" data-tab="term" aria-selected="false"><span class="ico">⌨️</span><span class="lbl"> Terminal</span><span class="needs">cần ADB</span></button>
-    <button role="tab" data-tab="tv" aria-selected="false"><span class="ico">📺</span><span class="lbl"> TV</span><span class="needs">thêm · cài đặt</span></button>
+    <button role="tab" data-tab="tv" aria-selected="false"><span class="ico">📺</span><span class="lbl"> Thiết lập</span><span class="needs">lần đầu</span></button>
   </nav>
 
   <!-- ============ Remote ============ -->
@@ -198,19 +221,6 @@
   </div>
   <!-- ============ TVs: saved, discovery, first-time setup ============ -->
   <div class="panel" data-panel="tv" hidden>
-    <div class="two-up">
-      <section class="card">
-        <h2>💾 TV đã lưu</h2>
-        <div class="list" id="tvlist" style="margin-top:0"></div>
-      </section>
-      <section class="card">
-        <div class="card-head"><h2>🔍 Tìm TV</h2><button class="small primary" id="scan">🔍 Quét mạng</button></div>
-        <p class="muted" id="scaninfo" style="margin:8px 0 0">Tìm TV trong cùng Wi-Fi với máy này và các thiết bị Android trong Tailscale của bạn.</p>
-        <div class="list" id="scanlist"></div>
-        <form class="line" id="ipf"><input id="ipin" placeholder="Hoặc nhập IP của TV, vd 192.168.1.88" autocomplete="off" inputmode="decimal"><button class="primary">✓ Chọn</button></form>
-        <p class="muted" style="margin:8px 0 0">Xem IP trên TV: Cài đặt → Mạng và Internet → bấm vào tên Wi-Fi đang kết nối.</p>
-      </section>
-    </div>
     <section class="card">
       <div class="card-head"><h2>🧭 Cài đặt lần đầu · <span id="setuphost" style="text-transform:none;letter-spacing:0"></span></h2><button class="small" id="setuprefresh">↻ Kiểm tra lại</button></div>
       <div id="steps"></div>
