@@ -49,6 +49,7 @@ import dev.tvremote.core.AdbLink
 import dev.tvremote.core.HttpServer
 import dev.tvremote.core.Manage
 import dev.tvremote.core.RemoteLabels
+import dev.tvremote.core.Adb
 import dev.tvremote.core.Atv
 import dev.tvremote.core.Tv
 import dev.tvremote.update.Release
@@ -103,6 +104,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     private lateinit var exitBtn: IconButton
     private lateinit var qualBtn: Button
     private val SHOT = -1                                             // not a key: the screenshot button in the extra keys
+    private val OPEN = -2                                             // not a key: "open on the TV" in the extra keys
     private lateinit var stage: FrameLayout                           // the picture with the full screen button over it
     private var tv: Tv? = null
     private var basic: Atv? = null                                    // keys only, for a TV whose ADB is still off (see Atv)
@@ -459,6 +461,44 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     private val HOMES = arrayOf("Projectivy Launcher" to "com.spocky.projengmenu", "ATV Launcher" to "ca.dstudio.atvlauncher.free", "FLauncher" to "me.efesser.flauncher")
 
     /** Everything the keys-only mode can do towards turning ADB on, in the order one needs it. */
+    /** Makes the TV open a link: a Play Store page, a YouTube video, a web address. Works with and without ADB. */
+    private fun openLink(link: String) {
+        val b = basic
+        val tv = tv
+        if (b != null) b.launch(link)
+        else if (tv != null && tv.ready()) Thread { try { tv.shell("am start -a android.intent.action.VIEW -d " + Adb.q(link)) } catch (ignored: Exception) { } }.start()
+    }
+
+    private fun askText(title: String, hint: String, ok: String, then: (String) -> Unit) {
+        val box = input(hint)
+        val wrap = FrameLayout(this)
+        wrap.setPadding(dp(20), dp(8), dp(20), 0)
+        wrap.addView(box)
+        AlertDialog.Builder(this).setTitle(title).setView(wrap)
+            .setPositiveButton(ok) { _, _ -> box.text.toString().trim().let { if (it.isNotEmpty()) then(it) } }
+            .setNegativeButton(t("Hủy", "Cancel"), null).show()
+    }
+
+    /** Things the TV can be told to open straight from the phone, saving the hunt with the TV's own keyboard. */
+    private fun quickOpen() {
+        if (!live()) return
+        val store = { id: String -> openLink("https://play.google.com/store/apps/details?id=$id") }
+        val items = ArrayList<Triple<String, String, () -> Unit>>()
+        items.add(Triple(t("Tìm app trên CH Play", "Search the Play Store"), t("Gõ tên app ở đây, TV mở kết quả tìm kiếm", "Type the name here; the TV shows the results")) {
+            askText(t("Tìm app trên CH Play", "Search the Play Store"), t("vd: vlc", "e.g. vlc"), t("Tìm", "Search")) { openLink("https://play.google.com/store/search?c=apps&q=" + java.net.URLEncoder.encode(it, "UTF-8")) }
+        })
+        items.add(Triple(t("Mở trang CH Play theo app id", "Open a Play Store page by app id"), t("vd: org.videolan.vlc. Từ đó bấm Cài đặt hoặc Mở trên TV", "e.g. org.videolan.vlc. Then choose Install or Open on the TV")) {
+            askText(t("App id (tên gói)", "App id (package name)"), "org.videolan.vlc", t("Mở", "Open")) { store(it) }
+        })
+        items.add(Triple(t("Mở đường dẫn trên TV", "Open a link on the TV"), t("Video YouTube, trang web, file tải về... TV mở bằng app phù hợp", "A YouTube video, a web page, a download... the TV opens it with a fitting app")) {
+            askText(t("Đường dẫn", "Link"), "https://youtu.be/...", t("Mở", "Open")) { openLink(if (Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:").containsMatchIn(it)) it else "https://$it") }
+        })
+        for ((name, id) in listOf("YouTube" to "com.google.android.youtube.tv", "Netflix" to "com.netflix.ninja", "VLC" to "org.videolan.vlc", "Kodi" to "org.xbmc.kodi",
+            "Downloader" to "com.esaba.downloader", "Projectivy Launcher" to "com.spocky.projengmenu", "Tailscale" to "com.tailscale.ipn"))
+            items.add(Triple(name, t("Trang CH Play: cài hoặc mở", "Play Store page: install or open")) { store(id) })
+        menu(t("Mở trên TV", "Open on the TV"), -1, items)
+    }
+
     /**
      * A menu whose choices look like what they are: buttons. Each has a title, a line saying what it does, and an arrow.
      * [primary] is the one to press first. Each item: title, explanation, action.
@@ -546,7 +586,21 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 ui.post { box.dismiss(); installSetupByHand() }
                 return@Thread
             }
-            var there = openOnTv(a, dl) { stop }
+            // The short way: hand the TV the link itself. A TV with an app that takes web links (Downloader, a browser) opens
+            // it there, after asking "Open with" when it has several; OK takes what is offered, and either of them downloads.
+            a.launch("https://$link")
+            for (i in 0 until 30) { if (stop || a.app == dl || a.app == "android") break; Thread.sleep(200) }
+            if (a.app == "android" && !stop) {
+                say("TV đang hỏi “Mở bằng”: app tự chọn giúp...", "The TV asks “Open with”: choosing for you...")
+                for (press in 0 until 3) {
+                    Thread.sleep(1500)
+                    if (a.app != "android" || stop) break
+                    a.pulse(23, 110)
+                }
+                Thread.sleep(1500)
+            }
+            val direct = !stop && a.app != "android" && a.app != "com.fptplay.launcher" && a.app.isNotEmpty() && (a.app == dl || a.app.contains("chrome") || a.app.contains("browser"))
+            var there = direct || openOnTv(a, dl) { stop }
             if (!there && !stop && basic === a) {                     // its Play Store page was told to install it
                 say("TV chưa có Downloader: đang cài từ CH Play...\n\nNếu TV không tự cài, bấm “Cài đặt” trên màn hình TV. Khi TV báo cài xong, bấm “Đã cài xong” bên dưới.",
                     "The TV has no Downloader yet: installing it from the Play Store...\n\nIf the TV does not start by itself, choose “Install” on its screen. When the TV says it is installed, tap “Installed” below.")
@@ -561,12 +615,15 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 ui.post { if (box.isShowing) box.dismiss(); if (!stop && basic === a) installSetupByHand() }
                 return@Thread
             }
-            say("Đang nhập đường dẫn tải vào Downloader...", "Typing the download link into Downloader...")
-            Thread.sleep(7000)                                        // its home page has to load before the pointer answers
-            downloaderGo(a, link)
+            if (!direct) {
+                say("Đang nhập đường dẫn tải vào Downloader...", "Typing the download link into Downloader...")
+                Thread.sleep(7000)                                    // its home page has to load before the pointer answers
+                downloaderGo(a, link)
+            }
+            val from = a.app
             say("Đã nhập đường dẫn. Đang chờ TV tải xong...", "Link entered. Waiting for the TV to finish the download...")
             for (i in 0 until 240) {                                  // up to 2 minutes, until the TV's installer (or its permission screen) comes up
-                if (stop || basic !== a || a.app != dl) break
+                if (stop || basic !== a || a.app != from) break
                 Thread.sleep(500)
             }
             ui.post {
@@ -610,10 +667,10 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
      * the address field wherever the focus first landed; OK opens the field with the TV's keyboard; type; Enter loads.
      */
     private fun downloaderGo(a: Atv, link: String) {
-        a.pulse(19, 2500)
+        for (i in 0 until 40) a.pulse(19, 70)                          // many short holds: over this protocol a key cannot be kept down, each one nudges the pointer
         for (i in 0 until 4) a.pulse(22, 110)
         for (i in 0 until 2) a.pulse(21, 110)
-        Thread.sleep(2500 + 6 * 350L)                                 // the keys above are queued; let them play out
+        Thread.sleep(40 * 90L + 6 * 350L)                             // the keys above are queued; let them play out
         a.pulse(23, 110)
         Thread.sleep(2500)                                            // the field and the keyboard open
         a.keys(link)
@@ -1549,6 +1606,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val more = col()
         more.addView(captioned(keys(58, "@input|" + t("Ngõ vào", "Input"), 178, "@settings|" + t("Cài đặt", "Settings"), 176, "@info|" + t("Thông tin", "Info"), 165, "@guide|" + t("Lịch phát", "Guide"), 172)), gap(8))
         more.addView(captioned(keys(58, "@tv|" + t("TV", "Live TV"), 170, "@subtitle|" + t("Phụ đề", "Subtitles"), 175, "@stop|" + t("Dừng", "Stop"), 86, "@camera|" + t("Chụp màn hình", "Screenshot"), SHOT)), gap(8))
+        more.addView(captioned(keys(58, "@send|" + t("Mở trên TV", "Open on the TV"), OPEN, "", 0, "", 0, "", 0)), gap(8))
         val showMore = { on: Boolean ->
             more.visibility = if (on) View.VISIBLE else View.GONE
             moreBtn.background = box(if (on) ACCENT else BTN, 16)
@@ -1816,6 +1874,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 val b = if (bar > 0) icon(label, say, BTN) else button(label, BTN)
                 if (bar < 0) b.textSize = 18f
                 if (code == SHOT) b.setOnClickListener { shot() }
+                else if (code == OPEN) b.setOnClickListener { quickOpen() }
                 else if (code in Tv.OPENERS) {
                     val held = box(HELD, 16)
                     b.setOnClickListener { flash(b, held); opens(code) }

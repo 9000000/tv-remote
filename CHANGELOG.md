@@ -4,6 +4,20 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.7.0 - 2026-10-13
+
+Web 2.7.0 · app điện thoại 2.6.0 · app TV 2.6.6
+
+**Tiếng Việt**
+- App điện thoại: nút **“Mở trên TV”** trong phần Thêm phím, dùng được cả khi chưa bật ADB: tìm app trên CH Play bằng cách gõ tên ở điện thoại, mở trang CH Play theo app id, mở một đường dẫn (video YouTube, trang web...), và lối tắt tới trang CH Play của vài app hay dùng.
+- “Cài TV Setup lên TV” đi đường ngắn trước: gửi thẳng đường dẫn tải cho TV. TV có app nhận đường dẫn web (Downloader, trình duyệt) sẽ mở và tải luôn; nếu TV hỏi “Mở bằng” thì app tự chọn. Không được mới quay về cách nhập qua Downloader.
+- Di chuyển con trỏ trong Downloader bằng nhiều nhịp ngắn thay vì một lần giữ dài (qua giao thức này phím không giữ được).
+
+**English**
+- Phone app: an **“Open on the TV”** button among the extra keys, also without ADB: search the Play Store by typing on the phone, open a Play Store page by app id, open a link (a YouTube video, a web page...), and shortcuts to the Play Store pages of a few common apps.
+- “Install TV Setup on the TV” takes the short way first: it hands the TV the download link. A TV with an app that takes web links (Downloader, a browser) opens and downloads it; when the TV asks “Open with”, the app chooses. Only if that fails does it type the link into Downloader.
+- The pointer in Downloader is moved with many short holds instead of one long one (a key cannot be kept down over this protocol).
+
 ## 2.6.9 - 2026-10-13
 
 Web 2.6.9 · app điện thoại 2.5.9 · app TV 2.6.6
