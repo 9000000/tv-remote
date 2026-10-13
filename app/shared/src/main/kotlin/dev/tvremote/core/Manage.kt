@@ -39,6 +39,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "files" -> return HttpServer.Response.json(files(r.q("path")))
                 "file" -> return download(r)
                 "health" -> return HttpServer.Response.json(health())
+                "stats" -> return HttpServer.Response.json(stats(r.q("days").toIntOrNull() ?: 7))
                 "job" -> {
                     val j = jobs[r.q("id")]
                     return if (j == null) HttpServer.Response.error(404, "no such job") else HttpServer.Response.json(JSONObject(j.toString()))
@@ -339,6 +340,32 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         }
     }
 
+    // ---------------------------------------------------------------- history
+    /** CPU load in percent over one second, or null. */
+    fun cpuNow(): Int? = try {
+        val f = sh("head -1 /proc/stat; sleep 1; head -1 /proc/stat").trim().jsplit("\n").map { it.trim().jsplit("\\s+").drop(1).map { n -> n.toLong() } }
+        val total = f[1].sum() - f[0].sum()
+        val idle = f[1][3] + f[1][4] - f[0][3] - f[0][4]
+        if (total > 0) Math.round(100.0 * (total - idle) / total).toInt() else null
+    } catch (e: Exception) { null }
+
+    /** Lets the TV Setup app on the TV read which app is on screen (it cannot ask for this itself). */
+    fun allowUsage(pkg: String) { try { sh("appops set $pkg GET_USAGE_STATS allow") } catch (ignored: Exception) { } }
+
+    /** What the TV Setup app on the TV has recorded (Stats.kt there), for the last [days] days. */
+    private fun stats(days: Int): JSONObject {
+        val d = days.coerceIn(1, 90)
+        val from = System.currentTimeMillis() / 1000 - d * 86400L
+        val usage = try { JSONObject(sh("cat $STATS/usage.json 2>/dev/null")) } catch (e: Exception) { null }
+        val samples = JSONArray()
+        for (line in sh("tail -n " + (d * 300) + " $STATS/samples.jsonl 2>/dev/null").jsplit("\n"))
+            try { val a = JSONArray(line); if (a.getLong(0) >= from) samples.put(a) } catch (ignored: Exception) { }
+        val names = JSONObject()
+        if (usage != null && labels != null)
+            for (day in usage.keys()) for (pkg in usage.getJSONObject(day).keys()) if (!names.has(pkg)) labels.label(pkg)?.let { names.put(pkg, it) }
+        return JSONObject().put("days", d).put("collector", usage != null || samples.length() > 0).put("usage", usage ?: JSONObject()).put("samples", samples).put("labels", names)
+    }
+
     // ---------------------------------------------------------------- health
     private fun health(): JSONObject {
         val adb = link.get()
@@ -404,6 +431,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         private val LS = Pattern.compile("^([dl-])\\S+\\s+\\d+\\s+\\S+\\s+\\S+\\s+(\\d+)\\s+(\\d{4}-\\d\\d-\\d\\d \\d\\d:\\d\\d)\\s+(.+)\$")
         private val DIGITS = Regex("\\d+")
         private const val TMP_APK = "/data/local/tmp/tvremote-install.apk"
+        private const val STATS = "/sdcard/Android/data/dev.tvremote.setup/files/stats"
 
         /** The separator is printed from octal codes, so it does not appear in this command's own line in the `top` output. */
         private const val HEALTH = "getprop ro.product.manufacturer; getprop ro.product.model; getprop ro.build.version.release; getprop ro.build.version.sdk; " +

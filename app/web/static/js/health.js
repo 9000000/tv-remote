@@ -16,7 +16,19 @@ $('#freeram').addEventListener('click', async () => {
   const b = $('#freeram'); b.disabled = true; const r = await api('/api/free', {}); b.disabled = false;
   if (r) { toast(tr('Đã lấy lại') + ' ' + r.freed + ' MB · ' + tr('còn trống') + ' ' + r.after + ' MB'); loadHealth(); }
 });
+// Now: the live figures. History: what the TV Setup app on the TV has written down (drawn by stats.js).
+let hmode = 'now';
+async function loadHist(days) {
+  $('#hhist').replaceChildren(el('div', { className: 'muted', textContent: tr('Đang đọc từ TV...') }));
+  const d = await api('/api/stats?days=' + (days || 7)); if (d && hmode === 'hist') renderStats($('#hhist'), d, window.LANG === 'vi', loadHist);
+}
+document.querySelectorAll('#hmode button').forEach((b) => b.addEventListener('click', () => {
+  hmode = b.dataset.m; document.querySelectorAll('#hmode button').forEach((x) => x.classList.toggle('on', x === b));
+  $('#hhist').hidden = hmode !== 'hist'; $('#hnow').hidden = hmode !== 'now';
+  if (hmode === 'hist') loadHist(); else loadHealth();
+}));
 async function loadHealth() {
+  if (hmode !== 'now') return;
   if (healthBusy || ADB.state !== 'ready') return;
   healthBusy = true;
   const t0 = performance.now(), h = await api('/api/health', null, true);

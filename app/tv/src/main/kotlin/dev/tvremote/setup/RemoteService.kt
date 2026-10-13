@@ -120,6 +120,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         lastUse = System.currentTimeMillis()
         connect()
         ui.postDelayed(rest, 30000)
+        ui.postDelayed(diary, 20000)
     }
 
     override fun onStartCommand(i: Intent?, flags: Int, id: Int): Int = START_STICKY
@@ -164,6 +165,22 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             try { Thread.sleep(100) } catch (e: InterruptedException) { break }
         }
     }
+
+    /** The diary for the History view: one entry every five minutes, the first shortly after the service starts. */
+    private val diary = object : Runnable {
+        override fun run() {
+            if (stopping) return
+            Thread({
+                val m = manage
+                val on = (getSystemService(POWER_SERVICE) as PowerManager).isInteractive
+                if (!usageAllowed) { m?.allowUsage(packageName); usageAllowed = true }
+                stats.tick(if (on) m?.cpuNow() else null)             // asleep: do not wake ADB for a number nobody needs
+            }, "diary").apply { isDaemon = true }.start()
+            ui.postDelayed(this, 5 * 60 * 1000L)
+        }
+    }
+    private val stats by lazy { Stats(this) }
+    private var usageAllowed = false
 
     private val rest = object : Runnable {
         override fun run() {
@@ -242,6 +259,11 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             val page = HttpServer.Response.of("text/html; charset=utf-8", page())
             page.headers["Cache-Control"] = "no-store"
             return page
+        }
+        if (r.path == "/stats.js") {                                   // draws the History view
+            val js = HttpServer.Response.of("text/javascript; charset=utf-8", assets.open("stats.js").use { it.readBytes() })
+            js.headers["Cache-Control"] = "no-store"
+            return js
         }
         if (r.path == "/jmuxer.min.js") {                              // turns the TV's H.264 into something a <video> can play
             val js = HttpServer.Response.of("text/javascript; charset=utf-8", assets.open("jmuxer.min.js").use { it.readBytes() })

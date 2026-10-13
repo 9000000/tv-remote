@@ -65,6 +65,7 @@ Works from any browser, with nothing to install on the phone or computer.
 
 - The page has Remote, Apps, Files, Install, Health, Terminal. The eye button shows the TV picture; one browser at a time can watch.
 - It starts again by itself when the TV boots.
+- **TV history:** the TV Setup app records every 5 minutes (which app is open, RAM, CPU, storage) and keeps it on the TV; all three clients show it under Health → History. Nothing else has to stay on.
 - On the TV, the app also offers **Optimize TV** / **Undo**, opening Tailscale, **Update**, turning the web remote on and off, and **Unpair all devices**.
 - The connection is plain HTTP, not encrypted. **Do not expose port 8765 to the Internet**; away from home, go through Tailscale.
 - It needs the TV's ADB on port 5555. Some newer Google TVs that only have pairing-code "Wireless debugging" may not work.
@@ -85,7 +86,7 @@ After that, just double-click the start file. Closing the window stops it; nothi
 | **Apps** | Open, stop, uninstall apps |
 | **Files** | Browse TV storage and USB; download, upload, rename, delete, install `.apk` |
 | **Download / Install** | Download a file from a link to the TV, install APKs, Optimize TV |
-| **Health** | CPU, RAM, storage, Wi-Fi, top CPU processes |
+| **Health** | Now: CPU, RAM, storage, Wi-Fi, top CPU processes, Free up RAM. History: TV time per day, most used apps, RAM/CPU/storage charts |
 | **Terminal** | Run shell commands on the TV, 30 seconds each at most |
 | **TV** | Saved TVs, network scan, first-time setup, switching TVs |
 
@@ -183,6 +184,7 @@ flowchart LR
 - **Accented text:** put on the TV's clipboard, then pasted.
 - **Volume:** calls `AudioService.setStreamVolume` directly (Android 9), falls back to `media volume`, and without ADB presses step by step.
 - **App names and icons:** all three ask the TV's own system. TV Setup asks directly; the phone app and the web on the computer copy the phone app's APK to `/data/local/tmp` and start its `Meta` class with `app_process`. The web on the computer caches the result in `.cache/apps`.
+- **History:** TV Setup writes to `/sdcard/Android/data/dev.tvremote.setup/files/stats/` (`usage.json` for 90 days, `samples.jsonl` for about 30); the remotes read it over ADB and draw it with `app/shared/web/stats.js`. Usage access is granted through ADB.
 - **Power (both apps):** the SLEEP (223) / WAKEUP (224) keys instead of POWER, so repeating a press never flips the state.
 </details>
 

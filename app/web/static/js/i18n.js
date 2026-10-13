@@ -33,6 +33,7 @@
     'Đưa TV về chế độ chờ?\nNếu TV tắt cả mạng thì chỉ mở lại được bằng nút Đánh thức (cần một máy ở nhà đang bật) hoặc remote của TV.': 'Put the TV in standby?\nIf its network goes off too, only Wake (needs a computer at home that is on) or the TV’s own remote can turn it back on.',
     'Thêm phím': 'More keys', 'Ngõ vào': 'Input', 'Cài đặt': 'Settings', 'Thông tin': 'Info', 'Lịch phát': 'Guide', 'Phụ đề': 'Subtitles', 'Kênh +': 'CH +', 'Kênh −': 'CH −', 'Kênh': 'CH', 'Tua lại': 'Rewind', 'Dừng': 'Stop', 'Tua tới': 'Forward', 'Chụp màn hình': 'Screenshot',
     '🧹 Giải phóng RAM': '🧹 Free up RAM', 'Đã lấy lại': 'Got back', 'còn trống': 'free',
+    'Hiện tại': 'Now', 'Lịch sử': 'History',
     'Lệnh đã chạy...': 'Earlier commands...',
     'Bài trước': 'Previous', 'Phát/Dừng': 'Play/Pause', 'Bài sau': 'Next', 'Bàn phím': 'Keyboard', 'Xóa ký tự': 'Delete a character', 'Gửi phím Enter': 'Send Enter',
     'Giữ nút = nhấn giữ trên TV · Bàn phím máy tính gõ thẳng lên TV: chữ, ⌫ xóa, mũi tên, Enter, Esc = Back': 'Hold a button = long press on the TV · The computer keyboard types straight onto the TV: letters, ⌫ delete, arrows, Enter, Esc = Back',

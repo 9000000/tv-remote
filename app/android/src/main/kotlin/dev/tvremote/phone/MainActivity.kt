@@ -912,6 +912,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             }
             if (r.path == "/api/state")                               // the page only needs to know it may show itself
                 return HttpServer.Response.json(JSONObject().put("name", name(forHost ?: "")).put("on", true).put("volume", 0).put("volume_max", 0).put("muted", false).put("adb", "ready"))
+            if (r.path == "/stats.js") return HttpServer.Response.of("text/javascript; charset=utf-8", assets.open("stats.js").use { it.readBytes() })
             if (r.path == "/api/icon") {
                 val png = labels?.icon(r.query["pkg"].toString()) ?: return HttpServer.Response.error(404, "no icon")
                 val icon = HttpServer.Response.of("image/png", png)

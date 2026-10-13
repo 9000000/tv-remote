@@ -39,6 +39,7 @@
   .cluster { display:grid; grid-template-columns:1fr 2.4fr 1fr; gap:10px; width:100%; align-items:stretch; } .cluster .mid { display:grid; grid-template-columns:1fr 1fr; gap:8px; } .cluster .mid button { min-height:58px; }
   .pill { display:flex; flex-direction:column; align-items:stretch; justify-content:space-between; background:var(--btn); border-radius:28px; overflow:hidden; } .pill button { flex:1; background:transparent; border-radius:0; min-height:64px; } .pill output, .pill span { text-align:center; font-weight:700; font-size:14px; color:var(--muted); font-variant-numeric:tabular-nums; }
   button.play small { color:inherit; opacity:.7; }
+  #hmode { display:flex; gap:8px; margin:0 0 12px; } #hmode button { min-height:40px; padding:0 16px; } #hmode button.on { background:var(--accent); color:var(--accent-ink); }
   .vol output { min-width:54px; white-space:nowrap; text-align:right; font-weight:700; font-variant-numeric:tabular-nums; font-size:14px; } .vol .on { color:var(--bad); }
   form { display:flex; gap:8px; } input { flex:1; min-width:0; font:inherit; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:14px; padding:0 14px; min-height:50px; }
   form button { width:56px; flex:none; } .primary { background:var(--accent); color:var(--accent-ink); font-weight:700; } .primary:hover { background:var(--accent); filter:brightness(1.08); }
@@ -205,6 +206,8 @@
   </div>
 
   <div class="panel" data-panel="health" hidden>
+    <div class="st-range" id="hmode"><button type="button" class="small on" data-m="now" data-t="h_now"></button><button type="button" class="small" data-m="hist" data-t="h_hist"></button></div>
+    <div id="hhist" hidden></div>
     <div class="muted" id="hwait" data-t="loading" style="text-align:center;padding:18px 0"></div>
     <div id="hbody" class="panel" hidden>
     <section class="card"><h2 data-t="h_sum"></h2><div class="kv" id="hsum"></div></section>
@@ -240,7 +243,7 @@ const T = {
         k_input: 'Ngõ vào', k_set: 'Cài đặt', k_info: 'Thông tin', k_guide: 'Lịch phát', k_live: 'TV', k_subs: 'Phụ đề', k_ch: 'Kênh', k_mute: 'Tắt tiếng', k_play: 'Phát / Dừng', k_prev: 'Bài trước', k_next: 'Bài sau', k_rew: 'Tua lại', k_stop: 'Dừng', k_ffwd: 'Tua tới', k_shot: 'Chụp màn hình', noop: 'TV đã nhận nút này, nhưng màn hình hiện tại không phản hồi', ask_del: 'Xóa {0}?', ask_deldir: 'Xóa thư mục {0} và mọi thứ bên trong?', ask_inst: 'Cài {0} lên TV?', dl: 'Tải về máy này', ren: 'Đổi tên', del: 'Xóa', onTv: 'Mở trên TV', inst: 'Cài', cancel: 'Hủy', more: 'Thao tác khác', opendir: 'Mở thư mục',
         inst_apk: 'Cài APK lên TV', pick_apk: 'Chọn file .apk từ máy này', inst_note: 'Dán link tới file .apk rồi bấm ✓, hoặc chọn file. Chỉ cài APK bạn tin tưởng.', apk_link: 'Link tới file .apk',
         fetch_title: 'Tải file từ link về TV', fetch_note: 'Lưu vào thư mục Download của TV.', jobs: 'Tiến trình', sending: 'đang gửi {0}', installing: 'đang cài {0}', installed: 'đã cài', sent: 'đã gửi',
-        free_ram: '🧹 Giải phóng RAM', freed: 'Đã lấy lại {0} MB · còn trống {1} MB', h_sum: 'Tổng quan', h_load: 'Tải hệ thống', h_top: 'Tiến trình tốn CPU nhất', h_net: 'Mạng', h_hw: 'Phần cứng', power: 'Nguồn', cur: 'Ứng dụng đang mở', lat: 'Độ trễ tới TV (ADB)', up: 'TV chạy liên tục',
+        h_now: 'Hiện tại', h_hist: 'Lịch sử', free_ram: '🧹 Giải phóng RAM', freed: 'Đã lấy lại {0} MB · còn trống {1} MB', h_sum: 'Tổng quan', h_load: 'Tải hệ thống', h_top: 'Tiến trình tốn CPU nhất', h_net: 'Mạng', h_hw: 'Phần cứng', power: 'Nguồn', cur: 'Ứng dụng đang mở', lat: 'Độ trễ tới TV (ADB)', up: 'TV chạy liên tục',
         used: 'đã dùng {0} / {1}', disk: 'Bộ nhớ trong', cores: '{0} nhân', sig: 'Tín hiệu', speed: 'Tốc độ kết nối', band: 'Băng tần', ip_home: 'IP trong nhà', ip_ts: 'IP Tailscale', ip_eth: 'IP dây mạng',
         dev: 'Máy', patch: 'Bản vá bảo mật', arch: 'Kiến trúc', ncores: 'Số nhân CPU', scr: 'Màn hình', dens: 'Mật độ điểm ảnh', sgood: ['rất tốt', 'tốt', 'trung bình', 'yếu'], day: 'ngày', hour: 'giờ', min: 'phút', nowifi: 'không kết nối',
         adb_allow: 'TV đang hỏi “Cho phép gỡ lỗi USB?”: tích “Luôn cho phép” rồi chọn OK thì các nút mới chạy.',
@@ -255,7 +258,7 @@ const T = {
         k_input: 'Input', k_set: 'Settings', k_info: 'Info', k_guide: 'Guide', k_live: 'Live TV', k_subs: 'Subtitles', k_ch: 'CH', k_mute: 'Mute', k_play: 'Play / Pause', k_prev: 'Previous', k_next: 'Next', k_rew: 'Rewind', k_stop: 'Stop', k_ffwd: 'Forward', k_shot: 'Screenshot', noop: 'The TV got the key, but the current screen did not react', ask_del: 'Delete {0}?', ask_deldir: 'Delete the folder {0} and everything in it?', ask_inst: 'Install {0} on the TV?', dl: 'Download to this device', ren: 'Rename', del: 'Delete', onTv: 'Open on the TV', inst: 'Install', cancel: 'Cancel', more: 'More actions', opendir: 'Open folder',
         inst_apk: 'Install an APK on the TV', pick_apk: 'Choose an .apk file from this device', inst_note: 'Paste a link to an .apk file and press ✓, or choose a file. Only install APKs you trust.', apk_link: 'Link to an .apk file',
         fetch_title: 'Download a file from a link to the TV', fetch_note: 'Saved to the TV’s Download folder.', jobs: 'Progress', sending: 'sending {0}', installing: 'installing {0}', installed: 'installed', sent: 'sent',
-        free_ram: '🧹 Free up RAM', freed: 'Got back {0} MB · {1} MB free', h_sum: 'Overview', h_load: 'System load', h_top: 'Top CPU processes', h_net: 'Network', h_hw: 'Hardware', power: 'Power', cur: 'Current app', lat: 'Latency to the TV (ADB)', up: 'Uptime',
+        h_now: 'Now', h_hist: 'History', free_ram: '🧹 Free up RAM', freed: 'Got back {0} MB · {1} MB free', h_sum: 'Overview', h_load: 'System load', h_top: 'Top CPU processes', h_net: 'Network', h_hw: 'Hardware', power: 'Power', cur: 'Current app', lat: 'Latency to the TV (ADB)', up: 'Uptime',
         used: '{0} used of {1}', disk: 'Internal storage', cores: '{0} cores', sig: 'Signal', speed: 'Link speed', band: 'Band', ip_home: 'Home IP', ip_ts: 'Tailscale IP', ip_eth: 'Ethernet IP',
         dev: 'Device', patch: 'Security patch', arch: 'Architecture', ncores: 'CPU cores', scr: 'Screen', dens: 'Pixel density', sgood: ['excellent', 'good', 'fair', 'weak'], day: 'd', hour: 'h', min: 'min', nowifi: 'not connected',
         adb_allow: 'The TV is asking “Allow USB debugging?”: tick “Always allow”, then OK, and the buttons will work.',
@@ -624,10 +627,23 @@ $('#freeram').addEventListener('click', async (e) => {
   e.currentTarget.disabled = true; const r = await m('free', {}); $('#freeram').disabled = false;
   if (r) { toast(t('freed', r.freed, r.after)); loadHealth(); }
 });
+// Now: the live figures. History: what the TV Setup app on the TV has written down (drawn by stats.js).
+let hmode = 'now';
+async function loadHist(days) {
+  $('#hhist').replaceChildren(el('div', { className: 'muted', textContent: t('loading'), style: 'text-align:center;padding:18px 0' }));
+  try { if (!window.renderStats) await loadScript('/stats.js'); } catch { return; }
+  const d = await m('stats?days=' + (days || 7)); if (d && hmode === 'hist') renderStats($('#hhist'), d, lang === 'vi', loadHist);
+}
+document.querySelectorAll('#hmode button').forEach((b) => b.addEventListener('click', () => {
+  hmode = b.dataset.m; document.querySelectorAll('#hmode button').forEach((x) => x.classList.toggle('on', x === b));
+  $('#hhist').hidden = hmode !== 'hist'; $('#hbody').hidden = true; $('#hwait').hidden = hmode !== 'now';
+  if (hmode === 'hist') loadHist(); else loadHealth();
+}));
 async function loadHealth() {
+  if (hmode !== 'now') return;
   if (healthBusy) return; healthBusy = true;
   const h = await m('health'); healthBusy = false;
-  if (!h || tab !== 'health') return;
+  if (!h || tab !== 'health' || hmode !== 'now') return;
   $('#hwait').hidden = true; $('#hbody').hidden = false;
   const s = h.uptime || 0, d = Math.floor(s / 86400), hr = Math.floor(s % 86400 / 3600), mi = Math.floor(s % 3600 / 60);
   $('#hsum').replaceChildren(...kv([[t('power'), h.on == null ? '' : t(h.on ? 'on' : 'off')], [t('cur'), h.app], [t('lat'), h.ping_ms + ' ms'],

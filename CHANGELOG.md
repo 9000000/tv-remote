@@ -4,6 +4,18 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.6.0 - 2026-10-13
+
+Web 2.6.0 · app điện thoại 2.5.0 · app TV 2.6.0
+
+**Tiếng Việt**
+- **Lịch sử dùng TV** (Sức khỏe → Lịch sử, ở cả ba nơi): thời gian TV bật theo từng ngày trong 7 hoặc 30 ngày, app nào dùng nhiều và bao lâu, biểu đồ RAM · CPU · bộ nhớ theo giờ; chạm vào biểu đồ để xem số liệu và app đang mở tại thời điểm đó.
+- Số liệu do **app TV Setup trên TV tự ghi** 5 phút một lần và lưu ngay trên TV, nên không cần máy nào khác bật. Cần TV Setup 2.6.0; lịch sử bắt đầu từ lúc cài bản này.
+
+**English**
+- **TV history** (Health → History, in all three clients): TV time per day over 7 or 30 days, which apps were used and for how long, and RAM · CPU · storage charts by the hour; touch a chart to read the figures and the app on screen at that moment.
+- The figures are **recorded by the TV Setup app on the TV** every 5 minutes and kept on the TV, so nothing else has to stay on. Needs TV Setup 2.6.0; history starts when this version is installed.
+
 ## 2.5.7 - 2026-10-13
 
 Web 2.5.7 · app điện thoại 2.4.8 · app TV 2.5.7

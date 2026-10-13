@@ -65,6 +65,7 @@ Dùng được từ mọi trình duyệt, không cần cài gì trên điện th
 
 - Trang có đủ Remote, Ứng dụng, Tệp, Cài, Sức khỏe, Terminal. Nút con mắt bật hình TV; mỗi lúc một trình duyệt xem được hình.
 - Trang tự chạy lại khi TV khởi động.
+- **Lịch sử dùng TV:** app TV Setup tự ghi 5 phút một lần (app nào đang mở, RAM, CPU, bộ nhớ) và lưu ngay trên TV; cả ba nơi xem lại ở Sức khỏe → Lịch sử. Không cần máy nào khác bật.
 - Trên TV, app còn có: **Tối ưu TV** / **Hoàn tác**, mở Tailscale, **Cập nhật**, bật/tắt remote qua web, **Hủy ghép mọi thiết bị**.
 - Kết nối là HTTP thường, không mã hóa. **Đừng mở cổng 8765 ra Internet**; ở ngoài nhà hãy đi qua Tailscale.
 - Cần TV mở ADB ở cổng 5555. Một số Google TV đời mới chỉ có "Gỡ lỗi không dây" kiểu ghép mã có thể không dùng được.
@@ -85,7 +86,7 @@ Từ đó chỉ cần bấm đúp file start. Đóng cửa sổ là dừng; khô
 | **Ứng dụng** | Mở, dừng, gỡ app |
 | **Tệp** | Duyệt bộ nhớ TV và USB; tải về, gửi lên, đổi tên, xóa, cài `.apk` |
 | **Tải / Cài** | Tải file từ link về TV, cài APK, Tối ưu TV |
-| **Sức khỏe** | CPU, RAM, bộ nhớ, Wi-Fi, tiến trình tốn CPU nhất |
+| **Sức khỏe** | Hiện tại: CPU, RAM, bộ nhớ, Wi-Fi, tiến trình tốn CPU nhất, Giải phóng RAM. Lịch sử: thời gian dùng TV theo ngày, app dùng nhiều, biểu đồ RAM/CPU/bộ nhớ |
 | **Terminal** | Chạy lệnh shell trên TV, mỗi lệnh tối đa 30 giây |
 | **TV** | TV đã lưu, quét mạng, cài đặt lần đầu, đổi TV |
 
@@ -183,6 +184,7 @@ flowchart LR
 - **Chữ có dấu:** đưa vào clipboard của TV rồi dán.
 - **Âm lượng:** gọi thẳng `AudioService.setStreamVolume` (Android 9), không được thì `media volume`, không có ADB thì bấm từng nấc.
 - **Tên và logo app:** cả ba nơi đều hỏi hệ thống của TV. TV Setup hỏi trực tiếp; app điện thoại và web máy tính chép APK của app điện thoại lên `/data/local/tmp` rồi chạy lớp `Meta` trong đó bằng `app_process`. Web máy tính lưu lại ở `.cache/apps`.
+- **Lịch sử:** TV Setup ghi vào `/sdcard/Android/data/dev.tvremote.setup/files/stats/` (`usage.json` 90 ngày, `samples.jsonl` khoảng 30 ngày); các remote đọc qua ADB và vẽ bằng `app/shared/web/stats.js`. Quyền xem app đang mở (usage access) được cấp qua ADB.
 - **Nguồn (hai app):** phím SLEEP (223) / WAKEUP (224) thay cho phím POWER, nên bấm lặp không bị đảo trạng thái.
 </details>
 

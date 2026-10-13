@@ -879,6 +879,37 @@ def build(S):
               "printf '\\043~\\043\\n'; cat /proc/uptime; printf '\\043~\\043\\n'; wm size; wm density; dumpsys display | grep -m1 -o 'fps=[0-9.]*'; printf '\\043~\\043\\n'; dumpsys wifi | grep -m1 mWifiInfo; "
               "printf '\\043~\\043\\n'; ip -o -4 addr show; printf '\\043~\\043\\n'; top -n 1 -b -m 7 -o %CPU,%MEM,ARGS -s 1 | tail -7")
 
+    STATS = "/sdcard/Android/data/dev.tvremote.setup/files/stats"
+
+    @routes.get("/api/stats")
+    @adb_errors
+    async def stats(request):
+        """What the TV Setup app on the TV has recorded (app/tv .../Stats.kt): time per app per day, and memory/CPU/storage samples."""
+        days = max(1, min(90, int(request.query.get("days", "7") or 7)))
+        since = time.time() - days * 86400
+        try:
+            usage = json.loads(await adb.shell(f"cat {STATS}/usage.json 2>/dev/null"))
+        except ValueError:
+            usage = None
+        samples = []
+        for line in (await adb.shell(f"tail -n {days * 300} {STATS}/samples.jsonl 2>/dev/null")).splitlines():
+            try:
+                row = json.loads(line)
+                if row[0] >= since:
+                    samples.append(row)
+            except (ValueError, IndexError, TypeError):
+                pass
+        try:                                                          # every package's display name, system apps included
+            known = await asyncio.get_running_loop().run_in_executor(None, meta._names)
+        except Exception:
+            known = {}
+        names = {pkg: known[pkg] for per_day in (usage or {}).values() for pkg in per_day if known.get(pkg)}
+        return web.json_response({"days": days, "collector": usage is not None or bool(samples), "usage": usage or {}, "samples": samples, "labels": names})
+
+    @routes.get("/stats.js")
+    async def stats_js(_):
+        return web.FileResponse(ROOT_DIR / "app" / "shared" / "web" / "stats.js", headers={"Cache-Control": "no-store"})
+
     @routes.post("/api/free")
     @adb_errors
     async def free(_):

@@ -36,10 +36,10 @@ class AppMeta:
             raise RuntimeError(r.stderr.decode(errors="replace").strip() or "adb failed")
         return r.stdout
 
-    def _names(self, pkg):
+    def _names(self, pkg=None):
         """{package: name} from one run of Meta on the TV; run again when an app installed since then is asked for."""
         with self.lock:
-            if self.labels is None or pkg not in self.labels:
+            if self.labels is None or (pkg and pkg not in self.labels):
                 size = str(HELPER.stat().st_size)
                 if self._adb("shell", f"[ -f {REMOTE} ] && wc -c < {REMOTE} || echo 0").decode().strip() != size:
                     self._adb("push", str(HELPER), REMOTE)

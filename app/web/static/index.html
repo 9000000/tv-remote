@@ -175,11 +175,15 @@
   <div class="panel" data-panel="health" hidden>
     <div data-adb-banner></div>
     <div class="health" data-adb-gated>
+      <div id="hmode" style="display:flex;gap:8px;margin:0 0 12px"><button type="button" class="on" data-m="now" style="padding:0 16px">Hiện tại</button><button type="button" data-m="hist" style="padding:0 16px">Lịch sử</button></div>
+      <div id="hhist" hidden></div>
+      <div id="hnow">
       <div class="muted" id="hwait">Đang đọc từ TV...</div>
       <section class="card"><div class="card-head"><h2>📊 Tổng quan</h2><span class="muted" id="hwhen"></span></div><div class="kv" id="hsum"></div></section>
       <section class="card"><h2>⚙️ Tải hệ thống</h2><div id="hload"></div><button id="freeram" style="margin-top:12px;padding:0 16px">🧹 Giải phóng RAM</button><h2 style="margin-top:14px">🔥 Tiến trình tốn CPU nhất</h2><div class="kv" id="htop"></div></section>
       <section class="card"><h2>📶 Mạng</h2><div class="kv" id="hnet"></div></section>
       <section class="card"><h2>🧩 Phần cứng</h2><div class="kv" id="hhw"></div></section>
+      </div>
     </div>
   </div>
   <!-- ============ Terminal ============ -->
@@ -262,6 +266,7 @@
 <script src="/web/js/screen.js"></script>
 <script src="/web/js/apps.js"></script>
 <script src="/web/js/files.js"></script>
+<script src="/stats.js"></script>
 <script src="/web/js/health.js"></script>
 <script src="/web/js/terminal.js"></script>
 <script src="/web/js/setup.js"></script>
