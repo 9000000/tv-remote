@@ -13,5 +13,9 @@ __pycache__/
 *.log
 .DS_Store
 # build output
-app/android/build/
-app/tv/build/
+app/*/build/
+app/.gradle/
+app/.kotlin/
+app/local.properties
+.idea/
+app/build/

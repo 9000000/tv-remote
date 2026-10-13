@@ -47,7 +47,14 @@
   .small { min-height:38px; padding:0 12px; font-size:13px; border-radius:12px; flex-direction:row; gap:6px; flex:none; } .danger { color:var(--bad); }
   .list { display:flex; flex-direction:column; } .item { display:flex; align-items:center; gap:10px; padding:9px 0; border-top:1px solid var(--line); min-width:0; } .item:first-child { border-top:0; }
   .item .name { flex:1; min-width:0; overflow-wrap:anywhere; font-size:14px; } .item .name small { display:block; color:var(--muted); font-size:12px; } .item.click { cursor:pointer; }
-  .item .acts { display:flex; gap:6px; } .item img, .ficon { width:42px; height:42px; border-radius:10px; flex:none; object-fit:contain; background:var(--btn); display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .item .acts { display:flex; gap:6px; }
+  .item img, .ficon { width:36px; height:36px; border-radius:9px; flex:none; object-fit:contain; background:var(--btn); display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .more { width:38px; padding:0; font-size:20px; line-height:1; }
+  .sheet { position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.55); display:flex; align-items:flex-end; justify-content:center; }
+  .sheet > div { width:100%; max-width:440px; background:var(--card); border:1px solid var(--line); border-radius:20px 20px 0 0; padding:14px 14px calc(14px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:8px; }
+  .sheet h3 { margin:2px 4px 6px; font-size:15px; overflow-wrap:anywhere; } .sheet button { min-height:48px; border-radius:14px; background:var(--btn); color:var(--ink); font-size:15px; flex-direction:row; }
+  .sheet .primary { background:var(--accent); color:var(--accent-ink); font-weight:700; } .sheet .danger { color:var(--bad); } .sheet .quiet { background:transparent; color:var(--muted); }
+  @media (min-width:640px) { .sheet { align-items:center; } .sheet > div { border-radius:20px; } }
   .crumbs { display:flex; flex-wrap:wrap; align-items:center; gap:2px; font-size:14px; margin:10px 0 4px; } .crumbs button { min-height:32px; padding:0 8px; background:transparent; border-radius:8px; flex-direction:row; }
   .crumbs button:last-of-type { font-weight:700; } .places { display:flex; gap:6px; flex-wrap:wrap; } .places button { min-height:34px; padding:0 12px; font-size:13px; border-radius:999px; flex-direction:row; }
   .tools { display:flex; gap:8px; flex-wrap:wrap; align-items:center; } .tools input { min-height:40px; font-size:14px; }
@@ -198,7 +205,7 @@ const T = {
         t_apps: 'Ứng dụng', t_files: 'Tệp', t_install: 'Cài', t_health: 'Sức khỏe', sys: 'Hiện cả app hệ thống', search_app: 'Tìm app', open: 'Mở', stop: 'Dừng', remove: 'Gỡ', loading: 'Đang tải...',
         ask_remove: 'Gỡ cài đặt {0} khỏi TV?', done: 'Xong', none: 'Không có gì.', folder: 'Thư mục', filter: 'Lọc trong thư mục này', upload: '＋ Chọn file để gửi lên thư mục này',
         tvmem: 'Bộ nhớ TV', movies: 'Phim', pics: 'Ảnh', music: 'Nhạc', free: 'Còn trống {0} / {1} · {2} mục', items: '{0} mục', newname: 'Tên mới:', newfolder: 'Tên thư mục mới:',
-        ask_del: 'Xóa {0}?', ask_deldir: 'Xóa thư mục {0} và mọi thứ bên trong?', ask_inst: 'Cài {0} lên TV?', dl: 'Tải về máy này', ren: 'Đổi tên', del: 'Xóa', onTv: 'Mở trên TV', inst: 'Cài',
+        ask_del: 'Xóa {0}?', ask_deldir: 'Xóa thư mục {0} và mọi thứ bên trong?', ask_inst: 'Cài {0} lên TV?', dl: 'Tải về máy này', ren: 'Đổi tên', del: 'Xóa', onTv: 'Mở trên TV', inst: 'Cài', cancel: 'Hủy', more: 'Thao tác khác', opendir: 'Mở thư mục',
         inst_apk: 'Cài APK lên TV', pick_apk: 'Chọn file .apk từ máy này', inst_note: 'Dán link tới file .apk rồi bấm ✓, hoặc chọn file. Chỉ cài APK bạn tin tưởng.', apk_link: 'Link tới file .apk',
         fetch_title: 'Tải file từ link về TV', fetch_note: 'Lưu vào thư mục Download của TV.', jobs: 'Tiến trình', sending: 'đang gửi {0}', installing: 'đang cài {0}', installed: 'đã cài', sent: 'đã gửi',
         h_sum: 'Tổng quan', h_load: 'Tải hệ thống', h_top: 'Tiến trình tốn CPU nhất', h_net: 'Mạng', h_hw: 'Phần cứng', power: 'Nguồn', cur: 'Ứng dụng đang mở', lat: 'Độ trễ tới TV (ADB)', up: 'TV chạy liên tục',
@@ -213,7 +220,7 @@ const T = {
         t_apps: 'Apps', t_files: 'Files', t_install: 'Install', t_health: 'Health', sys: 'Show system apps too', search_app: 'Search apps', open: 'Open', stop: 'Stop', remove: 'Uninstall', loading: 'Loading...',
         ask_remove: 'Uninstall {0} from the TV?', done: 'Done', none: 'Nothing here.', folder: 'Folder', filter: 'Filter this folder', upload: '＋ Choose files to send to this folder',
         tvmem: 'TV storage', movies: 'Movies', pics: 'Pictures', music: 'Music', free: '{0} free of {1} · {2} items', items: '{0} items', newname: 'New name:', newfolder: 'New folder name:',
-        ask_del: 'Delete {0}?', ask_deldir: 'Delete the folder {0} and everything in it?', ask_inst: 'Install {0} on the TV?', dl: 'Download to this device', ren: 'Rename', del: 'Delete', onTv: 'Open on the TV', inst: 'Install',
+        ask_del: 'Delete {0}?', ask_deldir: 'Delete the folder {0} and everything in it?', ask_inst: 'Install {0} on the TV?', dl: 'Download to this device', ren: 'Rename', del: 'Delete', onTv: 'Open on the TV', inst: 'Install', cancel: 'Cancel', more: 'More actions', opendir: 'Open folder',
         inst_apk: 'Install an APK on the TV', pick_apk: 'Choose an .apk file from this device', inst_note: 'Paste a link to an .apk file and press ✓, or choose a file. Only install APKs you trust.', apk_link: 'Link to an .apk file',
         fetch_title: 'Download a file from a link to the TV', fetch_note: 'Saved to the TV’s Download folder.', jobs: 'Progress', sending: 'sending {0}', installing: 'installing {0}', installed: 'installed', sent: 'sent',
         h_sum: 'Overview', h_load: 'System load', h_top: 'Top CPU processes', h_net: 'Network', h_hw: 'Hardware', power: 'Power', cur: 'Current app', lat: 'Latency to the TV (ADB)', up: 'Uptime',
@@ -330,6 +337,15 @@ if (EMBED) { document.querySelector('[data-tab=remote]').hidden = true; document
 
 const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); kids.forEach((k) => k != null && e.append(k)); return e; };
 const fmtSize = (n) => n > 1e9 ? (n / 1e9).toFixed(1) + ' GB' : n > 1e6 ? (n / 1e6).toFixed(1) + ' MB' : n > 1e3 ? Math.round(n / 1e3) + ' KB' : n + ' B';
+// a row's actions live behind its "⋯" button: a sheet with one big button per action
+function sheet(title, actions) {
+  const close = () => box.remove();
+  const box = el('div', { className: 'sheet', onclick: (e) => e.target === box && close() }, el('div', {}, el('h3', { textContent: title }),
+    ...actions.map((a) => el('button', { className: a.cls || '', textContent: a.label, onclick: () => { close(); a.fn(); } })),
+    el('button', { className: 'quiet', textContent: t('cancel'), onclick: close })));
+  document.body.append(box);
+}
+const more = (title, actions) => el('button', { className: 'small more', textContent: '⋯', title: t('more'), onclick: (e) => { e.stopPropagation(); sheet(title, actions()); } });
 let toastT; function toast(m) { const e = $('#toast'); e.textContent = m; e.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('show'), 2600); }
 // one place that explains ADB trouble for every tab that needs it
 async function m(path, body) {
@@ -352,13 +368,14 @@ async function loadAllApps(force) {
 function renderApps() {
   const q = $('#appsq').value.trim().toLowerCase();
   const rows = allApps.filter((a) => !q || a.pkg.toLowerCase().includes(q) || a.label.toLowerCase().includes(q)).sort((a, b) => a.label.localeCompare(b.label)).map((a) => {
-    const act = (action, label, cls) => el('button', { className: 'small ' + cls, textContent: label, onclick: async () => {
+    const run = (action, label) => async () => {
       if (action === 'uninstall' && !confirm(t('ask_remove', a.label))) return;
       if (await m('app', { pkg: a.pkg, action })) { toast(label + ': ' + a.label); if (action === 'uninstall') { appsLoaded = false; loadAllApps(true); } }
-    } });
+    };
     const icon = appIcons ? el('img', { loading: 'lazy', alt: '', src: '/api/icon?pkg=' + encodeURIComponent(a.pkg) }) : el('div', { className: 'ficon', textContent: a.label.slice(0, 1).toUpperCase() });
     return el('div', { className: 'item' }, icon, el('div', { className: 'name' }, el('span', { textContent: a.label }), el('small', { textContent: a.pkg })),
-      el('div', { className: 'acts' }, act('launch', t('open'), 'primary'), act('stop', t('stop'), ''), act('uninstall', t('remove'), 'danger')));
+      el('div', { className: 'acts' }, el('button', { className: 'small primary', textContent: t('open'), onclick: run('launch', t('open')) }),
+        more(a.label, () => [{ label: t('open'), cls: 'primary', fn: run('launch', t('open')) }, { label: t('stop'), fn: run('stop', t('stop')) }, { label: t('remove'), cls: 'danger', fn: run('uninstall', t('remove')) }])));
   });
   $('#appslist').replaceChildren(...(rows.length ? rows : [el('div', { className: 'muted', textContent: t('none') })]));
 }
@@ -386,12 +403,16 @@ function renderFiles() {
   const q = $('#filesq').value.trim().toLowerCase();
   const rows = listing.filter((i) => !q || i.name.toLowerCase().includes(q)).map((i) => {
     const full = cwd + '/' + i.name, kind = i.dir ? 'dir' : kindOf(i.name), acts = el('div', { className: 'acts' });
-    const btn = (label, title, fn, cls = '') => el('button', { className: 'small ' + cls, textContent: label, title, onclick: (e) => { e.stopPropagation(); fn(); } });
-    if (kind === 'apk') acts.append(btn(t('inst'), '', () => { if (confirm(t('ask_inst', i.name))) startJob('install', { path: full }); }, 'primary'));
-    if (['video', 'audio', 'image'].includes(kind)) acts.append(btn('▶', t('onTv'), () => m('open', { path: full }).then((r) => r && toast(t('onTv') + ': ' + i.name))));
-    if (!i.dir) acts.append(el('a', { className: 'small', style: 'display:flex;align-items:center;text-decoration:none;color:var(--ink);background:var(--btn)', href: '/api/m/file?path=' + encodeURIComponent(full), download: i.name, textContent: '⬇', title: t('dl'), onclick: (e) => e.stopPropagation() }));
-    acts.append(btn('✎', t('ren'), () => { const n = prompt(t('newname'), i.name); if (n && n !== i.name) fileAct('rename', { path: full, name: n }); }));
-    acts.append(btn('🗑', t('del'), () => { if (confirm(t(i.dir ? 'ask_deldir' : 'ask_del', i.name))) fileAct('delete', { path: full }); }, 'danger'));
+    const install = () => { if (confirm(t('ask_inst', i.name))) startJob('install', { path: full }); };
+    if (kind === 'apk') acts.append(el('button', { className: 'small primary', textContent: t('inst'), onclick: install }));
+    acts.append(more(i.name, () => [
+      i.dir && { label: t('opendir'), cls: 'primary', fn: () => loadFiles(full) },
+      kind === 'apk' && { label: t('inst'), cls: 'primary', fn: install },
+      ['video', 'audio', 'image'].includes(kind) && { label: t('onTv'), cls: 'primary', fn: () => m('open', { path: full }).then((r) => r && toast(t('onTv') + ': ' + i.name)) },
+      !i.dir && { label: t('dl'), fn: () => { location.href = '/api/m/file?path=' + encodeURIComponent(full); } },   // sent as an attachment: the page stays
+      { label: t('ren'), fn: () => { const n = prompt(t('newname'), i.name); if (n && n !== i.name) fileAct('rename', { path: full, name: n }); } },
+      { label: t('del'), cls: 'danger', fn: () => { if (confirm(t(i.dir ? 'ask_deldir' : 'ask_del', i.name))) fileAct('delete', { path: full }); } },
+    ].filter(Boolean)));
     return el('div', { className: 'item' + (i.dir ? ' click' : ''), onclick: i.dir ? () => loadFiles(full) : null }, el('div', { className: 'ficon', textContent: ICON[kind] }),
       el('div', { className: 'name' }, el('span', { textContent: i.name }), el('small', { textContent: (i.dir ? t('folder') : fmtSize(i.size)) + ' · ' + i.mtime })), acts);
   });

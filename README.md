@@ -272,9 +272,11 @@ app/web/      web remote chạy trên máy tính
               tvconfig.py  danh sách TV đã lưu (tvs.json)                tvtools.py   tìm adb / ffmpeg, đường dẫn chung
               cli/         dòng lệnh: tv_new.py, tv_setup.py (thêm TV, tối ưu TV; .sh / .cmd là vỏ gọi vào đây), pair.py, tvctl.py, wake.py
               requirements.txt, install-windows.ps1 (cài lần đầu trên Windows, start-windows.cmd tự gọi)
-app/android/  app TV Remote cho điện thoại Android (Java thuần, build.sh không cần Gradle) + tv-remote.apk đã build + VERSION riêng
-app/tv/       app TV Setup cài trên TV, kèm web remote do TV phục vụ (assets/index.html) + tv-setup.apk đã build + VERSION riêng
-app/shared/   dùng chung: src/ (Java: ADB + phiên điều khiển TV, kiểm tra bản mới) và scrcpy-server-v5.0.1 (Genymobile/scrcpy, Apache-2.0)
+app/android/  app TV Remote cho điện thoại Android (Kotlin; build.sh gọi Gradle) + tv-remote.apk đã build + VERSION riêng
+app/tv/       app TV Setup cài trên TV (Kotlin), kèm web remote do TV phục vụ + tv-setup.apk đã build + VERSION riêng
+app/shared/   dùng chung của hai app (Kotlin): ADB, phiên điều khiển TV, quản lý TV, kiểm tra bản mới; web/index.html (trang hai app phục vụ);
+              assets/scrcpy-server.jar (Genymobile/scrcpy v5.0.1, Apache-2.0)
+app/settings.gradle.kts, gradlew   project Gradle của hai app: mở thư mục app/ bằng Android Studio, hoặc chạy app/android/build.sh, app/tv/build.sh (cần JDK 17 + Android SDK)
 dev/          cho người phát triển: release.sh (build APK + tạo GitHub release), gen_icons.py (một bộ icon cho web và hai app)
 VERSION, CHANGELOG.md   số của bản phát hành (cũng là phiên bản web) và nhật ký thay đổi
 tvs.json, cert.pem, key.pem, venv/, tools/, .cache/   dữ liệu riêng của máy bạn, không đưa lên git

@@ -272,9 +272,11 @@ app/web/      the web remote that runs on a computer
               tvconfig.py  saved TVs (tvs.json)                         tvtools.py   finds adb / ffmpeg, shared paths
               cli/         command line: tv_new.py, tv_setup.py (add a TV, optimise a TV; .sh / .cmd are thin wrappers), pair.py, tvctl.py, wake.py
               requirements.txt, install-windows.ps1 (first-run setup on Windows, called by start-windows.cmd)
-app/android/  the TV Remote app for Android phones (plain Java, build.sh needs no Gradle) + the built tv-remote.apk + its own VERSION
-app/tv/       the TV Setup app for the TV, with the web remote the TV serves (assets/index.html) + the built tv-setup.apk + its own VERSION
-app/shared/   shared: src/ (Java: ADB + the TV session, the update check) and scrcpy-server-v5.0.1 (Genymobile/scrcpy, Apache-2.0)
+app/android/  the TV Remote app for Android phones (Kotlin; build.sh runs Gradle) + the built tv-remote.apk + its own VERSION
+app/tv/       the TV Setup app for the TV (Kotlin), with the web remote the TV serves + the built tv-setup.apk + its own VERSION
+app/shared/   shared by the two apps (Kotlin): ADB, the TV session, TV management, the update check; web/index.html (the page both apps serve);
+              assets/scrcpy-server.jar (Genymobile/scrcpy v5.0.1, Apache-2.0)
+app/settings.gradle.kts, gradlew   the Gradle project of the two apps: open the app/ folder in Android Studio, or run app/android/build.sh, app/tv/build.sh (needs JDK 17 + the Android SDK)
 dev/          for developers: release.sh (builds the APKs + creates the GitHub release), gen_icons.py (one icon set for the web and both apps)
 VERSION, CHANGELOG.md   the release number (also the web UI's version) and the change log
 tvs.json, cert.pem, key.pem, venv/, tools/, .cache/   your machine's own data, not in git

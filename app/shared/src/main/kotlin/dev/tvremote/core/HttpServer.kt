@@ -1,0 +1,189 @@
+package dev.tvremote.core
+
+import org.json.JSONObject
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
+import java.net.InetAddress
+import java.net.InetSocketAddress
+import java.net.ServerSocket
+import java.net.Socket
+import java.net.URLDecoder
+import java.util.Locale
+import java.util.concurrent.Executors
+
+/**
+ * A very small HTTP server (one request per connection, no TLS) for the pages the apps serve themselves.
+ * It only knows how to read a request and write a reply; what the paths mean is up to the Handler.
+ */
+class HttpServer(private val handler: Handler) {
+    class Request {
+        var method = ""
+        var path = ""
+        val query: MutableMap<String, String> = HashMap()
+        val headers: MutableMap<String, String> = HashMap()
+
+        /** The request body: read it as a stream (uploads), or call json() for a small JSON body. */
+        var body: InputStream = ByteArrayInputStream(ByteArray(0))
+        var length = 0L
+        private var small: ByteArray? = null
+
+        fun q(name: String): String = query[name] ?: ""
+
+        fun json(): JSONObject {
+            try {
+                val bytes = small ?: run {
+                    if (length > 65536) return JSONObject()
+                    val b = ByteArray(length.toInt())
+                    var off = 0
+                    while (off < b.size) {
+                        val n = body.read(b, off, b.size - off)
+                        if (n < 0) break
+                        off += n
+                    }
+                    small = b
+                    b
+                }
+                return JSONObject(String(bytes, Charsets.UTF_8))
+            } catch (e: Exception) {
+                return JSONObject()
+            }
+        }
+
+        fun cookie(name: String): String {
+            for (part in headers["cookie"].toString().split(";")) {
+                val kv = part.trim().split("=", limit = 2)
+                if (kv.size == 2 && kv[0] == name) return kv[1]
+            }
+            return ""
+        }
+    }
+
+    /** Writes a long reply (a file) straight to the browser. */
+    fun interface Body {
+        @Throws(IOException::class)
+        fun write(out: OutputStream)
+    }
+
+    class Response {
+        var status = 200
+        var type = "application/json; charset=utf-8"
+        var body = ByteArray(0)
+        var stream: Body? = null                                      // instead of body; length < 0 = unknown, sent until the connection closes
+        var length = -1L
+        val headers: MutableMap<String, String> = HashMap()
+
+        companion object {
+            fun json(status: Int, o: JSONObject) = Response().apply { this.status = status; body = bytes(o.toString()) }
+            fun json(o: JSONObject) = json(200, o)
+            fun ok() = of("application/json; charset=utf-8", bytes("{\"ok\":true}"))
+            fun error(status: Int, message: String) = json(status, JSONObject().put("error", message))
+            fun of(type: String, body: ByteArray) = Response().apply { this.type = type; this.body = body }
+            fun stream(type: String, length: Long, body: Body) = Response().apply { this.type = type; this.length = length; stream = body }
+        }
+    }
+
+    fun interface Handler {
+        @Throws(Exception::class)
+        fun handle(r: Request): Response
+    }
+
+    private val pool = Executors.newCachedThreadPool()
+    @Volatile private var server: ServerSocket? = null
+
+    /** localOnly: reachable from this device alone (127.0.0.1); otherwise from every network the device is on. */
+    @Throws(IOException::class)
+    fun start(port: Int, localOnly: Boolean): Int {
+        val s = ServerSocket()
+        s.reuseAddress = true
+        s.bind(if (localOnly) InetSocketAddress(InetAddress.getByAddress(byteArrayOf(127, 0, 0, 1)), port) else InetSocketAddress(port))
+        server = s
+        Thread({
+            while (!s.isClosed) {
+                try {
+                    val c = s.accept()
+                    pool.execute { serve(c) }
+                } catch (e: IOException) {
+                    if (s.isClosed) break
+                }
+            }
+        }, "http-accept").apply { isDaemon = true }.start()
+        return s.localPort
+    }
+
+    fun stop() {
+        val s = server
+        server = null
+        try { s?.close() } catch (ignored: IOException) { }
+    }
+
+    fun running(): Boolean = server != null
+
+    private fun serve(c: Socket) {
+        try {
+            c.use { sock ->
+                sock.soTimeout = 30000
+                val r = read(sock.getInputStream())
+                val out = if (r == null) Response.error(400, "bad request") else try {
+                    handler.handle(r)
+                } catch (e: Exception) {
+                    Response.error(500, e.message ?: e.javaClass.simpleName)
+                }
+                val stream = out.stream
+                val len = if (stream == null) out.body.size.toLong() else out.length
+                val h = StringBuilder("HTTP/1.1 ").append(out.status).append(if (out.status == 200) " OK" else " Error").append("\r\n")
+                    .append("Content-Type: ").append(out.type).append("\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\n")
+                if (len >= 0) h.append("Content-Length: ").append(len).append("\r\n")
+                for ((k, v) in out.headers) h.append(k).append(": ").append(v).append("\r\n")
+                val o = sock.getOutputStream()
+                o.write(bytes(h.append("\r\n").toString()))
+                if (stream != null) stream.write(o) else o.write(out.body)
+                o.flush()
+            }
+        } catch (ignored: IOException) {
+            // the browser went away
+        }
+    }
+
+    companion object {
+        /** Request line and headers; the body stays in the stream for the handler. */
+        private fun read(input: InputStream): Request? {
+            val head = ByteArrayOutputStream()
+            var state = 0
+            while (state < 4) {                                       // until the blank line
+                val b = input.read()
+                if (b < 0 || head.size() > 16384) return null
+                head.write(b)
+                state = when {
+                    (b == '\r'.code && (state == 0 || state == 2)) || (b == '\n'.code && (state == 1 || state == 3)) -> state + 1
+                    b == '\r'.code -> 1
+                    else -> 0
+                }
+            }
+            val lines = head.toString("ISO-8859-1").split("\r\n")
+            val first = lines[0].split(" ")
+            if (first.size < 2) return null
+            val r = Request()
+            r.method = first[0]
+            val target = first[1]
+            val q = target.indexOf('?')
+            r.path = if (q < 0) target else target.substring(0, q)
+            if (q >= 0) for (kv in target.substring(q + 1).split("&")) {
+                val p = kv.split("=", limit = 2)
+                r.query[URLDecoder.decode(p[0], "UTF-8")] = if (p.size > 1) URLDecoder.decode(p[1], "UTF-8") else ""
+            }
+            for (line in lines.drop(1)) {
+                val colon = line.indexOf(':')
+                if (colon > 0) r.headers[line.substring(0, colon).trim().lowercase(Locale.ROOT)] = line.substring(colon + 1).trim()
+            }
+            r.length = r.headers["content-length"]?.toLongOrNull() ?: 0
+            if (r.length < 0) return null
+            r.body = input
+            return r
+        }
+
+        fun bytes(s: String): ByteArray = s.toByteArray(Charsets.UTF_8)
+    }
+}

@@ -4,6 +4,20 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.3.0 - 2026-10-13
+
+Web 2.3.0 · app điện thoại 2.3.0 · app TV 2.3.0
+
+**Tiếng Việt**
+- Hai app Android (điện thoại và TV) viết lại bằng **Kotlin**, build bằng Gradle; mở thư mục `app/` bằng Android Studio là làm việc được. Chức năng và giao diện giữ nguyên.
+- Danh sách ứng dụng và tệp gọn hơn: mỗi dòng còn một nút chính và nút **⋯**; bấm ⋯ mới hiện bảng chọn thao tác. Logo nhỏ lại.
+- Nút **Cài đặt của TV** giờ mở thẳng màn Cài đặt của TV (trước đây gửi phím "settings", nhiều TV không phản hồi).
+
+**English**
+- Both Android apps (phone and TV) are rewritten in **Kotlin** and built with Gradle; open the `app/` folder in Android Studio to work on them. Features and looks are unchanged.
+- Tidier app and file lists: each row keeps one main button and a **⋯** button; the other actions appear in a sheet when ⋯ is tapped. Smaller icons.
+- The **TV settings** button now opens the TV's Settings screen directly (it used to send the "settings" key, which many TVs ignore).
+
 ## 2.2.0 - 2026-10-13
 
 Web 2.2.0 · app điện thoại 2.2.0 · app TV 2.2.0

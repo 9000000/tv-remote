@@ -529,6 +529,12 @@ def build(S):
         direction = str(d.get("dir") or "SHORT").upper()
         if direction not in ("SHORT", "START_LONG", "END_LONG"):
             raise web.HTTPBadRequest(text="bad dir")
+        if name == "SETTINGS" and direction != "END_LONG":            # the key itself does nothing on many TVs; the Settings app always opens
+            try:
+                await adb.shell("am start -a android.settings.SETTINGS")
+                return web.json_response({"ok": True})
+            except Exception:
+                pass                                                  # ADB closed: fall back to the key
         r, held = tv.need(), S.cur.held
         if direction != "SHORT" and name in held:
             held.pop(name).cancel()
