@@ -26,6 +26,7 @@ final class Tv {
     interface Listener {
         void onStatus(String key, String detail);                     // connecting | allow | starting | live | closed | error
         void onVideoSize(int w, int h);
+        void onNetwork(String mac, String lan);                       // the TV's home-network address, for Wake-on-LAN later
     }
 
     private static final String VER = "5.0.1", REMOTE = "/data/local/tmp/scrcpy-server.jar";
@@ -36,6 +37,7 @@ final class Tv {
     private final String host;
     private final Surface surface;
     private final Listener listener;
+    private final boolean wake;                                       // turn the screen on first (the TV answered but is in standby)
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private volatile boolean stopped;
     private volatile Adb adb;
@@ -43,8 +45,8 @@ final class Tv {
     private volatile int width = 960, height = 540;
     private MediaCodec codec;
 
-    Tv(Context ctx, String host, Surface surface, Listener listener) {
-        this.ctx = ctx.getApplicationContext(); this.host = host; this.surface = surface; this.listener = listener;
+    Tv(Context ctx, String host, Surface surface, boolean wake, Listener listener) {
+        this.ctx = ctx.getApplicationContext(); this.host = host; this.surface = surface; this.wake = wake; this.listener = listener;
         Thread t = new Thread(this::run, "tv-session");
         t.setDaemon(true);
         t.start();
@@ -58,7 +60,9 @@ final class Tv {
             adb = a;
             a.connect(host, 5555, () -> listener.onStatus("allow", ""));
             if (stopped) return;
-            listener.onStatus("starting", a.shell("getprop ro.product.model"));
+            listener.onStatus("starting", a.shell("getprop ro.product.model").trim());
+            if (wake) a.shell("input keyevent KEYCODE_WAKEUP");
+            reportNetwork(a);
             pushServer(a);
             String scid = String.format("%08x", new Random().nextInt(0x7fffffff));
             server = a.open("shell:CLASSPATH=" + REMOTE + " app_process / com.genymobile.scrcpy.Server " + VER + " scid=" + scid
@@ -94,6 +98,21 @@ final class Tv {
             if (adb != null) adb.close();                             // the TV stops scrcpy-server when its sockets go
             io.shutdownNow();
         }
+    }
+
+    /** MAC and IP of the interface that is on the home network (not Tailscale's 100.x, which has no MAC). */
+    private void reportNetwork(Adb a) {
+        try {
+            for (String block : a.shell("ip addr show").split("(?m)^\\d+: ")) {
+                Matcher ip = Pattern.compile("inet ([0-9.]+)/").matcher(block), mac = Pattern.compile("link/ether ([0-9a-f:]{17})").matcher(block);
+                if (!ip.find() || !mac.find()) continue;
+                String lan = ip.group(1);
+                if (lan.startsWith("192.168.") || lan.startsWith("10.") || lan.matches("172\\.(1[6-9]|2\\d|3[01])\\..*")) {
+                    listener.onNetwork(mac.group(1).toUpperCase(java.util.Locale.ROOT), lan);
+                    return;
+                }
+            }
+        } catch (IOException ignored) { }
     }
 
     /** Copies scrcpy-server from the APK to the TV unless the same file is already there. */

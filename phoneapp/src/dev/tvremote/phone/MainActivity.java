@@ -44,11 +44,12 @@ import java.util.concurrent.TimeUnit;
 /** Phone remote: pick a TV (saved, found on the Wi-Fi, or typed IP), then live picture with touch, and remote buttons. */
 public final class MainActivity extends Activity implements Tv.Listener, SurfaceHolder.Callback {
     private static final int BG = 0xff111418, CARD = 0xff1c2026, BTN = 0xff2a3038, ACCENT = 0xff5b8cff, HELD = 0xffe0a030, TEXT = 0xffe8eaed, MUTED = 0xff9aa0a6;
-    private static final boolean VI = "vi".equals(Locale.getDefault().getLanguage());
+    private static boolean VI = "vi".equals(Locale.getDefault().getLanguage());   // set again in onCreate from the Settings choice
 
     private final Handler ui = new Handler(Looper.getMainLooper());
     private SharedPreferences prefs;
     private LinearLayout picker, remote, controls, savedList, foundList;
+    private View settings;
     private TextView pickerMsg, status;
     private EditText ipBox, textBox;
     private Button scanBtn;
@@ -57,6 +58,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
     private boolean surfaceReady;
     private Tv tv;
     private String host;                                              // the TV we want to be connected to, null on the picker
+    private boolean wakeNext, waking;                                 // wakeNext: the next session turns the TV's screen on first
 
     static String t(String vi, String en) { return VI ? vi : en; }
 
@@ -66,6 +68,8 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
         prefs = getSharedPreferences("tvs", MODE_PRIVATE);
+        String lang = prefs.getString("lang", "");                    // "" = follow the phone
+        VI = "vi".equals(lang.isEmpty() ? Locale.getDefault().getLanguage() : lang);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         getWindow().setStatusBarColor(BG);
         getWindow().setNavigationBarColor(BG);
@@ -79,13 +83,16 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         sv.setTag("picker");
         root.addView(sv, new FrameLayout.LayoutParams(-1, -1));
         root.addView(remote, new FrameLayout.LayoutParams(-1, -1));
+        settings = buildSettings();
+        root.addView(settings, new FrameLayout.LayoutParams(-1, -1));
         setContentView(root);
         show(false);
         if (b != null) host = b.getString("host");
         if (host != null) show(true);
+        if (b != null && b.getBoolean("settings")) settings.setVisibility(View.VISIBLE);
     }
 
-    @Override protected void onSaveInstanceState(Bundle out) { super.onSaveInstanceState(out); out.putString("host", host); }
+    @Override protected void onSaveInstanceState(Bundle out) { super.onSaveInstanceState(out); out.putString("host", host); out.putBoolean("settings", settings.getVisibility() == View.VISIBLE); }
 
     @Override protected void onStart() { super.onStart(); refreshSaved(); startSession(); }
 
@@ -103,7 +110,11 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         frame.setLayoutParams(new LinearLayout.LayoutParams(-1, land ? -1 : -2));
     }
 
-    @Override public void onBackPressed() { if (host != null) disconnect(null); else super.onBackPressed(); }
+    @Override public void onBackPressed() {
+        if (settings.getVisibility() == View.VISIBLE) settings.setVisibility(View.GONE);
+        else if (host != null) disconnect(null);
+        else super.onBackPressed();
+    }
 
     /** The phone's volume buttons change the TV's volume while connected. */
     @Override public boolean dispatchKeyEvent(KeyEvent e) {
@@ -127,7 +138,8 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
 
     private void startSession() {
         if (host == null || tv != null || !surfaceReady) return;
-        tv = new Tv(this, host, surface.getHolder().getSurface(), this);
+        tv = new Tv(this, host, surface.getHolder().getSurface(), wakeNext, this);
+        wakeNext = false;
     }
 
     private void stopSession() { if (tv != null) { tv.stop(); tv = null; } }
@@ -136,9 +148,16 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         stopSession();
         host = null;
         show(false);
-        pickerMsg.setText(message == null ? "" : message);
-        pickerMsg.setVisibility(message == null ? View.GONE : View.VISIBLE);
+        message(message, true);
         refreshSaved();
+    }
+
+    /** The box at the top of the picker: an error (red) or a progress note. */
+    private void message(String text, boolean error) {
+        pickerMsg.setText(text == null ? "" : text);
+        pickerMsg.setTextColor(error ? 0xffffb4a8 : TEXT);
+        pickerMsg.setBackground(box(error ? 0xff3a2020 : CARD, 12));
+        pickerMsg.setVisibility(text == null ? View.GONE : View.VISIBLE);
     }
 
     private void show(boolean remoteScreen) {
@@ -171,11 +190,52 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
                      "The TV refused the connection: “ADB debugging” is off.\n\nOn the TV: Settings → Device Preferences → About → press OK 7 times on “Build”. Then Developer options → turn on “ADB debugging” (or “USB debugging”).");
         if (e.contains("timed out") || e.contains("timeout") || e.contains("unreachable") || e.contains("no route") || e.contains("failed to connect"))
             return t("Không tới được TV ở địa chỉ này. TV có đang bật không? Điện thoại phải cùng Wi-Fi với TV, hoặc cả hai cùng bật Tailscale (khi đó dùng IP 100.x của TV).",
-                     "Cannot reach the TV at this address. Is it on? The phone must be on the TV’s Wi-Fi, or both must have Tailscale on (then use the TV’s 100.x IP).") + "\n\n(" + err + ")";
+                     "Cannot reach the TV at this address. Is it on? The phone must be on the TV’s Wi-Fi, or both must have Tailscale on (then use the TV’s 100.x IP).") + "\n\n"
+                    + t("TV đang tắt thì bấm Đánh thức cạnh tên TV.", "If the TV is off, tap Wake next to it.") + "\n\n(" + err + ")";
         return t("Lỗi: ", "Error: ") + err;
     }
 
     @Override public void onVideoSize(final int w, final int h) { ui.post(() -> frame.setAspect(w, h)); }
+
+    @Override public void onNetwork(final String mac, final String lan) {
+        final String ip = host;
+        if (ip != null) prefs.edit().putString("mac:" + ip, mac).putString("lan:" + ip, lan).apply();
+    }
+
+    // ---------------------------------------------------------------- waking a TV that is off
+    /**
+     * Standby with the network still on: the TV answers, so connect and press "wake". Network off too: only a
+     * Wake-on-LAN packet helps, and that reaches the TV from its own Wi-Fi only (never through Tailscale).
+     */
+    private void wake(final String ip) {
+        if (waking) return;
+        waking = true;
+        final String mac = prefs.getString("mac:" + ip, ""), lan = prefs.getString("lan:" + ip, "");
+        message(t("Đang đánh thức ", "Waking ") + (name(ip).isEmpty() ? ip : name(ip)) + t("... (tối đa 45 giây)", "... (up to 45 seconds)"), false);
+        new Thread(() -> {
+            boolean up = open(ip, 5555, 1500);
+            int sent = 0;
+            for (int i = 0; i < 22 && !up; i++) {
+                if (i % 6 == 0 && !mac.isEmpty()) sent += Wol.send(mac, lan);
+                try { Thread.sleep(1000); } catch (InterruptedException e) { break; }
+                up = open(ip, 5555, 600) || !lan.isEmpty() && !lan.equals(ip) && Wol.sameNetwork(lan) && open(lan, 5555, 400);
+            }
+            final boolean ok = up, packets = sent > 0, home = Wol.sameNetwork(lan);
+            ui.post(() -> {
+                waking = false;
+                if (isFinishing() || host != null) return;
+                if (ok) { wakeNext = true; connect(ip); return; }
+                String why;
+                if (mac.isEmpty()) why = t("App chưa biết địa chỉ MAC của TV này (nó tự lưu sau lần kết nối đầu tiên bằng bản app này), nên chưa gửi được gói đánh thức.",
+                        "The app does not know this TV’s MAC address yet (it is saved after the first connection with this version), so no wake packet was sent.");
+                else if (!packets || !home) why = t("TV đã tắt cả mạng nên không nghe qua Tailscale. Gói đánh thức chỉ tới được TV từ đúng Wi-Fi nhà TV, mà điện thoại đang ở mạng khác. Cách mở: nối điện thoại vào Wi-Fi đó rồi bấm lại, hoặc dùng nút Đánh thức trên web ở máy tính (nó nhờ một máy ở nhà gửi giúp).",
+                        "The TV’s network is off too, so it cannot hear anything over Tailscale. A wake packet only reaches the TV from its own Wi-Fi, and the phone is on another network. Join that Wi-Fi and try again, or use Wake in the web UI on a computer (it relays through a machine at home).");
+                else why = t("Đã gửi gói đánh thức trong Wi-Fi nhưng TV không lên. Kiểm tra trên TV: Cài đặt → Mạng và Internet → “Khởi động từ xa” phải bật.",
+                        "Wake packets were sent on the Wi-Fi but the TV did not come up. On the TV check: Settings → Network & Internet → “Remote start” must be on.");
+                message(t("Chưa đánh thức được TV.\n\n", "Could not wake the TV.\n\n") + why, true);
+            });
+        }).start();
+    }
 
     // ---------------------------------------------------------------- saved TVs
     private String name(String ip) { return prefs.getString("name:" + ip, ""); }
@@ -199,19 +259,28 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         savedList.removeAllViews();
         for (final String ip : savedIps()) {
             Button b = row(name(ip).isEmpty() ? ip : name(ip) + "\n" + ip, () -> connect(ip));
+            Button wk = button(t("Đánh thức", "Wake"), BTN);
+            wk.setOnClickListener(v -> wake(ip));
+            LinearLayout line = new LinearLayout(this);
+            line.addView(b, new LinearLayout.LayoutParams(0, -2, 1));
+            LinearLayout.LayoutParams wp = new LinearLayout.LayoutParams(-2, -1);
+            wp.leftMargin = dp(6);
+            line.addView(wk, wp);
+            line.setLayoutParams(gap(6));
             b.setOnLongClickListener(v -> {
                 new AlertDialog.Builder(this).setMessage(t("Xóa TV này khỏi danh sách?", "Remove this TV from the list?") + "\n" + ip)
                         .setPositiveButton(t("Xóa", "Remove"), (d, w) -> {
                             List<String> ips = savedIps();
                             ips.remove(ip);
-                            prefs.edit().putString("ips", android.text.TextUtils.join(",", ips)).remove("name:" + ip).apply();
+                            prefs.edit().putString("ips", android.text.TextUtils.join(",", ips)).remove("name:" + ip).remove("mac:" + ip).remove("lan:" + ip).apply();
                             refreshSaved();
                         }).setNegativeButton(android.R.string.cancel, null).show();
                 return true;
             });
-            savedList.addView(b);
+            savedList.addView(line);
         }
         if (savedList.getChildCount() == 0) savedList.addView(note(t("Chưa có TV nào. Quét Wi-Fi hoặc nhập IP bên dưới.", "No TVs yet. Scan the Wi-Fi or type an IP below.")));
+        else savedList.addView(note(t("TV đang tắt: bấm Đánh thức. Giữ lâu vào một TV để xóa.", "TV is off: tap Wake. Long-press a TV to remove it.")));
     }
 
     // ---------------------------------------------------------------- finding TVs on the Wi-Fi
@@ -232,7 +301,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
                 ExecutorService pool = Executors.newFixedThreadPool(64);
                 for (final String net : nets) for (int i = 1; i < 255; i++) {
                     final String ip = net + i;
-                    pool.execute(() -> { if (open(ip, 5555) || open(ip, 6466)) found.add(ip); });
+                    pool.execute(() -> { if (open(ip, 5555, 500) || open(ip, 6466, 500)) found.add(ip); });
                 }
                 pool.shutdown();
                 pool.awaitTermination(20, TimeUnit.SECONDS);
@@ -249,8 +318,8 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         }).start();
     }
 
-    private static boolean open(String ip, int port) {
-        try (Socket s = new Socket()) { s.connect(new InetSocketAddress(ip, port), 500); return true; } catch (Exception e) { return false; }
+    private static boolean open(String ip, int port, int timeoutMs) {
+        try (Socket s = new Socket()) { s.connect(new InetSocketAddress(ip, port), timeoutMs); return true; } catch (Exception e) { return false; }
     }
 
     // ---------------------------------------------------------------- picker screen
@@ -259,7 +328,13 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         picker.setPadding(dp(16), dp(20), dp(16), dp(24));
         TextView title = label("TV Remote", 24, TEXT);
         title.setTypeface(Typeface.DEFAULT_BOLD);
-        picker.addView(title);
+        LinearLayout top = new LinearLayout(this);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+        top.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
+        Button set = button(t("Cài đặt", "Settings"), BTN);
+        set.setOnClickListener(v -> { hideKeyboard(); settings.setVisibility(View.VISIBLE); });
+        top.addView(set, new LinearLayout.LayoutParams(-2, dp(40)));
+        picker.addView(top);
         pickerMsg = label("", 14, 0xffffb4a8);
         pickerMsg.setBackground(box(0xff3a2020, 12));
         pickerMsg.setPadding(dp(12), dp(10), dp(12), dp(10));
@@ -294,6 +369,48 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         picker.addView(line, gap(6));
         picker.addView(note(t("Cùng Wi-Fi: dùng IP trong nhà của TV (Cài đặt → Mạng và Internet → tên Wi-Fi).\nKhác mạng: bật Tailscale trên cả điện thoại và TV, dùng IP 100.x của TV (xem trong app Tailscale). TV chưa vào Tailscale: mở Tailscale trên TV, nó hiện một mã; nhập mã đó ở login.tailscale.com/admin/machines → Add device, không cần gõ tài khoản trên TV.\nTV cần bật “Gỡ lỗi ADB”; lần đầu TV sẽ hỏi cho phép.",
                 "Same Wi-Fi: use the TV’s home IP (Settings → Network & Internet → the Wi-Fi name).\nOther network: turn on Tailscale on both the phone and the TV and use the TV’s 100.x IP (see the Tailscale app). TV not on Tailscale yet: open Tailscale on the TV, it shows a code; enter it at login.tailscale.com/admin/machines → Add device, no account typing on the TV.\nThe TV needs “ADB debugging” on; the first time it asks for permission.")), gap(10));
+    }
+
+    // ---------------------------------------------------------------- settings screen
+    private View buildSettings() {
+        LinearLayout box = col();
+        box.setPadding(dp(16), dp(20), dp(16), dp(24));
+        TextView title = label(t("Cài đặt", "Settings"), 24, TEXT);
+        title.setTypeface(Typeface.DEFAULT_BOLD);
+        LinearLayout top = new LinearLayout(this);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+        top.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
+        Button done = button(t("Xong", "Done"), ACCENT);
+        done.setOnClickListener(v -> settings.setVisibility(View.GONE));
+        top.addView(done, new LinearLayout.LayoutParams(-2, dp(40)));
+        box.addView(top);
+
+        box.addView(head(t("NGÔN NGỮ", "LANGUAGE")), gap(18));
+        final String now = prefs.getString("lang", "");
+        String[][] langs = {{"", t("Theo điện thoại", "Same as the phone")}, {"vi", "Tiếng Việt"}, {"en", "English"}};
+        for (final String[] l : langs) {
+            Button b = row((l[0].equals(now) ? "●  " : "○  ") + l[1], () -> {
+                if (l[0].equals(now)) return;
+                prefs.edit().putString("lang", l[0]).apply();
+                recreate();                                           // every label is built in onCreate
+            });
+            if (l[0].equals(now)) b.setTextColor(ACCENT);
+            box.addView(b);
+        }
+
+        box.addView(head(t("GIỚI THIỆU", "ABOUT")), gap(18));
+        String ver = "";
+        try { ver = getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception ignored) { }
+        box.addView(note("TV Remote " + ver + "\ngithub.com/HoangTran0410/tv-remote\n\n" + t(
+                "App nói chuyện thẳng với TV qua ADB, không qua máy chủ nào. Khóa ADB của app nằm trong điện thoại này; gỡ app là mất khóa và TV sẽ hỏi cho phép lại.",
+                "The app talks straight to the TV over ADB, with no server in between. Its ADB key lives on this phone; uninstalling the app loses it and the TV will ask for permission again.")));
+
+        ScrollView sv = new ScrollView(this);
+        sv.setBackgroundColor(BG);
+        sv.setClickable(true);                                        // do not let touches fall through to the screen below
+        sv.addView(box);
+        sv.setVisibility(View.GONE);
+        return sv;
     }
 
     // ---------------------------------------------------------------- remote screen
