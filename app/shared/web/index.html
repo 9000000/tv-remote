@@ -16,8 +16,9 @@
   .card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:16px; }
   .tvbox { position:relative; width:100%; max-height:70vh; background:#000; border-radius:14px; overflow:hidden; aspect-ratio:16/9; touch-action:none; }
   .tvbox video { width:100%; height:100%; object-fit:contain; display:block; } .tvbox:fullscreen { border-radius:0; aspect-ratio:auto; }
-  #tvfull { position:absolute; top:8px; right:8px; width:40px; min-height:40px; border-radius:12px; background:rgba(0,0,0,.4); color:#fff; opacity:.6; }
-  #tvq { position:absolute; top:8px; right:56px; width:auto; padding:0 10px; min-height:40px; border-radius:12px; background:rgba(0,0,0,.4); color:#fff; opacity:.6; font-size:13px; font-weight:700; }
+  #tvexit { display:none; position:absolute; top:8px; right:8px; width:40px; min-height:40px; border-radius:12px; background:rgba(0,0,0,.4); color:#fff; opacity:.5; }
+  .tvbox:fullscreen #tvexit { display:flex; }                         /* nothing sits on the picture except this, and only in full screen */
+  #tvq { font-weight:700; }
   #tvmsg { position:absolute; left:0; right:0; bottom:8px; text-align:center; color:#cbd5e1; font-size:13px; pointer-events:none; }
   #watch.on { background:var(--accent); color:var(--accent-ink); }
   header { display:flex; align-items:center; justify-content:space-between; gap:10px; }
@@ -82,7 +83,7 @@
 <main id="main">
   <header class="card">
     <div><h1 id="name">TV Remote</h1><div class="sub"><span class="dot" id="dot"></span><span id="status">...</span></div></div>
-    <span style="display:flex;gap:8px"><button class="lang" id="watch" hidden><svg class="ic"><use href="#i-eye"/></svg></button><button class="lang" id="lang">EN</button></span>
+    <span style="display:flex;gap:8px"><button class="lang" id="tvq" hidden></button><button class="lang" id="tvfull" hidden><svg class="ic"><use href="#i-expand"/></svg></button><button class="lang" id="watch" hidden><svg class="ic"><use href="#i-eye"/></svg></button><button class="lang" id="lang">EN</button></span>
   </header>
 
   <nav id="nav" hidden>
@@ -107,8 +108,7 @@
     <div class="warn" id="adbwarn" hidden></div>
     <div class="tvbox" id="tvbox" hidden>
       <video id="tvv" muted autoplay playsinline></video>
-      <button type="button" id="tvq"></button>
-      <button type="button" id="tvfull"><svg class="ic"><use href="#i-expand"/></svg></button>
+      <button type="button" id="tvexit"><svg class="ic"><use href="#i-close"/></svg></button>
       <div id="tvmsg"></div>
     </div>
     <div class="rrow four">
@@ -313,7 +313,7 @@ async function watch(on) {
   if (watching) { watching.stop(); watching = null; }
   $('#watch').classList.toggle('on', on); $('#tvbox').hidden = !on;
   $('#watch').querySelector('use').setAttribute('href', on ? '#i-eye_off' : '#i-eye');
-  $('#tvq').textContent = QUAL[qual][0] + 'p'; $('#tvq').title = t('v_q');
+  $('#tvq').textContent = QUAL[qual][0] + 'p'; $('#tvq').title = t('v_q'); $('#tvq').hidden = $('#tvfull').hidden = !on;
   if (!on) return;
   const msg = (m) => { $('#tvmsg').textContent = m; };
   msg(t('v_start'));
@@ -351,8 +351,8 @@ async function watch(on) {
 }
 $('#watch').addEventListener('click', () => watch(!watching));
 $('#tvq').addEventListener('click', () => { qual = (qual + 1) % QUAL.length; try { localStorage.setItem('quality', qual); } catch {} watch(true); });
-$('#tvfull').addEventListener('click', () => { if (document.fullscreenElement) document.exitFullscreen(); else ($('#tvbox').requestFullscreen || $('#tvbox').webkitRequestFullscreen || (() => {})).call($('#tvbox')); });
-document.addEventListener('fullscreenchange', () => $('#tvfull').querySelector('use').setAttribute('href', document.fullscreenElement ? '#i-close' : '#i-expand'));
+$('#tvfull').addEventListener('click', () => ($('#tvbox').requestFullscreen || $('#tvbox').webkitRequestFullscreen || (() => {})).call($('#tvbox')));
+$('#tvexit').addEventListener('click', () => document.exitFullscreen());
 { // a finger (or the mouse) on the picture
   const v = $('#tvv'); let down = false, last = 0;
   const send = (a, e) => {

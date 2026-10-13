@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.5.3 - 2026-10-13
+
+Web 2.5.3 · app điện thoại 2.4.4 · app TV 2.5.3
+
+**Tiếng Việt**
+- **Không còn nút nào nằm đè lên hình TV.** App điện thoại: nút toàn màn hình chuyển lên thanh trên cùng, cạnh nút con mắt. Trang trên TV: nút chất lượng và nút toàn màn hình cũng lên thanh trên cùng. Chỉ khi đang toàn màn hình mới có một nút X mờ ở góc để thoát.
+
+**English**
+- **No buttons sit on the TV picture any more.** Phone app: the full screen button moves to the top bar, next to the eye. The page on the TV: the quality and full screen buttons move to the top bar too. Only in full screen is there one faint X in the corner to leave.
+
 ## 2.5.2 - 2026-10-13
 
 Web 2.5.2 · app điện thoại 2.4.3 · app TV 2.5.2

@@ -98,6 +98,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     private var video = false                                         // video: show the TV picture (off = buttons only, no load on the TV)
     private lateinit var videoBtn: IconButton
     private lateinit var fullBtn: IconButton
+    private lateinit var exitBtn: IconButton
     private lateinit var stage: FrameLayout                           // the picture with the full screen button over it
     private var tv: Tv? = null
     private var host: String? = null                                  // the TV we want to be connected to, null on the picker
@@ -201,9 +202,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         stage.layoutParams = LinearLayout.LayoutParams(-1, if (full) -1 else -2)
         frame.layoutParams = FrameLayout.LayoutParams(-1, if (full) -1 else -2)
         stage.visibility = if (video) View.VISIBLE else View.GONE
-        fullBtn.setIcon(if (full) "@close" else "@expand", TEXT)
-        fullBtn.contentDescription = if (full) t("Thoát toàn màn hình", "Leave full screen") else t("Toàn màn hình", "Full screen")
-        fullBtn.setOnClickListener { setFullscreen(!full) }
+        fullBtn.visibility = if (video) View.VISIBLE else View.GONE
+        exitBtn.visibility = if (full) View.VISIBLE else View.GONE
         window.decorView.systemUiVisibility = if (full) View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY else 0
         videoBtn.setIcon(if (video) "@eye_off" else "@eye", TEXT)
         videoBtn.contentDescription = if (video) t("Ẩn hình TV", "Hide the TV picture") else t("Xem hình TV", "Show the TV picture")
@@ -1027,6 +1027,12 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val bar = LinearLayout(this)
         bar.gravity = Gravity.CENTER_VERTICAL
         bar.addView(status, LinearLayout.LayoutParams(0, -2, 1f))
+        fullBtn = icon("@expand", t("Toàn màn hình", "Full screen"), BTN)
+        fullBtn.setOnClickListener { setFullscreen(true) }
+        val fb = LinearLayout.LayoutParams(dp(52), dp(40))
+        fb.rightMargin = dp(8)
+        fb.topMargin = dp(6)
+        bar.addView(fullBtn, fb)
         val vb = LinearLayout.LayoutParams(dp(52), dp(40))
         vb.rightMargin = dp(10)
         vb.topMargin = dp(6)
@@ -1053,11 +1059,12 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         stage = FrameLayout(this)
         stage.setBackgroundColor(Color.BLACK)
         stage.addView(frame, FrameLayout.LayoutParams(-1, -2))
-        fullBtn = icon("@expand", t("Toàn màn hình", "Full screen"), 0x66000000)
-        fullBtn.alpha = 0.6f                                          // faint, so it does not cover the picture
+        exitBtn = icon("@close", t("Thoát toàn màn hình", "Leave full screen"), 0x66000000)   // the only thing on the picture, and only in full screen
+        exitBtn.alpha = 0.5f
+        exitBtn.setOnClickListener { setFullscreen(false) }
         val fp = FrameLayout.LayoutParams(dp(42), dp(42), Gravity.TOP or Gravity.END)
         fp.setMargins(dp(8), dp(8), dp(8), dp(8))
-        stage.addView(fullBtn, fp)
+        stage.addView(exitBtn, fp)
         remote.addView(stage, LinearLayout.LayoutParams(-1, -2))
 
         controls = col()
