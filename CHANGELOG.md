@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.5.2 - 2026-10-13
+
+Web 2.5.2 · app điện thoại 2.4.3 · app TV 2.5.2
+
+**Tiếng Việt**
+- Trang trên TV: **chọn chất lượng hình** bằng nút ở góc trên phải của hình (480p · 720p · 960p, bấm để đổi), cùng ba mức với app điện thoại. Lựa chọn được nhớ theo trình duyệt. 480p nhẹ và mượt nhất.
+
+**English**
+- The page on the TV: **pick the picture quality** with the button at the top right of the picture (480p · 720p · 960p, tap to change), the same three levels as the phone app. The choice is remembered per browser. 480p is the lightest and smoothest.
+
 ## 2.5.1 - 2026-10-13
 
 Web 2.5.1 · app điện thoại 2.4.2 · app TV 2.5.1
