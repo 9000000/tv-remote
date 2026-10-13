@@ -92,6 +92,9 @@ class Atv(dir: File, private val host: String) : Closeable {
     }
 
     // ---------------------------------------------------------------- remote (port 6466)
+    @Volatile private var ime = 0L                                    // the TV's counters for its text field, echoed back with the text
+    @Volatile private var field = 0L
+
     /** The package on the TV's screen, as the TV reports it ("" until it does). */
     @Volatile var app = ""
         private set
@@ -126,6 +129,9 @@ class Atv(dir: File, private val host: String) : Closeable {
         s.soTimeout = 8000
         try {
             while (!live) handle(s, frame(s.inputStream) ?: break)
+        } catch (slow: java.net.SocketTimeoutException) {             // a weak link is not a reason to ask for a new code
+            try { s.close() } catch (ignored: Exception) { }
+            throw java.io.IOException("timed out")
         } catch (ignored: Exception) {
         }
         if (!live) { try { s.close() } catch (ignored: Exception) { }; return null }
@@ -149,6 +155,11 @@ class Atv(dir: File, private val host: String) : Closeable {
             val n = Pb.read(it[0] as ByteArray)[1]?.firstOrNull() as? Long ?: 0L
             send(s, Pb().msg(9, Pb().int(1, n).bytes()).bytes())
         }
+        m[21]?.let {                                                  // remote_ime_batch_edit: a text field on the TV has the focus
+            val e = Pb.read(it[0] as ByteArray)
+            ime = e[1]?.firstOrNull() as? Long ?: 0L
+            field = e[2]?.firstOrNull() as? Long ?: 0L
+        }
         m[20]?.let {                                                  // remote_ime_key_inject: sent whenever another app comes to the front
             val info = Pb.read(it[0] as ByteArray)[1]?.firstOrNull() as? ByteArray
             val pkg = info?.let { i -> Pb.read(i)[12]?.firstOrNull() as? ByteArray }?.toString(Charsets.UTF_8)
@@ -158,6 +169,14 @@ class Atv(dir: File, private val host: String) : Closeable {
 
     /** [direction]: [DOWN] and [UP] for a held key, [SHORT] for a tap. */
     fun key(code: Int, direction: Int) = post(Pb().msg(10, Pb().int(1, code.toLong()).int(2, direction.toLong()).bytes()).bytes())
+
+    /** Fills the text field that has the focus on the TV with [t] (it replaces what is there). Nothing happens when no field has it. */
+    fun text(t: String) {
+        if (t.isEmpty()) return
+        val at = (t.length - 1).toLong()
+        val edit = Pb().int(1, 1).msg(2, Pb().int(1, at).int(2, at).str(3, t).bytes()).bytes()
+        post(Pb().msg(21, Pb().int(1, ime).int(2, field).msg(3, edit).bytes()).bytes())
+    }
 
     /** Opens a link on the TV, or an app by its package name: the app when it is installed, its Play Store page when it is not. */
     fun launch(link: String) {

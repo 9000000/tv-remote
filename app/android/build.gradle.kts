@@ -1,3 +1,5 @@
+import java.time.LocalDate
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -15,6 +17,7 @@ android {
         minSdk = 21
         targetSdk = 34
         versionName = appVersion
+        resValue("string", "released", LocalDate.now().toString())   // shown next to the version
         versionCode = appVersion.split(".").map { it.toInt() }.let { it[0] * 10000 + it[1] * 100 + it[2] }
     }
     signingConfigs {

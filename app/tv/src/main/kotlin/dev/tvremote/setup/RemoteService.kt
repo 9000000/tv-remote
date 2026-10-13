@@ -379,6 +379,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         var version: String? = ""
         try { version = packageManager.getPackageInfo(packageName, 0).versionName } catch (ignored: Exception) { }
         return JSONObject().put("name", Build.MODEL).put("maker", Build.MANUFACTURER).put("android", Build.VERSION.RELEASE).put("version", version)
+            .put("app", "TV Setup").put("released", try { getString(resources.getIdentifier("released", "string", packageName)).split("-").let { it[2] + "/" + it[1] + "/" + it[0] } } catch (e: Exception) { "" })
             .put("adb", adbState).put("on", pm.isInteractive)
             .put("volume", am.getStreamVolume(AudioManager.STREAM_MUSIC)).put("volume_max", am.getStreamMaxVolume(AudioManager.STREAM_MUSIC))
             .put("muted", Build.VERSION.SDK_INT >= 23 && am.isStreamMute(AudioManager.STREAM_MUSIC))

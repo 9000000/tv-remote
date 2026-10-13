@@ -45,7 +45,7 @@ class MainActivity : Activity() {
         val title = text("TV Setup", 30, Color.WHITE)
         title.typeface = Typeface.DEFAULT_BOLD
         root.addView(title)
-        root.addView(text("Bản " + version() + "  ·  Tác giả: Hoang Tran (@HoangTran0410)  ·  github.com/HoangTran0410/tv-remote", 14, Color.rgb(120, 130, 143)))
+        root.addView(text("Bản " + version() + released().let { if (it.isEmpty()) "" else " ($it)" } + "  ·  Tác giả: Hoang Tran (@HoangTran0410)  ·  github.com/HoangTran0410/tv-remote", 14, Color.rgb(120, 130, 143)))
         status = text("Đang kết nối ADB...", 18, Color.rgb(153, 163, 176))
         status.setPadding(0, dp(6), 0, dp(18))
         root.addView(status)
@@ -92,6 +92,11 @@ class MainActivity : Activity() {
             } catch (ignored: Exception) { }                          // offline: stay quiet, the button still checks on demand
         }.start()
     }
+
+    /** The day this build was made, as dd/mm/yyyy ("" when unknown). */
+    private fun released(): String = try {
+        getString(resources.getIdentifier("released", "string", packageName)).split("-").let { it[2] + "/" + it[1] + "/" + it[0] }
+    } catch (e: Exception) { "" }
 
     private fun version(): String =
         try { packageManager.getPackageInfo(packageName, 0).versionName ?: "0" } catch (e: Exception) { "0" }

@@ -228,6 +228,7 @@
 
   <section class="card" id="jobscard" hidden><h2 data-t="jobs"></h2><div id="jobs"></div></section>
   <div class="warn" id="adberr" hidden></div>
+  <div class="muted" id="ver" style="text-align:center;font-size:12px;padding:6px 0 14px"></div>
 </main>
 <div id="toast"></div>
 <script>
@@ -313,6 +314,7 @@ async function refresh() {
   if (s.status !== 200) { $('#status').textContent = t('lost'); $('#dot').className = 'dot bad'; return; }
   show(true); tvOn = !!s.on;
   $('#name').textContent = s.name; document.title = s.name + ' · Remote';
+  if (s.version) $('#ver').textContent = (s.app || 'TV Remote') + ' ' + s.version + (s.released ? ' · ' + s.released : '');
   $('#status').textContent = t(s.on ? 'on' : 'off'); $('#dot').className = 'dot ' + (s.on ? 'ok' : '');
   $('#volv').textContent = s.volume;
   $('#mute').classList.toggle('power', !!s.muted);

@@ -4,6 +4,22 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.6.4 - 2026-10-13
+
+Web 2.6.4 · app điện thoại 2.5.4 · app TV 2.6.3
+
+**Tiếng Việt**
+- **Hiện số bản và ngày phát hành** ở cả ba nơi: app điện thoại (ngay dưới tên app ở màn hình đầu và trong Giới thiệu), app TV, và cuối trang của hai bản web.
+- App điện thoại: **touchpad** thay cho cụm mũi tên (nút “Dùng touchpad” ngay dưới): vuốt là các phím mũi tên theo hướng đó, chạm là OK, chạm hai ngón là Quay lại. Không phải chuột thật: nó di chuyển thứ mà phím mũi tên di chuyển, trên trình duyệt của TV (vd. Downloader) chính là con trỏ.
+- App điện thoại, chế độ chỉ bấm phím: **gõ chữ được** vào ô đang được chọn trên TV (ô nhập ở cuối remote), và menu “Bật ADB cho TV này” vẽ lại thành các nút rõ ràng, mỗi nút có dòng giải thích.
+- Sửa: mạng chập chờn làm app đòi ghép mã lại dù TV đã ghép.
+
+**English**
+- **Version and release date shown** in all three clients: the phone app (under its name on the first screen and in About), the TV app, and the foot of both web pages.
+- Phone app: a **touchpad** in place of the arrows (the “Use the touchpad” button under them): a swipe is arrow keys in that direction, a tap is OK, a two-finger tap is Back. Not a real mouse: it moves what the arrows move, which in a TV browser (Downloader, for one) is the pointer.
+- Phone app, keys-only mode: **typing works** into the field that has the focus on the TV (the box at the foot of the remote), and the “Turn on ADB for this TV” menu is redrawn as proper buttons, each with a line of explanation.
+- Fixed: a weak link made the app ask for a new pairing code although the TV was paired.
+
 ## 2.6.3 - 2026-10-13
 
 Web 2.6.3 · app điện thoại 2.5.3 · app TV 2.6.2

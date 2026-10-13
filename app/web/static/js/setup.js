@@ -21,8 +21,9 @@ $('#lang').addEventListener('click', () => setLang(LANG === 'vi' ? 'en' : 'vi'))
 $('#aboutbtn').addEventListener('click', async () => {
   $('#about').showModal();
   const r = await fetch('/api/about').then((x) => x.json()).catch(() => null);
-  if (r && r.version) $('#aboutver').textContent = r.version;
+  if (r && r.version) $('#aboutver').textContent = r.version + (r.released ? ' · ' + r.released : '');
 });
+fetch('/api/about').then((x) => x.json()).then((r) => { if (r.version) $('#ver').textContent = 'TV Remote ' + r.version + (r.released ? ' · ' + r.released : ''); }).catch(() => {});
 $('#aboutclose').addEventListener('click', () => $('#about').close());
 $('#about').addEventListener('click', (e) => { if (e.target === $('#about')) $('#about').close(); });   // click outside the box
 

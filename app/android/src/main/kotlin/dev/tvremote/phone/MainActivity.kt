@@ -452,31 +452,63 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     private val HOMES = arrayOf("Projectivy Launcher" to "com.spocky.projengmenu", "ATV Launcher" to "ca.dstudio.atvlauncher.free", "FLauncher" to "me.efesser.flauncher")
 
     /** Everything the keys-only mode can do towards turning ADB on, in the order one needs it. */
+    /**
+     * A menu whose choices look like what they are: buttons. Each has a title, a line saying what it does, and an arrow.
+     * [primary] is the one to press first. Each item: title, explanation, action.
+     */
+    private fun menu(title: String, primary: Int, items: List<Triple<String, String, () -> Unit>>) {
+        val list = col()
+        list.setPadding(dp(16), dp(8), dp(16), dp(4))
+        var dialog: AlertDialog? = null
+        items.forEachIndexed { i, (name, what, run) ->
+            val row = LinearLayout(this)
+            row.gravity = Gravity.CENTER_VERTICAL
+            row.setPadding(dp(14), dp(12), dp(10), dp(12))
+            val color = if (i == primary) ACCENT else BTN
+            val normal = box(color, 14)
+            row.background = android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x40ffffff), normal, null)
+            val texts = col()
+            val head = label(name, 16, if (i == primary) Color.WHITE else TEXT)
+            head.typeface = Typeface.DEFAULT_BOLD
+            texts.addView(head)
+            if (what.isNotEmpty()) texts.addView(label(what, 13, if (i == primary) 0xffe3ebff.toInt() else MUTED))
+            row.addView(texts, LinearLayout.LayoutParams(0, -2, 1f))
+            row.addView(label("›", 24, if (i == primary) Color.WHITE else MUTED))
+            row.isClickable = true
+            row.isFocusable = true
+            row.contentDescription = name
+            row.setOnClickListener { dialog?.dismiss(); run() }
+            val lp = LinearLayout.LayoutParams(-1, -2)
+            lp.topMargin = dp(8)
+            list.addView(row, lp)
+        }
+        val sv = ScrollView(this)
+        sv.addView(list)
+        dialog = AlertDialog.Builder(this).setTitle(title).setView(sv).setNegativeButton(t("Đóng", "Close"), null).show()
+    }
+
+    /** Everything the keys-only mode can do towards turning ADB on, in the order one needs it. */
     private fun adbHelp() {
-        val items = arrayOf(t("1. Mở Cài đặt TV (tự thử các cách)", "1. Open TV Settings (tries every way)"),
-            t("2. Không mở được? Cài màn hình chính khác", "2. No luck? Install another home screen"),
-            t("3. Các bước bật Gỡ lỗi ADB", "3. Steps to turn on ADB debugging"),
-            t("4. Đã bật ADB: kết nối đầy đủ", "4. ADB is on: full connection"),
-            t("Mở CH Play trên TV", "Open the Play Store on the TV"),
-            t("Mở app theo tên gói hoặc đường dẫn", "Open an app by package name or link"))
-        AlertDialog.Builder(this).setTitle(t("Bật ADB cho TV này", "Turn on ADB for this TV")).setItems(items) { _, i ->
-            when (i) {
-                0 -> findSettings()
-                1 -> otherHome()
-                2 -> adbSteps()
-                3 -> { val ip = host; disconnect(null); if (ip != null) connect(ip) }
-                4 -> basic?.launch("market://search?q=launcher")
-                5 -> {
-                    val box = input("com.example.app")
-                    val wrap = FrameLayout(this)
-                    wrap.setPadding(dp(20), dp(8), dp(20), 0)
-                    wrap.addView(box)
-                    AlertDialog.Builder(this).setTitle(t("Tên gói hoặc đường dẫn", "Package name or link")).setView(wrap)
-                        .setPositiveButton(t("Mở", "Open")) { _, _ -> box.text.toString().trim().let { if (it.isNotEmpty()) basic?.launch(it) } }
-                        .setNegativeButton(t("Hủy", "Cancel"), null).show()
-                }
-            }
-        }.setNegativeButton(t("Đóng", "Close"), null).show()
+        menu(t("Bật ADB cho TV này", "Turn on ADB for this TV"), 0, listOf(
+            Triple(t("1. Mở Cài đặt TV", "1. Open TV Settings"), t("App tự thử mọi cách và báo kết quả", "The app tries every way and tells you")) { findSettings() },
+            Triple(t("2. Cài màn hình chính khác", "2. Install another home screen"), t("Khi TV giấu Cài đặt: mở qua một launcher từ CH Play", "When the TV hides Settings: go through a launcher from the Play Store")) { otherHome() },
+            Triple(t("3. Các bước bật Gỡ lỗi ADB", "3. Steps to turn on ADB debugging"), t("Làm trong Cài đặt của TV", "Done in the TV’s Settings")) { adbSteps() },
+            Triple(t("4. Kết nối đầy đủ", "4. Full connection"), t("Sau khi đã bật ADB: xem hình, ứng dụng, tệp...", "Once ADB is on: picture, apps, files...")) {
+                val ip = host
+                disconnect(null)
+                if (ip != null) connect(ip)
+            },
+            Triple(t("Mở CH Play trên TV", "Open the Play Store on the TV"), "") { basic?.launch("market://search?q=launcher"); Unit },
+            Triple(t("Mở app theo tên gói", "Open an app by package name"), t("Đã cài thì mở app, chưa cài thì mở trang CH Play của nó", "Opens the app, or its Play Store page when not installed")) {
+                val box = input("com.example.app")
+                val wrap = FrameLayout(this)
+                wrap.setPadding(dp(20), dp(8), dp(20), 0)
+                wrap.addView(box)
+                AlertDialog.Builder(this).setTitle(t("Tên gói hoặc đường dẫn", "Package name or link")).setView(wrap)
+                    .setPositiveButton(t("Mở", "Open")) { _, _ -> box.text.toString().trim().let { if (it.isNotEmpty()) basic?.launch(it) } }
+                    .setNegativeButton(t("Hủy", "Cancel"), null).show()
+                Unit
+            }))
     }
 
     private fun isSettings(pkg: String) = pkg.contains("settings", true)
@@ -516,16 +548,17 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     private fun otherHome() {
         val a = basic ?: return
-        val names = HOMES.map { it.first + (if (a.app == it.second) "  ✓" else "") }.toTypedArray()
-        AlertDialog.Builder(this).setTitle(t("TV này giấu Cài đặt: mở qua màn hình chính khác", "This TV hides Settings: go through another home screen"))
-            .setItems(names) { _, i ->
-                a.launch(HOMES[i].second)
-                AlertDialog.Builder(this).setMessage(t("Nhìn lên TV.\n\n• Thấy trang CH Play: bấm Cài đặt, xong bấm “Mở lại” bên dưới.\n• CH Play báo không tương thích hoặc không tìm thấy: bấm “Chọn cái khác”.\n• Thấy màn hình chính mới: tìm biểu tượng bánh răng → Cài đặt Android, rồi bấm “Các bước bật ADB”.\n\nCH Play cần TV đã đăng nhập tài khoản Google.",
+        menu(t("Mở Cài đặt qua màn hình chính khác", "Reach Settings through another home screen"), -1, HOMES.map { (name, pkg) ->
+            Triple(name, if (a.app == pkg) t("Đang mở trên TV", "Open on the TV now") else t("Đã cài thì mở, chưa cài thì mở trang CH Play", "Opens it, or its Play Store page")) {
+                a.launch(pkg)
+                AlertDialog.Builder(this).setTitle(name).setMessage(t("Nhìn lên TV.\n\n• Thấy trang CH Play: bấm Cài đặt, xong bấm “Mở lại” bên dưới.\n• CH Play báo không tương thích hoặc không tìm thấy: bấm “Chọn cái khác”.\n• Thấy màn hình chính mới: tìm biểu tượng bánh răng → Cài đặt Android, rồi bấm “Các bước bật ADB”.\n\nCH Play cần TV đã đăng nhập tài khoản Google.",
                         "Look at the TV.\n\n• A Play Store page: choose Install, then tap “Open again” below.\n• The store says it is incompatible or not found: tap “Pick another”.\n• The new home screen: find the gear icon → Android settings, then tap “ADB steps”.\n\nThe Play Store needs a Google account on the TV."))
                     .setPositiveButton(t("Các bước bật ADB", "ADB steps")) { _, _ -> adbSteps() }
-                    .setNeutralButton(t("Mở lại", "Open again")) { _, _ -> a.launch(HOMES[i].second); ui.postDelayed({ if (basic === a && !isFinishing) adbSteps() }, 800) }
+                    .setNeutralButton(t("Mở lại", "Open again")) { _, _ -> a.launch(pkg); ui.postDelayed({ if (basic === a && !isFinishing) adbSteps() }, 800) }
                     .setNegativeButton(t("Chọn cái khác", "Pick another")) { _, _ -> otherHome() }.show()
-            }.setNegativeButton(t("Đóng", "Close"), null).show()
+                Unit
+            }
+        })
     }
 
     private fun adbSteps() {
@@ -562,6 +595,14 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     }
 
     // ---------------------------------------------------------------- updates (GitHub releases)
+    /** "2.5.4 · 13/10/2026": this app's version and the day it was built. */
+    private fun versionLine(): String = version() + released().let { if (it.isEmpty()) "" else " · $it" }
+
+    /** The day this build was made, as dd/mm/yyyy ("" when unknown). */
+    private fun released(): String = try {
+        getString(resources.getIdentifier("released", "string", packageName)).split("-").let { it[2] + "/" + it[1] + "/" + it[0] }
+    } catch (e: Exception) { "" }
+
     private fun version(): String =
         try { packageManager.getPackageInfo(packageName, 0).versionName ?: "0" } catch (e: Exception) { "0" }
 
@@ -873,7 +914,10 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         title.typeface = Typeface.DEFAULT_BOLD
         val top = LinearLayout(this)
         top.gravity = Gravity.CENTER_VERTICAL
-        top.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
+        val names = col()
+        names.addView(title)
+        names.addView(label(t("Bản ", "Version ") + versionLine(), 12, MUTED))
+        top.addView(names, LinearLayout.LayoutParams(0, -2, 1f))
         val set = icon("@settings", t("Cài đặt", "Settings"), BTN)
         set.setOnClickListener {
             hideKeyboard()
@@ -1149,7 +1193,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 return HttpServer.Response.of("text/html; charset=utf-8", html)
             }
             if (r.path == "/api/state")                               // the page only needs to know it may show itself
-                return HttpServer.Response.json(JSONObject().put("name", name(forHost ?: "")).put("on", true).put("volume", 0).put("volume_max", 0).put("muted", false).put("adb", "ready"))
+                return HttpServer.Response.json(JSONObject().put("name", name(forHost ?: "")).put("on", true).put("volume", 0).put("volume_max", 0).put("muted", false).put("adb", "ready")
+                    .put("app", "TV Remote").put("version", version()).put("released", released()))
             if (r.path == "/stats.js") return HttpServer.Response.of("text/javascript; charset=utf-8", assets.open("stats.js").use { it.readBytes() })
             if (r.path == "/api/icon") {
                 val png = labels?.icon(r.query["pkg"].toString()) ?: return HttpServer.Response.error(404, "no icon")
@@ -1224,7 +1269,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         lp.gravity = Gravity.CENTER_HORIZONTAL
         lp.topMargin = dp(22)
         box.addView(logo, lp)
-        val name = label("TV Remote " + version(), 20, TEXT)
+        val name = label("TV Remote " + versionLine(), 20, TEXT)
         name.typeface = Typeface.DEFAULT_BOLD
         name.gravity = Gravity.CENTER
         box.addView(name, gap(10))
@@ -1385,7 +1430,32 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             showMore(on)
         }
         controls.addView(more)
-        controls.addView(dpad(), gap(16))
+        // The arrows, or a touchpad in their place: swipes become arrow keys, a tap is OK. Handy where the TV shows a pointer
+        // that follows the arrows (a browser, Downloader), and for long lists.
+        val arrows = dpad()
+        val tpad = touchpad()
+        val swap = button("", BTN)
+        swap.textSize = 13f
+        swap.setPadding(dp(12), 0, dp(12), 0)
+        swap.minHeight = 0
+        swap.minimumHeight = 0
+        val usePad = { on: Boolean ->
+            arrows.visibility = if (on) View.GONE else View.VISIBLE
+            tpad.visibility = if (on) View.VISIBLE else View.GONE
+            swap.text = if (on) t("Dùng phím mũi tên", "Use the arrows") else t("Dùng touchpad", "Use the touchpad")
+        }
+        usePad(prefs.getBoolean("pad", false))
+        swap.setOnClickListener {
+            val on = tpad.visibility != View.VISIBLE
+            prefs.edit().putBoolean("pad", on).apply()
+            usePad(on)
+        }
+        controls.addView(arrows, gap(16))
+        controls.addView(tpad, LinearLayout.LayoutParams(-1, dp(250)).also { it.topMargin = dp(16) })
+        val sp2 = LinearLayout.LayoutParams(-2, dp(36))
+        sp2.gravity = Gravity.CENTER_HORIZONTAL
+        sp2.topMargin = dp(8)
+        controls.addView(swap, sp2)
         controls.addView(captioned(keys(58, "@back|" + t("Quay lại", "Back"), 4, "@home|Home", 3, "@menu|Menu", 82)), gap(16))
         // the same rows, in the same order, as the two web remotes
         // Volume on the left, channels on the right, each one tall bar for the thumb; the media keys between them.
@@ -1466,7 +1536,10 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     private fun sendText() {
         val s = textBox.text.toString()
-        if (needsAdb()) return
+        basic?.let {                                                  // keys only: the text goes into the field that has the focus on the TV
+            if (s.isEmpty()) it.key(66, Atv.SHORT) else { it.text(s); textBox.setText("") }
+            return
+        }
         val tv = tv
         if (tv == null || !tv.ready()) return
         if (live) {                                                   // everything is on the TV already: this is Enter
@@ -1685,6 +1758,45 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     }
 
     /** The round direction pad: four arrows on a disc, OK in the middle. */
+    /**
+     * A touchpad made of keys: every bit of a swipe is one arrow key in that direction, a tap is OK, a tap with two fingers
+     * is Back. It is not a mouse: it moves whatever the arrows move, which on a TV browser is the pointer.
+     */
+    private fun touchpad(): View {
+        val pad = FrameLayout(this)
+        pad.background = box(CARD, 28)
+        val hint = label(t("Vuốt: di chuyển  ·  Chạm: OK  ·  Chạm 2 ngón: Quay lại", "Swipe: move  ·  Tap: OK  ·  Two-finger tap: Back"), 13, MUTED)
+        hint.gravity = Gravity.CENTER
+        pad.addView(hint, FrameLayout.LayoutParams(-1, -2, Gravity.CENTER))
+        val step = dp(26).toFloat()
+        var ax = 0f
+        var ay = 0f
+        var moved = false
+        var fingers = 0
+        var downAt = 0L
+        pad.setOnTouchListener { v, e ->
+            when (e.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    v.parent.requestDisallowInterceptTouchEvent(true)  // the page must not scroll under the finger
+                    ax = e.x; ay = e.y; moved = false; fingers = 1; downAt = e.eventTime
+                }
+                MotionEvent.ACTION_POINTER_DOWN -> fingers = maxOf(fingers, e.pointerCount)
+                MotionEvent.ACTION_MOVE -> if (fingers == 1 && live()) {
+                    while (Math.abs(e.x - ax) >= step) { val right = e.x > ax; press(if (right) 22 else 21); ax += if (right) step else -step; moved = true }
+                    while (Math.abs(e.y - ay) >= step) { val down = e.y > ay; press(if (down) 20 else 19); ay += if (down) step else -step; moved = true }
+                }
+                MotionEvent.ACTION_UP -> if (!moved && live() && e.eventTime - downAt < 400) {
+                    press(if (fingers >= 2) 4 else 23)
+                    val normal = pad.background
+                    pad.background = box(HELD, 28)
+                    ui.postDelayed({ pad.background = normal }, 120)
+                }
+            }
+            true
+        }
+        return pad
+    }
+
     private fun dpad(): View {
         val pad = FrameLayout(this)
         pad.background = oval(CARD)

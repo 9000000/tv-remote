@@ -1050,7 +1050,14 @@ def build(S):
             version = (ROOT / "VERSION").read_text().strip()
         except OSError:
             version = ""
-        return web.json_response({"version": version})
+        released = ""                                                # the day of that version, from its heading in the changelog
+        try:
+            m = re.search(r"^## " + re.escape(version) + r" - (\d{4})-(\d{2})-(\d{2})", (ROOT / "CHANGELOG.md").read_text(), re.M)
+            if m and version:
+                released = f"{m.group(3)}/{m.group(2)}/{m.group(1)}"
+        except OSError:
+            pass
+        return web.json_response({"version": version, "released": released})
 
     @routes.post("/api/shutdown")
     async def shutdown(request):
