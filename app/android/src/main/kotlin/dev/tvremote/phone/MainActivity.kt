@@ -267,6 +267,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     private fun disconnect(message: String?) {
         fullscreen = false
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        clearBox()                                                    // the next TV has received nothing from the box
         managing.close()
         stopSession()
         host = null
@@ -1091,13 +1092,24 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             "@next|" + t("Bài sau", "Next"), 87, "@vol_up|" + t("Tăng âm lượng", "Volume up"), 24), gap(8))
 
         val line = LinearLayout(this)
-        textBox = input(t("Gõ chữ gửi lên TV", "Type text for the TV"))
+        liveBtn = button("⚡", BTN)
+        liveBtn.setPadding(0, 0, 0, 0)
+        liveBtn.setOnClickListener { setLive(!live) }
+        val lb = LinearLayout.LayoutParams(dp(48), dp(48))
+        lb.rightMargin = dp(6)
+        line.addView(liveBtn, lb)
+        textBox = input("")
         textBox.imeOptions = EditorInfo.IME_ACTION_SEND
         textBox.setSingleLine(true)
         textBox.setOnEditorActionListener { _, _, _ ->
             sendText()
             true
         }
+        textBox.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) = typedLive(s.toString())
+        })
         line.addView(textBox, LinearLayout.LayoutParams(0, dp(48), 1f))
         val send = icon("@send", t("Gửi", "Send"), ACCENT)
         send.setOnClickListener { sendText() }
@@ -1106,7 +1118,26 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         lp.width = dp(60)
         line.addView(send, lp)
         controls.addView(line, gap(12))
-        controls.addView(keys(48, "@backspace|" + t("Xóa", "Delete"), 67, "@enter|Enter", 66), gap(8))
+        val edit = keys(48, "@backspace|" + t("Xóa", "Delete"), 67, "@enter|Enter", 66)
+        val digits = button("123", BTN)                               // shows / hides the number keys (channels, PIN codes)
+        digits.contentDescription = t("Bàn phím số", "Number keys")
+        val dl = LinearLayout.LayoutParams(dp(64), dp(48))
+        dl.rightMargin = dp(8)
+        edit.addView(digits, 0, dl)
+        controls.addView(edit, gap(8))
+        val pad = col()
+        pad.addView(keys(48, "1", 8, "2", 9, "3", 10), gap(8))
+        pad.addView(keys(48, "4", 11, "5", 12, "6", 13), gap(8))
+        pad.addView(keys(48, "7", 14, "8", 15, "9", 16), gap(8))
+        pad.addView(keys(48, "", 0, "0", 7, "", 0), gap(8))
+        pad.visibility = if (prefs.getBoolean("numpad", false)) View.VISIBLE else View.GONE
+        digits.setOnClickListener {
+            val show = pad.visibility != View.VISIBLE
+            pad.visibility = if (show) View.VISIBLE else View.GONE
+            prefs.edit().putBoolean("numpad", show).apply()
+        }
+        controls.addView(pad)
+        setLive(prefs.getBoolean("live", false))
 
         val bye = button(t("Ngắt kết nối", "Disconnect"), 0)
         bye.setTextColor(RED)
@@ -1124,10 +1155,50 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     private fun sendText() {
         val s = textBox.text.toString()
         val tv = tv
-        if (tv != null && tv.ready() && s.isNotEmpty()) {
+        if (tv == null || !tv.ready()) return
+        if (live) {                                                   // everything is on the TV already: this is Enter
+            tv.press(66)
+            clearBox()
+        } else if (s.isNotEmpty()) {
             tv.text(s)
             textBox.setText("")
         }
+    }
+
+    // Two ways to type. Send: write here, then send it in one go. Live (⚡): the TV follows every letter and every
+    // deletion as it happens, so one wrong letter is fixed by fixing it here.
+    private lateinit var liveBtn: Button
+    private var live = false
+    private var onTv = ""                                             // what the TV has received from the box so far
+    private var quiet = false                                         // the box is being changed by the app, not typed in
+
+    private fun setLive(on: Boolean) {
+        live = on
+        prefs.edit().putBoolean("live", on).apply()
+        liveBtn.background = box(if (on) ACCENT else BTN, 14)
+        liveBtn.contentDescription = if (on) t("Đang gõ trực tiếp. Bấm để chuyển sang gõ xong rồi gửi", "Live typing is on. Tap to type first, then send")
+            else t("Đang gõ xong rồi gửi. Bấm để chuyển sang gõ trực tiếp", "Type-then-send is on. Tap for live typing")
+        textBox.hint = if (on) t("Gõ trực tiếp: TV nhận từng chữ", "Live: the TV gets every letter") else t("Gõ chữ rồi bấm gửi", "Type, then send")
+        clearBox()
+    }
+
+    private fun clearBox() {
+        quiet = true
+        textBox.setText("")
+        quiet = false
+        onTv = ""
+    }
+
+    /** Live typing: make the TV's text follow the box by deleting what changed at the end and typing the new end. */
+    private fun typedLive(now: String) {
+        if (!live || quiet) return
+        val tv = tv
+        if (tv == null || !tv.ready()) return
+        var same = 0
+        while (same < onTv.length && same < now.length && onTv[same] == now[same]) same++
+        repeat(onTv.length - same) { tv.press(67) }
+        if (now.length > same) tv.text(now.substring(same))
+        onTv = now
     }
 
     /** A row of equal-width remote keys: label, Android key code, label, key code... "@icon|words" shows an icon. An empty label leaves a gap. */

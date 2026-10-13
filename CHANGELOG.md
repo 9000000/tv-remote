@@ -4,6 +4,18 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.3.5 - 2026-10-13
+
+Web 2.3.5 · app điện thoại 2.3.4 · app TV 2.3.2
+
+**Tiếng Việt**
+- App điện thoại: thêm chế độ **gõ trực tiếp** (nút ⚡ cạnh ô gõ chữ). Bật lên thì gõ tới đâu TV nhận tới đó, xóa chữ nào TV xóa chữ đó; sửa một ký tự không cần gửi lại cả câu. Tắt đi thì như cũ: gõ xong rồi bấm gửi.
+- Thêm **bàn phím số** (nút 123): các phím 0-9 để nhập kênh, mã PIN.
+
+**English**
+- Phone app: a **live typing** mode (the ⚡ button next to the text box). When on, the TV follows every letter and every deletion; fixing one character no longer means sending the whole text again. When off it works as before: type, then send.
+- A **number pad** (the 123 button): keys 0-9 for channels and PIN codes.
+
 ## 2.3.4 - 2026-10-13
 
 Web 2.3.4 · app điện thoại 2.3.3 · app TV 2.3.2
