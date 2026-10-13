@@ -529,8 +529,11 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val link = "github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"
         val dl = "com.esaba.downloader"
         var stop = false
+        var installed = false                                         // the person says the TV has finished installing Downloader
         val box = AlertDialog.Builder(this).setTitle(t("Cài TV Setup lên TV", "Install TV Setup on the TV")).setMessage(t("Đang mở Downloader trên TV...", "Opening Downloader on the TV..."))
+            .setNeutralButton(t("Đã cài xong", "Installed"), null)
             .setNegativeButton(t("Dừng", "Stop")) { _, _ -> stop = true }.setOnCancelListener { stop = true }.show()
+        box.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener { installed = true }   // set here so that the box stays open
         val say = { vi: String, en: String -> ui.post { if (box.isShowing) box.setMessage(t(vi, en)) } }
         // waits until the TV says [pkg] is in front; false when it does not within [seconds], or the person stopped it
         val front = { pkg: String, seconds: Int ->
@@ -539,22 +542,19 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             ok
         }
         Thread {
-            a.launch(dl)
-            var there = front(dl, 6)
-            if (!there && !stop && a.app.isEmpty()) {                  // this TV does not say what is on its screen: no way to follow along
+            if (a.app.isEmpty()) {                                    // this TV does not say what is on its screen: no way to follow along
                 ui.post { box.dismiss(); installSetupByHand() }
                 return@Thread
             }
-            if (!there && !stop) {                                     // not installed: the TV is on its Play Store page, with Install in focus
-                say("TV chưa có Downloader: đang cài từ CH Play...\n\nNếu TV không tự cài, bấm “Cài đặt” trên màn hình TV. App sẽ tự đi tiếp khi cài xong.",
-                    "The TV has no Downloader yet: installing it from the Play Store...\n\nIf the TV does not start by itself, choose “Install” on its screen. The app carries on when it is done.")
-                Thread.sleep(2500)
-                a.pulse(23, 110)
-                for (round in 0 until 30) {                            // up to 3 minutes: ask for the app again until it opens
+            var there = openOnTv(a, dl) { stop }
+            if (!there && !stop && basic === a) {                     // its Play Store page was told to install it
+                say("TV chưa có Downloader: đang cài từ CH Play...\n\nNếu TV không tự cài, bấm “Cài đặt” trên màn hình TV. Khi TV báo cài xong, bấm “Đã cài xong” bên dưới.",
+                    "The TV has no Downloader yet: installing it from the Play Store...\n\nIf the TV does not start by itself, choose “Install” on its screen. When the TV says it is installed, tap “Installed” below.")
+                while (!stop && basic === a && !there) {
+                    for (i in 0 until 600) { if (stop || installed || a.app == dl) break; Thread.sleep(200) }
                     if (stop || basic !== a) break
-                    Thread.sleep(4000)
-                    a.launch(dl)
-                    if (front(dl, 2)) { there = true; break }
+                    installed = false
+                    there = a.app == dl || openOnTv(a, dl) { stop }
                 }
             }
             if (!there) {
@@ -575,11 +575,33 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 AlertDialog.Builder(this).setTitle(t("Nhìn lên TV", "Look at the TV"))
                     .setMessage(t("App đã nhập đường dẫn và cho Downloader tải.\n\n1. TV hỏi cài đặt: chọn Cài đặt (Install). Nếu TV hỏi quyền cài từ nguồn này: bật cho Downloader, bấm Quay lại, rồi chọn Install.\n2. Cài xong chọn Mở (hoặc bấm “Mở TV Setup” bên dưới).\n3. TV Setup tự mở Tùy chọn nhà phát triển: bật “Gỡ lỗi USB”.\n\nNếu TV vẫn đứng ở trang chủ Downloader: bấm “Làm từng bước”.",
                         "The app has entered the link and Downloader is fetching it.\n\n1. The TV asks to install: choose Install. If it asks to allow installs from this source: allow Downloader, press Back, then choose Install.\n2. Then choose Open (or tap “Open TV Setup” below).\n3. TV Setup opens Developer options by itself: turn on “USB debugging”.\n\nIf the TV is still on Downloader’s home page: tap “Step by step”."))
-                    .setPositiveButton(t("Mở TV Setup", "Open TV Setup")) { _, _ -> a.launch("dev.tvremote.setup") }
+                    .setPositiveButton(t("Mở TV Setup", "Open TV Setup")) { _, _ -> Thread { openOnTv(a, "dev.tvremote.setup") { false } }.start() }
                     .setNeutralButton(t("Làm từng bước", "Step by step")) { _, _ -> installSetupByHand() }
                     .setNegativeButton(t("Đóng", "Close"), null).show()
             }
         }.start()
+    }
+
+    /**
+     * Brings the app [pkg] to the front on the TV, on a worker thread; true once the TV says it is there. Asking for the app by
+     * name works on some TVs and not on others (and not every time), so the sure way follows: its Play Store page, where OK
+     * presses the main button. That is "Open" when the app is installed; when it is not, the same press starts installing it,
+     * and this returns false.
+     */
+    private fun openOnTv(a: Atv, pkg: String, stop: () -> Boolean): Boolean {
+        val front = { want: String, seconds: Int ->
+            var ok = false
+            for (i in 0 until seconds * 5) { if (stop() || basic !== a) break; if (a.app == want) { ok = true; break }; Thread.sleep(200) }
+            ok
+        }
+        if (a.app == pkg) return true
+        a.launch(pkg)
+        if (front(pkg, 4)) return true
+        a.launch("https://play.google.com/store/apps/details?id=$pkg")
+        if (!front("com.android.vending", 10)) return false
+        Thread.sleep(3000)                                            // the page draws, with its main button in focus
+        a.pulse(23, 110)
+        return front(pkg, 15)
     }
 
     /**
@@ -604,7 +626,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val link = "github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"   // lower case, no "https://": typed as key presses, and Downloader adds the rest
         menu(t("Cài TV Setup lên TV", "Install TV Setup on the TV"), -1, listOf(
             Triple(t("1. Mở Downloader trên TV", "1. Open Downloader on the TV"), t("Chưa cài thì TV mở trang CH Play của nó: bấm Cài đặt, rồi bấm lại mục này", "Not installed: the TV opens its Play Store page. Install it, then tap this again")) {
-                basic?.launch("com.esaba.downloader")
+                basic?.let { b -> Thread { openOnTv(b, "com.esaba.downloader") { false } }.start() }
                 ui.postDelayed({ if (basic != null && !isFinishing) installSetupByHand() }, 600)
             },
             Triple(t("2. Nhập đường dẫn tải", "2. Enter the download link"), t("Khi TV đang ở trang chủ Downloader: app tự tới ô địa chỉ, gõ đường dẫn và cho tải. Mất khoảng 10 giây", "With Downloader’s home page on the TV: the app goes to the address field, types the link and starts the download. About 10 seconds")) {
@@ -612,7 +634,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 Toast.makeText(this, t("Đang nhập đường dẫn trên TV...", "Entering the link on the TV..."), Toast.LENGTH_LONG).show()
                 ui.postDelayed({ if (basic != null && !isFinishing) installSetupByHand() }, 600)
             },
-            Triple(t("3. Mở TV Setup trên TV", "3. Open TV Setup on the TV"), t("Trong đó bấm “Tùy chọn nhà phát triển” rồi bật Gỡ lỗi USB", "There choose “Tùy chọn nhà phát triển” (Developer options) and turn on USB debugging")) { basic?.launch("dev.tvremote.setup"); Unit },
+            Triple(t("3. Mở TV Setup trên TV", "3. Open TV Setup on the TV"), t("Trong đó bấm “Tùy chọn nhà phát triển” rồi bật Gỡ lỗi USB", "There choose “Tùy chọn nhà phát triển” (Developer options) and turn on USB debugging")) { basic?.let { b -> Thread { openOnTv(b, "dev.tvremote.setup") { false } }.start() }; Unit },
             Triple(t("Chép đường dẫn", "Copy the link"), link) {
                 (getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager).setPrimaryClip(android.content.ClipData.newPlainText("tv-setup", link))
                 Toast.makeText(this, t("Đã chép", "Copied"), Toast.LENGTH_SHORT).show()

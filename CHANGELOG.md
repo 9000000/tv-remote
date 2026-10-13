@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.6.9 - 2026-10-13
+
+Web 2.6.9 · app điện thoại 2.5.9 · app TV 2.6.6
+
+**Tiếng Việt**
+- App điện thoại, “Cài TV Setup lên TV”: sửa lỗi báo “TV chưa có Downloader” dù đã cài. Một số TV (box FPT Play) không mở app khi được gọi theo tên; app giờ mở trang CH Play của Downloader rồi bấm nút chính trên đó (“Mở” khi đã cài, “Cài đặt” khi chưa). Khi phải cài, có nút “Đã cài xong” để đi tiếp.
+
+**English**
+- Phone app, “Install TV Setup on the TV”: fixed “the TV has no Downloader” being reported although it is installed. Some TVs (FPT Play box) do not open an app asked for by name; the app now opens Downloader’s Play Store page and presses its main button (“Open” when installed, “Install” when not). When it has to be installed, an “Installed” button carries on.
+
 ## 2.6.8 - 2026-10-13
 
 Web 2.6.8 · app điện thoại 2.5.8 · app TV 2.6.6 (app TV không đổi chức năng / no functional change)
