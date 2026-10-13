@@ -332,8 +332,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 }
                 else -> {
                     tv = null
-                    disconnect(explain(detail))
-                    offerBasic(h)                                     // no ADB (refused, or filtered and timed out), but the TV may still take keys
+                    offerBasic(h, explain(detail))                    // no ADB (refused, or filtered and timed out), but the TV may still take keys
                 }
             }
         }
@@ -371,18 +370,24 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         return true
     }
 
-    /** ADB refused the connection. If the TV answers as an Android TV, offer the keys-only remote: enough to go and turn ADB on. */
-    private fun offerBasic(ip: String) {
+    /**
+     * ADB did not work. Before saying so, see whether the TV answers as an Android TV: then the keys-only remote takes over
+     * (straight away when this phone is paired with it, after asking otherwise). [error] is shown only when that is not possible.
+     */
+    private fun offerBasic(ip: String, error: String) {
         Thread {
-            if (open(ip, 5555, 1500) || !open(ip, 6466, 2500)) return@Thread   // ADB answers after all, or this is no Android TV
+            val keys = !open(ip, 5555, 1500) && open(ip, 6466, 2500)   // not when ADB answers after all, or this is no Android TV
             ui.post {
-                if (isFinishing || host != null) return@post
+                if (isFinishing || host != ip || tv != null) return@post   // the person has moved on
+                if (!keys) { disconnect(error); return@post }
+                disconnect(null)
                 if (prefs.getBoolean("atv:$ip", false)) startBasic(ip, false)
                 else AlertDialog.Builder(this).setTitle(t("TV chưa bật Gỡ lỗi ADB", "ADB debugging is off on this TV"))
                     .setMessage(t("Vẫn bấm phím điều khiển được, sau khi ghép bằng mã hiện trên TV. Từ đó bạn mở Cài đặt của TV để bật ADB, rồi dùng đủ chức năng (xem hình, ứng dụng, tệp...).",
                         "You can still press keys, after pairing with a code the TV shows. From there open the TV’s Settings to turn ADB on, then everything works (picture, apps, files...)."))
                     .setPositiveButton(t("Ghép bằng mã", "Pair with a code")) { _, _ -> startBasic(ip, false) }
-                    .setNegativeButton(t("Đóng", "Close"), null).show()
+                    .setNegativeButton(t("Đóng", "Close")) { _, _ -> message(error, true) }
+                    .setOnCancelListener { message(error, true) }.show()
             }
         }.start()
     }

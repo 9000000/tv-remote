@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.6.6 - 2026-10-13
+
+Web 2.6.6 · app điện thoại 2.5.6 · app TV 2.6.4
+
+**Tiếng Việt**
+- App điện thoại: khi TV không cho ADB nhưng vẫn điều khiển được bằng phím, app vào thẳng chế độ chỉ bấm phím, không còn chớp thông báo lỗi “TV từ chối kết nối” trước đó. Lỗi chỉ hiện khi không còn cách nào.
+
+**English**
+- Phone app: when the TV refuses ADB but can still be driven with keys, the app goes straight to keys-only mode without flashing the “TV refused the connection” error first. The error only shows when nothing else works.
+
 ## 2.6.5 - 2026-10-13
 
 Web 2.6.5 · app điện thoại 2.5.5 · app TV 2.6.4 (app TV không đổi chức năng / no functional change)
