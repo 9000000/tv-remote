@@ -163,6 +163,8 @@ You do not need this tool: use the **Google TV** app (Android/iPhone) → *Remot
 - **Tailscale** – opens Tailscale's Google Play page, or opens Tailscale to get the code that adds the TV, if it is already installed.
 - **Cập nhật** (Update) – downloads the latest TV Setup from GitHub Releases and installs it (through the TV's own ADB; the app closes, reopen it and it is the new version). Each time it opens, the app also tells you when a newer version exists.
 
+**A web remote on the TV itself (no computer, no app on the phone).** Open TV Setup once and it is on. On a phone or computer, open a browser at the address the app shows on the TV, like `http://<TV's IP>:8765` (the home IP on the same Wi-Fi, the `100.x` IP over Tailscale). The first time the TV shows a **6-digit code**; type it into the page and that device is paired from then on. The page has the remote buttons (hold = long press), volume, typing, and the TV's apps with their logos. It starts again when the TV boots. **Remote qua web** turns it off/on, **Hủy ghép mọi thiết bị** makes every device pair again. This page is the remote only: the live screen, files and APK install still need the web UI on a computer or the phone app. The connection is plain HTTP on your home network (not encrypted), so do not expose port 8765 to the Internet; away from home, go through Tailscale.
+
 It also shows the TV's home-network IP and Tailscale IP, to read out to whoever is helping. Get the APK onto the TV with a USB stick or the Downloader app. It has only been run on a Sony BRAVIA with Android 9; it needs the TV to open ADB on port 5555, so newer TVs that only offer pairing-code "Wireless debugging" (some Google TV devices on Android 12+) may not work.
 
 ---
@@ -173,7 +175,7 @@ It also shows the TV's home-network IP and Tailscale IP, to read out to whoever 
 - **Same Wi-Fi as the TV:** press *Scan the Wi-Fi* and choose the TV, or type its IP.
 - **Another network:** turn on Tailscale on both the phone and the TV and type the TV's `100.x` IP.
 
-The first time, the TV asks "Allow USB debugging?": tick **Always allow**, then OK. The app shows the TV's live picture (touch it to tap on the TV), remote buttons (hold = long press), a text box, the app list, and the phone's volume buttons control the TV. Under ⚙️ you can pick the picture quality (Data saver / Balanced / Sharp) to use less data; the status line shows the KB/s in use. The 🙈 / 📺 button at the top right turns the picture off/on: with it off only the buttons remain and the TV does no extra work. The TV only needs "ADB debugging" on (section 2). Several devices can control at once, but each one watching the picture costs the TV more CPU.
+The first time, the TV asks "Allow USB debugging?": tick **Always allow**, then OK. The app shows the TV's live picture (touch it to tap on the TV), remote buttons (hold = long press), a text box, the app list, and the phone's volume buttons control the TV. Under ⚙️ you can pick the picture quality (Data saver / Balanced / Sharp) to use less data; the status line shows the KB/s in use. The eye button at the top right turns the picture off/on: with it off only the buttons remain and the TV does no extra work. The TV only needs "ADB debugging" on (section 2). Several devices can control at once, but each one watching the picture costs the TV more CPU.
 
 **TV is off:** tap the red power button next to the TV to wake it. If the TV kept its network on (standby), the app turns the screen on, also over Tailscale. If its network is off too, only a Wake-on-LAN packet can reach it, and that only works when the phone is on the TV's own Wi-Fi (the TV needs "Remote start" on); from another network use Wake in the web UI on a computer, which relays through a machine at home. The ⚙️ button (top right) switches Tiếng Việt / English.
 
@@ -191,6 +193,7 @@ Double-click `start.command` / `start.cmd` → the browser opens `http://127.0.0
 | **Ứng dụng** (Apps) | App list with names and icons; open, stop, uninstall |
 | **Tệp** (Files) | Browse TV storage and USB; download, upload (drag and drop), rename, delete, open a file on the TV, install an `.apk` |
 | **Tải / Cài** (Download / Install) | Download a file from a link to the TV, install an APK from a link or from the computer, the **Tối ưu TV** (Optimise TV) button |
+| **Sức khỏe** (Health) | The TV at a glance: power, current app, volume, latency, stream, CPU, RAM, storage, top CPU processes, Wi-Fi (signal, speed, band), hardware |
 | **TV** | Saved TVs, network scan, first-time setup steps, switching between TVs |
 
 Two indicators at the top right show the state: **TV** (remote connection) and **ADB**.
@@ -259,7 +262,8 @@ scripts/   tv_new.py, tv_setup.py   add a TV, optimise a TV from the command lin
            pair.py remote pairing · tvctl.py command line (info | key HOME | app <pkg|url>) · wake.py Wake-on-LAN
 tvapp/     the Android TV app "TV Setup" (plain Java, build.sh needs no Gradle) + the built tv-setup.apk
 phoneapp/  the remote app for Android phones (plain Java, build.sh needs no Gradle) + the built tv-remote.apk
-shared/    Java code shared by both apps: the update check against GitHub Releases
+shared/    Java code shared by both apps: ADB + the TV session (core), the update check against GitHub Releases (update)
+scripts/gen_icons.py   one icon set for the web and both apps
 VERSION, CHANGELOG.md, scripts/release.sh   the project's version, the change log, the release command (builds the APKs + creates the GitHub release)
 vendor/    scrcpy-server-v5.0.1 (Genymobile/scrcpy, Apache-2.0, checksum pinned in server.py)
 tvs.json, cert.pem, key.pem, .cache/, tools/   your own machine's data, kept out of git

@@ -1,4 +1,4 @@
-package dev.tvremote.phone;
+package dev.tvremote.core;
 
 import android.util.Base64;
 
@@ -33,19 +33,19 @@ import javax.crypto.Cipher;
  * A small ADB client over TCP: authenticates with this app's own RSA key and multiplexes several streams (shell
  * commands, sockets on the TV) over the one connection. The first connection makes the TV ask "Allow USB debugging?".
  */
-final class Adb implements Closeable {
+public final class Adb implements Closeable {
     private static final int CNXN = 0x4e584e43, AUTH = 0x48545541, OPEN = 0x4e45504f, OKAY = 0x59414b4f, CLSE = 0x45534c43, WRTE = 0x45545257;
     private static final int AUTH_TOKEN = 1, AUTH_SIGNATURE = 2, AUTH_RSAPUBLICKEY = 3;
     private static final byte[] EMPTY = new byte[0], EOF = new byte[0];
     /** ASN.1 DigestInfo header for SHA-1: adbd treats the 20-byte token as a SHA-1 digest to be PKCS#1 v1.5 signed. */
     private static final byte[] SHA1_PREFIX = {0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02, 0x1a, 0x05, 0x00, 0x04, 0x14};
 
-    interface Prompt { void waitingForUser(); }
+    public interface Prompt { void waitingForUser(); }
 
     private static final class Msg { int cmd, arg0, arg1; byte[] data; }
 
     /** One ADB stream. Reads block until data, end of stream or the timeout; writes block until the TV acknowledges. */
-    final class Stream implements Closeable {
+    public final class Stream implements Closeable {
         private final int local;
         private volatile int remote;
         private volatile boolean closed;
@@ -57,7 +57,7 @@ final class Adb implements Closeable {
         Stream(int local) { this.local = local; }
 
         /** Reads up to len bytes; -1 at end of stream; 0 if nothing arrived within timeoutMs (0 = wait for ever). */
-        int read(byte[] buf, int off, int len, long timeoutMs) throws IOException {
+        public int read(byte[] buf, int off, int len, long timeoutMs) throws IOException {
             if (pos == cur.length) {
                 if (cur == EOF) return -1;
                 try {
@@ -75,7 +75,7 @@ final class Adb implements Closeable {
             return n;
         }
 
-        void readFully(byte[] buf, int off, int len) throws IOException {
+        public void readFully(byte[] buf, int off, int len) throws IOException {
             while (len > 0) {
                 int n = read(buf, off, len, 0);
                 if (n < 0) throw new EOFException("stream closed");
@@ -83,14 +83,14 @@ final class Adb implements Closeable {
             }
         }
 
-        String readAll() throws IOException {
+        public String readAll() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             byte[] buf = new byte[8192];
             for (int n; (n = read(buf, 0, buf.length, 0)) >= 0; ) out.write(buf, 0, n);
             return out.toString("UTF-8").replace("\r\n", "\n").trim();
         }
 
-        synchronized void write(byte[] data, int off, int len) throws IOException {
+        public synchronized void write(byte[] data, int off, int len) throws IOException {
             while (len > 0) {
                 if (closed) throw new IOException("stream closed");
                 int n = Math.min(len, maxData);
@@ -106,7 +106,7 @@ final class Adb implements Closeable {
             }
         }
 
-        void write(byte[] data) throws IOException { write(data, 0, data.length); }
+        public void write(byte[] data) throws IOException { write(data, 0, data.length); }
 
         @Override public void close() {
             if (closed) return;
@@ -130,7 +130,7 @@ final class Adb implements Closeable {
     private int nextId = 1, maxData = 4096;
     private volatile boolean dead;
 
-    Adb(File dir) throws Exception {
+    public Adb(File dir) throws Exception {
         File priv = new File(dir, "adbkey.pk8"), pub = new File(dir, "adbkey.x509");
         KeyFactory kf = KeyFactory.getInstance("RSA");
         if (priv.exists() && pub.exists()) {
@@ -153,7 +153,7 @@ final class Adb implements Closeable {
     }
 
     /** Connects and authenticates. If the TV does not know this app's key yet, waits (3 minutes) for the person to allow it. */
-    void connect(String host, int port, Prompt prompt) throws Exception {
+    public void connect(String host, int port, Prompt prompt) throws Exception {
         dial(host, port);
         byte[] token = authenticate();
         if (token != null) {
@@ -255,7 +255,7 @@ final class Adb implements Closeable {
     }
 
     /** Opens an ADB service, e.g. "shell:ls" or "localabstract:name". Throws if the TV refuses it. */
-    Stream open(String service) throws IOException {
+    public Stream open(String service) throws IOException {
         if (dead) throw new IOException("adb connection lost");
         Stream s;
         synchronized (this) { s = new Stream(nextId++); }
@@ -271,11 +271,11 @@ final class Adb implements Closeable {
     }
 
     /** Runs a command in the TV's shell (as the `shell` user) and returns everything it printed. */
-    String shell(String cmd) throws IOException {
+    public String shell(String cmd) throws IOException {
         try (Stream s = open("shell:" + cmd)) { return s.readAll(); }
     }
 
-    boolean isDead() { return dead; }
+    public boolean isDead() { return dead; }
 
     @Override public void close() {
         dead = true;

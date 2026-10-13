@@ -1,4 +1,4 @@
-package dev.tvremote.phone;
+package dev.tvremote.core;
 
 import android.content.Context;
 import android.media.MediaCodec;
@@ -23,8 +23,8 @@ import java.util.regex.Pattern;
  * straight onto a Surface) and for input (keys, touch, text). Everything runs off the UI thread.
  * With no Surface the TV is asked for input only: no picture is encoded, so the TV does no extra work.
  */
-final class Tv {
-    interface Listener {
+public final class Tv {
+    public interface Listener {
         void onStatus(String key, String detail);                     // connecting | allow | starting | live | closed | error
         void onVideoSize(int w, int h);
         void onNetwork(String mac, String lan);                       // the TV's home-network address, for Wake-on-LAN later
@@ -36,7 +36,7 @@ final class Tv {
      * used while the picture moves (a still picture sends almost nothing); the size mostly decides the load on the TV,
      * whose software encoder costs about 0.7 of 4 cores at 960 px and 2 Mbit/s, far more uncapped.
      */
-    static final int[][] QUALITY = {{480, 300_000, 8}, {720, 800_000, 10}, {960, 2_000_000, 10}};
+    public static final int[][] QUALITY = {{480, 300_000, 8}, {720, 800_000, 10}, {960, 2_000_000, 10}};
 
     private final Context ctx;
     private final String host;
@@ -52,7 +52,7 @@ final class Tv {
     private MediaCodec codec;
 
     /** quality: index into QUALITY. maxSide: longest side of the phone screen, there is no point sending more pixels than it shows. */
-    Tv(Context ctx, String host, Surface surface, int quality, int maxSide, boolean wake, Listener listener) {
+    public Tv(Context ctx, String host, Surface surface, int quality, int maxSide, boolean wake, Listener listener) {
         this.ctx = ctx.getApplicationContext(); this.host = host; this.surface = surface; this.wake = wake; this.listener = listener;
         int[] q = QUALITY[Math.max(0, Math.min(QUALITY.length - 1, quality))];
         this.video = "video_bit_rate=" + q[1] + " max_fps=" + q[2] + " max_size=" + Math.max(320, Math.min(q[0], maxSide) / 8 * 8);
@@ -226,13 +226,13 @@ final class Tv {
         codec = null;
     }
 
-    void stop() {
+    public void stop() {
         stopped = true;
         Adb a = adb;
         if (a != null) a.close();
     }
 
-    boolean ready() { return control != null && !stopped; }
+    public boolean ready() { return control != null && !stopped; }
 
     // ---- input: scrcpy control messages (big-endian), see ControlMessageReader.java in scrcpy ----
     private void send(final byte[] msg) {
@@ -246,20 +246,20 @@ final class Tv {
     }
 
     /** action: 0 down, 1 up. */
-    void key(int action, int code, int repeat, int meta) {
+    public void key(int action, int code, int repeat, int meta) {
         send(ByteBuffer.allocate(14).put((byte) 0).put((byte) action).putInt(code).putInt(repeat).putInt(meta).array());
     }
 
-    void press(int code) { key(0, code, 0, 0); key(1, code, 0, 0); }
+    public void press(int code) { key(0, code, 0, 0); key(1, code, 0, 0); }
 
     /** A finger on the TV screen. action: 0 down, 1 up, 2 move; x, y in 0..1 of the picture. */
-    void touch(int action, float x, float y) {
+    public void touch(int action, float x, float y) {
         int px = Math.round(Math.max(0, Math.min(1, x)) * (width - 1)), py = Math.round(Math.max(0, Math.min(1, y)) * (height - 1));
         send(ByteBuffer.allocate(32).put((byte) 2).put((byte) action).putLong(-2).putInt(px).putInt(py)
                 .putShort((short) width).putShort((short) height).putShort((short) (action == 1 ? 0 : 0xffff)).putInt(0).putInt(0).array());
     }
 
-    void text(String t) {
+    public void text(String t) {
         byte[] raw;
         try { raw = t.getBytes("UTF-8"); } catch (java.io.UnsupportedEncodingException e) { return; }
         boolean ascii = raw.length == t.length();
@@ -275,7 +275,7 @@ final class Tv {
 
     // ---- apps ----
     /** "package/activity" of every app that shows on the TV's home screen. */
-    List<String> apps() throws IOException {
+    public List<String> apps() throws IOException {
         List<String> out = new ArrayList<>();
         Adb a = adb;
         if (a == null) return out;
@@ -286,7 +286,13 @@ final class Tv {
         return out;
     }
 
-    void launch(final String component) {
+    /** Runs a shell command on the TV through this session's ADB connection; "" when not connected. */
+    public String shell(String cmd) throws IOException {
+        Adb a = adb;
+        return a == null ? "" : a.shell(cmd);
+    }
+
+    public void launch(final String component) {
         final Adb a = adb;
         if (a == null || !component.matches("[\\w.]+/[\\w.$]+")) return;
         new Thread(() -> { try { a.shell("am start -n '" + component + "'"); } catch (IOException ignored) { } }).start();

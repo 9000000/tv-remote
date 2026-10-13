@@ -14,6 +14,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import dev.tvremote.core.Adb;
 import dev.tvremote.update.Release;
 
 import java.io.File;
@@ -23,6 +24,9 @@ public final class MainActivity extends Activity {
     private TextView status, logView;
     private ScrollView scroll;
     private Button[] buttons;
+    private Button webBtn;
+    private TextView webInfo;
+    private String lanIp = "", tsIp = "";
     private Adb adb;
     private Setup setup;
     private boolean busy;
@@ -53,6 +57,20 @@ public final class MainActivity extends Activity {
                 button("Cập nhật", v -> update())};
         for (Button b : buttons) row.addView(b);
         root.addView(row);
+
+        // the web remote served by this TV: any phone or computer opens http://<TV's IP>:8765 and pairs with a code
+        LinearLayout web = new LinearLayout(this);
+        web.setOrientation(LinearLayout.HORIZONTAL);
+        web.setPadding(0, dp(12), 0, 0);
+        webBtn = button("", v -> { RemoteService.setEnabled(this, !RemoteService.enabled(this)); showWeb(); });
+        web.addView(webBtn);
+        web.addView(button("Hủy ghép mọi thiết bị", v -> { RemoteService.forgetAll(this); log("✓ Đã hủy ghép. Thiết bị nào muốn điều khiển phải nhập mã mới."); showWeb(); }));
+        root.addView(web);
+        webInfo = text("", 17, Color.rgb(233, 236, 241));
+        webInfo.setPadding(0, dp(10), 0, 0);
+        root.addView(webInfo);
+        if (RemoteService.enabled(this)) RemoteService.start(this);
+        showWeb();
 
         logView = text("", 17, Color.rgb(233, 236, 241));
         logView.setLineSpacing(dp(4), 1f);
@@ -94,7 +112,19 @@ public final class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
+        showWeb();
         if (setup != null && !busy) run(() -> showStatus());          // back from Tailscale / Play Store: refresh the IPs
+    }
+
+    private void showWeb() {
+        boolean on = RemoteService.enabled(this);
+        webBtn.setText(on ? "Remote qua web: ĐANG BẬT" : "Remote qua web: đang tắt");
+        if (!on) { webInfo.setText("Bật \"Remote qua web\" để điều khiển TV này từ trình duyệt của điện thoại hay máy tính, không cần cài gì."); return; }
+        String where = lanIp.isEmpty() && tsIp.isEmpty() ? "http://<IP của TV>:" + RemoteService.PORT
+                : (lanIp.isEmpty() ? "" : "http://" + lanIp + ":" + RemoteService.PORT + "  (cùng Wi-Fi)") + (lanIp.isEmpty() || tsIp.isEmpty() ? "" : "     hoặc     ")
+                + (tsIp.isEmpty() ? "" : "http://" + tsIp + ":" + RemoteService.PORT + "  (qua Tailscale)");
+        int n = RemoteService.pairedCount(this);
+        webInfo.setText("Mở trên điện thoại / máy tính:   " + where + "\nLần đầu TV sẽ hiện mã 6 số để ghép.   Đã ghép: " + n + " thiết bị.   Tự chạy lại khi TV khởi động.");
     }
 
     private void connect() {
@@ -128,7 +158,9 @@ public final class MainActivity extends Activity {
     private void showStatus() throws Exception {
         String name = setup.describe(), ts = setup.tailscaleIp(), lan = setup.lanIp();
         boolean tsInstalled = setup.has(Setup.TS_PKG);
+        lanIp = lan; tsIp = ts;
         ui(() -> {
+            showWeb();
             status.setTextColor(Color.rgb(70, 210, 131));
             status.setText(name + "\nIP trong nhà: " + (lan.isEmpty() ? "?" : lan) + "   ·   IP Tailscale: "
                     + (!ts.isEmpty() ? ts : tsInstalled ? "chưa vào mạng" : "chưa cài"));

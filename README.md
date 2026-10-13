@@ -163,6 +163,8 @@ Không cần công cụ này: dùng app **Google TV** (Android/iPhone) → nút 
 - **Tailscale** – mở trang cài Tailscale trong Google Play, hoặc mở Tailscale để lấy mã thêm TV nếu đã cài.
 - **Cập nhật** – tải bản TV Setup mới nhất từ GitHub Releases và cài luôn (qua ADB của chính TV, app tự đóng rồi mở lại là bản mới). Mỗi lần mở, app cũng tự báo nếu có bản mới.
 
+**Remote qua web ngay trên TV (không cần máy tính, không cần cài app trên điện thoại).** Mở TV Setup một lần là nó bật sẵn. Trên điện thoại hoặc máy tính, mở trình duyệt vào địa chỉ app hiện trên TV, dạng `http://<IP của TV>:8765` (IP trong nhà khi cùng Wi-Fi, IP `100.x` khi dùng Tailscale). Lần đầu TV hiện **mã 6 số**, nhập mã đó vào trang là xong; từ đó thiết bị ấy vào thẳng. Trang có nút điều khiển (giữ nút = nhấn giữ), âm lượng, gõ chữ và các app của TV kèm logo. Nó tự chạy lại khi TV khởi động. Nút **Remote qua web** để tắt/bật, **Hủy ghép mọi thiết bị** để bắt mọi máy ghép lại. Trang này chỉ có phần remote: xem màn hình, tệp và cài APK vẫn cần web trên máy tính hoặc app điện thoại. Kết nối là HTTP thường trong mạng nhà (không mã hóa), nên đừng mở cổng 8765 ra Internet; ở ngoài nhà hãy đi qua Tailscale.
+
 App cũng hiện IP trong nhà và IP Tailscale của TV để đọc cho người hỗ trợ. Đưa APK lên TV bằng USB, hoặc bằng app Downloader trên TV. App này mới chạy thử trên Sony BRAVIA Android 9; nó cần TV mở ADB ở cổng 5555, nên các TV đời mới chỉ có "Gỡ lỗi không dây" kiểu ghép mã (một số Google TV Android 12+) có thể không dùng được.
 
 ---
@@ -173,7 +175,7 @@ App cũng hiện IP trong nhà và IP Tailscale của TV để đọc cho ngư�
 - **Cùng Wi-Fi với TV:** bấm *Quét Wi-Fi* và chọn TV, hoặc gõ IP của TV.
 - **Khác mạng:** bật Tailscale trên cả điện thoại và TV, gõ IP `100.x` của TV.
 
-Lần đầu TV hỏi "Cho phép gỡ lỗi USB?": tích **Luôn cho phép** rồi OK. App hiện hình trực tiếp của TV (chạm vào hình = bấm trên TV), các nút điều khiển (giữ nút = nhấn giữ), ô gõ chữ, danh sách app, và dùng được nút âm lượng của điện thoại. Trong ⚙️ chọn được chất lượng hình (Tiết kiệm / Vừa / Nét) để đỡ tốn băng thông; dòng trạng thái hiện số KB/s đang dùng. Nút 🙈 / 📺 ở góc trên bên phải tắt/bật hình: tắt hình thì chỉ còn nút điều khiển và TV không tốn thêm CPU. TV chỉ cần bật "Gỡ lỗi ADB" (mục 2). Nhiều máy điều khiển cùng lúc được, nhưng mỗi máy đang xem hình làm TV tốn thêm CPU.
+Lần đầu TV hỏi "Cho phép gỡ lỗi USB?": tích **Luôn cho phép** rồi OK. App hiện hình trực tiếp của TV (chạm vào hình = bấm trên TV), các nút điều khiển (giữ nút = nhấn giữ), ô gõ chữ, danh sách app, và dùng được nút âm lượng của điện thoại. Trong ⚙️ chọn được chất lượng hình (Tiết kiệm / Vừa / Nét) để đỡ tốn băng thông; dòng trạng thái hiện số KB/s đang dùng. Nút con mắt ở góc trên bên phải tắt/bật hình: tắt hình thì chỉ còn nút điều khiển và TV không tốn thêm CPU. TV chỉ cần bật "Gỡ lỗi ADB" (mục 2). Nhiều máy điều khiển cùng lúc được, nhưng mỗi máy đang xem hình làm TV tốn thêm CPU.
 
 **TV đang tắt:** bấm nút nguồn (đỏ) cạnh tên TV để đánh thức. Nếu TV còn giữ mạng (chế độ chờ) thì app bật màn hình lên, kể cả qua Tailscale. Nếu TV tắt cả mạng thì chỉ gói Wake-on-LAN mới gọi được nó, và gói này chỉ tới TV khi điện thoại ở đúng Wi-Fi nhà TV (TV phải bật "Khởi động từ xa"); ở mạng khác thì dùng nút Đánh thức trên web ở máy tính, nó nhờ một máy ở nhà gửi giúp. Nút ⚙️ (góc trên bên phải) để đổi Tiếng Việt / English.
 
@@ -191,6 +193,7 @@ Bấm đúp `start.command` / `start.cmd` → trình duyệt mở `http://127.0.
 | **Ứng dụng** | Danh sách app có tên và logo; mở, dừng, gỡ |
 | **Tệp** | Duyệt bộ nhớ TV và USB; tải về, gửi lên (kéo thả), đổi tên, xóa, mở tệp trên TV, cài file `.apk` |
 | **Tải / Cài** | Tải file từ link về TV, cài APK từ link hoặc từ máy, nút **Tối ưu TV** |
+| **Sức khỏe** | Tình trạng TV: nguồn, app đang mở, âm lượng, độ trễ, luồng hình, CPU, RAM, bộ nhớ, tiến trình tốn CPU nhất, Wi-Fi (tín hiệu, tốc độ, băng tần), phần cứng |
 | **TV** | TV đã lưu, quét mạng tìm TV, các bước cài đặt lần đầu, đổi qua lại giữa các TV |
 
 Hai đèn ở góc trên cho biết tình trạng: **TV** (kết nối remote) và **ADB**.
@@ -259,7 +262,8 @@ scripts/   tv_new.py, tv_setup.py   thêm TV, tối ưu TV bằng dòng lệnh (
            pair.py ghép remote · tvctl.py dòng lệnh (info | key HOME | app <gói|link>) · wake.py Wake-on-LAN
 tvapp/     app Android TV "TV Setup" (Java thuần, build.sh không cần Gradle) + tv-setup.apk đã build
 phoneapp/  app remote cho điện thoại Android (Java thuần, build.sh không cần Gradle) + tv-remote.apk đã build
-shared/    code Java dùng chung của hai app: kiểm tra bản mới trên GitHub Releases
+shared/    code Java dùng chung của hai app: ADB + phiên điều khiển TV (core), kiểm tra bản mới trên GitHub Releases (update)
+scripts/gen_icons.py   một bộ icon cho web và hai app
 VERSION, CHANGELOG.md, scripts/release.sh   số phiên bản chung, nhật ký thay đổi, lệnh phát hành (build APK + tạo GitHub release)
 vendor/    scrcpy-server-v5.0.1 (Genymobile/scrcpy, Apache-2.0, checksum ghim trong server.py)
 tvs.json, cert.pem, key.pem, .cache/, tools/   dữ liệu riêng của máy bạn, không đưa lên git

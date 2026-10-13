@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#111418">
+<title>TV Remote</title>
+<style>
+  :root { --bg:#f3f4f7; --card:#fff; --ink:#1a1d23; --muted:#667080; --line:#e1e4ea; --btn:#eceff3; --btn-hi:#dde2e9; --accent:#2f6df6; --accent-ink:#fff; --bad:#d23d3d; --ok:#17894a; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1b1f25; --ink:#e9ecf1; --muted:#99a3b0; --line:#2b3139; --btn:#272d35; --btn-hi:#363e49; --accent:#5b8cff; --accent-ink:#0b1020; --bad:#ff7070; --ok:#46d283; } }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html { color-scheme:light dark; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  main { max-width:420px; margin:0 auto; padding:14px 14px 28px; display:flex; flex-direction:column; gap:14px; }
+  @media (min-width:860px) { main.wide { max-width:860px; display:grid; grid-template-columns:400px 1fr; align-items:start; } main.wide header { grid-column:1 / -1; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:16px; }
+  header { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  h1 { font-size:18px; margin:0; } .sub { color:var(--muted); font-size:13px; } .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--muted); margin-right:6px; } .dot.ok { background:var(--ok); } .dot.bad { background:var(--bad); }
+  h2 { font-size:12px; margin:0 0 10px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+  button { font:inherit; color:var(--ink); background:var(--btn); border:0; border-radius:16px; min-height:52px; cursor:pointer; touch-action:manipulation; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; display:flex; align-items:center; justify-content:center; gap:3px; flex-direction:column; padding:0; }
+  button:hover { background:var(--btn-hi); } button:active { transform:scale(.97); } button.held { background:#f59e0b !important; color:#1a1200 !important; }
+  .ic { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+  .rc { display:flex; flex-direction:column; align-items:center; gap:16px; }
+  .rrow { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; width:100%; } .rrow.three { grid-template-columns:repeat(3,1fr); } .rrow.five { grid-template-columns:repeat(5,1fr); gap:8px; }
+  button small { font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+  .power { color:var(--bad); } .play { background:var(--ink); color:var(--card); } .play:hover { background:var(--ink); }
+  .dpad { position:relative; width:min(250px, 70vw); aspect-ratio:1; border-radius:50%; background:var(--btn); border:1px solid var(--line); box-shadow:inset 0 2px 12px rgba(0,0,0,.18); }
+  .dpad button { position:absolute; width:34%; height:34%; min-height:0; background:transparent; border-radius:50%; color:var(--muted); } .dpad .ic { width:28px; height:28px; }
+  .dpad .up { top:2%; left:33%; } .dpad .down { bottom:2%; left:33%; } .dpad .left { left:2%; top:33%; } .dpad .right { right:2%; top:33%; }
+  .dpad .ok { top:31%; left:31%; width:38%; height:38%; background:var(--accent); color:var(--accent-ink); font-size:17px; font-weight:700; box-shadow:0 4px 14px rgba(0,0,0,.25); }
+  .vol { display:flex; align-items:center; gap:10px; width:100%; } .vol button { width:46px; min-height:46px; border-radius:50%; flex:none; } .vol .bar { flex:1; height:8px; border-radius:4px; background:var(--btn); overflow:hidden; } .vol .bar i { display:block; height:100%; width:0; background:var(--accent); transition:width .2s; }
+  .vol output { width:54px; text-align:right; font-weight:700; font-variant-numeric:tabular-nums; font-size:14px; } .vol .on { color:var(--bad); }
+  form { display:flex; gap:8px; } input { flex:1; min-width:0; font:inherit; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:14px; padding:0 14px; min-height:50px; }
+  form button { width:56px; flex:none; } .primary { background:var(--accent); color:var(--accent-ink); font-weight:700; } .primary:hover { background:var(--accent); filter:brightness(1.08); }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:10px; }
+  .tile { background:var(--bg); border:1px solid var(--line); border-radius:16px; padding:10px 6px 8px; min-height:0; gap:8px; font-size:12px; line-height:1.2; }
+  .tile img { width:100%; aspect-ratio:16/9; object-fit:contain; border-radius:8px; display:block; } .tile span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+  .muted { color:var(--muted); font-size:13px; } [hidden] { display:none !important; }
+  .pair { text-align:center; padding:28px 18px; } .pair p { margin:8px 0 16px; } .pair input { text-align:center; font-size:26px; letter-spacing:.3em; font-weight:700; }
+  .pair form { max-width:300px; margin:0 auto; } .err { color:var(--bad); min-height:22px; font-size:14px; margin-top:10px; }
+  .warn { background:rgba(245,158,11,.15); border-radius:14px; padding:10px 12px; font-size:13px; }
+  .lang { min-height:36px; padding:0 12px; font-size:13px; border-radius:12px; flex-direction:row; }
+</style>
+</head>
+<body>
+<!-- icons:start --><svg xmlns="http://www.w3.org/2000/svg" style="display:none"><symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol><symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol><symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol><symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol><symbol id="i-power" viewBox="0 0 24 24"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol><symbol id="i-back" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol><symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M21 4h-7"/><path d="M10 4H3"/><path d="M21 12h-9"/><path d="M8 12H3"/><path d="M21 20h-5"/><path d="M12 20H3"/><path d="M14 2v4"/><path d="M8 10v4"/><path d="M16 18v4"/></symbol><symbol id="i-vol_up" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></symbol><symbol id="i-vol_down" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></symbol><symbol id="i-mute" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="i-play_pause" viewBox="0 0 24 24"><path d="M4 5l9 7-9 7z"/><path d="M17 5v14"/><path d="M21 5v14"/></symbol><symbol id="i-prev" viewBox="0 0 24 24"><path d="M19 20 9 12l10-8v16z"/><path d="M5 19V5"/></symbol><symbol id="i-next" viewBox="0 0 24 24"><path d="M5 4l10 8-10 8V4z"/><path d="M19 5v14"/></symbol><symbol id="i-backspace" viewBox="0 0 24 24"><path d="M20 5H9l-7 7 7 7h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/><path d="m18 9-6 6"/><path d="m12 9 6 6"/></symbol><symbol id="i-enter" viewBox="0 0 24 24"><path d="M9 10 4 15l5 5"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></symbol><symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol><symbol id="i-apps" viewBox="0 0 24 24"><path d="M3 3h7v7H3z"/><path d="M14 3h7v7h-7z"/><path d="M14 14h7v7h-7z"/><path d="M3 14h7v7H3z"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/></symbol><symbol id="i-eye_off" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/><path d="M3 3l18 18"/></symbol><symbol id="i-wake" viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M6.34 17.66l-1.41 1.41"/><path d="M19.07 4.93l-1.41 1.41"/></symbol><symbol id="i-input" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><path d="M11 3a8 8 0 1 0 0 16a8 8 0 1 0 0-16"/><path d="m21 21-4.3-4.3"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/><path d="M12 2v3"/><path d="M12 19v3"/><path d="M2 12h3"/><path d="M19 12h3"/><path d="M4.9 4.9l2.2 2.2"/><path d="M16.9 16.9l2.2 2.2"/><path d="M4.9 19.1l2.2-2.2"/><path d="M16.9 7.1l2.2-2.2"/></symbol><symbol id="i-plug_off" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="M6 6l12 12"/><path d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20"/></symbol></svg><!-- icons:end -->
+<main id="main">
+  <header class="card">
+    <div><h1 id="name">TV Remote</h1><div class="sub"><span class="dot" id="dot"></span><span id="status">...</span></div></div>
+    <button class="lang" id="lang">EN</button>
+  </header>
+
+  <section class="card pair" id="pair" hidden>
+    <h1 data-t="pair_title"></h1>
+    <p class="muted" data-t="pair_text"></p>
+    <button class="primary" id="pairstart" style="width:100%;max-width:300px;margin:0 auto" data-t="pair_show"></button>
+    <form id="pairf" hidden><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="000 000"><button class="primary"><svg class="ic"><use href="#i-check"/></svg></button></form>
+    <div class="err" id="pairerr"></div>
+  </section>
+
+  <section class="card rc" id="remote" hidden>
+    <div class="warn" id="adbwarn" hidden></div>
+    <div class="rrow">
+      <button class="power" data-k="POWER"><svg class="ic"><use href="#i-power"/></svg></button>
+      <button data-k="MENU"><svg class="ic"><use href="#i-menu"/></svg></button>
+      <button data-k="SETTINGS"><svg class="ic"><use href="#i-settings"/></svg></button>
+      <button data-k="INPUT"><svg class="ic"><use href="#i-input"/></svg></button>
+    </div>
+    <div class="dpad">
+      <button class="up" data-k="UP"><svg class="ic"><use href="#i-up"/></svg></button>
+      <button class="left" data-k="LEFT"><svg class="ic"><use href="#i-left"/></svg></button>
+      <button class="ok" data-k="OK">OK</button>
+      <button class="right" data-k="RIGHT"><svg class="ic"><use href="#i-right"/></svg></button>
+      <button class="down" data-k="DOWN"><svg class="ic"><use href="#i-down"/></svg></button>
+    </div>
+    <div class="rrow three">
+      <button data-k="BACK" style="min-height:60px"><svg class="ic"><use href="#i-back"/></svg><small data-t="back"></small></button>
+      <button data-k="HOME" style="min-height:60px"><svg class="ic"><use href="#i-home"/></svg><small>Home</small></button>
+      <button data-k="MUTE" id="mute" style="min-height:60px"><svg class="ic"><use href="#i-mute"/></svg><small data-t="mute"></small></button>
+    </div>
+    <div class="vol">
+      <button data-k="VOL_DOWN"><svg class="ic"><use href="#i-minus"/></svg></button>
+      <div class="bar"><i id="volbar"></i></div>
+      <button data-k="VOL_UP"><svg class="ic"><use href="#i-plus"/></svg></button>
+      <output id="volv">–</output>
+    </div>
+    <div class="rrow three">
+      <button data-k="PREV"><svg class="ic"><use href="#i-prev"/></svg></button>
+      <button class="play" data-k="PLAY_PAUSE"><svg class="ic"><use href="#i-play_pause"/></svg></button>
+      <button data-k="NEXT"><svg class="ic"><use href="#i-next"/></svg></button>
+    </div>
+    <form id="textf" style="width:100%"><input id="text" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="primary"><svg class="ic"><use href="#i-send"/></svg></button></form>
+    <div class="rrow three">
+      <button data-k="DEL"><svg class="ic"><use href="#i-backspace"/></svg></button>
+      <button data-k="ENTER"><svg class="ic"><use href="#i-enter"/></svg></button>
+      <button data-k="WAKE"><svg class="ic"><use href="#i-wake"/></svg></button>
+    </div>
+  </section>
+
+  <section class="card" id="appscard" hidden>
+    <h2 data-t="apps"></h2>
+    <div class="tiles" id="apps"></div>
+  </section>
+</main>
+<script>
+const $ = (s) => document.querySelector(s);
+const T = {
+  vi: { pair_title: 'Ghép với TV', pair_text: 'Bấm nút dưới đây, TV sẽ hiện một mã 6 số. Nhập mã đó vào đây để điều khiển TV từ thiết bị này. Chỉ cần làm một lần.', pair_show: 'Hiện mã trên TV',
+        wrong: 'Sai mã, thử lại.', expired: 'Mã đã hết hạn. Bấm “Hiện mã trên TV” lần nữa.', wait: 'Nhìn lên TV và nhập mã 6 số.', back: 'Quay lại', mute: 'Tắt tiếng', apps: 'Ứng dụng', text: 'Gõ chữ gửi lên TV',
+        on: 'đang bật', off: 'màn hình tắt', lost: 'mất kết nối tới TV', other: 'VI',
+        adb_allow: 'TV đang hỏi “Cho phép gỡ lỗi USB?”: tích “Luôn cho phép” rồi chọn OK thì các nút mới chạy.',
+        adb_off: 'Các nút chưa chạy: app trên TV chưa nối được ADB. Trên TV bật “Gỡ lỗi ADB” trong Tùy chọn nhà phát triển, rồi mở app TV Setup.' },
+  en: { pair_title: 'Pair with the TV', pair_text: 'Press the button below; the TV shows a 6-digit code. Type it here to control the TV from this device. You only do this once.', pair_show: 'Show the code on the TV',
+        wrong: 'Wrong code, try again.', expired: 'The code expired. Press “Show the code on the TV” again.', wait: 'Look at the TV and type the 6-digit code.', back: 'Back', mute: 'Mute', apps: 'Apps', text: 'Type text for the TV',
+        on: 'on', off: 'screen off', lost: 'lost the TV', other: 'EN',
+        adb_allow: 'The TV is asking “Allow USB debugging?”: tick “Always allow”, then OK, and the buttons will work.',
+        adb_off: 'The buttons do not work yet: the app on the TV cannot reach ADB. On the TV turn on “ADB debugging” in Developer options, then open the TV Setup app.' },
+};
+let lang = 'vi';
+try { lang = localStorage.getItem('lang') || ((navigator.language || 'vi').toLowerCase().startsWith('vi') ? 'vi' : 'en'); } catch {}
+const t = (k) => T[lang][k] || k;
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-t]').forEach((e) => { e.textContent = t(e.dataset.t); });
+  $('#text').placeholder = t('text'); $('#lang').textContent = lang === 'vi' ? 'EN' : 'VI';
+}
+$('#lang').addEventListener('click', () => { lang = lang === 'vi' ? 'en' : 'vi'; try { localStorage.setItem('lang', lang); } catch {} applyLang(); refresh(); });
+
+async function api(path, body) {
+  try {
+    const r = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    return { status: r.status, ...j };
+  } catch { return { status: 0 }; }
+}
+
+// ---------- pairing ----------
+let paired = null, appsLoaded = false;
+function show(isPaired) {
+  if (paired === isPaired) return;
+  paired = isPaired;
+  $('#pair').hidden = isPaired; $('#remote').hidden = !isPaired; $('#appscard').hidden = !isPaired; $('#main').classList.toggle('wide', isPaired);
+  if (isPaired && !appsLoaded) loadApps();
+}
+$('#pairstart').addEventListener('click', async () => {
+  const r = await api('/api/pair/start', {});
+  if (r.status === 200) { $('#pairf').hidden = false; $('#pairerr').textContent = t('wait'); $('#code').value = ''; $('#code').focus(); }
+});
+$('#pairf').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const r = await api('/api/pair/finish', { code: $('#code').value });
+  if (r.status === 200) { $('#pairerr').textContent = ''; refresh(); }
+  else { $('#pairerr').textContent = t(r.error === 'wrong' ? 'wrong' : 'expired'); if (r.error !== 'wrong') $('#pairf').hidden = true; $('#code').select(); }
+});
+
+// ---------- state ----------
+async function refresh() {
+  const s = await api('/api/state');
+  if (s.status === 401) { $('#name').textContent = s.name || 'TV Remote'; $('#status').textContent = ''; $('#dot').className = 'dot'; show(false); return; }
+  if (s.status !== 200) { $('#status').textContent = t('lost'); $('#dot').className = 'dot bad'; return; }
+  show(true);
+  $('#name').textContent = s.name; document.title = s.name + ' · Remote';
+  $('#status').textContent = t(s.on ? 'on' : 'off'); $('#dot').className = 'dot ' + (s.on ? 'ok' : '');
+  $('#volv').textContent = s.volume + ' / ' + s.volume_max; $('#volbar').style.width = (s.volume_max ? s.volume * 100 / s.volume_max : 0) + '%';
+  $('#mute').classList.toggle('power', !!s.muted);
+  const w = $('#adbwarn'); w.hidden = s.adb === 'ready'; if (s.adb !== 'ready') w.textContent = t(s.adb === 'allow' ? 'adb_allow' : 'adb_off');
+}
+
+// ---------- keys: tap = one press, hold = long press on the TV ----------
+document.querySelectorAll('[data-k]').forEach((b) => {
+  const key = b.dataset.k; let timer = null, long = false, down = false;
+  const send = (action) => api('/api/key', { key, action }).then(() => setTimeout(refresh, 300));
+  const release = (tap) => {
+    if (!down) return; down = false; clearTimeout(timer);
+    if (long) { long = false; b.classList.remove('held'); send('up'); } else if (tap) send('press');
+  };
+  b.addEventListener('pointerdown', (e) => {
+    if (e.button) return; down = true; long = false; try { b.setPointerCapture(e.pointerId); } catch {}
+    if (key !== 'POWER') timer = setTimeout(() => { long = true; b.classList.add('held'); send('down'); }, 400);
+  });
+  b.addEventListener('pointerup', () => { release(true); b.blur(); });
+  ['pointercancel', 'lostpointercapture'].forEach((ev) => b.addEventListener(ev, () => release(false)));
+  b.addEventListener('contextmenu', (e) => e.preventDefault());
+});
+$('#textf').addEventListener('submit', async (e) => { e.preventDefault(); const v = $('#text').value; if (v) { await api('/api/text', { text: v }); $('#text').value = ''; } });
+
+// the computer's keyboard works as the remote while no text box is focused
+const KEYMAP = { ArrowUp: 'UP', ArrowDown: 'DOWN', ArrowLeft: 'LEFT', ArrowRight: 'RIGHT', Enter: 'OK', Escape: 'BACK', Backspace: 'DEL', ' ': 'PLAY_PAUSE' };
+document.addEventListener('keydown', (e) => {
+  if (!paired || e.target.tagName === 'INPUT' || e.metaKey || e.ctrlKey || e.altKey || !KEYMAP[e.key]) return;
+  e.preventDefault(); api('/api/key', { key: KEYMAP[e.key], action: 'press' });
+});
+
+// ---------- apps ----------
+async function loadApps() {
+  const r = await api('/api/apps'); if (r.status !== 200) return;
+  appsLoaded = true;
+  r.apps.sort((a, b) => a.label.localeCompare(b.label));
+  $('#apps').replaceChildren(...r.apps.map((a) => {
+    const b = document.createElement('button'); b.className = 'tile'; b.title = a.label;
+    const img = document.createElement('img'); img.loading = 'lazy'; img.alt = ''; img.src = '/api/icon?pkg=' + encodeURIComponent(a.pkg);
+    const s = document.createElement('span'); s.textContent = a.label;
+    b.append(img, s); b.addEventListener('click', () => api('/api/launch', { component: a.component }));
+    return b;
+  }));
+}
+
+applyLang(); refresh(); setInterval(() => { if (!document.hidden) refresh(); }, 4000);
+</script>
+</body>
+</html>

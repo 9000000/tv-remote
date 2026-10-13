@@ -29,6 +29,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import dev.tvremote.core.Tv;
 import dev.tvremote.update.Release;
 
 import java.net.Inet4Address;
@@ -225,7 +226,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         if (e.contains("timed out") || e.contains("timeout") || e.contains("unreachable") || e.contains("no route") || e.contains("failed to connect"))
             return t("Không tới được TV ở địa chỉ này. TV có đang bật không? Điện thoại phải cùng Wi-Fi với TV, hoặc cả hai cùng bật Tailscale (khi đó dùng IP 100.x của TV).",
                      "Cannot reach the TV at this address. Is it on? The phone must be on the TV’s Wi-Fi, or both must have Tailscale on (then use the TV’s 100.x IP).") + "\n\n"
-                    + t("TV đang tắt thì bấm nút nguồn cạnh tên TV để đánh thức.", "If the TV is off, tap the power button next to it to wake it.") + "\n\n(" + err + ")";
+                    + t("Nếu TV đang tắt, bấm nút nguồn cạnh tên TV để đánh thức.", "If the TV is off, tap the power button next to it to wake it.") + "\n\n(" + err + ")";
         return t("Lỗi: ", "Error: ") + err;
     }
 
@@ -404,7 +405,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
             savedList.addView(line);
         }
         if (savedList.getChildCount() == 0) savedList.addView(note(t("Chưa có TV nào. Quét Wi-Fi hoặc nhập IP bên dưới.", "No TVs yet. Scan the Wi-Fi or type an IP below.")));
-        else savedList.addView(note(t("TV đang tắt: bấm nút nguồn bên cạnh để đánh thức. Giữ lâu vào một TV để xóa.", "TV is off: tap the power button next to it to wake it. Long-press a TV to remove it.")));
+
     }
 
     // ---------------------------------------------------------------- finding TVs on the Wi-Fi
@@ -455,7 +456,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         LinearLayout top = new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
         top.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
-        Button set = icon("@gear", t("Cài đặt", "Settings"), BTN);
+        Button set = icon("@settings", t("Cài đặt", "Settings"), BTN);
         set.setOnClickListener(v -> { hideKeyboard(); settings.setVisibility(View.VISIBLE); });
         top.addView(set, new LinearLayout.LayoutParams(dp(52), dp(44)));
         picker.addView(top);
@@ -498,8 +499,23 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         lp.width = dp(60);
         line.addView(go, lp);
         picker.addView(line, gap(6));
-        picker.addView(note(t("Cùng Wi-Fi: dùng IP trong nhà của TV (Cài đặt → Mạng và Internet → tên Wi-Fi).\nKhác mạng: bật Tailscale trên cả điện thoại và TV, dùng IP 100.x của TV (xem trong app Tailscale). TV chưa vào Tailscale: mở Tailscale trên TV, nó hiện một mã; nhập mã đó ở login.tailscale.com/admin/machines → Add device, không cần gõ tài khoản trên TV.\nTV cần bật “Gỡ lỗi ADB”; lần đầu TV sẽ hỏi cho phép.",
-                "Same Wi-Fi: use the TV’s home IP (Settings → Network & Internet → the Wi-Fi name).\nOther network: turn on Tailscale on both the phone and the TV and use the TV’s 100.x IP (see the Tailscale app). TV not on Tailscale yet: open Tailscale on the TV, it shows a code; enter it at login.tailscale.com/admin/machines → Add device, no account typing on the TV.\nThe TV needs “ADB debugging” on; the first time it asks for permission.")), gap(10));
+        Button help = button(t("Chưa biết IP? Xem cách kết nối", "No IP yet? How to connect"), 0);
+        help.setTextColor(ACCENT);
+        help.setOnClickListener(v -> new AlertDialog.Builder(this).setTitle(t("Cách kết nối", "How to connect")).setMessage(t(
+                "1. BẬT ADB TRÊN TV (một lần)\nCài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng”. Rồi Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB”.\n\n"
+                + "2A. CÙNG WI-FI VỚI TV\nBấm “Quét Wi-Fi” rồi chọn TV. Hoặc xem IP trên TV: Cài đặt → Mạng và Internet → tên Wi-Fi.\n\n"
+                + "2B. KHÁC MẠNG\nBật Tailscale trên cả điện thoại và TV, rồi nhập IP 100.x của TV (xem trong app Tailscale).\n\n"
+                + "TV chưa có Tailscale? Mở Tailscale trên TV, nó hiện một mã. Nhập mã ở login.tailscale.com/admin/machines → Add device.\n\n"
+                + "3. LẦN ĐẦU KẾT NỐI\nTV hỏi cho phép: tích “Luôn cho phép” rồi OK.\n\n"
+                + "MẸO\nNút nguồn cạnh tên TV: đánh thức TV đang tắt. Giữ lâu vào tên TV: xóa khỏi danh sách.",
+                "1. TURN ON ADB ON THE TV (once)\nSettings → Device Preferences → About → press OK 7 times on “Build”. Then Developer options → turn on “ADB debugging”.\n\n"
+                + "2A. SAME WI-FI AS THE TV\nTap “Scan the Wi-Fi” and pick the TV. Or read the IP on the TV: Settings → Network & Internet → the Wi-Fi name.\n\n"
+                + "2B. ANOTHER NETWORK\nTurn on Tailscale on both the phone and the TV, then type the TV’s 100.x IP (see the Tailscale app).\n\n"
+                + "No Tailscale on the TV yet? Open Tailscale on the TV, it shows a code. Enter it at login.tailscale.com/admin/machines → Add device.\n\n"
+                + "3. THE FIRST CONNECTION\nThe TV asks for permission: tick “Always allow”, then OK.\n\n"
+                + "TIPS\nThe power button next to a TV wakes it when it is off. Long-press a TV to remove it from the list."))
+                .setPositiveButton(t("Đã hiểu", "Got it"), null).show());
+        picker.addView(help, new LinearLayout.LayoutParams(-1, dp(44)));
     }
 
     // ---------------------------------------------------------------- settings screen

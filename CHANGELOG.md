@@ -4,6 +4,18 @@ Một số phiên bản chung cho cả dự án (web, app điện thoại, app T
 
 One version number for the whole project (web, phone app, TV app), kept in `VERSION`. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.0.0 - 2026-10-13
+
+**Tiếng Việt**
+- **Remote qua web chạy ngay trên TV.** App TV Setup giờ tự mở một trang remote ở `http://<IP của TV>:8765`. Điện thoại hay máy tính nào cũng mở được bằng trình duyệt, không cần cài gì và không cần máy tính bật. Lần đầu TV hiện mã 6 số để ghép. Có nút điều khiển (giữ nút = nhấn giữ), âm lượng, gõ chữ, mở app kèm logo. Tự chạy lại khi TV khởi động. Bật/tắt và hủy ghép ngay trong app trên TV.
+- Web trên máy tính: giao diện remote mới (vòng điều hướng tròn, bộ icon nét mảnh) và tab **Sức khỏe**: nguồn, app đang mở, âm lượng, độ trễ, luồng hình, CPU, RAM, bộ nhớ, tiến trình tốn CPU, Wi-Fi, phần cứng.
+- App điện thoại: màn remote mới cùng kiểu; màn đầu gọn lại, hướng dẫn kết nối chỉ hiện khi bấm "Xem cách kết nối".
+
+**English**
+- **A web remote served by the TV itself.** The TV Setup app now serves a remote page at `http://<TV's IP>:8765`. Any phone or computer opens it in a browser, with nothing to install and no computer left running. The first time, the TV shows a 6-digit code to pair. It has the remote buttons (hold = long press), volume, typing, and apps with their logos. It starts again when the TV boots. Turn it on/off and unpair devices in the app on the TV.
+- Web on the computer: a new remote layout (round D-pad, one set of line icons) and a **Health** tab: power, current app, volume, latency, stream, CPU, RAM, storage, top processes, Wi-Fi, hardware.
+- Phone app: the same new remote layout; a cleaner first screen, with the connection guide shown only when you tap "How to connect".
+
 ## 1.6.0 - 2026-10-13
 
 **Tiếng Việt**
