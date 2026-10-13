@@ -169,7 +169,8 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
 
     private void startSession() {
         if (host == null || tv != null || video && !surfaceReady) return;
-        tv = new Tv(this, host, video ? surface.getHolder().getSurface() : null, wakeNext, this);
+        android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
+        tv = new Tv(this, host, video ? surface.getHolder().getSurface() : null, prefs.getInt("quality", 1), Math.max(dm.widthPixels, dm.heightPixels), wakeNext, this);
         wakeNext = false;
     }
 
@@ -207,6 +208,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
                     save(host, detail);
                     status.setText(t("Đang mở hình từ ", "Opening the picture from ") + (detail.isEmpty() ? host : detail) + "...");
                     break;
+                case "rate": if (video) status.setText((name(host).isEmpty() ? host : name(host)) + " · " + detail + " KB/s"); break;
                 case "live": status.setText((name(host).isEmpty() ? host : name(host)) + " · " + (video ? t("chạm vào hình để bấm trên TV", "touch the picture to tap on the TV")
                         : t("chỉ điều khiển, không xem hình (bấm 📺 để xem)", "buttons only, no picture (tap 📺 to watch)"))); break;
                 case "closed": tv = null; disconnect(t("TV đã ngắt kết nối.", "The TV closed the connection.")); break;
@@ -526,6 +528,23 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
             if (l[0].equals(now)) b.setTextColor(ACCENT);
             box.addView(b);
         }
+
+        box.addView(head(t("CHẤT LƯỢNG HÌNH", "PICTURE QUALITY")), gap(18));
+        final String[] levels = {"🪶  " + t("Tiết kiệm · 480 px · tối đa khoảng 40 KB/s", "Data saver · 480 px · up to about 40 KB/s"),
+                "⚖️  " + t("Vừa · 720 px · tối đa khoảng 100 KB/s", "Balanced · 720 px · up to about 100 KB/s"),
+                "🔍  " + t("Nét · 960 px · tối đa khoảng 250 KB/s", "Sharp · 960 px · up to about 250 KB/s")};
+        final Button[] qb = new Button[levels.length];
+        final Runnable marks = () -> {
+            for (int i = 0; i < qb.length; i++) { boolean on = prefs.getInt("quality", 1) == i; qb[i].setText(levels[i] + (on ? "   ✓" : "")); qb[i].setTextColor(on ? ACCENT : TEXT); }
+        };
+        for (int i = 0; i < levels.length; i++) {
+            final int level = i;
+            qb[i] = row("", () -> { prefs.edit().putInt("quality", level).apply(); marks.run(); });
+            box.addView(qb[i]);
+        }
+        marks.run();
+        box.addView(note(t("Áp dụng từ lần kết nối sau. Hình đứng yên thì gần như không tốn dữ liệu; con số trên là khi hình chuyển động liên tục (đang phát video). Mức thấp cũng nhẹ cho TV hơn. Không xem hình thì bấm 🙈 ở màn remote: không tốn gì.",
+                "Applies from the next connection. A still picture uses almost no data; the figures are for a constantly moving picture (video playing). Lower levels are also lighter on the TV. To not watch at all, tap 🙈 on the remote screen: that costs nothing.")));
 
         box.addView(head(t("CẬP NHẬT", "UPDATES")), gap(18));
         final Button[] auto = new Button[1];

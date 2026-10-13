@@ -31,13 +31,18 @@ final class Tv {
     }
 
     private static final String VER = "5.0.1", REMOTE = "/data/local/tmp/scrcpy-server.jar";
-    /** Light on the TV: its software encoder costs about 0.7 of 4 cores at this size and rate, far more uncapped. */
-    private static final String VIDEO = "video_bit_rate=2000000 max_fps=10 max_size=960";
+    /**
+     * Picture quality: longest side in pixels, bits per second, frames per second. The bit rate is what decides the data
+     * used while the picture moves (a still picture sends almost nothing); the size mostly decides the load on the TV,
+     * whose software encoder costs about 0.7 of 4 cores at 960 px and 2 Mbit/s, far more uncapped.
+     */
+    static final int[][] QUALITY = {{480, 300_000, 8}, {720, 800_000, 10}, {960, 2_000_000, 10}};
 
     private final Context ctx;
     private final String host;
     private final Surface surface;
     private final Listener listener;
+    private final String video;                                       // scrcpy video options
     private final boolean wake;                                       // turn the screen on first (the TV answered but is in standby)
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private volatile boolean stopped;
@@ -46,8 +51,11 @@ final class Tv {
     private volatile int width = 960, height = 540;
     private MediaCodec codec;
 
-    Tv(Context ctx, String host, Surface surface, boolean wake, Listener listener) {
+    /** quality: index into QUALITY. maxSide: longest side of the phone screen, there is no point sending more pixels than it shows. */
+    Tv(Context ctx, String host, Surface surface, int quality, int maxSide, boolean wake, Listener listener) {
         this.ctx = ctx.getApplicationContext(); this.host = host; this.surface = surface; this.wake = wake; this.listener = listener;
+        int[] q = QUALITY[Math.max(0, Math.min(QUALITY.length - 1, quality))];
+        this.video = "video_bit_rate=" + q[1] + " max_fps=" + q[2] + " max_size=" + Math.max(320, Math.min(q[0], maxSide) / 8 * 8);
         Thread t = new Thread(this::run, "tv-session");
         t.setDaemon(true);
         t.start();
@@ -68,7 +76,7 @@ final class Tv {
             String scid = String.format("%08x", new Random().nextInt(0x7fffffff));
             server = a.open("shell:CLASSPATH=" + REMOTE + " app_process / com.genymobile.scrcpy.Server " + VER + " scid=" + scid
                     + " tunnel_forward=true audio=false cleanup=false control=true send_dummy_byte=true send_device_meta=false "
-                    + (surface == null ? "video=false" : "video=true " + VIDEO)
+                    + (surface == null ? "video=false" : "video=true " + video)
                     // scrcpy-server does not always notice that we left (a still picture sends nothing), and a leftover one keeps
                     // loading the TV. So a shell loop on the TV waits for our heartbeat and kills the server when it stops.
                     + " & P=$!; while read -t 25 x; do :; done; kill $P");
@@ -159,6 +167,7 @@ final class Tv {
         byte[] head = new byte[12];
         video.readFully(head, 0, 4);
         boolean first = true;
+        long bytes = 0, since = System.currentTimeMillis();
         while (!stopped) {
             video.readFully(head, 0, 12);
             ByteBuffer h = ByteBuffer.wrap(head);
@@ -173,6 +182,12 @@ final class Tv {
             if (size < 0 || size > (8 << 20)) throw new IOException("bad video packet");
             byte[] data = new byte[size];
             video.readFully(data, 0, size);
+            bytes += size + 12;
+            long now = System.currentTimeMillis();
+            if (now - since >= 3000) {                                // data actually used, shown next to the TV's name
+                listener.onStatus("rate", String.valueOf(bytes * 1000 / (now - since) / 1024));
+                bytes = 0; since = now;
+            }
             boolean config = (flags & (1L << 62)) != 0;
             if (codec == null) continue;
             int idx = -1;

@@ -4,6 +4,16 @@ Một số phiên bản chung cho cả dự án (web, app điện thoại, app T
 
 One version number for the whole project (web, phone app, TV app), kept in `VERSION`. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 1.6.0 - 2026-10-13
+
+**Tiếng Việt**
+- App điện thoại: chọn chất lượng hình trong ⚙️ để tiết kiệm băng thông: Tiết kiệm (480 px, tối đa khoảng 40 KB/s), Vừa (720 px, khoảng 100 KB/s, mặc định mới), Nét (960 px, khoảng 250 KB/s, như trước đây). Hình không bao giờ gửi lớn hơn màn hình điện thoại.
+- App điện thoại: dòng trạng thái hiện lượng dữ liệu đang dùng thật (KB/s).
+
+**English**
+- Phone app: picture quality under ⚙️ to save data: Data saver (480 px, up to about 40 KB/s), Balanced (720 px, about 100 KB/s, the new default), Sharp (960 px, about 250 KB/s, as before). The picture is never sent larger than the phone's screen.
+- Phone app: the status line shows the data actually being used (KB/s).
+
 ## 1.5.0 - 2026-10-13
 
 **Tiếng Việt**
