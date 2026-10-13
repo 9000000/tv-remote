@@ -241,7 +241,8 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
     private void askUpdate() {
         final Release r = update;
         if (r == null || updating) return;
-        String notes = r.notes.length() > 900 ? r.notes.substring(0, 900) + "..." : r.notes;
+        String all = r.notes.replace("**", "").replace("\r", ""), notes = all.length() > 900 ? all.substring(0, 900) + "..." : all;   // release notes are Markdown
+
         new AlertDialog.Builder(this).setTitle(t("Bản mới ", "Version ") + r.version + t(" (đang dùng ", " (you have ") + version() + ")")
                 .setMessage(notes.isEmpty() ? t("Tải và cài bản mới?", "Download and install the new version?") : notes)
                 .setPositiveButton(t("Cập nhật", "Update"), (d, w) -> startUpdate(r)).setNegativeButton(t("Để sau", "Later"), null).show();
