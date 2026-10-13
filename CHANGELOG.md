@@ -4,6 +4,20 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.7.2 - 2026-10-13
+
+Web 2.7.2 · app điện thoại 2.6.2 · app TV 2.6.8
+
+**Tiếng Việt**
+- **App TV hiện mã QR** ở cạnh phải màn hình chính: một mã để tải app điện thoại TV Remote, một mã mở remote ngay trong trình duyệt (địa chỉ của TV, không phải gõ). Người chưa cài gì chỉ cần giơ camera điện thoại lên TV.
+- App điện thoại, phần Giới thiệu: mã QR và nút chia sẻ đường dẫn tải app, để đưa app cho người khác.
+- App TV: dòng “Mở trên điện thoại / máy tính” hiện đúng địa chỉ của TV cả khi chưa bật ADB. Chỉ tự mở Tùy chọn nhà phát triển khi ADB đang tắt (không mở khi người dùng bấm từ chối), và chỉ tự kết nối lại một lần khi quay về.
+
+**English**
+- **The TV app shows QR codes** down the right edge of its main screen: one to download the TV Remote phone app, one that opens the remote in a browser (the TV’s address, nothing to type). Someone with nothing installed just points their phone’s camera at the TV.
+- Phone app, About: a QR code and a share button for the app’s download link, to pass the app on.
+- TV app: the “Open on a phone / computer” line shows the TV’s address even before ADB is on. Developer options only open by themselves when ADB is off (not after the person declined the prompt), and the reconnect on return happens once.
+
 ## 2.7.1 - 2026-10-13
 
 Web 2.7.1 · app điện thoại 2.6.1 · app TV 2.6.7

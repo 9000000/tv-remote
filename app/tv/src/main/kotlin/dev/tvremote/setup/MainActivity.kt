@@ -72,6 +72,10 @@ class MainActivity : Activity() {
         webInfo.setPadding(0, dp(10), 0, 0)
         root.addView(webInfo)
         if (RemoteService.enabled(this)) RemoteService.start(this)
+        // Codes to scan with a phone's camera, so nobody has to type an address: the remote in the browser, and the phone app
+        qrRow = LinearLayout(this)                                    // a column down the right edge, out of the way of the log
+        qrRow.orientation = LinearLayout.VERTICAL
+        qrRow.setPadding(dp(8), dp(36), dp(24), 0)
         showWeb()
 
         logView = text("", 17, Color.rgb(233, 236, 241))
@@ -80,7 +84,12 @@ class MainActivity : Activity() {
         scroll.setPadding(0, dp(18), 0, 0)
         scroll.addView(logView)
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
-        setContentView(root)
+        val page = LinearLayout(this)
+        page.setBackgroundColor(Color.rgb(17, 20, 24))
+        (root.parent as? android.view.ViewGroup)?.removeView(root)
+        page.addView(root, LinearLayout.LayoutParams(0, -1, 1f))
+        page.addView(qrRow, LinearLayout.LayoutParams(dp(250), -1))
+        setContentView(page)
 
         log("Cần bật trước: Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào \"Bản dựng\",")
         log("rồi Tùy chọn nhà phát triển → bật \"Gỡ lỗi ADB\" (hoặc \"Gỡ lỗi USB\").")
@@ -120,13 +129,45 @@ class MainActivity : Activity() {
         super.onResume()
         showWeb()
         if (setup != null && !busy) job { showStatus(it) }            // back from Tailscale / Play Store: refresh the IPs
-        else if (setup == null && openedDev && !connecting) connect() // back from Developer options: ADB may be on now
+        else if (setup == null && retryOnResume && !connecting) { retryOnResume = false; connect() }   // back from Developer options: ADB may be on now
+    }
+
+    private lateinit var qrRow: LinearLayout
+    private val APP_LINK = "https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk"
+
+    /** This TV's address on the home network, read from the network interfaces (ADB not needed). */
+    private fun wifiIp(): String = try {
+        java.util.Collections.list(java.net.NetworkInterface.getNetworkInterfaces()).filter { it.isUp && !it.isLoopback && !it.name.startsWith("tun") }
+            .flatMap { java.util.Collections.list(it.inetAddresses) }.firstOrNull { it is java.net.Inet4Address && it.isSiteLocalAddress }?.hostAddress ?: ""
+    } catch (e: Exception) { "" }
+
+    private fun showCodes(webOn: Boolean) {
+        qrRow.removeAllViews()
+        fun code(link: String, title: String, what: String) {
+            val bmp = dev.tvremote.core.Qr.bitmap(link, 6) ?: return
+            val img = android.widget.ImageView(this)
+            img.setImageBitmap(bmp)
+            val box = LinearLayout(this)
+            box.orientation = LinearLayout.VERTICAL
+            box.setPadding(0, 0, 0, dp(18))
+            box.addView(img, LinearLayout.LayoutParams(dp(140), dp(140)))
+            val head = text(title, 15, Color.WHITE)
+            head.setPadding(0, dp(8), 0, 0)
+            box.addView(head)
+            box.addView(text(what, 13, Color.rgb(153, 163, 176)))
+            qrRow.addView(box)
+        }
+        val ip = lanIp.ifEmpty { wifiIp() }
+        code(APP_LINK, "Tải app điện thoại TV Remote", "Quét bằng camera điện thoại Android để tải và cài. Trong app chọn Quét Wi-Fi là thấy TV này.")
+        if (webOn && ip.isNotEmpty()) code("http://" + ip + ":" + RemoteService.PORT, "Điều khiển ngay bằng trình duyệt", "Không cần cài gì: quét rồi nhập mã 6 số TV hiện ra. Cần cùng Wi-Fi và TV đã bật Gỡ lỗi ADB.")
     }
 
     private fun showWeb() {
         val on = RemoteService.enabled(this)
+        showCodes(on)
         webBtn.text = if (on) "Remote qua web: ĐANG BẬT" else "Remote qua web: đang tắt"
         if (!on) { webInfo.text = "Bật \"Remote qua web\" để điều khiển TV này từ trình duyệt của điện thoại hay máy tính, không cần cài gì."; return }
+        val lanIp = lanIp.ifEmpty { wifiIp() }
         val where = if (lanIp.isEmpty() && tsIp.isEmpty()) "http://<IP của TV>:" + RemoteService.PORT
         else (if (lanIp.isEmpty()) "" else "http://" + lanIp + ":" + RemoteService.PORT + "  (cùng Wi-Fi)") + (if (lanIp.isEmpty() || tsIp.isEmpty()) "" else "     hoặc     ") +
             (if (tsIp.isEmpty()) "" else "http://" + tsIp + ":" + RemoteService.PORT + "  (qua Tailscale)")
@@ -165,7 +206,8 @@ class MainActivity : Activity() {
                     log("Kiểm tra đã bật \"Gỡ lỗi ADB\" chưa, rồi chọn \"Kết nối lại\". Nếu TV có hỏi thì phải chọn \"Luôn cho phép\".")
                     buttons[3].isEnabled = true
                     buttons[3].requestFocus()
-                    if (!openedDev) {                                 // once: straight to where ADB is turned on, no hunting through menus
+                    val off = (e.message ?: "").lowercase().let { it.contains("refused") }   // ADB is off; not: the person said no to the prompt
+                    if (!openedDev && off) {                          // once: straight to where ADB is turned on, no hunting through menus
                         openedDev = true
                         log("Đang mở Tùy chọn nhà phát triển để bật Gỡ lỗi USB...")
                         devOptions()
@@ -195,8 +237,10 @@ class MainActivity : Activity() {
      * password of their own when "Build" is pressed seven times; the screen itself often opens when asked for by name.
      */
     private var openedDev = false
+    private var retryOnResume = false                                // one more try when the person comes back from the screen we sent them to
 
     private fun devOptions() {
+        retryOnResume = true
         val tries = listOf(
             "Tùy chọn nhà phát triển" to android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS),
             "Tùy chọn nhà phát triển" to android.content.Intent().setClassName("com.android.tv.settings", "com.android.tv.settings.system.development.DevelopmentActivity"),

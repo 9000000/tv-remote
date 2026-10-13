@@ -1493,6 +1493,23 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         name.typeface = Typeface.DEFAULT_BOLD
         name.gravity = Gravity.CENTER
         box.addView(name, gap(10))
+        // The app's own download link as a code: someone next to you scans it and has the app
+        val appLink = "https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk"
+        dev.tvremote.core.Qr.bitmap(appLink, 6)?.let { bmp ->
+            val qr = ImageView(this)
+            qr.setImageBitmap(bmp)
+            qr.contentDescription = t("Mã QR tải app", "QR code to download the app")
+            val qp = LinearLayout.LayoutParams(dp(170), dp(170))
+            qp.gravity = Gravity.CENTER_HORIZONTAL
+            qp.topMargin = dp(14)
+            box.addView(qr, qp)
+            val hint = note(t("Quét để tải app này cho điện thoại khác", "Scan to get this app on another phone"))
+            hint.gravity = Gravity.CENTER
+            box.addView(hint, gap(6))
+            val share = button(t("Chia sẻ đường dẫn tải app", "Share the app’s download link"), BTN)
+            share.setOnClickListener { startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, appLink), null)) }
+            box.addView(share, gap(8))
+        }
         val what = note(t("Remote cho Android TV / Google TV: hình trực tiếp, chạm, nút điều khiển, gõ chữ, mở app.",
             "A remote for Android TV / Google TV: live picture, touch, remote buttons, typing, opening apps."))
         what.gravity = Gravity.CENTER
