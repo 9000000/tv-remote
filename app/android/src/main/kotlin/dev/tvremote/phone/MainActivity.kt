@@ -349,7 +349,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     private fun press(code: Int) {
         val tv = tv
-        if (tv != null) { if (tv.ready()) tv.press(code) } else basic?.key(code, Atv.SHORT)
+        if (tv != null) { if (tv.ready()) tv.press(code) }
+        else if (code in 19..23) basic?.pulse(code, 110)              // arrows and OK are held for a moment: see Atv.pulse
+        else basic?.key(code, Atv.SHORT)
     }
 
     private fun keyDown(code: Int, repeat: Int) {
@@ -1768,7 +1770,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val hint = label(t("Vuốt: di chuyển  ·  Chạm: OK  ·  Chạm 2 ngón: Quay lại", "Swipe: move  ·  Tap: OK  ·  Two-finger tap: Back"), 13, MUTED)
         hint.gravity = Gravity.CENTER
         pad.addView(hint, FrameLayout.LayoutParams(-1, -2, Gravity.CENTER))
-        val step = dp(26).toFloat()
+        val step = dp(20).toFloat()
         var ax = 0f
         var ay = 0f
         var moved = false

@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.6.5 - 2026-10-13
+
+Web 2.6.5 · app điện thoại 2.5.5 · app TV 2.6.4 (app TV không đổi chức năng / no functional change)
+
+**Tiếng Việt**
+- App điện thoại, chế độ chỉ bấm phím: phím mũi tên, OK và touchpad giờ **giữ phím một nhịp ngắn** như ngón tay trên remote thật, thay vì nhấn-nhả tức thì. Các app di chuyển con trỏ bằng phím mũi tên (trình duyệt của Downloader...) chỉ di chuyển khi phím đang được giữ, nên trước đây con trỏ đứng yên. Giữ lâu một phím mũi tên thì con trỏ chạy liên tục. Touchpad nhạy hơn.
+
+**English**
+- Phone app, keys-only mode: the arrows, OK and the touchpad now **hold the key for a moment**, as a finger on a real remote does, instead of an instant press. Apps that move a pointer with the arrows (Downloader’s browser...) only move it while the key is down, so the pointer used to stay put. Keeping a finger on an arrow moves the pointer continuously. The touchpad is more sensitive.
+
 ## 2.6.4 - 2026-10-13
 
 Web 2.6.4 · app điện thoại 2.5.4 · app TV 2.6.3

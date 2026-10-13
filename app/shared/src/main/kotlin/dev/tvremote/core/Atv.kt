@@ -170,6 +170,25 @@ class Atv(dir: File, private val host: String) : Closeable {
     /** [direction]: [DOWN] and [UP] for a held key, [SHORT] for a tap. */
     fun key(code: Int, direction: Int) = post(Pb().msg(10, Pb().int(1, code.toLong()).int(2, direction.toLong()).bytes()).bytes())
 
+    /**
+     * The key held down for [ms], as a finger on a real remote holds it. Apps that move a pointer with the arrows (TV browsers)
+     * move it for as long as the key is down, so a key that goes down and up in the same instant moves nothing there.
+     */
+    fun pulse(code: Int, ms: Long) {
+        if (closed || sock == null) return
+        val down = Pb().msg(10, Pb().int(1, code.toLong()).int(2, DOWN.toLong()).bytes()).bytes()
+        val up = Pb().msg(10, Pb().int(1, code.toLong()).int(2, UP.toLong()).bytes()).bytes()
+        out.execute {
+            val s = sock
+            if (!live || s == null) return@execute
+            try {
+                send(s, down)
+                try { Thread.sleep(ms) } catch (ignored: InterruptedException) { }
+                send(s, up)
+            } catch (e: Exception) { try { s.close() } catch (ignored: Exception) { } }
+        }
+    }
+
     /** Fills the text field that has the focus on the TV with [t] (it replaces what is there). Nothing happens when no field has it. */
     fun text(t: String) {
         if (t.isEmpty()) return
