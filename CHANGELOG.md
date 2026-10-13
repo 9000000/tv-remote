@@ -4,6 +4,18 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.5.6 - 2026-10-13
+
+Web 2.5.6 · app điện thoại 2.4.7 · app TV 2.5.6
+
+**Tiếng Việt**
+- **Phím điều khiển bớt nhạy, ở cả ba nơi:** chạm xuống chưa gửi gì; nhả tay ngay trên nút mới tính là bấm, và lúc đó nút mới nháy màu cam. Lỡ chạm rồi trượt tay ra khỏi nút (hoặc bắt đầu cuộn trang) thì không gửi phím nào.
+- Giữ nút 0,4 giây vẫn là nhấn giữ trên TV như trước (nút sáng cam trong lúc giữ); trượt ra khỏi nút thì thả phím.
+
+**English**
+- **Remote keys are less trigger-happy, in all three clients:** touching a key sends nothing; lifting the finger on the key is what counts as a press, and only then does the key flash amber. Touch it by accident and slide off (or start scrolling) and no key is sent.
+- Holding a key for 0.4 s is still a long press on the TV (the key stays amber meanwhile); sliding off it releases the key.
+
 ## 2.5.5 - 2026-10-13
 
 Web 2.5.5 · app điện thoại 2.4.6 · app TV 2.5.5

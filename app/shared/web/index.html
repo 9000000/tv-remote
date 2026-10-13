@@ -378,21 +378,23 @@ $('#tvexit').addEventListener('click', () => document.exitFullscreen());
   ['pointerup', 'pointercancel'].forEach((ev) => v.addEventListener(ev, (e) => { if (down) { down = false; send(1, e); } }));
 }
 
-// ---------- keys: tap = one press, hold = long press on the TV ----------
+// ---------- keys: a tap counts when the finger lifts on the key (slide off it and nothing is sent); hold = long press on the TV ----------
 document.querySelectorAll('[data-k]').forEach((b) => {
   const key = b.dataset.k; let timer = null, long = false, down = false;
   const send = (action) => { if (key === 'POWER' && tvOn && !confirm(t('ask_off'))) return; api('/api/key', { key, action }).then((r) => { if (r.noop) toast(t('noop')); setTimeout(refresh, 300); }); };
   const release = (tap) => {
     if (!down) return; down = false; clearTimeout(timer);
     b.classList.remove('held');
-    if (long) { long = false; send('up'); } else if (tap) send('press');
+    if (long) { long = false; send('up'); } else if (tap) { flash(); send('press'); }
   };
+  const inside = (e) => { const r = b.getBoundingClientRect(); return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; };
+  const flash = () => { b.classList.add('held'); setTimeout(() => { if (!long) b.classList.remove('held'); }, 160); };
   b.addEventListener('pointerdown', (e) => {
     if (e.button) return; down = true; long = false; try { b.setPointerCapture(e.pointerId); } catch {}
-    b.classList.add('held');                                                      // amber at once, like the phone app
-    if (key !== 'POWER') timer = setTimeout(() => { long = true; send('down'); }, 400);
+    if (key !== 'POWER') timer = setTimeout(() => { long = true; b.classList.add('held'); send('down'); }, 400);
   });
-  b.addEventListener('pointerup', () => { release(true); b.blur(); });
+  b.addEventListener('pointermove', (e) => { if (down && !inside(e)) release(false); });
+  b.addEventListener('pointerup', (e) => { release(inside(e)); b.blur(); });
   ['pointercancel', 'lostpointercapture'].forEach((ev) => b.addEventListener(ev, () => release(false)));
   b.addEventListener('contextmenu', (e) => e.preventDefault());
 });

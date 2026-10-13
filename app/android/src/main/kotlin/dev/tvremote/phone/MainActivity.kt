@@ -1352,14 +1352,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 if (bar < 0) b.textSize = 18f
                 if (code == SHOT) b.setOnClickListener { shot() }
                 else if (code in Tv.OPENERS) {
-                    val normal = b.background
                     val held = box(HELD, 16)
-                    b.setOnTouchListener { _, e ->                    // amber while touched, like the other keys
-                        if (e.actionMasked == MotionEvent.ACTION_DOWN) b.background = held
-                        else if (e.actionMasked == MotionEvent.ACTION_UP || e.actionMasked == MotionEvent.ACTION_CANCEL) b.background = normal
-                        false
-                    }
-                    b.setOnClickListener { opens(code) }
+                    b.setOnClickListener { flash(b, held); opens(code) }
                 } else bindKey(b, code, box(HELD, 16))
                 v = b
             }
@@ -1368,37 +1362,72 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         return row
     }
 
-    /** Down and up are sent separately, so holding the button = a long press on the TV; it turns amber while held. */
+    /**
+     * A tap counts when the finger lifts on the button: touching it sends nothing, and sliding off it (or starting to scroll)
+     * cancels. Then the button flashes amber. Keeping the finger on it for 0.4 s is a long press on the TV: the key goes
+     * down, repeats, and comes up when the finger lifts or leaves; the button stays amber meanwhile.
+     */
     private fun bindKey(b: Button, code: Int, held: Drawable) {
         val normal = b.background
-        var repeat: Runnable? = null
+        var holding = false
         var count = 0
-        b.setOnTouchListener { _, e ->
-            val a = e.actionMasked
-            if (a == MotionEvent.ACTION_DOWN) {
-                val tv = tv
-                if (tv == null || !tv.ready()) return@setOnTouchListener true
-                b.background = held
-                count = 0
-                tv.key(0, code, 0, 0)
-                val again = object : Runnable {
-                    override fun run() {
-                        this@MainActivity.tv?.key(0, code, ++count, 0)
-                        ui.postDelayed(this, 80)
-                    }
-                }
-                repeat = again
-                ui.postDelayed(again, 450)
-            } else if (a == MotionEvent.ACTION_UP || a == MotionEvent.ACTION_CANCEL) {
+        var start: Runnable? = null
+        val again = object : Runnable {
+            override fun run() {
+                if (!holding) return
+                tv?.key(0, code, ++count, 0)
+                ui.postDelayed(this, 80)
+            }
+        }
+        val stop = {
+            start?.let { ui.removeCallbacks(it) }
+            start = null
+            if (holding) {
+                holding = false
+                ui.removeCallbacks(again)
+                tv?.key(1, code, 0, 0)
                 b.background = normal
-                repeat?.let {
-                    ui.removeCallbacks(it)
-                    repeat = null
-                    tv?.key(1, code, 0, 0)
+            }
+        }
+        b.setOnTouchListener { v, e ->
+            val inside = e.x >= 0 && e.y >= 0 && e.x <= v.width && e.y <= v.height
+            when (e.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    val go = Runnable {
+                        val tv = tv
+                        if (tv == null || !tv.ready()) return@Runnable
+                        start = null
+                        holding = true
+                        count = 0
+                        b.background = held
+                        tv.key(0, code, 0, 0)
+                        ui.postDelayed(again, 80)
+                    }
+                    start = go
+                    ui.postDelayed(go, 400)
+                }
+                MotionEvent.ACTION_MOVE -> if (!inside) stop()
+                MotionEvent.ACTION_CANCEL -> stop()
+                MotionEvent.ACTION_UP -> {
+                    val tap = start != null && inside                 // lifted on the button before it became a hold
+                    stop()
+                    val tv = tv
+                    if (tap && tv != null && tv.ready()) {
+                        tv.press(code)
+                        flash(b, held)
+                    }
                 }
             }
             true
         }
+    }
+
+    /** Amber for a moment: the press was taken. */
+    private fun flash(b: Button, held: Drawable) {
+        val normal = b.background
+        if (normal === held) return
+        b.background = held
+        ui.postDelayed({ b.background = normal }, 160)
     }
 
     private fun oval(color: Int): GradientDrawable {

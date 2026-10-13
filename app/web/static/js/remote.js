@@ -1,6 +1,6 @@
 // remote keys, keyboard and mouse passthrough
 // ---------- keys ----------
-// Tap = one press. Hold (0.4 s) = the TV sees the key held down until you let go: fast scrolling, long-press menus.
+// A tap counts when the pointer lifts on the key (slide off it and nothing is sent). Hold (0.4 s) = the TV sees the key held down until you let go: fast scrolling, long-press menus.
 document.querySelectorAll('[data-k]').forEach((b) => {
   const k = b.dataset.k; let t = null, long = false, down = false;
   const power = k === 'POWER';                                     // never a long press, and turning the TV off needs a yes
@@ -11,15 +11,17 @@ document.querySelectorAll('[data-k]').forEach((b) => {
   const release = (tap) => {
     if (!down) return; down = false; clearTimeout(t);
     b.classList.remove('held');
-    if (long) { long = false; send('END_LONG'); } else if (tap) send();
+    if (long) { long = false; send('END_LONG'); } else if (tap) { flash(); send(); }
     setTimeout(refresh, 350);
   };
+  const inside = (e) => { const r = b.getBoundingClientRect(); return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; };
+  const flash = () => { b.classList.add('held'); setTimeout(() => { if (!long) b.classList.remove('held'); }, 160); };
   b.addEventListener('pointerdown', (e) => {
     if (e.button) return; down = true; long = false; try { b.setPointerCapture(e.pointerId); } catch {}
-    b.classList.add('held');                                                      // amber at once, like the phone app
-    if (!power) t = setTimeout(() => { long = true; send('START_LONG'); }, 400);
+    if (!power) t = setTimeout(() => { long = true; b.classList.add('held'); send('START_LONG'); }, 400);
   });
-  b.addEventListener('pointerup', () => { release(true); b.blur(); });           // keep focus off the button so typing goes to the TV
+  b.addEventListener('pointermove', (e) => { if (down && !inside(e)) release(false); });
+  b.addEventListener('pointerup', (e) => { release(inside(e)); b.blur(); });           // keep focus off the button so typing goes to the TV
   ['pointercancel', 'lostpointercapture'].forEach((ev) => b.addEventListener(ev, () => release(false)));
   b.addEventListener('click', (e) => { if (e.detail === 0) send(); });                          // keyboard activation
   b.addEventListener('contextmenu', (e) => e.preventDefault());
