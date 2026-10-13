@@ -7,11 +7,13 @@ cd "$(dirname "$0")"
 SDK="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
 BT=$(ls -d "$SDK"/build-tools/* | sort -V | tail -1)
 JAR=$(ls -d "$SDK"/platforms/android-* | sort -V | tail -1)/android.jar
+VER="${VERSION_NAME:-$(cat ../VERSION)}"                              # one version for the whole project, see CHANGELOG.md
+CODE=$(echo "$VER" | awk -F. '{print $1 * 10000 + $2 * 100 + $3}')
 rm -rf build && mkdir -p build/classes build/gen build/dex
 "$BT/aapt2" compile --dir res -o build/res.zip
 "$BT/aapt2" link -o build/unsigned.apk -I "$JAR" --manifest AndroidManifest.xml --java build/gen \
-  --min-sdk-version 21 --target-sdk-version 34 --version-code "${VERSION_CODE:-1}" --version-name "${VERSION_NAME:-1.0}" build/res.zip
-javac -nowarn -source 8 -target 8 -Xlint:-options -cp "$JAR" -d build/classes $(find src build/gen -name '*.java')
+  --min-sdk-version 21 --target-sdk-version 34 --version-code "$CODE" --version-name "$VER" build/res.zip
+javac -nowarn -source 8 -target 8 -Xlint:-options -cp "$JAR" -d build/classes $(find src ../shared/src build/gen -name '*.java')
 "$BT/d8" --min-api 21 --lib "$JAR" --output build/dex $(find build/classes -name '*.class')
 (cd build/dex && zip -q -j ../unsigned.apk classes.dex)
 "$BT/zipalign" -f 4 build/unsigned.apk build/aligned.apk

@@ -161,6 +161,7 @@ You do not need this tool: use the **Google TV** app (Android/iPhone) → *Remot
 `tvapp/tv-setup.apk` is a small app installed on the TV itself. After turning on "ADB debugging" (section 2), open it, choose "Always allow" when the TV asks, then use the TV remote:
 - **⚡ Tối ưu TV** (Optimise) / **Hoàn tác** (Undo) – the same as section 6, run on the TV.
 - **Tailscale** – opens Tailscale's Google Play page, or opens Tailscale to get the code that adds the TV, if it is already installed.
+- **Cập nhật** (Update) – downloads the latest TV Setup from GitHub Releases and installs it (through the TV's own ADB; the app closes, reopen it and it is the new version). Each time it opens, the app also tells you when a newer version exists.
 
 It also shows the TV's home-network IP and Tailscale IP, to read out to whoever is helping. Get the APK onto the TV with a USB stick or the Downloader app. It has only been run on a Sony BRAVIA with Android 9; it needs the TV to open ADB on port 5555, so newer TVs that only offer pairing-code "Wireless debugging" (some Google TV devices on Android 12+) may not work.
 
@@ -175,6 +176,8 @@ It also shows the TV's home-network IP and Tailscale IP, to read out to whoever 
 The first time, the TV asks "Allow USB debugging?": tick **Always allow**, then OK. The app shows the TV's live picture (touch it to tap on the TV), remote buttons (hold = long press), a text box, the app list, and the phone's volume buttons control the TV. The TV only needs "ADB debugging" on (section 2). Several devices can control at once, but each one watching the picture costs the TV more CPU.
 
 **TV is off:** tap the red power button next to the TV to wake it. If the TV kept its network on (standby), the app turns the screen on, also over Tailscale. If its network is off too, only a Wake-on-LAN packet can reach it, and that only works when the phone is on the TV's own Wi-Fi (the TV needs "Remote start" on); from another network use Wake in the web UI on a computer, which relays through a machine at home. The ⚙️ button (top right) switches Tiếng Việt / English.
+
+**Updates:** the app asks GitHub for a newer version each time it opens (can be turned off under ⚙️) and shows a green "New version" button; tap it to download and install, and Android asks you to confirm (the first time you must allow the app to "install unknown apps"). APKs of every version are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; see [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 ---
 
@@ -256,6 +259,8 @@ scripts/   tv_new.py, tv_setup.py   add a TV, optimise a TV from the command lin
            pair.py remote pairing · tvctl.py command line (info | key HOME | app <pkg|url>) · wake.py Wake-on-LAN
 tvapp/     the Android TV app "TV Setup" (plain Java, build.sh needs no Gradle) + the built tv-setup.apk
 phoneapp/  the remote app for Android phones (plain Java, build.sh needs no Gradle) + the built tv-remote.apk
+shared/    Java code shared by both apps: the update check against GitHub Releases
+VERSION, CHANGELOG.md, scripts/release.sh   the project's version, the change log, the release command (builds the APKs + creates the GitHub release)
 vendor/    scrcpy-server-v5.0.1 (Genymobile/scrcpy, Apache-2.0, checksum pinned in server.py)
 tvs.json, cert.pem, key.pem, .cache/, tools/   your own machine's data, kept out of git
 ```

@@ -161,6 +161,7 @@ Không cần công cụ này: dùng app **Google TV** (Android/iPhone) → nút 
 `tvapp/tv-setup.apk` là một app nhỏ cài thẳng lên TV. Sau khi bật "Gỡ lỗi ADB" (mục 2), mở app, chọn "Luôn cho phép" khi TV hỏi, rồi dùng remote bấm:
 - **⚡ Tối ưu TV** / **Hoàn tác** – giống mục 6, chạy ngay trên TV.
 - **Tailscale** – mở trang cài Tailscale trong Google Play, hoặc mở Tailscale để lấy mã thêm TV nếu đã cài.
+- **Cập nhật** – tải bản TV Setup mới nhất từ GitHub Releases và cài luôn (qua ADB của chính TV, app tự đóng rồi mở lại là bản mới). Mỗi lần mở, app cũng tự báo nếu có bản mới.
 
 App cũng hiện IP trong nhà và IP Tailscale của TV để đọc cho người hỗ trợ. Đưa APK lên TV bằng USB, hoặc bằng app Downloader trên TV. App này mới chạy thử trên Sony BRAVIA Android 9; nó cần TV mở ADB ở cổng 5555, nên các TV đời mới chỉ có "Gỡ lỗi không dây" kiểu ghép mã (một số Google TV Android 12+) có thể không dùng được.
 
@@ -175,6 +176,8 @@ App cũng hiện IP trong nhà và IP Tailscale của TV để đọc cho ngư�
 Lần đầu TV hỏi "Cho phép gỡ lỗi USB?": tích **Luôn cho phép** rồi OK. App hiện hình trực tiếp của TV (chạm vào hình = bấm trên TV), các nút điều khiển (giữ nút = nhấn giữ), ô gõ chữ, danh sách app, và dùng được nút âm lượng của điện thoại. TV chỉ cần bật "Gỡ lỗi ADB" (mục 2). Nhiều máy điều khiển cùng lúc được, nhưng mỗi máy đang xem hình làm TV tốn thêm CPU.
 
 **TV đang tắt:** bấm nút nguồn (đỏ) cạnh tên TV để đánh thức. Nếu TV còn giữ mạng (chế độ chờ) thì app bật màn hình lên, kể cả qua Tailscale. Nếu TV tắt cả mạng thì chỉ gói Wake-on-LAN mới gọi được nó, và gói này chỉ tới TV khi điện thoại ở đúng Wi-Fi nhà TV (TV phải bật "Khởi động từ xa"); ở mạng khác thì dùng nút Đánh thức trên web ở máy tính, nó nhờ một máy ở nhà gửi giúp. Nút ⚙️ (góc trên bên phải) để đổi Tiếng Việt / English.
+
+**Cập nhật:** app tự hỏi GitHub xem có bản mới không mỗi lần mở (tắt được trong ⚙️) và hiện nút xanh "Có bản mới"; bấm vào là tải và cài, Android sẽ hỏi xác nhận (lần đầu phải cho phép app "cài ứng dụng không rõ nguồn gốc"). File APK của mọi phiên bản nằm ở [Releases](https://github.com/HoangTran0410/tv-remote/releases), thay đổi từng bản xem [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -256,6 +259,8 @@ scripts/   tv_new.py, tv_setup.py   thêm TV, tối ưu TV bằng dòng lệnh (
            pair.py ghép remote · tvctl.py dòng lệnh (info | key HOME | app <gói|link>) · wake.py Wake-on-LAN
 tvapp/     app Android TV "TV Setup" (Java thuần, build.sh không cần Gradle) + tv-setup.apk đã build
 phoneapp/  app remote cho điện thoại Android (Java thuần, build.sh không cần Gradle) + tv-remote.apk đã build
+shared/    code Java dùng chung của hai app: kiểm tra bản mới trên GitHub Releases
+VERSION, CHANGELOG.md, scripts/release.sh   số phiên bản chung, nhật ký thay đổi, lệnh phát hành (build APK + tạo GitHub release)
 vendor/    scrcpy-server-v5.0.1 (Genymobile/scrcpy, Apache-2.0, checksum ghim trong server.py)
 tvs.json, cert.pem, key.pem, .cache/, tools/   dữ liệu riêng của máy bạn, không đưa lên git
 ```

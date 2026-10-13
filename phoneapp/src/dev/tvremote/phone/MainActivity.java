@@ -2,6 +2,7 @@ package dev.tvremote.phone;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Color;
@@ -28,6 +29,8 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import dev.tvremote.update.Release;
+
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -44,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 /** Phone remote: pick a TV (saved, found on the Wi-Fi, or typed IP), then live picture with touch, and remote buttons. */
 public final class MainActivity extends Activity implements Tv.Listener, SurfaceHolder.Callback {
     private static final int BG = 0xff111418, CARD = 0xff1c2026, BTN = 0xff2a3038, ACCENT = 0xff5b8cff, HELD = 0xffe0a030, TEXT = 0xffe8eaed, MUTED = 0xff9aa0a6;
+    private static final String INSTALL_RESULT = "dev.tvremote.phone.INSTALL_RESULT";
     private static boolean VI = "vi".equals(Locale.getDefault().getLanguage());   // set again in onCreate from the Settings choice
 
     private final Handler ui = new Handler(Looper.getMainLooper());
@@ -52,7 +56,10 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
     private View settings;
     private TextView pickerMsg, status;
     private EditText ipBox, textBox;
-    private Button scanBtn;
+    private Button scanBtn, updateBtn;
+    private TextView updateNote;
+    private Release update;                                           // a newer release found on GitHub, or null
+    private boolean updating;
     private VideoFrame frame;
     private SurfaceView surface;
     private boolean surfaceReady;
@@ -90,6 +97,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         if (b != null) host = b.getString("host");
         if (host != null) show(true);
         if (b != null && b.getBoolean("settings")) settings.setVisibility(View.VISIBLE);
+        if (prefs.getBoolean("autoUpdate", true)) checkUpdate(false);
     }
 
     @Override protected void onSaveInstanceState(Bundle out) { super.onSaveInstanceState(out); out.putString("host", host); out.putBoolean("settings", settings.getVisibility() == View.VISIBLE); }
@@ -200,6 +208,95 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
     @Override public void onNetwork(final String mac, final String lan) {
         final String ip = host;
         if (ip != null) prefs.edit().putString("mac:" + ip, mac).putString("lan:" + ip, lan).apply();
+    }
+
+    // ---------------------------------------------------------------- updates (GitHub releases)
+    private String version() {
+        try { return getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception e) { return "0"; }
+    }
+
+    private void checkUpdate(final boolean manual) {
+        if (manual) updateNote.setText(t("Đang kiểm tra...", "Checking..."));
+        new Thread(() -> {
+            Release found = null;
+            String error = null;
+            try { found = Release.newer(version(), "tv-remote.apk"); } catch (Exception e) { error = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage(); }
+            final Release r = found;
+            final String err = error;
+            ui.post(() -> {
+                if (isFinishing()) return;
+                if (err == null) { update = r; showUpdate(); }
+                if (manual) updateNote.setText(err != null ? t("Không kiểm tra được: ", "Could not check: ") + err
+                        : r == null ? t("Đang dùng bản mới nhất (", "You have the latest version (") + version() + ")."
+                        : t("Có bản mới ", "New version ") + r.version + t(". Bấm nút ở màn chọn TV để cập nhật.", ". Tap the button on the TV list to update."));
+            });
+        }).start();
+    }
+
+    private void showUpdate() {
+        updateBtn.setVisibility(update == null ? View.GONE : View.VISIBLE);
+        if (update != null && !updating) updateBtn.setText("🆕  " + t("Có bản mới ", "New version ") + update.version + t(" · bấm để cập nhật", " · tap to update"));
+    }
+
+    private void askUpdate() {
+        final Release r = update;
+        if (r == null || updating) return;
+        String notes = r.notes.length() > 900 ? r.notes.substring(0, 900) + "..." : r.notes;
+        new AlertDialog.Builder(this).setTitle(t("Bản mới ", "Version ") + r.version + t(" (đang dùng ", " (you have ") + version() + ")")
+                .setMessage(notes.isEmpty() ? t("Tải và cài bản mới?", "Download and install the new version?") : notes)
+                .setPositiveButton(t("Cập nhật", "Update"), (d, w) -> startUpdate(r)).setNegativeButton(t("Để sau", "Later"), null).show();
+    }
+
+    /** Downloads the APK from the release, then hands it to Android, which asks the person to confirm the install. */
+    private void startUpdate(final Release r) {
+        updating = true;
+        updateBtn.setText(t("Đang tải bản ", "Downloading ") + r.version + "...");
+        new Thread(() -> {
+            String error = null;
+            try {
+                java.io.File apk = new java.io.File(getCacheDir(), "update.apk");
+                Release.download(r.url, apk, pct -> ui.post(() -> updateBtn.setText(t("Đang tải bản ", "Downloading ") + r.version + "... " + pct + "%")));
+                android.content.pm.PackageInstaller pi = getPackageManager().getPackageInstaller();
+                int id = pi.createSession(new android.content.pm.PackageInstaller.SessionParams(android.content.pm.PackageInstaller.SessionParams.MODE_FULL_INSTALL));
+                try (android.content.pm.PackageInstaller.Session session = pi.openSession(id)) {
+                    try (java.io.OutputStream out = session.openWrite("apk", 0, apk.length()); java.io.InputStream in = new java.io.FileInputStream(apk)) {
+                        byte[] b = new byte[65536];
+                        for (int n; (n = in.read(b)) > 0; ) out.write(b, 0, n);
+                        session.fsync(out);
+                    }
+                    Intent back = new Intent(this, MainActivity.class).setAction(INSTALL_RESULT);
+                    session.commit(android.app.PendingIntent.getActivity(this, id, back,
+                            android.app.PendingIntent.FLAG_UPDATE_CURRENT | (android.os.Build.VERSION.SDK_INT >= 31 ? 0x02000000 /* FLAG_MUTABLE */ : 0)).getIntentSender());
+                }
+                apk.delete();
+            } catch (Exception e) {
+                error = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+            }
+            final String err = error;
+            ui.post(() -> {
+                if (err == null) { updateBtn.setText(t("Đang chờ Android xác nhận cài đặt...", "Waiting for Android to confirm the install...")); return; }
+                updating = false;
+                showUpdate();
+                message(t("Không cập nhật được: ", "Could not update: ") + err, true);
+            });
+        }).start();
+    }
+
+    /** Android reports back here: first "the person must confirm" (with the screen to show), then the result. */
+    @Override protected void onNewIntent(Intent i) {
+        super.onNewIntent(i);
+        if (!INSTALL_RESULT.equals(i.getAction())) return;
+        int status = i.getIntExtra(android.content.pm.PackageInstaller.EXTRA_STATUS, android.content.pm.PackageInstaller.STATUS_FAILURE);
+        if (status == android.content.pm.PackageInstaller.STATUS_PENDING_USER_ACTION) {
+            Intent confirm = i.getParcelableExtra(Intent.EXTRA_INTENT);
+            if (confirm != null) startActivity(confirm);
+            return;
+        }
+        if (status == android.content.pm.PackageInstaller.STATUS_SUCCESS) return;    // the app is restarted by the install anyway
+        updating = false;
+        showUpdate();
+        message(status == android.content.pm.PackageInstaller.STATUS_FAILURE_ABORTED ? t("Đã hủy cập nhật.", "Update cancelled.")
+                : t("Không cài được bản mới: ", "Could not install the new version: ") + i.getStringExtra(android.content.pm.PackageInstaller.EXTRA_STATUS_MESSAGE), true);
     }
 
     // ---------------------------------------------------------------- waking a TV that is off
@@ -340,6 +437,12 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         pickerMsg.setPadding(dp(12), dp(10), dp(12), dp(10));
         pickerMsg.setVisibility(View.GONE);
         picker.addView(pickerMsg, gap(12));
+        updateBtn = button("", 0xff2e7d4f);
+        updateBtn.setOnClickListener(v -> askUpdate());
+        updateBtn.setVisibility(View.GONE);
+        LinearLayout.LayoutParams up = new LinearLayout.LayoutParams(-1, dp(48));
+        up.topMargin = dp(12);
+        picker.addView(updateBtn, up);
 
         picker.addView(head(t("TV ĐÃ DÙNG", "YOUR TVS")), gap(18));
         savedList = col();
@@ -399,9 +502,18 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
             box.addView(b);
         }
 
+        box.addView(head(t("CẬP NHẬT", "UPDATES")), gap(18));
+        final Button[] auto = new Button[1];
+        final Runnable autoLabel = () -> auto[0].setText((prefs.getBoolean("autoUpdate", true) ? "✅  " : "⬜  ") + t("Tự kiểm tra bản mới khi mở app", "Check for a new version when the app opens"));
+        auto[0] = row("", () -> { prefs.edit().putBoolean("autoUpdate", !prefs.getBoolean("autoUpdate", true)).apply(); autoLabel.run(); });
+        autoLabel.run();
+        box.addView(auto[0]);
+        box.addView(row("🔄  " + t("Kiểm tra bản mới ngay", "Check for a new version now"), () -> checkUpdate(true)));
+        updateNote = note(t("App hỏi GitHub xem có bản phát hành mới hơn không; ngoài ra không gửi gì đi.", "The app asks GitHub whether a newer release exists; nothing else is sent."));
+        box.addView(updateNote);
+
         box.addView(head(t("GIỚI THIỆU", "ABOUT")), gap(18));
-        String ver = "";
-        try { ver = getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception ignored) { }
+        String ver = version();
         box.addView(note("TV Remote " + ver + "\ngithub.com/HoangTran0410/tv-remote\n\n" + t(
                 "App nói chuyện thẳng với TV qua ADB, không qua máy chủ nào. Khóa ADB của app nằm trong điện thoại này; gỡ app là mất khóa và TV sẽ hỏi cho phép lại.",
                 "The app talks straight to the TV over ADB, with no server in between. Its ADB key lives on this phone; uninstalling the app loses it and the TV will ask for permission again.")));

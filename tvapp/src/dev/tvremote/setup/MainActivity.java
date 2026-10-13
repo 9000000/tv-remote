@@ -14,6 +14,10 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import dev.tvremote.update.Release;
+
+import java.io.File;
+
 /** One screen, driven with the TV remote: connect to the TV's own ADB, then optimise / undo / set up Tailscale. */
 public final class MainActivity extends Activity {
     private TextView status, logView;
@@ -44,7 +48,8 @@ public final class MainActivity extends Activity {
                 button("⚡ Tối ưu TV", v -> run(() -> setup.apply())),
                 button("Hoàn tác", v -> run(() -> setup.undo())),
                 button("Tailscale", v -> tailscale()),
-                button("Kết nối lại", v -> connect())};
+                button("Kết nối lại", v -> connect()),
+                button("Cập nhật", v -> update())};
         for (Button b : buttons) row.addView(b);
         root.addView(row);
 
@@ -59,6 +64,31 @@ public final class MainActivity extends Activity {
         log("Cần bật trước: Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào \"Bản dựng\",");
         log("rồi Tùy chọn nhà phát triển → bật \"Gỡ lỗi ADB\" (hoặc \"Gỡ lỗi USB\").");
         connect();
+        new Thread(() -> {                                            // asks GitHub for the latest release, nothing else is sent
+            try {
+                Release r = Release.newer(version(), "tv-setup.apk");
+                if (r != null) { log("🆕 Có bản TV Setup mới " + r.version + " (đang dùng " + version() + "). Chọn \"Cập nhật\" để cài."); ui(() -> buttons[4].setText("🆕 Cập nhật " + r.version)); }
+            } catch (Exception ignored) { }                           // offline: stay quiet, the button still checks on demand
+        }).start();
+    }
+
+    private String version() {
+        try { return getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception e) { return "0"; }
+    }
+
+    /** Downloads this app's APK from the latest GitHub release and installs it through the TV's own ADB (no "unknown sources" needed). */
+    private void update() {
+        run(() -> {
+            log("Đang kiểm tra bản mới...");
+            Release r = Release.newer(version(), "tv-setup.apk");
+            if (r == null) { log("✓ Đang dùng bản mới nhất (" + version() + ")."); return; }
+            log("Đang tải bản " + r.version + "...");
+            File apk = new File(getExternalFilesDir(null), "tv-setup-update.apk");
+            int[] last = {0};
+            Release.download(r.url, apk, pct -> { if (pct >= last[0] + 25) { last[0] = pct; log("  " + pct + "%"); } });
+            log("Đang cài. App sẽ tự đóng; vài giây sau mở lại TV Setup là bản " + r.version + ".");
+            log(setup.install(apk));
+        });
     }
 
     @Override protected void onResume() {
