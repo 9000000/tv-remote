@@ -1,8 +1,20 @@
 # Changelog / Nhật ký thay đổi
 
-Một số phiên bản chung cho cả dự án (web, app điện thoại, app TV), ghi trong file `VERSION`. Bản phát hành kèm file APK nằm ở [Releases](https://github.com/HoangTran0410/tv-remote/releases); hai app tự kiểm tra bản mới ở đó.
+Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSION` (bản phát hành và web trên máy tính), `app/android/VERSION` (app điện thoại), `app/tv/VERSION` (app TV). Tiêu đề mỗi mục dưới đây là số của bản phát hành. Bản phát hành kèm file APK nằm ở [Releases](https://github.com/HoangTran0410/tv-remote/releases); hai app tự kiểm tra bản mới ở đó.
 
-One version number for the whole project (web, phone app, TV app), kept in `VERSION`. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
+Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
+
+## 2.1.0 - 2026-10-13
+
+Web 2.1.0 · app điện thoại 2.1.0 · app TV 2.1.0
+
+**Tiếng Việt**
+- Sắp xếp lại thư mục: `app/web` (web trên máy tính), `app/android` (app điện thoại), `app/tv` (app TV), `app/shared` (dùng chung), `dev` (công cụ phát hành). Thư mục gốc chỉ còn ba file để bấm: `start-mac.command`, `start-windows.cmd`, `start-linux.sh`. Ai đang dùng file `start.command` / `start.cmd` cũ thì đổi sang tên mới; `install-windows.cmd` đã gộp vào `start-windows.cmd`.
+- Mỗi app có số phiên bản riêng. Từ bản này, app chỉ báo cập nhật khi chính nó có thay đổi.
+
+**English**
+- Folders reorganised: `app/web` (web on the computer), `app/android` (phone app), `app/tv` (TV app), `app/shared`, `dev` (release tools). The top folder has only three files to click: `start-mac.command`, `start-windows.cmd`, `start-linux.sh`. If you used the old `start.command` / `start.cmd`, switch to the new names; `install-windows.cmd` is now part of `start-windows.cmd`.
+- Each app has its own version number. From this release on, an app only offers an update when it changed itself.
 
 ## 2.0.0 - 2026-10-13
 

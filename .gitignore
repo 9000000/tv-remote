@@ -2,16 +2,16 @@
 cert.pem
 key.pem
 *.pem
+# signing keys of the two Android apps: whoever has them can publish updates under the apps' names
+*.jks
+# this machine's own data and downloads
+tvs.json
 venv/
+tools/
+.cache/
 __pycache__/
 *.log
 .DS_Store
-.cache/
-start-*.command
-tools/
-start-*.cmd
-tvapp/build/
-tvapp/signing.jks
-tvs.json
-phoneapp/build/
-phoneapp/signing.jks
+# build output
+app/android/build/
+app/tv/build/

@@ -6,6 +6,14 @@
 
 Đã chạy thật với Sony BRAVIA (Android 9) từ macOS và Windows 11. TV hãng khác chưa thử.
 
+**Có ba cách dùng, chọn cái hợp với bạn:**
+
+| Bạn có | Dùng | Lấy ở đâu | Làm được |
+|---|---|---|---|
+| Máy tính (Mac, Windows, Linux) | Web remote trên máy tính | Tải repo này, bấm đúp `start-mac.command` / `start-windows.cmd` (mục 3) | Tất cả: nút bấm, xem màn hình, chuột, bàn phím, app, tệp, cài APK, sức khỏe TV |
+| Điện thoại Android | App **TV Remote** | `tv-remote.apk` ở [Releases](https://github.com/HoangTran0410/tv-remote/releases) (mục 4D) | Nút bấm, xem màn hình và chạm, gõ chữ, mở app |
+| Bất kỳ máy nào có trình duyệt (kể cả iPhone) | App **TV Setup** cài trên TV, rồi mở `http://<IP của TV>:8765` | `tv-setup.apk` ở [Releases](https://github.com/HoangTran0410/tv-remote/releases) (mục 4C) | Nút bấm, âm lượng, gõ chữ, mở app |
+
 ---
 
 ## Nhìn nhanh: nó hoạt động thế nào
@@ -15,7 +23,7 @@
 ```mermaid
 flowchart LR
     subgraph C["Máy điều khiển (một hoặc nhiều máy cùng lúc)"]
-        PC["💻 Máy tính<br/>start.command → trang web 127.0.0.1:8765"]
+        PC["💻 Máy tính<br/>start-mac.command → trang web 127.0.0.1:8765"]
         PH["📱 Điện thoại Android<br/>app TV Remote"]
     end
     subgraph T["📺 Android TV / Google TV"]
@@ -49,7 +57,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A0["Trên TV: bật “Gỡ lỗi ADB”<br/>(mục 2, làm bằng remote của TV)"] --> A1["Bấm đúp start.command / start.cmd<br/>→ trang web mở tab TV"]
+    A0["Trên TV: bật “Gỡ lỗi ADB”<br/>(mục 2, làm bằng remote của TV)"] --> A1["Bấm đúp start-mac.command / start-windows.cmd<br/>→ trang web mở tab TV"]
     A1 --> A2{"Tìm TV"}
     A2 -- "cùng Wi-Fi" --> A3["Quét mạng → Chọn"]
     A2 -- "khác mạng" --> A4["Nhập IP Tailscale của TV"]
@@ -114,8 +122,8 @@ Tên menu khác nhau chút ít tùy hãng; dưới đây là trên Sony.
 
 1. Tải mã nguồn về (git clone hoặc tải zip rồi giải nén).
 2. **Bấm đúp một file để chạy:**
-   - macOS / Linux: **`start.command`** (lần đầu nó tự tạo môi trường Python và cài gói).
-   - Windows: **`start.cmd`** (lần đầu nó tự chạy `install-windows.cmd`: cài gói, tải `adb`; nếu báo thiếu ffmpeg: `winget install Gyan.FFmpeg`).
+   - macOS: **`start-mac.command`**. Linux: chạy `./start-linux.sh`. (Lần đầu nó tự tạo môi trường Python và cài gói.)
+   - Windows: **`start-windows.cmd`** (lần đầu nó tự cài gói và tải `adb`; nếu báo thiếu ffmpeg: `winget install Gyan.FFmpeg`).
 3. Trình duyệt mở `http://127.0.0.1:8765`. Lần đầu chưa có TV nào nên trang mở sẵn tab **TV**:
    - Bấm **Quét mạng** để tìm TV trong cùng Wi-Fi (và các thiết bị Android trong Tailscale của bạn), hoặc gõ IP của TV rồi bấm **Chọn**.
    - Mục **Cài đặt lần đầu** hiện từng bước kèm nút bấm, bước nào xong thì có dấu ✓:
@@ -125,11 +133,11 @@ Tên menu khác nhau chút ít tùy hãng; dưới đây là trên Sony.
      4. **Lưu** – đặt tên và lưu. Nếu TV đã có IP Tailscale, từ nay trang kết nối qua IP đó nên dùng được cả khi không ở nhà.
      5. **Tối ưu TV** – tùy chọn, xem mục 6.
 
-Từ đó về sau chỉ cần bấm đúp `start.command` / `start.cmd`. Có nhiều TV thì đổi qua lại trong tab **TV**. Đóng cửa sổ là dừng; không có gì chạy ngầm trên máy tính.
+Từ đó về sau chỉ cần bấm đúp `start-mac.command` / `start-windows.cmd`. Có nhiều TV thì đổi qua lại trong tab **TV**. Đóng cửa sổ là dừng; không có gì chạy ngầm trên máy tính.
 
 > Máy tính phải kết nối được tới TV: cùng Wi-Fi, hoặc cả hai cùng trong một tài khoản Tailscale. Luồng cài mới hoàn toàn (bước 2–3 trên một TV chưa có gì) chưa được chạy thử trọn vẹn; quét mạng, chọn TV, lưu, đổi TV và các bước còn lại đã chạy trên macOS, và phần dòng lệnh đã chạy trên Windows.
 >
-> Thích dùng dòng lệnh: `scripts/tv-new.sh <IP>` (Windows: `scripts\tv-new.cmd <IP>`) làm đúng các bước trên.
+> Thích dùng dòng lệnh: `app/web/cli/tv-new.sh <IP>` (Windows: `app\web\cli\tv-new.cmd <IP>`) làm đúng các bước trên.
 
 ---
 
@@ -158,7 +166,7 @@ Không cần công cụ này: dùng app **Google TV** (Android/iPhone) → nút 
 
 **C. Không có cả điện thoại lẫn máy tính ở cạnh TV: app TV Setup**
 
-`tvapp/tv-setup.apk` là một app nhỏ cài thẳng lên TV. Sau khi bật "Gỡ lỗi ADB" (mục 2), mở app, chọn "Luôn cho phép" khi TV hỏi, rồi dùng remote bấm:
+`app/tv/tv-setup.apk` là một app nhỏ cài thẳng lên TV. Sau khi bật "Gỡ lỗi ADB" (mục 2), mở app, chọn "Luôn cho phép" khi TV hỏi, rồi dùng remote bấm:
 - **⚡ Tối ưu TV** / **Hoàn tác** – giống mục 6, chạy ngay trên TV.
 - **Tailscale** – mở trang cài Tailscale trong Google Play, hoặc mở Tailscale để lấy mã thêm TV nếu đã cài.
 - **Cập nhật** – tải bản TV Setup mới nhất từ GitHub Releases và cài luôn (qua ADB của chính TV, app tự đóng rồi mở lại là bản mới). Mỗi lần mở, app cũng tự báo nếu có bản mới.
@@ -171,7 +179,7 @@ App cũng hiện IP trong nhà và IP Tailscale của TV để đọc cho ngư�
 
 **D. Điều khiển bằng điện thoại Android: app TV Remote**
 
-`phoneapp/tv-remote.apk` là app remote cho điện thoại Android, không cần máy tính và không cần dòng lệnh. Cài APK, mở lên rồi:
+`app/android/tv-remote.apk` là app remote cho điện thoại Android, không cần máy tính và không cần dòng lệnh. Cài APK, mở lên rồi:
 - **Cùng Wi-Fi với TV:** bấm *Quét Wi-Fi* và chọn TV, hoặc gõ IP của TV.
 - **Khác mạng:** bật Tailscale trên cả điện thoại và TV, gõ IP `100.x` của TV.
 
@@ -185,7 +193,7 @@ Lần đầu TV hỏi "Cho phép gỡ lỗi USB?": tích **Luôn cho phép** r�
 
 ## 5. Dùng hằng ngày
 
-Bấm đúp `start.command` / `start.cmd` → trình duyệt mở `http://127.0.0.1:8765` với TV dùng lần trước.
+Bấm đúp `start-mac.command` / `start-windows.cmd` → trình duyệt mở `http://127.0.0.1:8765` với TV dùng lần trước.
 
 | Tab | Làm được gì |
 |---|---|
@@ -209,12 +217,12 @@ Hai đèn ở góc trên cho biết tình trạng: **TV** (kết nối remote) v
 
 ## 6. Tối ưu TV (tùy chọn)
 
-Nút **⚡ Tối ưu TV** trên web, hoặc `scripts/tv-setup.sh` (Windows: `scripts\tv-setup.cmd`). Chạy lại bao nhiêu lần cũng được, không gỡ cài đặt gì; **Hoàn tác** / `tv-setup.sh undo` trả lại như cũ.
+Nút **⚡ Tối ưu TV** trên web, hoặc `app/web/cli/tv-setup.sh` (Windows: `app\web\cli\tv-setup.cmd`). Chạy lại bao nhiêu lần cũng được, không gỡ cài đặt gì; **Hoàn tác** / `tv-setup.sh undo` trả lại như cũ.
 
 - Giữ Tailscale sống qua standby và khởi động lại.
 - Giảm hiệu ứng chuyển cảnh còn một nửa.
 - Cài FLauncher (màn hình chính chỉ có lưới app) và tắt màn hình chính của Google, vốn chiếm nhiều CPU.
-- Tắt app hệ thống không dùng. Danh sách này viết cho **Sony BRAVIA**; TV hãng khác thì các gói không có sẽ được bỏ qua (thêm gói của hãng đó vào `EXTRA` trong `scripts/tv_setup.py`).
+- Tắt app hệ thống không dùng. Danh sách này viết cho **Sony BRAVIA**; TV hãng khác thì các gói không có sẽ được bỏ qua (thêm gói của hãng đó vào `EXTRA` trong `app/web/cli/tv_setup.py`).
 
 Người ở nhà sẽ thấy màn hình chính đổi khác. Nếu sau này TV không hiện màn hình chính mà ADB cũng mất: Cài đặt → Ứng dụng → Ứng dụng hệ thống → **Android TV Home** → Bật.
 
@@ -254,20 +262,22 @@ Người ở nhà sẽ thấy màn hình chính đổi khác. Nếu sau này TV 
 ## 10. Dành cho người sửa code
 
 ```
-start.command, start.cmd, install-windows.cmd   bấm đúp để chạy (đây là tất cả những gì cần ở thư mục gốc)
-app/       server.py   trang web + API (aiohttp, chỉ 127.0.0.1)      web/         giao diện: index.html, style.css, js/ (i18n.js = bản tiếng Anh)
-           adbtools.py app, tệp, cài đặt qua adb                      appmeta.py   tên + logo app, đọc thẳng từ APK trên TV
-           tvconfig.py danh sách TV đã lưu (tvs.json)                 tvtools.py   tìm adb / ffmpeg, đường dẫn chung
-scripts/   tv_new.py, tv_setup.py   thêm TV, tối ưu TV bằng dòng lệnh (.sh / .cmd là vỏ gọi vào đây)
-           pair.py ghép remote · tvctl.py dòng lệnh (info | key HOME | app <gói|link>) · wake.py Wake-on-LAN
-tvapp/     app Android TV "TV Setup" (Java thuần, build.sh không cần Gradle) + tv-setup.apk đã build
-phoneapp/  app remote cho điện thoại Android (Java thuần, build.sh không cần Gradle) + tv-remote.apk đã build
-shared/    code Java dùng chung của hai app: ADB + phiên điều khiển TV (core), kiểm tra bản mới trên GitHub Releases (update)
-scripts/gen_icons.py   một bộ icon cho web và hai app
-VERSION, CHANGELOG.md, scripts/release.sh   số phiên bản chung, nhật ký thay đổi, lệnh phát hành (build APK + tạo GitHub release)
-vendor/    scrcpy-server-v5.0.1 (Genymobile/scrcpy, Apache-2.0, checksum ghim trong server.py)
-tvs.json, cert.pem, key.pem, .cache/, tools/   dữ liệu riêng của máy bạn, không đưa lên git
+start-mac.command, start-windows.cmd, start-linux.sh   bấm đúp để chạy web remote trên máy tính (thư mục gốc chỉ có ba file này để bấm)
+app/web/      web remote chạy trên máy tính
+              server.py    trang web + API (aiohttp, chỉ 127.0.0.1)     static/      giao diện: index.html, style.css, js/ (i18n.js = bản tiếng Anh)
+              adbtools.py  app, tệp, cài đặt qua adb                     appmeta.py   tên + logo app, đọc thẳng từ APK trên TV
+              tvconfig.py  danh sách TV đã lưu (tvs.json)                tvtools.py   tìm adb / ffmpeg, đường dẫn chung
+              cli/         dòng lệnh: tv_new.py, tv_setup.py (thêm TV, tối ưu TV; .sh / .cmd là vỏ gọi vào đây), pair.py, tvctl.py, wake.py
+              requirements.txt, install-windows.ps1 (cài lần đầu trên Windows, start-windows.cmd tự gọi)
+app/android/  app TV Remote cho điện thoại Android (Java thuần, build.sh không cần Gradle) + tv-remote.apk đã build + VERSION riêng
+app/tv/       app TV Setup cài trên TV, kèm web remote do TV phục vụ (assets/index.html) + tv-setup.apk đã build + VERSION riêng
+app/shared/   dùng chung: src/ (Java: ADB + phiên điều khiển TV, kiểm tra bản mới) và scrcpy-server-v5.0.1 (Genymobile/scrcpy, Apache-2.0)
+dev/          cho người phát triển: release.sh (build APK + tạo GitHub release), gen_icons.py (một bộ icon cho web và hai app)
+VERSION, CHANGELOG.md   số của bản phát hành (cũng là phiên bản web) và nhật ký thay đổi
+tvs.json, cert.pem, key.pem, venv/, tools/, .cache/   dữ liệu riêng của máy bạn, không đưa lên git
 ```
+
+**Phiên bản:** có ba số, mỗi số chỉ tăng khi phần của nó đổi. `VERSION` là số của bản phát hành và của web; `app/android/VERSION` và `app/tv/VERSION` là của từng app. Mỗi bản phát hành kèm cả hai APK và file `versions.json` ghi số của từng app; app đọc số của mình trong đó, nên app không đổi thì không bị mời cập nhật. `dev/release.sh` sẽ dừng lại nếu code một app đã đổi mà quên tăng số của nó.
 
 - **Nút remote:** giao thức Android TV Remote v2 (`androidtvremote2`), cổng 6466/6467. TV này bỏ qua lệnh mở app của giao thức, nên mở app/link đi qua ADB.
 - **Xem trực tiếp:** H.264 từ TV → ffmpeg → MJPEG multipart (`/api/stream`). Chế độ nhẹ dùng scrcpy-server giới hạn 8 fps / 960 px (đo được khoảng 0,7 trên 4 nhân CPU của TV); `?q=hd` dùng `screenrecord` 720p (khoảng 1,8 nhân). Lỗi thì trang tự chuyển sang ảnh chụp.
