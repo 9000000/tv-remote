@@ -10,9 +10,9 @@ Used for real with a Sony BRAVIA (Android 9) from macOS and Windows 11. Other TV
 
 | You have | Use | Get it | What it does |
 |---|---|---|---|
-| A computer (Mac, Windows, Linux) | The web remote on the computer | Download this repo, double-click `start-mac.command` / `start-windows.cmd` (section 3) | Everything: buttons, live screen, mouse, keyboard, apps, files, APK install, TV health |
-| An Android phone | The **TV Remote** app | `tv-remote.apk` from [Releases](https://github.com/HoangTran0410/tv-remote/releases) (section 4D) | Buttons, live screen with touch, typing, opening apps |
-| Anything with a browser (iPhone too) | The **TV Setup** app on the TV, then open `http://<TV's IP>:8765` | `tv-setup.apk` from [Releases](https://github.com/HoangTran0410/tv-remote/releases) (section 4C) | Buttons, volume, typing, opening apps |
+| A computer (Mac, Windows, Linux) | The web remote on the computer | Download this repo, double-click `start-mac.command` / `start-windows.cmd` (section 3) | Everything: buttons, live screen, mouse, keyboard, speaking to the TV, apps, files, APK install, TV health, terminal |
+| An Android phone | The **TV Remote** app | `tv-remote.apk` from [Releases](https://github.com/HoangTran0410/tv-remote/releases) (section 4D) | Buttons, live screen with touch, typing, speaking to the TV, apps, files, APK install, TV health, terminal |
+| Anything with a browser (iPhone too) | The **TV Setup** app on the TV, then open `http://<TV's IP>:8765` | `tv-setup.apk` from [Releases](https://github.com/HoangTran0410/tv-remote/releases) (section 4C) | Buttons, volume, typing, apps, files, APK install, TV health, terminal (no live screen yet) |
 
 ---
 
@@ -171,7 +171,7 @@ You do not need this tool: use the **Google TV** app (Android/iPhone) → *Remot
 - **Tailscale** – opens Tailscale's Google Play page, or opens Tailscale to get the code that adds the TV, if it is already installed.
 - **Cập nhật** (Update) – downloads the latest TV Setup from GitHub Releases and installs it (through the TV's own ADB; the app closes, reopen it and it is the new version). Each time it opens, the app also tells you when a newer version exists.
 
-**A web remote on the TV itself (no computer, no app on the phone).** Open TV Setup once and it is on. On a phone or computer, open a browser at the address the app shows on the TV, like `http://<TV's IP>:8765` (the home IP on the same Wi-Fi, the `100.x` IP over Tailscale). The first time the TV shows a **6-digit code**; type it into the page and that device is paired from then on. The page has the remote buttons (hold = long press), volume, typing, and the TV's apps with their logos. It starts again when the TV boots. **Remote qua web** turns it off/on, **Hủy ghép mọi thiết bị** makes every device pair again. This page is the remote only: the live screen, files and APK install still need the web UI on a computer or the phone app. The connection is plain HTTP on your home network (not encrypted), so do not expose port 8765 to the Internet; away from home, go through Tailscale.
+**A web remote on the TV itself (no computer, no app on the phone).** Open TV Setup once and it is on. On a phone or computer, open a browser at the address the app shows on the TV, like `http://<TV's IP>:8765` (the home IP on the same Wi-Fi, the `100.x` IP over Tailscale). The first time the TV shows a **6-digit code**; type it into the page and that device is paired from then on. The page has the remote buttons (hold = long press), volume, typing, and the TV's apps with their logos. It starts again when the TV boots. **Remote qua web** turns it off/on, **Hủy ghép mọi thiết bị** makes every device pair again. Besides the remote it has Apps, Files, Install, Health and Terminal tabs like the web UI on a computer; only the live screen is missing, for that use the web UI on a computer or the phone app. The connection is plain HTTP on your home network (not encrypted), so do not expose port 8765 to the Internet; away from home, go through Tailscale.
 
 It also shows the TV's home-network IP and Tailscale IP, to read out to whoever is helping. Get the APK onto the TV with a USB stick or the Downloader app. It has only been run on a Sony BRAVIA with Android 9; it needs the TV to open ADB on port 5555, so newer TVs that only offer pairing-code "Wireless debugging" (some Google TV devices on Android 12+) may not work.
 
@@ -186,6 +186,8 @@ It also shows the TV's home-network IP and Tailscale IP, to read out to whoever 
 The first time, the TV asks "Allow USB debugging?": tick **Always allow**, then OK. The app shows the TV's live picture (touch it to tap on the TV), remote buttons (hold = long press), a text box, the app list, and the phone's volume buttons control the TV. Under ⚙️ you can pick the picture quality (Data saver / Balanced / Sharp) to use less data; the status line shows the KB/s in use. The eye button at the top right turns the picture off/on: with it off only the buttons remain and the TV does no extra work. The TV only needs "ADB debugging" on (section 2). Several devices can control at once, but each one watching the picture costs the TV more CPU.
 
 **TV is off:** tap the red power button next to the TV to wake it. If the TV kept its network on (standby), the app turns the screen on, also over Tailscale. If its network is off too, only a Wake-on-LAN packet can reach it, and that only works when the phone is on the TV's own Wi-Fi (the TV needs "Remote start" on); from another network use Wake in the web UI on a computer, which relays through a machine at home. The ⚙️ button (top right) switches Tiếng Việt / English.
+
+**Managing the TV and speaking to it:** on the remote screen, the grid button opens management (Apps, Files, APK install, Health, Terminal). The microphone button: tap and say something like "open YouTube"; the phone turns speech into text and hands it to the TV's Google Assistant; long-press it to open the Assistant on the TV itself. App names in the list are package names (the phone cannot read display names remotely); for names and logos use the page on the TV or the web UI on a computer.
 
 **Updates:** the app asks GitHub for a newer version each time it opens (can be turned off under ⚙️) and shows a green "New version" button; tap it to download and install, and Android asks you to confirm (the first time you must allow the app to "install unknown apps"). APKs of every version are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; see [CHANGELOG.md](CHANGELOG.md) for what changed.
 
@@ -202,6 +204,7 @@ Double-click `start-mac.command` / `start-windows.cmd` → the browser opens `ht
 | **Tệp** (Files) | Browse TV storage and USB; download, upload (drag and drop), rename, delete, open a file on the TV, install an `.apk` |
 | **Tải / Cài** (Download / Install) | Download a file from a link to the TV, install an APK from a link or from the computer, the **Tối ưu TV** (Optimise TV) button |
 | **Sức khỏe** (Health) | The TV at a glance: power, current app, volume, latency, stream, CPU, RAM, storage, top CPU processes, Wi-Fi (signal, speed, band), hardware |
+| **Terminal** | Run commands as the TV's shell user (like `adb shell`), 30 seconds at most per command |
 | **TV** | Saved TVs, network scan, first-time setup steps, switching between TVs |
 
 Two indicators at the top right show the state: **TV** (remote connection) and **ADB**.

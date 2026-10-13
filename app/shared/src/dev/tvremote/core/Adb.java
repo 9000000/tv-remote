@@ -65,6 +65,7 @@ public final class Adb implements Closeable {
                     if (next == null) return 0;
                     cur = next; pos = 0;
                     if (cur == EOF) return -1;
+                    if (!closed) send(OKAY, local, remote, EMPTY);    // the TV sends its next packet only after this
                 } catch (InterruptedException e) {
                     throw new IOException("interrupted");
                 }
@@ -242,8 +243,7 @@ public final class Adb implements Closeable {
                 if (m.cmd == OKAY) {
                     if (s.remote == 0) { s.remote = m.arg0; s.opened.release(); } else s.acked.release();
                 } else if (m.cmd == WRTE) {
-                    s.in.add(m.data);
-                    send(OKAY, s.local, s.remote, EMPTY);
+                    s.in.add(m.data);                                 // acknowledged when read, so a slow reader slows the TV down instead of filling memory
                 } else if (m.cmd == CLSE) {
                     s.end();
                 }
@@ -266,9 +266,15 @@ public final class Adb implements Closeable {
         } catch (InterruptedException e) {
             throw new IOException("interrupted");
         }
-        if (s.closed || s.remote == 0) throw new IOException("refused: " + service);
+        if (s.remote == 0) throw new IOException("refused: " + service);   // closed already is fine: a quick command can finish before we look, its output is waiting
         return s;
     }
+
+    /** Like shell(), but without a terminal in between, so binary output is not altered (file contents). */
+    public Stream exec(String cmd) throws IOException { return open("exec:" + cmd); }
+
+    /** Quotes a string for the TV's shell. */
+    public static String q(String s) { return "'" + s.replace("'", "'\\''") + "'"; }
 
     /** Runs a command in the TV's shell (as the `shell` user) and returns everything it printed. */
     public String shell(String cmd) throws IOException {

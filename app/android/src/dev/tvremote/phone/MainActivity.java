@@ -29,6 +29,9 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import dev.tvremote.core.AdbLink;
+import dev.tvremote.core.HttpServer;
+import dev.tvremote.core.Manage;
 import dev.tvremote.core.Tv;
 import dev.tvremote.update.Release;
 
@@ -55,6 +58,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
     private SharedPreferences prefs;
     private LinearLayout picker, remote, controls, savedList, foundList;
     private View settings, about;
+    private Managing managing;                                        // apps, files, installs, health and terminal, shown in a web view
     private TextView pickerMsg, status;
     private EditText ipBox, textBox;
     private Button scanBtn, updateBtn;
@@ -97,6 +101,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         root.addView(settings, new FrameLayout.LayoutParams(-1, -1));
         about = buildAbout();
         root.addView(about, new FrameLayout.LayoutParams(-1, -1));
+        managing = new Managing(root);
         setContentView(root);
         show(false);
         if (b != null) host = b.getString("host");
@@ -142,6 +147,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
     }
 
     @Override public void onBackPressed() {
+        if (managing.back()) return;
         if (about.getVisibility() == View.VISIBLE) about.setVisibility(View.GONE);
         else if (settings.getVisibility() == View.VISIBLE) settings.setVisibility(View.GONE);
         else if (host != null) disconnect(null);
@@ -178,6 +184,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
     private void stopSession() { if (tv != null) { tv.stop(); tv = null; } }
 
     private void disconnect(String message) {
+        managing.close();
         stopSession();
         host = null;
         show(false);
@@ -210,7 +217,9 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
                     status.setText(t("Đang mở hình từ ", "Opening the picture from ") + (detail.isEmpty() ? host : detail) + "...");
                     break;
                 case "rate": if (video) status.setText((name(host).isEmpty() ? host : name(host)) + " · " + detail + " KB/s"); break;
-                case "live": status.setText((name(host).isEmpty() ? host : name(host)) + " · " + (video ? t("chạm vào hình để bấm trên TV", "touch the picture to tap on the TV")
+                case "live":
+                    if (pendingAsk != null) { tv.search(pendingAsk); pendingAsk = null; }
+                    status.setText((name(host).isEmpty() ? host : name(host)) + " · " + (video ? t("chạm vào hình để bấm trên TV", "touch the picture to tap on the TV")
                         : t("chỉ điều khiển, không xem hình (bấm nút con mắt để xem)", "buttons only, no picture (tap the eye to watch)"))); break;
                 case "closed": tv = null; disconnect(t("TV đã ngắt kết nối.", "The TV closed the connection.")); break;
                 default: tv = null; disconnect(explain(detail));
@@ -583,6 +592,187 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         return sv;
     }
 
+    // ---------------------------------------------------------------- managing the TV: apps, files, installs, health, terminal
+    @Override protected void onActivityResult(int request, int result, Intent data) {
+        super.onActivityResult(request, result, data);
+        if (request == Managing.PICK_FILE) managing.picked(result, data);
+        if (request == SPEAK && result == RESULT_OK && data != null) {
+            java.util.ArrayList<String> heard = data.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS);
+            if (heard != null && !heard.isEmpty()) ask(heard.get(0));
+        }
+    }
+
+    // ---------------------------------------------------------------- speaking to the TV
+    private static final int SPEAK = 78;
+    private String pendingAsk;                                        // heard while the session was restarting; sent when it is live again
+
+    /** The phone turns speech into text (its own Google speech service) and the TV's search / Assistant gets the sentence. */
+    private void speak() {
+        Intent i = new Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+                .putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                .putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, VI ? "vi-VN" : "en-US")
+                .putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, t("Nói điều muốn TV làm, vd: mở YouTube", "Say what the TV should do, e.g. open YouTube"));
+        try {
+            startActivityForResult(i, SPEAK);
+        } catch (Exception noRecognizer) {                            // no speech service on this phone: open the TV's own Assistant instead
+            if (tv != null && tv.ready()) tv.press(219);
+        }
+    }
+
+    private void ask(String sentence) {
+        android.widget.Toast.makeText(this, t("Gửi cho TV: ", "Sent to the TV: ") + sentence, android.widget.Toast.LENGTH_SHORT).show();
+        if (tv != null && tv.ready()) tv.search(sentence); else pendingAsk = sentence;
+    }
+
+    @Override protected void onDestroy() { managing.destroy(); super.onDestroy(); }
+
+    /**
+     * The same page the TV app serves, run inside this app: a server on 127.0.0.1 that only this app's web view can use
+     * (it must present a random cookie), talking to the TV over its own ADB connection.
+     */
+    private final class Managing implements HttpServer.Handler {
+        static final int PICK_FILE = 77;
+        private final LinearLayout view;
+        private final android.webkit.WebView web;
+        private final String token = java.util.UUID.randomUUID().toString().replace("-", "");
+        private HttpServer http;
+        private int port;
+        private AdbLink link;
+        private Manage manage;
+        private String forHost;
+        private android.webkit.ValueCallback<android.net.Uri[]> picking;
+        private byte[] page;
+
+        Managing(FrameLayout root) {
+            view = col();
+            view.setBackgroundColor(BG);
+            view.setClickable(true);
+            TextView title = label(t("Quản lý TV", "Manage the TV"), 20, TEXT);
+            title.setTypeface(Typeface.DEFAULT_BOLD);
+            LinearLayout top = new LinearLayout(MainActivity.this);
+            top.setGravity(Gravity.CENTER_VERTICAL);
+            top.setPadding(dp(16), dp(10), dp(12), dp(6));
+            top.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
+            Button done = icon("@close", t("Đóng", "Close"), BTN);
+            done.setOnClickListener(v -> view.setVisibility(View.GONE));
+            top.addView(done, new LinearLayout.LayoutParams(dp(48), dp(40)));
+            view.addView(top);
+            web = new android.webkit.WebView(MainActivity.this);
+            web.setBackgroundColor(BG);
+            web.getSettings().setJavaScriptEnabled(true);
+            web.getSettings().setDomStorageEnabled(true);
+            web.setWebViewClient(new android.webkit.WebViewClient());      // links stay inside
+            web.setWebChromeClient(new android.webkit.WebChromeClient() {
+                @Override public boolean onShowFileChooser(android.webkit.WebView w, android.webkit.ValueCallback<android.net.Uri[]> cb, FileChooserParams params) {
+                    if (picking != null) picking.onReceiveValue(null);
+                    picking = cb;
+                    try { startActivityForResult(params.createIntent(), PICK_FILE); } catch (Exception e) { picking = null; return false; }
+                    return true;
+                }
+            });
+            web.setDownloadListener((url, agent, disposition, mime, length) -> save(url, disposition));
+            view.addView(web, new LinearLayout.LayoutParams(-1, 0, 1));
+            view.setVisibility(View.GONE);
+            root.addView(view, new FrameLayout.LayoutParams(-1, -1));
+        }
+
+        void open(String tvHost) {
+            if (tvHost == null) return;
+            try {
+                if (http == null) { http = new HttpServer(this); port = http.start(0, true); }
+                if (!tvHost.equals(forHost)) {
+                    if (link != null) link.close();
+                    link = new AdbLink(getFilesDir(), tvHost);
+                    manage = new Manage(link, null);
+                    forHost = tvHost;
+                    String origin = "http://127.0.0.1:" + port;
+                    android.webkit.CookieManager.getInstance().setCookie(origin, "tvr=" + token);
+                    web.loadUrl(origin + "/?embed=1&lang=" + (VI ? "vi" : "en"));
+                }
+                view.setVisibility(View.VISIBLE);
+            } catch (Exception e) {
+                message(t("Không mở được trang quản lý: ", "Could not open the manage page: ") + e.getMessage(), true);
+            }
+        }
+
+        boolean back() {
+            if (view.getVisibility() != View.VISIBLE) return false;
+            view.setVisibility(View.GONE);
+            return true;
+        }
+
+        /** Leaving this TV: drop its ADB connection; the next TV gets a fresh page. */
+        void close() {
+            view.setVisibility(View.GONE);
+            if (link != null) link.close();
+            link = null; manage = null; forHost = null;
+        }
+
+        void destroy() {
+            close();
+            if (http != null) http.stop();
+            web.destroy();
+        }
+
+        void picked(int result, Intent data) {
+            if (picking == null) return;
+            picking.onReceiveValue(android.webkit.WebChromeClient.FileChooserParams.parseResult(result, data));
+            picking = null;
+        }
+
+        @Override public HttpServer.Response handle(HttpServer.Request r) throws Exception {
+            if (!token.equals(r.cookie("tvr"))) return HttpServer.Response.error(403, "this page belongs to the TV Remote app");
+            if (r.path.equals("/") || r.path.equals("/index.html")) {
+                if (page == null) {
+                    java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+                    try (java.io.InputStream in = getAssets().open("index.html")) { byte[] b = new byte[65536]; for (int n; (n = in.read(b)) > 0; ) buf.write(b, 0, n); }
+                    page = buf.toByteArray();
+                }
+                return HttpServer.Response.of("text/html; charset=utf-8", page);
+            }
+            if (r.path.equals("/api/state"))                           // the page only needs to know it may show itself
+                return HttpServer.Response.json(new org.json.JSONObject().put("name", name(forHost == null ? "" : forHost)).put("on", true).put("volume", 0).put("volume_max", 0).put("muted", false).put("adb", "ready"));
+            Manage m = manage;
+            HttpServer.Response out = m == null ? null : m.handle(r);
+            return out != null ? out : HttpServer.Response.error(404, "not found");
+        }
+
+        /** "Download to this device": copy the file from our own server into the phone's Download folder. */
+        private void save(final String url, final String disposition) {
+            String n = "file";
+            try {
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("filename\\*=UTF-8''([^;]+)").matcher(String.valueOf(disposition));
+                if (m.find()) n = java.net.URLDecoder.decode(m.group(1), "UTF-8");
+            } catch (Exception ignored) { }
+            final String fileName = n;
+            android.widget.Toast.makeText(MainActivity.this, t("Đang tải ", "Downloading ") + fileName + "...", android.widget.Toast.LENGTH_SHORT).show();
+            new Thread(() -> {
+                String result;
+                try {
+                    java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+                    c.setRequestProperty("Cookie", "tvr=" + token);
+                    java.io.OutputStream out;
+                    if (android.os.Build.VERSION.SDK_INT >= 29) {
+                        android.content.ContentValues v = new android.content.ContentValues();
+                        v.put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+                        v.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_DOWNLOADS);
+                        out = getContentResolver().openOutputStream(getContentResolver().insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, v));
+                        result = t("Đã lưu vào thư mục Download: ", "Saved to Download: ") + fileName;
+                    } else {
+                        java.io.File f = new java.io.File(getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS), fileName);
+                        out = new java.io.FileOutputStream(f);
+                        result = t("Đã lưu: ", "Saved: ") + f.getAbsolutePath();
+                    }
+                    try (java.io.InputStream in = c.getInputStream(); java.io.OutputStream o = out) { byte[] b = new byte[65536]; for (int k; (k = in.read(b)) > 0; ) o.write(b, 0, k); }
+                } catch (Exception e) {
+                    result = t("Không tải được: ", "Download failed: ") + e.getMessage();
+                }
+                final String msg = result;
+                ui.post(() -> android.widget.Toast.makeText(MainActivity.this, msg, android.widget.Toast.LENGTH_LONG).show());
+            }).start();
+        }
+    }
+
     // ---------------------------------------------------------------- about screen
     private void web(String url) {
         try { startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))); }
@@ -672,7 +862,11 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         controls.setPadding(dp(14), dp(12), dp(14), dp(20));
         LinearLayout first = keys(52, "@power|" + t("Nguồn", "Power"), 26, "@menu|Menu", 82, "@settings|" + t("Cài đặt của TV", "TV settings"), 176);
         IconButton apps = icon("@apps", t("Ứng dụng", "Apps"), BTN);
-        apps.setOnClickListener(v -> showApps());
+        apps.setOnClickListener(v -> managing.open(host));
+        IconButton mic = icon("@mic", t("Nói với TV", "Speak to the TV"), BTN);
+        mic.setOnClickListener(v -> speak());
+        mic.setOnLongClickListener(v -> { if (tv != null && tv.ready()) tv.press(219); return true; });   // the TV's own Assistant screen
+        first.addView(mic, cell(52, true));
         first.addView(apps, cell(52, true));
         controls.addView(first);
         controls.addView(dpad(), gap(16));
@@ -711,23 +905,6 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
     private void sendText() {
         String s = textBox.getText().toString();
         if (tv != null && tv.ready() && !s.isEmpty()) { tv.text(s); textBox.setText(""); }
-    }
-
-    private void showApps() {
-        final Tv session = tv;
-        if (session == null || !session.ready()) return;
-        new Thread(() -> {
-            List<String> list;
-            try { list = session.apps(); } catch (Exception e) { list = new ArrayList<>(); }
-            final List<String> apps = list;
-            ui.post(() -> {
-                if (isFinishing() || tv != session) return;
-                String[] names = new String[apps.size()];
-                for (int i = 0; i < names.length; i++) names[i] = apps.get(i).substring(0, apps.get(i).indexOf('/'));
-                new AlertDialog.Builder(this).setTitle(t("Mở ứng dụng trên TV", "Open an app on the TV"))
-                        .setItems(names, (d, i) -> session.launch(apps.get(i))).setNegativeButton(android.R.string.cancel, null).show();
-            });
-        }).start();
     }
 
     /** A row of equal-width remote keys: label, Android key code, label, key code... "@icon|words" shows an icon. An empty label leaves a gap. */

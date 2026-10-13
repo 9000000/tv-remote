@@ -4,6 +4,24 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.2.0 - 2026-10-13
+
+Web 2.2.0 · app điện thoại 2.2.0 · app TV 2.2.0
+
+**Tiếng Việt**
+- App điện thoại và trang remote do TV phục vụ có thêm phần **quản lý TV**: Ứng dụng (mở, dừng, gỡ), Tệp (duyệt, tải về, gửi lên, đổi tên, xóa, mở trên TV, cài file .apk), Cài APK từ link hoặc từ máy, tải file từ link về TV, Sức khỏe TV. Trên điện thoại: bấm nút ô lưới ở màn remote.
+- Tab **Terminal** ở cả ba nơi (web máy tính, app điện thoại, trang trên TV): chạy lệnh với quyền shell của TV.
+- **Google Assistant:** nút micro mở Assistant của TV. Thêm "hỏi TV": gõ hoặc nói một câu (vd "mở YouTube") rồi gửi cho Assistant của TV. Trên điện thoại: bấm nút micro để nói, giữ lâu để mở Assistant của TV. Trên web máy tính: ô "Hỏi / tìm trên TV" và nút 🎤 (Chrome).
+- Sửa lỗi: app đôi khi báo "refused" ngay khi kết nối dù TV vẫn bình thường.
+- Sửa lỗi: tải file lớn từ TV không còn dồn hết vào bộ nhớ khi máy nhận chậm.
+
+**English**
+- The phone app and the remote page served by the TV gain **TV management**: Apps (open, stop, uninstall), Files (browse, download, upload, rename, delete, open on the TV, install an .apk), APK install from a link or from the device, download a link to the TV, TV health. On the phone: tap the grid button on the remote screen.
+- A **Terminal** tab in all three places (web on the computer, phone app, the page on the TV): run commands as the TV's shell user.
+- **Google Assistant:** the microphone button opens the TV's Assistant. New "ask the TV": type or say a sentence (e.g. "open YouTube") and it is handed to the TV's Assistant. On the phone: tap the microphone to speak, long-press to open the TV's Assistant. On the computer web: the "Ask / search on the TV" box and the 🎤 button (Chrome).
+- Fix: the app sometimes reported "refused" right after connecting although the TV was fine.
+- Fix: downloading a large file from the TV no longer piles up in memory when the receiver is slow.
+
 ## 2.1.0 - 2026-10-13
 
 Web 2.1.0 · app điện thoại 2.1.0 · app TV 2.1.0

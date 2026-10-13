@@ -32,13 +32,14 @@ ICONS = {
     "close": ["M18 6 6 18", "m6 6 12 12"], "check": ["M20 6 9 17l-5-5"],
     "search": ["M11 3a8 8 0 1 0 0 16a8 8 0 1 0 0-16", "m21 21-4.3-4.3"],
     "gear": ["M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6", "M12 2v3", "M12 19v3", "M2 12h3", "M19 12h3", "M4.9 4.9l2.2 2.2", "M16.9 16.9l2.2 2.2", "M4.9 19.1l2.2-2.2", "M16.9 7.1l2.2-2.2"],
+    "mic": ["M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z", "M19 10v2a7 7 0 0 1-14 0v-2", "M12 19v3"],
     "plug_off": ["M18 6 6 18", "M6 6l12 12", "M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20"],
 }
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 sprite = '<svg xmlns="http://www.w3.org/2000/svg" style="display:none">' + "".join(
     f'<symbol id="i-{n}" viewBox="0 0 24 24">' + "".join(f'<path d="{d}"/>' for d in paths) + "</symbol>" for n, paths in ICONS.items()) + "</svg>"
-for page in (ROOT / "app/web/static/index.html", ROOT / "app/tv/assets/index.html"):
+for page in (ROOT / "app/web/static/index.html", ROOT / "app/shared/web/index.html"):
     if page.exists():
         s = page.read_text()
         s2 = re.sub(r"<!-- icons:start -->.*?<!-- icons:end -->", "<!-- icons:start -->" + sprite + "<!-- icons:end -->", s, flags=re.S)

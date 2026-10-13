@@ -75,6 +75,9 @@
     'IP Tailscale': 'Tailscale IP', 'IP dây mạng': 'Ethernet IP', 'IP trong nhà': 'Home IP', 'Máy': 'Device', 'Bản vá bảo mật': 'Security patch', 'Kiến trúc': 'Architecture',
     'Số nhân CPU': 'CPU cores', 'Mật độ điểm ảnh': 'Pixel density',
     'Màn hình': 'Screen', 'Đánh thức': 'Wake', 'Đánh thức TV (Wake-on-LAN khi TV standby sâu)': 'Wake the TV (Wake-on-LAN when it is in deep standby)',
+    'Chạy lệnh': 'Run', 'Chạy lệnh với quyền shell của TV (như adb shell). Mỗi lệnh chạy riêng, tối đa 30 giây; lệnh chờ gõ tiếp như top, logcat không dùng được. Phím ↑ ↓ gọi lại lệnh cũ.': 'Runs commands as the TV’s shell user (like adb shell). Each command runs on its own, for at most 30 seconds; interactive ones such as top or logcat do not work. ↑ ↓ recall earlier commands.',
+    'Mở Google Assistant trên TV': 'Open Google Assistant on the TV', 'Hỏi / tìm trên TV, vd: mở YouTube': 'Ask / search on the TV, e.g. open YouTube', 'Nói bằng micro của máy này': 'Speak into this computer’s microphone',
+    'Gửi câu này cho Google Assistant của TV': 'Send this sentence to the TV’s Google Assistant', 'trình duyệt chưa được phép dùng micro': 'the browser is not allowed to use the microphone', 'TV này không có tìm kiếm / Assistant của Google': 'This TV has no Google search / Assistant',
     // about
     'Giới thiệu': 'About', 'Điều khiển Android TV / Google TV từ máy tính và điện thoại: nút remote, xem màn hình, ứng dụng, tệp, cài APK.': 'Control an Android TV / Google TV from a computer and a phone: remote buttons, live screen, apps, files, APK install.',
     'Tác giả:': 'Author:', 'Mã nguồn:': 'Source code:', 'Các bản phát hành': 'Releases', 'Nhật ký thay đổi': 'Change log', 'Báo lỗi': 'Report a problem', 'Đóng': 'Close',
@@ -137,6 +140,7 @@
     [/^Còn trống ([^·]+) \/ ([^·]+)$/, (m) => `${m[1]} free of ${m[2]}`],
     [/^trong nhà (.+)$/, (m) => 'at home ' + m[1]],
     [/^Đang đọc tên và logo app từ TV \((\d+)\/(\d+)\), chỉ lần đầu\.\.\.$/, (m) => `Reading app names and icons from the TV (${m[1]}/${m[2]}), first time only...`],
+    [/^Đã gửi cho TV: (.*)$/, (m) => 'Sent to the TV: ' + m[1]],
     [/^Đã mở trên TV: (.*)$/, (m) => 'Opened on the TV: ' + m[1]],
     [/^Đã mở (.*)$/, (m) => 'Opened ' + tr(m[1])],
     [/^(Mở|Dừng|Gỡ): (.*)$/, (m) => ({ 'Mở': 'Opened', 'Dừng': 'Stopped', 'Gỡ': 'Uninstalled' })[m[1]] + ': ' + m[2]],

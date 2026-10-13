@@ -31,6 +31,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import dev.tvremote.core.AdbLink;
+import dev.tvremote.core.HttpServer;
+import dev.tvremote.core.Manage;
 import dev.tvremote.core.Tv;
 
 /**
@@ -45,7 +48,7 @@ public final class RemoteService extends Service implements Tv.Listener, HttpSer
     static {
         Object[] k = {"UP", 19, "DOWN", 20, "LEFT", 21, "RIGHT", 22, "OK", 23, "BACK", 4, "HOME", 3, "MENU", 82, "POWER", 26, "WAKE", 224,
                 "VOL_UP", 24, "VOL_DOWN", 25, "MUTE", 164, "PLAY_PAUSE", 85, "NEXT", 87, "PREV", 88, "SETTINGS", 176, "INPUT", 178,
-                "DEL", 67, "ENTER", 66, "CH_UP", 166, "CH_DOWN", 167};
+                "DEL", 67, "ENTER", 66, "ASSIST", 219, "CH_UP", 166, "CH_DOWN", 167};
         for (int i = 0; i < k.length; i += 2) KEYS.put((String) k[i], (Integer) k[i + 1]);
         for (int d = 0; d <= 9; d++) KEYS.put(String.valueOf(d), 7 + d);
     }
@@ -84,6 +87,8 @@ public final class RemoteService extends Service implements Tv.Listener, HttpSer
     private final Map<String, byte[]> icons = new ConcurrentHashMap<>();
     private final Map<Integer, Runnable> held = new HashMap<>();
     private HttpServer http;
+    private AdbLink link;                                             // for apps, files, installs and health; the keys go through `tv`
+    private Manage manage;
     private SharedPreferences prefs;
     private volatile Tv tv;
     private volatile boolean stopping;
@@ -103,7 +108,14 @@ public final class RemoteService extends Service implements Tv.Listener, HttpSer
         Notification.Builder n = Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(this, "remote") : new Notification.Builder(this);
         startForeground(1, n.setSmallIcon(R.drawable.ic_power).setContentTitle("TV Remote").setContentText("Web remote: port " + PORT).setOngoing(true).build());
         http = new HttpServer(this);
-        try { http.start(PORT); } catch (Exception e) { adbState = "error"; }
+        link = new AdbLink(getFilesDir(), "127.0.0.1");
+        manage = new Manage(link, new Manage.Labels() {
+            @Override public String label(String pkg) {
+                try { return String.valueOf(getPackageManager().getApplicationLabel(getPackageManager().getApplicationInfo(pkg, 0))); } catch (Exception e) { return null; }
+            }
+            @Override public boolean icons() { return true; }
+        });
+        try { http.start(PORT, false); } catch (Exception e) { adbState = "error"; }
         connect();
     }
 
@@ -114,6 +126,7 @@ public final class RemoteService extends Service implements Tv.Listener, HttpSer
         running = null;
         code = null;
         if (http != null) http.stop();
+        if (link != null) link.close();
         Tv t = tv;
         if (t != null) t.stop();
         ui.removeCallbacksAndMessages(null);
@@ -173,6 +186,8 @@ public final class RemoteService extends Service implements Tv.Listener, HttpSer
             }
             default:
         }
+        HttpServer.Response managed = manage.handle(r);
+        if (managed != null) return managed;
         if (!post) return HttpServer.Response.error(404, "not found");
         Tv t = tv;
         JSONObject d = r.json();
@@ -201,7 +216,7 @@ public final class RemoteService extends Service implements Tv.Listener, HttpSer
         }
     }
 
-    private static HttpServer.Response ok() throws Exception { return HttpServer.Response.json(new JSONObject().put("ok", true)); }
+    private static HttpServer.Response ok() { return HttpServer.Response.ok(); }
 
     /**
      * down / up are separate so holding a button in the browser is a long press on the TV. While it is held the key repeats

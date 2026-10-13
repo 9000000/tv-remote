@@ -66,9 +66,10 @@
   /* remote card: line icons, a round D-pad with OK in the middle */
   .ic { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
   .rc { display:flex; flex-direction:column; align-items:center; gap:16px; padding:18px 16px; }
-  .rrow { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; width:100%; max-width:300px; } .rrow.three { grid-template-columns:repeat(3,1fr); }
+  .rrow { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; width:100%; max-width:300px; } .rrow.three { grid-template-columns:repeat(3,1fr); }
   .rb { min-height:52px; border-radius:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:0; }
   .rb.lab { min-height:60px; } .rb small { font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+  #speak.on { background:var(--bad); color:#fff; }
   .rb.power { color:var(--bad); } .rb.play { background:var(--ink); color:var(--card); } .rb.play:hover { background:var(--ink); filter:brightness(.9); }
   .dpad { position:relative; width:min(250px, 72vw); aspect-ratio:1; border-radius:50%; background:var(--btn); border:1px solid var(--line); box-shadow:inset 0 2px 12px rgba(0,0,0,.18); flex:none; }
   .dpad button { position:absolute; width:34%; height:34%; min-height:0; background:transparent; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--muted); }
@@ -154,6 +155,9 @@
   .meter { margin:10px 0 0; font-size:14px; } .meter .top { display:flex; justify-content:space-between; gap:8px; } .meter b { font-variant-numeric:tabular-nums; }
   .meter .bar { height:10px; border-radius:5px; } .meter .bar i { border-radius:5px; } .meter.warn .bar i { background:var(--warn); } .meter.bad .bar i { background:var(--bad); }
   .tile { background:var(--bg); border:1px solid var(--line); }
+
+  .term { background:#0b0d10; color:#d7e0ea; border-radius:12px; padding:12px; font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; white-space:pre-wrap; overflow-wrap:anywhere; height:min(52vh, 460px); overflow:auto; margin:0 0 10px; }
+  .term .cmd { color:#7fb0ff; } .term .err { color:#ff8a80; } .mono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:14px; }
 
   /* setup checklist */
   .step { display:flex; gap:12px; padding:14px 0; border-top:1px solid var(--line); align-items:flex-start; } .step:first-child { border-top:0; }

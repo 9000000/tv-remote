@@ -286,6 +286,13 @@ public final class Tv {
         return out;
     }
 
+    /** Hands a sentence to the TV's own search / Assistant, as if it had been spoken to the TV's remote. */
+    public void search(final String query) {
+        final Adb a = adb;
+        if (a == null || query.trim().isEmpty()) return;
+        new Thread(() -> { try { a.shell("am start -a android.search.action.GLOBAL_SEARCH --es query " + Adb.q(query.trim())); } catch (IOException ignored) { } }).start();
+    }
+
     /** Runs a shell command on the TV through this session's ADB connection; "" when not connected. */
     public String shell(String cmd) throws IOException {
         Adb a = adb;

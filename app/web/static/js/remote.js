@@ -105,3 +105,20 @@ document.addEventListener('paste', (e) => {                           // Cmd+V a
   const t = (e.clipboardData || window.clipboardData).getData('text'); if (t) { e.preventDefault(); queue('/api/type', { text: t.slice(0, 500) }); }
 });
 
+
+// ---------- ask the TV: typed or spoken here, handed to the TV's own search / Assistant ----------
+async function askTv(q) { q = q.trim(); if (q && await api('/api/search', { query: q })) { toast('Đã gửi cho TV: ' + q); setTimeout(refresh, 2500); } }
+$('#askf').addEventListener('submit', (e) => { e.preventDefault(); askTv($('#ask').value); $('#ask').value = ''; });
+// speech is turned into text by the browser (Chrome), not by the TV
+const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (Speech) {
+  const b = $('#speak'); let rec = null; b.hidden = false;
+  b.addEventListener('click', () => {
+    if (rec) { rec.stop(); return; }
+    rec = new Speech(); rec.lang = LANG === 'vi' ? 'vi-VN' : 'en-US'; rec.interimResults = true;
+    rec.onresult = (e) => { const r = e.results[e.results.length - 1]; $('#ask').value = r[0].transcript; if (r.isFinal) { askTv(r[0].transcript); $('#ask').value = ''; } };
+    rec.onerror = (e) => toast('Lỗi: ' + (e.error === 'not-allowed' ? 'trình duyệt chưa được phép dùng micro' : e.error));
+    rec.onend = () => { rec = null; b.classList.remove('on'); };
+    b.classList.add('on'); rec.start();
+  });
+}

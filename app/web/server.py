@@ -8,6 +8,7 @@ from pathlib import Path
 from aiohttp import web
 from androidtvremote2 import AndroidTVRemote, CannotConnect, ConnectionClosed, InvalidAuth
 from androidtvremote2.remotemessage_pb2 import RemoteKeyCode
+import shlex
 import tempfile
 import tvconfig
 from adbtools import Adb, AdbError, PKG_RE
@@ -16,7 +17,7 @@ from tvtools import ADB, APP, CERT, FFMPEG, KEY, ROOT, SCRIPTS, find
 
 KEYS = {
     "UP": "DPAD_UP", "DOWN": "DPAD_DOWN", "LEFT": "DPAD_LEFT", "RIGHT": "DPAD_RIGHT", "OK": "DPAD_CENTER",
-    "BACK": "BACK", "HOME": "HOME", "MENU": "MENU", "POWER": "POWER", "MUTE": "MUTE",
+    "BACK": "BACK", "HOME": "HOME", "MENU": "MENU", "POWER": "POWER", "MUTE": "MUTE", "ASSIST": "SEARCH",   # over the remote protocol the search key opens the Assistant
     "VOL_UP": "VOLUME_UP", "VOL_DOWN": "VOLUME_DOWN", "PLAY_PAUSE": "MEDIA_PLAY_PAUSE",
     "NEXT": "MEDIA_NEXT", "PREV": "MEDIA_PREVIOUS", "CH_UP": "CHANNEL_UP", "CH_DOWN": "CHANNEL_DOWN",
     "SETTINGS": "SETTINGS", "INPUT": "TV_INPUT", "SEARCH": "SEARCH", "DEL": "DEL",
@@ -846,9 +847,9 @@ def build(S):
 
     HEALTH = ("getprop ro.product.manufacturer; getprop ro.product.model; getprop ro.build.version.release; getprop ro.build.version.sdk; "
               "getprop ro.build.version.security_patch; getprop ro.board.platform; getprop ro.product.cpu.abi; cat /sys/devices/system/cpu/present; "
-              "echo '#'; head -1 /proc/stat; sleep 0.6; head -1 /proc/stat; echo '#'; grep -E '^(MemTotal|MemAvailable):' /proc/meminfo; echo '#'; df -k /data | tail -1; "
-              "echo '#'; cat /proc/uptime; echo '#'; wm size; wm density; dumpsys display | grep -m1 -o 'fps=[0-9.]*'; echo '#'; dumpsys wifi | grep -m1 mWifiInfo; "
-              "echo '#'; ip -o -4 addr show; echo '#'; top -n 1 -b -m 7 -o %CPU,%MEM,ARGS -s 1 | tail -7")
+              "printf '\\043~\\043\\n'; head -1 /proc/stat; sleep 0.6; head -1 /proc/stat; printf '\\043~\\043\\n'; grep -E '^(MemTotal|MemAvailable):' /proc/meminfo; printf '\\043~\\043\\n'; df -k /data | tail -1; "
+              "printf '\\043~\\043\\n'; cat /proc/uptime; printf '\\043~\\043\\n'; wm size; wm density; dumpsys display | grep -m1 -o 'fps=[0-9.]*'; printf '\\043~\\043\\n'; dumpsys wifi | grep -m1 mWifiInfo; "
+              "printf '\\043~\\043\\n'; ip -o -4 addr show; printf '\\043~\\043\\n'; top -n 1 -b -m 7 -o %CPU,%MEM,ARGS -s 1 | tail -7")
 
     @routes.get("/api/health")
     @adb_errors
@@ -857,7 +858,7 @@ def build(S):
         t0 = time.monotonic()
         await adb.shell(":")
         ping = round((time.monotonic() - t0) * 1000)
-        part = [x.strip() for x in (await adb.shell(HEALTH, timeout=20)).split("#")] + [""] * 8
+        part = [x.strip() for x in (await adb.shell(HEALTH, timeout=20)).split("#~#")] + [""] * 8
         props = (part[0].splitlines() + [""] * 8)[:8]
         cpu = None
         stat = [[int(n) for n in line.split()[1:]] for line in part[1].splitlines() if line.startswith("cpu")]
@@ -885,6 +886,28 @@ def build(S):
             "wifi": {"ssid": wifi.get("SSID", ""), "rssi": num(wifi.get("RSSI")), "speed": num(wifi.get("Link speed")), "freq": num(wifi.get("Frequency"))} if wifi.get("SSID") else None,
             "ips": [{"if": m[1], "ip": m[2]} for m in re.finditer(r"(?m)^\d+: (\S+)\s+inet ([\d.]+)", part[7]) if m[1] != "lo"],
             "top": top[:5], "remote": tv.state()})
+
+    @routes.post("/api/search")
+    @adb_errors
+    async def search(request):
+        """Hands a sentence to the TV's own search / Assistant, as if it had been spoken to the TV's remote."""
+        q = str((await body(request)).get("query", "")).strip()
+        if not q:
+            raise web.HTTPBadRequest(text="empty query")
+        out = await adb.shell("am start -a android.search.action.GLOBAL_SEARCH --es query " + shlex.quote(q) + " 2>&1")
+        if "Error" in out:
+            return web.json_response({"error": "TV này không có tìm kiếm / Assistant của Google"}, status=400)
+        return web.json_response({"ok": True})
+
+    @routes.post("/api/shell")
+    @adb_errors
+    async def shell(request):
+        """Terminal tab: one command as the TV's shell user."""
+        cmd = str((await body(request)).get("cmd", "")).strip()
+        if not cmd:
+            raise web.HTTPBadRequest(text="empty command")
+        out = await adb.shell(cmd + " 2>&1", timeout=30)
+        return web.json_response({"out": out.replace("\r\n", "\n")[-200000:]})
 
     @routes.post("/api/tv/save")
     @adb_errors

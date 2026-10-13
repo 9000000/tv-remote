@@ -10,7 +10,7 @@ JAR=$(ls -d "$SDK"/platforms/android-* | sort -V | tail -1)/android.jar
 VER="${VERSION_NAME:-$(cat VERSION)}"                                 # this app's own version: bump it only when this app changes
 CODE=$(echo "$VER" | awk -F. '{print $1 * 10000 + $2 * 100 + $3}')
 rm -rf build && mkdir -p build/classes build/gen build/dex build/assets
-cp assets/* build/assets/ && cp ../shared/scrcpy-server-v5.0.1 build/assets/scrcpy-server.jar   # the web remote page, and the input server run on the TV
+cp ../shared/web/index.html build/assets/ && cp ../shared/scrcpy-server-v5.0.1 build/assets/scrcpy-server.jar   # the web remote page, and the input server run on the TV
 "$BT/aapt2" compile --dir res -o build/res.zip
 "$BT/aapt2" link -o build/unsigned.apk -I "$JAR" --manifest AndroidManifest.xml --java build/gen -A build/assets -0 jar \
   --min-sdk-version 21 --target-sdk-version 34 --version-code "$CODE" --version-name "$VER" build/res.zip

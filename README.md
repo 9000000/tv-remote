@@ -10,9 +10,9 @@
 
 | Bạn có | Dùng | Lấy ở đâu | Làm được |
 |---|---|---|---|
-| Máy tính (Mac, Windows, Linux) | Web remote trên máy tính | Tải repo này, bấm đúp `start-mac.command` / `start-windows.cmd` (mục 3) | Tất cả: nút bấm, xem màn hình, chuột, bàn phím, app, tệp, cài APK, sức khỏe TV |
-| Điện thoại Android | App **TV Remote** | `tv-remote.apk` ở [Releases](https://github.com/HoangTran0410/tv-remote/releases) (mục 4D) | Nút bấm, xem màn hình và chạm, gõ chữ, mở app |
-| Bất kỳ máy nào có trình duyệt (kể cả iPhone) | App **TV Setup** cài trên TV, rồi mở `http://<IP của TV>:8765` | `tv-setup.apk` ở [Releases](https://github.com/HoangTran0410/tv-remote/releases) (mục 4C) | Nút bấm, âm lượng, gõ chữ, mở app |
+| Máy tính (Mac, Windows, Linux) | Web remote trên máy tính | Tải repo này, bấm đúp `start-mac.command` / `start-windows.cmd` (mục 3) | Tất cả: nút bấm, xem màn hình, chuột, bàn phím, nói với TV, app, tệp, cài APK, sức khỏe TV, terminal |
+| Điện thoại Android | App **TV Remote** | `tv-remote.apk` ở [Releases](https://github.com/HoangTran0410/tv-remote/releases) (mục 4D) | Nút bấm, xem màn hình và chạm, gõ chữ, nói với TV, ứng dụng, tệp, cài APK, sức khỏe TV, terminal |
+| Bất kỳ máy nào có trình duyệt (kể cả iPhone) | App **TV Setup** cài trên TV, rồi mở `http://<IP của TV>:8765` | `tv-setup.apk` ở [Releases](https://github.com/HoangTran0410/tv-remote/releases) (mục 4C) | Nút bấm, âm lượng, gõ chữ, ứng dụng, tệp, cài APK, sức khỏe TV, terminal (chưa có xem màn hình) |
 
 ---
 
@@ -171,7 +171,7 @@ Không cần công cụ này: dùng app **Google TV** (Android/iPhone) → nút 
 - **Tailscale** – mở trang cài Tailscale trong Google Play, hoặc mở Tailscale để lấy mã thêm TV nếu đã cài.
 - **Cập nhật** – tải bản TV Setup mới nhất từ GitHub Releases và cài luôn (qua ADB của chính TV, app tự đóng rồi mở lại là bản mới). Mỗi lần mở, app cũng tự báo nếu có bản mới.
 
-**Remote qua web ngay trên TV (không cần máy tính, không cần cài app trên điện thoại).** Mở TV Setup một lần là nó bật sẵn. Trên điện thoại hoặc máy tính, mở trình duyệt vào địa chỉ app hiện trên TV, dạng `http://<IP của TV>:8765` (IP trong nhà khi cùng Wi-Fi, IP `100.x` khi dùng Tailscale). Lần đầu TV hiện **mã 6 số**, nhập mã đó vào trang là xong; từ đó thiết bị ấy vào thẳng. Trang có nút điều khiển (giữ nút = nhấn giữ), âm lượng, gõ chữ và các app của TV kèm logo. Nó tự chạy lại khi TV khởi động. Nút **Remote qua web** để tắt/bật, **Hủy ghép mọi thiết bị** để bắt mọi máy ghép lại. Trang này chỉ có phần remote: xem màn hình, tệp và cài APK vẫn cần web trên máy tính hoặc app điện thoại. Kết nối là HTTP thường trong mạng nhà (không mã hóa), nên đừng mở cổng 8765 ra Internet; ở ngoài nhà hãy đi qua Tailscale.
+**Remote qua web ngay trên TV (không cần máy tính, không cần cài app trên điện thoại).** Mở TV Setup một lần là nó bật sẵn. Trên điện thoại hoặc máy tính, mở trình duyệt vào địa chỉ app hiện trên TV, dạng `http://<IP của TV>:8765` (IP trong nhà khi cùng Wi-Fi, IP `100.x` khi dùng Tailscale). Lần đầu TV hiện **mã 6 số**, nhập mã đó vào trang là xong; từ đó thiết bị ấy vào thẳng. Trang có nút điều khiển (giữ nút = nhấn giữ), âm lượng, gõ chữ và các app của TV kèm logo. Nó tự chạy lại khi TV khởi động. Nút **Remote qua web** để tắt/bật, **Hủy ghép mọi thiết bị** để bắt mọi máy ghép lại. Ngoài phần remote, trang có các tab Ứng dụng, Tệp, Cài, Sức khỏe và Terminal như web trên máy tính; riêng xem màn hình thì chưa có, cần web trên máy tính hoặc app điện thoại. Kết nối là HTTP thường trong mạng nhà (không mã hóa), nên đừng mở cổng 8765 ra Internet; ở ngoài nhà hãy đi qua Tailscale.
 
 App cũng hiện IP trong nhà và IP Tailscale của TV để đọc cho người hỗ trợ. Đưa APK lên TV bằng USB, hoặc bằng app Downloader trên TV. App này mới chạy thử trên Sony BRAVIA Android 9; nó cần TV mở ADB ở cổng 5555, nên các TV đời mới chỉ có "Gỡ lỗi không dây" kiểu ghép mã (một số Google TV Android 12+) có thể không dùng được.
 
@@ -186,6 +186,8 @@ App cũng hiện IP trong nhà và IP Tailscale của TV để đọc cho ngư�
 Lần đầu TV hỏi "Cho phép gỡ lỗi USB?": tích **Luôn cho phép** rồi OK. App hiện hình trực tiếp của TV (chạm vào hình = bấm trên TV), các nút điều khiển (giữ nút = nhấn giữ), ô gõ chữ, danh sách app, và dùng được nút âm lượng của điện thoại. Trong ⚙️ chọn được chất lượng hình (Tiết kiệm / Vừa / Nét) để đỡ tốn băng thông; dòng trạng thái hiện số KB/s đang dùng. Nút con mắt ở góc trên bên phải tắt/bật hình: tắt hình thì chỉ còn nút điều khiển và TV không tốn thêm CPU. TV chỉ cần bật "Gỡ lỗi ADB" (mục 2). Nhiều máy điều khiển cùng lúc được, nhưng mỗi máy đang xem hình làm TV tốn thêm CPU.
 
 **TV đang tắt:** bấm nút nguồn (đỏ) cạnh tên TV để đánh thức. Nếu TV còn giữ mạng (chế độ chờ) thì app bật màn hình lên, kể cả qua Tailscale. Nếu TV tắt cả mạng thì chỉ gói Wake-on-LAN mới gọi được nó, và gói này chỉ tới TV khi điện thoại ở đúng Wi-Fi nhà TV (TV phải bật "Khởi động từ xa"); ở mạng khác thì dùng nút Đánh thức trên web ở máy tính, nó nhờ một máy ở nhà gửi giúp. Nút ⚙️ (góc trên bên phải) để đổi Tiếng Việt / English.
+
+**Quản lý TV và nói với TV:** ở màn remote, nút ô lưới mở phần quản lý (Ứng dụng, Tệp, Cài APK, Sức khỏe, Terminal). Nút micro: bấm rồi nói một câu như "mở YouTube", điện thoại đổi lời nói thành chữ và gửi cho Google Assistant của TV; giữ lâu nút đó để mở Assistant ngay trên TV. Tên app trong danh sách là tên gói (điện thoại không đọc được tên hiển thị từ xa); muốn có tên và logo thì dùng trang trên TV hoặc web máy tính.
 
 **Cập nhật:** app tự hỏi GitHub xem có bản mới không mỗi lần mở (tắt được trong ⚙️) và hiện nút xanh "Có bản mới"; bấm vào là tải và cài, Android sẽ hỏi xác nhận (lần đầu phải cho phép app "cài ứng dụng không rõ nguồn gốc"). File APK của mọi phiên bản nằm ở [Releases](https://github.com/HoangTran0410/tv-remote/releases), thay đổi từng bản xem [CHANGELOG.md](CHANGELOG.md).
 
@@ -202,6 +204,7 @@ Bấm đúp `start-mac.command` / `start-windows.cmd` → trình duyệt mở `h
 | **Tệp** | Duyệt bộ nhớ TV và USB; tải về, gửi lên (kéo thả), đổi tên, xóa, mở tệp trên TV, cài file `.apk` |
 | **Tải / Cài** | Tải file từ link về TV, cài APK từ link hoặc từ máy, nút **Tối ưu TV** |
 | **Sức khỏe** | Tình trạng TV: nguồn, app đang mở, âm lượng, độ trễ, luồng hình, CPU, RAM, bộ nhớ, tiến trình tốn CPU nhất, Wi-Fi (tín hiệu, tốc độ, băng tần), phần cứng |
+| **Terminal** | Chạy lệnh với quyền shell của TV (như `adb shell`), mỗi lệnh tối đa 30 giây |
 | **TV** | TV đã lưu, quét mạng tìm TV, các bước cài đặt lần đầu, đổi qua lại giữa các TV |
 
 Hai đèn ở góc trên cho biết tình trạng: **TV** (kết nối remote) và **ADB**.
