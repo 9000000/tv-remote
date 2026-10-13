@@ -67,6 +67,10 @@
     'Chạy tối ưu TV? Màn hình chính của TV sẽ là FLauncher.': 'Optimise the TV? Its home screen will become FLauncher.',
     'Hoàn tác? Bật lại màn hình chính Google, các app đã tắt và hiệu ứng như cũ.': 'Undo? This turns the Google home screen, the disabled apps and normal animations back on.',
     'Đang chạy...': 'Running...', 'Đã xong': 'Done',
+    // about
+    'Giới thiệu': 'About', 'Điều khiển Android TV / Google TV từ máy tính và điện thoại: nút remote, xem màn hình, ứng dụng, tệp, cài APK.': 'Control an Android TV / Google TV from a computer and a phone: remote buttons, live screen, apps, files, APK install.',
+    'Tác giả:': 'Author:', 'Mã nguồn:': 'Source code:', 'Các bản phát hành': 'Releases', 'Nhật ký thay đổi': 'Change log', 'Báo lỗi': 'Report a problem', 'Đóng': 'Close',
+    'Hình trực tiếp và chuột dùng': 'The live picture and mouse use', '(Genymobile, Apache-2.0). Nút remote dùng thư viện androidtvremote2.': '(Genymobile, Apache-2.0). The remote buttons use the androidtvremote2 library.',
     // quit
     'Tắt chương trình remote trên máy tính này?\nTV không bị ảnh hưởng. Muốn dùng lại thì bấm đúp start.command / start.cmd.': 'Stop the remote program on this computer?\nThe TV is not affected. To use it again, double-click start.command / start.cmd.',
     'Đã tắt': 'Stopped', 'Chương trình remote trên máy tính này đã dừng. Bấm đúp start.command (Windows: start.cmd) để mở lại. Có thể đóng tab này.': 'The remote program on this computer has stopped. Double-click start.command (Windows: start.cmd) to start it again. You can close this tab.',

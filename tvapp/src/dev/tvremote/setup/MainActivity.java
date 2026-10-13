@@ -38,6 +38,7 @@ public final class MainActivity extends Activity {
         TextView title = text("TV Setup", 30, Color.WHITE);
         title.setTypeface(Typeface.DEFAULT_BOLD);
         root.addView(title);
+        root.addView(text("Bản " + version() + "  ·  Tác giả: Hoang Tran (@HoangTran0410)  ·  github.com/HoangTran0410/tv-remote", 14, Color.rgb(120, 130, 143)));
         status = text("Đang kết nối ADB...", 18, Color.rgb(153, 163, 176));
         status.setPadding(0, dp(6), 0, dp(18));
         root.addView(status);

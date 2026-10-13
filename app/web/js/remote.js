@@ -89,7 +89,7 @@ $('#wake').addEventListener('click', async () => {
 const keymap = { ArrowUp:'UP', ArrowDown:'DOWN', ArrowLeft:'LEFT', ArrowRight:'RIGHT', Escape:'BACK', Home:'HOME' };
 const typingHere = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
 document.addEventListener('keydown', (e) => {
-  if (currentTab !== 'remote' || typingHere() || e.metaKey || e.ctrlKey || e.altKey || e.isComposing || $('#preview').open) return;
+  if (currentTab !== 'remote' || typingHere() || e.metaKey || e.ctrlKey || e.altKey || e.isComposing || $('#preview').open || $('#about').open) return;
   const onButton = ['BUTTON', 'SUMMARY', 'A'].includes(document.activeElement.tagName);
   if (onButton && (e.key === 'Enter' || e.key === ' ' || e.key === 'Tab')) return;   // keyboard users still operate the page
   if (e.key === 'Escape' && document.fullscreenElement) return;       // let Esc leave fullscreen

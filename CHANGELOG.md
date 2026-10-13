@@ -4,6 +4,14 @@ Một số phiên bản chung cho cả dự án (web, app điện thoại, app T
 
 One version number for the whole project (web, phone app, TV app), kept in `VERSION`. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 1.4.0 - 2026-10-13
+
+**Tiếng Việt**
+- Màn Giới thiệu: tác giả, link GitHub, bản phát hành, báo lỗi, ghi công scrcpy. Web: nút ℹ️ trên đầu trang. App điện thoại: ⚙️ → Giới thiệu. App TV: dòng dưới tiêu đề.
+
+**English**
+- About screen: author, GitHub link, releases, issue reporting, scrcpy credit. Web: the ℹ️ button in the header. Phone app: ⚙️ → About. TV app: a line under the title.
+
 ## 1.3.1 - 2026-10-13
 
 - App điện thoại: hộp thoại "Bản mới" không còn hiện ký hiệu Markdown `**` trong ghi chú phát hành. / Phone app: the "New version" dialog no longer shows Markdown `**` marks in the release notes.

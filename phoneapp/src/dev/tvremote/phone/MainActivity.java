@@ -53,7 +53,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
     private final Handler ui = new Handler(Looper.getMainLooper());
     private SharedPreferences prefs;
     private LinearLayout picker, remote, controls, savedList, foundList;
-    private View settings;
+    private View settings, about;
     private TextView pickerMsg, status;
     private EditText ipBox, textBox;
     private Button scanBtn, updateBtn;
@@ -92,15 +92,18 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         root.addView(remote, new FrameLayout.LayoutParams(-1, -1));
         settings = buildSettings();
         root.addView(settings, new FrameLayout.LayoutParams(-1, -1));
+        about = buildAbout();
+        root.addView(about, new FrameLayout.LayoutParams(-1, -1));
         setContentView(root);
         show(false);
         if (b != null) host = b.getString("host");
         if (host != null) show(true);
         if (b != null && b.getBoolean("settings")) settings.setVisibility(View.VISIBLE);
+        if (b != null && b.getBoolean("about")) about.setVisibility(View.VISIBLE);
         if (prefs.getBoolean("autoUpdate", true)) checkUpdate(false);
     }
 
-    @Override protected void onSaveInstanceState(Bundle out) { super.onSaveInstanceState(out); out.putString("host", host); out.putBoolean("settings", settings.getVisibility() == View.VISIBLE); }
+    @Override protected void onSaveInstanceState(Bundle out) { super.onSaveInstanceState(out); out.putString("host", host); out.putBoolean("settings", settings.getVisibility() == View.VISIBLE); out.putBoolean("about", about.getVisibility() == View.VISIBLE); }
 
     @Override protected void onStart() { super.onStart(); refreshSaved(); startSession(); }
 
@@ -119,7 +122,8 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
     }
 
     @Override public void onBackPressed() {
-        if (settings.getVisibility() == View.VISIBLE) settings.setVisibility(View.GONE);
+        if (about.getVisibility() == View.VISIBLE) about.setVisibility(View.GONE);
+        else if (settings.getVisibility() == View.VISIBLE) settings.setVisibility(View.GONE);
         else if (host != null) disconnect(null);
         else super.onBackPressed();
     }
@@ -514,14 +518,66 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         box.addView(updateNote);
 
         box.addView(head(t("GIỚI THIỆU", "ABOUT")), gap(18));
-        String ver = version();
-        box.addView(note("TV Remote " + ver + "\ngithub.com/HoangTran0410/tv-remote\n\n" + t(
-                "App nói chuyện thẳng với TV qua ADB, không qua máy chủ nào. Khóa ADB của app nằm trong điện thoại này; gỡ app là mất khóa và TV sẽ hỏi cho phép lại.",
-                "The app talks straight to the TV over ADB, with no server in between. Its ADB key lives on this phone; uninstalling the app loses it and the TV will ask for permission again.")));
+        box.addView(row("ℹ️  " + t("Giới thiệu, tác giả, mã nguồn", "About, author, source code"), () -> about.setVisibility(View.VISIBLE)));
 
         ScrollView sv = new ScrollView(this);
         sv.setBackgroundColor(BG);
         sv.setClickable(true);                                        // do not let touches fall through to the screen below
+        sv.addView(box);
+        sv.setVisibility(View.GONE);
+        return sv;
+    }
+
+    // ---------------------------------------------------------------- about screen
+    private void web(String url) {
+        try { startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))); }
+        catch (Exception e) { message(url, false); }                  // no browser on this device
+    }
+
+    private View buildAbout() {
+        LinearLayout box = col();
+        box.setPadding(dp(16), dp(20), dp(16), dp(24));
+        TextView title = label(t("Giới thiệu", "About"), 24, TEXT);
+        title.setTypeface(Typeface.DEFAULT_BOLD);
+        LinearLayout top = new LinearLayout(this);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+        top.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
+        Button done = icon("✓", t("Xong", "Done"), ACCENT);
+        done.setOnClickListener(v -> about.setVisibility(View.GONE));
+        top.addView(done, new LinearLayout.LayoutParams(dp(52), dp(44)));
+        box.addView(top);
+
+        android.widget.ImageView logo = new android.widget.ImageView(this);
+        logo.setImageResource(R.drawable.icon);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(84), dp(84));
+        lp.gravity = Gravity.CENTER_HORIZONTAL;
+        lp.topMargin = dp(22);
+        box.addView(logo, lp);
+        TextView name = label("TV Remote " + version(), 20, TEXT);
+        name.setTypeface(Typeface.DEFAULT_BOLD);
+        name.setGravity(Gravity.CENTER);
+        box.addView(name, gap(10));
+        TextView what = note(t("Remote cho Android TV / Google TV: hình trực tiếp, chạm, nút điều khiển, gõ chữ, mở app.",
+                "A remote for Android TV / Google TV: live picture, touch, remote buttons, typing, opening apps."));
+        what.setGravity(Gravity.CENTER);
+        box.addView(what);
+
+        box.addView(head(t("TÁC GIẢ", "AUTHOR")), gap(22));
+        box.addView(row("👤  Hoang Tran\n@HoangTran0410", () -> web("https://github.com/HoangTran0410")));
+
+        box.addView(head(t("MÃ NGUỒN", "SOURCE CODE")), gap(18));
+        box.addView(row("🔗  github.com/HoangTran0410/tv-remote", () -> web("https://github.com/" + Release.REPO)));
+        box.addView(row("📦  " + t("Các bản phát hành và nhật ký thay đổi", "Releases and change log"), () -> web("https://github.com/" + Release.REPO + "/releases")));
+        box.addView(row("🐞  " + t("Báo lỗi, góp ý", "Report a problem"), () -> web("https://github.com/" + Release.REPO + "/issues")));
+
+        box.addView(head(t("GHI CÔNG", "CREDITS")), gap(18));
+        box.addView(row("scrcpy · Genymobile · Apache-2.0\n" + t("hình trực tiếp và điều khiển", "live picture and input"), () -> web("https://github.com/Genymobile/scrcpy")));
+        box.addView(note(t("App nói chuyện thẳng với TV qua ADB, không qua máy chủ nào. Khóa ADB của app nằm trong điện thoại này; gỡ app là mất khóa và TV sẽ hỏi cho phép lại.",
+                "The app talks straight to the TV over ADB, with no server in between. Its ADB key lives on this phone; uninstalling the app loses it and the TV will ask for permission again.")), gap(12));
+
+        ScrollView sv = new ScrollView(this);
+        sv.setBackgroundColor(BG);
+        sv.setClickable(true);
         sv.addView(box);
         sv.setVisibility(View.GONE);
         return sv;

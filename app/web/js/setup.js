@@ -17,6 +17,15 @@ $('#setupundo').addEventListener('click', () => runSetup('undo'));
 $('#lang').textContent = LANG === 'vi' ? '🌐 EN' : '🌐 VI';
 $('#lang').addEventListener('click', () => setLang(LANG === 'vi' ? 'en' : 'vi'));
 
+// ---------- about ----------
+$('#aboutbtn').addEventListener('click', async () => {
+  $('#about').showModal();
+  const r = await fetch('/api/about').then((x) => x.json()).catch(() => null);
+  if (r && r.version) $('#aboutver').textContent = r.version;
+});
+$('#aboutclose').addEventListener('click', () => $('#about').close());
+$('#about').addEventListener('click', (e) => { if (e.target === $('#about')) $('#about').close(); });   // click outside the box
+
 // ---------- stop the local server from the page ----------
 let stopped = false;
 $('#quit').addEventListener('click', async () => {

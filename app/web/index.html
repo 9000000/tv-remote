@@ -17,6 +17,7 @@
       <span class="chip" id="chipTv"><i></i><span>TV: ...</span></span>
       <span class="chip" id="chipAdb"><i></i><span>ADB: ...</span></span>
       <button class="small" id="lang" title="Tiếng Việt / English">🌐 EN</button>
+      <button class="small" id="aboutbtn" title="Giới thiệu"><span class="ico">ℹ️</span><span class="lbl"> Giới thiệu</span></button>
       <button class="small danger" id="quit" title="Dừng chương trình trên máy tính này (TV không bị ảnh hưởng)"><span class="ico">⏻</span><span class="lbl"> Tắt</span></button>
     </div>
   </header>
@@ -200,6 +201,17 @@
   <section class="card" id="jobscard" hidden><h2>⏳ Tiến trình tải lên / cài đặt</h2><div id="jobs"></div></section>
 </main>
 <div id="pipslot"></div>
+<dialog id="about">
+  <div class="card aboutbox">
+    <h1>📺 TV Remote <span class="muted" id="aboutver"></span></h1>
+    <p>Điều khiển Android TV / Google TV từ máy tính và điện thoại: nút remote, xem màn hình, ứng dụng, tệp, cài APK.</p>
+    <p><b>Tác giả:</b> Hoang Tran · <a href="https://github.com/HoangTran0410" target="_blank" rel="noopener">@HoangTran0410</a></p>
+    <p><b>Mã nguồn:</b> <a href="https://github.com/HoangTran0410/tv-remote" target="_blank" rel="noopener">github.com/HoangTran0410/tv-remote</a></p>
+    <p><a href="https://github.com/HoangTran0410/tv-remote/releases" target="_blank" rel="noopener">Các bản phát hành</a> · <a href="https://github.com/HoangTran0410/tv-remote/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Nhật ký thay đổi</a> · <a href="https://github.com/HoangTran0410/tv-remote/issues" target="_blank" rel="noopener">Báo lỗi</a></p>
+    <p class="muted">Hình trực tiếp và chuột dùng <a href="https://github.com/Genymobile/scrcpy" target="_blank" rel="noopener">scrcpy</a> (Genymobile, Apache-2.0). Nút remote dùng thư viện androidtvremote2.</p>
+    <div style="text-align:right"><button class="small primary" id="aboutclose">✓ Đóng</button></div>
+  </div>
+</dialog>
 <dialog id="preview"><img alt="Xem trước"></dialog>
 <div id="toast" role="status"></div>
 

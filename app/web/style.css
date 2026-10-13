@@ -132,6 +132,7 @@
   .two-up { display:grid; gap:14px; grid-template-columns:1fr; } @media (min-width:900px) { .two-up { grid-template-columns:1fr 1fr; align-items:start; } }
 
   dialog { border:0; padding:0; background:transparent; max-width:96vw; max-height:96vh; } dialog::backdrop { background:rgba(0,0,0,.8); }
+  .aboutbox { max-width:480px; margin:0; } .aboutbox h1 { margin-bottom:10px; } .aboutbox p { margin:8px 0; font-size:14px; line-height:1.5; } .aboutbox a { color:var(--accent); }
   dialog img { max-width:96vw; max-height:92vh; display:block; border-radius:8px; cursor:zoom-out; }
 
   /* setup checklist */

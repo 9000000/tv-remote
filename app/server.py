@@ -906,6 +906,14 @@ def build(S):
             await asyncio.sleep(0.2)
         return web.json_response({"ok": True, "connected": tv.available})
 
+    @routes.get("/api/about")
+    async def about(request):
+        try:
+            version = (ROOT / "VERSION").read_text().strip()
+        except OSError:
+            version = ""
+        return web.json_response({"version": version})
+
     @routes.post("/api/shutdown")
     async def shutdown(request):
         await body(request)
