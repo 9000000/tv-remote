@@ -505,6 +505,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 disconnect(null)
                 if (ip != null) connect(ip)
             },
+            Triple(t("Cài TV Setup lên TV", "Install TV Setup on the TV"), t("Khi TV đòi mật khẩu ADB hoặc giấu Tùy chọn nhà phát triển: app này mở thẳng màn hình đó", "When the TV asks for an ADB password or hides Developer options: this app opens that screen directly")) { installSetup() },
             Triple(t("Mở CH Play trên TV", "Open the Play Store on the TV"), "") { basic?.launch("market://search?q=launcher"); Unit },
             Triple(t("Mở app theo tên gói", "Open an app by package name"), t("Đã cài thì mở app, chưa cài thì mở trang CH Play của nó", "Opens the app, or its Play Store page when not installed")) {
                 val box = input("com.example.app")
@@ -515,6 +516,88 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                     .setPositiveButton(t("Mở", "Open")) { _, _ -> box.text.toString().trim().let { if (it.isNotEmpty()) basic?.launch(it) } }
                     .setNegativeButton(t("Hủy", "Cancel"), null).show()
                 Unit
+            }))
+    }
+
+    /**
+     * Getting our TV app onto a TV that has no ADB yet, in one tap: the Downloader app (installed from the Play Store when
+     * missing) fetches it, and the phone opens Downloader, types the link and presses Go. What only the person can do is
+     * confirm the install on the TV.
+     */
+    private fun installSetup() {
+        val a = basic ?: return
+        val link = "github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"
+        val dl = "com.esaba.downloader"
+        var stop = false
+        val box = AlertDialog.Builder(this).setTitle(t("Cài TV Setup lên TV", "Install TV Setup on the TV")).setMessage(t("Đang mở Downloader trên TV...", "Opening Downloader on the TV..."))
+            .setNegativeButton(t("Dừng", "Stop")) { _, _ -> stop = true }.setOnCancelListener { stop = true }.show()
+        val say = { vi: String, en: String -> ui.post { if (box.isShowing) box.setMessage(t(vi, en)) } }
+        // waits until the TV says [pkg] is in front; false when it does not within [seconds], or the person stopped it
+        val front = { pkg: String, seconds: Int ->
+            var ok = false
+            for (i in 0 until seconds * 5) { if (stop || basic !== a) break; if (a.app == pkg) { ok = true; break }; Thread.sleep(200) }
+            ok
+        }
+        Thread {
+            a.launch(dl)
+            var there = front(dl, 6)
+            if (!there && !stop && a.app.isEmpty()) {                  // this TV does not say what is on its screen: no way to follow along
+                ui.post { box.dismiss(); installSetupByHand() }
+                return@Thread
+            }
+            if (!there && !stop) {                                     // not installed: the TV is on its Play Store page, with Install in focus
+                say("TV chưa có Downloader: đang cài từ CH Play...\n\nNếu TV không tự cài, bấm “Cài đặt” trên màn hình TV. App sẽ tự đi tiếp khi cài xong.",
+                    "The TV has no Downloader yet: installing it from the Play Store...\n\nIf the TV does not start by itself, choose “Install” on its screen. The app carries on when it is done.")
+                Thread.sleep(2500)
+                a.pulse(23, 110)
+                for (round in 0 until 30) {                            // up to 3 minutes: ask for the app again until it opens
+                    if (stop || basic !== a) break
+                    Thread.sleep(4000)
+                    a.launch(dl)
+                    if (front(dl, 2)) { there = true; break }
+                }
+            }
+            if (!there) {
+                ui.post { if (box.isShowing) box.dismiss(); if (!stop && basic === a) installSetupByHand() }
+                return@Thread
+            }
+            say("Đang nhập đường dẫn tải vào Downloader...", "Typing the download link into Downloader...")
+            Thread.sleep(3500)                                        // its home screen loads with the address field in focus
+            a.pulse(23, 110)                                          // OK: opens the field and its keyboard
+            Thread.sleep(1800)
+            a.keys(link)
+            Thread.sleep(link.length * 60L + 800)
+            a.key(85, Atv.SHORT)                                      // Play/Pause is "Go" on Downloader's keyboard
+            ui.post {
+                if (box.isShowing) box.dismiss()
+                if (stop || basic !== a || isFinishing) return@post
+                AlertDialog.Builder(this).setTitle(t("Nhìn lên TV", "Look at the TV"))
+                    .setMessage(t("App đã nhập đường dẫn và bấm Go.\n\n1. Chờ tải xong, chọn Install. Nếu TV hỏi quyền cài từ nguồn này: bật cho Downloader rồi quay lại.\n2. Cài xong chọn Open (hoặc bấm “Mở TV Setup” bên dưới).\n3. TV Setup tự mở Tùy chọn nhà phát triển: bật “Gỡ lỗi USB”.\n\nNếu ô địa chỉ trên TV không có chữ: bấm “Làm từng bước”.",
+                        "The app has typed the link and pressed Go.\n\n1. When the download ends, choose Install. If the TV asks to allow installs from this source: allow Downloader, then go back.\n2. Then choose Open (or tap “Open TV Setup” below).\n3. TV Setup opens Developer options by itself: turn on “USB debugging”.\n\nIf the address field on the TV is empty: tap “Step by step”."))
+                    .setPositiveButton(t("Mở TV Setup", "Open TV Setup")) { _, _ -> a.launch("dev.tvremote.setup") }
+                    .setNeutralButton(t("Làm từng bước", "Step by step")) { _, _ -> installSetupByHand() }
+                    .setNegativeButton(t("Đóng", "Close"), null).show()
+            }
+        }.start()
+    }
+
+    /** The same, one step at a time, for when the automatic run loses its way. */
+    private fun installSetupByHand() {
+        val link = "github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"   // lower case, no "https://": typed as key presses, and Downloader adds the rest
+        menu(t("Cài TV Setup lên TV", "Install TV Setup on the TV"), -1, listOf(
+            Triple(t("1. Mở Downloader trên TV", "1. Open Downloader on the TV"), t("Chưa cài thì TV mở trang CH Play của nó: bấm Cài đặt, rồi bấm lại mục này", "Not installed: the TV opens its Play Store page. Install it, then tap this again")) {
+                basic?.launch("com.esaba.downloader")
+                ui.postDelayed({ if (basic != null && !isFinishing) installSetupByHand() }, 600)
+            },
+            Triple(t("2. Gửi đường dẫn tải vào TV", "2. Send the download link to the TV"), t("Trước đó, trên TV chọn ô nhập địa chỉ của Downloader (bàn phím hiện lên). Xong bấm Go, rồi Install", "First put the focus on Downloader’s address field on the TV (its keyboard shows). Then choose Go, then Install")) {
+                basic?.let { if (it.hasField) it.text(link) else it.keys(link) }
+                Toast.makeText(this, t("Đã gửi đường dẫn vào ô đang chọn trên TV", "Link sent to the field that has the focus on the TV"), Toast.LENGTH_LONG).show()
+                ui.postDelayed({ if (basic != null && !isFinishing) installSetupByHand() }, 600)
+            },
+            Triple(t("3. Mở TV Setup trên TV", "3. Open TV Setup on the TV"), t("Trong đó bấm “Tùy chọn nhà phát triển” rồi bật Gỡ lỗi USB", "There choose “Tùy chọn nhà phát triển” (Developer options) and turn on USB debugging")) { basic?.launch("dev.tvremote.setup"); Unit },
+            Triple(t("Chép đường dẫn", "Copy the link"), link) {
+                (getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager).setPrimaryClip(android.content.ClipData.newPlainText("tv-setup", link))
+                Toast.makeText(this, t("Đã chép", "Copied"), Toast.LENGTH_SHORT).show()
             }))
     }
 
@@ -1544,7 +1627,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     private fun sendText() {
         val s = textBox.text.toString()
         basic?.let {                                                  // keys only: the text goes into the field that has the focus on the TV
-            if (s.isEmpty()) it.key(66, Atv.SHORT) else { it.text(s); textBox.setText("") }
+            if (live) { it.key(66, Atv.SHORT); clearBox() }           // everything is on the TV already: this is Enter
+            else if (s.isEmpty()) it.key(66, Atv.SHORT)
+            else { if (it.hasField) it.text(s) else it.keys(s); textBox.setText("") }
             return
         }
         val tv = tv
@@ -1585,6 +1670,17 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     /** Live typing: make the TV's text follow the box by deleting what changed at the end and typing the new end. */
     private fun typedLive(now: String) {
         if (!live || quiet) return
+        basic?.let {                                                  // keys only: through the TV's keyboard service when the app uses it, as key presses otherwise
+            if (it.hasField) { if (now.isNotEmpty()) it.text(now) }
+            else {
+                var keep = 0
+                while (keep < onTv.length && keep < now.length && onTv[keep] == now[keep]) keep++
+                repeat(onTv.length - keep) { _ -> it.key(67, Atv.SHORT) }
+                it.keys(now.substring(keep))
+            }
+            onTv = now
+            return
+        }
         val tv = tv
         if (tv == null || !tv.ready()) return
         var same = 0

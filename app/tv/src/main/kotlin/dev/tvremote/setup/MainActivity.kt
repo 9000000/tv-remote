@@ -159,6 +159,11 @@ class MainActivity : Activity() {
                     log("Kiểm tra đã bật \"Gỡ lỗi ADB\" chưa, rồi chọn \"Kết nối lại\". Nếu TV có hỏi thì phải chọn \"Luôn cho phép\".")
                     buttons[3].isEnabled = true
                     buttons[3].requestFocus()
+                    if (!openedDev) {                                 // once: straight to where ADB is turned on, no hunting through menus
+                        openedDev = true
+                        log("Đang mở Tùy chọn nhà phát triển để bật Gỡ lỗi USB...")
+                        devOptions()
+                    }
                 }
             }
         }.start()
@@ -183,6 +188,8 @@ class MainActivity : Activity() {
      * Opens the TV's Developer options straight away. Some operator boxes hide Settings on their home screen, or ask for a
      * password of their own when "Build" is pressed seven times; the screen itself often opens when asked for by name.
      */
+    private var openedDev = false
+
     private fun devOptions() {
         val tries = listOf(
             "Tùy chọn nhà phát triển" to android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS),

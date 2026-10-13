@@ -4,6 +4,20 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.6.7 - 2026-10-13
+
+Web 2.6.7 · app điện thoại 2.5.7 · app TV 2.6.5
+
+**Tiếng Việt**
+- App điện thoại, chế độ chỉ bấm phím: mục **“Cài TV Setup lên TV”** chạy tự động trong một lần bấm: mở Downloader trên TV (chưa có thì cài từ CH Play), tự nhập đường dẫn tải và bấm Go. Người dùng chỉ còn xác nhận cài đặt trên TV. Có sẵn cách làm từng bước khi lượt tự động lạc đường.
+- **Gõ chữ vào app có bàn phím riêng** (như Downloader): khi app trên TV không dùng bàn phím hệ thống, chữ được gửi thành từng phím, cả ở chế độ gõ trực tiếp ⚡. Giới hạn: chữ hoa thành chữ thường, các ký tự cần Shift (như “:”) bị bỏ.
+- App TV: mở lên mà ADB chưa bật thì **tự mở Tùy chọn nhà phát triển** một lần.
+
+**English**
+- Phone app, keys-only mode: **“Install TV Setup on the TV”** runs by itself on one tap: opens Downloader on the TV (installing it from the Play Store when missing), types the download link and presses Go. The person only confirms the install on the TV. A step-by-step version remains for when the automatic run loses its way.
+- **Typing into apps with a keyboard of their own** (such as Downloader): when the app on the TV does not use the system keyboard, text is sent as key presses, in live ⚡ mode too. Limits: capitals arrive in lower case, and characters that need Shift (such as “:”) are dropped.
+- TV app: when it is opened while ADB is off, it **opens Developer options by itself**, once.
+
 ## 2.6.6 - 2026-10-13
 
 Web 2.6.6 · app điện thoại 2.5.6 · app TV 2.6.4

@@ -95,6 +95,10 @@ class Atv(dir: File, private val host: String) : Closeable {
     @Volatile private var ime = 0L                                    // the TV's counters for its text field, echoed back with the text
     @Volatile private var field = 0L
 
+    /** The app in front has told us about a text field that takes text from the TV's keyboard service; see [text] and [keys]. */
+    @Volatile var hasField = false
+        private set
+
     /** The package on the TV's screen, as the TV reports it ("" until it does). */
     @Volatile var app = ""
         private set
@@ -159,11 +163,12 @@ class Atv(dir: File, private val host: String) : Closeable {
             val e = Pb.read(it[0] as ByteArray)
             ime = e[1]?.firstOrNull() as? Long ?: 0L
             field = e[2]?.firstOrNull() as? Long ?: 0L
+            hasField = true
         }
         m[20]?.let {                                                  // remote_ime_key_inject: sent whenever another app comes to the front
             val info = Pb.read(it[0] as ByteArray)[1]?.firstOrNull() as? ByteArray
             val pkg = info?.let { i -> Pb.read(i)[12]?.firstOrNull() as? ByteArray }?.toString(Charsets.UTF_8)
-            if (!pkg.isNullOrEmpty()) app = pkg
+            if (!pkg.isNullOrEmpty()) { if (pkg != app) hasField = false; app = pkg }
         }
     }
 
@@ -195,6 +200,24 @@ class Atv(dir: File, private val host: String) : Closeable {
         val at = (t.length - 1).toLong()
         val edit = Pb().int(1, 1).msg(2, Pb().int(1, at).int(2, at).str(3, t).bytes()).bytes()
         post(Pb().msg(21, Pb().int(1, ime).int(2, field).msg(3, edit).bytes()).bytes())
+    }
+
+    /**
+     * Types [t] as key presses, one per character, the way a keyboard plugged into the TV would: for apps with a keyboard of
+     * their own (Downloader), whose fields the TV's keyboard service never hears about. Only what has a key without Shift
+     * gets through: capitals arrive in lower case, and characters such as ":" are left out.
+     */
+    fun keys(t: String) {
+        for (c in t) {
+            val code = when (val l = c.lowercaseChar()) {
+                in 'a'..'z' -> 29 + (l - 'a')
+                in '0'..'9' -> 7 + (l - '0')
+                ' ' -> 62; '.' -> 56; '/' -> 76; '-' -> 69; ',' -> 55; '=' -> 70; ';' -> 74; '\'' -> 75; '@' -> 77; '+' -> 81
+                '#' -> 18; '*' -> 17; '[' -> 71; ']' -> 72; '\\' -> 73; '`' -> 68
+                else -> 0
+            }
+            if (code != 0) key(code, SHORT)
+        }
     }
 
     /** Opens a link on the TV, or an app by its package name: the app when it is installed, its Play Store page when it is not. */
