@@ -11,7 +11,7 @@ rm -rf build && mkdir -p build/classes build/gen build/dex build/assets
 cp ../vendor/scrcpy-server-v5.0.1 build/assets/scrcpy-server.jar      # started on the TV for the picture and the input
 "$BT/aapt2" compile --dir res -o build/res.zip
 "$BT/aapt2" link -o build/unsigned.apk -I "$JAR" --manifest AndroidManifest.xml --java build/gen -A build/assets -0 jar \
-  --min-sdk-version 21 --target-sdk-version 34 --version-code "${VERSION_CODE:-2}" --version-name "${VERSION_NAME:-1.1}" build/res.zip
+  --min-sdk-version 21 --target-sdk-version 34 --version-code "${VERSION_CODE:-3}" --version-name "${VERSION_NAME:-1.2}" build/res.zip
 javac -nowarn -source 8 -target 8 -Xlint:-options -cp "$JAR" -d build/classes $(find src build/gen -name '*.java')
 "$BT/d8" --min-api 21 --lib "$JAR" --output build/dex $(find build/classes -name '*.class')
 (cd build/dex && zip -q -j ../unsigned.apk classes.dex)

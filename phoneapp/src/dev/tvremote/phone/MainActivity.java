@@ -191,7 +191,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         if (e.contains("timed out") || e.contains("timeout") || e.contains("unreachable") || e.contains("no route") || e.contains("failed to connect"))
             return t("Không tới được TV ở địa chỉ này. TV có đang bật không? Điện thoại phải cùng Wi-Fi với TV, hoặc cả hai cùng bật Tailscale (khi đó dùng IP 100.x của TV).",
                      "Cannot reach the TV at this address. Is it on? The phone must be on the TV’s Wi-Fi, or both must have Tailscale on (then use the TV’s 100.x IP).") + "\n\n"
-                    + t("TV đang tắt thì bấm Đánh thức cạnh tên TV.", "If the TV is off, tap Wake next to it.") + "\n\n(" + err + ")";
+                    + t("TV đang tắt thì bấm nút nguồn cạnh tên TV để đánh thức.", "If the TV is off, tap the power button next to it to wake it.") + "\n\n(" + err + ")";
         return t("Lỗi: ", "Error: ") + err;
     }
 
@@ -259,11 +259,11 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         savedList.removeAllViews();
         for (final String ip : savedIps()) {
             Button b = row(name(ip).isEmpty() ? ip : name(ip) + "\n" + ip, () -> connect(ip));
-            Button wk = button(t("Đánh thức", "Wake"), BTN);
+            Button wk = icon("⏻", t("Đánh thức", "Wake"), BTN);
             wk.setOnClickListener(v -> wake(ip));
             LinearLayout line = new LinearLayout(this);
             line.addView(b, new LinearLayout.LayoutParams(0, -2, 1));
-            LinearLayout.LayoutParams wp = new LinearLayout.LayoutParams(-2, -1);
+            LinearLayout.LayoutParams wp = new LinearLayout.LayoutParams(dp(60), -1);
             wp.leftMargin = dp(6);
             line.addView(wk, wp);
             line.setLayoutParams(gap(6));
@@ -280,7 +280,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
             savedList.addView(line);
         }
         if (savedList.getChildCount() == 0) savedList.addView(note(t("Chưa có TV nào. Quét Wi-Fi hoặc nhập IP bên dưới.", "No TVs yet. Scan the Wi-Fi or type an IP below.")));
-        else savedList.addView(note(t("TV đang tắt: bấm Đánh thức. Giữ lâu vào một TV để xóa.", "TV is off: tap Wake. Long-press a TV to remove it.")));
+        else savedList.addView(note(t("TV đang tắt: bấm nút nguồn bên cạnh để đánh thức. Giữ lâu vào một TV để xóa.", "TV is off: tap the power button next to it to wake it. Long-press a TV to remove it.")));
     }
 
     // ---------------------------------------------------------------- finding TVs on the Wi-Fi
@@ -308,7 +308,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
             } catch (Exception ignored) { }
             ui.post(() -> {
                 scanBtn.setEnabled(true);
-                scanBtn.setText(t("Quét Wi-Fi", "Scan the Wi-Fi"));
+                scanBtn.setText("🔍  " + t("Quét Wi-Fi", "Scan the Wi-Fi"));
                 Collections.sort(found);
                 for (final String ip : found) foundList.addView(row(ip, () -> connect(ip)));
                 if (found.isEmpty()) foundList.addView(note(nets.isEmpty()
@@ -331,9 +331,9 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         LinearLayout top = new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
         top.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
-        Button set = button(t("Cài đặt", "Settings"), BTN);
+        Button set = icon("⚙️", t("Cài đặt", "Settings"), BTN);
         set.setOnClickListener(v -> { hideKeyboard(); settings.setVisibility(View.VISIBLE); });
-        top.addView(set, new LinearLayout.LayoutParams(-2, dp(40)));
+        top.addView(set, new LinearLayout.LayoutParams(dp(52), dp(44)));
         picker.addView(top);
         pickerMsg = label("", 14, 0xffffb4a8);
         pickerMsg.setBackground(box(0xff3a2020, 12));
@@ -346,7 +346,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         picker.addView(savedList);
 
         picker.addView(head(t("TÌM TRONG WI-FI", "FIND ON THE WI-FI")), gap(18));
-        scanBtn = button(t("Quét Wi-Fi", "Scan the Wi-Fi"), ACCENT);
+        scanBtn = button("🔍  " + t("Quét Wi-Fi", "Scan the Wi-Fi"), ACCENT);
         scanBtn.setOnClickListener(v -> scan());
         LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(-1, dp(48));
         sp.topMargin = dp(6);
@@ -360,11 +360,12 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         ipBox.setInputType(InputType.TYPE_CLASS_PHONE);
         ipBox.setImeOptions(EditorInfo.IME_ACTION_GO);
         ipBox.setOnEditorActionListener((v, a, e) -> { connect(ipBox.getText().toString()); return true; });
-        Button go = button(t("Kết nối", "Connect"), ACCENT);
+        Button go = icon("➜", t("Kết nối", "Connect"), ACCENT);
         go.setOnClickListener(v -> connect(ipBox.getText().toString()));
         line.addView(ipBox, new LinearLayout.LayoutParams(0, dp(48), 1));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, dp(48));
         lp.leftMargin = dp(8);
+        lp.width = dp(60);
         line.addView(go, lp);
         picker.addView(line, gap(6));
         picker.addView(note(t("Cùng Wi-Fi: dùng IP trong nhà của TV (Cài đặt → Mạng và Internet → tên Wi-Fi).\nKhác mạng: bật Tailscale trên cả điện thoại và TV, dùng IP 100.x của TV (xem trong app Tailscale). TV chưa vào Tailscale: mở Tailscale trên TV, nó hiện một mã; nhập mã đó ở login.tailscale.com/admin/machines → Add device, không cần gõ tài khoản trên TV.\nTV cần bật “Gỡ lỗi ADB”; lần đầu TV sẽ hỏi cho phép.",
@@ -380,16 +381,16 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         LinearLayout top = new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
         top.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
-        Button done = button(t("Xong", "Done"), ACCENT);
+        Button done = icon("✓", t("Xong", "Done"), ACCENT);
         done.setOnClickListener(v -> settings.setVisibility(View.GONE));
-        top.addView(done, new LinearLayout.LayoutParams(-2, dp(40)));
+        top.addView(done, new LinearLayout.LayoutParams(dp(52), dp(44)));
         box.addView(top);
 
         box.addView(head(t("NGÔN NGỮ", "LANGUAGE")), gap(18));
         final String now = prefs.getString("lang", "");
-        String[][] langs = {{"", t("Theo điện thoại", "Same as the phone")}, {"vi", "Tiếng Việt"}, {"en", "English"}};
+        String[][] langs = {{"", "📱  " + t("Theo điện thoại", "Same as the phone")}, {"vi", "🇻🇳  Tiếng Việt"}, {"en", "🇬🇧  English"}};
         for (final String[] l : langs) {
-            Button b = row((l[0].equals(now) ? "●  " : "○  ") + l[1], () -> {
+            Button b = row(l[1] + (l[0].equals(now) ? "   ✓" : ""), () -> {
                 if (l[0].equals(now)) return;
                 prefs.edit().putString("lang", l[0]).apply();
                 recreate();                                           // every label is built in onCreate
@@ -436,11 +437,11 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
 
         controls = col();
         controls.setPadding(dp(14), dp(12), dp(14), dp(20));
-        controls.addView(keys(54, t("Nguồn", "Power"), 26, t("Home", "Home"), 3, t("Quay lại", "Back"), 4, "Menu", 82));
+        controls.addView(keys(54, "⏻|" + t("Nguồn", "Power"), 26, "🏠|Home", 3, "↩️|" + t("Quay lại", "Back"), 4, "☰|Menu", 82));
         controls.addView(keys(58, "", 0, "▲", 19, "", 0), gap(12));
         controls.addView(keys(58, "◀", 21, "OK", 23, "▶", 22), gap(6));
         controls.addView(keys(58, "", 0, "▼", 20, "", 0), gap(6));
-        controls.addView(keys(54, t("Âm −", "Vol −"), 25, t("Tắt tiếng", "Mute"), 164, t("Âm +", "Vol +"), 24), gap(12));
+        controls.addView(keys(54, "🔉|" + t("Giảm âm lượng", "Volume down"), 25, "🔇|" + t("Tắt tiếng", "Mute"), 164, "🔊|" + t("Tăng âm lượng", "Volume up"), 24), gap(12));
         controls.addView(keys(50, "⏮", 88, "⏯", 85, "⏭", 87), gap(6));
 
         LinearLayout line = new LinearLayout(this);
@@ -449,18 +450,19 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         textBox.setSingleLine(true);
         textBox.setOnEditorActionListener((v, a, e) -> { sendText(); return true; });
         line.addView(textBox, new LinearLayout.LayoutParams(0, dp(48), 1));
-        Button send = button(t("Gửi", "Send"), ACCENT);
+        Button send = icon("➤", t("Gửi", "Send"), ACCENT);
         send.setOnClickListener(v -> sendText());
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, dp(48));
         lp.leftMargin = dp(6);
+        lp.width = dp(60);
         line.addView(send, lp);
         controls.addView(line, gap(12));
-        controls.addView(keys(50, "⌫", 67, "Enter", 66, t("Cài đặt", "Settings"), 176), gap(6));
+        controls.addView(keys(50, "⌫|" + t("Xóa", "Delete"), 67, "↵|Enter", 66, "⚙️|" + t("Cài đặt của TV", "TV settings"), 176), gap(6));
 
         LinearLayout last = new LinearLayout(this);
-        Button apps = button(t("Ứng dụng", "Apps"), BTN);
+        Button apps = button("📺  " + t("Ứng dụng", "Apps"), BTN);
         apps.setOnClickListener(v -> showApps());
-        Button bye = button(t("Ngắt kết nối", "Disconnect"), BTN);
+        Button bye = button("✕  " + t("Ngắt kết nối", "Disconnect"), BTN);
         bye.setTextColor(0xffff8a80);
         bye.setOnClickListener(v -> disconnect(null));
         last.addView(apps, cell(50, false));
@@ -498,12 +500,15 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
     private LinearLayout keys(int height, Object... labelAndCode) {
         LinearLayout row = new LinearLayout(this);
         for (int i = 0; i < labelAndCode.length; i += 2) {
-            String label = (String) labelAndCode[i];
+            String label = (String) labelAndCode[i], say = label;
+            int bar = label.indexOf('|');                             // "icon|what a screen reader says"
+            if (bar > 0) { say = label.substring(bar + 1); label = label.substring(0, bar); }
             final int code = (Integer) labelAndCode[i + 1];
             View v;
             if (label.isEmpty()) v = new View(this);
             else {
-                final Button b = button(label, code == 23 ? ACCENT : BTN);
+                final Button b = bar > 0 ? icon(label, say, code == 23 ? ACCENT : BTN) : button(label, code == 23 ? ACCENT : BTN);
+                if (bar < 0) b.setTextSize(18);
                 final int normal = code == 23 ? ACCENT : BTN;
                 final Runnable[] repeat = new Runnable[1];
                 final int[] count = {0};
@@ -555,6 +560,29 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         b.setStateListAnimator(null);
         b.setPadding(dp(14), 0, dp(14), 0);
         b.setMinHeight(0); b.setMinimumHeight(0);
+        return b;
+    }
+
+    /** A button that shows only a symbol; the words go to screen readers. "⏻" is drawn, because phone fonts lack it. */
+    private Button icon(String symbol, String says, int color) {
+        final boolean power = "⏻".equals(symbol);
+        final float d = getResources().getDisplayMetrics().density;
+        Button b = !power ? new Button(this) : new Button(this) {
+            private final android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+            @Override protected void onDraw(android.graphics.Canvas c) {
+                super.onDraw(c);
+                float cx = getWidth() / 2f, cy = getHeight() / 2f, r = 9 * d;
+                p.setStyle(android.graphics.Paint.Style.STROKE); p.setStrokeWidth(2.4f * d); p.setStrokeCap(android.graphics.Paint.Cap.ROUND); p.setColor(0xffff8a80);
+                c.drawArc(cx - r, cy - r + d, cx + r, cy + r + d, -60, 300, false, p);
+                c.drawLine(cx, cy - r - d, cx, cy - d, p);
+            }
+        };
+        b.setText(power ? "" : symbol); b.setAllCaps(false); b.setTextColor(TEXT); b.setTextSize(20);
+        b.setContentDescription(says);
+        b.setBackground(box(color, 14));
+        b.setStateListAnimator(null);
+        b.setPadding(0, 0, 0, 0);
+        b.setMinHeight(0); b.setMinimumHeight(0); b.setMinWidth(0); b.setMinimumWidth(0);
         return b;
     }
 

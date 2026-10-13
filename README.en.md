@@ -174,7 +174,7 @@ It also shows the TV's home-network IP and Tailscale IP, to read out to whoever 
 
 The first time, the TV asks "Allow USB debugging?": tick **Always allow**, then OK. The app shows the TV's live picture (touch it to tap on the TV), remote buttons (hold = long press), a text box, the app list, and the phone's volume buttons control the TV. The TV only needs "ADB debugging" on (section 2). Several devices can control at once, but each one watching the picture costs the TV more CPU.
 
-**TV is off:** tap **Wake** next to the TV. If the TV kept its network on (standby), the app turns the screen on, also over Tailscale. If its network is off too, only a Wake-on-LAN packet can reach it, and that only works when the phone is on the TV's own Wi-Fi (the TV needs "Remote start" on); from another network use Wake in the web UI on a computer, which relays through a machine at home. **Settings** (top right) switches Tiếng Việt / English.
+**TV is off:** tap the red power button next to the TV to wake it. If the TV kept its network on (standby), the app turns the screen on, also over Tailscale. If its network is off too, only a Wake-on-LAN packet can reach it, and that only works when the phone is on the TV's own Wi-Fi (the TV needs "Remote start" on); from another network use Wake in the web UI on a computer, which relays through a machine at home. The ⚙️ button (top right) switches Tiếng Việt / English.
 
 ---
 
