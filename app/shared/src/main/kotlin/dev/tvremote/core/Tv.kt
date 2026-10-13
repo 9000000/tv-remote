@@ -28,7 +28,12 @@ class Tv(
     /** turn the screen on first (the TV answered but is in standby) */
     private val wake: Boolean,
     private val listener: Listener,
+    /** instead of a Surface: the encoded picture is handed over as it arrives (to pass on to a browser) */
+    private val sink: Sink? = null,
 ) {
+    /** One H.264 packet as scrcpy sends it (Annex B). config: SPS/PPS, needed before the first frame; key: a key frame. */
+    fun interface Sink { fun video(config: Boolean, key: Boolean, data: ByteArray) }
+
     interface Listener {
         fun onStatus(key: String, detail: String)                     // connecting | allow | starting | live | closed | error
         fun onVideoSize(w: Int, h: Int)
@@ -56,6 +61,7 @@ class Tv(
     @Volatile private var width = 960
     @Volatile private var height = 540
     private var codec: MediaCodec? = null
+    private val wantVideo = surface != null || sink != null
 
     init {
         val q = QUALITY[quality.coerceIn(0, QUALITY.size - 1)]
@@ -77,7 +83,7 @@ class Tv(
             val scid = String.format("%08x", Random().nextInt(0x7fffffff))
             val log = a.open("shell:CLASSPATH=" + REMOTE + " app_process / com.genymobile.scrcpy.Server " + VER + " scid=" + scid
                     + " tunnel_forward=true audio=false cleanup=false control=true send_dummy_byte=true send_device_meta=false "
-                    + (if (surface == null) "video=false" else "video=true $video")
+                    + (if (wantVideo) "video=true $video" else "video=false")
                     // scrcpy-server does not always notice that we left (a still picture sends nothing), and a leftover one keeps
                     // loading the TV. So a shell loop on the TV waits for our heartbeat and kills the server when it stops.
                     + " & P=\$!; while read -t 25 x; do :; done; kill \$P")
@@ -99,7 +105,7 @@ class Tv(
                 i++
             }
             if (first == null) throw IOException("scrcpy-server did not start on the TV")
-            if (surface == null) {
+            if (!wantVideo) {
                 control = first
                 listener.onStatus("live", "")
                 try { first.readAll() } catch (ignored: IOException) { }   // returns when the TV closes the session
@@ -171,7 +177,7 @@ class Tv(
             val size = h.int
             if (flags < 0) {
                 width = (flags and 0xffffffffL).toInt(); height = size
-                startCodec()
+                if (surface != null) startCodec()
                 listener.onVideoSize(width, height)
                 continue
             }
@@ -185,6 +191,11 @@ class Tv(
                 bytes = 0; since = now
             }
             val config = (flags and (1L shl 62)) != 0L
+            if (sink != null) {
+                sink.video(config, (flags and (1L shl 61)) != 0L, data)
+                if (first && !config) { first = false; listener.onStatus("live", "") }
+                continue
+            }
             val c = codec ?: continue
             var idx = -1
             while (idx < 0 && !stopped) { idx = c.dequeueInputBuffer(20000); render(c) }

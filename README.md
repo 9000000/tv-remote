@@ -12,7 +12,7 @@
 |---|---|---|---|
 | Máy tính (Mac, Windows, Linux) | Web remote trên máy tính | Tải repo này, bấm đúp `start-mac.command` / `start-windows.cmd` (mục 3) | Tất cả: nút bấm, xem màn hình, chuột, bàn phím, nói với TV, app, tệp, cài APK, sức khỏe TV, terminal |
 | Điện thoại Android | App **TV Remote** | `tv-remote.apk` ở [Releases](https://github.com/HoangTran0410/tv-remote/releases) (mục 4D) | Nút bấm, xem màn hình và chạm, gõ chữ, nói với TV, ứng dụng, tệp, cài APK, sức khỏe TV, terminal |
-| Bất kỳ máy nào có trình duyệt (kể cả iPhone) | App **TV Setup** cài trên TV, rồi mở `http://<IP của TV>:8765` | `tv-setup.apk` ở [Releases](https://github.com/HoangTran0410/tv-remote/releases) (mục 4C) | Nút bấm, âm lượng, gõ chữ, ứng dụng, tệp, cài APK, sức khỏe TV, terminal (chưa có xem màn hình) |
+| Bất kỳ máy nào có trình duyệt (kể cả iPhone) | App **TV Setup** cài trên TV, rồi mở `http://<IP của TV>:8765` | `tv-setup.apk` ở [Releases](https://github.com/HoangTran0410/tv-remote/releases) (mục 4C) | Nút bấm, âm lượng, gõ chữ, ứng dụng, tệp, cài APK, sức khỏe TV, xem màn hình và chạm, terminal |
 
 ---
 
@@ -171,7 +171,7 @@ Không cần công cụ này: dùng app **Google TV** (Android/iPhone) → nút 
 - **Tailscale** – mở trang cài Tailscale trong Google Play, hoặc mở Tailscale để lấy mã thêm TV nếu đã cài.
 - **Cập nhật** – tải bản TV Setup mới nhất từ GitHub Releases và cài luôn (qua ADB của chính TV, app tự đóng rồi mở lại là bản mới). Mỗi lần mở, app cũng tự báo nếu có bản mới.
 
-**Remote qua web ngay trên TV (không cần máy tính, không cần cài app trên điện thoại).** Mở TV Setup một lần là nó bật sẵn. Trên điện thoại hoặc máy tính, mở trình duyệt vào địa chỉ app hiện trên TV, dạng `http://<IP của TV>:8765` (IP trong nhà khi cùng Wi-Fi, IP `100.x` khi dùng Tailscale). Lần đầu TV hiện **mã 6 số**, nhập mã đó vào trang là xong; từ đó thiết bị ấy vào thẳng. Trang có nút điều khiển (giữ nút = nhấn giữ), âm lượng, gõ chữ và các app của TV kèm logo. Nó tự chạy lại khi TV khởi động. Nút **Remote qua web** để tắt/bật, **Hủy ghép mọi thiết bị** để bắt mọi máy ghép lại. Ngoài phần remote, trang có các tab Ứng dụng, Tệp, Cài, Sức khỏe và Terminal như web trên máy tính; riêng xem màn hình thì chưa có, cần web trên máy tính hoặc app điện thoại. Kết nối là HTTP thường trong mạng nhà (không mã hóa), nên đừng mở cổng 8765 ra Internet; ở ngoài nhà hãy đi qua Tailscale.
+**Remote qua web ngay trên TV (không cần máy tính, không cần cài app trên điện thoại).** Mở TV Setup một lần là nó bật sẵn. Trên điện thoại hoặc máy tính, mở trình duyệt vào địa chỉ app hiện trên TV, dạng `http://<IP của TV>:8765` (IP trong nhà khi cùng Wi-Fi, IP `100.x` khi dùng Tailscale). Lần đầu TV hiện **mã 6 số**, nhập mã đó vào trang là xong; từ đó thiết bị ấy vào thẳng. Trang có nút điều khiển (giữ nút = nhấn giữ), âm lượng, gõ chữ và các app của TV kèm logo. Nó tự chạy lại khi TV khởi động. Nút **Remote qua web** để tắt/bật, **Hủy ghép mọi thiết bị** để bắt mọi máy ghép lại. Ngoài phần remote, trang có các tab Ứng dụng, Tệp, Cài, Sức khỏe và Terminal như web trên máy tính. Nút con mắt ở góc trên bật hình TV (chạm lên hình để bấm, có nút toàn màn hình); mỗi lúc chỉ một trình duyệt xem được hình. Kết nối là HTTP thường trong mạng nhà (không mã hóa), nên đừng mở cổng 8765 ra Internet; ở ngoài nhà hãy đi qua Tailscale.
 
 App cũng hiện IP trong nhà và IP Tailscale của TV để đọc cho người hỗ trợ. Đưa APK lên TV bằng USB, hoặc bằng app Downloader trên TV. App này mới chạy thử trên Sony BRAVIA Android 9; nó cần TV mở ADB ở cổng 5555, nên các TV đời mới chỉ có "Gỡ lỗi không dây" kiểu ghép mã (một số Google TV Android 12+) có thể không dùng được.
 
@@ -275,7 +275,7 @@ app/web/      web remote chạy trên máy tính
 app/android/  app TV Remote cho điện thoại Android (Kotlin; build.sh gọi Gradle) + tv-remote.apk đã build + VERSION riêng
 app/tv/       app TV Setup cài trên TV (Kotlin), kèm web remote do TV phục vụ + tv-setup.apk đã build + VERSION riêng
 app/shared/   dùng chung của hai app (Kotlin): ADB, phiên điều khiển TV, quản lý TV, kiểm tra bản mới; web/index.html (trang hai app phục vụ);
-              assets/scrcpy-server.jar (Genymobile/scrcpy v5.0.1, Apache-2.0)
+              assets/scrcpy-server.jar (Genymobile/scrcpy v5.0.1, Apache-2.0); web/jmuxer.min.js (samirkumardas/jmuxer 2.1.0, MIT)
 app/settings.gradle.kts, gradlew   project Gradle của hai app: mở thư mục app/ bằng Android Studio, hoặc chạy app/android/build.sh, app/tv/build.sh (cần JDK 17 + Android SDK)
 dev/          cho người phát triển: release.sh (build APK + tạo GitHub release), gen_icons.py (một bộ icon cho web và hai app)
 VERSION, CHANGELOG.md   số của bản phát hành (cũng là phiên bản web) và nhật ký thay đổi

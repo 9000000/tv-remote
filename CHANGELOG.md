@@ -4,6 +4,18 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.5.0 - 2026-10-13
+
+Web 2.5.0 · app điện thoại 2.4.1 · app TV 2.5.0
+
+**Tiếng Việt**
+- **Trang trên TV xem được hình TV:** nút con mắt ở góc trên bật hình, chạm (hoặc bấm chuột) lên hình để điều khiển, có nút toàn màn hình. Tắt hình thì TV ngừng mã hóa. Mỗi lúc một trình duyệt xem được hình.
+- Ô **tìm app theo tên** phía trên lưới ứng dụng ở tab Remote, trên trang của TV và web máy tính.
+
+**English**
+- **The page on the TV shows the TV picture:** the eye button at the top turns it on, touch (or click) the picture to control the TV, with a full screen button. Turning it off stops the encoder on the TV. One browser at a time can watch.
+- A **search-by-name box** above the app grid on the Remote tab, on the TV's page and the web on the computer.
+
 ## 2.4.0 - 2026-10-13
 
 Web 2.4.0 · app điện thoại 2.4.0 · app TV 2.4.0

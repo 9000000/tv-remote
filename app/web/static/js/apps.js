@@ -48,7 +48,7 @@ async function loadQuick() {
   });
   const gear = el('div', { className: 'appicon', textContent: '⚙' });
   tiles.push(el('button', { className: 'tile', onclick: () => openOnTv('settings', 'Cài đặt') }, gear, el('span', { textContent: 'Cài đặt TV' })));
-  $('#quick').replaceChildren(...tiles);
+  $('#quick').replaceChildren(...tiles); filterQuick();
 }
 
 // ---------- apps tab ----------
@@ -82,3 +82,7 @@ $('#appsf').addEventListener('submit', (e) => e.preventDefault());
 $('#appssys').addEventListener('change', loadApps);
 $('#appsreload').addEventListener('click', loadApps);
 
+
+// the search box above the quick-launch grid: tiles whose name does not contain the words are hidden
+function filterQuick() { const q = $('#quickq').value.trim().toLowerCase(); document.querySelectorAll('#quick .tile').forEach((b) => { b.hidden = !!q && !b.textContent.toLowerCase().includes(q); }); }
+$('#quickq').addEventListener('input', filterQuick);

@@ -12,7 +12,7 @@ Used for real with a Sony BRAVIA (Android 9) from macOS and Windows 11. Other TV
 |---|---|---|---|
 | A computer (Mac, Windows, Linux) | The web remote on the computer | Download this repo, double-click `start-mac.command` / `start-windows.cmd` (section 3) | Everything: buttons, live screen, mouse, keyboard, speaking to the TV, apps, files, APK install, TV health, terminal |
 | An Android phone | The **TV Remote** app | `tv-remote.apk` from [Releases](https://github.com/HoangTran0410/tv-remote/releases) (section 4D) | Buttons, live screen with touch, typing, speaking to the TV, apps, files, APK install, TV health, terminal |
-| Anything with a browser (iPhone too) | The **TV Setup** app on the TV, then open `http://<TV's IP>:8765` | `tv-setup.apk` from [Releases](https://github.com/HoangTran0410/tv-remote/releases) (section 4C) | Buttons, volume, typing, apps, files, APK install, TV health, terminal (no live screen yet) |
+| Anything with a browser (iPhone too) | The **TV Setup** app on the TV, then open `http://<TV's IP>:8765` | `tv-setup.apk` from [Releases](https://github.com/HoangTran0410/tv-remote/releases) (section 4C) | Buttons, volume, typing, apps, files, APK install, TV health, live screen with touch, terminal |
 
 ---
 
@@ -171,7 +171,7 @@ You do not need this tool: use the **Google TV** app (Android/iPhone) → *Remot
 - **Tailscale** – opens Tailscale's Google Play page, or opens Tailscale to get the code that adds the TV, if it is already installed.
 - **Cập nhật** (Update) – downloads the latest TV Setup from GitHub Releases and installs it (through the TV's own ADB; the app closes, reopen it and it is the new version). Each time it opens, the app also tells you when a newer version exists.
 
-**A web remote on the TV itself (no computer, no app on the phone).** Open TV Setup once and it is on. On a phone or computer, open a browser at the address the app shows on the TV, like `http://<TV's IP>:8765` (the home IP on the same Wi-Fi, the `100.x` IP over Tailscale). The first time the TV shows a **6-digit code**; type it into the page and that device is paired from then on. The page has the remote buttons (hold = long press), volume, typing, and the TV's apps with their logos. It starts again when the TV boots. **Remote qua web** turns it off/on, **Hủy ghép mọi thiết bị** makes every device pair again. Besides the remote it has Apps, Files, Install, Health and Terminal tabs like the web UI on a computer; only the live screen is missing, for that use the web UI on a computer or the phone app. The connection is plain HTTP on your home network (not encrypted), so do not expose port 8765 to the Internet; away from home, go through Tailscale.
+**A web remote on the TV itself (no computer, no app on the phone).** Open TV Setup once and it is on. On a phone or computer, open a browser at the address the app shows on the TV, like `http://<TV's IP>:8765` (the home IP on the same Wi-Fi, the `100.x` IP over Tailscale). The first time the TV shows a **6-digit code**; type it into the page and that device is paired from then on. The page has the remote buttons (hold = long press), volume, typing, and the TV's apps with their logos. It starts again when the TV boots. **Remote qua web** turns it off/on, **Hủy ghép mọi thiết bị** makes every device pair again. Besides the remote it has Apps, Files, Install, Health and Terminal tabs like the web UI on a computer. The eye button at the top turns the TV picture on (touch the picture to tap, with a full screen button); one browser at a time can watch. The connection is plain HTTP on your home network (not encrypted), so do not expose port 8765 to the Internet; away from home, go through Tailscale.
 
 It also shows the TV's home-network IP and Tailscale IP, to read out to whoever is helping. Get the APK onto the TV with a USB stick or the Downloader app. It has only been run on a Sony BRAVIA with Android 9; it needs the TV to open ADB on port 5555, so newer TVs that only offer pairing-code "Wireless debugging" (some Google TV devices on Android 12+) may not work.
 
@@ -275,7 +275,7 @@ app/web/      the web remote that runs on a computer
 app/android/  the TV Remote app for Android phones (Kotlin; build.sh runs Gradle) + the built tv-remote.apk + its own VERSION
 app/tv/       the TV Setup app for the TV (Kotlin), with the web remote the TV serves + the built tv-setup.apk + its own VERSION
 app/shared/   shared by the two apps (Kotlin): ADB, the TV session, TV management, the update check; web/index.html (the page both apps serve);
-              assets/scrcpy-server.jar (Genymobile/scrcpy v5.0.1, Apache-2.0)
+              assets/scrcpy-server.jar (Genymobile/scrcpy v5.0.1, Apache-2.0); web/jmuxer.min.js (samirkumardas/jmuxer 2.1.0, MIT)
 app/settings.gradle.kts, gradlew   the Gradle project of the two apps: open the app/ folder in Android Studio, or run app/android/build.sh, app/tv/build.sh (needs JDK 17 + the Android SDK)
 dev/          for developers: release.sh (builds the APKs + creates the GitHub release), gen_icons.py (one icon set for the web and both apps)
 VERSION, CHANGELOG.md   the release number (also the web UI's version) and the change log

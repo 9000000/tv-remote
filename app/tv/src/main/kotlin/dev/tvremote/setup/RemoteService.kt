@@ -85,6 +85,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     private var manage: Manage? = null
     private lateinit var prefs: SharedPreferences
     @Volatile private var tv: Tv? = null
+    @Volatile private var viewer: Tv? = null                         // a second session that carries the picture, only while a browser watches
     @Volatile private var stopping = false
     private var lastPairStart = 0L
     private var page: ByteArray? = null
@@ -124,6 +125,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         http?.stop()
         link?.close()
         tv?.stop()
+        viewer?.stop()
         ui.removeCallbacksAndMessages(null)
         super.onDestroy()
     }
@@ -151,6 +153,41 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     override fun onVideoSize(w: Int, h: Int) { }
     override fun onNetwork(mac: String, lan: String) { }
 
+    // ---------------------------------------------------------------- the picture, for one browser at a time
+    /**
+     * The TV's screen as a stream of packets: 1 byte kind (0 size: width, height; 1 codec config; 2 key frame; 3 frame;
+     * 4 nothing new), 4 bytes length, then the data. A still picture sends nothing, so kind 4 goes out now and then:
+     * that is how we notice the browser has left, and stop the encoder on the TV.
+     */
+    private fun video(quality: Int): HttpServer.Response {
+        viewer?.stop()                                                // a new viewer takes over
+        val q = java.util.concurrent.LinkedBlockingQueue<ByteArray>()
+        val end = ByteArray(0)
+        fun packet(kind: Int, data: ByteArray) = java.nio.ByteBuffer.allocate(5 + data.size).put(kind.toByte()).putInt(data.size).put(data).array()
+        val v = Tv(this, "127.0.0.1", null, quality, 1280, false, object : Tv.Listener {
+            override fun onStatus(key: String, detail: String) { if (key == "closed" || key == "error") q.add(end) }
+            override fun onVideoSize(w: Int, h: Int) { q.add(packet(0, java.nio.ByteBuffer.allocate(8).putInt(w).putInt(h).array())) }
+            override fun onNetwork(mac: String, lan: String) { }
+        }) { config, key, data ->
+            if (q.size > 150) q.add(end)                              // the browser cannot keep up: stop instead of filling memory
+            else q.add(packet(if (config) 1 else if (key) 2 else 3, data))
+        }
+        viewer = v
+        return HttpServer.Response.stream("application/octet-stream", -1) { out ->
+            try {
+                while (true) {
+                    val p = q.poll(5, java.util.concurrent.TimeUnit.SECONDS) ?: packet(4, end)
+                    if (p === end) break
+                    out.write(p)
+                    out.flush()
+                }
+            } finally {
+                v.stop()
+                if (viewer === v) viewer = null
+            }
+        }
+    }
+
     // ---------------------------------------------------------------- HTTP
     @Throws(Exception::class)
     override fun handle(r: HttpServer.Request): HttpServer.Response {
@@ -163,6 +200,11 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             page.headers["Cache-Control"] = "no-store"
             return page
         }
+        if (r.path == "/jmuxer.min.js") {                              // turns the TV's H.264 into something a <video> can play
+            val js = HttpServer.Response.of("text/javascript; charset=utf-8", assets.open("jmuxer.min.js").use { it.readBytes() })
+            js.headers["Cache-Control"] = "max-age=86400"
+            return js
+        }
         if (r.path == "/api/pair/start" && r.method == "POST") return pairStart()
         if (r.path == "/api/pair/finish" && r.method == "POST") return pairFinish(r)
         if (!tokens().contains(r.cookie(COOKIE)) || r.cookie(COOKIE).isEmpty())
@@ -171,6 +213,12 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         val post = r.method == "POST"
         when (r.path) {
             "/api/state" -> return HttpServer.Response.json(state())
+            "/api/video" -> return video(r.q("q").toIntOrNull() ?: 1)
+            "/api/touch" -> {
+                val d = r.json()
+                viewer?.let { if (it.ready()) it.touch(d.optInt("a"), d.optDouble("x").toFloat(), d.optDouble("y").toFloat()) }
+                return ok()
+            }
             "/api/apps" -> return HttpServer.Response.json(JSONObject().put("apps", apps()))
             "/api/icon" -> {
                 val png = icon(r.query["pkg"].toString()) ?: return HttpServer.Response.error(404, "no icon")
