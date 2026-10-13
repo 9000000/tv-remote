@@ -31,6 +31,7 @@
   .chip.ok { background:var(--ok-bg); color:var(--ok); } .chip.warn { background:var(--warn-bg); color:var(--warn); } .chip.bad { background:var(--bad-bg); color:var(--bad); }
 
   /* help */
+  #jobscard summary { cursor:pointer; } #jobscard summary h2 { display:inline; } #jobscard[open] summary { margin-bottom:10px; }
   details.help summary { cursor:pointer; font-weight:600; font-size:14px; }
   details.help .cols { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:12px; }
   details.help h3 { font-size:13px; margin:0 0 6px; } details.help ul { margin:0; padding-left:18px; font-size:13px; color:var(--muted); }
@@ -166,9 +167,9 @@
   dialog img { max-width:96vw; max-height:92vh; display:block; border-radius:8px; cursor:zoom-out; }
 
   /* health tab */
-  .health { display:grid; gap:14px; grid-template-columns:1fr; } @media (min-width:900px) { .health { grid-template-columns:1fr 1fr; align-items:start; } }
+  #hnow { display:grid; gap:14px; grid-template-columns:1fr; } @media (min-width:900px) { #hnow { grid-template-columns:1fr 1fr; align-items:start; } }
   .health .card-head { margin-bottom:8px; }
-  .kv { display:grid; grid-template-columns:minmax(110px,auto) 1fr; gap:6px 14px; font-size:14px; } .kv dt, .kv .k { color:var(--muted); } .kv .v { font-weight:600; overflow-wrap:anywhere; text-align:right; }
+  .kv { display:grid; grid-template-columns:minmax(0,1fr) minmax(40%,max-content); gap:6px 14px; font-size:14px; } .kv dt, .kv .k { color:var(--muted); overflow-wrap:anywhere; min-width:0; } #hnow > section { min-width:0; } .kv .v { font-weight:600; overflow-wrap:anywhere; text-align:right; }
   .meter { margin:10px 0 0; font-size:14px; } .meter .top { display:flex; justify-content:space-between; gap:8px; } .meter b { font-variant-numeric:tabular-nums; }
   .meter .bar { height:10px; border-radius:5px; } .meter .bar i { border-radius:5px; } .meter.warn .bar i { background:var(--warn); } .meter.bad .bar i { background:var(--bad); }
   .tile { background:var(--bg); border:1px solid var(--line); }
@@ -189,7 +190,7 @@
   #toast.show { opacity:.94; }
 
   /* health: one line of text until the first snapshot arrives, so the tab never looks empty or broken */
-  #hwait { text-align:center; padding:18px 0; grid-column:1/-1; } .health.ready > #hwait, .health:not(.ready) > section { display:none; }
+  #hwait { text-align:center; padding:18px 0; grid-column:1/-1; } .health.ready #hwait, .health:not(.ready) #hnow > section { display:none; }
   /* typing: ⚡ switches between live typing and type-then-send; 123 shows the number keys */
   #live { padding:0 12px; } #live.on { background:var(--accent); color:var(--accent-ink); }
   .numpad { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:300px; margin-top:8px; } .numpad[hidden] { display:none; }

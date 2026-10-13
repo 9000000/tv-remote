@@ -4,6 +4,20 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.8.0 - 2026-10-14
+
+Web 2.8.0 · app điện thoại 2.7.0 · app TV 2.6.9
+
+**Tiếng Việt**
+- **Phát lên TV** ở cả ba bản. App điện thoại: nút Chia sẻ ở app khác → TV Remote (link thì TV mở, ảnh / video / nhạc thì chép sang TV rồi TV tự phát), thêm mục “Phát ảnh / video / nhạc từ điện thoại” và “Chiếu màn hình điện thoại lên TV” (mở phần Truyền của Android) trong “Mở trên TV”. Web máy tính: nút “Phát ảnh, video, nhạc từ máy này lên TV” cạnh ô mở link. Trang do TV phục vụ: khung “Phát lên TV” (link hoặc tệp) ở tab Cài. Phát tệp cần ADB.
+- App điện thoại, quét Wi-Fi: chờ TV trả lời lâu hơn, nghe thêm lời TV tự giới thiệu trong mạng (mDNS) nên không còn phải quét vài lần mới thấy; mỗi TV tìm được ghi rõ ADB đã bật hay chưa; khi không thấy gì thì nói đã quét mạng nào và nhắc TV qua Tailscale phải nhập IP.
+- Web máy tính: quét mạng hiện tên TV cả khi TV chưa bật ADB. Tab “Tải / Cài” gộp vào tab “Tệp · Cài”; “Tối ưu TV” chỉ còn một chỗ, ở tab Thiết lập. Khung “Tiến trình tải lên / cài đặt” gập lại được. Sửa tab Sức khỏe bị dồn sang phải và dính nhau.
+
+**English**
+- **Play on the TV** in all three. Phone app: Share in another app → TV Remote (the TV opens a link; a photo / video / song is copied to the TV, which plays it), plus “Play a photo / video / song from the phone” and “Mirror the phone’s screen on the TV” (opens Android’s Cast screen) under “Open on the TV”. Computer web: a “Play a photo, video or song from this computer on the TV” button next to the link box. The TV-served page: a “Play on the TV” card (link or file) on the Install tab. Playing a file needs ADB.
+- Phone app, Wi-Fi scan: waits longer for each TV and also listens for TVs announcing themselves (mDNS), so one scan is enough; each TV found says whether ADB is on; when nothing is found it says which network was scanned and that a TV reached through Tailscale needs its IP typed.
+- Computer web: the scan shows a TV’s name even with ADB off. The “Download / Install” tab is folded into “Files · Install”; “Optimise TV” lives in one place, the Set-up tab. The upload / install progress card can be collapsed. Fixed the Health tab being pushed to the right with its sections stuck together.
+
 ## 2.7.6 - 2026-10-14
 
 Web 2.7.6 · app điện thoại 2.6.3 · app TV 2.6.8

@@ -45,8 +45,7 @@
   <nav class="tabs" role="tablist">
     <button role="tab" data-tab="remote" aria-selected="true"><span class="ico">🎮</span><span class="lbl"> Remote</span></button>
     <button role="tab" data-tab="apps" aria-selected="false"><span class="ico">📱</span><span class="lbl"> Ứng dụng</span><span class="needs">cần ADB</span></button>
-    <button role="tab" data-tab="files" aria-selected="false"><span class="ico">📁</span><span class="lbl"> Tệp</span><span class="needs">cần ADB</span></button>
-    <button role="tab" data-tab="install" aria-selected="false"><span class="ico">⬇️</span><span class="lbl"> Tải / Cài</span><span class="needs">cần ADB</span></button>
+    <button role="tab" data-tab="files" aria-selected="false"><span class="ico">📁</span><span class="lbl"> Tệp · Cài</span><span class="needs">cần ADB</span></button>
     <button role="tab" data-tab="health" aria-selected="false"><span class="ico">🩺</span><span class="lbl"> Sức khỏe</span><span class="needs">cần ADB</span></button>
     <button role="tab" data-tab="term" aria-selected="false"><span class="ico">⌨️</span><span class="lbl"> Terminal</span><span class="needs">cần ADB</span></button>
     <button role="tab" data-tab="tv" aria-selected="false"><span class="ico">📺</span><span class="lbl"> Thiết lập</span><span class="needs">lần đầu</span></button>
@@ -125,6 +124,7 @@
           <h2 style="margin-top:14px">🔗 Mở trên TV <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· link, CH Play</span></h2>
           <form class="line" id="linkf" style="margin-top:0"><input id="link" placeholder="youtube.com/watch?v=..." autocomplete="off" inputmode="url"><button class="primary">↗ Mở</button></form>
           <form class="line" id="storef"><input id="store" placeholder="Tìm app trên CH Play, hoặc app id (vd org.videolan.vlc)" autocomplete="off"><button class="primary">🛒 CH Play</button></form>
+          <label class="drop" data-adb-gated style="margin-top:8px"><input type="file" id="castfile" accept="image/*,video/*,audio/*">📤 Phát ảnh, video, nhạc từ máy này lên TV</label>
         </section>
       </div>
     </div>
@@ -160,8 +160,7 @@
   </div>
 
   <!-- ============ Install ============ -->
-  <div class="panel" data-panel="install" hidden>
-    <div data-adb-banner></div>
+  <div class="panel" data-panel="files" hidden>
     <div class="two-up" data-adb-gated>
       <section class="card">
         <h2>⬇️ Tải file từ link về TV</h2>
@@ -175,23 +174,6 @@
         <p class="muted" style="margin:8px 0 0">Chỉ cài APK bạn tin tưởng. Cài đè bản cũ được (giữ dữ liệu). File .apk đã nằm trên TV thì cài từ tab Tệp.</p>
       </section>
     </div>
-  </div>
-  <div class="panel" data-panel="install" hidden>
-    <section class="card" data-adb-gated>
-      <h2>⚡ Tối ưu TV</h2>
-      <p class="muted" style="margin:0 0 10px">Một lần bấm, chạy lại bao nhiêu lần cũng được, không gỡ cài đặt gì:</p>
-      <ul class="muted" style="margin:0 0 12px;padding-left:18px">
-        <li>Giữ Tailscale sống qua standby và khởi động lại</li>
-        <li>Tắt hiệu ứng chuyển cảnh cho TV nhanh hơn</li>
-        <li>Thay màn hình chính Google bằng FLauncher (chỉ lưới app, nhẹ CPU)</li>
-        <li>Tắt app hệ thống không dùng (chế độ khách sạn/trưng bày của Sony, Samba, Sony Select, Play Games, Play Movies, YouTube Music)</li>
-      </ul>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="primary" id="setupapply" style="padding:0 18px">⚡ Tối ưu TV</button>
-        <button id="setupundo" style="padding:0 18px">↩ Hoàn tác</button>
-      </div>
-      <pre id="setuplog" hidden style="margin:12px 0 0;padding:10px;background:var(--bg);border:1px solid var(--line);border-radius:10px;font-size:12px;max-height:260px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere"></pre>
-    </section>
   </div>
   <!-- ============ Health ============ -->
   <div class="panel" data-panel="health" hidden>
@@ -226,6 +208,24 @@
     </section>
   </div>
 
+  <div class="panel" data-panel="tv" hidden>
+    <section class="card" data-adb-gated>
+      <h2>⚡ Tối ưu TV</h2>
+      <p class="muted" style="margin:0 0 10px">Một lần bấm, chạy lại bao nhiêu lần cũng được, không gỡ cài đặt gì:</p>
+      <ul class="muted" style="margin:0 0 12px;padding-left:18px">
+        <li>Giữ Tailscale sống qua standby và khởi động lại</li>
+        <li>Tắt hiệu ứng chuyển cảnh cho TV nhanh hơn</li>
+        <li>Thay màn hình chính Google bằng FLauncher (chỉ lưới app, nhẹ CPU)</li>
+        <li>Tắt app hệ thống không dùng (chế độ khách sạn/trưng bày của Sony, Samba, Sony Select, Play Games, Play Movies, YouTube Music)</li>
+      </ul>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="primary" id="setupapply" style="padding:0 18px">⚡ Tối ưu TV</button>
+        <button id="setupundo" style="padding:0 18px">↩ Hoàn tác</button>
+      </div>
+      <pre id="setuplog" hidden style="margin:12px 0 0;padding:10px;background:var(--bg);border:1px solid var(--line);border-radius:10px;font-size:12px;max-height:260px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere"></pre>
+    </section>
+  </div>
+
   <details class="card help" id="help">
     <summary>❓ Chức năng nào cần ADB (cổng 5555)?</summary>
     <div class="cols">
@@ -252,7 +252,7 @@
     <p><b>ADB đóng khi nào?</b> TV tắt hẳn hoặc đang standby sâu (mất Wi-Fi), TV vừa khởi động lại và chưa mở lại cổng, hoặc đã tắt “Gỡ lỗi ADB”. Chức năng Remote vẫn dùng được nếu TV còn mạng.</p>
     <p><b>Bật lại:</b> Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng” → Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB”. Lần đầu TV hỏi cho phép thì chọn “Luôn cho phép”.</p>
   </details>
-  <section class="card" id="jobscard" hidden><h2>⏳ Tiến trình tải lên / cài đặt</h2><div id="jobs"></div></section>
+  <details class="card" id="jobscard" hidden open><summary><h2>⏳ Tiến trình tải lên / cài đặt</h2></summary><div id="jobs"></div></details>
   <div class="muted" id="ver" style="text-align:center;font-size:12px;padding:6px 0 14px"></div>
 </main>
 <div id="pipslot"></div>

@@ -60,6 +60,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "rename" -> fileOp("rename", r.json())
                 "mkdir" -> fileOp("mkdir", r.json())
                 "open" -> fileOp("open", r.json())
+                "link" -> { openLink(r.json().optString("link")); HttpServer.Response.ok() }
                 "install" -> HttpServer.Response.json(installPath(safePath(r.json().optString("path"))))
                 "install-upload" -> installUpload(r)
                 "free" -> HttpServer.Response.json(free())
@@ -163,6 +164,23 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         if (part.size > 2) for (v in part[2].trim().jsplit("\\s+"))
             if (v.isNotEmpty() && v != "emulated" && v != "self" && !v.startsWith("sdcard")) usb.put(v)
         return out.put("usb", usb)
+    }
+
+    /** Makes the TV open a link (a video, a web page) with whatever app takes it. */
+    fun openLink(url: String) {
+        val u = url.trim()
+        if (!u.matches(Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:\\S+$"))) throw IllegalArgumentException("not a link")
+        val out = sh("am start -a android.intent.action.VIEW -d " + Adb.q(u) + " 2>&1")
+        if (out.contains("Error") || out.lowercase(Locale.ROOT).contains("unable to resolve")) throw IllegalArgumentException("the TV has no app that can open this")
+    }
+
+    /** Puts a file from this device into the TV's Download folder and has the TV open it: a photo, a video, a song. */
+    @Throws(IOException::class)
+    fun cast(input: InputStream, length: Long, name: String) {
+        val path = CAST_DIR + "/" + safeName(name)
+        sh("mkdir -p " + Adb.q(CAST_DIR))
+        push(input, length, path, null)
+        fileOp("open", JSONObject().put("path", path))
     }
 
     private fun fileOp(op: String, d: JSONObject): HttpServer.Response {
@@ -427,6 +445,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     }
 
     companion object {
+        const val CAST_DIR = "/sdcard/Download"
         private val PKG = Pattern.compile("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)+")
         private val LS = Pattern.compile("^([dl-])\\S+\\s+\\d+\\s+\\S+\\s+\\S+\\s+(\\d+)\\s+(\\d{4}-\\d\\d-\\d\\d \\d\\d:\\d\\d)\\s+(.+)\$")
         private val DIGITS = Regex("\\d+")

@@ -193,14 +193,11 @@ async function loadSteps() {
     out.push(step(4, 'todo', move ? 'Lưu và chuyển sang IP Tailscale' : 'Lưu TV này', move ? 'TV đã có IP Tailscale ' + s.tailscale_ip + '. Lưu để từ nay kết nối qua IP đó, dùng được cả khi không ở nhà.' : 'Để lần sau mở lên là dùng ngay, không phải tìm lại.',
       name, act('💾 Lưu', async () => { const x = await api('/api/tv/save', { name: name.value }); if (x) { toast(x.moved ? 'Đã lưu, chuyển sang ' + x.tv.host : 'Đã lưu'); await refresh(); await loadSteps(); } }, 'primary')));
   }
-  // 5. optimise
-  out.push(step(5, s.flauncher ? 'ok' : 'todo', 'Tối ưu TV (tùy chọn)', s.flauncher ? 'Đã có FLauncher. Chạy lại để áp dụng đủ các bước, hoặc Hoàn tác ở tab Tải / Cài.' : 'Giữ Tailscale sống, giảm hiệu ứng, thay màn hình chính bằng FLauncher, tắt app hệ thống không dùng. Hoàn tác được.',
-    ready ? act('⚡ Tối ưu TV', async () => { showTab('install'); await runSetup('apply'); }) : null));
   if (document.activeElement && $('#steps').contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;   // don't wipe what is being typed
   $('#steps').replaceChildren(...out);
 }
 setInterval(() => { if (currentTab === 'tv' && !document.hidden && !stopped) loadSteps(); }, 6000);
 
 const startTab = location.hash.slice(1);
-if (['remote', 'apps', 'files', 'install', 'health', 'term', 'tv'].includes(startTab)) showTab(startTab);
+if (['remote', 'apps', 'files', 'health', 'term', 'tv'].includes(startTab)) showTab(startTab); else if (startTab === 'install') showTab('files');
 applyAdb(); refresh(); setInterval(refresh, 4000);

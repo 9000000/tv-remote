@@ -65,19 +65,20 @@ fc.addEventListener('drop', (e) => { e.preventDefault(); fc.classList.remove('dr
 // ---------- jobs / upload ----------
 const jobEls = {};
 function showJob(j, label) {
-  $('#jobscard').hidden = false;
+  if ($('#jobscard').hidden) { $('#jobscard').hidden = false; try { $('#jobscard').open = localStorage.getItem('jobs') !== '0'; } catch {} }
   let row = jobEls[j.id];
   if (!row) { row = jobEls[j.id] = { root: el('div', { className: 'job' }), msg: el('div', { className: 'msg' }), bar: el('i') }; row.root.append(el('div', { textContent: label || j.title }), row.msg, el('div', { className: 'bar' }, row.bar)); $('#jobs').prepend(row.root); }
   row.root.className = 'job ' + j.status; row.msg.textContent = j.msg; row.bar.style.width = j.pct + '%';
 }
-async function trackJob(j, label) {
+async function trackJob(j, label, after) {
   showJob(j, label);
   while (j.status === 'running') { await sleep(1000); const r = await api('/api/job?id=' + j.id); if (!r) return; j = r; showJob(j, label); }
   toast(j.status === 'done' ? 'Xong: ' + j.msg : 'Lỗi: ' + j.msg);
+  if (j.status === 'done' && after) after(j);
   if (j.status === 'done' && filesLoaded) loadFiles(cwd);
   if (j.status === 'done') { appsLoaded = false; if (/install/.test(j.title)) loadQuick(); }
 }
-function upload(file, kind, dest) {
+function upload(file, kind, dest, after) {
   const row = { id: 'up' + Math.random().toString(36).slice(2), title: 'Gửi ' + file.name, status: 'running', msg: 'đang gửi lên server...', pct: 0 };
   showJob(row);
   const xhr = new XMLHttpRequest();
@@ -88,12 +89,19 @@ function upload(file, kind, dest) {
   xhr.onload = () => {
     let r = {}; try { r = JSON.parse(xhr.responseText); } catch {}
     if (xhr.status !== 200) { row.status = 'error'; row.msg = r.error || xhr.statusText; showJob(row); return; }
-    jobEls[row.id].root.remove(); delete jobEls[row.id]; trackJob(r, file.name);
+    jobEls[row.id].root.remove(); delete jobEls[row.id]; trackJob(r, file.name, after);
   };
   xhr.send(file);
 }
+// "Cast" a file: copy it to the TV's Download folder, then have the TV open it with its own viewer or player.
+$('#castfile').addEventListener('change', (e) => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  upload(f, 'file', '/sdcard/Download', async (j) => { const p = /^saved (.+)$/.exec(j.msg || ''); if (await api('/api/file/open', { path: p ? p[1] : '/sdcard/Download/' + f.name })) toast('Đã mở trên TV: ' + f.name); });
+});
 async function startJob(path, data, label) { const r = await api(path, data); if (r) trackJob(r, label); }
 $('#fetchf').addEventListener('submit', (e) => { e.preventDefault(); const u = $('#fetchurl').value.trim(); if (u) { startJob('/api/fetch', { url: u, dest: '/sdcard/Download' }); $('#fetchurl').value = ''; } });
 $('#instf').addEventListener('submit', (e) => { e.preventDefault(); const u = $('#insturl').value.trim(); if (u && confirm('Cài APK từ link này lên TV?\n' + u)) { startJob('/api/install', { url: u }); $('#insturl').value = ''; } });
 $('#apkfile').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; if (f && confirm('Cài ' + f.name + ' lên TV?')) upload(f, 'install'); });
 
+
+$('#jobscard').addEventListener('toggle', () => { try { localStorage.setItem('jobs', $('#jobscard').open ? '1' : '0'); } catch {} });   // stays folded once folded

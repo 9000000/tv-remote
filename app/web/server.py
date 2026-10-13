@@ -456,6 +456,28 @@ def local_networks():
     return nets
 
 
+async def cast_name(ip):
+    """The name an Android TV gives itself, asked from its Chromecast service (every Android TV has one). "" when it does not answer."""
+    try:
+        r, w = await asyncio.wait_for(asyncio.open_connection(ip, 8008), 0.8)
+        try:
+            w.write(f"GET /setup/eureka_info HTTP/1.1\r\nHost: {ip}:8008\r\nConnection: close\r\n\r\n".encode())
+            got = b""
+            while len(got) < 20000:                                   # the TV may keep the connection open: stop at the name
+                chunk = await asyncio.wait_for(r.read(2048), 1.5)
+                if not chunk:
+                    break
+                got += chunk
+                m = re.search(r'"name"\s*:\s*"([^"]{1,60})"', got.decode("utf-8", "replace"))
+                if m:
+                    return m[1]
+        finally:
+            w.close()
+    except (OSError, asyncio.TimeoutError):
+        pass
+    return ""
+
+
 async def discover():
     """TVs we can see: LAN hosts answering on the remote (6466) or ADB (5555) port, and Android devices on the tailnet."""
     sem, found = asyncio.Semaphore(120), {}
@@ -464,7 +486,7 @@ async def discover():
         async with sem:
             remote, adb = await asyncio.gather(port_open(ip, 6466), port_open(ip, 5555))
         if remote or adb:
-            found[ip] = {"ip": ip, "remote": remote, "adb": adb, "via": via, "name": name}
+            found[ip] = {"ip": ip, "remote": remote, "adb": adb, "via": via, "name": await cast_name(ip) or name}
 
     jobs, mine = [], set()
     for me, net in local_networks():

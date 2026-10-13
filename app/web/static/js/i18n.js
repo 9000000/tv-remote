@@ -13,7 +13,7 @@
   const EN = {
     // header, tabs
     'đang kết nối...': 'connecting...', 'Tắt': 'Quit', 'Dừng chương trình trên máy tính này (TV không bị ảnh hưởng)': 'Stop the program on this computer (the TV is not affected)',
-    'Ứng dụng': 'Apps', 'Tệp': 'Files', 'Tải / Cài': 'Download / Install', 'cần ADB': 'needs ADB', '· cần ADB': '· needs ADB', 'thêm': 'add', 'cài đặt': 'setup',
+    'Ứng dụng': 'Apps', 'Tệp': 'Files', 'Tệp · Cài': 'Files · Install', 'Tải / Cài': 'Download / Install', 'cần ADB': 'needs ADB', '· cần ADB': '· needs ADB', 'thêm': 'add', 'cài đặt': 'setup',
     'ADB: sẵn sàng': 'ADB: ready', 'ADB: chờ TV cho phép': 'ADB: waiting for the TV', 'ADB: cổng đóng': 'ADB: port closed', 'ADB: lỗi': 'ADB: error',
     'Server tắt': 'Server stopped', 'Không gọi được server. Chạy lại start-mac.command.': 'Cannot reach the server. Run start-mac.command again.', 'Không gọi được server': 'Cannot reach the server',
     'TV: mất kết nối': 'TV: disconnected', 'TV: đang bật': 'TV: on', 'TV: màn hình tắt': 'TV: screen off', 'Chưa chọn TV': 'No TV chosen',
@@ -33,7 +33,7 @@
     'Đưa TV về chế độ chờ?\nNếu TV tắt cả mạng thì chỉ mở lại được bằng nút Đánh thức (cần một máy ở nhà đang bật) hoặc remote của TV.': 'Put the TV in standby?\nIf its network goes off too, only Wake (needs a computer at home that is on) or the TV’s own remote can turn it back on.',
     'Thêm phím': 'More keys', 'Ngõ vào': 'Input', 'Cài đặt': 'Settings', 'Thông tin': 'Info', 'Lịch phát': 'Guide', 'Phụ đề': 'Subtitles', 'Kênh +': 'CH +', 'Kênh −': 'CH −', 'Kênh': 'CH', 'Tua lại': 'Rewind', 'Dừng': 'Stop', 'Tua tới': 'Forward', 'Chụp màn hình': 'Screenshot',
     '🧹 Giải phóng RAM': '🧹 Free up RAM', 'Đã lấy lại': 'Got back', 'còn trống': 'free',
-    'Hiện tại': 'Now', 'Lịch sử': 'History',
+    'Hiện tại': 'Now', 'Lịch sử': 'History', '📤 Phát ảnh, video, nhạc từ máy này lên TV': '📤 Play a photo, video or song from this computer on the TV',
     'Bật ADB giúp tôi': 'Turn ADB on for me', 'Bật ADB cho TV này': 'Turn on ADB for this TV', 'Đóng': 'Close', 'Tự động: cài TV Setup lên TV': 'Automatic: install TV Setup on the TV',
     'Trang này cho TV tự tải và mở app TV Setup; app đó mở thẳng Tùy chọn nhà phát triển. Bạn chỉ xác nhận trên TV.': 'This page has the TV fetch and open the TV Setup app, which opens Developer options directly. You only confirm on the TV.',
     'Tự làm: mở Cài đặt TV': 'By hand: open TV Settings', 'Thử mọi cách mở Cài đặt, rồi chỉ các bước bật Gỡ lỗi ADB.': 'Tries every way to open Settings, then shows the steps to turn ADB on.',
@@ -139,7 +139,7 @@
     'Lần sau mở lên là dùng TV này. Đã ghi địa chỉ MAC để đánh thức TV.': 'This TV is used the next time you start. Its MAC address is recorded for waking it.',
     'Tên gọi, vd TV phòng khách': 'A name, e.g. Living-room TV', 'Lưu và chuyển sang IP Tailscale': 'Save and switch to the Tailscale IP', 'Lưu TV này': 'Save this TV', 'Lưu': 'Save', 'Đã lưu': 'Saved',
     'Để lần sau mở lên là dùng ngay, không phải tìm lại.': 'So it is ready the next time you start, without searching again.', 'Tối ưu TV (tùy chọn)': 'Optimise the TV (optional)',
-    'Đã có FLauncher. Chạy lại để áp dụng đủ các bước, hoặc Hoàn tác ở tab Tải / Cài.': 'FLauncher is installed. Run again to apply every step, or Undo on the Download / Install tab.',
+    
     'Giữ Tailscale sống, giảm hiệu ứng, thay màn hình chính bằng FLauncher, tắt app hệ thống không dùng. Hoàn tác được.': 'Keep Tailscale alive, reduce animations, replace the home screen with FLauncher, turn off unused system apps. Can be undone.',
     // help
     'Chức năng nào cần ADB (cổng 5555)?': 'Which features need ADB (port 5555)?', '✅ Không cần ADB, chỉ cần Remote (cổng 6466)': '✅ No ADB needed, just the remote (port 6466)',

@@ -148,6 +148,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         show(false)
         if (b != null) host = b.getString("host")
         if (host != null) show(true)
+        takeShare(intent)
         if (b != null && b.getBoolean("settings")) settings.visibility = View.VISIBLE
         if (b != null && b.getBoolean("about")) about.visibility = View.VISIBLE
         if (prefs.getBoolean("autoUpdate", true)) checkUpdate(false)
@@ -492,6 +493,76 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         else if (tv != null && tv.ready()) Thread { try { tv.shell("am start -a android.intent.action.VIEW -d " + Adb.q(link)) } catch (ignored: Exception) { } }.start()
     }
 
+    // ---------------------------------------------------------------- "Share → TV Remote" from other apps, and playing a file on the TV
+    private var shared: Intent? = null
+    /** On the remote screen the picker's message line is out of sight: say it in a toast there. */
+    private fun say(text: String, error: Boolean) {
+        if (host == null) message(text, error) else Toast.makeText(this, text, if (error) Toast.LENGTH_LONG else Toast.LENGTH_SHORT).show()
+    }
+    private val PICK_CAST = 71
+
+    /** Another app shared a link or a file with us: keep it until a TV is connected, then send it there. */
+    private fun takeShare(i: Intent?): Boolean {
+        if (i == null || Intent.ACTION_SEND != i.action) return false
+        shared = i
+        setIntent(Intent(this, MainActivity::class.java))             // not again after a rotation
+        sendShared(0)
+        return true
+    }
+
+    private fun sendShared(tries: Int) {
+        val i = shared ?: return
+        if (!live()) {
+            if (host == null) message(t("Chọn TV để phát nội dung vừa chia sẻ.", "Choose a TV to play what you shared."), false)
+            if (tries < 90) ui.postDelayed({ if (!isFinishing) sendShared(tries + 1) }, 1000) else shared = null
+            return
+        }
+        shared = null
+        @Suppress("DEPRECATION")
+        val file = i.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+        if (file != null) { castFile(file); return }
+        val link = Regex("[a-zA-Z][a-zA-Z0-9+.-]*://\\S+").find(i.getStringExtra(Intent.EXTRA_TEXT) ?: "")?.value
+        if (link == null) say(t("Nội dung chia sẻ không có đường dẫn nào để mở trên TV.", "What was shared has no link to open on the TV."), true)
+        else { openLink(link); Toast.makeText(this, t("Đã gửi lên TV", "Sent to the TV"), Toast.LENGTH_SHORT).show() }
+    }
+
+    /** A photo, video or song from this phone: copied to the TV's Download folder, then opened by the TV's own viewer or player. */
+    private fun castFile(uri: Uri) {
+        val ip = host
+        if (ip == null || tv?.ready() != true) {
+            say(t("Phát tệp lên TV cần ADB. TV này mới chỉ nối bằng nút remote: vào “Bật ADB” trước.", "Playing a file on the TV needs ADB. This TV is connected with the remote buttons only: turn ADB on first."), true)
+            return
+        }
+        var name = "shared"
+        var size = -1L
+        try {
+            contentResolver.query(uri, null, null, null, null)?.use { c ->
+                if (c.moveToFirst()) {
+                    c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME).let { if (it >= 0) c.getString(it)?.let { n -> name = n } }
+                    c.getColumnIndex(android.provider.OpenableColumns.SIZE).let { if (it >= 0 && !c.isNull(it)) size = c.getLong(it) }
+                }
+            }
+        } catch (ignored: Exception) {
+        }
+        if (!name.contains('.')) android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(contentResolver.getType(uri))?.let { name += ".$it" }
+        say(t("Đang gửi lên TV: ", "Sending to the TV: ") + name + "...", false)
+        Thread {
+            val link = AdbLink(filesDir, ip)
+            val err = try {
+                contentResolver.openInputStream(uri).use { input ->
+                    if (input == null) throw java.io.IOException("cannot read the file")
+                    Manage(link, null, cacheDir).cast(input, size, name)
+                }
+                null
+            } catch (e: Exception) { e.message ?: e.toString() } finally { link.close() }
+            ui.post {
+                if (isFinishing) return@post
+                if (err == null) say(t("Đang phát trên TV: ", "Playing on the TV: ") + name, false)
+                else say(t("Không phát được: ", "Could not play it: ") + err, true)
+            }
+        }.start()
+    }
+
     private fun askText(title: String, hint: String, ok: String, then: (String) -> Unit) {
         val box = input(hint)
         val wrap = FrameLayout(this)
@@ -515,6 +586,14 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         })
         items.add(Triple(t("Mở đường dẫn trên TV", "Open a link on the TV"), t("Video YouTube, trang web, file tải về... TV mở bằng app phù hợp", "A YouTube video, a web page, a download... the TV opens it with a fitting app")) {
             askText(t("Đường dẫn", "Link"), "https://youtu.be/...", t("Mở", "Open")) { openLink(if (Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:").containsMatchIn(it)) it else "https://$it") }
+        })
+        items.add(Triple(t("Phát ảnh / video / nhạc từ điện thoại", "Play a photo / video / song from the phone"), t("Chọn tệp, app chép sang TV rồi TV tự mở. Cần ADB. Cũng dùng được nút Chia sẻ → TV Remote ở app khác", "Pick a file; it is copied to the TV, which opens it. Needs ADB. Share → TV Remote in other apps does the same")) {
+            try { startActivityForResult(Intent(Intent.ACTION_GET_CONTENT).setType("*/*").putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*", "audio/*")).addCategory(Intent.CATEGORY_OPENABLE), PICK_CAST) }
+            catch (e: Exception) { say(t("Điện thoại không có app chọn tệp.", "This phone has no file picker."), true) }
+        })
+        items.add(Triple(t("Chiếu màn hình điện thoại lên TV", "Mirror the phone’s screen on the TV"), t("Mở phần Truyền (Cast) của Android: chọn TV trong danh sách. Điện thoại và TV phải cùng Wi-Fi", "Opens Android’s Cast screen: pick the TV in the list. Phone and TV must be on the same Wi-Fi")) {
+            try { startActivity(Intent("android.settings.CAST_SETTINGS")) }
+            catch (e: Exception) { say(t("Điện thoại này không có phần Truyền (Cast) trong Cài đặt. Thử nút Truyền / Smart View ở thanh thông báo.", "This phone has no Cast screen in Settings. Try the Cast / Smart View tile in the notification shade."), true) }
         })
         for ((name, id) in listOf("YouTube" to "com.google.android.youtube.tv", "Netflix" to "com.netflix.ninja", "VLC" to "org.videolan.vlc", "Kodi" to "org.xbmc.kodi",
             "Downloader" to "com.esaba.downloader", "Projectivy Launcher" to "com.spocky.projengmenu", "Tailscale" to "com.tailscale.ipn"))
@@ -920,6 +999,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     /** Android reports back here: first "the person must confirm" (with the screen to show), then the result. */
     override fun onNewIntent(i: Intent) {
         super.onNewIntent(i)
+        if (takeShare(i)) return
         if (INSTALL_RESULT != i.action) return
         val status = i.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
         if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
@@ -1076,38 +1156,95 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             val nets = ArrayList<String>()
             val found = Collections.synchronizedList(ArrayList<String>())
             val names = java.util.concurrent.ConcurrentHashMap<String, String>()
+            val adbOn = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
             try {
-                for (ni in Collections.list(NetworkInterface.getNetworkInterfaces())) {
-                    if (!ni.isUp || ni.isLoopback) continue
-                    for (a in Collections.list(ni.inetAddresses)) {
-                        val ip = a.hostAddress ?: continue
-                        if (a is Inet4Address && a.isSiteLocalAddress) nets.add(ip.substring(0, ip.lastIndexOf('.') + 1))
+                val add = { a: java.net.InetAddress? ->
+                    val ip = a?.hostAddress
+                    if (ip != null && a is Inet4Address && a.isSiteLocalAddress) ip.substring(0, ip.lastIndexOf('.') + 1).let { if (it !in nets) nets.add(it) }
+                }
+                try {
+                    for (ni in Collections.list(NetworkInterface.getNetworkInterfaces())) {
+                        if (!ni.isUp || ni.isLoopback) continue
+                        for (a in Collections.list(ni.inetAddresses)) add(a)
+                    }
+                } catch (ignored: Exception) {
+                }
+                try {                                                 // a second source: with a VPN (Tailscale) on, the list above can miss the Wi-Fi
+                    val cm = getSystemService(CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+                    @Suppress("DEPRECATION")
+                    for (n in cm.allNetworks) cm.getLinkProperties(n)?.linkAddresses?.forEach { add(it.address) }
+                } catch (ignored: Exception) {
+                }
+                val seen = { ip: String ->
+                    if (!found.contains(ip)) {
+                        found.add(ip)
+                        adbOn[ip] = open(ip, 5555, 900)
+                        (name(ip).ifEmpty { castName(ip) }).let { if (it.isNotEmpty()) names[ip] = it }
                     }
                 }
-                val pool = Executors.newFixedThreadPool(64)
+                val stopMdns = announced { ip -> Thread { seen(ip) }.start() }   // TVs also announce themselves; this finds the slow ones
+                val pool = Executors.newFixedThreadPool(96)
                 for (net in nets) for (i in 1 until 255) {
                     val ip = net + i
-                    pool.execute {
-                        if (open(ip, 5555, 500) || open(ip, 6466, 500)) {
-                            found.add(ip)
-                            (name(ip).ifEmpty { castName(ip) }).let { if (it.isNotEmpty()) names[ip] = it }
-                        }
-                    }
+                    pool.execute { if (open(ip, 6466, 900) || open(ip, 5555, 900)) seen(ip) }
                 }
                 pool.shutdown()
-                pool.awaitTermination(20, TimeUnit.SECONDS)
+                pool.awaitTermination(25, TimeUnit.SECONDS)
+                stopMdns()
             } catch (ignored: Exception) {
             }
             ui.post {
                 scanBtn.isEnabled = true
                 scanBtn.text = "🔍  " + t("Quét Wi-Fi", "Scan the Wi-Fi")
                 val ips = synchronized(found) { found.sorted() }
-                for (ip in ips) foundList.addView(row(names[ip]?.let { it + "\n" + ip } ?: ip) { connect(ip) })
+                for (ip in ips) foundList.addView(row((names[ip]?.let { it + "\n" } ?: "") + ip + " · " +
+                    (if (adbOn[ip] == true) t("ADB đã bật", "ADB on") else t("ADB chưa bật: chỉ bấm phím, app sẽ giúp bật", "ADB off: keys only, the app helps turn it on"))) { connect(ip) })
                 if (ips.isEmpty()) foundList.addView(note(
                     if (nets.isEmpty()) t("Điện thoại chưa nối Wi-Fi. Khác mạng thì nhập IP Tailscale của TV bên dưới.", "The phone is not on Wi-Fi. On another network, type the TV’s Tailscale IP below.")
-                    else t("Không thấy TV nào trong Wi-Fi này. TV có đang bật và đã bật “Gỡ lỗi ADB” chưa?", "No TV found on this Wi-Fi. Is it on, with “ADB debugging” enabled?")))
+                    else t("Đã quét ", "Scanned ") + nets.joinToString(", ") { it + "x" } + t(": không thấy TV nào. TV có đang bật và cùng Wi-Fi này không?\n\nTV ở mạng khác (qua Tailscale) thì không quét được: nhập IP Tailscale của TV (100.x.x.x) bên dưới.",
+                        ": no TV found. Is it on, and on this Wi-Fi?\n\nA TV on another network (through Tailscale) cannot be scanned for: type its Tailscale IP (100.x.x.x) below.")))
             }
         }.start()
+    }
+
+    /** Listens for Android TVs announcing their remote service on the Wi-Fi (mDNS); [onTv] gets each one's address. Returns how to stop. */
+    private fun announced(onTv: (String) -> Unit): () -> Unit {
+        try {
+            val nsd = getSystemService(NSD_SERVICE) as android.net.nsd.NsdManager
+            val queue = java.util.concurrent.LinkedBlockingQueue<android.net.nsd.NsdServiceInfo>()
+            var busy = false
+            lateinit var next: () -> Unit
+            next = {                                                  // old Androids resolve one at a time
+                val s = queue.poll()
+                if (s == null) busy = false
+                else {
+                    busy = true
+                    try {
+                        @Suppress("DEPRECATION")
+                        nsd.resolveService(s, object : android.net.nsd.NsdManager.ResolveListener {
+                            override fun onResolveFailed(i: android.net.nsd.NsdServiceInfo, code: Int) { next() }
+                            override fun onServiceResolved(i: android.net.nsd.NsdServiceInfo) {
+                                @Suppress("DEPRECATION")
+                                (i.host as? Inet4Address)?.hostAddress?.let(onTv)
+                                next()
+                            }
+                        })
+                    } catch (e: Exception) { busy = false }
+                }
+            }
+            val listener = object : android.net.nsd.NsdManager.DiscoveryListener {
+                override fun onStartDiscoveryFailed(type: String, code: Int) {}
+                override fun onStopDiscoveryFailed(type: String, code: Int) {}
+                override fun onDiscoveryStarted(type: String) {}
+                override fun onDiscoveryStopped(type: String) {}
+                override fun onServiceLost(s: android.net.nsd.NsdServiceInfo) {}
+                override fun onServiceFound(s: android.net.nsd.NsdServiceInfo) { synchronized(queue) { queue.add(s); if (!busy) next() } }
+            }
+            nsd.discoverServices("_androidtvremote2._tcp.", android.net.nsd.NsdManager.PROTOCOL_DNS_SD, listener)
+            return { try { nsd.stopServiceDiscovery(listener) } catch (ignored: Exception) { } }
+        } catch (e: Exception) {
+            return {}
+        }
     }
 
     /** The name an Android TV gives itself, asked from its Chromecast service (every Android TV has one). "" when it does not answer. */
@@ -1270,6 +1407,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     override fun onActivityResult(request: Int, result: Int, data: Intent?) {
         super.onActivityResult(request, result, data)
         if (request == PICK_FILE) managing.picked(result, data)
+        if (request == PICK_CAST && result == RESULT_OK) data?.data?.let { castFile(it) }
         if (request == SPEAK && result == RESULT_OK && data != null) {
             val heard = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             if (heard != null && heard.isNotEmpty()) ask(heard[0])
