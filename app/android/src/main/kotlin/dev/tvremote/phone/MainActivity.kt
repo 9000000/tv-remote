@@ -808,6 +808,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         Thread {
             val nets = ArrayList<String>()
             val found = Collections.synchronizedList(ArrayList<String>())
+            val names = java.util.concurrent.ConcurrentHashMap<String, String>()
             try {
                 for (ni in Collections.list(NetworkInterface.getNetworkInterfaces())) {
                     if (!ni.isUp || ni.isLoopback) continue
@@ -819,7 +820,12 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 val pool = Executors.newFixedThreadPool(64)
                 for (net in nets) for (i in 1 until 255) {
                     val ip = net + i
-                    pool.execute { if (open(ip, 5555, 500) || open(ip, 6466, 500)) found.add(ip) }
+                    pool.execute {
+                        if (open(ip, 5555, 500) || open(ip, 6466, 500)) {
+                            found.add(ip)
+                            (name(ip).ifEmpty { castName(ip) }).let { if (it.isNotEmpty()) names[ip] = it }
+                        }
+                    }
                 }
                 pool.shutdown()
                 pool.awaitTermination(20, TimeUnit.SECONDS)
@@ -829,13 +835,35 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 scanBtn.isEnabled = true
                 scanBtn.text = "🔍  " + t("Quét Wi-Fi", "Scan the Wi-Fi")
                 val ips = synchronized(found) { found.sorted() }
-                for (ip in ips) foundList.addView(row(ip) { connect(ip) })
+                for (ip in ips) foundList.addView(row(names[ip]?.let { it + "\n" + ip } ?: ip) { connect(ip) })
                 if (ips.isEmpty()) foundList.addView(note(
                     if (nets.isEmpty()) t("Điện thoại chưa nối Wi-Fi. Khác mạng thì nhập IP Tailscale của TV bên dưới.", "The phone is not on Wi-Fi. On another network, type the TV’s Tailscale IP below.")
                     else t("Không thấy TV nào trong Wi-Fi này. TV có đang bật và đã bật “Gỡ lỗi ADB” chưa?", "No TV found on this Wi-Fi. Is it on, with “ADB debugging” enabled?")))
             }
         }.start()
     }
+
+    /** The name an Android TV gives itself, asked from its Chromecast service (every Android TV has one). "" when it does not answer. */
+    private fun castName(ip: String): String = try {
+        java.net.Socket().use { so ->
+            so.connect(java.net.InetSocketAddress(ip, 8008), 800)
+            so.soTimeout = 1500
+            so.getOutputStream().write(("GET /setup/eureka_info HTTP/1.1\r\nHost: $ip:8008\r\nConnection: close\r\n\r\n").toByteArray())
+            val got = java.io.ByteArrayOutputStream()
+            val buf = ByteArray(2048)
+            var found = ""
+            try {
+                while (found.isEmpty() && got.size() < 20000) {       // the TV may keep the connection open: stop at the name
+                    val n = so.getInputStream().read(buf)
+                    if (n < 0) break
+                    got.write(buf, 0, n)
+                    found = Regex("\"name\"\\s*:\\s*\"([^\"]{1,60})\"").find(got.toString("UTF-8"))?.groupValues?.get(1) ?: ""
+                }
+            } catch (timeout: Exception) {
+            }
+            found
+        }
+    } catch (e: Exception) { "" }
 
     // ---------------------------------------------------------------- picker screen
     private fun buildPicker() {

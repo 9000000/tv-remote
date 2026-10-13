@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.6.3 - 2026-10-13
+
+Web 2.6.3 · app điện thoại 2.5.3 · app TV 2.6.2
+
+**Tiếng Việt**
+- App điện thoại: “Quét Wi-Fi” hiện **tên TV** phía trên địa chỉ IP (tên đã lưu, hoặc tên TV tự đặt, hỏi qua dịch vụ Chromecast của nó). TV nào không trả lời thì vẫn chỉ hiện IP.
+
+**English**
+- Phone app: “Scan the Wi-Fi” shows the **TV’s name** above its IP address (the saved name, or the name the TV gives itself, asked from its Chromecast service). A TV that does not answer still shows its IP only.
+
 ## 2.6.2 - 2026-10-13
 
 Web 2.6.2 · app điện thoại 2.5.2 · app TV 2.6.2
