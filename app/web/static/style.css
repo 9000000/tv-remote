@@ -170,3 +170,6 @@
 
   #toast { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:9px 16px; border-radius:10px; font-size:14px; opacity:0; transition:opacity .2s; pointer-events:none; max-width:90vw; z-index:20; }
   #toast.show { opacity:.94; }
+
+  /* health: one line of text until the first snapshot arrives, so the tab never looks empty or broken */
+  #hwait { text-align:center; padding:18px 0; grid-column:1/-1; } .health.ready > #hwait, .health:not(.ready) > section { display:none; }

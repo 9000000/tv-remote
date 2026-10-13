@@ -18,6 +18,7 @@ async function loadHealth() {
   const t0 = performance.now(), h = await api('/api/health', null, true);
   healthBusy = false;
   if (!h || currentTab !== 'health') return;
+  $('.health').classList.add('ready');
   const r = h.remote || {}, vol = r.volume || {};
   $('#hwhen').textContent = 'cập nhật mỗi 5 giây';
   $('#hsum').replaceChildren(...kv([

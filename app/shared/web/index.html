@@ -177,10 +177,13 @@
   </div>
 
   <div class="panel" data-panel="health" hidden>
+    <div class="muted" id="hwait" data-t="loading" style="text-align:center;padding:18px 0"></div>
+    <div id="hbody" class="panel" hidden>
     <section class="card"><h2 data-t="h_sum"></h2><div class="kv" id="hsum"></div></section>
     <section class="card"><h2 data-t="h_load"></h2><div id="hload"></div><h2 style="margin-top:14px" data-t="h_top"></h2><div class="kv" id="htop"></div></section>
     <section class="card"><h2 data-t="h_net"></h2><div class="kv" id="hnet"></div></section>
     <section class="card"><h2 data-t="h_hw"></h2><div class="kv" id="hhw"></div></section>
+    </div>
   </div>
 
   <div class="panel" data-panel="term" hidden>
@@ -203,7 +206,7 @@ const T = {
         on: 'đang bật', off: 'màn hình tắt', lost: 'mất kết nối tới TV', other: 'VI',
         term_note: 'Chạy lệnh với quyền shell của TV (như adb shell). Mỗi lệnh chạy riêng, tối đa 30 giây; lệnh chờ gõ tiếp như top, logcat không dùng được. Phím ↑ ↓ gọi lại lệnh cũ.', running: 'đang chạy...', cutoff: '[đã cắt: quá 30 giây hoặc quá dài]',
         t_apps: 'Ứng dụng', t_files: 'Tệp', t_install: 'Cài', t_health: 'Sức khỏe', sys: 'Hiện cả app hệ thống', search_app: 'Tìm app', open: 'Mở', stop: 'Dừng', remove: 'Gỡ', loading: 'Đang tải...',
-        ask_remove: 'Gỡ cài đặt {0} khỏi TV?', done: 'Xong', none: 'Không có gì.', folder: 'Thư mục', filter: 'Lọc trong thư mục này', upload: '＋ Chọn file để gửi lên thư mục này',
+        ask_remove: 'Gỡ cài đặt {0} khỏi TV?', ask_off: 'Tắt TV?', done: 'Xong', none: 'Không có gì.', folder: 'Thư mục', filter: 'Lọc trong thư mục này', upload: '＋ Chọn file để gửi lên thư mục này',
         tvmem: 'Bộ nhớ TV', movies: 'Phim', pics: 'Ảnh', music: 'Nhạc', free: 'Còn trống {0} / {1} · {2} mục', items: '{0} mục', newname: 'Tên mới:', newfolder: 'Tên thư mục mới:',
         ask_del: 'Xóa {0}?', ask_deldir: 'Xóa thư mục {0} và mọi thứ bên trong?', ask_inst: 'Cài {0} lên TV?', dl: 'Tải về máy này', ren: 'Đổi tên', del: 'Xóa', onTv: 'Mở trên TV', inst: 'Cài', cancel: 'Hủy', more: 'Thao tác khác', opendir: 'Mở thư mục',
         inst_apk: 'Cài APK lên TV', pick_apk: 'Chọn file .apk từ máy này', inst_note: 'Dán link tới file .apk rồi bấm ✓, hoặc chọn file. Chỉ cài APK bạn tin tưởng.', apk_link: 'Link tới file .apk',
@@ -218,7 +221,7 @@ const T = {
         on: 'on', off: 'screen off', lost: 'lost the TV', other: 'EN',
         term_note: 'Runs commands as the TV’s shell user (like adb shell). Each command runs on its own, for at most 30 seconds; interactive ones such as top or logcat do not work. ↑ ↓ recall earlier commands.', running: 'running...', cutoff: '[cut: over 30 seconds or too long]',
         t_apps: 'Apps', t_files: 'Files', t_install: 'Install', t_health: 'Health', sys: 'Show system apps too', search_app: 'Search apps', open: 'Open', stop: 'Stop', remove: 'Uninstall', loading: 'Loading...',
-        ask_remove: 'Uninstall {0} from the TV?', done: 'Done', none: 'Nothing here.', folder: 'Folder', filter: 'Filter this folder', upload: '＋ Choose files to send to this folder',
+        ask_remove: 'Uninstall {0} from the TV?', ask_off: 'Turn the TV off?', done: 'Done', none: 'Nothing here.', folder: 'Folder', filter: 'Filter this folder', upload: '＋ Choose files to send to this folder',
         tvmem: 'TV storage', movies: 'Movies', pics: 'Pictures', music: 'Music', free: '{0} free of {1} · {2} items', items: '{0} items', newname: 'New name:', newfolder: 'New folder name:',
         ask_del: 'Delete {0}?', ask_deldir: 'Delete the folder {0} and everything in it?', ask_inst: 'Install {0} on the TV?', dl: 'Download to this device', ren: 'Rename', del: 'Delete', onTv: 'Open on the TV', inst: 'Install', cancel: 'Cancel', more: 'More actions', opendir: 'Open folder',
         inst_apk: 'Install an APK on the TV', pick_apk: 'Choose an .apk file from this device', inst_note: 'Paste a link to an .apk file and press ✓, or choose a file. Only install APKs you trust.', apk_link: 'Link to an .apk file',
@@ -270,11 +273,12 @@ $('#pairf').addEventListener('submit', async (e) => {
 });
 
 // ---------- state ----------
+let tvOn = false;                                              // turning it off asks first, turning it on does not
 async function refresh() {
   const s = await api('/api/state');
   if (s.status === 401) { $('#name').textContent = s.name || 'TV Remote'; $('#status').textContent = ''; $('#dot').className = 'dot'; show(false); return; }
   if (s.status !== 200) { $('#status').textContent = t('lost'); $('#dot').className = 'dot bad'; return; }
-  show(true);
+  show(true); tvOn = !!s.on;
   $('#name').textContent = s.name; document.title = s.name + ' · Remote';
   $('#status').textContent = t(s.on ? 'on' : 'off'); $('#dot').className = 'dot ' + (s.on ? 'ok' : '');
   $('#volv').textContent = s.volume + ' / ' + s.volume_max; $('#volbar').style.width = (s.volume_max ? s.volume * 100 / s.volume_max : 0) + '%';
@@ -285,7 +289,7 @@ async function refresh() {
 // ---------- keys: tap = one press, hold = long press on the TV ----------
 document.querySelectorAll('[data-k]').forEach((b) => {
   const key = b.dataset.k; let timer = null, long = false, down = false;
-  const send = (action) => api('/api/key', { key, action }).then(() => setTimeout(refresh, 300));
+  const send = (action) => { if (key === 'POWER' && tvOn && !confirm(t('ask_off'))) return; api('/api/key', { key, action }).then(() => setTimeout(refresh, 300)); };
   const release = (tap) => {
     if (!down) return; down = false; clearTimeout(timer);
     if (long) { long = false; b.classList.remove('held'); send('up'); } else if (tap) send('press');
@@ -480,6 +484,7 @@ async function loadHealth() {
   if (healthBusy) return; healthBusy = true;
   const h = await m('health'); healthBusy = false;
   if (!h || tab !== 'health') return;
+  $('#hwait').hidden = true; $('#hbody').hidden = false;
   const s = h.uptime || 0, d = Math.floor(s / 86400), hr = Math.floor(s % 86400 / 3600), mi = Math.floor(s % 3600 / 60);
   $('#hsum').replaceChildren(...kv([[t('power'), h.on == null ? '' : t(h.on ? 'on' : 'off')], [t('cur'), h.app], [t('lat'), h.ping_ms + ' ms'],
     [t('up'), h.uptime == null ? '' : (d ? d + ' ' + t('day') + ' ' : '') + (d || hr ? hr + ' ' + t('hour') + ' ' : '') + mi + ' ' + t('min')]]));

@@ -487,12 +487,49 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         e.apply()
     }
 
+    // Each saved TV says whether it answers right now, so nobody has to tap it to find out; the wake button appears only when it does not.
+    private val savedRows = HashMap<String, Pair<Button, View>>()
+    private val reach = HashMap<String, Boolean>()                    // absent: not checked yet
+    private val probe = object : Runnable {
+        override fun run() {
+            ui.removeCallbacks(this)
+            if (host == null && !waking) for (ip in savedIps()) Thread {
+                val up = open(ip, 5555, 2500)
+                ui.post { reach[ip] = up; showReach(ip, up) }
+            }.start()
+            ui.postDelayed(this, 8000)
+        }
+    }
+
+    private fun showReach(ip: String, up: Boolean?) {
+        val (b, wk) = savedRows[ip] ?: return
+        val status = when (up) {
+            null -> t("đang kiểm tra...", "checking...")
+            true -> t("● kết nối được", "● reachable")
+            false -> t("○ không thấy: TV tắt hoặc khác mạng", "○ no answer: off or on another network")
+        }
+        val text = android.text.SpannableString((if (name(ip).isEmpty()) ip else name(ip) + "\n" + ip) + "\n" + status)
+        val from = text.length - status.length
+        text.setSpan(android.text.style.ForegroundColorSpan(if (up == true) 0xff4ade80.toInt() else MUTED), from, text.length, 0)
+        text.setSpan(android.text.style.RelativeSizeSpan(0.82f), from, text.length, 0)
+        b.text = text
+        wk.visibility = if (up == false) View.VISIBLE else View.GONE
+    }
+
+    override fun onResume() { super.onResume(); probe.run() }
+
+    override fun onPause() { ui.removeCallbacks(probe); super.onPause() }
+
     private fun refreshSaved() {
         savedList.removeAllViews()
+        savedRows.clear()
         for (ip in savedIps()) {
-            val b = row(if (name(ip).isEmpty()) ip else name(ip) + "\n" + ip) { connect(ip) }
-            val wk = icon("@power", t("Đánh thức", "Wake"), BTN)
+            val b = row("") { connect(ip) }
+            val wk = icon("@power", t("Đánh thức", "Wake"), BTN)        // only offered while the TV does not answer
             wk.setOnClickListener { wake(ip) }
+            wk.visibility = View.GONE
+            savedRows[ip] = Pair(b, wk)
+            showReach(ip, reach[ip])
             val line = LinearLayout(this)
             line.addView(b, LinearLayout.LayoutParams(0, -2, 1f))
             val wp = LinearLayout.LayoutParams(dp(60), -1)
@@ -989,7 +1026,16 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
         controls = col()
         controls.setPadding(dp(14), dp(12), dp(14), dp(20))
-        val first = keys(52, "@power|" + t("Nguồn", "Power"), 26, "@menu|Menu", 82)
+        val first = keys(52, "@menu|Menu", 82)
+        first.getChildAt(0).layoutParams = cell(52, true)
+        // power is a tap with a question, never a hold: a held power key opens the TV's power menu and picks "power off" there
+        val power = icon("@power", t("Nguồn", "Power"), BTN)
+        power.setOnClickListener {
+            AlertDialog.Builder(this).setMessage(t("Tắt TV?", "Turn the TV off?"))
+                .setPositiveButton(t("Tắt", "Turn off")) { _, _ -> tv?.let { if (it.ready()) it.press(26) } }
+                .setNegativeButton(t("Hủy", "Cancel"), null).show()
+        }
+        first.addView(power, 0, cell(52, false))
         val tvSettings = icon("@settings", t("Cài đặt của TV", "TV settings"), BTN)
         tvSettings.setOnClickListener { tv?.let { if (it.ready()) it.settings() } }
         first.addView(tvSettings, cell(52, true))

@@ -4,6 +4,20 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.3.2 - 2026-10-13
+
+Web 2.3.2 · app điện thoại 2.3.1 · app TV 2.3.2
+
+**Tiếng Việt**
+- App điện thoại: mỗi TV đã lưu hiện trạng thái ngay trong danh sách (kết nối được / không thấy), tự kiểm tra lại mỗi 8 giây. Nút đánh thức chỉ hiện khi TV không trả lời.
+- Nút nguồn ở màn remote hỏi lại trước khi tắt và không còn giữ được: giữ nút nguồn trước đây mở menu nguồn của TV rồi chọn luôn "Tắt nguồn". Trang trên TV cũng hỏi lại trước khi tắt.
+- Tab Sức khỏe hiện "Đang tải..." trong lúc chờ số liệu đầu tiên thay vì để trống.
+
+**English**
+- Phone app: each saved TV shows its status in the list (reachable / no answer), rechecked every 8 seconds. The wake button only appears when the TV does not answer.
+- The power button on the remote screen asks before turning off and can no longer be held: holding it used to open the TV's power menu and pick "Power off". The page on the TV asks too.
+- The Health tab shows "Loading..." while waiting for the first numbers instead of staying empty.
+
 ## 2.3.1 - 2026-10-13
 
 Web 2.3.1 · app điện thoại 2.3.0 · app TV 2.3.1
