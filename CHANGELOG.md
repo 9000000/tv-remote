@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.5.1 - 2026-10-13
+
+Web 2.5.1 · app điện thoại 2.4.2 · app TV 2.5.1
+
+**Tiếng Việt**
+- Trang trên TV và web máy tính: phím điều khiển **đổi màu cam ngay khi chạm**, như app điện thoại. Trước đây phải giữ 0,4 giây (lúc TV bắt đầu nhận là giữ phím) mới đổi màu.
+
+**English**
+- The page on the TV and the web on the computer: remote keys **turn amber the moment you touch them**, like the phone app. They used to change only after 0.4 s, when the TV starts seeing the key as held.
+
 ## 2.5.0 - 2026-10-13
 
 Web 2.5.0 · app điện thoại 2.4.1 · app TV 2.5.0

@@ -10,12 +10,14 @@ document.querySelectorAll('[data-k]').forEach((b) => {
   };
   const release = (tap) => {
     if (!down) return; down = false; clearTimeout(t);
-    if (long) { long = false; b.classList.remove('held'); send('END_LONG'); } else if (tap) send();
+    b.classList.remove('held');
+    if (long) { long = false; send('END_LONG'); } else if (tap) send();
     setTimeout(refresh, 350);
   };
   b.addEventListener('pointerdown', (e) => {
     if (e.button) return; down = true; long = false; try { b.setPointerCapture(e.pointerId); } catch {}
-    if (!power) t = setTimeout(() => { long = true; b.classList.add('held'); send('START_LONG'); }, 400);
+    b.classList.add('held');                                                      // amber at once, like the phone app
+    if (!power) t = setTimeout(() => { long = true; send('START_LONG'); }, 400);
   });
   b.addEventListener('pointerup', () => { release(true); b.blur(); });           // keep focus off the button so typing goes to the TV
   ['pointercancel', 'lostpointercapture'].forEach((ev) => b.addEventListener(ev, () => release(false)));

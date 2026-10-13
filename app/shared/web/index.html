@@ -365,11 +365,13 @@ document.querySelectorAll('[data-k]').forEach((b) => {
   const send = (action) => { if (key === 'POWER' && tvOn && !confirm(t('ask_off'))) return; api('/api/key', { key, action }).then(() => setTimeout(refresh, 300)); };
   const release = (tap) => {
     if (!down) return; down = false; clearTimeout(timer);
-    if (long) { long = false; b.classList.remove('held'); send('up'); } else if (tap) send('press');
+    b.classList.remove('held');
+    if (long) { long = false; send('up'); } else if (tap) send('press');
   };
   b.addEventListener('pointerdown', (e) => {
     if (e.button) return; down = true; long = false; try { b.setPointerCapture(e.pointerId); } catch {}
-    if (key !== 'POWER') timer = setTimeout(() => { long = true; b.classList.add('held'); send('down'); }, 400);
+    b.classList.add('held');                                                      // amber at once, like the phone app
+    if (key !== 'POWER') timer = setTimeout(() => { long = true; send('down'); }, 400);
   });
   b.addEventListener('pointerup', () => { release(true); b.blur(); });
   ['pointercancel', 'lostpointercapture'].forEach((ev) => b.addEventListener(ev, () => release(false)));
