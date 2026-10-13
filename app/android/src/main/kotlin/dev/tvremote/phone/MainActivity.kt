@@ -378,7 +378,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
      */
     private fun offerBasic(ip: String, error: String) {
         Thread {
-            val keys = !open(ip, 5555, 1500) && open(ip, 6466, 2500)   // not when ADB answers after all, or this is no Android TV
+            if (open(ip, 5555, 1500)) adbFailed.add(ip)                // the port answers, yet ADB did not work (not allowed on the TV, say): do not keep retrying by ourselves
+            val keys = open(ip, 6466, 2500)                            // an Android TV: it takes keys
             ui.post {
                 if (isFinishing || host != ip || tv != null) return@post   // the person has moved on
                 if (!keys) { disconnect(error); return@post }
@@ -410,6 +411,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                     show(true)
                     layoutRemote()
                     status.text = title(ip) + " · " + t("chỉ bấm phím", "keys only")
+                    watchAdb(a, ip)
                 }
             } catch (e: Atv.NotPaired) {
                 a.close()
@@ -420,6 +422,27 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 ui.post { message(explain(e.message), true) }
             }
         }.start()
+    }
+
+    private val adbFailed = HashSet<String>()                        // TVs whose ADB port answers but would not let us in, this session
+
+    /** While on the keys-only remote: the moment the TV starts answering on its ADB port, move over to the full connection. */
+    private fun watchAdb(a: Atv, ip: String) {
+        if (ip in adbFailed) return
+        Thread {
+            while (basic === a && !isFinishing) {
+                Thread.sleep(4000)
+                if (basic === a && open(ip, 5555, 1200)) {
+                    ui.post {
+                        if (basic !== a || isFinishing) return@post
+                        Toast.makeText(this, t("TV đã bật ADB: đang chuyển sang kết nối đầy đủ. Nhìn lên TV và chọn “Luôn cho phép”.", "ADB is on: switching to the full connection. Look at the TV and choose “Always allow”."), Toast.LENGTH_LONG).show()
+                        disconnect(null)
+                        connect(ip)
+                    }
+                    return@Thread
+                }
+            }
+        }.apply { isDaemon = true }.start()
     }
 
     /** On a worker thread: the TV shows a code, the person types it here. */
@@ -537,23 +560,27 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     /** Everything the keys-only mode can do towards turning ADB on, in the order one needs it. */
     private fun adbHelp() {
         menu(t("Bật ADB cho TV này", "Turn on ADB for this TV"), 0, listOf(
-            Triple(t("1. Mở Cài đặt TV", "1. Open TV Settings"), t("App tự thử mọi cách và báo kết quả", "The app tries every way and tells you")) { findSettings() },
-            Triple(t("2. Cài màn hình chính khác", "2. Install another home screen"), t("Khi TV giấu Cài đặt: mở qua một launcher từ CH Play", "When the TV hides Settings: go through a launcher from the Play Store")) { otherHome() },
-            Triple(t("3. Các bước bật Gỡ lỗi ADB", "3. Steps to turn on ADB debugging"), t("Làm trong Cài đặt của TV", "Done in the TV’s Settings")) { adbSteps() },
-            Triple(t("4. Kết nối đầy đủ", "4. Full connection"), t("Sau khi đã bật ADB: xem hình, ứng dụng, tệp...", "Once ADB is on: picture, apps, files...")) {
+            Triple(t("Tự động: cài TV Setup lên TV", "Automatic: install TV Setup on the TV"), t("App tự tải và mở app TV Setup trên TV; nó mở thẳng Tùy chọn nhà phát triển. Bạn chỉ xác nhận trên TV", "The app fetches and opens the TV Setup app on the TV, which opens Developer options directly. You only confirm on the TV")) { installSetup() },
+            Triple(t("Tự làm: mở Cài đặt TV", "By hand: open TV Settings"), t("App thử mọi cách mở Cài đặt, rồi chỉ các bước bật Gỡ lỗi ADB", "The app tries every way to open Settings, then shows the steps to turn ADB on")) { findSettings() },
+            Triple(t("Cài màn hình chính khác", "Install another home screen"), t("Khi TV giấu Cài đặt: mở qua một launcher từ CH Play", "When the TV hides Settings: go through a launcher from the Play Store")) { otherHome() },
+            Triple(t("Kết nối đầy đủ", "Full connection"), t("App tự chuyển khi TV bật ADB; bấm nếu muốn thử ngay", "The app switches by itself once ADB is on; tap to try now")) {
                 val ip = host
+                adbFailed.remove(ip)
                 disconnect(null)
                 if (ip != null) connect(ip)
             },
-            Triple(t("Cài TV Setup lên TV", "Install TV Setup on the TV"), t("Khi TV đòi mật khẩu ADB hoặc giấu Tùy chọn nhà phát triển: app này mở thẳng màn hình đó", "When the TV asks for an ADB password or hides Developer options: this app opens that screen directly")) { installSetup() },
-            Triple(t("Mở CH Play trên TV", "Open the Play Store on the TV"), "") { basic?.launch("market://search?q=launcher"); Unit },
+            Triple(t("Mở CH Play trên TV", "Open the Play Store on the TV"), "") { basic?.launch("https://play.google.com/store/apps"); Unit },
             Triple(t("Mở app theo tên gói", "Open an app by package name"), t("Đã cài thì mở app, chưa cài thì mở trang CH Play của nó", "Opens the app, or its Play Store page when not installed")) {
                 val box = input("com.example.app")
                 val wrap = FrameLayout(this)
                 wrap.setPadding(dp(20), dp(8), dp(20), 0)
                 wrap.addView(box)
                 AlertDialog.Builder(this).setTitle(t("Tên gói hoặc đường dẫn", "Package name or link")).setView(wrap)
-                    .setPositiveButton(t("Mở", "Open")) { _, _ -> box.text.toString().trim().let { if (it.isNotEmpty()) basic?.launch(it) } }
+                    .setPositiveButton(t("Mở", "Open")) { _, _ ->
+                        val what = box.text.toString().trim()
+                        val b = basic
+                        if (what.isNotEmpty() && b != null) { if (what.contains(":")) b.launch(what) else Thread { openOnTv(b, what) { false } }.start() }
+                    }
                     .setNegativeButton(t("Hủy", "Cancel"), null).show()
                 Unit
             }))
@@ -615,10 +642,16 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 ui.post { if (box.isShowing) box.dismiss(); if (!stop && basic === a) installSetupByHand() }
                 return@Thread
             }
-            if (!direct) {
-                say("Đang nhập đường dẫn tải vào Downloader...", "Typing the download link into Downloader...")
-                Thread.sleep(7000)                                    // its home page has to load before the pointer answers
-                downloaderGo(a, link)
+            if (!direct) {                                            // Downloader is there now, so the TV has an app for the link
+                say("Đang đưa đường dẫn tải cho Downloader...", "Handing the download link to Downloader...")
+                Thread.sleep(3000)
+                a.launch("https://$link")
+                for (press in 0 until 3) {                            // "Open with", when a browser is installed too
+                    Thread.sleep(1500)
+                    if (a.app != "android" || stop) break
+                    a.pulse(23, 110)
+                }
+                Thread.sleep(2500)
             }
             val from = a.app
             say("Đã nhập đường dẫn. Đang chờ TV tải xong...", "Link entered. Waiting for the TV to finish the download...")
@@ -737,11 +770,11 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val a = basic ?: return
         menu(t("Mở Cài đặt qua màn hình chính khác", "Reach Settings through another home screen"), -1, HOMES.map { (name, pkg) ->
             Triple(name, if (a.app == pkg) t("Đang mở trên TV", "Open on the TV now") else t("Đã cài thì mở, chưa cài thì mở trang CH Play", "Opens it, or its Play Store page")) {
-                a.launch(pkg)
+                Thread { openOnTv(a, pkg) { false } }.start()
                 AlertDialog.Builder(this).setTitle(name).setMessage(t("Nhìn lên TV.\n\n• Thấy trang CH Play: bấm Cài đặt, xong bấm “Mở lại” bên dưới.\n• CH Play báo không tương thích hoặc không tìm thấy: bấm “Chọn cái khác”.\n• Thấy màn hình chính mới: tìm biểu tượng bánh răng → Cài đặt Android, rồi bấm “Các bước bật ADB”.\n\nCH Play cần TV đã đăng nhập tài khoản Google.",
                         "Look at the TV.\n\n• A Play Store page: choose Install, then tap “Open again” below.\n• The store says it is incompatible or not found: tap “Pick another”.\n• The new home screen: find the gear icon → Android settings, then tap “ADB steps”.\n\nThe Play Store needs a Google account on the TV."))
                     .setPositiveButton(t("Các bước bật ADB", "ADB steps")) { _, _ -> adbSteps() }
-                    .setNeutralButton(t("Mở lại", "Open again")) { _, _ -> a.launch(pkg); ui.postDelayed({ if (basic === a && !isFinishing) adbSteps() }, 800) }
+                    .setNeutralButton(t("Mở lại", "Open again")) { _, _ -> Thread { openOnTv(a, pkg) { false } }.start(); ui.postDelayed({ if (basic === a && !isFinishing) adbSteps() }, 800) }
                     .setNegativeButton(t("Chọn cái khác", "Pick another")) { _, _ -> otherHome() }.show()
                 Unit
             }

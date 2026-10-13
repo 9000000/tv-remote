@@ -4,6 +4,28 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.7.1 - 2026-10-13
+
+Web 2.7.1 · app điện thoại 2.6.1 · app TV 2.6.7
+
+Rà lại luồng bật ADB cho TV chưa bật, bớt các bước phải làm tay. / A pass over the “turn ADB on” flow to cut the manual steps.
+
+**Tiếng Việt**
+- App điện thoại **tự chuyển sang kết nối đầy đủ** ngay khi TV bật ADB, không cần quay lại menu bấm “Kết nối đầy đủ”.
+- Menu “Bật ADB cho TV này”: lối tự động (cài TV Setup) lên đầu; các lối tự làm xếp sau.
+- Khi TV chưa có Downloader: cài xong thì app đưa thẳng đường dẫn tải cho Downloader, không còn phải lái con trỏ của nó tới ô địa chỉ.
+- Mở app theo tên gói và mở màn hình chính khác giờ đi qua trang CH Play khi TV không chịu mở theo tên (box FPT Play).
+- TV chịu nhận phím nhưng không cho ADB (cổng mở mà chưa được cho phép): vẫn vào được chế độ chỉ bấm phím thay vì chỉ báo lỗi.
+- App TV: quay lại từ Tùy chọn nhà phát triển thì tự kết nối lại, không cần chọn “Kết nối lại”.
+
+**English**
+- The phone app **switches to the full connection by itself** as soon as the TV turns ADB on; no trip back to the menu.
+- “Turn on ADB for this TV” menu: the automatic route (installing TV Setup) comes first, the by-hand ones after it.
+- When the TV has no Downloader yet: once installed, the app hands it the download link directly instead of steering its pointer to the address field.
+- Opening an app by package name, and the other home screens, go through the Play Store page when the TV will not open by name (FPT Play box).
+- A TV that takes keys but refuses ADB (port open, not allowed yet) still gets the keys-only remote instead of just an error.
+- TV app: coming back from Developer options reconnects by itself.
+
 ## 2.7.0 - 2026-10-13
 
 Web 2.7.0 · app điện thoại 2.6.0 · app TV 2.6.6

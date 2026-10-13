@@ -120,6 +120,7 @@ class MainActivity : Activity() {
         super.onResume()
         showWeb()
         if (setup != null && !busy) job { showStatus(it) }            // back from Tailscale / Play Store: refresh the IPs
+        else if (setup == null && openedDev && !connecting) connect() // back from Developer options: ADB may be on now
     }
 
     private fun showWeb() {
@@ -133,8 +134,11 @@ class MainActivity : Activity() {
         webInfo.text = "Mở trên điện thoại / máy tính:   $where\nLần đầu TV sẽ hiện mã 6 số để ghép.   Đã ghép: $n thiết bị.   Tự chạy lại khi TV khởi động."
     }
 
+    @Volatile private var connecting = false
+
     private fun connect() {
         setEnabled(false)
+        connecting = true
         Thread {
             try {
                 adb?.close()
@@ -149,9 +153,11 @@ class MainActivity : Activity() {
                 val s = Setup(a, getExternalFilesDir(null), true, Setup.Log { log(it) })
                 setup = s
                 showStatus(s)
+                connecting = false
                 ui { setEnabled(true) }
             } catch (e: Exception) {
                 adb = null; setup = null
+                connecting = false
                 ui {
                     status.text = "Chưa kết nối được ADB"
                     status.setTextColor(Color.rgb(255, 112, 112))
