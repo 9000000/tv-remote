@@ -63,7 +63,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
     private VideoFrame frame;
     private SurfaceView surface;
     private boolean surfaceReady, video;                               // video: show the TV picture (off = buttons only, no load on the TV)
-    private Button videoBtn;
+    private IconButton videoBtn;
     private Tv tv;
     private String host;                                              // the TV we want to be connected to, null on the picker
     private boolean wakeNext, waking;                                 // wakeNext: the next session turns the TV's screen on first
@@ -126,7 +126,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         ((View) status.getParent()).setVisibility(full ? View.GONE : View.VISIBLE);
         frame.setLayoutParams(new LinearLayout.LayoutParams(-1, full ? -1 : -2));
         frame.setVisibility(video ? View.VISIBLE : View.GONE);
-        videoBtn.setText(video ? "🙈" : "📺");
+        videoBtn.setIcon(video ? "@eye_off" : "@eye", TEXT);
         videoBtn.setContentDescription(video ? t("Ẩn hình TV", "Hide the TV picture") : t("Xem hình TV", "Show the TV picture"));
     }
 
@@ -210,7 +210,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
                     break;
                 case "rate": if (video) status.setText((name(host).isEmpty() ? host : name(host)) + " · " + detail + " KB/s"); break;
                 case "live": status.setText((name(host).isEmpty() ? host : name(host)) + " · " + (video ? t("chạm vào hình để bấm trên TV", "touch the picture to tap on the TV")
-                        : t("chỉ điều khiển, không xem hình (bấm 📺 để xem)", "buttons only, no picture (tap 📺 to watch)"))); break;
+                        : t("chỉ điều khiển, không xem hình (bấm nút con mắt để xem)", "buttons only, no picture (tap the eye to watch)"))); break;
                 case "closed": tv = null; disconnect(t("TV đã ngắt kết nối.", "The TV closed the connection.")); break;
                 default: tv = null; disconnect(explain(detail));
             }
@@ -383,7 +383,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         savedList.removeAllViews();
         for (final String ip : savedIps()) {
             Button b = row(name(ip).isEmpty() ? ip : name(ip) + "\n" + ip, () -> connect(ip));
-            Button wk = icon("⏻", t("Đánh thức", "Wake"), BTN);
+            Button wk = icon("@power", t("Đánh thức", "Wake"), BTN);
             wk.setOnClickListener(v -> wake(ip));
             LinearLayout line = new LinearLayout(this);
             line.addView(b, new LinearLayout.LayoutParams(0, -2, 1));
@@ -455,7 +455,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         LinearLayout top = new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
         top.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
-        Button set = icon("⚙️", t("Cài đặt", "Settings"), BTN);
+        Button set = icon("@gear", t("Cài đặt", "Settings"), BTN);
         set.setOnClickListener(v -> { hideKeyboard(); settings.setVisibility(View.VISIBLE); });
         top.addView(set, new LinearLayout.LayoutParams(dp(52), dp(44)));
         picker.addView(top);
@@ -490,7 +490,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         ipBox.setInputType(InputType.TYPE_CLASS_PHONE);
         ipBox.setImeOptions(EditorInfo.IME_ACTION_GO);
         ipBox.setOnEditorActionListener((v, a, e) -> { connect(ipBox.getText().toString()); return true; });
-        Button go = icon("➜", t("Kết nối", "Connect"), ACCENT);
+        Button go = icon("@right", t("Kết nối", "Connect"), ACCENT);
         go.setOnClickListener(v -> connect(ipBox.getText().toString()));
         line.addView(ipBox, new LinearLayout.LayoutParams(0, dp(48), 1));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, dp(48));
@@ -511,7 +511,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         LinearLayout top = new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
         top.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
-        Button done = icon("✓", t("Xong", "Done"), ACCENT);
+        Button done = icon("@check", t("Xong", "Done"), ACCENT);
         done.setOnClickListener(v -> settings.setVisibility(View.GONE));
         top.addView(done, new LinearLayout.LayoutParams(dp(52), dp(44)));
         box.addView(top);
@@ -543,8 +543,8 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
             box.addView(qb[i]);
         }
         marks.run();
-        box.addView(note(t("Áp dụng từ lần kết nối sau. Hình đứng yên thì gần như không tốn dữ liệu; con số trên là khi hình chuyển động liên tục (đang phát video). Mức thấp cũng nhẹ cho TV hơn. Không xem hình thì bấm 🙈 ở màn remote: không tốn gì.",
-                "Applies from the next connection. A still picture uses almost no data; the figures are for a constantly moving picture (video playing). Lower levels are also lighter on the TV. To not watch at all, tap 🙈 on the remote screen: that costs nothing.")));
+        box.addView(note(t("Áp dụng từ lần kết nối sau. Hình đứng yên thì gần như không tốn dữ liệu; con số trên là khi hình chuyển động liên tục (đang phát video). Mức thấp cũng nhẹ cho TV hơn. Không xem hình thì bấm nút con mắt ở màn remote: không tốn gì.",
+                "Applies from the next connection. A still picture uses almost no data; the figures are for a constantly moving picture (video playing). Lower levels are also lighter on the TV. To not watch at all, tap the eye on the remote screen: that costs nothing.")));
 
         box.addView(head(t("CẬP NHẬT", "UPDATES")), gap(18));
         final Button[] auto = new Button[1];
@@ -581,7 +581,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         LinearLayout top = new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
         top.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
-        Button done = icon("✓", t("Xong", "Done"), ACCENT);
+        Button done = icon("@check", t("Xong", "Done"), ACCENT);
         done.setOnClickListener(v -> about.setVisibility(View.GONE));
         top.addView(done, new LinearLayout.LayoutParams(dp(52), dp(44)));
         box.addView(top);
@@ -627,7 +627,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         remote = col();
         status = label("", 13, MUTED);
         status.setPadding(dp(14), dp(8), dp(8), dp(8));
-        videoBtn = icon("🙈", "", BTN);
+        videoBtn = icon("@eye_off", "", BTN);
         videoBtn.setOnClickListener(v -> toggleVideo());
         LinearLayout bar = new LinearLayout(this);
         bar.setGravity(Gravity.CENTER_VERTICAL);
@@ -654,12 +654,15 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
 
         controls = col();
         controls.setPadding(dp(14), dp(12), dp(14), dp(20));
-        controls.addView(keys(54, "⏻|" + t("Nguồn", "Power"), 26, "🏠|Home", 3, "↩️|" + t("Quay lại", "Back"), 4, "☰|Menu", 82));
-        controls.addView(keys(58, "", 0, "▲", 19, "", 0), gap(12));
-        controls.addView(keys(58, "◀", 21, "OK", 23, "▶", 22), gap(6));
-        controls.addView(keys(58, "", 0, "▼", 20, "", 0), gap(6));
-        controls.addView(keys(54, "🔉|" + t("Giảm âm lượng", "Volume down"), 25, "🔇|" + t("Tắt tiếng", "Mute"), 164, "🔊|" + t("Tăng âm lượng", "Volume up"), 24), gap(12));
-        controls.addView(keys(50, "⏮", 88, "⏯", 85, "⏭", 87), gap(6));
+        LinearLayout first = keys(52, "@power|" + t("Nguồn", "Power"), 26, "@menu|Menu", 82, "@settings|" + t("Cài đặt của TV", "TV settings"), 176);
+        IconButton apps = icon("@apps", t("Ứng dụng", "Apps"), BTN);
+        apps.setOnClickListener(v -> showApps());
+        first.addView(apps, cell(52, true));
+        controls.addView(first);
+        controls.addView(dpad(), gap(16));
+        controls.addView(keys(56, "@back|" + t("Quay lại", "Back"), 4, "@home|Home", 3, "@mute|" + t("Tắt tiếng", "Mute"), 164), gap(16));
+        controls.addView(keys(52, "@vol_down|" + t("Giảm âm lượng", "Volume down"), 25, "@prev|" + t("Bài trước", "Previous"), 88, "@play_pause|" + t("Phát / Dừng", "Play / Pause"), 85,
+                "@next|" + t("Bài sau", "Next"), 87, "@vol_up|" + t("Tăng âm lượng", "Volume up"), 24), gap(8));
 
         LinearLayout line = new LinearLayout(this);
         textBox = input(t("Gõ chữ gửi lên TV", "Type text for the TV"));
@@ -667,24 +670,21 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         textBox.setSingleLine(true);
         textBox.setOnEditorActionListener((v, a, e) -> { sendText(); return true; });
         line.addView(textBox, new LinearLayout.LayoutParams(0, dp(48), 1));
-        Button send = icon("➤", t("Gửi", "Send"), ACCENT);
+        Button send = icon("@send", t("Gửi", "Send"), ACCENT);
         send.setOnClickListener(v -> sendText());
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, dp(48));
         lp.leftMargin = dp(6);
         lp.width = dp(60);
         line.addView(send, lp);
         controls.addView(line, gap(12));
-        controls.addView(keys(50, "⌫|" + t("Xóa", "Delete"), 67, "↵|Enter", 66, "⚙️|" + t("Cài đặt của TV", "TV settings"), 176), gap(6));
+        controls.addView(keys(48, "@backspace|" + t("Xóa", "Delete"), 67, "@enter|Enter", 66), gap(8));
 
-        LinearLayout last = new LinearLayout(this);
-        Button apps = button("📺  " + t("Ứng dụng", "Apps"), BTN);
-        apps.setOnClickListener(v -> showApps());
-        Button bye = button("✕  " + t("Ngắt kết nối", "Disconnect"), BTN);
+        Button bye = button(t("Ngắt kết nối", "Disconnect"), 0);
         bye.setTextColor(0xffff8a80);
         bye.setOnClickListener(v -> disconnect(null));
-        last.addView(apps, cell(50, false));
-        last.addView(bye, cell(50, true));
-        controls.addView(last, gap(12));
+        LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(-1, dp(48));
+        bp.topMargin = dp(10);
+        controls.addView(bye, bp);
 
         ScrollView sv = new ScrollView(this);
         sv.addView(controls);
@@ -714,42 +714,79 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         }).start();
     }
 
-    /** A row of equal-width remote keys: label, Android key code, label, key code... An empty label leaves a gap. */
+    /** A row of equal-width remote keys: label, Android key code, label, key code... "@icon|words" shows an icon. An empty label leaves a gap. */
     private LinearLayout keys(int height, Object... labelAndCode) {
         LinearLayout row = new LinearLayout(this);
         for (int i = 0; i < labelAndCode.length; i += 2) {
             String label = (String) labelAndCode[i], say = label;
-            int bar = label.indexOf('|');                             // "icon|what a screen reader says"
+            int bar = label.indexOf('|');
             if (bar > 0) { say = label.substring(bar + 1); label = label.substring(0, bar); }
-            final int code = (Integer) labelAndCode[i + 1];
+            int code = (Integer) labelAndCode[i + 1];
             View v;
             if (label.isEmpty()) v = new View(this);
             else {
-                final Button b = bar > 0 ? icon(label, say, code == 23 ? ACCENT : BTN) : button(label, code == 23 ? ACCENT : BTN);
+                Button b = bar > 0 ? icon(label, say, BTN) : button(label, BTN);
                 if (bar < 0) b.setTextSize(18);
-                final int normal = code == 23 ? ACCENT : BTN;
-                final Runnable[] repeat = new Runnable[1];
-                final int[] count = {0};
-                b.setOnTouchListener((view, e) -> {                    // down and up are sent separately, so holding = long press on the TV
-                    int a = e.getActionMasked();
-                    if (a == MotionEvent.ACTION_DOWN) {
-                        if (tv == null || !tv.ready()) return true;
-                        b.setBackground(box(HELD, 14));
-                        count[0] = 0;
-                        tv.key(0, code, 0, 0);
-                        repeat[0] = new Runnable() { @Override public void run() { if (tv != null) tv.key(0, code, ++count[0], 0); ui.postDelayed(this, 80); } };
-                        ui.postDelayed(repeat[0], 450);
-                    } else if (a == MotionEvent.ACTION_UP || a == MotionEvent.ACTION_CANCEL) {
-                        b.setBackground(box(normal, 14));
-                        if (repeat[0] != null) { ui.removeCallbacks(repeat[0]); repeat[0] = null; if (tv != null) tv.key(1, code, 0, 0); }
-                    }
-                    return true;
-                });
+                bindKey(b, code, box(HELD, 16));
                 v = b;
             }
             row.addView(v, cell(height, i > 0));
         }
         return row;
+    }
+
+    /** Down and up are sent separately, so holding the button = a long press on the TV; it turns amber while held. */
+    private void bindKey(final Button b, final int code, final android.graphics.drawable.Drawable held) {
+        final android.graphics.drawable.Drawable normal = b.getBackground();
+        final Runnable[] repeat = new Runnable[1];
+        final int[] count = {0};
+        b.setOnTouchListener((view, e) -> {
+            int a = e.getActionMasked();
+            if (a == MotionEvent.ACTION_DOWN) {
+                if (tv == null || !tv.ready()) return true;
+                b.setBackground(held);
+                count[0] = 0;
+                tv.key(0, code, 0, 0);
+                repeat[0] = new Runnable() { @Override public void run() { if (tv != null) tv.key(0, code, ++count[0], 0); ui.postDelayed(this, 80); } };
+                ui.postDelayed(repeat[0], 450);
+            } else if (a == MotionEvent.ACTION_UP || a == MotionEvent.ACTION_CANCEL) {
+                b.setBackground(normal);
+                if (repeat[0] != null) { ui.removeCallbacks(repeat[0]); repeat[0] = null; if (tv != null) tv.key(1, code, 0, 0); }
+            }
+            return true;
+        });
+    }
+
+    private GradientDrawable oval(int color) { GradientDrawable g = new GradientDrawable(); g.setShape(GradientDrawable.OVAL); g.setColor(color); return g; }
+
+    /** The round direction pad: four arrows on a disc, OK in the middle. */
+    private View dpad() {
+        FrameLayout pad = new FrameLayout(this);
+        pad.setBackground(oval(CARD));
+        int[][] arrows = {{19, Gravity.TOP | Gravity.CENTER_HORIZONTAL}, {20, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL}, {21, Gravity.START | Gravity.CENTER_VERTICAL}, {22, Gravity.END | Gravity.CENTER_VERTICAL}};
+        String[] names = {"@up", "@down", "@left", "@right"}, says = {t("Lên", "Up"), t("Xuống", "Down"), t("Trái", "Left"), t("Phải", "Right")};
+        for (int i = 0; i < 4; i++) {
+            IconButton b = icon(names[i], says[i], 0);
+            b.setIcon(names[i], MUTED);
+            b.size = 30;
+            b.setBackground(oval(0));
+            bindKey(b, arrows[i][0], oval(HELD));
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(dp(80), dp(80), arrows[i][1]);
+            lp.setMargins(dp(4), dp(4), dp(4), dp(4));
+            pad.addView(b, lp);
+        }
+        Button ok = button("OK", ACCENT);
+        ok.setTypeface(Typeface.DEFAULT_BOLD);
+        ok.setTextSize(18);
+        ok.setPadding(0, 0, 0, 0);
+        ok.setBackground(oval(ACCENT));
+        ok.setElevation(dp(6));
+        bindKey(ok, 23, oval(HELD));
+        pad.addView(ok, new FrameLayout.LayoutParams(dp(92), dp(92), Gravity.CENTER));
+        LinearLayout wrap = new LinearLayout(this);
+        wrap.setGravity(Gravity.CENTER);
+        wrap.addView(pad, new LinearLayout.LayoutParams(dp(248), dp(248)));
+        return wrap;
     }
 
     // ---------------------------------------------------------------- small view helpers
@@ -781,27 +818,41 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         return b;
     }
 
-    /** A button that shows only a symbol; the words go to screen readers. "⏻" is drawn, because phone fonts lack it. */
-    private Button icon(String symbol, String says, int color) {
-        final boolean power = "⏻".equals(symbol);
-        final float d = getResources().getDisplayMetrics().density;
-        Button b = !power ? new Button(this) : new Button(this) {
-            private final android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
-            @Override protected void onDraw(android.graphics.Canvas c) {
-                super.onDraw(c);
-                float cx = getWidth() / 2f, cy = getHeight() / 2f, r = 9 * d;
-                p.setStyle(android.graphics.Paint.Style.STROKE); p.setStrokeWidth(2.4f * d); p.setStrokeCap(android.graphics.Paint.Cap.ROUND); p.setColor(0xffff8a80);
-                c.drawArc(cx - r, cy - r + d, cx + r, cy + r + d, -60, 300, false, p);
-                c.drawLine(cx, cy - r - d, cx, cy - d, p);
-            }
-        };
-        b.setText(power ? "" : symbol); b.setAllCaps(false); b.setTextColor(TEXT); b.setTextSize(20);
+    /** A button that shows only an icon; the words go to screen readers. "@name" = res/drawable/ic_name (scripts/gen_icons.py), anything else is text. */
+    private IconButton icon(String symbol, String says, int color) {
+        IconButton b = new IconButton(this);
+        b.setIcon(symbol, symbol.equals("@power") ? 0xffff8a80 : TEXT);
+        b.setAllCaps(false); b.setTextColor(TEXT); b.setTextSize(20);
         b.setContentDescription(says);
-        b.setBackground(box(color, 14));
+        b.setBackground(box(color, 16));
         b.setStateListAnimator(null);
         b.setPadding(0, 0, 0, 0);
         b.setMinHeight(0); b.setMinimumHeight(0); b.setMinWidth(0); b.setMinimumWidth(0);
         return b;
+    }
+
+    static final class IconButton extends Button {
+        private android.graphics.drawable.Drawable art;
+        float size = 24;                                              // dp
+
+        IconButton(android.content.Context c) { super(c); }
+
+        void setIcon(String symbol, int tint) {
+            if (!symbol.startsWith("@")) { art = null; setText(symbol); return; }
+            int id = getResources().getIdentifier("ic_" + symbol.substring(1), "drawable", getContext().getPackageName());
+            art = id == 0 ? null : getResources().getDrawable(id, null).mutate();
+            if (art != null) art.setTint(tint);
+            setText("");
+            invalidate();
+        }
+
+        @Override protected void onDraw(android.graphics.Canvas c) {
+            super.onDraw(c);
+            if (art == null) return;
+            int h = Math.round(size * getResources().getDisplayMetrics().density / 2), cx = getWidth() / 2, cy = getHeight() / 2;
+            art.setBounds(cx - h, cy - h, cx + h, cy + h);
+            art.draw(c);
+        }
     }
 
     private Button row(String s, final Runnable onClick) {
