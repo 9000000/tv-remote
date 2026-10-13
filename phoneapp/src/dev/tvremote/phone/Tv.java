@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 /**
  * One session with a TV: ADB over the network, scrcpy-server started on the TV for the picture (H.264, decoded here
  * straight onto a Surface) and for input (keys, touch, text). Everything runs off the UI thread.
+ * With no Surface the TV is asked for input only: no picture is encoded, so the TV does no extra work.
  */
 final class Tv {
     interface Listener {
@@ -66,36 +67,51 @@ final class Tv {
             pushServer(a);
             String scid = String.format("%08x", new Random().nextInt(0x7fffffff));
             server = a.open("shell:CLASSPATH=" + REMOTE + " app_process / com.genymobile.scrcpy.Server " + VER + " scid=" + scid
-                    + " tunnel_forward=true audio=false cleanup=false video=true control=true send_dummy_byte=true send_device_meta=false " + VIDEO);
+                    + " tunnel_forward=true audio=false cleanup=false control=true send_dummy_byte=true send_device_meta=false "
+                    + (surface == null ? "video=false" : "video=true " + VIDEO)
+                    // scrcpy-server does not always notice that we left (a still picture sends nothing), and a leftover one keeps
+                    // loading the TV. So a shell loop on the TV waits for our heartbeat and kills the server when it stops.
+                    + " & P=$!; while read -t 25 x; do :; done; kill $P");
             final Adb.Stream log = server;
+            Thread beat = new Thread(() -> {
+                try { while (!stopped) { log.write("\n".getBytes()); Thread.sleep(8000); } } catch (Exception gone) { }
+            }, "scrcpy-heartbeat");
+            beat.setDaemon(true);
+            beat.start();
             Thread drain = new Thread(() -> { try { log.readAll(); } catch (IOException ignored) { } }, "scrcpy-log");
             drain.setDaemon(true);
             drain.start();
-            Adb.Stream video = null;
+            Adb.Stream first = null;                                  // the video socket, or the control socket when there is no picture
             byte[] one = new byte[1];
-            for (int i = 0; i < 80 && video == null && !stopped; i++) {    // until the server listens, the TV refuses the socket
+            for (int i = 0; i < 80 && first == null && !stopped; i++) {    // until the server listens, the TV refuses the socket
                 try {
                     Adb.Stream s = a.open("localabstract:scrcpy_" + scid);
-                    if (s.read(one, 0, 1, 4000) == 1 && one[0] == 0) video = s; else s.close();
+                    if (s.read(one, 0, 1, 4000) == 1 && one[0] == 0) first = s; else s.close();
                 } catch (IOException notYet) {
                     if (a.isDead()) throw notYet;
                 }
-                if (video == null) Thread.sleep(250);
+                if (first == null) Thread.sleep(250);
             }
-            if (video == null) throw new IOException("scrcpy-server did not start on the TV");
-            control = a.open("localabstract:scrcpy_" + scid);
-            Adb.Stream fromTv = control;
-            Thread ctl = new Thread(() -> { try { fromTv.readAll(); } catch (IOException ignored) { } }, "scrcpy-ctl");   // clipboard etc: not needed
-            ctl.setDaemon(true);
-            ctl.start();
-            play(video);
+            if (first == null) throw new IOException("scrcpy-server did not start on the TV");
+            if (surface == null) {
+                control = first;
+                listener.onStatus("live", "");
+                try { first.readAll(); } catch (IOException ignored) { }   // returns when the TV closes the session
+            } else {
+                control = a.open("localabstract:scrcpy_" + scid);
+                Adb.Stream fromTv = control;
+                Thread ctl = new Thread(() -> { try { fromTv.readAll(); } catch (IOException ignored) { } }, "scrcpy-ctl");   // clipboard etc: not needed
+                ctl.setDaemon(true);
+                ctl.start();
+                play(first);
+            }
             if (!stopped) listener.onStatus("closed", "");
         } catch (Throwable e) {
             if (!stopped) listener.onStatus("error", e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
         } finally {
             control = null;
             releaseCodec();
-            if (adb != null) adb.close();                             // the TV stops scrcpy-server when its sockets go
+            if (adb != null) adb.close();                             // the heartbeat stops, the loop on the TV kills scrcpy-server
             io.shutdownNow();
         }
     }

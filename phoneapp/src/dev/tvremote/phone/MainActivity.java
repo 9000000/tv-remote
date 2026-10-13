@@ -62,7 +62,8 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
     private boolean updating;
     private VideoFrame frame;
     private SurfaceView surface;
-    private boolean surfaceReady;
+    private boolean surfaceReady, video;                               // video: show the TV picture (off = buttons only, no load on the TV)
+    private Button videoBtn;
     private Tv tv;
     private String host;                                              // the TV we want to be connected to, null on the picker
     private boolean wakeNext, waking;                                 // wakeNext: the next session turns the TV's screen on first
@@ -75,6 +76,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
         prefs = getSharedPreferences("tvs", MODE_PRIVATE);
+        video = prefs.getBoolean("video", true);
         String lang = prefs.getString("lang", "");                    // "" = follow the phone
         VI = "vi".equals(lang.isEmpty() ? Locale.getDefault().getLanguage() : lang);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -111,14 +113,31 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
 
     @Override public void surfaceCreated(SurfaceHolder h) { surfaceReady = true; startSession(); }
     @Override public void surfaceChanged(SurfaceHolder h, int f, int w, int hh) { }
-    @Override public void surfaceDestroyed(SurfaceHolder h) { surfaceReady = false; stopSession(); }
+    @Override public void surfaceDestroyed(SurfaceHolder h) { surfaceReady = false; if (video) stopSession(); }
 
     @Override public void onConfigurationChanged(Configuration c) {
         super.onConfigurationChanged(c);
-        boolean land = c.orientation == Configuration.ORIENTATION_LANDSCAPE;   // landscape: the picture fills the screen
-        ((View) controls.getParent()).setVisibility(land ? View.GONE : View.VISIBLE);
-        status.setVisibility(land ? View.GONE : View.VISIBLE);
-        frame.setLayoutParams(new LinearLayout.LayoutParams(-1, land ? -1 : -2));
+        layoutRemote();
+    }
+
+    private void layoutRemote() {
+        boolean full = video && getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;   // landscape: the picture fills the screen
+        ((View) controls.getParent()).setVisibility(full ? View.GONE : View.VISIBLE);
+        ((View) status.getParent()).setVisibility(full ? View.GONE : View.VISIBLE);
+        frame.setLayoutParams(new LinearLayout.LayoutParams(-1, full ? -1 : -2));
+        frame.setVisibility(video ? View.VISIBLE : View.GONE);
+        videoBtn.setText(video ? "🙈" : "📺");
+        videoBtn.setContentDescription(video ? t("Ẩn hình TV", "Hide the TV picture") : t("Xem hình TV", "Show the TV picture"));
+    }
+
+    /** Picture on or off. Off: the TV encodes nothing, only the buttons work. The session restarts either way. */
+    private void toggleVideo() {
+        stopSession();
+        video = !video;
+        prefs.edit().putBoolean("video", video).apply();
+        layoutRemote();                                               // showing the picture creates the surface, which starts the session
+        status.setText(t("Đang kết nối ", "Connecting to ") + host + "...");
+        startSession();
     }
 
     @Override public void onBackPressed() {
@@ -149,8 +168,8 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
     }
 
     private void startSession() {
-        if (host == null || tv != null || !surfaceReady) return;
-        tv = new Tv(this, host, surface.getHolder().getSurface(), wakeNext, this);
+        if (host == null || tv != null || video && !surfaceReady) return;
+        tv = new Tv(this, host, video ? surface.getHolder().getSurface() : null, wakeNext, this);
         wakeNext = false;
     }
 
@@ -188,7 +207,8 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
                     save(host, detail);
                     status.setText(t("Đang mở hình từ ", "Opening the picture from ") + (detail.isEmpty() ? host : detail) + "...");
                     break;
-                case "live": status.setText((name(host).isEmpty() ? host : name(host)) + " · " + t("chạm vào hình để bấm trên TV", "touch the picture to tap on the TV")); break;
+                case "live": status.setText((name(host).isEmpty() ? host : name(host)) + " · " + (video ? t("chạm vào hình để bấm trên TV", "touch the picture to tap on the TV")
+                        : t("chỉ điều khiển, không xem hình (bấm 📺 để xem)", "buttons only, no picture (tap 📺 to watch)"))); break;
                 case "closed": tv = null; disconnect(t("TV đã ngắt kết nối.", "The TV closed the connection.")); break;
                 default: tv = null; disconnect(explain(detail));
             }
@@ -587,8 +607,17 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
     private void buildRemote() {
         remote = col();
         status = label("", 13, MUTED);
-        status.setPadding(dp(14), dp(8), dp(14), dp(8));
-        remote.addView(status);
+        status.setPadding(dp(14), dp(8), dp(8), dp(8));
+        videoBtn = icon("🙈", "", BTN);
+        videoBtn.setOnClickListener(v -> toggleVideo());
+        LinearLayout bar = new LinearLayout(this);
+        bar.setGravity(Gravity.CENTER_VERTICAL);
+        bar.addView(status, new LinearLayout.LayoutParams(0, -2, 1));
+        LinearLayout.LayoutParams vb = new LinearLayout.LayoutParams(dp(52), dp(40));
+        vb.rightMargin = dp(10);
+        vb.topMargin = dp(6);
+        bar.addView(videoBtn, vb);
+        remote.addView(bar);
 
         frame = new VideoFrame(this);
         frame.setBackgroundColor(Color.BLACK);
@@ -641,6 +670,7 @@ public final class MainActivity extends Activity implements Tv.Listener, Surface
         ScrollView sv = new ScrollView(this);
         sv.addView(controls);
         remote.addView(sv, new LinearLayout.LayoutParams(-1, 0, 1));
+        layoutRemote();
     }
 
     private void sendText() {
