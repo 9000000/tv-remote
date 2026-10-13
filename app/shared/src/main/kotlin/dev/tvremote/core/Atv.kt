@@ -205,19 +205,10 @@ class Atv(dir: File, private val host: String) : Closeable {
     /**
      * Types [t] as key presses, one per character, the way a keyboard plugged into the TV would: for apps with a keyboard of
      * their own (Downloader), whose fields the TV's keyboard service never hears about. Only what has a key without Shift
-     * gets through: capitals arrive in lower case, and characters such as ":" are left out.
+     * gets through: capitals arrive in lower case, and characters such as ":" are left out (see [typable]).
      */
     fun keys(t: String) {
-        for (c in t) {
-            val code = when (val l = c.lowercaseChar()) {
-                in 'a'..'z' -> 29 + (l - 'a')
-                in '0'..'9' -> 7 + (l - '0')
-                ' ' -> 62; '.' -> 56; '/' -> 76; '-' -> 69; ',' -> 55; '=' -> 70; ';' -> 74; '\'' -> 75; '@' -> 77; '+' -> 81
-                '#' -> 18; '*' -> 17; '[' -> 71; ']' -> 72; '\\' -> 73; '`' -> 68
-                else -> 0
-            }
-            if (code != 0) key(code, SHORT)
-        }
+        for (c in t) (code(c).takeIf { it != 0 } ?: code(c.lowercaseChar())).let { if (it != 0) key(it, SHORT) }
     }
 
     /** Opens a link on the TV, or an app by its package name: the app when it is installed, its Play Store page when it is not. */
@@ -333,6 +324,18 @@ class Atv(dir: File, private val host: String) : Closeable {
         const val DOWN = 1
         const val UP = 2
         const val SHORT = 3
+
+        /** The key that types [c] without Shift, or 0. */
+        private fun code(c: Char): Int = when (c) {
+            in 'a'..'z' -> 29 + (c - 'a')
+            in '0'..'9' -> 7 + (c - '0')
+            ' ' -> 62; '.' -> 56; '/' -> 76; '-' -> 69; ',' -> 55; '=' -> 70; ';' -> 74; '\'' -> 75; '@' -> 77; '+' -> 81
+            '#' -> 18; '*' -> 17; '[' -> 71; ']' -> 72; '\\' -> 73; '`' -> 68
+            else -> 0
+        }
+
+        /** True when [keys] types [t] exactly: every character has a key of its own. */
+        fun typable(t: String): Boolean = t.all { code(it) != 0 }
 
         private fun hex(s: String): ByteArray = ByteArray(s.length / 2) { s.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
 

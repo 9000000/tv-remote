@@ -4,6 +4,18 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.6.8 - 2026-10-13
+
+Web 2.6.8 · app điện thoại 2.5.8 · app TV 2.6.6 (app TV không đổi chức năng / no functional change)
+
+**Tiếng Việt**
+- App điện thoại, “Cài TV Setup lên TV”: lượt tự động giờ **tự đưa tới ô địa chỉ của Downloader** (trang chủ của nó chỉ có con trỏ, không ô nào được chọn sẵn), gõ đường dẫn, bấm Enter và chờ tới khi TV hỏi cài đặt. Đã chạy trọn trên TV giả lập Google TV với Downloader thật.
+- Gõ chữ ở chế độ chỉ bấm phím: ưu tiên gửi thành từng phím (cách Downloader nhận được); chỉ dùng bàn phím hệ thống của TV cho chữ có ký tự không gõ được bằng phím (chữ hoa, dấu tiếng Việt, “:”...).
+
+**English**
+- Phone app, “Install TV Setup on the TV”: the automatic run now **finds its own way to Downloader’s address field** (its home page has a pointer and nothing in focus), types the link, presses Enter and waits until the TV asks to install. Run from start to finish against a Google TV emulator with the real Downloader.
+- Typing in keys-only mode: key presses come first (the way Downloader takes text); the TV’s system keyboard is only used for text with characters no key can type (capitals, accents, “:”...).
+
 ## 2.6.7 - 2026-10-13
 
 Web 2.6.7 · app điện thoại 2.5.7 · app TV 2.6.5

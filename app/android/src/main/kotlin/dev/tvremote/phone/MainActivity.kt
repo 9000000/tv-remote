@@ -562,23 +562,41 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 return@Thread
             }
             say("Đang nhập đường dẫn tải vào Downloader...", "Typing the download link into Downloader...")
-            Thread.sleep(3500)                                        // its home screen loads with the address field in focus
-            a.pulse(23, 110)                                          // OK: opens the field and its keyboard
-            Thread.sleep(1800)
-            a.keys(link)
-            Thread.sleep(link.length * 60L + 800)
-            a.key(85, Atv.SHORT)                                      // Play/Pause is "Go" on Downloader's keyboard
+            Thread.sleep(7000)                                        // its home page has to load before the pointer answers
+            downloaderGo(a, link)
+            say("Đã nhập đường dẫn. Đang chờ TV tải xong...", "Link entered. Waiting for the TV to finish the download...")
+            for (i in 0 until 240) {                                  // up to 2 minutes, until the TV's installer (or its permission screen) comes up
+                if (stop || basic !== a || a.app != dl) break
+                Thread.sleep(500)
+            }
             ui.post {
                 if (box.isShowing) box.dismiss()
                 if (stop || basic !== a || isFinishing) return@post
                 AlertDialog.Builder(this).setTitle(t("Nhìn lên TV", "Look at the TV"))
-                    .setMessage(t("App đã nhập đường dẫn và bấm Go.\n\n1. Chờ tải xong, chọn Install. Nếu TV hỏi quyền cài từ nguồn này: bật cho Downloader rồi quay lại.\n2. Cài xong chọn Open (hoặc bấm “Mở TV Setup” bên dưới).\n3. TV Setup tự mở Tùy chọn nhà phát triển: bật “Gỡ lỗi USB”.\n\nNếu ô địa chỉ trên TV không có chữ: bấm “Làm từng bước”.",
-                        "The app has typed the link and pressed Go.\n\n1. When the download ends, choose Install. If the TV asks to allow installs from this source: allow Downloader, then go back.\n2. Then choose Open (or tap “Open TV Setup” below).\n3. TV Setup opens Developer options by itself: turn on “USB debugging”.\n\nIf the address field on the TV is empty: tap “Step by step”."))
+                    .setMessage(t("App đã nhập đường dẫn và cho Downloader tải.\n\n1. TV hỏi cài đặt: chọn Cài đặt (Install). Nếu TV hỏi quyền cài từ nguồn này: bật cho Downloader, bấm Quay lại, rồi chọn Install.\n2. Cài xong chọn Mở (hoặc bấm “Mở TV Setup” bên dưới).\n3. TV Setup tự mở Tùy chọn nhà phát triển: bật “Gỡ lỗi USB”.\n\nNếu TV vẫn đứng ở trang chủ Downloader: bấm “Làm từng bước”.",
+                        "The app has entered the link and Downloader is fetching it.\n\n1. The TV asks to install: choose Install. If it asks to allow installs from this source: allow Downloader, press Back, then choose Install.\n2. Then choose Open (or tap “Open TV Setup” below).\n3. TV Setup opens Developer options by itself: turn on “USB debugging”.\n\nIf the TV is still on Downloader’s home page: tap “Step by step”."))
                     .setPositiveButton(t("Mở TV Setup", "Open TV Setup")) { _, _ -> a.launch("dev.tvremote.setup") }
                     .setNeutralButton(t("Làm từng bước", "Step by step")) { _, _ -> installSetupByHand() }
                     .setNegativeButton(t("Đóng", "Close"), null).show()
             }
         }.start()
+    }
+
+    /**
+     * Drives Downloader's home page to load [link], on a worker thread. The page has a pointer and no field in focus, so:
+     * hold Up until the pointer leaves the page and the toolbar takes the focus; go to its right end and two back, which is
+     * the address field wherever the focus first landed; OK opens the field with the TV's keyboard; type; Enter loads.
+     */
+    private fun downloaderGo(a: Atv, link: String) {
+        a.pulse(19, 2500)
+        for (i in 0 until 4) a.pulse(22, 110)
+        for (i in 0 until 2) a.pulse(21, 110)
+        Thread.sleep(2500 + 6 * 350L)                                 // the keys above are queued; let them play out
+        a.pulse(23, 110)
+        Thread.sleep(2500)                                            // the field and the keyboard open
+        a.keys(link)
+        Thread.sleep(link.length * 60L + 1000)
+        a.key(66, Atv.SHORT)
     }
 
     /** The same, one step at a time, for when the automatic run loses its way. */
@@ -589,9 +607,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 basic?.launch("com.esaba.downloader")
                 ui.postDelayed({ if (basic != null && !isFinishing) installSetupByHand() }, 600)
             },
-            Triple(t("2. Gửi đường dẫn tải vào TV", "2. Send the download link to the TV"), t("Trước đó, trên TV chọn ô nhập địa chỉ của Downloader (bàn phím hiện lên). Xong bấm Go, rồi Install", "First put the focus on Downloader’s address field on the TV (its keyboard shows). Then choose Go, then Install")) {
-                basic?.let { if (it.hasField) it.text(link) else it.keys(link) }
-                Toast.makeText(this, t("Đã gửi đường dẫn vào ô đang chọn trên TV", "Link sent to the field that has the focus on the TV"), Toast.LENGTH_LONG).show()
+            Triple(t("2. Nhập đường dẫn tải", "2. Enter the download link"), t("Khi TV đang ở trang chủ Downloader: app tự tới ô địa chỉ, gõ đường dẫn và cho tải. Mất khoảng 10 giây", "With Downloader’s home page on the TV: the app goes to the address field, types the link and starts the download. About 10 seconds")) {
+                basic?.let { b -> Thread { downloaderGo(b, link) }.start() }
+                Toast.makeText(this, t("Đang nhập đường dẫn trên TV...", "Entering the link on the TV..."), Toast.LENGTH_LONG).show()
                 ui.postDelayed({ if (basic != null && !isFinishing) installSetupByHand() }, 600)
             },
             Triple(t("3. Mở TV Setup trên TV", "3. Open TV Setup on the TV"), t("Trong đó bấm “Tùy chọn nhà phát triển” rồi bật Gỡ lỗi USB", "There choose “Tùy chọn nhà phát triển” (Developer options) and turn on USB debugging")) { basic?.launch("dev.tvremote.setup"); Unit },
@@ -1629,7 +1647,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         basic?.let {                                                  // keys only: the text goes into the field that has the focus on the TV
             if (live) { it.key(66, Atv.SHORT); clearBox() }           // everything is on the TV already: this is Enter
             else if (s.isEmpty()) it.key(66, Atv.SHORT)
-            else { if (it.hasField) it.text(s) else it.keys(s); textBox.setText("") }
+            else { if (it.hasField && !Atv.typable(s)) it.text(s) else it.keys(s); textBox.setText("") }
             return
         }
         val tv = tv
@@ -1671,7 +1689,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     private fun typedLive(now: String) {
         if (!live || quiet) return
         basic?.let {                                                  // keys only: through the TV's keyboard service when the app uses it, as key presses otherwise
-            if (it.hasField) { if (now.isNotEmpty()) it.text(now) }
+            if (it.hasField && !Atv.typable(now)) { if (now.isNotEmpty()) it.text(now) }
             else {
                 var keep = 0
                 while (keep < onTv.length && keep < now.length && onTv[keep] == now[keep]) keep++
