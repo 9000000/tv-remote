@@ -1029,6 +1029,145 @@ def build(S):
         await adb.launch(TS_PKG)
         return web.json_response({"ok": True})
 
+    # ---- turning ADB on with the remote buttons alone (port 6466), as the phone app does ----
+    SETUP_APK = "https://github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"
+    DOWNLOADER, SETUP_PKG = "com.esaba.downloader", "dev.tvremote.setup"
+    assist = {"status": "idle", "msg": "", "stop": False, "installed": False, "task": None}
+
+    def front():
+        return (tv.remote.current_app or "") if tv.available else ""
+
+    async def until_front(want, seconds, stop=lambda: False):
+        for _ in range(int(seconds * 5)):
+            if stop():
+                return False
+            if want(front()):
+                return True
+            await asyncio.sleep(0.2)
+        return False
+
+    async def send_link(link):
+        for _ in range(30):                                           # the TV may have dropped us after a link it disliked
+            if tv.available:
+                break
+            await asyncio.sleep(0.2)
+        tv.need().send_launch_app_command(link)
+
+    async def press_ok():
+        tv.need().send_key_command("DPAD_CENTER")
+
+    async def open_on_tv(pkg, stop=lambda: False):
+        """Bring an app to the front without ADB: ask for it, else open its Play Store page and press its main button."""
+        if front() == pkg:
+            return True
+        await send_link(f"market://launch?id={pkg}")
+        if await until_front(lambda a: a == pkg, 4, stop):
+            return True
+        await send_link(f"https://play.google.com/store/apps/details?id={pkg}")
+        if not await until_front(lambda a: a == "com.android.vending", 10, stop):
+            return False
+        await asyncio.sleep(3)                                        # the page draws, with its main button in focus
+        await press_ok()
+        return await until_front(lambda a: a == pkg, 15, stop)
+
+    async def answer_chooser(stop):
+        for _ in range(3):                                            # "Open with": OK takes what is offered
+            await asyncio.sleep(1.5)
+            if front() != "android" or stop():
+                break
+            await press_ok()
+
+    async def install_setup():
+        """Get the TV Setup app onto the TV: hand the TV the download link; a TV without an app for links gets Downloader first."""
+        stop = lambda: assist["stop"]
+        say = lambda m: assist.update(msg=m)
+        try:
+            if not front():
+                assist.update(status="blind", msg="TV này không cho biết đang mở gì nên không tự làm được. Làm theo cách “Tự làm” bên dưới.")
+                return
+            say("Đang gửi đường dẫn tải cho TV...")
+            await send_link(SETUP_APK)
+            await until_front(lambda a: a in (DOWNLOADER, "android"), 6, stop)
+            if front() == "android":
+                say("TV đang hỏi “Mở bằng”: đang chọn giúp...")
+                await answer_chooser(stop); await asyncio.sleep(1.5)
+            a = front()
+            direct = not stop() and (a == DOWNLOADER or "chrome" in a or "browser" in a)
+            there = direct or await open_on_tv(DOWNLOADER, stop)
+            while not there and not stop():                          # its Play Store page was told to install it
+                say("TV chưa có app Downloader: đang cài từ CH Play. Nếu TV không tự cài, chọn “Cài đặt” trên màn hình TV. Khi TV báo cài xong, bấm “Đã cài xong”.")
+                for _ in range(600):
+                    if stop() or assist["installed"] or front() == DOWNLOADER:
+                        break
+                    await asyncio.sleep(0.2)
+                if stop():
+                    break
+                assist["installed"] = False
+                there = front() == DOWNLOADER or await open_on_tv(DOWNLOADER, stop)
+            if stop():
+                assist.update(status="idle", msg=""); return
+            if not direct:
+                say("Đang đưa đường dẫn tải cho Downloader...")
+                await asyncio.sleep(3)
+                await send_link(SETUP_APK)
+                await answer_chooser(stop); await asyncio.sleep(2.5)
+            was = front()
+            say("TV đang tải TV Setup...")
+            await until_front(lambda x: x != was, 120, stop)          # until the TV's installer (or its permission screen) comes up
+            assist.update(status="idle" if stop() else "look", msg="")
+        except (web.HTTPException, ConnectionClosed, CannotConnect, OSError) as e:
+            assist.update(status="failed", msg=f"Mất kết nối với TV giữa chừng, thử lại: {getattr(e, 'text', '') or e}")
+        except asyncio.CancelledError:
+            assist.update(status="idle", msg="")
+
+    @routes.get("/api/assist")
+    async def assist_state(_):
+        return web.json_response({"status": assist["status"], "msg": assist["msg"], "front": front(), "connected": tv.available})
+
+    @routes.post("/api/assist")
+    async def assist_do(request):
+        d = await body(request)
+        do = str(d.get("do", ""))
+        if do == "stop":
+            assist["stop"] = True
+            return web.json_response({"ok": True})
+        if do == "installed":
+            assist["installed"] = True
+            return web.json_response({"ok": True})
+        tv.need()
+        if do == "setup":
+            if assist["status"] != "running":
+                assist.update(status="running", msg="", stop=False, installed=False)
+                assist["task"] = asyncio.create_task(install_setup())
+            return web.json_response({"ok": True})
+        if do == "open":                                              # an app by package name, or any link
+            what = str(d.get("what", "")).strip()
+            if not what:
+                raise web.HTTPBadRequest(text="what required")
+            if ":" in what:
+                await send_link(what)
+                return web.json_response({"ok": True, "front": front()})
+            if not PKG_RE.match(what):
+                raise web.HTTPBadRequest(text="not a package name")
+            return web.json_response({"ok": await open_on_tv(what), "front": front()})
+        if do == "settings":                                          # every way a TV may open its Settings when asked
+            is_settings = lambda a: "settings" in a.lower()
+            tries = [lambda: tv.need().send_key_command("SETTINGS"), lambda: send_link("android-app://com.android.tv.settings"),
+                     lambda: send_link("intent:#Intent;action=android.settings.SETTINGS;end")]
+            ok = is_settings(front())
+            for attempt in tries:
+                if ok:
+                    break
+                try:
+                    r = attempt()
+                    if asyncio.iscoroutine(r):
+                        await r
+                except (web.HTTPException, ConnectionClosed, OSError, ValueError):
+                    continue
+                ok = await until_front(is_settings, 2.4)
+            return web.json_response({"ok": ok, "blind": not front()})
+        raise web.HTTPBadRequest(text="unknown action")
+
     @routes.post("/api/pair/start")
     async def pair_start(request):
         await body(request)
@@ -1066,7 +1205,8 @@ def build(S):
                 released = f"{m.group(3)}/{m.group(2)}/{m.group(1)}"
         except OSError:
             pass
-        return web.json_response({"version": version, "released": released})
+        tv_web = f"http://{tv.host}:8765" if tv.host and tv.host not in ("127.0.0.1", "localhost") and await port_open(tv.host, 8765) else ""   # the TV Setup app's page
+        return web.json_response({"version": version, "released": released, "tv_web": tv_web})
 
     @routes.post("/api/shutdown")
     async def shutdown(request):

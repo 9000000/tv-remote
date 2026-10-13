@@ -44,12 +44,13 @@ const ADB_TEXT = {
 };
 function setChip(id, cls, text) { const c = $(id); c.className = 'chip ' + cls; c.lastElementChild.textContent = text; }
 
+let STATE = {};
 let tvOn = false;                                                    // the power button asks before turning a TV that is on off
 let volHold = 0;                                                      // don't yank the slider while the user drags it
 async function refresh() {
   if (stopped) return;
   const s = await fetch('/api/state').then((r) => r.json()).catch(() => null);
-  tvOn = !!(s && s.connected && s.is_on);
+  tvOn = !!(s && s.connected && s.is_on); STATE = s || {};
   if (!s) { setChip('#chipTv', 'bad', 'Server tắt'); setChip('#chipAdb', '', 'ADB: ?'); $('#info').textContent = 'Không gọi được server. Chạy lại start-mac.command.'; return; }
   setChip('#chipTv', s.connected && s.is_on ? 'ok' : s.connected ? 'warn' : 'bad', !s.connected ? 'TV: mất kết nối' : s.is_on ? 'TV: đang bật' : 'TV: màn hình tắt');
   ADB = s.adb || { state: 'unknown' };
@@ -69,6 +70,9 @@ async function refresh() {
     $('#mute').classList.toggle('on', !!s.volume.muted); $('#mute').title = s.volume.muted ? 'Đang tắt tiếng, bấm để bật' : 'Tắt tiếng';
   }
   applyAdb();
+  if ($('#assist').open && (ADB.state === 'ready' || ADB.state === 'unauthorized')) {   // the TV has opened its ADB port: nothing left to help with
+    $('#assist').close(); toast(ADB.state === 'ready' ? 'ADB đã kết nối' : 'ADB đã bật: nhìn lên TV, chọn “Luôn cho phép”');
+  }
 }
 
 // ---------- ADB gating + banners ----------
@@ -87,9 +91,11 @@ function buildBanner() {
     const r = await api('/api/adb/connect', {}); if (r) { ADB = r; bannerKey = ''; applyAdb(); refresh(); }
     b.disabled = false; b.textContent = '🔄 Thử kết nối lại';
   } });
+  const helpMe = ADB.state === 'closed' || ADB.state === 'error' ? el('button', { className: 'small primary', textContent: '🧭 Bật ADB giúp tôi', onclick: () => adbHelp() }) : null;
+  if (helpMe) retry.className = 'small';
   const loss = el('p'); loss.append(el('b', { textContent: 'Mất chức năng: ' }), 'xem màn hình, mở app/link, danh sách app, tệp, tải link về TV, cài APK.');
   return el('div', { className: 'banner ' + cls }, el('b', { textContent: title }), el('p', { textContent: text }), loss,
-    el('div', { className: 'actions' }, retry, el('button', { className: 'small', textContent: '❓ Cách bật ADB', onclick: () => { const h = $('#help'); h.open = true; h.scrollIntoView({ behavior: 'smooth', block: 'center' }); } })));
+    el('div', { className: 'actions' }, helpMe, retry, el('button', { className: 'small', textContent: '❓ Cách bật ADB', onclick: () => { const h = $('#help'); h.open = true; h.scrollIntoView({ behavior: 'smooth', block: 'center' }); } })));
 }
 function applyAdb() {
   const ready = ADB.state === 'ready';
@@ -98,6 +104,7 @@ function applyAdb() {
     document.querySelectorAll('[data-adb-banner]').forEach((b) => b.replaceChildren(...(ready ? [] : [buildBanner()])));
   }
   document.querySelectorAll('[data-adb-gated]').forEach((g) => { g.hidden = !ready; });
+  $('#kbd').disabled = !ready; $('#kbdoff').hidden = ready;           // typing goes through ADB: no half-working box without it
   $('#screenbtn').disabled = !ready && !screenOn;
   if (!ready && screenOn) stopScreen('ADB chưa sẵn sàng, đã dừng xem màn hình.');
   if (ready && autoView) { autoView = false; startScreen(); }           // bookmark ?view=1 to start watching right away

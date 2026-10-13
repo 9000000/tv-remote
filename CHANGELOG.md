@@ -4,6 +4,20 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.7.6 - 2026-10-14
+
+Web 2.7.6 · app điện thoại 2.6.3 · app TV 2.6.8
+
+**Tiếng Việt**
+- Web trên máy tính: nút **“Bật ADB giúp tôi”** trên banner “Cổng ADB đang đóng” và ở tab Thiết lập, với đủ các cách như app điện thoại: tự động cài TV Setup lên TV, mở Cài đặt TV, cài màn hình chính khác, mở CH Play, mở app theo tên gói. Chỉ cần nút remote đã ghép (cổng 6466); khi TV bật ADB xong trang tự nhận ra.
+- Khi ADB chưa mở, phần **Bàn phím bị khóa** kèm lời giải thích, thay vì cho gõ mà không có tác dụng. Chữ gõ từ bàn phím máy tính và dán cũng không gửi đi nữa; mũi tên, Enter, Esc vẫn chạy.
+- Hộp Giới thiệu có **mã QR tải app Android**, và mã QR mở trang remote do TV phục vụ khi app TV Setup trên TV đang bật trang đó.
+
+**English**
+- Computer web: a **“Turn ADB on for me”** button on the “ADB port closed” banner and in the Set-up tab, with the same ways as the phone app: install TV Setup on the TV automatically, open TV Settings, install another home screen, open the Play Store, open an app by package name. It only needs the paired remote buttons (port 6466); the page notices once the TV has ADB on.
+- With ADB closed the **Keyboard section is locked**, with the reason, instead of accepting typing that goes nowhere. Letters typed on the computer keyboard and pastes are not sent either; arrows, Enter and Esc still work.
+- The About box has a **QR code for the Android app**, and one for the remote page served by the TV when the TV Setup app has it on.
+
 ## 2.7.5 - 2026-10-13
 
 Web 2.7.5 · app điện thoại 2.6.3 · app TV 2.6.8

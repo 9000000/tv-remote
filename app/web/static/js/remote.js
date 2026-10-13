@@ -111,7 +111,7 @@ $('#wake').addEventListener('click', async () => {
 const keymap = { ArrowUp:'UP', ArrowDown:'DOWN', ArrowLeft:'LEFT', ArrowRight:'RIGHT', Escape:'BACK', Home:'HOME' };
 const typingHere = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
 document.addEventListener('keydown', (e) => {
-  if (currentTab !== 'remote' || typingHere() || e.metaKey || e.ctrlKey || e.altKey || e.isComposing || $('#preview').open || $('#about').open) return;
+  if (currentTab !== 'remote' || picking || typingHere() || e.metaKey || e.ctrlKey || e.altKey || e.isComposing || $('#preview').open || $('#about').open || $('#assist').open) return;
   const onButton = ['BUTTON', 'SUMMARY', 'A'].includes(document.activeElement.tagName);
   if (onButton && (e.key === 'Enter' || e.key === ' ' || e.key === 'Tab')) return;   // keyboard users still operate the page
   if (e.key === 'Escape' && document.fullscreenElement) return;       // let Esc leave fullscreen
@@ -119,11 +119,12 @@ document.addEventListener('keydown', (e) => {
   if (keymap[e.key]) { e.preventDefault(); api('/api/key', { key: keymap[e.key] }); }
   else if (e.key === 'Enter') { e.preventDefault(); if (adb) queue('/api/type', { enter: true }); else api('/api/key', { key: 'OK' }); }
   else if (e.key === 'Backspace') { e.preventDefault(); if (adb) queue('/api/type', { del: 1 }); else api('/api/key', { key: 'DEL' }); }
+  else if (!adb) return;                                              // letters need ADB
   else if (e.key === 'Delete') { e.preventDefault(); queue('/api/type', { fdel: 1 }); }
   else if (e.key.length === 1) { e.preventDefault(); queue('/api/type', { text: e.key }); }
 });
 document.addEventListener('paste', (e) => {                           // Cmd+V anywhere on the Remote tab pastes onto the TV
-  if (currentTab !== 'remote' || typingHere()) return;
+  if (currentTab !== 'remote' || typingHere() || ADB.state !== 'ready') return;
   const t = (e.clipboardData || window.clipboardData).getData('text'); if (t) { e.preventDefault(); queue('/api/type', { text: t.slice(0, 500) }); }
 });
 

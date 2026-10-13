@@ -22,6 +22,10 @@ $('#aboutbtn').addEventListener('click', async () => {
   $('#about').showModal();
   const r = await fetch('/api/about').then((x) => x.json()).catch(() => null);
   if (r && r.version) $('#aboutver').textContent = r.version + (r.released ? ' · ' + r.released : '');
+  // scan with a phone: the Android app, and (when the TV Setup app is serving it) this TV's own remote page
+  const code = (title, note, link) => { const s = qrSvg(link, 170); return s ? el('div', { className: 'qr' }, s, el('b', { textContent: title }), el('span', { className: 'muted', textContent: note }), el('br'), el('a', { href: link, target: '_blank', rel: 'noopener', textContent: link.replace(/^https?:\/\//, '') })) : null; };
+  $('#qrs').replaceChildren(...[code('📱 App Android', 'Quét bằng điện thoại để tải app.', 'https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk'),
+    r && r.tv_web ? code('🌐 Remote trên điện thoại', 'Trang remote do chính TV phục vụ: quét khi điện thoại cùng Wi-Fi hoặc cùng Tailscale với TV.', r.tv_web) : null].filter(Boolean));
 });
 fetch('/api/about').then((x) => x.json()).then((r) => { if (r.version) $('#ver').textContent = 'TV Remote ' + r.version + (r.released ? ' · ' + r.released : ''); }).catch(() => {});
 $('#aboutclose').addEventListener('click', () => $('#about').close());
@@ -79,6 +83,73 @@ $('#scan').addEventListener('click', async () => {
 $('#ipf').addEventListener('submit', (e) => { e.preventDefault(); const ip = $('#ipin').value.trim(); if (ip) selectTv(ip); });
 $('#setuprefresh').addEventListener('click', () => loadSteps());
 
+// ---------- turning ADB on for a TV that has it off, with the remote buttons alone (the phone app's assistant) ----------
+const HOMES = [['Projectivy Launcher', 'com.spocky.projengmenu'], ['ATV Launcher', 'ca.dstudio.atvlauncher.free'], ['FLauncher', 'me.efesser.flauncher']];
+let assistGen = 0;
+function assistShow(title, ...kids) {
+  assistGen++; $('#assisttitle').textContent = title; $('#assistbody').replaceChildren(...kids.filter(Boolean));
+  if (!$('#assist').open) $('#assist').showModal();
+}
+const choice = (title, sub, fn, cls = '') => el('button', { className: 'choice ' + cls, onclick: fn }, el('b', { textContent: title }), sub ? el('small', { textContent: sub }) : null);
+const say = (text) => el('p', { textContent: text });
+const row = (...kids) => el('div', { className: 'assistrow' }, ...kids.filter(Boolean));
+const assist = (do_, extra) => api('/api/assist', { do: do_, ...extra });
+$('#assistclose').addEventListener('click', () => { assistGen++; $('#assist').close(); });
+
+function adbHelp() {
+  if (!STATE.connected) {                                             // everything here goes through the remote buttons
+    assistShow('Bật ADB cho TV này', say(STATE.paired === false ? 'Trước hết cần ghép nút remote với TV (TV hiện mã 6 ký tự, gõ vào đây). Sau đó trang này tự làm giúp phần còn lại.'
+      : 'Chưa kết nối được nút remote tới TV (cổng 6466): TV đang bật và cùng mạng với máy này chứ?'),
+      row(act('🔗 Tới bước ghép remote', async () => { $('#assist').close(); showTab('tv'); }, 'primary')), say('Hoặc tự làm bằng remote của TV:\n' + ADB_STEPS));
+    return;
+  }
+  assistShow('Bật ADB cho TV này',
+    choice('⚡ Tự động: cài TV Setup lên TV', 'Trang này cho TV tự tải và mở app TV Setup; app đó mở thẳng Tùy chọn nhà phát triển. Bạn chỉ xác nhận trên TV.', installSetup, 'primary'),
+    choice('🔧 Tự làm: mở Cài đặt TV', 'Thử mọi cách mở Cài đặt, rồi chỉ các bước bật Gỡ lỗi ADB.', findSettings),
+    choice('🏠 Cài màn hình chính khác', 'Khi TV giấu Cài đặt: mở qua một launcher từ CH Play.', otherHome),
+    choice('🛒 Mở CH Play trên TV', '', () => assist('open', { what: 'https://play.google.com/store/apps' })),
+    choice('📦 Mở app theo tên gói', 'Đã cài thì mở app, chưa cài thì mở trang CH Play của nó.', () => { const p = prompt('Tên gói hoặc đường dẫn', 'com.example.app'); if (p && p.trim()) assist('open', { what: p.trim() }); }),
+    say('Khi TV bật ADB xong, trang này tự nhận ra và kết nối. Các nút mũi tên, OK ở tab Remote vẫn dùng được trong lúc làm.'));
+}
+const ADB_STEPS = '1. Trong Cài đặt: Tùy chọn thiết bị (hoặc Hệ thống) → Giới thiệu → bấm OK 7 lần vào “Bản dựng”.\n2. Quay lại, vào Tùy chọn nhà phát triển → bật “Gỡ lỗi USB” (hoặc “Gỡ lỗi ADB”).\n3. Trên TV tích “Luôn cho phép” rồi chọn OK.\n\nNếu TV đòi “mật khẩu ADB” khi bấm 7 lần: dùng cách “Tự động: cài TV Setup lên TV”.';
+function adbSteps() {
+  assistShow('Bật Gỡ lỗi ADB trên TV', say('Dùng các nút mũi tên và OK ở tab Remote, hoặc remote của TV:\n\n' + ADB_STEPS),
+    row(act('🔌 Đã bật, kết nối', async () => { const r = await api('/api/adb/connect', {}); if (r) { ADB = r; bannerKey = ''; await refresh(); } }, 'primary'), act('← Các cách khác', async () => adbHelp())));
+}
+function lookOnHome() {
+  assistShow('TV không mở Cài đặt theo lệnh', say('Tìm trên màn hình chính của TV, dùng các nút mũi tên ở tab Remote: biểu tượng hồ sơ/tài khoản hoặc bánh răng (thường ở góc trên) → Cài đặt → “Cài đặt thiết bị”.\n\nBox FPT Play: mở bảng Quản lý (hồ sơ) → Cài đặt → Cài đặt thiết bị.'),
+    row(act('✓ Thấy rồi', async () => adbSteps(), 'primary'), act('Không có · Cài màn hình chính khác', async () => otherHome()), act('← Các cách khác', async () => adbHelp())));
+}
+async function findSettings() {
+  assistShow('Mở Cài đặt TV', say('Đang thử mở Cài đặt trên TV...')); const gen = assistGen;
+  const r = await assist('settings'); if (gen !== assistGen) return;
+  if (!r) return adbHelp();
+  if (r.ok) return adbSteps();
+  if (r.blind) return assistShow('Mở Cài đặt TV', say('TV có mở màn hình Cài đặt không?'), row(act('Có', async () => adbSteps(), 'primary'), act('Không', async () => lookOnHome())));
+  lookOnHome();
+}
+function otherHome() {
+  assistShow('Mở Cài đặt qua màn hình chính khác', ...HOMES.map(([name, pkg]) => choice(name, STATE.app === pkg ? 'Đang mở trên TV' : 'Đã cài thì mở, chưa cài thì mở trang CH Play.', () => {
+    assist('open', { what: pkg });
+    assistShow(name, say('Nhìn lên TV.\n\n• Thấy trang CH Play: chọn Cài đặt, xong bấm “Mở lại” bên dưới.\n• CH Play báo không tương thích hoặc không tìm thấy: bấm “Chọn cái khác”.\n• Thấy màn hình chính mới: tìm biểu tượng bánh răng → Cài đặt Android, rồi bấm “Các bước bật ADB”.\n\nCH Play cần TV đã đăng nhập tài khoản Google.'),
+      row(act('Các bước bật ADB', async () => adbSteps(), 'primary'), act('↻ Mở lại', async () => { await assist('open', { what: pkg }); }), act('Chọn cái khác', async () => otherHome())));
+  })), row(act('← Các cách khác', async () => adbHelp())));
+}
+async function installSetup() {
+  if (!await assist('setup')) return;
+  const msg = say('Đang bắt đầu...');
+  assistShow('Cài TV Setup lên TV', msg, row(act('✓ Đã cài xong', async () => { await assist('installed'); }), act('■ Dừng', async () => { await assist('stop'); adbHelp(); })));
+  const gen = assistGen;
+  for (;;) {
+    await sleep(1000); if (gen !== assistGen) { if (!$('#assist').open) assist('stop'); return; }
+    const r = await api('/api/assist', null, true); if (gen !== assistGen) return;
+    if (!r || r.status === 'running') { if (r && r.msg) msg.textContent = tr(r.msg); continue; }
+    if (r.status === 'look') return assistShow('Nhìn lên TV', say('TV đã nhận đường dẫn và tải TV Setup.\n\n1. TV hỏi cài đặt: chọn Cài đặt (Install). Nếu TV hỏi quyền cài từ nguồn này: bật cho app đang tải, bấm Quay lại, rồi chọn Install.\n2. Cài xong chọn Mở (hoặc bấm “Mở TV Setup” bên dưới).\n3. TV Setup tự mở Tùy chọn nhà phát triển: bật “Gỡ lỗi USB”.\n4. TV hỏi cho phép gỡ lỗi: tích “Luôn cho phép”, chọn OK. Trang này tự kết nối.'),
+      row(act('📺 Mở TV Setup', async () => { await assist('open', { what: 'dev.tvremote.setup' }); }, 'primary'), act('↻ Làm lại', async () => installSetup()), act('← Các cách khác', async () => adbHelp())));
+    return assistShow('Cài TV Setup lên TV', say(tr(r.msg) || 'Không làm được.'), row(act('↻ Thử lại', async () => installSetup(), 'primary'), act('← Các cách khác', async () => adbHelp())));
+  }
+}
+
 let stepsBusy = false, pairing = false;
 function step(n, state, title, text, ...actions) {
   return el('div', { className: 'step ' + state }, el('div', { className: 'mark', textContent: state === 'ok' ? '✓' : n }),
@@ -95,8 +166,8 @@ async function loadSteps() {
   // 1. ADB
   out.push(ready ? step(1, 'ok', 'ADB đã kết nối', 'Máy này đã được TV cho phép.')
     : adb === 'unauthorized' ? step(1, 'wait', 'TV đang chờ bạn cho phép', 'Nhìn lên TV: tích “Luôn cho phép từ máy tính này” rồi chọn OK.', act('🔄 Đã bấm, thử lại', async () => { await api('/api/adb/connect', {}); await loadSteps(); }, 'primary'))
-    : step(1, 'todo', 'Bật “Gỡ lỗi ADB” trên TV', 'Trên TV: Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng”. Rồi Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB” (hoặc “Gỡ lỗi USB”). Việc này phải làm bằng remote của TV.',
-        act('🔌 Đã bật, kết nối', async () => { await api('/api/adb/connect', {}); await loadSteps(); }, 'primary')));
+    : step(1, 'todo', 'Bật “Gỡ lỗi ADB” trên TV', 'Bấm “Bật ADB giúp tôi” để trang này tự làm phần lớn việc. Hoặc tự làm trên TV: Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng”, rồi Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB” (hoặc “Gỡ lỗi USB”).',
+        act('🧭 Bật ADB giúp tôi', async () => adbHelp(), 'primary'), act('🔌 Đã bật, kết nối', async () => { await api('/api/adb/connect', {}); await loadSteps(); })));
   // 2. Tailscale
   if (!ready) out.push(step(2, 'todo', 'Tailscale (để điều khiển khi không ở nhà)', 'Làm sau khi ADB đã kết nối. Chỉ dùng trong cùng Wi-Fi thì bỏ qua bước này được.'));
   else if (s.tailscale_ip) out.push(step(2, 'ok', 'Tailscale đã vào mạng', 'IP Tailscale của TV: ' + s.tailscale_ip + '. ' + 'Nên làm thêm: trong trang quản trị Tailscale, mở menu ⋯ của TV → Disable key expiry, để TV không bị đăng xuất sau khoảng 180 ngày.'));

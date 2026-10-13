@@ -115,10 +115,13 @@
 
         <section class="card">
           <h2>⌨️ Bàn phím <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
+          <p class="muted" id="kbdoff" hidden style="margin:0 0 8px">🔒 Gõ chữ cần ADB. TV này chưa mở ADB nên phần này tạm khóa; các nút mũi tên, OK, Back vẫn dùng được.</p>
+          <fieldset id="kbd">
           <form class="line" id="textf" style="margin-top:0"><button type="button" id="live" title="Gõ trực tiếp / gõ xong rồi gửi">⚡</button><input id="text" placeholder="Bấm vào đây rồi gõ, chữ hiện ngay trên TV" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="primary" title="Gửi phím Enter">↵</button><button type="button" id="del" aria-label="Xóa ký tự">⌫</button><button type="button" id="digits" title="Bàn phím số">123</button></form>
           <div class="numpad" id="numpad" hidden><button class="rb" data-k="1">1</button><button class="rb" data-k="2">2</button><button class="rb" data-k="3">3</button><button class="rb" data-k="4">4</button><button class="rb" data-k="5">5</button><button class="rb" data-k="6">6</button><button class="rb" data-k="7">7</button><button class="rb" data-k="8">8</button><button class="rb" data-k="9">9</button><span></span><button class="rb" data-k="0">0</button><span></span></div>
           <form class="line" id="askf"><input id="ask" placeholder="Hỏi / tìm trên TV, vd: mở YouTube" autocomplete="off"><button type="button" id="speak" title="Nói bằng micro của máy này" hidden>🎤</button><button class="primary" title="Gửi câu này cho Google Assistant của TV">🔍</button></form>
           <p class="muted" style="margin:6px 0 0">Không cần bấm vào ô này: cứ gõ là chữ lên TV (TV phải đang ở một ô nhập chữ). Ô này dành cho gõ tiếng Việt có dấu. Bàn phím ảo trên TV không bấm bằng chuột được, hãy gõ từ đây.</p>
+          </fieldset>
           <h2 style="margin-top:14px">🔗 Mở trên TV <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· link, CH Play</span></h2>
           <form class="line" id="linkf" style="margin-top:0"><input id="link" placeholder="youtube.com/watch?v=..." autocomplete="off" inputmode="url"><button class="primary">↗ Mở</button></form>
           <form class="line" id="storef"><input id="store" placeholder="Tìm app trên CH Play, hoặc app id (vd org.videolan.vlc)" autocomplete="off"><button class="primary">🛒 CH Play</button></form>
@@ -261,13 +264,16 @@
     <p><b>Mã nguồn:</b> <a href="https://github.com/HoangTran0410/tv-remote" target="_blank" rel="noopener">github.com/HoangTran0410/tv-remote</a></p>
     <p><a href="https://github.com/HoangTran0410/tv-remote/releases" target="_blank" rel="noopener">Các bản phát hành</a> · <a href="https://github.com/HoangTran0410/tv-remote/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Nhật ký thay đổi</a> · <a href="https://github.com/HoangTran0410/tv-remote/issues" target="_blank" rel="noopener">Báo lỗi</a></p>
     <p class="muted">Hình trực tiếp và chuột dùng <a href="https://github.com/Genymobile/scrcpy" target="_blank" rel="noopener">scrcpy</a> (Genymobile, Apache-2.0). Nút remote dùng thư viện androidtvremote2.</p>
+    <div class="qrs" id="qrs"></div>
     <div style="text-align:right"><button class="small primary" id="aboutclose">✓ Đóng</button></div>
   </div>
 </dialog>
+<dialog id="assist"><div class="card assistbox"><div class="card-head"><h2 id="assisttitle"></h2><button class="small" id="assistclose">✕ Đóng</button></div><div id="assistbody"></div></div></dialog>
 <dialog id="preview"><img alt="Xem trước"></dialog>
 <div id="toast" role="status"></div>
 
 <script src="/web/js/i18n.js"></script>
+<script src="/web/js/qr.js"></script>
 <script src="/web/js/core.js"></script>
 <script src="/web/js/remote.js"></script>
 <script src="/web/js/screen.js"></script>
