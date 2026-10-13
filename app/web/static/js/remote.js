@@ -26,12 +26,6 @@ document.querySelectorAll('[data-k]').forEach((b) => {
   b.addEventListener('click', (e) => { if (e.detail === 0) send(); });                          // keyboard activation
   b.addEventListener('contextmenu', (e) => e.preventDefault());
 });
-$('#volr').addEventListener('input', () => { volHold = Date.now() + 4000; $('#volv').textContent = $('#volr').value; });
-$('#volr').addEventListener('change', async () => {
-  volHold = Date.now() + 20000;
-  await api('/api/volume', { level: +$('#volr').value });
-  volHold = Date.now() + 600; setTimeout(refresh, 700);
-});
 function normalizeLink(v) {
   v = v.trim(); if (!v) return '';
   if (/^[a-z][a-z0-9+.-]*:\/\//i.test(v)) return v;
@@ -39,9 +33,15 @@ function normalizeLink(v) {
 }
 async function openOnTv(link, label) {
   const r = await api('/api/app', { link });
-  if (r) { toast(r.via === 'adb' ? 'Đã mở ' + label : 'Đã gửi lệnh, nhưng ADB đang đóng nên TV có thể bỏ qua'); setTimeout(refresh, 1500); }
+  if (r) { toast(r.via === 'adb' ? 'Đã mở ' + label : 'Đã gửi cho TV (không qua ADB: vài TV bỏ qua lệnh này)'); setTimeout(refresh, 1500); }
 }
 $('#linkf').addEventListener('submit', (e) => { e.preventDefault(); const l = normalizeLink($('#link').value); if (l) openOnTv(l, 'link'); });
+// The Play Store on the TV, without its keyboard: an app id opens that app's page, anything else is searched for.
+$('#storef').addEventListener('submit', (e) => {
+  e.preventDefault(); const v = $('#store').value.trim(); if (!v) return;
+  const id = /^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$/i.test(v);
+  openOnTv('https://play.google.com/store/' + (id ? 'apps/details?id=' + v : 'search?c=apps&q=' + encodeURIComponent(v)), 'CH Play');
+});
 // ---------- keyboard: whatever is typed in the box is mirrored on the TV, keystroke by keystroke ----------
 const txt = $('#text');
 let typed = '', inputQ = Promise.resolve();

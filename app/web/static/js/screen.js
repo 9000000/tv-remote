@@ -36,7 +36,8 @@ async function liveLoop(gen) {
   if (first instanceof Blob) showFrame(first);
   streamCtl = new AbortController();
   try {
-    const r = await fetch('/api/stream?q=' + ($('#screenmode').value === 'hd' ? 'hd' : 'eco'), { signal: streamCtl.signal });
+    const mode = $('#screenmode').value;
+    const r = await fetch('/api/stream?' + (mode === 'hd' ? 'q=hd' : 'q=eco&size=' + mode), { signal: streamCtl.signal });
     if (!r.ok) throw new Error('stream');
     const rd = r.body.getReader(); let buf = new Uint8Array(0);
     for (;;) {
@@ -74,11 +75,12 @@ function startScreen() {
 setInterval(() => {
   if (screenOn && $('#screenmode').value !== 'snap' && streamCtl && !streamCtl.signal.aborted)
     streamFps = frames;
-    setScreenInfo((frames ? `Trực tiếp · ${frames} khung/giây` : 'Trực tiếp · đang chờ hình') + ($('#screenmode').value === 'hd' ? ' · chế độ nét làm TV chậm hơn rõ rệt' : ' · chế độ nhẹ cho TV'), true);
+    setScreenInfo((frames ? `Trực tiếp · ${frames} khung/giây` : 'Trực tiếp · đang chờ hình') + ($('#screenmode').value === 'hd' ? ' · chế độ nét nhất làm TV chậm hơn rõ rệt' : ' · ' + $('#screenmode').value + 'p'), true);
   frames = 0;
 }, 1000);
 $('#screenbtn').addEventListener('click', () => { if (screenOn) stopScreen(); else startScreen(); });
-$('#screenmode').addEventListener('change', () => { if (screenOn) startScreen(); });
+try { const q = localStorage.getItem('quality'); if (q && [...$('#screenmode').options].some((o) => o.value === q)) $('#screenmode').value = q; } catch {}   // the level picked last time
+$('#screenmode').addEventListener('change', () => { try { localStorage.setItem('quality', $('#screenmode').value); } catch {} if (screenOn) startScreen(); });
 $('#screenfull').addEventListener('click', () => { const b = $('#screenbox'); if (document.fullscreenElement) document.exitFullscreen(); else if (b.requestFullscreen) b.requestFullscreen(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && screenOn) stopScreen(); });
 setScreenPlaceholder();

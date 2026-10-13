@@ -4,6 +4,24 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.7.5 - 2026-10-13
+
+Web 2.7.5 · app điện thoại 2.6.3 · app TV 2.6.8
+
+**Tiếng Việt**
+- Web trên máy tính: **sửa lỗi luồng hình “nhẹ” chưa bao giờ chạy từ bản 2.3.0**. Trang trỏ nhầm chỗ file scrcpy nên luôn âm thầm rơi về cách quay nặng (1280×720, không giới hạn), làm TV chậm và tốn mạng; điều khiển bằng chuột và bàn phím trên hình cũng hỏng theo. Đo trên TV Sony trong 8 giây: trước 4,6 MB, giờ 0,2 MB ở 240p và 1,7 MB ở 960p.
+- **Chọn chất lượng hình** như app điện thoại: 240p, 360p, 480p, 720p, 960p, thêm “Nét nhất” và “Ảnh chụp”. Mức chọn được nhớ lại.
+- **Luôn mở ở màn Chọn TV**, kể cả khi đã có TV lưu. Chưa lưu TV nào thì không hiện khung “TV đã lưu” trống; nút “Quay lại” chỉ hiện khi vừa bấm “Đổi TV”. Chọn TV xong, trang chờ TV trả lời vài giây rồi mới quyết định mở Remote hay Thiết lập.
+- Bỏ thanh trượt âm lượng (đã có nút + và −).
+- Ô **CH Play** cạnh ô mở link: gõ tên app để TV tìm trên CH Play, hoặc app id để mở thẳng trang của app.
+
+**English**
+- Computer web: **fixed the “light” picture stream, which had never run since 2.3.0**. The page looked for the scrcpy file in the wrong place and silently fell back to the heavy recorder (1280×720, uncapped), slowing the TV and using far more data; mouse and keyboard on the picture were broken with it. Measured on the Sony TV over 8 seconds: 4.6 MB before, now 0.2 MB at 240p and 1.7 MB at 960p.
+- **Picture quality levels** as in the phone app: 240p, 360p, 480p, 720p, 960p, plus “Sharpest” and “Screenshots”. The choice is remembered.
+- **Always opens on the Choose-a-TV screen**, also when a TV is saved. With nothing saved there is no empty “Saved TVs” box; “Back” only shows after “Change TV”. After choosing, the page gives the TV a few seconds to answer before deciding between Remote and Set-up.
+- The volume slider is gone (the + and − buttons remain).
+- A **Play Store** box next to the link box: type an app’s name for the TV to search the store, or an app id to open its page.
+
 ## 2.7.4 - 2026-10-13
 
 Web 2.7.4 · app điện thoại 2.6.3 · app TV 2.6.8

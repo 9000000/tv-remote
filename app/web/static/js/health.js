@@ -42,7 +42,7 @@ async function loadHealth() {
     ['Ứng dụng đang mở', r.app ? ((typeof appName === 'function' && appName(r.app)) || r.app) : ''],
     ['Âm lượng', vol.max ? vol.level + ' / ' + vol.max + (vol.muted ? ' · đang tắt tiếng' : '') : ''],
     ['Độ trễ tới TV (ADB)', h.ping_ms + ' ms'],
-    ['Luồng hình', screenOn ? ($('#screenmode').value === 'snap' ? 'ảnh chụp' : 'trực tiếp · ' + streamFps + ' khung/giây' + ($('#screenmode').value === 'hd' ? ' · nét' : ' · nhẹ')) : 'đang không xem'],
+    ['Luồng hình', screenOn ? ($('#screenmode').value === 'snap' ? 'ảnh chụp' : 'trực tiếp · ' + streamFps + ' khung/giây' + ($('#screenmode').value === 'hd' ? ' · nét nhất' : ' · ' + $('#screenmode').value + 'p')) : 'đang không xem'],
     ['TV chạy liên tục', h.uptime != null ? fmtUptime(h.uptime) : ''],
   ]));
   const load = [];

@@ -24,7 +24,7 @@
   /* Until a TV is chosen there is only the list of TVs: no tabs, no remote, nothing that needs a TV. */
   main:not(.picking) #picker { display:none; }
   main.picking > .tabs, main.picking > .panel, main.picking > #help, main.picking #chipTv, main.picking #chipAdb, main.picking #switchtv { display:none; }
-  #picker { display:flex; flex-direction:column; gap:14px; } .pickhead h2 { font-size:18px; text-transform:none; letter-spacing:0; }
+  #picker { display:flex; flex-direction:column; gap:14px; } #pickcols.solo { grid-template-columns:1fr; max-width:640px; width:100%; margin:0 auto; }
   #picker .item { cursor:pointer; } #picker .item:hover { background:var(--hover, rgba(127,127,127,.12)); }
   .chip { display:inline-flex; align-items:center; gap:7px; padding:6px 12px; border-radius:999px; font-size:13px; font-weight:600; background:var(--btn); color:var(--muted); }
   .chip i { width:8px; height:8px; border-radius:50%; background:currentColor; }

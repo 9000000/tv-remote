@@ -69,7 +69,7 @@ PART = b"--ffmpeg\r\nContent-type: image/jpeg\r\nContent-length: %d\r\n\r\n"
 
 
 SCRCPY_VER = "5.0.1"                                                   # github.com/Genymobile/scrcpy release asset, Apache-2.0
-SCRCPY_JAR = ROOT / "app" / "shared" / f"scrcpy-server-v{SCRCPY_VER}"
+SCRCPY_JAR = ROOT / "app" / "shared" / "assets" / "scrcpy-server.jar"   # the same file the two Android apps carry
 SCRCPY_SHA = "764eb6f79811d5211fe9df341120882ba9994c7a61b897d7bf3fb662e53bc536"
 SCRCPY_REMOTE = "/data/local/tmp/scrcpy-server.jar"
 
@@ -180,11 +180,16 @@ class Scrcpy:
     Encoding is done in software on the TV and is what makes it lag while someone watches: screenrecord encodes every
     frame the TV draws (measured ~1.8 of 4 cores on the animated home screen), scrcpy capped at 8 fps / 960 px ~0.7.
     """
-    def __init__(self, adb, fps=8, size=960):
-        self.adb, self.fps, self.size, self.port, self.proc, self.writer, self.first = adb, fps, size, None, None, None, b""
+    # longest side -> bits per second, frames per second: the same levels as the phone app (Tv.QUALITY)
+    LEVELS = {240: (120_000, 8), 360: (200_000, 8), 480: (300_000, 8), 720: (800_000, 10), 960: (2_000_000, 8)}
+
+    def __init__(self, adb, size=960):
+        size = size if size in self.LEVELS else 960
+        self.rate, self.fps = self.LEVELS[size]
+        self.adb, self.size, self.port, self.proc, self.writer, self.first = adb, size, None, None, None, b""
 
     async def open(self):
-        self.proc, self.port = await scrcpy_launch(self.adb, f"control=false raw_stream=true video_bit_rate=2000000 max_fps={self.fps} max_size={self.size}")
+        self.proc, self.port = await scrcpy_launch(self.adb, f"control=false raw_stream=true video_bit_rate={self.rate} max_fps={self.fps} max_size={self.size}")
         for _ in range(100):                                          # until the server listens, adb closes the socket at once
             reader, self.writer = await asyncio.open_connection("127.0.0.1", self.port)
             try:
@@ -208,7 +213,7 @@ class Scrcpy:
             await self.adb.run("forward", "--remove", f"tcp:{self.port}")
 
 
-async def live_session(adb, write, alive, eco=True):
+async def live_session(adb, write, alive, eco=True, size=960):
     """One recording run decoded to an MJPEG multipart stream. Returns bytes sent, or RESYNC.
 
     eco: scrcpy-server with a frame-rate cap (light on the TV). Otherwise, or if that fails, screenrecord (sharper and
@@ -221,7 +226,7 @@ async def live_session(adb, write, alive, eco=True):
     """
     rec = scr = source = None
     if eco:
-        scr = Scrcpy(adb)
+        scr = Scrcpy(adb, size)
         try:
             source = await scr.open()
         except Exception:
@@ -631,7 +636,7 @@ def build(S):
             while True:
                 t = time.time()
                 sent = await live_session(S.cur.adb, resp.write, lambda: request.transport is not None and not request.transport.is_closing(),
-                                          eco=request.query.get("q") != "hd")
+                                          eco=request.query.get("q") != "hd", size=int(request.query.get("size", "960") or 960) if request.query.get("size", "960").isdigit() else 960)
                 if request.transport is None or request.transport.is_closing():
                     break
                 if sent == RESYNC:

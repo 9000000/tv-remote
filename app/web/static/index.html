@@ -26,13 +26,9 @@
 
   <!-- ============ Choosing a TV: all there is to see until one is chosen ============ -->
   <div id="picker">
-    <section class="card pickhead">
-      <h2 id="picktitle">Chọn TV để điều khiển</h2>
-      <p class="muted" id="pickhint" style="margin:6px 0 0">Bấm vào một TV bên dưới. Lần đầu: bấm “Quét mạng” để tìm TV trong cùng Wi-Fi, hoặc nhập IP của TV.</p>
-      <button class="small" id="pickback" hidden style="margin-top:10px"></button>
-    </section>
-    <div class="two-up">
-      <section class="card">
+    <button class="small" id="pickback" hidden style="align-self:flex-start"></button>
+    <div class="two-up" id="pickcols">
+      <section class="card" id="savedcard">
         <h2>💾 TV đã lưu</h2>
         <div class="list" id="tvlist" style="margin-top:0"></div>
       </section>
@@ -64,7 +60,7 @@
           <div class="card-head">
             <h2>🖥️ Màn hình TV <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
             <div class="tools">
-              <select id="screenmode" aria-label="Chế độ xem"><option value="live">Trực tiếp · nhẹ</option><option value="hd">Trực tiếp · nét</option><option value="snap">Ảnh chụp</option></select>
+              <select id="screenmode" aria-label="Chất lượng hình" title="Chất lượng hình: số nhỏ thì nhẹ cho TV và mạng"><option value="240">240p</option><option value="360">360p</option><option value="480">480p</option><option value="720">720p</option><option value="960" selected>960p</option><option value="hd">Nét nhất · nặng TV</option><option value="snap">Ảnh chụp</option></select>
               <button class="small iconbtn" id="screenfull" aria-label="Toàn màn hình" title="Toàn màn hình">⛶</button>
               <button class="small primary" id="screenbtn"><span class="ico">▶</span><span class="lbl"> Xem</span></button>
               <button class="small" id="pipback" hidden><span class="ico">↩</span><span class="lbl"> Về Remote</span></button>
@@ -106,7 +102,7 @@
             <button class="rb lab" data-k="MENU"><svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg><small>Menu</small></button>
           </div>
           <div class="cluster">
-            <div class="pill"><button data-k="VOL_UP" aria-label="Tăng âm lượng"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></button><output id="volv" for="volr">–</output><button data-k="VOL_DOWN" aria-label="Giảm âm lượng"><svg class="ic" aria-hidden="true"><use href="#i-minus"/></svg></button></div>
+            <div class="pill"><button data-k="VOL_UP" aria-label="Tăng âm lượng"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></button><output id="volv">–</output><button data-k="VOL_DOWN" aria-label="Giảm âm lượng"><svg class="ic" aria-hidden="true"><use href="#i-minus"/></svg></button></div>
             <div class="mid">
               <button class="rb lab" data-k="MUTE" id="mute"><svg class="ic" aria-hidden="true"><use href="#i-mute"/></svg><small>Tắt tiếng</small></button><button class="rb lab play" data-k="PLAY_PAUSE"><svg class="ic" aria-hidden="true"><use href="#i-play_pause"/></svg><small>Phát/Dừng</small></button>
               <button class="rb lab" data-k="PREV"><svg class="ic" aria-hidden="true"><use href="#i-prev"/></svg><small>Bài trước</small></button><button class="rb lab" data-k="NEXT"><svg class="ic" aria-hidden="true"><use href="#i-next"/></svg><small>Bài sau</small></button>
@@ -114,7 +110,6 @@
             </div>
             <div class="pill"><button data-k="CH_UP" aria-label="Kênh +"><svg class="ic" aria-hidden="true"><use href="#i-up"/></svg></button><span>Kênh</span><button data-k="CH_DOWN" aria-label="Kênh −"><svg class="ic" aria-hidden="true"><use href="#i-down"/></svg></button></div>
           </div>
-          <div class="vol" aria-label="Âm lượng"><input type="range" id="volr" min="0" max="100" value="0" aria-label="Âm lượng"></div>
           <div class="muted hint">Giữ nút = nhấn giữ trên TV · Bàn phím máy tính gõ thẳng lên TV: chữ, ⌫ xóa, mũi tên, Enter, Esc = Back</div>
         </section>
 
@@ -124,8 +119,9 @@
           <div class="numpad" id="numpad" hidden><button class="rb" data-k="1">1</button><button class="rb" data-k="2">2</button><button class="rb" data-k="3">3</button><button class="rb" data-k="4">4</button><button class="rb" data-k="5">5</button><button class="rb" data-k="6">6</button><button class="rb" data-k="7">7</button><button class="rb" data-k="8">8</button><button class="rb" data-k="9">9</button><span></span><button class="rb" data-k="0">0</button><span></span></div>
           <form class="line" id="askf"><input id="ask" placeholder="Hỏi / tìm trên TV, vd: mở YouTube" autocomplete="off"><button type="button" id="speak" title="Nói bằng micro của máy này" hidden>🎤</button><button class="primary" title="Gửi câu này cho Google Assistant của TV">🔍</button></form>
           <p class="muted" style="margin:6px 0 0">Không cần bấm vào ô này: cứ gõ là chữ lên TV (TV phải đang ở một ô nhập chữ). Ô này dành cho gõ tiếng Việt có dấu. Bàn phím ảo trên TV không bấm bằng chuột được, hãy gõ từ đây.</p>
-          <h2 style="margin-top:14px">🔗 Mở link trên TV <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
+          <h2 style="margin-top:14px">🔗 Mở trên TV <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· link, CH Play</span></h2>
           <form class="line" id="linkf" style="margin-top:0"><input id="link" placeholder="youtube.com/watch?v=..." autocomplete="off" inputmode="url"><button class="primary">↗ Mở</button></form>
+          <form class="line" id="storef"><input id="store" placeholder="Tìm app trên CH Play, hoặc app id (vd org.videolan.vlc)" autocomplete="off"><button class="primary">🛒 CH Play</button></form>
         </section>
       </div>
     </div>

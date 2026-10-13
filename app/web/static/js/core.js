@@ -19,11 +19,11 @@ async function api(path, data, quiet) {
 // ---------- status ----------
 let curHost = null;
 // The list of TVs comes first, as in the phone app: shown whenever no TV is chosen, or when "Change TV" asks for it.
-let picking = false, wantPick = false, justPicked = null, scannedOnce = false;
+// It always opens on the list; "Change TV" comes back to it, and only then is there a TV to go back to.
+let picking = false, wantPick = true, cameFromTv = false, justPicked = null, pickedAt = 0, scannedOnce = false;
 function setPicking(on, tvName) {
-  const b = $('#pickback');
-  b.hidden = !tvName; if (tvName) b.textContent = '← ' + tr('Quay lại') + ' ' + tvName;
-  $('#picktitle').textContent = tr(tvName ? 'Chọn TV khác' : 'Chọn TV để điều khiển');
+  const b = $('#pickback'), back = cameFromTv && !!tvName;
+  b.hidden = !back; if (back) b.textContent = '← ' + tr('Quay lại') + ' ' + tvName;
   if (on === picking) return;
   picking = on; document.querySelector('main').classList.toggle('picking', on);
   if (on) {
@@ -57,14 +57,15 @@ async function refresh() {
   const tvName = s.name || (s.device && s.device.model) || (s.host ? 'TV ' + s.host : '');
   setPicking(!s.host || wantPick, tvName);
   $('#name').textContent = picking ? 'TV Remote' : tvName;
-  $('#info').textContent = picking ? tr('Chưa chọn TV') : [s.host, appName(s.app), s.paired === false ? 'chưa ghép remote (tab Thiết lập)' : s.error].filter(Boolean).join(' · ') || 'đã kết nối';
+  $('#info').textContent = picking ? tr('Chọn TV để điều khiển') : [s.host, appName(s.app), s.paired === false ? 'chưa ghép remote (tab Thiết lập)' : s.error].filter(Boolean).join(' · ') || 'đã kết nối';
   if (justPicked && s.host === justPicked) {                          // straight to the remote when the TV is ready, to the first-time steps when it is not
-    justPicked = null;
-    showTab(s.connected || (s.adb && s.adb.state === 'ready') ? 'remote' : 'tv');
+    const ready = s.connected || (s.adb && s.adb.state === 'ready');
+    if (ready || Date.now() - pickedAt > 6000) { justPicked = null; showTab(ready ? 'remote' : 'tv'); }   // a TV takes a few seconds to answer
+    else setTimeout(refresh, 1000);
   }
   if (s.host !== curHost) { const first = curHost === null; curHost = s.host; if (!first) tvChanged(); }
   if (s.volume && Date.now() > volHold) {
-    $('#volr').max = s.volume.max || 100; $('#volr').value = s.volume.level; $('#volv').textContent = s.volume.level;
+    $('#volv').textContent = s.volume.level;
     $('#mute').classList.toggle('on', !!s.volume.muted); $('#mute').title = s.volume.muted ? 'Đang tắt tiếng, bấm để bật' : 'Tắt tiếng';
   }
   applyAdb();

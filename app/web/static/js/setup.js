@@ -49,19 +49,21 @@ function tvChanged() {                                                // another
 }
 async function selectTv(host) {
   const r = await api('/api/tv/select', { host }); if (!r) return;
-  toast('Đang kết nối ' + host + '...'); wantPick = false; justPicked = host; await sleep(1200); await refresh(); loadSteps();
+  toast('Đang kết nối ' + host + '...'); wantPick = false; cameFromTv = false; justPicked = host; pickedAt = Date.now(); showTab('remote'); await sleep(1200); await refresh(); loadSteps();
 }
-$('#switchtv').addEventListener('click', () => { wantPick = true; refresh(); });
-$('#pickback').addEventListener('click', () => { wantPick = false; refresh(); });
+$('#switchtv').addEventListener('click', () => { wantPick = true; cameFromTv = true; refresh(); });
+$('#pickback').addEventListener('click', () => { wantPick = false; cameFromTv = false; refresh(); });
+const openTv = (host, current) => { if (host === current) { wantPick = false; cameFromTv = false; justPicked = host; pickedAt = Date.now(); refresh(); } else selectTv(host); };
 async function loadTvs() {
   const r = await api('/api/tvs', null, true); if (!r) return;
-  const rows = r.tvs.map((t) => el('div', { className: 'item', onclick: (e) => { if (e.target.closest('button')) return; if (t.host === r.current) { wantPick = false; refresh(); } else selectTv(t.host); } },
-    el('div', { className: 'name' }, el('span', { textContent: t.name || t.host }), t.host === r.current ? el('span', { className: 'badge ok', textContent: 'đang dùng' }) : null,
+  const rows = r.tvs.map((t) => el('div', { className: 'item', onclick: (e) => { if (!e.target.closest('button')) openTv(t.host, r.current); } },
+    el('div', { className: 'name' }, el('span', { textContent: t.name || t.host }), t.host === r.current && cameFromTv ? el('span', { className: 'badge ok', textContent: 'đang dùng' }) : null,
       el('small', { textContent: t.host + (t.lan && t.lan !== t.host ? ' · trong nhà ' + t.lan : '') })),
     el('div', { className: 'acts' },
-      setLabel(el('button', { className: 'small primary', onclick: () => { if (t.host === r.current) { wantPick = false; refresh(); } else selectTv(t.host); } }), '▶', 'Điều khiển'),
+      setLabel(el('button', { className: 'small primary', onclick: () => openTv(t.host, r.current) }), '▶', 'Điều khiển'),
       setLabel(el('button', { className: 'small danger', onclick: async () => { if (confirm('Xóa "' + (t.name || t.host) + '" khỏi danh sách? (Không đổi gì trên TV)')) { await api('/api/tv/remove', { host: t.host }); await refresh(); loadTvs(); loadSteps(); } } }), '🗑', 'Xóa'))));
-  $('#tvlist').replaceChildren(...(rows.length ? rows : [el('div', { className: 'muted', textContent: 'Chưa có TV nào. Bấm “Quét mạng” hoặc nhập IP ở bên cạnh.' })]));
+  $('#tvlist').replaceChildren(...rows);
+  $('#savedcard').hidden = !rows.length; $('#pickcols').classList.toggle('solo', !rows.length);   // nothing saved: no empty box, just the search
 }
 $('#scan').addEventListener('click', async () => {
   const b = $('#scan'); b.disabled = true; b.textContent = '⏳ Đang quét...'; $('#scanlist').replaceChildren();
