@@ -1046,16 +1046,22 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             wp.leftMargin = dp(6)
             line.addView(wk, wp)
             line.layoutParams = gap(6)
-            b.setOnLongClickListener {
-                AlertDialog.Builder(this).setMessage(t("Xóa TV này khỏi danh sách?", "Remove this TV from the list?") + "\n" + ip)
+            val ask = {
+                AlertDialog.Builder(this).setMessage(t("Xóa TV này khỏi danh sách?", "Remove this TV from the list?") + "\n" + title(ip) + (if (name(ip).isEmpty()) "" else " · $ip") + "\n\n" +
+                        t("Không đổi gì trên TV. Muốn dùng lại thì quét hoặc nhập IP như lần đầu.", "Nothing changes on the TV. To use it again, scan or type its IP as the first time."))
                     .setPositiveButton(t("Xóa", "Remove")) { _, _ ->
                         val ips = savedIps()
                         ips.remove(ip)
-                        prefs.edit().putString("ips", TextUtils.join(",", ips)).remove("name:$ip").remove("mac:$ip").remove("lan:$ip").apply()
+                        prefs.edit().putString("ips", TextUtils.join(",", ips)).remove("name:$ip").remove("mac:$ip").remove("lan:$ip").remove("atv:$ip").apply()
                         refreshSaved()
                     }.setNegativeButton(android.R.string.cancel, null).show()
-                true
             }
+            val del = icon("@close", t("Xóa TV này khỏi danh sách", "Remove this TV from the list"), BTN)
+            del.setOnClickListener { ask() }
+            val dp2 = LinearLayout.LayoutParams(dp(48), -1)
+            dp2.leftMargin = dp(6)
+            line.addView(del, dp2)
+            b.setOnLongClickListener { ask(); true }
             savedList.addView(line)
         }
         if (savedList.childCount == 0) savedList.addView(note(t("Chưa có TV nào. Quét Wi-Fi hoặc nhập IP bên dưới.", "No TVs yet. Scan the Wi-Fi or type an IP below.")))
@@ -1196,13 +1202,13 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                     "2B. KHÁC MẠNG\nBật Tailscale trên cả điện thoại và TV, rồi nhập IP 100.x của TV (xem trong app Tailscale).\n\n" +
                     "TV chưa có Tailscale? Mở Tailscale trên TV, nó hiện một mã. Nhập mã ở login.tailscale.com/admin/machines → Add device.\n\n" +
                     "3. LẦN ĐẦU KẾT NỐI\nTV hỏi cho phép: tích “Luôn cho phép” rồi OK.\n\n" +
-                    "MẸO\nNút nguồn cạnh tên TV: đánh thức TV đang tắt. Giữ lâu vào tên TV: xóa khỏi danh sách.",
+                    "MẸO\nNút nguồn cạnh tên TV: đánh thức TV đang tắt. Nút ✕ cạnh tên TV: xóa khỏi danh sách.",
                 "1. TURN ON ADB ON THE TV (once)\nSettings → Device Preferences → About → press OK 7 times on “Build”. Then Developer options → turn on “ADB debugging”.\n\n" +
                     "2A. SAME WI-FI AS THE TV\nTap “Scan the Wi-Fi” and pick the TV. Or read the IP on the TV: Settings → Network & Internet → the Wi-Fi name.\n\n" +
                     "2B. ANOTHER NETWORK\nTurn on Tailscale on both the phone and the TV, then type the TV’s 100.x IP (see the Tailscale app).\n\n" +
                     "No Tailscale on the TV yet? Open Tailscale on the TV, it shows a code. Enter it at login.tailscale.com/admin/machines → Add device.\n\n" +
                     "3. THE FIRST CONNECTION\nThe TV asks for permission: tick “Always allow”, then OK.\n\n" +
-                    "TIPS\nThe power button next to a TV wakes it when it is off. Long-press a TV to remove it from the list."))
+                    "TIPS\nThe power button next to a TV wakes it when it is off. The ✕ next to a TV removes it from the list."))
                 .setPositiveButton(t("Đã hiểu", "Got it"), null).show()
         }
         picker.addView(help, LinearLayout.LayoutParams(-1, dp(44)))

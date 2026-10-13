@@ -4,6 +4,18 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.7.4 - 2026-10-13
+
+Web 2.7.4 · app điện thoại 2.6.3 · app TV 2.6.8
+
+**Tiếng Việt**
+- Web trên máy tính: sửa lỗi sau khi cập nhật, trình duyệt ghép trang mới với script và CSS cũ còn lưu, nên màn “Chọn TV” hiện lẫn với các tab và các khung dính vào nhau. Các file này giờ mang dấu phiên bản, trình duyệt luôn tải đúng bản mới.
+- App điện thoại: mỗi TV đã dùng có **nút ✕ để xóa** khỏi danh sách (trước đây phải biết bấm giữ). Xóa TV cũng quên luôn việc đã ghép mã với nó.
+
+**English**
+- Computer web: fixed the browser pairing the new page with scripts and styles it had kept from before an update, which showed the “Choose a TV” screen together with the tabs, its sections stuck together. Those files now carry a version stamp, so the browser always loads the current ones.
+- Phone app: each saved TV has an **✕ button to remove** it from the list (before, one had to know to long-press). Removing a TV also forgets its pairing.
+
 ## 2.7.3 - 2026-10-13
 
 Web 2.7.3 · app điện thoại 2.6.2 · app TV 2.6.8

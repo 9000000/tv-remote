@@ -510,7 +510,11 @@ def build(S):
 
     @routes.get("/")
     async def index(_):
-        return web.FileResponse(WEB / "index.html", headers={"Cache-Control": "no-store"})
+        # The page names its scripts and its stylesheet with a stamp of their newest change, so a browser never pairs a new
+        # page with scripts it kept from an older version (which showed the new layout unstyled, run by the old code).
+        stamp = str(int(max(f.stat().st_mtime for f in WEB.rglob("*") if f.is_file())))
+        html = re.sub(r'((?:src|href)="/(?:web/[^"?]+|stats\.js))"', r'\1?v=' + stamp + '"', (WEB / "index.html").read_text(encoding="utf-8"))
+        return web.Response(text=html, content_type="text/html", headers={"Cache-Control": "no-store"})
 
     @routes.get("/api/state")
     async def state(_):
