@@ -48,6 +48,7 @@ import android.widget.Toast
 import dev.tvremote.core.AdbLink
 import dev.tvremote.core.HttpServer
 import dev.tvremote.core.Manage
+import dev.tvremote.core.RemoteLabels
 import dev.tvremote.core.Tv
 import dev.tvremote.update.Release
 import org.json.JSONObject
@@ -99,6 +100,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     private lateinit var videoBtn: IconButton
     private lateinit var fullBtn: IconButton
     private lateinit var exitBtn: IconButton
+    private lateinit var qualBtn: Button
+    private val SHOT = -1                                             // not a key: the screenshot button in the extra keys
     private lateinit var stage: FrameLayout                           // the picture with the full screen button over it
     private var tv: Tv? = null
     private var host: String? = null                                  // the TV we want to be connected to, null on the picker
@@ -203,6 +206,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         frame.layoutParams = FrameLayout.LayoutParams(-1, if (full) -1 else -2)
         stage.visibility = if (video) View.VISIBLE else View.GONE
         fullBtn.visibility = if (video) View.VISIBLE else View.GONE
+        qualBtn.visibility = fullBtn.visibility
+        qualBtn.text = Tv.QUALITY[prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)][0].toString() + "p"
         exitBtn.visibility = if (full) View.VISIBLE else View.GONE
         window.decorView.systemUiVisibility = if (full) View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY else 0
         videoBtn.setIcon(if (video) "@eye_off" else "@eye", TEXT)
@@ -312,7 +317,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                         pendingAsk = null
                     }
                     status.text = title(h) + " · " + (if (video) t("chạm vào hình để bấm trên TV", "touch the picture to tap on the TV")
-                    else t("chỉ điều khiển, không xem hình (bấm nút con mắt để xem)", "buttons only, no picture (tap the eye to watch)"))
+                    else t("đang tắt hình", "picture off"))
                 }
                 "closed" -> {
                     tv = null
@@ -368,8 +373,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 if (manual) updateNote.text = when {
                     err != null -> t("Không kiểm tra được: ", "Could not check: ") + err
                     r == null -> t("Đang dùng bản mới nhất (", "You have the latest version (") + version() + ")."
-                    else -> t("Có bản mới ", "New version ") + r.version + t(". Bấm nút ở màn chọn TV để cập nhật.", ". Tap the button on the TV list to update.")
+                    else -> t("Có bản mới ", "New version ") + r.version
                 }
+                if (manual && r != null) askUpdate()                  // asked for it: offer the update right here
             }
         }.start()
     }
@@ -378,6 +384,12 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val u = update
         updateBtn.visibility = if (u == null) View.GONE else View.VISIBLE
         if (u != null && !updating) updateBtn.text = "🆕  " + t("Có bản mới ", "New version ") + u.version + t(" · bấm để cập nhật", " · tap to update")
+    }
+
+    /** The download shows both on the TV list and in Settings, wherever the update was started from. */
+    private fun progress(s: String) {
+        updateBtn.text = s
+        updateNote.text = s
     }
 
     private fun askUpdate() {
@@ -394,12 +406,12 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     /** Downloads the APK from the release, then hands it to Android, which asks the person to confirm the install. */
     private fun startUpdate(r: Release) {
         updating = true
-        updateBtn.text = t("Đang tải bản ", "Downloading ") + r.version + "..."
+        progress(t("Đang tải bản ", "Downloading ") + r.version + "...")
         Thread {
             var error: String? = null
             try {
                 val apk = File(cacheDir, "update.apk")
-                Release.download(r.url, apk) { pct -> ui.post { updateBtn.text = t("Đang tải bản ", "Downloading ") + r.version + "... " + pct + "%" } }
+                Release.download(r.url, apk) { pct -> ui.post { progress(t("Đang tải bản ", "Downloading ") + r.version + "... " + pct + "%") } }
                 val pi = packageManager.packageInstaller
                 val id = pi.createSession(PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL))
                 pi.openSession(id).use { session ->
@@ -425,7 +437,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             val err = error
             ui.post {
                 if (err == null) {
-                    updateBtn.text = t("Đang chờ Android xác nhận cài đặt...", "Waiting for Android to confirm the install...")
+                    progress(t("Đang chờ Android xác nhận cài đặt...", "Waiting for Android to confirm the install..."))
                     return@post
                 }
                 updating = false
@@ -722,47 +734,21 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             box.addView(b)
         }
 
-        box.addView(head(t("CHẤT LƯỢNG HÌNH", "PICTURE QUALITY")), gap(18))
-        val levels = listOf("🪶  " + t("Tiết kiệm · 480 px · tối đa khoảng 40 KB/s", "Data saver · 480 px · up to about 40 KB/s"),   // in the order of Tv.QUALITY
-            "⚖️  " + t("Vừa · 720 px · tối đa khoảng 100 KB/s", "Balanced · 720 px · up to about 100 KB/s"),
-            "🔍  " + t("Nét · 960 px · tối đa khoảng 250 KB/s", "Sharp · 960 px · up to about 250 KB/s"),
-            "🐜  " + t("Nhẹ · 360 px · tối đa khoảng 25 KB/s", "Light · 360 px · up to about 25 KB/s"),
-            "🧱  " + t("Nhẹ nhất · 240 px · tối đa khoảng 15 KB/s, chữ khó đọc", "Lightest · 240 px · up to about 15 KB/s, text is hard to read"))
-        val qb = LinkedHashMap<Int, Button>()
-        val marks = {
-            for ((i, b) in qb) {
-                val on = prefs.getInt("quality", 1) == i
-                b.text = levels[i] + (if (on) "   ✓" else "")
-                b.setTextColor(if (on) ACCENT else TEXT)
-            }
-        }
-        for (level in Tv.LEVELS) {
-            val b = row("") {
-                prefs.edit().putInt("quality", level).apply()
-                marks()
-            }
-            qb[level] = b
-            box.addView(b)
-        }
-        marks()
-        box.addView(note(t("Áp dụng từ lần kết nối sau. Hình đứng yên thì gần như không tốn dữ liệu; con số trên là khi hình chuyển động liên tục (đang phát video). Mức thấp cũng nhẹ cho TV hơn. Không xem hình thì bấm nút con mắt ở màn remote: không tốn gì.",
-            "Applies from the next connection. A still picture uses almost no data; the figures are for a constantly moving picture (video playing). Lower levels are also lighter on the TV. To not watch at all, tap the eye on the remote screen: that costs nothing.")))
-
         box.addView(head(t("CẬP NHẬT", "UPDATES")), gap(18))
         lateinit var auto: Button
-        val autoLabel = { auto.text = (if (prefs.getBoolean("autoUpdate", true)) "✅  " else "⬜  ") + t("Tự kiểm tra bản mới khi mở app", "Check for a new version when the app opens") }
+        val autoLabel = { auto.text = (if (prefs.getBoolean("autoUpdate", true)) "✅  " else "⬜  ") + t("Tự kiểm tra bản mới", "Check for updates automatically") }
         auto = row("") {
             prefs.edit().putBoolean("autoUpdate", !prefs.getBoolean("autoUpdate", true)).apply()
             autoLabel()
         }
         autoLabel()
         box.addView(auto)
-        box.addView(row("🔄  " + t("Kiểm tra bản mới ngay", "Check for a new version now")) { checkUpdate(true) })
-        updateNote = note(t("App hỏi GitHub xem có bản phát hành mới hơn không; ngoài ra không gửi gì đi.", "The app asks GitHub whether a newer release exists; nothing else is sent."))
+        box.addView(row("🔄  " + t("Kiểm tra ngay", "Check now")) { checkUpdate(true) })
+        updateNote = note("")
         box.addView(updateNote)
 
         box.addView(head(t("GIỚI THIỆU", "ABOUT")), gap(18))
-        box.addView(row("ℹ️  " + t("Giới thiệu, tác giả, mã nguồn", "About, author, source code")) { about.visibility = View.VISIBLE })
+        box.addView(row("ℹ️  " + t("Giới thiệu", "About")) { about.visibility = View.VISIBLE })
 
         val sv = ScrollView(this)
         sv.setBackgroundColor(BG)
@@ -816,6 +802,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         private var port = 0
         private var link: AdbLink? = null
         private var manage: Manage? = null
+        private var labels: RemoteLabels? = null
         private var forHost: String? = null
         private var picking: ValueCallback<Array<Uri>>? = null
         private var page: ByteArray? = null
@@ -871,7 +858,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                     link?.close()
                     val l = AdbLink(filesDir, tvHost)
                     link = l
-                    manage = Manage(l, null)
+                    val names = RemoteLabels(l, File(applicationInfo.sourceDir))   // app names and pictures, asked from the TV itself
+                    labels = names
+                    manage = Manage(l, names, cacheDir)
                     forHost = tvHost
                     val origin = "http://127.0.0.1:$port"
                     CookieManager.getInstance().setCookie(origin, "tvr=$token")
@@ -894,6 +883,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             view.visibility = View.GONE
             link?.close()
             link = null
+            labels = null
             manage = null
             forHost = null
         }
@@ -922,6 +912,12 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             }
             if (r.path == "/api/state")                               // the page only needs to know it may show itself
                 return HttpServer.Response.json(JSONObject().put("name", name(forHost ?: "")).put("on", true).put("volume", 0).put("volume_max", 0).put("muted", false).put("adb", "ready"))
+            if (r.path == "/api/icon") {
+                val png = labels?.icon(r.query["pkg"].toString()) ?: return HttpServer.Response.error(404, "no icon")
+                val icon = HttpServer.Response.of("image/png", png)
+                icon.headers["Cache-Control"] = "max-age=86400"
+                return icon
+            }
             return manage?.handle(r) ?: HttpServer.Response.error(404, "not found")
         }
 
@@ -1029,16 +1025,41 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val bar = LinearLayout(this)
         bar.gravity = Gravity.CENTER_VERTICAL
         bar.addView(status, LinearLayout.LayoutParams(0, -2, 1f))
+        qualBtn = button("", BTN)                                     // picture quality: a menu of the levels, lightest first
+        qualBtn.textSize = 13f
+        qualBtn.typeface = Typeface.DEFAULT_BOLD
+        qualBtn.setPadding(0, 0, 0, 0)
+        qualBtn.minHeight = 0
+        qualBtn.minimumHeight = 0
+        qualBtn.minWidth = 0
+        qualBtn.minimumWidth = 0
+        qualBtn.contentDescription = t("Chất lượng hình", "Picture quality")
+        qualBtn.setOnClickListener {
+            val menu = android.widget.PopupMenu(this, qualBtn)
+            for (level in Tv.LEVELS) menu.menu.add(0, level, 0, Tv.QUALITY[level][0].toString() + "p" + (if (level == prefs.getInt("quality", 1)) "  ✓" else ""))
+            menu.setOnMenuItemClickListener { item ->
+                if (item.itemId != prefs.getInt("quality", 1)) {
+                    prefs.edit().putInt("quality", item.itemId).apply()
+                    stopSession()                                     // the size is fixed when the session starts
+                    layoutRemote()
+                    startSession()
+                }
+                true
+            }
+            menu.show()
+        }
+        val qp = LinearLayout.LayoutParams(dp(60), dp(40))
+        qp.rightMargin = dp(8)
+        bar.addView(qualBtn, qp)
         fullBtn = icon("@expand", t("Toàn màn hình", "Full screen"), BTN)
         fullBtn.setOnClickListener { setFullscreen(true) }
         val fb = LinearLayout.LayoutParams(dp(52), dp(40))
         fb.rightMargin = dp(8)
-        fb.topMargin = dp(6)
         bar.addView(fullBtn, fb)
         val vb = LinearLayout.LayoutParams(dp(52), dp(40))
         vb.rightMargin = dp(10)
-        vb.topMargin = dp(6)
         bar.addView(videoBtn, vb)
+        bar.setPadding(0, dp(8), 0, dp(10))                               // room between the buttons and the picture
         remote.addView(bar)
 
         frame = VideoFrame(this)
@@ -1071,11 +1092,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
         controls = col()
         controls.setPadding(dp(14), dp(12), dp(14), dp(20))
-        val first = keys(52, "@input|" + t("Nguồn vào", "Input"), 178)
-        first.getChildAt(0).layoutParams = cell(52, true)
-        // Power is a tap, never a hold: a held power key opens the TV's power menu and picks "power off" there.
-        // It looks at the TV first: asleep, it wakes it at once; awake, it asks before putting it to sleep (standby: the
-        // screen goes dark, the network stays on). The sleep and wake keys are used, so a tap can never do the opposite.
+        val first = LinearLayout(this)
         val power = icon("@power", t("Nguồn", "Power"), BTN)
         power.setOnClickListener {
             val tv = tv
@@ -1093,10 +1110,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 }
             }.start()
         }
-        first.addView(power, 0, cell(52, false))
-        val tvSettings = icon("@settings", t("Cài đặt của TV", "TV settings"), BTN)
-        tvSettings.setOnClickListener { tv?.let { if (it.ready()) it.settings() } }
-        first.addView(tvSettings, cell(52, true))
+        first.addView(power, cell(52, false))
         val apps = icon("@apps", t("Ứng dụng", "Apps"), BTN)
         apps.setOnClickListener { managing.open(host) }
         val mic = icon("@mic", t("Nói với TV", "Speak to the TV"), BTN)
@@ -1107,12 +1121,41 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         }
         first.addView(mic, cell(52, true))
         first.addView(apps, cell(52, true))
+        // Everything used less often sits behind this button: one tap shows the extra keys, another hides them.
+        val moreBtn = icon("@more", t("Thêm phím", "More keys"), BTN)
+        first.addView(moreBtn, cell(52, true))
         controls.addView(first)
+        val more = col()
+        more.addView(captioned(keys(58, "@input|" + t("Ngõ vào", "Input"), 178, "@settings|" + t("Cài đặt", "Settings"), 176, "@info|" + t("Thông tin", "Info"), 165, "@guide|" + t("Lịch phát", "Guide"), 172)), gap(8))
+        more.addView(captioned(keys(58, "@tv|" + t("TV", "Live TV"), 170, "@subtitle|" + t("Phụ đề", "Subtitles"), 175, "@stop|" + t("Dừng", "Stop"), 86, "@camera|" + t("Chụp màn hình", "Screenshot"), SHOT)), gap(8))
+        val showMore = { on: Boolean ->
+            more.visibility = if (on) View.VISIBLE else View.GONE
+            moreBtn.background = box(if (on) ACCENT else BTN, 16)
+        }
+        showMore(prefs.getBoolean("more", false))
+        moreBtn.setOnClickListener {
+            val on = more.visibility != View.VISIBLE
+            prefs.edit().putBoolean("more", on).apply()
+            showMore(on)
+        }
+        controls.addView(more)
         controls.addView(dpad(), gap(16))
-        controls.addView(keys(56, "@back|" + t("Quay lại", "Back"), 4, "@home|Home", 3, "@menu|Menu", 82), gap(16))
+        controls.addView(captioned(keys(58, "@back|" + t("Quay lại", "Back"), 4, "@home|Home", 3, "@menu|Menu", 82)), gap(16))
         // the same rows, in the same order, as the two web remotes
-        controls.addView(keys(52, "@mute|" + t("Tắt tiếng", "Mute"), 164, "@vol_down|" + t("Giảm âm lượng", "Volume down"), 25, "@vol_up|" + t("Tăng âm lượng", "Volume up"), 24), gap(8))
-        controls.addView(keys(52, "@prev|" + t("Bài trước", "Previous"), 88, "@play_pause|" + t("Phát / Dừng", "Play / Pause"), 85, "@next|" + t("Bài sau", "Next"), 87), gap(8))
+        // Volume on the left, channels on the right, each one tall bar for the thumb; the media keys between them.
+        // The same block, in the same order, as the two web remotes.
+        val mid = col()
+        mid.addView(captioned(keys(58, "@mute|" + t("Tắt tiếng", "Mute"), 164, "@play_pause|" + t("Phát / Dừng", "Play / Pause"), 85)))
+        mid.addView(captioned(keys(58, "@prev|" + t("Bài trước", "Previous"), 88, "@next|" + t("Bài sau", "Next"), 87)), gap(8))
+        mid.addView(captioned(keys(58, "@rewind|" + t("Tua lại", "Rewind"), 89, "@ffwd|" + t("Tua tới", "Forward"), 90)), gap(8))
+        val cluster = LinearLayout(this)
+        cluster.addView(pill("Vol", "@plus", 24, t("Tăng âm lượng", "Volume up"), "@minus", 25, t("Giảm âm lượng", "Volume down")), LinearLayout.LayoutParams(0, -1, 1f))
+        val mp = LinearLayout.LayoutParams(0, -2, 2.4f)
+        mp.leftMargin = dp(10)
+        mp.rightMargin = dp(10)
+        cluster.addView(mid, mp)
+        cluster.addView(pill(t("Kênh", "CH"), "@up", 166, t("Kênh +", "Channel up"), "@down", 167, t("Kênh −", "Channel down")), LinearLayout.LayoutParams(0, -1, 1f))
+        controls.addView(cluster, gap(16))
 
         val line = LinearLayout(this)
         liveBtn = button("⚡", BTN)
@@ -1225,6 +1268,72 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     }
 
     /** A row of equal-width remote keys: label, Android key code, label, key code... "@icon|words" shows an icon. An empty label leaves a gap. */
+    /** One tall bar with a key at each end and its name in the middle: volume, channels. */
+    private fun pill(name: String, upIcon: String, up: Int, sayUp: String, downIcon: String, down: Int, sayDown: String): LinearLayout {
+        val p = col()
+        p.background = box(BTN, 26)
+        val a = icon(upIcon, sayUp, 0)
+        bindKey(a, up, box(HELD, 26))
+        val b = icon(downIcon, sayDown, 0)
+        bindKey(b, down, box(HELD, 26))
+        val l = label(name, 13, MUTED)
+        l.gravity = Gravity.CENTER
+        l.typeface = Typeface.DEFAULT_BOLD
+        p.addView(a, LinearLayout.LayoutParams(-1, 0, 1f))
+        p.addView(l, LinearLayout.LayoutParams(-1, -2))
+        p.addView(b, LinearLayout.LayoutParams(-1, 0, 1f))
+        return p
+    }
+
+    /** Shows each icon button's name under its icon. */
+    private fun captioned(row: LinearLayout): LinearLayout {
+        for (i in 0 until row.childCount) (row.getChildAt(i) as? IconButton)?.let { it.caption = it.contentDescription?.toString() }
+        return row
+    }
+
+    /** Saves what is on the TV's screen as a picture in this phone's Download folder. */
+    private fun shot() {
+        val tv = tv
+        if (tv == null || !tv.ready()) return
+        Toast.makeText(this, t("Đang chụp màn hình TV...", "Taking a screenshot of the TV..."), Toast.LENGTH_SHORT).show()
+        Thread {
+            var result: String
+            try {
+                val png = tv.screenshot() ?: throw java.io.IOException(t("TV không trả ảnh", "the TV sent no picture"))
+                val fileName = "tv-" + System.currentTimeMillis() / 1000 + ".png"
+                val out: OutputStream
+                if (Build.VERSION.SDK_INT >= 29) {
+                    val v = ContentValues()
+                    v.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                    v.put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
+                    v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                    out = contentResolver.openOutputStream(contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v)!!)!!
+                    result = t("Đã lưu vào thư mục Download: ", "Saved to Download: ") + fileName
+                } else {
+                    val f = File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), fileName)
+                    out = FileOutputStream(f)
+                    result = t("Đã lưu: ", "Saved: ") + f.absolutePath
+                }
+                out.use { it.write(png) }
+            } catch (e: Exception) {
+                result = t("Không chụp được: ", "Screenshot failed: ") + e.message
+            }
+            val msg = result
+            ui.post { if (!isFinishing) Toast.makeText(this, msg, Toast.LENGTH_LONG).show() }
+        }.start()
+    }
+
+    /** Menu, Input, TV settings, Guide, Live TV: keys that should open something. When the TV's screen ignores one, say so, so it does not look like a dead button. */
+    private fun opens(code: Int) {
+        val tv = tv
+        if (tv == null || !tv.ready()) return
+        Thread {
+            if (!tv.pressSeen(code)) ui.post {
+                if (!isFinishing && this.tv === tv) Toast.makeText(this, t("TV đã nhận nút này, nhưng màn hình hiện tại không phản hồi", "The TV got the key, but the current screen did not react"), Toast.LENGTH_SHORT).show()
+            }
+        }.start()
+    }
+
     private fun keys(height: Int, vararg labelAndCode: Any): LinearLayout {
         val row = LinearLayout(this)
         for (i in labelAndCode.indices step 2) {
@@ -1241,7 +1350,17 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             else {
                 val b = if (bar > 0) icon(label, say, BTN) else button(label, BTN)
                 if (bar < 0) b.textSize = 18f
-                bindKey(b, code, box(HELD, 16))
+                if (code == SHOT) b.setOnClickListener { shot() }
+                else if (code in Tv.OPENERS) {
+                    val normal = b.background
+                    val held = box(HELD, 16)
+                    b.setOnTouchListener { _, e ->                    // amber while touched, like the other keys
+                        if (e.actionMasked == MotionEvent.ACTION_DOWN) b.background = held
+                        else if (e.actionMasked == MotionEvent.ACTION_UP || e.actionMasked == MotionEvent.ACTION_CANCEL) b.background = normal
+                        false
+                    }
+                    b.setOnClickListener { opens(code) }
+                } else bindKey(b, code, box(HELD, 16))
                 v = b
             }
             row.addView(v, cell(height, i > 0))

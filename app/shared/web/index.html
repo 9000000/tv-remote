@@ -22,13 +22,13 @@
   #tvmsg { position:absolute; left:0; right:0; bottom:8px; text-align:center; color:#cbd5e1; font-size:13px; pointer-events:none; }
   #watch.on { background:var(--accent); color:var(--accent-ink); }
   header { display:flex; align-items:center; justify-content:space-between; gap:10px; }
-  h1 { font-size:18px; margin:0; } .sub { color:var(--muted); font-size:13px; } .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--muted); margin-right:6px; } .dot.ok { background:var(--ok); } .dot.bad { background:var(--bad); }
+  h1 { font-size:18px; margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } header > div { min-width:0; } header > span { flex:none; } .sub { color:var(--muted); font-size:13px; } .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--muted); margin-right:6px; } .dot.ok { background:var(--ok); } .dot.bad { background:var(--bad); }
   h2 { font-size:12px; margin:0 0 10px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
   button { font:inherit; color:var(--ink); background:var(--btn); border:0; border-radius:16px; min-height:52px; cursor:pointer; touch-action:manipulation; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; display:flex; align-items:center; justify-content:center; gap:3px; flex-direction:column; padding:0; }
   button:hover { background:var(--btn-hi); } button:active { transform:scale(.97); } button.held { background:#f59e0b !important; color:#1a1200 !important; }
   .ic { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
   .rc { display:flex; flex-direction:column; align-items:center; gap:16px; }
-  .rrow { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; width:100%; } .rrow.three { grid-template-columns:repeat(3,1fr); } .rrow.four { grid-template-columns:repeat(4,1fr); } #numpad[hidden] { display:none; } #live.on { background:var(--accent); color:var(--accent-ink); } .rrow.five { grid-template-columns:repeat(5,1fr); gap:8px; }
+  .rrow { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; width:100%; } .rrow.three { grid-template-columns:repeat(3,1fr); } .rrow.four { grid-template-columns:repeat(4,1fr); } #numpad[hidden], #more[hidden] { display:none; } .rrow.lab button { min-height:60px; } #morebtn.on { background:var(--accent); color:var(--accent-ink); } #live.on { background:var(--accent); color:var(--accent-ink); } .rrow.five { grid-template-columns:repeat(5,1fr); gap:8px; }
   button small { font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
   .power { color:var(--bad); } .play { background:var(--ink); color:var(--card); } .play:hover { background:var(--ink); }
   .dpad { position:relative; width:min(250px, 70vw); aspect-ratio:1; border-radius:50%; background:var(--btn); border:1px solid var(--line); box-shadow:inset 0 2px 12px rgba(0,0,0,.18); }
@@ -36,7 +36,10 @@
   .dpad .up { top:2%; left:33%; } .dpad .down { bottom:2%; left:33%; } .dpad .left { left:2%; top:33%; } .dpad .right { right:2%; top:33%; }
   .dpad .ok { top:31%; left:31%; width:38%; height:38%; background:var(--accent); color:var(--accent-ink); font-size:17px; font-weight:700; box-shadow:0 4px 14px rgba(0,0,0,.25); }
   .vol { display:flex; align-items:center; gap:10px; width:100%; } .vol button { width:46px; min-height:46px; border-radius:50%; flex:none; } .vol .bar { flex:1; height:8px; border-radius:4px; background:var(--btn); overflow:hidden; } .vol .bar i { display:block; height:100%; width:0; background:var(--accent); transition:width .2s; }
-  .vol output { width:54px; text-align:right; font-weight:700; font-variant-numeric:tabular-nums; font-size:14px; } .vol .on { color:var(--bad); }
+  .cluster { display:grid; grid-template-columns:1fr 2.4fr 1fr; gap:10px; width:100%; align-items:stretch; } .cluster .mid { display:grid; grid-template-columns:1fr 1fr; gap:8px; } .cluster .mid button { min-height:58px; }
+  .pill { display:flex; flex-direction:column; align-items:stretch; justify-content:space-between; background:var(--btn); border-radius:28px; overflow:hidden; } .pill button { flex:1; background:transparent; border-radius:0; min-height:64px; } .pill output, .pill span { text-align:center; font-weight:700; font-size:14px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  button.play small { color:inherit; opacity:.7; }
+  .vol output { min-width:54px; white-space:nowrap; text-align:right; font-weight:700; font-variant-numeric:tabular-nums; font-size:14px; } .vol .on { color:var(--bad); }
   form { display:flex; gap:8px; } input { flex:1; min-width:0; font:inherit; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:14px; padding:0 14px; min-height:50px; }
   form button { width:56px; flex:none; } .primary { background:var(--accent); color:var(--accent-ink); font-weight:700; } .primary:hover { background:var(--accent); filter:brightness(1.08); }
   .tiles { display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:10px; }
@@ -69,7 +72,7 @@
   .kv { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 14px; font-size:14px; } .kv .k { color:var(--muted); overflow-wrap:anywhere; min-width:0; } .kv .v { font-weight:600; text-align:right; max-width:60vw; overflow-wrap:anywhere; }
   .meter { margin:10px 0 0; font-size:14px; } .meter .top { display:flex; justify-content:space-between; gap:8px; } .mbar { height:10px; border-radius:5px; background:var(--btn); overflow:hidden; margin-top:6px; } .mbar i { display:block; height:100%; background:var(--accent); border-radius:5px; }
   .meter.hi .mbar i { background:#f59e0b; } .meter.max .mbar i { background:var(--bad); }
-  .job { padding:8px 0; border-top:1px solid var(--line); font-size:13px; } .job:first-child { border-top:0; } .job.error .msg { color:var(--bad); } .job.done .msg { color:var(--ok); }
+  .job { padding:8px 0; border-top:1px solid var(--line); font-size:13px; } .job:first-child { border-top:0; } .job.error .msg { color:var(--bad); } .job.done .msg { color:var(--ok); } .job .msg { white-space:pre-wrap; } #termhist { width:100%; margin:0 0 10px; min-height:44px; border-radius:12px; background:var(--btn); color:var(--ink); border:0; padding:0 12px; font:inherit; } #termhist[hidden] { display:none; }
   .term { background:#0b0d10; color:#d7e0ea; border-radius:12px; padding:12px; font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; white-space:pre-wrap; overflow-wrap:anywhere; height:min(52vh, 460px); overflow:auto; margin:0 0 10px; }
   .term .cmd { color:#7fb0ff; } .term .err { color:#ff8a80; } .mono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:14px; }
   #toast { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:9px 16px; border-radius:10px; font-size:14px; opacity:0; transition:opacity .2s; pointer-events:none; max-width:90vw; z-index:20; } #toast.show { opacity:.94; }
@@ -79,7 +82,7 @@
 </style>
 </head>
 <body>
-<!-- icons:start --><svg xmlns="http://www.w3.org/2000/svg" style="display:none"><symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol><symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol><symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol><symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol><symbol id="i-power" viewBox="0 0 24 24"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol><symbol id="i-back" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol><symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M21 4h-7"/><path d="M10 4H3"/><path d="M21 12h-9"/><path d="M8 12H3"/><path d="M21 20h-5"/><path d="M12 20H3"/><path d="M14 2v4"/><path d="M8 10v4"/><path d="M16 18v4"/></symbol><symbol id="i-vol_up" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></symbol><symbol id="i-vol_down" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></symbol><symbol id="i-mute" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="i-play_pause" viewBox="0 0 24 24"><path d="M4 5l9 7-9 7z"/><path d="M17 5v14"/><path d="M21 5v14"/></symbol><symbol id="i-prev" viewBox="0 0 24 24"><path d="M19 20 9 12l10-8v16z"/><path d="M5 19V5"/></symbol><symbol id="i-next" viewBox="0 0 24 24"><path d="M5 4l10 8-10 8V4z"/><path d="M19 5v14"/></symbol><symbol id="i-backspace" viewBox="0 0 24 24"><path d="M20 5H9l-7 7 7 7h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/><path d="m18 9-6 6"/><path d="m12 9 6 6"/></symbol><symbol id="i-enter" viewBox="0 0 24 24"><path d="M9 10 4 15l5 5"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></symbol><symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol><symbol id="i-apps" viewBox="0 0 24 24"><path d="M3 3h7v7H3z"/><path d="M14 3h7v7h-7z"/><path d="M14 14h7v7h-7z"/><path d="M3 14h7v7H3z"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/></symbol><symbol id="i-eye_off" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/><path d="M3 3l18 18"/></symbol><symbol id="i-wake" viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M6.34 17.66l-1.41 1.41"/><path d="M19.07 4.93l-1.41 1.41"/></symbol><symbol id="i-input" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><path d="M11 3a8 8 0 1 0 0 16a8 8 0 1 0 0-16"/><path d="m21 21-4.3-4.3"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/><path d="M12 2v3"/><path d="M12 19v3"/><path d="M2 12h3"/><path d="M19 12h3"/><path d="M4.9 4.9l2.2 2.2"/><path d="M16.9 16.9l2.2 2.2"/><path d="M4.9 19.1l2.2-2.2"/><path d="M16.9 7.1l2.2-2.2"/></symbol><symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol><symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></symbol><symbol id="i-plug_off" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="M6 6l12 12"/><path d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20"/></symbol></svg><!-- icons:end -->
+<!-- icons:start --><svg xmlns="http://www.w3.org/2000/svg" style="display:none"><symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol><symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol><symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol><symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol><symbol id="i-power" viewBox="0 0 24 24"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol><symbol id="i-back" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol><symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M21 4h-7"/><path d="M10 4H3"/><path d="M21 12h-9"/><path d="M8 12H3"/><path d="M21 20h-5"/><path d="M12 20H3"/><path d="M14 2v4"/><path d="M8 10v4"/><path d="M16 18v4"/></symbol><symbol id="i-vol_up" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></symbol><symbol id="i-vol_down" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></symbol><symbol id="i-mute" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="i-play_pause" viewBox="0 0 24 24"><path d="M4 5l9 7-9 7z"/><path d="M17 5v14"/><path d="M21 5v14"/></symbol><symbol id="i-prev" viewBox="0 0 24 24"><path d="M19 20 9 12l10-8v16z"/><path d="M5 19V5"/></symbol><symbol id="i-next" viewBox="0 0 24 24"><path d="M5 4l10 8-10 8V4z"/><path d="M19 5v14"/></symbol><symbol id="i-backspace" viewBox="0 0 24 24"><path d="M20 5H9l-7 7 7 7h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/><path d="m18 9-6 6"/><path d="m12 9 6 6"/></symbol><symbol id="i-enter" viewBox="0 0 24 24"><path d="M9 10 4 15l5 5"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></symbol><symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol><symbol id="i-apps" viewBox="0 0 24 24"><path d="M3 3h7v7H3z"/><path d="M14 3h7v7h-7z"/><path d="M14 14h7v7h-7z"/><path d="M3 14h7v7H3z"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/></symbol><symbol id="i-eye_off" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/><path d="M3 3l18 18"/></symbol><symbol id="i-wake" viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M6.34 17.66l-1.41 1.41"/><path d="M19.07 4.93l-1.41 1.41"/></symbol><symbol id="i-input" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><path d="M11 3a8 8 0 1 0 0 16a8 8 0 1 0 0-16"/><path d="m21 21-4.3-4.3"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/><path d="M12 2v3"/><path d="M12 19v3"/><path d="M2 12h3"/><path d="M19 12h3"/><path d="M4.9 4.9l2.2 2.2"/><path d="M16.9 16.9l2.2 2.2"/><path d="M4.9 19.1l2.2-2.2"/><path d="M16.9 7.1l2.2-2.2"/></symbol><symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol><symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></symbol><symbol id="i-more" viewBox="0 0 24 24"><path d="M5 12h.01"/><path d="M12 12h.01"/><path d="M19 12h.01"/></symbol><symbol id="i-info" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol><symbol id="i-guide" viewBox="0 0 24 24"><path d="M3 5h18v14H3z"/><path d="M3 10h18"/><path d="M9 10v9"/></symbol><symbol id="i-tv" viewBox="0 0 24 24"><path d="M3 7h18v13H3z"/><path d="m17 2-5 5-5-5"/></symbol><symbol id="i-subtitle" viewBox="0 0 24 24"><path d="M3 5h18v14H3z"/><path d="M7 15h4"/><path d="M15 15h2"/><path d="M7 11h2"/><path d="M13 11h4"/></symbol><symbol id="i-rewind" viewBox="0 0 24 24"><path d="M11 19 2 12l9-7v14z"/><path d="M22 19l-9-7 9-7v14z"/></symbol><symbol id="i-ffwd" viewBox="0 0 24 24"><path d="M13 19l9-7-9-7v14z"/><path d="M2 19l9-7-9-7v14z"/></symbol><symbol id="i-stop" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></symbol><symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><path d="M12 10a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/></symbol><symbol id="i-plug_off" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="M6 6l12 12"/><path d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20"/></symbol></svg><!-- icons:end -->
 <main id="main">
   <header class="card">
     <div><h1 id="name">TV Remote</h1><div class="sub"><span class="dot" id="dot"></span><span id="status">...</span></div></div>
@@ -111,11 +114,14 @@
       <button type="button" id="tvexit"><svg class="ic"><use href="#i-close"/></svg></button>
       <div id="tvmsg"></div>
     </div>
-    <div class="rrow four">
+    <div class="rrow three">
       <button class="power" data-k="POWER"><svg class="ic"><use href="#i-power"/></svg></button>
-      <button data-k="INPUT"><svg class="ic"><use href="#i-input"/></svg></button>
-      <button data-k="SETTINGS"><svg class="ic"><use href="#i-settings"/></svg></button>
       <button data-k="ASSIST" title="Google Assistant"><svg class="ic"><use href="#i-mic"/></svg></button>
+      <button type="button" id="morebtn"><svg class="ic"><use href="#i-more"/></svg></button>
+    </div>
+    <div class="rrow four lab" id="more" hidden>
+      <button data-k="INPUT"><svg class="ic"><use href="#i-input"/></svg><small data-t="k_input"></small></button><button data-k="SETTINGS"><svg class="ic"><use href="#i-settings"/></svg><small data-t="k_set"></small></button><button data-k="INFO"><svg class="ic"><use href="#i-info"/></svg><small data-t="k_info"></small></button><button data-k="GUIDE"><svg class="ic"><use href="#i-guide"/></svg><small data-t="k_guide"></small></button>
+      <button data-k="LIVE"><svg class="ic"><use href="#i-tv"/></svg><small data-t="k_live"></small></button><button data-k="SUBTITLE"><svg class="ic"><use href="#i-subtitle"/></svg><small data-t="k_subs"></small></button><button data-k="STOP"><svg class="ic"><use href="#i-stop"/></svg><small data-t="k_stop"></small></button><button type="button" id="shot"><svg class="ic"><use href="#i-camera"/></svg><small data-t="k_shot"></small></button>
     </div>
     <div class="dpad">
       <button class="up" data-k="UP"><svg class="ic"><use href="#i-up"/></svg></button>
@@ -124,22 +130,19 @@
       <button class="right" data-k="RIGHT"><svg class="ic"><use href="#i-right"/></svg></button>
       <button class="down" data-k="DOWN"><svg class="ic"><use href="#i-down"/></svg></button>
     </div>
-    <div class="rrow three">
-      <button data-k="BACK" style="min-height:60px"><svg class="ic"><use href="#i-back"/></svg><small data-t="back"></small></button>
-      <button data-k="HOME" style="min-height:60px"><svg class="ic"><use href="#i-home"/></svg><small>Home</small></button>
-      <button data-k="MENU" style="min-height:60px"><svg class="ic"><use href="#i-menu"/></svg><small>Menu</small></button>
+    <div class="rrow three lab">
+      <button data-k="BACK"><svg class="ic"><use href="#i-back"/></svg><small data-t="back"></small></button>
+      <button data-k="HOME"><svg class="ic"><use href="#i-home"/></svg><small>Home</small></button>
+      <button data-k="MENU"><svg class="ic"><use href="#i-menu"/></svg><small>Menu</small></button>
     </div>
-    <div class="vol">
-      <button data-k="MUTE" id="mute"><svg class="ic"><use href="#i-mute"/></svg></button>
-      <button data-k="VOL_DOWN"><svg class="ic"><use href="#i-minus"/></svg></button>
-      <div class="bar"><i id="volbar"></i></div>
-      <button data-k="VOL_UP"><svg class="ic"><use href="#i-plus"/></svg></button>
-      <output id="volv">–</output>
-    </div>
-    <div class="rrow three">
-      <button data-k="PREV"><svg class="ic"><use href="#i-prev"/></svg></button>
-      <button class="play" data-k="PLAY_PAUSE"><svg class="ic"><use href="#i-play_pause"/></svg></button>
-      <button data-k="NEXT"><svg class="ic"><use href="#i-next"/></svg></button>
+    <div class="cluster">
+      <div class="pill"><button data-k="VOL_UP"><svg class="ic"><use href="#i-plus"/></svg></button><output id="volv">–</output><button data-k="VOL_DOWN"><svg class="ic"><use href="#i-minus"/></svg></button></div>
+      <div class="mid lab">
+        <button data-k="MUTE" id="mute"><svg class="ic"><use href="#i-mute"/></svg><small data-t="k_mute"></small></button><button class="play" data-k="PLAY_PAUSE"><svg class="ic"><use href="#i-play_pause"/></svg><small data-t="k_play"></small></button>
+        <button data-k="PREV"><svg class="ic"><use href="#i-prev"/></svg><small data-t="k_prev"></small></button><button data-k="NEXT"><svg class="ic"><use href="#i-next"/></svg><small data-t="k_next"></small></button>
+        <button data-k="REWIND"><svg class="ic"><use href="#i-rewind"/></svg><small data-t="k_rew"></small></button><button data-k="FFWD"><svg class="ic"><use href="#i-ffwd"/></svg><small data-t="k_ffwd"></small></button>
+      </div>
+      <div class="pill"><button data-k="CH_UP"><svg class="ic"><use href="#i-up"/></svg></button><span data-t="k_ch"></span><button data-k="CH_DOWN"><svg class="ic"><use href="#i-down"/></svg></button></div>
     </div>
     <form id="textf" style="width:100%"><button type="button" id="live">⚡</button><input id="text" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="primary" id="textsend"><svg class="ic"><use href="#i-send"/></svg></button><button type="button" id="ask"><svg class="ic"><use href="#i-search"/></svg></button></form>
     <div class="rrow three">
@@ -186,6 +189,14 @@
       <p class="muted" data-t="inst_note" style="margin:10px 0 0"></p>
     </section>
     <section class="card">
+      <h2 data-t="opt_title"></h2>
+      <p class="muted" data-t="opt_note" style="margin:0 0 12px"></p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="primary small" id="optapply" data-t="opt_apply" style="min-height:44px;padding:0 18px"></button>
+        <button class="small" id="optundo" data-t="opt_undo" style="min-height:44px;padding:0 18px"></button>
+      </div>
+    </section>
+    <section class="card">
       <h2 data-t="fetch_title"></h2>
       <form id="fetchf"><input id="fetchurl" inputmode="url" autocomplete="off" placeholder="https://.../file.zip"><button class="primary"><svg class="ic"><use href="#i-check"/></svg></button></form>
       <p class="muted" data-t="fetch_note" style="margin:10px 0 0"></p>
@@ -196,7 +207,7 @@
     <div class="muted" id="hwait" data-t="loading" style="text-align:center;padding:18px 0"></div>
     <div id="hbody" class="panel" hidden>
     <section class="card"><h2 data-t="h_sum"></h2><div class="kv" id="hsum"></div></section>
-    <section class="card"><h2 data-t="h_load"></h2><div id="hload"></div><h2 style="margin-top:14px" data-t="h_top"></h2><div class="kv" id="htop"></div></section>
+    <section class="card"><h2 data-t="h_load"></h2><div id="hload"></div><button class="small" id="freeram" data-t="free_ram" style="margin-top:12px;min-height:44px;padding:0 16px"></button><h2 style="margin-top:14px" data-t="h_top"></h2><div class="kv" id="htop"></div></section>
     <section class="card"><h2 data-t="h_net"></h2><div class="kv" id="hnet"></div></section>
     <section class="card"><h2 data-t="h_hw"></h2><div class="kv" id="hhw"></div></section>
     </div>
@@ -205,6 +216,7 @@
   <div class="panel" data-panel="term" hidden>
     <section class="card">
       <pre class="term" id="termout"></pre>
+      <select id="termhist" hidden></select>
       <form id="termf"><input id="termin" class="mono" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ls /sdcard"><button class="primary"><svg class="ic"><use href="#i-enter"/></svg></button></form>
       <p class="muted" data-t="term_note" style="margin:10px 0 0"></p>
     </section>
@@ -220,14 +232,14 @@ const T = {
   vi: { pair_title: 'Ghép với TV', pair_text: 'Bấm nút dưới đây, TV sẽ hiện một mã 6 số. Nhập mã đó vào đây để điều khiển TV từ thiết bị này. Chỉ cần làm một lần.', pair_show: 'Hiện mã trên TV',
         wrong: 'Sai mã, thử lại.', expired: 'Mã đã hết hạn. Bấm “Hiện mã trên TV” lần nữa.', wait: 'Nhìn lên TV và nhập mã 6 số.', back: 'Quay lại', mute: 'Tắt tiếng', apps: 'Ứng dụng', text: 'Gõ chữ rồi bấm gửi, hoặc câu hỏi rồi bấm kính lúp', text_live: 'Gõ trực tiếp: TV nhận từng chữ', live_on: 'Đang gõ trực tiếp. Bấm để chuyển sang gõ xong rồi gửi', live_off: 'Đang gõ xong rồi gửi. Bấm để chuyển sang gõ trực tiếp',
         on: 'đang bật', off: 'màn hình tắt', lost: 'mất kết nối tới TV', other: 'VI',
-        term_note: 'Chạy lệnh với quyền shell của TV (như adb shell). Mỗi lệnh chạy riêng, tối đa 30 giây; lệnh chờ gõ tiếp như top, logcat không dùng được. Phím ↑ ↓ gọi lại lệnh cũ.', running: 'đang chạy...', cutoff: '[đã cắt: quá 30 giây hoặc quá dài]',
+        term_note: 'Chạy lệnh với quyền shell của TV (như adb shell). Mỗi lệnh chạy riêng, tối đa 30 giây; lệnh chờ gõ tiếp như top, logcat không dùng được. Chọn lại lệnh cũ ở danh sách phía trên ô gõ.', term_hist: 'Lệnh đã chạy...', opt_title: 'Tối ưu TV', opt_note: 'Giữ Tailscale sống qua chế độ chờ, tắt hiệu ứng chuyển cảnh, thay màn hình chính Google bằng FLauncher (nhẹ CPU) và tắt app hệ thống không dùng. Không gỡ cài đặt gì, chạy lại bao nhiêu lần cũng được.', opt_apply: '⚡ Tối ưu TV', opt_undo: '↩ Hoàn tác', ask_opt: 'Tối ưu TV? Màn hình chính của TV sẽ đổi sang FLauncher.', ask_undo: 'Hoàn tác? Màn hình chính Google và các app đã tắt được bật lại.', running: 'đang chạy...', cutoff: '[đã cắt: quá 30 giây hoặc quá dài]',
         t_apps: 'Ứng dụng', t_files: 'Tệp', t_install: 'Cài', t_health: 'Sức khỏe', sys: 'Hiện cả app hệ thống', search_app: 'Tìm app', open: 'Mở', stop: 'Dừng', remove: 'Gỡ', loading: 'Đang tải...',
-        ask_remove: 'Gỡ cài đặt {0} khỏi TV?', v_start: 'Đang mở hình TV...', v_q: 'Chất lượng hình (bấm để đổi): 240 nhẹ nhất, 960 nét nhất', v_fail: 'Không xem được hình TV trên trình duyệt này', v_end: 'Hình TV đã dừng. Bấm nút con mắt để xem lại', watch: 'Xem hình TV', ask_off: 'Đưa TV về chế độ chờ?', done: 'Xong', none: 'Không có gì.', folder: 'Thư mục', filter: 'Lọc trong thư mục này', upload: '＋ Chọn file để gửi lên thư mục này',
+        ask_remove: 'Gỡ cài đặt {0} khỏi TV?', v_start: 'Đang mở hình TV...', v_q: 'Chất lượng hình (bấm để đổi): 240 nhẹ nhất, 960 nét nhất', v_fail: 'Không xem được hình TV trên trình duyệt này', v_end: 'Hình TV đã dừng', watch: 'Xem hình TV', ask_off: 'Đưa TV về chế độ chờ?', done: 'Xong', none: 'Không có gì.', folder: 'Thư mục', filter: 'Lọc trong thư mục này', upload: '＋ Chọn file để gửi lên thư mục này',
         tvmem: 'Bộ nhớ TV', movies: 'Phim', pics: 'Ảnh', music: 'Nhạc', free: 'Còn trống {0} / {1} · {2} mục', items: '{0} mục', newname: 'Tên mới:', newfolder: 'Tên thư mục mới:',
-        ask_del: 'Xóa {0}?', ask_deldir: 'Xóa thư mục {0} và mọi thứ bên trong?', ask_inst: 'Cài {0} lên TV?', dl: 'Tải về máy này', ren: 'Đổi tên', del: 'Xóa', onTv: 'Mở trên TV', inst: 'Cài', cancel: 'Hủy', more: 'Thao tác khác', opendir: 'Mở thư mục',
+        k_input: 'Ngõ vào', k_set: 'Cài đặt', k_info: 'Thông tin', k_guide: 'Lịch phát', k_live: 'TV', k_subs: 'Phụ đề', k_ch: 'Kênh', k_mute: 'Tắt tiếng', k_play: 'Phát / Dừng', k_prev: 'Bài trước', k_next: 'Bài sau', k_rew: 'Tua lại', k_stop: 'Dừng', k_ffwd: 'Tua tới', k_shot: 'Chụp màn hình', noop: 'TV đã nhận nút này, nhưng màn hình hiện tại không phản hồi', ask_del: 'Xóa {0}?', ask_deldir: 'Xóa thư mục {0} và mọi thứ bên trong?', ask_inst: 'Cài {0} lên TV?', dl: 'Tải về máy này', ren: 'Đổi tên', del: 'Xóa', onTv: 'Mở trên TV', inst: 'Cài', cancel: 'Hủy', more: 'Thao tác khác', opendir: 'Mở thư mục',
         inst_apk: 'Cài APK lên TV', pick_apk: 'Chọn file .apk từ máy này', inst_note: 'Dán link tới file .apk rồi bấm ✓, hoặc chọn file. Chỉ cài APK bạn tin tưởng.', apk_link: 'Link tới file .apk',
         fetch_title: 'Tải file từ link về TV', fetch_note: 'Lưu vào thư mục Download của TV.', jobs: 'Tiến trình', sending: 'đang gửi {0}', installing: 'đang cài {0}', installed: 'đã cài', sent: 'đã gửi',
-        h_sum: 'Tổng quan', h_load: 'Tải hệ thống', h_top: 'Tiến trình tốn CPU nhất', h_net: 'Mạng', h_hw: 'Phần cứng', power: 'Nguồn', cur: 'Ứng dụng đang mở', lat: 'Độ trễ tới TV (ADB)', up: 'TV chạy liên tục',
+        free_ram: '🧹 Giải phóng RAM', freed: 'Đã lấy lại {0} MB · còn trống {1} MB', h_sum: 'Tổng quan', h_load: 'Tải hệ thống', h_top: 'Tiến trình tốn CPU nhất', h_net: 'Mạng', h_hw: 'Phần cứng', power: 'Nguồn', cur: 'Ứng dụng đang mở', lat: 'Độ trễ tới TV (ADB)', up: 'TV chạy liên tục',
         used: 'đã dùng {0} / {1}', disk: 'Bộ nhớ trong', cores: '{0} nhân', sig: 'Tín hiệu', speed: 'Tốc độ kết nối', band: 'Băng tần', ip_home: 'IP trong nhà', ip_ts: 'IP Tailscale', ip_eth: 'IP dây mạng',
         dev: 'Máy', patch: 'Bản vá bảo mật', arch: 'Kiến trúc', ncores: 'Số nhân CPU', scr: 'Màn hình', dens: 'Mật độ điểm ảnh', sgood: ['rất tốt', 'tốt', 'trung bình', 'yếu'], day: 'ngày', hour: 'giờ', min: 'phút', nowifi: 'không kết nối',
         adb_allow: 'TV đang hỏi “Cho phép gỡ lỗi USB?”: tích “Luôn cho phép” rồi chọn OK thì các nút mới chạy.',
@@ -235,14 +247,14 @@ const T = {
   en: { pair_title: 'Pair with the TV', pair_text: 'Press the button below; the TV shows a 6-digit code. Type it here to control the TV from this device. You only do this once.', pair_show: 'Show the code on the TV',
         wrong: 'Wrong code, try again.', expired: 'The code expired. Press “Show the code on the TV” again.', wait: 'Look at the TV and type the 6-digit code.', back: 'Back', mute: 'Mute', apps: 'Apps', text: 'Type then send, or a question then the magnifier', text_live: 'Live: the TV gets every letter', live_on: 'Live typing is on. Tap to type first, then send', live_off: 'Type-then-send is on. Tap for live typing',
         on: 'on', off: 'screen off', lost: 'lost the TV', other: 'EN',
-        term_note: 'Runs commands as the TV’s shell user (like adb shell). Each command runs on its own, for at most 30 seconds; interactive ones such as top or logcat do not work. ↑ ↓ recall earlier commands.', running: 'running...', cutoff: '[cut: over 30 seconds or too long]',
+        term_note: 'Runs commands as the TV’s shell user (like adb shell). Each command runs on its own, for at most 30 seconds; interactive ones such as top or logcat do not work. Pick an earlier command from the list above the box.', term_hist: 'Earlier commands...', opt_title: 'Optimize TV', opt_note: 'Keeps Tailscale alive through standby, turns off transition animations, replaces Google’s home screen with FLauncher (light on CPU) and disables unused system apps. Nothing is uninstalled, and it is safe to run again.', opt_apply: '⚡ Optimize TV', opt_undo: '↩ Undo', ask_opt: 'Optimize the TV? Its home screen will change to FLauncher.', ask_undo: 'Undo? Google’s home screen and the disabled apps are turned back on.', running: 'running...', cutoff: '[cut: over 30 seconds or too long]',
         t_apps: 'Apps', t_files: 'Files', t_install: 'Install', t_health: 'Health', sys: 'Show system apps too', search_app: 'Search apps', open: 'Open', stop: 'Stop', remove: 'Uninstall', loading: 'Loading...',
-        ask_remove: 'Uninstall {0} from the TV?', v_start: 'Opening the TV picture...', v_q: 'Picture quality (tap to change): 240 is the lightest, 960 the sharpest', v_fail: 'This browser cannot show the TV picture', v_end: 'The picture stopped. Tap the eye to watch again', watch: 'Show the TV picture', ask_off: 'Put the TV in standby?', done: 'Done', none: 'Nothing here.', folder: 'Folder', filter: 'Filter this folder', upload: '＋ Choose files to send to this folder',
+        ask_remove: 'Uninstall {0} from the TV?', v_start: 'Opening the TV picture...', v_q: 'Picture quality (tap to change): 240 is the lightest, 960 the sharpest', v_fail: 'This browser cannot show the TV picture', v_end: 'The picture stopped', watch: 'Show the TV picture', ask_off: 'Put the TV in standby?', done: 'Done', none: 'Nothing here.', folder: 'Folder', filter: 'Filter this folder', upload: '＋ Choose files to send to this folder',
         tvmem: 'TV storage', movies: 'Movies', pics: 'Pictures', music: 'Music', free: '{0} free of {1} · {2} items', items: '{0} items', newname: 'New name:', newfolder: 'New folder name:',
-        ask_del: 'Delete {0}?', ask_deldir: 'Delete the folder {0} and everything in it?', ask_inst: 'Install {0} on the TV?', dl: 'Download to this device', ren: 'Rename', del: 'Delete', onTv: 'Open on the TV', inst: 'Install', cancel: 'Cancel', more: 'More actions', opendir: 'Open folder',
+        k_input: 'Input', k_set: 'Settings', k_info: 'Info', k_guide: 'Guide', k_live: 'Live TV', k_subs: 'Subtitles', k_ch: 'CH', k_mute: 'Mute', k_play: 'Play / Pause', k_prev: 'Previous', k_next: 'Next', k_rew: 'Rewind', k_stop: 'Stop', k_ffwd: 'Forward', k_shot: 'Screenshot', noop: 'The TV got the key, but the current screen did not react', ask_del: 'Delete {0}?', ask_deldir: 'Delete the folder {0} and everything in it?', ask_inst: 'Install {0} on the TV?', dl: 'Download to this device', ren: 'Rename', del: 'Delete', onTv: 'Open on the TV', inst: 'Install', cancel: 'Cancel', more: 'More actions', opendir: 'Open folder',
         inst_apk: 'Install an APK on the TV', pick_apk: 'Choose an .apk file from this device', inst_note: 'Paste a link to an .apk file and press ✓, or choose a file. Only install APKs you trust.', apk_link: 'Link to an .apk file',
         fetch_title: 'Download a file from a link to the TV', fetch_note: 'Saved to the TV’s Download folder.', jobs: 'Progress', sending: 'sending {0}', installing: 'installing {0}', installed: 'installed', sent: 'sent',
-        h_sum: 'Overview', h_load: 'System load', h_top: 'Top CPU processes', h_net: 'Network', h_hw: 'Hardware', power: 'Power', cur: 'Current app', lat: 'Latency to the TV (ADB)', up: 'Uptime',
+        free_ram: '🧹 Free up RAM', freed: 'Got back {0} MB · {1} MB free', h_sum: 'Overview', h_load: 'System load', h_top: 'Top CPU processes', h_net: 'Network', h_hw: 'Hardware', power: 'Power', cur: 'Current app', lat: 'Latency to the TV (ADB)', up: 'Uptime',
         used: '{0} used of {1}', disk: 'Internal storage', cores: '{0} cores', sig: 'Signal', speed: 'Link speed', band: 'Band', ip_home: 'Home IP', ip_ts: 'Tailscale IP', ip_eth: 'Ethernet IP',
         dev: 'Device', patch: 'Security patch', arch: 'Architecture', ncores: 'CPU cores', scr: 'Screen', dens: 'Pixel density', sgood: ['excellent', 'good', 'fair', 'weak'], day: 'd', hour: 'h', min: 'min', nowifi: 'not connected',
         adb_allow: 'The TV is asking “Allow USB debugging?”: tick “Always allow”, then OK, and the buttons will work.',
@@ -298,7 +310,7 @@ async function refresh() {
   show(true); tvOn = !!s.on;
   $('#name').textContent = s.name; document.title = s.name + ' · Remote';
   $('#status').textContent = t(s.on ? 'on' : 'off'); $('#dot').className = 'dot ' + (s.on ? 'ok' : '');
-  $('#volv').textContent = s.volume + ' / ' + s.volume_max; $('#volbar').style.width = (s.volume_max ? s.volume * 100 / s.volume_max : 0) + '%';
+  $('#volv').textContent = s.volume;
   $('#mute').classList.toggle('power', !!s.muted);
   const w = $('#adbwarn'); w.hidden = s.adb === 'ready'; if (s.adb !== 'ready') w.textContent = t(s.adb === 'allow' ? 'adb_allow' : 'adb_off');
 }
@@ -318,7 +330,7 @@ async function watch(on) {
   if (!on) return;
   const msg = (m) => { $('#tvmsg').textContent = m; };
   msg(t('v_start'));
-  try { if (!window.JMuxer) await loadScript('/jmuxer.min.js'); } catch { msg(t('v_fail')); return; }
+  try { if (!window.JMuxer) await loadScript('/jmuxer.min.js'); } catch { watch(false); toast(t('v_fail')); return; }
   const video = $('#tvv'), abort = new AbortController(), step = Math.round(1000 / QUAL[qual][1]);
   const mux = new JMuxer({ node: video, mode: 'video', flushingTime: 0, fps: QUAL[qual][1], clearBuffer: true, onError: () => {} });
   const edge = setInterval(() => {                                    // stay on the newest frame instead of playing a growing backlog
@@ -347,8 +359,8 @@ async function watch(on) {
         }
       }
     }
-    if (watching === me) msg(t('v_end'));
-  } catch (e) { if (watching === me) msg(t('v_fail')); }
+    if (watching === me) { watch(false); toast(t('v_end')); }       // back to the plain remote: no dead picture, no buttons for it
+  } catch (e) { if (watching === me) { watch(false); toast(t('v_fail')); } }
 }
 $('#watch').addEventListener('click', () => watch(!watching));
 $('#tvq').addEventListener('click', () => { qual = LEVELS[(LEVELS.indexOf(qual) + 1) % LEVELS.length]; try { localStorage.setItem('quality', qual); } catch {} watch(true); });
@@ -369,7 +381,7 @@ $('#tvexit').addEventListener('click', () => document.exitFullscreen());
 // ---------- keys: tap = one press, hold = long press on the TV ----------
 document.querySelectorAll('[data-k]').forEach((b) => {
   const key = b.dataset.k; let timer = null, long = false, down = false;
-  const send = (action) => { if (key === 'POWER' && tvOn && !confirm(t('ask_off'))) return; api('/api/key', { key, action }).then(() => setTimeout(refresh, 300)); };
+  const send = (action) => { if (key === 'POWER' && tvOn && !confirm(t('ask_off'))) return; api('/api/key', { key, action }).then((r) => { if (r.noop) toast(t('noop')); setTimeout(refresh, 300); }); };
   const release = (tap) => {
     if (!down) return; down = false; clearTimeout(timer);
     b.classList.remove('held');
@@ -408,6 +420,10 @@ $('#textf').addEventListener('submit', (e) => {
   $('#text').value = onTv = '';
 });
 try { setLive(!!localStorage.getItem('live')); $('#numpad').hidden = !localStorage.getItem('numpad'); } catch { setLive(false); }
+function setMore(on) { $('#more').hidden = !on; $('#morebtn').classList.toggle('on', on); try { localStorage.setItem('more', on ? '1' : ''); } catch {} }
+try { setMore(!!localStorage.getItem('more')); } catch {}
+$('#morebtn').addEventListener('click', () => setMore($('#more').hidden));
+$('#shot').addEventListener('click', () => { location.href = '/api/screenshot'; });
 $('#digits').addEventListener('click', () => { const p = $('#numpad'); p.hidden = !p.hidden; try { localStorage.setItem('numpad', p.hidden ? '' : '1'); } catch {} });
 // the magnifier hands the sentence to the TV's own search / Assistant instead of typing it
 $('#ask').addEventListener('click', async () => { const v = $('#text').value.trim(); if (v && (await api('/api/m/search', { query: v })).status === 200) $('#text').value = ''; });
@@ -564,20 +580,31 @@ async function startJob(path, body) {
 $('#upfile').addEventListener('change', (e) => { for (const f of e.target.files) send(f, '/api/m/upload?dir=' + encodeURIComponent(cwd) + '&name=' + encodeURIComponent(f.name), t('sending', f.name), () => loadFiles(cwd)); e.target.value = ''; });
 $('#apkfile').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; if (f && confirm(t('ask_inst', f.name))) send(f, '/api/m/install-upload?name=' + encodeURIComponent(f.name), t('installing', f.name), () => { allApps = null; appsLoaded = false; }); });
 $('#instf').addEventListener('submit', (e) => { e.preventDefault(); const u = $('#insturl').value.trim(); if (u && confirm(t('ask_inst', u))) { startJob('fetch', { url: u, install: true }); $('#insturl').value = ''; } });
+$('#optapply').addEventListener('click', () => { if (confirm(t('ask_opt'))) startJob('optimize', { lang }); });
+$('#optundo').addEventListener('click', () => { if (confirm(t('ask_undo'))) startJob('undo', { lang }); });
 $('#fetchf').addEventListener('submit', (e) => { e.preventDefault(); const u = $('#fetchurl').value.trim(); if (u) { startJob('fetch', { url: u }); $('#fetchurl').value = ''; } });
 
 // ---------- terminal ----------
+// Earlier commands, newest first, kept on this device: a list to pick from, since a phone keyboard has no ↑ ↓.
+function termRemember(cmd) {
+  let h = []; try { h = JSON.parse(localStorage.getItem('termhist') || '[]'); } catch {}
+  if (cmd) { h = [cmd, ...h.filter((c) => c !== cmd)].slice(0, 30); try { localStorage.setItem('termhist', JSON.stringify(h)); } catch {} }
+  const sel = $('#termhist'); sel.hidden = !h.length;
+  sel.replaceChildren(el('option', { value: '', textContent: t('term_hist') }), ...h.map((c) => el('option', { value: c, textContent: c })));
+}
+$('#termhist').addEventListener('change', (e) => { if (e.target.value) { $('#termin').value = e.target.value; $('#termin').focus(); } e.target.value = ''; });
 const termHist = []; let termPos = 0;
 function termPrint(text, cls) { const o = $('#termout'); o.append(el('span', { className: cls || '', textContent: text })); o.scrollTop = o.scrollHeight; }
 $('#termf').addEventListener('submit', async (e) => {
   e.preventDefault();
   const cmd = $('#termin').value.trim(); if (!cmd) return;
-  termHist.push(cmd); termPos = termHist.length; $('#termin').value = '';
+  termHist.push(cmd); termPos = termHist.length; $('#termin').value = ''; termRemember(cmd);
   termPrint('$ ' + cmd + '\n', 'cmd');
   const r = await api('/api/m/shell', { cmd });
   if (r.status === 200) termPrint((r.out || '') + (r.out && !r.out.endsWith('\n') ? '\n' : '') + (r.cut ? t('cutoff') + '\n' : ''));
   else termPrint((r.status === 503 ? t(String(r.error).includes('allow') ? 'adb_allow' : 'adb_off') : r.error || 'error') + '\n', 'err');
 });
+termRemember();
 $('#termin').addEventListener('keydown', (e) => {
   if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
   e.preventDefault(); termPos = Math.max(0, Math.min(termHist.length, termPos + (e.key === 'ArrowUp' ? -1 : 1))); $('#termin').value = termHist[termPos] || '';
@@ -590,6 +617,10 @@ function meter(label, pct, detail) {
   x.querySelector('i').style.width = Math.max(0, Math.min(100, pct)) + '%'; return x;
 }
 let healthBusy = false;
+$('#freeram').addEventListener('click', async (e) => {
+  e.currentTarget.disabled = true; const r = await m('free', {}); $('#freeram').disabled = false;
+  if (r) { toast(t('freed', r.freed, r.after)); loadHealth(); }
+});
 async function loadHealth() {
   if (healthBusy) return; healthBusy = true;
   const h = await m('health'); healthBusy = false;

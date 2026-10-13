@@ -57,8 +57,9 @@ def main(mode, target):
         print("tailscale: not installed, skipped", flush=True)
 
     # 2. Snappier UI
-    sh(f"for k in {ANIM}; do settings put global $k 0.5; done")
-    print("animations: 0.5x", flush=True)
+    # window and transition animations off; the animator stays at 0.5x, because at 0 loading spinners freeze
+    sh("settings put global window_animation_scale 0; settings put global transition_animation_scale 0; settings put global animator_duration_scale 0.5")
+    print("animations: off", flush=True)
 
     # 3. Unused system apps
     for p in GOOGLE + SONY + EXTRA:

@@ -4,6 +4,46 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.5.5 - 2026-10-13
+
+Web 2.5.5 · app điện thoại 2.4.6 · app TV 2.5.5
+
+**Tiếng Việt**
+- App điện thoại: **nút chất lượng hình ngay trên màn xem TV** (240p đến 960p), đổi là áp dụng luôn. Mục chất lượng trong Cài đặt được bỏ, chữ trong Cài đặt gọn lại.
+- App điện thoại: bấm **Kiểm tra ngay** mà có bản mới thì hộp cập nhật hiện ngay tại chỗ, không phải quay ra màn chọn TV.
+- Trang trên TV: hình dừng (ví dụ máy khác vào xem) thì khung hình và các nút của nó tự ẩn; tên TV dài và số âm lượng không còn bị xuống dòng.
+- **Bố cục điều khiển mới ở cả ba nơi:** hàng trên cùng là Nguồn · Micro · ⋯; dưới vòng điều hướng là Quay lại · Home · Menu; dưới nữa là cột Âm lượng bên trái, cột Kênh bên phải, giữa là Tắt tiếng, Phát/Dừng, Bài trước/sau, Tua lại/tới. Các nút có tên ngay dưới icon.
+- **Nút ⋯ mở thêm phím:** Ngõ vào, Cài đặt TV, Thông tin, Lịch phát, TV, Phụ đề, Dừng và **Chụp màn hình** (lưu ảnh màn hình TV về máy đang dùng).
+- **Tên và logo app lấy cùng một cách ở cả ba nơi** (hỏi hệ thống của TV). Web máy tính không còn tự giải mã APK hay lấy logo từ Google Play, và bớt được gói `pyaxmlparser`.
+- **Tối ưu TV có trong app điện thoại và trang trên TV:** tab Cài có nút ⚡ Tối ưu TV và ↩ Hoàn tác, chạy cùng các bước như web máy tính.
+- **Terminal:** danh sách "Lệnh đã chạy" để chọn lại lệnh cũ (điện thoại không có phím ↑ ↓), nhớ 30 lệnh gần nhất trên máy đang dùng.
+- **Nhẹ RAM hơn cho TV:** app TV Setup chỉ giữ kết nối điều khiển khi có người đang mở remote, rảnh 3 phút thì đóng (bớt khoảng 70 MB trên TV 2 GB); lần bấm kế tiếp tự mở lại.
+- **Nút 🧹 Giải phóng RAM** ở tab Sức khỏe của cả ba nơi: đóng các app đang nằm chờ ở nền, app đang hiện trên màn hình không bị ảnh hưởng.
+- **Tối ưu TV** giờ tắt hẳn hiệu ứng chuyển cảnh (trước là 0,5x).
+- **Nút không có tác dụng thì báo:** bấm Menu, Ngõ vào, Lịch phát, TV hoặc Cài đặt TV mà màn hình TV không đổi thì cả ba nơi hiện "TV đã nhận nút này, nhưng màn hình hiện tại không phản hồi", để không tưởng là app hỏng.
+- App điện thoại: danh sách ứng dụng có **tên thật và logo** của app, hỏi thẳng từ TV.
+- App điện thoại: thanh nút phía trên hình TV có thêm khoảng cách.
+- Web máy tính: nút Ngõ vào giờ mở được danh sách ngõ vào trên TV này (đi qua ADB).
+- README viết lại gọn hơn, có ảnh chụp, phần kỹ thuật thu gọn được.
+
+**English**
+- Phone app: a **picture quality button on the watch screen** (240p to 960p), applied at once. The quality section is gone from Settings, whose labels are shorter.
+- Phone app: **Check now** opens the update dialog right there when a new version exists, instead of sending you back to the TV list.
+- **A new control layout in all three clients:** the top row is Power · Mic · ⋯; under the D-pad come Back · Home · Menu; below that a volume bar on the left, a channel bar on the right, and Mute, Play/Pause, Previous/Next, Rewind/Forward between them. Buttons carry their name under the icon.
+- **The ⋯ button shows more keys:** Input, TV settings, Info, Guide, Live TV, Subtitles, Stop and **Screenshot** (saves the TV's screen to the device in your hand).
+- **App names and icons come the same way in all three** (asked from the TV's own system). The web on the computer no longer decodes APKs or fetches icons from Google Play, and drops the `pyaxmlparser` package.
+- **Optimize TV in the phone app and on the TV's page:** the Install tab has ⚡ Optimize TV and ↩ Undo, running the same steps as the web on the computer.
+- **Terminal:** an "Earlier commands" list to pick a previous command from (a phone has no ↑ ↓ keys); it keeps the last 30 on the device in your hand.
+- **Lighter on the TV's memory:** the TV Setup app keeps its control session only while somebody has the remote open and closes it after 3 idle minutes (about 70 MB less on a 2 GB TV); the next press opens it again.
+- **A 🧹 Free up RAM button** on the Health tab of all three: closes apps that are only waiting in the background; what is on screen is untouched.
+- **Optimize TV** now turns transition animations off completely (it was 0.5x).
+- **A key that does nothing says so:** when Menu, Input, Guide, Live TV or TV settings leaves the TV's screen unchanged, all three clients show "The TV got the key, but the current screen did not react", so it does not look like a broken app.
+- Phone app: the app list shows each app's **real name and icon**, asked from the TV itself.
+- Phone app: more room between the top buttons and the TV picture.
+- Web on the computer: the Input button now opens the input list on this TV (it goes through ADB).
+- The page on the TV: when the picture stops (another device took over, for example) the picture box and its buttons hide themselves; a long TV name and the volume figure no longer wrap.
+- README rewritten: shorter, with screenshots and collapsible technical sections.
+
 ## 2.5.4 - 2026-10-13
 
 Web 2.5.4 · app điện thoại 2.4.5 · app TV 2.5.4

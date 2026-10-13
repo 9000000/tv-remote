@@ -15,6 +15,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import dev.tvremote.core.Adb
+import dev.tvremote.core.Setup
 import dev.tvremote.update.Release
 import java.io.File
 import kotlin.math.roundToInt
@@ -139,7 +140,7 @@ class MainActivity : Activity() {
                     }
                 })
                 adb = a
-                val s = Setup(a, getExternalFilesDir(null), Setup.Log { log(it) })
+                val s = Setup(a, getExternalFilesDir(null), true, Setup.Log { log(it) })
                 setup = s
                 showStatus(s)
                 ui { setEnabled(true) }

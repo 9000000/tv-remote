@@ -40,7 +40,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         private val KEYS: Map<String, Int> = HashMap<String, Int>().apply {
             putAll(mapOf("UP" to 19, "DOWN" to 20, "LEFT" to 21, "RIGHT" to 22, "OK" to 23, "BACK" to 4, "HOME" to 3, "MENU" to 82, "POWER" to 26, "WAKE" to 224,
                 "VOL_UP" to 24, "VOL_DOWN" to 25, "MUTE" to 164, "PLAY_PAUSE" to 85, "NEXT" to 87, "PREV" to 88, "SETTINGS" to 176, "INPUT" to 178,
-                "DEL" to 67, "ENTER" to 66, "ASSIST" to 219, "CH_UP" to 166, "CH_DOWN" to 167))
+                "DEL" to 67, "ENTER" to 66, "ASSIST" to 219, "CH_UP" to 166, "CH_DOWN" to 167,
+                "INFO" to 165, "GUIDE" to 172, "LIVE" to 170, "SUBTITLE" to 175, "REWIND" to 89, "STOP" to 86, "FFWD" to 90))
             for (d in 0..9) put(d.toString(), 7 + d)
         }
 
@@ -73,6 +74,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
 
         fun forgetAll(c: Context) { c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove("tokens").apply() }
 
+        private const val REST_MS = 3 * 60 * 1000L
         private fun ok(): HttpServer.Response = HttpServer.Response.ok()
     }
 
@@ -87,6 +89,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     @Volatile private var tv: Tv? = null
     @Volatile private var viewer: Tv? = null                         // a second session that carries the picture, only while a browser watches
     @Volatile private var stopping = false
+    @Volatile private var lastUse = 0L                                // when a paired browser last asked for anything
+    @Volatile private var resting = false                             // the input session is closed on purpose: nobody is using the remote
     private var lastPairStart = 0L
     private var page: ByteArray? = null
 
@@ -111,9 +115,11 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             override fun label(pkg: String): String? =
                 try { packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString() } catch (e: Exception) { null }
             override fun icons(): Boolean = true
-        })
+        }, getExternalFilesDir(null))
         try { server.start(PORT, false) } catch (e: Exception) { adbState = "error" }
+        lastUse = System.currentTimeMillis()
         connect()
+        ui.postDelayed(rest, 30000)
     }
 
     override fun onStartCommand(i: Intent?, flags: Int, id: Int): Int = START_STICKY
@@ -131,10 +137,46 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     }
 
     // ---------------------------------------------------------------- the input session to the TV's own ADB
+    @Synchronized
     private fun connect() {
-        if (stopping) return
+        if (stopping || tv != null) return
+        resting = false
         adbState = "connecting"
-        tv = Tv(this, "127.0.0.1", null, 0, 0, false, this)
+        var mine: Tv? = null
+        mine = Tv(this, "127.0.0.1", null, 0, 0, false, object : Tv.Listener {   // a session we have let go of no longer has a say
+            override fun onStatus(key: String, detail: String) { if (mine == null || tv === mine) this@RemoteService.onStatus(key, detail) }
+            override fun onVideoSize(w: Int, h: Int) { }
+            override fun onNetwork(mac: String, lan: String) { }
+        })
+        tv = mine
+    }
+
+    /**
+     * The input session keeps a scrcpy-server process alive on the TV, about 70 MB of its 2 GB. So it only runs while
+     * somebody has the remote open: every request from a paired browser counts as use, and after [REST_MS] without one
+     * the session is closed. The next request opens it again and waits a moment for it, so the first key still works.
+     */
+    private fun inUse() {
+        lastUse = System.currentTimeMillis()
+        if (tv == null && resting) connect()
+        if (adbState == "connecting") for (i in 0 until 40) {         // up to 4 s, usually well under one
+            if (adbState != "connecting") break
+            try { Thread.sleep(100) } catch (e: InterruptedException) { break }
+        }
+    }
+
+    private val rest = object : Runnable {
+        override fun run() {
+            if (stopping) return
+            val t = tv
+            if (t != null && viewer == null && adbState == "ready" && System.currentTimeMillis() - lastUse > REST_MS) {
+                resting = true
+                tv = null
+                t.stop()
+                adbState = "ready"                                    // nothing is wrong; it comes back with the next request
+            }
+            ui.postDelayed(this, 30000)
+        }
     }
 
     override fun onStatus(key: String, detail: String) {
@@ -143,6 +185,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             "allow" -> adbState = "allow"                             // the TV is asking "Allow USB debugging?"
             "live" -> adbState = "ready"
             "closed", "error" -> {                                    // ADB off, TV just booted, session dropped: keep trying
+                if (resting) return                                   // we closed it ourselves
                 adbState = if (key == "error") "error" else "connecting"
                 tv = null
                 ui.postDelayed({ connect() }, 5000)
@@ -210,9 +253,16 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         if (!tokens().contains(r.cookie(COOKIE)) || r.cookie(COOKIE).isEmpty())
             return HttpServer.Response.json(401, JSONObject().put("error", "not paired").put("name", Build.MODEL))
 
+        inUse()
         val post = r.method == "POST"
         when (r.path) {
             "/api/state" -> return HttpServer.Response.json(state())
+            "/api/screenshot" -> {
+                val png = tv?.screenshot() ?: return HttpServer.Response.error(503, "no screenshot")
+                val shot = HttpServer.Response.of("image/png", png)
+                shot.headers["Content-Disposition"] = "attachment; filename=\"tv-" + System.currentTimeMillis() / 1000 + ".png\""
+                return shot
+            }
             "/api/video" -> return video(r.q("q").toIntOrNull() ?: 1)
             "/api/touch" -> {
                 val d = r.json()
@@ -241,6 +291,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             "/api/key" -> {
                 val keyCode = KEYS[d.optString("key").uppercase(Locale.ROOT)] ?: return HttpServer.Response.error(400, "unknown key")
                 if (t == null || !t.ready()) return HttpServer.Response.error(503, "adb:$adbState")
+                if (d.optString("action", "press") == "press" && keyCode in Tv.OPENERS)   // keys that should open something
+                    return HttpServer.Response.json(JSONObject().put("ok", true).put("noop", !t.pressSeen(keyCode)))
                 if (keyCode == 26) {                                  // sleep or wake by what the TV is doing now, so a tap never does the opposite
                     if (d.optString("action", "press") != "up") t.press(if ((getSystemService(POWER_SERVICE) as android.os.PowerManager).isInteractive) 223 else 224)
                 } else if (keyCode == 176) { if (d.optString("action", "press") != "up") t.settings() }   // the key itself does nothing on many TVs

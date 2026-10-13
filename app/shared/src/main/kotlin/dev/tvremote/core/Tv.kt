@@ -49,6 +49,9 @@ class Tv(
          * used while the picture moves (a still picture sends almost nothing); the size mostly decides the load on the TV,
          * whose software encoder costs about 0.7 of 4 cores at 960 px and 2 Mbit/s, far more uncapped.
          */
+        /** Keys that should bring up a screen of their own: Menu, TV settings, Input, Guide, Live TV. See [pressSeen]. */
+        val OPENERS = setOf(82, 176, 178, 172, 170)
+
         val QUALITY = arrayOf(intArrayOf(480, 300_000, 8), intArrayOf(720, 800_000, 10), intArrayOf(960, 2_000_000, 10),
             intArrayOf(360, 200_000, 8), intArrayOf(240, 120_000, 8))   // added later, at the end: the index is what people have saved
 
@@ -312,6 +315,39 @@ class Tv(
     }
 
     /** Opens the TV's Settings. The settings key of a remote does nothing on many TVs, the app itself always opens. */
+    /**
+     * For keys that should open something ([OPENERS]; 176 opens the TV's settings): presses the key and says whether the TV's front
+     * window changed. False means the TV got the key and the current screen ignored it, so the person is not left guessing
+     * whether the remote works. Blocks for about a second.
+     */
+    fun pressSeen(code: Int): Boolean {
+        val a = adb ?: return true
+        return try {
+            val front = { a.shell("dumpsys window | grep -m1 mCurrentFocus").trim() }
+            val before = front()
+            if (code == 176) a.shell("am start -a android.settings.SETTINGS") else press(code)
+            Thread.sleep(900)
+            before.isEmpty() || front() != before
+        } catch (e: Exception) { true }
+    }
+
+    /** What is on the TV's screen right now, as a PNG; null when it could not be taken. */
+    fun screenshot(): ByteArray? {
+        val a = adb ?: return null
+        return try {
+            val out = java.io.ByteArrayOutputStream()
+            val buf = ByteArray(65536)
+            a.open("exec:screencap -p").use {
+                while (true) {
+                    val n = it.read(buf, 0, buf.size, 15000)
+                    if (n <= 0) break
+                    out.write(buf, 0, n)
+                }
+            }
+            if (out.size() > 8) out.toByteArray() else null
+        } catch (e: IOException) { null }
+    }
+
     fun settings() {
         val a = adb ?: return
         Thread { try { a.shell("am start -a android.settings.SETTINGS") } catch (ignored: IOException) { } }.start()

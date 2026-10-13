@@ -17,7 +17,7 @@ import java.util.regex.Pattern
  * Managing a TV over ADB for the page both apps serve: installed apps, files, APK installs and a health snapshot.
  * Everything under /api/m/. Whoever owns the HttpServer checks first that the caller may use it.
  */
-class Manage(private val link: AdbLink, private val labels: Labels?) {
+class Manage(private val link: AdbLink, private val labels: Labels?, private val dir: java.io.File?) {
     /** Names and icons for packages, where the app can ask the system for them (the TV app); otherwise package names are shown. */
     interface Labels {
         fun label(pkg: String): String?
@@ -61,6 +61,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?) {
                 "open" -> fileOp("open", r.json())
                 "install" -> HttpServer.Response.json(installPath(safePath(r.json().optString("path"))))
                 "install-upload" -> installUpload(r)
+                "free" -> HttpServer.Response.json(free())
+                "optimize", "undo" -> HttpServer.Response.json(setup(what == "undo", r.json().optString("lang") != "en"))
                 "fetch" -> HttpServer.Response.json(fetch(r.json().optString("url"), r.json().optBoolean("install")))
                 else -> HttpServer.Response.error(404, "not found")
             }
@@ -289,6 +291,25 @@ class Manage(private val link: AdbLink, private val labels: Labels?) {
         }
         return HttpServer.Response.ok()
     }
+
+    /** Closes the apps that are only waiting in the background (what is on screen stays); says how much memory came back, in MB. */
+    private fun free(): JSONObject {
+        val avail = { (find("MemAvailable:\\s+(\\d+)", sh("cat /proc/meminfo"))?.toLong() ?: 0L) / 1024 }
+        val before = avail()
+        sh("am kill-all")
+        Thread.sleep(1500)
+        val after = avail()
+        return JSONObject().put("before", before).put("after", after).put("freed", maxOf(0L, after - before))
+    }
+
+    /** "Optimize TV" or its undo; the job's message grows a line per step. */
+    private fun setup(undo: Boolean, vi: Boolean): JSONObject =
+        job(if (undo) "undo" else "optimize") { j ->
+            val lines = StringBuilder()
+            val s = Setup(link.get(), dir, vi) { line -> lines.append(line).append('\n'); try { j.put("msg", lines.toString().trim()) } catch (ignored: Exception) { } }
+            if (undo) s.undo() else s.apply()
+            lines.toString().trim()
+        }
 
     /** This device downloads the link and passes it on to the TV, into Download or straight into the installer. */
     private fun fetch(url: String, install: Boolean): JSONObject {

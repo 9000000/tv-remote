@@ -21,7 +21,11 @@ KEYS = {
     "VOL_UP": "VOLUME_UP", "VOL_DOWN": "VOLUME_DOWN", "PLAY_PAUSE": "MEDIA_PLAY_PAUSE",
     "NEXT": "MEDIA_NEXT", "PREV": "MEDIA_PREVIOUS", "CH_UP": "CHANNEL_UP", "CH_DOWN": "CHANNEL_DOWN",
     "SETTINGS": "SETTINGS", "INPUT": "TV_INPUT", "SEARCH": "SEARCH", "DEL": "DEL",
+    "INFO": "INFO", "GUIDE": "GUIDE", "LIVE": "TV", "SUBTITLE": "CAPTIONS", "REWIND": "MEDIA_REWIND", "STOP": "MEDIA_STOP", "FFWD": "MEDIA_FAST_FORWARD",
 }
+# The "More" keys go through ADB when it is open: this TV ignores some of them over the remote protocol (the input key, for one).
+ADB_KEYS = {"INPUT": 178, "INFO": 165, "GUIDE": 172, "LIVE": 170, "SUBTITLE": 175, "CH_UP": 166, "CH_DOWN": 167, "REWIND": 89, "STOP": 86, "FFWD": 90}
+OPENERS = {"MENU", "SETTINGS", "INPUT", "GUIDE", "LIVE"}             # keys that should bring up a screen of their own
 APPS = {"settings": "android-app://com.android.tv.settings"}          # remote-protocol fallback when ADB is closed
 
 WEB = APP / "static"
@@ -529,6 +533,24 @@ def build(S):
         direction = str(d.get("dir") or "SHORT").upper()
         if direction not in ("SHORT", "START_LONG", "END_LONG"):
             raise web.HTTPBadRequest(text="bad dir")
+        if (k in OPENERS or k in ADB_KEYS) and direction == "SHORT":
+            try:
+                front = lambda: adb.shell("dumpsys window | grep -m1 mCurrentFocus", timeout=5)
+                before = (await front()).strip() if k in OPENERS else ""   # openers: say so when the screen ignores them
+                if name == "SETTINGS":
+                    await adb.shell("am start -a android.settings.SETTINGS")
+                elif k in ADB_KEYS:
+                    await adb.shell(f"input keyevent {ADB_KEYS[k]}")
+                else:
+                    tv.need().send_key_command(name, "SHORT")
+                if k not in OPENERS:
+                    return web.json_response({"ok": True})
+                await asyncio.sleep(0.9)
+                return web.json_response({"ok": True, "noop": bool(before) and (await front()).strip() == before})
+            except web.HTTPException:
+                raise
+            except Exception:
+                pass                                                  # ADB closed: just press the key
         if name == "SETTINGS" and direction != "END_LONG":            # the key itself does nothing on many TVs; the Settings app always opens
             try:
                 await adb.shell("am start -a android.settings.SETTINGS")
@@ -856,6 +878,19 @@ def build(S):
               "printf '\\043~\\043\\n'; head -1 /proc/stat; sleep 0.6; head -1 /proc/stat; printf '\\043~\\043\\n'; grep -E '^(MemTotal|MemAvailable):' /proc/meminfo; printf '\\043~\\043\\n'; df -k /data | tail -1; "
               "printf '\\043~\\043\\n'; cat /proc/uptime; printf '\\043~\\043\\n'; wm size; wm density; dumpsys display | grep -m1 -o 'fps=[0-9.]*'; printf '\\043~\\043\\n'; dumpsys wifi | grep -m1 mWifiInfo; "
               "printf '\\043~\\043\\n'; ip -o -4 addr show; printf '\\043~\\043\\n'; top -n 1 -b -m 7 -o %CPU,%MEM,ARGS -s 1 | tail -7")
+
+    @routes.post("/api/free")
+    @adb_errors
+    async def free(_):
+        """Closes the apps that are only waiting in the background (what is on screen stays); says how much memory came back, in MB."""
+        async def avail():
+            m = re.search(r"MemAvailable:\s+(\d+)", await adb.shell("cat /proc/meminfo"))
+            return int(m.group(1)) // 1024 if m else 0
+        before = await avail()
+        await adb.shell("am kill-all")
+        await asyncio.sleep(1.5)
+        after = await avail()
+        return web.json_response({"before": before, "after": after, "freed": max(0, after - before)})
 
     @routes.get("/api/health")
     @adb_errors

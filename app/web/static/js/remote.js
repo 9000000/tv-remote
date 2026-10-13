@@ -6,7 +6,7 @@ document.querySelectorAll('[data-k]').forEach((b) => {
   const power = k === 'POWER';                                     // never a long press, and turning the TV off needs a yes
   const send = (dir) => {
     if (power && tvOn && !confirm('Đưa TV về chế độ chờ?\nNếu TV tắt cả mạng thì chỉ mở lại được bằng nút Đánh thức (cần một máy ở nhà đang bật) hoặc remote của TV.')) return;
-    return api('/api/key', dir ? { key: k, dir } : { key: k });
+    return api('/api/key', dir ? { key: k, dir } : { key: k }).then((r) => { if (r && r.noop) toast('TV đã nhận nút này, nhưng màn hình hiện tại không phản hồi'); return r; });
   };
   const release = (tap) => {
     if (!down) return; down = false; clearTimeout(t);
@@ -66,6 +66,10 @@ $('#textf').addEventListener('submit', (e) => {
   txt.value = typed = '';
 });
 $('#del').addEventListener('click', () => { if (txt.value) { txt.value = [...txt.value].slice(0, -1).join(''); if (live) syncText(); } else queue('/api/type', { del: 1 }); });
+function setMore(on) { $('#more').hidden = !on; $('#morebtn').classList.toggle('on', on); try { localStorage.setItem('more', on ? '1' : ''); } catch {} }
+try { setMore(!!localStorage.getItem('more')); } catch {}
+$('#morebtn').addEventListener('click', () => setMore($('#more').hidden));
+$('#shot').addEventListener('click', () => { const a = document.createElement('a'); a.href = '/api/screen'; a.download = 'tv-' + Math.floor(Date.now() / 1000) + '.jpg'; a.click(); });
 $('#digits').addEventListener('click', () => { const p = $('#numpad'); p.hidden = !p.hidden; try { localStorage.setItem('numpad', p.hidden ? '' : '1'); } catch {} });
 try { setLive(localStorage.getItem('live') !== '0'); $('#numpad').hidden = !localStorage.getItem('numpad'); } catch { setLive(true); }
 

@@ -12,6 +12,10 @@ function fmtUptime(s) {
   return (d ? d + ' ngày ' : '') + (d || h ? h + ' giờ ' : '') + m + ' phút';
 }
 function signal(rssi) { return rssi >= -55 ? 'rất tốt' : rssi >= -67 ? 'tốt' : rssi >= -75 ? 'trung bình' : 'yếu'; }
+$('#freeram').addEventListener('click', async () => {
+  const b = $('#freeram'); b.disabled = true; const r = await api('/api/free', {}); b.disabled = false;
+  if (r) { toast(tr('Đã lấy lại') + ' ' + r.freed + ' MB · ' + tr('còn trống') + ' ' + r.after + ' MB'); loadHealth(); }
+});
 async function loadHealth() {
   if (healthBusy || ADB.state !== 'ready') return;
   healthBusy = true;

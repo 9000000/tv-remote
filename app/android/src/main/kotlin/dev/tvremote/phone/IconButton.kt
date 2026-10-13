@@ -10,6 +10,12 @@ import kotlin.math.roundToInt
 internal class IconButton(c: Context) : Button(c) {
     private var art: Drawable? = null
     var size = 24f                                                    // dp
+    /** A small label under the icon. */
+    var caption: String? = null
+    private val ink = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        textAlign = android.graphics.Paint.Align.CENTER
+        color = 0xFF98A2B3.toInt()
+    }
 
     fun setIcon(symbol: String, tint: Int) {
         if (!symbol.startsWith("@")) {
@@ -29,7 +35,13 @@ internal class IconButton(c: Context) : Button(c) {
         val art = art ?: return
         val h = (size * resources.displayMetrics.density / 2).roundToInt()
         val cx = width / 2
-        val cy = height / 2
+        var cy = height / 2
+        caption?.let {
+            val d = resources.displayMetrics.density
+            cy -= (7 * d).roundToInt()
+            ink.textSize = 10.5f * resources.displayMetrics.scaledDensity
+            c.drawText(it, cx.toFloat(), cy + h + 15 * d, ink)
+        }
         art.setBounds(cx - h, cy - h, cx + h, cy + h)
         art.draw(c)
     }
