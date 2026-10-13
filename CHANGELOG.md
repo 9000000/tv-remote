@@ -4,6 +4,22 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.6.2 - 2026-10-13
+
+Web 2.6.2 · app điện thoại 2.5.2 · app TV 2.6.2
+
+**Tiếng Việt**
+- **App điện thoại, chế độ chỉ bấm phím: trợ lý bật ADB từng bước.** (1) Tự thử mọi cách mở Cài đặt TV và tự đọc xem TV đang mở app nào để biết có thành công không; (2) nếu không, chỉ chỗ tìm Cài đặt trên màn hình chính của TV; (3) nếu vẫn không có, mở/cài một màn hình chính khác từ CH Play (Projectivy, ATV Launcher, FLauncher: đã cài thì mở, chưa cài thì mở trang CH Play, không tương thích thì chọn cái khác); (4) các bước bật ADB, kể cả trường hợp nhà mạng khóa bằng mật khẩu. Thêm hai lệnh nhanh: mở CH Play, mở app theo tên gói hoặc đường dẫn.
+- App tự nối lại khi TV ngắt kết nối sau một đường dẫn nó không mở được, và đề nghị ghép mã cả khi cổng ADB không trả lời (trước đây chỉ khi bị từ chối).
+- Sửa: mở app theo tên gói ở chế độ chỉ bấm phím không có tác dụng.
+- **App TV: nút “Tùy chọn nhà phát triển”**, mở thẳng màn hình đó (không cần ADB), cho các box giấu Cài đặt hoặc đòi mật khẩu khi bấm 7 lần vào Bản dựng.
+
+**English**
+- **Phone app, keys-only mode: a step-by-step assistant for turning ADB on.** (1) Tries every way to open the TV’s Settings and reads which app the TV has in front to know whether it worked; (2) if not, says where to look on the TV’s own home screen; (3) failing that, opens or installs another home screen from the Play Store (opens it when installed, its store page when not, pick another when incompatible); (4) the ADB steps, including operator boxes that lock it with a password. Two quick commands: open the Play Store, open an app by package name or link.
+- The app reconnects when the TV drops the connection after a link it cannot open, and offers pairing when the ADB port does not answer at all (before: only when refused).
+- Fixed: opening an app by package name did nothing in keys-only mode.
+- **TV app: a “Developer options” button** that opens that screen directly (no ADB needed), for boxes that hide Settings or ask for a password on the seven presses on Build.
+
 ## 2.6.1 - 2026-10-13
 
 Web 2.6.1 · app điện thoại 2.5.1 · app TV 2.6.1 (app TV không đổi chức năng / no functional change)

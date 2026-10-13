@@ -333,7 +333,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 else -> {
                     tv = null
                     disconnect(explain(detail))
-                    if (refused(detail)) offerBasic(h)                // ADB is off, but the TV may still take keys
+                    offerBasic(h)                                     // no ADB (refused, or filtered and timed out), but the TV may still take keys
                 }
             }
         }
@@ -372,7 +372,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     /** ADB refused the connection. If the TV answers as an Android TV, offer the keys-only remote: enough to go and turn ADB on. */
     private fun offerBasic(ip: String) {
         Thread {
-            if (!open(ip, 6466, 1500)) return@Thread
+            if (open(ip, 5555, 1500) || !open(ip, 6466, 2500)) return@Thread   // ADB answers after all, or this is no Android TV
             ui.post {
                 if (isFinishing || host != null) return@post
                 if (prefs.getBoolean("atv:$ip", false)) startBasic(ip, false)
@@ -446,30 +446,98 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         }
     }
 
+    // Getting to the TV's Settings without ADB. Most TVs open them on the Settings key. Operator boxes may ignore it and hide
+    // Settings on their own home screen; then the way in is another home screen app from the Play Store, which the TV opens
+    // when asked for the app's package (the app itself when it is installed, its store page when it is not).
+    private val HOMES = arrayOf("Projectivy Launcher" to "com.spocky.projengmenu", "ATV Launcher" to "ca.dstudio.atvlauncher.free", "FLauncher" to "me.efesser.flauncher")
+
+    /** Everything the keys-only mode can do towards turning ADB on, in the order one needs it. */
     private fun adbHelp() {
+        val items = arrayOf(t("1. Mở Cài đặt TV (tự thử các cách)", "1. Open TV Settings (tries every way)"),
+            t("2. Không mở được? Cài màn hình chính khác", "2. No luck? Install another home screen"),
+            t("3. Các bước bật Gỡ lỗi ADB", "3. Steps to turn on ADB debugging"),
+            t("4. Đã bật ADB: kết nối đầy đủ", "4. ADB is on: full connection"),
+            t("Mở CH Play trên TV", "Open the Play Store on the TV"),
+            t("Mở app theo tên gói hoặc đường dẫn", "Open an app by package name or link"))
+        AlertDialog.Builder(this).setTitle(t("Bật ADB cho TV này", "Turn on ADB for this TV")).setItems(items) { _, i ->
+            when (i) {
+                0 -> findSettings()
+                1 -> otherHome()
+                2 -> adbSteps()
+                3 -> { val ip = host; disconnect(null); if (ip != null) connect(ip) }
+                4 -> basic?.launch("market://search?q=launcher")
+                5 -> {
+                    val box = input("com.example.app")
+                    val wrap = FrameLayout(this)
+                    wrap.setPadding(dp(20), dp(8), dp(20), 0)
+                    wrap.addView(box)
+                    AlertDialog.Builder(this).setTitle(t("Tên gói hoặc đường dẫn", "Package name or link")).setView(wrap)
+                        .setPositiveButton(t("Mở", "Open")) { _, _ -> box.text.toString().trim().let { if (it.isNotEmpty()) basic?.launch(it) } }
+                        .setNegativeButton(t("Hủy", "Cancel"), null).show()
+                }
+            }
+        }.setNegativeButton(t("Đóng", "Close"), null).show()
+    }
+
+    private fun isSettings(pkg: String) = pkg.contains("settings", true)
+
+    /** Tries the Settings key, then the links that open Settings on other TVs, watching which app the TV says is in front. */
+    private fun findSettings() {
+        val a = basic ?: return
+        Toast.makeText(this, t("Đang thử mở Cài đặt trên TV...", "Trying to open Settings on the TV..."), Toast.LENGTH_SHORT).show()
+        Thread {
+            val tries = listOf<() -> Unit>({ a.key(176, Atv.SHORT) }, { a.launch("android-app://com.android.tv.settings") }, { a.launch("intent:#Intent;action=android.settings.SETTINGS;end") })
+            var ok = isSettings(a.app)
+            for (attempt in tries) {
+                if (ok) break
+                for (i in 0 until 30) { if (a.ready()) break; Thread.sleep(200) }   // the TV may have dropped us after the last try
+                attempt()
+                for (i in 0 until 12) { Thread.sleep(200); if (isSettings(a.app)) { ok = true; break } }
+            }
+            val blind = a.app.isEmpty()                                // this TV does not say what is on its screen
+            ui.post {
+                if (isFinishing || basic !== a) return@post
+                if (ok) adbSteps()
+                else if (blind) AlertDialog.Builder(this).setMessage(t("TV có mở màn hình Cài đặt không?", "Did the TV open its Settings?"))
+                    .setPositiveButton(t("Có", "Yes")) { _, _ -> adbSteps() }.setNegativeButton(t("Không", "No")) { _, _ -> lookOnHome() }.show()
+                else lookOnHome()
+            }
+        }.start()
+    }
+
+    /** The keys and links did nothing: the TV's own home screen may still have Settings somewhere, before anything gets installed. */
+    private fun lookOnHome() {
+        AlertDialog.Builder(this).setTitle(t("TV không mở Cài đặt theo lệnh", "The TV did not open Settings when asked"))
+            .setMessage(t("Tìm trên màn hình chính của TV, dùng các phím mũi tên ở đây: biểu tượng hồ sơ/tài khoản hoặc bánh răng (thường ở góc trên) → Cài đặt → “Cài đặt thiết bị”.\n\nBox FPT Play: mở bảng Quản lý (hồ sơ) → Cài đặt → Cài đặt thiết bị.",
+                "Look on the TV’s home screen, using the arrows here: the profile/account or gear icon (usually in a top corner) → Settings → “Device settings”.\n\nFPT Play box: open the profile panel → Settings → Device settings."))
+            .setPositiveButton(t("Thấy rồi", "Found it")) { _, _ -> adbSteps() }
+            .setNegativeButton(t("Không có · Cài màn hình chính khác", "Not there · Install another home screen")) { _, _ -> otherHome() }.show()
+    }
+
+    private fun otherHome() {
+        val a = basic ?: return
+        val names = HOMES.map { it.first + (if (a.app == it.second) "  ✓" else "") }.toTypedArray()
+        AlertDialog.Builder(this).setTitle(t("TV này giấu Cài đặt: mở qua màn hình chính khác", "This TV hides Settings: go through another home screen"))
+            .setItems(names) { _, i ->
+                a.launch(HOMES[i].second)
+                AlertDialog.Builder(this).setMessage(t("Nhìn lên TV.\n\n• Thấy trang CH Play: bấm Cài đặt, xong bấm “Mở lại” bên dưới.\n• CH Play báo không tương thích hoặc không tìm thấy: bấm “Chọn cái khác”.\n• Thấy màn hình chính mới: tìm biểu tượng bánh răng → Cài đặt Android, rồi bấm “Các bước bật ADB”.\n\nCH Play cần TV đã đăng nhập tài khoản Google.",
+                        "Look at the TV.\n\n• A Play Store page: choose Install, then tap “Open again” below.\n• The store says it is incompatible or not found: tap “Pick another”.\n• The new home screen: find the gear icon → Android settings, then tap “ADB steps”.\n\nThe Play Store needs a Google account on the TV."))
+                    .setPositiveButton(t("Các bước bật ADB", "ADB steps")) { _, _ -> adbSteps() }
+                    .setNeutralButton(t("Mở lại", "Open again")) { _, _ -> a.launch(HOMES[i].second); ui.postDelayed({ if (basic === a && !isFinishing) adbSteps() }, 800) }
+                    .setNegativeButton(t("Chọn cái khác", "Pick another")) { _, _ -> otherHome() }.show()
+            }.setNegativeButton(t("Đóng", "Close"), null).show()
+    }
+
+    private fun adbSteps() {
         AlertDialog.Builder(this).setTitle(t("Bật Gỡ lỗi ADB trên TV", "Turn on ADB debugging on the TV"))
-            .setMessage(t("1. Bấm “Mở Cài đặt TV” bên dưới (dùng khi màn hình chính của TV không có mục Cài đặt).\n2. Trên TV: Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng”.\n3. Quay lại, vào Tùy chọn nhà phát triển → bật “Gỡ lỗi USB” (hoặc “Gỡ lỗi ADB”).\n4. Bấm “Kết nối đầy đủ”, rồi trên TV tích “Luôn cho phép” và chọn OK.",
-                "1. Tap “Open TV Settings” below (for TVs whose home screen has no Settings entry).\n2. On the TV: Device Preferences → About → press OK 7 times on “Build”.\n3. Go back, open Developer options → turn on “USB debugging” (or “ADB debugging”).\n4. Tap “Full connection”, then on the TV tick “Always allow” and choose OK."))
-            .setPositiveButton(t("Mở Cài đặt TV", "Open TV Settings")) { _, _ -> tvSettings(); ui.postDelayed({ if (basic != null && !isFinishing) askSettingsOpened() }, 1500) }
-            .setNeutralButton(t("Kết nối đầy đủ", "Full connection")) { _, _ ->
+            .setMessage(t("Dùng các phím mũi tên và OK của remote này:\n\n1. Trong Cài đặt: Tùy chọn thiết bị (hoặc Hệ thống) → Giới thiệu → bấm OK 7 lần vào “Bản dựng”.\n2. Quay lại, vào Tùy chọn nhà phát triển → bật “Gỡ lỗi USB” (hoặc “Gỡ lỗi ADB”).\n3. Bấm “Kết nối đầy đủ”, rồi trên TV tích “Luôn cho phép” và chọn OK.\n\nNếu TV đòi “mật khẩu ADB”: nhà mạng đã khóa chức năng này (vd. box FPT Play). Chỉ nhà mạng có mật khẩu; khi đó TV này chỉ dùng được chế độ bấm phím.",
+                "Use this remote’s arrows and OK:\n\n1. In Settings: Device Preferences (or System) → About → press OK 7 times on “Build”.\n2. Go back, open Developer options → turn on “USB debugging” (or “ADB debugging”).\n3. Tap “Full connection”, then on the TV tick “Always allow” and choose OK.\n\nIf the TV asks for an “ADB password”: the operator has locked this (some operator boxes do). Only they have the password; this TV then works in keys-only mode only."))
+            .setPositiveButton(t("Kết nối đầy đủ", "Full connection")) { _, _ ->
                 val ip = host
                 disconnect(null)
                 if (ip != null) connect(ip)
             }
             .setNegativeButton(t("Đóng", "Close"), null).show()
-    }
-
-    /** The TV's own Settings screen, also where the home screen hides it. */
-    private fun tvSettings() {
-        basic?.key(176, Atv.SHORT)
-    }
-
-    /** Some operator boxes ignore the Settings key and hide Settings on their home screen; another home screen app from the store has a way in. */
-    private fun askSettingsOpened() {
-        AlertDialog.Builder(this).setMessage(t("TV có mở màn hình Cài đặt không?\n\nNếu không (vd. box FPT Play): cài một màn hình chính khác từ CH Play, trong đó có lối vào Cài đặt của TV. Lưu ý: vài box nhà mạng còn khóa Gỡ lỗi ADB bằng mật khẩu riêng; khi đó chỉ dùng được chế độ bấm phím này.",
-                "Did the TV open its Settings?\n\nIf not (some operator boxes): install another home screen app from the Play Store; it has a way into the TV’s Settings. Note: a few operator boxes also lock ADB debugging behind their own password; then only this keys-only mode works."))
-            .setPositiveButton(t("Có rồi", "Yes"), null)
-            .setNegativeButton(t("Không · Mở CH Play", "No · Open Play Store")) { _, _ -> basic?.launch("market://details?id=com.spocky.projengmenu") }.show()
     }
 
     private fun explain(err: String?): String {
@@ -1477,7 +1545,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     /** Menu, Input, TV settings, Guide, Live TV: keys that should open something. When the TV's screen ignores one, say so, so it does not look like a dead button. */
     private fun opens(code: Int) {
-        if (basic != null) { if (code == 176) tvSettings() else press(code); return }
+        if (basic != null) { if (code == 176) findSettings() else press(code); return }
         val tv = tv
         if (tv == null || !tv.ready()) return
         Thread {

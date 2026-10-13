@@ -58,6 +58,7 @@ class MainActivity : Activity() {
             button("Kết nối lại") { connect() },
             button("Cập nhật") { update() })
         for (b in buttons) row.addView(b)
+        row.addView(button("Tùy chọn nhà phát triển") { devOptions() })   // works without ADB: it is how one gets to turn ADB on
         root.addView(row)
 
         // the web remote served by this TV: any phone or computer opens http://<TV's IP>:8765 and pairs with a code
@@ -171,6 +172,35 @@ class MainActivity : Activity() {
             status.text = name + "\nIP trong nhà: " + (if (lan.isEmpty()) "?" else lan) + "   ·   IP Tailscale: " +
                 (if (ts.isNotEmpty()) ts else if (tsInstalled) "chưa vào mạng" else "chưa cài")
         }
+    }
+
+    /**
+     * Opens the TV's Developer options straight away. Some operator boxes hide Settings on their home screen, or ask for a
+     * password of their own when "Build" is pressed seven times; the screen itself often opens when asked for by name.
+     */
+    private fun devOptions() {
+        val tries = listOf(
+            "Tùy chọn nhà phát triển" to android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS),
+            "Tùy chọn nhà phát triển" to android.content.Intent().setClassName("com.android.tv.settings", "com.android.tv.settings.system.development.DevelopmentActivity"),
+            "Tùy chọn nhà phát triển" to android.content.Intent().setClassName("com.android.settings", "com.android.settings.DevelopmentSettings"),
+            "Giới thiệu (bấm OK 7 lần vào \"Bản dựng\")" to android.content.Intent(android.provider.Settings.ACTION_DEVICE_INFO_SETTINGS),
+            "Cài đặt" to android.content.Intent(android.provider.Settings.ACTION_SETTINGS))
+        fun attempt(i: Int) {
+            if (i >= tries.size) { log("✗ TV này không cho mở Cài đặt từ app."); return }
+            val (name, intent) = tries[i]
+            try {
+                startActivity(intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+            } catch (e: Exception) {                                  // not on this TV, or not allowed: the next one
+                attempt(i + 1)
+                return
+            }
+            // a screen that is not allowed to open closes itself at once and leaves us in front: then try the next one
+            window.decorView.postDelayed({
+                if (hasWindowFocus()) attempt(i + 1)
+                else log("Đã mở: $name. Bật \"Gỡ lỗi USB\" (hoặc \"Gỡ lỗi ADB\"), quay lại đây rồi chọn \"Kết nối lại\".")
+            }, 1200)
+        }
+        attempt(0)
     }
 
     private fun interface Job { @Throws(Exception::class) fun run(setup: Setup) }

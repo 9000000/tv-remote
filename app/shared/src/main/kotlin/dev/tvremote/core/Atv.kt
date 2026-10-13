@@ -15,9 +15,7 @@ import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.security.interfaces.RSAPublicKey
 import java.security.spec.PKCS8EncodedKeySpec
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLSocket
@@ -33,7 +31,7 @@ class Atv(dir: File, private val host: String) : Closeable {
 
     private val key: PrivateKey
     private val cert: X509Certificate
-    private var sock: SSLSocket? = null
+    @Volatile private var sock: SSLSocket? = null
     private val out = Executors.newSingleThreadExecutor()
     @Volatile private var live = false
     @Volatile private var closed = false
@@ -94,55 +92,87 @@ class Atv(dir: File, private val host: String) : Closeable {
     }
 
     // ---------------------------------------------------------------- remote (port 6466)
-    /** Blocks until the TV accepts keys. [NotPaired]: the TV does not know this phone yet. [onClosed] is called once, later, if the connection ends. */
+    /** The package on the TV's screen, as the TV reports it ("" until it does). */
+    @Volatile var app = ""
+        private set
+
+    /**
+     * Blocks until the TV accepts keys. [NotPaired]: the TV does not know this phone yet. [onClosed] is called once, later, if
+     * the connection ends for good: a TV that drops it (some do after a link they cannot open) is simply dialled again.
+     */
     fun connect(onClosed: () -> Unit) {
-        val s = try { dial(6466) } catch (e: javax.net.ssl.SSLException) { throw NotPaired() }
-        sock = s
-        val up = CountDownLatch(1)
+        var s = open() ?: throw NotPaired()
         Thread({
-            try {
-                val input = s.inputStream
-                while (true) {
-                    val m = Pb.read(frame(input) ?: break)
-                    m[1]?.let {                                       // remote_configure: who the TV is; answer with who we are
-                        val info = Pb.read(it[0] as ByteArray)[2]?.firstOrNull() as? ByteArray
-                        if (info != null) model = (Pb.read(info)[1]?.firstOrNull() as? ByteArray)?.toString(Charsets.UTF_8) ?: ""
-                        val me = Pb().str(1, "TV Remote").str(2, "tv-remote").int(3, 1).str(4, "1").str(5, "atvremote").str(6, "1.0.0").bytes()
-                        send(s, Pb().msg(1, Pb().int(1, 622).msg(2, me).bytes()).bytes())
-                    }
-                    m[2]?.let {                                       // remote_set_active
-                        send(s, Pb().msg(2, Pb().int(1, 622).bytes()).bytes())
-                        live = true
-                        up.countDown()
-                    }
-                    m[8]?.let {                                       // ping
-                        val n = Pb.read(it[0] as ByteArray)[1]?.firstOrNull() as? Long ?: 0L
-                        send(s, Pb().msg(9, Pb().int(1, n).bytes()).bytes())
-                    }
+            while (true) {
+                try { while (true) handle(s, frame(s.inputStream) ?: break) } catch (ignored: Exception) { }
+                live = false
+                var again: SSLSocket? = null
+                for (i in 0 until 4) {
+                    if (closed) break
+                    try { Thread.sleep(600) } catch (ignored: InterruptedException) { }
+                    again = try { open() } catch (e: Exception) { null }
+                    if (again != null) break
                 }
-            } catch (ignored: Exception) {
+                s = again ?: break
             }
-            val was = live
-            live = false
-            up.countDown()
-            if (was && !closed) onClosed()
+            if (!closed) onClosed()
         }, "atv").apply { isDaemon = true }.start()
-        if (!up.await(8, TimeUnit.SECONDS) || !live) {
-            close()
-            throw NotPaired()                                         // an unknown phone is let in and then dropped without a word
+    }
+
+    /** Dials and answers the TV's greeting. null when the TV lets us in and then drops us without a word: it does not know this phone. */
+    private fun open(): SSLSocket? {
+        val s = try { dial(6466) } catch (e: javax.net.ssl.SSLException) { return null }
+        sock = s
+        s.soTimeout = 8000
+        try {
+            while (!live) handle(s, frame(s.inputStream) ?: break)
+        } catch (ignored: Exception) {
+        }
+        if (!live) { try { s.close() } catch (ignored: Exception) { }; return null }
+        s.soTimeout = 0
+        return s
+    }
+
+    private fun handle(s: SSLSocket, body: ByteArray) {
+        val m = Pb.read(body)
+        m[1]?.let {                                                   // remote_configure: who the TV is; answer with who we are
+            val info = Pb.read(it[0] as ByteArray)[2]?.firstOrNull() as? ByteArray
+            if (info != null) model = (Pb.read(info)[1]?.firstOrNull() as? ByteArray)?.toString(Charsets.UTF_8) ?: ""
+            val me = Pb().str(1, "TV Remote").str(2, "tv-remote").int(3, 1).str(4, "1").str(5, "atvremote").str(6, "1.0.0").bytes()
+            send(s, Pb().msg(1, Pb().int(1, 622).msg(2, me).bytes()).bytes())
+        }
+        m[2]?.let {                                                   // remote_set_active
+            send(s, Pb().msg(2, Pb().int(1, 622).bytes()).bytes())
+            live = true
+        }
+        m[8]?.let {                                                   // ping
+            val n = Pb.read(it[0] as ByteArray)[1]?.firstOrNull() as? Long ?: 0L
+            send(s, Pb().msg(9, Pb().int(1, n).bytes()).bytes())
+        }
+        m[20]?.let {                                                  // remote_ime_key_inject: sent whenever another app comes to the front
+            val info = Pb.read(it[0] as ByteArray)[1]?.firstOrNull() as? ByteArray
+            val pkg = info?.let { i -> Pb.read(i)[12]?.firstOrNull() as? ByteArray }?.toString(Charsets.UTF_8)
+            if (!pkg.isNullOrEmpty()) app = pkg
         }
     }
 
     /** [direction]: [DOWN] and [UP] for a held key, [SHORT] for a tap. */
     fun key(code: Int, direction: Int) = post(Pb().msg(10, Pb().int(1, code.toLong()).int(2, direction.toLong()).bytes()).bytes())
 
-    /** Opens a link on the TV, such as android-app://package. */
-    fun launch(link: String) = post(Pb().msg(90, Pb().str(1, link).bytes()).bytes())
+    /** Opens a link on the TV, or an app by its package name: the app when it is installed, its Play Store page when it is not. */
+    fun launch(link: String) {
+        val full = if (Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:").containsMatchIn(link)) link else "market://launch?id=$link"
+        post(Pb().msg(90, Pb().str(1, full).bytes()).bytes())
+    }
 
     private fun post(message: ByteArray) {
-        val s = sock ?: return
-        if (!ready()) return
-        out.execute { try { send(s, message) } catch (e: Exception) { try { s.close() } catch (ignored: Exception) { } } }
+        if (closed || sock == null) return
+        out.execute {
+            for (i in 0 until 30) { if (live || closed) break; try { Thread.sleep(200) } catch (e: InterruptedException) { return@execute } }   // being dialled again
+            val s = sock
+            if (!live || s == null) return@execute
+            try { send(s, message) } catch (e: Exception) { try { s.close() } catch (ignored: Exception) { } }
+        }
     }
 
     override fun close() {
