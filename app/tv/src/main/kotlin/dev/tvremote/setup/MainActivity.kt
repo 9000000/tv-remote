@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -48,8 +49,7 @@ class MainActivity : Activity() {
         status.setPadding(0, dp(6), 0, dp(18))
         root.addView(status)
 
-        val row = LinearLayout(this)
-        row.orientation = LinearLayout.HORIZONTAL
+        val row = FlowRow(this, dp(12))
         buttons = arrayOf(
             button("⚡ Tối ưu TV") { job { it.apply() } },
             button("Hoàn tác") { job { it.undo() } },
@@ -60,8 +60,7 @@ class MainActivity : Activity() {
         root.addView(row)
 
         // the web remote served by this TV: any phone or computer opens http://<TV's IP>:8765 and pairs with a code
-        val web = LinearLayout(this)
-        web.orientation = LinearLayout.HORIZONTAL
+        val web = FlowRow(this, dp(12))
         web.setPadding(0, dp(12), 0, 0)
         webBtn = button("") { RemoteService.setEnabled(this, !RemoteService.enabled(this)); showWeb() }
         web.addView(webBtn)
@@ -264,9 +263,7 @@ class MainActivity : Activity() {
         b.background = background(false)
         b.setOnFocusChangeListener { v, focused -> v.background = background(focused) }
         b.gravity = Gravity.CENTER
-        val p = LinearLayout.LayoutParams(-2, -2)
-        p.marginEnd = dp(12)
-        b.layoutParams = p
+        b.layoutParams = ViewGroup.LayoutParams(-2, -2)             // spacing comes from the FlowRow it sits in
         b.setPadding(dp(22), dp(12), dp(22), dp(12))
         return b
     }
