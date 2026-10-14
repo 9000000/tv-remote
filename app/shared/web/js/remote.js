@@ -78,13 +78,13 @@ try { setLive(localStorage.getItem('live') !== '0'); $('#numpad').hidden = !loca
 
 // ---------- mouse: click, drag and scroll on the picture act as a finger on the TV screen ----------
 // The picture is an <img> (frames from the computer) or a <video> (H.264 straight from the TV): both take the same gestures.
-let touching = false, lastMove = 0, lastWheel = 0, lastPos = { x: .5, y: .5 }, mark = null;
+let touching = false, lastMove = 0, lastWheel = 0, lastPos = { x: .5, y: .5 }, tapDot = null;
 // Where the finger landed: a dot that follows a drag and fades out in a ring when let go, so a click on a still picture shows.
 function tapMark(e, what) {
   const box = $('#screenbox').getBoundingClientRect(), at = (m) => { m.style.left = (e.clientX - box.left) + 'px'; m.style.top = (e.clientY - box.top) + 'px'; };
-  if (what === 'move') { if (mark) at(mark); return; }
-  if (what === 'down') { if (mark) mark.remove(); mark = el('div', { className: 'tap' }); at(mark); $('#screenbox').append(mark); return; }
-  const m = mark; if (!m) return; mark = null;
+  if (what === 'move') { if (tapDot) at(tapDot); return; }
+  if (what === 'down') { if (tapDot) tapDot.remove(); tapDot = el('div', { className: 'tap' }); at(tapDot); $('#screenbox').append(tapDot); return; }
+  const m = tapDot; if (!m) return; tapDot = null;
   m.classList.add('gone'); m.addEventListener('animationend', () => m.remove());
 }
 const touch = (a, p, extra) => queue('/api/touch', { a, x: p.x, y: p.y, ...extra });
