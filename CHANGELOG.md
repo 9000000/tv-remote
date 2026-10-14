@@ -10,10 +10,12 @@ Web 2.17.2 · app điện thoại 2.15.2 · app TV 2.14.2
 
 **Tiếng Việt**
 - **Sửa tab Tệp · Cài không chạy (2.17.1):** chấm tròn chỗ bấm trên hình dùng trùng một tên với tab Tệp, làm cả tab đó và việc đổi TV báo lỗi.
+- **Sửa lỗi 500 khi tải danh sách app (web máy tính):** chọn hoặc đổi TV đúng lúc trang đang tải danh sách app làm server trộn hai TV và báo lỗi. Chọn lại đúng TV đang dùng cũng không còn làm rớt kết nối.
 - **Sức khỏe → Lỗi app:** xem app nào trên TV bị dừng, bị treo trong khoảng 3 ngày qua (Android tự ghi lại), gom theo app, có số lần, lần cuối, lý do bằng lời dễ hiểu và nguyên văn lỗi, nút chép để gửi người khác hỏi. Có ở cả ba nơi.
 
 **English**
 - **Fixed the Files · Install tab not working (2.17.1):** the tap dot on the picture reused a name from the Files tab, which broke that tab and switching TVs.
+- **Fixed a 500 when loading the app list (computer web):** choosing or changing the TV while the page loaded the apps mixed two TVs up. Choosing the TV already in use no longer drops its connections either.
 - **Health → App errors:** see which apps on the TV stopped or froze over the last 3 days or so (Android keeps the record), grouped per app with how often, when last, the reason in plain words and the exact error, and a button to copy it for someone to look at. In all three clients.
 
 ## 2.17.1 - 2026-10-15

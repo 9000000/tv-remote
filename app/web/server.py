@@ -284,14 +284,16 @@ def build(S):
     @routes.get("/api/apps")
     @adb_errors
     async def apps(request):
-        pkgs = await adb.apps(request.query.get("system") == "1")
-        off = await adb.disabled()
-        return web.json_response({"apps": [{"pkg": p, "off": p in off, "keep": bool(PROTECTED.fullmatch(p)), "meta": meta.cached(p, adb.apk_paths[p])} for p in pkgs]})
+        cur = S.cur                                                   # one TV throughout: a switch mid-request left the paths of the new, empty one
+        pkgs = await cur.adb.apps(request.query.get("system") == "1")
+        off = await cur.adb.disabled()
+        return web.json_response({"apps": [{"pkg": p, "off": p in off, "keep": bool(PROTECTED.fullmatch(p)), "meta": cur.meta.cached(p, cur.adb.apk_paths.get(p, ""))} for p in pkgs]})
 
     @routes.get("/api/apps/report")
     @adb_errors
     async def apps_report(_):
         """What an AI (or a person) needs to say which apps can go; the page turns it into a prompt to copy."""
+        cur = S.cur; adb, meta = cur.adb, cur.meta                   # one TV throughout, as in apps()
         lst = lambda out: sorted(l[8:].strip() for l in out.splitlines() if l.startswith("package:"))
         # all at once: meminfo alone takes seconds on a slow TV
         head, user, system, off, mem, _ = await asyncio.gather(
@@ -311,10 +313,11 @@ def build(S):
     @routes.get("/api/app/meta")
     @adb_errors
     async def app_meta(request):
-        pkg = request.query.get("pkg", "")
-        if pkg not in adb.apk_paths:
+        pkg, cur = request.query.get("pkg", ""), S.cur
+        path = cur.adb.apk_paths.get(pkg)
+        if not path:
             raise web.HTTPNotFound()
-        return web.json_response(await meta.get(pkg, adb.apk_paths[pkg]))
+        return web.json_response(await cur.meta.get(pkg, path))
 
     @routes.get("/api/app/icon")
     async def app_icon(request):
@@ -511,7 +514,8 @@ def build(S):
             raise web.HTTPBadRequest(text="not an IP address")
         if tvconfig.find(S.cfg, host):
             S.cfg["current"] = host; tvconfig.save(S.cfg)
-        await switch(host)
+        if host != tv.host:                                           # the TV in use again: keep its connections (a new session dropped them)
+            await switch(host)
         return web.json_response({"ok": True})
 
     async def tv_info():
