@@ -87,6 +87,8 @@ Dùng được từ mọi trình duyệt, không cần cài gì trên điện th
 - Kết nối là HTTP thường, không mã hóa. **Đừng mở cổng 8765 ra Internet**; ở ngoài nhà hãy đi qua Tailscale.
 - Cần TV mở ADB ở cổng 5555. Một số Google TV đời mới chỉ có "Gỡ lỗi không dây" kiểu ghép mã có thể không dùng được.
 
+<p align="center"><img src="docs/tvapp-vi.png" width="640" alt="Màn hình app TV Setup"></p>
+
 ## 3. Web trên máy tính
 
 Cần Python 3.10 trở lên, `adb` và `ffmpeg` (macOS: `brew install android-platform-tools ffmpeg`; Windows: bộ cài tự tải `adb`, thiếu ffmpeg thì `winget install Gyan.FFmpeg`).

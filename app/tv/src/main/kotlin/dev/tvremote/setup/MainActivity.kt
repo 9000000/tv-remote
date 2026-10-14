@@ -168,7 +168,7 @@ class MainActivity : Activity() {
             tsTile,
             Tile(R.drawable.ic_undo, t("Hoàn tác", "Undo"), t("Trả TV về như trước khi tối ưu", "Put the TV back as it was")) { job { it.undo() } },
             updateTile,
-            Tile(R.drawable.ic_code, t("Gỡ lỗi ADB", "ADB debugging"), t("Mở Tùy chọn nhà phát triển", "Open Developer options")) { devOptions() },
+            Tile(R.drawable.ic_code, t("Gỡ lỗi ADB", "Debugging"), t("Mở Tùy chọn nhà phát triển", "Open Developer options for ADB")) { devOptions() },
             Tile(R.drawable.ic_refresh, t("Kết nối lại", "Reconnect"), t("Nối lại ADB của TV", "Connect to the TV's ADB again")) { connect() })
         for (row in tiles.chunked(3)) {
             val r = LinearLayout(this)

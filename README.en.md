@@ -87,6 +87,8 @@ Works from any browser, with nothing to install on the phone or computer.
 - The connection is plain HTTP, not encrypted. **Do not expose port 8765 to the Internet**; away from home, go through Tailscale.
 - It needs the TV's ADB on port 5555. Some newer Google TVs that only have pairing-code "Wireless debugging" may not work.
 
+<p align="center"><img src="docs/tvapp-en.png" width="640" alt="The TV Setup app screen"></p>
+
 ## 3. Web on the computer
 
 Needs Python 3.10 or newer, `adb` and `ffmpeg` (macOS: `brew install android-platform-tools ffmpeg`; Windows: the installer fetches `adb`, and for ffmpeg run `winget install Gyan.FFmpeg`).

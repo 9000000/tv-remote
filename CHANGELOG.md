@@ -4,6 +4,18 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.11.1 - 2026-10-14
+
+Web 2.11.1 · app điện thoại 2.10.0 · app TV 2.9.1
+
+**Tiếng Việt**
+- App TV (tiếng Anh): ô “ADB debugging” bị cắt chữ, giờ là “Debugging” · “Open Developer options for ADB”.
+- README: thêm ảnh màn hình app TV Setup mới.
+
+**English**
+- TV app (English): the “ADB debugging” tile was cut off; it now reads “Debugging” · “Open Developer options for ADB”.
+- README: a screenshot of the new TV Setup app screen.
+
 ## 2.11.0 - 2026-10-14
 
 Web 2.11.0 · app điện thoại 2.10.0 · app TV 2.9.0
