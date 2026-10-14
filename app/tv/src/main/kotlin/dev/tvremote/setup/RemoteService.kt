@@ -148,7 +148,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         mine = Tv(this, "127.0.0.1", null, 0, 0, false, object : Tv.Listener {   // a session we have let go of no longer has a say
             override fun onStatus(key: String, detail: String) { if (mine == null || tv === mine) this@RemoteService.onStatus(key, detail) }
             override fun onVideoSize(w: Int, h: Int) { }
-            override fun onNetwork(mac: String, lan: String) { }
+            override fun onNetwork(mac: String, lan: String, tailscale: String) { }
         })
         tv = mine
     }
@@ -212,7 +212,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     }
 
     override fun onVideoSize(w: Int, h: Int) { }
-    override fun onNetwork(mac: String, lan: String) { }
+    override fun onNetwork(mac: String, lan: String, tailscale: String) { }
 
     // ---------------------------------------------------------------- the picture, for one browser at a time
     /**
@@ -228,7 +228,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         val v = Tv(this, "127.0.0.1", null, quality, 1280, false, object : Tv.Listener {
             override fun onStatus(key: String, detail: String) { if (key == "closed" || key == "error") q.add(end) }
             override fun onVideoSize(w: Int, h: Int) { q.add(packet(0, java.nio.ByteBuffer.allocate(8).putInt(w).putInt(h).array())) }
-            override fun onNetwork(mac: String, lan: String) { }
+            override fun onNetwork(mac: String, lan: String, tailscale: String) { }
         }) { config, key, data ->
             if (q.size > 150) q.add(end)                              // the browser cannot keep up: stop instead of filling memory
             else q.add(packet(if (config) 1 else if (key) 2 else 3, data))

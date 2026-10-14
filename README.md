@@ -40,7 +40,7 @@ flowchart TD
 
 ## Chuẩn bị TV (một lần, bằng remote của TV)
 
-Tên menu dưới đây là trên Sony; hãng khác khác chút ít.
+Tên menu dưới đây là trên Sony; hãng khác có thể hơi khác.
 
 1. **Bật Tùy chọn nhà phát triển:** Cài đặt → Tùy chọn thiết bị → Giới thiệu → **Bản dựng** → bấm OK 7 lần.
 2. **Bật ADB:** Cài đặt → Tùy chọn thiết bị → Tùy chọn nhà phát triển → **Gỡ lỗi ADB** (có TV ghi "Gỡ lỗi USB").
@@ -83,7 +83,7 @@ Dùng được từ mọi trình duyệt, không cần cài gì trên điện th
 - Không cần gõ địa chỉ: app TV Setup hiện mã QR trỏ tới trang này, quét bằng camera điện thoại là mở.
 - Trang tự chạy lại khi TV khởi động.
 - **Lịch sử dùng TV:** app TV Setup tự ghi 5 phút một lần (app nào đang mở, RAM, CPU, bộ nhớ) và lưu ngay trên TV; cả ba nơi xem lại ở Sức khỏe → Lịch sử. Không cần máy nào khác bật.
-- Trên TV, app còn có: **Tối ưu TV** / **Hoàn tác**, **Tailscale** (tự cài và mở mã đăng nhập), **Cập nhật**, bật/tắt remote qua web, **Hủy ghép mọi thiết bị**.
+- Trên TV, app còn có: **Tối ưu TV** / **Hoàn tác**, **Tailscale** (tự cài và mở mã đăng nhập), **Cập nhật**, bật/tắt remote qua web, **Hủy ghép** (mọi thiết bị).
 - Kết nối là HTTP thường, không mã hóa. **Đừng mở cổng 8765 ra Internet**; ở ngoài nhà hãy đi qua Tailscale.
 - Cần TV mở ADB ở cổng 5555. Một số Google TV đời mới chỉ có "Gỡ lỗi không dây" kiểu ghép mã có thể không dùng được.
 
@@ -125,7 +125,7 @@ Từ đó chỉ cần bấm đúp file start. Đóng cửa sổ là dừng; khô
 Làm một lần, lúc đang ở nhà (cùng Wi-Fi với TV):
 
 1. Mở tab **Thiết lập** (app điện thoại: nút ô lưới → Thiết lập; app TV Setup trên TV: nút **Tailscale**) → **⚡ Cài và đăng nhập Tailscale**.
-2. Chờ khoảng nửa phút: TV tự tải Tailscale bản chính thức (kiểm checksum), cài, bỏ qua hộp hỏi VPN, bật lên và lấy link đăng nhập.
+2. Chờ khoảng nửa phút: TV tự tải Tailscale bản chính thức (kiểm checksum), cài, bỏ qua hộp hỏi VPN, cho nó tự chạy lại mỗi khi bật TV, bật lên và lấy link đăng nhập.
 3. Bấm **🔑 Mở trang đăng nhập Tailscale** (hoặc quét mã QR), đăng nhập tài khoản Tailscale của bạn (chưa có thì tạo miễn phí bằng Google, Microsoft, GitHub), bấm **Connect**. Không phải gõ gì trên TV. Trang tự nhận khi TV đã vào.
 4. Nên làm thêm: ở [trang quản trị Tailscale](https://login.tailscale.com/admin/machines), mở menu ⋯ của TV → **Disable key expiry**, nếu không khoảng 180 ngày sau TV bị đăng xuất.
 5. Cài Tailscale trên máy điều khiển (cùng tài khoản), rồi dùng IP `100.x.x.x` của TV thay cho IP trong nhà. Web trên máy tính có bước **Lưu** để tự chuyển sang IP này.
@@ -145,13 +145,12 @@ Người ở cạnh TV: bật Gỡ lỗi ADB, cài TV Setup (hoặc nhờ ngư�
 - **Chế độ chờ (còn mạng):** nút Nguồn hoặc Đánh thức là đủ, kể cả qua Tailscale.
 - **Tắt hẳn (mất mạng):** chỉ gói Wake-on-LAN gọi được TV, và gói này phải gửi từ **trong mạng nhà**. App điện thoại gửi được khi ở đúng Wi-Fi nhà. Web máy tính nhờ được một máy ở nhà gửi giúp qua SSH: thêm `relay_user`, `relay_host` vào mục của TV trong `tvs.json`.
 - Giữ lâu nút nguồn trên remote của TV sẽ mở menu tắt hẳn; muốn bật lại từ xa thì chỉ bấm ngắn.
-- **Sau khi TV khởi động lại:** Tailscale tự vào lại nếu đã chạy Tối ưu TV. Nếu ADB không tự mở, tắt rồi bật lại "Gỡ lỗi ADB".
+- **Sau khi TV khởi động lại:** Tailscale tự chạy lại nếu đã cài bằng nút Tailscale (hoặc đã chạy Tối ưu TV). Nếu ADB không tự mở, tắt rồi bật lại "Gỡ lỗi ADB".
 
 ## Tối ưu TV (tùy chọn)
 
 Nút **⚡ Tối ưu TV** ở tab Thiết lập của cả ba nơi (và ngay trong app TV Setup trên TV); **Hoàn tác** trả lại như cũ. Chạy lại bao nhiêu lần cũng được.
 
-- Giữ Tailscale sống qua chế độ chờ và khởi động lại.
 - Tắt hiệu ứng chuyển cảnh.
 - Cài FLauncher và tắt màn hình chính "Android TV Home" của Google, vốn chiếm nhiều CPU. TV giao diện Google TV mới, box nhà mạng (vd FPT) và TV chỉ chạy app 64-bit thì màn hình chính được giữ nguyên.
 - Tắt app hệ thống không dùng (danh sách viết cho Sony BRAVIA; gói không có thì bỏ qua).
@@ -166,7 +165,7 @@ Nếu sau này TV không hiện màn hình chính: Cài đặt → Ứng dụng 
 | **ADB: chờ TV cho phép** | Trên TV chọn "Luôn cho phép". Lỡ đóng hộp hỏi (Back, Home, Hủy)? App tự hỏi lại vài lần; web thì bấm "Thử kết nối lại" |
 | **ADB: cổng đóng** | TV đang tắt, hoặc vừa khởi động lại: tắt rồi bật lại "Gỡ lỗi ADB" |
 | Bấm nút không ăn (web máy tính) | Chưa ghép nút remote (tab **Thiết lập**), hoặc đang mở hai cửa sổ cho cùng một TV |
-| Trang của TV hỏi lại mã 6 số | Trên TV đã bấm "Hủy ghép mọi thiết bị", hoặc trình duyệt đã xóa dữ liệu trang: nhập mã mới |
+| Trang của TV hỏi lại mã 6 số | Trên TV đã bấm "Hủy ghép", hoặc trình duyệt đã xóa dữ liệu trang: nhập mã mới |
 | Tailscale không ra link đăng nhập | TV phải đang mở màn hình (không ở chế độ chờ) và có Internet. Bấm lại nút; vẫn không được thì mở Tailscale trên TV và quét mã QR nó hiện |
 | Hình giật, TV chậm | Chọn chất lượng thấp hơn; tắt hình khi không cần |
 | Ở xa không kết nối được | Hai máy có cùng tài khoản Tailscale và đều đang bật không? |

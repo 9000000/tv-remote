@@ -110,6 +110,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     private var basic: Atv? = null                                    // keys only, for a TV whose ADB is still off (see Atv)
     private lateinit var basicBar: Button
     private var host: String? = null                                  // the TV we want to be connected to, null on the picker
+    private var entry: String? = null                                 // the saved TV that [host] is another address of (its Tailscale or home IP), if so
+    private val route = HashMap<String, String>()                     // saved TV -> the address that answered last: itself, its Tailscale IP or its home IP
     private var wakeNext = false                                      // wakeNext: the next session turns the TV's screen on first
     private var waking = false
     private var pendingAsk: String? = null                            // heard while the session was restarting; sent when it is live again
@@ -254,7 +256,11 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     }
 
     // ---------------------------------------------------------------- session
-    private fun connect(ip: String) {
+    /** A saved TV: through whichever of its addresses answered (at home its Wi-Fi IP, away its Tailscale IP). */
+    private fun connectSaved(ip: String) { val r = route[ip] ?: ip; connect(r, if (r != ip) ip else null) }
+
+    private fun connect(ip: String, from: String? = null) {
+        entry = from
         val h = ip.trim()
         host = h
         if (h.isEmpty()) return
@@ -345,16 +351,16 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 "connecting" -> status.text = t("Đang kết nối ", "Connecting to ") + detail + "..."
                 "allow" -> status.text = t("Nhìn lên TV: tích “Luôn cho phép từ máy tính này” rồi chọn OK.", "Look at the TV: tick “Always allow from this computer”, then OK.")
                 "starting" -> {
-                    save(h, detail)
+                    save(entry ?: h, detail)
                     status.text = t("Đang mở hình từ ", "Opening the picture from ") + detail.ifEmpty { h } + "..."
                 }
-                "rate" -> if (video) status.text = title(h) + " · " + detail + " KB/s"
+                "rate" -> if (video) status.text = title(entry ?: h) + " · " + detail + " KB/s"
                 "live" -> {
                     pendingAsk?.let {
                         from?.search(it)
                         pendingAsk = null
                     }
-                    status.text = title(h) + " · " + (if (video) t("chạm vào hình để bấm trên TV", "touch the picture to tap on the TV")
+                    status.text = title(entry ?: h) + " · " + (if (video) t("chạm vào hình để bấm trên TV", "touch the picture to tap on the TV")
                     else t("đang tắt hình", "picture off"))
                 }
                 "closed" -> {
@@ -397,7 +403,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     /** True, with a word of explanation, when the button needs ADB and there is only the keys-only connection. */
     private fun needsAdb(): Boolean {
         if (basic == null) return false
-        Toast.makeText(this, t("Cần bật Gỡ lỗi ADB trên TV cho chức năng này", "This needs ADB debugging turned on on the TV"), Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, t("Cần bật Gỡ lỗi ADB trên TV cho chức năng này", "This needs ADB debugging on for the TV"), Toast.LENGTH_SHORT).show()
         return true
     }
 
@@ -435,7 +441,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                     prefs.edit().putBoolean("atv:$ip", true).apply()
                     basic = a
                     host = ip
-                    save(ip, a.model)
+                    save(entry ?: ip, a.model)
                     message(null, false)
                     show(true)
                     layoutRemote()
@@ -465,8 +471,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                     ui.post {
                         if (basic !== a || isFinishing) return@post
                         Toast.makeText(this, t("TV đã bật ADB: đang chuyển sang kết nối đầy đủ. Nhìn lên TV và chọn “Luôn cho phép”.", "ADB is on: switching to the full connection. Look at the TV and choose “Always allow”."), Toast.LENGTH_LONG).show()
+                        val e = entry
                         disconnect(null)
-                        connect(ip)
+                        connect(ip, e)
                     }
                     return@Thread
                 }
@@ -558,7 +565,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     private fun castFile(uri: Uri) {
         val ip = host
         if (ip == null || tv?.ready() != true) {
-            say(t("Phát tệp lên TV cần ADB. TV này mới chỉ nối bằng nút remote: vào “Bật ADB” trước.", "Playing a file on the TV needs ADB. This TV is connected with the remote buttons only: turn ADB on first."), true)
+            say(t("Phát tệp lên TV cần ADB. TV này mới chỉ nối bằng nút remote: vào “Bật ADB cho TV này” trước.", "Playing a file on the TV needs ADB. This TV is connected with the remote buttons only: use “Turn on ADB for this TV” first."), true)
             return
         }
         var name = "shared"
@@ -689,8 +696,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             Triple(t("Kết nối đầy đủ", "Full connection"), t("App tự chuyển khi TV bật ADB; bấm nếu muốn thử ngay", "The app switches by itself once ADB is on; tap to try now")) {
                 val ip = host
                 adbFailed.remove(ip)
+                val e = entry
                 disconnect(null)
-                if (ip != null) connect(ip)
+                if (ip != null) connect(ip, e)
             },
             Triple(t("Mở CH Play trên TV", "Open the Play Store on the TV"), "") { basic?.launch("https://play.google.com/store/apps"); Unit },
             Triple(t("Mở app theo tên gói", "Open an app by package name"), t("Đã cài thì mở app, chưa cài thì mở trang CH Play của nó", "Opens the app, or its Play Store page when not installed")) {
@@ -864,7 +872,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 Toast.makeText(this, t("Đang nhập đường dẫn trên TV...", "Entering the link on the TV..."), Toast.LENGTH_LONG).show()
                 ui.postDelayed({ if (basic != null && !isFinishing) installSetupByHand() }, 600)
             },
-            Triple(t("3. Mở TV Setup trên TV", "3. Open TV Setup on the TV"), t("Trong đó bấm “Tùy chọn nhà phát triển” rồi bật Gỡ lỗi USB", "There choose “Tùy chọn nhà phát triển” (Developer options) and turn on USB debugging")) { basic?.let { b -> tvJob { openOnTv(b, "dev.tvremote.setup") { false } } }; Unit },
+            Triple(t("3. Mở TV Setup trên TV", "3. Open TV Setup on the TV"), t("Trong đó bấm “Tùy chọn nhà phát triển” rồi bật Gỡ lỗi USB", "There choose “Developer options” and turn on USB debugging")) { basic?.let { b -> tvJob { openOnTv(b, "dev.tvremote.setup") { false } } }; Unit },
             Triple(t("Chép đường dẫn", "Copy the link"), link) {
                 (getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager).setPrimaryClip(android.content.ClipData.newPlainText("tv-setup", link))
                 Toast.makeText(this, t("Đã chép", "Copied"), Toast.LENGTH_SHORT).show()
@@ -933,8 +941,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 "Use this remote’s arrows and OK:\n\n1. In Settings: Device Preferences (or System) → About → press OK 7 times on “Build”.\n2. Go back, open Developer options → turn on “USB debugging” (or “ADB debugging”).\n3. Tap “Full connection”, then on the TV tick “Always allow” and choose OK.\n\nIf the TV asks for an “ADB password”: the operator has locked this (some operator boxes do). Only they have the password; this TV then works in keys-only mode only."))
             .setPositiveButton(t("Kết nối đầy đủ", "Full connection")) { _, _ ->
                 val ip = host
+                val e = entry
                 disconnect(null)
-                if (ip != null) connect(ip)
+                if (ip != null) connect(ip, e)
             }
             .setNegativeButton(t("Đóng", "Close"), null).show()
     }
@@ -955,9 +964,11 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         ui.post { frame.setAspect(w, h) }
     }
 
-    override fun onNetwork(mac: String, lan: String) {
-        val ip = host
-        if (ip != null) prefs.edit().putString("mac:$ip", mac).putString("lan:$ip", lan).apply()
+    override fun onNetwork(mac: String, lan: String, tailscale: String) {
+        val ip = entry ?: host ?: return
+        val e = prefs.edit().putString("mac:$ip", mac).putString("lan:$ip", lan)
+        if (tailscale.isNotEmpty() && tailscale != ip) e.putString("ts:$ip", tailscale)   // remembered at home, used when away
+        e.apply()
     }
 
     // ---------------------------------------------------------------- updates (GitHub releases)
@@ -1148,10 +1159,13 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         override fun run() {
             ui.removeCallbacks(this)
             if (host == null && !waking) for (ip in savedIps()) Thread {
-                val up = open(ip, 5555, 2500) || prefs.getBoolean("atv:$ip", false) && open(ip, 6466, 1500)
+                // the saved address first, then the TV's other one: its Tailscale IP when away, its home IP when at home
+                val via = listOf(ip, pref("ts:$ip"), pref("lan:$ip")).filter { it.isNotEmpty() }.distinct()
+                    .firstOrNull { open(it, 5555, 2500) || prefs.getBoolean("atv:$ip", false) && open(it, 6466, 1500) }
+                val up = via != null
                 val lan = pref("lan:$ip")
                 val away = lan.isNotEmpty() && !Wol.sameNetwork(lan)   // the phone is not on the TV's own Wi-Fi
-                ui.post { reach[ip] = up; awayFrom[ip] = away; showReach(ip, up) }
+                ui.post { if (via != null) route[ip] = via else route.remove(ip); reach[ip] = up; awayFrom[ip] = away; showReach(ip, up) }
             }.start()
             ui.postDelayed(this, 8000)
         }
@@ -1161,7 +1175,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val (b, wk) = savedRows[ip] ?: return
         val status = when (up) {
             null -> t("đang kiểm tra...", "checking...")
-            true -> t("● kết nối được", "● reachable")
+            true -> route[ip].let { r -> if (r == null || r == ip) t("● kết nối được", "● reachable")
+                else if (r.startsWith("100.")) t("● kết nối được qua Tailscale", "● reachable through Tailscale") else t("● kết nối được trong nhà", "● reachable at home") }
             false -> if (awayFrom[ip] == true) t("○ không thấy · bạn đang ngoài Wi-Fi của TV nên không đánh thức từ đây được", "○ no answer · you are not on the TV’s Wi-Fi, so it cannot be woken from here")
                 else t("○ không thấy · TV đang tắt? bấm nút nguồn để đánh thức", "○ no answer · is the TV off? tap power to wake it")
         }
@@ -1181,7 +1196,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         savedList.removeAllViews()
         savedRows.clear()
         for (ip in savedIps()) {
-            val b = row("") { connect(ip) }
+            val b = row("") { connectSaved(ip) }
             val wk = icon("@power", t("Đánh thức", "Wake"), BTN)        // only offered while the TV does not answer
             wk.setOnClickListener { wake(ip) }
             wk.visibility = View.GONE
@@ -1199,7 +1214,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                     .setPositiveButton(t("Xóa", "Remove")) { _, _ ->
                         val ips = savedIps()
                         ips.remove(ip)
-                        prefs.edit().putString("ips", TextUtils.join(",", ips)).remove("name:$ip").remove("mac:$ip").remove("lan:$ip").remove("atv:$ip").apply()
+                        prefs.edit().putString("ips", TextUtils.join(",", ips)).remove("name:$ip").remove("mac:$ip").remove("lan:$ip").remove("ts:$ip").remove("atv:$ip").apply()
                         refreshSaved()
                     }.setNegativeButton(android.R.string.cancel, null).show()
             }
@@ -1403,13 +1418,13 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             AlertDialog.Builder(this).setTitle(t("Cách kết nối", "How to connect")).setMessage(t(
                 "1. BẬT ADB TRÊN TV (một lần)\nCài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng”. Rồi Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB”.\n\n" +
                     "2A. CÙNG WI-FI VỚI TV\nBấm “Quét Wi-Fi” rồi chọn TV. Hoặc xem IP trên TV: Cài đặt → Mạng và Internet → tên Wi-Fi.\n\n" +
-                    "2B. KHÁC MẠNG\nBật Tailscale trên cả điện thoại và TV, rồi nhập IP 100.x của TV (xem trong app Tailscale).\n\n" +
+                    "2B. KHÁC MẠNG\nBật Tailscale trên cả điện thoại và TV. TV đã kết nối ở nhà một lần thì app nhớ IP Tailscale của nó, ra ngoài chỉ cần bấm TV trong danh sách. Chưa thì nhập IP 100.x của TV (xem trong app Tailscale).\n\n" +
                     "TV chưa có Tailscale? Lúc đang ở nhà, kết nối TV rồi bấm nút ô lưới → Thiết lập → “Cài và đăng nhập Tailscale”: app tự cài lên TV và mở trang đăng nhập trên điện thoại, bạn chỉ bấm Connect.\n\n" +
                     "3. LẦN ĐẦU KẾT NỐI\nTV hỏi cho phép: tích “Luôn cho phép” rồi OK.\n\n" +
                     "MẸO\nNút nguồn cạnh tên TV: đánh thức TV đang tắt. Nút ✕ cạnh tên TV: xóa khỏi danh sách.",
                 "1. TURN ON ADB ON THE TV (once)\nSettings → Device Preferences → About → press OK 7 times on “Build”. Then Developer options → turn on “ADB debugging”.\n\n" +
                     "2A. SAME WI-FI AS THE TV\nTap “Scan the Wi-Fi” and pick the TV. Or read the IP on the TV: Settings → Network & Internet → the Wi-Fi name.\n\n" +
-                    "2B. ANOTHER NETWORK\nTurn on Tailscale on both the phone and the TV, then type the TV’s 100.x IP (see the Tailscale app).\n\n" +
+                    "2B. ANOTHER NETWORK\nTurn on Tailscale on both the phone and the TV. Once the TV has been connected at home, the app remembers its Tailscale IP: away, just tap the TV in the list. Otherwise type the TV’s 100.x IP (see the Tailscale app).\n\n" +
                     "No Tailscale on the TV yet? While at home, connect to the TV, then tap the grid button → Setup → “Install and sign in to Tailscale”: the app installs it on the TV and opens the sign-in page on the phone; you only press Connect.\n\n" +
                     "3. THE FIRST CONNECTION\nThe TV asks for permission: tick “Always allow”, then OK.\n\n" +
                     "TIPS\nThe power button next to a TV wakes it when it is off. The ✕ next to a TV removes it from the list."))
@@ -1498,7 +1513,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     private fun ask(sentence: String) {
         if (needsAdb()) return
-        Toast.makeText(this, t("Gửi cho TV: ", "Sent to the TV: ") + sentence, Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, t("Đã gửi cho TV: ", "Sent to the TV: ") + sentence, Toast.LENGTH_SHORT).show()
         val tv = tv
         if (tv != null && tv.ready()) tv.search(sentence) else pendingAsk = sentence
     }

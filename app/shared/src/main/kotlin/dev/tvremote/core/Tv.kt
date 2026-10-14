@@ -37,7 +37,7 @@ class Tv(
     interface Listener {
         fun onStatus(key: String, detail: String)                     // connecting | allow | starting | live | closed | error
         fun onVideoSize(w: Int, h: Int)
-        fun onNetwork(mac: String, lan: String)                       // the TV's home-network address, for Wake-on-LAN later
+        fun onNetwork(mac: String, lan: String, tailscale: String)    // the TV's home-network address (for Wake-on-LAN), and its 100.x one if any
     }
 
     companion object {
@@ -133,16 +133,18 @@ class Tv(
         }
     }
 
-    /** MAC and IP of the interface that is on the home network (not Tailscale's 100.x, which has no MAC). */
+    /** MAC and IP of the interface that is on the home network, and the Tailscale 100.x address (no MAC) if the TV has one. */
     private fun reportNetwork(a: Adb) {
         try {
-            for (block in Pattern.compile("(?m)^\\d+: ").split(a.shell("ip addr show"))) {
+            val all = a.shell("ip addr show")
+            val ts = Regex("inet (100\\.(?:6[4-9]|[7-9]\\d|1[01]\\d|12[0-7])\\.[0-9.]+)/").find(all)?.groupValues?.get(1) ?: ""
+            for (block in Pattern.compile("(?m)^\\d+: ").split(all)) {
                 val ip = Pattern.compile("inet ([0-9.]+)/").matcher(block)
                 val mac = Pattern.compile("link/ether ([0-9a-f:]{17})").matcher(block)
                 if (!ip.find() || !mac.find()) continue
                 val lan = ip.group(1)!!
                 if (lan.startsWith("192.168.") || lan.startsWith("10.") || lan.matches(Regex("172\\.(1[6-9]|2\\d|3[01])\\..*"))) {
-                    listener.onNetwork(mac.group(1)!!.uppercase(Locale.ROOT), lan)
+                    listener.onNetwork(mac.group(1)!!.uppercase(Locale.ROOT), lan, ts)
                     return
                 }
             }

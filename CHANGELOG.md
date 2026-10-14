@@ -4,6 +4,30 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.11.0 - 2026-10-14
+
+Web 2.11.0 · app điện thoại 2.10.0 · app TV 2.9.0
+
+**Tiếng Việt**
+- **App TV có giao diện mới.** Thẻ trạng thái có chấm màu; 6 ô thao tác lớn có biểu tượng và một dòng mô tả (Tối ưu TV, Tailscale, Hoàn tác, Cập nhật, Gỡ lỗi ADB, Kết nối lại); khung “Hoạt động” riêng; cột phải “Điều khiển từ điện thoại” có mã QR. Màn hình ghép mã cũng làm lại, mã to dễ đọc. App TV nói tiếng Anh khi TV không đặt tiếng Việt.
+- **Ô đang chạy hiện vòng xoay** và tiến độ (“Đang tải 40%”, “Đang cài...”, “Đang bật...”); các ô khác mờ đi chờ.
+- **Không còn treo “Đang làm...” mãi mãi.** Mọi lệnh gửi TV giờ có giới hạn thời gian: TV ngừng trả lời thì báo lỗi và trả nút lại. Trang web máy tính/TV/điện thoại: mạng chập chờn khi đang theo dõi một việc không còn kết thúc giữa chừng; mất hẳn kết nối thì báo rõ.
+- Sửa: nút Tailscale trên app TV đứng yên khi cài (chép 100 MB qua ADB bị kẹt). Giờ cài thẳng từ tệp đã tải, nhanh hơn nhiều; chép tệp mà hỏng thì tự thử lại một lần và không để lại tệp dở.
+- **Lỗi dễ hiểu hơn**: ngày giờ TV sai (lỗi chứng chỉ), TV chưa vào Internet, mạng chậm, TV hết bộ nhớ... được nói thành câu hướng dẫn thay vì tên lỗi kỹ thuật.
+- **Tailscale tự chạy lại khi bật TV** được làm ngay trong bước cài Tailscale, không cần chạy Tối ưu TV nữa. Mô tả Tối ưu TV gọn lại: “Bớt hiệu ứng và app thừa”.
+- **App điện thoại nhớ IP Tailscale của TV.** Kết nối TV một lần ở nhà, app ghi lại IP Tailscale của nó; ra ngoài, bấm TV đã lưu là app tự đi qua Tailscale (dòng trạng thái ghi “kết nối được qua Tailscale”). Android không cho app khác xem danh sách máy Tailscale nên không quét được như web máy tính.
+- Rà chính tả toàn bộ: thống nhất “Optimize”, tên tab “Setup”, bổ sung tiếng Anh cho trợ lý bật ADB và vài thông báo còn sót.
+
+**English**
+- **A new TV app screen.** A status card with a coloured dot; six big action tiles with an icon and one line each (Optimize TV, Tailscale, Undo, Update, ADB debugging, Reconnect); a separate “Activity” box; a right-hand “Control from your phone” card with the QR code. The pairing screen is redone too, with a big code. The TV app speaks English when the TV is not set to Vietnamese.
+- **The running tile shows a spinner** and progress (“Downloading 40%”, “Installing...”, “Switching on...”); the other tiles dim while waiting.
+- **No more endless “Working...”.** Every command sent to the TV now has a time limit: when the TV stops answering, the error is shown and the buttons come back. On the web page (computer, TV, phone), a network blip while following a job no longer ends it early; a lost connection is said plainly.
+- Fixed: the Tailscale button in the TV app stood still while installing (copying 100 MB over ADB stalled). It now installs straight from the downloaded file, much faster; a failed copy is retried once and leaves no half file behind.
+- **Clearer errors**: a wrong date on the TV (certificate errors), no Internet, a slow network, a full TV... are told as advice instead of a technical error name.
+- **Tailscale starting again whenever the TV turns on** is now part of the Tailscale install itself; Optimize TV is no longer needed for that. Its description is shorter: “Fewer animations and extra apps”.
+- **The phone app remembers the TV's Tailscale IP.** Connect to the TV once at home and the app notes its Tailscale IP; away from home, tapping the saved TV goes through Tailscale (the status says “reachable through Tailscale”). Android does not let other apps list Tailscale devices, so the phone cannot scan for them like the computer web does.
+- Proofread throughout: “Optimize” everywhere, the “Setup” tab name, English for the ADB assistant and a few messages that lacked it.
+
 ## 2.10.0 - 2026-10-14
 
 Web 2.10.0 · app điện thoại 2.9.0 · app TV 2.8.0
@@ -22,7 +46,7 @@ Web 2.10.0 · app điện thoại 2.9.0 · app TV 2.8.0
 
 **English**
 - **Tailscale in one button.** The Setup tab (all three) and the Tailscale button in the TV app: downloads the official Tailscale onto the TV (checksum checked), installs it, skips the VPN question, switches it on, then reads the sign-in link off the TV's screen. You just press “Open the Tailscale sign-in page” (or scan the QR code) and Connect with your account; the page notices when the TV is in. Nothing typed on the TV, no password given to any app. In the phone app the link opens in the phone's browser.
-- The “Optimise” tab on the TV's page and in the phone app is now “Setup” (Tailscale + Optimize TV).
+- The “Optimize” tab on the TV's page and in the phone app is now “Setup” (Tailscale + Optimize TV).
 - Fixed: on the page served by the TV, the live picture was zoomed in and cropped; it now fits the box.
 - Fixed: closing the TV's “Allow USB debugging?” question by mistake (Back, Home, Cancel) left the phone and TV apps waiting 3 minutes for nothing; they now ask the TV again (up to 3 times).
 - “Optimize TV” on the computer logs short Vietnamese/English lines like the two apps (it was English with 16 “skip” lines), and says plainly when the TV runs 64-bit apps only and cannot take FLauncher.
@@ -48,7 +72,7 @@ Web 2.9.0 · app điện thoại 2.8.0 · app TV 2.7.0
 **English**
 - **One web UI for all three places.** The page on the computer, the page the TV serves (port 8765, opened from the QR code) and Manage in the phone app are now the same code (`app/shared/web`); only the core answering `/api` differs. A UI change now lands in all three at once.
 - The page served by the TV gains: picture quality from 240p to 960p and a screenshots mode, a floating picture on the other tabs, app search, file sorting, drag and drop and image preview, the merged “Files · Install” tab, and the About box with the QR code for the app. Pairing with the 6-digit code is unchanged.
-- Manage in the phone app uses this UI (Apps, Files · Install, Health, Terminal, Optimise).
+- Manage in the phone app uses this UI (Apps, Files · Install, Health, Terminal, Optimize).
 - **“Look at the TV” is now a full-screen alert** (phone app and web): when the TV asks “Allow USB debugging?”, the whole screen says to tick “Always allow” and choose OK, and closes by itself once the TV has allowed it. It used to be one small line at the top.
 - Fixed the phone app freezing (“isn’t responding”) when leaving a TV that was still waiting for that permission.
 - On a phone, the web page’s Remote tab: the TV picture box folds away until you watch, the app grid sits below the buttons, tabs carry their name under the icon.
@@ -94,7 +118,7 @@ Web 2.8.0 · app điện thoại 2.7.0 · app TV 2.6.9
 **English**
 - **Play on the TV** in all three. Phone app: Share in another app → TV Remote (the TV opens a link; a photo / video / song is copied to the TV, which plays it), plus “Play a photo / video / song from the phone” and “Mirror the phone’s screen on the TV” (opens Android’s Cast screen) under “Open on the TV”. Computer web: a “Play a photo, video or song from this computer on the TV” button next to the link box. The TV-served page: a “Play on the TV” card (link or file) on the Install tab. Playing a file needs ADB.
 - Phone app, Wi-Fi scan: waits longer for each TV and also listens for TVs announcing themselves (mDNS), so one scan is enough; each TV found says whether ADB is on; when nothing is found it says which network was scanned and that a TV reached through Tailscale needs its IP typed.
-- Computer web: the scan shows a TV’s name even with ADB off. The “Download / Install” tab is folded into “Files · Install”; “Optimise TV” lives in one place, the Set-up tab. The upload / install progress card can be collapsed. Fixed the Health tab being pushed to the right with its sections stuck together.
+- Computer web: the scan shows a TV’s name even with ADB off. The “Download / Install” tab is folded into “Files · Install”; “Optimize TV” lives in one place, the Setup tab. The upload / install progress card can be collapsed. Fixed the Health tab being pushed to the right with its sections stuck together.
 
 ## 2.7.6 - 2026-10-14
 
@@ -106,7 +130,7 @@ Web 2.7.6 · app điện thoại 2.6.3 · app TV 2.6.8
 - Hộp Giới thiệu có **mã QR tải app Android**, và mã QR mở trang remote do TV phục vụ khi app TV Setup trên TV đang bật trang đó.
 
 **English**
-- Computer web: a **“Turn ADB on for me”** button on the “ADB port closed” banner and in the Set-up tab, with the same ways as the phone app: install TV Setup on the TV automatically, open TV Settings, install another home screen, open the Play Store, open an app by package name. It only needs the paired remote buttons (port 6466); the page notices once the TV has ADB on.
+- Computer web: a **“Turn ADB on for me”** button on the “ADB port closed” banner and in the Setup tab, with the same ways as the phone app: install TV Setup on the TV automatically, open TV Settings, install another home screen, open the Play Store, open an app by package name. It only needs the paired remote buttons (port 6466); the page notices once the TV has ADB on.
 - With ADB closed the **Keyboard section is locked**, with the reason, instead of accepting typing that goes nowhere. Letters typed on the computer keyboard and pastes are not sent either; arrows, Enter and Esc still work.
 - The About box has a **QR code for the Android app**, and one for the remote page served by the TV when the TV Setup app has it on.
 
@@ -124,7 +148,7 @@ Web 2.7.5 · app điện thoại 2.6.3 · app TV 2.6.8
 **English**
 - Computer web: **fixed the “light” picture stream, which had never run since 2.3.0**. The page looked for the scrcpy file in the wrong place and silently fell back to the heavy recorder (1280×720, uncapped), slowing the TV and using far more data; mouse and keyboard on the picture were broken with it. Measured on the Sony TV over 8 seconds: 4.6 MB before, now 0.2 MB at 240p and 1.7 MB at 960p.
 - **Picture quality levels** as in the phone app: 240p, 360p, 480p, 720p, 960p, plus “Sharpest” and “Screenshots”. The choice is remembered.
-- **Always opens on the Choose-a-TV screen**, also when a TV is saved. With nothing saved there is no empty “Saved TVs” box; “Back” only shows after “Change TV”. After choosing, the page gives the TV a few seconds to answer before deciding between Remote and Set-up.
+- **Always opens on the Choose-a-TV screen**, also when a TV is saved. With nothing saved there is no empty “Saved TVs” box; “Back” only shows after “Change TV”. After choosing, the page gives the TV a few seconds to answer before deciding between Remote and Setup.
 - The volume slider is gone (the + and − buttons remain).
 - A **Play Store** box next to the link box: type an app’s name for the TV to search the store, or an app id to open its page.
 
@@ -150,7 +174,7 @@ Web 2.7.3 · app điện thoại 2.6.2 · app TV 2.6.8
 
 **English**
 - Computer web: the **“Choose a TV” screen comes first**, as in the phone app. With no TV chosen the page shows only the saved TVs, the search (it scans once by itself) and the IP box; the tabs, the remote and the ADB status are hidden. Clicking a TV goes to it: the Remote when it is ready, the first-time steps when it is not.
-- A **“Change TV”** button in the header returns to that list, with a way back to the TV in use. The old “TV” tab is now “Set-up” and holds only the first-time steps.
+- A **“Change TV”** button in the header returns to that list, with a way back to the TV in use. The old “TV” tab is now “Setup” and holds only the first-time steps.
 
 ## 2.7.2 - 2026-10-13
 
@@ -559,7 +583,7 @@ Web 2.1.0 · app điện thoại 2.1.0 · app TV 2.1.0
 - Mỗi app có số phiên bản riêng. Từ bản này, app chỉ báo cập nhật khi chính nó có thay đổi.
 
 **English**
-- Folders reorganised: `app/web` (web on the computer), `app/android` (phone app), `app/tv` (TV app), `app/shared`, `dev` (release tools). The top folder has only three files to click: `start-mac.command`, `start-windows.cmd`, `start-linux.sh`. If you used the old `start.command` / `start.cmd`, switch to the new names; `install-windows.cmd` is now part of `start-windows.cmd`.
+- Folders reorganized: `app/web` (web on the computer), `app/android` (phone app), `app/tv` (TV app), `app/shared`, `dev` (release tools). The top folder has only three files to click: `start-mac.command`, `start-windows.cmd`, `start-linux.sh`. If you used the old `start.command` / `start.cmd`, switch to the new names; `install-windows.cmd` is now part of `start-windows.cmd`.
 - Each app has its own version number. From this release on, an app only offers an update when it changed itself.
 
 ## 2.0.0 - 2026-10-13

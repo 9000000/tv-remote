@@ -106,7 +106,7 @@ const touch = (a, p, extra) => queue('/api/touch', { a, x: p.x, y: p.y, ...extra
 $('#wake').addEventListener('click', async () => {
   const b = $('#wake'); b.disabled = true; toast('Đang đánh thức TV...');
   const r = await api('/api/wake', {});
-  if (r) { toast(r.ok ? 'TV đã sẵn sàng' : 'TV chưa lên. Kiểm tra “Khởi động từ xa” trên TV và laptop ở nhà còn bật'); refresh(); }
+  if (r) { toast(r.ok ? 'TV đã sẵn sàng' : 'TV chưa lên. Kiểm tra “Khởi động từ xa” trên TV và máy ở nhà còn bật'); refresh(); }
   b.disabled = false;
 });
 // The computer keyboard is the TV's keyboard on the Remote tab, no need to click into the box first:

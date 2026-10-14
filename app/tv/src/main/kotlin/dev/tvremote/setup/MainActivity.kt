@@ -1,103 +1,229 @@
 package dev.tvremote.setup
 
 import android.app.Activity
-import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
-import android.net.Uri
 import android.os.Bundle
+import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
-import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import dev.tvremote.core.Adb
 import dev.tvremote.core.Setup
+import dev.tvremote.core.Tailscale
 import dev.tvremote.update.Release
 import java.io.File
+import java.util.Locale
 import kotlin.math.roundToInt
 
-/** One screen, driven with the TV remote: connect to the TV's own ADB, then optimise / undo / set up Tailscale. */
+/**
+ * One screen, driven with the TV remote. Left: where things stand (ADB, the TV's addresses) and six actions as tiles.
+ * Right: how a phone or computer takes over (the QR code of the web remote this TV serves, the phone app). Below: what happened.
+ * Words follow the TV's language (Vietnamese, otherwise English).
+ */
 class MainActivity : Activity() {
-    private lateinit var status: TextView
+    private val vi = Locale.getDefault().language == "vi"
+    private fun t(v: String, e: String) = if (vi) v else e
+
+    private lateinit var dot: View
+    private lateinit var statusTitle: TextView
+    private lateinit var statusDetail: TextView
     private lateinit var logView: TextView
     private lateinit var scroll: ScrollView
-    private lateinit var buttons: Array<Button>
+    private lateinit var spinner: ProgressBar
+    private lateinit var tiles: List<Tile>
+    private lateinit var tsTile: Tile
+    private lateinit var updateTile: Tile
+    private lateinit var webCol: LinearLayout
     private lateinit var webBtn: Button
-    private lateinit var webInfo: TextView
     private var lanIp = ""
     private var tsIp = ""
     private var adb: Adb? = null
     private var setup: Setup? = null
     private var busy = false
+    private var focusedOnce = false
+
+    private val BG = Color.rgb(13, 16, 20)
+    private val CARD = Color.rgb(25, 29, 35)
+    private val TILE = Color.rgb(34, 39, 47)
+    private val INK = Color.rgb(233, 236, 241)
+    private val MUTED = Color.rgb(140, 150, 163)
+    private val ACCENT = Color.rgb(59, 115, 246)
+    private val OK = Color.rgb(70, 210, 131)
+    private val WARN = Color.rgb(240, 179, 74)
+    private val BAD = Color.rgb(255, 112, 112)
+
+    /** An action: an icon, a title, and one line beside it saying what it does or where it stands. */
+    private inner class Tile(icon: Int, title: String, sub: String, run: () -> Unit) {
+        val view = LinearLayout(this@MainActivity)
+        private val subView: TextView
+        private val badge = ImageView(this@MainActivity)
+        private val wheel = ProgressBar(this@MainActivity)              // in place of the icon while this tile's work runs
+        init {
+            view.gravity = Gravity.CENTER_VERTICAL
+            view.setPadding(dp(14), dp(10), dp(14), dp(10))
+            view.isFocusable = true
+            view.isClickable = true
+            view.background = box(TILE, 14, 0)
+            badge.setImageResource(icon)
+            badge.setColorFilter(INK)
+            badge.background = box(CARD, 10, 0)
+            badge.setPadding(dp(8), dp(8), dp(8), dp(8))
+            val slot = android.widget.FrameLayout(this@MainActivity)
+            slot.addView(badge, android.widget.FrameLayout.LayoutParams(dp(40), dp(40)))
+            wheel.isIndeterminate = true
+            wheel.indeterminateTintList = android.content.res.ColorStateList.valueOf(Color.WHITE)
+            wheel.visibility = View.GONE
+            slot.addView(wheel, android.widget.FrameLayout.LayoutParams(dp(28), dp(28), Gravity.CENTER))
+            view.addView(slot, LinearLayout.LayoutParams(dp(40), dp(40)))
+            val words = LinearLayout(this@MainActivity)
+            words.orientation = LinearLayout.VERTICAL
+            words.setPadding(dp(12), 0, 0, 0)
+            val head = text(title, 16, INK, true)
+            head.isSingleLine = true
+            head.ellipsize = TextUtils.TruncateAt.END
+            words.addView(head)
+            subView = text(sub, 12, MUTED, false)
+            subView.maxLines = 2
+            subView.ellipsize = TextUtils.TruncateAt.END
+            words.addView(subView)
+            view.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
+            view.setOnClickListener { if (!busy) run() }
+            view.setOnFocusChangeListener { v, f ->
+                v.background = if (f) box(ACCENT, 14, 2) else box(TILE, 14, 0)
+                badge.background = box(if (f) Color.argb(60, 255, 255, 255) else CARD, 10, 0)
+                subView.setTextColor(if (f) Color.WHITE else MUTED)
+                v.animate().scaleX(if (f) 1.03f else 1f).scaleY(if (f) 1.03f else 1f).setDuration(120).start()
+            }
+        }
+        private var idle = sub
+        private var working = false
+        fun say(s: String) { idle = s; if (!working) subView.text = s }
+        fun progress(s: String) { if (working) subView.text = s }
+        fun work(on: Boolean) {
+            working = on
+            subView.text = if (on) t("Đang làm...", "Working...") else idle
+            wheel.visibility = if (on) View.VISIBLE else View.GONE
+            badge.imageAlpha = if (on) 0 else 255
+        }
+        fun enable(on: Boolean) { view.isEnabled = on; view.alpha = if (on) 1f else 0.4f }
+    }
 
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
-        val pad = dp(32)
-        val root = LinearLayout(this)
-        root.orientation = LinearLayout.VERTICAL
-        root.setPadding(pad, pad, pad, pad)
-        root.setBackgroundColor(Color.rgb(17, 20, 24))
-
-        val title = text("TV Setup", 30, Color.WHITE)
-        title.typeface = Typeface.DEFAULT_BOLD
-        root.addView(title)
-        root.addView(text("Bản " + version() + released().let { if (it.isEmpty()) "" else " ($it)" } + "  ·  Tác giả: Hoang Tran (@HoangTran0410)  ·  github.com/HoangTran0410/tv-remote", 14, Color.rgb(120, 130, 143)))
-        status = text("Đang kết nối ADB...", 18, Color.rgb(153, 163, 176))
-        status.setPadding(0, dp(6), 0, dp(18))
-        root.addView(status)
-
-        val row = FlowRow(this, dp(12))
-        buttons = arrayOf(
-            button("⚡ Tối ưu TV") { job { it.apply() } },
-            button("Hoàn tác") { job { it.undo() } },
-            button("Tailscale") { tailscale() },
-            button("Kết nối lại") { connect() },
-            button("Cập nhật") { update() })
-        for (b in buttons) row.addView(b)
-        row.addView(button("Tùy chọn nhà phát triển") { devOptions() })   // works without ADB: it is how one gets to turn ADB on
-        root.addView(row)
-
-        // the web remote served by this TV: any phone or computer opens http://<TV's IP>:8765 and pairs with a code
-        val web = FlowRow(this, dp(12))
-        web.setPadding(0, dp(12), 0, 0)
-        webBtn = button("") { RemoteService.setEnabled(this, !RemoteService.enabled(this)); showWeb() }
-        web.addView(webBtn)
-        web.addView(button("Hủy ghép mọi thiết bị") { RemoteService.forgetAll(this); log("✓ Đã hủy ghép. Thiết bị nào muốn điều khiển phải nhập mã mới."); showWeb() })
-        root.addView(web)
-        webInfo = text("", 17, Color.rgb(233, 236, 241))
-        webInfo.setPadding(0, dp(10), 0, 0)
-        root.addView(webInfo)
-        if (RemoteService.enabled(this)) RemoteService.start(this)
-        // Codes to scan with a phone's camera, so nobody has to type an address: the remote in the browser, and the phone app
-        qrRow = LinearLayout(this)                                    // a column down the right edge, out of the way of the log
-        qrRow.orientation = LinearLayout.VERTICAL
-        qrRow.setPadding(dp(8), dp(36), dp(24), 0)
-        showWeb()
-
-        logView = text("", 17, Color.rgb(233, 236, 241))
-        logView.setLineSpacing(dp(4).toFloat(), 1f)
-        scroll = ScrollView(this)
-        scroll.setPadding(0, dp(18), 0, 0)
-        scroll.addView(logView)
-        root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         val page = LinearLayout(this)
-        page.setBackgroundColor(Color.rgb(17, 20, 24))
-        (root.parent as? android.view.ViewGroup)?.removeView(root)
-        page.addView(root, LinearLayout.LayoutParams(0, -1, 1f))
-        page.addView(qrRow, LinearLayout.LayoutParams(dp(250), -1))
+        page.setBackgroundColor(BG)
+        page.setPadding(dp(36), dp(28), dp(36), dp(24))
+
+        // ---- left: header, status, actions, activity
+        val left = LinearLayout(this)
+        left.orientation = LinearLayout.VERTICAL
+
+        val head = LinearLayout(this)
+        head.gravity = Gravity.CENTER_VERTICAL
+        val logo = ImageView(this)
+        logo.setImageResource(R.drawable.icon)
+        logo.outlineProvider = object : android.view.ViewOutlineProvider() {
+            override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, dp(10).toFloat()) }
+        }
+        logo.clipToOutline = true
+        head.addView(logo, LinearLayout.LayoutParams(dp(44), dp(44)))
+        val names = LinearLayout(this)
+        names.orientation = LinearLayout.VERTICAL
+        names.setPadding(dp(14), 0, 0, 0)
+        names.addView(text("TV Setup", 24, INK, true))
+        names.addView(text(t("Phiên bản ", "Version ") + version() + released().let { if (it.isEmpty()) "" else " · $it" } +
+            "   ·   Hoang Tran   ·   github.com/HoangTran0410/tv-remote", 12, MUTED, false))
+        head.addView(names)
+        left.addView(head)
+
+        val status = LinearLayout(this)
+        status.gravity = Gravity.CENTER_VERTICAL
+        status.background = box(CARD, 16, 0)
+        status.setPadding(dp(18), dp(14), dp(18), dp(14))
+        dot = View(this)
+        status.addView(dot, LinearLayout.LayoutParams(dp(12), dp(12)))
+        val st = LinearLayout(this)
+        st.orientation = LinearLayout.VERTICAL
+        st.setPadding(dp(14), 0, 0, 0)
+        statusTitle = text("", 17, INK, true)
+        statusDetail = text("", 13, MUTED, false)
+        statusDetail.setLineSpacing(dp(2).toFloat(), 1f)
+        st.addView(statusTitle)
+        st.addView(statusDetail)
+        status.addView(st, LinearLayout.LayoutParams(0, -2, 1f))
+        left.addView(status, margins(top = 18))
+
+        left.addView(section(t("THAO TÁC", "ACTIONS")), margins(top = 18))
+        tsTile = Tile(R.drawable.ic_globe, "Tailscale", t("Điều khiển TV khi không ở nhà", "Control the TV away from home")) { tailscale() }
+        updateTile = Tile(R.drawable.ic_download, t("Cập nhật", "Update"), t("Đang dùng bản ", "You have version ") + version()) { update() }
+        tiles = listOf(
+            Tile(R.drawable.ic_zap, t("Tối ưu TV", "Optimize TV"), t("Bớt hiệu ứng và app thừa", "Fewer animations and extra apps")) { job { it.apply() } },
+            tsTile,
+            Tile(R.drawable.ic_undo, t("Hoàn tác", "Undo"), t("Trả TV về như trước khi tối ưu", "Put the TV back as it was")) { job { it.undo() } },
+            updateTile,
+            Tile(R.drawable.ic_code, t("Gỡ lỗi ADB", "ADB debugging"), t("Mở Tùy chọn nhà phát triển", "Open Developer options")) { devOptions() },
+            Tile(R.drawable.ic_refresh, t("Kết nối lại", "Reconnect"), t("Nối lại ADB của TV", "Connect to the TV's ADB again")) { connect() })
+        for (row in tiles.chunked(3)) {
+            val r = LinearLayout(this)
+            row.forEachIndexed { i, tile -> r.addView(tile.view, LinearLayout.LayoutParams(0, dp(74), 1f).apply { if (i > 0) leftMargin = dp(12) }) }
+            left.addView(r, margins(top = 10))
+        }
+
+        val actHead = LinearLayout(this)
+        actHead.gravity = Gravity.CENTER_VERTICAL
+        actHead.addView(section(t("HOẠT ĐỘNG", "ACTIVITY")))
+        spinner = ProgressBar(this)
+        spinner.isIndeterminate = true
+        spinner.visibility = View.INVISIBLE
+        actHead.addView(spinner, LinearLayout.LayoutParams(dp(16), dp(16)).apply { leftMargin = dp(10) })
+        left.addView(actHead, margins(top = 18))
+        logView = text("", 14, INK, false)
+        logView.setLineSpacing(dp(3).toFloat(), 1f)
+        scroll = ScrollView(this)
+        scroll.background = box(CARD, 14, 0)
+        scroll.setPadding(dp(16), dp(10), dp(16), dp(10))
+        scroll.isFocusable = false
+        scroll.addView(logView)
+        left.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f).apply { topMargin = dp(8) })
+        page.addView(left, LinearLayout.LayoutParams(0, -1, 1f))
+
+        // ---- right: taking over from a phone or a computer
+        webCol = LinearLayout(this)
+        webCol.orientation = LinearLayout.VERTICAL
+        webCol.background = box(CARD, 18, 0)
+        webCol.setPadding(dp(20), dp(18), dp(20), dp(18))
+        page.addView(webCol, LinearLayout.LayoutParams(dp(290), -1).apply { leftMargin = dp(24) })
+        webBtn = smallButton("") { RemoteService.setEnabled(this, !RemoteService.enabled(this)); showWeb(); webBtn.requestFocus() }
         setContentView(page)
 
+        if (RemoteService.enabled(this)) RemoteService.start(this)
+        showWeb()
+        log(t("Chào bạn. Chọn một ô bằng các phím mũi tên và OK của remote.", "Hello. Pick a tile with the remote's arrow keys and OK."))
         connect()
         Thread {                                                      // asks GitHub for the latest release, nothing else is sent
             try {
                 val r = Release.newer(version(), "tv", "tv-setup.apk")
-                if (r != null) { log("🆕 Có bản TV Setup mới " + r.version + " (đang dùng " + version() + "). Chọn \"Cập nhật\" để cài."); ui { buttons[4].text = "🆕 Cập nhật " + r.version } }
-            } catch (ignored: Exception) { }                          // offline: stay quiet, the button still checks on demand
+                if (r != null) ui { updateTile.say(t("Có bản mới ", "New version ") + r.version + t(" · chọn để cài", " · select to install")) }
+            } catch (ignored: Exception) { }                          // offline: stay quiet, the tile still checks on demand
         }.start()
+    }
+
+    /** Opened by touch or by another app, nothing has the focus yet: the first arrow key lands on the first tile that works. */
+    override fun dispatchKeyEvent(e: android.view.KeyEvent): Boolean {
+        val arrow = e.keyCode in intArrayOf(android.view.KeyEvent.KEYCODE_DPAD_UP, android.view.KeyEvent.KEYCODE_DPAD_DOWN,
+            android.view.KeyEvent.KEYCODE_DPAD_LEFT, android.view.KeyEvent.KEYCODE_DPAD_RIGHT, android.view.KeyEvent.KEYCODE_DPAD_CENTER)
+        if (arrow && e.action == android.view.KeyEvent.ACTION_DOWN && (currentFocus == null || window.decorView.isInTouchMode)) {
+            (tiles.firstOrNull { it.view.isEnabled } ?: tiles[4]).view.let { it.isFocusableInTouchMode = true; it.requestFocus(); it.isFocusableInTouchMode = false }
+            return true
+        }
+        return super.dispatchKeyEvent(e)
     }
 
     /** The day this build was made, as dd/mm/yyyy ("" when unknown). */
@@ -111,14 +237,14 @@ class MainActivity : Activity() {
     /** Downloads this app's APK from the latest GitHub release and installs it through the TV's own ADB (no "unknown sources" needed). */
     private fun update() {
         job { setup ->
-            log("Đang kiểm tra bản mới...")
+            log(t("Đang kiểm tra bản mới...", "Checking for a new version..."))
             val r = Release.newer(version(), "tv", "tv-setup.apk")
-            if (r == null) { log("✓ Đang dùng bản mới nhất (" + version() + ")."); return@job }
-            log("Đang tải bản " + r.version + "...")
+            if (r == null) { log(t("✓ Đang dùng bản mới nhất (", "✓ This is the newest version (") + version() + ")."); return@job }
+            log(t("Đang tải bản ", "Downloading version ") + r.version + "...")
             val apk = File(getExternalFilesDir(null), "tv-setup-update.apk")
             var last = 0
             Release.download(r.url, apk, Release.Progress { pct -> if (pct >= last + 25) { last = pct; log("  $pct%") } })
-            log("Đang cài. App sẽ tự đóng; vài giây sau mở lại TV Setup là bản " + r.version + ".")
+            log(t("Đang cài. App sẽ tự đóng; vài giây sau mở lại TV Setup là bản ", "Installing. The app closes by itself; open TV Setup again in a few seconds for version ") + r.version + ".")
             log(setup.install(apk))
         }
     }
@@ -126,11 +252,11 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         showWeb()
-        if (setup != null && !busy) job { showStatus(it) }            // back from Tailscale / Play Store: refresh the IPs
+        val s = setup
+        if (s != null && !busy) Thread { try { showStatus(s) } catch (ignored: Exception) { } }.start()   // back from Tailscale / Play Store: refresh the IPs
         else if (setup == null && retryOnResume && !connecting) { retryOnResume = false; connect() }   // back from Developer options: ADB may be on now
     }
 
-    private lateinit var qrRow: LinearLayout
     private val APP_LINK = "https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk"
 
     /** This TV's address on the home network, read from the network interfaces (ADB not needed). */
@@ -139,38 +265,63 @@ class MainActivity : Activity() {
             .flatMap { java.util.Collections.list(it.inetAddresses) }.firstOrNull { it is java.net.Inet4Address && it.isSiteLocalAddress }?.hostAddress ?: ""
     } catch (e: Exception) { "" }
 
-    private fun showCodes(webOn: Boolean) {
-        qrRow.removeAllViews()
-        fun code(link: String, title: String, what: String) {
-            val bmp = dev.tvremote.core.Qr.bitmap(link, 6) ?: return
-            val img = android.widget.ImageView(this)
-            img.setImageBitmap(bmp)
-            val box = LinearLayout(this)
-            box.orientation = LinearLayout.VERTICAL
-            box.setPadding(0, 0, 0, dp(18))
-            box.addView(img, LinearLayout.LayoutParams(dp(140), dp(140)))
-            val head = text(title, 15, Color.WHITE)
-            head.setPadding(0, dp(8), 0, 0)
-            box.addView(head)
-            box.addView(text(what, 13, Color.rgb(153, 163, 176)))
-            qrRow.addView(box)
-        }
-        val ip = lanIp.ifEmpty { wifiIp() }
-        code(APP_LINK, "Tải app điện thoại TV Remote", "Quét bằng camera điện thoại Android để tải và cài. Trong app chọn Quét Wi-Fi là thấy TV này.")
-        if (webOn && ip.isNotEmpty()) code("http://" + ip + ":" + RemoteService.PORT, "Điều khiển ngay bằng trình duyệt", "Không cần cài gì: quét rồi nhập mã 6 số TV hiện ra. Cần cùng Wi-Fi và TV đã bật Gỡ lỗi ADB.")
-    }
-
+    /** The right-hand card: the web remote's QR code and address, pairing, and the phone app. */
     private fun showWeb() {
         val on = RemoteService.enabled(this)
-        showCodes(on)
-        webBtn.text = if (on) "Remote qua web: ĐANG BẬT" else "Remote qua web: đang tắt"
-        if (!on) { webInfo.text = "Bật \"Remote qua web\" để điều khiển TV này từ trình duyệt của điện thoại hay máy tính, không cần cài gì."; return }
-        val lanIp = lanIp.ifEmpty { wifiIp() }
-        val where = if (lanIp.isEmpty() && tsIp.isEmpty()) "http://<IP của TV>:" + RemoteService.PORT
-        else (if (lanIp.isEmpty()) "" else "http://" + lanIp + ":" + RemoteService.PORT + "  (cùng Wi-Fi)") + (if (lanIp.isEmpty() || tsIp.isEmpty()) "" else "     hoặc     ") +
-            (if (tsIp.isEmpty()) "" else "http://" + tsIp + ":" + RemoteService.PORT + "  (qua Tailscale)")
-        val n = RemoteService.pairedCount(this)
-        webInfo.text = "Mở trên điện thoại / máy tính:   $where\nLần đầu TV sẽ hiện mã 6 số để ghép.   Đã ghép: $n thiết bị.   Tự chạy lại khi TV khởi động."
+        val ip = lanIp.ifEmpty { wifiIp() }
+        val focused = currentFocus
+        webCol.removeAllViews()
+        webCol.addView(text(t("Điều khiển từ điện thoại", "Control from a phone"), 18, INK, true))
+        if (on && ip.isNotEmpty()) {
+            val link = "http://" + ip + ":" + RemoteService.PORT
+            webCol.addView(text(t("Quét bằng camera, không cần cài gì.", "Scan with the camera, nothing to install."), 13, MUTED, false), margins(top = 4))
+            qr(link)?.let { webCol.addView(it, LinearLayout.LayoutParams(dp(164), dp(164)).apply { topMargin = dp(14); gravity = Gravity.CENTER_HORIZONTAL }) }
+            val addr = text(link.removePrefix("http://"), 16, INK, true)
+            addr.gravity = Gravity.CENTER
+            webCol.addView(addr, margins(top = 10))
+            if (tsIp.isNotEmpty()) {
+                val ts = text(t("Ngoài nhà: ", "Away from home: ") + tsIp + ":" + RemoteService.PORT, 13, MUTED, false)
+                ts.gravity = Gravity.CENTER
+                webCol.addView(ts)
+            }
+            val n = RemoteService.pairedCount(this)
+            webCol.addView(text(t("Lần đầu, TV hiện mã 6 số để nhập trên máy đó. Đã ghép: $n thiết bị.",
+                "The first time, the TV shows a 6-digit code to type there. Paired: $n " + (if (n == 1) "device." else "devices.")), 13, MUTED, false), margins(top = 10))
+        } else {
+            webCol.addView(text(if (on) t("TV chưa có mạng: nối TV vào Wi-Fi.", "The TV has no network: connect it to Wi-Fi.")
+                else t("Đang tắt. Bật để điều khiển TV này từ trình duyệt của điện thoại hay máy tính, không cần cài gì.",
+                    "Off. Turn it on to control this TV from a phone or computer browser, with nothing to install."), 14, MUTED, false), margins(top = 8))
+        }
+        webBtn.text = if (on) t("Remote qua web: Bật", "Web remote: On") else t("Remote qua web: Tắt", "Web remote: Off")
+        (webBtn.parent as? LinearLayout)?.removeView(webBtn)
+        val btns = LinearLayout(this)
+        btns.addView(webBtn, LinearLayout.LayoutParams(0, -2, 1f))
+        if (on) btns.addView(smallButton(t("Hủy ghép", "Unpair all")) {
+            RemoteService.forgetAll(this); log(t("✓ Đã hủy ghép. Thiết bị nào muốn điều khiển phải nhập mã mới.", "✓ Unpaired. Any device that wants control must enter a new code.")); showWeb()
+        }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(8) })
+        webCol.addView(btns, margins(top = 12))
+
+        webCol.addView(View(this), LinearLayout.LayoutParams(1, 0, 1f))
+        val app = LinearLayout(this)
+        app.gravity = Gravity.CENTER_VERTICAL
+        qr(APP_LINK)?.let { app.addView(it, LinearLayout.LayoutParams(dp(72), dp(72))) }
+        val words = LinearLayout(this)
+        words.orientation = LinearLayout.VERTICAL
+        words.setPadding(dp(12), 0, 0, 0)
+        words.addView(text(t("App Android TV Remote", "TV Remote Android app"), 14, INK, true))
+        words.addView(text(t("Quét để tải. Trong app chọn Quét Wi-Fi.", "Scan to download. In the app, pick Scan Wi-Fi."), 12, MUTED, false))
+        app.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
+        webCol.addView(app)
+        if (focused != null && focused.parent == null) webBtn.requestFocus()   // the focused button was rebuilt: keep the focus on this card
+    }
+
+    private fun qr(link: String): View? {
+        val bmp = dev.tvremote.core.Qr.bitmap(link, 6) ?: return null
+        val img = ImageView(this)
+        img.setImageBitmap(bmp)
+        img.background = box(Color.WHITE, 10, 0)
+        img.setPadding(dp(6), dp(6), dp(6), dp(6))
+        return img
     }
 
     @Volatile private var connecting = false
@@ -178,18 +329,17 @@ class MainActivity : Activity() {
     private fun connect() {
         setEnabled(false)
         connecting = true
+        setStatus(WARN, t("Đang kết nối ADB...", "Connecting ADB..."), "")
         Thread {
             try {
                 adb?.close()
                 val a = Adb(filesDir)
                 a.connect("127.0.0.1", 5555, Adb.Prompt {
-                    ui {
-                        status.text = "TV đang hỏi \"Cho phép gỡ lỗi USB?\" → tích \"Luôn cho phép\" rồi chọn OK"
-                        status.setTextColor(Color.rgb(240, 179, 74))
-                    }
+                    ui { setStatus(WARN, t("TV đang hỏi “Cho phép gỡ lỗi USB?”", "The TV is asking “Allow USB debugging?”"),
+                        t("Tích “Luôn cho phép”, rồi chọn OK.", "Tick “Always allow”, then choose OK.")) }
                 })
                 adb = a
-                val s = Setup(a, getExternalFilesDir(null), true, Setup.Log { log(it) })
+                val s = Setup(a, getExternalFilesDir(null), vi, Setup.Log { log(it) })
                 setup = s
                 showStatus(s)
                 connecting = false
@@ -198,17 +348,17 @@ class MainActivity : Activity() {
                 adb = null; setup = null
                 connecting = false
                 ui {
-                    status.text = "Chưa kết nối được ADB"
-                    status.setTextColor(Color.rgb(255, 112, 112))
+                    setStatus(BAD, t("Chưa kết nối được ADB", "No ADB connection"), t("Bật “Gỡ lỗi ADB” rồi chọn Kết nối lại.", "Turn on “ADB debugging”, then choose Reconnect."))
                     log("✗ " + reason(e))
-                    log("Cần bật \"Gỡ lỗi ADB\": Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào \"Bản dựng\", rồi Tùy chọn nhà phát triển → bật \"Gỡ lỗi ADB\" (hoặc \"Gỡ lỗi USB\").")
-                    log("Bật xong quay lại đây, chọn \"Kết nối lại\". TV hỏi thì chọn \"Luôn cho phép\".")
-                    buttons[3].isEnabled = true
-                    buttons[3].requestFocus()
+                    log(t("Cần bật “Gỡ lỗi ADB”: Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng”, rồi Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB” (hoặc “Gỡ lỗi USB”).",
+                        "Turn on “ADB debugging”: Settings → Device Preferences → About → press OK 7 times on “Build”, then Developer options → “ADB debugging” (or “USB debugging”)."))
+                    log(t("Bật xong quay lại đây, chọn Kết nối lại. TV hỏi thì chọn “Luôn cho phép”.", "Then come back here and choose Reconnect. If the TV asks, choose “Always allow”."))
+                    tiles[5].enable(true)
+                    tiles[5].view.requestFocus()
                     val off = (e.message ?: "").lowercase().let { it.contains("refused") }   // ADB is off; not: the person said no to the prompt
                     if (!openedDev && off) {                          // once: straight to where ADB is turned on, no hunting through menus
                         openedDev = true
-                        log("Đang mở Tùy chọn nhà phát triển để bật Gỡ lỗi USB...")
+                        log(t("Đang mở Tùy chọn nhà phát triển để bật Gỡ lỗi USB...", "Opening Developer options to turn on USB debugging..."))
                         devOptions()
                     }
                 }
@@ -225,10 +375,19 @@ class MainActivity : Activity() {
         lanIp = lan; tsIp = ts
         ui {
             showWeb()
-            status.setTextColor(Color.rgb(70, 210, 131))
-            status.text = "✓ ADB đã kết nối · " + name + "\nIP trong nhà: " + (if (lan.isEmpty()) "?" else lan) + "   ·   IP Tailscale: " +
-                (if (ts.isNotEmpty()) ts else if (tsInstalled) "chưa vào mạng" else "chưa cài")
+            setStatus(OK, t("Đã kết nối ADB", "ADB connected"), name + "\n" + t("Trong nhà ", "Home network ") + lan.ifEmpty { "?" } + "    ·    Tailscale " +
+                (if (ts.isNotEmpty()) ts else if (tsInstalled) t("chưa đăng nhập", "signed out") else t("chưa cài", "not installed")))
+            tsTile.say(if (ts.isNotEmpty()) t("Đã vào · ", "Connected · ") + ts else if (tsInstalled) t("Chưa đăng nhập · chọn để vào", "Signed out · select to sign in")
+                else t("Chưa cài · chọn để cài", "Not installed · select to install"))
         }
+    }
+
+    private fun setStatus(color: Int, title: String, detail: String) {
+        dot.background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(color) }
+        statusTitle.text = title
+        statusTitle.setTextColor(if (color == OK) INK else color)
+        statusDetail.text = detail
+        statusDetail.visibility = if (detail.isEmpty()) View.GONE else View.VISIBLE
     }
 
     /**
@@ -240,14 +399,15 @@ class MainActivity : Activity() {
 
     private fun devOptions() {
         retryOnResume = true
+        val dev = t("Tùy chọn nhà phát triển", "Developer options")
         val tries = listOf(
-            "Tùy chọn nhà phát triển" to android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS),
-            "Tùy chọn nhà phát triển" to android.content.Intent().setClassName("com.android.tv.settings", "com.android.tv.settings.system.development.DevelopmentActivity"),
-            "Tùy chọn nhà phát triển" to android.content.Intent().setClassName("com.android.settings", "com.android.settings.DevelopmentSettings"),
-            "Giới thiệu (bấm OK 7 lần vào \"Bản dựng\")" to android.content.Intent(android.provider.Settings.ACTION_DEVICE_INFO_SETTINGS),
-            "Cài đặt" to android.content.Intent(android.provider.Settings.ACTION_SETTINGS))
+            dev to android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS),
+            dev to android.content.Intent().setClassName("com.android.tv.settings", "com.android.tv.settings.system.development.DevelopmentActivity"),
+            dev to android.content.Intent().setClassName("com.android.settings", "com.android.settings.DevelopmentSettings"),
+            t("Giới thiệu (bấm OK 7 lần vào “Bản dựng”)", "About (press OK 7 times on “Build”)") to android.content.Intent(android.provider.Settings.ACTION_DEVICE_INFO_SETTINGS),
+            t("Cài đặt", "Settings") to android.content.Intent(android.provider.Settings.ACTION_SETTINGS))
         fun attempt(i: Int) {
-            if (i >= tries.size) { log("✗ TV này không cho mở Cài đặt từ app."); return }
+            if (i >= tries.size) { log(t("✗ TV này không cho mở Cài đặt từ app.", "✗ This TV does not let apps open its Settings.")); return }
             val (name, intent) = tries[i]
             try {
                 startActivity(intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -258,7 +418,7 @@ class MainActivity : Activity() {
             // a screen that is not allowed to open closes itself at once and leaves us in front: then try the next one
             window.decorView.postDelayed({
                 if (hasWindowFocus()) attempt(i + 1)
-                else log("Đã mở: $name. Bật \"Gỡ lỗi USB\" (hoặc \"Gỡ lỗi ADB\"), quay lại đây rồi chọn \"Kết nối lại\".")
+                else log(t("Đã mở: ", "Opened: ") + name + t(". Bật “Gỡ lỗi USB” (hoặc “Gỡ lỗi ADB”), quay lại đây rồi chọn Kết nối lại.", ". Turn on “USB debugging” (or “ADB debugging”), come back here and choose Reconnect."))
             }, 1200)
         }
         attempt(0)
@@ -266,12 +426,14 @@ class MainActivity : Activity() {
 
     private fun interface Job { @Throws(Exception::class) fun run(setup: Setup) }
 
-    /** Runs one piece of work on the ADB connection in the background, buttons greyed out meanwhile. */
+    /** Runs one piece of work on the ADB connection in the background, tiles greyed out and a spinner meanwhile. */
     private fun job(job: Job) {
         val s = setup
         if (s == null || busy) return
         busy = true
-        setEnabled(false)
+        val running = currentFocus
+        tiles.forEach { it.view.alpha = if (it.view === running) 1f else 0.4f; if (it.view === running) it.work(true) }   // focus stays where it is; the others wait
+        spinner.visibility = View.VISIBLE
         Thread {
             try {
                 job.run(s)
@@ -280,7 +442,7 @@ class MainActivity : Activity() {
                 log("✗ " + reason(e))
             }
             busy = false
-            ui { setEnabled(true) }
+            ui { tiles.forEach { it.work(false) }; setEnabled(true); spinner.visibility = View.INVISIBLE }
         }.start()
     }
 
@@ -291,69 +453,84 @@ class MainActivity : Activity() {
      */
     private fun tailscale() {
         job { _ ->
-            val ts = dev.tvremote.core.Tailscale(adb ?: return@job, getExternalFilesDir(null))
-            if (!ts.installed()) log("Đang tải và cài Tailscale bản chính thức (khoảng 100 MB)...")
-            val url = ts.start { what, _ -> if (what == "start") log("Đang bật Tailscale...") }
-            if (url.isEmpty()) log("✓ TV đã vào Tailscale: " + ts.ip() + ". Ở ngoài nhà dùng IP này (máy điều khiển cũng bật Tailscale, cùng tài khoản).")
-            else log("Tailscale đang hiện mã QR: quét bằng điện thoại đã đăng nhập Tailscale rồi bấm Connect (hoặc mở " + url + " trên máy tính). " +
-                "Xong thì nên vào login.tailscale.com/admin/machines, menu ⋯ của TV → Disable key expiry.")
+            val ts = Tailscale(adb ?: return@job, getExternalFilesDir(null))
+            if (!ts.installed()) log(t("Đang tải và cài Tailscale bản chính thức (khoảng 100 MB)...", "Downloading and installing the official Tailscale (about 100 MB)..."))
+            val url = ts.start { what, pct ->
+                ui { tsTile.progress(when (what) {
+                    "download" -> t("Đang tải ", "Downloading ") + ((pct - 5) * 100 / 55).coerceIn(0, 100) + "%"
+                    "install" -> t("Đang cài...", "Installing...")
+                    else -> t("Đang bật...", "Switching on...") }) }
+                if (what == "start") log(t("Đang bật Tailscale...", "Switching Tailscale on..."))
+            }
+            if (url.isEmpty()) log(t("✓ TV đã vào Tailscale: ", "✓ The TV is in Tailscale: ") + ts.ip() + t(". Ở ngoài nhà dùng IP này (máy điều khiển cũng bật Tailscale, cùng tài khoản).", ". Away from home use this IP (the controlling device needs Tailscale too, same account)."))
+            else log(t("Tailscale đang hiện mã QR: quét bằng điện thoại đã đăng nhập Tailscale rồi bấm Connect (hoặc mở ", "Tailscale shows a QR code: scan it with a phone signed in to Tailscale and press Connect (or open ") + url +
+                t(" trên máy tính). Xong thì nên vào login.tailscale.com/admin/machines, menu ⋯ của TV → Disable key expiry.", " on a computer). Afterwards, at login.tailscale.com/admin/machines, open the TV's ⋯ menu → Disable key expiry."))
         }
     }
 
     private fun log(line: String) {
         ui {
             logView.append(line + "\n")
+            if (logView.lineCount > 300) logView.text = logView.text.toString().lines().takeLast(200).joinToString("\n")
             scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
         }
     }
 
-    private fun reason(e: Exception): String {
-        val m = e.message
-        return e.javaClass.simpleName + (if (m == null) "" else ": $m")
-    }
+    private fun reason(e: Exception): String = dev.tvremote.core.Errors.say(e, vi)
 
     private fun ui(r: Runnable) { runOnUiThread(r) }
 
+    /** Tiles that need ADB follow it; "Developer options" always works. Focus stays where it was, or goes to a tile that works. */
     private fun setEnabled(on: Boolean) {
         val had = currentFocus
-        for (b in buttons) { b.isEnabled = on; b.alpha = if (on) 1f else 0.45f }
-        if (on && had !is Button) buttons[0].requestFocus()
-        else if (on && had != null) had.requestFocus()
+        tiles.forEachIndexed { i, tile -> tile.enable(on || i == 4) }
+        if (on && !focusedOnce) { focusedOnce = true; tiles[0].view.requestFocus() }   // ready for the first time: start on the first action
+        else if (had == null || !had.isEnabled) (if (on) tiles[0] else tiles[4]).view.requestFocus()
     }
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).roundToInt()
 
-    private fun text(s: String, sp: Int, color: Int): TextView {
+    private fun margins(top: Int) = LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(top) }
+
+    private fun box(color: Int, radius: Int, stroke: Int): GradientDrawable {
+        val d = GradientDrawable()
+        d.cornerRadius = dp(radius).toFloat()
+        d.setColor(color)
+        if (stroke > 0) d.setStroke(dp(stroke), Color.WHITE)
+        return d
+    }
+
+    private fun section(s: String): TextView {
+        val v = text(s, 12, MUTED, true)
+        v.letterSpacing = 0.08f
+        return v
+    }
+
+    private fun text(s: String, sp: Int, color: Int, bold: Boolean): TextView {
         val t = TextView(this)
         t.text = s
         t.textSize = sp.toFloat()
         t.setTextColor(color)
+        if (bold) t.typeface = Typeface.DEFAULT_BOLD
         return t
     }
 
-    /** The stock button barely shows focus on a TV; make the focused one unmistakable. */
-    private fun background(focused: Boolean): GradientDrawable {
-        val d = GradientDrawable()
-        d.cornerRadius = dp(10).toFloat()
-        d.setColor(if (focused) Color.rgb(47, 109, 246) else Color.rgb(39, 45, 53))
-        if (focused) d.setStroke(dp(3), Color.WHITE)
-        return d
-    }
-
-    private fun button(label: String, l: View.OnClickListener): Button {
+    /** The smaller buttons of the right-hand card; the focused one is unmistakable on a TV. */
+    private fun smallButton(label: String, l: View.OnClickListener): Button {
         val b = Button(this)
         b.text = label
-        b.textSize = 18f
+        b.textSize = 14f
         b.isAllCaps = false
         b.setOnClickListener(l)
         b.isFocusable = true
-        b.isFocusableInTouchMode = true                               // keep D-pad focus even after a mouse / touch event
         b.setTextColor(Color.WHITE)
-        b.background = background(false)
-        b.setOnFocusChangeListener { v, focused -> v.background = background(focused) }
-        b.gravity = Gravity.CENTER
-        b.layoutParams = ViewGroup.LayoutParams(-2, -2)             // spacing comes from the FlowRow it sits in
-        b.setPadding(dp(22), dp(12), dp(22), dp(12))
+        b.background = box(TILE, 10, 0)
+        b.setOnFocusChangeListener { v, f -> v.background = if (f) box(ACCENT, 10, 2) else box(TILE, 10, 0) }
+        b.minHeight = 0
+        b.minimumHeight = 0
+        b.minWidth = 0
+        b.minimumWidth = 0
+        b.setPadding(dp(12), dp(10), dp(12), dp(10))
         return b
     }
 }

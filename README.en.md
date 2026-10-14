@@ -83,7 +83,7 @@ Works from any browser, with nothing to install on the phone or computer.
 - No address to type: the TV Setup app shows a QR code for this page; scan it with the phone's camera.
 - It starts again by itself when the TV boots.
 - **TV history:** the TV Setup app records every 5 minutes (which app is open, RAM, CPU, storage) and keeps it on the TV; all three clients show it under Health → History. Nothing else has to stay on.
-- On the TV, the app also offers **Optimize TV** / **Undo**, **Tailscale** (installs it and brings up its sign-in code), **Update**, turning the web remote on and off, and **Unpair all devices**.
+- On the TV, the app also offers **Optimize TV** / **Undo**, **Tailscale** (installs it and brings up its sign-in code), **Update**, turning the web remote on and off, and **Unpair all**.
 - The connection is plain HTTP, not encrypted. **Do not expose port 8765 to the Internet**; away from home, go through Tailscale.
 - It needs the TV's ADB on port 5555. Some newer Google TVs that only have pairing-code "Wireless debugging" may not work.
 
@@ -109,7 +109,7 @@ After that, just double-click the start file. Closing the window stops it; nothi
 | **Terminal** | Run shell commands on the TV, 30 seconds each at most |
 | **Setup** | First-time steps (ADB, Tailscale, pairing the remote, saving), Optimize TV. On the TV's page and in the phone app: Tailscale and Optimize TV |
 
-**When ADB is closed**, only the buttons, power, step-by-step volume and wake remain. Lost: the live screen, mouse, keyboard, apps, files, installing APKs. The page says so and has a "Try again" button.
+**When ADB is closed**, only the buttons, power, step-by-step volume and wake remain. Lost: the live screen, mouse, keyboard, apps, files, installing APKs. The page says so and has a "Retry connection" button.
 
 <details>
 <summary>Usage notes</summary>
@@ -125,7 +125,7 @@ After that, just double-click the start file. Closing the window stops it; nothi
 Once, while at home (on the TV's Wi-Fi):
 
 1. Open the **Setup** tab (phone app: grid button → Setup; TV Setup app on the TV: the **Tailscale** button) → **⚡ Install and sign in to Tailscale**.
-2. Wait about half a minute: the TV downloads the official Tailscale (checksum checked), installs it, skips the VPN question, switches it on and fetches its sign-in link.
+2. Wait about half a minute: the TV downloads the official Tailscale (checksum checked), installs it, skips the VPN question, has it start again whenever the TV turns on, switches it on and fetches its sign-in link.
 3. Press **🔑 Open the Tailscale sign-in page** (or scan the QR code), sign in to your Tailscale account (none yet? Create one for free with Google, Microsoft or GitHub) and press **Connect**. Nothing is typed on the TV. The page notices when the TV is in.
 4. Recommended: in the [Tailscale admin console](https://login.tailscale.com/admin/machines), open the TV's ⋯ menu → **Disable key expiry**, or the TV is signed out after about 180 days.
 5. Install Tailscale on the controlling device (same account), then use the TV's `100.x.x.x` IP instead of the home one. The web on the computer has a **Save** step that switches to that IP for you.
@@ -145,13 +145,12 @@ The person at the TV: turn on ADB debugging, install TV Setup (or let the helper
 - **Standby (network still up):** Power or Wake is enough, over Tailscale too.
 - **Fully off (network down):** only a Wake-on-LAN packet reaches the TV, and it must be sent from **inside the home network**. The phone app can send it when on the home Wi-Fi. The web on the computer can ask a machine at home to send it over SSH: add `relay_user` and `relay_host` to the TV's entry in `tvs.json`.
 - Holding the power key on the TV's own remote opens the full power-off menu; press it briefly if you want to wake the TV remotely later.
-- **After the TV restarts:** Tailscale rejoins by itself if Optimize TV was run. If ADB does not reopen, turn "ADB debugging" off and on.
+- **After the TV restarts:** Tailscale starts again by itself if it was installed with the Tailscale button (or Optimize TV was run). If ADB does not reopen, turn "ADB debugging" off and on.
 
 ## Optimize TV (optional)
 
 The **⚡ Optimize TV** button on the Setup tab of all three (and in the TV Setup app on the TV itself); **Undo** puts everything back. Safe to run again.
 
-- Keeps Tailscale alive through standby and restarts.
 - Turns off transition animations.
 - Installs FLauncher and turns off Google's "Android TV Home" screen, which uses a lot of CPU. TVs with the newer Google TV interface, operator boxes (FPT, for one) and TVs that run 64-bit apps only keep their home screen.
 - Disables unused system apps (the list is written for Sony BRAVIA; missing packages are skipped).
@@ -163,10 +162,10 @@ If the TV later shows no home screen: Settings → Apps → System apps → **An
 | Symptom | What to do |
 |---|---|
 | Cannot connect | Same network as the TV? ADB debugging on? Right IP? Look at the TV for a permission dialog |
-| **ADB: waiting for the TV** | Choose "Always allow" on the TV. Closed the question by mistake (Back, Home, Cancel)? The apps ask again a few times; on the web press "Try again" |
+| **ADB: waiting for the TV** | Choose "Always allow" on the TV. Closed the question by mistake (Back, Home, Cancel)? The apps ask again a few times; on the web press "Retry connection" |
 | **ADB: port closed** | The TV is off, or just restarted: turn "ADB debugging" off and on |
 | Buttons do nothing (web on the computer) | The remote is not paired (the **Setup** tab), or two windows are open for the same TV |
-| The TV's page asks for the 6-digit code again | "Unpair all devices" was pressed on the TV, or the browser cleared the page's data: enter a new code |
+| The TV's page asks for the 6-digit code again | "Unpair all" was pressed on the TV, or the browser cleared the page's data: enter a new code |
 | Tailscale gives no sign-in link | The TV's screen must be on (not in standby) and online. Press the button again; failing that, open Tailscale on the TV and scan the QR code it shows |
 | Choppy picture, slow TV | Pick a lower quality; turn the picture off when not needed |
 | Cannot connect from far away | Are both devices in the same Tailscale account and online? |

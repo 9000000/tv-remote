@@ -24,6 +24,13 @@ class Tailscale(private val adb: Adb, private val dir: File?) {
 
     fun interface Step { fun at(text: String, percent: Int) }
 
+    private fun get(url: String): String {
+        val c = URL(url).openConnection() as java.net.HttpURLConnection
+        c.connectTimeout = 15000
+        c.readTimeout = 20000
+        try { return c.inputStream.bufferedReader().readText() } finally { c.disconnect() }
+    }
+
     @Throws(IOException::class)
     fun installed(): Boolean = adb.shell("pm path $PKG").contains("package:")
 
@@ -34,16 +41,26 @@ class Tailscale(private val adb: Adb, private val dir: File?) {
     /** The newest official APK, checked against its published SHA-256, then installed through ADB (no "unknown sources" needed). */
     @Throws(Exception::class)
     fun install(step: Step) {
-        val name = org.json.JSONObject(URL("$BASE?mode=json").readText()).getJSONObject("APKs").getString("universal")
-        val sha = URL(BASE + name + ".sha256").readText().trim().split(Regex("\\s+"))[0]
+        val name = org.json.JSONObject(get("$BASE?mode=json")).getJSONObject("APKs").getString("universal")
+        val sha = get(BASE + name + ".sha256").trim().split(Regex("\\s+"))[0]
         step.at("download", 5)
         val setup = Setup(adb, dir, true, Setup.Log { })
-        val apk = setup.download(BASE + name, "tailscale.apk", sha)
+        var shown = -1
+        val apk = setup.download(BASE + name, "tailscale.apk", sha) { pct -> if (pct / 5 != shown) { shown = pct / 5; step.at("download", 5 + pct * 55 / 100) } }
         try {
             step.at("install", 60)
             val out = setup.install(apk)
             if (!out.contains("Success")) throw IOException("install failed: " + out.trim().lines().lastOrNull())
         } finally { apk.delete() }
+    }
+
+    /** Comes back by itself after standby or a restart of the TV, and Android does not put it to sleep. Safe to repeat. */
+    @Throws(IOException::class)
+    fun keepAlive() {
+        adb.shell("dumpsys deviceidle whitelist +$PKG")                // exempt from Doze / battery optimisation
+        adb.shell("am set-standby-bucket $PKG active")
+        adb.shell("cmd appops set $PKG RUN_IN_BACKGROUND allow; cmd appops set $PKG RUN_ANY_IN_BACKGROUND allow")
+        adb.shell("settings put secure always_on_vpn_app $PKG; settings put secure always_on_vpn_lockdown 0")   // the VPN starts with the TV, nothing blocked without it
     }
 
     /**
@@ -54,6 +71,7 @@ class Tailscale(private val adb: Adb, private val dir: File?) {
     fun start(step: Step): String {
         if (!installed()) install(step)
         step.at("start", 80)
+        keepAlive()
         adb.shell("cmd appops set $PKG ACTIVATE_VPN allow")           // no "Tailscale wants to set up a VPN connection" box
         adb.shell("pm grant $PKG android.permission.POST_NOTIFICATIONS 2>/dev/null")   // nor "Allow notifications?" (Android 13+)
         if (ip().isNotEmpty()) return ""

@@ -72,7 +72,13 @@ function showJob(j, label) {
 }
 async function trackJob(j, label, after) {
   showJob(j, label);
-  while (j.status === 'running') { await sleep(1000); const r = await api('/api/job?id=' + j.id); if (!r) return; j = r; showJob(j, label); }
+  let misses = 0;                                                     // a blip in the network is not the end of the job; ten in a row are
+  while (j.status === 'running') {
+    await sleep(1000); const r = await api('/api/job?id=' + j.id, null, true);
+    if (r) { misses = 0; j = r; showJob(j, label); continue; }
+    if (++misses >= 10) { j = { ...j, status: 'error', msg: 'mất kết nối, không rõ đã xong chưa' }; showJob(j, label); break; }
+  }
+  if (j.status === 'error') { j.msg = friendly(j.msg); showJob(j, label); }
   toast(j.status === 'done' ? 'Xong: ' + j.msg : 'Lỗi: ' + j.msg);
   if (j.status === 'done' && after) after(j);
   if (j.status === 'done' && filesLoaded) loadFiles(cwd);

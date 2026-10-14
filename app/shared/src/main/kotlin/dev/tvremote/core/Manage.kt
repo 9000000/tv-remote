@@ -315,7 +315,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val q = Adb.q(path)
         if (!adb.shell("head -c 2 $q 2>/dev/null").startsWith("PK")) throw IOException("not an APK file")
         val size = adb.shell("stat -c %s $q").trim()
-        val out = adb.shell("cat $q | pm install -r -S $size 2>&1")
+        val out = adb.shell("cat $q | pm install -r -S $size 2>&1", 600000)
         if (!out.contains("Success")) throw IOException(if (out.trim().isEmpty()) "install failed" else out.trim())
         return "installed"
     }

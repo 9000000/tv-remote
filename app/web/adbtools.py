@@ -351,6 +351,10 @@ class Adb:
                 if inner["status"] != "done":
                     raise AdbError(inner["msg"])
             j["msg"], j["pct"] = "start", 80
+            # comes back by itself after standby or a restart, and Android does not put it to sleep (as Tailscale.kt keepAlive)
+            await self.shell(f"dumpsys deviceidle whitelist +{TS_PKG}; am set-standby-bucket {TS_PKG} active; "
+                             f"cmd appops set {TS_PKG} RUN_IN_BACKGROUND allow; cmd appops set {TS_PKG} RUN_ANY_IN_BACKGROUND allow; "
+                             f"settings put secure always_on_vpn_app {TS_PKG}; settings put secure always_on_vpn_lockdown 0; echo .")
             await self.shell(f"cmd appops set {TS_PKG} ACTIVATE_VPN allow")   # no "Tailscale wants to set up a VPN connection" box
             await self.shell(f"pm grant {TS_PKG} android.permission.POST_NOTIFICATIONS 2>/dev/null; echo .")   # nor "Allow notifications?"
             if (ip := await self.tailscale_ip()):

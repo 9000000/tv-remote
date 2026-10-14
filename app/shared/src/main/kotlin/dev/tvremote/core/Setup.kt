@@ -54,14 +54,9 @@ class Setup(private val adb: Adb, private val dir: File?, private val vi: Boolea
 
     @Throws(Exception::class)
     fun apply() {
-        if (has(TS_PKG)) {
-            adb.shell("dumpsys deviceidle whitelist +$TS_PKG")                     // exempt from Doze / battery optimisation
-            adb.shell("am set-standby-bucket $TS_PKG active")
-            adb.shell("cmd appops set $TS_PKG RUN_IN_BACKGROUND allow; cmd appops set $TS_PKG RUN_ANY_IN_BACKGROUND allow")
-            adb.shell("settings put secure always_on_vpn_app $TS_PKG; settings put secure always_on_vpn_lockdown 0")
-            log.line(t("✓ Tailscale: giữ sống qua standby và khởi động lại", "✓ Tailscale: kept alive through standby and restarts"))
-        } else {
-            log.line(t("– Tailscale chưa cài, bỏ qua bước giữ sống (cài xong hãy chạy lại)", "– Tailscale is not installed, skipping keep-alive (run this again once it is)"))
+        if (has(TS_PKG)) {                                            // the Tailscale button does this too; here for a Tailscale installed by hand
+            Tailscale(adb, dir).keepAlive()
+            log.line(t("✓ Tailscale: tự chạy lại sau khi TV ngủ hoặc khởi động lại", "✓ Tailscale: starts again by itself after standby or a restart"))
         }
         adb.shell("settings put global window_animation_scale 0; settings put global transition_animation_scale 0; settings put global animator_duration_scale 0.5")   // not 0 for the last one: loading spinners would freeze
         log.line(t("✓ Hiệu ứng chuyển cảnh: tắt", "✓ Transition animations: off"))
@@ -105,7 +100,17 @@ class Setup(private val adb: Adb, private val dir: File?, private val vi: Boolea
     /** Copies the APK to the TV through ADB and has the shell user install it there (an app may not install on its own). */
     @Throws(IOException::class)
     fun install(apk: File): String {
+        // On the TV itself the file sits in this app's folder on shared storage, which the shell user can read: no copy at all
+        val q = "'" + apk.absolutePath.replace("'", "'\\''") + "'"
+        if (adb.shell("stat -c %s $q 2>/dev/null").trim() == apk.length().toString())
+            return adb.shell("cat $q | pm install -r -S " + apk.length() + " 2>&1", 600000)
+        return try { copyAndInstall(apk) } catch (e: IOException) { copyAndInstall(apk) }   // a copy that stalled: once more
+    }
+
+    @Throws(IOException::class)
+    private fun copyAndInstall(apk: File): String {
         val s = adb.exec("cat > $TMP")
+        var whole = false
         try {
             apk.inputStream().use { input ->
                 val buf = ByteArray(1 shl 16)
@@ -115,18 +120,27 @@ class Setup(private val adb: Adb, private val dir: File?, private val vi: Boolea
                     s.write(buf, 0, n)
                 }
             }
+            whole = true
         } finally {
             s.close()
+            if (!whole) try { adb.shell("rm -f $TMP", 10000) } catch (ignored: IOException) { }   // no half file left behind
         }
-        for (i in 0 until 60) {                                       // cat finishes writing shortly after the stream closes
-            if (adb.shell("stat -c %s $TMP 2>/dev/null").trim() == apk.length().toString()) break
-            Thread.sleep(150)
+        // cat is still writing for a while after the stream closes (seconds for a big file on a slow TV): install only a whole file
+        var size = ""
+        var still = 0                                                 // checks in a row without the file growing
+        while (still < 30) {                                          // 15 s without growing: it will not finish
+            val now = adb.shell("stat -c %s $TMP 2>/dev/null").trim()
+            if (now == apk.length().toString()) { size = now; break }
+            still = if (now == size) still + 1 else 0
+            size = now
+            Thread.sleep(500)
         }
-        return try { adb.shell("cat $TMP | pm install -r -S " + apk.length() + " 2>&1") } finally { adb.shell("rm -f $TMP") }
+        if (size != apk.length().toString()) { adb.shell("rm -f $TMP"); throw IOException("copy to the TV incomplete ($size of ${apk.length()} bytes)") }
+        return try { adb.shell("cat $TMP | pm install -r -S " + apk.length() + " 2>&1", 600000) } finally { adb.shell("rm -f $TMP") }
     }
 
     @Throws(Exception::class)
-    fun download(url: String, name: String, sha256: String?): File {
+    fun download(url: String, name: String, sha256: String?, progress: ((Int) -> Unit)? = null): File {
         val f = File(dir, name)
         val c = URL(url).openConnection() as HttpURLConnection
         c.connectTimeout = 20000
@@ -134,6 +148,8 @@ class Setup(private val adb: Adb, private val dir: File?, private val vi: Boolea
         c.instanceFollowRedirects = true
         val md = MessageDigest.getInstance("SHA-256")
         try {
+            val total = c.contentLength.toLong()                      // -1 when the server does not say
+            var done = 0L
             c.inputStream.use { input ->
                 FileOutputStream(f).use { out ->
                     val buf = ByteArray(1 shl 16)
@@ -141,6 +157,8 @@ class Setup(private val adb: Adb, private val dir: File?, private val vi: Boolea
                         val n = input.read(buf)
                         if (n <= 0) break
                         out.write(buf, 0, n); md.update(buf, 0, n)
+                        done += n
+                        if (progress != null && total > 0) progress((done * 100 / total).toInt())
                     }
                 }
             }

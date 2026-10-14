@@ -28,6 +28,18 @@ async function api(path, data, quiet) {
   } catch { if (!quiet) toast('Không gọi được server'); return null; }
 }
 
+// The errors people actually meet, from any core (Kotlin or Python words), in words they can act on; anything else as it came.
+const FRIENDLY = [
+  [/SSLHandshake|CertPathValidator|Chain validation|CERTIFICATE_VERIFY|not yet valid/i, 'Không mở được kết nối bảo mật. Ngày giờ trên TV có đúng không? (Cài đặt → Hệ thống → Ngày và giờ)'],
+  [/UnknownHost|Name or service not known|nodename nor servname|getaddrinfo/i, 'TV (hoặc máy này) chưa vào được Internet.'],
+  [/SocketTimeout|timed out|ConnectException|Connection reset/i, 'Mạng chậm hoặc vừa mất kết nối. Thử lại sau ít phút.'],
+  [/stopped answering|stopped taking data/i, 'TV ngừng trả lời giữa chừng. Thử lại; vẫn vậy thì khởi động lại TV.'],
+  [/copy to the TV incomplete/i, 'Chép tệp lên TV không trọn vẹn. Thử lại.'],
+  [/no sign-in link/i, 'Không đọc được link đăng nhập trên màn hình TV. Mở Tailscale trên TV và quét mã QR nó hiện.'],
+  [/INSUFFICIENT_STORAGE|No space left/i, 'TV hết bộ nhớ trống.'],
+];
+const friendly = (m) => { m = String(m || ''); const f = FRIENDLY.find(([re]) => re.test(m)); return f ? f[1] : m; };
+
 // ---------- status ----------
 let curHost = null;
 // The list of TVs comes first, as in the phone app: shown whenever no TV is chosen, or when "Change TV" asks for it.

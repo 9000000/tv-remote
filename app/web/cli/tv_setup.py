@@ -51,15 +51,13 @@ def main(mode, target, vi=False):
         print(t(f"✓ Đã bật lại {on} app (gồm màn hình chính Google), hiệu ứng về 1.0x", f"✓ Re-enabled {on} apps (Google's home screen among them), animations back to 1.0x"))
         print(t("FLauncher và cài đặt Tailscale được giữ nguyên.", "FLauncher and the Tailscale settings are left as they are.")); return 0
 
-    # 1. Tailscale survives standby and reboot (skipped if Tailscale is not on the TV)
+    # 1. Tailscale survives standby and reboot (the Tailscale button does this too; here for a Tailscale installed by hand)
     if has("com.tailscale.ipn"):
         sh("dumpsys deviceidle whitelist +com.tailscale.ipn")                 # exempt from Doze / battery optimisation
         sh("am set-standby-bucket com.tailscale.ipn active")                    # resets on reboot, hence re-runnable
         sh("cmd appops set com.tailscale.ipn RUN_IN_BACKGROUND allow; cmd appops set com.tailscale.ipn RUN_ANY_IN_BACKGROUND allow")
         sh("settings put secure always_on_vpn_app com.tailscale.ipn; settings put secure always_on_vpn_lockdown 0")   # VPN starts at boot, no lockdown
-        print(t("✓ Tailscale: giữ sống qua standby và khởi động lại", "✓ Tailscale: kept alive through standby and restarts"), flush=True)
-    else:
-        print(t("– Tailscale chưa cài, bỏ qua bước giữ sống (cài xong hãy chạy lại)", "– Tailscale is not installed, skipping keep-alive (run this again once it is)"), flush=True)
+        print(t("✓ Tailscale: tự chạy lại sau khi TV ngủ hoặc khởi động lại", "✓ Tailscale: starts again by itself after standby or a restart"), flush=True)
 
     # 2. Snappier UI
     # window and transition animations off; the animator stays at 0.5x, because at 0 loading spinners freeze

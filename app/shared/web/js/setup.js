@@ -6,8 +6,14 @@ async function runSetup(mode) {
   const btns = [$('#setupapply'), $('#setupundo')], log = $('#setuplog');
   btns.forEach((b) => { b.disabled = true; }); log.hidden = false; log.textContent = 'Đang chạy...';
   let j = await api('/api/setup', { mode, lang: LANG });
-  while (j && j.status === 'running') { await sleep(1000); j = await api('/api/job?id=' + j.id); if (j) { log.textContent = j.log || 'Đang chạy...'; log.scrollTop = log.scrollHeight; } }
-  if (j) { log.textContent = (j.log || '') + (j.status === 'done' ? '\n✅ Xong.' : '\n❌ Lỗi: ' + j.msg); toast(j.status === 'done' ? 'Đã xong' : 'Lỗi: ' + j.msg); quickLoaded = appsLoaded = false; applyAdb(); }
+  for (let misses = 0; j && j.status === 'running' && misses < 10;) {          // ten failed polls in a row: give up waiting, not the TV
+    await sleep(1000); const r = await api('/api/job?id=' + j.id, null, true);
+    if (!r) { misses++; continue; }
+    misses = 0; j = r; log.textContent = j.log || 'Đang chạy...'; log.scrollTop = log.scrollHeight;
+  }
+  if (j && j.status === 'running') j = null;
+  if (j) { log.textContent = (j.log || '') + (j.status === 'done' ? '\n✅ Xong.' : '\n❌ Lỗi: ' + friendly(j.msg)); toast(j.status === 'done' ? 'Đã xong' : 'Lỗi: ' + friendly(j.msg)); quickLoaded = appsLoaded = false; applyAdb(); }
+  else log.textContent += '\n❌ ' + tr('mất kết nối, không rõ đã xong chưa');
   btns.forEach((b) => { b.disabled = false; });
 }
 $('#setupapply').addEventListener('click', () => runSetup('apply'));
@@ -101,7 +107,7 @@ function adbHelp() {
   if (!STATE.connected) {                                             // everything here goes through the remote buttons
     assistShow('Bật ADB cho TV này', say(STATE.paired === false ? 'Trước hết cần ghép nút remote với TV (TV hiện mã 6 ký tự, gõ vào đây). Sau đó trang này tự làm giúp phần còn lại.'
       : 'Chưa kết nối được nút remote tới TV (cổng 6466): TV đang bật và cùng mạng với máy này chứ?'),
-      row(act('🔗 Tới bước ghép remote', async () => { $('#assist').close(); showTab('tv'); }, 'primary')), say('Hoặc tự làm bằng remote của TV:\n' + ADB_STEPS));
+      row(act('🔗 Tới bước ghép remote', async () => { $('#assist').close(); showTab('tv'); }, 'primary')), say('Hoặc tự làm bằng remote của TV:'), say(ADB_STEPS));
     return;
   }
   assistShow('Bật ADB cho TV này',
@@ -114,7 +120,7 @@ function adbHelp() {
 }
 const ADB_STEPS = '1. Trong Cài đặt: Tùy chọn thiết bị (hoặc Hệ thống) → Giới thiệu → bấm OK 7 lần vào “Bản dựng”.\n2. Quay lại, vào Tùy chọn nhà phát triển → bật “Gỡ lỗi USB” (hoặc “Gỡ lỗi ADB”).\n3. Trên TV tích “Luôn cho phép” rồi chọn OK.\n\nNếu TV đòi “mật khẩu ADB” khi bấm 7 lần: dùng cách “Tự động: cài TV Setup lên TV”.';
 function adbSteps() {
-  assistShow('Bật Gỡ lỗi ADB trên TV', say('Dùng các nút mũi tên và OK ở tab Remote, hoặc remote của TV:\n\n' + ADB_STEPS),
+  assistShow('Bật Gỡ lỗi ADB trên TV', say('Dùng các nút mũi tên và OK ở tab Remote, hoặc remote của TV:'), say(ADB_STEPS),
     row(act('🔌 Đã bật, kết nối', async () => { const r = await api('/api/adb/connect', {}); if (r) { ADB = r; bannerKey = ''; await refresh(); } }, 'primary'), act('← Các cách khác', async () => adbHelp())));
 }
 function lookOnHome() {
@@ -155,7 +161,7 @@ async function installSetup() {
 
 // ---------- Tailscale: one button installs it on the TV, switches it on and fetches its sign-in link (Tailscale.kt / adbtools.py) ----------
 // Nobody types on the TV: the link opens in a browser that is signed in to Tailscale, where one click adds the TV.
-const TS_PITCH = 'Một nút: tự cài Tailscale bản chính thức lên TV, bật lên và lấy link đăng nhập. Bạn chỉ cần bấm “Connect” bằng tài khoản Tailscale của mình. Chỉ dùng trong cùng Wi-Fi thì bỏ qua được.';
+const TS_PITCH = 'Một nút: tự cài Tailscale bản chính thức lên TV, cho nó tự chạy lại mỗi khi bật TV, và lấy link đăng nhập. Bạn chỉ cần bấm “Connect” bằng tài khoản Tailscale của mình. Chỉ dùng trong cùng Wi-Fi thì bỏ qua được.';
 const TS_STEP = { download: 'Đang tải Tailscale bản chính thức (khoảng 100 MB)...', install: 'Đang cài Tailscale lên TV...', start: 'Đang bật Tailscale trên TV...' };
 let tsGen = 0;
 function tsShow(...kids) { $('#tsbody').replaceChildren(...kids.filter(Boolean)); if (!$('#ts').open) $('#ts').showModal(); }
@@ -169,7 +175,7 @@ async function tailscaleGo() {
     const r = await api('/api/job?id=' + j.id, null, true); if (r) { j = r; misses = 0; } else misses++;
   }
   if (gen !== tsGen) return;
-  if (!j || j.status !== 'done') return tsShow(el('p', { textContent: 'Không làm được: ' + (j && j.status === 'error' ? j.msg : 'mất kết nối tới TV') }), row(act('↻ Thử lại', async () => tailscaleGo(), 'primary')));
+  if (!j || j.status !== 'done') return tsShow(el('p', { textContent: 'Không làm được: ' + (j && j.status === 'error' ? friendly(j.msg) : 'mất kết nối tới TV') }), row(act('↻ Thử lại', async () => tailscaleGo(), 'primary')));
   if (j.ip) return tsDone(j.ip);
   const qr = qrSvg(j.url, 200), wait = el('p', { className: 'muted wait', textContent: 'Đang chờ TV vào Tailscale... Trang này tự nhận ra.' });
   tsShow(el('p', { textContent: 'Còn một bước: cho TV vào tài khoản Tailscale của bạn.' }),

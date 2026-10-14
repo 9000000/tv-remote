@@ -78,13 +78,15 @@ class Adb(dir: File) : Closeable {
             }
         }
 
+        /** Everything until the end of the stream. With [quietMs], gives up when nothing has come for that long (a command that hangs). */
         @Throws(IOException::class)
-        fun readAll(): String {
+        fun readAll(quietMs: Long = 0): String {
             val out = ByteArrayOutputStream()
             val buf = ByteArray(8192)
             while (true) {
-                val n = read(buf, 0, buf.size, 0)
+                val n = read(buf, 0, buf.size, if (quietMs > 0) quietMs else 0)
                 if (n < 0) break
+                if (n == 0) { close(); throw IOException("the TV stopped answering") }
                 out.write(buf, 0, n)
             }
             return out.toString("UTF-8").replace("\r\n", "\n").trim()
@@ -100,7 +102,11 @@ class Adb(dir: File) : Closeable {
                 val n = minOf(left, maxData)
                 send(WRTE, local, remote, data.copyOfRange(at, at + n))
                 try {
-                    while (!acked.tryAcquire(1, TimeUnit.SECONDS)) if (closed) throw IOException("stream closed")
+                    var waited = 0
+                    while (!acked.tryAcquire(1, TimeUnit.SECONDS)) {
+                        if (closed) throw IOException("stream closed")
+                        if (++waited >= WRITE_WAIT) { close(); throw IOException("the TV stopped taking data") }   // never wait for ever
+                    }
                 } catch (e: InterruptedException) {
                     throw IOException("interrupted")
                 }
@@ -281,9 +287,12 @@ class Adb(dir: File) : Closeable {
     @Throws(IOException::class)
     fun exec(cmd: String): Stream = open("exec:$cmd")
 
-    /** Runs a command in the TV's shell (as the `shell` user) and returns everything it printed. */
+    /**
+     * Runs a command in the TV's shell (as the `shell` user) and returns everything it printed. Throws when it prints nothing
+     * for [quietMs] (2 minutes; longer for installs), so no caller waits for ever on a command that hangs.
+     */
     @Throws(IOException::class)
-    fun shell(cmd: String): String = open("shell:$cmd").use { it.readAll() }
+    fun shell(cmd: String, quietMs: Long = 120000): String = open("shell:$cmd").use { it.readAll(quietMs) }
 
     fun isDead(): Boolean = dead
 
@@ -330,6 +339,8 @@ class Adb(dir: File) : Closeable {
     }
 
     companion object {
+        /** Seconds a write may wait for the TV to take it. */
+        private const val WRITE_WAIT = 30
         private const val CNXN = 0x4e584e43
         private const val AUTH = 0x48545541
         private const val OPEN = 0x4e45504f
