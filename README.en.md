@@ -1,6 +1,6 @@
 # tv-remote
 
-[Tiếng Việt](README.md) · **English**
+[Tiếng Việt](README.md) · **English** · 🌐 [tvremote.pages.dev](https://tvremote.pages.dev)
 
 Control an Android TV / Google TV from a phone or a computer: remote buttons, the live TV picture with touch, typing, talking to the TV, the TV's sound on the phone, a sleep timer, bedtime and app limits for children, scenes (one button, several things), managing apps and files, installing APKs, TV health. Every connection goes straight to the TV with no server in between; from another network, use Tailscale.
 

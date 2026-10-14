@@ -283,12 +283,13 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
      * mono here ([Downmix], 48 KB/s), because the page is plain HTTP, where browsers offer no Opus decoder to scripts.
      * While someone listens the TV's own speakers are silent; they come back when the browser stops.
      */
-    private fun sound(share: Boolean): HttpServer.Response {
+    /** [hq]: the PCM as captured, 48 kHz stereo (1.5 Mbit/s, fine on the home network); else 24 kHz mono (384 kbit/s). */
+    private fun sound(share: Boolean, hq: Boolean): HttpServer.Response {
         hearer?.stop()                                                // a new listener takes over
         val q = java.util.concurrent.LinkedBlockingQueue<ByteArray>()
         val end = ByteArray(0)
         fun packet(kind: Int, data: ByteArray) = java.nio.ByteBuffer.allocate(5 + data.size).put(kind.toByte()).putInt(data.size).put(data).array()
-        q.add(packet(0, java.nio.ByteBuffer.allocate(6).put(2.toByte()).putInt(24000).put(1.toByte()).array()))
+        q.add(packet(0, java.nio.ByteBuffer.allocate(6).put(2.toByte()).putInt(if (hq) 48000 else 24000).put((if (hq) 2 else 1).toByte()).array()))
         val mix = dev.tvremote.core.Downmix()
         val h = Tv(this, "127.0.0.1", null, 0, 0, false, object : Tv.Listener {
             override fun onStatus(key: String, detail: String) {
@@ -299,7 +300,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             override fun onNetwork(mac: String, lan: String, tailscale: String) { }
         }, null, "raw", Tv.AudioSink { config, data ->
             if (config) return@AudioSink
-            if (q.size > 200) q.add(end) else q.add(packet(2, mix.feed(data)))   // the browser cannot keep up: stop instead of filling memory
+            if (q.size > 200) q.add(end) else q.add(packet(2, if (hq) data else mix.feed(data)))   // the browser cannot keep up: stop instead of filling memory
         }, false, share)
         hearer = h
         return HttpServer.Response.stream("application/octet-stream", -1) { out ->
@@ -342,7 +343,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 return shot
             }
             "/api/video" -> return video(r.q("q").toIntOrNull() ?: 1)
-            "/api/audio" -> return sound(r.query["share"] == "1")
+            "/api/audio" -> return sound(r.query["share"] == "1", r.query["hq"] == "1")
             "/api/rules" -> return try {
                 val st = Rules.change(this, if (r.method == "POST") r.json() else JSONObject())
                 HttpServer.Response.json(st)

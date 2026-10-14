@@ -280,7 +280,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         if (h == null || tv != null || basic != null || picture && !surfaceReady) return
         val dm = resources.displayMetrics
         tv = Tv(this, h, if (picture) surface.holder.surface else null, prefs.getInt("quality", 1), maxOf(dm.widthPixels, dm.heightPixels), wakeNext, this,
-            audio = if (listen) "opus" else null, audioShare = listenShare)
+            audio = if (listen) "opus" else null, audioShare = listenShare, audioBitRate = if (prefs.getBoolean("listenHq", false)) 160000 else 64000)
         wakeNext = false
     }
 

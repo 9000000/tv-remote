@@ -6,10 +6,17 @@
 //   Opus, 64 kbit/s (8 KB/s): the computer's page, where the browser decodes Opus (WebCodecs needs a secure page, and
 //         127.0.0.1 is one); the TV encodes it at a few percent of one core
 //   PCM 24 kHz mono, 384 kbit/s (48 KB/s): the TV's own page (plain HTTP, no WebCodecs); the TV encodes nothing
+// ✨ high quality: Opus at 160 kbit/s, PCM as captured (48 kHz stereo, 1.5 Mbit/s: fine on the home network).
 // For comparison the 960p picture is up to 2 Mbit/s and most of a CPU core on the TV.
 // Stream framing, as the picture's: 1 byte kind (0 format, 1 codec header, 2 sound, 3 notice word, 4 nothing new, 5 error word),
 // 4 bytes length, data.
 let listenShared = false;
+const listenHq = () => { try { return localStorage.getItem('listenHq') === '1'; } catch { return false; } };
+function showHq() {
+  const b = $('#listenpick .hq'), on = listenHq(); b.classList.toggle('primary', on);
+  b.innerHTML = on ? '<b>✨ Chất lượng cao: bật</b><span>Âm thanh như gốc, tốn mạng hơn. Bấm để về thường.</span>'
+    : '<b>✨ Chất lượng cao: tắt</b><span>Bật để nghe nhạc rõ hơn, tốn mạng hơn một chút.</span>';
+}
 let listenOn = false, listenCtl = null, actx = null, adec = null, anext = 0, abytes = 0, listenGen = 0;
 
 async function opusHere() {
@@ -48,7 +55,7 @@ async function startListen(share) {
   listenCtl = new AbortController(); anext = 0; abytes = 0;
   let fmt = { codec: 2, rate: 24000, ch: 1 }, ts = 0, why = 'TV đã dừng gửi tiếng.';
   try {
-    const r = await fetch('/api/audio?codec=' + (opus ? 'opus' : 'pcm') + (listenShared ? '&share=1' : ''), { signal: listenCtl.signal });
+    const r = await fetch('/api/audio?codec=' + (opus ? 'opus' : 'pcm') + (listenShared ? '&share=1' : '') + (listenHq() ? '&hq=1' : ''), { signal: listenCtl.signal });
     if (!r.ok) { let e = r.statusText; try { e = (await r.json()).error || e; } catch {} throw new Error(r.status === 404 && CORE === 'mac' ? STALE : e); }
     toast(listenShared ? 'Đang nghe tiếng TV trên cả TV và máy này.' : 'Đang nghe tiếng TV trên máy này. Loa TV tạm im.');
     const rd = r.body.getReader(); let buf = new Uint8Array(0);
@@ -89,13 +96,18 @@ function stopListen(msg) {
 }
 
 setInterval(() => {                                                    // what it costs, next to the button
-  if (listenOn && abytes) setListenUi(true, '🎧 Đang nghe trên máy này · ' + (listenShared ? 'TV vẫn có tiếng' : 'loa TV tạm im') + ' · ' + Math.max(1, Math.round(abytes / 1024)) + ' KB/s');
+  if (listenOn && abytes) setListenUi(true, '🎧 Đang nghe trên máy này · ' + (listenShared ? 'TV vẫn có tiếng' : 'loa TV tạm im') + (listenHq() ? ' · ✨ chất lượng cao' : '') + ' · ' + Math.max(1, Math.round(abytes / 1024)) + ' KB/s');
   abytes = 0;
 }, 1000);
 $('#listen').addEventListener('click', () => {                       // off: show the two ways, the last one used first
   if (listenOn) { stopListen(); return; }
   const pick = $('#listenpick'); pick.hidden = !pick.hidden; if (pick.hidden) return;
   let last = '0'; try { last = localStorage.getItem('listenShare') || '0'; } catch {}
-  pick.querySelectorAll('button').forEach((b) => b.classList.toggle('primary', b.dataset.share === last));
+  pick.querySelectorAll('[data-share]').forEach((b) => b.classList.toggle('primary', b.dataset.share === last));
+  showHq();
 });
-$('#listenpick').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { $('#listenpick').hidden = true; startListen(b.dataset.share === '1'); }));
+$('#listenpick').querySelectorAll('[data-share]').forEach((b) => b.addEventListener('click', () => { $('#listenpick').hidden = true; startListen(b.dataset.share === '1'); }));
+$('#listenpick .hq').addEventListener('click', () => {                // a switch: the picker stays open to pick the way
+  try { localStorage.setItem('listenHq', listenHq() ? '0' : '1'); } catch {}
+  showHq();
+});

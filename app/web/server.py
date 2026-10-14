@@ -678,6 +678,7 @@ def build(S):
         await resp.prepare(request)
         opus = request.query.get("codec") == "opus"
         share = request.query.get("share") == "1"                     # the TV keeps playing too (playback capture, Android 13+)
+        hq = request.query.get("hq") == "1"                           # high quality: Opus 160 kbit/s, or PCM as captured (48 kHz stereo)
         proc = port = writer = None
         try:
             if (await adb.status())["state"] != "ready":
@@ -688,9 +689,11 @@ def build(S):
             if share and sdk < 33:                                    # too old to keep playing: the private way, and say so
                 share = False
                 await resp.write(scn.packet(3, b"noshare"))
+            # Android 13+: playback capture in both modes. The private one used to take the whole output (REMOTE_SUBMIX), and
+            # that device crashes Google's remote service on some TVs (FPT Play box, Android 14): the keys went dead with the sound.
             proc, port = await scrcpy_launch(S.cur.adb, "video=false control=false send_dummy_byte=true send_device_meta=false audio=true "
-                                             + ("audio_codec=opus audio_bit_rate=64000" if opus else "audio_codec=raw")
-                                             + (" audio_source=playback audio_dup=true" if share else ""))
+                                             + (f"audio_codec=opus audio_bit_rate={160000 if hq else 64000}" if opus else "audio_codec=raw")
+                                             + (" audio_source=playback" if sdk >= 33 else "") + (" audio_dup=true" if share else ""))
             reader = None
             for _ in range(100):                                      # until the server listens, adb closes the socket at once
                 reader, writer = await asyncio.open_connection("127.0.0.1", port)
@@ -708,7 +711,8 @@ def build(S):
                 raise AdbError("scrcpy-server did not start")
             if int.from_bytes(await reader.readexactly(4), "big") in (0, 1):   # the TV could not capture sound
                 await resp.write(scn.packet(5, b"unsupported")); return resp
-            await resp.write(scn.packet(0, bytes([1 if opus else 2]) + (48000 if opus else 24000).to_bytes(4, "big") + bytes([2 if opus else 1])))
+            whole = opus or hq                                        # 48 kHz stereo; else made 24 kHz mono here
+            await resp.write(scn.packet(0, bytes([1 if opus else 2]) + (48000 if whole else 24000).to_bytes(4, "big") + bytes([2 if whole else 1])))
             carry = b""
             while True:
                 head = await reader.readexactly(12)
@@ -718,7 +722,7 @@ def build(S):
                     if opus:
                         await resp.write(scn.packet(1, data))
                     continue
-                if not opus:
+                if not whole:
                     data, carry = scn.downmix(data, carry)
                 await resp.write(scn.packet(2, data))
         except (ConnectionError, asyncio.CancelledError, asyncio.IncompleteReadError):

@@ -6,7 +6,7 @@ import android.widget.Toast
 
 // 🎧 The TV's sound on the phone, two ways, picked each time: only here (the TV's speakers quiet: headphones on, the house
 // asleep; they come back the moment listening stops), or both (the TV keeps playing: scrcpy's playback capture, Android 13+;
-// the phone lags the TV a little and apps that refuse capture are silent). Opus at 64 kbit/s, about 8 KB/s, decoded here (AudioOut): next to the picture's up to 2 Mbit/s it
+// the phone lags the TV a little and apps that refuse capture are silent). Opus at 64 kbit/s (160 with ✨), about 8 KB/s, decoded here (AudioOut): next to the picture's up to 2 Mbit/s it
 // costs the network and the TV almost nothing, and it keeps going with the phone's screen off (ListenService).
 
 /** Off, or the two ways to pick from (the one used last is marked). The session restarts either way, as for the picture. */
@@ -25,7 +25,11 @@ internal fun MainActivity.toggleListen() {
     menu(t("Nghe tiếng TV", "Hear the TV"), if (prefs.getBoolean("listenShare", false)) 1 else 0, listOf(
         Triple(t("🎧 Chỉ điện thoại", "🎧 Only the phone"), t("Loa TV tạm im. Hợp khi đeo tai nghe, cả nhà ngủ.", "The TV’s speakers go quiet. For headphones while the house sleeps.")) { start(false) },
         Triple(t("🔈 Cả TV và điện thoại", "🔈 TV and phone"), t("TV vẫn có tiếng (TV Android 13+). Điện thoại trễ hơn TV một chút; vài app như Netflix chặn thu tiếng kiểu này.",
-            "The TV keeps its sound (Android 13+ TVs). The phone lags the TV a little; some apps such as Netflix block this kind of capture.")) { start(true) }))
+            "The TV keeps its sound (Android 13+ TVs). The phone lags the TV a little; some apps such as Netflix block this kind of capture.")) { start(true) },
+        if (prefs.getBoolean("listenHq", false))                        // a switch, not a way: the menu comes back to pick the way
+            Triple(t("✨ Chất lượng cao: đang bật", "✨ High quality: on"), t("160 kbit/s, nghe nhạc rõ hơn. Bấm để về thường (64 kbit/s).", "160 kbit/s, clearer music. Tap for normal (64 kbit/s).")) { prefs.edit().putBoolean("listenHq", false).apply(); toggleListen() }
+        else
+            Triple(t("✨ Chất lượng cao: đang tắt", "✨ High quality: off"), t("Bật để nghe nhạc rõ hơn: 160 kbit/s thay vì 64.", "Turn on for clearer music: 160 kbit/s instead of 64.")) { prefs.edit().putBoolean("listenHq", true).apply(); toggleListen() }))
 }
 
 /** Back to the TV's speakers; [why] is said when it was not the person's choice (e.g. the TV cannot send its sound). */

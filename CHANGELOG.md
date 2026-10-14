@@ -4,6 +4,20 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.17.1 - 2026-10-14
+
+Web 2.17.1 · app điện thoại 2.15.1 · app TV 2.14.1
+
+**Tiếng Việt**
+- **Sửa "🎧 Chỉ máy này" không có tiếng và nút remote báo "chưa nối":** trên TV Android 13+ có dịch vụ remote của Google (vd box FPT Play), cách thu tiếng cũ làm dịch vụ đó bị lỗi và tắt khoảng 30 phút. Giờ cả hai cách nghe đều thu tiếng kiểu mới (Android 13+), không đụng tới dịch vụ remote. TV cũ hơn vẫn như trước.
+- **🎧 Chất lượng cao:** nút bật/tắt trong khung chọn nghe (và menu 🎧 của app điện thoại): Opus 160 kbit/s thay vì 64, nghe nhạc rõ hơn; trên trang mở từ TV là âm thanh gốc 48 kHz stereo thay vì 24 kHz mono.
+- README có link tới trang giới thiệu tvremote.pages.dev.
+
+**English**
+- **Fixed "🎧 Only this device" giving no sound and the remote showing "not connected":** on Android 13+ TVs with Google's remote service (e.g. FPT Play boxes), the old way of capturing the sound crashed that service and kept it down for about 30 minutes. Both ways of listening now use the newer capture (Android 13+), which leaves the remote service alone. Older TVs work as before.
+- **🎧 High quality:** a switch in the listening picker (and the phone app's 🎧 menu): Opus at 160 kbit/s instead of 64, clearer music; on the page served by the TV, the original 48 kHz stereo instead of 24 kHz mono.
+- The README links to the product page tvremote.pages.dev.
+
 ## 2.17.0 - 2026-10-14
 
 Web 2.17.0 · app điện thoại 2.15.0 · app TV 2.14.0

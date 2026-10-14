@@ -233,6 +233,9 @@
     // server messages that are in Vietnamese
     'sai mã, thử lại': 'wrong code, try again',
     // automation, scenes, the TV's sound, voice commands, the home screen icon
+    '✨ Chất lượng cao: tắt': '✨ High quality: off', '✨ Chất lượng cao: bật': '✨ High quality: on',
+    'Bật để nghe nhạc rõ hơn, tốn mạng hơn một chút.': 'Turn on for clearer music; uses a little more network.',
+    'Âm thanh như gốc, tốn mạng hơn. Bấm để về thường.': 'Sound as the source, more network. Tap for normal.',
     '🎧 Chỉ máy này': '🎧 Only this device', 'Loa TV tạm im. Hợp khi đeo tai nghe, cả nhà ngủ.': 'The TV’s speakers go quiet. For headphones while the house sleeps.',
     '🔈 Cả TV và máy này': '🔈 TV and this device', 'TV vẫn có tiếng (TV Android 13+). Máy này trễ hơn TV một chút; vài app như Netflix chặn thu tiếng kiểu này.': 'The TV keeps its sound (Android 13+ TVs). This device lags the TV a little; some apps such as Netflix block this kind of capture.',
     'Nghe tiếng TV trên máy này': 'Hear the TV on this device', 'Đang nghe tiếng TV trên cả TV và máy này.': 'Playing the TV’s sound on both the TV and this device.',
@@ -337,6 +340,7 @@
     'TV này không gửi được tiếng (cần Android 11 trở lên).': 'This TV cannot send its sound (Android 11 or newer is needed).',
     'Đang nghe trên máy này': 'Listening on this device',
     'loa TV tạm im': 'TV speakers quiet',
+    '✨ chất lượng cao': '✨ high quality', 'chất lượng cao': 'high quality',
     'ADB chưa sẵn sàng, đã dừng nghe tiếng TV.': 'ADB is not ready, stopped the TV’s sound.',
     'nói bằng nút 🎤 của bàn phím': 'speak with the keyboard’s 🎤 key',
   };

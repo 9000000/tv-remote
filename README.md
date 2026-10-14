@@ -1,6 +1,6 @@
 # tv-remote
 
-**Tiếng Việt** · [English](README.en.md)
+**Tiếng Việt** · [English](README.en.md) · 🌐 [tvremote.pages.dev](https://tvremote.pages.dev)
 
 Điều khiển Android TV / Google TV từ điện thoại hoặc máy tính: nút remote, xem hình TV trực tiếp và chạm lên hình, gõ chữ, nói với TV, nghe tiếng TV trên điện thoại, hẹn giờ tắt, giờ đi ngủ và giới hạn app cho trẻ, cảnh (một nút làm nhiều việc), quản lý app và tệp, cài APK, xem sức khỏe TV. Mọi kết nối đi thẳng tới TV, không qua máy chủ nào; ở khác mạng thì dùng Tailscale.
 

@@ -40,10 +40,12 @@ class Tv(
     private val wantControl: Boolean = true,
     /**
      * true: the TV keeps playing its sound too (scrcpy's playback capture with audio_dup; Android 13+). Older TVs fall back to
-     * the private way (TV speakers silent) and say so with onStatus("audio", "noshare"). Apps that refuse playback capture
-     * (some with DRM) are silent here in this mode.
+     * the private way (TV speakers silent) and say so with onStatus("audio", "noshare"). From Android 13 both ways use playback
+     * capture, so apps that refuse it (some with DRM) are not heard here, and keep playing on the TV in the private way.
      */
     private val audioShare: Boolean = false,
+    /** Opus bit rate: 64 kbit/s is plenty for speech and TV, 160 sounds like the source for music */
+    private val audioBitRate: Int = 64000,
 ) {
     /** One H.264 packet as scrcpy sends it (Annex B). config: SPS/PPS, needed before the first frame; key: a key frame. */
     fun interface Sink { fun video(config: Boolean, key: Boolean, data: ByteArray) }
@@ -110,6 +112,9 @@ class Tv(
             var hearing = audio
             val sdk = if (hearing != null) a.shell("getprop ro.build.version.sdk").trim().toIntOrNull() ?: 0 else 0
             val share = hearing != null && audioShare && sdk >= 33
+            // Android 13+: playback capture in both modes. The private one used to take the whole output (REMOTE_SUBMIX), and that
+            // device crashes Google's remote service on some TVs (FPT Play box, Android 14), so the keys went dead with the sound.
+            val playback = hearing != null && sdk >= 33
             if (hearing != null && audioShare && !share && sdk >= 30) listener.onStatus("audio", "noshare")
             if (hearing != null && sdk < 30) {                        // scrcpy captures sound from Android 11
                 listener.onStatus("audio", "unsupported")
@@ -120,7 +125,7 @@ class Tv(
             val log = a.open("shell:CLASSPATH=" + REMOTE + " app_process / com.genymobile.scrcpy.Server " + VER + " scid=" + scid
                     + " tunnel_forward=true cleanup=false control=$wantControl send_dummy_byte=true send_device_meta=false "
                     + (if (wantVideo) "video=true $video" else "video=false")
-                    + (if (hearing == null) " audio=false" else " audio=true audio_codec=$hearing" + (if (hearing == "opus") " audio_bit_rate=64000" else "") + (if (share) " audio_source=playback audio_dup=true" else ""))
+                    + (if (hearing == null) " audio=false" else " audio=true audio_codec=$hearing" + (if (hearing == "opus") " audio_bit_rate=$audioBitRate" else "") + (if (playback) " audio_source=playback" else "") + (if (share) " audio_dup=true" else ""))
                     // scrcpy-server does not always notice that we left (a still picture sends nothing), and a leftover one keeps
                     // loading the TV. So a shell loop on the TV waits for our heartbeat and kills the server when it stops.
                     + " & P=\$!; while read -t 25 x; do :; done; kill \$P")
