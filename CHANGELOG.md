@@ -4,6 +4,18 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.8.2 - 2026-10-14
+
+Web 2.8.2 · app điện thoại 2.7.2 · app TV 2.6.10
+
+**Tiếng Việt**
+- Trang remote do TV phục vụ (mở bằng mã QR, cổng 8765): ô **“Mở trên TV”** nằm ngay ở tab Remote như app điện thoại và web trên máy tính, thay cho ô “Phát lên TV” khuất trong tab Cài. Thêm ô **tìm app trên CH Play / mở theo app id**.
+- Cũng trang đó, trên màn hình rộng: thanh tab trải hết chiều ngang, cột bên phải không còn bị bóp hẹp.
+
+**English**
+- The remote page served by the TV (opened from the QR code, port 8765): the **“Open on the TV”** box now sits on the Remote tab, as in the phone app and the computer web UI, instead of “Play on the TV” tucked away in the Install tab. Adds a **Play Store search / app id** box.
+- Same page on wide screens: the tab bar spans the full width and the right column is no longer squeezed.
+
 ## 2.8.1 - 2026-10-14
 
 Web 2.8.1 · app điện thoại 2.7.1 · app TV 2.6.9
