@@ -1,5 +1,6 @@
 """Finding TVs: which hosts answer, this machine's networks and Tailscale peers, Cast names, the scan behind the TV list."""
 import asyncio, errno, ipaddress, json, os, re, socket
+from collections import Counter
 from tvtools import find
 
 TAILSCALE = find("tailscale", "/Applications/Tailscale.app/Contents/MacOS/Tailscale", r"C:\Program Files\Tailscale\tailscale.exe")
@@ -7,14 +8,15 @@ TS_ENV = {**os.environ, "TAILSCALE_BE_CLI": "1"}                      # the Mac 
 
 
 async def port_open(ip, port, timeout=0.7, unknown=None):
-    """unknown: a set that collects hosts the OS gave up on at once ("Host is down", "No route to host") instead of trying."""
+    """unknown: a dict that collects hosts the OS gave up on ("Host is down", "No route to host"...) instead of a plain "no",
+    with the error's name."""
     try:
         _, w = await asyncio.wait_for(asyncio.open_connection(ip, port), timeout)
         w.close()
         return True
     except OSError as e:
-        if unknown is not None and e.errno in (errno.EHOSTDOWN, errno.EHOSTUNREACH):
-            unknown.add(ip)
+        if unknown is not None and e.errno != errno.ECONNREFUSED:     # refused: the host is there, the port closed
+            unknown[ip] = errno.errorcode.get(e.errno, str(e.errno))
         return False
     except asyncio.TimeoutError:
         return False
@@ -65,7 +67,7 @@ async def cast_name(ip):
 
 async def discover():
     """TVs we can see: LAN hosts answering on the remote (6466) or ADB (5555) port, and Android devices on the tailnet."""
-    sem, found, unknown = asyncio.Semaphore(120), {}, set()
+    sem, found, unknown, peers = asyncio.Semaphore(120), {}, {}, {}
 
     async def probe(ip, via, name=""):
         async with sem:
@@ -82,9 +84,10 @@ async def discover():
         out, _ = await asyncio.wait_for(p.communicate(), 8)
         for peer in (json.loads(out).get("Peer") or {}).values():
             if peer.get("OS") == "android" and peer.get("Online") and peer.get("TailscaleIPs"):
+                peers[peer["TailscaleIPs"][0]] = peer.get("HostName", "")
                 jobs.append(probe(peer["TailscaleIPs"][0], "tailscale", peer.get("HostName", "")))
-    except Exception:
-        pass                                                          # no Tailscale CLI here: LAN results only
+    except Exception as e:
+        peers["error"] = repr(e)                                      # no Tailscale CLI here: LAN results only
     await asyncio.gather(*jobs)
     # A first scan asks the whole network at once who has each address (ARP), and the Mac answers "Host is down" for many
     # hosts without waiting, the TV often among them: it turned up only on the second scan. By now the answers have come
@@ -92,5 +95,7 @@ async def discover():
     again = [ip for ip in unknown if ip not in found]
     if again:
         await asyncio.sleep(1)
-        await asyncio.gather(*[probe(ip, "lan") for ip in again])
+        await asyncio.gather(*[probe(ip, "tailscale" if ip in peers else "lan", peers.get(ip, "")) for ip in again])
+    if not found:                                                     # for the log: why a scan found nothing at all
+        print(f"scan found nothing: tailscale {peers or 'no peers'}; errors {dict(Counter(unknown.values()))}", flush=True)
     return {"networks": [str(n) for _, n in local_networks()], "found": sorted(found.values(), key=lambda f: (f["via"], f["ip"]))}

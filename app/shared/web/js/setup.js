@@ -117,7 +117,8 @@ async function loadTvs() {
 }
 $('#scan').addEventListener('click', async () => {
   const b = $('#scan'); b.disabled = true; b.textContent = '⏳ Đang quét...'; $('#scanlist').replaceChildren();
-  const r = await api('/api/discover');
+  let r = await api('/api/discover');
+  if (r && !r.found.length) r = await api('/api/discover') || r;     // now and then a first scan misses TVs a second one finds
   b.disabled = false; b.textContent = '🔍 Quét mạng'; if (!r) return;
   $('#scaninfo').textContent = (r.networks.length ? 'Đã quét ' + r.networks.join(', ') : 'Không thấy mạng nội bộ nào') + ' và Tailscale. ' + (r.found.length ? '' : 'Không thấy TV nào: TV có bật và cùng Wi-Fi với máy này không? Hoặc nhập IP bên dưới.');
   $('#scanlist').replaceChildren(...r.found.map((f) => el('div', { className: 'item', onclick: (e) => { if (!e.target.closest('button')) selectTv(f.ip); } },
