@@ -289,6 +289,8 @@
 <dialog id="allow"><div class="allowbox"><div class="big">📺</div><h1>Nhìn lên TV</h1><p class="muted">TV đang hỏi “Cho phép gỡ lỗi USB?”</p>
   <ol><li>Tích “Luôn cho phép từ máy tính này”</li><li>Chọn OK (Cho phép)</li></ol>
   <p class="muted">Màn hình này tự đóng khi TV đã cho phép.</p><button id="allowlater">Để sau</button></div></dialog>
+<!-- a TV is being connected: nothing on the remote works yet -->
+<dialog id="connecting"><div class="allowbox"><div class="spin"></div><p class="muted">Đang kết nối</p><h1 id="conname"></h1><p class="muted" id="constep"></p><button id="concancel">Hủy</button></div></dialog>
 <dialog id="ts"><div class="card assistbox"><div class="card-head"><h2>🌐 Tailscale cho TV</h2><button class="small" id="tsclose">✕ Đóng</button></div><div class="tsbox" id="tsbody" style="display:flex;flex-direction:column;gap:12px;margin-top:12px"></div></div></dialog>
 <dialog id="optdlg"><div class="card assistbox">
   <div class="card-head"><h2>⚡ Tối ưu TV</h2><button class="small" id="optclose">✕ Đóng</button></div>

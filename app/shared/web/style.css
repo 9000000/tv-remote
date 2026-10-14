@@ -219,9 +219,10 @@
   .numpad { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:300px; margin-top:8px; } .numpad[hidden] { display:none; }
 
   /* "Look at the TV": the whole screen, because nothing else can be done until the TV has been answered */
-  #allow { width:100vw; height:100vh; max-width:none; max-height:none; margin:0; padding:0; border:0; background:var(--bg); color:var(--ink); }
-  #allow[open] { display:flex; align-items:center; justify-content:center; }
+  #allow, #connecting { width:100vw; height:100vh; max-width:none; max-height:none; margin:0; padding:0; border:0; background:var(--bg); color:var(--ink); }
+  #allow[open], #connecting[open] { display:flex; align-items:center; justify-content:center; }
   .allowbox { text-align:center; padding:24px; max-width:520px; } .allowbox .big { font-size:72px; line-height:1; } .allowbox h1 { font-size:34px; margin:10px 0 6px; }
+  .spin { width:56px; height:56px; margin:0 auto 22px; border-radius:50%; border:5px solid var(--btn); border-top-color:var(--accent); animation:spin .9s linear infinite; } @keyframes spin { to { transform:rotate(360deg); } }
   .allowbox p { font-size:17px; margin:8px 0; } .allowbox ol { display:inline-block; text-align:left; font-size:21px; font-weight:700; line-height:1.6; margin:18px 0; padding-left:28px; }
   .allowbox button { display:block; width:100%; max-width:280px; margin:22px auto 0; }
 

@@ -87,16 +87,22 @@ function tvChanged() {                                                // another
   if (currentTab === 'tv') loadSteps();
   if (picking) loadTvs();
 }
-async function selectTv(host) {
+function connecting(name, host) {                                   // covers the remote until the TV answers (see refresh)
+  $('#conname').textContent = name; $('#constep').textContent = 'Đang tìm TV ở ' + host + '...';
+  if (!$('#connecting').open) $('#connecting').showModal();
+}
+$('#concancel').addEventListener('click', () => { justPicked = null; $('#connecting').close(); wantPick = true; refresh(); });
+$('#connecting').addEventListener('cancel', (e) => { e.preventDefault(); $('#concancel').click(); });   // Esc: the same as Cancel
+async function selectTv(host, name) {
   const r = await api('/api/tv/select', { host }); if (!r) return;
-  toast('Đang kết nối ' + host + '...'); wantPick = false; cameFromTv = false; justPicked = host; pickedAt = Date.now(); showTab('remote'); await sleep(1200); await refresh(); loadSteps();
+  connecting(name || host, host); wantPick = false; cameFromTv = false; justPicked = host; pickedAt = Date.now(); showTab('remote'); await sleep(1200); await refresh(); loadSteps();
 }
 $('#switchtv').addEventListener('click', () => { wantPick = true; cameFromTv = true; refresh(); });
 $('#pickback').addEventListener('click', () => { wantPick = false; cameFromTv = false; refresh(); });
-const openTv = (host, current) => { if (host === current) { wantPick = false; cameFromTv = false; justPicked = host; pickedAt = Date.now(); refresh(); } else selectTv(host); };
+const openTv = (host, current, name) => { if (host === current) { wantPick = false; cameFromTv = false; justPicked = host; pickedAt = Date.now(); refresh(); } else selectTv(host, name); };
 async function loadTvs() {
   const r = await api('/api/tvs', null, true); if (!r) return;
-  const rows = r.tvs.map((t) => el('div', { className: 'item', onclick: (e) => { if (!e.target.closest('button')) openTv(t.host, r.current); } },
+  const rows = r.tvs.map((t) => el('div', { className: 'item', onclick: (e) => { if (!e.target.closest('button')) openTv(t.host, r.current, t.name); } },
     el('div', { className: 'name' }, el('span', { textContent: t.name || t.host }), t.host === r.current && cameFromTv ? el('span', { className: 'badge ok', textContent: 'đang dùng' }) : null,
       el('small', { textContent: t.host + (t.lan && t.lan !== t.host ? ' · trong nhà ' + t.lan : '') })),
     el('div', { className: 'acts' },

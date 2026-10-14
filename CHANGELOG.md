@@ -4,6 +4,18 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.14.0 - 2026-10-14
+
+Web 2.14.0 · app điện thoại 2.13.0 · app TV 2.11.2
+
+**Tiếng Việt**
+- **Màn hình chờ khi kết nối TV** (app điện thoại và web máy tính): trước đây app vào thẳng màn hình điều khiển, chỉ có dòng “Đang kết nối...” nhỏ ở trên, trong khi các nút chưa bấm được. Giờ là màn hình riêng có tên TV cỡ lớn, đang làm bước nào (tìm TV, chờ cho phép trên TV, mở hình, thử chế độ chỉ bấm phím) và nút Hủy. Màn hình tự đóng khi TV đã sẵn sàng.
+- Sửa: xem hình TV này, thoát ra rồi mở TV khác thì khung hình vẫn đứng ở hình cuối của TV trước. Giờ khung hình được xóa mỗi khi ngắt kết nối.
+
+**English**
+- **A waiting screen while connecting to a TV** (phone app and computer web): the app used to go straight to the remote with a small “Connecting...” line on top while none of the buttons worked yet. Now a screen of its own shows the TV's name in large type, the current step (looking for the TV, waiting for the TV to allow it, opening the picture, trying keys only) and a Cancel button. It closes by itself once the TV is ready.
+- Fixed: after watching one TV, leaving and opening another, the picture stayed frozen on the first TV's last frame. The picture is now cleared on every disconnect.
+
 ## 2.13.1 - 2026-10-14
 
 Web 2.13.1 · app điện thoại 2.12.1 · app TV 2.11.1

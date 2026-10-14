@@ -96,8 +96,9 @@ async function refresh() {
   if (justPicked && s.host === justPicked) {                          // straight to the remote when the TV is ready, to the first-time steps when it is not
     const ready = s.connected || (s.adb && s.adb.state === 'ready');
     if (ready || Date.now() - pickedAt > 6000) { justPicked = null; showTab(ready ? 'remote' : 'tv'); }   // a TV takes a few seconds to answer
-    else setTimeout(refresh, 1000);
+    else { setTimeout(refresh, 1000); if (s.name) $('#conname').textContent = s.name; }
   }
+  if (!justPicked && $('#connecting').open) $('#connecting').close();
   if (s.host !== curHost) { const first = curHost === null; curHost = s.host; if (!first) tvChanged(); }
   if (s.volume && Date.now() > volHold) {
     $('#volv').textContent = s.volume.level;

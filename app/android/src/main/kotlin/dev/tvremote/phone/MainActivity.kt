@@ -42,6 +42,7 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
@@ -88,6 +89,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     private lateinit var managing: Managing                           // apps, files, installs, health and terminal, shown in a web view
     private lateinit var pickerMsg: TextView
     private lateinit var status: TextView
+    private lateinit var waiting: FrameLayout                         // covers the remote while a TV is being connected: nothing on it works yet
+    private lateinit var waitName: TextView
+    private lateinit var waitStep: TextView
     private lateinit var ipBox: EditText
     private lateinit var textBox: EditText
     private lateinit var scanBtn: Button
@@ -141,6 +145,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         sv.tag = "picker"
         root.addView(sv, FrameLayout.LayoutParams(-1, -1))
         root.addView(remote, FrameLayout.LayoutParams(-1, -1))
+        waiting = buildWaiting()
+        root.addView(waiting, FrameLayout.LayoutParams(-1, -1))
         settings = buildSettings()
         root.addView(settings, FrameLayout.LayoutParams(-1, -1))
         about = buildAbout()
@@ -266,7 +272,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         if (h.isEmpty()) return
         hideKeyboard()
         status.text = t("Đang kết nối ", "Connecting to ") + h + "..."
+        surface.visibility = View.VISIBLE                              // a fresh, black surface (see disconnect)
         show(true)
+        waitFor(title(from ?: h), t("Đang tìm TV ở ", "Looking for the TV at ") + h + "...")
         startSession()
     }
 
@@ -348,6 +356,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         clearBox()                                                    // the next TV has received nothing from the box
         managing.close()
         stopSession()
+        waiting.visibility = View.GONE
+        surface.visibility = View.GONE                                 // drops the surface, or the next TV opens on this one's last frame
         basic?.close()
         basic = null
         host = null
@@ -380,14 +390,25 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             if (tv !== from || h == null) return@post                 // from a session that has been replaced
             allowAlert(key == "allow")
             when (key) {
-                "connecting" -> status.text = t("Đang kết nối ", "Connecting to ") + detail + "..."
-                "allow" -> status.text = t("Nhìn lên TV: tích “Luôn cho phép từ máy tính này” rồi chọn OK.", "Look at the TV: tick “Always allow from this computer”, then OK.")
+                "connecting" -> {
+                    status.text = t("Đang kết nối ", "Connecting to ") + detail + "..."
+                    waitStep.text = t("Đang tìm TV ở ", "Looking for the TV at ") + detail + "..."
+                }
+                "allow" -> {
+                    status.text = t("Nhìn lên TV: tích “Luôn cho phép từ máy tính này” rồi chọn OK.", "Look at the TV: tick “Always allow from this computer”, then OK.")
+                    waitStep.text = t("Chờ cho phép trên TV: tích “Luôn cho phép” rồi chọn OK.", "Waiting for the TV: tick “Always allow”, then OK.")
+                }
                 "starting" -> {
                     save(entry ?: h, detail)
                     status.text = t("Đang mở hình từ ", "Opening the picture from ") + detail.ifEmpty { h } + "..."
+                    waitName.text = title(entry ?: h)
+                    waitStep.text = if (video) t("Đã kết nối, đang mở hình TV...", "Connected, opening the TV picture...") else t("Đã kết nối, đang mở điều khiển...", "Connected, opening the controls...")
+                    val s = from
+                    ui.postDelayed({ if (tv === s && s != null && s.ready()) waiting.visibility = View.GONE }, 10000)   // no picture yet, but the buttons work
                 }
                 "rate" -> if (video) status.text = title(entry ?: h) + " · " + detail + " KB/s"
                 "live" -> {
+                    waiting.visibility = View.GONE
                     pendingAsk?.let {
                         from?.search(it)
                         pendingAsk = null
@@ -401,6 +422,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 }
                 else -> {
                     tv = null
+                    waitStep.text = t("Không vào được bằng ADB, đang thử chế độ chỉ bấm phím...", "ADB did not work, trying keys only...")
                     offerBasic(h, explain(detail))                    // no ADB (refused, or filtered and timed out), but the TV may still take keys
                 }
             }
@@ -2368,6 +2390,37 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     }
 
     // ---------------------------------------------------------------- small view helpers
+    /** Shows the waiting screen for [name], with what is going on now. */
+    private fun waitFor(name: String, step: String) {
+        waitName.text = name
+        waitStep.text = step
+        waiting.visibility = View.VISIBLE
+    }
+
+    private fun buildWaiting(): FrameLayout {
+        val f = FrameLayout(this)
+        f.setBackgroundColor(BG)
+        f.isClickable = true                                          // the remote underneath takes no touches meanwhile
+        f.visibility = View.GONE
+        val c = col()
+        c.gravity = Gravity.CENTER_HORIZONTAL
+        c.setPadding(dp(28), 0, dp(28), 0)
+        val spin = ProgressBar(this)
+        spin.isIndeterminate = true
+        spin.indeterminateTintList = android.content.res.ColorStateList.valueOf(ACCENT)
+        c.addView(spin, LinearLayout.LayoutParams(dp(64), dp(64)))
+        c.addView(TextView(this).apply { text = t("Đang kết nối", "Connecting"); textSize = 15f; setTextColor(MUTED); gravity = Gravity.CENTER },
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(28) })
+        waitName = TextView(this).apply { textSize = 28f; setTextColor(TEXT); typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER }
+        c.addView(waitName, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6) })
+        waitStep = TextView(this).apply { textSize = 16f; setTextColor(MUTED); gravity = Gravity.CENTER; setLineSpacing(dp(3).toFloat(), 1f) }
+        c.addView(waitStep, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
+        c.addView(button(t("Hủy", "Cancel"), CARD).apply { setOnClickListener { disconnect(null) } },
+            LinearLayout.LayoutParams(dp(200), dp(54)).apply { topMargin = dp(40) })
+        f.addView(c, FrameLayout.LayoutParams(-1, -2, Gravity.CENTER))
+        return f
+    }
+
     private fun col(): LinearLayout {
         val l = LinearLayout(this)
         l.orientation = LinearLayout.VERTICAL
