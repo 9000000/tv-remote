@@ -115,8 +115,13 @@ class MainActivity : Activity() {
         fun enable(on: Boolean) { view.isEnabled = on; view.alpha = if (on) 1f else 0.4f }
     }
 
-    /** A phone (TV Setup runs there too, see README): one scrolling column instead of the TV's two, whichever way it is held. */
-    private val phone by lazy { resources.configuration.smallestScreenWidthDp < 600 }
+    /**
+     * A phone (TV Setup runs there too, see README): one scrolling column instead of the TV's two, whichever way it is held.
+     * Not the screen size alone: a 1080p TV is only 540dp on its short side.
+     */
+    private val phone by lazy {
+        !packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_LEANBACK) && resources.configuration.smallestScreenWidthDp < 600
+    }
 
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
