@@ -949,19 +949,19 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     /** The same, one step at a time, for when the automatic run loses its way. */
     private fun installSetupByHand() {
-        val link = "github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"   // lower case, no "https://": typed as key presses, and Downloader adds the rest
+        val link = "github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"
         menu(t("Cài TV Setup lên TV", "Install TV Setup on the TV"), -1, listOf(
             Triple(t("1. Mở Downloader trên TV", "1. Open Downloader on the TV"), t("Chưa cài thì TV mở trang CH Play của nó: bấm Cài đặt, rồi bấm lại mục này", "Not installed: the TV opens its Play Store page. Install it, then tap this again")) {
                 basic?.let { b -> tvJob { openOnTv(b, "com.esaba.downloader") { false } } }
                 ui.postDelayed({ if (basic != null && !isFinishing) installSetupByHand() }, 600)
             },
-            Triple(t("2. Nhập đường dẫn tải", "2. Enter the download link"), t("Khi TV đang ở trang chủ Downloader: app tự tới ô địa chỉ, gõ đường dẫn và cho tải. Mất khoảng 10 giây", "With Downloader’s home page on the TV: the app goes to the address field, types the link and starts the download. About 10 seconds")) {
-                basic?.let { b -> tvJob { downloaderGo(b, link) } }
+            Triple(t("2. Nhập mã tải $DL_CODE", "2. Enter the download code $DL_CODE"), t("Khi TV đang ở trang chủ Downloader: app tự tới ô địa chỉ, gõ mã và cho tải. Mất khoảng 5 giây", "With Downloader’s home page on the TV: the app goes to the address field, types the code and starts the download. About 5 seconds")) {
+                basic?.let { b -> tvJob { downloaderGo(b, DL_CODE) } }
                 Toast.makeText(this, t("Đang nhập đường dẫn trên TV...", "Entering the link on the TV..."), Toast.LENGTH_LONG).show()
                 ui.postDelayed({ if (basic != null && !isFinishing) installSetupByHand() }, 600)
             },
             Triple(t("3. Mở TV Setup trên TV", "3. Open TV Setup on the TV"), t("Trong đó bấm “Tùy chọn nhà phát triển” rồi bật Gỡ lỗi USB", "There choose “Developer options” and turn on USB debugging")) { basic?.let { b -> tvJob { openOnTv(b, "dev.tvremote.setup") { false } } }; Unit },
-            Triple(t("Chép đường dẫn", "Copy the link"), link) {
+            Triple(t("Chép đường dẫn", "Copy the link"), t("Tự gõ trong Downloader: mã $DL_CODE, hoặc ", "To type in Downloader yourself: the code $DL_CODE, or ") + link) {
                 (getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager).setPrimaryClip(android.content.ClipData.newPlainText("tv-setup", link))
                 Toast.makeText(this, t("Đã chép", "Copied"), Toast.LENGTH_SHORT).show()
             }))
@@ -2536,6 +2536,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     companion object {
         private const val BG = 0xff111418.toInt()
+        private const val DL_CODE = "2397346"                         // AFTVnews short code for releases/latest/download/tv-setup.apk: Downloader takes it in the address field
         private const val CARD = 0xff1c2026.toInt()
         private const val BTN = 0xff2a3038.toInt()
         private const val ACCENT = 0xff5b8cff.toInt()

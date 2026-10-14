@@ -14,12 +14,14 @@
 </tr>
 </table>
 
+**Mục lục:** [Chọn cách dùng](#chọn-cách-dùng) · [Chuẩn bị TV](#chuẩn-bị-tv) · [Cài TV Setup bằng mã Downloader](#cài-tv-setup-bằng-mã-downloader) · [App điện thoại](#1-app-điện-thoại-android-tv-remote) · [Trang do TV phục vụ](#2-trang-do-tv-phục-vụ-tv-setup) · [Web trên máy tính](#3-web-trên-máy-tính) · [Dùng khi khác mạng](#dùng-khi-khác-mạng-tailscale) · [Khi TV tắt](#khi-tv-tắt) · [Tối ưu TV](#tối-ưu-tv) · [Gặp lỗi](#gặp-lỗi) · [Bảo mật](#bảo-mật) · [Chi tiết kỹ thuật](#chi-tiết-kỹ-thuật)
+
 ## Chọn cách dùng
 
 | Bạn có | Dùng | Lấy ở đâu |
 |---|---|---|
-| Điện thoại Android | App **TV Remote** | `tv-remote.apk` ở [Releases](https://github.com/HoangTran0410/tv-remote/releases) |
-| Bất kỳ trình duyệt nào, kể cả iPhone | App **TV Setup** cài trên TV, rồi mở `http://<IP của TV>:8765` | `tv-setup.apk` ở [Releases](https://github.com/HoangTran0410/tv-remote/releases) |
+| Điện thoại Android | App **TV Remote** | `tv-remote.apk` ở [Releases](https://github.com/HoangTran0410/tv-remote/releases), hoặc mã Downloader **`2973135`** |
+| Bất kỳ trình duyệt nào, kể cả iPhone | App **TV Setup** cài trên TV, rồi mở `http://<IP của TV>:8765` | Trên TV: app Downloader, mã **`2397346`** ([xem cách cài](#cài-tv-setup-bằng-mã-downloader)) |
 | Máy tính (Mac, Windows, Linux) | **Web trên máy tính** | Tải repo, bấm đúp `start-mac.command` / `start-windows.cmd` |
 
 Cả ba dùng **chung một giao diện web** với các tab: Remote, Ứng dụng, Tệp · Cài, Sức khỏe, Terminal, Thiết lập. App điện thoại có màn remote riêng (vuốt, nút âm lượng của máy) và mở các tab còn lại bằng nút ô lưới. Riêng web trên máy tính có thêm chuột, bàn phím máy tính, nhiều TV, và bấm phím được cả khi TV chưa bật ADB.
@@ -28,7 +30,7 @@ Cả ba dùng **chung một giao diện web** với các tab: Remote, Ứng dụ
 flowchart TD
     A["Bật Gỡ lỗi ADB trên TV<br/>(một lần, bằng remote của TV)"] --> B{"Dùng gì?"}
     B -- "Điện thoại Android" --> P["App TV Remote:<br/>Quét Wi-Fi → chọn TV"]
-    B -- "Trình duyệt bất kỳ" --> T["Cài TV Setup lên TV →<br/>quét mã QR trên TV → nhập mã 6 số"]
+    B -- "Trình duyệt bất kỳ" --> T["Cài TV Setup lên TV (Downloader, mã 2397346) →<br/>quét mã QR trên TV → nhập mã 6 số"]
     B -- "Máy tính" --> W["Bấm đúp start-mac / start-windows →<br/>chọn TV trong danh sách"]
     P --> Q["TV hỏi “Cho phép gỡ lỗi USB?”:<br/>tích Luôn cho phép → OK"]
     W --> Q
@@ -38,9 +40,9 @@ flowchart TD
     S --> X["Điều khiển từ bất cứ đâu<br/>bằng IP 100.x của TV"]
 ```
 
-## Chuẩn bị TV (một lần, bằng remote của TV)
+## Chuẩn bị TV
 
-Tên menu dưới đây là trên Sony; hãng khác có thể hơi khác.
+Làm một lần, bằng remote của TV. Tên menu dưới đây là trên Sony; hãng khác có thể hơi khác.
 
 1. **Bật Tùy chọn nhà phát triển:** Cài đặt → Tùy chọn thiết bị → Giới thiệu → **Bản dựng** → bấm OK 7 lần.
 2. **Bật ADB:** Cài đặt → Tùy chọn thiết bị → Tùy chọn nhà phát triển → **Gỡ lỗi ADB** (có TV ghi "Gỡ lỗi USB").
@@ -48,12 +50,15 @@ Tên menu dưới đây là trên Sony; hãng khác có thể hơi khác.
 
 Lần đầu mỗi máy kết nối, TV hỏi "Cho phép gỡ lỗi USB?": tích **Luôn cho phép** rồi OK. Cần một người ở cạnh TV cho việc này. Lúc đó cả ba nơi đều hiện một màn hình lớn "Nhìn lên TV" và tự đóng khi TV đã cho phép.
 
-**Khi không ở nhà mà TV lại hỏi** (TV quên máy này, Android 11+ tự thu hồi sau 7 ngày không dùng...):
+<details>
+<summary><b>Khi không ở nhà mà TV lại hỏi</b> (TV quên máy này, Android 11+ tự thu hồi sau 7 ngày không dùng...)</summary>
+
 - **Tự động:** app điện thoại và web máy tính, mỗi lần đã kết nối được ADB, tự xin TV Setup một "thẻ". Lần sau TV hỏi, chúng nhờ TV Setup bấm cho phép, không cần ai ở TV. TV Setup chỉ bấm khi **mã khóa trong hộp hỏi trùng mã của chính máy đang xin**, và hiện thông báo trên TV mỗi lần cho phép.
 - **Bấm tay:** trang nào đang có ADB (trang của TV đã ghép mã, web máy tính, app điện thoại) hiện dải báo "TV đang hỏi... cho một thiết bị" kèm mã và nút **Cho phép / Từ chối**. Chỉ cho phép khi mã trùng với mã mà app TV Remote hiện trong lúc chờ.
 - Máy chưa từng kết nối và chưa ghép mã với TV Setup thì vẫn phải có người ở TV. Đó là chủ ý, để người lạ không vào được.
+</details>
 
-TV chưa bật được ADB (box nhà mạng giấu Cài đặt, đòi mật khẩu...)? Web trên máy tính có nút **🧭 Bật ADB giúp tôi**, app điện thoại có trợ lý tương tự: chỉ dùng nút remote để tự cài TV Setup, hoặc mở Cài đặt TV bằng nhiều cách.
+TV chưa bật được ADB (box nhà mạng giấu Cài đặt, đòi mật khẩu...)? Cài TV Setup bằng [mã Downloader](#cài-tv-setup-bằng-mã-downloader): app đó mở thẳng chỗ bật. Web trên máy tính có nút **🧭 Bật ADB giúp tôi**, app điện thoại có trợ lý tương tự: chỉ dùng nút remote để tự cài TV Setup, hoặc mở Cài đặt TV bằng nhiều cách.
 
 <details>
 <summary>Xem IP của TV ở đâu</summary>
@@ -63,10 +68,31 @@ TV chưa bật được ADB (box nhà mạng giấu Cài đặt, đòi mật kh�
 - App TV Setup cũng hiện cả hai IP ngay trên TV.
 </details>
 
+## Cài TV Setup bằng mã Downloader
+
+Cách dễ nhất cho người mới: chỉ cần remote của TV, không cần máy tính hay điện thoại Android. Sau đó điện thoại nào (kể cả iPhone) cũng điều khiển được qua trình duyệt.
+
+1. Trên TV mở **CH Play**, tìm và cài **Downloader** (của AFTVnews, biểu tượng màu cam).
+2. Mở Downloader. Nó xin quyền truy cập tệp thì chọn **Cho phép**.
+3. Ở ô nhập địa chỉ, gõ mã **`2397346`** rồi chọn **Go**.
+4. Downloader tải TV Setup bản mới nhất. TV hỏi cài đặt: chọn **Cài đặt**. TV báo chưa cho phép cài từ nguồn này: bật cho Downloader, bấm Quay lại, rồi chọn Cài đặt.
+5. Mở **TV Setup**. Chưa bật Gỡ lỗi ADB thì app chỉ cách và mở thẳng Tùy chọn nhà phát triển.
+6. TV Setup hiện **mã QR**: quét bằng camera điện thoại, nhập **mã 6 số** hiện trên TV. Xong.
+
+| App | Mã Downloader | Link trực tiếp |
+|---|---|---|
+| TV Setup (cài trên TV) | **`2397346`** | [tv-setup.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-setup.apk) |
+| TV Remote (điện thoại Android) | **`2973135`** | [tv-remote.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk) |
+
+Mã luôn trỏ tới bản mới nhất. Không có Downloader thì mở `go.aftvnews.com/<mã>` trong trình duyệt cũng tải được.
+
 ## 1. App điện thoại Android: TV Remote
 
-1. Cài `tv-remote.apk` từ [Releases](https://github.com/HoangTran0410/tv-remote/releases).
-2. Mở app, bấm **Quét Wi-Fi** rồi chọn TV, hoặc gõ IP của TV.
+1. Cài `tv-remote.apk` từ [Releases](https://github.com/HoangTran0410/tv-remote/releases) (hoặc mã Downloader `2973135`).
+2. Mở app, bấm **Quét Wi-Fi** rồi chọn TV, hoặc gõ IP của TV. TV chưa bật ADB thì app vẫn bấm phím được sau khi ghép mã, và tự dẫn từng bước tới khi cài xong TV Setup.
+
+<details>
+<summary>Tính năng</summary>
 
 - **Hình TV:** nút con mắt bật/tắt; chạm lên hình là chạm lên TV. Khi đang xem, thanh trên có nút chất lượng (240p đến 960p) và toàn màn hình. Tắt hình thì TV không tốn thêm CPU.
 - **Nút bấm:** chạm = bấm một lần, giữ = nhấn giữ trên TV. Nút `⋯` mở thêm phím ít dùng: Ngõ vào, Cài đặt TV, Thông tin, Lịch phát, TV, Phụ đề, Dừng, Chụp màn hình. Nút âm lượng của điện thoại cũng chỉnh âm lượng TV.
@@ -74,15 +100,19 @@ TV chưa bật được ADB (box nhà mạng giấu Cài đặt, đòi mật kh�
 - **Nói với TV:** bấm micro rồi nói, ví dụ "mở YouTube"; giữ micro để mở Assistant trên TV.
 - **Quản lý TV:** nút ô lưới mở Ứng dụng (có tên và logo), Tệp · Cài, Sức khỏe, Terminal, Thiết lập (Tailscale, Tối ưu TV).
 - **Cập nhật:** app tự báo khi có bản mới và cài ngay trong app.
+</details>
 
 ## 2. Trang do TV phục vụ: TV Setup
 
 Dùng được từ mọi trình duyệt, không cần cài gì trên điện thoại hay máy tính.
 
-1. Đưa `tv-setup.apk` lên TV (USB hoặc app Downloader) và cài.
+1. Cài TV Setup lên TV: [mã Downloader `2397346`](#cài-tv-setup-bằng-mã-downloader), USB, hoặc để app điện thoại / web máy tính cài giúp.
 2. Mở **TV Setup** trên TV, chọn "Luôn cho phép" khi TV hỏi.
 3. Trên điện thoại hoặc máy tính, mở địa chỉ app hiện trên TV: `http://<IP của TV>:8765`.
 4. Nhập **mã 6 số** TV hiện ra. Từ đó thiết bị ấy vào thẳng.
+
+<details>
+<summary>Thêm về TV Setup</summary>
 
 - Trang có đủ Remote, Ứng dụng, Tệp · Cài, Sức khỏe, Terminal, Thiết lập. Nút ▶ Xem bật hình TV; mỗi lúc một trình duyệt xem được hình.
 - Không cần gõ địa chỉ: app TV Setup hiện mã QR trỏ tới trang này, quét bằng camera điện thoại là mở.
@@ -92,7 +122,9 @@ Dùng được từ mọi trình duyệt, không cần cài gì trên điện th
 - Kết nối là HTTP thường, không mã hóa. **Đừng mở cổng 8765 ra Internet**; ở ngoài nhà hãy đi qua Tailscale.
 - Cần TV mở ADB ở cổng 5555. Một số Google TV đời mới chỉ có "Gỡ lỗi không dây" kiểu ghép mã có thể không dùng được.
 
+
 <p align="center"><img src="docs/tvapp-vi.png" width="640" alt="Màn hình app TV Setup"></p>
+</details>
 
 ## 3. Web trên máy tính
 
@@ -107,6 +139,9 @@ Nút **📺 Đổi TV** ở thanh trên quay về danh sách TV.
 
 Từ đó chỉ cần bấm đúp file start. Đóng cửa sổ là dừng; không có gì chạy ngầm trên máy tính.
 
+<details>
+<summary>Các tab làm được gì</summary>
+
 | Tab | Làm được gì |
 |---|---|
 | **Remote** | Nút bấm, âm lượng, đánh thức, xem màn hình, bấm/kéo/cuộn chuột lên hình, gõ bàn phím thẳng lên TV, mở app, link và CH Play, phát ảnh/video từ máy này lên TV |
@@ -117,6 +152,7 @@ Từ đó chỉ cần bấm đúp file start. Đóng cửa sổ là dừng; khô
 | **Thiết lập** | Các bước lần đầu (ADB, Tailscale, ghép nút remote, lưu), Tối ưu TV. Trên trang của TV và app điện thoại: Tailscale và Tối ưu TV |
 
 **Khi ADB đóng**, chỉ còn nút bấm, nguồn, âm lượng từng nấc và đánh thức. Mất: xem màn hình, chuột, bàn phím, app, tệp, cài APK. Trang web ghi rõ điều này và có nút "Thử kết nối lại".
+</details>
 
 <details>
 <summary>Lưu ý khi dùng</summary>
@@ -137,9 +173,13 @@ Làm một lần, lúc đang ở nhà (cùng Wi-Fi với TV):
 4. Nên làm thêm: ở [trang quản trị Tailscale](https://login.tailscale.com/admin/machines), mở menu ⋯ của TV → **Disable key expiry**, nếu không khoảng 180 ngày sau TV bị đăng xuất.
 5. Cài Tailscale trên máy điều khiển (cùng tài khoản), rồi dùng IP `100.x.x.x` của TV thay cho IP trong nhà. Web trên máy tính có bước **Lưu** để tự chuyển sang IP này.
 
+<details>
+<summary>Ảnh hộp Tailscale, và vì sao phải đăng nhập qua link</summary>
+
 <p align="center"><img src="docs/tailscale-vi.png" width="320" alt="Hộp Tailscale: link đăng nhập và mã QR"></p>
 
 Vì sao không gửi thẳng tài khoản từ điện thoại sang TV? Tailscale chỉ nhận đăng nhập qua trang web của nó (Google, Microsoft...) hoặc khóa cấp qua phần mềm quản lý thiết bị doanh nghiệp, thứ mà TV gia đình không có. Gửi link đăng nhập là cách ít bước nhất mà không phải đưa mật khẩu cho app nào.
+</details>
 
 <details>
 <summary>Người ở nhà chỉ có remote TV, người hỗ trợ ở xa</summary>
@@ -154,9 +194,12 @@ Người ở cạnh TV: bật Gỡ lỗi ADB, cài TV Setup (hoặc nhờ ngư�
 - Giữ lâu nút nguồn trên remote của TV sẽ mở menu tắt hẳn; muốn bật lại từ xa thì chỉ bấm ngắn.
 - **Sau khi TV khởi động lại:** Tailscale tự chạy lại nếu đã cài bằng nút Tailscale (hoặc đã chạy Tối ưu TV). Nếu ADB không tự mở, tắt rồi bật lại "Gỡ lỗi ADB".
 
-## Tối ưu TV (tùy chọn)
+## Tối ưu TV
 
-Nút **⚡ Tối ưu TV** ở tab Thiết lập của cả ba nơi (và ngay trong app TV Setup trên TV) mở hộp **chọn việc cần làm**; **Hoàn tác** trả lại như cũ. Chạy lại bao nhiêu lần cũng được.
+Nút **⚡ Tối ưu TV** ở tab Thiết lập của cả ba nơi (và ngay trong app TV Setup trên TV) mở hộp **chọn việc cần làm**; **Hoàn tác** trả lại như cũ. Chạy lại bao nhiêu lần cũng được. Không bắt buộc.
+
+<details>
+<summary>Các lựa chọn</summary>
 
 - **Tắt hiệu ứng chuyển cảnh** (tích sẵn).
 - **Dùng FLauncher làm màn hình chính** (tích sẵn): cài FLauncher và tắt màn hình chính "Android TV Home" của Google, vốn chiếm nhiều CPU. TV giao diện Google TV mới, box nhà mạng (vd FPT) và TV chỉ chạy app 64-bit thì màn hình chính được giữ nguyên.
@@ -166,6 +209,7 @@ Nút **⚡ Tối ưu TV** ở tab Thiết lập của cả ba nơi (và ngay tro
 Tắt là tạm ngưng, không gỡ. **Hoàn tác** bật lại cả những app bạn tự chọn thêm (TV nhớ danh sách ở `/data/local/tmp/tvr-disabled.txt`).
 
 Nếu sau này TV không hiện màn hình chính: Cài đặt → Ứng dụng → Ứng dụng hệ thống → **Android TV Home** → Bật.
+</details>
 
 ## Gặp lỗi
 
@@ -230,6 +274,8 @@ flowchart LR
 
 <details>
 <summary>Dành cho người sửa code</summary>
+
+Hướng dẫn đầy đủ cho người (và AI agent) sửa code: [CLAUDE.md](CLAUDE.md).
 
 ```
 start-mac.command, start-windows.cmd, start-linux.sh   chạy web trên máy tính

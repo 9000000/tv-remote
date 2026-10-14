@@ -143,7 +143,7 @@ function adbHelp() {
   if (!STATE.connected) {                                             // everything here goes through the remote buttons
     assistShow('Bật ADB cho TV này', say(STATE.paired === false ? 'Trước hết cần ghép nút remote với TV (TV hiện mã 6 ký tự, gõ vào đây). Sau đó trang này tự làm giúp phần còn lại.'
       : 'Chưa kết nối được nút remote tới TV (cổng 6466): TV đang bật và cùng mạng với máy này chứ?'),
-      row(act('🔗 Tới bước ghép remote', async () => { $('#assist').close(); showTab('tv'); }, 'primary')), say('Hoặc tự làm bằng remote của TV:'), say(ADB_STEPS));
+      row(act('🔗 Tới bước ghép remote', async () => { $('#assist').close(); showTab('tv'); }, 'primary')), say('Hoặc tự làm bằng remote của TV:'), say(ADB_STEPS), say(DL_TIP));
     return;
   }
   assistShow('Bật ADB cho TV này',
@@ -152,8 +152,10 @@ function adbHelp() {
     choice('🏠 Cài màn hình chính khác', 'Khi TV giấu Cài đặt: mở qua một launcher từ CH Play.', otherHome),
     choice('🛒 Mở CH Play trên TV', '', () => assist('open', { what: 'https://play.google.com/store/apps' })),
     choice('📦 Mở app theo tên gói', 'Đã cài thì mở app, chưa cài thì mở trang CH Play của nó.', () => { const p = prompt('Tên gói hoặc đường dẫn', 'com.example.app'); if (p && p.trim()) assist('open', { what: p.trim() }); }),
+    say(DL_TIP),
     say('Khi TV bật ADB xong, trang này tự nhận ra và kết nối. Các nút mũi tên, OK ở tab Remote vẫn dùng được trong lúc làm.'));
 }
+const DL_TIP = 'Cài TV Setup bằng tay: trên TV cài app Downloader từ CH Play, mở nó, nhập mã 2397346 rồi Go. TV Setup tự mở chỗ bật Gỡ lỗi ADB.';
 const ADB_STEPS = '1. Trong Cài đặt: Tùy chọn thiết bị (hoặc Hệ thống) → Giới thiệu → bấm OK 7 lần vào “Bản dựng”.\n2. Quay lại, vào Tùy chọn nhà phát triển → bật “Gỡ lỗi USB” (hoặc “Gỡ lỗi ADB”).\n3. Trên TV tích “Luôn cho phép” rồi chọn OK.\n\nNếu TV đòi “mật khẩu ADB” khi bấm 7 lần: dùng cách “Tự động: cài TV Setup lên TV”.';
 function adbSteps() {
   assistShow('Bật Gỡ lỗi ADB trên TV', say('Dùng các nút mũi tên và OK ở tab Remote, hoặc remote của TV:'), say(ADB_STEPS),

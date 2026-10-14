@@ -14,12 +14,14 @@ Tested for real on a Sony BRAVIA (Android 9). Other brands are untested. Samsung
 </tr>
 </table>
 
+**Contents:** [Pick how to use it](#pick-how-to-use-it) · [Prepare the TV](#prepare-the-tv) · [Install TV Setup with a Downloader code](#install-tv-setup-with-a-downloader-code) · [Phone app](#1-android-phone-app-tv-remote) · [Page served by the TV](#2-page-served-by-the-tv-tv-setup) · [Web on the computer](#3-web-on-the-computer) · [From another network](#from-another-network-tailscale) · [When the TV is off](#when-the-tv-is-off) · [Optimize TV](#optimize-tv) · [Troubleshooting](#troubleshooting) · [Security](#security) · [Technical details](#technical-details)
+
 ## Pick how to use it
 
 | You have | Use | Get it from |
 |---|---|---|
-| An Android phone | The **TV Remote** app | `tv-remote.apk` in [Releases](https://github.com/HoangTran0410/tv-remote/releases) |
-| Any browser, iPhone included | The **TV Setup** app installed on the TV, then open `http://<TV IP>:8765` | `tv-setup.apk` in [Releases](https://github.com/HoangTran0410/tv-remote/releases) |
+| An Android phone | The **TV Remote** app | `tv-remote.apk` in [Releases](https://github.com/HoangTran0410/tv-remote/releases), or the Downloader code **`2973135`** |
+| Any browser, iPhone included | The **TV Setup** app installed on the TV, then open `http://<TV IP>:8765` | On the TV: the Downloader app, code **`2397346`** ([how](#install-tv-setup-with-a-downloader-code)) |
 | A computer (Mac, Windows, Linux) | The **web on the computer** | Download the repo, double-click `start-mac.command` / `start-windows.cmd` |
 
 All three use **one shared web UI** with these tabs: Remote, Apps, Files · Install, Health, Terminal, Setup. The phone app has its own remote screen (swipes, the phone's volume keys) and opens the other tabs from the grid button. The web on the computer adds the mouse, the computer keyboard, several TVs, and keys that work even before the TV has ADB on.
@@ -28,7 +30,7 @@ All three use **one shared web UI** with these tabs: Remote, Apps, Files · Inst
 flowchart TD
     A["Turn on ADB debugging on the TV<br/>(once, with the TV's remote)"] --> B{"What do you use?"}
     B -- "Android phone" --> P["TV Remote app:<br/>Scan Wi-Fi → pick the TV"]
-    B -- "Any browser" --> T["Install TV Setup on the TV →<br/>scan the QR code on the TV → enter the 6-digit code"]
+    B -- "Any browser" --> T["Install TV Setup on the TV (Downloader, code 2397346) →<br/>scan the QR code on the TV → enter the 6-digit code"]
     B -- "Computer" --> W["Double-click start-mac / start-windows →<br/>pick the TV in the list"]
     P --> Q["The TV asks “Allow USB debugging?”:<br/>tick Always allow → OK"]
     W --> Q
@@ -38,9 +40,9 @@ flowchart TD
     S --> X["Control it from anywhere<br/>with the TV's 100.x IP"]
 ```
 
-## Prepare the TV (once, with the TV's own remote)
+## Prepare the TV
 
-Menu names below are Sony's; other brands differ slightly.
+Once, with the TV's own remote. Menu names below are Sony's; other brands differ slightly.
 
 1. **Turn on Developer options:** Settings → Device Preferences → About → **Build** → press OK 7 times.
 2. **Turn on ADB:** Settings → Device Preferences → Developer options → **ADB debugging** (some TVs say "USB debugging").
@@ -48,12 +50,15 @@ Menu names below are Sony's; other brands differ slightly.
 
 The first time each device connects, the TV asks "Allow USB debugging?": tick **Always allow**, then OK. Someone has to be at the TV for this. Meanwhile all three show a full-screen "Look at the TV" that closes by itself once the TV allows it.
 
-**When you are away and the TV asks again** (it forgot this device, Android 11+ revokes after 7 days unused...):
+<details>
+<summary><b>When you are away and the TV asks again</b> (it forgot this device, Android 11+ revokes after 7 days unused...)</summary>
+
 - **Automatic:** the phone app and the computer web, whenever they have ADB, fetch a "pass" from TV Setup. The next time the TV asks, they have TV Setup press Allow, nobody needed at the TV. TV Setup presses only when **the key code in the question matches the asking device's own**, and shows a notice on the TV each time.
 - **By hand:** any page that has ADB (the TV's page once paired, the computer web, the phone app) shows a "The TV is asking... for a device" bar with the code and **Allow / Decline**. Allow only when the code matches the one the TV Remote app shows while it waits.
 - A device that never connected and never paired with TV Setup still needs someone at the TV. That is on purpose, so strangers cannot get in.
+</details>
 
-ADB cannot be turned on (an operator box hides Settings, asks for a password...)? The web on the computer has **🧭 Turn ADB on for me**, and the phone app a similar assistant: using only the remote buttons, it installs TV Setup on the TV, or opens the TV's Settings in every way it knows.
+ADB cannot be turned on (an operator box hides Settings, asks for a password...)? Install TV Setup with the [Downloader code](#install-tv-setup-with-a-downloader-code): it opens the right place directly. The web on the computer has **🧭 Turn ADB on for me**, and the phone app a similar assistant: using only the remote buttons, it installs TV Setup on the TV, or opens the TV's Settings in every way it knows.
 
 <details>
 <summary>Where to find the TV's IP</summary>
@@ -63,10 +68,31 @@ ADB cannot be turned on (an operator box hides Settings, asks for a password...)
 - The TV Setup app also shows both IPs on the TV.
 </details>
 
+## Install TV Setup with a Downloader code
+
+The easiest way for a newcomer: only the TV's remote is needed, no computer or Android phone. Afterwards any phone (iPhone included) controls the TV from its browser.
+
+1. On the TV open the **Play Store**, find and install **Downloader** (by AFTVnews, an orange icon).
+2. Open Downloader. If it asks for access to files, choose **Allow**.
+3. In the address field type the code **`2397346`** and choose **Go**.
+4. Downloader fetches the latest TV Setup. The TV asks to install: choose **Install**. If it says installs from this source are not allowed: allow Downloader, press Back, then choose Install.
+5. Open **TV Setup**. If ADB debugging is still off, the app explains how and opens Developer options directly.
+6. TV Setup shows a **QR code**: scan it with the phone's camera and enter the **6-digit code** shown on the TV. Done.
+
+| App | Downloader code | Direct link |
+|---|---|---|
+| TV Setup (on the TV) | **`2397346`** | [tv-setup.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-setup.apk) |
+| TV Remote (Android phone) | **`2973135`** | [tv-remote.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk) |
+
+The codes always point at the latest release. Without Downloader, opening `go.aftvnews.com/<code>` in a browser downloads it too.
+
 ## 1. Android phone app: TV Remote
 
-1. Install `tv-remote.apk` from [Releases](https://github.com/HoangTran0410/tv-remote/releases).
-2. Open the app, tap **Scan Wi-Fi** and pick the TV, or type the TV's IP.
+1. Install `tv-remote.apk` from [Releases](https://github.com/HoangTran0410/tv-remote/releases) (or the Downloader code `2973135`).
+2. Open the app, tap **Scan Wi-Fi** and pick the TV, or type the TV's IP. With ADB still off the app can send keys after pairing with a code, and walks you step by step until TV Setup is installed.
+
+<details>
+<summary>Features</summary>
 
 - **TV picture:** the eye button turns it on and off; touching the picture touches the TV. While watching, the top bar has the quality button (240p to 960p) and full screen. With the picture off the TV spends no extra CPU.
 - **Buttons:** a tap is one press, a hold is a long press on the TV. The `⋯` button shows the less used keys: Input, TV settings, Info, Guide, Live TV, Subtitles, Stop, Screenshot. The phone's volume keys change the TV's volume too.
@@ -74,15 +100,19 @@ ADB cannot be turned on (an operator box hides Settings, asks for a password...)
 - **Talk to the TV:** tap the mic and speak, for example "open YouTube"; hold the mic to open the Assistant on the TV.
 - **Manage the TV:** the grid button opens Apps (with names and icons), Files · Install, Health, Terminal, Setup (Tailscale, Optimize TV).
 - **Updates:** the app tells you when a new version exists and installs it in place.
+</details>
 
 ## 2. Page served by the TV: TV Setup
 
 Works from any browser, with nothing to install on the phone or computer.
 
-1. Put `tv-setup.apk` on the TV (USB or the Downloader app) and install it.
+1. Install TV Setup on the TV: the [Downloader code `2397346`](#install-tv-setup-with-a-downloader-code), a USB stick, or let the phone app / computer web do it.
 2. Open **TV Setup** on the TV and choose "Always allow" when the TV asks.
 3. On a phone or computer, open the address the app shows on the TV: `http://<TV IP>:8765`.
 4. Enter the **6-digit code** the TV shows. That device gets straight in from then on.
+
+<details>
+<summary>More about TV Setup</summary>
 
 - The page has Remote, Apps, Files · Install, Health, Terminal, Setup. ▶ View shows the TV picture; one browser at a time can watch.
 - No address to type: the TV Setup app shows a QR code for this page; scan it with the phone's camera.
@@ -92,7 +122,9 @@ Works from any browser, with nothing to install on the phone or computer.
 - The connection is plain HTTP, not encrypted. **Do not expose port 8765 to the Internet**; away from home, go through Tailscale.
 - It needs the TV's ADB on port 5555. Some newer Google TVs that only have pairing-code "Wireless debugging" may not work.
 
+
 <p align="center"><img src="docs/tvapp-en.png" width="640" alt="The TV Setup app screen"></p>
+</details>
 
 ## 3. Web on the computer
 
@@ -107,6 +139,9 @@ The **📺 Change TV** button at the top goes back to the list.
 
 After that, just double-click the start file. Closing the window stops it; nothing keeps running on the computer.
 
+<details>
+<summary>What the tabs do</summary>
+
 | Tab | What it does |
 |---|---|
 | **Remote** | Buttons, volume, wake, the live screen, click/drag/scroll on the picture, type straight onto the TV, open apps, links and the Play Store, play a photo/video from this computer on the TV |
@@ -117,6 +152,7 @@ After that, just double-click the start file. Closing the window stops it; nothi
 | **Setup** | First-time steps (ADB, Tailscale, pairing the remote, saving), Optimize TV. On the TV's page and in the phone app: Tailscale and Optimize TV |
 
 **When ADB is closed**, only the buttons, power, step-by-step volume and wake remain. Lost: the live screen, mouse, keyboard, apps, files, installing APKs. The page says so and has a "Retry connection" button.
+</details>
 
 <details>
 <summary>Usage notes</summary>
@@ -137,9 +173,13 @@ Once, while at home (on the TV's Wi-Fi):
 4. Recommended: in the [Tailscale admin console](https://login.tailscale.com/admin/machines), open the TV's ⋯ menu → **Disable key expiry**, or the TV is signed out after about 180 days.
 5. Install Tailscale on the controlling device (same account), then use the TV's `100.x.x.x` IP instead of the home one. The web on the computer has a **Save** step that switches to that IP for you.
 
+<details>
+<summary>The Tailscale box, and why the sign-in goes through a link</summary>
+
 <p align="center"><img src="docs/tailscale-en.png" width="320" alt="The Tailscale box: sign-in link and QR code"></p>
 
 Why not send the account from the phone to the TV? Tailscale only takes a sign-in through its own web page (Google, Microsoft...) or a key handed out by company device-management software, which a home TV does not have. Sending the sign-in link is the fewest steps without giving a password to any app.
+</details>
 
 <details>
 <summary>The person at home only has the TV remote, the helper is far away</summary>
@@ -154,9 +194,12 @@ The person at the TV: turn on ADB debugging, install TV Setup (or let the helper
 - Holding the power key on the TV's own remote opens the full power-off menu; press it briefly if you want to wake the TV remotely later.
 - **After the TV restarts:** Tailscale starts again by itself if it was installed with the Tailscale button (or Optimize TV was run). If ADB does not reopen, turn "ADB debugging" off and on.
 
-## Optimize TV (optional)
+## Optimize TV
 
-The **⚡ Optimize TV** button on the Setup tab of all three (and in the TV Setup app on the TV itself) opens a box to **choose what to do**; **Undo** puts everything back. Safe to run again.
+The **⚡ Optimize TV** button on the Setup tab of all three (and in the TV Setup app on the TV itself) opens a box to **choose what to do**; **Undo** puts everything back. Safe to run again. Optional.
+
+<details>
+<summary>The choices</summary>
 
 - **Turn off transition animations** (ticked).
 - **Use FLauncher as the home screen** (ticked): installs FLauncher and turns off Google's "Android TV Home" screen, which uses a lot of CPU. TVs with the newer Google TV interface, operator boxes (FPT, for one) and TVs that run 64-bit apps only keep their home screen.
@@ -166,6 +209,7 @@ The **⚡ Optimize TV** button on the Setup tab of all three (and in the TV Setu
 Turning off only pauses an app, nothing is uninstalled. **Undo** also turns back on the apps you added yourself (the TV keeps the list in `/data/local/tmp/tvr-disabled.txt`).
 
 If the TV later shows no home screen: Settings → Apps → System apps → **Android TV Home** → Enable.
+</details>
 
 ## Troubleshooting
 
@@ -230,6 +274,8 @@ flowchart LR
 
 <details>
 <summary>For people changing the code</summary>
+
+The full guide for people (and AI agents) changing the code: [CLAUDE.md](CLAUDE.md).
 
 ```
 start-mac.command, start-windows.cmd, start-linux.sh   run the web on the computer

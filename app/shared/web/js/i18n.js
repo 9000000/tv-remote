@@ -33,7 +33,7 @@
     'Tích “Luôn cho phép từ máy tính này”': 'Tick “Always allow from this computer”',
     'Chọn OK (Cho phép)': 'Choose OK (Allow)',
     'Màn hình này tự đóng khi TV đã cho phép.': 'This screen closes by itself once the TV has allowed it.',
-    'Để sau': 'Later', 'Đang kết nối': 'Connecting',
+    'Để sau': 'Later', 'Cài TV Setup bằng tay: trên TV cài app Downloader từ CH Play, mở nó, nhập mã 2397346 rồi Go. TV Setup tự mở chỗ bật Gỡ lỗi ADB.': 'Install TV Setup by hand: on the TV install the Downloader app from the Play Store, open it, enter the code 2397346 and press Go. TV Setup then opens the place to turn ADB debugging on.', 'Đang kết nối': 'Connecting',
     'Tối ưu': 'Optimize',
     'TV đã dừng gửi hình.': 'The TV stopped sending the picture.',
     'Không lấy được hình từ TV.': 'Could not get the picture from the TV.',

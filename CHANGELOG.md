@@ -4,6 +4,20 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.14.2 - 2026-10-14
+
+Web 2.14.2 · app điện thoại 2.13.2 · app TV 2.11.3
+
+**Tiếng Việt**
+- **Mã Downloader cho người mới:** trên TV cài app Downloader từ CH Play, nhập mã **2397346** là tải được TV Setup bản mới nhất; mã **2973135** cho app điện thoại TV Remote. Không cần máy tính hay điện thoại Android, nên người chỉ có iPhone cũng tự cài được.
+- App điện thoại: bước “Làm từng bước” khi cài TV Setup giờ gõ mã 7 số vào Downloader thay cho đường dẫn dài, nhanh và ít sai hơn. Web máy tính: “Bật ADB giúp tôi” có thêm cách tự cài bằng mã này.
+- README: thêm mục lục, mục “Cài TV Setup bằng mã Downloader”, thu gọn các phần dài. Thêm `CLAUDE.md` mô tả repo cho người sửa code.
+
+**English**
+- **Downloader codes for newcomers:** on the TV install the Downloader app from the Play Store and enter **2397346** to get the latest TV Setup; **2973135** is the TV Remote phone app. No computer or Android phone needed, so someone with only an iPhone can install it too.
+- Phone app: the “Step by step” TV Setup install now types the 7-digit code into Downloader instead of the long link, faster and less error-prone. The computer web's “Turn ADB on for me” mentions installing by hand with the code.
+- README: a table of contents, an “Install TV Setup with a Downloader code” section, long parts folded. Added `CLAUDE.md`, a guide to the repo for people changing the code.
+
 ## 2.14.1 - 2026-10-14
 
 Web 2.14.1 · app điện thoại 2.13.1 · app TV 2.11.2
