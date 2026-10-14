@@ -41,6 +41,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "file" -> return download(r)
                 "health" -> return HttpServer.Response.json(health())
                 "stats" -> return HttpServer.Response.json(stats(r.q("days").toIntOrNull() ?: 7))
+                "tailscale" -> { val t = Tailscale(link.get(), dir); return HttpServer.Response.json(JSONObject().put("installed", t.installed()).put("ip", t.ip())) }
                 "job" -> {
                     val j = jobs[r.q("id")]
                     return if (j == null) HttpServer.Response.error(404, "no such job") else HttpServer.Response.json(JSONObject(j.toString()))
@@ -65,6 +66,11 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "setup" -> { val d = r.json(); HttpServer.Response.json(setup(d.optString("mode") == "undo", d.optString("lang") != "en")) }
                 "fetch" -> HttpServer.Response.json(fetch(r.json().optString("url"), false))
                 "install" -> HttpServer.Response.json(fetch(r.json().optString("url"), true))
+                "tailscale/start" -> HttpServer.Response.json(job("tailscale") { j ->
+                    val t = Tailscale(link.get(), dir)
+                    val url = t.start { what, pct -> j.put("msg", what).put("pct", pct) }
+                    if (url.isEmpty()) { j.put("ip", t.ip()); "in" } else { j.put("url", url); "sign in" }
+                })
                 else -> null
             }
         } catch (e: IllegalArgumentException) {

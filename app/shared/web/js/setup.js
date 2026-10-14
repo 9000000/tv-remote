@@ -153,6 +153,52 @@ async function installSetup() {
   }
 }
 
+// ---------- Tailscale: one button installs it on the TV, switches it on and fetches its sign-in link (Tailscale.kt / adbtools.py) ----------
+// Nobody types on the TV: the link opens in a browser that is signed in to Tailscale, where one click adds the TV.
+const TS_PITCH = 'Một nút: tự cài Tailscale bản chính thức lên TV, bật lên và lấy link đăng nhập. Bạn chỉ cần bấm “Connect” bằng tài khoản Tailscale của mình. Chỉ dùng trong cùng Wi-Fi thì bỏ qua được.';
+const TS_STEP = { download: 'Đang tải Tailscale bản chính thức (khoảng 100 MB)...', install: 'Đang cài Tailscale lên TV...', start: 'Đang bật Tailscale trên TV...' };
+let tsGen = 0;
+function tsShow(...kids) { $('#tsbody').replaceChildren(...kids.filter(Boolean)); if (!$('#ts').open) $('#ts').showModal(); }
+async function tailscaleGo() {
+  const gen = ++tsGen, msg = el('p', { className: 'wait', textContent: 'Đang bắt đầu...' }), bar = el('div', { className: 'bar' }, el('i'));
+  tsShow(msg, bar, el('p', { className: 'muted', textContent: 'Có thể đóng hộp này: TV vẫn làm tiếp.' }));
+  let j = await api('/api/tailscale/start', {}), misses = 0;
+  while (j && j.status === 'running' && misses < 10) {
+    const k = Object.keys(TS_STEP).find((w) => (j.msg || '').startsWith(w)); msg.textContent = k ? TS_STEP[k] : 'Đang làm...'; bar.firstChild.style.width = (j.pct || 0) + '%';
+    await sleep(1000); if (gen !== tsGen) return;
+    const r = await api('/api/job?id=' + j.id, null, true); if (r) { j = r; misses = 0; } else misses++;
+  }
+  if (gen !== tsGen) return;
+  if (!j || j.status !== 'done') return tsShow(el('p', { textContent: 'Không làm được: ' + (j && j.status === 'error' ? j.msg : 'mất kết nối tới TV') }), row(act('↻ Thử lại', async () => tailscaleGo(), 'primary')));
+  if (j.ip) return tsDone(j.ip);
+  const qr = qrSvg(j.url, 200), wait = el('p', { className: 'muted wait', textContent: 'Đang chờ TV vào Tailscale... Trang này tự nhận ra.' });
+  tsShow(el('p', { textContent: 'Còn một bước: cho TV vào tài khoản Tailscale của bạn.' }),
+    el('a', { className: 'go primary', href: j.url, target: '_blank', rel: 'noopener', textContent: '🔑 Mở trang đăng nhập Tailscale' }),
+    el('ol', {}, el('li', { textContent: 'Đăng nhập Tailscale (chưa có tài khoản thì tạo miễn phí bằng Google, Microsoft hoặc GitHub).' }), el('li', { textContent: 'Bấm “Connect” để thêm TV.' })),
+    qr ? el('div', { className: 'qr' }, qr, el('span', { className: 'muted', textContent: 'Hoặc quét mã này bằng điện thoại đã đăng nhập Tailscale. TV cũng đang hiện đúng mã này.' })) : null, wait);
+  for (;;) {
+    await sleep(2500); if (gen !== tsGen || !$('#ts').open) return;
+    const s = await api('/api/tailscale', null, true); if (s && s.ip) return tsDone(s.ip);
+  }
+}
+function tsDone(ip) {
+  tsShow(el('p', { className: 'okline', textContent: '✓ TV đã vào Tailscale · ' + ip }),
+    el('p', { textContent: CORE === 'mac' ? 'Bấm “Lưu” ở bước cuối để từ nay nối tới TV qua IP này, dùng được cả khi không ở nhà.' : 'Ở ngoài nhà: bật Tailscale trên điện thoại hoặc máy tính (cùng tài khoản), rồi mở TV bằng IP này.' }),
+    el('p', { className: 'muted', textContent: 'Nên làm thêm: trong trang quản trị Tailscale, mở menu ⋯ của TV → Disable key expiry, để TV không bị đăng xuất sau khoảng 180 ngày.' }),
+    row(el('a', { className: 'linkbtn small', style: 'padding:0 14px;min-height:36px', href: 'https://login.tailscale.com/admin/machines', target: '_blank', rel: 'noopener', textContent: '↗ Trang quản trị Tailscale' }), act('✓ Xong', async () => $('#ts').close(), 'primary')));
+  tsState(); if (CORE === 'mac') loadSteps();
+}
+async function tsState() {                                             // the card on the tv / phone cores (the computer has its step 2)
+  if (CORE === 'mac' || ADB.state !== 'ready') return;
+  const s = await api('/api/tailscale', null, true); if (!s) return;
+  $('#tsstate').textContent = s.ip ? 'Đã vào Tailscale · IP ' + s.ip + '. Ở ngoài nhà, máy điều khiển bật Tailscale (cùng tài khoản) rồi dùng IP này.'
+    : s.installed ? 'Tailscale đã cài nhưng chưa đăng nhập hoặc đang tắt. Bấm nút dưới để bật và đăng nhập.' : TS_PITCH;
+  $('#tsgo').hidden = !!s.ip; $('#tsgo').textContent = s.installed ? '⚡ Bật và đăng nhập Tailscale' : '⚡ Cài và đăng nhập Tailscale';
+}
+$('#tsgo').addEventListener('click', tailscaleGo);
+$('#tsclose').addEventListener('click', () => $('#ts').close());
+$('#ts').addEventListener('close', () => { tsGen++; });
+
 let stepsBusy = false, pairing = false;
 function step(n, state, title, text, ...actions) {
   return el('div', { className: 'step ' + state }, el('div', { className: 'mark', textContent: state === 'ok' ? '✓' : n }),
@@ -174,10 +220,7 @@ async function loadSteps() {
   // 2. Tailscale
   if (!ready) out.push(step(2, 'todo', 'Tailscale (để điều khiển khi không ở nhà)', 'Làm sau khi ADB đã kết nối. Chỉ dùng trong cùng Wi-Fi thì bỏ qua bước này được.'));
   else if (s.tailscale_ip) out.push(step(2, 'ok', 'Tailscale đã vào mạng', 'IP Tailscale của TV: ' + s.tailscale_ip + '. ' + 'Nên làm thêm: trong trang quản trị Tailscale, mở menu ⋯ của TV → Disable key expiry, để TV không bị đăng xuất sau khoảng 180 ngày.'));
-  else if (!s.tailscale_installed) out.push(step(2, 'todo', 'Cài Tailscale lên TV', 'Để điều khiển TV khi không ở cùng mạng. Tải bản chính thức (khoảng 100 MB), có kiểm checksum. Chỉ dùng trong cùng Wi-Fi thì bỏ qua được.',
-    act('⬇️ Cài Tailscale', async () => { const j = await api('/api/tailscale/install', {}); if (j) { await trackJob(j, 'Cài Tailscale'); await loadSteps(); } }, 'primary')));
-  else out.push(step(2, 'wait', 'Thêm TV vào Tailscale của bạn', 'Mở Tailscale trên TV rồi xem màn hình TV ngay tại đây: TV hiện một mã (và mã QR). Không cần gõ tài khoản trên TV: mở login.tailscale.com/admin/machines trên máy này hoặc điện thoại → Add device → nhập mã đó (hoặc quét QR bằng điện thoại).',
-    act('📺 Mở Tailscale trên TV', async () => { if (await api('/api/tailscale/open', {})) { showTab('remote'); if (!screenOn) startScreen(); } }, 'primary'), act('🔄 Đã thêm, kiểm tra', loadSteps)));
+  else out.push(step(2, 'todo', 'Tailscale (để điều khiển khi không ở nhà)', TS_PITCH, act('⚡ Cài và đăng nhập Tailscale', async () => tailscaleGo(), 'primary')));
   // 3. remote pairing
   const r = s.remote;
   if (r.connected) out.push(step(3, 'ok', 'Nút remote đã ghép', 'Các nút điều khiển dùng được.'));

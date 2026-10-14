@@ -4,6 +4,34 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.10.0 - 2026-10-14
+
+Web 2.10.0 · app điện thoại 2.9.0 · app TV 2.8.0
+
+**Tiếng Việt**
+- **Tailscale một nút.** Tab Thiết lập (cả ba nơi) và nút Tailscale trong app TV: tự tải Tailscale bản chính thức lên TV (kiểm checksum), cài, bỏ qua hộp hỏi VPN, bật lên, rồi đọc link đăng nhập ngay trên màn hình TV. Bạn chỉ bấm “Mở trang đăng nhập Tailscale” (hoặc quét mã QR) và Connect bằng tài khoản của mình; trang tự nhận khi TV đã vào. Không phải gõ gì trên TV, không gửi mật khẩu cho app nào. Trên app điện thoại, link mở trong trình duyệt của máy.
+- Tab “Tối ưu” trên trang của TV và app điện thoại đổi thành “Thiết lập” (Tailscale + Tối ưu TV).
+- Sửa: trên trang do TV phục vụ, hình trực tiếp bị phóng to và cắt mất mép; giờ hiện trọn khung.
+- Sửa: lỡ đóng hộp “Cho phép gỡ lỗi USB?” trên TV (Back, Home, Hủy) thì app điện thoại và app TV chờ suông 3 phút; giờ tự hỏi lại TV (tối đa 3 lần).
+- “Tối ưu TV” trên máy tính in nhật ký tiếng Việt gọn như hai app (trước là tiếng Anh với 16 dòng “skip”); báo rõ khi TV chỉ chạy app 64-bit nên không cài được FLauncher.
+- Thanh trên của web máy tính: TV nối được ADB nhưng chưa nối nút remote thì báo “Nút remote: chưa nối” thay cho “TV: mất kết nối” và lỗi kỹ thuật.
+- Màn hình đứng yên thì ghi “Trực tiếp · hình đứng yên” thay cho “đang chờ hình”.
+- Trên điện thoại: hàng nút đầu trang nằm gọn một dòng, ô gõ chữ có chữ gợi ý ngắn, bỏ câu “bàn phím máy tính gõ thẳng lên TV” trên máy cảm ứng, bảng Phần cứng không còn bẻ chữ từng ký tự. Trang TV không hiện “127.0.0.1” và các nhãn “cần ADB” vô nghĩa ở đó.
+- App TV: dòng trạng thái ghi rõ “✓ ADB đã kết nối”; hướng dẫn bật Gỡ lỗi ADB chỉ hiện khi chưa nối được.
+- README: luồng dùng lần đầu (sơ đồ), Tailscale một nút, tên tab mới, ảnh chụp mới cho cả ba nơi.
+
+**English**
+- **Tailscale in one button.** The Setup tab (all three) and the Tailscale button in the TV app: downloads the official Tailscale onto the TV (checksum checked), installs it, skips the VPN question, switches it on, then reads the sign-in link off the TV's screen. You just press “Open the Tailscale sign-in page” (or scan the QR code) and Connect with your account; the page notices when the TV is in. Nothing typed on the TV, no password given to any app. In the phone app the link opens in the phone's browser.
+- The “Optimise” tab on the TV's page and in the phone app is now “Setup” (Tailscale + Optimize TV).
+- Fixed: on the page served by the TV, the live picture was zoomed in and cropped; it now fits the box.
+- Fixed: closing the TV's “Allow USB debugging?” question by mistake (Back, Home, Cancel) left the phone and TV apps waiting 3 minutes for nothing; they now ask the TV again (up to 3 times).
+- “Optimize TV” on the computer logs short Vietnamese/English lines like the two apps (it was English with 16 “skip” lines), and says plainly when the TV runs 64-bit apps only and cannot take FLauncher.
+- Top bar of the computer web: a TV reachable over ADB but without the remote-button service now shows “Remote buttons: not connected” instead of “TV: disconnected” and a technical error.
+- A still picture reads “Live · picture unchanged” instead of “waiting for a picture”.
+- On phones: the top buttons fit on one line, shorter hints in the text boxes, no “type on the computer keyboard” line on touch devices, the Hardware table no longer breaks words letter by letter. The TV's page no longer shows “127.0.0.1” or pointless “needs ADB” labels.
+- TV app: the status line says “✓ ADB connected”; the steps to turn on ADB debugging only show when it cannot connect.
+- README: the first-time flow (diagram), one-button Tailscale, the new tab names, new screenshots of all three.
+
 ## 2.9.0 - 2026-10-14
 
 Web 2.9.0 · app điện thoại 2.8.0 · app TV 2.7.0

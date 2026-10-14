@@ -816,12 +816,13 @@ def build(S):
 
     @routes.post("/api/setup")
     async def setup(request):
-        mode = (await body(request)).get("mode")
+        d = await body(request)
+        mode = d.get("mode")
         if mode not in ("apply", "undo"):
             raise web.HTTPBadRequest(text="bad mode")
 
         async def go(j):                                              # same script as the command line: deploy/tv_setup.py
-            p = await asyncio.create_subprocess_exec(sys.executable, str(SCRIPTS / "tv_setup.py"), mode, adb.target,
+            p = await asyncio.create_subprocess_exec(sys.executable, str(SCRIPTS / "tv_setup.py"), mode, adb.target, *(["--vi"] if d.get("lang") != "en" else []),
                                                      stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
             async for line in p.stdout:
                 text = line.decode(errors="replace")
@@ -1035,18 +1036,16 @@ def build(S):
             await switch(S.cfg["current"])
         return web.json_response({"ok": True})
 
-    @routes.post("/api/tailscale/install")
+    @routes.get("/api/tailscale")
     @adb_errors
-    async def tailscale_install(request):
-        await body(request)
-        return web.json_response(adb.job_install_tailscale())
+    async def tailscale_state(request):
+        return web.json_response({"installed": "package:" in await adb.shell("pm path " + TS_PKG + "; echo ."), "ip": await adb.tailscale_ip()})
 
-    @routes.post("/api/tailscale/open")
+    @routes.post("/api/tailscale/start")
     @adb_errors
-    async def tailscale_open(request):
+    async def tailscale_start(request):
         await body(request)
-        await adb.launch(TS_PKG)
-        return web.json_response({"ok": True})
+        return web.json_response(adb.job_tailscale_start())
 
     # ---- turning ADB on with the remote buttons alone (port 6466), as the phone app does ----
     SETUP_APK = "https://github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"

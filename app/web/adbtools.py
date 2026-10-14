@@ -12,6 +12,7 @@ MAX_BYTES = 4 * 1024**3
 PKG_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$")
 ROOTS = ("/sdcard", "/storage")
 DEFAULT_DEST = "/sdcard/Download"
+TS_PKG = "com.tailscale.ipn"
 LS_RE = re.compile(r"^([dl-])\S+\s+\d+\s+\S+\s+\S+\s+(\d+)\s+(\d{4}-\d\d-\d\d \d\d:\d\d)\s+(.+)$")
 
 
@@ -327,6 +328,56 @@ class Adb:
                     raise AdbError("Tailscale checksum mismatch, not installing")
                 return await self.install(local, j)
         return self.job(go, "install Tailscale")
+
+    async def tailscale_ip(self):
+        m = re.search(r"inet (100\.[0-9.]+)/32", await self.shell("ip -4 addr show"))
+        return m.group(1) if m else ""
+
+    def job_tailscale_start(self):
+        """Tailscale on the TV with as little done by hand as possible (the same steps as Tailscale.kt in the apps): install the
+        official APK when missing, let it make its VPN without asking, switch it on, and when it still has to be signed in, read the
+        sign-in link off its screen. The job ends with "ip" (in the tailnet) or "url" (open it in a browser signed in to Tailscale)."""
+        login = re.compile(r"^(get started|continue|log ?in|sign ?in|bắt đầu|đăng nhập|anmelden|connexion|iniciar sesión|ログイン|登录|로그인)$", re.I)
+        code = re.compile(r"^[0-9a-f]{8,20}$")
+        node = re.compile(r'<node [^>]*?text="([^"]*)"[^>]*?bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"')
+
+        async def go(j):
+            if "package:" not in await self.shell("pm path " + TS_PKG + "; echo ."):
+                inner = self.job_install_tailscale()                  # its own job: wait for it, showing its progress here
+                while inner["status"] == "running":
+                    j["msg"], j["pct"] = inner["msg"], int(inner["pct"] * .8)
+                    await asyncio.sleep(.5)
+                self.jobs.pop(inner["id"], None)
+                if inner["status"] != "done":
+                    raise AdbError(inner["msg"])
+            j["msg"], j["pct"] = "start", 80
+            await self.shell(f"cmd appops set {TS_PKG} ACTIVATE_VPN allow")   # no "Tailscale wants to set up a VPN connection" box
+            await self.shell(f"pm grant {TS_PKG} android.permission.POST_NOTIFICATIONS 2>/dev/null; echo .")   # nor "Allow notifications?"
+            if (ip := await self.tailscale_ip()):
+                j["ip"] = ip; return "in"
+            await self.shell(f"am broadcast -a com.tailscale.ipn.CONNECT_VPN -n {TS_PKG}/.IPNReceiver")   # signed in but switched off
+            for _ in range(6):
+                await asyncio.sleep(1)
+                if (ip := await self.tailscale_ip()):
+                    j["ip"] = ip; return "in"
+            await self.shell(f"am start -n {TS_PKG}/.MainActivity")
+            pressed = 0
+            for i in range(20):
+                await asyncio.sleep(1.5)
+                if (ip := await self.tailscale_ip()):
+                    j["ip"] = ip; return "in"
+                nodes = node.findall(await self.shell("uiautomator dump /sdcard/tvr-ui.xml >/dev/null 2>&1; cat /sdcard/tvr-ui.xml; rm -f /sdcard/tvr-ui.xml"))
+                found = next((n for n in nodes if code.match(n[0])), None)
+                if found:
+                    j["url"] = "https://login.tailscale.com/a/" + found[0]; return "sign in"
+                btn = next((n for n in nodes if login.match(n[0].strip())), None)
+                if btn and pressed < 5:
+                    x1, y1, x2, y2 = map(int, btn[1:])
+                    await self.shell(f"input tap {(x1 + x2) // 2} {(y1 + y2) // 2}"); pressed += 1
+                elif not btn and i == 4 and not pressed:
+                    await self.shell("input keyevent 23"); pressed += 1   # a button we cannot read: it is the one in focus on a TV
+            raise AdbError("no sign-in link on the TV's screen")
+        return self.job(go, "tailscale")
 
     async def save_upload(self, request, tmpdir, name):
         dest, done = Path(tmpdir) / safe_name(name), 0

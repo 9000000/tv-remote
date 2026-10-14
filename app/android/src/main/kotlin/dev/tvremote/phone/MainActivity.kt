@@ -1404,13 +1404,13 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 "1. BẬT ADB TRÊN TV (một lần)\nCài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng”. Rồi Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB”.\n\n" +
                     "2A. CÙNG WI-FI VỚI TV\nBấm “Quét Wi-Fi” rồi chọn TV. Hoặc xem IP trên TV: Cài đặt → Mạng và Internet → tên Wi-Fi.\n\n" +
                     "2B. KHÁC MẠNG\nBật Tailscale trên cả điện thoại và TV, rồi nhập IP 100.x của TV (xem trong app Tailscale).\n\n" +
-                    "TV chưa có Tailscale? Mở Tailscale trên TV, nó hiện một mã. Nhập mã ở login.tailscale.com/admin/machines → Add device.\n\n" +
+                    "TV chưa có Tailscale? Lúc đang ở nhà, kết nối TV rồi bấm nút ô lưới → Thiết lập → “Cài và đăng nhập Tailscale”: app tự cài lên TV và mở trang đăng nhập trên điện thoại, bạn chỉ bấm Connect.\n\n" +
                     "3. LẦN ĐẦU KẾT NỐI\nTV hỏi cho phép: tích “Luôn cho phép” rồi OK.\n\n" +
                     "MẸO\nNút nguồn cạnh tên TV: đánh thức TV đang tắt. Nút ✕ cạnh tên TV: xóa khỏi danh sách.",
                 "1. TURN ON ADB ON THE TV (once)\nSettings → Device Preferences → About → press OK 7 times on “Build”. Then Developer options → turn on “ADB debugging”.\n\n" +
                     "2A. SAME WI-FI AS THE TV\nTap “Scan the Wi-Fi” and pick the TV. Or read the IP on the TV: Settings → Network & Internet → the Wi-Fi name.\n\n" +
                     "2B. ANOTHER NETWORK\nTurn on Tailscale on both the phone and the TV, then type the TV’s 100.x IP (see the Tailscale app).\n\n" +
-                    "No Tailscale on the TV yet? Open Tailscale on the TV, it shows a code. Enter it at login.tailscale.com/admin/machines → Add device.\n\n" +
+                    "No Tailscale on the TV yet? While at home, connect to the TV, then tap the grid button → Setup → “Install and sign in to Tailscale”: the app installs it on the TV and opens the sign-in page on the phone; you only press Connect.\n\n" +
                     "3. THE FIRST CONNECTION\nThe TV asks for permission: tick “Always allow”, then OK.\n\n" +
                     "TIPS\nThe power button next to a TV wakes it when it is off. The ✕ next to a TV removes it from the list."))
                 .setPositiveButton(t("Đã hiểu", "Got it"), null).show()
@@ -1538,7 +1538,14 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             @Suppress("SetJavaScriptEnabled")
             web.settings.javaScriptEnabled = true
             web.settings.domStorageEnabled = true
-            web.webViewClient = WebViewClient()                       // links stay inside
+            web.webViewClient = object : WebViewClient() {            // the page's own links stay inside; the rest (Tailscale sign-in) go to the browser
+                override fun shouldOverrideUrlLoading(w: WebView?, req: android.webkit.WebResourceRequest?): Boolean {
+                    val u = req?.url ?: return false
+                    if (u.host == "127.0.0.1") return false
+                    web(u.toString())
+                    return true
+                }
+            }
             web.webChromeClient = object : WebChromeClient() {
                 override fun onShowFileChooser(w: WebView?, cb: ValueCallback<Array<Uri>>?, params: FileChooserParams?): Boolean {
                     picking?.onReceiveValue(null)

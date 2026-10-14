@@ -163,10 +163,12 @@ class Adb(dir: File) : Closeable {
     }
 
     private fun awaitApproval(host: String, port: Int) {
-        val asking = sock!!
-        val askingIn = input
+        var asking = sock!!
+        var askingIn = input
         val end = System.currentTimeMillis() + 180000
         var askingAlive = true
+        var askAgainAt = 0L
+        var asked = 1
         while (System.currentTimeMillis() < end) {
             if (dead) throw IOException("closed")                     // whoever wanted this connection has let go of it
             if (askingAlive) {
@@ -183,6 +185,7 @@ class Adb(dir: File) : Closeable {
                     // still undecided on that connection
                 } catch (closedByTv: IOException) {
                     askingAlive = false
+                    askAgainAt = System.currentTimeMillis() + 6000
                 }
             } else {
                 Thread.sleep(2000)
@@ -191,6 +194,16 @@ class Adb(dir: File) : Closeable {
             try {
                 dial(host, port)
                 if (authenticate() == null) { asking.close(); return }
+                if (!askingAlive && asked < 4 && System.currentTimeMillis() > askAgainAt) {
+                    // the question went away on the TV without "Always allow" (Back, Home, Cancel, a timeout): ask it once more
+                    send(AUTH, AUTH_RSAPUBLICKEY, 0, (publicKey() + "\u0000").toByteArray())
+                    asking.close()
+                    asking = sock!!
+                    askingIn = input
+                    askingAlive = true
+                    asked++
+                    continue
+                }
                 sock!!.close()
             } catch (retry: IOException) {
                 // adbd busy, try again

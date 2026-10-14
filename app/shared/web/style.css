@@ -21,6 +21,8 @@
   .top { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
   .top .sub { color:var(--muted); font-size:13px; word-break:break-all; }
   .chips { display:flex; gap:8px; flex-wrap:wrap; }
+  @media (max-width:640px) { .chips { gap:5px; } .chip { padding:4px 9px; font-size:12px; gap:5px; } .chip i { display:none; } .chips button.small { min-height:30px; padding:0 8px; font-size:12px; } }
+  @media (hover:none), (pointer:coarse) { .fine-only { display:none; } }   /* no computer keyboard to type with */
   /* One page, three cores (see core.js): the computer's server ("mac"), the TV Setup app on the TV ("tv") and the phone app's
      Manage screen ("phone"). An element marked data-for is only there on the cores it names. */
   html[data-core=mac] [data-for]:not([data-for~=mac]), html[data-core=tv] [data-for]:not([data-for~=tv]), html[data-core=phone] [data-for]:not([data-for~=phone]) { display:none !important; }
@@ -116,7 +118,7 @@
   .vol button.on { background:var(--bad-bg); color:var(--bad); }
 
   .screenbox { position:relative; background:#000; border-radius:10px; overflow:hidden; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; margin-top:10px; }
-  .screenbox img { width:100%; height:100%; object-fit:contain; display:block; cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none; }
+  .screenbox img, .screenbox video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; display:block; cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none; }
   .screenbox .ph { color:#9aa3af; font-size:14px; padding:16px; text-align:center; }
   .screenbox:fullscreen { border-radius:0; aspect-ratio:auto; }
   .card-head { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
@@ -184,7 +186,7 @@
   /* health tab */
   #hnow { display:grid; gap:14px; grid-template-columns:1fr; } @media (min-width:900px) { #hnow { grid-template-columns:1fr 1fr; align-items:start; } }
   .health .card-head { margin-bottom:8px; }
-  .kv { display:grid; grid-template-columns:minmax(0,1fr) minmax(40%,max-content); gap:6px 14px; font-size:14px; } .kv dt, .kv .k { color:var(--muted); overflow-wrap:anywhere; min-width:0; } #hnow > section { min-width:0; } .kv .v { font-weight:600; overflow-wrap:anywhere; text-align:right; }
+  .kv { display:grid; grid-template-columns:fit-content(55%) minmax(0,1fr); gap:6px 14px; font-size:14px; } .kv dt, .kv .k { color:var(--muted); overflow-wrap:anywhere; min-width:0; } #hnow > section { min-width:0; } .kv .v { font-weight:600; overflow-wrap:anywhere; text-align:right; }
   .meter { margin:10px 0 0; font-size:14px; } .meter .top { display:flex; justify-content:space-between; gap:8px; } .meter b { font-variant-numeric:tabular-nums; }
   .meter .bar { height:10px; border-radius:5px; } .meter .bar i { border-radius:5px; } .meter.warn .bar i { background:var(--warn); } .meter.bad .bar i { background:var(--bad); }
   .tile { background:var(--bg); border:1px solid var(--line); }
@@ -216,3 +218,9 @@
   .allowbox { text-align:center; padding:24px; max-width:520px; } .allowbox .big { font-size:72px; line-height:1; } .allowbox h1 { font-size:34px; margin:10px 0 6px; }
   .allowbox p { font-size:17px; margin:8px 0; } .allowbox ol { display:inline-block; text-align:left; font-size:21px; font-weight:700; line-height:1.6; margin:18px 0; padding-left:28px; }
   .allowbox button { display:block; width:100%; max-width:280px; margin:22px auto 0; }
+
+  /* Tailscale: one button, then a sign-in link (and its QR code) for a browser that is signed in to Tailscale */
+  .tsbox p { margin:0; font-size:14px; line-height:1.55; } .tsbox ol { margin:0; padding-left:20px; font-size:14px; line-height:1.6; }
+  .tsbox .go { display:flex; align-items:center; justify-content:center; gap:8px; min-height:52px; padding:0 18px; border-radius:12px; text-decoration:none; font-size:16px; }
+  .tsbox .qr { max-width:220px; margin:0 auto; } .tsbox .wait::before { content:"⏳ "; } .tsbox .okline { color:var(--ok); font-weight:700; font-size:16px; }
+  #tscard .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }

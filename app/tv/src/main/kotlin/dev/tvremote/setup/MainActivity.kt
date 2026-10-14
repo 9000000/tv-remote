@@ -91,8 +91,6 @@ class MainActivity : Activity() {
         page.addView(qrRow, LinearLayout.LayoutParams(dp(250), -1))
         setContentView(page)
 
-        log("Cần bật trước: Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào \"Bản dựng\",")
-        log("rồi Tùy chọn nhà phát triển → bật \"Gỡ lỗi ADB\" (hoặc \"Gỡ lỗi USB\").")
         connect()
         Thread {                                                      // asks GitHub for the latest release, nothing else is sent
             try {
@@ -203,7 +201,8 @@ class MainActivity : Activity() {
                     status.text = "Chưa kết nối được ADB"
                     status.setTextColor(Color.rgb(255, 112, 112))
                     log("✗ " + reason(e))
-                    log("Kiểm tra đã bật \"Gỡ lỗi ADB\" chưa, rồi chọn \"Kết nối lại\". Nếu TV có hỏi thì phải chọn \"Luôn cho phép\".")
+                    log("Cần bật \"Gỡ lỗi ADB\": Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào \"Bản dựng\", rồi Tùy chọn nhà phát triển → bật \"Gỡ lỗi ADB\" (hoặc \"Gỡ lỗi USB\").")
+                    log("Bật xong quay lại đây, chọn \"Kết nối lại\". TV hỏi thì chọn \"Luôn cho phép\".")
                     buttons[3].isEnabled = true
                     buttons[3].requestFocus()
                     val off = (e.message ?: "").lowercase().let { it.contains("refused") }   // ADB is off; not: the person said no to the prompt
@@ -227,7 +226,7 @@ class MainActivity : Activity() {
         ui {
             showWeb()
             status.setTextColor(Color.rgb(70, 210, 131))
-            status.text = name + "\nIP trong nhà: " + (if (lan.isEmpty()) "?" else lan) + "   ·   IP Tailscale: " +
+            status.text = "✓ ADB đã kết nối · " + name + "\nIP trong nhà: " + (if (lan.isEmpty()) "?" else lan) + "   ·   IP Tailscale: " +
                 (if (ts.isNotEmpty()) ts else if (tsInstalled) "chưa vào mạng" else "chưa cài")
         }
     }
@@ -285,22 +284,19 @@ class MainActivity : Activity() {
         }.start()
     }
 
-    /** Installed: open it so it shows its code, which the person enters in the Tailscale admin console. Not installed: its Play Store page. */
+    /**
+     * One press: installs the official Tailscale when missing (through this TV's own ADB, no Play Store), lets it make its VPN
+     * without asking, switches it on, and when it still has to be signed in, leaves its sign-in screen up: a QR code that a phone
+     * signed in to Tailscale scans to add the TV. Nobody types an account on the TV.
+     */
     private fun tailscale() {
-        job { setup ->
-            if (setup.has(Setup.TS_PKG)) {
-                val i = packageManager.getLeanbackLaunchIntentForPackage(Setup.TS_PKG) ?: packageManager.getLaunchIntentForPackage(Setup.TS_PKG)
-                if (i == null) { log("✗ Không mở được Tailscale"); return@job }
-                log("Mở Tailscale: TV hiện một mã. Không cần gõ tài khoản trên TV: trên máy tính/điện thoại mở login.tailscale.com/admin/machines, chọn Add device rồi nhập mã đó (hoặc quét mã QR). Xong thì vào menu của TV trong trang đó, chọn Disable key expiry.")
-                startActivity(i)
-            } else {
-                log("Mở Google Play: chọn Cài đặt (Install), xong quay lại đây bấm \"Tailscale\" lần nữa để lấy mã thêm TV.")
-                try {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + Setup.TS_PKG)))
-                } catch (e: Exception) {
-                    log("✗ TV này không có Google Play. Cài Tailscale từ máy tính bằng deploy/tv-new.")
-                }
-            }
+        job { _ ->
+            val ts = dev.tvremote.core.Tailscale(adb ?: return@job, getExternalFilesDir(null))
+            if (!ts.installed()) log("Đang tải và cài Tailscale bản chính thức (khoảng 100 MB)...")
+            val url = ts.start { what, _ -> if (what == "start") log("Đang bật Tailscale...") }
+            if (url.isEmpty()) log("✓ TV đã vào Tailscale: " + ts.ip() + ". Ở ngoài nhà dùng IP này (máy điều khiển cũng bật Tailscale, cùng tài khoản).")
+            else log("Tailscale đang hiện mã QR: quét bằng điện thoại đã đăng nhập Tailscale rồi bấm Connect (hoặc mở " + url + " trên máy tính). " +
+                "Xong thì nên vào login.tailscale.com/admin/machines, menu ⋯ của TV → Disable key expiry.")
         }
     }
 

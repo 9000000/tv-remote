@@ -22,7 +22,21 @@
 | Bất kỳ trình duyệt nào, kể cả iPhone | App **TV Setup** cài trên TV, rồi mở `http://<IP của TV>:8765` | `tv-setup.apk` ở [Releases](https://github.com/HoangTran0410/tv-remote/releases) |
 | Máy tính (Mac, Windows, Linux) | **Web trên máy tính** | Tải repo, bấm đúp `start-mac.command` / `start-windows.cmd` |
 
-Cả ba có cùng bố cục điều khiển và cùng các phần: Remote, Ứng dụng, Tệp, Cài APK, Sức khỏe, Terminal. Riêng web trên máy tính có thêm chuột, bàn phím máy tính và thêm TV mới.
+Cả ba dùng **chung một giao diện web** với các tab: Remote, Ứng dụng, Tệp · Cài, Sức khỏe, Terminal, Thiết lập. App điện thoại có màn remote riêng (vuốt, nút âm lượng của máy) và mở các tab còn lại bằng nút ô lưới. Riêng web trên máy tính có thêm chuột, bàn phím máy tính, nhiều TV, và bấm phím được cả khi TV chưa bật ADB.
+
+```mermaid
+flowchart TD
+    A["Bật Gỡ lỗi ADB trên TV<br/>(một lần, bằng remote của TV)"] --> B{"Dùng gì?"}
+    B -- "Điện thoại Android" --> P["App TV Remote:<br/>Quét Wi-Fi → chọn TV"]
+    B -- "Trình duyệt bất kỳ" --> T["Cài TV Setup lên TV →<br/>quét mã QR trên TV → nhập mã 6 số"]
+    B -- "Máy tính" --> W["Bấm đúp start-mac / start-windows →<br/>chọn TV trong danh sách"]
+    P --> Q["TV hỏi “Cho phép gỡ lỗi USB?”:<br/>tích Luôn cho phép → OK"]
+    W --> Q
+    T --> Q
+    Q --> R["Điều khiển trong nhà"]
+    R --> S["Tùy chọn: tab Thiết lập →<br/>Cài và đăng nhập Tailscale"]
+    S --> X["Điều khiển từ bất cứ đâu<br/>bằng IP 100.x của TV"]
+```
 
 ## Chuẩn bị TV (một lần, bằng remote của TV)
 
@@ -32,7 +46,9 @@ Tên menu dưới đây là trên Sony; hãng khác khác chút ít.
 2. **Bật ADB:** Cài đặt → Tùy chọn thiết bị → Tùy chọn nhà phát triển → **Gỡ lỗi ADB** (có TV ghi "Gỡ lỗi USB").
 3. **Nên bật đánh thức từ xa:** Cài đặt → Mạng và Internet → **Khởi động từ xa**. Thiếu bước này thì không bật lại được TV từ xa khi nó đã tắt hẳn.
 
-Lần đầu mỗi máy kết nối, TV hỏi "Cho phép gỡ lỗi USB?": tích **Luôn cho phép** rồi OK. Cần một người ở cạnh TV cho việc này.
+Lần đầu mỗi máy kết nối, TV hỏi "Cho phép gỡ lỗi USB?": tích **Luôn cho phép** rồi OK. Cần một người ở cạnh TV cho việc này. Lúc đó cả ba nơi đều hiện một màn hình lớn "Nhìn lên TV" và tự đóng khi TV đã cho phép.
+
+TV chưa bật được ADB (box nhà mạng giấu Cài đặt, đòi mật khẩu...)? Web trên máy tính có nút **🧭 Bật ADB giúp tôi**, app điện thoại có trợ lý tương tự: chỉ dùng nút remote để tự cài TV Setup, hoặc mở Cài đặt TV bằng nhiều cách.
 
 <details>
 <summary>Xem IP của TV ở đâu</summary>
@@ -51,7 +67,7 @@ Lần đầu mỗi máy kết nối, TV hỏi "Cho phép gỡ lỗi USB?": tích
 - **Nút bấm:** chạm = bấm một lần, giữ = nhấn giữ trên TV. Nút `⋯` mở thêm phím ít dùng: Ngõ vào, Cài đặt TV, Thông tin, Lịch phát, TV, Phụ đề, Dừng, Chụp màn hình. Nút âm lượng của điện thoại cũng chỉnh âm lượng TV.
 - **Gõ chữ:** nút ⚡ đổi giữa gõ tới đâu TV nhận tới đó và gõ xong rồi gửi; nút `123` mở bàn phím số.
 - **Nói với TV:** bấm micro rồi nói, ví dụ "mở YouTube"; giữ micro để mở Assistant trên TV.
-- **Quản lý TV:** nút ô lưới mở Ứng dụng (có tên và logo), Tệp, Cài APK, Sức khỏe, Terminal.
+- **Quản lý TV:** nút ô lưới mở Ứng dụng (có tên và logo), Tệp · Cài, Sức khỏe, Terminal, Thiết lập (Tailscale, Tối ưu TV).
 - **Cập nhật:** app tự báo khi có bản mới và cài ngay trong app.
 
 ## 2. Trang do TV phục vụ: TV Setup
@@ -63,10 +79,11 @@ Dùng được từ mọi trình duyệt, không cần cài gì trên điện th
 3. Trên điện thoại hoặc máy tính, mở địa chỉ app hiện trên TV: `http://<IP của TV>:8765`.
 4. Nhập **mã 6 số** TV hiện ra. Từ đó thiết bị ấy vào thẳng.
 
-- Trang có đủ Remote, Ứng dụng, Tệp, Cài, Sức khỏe, Terminal. Nút con mắt bật hình TV; mỗi lúc một trình duyệt xem được hình.
+- Trang có đủ Remote, Ứng dụng, Tệp · Cài, Sức khỏe, Terminal, Thiết lập. Nút ▶ Xem bật hình TV; mỗi lúc một trình duyệt xem được hình.
+- Không cần gõ địa chỉ: app TV Setup hiện mã QR trỏ tới trang này, quét bằng camera điện thoại là mở.
 - Trang tự chạy lại khi TV khởi động.
 - **Lịch sử dùng TV:** app TV Setup tự ghi 5 phút một lần (app nào đang mở, RAM, CPU, bộ nhớ) và lưu ngay trên TV; cả ba nơi xem lại ở Sức khỏe → Lịch sử. Không cần máy nào khác bật.
-- Trên TV, app còn có: **Tối ưu TV** / **Hoàn tác**, mở Tailscale, **Cập nhật**, bật/tắt remote qua web, **Hủy ghép mọi thiết bị**.
+- Trên TV, app còn có: **Tối ưu TV** / **Hoàn tác**, **Tailscale** (tự cài và mở mã đăng nhập), **Cập nhật**, bật/tắt remote qua web, **Hủy ghép mọi thiết bị**.
 - Kết nối là HTTP thường, không mã hóa. **Đừng mở cổng 8765 ra Internet**; ở ngoài nhà hãy đi qua Tailscale.
 - Cần TV mở ADB ở cổng 5555. Một số Google TV đời mới chỉ có "Gỡ lỗi không dây" kiểu ghép mã có thể không dùng được.
 
@@ -76,26 +93,28 @@ Cần Python 3.10 trở lên, `adb` và `ffmpeg` (macOS: `brew install android-p
 
 1. Tải repo về (git clone hoặc tải zip).
 2. Bấm đúp **`start-mac.command`** / **`start-windows.cmd`** (Linux: `./start-linux.sh`). Lần đầu nó tự cài các gói cần thiết.
-3. Trình duyệt mở `http://127.0.0.1:8765`. Ở tab **TV**: **Quét mạng** hoặc gõ IP, rồi làm theo các bước có dấu ✓: ADB → Tailscale (tùy chọn) → Ghép nút remote (gõ mã 6 ký tự TV hiện) → Lưu.
+3. Trình duyệt mở `http://127.0.0.1:8765` và hiện danh sách TV (tự quét mạng lần đầu). Chọn TV, hoặc gõ IP.
+4. TV đã sẵn sàng thì vào thẳng tab Remote. Chưa thì sang tab **Thiết lập**, làm theo các bước có dấu ✓: ADB → Tailscale (tùy chọn, một nút) → Ghép nút remote (gõ mã 6 ký tự TV hiện) → Lưu.
+
+Nút **📺 Đổi TV** ở thanh trên quay về danh sách TV.
 
 Từ đó chỉ cần bấm đúp file start. Đóng cửa sổ là dừng; không có gì chạy ngầm trên máy tính.
 
 | Tab | Làm được gì |
 |---|---|
-| **Remote** | Nút bấm, âm lượng, đánh thức, xem màn hình, bấm/kéo/cuộn chuột lên hình, gõ bàn phím thẳng lên TV, mở app và link |
+| **Remote** | Nút bấm, âm lượng, đánh thức, xem màn hình, bấm/kéo/cuộn chuột lên hình, gõ bàn phím thẳng lên TV, mở app, link và CH Play, phát ảnh/video từ máy này lên TV |
 | **Ứng dụng** | Mở, dừng, gỡ app |
-| **Tệp** | Duyệt bộ nhớ TV và USB; tải về, gửi lên, đổi tên, xóa, cài `.apk` |
-| **Tải / Cài** | Tải file từ link về TV, cài APK, Tối ưu TV |
+| **Tệp · Cài** | Duyệt bộ nhớ TV và USB; tải về, gửi lên (kéo thả), đổi tên, xóa, cài `.apk`; tải file từ link về TV; cài APK từ link hoặc từ máy này |
 | **Sức khỏe** | Hiện tại: CPU, RAM, bộ nhớ, Wi-Fi, tiến trình tốn CPU nhất, Giải phóng RAM. Lịch sử: thời gian dùng TV theo ngày, app dùng nhiều, biểu đồ RAM/CPU/bộ nhớ |
 | **Terminal** | Chạy lệnh shell trên TV, mỗi lệnh tối đa 30 giây |
-| **TV** | TV đã lưu, quét mạng, cài đặt lần đầu, đổi TV |
+| **Thiết lập** | Các bước lần đầu (ADB, Tailscale, ghép nút remote, lưu), Tối ưu TV. Trên trang của TV và app điện thoại: Tailscale và Tối ưu TV |
 
 **Khi ADB đóng**, chỉ còn nút bấm, nguồn, âm lượng từng nấc và đánh thức. Mất: xem màn hình, chuột, bàn phím, app, tệp, cài APK. Trang web ghi rõ điều này và có nút "Thử kết nối lại".
 
 <details>
 <summary>Lưu ý khi dùng</summary>
 
-- Xem trực tiếp có hai chế độ: *nhẹ* (mặc định) và *nét* (720p, làm TV chậm hơn rõ rệt).
+- Chất lượng hình chọn từ 240p tới 960p; số nhỏ nhẹ cho TV và mạng. Web máy tính có thêm *Nét nhất* (làm TV chậm hơn rõ rệt). *Ảnh chụp* thì tải từng ảnh, nhẹ nhất. Sang tab khác thì hình thu nhỏ ở góc.
 - Video có bản quyền (Netflix...) hiện màu đen.
 - Bàn phím ảo trên TV không bấm được bằng chuột; hãy gõ bằng bàn phím máy tính. Chữ có dấu thì gõ trong ô "Bàn phím".
 - Dòng lệnh: `app/web/cli/tv-new.sh <IP>` (Windows: `tv-new.cmd`) làm đúng các bước thêm TV.
@@ -103,15 +122,22 @@ Từ đó chỉ cần bấm đúp file start. Đóng cửa sổ là dừng; khô
 
 ## Dùng khi khác mạng (Tailscale)
 
-1. Cài **Tailscale** trên TV (Google Play, hoặc nút trong web máy tính / TV Setup) và trên máy điều khiển.
-2. Mở Tailscale trên TV: TV hiện một mã. Nhập mã ở [trang quản trị Tailscale](https://login.tailscale.com/admin/machines) → **Add device**. Không phải gõ tài khoản trên TV.
-3. Ở trang đó, mở menu ⋯ của TV → **Disable key expiry**, nếu không khoảng 180 ngày sau TV bị đăng xuất.
-4. Dùng IP `100.x.x.x` của TV thay cho IP trong nhà.
+Làm một lần, lúc đang ở nhà (cùng Wi-Fi với TV):
+
+1. Mở tab **Thiết lập** (app điện thoại: nút ô lưới → Thiết lập; app TV Setup trên TV: nút **Tailscale**) → **⚡ Cài và đăng nhập Tailscale**.
+2. Chờ khoảng nửa phút: TV tự tải Tailscale bản chính thức (kiểm checksum), cài, bỏ qua hộp hỏi VPN, bật lên và lấy link đăng nhập.
+3. Bấm **🔑 Mở trang đăng nhập Tailscale** (hoặc quét mã QR), đăng nhập tài khoản Tailscale của bạn (chưa có thì tạo miễn phí bằng Google, Microsoft, GitHub), bấm **Connect**. Không phải gõ gì trên TV. Trang tự nhận khi TV đã vào.
+4. Nên làm thêm: ở [trang quản trị Tailscale](https://login.tailscale.com/admin/machines), mở menu ⋯ của TV → **Disable key expiry**, nếu không khoảng 180 ngày sau TV bị đăng xuất.
+5. Cài Tailscale trên máy điều khiển (cùng tài khoản), rồi dùng IP `100.x.x.x` của TV thay cho IP trong nhà. Web trên máy tính có bước **Lưu** để tự chuyển sang IP này.
+
+<p align="center"><img src="docs/tailscale-vi.png" width="320" alt="Hộp Tailscale: link đăng nhập và mã QR"></p>
+
+Vì sao không gửi thẳng tài khoản từ điện thoại sang TV? Tailscale chỉ nhận đăng nhập qua trang web của nó (Google, Microsoft...) hoặc khóa cấp qua phần mềm quản lý thiết bị doanh nghiệp, thứ mà TV gia đình không có. Gửi link đăng nhập là cách ít bước nhất mà không phải đưa mật khẩu cho app nào.
 
 <details>
 <summary>Người ở nhà chỉ có remote TV, người hỗ trợ ở xa</summary>
 
-Người ở cạnh TV: cài Tailscale từ Google Play trên TV, mở lên và đọc mã cho người hỗ trợ; bật Gỡ lỗi ADB; bấm "Luôn cho phép" khi TV hỏi. Người hỗ trợ nhập mã vào tài khoản Tailscale của mình rồi kết nối tới IP `100.x` của TV.
+Người ở cạnh TV: bật Gỡ lỗi ADB, cài TV Setup (hoặc nhờ người hỗ trợ cài từ xa qua nút "Bật ADB giúp tôi"), mở TV Setup, bấm nút **Tailscale**. TV hiện mã QR: chụp ảnh gửi cho người hỗ trợ. Người hỗ trợ quét mã bằng điện thoại đã đăng nhập Tailscale của mình, bấm Connect, rồi kết nối tới IP `100.x` của TV.
 </details>
 
 ## Khi TV tắt
@@ -123,11 +149,11 @@ Người ở cạnh TV: cài Tailscale từ Google Play trên TV, mở lên và 
 
 ## Tối ưu TV (tùy chọn)
 
-Nút **⚡ Tối ưu TV** ở tab Cài của cả ba nơi (và ngay trong app TV Setup trên TV); **Hoàn tác** trả lại như cũ. Chạy lại bao nhiêu lần cũng được.
+Nút **⚡ Tối ưu TV** ở tab Thiết lập của cả ba nơi (và ngay trong app TV Setup trên TV); **Hoàn tác** trả lại như cũ. Chạy lại bao nhiêu lần cũng được.
 
 - Giữ Tailscale sống qua chế độ chờ và khởi động lại.
 - Tắt hiệu ứng chuyển cảnh.
-- Cài FLauncher và tắt màn hình chính của Google, vốn chiếm nhiều CPU.
+- Cài FLauncher và tắt màn hình chính "Android TV Home" của Google, vốn chiếm nhiều CPU. TV giao diện Google TV mới, box nhà mạng (vd FPT) và TV chỉ chạy app 64-bit thì màn hình chính được giữ nguyên.
 - Tắt app hệ thống không dùng (danh sách viết cho Sony BRAVIA; gói không có thì bỏ qua).
 
 Nếu sau này TV không hiện màn hình chính: Cài đặt → Ứng dụng → Ứng dụng hệ thống → **Android TV Home** → Bật.
@@ -137,9 +163,11 @@ Nếu sau này TV không hiện màn hình chính: Cài đặt → Ứng dụng 
 | Hiện tượng | Cách xử lý |
 |---|---|
 | Không kết nối được | Cùng mạng với TV chưa? Đã bật Gỡ lỗi ADB chưa? IP đúng chưa? Nhìn TV xem có hộp hỏi cho phép không |
-| **ADB: chờ TV cho phép** | Trên TV chọn "Luôn cho phép", rồi bấm "Thử kết nối lại" |
+| **ADB: chờ TV cho phép** | Trên TV chọn "Luôn cho phép". Lỡ đóng hộp hỏi (Back, Home, Hủy)? App tự hỏi lại vài lần; web thì bấm "Thử kết nối lại" |
 | **ADB: cổng đóng** | TV đang tắt, hoặc vừa khởi động lại: tắt rồi bật lại "Gỡ lỗi ADB" |
-| Bấm nút không ăn (web máy tính) | Chưa ghép nút remote (tab **TV**), hoặc đang mở hai cửa sổ cho cùng một TV |
+| Bấm nút không ăn (web máy tính) | Chưa ghép nút remote (tab **Thiết lập**), hoặc đang mở hai cửa sổ cho cùng một TV |
+| Trang của TV hỏi lại mã 6 số | Trên TV đã bấm "Hủy ghép mọi thiết bị", hoặc trình duyệt đã xóa dữ liệu trang: nhập mã mới |
+| Tailscale không ra link đăng nhập | TV phải đang mở màn hình (không ở chế độ chờ) và có Internet. Bấm lại nút; vẫn không được thì mở Tailscale trên TV và quét mã QR nó hiện |
 | Hình giật, TV chậm | Chọn chất lượng thấp hơn; tắt hình khi không cần |
 | Ở xa không kết nối được | Hai máy có cùng tài khoản Tailscale và đều đang bật không? |
 | Android báo app "có hại" khi cài | Play Protect cảnh báo app lạ có quyền cài APK. Mã nguồn ở ngay repo này; chọn "Vẫn cài" nếu bạn tin |
@@ -187,6 +215,7 @@ flowchart LR
 - **TV chưa bật ADB:** app điện thoại và web máy tính vẫn bấm phím được sau khi ghép bằng mã 6 ký tự hiện trên TV (giao thức Android TV Remote, cổng 6466/6467). Xem hình, ứng dụng, tệp thì cần ADB.
 - **Lịch sử:** TV Setup ghi vào `/sdcard/Android/data/dev.tvremote.setup/files/stats/` (`usage.json` 90 ngày, `samples.jsonl` khoảng 30 ngày); các remote đọc qua ADB và vẽ bằng `app/shared/web/stats.js`. Quyền xem app đang mở (usage access) được cấp qua ADB.
 - **Nguồn (hai app):** phím SLEEP (223) / WAKEUP (224) thay cho phím POWER, nên bấm lặp không bị đảo trạng thái.
+- **Tailscale một nút** (`Tailscale.kt`, `adbtools.py`): tải APK từ `pkgs.tailscale.com` và kiểm SHA-256, cài qua ADB, `appops set com.tailscale.ipn ACTIVATE_VPN allow` để khỏi hộp hỏi VPN, bật bằng broadcast `CONNECT_VPN`; còn chưa đăng nhập thì mở app, bấm "Log in" và đọc mã dưới QR bằng `uiautomator dump`. Link đăng nhập là `https://login.tailscale.com/a/<mã>`.
 </details>
 
 <details>

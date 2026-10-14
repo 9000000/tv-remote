@@ -2,6 +2,7 @@
 
   tv_setup.py [apply] [host:port]    keep Tailscale alive, speed up the UI, light launcher, turn off unused system apps
   tv_setup.py undo    [host:port]    put the stock launcher, apps and animation speed back
+  --vi                               messages in Vietnamese
 
 Universal: the Tailscale, animation and launcher steps work on any Android TV / Google TV with ADB debugging on.
 Not universal: the SONY list only exists on Sony BRAVIA sets (elsewhere those are skipped as "not installed"; add that
@@ -30,21 +31,25 @@ def run(*args, timeout=120):
     return (p.stdout + p.stderr).strip()
 
 
-def main(mode, target):
+def main(mode, target, vi=False):
+    """Prints one line per step, in the words the two apps use (Setup.kt), Vietnamese when asked (the web UI passes its language)."""
+    t = lambda v, e: v if vi else e
     sh = lambda cmd: run("-s", target, "shell", cmd)
     has = lambda pkg: "package:" in sh(f"pm path {pkg}")
     last = lambda text: (text.splitlines() or [""])[-1]
     run("connect", target)
     if run("-s", target, "get-state") != "device":
-        print(f"cannot reach {target} over ADB (is ADB debugging on, and this computer allowed?)"); return 1
+        print(t(f"✗ Không nối được ADB tới {target} (TV đã bật Gỡ lỗi ADB và cho phép máy này chưa?)", f"cannot reach {target} over ADB (is ADB debugging on, and this computer allowed?)")); return 1
     print(f"TV: {sh('getprop ro.product.manufacturer')} {sh('getprop ro.product.model')}, Android {sh('getprop ro.build.version.release')}", flush=True)
 
     if mode == "undo":
+        on = 0
         for p in LAUNCHER + GOOGLE + SONY + EXTRA:
             if has(p):
-                print(f"enable  {p}: {last(sh(f'pm enable --user 0 {p}'))}", flush=True)
+                sh(f"pm enable --user 0 {p}"); on += 1
         sh(f"for k in {ANIM}; do settings put global $k 1.0; done")
-        print("done. FLauncher and the Tailscale keep-alive settings are left in place."); return 0
+        print(t(f"✓ Đã bật lại {on} app (gồm màn hình chính Google), hiệu ứng về 1.0x", f"✓ Re-enabled {on} apps (Google's home screen among them), animations back to 1.0x"))
+        print(t("FLauncher và cài đặt Tailscale được giữ nguyên.", "FLauncher and the Tailscale settings are left as they are.")); return 0
 
     # 1. Tailscale survives standby and reboot (skipped if Tailscale is not on the TV)
     if has("com.tailscale.ipn"):
@@ -52,48 +57,55 @@ def main(mode, target):
         sh("am set-standby-bucket com.tailscale.ipn active")                    # resets on reboot, hence re-runnable
         sh("cmd appops set com.tailscale.ipn RUN_IN_BACKGROUND allow; cmd appops set com.tailscale.ipn RUN_ANY_IN_BACKGROUND allow")
         sh("settings put secure always_on_vpn_app com.tailscale.ipn; settings put secure always_on_vpn_lockdown 0")   # VPN starts at boot, no lockdown
-        print("tailscale: kept alive", flush=True)
+        print(t("✓ Tailscale: giữ sống qua standby và khởi động lại", "✓ Tailscale: kept alive through standby and restarts"), flush=True)
     else:
-        print("tailscale: not installed, skipped", flush=True)
+        print(t("– Tailscale chưa cài, bỏ qua bước giữ sống (cài xong hãy chạy lại)", "– Tailscale is not installed, skipping keep-alive (run this again once it is)"), flush=True)
 
     # 2. Snappier UI
     # window and transition animations off; the animator stays at 0.5x, because at 0 loading spinners freeze
     sh("settings put global window_animation_scale 0; settings put global transition_animation_scale 0; settings put global animator_duration_scale 0.5")
-    print("animations: off", flush=True)
+    print(t("✓ Hiệu ứng chuyển cảnh: tắt", "✓ Transition animations: off"), flush=True)
 
-    # 3. Unused system apps
+    # 3. Unused system apps (the ones this TV does not have are skipped quietly)
+    off = 0
     for p in GOOGLE + SONY + EXTRA:
         if has(p):
-            print(f"disable {p}: {last(sh(f'pm disable-user --user 0 {p}; am force-stop {p}'))}", flush=True)
-        else:
-            print(f"skip    {p} (not installed)", flush=True)
+            sh(f"pm disable-user --user 0 {p}; am force-stop {p}"); off += 1
+    print(t(f"✓ Đã tắt {off} app hệ thống không dùng", f"✓ Disabled {off} unused system apps"), flush=True)
 
     # 4. Light launcher, then retire the Google home screen
     if not has(FL_PKG):
+        print(t("… Đang tải FLauncher (10 MB)", "… Downloading FLauncher (10 MB)"), flush=True)
         with tempfile.TemporaryDirectory() as d:
             apk = Path(d) / "flauncher.apk"
             try:
                 apk.write_bytes(urllib.request.urlopen(FL_URL, timeout=120).read())
             except OSError as e:
-                print(f"FLauncher download failed ({e}), launcher left unchanged"); return 1
+                print(t(f"✗ Không tải được FLauncher ({e}) — giữ nguyên màn hình chính", f"✗ FLauncher download failed ({e}), launcher left unchanged")); return 1
             if hashlib.sha256(apk.read_bytes()).hexdigest() != FL_SHA:
-                print("FLauncher checksum mismatch, not installing"); return 1
-            print(f"install FLauncher: {last(run('-s', target, 'install', '-r', str(apk), timeout=300))}", flush=True)
-    if has(FL_PKG):
-        for p in LAUNCHER:
-            if has(p):
-                print(f"disable {p}: {last(sh(f'pm disable-user --user 0 {p}; am force-stop {p}'))}", flush=True)
-        home = last(sh("cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN"))
-        print(f"home: {home}")
-    else:
-        print("FLauncher is not installed, Google launcher left on")
-    print(f"done. Undo with: tv_setup.py undo {target}")
+                print(t("✗ FLauncher sai checksum, không cài", "✗ FLauncher checksum mismatch, not installing")); return 1
+            print(t("… Đang cài FLauncher", "… Installing FLauncher"), flush=True)
+            out = last(run("-s", target, "install", "-r", str(apk), timeout=300))
+        if not has(FL_PKG):
+            why = t("TV này chỉ chạy app 64-bit, FLauncher chỉ có bản 32-bit", "this TV runs 64-bit apps only and FLauncher is 32-bit") if "NO_MATCHING_ABIS" in out else out
+            print(t(f"– Không cài được FLauncher ({why}) — giữ nguyên màn hình chính", f"– FLauncher could not be installed ({why}), the home screen is left as it is"))
+            print(t("Xong.", "Done.")); return 0
+    for p in LAUNCHER:
+        if has(p):
+            sh(f"pm disable-user --user 0 {p}; am force-stop {p}")
+    home = last(sh("cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN"))
+    print(t("✓ Màn hình chính: ", "✓ Home screen: ") + home)
+    print(t("Xong. Bấm nút Home để thấy màn hình chính mới.", "Done. Press Home to see the new home screen."))
+    if sys.stdout.isatty():
+        print(f"Undo with: tv_setup.py undo {target}")
     return 0
 
 
 if __name__ == "__main__":
     utf8_console()
     args = sys.argv[1:]
+    vi = "--vi" in args
+    args = [a for a in args if a != "--vi"]
     mode = args.pop(0) if args and args[0] in ("apply", "undo") else "apply"
     if args and args[0].startswith("-"):
         print(__doc__); sys.exit(2)
@@ -103,4 +115,4 @@ if __name__ == "__main__":
         if not cur:
             print(__doc__); sys.exit(2)
         args = [cur + ":5555"]                                        # the TV picked in the web UI
-    sys.exit(main(mode, args[0]))
+    sys.exit(main(mode, args[0], vi))

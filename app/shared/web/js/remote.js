@@ -57,7 +57,7 @@ let live = true;
 function setLive(on) {
   live = on; try { localStorage.setItem('live', on ? '1' : '0'); } catch {}
   $('#live').classList.toggle('on', on);
-  txt.placeholder = tr(on ? 'Bấm vào đây rồi gõ, chữ hiện ngay trên TV' : 'Gõ chữ rồi bấm Enter để gửi'); txt.value = typed = '';
+  txt.placeholder = tr(on ? 'Gõ chữ lên TV' : 'Gõ xong bấm ↵ để gửi'); txt.value = typed = '';
 }
 $('#live').addEventListener('click', () => setLive(!live));
 txt.addEventListener('input', (e) => { if (live && !e.isComposing) syncText(); });
@@ -114,7 +114,7 @@ $('#wake').addEventListener('click', async () => {
 const keymap = { ArrowUp:'UP', ArrowDown:'DOWN', ArrowLeft:'LEFT', ArrowRight:'RIGHT', Escape:'BACK', Home:'HOME' };
 const typingHere = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
 document.addEventListener('keydown', (e) => {
-  if (currentTab !== 'remote' || picking || typingHere() || e.metaKey || e.ctrlKey || e.altKey || e.isComposing || $('#preview').open || $('#about').open || $('#assist').open) return;
+  if (currentTab !== 'remote' || picking || typingHere() || e.metaKey || e.ctrlKey || e.altKey || e.isComposing || $('#preview').open || $('#about').open || $('#assist').open || $('#ts').open) return;
   const onButton = ['BUTTON', 'SUMMARY', 'A'].includes(document.activeElement.tagName);
   if (onButton && (e.key === 'Enter' || e.key === ' ' || e.key === 'Tab')) return;   // keyboard users still operate the page
   if (e.key === 'Escape' && document.fullscreenElement) return;       // let Esc leave fullscreen

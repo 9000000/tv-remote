@@ -78,7 +78,12 @@ class Setup(private val adb: Adb, private val dir: File?, private val vi: Boolea
             log.line(t("… Đang cài FLauncher", "… Installing FLauncher"))
             val out = install(apk)
             apk.delete()
-            if (!out.contains("Success")) { log.line(t("✗ Cài FLauncher lỗi: ", "✗ FLauncher failed to install: ") + last(out) + t(" — giữ nguyên màn hình chính Google", " — Google's home screen is kept")); return }
+            if (!out.contains("Success")) {
+                val why = if (out.contains("NO_MATCHING_ABIS")) t("TV này chỉ chạy app 64-bit, FLauncher chỉ có bản 32-bit", "this TV runs 64-bit apps only and FLauncher is 32-bit") else last(out)
+                log.line(t("– Không cài được FLauncher (", "– FLauncher could not be installed (") + why + t(") — giữ nguyên màn hình chính", "), the home screen is left as it is"))
+                log.line(t("Xong.", "Done."))
+                return
+            }
         }
         for (p in LAUNCHER)
             if (has(p)) adb.shell("pm disable-user --user 0 $p; am force-stop $p")

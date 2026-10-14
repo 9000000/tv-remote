@@ -70,7 +70,8 @@ async function refresh() {
     setChip('#chipTv', 'bad', CORE === 'mac' ? 'Server tắt' : 'TV: mất kết nối'); setChip('#chipAdb', '', 'ADB: ?');
     $('#info').textContent = CORE === 'mac' ? 'Không gọi được server. Chạy lại start-mac.command.' : 'Không gọi được TV: TV đang bật và cùng mạng với máy này chứ?'; return;
   }
-  setChip('#chipTv', s.connected && s.is_on ? 'ok' : s.connected ? 'warn' : 'bad', !s.connected ? 'TV: mất kết nối' : s.is_on ? 'TV: đang bật' : 'TV: màn hình tắt');
+  const adbUp = s.adb && s.adb.state === 'ready';                   // over ADB the TV answers even when the remote-button service does not
+  setChip('#chipTv', s.connected && s.is_on ? 'ok' : s.connected || adbUp ? 'warn' : 'bad', s.connected ? (s.is_on ? 'TV: đang bật' : 'TV: màn hình tắt') : adbUp ? 'Nút remote: chưa nối' : 'TV: mất kết nối');
   ADB = s.adb || { state: 'unknown' };
   const [cls, txt] = ADB_TEXT[ADB.state] || ADB_TEXT.unknown; setChip('#chipAdb', cls, txt);
   const tvName = s.name || (s.device && s.device.model) || (s.host ? 'TV ' + s.host : '');
@@ -78,7 +79,7 @@ async function refresh() {
   if (s.version) $('#ver').textContent = (s.app_name || 'TV Remote') + ' ' + s.version + (s.released ? ' · ' + s.released : '');
   document.title = tvName && !picking ? tvName + ' · Remote' : 'TV Remote';
   $('#name').textContent = picking ? 'TV Remote' : tvName;
-  $('#info').textContent = picking ? tr('Chọn TV để điều khiển') : [s.host, appName(s.app), s.paired === false ? 'chưa ghép remote (tab Thiết lập)' : s.error].filter(Boolean).join(' · ') || 'đã kết nối';
+  $('#info').textContent = picking ? tr('Chọn TV để điều khiển') : [CORE === 'mac' ? s.host : '', appName(s.app), s.paired === false ? 'chưa ghép remote (tab Thiết lập)' : s.error ? 'nút remote chưa kết nối được (tab Thiết lập)' : ''].filter(Boolean).join(' · ') || 'đã kết nối';
   if (justPicked && s.host === justPicked) {                          // straight to the remote when the TV is ready, to the first-time steps when it is not
     const ready = s.connected || (s.adb && s.adb.state === 'ready');
     if (ready || Date.now() - pickedAt > 6000) { justPicked = null; showTab(ready ? 'remote' : 'tv'); }   // a TV takes a few seconds to answer
@@ -130,6 +131,7 @@ function applyAdb() {
   if (bannerKey !== ADB.state) {                                      // rebuild only on change so buttons are not replaced mid-click
     bannerKey = ADB.state;
     document.querySelectorAll('[data-adb-banner]').forEach((b) => b.replaceChildren(...(ready ? [] : [buildBanner()])));
+    if (ready && currentTab === 'tv' && typeof tsState === 'function') tsState();
   }
   document.querySelectorAll('[data-adb-gated]').forEach((g) => { g.hidden = !ready; });
   $('#kbd').disabled = !ready; $('#kbdoff').hidden = ready;           // typing goes through ADB: no half-working box without it

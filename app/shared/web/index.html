@@ -57,7 +57,7 @@
     <button role="tab" data-tab="files" aria-selected="false"><span class="ico">📁</span><span class="lbl"> Tệp · Cài</span><span class="needs">cần ADB</span></button>
     <button role="tab" data-tab="health" aria-selected="false"><span class="ico">🩺</span><span class="lbl"> Sức khỏe</span><span class="needs">cần ADB</span></button>
     <button role="tab" data-tab="term" aria-selected="false"><span class="ico">⌨️</span><span class="lbl"> Terminal</span><span class="needs">cần ADB</span></button>
-    <button role="tab" data-tab="tv" aria-selected="false"><span class="ico" data-for="mac">📺</span><span class="lbl" data-for="mac"> Thiết lập</span><span class="ico" data-for="tv phone">⚡</span><span class="lbl" data-for="tv phone"> Tối ưu</span><span class="needs" data-for="mac">lần đầu</span></button>
+    <button role="tab" data-tab="tv" aria-selected="false"><span class="ico" data-for="mac">📺</span><span class="lbl" data-for="mac"> Thiết lập</span><span class="ico" data-for="tv phone">🧭</span><span class="lbl" data-for="tv phone"> Thiết lập</span><span class="needs" data-for="mac">lần đầu</span></button>
   </nav>
 
   <!-- ============ Remote ============ -->
@@ -66,7 +66,7 @@
       <div class="col">
         <section class="card" id="screencard" aria-label="Màn hình TV">
           <div class="card-head">
-            <h2>🖥️ Màn hình TV <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
+            <h2>🖥️ Màn hình TV <span class="muted" data-for="mac" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
             <div class="tools">
               <select id="screenmode" aria-label="Chất lượng hình" title="Chất lượng hình: số nhỏ thì nhẹ cho TV và mạng"><option value="240">240p</option><option value="360">360p</option><option value="480">480p</option><option value="720">720p</option><option value="960" selected>960p</option><option value="hd" data-for="mac">Nét nhất · nặng TV</option><option value="snap">Ảnh chụp</option></select>
               <button class="small iconbtn" id="screenfull" aria-label="Toàn màn hình" title="Toàn màn hình">⛶</button>
@@ -79,7 +79,7 @@
         </section>
         <div data-adb-banner></div>
         <section class="card wide-only">
-          <h2>🚀 Mở ứng dụng <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
+          <h2>🚀 Mở ứng dụng <span class="muted" data-for="mac" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
           <input id="quickq" type="search" placeholder="Tìm theo tên app" autocomplete="off" style="margin-bottom:10px;width:100%">
           <div class="tiles" id="quick"><div class="muted">Danh sách app hiện khi ADB sẵn sàng.</div></div>
         </section>
@@ -122,13 +122,13 @@
         </section>
 
         <section class="card">
-          <h2>⌨️ Bàn phím <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
+          <h2>⌨️ Bàn phím <span class="muted" data-for="mac" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
           <p class="muted" id="kbdoff" hidden style="margin:0 0 8px">🔒 Gõ chữ cần ADB. TV này chưa mở ADB nên phần này tạm khóa; các nút mũi tên, OK, Back vẫn dùng được.</p>
           <fieldset id="kbd">
-          <form class="line" id="textf" style="margin-top:0"><button type="button" id="live" title="Gõ trực tiếp / gõ xong rồi gửi">⚡</button><input id="text" placeholder="Bấm vào đây rồi gõ, chữ hiện ngay trên TV" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="primary" title="Gửi phím Enter">↵</button><button type="button" id="del" aria-label="Xóa ký tự">⌫</button><button type="button" id="digits" title="Bàn phím số">123</button></form>
+          <form class="line" id="textf" style="margin-top:0"><button type="button" id="live" title="Gõ trực tiếp / gõ xong rồi gửi">⚡</button><input id="text" placeholder="Gõ chữ lên TV" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="primary" title="Gửi phím Enter">↵</button><button type="button" id="del" aria-label="Xóa ký tự">⌫</button><button type="button" id="digits" title="Bàn phím số">123</button></form>
           <div class="numpad" id="numpad" hidden><button class="rb" data-k="1">1</button><button class="rb" data-k="2">2</button><button class="rb" data-k="3">3</button><button class="rb" data-k="4">4</button><button class="rb" data-k="5">5</button><button class="rb" data-k="6">6</button><button class="rb" data-k="7">7</button><button class="rb" data-k="8">8</button><button class="rb" data-k="9">9</button><span></span><button class="rb" data-k="0">0</button><span></span></div>
-          <form class="line" id="askf"><input id="ask" placeholder="Hỏi / tìm trên TV, vd: mở YouTube" autocomplete="off"><button type="button" id="speak" title="Nói bằng micro của máy này" hidden>🎤</button><button class="primary" title="Gửi câu này cho Google Assistant của TV">🔍</button></form>
-          <p class="muted" style="margin:6px 0 0">Không cần bấm vào ô này: cứ gõ là chữ lên TV (TV phải đang ở một ô nhập chữ). Ô này dành cho gõ tiếng Việt có dấu. Bàn phím ảo trên TV không bấm bằng chuột được, hãy gõ từ đây.</p>
+          <form class="line" id="askf"><input id="ask" placeholder="Hỏi TV: mở YouTube" autocomplete="off"><button type="button" id="speak" title="Nói bằng micro của máy này" hidden>🎤</button><button class="primary" title="Gửi câu này cho Google Assistant của TV">🔍</button></form>
+          <p class="muted fine-only" style="margin:6px 0 0">Không cần bấm vào ô này: cứ gõ là chữ lên TV (TV phải đang ở một ô nhập chữ). Ô này dành cho gõ tiếng Việt có dấu. Bàn phím ảo trên TV không bấm bằng chuột được, hãy gõ từ đây.</p>
           </fieldset>
           <h2 style="margin-top:14px">🔗 Mở trên TV <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· link, CH Play</span></h2>
           <form class="line" id="linkf" style="margin-top:0"><input id="link" placeholder="youtube.com/watch?v=..." autocomplete="off" inputmode="url"><button class="primary">↗ Mở</button></form>
@@ -164,7 +164,7 @@
       </div>
       <div class="muted" id="space" style="margin-top:8px"></div>
       <div class="list" id="fileslist"></div>
-      <label class="drop"><input type="file" id="upfile" multiple>＋ Kéo thả file vào đây, hoặc bấm để chọn file gửi lên thư mục này</label>
+      <label class="drop"><input type="file" id="upfile" multiple>＋ Bấm để chọn file gửi lên thư mục này (hoặc kéo thả vào đây)</label>
     </section>
   </div>
 
@@ -180,7 +180,7 @@
         <h2>📦 Cài APK</h2>
         <form class="line" id="instf" style="margin-top:0"><input id="insturl" placeholder="Link tới file .apk" inputmode="url" autocomplete="off"><button class="primary">📦 Cài</button></form>
         <label class="drop"><input type="file" id="apkfile" accept=".apk,application/vnd.android.package-archive">Hoặc chọn file .apk từ máy này</label>
-        <p class="muted" style="margin:8px 0 0">Chỉ cài APK bạn tin tưởng. Cài đè bản cũ được (giữ dữ liệu). File .apk đã nằm trên TV thì cài từ tab Tệp.</p>
+        <p class="muted" style="margin:8px 0 0">Chỉ cài APK bạn tin tưởng. Cài đè bản cũ được (giữ dữ liệu). File .apk đã nằm trên TV thì bấm “Cài” cạnh nó trong danh sách tệp ở trên.</p>
       </section>
     </div>
   </div>
@@ -218,6 +218,11 @@
   </div>
 
   <div class="panel" data-panel="tv" hidden>
+    <section class="card" data-adb-gated id="tscard" data-for="tv phone">
+      <h2>🌐 Tailscale · điều khiển khi không ở nhà</h2>
+      <p class="muted" id="tsstate" style="margin:0">Đang xem TV đã có Tailscale chưa...</p>
+      <div class="actions"><button class="primary" id="tsgo" style="padding:0 18px">⚡ Cài và đăng nhập Tailscale</button></div>
+    </section>
     <section class="card" data-adb-gated>
       <h2>⚡ Tối ưu TV</h2>
       <p class="muted" style="margin:0 0 10px">Một lần bấm, chạy lại bao nhiêu lần cũng được, không gỡ cài đặt gì:</p>
@@ -282,6 +287,7 @@
 <dialog id="allow"><div class="allowbox"><div class="big">📺</div><h1>Nhìn lên TV</h1><p class="muted">TV đang hỏi “Cho phép gỡ lỗi USB?”</p>
   <ol><li>Tích “Luôn cho phép từ máy tính này”</li><li>Chọn OK (Cho phép)</li></ol>
   <p class="muted">Màn hình này tự đóng khi TV đã cho phép.</p><button id="allowlater">Để sau</button></div></dialog>
+<dialog id="ts"><div class="card assistbox"><div class="card-head"><h2>🌐 Tailscale cho TV</h2><button class="small" id="tsclose">✕ Đóng</button></div><div class="tsbox" id="tsbody" style="display:flex;flex-direction:column;gap:12px;margin-top:12px"></div></div></dialog>
 <dialog id="preview"><img alt="Xem trước"></dialog>
 <div id="toast" role="status"></div>
 
