@@ -17,12 +17,26 @@ function onMeta(pkg, fn) {
   metaWaiters.get(pkg).push(fn); pumpMeta();
 }
 function seedMeta(apps) { apps.forEach((a) => { if (a.meta && !META.has(a.pkg)) META.set(a.pkg, a.meta); }); }
+// An app's picture, or a placeholder until there is one (and for good when there is none, or it fails to load): the first
+// letter of its name on a colour taken from the package name, so apps without a logo still look apart.
 function appIcon(pkg) {
-  const box = el('div', { className: 'appicon', textContent: pkg.split('.').pop()[0].toUpperCase() });
+  const box = el('div', { className: 'appicon placeholder' });
+  const hue = [...pkg].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
+  const letter = (name) => {
+    box.replaceChildren(); box.className = 'appicon placeholder'; box.style.background = `hsl(${hue} 45% 32%)`;
+    box.textContent = ((name || pkg.split('.').pop()).match(/\p{L}|\p{N}/u) || ['?'])[0].toUpperCase();
+  };
+  letter('');
   box.fill = (m) => {
-    if (!m.icon) { if (m.label) box.textContent = m.label[0].toUpperCase(); return; }
-    box.textContent = ''; box.classList.toggle('adaptive', !!m.adaptive); box.classList.toggle('wide', !!m.banner); if (m.bg) box.style.background = m.bg;
-    box.append(el('img', { src: '/api/app/icon?pkg=' + encodeURIComponent(pkg), alt: '', loading: 'lazy' }));
+    if (!m.icon) { letter(m.label); return; }
+    const img = el('img', { src: '/api/app/icon?pkg=' + encodeURIComponent(pkg), alt: '', loading: 'lazy' });
+    img.onerror = () => letter(m.label);
+    img.onload = () => {
+      box.replaceChildren(img); box.className = 'appicon'; box.style.background = m.bg || '';
+      box.classList.toggle('adaptive', !!m.adaptive); box.classList.toggle('wide', !!m.banner);
+    };
+    letter(m.label); box.append(img); img.style.display = 'none';            // shown once it has loaded
+    img.addEventListener('load', () => { img.style.display = ''; });
   };
   return box;
 }
@@ -52,7 +66,7 @@ async function loadQuick() {
 }
 
 // ---------- apps tab ----------
-let appsLoaded = false, appsAll = [], appsInfo = new Map();          // pkg -> { off, keep }
+let appsLoaded = false, appsAll = [], appsInfo = new Map(), appsOffOpen = false;          // pkg -> { off, keep }
 async function loadApps() {
   $('#appslist').replaceChildren(el('div', { className: 'muted', textContent: 'Đang tải...' }));
   const r = await api('/api/apps' + ($('#appssys').checked ? '?system=1' : ''));
@@ -66,7 +80,7 @@ function renderApps() {
     .sort((a, b) => (appsInfo.get(a)?.off ? 1 : 0) - (appsInfo.get(b)?.off ? 1 : 0) || appName(a).localeCompare(appName(b))).map((pkg) => {   // turned off: last
     const act = (name, icon, label, cls = '') => setLabel(el('button', { title: label, className: 'small ' + cls, onclick: async () => {
       if (name === 'uninstall' && !confirm('Gỡ cài đặt ' + appName(pkg) + ' khỏi TV?')) return;
-      if (name === 'disable' && !confirm('Tắt ' + appName(pkg) + '? App biến khỏi TV cho tới khi bấm “Bật lại” ở cuối danh sách này.')) return;
+      if (name === 'disable' && !confirm('Tắt ' + appName(pkg) + '? App biến khỏi TV cho tới khi bật lại ở mục “App đã tắt” cuối danh sách này.')) return;
       const r = await api('/api/app/' + name, { pkg }); if (r) { toast(label + ': ' + appName(pkg)); if (name !== 'launch' && name !== 'stop') { quickLoaded = false; loadApps(); loadQuick(); } }
     } }), icon, label);
     const icon = appIcon(pkg), title = el('span', { textContent: pkg.split('.').pop() });
@@ -75,11 +89,16 @@ function renderApps() {
       el('div', { className: 'acts' }, ...(info.off ? [act('enable', '↩', 'Bật lại', 'primary')]
         : [act('launch', '▶', 'Mở', 'primary'), act('stop', '⏹', 'Dừng'), ...(info.keep ? [] : [act('disable', '⏸', 'Tắt app')])]),
         act('uninstall', '🗑', 'Gỡ', 'danger')));
-    row.loadMeta = () => onMeta(pkg, (m) => { icon.fill(m); if (m.label) title.textContent = m.label; });
+    row.loadMeta = () => onMeta(pkg, (m) => { icon.fill(info.off ? { label: m.label } : m); if (m.label) title.textContent = m.label; });   // a disabled app has no picture to give
     if (META.has(pkg)) row.loadMeta(); else lazyMeta.observe(row);
+    row.off = !!info.off;
     return row;
   });
-  $('#appslist').replaceChildren(...(rows.length ? rows : [el('div', { className: 'muted', textContent: 'Không có app nào.' })]));
+  // the disabled apps (Optimize TV's, or "Disable" here) fold away at the end, so "Turn on" is at hand but out of the way
+  const on = rows.filter((r) => !r.off), off = rows.filter((r) => r.off);
+  const fold = off.length ? [el('details', { className: 'appsoff', open: !!q || appsOffOpen, ontoggle: (e) => { if (!q) appsOffOpen = e.target.open; } },
+    el('summary', { textContent: '⏸ App đã tắt (' + off.length + ')' }), el('p', { className: 'muted', textContent: 'Đã tắt bằng Tối ưu TV hoặc nút Tắt app. Bấm ↩ để bật lại.' }), ...off)] : [];
+  $('#appslist').replaceChildren(...(on.length ? on : [el('div', { className: 'muted', textContent: 'Không có app nào.' })]), ...fold);
 }
 $('#appsq').addEventListener('input', renderApps);
 $('#appsf').addEventListener('submit', (e) => e.preventDefault());

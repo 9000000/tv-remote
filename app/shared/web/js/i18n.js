@@ -235,7 +235,8 @@
     'Nghe tiếng TV trên máy này': 'Hear the TV on this device', 'Đang nghe tiếng TV trên cả TV và máy này.': 'Playing the TV’s sound on both the TV and this device.',
     'TV này dưới Android 13 nên chỉ nghe riêng được: loa TV tạm im.': 'This TV is older than Android 13, so only private listening works: the TV’s speakers are quiet.', 'TV vẫn có tiếng': 'TV still playing',
     '🤖 Hỏi AI nên tắt / gỡ app nào': '🤖 Ask an AI which apps to disable / remove', 'Chép danh sách app kèm câu hỏi sẵn, dán vào ChatGPT, Claude hay Gemini.': 'Copies the app list with a ready question, to paste into ChatGPT, Claude or Gemini.',
-    'Sửa dòng “Người nhà vẫn dùng” cho đúng, bấm Sao chép rồi dán vào ChatGPT, Claude hay Gemini. AI có thể sai: tắt từng app một, thấy lỗi thì bấm “Bật lại” ở cuối danh sách Ứng dụng.': 'Fix the “My family still uses” line, press Copy and paste it into ChatGPT, Claude or Gemini. AI can be wrong: disable one app at a time; if something breaks, press “Turn on” at the end of the Apps list.',
+    'Sửa dòng “Người nhà vẫn dùng” cho đúng, bấm Sao chép rồi dán vào ChatGPT, Claude hay Gemini. AI có thể sai: tắt từng app một, thấy lỗi thì bật lại ở mục “App đã tắt” cuối danh sách Ứng dụng.': 'Fix the “My family still uses” line, press Copy and paste it into ChatGPT, Claude or Gemini. AI can be wrong: disable one app at a time; if something breaks, turn it back on under “Disabled apps” at the end of the Apps list.',
+    'Đã tắt bằng Tối ưu TV hoặc nút Tắt app. Bấm ↩ để bật lại.': 'Turned off by Optimize TV or the Disable button. Press ↩ to turn one back on.',
     'Bật lại': 'Turn on', 'Tắt app': 'Disable', 'đã tắt': 'disabled',
     '📋 Sao chép': '📋 Copy', 'Đang lấy danh sách app...': 'Getting the app list...', 'Đã chép. Dán vào ChatGPT, Claude hay Gemini.': 'Copied. Paste it into ChatGPT, Claude or Gemini.',
     'Không chép tự động được: chữ đã được bôi đen, bấm giữ để chép.': 'Could not copy by itself: the text is selected, long-press to copy.',
@@ -335,7 +336,8 @@
   // Strings with a variable part. Captured pieces are passed through tr() again where they can be text of ours.
   const RULES = [
     // automation, scenes, the TV's sound
-    [/^Tắt (.+)\? App biến khỏi TV cho tới khi bấm “Bật lại” ở cuối danh sách này\.$/, (m) => `Disable ${m[1]}? It disappears from the TV until you press “Turn on” at the end of this list.`],
+    [/^⏸ App đã tắt \((\d+)\)$/, (m) => `⏸ Disabled apps (${m[1]})`],
+    [/^Tắt (.+)\? App biến khỏi TV cho tới khi bật lại ở mục “App đã tắt” cuối danh sách này\.$/, (m) => `Disable ${m[1]}? It disappears from the TV until you turn it back on under “Disabled apps” at the end of this list.`],
     [/^⏸ đã tắt · (.+)$/, (m) => '⏸ disabled · ' + m[1]],
     [/^Đã nhập (\d+) cảnh$/, (m) => `Imported ${m[1]} scene${m[1] === '1' ? '' : 's'}`],
     [/^bỏ qua (\d+) cảnh không hợp lệ$/, (m) => `skipped ${m[1]} invalid`],

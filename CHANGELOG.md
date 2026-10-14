@@ -4,6 +4,18 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.16.2 - 2026-10-14
+
+Web 2.16.2 · app điện thoại 2.14.2 · app TV 2.13.2
+
+**Tiếng Việt**
+- Tab Ứng dụng: các app đã tắt (bởi Tối ưu TV hoặc nút Tắt app) gom vào mục gập **“⏸ App đã tắt (n)”** ở cuối, mặc định đóng, thay vì lẫn vào danh sách chính.
+- App không có logo (hoặc logo tải lỗi) hiện ô chữ cái đầu trên nền màu riêng, không còn ảnh vỡ.
+
+**English**
+- Apps tab: apps turned off (by Optimize TV or the Disable button) are folded into a **“⏸ Disabled apps (n)”** section at the end, closed by default, instead of mixing with the main list.
+- Apps without a logo (or whose logo fails to load) show their first letter on a colour of their own instead of a broken picture.
+
 ## 2.16.1 - 2026-10-14
 
 Web 2.16.1 · app điện thoại 2.14.1 · app TV 2.13.1

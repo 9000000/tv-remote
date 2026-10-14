@@ -265,3 +265,5 @@
   #aitext { width:100%; box-sizing:border-box; font:12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; background:var(--bg); color:var(--ink); border:1px solid var(--line, #333); border-radius:10px; padding:10px; resize:vertical; }
   #appslist .item.off .appicon, #appslist .item.off .name > span { opacity:.5; }
   @media (max-width:380px) { #limitf { flex-wrap:wrap; } #limitf select#limitpkg { flex:1 1 100%; } }
+  .appsoff { margin-top:12px; border-top:1px solid var(--line); padding-top:10px; } .appsoff summary { cursor:pointer; font-weight:600; color:var(--muted); padding:6px 0; } .appsoff > p { margin:4px 0 6px; font-size:12px; }
+  .appicon.placeholder { color:#fff; font-weight:700; font-size:20px; display:flex; align-items:center; justify-content:center; }
