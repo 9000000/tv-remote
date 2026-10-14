@@ -98,7 +98,7 @@ async function refresh() {
     $('#info').textContent = CORE === 'mac' ? 'Không gọi được server. Mở lại TV Remote trên máy này.' : 'Không gọi được TV: TV đang bật và cùng mạng với máy này chứ?'; return;
   }
   const adbUp = s.adb && s.adb.state === 'ready';                   // over ADB the TV answers even when the remote-button service does not
-  setChip('#chipTv', s.connected && s.is_on ? 'ok' : s.connected || adbUp ? 'warn' : 'bad', s.connected ? (s.is_on ? 'TV: đang bật' : 'TV: màn hình tắt') : adbUp ? 'Nút remote: chưa nối' : 'TV: mất kết nối');
+  setChip('#chipTv', s.connected && s.is_on ? 'ok' : s.connected || adbUp ? 'warn' : 'bad', s.connected ? (s.is_on ? 'TV: đang bật' : 'TV: màn hình tắt') : adbUp ? 'Nút bấm: đi qua ADB' : 'TV: mất kết nối');
   ADB = s.adb || { state: 'unknown' };
   const [cls, txt] = ADB_TEXT[ADB.state] || ADB_TEXT.unknown; setChip('#chipAdb', cls, txt);
   const tvName = s.name || (s.device && s.device.model) || (s.host ? 'TV ' + s.host : '');

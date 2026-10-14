@@ -39,7 +39,7 @@ class AudioOut {
             val buf = c.getOutputBuffer(out)
             if (t != null && buf != null && info.size > 0) {
                 val behind = written - (t.playbackHeadPosition.toLong() and 0xffffffffL)
-                if (behind < RATE * 3 / 10) {                         // at most 0.3 s queued; more than that would only add delay
+                if (behind < RATE * 15 / 100) {                       // at most 0.15 s queued; more than that would only add delay
                     val pcm = ByteArray(info.size)
                     buf.position(info.offset)
                     buf.get(pcm)

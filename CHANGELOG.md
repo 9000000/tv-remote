@@ -9,12 +9,16 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 Web 2.17.1 · app điện thoại 2.15.1 · app TV 2.14.1
 
 **Tiếng Việt**
-- **Sửa "🎧 Chỉ máy này" không có tiếng và nút remote báo "chưa nối":** trên TV Android 13+ có dịch vụ remote của Google (vd box FPT Play), cách thu tiếng cũ làm dịch vụ đó bị lỗi và tắt khoảng 30 phút. Giờ cả hai cách nghe đều thu tiếng kiểu mới (Android 13+), không đụng tới dịch vụ remote. TV cũ hơn vẫn như trước.
+- **Sửa nút remote "chưa nối" sau khi nghe tiếng TV:** trên vài TV (box FPT Play, Android 14), dịch vụ remote của Google bị lỗi khi TV đang bị thu tiếng, và Android chờ tới vài giờ mới bật lại nó. Giờ tắt nghe là dịch vụ được bật lại ngay; trong lúc nghe, các nút đi qua ADB (nhãn "Nút bấm: đi qua ADB") nên vẫn bấm được.
+- **Tắt nghe không còn làm tiếng TV khựng ~2 giây:** việc thu tiếng được dừng gọn thay vì bị ngắt ngang.
+- **Nghe tiếng ít trễ hơn:** trước đây mỗi lần mạng khựng, độ trễ tăng thêm và giữ luôn (tới 0,6 giây); giờ trang tự đuổi kịp, giữ khoảng 0,1 giây. App điện thoại giữ tối đa 0,15 giây thay vì 0,3.
 - **🎧 Chất lượng cao:** nút bật/tắt trong khung chọn nghe (và menu 🎧 của app điện thoại): Opus 160 kbit/s thay vì 64, nghe nhạc rõ hơn; trên trang mở từ TV là âm thanh gốc 48 kHz stereo thay vì 24 kHz mono.
 - README có link tới trang giới thiệu tvremote.pages.dev.
 
 **English**
-- **Fixed "🎧 Only this device" giving no sound and the remote showing "not connected":** on Android 13+ TVs with Google's remote service (e.g. FPT Play boxes), the old way of capturing the sound crashed that service and kept it down for about 30 minutes. Both ways of listening now use the newer capture (Android 13+), which leaves the remote service alone. Older TVs work as before.
+- **Fixed the remote buttons showing "not connected" after listening to the TV:** on some TVs (FPT Play box, Android 14), Google's remote service crashes while the TV's sound is captured, and Android waits up to hours to restart it. It is now started again as soon as listening stops; while listening, buttons go over ADB (labelled "Buttons: over ADB"), so they keep working.
+- **Stopping listening no longer makes the TV's sound stutter for ~2 s:** the capture is ended cleanly instead of being cut off.
+- **Less delay when listening:** every network hiccup used to add delay that stayed (up to 0.6 s); the page now catches up to about 0.1 s. The phone app keeps at most 0.15 s instead of 0.3.
 - **🎧 High quality:** a switch in the listening picker (and the phone app's 🎧 menu): Opus at 160 kbit/s instead of 64, clearer music; on the page served by the TV, the original 48 kHz stereo instead of 24 kHz mono.
 - The README links to the product page tvremote.pages.dev.
 

@@ -40,8 +40,8 @@ class Tv(
     private val wantControl: Boolean = true,
     /**
      * true: the TV keeps playing its sound too (scrcpy's playback capture with audio_dup; Android 13+). Older TVs fall back to
-     * the private way (TV speakers silent) and say so with onStatus("audio", "noshare"). From Android 13 both ways use playback
-     * capture, so apps that refuse it (some with DRM) are not heard here, and keep playing on the TV in the private way.
+     * the private way (TV speakers silent) and say so with onStatus("audio", "noshare"). Apps that refuse playback capture
+     * (some with DRM) are silent here in this mode.
      */
     private val audioShare: Boolean = false,
     /** Opus bit rate: 64 kbit/s is plenty for speech and TV, 160 sounds like the source for music */
@@ -64,6 +64,9 @@ class Tv(
     companion object {
         private const val VER = "5.0.1"
         private const val REMOTE = "/data/local/tmp/scrcpy-server.jar"
+        /** Waits for the capture's virtual output to go, then starts Google's remote service: see endCapture */
+        private const val REVIVE_REMOTE = "for i in 1 2 3 4 5 6 7 8 9 10; do dumpsys audio | grep -qi remote_submix || break; sleep 0.5; done; " +
+            "pm path com.google.android.tv.remote.service >/dev/null 2>&1 && am startservice -n com.google.android.tv.remote.service/.RemoteService >/dev/null 2>&1; true"
 
         /**
          * Picture quality: longest side in pixels, bits per second, frames per second. The bit rate is what decides the data
@@ -84,6 +87,7 @@ class Tv(
     private val video: String                                         // scrcpy video options
     private val io = Executors.newSingleThreadExecutor()
     @Volatile private var stopped = false
+    @Volatile private var capture: List<Adb.Stream>? = null           // the sockets while the TV's sound is captured
     @Volatile private var adb: Adb? = null
     @Volatile private var control: Adb.Stream? = null
     @Volatile private var width = 960
@@ -98,6 +102,7 @@ class Tv(
     }
 
     private fun run() {
+        val socks = arrayListOf<Adb.Stream>()
         try {
             listener.onStatus("connecting", host)
             val a = Adb(ctx.filesDir)
@@ -112,9 +117,6 @@ class Tv(
             var hearing = audio
             val sdk = if (hearing != null) a.shell("getprop ro.build.version.sdk").trim().toIntOrNull() ?: 0 else 0
             val share = hearing != null && audioShare && sdk >= 33
-            // Android 13+: playback capture in both modes. The private one used to take the whole output (REMOTE_SUBMIX), and that
-            // device crashes Google's remote service on some TVs (FPT Play box, Android 14), so the keys went dead with the sound.
-            val playback = hearing != null && sdk >= 33
             if (hearing != null && audioShare && !share && sdk >= 30) listener.onStatus("audio", "noshare")
             if (hearing != null && sdk < 30) {                        // scrcpy captures sound from Android 11
                 listener.onStatus("audio", "unsupported")
@@ -125,7 +127,7 @@ class Tv(
             val log = a.open("shell:CLASSPATH=" + REMOTE + " app_process / com.genymobile.scrcpy.Server " + VER + " scid=" + scid
                     + " tunnel_forward=true cleanup=false control=$wantControl send_dummy_byte=true send_device_meta=false "
                     + (if (wantVideo) "video=true $video" else "video=false")
-                    + (if (hearing == null) " audio=false" else " audio=true audio_codec=$hearing" + (if (hearing == "opus") " audio_bit_rate=$audioBitRate" else "") + (if (playback) " audio_source=playback" else "") + (if (share) " audio_dup=true" else ""))
+                    + (if (hearing == null) " audio=false" else " audio=true audio_codec=$hearing" + (if (hearing == "opus") " audio_bit_rate=$audioBitRate" else "") + (if (share) " audio_source=playback audio_dup=true" else ""))
                     // scrcpy-server does not always notice that we left (a still picture sends nothing), and a leftover one keeps
                     // loading the TV. So a shell loop on the TV waits for our heartbeat and kills the server when it stops.
                     + " & P=\$!; while read -t 25 x; do :; done; kill \$P")
@@ -147,7 +149,7 @@ class Tv(
                 i++
             }
             if (first == null) throw IOException("scrcpy-server did not start on the TV")
-            val socks = arrayListOf(first)                            // the server takes the connections in this order
+            socks.add(first)                                          // the server takes the connections in this order
             val count = (if (wantVideo) 1 else 0) + (if (hearing != null) 1 else 0) + (if (wantControl) 1 else 0)
             while (socks.size < count) socks.add(a.open("localabstract:scrcpy_$scid"))
             var next = 0
@@ -155,6 +157,7 @@ class Tv(
             val soundIn = if (hearing != null) socks[next++] else null
             val ctl = if (wantControl) socks[next] else null
             control = ctl
+            if (hearing != null) capture = socks
             if (soundIn != null && (pictureIn != null || ctl != null))
                 Thread({ try { hear(soundIn, hearing!!) } catch (ignored: IOException) { } }, "scrcpy-audio").apply { isDaemon = true }.start()
             if (pictureIn != null) {
@@ -173,9 +176,22 @@ class Tv(
         } finally {
             control = null
             releaseCodec()
+            if (capture != null) endCapture(socks)
+            capture = null
             adb?.close()                                              // the heartbeat stops, the loop on the TV kills scrcpy-server
             io.shutdownNow()
         }
+    }
+
+    /**
+     * The sound capture ends: closing the sockets lets scrcpy-server let it go itself (killed, Android notices the dead capture
+     * seconds later and the TV's own sound stutters meanwhile). Then Google's remote service is started again: on some TVs it
+     * crashes on the capture's virtual output and Android waits hours to restart it (see REVIVE_REMOTE in scenes.py).
+     */
+    private fun endCapture(socks: List<Adb.Stream>) {
+        val a = adb ?: return
+        for (s in socks) try { s.close() } catch (ignored: Exception) { }
+        try { a.shell(REVIVE_REMOTE) } catch (ignored: IOException) { }   // waits there for the virtual output to go
     }
 
     /** MAC and IP of the interface that is on the home network, and the Tailscale 100.x address (no MAC) if the TV has one. */
@@ -330,7 +346,13 @@ class Tv(
 
     fun stop() {
         stopped = true
-        adb?.close()
+        val c = capture
+        if (c == null) { adb?.close(); return }
+        Thread({                                                      // the session's thread ends the capture, then closes ADB
+            for (s in c) try { s.close() } catch (ignored: Exception) { }
+            Thread.sleep(20000)
+            adb?.close()                                              // in case it is stuck
+        }, "scrcpy-stop").apply { isDaemon = true }.start()
     }
 
     fun ready(): Boolean = control != null && !stopped

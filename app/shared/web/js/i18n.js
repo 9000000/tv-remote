@@ -153,7 +153,7 @@
     'Không đọc được link đăng nhập trên màn hình TV. Mở Tailscale trên TV và quét mã QR nó hiện.': 'Could not read the sign-in link off the TV\'s screen. Open Tailscale on the TV and scan the QR code it shows.',
     'mất kết nối, không rõ đã xong chưa': 'connection lost, unknown whether it finished',
     'Trực tiếp · hình đứng yên': 'Live · picture unchanged', 'hình đứng yên': 'picture unchanged',
-    'Nút remote: chưa nối': 'Remote buttons: not connected', 'nút remote chưa kết nối được (tab Thiết lập)': 'remote buttons not connected (Setup tab)',
+    'Nút remote: chưa nối': 'Remote buttons: not connected', 'Nút bấm: đi qua ADB': 'Buttons: over ADB', 'nút remote chưa kết nối được (tab Thiết lập)': 'remote buttons not connected (Setup tab)',
     'Tailscale · điều khiển khi không ở nhà': 'Tailscale · control away from home', 'Đang xem TV đã có Tailscale chưa...': 'Checking whether the TV has Tailscale...',
     'Cài và đăng nhập Tailscale': 'Install and sign in to Tailscale', 'Bật và đăng nhập Tailscale': 'Switch on and sign in to Tailscale', 'Tailscale cho TV': 'Tailscale for the TV', 'Tailscale (để điều khiển khi không ở nhà)': 'Tailscale (to control the TV away from home)',
     'Một nút: tự cài Tailscale bản chính thức lên TV, cho nó tự chạy lại mỗi khi bật TV, và lấy link đăng nhập. Bạn chỉ cần bấm “Connect” bằng tài khoản Tailscale của mình. Chỉ dùng trong cùng Wi-Fi thì bỏ qua được.': 'One button: installs the official Tailscale on the TV, has it start again whenever the TV turns on, and fetches its sign-in link. All you do is press “Connect” with your Tailscale account. Skip this if you only use the TV’s Wi-Fi.',

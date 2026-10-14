@@ -149,6 +149,32 @@ def downmix(data, carry=b""):
     return out.tobytes(), data[n:]
 
 
+# Every way to capture the TV's sound adds a virtual output (REMOTE_SUBMIX). Google's remote service on some TVs (FPT Play box,
+# Android 14, service 7.00) crashes on that device ("Illegal output device type 25") and Android waits up to hours to restart it:
+# the remote protocol (phone app, the computer's keys) is gone till then. Nothing on our side keeps it alive while the sound is
+# captured, so once the capture is over and the device has gone, it is started again at once.
+REVIVE_REMOTE = ("for i in 1 2 3 4 5 6 7 8 9 10; do dumpsys audio | grep -qi remote_submix || break; sleep 0.5; done; "
+                 "pm path com.google.android.tv.remote.service >/dev/null 2>&1 && "
+                 "am startservice -n com.google.android.tv.remote.service/.RemoteService >/dev/null 2>&1; true")
+
+
+async def end_capture(adb, proc, writer, port):
+    """Stops a sound capture so that the TV's speakers come back at once: scrcpy-server sees its socket close and lets the capture
+    go itself (killed, Android notices the dead capture seconds later and the TV's sound stutters meanwhile)."""
+    if writer:
+        writer.close()
+    try:
+        await asyncio.wait_for(proc.wait(), 1.5)
+    except asyncio.TimeoutError:
+        proc.kill()
+    if port:
+        await adb.run("forward", "--remove", f"tcp:{port}")
+    try:
+        await adb.shell(REVIVE_REMOTE, timeout=15)
+    except Exception:
+        pass
+
+
 def packet(kind, data=b""):
     """The framing the page reads (listen.js): 1 byte kind, 4 bytes length, the data."""
     return bytes([kind]) + len(data).to_bytes(4, "big") + data

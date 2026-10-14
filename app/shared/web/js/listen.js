@@ -17,7 +17,7 @@ function showHq() {
   b.innerHTML = on ? '<b>✨ Chất lượng cao: bật</b><span>Âm thanh như gốc, tốn mạng hơn. Bấm để về thường.</span>'
     : '<b>✨ Chất lượng cao: tắt</b><span>Bật để nghe nhạc rõ hơn, tốn mạng hơn một chút.</span>';
 }
-let listenOn = false, listenCtl = null, actx = null, adec = null, anext = 0, abytes = 0, listenGen = 0;
+let listenOn = false, listenCtl = null, actx = null, adec = null, anext = 0, abytes = 0, listenGen = 0, catchUp = false;
 
 async function opusHere() {
   if (CORE !== 'mac' || !window.AudioDecoder || !window.isSecureContext) return false;
@@ -31,8 +31,12 @@ function playPcm(channels, rate) {
   const buf = actx.createBuffer(channels.length, channels[0].length, rate);
   channels.forEach((c, i) => buf.copyToChannel(c, i));
   const now = actx.currentTime;
-  if (anext < now + 0.02) anext = now + 0.12;
-  if (anext - now > 0.6) return;
+  if (anext < now + 0.02) anext = now + 0.08;                         // ran dry (a stall): start again a little ahead
+  // After a stall the network hands over the late sound in one burst; played in turn, it would keep the whole stall as delay
+  // for good. Too far ahead: drop pieces until close to live again (one short skip instead of a lasting lag).
+  const ahead = anext - now;
+  if (ahead > 0.25) catchUp = true; else if (ahead < 0.1) catchUp = false;
+  if (catchUp) return;
   const src = actx.createBufferSource(); src.buffer = buf; src.connect(actx.destination); src.start(anext);
   anext += buf.duration;
 }

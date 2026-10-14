@@ -124,6 +124,10 @@ def build(S):
                 return web.json_response({"ok": True})
             except Exception:
                 pass                                                  # ADB closed: fall back to the key
+        if not tv.available and direction != "END_LONG" and (await adb.status())["state"] == "ready":
+            # the remote protocol is down (e.g. Google's remote service crashed while the sound was captured): keys over ADB
+            await adb.shell(("input keyevent --longpress " if direction == "START_LONG" else "input keyevent ") + "KEYCODE_" + name)
+            return web.json_response({"ok": True, "via": "adb"})
         r, held = tv.need(), S.cur.held
         if direction != "SHORT" and name in held:
             held.pop(name).cancel()
@@ -689,11 +693,9 @@ def build(S):
             if share and sdk < 33:                                    # too old to keep playing: the private way, and say so
                 share = False
                 await resp.write(scn.packet(3, b"noshare"))
-            # Android 13+: playback capture in both modes. The private one used to take the whole output (REMOTE_SUBMIX), and
-            # that device crashes Google's remote service on some TVs (FPT Play box, Android 14): the keys went dead with the sound.
             proc, port = await scrcpy_launch(S.cur.adb, "video=false control=false send_dummy_byte=true send_device_meta=false audio=true "
                                              + (f"audio_codec=opus audio_bit_rate={160000 if hq else 64000}" if opus else "audio_codec=raw")
-                                             + (" audio_source=playback" if sdk >= 33 else "") + (" audio_dup=true" if share else ""))
+                                             + (" audio_source=playback audio_dup=true" if share else ""))
             reader = None
             for _ in range(100):                                      # until the server listens, adb closes the socket at once
                 reader, writer = await asyncio.open_connection("127.0.0.1", port)
@@ -733,12 +735,8 @@ def build(S):
             except ConnectionError:
                 pass
         finally:
-            if writer:
-                writer.close()
-            if proc and proc.returncode is None:
-                proc.kill()                                           # the TV's speakers come back when the capture ends
-            if port:
-                await adb.run("forward", "--remove", f"tcp:{port}")
+            if proc:                                                  # on its own: the page has gone and this task may be cancelled
+                asyncio.create_task(scn.end_capture(adb, proc, writer, port))
         return resp
 
     @routes.post("/api/shell")
