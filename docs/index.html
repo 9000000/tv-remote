@@ -135,7 +135,7 @@ nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
 .chip .e{font-size:22px}
 .wire{display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--muted);font-size:13px;text-align:center;max-width:180px}
 .wire .line{width:150px;height:2px;background:linear-gradient(90deg,var(--blue),var(--orange));position:relative;border-radius:2px}
-.wire .line::after{content:"";position:absolute;right:-2px;top:-5px;border:6px solid transparent;border-left:9px solid var(--orange)}
+.wire .line::after{content:"";position:absolute;right:-8px;top:-5px;border:6px solid transparent;border-right:0;border-left:9px solid var(--orange)}
 .noserver{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;border:1px dashed var(--line2);color:var(--muted);font-size:13px}
 .noserver s{color:var(--red)}
 .facts{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:40px}
@@ -240,7 +240,7 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
   .flow{grid-template-columns:1fr;justify-items:stretch}
   .wire{max-width:none;flex-direction:row;justify-content:center}
   .wire .line{width:2px;height:40px;background:linear-gradient(var(--blue),var(--orange))}
-  .wire .line::after{right:-5px;top:auto;bottom:-6px;border:6px solid transparent;border-top:9px solid var(--orange)}
+  .wire .line::after{right:-5px;top:auto;bottom:-8px;border:6px solid transparent;border-bottom:0;border-top:9px solid var(--orange)}
   .stage{max-width:620px;margin:0 auto;width:100%}
 }
 @media (max-width:620px){
