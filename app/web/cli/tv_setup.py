@@ -57,6 +57,9 @@ def main(mode, target, vi=False, anim=True, home=True, disable=None):
     if run("-s", target, "get-state") != "device":
         print(t(f"✗ Không nối được ADB tới {target} (TV đã bật Gỡ lỗi ADB và cho phép máy này chưa?)", f"cannot reach {target} over ADB (is ADB debugging on, and this computer allowed?)")); return 1
     print(f"TV: {sh('getprop ro.product.manufacturer')} {sh('getprop ro.product.model')}, Android {sh('getprop ro.build.version.release')}", flush=True)
+    if mode != "undo" and sh("pm has-feature android.software.leanback").strip() == "false":   # a phone or tablet: see Setup.tvOnly
+        print(t("✗ Máy này không phải TV. Tối ưu TV đổi màn hình chính và tắt app hệ thống, nên chỉ dùng cho TV.",
+                "✗ This device is not a TV. Optimize TV swaps the home screen and turns system apps off, so it is for TVs only.")); return 1
 
     if mode == "plan":
         enabled = {l[8:].strip() for l in sh("pm list packages -e").splitlines() if l.startswith("package:")}

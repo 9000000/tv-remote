@@ -68,9 +68,20 @@ class Setup(private val adb: Adb, private val dir: File?, private val vi: Boolea
     fun lanIp(): String =
         Regex("inet ((?:192\\.168|10|172\\.(?:1[6-9]|2[0-9]|3[01]))\\.[0-9.]+)/").find(adb.shell("ip -4 addr show"))?.groupValues?.get(1) ?: ""
 
+    /**
+     * Optimize swaps the home screen and turns system apps off, which suits a TV only: a phone or tablet running TV Setup is
+     * refused. Only a plain "false" counts, so an old TV whose pm has no has-feature is not turned away.
+     */
+    private fun tvOnly() {
+        if (adb.shell("pm has-feature android.software.leanback").trim() == "false")
+            throw IOException(t("Máy này không phải TV. Tối ưu TV đổi màn hình chính và tắt app hệ thống, nên chỉ dùng cho TV.",
+                "This device is not a TV. Optimize TV swaps the home screen and turns system apps off, so it is for TVs only."))
+    }
+
     /** What "Optimize TV" would do, for the person to choose: [label] gives an app's name where known. */
     @Throws(IOException::class)
     fun plan(label: (String) -> String?): org.json.JSONObject {
+        tvOnly()
         val enabled = adb.shell("pm list packages -e").split("\n").filter { it.startsWith("package:") }.map { it.substring(8).trim() }.toSet()
         val suggest = (GOOGLE + SONY).filter { it in enabled }
         val home = last(adb.shell("cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN")).substringBefore('/')
@@ -92,6 +103,7 @@ class Setup(private val adb: Adb, private val dir: File?, private val vi: Boolea
 
     @Throws(Exception::class)
     fun apply(c: Choice = Choice()) {
+        tvOnly()
         if (has(TS_PKG)) {                                            // the Tailscale button does this too; here for a Tailscale installed by hand
             Tailscale(adb, dir).keepAlive()
             log.line(t("✓ Tailscale: tự chạy lại sau khi TV ngủ hoặc khởi động lại", "✓ Tailscale: starts again by itself after standby or a restart"))

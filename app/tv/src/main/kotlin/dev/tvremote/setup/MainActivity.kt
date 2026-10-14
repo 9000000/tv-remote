@@ -115,11 +115,17 @@ class MainActivity : Activity() {
         fun enable(on: Boolean) { view.isEnabled = on; view.alpha = if (on) 1f else 0.4f }
     }
 
+    /** A phone (TV Setup runs there too, see README): one scrolling column instead of the TV's two, whichever way it is held. */
+    private val phone by lazy { resources.configuration.smallestScreenWidthDp < 600 }
+
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
         val page = LinearLayout(this)
         page.setBackgroundColor(BG)
-        page.setPadding(dp(36), dp(28), dp(36), dp(24))
+        if (phone) {
+            page.orientation = LinearLayout.VERTICAL
+            page.setPadding(dp(16), dp(20), dp(16), dp(24))
+        } else page.setPadding(dp(36), dp(28), dp(36), dp(24))
 
         // ---- left: header, status, actions, activity
         val left = LinearLayout(this)
@@ -170,7 +176,7 @@ class MainActivity : Activity() {
             updateTile,
             Tile(R.drawable.ic_code, t("Gỡ lỗi ADB", "Debugging"), t("Mở Tùy chọn nhà phát triển", "Open Developer options for ADB")) { devOptions() },
             Tile(R.drawable.ic_refresh, t("Kết nối lại", "Reconnect"), t("Nối lại ADB của TV", "Connect to the TV's ADB again")) { connect() })
-        for (row in tiles.chunked(3)) {
+        for (row in tiles.chunked(if (phone) 2 else 3)) {
             val r = LinearLayout(this)
             row.forEachIndexed { i, tile -> r.addView(tile.view, LinearLayout.LayoutParams(0, dp(74), 1f).apply { if (i > 0) leftMargin = dp(12) }) }
             left.addView(r, margins(top = 10))
@@ -191,21 +197,33 @@ class MainActivity : Activity() {
         scroll.setPadding(dp(16), dp(10), dp(16), dp(10))
         scroll.isFocusable = false
         scroll.addView(logView)
-        left.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f).apply { topMargin = dp(8) })
-        page.addView(left, LinearLayout.LayoutParams(0, -1, 1f))
-
         // ---- right: taking over from a phone or a computer
         webCol = LinearLayout(this)
         webCol.orientation = LinearLayout.VERTICAL
         webCol.background = box(CARD, 18, 0)
         webCol.setPadding(dp(20), dp(18), dp(20), dp(18))
-        page.addView(webCol, LinearLayout.LayoutParams(dp(290), -1).apply { leftMargin = dp(24) })
         webBtn = smallButton("") { RemoteService.setEnabled(this, !RemoteService.enabled(this)); showWeb(); webBtn.requestFocus() }
-        setContentView(page)
+        if (phone) {                                                  // header, status, then the card (what a phone is mostly here for), the tiles, the log
+            left.addView(webCol, 2, margins(top = 16))
+            scroll.isNestedScrollingEnabled = true
+            left.addView(scroll, LinearLayout.LayoutParams(-1, dp(240)).apply { topMargin = dp(8) })
+            page.addView(left, LinearLayout.LayoutParams(-1, -2))
+            val outer = ScrollView(this)
+            outer.setBackgroundColor(BG)
+            outer.isFillViewport = true
+            outer.addView(page)
+            setContentView(outer)
+        } else {
+            left.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f).apply { topMargin = dp(8) })
+            page.addView(left, LinearLayout.LayoutParams(0, -1, 1f))
+            page.addView(webCol, LinearLayout.LayoutParams(dp(290), -1).apply { leftMargin = dp(24) })
+            setContentView(page)
+        }
 
         if (RemoteService.enabled(this)) RemoteService.start(this)
         showWeb()
-        log(t("Chào bạn. Chọn một ô bằng các phím mũi tên và OK của remote.", "Hello. Pick a tile with the remote's arrow keys and OK."))
+        log(if (phone) t("Chào bạn. Chạm vào một ô để làm việc đó.", "Hello. Tap a tile to do what it says.")
+            else t("Chào bạn. Chọn một ô bằng các phím mũi tên và OK của remote.", "Hello. Pick a tile with the remote's arrow keys and OK."))
         connect()
         Thread {                                                      // asks GitHub for the latest release, nothing else is sent
             try {
@@ -301,7 +319,7 @@ class MainActivity : Activity() {
         }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(8) })
         webCol.addView(btns, margins(top = 12))
 
-        webCol.addView(View(this), LinearLayout.LayoutParams(1, 0, 1f))
+        webCol.addView(View(this), if (phone) LinearLayout.LayoutParams(1, dp(16)) else LinearLayout.LayoutParams(1, 0, 1f))
         val app = LinearLayout(this)
         app.gravity = Gravity.CENTER_VERTICAL
         qr(APP_LINK)?.let { app.addView(it, LinearLayout.LayoutParams(dp(72), dp(72))) }

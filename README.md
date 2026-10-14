@@ -121,6 +121,7 @@ Dùng được từ mọi trình duyệt, không cần cài gì trên điện th
 - Trên TV, app còn có: **Tối ưu TV** / **Hoàn tác**, **Tailscale** (tự cài và mở mã đăng nhập), **Cập nhật**, bật/tắt remote qua web, **Hủy ghép** (mọi thiết bị).
 - Kết nối là HTTP thường, không mã hóa. **Đừng mở cổng 8765 ra Internet**; ở ngoài nhà hãy đi qua Tailscale.
 - Cần TV mở ADB ở cổng 5555. Một số Google TV đời mới chỉ có "Gỡ lỗi không dây" kiểu ghép mã có thể không dùng được.
+- **Trên điện thoại / máy tính bảng Android** cũng cài được (giao diện một cột cho màn nhỏ), để điều khiển chính máy đó từ trình duyệt khác. Điều kiện: ADB mở cổng 5555. Điện thoại thường chỉ mở qua cáp: cắm máy tính chạy `adb tcpip 5555` một lần, khởi động lại máy thì phải làm lại. "Gỡ lỗi không dây" của Android 11+ chưa dùng được. Tối ưu TV không chạy trên máy không phải TV.
 
 
 <p align="center"><img src="docs/tvapp-vi.png" width="640" alt="Màn hình app TV Setup"></p>

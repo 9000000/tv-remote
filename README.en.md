@@ -121,6 +121,7 @@ Works from any browser, with nothing to install on the phone or computer.
 - On the TV, the app also offers **Optimize TV** / **Undo**, **Tailscale** (installs it and brings up its sign-in code), **Update**, turning the web remote on and off, and **Unpair all**.
 - The connection is plain HTTP, not encrypted. **Do not expose port 8765 to the Internet**; away from home, go through Tailscale.
 - It needs the TV's ADB on port 5555. Some newer Google TVs that only have pairing-code "Wireless debugging" may not work.
+- **On an Android phone / tablet** it installs too (a one-column layout for small screens), to control that device itself from another browser. It needs ADB on port 5555. A normal phone opens ADB over the cable only: plug it into a computer and run `adb tcpip 5555` once, again after every restart. Android 11+ "Wireless debugging" does not work yet. Optimize TV refuses to run on anything that is not a TV.
 
 
 <p align="center"><img src="docs/tvapp-en.png" width="640" alt="The TV Setup app screen"></p>

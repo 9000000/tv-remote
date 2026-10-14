@@ -4,6 +4,18 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.15.0 - 2026-10-14
+
+Web 2.15.0 · app điện thoại 2.13.4 · app TV 2.12.0
+
+**Tiếng Việt**
+- **TV Setup trên điện thoại:** giao diện một cột cuộn được cho màn nhỏ (trước đây cột thao tác bị ép thành một vệt mỏng). Thứ tự: trạng thái, thẻ điều khiển từ thiết bị khác (mã QR), các ô thao tác 2 cột, nhật ký. TV và máy tính bảng giữ giao diện hai cột. Đã thử trên điện thoại Android 14 (emulator): ghép mã, xem hình dọc, quản lý app qua trình duyệt đều chạy.
+- **Tối ưu TV chỉ chạy trên TV:** trên điện thoại hay máy tính bảng (máy báo không có tính năng TV), cả ba nơi đều từ chối và giải thích, vì việc này đổi màn hình chính và tắt app hệ thống. Hoàn tác vẫn dùng được.
+
+**English**
+- **TV Setup on a phone:** a scrolling one-column layout for small screens (the actions column used to be squeezed into a thin strip). Order: status, the card for control from another device (QR code), the action tiles in 2 columns, the log. TVs and tablets keep the two-column layout. Tried on an Android 14 phone (emulator): pairing, the upright picture and managing apps from a browser all work.
+- **Optimize TV runs on TVs only:** on a phone or tablet (the device reports no TV feature) all three refuse and say why, since it swaps the home screen and turns system apps off. Undo still works.
+
 ## 2.14.3 - 2026-10-14
 
 Web 2.14.3 · app điện thoại 2.13.3 · app TV 2.11.3
