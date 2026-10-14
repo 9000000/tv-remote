@@ -41,7 +41,8 @@ class Tv(
     /**
      * true: the TV keeps playing its sound too (scrcpy's playback capture with audio_dup; Android 13+). Older TVs fall back to
      * the private way (TV speakers silent) and say so with onStatus("audio", "noshare"). Apps that refuse playback capture
-     * (some with DRM) are silent here in this mode.
+     * (some with DRM) are silent here; from Android 13 the private way uses it too (the whole output gave silence on some TVs,
+     * such as the FPT Play box), so there they keep playing on the TV instead.
      */
     private val audioShare: Boolean = false,
     /** Opus bit rate: 64 kbit/s is plenty for speech and TV, 160 sounds like the source for music */
@@ -127,7 +128,7 @@ class Tv(
             val log = a.open("shell:CLASSPATH=" + REMOTE + " app_process / com.genymobile.scrcpy.Server " + VER + " scid=" + scid
                     + " tunnel_forward=true cleanup=false control=$wantControl send_dummy_byte=true send_device_meta=false "
                     + (if (wantVideo) "video=true $video" else "video=false")
-                    + (if (hearing == null) " audio=false" else " audio=true audio_codec=$hearing" + (if (hearing == "opus") " audio_bit_rate=$audioBitRate" else "") + (if (share) " audio_source=playback audio_dup=true" else ""))
+                    + (if (hearing == null) " audio=false" else " audio=true audio_codec=$hearing" + (if (hearing == "opus") " audio_bit_rate=$audioBitRate" else "") + (if (sdk >= 33) " audio_source=playback" else "") + (if (share) " audio_dup=true" else ""))
                     // scrcpy-server does not always notice that we left (a still picture sends nothing), and a leftover one keeps
                     // loading the TV. So a shell loop on the TV waits for our heartbeat and kills the server when it stops.
                     + " & P=\$!; while read -t 25 x; do :; done; kill \$P")

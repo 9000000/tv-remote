@@ -695,7 +695,9 @@ def build(S):
                 await resp.write(scn.packet(3, b"noshare"))
             proc, port = await scrcpy_launch(S.cur.adb, "video=false control=false send_dummy_byte=true send_device_meta=false audio=true "
                                              + (f"audio_codec=opus audio_bit_rate={160000 if hq else 64000}" if opus else "audio_codec=raw")
-                                             + (" audio_source=playback audio_dup=true" if share else ""))
+                                             # Android 13+: playback capture in both modes. Taking the whole output instead
+                                             # (REMOTE_SUBMIX, the private way before) gave silence on some TVs (FPT Play box).
+                                             + (" audio_source=playback" if sdk >= 33 else "") + (" audio_dup=true" if share else ""))
             reader = None
             for _ in range(100):                                      # until the server listens, adb closes the socket at once
                 reader, writer = await asyncio.open_connection("127.0.0.1", port)
