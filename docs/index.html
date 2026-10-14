@@ -178,6 +178,11 @@ nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
 .side{display:flex;flex-direction:column;gap:14px}
 .side .alt{color:var(--muted);font-size:14px;padding:16px;border-radius:14px;border:1px dashed var(--line2)}
 .side .alt a{color:var(--blue);font-weight:600}
+.qr{display:flex;gap:16px;align-items:center;padding:14px;border-radius:16px;background:var(--card2);border:1px solid var(--line2)}
+.qr svg{flex:none;width:112px;height:112px;border-radius:10px}
+.qr b{display:block;font-size:15px;margin-bottom:4px}.qr small{display:block;color:var(--muted);font-size:13px;line-height:1.45}
+.hero .qr{max-width:440px;margin-top:22px}.feat .qr{max-width:440px;margin-top:20px}
+@media (max-width:760px),(hover:none){.qr{display:none}}  /* a code to scan with a phone means nothing on the phone itself */
 .term{background:#07090e;border:1px solid var(--line);border-radius:14px;padding:16px 18px;font-size:14px;color:#cfd8ea;overflow-x:auto}
 .term .c{color:var(--dim)}
 .term .p{color:var(--green)}
@@ -302,6 +307,7 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
         <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg><span class="vi">Không đám mây</span><span class="en">No cloud</span></span>
         <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg><span class="vi">Chạy cả trên iPhone</span><span class="en">Works on iPhone too</span></span>
       </div>
+      <div class="qr" data-qr="here"><div><b><span class="vi">📱 Đang xem trên máy tính?</span><span class="en">📱 Reading this on a computer?</span></b><small><span class="vi">Quét mã để mở trang này trên điện thoại và cài app ngay trên đó.</span><span class="en">Scan to open this page on your phone and install the app right there.</span></small></div></div>
     </div>
     <div class="stage">
       <div class="tv">
@@ -427,6 +433,7 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
           <li class="vi"><span><b>Bật TV từ xa</b> khi đang ở chế độ chờ; Wake-on-LAN khi đã tắt hẳn.</span></li>
           <li class="en"><span><b>Wake the TV remotely</b> from standby; Wake-on-LAN when fully off.</span></li>
         </ul>
+        <div class="qr" data-qr="https://tailscale.com/download"><div><b><span class="vi">🛰️ Cài Tailscale lên điện thoại</span><span class="en">🛰️ Get Tailscale on your phone</span></b><small><span class="vi">Quét mã để tải (CH Play / App Store), rồi đăng nhập cùng tài khoản với TV.</span><span class="en">Scan to download it (Play Store / App Store), then sign in with the same account as the TV.</span></small></div></div>
       </div>
       <div class="shot" style="max-width:380px;margin:0 auto">
         <div class="phone">
@@ -554,6 +561,7 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
         </ol>
       </div>
       <div class="side">
+        <div class="qr" data-qr="https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk"><div><b><span class="vi">📱 Quét để tải về điện thoại</span><span class="en">📱 Scan to get it on your phone</span></b><small><span class="vi">Mở camera điện thoại, quét mã rồi mở link: APK tải về ngay.</span><span class="en">Point the phone's camera here and open the link: the APK downloads right away.</span></small></div></div>
         <a class="btn btn-primary" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
           <span class="vi">Tải tv-remote.apk</span><span class="en">Download tv-remote.apk</span>
@@ -571,7 +579,7 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
     <div class="panel" id="p-computer" role="tabpanel">
       <div>
         <h3><span class="vi">Chạy web trên máy tính</span><span class="en">Run the web app on your computer</span></h3>
-        <p class="sub"><span class="vi">Cần Python 3.10+, <code>adb</code> và <code>ffmpeg</code>. Lần đầu tự cài các gói cần thiết.</span><span class="en">Needs Python 3.10+, <code>adb</code> and <code>ffmpeg</code>. The first run installs everything else.</span></p>
+        <p class="sub"><span class="vi">Chỉ cần Python 3.10+. Lần đầu chạy tự tải mọi thứ còn lại (<code>adb</code>, <code>ffmpeg</code>), không phải gõ lệnh nào.</span><span class="en">Only Python 3.10+ is needed. The first run fetches everything else (<code>adb</code>, <code>ffmpeg</code>); no commands to type.</span></p>
         <ol class="steps">
           <li><div class="vi">Tải mã nguồn về (nút <b>Tải ZIP</b> hoặc git clone) và giải nén.</div><div class="en">Get the source (<b>Download ZIP</b> or git clone) and unzip it.</div></li>
           <li><div class="vi">Mac: bấm đúp <b class="mono">TV Remote</b>. Windows: <b class="mono">start-windows.cmd</b> (Linux: <b class="mono">./start-linux.sh</b>).</div><div class="en">Mac: double-click <b class="mono">TV Remote</b>. Windows: <b class="mono">start-windows.cmd</b> (Linux: <b class="mono">./start-linux.sh</b>).</div></li>
@@ -584,7 +592,6 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
           <span class="vi">Tải ZIP</span><span class="en">Download ZIP</span>
         </a>
-        <div class="term"><span class="c"># macOS</span><br><span class="p">$</span> brew install android-platform-tools ffmpeg<br><br><span class="c"># Windows (adb <span class="vi">tự tải</span><span class="en">is fetched for you</span>)</span><br><span class="p">&gt;</span> winget install Gyan.FFmpeg</div>
         <div class="alt"><span class="vi">🔒 Web chỉ nghe ở 127.0.0.1, không ai khác trong mạng vào được. Bấm ⏻ Tắt trên trang là dừng hẳn, không để lại gì chạy ngầm.</span><span class="en">🔒 It only listens on 127.0.0.1, nobody else on the network can reach it. Press ⏻ Quit on the page and it is fully gone; nothing keeps running.</span></div>
       </div>
     </div>
@@ -614,7 +621,7 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
           <li><span class="m">✅</span><span class="vi"><b>Android TV và Google TV</b> có Gỡ lỗi ADB qua mạng (cổng 5555): Sony, TCL, Xiaomi, Philips, box Android…</span><span class="en"><b>Android TV and Google TV</b> with network ADB debugging (port 5555): Sony, TCL, Xiaomi, Philips, Android boxes…</span></li>
           <li><span class="m">🧪</span><span class="vi">Đã dùng thực tế trên <b>Sony BRAVIA</b> (Android 9). Hãng khác chưa thử, nhưng cùng chạy Android TV nên cách làm giống nhau.</span><span class="en">Verified on a real <b>Sony BRAVIA</b> (Android 9). Other brands untested but use the same standard.</span></li>
           <li><span class="m">⚠️</span><span class="vi">Vài Google TV đời mới chỉ có “Gỡ lỗi không dây” kiểu ghép mã: có thể chưa dùng được.</span><span class="en">Some newer Google TVs only offer pairing-code “Wireless debugging”: may not work yet.</span></li>
-          <li><span class="m">❌</span><span class="vi"><b>Samsung (Tizen)</b> và <b>LG (webOS)</b> không dùng được.</span><span class="en"><b>Samsung (Tizen)</b> and <b>LG (webOS)</b> are not supported.</span></li>
+          <li><span class="m">❌</span><span class="vi"><b>Samsung (Tizen)</b> và <b>LG (webOS)</b> không dùng được, kể cả bấm phím: hai hãng này không chạy Android nên không có ADB lẫn giao thức remote của Google.</span><span class="en"><b>Samsung (Tizen)</b> and <b>LG (webOS)</b> do not work at all, not even the keys: they do not run Android, so they have neither ADB nor Google's remote protocol.</span></li>
         </ul>
       </div>
       <div class="box reveal">
@@ -690,6 +697,7 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
 
 <div class="toast" id="toast"></div>
 
+<script src="qr.js"></script>
 <script>
 (function(){
   var root = document.documentElement;
@@ -714,6 +722,13 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
       var p = document.getElementById("p-" + o.dataset.tab);
       if (p.getBoundingClientRect().top > innerHeight - 120) p.scrollIntoView({behavior:"smooth", block:"start"});
     };
+  });
+
+  // QR codes for the steps done on a phone ("here" = this page)
+  document.querySelectorAll("[data-qr]").forEach(function(d){
+    var u = d.dataset.qr === "here" ? (/^https?:$/.test(location.protocol) ? location.origin + location.pathname : "") : d.dataset.qr;
+    var s = u && typeof qrSvg === "function" ? qrSvg(u, 112) : null;
+    if (s) d.prepend(s); else d.remove();
   });
 
   // copy codes

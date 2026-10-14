@@ -6,5 +6,6 @@ if [ ! -x venv/bin/python ]; then
   echo "First run: creating the Python environment..."
   python3 -m venv venv && ./venv/bin/pip install -q -r app/web/requirements.txt || { echo "Setup failed. Is Python 3.10+ installed?"; read -r; exit 1; }
 fi
+./venv/bin/python app/web/gettools.py                                 # adb and ffmpeg into ./tools when missing (first run)
 ( sleep 2; open "http://127.0.0.1:8765" 2>/dev/null || xdg-open "http://127.0.0.1:8765" 2>/dev/null ) &
 exec ./venv/bin/python app/web/server.py "$@"

@@ -4,7 +4,7 @@
 
 Control an Android TV / Google TV from a phone or a computer: remote buttons, the live TV picture with touch, typing, talking to the TV, the TV's sound on the phone, a sleep timer, bedtime and app limits for children, scenes (one button, several things), managing apps and files, installing APKs, TV health. Every connection goes straight to the TV with no server in between; from another network, use Tailscale.
 
-Tested for real on a Sony BRAVIA (Android 9). Other brands are untested. Samsung (Tizen) and LG (webOS) do not work.
+Tested for real on a Sony BRAVIA (Android 9). Other brands are untested. Samsung (Tizen) and LG (webOS) do not work at all, not even the keys: they do not run Android, so they have neither ADB nor Google's remote protocol.
 
 <table>
 <tr>
@@ -133,7 +133,7 @@ Works from any browser, with nothing to install on the phone or computer.
 
 ## 3. Web on the computer
 
-Needs Python 3.10 or newer, `adb` and `ffmpeg` (macOS: `brew install android-platform-tools ffmpeg`; Windows: the installer fetches `adb`, and for ffmpeg run `winget install Gyan.FFmpeg`).
+Only Python 3.10 or newer is needed. The first run fetches `adb` (Google's official build) and `ffmpeg` into `tools/` when the computer has neither; ones already installed (Homebrew, winget, apt) are used as they are.
 
 1. Download the repo (git clone or the zip).
 2. Mac: double-click **`TV Remote`** (the app in the folder; it can go to Applications or the Dock too, it remembers where the tv-remote folder is, just keep that folder). Windows: **`start-windows.cmd`**. Linux: `./start-linux.sh`. The first run installs what it needs. If the Mac says the app is “unverified”: right-click → Open (or System Settings → Privacy & Security → Open Anyway). To stop: the ⏻ Quit button on the page.

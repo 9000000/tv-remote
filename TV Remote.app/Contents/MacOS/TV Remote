@@ -35,6 +35,10 @@ if [ ! -x venv/bin/python ]; then
   { python3 -m venv venv && ./venv/bin/pip install -q -r app/web/requirements.txt; } > .cache/setup.log 2>&1 \
     || { rm -rf venv; say "Chưa cài được: máy cần Python 3.10 trở lên (python.org). Chi tiết trong .cache/setup.log\n\nSetup failed: this Mac needs Python 3.10+ (python.org). Details in .cache/setup.log"; exit 1; }
 fi
+if ! ./venv/bin/python -c "import sys; sys.path.insert(0, 'app/web'); import tvtools, os; sys.exit(not all(os.path.isabs(p) for p in (tvtools.ADB, tvtools.FFMPEG)))" 2>/dev/null; then
+  note "Lần đầu: đang tải adb và ffmpeg... / First run: downloading adb and ffmpeg..."
+  ./venv/bin/python app/web/gettools.py >> .cache/setup.log 2>&1        # never fatal: the page says what is still missing
+fi
 nohup ./venv/bin/python app/web/server.py "$@" > .cache/server.log 2>&1 &   # on its own: this app quits right away, so macOS
 for _ in $(seq 40); do                                                 # never sees an app that stopped answering it
   sleep 0.5; curl -s -m 1 -o /dev/null "$URL/api/about" && { open "$URL"; exit 0; }

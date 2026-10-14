@@ -16,6 +16,7 @@ Web 2.17.0 · app điện thoại 2.15.0 · app TV 2.14.0
 - **Nghe tiếng TV:** khung chọn "Chỉ máy này / Cả TV và máy này" hiện ngay dưới nút 🎧, không còn bị hình TV che.
 - **Mac: app `TV Remote`** để bấm đúp thay cho `start-mac.command`: không qua Terminal (oh-my-zsh hỏi cập nhật có thể nuốt lệnh), kéo vào Applications hay Dock vẫn chạy, mở lần nữa chỉ mở trang.
 - **Nút Tắt tắt hẳn:** server dừng, cổng 8765 đóng, adb do chương trình bật cũng tắt theo (adb của chương trình khác thì chỉ ngắt kết nối tới TV). Đóng cửa sổ Terminal hay Ctrl+C cũng vậy.
+- **Web máy tính tự tải `adb` và `ffmpeg`** lần đầu chạy (Mac, Windows, Linux) nếu máy chưa có: chỉ cần Python, không còn phải gõ `brew install` hay `winget install`. adb lấy từ Google, ffmpeg được kiểm tra checksum.
 - Web máy tính: nếu code vừa được cập nhật mà server chưa chạy lại, trang hiện dải vàng nhắc mở lại, thay vì các nút báo "Not found".
 - Trang giới thiệu sản phẩm (`docs/`, GitHub Pages), ảnh README chuyển sang WebP (nhẹ hơn khoảng 8 lần). Thư mục `app/` gọn lại: cấu hình Gradle vào `app/gradle/`.
 
@@ -27,6 +28,7 @@ Web 2.17.0 · app điện thoại 2.15.0 · app TV 2.14.0
 - **Listen to the TV:** the "Only this device / TV and this device" choice now appears right under 🎧, no longer hidden by the picture.
 - **Mac: a `TV Remote` app** to double-click instead of `start-mac.command`: no Terminal (an oh-my-zsh update prompt could eat the command), works from Applications or the Dock, opening it again only opens the page.
 - **Quit really quits:** the server stops, port 8765 closes, and an adb it started goes too (someone else's adb only drops the TVs). Same for closing the Terminal window or Ctrl+C.
+- **The computer web fetches `adb` and `ffmpeg` itself** on first run (Mac, Windows, Linux) when missing: only Python is needed, no more `brew install` or `winget install`. adb comes from Google; ffmpeg is checksum-verified.
 - Computer web: when the code was updated but the server not restarted, a yellow banner asks to reopen it, instead of buttons failing with "Not found".
 - A product page (`docs/`, GitHub Pages); README images are WebP now (about 8x lighter). `app/` is tidier: the Gradle setup moved to `app/gradle/`.
 

@@ -4,7 +4,7 @@
 
 Điều khiển Android TV / Google TV từ điện thoại hoặc máy tính: nút remote, xem hình TV trực tiếp và chạm lên hình, gõ chữ, nói với TV, nghe tiếng TV trên điện thoại, hẹn giờ tắt, giờ đi ngủ và giới hạn app cho trẻ, cảnh (một nút làm nhiều việc), quản lý app và tệp, cài APK, xem sức khỏe TV. Mọi kết nối đi thẳng tới TV, không qua máy chủ nào; ở khác mạng thì dùng Tailscale.
 
-Đã chạy thật với Sony BRAVIA (Android 9). TV hãng khác chưa thử. Samsung (Tizen) và LG (webOS) không dùng được.
+Đã chạy thật với Sony BRAVIA (Android 9). TV hãng khác chưa thử. Samsung (Tizen) và LG (webOS) không dùng được gì, kể cả bấm phím: hai hãng này không chạy Android nên không có ADB lẫn giao thức remote của Google.
 
 <table>
 <tr>
@@ -133,7 +133,7 @@ Dùng được từ mọi trình duyệt, không cần cài gì trên điện th
 
 ## 3. Web trên máy tính
 
-Cần Python 3.10 trở lên, `adb` và `ffmpeg` (macOS: `brew install android-platform-tools ffmpeg`; Windows: bộ cài tự tải `adb`, thiếu ffmpeg thì `winget install Gyan.FFmpeg`).
+Chỉ cần Python 3.10 trở lên. Lần đầu chạy tự tải `adb` (bản chính thức của Google) và `ffmpeg` vào thư mục `tools/` nếu máy chưa có; máy đã có sẵn (Homebrew, winget, apt) thì dùng luôn bản đó.
 
 1. Tải repo về (git clone hoặc tải zip).
 2. Mac: bấm đúp **`TV Remote`** (app trong thư mục; kéo vào Applications hay Dock cũng được, app nhớ chỗ thư mục tv-remote, chỉ đừng xoá thư mục đó). Windows: **`start-windows.cmd`**. Linux: `./start-linux.sh`. Lần đầu nó tự cài các gói cần thiết. Mac báo app “chưa xác minh” thì chuột phải → Mở (hoặc Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Vẫn mở). Dừng: nút ⏻ Tắt trên trang.
