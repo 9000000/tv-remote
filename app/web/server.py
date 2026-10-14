@@ -9,6 +9,7 @@ from aiohttp import web
 from androidtvremote2 import CannotConnect, ConnectionClosed, InvalidAuth
 from androidtvremote2.remotemessage_pb2 import RemoteKeyCode
 import tvconfig
+import tvshell
 import scenes as scn
 from adbtools import AdbError, PKG_RE, FP_RE, PROTECTED, my_fingerprint, memory_by_app
 from tvtools import ADB, ROOT, SCRIPTS
@@ -218,7 +219,7 @@ def build(S):
         async def wrapped(request):
             try:
                 return await fn(request)
-            except AdbError as e:
+            except (AdbError, ValueError) as e:                       # ValueError: a value the page sent that tvshell refused
                 return web.json_response({"error": str(e)}, status=400)
             except web.HTTPException:
                 raise
@@ -333,10 +334,56 @@ def build(S):
     @adb_errors
     async def app_action(request):
         action, pkg = request.match_info["action"], str((await body(request)).get("pkg", ""))
-        if action not in ("launch", "stop", "uninstall", "disable", "enable"):
+        if action not in ("launch", "stop", "uninstall", "disable", "enable", "clear"):
             raise web.HTTPNotFound()
         res = await getattr(adb, action)(pkg)
         return web.json_response({"ok": True, "result": res})
+
+    @routes.get("/api/app/backup")
+    @adb_errors
+    async def app_backup(request):
+        """💾 one app as a .tar, made on the TV and streamed straight through (tvshell.backup says what is in it)."""
+        pkg = request.query.get("pkg", "")
+        proc = await asyncio.create_subprocess_exec(ADB, "-s", adb.target, "exec-out", tvshell.backup(pkg),
+                                                    stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
+        resp = web.StreamResponse(headers={"Content-Type": "application/x-tar", "Content-Disposition": f"attachment; filename*=UTF-8''{pkg}-backup.tar"})
+        await resp.prepare(request)
+        while chunk := await proc.stdout.read(1 << 20):
+            await resp.write(chunk)
+        await proc.wait()
+        return resp
+
+    @routes.get("/api/log")
+    @adb_errors
+    async def app_log(request):
+        return web.json_response({"text": await adb.shell(tvshell.log(request.query.get("pkg", ""), request.query.get("since", "")), timeout=20)})
+
+    @routes.post("/api/clean")
+    @adb_errors
+    async def clean(_):
+        return web.json_response({"text": await adb.shell(tvshell.CLEAN, timeout=90)})
+
+    @routes.get("/api/tvset")
+    @adb_errors
+    async def tvset_read(_):
+        return web.json_response({"text": await adb.shell(tvshell.TVSET_READ)})
+
+    @routes.post("/api/tvset")
+    @adb_errors
+    async def tvset(request):
+        d = await body(request)
+        return web.json_response({"text": await adb.shell(tvshell.tvset(str(d.get("key", "")), d.get("value", "")), timeout=60)})
+
+    @routes.post("/api/reboot")
+    @adb_errors
+    async def reboot(_):
+        await adb.shell(tvshell.REBOOT_PREP, timeout=15)
+        try:
+            await adb.run("reboot", timeout=10)                       # the link drops as the TV goes down: not an error
+        except AdbError:
+            pass
+        adb._st_t = 0
+        return web.json_response({"ok": True})
 
     @routes.get("/api/files")
     @adb_errors
@@ -396,8 +443,8 @@ def build(S):
     @routes.post("/api/upload")
     @adb_errors
     async def upload(request):
-        kind = request.query.get("kind", "file")                          # file -> push to dest, install -> adb install
-        if kind not in ("file", "install"):
+        kind = request.query.get("kind", "file")                          # file -> push to dest, install -> adb install, restore -> a 💾 backup
+        if kind not in ("file", "install", "restore"):
             raise web.HTTPBadRequest(text="bad kind")
         tmp = tempfile.TemporaryDirectory(prefix="tvup-")
         try:

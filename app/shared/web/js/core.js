@@ -40,6 +40,25 @@ async function call(path, data, quiet) {
   } catch { if (!quiet) toast('Không gọi được server'); return null; }
 }
 
+// A small menu under a button (⋯ on each app): items are [icon, words, fn, class]; null items are left out. A click elsewhere,
+// Esc or scrolling closes it; the same button again too.
+let popEl = null;
+function closePop() { if (popEl) { popEl.remove(); popEl = null; } }
+function popover(anchor, items) {
+  const again = popEl && popEl.anchor === anchor; closePop(); if (again) return;
+  const m = el('div', { className: 'pop', role: 'menu' }, ...items.filter(Boolean).map(([icon, text, fn, cls]) =>
+    setLabel(el('button', { className: cls || '', role: 'menuitem', onclick: () => { closePop(); fn(); } }), icon, text)));
+  m.anchor = anchor; document.body.append(m); popEl = m;
+  const r = anchor.getBoundingClientRect(), w = m.offsetWidth, h = m.offsetHeight;
+  m.style.left = scrollX + Math.max(8, Math.min(innerWidth - w - 8, r.right - w)) + 'px';
+  m.style.top = scrollY + (r.bottom + h + 8 > innerHeight && r.top > h + 8 ? r.top - h - 4 : r.bottom + 4) + 'px';
+  m.querySelector('button').focus({ preventScroll: true });
+}
+document.addEventListener('click', (e) => { if (popEl && !popEl.contains(e.target) && !popEl.anchor.contains(e.target)) closePop(); }, true);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && popEl) { const a = popEl.anchor; closePop(); a.focus(); } });
+addEventListener('scroll', (e) => { if (popEl && !popEl.contains(e.target)) closePop(); }, true);
+addEventListener('resize', closePop);
+
 // The errors people actually meet, from any core (Kotlin or Python words), in words they can act on; anything else as it came.
 const FRIENDLY = [
   [/SSLHandshake|CertPathValidator|Chain validation|CERTIFICATE_VERIFY|not yet valid/i, 'Không mở được kết nối bảo mật. Ngày giờ trên TV có đúng không? (Cài đặt → Hệ thống → Ngày và giờ)'],
@@ -51,6 +70,8 @@ const FRIENDLY = [
   [/INSUFFICIENT_STORAGE|No space left/i, 'TV hết bộ nhớ trống.'],
   [/no app that can open/i, 'TV không có app mở loại tệp này (cài VLC rồi thử lại).'],
   [/cannot be opened \(no launcher screen\)|no launcher activity/i, 'App này không có màn hình để mở: nó chỉ chạy nền, hoặc là một phần của app khác.'],
+  [/not a backup/i, 'Tệp này không phải bản sao lưu của TV Remote.'],
+  [/^protected: the TV needs this app/i, 'App này cần cho TV chạy, không tắt hay xóa dữ liệu được.'],
   [/removed by the TV right after install/i, 'TV báo cài xong nhưng tự gỡ app này ngay sau đó. Box của nhà mạng (FPT Play...) chặn một số app; app này không dùng được trên TV này.'],
 ];
 const friendly = (m) => { m = String(m || ''); const f = FRIENDLY.find(([re]) => re.test(m)); return f ? f[1] : m; };
@@ -159,7 +180,7 @@ function applyAdb() {
   if (bannerKey !== ADB.state) {                                      // rebuild only on change so buttons are not replaced mid-click
     bannerKey = ADB.state;
     document.querySelectorAll('[data-adb-banner]').forEach((b) => b.replaceChildren(...(ready ? [] : [buildBanner()])));
-    if (ready && currentTab === 'tv' && typeof tsState === 'function') tsState();
+    if (ready && currentTab === 'tv' && typeof tsState === 'function') { tsState(); loadTvset(); }
   }
   document.querySelectorAll('[data-adb-gated]').forEach((g) => { g.hidden = !ready; });
   $('#kbd').disabled = !ready; $('#kbdoff').hidden = ready;           // typing goes through ADB: no half-working box without it

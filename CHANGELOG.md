@@ -4,6 +4,32 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.18.0 - 2026-10-15
+
+Web 2.18.0 · app điện thoại 2.16.0 · app TV 2.15.0
+
+**Tiếng Việt**
+- **Nút ⋯ cho từng app (tab Ứng dụng):** mỗi app chỉ còn nút Mở (hoặc Bật lại) và nút ⋯; bấm ⋯ để chọn Dừng, Xem log, Sao lưu, Xóa dữ liệu, Tắt app, Gỡ.
+- **🧹 Dọn bộ nhớ đệm:** dọn cache của mọi app một lần, báo lấy lại được bao nhiêu. **🧽 Xóa dữ liệu** một app (hỏi lại trước khi làm; app cần cho TV chạy thì không cho).
+- **💾 Sao lưu / 📥 Khôi phục app:** tải về một tệp .tar gồm APK (cả bản tách nhiều tệp) và thư mục dữ liệu trong bộ nhớ chung (Android/data, obb); khôi phục lên cùng TV hay TV khác. Dữ liệu riêng của app (đăng nhập...) Android không cho lấy ra nếu không root.
+- **📜 Xem log của app** ngay trên trang, cập nhật liên tục, tô màu lỗi/cảnh báo, tạm dừng và chép được.
+- **Thẻ 📺 TV (tab Thiết lập):**
+  - 🔁 Khởi động lại TV. Trang chờ TV lên rồi tự kết nối lại. Tailscale được đặt làm VPN luôn bật trước đó, để vẫn điều khiển được từ xa sau khi TV khởi động lại.
+  - 🛡️ Lọc DNS (chặn quảng cáo, gia đình, tự nhập). TV thử từng máy chủ, không dùng được thì tự trả lại cài đặt cũ, kể cả khi mất kết nối giữa chừng.
+  - 💤 Tự tắt khi không dùng, 🖼️ màn hình chờ, 🔠 cỡ giao diện, 🏠 chọn màn hình chính.
+- Có ở cả ba nơi: web máy tính, TV Setup, mục Quản lý của app điện thoại.
+
+**English**
+- **A ⋯ button per app (Apps tab):** each app keeps only Open (or Turn on) and ⋯, which holds Stop, View log, Back up, Clear data, Disable and Uninstall.
+- **🧹 Clean caches:** clears every app's cache at once and says how much came back. **🧽 Clear data** for one app (asks first; refused for apps the TV needs).
+- **💾 Back up / 📥 Restore apps:** downloads a .tar with the APK (split APKs too) and the app's folders in shared storage (Android/data, obb); restore it to the same TV or another. Android keeps an app's private data (sign-ins...) out of reach without root.
+- **📜 An app's live log** right on the page, coloured by level, with pause and copy.
+- **📺 TV card (Setup tab):**
+  - 🔁 Restart the TV. The page waits for it and reconnects. Tailscale is made the always-on VPN first, so the TV stays reachable from away after the restart.
+  - 🛡️ DNS filter (block ads, family, custom). The TV tries each server and puts the old setting back when one does not work, even if the link drops meanwhile.
+  - 💤 Turn off when idle, 🖼️ screensaver, 🔠 display size, 🏠 home screen choice.
+- In all three clients: the computer web, TV Setup and the phone app's Manage screen.
+
 ## 2.17.2 - 2026-10-15
 
 Web 2.17.2 · app điện thoại 2.15.2 · app TV 2.14.2

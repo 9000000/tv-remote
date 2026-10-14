@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.parse import quote, unquote, urlsplit
 
 from tvtools import ADB
+import tvshell
 MAX_BYTES = 4 * 1024**3
 PKG_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$")
 ROOTS = ("/sdcard", "/storage")
@@ -331,6 +332,14 @@ class Adb:
         if "disabled" not in out:
             raise AdbError(out.strip() or "disable failed")
 
+    async def clear(self, pkg):                                       # 🧽 back to as just installed: logins, settings, downloads all go
+        self._pkg(pkg)
+        if PROTECTED.fullmatch(pkg):
+            raise AdbError("protected: the TV needs this app")
+        out = await self.shell(f"pm clear {pkg} 2>&1")
+        if "Success" not in out:
+            raise AdbError(out.strip() or "clear failed")
+
     async def enable(self, pkg):
         self._pkg(pkg)
         out = await self.shell(f"pm enable {pkg} 2>&1")
@@ -488,6 +497,18 @@ class Adb:
         await self.kept(pkg, j)
         return "installed"
 
+    async def restore(self, local, j):
+        """📥 a backup made by 💾 (tvshell.backup): sent to the TV whole, installed and put back there."""
+        remote = f"/data/local/tmp/tvr-rs-{uuid.uuid4().hex[:8]}.tar"
+        await self.push(local, remote, j)
+        j["msg"], j["pct"] = "installing on TV", 70
+        out = await self.shell(tvshell.restore(remote), timeout=1800)
+        if "Success" not in out:
+            raise AdbError(out.strip()[-300:] or "restore failed")
+        pkg = out.strip().splitlines()[-1][7:].strip()                # the last line names it: "package <name>"
+        await self.kept(pkg if PKG_RE.match(pkg) else None, j)
+        return "restored"
+
     async def kept(self, pkg, j):
         """Some boxes (FPT Play...) uninstall the apps they do not allow the moment they land, so "Success" alone proves nothing."""
         if not pkg:
@@ -600,6 +621,8 @@ class Adb:
             try:
                 if kind == "install":
                     return await self.install(local, j)
+                if kind == "restore":
+                    return await self.restore(local, j)
                 dd = safe_path(dest_dir)
                 await self.push(local, f"{dd}/{Path(local).name}", j)
                 return f"saved {dd}/{Path(local).name}"

@@ -179,7 +179,12 @@
   <div class="panel" data-panel="apps" hidden>
     <div data-adb-banner></div>
     <section class="card" data-adb-gated>
-      <div class="card-head"><h2>📱 Ứng dụng đã cài</h2><button class="small" id="appsreload">↻ Tải lại</button></div>
+      <div class="card-head"><h2>📱 Ứng dụng đã cài</h2>
+        <div class="tools">
+          <button class="small" id="appsclean" title="Dọn bộ nhớ đệm của mọi app"><span class="ico">🧹</span><span class="lbl"> Dọn bộ nhớ đệm</span></button>
+          <label class="small linkbtn filebtn" title="Khôi phục app từ tệp sao lưu .tar"><input type="file" id="restorefile" accept=".tar,application/x-tar"><span class="ico">📥</span><span class="lbl"> Khôi phục</span></label>
+          <button class="small" id="appsreload" title="Tải lại"><span class="ico">↻</span><span class="lbl"> Tải lại</span></button>
+        </div></div>
       <form class="line" id="appsf"><input type="search" id="appsq" placeholder="Tìm theo tên app" autocomplete="off"></form>
       <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px;color:var(--muted);cursor:pointer"><input type="checkbox" id="appssys"> Hiện cả app hệ thống</label>
       <div class="aihint"><button class="small" id="aiapps">🤖 Hỏi AI nên tắt / gỡ app nào</button><span class="muted">Chép danh sách app kèm câu hỏi sẵn, dán vào ChatGPT, Claude hay Gemini.</span></div>
@@ -307,6 +312,10 @@
       <p class="muted" id="tsstate" style="margin:0">Đang xem TV đã có Tailscale chưa...</p>
       <div class="actions"><button class="primary" id="tsgo" style="padding:0 18px">⚡ Cài và đăng nhập Tailscale</button></div>
     </section>
+    <section class="card" data-adb-gated id="tvsetcard">
+      <div class="card-head"><h2>📺 TV</h2><button class="small" id="tvreboot"><span class="ico">🔁</span><span class="lbl"> Khởi động lại TV</span></button></div>
+      <div class="tvset" id="tvset"><div class="muted">Đang đọc cài đặt TV...</div></div>
+    </section>
     <section class="card" data-adb-gated>
       <h2>⚡ Tối ưu TV</h2>
       <p class="muted" style="margin:0 0 12px">Bấm “Tối ưu TV” để chọn việc cần làm: tắt hiệu ứng chuyển cảnh, dùng FLauncher làm màn hình chính, tắt app không dùng (có sẵn đề xuất, chọn thêm app khác tùy ý). Không gỡ app nào; Hoàn tác bật lại tất cả.</p>
@@ -389,6 +398,12 @@
   <textarea id="aitext" rows="14" spellcheck="false"></textarea>
   <div class="aihint"><button class="primary" id="aicopy">📋 Sao chép</button></div>
 </div></dialog>
+<dialog id="logdlg"><div class="card assistbox logbox"><div class="card-head"><h2 id="logtitle">📜 Log</h2>
+  <div class="tools"><button class="small" id="logpause"></button><button class="small" id="logcopy"><span class="ico">📋</span><span class="lbl"> Sao chép</span></button><button class="small" id="logclose">✕ Đóng</button></div></div>
+  <p class="muted" id="lognote" hidden>App chưa chạy: mở app, log hiện ở đây ngay khi app chạy. <button class="small" id="logopen">▶ Mở app</button></p>
+  <div id="logpre" class="logpre"></div>
+</div></dialog>
+<dialog id="rebootdlg"><div class="allowbox"><div class="spin" id="rebootspin"></div><h1 id="reboottitle">TV đang khởi động lại</h1><p class="muted" id="rebootstep"></p><button id="rebootclose">Ẩn</button></div></dialog>
 <dialog id="preview"><img alt="Xem trước"></dialog>
 <div id="toast" role="status"></div>
 
@@ -397,6 +412,7 @@
 <script src="js/core.js"></script>
 <script src="js/remote.js"></script>
 <script src="js/screen.js"></script>
+<script src="js/tvread.js"></script>
 <script src="js/apps.js"></script>
 <script src="js/files.js"></script>
 <script src="stats.js"></script>
@@ -406,5 +422,6 @@
 <script src="js/listen.js"></script>
 <script src="js/auto.js"></script>
 <script src="js/setup.js"></script>
+<script src="js/tvset.js"></script>
 </body>
 </html>

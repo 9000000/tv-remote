@@ -78,17 +78,26 @@ function renderApps() {
   lazyMeta.disconnect();
   const rows = appsAll.filter((p) => !q || p.toLowerCase().includes(q) || appName(p).toLowerCase().includes(q))
     .sort((a, b) => (appsInfo.get(a)?.off ? 1 : 0) - (appsInfo.get(b)?.off ? 1 : 0) || appName(a).localeCompare(appName(b))).map((pkg) => {   // turned off: last
-    const act = (name, icon, label, cls = '') => setLabel(el('button', { title: label, className: 'small ' + cls, onclick: async () => {
+    const run = async (name, label) => {
       if (name === 'uninstall' && !confirm('Gỡ cài đặt ' + appName(pkg) + ' khỏi TV?')) return;
       if (name === 'disable' && !confirm('Tắt ' + appName(pkg) + '? App biến khỏi TV cho tới khi bật lại ở mục “App đã tắt” cuối danh sách này.')) return;
-      const r = await api('/api/app/' + name, { pkg }); if (r) { toast(label + ': ' + appName(pkg)); if (name !== 'launch' && name !== 'stop') { quickLoaded = false; loadApps(); loadQuick(); } }
-    } }), icon, label);
+      if (name === 'clear' && !confirm('Xóa toàn bộ dữ liệu của ' + appName(pkg) + '? App trở lại như mới cài: mất đăng nhập, cài đặt và nội dung đã tải trong app. Không hoàn tác được.')) return;
+      const r = await api('/api/app/' + name, { pkg }); if (r) { toast(label + ': ' + appName(pkg)); if (!['launch', 'stop', 'clear'].includes(name)) { quickLoaded = false; loadApps(); loadQuick(); } }
+    };
+    const act = (name, icon, label, cls = '') => setLabel(el('button', { title: label, className: 'small ' + cls, onclick: () => run(name, label) }), icon, label);
     const icon = appIcon(pkg), title = el('span', { textContent: pkg.split('.').pop() });
     const info = appsInfo.get(pkg) || {};
+    // one button for what is wanted most, everything else behind ⋯
+    const more = el('button', { className: 'small iconbtn', title: 'Thêm thao tác', ariaLabel: 'Thêm thao tác', textContent: '⋯', onclick: (e) => popover(e.currentTarget, [
+      info.off ? null : ['⏹', 'Dừng', () => run('stop', 'Dừng')],
+      info.off ? null : ['📜', 'Xem log', () => appLog(pkg)],
+      ['💾', 'Sao lưu (tải về)', () => appBackup(pkg)],
+      info.keep || info.off ? null : ['🧽', 'Xóa dữ liệu', () => run('clear', 'Xóa dữ liệu')],
+      info.keep || info.off ? null : ['⏸', 'Tắt app', () => run('disable', 'Tắt app')],
+      ['🗑', 'Gỡ', () => run('uninstall', 'Gỡ'), 'danger'],
+    ]) });
     const row = el('div', { className: 'item' + (info.off ? ' off' : '') }, icon, el('div', { className: 'name' }, title, el('small', { textContent: (info.off ? '⏸ đã tắt · ' : '') + pkg })),
-      el('div', { className: 'acts' }, ...(info.off ? [act('enable', '↩', 'Bật lại', 'primary')]
-        : [act('launch', '▶', 'Mở', 'primary'), act('stop', '⏹', 'Dừng'), ...(info.keep ? [] : [act('disable', '⏸', 'Tắt app')])]),
-        act('uninstall', '🗑', 'Gỡ', 'danger')));
+      el('div', { className: 'acts' }, info.off ? act('enable', '↩', 'Bật lại', 'primary') : act('launch', '▶', 'Mở', 'primary'), more));
     row.loadMeta = () => onMeta(pkg, (m) => { icon.fill(info.off ? { label: m.label } : m); if (m.label) title.textContent = m.label; });   // a disabled app has no picture to give
     if (META.has(pkg)) row.loadMeta(); else lazyMeta.observe(row);
     row.off = !!info.off;
@@ -104,6 +113,60 @@ $('#appsq').addEventListener('input', renderApps);
 $('#appsf').addEventListener('submit', (e) => e.preventDefault());
 $('#appssys').addEventListener('change', loadApps);
 $('#appsreload').addEventListener('click', loadApps);
+
+// 💾 the app as a .tar: its APKs and its folders in shared storage. What it keeps in its private folder needs root to read.
+function appBackup(pkg) {
+  const a = el('a', { href: '/api/app/backup?pkg=' + encodeURIComponent(pkg) }); document.body.append(a); a.click(); a.remove();
+  toast('Đang sao lưu ' + appName(pkg) + ': tệp .tar sẽ tải về máy này');
+}
+// 📥 a backup back onto this TV (or onto another one: that is how an app moves between TVs)
+$('#restorefile').addEventListener('change', (e) => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  if (!/\.tar$/i.test(f.name)) { toast('Chọn tệp .tar đã sao lưu bằng nút 💾'); return; }
+  if (confirm('Khôi phục ' + f.name + ' lên TV? App được cài lại (giữ dữ liệu nếu đang có trên TV), kèm thư mục dữ liệu trong bộ nhớ chung.'))
+    upload(f, 'restore', '', () => { quickLoaded = false; loadApps(); loadQuick(); }, e.target.closest('label'));
+});
+// 🧹 the system's own cache cleaner for every app: nothing anyone would miss, apps just rebuild what they need
+$('#appsclean').addEventListener('click', async () => {
+  const r = await api('/api/clean', {});
+  if (!r) return;
+  const freed = cleanFreed(r.text);
+  toast(freed === null ? 'Đã dọn bộ nhớ đệm' : freed > 1e6 ? 'Đã dọn bộ nhớ đệm, lấy lại ' + fmtSize(freed) : 'Bộ nhớ đệm đã sạch, không còn gì để dọn');
+});
+
+// 📜 an app's own log, live: every 1.5 s the lines since the last one shown
+let logPkg = '', logTimer = 0, logSt = null, logPaused = false;
+function appLog(pkg) {
+  logPkg = pkg; logSt = { last: '', seen: new Set() }; logPaused = false;
+  $('#logtitle').textContent = '📜 ' + appName(pkg); $('#logpre').replaceChildren(); $('#lognote').hidden = true;
+  setLabel($('#logpause'), '⏸', 'Tạm dừng'); $('#logdlg').showModal(); pollLog();
+}
+async function pollLog() {
+  clearTimeout(logTimer);
+  if (!$('#logdlg').open) return;
+  const pkg = logPkg;
+  if (!logPaused) {
+    const r = await api('/api/log?pkg=' + encodeURIComponent(pkg) + '&since=' + encodeURIComponent(logSt.last), null, true);
+    if (pkg !== logPkg || !$('#logdlg').open) return;
+    if (r) {
+      const { pid, lines } = logNext(logSt, r.text), pre = $('#logpre');
+      $('#lognote').hidden = !!pid;
+      const end = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 30;   // follow the end unless the reader scrolled up
+      pre.append(...lines.map((l) => el('div', { className: 'l' + logLevel(l), textContent: l })));
+      while (pre.childElementCount > 3000) pre.firstElementChild.remove();
+      if (end) pre.scrollTop = pre.scrollHeight;
+    }
+  }
+  logTimer = setTimeout(pollLog, 1500);
+}
+$('#logpause').addEventListener('click', () => { logPaused = !logPaused; setLabel($('#logpause'), logPaused ? '▶' : '⏸', logPaused ? 'Chạy tiếp' : 'Tạm dừng'); });
+$('#logcopy').addEventListener('click', async () => {
+  const text = [...$('#logpre').children].map((d) => d.textContent).join('\n');
+  try { await navigator.clipboard.writeText(text); toast('Đã sao chép log'); } catch { toast('Không sao chép được: chọn chữ rồi sao chép tay'); }
+});
+$('#logopen').addEventListener('click', async () => { if (await api('/api/app/launch', { pkg: logPkg })) toast('Mở: ' + appName(logPkg)); });
+$('#logclose').addEventListener('click', () => $('#logdlg').close());
+$('#logdlg').addEventListener('close', () => clearTimeout(logTimer));
 
 
 // the search box above the quick-launch grid: tiles whose name does not contain the words are hidden

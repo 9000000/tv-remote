@@ -1,0 +1,319 @@
+{
+ "consts": {
+  "CLEAN": "a=$(stat -f -c '%a %S' /data); pm trim-caches 999G >/dev/null 2>&1; sleep 2; echo $a $(stat -f -c '%a %S' /data)",
+  "REBOOT_PREP": "case \"$(settings get secure always_on_vpn_app)\" in com.tailscale.ipn) ;; *) pm path com.tailscale.ipn >/dev/null 2>&1 && ip addr | grep -qE 'inet 100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\.' && { settings put secure always_on_vpn_app com.tailscale.ipn; settings put secure always_on_vpn_lockdown 0; };; esac; echo ok",
+  "TVSET_READ": "echo sdk $(getprop ro.build.version.sdk); echo dns_mode $(settings get global private_dns_mode); echo dns_host $(settings get global private_dns_specifier); echo sleep $(settings get secure sleep_timeout); echo saver $(settings get secure screensaver_enabled); echo saver_after $(settings get system screen_off_timeout); wm density; echo home $(cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME | tail -n 1); cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME | grep / | sed 's/^ */launcher /'"
+ },
+ "calls": [
+  {
+   "call": [
+    "backup",
+    "com.esaba.downloader"
+   ],
+   "out": "p=com.esaba.downloader; d=/data/local/tmp/tvr-bk-$$; rm -rf $d; mkdir -p $d/apk && cd $d || exit 1; for f in $(pm path $p | sed 's/^package://'); do ln -s \"$f\" apk/${f##*/}; done; for k in obb data; do [ -d /sdcard/Android/$k/$p ] && ln -s /sdcard/Android/$k/$p $k; done; echo $p > package.txt; dumpsys package $p | grep -m1 versionName | cut -d= -f2 > version.txt; tar -chf - * 2>/dev/null; cd /; rm -rf $d"
+  },
+  {
+   "call": [
+    "backup",
+    "a.b"
+   ],
+   "out": "p=a.b; d=/data/local/tmp/tvr-bk-$$; rm -rf $d; mkdir -p $d/apk && cd $d || exit 1; for f in $(pm path $p | sed 's/^package://'); do ln -s \"$f\" apk/${f##*/}; done; for k in obb data; do [ -d /sdcard/Android/$k/$p ] && ln -s /sdcard/Android/$k/$p $k; done; echo $p > package.txt; dumpsys package $p | grep -m1 versionName | cut -d= -f2 > version.txt; tar -chf - * 2>/dev/null; cd /; rm -rf $d"
+  },
+  {
+   "call": [
+    "backup",
+    "com.x;reboot"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "backup",
+    "../x"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "backup",
+    ""
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "backup",
+    "com.x\n"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "backup",
+    "cóm.x"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "restore",
+    "/data/local/tmp/tvr-rs-0123abcd.tar"
+   ],
+   "out": "t=/data/local/tmp/tvr-rs-0123abcd.tar; d=${t%.tar}; rm -rf $d; mkdir -p $d && cd $d && tar -xf $t 2>/dev/null; ls apk/*.apk >/dev/null 2>&1 || { echo 'not a backup'; cd /; rm -rf $d $t; exit; }; p=$(cat package.txt 2>/dev/null); echo \"$p\" | grep -qE '^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)+$' || p=; s=$(pm install-create -r | tr -dc 0-9); for f in apk/*.apk; do cat $f | pm install-write -S $(stat -c %s $f) $s ${f##*/} - >/dev/null; done; pm install-commit $s 2>&1; [ -n \"$p\" ] && for k in obb data; do [ -d $k ] && mkdir -p /sdcard/Android/$k/$p && cp -R $k/. /sdcard/Android/$k/$p/; done; cd /; rm -rf $d $t; echo package $p"
+  },
+  {
+   "call": [
+    "restore",
+    "/sdcard/x.tar"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "restore",
+    "/data/local/tmp/tvr-rs-0123abcd.tar;x"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "log",
+    "com.google.android.youtube.tv",
+    ""
+   ],
+   "out": "p=$(pidof com.google.android.youtube.tv); echo pid $p; [ -n \"$p\" ] && logcat -d -v threadtime --pid=${p%% *} -t 300 | tail -n 500"
+  },
+  {
+   "call": [
+    "log",
+    "com.a.b",
+    "10-15 04:30:07.960"
+   ],
+   "out": "p=$(pidof com.a.b); echo pid $p; [ -n \"$p\" ] && logcat -d -v threadtime --pid=${p%% *} -T '10-15 04:30:07.960' | tail -n 500"
+  },
+  {
+   "call": [
+    "log",
+    "com.a.b",
+    "10-15 04:30:07"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "log",
+    "com.a.b",
+    "10-15 04:30:07.960'; reboot; '"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "log",
+    "x",
+    ""
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "tvset",
+    "dns",
+    ""
+   ],
+   "out": "settings put global private_dns_mode opportunistic; settings delete global private_dns_specifier >/dev/null 2>&1; echo ok"
+  },
+  {
+   "call": [
+    "tvset",
+    "dns",
+    "dns.adguard-dns.com"
+   ],
+   "out": "trap '' HUP PIPE; m=$(settings get global private_dns_mode); h=$(settings get global private_dns_specifier); settings put global private_dns_specifier dns.adguard-dns.com; settings put global private_dns_mode hostname; e=$(($(date +%s)+30)); while [ $(date +%s) -lt $e ]; do sleep 2; timeout 4 ping -c 1 -W 2 www.google.com 2>&1 | grep -q '^PING ' && { echo ok; exit; }; done; if [ \"$h\" = null ]; then settings delete global private_dns_specifier >/dev/null 2>&1; else settings put global private_dns_specifier \"$h\"; fi; [ \"$m\" = null ] && m=opportunistic; settings put global private_dns_mode $m; echo failed"
+  },
+  {
+   "call": [
+    "tvset",
+    "dns",
+    " Family.AdGuard-DNS.com "
+   ],
+   "out": "trap '' HUP PIPE; m=$(settings get global private_dns_mode); h=$(settings get global private_dns_specifier); settings put global private_dns_specifier family.adguard-dns.com; settings put global private_dns_mode hostname; e=$(($(date +%s)+30)); while [ $(date +%s) -lt $e ]; do sleep 2; timeout 4 ping -c 1 -W 2 www.google.com 2>&1 | grep -q '^PING ' && { echo ok; exit; }; done; if [ \"$h\" = null ]; then settings delete global private_dns_specifier >/dev/null 2>&1; else settings put global private_dns_specifier \"$h\"; fi; [ \"$m\" = null ] && m=opportunistic; settings put global private_dns_mode $m; echo failed"
+  },
+  {
+   "call": [
+    "tvset",
+    "dns",
+    "a;b.com"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "tvset",
+    "dns",
+    "localhost"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "tvset",
+    "dns",
+    "-x.com"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "tvset",
+    "dns",
+    "x.c"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "tvset",
+    "sleep",
+    "-1"
+   ],
+   "out": "settings put secure sleep_timeout -1; echo ok"
+  },
+  {
+   "call": [
+    "tvset",
+    "sleep",
+    1800000
+   ],
+   "out": "settings put secure sleep_timeout 1800000; echo ok"
+  },
+  {
+   "call": [
+    "tvset",
+    "sleep",
+    "0"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "tvset",
+    "sleep",
+    "1_000_000"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "tvset",
+    "sleep",
+    "+60000"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "tvset",
+    "sleep",
+    "99999999999"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "tvset",
+    "saver",
+    "off"
+   ],
+   "out": "settings put secure screensaver_enabled 0; echo ok"
+  },
+  {
+   "call": [
+    "tvset",
+    "saver",
+    "300000"
+   ],
+   "out": "settings put secure screensaver_enabled 1; settings put system screen_off_timeout 300000; echo ok"
+  },
+  {
+   "call": [
+    "tvset",
+    "saver",
+    "5"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "tvset",
+    "density",
+    "reset"
+   ],
+   "out": "wm density reset; echo ok"
+  },
+  {
+   "call": [
+    "tvset",
+    "density",
+    "288"
+   ],
+   "out": "wm density 288; echo ok"
+  },
+  {
+   "call": [
+    "tvset",
+    "density",
+    "2000"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "tvset",
+    "density",
+    "28.8"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "tvset",
+    "home",
+    "com.spocky.projengmenu/.ui.home.MainActivity"
+   ],
+   "out": "cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME | grep -qF 'com.spocky.projengmenu/.ui.home.MainActivity' || { echo 'not a home screen'; exit; }; cmd package set-home-activity 'com.spocky.projengmenu/.ui.home.MainActivity' >/dev/null 2>&1; echo home $(cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME | tail -n 1)"
+  },
+  {
+   "call": [
+    "tvset",
+    "home",
+    "a.b/.C$D"
+   ],
+   "out": "cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME | grep -qF 'a.b/.C$D' || { echo 'not a home screen'; exit; }; cmd package set-home-activity 'a.b/.C$D' >/dev/null 2>&1; echo home $(cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME | tail -n 1)"
+  },
+  {
+   "call": [
+    "tvset",
+    "home",
+    "a.b/c';reboot;'"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "tvset",
+    "home",
+    "nohome"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "tvset",
+    "volume",
+    "1"
+   ],
+   "out": null
+  }
+ ]
+}

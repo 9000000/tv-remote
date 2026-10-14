@@ -48,6 +48,9 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "crashes" -> return HttpServer.Response.json(JSONObject().put("text", sh(CRASHES).replace("\r\n", "\n").takeLast(500000)))
                 "stats" -> return HttpServer.Response.json(stats(r.q("days").toIntOrNull() ?: 7))
                 "rules" -> if (!post) return HttpServer.Response.json(rules(null))
+                "tvset" -> if (!post) return text(TvShell.TVSET_READ, 60000)
+                "log" -> return text(TvShell.log(r.q("pkg"), r.q("since")), 20000)
+                "app/backup" -> return backup(r.q("pkg"))
                 "tailscale" -> { val t = Tailscale(link.get(), dir); return HttpServer.Response.json(JSONObject().put("installed", t.installed()).put("ip", t.ip())) }
                 "setup/plan" -> return HttpServer.Response.json(Setup(link.get(), dir, true) { }.plan { labels?.label(it) })
                 "adb/prompt" -> {                                     // the TV's "Allow USB debugging?" question, if it is up
@@ -62,7 +65,15 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             if (!post) return null
             return when (what) {
                 "app" -> { open(r.json().optString("link")); HttpServer.Response.json(JSONObject().put("ok", true).put("via", "adb")) }
-                "app/launch", "app/stop", "app/uninstall", "app/disable", "app/enable" -> app(r.json().optString("pkg"), what.substring(4))
+                "app/launch", "app/stop", "app/uninstall", "app/disable", "app/enable", "app/clear" -> app(r.json().optString("pkg"), what.substring(4))
+                "clean" -> text(TvShell.CLEAN, 90000)
+                "tvset" -> { val d = r.json(); text(TvShell.tvset(d.optString("key"), d.optString("value")), 60000) }
+                "reboot" -> {
+                    sh(TvShell.REBOOT_PREP)
+                    try { link.get().open("reboot:").use { it.readAll(3000) } } catch (ignored: Exception) { }   // the link drops as the TV goes down
+                    link.close()                                      // so the page's next state() dials again instead of trusting it
+                    HttpServer.Response.ok()
+                }
                 "adb/connect" -> HttpServer.Response.json(JSONObject().put("state", link.reconnect()))
                 "shell" -> shell(r.json().optString("cmd"))
                 "rules" -> HttpServer.Response.json(rules(r.json()))
@@ -174,6 +185,12 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 if (!out.contains("disabled")) throw IllegalArgumentException(out.trim().ifEmpty { "disable failed" })
                 return HttpServer.Response.ok()
             }
+            "clear" -> {                                              // back to as just installed: logins, settings, downloads all go
+                if (Setup.PROTECTED.matches(pkg)) throw IllegalArgumentException("protected: the TV needs this app")
+                val out = sh("pm clear $pkg 2>&1")
+                if (!out.contains("Success")) throw IllegalArgumentException(out.trim().ifEmpty { "clear failed" })
+                return HttpServer.Response.ok()
+            }
             "enable" -> {
                 val out = sh("pm enable $pkg 2>&1")
                 if (!out.contains("enabled")) throw IllegalArgumentException(out.trim().ifEmpty { "enable failed" })
@@ -280,6 +297,29 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         return HttpServer.Response.ok()
     }
 
+    /** What a [TvShell] recipe printed, for the page to read. */
+    private fun text(cmd: String, quietMs: Long): HttpServer.Response =
+        HttpServer.Response.json(JSONObject().put("text", link.get().shell(cmd, quietMs).replace("\r\n", "\n")))
+
+    /** 💾 one app as a .tar, made on the TV and streamed straight through (TvShell.backup says what is in it). */
+    private fun backup(pkg: String): HttpServer.Response {
+        val s = link.get().exec(TvShell.backup(pkg))
+        val out = HttpServer.Response.stream("application/x-tar", -1) { o ->
+            try {
+                val b = ByteArray(65536)
+                while (true) {
+                    val n = s.read(b, 0, b.size, 0)
+                    if (n < 0) break
+                    o.write(b, 0, n)
+                }
+            } finally {
+                s.close()
+            }
+        }
+        out.headers["Content-Disposition"] = "attachment; filename*=UTF-8''$pkg-backup.tar"   // the phone's WebView reads this form
+        return out
+    }
+
     private fun download(r: HttpServer.Request): HttpServer.Response {
         val path = safePath(r.q("path"))
         val adb = link.get()
@@ -339,6 +379,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val name = safeName(r.q("name"))
         val done = { title: String, msg: String -> JSONObject().put("id", "u" + nextJob++).put("title", title).put("status", "done").put("pct", 100).put("msg", msg) }
         if (r.q("kind") == "install") { installUpload(r); return done("install $name", "installed") }
+        if (r.q("kind") == "restore") { restore(r); return done("restore $name", "restored") }
         val dest = safePath(r.q("dest")) + "/" + name
         push(r.body, r.length, dest, null)
         return done("upload $name", "saved $dest")
@@ -393,6 +434,21 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             throw IllegalArgumentException(e.message)
         } finally {
             sh("rm -f $TMP_APK")
+        }
+    }
+
+    /** 📥 a backup made by 💾, sent to the TV whole, then installed and put back there. Not a background job, as with installUpload. */
+    private fun restore(r: HttpServer.Request) {
+        if (r.length <= 0) throw IllegalArgumentException("empty upload")
+        val tar = "/data/local/tmp/tvr-rs-%08x.tar".format(java.util.Random().nextInt())
+        push(r.body, r.length, tar, null)
+        val adb = link.get()
+        val out = try { adb.shell(TvShell.restore(tar), 600000) } finally { adb.shell("rm -f $tar") }
+        if (!out.contains("Success")) throw IllegalArgumentException(out.trim().takeLast(300).ifEmpty { "restore failed" })
+        val pkg = out.trim().substringAfterLast('\n').removePrefix("package").trim()   // the last line names it
+        if (PKG.matcher(pkg).matches()) {                                       // as pmInstall: some boxes remove what they do not allow
+            Thread.sleep(3000)
+            if (!adb.shell("pm path $pkg 2>/dev/null; echo .").contains("package:")) throw IllegalArgumentException("removed by the TV right after install: $pkg")
         }
     }
 
