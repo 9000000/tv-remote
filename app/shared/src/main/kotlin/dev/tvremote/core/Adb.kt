@@ -269,13 +269,14 @@ class Adb(dir: File) : Closeable {
 
     /** Opens an ADB service, e.g. "shell:ls" or "localabstract:name". Throws if the TV refuses it. */
     @Throws(IOException::class)
-    fun open(service: String): Stream {
+    fun open(service: String, answerMs: Long = 10000): Stream {
         if (dead) throw IOException("adb connection lost")
         val s = synchronized(this) { Stream(nextId++) }
         streams[s.local] = s
         send(OPEN, s.local, 0, (service + "\u0000").toByteArray())
         try {
-            if (!s.opened.tryAcquire(10, TimeUnit.SECONDS)) { s.end(); throw IOException("no answer from the TV") }
+            // no answer at all: the connection died quietly (the phone slept, Wi-Fi or VPN changed); drop it so the next call dials again
+            if (!s.opened.tryAcquire(answerMs, TimeUnit.MILLISECONDS)) { s.end(); close(); throw IOException("no answer from the TV") }
         } catch (e: InterruptedException) {
             throw IOException("interrupted")
         }
@@ -295,6 +296,9 @@ class Adb(dir: File) : Closeable {
     fun shell(cmd: String, quietMs: Long = 120000): String = open("shell:$cmd").use { it.readAll(quietMs) }
 
     fun isDead(): Boolean = dead
+
+    /** Asks the TV for a trivial answer within [ms]; a connection that died quietly is closed by the asking. */
+    fun alive(ms: Long): Boolean = try { open("shell:echo", ms).use { it.readAll(ms) }; !dead } catch (e: IOException) { false }
 
     override fun close() {
         dead = true

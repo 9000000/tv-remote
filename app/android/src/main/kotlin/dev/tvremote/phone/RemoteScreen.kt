@@ -42,6 +42,11 @@ internal fun MainActivity.layoutRemote() {
     stage.visibility = if (video) View.VISIBLE else View.GONE
     fullBtn.visibility = if (video) View.VISIBLE else View.GONE
     qualBtn.visibility = fullBtn.visibility
+    // four buttons leave the words a sliver: then the words get their own line and the buttons go under them, to the right
+    val stacked = video
+    topBar.orientation = if (stacked) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
+    topBar.gravity = if (stacked) Gravity.END else Gravity.CENTER_VERTICAL
+    status.layoutParams = if (stacked) LinearLayout.LayoutParams(-1, -2) else LinearLayout.LayoutParams(0, -2, 1f)
     qualBtn.text = Tv.QUALITY[prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)][0].toString() + "p"
     exitBtn.visibility = if (full) View.VISIBLE else View.GONE
     window.decorView.systemUiVisibility = if (full) View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY else 0
@@ -59,9 +64,13 @@ internal fun MainActivity.buildRemote() {
     basicBar = button(t("Chỉ bấm phím · Bật ADB để dùng đủ chức năng  ›", "Keys only · Turn on ADB for everything  ›"), ACCENT)
     basicBar.textSize = 13f
     basicBar.setOnClickListener { adbHelp() }
-    val bar = LinearLayout(this)
+    topBar = LinearLayout(this)
+    val bar = topBar
     bar.gravity = Gravity.CENTER_VERTICAL
     bar.addView(status, LinearLayout.LayoutParams(0, -2, 1f))
+    topTools = LinearLayout(this)                                     // the buttons; under the words when there are many (layoutRemote)
+    val tools = topTools
+    tools.gravity = Gravity.CENTER_VERTICAL or Gravity.END
     qualBtn = button("", BTN)                                     // picture quality: a menu of the levels, lightest first
     qualBtn.textSize = 13f
     qualBtn.typeface = Typeface.DEFAULT_BOLD
@@ -86,21 +95,22 @@ internal fun MainActivity.buildRemote() {
         menu.show()
     }
     listenBtn = icon("@headphones", t("Nghe tiếng TV trên điện thoại", "Hear the TV on the phone"), BTN)   // 🎧 Listen.kt
-listenBtn.setOnClickListener { toggleListen() }
-val hp = LinearLayout.LayoutParams(dp(52), dp(40))
-hp.rightMargin = dp(8)
-bar.addView(listenBtn, hp)
-val qp = LinearLayout.LayoutParams(dp(60), dp(40))
+    listenBtn.setOnClickListener { toggleListen() }
+    val hp = LinearLayout.LayoutParams(dp(52), dp(40))
+    hp.rightMargin = dp(8)
+    tools.addView(listenBtn, hp)
+    val qp = LinearLayout.LayoutParams(dp(60), dp(40))
     qp.rightMargin = dp(8)
-    bar.addView(qualBtn, qp)
+    tools.addView(qualBtn, qp)
     fullBtn = icon("@expand", t("Toàn màn hình", "Full screen"), BTN)
     fullBtn.setOnClickListener { setFullscreen(true) }
     val fb = LinearLayout.LayoutParams(dp(52), dp(40))
     fb.rightMargin = dp(8)
-    bar.addView(fullBtn, fb)
+    tools.addView(fullBtn, fb)
     val vb = LinearLayout.LayoutParams(dp(52), dp(40))
     vb.rightMargin = dp(10)
-    bar.addView(videoBtn, vb)
+    tools.addView(videoBtn, vb)
+    bar.addView(tools, LinearLayout.LayoutParams(-2, -2))
     bar.setPadding(0, dp(8), 0, dp(10))                               // room between the buttons and the picture
     remote.addView(bar)
 

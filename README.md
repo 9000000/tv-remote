@@ -150,7 +150,7 @@ Từ đó chỉ cần bấm đúp file start. Đóng cửa sổ là dừng; khô
 | Tab | Làm được gì |
 |---|---|
 | **Remote** | Nút bấm, âm lượng, đánh thức, xem màn hình, 🎧 nghe tiếng TV, nút các cảnh, bấm/kéo/cuộn chuột lên hình, gõ bàn phím thẳng lên TV, mở app, link và CH Play, phát ảnh/video từ máy này lên TV |
-| **Ứng dụng** | Mở, dừng, gỡ app; tắt / bật lại app hệ thống không dùng; 🤖 chép danh sách app kèm câu hỏi để hỏi AI nên tắt app nào |
+| **Ứng dụng** | Mở, dừng, gỡ app; tắt / bật lại app hệ thống không dùng; 🤖 chép danh sách app kèm câu hỏi để hỏi AI nên tắt app nào; dán danh sách app id để bật / tắt / gỡ hàng loạt |
 | **Tệp · Cài** | Duyệt bộ nhớ TV và USB; tải về, gửi lên (kéo thả), đổi tên, xóa, cài `.apk`; tải file từ link về TV; cài APK từ link hoặc từ máy này |
 | **Sức khỏe** | Hiện tại: CPU, RAM, bộ nhớ, Wi-Fi, tiến trình tốn CPU nhất, Giải phóng RAM. Lịch sử: thời gian dùng TV theo ngày, app dùng nhiều, biểu đồ RAM/CPU/bộ nhớ. Cuối tab: Terminal (chạy lệnh shell trên TV, cho người rành) |
 | **Tự động** | Hẹn giờ tắt TV, giờ đi ngủ (TV bật lên trong khoảng giờ này sẽ tự tắt), giới hạn số phút mỗi ngày cho từng app. Ba mục này chạy ngay trên TV (app TV Setup 2.13.0+), không cần máy nào khác bật. Cảnh: một nút làm nhiều việc (bật TV, mở app, đặt âm lượng, bấm phím, mở link, chờ, hẹn giờ), xuất/nhập file để sao lưu |

@@ -502,7 +502,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         for (category in arrayOf(Intent.CATEGORY_LEANBACK_LAUNCHER, Intent.CATEGORY_LAUNCHER)) {
             for (ri in pm.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(category), 0)) {
                 val pkg = ri.activityInfo.packageName
-                if (!seen.add(pkg) || pkg == packageName) continue
+                if (!seen.add(pkg)) continue                          // TV Setup itself too: it has a screen of its own now
                 out.put(JSONObject().put("pkg", pkg).put("keep", Setup.PROTECTED.matches(pkg)).put("meta", JSONObject().put("label", ri.loadLabel(pm).toString()).put("icon", true).put("banner", true)))
             }
         }

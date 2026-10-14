@@ -62,7 +62,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             return when (what) {
                 "app" -> { open(r.json().optString("link")); HttpServer.Response.json(JSONObject().put("ok", true).put("via", "adb")) }
                 "app/launch", "app/stop", "app/uninstall", "app/disable", "app/enable" -> app(r.json().optString("pkg"), what.substring(4))
-                "adb/connect" -> HttpServer.Response.json(JSONObject().put("state", adbState()))
+                "adb/connect" -> HttpServer.Response.json(JSONObject().put("state", link.reconnect()))
                 "shell" -> shell(r.json().optString("cmd"))
                 "rules" -> HttpServer.Response.json(rules(r.json()))
                 "search" -> {
@@ -113,13 +113,19 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
      * apps still on, the ones already off, and what is using memory right now. The page turns it into a prompt to copy.
      */
     private fun appsReport(): JSONObject {
-        val list = { flags: String -> sh("pm list packages $flags").jsplit("\n").filter { it.startsWith("package:") }.map { it.substring(8).trim() }.sorted() }
-        val user = list("-3 -e")
-        val o = JSONObject().put("device", (sh("getprop ro.product.manufacturer").trim() + " " + sh("getprop ro.product.model").trim()).trim())
-            .put("android", sh("getprop ro.build.version.release").trim())
-            .put("ram_mb", (Regex("MemTotal:\\s+(\\d+)").find(sh("cat /proc/meminfo"))?.groupValues?.get(1)?.toLongOrNull() ?: 0L) / 1024)
-            .put("user", JSONArray(user)).put("system", JSONArray(list("-s -e"))).put("disabled", JSONArray(list("-d")))
-            .put("memory", JSONArray(memoryByApp(sh("dumpsys meminfo")).map { JSONObject().put("pkg", it.first).put("mb", it.second) }))
+        // one shell round trip: the parts come back separated by "#~#" lines (meminfo alone takes seconds on a slow TV)
+        val p = sh("getprop ro.product.manufacturer; getprop ro.product.model; getprop ro.build.version.release; grep MemTotal /proc/meminfo; " +
+            "printf '\\043~\\043\\n'; pm list packages -3 -e; printf '\\043~\\043\\n'; pm list packages -s -e; printf '\\043~\\043\\n'; pm list packages -d; " +
+            "printf '\\043~\\043\\n'; dumpsys meminfo").split("#~#\n")
+        val part = { i: Int -> p.getOrElse(i) { "" } }
+        val list = { i: Int -> part(i).split("\n").filter { it.startsWith("package:") }.map { it.substring(8).trim() }.sorted() }
+        val head = part(0).split("\n")
+        val user = list(1)
+        val o = JSONObject().put("device", (head.getOrElse(0) { "" }.trim() + " " + head.getOrElse(1) { "" }.trim()).trim())
+            .put("android", head.getOrElse(2) { "" }.trim())
+            .put("ram_mb", (Regex("MemTotal:\\s+(\\d+)").find(part(0))?.groupValues?.get(1)?.toLongOrNull() ?: 0L) / 1024)
+            .put("user", JSONArray(user)).put("system", JSONArray(list(2))).put("disabled", JSONArray(list(3)))
+            .put("memory", JSONArray(memoryByApp(part(4)).map { JSONObject().put("pkg", it.first).put("mb", it.second) }))
         val names = JSONObject()
         for (p in user) labels?.label(p)?.let { names.put(p, it) }
         return o.put("labels", names)

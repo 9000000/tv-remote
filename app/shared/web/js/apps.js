@@ -125,6 +125,7 @@ function aiPrompt(r) {
     '3. Không được đụng (hệ thống, Google Play Services, bàn phím, launcher đang dùng, Chromecast, cài đặt, nguồn phát TV...)',
     'Ưu tiên "tắt" (pm disable-user --user 0) vì bật lại được; chỉ đề nghị gỡ với app tự cài. Cuối cùng xếp các app nên tắt theo mức RAM lấy lại được.',
     'Người nhà vẫn dùng: (điền vào, vd YouTube, Netflix, tìm kiếm bằng giọng nói, xem truyền hình bằng ăng-ten)',
+    'Cuối câu trả lời, ghi riêng danh sách app id nên tắt (mỗi dòng một id) trong một khối code, để mình dán vào ô "Bật / tắt / gỡ hàng loạt".',
     ours.length ? `Đừng đề xuất tắt ${ours.join(', ')}: mình dùng để điều khiển TV.` : '',
     '', '== App đang tốn RAM nhất lúc này ==', mem,
     '', `== App tự cài (${r.user.length}) ==`, r.user.map(named).join('\n'),
@@ -138,6 +139,7 @@ function aiPrompt(r) {
     '3. Do not touch (system, Google Play Services, keyboard, the launcher in use, Chromecast, settings, TV inputs...)',
     'Prefer "disable" (pm disable-user --user 0), which can be undone; suggest uninstalling only for user-installed apps. Finally, rank the apps to disable by the memory they would give back.',
     'My family still uses: (fill in, e.g. YouTube, Netflix, voice search, antenna TV)',
+    'At the end, list the app ids to disable on their own (one per line) in a code block, so I can paste them into "Turn on / off / remove in bulk".',
     ours.length ? `Do not suggest disabling ${ours.join(', ')}: I use them to control the TV.` : '',
     '', '== Apps using the most memory right now ==', mem,
     '', `== User-installed apps (${r.user.length}) ==`, r.user.map(named).join('\n'),
@@ -145,10 +147,13 @@ function aiPrompt(r) {
     '', `== Apps already disabled (${r.disabled.length}) ==`, r.disabled.join('\n') || '(none)',
   ]).filter((l, i, a) => l !== '' || a[i - 1] !== '').join('\n');
 }
-$('#aiapps').addEventListener('click', async () => {
-  toast('Đang lấy danh sách app...');
-  const r = await api('/api/apps/report'); if (!r) return;
-  $('#aitext').value = aiPrompt(r); $('#aidlg').showModal();
+$('#aiapps').addEventListener('click', async (e) => {                // the TV's memory survey takes a few seconds: the button says so until the text is ready
+  const b = e.currentTarget, was = [...b.childNodes];
+  b.disabled = true; b.replaceChildren(el('span', { className: 'minispin' }), el('span', { textContent: 'Đang lấy danh sách app...' }));
+  try {
+    const r = await api('/api/apps/report'); if (!r) return;
+    $('#aitext').value = aiPrompt(r); $('#aidlg').showModal();
+  } finally { b.disabled = false; b.replaceChildren(...was); }
 });
 $('#aiclose').addEventListener('click', () => $('#aidlg').close());
 $('#aicopy').addEventListener('click', async () => {
@@ -157,4 +162,52 @@ $('#aicopy').addEventListener('click', async () => {
   if (!ok) { t.focus(); t.select(); try { ok = document.execCommand('copy'); } catch {} }   // plain-HTTP pages (the TV's) have no clipboard API
   toast(ok ? 'Đã chép. Dán vào ChatGPT, Claude hay Gemini.' : 'Không chép tự động được: chữ đã được bôi đen, bấm giữ để chép.');
 });
+
+// 📝 in bulk: paste package names (or a whole AI answer: anything shaped like com.abc.xyz counts), see where each one stands,
+// then turn them all off, back on, or remove them. One app after another through the same calls as the buttons on each row.
+let bulkKnown = null;                                                // pkg -> { off, keep } for every package on the TV
+const bulkPkgs = () => [...new Set(($('#bulktext').value.match(/\b[a-zA-Z][\w]*(?:\.[a-zA-Z_][\w]*)+\b/g) || [])
+  .filter((p) => p.split('.').every((part) => part.length >= 2)))];   // "e.g" is not a package; anything not on the TV shows as such
+async function bulkStatus(force) {
+  if (bulkKnown && !force) return bulkKnown;
+  const r = await api('/api/apps?system=1', null, true); if (!r) return null;
+  seedMeta(r.apps); bulkKnown = new Map(r.apps.map((a) => [a.pkg, { off: !!a.off, keep: !!a.keep }]));
+  return bulkKnown;
+}
+function bulkWhere(pkg) {
+  const k = bulkKnown && bulkKnown.get(pkg);
+  return !bulkKnown ? ['', '…'] : !k ? ['bad', 'không có trên TV'] : k.keep ? ['warn', 'TV cần app này: bỏ qua'] : k.off ? ['', '⏸ đã tắt'] : ['ok', 'đang bật'];
+}
+function renderBulk() {
+  const pkgs = bulkPkgs();
+  $('#bulklist').replaceChildren(...pkgs.map((p) => {
+    const [cls, word] = bulkWhere(p);
+    return el('div', { className: 'item bulkrow' }, el('div', { className: 'name' }, el('span', { textContent: appName(p) }), el('small', { textContent: p })), el('span', { className: 'chip ' + cls, textContent: word }));
+  }));
+  ['#bulkoff', '#bulkon', '#bulkdel'].forEach((id) => { $(id).disabled = !pkgs.length; });
+  if (!pkgs.length) $('#bulklog').textContent = $('#bulktext').value.trim() ? 'Không thấy app id nào trong đoạn chữ này.' : '';
+}
+let bulkT = 0;
+$('#bulktext').addEventListener('input', () => { clearTimeout(bulkT); bulkT = setTimeout(async () => { renderBulk(); await bulkStatus(); renderBulk(); }, 300); });
+$('#bulk').addEventListener('toggle', async (e) => { if (e.target.open) { renderBulk(); await bulkStatus(true); renderBulk(); } });
+async function bulkRun(action, label) {
+  await bulkStatus();
+  const pkgs = bulkPkgs().filter((p) => { const k = bulkKnown.get(p); return k && !(action === 'disable' && (k.keep || k.off)) && !(action === 'enable' && !k.off); });
+  if (!pkgs.length) { $('#bulklog').textContent = 'Không có app nào cần ' + label.toLowerCase() + '.'; return; }
+  if (action === 'uninstall' && !confirm('Gỡ ' + pkgs.length + ' app khỏi TV? Gỡ rồi phải cài lại mới có (app hệ thống thì không gỡ được, hãy tắt).')) return;
+  if (action === 'disable' && !confirm('Tắt ' + pkgs.length + ' app? Bật lại được bất cứ lúc nào ở đây hoặc ở mục “App đã tắt”.')) return;
+  const btns = ['#bulkoff', '#bulkon', '#bulkdel'].map((id) => $(id)); btns.forEach((b) => { b.disabled = true; });
+  let ok = 0; const bad = [];
+  for (let i = 0; i < pkgs.length; i++) {
+    $('#bulklog').textContent = label + ' ' + (i + 1) + '/' + pkgs.length + ': ' + appName(pkgs[i]) + '...';
+    const r = await api('/api/app/' + action, { pkg: pkgs[i] }, true);
+    if (r) ok++; else bad.push(pkgs[i]);
+  }
+  $('#bulklog').textContent = label + ': xong ' + ok + '/' + pkgs.length + (bad.length ? ' · không được: ' + bad.join(', ') : '');
+  btns.forEach((b) => { b.disabled = false; });
+  await bulkStatus(true); renderBulk(); quickLoaded = false; loadQuick(); if (appsLoaded) loadApps();
+}
+$('#bulkoff').addEventListener('click', () => bulkRun('disable', 'Tắt'));
+$('#bulkon').addEventListener('click', () => bulkRun('enable', 'Bật lại'));
+$('#bulkdel').addEventListener('click', () => bulkRun('uninstall', 'Gỡ'));
 

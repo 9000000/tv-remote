@@ -4,6 +4,24 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.16.3 - 2026-10-14
+
+Web 2.16.3 · app điện thoại 2.14.3 · app TV 2.13.3
+
+**Tiếng Việt**
+- **Bật / tắt / gỡ hàng loạt** (tab Ứng dụng): dán danh sách app id, hoặc dán nguyên câu trả lời của AI, trang tự nhặt mọi chuỗi dạng com.abc.xyz, hiện từng app đang bật / đã tắt / TV cần (bỏ qua) / không có trên TV, rồi tắt, bật lại hay gỡ cả loạt. Câu hỏi cho AI giờ dặn AI ghi riêng danh sách id để dán vào đây.
+- Sửa: màn Quản lý hay kẹt ở "Đang kết nối ADB..." (lần đầu mở, hoặc quay lại từ app khác). Kết nối chết lặng (điện thoại ngủ, đổi Wi-Fi / VPN) giờ được phát hiện và nối lại ngay; lần nối nào treo quá 25 giây thì báo lỗi thay vì chờ mãi; nút "Thử kết nối lại" thật sự mở kết nối mới.
+- Trang do TV phục vụ: danh sách Ứng dụng có cả TV Setup (trước đây tự ẩn chính nó).
+- App điện thoại: khi đang xem hình (4 nút ở thanh trên), dòng tên TV có hàng riêng, các nút xuống dưới, không còn bị ép thành cột chữ hẹp.
+- Nút 🤖 Hỏi AI hiện vòng xoay "Đang lấy danh sách app..." ngay trên nút cho tới khi popup mở (trước đây chỉ có toast 2 giây rồi im lặng). Lấy danh sách cũng nhanh hơn: các lệnh trên TV chạy một lượt thay vì lần lượt.
+
+**English**
+- **Turn on / off / remove in bulk** (Apps tab): paste app ids, or a whole AI answer; the page picks out everything shaped like com.abc.xyz, shows each one as on / disabled / needed by the TV (skipped) / not on this TV, then disables, turns on or removes them all. The AI question now asks for that list on its own, ready to paste.
+- Fixed: the Manage screen often stuck at "Connecting ADB..." (on first open, or back from another app). A connection that died quietly (phone asleep, Wi-Fi / VPN changed) is now noticed and dialled again at once; a dial stuck over 25 seconds reports an error instead of waiting for ever; "Try again" really opens a fresh connection.
+- Page served by the TV: the Apps list includes TV Setup (it used to hide itself).
+- Phone app: while the picture is on (four buttons in the top bar), the TV's name gets its own line and the buttons go under it, instead of squeezing the words into a narrow column.
+- The 🤖 Ask an AI button shows a spinner and "Getting the app list..." until the window opens (it used to show a 2-second toast, then nothing). Getting the list is faster too: the commands on the TV run in one go instead of one after another.
+
 ## 2.16.2 - 2026-10-14
 
 Web 2.16.2 · app điện thoại 2.14.2 · app TV 2.13.2

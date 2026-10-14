@@ -267,3 +267,7 @@
   @media (max-width:380px) { #limitf { flex-wrap:wrap; } #limitf select#limitpkg { flex:1 1 100%; } }
   .appsoff { margin-top:12px; border-top:1px solid var(--line); padding-top:10px; } .appsoff summary { cursor:pointer; font-weight:600; color:var(--muted); padding:6px 0; } .appsoff > p { margin:4px 0 6px; font-size:12px; }
   .appicon.placeholder { color:#fff; font-weight:700; font-size:20px; display:flex; align-items:center; justify-content:center; }
+  .minispin { display:inline-block; width:14px; height:14px; margin-right:8px; vertical-align:-2px; border-radius:50%; border:2px solid var(--muted); border-top-color:var(--accent); animation:spin .9s linear infinite; }
+  .bulk { margin-top:12px; border:1px solid var(--line); border-radius:12px; padding:8px 12px; } .bulk summary { cursor:pointer; font-weight:600; padding:4px 0; } .bulk > p { margin:6px 0; font-size:12px; }
+  #bulktext { width:100%; box-sizing:border-box; font:12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:10px; padding:8px; resize:vertical; }
+  .bulkrow { padding:6px 0; } .bulkrow .chip { flex:none; font-size:11px; padding:3px 8px; } #bulklog { margin-top:8px; font-size:12px; overflow-wrap:anywhere; }

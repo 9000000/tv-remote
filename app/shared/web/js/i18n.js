@@ -238,6 +238,11 @@
     'Sửa dòng “Người nhà vẫn dùng” cho đúng, bấm Sao chép rồi dán vào ChatGPT, Claude hay Gemini. AI có thể sai: tắt từng app một, thấy lỗi thì bật lại ở mục “App đã tắt” cuối danh sách Ứng dụng.': 'Fix the “My family still uses” line, press Copy and paste it into ChatGPT, Claude or Gemini. AI can be wrong: disable one app at a time; if something breaks, turn it back on under “Disabled apps” at the end of the Apps list.',
     'Đã tắt bằng Tối ưu TV hoặc nút Tắt app. Bấm ↩ để bật lại.': 'Turned off by Optimize TV or the Disable button. Press ↩ to turn one back on.',
     'Bật lại': 'Turn on', 'Tắt app': 'Disable', 'đã tắt': 'disabled',
+    '📝 Bật / tắt / gỡ hàng loạt': '📝 Turn on / off / remove in bulk',
+    'Dán danh sách app id, mỗi dòng một app, hoặc dán nguyên câu trả lời của AI: mọi chuỗi dạng com.abc.xyz đều được nhận.': 'Paste app ids, one per line, or a whole AI answer: anything shaped like com.abc.xyz counts.',
+    '⏸ Tắt các app này': '⏸ Disable these apps', '↩ Bật lại các app này': '↩ Turn these back on', '🗑 Gỡ các app này': '🗑 Remove these apps',
+    'không có trên TV': 'not on this TV', 'TV cần app này: bỏ qua': 'the TV needs it: skipped', 'đang bật': 'on',
+    'Không thấy app id nào trong đoạn chữ này.': 'No app ids in this text.',
     '📋 Sao chép': '📋 Copy', 'Đang lấy danh sách app...': 'Getting the app list...', 'Đã chép. Dán vào ChatGPT, Claude hay Gemini.': 'Copied. Paste it into ChatGPT, Claude or Gemini.',
     'Không chép tự động được: chữ đã được bôi đen, bấm giữ để chép.': 'Could not copy by itself: the text is selected, long-press to copy.',
     '⬇️ Xuất file sao lưu': '⬇️ Export a backup file', '⬆️ Nhập từ file': '⬆️ Import from a file',
@@ -336,6 +341,11 @@
   // Strings with a variable part. Captured pieces are passed through tr() again where they can be text of ours.
   const RULES = [
     // automation, scenes, the TV's sound
+    [/^Không có app nào cần (.+)\.$/, (m) => `Nothing to ${({ 'tắt': 'disable', 'bật lại': 'turn on', 'gỡ': 'remove' })[m[1]] || m[1]}.`],
+    [/^Gỡ (\d+) app khỏi TV\? Gỡ rồi phải cài lại mới có \(app hệ thống thì không gỡ được, hãy tắt\)\.$/, (m) => `Remove ${m[1]} apps from the TV? They are gone until reinstalled (system apps cannot be removed: disable them).`],
+    [/^Tắt (\d+) app\? Bật lại được bất cứ lúc nào ở đây hoặc ở mục “App đã tắt”\.$/, (m) => `Disable ${m[1]} apps? Turn them back on any time here or under “Disabled apps”.`],
+    [/^(Tắt|Bật lại|Gỡ) (\d+)\/(\d+): (.+)\.\.\.$/, (m) => `${({ 'Tắt': 'Disabling', 'Bật lại': 'Turning on', 'Gỡ': 'Removing' })[m[1]]} ${m[2]}/${m[3]}: ${m[4]}...`],
+    [/^(Tắt|Bật lại|Gỡ): xong (\d+)\/(\d+)(?: · không được: (.+))?$/, (m) => `${({ 'Tắt': 'Disable', 'Bật lại': 'Turn on', 'Gỡ': 'Remove' })[m[1]]}: done ${m[2]}/${m[3]}` + (m[4] ? ` · failed: ${m[4]}` : '')],
     [/^⏸ App đã tắt \((\d+)\)$/, (m) => `⏸ Disabled apps (${m[1]})`],
     [/^Tắt (.+)\? App biến khỏi TV cho tới khi bật lại ở mục “App đã tắt” cuối danh sách này\.$/, (m) => `Disable ${m[1]}? It disappears from the TV until you turn it back on under “Disabled apps” at the end of this list.`],
     [/^⏸ đã tắt · (.+)$/, (m) => '⏸ disabled · ' + m[1]],

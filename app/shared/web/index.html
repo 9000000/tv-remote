@@ -181,6 +181,13 @@
       <form class="line" id="appsf"><input type="search" id="appsq" placeholder="Tìm theo tên app" autocomplete="off"></form>
       <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px;color:var(--muted);cursor:pointer"><input type="checkbox" id="appssys"> Hiện cả app hệ thống</label>
       <div class="aihint"><button class="small" id="aiapps">🤖 Hỏi AI nên tắt / gỡ app nào</button><span class="muted">Chép danh sách app kèm câu hỏi sẵn, dán vào ChatGPT, Claude hay Gemini.</span></div>
+      <details class="bulk" id="bulk"><summary>📝 Bật / tắt / gỡ hàng loạt</summary>
+        <p class="muted">Dán danh sách app id, mỗi dòng một app, hoặc dán nguyên câu trả lời của AI: mọi chuỗi dạng com.abc.xyz đều được nhận.</p>
+        <textarea id="bulktext" rows="5" spellcheck="false" placeholder="com.sony.dtv.imanual&#10;com.google.android.marvin.talkback"></textarea>
+        <div class="list" id="bulklist"></div>
+        <div class="aihint"><button class="small" id="bulkoff">⏸ Tắt các app này</button><button class="small" id="bulkon">↩ Bật lại các app này</button><button class="small danger" id="bulkdel">🗑 Gỡ các app này</button></div>
+        <div class="muted" id="bulklog"></div>
+      </details>
       <div class="list" id="appslist"></div>
     </section>
   </div>

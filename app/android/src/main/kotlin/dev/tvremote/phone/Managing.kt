@@ -117,11 +117,19 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
                 val origin = "http://127.0.0.1:$port"
                 CookieManager.getInstance().setCookie(origin, "tvr=$token")
                 web.loadUrl(origin + "/?embed=1&lang=" + (if (VI) "vi" else "en") + (if (tab != null) "#$tab" else ""))
-            } else if (tab != null) web.evaluateJavascript("showTab('" + tab.filter { it.isLetter() } + "')", null)
+            } else {
+                link?.check()                                         // the same TV again: make sure its connection still answers
+                if (tab != null) web.evaluateJavascript("showTab('" + tab.filter { it.isLetter() } + "')", null)
+            }
             view.visibility = View.VISIBLE
         } catch (e: Exception) {
             a.message(t("Không mở được trang quản lý: ", "Could not open the manage page: ") + e.message, true)
         }
+    }
+
+    /** The app is on screen again (back from another app): a connection that died meanwhile is dialled again before the page asks. */
+    fun resume() {
+        if (view.visibility == View.VISIBLE) { link?.check(); web.evaluateJavascript("typeof refresh === 'function' && refresh()", null) }
     }
 
     fun back(): Boolean {

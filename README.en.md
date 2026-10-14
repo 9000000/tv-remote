@@ -150,7 +150,7 @@ After that, just double-click the start file. Closing the window stops it; nothi
 | Tab | What it does |
 |---|---|
 | **Remote** | Buttons, volume, wake, the live screen, 🎧 the TV's sound, scene buttons, click/drag/scroll on the picture, type straight onto the TV, open apps, links and the Play Store, play a photo/video from this computer on the TV |
-| **Apps** | Open, stop, uninstall apps; disable / turn on unused system apps; 🤖 copy the app list with a question for an AI on what to disable |
+| **Apps** | Open, stop, uninstall apps; disable / turn on unused system apps; 🤖 copy the app list with a question for an AI on what to disable; paste app ids to turn on / off / remove in bulk |
 | **Files · Install** | Browse TV storage and USB; download, upload (drag and drop), rename, delete, install `.apk`; download a link to the TV; install an APK from a link or from this computer |
 | **Health** | Now: CPU, RAM, storage, Wi-Fi, top CPU processes, Free up RAM. History: TV time per day, most used apps, RAM/CPU/storage charts. At the bottom: Terminal (shell commands on the TV, for people who know them) |
 | **Automation** | Sleep timer, bedtime (a TV turned on in those hours goes back to standby), daily minutes per app. These three run on the TV itself (TV Setup 2.13.0+), with no other device on. Scenes: one button, several things (wake the TV, open an app, set the volume, press keys, open a link, wait, sleep timer), export/import a file as a backup |

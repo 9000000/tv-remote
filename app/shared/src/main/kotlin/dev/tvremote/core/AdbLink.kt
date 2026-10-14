@@ -9,6 +9,7 @@ class AdbLink(private val keyDir: File, private val host: String) {
     @Volatile private var dialing: Adb? = null                        // being connected right now: it may sit for minutes waiting for the person at the TV
     @Volatile private var waiting = false                             // the TV is showing "Allow USB debugging?"
     @Volatile private var failed = false                              // the last attempt did not get through
+    @Volatile private var dialStart = 0L
     private val lock = Any()
 
     @Throws(IOException::class)
@@ -18,6 +19,7 @@ class AdbLink(private val keyDir: File, private val host: String) {
             adb?.let { if (!it.isDead()) return it }
             val a = Adb(keyDir)
             dialing = a
+            dialStart = System.currentTimeMillis()
             try {
                 a.connect(host, 5555) { waiting = true }
                 waiting = false
@@ -44,8 +46,27 @@ class AdbLink(private val keyDir: File, private val host: String) {
      */
     fun state(): String {
         adb?.let { if (!it.isDead()) return "ready" }
-        if (dialing == null) Thread({ try { get() } catch (ignored: Exception) { } }, "adb-link").apply { isDaemon = true }.start()
+        val d = dialing
+        if (d != null && !waiting && System.currentTimeMillis() - dialStart > 25000) {   // stuck dialing (a network that changed under it): cut it, say so
+            failed = true
+            try { d.close() } catch (ignored: Exception) { }
+            return "closed"
+        }
+        if (d == null) Thread({ try { get() } catch (ignored: Exception) { } }, "adb-link").apply { isDaemon = true }.start()
         return if (waiting) "unauthorized" else if (failed) "closed" else "unknown"
+    }
+
+    /** "Try again": a fresh connection, whatever the old one thought of itself. */
+    fun reconnect(): String {
+        close()
+        failed = false
+        return state()
+    }
+
+    /** Back on screen after a while: checks that the connection still answers (in the background), and dials again if not. */
+    fun check() {
+        val a = adb ?: return
+        Thread({ if (!a.alive(4000)) { try { get() } catch (ignored: Exception) { } } }, "adb-check").apply { isDaemon = true }.start()
     }
 
     /** Never waits, not even for a connection that is still being made: that one is cut off. */

@@ -754,15 +754,18 @@ def build(S):
     async def apps_report(_):
         """What an AI (or a person) needs to say which apps can go; the page turns it into a prompt to copy."""
         lst = lambda out: sorted(l[8:].strip() for l in out.splitlines() if l.startswith("package:"))
-        user = lst(await adb.shell("pm list packages -3 -e"))
-        m = re.search(r"MemTotal:\s+(\d+)", await adb.shell("cat /proc/meminfo"))
-        await adb.apps(False)                                         # the apk paths the names come from
+        # all at once: meminfo alone takes seconds on a slow TV
+        head, user, system, off, mem, _ = await asyncio.gather(
+            adb.shell("getprop ro.product.manufacturer; getprop ro.product.model; getprop ro.build.version.release; grep MemTotal /proc/meminfo"),
+            adb.shell("pm list packages -3 -e"), adb.shell("pm list packages -s -e"), adb.shell("pm list packages -d"), adb.shell("dumpsys meminfo"),
+            adb.apps(False))                                          # the apk paths the names come from
+        h = head.splitlines() + ["", "", ""]
+        m = re.search(r"MemTotal:\s+(\d+)", head)
+        user = lst(user)
         return web.json_response({
-            "device": ((await adb.shell("getprop ro.product.manufacturer")).strip() + " " + (await adb.shell("getprop ro.product.model")).strip()).strip(),
-            "android": (await adb.shell("getprop ro.build.version.release")).strip(),
-            "ram_mb": int(m.group(1)) // 1024 if m else 0,
-            "user": user, "system": lst(await adb.shell("pm list packages -s -e")), "disabled": lst(await adb.shell("pm list packages -d")),
-            "memory": [{"pkg": p, "mb": mb} for p, mb in memory_by_app(await adb.shell("dumpsys meminfo"))],
+            "device": (h[0].strip() + " " + h[1].strip()).strip(), "android": h[2].strip(), "ram_mb": int(m.group(1)) // 1024 if m else 0,
+            "user": user, "system": lst(system), "disabled": lst(off),
+            "memory": [{"pkg": p, "mb": mb} for p, mb in memory_by_app(mem)],
             "labels": {p: (meta.cached(p, adb.apk_paths[p]) or {}).get("label") for p in user if p in adb.apk_paths and (meta.cached(p, adb.apk_paths[p]) or {}).get("label")},
         })
 

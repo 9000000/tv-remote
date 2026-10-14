@@ -85,6 +85,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal lateinit var exitBtn: IconButton
     internal lateinit var qualBtn: Button
     internal lateinit var listenBtn: IconButton
+    internal lateinit var topBar: LinearLayout                         // the TV's name and state, with the buttons beside or under it
+    internal lateinit var topTools: LinearLayout
     internal lateinit var basicBar: Button
     internal val SHOT = -1                                             // not a key: the screenshot button in the extra keys
     internal val OPEN = -2                                             // not a key: "open on the TV" in the extra keys
@@ -173,6 +175,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         ui.removeCallbacks(idleStop)
         refreshSaved()
         if (bgListen) { bgListen = false; stopSession() }             // back on screen: the picture again
+        managing.resume()
         startSession()
     }
 
