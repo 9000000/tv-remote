@@ -14,8 +14,8 @@ __pycache__/
 .DS_Store
 # build output
 app/*/build/
-app/.gradle/
-app/.kotlin/
-app/local.properties
+app/gradle/.gradle/
+app/gradle/.kotlin/
+app/gradle/build/
+app/gradle/local.properties
 .idea/
-app/build/

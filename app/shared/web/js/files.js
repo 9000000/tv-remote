@@ -35,9 +35,9 @@ function renderFiles() {
   const cmp = sort === 'new' ? (a, b) => b.mtime.localeCompare(a.mtime) : sort === 'big' ? (a, b) => b.size - a.size : (a, b) => a.name.localeCompare(b.name, undefined, { numeric: true });
   const rows = fileItems.filter((i) => !q || i.name.toLowerCase().includes(q)).sort((a, b) => (b.dir - a.dir) || cmp(a, b)).map((i) => {
     const full = join(i.name), [icon, kind] = kindOf(i);
-    const btn = (text, title, fn, cls = '') => el('button', { textContent: text, title, ariaLabel: title, className: 'small ' + cls, onclick: (e) => { e.stopPropagation(); fn(); } });
+    const btn = (text, title, fn, cls = '') => el('button', { textContent: text, title, ariaLabel: title, className: 'small ' + cls, onclick: (e) => { e.stopPropagation(); fn(e); } });
     const acts = el('div', { className: 'acts' });
-    if (kind === 'apk') acts.append(setLabel(btn('', 'Cài APK này lên TV', () => { if (confirm('Cài ' + i.name + ' lên TV?')) startJob('/api/file/install', { path: full }, 'Cài ' + i.name); }, 'primary'), '📦', 'Cài'));
+    if (kind === 'apk') acts.append(setLabel(btn('', 'Cài APK này lên TV', (e) => { const b = e.currentTarget; if (confirm('Cài ' + i.name + ' lên TV?')) startJob('/api/file/install', { path: full }, 'Cài ' + i.name, b); }, 'primary'), '📦', 'Cài'));
     if (['video', 'audio', 'image'].includes(kind)) acts.append(btn('▶ TV', 'Mở trên TV', () => api('/api/file/open', { path: full }).then((r) => r && toast('Đã mở trên TV: ' + i.name))));
     if (!i.dir) acts.append(el('a', { className: 'linkbtn iconbtn', href: '/api/file?path=' + encodeURIComponent(full), textContent: '⬇', title: 'Tải về máy này', ariaLabel: 'Tải về máy này', onclick: (e) => e.stopPropagation() }));
     acts.append(btn('✎', 'Đổi tên', () => { const n = prompt('Tên mới:', i.name); if (n && n !== i.name) fileAct('/api/file/rename', { path: full, name: n }, 'Đã đổi tên'); }, 'iconbtn'));
@@ -64,38 +64,43 @@ fc.addEventListener('drop', (e) => { e.preventDefault(); fc.classList.remove('dr
 
 // ---------- jobs / upload ----------
 const jobEls = {};
+// The control that started a job shows its progress too: the jobs card sits in a corner, far from where the eyes are.
+function mark(src, j) {
+  if (!src) return;
+  if (j.status === 'running') src.dataset.busy = '⏳ ' + (j.pct || 0) + '%'; else delete src.dataset.busy;
+}
 function showJob(j, label) {
-  if ($('#jobscard').hidden) { $('#jobscard').hidden = false; try { $('#jobscard').open = localStorage.getItem('jobs') !== '0'; } catch {} }
   let row = jobEls[j.id];
-  if (!row) { row = jobEls[j.id] = { root: el('div', { className: 'job' }), msg: el('div', { className: 'msg' }), bar: el('i') }; row.root.append(el('div', { textContent: label || j.title }), row.msg, el('div', { className: 'bar' }, row.bar)); $('#jobs').prepend(row.root); }
+  if (!row) { $('#jobscard').hidden = false; $('#jobscard').open = true; row = jobEls[j.id] = { root: el('div', { className: 'job' }), msg: el('div', { className: 'msg' }), bar: el('i') }; row.root.append(el('div', { textContent: label || j.title }), row.msg, el('div', { className: 'bar' }, row.bar)); $('#jobs').prepend(row.root); }
   row.root.className = 'job ' + j.status; row.msg.textContent = j.msg; row.bar.style.width = j.pct + '%';
 }
-async function trackJob(j, label, after) {
-  showJob(j, label);
+async function trackJob(j, label, after, src) {
+  showJob(j, label); mark(src, j);
   let misses = 0;                                                     // a blip in the network is not the end of the job; ten in a row are
   while (j.status === 'running') {
     await sleep(1000); const r = await api('/api/job?id=' + j.id, null, true);
-    if (r) { misses = 0; j = r; showJob(j, label); continue; }
+    if (r) { misses = 0; j = r; showJob(j, label); mark(src, j); continue; }
     if (++misses >= 10) { j = { ...j, status: 'error', msg: 'mất kết nối, không rõ đã xong chưa' }; showJob(j, label); break; }
   }
+  mark(src, j);
   if (j.status === 'error') { j.msg = friendly(j.msg); showJob(j, label); }
   toast(j.status === 'done' ? 'Xong: ' + j.msg : 'Lỗi: ' + j.msg);
   if (j.status === 'done' && after) after(j);
   if (j.status === 'done' && filesLoaded) loadFiles(cwd);
   if (j.status === 'done') { appsLoaded = false; if (/install/.test(j.title)) loadQuick(); }
 }
-function upload(file, kind, dest, after) {
+function upload(file, kind, dest, after, src) {
   const row = { id: 'up' + Math.random().toString(36).slice(2), title: 'Gửi ' + file.name, status: 'running', msg: 'đang gửi lên server...', pct: 0 };
-  showJob(row);
+  showJob(row); mark(src, row);
   const xhr = new XMLHttpRequest();
   xhr.open('POST', '/api/upload?kind=' + kind + '&name=' + encodeURIComponent(file.name) + '&dest=' + encodeURIComponent(dest || ''));
   xhr.setRequestHeader('Content-Type', 'application/octet-stream');
-  xhr.upload.onprogress = (e) => { if (e.lengthComputable) { row.pct = Math.round(e.loaded * (CORE === 'mac' ? 45 : 95) / e.total); row.msg = 'đang gửi ' + fmtSize(e.loaded) + ' / ' + fmtSize(e.total); showJob(row); } };
-  xhr.onerror = () => { row.status = 'error'; row.msg = 'Không gọi được server'; showJob(row); };
+  xhr.upload.onprogress = (e) => { if (e.lengthComputable) { row.pct = Math.round(e.loaded * (CORE === 'mac' ? 45 : 95) / e.total); row.msg = 'đang gửi ' + fmtSize(e.loaded) + ' / ' + fmtSize(e.total); showJob(row); mark(src, row); } };
+  xhr.onerror = () => { row.status = 'error'; row.msg = 'Không gọi được server'; showJob(row); mark(src, row); };
   xhr.onload = () => {
     let r = {}; try { r = JSON.parse(xhr.responseText); } catch {}
-    if (xhr.status !== 200) { row.status = 'error'; row.msg = r.error || xhr.statusText; showJob(row); return; }
-    jobEls[row.id].root.remove(); delete jobEls[row.id]; trackJob(r, file.name, after);
+    if (xhr.status !== 200) { row.status = 'error'; row.msg = r.error || xhr.statusText; showJob(row); mark(src, row); return; }
+    jobEls[row.id].root.remove(); delete jobEls[row.id]; trackJob(r, file.name, after, src);
   };
   xhr.send(file);
 }
@@ -104,10 +109,10 @@ $('#castfile').addEventListener('change', (e) => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
   upload(f, 'file', '/sdcard/Download', async (j) => { const p = /^saved (.+)$/.exec(j.msg || ''); if (await api('/api/file/open', { path: p ? p[1] : '/sdcard/Download/' + f.name })) toast('Đã mở trên TV: ' + f.name); });
 });
-async function startJob(path, data, label) { const r = await api(path, data); if (r) trackJob(r, label); }
+async function startJob(path, data, label, src) { if (src) src.dataset.busy = '⏳'; const r = await api(path, data); if (r) trackJob(r, label, undefined, src); else mark(src, {}); }
 $('#fetchf').addEventListener('submit', (e) => { e.preventDefault(); const u = $('#fetchurl').value.trim(); if (u) { startJob('/api/fetch', { url: u, dest: '/sdcard/Download' }); $('#fetchurl').value = ''; } });
-$('#instf').addEventListener('submit', (e) => { e.preventDefault(); const u = $('#insturl').value.trim(); if (u && confirm('Cài APK từ link này lên TV?\n' + u)) { startJob('/api/install', { url: u }); $('#insturl').value = ''; } });
-$('#apkfile').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; if (f && confirm('Cài ' + f.name + ' lên TV?')) upload(f, 'install'); });
+$('#instf').addEventListener('submit', (e) => { e.preventDefault(); const u = $('#insturl').value.trim(); if (u && confirm('Cài APK từ link này lên TV?\n' + u)) { startJob('/api/install', { url: u }, undefined, $('#instf button')); $('#insturl').value = ''; } });
+$('#apkfile').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; if (f && confirm('Cài ' + f.name + ' lên TV?')) upload(f, 'install', '', undefined, e.target.closest('label')); });
 
 
-$('#jobscard').addEventListener('toggle', () => { try { localStorage.setItem('jobs', $('#jobscard').open ? '1' : '0'); } catch {} });   // stays folded once folded
+$('#jobsclose').addEventListener('click', (e) => { e.preventDefault(); $('#jobscard').hidden = true; });   // the next upload or install brings it back

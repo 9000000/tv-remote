@@ -42,3 +42,16 @@ Total PSS by OOM adjustment:
         assertEquals("*/*", Manage.mime("x.unknown"))
     }
 }
+
+/** The package name read from an APK's binary manifest, to check after an install that the TV kept the app. */
+class ApkPackageTest {
+    @Test fun readsPackage() {
+        val m = javaClass.classLoader!!.getResourceAsStream("setup-manifest.bin").readBytes()
+        assertEquals("dev.tvremote.setup", Manage.apkPackage(m))
+    }
+
+    @Test fun garbageIsNull() {
+        assertEquals(null, Manage.apkPackage(ByteArray(0)))
+        assertEquals(null, Manage.apkPackage("not a manifest at all".toByteArray()))
+    }
+}

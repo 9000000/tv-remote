@@ -4,6 +4,32 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.17.0 - 2026-10-14
+
+Web 2.17.0 · app điện thoại 2.15.0 · app TV 2.14.0
+
+**Tiếng Việt**
+- **Hẹn giờ tắt tự chọn:** ngoài các nút 15 phút … 2 giờ, nhập số phút (vd `40`) hoặc giờ tắt (vd `23:30`, `23h30`). App điện thoại: mục "Tự chọn..." trong menu 😴.
+- **Mọi nút đều có phản hồi:** nút nào phải chờ TV trả lời thì hiện vòng xoay ngay trên nút cho tới khi xong. Cài APK hiện % ngay trên nút đã bấm, ngoài thẻ tiến trình (giờ nổi ở góc dưới bên phải, có nút ✕).
+- **Cài APK kiểm tra app còn trên TV:** vài box nhà mạng (FPT Play...) gỡ một số app ngay sau khi cài; trước đây vẫn báo "đã cài", giờ báo rõ TV đã tự gỡ.
+- Web máy tính: nút "Mở" app nhanh hơn (tra màn hình chính của app trước, không dùng `monkey`); app không có màn hình để mở thì báo bằng câu dễ hiểu.
+- **Nghe tiếng TV:** khung chọn "Chỉ máy này / Cả TV và máy này" hiện ngay dưới nút 🎧, không còn bị hình TV che.
+- **Mac: app `TV Remote`** để bấm đúp thay cho `start-mac.command`: không qua Terminal (oh-my-zsh hỏi cập nhật có thể nuốt lệnh), kéo vào Applications hay Dock vẫn chạy, mở lần nữa chỉ mở trang.
+- **Nút Tắt tắt hẳn:** server dừng, cổng 8765 đóng, adb do chương trình bật cũng tắt theo (adb của chương trình khác thì chỉ ngắt kết nối tới TV). Đóng cửa sổ Terminal hay Ctrl+C cũng vậy.
+- Web máy tính: nếu code vừa được cập nhật mà server chưa chạy lại, trang hiện dải vàng nhắc mở lại, thay vì các nút báo "Not found".
+- Trang giới thiệu sản phẩm (`docs/`, GitHub Pages), ảnh README chuyển sang WebP (nhẹ hơn khoảng 8 lần). Thư mục `app/` gọn lại: cấu hình Gradle vào `app/gradle/`.
+
+**English**
+- **Custom sleep timer:** besides the 15 min … 2 h buttons, type minutes (e.g. `40`) or a time (e.g. `23:30`, `23h30`). Phone app: "Custom..." in the 😴 menu.
+- **Every button gives feedback:** a button waiting on the TV spins until the answer comes. Installing an APK shows its % on the button pressed, besides the jobs card (now floating bottom-right, with ✕).
+- **APK installs check the app stayed:** some operator boxes (FPT Play...) remove certain apps right after install; that used to say "installed", now it says the TV removed it.
+- Computer web: "Open" on an app is faster (looks up the app's screen first instead of `monkey`); an app with no screen to open says so in plain words.
+- **Listen to the TV:** the "Only this device / TV and this device" choice now appears right under 🎧, no longer hidden by the picture.
+- **Mac: a `TV Remote` app** to double-click instead of `start-mac.command`: no Terminal (an oh-my-zsh update prompt could eat the command), works from Applications or the Dock, opening it again only opens the page.
+- **Quit really quits:** the server stops, port 8765 closes, and an adb it started goes too (someone else's adb only drops the TVs). Same for closing the Terminal window or Ctrl+C.
+- Computer web: when the code was updated but the server not restarted, a yellow banner asks to reopen it, instead of buttons failing with "Not found".
+- A product page (`docs/`, GitHub Pages); README images are WebP now (about 8x lighter). `app/` is tidier: the Gradle setup moved to `app/gradle/`.
+
 ## 2.16.3 - 2026-10-14
 
 Web 2.16.3 · app điện thoại 2.14.3 · app TV 2.13.3

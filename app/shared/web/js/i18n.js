@@ -44,7 +44,7 @@
     'đang kết nối...': 'connecting...', 'Tắt': 'Quit', 'Dừng chương trình trên máy tính này (TV không bị ảnh hưởng)': 'Stop the program on this computer (the TV is not affected)',
     'Ứng dụng': 'Apps', 'Tệp': 'Files', 'Tệp · Cài': 'Files · Install', 'Tải / Cài': 'Download / Install', 'cần ADB': 'needs ADB', '· cần ADB': '· needs ADB', 'thêm': 'add', 'cài đặt': 'setup',
     'ADB: sẵn sàng': 'ADB: ready', 'ADB: chờ TV cho phép': 'ADB: waiting for the TV', 'ADB: cổng đóng': 'ADB: port closed', 'ADB: lỗi': 'ADB: error',
-    'Server tắt': 'Server stopped', 'Không gọi được server. Chạy lại start-mac.command.': 'Cannot reach the server. Run start-mac.command again.', 'Không gọi được server': 'Cannot reach the server',
+    'Server tắt': 'Server stopped', 'Không gọi được server. Mở lại TV Remote trên máy này.': 'Cannot reach the server. Open TV Remote on this computer again.', 'Không gọi được server': 'Cannot reach the server',
     'TV: mất kết nối': 'TV: disconnected', 'TV: đang bật': 'TV: on', 'TV: màn hình tắt': 'TV: screen off', 'Chưa chọn TV': 'No TV chosen',
     'Mở tab “TV” để tìm và thêm TV': 'Open the “TV” tab to find and add a TV', 'chưa ghép remote (tab TV)': 'remote not paired (TV tab)', 'đã kết nối': 'connected',
     // screen
@@ -146,7 +146,10 @@
     'Không mở được kết nối bảo mật. Ngày giờ trên TV có đúng không? (Cài đặt → Hệ thống → Ngày và giờ)': 'Could not open a secure connection. Is the TV\'s date and time right? (Settings → System → Date & time)',
     'TV (hoặc máy này) chưa vào được Internet.': 'The TV (or this device) cannot reach the Internet.', 'Mạng chậm hoặc vừa mất kết nối. Thử lại sau ít phút.': 'The network is slow or dropped. Try again in a few minutes.',
     'TV ngừng trả lời giữa chừng. Thử lại; vẫn vậy thì khởi động lại TV.': 'The TV stopped answering midway. Try again; if it keeps happening, restart the TV.',
-    'Chép tệp lên TV không trọn vẹn. Thử lại.': 'The file did not reach the TV whole. Try again.', 'TV hết bộ nhớ trống.': 'The TV is out of storage.', 'TV không có app mở loại tệp này (cài VLC rồi thử lại).': 'The TV has no app for this kind of file (install VLC, then retry).',
+    'Chép tệp lên TV không trọn vẹn. Thử lại.': 'The file did not reach the TV whole. Try again.', 'TV hết bộ nhớ trống.': 'The TV is out of storage.',
+    'TV báo cài xong nhưng tự gỡ app này ngay sau đó. Box của nhà mạng (FPT Play...) chặn một số app; app này không dùng được trên TV này.': 'The TV said it installed the app, then removed it right away. Operator boxes (FPT Play...) block some apps; this one cannot be used on this TV.',
+    'Trang mới hơn phần đang chạy: bấm ⏻ Tắt rồi mở lại TV Remote.': 'This page is newer than the running server: press ⏻ Quit, then open TV Remote again.', 'Ẩn': 'Hide', 'App này không có màn hình để mở: nó chỉ chạy nền, hoặc là một phần của app khác.': 'This app has no screen to open: it only runs in the background, or is part of another app.', 'Tự chọn: số phút (vd 40) hoặc giờ tắt (vd 23:30)': 'Custom: minutes (e.g. 40) or a time (e.g. 23:30)', '😴 Hẹn': '😴 Set', 'Nhập số phút (vd 40) hoặc giờ tắt (vd 23:30)': 'Type minutes (e.g. 40) or a time to turn off (e.g. 23:30)',
+    '🔄 Phần chạy trên máy này vừa được cập nhật': '🔄 The part running on this computer was just updated', 'Bấm ⏻ Tắt ở góc trên rồi mở lại TV Remote để dùng bản mới. Chưa làm thì vài nút sẽ báo lỗi.': 'Press ⏻ Quit at the top, then open TV Remote again to use the new version. Until then some buttons will fail.', 'TV không có app mở loại tệp này (cài VLC rồi thử lại).': 'The TV has no app for this kind of file (install VLC, then retry).',
     'Không đọc được link đăng nhập trên màn hình TV. Mở Tailscale trên TV và quét mã QR nó hiện.': 'Could not read the sign-in link off the TV\'s screen. Open Tailscale on the TV and scan the QR code it shows.',
     'mất kết nối, không rõ đã xong chưa': 'connection lost, unknown whether it finished',
     'Trực tiếp · hình đứng yên': 'Live · picture unchanged', 'hình đứng yên': 'picture unchanged',
@@ -189,8 +192,8 @@
     'Tác giả:': 'Author:', 'Mã nguồn:': 'Source code:', 'Các bản phát hành': 'Releases', 'Nhật ký thay đổi': 'Change log', 'Báo lỗi': 'Report a problem', 'Đóng': 'Close',
     'Hình trực tiếp và chuột dùng': 'The live picture and mouse use', '(Genymobile, Apache-2.0). Nút remote dùng thư viện androidtvremote2.': '(Genymobile, Apache-2.0). The remote buttons use the androidtvremote2 library.',
     // quit
-    'Tắt chương trình remote trên máy tính này?\nTV không bị ảnh hưởng. Muốn dùng lại thì bấm đúp start-mac.command / start-windows.cmd.': 'Stop the remote program on this computer?\nThe TV is not affected. To use it again, double-click start-mac.command / start-windows.cmd.',
-    'Đã tắt': 'Stopped', 'Chương trình remote trên máy tính này đã dừng. Bấm đúp start-mac.command (Windows: start-windows.cmd) để mở lại. Có thể đóng tab này.': 'The remote program on this computer has stopped. Double-click start-mac.command (Windows: start-windows.cmd) to start it again. You can close this tab.',
+    'Tắt chương trình remote trên máy tính này?\nTV không bị ảnh hưởng. Muốn dùng lại thì mở TV Remote (Mac) hoặc start-windows.cmd.': 'Stop the remote program on this computer?\nThe TV is not affected. To use it again, open TV Remote (Mac) or start-windows.cmd.',
+    'Đã tắt': 'Stopped', 'Chương trình remote trên máy tính này đã dừng. Mở TV Remote (Windows: start-windows.cmd) để dùng lại. Có thể đóng tab này.': 'The remote program on this computer has stopped. Open TV Remote (Windows: start-windows.cmd) to start it again. You can close this tab.',
     // TV tab
     'TV đã lưu': 'Saved TVs', 'Tìm TV': 'Find a TV', 'Quét mạng': 'Scan', 'Đang quét...': 'Scanning...', 'Chọn': 'Choose', 'Dùng': 'Use', 'đang dùng': 'in use', 'cùng mạng': 'same network', 'qua Tailscale': 'via Tailscale',
     'Tìm TV trong cùng Wi-Fi với máy này và các thiết bị Android trong Tailscale của bạn.': 'Looks for TVs on the same Wi-Fi as this computer and Android devices on your Tailscale network.',

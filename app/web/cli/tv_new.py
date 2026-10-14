@@ -126,7 +126,7 @@ def main(ip):
     cfg = tvconfig.load()
     tvconfig.upsert(cfg, {"name": model, "host": ts, "lan": ip if not ip.startswith("100.") else "", "mac": mac}, replace_host=ip)
     tvconfig.save(cfg)
-    print(f'\nXong. Đã lưu "{model}" ({ts}). Bấm đúp start-mac.command / start-windows.cmd để mở remote; TV này đã được chọn sẵn.')
+    print(f'\nXong. Đã lưu "{model}" ({ts}). Mở TV Remote (Mac) / start-windows.cmd để dùng remote; TV này đã được chọn sẵn.')
     print("Bật TV khi nó tắt hẳn vẫn cần một máy trong cùng mạng nhà gửi Wake-on-LAN (xem wake.py).")
     return 0
 

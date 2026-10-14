@@ -1,0 +1,42 @@
+#!/bin/bash
+# Double-clicking the app runs this, with no Terminal: a shell's own start-up (oh-my-zsh asking to update, a slow .zshrc)
+# cannot eat the command the way it can with start-mac.command. The server stops from the page's "Tắt" button (it ends
+# completely, see release_adb in server.py); opening the app again while it runs only opens the page.
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"                     # apps start with a bare PATH: /usr/bin/python3 can be 3.9
+URL="http://127.0.0.1:8765"
+SAVED="$HOME/Library/Application Support/TV Remote/folder"            # where the tv-remote folder was last found
+say() { osascript -e "display dialog \"$1\" buttons {\"OK\"} default button 1 with title \"TV Remote\" with icon caution" >/dev/null 2>&1; }
+note() { osascript -e "display notification \"$1\" with title \"TV Remote\"" >/dev/null 2>&1; }
+ok() { [ -n "$1" ] && [ -f "$1/app/web/server.py" ]; }
+
+# The code lives in the tv-remote folder, not in the app. Normally the app sits in that folder, but it may have been moved
+# (to Applications...), or macOS may run it from a random read-only copy (App Translocation: a quarantined app from a ZIP).
+APP="$(cd "$(dirname "$0")/../.." && pwd)"
+case "$APP" in */AppTranslocation/*)                                   # the real place is the source of that mount
+  real=$(mount | APP="$APP" awk '{ i = index($0, " on "); j = index($0, " ("); src = substr($0, 1, i - 1); mp = substr($0, i + 4, j - i - 4)
+    if (mp != "" && index(ENVIRON["APP"] "/", mp "/") == 1) print src substr(ENVIRON["APP"], length(mp) + 1) }' | tail -1)
+  [ -n "$real" ] && APP="$real" && xattr -dr com.apple.quarantine "$APP" 2>/dev/null ;;   # next time macOS runs it in place
+esac
+DIR="$(dirname "$APP")"
+ok "$DIR" || DIR="$(cat "$SAVED" 2>/dev/null)"
+ok "$DIR" || DIR="$({ find "$HOME/Desktop" "$HOME/Downloads" "$HOME/Documents" -maxdepth 6 -path "*/app/web/server.py"
+  find "$HOME" -maxdepth 4 -path "*/app/web/server.py" -not -path "*/Library/*"; } 2>/dev/null | head -1 | sed 's#/app/web/server.py$##')"
+while ! ok "$DIR"; do
+  DIR=$(osascript -e 'POSIX path of (choose folder with prompt "Chọn thư mục tv-remote đã tải về (có start-mac.command) / Pick the downloaded tv-remote folder (it has start-mac.command)")' 2>/dev/null) || exit 0
+  DIR="${DIR%/}"; ok "$DIR" || say "Thư mục này không phải tv-remote. Chọn thư mục có start-mac.command.\n\nThis is not the tv-remote folder. Pick the one with start-mac.command."
+done
+mkdir -p "$(dirname "$SAVED")" && printf '%s' "$DIR" > "$SAVED"
+[ "$1" = --where ] && { echo "$DIR"; exit 0; }                         # for testing: only say which folder it would run
+cd "$DIR" || exit 1
+if curl -s -m 2 -o /dev/null "$URL/api/about"; then open "$URL"; exit 0; fi
+mkdir -p .cache
+if [ ! -x venv/bin/python ]; then
+  note "Lần đầu: đang cài các gói cần thiết, khoảng 1 phút... / First run: installing, about a minute..."
+  { python3 -m venv venv && ./venv/bin/pip install -q -r app/web/requirements.txt; } > .cache/setup.log 2>&1 \
+    || { rm -rf venv; say "Chưa cài được: máy cần Python 3.10 trở lên (python.org). Chi tiết trong .cache/setup.log\n\nSetup failed: this Mac needs Python 3.10+ (python.org). Details in .cache/setup.log"; exit 1; }
+fi
+nohup ./venv/bin/python app/web/server.py "$@" > .cache/server.log 2>&1 &   # on its own: this app quits right away, so macOS
+for _ in $(seq 40); do                                                 # never sees an app that stopped answering it
+  sleep 0.5; curl -s -m 1 -o /dev/null "$URL/api/about" && { open "$URL"; exit 0; }
+done
+say "TV Remote chưa chạy được. Chi tiết trong .cache/server.log\n\nTV Remote did not start. Details in .cache/server.log"

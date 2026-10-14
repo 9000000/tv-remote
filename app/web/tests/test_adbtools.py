@@ -102,5 +102,16 @@ class SavedTvs(unittest.TestCase):
         self.assertEqual(cfg, {"current": "", "tvs": []})
 
 
+class ApkPackage(unittest.TestCase):
+    """The package name read from an APK's binary manifest, to check after an install that the TV kept the app."""
+    def test_reads_package(self):
+        m = (Path(__file__).resolve().parents[2] / "shared/src/test/resources/setup-manifest.bin").read_bytes()
+        self.assertEqual(adbtools.apk_package(m), "dev.tvremote.setup")
+
+    def test_garbage_is_none(self):
+        self.assertIsNone(adbtools.apk_package(b""))
+        self.assertIsNone(adbtools.apk_package(b"not a manifest at all"))
+
+
 if __name__ == "__main__":
     unittest.main()

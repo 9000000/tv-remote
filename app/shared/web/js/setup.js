@@ -63,19 +63,22 @@ $('#aboutbtn').addEventListener('click', async () => {
   $('#qrs').replaceChildren(...[code('📱 App Android', 'Quét bằng điện thoại để tải app.', 'https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk'),
     r && r.tv_web ? code('🌐 Remote trên điện thoại', 'Trang remote do chính TV phục vụ: quét khi điện thoại cùng Wi-Fi hoặc cùng Tailscale với TV.', r.tv_web) : null].filter(Boolean));
 });
-if (CORE === 'mac') fetch('/api/about').then((x) => x.json()).then((r) => { if (r.version) $('#ver').textContent = 'TV Remote ' + r.version + (r.released ? ' · ' + r.released : ''); }).catch(() => {});
+if (CORE === 'mac') fetch('/api/about').then((x) => x.json()).then((r) => {
+  if (r.version) $('#ver').textContent = 'TV Remote ' + r.version + (r.released ? ' · ' + r.released : '');
+  if (r.stale) $('#stale').hidden = false;                            // its code was updated after it started: new buttons would answer "not found"
+}).catch(() => {});
 $('#aboutclose').addEventListener('click', () => $('#about').close());
 $('#about').addEventListener('click', (e) => { if (e.target === $('#about')) $('#about').close(); });   // click outside the box
 
 // ---------- stop the local server from the page ----------
 let stopped = false;
 $('#quit').addEventListener('click', async () => {
-  if (!confirm('Tắt chương trình remote trên máy tính này?\nTV không bị ảnh hưởng. Muốn dùng lại thì bấm đúp start-mac.command / start-windows.cmd.')) return;
+  if (!confirm('Tắt chương trình remote trên máy tính này?\nTV không bị ảnh hưởng. Muốn dùng lại thì mở TV Remote (Mac) hoặc start-windows.cmd.')) return;
   if (screenOn) stopScreen();
   if (!await api('/api/shutdown', {})) return;
   stopped = true;
   document.querySelector('main').replaceChildren(el('section', { className: 'card', style: 'text-align:center;padding:40px 16px' },
-    el('h1', { textContent: 'Đã tắt' }), el('p', { className: 'muted', textContent: 'Chương trình remote trên máy tính này đã dừng. Bấm đúp start-mac.command (Windows: start-windows.cmd) để mở lại. Có thể đóng tab này.' })));
+    el('h1', { textContent: 'Đã tắt' }), el('p', { className: 'muted', textContent: 'Chương trình remote trên máy tính này đã dừng. Mở TV Remote (Windows: start-windows.cmd) để dùng lại. Có thể đóng tab này.' })));
 });
 
 // ---------- TVs: saved list, discovery, first-time setup ----------

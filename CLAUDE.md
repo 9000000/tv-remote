@@ -28,6 +28,7 @@ app/android/.../phone/   phone app, one file per part, as extension functions on
                          SceneStore, Headless + SceneActivity/SceneService (widget, tiles, shortcuts), Tiles, RemoteWidget
 app/tv/                  TV Setup: MainActivity (the TV screen), RemoteService (web server), PairActivity, Stats, TrustReceiver,
                          Rules + Guard + RulesReceiver + WarnActivity (sleep timer, bedtime, app limits)
+app/gradle/              the Gradle build of the two apps (settings point at ../shared, ../android, ../tv); open it in Android Studio
 app/web/                 server.py (the computer's /api core), scenes.py, adbtools.py, tvconfig.py (tvs.json, also "scenes"),
                          cli/ (command line tools), tests/
 dev/                     release.sh, gen_icons.py
@@ -46,7 +47,7 @@ dev/                     release.sh, gen_icons.py
 ## Build and run
 
 - Apps: `app/android/build.sh`, `app/tv/build.sh` (JDK 17, Android SDK) → `app/*/build/*.apk`. The web UI is packed into both APKs as assets.
-- Computer web: `venv/bin/python app/web/server.py` (first run: `start-mac.command` creates `venv`). For tests, run a second copy on another port with its own TV list so real TVs are untouched: `TVS_FILE=/tmp/x.json venv/bin/python app/web/server.py --port 8767`.
+- Computer web: `venv/bin/python app/web/server.py` (first run: `TV Remote.app` or `start-mac.command` creates `venv`; the app exists because a Terminal shell's start-up, e.g. oh-my-zsh asking to update, can eat the `.command` line). For tests, run a second copy on another port with its own TV list so real TVs are untouched: `TVS_FILE=/tmp/x.json venv/bin/python app/web/server.py --port 8767`.
 
 ## Automation (sleep timer, bedtime, app limits, scenes)
 
@@ -76,7 +77,7 @@ Test on emulators, not on real TVs. Two AVDs are used: `tvremote_gtv` (Google TV
 - If `adb exec-out screencap` comes back blank on the phone emulator, use `adb emu screenrecord screenshot <file>`.
 - Web UI: headless Chrome through the DevTools protocol against the test server above.
 - Unit tests (no device needed): `venv/bin/python -m unittest discover -s app/web/tests`, `node --test app/web/tests/`,
-  `cd app && ./gradlew :shared:testDebugUnitTest :tv:testDebugUnitTest`. The voice tests exist on both sides
+  `cd app/gradle && ./gradlew :shared:testDebugUnitTest :tv:testDebugUnitTest`. The voice tests exist on both sides
   (`voice.test.js`, `VoiceTest.kt`): keep `js/voice.js` and `Voice.kt` understanding the same sentences.
 - The TV's sound: the Google TV emulator cannot run YouTube; press D-pad keys on the TV during a capture to get click sounds.
 

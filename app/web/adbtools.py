@@ -3,7 +3,7 @@
 Everything shells out to `adb -s <target>`. Paths are restricted to the TV's shared storage, package names are
 validated, and long transfers run as background jobs the page polls.
 """
-import asyncio, hashlib, json, mimetypes, re, shlex, tempfile, time, urllib.request, uuid
+import asyncio, hashlib, json, mimetypes, re, shlex, struct, tempfile, time, urllib.request, uuid, zipfile
 from pathlib import Path
 from urllib.parse import quote, unquote, urlsplit
 
@@ -80,6 +80,41 @@ def safe_path(p):
     if ".." in p.split("/") or not (p in ROOTS or p.startswith(tuple(r + "/" for r in ROOTS))):
         raise AdbError("path must be under /sdcard or /storage")
     return p
+
+
+def apk_package(manifest):
+    """The package name in an APK's binary AndroidManifest.xml: the "package" attribute of the first element. None if unreadable."""
+    try:
+        u16, u32 = (lambda o: struct.unpack_from("<H", manifest, o)[0]), (lambda o: struct.unpack_from("<I", manifest, o)[0])
+        strings, o = [], u16(2)                                     # chunks start after the file header
+        while o + 8 <= len(manifest):
+            kind, size = u16(o), u32(o + 4)
+            if kind == 0x0001:                                      # string pool
+                count, utf8, start = u32(o + 8), u32(o + 16) & 0x100, o + u32(o + 20)
+                for i in range(count):
+                    at = start + u32(o + u16(o + 2) + 4 * i)
+                    if utf8:
+                        at += 2 if manifest[at] & 0x80 else 1      # length in chars, then in bytes
+                        n = manifest[at] & 0x7F
+                        if manifest[at] & 0x80:
+                            n, at = (n << 8) | manifest[at + 1], at + 1
+                        strings.append(manifest[at + 1:at + 1 + n].decode("utf-8", "replace"))
+                    else:
+                        n = u16(at)
+                        if n & 0x8000:
+                            n, at = ((n & 0x7FFF) << 16) | u16(at + 2), at + 2
+                        strings.append(manifest[at + 2:at + 2 + 2 * n].decode("utf-16-le", "replace"))
+            elif kind == 0x0102:                                    # first start tag: <manifest>
+                attrs, step = o + 16 + u16(o + 24), u16(o + 26)
+                for i in range(u16(o + 28)):
+                    a = attrs + i * step
+                    if strings[u32(a + 4)] == "package":
+                        return strings[u32(a + 8)]
+                return None
+            o += size or len(manifest)
+    except (IndexError, struct.error):
+        pass
+    return None
 
 
 def safe_name(n):
@@ -239,12 +274,14 @@ class Adb:
         return sorted(found)
 
     async def launch(self, pkg):
+        """The app's own TV screen, else its phone-style one; looked up first, `monkey` takes seconds per try (as Scenes.launch)."""
         self._pkg(pkg)
         for cat in ("LEANBACK_LAUNCHER", "LAUNCHER"):
-            out = await self.shell(f"monkey -p {pkg} -c android.intent.category.{cat} 1")
-            if "No activities found" not in out and "monkey aborted" not in out:
+            lines = (await self.shell(f"cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.{cat} {pkg} 2>/dev/null")).strip().splitlines()
+            comp = lines[-1].strip() if lines else ""
+            if re.fullmatch(r"[\w.]+/[\w.$]+", comp) and comp.startswith(pkg + "/") and "Error" not in await self.shell(f"am start -n {shlex.quote(comp)} 2>&1"):
                 return "launched"
-        raise AdbError("app has no launcher activity")
+        raise AdbError("this app cannot be opened (no launcher screen)")
 
     async def _am(self, args):
         # Google TV answers files it cannot show with a do-nothing stub (frameworkpackagestubs): that is "no app" too
@@ -371,9 +408,11 @@ class Adb:
             if not size.isdigit():
                 raise AdbError("cannot read file")
             j["msg"], j["pct"] = "installing on TV", 50
+            _, manifest, _ = await self.run("exec-out", f"unzip -p {q} AndroidManifest.xml 2>/dev/null")
             out = await self.shell(f"cat {q} | pm install -r -S {size} 2>&1", timeout=1800)
             if "Success" not in out:
                 raise AdbError(out.strip()[-300:] or "install failed")
+            await self.kept(apk_package(manifest), j)
             return "installed"
         return self.job(go, f"install {path.rsplit('/', 1)[-1]}")
 
@@ -437,11 +476,26 @@ class Adb:
         if open(local, "rb").read(2) != b"PK":
             raise AdbError("not an APK (not a zip file)")
         j["msg"] = "installing on TV"; j["pct"] = max(j["pct"], 60)
+        try:
+            with zipfile.ZipFile(local) as z:
+                pkg = apk_package(z.read("AndroidManifest.xml"))
+        except (zipfile.BadZipFile, KeyError):
+            pkg = None
         rc, out, err = await self.run("install", "-r", str(local), timeout=1800)
         text = (out.decode(errors="replace") + err).strip()
         if "Success" not in text:
             raise AdbError(text[-300:] or "install failed")
+        await self.kept(pkg, j)
         return "installed"
+
+    async def kept(self, pkg, j):
+        """Some boxes (FPT Play...) uninstall the apps they do not allow the moment they land, so "Success" alone proves nothing."""
+        if not pkg:
+            return
+        j["msg"], j["pct"] = "checking the TV kept it", 95
+        await asyncio.sleep(3)
+        if "package:" not in await self.shell(f"pm path {shlex.quote(pkg)} 2>/dev/null; echo ."):
+            raise AdbError(f"removed by the TV right after install: {pkg}")
 
     def job_fetch(self, url, dest_dir):
         dest_dir = safe_path(dest_dir)

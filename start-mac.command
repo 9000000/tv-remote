@@ -1,5 +1,5 @@
 #!/bin/bash
-# macOS: double-click this file. It starts the TV remote on this computer and opens it in the browser.
+# macOS: the "TV Remote" app does the same without Terminal (prefer it). This file: double-click it. It starts the TV remote on this computer and opens it in the browser.
 # Close the window (or press Ctrl+C) to stop. Linux: run ./start-linux.sh, which does the same.
 cd "$(dirname "$0")" || exit 1
 if [ ! -x venv/bin/python ]; then

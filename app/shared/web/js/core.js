@@ -15,14 +15,26 @@ const sleep = (ms) => new Promise((z) => setTimeout(z, ms));
 let toastT;
 function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2500); }
 
+// The computer's page is read fresh from disk, its server's code only at start: a newer page's calls then answer 404.
+const STALE = 'Trang mới hơn phần đang chạy: bấm ⏻ Tắt rồi mở lại TV Remote.';
+// Every button that waits on the server shows it: the one just clicked spins until its call returns (style.css .busy, shown
+// only past 150 ms so quick calls do not flicker). Counted from the end of the click handler, so a confirm() in it is fine.
+let clicked = null, clickedAt = Infinity;
+document.addEventListener('click', (e) => { clicked = e.target.closest && e.target.closest('button'); clickedAt = Infinity; setTimeout(() => { clickedAt = performance.now(); }, 0); }, true);
 async function api(path, data, quiet) {
+  const b = clicked && !clicked.dataset.busy && performance.now() - clickedAt < 1000 ? clicked : null;
+  if (b) { b.classList.add('busy'); b.busyN = (b.busyN || 0) + 1; }
+  try { return await call(path, data, quiet); } finally { if (b && !--b.busyN) b.classList.remove('busy'); }
+}
+async function call(path, data, quiet) {
   try {
     const r = await fetch(path, data ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) } : undefined);
     if (r.status === 401 && CORE === 'tv') { refresh(); return null; }   // this browser is no longer paired with the TV
     if (!r.ok) {
       let e = r.statusText; try { e = (await r.json()).error || e; } catch {}
+      if (r.status === 404 && CORE === 'mac') e = STALE;
       if (r.status === 503 && /^adb/.test(e)) { e = /allow/.test(e) ? 'TV đang hỏi cho phép gỡ lỗi: nhìn lên TV, chọn “Luôn cho phép”' : 'chưa nối được ADB tới TV'; setTimeout(refresh, 300); }
-      if (!quiet) toast('Lỗi: ' + e); return null;
+      if (!quiet) toast('Lỗi: ' + friendly(e)); return null;
     }
     return await r.json();
   } catch { if (!quiet) toast('Không gọi được server'); return null; }
@@ -38,6 +50,8 @@ const FRIENDLY = [
   [/no sign-in link/i, 'Không đọc được link đăng nhập trên màn hình TV. Mở Tailscale trên TV và quét mã QR nó hiện.'],
   [/INSUFFICIENT_STORAGE|No space left/i, 'TV hết bộ nhớ trống.'],
   [/no app that can open/i, 'TV không có app mở loại tệp này (cài VLC rồi thử lại).'],
+  [/cannot be opened \(no launcher screen\)|no launcher activity/i, 'App này không có màn hình để mở: nó chỉ chạy nền, hoặc là một phần của app khác.'],
+  [/removed by the TV right after install/i, 'TV báo cài xong nhưng tự gỡ app này ngay sau đó. Box của nhà mạng (FPT Play...) chặn một số app; app này không dùng được trên TV này.'],
 ];
 const friendly = (m) => { m = String(m || ''); const f = FRIENDLY.find(([re]) => re.test(m)); return f ? f[1] : m; };
 
@@ -81,7 +95,7 @@ async function refresh() {
   tvOn = !!(s && s.connected && s.is_on); STATE = s || {};
   if (!s) {
     setChip('#chipTv', 'bad', CORE === 'mac' ? 'Server tắt' : 'TV: mất kết nối'); setChip('#chipAdb', '', 'ADB: ?');
-    $('#info').textContent = CORE === 'mac' ? 'Không gọi được server. Chạy lại start-mac.command.' : 'Không gọi được TV: TV đang bật và cùng mạng với máy này chứ?'; return;
+    $('#info').textContent = CORE === 'mac' ? 'Không gọi được server. Mở lại TV Remote trên máy này.' : 'Không gọi được TV: TV đang bật và cùng mạng với máy này chứ?'; return;
   }
   const adbUp = s.adb && s.adb.state === 'ready';                   // over ADB the TV answers even when the remote-button service does not
   setChip('#chipTv', s.connected && s.is_on ? 'ok' : s.connected || adbUp ? 'warn' : 'bad', s.connected ? (s.is_on ? 'TV: đang bật' : 'TV: màn hình tắt') : adbUp ? 'Nút remote: chưa nối' : 'TV: mất kết nối');

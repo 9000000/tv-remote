@@ -367,8 +367,15 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val q = Adb.q(path)
         if (!adb.shell("head -c 2 $q 2>/dev/null").startsWith("PK")) throw IOException("not an APK file")
         val size = adb.shell("stat -c %s $q").trim()
+        val pkg = try { apkPackage(android.util.Base64.decode(adb.shell("unzip -p $q AndroidManifest.xml 2>/dev/null | base64"), android.util.Base64.DEFAULT)) }
+                  catch (e: IllegalArgumentException) { null }
         val out = adb.shell("cat $q | pm install -r -S $size 2>&1", 600000)
         if (!out.contains("Success")) throw IOException(if (out.trim().isEmpty()) "install failed" else out.trim())
+        // some boxes (FPT Play...) uninstall the apps they do not allow the moment they land, so "Success" alone proves nothing
+        if (pkg != null) {
+            Thread.sleep(3000)
+            if (!adb.shell("pm path $pkg 2>/dev/null; echo .").contains("package:")) throw IOException("removed by the TV right after install: $pkg")
+        }
         return "installed"
     }
 
@@ -553,6 +560,43 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "printf '\\043~\\043\\n'; cat /proc/uptime; printf '\\043~\\043\\n'; wm size; wm density; dumpsys display | grep -m1 -o 'fps=[0-9.]*'; printf '\\043~\\043\\n'; dumpsys wifi | grep -m1 mWifiInfo; " +
                 "printf '\\043~\\043\\n'; ip -o -4 addr show; printf '\\043~\\043\\n'; top -n 1 -b -m 7 -o %CPU,%MEM,ARGS -s 1 | tail -7; " +
                 "printf '\\043~\\043\\n'; dumpsys power | grep -m1 -o 'mWakefulness=[A-Za-z]*'; dumpsys activity activities | grep -m1 -E 'mResumedActivity|topResumedActivity'"
+
+        /** The package name in an APK's binary AndroidManifest.xml: the "package" attribute of the first element. Null if unreadable. */
+        fun apkPackage(m: ByteArray): String? = try {
+            val b = java.nio.ByteBuffer.wrap(m).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            fun u16(o: Int) = b.getShort(o).toInt() and 0xFFFF
+            val strings = ArrayList<String>()
+            var o = u16(2)                                                // chunks start after the file header
+            var found: String? = null
+            while (o + 8 <= m.size) {
+                val kind = u16(o); val size = b.getInt(o + 4)
+                if (kind == 0x0001) {                                     // string pool
+                    val utf8 = b.getInt(o + 16) and 0x100 != 0; val start = o + b.getInt(o + 20)
+                    for (i in 0 until b.getInt(o + 8)) {
+                        var at = start + b.getInt(o + u16(o + 2) + 4 * i)
+                        if (utf8) {
+                            at += if (m[at].toInt() and 0x80 != 0) 2 else 1      // length in chars, then in bytes
+                            var n = m[at].toInt() and 0x7F
+                            if (m[at].toInt() and 0x80 != 0) { n = (n shl 8) or (m[at + 1].toInt() and 0xFF); at++ }
+                            strings.add(String(m, at + 1, n, Charsets.UTF_8))
+                        } else {
+                            var n = u16(at)
+                            if (n and 0x8000 != 0) { n = ((n and 0x7FFF) shl 16) or u16(at + 2); at += 2 }
+                            strings.add(String(m, at + 2, 2 * n, Charsets.UTF_16LE))
+                        }
+                    }
+                } else if (kind == 0x0102) {                              // first start tag: <manifest>
+                    val attrs = o + 16 + u16(o + 24); val step = u16(o + 26)
+                    for (i in 0 until u16(o + 28)) {
+                        val a = attrs + i * step
+                        if (strings[b.getInt(a + 4)] == "package") { found = strings[b.getInt(a + 8)]; break }
+                    }
+                    break
+                }
+                o += if (size > 0) size else m.size
+            }
+            found
+        } catch (e: RuntimeException) { null }
 
         /** Java's String.split: trailing empty strings are dropped unless a limit is given. The parsing above counts on it. */
         private fun String.jsplit(regex: String, limit: Int = 0): Array<String> = Pattern.compile(regex).split(this, limit)

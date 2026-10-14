@@ -50,6 +50,18 @@ internal fun MainActivity.setTimer(minutes: Int) {
     }
 }
 
+/** "40" is minutes from now, "23:30" / "23h30" / "23h" a time of day (the next one); 0 = not understood. Same as sleepMinutes in auto.js. */
+internal fun sleepMinutes(v: String, now: java.util.Calendar = java.util.Calendar.getInstance()): Int {
+    val s = v.trim().lowercase()
+    if (s.isNotEmpty() && s.all { it.isDigit() }) return s.toIntOrNull()?.takeIf { it in 1..1440 } ?: 0
+    val m = Regex("""^(\d{1,2})\s*[:hg.]\s*(\d{2})?$""").find(s) ?: return 0
+    val h = m.groupValues[1].toInt(); val min = m.groupValues[2].ifEmpty { "0" }.toInt()
+    if (h > 23 || min > 59) return 0
+    val at = (now.clone() as java.util.Calendar).apply { set(java.util.Calendar.HOUR_OF_DAY, h); set(java.util.Calendar.MINUTE, min); set(java.util.Calendar.SECOND, 0); set(java.util.Calendar.MILLISECOND, 0) }
+    if (!at.after(now)) at.add(java.util.Calendar.DATE, 1)
+    return maxOf(1, Math.round((at.timeInMillis - now.timeInMillis) / 60000.0).toInt())
+}
+
 /** 😴: a few lengths to pick from, and where the timer stands. */
 internal fun MainActivity.timerMenu() {
     if (needsAdb()) return
@@ -62,6 +74,12 @@ internal fun MainActivity.timerMenu() {
             items.add(0, Triple(t("＋15 phút", "+15 minutes"), "") { rules(JSONObject().put("do", "sleep_add").put("minutes", 15)) { x -> toast(t("TV sẽ tự tắt lúc ", "The TV turns off at ") + hm(x.optLong("sleep_at"), x.optLong("now"))) } })
             items.add(1, Triple(t("Hủy hẹn giờ", "Cancel the timer"), "") { setTimer(0) })
         }
+        items.add(Triple(t("Tự chọn...", "Custom..."), t("Số phút, hoặc giờ tắt như 23:30", "Minutes, or a time like 23:30")) {
+            askText(t("Tắt TV sau bao lâu?", "Turn the TV off when?"), t("vd 40 (phút) hoặc 23:30", "e.g. 40 (minutes) or 23:30"), t("Hẹn", "Set")) {
+                val m = sleepMinutes(it)
+                if (m > 0) setTimer(m) else toast(t("Nhập số phút (vd 40) hoặc giờ tắt (vd 23:30)", "Type minutes (e.g. 40) or a time to turn off (e.g. 23:30)"))
+            }
+        })
         items.add(Triple(t("Giờ đi ngủ, giới hạn app...", "Bedtime, app limits..."), t("Trên trang Tự động", "On the Automation page")) { managing.open(host, "auto") })
         menu(if (at > 0) t("TV tự tắt lúc ", "The TV turns off at ") + hm(at, r.optLong("now")) else t("Hẹn giờ tắt TV", "Sleep timer"), if (at > 0) 0 else -1, items)
     }

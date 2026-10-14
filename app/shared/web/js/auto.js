@@ -60,6 +60,22 @@ function renderRules() {
   if (CORE === 'tv' && r.adb && r.adb !== 'ready') $('#bedstate').append(el('span', { className: 'warnline', textContent: '⚠️ TV Setup chưa nối được ADB của TV nên chưa tự tắt TV / đóng app được.' }));
 }
 
+// "40" is minutes from now, "23:30" / "23h30" / "23h" a time of day (the next one); the same reading as sleepMinutes in Automation.kt.
+function sleepMinutes(v, now = new Date()) {
+  v = v.trim().toLowerCase();
+  if (/^\d+$/.test(v)) return +v >= 1 && +v <= 1440 ? +v : 0;
+  const m = /^(\d{1,2})\s*[:hg.]\s*(\d{2})?$/.exec(v);
+  if (!m || +m[1] > 23 || +(m[2] || 0) > 59) return 0;
+  const at = new Date(now); at.setHours(+m[1], +(m[2] || 0), 0, 0);
+  if (at <= now) at.setDate(at.getDate() + 1);
+  return Math.max(1, Math.round((at - now) / 60000));
+}
+$('#sleepf').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const m = sleepMinutes($('#sleepin').value);
+  if (!m) return toast('Nhập số phút (vd 40) hoặc giờ tắt (vd 23:30)');
+  $('#sleepin').value = ''; await setSleep(m);
+});
 async function setSleep(m) {
   const r = await loadRules({ do: 'sleep', minutes: m });
   if (r) toast(m ? 'TV sẽ tự tắt lúc ' + clock(r.sleep_at) : 'Đã hủy hẹn giờ tắt');

@@ -8,9 +8,9 @@
 
 <table>
 <tr>
-<td align="center"><img src="docs/phone-remote.png" height="360" alt="App điện thoại"><br><sub>App điện thoại</sub></td>
-<td align="center"><img src="docs/tvpage-remote-vi.png" height="360" alt="Trang do TV phục vụ"><br><sub>Trang do TV phục vụ</sub></td>
-<td align="center"><img src="docs/web-remote-vi.png" height="360" alt="Web trên máy tính"><br><sub>Web trên máy tính</sub></td>
+<td align="center"><img src="docs/img/phone-remote.webp" height="360" alt="App điện thoại"><br><sub>App điện thoại</sub></td>
+<td align="center"><img src="docs/img/tvpage-remote-vi.webp" height="360" alt="Trang do TV phục vụ"><br><sub>Trang do TV phục vụ</sub></td>
+<td align="center"><img src="docs/img/web-remote-vi.webp" height="360" alt="Web trên máy tính"><br><sub>Web trên máy tính</sub></td>
 </tr>
 </table>
 
@@ -22,7 +22,7 @@
 |---|---|---|
 | Điện thoại Android | App **TV Remote** | `tv-remote.apk` ở [Releases](https://github.com/HoangTran0410/tv-remote/releases), hoặc mã Downloader **`2973135`** |
 | Bất kỳ trình duyệt nào, kể cả iPhone | App **TV Setup** cài trên TV, rồi mở `http://<IP của TV>:8765` | Trên TV: app Downloader, mã **`2397346`** ([xem cách cài](#cài-tv-setup-bằng-mã-downloader)) |
-| Máy tính (Mac, Windows, Linux) | **Web trên máy tính** | Tải repo, bấm đúp `start-mac.command` / `start-windows.cmd` |
+| Máy tính (Mac, Windows, Linux) | **Web trên máy tính** | Tải repo, bấm đúp `TV Remote` (Mac) / `start-windows.cmd` |
 
 Cả ba dùng **chung một giao diện web** với các tab: Remote, Ứng dụng, Tệp · Cài, Sức khỏe, Tự động, Thiết lập. App điện thoại có màn remote riêng (vuốt, nút âm lượng của máy) và mở các tab còn lại bằng nút ô lưới. Riêng web trên máy tính có thêm chuột, bàn phím máy tính, nhiều TV, và bấm phím được cả khi TV chưa bật ADB.
 
@@ -31,7 +31,7 @@ flowchart TD
     A["Bật Gỡ lỗi ADB trên TV<br/>(một lần, bằng remote của TV)"] --> B{"Dùng gì?"}
     B -- "Điện thoại Android" --> P["App TV Remote:<br/>Quét Wi-Fi → chọn TV"]
     B -- "Trình duyệt bất kỳ" --> T["Cài TV Setup lên TV (Downloader, mã 2397346) →<br/>quét mã QR trên TV → nhập mã 6 số"]
-    B -- "Máy tính" --> W["Bấm đúp start-mac / start-windows →<br/>chọn TV trong danh sách"]
+    B -- "Máy tính" --> W["Bấm đúp TV Remote / start-windows →<br/>chọn TV trong danh sách"]
     P --> Q["TV hỏi “Cho phép gỡ lỗi USB?”:<br/>tích Luôn cho phép → OK"]
     W --> Q
     T --> Q
@@ -128,7 +128,7 @@ Dùng được từ mọi trình duyệt, không cần cài gì trên điện th
 - **Trên điện thoại / máy tính bảng Android** cũng cài được (giao diện một cột cho màn nhỏ), để điều khiển chính máy đó từ trình duyệt khác. Điều kiện: ADB mở cổng 5555. Điện thoại thường chỉ mở qua cáp: cắm máy tính chạy `adb tcpip 5555` một lần, khởi động lại máy thì phải làm lại. "Gỡ lỗi không dây" của Android 11+ chưa dùng được. Tối ưu TV không chạy trên máy không phải TV.
 
 
-<p align="center"><img src="docs/tvapp-vi.png" width="640" alt="Màn hình app TV Setup"></p>
+<p align="center"><img src="docs/img/tvapp-vi.webp" width="640" alt="Màn hình app TV Setup"></p>
 </details>
 
 ## 3. Web trên máy tính
@@ -136,7 +136,7 @@ Dùng được từ mọi trình duyệt, không cần cài gì trên điện th
 Cần Python 3.10 trở lên, `adb` và `ffmpeg` (macOS: `brew install android-platform-tools ffmpeg`; Windows: bộ cài tự tải `adb`, thiếu ffmpeg thì `winget install Gyan.FFmpeg`).
 
 1. Tải repo về (git clone hoặc tải zip).
-2. Bấm đúp **`start-mac.command`** / **`start-windows.cmd`** (Linux: `./start-linux.sh`). Lần đầu nó tự cài các gói cần thiết.
+2. Mac: bấm đúp **`TV Remote`** (app trong thư mục; kéo vào Applications hay Dock cũng được, app nhớ chỗ thư mục tv-remote, chỉ đừng xoá thư mục đó). Windows: **`start-windows.cmd`**. Linux: `./start-linux.sh`. Lần đầu nó tự cài các gói cần thiết. Mac báo app “chưa xác minh” thì chuột phải → Mở (hoặc Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Vẫn mở). Dừng: nút ⏻ Tắt trên trang.
 3. Trình duyệt mở `http://127.0.0.1:8765` và hiện danh sách TV (tự quét mạng lần đầu). Chọn TV, hoặc gõ IP.
 4. TV đã sẵn sàng thì vào thẳng tab Remote. Chưa thì sang tab **Thiết lập**, làm theo các bước có dấu ✓: ADB → Tailscale (tùy chọn, một nút) → Ghép nút remote (gõ mã 6 ký tự TV hiện) → Lưu.
 
@@ -181,7 +181,7 @@ Làm một lần, lúc đang ở nhà (cùng Wi-Fi với TV):
 <details>
 <summary>Ảnh hộp Tailscale, và vì sao phải đăng nhập qua link</summary>
 
-<p align="center"><img src="docs/tailscale-vi.png" width="320" alt="Hộp Tailscale: link đăng nhập và mã QR"></p>
+<p align="center"><img src="docs/img/tailscale-vi.webp" width="320" alt="Hộp Tailscale: link đăng nhập và mã QR"></p>
 
 Vì sao không gửi thẳng tài khoản từ điện thoại sang TV? Tailscale chỉ nhận đăng nhập qua trang web của nó (Google, Microsoft...) hoặc khóa cấp qua phần mềm quản lý thiết bị doanh nghiệp, thứ mà TV gia đình không có. Gửi link đăng nhập là cách ít bước nhất mà không phải đưa mật khẩu cho app nào.
 </details>
@@ -283,13 +283,14 @@ flowchart LR
 Hướng dẫn đầy đủ cho người (và AI agent) sửa code: [CLAUDE.md](CLAUDE.md).
 
 ```
-start-mac.command, start-windows.cmd, start-linux.sh   chạy web trên máy tính
+TV Remote.app, start-windows.cmd, start-linux.sh       chạy web trên máy tính (start-mac.command: bản chạy trong Terminal)
 app/web/      web trên máy tính: server.py (aiohttp, chỉ 127.0.0.1), cli/ (dòng lệnh); giao diện lấy từ app/shared/web
 app/android/  app TV Remote (Kotlin)                app/tv/   app TV Setup (Kotlin) + trang web do TV phục vụ
 app/shared/   dùng chung: ADB, phiên điều khiển, quản lý TV, cập nhật; web/ = MỘT giao diện web cho cả ba nơi
               (máy tính, trang do TV phục vụ, phần Quản lý trong app điện thoại); mỗi nơi chỉ khác phần lõi trả lời /api
+app/gradle/   cấu hình build hai app Android (mở thư mục này trong Android Studio)
 dev/          release.sh (build APK + tạo GitHub release), gen_icons.py (một bộ icon cho cả ba nơi)
-docs/         ảnh chụp cho README
+docs/         trang giới thiệu (GitHub Pages) và ảnh chụp
 VERSION, CHANGELOG.md
 tvs.json, cert.pem, key.pem, *.jks, venv/, .cache/      dữ liệu riêng của máy bạn, không đưa lên git
 ```

@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="vi" data-lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TV Remote: điều khiển Android TV từ điện thoại, iPhone, máy tính</title>
+<meta name="description" content="Điều khiển Android TV / Google TV từ điện thoại, iPhone hay máy tính: xem và chạm lên màn hình TV, gõ chữ có dấu, hẹn giờ tắt, giới hạn app cho trẻ, quản lý app và tệp, điều khiển từ xa qua Tailscale. Miễn phí, mã nguồn mở, không máy chủ.">
+<meta name="theme-color" content="#0a0d14">
+<meta property="og:type" content="website">
+<meta property="og:title" content="TV Remote: điều khiển Android TV từ bất kỳ thiết bị nào">
+<meta property="og:description" content="Xem và chạm lên màn hình TV, gõ chữ có dấu, hẹn giờ tắt, giới hạn app cho trẻ, điều khiển từ xa. Miễn phí, mã nguồn mở, không máy chủ.">
+<meta property="og:image" content="tvapp-vi.png">
+<script>(function(){var l;try{l=localStorage.getItem("lang")}catch(e){}var q=new URLSearchParams(location.search).get("lang");l=q==="en"||q==="vi"?q:l||(/^vi\b/i.test(navigator.language||"")?"vi":"en");document.documentElement.dataset.lang=l;document.documentElement.lang=l})()</script>
+<link rel="icon" href="img/icon.png">
+<link rel="apple-touch-icon" href="img/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0d14; --bg2:#0e121b; --card:#141924; --card2:#1a2030; --line:#232a3a; --line2:#2f3850;
+  --text:#e9edf5; --muted:#9aa4b8; --dim:#6b7489;
+  --blue:#5b8cff; --blue2:#3d6fe8; --orange:#ffa31a; --green:#3ddc84; --red:#ff6b6b;
+  --r:18px; --max:1160px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font:16px/1.6 "Be Vietnam Pro",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+img{max-width:100%;height:auto;display:block}
+.hero .wrap>*,.feat>*,.panel>*,.prep>*,.flow>*{min-width:0}
+a{color:inherit;text-decoration:none}
+code,.mono{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace}
+html[data-lang="vi"] .en, html[data-lang="en"] .vi{display:none !important}
+
+.wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+section{padding:96px 0;position:relative}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--blue)}
+h1,h2,h3{line-height:1.15;letter-spacing:-.02em}
+h2{font-size:clamp(30px,4.2vw,46px);font-weight:800;margin:14px 0 16px}
+.lead{color:var(--muted);font-size:clamp(16px,1.6vw,19px);max-width:680px}
+.center{text-align:center}.center .lead{margin:0 auto}
+.grad{background:linear-gradient(100deg,#8fb0ff 0%,var(--blue) 45%,var(--orange) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* nav */
+nav{position:sticky;top:0;z-index:50;background:rgba(10,13,20,.72);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid rgba(255,255,255,.06)}
+nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
+.brand img{width:32px;height:32px;border-radius:9px}
+.navlinks{display:flex;gap:4px;margin-left:auto}
+.navlinks a{padding:8px 12px;border-radius:10px;color:var(--muted);font-size:15px;font-weight:500}
+.navlinks a:hover{color:var(--text);background:rgba(255,255,255,.05)}
+.navtools{display:flex;gap:8px;align-items:center}
+.lang{display:flex;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:3px}
+.lang button{all:unset;cursor:pointer;padding:4px 10px;border-radius:7px;font-size:13px;font-weight:700;color:var(--muted)}
+.lang button[aria-pressed="true"]{background:var(--card2);color:var(--text)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 22px;border-radius:14px;font-weight:700;font-size:16px;border:1px solid transparent;cursor:pointer;transition:transform .15s,background .15s,border-color .15s;white-space:nowrap}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--blue);color:#06112b;box-shadow:0 8px 30px -8px rgba(91,140,255,.7)}
+.btn-primary:hover{background:#6f9aff}
+.btn-ghost{background:rgba(255,255,255,.04);border-color:var(--line2);color:var(--text)}
+.btn-ghost:hover{background:rgba(255,255,255,.08)}
+.btn-sm{padding:8px 14px;font-size:14px;border-radius:10px}
+.btn svg{width:20px;height:20px;flex:none}
+
+/* hero */
+.hero{padding:72px 0 40px;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:-200px -10% auto;height:900px;background:radial-gradient(600px 380px at 70% 30%,rgba(91,140,255,.22),transparent 70%),radial-gradient(500px 300px at 20% 10%,rgba(255,163,26,.10),transparent 70%);pointer-events:none}
+.hero .wrap{display:grid;grid-template-columns:1.02fr 1fr;gap:48px;align-items:center;position:relative}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 14px 6px 8px;border-radius:999px;background:rgba(91,140,255,.1);border:1px solid rgba(91,140,255,.3);font-size:14px;color:#c4d4ff;font-weight:500}
+.pill b{background:var(--blue);color:#06112b;border-radius:999px;padding:2px 9px;font-size:12px}
+.hero h1{font-size:clamp(38px,5.6vw,66px);font-weight:800;margin:22px 0 20px}
+.hero .lead{font-size:clamp(17px,1.7vw,20px)}
+.cta{display:flex;flex-wrap:wrap;gap:12px;margin:32px 0 26px}
+.trust{display:flex;flex-wrap:wrap;gap:8px 22px;color:var(--muted);font-size:14px}
+.trust span{display:inline-flex;align-items:center;gap:7px}
+.trust svg{width:17px;height:17px;color:var(--green)}
+
+.stage{position:relative;padding:0 0 70px}
+.stage .tv{margin-right:16%}
+.tv{position:relative;border-radius:14px;padding:10px;background:linear-gradient(#20263a,#151a28);box-shadow:0 40px 80px -30px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.07) inset}
+.tv img{border-radius:6px}
+.tv::after{content:"";position:absolute;left:50%;bottom:-26px;transform:translateX(-50%);width:34%;height:26px;background:linear-gradient(#1b2131,#10141f);clip-path:polygon(18% 0,82% 0,100% 100%,0 100%);border-radius:0 0 6px 6px}
+.phone{border-radius:30px;padding:7px;background:#0d1018;box-shadow:0 30px 60px -20px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.12) inset,0 0 0 2px #2a3145}
+.phone img{border-radius:24px}
+.stage .phone{position:absolute;right:0;bottom:0;width:24%;border-radius:22px;padding:5px}
+.stage .phone img{border-radius:18px}
+.signal{position:absolute;right:20%;bottom:44%;width:90px;height:90px;pointer-events:none}
+.signal i{position:absolute;inset:0;border:2px solid var(--blue);border-radius:50%;opacity:0;animation:ping 2.6s infinite}
+.signal i:nth-child(2){animation-delay:.85s}.signal i:nth-child(3){animation-delay:1.7s}
+@keyframes ping{0%{transform:scale(.3);opacity:.9}100%{transform:scale(1.5);opacity:0}}
+@media (prefers-reduced-motion:reduce){.signal i{animation:none;opacity:.3}}
+
+/* pains */
+.pains{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:48px}
+.pain{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:8px;transition:border-color .2s,transform .2s}
+.pain:hover{border-color:var(--line2);transform:translateY(-2px)}
+.pain .emo{font-size:28px;line-height:1}
+.pain q{font-weight:700;font-size:17px;line-height:1.3;quotes:"“" "”"}
+.pain p{color:var(--muted);font-size:14.5px;line-height:1.5;margin-top:auto}
+.pain p b{color:var(--green);font-weight:600}
+
+/* features */
+.feat{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;margin-top:88px}
+.feat.flip .shot{order:-1}
+.feat h3{font-size:clamp(26px,3vw,34px);font-weight:800;margin:12px 0 14px}
+.feat ul{list-style:none;margin-top:22px;display:grid;gap:12px}
+.feat li{display:flex;gap:12px;color:var(--muted)}
+.feat li b{color:var(--text);font-weight:600}
+.feat li::before{content:"";flex:none;width:22px;height:22px;margin-top:2px;border-radius:7px;background:rgba(91,140,255,.15) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b8cff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E") center/14px no-repeat}
+.shot{position:relative}
+.shot::before{content:"";position:absolute;inset:8% 4%;background:radial-gradient(closest-side,rgba(91,140,255,.25),transparent);filter:blur(30px);z-index:-1}
+.browser{border-radius:14px;overflow:hidden;background:var(--card);border:1px solid var(--line2);box-shadow:0 40px 80px -30px rgba(0,0,0,.8)}
+.browser .bar{display:flex;align-items:center;gap:7px;padding:11px 14px;background:#11151f;border-bottom:1px solid var(--line)}
+.browser .bar i{width:11px;height:11px;border-radius:50%;background:#3a4256}
+.browser .bar span{margin-left:12px;flex:1;max-width:280px;background:#1a2030;border-radius:7px;padding:3px 12px;font-size:12px;color:var(--dim)}
+.duo{display:flex;gap:20px;justify-content:center;align-items:flex-end;max-width:500px;margin:0 auto}
+.duo .phone{width:48%}
+.duo .phone.small{width:42%;margin-bottom:48px}
+.duo .phone img{aspect-ratio:720/1560;object-fit:cover;object-position:top}
+.tag{display:inline-block;font-size:12px;font-weight:700;color:var(--orange);background:rgba(255,163,26,.1);border:1px solid rgba(255,163,26,.25);border-radius:999px;padding:3px 10px;margin-left:6px;vertical-align:middle}
+
+.minis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:88px}
+.mini{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px}
+.mini .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--card2);font-size:22px;margin-bottom:14px}
+.mini h4{font-size:17px;margin-bottom:6px}
+.mini p{color:var(--muted);font-size:14.5px}
+
+/* how */
+.how{background:linear-gradient(180deg,transparent,var(--bg2) 20%,var(--bg2) 80%,transparent)}
+.flow{display:grid;grid-template-columns:1fr auto 1fr;gap:28px;align-items:center;margin-top:52px}
+.node{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.node h4{font-size:15px;color:var(--muted);font-weight:600;margin-bottom:14px;text-transform:uppercase;letter-spacing:.08em}
+.chip{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--card2);margin-top:8px;font-weight:600}
+.chip small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.chip .e{font-size:22px}
+.wire{display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--muted);font-size:13px;text-align:center;max-width:180px}
+.wire .line{width:150px;height:2px;background:linear-gradient(90deg,var(--blue),var(--orange));position:relative;border-radius:2px}
+.wire .line::after{content:"";position:absolute;right:-2px;top:-5px;border:6px solid transparent;border-left:9px solid var(--orange)}
+.noserver{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;border:1px dashed var(--line2);color:var(--muted);font-size:13px}
+.noserver s{color:var(--red)}
+.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:40px}
+.fact{padding:20px;border-radius:var(--r);border:1px solid var(--line)}
+.fact b{display:block;font-size:24px;font-weight:800;margin-bottom:4px}
+.fact span{color:var(--muted);font-size:14px}
+
+/* choose */
+.choose{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px}
+.opt{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:26px;display:flex;flex-direction:column;cursor:pointer;transition:border-color .2s,background .2s;text-align:left;color:inherit;font:inherit}
+.opt:hover{border-color:var(--line2)}
+.opt[aria-selected="true"]{border-color:var(--blue);background:linear-gradient(180deg,rgba(91,140,255,.08),var(--card) 60%)}
+.opt .big{font-size:34px;margin-bottom:14px}
+.opt h3{font-size:20px;margin-bottom:4px}
+.opt .who{color:var(--blue);font-weight:600;font-size:14px;margin-bottom:12px}
+.opt p{color:var(--muted);font-size:14.5px}
+.opt .go{margin-top:18px;font-weight:700;font-size:14px;color:var(--text);display:flex;align-items:center;gap:6px}
+
+/* install */
+.prep{margin-top:56px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px;display:grid;grid-template-columns:260px 1fr;gap:32px}
+.prep h3{font-size:22px;margin:8px 0 8px}
+.prep .note{color:var(--muted);font-size:14.5px}
+.steps{list-style:none;counter-reset:s;display:grid;gap:14px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:36px 1fr;gap:14px;align-items:start}
+.steps li::before{content:counter(s);width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:var(--card2);border:1px solid var(--line2);font-weight:800;font-size:14px;color:var(--blue)}
+.steps li div{padding-top:4px;color:var(--muted)}
+.steps li div b{color:var(--text)}
+.path{display:inline;font-size:14px;color:var(--text);background:var(--card2);border:1px solid var(--line);padding:1px 8px;border-radius:7px;line-height:2}
+
+.panel{margin-top:20px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:32px;display:none}
+.panel.on{display:grid;grid-template-columns:1.15fr .85fr;gap:40px;animation:fade .3s}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.panel h3{font-size:24px;margin-bottom:6px}
+.panel .sub{color:var(--muted);margin-bottom:22px}
+.code{border-radius:18px;padding:22px;background:linear-gradient(135deg,#1d1408,#24170a);border:1px solid rgba(255,163,26,.35);text-align:center}
+.code small{display:block;color:#ffcf8a;font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.code .num{font-family:"JetBrains Mono",monospace;font-size:clamp(40px,5vw,54px);font-weight:700;letter-spacing:.08em;color:#fff;margin:6px 0 10px}
+.code .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.code .btn-ghost{border-color:rgba(255,163,26,.35)}
+.side{display:flex;flex-direction:column;gap:14px}
+.side .alt{color:var(--muted);font-size:14px;padding:16px;border-radius:14px;border:1px dashed var(--line2)}
+.side .alt a{color:var(--blue);font-weight:600}
+.term{background:#07090e;border:1px solid var(--line);border-radius:14px;padding:16px 18px;font-size:14px;color:#cfd8ea;overflow-x:auto}
+.term .c{color:var(--dim)}
+.term .p{color:var(--green)}
+
+/* compat + security */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:48px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px}
+.box h3{font-size:20px;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.list{list-style:none;display:grid;gap:12px}
+.list li{display:flex;gap:12px;color:var(--muted);font-size:15px}
+.list li .m{flex:none;width:22px;text-align:center}
+.list li b{color:var(--text);font-weight:600}
+
+/* faq */
+.faq{max-width:820px;margin:44px auto 0;display:grid;gap:10px}
+details{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:0 22px}
+details[open]{border-color:var(--line2)}
+summary{list-style:none;cursor:pointer;padding:18px 0;font-weight:600;font-size:16.5px;display:flex;justify-content:space-between;gap:16px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-size:22px;line-height:1;color:var(--muted);transition:transform .2s}
+details[open] summary::after{transform:rotate(45deg)}
+details p{color:var(--muted);padding:0 0 20px;font-size:15px}
+details p a{color:var(--blue)}
+
+/* final */
+.final{text-align:center;padding:100px 0 110px}
+.final .card{border-radius:28px;padding:64px 28px;background:radial-gradient(500px 240px at 50% 0%,rgba(91,140,255,.28),transparent 70%),var(--card);border:1px solid var(--line2)}
+.final h2{margin-top:0}
+.final .cta{justify-content:center}
+footer{border-top:1px solid var(--line);padding:36px 0;color:var(--dim);font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-between}
+footer a{color:var(--muted)}footer a:hover{color:var(--text)}
+
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);background:var(--card2);border:1px solid var(--line2);padding:10px 18px;border-radius:12px;font-weight:600;font-size:14px;transition:transform .25s;z-index:99}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+@media (max-width:980px){
+  .navlinks{display:none}
+  .navtools{margin-left:auto}
+  .hero .wrap,.feat,.panel.on,.prep,.two{grid-template-columns:1fr}
+  .feat{gap:36px}
+  .feat.flip .shot{order:0}
+  .pains{grid-template-columns:repeat(2,1fr)}
+  .minis,.choose{grid-template-columns:1fr 1fr}
+  .facts{grid-template-columns:repeat(2,1fr)}
+  .flow{grid-template-columns:1fr;justify-items:stretch}
+  .wire{max-width:none;flex-direction:row;justify-content:center}
+  .wire .line{width:2px;height:40px;background:linear-gradient(var(--blue),var(--orange))}
+  .wire .line::after{right:-5px;top:auto;bottom:-6px;border:6px solid transparent;border-top:9px solid var(--orange)}
+  .stage{max-width:620px;margin:0 auto;width:100%}
+}
+@media (max-width:620px){
+  .wrap{padding:0 16px}
+  section{padding:72px 0}
+  .hero{padding-top:44px}
+  .gh-label{display:none}
+  .minis,.choose{grid-template-columns:1fr}
+  .pains{gap:10px}.pain{padding:14px}.pain .emo{font-size:22px}.pain q{font-size:15px}.pain p{font-size:13.5px}
+  .cta .btn{flex:1 1 100%}
+  .stage{padding-bottom:56px}
+  .panel{padding:22px}
+  .prep{padding:22px}
+  .duo{gap:12px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="img/icon.png" width="32" height="32" alt="">TV Remote</a>
+    <div class="navlinks">
+      <a href="#why"><span class="vi">Vì sao</span><span class="en">Why</span></a>
+      <a href="#features"><span class="vi">Tính năng</span><span class="en">Features</span></a>
+      <a href="#how"><span class="vi">Cách hoạt động</span><span class="en">How it works</span></a>
+      <a href="#install"><span class="vi">Cài đặt</span><span class="en">Install</span></a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <div class="navtools">
+      <div class="lang" role="group" aria-label="Language">
+        <button data-set="vi" aria-pressed="true">VI</button>
+        <button data-set="en" aria-pressed="false">EN</button>
+      </div>
+      <a class="btn btn-ghost btn-sm" href="https://github.com/HoangTran0410/tv-remote" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.62 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+        <span class="gh-label">GitHub</span>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero" id="top">
+  <div class="wrap">
+    <div>
+      <a class="pill" href="https://github.com/HoangTran0410/tv-remote/releases/latest" target="_blank" rel="noopener">
+        <b id="ver">NEW</b>
+        <span class="vi">Miễn phí · mã nguồn mở · không quảng cáo</span>
+        <span class="en">Free · open source · no ads</span>
+      </a>
+      <h1>
+        <span class="vi">Chiếc remote <span class="grad">thông minh nhất</span> cho Android TV, ngay trên máy bạn đang cầm.</span>
+        <span class="en">The <span class="grad">smartest remote</span> for your Android TV is already in your hand.</span>
+      </h1>
+      <p class="lead">
+        <span class="vi">Điện thoại Android, iPhone hay máy tính đều thành remote: thấy màn hình TV và chạm lên đó, gõ chữ có dấu, hẹn giờ tắt cho con, quản lý app, giúp bố mẹ chỉnh TV từ xa. Kết nối đi thẳng tới TV, không qua máy chủ nào.</span>
+        <span class="en">Your Android phone, iPhone or computer becomes the remote: see the TV screen and touch it, type with a real keyboard, set sleep timers for the kids, manage apps, fix your parents' TV from across town. Everything talks straight to the TV, no server in between.</span>
+      </p>
+      <div class="cta">
+        <a class="btn btn-primary" href="#install">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
+          <span class="vi">Cài trong 2 phút</span><span class="en">Set up in 2 minutes</span>
+        </a>
+        <a class="btn btn-ghost" href="#features"><span class="vi">Xem làm được gì</span><span class="en">See what it does</span></a>
+      </div>
+      <div class="trust">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg><span class="vi">Không tài khoản</span><span class="en">No account</span></span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg><span class="vi">Không đám mây</span><span class="en">No cloud</span></span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg><span class="vi">Chạy cả trên iPhone</span><span class="en">Works on iPhone too</span></span>
+      </div>
+    </div>
+    <div class="stage">
+      <div class="tv">
+        <img src="img/tvapp-vi.webp" data-lang-src="img/tvapp-LANG.webp" width="1280" height="720" alt="TV Setup" fetchpriority="high">
+      </div>
+      <div class="signal" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="phone"><img src="img/phone-remote.webp" width="480" height="1040" alt="TV Remote phone app" fetchpriority="high"></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ PAIN POINTS ============ -->
+<section id="why">
+  <div class="wrap">
+    <div class="center reveal">
+      <span class="eyebrow"><span class="vi">Nghe quen không?</span><span class="en">Sound familiar?</span></span>
+      <h2><span class="vi">Cái remote đi kèm TV chưa bao giờ đủ.</span><span class="en">The remote in the box was never enough.</span></h2>
+      <p class="lead"><span class="vi">Tám chuyện nhà nào có Android TV cũng gặp, và cách giải quyết.</span><span class="en">Eight things every Android TV home knows, and the fix.</span></p>
+    </div>
+    <div class="pains">
+      <div class="pain reveal"><div class="emo">🛋️</div><q class="vi">Remote lại mất, lại hết pin</q><q class="en">Remote lost, batteries dead</q><p><b>→</b> <span class="vi">Điện thoại thành remote, dùng được ngay.</span><span class="en">Your phone is the remote, right away.</span></p></div>
+      <div class="pain reveal"><div class="emo">⌨️</div><q class="vi">Gõ chữ bằng phím mũi tên</q><q class="en">Typing with arrow keys</q><p><b>→</b> <span class="vi">Gõ bằng bàn phím thật, có dấu tiếng Việt.</span><span class="en">Type on a real keyboard instead.</span></p></div>
+      <div class="pain reveal"><div class="emo">🌙</div><q class="vi">Con xem YouTube tới khuya</q><q class="en">Kids on YouTube till midnight</q><p><b>→</b> <span class="vi">Hẹn giờ tắt, giờ đi ngủ, giới hạn giờ xem. TV tự canh, khỏi phải nhắc.</span><span class="en">Sleep timer, bedtime, screen-time limits. The TV enforces them.</span></p></div>
+      <div class="pain reveal"><div class="emo">📞</div><q class="vi">Bố mẹ ở xa nhờ chỉnh TV</q><q class="en">Parents need help, far away</q><p><b>→</b> <span class="vi">Thấy màn hình TV nhà bố mẹ và bấm giúp từ xa.</span><span class="en">See their TV screen and press buttons for them.</span></p></div>
+      <div class="pain reveal"><div class="emo">🐢</div><q class="vi">TV chậm, đầy app rác</q><q class="en">Slow TV, full of bloat</q><p><b>→</b> <span class="vi">Tối ưu một nút, hoàn tác bất cứ lúc nào.</span><span class="en">One-tap Optimize, undo any time.</span></p></div>
+      <div class="pain reveal"><div class="emo">🍎</div><q class="vi">Nhà dùng iPhone</q><q class="en">You're on iPhone</q><p><b>→</b> <span class="vi">Mở Safari, nhập mã 6 số. Không cài gì.</span><span class="en">Open Safari, enter a 6-digit code. Nothing to install.</span></p></div>
+      <div class="pain reveal"><div class="emo">🔇</div><q class="vi">Xem khuya sợ ồn</q><q class="en">Late show, sleeping house</q><p><b>→</b> <span class="vi">Nghe tiếng TV qua tai nghe điện thoại.</span><span class="en">Hear the TV in your phone's headphones.</span></p></div>
+      <div class="pain reveal"><div class="emo">🕵️</div><q class="vi">App remote đầy quảng cáo</q><q class="en">Remote apps full of ads</q><p><b>→</b> <span class="vi">Mã nguồn mở. Không quảng cáo, không tài khoản.</span><span class="en">Open source. No ads, no account.</span></p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section id="features" style="padding-top:40px">
+  <div class="wrap">
+    <div class="center reveal">
+      <span class="eyebrow"><span class="vi">Tính năng</span><span class="en">Features</span></span>
+      <h2><span class="vi">Không chỉ là nút bấm.</span><span class="en">Much more than buttons.</span></h2>
+      <p class="lead"><span class="vi">Một bộ công cụ đầy đủ để dùng, dọn dẹp và quản lý chiếc TV của bạn.</span><span class="en">A complete toolkit to use, look after and manage your TV.</span></p>
+    </div>
+
+    <div class="feat reveal">
+      <div>
+        <span class="eyebrow">01 · <span class="vi">Thấy và chạm</span><span class="en">See and touch</span></span>
+        <h3><span class="vi">Màn hình TV nằm ngay trong lòng bàn tay.</span><span class="en">The TV screen, in the palm of your hand.</span></h3>
+        <p class="lead"><span class="vi">Xem trực tiếp màn hình TV và chạm lên hình như chạm lên TV. Không cần nhìn lên TV để biết mình đang ở menu nào.</span><span class="en">Watch the TV screen live and tap on it as if you were tapping the TV. No more looking up to see which menu you're in.</span></p>
+        <ul>
+          <li class="vi"><span><b>Chạm, vuốt, cuộn</b> lên hình; trên máy tính dùng chuột và bàn phím.</span></li>
+          <li class="en"><span><b>Tap, swipe, scroll</b> on the picture; mouse and keyboard on a computer.</span></li>
+          <li class="vi"><span><b>Chất lượng 240p tới 960p</b>, tắt hình thì TV không tốn thêm CPU.</span></li>
+          <li class="en"><span><b>240p to 960p</b>; turn the picture off and the TV spends no extra CPU.</span></li>
+          <li class="vi"><span><b>Nói với TV:</b> “mở YouTube”, “tăng âm lượng 5”, “hẹn giờ tắt 30 phút”.</span></li>
+          <li class="en"><span><b>Talk to it:</b> “open YouTube”, “volume up 5”, “sleep in 30 minutes”.</span></li>
+          <li class="vi"><span><b>Widget, ô Cài đặt nhanh, phím tắt</b> bật/tắt TV mà không cần mở app.</span></li>
+          <li class="en"><span><b>Widget, Quick Settings tiles, shortcuts</b> to control the TV without opening the app.</span></li>
+        </ul>
+      </div>
+      <div class="shot duo">
+        <div class="phone"><img src="img/phone-remote.webp" width="480" height="1040" alt="" loading="lazy" decoding="async"></div>
+        <div class="phone small">
+          <img src="img/tvpage-remote-vi.webp" data-lang-src="img/tvpage-remote-LANG.webp" width="400" height="867" alt="" loading="lazy" decoding="async">
+        </div>
+      </div>
+    </div>
+
+    <div class="feat flip reveal">
+      <div>
+        <span class="eyebrow">02 · <span class="vi">Cho gia đình</span><span class="en">For families</span></span>
+        <h3><span class="vi">Cài một lần, TV tự canh giờ.</span><span class="en">Set it once, the TV keeps watch.</span></h3>
+        <p class="lead"><span class="vi">Hẹn giờ, giờ đi ngủ và giới hạn app do chính TV thực hiện. Điện thoại, máy tính tắt hết vẫn chạy, và cũng không ai “lỡ quên” được.</span><span class="en">Timers, bedtime and app limits run on the TV. No phone or computer has to stay on, and nobody gets to “forget”.</span></p>
+        <ul>
+          <li class="vi"><span><b>Hẹn giờ tắt</b> và <b>giờ đi ngủ</b>: TV bật lên trong khoảng giờ đó sẽ tự tắt, có báo trước.</span></li>
+          <li class="en"><span><b>Sleep timer</b> and <b>bedtime</b>: a TV switched on during bedtime turns itself off, with a warning first.</span></li>
+          <li class="vi"><span><b>Giới hạn phút mỗi ngày</b> cho từng app (YouTube, TikTok…).</span></li>
+          <li class="en"><span><b>Daily minutes</b> per app (YouTube, TikTok…).</span></li>
+          <li class="vi"><span><b>Cảnh</b>: một nút làm nhiều việc, ví dụ “Xem phim” = bật TV, mở Netflix, âm lượng 20.</span></li>
+          <li class="en"><span><b>Scenes</b>: one button, many steps. “Movie night” = TV on, open Netflix, volume 20.</span></li>
+          <li class="vi"><span><b>Lịch sử dùng TV</b> theo ngày, app nào dùng nhiều nhất.</span></li>
+          <li class="en"><span><b>Usage history</b> per day, and which apps get the most time.</span></li>
+        </ul>
+      </div>
+      <div class="shot">
+        <div class="tv">
+          <img src="img/tvapp-vi.webp" data-lang-src="img/tvapp-LANG.webp" width="1280" height="720" alt="" loading="lazy" decoding="async">
+        </div>
+      </div>
+    </div>
+
+    <div class="feat reveal">
+      <div>
+        <span class="eyebrow">03 · <span class="vi">Quản lý như dân chuyên</span><span class="en">Manage like a pro</span></span>
+        <h3><span class="vi">Cả chiếc TV, gọn trong một trang web.</span><span class="en">The whole TV, in one web page.</span></h3>
+        <p class="lead"><span class="vi">Những việc trước đây phải cắm máy tính, gõ lệnh ADB, giờ chỉ là vài cú bấm.</span><span class="en">What used to take a laptop and ADB commands is now a few clicks.</span></p>
+        <ul>
+          <li class="vi"><span><b>Ứng dụng:</b> mở, dừng, gỡ, tắt app hệ thống, làm hàng loạt.</span></li>
+          <li class="en"><span><b>Apps:</b> open, stop, uninstall, disable system apps, in bulk.</span></li>
+          <li class="vi"><span><b>Tệp · Cài:</b> duyệt bộ nhớ và USB, kéo thả gửi tệp, cài APK từ máy hay từ link.</span></li>
+          <li class="en"><span><b>Files · Install:</b> browse storage and USB, drag and drop, install APKs from disk or a link.</span></li>
+          <li class="vi"><span><b>Sức khỏe:</b> CPU, RAM, bộ nhớ, Wi-Fi, giải phóng RAM, biểu đồ theo thời gian.</span></li>
+          <li class="en"><span><b>Health:</b> CPU, RAM, storage, Wi-Fi, free up RAM, charts over time.</span></li>
+          <li class="vi"><span><b>Nhiều TV</b> trong một danh sách, chuyển qua lại một nút.</span></li>
+          <li class="en"><span><b>Many TVs</b> in one list, switch with a click.</span></li>
+        </ul>
+      </div>
+      <div class="shot">
+        <div class="browser">
+          <div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8765</span></div>
+          <img src="img/web-remote-vi.webp" data-lang-src="img/web-remote-LANG.webp" width="1200" height="851" alt="" loading="lazy" decoding="async">
+        </div>
+      </div>
+    </div>
+
+    <div class="feat flip reveal">
+      <div>
+        <span class="eyebrow">04 · <span class="vi">Ở bất cứ đâu</span><span class="en">From anywhere</span></span>
+        <h3><span class="vi">Đi xa vẫn điều khiển được TV ở nhà.</span><span class="en">Control the TV at home from anywhere.</span></h3>
+        <p class="lead"><span class="vi">Một nút cài và đăng nhập Tailscale lên TV: tự tải bản chính thức, kiểm tra tệp tải về, tự bật lại mỗi khi TV khởi động. Bạn chỉ cần quét mã QR để đăng nhập.</span><span class="en">One button installs and signs in Tailscale on the TV: official build, checksum verified, restarts with the TV. You just scan a QR code to sign in.</span></p>
+        <ul>
+          <li class="vi"><span><b>Kết nối mã hóa riêng</b> giữa máy bạn và TV, không mở cổng nào ra Internet.</span></li>
+          <li class="en"><span><b>A private, encrypted link</b> between you and the TV, no ports opened to the Internet.</span></li>
+          <li class="vi"><span><b>Hỗ trợ người thân</b>: họ chỉ cần chụp mã QR trên TV gửi bạn.</span></li>
+          <li class="en"><span><b>Help family remotely</b>: they just send you a photo of the QR code on their TV.</span></li>
+          <li class="vi"><span><b>Bật TV từ xa</b> khi đang ở chế độ chờ; Wake-on-LAN khi đã tắt hẳn.</span></li>
+          <li class="en"><span><b>Wake the TV remotely</b> from standby; Wake-on-LAN when fully off.</span></li>
+        </ul>
+      </div>
+      <div class="shot" style="max-width:380px;margin:0 auto">
+        <div class="phone">
+          <img src="img/tailscale-vi.webp" data-lang-src="img/tailscale-LANG.webp" width="600" height="885" alt="" loading="lazy" decoding="async">
+        </div>
+      </div>
+    </div>
+
+    <div class="minis">
+      <div class="mini reveal"><div class="ic">🎧</div><h4><span class="vi">Nghe tiếng TV</span><span class="en">Listen to the TV</span></h4><p><span class="vi">Tiếng TV phát trên điện thoại hoặc trình duyệt, chỉ khoảng 8 KB/s. Nghe tiếp cả khi khóa màn hình.</span><span class="en">TV sound on your phone or browser at about 8 KB/s. Keeps playing with the screen locked.</span></p></div>
+      <div class="mini reveal"><div class="ic">⚡</div><h4><span class="vi">Tối ưu TV</span><span class="en">Optimize TV</span></h4><p><span class="vi">Tắt hiệu ứng, app đề xuất, đổi màn hình chính nhẹ hơn. App chỉ bị tạm tắt, không bị xóa: bấm Hoàn tác là trở lại như cũ.</span><span class="en">Fewer animations, no bloat, a lighter home screen. Disabled, never deleted; Undo puts it all back.</span></p></div>
+      <div class="mini reveal"><div class="ic">🔑</div><h4><span class="vi">Không cần ở cạnh TV</span><span class="en">No need to be at the TV</span></h4><p><span class="vi">Khi TV hỏi lại “Cho phép gỡ lỗi?”, TV Setup tự cho phép đúng máy của bạn, và chỉ máy của bạn.</span><span class="en">When the TV asks “Allow debugging?” again, TV Setup approves your own device, and only yours.</span></p></div>
+      <div class="mini reveal"><div class="ic">🧭</div><h4><span class="vi">Dẫn từng bước</span><span class="en">Guided all the way</span></h4><p><span class="vi">TV chưa bật ADB? App tự dẫn bạn tới chỗ bật, hoặc cài TV Setup giúp chỉ bằng nút remote.</span><span class="en">ADB not on yet? The app leads you there, or installs TV Setup for you using remote keys only.</span></p></div>
+      <div class="mini reveal"><div class="ic">🌐</div><h4><span class="vi">Song ngữ</span><span class="en">Bilingual</span></h4><p><span class="vi">Giao diện tiếng Việt và tiếng Anh, đổi một chạm.</span><span class="en">Vietnamese and English interface, one tap to switch.</span></p></div>
+      <div class="mini reveal"><div class="ic">🔄</div><h4><span class="vi">Tự cập nhật</span><span class="en">Self-updating</span></h4><p><span class="vi">Cả hai app tự báo và cài bản mới ngay trong app, không cần CH Play.</span><span class="en">Both apps find and install new versions in-app, no Play Store needed.</span></p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW ============ -->
+<section id="how" class="how">
+  <div class="wrap">
+    <div class="center reveal">
+      <span class="eyebrow"><span class="vi">Cách hoạt động</span><span class="en">How it works</span></span>
+      <h2><span class="vi">Máy của bạn kết nối thẳng tới TV.</span><span class="en">Your device talks straight to the TV.</span></h2>
+      <p class="lead"><span class="vi">Không có máy chủ trung gian, không có tài khoản, không có gì lọt ra ngoài. Dữ liệu chỉ đi trong mạng nhà bạn, hoặc qua kết nối Tailscale riêng của bạn.</span><span class="en">No middle server, no account, nothing to leak. Data stays on your home network, or inside your own Tailscale tunnel.</span></p>
+    </div>
+    <div class="flow reveal">
+      <div class="node">
+        <h4><span class="vi">Máy điều khiển</span><span class="en">Your device</span></h4>
+        <div class="chip"><span class="e">📱</span><div>TV Remote<small><span class="vi">App Android</span><span class="en">Android app</span></small></div></div>
+        <div class="chip"><span class="e">🌐</span><div><span class="vi">Trình duyệt bất kỳ</span><span class="en">Any browser</span><small>iPhone, iPad, laptop…</small></div></div>
+        <div class="chip"><span class="e">💻</span><div><span class="vi">Web trên máy tính</span><span class="en">Computer web</span><small>Mac · Windows · Linux</small></div></div>
+      </div>
+      <div class="wire">
+        <div class="line"></div>
+        <div><span class="vi">Wi-Fi nhà<br>hoặc Tailscale</span><span class="en">Home Wi-Fi<br>or Tailscale</span></div>
+        <span class="noserver">☁️ <s><span class="vi">máy chủ</span><span class="en">cloud</span></s></span>
+      </div>
+      <div class="node">
+        <h4>📺 Android TV / Google TV</h4>
+        <div class="chip"><span class="e">🔌</span><div>ADB<small><span class="vi">hình, chạm, app, tệp</span><span class="en">screen, touch, apps, files</span></small></div></div>
+        <div class="chip"><span class="e">🎮</span><div>Android TV Remote<small><span class="vi">nút bấm, kể cả khi ADB tắt</span><span class="en">keys, even with ADB off</span></small></div></div>
+        <div class="chip"><span class="e">⚡</span><div>TV Setup<small><span class="vi">trang web, hẹn giờ, giới hạn app</span><span class="en">web page, timers, app limits</span></small></div></div>
+      </div>
+    </div>
+    <div class="facts reveal">
+      <div class="fact"><b>0</b><span><span class="vi">máy chủ trung gian</span><span class="en">servers in between</span></span></div>
+      <div class="fact"><b>3</b><span><span class="vi">cách dùng, chung một giao diện</span><span class="en">clients, one shared interface</span></span></div>
+      <div class="fact"><b>~8 KB/s</b><span><span class="vi">để nghe tiếng TV</span><span class="en">to stream TV audio</span></span></div>
+      <div class="fact"><b>100%</b><span><span class="vi">mã nguồn mở trên GitHub</span><span class="en">open source on GitHub</span></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ INSTALL ============ -->
+<section id="install">
+  <div class="wrap">
+    <div class="center reveal">
+      <span class="eyebrow"><span class="vi">Cài đặt</span><span class="en">Install</span></span>
+      <h2><span class="vi">Chọn máy bạn sẽ dùng để điều khiển.</span><span class="en">Pick the device you'll control from.</span></h2>
+      <p class="lead"><span class="vi">Cả ba dùng chung một giao diện. Dùng một hay cả ba đều được.</span><span class="en">All three share the same interface. Use one, or all of them.</span></p>
+    </div>
+
+    <div class="choose reveal" role="tablist">
+      <button class="opt" role="tab" data-tab="browser" aria-selected="true">
+        <div class="big">📺→🌐</div>
+        <h3><span class="vi">Mọi trình duyệt</span><span class="en">Any browser</span></h3>
+        <div class="who"><span class="vi">iPhone, iPad, máy tính · dễ nhất</span><span class="en">iPhone, iPad, computer · easiest</span></div>
+        <p><span class="vi">Cài app <b>TV Setup</b> lên TV chỉ bằng remote của TV. Rồi máy nào có trình duyệt cũng điều khiển được.</span><span class="en">Install <b>TV Setup</b> on the TV using just the TV's remote. Then any device with a browser can control it.</span></p>
+        <div class="go"><span class="vi">Xem các bước</span><span class="en">See steps</span> →</div>
+      </button>
+      <button class="opt" role="tab" data-tab="android" aria-selected="false">
+        <div class="big">📱</div>
+        <h3><span class="vi">Điện thoại Android</span><span class="en">Android phone</span></h3>
+        <div class="who"><span class="vi">Trải nghiệm đầy đủ nhất</span><span class="en">The fullest experience</span></div>
+        <p><span class="vi">App <b>TV Remote</b>: nút âm lượng vật lý, widget, nghe tiếng TV, nói với TV, bấm phím cả khi chưa bật ADB.</span><span class="en">The <b>TV Remote</b> app: hardware volume keys, widgets, TV audio, voice, keys even before ADB is on.</span></p>
+        <div class="go"><span class="vi">Xem các bước</span><span class="en">See steps</span> →</div>
+      </button>
+      <button class="opt" role="tab" data-tab="computer" aria-selected="false">
+        <div class="big">💻</div>
+        <h3><span class="vi">Máy tính</span><span class="en">Computer</span></h3>
+        <div class="who">Mac · Windows · Linux</div>
+        <p><span class="vi">Màn hình lớn, chuột và bàn phím thật, quản lý nhiều TV, kéo thả tệp lên TV.</span><span class="en">Big screen, real mouse and keyboard, many TVs, drag and drop files onto the TV.</span></p>
+        <div class="go"><span class="vi">Xem các bước</span><span class="en">See steps</span> →</div>
+      </button>
+    </div>
+
+    <!-- browser / TV Setup -->
+    <div class="panel on" id="p-browser" role="tabpanel">
+      <div>
+        <h3><span class="vi">Cài TV Setup bằng mã Downloader</span><span class="en">Install TV Setup with a Downloader code</span></h3>
+        <p class="sub"><span class="vi">Chỉ cần remote của TV. Không cần máy tính, không cần cáp.</span><span class="en">All you need is the TV's remote. No computer, no cable.</span></p>
+        <ol class="steps">
+          <li><div class="vi">Trên TV mở <b>CH Play</b>, tìm và cài <b>Downloader</b> (của AFTVnews, biểu tượng màu cam).</div><div class="en">On the TV open <b>Google Play</b>, find and install <b>Downloader</b> (by AFTVnews, orange icon).</div></li>
+          <li><div class="vi">Mở Downloader, gõ mã <b class="mono">2397346</b> rồi chọn <b>Go</b>. Nó tải bản TV Setup mới nhất.</div><div class="en">Open Downloader, type <b class="mono">2397346</b> and choose <b>Go</b>. It fetches the latest TV Setup.</div></li>
+          <li><div class="vi">Chọn <b>Cài đặt</b>. TV báo chưa cho phép nguồn này thì bật cho Downloader, quay lại, cài tiếp.</div><div class="en">Choose <b>Install</b>. If the TV blocks unknown sources, allow Downloader, go back, install.</div></li>
+          <li><div class="vi">Mở <b>TV Setup</b>. Chưa bật Gỡ lỗi ADB thì app chỉ cách và mở thẳng chỗ bật.</div><div class="en">Open <b>TV Setup</b>. If ADB debugging is off, the app shows how and opens the right screen.</div></li>
+          <li><div class="vi">Quét <b>mã QR</b> trên TV bằng camera, nhập <b>mã 6 số</b> TV hiện ra. Xong.</div><div class="en">Scan the <b>QR code</b> on the TV with your camera, enter the <b>6-digit code</b>. Done.</div></li>
+        </ol>
+      </div>
+      <div class="side">
+        <div class="code">
+          <small><span class="vi">Mã Downloader · TV Setup</span><span class="en">Downloader code · TV Setup</span></small>
+          <div class="num">2397346</div>
+          <div class="row">
+            <button class="btn btn-ghost btn-sm" data-copy="2397346"><span class="vi">Chép mã</span><span class="en">Copy code</span></button>
+            <a class="btn btn-ghost btn-sm" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-setup.apk">tv-setup.apk</a>
+          </div>
+        </div>
+        <div class="alt"><span class="vi">💡 Trên iPhone: Safari → Chia sẻ → <b>Thêm vào MH chính</b> để có biểu tượng như một app. Không có Downloader thì mở</span><span class="en">💡 On iPhone: Safari → Share → <b>Add to Home Screen</b> for an app-like icon. No Downloader? Open</span> <a class="mono" href="https://go.aftvnews.com/2397346" target="_blank" rel="noopener">go.aftvnews.com/2397346</a>.</div>
+      </div>
+    </div>
+
+    <!-- android -->
+    <div class="panel" id="p-android" role="tabpanel">
+      <div>
+        <h3><span class="vi">Cài app TV Remote cho điện thoại</span><span class="en">Install the TV Remote phone app</span></h3>
+        <p class="sub"><span class="vi">Android 7 trở lên. Điện thoại và TV cùng mạng Wi-Fi.</span><span class="en">Android 7 or newer. Phone and TV on the same Wi-Fi.</span></p>
+        <ol class="steps">
+          <li><div class="vi">Tải <b>tv-remote.apk</b> bằng nút bên cạnh rồi mở để cài. Android cảnh báo “ứng dụng không rõ nguồn” thì cho phép trình duyệt cài.</div><div class="en">Download <b>tv-remote.apk</b> with the button and open it. If Android warns about unknown apps, allow your browser to install.</div></li>
+          <li><div class="vi">Mở app, bấm <b>Quét Wi-Fi</b> rồi chọn TV (hoặc gõ IP của TV).</div><div class="en">Open the app, tap <b>Scan Wi-Fi</b> and pick your TV (or type its IP).</div></li>
+          <li><div class="vi">TV hỏi <b>“Cho phép gỡ lỗi USB?”</b>: tích <b>Luôn cho phép</b> rồi OK. Chỉ một lần.</div><div class="en">The TV asks <b>“Allow USB debugging?”</b>: tick <b>Always allow</b>, then OK. Just once.</div></li>
+          <li><div class="vi">TV chưa bật ADB? Bạn vẫn bấm phím được ngay sau khi ghép mã, và app dẫn từng bước cho tới khi xong.</div><div class="en">ADB not on yet? Keys work right after pairing a code, and the app guides you step by step the rest of the way.</div></li>
+        </ol>
+      </div>
+      <div class="side">
+        <a class="btn btn-primary" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
+          <span class="vi">Tải tv-remote.apk</span><span class="en">Download tv-remote.apk</span>
+        </a>
+        <div class="code">
+          <small><span class="vi">Hoặc mã Downloader</span><span class="en">Or Downloader code</span></small>
+          <div class="num">2973135</div>
+          <div class="row"><button class="btn btn-ghost btn-sm" data-copy="2973135"><span class="vi">Chép mã</span><span class="en">Copy code</span></button></div>
+        </div>
+        <div class="alt"><span class="vi">🛡️ Play Protect có thể cảnh báo vì app có quyền cài APK. Mã nguồn công khai ngay trên GitHub; chọn “Vẫn cài” nếu bạn tin.</span><span class="en">🛡️ Play Protect may warn because the app can install APKs. The source is public on GitHub; choose “Install anyway” if you trust it.</span></div>
+      </div>
+    </div>
+
+    <!-- computer -->
+    <div class="panel" id="p-computer" role="tabpanel">
+      <div>
+        <h3><span class="vi">Chạy web trên máy tính</span><span class="en">Run the web app on your computer</span></h3>
+        <p class="sub"><span class="vi">Cần Python 3.10+, <code>adb</code> và <code>ffmpeg</code>. Lần đầu tự cài các gói cần thiết.</span><span class="en">Needs Python 3.10+, <code>adb</code> and <code>ffmpeg</code>. The first run installs everything else.</span></p>
+        <ol class="steps">
+          <li><div class="vi">Tải mã nguồn về (nút <b>Tải ZIP</b> hoặc git clone) và giải nén.</div><div class="en">Get the source (<b>Download ZIP</b> or git clone) and unzip it.</div></li>
+          <li><div class="vi">Mac: bấm đúp <b class="mono">TV Remote</b>. Windows: <b class="mono">start-windows.cmd</b> (Linux: <b class="mono">./start-linux.sh</b>).</div><div class="en">Mac: double-click <b class="mono">TV Remote</b>. Windows: <b class="mono">start-windows.cmd</b> (Linux: <b class="mono">./start-linux.sh</b>).</div></li>
+          <li><div class="vi">Trình duyệt mở <b class="mono">127.0.0.1:8765</b> và tự quét mạng tìm TV. Chọn TV.</div><div class="en">Your browser opens <b class="mono">127.0.0.1:8765</b> and scans for TVs. Pick yours.</div></li>
+          <li><div class="vi">Chưa sẵn sàng thì tab <b>Thiết lập</b> dẫn từng bước có dấu ✓. TV chưa bật ADB thì bấm <b>🧭 Bật ADB giúp tôi</b>.</div><div class="en">If it isn't ready, the <b>Setup</b> tab walks you through with ✓ marks. ADB off? Press <b>🧭 Help me turn on ADB</b>.</div></li>
+        </ol>
+      </div>
+      <div class="side">
+        <a class="btn btn-primary" href="https://github.com/HoangTran0410/tv-remote/archive/refs/heads/main.zip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
+          <span class="vi">Tải ZIP</span><span class="en">Download ZIP</span>
+        </a>
+        <div class="term"><span class="c"># macOS</span><br><span class="p">$</span> brew install android-platform-tools ffmpeg<br><br><span class="c"># Windows (adb <span class="vi">tự tải</span><span class="en">is fetched for you</span>)</span><br><span class="p">&gt;</span> winget install Gyan.FFmpeg</div>
+        <div class="alt"><span class="vi">🔒 Web chỉ nghe ở 127.0.0.1, không ai khác trong mạng vào được. Bấm ⏻ Tắt trên trang là dừng hẳn, không để lại gì chạy ngầm.</span><span class="en">🔒 It only listens on 127.0.0.1, nobody else on the network can reach it. Press ⏻ Quit on the page and it is fully gone; nothing keeps running.</span></div>
+      </div>
+    </div>
+
+    <div class="prep reveal">
+      <div>
+        <span class="eyebrow"><span class="vi">Làm một lần</span><span class="en">One-time</span></span>
+        <h3><span class="vi">Chuẩn bị TV</span><span class="en">Prepare the TV</span></h3>
+        <p class="note"><span class="vi">Bằng remote của TV, khoảng 1 phút. Tên menu lấy theo TV Sony, hãng khác có thể hơi khác. TV Setup và app điện thoại đều có thể dẫn bạn tới đúng chỗ.</span><span class="en">With the TV's remote, about a minute. Menu names are from Sony; others differ slightly. TV Setup and the phone app can take you to the right screen.</span></p>
+      </div>
+      <ol class="steps">
+        <li><div class="vi"><b>Bật Tùy chọn nhà phát triển:</b> <span class="path">Cài đặt → Tùy chọn thiết bị → Giới thiệu → Bản dựng</span>, bấm OK 7 lần.</div><div class="en"><b>Unlock Developer options:</b> <span class="path">Settings → Device Preferences → About → Build</span>, press OK 7 times.</div></li>
+        <li><div class="vi"><b>Bật ADB:</b> <span class="path">Tùy chọn nhà phát triển → Gỡ lỗi ADB</span> (có TV ghi “Gỡ lỗi USB”).</div><div class="en"><b>Turn on ADB:</b> <span class="path">Developer options → ADB debugging</span> (some TVs say “USB debugging”).</div></li>
+        <li><div class="vi"><b>Nên bật:</b> <span class="path">Mạng và Internet → Khởi động từ xa</span>, để bật lại được TV từ xa khi đã tắt.</div><div class="en"><b>Recommended:</b> <span class="path">Network &amp; Internet → Remote start</span>, so you can wake the TV remotely.</div></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COMPAT & SECURITY ============ -->
+<section style="padding-top:20px">
+  <div class="wrap">
+    <div class="two">
+      <div class="box reveal">
+        <h3>📺 <span class="vi">TV nào dùng được?</span><span class="en">Which TVs work?</span></h3>
+        <ul class="list">
+          <li><span class="m">✅</span><span class="vi"><b>Android TV và Google TV</b> có Gỡ lỗi ADB qua mạng (cổng 5555): Sony, TCL, Xiaomi, Philips, box Android…</span><span class="en"><b>Android TV and Google TV</b> with network ADB debugging (port 5555): Sony, TCL, Xiaomi, Philips, Android boxes…</span></li>
+          <li><span class="m">🧪</span><span class="vi">Đã dùng thực tế trên <b>Sony BRAVIA</b> (Android 9). Hãng khác chưa thử, nhưng cùng chạy Android TV nên cách làm giống nhau.</span><span class="en">Verified on a real <b>Sony BRAVIA</b> (Android 9). Other brands untested but use the same standard.</span></li>
+          <li><span class="m">⚠️</span><span class="vi">Vài Google TV đời mới chỉ có “Gỡ lỗi không dây” kiểu ghép mã: có thể chưa dùng được.</span><span class="en">Some newer Google TVs only offer pairing-code “Wireless debugging”: may not work yet.</span></li>
+          <li><span class="m">❌</span><span class="vi"><b>Samsung (Tizen)</b> và <b>LG (webOS)</b> không dùng được.</span><span class="en"><b>Samsung (Tizen)</b> and <b>LG (webOS)</b> are not supported.</span></li>
+        </ul>
+      </div>
+      <div class="box reveal">
+        <h3>🔒 <span class="vi">An toàn ngay từ đầu</span><span class="en">Secure by design</span></h3>
+        <ul class="list">
+          <li><span class="m">🏠</span><span class="vi"><b>Không máy chủ, không tài khoản.</b> Không có gì của bạn rời khỏi mạng nhà.</span><span class="en"><b>No server, no account.</b> Nothing of yours leaves your home network.</span></li>
+          <li><span class="m">🔢</span><span class="vi"><b>Ghép mã 6 số</b> hiện trên màn hình TV: người lạ cùng Wi-Fi không vào được.</span><span class="en"><b>6-digit pairing</b> shown on the TV screen: strangers on your Wi-Fi can't get in.</span></li>
+          <li><span class="m">🔍</span><span class="vi">TV Setup chỉ bấm “Cho phép” khi <b>đúng là máy của bạn đang xin quyền</b>, và hiện thông báo trên TV mỗi lần.</span><span class="en">TV Setup only presses “Allow” when <b>the key matches your own device</b>, and shows a notice every time.</span></li>
+          <li><span class="m">🛰️</span><span class="vi">Ở ngoài nhà thì đi qua <b>Tailscale</b>, không mở cổng nào ra Internet.</span><span class="en">Away from home it goes over <b>Tailscale</b>, with no ports opened to the Internet.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section id="faq" style="padding-top:40px">
+  <div class="wrap">
+    <div class="center reveal">
+      <span class="eyebrow">FAQ</span>
+      <h2><span class="vi">Câu hỏi thường gặp</span><span class="en">Frequently asked questions</span></h2>
+    </div>
+    <div class="faq">
+      <details class="reveal"><summary><span class="vi">Có mất phí không?</span><span class="en">Does it cost anything?</span></summary>
+        <p class="vi">Không. Miễn phí hoàn toàn, không quảng cáo, không bản trả phí. Mã nguồn công khai trên GitHub.</p><p class="en">No. Completely free, no ads, no paid tier. The source is public on GitHub.</p></details>
+      <details class="reveal"><summary><span class="vi">“Gỡ lỗi ADB” là gì, bật lên có nguy hiểm không?</span><span class="en">What is “ADB debugging”, is it risky?</span></summary>
+        <p class="vi">ADB là cổng mà Android dùng để máy khác điều khiển nó, cũng là thứ cho phép xem màn hình, cài app, quản lý tệp. Máy nào muốn dùng đều phải được bạn bấm “Cho phép” ngay trên TV. Chỉ dùng trong mạng nhà bạn tin và qua Tailscale; muốn thu hồi thì vào Tùy chọn nhà phát triển → Thu hồi quyền gỡ lỗi USB.</p>
+        <p class="en">ADB is how Android lets another device control it; it's what makes screen viewing, app installs and file management possible. Every device must be approved by you, on the TV screen. Use it on a home network you trust and over Tailscale; revoke any time in Developer options → Revoke USB debugging authorizations.</p></details>
+      <details class="reveal"><summary><span class="vi">Có cần bật ADB mới dùng được không?</span><span class="en">Do I need ADB at all?</span></summary>
+        <p class="vi">Để bấm nút thì không: app điện thoại và web máy tính dùng giao thức Android TV Remote của Google, chỉ cần ghép mã. Xem màn hình, quản lý app, tệp, hẹn giờ thì cần ADB.</p>
+        <p class="en">Not for buttons: the phone app and computer web use Google's Android TV Remote protocol, just pair a code. Screen view, apps, files and timers need ADB.</p></details>
+      <details class="reveal"><summary><span class="vi">Có dùng được trên iPhone không?</span><span class="en">Does it work on iPhone?</span></summary>
+        <p class="vi">Có. Cài TV Setup lên TV (mã Downloader 2397346), rồi mở trang TV hiện ra trên Safari. Thêm vào Màn hình chính để dùng như một app.</p>
+        <p class="en">Yes. Install TV Setup on the TV (Downloader code 2397346), then open the page it shows in Safari. Add it to your Home Screen to use it like an app.</p></details>
+      <details class="reveal"><summary><span class="vi">Netflix, phim có bản quyền hiện màu đen?</span><span class="en">Why are Netflix and other protected videos black?</span></summary>
+        <p class="vi">Đúng vậy, đó là bảo vệ bản quyền của Android, không ứng dụng nào vượt qua được. Nút bấm, âm lượng, nghe tiếng vẫn dùng bình thường.</p>
+        <p class="en">That's Android's copy protection; no app can capture it. Buttons, volume and audio still work normally.</p></details>
+      <details class="reveal"><summary><span class="vi">TV tắt hẳn rồi có bật lại từ xa được không?</span><span class="en">Can I turn on a TV that's fully off?</span></summary>
+        <p class="vi">Ở chế độ chờ thì một nút là bật, kể cả qua Tailscale. Tắt hẳn thì cần Wake-on-LAN từ trong mạng nhà: app điện thoại gửi được khi cùng Wi-Fi; web máy tính có thể nhờ một máy ở nhà gửi qua SSH.</p>
+        <p class="en">From standby, one press wakes it, even over Tailscale. Fully off needs Wake-on-LAN from inside the home network: the phone app sends it on the same Wi-Fi; the computer web can relay through a machine at home over SSH.</p></details>
+      <details class="reveal"><summary><span class="vi">Android báo app “có hại” khi cài?</span><span class="en">Android says the app is “harmful”?</span></summary>
+        <p class="vi">Play Protect cảnh báo mọi app ngoài CH Play có quyền cài APK. Toàn bộ mã nguồn nằm trên <a href="https://github.com/HoangTran0410/tv-remote" target="_blank" rel="noopener">GitHub</a> để bạn tự kiểm tra; chọn “Vẫn cài” nếu bạn tin.</p>
+        <p class="en">Play Protect warns about any non-Play app that can install APKs. All the source is on <a href="https://github.com/HoangTran0410/tv-remote" target="_blank" rel="noopener">GitHub</a> for you to check; choose “Install anyway” if you trust it.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="final">
+  <div class="wrap">
+    <div class="card reveal">
+      <h2><span class="vi">Cất cái remote cũ vào ngăn kéo.</span><span class="en">Put the old remote in a drawer.</span></h2>
+      <p class="lead"><span class="vi">Hai phút cài đặt, dùng cả đời. Miễn phí, mã nguồn mở, không quảng cáo.</span><span class="en">Two minutes to set up, yours for good. Free, open source, no ads.</span></p>
+      <div class="cta">
+        <a class="btn btn-primary" href="#install"><span class="vi">Bắt đầu ngay</span><span class="en">Get started</span></a>
+        <a class="btn btn-ghost" href="https://github.com/HoangTran0410/tv-remote" target="_blank" rel="noopener">⭐ <span class="vi">Gắn sao trên GitHub</span><span class="en">Star on GitHub</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>© <span id="yr">2026</span> Hoang Tran · <a href="https://github.com/HoangTran0410/tv-remote">tv-remote</a></div>
+    <div>
+      <a href="https://github.com/HoangTran0410/tv-remote/releases"><span class="vi">Các bản phát hành</span><span class="en">Releases</span></a> ·
+      <a href="https://github.com/HoangTran0410/tv-remote/blob/main/CHANGELOG.md"><span class="vi">Nhật ký thay đổi</span><span class="en">Changelog</span></a> ·
+      <a href="https://github.com/HoangTran0410/tv-remote/issues"><span class="vi">Báo lỗi</span><span class="en">Report a bug</span></a>
+    </div>
+    <div><span class="vi">Dựa trên</span><span class="en">Built on</span> <a href="https://github.com/Genymobile/scrcpy">scrcpy</a>, <a href="https://github.com/samirkumardas/jmuxer">JMuxer</a>, <a href="https://github.com/tronikos/androidtvremote2">androidtvremote2</a></div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  var titles = {
+    vi: "TV Remote: điều khiển Android TV từ điện thoại, iPhone, máy tính",
+    en: "TV Remote: control Android TV from your phone, iPhone or computer"
+  };
+  function setLang(l){
+    root.dataset.lang = l; root.lang = l; document.title = titles[l];
+    document.querySelectorAll("img[data-lang-src]").forEach(function(i){ i.src = i.dataset.langSrc.replace("LANG", l); });
+    document.querySelectorAll(".lang button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.set === l); });
+    try { localStorage.setItem("lang", l); } catch(e){}
+  }
+  setLang(root.dataset.lang);
+  document.querySelectorAll(".lang button").forEach(function(b){ b.onclick = function(){ setLang(b.dataset.set); }; });
+
+  // install tabs
+  document.querySelectorAll(".opt").forEach(function(o){
+    o.onclick = function(){
+      document.querySelectorAll(".opt").forEach(function(x){ x.setAttribute("aria-selected", x === o); });
+      document.querySelectorAll(".panel").forEach(function(p){ p.classList.toggle("on", p.id === "p-" + o.dataset.tab); });
+      var p = document.getElementById("p-" + o.dataset.tab);
+      if (p.getBoundingClientRect().top > innerHeight - 120) p.scrollIntoView({behavior:"smooth", block:"start"});
+    };
+  });
+
+  // copy codes
+  var toast = document.getElementById("toast"), tt;
+  function say(s){ toast.textContent = s; toast.classList.add("show"); clearTimeout(tt); tt = setTimeout(function(){ toast.classList.remove("show"); }, 1800); }
+  document.querySelectorAll("[data-copy]").forEach(function(b){
+    b.onclick = function(){
+      var v = b.dataset.copy, en = root.dataset.lang === "en";
+      (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject())
+        .then(function(){ say((en ? "Copied " : "Đã chép ") + v); })
+        .catch(function(){ say((en ? "Code: " : "Mã: ") + v); });
+    };
+  });
+
+  // scroll reveal
+  if ("IntersectionObserver" in window){
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){ if (e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } });
+    }, {rootMargin:"0px 0px -8% 0px"});
+    document.querySelectorAll(".reveal").forEach(function(el){ io.observe(el); });
+  } else document.querySelectorAll(".reveal").forEach(function(el){ el.classList.add("in"); });
+
+  document.getElementById("yr").textContent = new Date().getFullYear();
+
+  // latest release tag in the hero pill; the page still reads fine if GitHub is unreachable
+  fetch("https://api.github.com/repos/HoangTran0410/tv-remote/releases/latest")
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(j){ if (j && j.tag_name) document.getElementById("ver").textContent = j.tag_name.replace(/^v?/, "v"); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

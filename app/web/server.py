@@ -3,7 +3,7 @@
 Binds to 127.0.0.1 only. Mutating endpoints require a JSON body (forces a CORS preflight) and a same-origin
 Host/Origin, so other websites open in your browser cannot drive the TV.
 """
-import argparse, asyncio, hashlib, ipaddress, json, mimetypes, os, random, re, socket, struct, sys, time
+import argparse, asyncio, hashlib, ipaddress, json, mimetypes, os, random, re, signal, socket, struct, sys, time
 from pathlib import Path
 from aiohttp import web
 from androidtvremote2 import AndroidTVRemote, CannotConnect, ConnectionClosed, InvalidAuth
@@ -12,6 +12,7 @@ import shlex
 import tempfile
 import tvconfig
 import scenes as scn
+STARTED = time.time()                                                  # the page is read from disk on every load, this code only now
 from adbtools import Adb, AdbError, PKG_RE, FP_RE, PROTECTED, my_fingerprint, memory_by_app
 from appmeta import AppMeta
 from tvtools import ADB, APP, CERT, FFMPEG, KEY, ROOT, SCRIPTS, find
@@ -1450,7 +1451,8 @@ def build(S):
         except OSError:
             pass
         tv_web = f"http://{tv.host}:8765" if tv.host and tv.host not in ("127.0.0.1", "localhost") and await port_open(tv.host, 8765) else ""   # the TV Setup app's page
-        return web.json_response({"version": version, "released": released, "tv_web": tv_web})
+        stale = any(f.stat().st_mtime > STARTED for f in Path(__file__).parent.glob("*.py"))   # updated since start: only a restart loads it
+        return web.json_response({"version": version, "released": released, "tv_web": tv_web, "stale": stale})
 
     @routes.post("/api/shutdown")
     async def shutdown(request):
@@ -1470,10 +1472,34 @@ class State:
     pass
 
 
+ADB_OWNED = [False]                                                    # whether this run started the adb server (port 5037)
+
+
+def release_adb(cfg):
+    """Stopping leaves nothing behind: the adb server this run started goes too (with its links to the TVs). An adb that was
+    already running belongs to someone else (Android Studio...): only this program's TVs are disconnected from it."""
+    import subprocess
+    try:
+        if ADB_OWNED[0]:
+            subprocess.run([ADB, "kill-server"], capture_output=True, timeout=5)
+        else:
+            for host in {t.get("host") for t in cfg["tvs"]} | {cfg["current"]}:
+                if host:
+                    subprocess.run([ADB, "disconnect", f"{host}:5555"], capture_output=True, timeout=5)
+    except (OSError, subprocess.SubprocessError):
+        pass
+
+
 async def main(a):
     S = State()
     S.cfg = tvconfig.load()
     S.stop = asyncio.Event()
+    ADB_OWNED[0] = not await port_open("127.0.0.1", 5037)
+    for sig in ("SIGINT", "SIGTERM", "SIGHUP"):                        # Ctrl+C, the Mac app's Quit, closing the Terminal window
+        try:
+            asyncio.get_running_loop().add_signal_handler(getattr(signal, sig), S.stop.set)
+        except (AttributeError, NotImplementedError, ValueError):
+            pass                                                      # Windows: Ctrl+C still ends below as KeyboardInterrupt
     S.cur = Session(a.tv or S.cfg["current"])
     await S.cur.start()
     runner = web.AppRunner(build(S))
@@ -1487,6 +1513,7 @@ async def main(a):
         await asyncio.wait_for(runner.cleanup(), 4)
     except asyncio.TimeoutError:
         pass                                                          # open live views are cancelled when the loop ends
+    release_adb(S.cfg)
 
 
 if __name__ == "__main__":
@@ -1496,4 +1523,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main(p.parse_args()))
     except KeyboardInterrupt:
-        pass
+        release_adb(tvconfig.load())

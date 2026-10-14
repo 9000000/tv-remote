@@ -8,9 +8,9 @@ Tested for real on a Sony BRAVIA (Android 9). Other brands are untested. Samsung
 
 <table>
 <tr>
-<td align="center"><img src="docs/phone-remote.png" height="360" alt="Phone app"><br><sub>Phone app</sub></td>
-<td align="center"><img src="docs/tvpage-remote-en.png" height="360" alt="Page served by the TV"><br><sub>Page served by the TV</sub></td>
-<td align="center"><img src="docs/web-remote-en.png" height="360" alt="Web on the computer"><br><sub>Web on the computer</sub></td>
+<td align="center"><img src="docs/img/phone-remote.webp" height="360" alt="Phone app"><br><sub>Phone app</sub></td>
+<td align="center"><img src="docs/img/tvpage-remote-en.webp" height="360" alt="Page served by the TV"><br><sub>Page served by the TV</sub></td>
+<td align="center"><img src="docs/img/web-remote-en.webp" height="360" alt="Web on the computer"><br><sub>Web on the computer</sub></td>
 </tr>
 </table>
 
@@ -22,7 +22,7 @@ Tested for real on a Sony BRAVIA (Android 9). Other brands are untested. Samsung
 |---|---|---|
 | An Android phone | The **TV Remote** app | `tv-remote.apk` in [Releases](https://github.com/HoangTran0410/tv-remote/releases), or the Downloader code **`2973135`** |
 | Any browser, iPhone included | The **TV Setup** app installed on the TV, then open `http://<TV IP>:8765` | On the TV: the Downloader app, code **`2397346`** ([how](#install-tv-setup-with-a-downloader-code)) |
-| A computer (Mac, Windows, Linux) | The **web on the computer** | Download the repo, double-click `start-mac.command` / `start-windows.cmd` |
+| A computer (Mac, Windows, Linux) | The **web on the computer** | Download the repo, double-click `TV Remote` (Mac) / `start-windows.cmd` |
 
 All three use **one shared web UI** with these tabs: Remote, Apps, Files · Install, Health, Automation, Setup. The phone app has its own remote screen (swipes, the phone's volume keys) and opens the other tabs from the grid button. The web on the computer adds the mouse, the computer keyboard, several TVs, and keys that work even before the TV has ADB on.
 
@@ -31,7 +31,7 @@ flowchart TD
     A["Turn on ADB debugging on the TV<br/>(once, with the TV's remote)"] --> B{"What do you use?"}
     B -- "Android phone" --> P["TV Remote app:<br/>Scan Wi-Fi → pick the TV"]
     B -- "Any browser" --> T["Install TV Setup on the TV (Downloader, code 2397346) →<br/>scan the QR code on the TV → enter the 6-digit code"]
-    B -- "Computer" --> W["Double-click start-mac / start-windows →<br/>pick the TV in the list"]
+    B -- "Computer" --> W["Double-click TV Remote / start-windows →<br/>pick the TV in the list"]
     P --> Q["The TV asks “Allow USB debugging?”:<br/>tick Always allow → OK"]
     W --> Q
     T --> Q
@@ -128,7 +128,7 @@ Works from any browser, with nothing to install on the phone or computer.
 - **On an Android phone / tablet** it installs too (a one-column layout for small screens), to control that device itself from another browser. It needs ADB on port 5555. A normal phone opens ADB over the cable only: plug it into a computer and run `adb tcpip 5555` once, again after every restart. Android 11+ "Wireless debugging" does not work yet. Optimize TV refuses to run on anything that is not a TV.
 
 
-<p align="center"><img src="docs/tvapp-en.png" width="640" alt="The TV Setup app screen"></p>
+<p align="center"><img src="docs/img/tvapp-en.webp" width="640" alt="The TV Setup app screen"></p>
 </details>
 
 ## 3. Web on the computer
@@ -136,7 +136,7 @@ Works from any browser, with nothing to install on the phone or computer.
 Needs Python 3.10 or newer, `adb` and `ffmpeg` (macOS: `brew install android-platform-tools ffmpeg`; Windows: the installer fetches `adb`, and for ffmpeg run `winget install Gyan.FFmpeg`).
 
 1. Download the repo (git clone or the zip).
-2. Double-click **`start-mac.command`** / **`start-windows.cmd`** (Linux: `./start-linux.sh`). The first run installs what it needs.
+2. Mac: double-click **`TV Remote`** (the app in the folder; it can go to Applications or the Dock too, it remembers where the tv-remote folder is, just keep that folder). Windows: **`start-windows.cmd`**. Linux: `./start-linux.sh`. The first run installs what it needs. If the Mac says the app is “unverified”: right-click → Open (or System Settings → Privacy & Security → Open Anyway). To stop: the ⏻ Quit button on the page.
 3. The browser opens `http://127.0.0.1:8765` with the list of TVs (it scans the network the first time). Pick a TV, or type its IP.
 4. A ready TV goes straight to the Remote tab. Otherwise the **Setup** tab lists the steps, each ticked when done: ADB → Tailscale (optional, one button) → Pair the remote (type the 6-character code the TV shows) → Save.
 
@@ -181,7 +181,7 @@ Once, while at home (on the TV's Wi-Fi):
 <details>
 <summary>The Tailscale box, and why the sign-in goes through a link</summary>
 
-<p align="center"><img src="docs/tailscale-en.png" width="320" alt="The Tailscale box: sign-in link and QR code"></p>
+<p align="center"><img src="docs/img/tailscale-en.webp" width="320" alt="The Tailscale box: sign-in link and QR code"></p>
 
 Why not send the account from the phone to the TV? Tailscale only takes a sign-in through its own web page (Google, Microsoft...) or a key handed out by company device-management software, which a home TV does not have. Sending the sign-in link is the fewest steps without giving a password to any app.
 </details>
@@ -283,13 +283,14 @@ flowchart LR
 The full guide for people (and AI agents) changing the code: [CLAUDE.md](CLAUDE.md).
 
 ```
-start-mac.command, start-windows.cmd, start-linux.sh   run the web on the computer
+TV Remote.app, start-windows.cmd, start-linux.sh       run the web on the computer (start-mac.command: the same in Terminal)
 app/web/      web on the computer: server.py (aiohttp, 127.0.0.1 only), cli/ (command line); the UI comes from app/shared/web
 app/android/  the TV Remote app (Kotlin)            app/tv/   the TV Setup app (Kotlin) + the page the TV serves
 app/shared/   shared: ADB, the control session, TV management, updates; web/ = ONE web UI for all three places
               (the computer, the page the TV serves, Manage in the phone app); only the core answering /api differs
+app/gradle/   build setup of the two Android apps (open this folder in Android Studio)
 dev/          release.sh (build the APKs + create the GitHub release), gen_icons.py (one icon set for all three)
-docs/         screenshots for the README
+docs/         the product page (GitHub Pages) and screenshots
 VERSION, CHANGELOG.md
 tvs.json, cert.pem, key.pem, *.jks, venv/, .cache/      your machine's own data, never committed
 ```

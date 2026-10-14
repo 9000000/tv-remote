@@ -40,7 +40,17 @@
   .chip.ok { background:var(--ok-bg); color:var(--ok); } .chip.warn { background:var(--warn-bg); color:var(--warn); } .chip.bad { background:var(--bad-bg); color:var(--bad); }
 
   /* help */
-  #jobscard summary { cursor:pointer; } #jobscard summary h2 { display:inline; } #jobscard[open] summary { margin-bottom:10px; }
+  /* uploads and installs float above every tab: started from a button halfway down the page, they are seen without scrolling */
+  #jobscard { position:fixed; right:16px; bottom:16px; width:min(380px, calc(100vw - 32px)); max-height:min(46vh, 420px); overflow:auto; z-index:15; box-shadow:0 12px 36px rgba(0,0,0,.28); }
+  button.busy { position:relative; pointer-events:none; }   /* core.js api(): the clicked button, while its call runs */
+  button.busy::before, button.busy::after { content:''; position:absolute; opacity:0; animation:busyin 0s .15s forwards; }
+  button.busy::before { inset:0; background:inherit; border-radius:inherit; }   /* covers the label */
+  button.busy::after { inset:0; margin:auto; width:14px; height:14px; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; animation:busyin 0s .15s forwards, spin .7s linear infinite; }
+  @keyframes busyin { to { opacity:1; } }
+  [data-busy] { pointer-events:none; } button[data-busy] > * { display:none; } button[data-busy]::after, .drop[data-busy]::after { content:attr(data-busy); font-weight:600; }   /* a job's progress on the control that started it (files.js mark) */
+  .drop[data-busy]::after { margin-left:8px; }
+  #jobscard summary { cursor:pointer; display:flex; align-items:center; gap:8px; list-style:none; } #jobscard summary::-webkit-details-marker { display:none; }
+  #jobscard summary h2 { display:inline; margin:0; flex:1; font-size:14px; } #jobscard[open] summary { margin-bottom:10px; }
   details.help summary { cursor:pointer; font-weight:600; font-size:14px; }
   details.help .cols { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:12px; }
   details.help h3 { font-size:13px; margin:0 0 6px; } details.help ul { margin:0; padding-left:18px; font-size:13px; color:var(--muted); }
@@ -259,7 +269,7 @@
   .steprow span { flex:1; min-width:0; overflow-wrap:anywhere; }
   .homehint { background:var(--ok-bg); border-color:transparent; }
   .sceneio { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; } .sceneio button { min-height:40px; padding:0 14px; font-size:14px; }
-  .listenpick { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; } .listenpick button { display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding:10px 12px; text-align:left; } .listenpick span { font-size:12px; color:var(--muted); line-height:1.35; } .listenpick button.primary span { color:inherit; opacity:.85; }
+  .listenpick { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:14px 0; }     /* right under the 🎧 button, above the picture: below it, a tall picture hid the choice */ .listenpick button { display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding:10px 12px; text-align:left; } .listenpick span { font-size:12px; color:var(--muted); line-height:1.35; } .listenpick button.primary span { color:inherit; opacity:.85; }
   @media (max-width:520px) { .listenpick { grid-template-columns:1fr; } }
   .aihint { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-top:10px; } .aihint button { min-height:40px; padding:0 14px; font-size:14px; } .aihint .muted { font-size:12px; }
   #aitext { width:100%; box-sizing:border-box; font:12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; background:var(--bg); color:var(--ink); border:1px solid var(--line, #333); border-radius:10px; padding:10px; resize:vertical; }
