@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.14.3 - 2026-10-14
+
+Web 2.14.3 · app điện thoại 2.13.3 · app TV 2.11.3
+
+**Tiếng Việt**
+- Cài TV Setup bằng nút remote (app điện thoại và web máy tính): khi TV đã có Downloader, app mở thẳng link riêng của Downloader `downloader://2397346`. Downloader tự tải TV Setup, không còn hộp “Mở bằng” và không phải gõ gì. Bước “Làm từng bước” của app điện thoại cũng dùng cách này; gõ mã vào ô địa chỉ chỉ còn là cách dự phòng.
+
+**English**
+- Installing TV Setup with the remote buttons (phone app and computer web): once the TV has Downloader, the app opens Downloader's own link `downloader://2397346`. Downloader fetches TV Setup by itself, with no “Open with” box and nothing typed. The phone app's “Step by step” uses it too; typing the code into the address field is only the fallback now.
+
 ## 2.14.2 - 2026-10-14
 
 Web 2.14.2 · app điện thoại 2.13.2 · app TV 2.11.3

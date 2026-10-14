@@ -874,10 +874,10 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                     ui.post { if (box.isShowing) box.dismiss(); if (!stop && basic === a) installSetupByHand() }
                     return@Thread
                 }
-                if (!direct) {                                            // Downloader is there now, so the TV has an app for the link
+                if (!direct) {                                            // Downloader is there now: its own link opens it alone, no "Open with"
                     say("Đang đưa đường dẫn tải cho Downloader...", "Handing the download link to Downloader...")
                     Thread.sleep(3000)
-                    a.launch("https://$link")
+                    a.launch("downloader://$DL_CODE")
                     for (press in 0 until 3) {                            // "Open with", when a browser is installed too
                         Thread.sleep(1500)
                         if (a.app != "android" || stop) break
@@ -955,7 +955,12 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 basic?.let { b -> tvJob { openOnTv(b, "com.esaba.downloader") { false } } }
                 ui.postDelayed({ if (basic != null && !isFinishing) installSetupByHand() }, 600)
             },
-            Triple(t("2. Nhập mã tải $DL_CODE", "2. Enter the download code $DL_CODE"), t("Khi TV đang ở trang chủ Downloader: app tự tới ô địa chỉ, gõ mã và cho tải. Mất khoảng 5 giây", "With Downloader’s home page on the TV: the app goes to the address field, types the code and starts the download. About 5 seconds")) {
+            Triple(t("2. Tải TV Setup trong Downloader", "2. Download TV Setup in Downloader"), t("App bảo Downloader tải mã $DL_CODE. TV hỏi cài đặt: chọn Cài đặt", "The app has Downloader fetch the code $DL_CODE. The TV asks to install: choose Install")) {
+                basic?.let { b -> tvJob { b.launch("downloader://$DL_CODE") } }
+                Toast.makeText(this, t("Đang bảo Downloader tải...", "Asking Downloader to download..."), Toast.LENGTH_LONG).show()
+                ui.postDelayed({ if (basic != null && !isFinishing) installSetupByHand() }, 600)
+            },
+            Triple(t("2b. Không được? Gõ mã vào Downloader", "2b. No luck? Type the code into Downloader"), t("Khi TV đang ở trang chủ Downloader: app tự tới ô địa chỉ, gõ mã và cho tải. Mất khoảng 5 giây", "With Downloader’s home page on the TV: the app goes to the address field, types the code and starts the download. About 5 seconds")) {
                 basic?.let { b -> tvJob { downloaderGo(b, DL_CODE) } }
                 Toast.makeText(this, t("Đang nhập đường dẫn trên TV...", "Entering the link on the TV..."), Toast.LENGTH_LONG).show()
                 ui.postDelayed({ if (basic != null && !isFinishing) installSetupByHand() }, 600)
@@ -2536,7 +2541,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     companion object {
         private const val BG = 0xff111418.toInt()
-        private const val DL_CODE = "2397346"                         // AFTVnews short code for releases/latest/download/tv-setup.apk: Downloader takes it in the address field
+        private const val DL_CODE = "2397346"                         // AFTVnews short code for releases/latest/download/tv-setup.apk: Downloader takes it as downloader://<code> or in its address field
         private const val CARD = 0xff1c2026.toInt()
         private const val BTN = 0xff2a3038.toInt()
         private const val ACCENT = 0xff5b8cff.toInt()

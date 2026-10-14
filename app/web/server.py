@@ -1125,6 +1125,7 @@ def build(S):
     # ---- turning ADB on with the remote buttons alone (port 6466), as the phone app does ----
     SETUP_APK = "https://github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"
     DOWNLOADER, SETUP_PKG = "com.esaba.downloader", "dev.tvremote.setup"
+    SETUP_CODE = "downloader://2397346"                               # Downloader's own link for the AFTVnews code of SETUP_APK: opens Downloader alone, no "Open with"
     assist = {"status": "idle", "msg": "", "stop": False, "installed": False, "task": None}
 
     def front():
@@ -1204,7 +1205,7 @@ def build(S):
             if not direct:
                 say("Đang đưa đường dẫn tải cho Downloader...")
                 await asyncio.sleep(3)
-                await send_link(SETUP_APK)
+                await send_link(SETUP_CODE)
                 await answer_chooser(stop); await asyncio.sleep(2.5)
             was = front()
             say("TV đang tải TV Setup...")
