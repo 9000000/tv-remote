@@ -1,8 +1,9 @@
 """Finding TVs: which hosts answer, this machine's networks and Tailscale peers, Cast names, the scan behind the TV list."""
-import asyncio, ipaddress, json, re, socket
+import asyncio, ipaddress, json, os, re, socket
 from tvtools import find
 
 TAILSCALE = find("tailscale", "/Applications/Tailscale.app/Contents/MacOS/Tailscale", r"C:\Program Files\Tailscale\tailscale.exe")
+TS_ENV = {**os.environ, "TAILSCALE_BE_CLI": "1"}                      # the Mac app's binary acts as the CLI only from a Terminal
 
 
 async def port_open(ip, port, timeout=0.7):
@@ -72,7 +73,7 @@ async def discover():
         mine.add(me)
         jobs += [probe(str(h), "lan") for h in net.hosts() if str(h) != me]
     try:
-        p = await asyncio.create_subprocess_exec(TAILSCALE, "status", "--json", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
+        p = await asyncio.create_subprocess_exec(TAILSCALE, "status", "--json", env=TS_ENV, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
         out, _ = await asyncio.wait_for(p.communicate(), 8)
         for peer in (json.loads(out).get("Peer") or {}).values():
             if peer.get("OS") == "android" and peer.get("Online") and peer.get("TailscaleIPs"):
