@@ -2,7 +2,7 @@
 
 [Tiếng Việt](README.md) · **English** · 🌐 [tvremote.pages.dev](https://tvremote.pages.dev)
 
-Control an Android TV / Google TV from a phone or a computer: remote buttons, the live TV picture with touch, typing, talking to the TV, the TV's sound on the phone, a sleep timer, bedtime and app limits for children, scenes (one button, several things), managing apps and files, installing APKs, TV health. Every connection goes straight to the TV with no server in between; from another network, use Tailscale.
+Control an Android TV / Google TV from a phone or a computer, straight to the TV with no server in between. **Features, screenshots and downloads: [tvremote.pages.dev](https://tvremote.pages.dev).** This README covers setup, troubleshooting and the technical details.
 
 Tested for real on a Sony BRAVIA (Android 9). Other brands are untested. Samsung (Tizen) and LG (webOS) do not work at all, not even the keys: they do not run Android, so they have neither ADB nor Google's remote protocol.
 
@@ -24,21 +24,7 @@ Tested for real on a Sony BRAVIA (Android 9). Other brands are untested. Samsung
 | Any browser, iPhone included | The **TV Setup** app installed on the TV, then open `http://<TV IP>:8765` | On the TV: the Downloader app, code **`2397346`** ([how](#install-tv-setup-with-a-downloader-code)) |
 | A computer (Mac, Windows, Linux) | The **web on the computer** | Download the repo, double-click `TV Remote` (Mac) / `start-windows.cmd` |
 
-All three use **one shared web UI** with these tabs: Remote, Apps, Files · Install, Health, Automation, Setup. The phone app has its own remote screen (swipes, the phone's volume keys) and opens the other tabs from the grid button. The web on the computer adds the mouse, the computer keyboard, several TVs, and keys that work even before the TV has ADB on.
-
-```mermaid
-flowchart TD
-    A["Turn on ADB debugging on the TV<br/>(once, with the TV's remote)"] --> B{"What do you use?"}
-    B -- "Android phone" --> P["TV Remote app:<br/>Scan Wi-Fi → pick the TV"]
-    B -- "Any browser" --> T["Install TV Setup on the TV (Downloader, code 2397346) →<br/>scan the QR code on the TV → enter the 6-digit code"]
-    B -- "Computer" --> W["Double-click TV Remote / start-windows →<br/>pick the TV in the list"]
-    P --> Q["The TV asks “Allow USB debugging?”:<br/>tick Always allow → OK"]
-    W --> Q
-    T --> Q
-    Q --> R["Control it at home"]
-    R --> S["Optional: Setup tab →<br/>Install and sign in to Tailscale"]
-    S --> X["Control it from anywhere<br/>with the TV's 100.x IP"]
-```
+All three share one web UI; the site has the [feature list](https://tvremote.pages.dev/#features) and [the three ways compared](https://tvremote.pages.dev/#install).
 
 ## Prepare the TV
 
@@ -91,19 +77,7 @@ The codes always point at the latest release. Without Downloader, opening `go.af
 1. Install `tv-remote.apk` from [Releases](https://github.com/HoangTran0410/tv-remote/releases) (or the Downloader code `2973135`).
 2. Open the app, tap **Scan Wi-Fi** and pick the TV, or type the TV's IP. With ADB still off the app can send keys after pairing with a code, and walks you step by step until TV Setup is installed.
 
-<details>
-<summary>Features</summary>
-
-- **TV picture:** the eye button turns it on and off; touching the picture touches the TV. While watching, the top bar has the quality button (240p to 960p) and full screen. With the picture off the TV spends no extra CPU.
-- **Buttons:** a tap is one press, a hold is a long press on the TV. The `⋯` button shows the less used keys: Input, TV settings, Info, Guide, Live TV, Subtitles, Stop, Screenshot. The phone's volume keys change the TV's volume too (can be turned off in Settings; while listening to the TV they set the phone's).
-- **Typing:** ⚡ switches between live typing and type-then-send; `123` opens the number pad.
-- **Talk to the TV:** tap the mic and speak. Sentences like "open YouTube", "mute", "volume up 5", "sleep in 30 minutes", or a scene's name are carried out by the app itself (fast, and it works with keys only too); anything else goes to the Assistant on the TV. Hold the mic to open the Assistant.
-- **🎧 Hear the TV:** the headphones button in the top bar. The TV's sound plays on the phone, picked each time: only the phone (the TV's speakers go quiet, plug in headphones for late nights) or TV and phone (the TV keeps its sound, needs Android 13+ on the TV). About 8 KB/s (Opus 64 kbps), some 30 times lighter than the picture. With the picture off it keeps playing with the phone locked. Needs Android 11 or newer on the TV.
-- **😴 Sleep timer and 🎬 Scenes:** under the `⋯` button. Scenes are made on the Automation page.
-- **Widget, Quick Settings tiles, shortcuts:** a home screen widget (power, mute, volume, the first 3 scenes), "TV power" and "TV scene" tiles in Quick Settings, and scenes when you hold the app icon. All of them control the TV used last without opening the app.
-- **Manage the TV:** the grid button opens Apps (with names and icons), Files · Install, Health, Automation, Setup (Tailscale, Optimize TV).
-- **Updates:** the app tells you when a new version exists and installs it in place.
-</details>
+The phone's volume keys set the TV's volume; a widget, Quick Settings tiles and shortcuts control the TV used last without opening the app. The app tells you when a new version exists.
 
 ## 2. Page served by the TV: TV Setup
 
@@ -115,18 +89,15 @@ Works from any browser, with nothing to install on the phone or computer.
 4. Enter the **6-digit code** the TV shows. That device gets straight in from then on.
 
 <details>
-<summary>More about TV Setup</summary>
+<summary>Notes on TV Setup</summary>
 
-- The page has Remote, Apps, Files · Install, Health, Automation, Setup. ▶ View shows the TV picture; one browser at a time can watch. 🎧 Listen plays the TV's sound in the browser.
 - **iPhone:** in Safari tap Share → "Add to Home Screen" for an icon that opens like an app (opened from the icon, it asks for the pairing code once more).
 - No address to type: the TV Setup app shows a QR code for this page; scan it with the phone's camera.
 - It starts again by itself when the TV boots.
-- **TV history:** the TV Setup app records every 5 minutes (which app is open, RAM, CPU, storage) and keeps it on the TV; all three clients show it under Health → History. Nothing else has to stay on.
 - On the TV, the app also offers **Optimize TV** / **Undo**, **Tailscale** (installs it and brings up its sign-in code), **Update**, turning the web remote on and off, and **Unpair all**.
 - The connection is plain HTTP, not encrypted. **Do not expose port 8765 to the Internet**; away from home, go through Tailscale.
 - It needs the TV's ADB on port 5555. Some newer Google TVs that only have pairing-code "Wireless debugging" may not work.
 - **On an Android phone / tablet** it installs too (a one-column layout for small screens), to control that device itself from another browser. It needs ADB on port 5555. A normal phone opens ADB over the cable only: plug it into a computer and run `adb tcpip 5555` once, again after every restart. Android 11+ "Wireless debugging" does not work yet. Optimize TV refuses to run on anything that is not a TV.
-
 
 <p align="center"><img src="docs/img/tvapp-en.webp" width="640" alt="The TV Setup app screen"></p>
 </details>
@@ -142,22 +113,9 @@ Only Python 3.10 or newer is needed. The first run fetches `adb` (Google's offic
 
 The **📺 Change TV** button at the top goes back to the list.
 
-After that, just double-click the start file. Closing the window stops it; nothing keeps running on the computer.
+After that, just double-click `TV Remote` (or the start file). The ⏻ Quit button on the page stops it; nothing keeps running on the computer.
 
-<details>
-<summary>What the tabs do</summary>
-
-| Tab | What it does |
-|---|---|
-| **Remote** | Buttons, volume, wake, the live screen, 🎧 the TV's sound, scene buttons, click/drag/scroll on the picture, type straight onto the TV, open apps, links and the Play Store, play a photo/video from this computer on the TV |
-| **Apps** | Open, stop, uninstall apps; disable / turn on unused system apps; 🤖 copy the app list with a question for an AI on what to disable; paste app ids to turn on / off / remove in bulk |
-| **Files · Install** | Browse TV storage and USB; download, upload (drag and drop), rename, delete, install `.apk`; download a link to the TV; install an APK from a link or from this computer |
-| **Health** | Now: CPU, RAM, storage, Wi-Fi, top CPU processes, Free up RAM. History: TV time per day, most used apps, RAM/CPU/storage charts. At the bottom: Terminal (shell commands on the TV, for people who know them) |
-| **Automation** | Sleep timer, bedtime (a TV turned on in those hours goes back to standby), daily minutes per app. These three run on the TV itself (TV Setup 2.13.0+), with no other device on. Scenes: one button, several things (wake the TV, open an app, set the volume, press keys, open a link, wait, sleep timer), export/import a file as a backup |
-| **Setup** | First-time steps (ADB, Tailscale, pairing the remote, saving), Optimize TV. On the TV's page and in the phone app: Tailscale and Optimize TV |
-
-**When ADB is closed**, only the buttons, power, step-by-step volume and wake remain. Lost: the live screen, mouse, keyboard, apps, files, installing APKs. The page says so and has a "Retry connection" button.
-</details>
+**When ADB is closed**, only the buttons, power, step-by-step volume and wake remain; the page says so and has a "Retry connection" button.
 
 <details>
 <summary>Usage notes</summary>
