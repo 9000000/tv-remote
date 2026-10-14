@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.17.2 - 2026-10-15
+
+Web 2.17.2 · app điện thoại 2.15.2 · app TV 2.14.2
+
+**Tiếng Việt**
+- **Sức khỏe → Lỗi app:** xem app nào trên TV bị dừng, bị treo trong khoảng 3 ngày qua (Android tự ghi lại), gom theo app, có số lần, lần cuối, lý do bằng lời dễ hiểu và nguyên văn lỗi, nút chép để gửi người khác hỏi. Có ở cả ba nơi.
+
+**English**
+- **Health → App errors:** see which apps on the TV stopped or froze over the last 3 days or so (Android keeps the record), grouped per app with how often, when last, the reason in plain words and the exact error, and a button to copy it for someone to look at. In all three clients.
+
 ## 2.17.1 - 2026-10-15
 
 Web 2.17.1 · app điện thoại 2.15.1 · app TV 2.14.1

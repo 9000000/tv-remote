@@ -45,6 +45,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "files" -> return HttpServer.Response.json(files(r.q("path")))
                 "file" -> return download(r)
                 "health" -> return HttpServer.Response.json(health())
+                "crashes" -> return HttpServer.Response.json(JSONObject().put("text", sh(CRASHES).replace("\r\n", "\n").takeLast(500000)))
                 "stats" -> return HttpServer.Response.json(stats(r.q("days").toIntOrNull() ?: 7))
                 "rules" -> if (!post) return HttpServer.Response.json(rules(null))
                 "tailscale" -> { val t = Tailscale(link.get(), dir); return HttpServer.Response.json(JSONObject().put("installed", t.installed()).put("ip", t.ip())) }
@@ -560,6 +561,12 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "printf '\\043~\\043\\n'; cat /proc/uptime; printf '\\043~\\043\\n'; wm size; wm density; dumpsys display | grep -m1 -o 'fps=[0-9.]*'; printf '\\043~\\043\\n'; dumpsys wifi | grep -m1 mWifiInfo; " +
                 "printf '\\043~\\043\\n'; ip -o -4 addr show; printf '\\043~\\043\\n'; top -n 1 -b -m 7 -o %CPU,%MEM,ARGS -s 1 | tail -7; " +
                 "printf '\\043~\\043\\n'; dumpsys power | grep -m1 -o 'mWakefulness=[A-Za-z]*'; dumpsys activity activities | grep -m1 -E 'mResumedActivity|topResumedActivity'"
+
+        /** Health → Errors: the dropbox's notes on apps that stopped, froze or crashed natively, cut on the TV to the lines the page
+         *  shows (ANR thread dumps are hundreds of KB). Same command as CRASHES in server.py. */
+        private const val CRASHES = "for t in data_app_crash system_app_crash system_server_crash data_app_anr system_app_anr system_server_anr " +
+                "data_app_native_crash system_app_native_crash; do dumpsys dropbox --print \$t; done | grep -E '^(=====|[0-9]{4}-[0-9]{2}-[0-9]{2} " +
+                "[0-9:]{8} |Process: |Subject: |signal [0-9]|Abort message|Caused by: |[A-Za-z_\$][A-Za-z0-9_.\$]*(Exception|Error)(: |\$)|\tat )'"
 
         /** The package name in an APK's binary AndroidManifest.xml: the "package" attribute of the first element. Null if unreadable. */
         fun apkPackage(m: ByteArray): String? = try {

@@ -24,9 +24,78 @@ async function loadHist(days) {
 }
 document.querySelectorAll('#hmode button').forEach((b) => b.addEventListener('click', () => {
   hmode = b.dataset.m; document.querySelectorAll('#hmode button').forEach((x) => x.classList.toggle('on', x === b));
-  $('#hhist').hidden = hmode !== 'hist'; $('#hnow').hidden = hmode !== 'now';
-  if (hmode === 'hist') loadHist(); else loadHealth();
+  $('#hhist').hidden = hmode !== 'hist'; $('#hnow').hidden = hmode !== 'now'; $('#herr').hidden = hmode !== 'err';
+  if (hmode === 'hist') loadHist(); else if (hmode === 'err') loadErrors(); else loadHealth();
 }));
+
+// Errors: Android notes every app that stops or stops answering in its "dropbox" (kept about 3 days); the core sends those notes
+// cut to the lines that matter (CRASHES in server.py / Manage.kt), and this groups them per app, newest first.
+function parseCrashes(text) {
+  const out = []; let e = null, sep = false;
+  for (const line of text.split('\n')) {
+    if (line.startsWith('=====')) { sep = true; continue; }
+    const h = sep && line.match(/^(\d{4}-\d\d-\d\d \d\d:\d\d):\d\d (\S+)/); sep = false;
+    if (h) { e = { at: h[1], kind: /anr/.test(h[2]) ? 'anr' : /native/.test(h[2]) ? 'native' : 'crash', sys: h[2].startsWith('system_server'), proc: '', why: '', lines: [] }; out.push(e); continue; }
+    if (!e) continue;
+    if (line.startsWith('Process: ')) { e.proc = line.slice(9).trim(); continue; }
+    if (line.startsWith('Subject: ') || (!line.startsWith('\tat ') && !e.why) || line.startsWith('Abort message')) e.why = line.replace(/^Subject: /, '').trim();
+    if (e.lines.length < 20) e.lines.push(line.replace(/^\t/, '    '));
+  }
+  return out;
+}
+const crashAt = (at) => at.slice(8, 10) + '/' + at.slice(5, 7) + ' ' + at.slice(11);
+const KIND = { crash: 'bị dừng:', anr: 'bị treo:', native: 'bị dừng:' };
+const PLAIN = [                                                       // the usual reasons in words; the exact note stays below
+  [/^Input dispatching timed out/, 'không phản hồi khi bấm phím'], [/executing service/, 'một dịch vụ chạy quá lâu'],
+  [/^Broadcast of Intent/, 'xử lý tin báo hệ thống quá lâu'], [/ContentProvider not responding/, 'không trả lời app khác'],
+  [/^signal 11 /, 'lỗi đọc ghi bộ nhớ (SIGSEGV)'], [/^signal 6 /, 'tự dừng vì lỗi (SIGABRT)'], [/^(java\.lang\.)?OutOfMemoryError/, 'hết bộ nhớ'],
+];
+const plain = (why) => (PLAIN.find(([re]) => re.test(why)) || [])[1] || why;
+async function copyText(t) {
+  let ok = false;
+  try { await navigator.clipboard.writeText(t); ok = true; } catch {}
+  if (!ok) { const a = el('textarea', { value: t }); document.body.append(a); a.select(); try { ok = document.execCommand('copy'); } catch {} a.remove(); }  // plain-HTTP pages (the TV's) have no clipboard API
+  toast(ok ? 'Đã chép' : 'Không chép được');
+}
+async function loadErrors() {
+  const box = $('#herr');
+  box.replaceChildren(el('section', { className: 'card' }, el('div', { className: 'muted', textContent: tr('Đang đọc từ TV...') })));
+  const r = await api('/api/crashes'); if (!r || hmode !== 'err') return;
+  const groups = new Map();
+  for (const e of parseCrashes(r.text)) {
+    const key = e.sys ? 'android' : (e.proc || '?').split(':')[0];
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(e);
+  }
+  const list = [...groups].map(([pkg, es]) => ({ pkg, es: es.sort((a, b) => b.at.localeCompare(a.at)) })).sort((a, b) => b.es[0].at.localeCompare(a.es[0].at));
+  const reload = el('button', { type: 'button', textContent: '↻ Đọc lại', onclick: loadErrors });
+  const card = el('section', { className: 'card' }, el('div', { className: 'card-head' }, el('h2', { textContent: '🐞 App bị dừng, bị treo' }), reload),
+    el('p', { className: 'muted', style: 'margin:0 0 8px', textContent: 'Android tự ghi lại mỗi lần một app trên TV bị dừng hoặc không phản hồi, và giữ trong khoảng 3 ngày.' }));
+  if (!list.length) card.append(el('p', { textContent: 'Không có app nào bị dừng hay bị treo gần đây. 👍' }));
+  for (const { pkg, es } of list) {
+    const n = { crash: 0, anr: 0 }; es.forEach((e) => { n[e.kind === 'anr' ? 'anr' : 'crash']++; });
+    const name = el('b', { textContent: pkg === 'android' ? 'Hệ thống Android' : appName(pkg) });
+    if (pkg !== 'android') onMeta(pkg, (m) => { if (m.label) name.textContent = m.label; });
+    const icon = pkg === 'android' ? el('div', { className: 'appicon placeholder', textContent: '⚙️' }) : appIcon(pkg);
+    if (pkg !== 'android') onMeta(pkg, (m) => icon.fill(m));
+    const counts = [n.crash ? n.crash + ' lần bị dừng' : '', n.anr ? n.anr + ' lần bị treo' : ''].filter(Boolean).join(' · ');
+    const d = el('details', { className: 'crash' }, el('summary', {}, icon,
+      el('div', { className: 't' }, name, el('small', { textContent: counts + ' · lần cuối ' + crashAt(es[0].at) })),
+      el('span', { className: 'n', textContent: String(es.length) })));
+    const whys = new Map();                                            // the same failure again and again: shown once, with how often
+    for (const e of es) { const k = e.kind + e.why; if (!whys.has(k)) whys.set(k, { e, n: 0 }); whys.get(k).n++; }
+    for (const { e, n: times } of [...whys.values()].slice(0, 5)) {
+      d.append(el('div', { className: 'why' }, el('span', { textContent: KIND[e.kind] }), ' ', el('b', { textContent: plain(e.why) || '?' }),
+        el('small', {}, ' · ', el('span', { textContent: times + ' lần · lần cuối ' + crashAt(e.at) }))));
+      const text = (e.proc ? 'Process: ' + e.proc + '\n' : '') + e.lines.join('\n');
+      d.append(el('pre', { className: 'term', textContent: text }));
+    }
+    d.append(el('button', { type: 'button', textContent: '📋 Chép để gửi hỏi', style: 'margin:0 0 12px;padding:0 14px',
+      onclick: () => copyText([...whys.values()].map(({ e, n: t }) => `[${e.at}] ${pkg} ${e.kind} ×${t}\n${e.lines.join('\n')}`).join('\n\n')) }));
+    card.append(d);
+  }
+  box.replaceChildren(card);
+}
 async function loadHealth() {
   if (hmode !== 'now') return;
   if (healthBusy || ADB.state !== 'ready') return;

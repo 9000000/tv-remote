@@ -34,6 +34,11 @@ APPS = {"settings": "android-app://com.android.tv.settings"}          # remote-p
 
 WEB = ROOT / "app" / "shared" / "web"                             # the one page all three remotes serve (the two Android apps carry it as an asset)
 TS_PKG = "com.tailscale.ipn"
+# Health → Errors: what Android's dropbox noted about apps that stopped, froze or crashed natively (it keeps about 3 days), cut
+# on the TV to the lines the page shows, so hundreds of KB of ANR thread dumps never cross the network. Same command in Manage.kt.
+CRASHES = ("for t in data_app_crash system_app_crash system_server_crash data_app_anr system_app_anr system_server_anr "
+           "data_app_native_crash system_app_native_crash; do dumpsys dropbox --print $t; done | grep -E '^(=====|[0-9]{4}-[0-9]{2}-[0-9]{2} "
+           "[0-9:]{8} |Process: |Subject: |signal [0-9]|Abort message|Caused by: |[A-Za-z_$][A-Za-z0-9_.$]*(Exception|Error)(: |$)|\tat )'")
 
 
 @web.middleware
@@ -583,6 +588,13 @@ def build(S):
         await asyncio.sleep(1.5)
         after = await avail()
         return web.json_response({"before": before, "after": after, "freed": max(0, after - before)})
+
+    @routes.get("/api/crashes")
+    @adb_errors
+    async def crashes(_):
+        """Health → Errors: the TV's own record of apps that stopped or froze; the page groups and words it."""
+        out = await adb.shell(CRASHES, timeout=30)
+        return web.json_response({"text": out.replace("\r\n", "\n")[-500000:]})
 
     @routes.get("/api/health")
     @adb_errors
