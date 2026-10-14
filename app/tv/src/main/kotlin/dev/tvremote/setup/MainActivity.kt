@@ -440,28 +440,129 @@ class MainActivity : Activity() {
         }.start()
     }
 
+    /** The choices, in this app's own look: rows to tick with the remote's OK, sections, and the two buttons at the bottom. */
     private fun showOptimize(plan: org.json.JSONObject) {
-        val names = ArrayList<String>()
-        val on = ArrayList<Boolean>()
-        val pkgs = ArrayList<String?>()
-        val home = plan.optString("home") == Setup.FL_PKG
-        names.add(t("Tắt hiệu ứng chuyển cảnh (mở app nhanh hơn)", "Turn off transition animations (apps open faster)")); on.add(true); pkgs.add(null)
-        names.add(if (home) t("Màn hình chính FLauncher (đang dùng)", "FLauncher home screen (in use)") else t("Dùng FLauncher làm màn hình chính (nhẹ, thay màn hình Google)", "Use FLauncher as the home screen (light, replaces Google’s)")); on.add(true); pkgs.add(null)
-        val sug = plan.optJSONArray("suggest") ?: org.json.JSONArray()
-        for (i in 0 until sug.length()) { val a = sug.getJSONObject(i); names.add(t("Tắt app: ", "Turn off: ") + a.optString("label") + t("  · đề xuất", "  · suggested")); on.add(true); pkgs.add(a.optString("pkg")) }
-        val more = plan.optJSONArray("apps") ?: org.json.JSONArray()
-        for (i in 0 until more.length()) { val a = more.getJSONObject(i); names.add(t("Tắt app: ", "Turn off: ") + a.optString("label")); on.add(false); pkgs.add(a.optString("pkg")) }
-        val checked = on.toBooleanArray()
-        android.app.AlertDialog.Builder(this)
-            .setTitle(t("Tối ưu TV: chọn việc cần làm", "Optimize TV: choose what to do"))
-            .setMultiChoiceItems(names.toTypedArray(), checked) { _, i, v -> checked[i] = v }
-            .setPositiveButton(t("Chạy tối ưu", "Optimize")) { _, _ ->
-                val off = pkgs.indices.filter { pkgs[it] != null && checked[it] }.map { pkgs[it]!! }
-                job { it.apply(Setup.Choice(checked[0], checked[1], off)) }
+        val d = android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen)
+        val root = android.widget.FrameLayout(this)
+        root.setBackgroundColor(Color.argb(215, 5, 7, 10))
+        val card = LinearLayout(this)
+        card.orientation = LinearLayout.VERTICAL
+        card.background = box(CARD, 22, 0)
+        card.setPadding(dp(32), dp(26), dp(32), dp(22))
+
+        val head = LinearLayout(this)
+        head.gravity = Gravity.CENTER_VERTICAL
+        val badge = ImageView(this)
+        badge.setImageResource(R.drawable.ic_zap)
+        badge.setColorFilter(Color.WHITE)
+        badge.background = box(ACCENT, 12, 0)
+        badge.setPadding(dp(9), dp(9), dp(9), dp(9))
+        head.addView(badge, LinearLayout.LayoutParams(dp(44), dp(44)))
+        val words = LinearLayout(this)
+        words.orientation = LinearLayout.VERTICAL
+        words.setPadding(dp(14), 0, 0, 0)
+        words.addView(text(t("Tối ưu TV", "Optimize TV"), 22, INK, true))
+        words.addView(text(t("Chọn việc cần làm bằng phím mũi tên và OK. Tắt app là tạm ngưng, không gỡ; Hoàn tác bật lại tất cả.",
+            "Choose with the arrows and OK. Turning an app off only pauses it, nothing is uninstalled; Undo turns everything back on."), 13, MUTED, false))
+        head.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
+        card.addView(head)
+
+        val list = LinearLayout(this)
+        list.orientation = LinearLayout.VERTICAL
+        val rows = ArrayList<Pair<String?, BooleanArray>>()             // (package or null, ticked)
+        val count = text("", 13, MUTED, false)
+        fun recount() {
+            val n = rows.count { it.first != null && it.second[0] }
+            count.text = if (n == 0) t("Không tắt app nào", "No apps turned off") else t("Sẽ tắt $n app", "$n apps will be turned off")
+        }
+        fun row(title: String, sub: String, on: Boolean, pkg: String?): View {
+            val ticked = booleanArrayOf(on)
+            rows.add(pkg to ticked)
+            val r = LinearLayout(this)
+            r.gravity = Gravity.CENTER_VERTICAL
+            r.setPadding(dp(14), dp(10), dp(14), dp(10))
+            r.isFocusable = true
+            r.isClickable = true
+            val mark = TextView(this)
+            mark.gravity = Gravity.CENTER
+            mark.textSize = 16f
+            mark.typeface = Typeface.DEFAULT_BOLD
+            r.addView(mark, LinearLayout.LayoutParams(dp(26), dp(26)))
+            val w = LinearLayout(this)
+            w.orientation = LinearLayout.VERTICAL
+            w.setPadding(dp(14), 0, 0, 0)
+            val tt = text(title, 16, INK, true)
+            tt.isSingleLine = true
+            tt.ellipsize = TextUtils.TruncateAt.END
+            w.addView(tt)
+            val st = text(sub, 12, MUTED, false)
+            st.isSingleLine = true
+            st.ellipsize = TextUtils.TruncateAt.END
+            if (sub.isNotEmpty()) w.addView(st)
+            r.addView(w, LinearLayout.LayoutParams(0, -2, 1f))
+            fun paint() {
+                val f = r.isFocused
+                r.background = if (f) box(ACCENT, 12, 2) else box(TILE, 12, 0)
+                mark.text = if (ticked[0]) "✓" else ""
+                mark.setTextColor(if (f) ACCENT else Color.WHITE)
+                mark.background = if (ticked[0]) box(if (f) Color.WHITE else ACCENT, 7, 0) else GradientDrawable().apply { cornerRadius = dp(7).toFloat(); setStroke(dp(2), if (f) Color.WHITE else MUTED) }
+                st.setTextColor(if (f) Color.WHITE else MUTED)
             }
-            .setNegativeButton(t("Hủy", "Cancel"), null)
-            .show()
-        log(t("Tắt app là tạm ngưng, không gỡ; Hoàn tác bật lại tất cả.", "Turning an app off only pauses it, nothing is uninstalled; Undo turns everything back on."))
+            r.setOnClickListener { ticked[0] = !ticked[0]; paint(); recount() }
+            r.setOnFocusChangeListener { _, _ -> paint() }
+            paint()
+            return r
+        }
+        fun add(v: View) = list.addView(v, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        fun header(s: String) = list.addView(section(s), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
+
+        val usingFl = plan.optString("home") == Setup.FL_PKG
+        header(t("CHUNG", "GENERAL"))
+        add(row(t("Tắt hiệu ứng chuyển cảnh", "Turn off transition animations"),
+            if (plan.optBoolean("anim", true)) t("Mở app, chuyển màn hình nhanh hơn", "Apps open and screens change faster") else t("Đang tắt sẵn", "Already off"), true, null))
+        add(row(if (usingFl) t("Màn hình chính FLauncher (đang dùng)", "FLauncher home screen (in use)") else t("Dùng FLauncher làm màn hình chính", "Use FLauncher as the home screen"),
+            t("Chỉ lưới app, nhẹ, không quảng cáo; màn hình chính Google được tắt", "Just a grid of apps, light, no ads; Google’s home screen is turned off") + (if (plan.optBoolean("flauncher")) "" else t(" · tải 10 MB", " · 10 MB download")), true, null))
+        val sug = plan.optJSONArray("suggest") ?: org.json.JSONArray()
+        if (sug.length() > 0) header(t("TẮT APP ĐỀ XUẤT", "SUGGESTED APPS TO TURN OFF"))
+        for (i in 0 until sug.length()) { val a = sug.getJSONObject(i); add(row(a.optString("label"), a.optString("pkg"), true, a.optString("pkg"))) }
+        val more = plan.optJSONArray("apps") ?: org.json.JSONArray()
+        if (more.length() > 0) header(t("TẮT THÊM APP KHÁC", "TURN OFF OTHER APPS"))
+        for (i in 0 until more.length()) { val a = more.getJSONObject(i); add(row(a.optString("label"), a.optString("pkg"), false, a.optString("pkg"))) }
+        recount()
+
+        val most = (resources.displayMetrics.heightPixels * 0.62).toInt()  // the list grows with its rows, then scrolls
+        val scroll = object : ScrollView(this) {
+            override fun onMeasure(w: Int, h: Int) = super.onMeasure(w, View.MeasureSpec.makeMeasureSpec(most, View.MeasureSpec.AT_MOST))
+        }
+        scroll.addView(list)
+        card.addView(scroll, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6) })
+
+        val foot = LinearLayout(this)
+        foot.gravity = Gravity.CENTER_VERTICAL
+        foot.setPadding(0, dp(18), 0, 0)
+        val go = smallButton(t("⚡  Chạy tối ưu", "⚡  Optimize")) {
+            val ticks = rows.map { it.second[0] }
+            d.dismiss()
+            job { it.apply(Setup.Choice(ticks[0], ticks[1], rows.filter { r -> r.first != null && r.second[0] }.map { r -> r.first!! })) }
+        }
+        go.textSize = 16f
+        go.setPadding(dp(22), dp(12), dp(22), dp(12))
+        go.id = View.generateViewId()
+        go.background = box(Color.rgb(36, 58, 108), 10, 0)                   // dim until focused: only one button ever looks "on"
+        go.setOnFocusChangeListener { v, f -> v.background = if (f) box(ACCENT, 10, 2) else box(Color.rgb(36, 58, 108), 10, 0) }
+        list.getChildAt(list.childCount - 1)?.nextFocusDownId = go.id
+        val cancel = smallButton(t("Hủy", "Cancel")) { d.dismiss() }
+        cancel.textSize = 16f
+        cancel.setPadding(dp(22), dp(12), dp(22), dp(12))
+        foot.addView(go)
+        foot.addView(cancel, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
+        foot.addView(count, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(18) })
+        card.addView(foot)
+
+        root.addView(card, android.widget.FrameLayout.LayoutParams(dp(820), -2, Gravity.CENTER))
+        d.setContentView(root)
+        d.show()
+        list.getChildAt(1)?.requestFocus()                                // the first choice, under its heading
     }
 
     private fun job(job: Job) {

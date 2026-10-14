@@ -237,7 +237,9 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             }
             else -> {                                                 // open on the TV with whatever app handles the type
                 val real = if (path.startsWith("/sdcard")) "/storage/emulated/0" + path.substring(7) else path
-                out = sh("am start -a android.intent.action.VIEW -d " + Adb.q("file://" + real.replace(" ", "%20")) + " -t " + Adb.q(mime(path)) + " 2>&1")
+                val args = "-a android.intent.action.VIEW -d " + Adb.q("file://" + real.replace(" ", "%20")) + " -t " + Adb.q(mime(path))
+                // Google TV answers files it cannot show with a do-nothing stub (frameworkpackagestubs): that is "no app" too
+                out = if (sh("cmd package resolve-activity --brief $args 2>&1").contains("frameworkpackagestubs")) "Error" else sh("am start $args 2>&1")
                 out = if (out.contains("Error") || out.lowercase(Locale.ROOT).contains("unable to resolve")) "the TV has no app that can open this" else ""
             }
         }

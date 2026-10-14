@@ -4,6 +4,24 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.13.0 - 2026-10-14
+
+Web 2.13.0 · app điện thoại 2.12.0 · app TV 2.11.0
+
+**Tiếng Việt**
+- **App TV: màn hình Tối ưu TV làm lại** theo giao diện mới của app: các dòng tích bằng phím mũi tên và OK, chia mục Chung / App đề xuất / App khác, đếm “Sẽ tắt N app”, danh sách tự cuộn, nút Chạy tối ưu và Hủy rõ ràng cái nào đang chọn.
+- Sửa: **tìm app trên CH Play** (app điện thoại và web) mở ra lỗi “Tìm kiếm trên cửa hàng Chrome không khả dụng”. CH Play trên TV chỉ nhận tìm kiếm dạng `market://search`, giờ dùng đúng dạng đó.
+- Sửa: **phát ảnh / video từ điện thoại** báo “Cần ADB” dù đang có ADB. Mở trình chọn tệp làm app tạm dừng phiên xem hình; khi quay lại, app tưởng chưa có ADB. Giờ chỉ chặn khi TV đang ở chế độ chỉ có nút remote.
+- **Chọn ảnh / video bằng sheet thư viện ảnh** của hệ thống, nổi trên app, không rời khỏi remote, không cần quyền đọc ảnh. Android 12 trở xuống dùng bản của Google Play services; không có thì mới dùng trình chọn tệp. Nhạc và tệp khác có mục riêng “Phát nhạc / tệp khác”.
+- TV không có app mở được tệp (Google TV trả lời bằng một app giả không làm gì) thì báo rõ “TV không có app mở loại tệp này”, thay vì báo đang phát.
+
+**English**
+- **TV app: the Optimize TV screen redone** in the app's new look: rows ticked with the arrows and OK, sections General / Suggested apps / Other apps, an “N apps will be turned off” count, a scrolling list, and Optimize / Cancel buttons where it is clear which one is selected.
+- Fixed: **searching the Play Store** (phone app and web) opened a “Chrome Web Store search is unavailable” error. The TV's Play Store takes searches only as `market://search`, which is used now.
+- Fixed: **playing a photo / video from the phone** said “Needs ADB” while ADB was there. The file picker paused the picture session, and on return the app thought ADB was missing. It now refuses only in keys-only mode.
+- **Photos and videos are picked in the system gallery sheet**, over the app, without leaving the remote and without a photo permission. Android 12 and older use Google Play services' version; only without it the file picker. Music and other files have their own “Play a song / other file” item.
+- When the TV has no app for a file (Google TV answers with a do-nothing stub), it now says “The TV has no app for this kind of file” instead of claiming to play it.
+
 ## 2.12.0 - 2026-10-14
 
 Web 2.12.0 · app điện thoại 2.11.0 · app TV 2.10.0

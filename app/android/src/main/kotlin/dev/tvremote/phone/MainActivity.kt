@@ -595,8 +595,10 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     /** A photo, video or song from this phone: copied to the TV's Download folder, then opened by the TV's own viewer or player. */
     private fun castFile(uri: Uri) {
+        // Not tv?.ready(): the file picker stops the picture session (onStop) and it is still reopening when we get here.
+        // The copy makes its own ADB connection; only the keys-only mode means there is no ADB at all.
         val ip = host
-        if (ip == null || tv?.ready() != true) {
+        if (ip == null || basic != null) {
             say(t("Phát tệp lên TV cần ADB. TV này mới chỉ nối bằng nút remote: vào “Bật ADB cho TV này” trước.", "Playing a file on the TV needs ADB. This TV is connected with the remote buttons only: use “Turn on ADB for this TV” first."), true)
             return
         }
@@ -621,13 +623,35 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                     Manage(link, null, cacheDir).cast(input, size, name)
                 }
                 null
-            } catch (e: Exception) { e.message ?: e.toString() } finally { link.close() }
+            } catch (e: Exception) { dev.tvremote.core.Errors.say(e, VI) } finally { link.close() }
             ui.post {
                 if (isFinishing) return@post
                 if (err == null) say(t("Đang phát trên TV: ", "Playing on the TV: ") + name, false)
                 else say(t("Không phát được: ", "Could not play it: ") + err, true)
             }
         }.start()
+    }
+
+    /**
+     * The system photo picker: a sheet over this app (Android 13+, or older phones with a recent Google Play system update),
+     * so the remote stays where it is and needs no permission to read photos. Without it, the file picker.
+     */
+    private fun pickMedia() {
+        val sheet = Intent(android.provider.MediaStore.ACTION_PICK_IMAGES)    // no type: photos and videos both
+        if (Build.VERSION.SDK_INT >= 33 || sheet.resolveActivity(packageManager) != null) {
+            try { startActivityForResult(sheet, PICK_CAST); return } catch (ignored: Exception) { }
+        }
+        // Android 12 and older: Google Play services carries the same picker under this name (as androidx PickVisualMedia uses)
+        val gms = Intent("androidx.activity.result.contract.action.PICK_IMAGES")
+        if (gms.resolveActivity(packageManager) != null) {
+            try { startActivityForResult(gms, PICK_CAST); return } catch (ignored: Exception) { }
+        }
+        pickFile(arrayOf("image/*", "video/*"))                       // the full-screen file picker: the copy works all the same
+    }
+
+    private fun pickFile(types: Array<String>) {
+        try { startActivityForResult(Intent(Intent.ACTION_GET_CONTENT).setType("*/*").putExtra(Intent.EXTRA_MIME_TYPES, types).addCategory(Intent.CATEGORY_OPENABLE), PICK_CAST) }
+        catch (e: Exception) { say(t("Điện thoại không có app chọn tệp.", "This phone has no file picker."), true) }
     }
 
     private fun askText(title: String, hint: String, ok: String, then: (String) -> Unit) {
@@ -646,7 +670,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val store = { id: String -> openLink("https://play.google.com/store/apps/details?id=$id") }
         val items = ArrayList<Triple<String, String, () -> Unit>>()
         items.add(Triple(t("Tìm app trên CH Play", "Search the Play Store"), t("Gõ tên app ở đây, TV mở kết quả tìm kiếm", "Type the name here; the TV shows the results")) {
-            askText(t("Tìm app trên CH Play", "Search the Play Store"), t("vd: vlc", "e.g. vlc"), t("Tìm", "Search")) { openLink("https://play.google.com/store/search?c=apps&q=" + java.net.URLEncoder.encode(it, "UTF-8")) }
+            askText(t("Tìm app trên CH Play", "Search the Play Store"), t("vd: vlc", "e.g. vlc"), t("Tìm", "Search")) { openLink("market://search?c=apps&q=" + java.net.URLEncoder.encode(it, "UTF-8")) }   // the TV's Play Store takes searches only this way
         })
         items.add(Triple(t("Mở trang CH Play theo app id", "Open a Play Store page by app id"), t("vd: org.videolan.vlc. Từ đó bấm Cài đặt hoặc Mở trên TV", "e.g. org.videolan.vlc. Then choose Install or Open on the TV")) {
             askText(t("App id (tên gói)", "App id (package name)"), "org.videolan.vlc", t("Mở", "Open")) { store(it) }
@@ -654,9 +678,11 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         items.add(Triple(t("Mở đường dẫn trên TV", "Open a link on the TV"), t("Video YouTube, trang web, file tải về... TV mở bằng app phù hợp", "A YouTube video, a web page, a download... the TV opens it with a fitting app")) {
             askText(t("Đường dẫn", "Link"), "https://youtu.be/...", t("Mở", "Open")) { openLink(if (Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:").containsMatchIn(it)) it else "https://$it") }
         })
-        items.add(Triple(t("Phát ảnh / video / nhạc từ điện thoại", "Play a photo / video / song from the phone"), t("Chọn tệp, app chép sang TV rồi TV tự mở. Cần ADB. Cũng dùng được nút Chia sẻ → TV Remote ở app khác", "Pick a file; it is copied to the TV, which opens it. Needs ADB. Share → TV Remote in other apps does the same")) {
-            try { startActivityForResult(Intent(Intent.ACTION_GET_CONTENT).setType("*/*").putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*", "audio/*")).addCategory(Intent.CATEGORY_OPENABLE), PICK_CAST) }
-            catch (e: Exception) { say(t("Điện thoại không có app chọn tệp.", "This phone has no file picker."), true) }
+        items.add(Triple(t("Phát ảnh / video từ điện thoại", "Play a photo / video from the phone"), t("Chọn trong thư viện ảnh, app chép sang TV rồi TV tự mở. Cần ADB. Cũng dùng được nút Chia sẻ → TV Remote ở app khác", "Pick from the gallery; it is copied to the TV, which opens it. Needs ADB. Share → TV Remote in other apps does the same")) {
+            pickMedia()
+        })
+        items.add(Triple(t("Phát nhạc / tệp khác", "Play a song / other file"), t("Chọn tệp bằng trình chọn tệp của điện thoại", "Pick a file with the phone’s file picker")) {
+            pickFile(arrayOf("audio/*", "video/*", "image/*"))
         })
         items.add(Triple(t("Chiếu màn hình điện thoại lên TV", "Mirror the phone’s screen on the TV"), t("Mở phần Truyền (Cast) của Android: chọn TV trong danh sách. Điện thoại và TV phải cùng Wi-Fi", "Opens Android’s Cast screen: pick the TV in the list. Phone and TV must be on the same Wi-Fi")) {
             try { startActivity(Intent("android.settings.CAST_SETTINGS")) }

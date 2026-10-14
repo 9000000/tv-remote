@@ -224,6 +224,9 @@ class Adb:
         raise AdbError("app has no launcher activity")
 
     async def _am(self, args):
+        # Google TV answers files it cannot show with a do-nothing stub (frameworkpackagestubs): that is "no app" too
+        if "frameworkpackagestubs" in await self.shell(f"cmd package resolve-activity --brief {args} 2>&1"):
+            raise AdbError("the TV has no app that can open this")
         out = await self.shell(f"am start {args} 2>&1")
         if "Error" in out or "unable to resolve" in out.lower():
             raise AdbError("the TV has no app that can open this")

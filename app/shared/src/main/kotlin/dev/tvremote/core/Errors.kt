@@ -17,6 +17,7 @@ object Errors {
             all.contains("copy to the TV incomplete") -> t("Chép tệp lên TV không trọn vẹn. Thử lại.", "The file did not reach the TV whole. Try again.")
             all.contains("no sign-in link") -> t("Không đọc được link đăng nhập trên màn hình TV. Mở Tailscale trên TV và quét mã QR nó hiện.",
                 "Could not read the sign-in link off the TV's screen. Open Tailscale on the TV and scan the QR code it shows.")
+            all.contains("no app that can open") -> t("TV không có app mở loại tệp này (cài VLC rồi thử lại).", "The TV has no app for this kind of file (install VLC, then retry).")
             Regex("INSUFFICIENT_STORAGE|No space", RegexOption.IGNORE_CASE).containsMatchIn(all) -> t("TV hết bộ nhớ trống.", "The TV is out of storage.")
             else -> e.message ?: e.javaClass.simpleName
         }

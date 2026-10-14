@@ -40,7 +40,8 @@ $('#linkf').addEventListener('submit', (e) => { e.preventDefault(); const l = no
 $('#storef').addEventListener('submit', (e) => {
   e.preventDefault(); const v = $('#store').value.trim(); if (!v) return;
   const id = /^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$/i.test(v);
-  openOnTv('https://play.google.com/store/' + (id ? 'apps/details?id=' + v : 'search?c=apps&q=' + encodeURIComponent(v)), 'CH Play');
+  // the TV's Play Store takes a search only as market://search (a play.google.com search link ends in a browser error)
+  openOnTv(id ? 'https://play.google.com/store/apps/details?id=' + v : 'market://search?c=apps&q=' + encodeURIComponent(v), 'CH Play');
 });
 // ---------- keyboard: whatever is typed in the box is mirrored on the TV, keystroke by keystroke ----------
 const txt = $('#text');
