@@ -4,7 +4,7 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
-## 2.17.1 - 2026-10-14
+## 2.17.1 - 2026-10-15
 
 Web 2.17.1 · app điện thoại 2.15.1 · app TV 2.14.1
 
