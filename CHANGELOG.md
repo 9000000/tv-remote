@@ -4,6 +4,44 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.16.0 - 2026-10-14
+
+Web 2.16.0 · app điện thoại 2.14.0 · app TV 2.13.0
+
+**Tiếng Việt**
+- **🎧 Nghe tiếng TV trên điện thoại / trình duyệt**, chọn mỗi lần bấm: **Chỉ máy này** (loa TV tạm im, cắm tai nghe để xem khuya; dừng nghe là TV có tiếng lại) hoặc **Cả TV và máy này** (TV vẫn phát loa, cần TV Android 13 trở lên; máy cầm tay trễ hơn TV một chút, vài app như Netflix chặn thu tiếng kiểu này; TV cũ hơn tự về chế độ đầu và báo lại). App điện thoại và web máy tính dùng Opus 64 kbps, khoảng 8 KB/s, nhẹ hơn hình TV cỡ 30 lần và TV chỉ tốn vài % một nhân CPU. Trang do TV phục vụ (HTTP, trình duyệt không giải mã Opus được) dùng PCM 24 kHz mono, khoảng 48 KB/s, TV không phải mã hóa gì. App điện thoại nghe tiếp khi khóa màn hình (lúc đã tắt hình), có thông báo với nút Dừng. Cần TV Android 11 trở lên.
+- **Tab mới ⏰ Tự động** (thay chỗ Terminal; Terminal chuyển xuống cuối tab Sức khỏe):
+  - **Hẹn giờ tắt TV:** 15 phút đến 2 giờ. Còn 1 phút, TV hiện thông báo kèm nút "+15 phút" / "Tắt ngay" / "Hủy".
+  - **Giờ đi ngủ:** trong khoảng giờ đã đặt, TV bật lên sẽ tự tắt sau 1 phút.
+  - **Giới hạn app mỗi ngày:** còn 5 phút TV báo trước, hết giờ app tự đóng; cho thêm 30 phút ngay trên trang.
+  - Ba mục này chạy ngay trên TV trong app TV Setup (bản 2.13.0 trở lên), không cần điện thoại hay máy tính bật. Trang có nút cài / cập nhật TV Setup. Đây không phải khóa trẻ em tuyệt đối: người rành có thể gỡ TV Setup.
+  - **Cảnh:** một nút làm nhiều việc (bật/tắt TV, mở app, đặt âm lượng, bấm phím, mở link, chờ, hẹn giờ tắt), có sẵn mẫu. Cảnh hiện thành nút trên tab Remote. **Xuất file sao lưu / nhập từ file** (.json; nhập thì gộp với danh sách đang có, trùng thì thay). Mỗi nơi giữ danh sách cảnh riêng: máy tính trong `tvs.json`, TV Setup trên TV, app điện thoại trong app; dùng xuất/nhập để chép qua lại.
+- **Nói với TV thông minh hơn:** "mở YouTube", "tắt tiếng", "tăng âm lượng 5", "hẹn giờ tắt 30 phút", "tắt TV", tên một cảnh... được làm ngay không qua Assistant (nhanh hơn, chạy cả trên TV không có Assistant và khi app chỉ có nút bấm). Câu khác vẫn gửi cho TV như trước.
+- **App điện thoại:** nút 🎧 trên thanh trên; nút `⋯` có thêm 😴 Hẹn giờ tắt và 🎬 Cảnh. **Widget** màn hình chính (nguồn, tắt tiếng, âm lượng, 3 cảnh đầu), ô **Cài đặt nhanh** "Nguồn TV" và "Cảnh TV", **phím tắt** khi giữ biểu tượng app: điều khiển TV dùng gần nhất mà không cần mở app.
+- **iPhone / Android: thêm trang vào màn hình chính** (PWA): có biểu tượng, mở toàn màn hình như app. Trang hiện hướng dẫn một lần. Trên iPhone, mở từ biểu tượng phải nhập mã ghép thêm một lần.
+- **Tab Ứng dụng:** nút **Tắt app / Bật lại** (tắt được app hệ thống không dùng, bật lại lúc nào cũng được; app đã tắt luôn hiện mờ ở cuối danh sách; không cho tắt các app TV cần như Google Play Services, bàn phím, launcher, Cài đặt). Nút **🤖 Hỏi AI nên tắt / gỡ app nào**: chép sẵn một câu hỏi kèm model TV, Android, RAM, app tự cài, app hệ thống, app đang tốn RAM, để dán vào ChatGPT / Claude / Gemini.
+- Đặt âm lượng giờ đúng cả trên TV bỏ qua lệnh đặt mức (HDMI-CEC): đặt xong đọc lại, chưa đúng thì bấm phím +/− cho đủ.
+- App điện thoại: **Cài đặt → Nút âm lượng của điện thoại** cho chọn nút âm lượng chỉnh TV (như trước) hay chỉnh điện thoại. Lúc đang 🎧 nghe tiếng TV, nút luôn chỉnh điện thoại.
+- App điện thoại: hàng nút đầu (Nguồn, Nói, Quản lý, Thêm phím) có chữ dưới icon như các hàng khác.
+- Thêm unit test: Python (`app/web/tests`), JavaScript (`node --test`), Kotlin (`:shared` và `:tv`).
+
+**English**
+- **🎧 Hear the TV on the phone / in the browser**, picked each time: **Only this device** (the TV's speakers go quiet, plug in headphones for late nights; stop and the TV has its sound back) or **TV and this device** (the TV keeps playing, needs Android 13 or newer on the TV; the device in your hand lags the TV a little, and some apps such as Netflix block this kind of capture; older TVs fall back to the first way and say so). The phone app and the computer's web use Opus 64 kbps, about 8 KB/s, some 30 times lighter than the picture, costing the TV a few % of one CPU core. The page served by the TV (plain HTTP, where browsers cannot decode Opus) uses 24 kHz mono PCM, about 48 KB/s, with no encoding on the TV. The phone app keeps playing with the phone locked (with the picture off), with a notification and a Stop button. Needs Android 11 or newer on the TV.
+- **New ⏰ Automation tab** (where Terminal was; Terminal moved to the bottom of the Health tab):
+  - **Sleep timer:** 15 minutes to 2 hours. With a minute left the TV shows a notice with "+15 min" / "Turn off now" / "Cancel".
+  - **Bedtime:** between the set hours, a TV that is turned on goes back to standby a minute later.
+  - **Daily app limits:** 5 minutes before, the TV says so; then the app closes. Grant 30 more minutes right on the page.
+  - These three run on the TV itself in TV Setup (2.13.0 or newer), with no phone or computer on. The page can install / update TV Setup. It is not a hard parental lock: someone who knows how can uninstall TV Setup.
+  - **Scenes:** one button, several things (wake/sleep the TV, open an app, set the volume, press keys, open a link, wait, sleep timer), with examples to start from. Scenes show as buttons on the Remote tab. **Export a backup file / import from a file** (.json; importing merges with the list, same id replaces). Each place keeps its own scenes: the computer in `tvs.json`, TV Setup on the TV, the phone app in the app; use export/import to copy between them.
+- **Smarter talking to the TV:** "open YouTube", "mute", "volume up 5", "sleep in 30 minutes", "turn off the TV", a scene's name... are carried out at once without the Assistant (faster, and works on TVs without one and with keys only). Anything else goes to the TV as before.
+- **Phone app:** a 🎧 button in the top bar; `⋯` gains 😴 Sleep timer and 🎬 Scenes. A home screen **widget** (power, mute, volume, the first 3 scenes), **Quick Settings** tiles "TV power" and "TV scene", and **shortcuts** when holding the app icon: they control the TV used last without opening the app.
+- **iPhone / Android: add the page to the home screen** (PWA): an icon that opens full screen like an app. The page explains it once. On iPhone, opened from the icon it asks for the pairing code once more.
+- **Apps tab:** **Disable / Turn on** buttons (unused system apps can be turned off and back on at any time; disabled apps always show dimmed at the end of the list; apps the TV needs, such as Google Play Services, the keyboard, the launcher and Settings, cannot be disabled). **🤖 Ask an AI which apps to disable / remove** copies a ready question with the TV model, Android version, RAM, user apps, system apps and what uses memory, to paste into ChatGPT / Claude / Gemini.
+- Setting the volume now works on TVs that ignore the set command (HDMI-CEC): it reads the level back and presses +/− for the rest.
+- Phone app: **Settings → The phone's volume keys** picks whether they set the TV's volume (as before) or the phone's. While 🎧 listening to the TV they always set the phone's.
+- Phone app: the top row (Power, Speak, Manage, More keys) has names under the icons like the other rows.
+- Unit tests: Python (`app/web/tests`), JavaScript (`node --test`), Kotlin (`:shared` and `:tv`).
+
 ## 2.15.1 - 2026-10-14
 
 Web 2.15.1 · app điện thoại 2.13.4 · app TV 2.12.1

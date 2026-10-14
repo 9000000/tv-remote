@@ -19,6 +19,8 @@ import android.os.PowerManager
 import dev.tvremote.core.AdbLink
 import dev.tvremote.core.HttpServer
 import dev.tvremote.core.Manage
+import dev.tvremote.core.Scenes
+import dev.tvremote.core.Setup
 import dev.tvremote.core.Tv
 import dev.tvremote.core.WebPage
 import org.json.JSONArray
@@ -38,13 +40,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         const val PORT = 8765
         private const val PREFS = "remote"
         private const val COOKIE = "tvr"
-        private val KEYS: Map<String, Int> = HashMap<String, Int>().apply {
-            putAll(mapOf("UP" to 19, "DOWN" to 20, "LEFT" to 21, "RIGHT" to 22, "OK" to 23, "BACK" to 4, "HOME" to 3, "MENU" to 82, "POWER" to 26, "WAKE" to 224,
-                "VOL_UP" to 24, "VOL_DOWN" to 25, "MUTE" to 164, "PLAY_PAUSE" to 85, "NEXT" to 87, "PREV" to 88, "SETTINGS" to 176, "INPUT" to 178,
-                "DEL" to 67, "ENTER" to 66, "ASSIST" to 219, "CH_UP" to 166, "CH_DOWN" to 167,
-                "INFO" to 165, "GUIDE" to 172, "LIVE" to 170, "SUBTITLE" to 175, "REWIND" to 89, "STOP" to 86, "FFWD" to 90))
-            for (d in 0..9) put(d.toString(), 7 + d)
-        }
+        private val KEYS: Map<String, Int> = Scenes.KEYS
 
         // pairing: one code at a time, shown on the TV, good for two minutes and five guesses
         @Volatile private var code: String? = null
@@ -61,9 +57,13 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
 
         fun enabled(c: Context): Boolean = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean("on", true)
 
+        /** The service runs for the web remote, and also, with the web remote off, while timers or limits need watching. */
+        fun wanted(c: Context): Boolean = enabled(c) || Rules.active(c)
+
         fun setEnabled(c: Context, on: Boolean) {
-            c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean("on", on).apply()
-            if (on) start(c) else c.stopService(Intent(c, RemoteService::class.java))
+            c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean("on", on).commit()
+            c.stopService(Intent(c, RemoteService::class.java))       // started again with or without its web server
+            if (wanted(c)) start(c)
         }
 
         fun start(c: Context) {
@@ -107,6 +107,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     @Volatile private var lastUse = 0L                                // when a paired browser last asked for anything
     @Volatile private var resting = false                             // the input session is closed on purpose: nobody is using the remote
     private var lastPairStart = 0L
+    private var guard: Guard? = null
+    @Volatile private var hearer: Tv? = null                         // a session that carries the TV's sound to one browser
     private val page by lazy { WebPage(assets, "tv", try { packageManager.getPackageInfo(packageName, 0).let { it.versionName + "-" + it.lastUpdateTime / 1000 } } catch (e: Exception) { "0" }) }
 
     override fun onBind(i: Intent?): IBinder? = null
@@ -134,9 +136,10 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         manage?.allowed = { fp ->                                      // whoever is at the TV sees that a device was let in
             ui.post { android.widget.Toast.makeText(this, (if (java.util.Locale.getDefault().language == "vi") "Đã cho phép gỡ lỗi USB cho một thiết bị đã ghép\n" else "USB debugging allowed for a paired device\n") + fp, android.widget.Toast.LENGTH_LONG).show() }
         }
-        try { server.start(PORT, false) } catch (e: Exception) { adbState = "error" }
+        if (enabled(this)) try { server.start(PORT, false) } catch (e: Exception) { adbState = "error" }
         lastUse = System.currentTimeMillis()
         connect()
+        guard = Guard(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         ui.postDelayed(rest, 30000)
         ui.postDelayed(diary, 20000)
     }
@@ -148,9 +151,11 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         running = null
         code = null
         http?.stop()
+        guard?.stop()
         link?.close()
         tv?.stop()
         viewer?.stop()
+        hearer?.stop()
         ui.removeCallbacksAndMessages(null)
         super.onDestroy()
     }
@@ -246,10 +251,10 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             override fun onStatus(key: String, detail: String) { if (key == "closed" || key == "error") q.add(end) }
             override fun onVideoSize(w: Int, h: Int) { q.add(packet(0, java.nio.ByteBuffer.allocate(8).putInt(w).putInt(h).array())) }
             override fun onNetwork(mac: String, lan: String, tailscale: String) { }
-        }) { config, key, data ->
+        }, Tv.Sink { config, key, data ->
             if (q.size > 150) q.add(end)                              // the browser cannot keep up: stop instead of filling memory
             else q.add(packet(if (config) 1 else if (key) 2 else 3, data))
-        }
+        })
         viewer = v
         return HttpServer.Response.stream("application/octet-stream", -1) { out ->
             try {
@@ -262,6 +267,49 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             } finally {
                 v.stop()
                 if (viewer === v) viewer = null
+            }
+        }
+    }
+
+    private fun scenes(): JSONArray = try { JSONArray(prefs.getString("scenes", "[]")) } catch (e: Exception) { JSONArray() }
+
+    // ---------------------------------------------------------------- the sound, for one browser at a time
+    /**
+     * The TV's sound as packets in the picture's framing: kind 0 the format (codec 2 = PCM, then the rate and the channels),
+     * 2 a piece of sound, 4 nothing new, 5 an error word. The TV encodes nothing: scrcpy hands over its raw PCM, made 24 kHz
+     * mono here ([Downmix], 48 KB/s), because the page is plain HTTP, where browsers offer no Opus decoder to scripts.
+     * While someone listens the TV's own speakers are silent; they come back when the browser stops.
+     */
+    private fun sound(share: Boolean): HttpServer.Response {
+        hearer?.stop()                                                // a new listener takes over
+        val q = java.util.concurrent.LinkedBlockingQueue<ByteArray>()
+        val end = ByteArray(0)
+        fun packet(kind: Int, data: ByteArray) = java.nio.ByteBuffer.allocate(5 + data.size).put(kind.toByte()).putInt(data.size).put(data).array()
+        q.add(packet(0, java.nio.ByteBuffer.allocate(6).put(2.toByte()).putInt(24000).put(1.toByte()).array()))
+        val mix = dev.tvremote.core.Downmix()
+        val h = Tv(this, "127.0.0.1", null, 0, 0, false, object : Tv.Listener {
+            override fun onStatus(key: String, detail: String) {
+                if (key == "audio") q.add(if (detail == "noshare") packet(3, detail.toByteArray()) else packet(5, "unsupported".toByteArray()))
+                if (key == "closed" || key == "error") { if (key == "error") q.add(packet(5, detail.toByteArray())); q.add(end) }
+            }
+            override fun onVideoSize(w: Int, h: Int) { }
+            override fun onNetwork(mac: String, lan: String, tailscale: String) { }
+        }, null, "raw", Tv.AudioSink { config, data ->
+            if (config) return@AudioSink
+            if (q.size > 200) q.add(end) else q.add(packet(2, mix.feed(data)))   // the browser cannot keep up: stop instead of filling memory
+        }, false, share)
+        hearer = h
+        return HttpServer.Response.stream("application/octet-stream", -1) { out ->
+            try {
+                while (true) {
+                    val p = q.poll(5, java.util.concurrent.TimeUnit.SECONDS) ?: packet(4, end)
+                    if (p === end) break
+                    out.write(p)
+                    out.flush()
+                }
+            } finally {
+                h.stop()
+                if (hearer === h) hearer = null
             }
         }
     }
@@ -291,6 +339,25 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 return shot
             }
             "/api/video" -> return video(r.q("q").toIntOrNull() ?: 1)
+            "/api/audio" -> return sound(r.query["share"] == "1")
+            "/api/rules" -> return try {
+                val st = Rules.change(this, if (r.method == "POST") r.json() else JSONObject())
+                HttpServer.Response.json(st)
+            } catch (e: IllegalArgumentException) { HttpServer.Response.error(400, e.message.toString()) }
+            "/api/scenes" -> {
+                if (r.method == "POST") prefs.edit().putString("scenes", Scenes.clean(r.json().optJSONArray("scenes") ?: JSONArray()).toString()).apply()
+                if (r.query["download"] != null) return Scenes.backup(scenes())
+                return HttpServer.Response.json(JSONObject().put("scenes", scenes()))
+            }
+            "/api/scene/run" -> {
+                val d = r.json()
+                val steps = d.optJSONArray("steps") ?: (0 until scenes().length()).map { scenes().getJSONObject(it) }.firstOrNull { it.optString("id") == d.optString("id") }?.optJSONArray("steps")
+                    ?: return HttpServer.Response.error(404, "no such scene")
+                val l = link ?: return HttpServer.Response.error(503, "adb:$adbState")
+                val failed = Scenes.run(Scenes.clean(JSONArray().put(JSONObject().put("name", "x").put("steps", steps))).optJSONObject(0)?.optJSONArray("steps") ?: JSONArray(),
+                    Scenes.Shell({ l.get().shell(it) }) { m -> Rules.change(this, JSONObject().put("do", "sleep").put("minutes", m)) })
+                return HttpServer.Response.json(JSONObject().put("ok", failed == null).put("failed", failed ?: ""))
+            }
             "/api/touch" -> {
                 val d = r.json()
                 val a = when (d.optString("a")) { "down", "0" -> 0; "up", "1" -> 1; "move", "2" -> 2; else -> -1 }   // no wheel here
@@ -436,8 +503,14 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             for (ri in pm.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(category), 0)) {
                 val pkg = ri.activityInfo.packageName
                 if (!seen.add(pkg) || pkg == packageName) continue
-                out.put(JSONObject().put("pkg", pkg).put("meta", JSONObject().put("label", ri.loadLabel(pm).toString()).put("icon", true).put("banner", true)))
+                out.put(JSONObject().put("pkg", pkg).put("keep", Setup.PROTECTED.matches(pkg)).put("meta", JSONObject().put("label", ri.loadLabel(pm).toString()).put("icon", true).put("banner", true)))
             }
+        }
+        // the apps turned off (they have no launcher entry then), so "Turn on" is always at hand
+        @Suppress("DEPRECATION")
+        for (ai in pm.getInstalledApplications(android.content.pm.PackageManager.MATCH_DISABLED_COMPONENTS)) {
+            if (ai.enabled || !seen.add(ai.packageName)) continue
+            out.put(JSONObject().put("pkg", ai.packageName).put("off", true).put("meta", JSONObject().put("label", ai.loadLabel(pm).toString()).put("icon", true).put("banner", true)))
         }
         return out
     }

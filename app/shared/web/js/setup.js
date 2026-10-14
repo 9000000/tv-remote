@@ -81,7 +81,8 @@ $('#quit').addEventListener('click', async () => {
 // ---------- TVs: saved list, discovery, first-time setup ----------
 function tvChanged() {                                                // another TV: forget everything cached about the old one
   if (screenOn) stopScreen();
-  quickLoaded = appsLoaded = filesLoaded = false; META.clear(); cwd = '/sdcard/Download'; bannerKey = '';
+  if (listenOn) stopListen();
+  quickLoaded = appsLoaded = filesLoaded = scenesLoaded = autoLoaded = sceneNamesAsked = false; META.clear(); cwd = '/sdcard/Download'; bannerKey = ''; RULES = null; SCENES = []; renderScenes();
   $('#quick').replaceChildren(el('div', { className: 'muted', textContent: 'Danh sách app hiện khi ADB sẵn sàng.' }));
   $('#appslist').replaceChildren(); $('#fileslist').replaceChildren();
   if (currentTab === 'tv') loadSteps();
@@ -290,5 +291,7 @@ setInterval(() => { if (currentTab === 'tv' && !document.hidden && !stopped) loa
 
 const startTab = location.hash.slice(1) || new URLSearchParams(location.search).get('tab') || (CORE === 'phone' ? 'apps' : '');
 if (CORE !== 'mac') $('#wake').parentElement.className = 'rrow three';   // no wake button there: three keys fill the row
-if (['remote', 'apps', 'files', 'health', 'term', 'tv'].includes(startTab)) showTab(startTab); else if (startTab === 'install') showTab('files');
+if (['remote', 'apps', 'files', 'health', 'auto', 'tv'].includes(startTab)) showTab(startTab); else if (startTab === 'install') showTab('files');
+else if (startTab === 'term') { showTab('health'); $('#termcard').open = true; }   // the terminal used to be a tab of its own
 applyAdb(); refresh(); setInterval(refresh, 4000);
+homeHint();

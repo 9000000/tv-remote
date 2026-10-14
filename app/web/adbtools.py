@@ -53,6 +53,28 @@ def _part(nodes, which):
     return None
 
 
+# never turned off (as Setup.kt PROTECTED): the TV would stop working, or this project would
+PROTECTED = re.compile(r"android|com\.android\.(systemui|settings|tv\.settings|shell|phone|bluetooth|providers\..*|packageinstaller|permissioncontroller|inputmethod.*|networkstack.*|vending)"
+                       r"|com\.google\.android\.(gms|gsf|packageinstaller|permissioncontroller|tvlauncher|tvrecommendations|leanbacklauncher.*|inputmethod.*|tv\.remote\.service|katniss)"
+                       r"|dev\.tvremote\..*|me\.efesser\.flauncher|com\.tailscale\.ipn")
+
+
+def memory_by_app(meminfo):
+    """"Total PSS by process" of dumpsys meminfo, summed per package (":service" processes count for their app): [(pkg, MB)], largest first."""
+    i = meminfo.find("Total PSS by process:")
+    if i < 0:
+        return []
+    by = {}
+    for line in meminfo[i:].splitlines()[1:]:
+        if not line.strip():
+            break
+        m = re.match(r"\s*([\d,]+)K: ([^\s(]+)", line)
+        if m and "." in m.group(2):                                  # apps only: not "system", native daemons, our own app_process
+            pkg = m.group(2).split(":")[0]
+            by[pkg] = by.get(pkg, 0) + int(m.group(1).replace(",", "")) // 1024
+    return sorted(((p, mb) for p, mb in by.items() if mb >= 5), key=lambda x: -x[1])[:25]
+
+
 def safe_path(p):
     p = "/" + "/".join(x for x in (p or DEFAULT_DEST).split("/") if x not in ("", "."))
     if ".." in p.split("/") or not (p in ROOTS or p.startswith(tuple(r + "/" for r in ROOTS))):
@@ -210,7 +232,8 @@ class Adb:
 
     # ---- apps ----
     async def apps(self, system=False):
-        out = await self.shell("pm list packages -f" + ("" if system else " -3"))
+        # the apps turned off are always listed, so "Turn on" is at hand without showing every system app
+        out = await self.shell("pm list packages -f" + ("" if system else " -3; pm list packages -f -d"))
         found = dict(l[8:].strip().rsplit("=", 1)[::-1] for l in out.splitlines() if l.startswith("package:") and "=" in l)
         self.apk_paths.update(found)
         return sorted(found)
@@ -262,6 +285,23 @@ class Adb:
         out = (await self.shell(f"pm uninstall {pkg}")).strip()
         if "Success" not in out:
             raise AdbError(out or "uninstall failed")
+
+    async def disable(self, pkg):                                     # off and on again (Undo-able), never what the TV or this project needs
+        self._pkg(pkg)
+        if PROTECTED.fullmatch(pkg):
+            raise AdbError("protected: the TV needs this app")
+        out = await self.shell(f"pm disable-user --user 0 {pkg} 2>&1")
+        if "disabled" not in out:
+            raise AdbError(out.strip() or "disable failed")
+
+    async def enable(self, pkg):
+        self._pkg(pkg)
+        out = await self.shell(f"pm enable {pkg} 2>&1")
+        if "enabled" not in out:
+            raise AdbError(out.strip() or "enable failed")
+
+    async def disabled(self):
+        return {l[8:].strip() for l in (await self.shell("pm list packages -d")).splitlines() if l.startswith("package:")}
 
     @staticmethod
     def _pkg(pkg):

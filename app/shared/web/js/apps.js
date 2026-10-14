@@ -52,25 +52,29 @@ async function loadQuick() {
 }
 
 // ---------- apps tab ----------
-let appsLoaded = false, appsAll = [];
+let appsLoaded = false, appsAll = [], appsInfo = new Map();          // pkg -> { off, keep }
 async function loadApps() {
   $('#appslist').replaceChildren(el('div', { className: 'muted', textContent: 'Đang tải...' }));
   const r = await api('/api/apps' + ($('#appssys').checked ? '?system=1' : ''));
   if (!r) { $('#appslist').replaceChildren(); return; }
-  appsLoaded = true; appsAll = r.apps.map((a) => a.pkg); seedMeta(r.apps); renderApps();
+  appsLoaded = true; appsAll = r.apps.map((a) => a.pkg); appsInfo = new Map(r.apps.map((a) => [a.pkg, { off: !!a.off, keep: !!a.keep }])); seedMeta(r.apps); renderApps();
 }
 function renderApps() {
   const q = $('#appsq').value.trim().toLowerCase();
   lazyMeta.disconnect();
   const rows = appsAll.filter((p) => !q || p.toLowerCase().includes(q) || appName(p).toLowerCase().includes(q))
-    .sort((a, b) => appName(a).localeCompare(appName(b))).map((pkg) => {
+    .sort((a, b) => (appsInfo.get(a)?.off ? 1 : 0) - (appsInfo.get(b)?.off ? 1 : 0) || appName(a).localeCompare(appName(b))).map((pkg) => {   // turned off: last
     const act = (name, icon, label, cls = '') => setLabel(el('button', { title: label, className: 'small ' + cls, onclick: async () => {
       if (name === 'uninstall' && !confirm('Gỡ cài đặt ' + appName(pkg) + ' khỏi TV?')) return;
-      const r = await api('/api/app/' + name, { pkg }); if (r) { toast(label + ': ' + appName(pkg)); if (name === 'uninstall') { quickLoaded = false; loadApps(); loadQuick(); } }
+      if (name === 'disable' && !confirm('Tắt ' + appName(pkg) + '? App biến khỏi TV cho tới khi bấm “Bật lại” ở cuối danh sách này.')) return;
+      const r = await api('/api/app/' + name, { pkg }); if (r) { toast(label + ': ' + appName(pkg)); if (name !== 'launch' && name !== 'stop') { quickLoaded = false; loadApps(); loadQuick(); } }
     } }), icon, label);
     const icon = appIcon(pkg), title = el('span', { textContent: pkg.split('.').pop() });
-    const row = el('div', { className: 'item' }, icon, el('div', { className: 'name' }, title, el('small', { textContent: pkg })),
-      el('div', { className: 'acts' }, act('launch', '▶', 'Mở', 'primary'), act('stop', '⏹', 'Dừng'), act('uninstall', '🗑', 'Gỡ', 'danger')));
+    const info = appsInfo.get(pkg) || {};
+    const row = el('div', { className: 'item' + (info.off ? ' off' : '') }, icon, el('div', { className: 'name' }, title, el('small', { textContent: (info.off ? '⏸ đã tắt · ' : '') + pkg })),
+      el('div', { className: 'acts' }, ...(info.off ? [act('enable', '↩', 'Bật lại', 'primary')]
+        : [act('launch', '▶', 'Mở', 'primary'), act('stop', '⏹', 'Dừng'), ...(info.keep ? [] : [act('disable', '⏸', 'Tắt app')])]),
+        act('uninstall', '🗑', 'Gỡ', 'danger')));
     row.loadMeta = () => onMeta(pkg, (m) => { icon.fill(m); if (m.label) title.textContent = m.label; });
     if (META.has(pkg)) row.loadMeta(); else lazyMeta.observe(row);
     return row;
@@ -86,3 +90,52 @@ $('#appsreload').addEventListener('click', loadApps);
 // the search box above the quick-launch grid: tiles whose name does not contain the words are hidden
 function filterQuick() { const q = $('#quickq').value.trim().toLowerCase(); document.querySelectorAll('#quick .tile').forEach((b) => { b.hidden = !!q && !b.textContent.toLowerCase().includes(q); }); }
 $('#quickq').addEventListener('input', filterQuick);
+
+// 🤖 "which apps can go?": the TV's app lists and memory as a ready question for an AI (or a knowledgeable friend). Nobody can
+// tell a Sony service from bloatware by its package name; an AI that knows Android TV mostly can. The text stays editable.
+function aiPrompt(r) {
+  const vi = window.LANG !== 'en';
+  const named = (p) => r.labels && r.labels[p] ? `${p} (${r.labels[p]})` : p;
+  const ours = ['dev.tvremote.setup', 'com.tailscale.ipn'].filter((p) => r.user.includes(p));
+  const mem = r.memory.map((m) => `${m.pkg}: ${m.mb} MB`).join('\n');
+  return (vi ? [
+    `Mình có TV ${r.device}, Android ${r.android}, RAM ${r.ram_mb} MB. Mình muốn TV chạy mượt hơn bằng cách tắt (disable) hoặc gỡ những app không cần.`,
+    'Xem danh sách bên dưới và chia thành 3 nhóm, mỗi app kèm một lý do ngắn:',
+    '1. An toàn để tắt/gỡ (bloatware, demo, quảng cáo, app trùng chức năng)',
+    '2. Tắt được nếu không dùng tính năng đó (nói rõ sẽ mất tính năng gì)',
+    '3. Không được đụng (hệ thống, Google Play Services, bàn phím, launcher đang dùng, Chromecast, cài đặt, nguồn phát TV...)',
+    'Ưu tiên "tắt" (pm disable-user --user 0) vì bật lại được; chỉ đề nghị gỡ với app tự cài. Cuối cùng xếp các app nên tắt theo mức RAM lấy lại được.',
+    'Người nhà vẫn dùng: (điền vào, vd YouTube, Netflix, tìm kiếm bằng giọng nói, xem truyền hình bằng ăng-ten)',
+    ours.length ? `Đừng đề xuất tắt ${ours.join(', ')}: mình dùng để điều khiển TV.` : '',
+    '', '== App đang tốn RAM nhất lúc này ==', mem,
+    '', `== App tự cài (${r.user.length}) ==`, r.user.map(named).join('\n'),
+    '', `== App hệ thống đang bật (${r.system.length}) ==`, r.system.join('\n'),
+    '', `== App đã tắt sẵn (${r.disabled.length}) ==`, r.disabled.join('\n') || '(không có)',
+  ] : [
+    `I have a ${r.device} TV, Android ${r.android}, ${r.ram_mb} MB of RAM. I want it to run smoother by disabling or uninstalling apps it does not need.`,
+    'Look at the lists below and sort the apps into 3 groups, each with a short reason:',
+    '1. Safe to disable/uninstall (bloatware, demos, ads, duplicates)',
+    '2. Can be disabled if that feature is not used (say which feature is lost)',
+    '3. Do not touch (system, Google Play Services, keyboard, the launcher in use, Chromecast, settings, TV inputs...)',
+    'Prefer "disable" (pm disable-user --user 0), which can be undone; suggest uninstalling only for user-installed apps. Finally, rank the apps to disable by the memory they would give back.',
+    'My family still uses: (fill in, e.g. YouTube, Netflix, voice search, antenna TV)',
+    ours.length ? `Do not suggest disabling ${ours.join(', ')}: I use them to control the TV.` : '',
+    '', '== Apps using the most memory right now ==', mem,
+    '', `== User-installed apps (${r.user.length}) ==`, r.user.map(named).join('\n'),
+    '', `== System apps that are on (${r.system.length}) ==`, r.system.join('\n'),
+    '', `== Apps already disabled (${r.disabled.length}) ==`, r.disabled.join('\n') || '(none)',
+  ]).filter((l, i, a) => l !== '' || a[i - 1] !== '').join('\n');
+}
+$('#aiapps').addEventListener('click', async () => {
+  toast('Đang lấy danh sách app...');
+  const r = await api('/api/apps/report'); if (!r) return;
+  $('#aitext').value = aiPrompt(r); $('#aidlg').showModal();
+});
+$('#aiclose').addEventListener('click', () => $('#aidlg').close());
+$('#aicopy').addEventListener('click', async () => {
+  const t = $('#aitext'); let ok = false;
+  try { await navigator.clipboard.writeText(t.value); ok = true; } catch {}
+  if (!ok) { t.focus(); t.select(); try { ok = document.execCommand('copy'); } catch {} }   // plain-HTTP pages (the TV's) have no clipboard API
+  toast(ok ? 'Đã chép. Dán vào ChatGPT, Claude hay Gemini.' : 'Không chép tự động được: chữ đã được bôi đen, bấm giữ để chép.');
+});
+

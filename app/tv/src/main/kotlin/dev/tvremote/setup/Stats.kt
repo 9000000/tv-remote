@@ -63,7 +63,7 @@ internal class Stats(private val ctx: Context) {
     }
 
     /** Seconds on screen per app since midnight, and the app on screen now ("" when unknown). */
-    private fun today(now: Long, on: Boolean): Pair<JSONObject, String> {
+    fun today(now: Long, on: Boolean): Pair<JSONObject, String> {
         val start = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }.timeInMillis
         val events = (ctx.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager).queryEvents(start, now)
         val total = HashMap<String, Long>()

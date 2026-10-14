@@ -57,8 +57,9 @@ class RemoteLabels(private val link: AdbLink, private val apk: File) : Manage.La
     private var names: Map<String, String>? = null
     @Volatile private var ok = false
 
+    /** Every app's display name, by package; asked from the TV once per connection. */
     @Synchronized
-    private fun names(): Map<String, String> {
+    fun names(): Map<String, String> {
         names?.let { return it }
         val out = HashMap<String, String>()
         try {

@@ -42,4 +42,8 @@ android {
     kotlinOptions { jvmTarget = "11" }
 }
 
-dependencies { implementation(project(":shared")) }
+dependencies {
+    implementation(project(":shared"))
+    testImplementation("junit:junit:4.13.2")                          // ./gradlew :tv:testDebugUnitTest
+    testImplementation("org.json:json:20240303")
+}

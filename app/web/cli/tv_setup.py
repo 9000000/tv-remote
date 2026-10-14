@@ -16,6 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from tvtools import ADB, utf8_console
+from adbtools import PROTECTED                                   # never offered or turned off (as Setup.kt PROTECTED)
 
 FL_PKG = "me.efesser.flauncher"
 FL_URL = "https://github.com/osrosal/flauncher/releases/download/v2025.07.001/flauncher-armeabi-v7a-release.apk"   # 32-bit ARM, also runs on arm64
@@ -35,10 +36,6 @@ NAMES = {"com.google.android.play.games": "Google Play Games", "com.google.andro
          "com.sony.dtv.b2b.webappruntimedrm": "Sony B2B web app DRM", "com.sony.dtv.demomode": "Sony Demo mode",
          "com.sony.dtv.demosupport": "Sony Demo support", "com.sony.dtv.multiscreendemo": "Sony Multi-screen demo",
          "com.sony.dtv.sonyselect": "Sony Select", "tv.samba.ssm": "Samba TV"}
-# never offered or turned off (as Setup.kt PROTECTED): the TV would stop working, or this project would
-PROTECTED = re.compile(r"android|com\.android\.(systemui|settings|tv\.settings|shell|phone|bluetooth|providers\..*|packageinstaller|permissioncontroller|inputmethod.*|networkstack.*|vending)"
-                       r"|com\.google\.android\.(gms|gsf|packageinstaller|permissioncontroller|tvlauncher|tvrecommendations|leanbacklauncher.*|inputmethod.*|tv\.remote\.service|katniss)"
-                       r"|dev\.tvremote\..*|me\.efesser\.flauncher|com\.tailscale\.ipn")
 OFF_LIST = "/data/local/tmp/tvr-disabled.txt"                    # what was turned off beyond the lists above, for undo
 
 

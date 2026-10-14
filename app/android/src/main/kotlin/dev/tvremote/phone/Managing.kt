@@ -1,0 +1,217 @@
+package dev.tvremote.phone
+
+import android.content.ContentValues
+import android.content.Intent
+import android.graphics.Typeface
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.os.Handler
+import android.provider.MediaStore
+import android.view.Gravity
+import android.view.View
+import android.webkit.CookieManager
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.Toast
+import dev.tvremote.core.AdbLink
+import dev.tvremote.core.HttpServer
+import dev.tvremote.core.Manage
+import dev.tvremote.core.RemoteLabels
+import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStream
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLDecoder
+import java.util.UUID
+import java.util.regex.Pattern
+import dev.tvremote.core.Scenes
+import org.json.JSONArray
+import org.json.JSONObject
+
+/**
+ * The same page the TV app serves, run inside this app: a server on 127.0.0.1 that only this app's web view can use
+ * (it must present a random cookie), talking to the TV over its own ADB connection.
+ */
+internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpServer.Handler {
+    private val view: LinearLayout = a.col()
+    private val web: WebView
+    private val token = UUID.randomUUID().toString().replace("-", "")
+    private var http: HttpServer? = null
+    private var port = 0
+    private var link: AdbLink? = null
+    private var manage: Manage? = null
+    private var labels: RemoteLabels? = null
+    private var forHost: String? = null
+    private var picking: ValueCallback<Array<Uri>>? = null
+    private val webPage by lazy { dev.tvremote.core.WebPage(a.assets, "phone", a.version() + "-" + (try { a.packageManager.getPackageInfo(a.packageName, 0).lastUpdateTime / 1000 } catch (e: Exception) { 0L })) }
+
+    init {
+        view.setBackgroundColor(BG)
+        view.isClickable = true
+        val title = a.label(t("Quản lý TV", "Manage the TV"), 20, TEXT)
+        title.typeface = Typeface.DEFAULT_BOLD
+        val top = LinearLayout(a)
+        top.gravity = Gravity.CENTER_VERTICAL
+        top.setPadding(a.dp(16), a.dp(10), a.dp(12), a.dp(6))
+        top.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
+        val done = a.icon("@close", t("Đóng", "Close"), BTN)
+        done.setOnClickListener { view.visibility = View.GONE }
+        top.addView(done, LinearLayout.LayoutParams(a.dp(48), a.dp(40)))
+        view.addView(top)
+        web = WebView(a)
+        web.setBackgroundColor(BG)
+        @Suppress("SetJavaScriptEnabled")
+        web.settings.javaScriptEnabled = true
+        web.settings.domStorageEnabled = true
+        web.webViewClient = object : WebViewClient() {            // the page's own links stay inside; the rest (Tailscale sign-in) go to the browser
+            override fun shouldOverrideUrlLoading(w: WebView?, req: android.webkit.WebResourceRequest?): Boolean {
+                val u = req?.url ?: return false
+                if (u.host == "127.0.0.1") return false
+                a.web(u.toString())
+                return true
+            }
+        }
+        web.webChromeClient = object : WebChromeClient() {
+            override fun onShowFileChooser(w: WebView?, cb: ValueCallback<Array<Uri>>?, params: FileChooserParams?): Boolean {
+                picking?.onReceiveValue(null)
+                picking = cb
+                try {
+                    @Suppress("DEPRECATION")
+                    a.startActivityForResult(params!!.createIntent(), PICK_FILE)
+                } catch (e: Exception) {
+                    picking = null
+                    return false
+                }
+                return true
+            }
+        }
+        web.setDownloadListener { url, _, disposition, _, _ -> saveToPhone(url, disposition) }
+        view.addView(web, LinearLayout.LayoutParams(-1, 0, 1f))
+        view.visibility = View.GONE
+        root.addView(view, FrameLayout.LayoutParams(-1, -1))
+    }
+
+    /** Shows the page for [tvHost], on [tab] when one is named ("auto", "apps"...). */
+    fun open(tvHost: String?, tab: String? = null) {
+        if (tvHost == null) return
+        try {
+            if (http == null) {
+                val server = HttpServer(this)
+                http = server
+                port = server.start(0, true)
+            }
+            if (tvHost != forHost) {
+                link?.close()
+                val l = AdbLink(a.filesDir, tvHost)
+                link = l
+                val names = RemoteLabels(l, File(a.applicationInfo.sourceDir))   // app names and pictures, asked from the TV itself
+                labels = names
+                manage = Manage(l, names, a.cacheDir)
+                forHost = tvHost
+                val origin = "http://127.0.0.1:$port"
+                CookieManager.getInstance().setCookie(origin, "tvr=$token")
+                web.loadUrl(origin + "/?embed=1&lang=" + (if (VI) "vi" else "en") + (if (tab != null) "#$tab" else ""))
+            } else if (tab != null) web.evaluateJavascript("showTab('" + tab.filter { it.isLetter() } + "')", null)
+            view.visibility = View.VISIBLE
+        } catch (e: Exception) {
+            a.message(t("Không mở được trang quản lý: ", "Could not open the manage page: ") + e.message, true)
+        }
+    }
+
+    fun back(): Boolean {
+        if (view.visibility != View.VISIBLE) return false
+        view.visibility = View.GONE
+        return true
+    }
+
+    /** Leaving this TV: drop its ADB connection; the next TV gets a fresh page. */
+    fun close() {
+        view.visibility = View.GONE
+        link?.close()
+        link = null
+        labels = null
+        manage = null
+        forHost = null
+    }
+
+    fun destroy() {
+        close()
+        http?.stop()
+        web.destroy()
+    }
+
+    fun picked(result: Int, data: Intent?) {
+        val cb = picking ?: return
+        cb.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(result, data))
+        picking = null
+    }
+
+    override fun handle(r: HttpServer.Request): HttpServer.Response {
+        if (token != r.cookie("tvr")) return HttpServer.Response.error(403, "this page belongs to the TV Remote app")
+        webPage.serve(r.path)?.let { return it }
+        if (r.path == "/api/state" || r.path == "/api/about")      // the page only needs to know it may show itself, and for which TV
+            return HttpServer.Response.json(JSONObject().put("core", "phone").put("host", forHost ?: "").put("name", a.name(forHost ?: "")).put("connected", true).put("is_on", true).put("paired", true)
+                .put("adb", JSONObject().put("state", manage?.adbState() ?: "closed")).put("app_name", "TV Remote").put("version", a.version()).put("released", a.released()))
+        if (r.path == "/api/scenes") {                                 // this phone's scenes: the widget, tiles and shortcuts use them too
+            if (r.method == "POST") SceneStore.save(a, r.json().optJSONArray("scenes") ?: JSONArray())
+            if (r.query["download"] != null) return Scenes.backup(SceneStore.all(a))   // "Export": lands in the phone's Download folder
+            return HttpServer.Response.json(JSONObject().put("scenes", SceneStore.all(a)))
+        }
+        if (r.path == "/api/scene/run" && r.method == "POST") {
+            val l = link ?: return HttpServer.Response.error(503, "adb: not connected")
+            val d = r.json()
+            val steps = d.optJSONArray("steps") ?: SceneStore.find(a, d.optString("id"))?.optJSONArray("steps") ?: return HttpServer.Response.error(404, "no such scene")
+            val clean = Scenes.clean(JSONArray().put(JSONObject().put("name", "x").put("steps", steps))).optJSONObject(0)?.optJSONArray("steps") ?: JSONArray()
+            val failed = Scenes.run(clean, Scenes.Shell({ l.get().shell(it) }))
+            return HttpServer.Response.json(JSONObject().put("ok", failed == null).put("failed", failed ?: ""))
+        }
+        if (r.path == "/api/app/icon") {
+            val png = labels?.icon(r.query["pkg"].toString()) ?: return HttpServer.Response.error(404, "no icon")
+            val icon = HttpServer.Response.of("image/png", png)
+            icon.headers["Cache-Control"] = "max-age=86400"
+            return icon
+        }
+        return manage?.handle(r) ?: HttpServer.Response.error(404, "not found")
+    }
+
+    /** "Download to this device": copy the file from our own server into the phone's Download folder. */
+    private fun saveToPhone(url: String, disposition: String?) {
+        var fileName = "file"
+        try {
+            val m = Pattern.compile("filename\\*=UTF-8''([^;]+)").matcher(disposition.toString())
+            if (m.find()) fileName = URLDecoder.decode(m.group(1), "UTF-8")
+        } catch (ignored: Exception) {
+        }
+        Toast.makeText(a, t("Đang tải ", "Downloading ") + fileName + "...", Toast.LENGTH_SHORT).show()
+        Thread {
+            var result: String
+            try {
+                val c = URL(url).openConnection() as HttpURLConnection
+                c.setRequestProperty("Cookie", "tvr=$token")
+                val out: OutputStream
+                if (Build.VERSION.SDK_INT >= 29) {
+                    val v = ContentValues()
+                    v.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                    v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                    out = a.contentResolver.openOutputStream(a.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v)!!)!!
+                    result = t("Đã lưu vào thư mục Download: ", "Saved to Download: ") + fileName
+                } else {
+                    val f = File(a.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), fileName)
+                    out = FileOutputStream(f)
+                    result = t("Đã lưu: ", "Saved: ") + f.absolutePath
+                }
+                out.use { o -> c.inputStream.use { it.copyTo(o, 65536) } }
+            } catch (e: Exception) {
+                result = t("Không tải được: ", "Download failed: ") + e.message
+            }
+            val msg = result
+            a.ui.post { Toast.makeText(a, msg, Toast.LENGTH_LONG).show() }
+        }.start()
+    }
+}

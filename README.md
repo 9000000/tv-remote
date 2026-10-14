@@ -2,7 +2,7 @@
 
 **Tiếng Việt** · [English](README.en.md)
 
-Điều khiển Android TV / Google TV từ điện thoại hoặc máy tính: nút remote, xem hình TV trực tiếp và chạm lên hình, gõ chữ, nói với TV, quản lý app và tệp, cài APK, xem sức khỏe TV, terminal. Mọi kết nối đi thẳng tới TV, không qua máy chủ nào; ở khác mạng thì dùng Tailscale.
+Điều khiển Android TV / Google TV từ điện thoại hoặc máy tính: nút remote, xem hình TV trực tiếp và chạm lên hình, gõ chữ, nói với TV, nghe tiếng TV trên điện thoại, hẹn giờ tắt, giờ đi ngủ và giới hạn app cho trẻ, cảnh (một nút làm nhiều việc), quản lý app và tệp, cài APK, xem sức khỏe TV. Mọi kết nối đi thẳng tới TV, không qua máy chủ nào; ở khác mạng thì dùng Tailscale.
 
 Đã chạy thật với Sony BRAVIA (Android 9). TV hãng khác chưa thử. Samsung (Tizen) và LG (webOS) không dùng được.
 
@@ -24,7 +24,7 @@
 | Bất kỳ trình duyệt nào, kể cả iPhone | App **TV Setup** cài trên TV, rồi mở `http://<IP của TV>:8765` | Trên TV: app Downloader, mã **`2397346`** ([xem cách cài](#cài-tv-setup-bằng-mã-downloader)) |
 | Máy tính (Mac, Windows, Linux) | **Web trên máy tính** | Tải repo, bấm đúp `start-mac.command` / `start-windows.cmd` |
 
-Cả ba dùng **chung một giao diện web** với các tab: Remote, Ứng dụng, Tệp · Cài, Sức khỏe, Terminal, Thiết lập. App điện thoại có màn remote riêng (vuốt, nút âm lượng của máy) và mở các tab còn lại bằng nút ô lưới. Riêng web trên máy tính có thêm chuột, bàn phím máy tính, nhiều TV, và bấm phím được cả khi TV chưa bật ADB.
+Cả ba dùng **chung một giao diện web** với các tab: Remote, Ứng dụng, Tệp · Cài, Sức khỏe, Tự động, Thiết lập. App điện thoại có màn remote riêng (vuốt, nút âm lượng của máy) và mở các tab còn lại bằng nút ô lưới. Riêng web trên máy tính có thêm chuột, bàn phím máy tính, nhiều TV, và bấm phím được cả khi TV chưa bật ADB.
 
 ```mermaid
 flowchart TD
@@ -95,10 +95,13 @@ Mã luôn trỏ tới bản mới nhất. Không có Downloader thì mở `go.af
 <summary>Tính năng</summary>
 
 - **Hình TV:** nút con mắt bật/tắt; chạm lên hình là chạm lên TV. Khi đang xem, thanh trên có nút chất lượng (240p đến 960p) và toàn màn hình. Tắt hình thì TV không tốn thêm CPU.
-- **Nút bấm:** chạm = bấm một lần, giữ = nhấn giữ trên TV. Nút `⋯` mở thêm phím ít dùng: Ngõ vào, Cài đặt TV, Thông tin, Lịch phát, TV, Phụ đề, Dừng, Chụp màn hình. Nút âm lượng của điện thoại cũng chỉnh âm lượng TV.
+- **Nút bấm:** chạm = bấm một lần, giữ = nhấn giữ trên TV. Nút `⋯` mở thêm phím ít dùng: Ngõ vào, Cài đặt TV, Thông tin, Lịch phát, TV, Phụ đề, Dừng, Chụp màn hình. Nút âm lượng của điện thoại cũng chỉnh âm lượng TV (tắt được trong Cài đặt; lúc đang nghe tiếng TV thì nút chỉnh điện thoại).
 - **Gõ chữ:** nút ⚡ đổi giữa gõ tới đâu TV nhận tới đó và gõ xong rồi gửi; nút `123` mở bàn phím số.
-- **Nói với TV:** bấm micro rồi nói, ví dụ "mở YouTube"; giữ micro để mở Assistant trên TV.
-- **Quản lý TV:** nút ô lưới mở Ứng dụng (có tên và logo), Tệp · Cài, Sức khỏe, Terminal, Thiết lập (Tailscale, Tối ưu TV).
+- **Nói với TV:** bấm micro rồi nói. Các câu như "mở YouTube", "tắt tiếng", "tăng âm lượng 5", "hẹn giờ tắt 30 phút", tên một cảnh được app làm luôn (nhanh, chạy cả khi chỉ có nút bấm); câu khác thì gửi cho Assistant trên TV. Giữ micro để mở Assistant.
+- **🎧 Nghe tiếng TV:** nút tai nghe ở thanh trên. Tiếng TV phát trên điện thoại, chọn mỗi lần: chỉ điện thoại (loa TV tạm im, cắm tai nghe để xem khuya) hoặc cả TV và điện thoại (TV vẫn có tiếng, cần TV Android 13+). Chỉ khoảng 8 KB/s (Opus 64 kbps), nhẹ hơn hình TV cỡ 30 lần. Tắt hình thì vẫn nghe tiếp khi khóa màn hình điện thoại. Cần TV Android 11 trở lên.
+- **😴 Hẹn giờ tắt và 🎬 Cảnh:** trong nút `⋯`. Cảnh tạo ở trang Tự động.
+- **Widget, ô Cài đặt nhanh, phím tắt:** widget màn hình chính (nguồn, tắt tiếng, âm lượng, 3 cảnh đầu), ô "Nguồn TV" và "Cảnh TV" trong Cài đặt nhanh, giữ biểu tượng app để chạy cảnh. Tất cả điều khiển TV dùng gần nhất mà không cần mở app.
+- **Quản lý TV:** nút ô lưới mở Ứng dụng (có tên và logo), Tệp · Cài, Sức khỏe, Tự động, Thiết lập (Tailscale, Tối ưu TV).
 - **Cập nhật:** app tự báo khi có bản mới và cài ngay trong app.
 </details>
 
@@ -114,7 +117,8 @@ Dùng được từ mọi trình duyệt, không cần cài gì trên điện th
 <details>
 <summary>Thêm về TV Setup</summary>
 
-- Trang có đủ Remote, Ứng dụng, Tệp · Cài, Sức khỏe, Terminal, Thiết lập. Nút ▶ Xem bật hình TV; mỗi lúc một trình duyệt xem được hình.
+- Trang có đủ Remote, Ứng dụng, Tệp · Cài, Sức khỏe, Tự động, Thiết lập. Nút ▶ Xem bật hình TV; mỗi lúc một trình duyệt xem được hình. Nút 🎧 Nghe phát tiếng TV ngay trên trình duyệt.
+- **iPhone:** trong Safari bấm Chia sẻ → "Thêm vào MH chính" để có biểu tượng như một app (mở từ biểu tượng thì nhập mã ghép thêm một lần).
 - Không cần gõ địa chỉ: app TV Setup hiện mã QR trỏ tới trang này, quét bằng camera điện thoại là mở.
 - Trang tự chạy lại khi TV khởi động.
 - **Lịch sử dùng TV:** app TV Setup tự ghi 5 phút một lần (app nào đang mở, RAM, CPU, bộ nhớ) và lưu ngay trên TV; cả ba nơi xem lại ở Sức khỏe → Lịch sử. Không cần máy nào khác bật.
@@ -145,11 +149,11 @@ Từ đó chỉ cần bấm đúp file start. Đóng cửa sổ là dừng; khô
 
 | Tab | Làm được gì |
 |---|---|
-| **Remote** | Nút bấm, âm lượng, đánh thức, xem màn hình, bấm/kéo/cuộn chuột lên hình, gõ bàn phím thẳng lên TV, mở app, link và CH Play, phát ảnh/video từ máy này lên TV |
-| **Ứng dụng** | Mở, dừng, gỡ app |
+| **Remote** | Nút bấm, âm lượng, đánh thức, xem màn hình, 🎧 nghe tiếng TV, nút các cảnh, bấm/kéo/cuộn chuột lên hình, gõ bàn phím thẳng lên TV, mở app, link và CH Play, phát ảnh/video từ máy này lên TV |
+| **Ứng dụng** | Mở, dừng, gỡ app; tắt / bật lại app hệ thống không dùng; 🤖 chép danh sách app kèm câu hỏi để hỏi AI nên tắt app nào |
 | **Tệp · Cài** | Duyệt bộ nhớ TV và USB; tải về, gửi lên (kéo thả), đổi tên, xóa, cài `.apk`; tải file từ link về TV; cài APK từ link hoặc từ máy này |
-| **Sức khỏe** | Hiện tại: CPU, RAM, bộ nhớ, Wi-Fi, tiến trình tốn CPU nhất, Giải phóng RAM. Lịch sử: thời gian dùng TV theo ngày, app dùng nhiều, biểu đồ RAM/CPU/bộ nhớ |
-| **Terminal** | Chạy lệnh shell trên TV, mỗi lệnh tối đa 30 giây |
+| **Sức khỏe** | Hiện tại: CPU, RAM, bộ nhớ, Wi-Fi, tiến trình tốn CPU nhất, Giải phóng RAM. Lịch sử: thời gian dùng TV theo ngày, app dùng nhiều, biểu đồ RAM/CPU/bộ nhớ. Cuối tab: Terminal (chạy lệnh shell trên TV, cho người rành) |
+| **Tự động** | Hẹn giờ tắt TV, giờ đi ngủ (TV bật lên trong khoảng giờ này sẽ tự tắt), giới hạn số phút mỗi ngày cho từng app. Ba mục này chạy ngay trên TV (app TV Setup 2.13.0+), không cần máy nào khác bật. Cảnh: một nút làm nhiều việc (bật TV, mở app, đặt âm lượng, bấm phím, mở link, chờ, hẹn giờ), xuất/nhập file để sao lưu |
 | **Thiết lập** | Các bước lần đầu (ADB, Tailscale, ghép nút remote, lưu), Tối ưu TV. Trên trang của TV và app điện thoại: Tailscale và Tối ưu TV |
 
 **Khi ADB đóng**, chỉ còn nút bấm, nguồn, âm lượng từng nấc và đánh thức. Mất: xem màn hình, chuột, bàn phím, app, tệp, cài APK. Trang web ghi rõ điều này và có nút "Thử kết nối lại".

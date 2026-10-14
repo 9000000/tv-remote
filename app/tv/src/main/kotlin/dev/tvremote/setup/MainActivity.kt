@@ -323,6 +323,12 @@ class MainActivity : Activity() {
             RemoteService.forgetAll(this); log(t("✓ Đã hủy ghép. Thiết bị nào muốn điều khiển phải nhập mã mới.", "✓ Unpaired. Any device that wants control must enter a new code.")); showWeb()
         }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(8) })
         webCol.addView(btns, margins(top = 12))
+        rulesLine()?.let { (line, sleeping) ->                       // timers and limits set from a phone or computer (Rules.kt)
+            webCol.addView(text(line, 13, INK, false).apply { setLineSpacing(dp(2).toFloat(), 1f) }, margins(top = 14))
+            if (sleeping) webCol.addView(smallButton(t("Hủy hẹn giờ tắt", "Cancel the sleep timer")) {
+                Rules.change(this, org.json.JSONObject().put("do", "sleep").put("minutes", 0)); showWeb()
+            }, margins(top = 8))
+        }
 
         webCol.addView(View(this), if (phone) LinearLayout.LayoutParams(1, dp(16)) else LinearLayout.LayoutParams(1, 0, 1f))
         val app = LinearLayout(this)
@@ -336,6 +342,19 @@ class MainActivity : Activity() {
         app.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
         webCol.addView(app)
         if (focused != null && focused.parent == null) webBtn.requestFocus()   // the focused button was rebuilt: keep the focus on this card
+    }
+
+    /** One line per timer or limit that is set, and whether the sleep timer is running; null when nothing is set. */
+    private fun rulesLine(): Pair<String, Boolean>? {
+        val o = Rules.load(this)
+        val lines = ArrayList<String>()
+        val at = o.optLong("sleep_at")
+        val sleeping = at > System.currentTimeMillis()
+        if (sleeping) lines.add("😴 " + t("TV tự tắt lúc ", "The TV turns off at ") + java.text.SimpleDateFormat("HH:mm", Locale.US).format(java.util.Date(at)))
+        o.optJSONObject("bedtime")?.let { if (it.optBoolean("on")) lines.add("🌙 " + t("Giờ đi ngủ ", "Bedtime ") + it.optString("from") + " – " + it.optString("to")) }
+        val n = o.optJSONObject("limits")?.length() ?: 0
+        if (n > 0) lines.add("⏳ " + t("Giới hạn giờ dùng: $n app", "Daily limits: $n " + (if (n == 1) "app" else "apps")))
+        return if (lines.isEmpty()) null else Pair(lines.joinToString("\n"), sleeping)
     }
 
     private fun qr(link: String): View? {

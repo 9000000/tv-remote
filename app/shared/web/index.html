@@ -5,9 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TV Remote</title>
 <link rel="stylesheet" href="style.css">
+<!-- "Add to Home screen": an icon that opens this page like an app (manifest.json; the apple- lines are for iPhone) -->
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#111418">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TV Remote">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 </head>
 <body>
-<!-- icons:start --><svg xmlns="http://www.w3.org/2000/svg" style="display:none"><symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol><symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol><symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol><symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol><symbol id="i-power" viewBox="0 0 24 24"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol><symbol id="i-back" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol><symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M21 4h-7"/><path d="M10 4H3"/><path d="M21 12h-9"/><path d="M8 12H3"/><path d="M21 20h-5"/><path d="M12 20H3"/><path d="M14 2v4"/><path d="M8 10v4"/><path d="M16 18v4"/></symbol><symbol id="i-vol_up" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></symbol><symbol id="i-vol_down" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></symbol><symbol id="i-mute" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="i-play_pause" viewBox="0 0 24 24"><path d="M4 5l9 7-9 7z"/><path d="M17 5v14"/><path d="M21 5v14"/></symbol><symbol id="i-prev" viewBox="0 0 24 24"><path d="M19 20 9 12l10-8v16z"/><path d="M5 19V5"/></symbol><symbol id="i-next" viewBox="0 0 24 24"><path d="M5 4l10 8-10 8V4z"/><path d="M19 5v14"/></symbol><symbol id="i-backspace" viewBox="0 0 24 24"><path d="M20 5H9l-7 7 7 7h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/><path d="m18 9-6 6"/><path d="m12 9 6 6"/></symbol><symbol id="i-enter" viewBox="0 0 24 24"><path d="M9 10 4 15l5 5"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></symbol><symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol><symbol id="i-apps" viewBox="0 0 24 24"><path d="M3 3h7v7H3z"/><path d="M14 3h7v7h-7z"/><path d="M14 14h7v7h-7z"/><path d="M3 14h7v7H3z"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/></symbol><symbol id="i-eye_off" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/><path d="M3 3l18 18"/></symbol><symbol id="i-wake" viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M6.34 17.66l-1.41 1.41"/><path d="M19.07 4.93l-1.41 1.41"/></symbol><symbol id="i-input" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><path d="M11 3a8 8 0 1 0 0 16a8 8 0 1 0 0-16"/><path d="m21 21-4.3-4.3"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/><path d="M12 2v3"/><path d="M12 19v3"/><path d="M2 12h3"/><path d="M19 12h3"/><path d="M4.9 4.9l2.2 2.2"/><path d="M16.9 16.9l2.2 2.2"/><path d="M4.9 19.1l2.2-2.2"/><path d="M16.9 7.1l2.2-2.2"/></symbol><symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol><symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></symbol><symbol id="i-more" viewBox="0 0 24 24"><path d="M5 12h.01"/><path d="M12 12h.01"/><path d="M19 12h.01"/></symbol><symbol id="i-info" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol><symbol id="i-guide" viewBox="0 0 24 24"><path d="M3 5h18v14H3z"/><path d="M3 10h18"/><path d="M9 10v9"/></symbol><symbol id="i-tv" viewBox="0 0 24 24"><path d="M3 7h18v13H3z"/><path d="m17 2-5 5-5-5"/></symbol><symbol id="i-subtitle" viewBox="0 0 24 24"><path d="M3 5h18v14H3z"/><path d="M7 15h4"/><path d="M15 15h2"/><path d="M7 11h2"/><path d="M13 11h4"/></symbol><symbol id="i-rewind" viewBox="0 0 24 24"><path d="M11 19 2 12l9-7v14z"/><path d="M22 19l-9-7 9-7v14z"/></symbol><symbol id="i-ffwd" viewBox="0 0 24 24"><path d="M13 19l9-7-9-7v14z"/><path d="M2 19l9-7-9-7v14z"/></symbol><symbol id="i-stop" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></symbol><symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><path d="M12 10a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/></symbol><symbol id="i-plug_off" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="M6 6l12 12"/><path d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20"/></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></symbol><symbol id="i-undo" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9a9 9 0 0 0-6 2.3L3 13"/></symbol><symbol id="i-globe" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10a15.3 15.3 0 0 1-4 10a15.3 15.3 0 0 1-4-10a15.3 15.3 0 0 1 4-10z"/></symbol><symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></symbol><symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-9-9a9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9a9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></symbol><symbol id="i-code" viewBox="0 0 24 24"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></symbol><symbol id="i-unlink" viewBox="0 0 24 24"><path d="M18.84 12.25l1.72-1.71a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5 5 0 0 0 7.07 7.07l1.71-1.71"/><path d="M8 2v3"/><path d="M2 8h3"/><path d="M16 19v3"/><path d="M19 16h3"/></symbol><symbol id="i-phone" viewBox="0 0 24 24"><path d="M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M12 18h.01"/></symbol></svg><!-- icons:end -->
+<!-- icons:start --><svg xmlns="http://www.w3.org/2000/svg" style="display:none"><symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol><symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol><symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol><symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol><symbol id="i-power" viewBox="0 0 24 24"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol><symbol id="i-back" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol><symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M21 4h-7"/><path d="M10 4H3"/><path d="M21 12h-9"/><path d="M8 12H3"/><path d="M21 20h-5"/><path d="M12 20H3"/><path d="M14 2v4"/><path d="M8 10v4"/><path d="M16 18v4"/></symbol><symbol id="i-vol_up" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></symbol><symbol id="i-vol_down" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></symbol><symbol id="i-mute" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="i-play_pause" viewBox="0 0 24 24"><path d="M4 5l9 7-9 7z"/><path d="M17 5v14"/><path d="M21 5v14"/></symbol><symbol id="i-prev" viewBox="0 0 24 24"><path d="M19 20 9 12l10-8v16z"/><path d="M5 19V5"/></symbol><symbol id="i-next" viewBox="0 0 24 24"><path d="M5 4l10 8-10 8V4z"/><path d="M19 5v14"/></symbol><symbol id="i-backspace" viewBox="0 0 24 24"><path d="M20 5H9l-7 7 7 7h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/><path d="m18 9-6 6"/><path d="m12 9 6 6"/></symbol><symbol id="i-enter" viewBox="0 0 24 24"><path d="M9 10 4 15l5 5"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></symbol><symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol><symbol id="i-apps" viewBox="0 0 24 24"><path d="M3 3h7v7H3z"/><path d="M14 3h7v7h-7z"/><path d="M14 14h7v7h-7z"/><path d="M3 14h7v7H3z"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/></symbol><symbol id="i-eye_off" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/><path d="M3 3l18 18"/></symbol><symbol id="i-wake" viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M6.34 17.66l-1.41 1.41"/><path d="M19.07 4.93l-1.41 1.41"/></symbol><symbol id="i-input" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><path d="M11 3a8 8 0 1 0 0 16a8 8 0 1 0 0-16"/><path d="m21 21-4.3-4.3"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/><path d="M12 2v3"/><path d="M12 19v3"/><path d="M2 12h3"/><path d="M19 12h3"/><path d="M4.9 4.9l2.2 2.2"/><path d="M16.9 16.9l2.2 2.2"/><path d="M4.9 19.1l2.2-2.2"/><path d="M16.9 7.1l2.2-2.2"/></symbol><symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol><symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></symbol><symbol id="i-more" viewBox="0 0 24 24"><path d="M5 12h.01"/><path d="M12 12h.01"/><path d="M19 12h.01"/></symbol><symbol id="i-info" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol><symbol id="i-guide" viewBox="0 0 24 24"><path d="M3 5h18v14H3z"/><path d="M3 10h18"/><path d="M9 10v9"/></symbol><symbol id="i-tv" viewBox="0 0 24 24"><path d="M3 7h18v13H3z"/><path d="m17 2-5 5-5-5"/></symbol><symbol id="i-subtitle" viewBox="0 0 24 24"><path d="M3 5h18v14H3z"/><path d="M7 15h4"/><path d="M15 15h2"/><path d="M7 11h2"/><path d="M13 11h4"/></symbol><symbol id="i-rewind" viewBox="0 0 24 24"><path d="M11 19 2 12l9-7v14z"/><path d="M22 19l-9-7 9-7v14z"/></symbol><symbol id="i-ffwd" viewBox="0 0 24 24"><path d="M13 19l9-7-9-7v14z"/><path d="M2 19l9-7-9-7v14z"/></symbol><symbol id="i-stop" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></symbol><symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><path d="M12 10a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/></symbol><symbol id="i-plug_off" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="M6 6l12 12"/><path d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20"/></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></symbol><symbol id="i-undo" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9a9 9 0 0 0-6 2.3L3 13"/></symbol><symbol id="i-globe" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10a15.3 15.3 0 0 1-4 10a15.3 15.3 0 0 1-4-10a15.3 15.3 0 0 1 4-10z"/></symbol><symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></symbol><symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-9-9a9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9a9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></symbol><symbol id="i-code" viewBox="0 0 24 24"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></symbol><symbol id="i-unlink" viewBox="0 0 24 24"><path d="M18.84 12.25l1.72-1.71a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5 5 0 0 0 7.07 7.07l1.71-1.71"/><path d="M8 2v3"/><path d="M2 8h3"/><path d="M16 19v3"/><path d="M19 16h3"/></symbol><symbol id="i-phone" viewBox="0 0 24 24"><path d="M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M12 18h.01"/></symbol><symbol id="i-headphones" viewBox="0 0 24 24"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9a9 9 0 1 1-9-9z"/></symbol><symbol id="i-timer" viewBox="0 0 24 24"><path d="M10 2h4"/><path d="M12 14l3-3"/><path d="M12 6a8 8 0 1 0 0 16a8 8 0 1 0 0-16"/></symbol><symbol id="i-scene" viewBox="0 0 24 24"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol></svg><!-- icons:end -->
 <main class="wide">
   <header class="card top">
     <div>
@@ -30,6 +38,13 @@
     <p>Mã của thiết bị: <code id="askfp"></code></p>
     <p class="muted">Chỉ cho phép khi chắc đó là máy của bạn: app TV Remote hiện mã của nó trong lúc chờ. Cho phép là thiết bị đó điều khiển được toàn bộ TV.</p>
     <div class="actions"><button class="small primary" id="askyes">✓ Cho phép</button><button class="small" id="askno">Từ chối</button></div>
+  </div>
+
+  <!-- the TV's page on a phone, in the browser: it can sit on the home screen like an app -->
+  <div class="banner homehint" id="homehint" hidden>
+    <b>📲 Thêm remote này vào màn hình chính</b>
+    <p id="homehow"></p>
+    <div class="actions"><button class="small" id="homeok">✓ Đã hiểu</button></div>
   </div>
 
   <!-- ============ Choosing a TV: all there is to see until one is chosen ============ -->
@@ -64,7 +79,7 @@
     <button role="tab" data-tab="apps" aria-selected="false"><span class="ico">📱</span><span class="lbl"> Ứng dụng</span><span class="needs">cần ADB</span></button>
     <button role="tab" data-tab="files" aria-selected="false"><span class="ico">📁</span><span class="lbl"> Tệp · Cài</span><span class="needs">cần ADB</span></button>
     <button role="tab" data-tab="health" aria-selected="false"><span class="ico">🩺</span><span class="lbl"> Sức khỏe</span><span class="needs">cần ADB</span></button>
-    <button role="tab" data-tab="term" aria-selected="false"><span class="ico">⌨️</span><span class="lbl"> Terminal</span><span class="needs">cần ADB</span></button>
+    <button role="tab" data-tab="auto" aria-selected="false"><span class="ico">⏰</span><span class="lbl"> Tự động</span><span class="needs">cần ADB</span></button>
     <button role="tab" data-tab="tv" aria-selected="false"><span class="ico" data-for="mac">📺</span><span class="lbl" data-for="mac"> Thiết lập</span><span class="ico" data-for="tv phone">🧭</span><span class="lbl" data-for="tv phone"> Thiết lập</span><span class="needs" data-for="mac">lần đầu</span></button>
   </nav>
 
@@ -77,6 +92,7 @@
             <h2>🖥️ Màn hình TV <span class="muted" data-for="mac" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
             <div class="tools">
               <select id="screenmode" aria-label="Chất lượng hình" title="Chất lượng hình: số nhỏ thì nhẹ cho TV và mạng"><option value="240">240p</option><option value="360">360p</option><option value="480">480p</option><option value="720">720p</option><option value="960" selected>960p</option><option value="hd" data-for="mac">Nét nhất · nặng TV</option><option value="snap">Ảnh chụp</option></select>
+              <button class="small" id="listen" data-adb-gated title="Nghe tiếng TV trên máy này"><span class="ico">🎧</span><span class="lbl"> Nghe</span></button>
               <button class="small iconbtn" id="screenfull" aria-label="Toàn màn hình" title="Toàn màn hình">⛶</button>
               <button class="small primary" id="screenbtn"><span class="ico">▶</span><span class="lbl"> Xem</span></button>
               <button class="small" id="pipback" hidden><span class="ico">↩</span><span class="lbl"> Về Remote</span></button>
@@ -84,6 +100,11 @@
           </div>
           <div class="screenbox" id="screenbox"><img id="screen" alt="Màn hình TV" hidden><video id="screenv" muted playsinline autoplay hidden></video><div class="ph" id="screenph"></div></div>
           <div class="muted" id="screeninfo"></div>
+          <div class="listenpick" id="listenpick" hidden>
+            <button data-share="0"><b>🎧 Chỉ máy này</b><span>Loa TV tạm im. Hợp khi đeo tai nghe, cả nhà ngủ.</span></button>
+            <button data-share="1"><b>🔈 Cả TV và máy này</b><span>TV vẫn có tiếng (TV Android 13+). Máy này trễ hơn TV một chút; vài app như Netflix chặn thu tiếng kiểu này.</span></button>
+          </div>
+          <div class="muted" id="listeninfo" hidden></div>
         </section>
         <div data-adb-banner></div>
         <section class="card wide-only">
@@ -129,6 +150,11 @@
           <div class="muted hint wide-hint">Giữ nút = nhấn giữ trên TV · Bàn phím máy tính gõ thẳng lên TV: chữ, ⌫ xóa, mũi tên, Enter, Esc = Back</div>
         </section>
 
+        <section class="card" id="scenecard" data-adb-gated>
+          <div class="card-head"><h2>🎬 Cảnh</h2><button class="small" id="sceneedit">✏️ Sửa</button></div>
+          <div class="scenebtns" id="scenebtns"></div>
+        </section>
+
         <section class="card">
           <h2>⌨️ Bàn phím <span class="muted" data-for="mac" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
           <p class="muted" id="kbdoff" hidden style="margin:0 0 8px">🔒 Gõ chữ cần ADB. TV này chưa mở ADB nên phần này tạm khóa; các nút mũi tên, OK, Back vẫn dùng được.</p>
@@ -154,6 +180,7 @@
       <div class="card-head"><h2>📱 Ứng dụng đã cài</h2><button class="small" id="appsreload">↻ Tải lại</button></div>
       <form class="line" id="appsf"><input type="search" id="appsq" placeholder="Tìm theo tên app" autocomplete="off"></form>
       <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px;color:var(--muted);cursor:pointer"><input type="checkbox" id="appssys"> Hiện cả app hệ thống</label>
+      <div class="aihint"><button class="small" id="aiapps">🤖 Hỏi AI nên tắt / gỡ app nào</button><span class="muted">Chép danh sách app kèm câu hỏi sẵn, dán vào ChatGPT, Claude hay Gemini.</span></div>
       <div class="list" id="appslist"></div>
     </section>
   </div>
@@ -206,15 +233,53 @@
       <section class="card"><h2>🧩 Phần cứng</h2><div class="kv" id="hhw"></div></section>
       </div>
     </div>
-  </div>
-  <!-- ============ Terminal ============ -->
-  <div class="panel" data-panel="term" hidden>
-    <div data-adb-banner></div>
-    <section class="card" data-adb-gated>
+    <!-- Terminal: for people who know shell commands, so folded away -->
+    <details class="card" id="termcard" data-adb-gated>
+      <summary>⌨️ Terminal <span class="muted">· cho người rành dòng lệnh</span></summary>
       <pre class="term" id="termout"></pre>
       <select id="termhist" hidden style="width:100%;margin:0 0 10px;min-height:40px;border-radius:10px;background:var(--btn);color:var(--ink);border:0;padding:0 10px;font:inherit"></select>
       <form class="line" id="termf" style="margin-top:0"><input id="termin" class="mono" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ls /sdcard"><button class="primary" title="Chạy lệnh">↵</button></form>
       <p class="muted" style="margin:8px 0 0">Chạy lệnh với quyền shell của TV (như adb shell). Mỗi lệnh chạy riêng, tối đa 30 giây; lệnh chờ gõ tiếp như top, logcat không dùng được. Phím ↑ ↓ gọi lại lệnh cũ.</p>
+    </details>
+  </div>
+  <!-- ============ Automation: TV Setup's timers and limits (they run on the TV), and scenes ============ -->
+  <div class="panel" data-panel="auto" hidden>
+    <div data-adb-banner></div>
+    <div id="autosetup" data-adb-gated></div>
+    <div class="two-up" id="rulecards" data-adb-gated hidden>
+      <section class="card">
+        <h2>😴 Hẹn giờ tắt TV</h2>
+        <p class="state" id="sleepstate">Chưa hẹn giờ.</p>
+        <div class="presets" id="sleepbtns"></div>
+        <div class="actions" id="sleepacts"></div>
+        <p class="muted" style="margin:10px 0 0">Còn 1 phút, TV hiện thông báo kèm nút “＋15 phút”. Hết giờ TV về chế độ chờ.</p>
+      </section>
+      <section class="card">
+        <h2>🌙 Giờ đi ngủ</h2>
+        <p class="muted" style="margin:0 0 10px">Trong khoảng giờ này, mỗi lần TV được bật, 1 phút sau TV tự tắt. Hợp cho trẻ nhỏ.</p>
+        <label class="check"><input type="checkbox" id="bedon"> Bật giờ đi ngủ</label>
+        <div class="timerow"><label>Từ <input type="time" id="bedfrom" value="22:00"></label><label>đến <input type="time" id="bedto" value="06:30"></label><button class="small primary" id="bedsave">💾 Lưu</button></div>
+        <p class="state" id="bedstate"></p>
+        <div class="actions" id="bedacts"></div>
+      </section>
+      <section class="card">
+        <h2>⏳ Giới hạn giờ dùng app mỗi ngày</h2>
+        <div class="list" id="limits" style="margin-top:0"></div>
+        <form class="line" id="limitf"><select id="limitpkg" aria-label="App"></select><select id="limitmin" aria-label="Số phút mỗi ngày"><option value="30">30 phút</option><option value="60" selected>1 giờ</option><option value="90">1 giờ 30</option><option value="120">2 giờ</option><option value="180">3 giờ</option><option value="240">4 giờ</option></select><button class="primary">＋ Thêm</button></form>
+        <p class="muted" style="margin:8px 0 0">Còn 5 phút, TV báo trước. Hết giờ, app tự đóng; cho thêm giờ ngay ở đây.</p>
+      </section>
+      <p class="muted autonote">Ba mục trên chạy ngay trên TV (app TV Setup), không cần máy này bật. Đây không phải khóa trẻ em tuyệt đối: người rành có thể gỡ TV Setup.</p>
+    </div>
+    <section class="card" data-adb-gated>
+      <div class="card-head"><h2>🎬 Cảnh: một nút làm nhiều việc</h2><button class="small primary" id="scenenew">＋ Tạo cảnh</button></div>
+      <div class="list" id="scenelist"></div>
+      <div class="sceneio">
+        <button class="small" id="sceneexport">⬇️ Xuất file sao lưu</button>
+        <button class="small" id="sceneimport">⬆️ Nhập từ file</button>
+        <input type="file" id="scenefile" accept=".json,application/json" hidden>
+      </div>
+      <p class="muted" style="margin:8px 0 0" data-for="mac tv">Cảnh hiện thành nút trên tab Remote. Nói hoặc gõ tên cảnh vào ô “Hỏi TV” cũng chạy được.</p>
+      <p class="muted" style="margin:8px 0 0" data-for="phone">Cảnh hiện trong nút 🎬 trên remote của app, trong widget và ô Cài đặt nhanh.</p>
     </section>
   </div>
   <!-- ============ TVs: saved, discovery, first-time setup ============ -->
@@ -297,6 +362,22 @@
   <div id="optbody" class="optbox"></div>
   <div class="actions" style="display:flex;gap:8px;margin-top:14px"><button class="primary" id="optgo" style="padding:0 18px">⚡ Chạy tối ưu</button><button id="optcancel">Hủy</button></div>
 </div></dialog>
+<dialog id="scenedlg"><div class="card assistbox">
+  <div class="card-head"><h2 id="scenetitle">🎬 Cảnh</h2><button class="small" id="sceneclose">✕ Đóng</button></div>
+  <div class="scenebox">
+    <div class="presets" id="scenetpl"></div>
+    <div class="line2"><input id="sceneicon" maxlength="4" aria-label="Biểu tượng" placeholder="🎬"><input id="scenename" maxlength="40" placeholder="Tên cảnh, vd Xem phim"></div>
+    <h3>Các bước</h3>
+    <div id="scenesteps"></div>
+    <div class="line2"><select id="stepkind" aria-label="Loại bước"><option value="wake">☀️ Bật TV</option><option value="app">📱 Mở app</option><option value="volume">🔊 Đặt âm lượng</option><option value="key">🎮 Bấm phím</option><option value="link">🔗 Mở link</option><option value="wait">⏱️ Chờ</option><option value="timer">😴 Hẹn giờ tắt</option><option value="sleep">🌙 Tắt TV</option></select><span id="stepargs"></span><button class="small" id="stepadd">＋ Thêm bước</button></div>
+  </div>
+  <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="primary" id="scenesave" style="padding:0 18px">💾 Lưu</button><button id="scenetry">▶ Thử</button><button class="danger" id="scenedel">🗑 Xóa</button></div>
+</div></dialog>
+<dialog id="aidlg"><div class="card assistbox"><div class="card-head"><h2>🤖 Hỏi AI nên tắt / gỡ app nào</h2><button class="small" id="aiclose">✕ Đóng</button></div>
+  <p class="muted" style="margin:10px 0 8px">Sửa dòng “Người nhà vẫn dùng” cho đúng, bấm Sao chép rồi dán vào ChatGPT, Claude hay Gemini. AI có thể sai: tắt từng app một, thấy lỗi thì bấm “Bật lại” ở cuối danh sách Ứng dụng.</p>
+  <textarea id="aitext" rows="14" spellcheck="false"></textarea>
+  <div class="aihint"><button class="primary" id="aicopy">📋 Sao chép</button></div>
+</div></dialog>
 <dialog id="preview"><img alt="Xem trước"></dialog>
 <div id="toast" role="status"></div>
 
@@ -310,6 +391,9 @@
 <script src="stats.js"></script>
 <script src="js/health.js"></script>
 <script src="js/terminal.js"></script>
+<script src="js/voice.js"></script>
+<script src="js/listen.js"></script>
+<script src="js/auto.js"></script>
 <script src="js/setup.js"></script>
 </body>
 </html>

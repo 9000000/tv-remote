@@ -231,3 +231,36 @@
   .tsbox .go { display:flex; align-items:center; justify-content:center; gap:8px; min-height:52px; padding:0 18px; border-radius:12px; text-decoration:none; font-size:16px; }
   .tsbox .qr { max-width:220px; margin:0 auto; } .tsbox .wait::before { content:"⏳ "; } .tsbox .okline { color:var(--ok); font-weight:700; font-size:16px; }
   #tscard .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+
+  /* 🎧 the TV's sound here */
+  #listen.on { background:var(--accent); color:var(--accent-ink); } #listeninfo { margin-top:6px; }
+  #pipslot #listeninfo { display:none; }
+  /* scenes: one button each on the Remote tab */
+  .scenebtns { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:8px; margin-top:10px; }
+  .scene { display:flex; align-items:center; gap:8px; padding:8px 12px; min-height:48px; text-align:left; font-size:14px; font-weight:600; }
+  .scene .ico { font-size:20px; flex:none; } .scene span:last-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .scene.add { grid-column:1/-1; color:var(--muted); font-weight:500; }
+  /* automation tab */
+  .presets { display:flex; gap:8px; flex-wrap:wrap; align-items:center; } .presets button { padding:0 14px; }
+  #rulecards .actions, #autosetup .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .state { font-size:16px; font-weight:600; margin:0 0 10px; } .state:empty { display:none; } #sleepstate.on { color:var(--accent); }
+  .check { display:flex; gap:8px; align-items:center; font-size:14px; cursor:pointer; }
+  .timerow { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:10px 0; font-size:14px; }
+  input[type=time], input[type=number] { font:inherit; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:0 10px; min-height:40px; }
+  input[type=number] { width:84px; }
+  #limitf select { flex:1; min-width:0; min-height:48px; } #limitf select#limitmin { flex:none; }
+  #limits .name .bar { max-width:260px; } .bar.full i { background:var(--bad); }
+  .autonote { grid-column:1/-1; margin:0; }
+  /* the scene editor */
+  .scenebox { display:flex; flex-direction:column; gap:10px; margin-top:12px; } .scenebox h3 { margin:4px 0 0; font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .line2 { display:flex; gap:8px; flex-wrap:wrap; align-items:center; } .line2 > input:first-child { flex:0 0 64px; text-align:center; font-size:20px; }
+  .line2 select { min-height:44px; } #stepargs { display:contents; } #stepargs select, #stepargs input:not([type=number]) { flex:1 1 160px; min-height:44px; }
+  .steprow { display:flex; gap:6px; align-items:center; padding:6px 0; border-top:1px solid var(--line); font-size:14px; } .steprow:first-child { border-top:0; }
+  .steprow span { flex:1; min-width:0; overflow-wrap:anywhere; }
+  .homehint { background:var(--ok-bg); border-color:transparent; }
+  .sceneio { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; } .sceneio button { min-height:40px; padding:0 14px; font-size:14px; }
+  .listenpick { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; } .listenpick button { display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding:10px 12px; text-align:left; } .listenpick span { font-size:12px; color:var(--muted); line-height:1.35; } .listenpick button.primary span { color:inherit; opacity:.85; }
+  @media (max-width:520px) { .listenpick { grid-template-columns:1fr; } }
+  .aihint { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-top:10px; } .aihint button { min-height:40px; padding:0 14px; font-size:14px; } .aihint .muted { font-size:12px; }
+  #aitext { width:100%; box-sizing:border-box; font:12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; background:var(--bg); color:var(--ink); border:1px solid var(--line, #333); border-radius:10px; padding:10px; resize:vertical; }
+  #appslist .item.off .appicon, #appslist .item.off .name > span { opacity:.5; }

@@ -41,10 +41,12 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         try {
             when (what) {
                 "apps" -> return HttpServer.Response.json(apps(r.q("system") == "1"))
+                "apps/report" -> return HttpServer.Response.json(appsReport())
                 "files" -> return HttpServer.Response.json(files(r.q("path")))
                 "file" -> return download(r)
                 "health" -> return HttpServer.Response.json(health())
                 "stats" -> return HttpServer.Response.json(stats(r.q("days").toIntOrNull() ?: 7))
+                "rules" -> if (!post) return HttpServer.Response.json(rules(null))
                 "tailscale" -> { val t = Tailscale(link.get(), dir); return HttpServer.Response.json(JSONObject().put("installed", t.installed()).put("ip", t.ip())) }
                 "setup/plan" -> return HttpServer.Response.json(Setup(link.get(), dir, true) { }.plan { labels?.label(it) })
                 "adb/prompt" -> {                                     // the TV's "Allow USB debugging?" question, if it is up
@@ -59,9 +61,10 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             if (!post) return null
             return when (what) {
                 "app" -> { open(r.json().optString("link")); HttpServer.Response.json(JSONObject().put("ok", true).put("via", "adb")) }
-                "app/launch", "app/stop", "app/uninstall" -> app(r.json().optString("pkg"), what.substring(4))
+                "app/launch", "app/stop", "app/uninstall", "app/disable", "app/enable" -> app(r.json().optString("pkg"), what.substring(4))
                 "adb/connect" -> HttpServer.Response.json(JSONObject().put("state", adbState()))
                 "shell" -> shell(r.json().optString("cmd"))
+                "rules" -> HttpServer.Response.json(rules(r.json()))
                 "search" -> {
                     val q = r.json().optString("query").trim()
                     if (q.isEmpty()) throw IllegalArgumentException("empty query")
@@ -105,16 +108,36 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     private fun sh(cmd: String): String = link.get().shell(cmd)
 
     // ---------------------------------------------------------------- apps
+    /**
+     * Everything an AI (or a person) needs to say which apps can go: the TV, its memory, the apps the user installed, the system
+     * apps still on, the ones already off, and what is using memory right now. The page turns it into a prompt to copy.
+     */
+    private fun appsReport(): JSONObject {
+        val list = { flags: String -> sh("pm list packages $flags").jsplit("\n").filter { it.startsWith("package:") }.map { it.substring(8).trim() }.sorted() }
+        val user = list("-3 -e")
+        val o = JSONObject().put("device", (sh("getprop ro.product.manufacturer").trim() + " " + sh("getprop ro.product.model").trim()).trim())
+            .put("android", sh("getprop ro.build.version.release").trim())
+            .put("ram_mb", (Regex("MemTotal:\\s+(\\d+)").find(sh("cat /proc/meminfo"))?.groupValues?.get(1)?.toLongOrNull() ?: 0L) / 1024)
+            .put("user", JSONArray(user)).put("system", JSONArray(list("-s -e"))).put("disabled", JSONArray(list("-d")))
+            .put("memory", JSONArray(memoryByApp(sh("dumpsys meminfo")).map { JSONObject().put("pkg", it.first).put("mb", it.second) }))
+        val names = JSONObject()
+        for (p in user) labels?.label(p)?.let { names.put(p, it) }
+        return o.put("labels", names)
+    }
+
     private fun apps(system: Boolean): JSONObject {
         val pkgs = ArrayList<String>()
-        for (line in sh("pm list packages" + (if (system) "" else " -3")).jsplit("\n"))
-            if (line.startsWith("package:")) pkgs.add(line.substring(8).trim())
+        // the apps turned off are always listed, so "Turn on" is at hand without showing every system app
+        for (line in sh("pm list packages" + (if (system) "" else " -3; pm list packages -d")).jsplit("\n"))
+            if (line.startsWith("package:") && line.substring(8).trim() !in pkgs) pkgs.add(line.substring(8).trim())
         pkgs.sort()
         val out = JSONArray()
         val icons = labels != null && labels.icons()
+        val off = sh("pm list packages -d").jsplit("\n").filter { it.startsWith("package:") }.map { it.substring(8).trim() }.toSet()
         for (p in pkgs) {
             val label = labels?.label(p)
-            out.put(JSONObject().put("pkg", p).put("meta", JSONObject().put("label", label ?: p.substring(p.lastIndexOf('.') + 1)).put("icon", icons).put("banner", icons)))
+            out.put(JSONObject().put("pkg", p).put("off", p in off).put("keep", Setup.PROTECTED.matches(p))
+                .put("meta", JSONObject().put("label", label ?: p.substring(p.lastIndexOf('.') + 1)).put("icon", icons).put("banner", icons)))
         }
         return JSONObject().put("apps", out)
     }
@@ -130,20 +153,23 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     private fun app(pkg: String, action: String): HttpServer.Response {
         if (!PKG.matcher(pkg).matches()) throw IllegalArgumentException("bad package name")
         when (action) {
-            "launch" -> {
-                for (cat in arrayOf("LEANBACK_LAUNCHER", "LAUNCHER")) {   // a TV app's own screen first, then a phone-style one
-                    val lines = sh("cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.$cat $pkg 2>/dev/null").trim().jsplit("\n")
-                    val component = lines[lines.size - 1].trim()
-                    if (!component.matches(Regex("[\\w.]+/[\\w.\$]+")) || !component.startsWith("$pkg/")) continue
-                    val out = sh("am start -n " + Adb.q(component) + " 2>&1")
-                    if (!out.contains("Error")) return HttpServer.Response.ok()
-                }
-                throw IllegalArgumentException("this app cannot be opened (no launcher screen)")
-            }
+            "launch" -> { Scenes.launch({ sh(it) }, pkg); return HttpServer.Response.ok() }
             "stop" -> { sh("am force-stop $pkg"); return HttpServer.Response.ok() }
             "uninstall" -> {
                 val out = sh("pm uninstall $pkg 2>&1").trim()
                 if (!out.contains("Success")) throw IllegalArgumentException(if (out.isEmpty()) "uninstall failed" else out)
+                return HttpServer.Response.ok()
+            }
+            // off and on again, for the system apps nobody uses (Undo-able, unlike uninstalling); never what the TV or this project needs
+            "disable" -> {
+                if (Setup.PROTECTED.matches(pkg)) throw IllegalArgumentException("protected: the TV needs this app")
+                val out = sh("pm disable-user --user 0 $pkg 2>&1")
+                if (!out.contains("disabled")) throw IllegalArgumentException(out.trim().ifEmpty { "disable failed" })
+                return HttpServer.Response.ok()
+            }
+            "enable" -> {
+                val out = sh("pm enable $pkg 2>&1")
+                if (!out.contains("enabled")) throw IllegalArgumentException(out.trim().ifEmpty { "enable failed" })
                 return HttpServer.Response.ok()
             }
             else -> throw IllegalArgumentException("unknown action")
@@ -409,6 +435,15 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         }
     }
 
+    // ---------------------------------------------------------------- timers and limits (kept by TV Setup on the TV)
+    /** The labels of the limited apps are this device's to give; TV Setup knows only package names when asked over ADB. */
+    private fun rules(change: JSONObject?): JSONObject {
+        val state = RulesClient.call({ sh(it) }, change)
+        val limits = state.optJSONArray("limits")
+        if (limits != null && labels != null) for (i in 0 until limits.length()) limits.optJSONObject(i)?.let { l -> if (!l.has("label")) labels.label(l.optString("pkg"))?.let { l.put("label", it) } }
+        return state
+    }
+
     // ---------------------------------------------------------------- history
     /** CPU load in percent over one second, or null. */
     fun cpuNow(): Int? = try {
@@ -515,6 +550,21 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
 
         /** Java's String.split: trailing empty strings are dropped unless a limit is given. The parsing above counts on it. */
         private fun String.jsplit(regex: String, limit: Int = 0): Array<String> = Pattern.compile(regex).split(this, limit)
+
+        /** "Total PSS by process" of dumpsys meminfo, summed per package (":service" processes count for their app), MB, largest first. */
+        internal fun memoryByApp(meminfo: String): List<Pair<String, Int>> {
+            val start = meminfo.indexOf("Total PSS by process:")
+            if (start < 0) return emptyList()
+            val by = HashMap<String, Int>()
+            for (line in meminfo.substring(start).split("\n").drop(1)) {
+                if (line.isBlank()) break
+                val m = Regex("^\\s*([\\d,]+)K: ([^\\s(]+)").find(line) ?: continue
+                if (!m.groupValues[2].contains('.')) continue          // apps only: not "system", native daemons, our own app_process
+                val pkg = m.groupValues[2].substringBefore(':')
+                by[pkg] = (by[pkg] ?: 0) + (m.groupValues[1].replace(",", "").toInt() / 1024)
+            }
+            return by.entries.filter { it.value >= 5 }.sortedByDescending { it.value }.take(25).map { it.key to it.value }
+        }
 
         /** Only the shared storage and USB drives; no "..". */
         internal fun safePath(p: String?): String {

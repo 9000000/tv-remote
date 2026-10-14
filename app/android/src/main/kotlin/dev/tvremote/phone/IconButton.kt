@@ -16,6 +16,9 @@ internal class IconButton(c: Context) : Button(c) {
         textAlign = android.graphics.Paint.Align.CENTER
         color = 0xFF98A2B3.toInt()
     }
+    /** White on a lit (accent) button, where the usual grey is hard to read. */
+    var lit = false
+        set(v) { field = v; ink.color = if (v) TEXT else 0xFF98A2B3.toInt(); invalidate() }
 
     fun setIcon(symbol: String, tint: Int) {
         if (!symbol.startsWith("@")) {

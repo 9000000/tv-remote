@@ -3,6 +3,11 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />   <!-- which Wi-Fi network to scan for TVs -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />   <!-- installing its own update -->
+    <!-- the TV's sound on the phone with its screen off (ListenService), and the widget / tiles' short jobs (SceneService) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- the photo picker sheet: Android's own, or Google Play services' on Android 12 and older -->
     <queries>
         <intent><action android:name="android.provider.action.PICK_IMAGES" /></intent>
@@ -25,5 +30,22 @@
                 <data android:mimeType="audio/*" />
             </intent-filter>
         </activity>
+        <!-- the widget, the Quick Settings tiles and the app icon's shortcuts land here; it shows nothing (SceneActivity.kt) -->
+        <activity android:name=".SceneActivity" android:exported="false" android:theme="@android:style/Theme.NoDisplay" android:excludeFromRecents="true"
+            android:taskAffinity="" android:noHistory="true" />
+        <service android:name=".SceneService" android:exported="false" android:foregroundServiceType="shortService" />
+        <service android:name=".ListenService" android:exported="false" android:foregroundServiceType="mediaPlayback" />
+        <receiver android:name=".RemoteWidget" android:exported="true" android:label="@string/widget_name">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_info" />
+        </receiver>
+        <service android:name=".PowerTile" android:exported="true" android:label="@string/tile_power" android:icon="@drawable/ic_power"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
+        <service android:name=".SceneTile" android:exported="true" android:label="@string/tile_scene" android:icon="@drawable/ic_scene"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
     </application>
 </manifest>

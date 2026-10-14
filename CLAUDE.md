@@ -18,11 +18,18 @@ The phone app and TV Setup speak ADB themselves (`app/shared/.../Adb.kt`) and pu
 
 ```
 app/shared/web/          THE web UI (index.html, style.css, js/*.js), used by all three clients
-app/shared/src/.../core/ Kotlin shared by both apps: Adb, Tv (scrcpy session), Atv (keys without ADB), Manage (the /api core
-                         for the web UI), Setup (Optimize TV), Tailscale, AdbPrompt ("Allow USB debugging?"), Errors, Meta
-app/android/             phone app: MainActivity.kt holds nearly all of it (picker, remote screen, assistants, updates)
-app/tv/                  TV Setup: MainActivity (the TV screen), RemoteService (web server), PairActivity, Stats, TrustReceiver
-app/web/                 server.py (the computer's /api core), adbtools.py, tvconfig.py (tvs.json), cli/ (command line tools)
+app/shared/src/.../core/ Kotlin shared by both apps: Adb, Tv (scrcpy session, video/audio/control), Atv (keys without ADB),
+                         Manage (the /api core for the web UI), Setup (Optimize TV), Tailscale, AdbPrompt ("Allow USB
+                         debugging?"), Errors, Meta, Scenes (scenes + key names), RulesClient (talks to TV Setup's rules),
+                         Voice (spoken commands), AudioOut (Opus playback, PCM downmix)
+app/android/.../phone/   phone app, one file per part, as extension functions on MainActivity: MainActivity (state, lifecycle),
+                         Ui, Net, PickerScreen, RemoteScreen, Typing, InfoScreens, KeysOnly, AdbHelp, Media, Managing (the
+                         web UI in a WebView), Updater, Listen + ListenService (🎧), Automation (timer, scenes, voice),
+                         SceneStore, Headless + SceneActivity/SceneService (widget, tiles, shortcuts), Tiles, RemoteWidget
+app/tv/                  TV Setup: MainActivity (the TV screen), RemoteService (web server), PairActivity, Stats, TrustReceiver,
+                         Rules + Guard + RulesReceiver + WarnActivity (sleep timer, bedtime, app limits)
+app/web/                 server.py (the computer's /api core), scenes.py, adbtools.py, tvconfig.py (tvs.json, also "scenes"),
+                         cli/ (command line tools), tests/
 dev/                     release.sh, gen_icons.py
 ```
 
@@ -40,6 +47,15 @@ dev/                     release.sh, gen_icons.py
 
 - Apps: `app/android/build.sh`, `app/tv/build.sh` (JDK 17, Android SDK) → `app/*/build/*.apk`. The web UI is packed into both APKs as assets.
 - Computer web: `venv/bin/python app/web/server.py` (first run: `start-mac.command` creates `venv`). For tests, run a second copy on another port with its own TV list so real TVs are untouched: `TVS_FILE=/tmp/x.json venv/bin/python app/web/server.py --port 8767`.
+
+## Automation (sleep timer, bedtime, app limits, scenes)
+
+- The timer, bedtime and limits live **on the TV**, in TV Setup (`Rules.kt`, prefs), enforced by `Guard` (standby with keyevent 223,
+  closing apps, the notice `WarnActivity`), so they work with every other device off. All three clients reach them the same way:
+  `am broadcast -n dev.tvremote.setup/.RulesReceiver --es set <base64 json>` over ADB (`RulesClient.kt`, `scenes.py rules()`);
+  the receiver needs the shell's DUMP permission, so apps cannot call it. No receiver = TV Setup missing or older than 2.13.0.
+- Scenes are kept per client (computer: `tvs.json` "scenes"; TV Setup: prefs; phone: `SceneStore`), cleaned by `Scenes.clean` /
+  `scenes.clean` with the same rules; `GET /api/scenes?download=1` is the backup file the page imports back.
 
 ## Versions and releases
 
@@ -59,6 +75,10 @@ Test on emulators, not on real TVs. Two AVDs are used: `tvremote_gtv` (Google TV
 - Tap by text (find the node in `uiautomator dump`), never by fixed coordinates.
 - If `adb exec-out screencap` comes back blank on the phone emulator, use `adb emu screenrecord screenshot <file>`.
 - Web UI: headless Chrome through the DevTools protocol against the test server above.
+- Unit tests (no device needed): `venv/bin/python -m unittest discover -s app/web/tests`, `node --test app/web/tests/`,
+  `cd app && ./gradlew :shared:testDebugUnitTest :tv:testDebugUnitTest`. The voice tests exist on both sides
+  (`voice.test.js`, `VoiceTest.kt`): keep `js/voice.js` and `Voice.kt` understanding the same sentences.
+- The TV's sound: the Google TV emulator cannot run YouTube; press D-pad keys on the TV during a capture to get click sounds.
 
 ## Handy facts
 

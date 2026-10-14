@@ -11,7 +11,8 @@ from androidtvremote2.remotemessage_pb2 import RemoteKeyCode
 import shlex
 import tempfile
 import tvconfig
-from adbtools import Adb, AdbError, PKG_RE, FP_RE, my_fingerprint
+import scenes as scn
+from adbtools import Adb, AdbError, PKG_RE, FP_RE, PROTECTED, my_fingerprint, memory_by_app
 from appmeta import AppMeta
 from tvtools import ADB, APP, CERT, FFMPEG, KEY, ROOT, SCRIPTS, find
 
@@ -22,6 +23,7 @@ KEYS = {
     "NEXT": "MEDIA_NEXT", "PREV": "MEDIA_PREVIOUS", "CH_UP": "CHANNEL_UP", "CH_DOWN": "CHANNEL_DOWN",
     "SETTINGS": "SETTINGS", "INPUT": "TV_INPUT", "SEARCH": "SEARCH", "DEL": "DEL",
     "INFO": "INFO", "GUIDE": "GUIDE", "LIVE": "TV", "SUBTITLE": "CAPTIONS", "REWIND": "MEDIA_REWIND", "STOP": "MEDIA_STOP", "FFWD": "MEDIA_FAST_FORWARD",
+    "SLEEP": "SLEEP", "WAKE": "WAKEUP",                               # "tắt TV" / "bật TV" spoken: never POWER, which would turn a TV that is off on
 }
 # The "More" keys go through ADB when it is open: this TV ignores some of them over the remote protocol (the input key, for one).
 ADB_KEYS = {"INPUT": 178, "INFO": 165, "GUIDE": 172, "LIVE": 170, "SUBTITLE": 175, "CH_UP": 166, "CH_DOWN": 167, "REWIND": 89, "STOP": 86, "FFWD": 90}
@@ -88,7 +90,7 @@ async def scrcpy_launch(adb, opts):
     proc = await asyncio.create_subprocess_exec(
         ADB, "-s", adb.target, "shell",
         f"CLASSPATH={SCRCPY_REMOTE} app_process / com.genymobile.scrcpy.Server {SCRCPY_VER} scid={scid} tunnel_forward=true "
-        f"audio=false cleanup=false {opts}", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+        f"cleanup=false {opts}", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
     return proc, port
 
 
@@ -105,7 +107,7 @@ class Control:
         size = re.search(r"(\d+)x(\d+)", await self.adb.shell("wm size"))
         if size:
             self.W, self.H = int(size.group(1)), int(size.group(2))
-        self.proc, self.port = await scrcpy_launch(self.adb, "video=false control=true send_dummy_byte=true")
+        self.proc, self.port = await scrcpy_launch(self.adb, "video=false audio=false control=true send_dummy_byte=true")
         for _ in range(100):                                          # until the server listens, adb closes the socket at once
             reader, writer = await asyncio.open_connection("127.0.0.1", self.port)
             try:
@@ -189,7 +191,7 @@ class Scrcpy:
         self.adb, self.size, self.port, self.proc, self.writer, self.first = adb, size, None, None, None, b""
 
     async def open(self):
-        self.proc, self.port = await scrcpy_launch(self.adb, f"control=false raw_stream=true video_bit_rate={self.rate} max_fps={self.fps} max_size={self.size}")
+        self.proc, self.port = await scrcpy_launch(self.adb, f"audio=false control=false raw_stream=true video_bit_rate={self.rate} max_fps={self.fps} max_size={self.size}")
         for _ in range(100):                                          # until the server listens, adb closes the socket at once
             reader, self.writer = await asyncio.open_connection("127.0.0.1", self.port)
             try:
@@ -744,7 +746,25 @@ def build(S):
     @adb_errors
     async def apps(request):
         pkgs = await adb.apps(request.query.get("system") == "1")
-        return web.json_response({"apps": [{"pkg": p, "meta": meta.cached(p, adb.apk_paths[p])} for p in pkgs]})
+        off = await adb.disabled()
+        return web.json_response({"apps": [{"pkg": p, "off": p in off, "keep": bool(PROTECTED.fullmatch(p)), "meta": meta.cached(p, adb.apk_paths[p])} for p in pkgs]})
+
+    @routes.get("/api/apps/report")
+    @adb_errors
+    async def apps_report(_):
+        """What an AI (or a person) needs to say which apps can go; the page turns it into a prompt to copy."""
+        lst = lambda out: sorted(l[8:].strip() for l in out.splitlines() if l.startswith("package:"))
+        user = lst(await adb.shell("pm list packages -3 -e"))
+        m = re.search(r"MemTotal:\s+(\d+)", await adb.shell("cat /proc/meminfo"))
+        await adb.apps(False)                                         # the apk paths the names come from
+        return web.json_response({
+            "device": ((await adb.shell("getprop ro.product.manufacturer")).strip() + " " + (await adb.shell("getprop ro.product.model")).strip()).strip(),
+            "android": (await adb.shell("getprop ro.build.version.release")).strip(),
+            "ram_mb": int(m.group(1)) // 1024 if m else 0,
+            "user": user, "system": lst(await adb.shell("pm list packages -s -e")), "disabled": lst(await adb.shell("pm list packages -d")),
+            "memory": [{"pkg": p, "mb": mb} for p, mb in memory_by_app(await adb.shell("dumpsys meminfo"))],
+            "labels": {p: (meta.cached(p, adb.apk_paths[p]) or {}).get("label") for p in user if p in adb.apk_paths and (meta.cached(p, adb.apk_paths[p]) or {}).get("label")},
+        })
 
     @routes.get("/api/app/meta")
     @adb_errors
@@ -768,7 +788,7 @@ def build(S):
     @adb_errors
     async def app_action(request):
         action, pkg = request.match_info["action"], str((await body(request)).get("pkg", ""))
-        if action not in ("launch", "stop", "uninstall"):
+        if action not in ("launch", "stop", "uninstall", "disable", "enable"):
             raise web.HTTPNotFound()
         res = await getattr(adb, action)(pkg)
         return web.json_response({"ok": True, "result": res})
@@ -1076,6 +1096,114 @@ def build(S):
             return web.json_response({"error": "TV này không có tìm kiếm / Assistant của Google"}, status=400)
         return web.json_response({"ok": True})
 
+    # ---- automation: TV Setup's timers and limits (they run on the TV, see scenes.rules), and scenes ----
+    @routes.get("/api/rules")
+    @adb_errors
+    async def rules_get(_):
+        return web.json_response(await rules_with_names(None))
+
+    @routes.post("/api/rules")
+    @adb_errors
+    async def rules_set(request):
+        return web.json_response(await rules_with_names(await body(request)))
+
+    async def rules_with_names(change):
+        r = await scn.rules(adb, change)
+        for l in r.get("limits", []):                                 # the names the Apps tab shows
+            l["label"] = (meta.cached(l["pkg"], adb.apk_paths.get(l["pkg"], "")) or {}).get("label") or l.get("label") or l["pkg"]
+        return r
+
+    @routes.get("/api/scenes")
+    async def scenes_get(request):
+        if "download" in request.query:                               # "Export": a file to keep
+            name = time.strftime("tv-remote-scenes-%Y-%m-%d.json")
+            return web.Response(text=json.dumps(scn.backup(S.cfg.get("scenes", [])), ensure_ascii=False, indent=2), content_type="application/json",
+                                headers={"Content-Disposition": f'attachment; filename="{name}"', "Cache-Control": "no-store"})
+        return web.json_response({"scenes": S.cfg.get("scenes", [])})
+
+    @routes.post("/api/scenes")
+    async def scenes_set(request):
+        S.cfg["scenes"] = scn.clean((await body(request)).get("scenes"))
+        tvconfig.save(S.cfg)
+        return web.json_response({"scenes": S.cfg["scenes"]})
+
+    @routes.post("/api/scene/run")
+    @adb_errors
+    async def scene_run(request):
+        d = await body(request)
+        steps = d.get("steps") or next((x["steps"] for x in S.cfg.get("scenes", []) if x["id"] == d.get("id")), None)
+        if steps is None:
+            return web.json_response({"error": "no such scene"}, status=404)
+        cleaned = scn.clean([{"name": "x", "steps": steps}])
+        failed = await scn.run(adb, cleaned[0]["steps"] if cleaned else [])
+        return web.json_response({"ok": not failed, "failed": failed or ""})
+
+    # ---- 🎧 the TV's sound in this browser (see listen.js): Opus straight from scrcpy, or PCM made 24 kHz mono here ----
+    @routes.get("/api/audio")
+    async def audio(request):
+        resp = web.StreamResponse(headers={"Content-Type": "application/octet-stream", "Cache-Control": "no-store"})
+        await resp.prepare(request)
+        opus = request.query.get("codec") == "opus"
+        share = request.query.get("share") == "1"                     # the TV keeps playing too (playback capture, Android 13+)
+        proc = port = writer = None
+        try:
+            if (await adb.status())["state"] != "ready":
+                await resp.write(scn.packet(5, b"adb: not ready")); return resp
+            sdk = int((await adb.shell("getprop ro.build.version.sdk")).strip() or 0)
+            if sdk < 30:                                              # scrcpy captures sound from Android 11
+                await resp.write(scn.packet(5, b"unsupported")); return resp
+            if share and sdk < 33:                                    # too old to keep playing: the private way, and say so
+                share = False
+                await resp.write(scn.packet(3, b"noshare"))
+            proc, port = await scrcpy_launch(S.cur.adb, "video=false control=false send_dummy_byte=true send_device_meta=false audio=true "
+                                             + ("audio_codec=opus audio_bit_rate=64000" if opus else "audio_codec=raw")
+                                             + (" audio_source=playback audio_dup=true" if share else ""))
+            reader = None
+            for _ in range(100):                                      # until the server listens, adb closes the socket at once
+                reader, writer = await asyncio.open_connection("127.0.0.1", port)
+                try:
+                    first = await asyncio.wait_for(reader.readexactly(1), 4)
+                except (asyncio.TimeoutError, asyncio.IncompleteReadError):
+                    first = b""
+                if first == b"\x00":
+                    break
+                writer.close(); writer = None
+                if proc.returncode is not None:
+                    break
+                await asyncio.sleep(0.25)
+            if not writer:
+                raise AdbError("scrcpy-server did not start")
+            if int.from_bytes(await reader.readexactly(4), "big") in (0, 1):   # the TV could not capture sound
+                await resp.write(scn.packet(5, b"unsupported")); return resp
+            await resp.write(scn.packet(0, bytes([1 if opus else 2]) + (48000 if opus else 24000).to_bytes(4, "big") + bytes([2 if opus else 1])))
+            carry = b""
+            while True:
+                head = await reader.readexactly(12)
+                flags, size = int.from_bytes(head[:8], "big"), int.from_bytes(head[8:], "big")
+                data = await reader.readexactly(size)
+                if flags & (1 << 62):                                 # the codec header (OpusHead)
+                    if opus:
+                        await resp.write(scn.packet(1, data))
+                    continue
+                if not opus:
+                    data, carry = scn.downmix(data, carry)
+                await resp.write(scn.packet(2, data))
+        except (ConnectionError, asyncio.CancelledError, asyncio.IncompleteReadError):
+            pass
+        except AdbError as e:
+            try:
+                await resp.write(scn.packet(5, str(e).encode()))
+            except ConnectionError:
+                pass
+        finally:
+            if writer:
+                writer.close()
+            if proc and proc.returncode is None:
+                proc.kill()                                           # the TV's speakers come back when the capture ends
+            if port:
+                await adb.run("forward", "--remove", f"tcp:{port}")
+        return resp
+
     @routes.post("/api/shell")
     @adb_errors
     async def shell(request):
@@ -1329,7 +1457,7 @@ def build(S):
 
     app_ = web.Application(middlewares=[guard])
     app_.add_routes(routes)
-    for name in ("style.css", "stats.js"):
+    for name in ("style.css", "stats.js", "manifest.json", "icon-180.png", "icon-192.png", "icon-512.png", "icon-maskable.png"):
         app_.router.add_get("/" + name, lambda _, f=WEB / name: web.FileResponse(f, headers={"Cache-Control": "no-store"}))
     app_.router.add_static("/js", WEB / "js")
     return app_

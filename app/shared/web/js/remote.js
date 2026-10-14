@@ -134,11 +134,18 @@ document.addEventListener('paste', (e) => {                           // Cmd+V a
 
 
 // ---------- ask the TV: typed or spoken here, handed to the TV's own search / Assistant ----------
-async function askTv(q) { q = q.trim(); if (q && await api('/api/search', { query: q })) { toast('Đã gửi cho TV: ' + q); setTimeout(refresh, 2500); } }
+async function askTv(q) {
+  q = q.trim(); if (!q) return;
+  const c = voiceCommand(q, voiceApps(), SCENES);                     // "mở YouTube", "tắt tiếng", a scene's name...: done here, at once (voice.js)
+  if (c) { doCommand(c); return; }
+  if (await api('/api/search', { query: q })) { toast('Đã gửi cho TV: ' + q); setTimeout(refresh, 2500); }
+}
 $('#askf').addEventListener('submit', (e) => { e.preventDefault(); askTv($('#ask').value); $('#ask').value = ''; });
-// speech is turned into text by the browser (Chrome), not by the TV
+// speech is turned into text by the browser (Chrome, Safari), not by the TV. Browsers allow the microphone only on secure pages:
+// the TV's own page is plain HTTP, so there the phone keyboard's own microphone key does it.
 const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-if (Speech) {
+if (!(Speech && window.isSecureContext) && matchMedia('(pointer:coarse)').matches) $('#ask').placeholder = tr('Hỏi TV: mở YouTube · nói bằng nút 🎤 của bàn phím');
+if (Speech && window.isSecureContext) {
   const b = $('#speak'); let rec = null; b.hidden = false;
   b.addEventListener('click', () => {
     if (rec) { rec.stop(); return; }

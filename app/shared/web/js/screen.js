@@ -147,6 +147,7 @@ function showTab(t) {
   if (ADB.state === 'ready') { if (t === 'apps' && !appsLoaded) loadApps(); if (t === 'files' && !filesLoaded) loadFiles(cwd); }
   if (t === 'tv' && CORE === 'mac') loadSteps();
   if (t === 'health') loadHealth();
+  if (t === 'auto') autoTab();
   if (t === 'tv') tsState();
 }
 document.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));

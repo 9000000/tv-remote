@@ -1,0 +1,64 @@
+package dev.tvremote.phone
+
+import dev.tvremote.core.Atv
+
+// The text box: type then send, or live (the TV follows every letter); with or without ADB.
+
+internal fun MainActivity.sendText() {
+    val s = textBox.text.toString()
+    basic?.let {                                                  // keys only: the text goes into the field that has the focus on the TV
+        if (live) { it.key(66, Atv.SHORT); clearBox() }           // everything is on the TV already: this is Enter
+        else if (s.isEmpty()) it.key(66, Atv.SHORT)
+        else { if (it.hasField && !Atv.typable(s)) it.text(s) else it.keys(s); textBox.setText("") }
+        return
+    }
+    val tv = tv
+    if (tv == null || !tv.ready()) return
+    if (live) {                                                   // everything is on the TV already: this is Enter
+        tv.press(66)
+        clearBox()
+    } else if (s.isNotEmpty()) {
+        tv.text(s)
+        textBox.setText("")
+    }
+}
+
+internal fun MainActivity.setLive(on: Boolean) {
+    live = on
+    prefs.edit().putBoolean("live", on).apply()
+    liveBtn.background = box(if (on) ACCENT else BTN, 14)
+    liveBtn.contentDescription = if (on) t("Đang gõ trực tiếp. Bấm để chuyển sang gõ xong rồi gửi", "Live typing is on. Tap to type first, then send")
+        else t("Đang gõ xong rồi gửi. Bấm để chuyển sang gõ trực tiếp", "Type-then-send is on. Tap for live typing")
+    textBox.hint = if (on) t("Gõ trực tiếp: TV nhận từng chữ", "Live: the TV gets every letter") else t("Gõ chữ rồi bấm gửi", "Type, then send")
+    clearBox()
+}
+
+internal fun MainActivity.clearBox() {
+    quiet = true
+    textBox.setText("")
+    quiet = false
+    onTv = ""
+}
+
+/** Live typing: make the TV's text follow the box by deleting what changed at the end and typing the new end. */
+internal fun MainActivity.typedLive(now: String) {
+    if (!live || quiet) return
+    basic?.let {                                                  // keys only: through the TV's keyboard service when the app uses it, as key presses otherwise
+        if (it.hasField && !Atv.typable(now)) { if (now.isNotEmpty()) it.text(now) }
+        else {
+            var keep = 0
+            while (keep < onTv.length && keep < now.length && onTv[keep] == now[keep]) keep++
+            repeat(onTv.length - keep) { _ -> it.key(67, Atv.SHORT) }
+            it.keys(now.substring(keep))
+        }
+        onTv = now
+        return
+    }
+    val tv = tv
+    if (tv == null || !tv.ready()) return
+    var same = 0
+    while (same < onTv.length && same < now.length && onTv[same] == now[same]) same++
+    repeat(onTv.length - same) { tv.press(67) }
+    if (now.length > same) tv.text(now.substring(same))
+    onTv = now
+}

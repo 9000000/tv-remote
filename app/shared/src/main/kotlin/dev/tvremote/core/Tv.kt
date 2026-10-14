@@ -30,12 +30,29 @@ class Tv(
     private val listener: Listener,
     /** instead of a Surface: the encoded picture is handed over as it arrives (to pass on to a browser) */
     private val sink: Sink? = null,
+    /**
+     * The TV's sound (Android 11+; while it is captured the TV's own speakers are silent). null: none. "opus": played on this
+     * device ([AudioOut]), about 8 KB/s. "raw": 48 kHz 16-bit stereo PCM handed to [audioSink], no encoding at all on the TV.
+     */
+    private val audio: String? = null,
+    private val audioSink: AudioSink? = null,
+    /** false: a session that only watches or listens, with no keys or touch */
+    private val wantControl: Boolean = true,
+    /**
+     * true: the TV keeps playing its sound too (scrcpy's playback capture with audio_dup; Android 13+). Older TVs fall back to
+     * the private way (TV speakers silent) and say so with onStatus("audio", "noshare"). Apps that refuse playback capture
+     * (some with DRM) are silent here in this mode.
+     */
+    private val audioShare: Boolean = false,
 ) {
     /** One H.264 packet as scrcpy sends it (Annex B). config: SPS/PPS, needed before the first frame; key: a key frame. */
     fun interface Sink { fun video(config: Boolean, key: Boolean, data: ByteArray) }
 
+    /** One packet of sound as scrcpy sends it. config: the codec's header (Opus: OpusHead), before the first packet. */
+    fun interface AudioSink { fun audio(config: Boolean, data: ByteArray) }
+
     interface Listener {
-        fun onStatus(key: String, detail: String)                     // connecting | allow | starting | live | closed | error
+        fun onStatus(key: String, detail: String)                     // connecting | allow | starting | live | closed | error; audio (detail "unsupported"); rate
         fun onVideoSize(w: Int, h: Int)
         fun onNetwork(mac: String, lan: String, tailscale: String)    // the TV's home-network address (for Wake-on-LAN), and its 100.x one if any
         fun wantsPass(): Boolean = false                              // no TV Setup pass for this TV yet: fetch one while ADB works
@@ -90,10 +107,20 @@ class Tv(
             reportNetwork(a)
             if (listener.wantsPass()) try { AdbPrompt.token(a)?.let { listener.onPass(it) } } catch (ignored: IOException) { }
             pushServer(a)
+            var hearing = audio
+            val sdk = if (hearing != null) a.shell("getprop ro.build.version.sdk").trim().toIntOrNull() ?: 0 else 0
+            val share = hearing != null && audioShare && sdk >= 33
+            if (hearing != null && audioShare && !share && sdk >= 30) listener.onStatus("audio", "noshare")
+            if (hearing != null && sdk < 30) {                        // scrcpy captures sound from Android 11
+                listener.onStatus("audio", "unsupported")
+                hearing = null
+                if (!wantVideo && !wantControl) throw IOException("this TV cannot send its sound (Android 11 or newer is needed)")
+            }
             val scid = String.format("%08x", Random().nextInt(0x7fffffff))
             val log = a.open("shell:CLASSPATH=" + REMOTE + " app_process / com.genymobile.scrcpy.Server " + VER + " scid=" + scid
-                    + " tunnel_forward=true audio=false cleanup=false control=true send_dummy_byte=true send_device_meta=false "
+                    + " tunnel_forward=true cleanup=false control=$wantControl send_dummy_byte=true send_device_meta=false "
                     + (if (wantVideo) "video=true $video" else "video=false")
+                    + (if (hearing == null) " audio=false" else " audio=true audio_codec=$hearing" + (if (hearing == "opus") " audio_bit_rate=64000" else "") + (if (share) " audio_source=playback audio_dup=true" else ""))
                     // scrcpy-server does not always notice that we left (a still picture sends nothing), and a leftover one keeps
                     // loading the TV. So a shell loop on the TV waits for our heartbeat and kills the server when it stops.
                     + " & P=\$!; while read -t 25 x; do :; done; kill \$P")
@@ -101,7 +128,7 @@ class Tv(
                 try { while (!stopped) { log.write("\n".toByteArray()); Thread.sleep(8000) } } catch (gone: Exception) { }
             }, "scrcpy-heartbeat").apply { isDaemon = true }.start()
             Thread({ try { log.readAll() } catch (ignored: IOException) { } }, "scrcpy-log").apply { isDaemon = true }.start()
-            var first: Adb.Stream? = null                             // the video socket, or the control socket when there is no picture
+            var first: Adb.Stream? = null                             // the first of the sockets: video, then sound, then control, whichever are asked for
             val one = ByteArray(1)
             var i = 0
             while (i < 80 && first == null && !stopped) {             // until the server listens, the TV refuses the socket
@@ -115,15 +142,25 @@ class Tv(
                 i++
             }
             if (first == null) throw IOException("scrcpy-server did not start on the TV")
-            if (!wantVideo) {
-                control = first
+            val socks = arrayListOf(first)                            // the server takes the connections in this order
+            val count = (if (wantVideo) 1 else 0) + (if (hearing != null) 1 else 0) + (if (wantControl) 1 else 0)
+            while (socks.size < count) socks.add(a.open("localabstract:scrcpy_$scid"))
+            var next = 0
+            val pictureIn = if (wantVideo) socks[next++] else null
+            val soundIn = if (hearing != null) socks[next++] else null
+            val ctl = if (wantControl) socks[next] else null
+            control = ctl
+            if (soundIn != null && (pictureIn != null || ctl != null))
+                Thread({ try { hear(soundIn, hearing!!) } catch (ignored: IOException) { } }, "scrcpy-audio").apply { isDaemon = true }.start()
+            if (pictureIn != null) {
+                if (ctl != null) Thread({ try { ctl.readAll() } catch (ignored: IOException) { } }, "scrcpy-ctl").apply { isDaemon = true }.start()   // clipboard etc: not needed
+                play(pictureIn)
+            } else if (ctl != null) {
                 listener.onStatus("live", "")
-                try { first.readAll() } catch (ignored: IOException) { }   // returns when the TV closes the session
-            } else {
-                val fromTv = a.open("localabstract:scrcpy_$scid")
-                control = fromTv
-                Thread({ try { fromTv.readAll() } catch (ignored: IOException) { } }, "scrcpy-ctl").apply { isDaemon = true }.start()   // clipboard etc: not needed
-                play(first)
+                try { ctl.readAll() } catch (ignored: IOException) { }   // returns when the TV closes the session
+            } else if (soundIn != null) {
+                listener.onStatus("live", "")
+                hear(soundIn, hearing!!)
             }
             if (!stopped) listener.onStatus("closed", "")
         } catch (e: Throwable) {
@@ -219,6 +256,39 @@ class Tv(
             var tries = 0
             while (tries < 6 && !render(c)) tries++                   // the TV only sends a frame when the picture changes: show it now
             if (first && !config) { first = false; listener.onStatus("live", "") }
+        }
+    }
+
+    /**
+     * scrcpy's sound socket: 4 bytes codec id (0 or 1: the TV could not capture sound), then the same 12-byte headers as the
+     * picture. Played here ([AudioOut]) or handed to [audioSink].
+     */
+    @Throws(IOException::class)
+    private fun hear(s: Adb.Stream, codec: String) {
+        val head = ByteArray(12)
+        s.readFully(head, 0, 4)
+        val id = ByteBuffer.wrap(head, 0, 4).int
+        if (id == 0 || id == 1) { listener.onStatus("audio", "unsupported"); return }   // e.g. the TV refused the capture
+        val out = if (codec == "opus" && audioSink == null) AudioOut() else null
+        var bytes = 0L
+        var since = System.currentTimeMillis()
+        try {
+            while (!stopped) {
+                s.readFully(head, 0, 12)
+                val h = ByteBuffer.wrap(head)
+                val flags = h.long
+                val size = h.int
+                if (size < 0 || size > (1 shl 20)) throw IOException("bad audio packet")
+                val data = ByteArray(size)
+                s.readFully(data, 0, size)
+                val config = (flags and (1L shl 62)) != 0L
+                if (out != null) out.feed(config, data) else audioSink?.audio(config, data)
+                bytes += size + 12
+                val now = System.currentTimeMillis()
+                if (now - since >= 3000) { listener.onStatus("arate", (bytes * 1000.0 / (now - since) / 1024).let { if (it < 10) String.format(java.util.Locale.US, "%.1f", it) else it.toInt().toString() }); bytes = 0; since = now }   // Opus: under 1 KB/s while the TV is quiet
+            }
+        } finally {
+            out?.release()
         }
     }
 

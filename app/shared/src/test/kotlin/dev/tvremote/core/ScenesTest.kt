@@ -1,0 +1,90 @@
+package dev.tvremote.core
+
+import org.json.JSONArray
+import org.json.JSONObject
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class ScenesTest {
+    /** Records what the steps asked of the TV. */
+    private class Fake(val failApp: Boolean = false) : Scenes.Target {
+        val did = ArrayList<String>()
+        override fun key(code: Int) { did.add("key $code") }
+        override fun app(pkg: String) { if (failApp) throw IllegalArgumentException("no such app"); did.add("app $pkg") }
+        override fun link(url: String) { did.add("link $url") }
+        override fun volume(level: Int) { did.add("volume $level") }
+        override fun timer(minutes: Int) { did.add("timer $minutes") }
+    }
+
+    private fun steps(vararg s: String) = JSONArray(s.map { JSONObject(it) })
+
+    @Test fun runsStepsInOrder() {
+        val tv = Fake()
+        assertNull(Scenes.run(steps("""{"do":"wake"}""", """{"do":"app","pkg":"com.a.b"}""", """{"do":"volume","level":12}""",
+            """{"do":"key","key":"mute"}""", """{"do":"timer","min":30}""", """{"do":"sleep"}"""), tv))
+        assertEquals(listOf("key 224", "app com.a.b", "volume 12", "key 164", "timer 30", "key 223"), tv.did)
+    }
+
+    @Test fun aFailingStepIsNamedAndTheRestRuns() {
+        val tv = Fake(failApp = true)
+        val failed = Scenes.run(steps("""{"do":"app","pkg":"com.a.b"}""", """{"do":"key","key":"HOME"}"""), tv)
+        assertTrue(failed!!.startsWith("1: no such app"))
+        assertEquals(listOf("key 3"), tv.did)
+    }
+
+    @Test fun stopIsAskedBetweenSteps() {
+        val tv = Fake()
+        Scenes.run(steps("""{"do":"wake"}""", """{"do":"sleep"}"""), tv) { tv.did.size == 1 }
+        assertEquals(listOf("key 224"), tv.did)
+    }
+
+    @Test fun cleanKeepsOnlyWhatCanRun() {
+        val out = Scenes.clean(JSONArray().put(JSONObject("""{"id":"s1","name":" Xem phim ","icon":"🎬","steps":[
+            {"do":"wake"},{"do":"app","pkg":"bad; rm -rf /"},{"do":"key","key":"nope"},{"do":"volume","level":300},
+            {"do":"link","url":"javascript"},{"do":"link","url":"https://youtu.be/x"},{"do":"explode"}]}""")))
+        assertEquals(1, out.length())
+        val sc = out.getJSONObject(0)
+        assertEquals("Xem phim", sc.getString("name"))
+        val st = sc.getJSONArray("steps")
+        assertEquals(listOf("wake", "volume", "link"), (0 until st.length()).map { st.getJSONObject(it).getString("do") })
+        assertEquals(100, st.getJSONObject(1).getInt("level"))
+        assertEquals("https://youtu.be/x", st.getJSONObject(2).getString("url"))
+    }
+
+    @Test fun cleanDropsNamelessOrEmptyScenesAndBadIds() {
+        val out = Scenes.clean(JSONArray("""[{"name":"","steps":[{"do":"wake"}]},{"name":"x","steps":[]},{"id":"../x","name":"y","steps":[{"do":"sleep"}]}]"""))
+        assertEquals(1, out.length())
+        assertTrue(out.getJSONObject(0).getString("id").matches(Regex("s[0-9a-z]+")))
+    }
+
+    @Test fun backupIsADownloadThatReadsBack() {
+        val scenes = Scenes.clean(JSONArray("""[{"id":"s1","name":"Đi ngủ","icon":"🌙","steps":[{"do":"timer","min":30}]}]"""))
+        val r = Scenes.backup(scenes)
+        assertTrue(r.headers["Content-Disposition"]!!.startsWith("attachment; filename=\"tv-remote-scenes-"))
+        val file = JSONObject(String(r.body, Charsets.UTF_8))
+        assertEquals("scenes", file.getString("kind"))
+        assertEquals(scenes.toString(), Scenes.clean(file.getJSONArray("scenes")).toString())
+    }
+
+    @Test fun launchUsesTheLauncherActivity() {
+        val asked = ArrayList<String>()
+        Scenes.launch({ asked.add(it); if (it.contains("resolve-activity")) "priority=0\ncom.a.b/.Main\n" else "" }, "com.a.b")
+        assertTrue(asked.last().startsWith("am start -n 'com.a.b/.Main'"))
+    }
+
+    @Test(expected = IllegalArgumentException::class) fun launchRefusesBadPackageNames() { Scenes.launch({ "" }, "x; reboot") }
+
+    @Test fun volumeFallsBackToTheOldCommand() {
+        val asked = ArrayList<String>()
+        Scenes.volume({ asked.add(it); if (it.startsWith("cmd media_session")) "Unknown command" else "" }, 7)
+        assertTrue(asked[1].startsWith("media volume --stream 3 --set 7"))
+    }
+
+    @Test fun volumePressesKeysWhenTheTvKeepsItsLevel() {
+        val asked = ArrayList<String>()
+        Scenes.volume({ asked.add(it); if (it.contains("--get")) "[V] volume is 6 in range [0..15]" else "" }, 4)
+        assertEquals("input keyevent 25; input keyevent 25", asked.last())
+    }
+}

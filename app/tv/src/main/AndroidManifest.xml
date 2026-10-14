@@ -22,11 +22,16 @@
             </intent-filter>
         </activity>
         <activity android:name=".PairActivity" android:exported="true" android:excludeFromRecents="true" />
+        <!-- the sleep timer, bedtime and app limits warn over whatever is on screen; started through the TV's ADB (Guard.kt) -->
+        <activity android:name=".WarnActivity" android:exported="true" android:excludeFromRecents="true" android:launchMode="singleTop"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" android:noHistory="true" />
         <service android:name=".RemoteService" android:exported="false" android:foregroundServiceType="specialUse">
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="web remote control served on the local network" />
         </service>
         <!-- hands a TV Setup pass to a device that already has ADB; DUMP is held by the shell only, so no app can ask -->
         <receiver android:name=".TrustReceiver" android:exported="true" android:permission="android.permission.DUMP" />
+        <!-- timers and limits for a device that has ADB here (RulesClient.kt); held by the shell only, like the one above -->
+        <receiver android:name=".RulesReceiver" android:exported="true" android:permission="android.permission.DUMP" />
         <receiver android:name=".BootReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

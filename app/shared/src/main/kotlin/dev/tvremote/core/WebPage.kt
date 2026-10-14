@@ -20,7 +20,11 @@ class WebPage(private val assets: AssetManager, private val core: String, privat
                 b.also { if (cache.size < 30) cache[name] = it }
             } catch (e: Exception) { null }
         } ?: return null
-        val out = HttpServer.Response.of(if (name.endsWith(".html")) "text/html; charset=utf-8" else if (name.endsWith(".css")) "text/css; charset=utf-8" else "text/javascript; charset=utf-8", bytes)
+        val type = when (name.substringAfterLast('.')) {
+            "html" -> "text/html; charset=utf-8"; "css" -> "text/css; charset=utf-8"; "png" -> "image/png"
+            "json" -> "application/manifest+json"; else -> "text/javascript; charset=utf-8"
+        }
+        val out = HttpServer.Response.of(type, bytes)
         // the page names its files with a stamp that changes with every update of the app, so they can be kept; the page itself never is
         out.headers["Cache-Control"] = if (name == "index.html") "no-store" else "max-age=604800"
         return out
@@ -30,7 +34,7 @@ class WebPage(private val assets: AssetManager, private val core: String, privat
         LINK.replace(html.replaceFirst("<html ", "<html data-core=\"$core\" ")) { it.groupValues[1] + "?v=" + stamp + "\"" }
 
     private companion object {
-        val FILE = Regex("index\\.html|style\\.css|stats\\.js|jmuxer\\.min\\.js|js/[a-z0-9_-]+\\.js")
+        val FILE = Regex("index\\.html|style\\.css|stats\\.js|jmuxer\\.min\\.js|js/[a-z0-9_-]+\\.js|manifest\\.json|icon-[a-z0-9]+\\.png")   // the last two: "Add to Home screen"
         val LINK = Regex("((?:src|href)=\"(?:style\\.css|stats\\.js|js/[^\"?]+))\"")
     }
 }

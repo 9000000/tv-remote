@@ -125,7 +125,7 @@ const BANNERS = {
   error: ['bad', 'Không kết nối được ADB', 'Thử kết nối lại. Nếu vẫn lỗi, kiểm tra TV còn mạng và đã bật “Gỡ lỗi ADB”.'],
   unknown: ['warn', 'Đang kiểm tra ADB...', ''],
 };
-let bannerKey = '';
+let bannerKey = '', scenesLoaded = false;
 function buildBanner() {
   const set = CORE === 'mac' ? BANNERS : BANNERS_TV, [cls, title, text] = set[ADB.state] || set.unknown;
   const retry = el('button', { className: 'small primary', textContent: '🔄 Thử kết nối lại', onclick: async (e) => {
@@ -152,7 +152,8 @@ function applyAdb() {
   $('#screenbtn').disabled = !ready && !screenOn;
   if (!ready && screenOn) stopScreen('ADB chưa sẵn sàng, đã dừng xem màn hình.');
   if (ready && autoView) { autoView = false; startScreen(); }           // bookmark ?view=1 to start watching right away
-  if (ready) { if (!quickLoaded) loadQuick(); if (currentTab === 'apps' && !appsLoaded) loadApps(); if (currentTab === 'files' && !filesLoaded) loadFiles(cwd); }
+  if (ready) { if (!quickLoaded) loadQuick(); if (currentTab === 'apps' && !appsLoaded) loadApps(); if (currentTab === 'files' && !filesLoaded) loadFiles(cwd); if (!scenesLoaded) { scenesLoaded = true; loadScenes(); } if (currentTab === 'auto' && !autoLoaded) autoTab(); }
+  if (!ready && listenOn) stopListen('ADB chưa sẵn sàng, đã dừng nghe tiếng TV.');
 }
 
 
@@ -206,3 +207,16 @@ $('#pairf').addEventListener('submit', async (e) => {
   if (r.ok) { $('#pairerr').textContent = ''; refresh(); return; }
   $('#pairerr').textContent = tr(r.error === 'wrong' ? 'Sai mã, thử lại.' : 'Mã đã hết hạn: bấm “Hiện mã trên TV” để lấy mã mới.'); if (r.error !== 'wrong') $('#pairf').hidden = true; $('#paircode').select();
 });
+
+// ---------- the TV's page on a phone: it can live on the home screen like an app (manifest.json) ----------
+// Said once; a browser that is already showing it as an app, or a computer, is not told.
+function homeHint() {
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  let seen = false; try { seen = !!localStorage.getItem('homehint'); } catch {}
+  if (CORE !== 'tv' || standalone || seen || !matchMedia('(pointer:coarse)').matches) return;
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  $('#homehow').textContent = ios ? 'Trong Safari: bấm nút Chia sẻ (ô vuông có mũi tên lên) → “Thêm vào MH chính”. Mở từ biểu tượng đó, trang hỏi mã ghép một lần nữa (iPhone giữ dữ liệu riêng cho nó).'
+    : 'Trong Chrome: bấm menu ⋮ → “Thêm vào màn hình chính”. Lần sau mở thẳng từ biểu tượng, như một app.';
+  $('#homehint').hidden = false;
+}
+$('#homeok').addEventListener('click', () => { $('#homehint').hidden = true; try { localStorage.setItem('homehint', '1'); } catch {} });

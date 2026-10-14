@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- RemoteWidget: the TV's name, power / mute / volume, then up to three scenes -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@drawable/widget_bg" android:padding="10dp">
+    <TextView android:id="@+id/w_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="TV Remote"
+        android:textColor="#FF9AA0A6" android:textSize="12sp" android:textStyle="bold" android:singleLine="true" android:ellipsize="end" android:paddingStart="4dp" android:paddingBottom="6dp" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:orientation="horizontal">
+        <ImageButton android:id="@+id/w_power" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:src="@drawable/ic_power"
+            android:tint="#FFFF8A80" android:background="@drawable/widget_btn" android:contentDescription="Power" />
+        <ImageButton android:id="@+id/w_mute" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="6dp" android:src="@drawable/ic_mute"
+            android:background="@drawable/widget_btn" android:contentDescription="Mute" />
+        <ImageButton android:id="@+id/w_down" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="6dp" android:src="@drawable/ic_minus"
+            android:background="@drawable/widget_btn" android:contentDescription="Volume down" />
+        <ImageButton android:id="@+id/w_up" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="6dp" android:src="@drawable/ic_plus"
+            android:background="@drawable/widget_btn" android:contentDescription="Volume up" />
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="44dp" android:orientation="horizontal" android:layout_marginTop="6dp">
+        <TextView android:id="@+id/w_scene1" style="@style/WidgetScene" />
+        <TextView android:id="@+id/w_scene2" style="@style/WidgetScene" android:layout_marginStart="6dp" />
+        <TextView android:id="@+id/w_scene3" style="@style/WidgetScene" android:layout_marginStart="6dp" />
+        <TextView android:id="@+id/w_hint" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center"
+            android:textColor="#FF9AA0A6" android:textSize="12sp" android:visibility="gone" />
+    </LinearLayout>
+</LinearLayout>
