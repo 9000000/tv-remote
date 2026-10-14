@@ -84,8 +84,7 @@ function tapMark(e, what) {
   const box = $('#screenbox').getBoundingClientRect(), at = (m) => { m.style.left = (e.clientX - box.left) + 'px'; m.style.top = (e.clientY - box.top) + 'px'; };
   if (what === 'move') { if (mark) at(mark); return; }
   if (what === 'down') { if (mark) mark.remove(); mark = el('div', { className: 'tap' }); at(mark); $('#screenbox').append(mark); return; }
-  const m = what === 'up' ? mark : el('div', { className: 'tap' });   // a wheel turn: a ring alone
-  if (!m) return; if (m === mark) mark = null; else { at(m); $('#screenbox').append(m); }
+  const m = mark; if (!m) return; mark = null;
   m.classList.add('gone'); m.addEventListener('animationend', () => m.remove());
 }
 const touch = (a, p, extra) => queue('/api/touch', { a, x: p.x, y: p.y, ...extra });
@@ -110,7 +109,7 @@ const touch = (a, p, extra) => queue('/api/touch', { a, x: p.x, y: p.y, ...extra
   scr.addEventListener('wheel', (e) => {
     const p = screenPos(e); if (!p) return;
     e.preventDefault(); if (Date.now() - lastWheel < 90) return;
-    lastWheel = Date.now(); touch('scroll', p, { dy: e.deltaY > 0 ? -1 : 1 }); tapMark(e, 'wheel');
+    lastWheel = Date.now(); touch('scroll', p, { dy: e.deltaY > 0 ? -1 : 1 });
   }, { passive: false });
   scr.addEventListener('contextmenu', (e) => { e.preventDefault(); api('/api/key', { key: 'BACK' }); });   // right click = Back
 });
