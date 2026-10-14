@@ -48,6 +48,11 @@ Tên menu dưới đây là trên Sony; hãng khác có thể hơi khác.
 
 Lần đầu mỗi máy kết nối, TV hỏi "Cho phép gỡ lỗi USB?": tích **Luôn cho phép** rồi OK. Cần một người ở cạnh TV cho việc này. Lúc đó cả ba nơi đều hiện một màn hình lớn "Nhìn lên TV" và tự đóng khi TV đã cho phép.
 
+**Khi không ở nhà mà TV lại hỏi** (TV quên máy này, Android 11+ tự thu hồi sau 7 ngày không dùng...):
+- **Tự động:** app điện thoại và web máy tính, mỗi lần đã kết nối được ADB, tự xin TV Setup một "thẻ". Lần sau TV hỏi, chúng nhờ TV Setup bấm cho phép, không cần ai ở TV. TV Setup chỉ bấm khi **mã khóa trong hộp hỏi trùng mã của chính máy đang xin**, và hiện thông báo trên TV mỗi lần cho phép.
+- **Bấm tay:** trang nào đang có ADB (trang của TV đã ghép mã, web máy tính, app điện thoại) hiện dải báo "TV đang hỏi... cho một thiết bị" kèm mã và nút **Cho phép / Từ chối**. Chỉ cho phép khi mã trùng với mã mà app TV Remote hiện trong lúc chờ.
+- Máy chưa từng kết nối và chưa ghép mã với TV Setup thì vẫn phải có người ở TV. Đó là chủ ý, để người lạ không vào được.
+
 TV chưa bật được ADB (box nhà mạng giấu Cài đặt, đòi mật khẩu...)? Web trên máy tính có nút **🧭 Bật ADB giúp tôi**, app điện thoại có trợ lý tương tự: chỉ dùng nút remote để tự cài TV Setup, hoặc mở Cài đặt TV bằng nhiều cách.
 
 <details>
@@ -151,11 +156,14 @@ Người ở cạnh TV: bật Gỡ lỗi ADB, cài TV Setup (hoặc nhờ ngư�
 
 ## Tối ưu TV (tùy chọn)
 
-Nút **⚡ Tối ưu TV** ở tab Thiết lập của cả ba nơi (và ngay trong app TV Setup trên TV); **Hoàn tác** trả lại như cũ. Chạy lại bao nhiêu lần cũng được.
+Nút **⚡ Tối ưu TV** ở tab Thiết lập của cả ba nơi (và ngay trong app TV Setup trên TV) mở hộp **chọn việc cần làm**; **Hoàn tác** trả lại như cũ. Chạy lại bao nhiêu lần cũng được.
 
-- Tắt hiệu ứng chuyển cảnh.
-- Cài FLauncher và tắt màn hình chính "Android TV Home" của Google, vốn chiếm nhiều CPU. TV giao diện Google TV mới, box nhà mạng (vd FPT) và TV chỉ chạy app 64-bit thì màn hình chính được giữ nguyên.
-- Tắt app hệ thống không dùng (danh sách viết cho Sony BRAVIA; gói không có thì bỏ qua).
+- **Tắt hiệu ứng chuyển cảnh** (tích sẵn).
+- **Dùng FLauncher làm màn hình chính** (tích sẵn): cài FLauncher và tắt màn hình chính "Android TV Home" của Google, vốn chiếm nhiều CPU. TV giao diện Google TV mới, box nhà mạng (vd FPT) và TV chỉ chạy app 64-bit thì màn hình chính được giữ nguyên.
+- **Tắt app đề xuất** (tích sẵn): app hệ thống không dùng, danh sách viết cho Sony BRAVIA và vài app Google; chỉ hiện những app TV đó có.
+- **Tắt thêm app khác** (không tích sẵn): mọi app có biểu tượng trên TV, có ô lọc theo tên. App quan trọng (Cài đặt, giao diện hệ thống, bàn phím, Google Play Services, TV Setup, Tailscale...) không bao giờ có trong danh sách.
+
+Tắt là tạm ngưng, không gỡ. **Hoàn tác** bật lại cả những app bạn tự chọn thêm (TV nhớ danh sách ở `/data/local/tmp/tvr-disabled.txt`).
 
 Nếu sau này TV không hiện màn hình chính: Cài đặt → Ứng dụng → Ứng dụng hệ thống → **Android TV Home** → Bật.
 
@@ -164,7 +172,7 @@ Nếu sau này TV không hiện màn hình chính: Cài đặt → Ứng dụng 
 | Hiện tượng | Cách xử lý |
 |---|---|
 | Không kết nối được | Cùng mạng với TV chưa? Đã bật Gỡ lỗi ADB chưa? IP đúng chưa? Nhìn TV xem có hộp hỏi cho phép không |
-| **ADB: chờ TV cho phép** | Trên TV chọn "Luôn cho phép". Lỡ đóng hộp hỏi (Back, Home, Hủy)? App tự hỏi lại vài lần; web thì bấm "Thử kết nối lại" |
+| **ADB: chờ TV cho phép** | Trên TV chọn "Luôn cho phép". Lỡ đóng hộp hỏi (Back, Home, Hủy)? App tự hỏi lại vài lần; web thì bấm "Thử kết nối lại". Không ở nhà: xem "Khi không ở nhà mà TV lại hỏi" ở trên |
 | **ADB: cổng đóng** | TV đang tắt, hoặc vừa khởi động lại: tắt rồi bật lại "Gỡ lỗi ADB" |
 | Bấm nút không ăn (web máy tính) | Chưa ghép nút remote (tab **Thiết lập**), hoặc đang mở hai cửa sổ cho cùng một TV |
 | Trang của TV hỏi lại mã 6 số | Trên TV đã bấm "Hủy ghép", hoặc trình duyệt đã xóa dữ liệu trang: nhập mã mới |
@@ -176,6 +184,7 @@ Nếu sau này TV không hiện màn hình chính: Cài đặt → Ứng dụng 
 ## Bảo mật
 
 - ADB qua mạng không có mật khẩu: máy nào đã được TV "Luôn cho phép" là có toàn quyền trên TV. Chỉ dùng trong mạng bạn tin và qua Tailscale. Thu hồi: Tùy chọn nhà phát triển → Thu hồi quyền gỡ lỗi USB.
+- **Ai được nhờ TV Setup cho phép:** chỉ máy đã ghép mã 6 số (mã hiện trên màn hình TV, tức đã có người ở TV) hoặc máy đã có ADB. "Thẻ" cho máy có ADB được phát qua một broadcast chỉ lệnh shell của ADB gửi được, app khác trên TV không lấy được. Mỗi lần cho phép đều so mã khóa và hiện thông báo trên TV. **Hủy ghép** trên TV vô hiệu mọi thẻ.
 - `cert.pem` / `key.pem` (web máy tính) là chìa khóa ghép với TV. **Ai có `key.pem` là điều khiển được TV.** Hai file này không được đưa lên git.
 - Web máy tính chỉ nghe ở `127.0.0.1`. Trang trên TV nghe trong mạng nhà và đòi ghép mã.
 - Chỉ cài APK từ nguồn bạn tin.

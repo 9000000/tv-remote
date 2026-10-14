@@ -4,6 +4,20 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.12.0 - 2026-10-14
+
+Web 2.12.0 · app điện thoại 2.11.0 · app TV 2.10.0
+
+**Tiếng Việt**
+- **Không ở nhà mà TV hỏi “Cho phép gỡ lỗi USB?”: TV Setup tự bấm cho phép, an toàn.** App điện thoại và web máy tính, mỗi lần đã có ADB, tự xin TV Setup một “thẻ” (qua một broadcast chỉ lệnh shell của ADB gửi được). Lần sau TV hỏi (TV quên máy, Android 11+ tự thu hồi sau 7 ngày...), chúng nhờ TV Setup đọc hộp hỏi và chỉ bấm khi mã khóa trong đó **trùng mã của chính máy đang xin**; tích “Luôn cho phép”, bấm OK, rồi hiện thông báo trên TV. Hộp hỏi cũ của máy khác đang xếp hàng (TV chỉ hiện một hộp mỗi lúc) được từ chối để tới lượt máy mình; từ chối không cho ai vào. Thử trên emulator: khóa mới, không ai chạm TV, vào được sau khoảng 8 giây.
+- **Dải báo “TV đang hỏi... cho một thiết bị”** trên trang nào đang có ADB (trang của TV, web máy tính, app điện thoại): hiện mã khóa, nút Cho phép (hỏi xác nhận) / Từ chối. Màn hình chờ của app điện thoại hiện mã của chính máy để so.
+- **Tối ưu TV: chọn việc cần làm.** Hộp chọn ở cả ba nơi và trong app TV: tắt hiệu ứng, dùng FLauncher, tắt app đề xuất (chỉ những app TV có, tích sẵn) và **tắt thêm app khác** tùy ý (mọi app có biểu tượng, có ô lọc). App quan trọng không bao giờ có trong danh sách. Hoàn tác bật lại cả app tự chọn thêm.
+
+**English**
+- **Away from home and the TV asks “Allow USB debugging?”: TV Setup presses Allow, safely.** The phone app and the computer web, whenever they have ADB, fetch a “pass” from TV Setup (through a broadcast only ADB's shell can send). The next time the TV asks (it forgot the device, Android 11+ revokes after 7 days...), they have TV Setup read the question and press only when its key code **matches the asking device's own**; it ticks “Always allow”, presses OK and shows a notice on the TV. Older questions from other devices waiting in line (the TV shows one at a time) are declined so ours comes up; declining lets nobody in. Tested on an emulator: new key, nobody touching the TV, connected in about 8 seconds.
+- **A “The TV is asking... for a device” bar** on any page that has ADB (the TV's page, the computer web, the phone app): shows the key code, Allow (with a confirmation) / Decline. The phone app's waiting screen shows its own code to compare.
+- **Optimize TV: choose what to do.** A choice box on all three and in the TV app: animations off, FLauncher, suggested apps (only the ones the TV has, ticked) and **turn off other apps** as you like (every app with an icon, with a filter). Essential apps are never listed. Undo also turns back on the apps you added.
+
 ## 2.11.1 - 2026-10-14
 
 Web 2.11.1 · app điện thoại 2.10.0 · app TV 2.9.1

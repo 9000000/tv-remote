@@ -20,6 +20,39 @@ class AdbError(Exception):
     pass
 
 
+# ---- the TV's "Allow USB debugging?" question (same rules as AdbPrompt.kt: only for the key named, after its fingerprint matches) ----
+FP_RE = re.compile(r"(?:[0-9A-F]{2}:){15}[0-9A-F]{2}")
+
+
+def my_fingerprint():
+    """What the TV's question shows for this computer's adb key: MD5 of the key, AB:CD:..."""
+    import base64, os
+    try:
+        blob = base64.b64decode(Path(os.path.expanduser("~/.android/adbkey.pub")).read_text().split()[0])
+    except Exception:
+        return ""
+    return ":".join("%02X" % b for b in hashlib.md5(blob).digest())
+
+
+def _nodes(xml):
+    out = []
+    for m in re.finditer(r"<node ([^>]*)", xml):
+        a = dict(re.findall(r'([\w-]+)="([^"]*)"', m.group(1)))
+        b = [int(x) for x in re.findall(r"\d+", a.get("bounds", ""))]
+        if len(b) == 4:
+            out.append({"id": a.get("resource-id", ""), "cls": a.get("class", ""), "text": a.get("text", ""), "checked": a.get("checked") == "true",
+                        "focused": a.get("focused") == "true", "x": (b[0] + b[2]) // 2, "y": (b[1] + b[3]) // 2})
+    return out
+
+
+def _part(nodes, which):
+    for n in nodes:
+        if which == "always" and (n["id"].endswith("alwaysUse") or n["cls"].endswith("CheckBox")) \
+                or which == "allow" and n["id"] == "android:id/button1" or which == "cancel" and n["id"] == "android:id/button2":
+            return n
+    return None
+
+
 def safe_path(p):
     p = "/" + "/".join(x for x in (p or DEFAULT_DEST).split("/") if x not in ("", "."))
     if ".." in p.split("/") or not (p in ROOTS or p.startswith(tuple(r + "/" for r in ROOTS))):
@@ -102,6 +135,78 @@ class Adb:
             if rc != 0 and not out:
                 raise AdbError(err.strip() or "adb shell failed")
         return out.decode(errors="replace")
+
+    # ---- the TV's "Allow USB debugging?" question ----
+    async def prompt_read(self):
+        """(fingerprint, nodes) of the question on screen, or None."""
+        if "UsbDebuggingActivity" not in await self.shell("dumpsys window | grep -E 'mCurrentFocus|mFocusedWindow'", timeout=15):
+            return None
+        for _ in range(3):                                            # uiautomator sometimes finds the screen busy
+            xml = await self.shell("uiautomator dump /data/local/tmp/tvr-ui.xml >/dev/null 2>&1; cat /data/local/tmp/tvr-ui.xml; rm -f /data/local/tmp/tvr-ui.xml", timeout=30)
+            nodes = _nodes(xml)
+            fp = next((m.group(0) for n in nodes for m in [FP_RE.search(n["text"])] if m), "")
+            if fp:
+                return fp, nodes
+            await asyncio.sleep(0.6)
+        return None
+
+    async def _press(self, seen, which):
+        """A tap on the part; if the TV ignores taps, the arrow keys to it and OK."""
+        fp, nodes = seen
+        n = _part(nodes, which)
+        if not n:
+            raise AdbError("the question on the TV looks different than expected")
+        await self.shell(f"input tap {n['x']} {n['y']}")
+        await asyncio.sleep(0.5)
+        after = await self.prompt_read()
+        if not after or after[0] != fp or (_part(after[1], which) or {}).get("checked") != n["checked"]:
+            return
+        for _ in range(8):
+            t, f = _part(after[1], which), next((x for x in after[1] if x["focused"]), None)
+            if not t:
+                return
+            if f and f["x"] == t["x"] and f["y"] == t["y"]:
+                await self.shell("input keyevent 23"); return
+            key = 20 if not f or t["y"] > f["y"] + 10 else 19 if t["y"] < f["y"] - 10 else 22 if t["x"] > f["x"] else 21
+            await self.shell(f"input keyevent {key}")
+            after = await self.prompt_read()
+            if not after:
+                return
+
+    async def prompt_allow(self, want, wait=0, others=False):
+        """allowed | none | other:<fp> | failed. Questions about other keys are declined only with others=True (never lets anyone in)."""
+        want, end, skipped = want.upper(), time.time() + wait, 0
+        while True:
+            p = await self.prompt_read()
+            if not p:
+                if time.time() > end:
+                    return "none"
+                await asyncio.sleep(0.8); continue
+            if p[0] != want:
+                if not others or skipped >= 6:
+                    return "other:" + p[0]
+                await self._press(p, "cancel"); skipped += 1; await asyncio.sleep(1.2); continue
+            if not (_part(p[1], "always") or {}).get("checked"):
+                await self._press(p, "always")
+            now = await self.prompt_read()
+            if now and now[0] == want and not (_part(now[1], "always") or {}).get("checked"):
+                return "failed"                                       # never answer without "Always allow"
+            await self._press(now or p, "allow")
+            await asyncio.sleep(0.9)
+            after = await self.prompt_read()
+            return "allowed" if not after or after[0] != want else "failed"
+
+    async def prompt_deny(self, want):
+        p = await self.prompt_read()
+        if not p or p[0] != want.upper():
+            return False
+        await self._press(p, "cancel")
+        return True
+
+    async def setup_pass(self):
+        """A TV Setup pass for this computer (a broadcast only the shell may send), or None without TV Setup."""
+        m = re.search(r'data="([0-9a-f]{48})"', await self.shell("am broadcast -n dev.tvremote.setup/.TrustReceiver 2>&1", timeout=15))
+        return m.group(1) if m else None
 
     # ---- apps ----
     async def apps(self, system=False):

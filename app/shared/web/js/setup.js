@@ -1,11 +1,10 @@
 // optimise, language, quit, and the TV tab (saved TVs, scan, first-time setup)
 // ---------- one-click TV setup (cli/tv_setup.py) ----------
-async function runSetup(mode) {
-  const ask = mode === 'apply' ? 'Chạy tối ưu TV? Màn hình chính của TV sẽ là FLauncher.' : 'Hoàn tác? Bật lại màn hình chính Google, các app đã tắt và hiệu ứng như cũ.';
-  if (!confirm(ask)) return;
+async function runSetup(mode, choice) {
+  if (mode === 'undo' && !confirm('Hoàn tác? Bật lại màn hình chính Google, các app đã tắt và hiệu ứng như cũ.')) return;
   const btns = [$('#setupapply'), $('#setupundo')], log = $('#setuplog');
   btns.forEach((b) => { b.disabled = true; }); log.hidden = false; log.textContent = 'Đang chạy...';
-  let j = await api('/api/setup', { mode, lang: LANG });
+  let j = await api('/api/setup', { mode, lang: LANG, ...(choice || {}) });
   for (let misses = 0; j && j.status === 'running' && misses < 10;) {          // ten failed polls in a row: give up waiting, not the TV
     await sleep(1000); const r = await api('/api/job?id=' + j.id, null, true);
     if (!r) { misses++; continue; }
@@ -16,7 +15,38 @@ async function runSetup(mode) {
   else log.textContent += '\n❌ ' + tr('mất kết nối, không rõ đã xong chưa');
   btns.forEach((b) => { b.disabled = false; });
 }
-$('#setupapply').addEventListener('click', () => runSetup('apply'));
+// "Optimize TV" asks first what to do: what this TV has, suggested apps ticked, any other app the person wants off
+function optRow(name, sub, checked, data) {
+  const box = el('input', { type: 'checkbox', checked }); Object.assign(box.dataset, data);
+  return el('label', { className: 'optrow' }, box, el('span', {}, el('b', { textContent: name }), sub ? el('small', { textContent: sub }) : null));
+}
+async function chooseOptimize() {
+  const body = $('#optbody'); body.replaceChildren(el('p', { className: 'muted', textContent: 'Đang xem TV có gì để tối ưu...' }));
+  $('#optgo').disabled = true; $('#optdlg').showModal();
+  const p = await api('/api/setup/plan');
+  if (!p) { body.replaceChildren(el('p', { textContent: 'Không đọc được TV. Thử lại.' })); return; }
+  const usingFl = p.home === 'me.efesser.flauncher';
+  const parts = [el('h3', { textContent: 'Chung' }),
+    optRow('Tắt hiệu ứng chuyển cảnh', p.anim ? 'Mở app, chuyển màn hình nhanh hơn' : 'Đang tắt sẵn', true, { what: 'anim' }),
+    optRow(usingFl ? 'Màn hình chính FLauncher (đang dùng)' : 'Dùng FLauncher làm màn hình chính', 'Chỉ lưới app, nhẹ, không quảng cáo; màn hình chính Google được tắt' + (p.flauncher ? '' : ' · tải 10 MB'), true, { what: 'home' })];
+  if (p.suggest.length) parts.push(el('h3', { textContent: 'Tắt app đề xuất' }), ...p.suggest.map((a) => optRow(a.label, a.pkg, true, { pkg: a.pkg })));
+  if (p.apps.length) {
+    const list = el('div', { className: 'optbox', style: 'margin:0' }, ...p.apps.map((a) => optRow(a.label, a.pkg, false, { pkg: a.pkg })));
+    const filter = el('input', { className: 'filter', type: 'search', placeholder: 'Lọc theo tên...', oninput: () => {
+      const q = filter.value.trim().toLowerCase(); list.querySelectorAll('.optrow').forEach((r) => { r.hidden = q && !r.textContent.toLowerCase().includes(q); });
+    } });
+    parts.push(el('h3', { textContent: 'Tắt thêm app khác' }), el('p', { className: 'muted', style: 'margin:0;font-size:13px', textContent: 'Tắt là tạm ngưng, không gỡ; app biến khỏi TV cho tới khi Hoàn tác.' }), p.apps.length > 7 ? filter : null, list);
+  }
+  body.replaceChildren(...parts); $('#optgo').disabled = false;
+}
+$('#optgo').addEventListener('click', () => {
+  const boxes = [...$('#optbody').querySelectorAll('input[type=checkbox]')], on = (w) => boxes.some((b) => b.dataset.what === w && b.checked);
+  const choice = { anim: on('anim'), home: on('home'), disable: boxes.filter((b) => b.dataset.pkg && b.checked).map((b) => b.dataset.pkg) };
+  $('#optdlg').close(); runSetup('apply', choice);
+});
+$('#optclose').addEventListener('click', () => $('#optdlg').close());
+$('#optcancel').addEventListener('click', () => $('#optdlg').close());
+$('#setupapply').addEventListener('click', () => chooseOptimize());
 $('#setupundo').addEventListener('click', () => runSetup('undo'));
 
 // ---------- language: Vietnamese is the source, i18n.js renders English ----------

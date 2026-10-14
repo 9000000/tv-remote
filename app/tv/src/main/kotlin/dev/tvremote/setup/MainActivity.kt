@@ -164,7 +164,7 @@ class MainActivity : Activity() {
         tsTile = Tile(R.drawable.ic_globe, "Tailscale", t("Điều khiển TV khi không ở nhà", "Control the TV away from home")) { tailscale() }
         updateTile = Tile(R.drawable.ic_download, t("Cập nhật", "Update"), t("Đang dùng bản ", "You have version ") + version()) { update() }
         tiles = listOf(
-            Tile(R.drawable.ic_zap, t("Tối ưu TV", "Optimize TV"), t("Bớt hiệu ứng và app thừa", "Fewer animations and extra apps")) { job { it.apply() } },
+            Tile(R.drawable.ic_zap, t("Tối ưu TV", "Optimize TV"), t("Bớt hiệu ứng và app thừa", "Fewer animations and extra apps")) { chooseOptimize() },
             tsTile,
             Tile(R.drawable.ic_undo, t("Hoàn tác", "Undo"), t("Trả TV về như trước khi tối ưu", "Put the TV back as it was")) { job { it.undo() } },
             updateTile,
@@ -427,6 +427,43 @@ class MainActivity : Activity() {
     private fun interface Job { @Throws(Exception::class) fun run(setup: Setup) }
 
     /** Runs one piece of work on the ADB connection in the background, tiles greyed out and a spinner meanwhile. */
+    /** "Optimize TV": first what this TV has, then the person ticks what to do (suggested apps ticked, other apps not). */
+    private fun chooseOptimize() {
+        val s = setup ?: return
+        if (busy) return
+        log(t("Đang xem TV có gì để tối ưu...", "Looking at what this TV has..."))
+        Thread {
+            val plan = try {
+                s.plan { pkg -> try { packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString() } catch (e: Exception) { null } }
+            } catch (e: Exception) { ui { log("✗ " + reason(e)) }; return@Thread }
+            ui { showOptimize(plan) }
+        }.start()
+    }
+
+    private fun showOptimize(plan: org.json.JSONObject) {
+        val names = ArrayList<String>()
+        val on = ArrayList<Boolean>()
+        val pkgs = ArrayList<String?>()
+        val home = plan.optString("home") == Setup.FL_PKG
+        names.add(t("Tắt hiệu ứng chuyển cảnh (mở app nhanh hơn)", "Turn off transition animations (apps open faster)")); on.add(true); pkgs.add(null)
+        names.add(if (home) t("Màn hình chính FLauncher (đang dùng)", "FLauncher home screen (in use)") else t("Dùng FLauncher làm màn hình chính (nhẹ, thay màn hình Google)", "Use FLauncher as the home screen (light, replaces Google’s)")); on.add(true); pkgs.add(null)
+        val sug = plan.optJSONArray("suggest") ?: org.json.JSONArray()
+        for (i in 0 until sug.length()) { val a = sug.getJSONObject(i); names.add(t("Tắt app: ", "Turn off: ") + a.optString("label") + t("  · đề xuất", "  · suggested")); on.add(true); pkgs.add(a.optString("pkg")) }
+        val more = plan.optJSONArray("apps") ?: org.json.JSONArray()
+        for (i in 0 until more.length()) { val a = more.getJSONObject(i); names.add(t("Tắt app: ", "Turn off: ") + a.optString("label")); on.add(false); pkgs.add(a.optString("pkg")) }
+        val checked = on.toBooleanArray()
+        android.app.AlertDialog.Builder(this)
+            .setTitle(t("Tối ưu TV: chọn việc cần làm", "Optimize TV: choose what to do"))
+            .setMultiChoiceItems(names.toTypedArray(), checked) { _, i, v -> checked[i] = v }
+            .setPositiveButton(t("Chạy tối ưu", "Optimize")) { _, _ ->
+                val off = pkgs.indices.filter { pkgs[it] != null && checked[it] }.map { pkgs[it]!! }
+                job { it.apply(Setup.Choice(checked[0], checked[1], off)) }
+            }
+            .setNegativeButton(t("Hủy", "Cancel"), null)
+            .show()
+        log(t("Tắt app là tạm ngưng, không gỡ; Hoàn tác bật lại tất cả.", "Turning an app off only pauses it, nothing is uninstalled; Undo turns everything back on."))
+    }
+
     private fun job(job: Job) {
         val s = setup
         if (s == null || busy) return

@@ -48,6 +48,11 @@ Menu names below are Sony's; other brands differ slightly.
 
 The first time each device connects, the TV asks "Allow USB debugging?": tick **Always allow**, then OK. Someone has to be at the TV for this. Meanwhile all three show a full-screen "Look at the TV" that closes by itself once the TV allows it.
 
+**When you are away and the TV asks again** (it forgot this device, Android 11+ revokes after 7 days unused...):
+- **Automatic:** the phone app and the computer web, whenever they have ADB, fetch a "pass" from TV Setup. The next time the TV asks, they have TV Setup press Allow, nobody needed at the TV. TV Setup presses only when **the key code in the question matches the asking device's own**, and shows a notice on the TV each time.
+- **By hand:** any page that has ADB (the TV's page once paired, the computer web, the phone app) shows a "The TV is asking... for a device" bar with the code and **Allow / Decline**. Allow only when the code matches the one the TV Remote app shows while it waits.
+- A device that never connected and never paired with TV Setup still needs someone at the TV. That is on purpose, so strangers cannot get in.
+
 ADB cannot be turned on (an operator box hides Settings, asks for a password...)? The web on the computer has **🧭 Turn ADB on for me**, and the phone app a similar assistant: using only the remote buttons, it installs TV Setup on the TV, or opens the TV's Settings in every way it knows.
 
 <details>
@@ -151,11 +156,14 @@ The person at the TV: turn on ADB debugging, install TV Setup (or let the helper
 
 ## Optimize TV (optional)
 
-The **⚡ Optimize TV** button on the Setup tab of all three (and in the TV Setup app on the TV itself); **Undo** puts everything back. Safe to run again.
+The **⚡ Optimize TV** button on the Setup tab of all three (and in the TV Setup app on the TV itself) opens a box to **choose what to do**; **Undo** puts everything back. Safe to run again.
 
-- Turns off transition animations.
-- Installs FLauncher and turns off Google's "Android TV Home" screen, which uses a lot of CPU. TVs with the newer Google TV interface, operator boxes (FPT, for one) and TVs that run 64-bit apps only keep their home screen.
-- Disables unused system apps (the list is written for Sony BRAVIA; missing packages are skipped).
+- **Turn off transition animations** (ticked).
+- **Use FLauncher as the home screen** (ticked): installs FLauncher and turns off Google's "Android TV Home" screen, which uses a lot of CPU. TVs with the newer Google TV interface, operator boxes (FPT, for one) and TVs that run 64-bit apps only keep their home screen.
+- **Suggested apps to turn off** (ticked): unused system apps, a list written for Sony BRAVIA plus a few Google apps; only the ones this TV has are shown.
+- **Turn off other apps** (not ticked): every app with an icon on the TV, with a filter. Essential apps (Settings, the system UI, the keyboard, Google Play Services, TV Setup, Tailscale...) are never listed.
+
+Turning off only pauses an app, nothing is uninstalled. **Undo** also turns back on the apps you added yourself (the TV keeps the list in `/data/local/tmp/tvr-disabled.txt`).
 
 If the TV later shows no home screen: Settings → Apps → System apps → **Android TV Home** → Enable.
 
@@ -164,7 +172,7 @@ If the TV later shows no home screen: Settings → Apps → System apps → **An
 | Symptom | What to do |
 |---|---|
 | Cannot connect | Same network as the TV? ADB debugging on? Right IP? Look at the TV for a permission dialog |
-| **ADB: waiting for the TV** | Choose "Always allow" on the TV. Closed the question by mistake (Back, Home, Cancel)? The apps ask again a few times; on the web press "Retry connection" |
+| **ADB: waiting for the TV** | Choose "Always allow" on the TV. Closed the question by mistake (Back, Home, Cancel)? The apps ask again a few times; on the web press "Retry connection". Away from home: see "When you are away and the TV asks again" above |
 | **ADB: port closed** | The TV is off, or just restarted: turn "ADB debugging" off and on |
 | Buttons do nothing (web on the computer) | The remote is not paired (the **Setup** tab), or two windows are open for the same TV |
 | The TV's page asks for the 6-digit code again | "Unpair all" was pressed on the TV, or the browser cleared the page's data: enter a new code |
@@ -176,6 +184,7 @@ If the TV later shows no home screen: Settings → Apps → System apps → **An
 ## Security
 
 - ADB over the network has no password: any device the TV has "Always allowed" has full control of it. Use it only on networks you trust and over Tailscale. To revoke: Developer options → Revoke USB debugging authorizations.
+- **Who may have TV Setup press Allow:** only a device paired with the 6-digit code (shown on the TV's screen, so someone was there) or one that already has ADB. The pass for a device with ADB is handed out through a broadcast only ADB's shell can send, so no other app on the TV can get one. Each Allow checks the key code and shows a notice on the TV. **Unpair all** on the TV voids every pass.
 - `cert.pem` / `key.pem` (web on the computer) are the pairing key. **Whoever has `key.pem` can control the TV.** They are never committed to git.
 - The web on the computer listens on `127.0.0.1` only. The page on the TV listens on the home network and requires the pairing code.
 - Install APKs only from sources you trust.

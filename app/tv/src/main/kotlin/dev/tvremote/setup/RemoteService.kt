@@ -73,6 +73,20 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
 
         fun pairedCount(c: Context): Int = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getStringSet("tokens", HashSet())?.size ?: 0
 
+        /** A new pass for a device, kept with the others (pairing hands them out, and TrustReceiver to ADB). */
+        fun newToken(c: Context): String {
+            val raw = ByteArray(24)
+            java.security.SecureRandom().nextBytes(raw)
+            val token = raw.joinToString("") { String.format("%02x", it) }
+            val p = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            synchronized(RemoteService::class.java) {
+                val tokens = HashSet(p.getStringSet("tokens", HashSet()) ?: emptySet())
+                tokens.add(token)
+                p.edit().putStringSet("tokens", tokens).commit()
+            }
+            return token
+        }
+
         fun forgetAll(c: Context) { c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove("tokens").apply() }
 
         private const val REST_MS = 3 * 60 * 1000L
@@ -117,6 +131,9 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 try { packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString() } catch (e: Exception) { null }
             override fun icons(): Boolean = true
         }, getExternalFilesDir(null))
+        manage?.allowed = { fp ->                                      // whoever is at the TV sees that a device was let in
+            ui.post { android.widget.Toast.makeText(this, (if (java.util.Locale.getDefault().language == "vi") "Đã cho phép gỡ lỗi USB cho một thiết bị đã ghép\n" else "USB debugging allowed for a paired device\n") + fp, android.widget.Toast.LENGTH_LONG).show() }
+        }
         try { server.start(PORT, false) } catch (e: Exception) { adbState = "error" }
         lastUse = System.currentTimeMillis()
         connect()
@@ -403,12 +420,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             return HttpServer.Response.error(400, if (code == null) "expired" else "wrong")
         }
         code = null
-        val raw = ByteArray(24)
-        random.nextBytes(raw)
-        val token = raw.joinToString("") { String.format("%02x", it) }
-        val tokens = HashSet(tokens())
-        tokens.add(token)
-        prefs.edit().putStringSet("tokens", tokens).apply()
+        val token = newToken(this)
         val ok = ok()
         ok.headers["Set-Cookie"] = "$COOKIE=$token; Max-Age=315360000; Path=/; HttpOnly; SameSite=Strict"
         return ok

@@ -289,6 +289,33 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
      * The TV is asking "Allow USB debugging?" and nothing goes on until somebody answers it there. A line in the status bar is
      * easy to miss, so this takes the whole screen; it goes away by itself once the TV has answered.
      */
+    /**
+     * Away from the TV: TV Setup on it answers the question for this phone's own key, with the pass it gave us while ADB
+     * worked (see AdbPrompt). Shown in [helper]; the person can still answer on the TV themselves.
+     */
+    private fun askSetup(fp: String, helper: TextView) {
+        val ip = host ?: return
+        val key = entry ?: ip
+        val token = pref("tvs:$key")
+        if (fp.isEmpty() || token.isEmpty()) return
+        helper.visibility = View.VISIBLE
+        helper.text = t("TV Setup trên TV đang tự cho phép máy này...", "TV Setup on the TV is allowing this phone...")
+        Thread {
+            val r = dev.tvremote.core.AdbPrompt.ask(ip, token, fp, 30)
+            if (r == "forgotten") prefs.edit().remove("tvs:$key").apply()   // "Unpair all" was pressed on the TV
+            ui.post {
+                if (allowBox == null) return@post
+                helper.text = when {
+                    r == "allowed" -> t("✓ TV Setup đã cho phép. Đang kết nối...", "✓ TV Setup allowed it. Connecting...")
+                    r == "forgotten" -> t("TV Setup đã hủy ghép máy này: hãy bấm trên TV.", "TV Setup has unpaired this phone: answer on the TV.")
+                    r == "unreachable" -> t("Không gọi được TV Setup (remote qua web đang tắt?): hãy bấm trên TV.", "Could not reach TV Setup (web remote off?): answer on the TV.")
+                    r.startsWith("other:") -> t("TV đang hỏi cho một máy khác. Hãy bấm trên TV.", "The TV is asking about another device. Answer on the TV.")
+                    else -> t("TV Setup không cho phép được: hãy bấm trên TV.", "TV Setup could not allow it: answer on the TV.")
+                }
+            }
+        }.start()
+    }
+
     private fun allowAlert(on: Boolean) {
         if (!on) { allowBox?.dismiss(); allowBox = null; return }
         if (allowBox != null || isFinishing) return
@@ -302,7 +329,12 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         line(t("Nhìn lên TV", "Look at the TV"), 30f, TEXT, true, 8)
         line(t("TV đang hỏi “Cho phép gỡ lỗi USB?”", "The TV is asking “Allow USB debugging?”"), 18f, MUTED, false, 10)
         line(t("1. Tích “Luôn cho phép”\n2. Chọn OK (Cho phép)", "1. Tick “Always allow”\n2. Choose OK (Allow)"), 20f, TEXT, true, 26)
+        val fp = try { dev.tvremote.core.Adb(filesDir).fingerprint() } catch (e: Exception) { "" }
+        if (fp.isNotEmpty()) line(t("Mã trên TV phải trùng mã của máy này:\n", "The code on the TV must match this phone’s:\n") + fp, 13f, MUTED, false, 18)
+        val helper = TextView(this).apply { textSize = 15f; setTextColor(ACCENT); gravity = Gravity.CENTER; visibility = View.GONE }
+        col.addView(helper, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
         line(t("Màn hình này tự đóng khi TV đã cho phép.", "This screen closes by itself once the TV has allowed it."), 15f, MUTED, false, 26)
+        askSetup(fp, helper)
         col.addView(button(t("Để sau", "Later"), CARD).apply { setOnClickListener { d.dismiss() } }, LinearLayout.LayoutParams(-1, dp(54)).apply { topMargin = dp(30) })
         d.setContentView(col)
         allowBox = d
@@ -964,6 +996,10 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         ui.post { frame.setAspect(w, h) }
     }
 
+    override fun wantsPass(): Boolean = (entry ?: host)?.let { pref("tvs:$it").isEmpty() } ?: false
+
+    override fun onPass(token: String) { (entry ?: host)?.let { prefs.edit().putString("tvs:$it", token).apply() } }
+
     override fun onNetwork(mac: String, lan: String, tailscale: String) {
         val ip = entry ?: host ?: return
         val e = prefs.edit().putString("mac:$ip", mac).putString("lan:$ip", lan)
@@ -1214,7 +1250,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                     .setPositiveButton(t("Xóa", "Remove")) { _, _ ->
                         val ips = savedIps()
                         ips.remove(ip)
-                        prefs.edit().putString("ips", TextUtils.join(",", ips)).remove("name:$ip").remove("mac:$ip").remove("lan:$ip").remove("ts:$ip").remove("atv:$ip").apply()
+                        prefs.edit().putString("ips", TextUtils.join(",", ips)).remove("name:$ip").remove("mac:$ip").remove("lan:$ip").remove("ts:$ip").remove("tvs:$ip").remove("atv:$ip").apply()
                         refreshSaved()
                     }.setNegativeButton(android.R.string.cancel, null).show()
             }

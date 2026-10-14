@@ -25,6 +25,10 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         fun icons(): Boolean
     }
 
+    /** Told when a device was let in through the TV's question (TV Setup shows it on the TV). */
+    var allowed: ((String) -> Unit)? = null
+    private val promptLock = Any()
+
     private val jobs: MutableMap<String, JSONObject> = Collections.synchronizedMap(LinkedHashMap<String, JSONObject>())
     private var nextJob = 1
 
@@ -42,6 +46,11 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "health" -> return HttpServer.Response.json(health())
                 "stats" -> return HttpServer.Response.json(stats(r.q("days").toIntOrNull() ?: 7))
                 "tailscale" -> { val t = Tailscale(link.get(), dir); return HttpServer.Response.json(JSONObject().put("installed", t.installed()).put("ip", t.ip())) }
+                "setup/plan" -> return HttpServer.Response.json(Setup(link.get(), dir, true) { }.plan { labels?.label(it) })
+                "adb/prompt" -> {                                     // the TV's "Allow USB debugging?" question, if it is up
+                    val p = if (link.state() == "ready") AdbPrompt.read(link.get()) else null
+                    return HttpServer.Response.json(JSONObject().put("fingerprint", p?.fingerprint ?: ""))
+                }
                 "job" -> {
                     val j = jobs[r.q("id")]
                     return if (j == null) HttpServer.Response.error(404, "no such job") else HttpServer.Response.json(JSONObject(j.toString()))
@@ -63,9 +72,18 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "file/delete", "file/rename", "file/mkdir", "file/open" -> fileOp(what.substring(5), r.json())
                 "file/install" -> HttpServer.Response.json(installPath(safePath(r.json().optString("path"))))
                 "free" -> HttpServer.Response.json(free())
-                "setup" -> { val d = r.json(); HttpServer.Response.json(setup(d.optString("mode") == "undo", d.optString("lang") != "en")) }
+                "setup" -> { val d = r.json(); HttpServer.Response.json(setup(d.optString("mode") == "undo", d.optString("lang") != "en", choice(d))) }
                 "fetch" -> HttpServer.Response.json(fetch(r.json().optString("url"), false))
                 "install" -> HttpServer.Response.json(fetch(r.json().optString("url"), true))
+                "adb/allow" -> {                                      // only for the key named: see AdbPrompt
+                    val d = r.json()
+                    val fp = d.optString("fingerprint").uppercase()
+                    if (!fp.matches(Regex("(?:[0-9A-F]{2}:){15}[0-9A-F]{2}"))) throw IllegalArgumentException("bad fingerprint")
+                    val result = synchronized(promptLock) { AdbPrompt.allow(link.get(), fp, d.optLong("wait", 0).coerceIn(0, 40) * 1000, d.optBoolean("others")) }
+                    if (result == "allowed") allowed?.invoke(fp)
+                    HttpServer.Response.json(JSONObject().put("result", result))
+                }
+                "adb/deny" -> HttpServer.Response.json(JSONObject().put("ok", synchronized(promptLock) { AdbPrompt.deny(link.get(), r.json().optString("fingerprint")) }))
                 "tailscale/start" -> HttpServer.Response.json(job("tailscale") { j ->
                     val t = Tailscale(link.get(), dir)
                     val url = t.start { what, pct -> j.put("msg", what).put("pct", pct) }
@@ -347,11 +365,17 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     }
 
     /** "Optimize TV" or its undo; the job's message grows a line per step. */
-    private fun setup(undo: Boolean, vi: Boolean): JSONObject =
+    /** The person's choices from the Optimize dialog; a page that sends none gets everything, as before. */
+    private fun choice(d: JSONObject): Setup.Choice {
+        val list = d.optJSONArray("disable") ?: return Setup.Choice(d.optBoolean("anim", true), d.optBoolean("home", true), null)
+        return Setup.Choice(d.optBoolean("anim", true), d.optBoolean("home", true), (0 until list.length()).map { list.optString(it) })
+    }
+
+    private fun setup(undo: Boolean, vi: Boolean, c: Setup.Choice): JSONObject =
         job(if (undo) "undo" else "optimize") { j ->
             val lines = StringBuilder()
             val s = Setup(link.get(), dir, vi) { line -> lines.append(line).append('\n'); try { j.put("log", lines.toString().trim()) } catch (ignored: Exception) { } }
-            if (undo) s.undo() else s.apply()
+            if (undo) s.undo() else s.apply(c)
             "ok"
         }
 

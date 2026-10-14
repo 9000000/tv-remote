@@ -137,6 +137,12 @@
   .banner.warn { background:var(--warn-bg); border-color:transparent; } .banner.bad { background:var(--bad-bg); border-color:transparent; }
   .banner > b { font-size:15px; } .banner p { margin:0; font-size:13px; }
   .banner .actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .askother { margin-bottom:12px; }
+  .optbox { display:flex; flex-direction:column; gap:8px; margin-top:12px; } .optbox h3 { margin:10px 0 2px; font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .optrow { display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; cursor:pointer; background:var(--card); }
+  .optrow:has(input:checked) { border-color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, var(--card)); }
+  .optrow input { width:20px; height:20px; flex:none; accent-color:var(--accent); } .optrow b { display:block; font-size:14px; } .optrow small { display:block; color:var(--muted); font-size:12px; overflow-wrap:anywhere; }
+  .optbox .filter { width:100%; } .askother code { font-size:13px; word-break:break-all; }
 
   /* app icons */
   .appicon { width:44px; height:44px; border-radius:11px; background:var(--btn); flex:none; display:flex; align-items:center; justify-content:center; overflow:hidden; font-weight:700; color:var(--muted); font-size:18px; }

@@ -324,6 +324,12 @@ class Adb(dir: File) : Closeable {
         return Msg(cmd, arg0, arg1, data)
     }
 
+    /** What the TV's "Allow USB debugging?" question shows for this key: MD5 of the key, as AB:CD:... */
+    fun fingerprint(): String {
+        val blob = Base64.decode(publicKey().substringBefore(' '), Base64.NO_WRAP)
+        return java.security.MessageDigest.getInstance("MD5").digest(blob).joinToString(":") { String.format("%02X", it) }
+    }
+
     /** The public key in adb's own format: little-endian words of n, R^2 mod n and -1/n mod 2^32, base64 encoded. */
     private fun publicKey(): String {
         val k = key.public as RSAPublicKey

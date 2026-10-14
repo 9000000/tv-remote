@@ -24,6 +24,14 @@
     </div>
   </header>
 
+  <!-- The TV is asking "Allow USB debugging?" for some other device: answered from here, for that key only -->
+  <div class="banner warn askother" id="askother" hidden>
+    <b>TV đang hỏi “Cho phép gỡ lỗi USB?” cho một thiết bị</b>
+    <p>Mã của thiết bị: <code id="askfp"></code></p>
+    <p class="muted">Chỉ cho phép khi chắc đó là máy của bạn: app TV Remote hiện mã của nó trong lúc chờ. Cho phép là thiết bị đó điều khiển được toàn bộ TV.</p>
+    <div class="actions"><button class="small primary" id="askyes">✓ Cho phép</button><button class="small" id="askno">Từ chối</button></div>
+  </div>
+
   <!-- ============ Choosing a TV: all there is to see until one is chosen ============ -->
   <!-- ============ The page served by the TV itself asks once for a code shown on the TV ============ -->
   <section class="card pair" id="pair" hidden>
@@ -225,12 +233,7 @@
     </section>
     <section class="card" data-adb-gated>
       <h2>⚡ Tối ưu TV</h2>
-      <p class="muted" style="margin:0 0 10px">Một lần bấm, chạy lại bao nhiêu lần cũng được, không gỡ cài đặt gì:</p>
-      <ul class="muted" style="margin:0 0 12px;padding-left:18px">
-        <li>Tắt hiệu ứng chuyển cảnh cho TV nhanh hơn</li>
-        <li>Thay màn hình chính Google bằng FLauncher (chỉ lưới app, nhẹ CPU)</li>
-        <li>Tắt app hệ thống không dùng (chế độ khách sạn/trưng bày của Sony, Samba, Sony Select, Play Games, Play Movies, YouTube Music)</li>
-      </ul>
+      <p class="muted" style="margin:0 0 12px">Bấm “Tối ưu TV” để chọn việc cần làm: tắt hiệu ứng chuyển cảnh, dùng FLauncher làm màn hình chính, tắt app không dùng (có sẵn đề xuất, chọn thêm app khác tùy ý). Không gỡ app nào; Hoàn tác bật lại tất cả.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="primary" id="setupapply" style="padding:0 18px">⚡ Tối ưu TV</button>
         <button id="setupundo" style="padding:0 18px">↩ Hoàn tác</button>
@@ -287,6 +290,11 @@
   <ol><li>Tích “Luôn cho phép từ máy tính này”</li><li>Chọn OK (Cho phép)</li></ol>
   <p class="muted">Màn hình này tự đóng khi TV đã cho phép.</p><button id="allowlater">Để sau</button></div></dialog>
 <dialog id="ts"><div class="card assistbox"><div class="card-head"><h2>🌐 Tailscale cho TV</h2><button class="small" id="tsclose">✕ Đóng</button></div><div class="tsbox" id="tsbody" style="display:flex;flex-direction:column;gap:12px;margin-top:12px"></div></div></dialog>
+<dialog id="optdlg"><div class="card assistbox">
+  <div class="card-head"><h2>⚡ Tối ưu TV</h2><button class="small" id="optclose">✕ Đóng</button></div>
+  <div id="optbody" class="optbox"></div>
+  <div class="actions" style="display:flex;gap:8px;margin-top:14px"><button class="primary" id="optgo" style="padding:0 18px">⚡ Chạy tối ưu</button><button id="optcancel">Hủy</button></div>
+</div></dialog>
 <dialog id="preview"><img alt="Xem trước"></dialog>
 <div id="toast" role="status"></div>
 

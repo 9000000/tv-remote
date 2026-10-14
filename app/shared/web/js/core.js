@@ -102,7 +102,7 @@ async function refresh() {
     $('#volv').textContent = s.volume.level;
     $('#mute').classList.toggle('on', !!s.volume.muted); $('#mute').title = s.volume.muted ? 'Đang tắt tiếng, bấm để bật' : 'Tắt tiếng';
   }
-  applyAdb(); allowAlert();
+  applyAdb(); allowAlert(); checkAsk();
   if ($('#assist').open && (ADB.state === 'ready' || ADB.state === 'unauthorized')) {   // the TV has opened its ADB port: nothing left to help with
     $('#assist').close(); toast(ADB.state === 'ready' ? 'ADB đã kết nối' : 'ADB đã bật: nhìn lên TV, chọn “Luôn cho phép”');
   }
@@ -153,6 +153,27 @@ function applyAdb() {
   if (ready) { if (!quickLoaded) loadQuick(); if (currentTab === 'apps' && !appsLoaded) loadApps(); if (currentTab === 'files' && !filesLoaded) loadFiles(cwd); }
 }
 
+
+// ---------- the TV asks "Allow USB debugging?" for another device: answer it from here (for its key only) ----------
+let askSeen = '', askAt = 0;
+async function checkAsk() {
+  if (ADB.state !== 'ready' || document.hidden || Date.now() - askAt < 7000) return;
+  askAt = Date.now();
+  const r = await fetch('/api/adb/prompt').then((x) => x.ok ? x.json() : null).catch(() => null);
+  const fp = (r && r.fingerprint) || '';
+  $('#askother').hidden = !fp || picking; if (fp !== askSeen) { askSeen = fp; $('#askfp').textContent = fp; }
+}
+async function answerAsk(yes) {
+  const fp = askSeen; if (!fp) return;
+  if (yes && !confirm(tr('Cho phép thiết bị có mã này điều khiển toàn bộ TV qua ADB?') + '\n\n' + fp)) return;
+  $('#askyes').disabled = $('#askno').disabled = true;
+  const r = await api(yes ? '/api/adb/allow' : '/api/adb/deny', { fingerprint: fp });
+  $('#askyes').disabled = $('#askno').disabled = false;
+  if (r) toast(yes ? (r.result === 'allowed' ? 'Đã cho phép thiết bị đó' : 'Không cho phép được: hộp hỏi trên TV đã đổi') : 'Đã từ chối');
+  askAt = 0; checkAsk();
+}
+$('#askyes').addEventListener('click', () => answerAsk(true));
+$('#askno').addEventListener('click', () => answerAsk(false));
 
 // ---------- "Look at the TV": full screen while the TV is asking whether to allow debugging ----------
 let allowLater = false;                                               // "Later" was pressed: not again for this round of asking

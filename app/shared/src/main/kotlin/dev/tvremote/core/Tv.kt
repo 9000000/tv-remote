@@ -38,6 +38,8 @@ class Tv(
         fun onStatus(key: String, detail: String)                     // connecting | allow | starting | live | closed | error
         fun onVideoSize(w: Int, h: Int)
         fun onNetwork(mac: String, lan: String, tailscale: String)    // the TV's home-network address (for Wake-on-LAN), and its 100.x one if any
+        fun wantsPass(): Boolean = false                              // no TV Setup pass for this TV yet: fetch one while ADB works
+        fun onPass(token: String) {}                                  // lets TV Setup answer "Allow USB debugging?" for us later, see AdbPrompt
     }
 
     companion object {
@@ -86,6 +88,7 @@ class Tv(
             listener.onStatus("starting", a.shell("getprop ro.product.model").trim())
             if (wake) a.shell("input keyevent KEYCODE_WAKEUP")
             reportNetwork(a)
+            if (listener.wantsPass()) try { AdbPrompt.token(a)?.let { listener.onPass(it) } } catch (ignored: IOException) { }
             pushServer(a)
             val scid = String.format("%08x", Random().nextInt(0x7fffffff))
             val log = a.open("shell:CLASSPATH=" + REMOTE + " app_process / com.genymobile.scrcpy.Server " + VER + " scid=" + scid

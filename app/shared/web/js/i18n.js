@@ -128,6 +128,20 @@
     'Chưa kết nối được nút remote tới TV (cổng 6466): TV đang bật và cùng mạng với máy này chứ?': 'The remote buttons cannot reach the TV (port 6466): is it on and on the same network as this computer?',
     'Tên gói hoặc đường dẫn': 'Package name or link', 'Đã gửi cho TV (không qua ADB: vài TV bỏ qua lệnh này)': 'Sent to the TV (not through ADB: some TVs ignore this)',
     'chế độ nét nhất làm TV chậm hơn rõ rệt': 'sharpest mode slows the TV noticeably', 'nét nhất': 'sharpest',
+    // answering the TV's question for another device
+    'TV đang hỏi “Cho phép gỡ lỗi USB?” cho một thiết bị': 'The TV is asking “Allow USB debugging?” for a device', 'Mã của thiết bị:': 'The device’s code:',
+    'Chỉ cho phép khi chắc đó là máy của bạn: app TV Remote hiện mã của nó trong lúc chờ. Cho phép là thiết bị đó điều khiển được toàn bộ TV.': 'Allow only if you are sure it is yours: the TV Remote app shows its code while it waits. Allowing gives that device full control of the TV.',
+    '✓ Cho phép': '✓ Allow', 'Từ chối': 'Decline', 'Cho phép thiết bị có mã này điều khiển toàn bộ TV qua ADB?': 'Let the device with this code control the whole TV over ADB?',
+    'Đã cho phép thiết bị đó': 'That device is allowed', 'Không cho phép được: hộp hỏi trên TV đã đổi': 'Could not allow it: the question on the TV has changed', 'Đã từ chối': 'Declined',
+    // choosing what Optimize TV does
+    'Bấm “Tối ưu TV” để chọn việc cần làm: tắt hiệu ứng chuyển cảnh, dùng FLauncher làm màn hình chính, tắt app không dùng (có sẵn đề xuất, chọn thêm app khác tùy ý). Không gỡ app nào; Hoàn tác bật lại tất cả.': 'Press “Optimize TV” to choose what to do: turn off transition animations, use FLauncher as the home screen, turn off unused apps (suggestions ticked, add any other app you like). Nothing is uninstalled; Undo turns everything back on.',
+    'Chạy tối ưu': 'Optimize', '⚡ Chạy tối ưu': '⚡ Optimize', 'Hủy': 'Cancel', 'Đang xem TV có gì để tối ưu...': 'Looking at what this TV has...', 'Không đọc được TV. Thử lại.': 'Could not read the TV. Try again.',
+    'Chung': 'General', 'Tắt hiệu ứng chuyển cảnh': 'Turn off transition animations', 'Mở app, chuyển màn hình nhanh hơn': 'Apps open and screens change faster', 'Đang tắt sẵn': 'Already off',
+    'Màn hình chính FLauncher (đang dùng)': 'FLauncher home screen (in use)', 'Dùng FLauncher làm màn hình chính': 'Use FLauncher as the home screen',
+    'Chỉ lưới app, nhẹ, không quảng cáo; màn hình chính Google được tắt': 'Just a grid of apps, light, no ads; Google’s home screen is turned off',
+    'Chỉ lưới app, nhẹ, không quảng cáo; màn hình chính Google được tắt · tải 10 MB': 'Just a grid of apps, light, no ads; Google’s home screen is turned off · 10 MB download',
+    'Tắt app đề xuất': 'Suggested apps to turn off', 'Tắt thêm app khác': 'Turn off other apps', 'Lọc theo tên...': 'Filter by name...',
+    'Tắt là tạm ngưng, không gỡ; app biến khỏi TV cho tới khi Hoàn tác.': 'Turning off only pauses an app, nothing is uninstalled; it disappears from the TV until Undo.',
     // Tailscale in one button
     'Không mở được kết nối bảo mật. Ngày giờ trên TV có đúng không? (Cài đặt → Hệ thống → Ngày và giờ)': 'Could not open a secure connection. Is the TV\'s date and time right? (Settings → System → Date & time)',
     'TV (hoặc máy này) chưa vào được Internet.': 'The TV (or this device) cannot reach the Internet.', 'Mạng chậm hoặc vừa mất kết nối. Thử lại sau ít phút.': 'The network is slow or dropped. Try again in a few minutes.',

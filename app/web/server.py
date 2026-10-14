@@ -11,7 +11,7 @@ from androidtvremote2.remotemessage_pb2 import RemoteKeyCode
 import shlex
 import tempfile
 import tvconfig
-from adbtools import Adb, AdbError, PKG_RE
+from adbtools import Adb, AdbError, PKG_RE, FP_RE, my_fingerprint
 from appmeta import AppMeta
 from tvtools import ADB, APP, CERT, FFMPEG, KEY, ROOT, SCRIPTS, find
 
@@ -547,7 +547,10 @@ def build(S):
     @routes.get("/api/state")
     async def state(_):
         entry = tvconfig.find(S.cfg, tv.host) or {}
-        return web.json_response({**tv.state(), "adb": await adb.status(), "name": entry.get("name", ""), "saved": bool(entry)})
+        st = await adb.status()
+        if st["state"] in ("ready", "unauthorized"):
+            asyncio.create_task(keep_trusted(st["state"]))
+        return web.json_response({**tv.state(), "adb": st, "name": entry.get("name", ""), "saved": bool(entry)})
 
     @routes.post("/api/adb/connect")
     async def adb_connect(request):
@@ -681,6 +684,61 @@ def build(S):
             except Exception as e:
                 return web.json_response({"error": f"{e.__class__.__name__}: {e}"}, status=500)
         return wrapped
+
+    # ---- the TV's "Allow USB debugging?" question: answered for one named key only (see AdbPrompt.kt) ----
+    @routes.get("/api/adb/prompt")
+    @adb_errors
+    async def adb_prompt(_):
+        p = await adb.prompt_read() if (await adb.status())["state"] == "ready" else None
+        return web.json_response({"fingerprint": p[0] if p else ""})
+
+    @routes.post("/api/adb/allow")
+    @adb_errors
+    async def adb_allow(request):
+        d = await body(request)
+        fp = str(d.get("fingerprint", "")).upper()
+        if not FP_RE.fullmatch(fp):
+            return web.json_response({"error": "bad fingerprint"}, status=400)
+        async with prompt_lock:
+            return web.json_response({"result": await adb.prompt_allow(fp, min(max(int(d.get("wait", 0) or 0), 0), 40), bool(d.get("others")))})
+
+    @routes.post("/api/adb/deny")
+    @adb_errors
+    async def adb_deny(request):
+        async with prompt_lock:
+            return web.json_response({"ok": await adb.prompt_deny(str((await body(request)).get("fingerprint", "")))})
+
+    prompt_lock = asyncio.Lock()
+    trust = {"asked": 0, "fetched": set()}
+
+    async def keep_trusted(st):
+        """While ADB works, fetch a TV Setup pass for this TV once; when the TV asks about this computer, have TV Setup answer."""
+        entry = tvconfig.find(S.cfg, tv.host)
+        if not entry:
+            return
+        host = tv.host
+        try:
+            if st == "ready" and not entry.get("setup_pass") and host not in trust["fetched"]:
+                trust["fetched"].add(host)
+                token = await adb.setup_pass()
+                if token:
+                    entry["setup_pass"] = token; tvconfig.save(S.cfg)
+            elif st == "unauthorized" and entry.get("setup_pass") and time.time() - trust["asked"] > 45:
+                trust["asked"] = time.time()
+                fp = my_fingerprint()
+                if not fp:
+                    return
+                import aiohttp
+                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=70)) as s:
+                    async with s.post(f"http://{host}:8765/api/adb/allow", json={"fingerprint": fp, "wait": 30, "others": True},
+                                      headers={"Cookie": "tvr=" + entry["setup_pass"]}) as r:
+                        if r.status in (401, 403):
+                            entry.pop("setup_pass", None); tvconfig.save(S.cfg)   # "Unpair all" was pressed on the TV
+                        elif r.status == 200 and (await r.json()).get("result") == "allowed":
+                            print(f"TV Setup allowed this computer on {host}", flush=True)
+                            await adb.ensure()
+        except Exception:
+            pass
 
     @routes.get("/api/apps")
     @adb_errors
@@ -822,7 +880,9 @@ def build(S):
             raise web.HTTPBadRequest(text="bad mode")
 
         async def go(j):                                              # same script as the command line: deploy/tv_setup.py
-            p = await asyncio.create_subprocess_exec(sys.executable, str(SCRIPTS / "tv_setup.py"), mode, adb.target, *(["--vi"] if d.get("lang") != "en" else []),
+            choice = [] if mode == "undo" else [*([] if d.get("anim", True) else ["--keep-anim"]), *([] if d.get("home", True) else ["--keep-home"]),
+                      *(["--disable=" + ",".join(x for x in d["disable"] if PKG_RE.match(str(x)))] if isinstance(d.get("disable"), list) else [])]
+            p = await asyncio.create_subprocess_exec(sys.executable, str(SCRIPTS / "tv_setup.py"), mode, adb.target, *(["--vi"] if d.get("lang") != "en" else []), *choice,
                                                      stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
             async for line in p.stdout:
                 text = line.decode(errors="replace")
@@ -834,6 +894,21 @@ def build(S):
         j = adb.job(go, f"setup {mode}")
         j["log"] = ""
         return web.json_response(j)
+
+    @routes.get("/api/setup/plan")
+    @adb_errors
+    async def setup_plan(_):
+        p = await asyncio.create_subprocess_exec(sys.executable, str(SCRIPTS / "tv_setup.py"), "plan", adb.target, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
+        out, _ = await asyncio.wait_for(p.communicate(), 90)
+        try:
+            plan = json.loads(out.decode(errors="replace").strip().splitlines()[-1])
+        except Exception:
+            raise AdbError(out.decode(errors="replace").strip()[-200:] or "could not read the TV")
+        await adb.apps(True)                                          # labels the apps tab already knows
+        for a in plan["suggest"] + plan["apps"]:
+            a["label"] = (meta.cached(a["pkg"], adb.apk_paths.get(a["pkg"], "")) or {}).get("label") or a["label"] or ".".join(a["pkg"].split(".")[-2 if len(a["pkg"].split(".")[-1]) <= 3 else -1:])
+        plan["apps"].sort(key=lambda a: a["label"].lower())
+        return web.json_response(plan)
 
     @routes.get("/api/job")
     async def job(request):
