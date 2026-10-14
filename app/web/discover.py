@@ -1,17 +1,22 @@
 """Finding TVs: which hosts answer, this machine's networks and Tailscale peers, Cast names, the scan behind the TV list."""
-import asyncio, ipaddress, json, os, re, socket
+import asyncio, errno, ipaddress, json, os, re, socket
 from tvtools import find
 
 TAILSCALE = find("tailscale", "/Applications/Tailscale.app/Contents/MacOS/Tailscale", r"C:\Program Files\Tailscale\tailscale.exe")
 TS_ENV = {**os.environ, "TAILSCALE_BE_CLI": "1"}                      # the Mac app's binary acts as the CLI only from a Terminal
 
 
-async def port_open(ip, port, timeout=0.7):
+async def port_open(ip, port, timeout=0.7, unknown=None):
+    """unknown: a set that collects hosts the OS gave up on at once ("Host is down", "No route to host") instead of trying."""
     try:
         _, w = await asyncio.wait_for(asyncio.open_connection(ip, port), timeout)
         w.close()
         return True
-    except (OSError, asyncio.TimeoutError):
+    except OSError as e:
+        if unknown is not None and e.errno in (errno.EHOSTDOWN, errno.EHOSTUNREACH):
+            unknown.add(ip)
+        return False
+    except asyncio.TimeoutError:
         return False
 
 
@@ -60,11 +65,11 @@ async def cast_name(ip):
 
 async def discover():
     """TVs we can see: LAN hosts answering on the remote (6466) or ADB (5555) port, and Android devices on the tailnet."""
-    sem, found = asyncio.Semaphore(120), {}
+    sem, found, unknown = asyncio.Semaphore(120), {}, set()
 
     async def probe(ip, via, name=""):
         async with sem:
-            remote, adb = await asyncio.gather(port_open(ip, 6466), port_open(ip, 5555))
+            remote, adb = await asyncio.gather(port_open(ip, 6466, unknown=unknown), port_open(ip, 5555, unknown=unknown))
         if remote or adb:
             found[ip] = {"ip": ip, "remote": remote, "adb": adb, "via": via, "name": await cast_name(ip) or name}
 
@@ -81,4 +86,11 @@ async def discover():
     except Exception:
         pass                                                          # no Tailscale CLI here: LAN results only
     await asyncio.gather(*jobs)
+    # A first scan asks the whole network at once who has each address (ARP), and the Mac answers "Host is down" for many
+    # hosts without waiting, the TV often among them: it turned up only on the second scan. By now the answers have come
+    # in, so those hosts are asked once more.
+    again = [ip for ip in unknown if ip not in found]
+    if again:
+        await asyncio.sleep(1)
+        await asyncio.gather(*[probe(ip, "lan") for ip in again])
     return {"networks": [str(n) for _, n in local_networks()], "found": sorted(found.values(), key=lambda f: (f["via"], f["ip"]))}
