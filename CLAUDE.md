@@ -29,8 +29,9 @@ app/android/.../phone/   phone app, one file per part, as extension functions on
 app/tv/                  TV Setup: MainActivity (the TV screen), RemoteService (web server), PairActivity, Stats, TrustReceiver,
                          Rules + Guard + RulesReceiver + WarnActivity (sleep timer, bedtime, app limits)
 app/gradle/              the Gradle build of the two apps (settings point at ../shared, ../android, ../tv); open it in Android Studio
-app/web/                 server.py (the computer's /api core), scenes.py, adbtools.py, tvconfig.py (tvs.json, also "scenes"),
-                         cli/ (command line tools), tests/
+app/web/                 server.py (the computer's /api routes and main), session.py (one TV: remote protocol + ADB), screen.py
+                         (screenshots, scrcpy, live view), discover.py (finding TVs), scenes.py, adbtools.py, tvconfig.py
+                         (tvs.json, also "scenes"), cli/ (command line tools), tests/
 dev/                     release.sh, gen_icons.py
 ```
 
