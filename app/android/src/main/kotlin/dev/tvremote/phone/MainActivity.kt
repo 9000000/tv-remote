@@ -79,6 +79,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal lateinit var status: TextView
     internal lateinit var frame: VideoFrame
     internal lateinit var surface: SurfaceView
+    internal lateinit var tapMark: TapMark                            // where the finger is on the picture
     internal lateinit var stage: FrameLayout                           // the picture with the full screen button over it
     internal lateinit var videoBtn: IconButton
     internal lateinit var fullBtn: IconButton

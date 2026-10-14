@@ -13,6 +13,7 @@ Web 2.17.1 · app điện thoại 2.15.1 · app TV 2.14.1
 - **Sửa "🎧 Chỉ máy này" không có tiếng** (box FPT Play): trên TV Android 13+ chế độ này giờ thu tiếng kiểu mới như "Cả TV và máy này", loa TV vẫn tạm im.
 - **Tắt nghe không còn làm tiếng TV khựng ~2 giây:** việc thu tiếng được dừng gọn thay vì bị ngắt ngang.
 - **Nghe tiếng ít trễ hơn:** trước đây mỗi lần mạng khựng, độ trễ tăng thêm và giữ luôn (tới 0,6 giây); giờ trang tự đuổi kịp, giữ khoảng 0,1 giây. App điện thoại giữ tối đa 0,15 giây thay vì 0,3.
+- **Thấy chỗ mình bấm trên hình TV:** bấm/chạm lên hình hiện một chấm tròn, kéo thì chấm đi theo, nhả ra thì loang rồi mờ dần (web và app điện thoại).
 - **🎧 Chất lượng cao:** nút bật/tắt trong khung chọn nghe (và menu 🎧 của app điện thoại): Opus 160 kbit/s thay vì 64, nghe nhạc rõ hơn; trên trang mở từ TV là âm thanh gốc 48 kHz stereo thay vì 24 kHz mono.
 - **Web máy tính: lần quét mạng đầu tiên không thấy TV,** phải bấm quét lại mới ra. Giờ các địa chỉ trả lời lỗi được hỏi lại một lần, và lần quét nào không thấy gì thì trang tự quét thêm lần nữa trước khi báo.
 - README có link tới trang giới thiệu tvremote.pages.dev.
@@ -22,6 +23,7 @@ Web 2.17.1 · app điện thoại 2.15.1 · app TV 2.14.1
 - **Fixed "🎧 Only this device" being silent** (FPT Play box): on Android 13+ TVs this mode now uses the same newer capture as "TV and this device"; the TV's speakers still go quiet.
 - **Stopping listening no longer makes the TV's sound stutter for ~2 s:** the capture is ended cleanly instead of being cut off.
 - **Less delay when listening:** every network hiccup used to add delay that stayed (up to 0.6 s); the page now catches up to about 0.1 s. The phone app keeps at most 0.15 s instead of 0.3.
+- **See where you click on the TV picture:** a click or touch shows a dot that follows a drag and fades out in a ring when let go (web and phone app).
 - **🎧 High quality:** a switch in the listening picker (and the phone app's 🎧 menu): Opus at 160 kbit/s instead of 64, clearer music; on the page served by the TV, the original 48 kHz stereo instead of 24 kHz mono.
 - **Computer web: the first network scan found no TV,** and only a second scan did. Addresses that answered with an error are now asked once more, and a scan that finds nothing is repeated once before saying so.
 - The README links to the product page tvremote.pages.dev.

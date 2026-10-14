@@ -9,6 +9,10 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.animation.ValueAnimator
+import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.SurfaceView
@@ -129,8 +133,11 @@ internal fun MainActivity.buildRemote() {
             else -> -1
         }
         if (action >= 0) tv.touch(action, e.x / v.width, e.y / v.height)
+        when (action) { 0 -> tapMark.down(e.x, e.y); 2 -> tapMark.move(e.x, e.y); 1 -> tapMark.up() }
         true
     }
+    tapMark = TapMark(this)
+    frame.addView(tapMark, FrameLayout.LayoutParams(-1, -1))
     stage = FrameLayout(this)
     stage.setBackgroundColor(Color.BLACK)
     stage.addView(frame, FrameLayout.LayoutParams(-1, -2))
@@ -536,4 +543,35 @@ internal fun MainActivity.dpad(): View {
     wrap.gravity = Gravity.CENTER
     wrap.addView(pad, LinearLayout.LayoutParams(dp(248), dp(248)))
     return wrap
+}
+
+/** Where the finger is on the TV picture, as on the web page: a dot that follows a drag and spreads into a fading ring when let go. */
+internal class TapMark(c: Context) : View(c) {
+    private val d = resources.displayMetrics.density
+    private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x4DFFFFFF }
+    private val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 2 * d; color = 0xE6FFFFFF.toInt(); setShadowLayer(4 * d, 0f, 0f, 0x80000000.toInt()) }
+    private var x = 0f
+    private var y = 0f
+    private var held = false
+    private var gone = 1f                                              // 0..1 through the fade after letting go; 1: nothing to draw
+    private var anim: ValueAnimator? = null
+
+    init { isClickable = false; isFocusable = false; setLayerType(LAYER_TYPE_SOFTWARE, null) }   // the touches go on to the picture; software: shadows on the ring
+
+    fun down(x: Float, y: Float) { anim?.cancel(); this.x = x; this.y = y; held = true; gone = 0f; invalidate() }
+    fun move(x: Float, y: Float) { if (held) { this.x = x; this.y = y; invalidate() } }
+    fun up() {
+        if (!held) return
+        held = false
+        anim = ValueAnimator.ofFloat(0f, 1f).setDuration(450).apply { addUpdateListener { gone = it.animatedValue as Float; invalidate() }; start() }
+    }
+
+    override fun onDraw(c: Canvas) {
+        if (!held && gone >= 1f) return
+        val r = 17 * d * (1 + 0.9f * gone)
+        val a = 1 - gone
+        fill.alpha = (0x4D * a * (1 - gone)).toInt(); ring.alpha = (0xE6 * a).toInt()
+        c.drawCircle(x, y, r, fill)
+        c.drawCircle(x, y, r, ring)
+    }
 }
