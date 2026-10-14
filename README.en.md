@@ -195,7 +195,7 @@ The person at the TV: turn on ADB debugging, install TV Setup (or let the helper
 ## When the TV is off
 
 - **Standby (network still up):** Power or Wake is enough, over Tailscale too.
-- **Fully off (network down):** only a Wake-on-LAN packet reaches the TV, and it must be sent from **inside the home network**. The phone app can send it when on the home Wi-Fi. The web on the computer can ask a machine at home to send it over SSH: add `relay_user` and `relay_host` to the TV's entry in `tvs.json`.
+- **Fully off (network down):** only a Wake-on-LAN packet reaches the TV, and it must be sent from **inside the home network**. The phone app and the web on the computer both send it when on the TV's network. From away, the web on the computer can ask a machine at home to send it over SSH: add `relay_user` and `relay_host` to the TV's entry in `tvs.json`.
 - Holding the power key on the TV's own remote opens the full power-off menu; press it briefly if you want to wake the TV remotely later.
 - **After the TV restarts:** Tailscale starts again by itself if it was installed with the Tailscale button (or Optimize TV was run). If ADB does not reopen, turn "ADB debugging" off and on.
 
