@@ -182,6 +182,11 @@ nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
 .qr svg{flex:none;width:112px;height:112px;border-radius:10px}
 .qr b{display:block;font-size:15px;margin-bottom:4px}.qr small{display:block;color:var(--muted);font-size:13px;line-height:1.45}
 .hero .qr{max-width:440px;margin-top:22px}.feat .qr{max-width:440px;margin-top:20px}
+.qr{cursor:zoom-in}
+#qrbig{margin:auto;inset:0;border:0;border-radius:22px;padding:22px;background:var(--card);color:inherit;text-align:center;max-width:min(92vw,420px)}
+#qrbig::backdrop{background:rgba(4,6,12,.78);backdrop-filter:blur(4px)}
+#qrbig svg{width:min(78vw,340px);height:auto;border-radius:14px;display:block;margin:0 auto 14px}
+#qrbig b{display:block;font-size:17px;margin-bottom:6px}#qrbig small{display:block;color:var(--muted);font-size:14px;margin-bottom:16px}
 @media (max-width:760px),(hover:none){.qr{display:none}}  /* a code to scan with a phone means nothing on the phone itself */
 .term{background:#07090e;border:1px solid var(--line);border-radius:14px;padding:16px 18px;font-size:14px;color:#cfd8ea;overflow-x:auto}
 .term .c{color:var(--dim)}
@@ -288,12 +293,12 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
         <span class="en">Free · open source · no ads</span>
       </a>
       <h1>
-        <span class="vi">Chiếc remote <span class="grad">thông minh nhất</span> cho Android TV, ngay trên máy bạn đang cầm.</span>
-        <span class="en">The <span class="grad">smartest remote</span> for your Android TV is already in your hand.</span>
+        <span class="vi">Remote <span class="grad">thông minh</span> cho Android TV.</span>
+        <span class="en">The <span class="grad">smart remote</span> for Android TV.</span>
       </h1>
       <p class="lead">
-        <span class="vi">Điện thoại Android, iPhone hay máy tính đều thành remote: thấy màn hình TV và chạm lên đó, gõ chữ có dấu, hẹn giờ tắt cho con, quản lý app, giúp bố mẹ chỉnh TV từ xa. Kết nối đi thẳng tới TV, không qua máy chủ nào.</span>
-        <span class="en">Your Android phone, iPhone or computer becomes the remote: see the TV screen and touch it, type with a real keyboard, set sleep timers for the kids, manage apps, fix your parents' TV from across town. Everything talks straight to the TV, no server in between.</span>
+        <span class="vi">Điện thoại, iPhone hay máy tính đều thành remote: chạm thẳng lên màn hình TV, gõ tiếng Việt, hẹn giờ tắt, quản lý app. Đi thẳng tới TV, không qua máy chủ.</span>
+        <span class="en">Your phone, iPhone or computer becomes the remote: touch the TV screen itself, type, set sleep timers, manage apps. Straight to the TV, no server in between.</span>
       </p>
       <div class="cta">
         <a class="btn btn-primary" href="#install">
@@ -696,6 +701,7 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
 </footer>
 
 <div class="toast" id="toast"></div>
+<dialog id="qrbig"><div class="big"></div><button class="btn btn-ghost btn-sm" onclick="this.closest('dialog').close()"><span class="vi">Đóng</span><span class="en">Close</span></button></dialog>
 
 <script src="qr.js"></script>
 <script>
@@ -728,8 +734,15 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
   document.querySelectorAll("[data-qr]").forEach(function(d){
     var u = d.dataset.qr === "here" ? (/^https?:$/.test(location.protocol) ? location.origin + location.pathname : "") : d.dataset.qr;
     var s = u && typeof qrSvg === "function" ? qrSvg(u, 112) : null;
-    if (s) d.prepend(s); else d.remove();
+    if (!s) { d.remove(); return; }
+    d.prepend(s);
+    d.addEventListener("click", function(){                            // small on the page: shown big to scan
+      var dlg = document.getElementById("qrbig"), box = dlg.querySelector(".big");
+      box.innerHTML = ""; box.appendChild(qrSvg(u, 340)); box.appendChild(d.querySelector("div").cloneNode(true));
+      dlg.showModal();
+    });
   });
+  document.getElementById("qrbig").addEventListener("click", function(e){ if (e.target === this) this.close(); });   // a click outside closes it
 
   // copy codes
   var toast = document.getElementById("toast"), tt;

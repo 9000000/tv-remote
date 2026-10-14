@@ -108,6 +108,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     @Volatile private var resting = false                             // the input session is closed on purpose: nobody is using the remote
     private var lastPairStart = 0L
     private var guard: Guard? = null
+    private var tsWatch: TailscaleWatch? = null
     @Volatile private var hearer: Tv? = null                         // a session that carries the TV's sound to one browser
     private val page by lazy { WebPage(assets, "tv", try { packageManager.getPackageInfo(packageName, 0).let { it.versionName + "-" + it.lastUpdateTime / 1000 } } catch (e: Exception) { "0" }) }
 
@@ -140,6 +141,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         lastUse = System.currentTimeMillis()
         connect()
         guard = Guard(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
+        tsWatch = TailscaleWatch(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         ui.postDelayed(rest, 30000)
         ui.postDelayed(diary, 20000)
     }
@@ -152,6 +154,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         code = null
         http?.stop()
         guard?.stop()
+        tsWatch?.stop()
         link?.close()
         tv?.stop()
         viewer?.stop()
