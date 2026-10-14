@@ -21,7 +21,7 @@ function appIcon(pkg) {
   const box = el('div', { className: 'appicon', textContent: pkg.split('.').pop()[0].toUpperCase() });
   box.fill = (m) => {
     if (!m.icon) { if (m.label) box.textContent = m.label[0].toUpperCase(); return; }
-    box.textContent = ''; box.classList.toggle('adaptive', !!m.adaptive); box.classList.toggle('banner', !!m.banner); if (m.bg) box.style.background = m.bg;
+    box.textContent = ''; box.classList.toggle('adaptive', !!m.adaptive); box.classList.toggle('wide', !!m.banner); if (m.bg) box.style.background = m.bg;
     box.append(el('img', { src: '/api/app/icon?pkg=' + encodeURIComponent(pkg), alt: '', loading: 'lazy' }));
   };
   return box;

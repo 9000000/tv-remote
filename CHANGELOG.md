@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.13.1 - 2026-10-14
+
+Web 2.13.1 · app điện thoại 2.12.1 · app TV 2.11.1
+
+**Tiếng Việt**
+- Sửa: trong Quản lý TV → Ứng dụng, **logo dạng ảnh ngang của app TV bị co nhỏ** giữa một khung viền dày. Ô logo dùng nhầm tên class của dải báo ADB nên bị thêm lề và viền của dải đó.
+
+**English**
+- Fixed: in Manage TV → Apps, **an app's wide TV banner was shrunk** inside a thick frame. The icon box shared a class name with the ADB notice and picked up its padding and border.
+
 ## 2.13.0 - 2026-10-14
 
 Web 2.13.0 · app điện thoại 2.12.0 · app TV 2.11.0
