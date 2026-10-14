@@ -194,9 +194,10 @@ flowchart LR
 
 ```
 start-mac.command, start-windows.cmd, start-linux.sh   run the web on the computer
-app/web/      web on the computer: server.py (aiohttp, 127.0.0.1 only), static/ (UI), cli/ (command line)
+app/web/      web on the computer: server.py (aiohttp, 127.0.0.1 only), cli/ (command line); the UI comes from app/shared/web
 app/android/  the TV Remote app (Kotlin)            app/tv/   the TV Setup app (Kotlin) + the page the TV serves
-app/shared/   shared by both apps: ADB, the control session, TV management, updates; web/index.html
+app/shared/   shared: ADB, the control session, TV management, updates; web/ = ONE web UI for all three places
+              (the computer, the page the TV serves, Manage in the phone app); only the core answering /api differs
 dev/          release.sh (build the APKs + create the GitHub release), gen_icons.py (one icon set for all three)
 docs/         screenshots for the README
 VERSION, CHANGELOG.md

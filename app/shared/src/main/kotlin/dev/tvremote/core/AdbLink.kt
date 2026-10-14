@@ -5,31 +5,56 @@ import java.io.IOException
 
 /** An ADB connection to one TV that is opened when first needed and opened again after it drops. */
 class AdbLink(private val keyDir: File, private val host: String) {
-    private var adb: Adb? = null
+    @Volatile private var adb: Adb? = null
+    @Volatile private var dialing: Adb? = null                        // being connected right now: it may sit for minutes waiting for the person at the TV
     @Volatile private var waiting = false                             // the TV is showing "Allow USB debugging?"
+    @Volatile private var failed = false                              // the last attempt did not get through
+    private val lock = Any()
 
-    @Synchronized
     @Throws(IOException::class)
     fun get(): Adb {
         adb?.let { if (!it.isDead()) return it }
-        try {
+        synchronized(lock) {
+            adb?.let { if (!it.isDead()) return it }
             val a = Adb(keyDir)
-            a.connect(host, 5555) { waiting = true }
-            waiting = false
-            adb = a
-            return a
-        } catch (e: IOException) {
-            throw e
-        } catch (e: Exception) {
-            throw IOException(e.message ?: e.javaClass.simpleName)
+            dialing = a
+            try {
+                a.connect(host, 5555) { waiting = true }
+                waiting = false
+                failed = false
+                adb = a
+                return a
+            } catch (e: IOException) {
+                failed = true
+                throw e
+            } catch (e: Exception) {
+                failed = true
+                throw IOException(e.message ?: e.javaClass.simpleName)
+            } finally {
+                dialing = null
+            }
         }
     }
 
     fun waitingForUser(): Boolean = waiting
 
-    @Synchronized
+    /**
+     * How things stand, without waiting for anything: ready, unauthorized (the TV is asking the person), unknown (connecting)
+     * or closed. Asking is also what starts a connection when there is none, so whoever shows this keeps it alive.
+     */
+    fun state(): String {
+        adb?.let { if (!it.isDead()) return "ready" }
+        if (dialing == null) Thread({ try { get() } catch (ignored: Exception) { } }, "adb-link").apply { isDaemon = true }.start()
+        return if (waiting) "unauthorized" else if (failed) "closed" else "unknown"
+    }
+
+    /** Never waits, not even for a connection that is still being made: that one is cut off. */
     fun close() {
-        adb?.close()
+        val d = dialing
+        val a = adb
         adb = null
+        waiting = false
+        try { d?.close() } catch (ignored: Exception) { }
+        try { a?.close() } catch (ignored: Exception) { }
     }
 }

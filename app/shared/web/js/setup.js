@@ -5,7 +5,7 @@ async function runSetup(mode) {
   if (!confirm(ask)) return;
   const btns = [$('#setupapply'), $('#setupundo')], log = $('#setuplog');
   btns.forEach((b) => { b.disabled = true; }); log.hidden = false; log.textContent = 'Đang chạy...';
-  let j = await api('/api/setup', { mode });
+  let j = await api('/api/setup', { mode, lang: LANG });
   while (j && j.status === 'running') { await sleep(1000); j = await api('/api/job?id=' + j.id); if (j) { log.textContent = j.log || 'Đang chạy...'; log.scrollTop = log.scrollHeight; } }
   if (j) { log.textContent = (j.log || '') + (j.status === 'done' ? '\n✅ Xong.' : '\n❌ Lỗi: ' + j.msg); toast(j.status === 'done' ? 'Đã xong' : 'Lỗi: ' + j.msg); quickLoaded = appsLoaded = false; applyAdb(); }
   btns.forEach((b) => { b.disabled = false; });
@@ -27,7 +27,7 @@ $('#aboutbtn').addEventListener('click', async () => {
   $('#qrs').replaceChildren(...[code('📱 App Android', 'Quét bằng điện thoại để tải app.', 'https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk'),
     r && r.tv_web ? code('🌐 Remote trên điện thoại', 'Trang remote do chính TV phục vụ: quét khi điện thoại cùng Wi-Fi hoặc cùng Tailscale với TV.', r.tv_web) : null].filter(Boolean));
 });
-fetch('/api/about').then((x) => x.json()).then((r) => { if (r.version) $('#ver').textContent = 'TV Remote ' + r.version + (r.released ? ' · ' + r.released : ''); }).catch(() => {});
+if (CORE === 'mac') fetch('/api/about').then((x) => x.json()).then((r) => { if (r.version) $('#ver').textContent = 'TV Remote ' + r.version + (r.released ? ' · ' + r.released : ''); }).catch(() => {});
 $('#aboutclose').addEventListener('click', () => $('#about').close());
 $('#about').addEventListener('click', (e) => { if (e.target === $('#about')) $('#about').close(); });   // click outside the box
 
@@ -160,7 +160,7 @@ function step(n, state, title, text, ...actions) {
 }
 const act = (label, fn, cls = '') => el('button', { className: 'small ' + cls, textContent: label, onclick: async (e) => { const b = e.currentTarget; b.disabled = true; try { await fn(); } finally { b.disabled = false; } } });
 async function loadSteps() {
-  if (stepsBusy) return; stepsBusy = true;
+  if (stepsBusy || CORE !== 'mac') return; stepsBusy = true;
   const s = await api('/api/setup/status', null, true); stepsBusy = false;
   if (!s) return;
   $('#setuphost').textContent = s.host ? (s.model ? s.model + ' · ' : '') + s.host : 'chưa chọn TV';
@@ -201,6 +201,7 @@ async function loadSteps() {
 }
 setInterval(() => { if (currentTab === 'tv' && !document.hidden && !stopped) loadSteps(); }, 6000);
 
-const startTab = location.hash.slice(1);
+const startTab = location.hash.slice(1) || new URLSearchParams(location.search).get('tab') || (CORE === 'phone' ? 'apps' : '');
+if (CORE !== 'mac') $('#wake').parentElement.className = 'rrow three';   // no wake button there: three keys fill the row
 if (['remote', 'apps', 'files', 'health', 'term', 'tv'].includes(startTab)) showTab(startTab); else if (startTab === 'install') showTab('files');
 applyAdb(); refresh(); setInterval(refresh, 4000);

@@ -4,6 +4,28 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.9.0 - 2026-10-14
+
+Web 2.9.0 · app điện thoại 2.8.0 · app TV 2.7.0
+
+**Tiếng Việt**
+- **Một giao diện web cho cả ba nơi.** Trang trên máy tính, trang do TV phục vụ (cổng 8765, mở bằng mã QR) và phần Quản lý trong app điện thoại giờ là cùng một bộ mã (`app/shared/web`); mỗi nơi chỉ khác phần lõi trả lời `/api`. Từ nay một thay đổi giao diện có mặt ở cả ba nơi cùng lúc.
+- Trang do TV phục vụ nhờ vậy có thêm: chọn chất lượng hình 240p đến 960p và chế độ ảnh chụp, xem hình nổi ở góc khi sang tab khác, ô tìm app, sắp xếp và kéo thả tệp, xem trước ảnh, tab “Tệp · Cài” gộp, hộp Giới thiệu kèm mã QR tải app. Ghép bằng mã 6 số như cũ.
+- Phần Quản lý trong app điện thoại dùng giao diện mới này (Ứng dụng, Tệp · Cài, Sức khỏe, Terminal, Tối ưu).
+- **“Nhìn lên TV” thành cảnh báo toàn màn hình** (app điện thoại và web): khi TV hỏi “Cho phép gỡ lỗi USB?”, cả màn hình hiện hướng dẫn tích “Luôn cho phép” rồi chọn OK, và tự đóng khi TV đã cho phép. Trước đây chỉ là một dòng chữ nhỏ ở đầu màn hình.
+- Sửa lỗi app điện thoại bị đơ (“không phản hồi”) khi thoát khỏi một TV đang chờ cho phép gỡ lỗi.
+- Trên điện thoại, tab Remote của trang web: ô màn hình TV gọn lại khi chưa xem, lưới app nằm dưới các nút, tab có tên nhỏ dưới biểu tượng.
+- Sửa dòng “Trực tiếp · đang chờ hình” hiện cả khi không xem màn hình.
+
+**English**
+- **One web UI for all three places.** The page on the computer, the page the TV serves (port 8765, opened from the QR code) and Manage in the phone app are now the same code (`app/shared/web`); only the core answering `/api` differs. A UI change now lands in all three at once.
+- The page served by the TV gains: picture quality from 240p to 960p and a screenshots mode, a floating picture on the other tabs, app search, file sorting, drag and drop and image preview, the merged “Files · Install” tab, and the About box with the QR code for the app. Pairing with the 6-digit code is unchanged.
+- Manage in the phone app uses this UI (Apps, Files · Install, Health, Terminal, Optimise).
+- **“Look at the TV” is now a full-screen alert** (phone app and web): when the TV asks “Allow USB debugging?”, the whole screen says to tick “Always allow” and choose OK, and closes by itself once the TV has allowed it. It used to be one small line at the top.
+- Fixed the phone app freezing (“isn’t responding”) when leaving a TV that was still waiting for that permission.
+- On a phone, the web page’s Remote tab: the TV picture box folds away until you watch, the app grid sits below the buttons, tabs carry their name under the icon.
+- Fixed “Live · waiting for a picture” showing while not watching.
+
 ## 2.8.2 - 2026-10-14
 
 Web 2.8.2 · app điện thoại 2.7.2 · app TV 2.6.10

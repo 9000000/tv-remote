@@ -194,9 +194,10 @@ flowchart LR
 
 ```
 start-mac.command, start-windows.cmd, start-linux.sh   chạy web trên máy tính
-app/web/      web trên máy tính: server.py (aiohttp, chỉ 127.0.0.1), static/ (giao diện), cli/ (dòng lệnh)
+app/web/      web trên máy tính: server.py (aiohttp, chỉ 127.0.0.1), cli/ (dòng lệnh); giao diện lấy từ app/shared/web
 app/android/  app TV Remote (Kotlin)                app/tv/   app TV Setup (Kotlin) + trang web do TV phục vụ
-app/shared/   dùng chung của hai app: ADB, phiên điều khiển, quản lý TV, cập nhật; web/index.html
+app/shared/   dùng chung: ADB, phiên điều khiển, quản lý TV, cập nhật; web/ = MỘT giao diện web cho cả ba nơi
+              (máy tính, trang do TV phục vụ, phần Quản lý trong app điện thoại); mỗi nơi chỉ khác phần lõi trả lời /api
 dev/          release.sh (build APK + tạo GitHub release), gen_icons.py (một bộ icon cho cả ba nơi)
 docs/         ảnh chụp cho README
 VERSION, CHANGELOG.md

@@ -48,7 +48,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 sprite = '<svg xmlns="http://www.w3.org/2000/svg" style="display:none">' + "".join(
     f'<symbol id="i-{n}" viewBox="0 0 24 24">' + "".join(f'<path d="{d}"/>' for d in paths) + "</symbol>" for n, paths in ICONS.items()) + "</svg>"
-for page in (ROOT / "app/web/static/index.html", ROOT / "app/shared/web/index.html"):
+for page in (ROOT / "app/shared/web/index.html",):
     if page.exists():
         s = page.read_text()
         s2 = re.sub(r"<!-- icons:start -->.*?<!-- icons:end -->", "<!-- icons:start -->" + sprite + "<!-- icons:end -->", s, flags=re.S)

@@ -28,7 +28,7 @@ ADB_KEYS = {"INPUT": 178, "INFO": 165, "GUIDE": 172, "LIVE": 170, "SUBTITLE": 17
 OPENERS = {"MENU", "SETTINGS", "INPUT", "GUIDE", "LIVE"}             # keys that should bring up a screen of their own
 APPS = {"settings": "android-app://com.android.tv.settings"}          # remote-protocol fallback when ADB is closed
 
-WEB = APP / "static"
+WEB = ROOT / "app" / "shared" / "web"                             # the one page all three remotes serve (the two Android apps carry it as an asset)
 TS_PKG = "com.tailscale.ipn"
 TAILSCALE = find("tailscale", "/Applications/Tailscale.app/Contents/MacOS/Tailscale", r"C:\Program Files\Tailscale\tailscale.exe")
 
@@ -540,7 +540,8 @@ def build(S):
         # The page names its scripts and its stylesheet with a stamp of their newest change, so a browser never pairs a new
         # page with scripts it kept from an older version (which showed the new layout unstyled, run by the old code).
         stamp = str(int(max(f.stat().st_mtime for f in WEB.rglob("*") if f.is_file())))
-        html = re.sub(r'((?:src|href)="/(?:web/[^"?]+|stats\.js))"', r'\1?v=' + stamp + '"', (WEB / "index.html").read_text(encoding="utf-8"))
+        html = re.sub(r'((?:src|href)="(?:style\.css|stats\.js|js/[^"?]+))"', r'\1?v=' + stamp + '"', (WEB / "index.html").read_text(encoding="utf-8"))
+        html = html.replace("<html ", '<html data-core="mac" ', 1)        # which core serves the page decides what it shows (see core.js)
         return web.Response(text=html, content_type="text/html", headers={"Cache-Control": "no-store"})
 
     @routes.get("/api/state")
@@ -937,10 +938,6 @@ def build(S):
         names = {pkg: known[pkg] for per_day in (usage or {}).values() for pkg in per_day if known.get(pkg)}
         return web.json_response({"days": days, "collector": usage is not None or bool(samples), "usage": usage or {}, "samples": samples, "labels": names})
 
-    @routes.get("/stats.js")
-    async def stats_js(_):
-        return web.FileResponse(ROOT_DIR / "app" / "shared" / "web" / "stats.js", headers={"Cache-Control": "no-store"})
-
     @routes.post("/api/free")
     @adb_errors
     async def free(_):
@@ -1257,7 +1254,9 @@ def build(S):
 
     app_ = web.Application(middlewares=[guard])
     app_.add_routes(routes)
-    app_.router.add_static("/web", WEB)                              # style.css and js/ next to index.html
+    for name in ("style.css", "stats.js"):
+        app_.router.add_get("/" + name, lambda _, f=WEB / name: web.FileResponse(f, headers={"Cache-Control": "no-store"}))
+    app_.router.add_static("/js", WEB / "js")
     return app_
 
 

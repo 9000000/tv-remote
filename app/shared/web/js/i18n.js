@@ -4,13 +4,42 @@
 (() => {
   let stored = null;
   try { stored = localStorage.getItem('lang'); } catch {}
-  const LANG = stored || ((navigator.language || 'vi').toLowerCase().startsWith('vi') ? 'vi' : 'en');
+  let asked = null;                                                  // the phone app says which language its own screens use
+  try { asked = new URLSearchParams(location.search).get('lang'); } catch {}
+  const LANG = (asked === 'vi' || asked === 'en') ? asked : stored || ((navigator.language || 'vi').toLowerCase().startsWith('vi') ? 'vi' : 'en');
   window.LANG = LANG;
   window.setLang = (l) => { try { localStorage.setItem('lang', l); } catch {} location.reload(); };
   document.documentElement.lang = LANG;
   if (LANG === 'vi') { window.tr = (s) => s; return; }
 
   const EN = {
+    // one page for the three cores: pairing with the page from the TV, the allow-debugging screen
+    'Không gọi được TV: TV đang bật và cùng mạng với máy này chứ?': 'Cannot reach the TV: is it on and on the same network as this device?',
+    'TV đang hỏi cho phép gỡ lỗi: nhìn lên TV, chọn “Luôn cho phép”': 'the TV is asking to allow debugging: look at the TV and choose “Always allow”',
+    'chưa nối được ADB tới TV': 'no ADB connection to the TV yet',
+    'App trên TV chưa nối được ADB': 'The app on the TV cannot reach ADB',
+    'Các nút chưa hoạt động. Trên TV: bật “Gỡ lỗi ADB” (hoặc “Gỡ lỗi USB”) trong Tùy chọn nhà phát triển, rồi mở app TV Setup.': 'The buttons do not work yet. On the TV: turn on “ADB debugging” (or “USB debugging”) in Developer options, then open the TV Setup app.',
+    'TV đang hỏi cho phép gỡ lỗi': 'The TV is asking to allow debugging',
+    'Nhìn lên TV: tích “Luôn cho phép” rồi chọn OK. Trang này tự chạy tiếp.': 'Look at the TV: tick “Always allow”, then OK. This page carries on by itself.',
+    'Đang kết nối ADB...': 'Connecting ADB...',
+    'Chưa ghép với TV này': 'Not paired with this TV yet',
+    'Nhìn lên TV: mã có hiệu lực trong 2 phút.': 'Look at the TV: the code is good for 2 minutes.',
+    'Sai mã, thử lại.': 'Wrong code, try again.',
+    'Mã đã hết hạn: bấm “Hiện mã trên TV” để lấy mã mới.': 'The code has expired: press “Show the code on the TV” for a new one.',
+    'Ghép với TV': 'Pair with the TV',
+    'Bấm “Hiện mã trên TV”: TV hiện một mã 6 số. Gõ mã đó vào đây. Mỗi thiết bị chỉ cần làm một lần.': 'Press “Show the code on the TV”: the TV shows a 6-digit code. Type it here. Once per device is enough.',
+    'Hiện mã trên TV': 'Show the code on the TV',
+    'TV đang hỏi “Cho phép gỡ lỗi USB?”': 'The TV is asking “Allow USB debugging?”',
+    'Tích “Luôn cho phép từ máy tính này”': 'Tick “Always allow from this computer”',
+    'Chọn OK (Cho phép)': 'Choose OK (Allow)',
+    'Màn hình này tự đóng khi TV đã cho phép.': 'This screen closes by itself once the TV has allowed it.',
+    'Để sau': 'Later',
+    'Tối ưu': 'Optimise',
+    'TV đã dừng gửi hình.': 'The TV stopped sending the picture.',
+    'Không lấy được hình từ TV.': 'Could not get the picture from the TV.',
+    'Không tải được phần phát hình.': 'Could not load the video player.',
+    'Lưu vào thư mục Download của TV.': 'Saved to the TV’s Download folder.',
+    'Máy này tải về trước rồi đẩy sang TV.': 'This device downloads it first, then pushes it to the TV.',
     // header, tabs
     'đang kết nối...': 'connecting...', 'Tắt': 'Quit', 'Dừng chương trình trên máy tính này (TV không bị ảnh hưởng)': 'Stop the program on this computer (the TV is not affected)',
     'Ứng dụng': 'Apps', 'Tệp': 'Files', 'Tệp · Cài': 'Files · Install', 'Tải / Cài': 'Download / Install', 'cần ADB': 'needs ADB', '· cần ADB': '· needs ADB', 'thêm': 'add', 'cài đặt': 'setup',
@@ -53,7 +82,7 @@
     'App Android': 'Android app', 'Quét bằng điện thoại để tải app.': 'Scan with a phone to download the app.', 'Remote trên điện thoại': 'Remote on a phone',
     'Trang remote do chính TV phục vụ: quét khi điện thoại cùng Wi-Fi hoặc cùng Tailscale với TV.': 'The remote page served by the TV itself: scan when the phone is on the same Wi-Fi or Tailscale as the TV.', 'Chất lượng hình': 'Picture quality', 'Nét nhất · nặng TV': 'Sharpest · heavy on the TV', 'Mở trên TV': 'Open on the TV', 'link, CH Play': 'link, Play Store', 'CH Play': 'Play Store',
     'Tìm app trên CH Play, hoặc app id (vd org.videolan.vlc)': 'Search the Play Store, or an app id (e.g. org.videolan.vlc)', 'Chất lượng hình: số nhỏ thì nhẹ cho TV và mạng': 'Picture quality: a smaller number is lighter on the TV and the network',
-    'Chọn TV để điều khiển': 'Choose a TV to control', 'Chọn TV khác': 'Choose another TV', 'Chưa chọn TV': 'No TV chosen', 'Quay lại': 'Back to', 'Đổi TV': 'Change TV', 'Điều khiển': 'Control', 'Thiết lập': 'Set-up', 'lần đầu': 'first time',
+    'Chọn TV để điều khiển': 'Choose a TV to control', 'Chọn TV khác': 'Choose another TV', 'Chưa chọn TV': 'No TV chosen', 'Về lại': 'Back to', 'Đổi TV': 'Change TV', 'Điều khiển': 'Control', 'Thiết lập': 'Set-up', 'lần đầu': 'first time',
     'Bấm vào một TV bên dưới. Lần đầu: bấm “Quét mạng” để tìm TV trong cùng Wi-Fi, hoặc nhập IP của TV.': 'Click a TV below. First time: press “Scan” to find TVs on this Wi-Fi, or type the TV’s IP.',
     'chưa ghép remote (tab Thiết lập)': 'remote not paired (Set-up tab)', 'Chọn TV khác, tìm TV mới': 'Choose another TV, find a new one',
     'Lệnh đã chạy...': 'Earlier commands...',

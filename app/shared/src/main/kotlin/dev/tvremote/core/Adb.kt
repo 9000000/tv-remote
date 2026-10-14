@@ -168,6 +168,7 @@ class Adb(dir: File) : Closeable {
         val end = System.currentTimeMillis() + 180000
         var askingAlive = true
         while (System.currentTimeMillis() < end) {
+            if (dead) throw IOException("closed")                     // whoever wanted this connection has let go of it
             if (askingAlive) {
                 sock = asking
                 input = askingIn

@@ -71,35 +71,38 @@ $('#del').addEventListener('click', () => { if (txt.value) { txt.value = [...txt
 function setMore(on) { $('#more').hidden = !on; $('#morebtn').classList.toggle('on', on); try { localStorage.setItem('more', on ? '1' : ''); } catch {} }
 try { setMore(!!localStorage.getItem('more')); } catch {}
 $('#morebtn').addEventListener('click', () => setMore($('#more').hidden));
-$('#shot').addEventListener('click', () => { const a = document.createElement('a'); a.href = '/api/screen'; a.download = 'tv-' + Math.floor(Date.now() / 1000) + '.jpg'; a.click(); });
+$('#shot').addEventListener('click', () => { const a = document.createElement('a'); a.href = '/api/screen'; a.download = 'tv-' + Math.floor(Date.now() / 1000) + (CORE === 'mac' ? '.jpg' : '.png'); a.click(); });
 $('#digits').addEventListener('click', () => { const p = $('#numpad'); p.hidden = !p.hidden; try { localStorage.setItem('numpad', p.hidden ? '' : '1'); } catch {} });
 try { setLive(localStorage.getItem('live') !== '0'); $('#numpad').hidden = !localStorage.getItem('numpad'); } catch { setLive(true); }
 
 // ---------- mouse: click, drag and scroll on the picture act as a finger on the TV screen ----------
-const scr = $('#screen'); scr.draggable = false;
-function screenPos(e) {                                               // pointer -> 0..1 inside the picture (the img letterboxes it)
-  const r = scr.getBoundingClientRect(), nw = scr.naturalWidth || 16, nh = scr.naturalHeight || 9;
-  const k = Math.min(r.width / nw, r.height / nh), w = nw * k, h = nh * k;
-  const x = (e.clientX - r.left - (r.width - w) / 2) / w, y = (e.clientY - r.top - (r.height - h) / 2) / h;
-  return x < 0 || x > 1 || y < 0 || y > 1 ? null : { x, y };
-}
+// The picture is an <img> (frames from the computer) or a <video> (H.264 straight from the TV): both take the same gestures.
 let touching = false, lastMove = 0, lastWheel = 0, lastPos = { x: .5, y: .5 };
 const touch = (a, p, extra) => queue('/api/touch', { a, x: p.x, y: p.y, ...extra });
-scr.addEventListener('pointerdown', (e) => {
-  const p = screenPos(e); if (e.button || !p) return;
-  e.preventDefault(); touching = true; lastPos = p; try { scr.setPointerCapture(e.pointerId); } catch {} touch('down', p);
+[$('#screen'), $('#screenv')].forEach((scr) => {
+  scr.draggable = false;
+  const screenPos = (e) => {                                          // pointer -> 0..1 inside the picture (the box letterboxes it)
+    const r = scr.getBoundingClientRect(), nw = scr.naturalWidth || scr.videoWidth || 16, nh = scr.naturalHeight || scr.videoHeight || 9;
+    const k = Math.min(r.width / nw, r.height / nh), w = nw * k, h = nh * k;
+    const x = (e.clientX - r.left - (r.width - w) / 2) / w, y = (e.clientY - r.top - (r.height - h) / 2) / h;
+    return x < 0 || x > 1 || y < 0 || y > 1 ? null : { x, y };
+  };
+  scr.addEventListener('pointerdown', (e) => {
+    const p = screenPos(e); if (e.button || !p) return;
+    e.preventDefault(); touching = true; lastPos = p; try { scr.setPointerCapture(e.pointerId); } catch {} touch('down', p);
+  });
+  scr.addEventListener('pointermove', (e) => {
+    const p = screenPos(e); if (!touching || !p || Date.now() - lastMove < 40) return;
+    lastMove = Date.now(); lastPos = p; touch('move', p);
+  });
+  ['pointerup', 'pointercancel'].forEach((ev) => scr.addEventListener(ev, (e) => { if (touching) { touching = false; touch('up', screenPos(e) || lastPos); } }));
+  scr.addEventListener('wheel', (e) => {
+    const p = screenPos(e); if (!p) return;
+    e.preventDefault(); if (Date.now() - lastWheel < 90) return;
+    lastWheel = Date.now(); touch('scroll', p, { dy: e.deltaY > 0 ? -1 : 1 });
+  }, { passive: false });
+  scr.addEventListener('contextmenu', (e) => { e.preventDefault(); api('/api/key', { key: 'BACK' }); });   // right click = Back
 });
-scr.addEventListener('pointermove', (e) => {
-  const p = screenPos(e); if (!touching || !p || Date.now() - lastMove < 40) return;
-  lastMove = Date.now(); lastPos = p; touch('move', p);
-});
-['pointerup', 'pointercancel'].forEach((ev) => scr.addEventListener(ev, (e) => { if (touching) { touching = false; touch('up', screenPos(e) || lastPos); } }));
-scr.addEventListener('wheel', (e) => {
-  const p = screenPos(e); if (!p) return;
-  e.preventDefault(); if (Date.now() - lastWheel < 90) return;
-  lastWheel = Date.now(); touch('scroll', p, { dy: e.deltaY > 0 ? -1 : 1 });
-}, { passive: false });
-scr.addEventListener('contextmenu', (e) => { e.preventDefault(); api('/api/key', { key: 'BACK' }); });   // right click = Back
 $('#wake').addEventListener('click', async () => {
   const b = $('#wake'); b.disabled = true; toast('Đang đánh thức TV...');
   const r = await api('/api/wake', {});

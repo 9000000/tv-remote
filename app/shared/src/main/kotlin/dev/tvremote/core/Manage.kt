@@ -15,7 +15,8 @@ import java.util.regex.Pattern
 
 /**
  * Managing a TV over ADB for the page both apps serve: installed apps, files, APK installs and a health snapshot.
- * Everything under /api/m/. Whoever owns the HttpServer checks first that the caller may use it.
+ * The paths and the answers are the ones the computer's server gives (app/web/server.py), because all three serve the same page
+ * (app/shared/web). Whoever owns the HttpServer checks first that the caller may use it.
  */
 class Manage(private val link: AdbLink, private val labels: Labels?, private val dir: java.io.File?) {
     /** Names and icons for packages, where the app can ask the system for them (the TV app); otherwise package names are shown. */
@@ -30,8 +31,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     /** null when the path is not ours. */
     @Throws(Exception::class)
     fun handle(r: HttpServer.Request): HttpServer.Response? {
-        if (!r.path.startsWith("/api/m/")) return null
-        val what = r.path.substring(7)
+        if (!r.path.startsWith("/api/")) return null
+        val what = r.path.substring(5)
         val post = r.method == "POST"
         try {
             when (what) {
@@ -45,9 +46,11 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     return if (j == null) HttpServer.Response.error(404, "no such job") else HttpServer.Response.json(JSONObject(j.toString()))
                 }
             }
-            if (!post) return HttpServer.Response.error(404, "not found")
+            if (!post) return null
             return when (what) {
-                "app" -> app(r.json())
+                "app" -> { open(r.json().optString("link")); HttpServer.Response.json(JSONObject().put("ok", true).put("via", "adb")) }
+                "app/launch", "app/stop", "app/uninstall" -> app(r.json().optString("pkg"), what.substring(4))
+                "adb/connect" -> HttpServer.Response.json(JSONObject().put("state", adbState()))
                 "shell" -> shell(r.json().optString("cmd"))
                 "search" -> {
                     val q = r.json().optString("query").trim()
@@ -55,18 +58,14 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     if (sh("am start -a android.search.action.GLOBAL_SEARCH --es query " + Adb.q(q) + " 2>&1").contains("Error")) throw IllegalArgumentException("this TV has no Google search / Assistant")
                     HttpServer.Response.ok()
                 }
-                "upload" -> upload(r)
-                "delete" -> fileOp("delete", r.json())
-                "rename" -> fileOp("rename", r.json())
-                "mkdir" -> fileOp("mkdir", r.json())
-                "open" -> fileOp("open", r.json())
-                "link" -> { openLink(r.json().optString("link")); HttpServer.Response.ok() }
-                "install" -> HttpServer.Response.json(installPath(safePath(r.json().optString("path"))))
-                "install-upload" -> installUpload(r)
+                "upload" -> HttpServer.Response.json(upload(r))
+                "file/delete", "file/rename", "file/mkdir", "file/open" -> fileOp(what.substring(5), r.json())
+                "file/install" -> HttpServer.Response.json(installPath(safePath(r.json().optString("path"))))
                 "free" -> HttpServer.Response.json(free())
-                "optimize", "undo" -> HttpServer.Response.json(setup(what == "undo", r.json().optString("lang") != "en"))
-                "fetch" -> HttpServer.Response.json(fetch(r.json().optString("url"), r.json().optBoolean("install")))
-                else -> HttpServer.Response.error(404, "not found")
+                "setup" -> { val d = r.json(); HttpServer.Response.json(setup(d.optString("mode") == "undo", d.optString("lang") != "en")) }
+                "fetch" -> HttpServer.Response.json(fetch(r.json().optString("url"), false))
+                "install" -> HttpServer.Response.json(fetch(r.json().optString("url"), true))
+                else -> null
             }
         } catch (e: IllegalArgumentException) {
             return HttpServer.Response.error(400, e.message.toString())
@@ -74,6 +73,9 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             return HttpServer.Response.error(503, if (link.waitingForUser()) "adb:allow" else "adb: " + e.message)
         }
     }
+
+    /** ready, unauthorized (the TV is asking) or closed: the words the page knows. */
+    fun adbState(): String = link.state()
 
     @Throws(IOException::class)
     private fun sh(cmd: String): String = link.get().shell(cmd)
@@ -85,16 +87,23 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             if (line.startsWith("package:")) pkgs.add(line.substring(8).trim())
         pkgs.sort()
         val out = JSONArray()
+        val icons = labels != null && labels.icons()
         for (p in pkgs) {
             val label = labels?.label(p)
-            out.put(JSONObject().put("pkg", p).put("label", label ?: p.substring(p.lastIndexOf('.') + 1)))
+            out.put(JSONObject().put("pkg", p).put("meta", JSONObject().put("label", label ?: p.substring(p.lastIndexOf('.') + 1)).put("icon", icons).put("banner", icons)))
         }
-        return JSONObject().put("apps", out).put("icons", labels != null && labels.icons())
+        return JSONObject().put("apps", out)
     }
 
-    private fun app(d: JSONObject): HttpServer.Response {
-        val pkg = d.optString("pkg")
-        val action = d.optString("action")
+    /** "Open on the TV": the settings, an app by its package name, or a link for whatever app takes it. */
+    private fun open(what: String) {
+        val w = what.trim()
+        if (w == "settings") { if (sh("am start -a android.settings.SETTINGS 2>&1").contains("Error")) throw IllegalArgumentException("the TV did not open its settings") }
+        else if (PKG.matcher(w).matches()) app(w, "launch")
+        else openLink(w)
+    }
+
+    private fun app(pkg: String, action: String): HttpServer.Response {
         if (!PKG.matcher(pkg).matches()) throw IllegalArgumentException("bad package name")
         when (action) {
             "launch" -> {
@@ -159,11 +168,11 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         }
         val out = JSONObject().put("path", path).put("items", JSONArray(items))
         val df = if (part.size > 1) part[1].trim().jsplit("\\s+") else emptyArray<String>()
-        if (df.size > 3 && df[1].matches(DIGITS) && df[3].matches(DIGITS)) out.put("total", df[1].toLong() * 1024).put("free", df[3].toLong() * 1024)
+        if (df.size > 3 && df[1].matches(DIGITS) && df[3].matches(DIGITS)) out.put("space", JSONObject().put("total", df[1].toLong() * 1024).put("free", df[3].toLong() * 1024))
         val usb = JSONArray()
         if (part.size > 2) for (v in part[2].trim().jsplit("\\s+"))
             if (v.isNotEmpty() && v != "emulated" && v != "self" && !v.startsWith("sdcard")) usb.put(v)
-        return out.put("usb", usb)
+        return out.put("volumes", usb)
     }
 
     /** Makes the TV open a link (a video, a web page) with whatever app takes it. */
@@ -191,7 +200,11 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 if (root(path)) throw IllegalArgumentException("refusing to delete a storage root")
                 out = sh("rm -rf " + Adb.q(path) + " 2>&1")
             }
-            "mkdir" -> out = sh("mkdir " + Adb.q(path + "/" + safeName(d.optString("name"))) + " 2>&1")
+            "mkdir" -> {
+                val name = path.substring(path.lastIndexOf('/') + 1)
+                if (root(path) || name != safeName(name)) throw IllegalArgumentException("bad name")
+                out = sh("mkdir " + Adb.q(path) + " 2>&1")
+            }
             "rename" -> {
                 val name = d.optString("name")
                 if (root(path) || name != safeName(name)) throw IllegalArgumentException("bad name")
@@ -259,25 +272,32 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         if (want != null) throw IOException("the TV did not store the whole file (is its storage full?)")
     }
 
-    private fun upload(r: HttpServer.Request): HttpServer.Response {
-        val dest = safePath(r.q("dir")) + "/" + safeName(r.q("name"))
+    /**
+     * A file from the browser, into a folder on the TV or (kind=install) straight into the installer. The file arrives in the
+     * request body and has to be read before we answer, so the answer is a job that is already finished.
+     */
+    private fun upload(r: HttpServer.Request): JSONObject {
+        val name = safeName(r.q("name"))
+        val done = { title: String, msg: String -> JSONObject().put("id", "u" + nextJob++).put("title", title).put("status", "done").put("pct", 100).put("msg", msg) }
+        if (r.q("kind") == "install") { installUpload(r); return done("install $name", "installed") }
+        val dest = safePath(r.q("dest")) + "/" + name
         push(r.body, r.length, dest, null)
-        return HttpServer.Response.ok()
+        return done("upload $name", "saved $dest")
     }
 
     // ---------------------------------------------------------------- installs and downloads (jobs the page polls)
     private fun interface Work { fun run(job: JSONObject): String }
 
     private fun job(title: String, work: Work): JSONObject {
-        val j = JSONObject().put("id", (nextJob++).toString()).put("title", title).put("state", "running").put("pct", 0).put("msg", "")
+        val j = JSONObject().put("id", (nextJob++).toString()).put("title", title).put("status", "running").put("pct", 0).put("msg", "")
         jobs[j.getString("id")] = j
         while (jobs.size > 20) jobs.remove(jobs.keys.iterator().next())
         Thread({
             try {
                 val msg = work.run(j)
-                j.put("state", "done").put("pct", 100).put("msg", msg)
+                j.put("status", "done").put("pct", 100).put("msg", msg)
             } catch (e: Exception) {
-                try { j.put("state", "error").put("msg", e.message ?: e.javaClass.simpleName) } catch (ignored: Exception) { }
+                try { j.put("status", "error").put("msg", e.message ?: e.javaClass.simpleName) } catch (ignored: Exception) { }
             }
         }, "job").apply { isDaemon = true }.start()
         return JSONObject(j.toString())
@@ -298,7 +318,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         job("install " + path.substring(path.lastIndexOf('/') + 1)) { j -> j.put("pct", 50); pmInstall(path) }
 
     /** The APK arrives in the request body: it has to be read before we answer, so this one is not a background job. */
-    private fun installUpload(r: HttpServer.Request): HttpServer.Response {
+    private fun installUpload(r: HttpServer.Request) {
         if (r.length <= 0) throw IllegalArgumentException("empty upload")
         push(r.body, r.length, TMP_APK, null)
         try {
@@ -308,7 +328,6 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         } finally {
             sh("rm -f $TMP_APK")
         }
-        return HttpServer.Response.ok()
     }
 
     /** Closes the apps that are only waiting in the background (what is on screen stays); says how much memory came back, in MB. */
@@ -325,9 +344,9 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     private fun setup(undo: Boolean, vi: Boolean): JSONObject =
         job(if (undo) "undo" else "optimize") { j ->
             val lines = StringBuilder()
-            val s = Setup(link.get(), dir, vi) { line -> lines.append(line).append('\n'); try { j.put("msg", lines.toString().trim()) } catch (ignored: Exception) { } }
+            val s = Setup(link.get(), dir, vi) { line -> lines.append(line).append('\n'); try { j.put("log", lines.toString().trim()) } catch (ignored: Exception) { } }
             if (undo) s.undo() else s.apply()
-            lines.toString().trim()
+            "ok"
         }
 
     /** This device downloads the link and passes it on to the TV, into Download or straight into the installer. */
@@ -441,6 +460,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val app = find("u\\d+ ([\\w.]+)/", part[9])
         o.put("on", if (awake == null) JSONObject.NULL else awake == "Awake")
         if (app != null) o.put("app", labels?.label(app) ?: app)
+        // the computer's server reports what its remote-control session sees; here the same facts come from ADB
+        o.put("remote", JSONObject().put("connected", awake != null).put("is_on", awake == "Awake").put("app", o.optString("app")))
         return o
     }
 

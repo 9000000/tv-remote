@@ -20,6 +20,7 @@ import dev.tvremote.core.AdbLink
 import dev.tvremote.core.HttpServer
 import dev.tvremote.core.Manage
 import dev.tvremote.core.Tv
+import dev.tvremote.core.WebPage
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
@@ -92,7 +93,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     @Volatile private var lastUse = 0L                                // when a paired browser last asked for anything
     @Volatile private var resting = false                             // the input session is closed on purpose: nobody is using the remote
     private var lastPairStart = 0L
-    private var page: ByteArray? = null
+    private val page by lazy { WebPage(assets, "tv", try { packageManager.getPackageInfo(packageName, 0).let { it.versionName + "-" + it.lastUpdateTime / 1000 } } catch (e: Exception) { "0" }) }
 
     override fun onBind(i: Intent?): IBinder? = null
 
@@ -255,21 +256,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         val host = r.headers["host"].toString().replaceFirst(Regex(":\\d+$"), "")
         if (!host.matches(Regex("[0-9.]+|localhost|\\[[0-9a-fA-F:]+\\]"))) return HttpServer.Response.error(403, "open this page by the TV's IP address")
 
-        if (r.path == "/" || r.path == "/index.html") {
-            val page = HttpServer.Response.of("text/html; charset=utf-8", page())
-            page.headers["Cache-Control"] = "no-store"
-            return page
-        }
-        if (r.path == "/stats.js") {                                   // draws the History view
-            val js = HttpServer.Response.of("text/javascript; charset=utf-8", assets.open("stats.js").use { it.readBytes() })
-            js.headers["Cache-Control"] = "no-store"
-            return js
-        }
-        if (r.path == "/jmuxer.min.js") {                              // turns the TV's H.264 into something a <video> can play
-            val js = HttpServer.Response.of("text/javascript; charset=utf-8", assets.open("jmuxer.min.js").use { it.readBytes() })
-            js.headers["Cache-Control"] = "max-age=86400"
-            return js
-        }
+        page.serve(r.path)?.let { return it }                        // the page and its scripts need no pairing: they hold no secrets
         if (r.path == "/api/pair/start" && r.method == "POST") return pairStart()
         if (r.path == "/api/pair/finish" && r.method == "POST") return pairFinish(r)
         if (!tokens().contains(r.cookie(COOKIE)) || r.cookie(COOKIE).isEmpty())
@@ -278,26 +265,29 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         inUse()
         val post = r.method == "POST"
         when (r.path) {
-            "/api/state" -> return HttpServer.Response.json(state())
-            "/api/screenshot" -> {
+            "/api/state" -> return HttpServer.Response.json(state(host))
+            "/api/about" -> return HttpServer.Response.json(state(host))
+            "/api/screen" -> {                                        // one picture of the screen: the Screenshots mode, and the camera key
                 val png = tv?.screenshot() ?: return HttpServer.Response.error(503, "no screenshot")
                 val shot = HttpServer.Response.of("image/png", png)
-                shot.headers["Content-Disposition"] = "attachment; filename=\"tv-" + System.currentTimeMillis() / 1000 + ".png\""
+                shot.headers["Cache-Control"] = "no-store"
                 return shot
             }
             "/api/video" -> return video(r.q("q").toIntOrNull() ?: 1)
             "/api/touch" -> {
                 val d = r.json()
-                viewer?.let { if (it.ready()) it.touch(d.optInt("a"), d.optDouble("x").toFloat(), d.optDouble("y").toFloat()) }
+                val a = when (d.optString("a")) { "down", "0" -> 0; "up", "1" -> 1; "move", "2" -> 2; else -> -1 }   // no wheel here
+                viewer?.let { if (a >= 0 && it.ready()) it.touch(a, d.optDouble("x").toFloat(), d.optDouble("y").toFloat()) }
                 return ok()
             }
-            "/api/apps" -> return HttpServer.Response.json(JSONObject().put("apps", apps()))
-            "/api/icon" -> {
+            "/api/apps" -> if (r.q("system") != "1") return HttpServer.Response.json(JSONObject().put("apps", apps()))   // every package: Manage
+            "/api/app/icon" -> {
                 val png = icon(r.query["pkg"].toString()) ?: return HttpServer.Response.error(404, "no icon")
                 val icon = HttpServer.Response.of("image/png", png)
                 icon.headers["Cache-Control"] = "max-age=86400"
                 return icon
             }
+            "/api/adb/connect" -> { if (tv == null) connect(); inUse(); return HttpServer.Response.json(JSONObject().put("state", adbWord())) }
         }
         val managed = manage?.handle(r)
         if (managed != null) return managed
@@ -305,32 +295,24 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         val t = tv
         val d = r.json()
         when (r.path) {
-            "/api/volume" -> {
-                val am = getSystemService(AUDIO_SERVICE) as AudioManager
-                am.setStreamVolume(AudioManager.STREAM_MUSIC, maxOf(0, minOf(am.getStreamMaxVolume(AudioManager.STREAM_MUSIC), d.optInt("level"))), AudioManager.FLAG_SHOW_UI)
-                return HttpServer.Response.json(state())
-            }
             "/api/key" -> {
                 val keyCode = KEYS[d.optString("key").uppercase(Locale.ROOT)] ?: return HttpServer.Response.error(400, "unknown key")
                 if (t == null || !t.ready()) return HttpServer.Response.error(503, "adb:$adbState")
-                if (d.optString("action", "press") == "press" && keyCode in Tv.OPENERS)   // keys that should open something
+                val action = when (d.optString("dir")) { "START_LONG" -> "down"; "END_LONG" -> "up"; else -> "press" }   // the words of the computer's server
+                if (action == "press" && keyCode in Tv.OPENERS)   // keys that should open something
                     return HttpServer.Response.json(JSONObject().put("ok", true).put("noop", !t.pressSeen(keyCode)))
                 if (keyCode == 26) {                                  // sleep or wake by what the TV is doing now, so a tap never does the opposite
-                    if (d.optString("action", "press") != "up") t.press(if ((getSystemService(POWER_SERVICE) as android.os.PowerManager).isInteractive) 223 else 224)
-                } else if (keyCode == 176) { if (d.optString("action", "press") != "up") t.settings() }   // the key itself does nothing on many TVs
-                else key(t, keyCode, d.optString("action", "press"))
+                    if (action != "up") t.press(if ((getSystemService(POWER_SERVICE) as android.os.PowerManager).isInteractive) 223 else 224)
+                } else if (keyCode == 176) { if (action != "up") t.settings() }   // the key itself does nothing on many TVs
+                else key(t, keyCode, action)
                 return ok()
             }
-            "/api/text" -> {
+            "/api/type" -> {
                 if (t == null || !t.ready()) return HttpServer.Response.error(503, "adb:$adbState")
                 repeat(minOf(d.optInt("del"), 500)) { t.press(67) }    // live typing: what changed is deleted, then typed again
                 if (d.optString("text").isNotEmpty()) t.text(d.optString("text"))
+                repeat(minOf(d.optInt("fdel"), 500)) { t.press(112) }
                 if (d.optBoolean("enter")) t.press(66)
-                return ok()
-            }
-            "/api/launch" -> {
-                if (t == null || !t.ready()) return HttpServer.Response.error(503, "adb:$adbState")
-                t.launch(d.optString("component"))
                 return ok()
             }
             else -> return HttpServer.Response.error(404, "not found")
@@ -372,17 +354,23 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         }
     }
 
+    /** ready, unauthorized, closed, error or unknown: the words the page knows (the computer's server uses them too). */
+    private fun adbWord(): String = when (adbState) { "ready" -> "ready"; "allow" -> "unauthorized"; "connecting" -> "unknown"; "error" -> "error"; else -> "closed" }
+
+    /** What the page shows at the top, in the shape the computer's server gives it. */
     @Throws(Exception::class)
-    private fun state(): JSONObject {
+    private fun state(host: String): JSONObject {
         val am = getSystemService(AUDIO_SERVICE) as AudioManager
         val pm = getSystemService(POWER_SERVICE) as PowerManager
         var version: String? = ""
         try { version = packageManager.getPackageInfo(packageName, 0).versionName } catch (ignored: Exception) { }
-        return JSONObject().put("name", Build.MODEL).put("maker", Build.MANUFACTURER).put("android", Build.VERSION.RELEASE).put("version", version)
-            .put("app", "TV Setup").put("released", try { getString(resources.getIdentifier("released", "string", packageName)).split("-").let { it[2] + "/" + it[1] + "/" + it[0] } } catch (e: Exception) { "" })
-            .put("adb", adbState).put("on", pm.isInteractive)
-            .put("volume", am.getStreamVolume(AudioManager.STREAM_MUSIC)).put("volume_max", am.getStreamMaxVolume(AudioManager.STREAM_MUSIC))
-            .put("muted", Build.VERSION.SDK_INT >= 23 && am.isStreamMute(AudioManager.STREAM_MUSIC))
+        return JSONObject().put("core", "tv").put("host", host).put("name", Build.MODEL).put("connected", true).put("is_on", pm.isInteractive).put("paired", true)
+            .put("device", JSONObject().put("manufacturer", Build.MANUFACTURER).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE))
+            .put("version", version).put("app_name", "TV Setup")
+            .put("released", try { getString(resources.getIdentifier("released", "string", packageName)).split("-").let { it[2] + "/" + it[1] + "/" + it[0] } } catch (e: Exception) { "" })
+            .put("adb", JSONObject().put("state", adbWord()))
+            .put("volume", JSONObject().put("level", am.getStreamVolume(AudioManager.STREAM_MUSIC)).put("max", am.getStreamMaxVolume(AudioManager.STREAM_MUSIC))
+                .put("muted", Build.VERSION.SDK_INT >= 23 && am.isStreamMute(AudioManager.STREAM_MUSIC)))
     }
 
     // ---------------------------------------------------------------- pairing
@@ -436,7 +424,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             for (ri in pm.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(category), 0)) {
                 val pkg = ri.activityInfo.packageName
                 if (!seen.add(pkg) || pkg == packageName) continue
-                out.put(JSONObject().put("pkg", pkg).put("component", pkg + "/" + ri.activityInfo.name).put("label", ri.loadLabel(pm).toString()))
+                out.put(JSONObject().put("pkg", pkg).put("meta", JSONObject().put("label", ri.loadLabel(pm).toString()).put("icon", true).put("banner", true)))
             }
         }
         return out
@@ -461,13 +449,5 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         } catch (e: Exception) {
             return null
         }
-    }
-
-    @Throws(Exception::class)
-    private fun page(): ByteArray {
-        page?.let { return it }
-        val bytes = assets.open("index.html").use { it.readBytes() }
-        page = bytes
-        return bytes
     }
 }

@@ -277,7 +277,34 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         tv = null
     }
 
+    private var allowBox: android.app.Dialog? = null
+
+    /**
+     * The TV is asking "Allow USB debugging?" and nothing goes on until somebody answers it there. A line in the status bar is
+     * easy to miss, so this takes the whole screen; it goes away by itself once the TV has answered.
+     */
+    private fun allowAlert(on: Boolean) {
+        if (!on) { allowBox?.dismiss(); allowBox = null; return }
+        if (allowBox != null || isFinishing) return
+        val d = android.app.Dialog(this, android.R.style.Theme_Black_NoTitleBar)
+        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setBackgroundColor(BG); setPadding(dp(28), dp(28), dp(28), dp(28)) }
+        val line = { text: String, size: Float, color: Int, bold: Boolean, top: Int ->
+            col.addView(TextView(this).apply { this.text = text; textSize = size; setTextColor(color); gravity = Gravity.CENTER; if (bold) typeface = Typeface.DEFAULT_BOLD; setLineSpacing(dp(4).toFloat(), 1f) },
+                LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(top) })
+        }
+        line("📺", 64f, TEXT, false, 0)
+        line(t("Nhìn lên TV", "Look at the TV"), 30f, TEXT, true, 8)
+        line(t("TV đang hỏi “Cho phép gỡ lỗi USB?”", "The TV is asking “Allow USB debugging?”"), 18f, MUTED, false, 10)
+        line(t("1. Tích “Luôn cho phép”\n2. Chọn OK (Cho phép)", "1. Tick “Always allow”\n2. Choose OK (Allow)"), 20f, TEXT, true, 26)
+        line(t("Màn hình này tự đóng khi TV đã cho phép.", "This screen closes by itself once the TV has allowed it."), 15f, MUTED, false, 26)
+        col.addView(button(t("Để sau", "Later"), CARD).apply { setOnClickListener { d.dismiss() } }, LinearLayout.LayoutParams(-1, dp(54)).apply { topMargin = dp(30) })
+        d.setContentView(col)
+        allowBox = d
+        try { d.show() } catch (e: Exception) { allowBox = null }
+    }
+
     private fun disconnect(message: String?) {
+        allowAlert(false)
         fullscreen = false
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         clearBox()                                                    // the next TV has received nothing from the box
@@ -313,6 +340,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         ui.post {
             val h = host
             if (tv !== from || h == null) return@post                 // from a session that has been replaced
+            allowAlert(key == "allow")
             when (key) {
                 "connecting" -> status.text = t("Đang kết nối ", "Connecting to ") + detail + "..."
                 "allow" -> status.text = t("Nhìn lên TV: tích “Luôn cho phép từ máy tính này” rồi chọn OK.", "Look at the TV: tick “Always allow from this computer”, then OK.")
@@ -1490,7 +1518,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         private var labels: RemoteLabels? = null
         private var forHost: String? = null
         private var picking: ValueCallback<Array<Uri>>? = null
-        private var page: ByteArray? = null
+        private val webPage by lazy { dev.tvremote.core.WebPage(assets, "phone", version() + "-" + (try { packageManager.getPackageInfo(packageName, 0).lastUpdateTime / 1000 } catch (e: Exception) { 0L })) }
 
         init {
             view.setBackgroundColor(BG)
@@ -1587,19 +1615,11 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
         override fun handle(r: HttpServer.Request): HttpServer.Response {
             if (token != r.cookie("tvr")) return HttpServer.Response.error(403, "this page belongs to the TV Remote app")
-            if (r.path == "/" || r.path == "/index.html") {
-                val html = page ?: run {
-                    val buf = ByteArrayOutputStream()
-                    assets.open("index.html").use { it.copyTo(buf, 65536) }
-                    buf.toByteArray().also { page = it }
-                }
-                return HttpServer.Response.of("text/html; charset=utf-8", html)
-            }
-            if (r.path == "/api/state")                               // the page only needs to know it may show itself
-                return HttpServer.Response.json(JSONObject().put("name", name(forHost ?: "")).put("on", true).put("volume", 0).put("volume_max", 0).put("muted", false).put("adb", "ready")
-                    .put("app", "TV Remote").put("version", version()).put("released", released()))
-            if (r.path == "/stats.js") return HttpServer.Response.of("text/javascript; charset=utf-8", assets.open("stats.js").use { it.readBytes() })
-            if (r.path == "/api/icon") {
+            webPage.serve(r.path)?.let { return it }
+            if (r.path == "/api/state" || r.path == "/api/about")      // the page only needs to know it may show itself, and for which TV
+                return HttpServer.Response.json(JSONObject().put("core", "phone").put("host", forHost ?: "").put("name", name(forHost ?: "")).put("connected", true).put("is_on", true).put("paired", true)
+                    .put("adb", JSONObject().put("state", manage?.adbState() ?: "closed")).put("app_name", "TV Remote").put("version", version()).put("released", released()))
+            if (r.path == "/api/app/icon") {
                 val png = labels?.icon(r.query["pkg"].toString()) ?: return HttpServer.Response.error(404, "no icon")
                 val icon = HttpServer.Response.of("image/png", png)
                 icon.headers["Cache-Control"] = "max-age=86400"
