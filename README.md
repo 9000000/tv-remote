@@ -14,7 +14,21 @@
 </tr>
 </table>
 
-**Mục lục:** [Chọn cách dùng](#chọn-cách-dùng) · [Chuẩn bị TV](#chuẩn-bị-tv) · [Cài TV Setup bằng mã Downloader](#cài-tv-setup-bằng-mã-downloader) · [App điện thoại](#1-app-điện-thoại-android-tv-remote) · [Trang do TV phục vụ](#2-trang-do-tv-phục-vụ-tv-setup) · [Web trên máy tính](#3-web-trên-máy-tính) · [Dùng khi khác mạng](#dùng-khi-khác-mạng-tailscale) · [Khi TV tắt](#khi-tv-tắt) · [Tối ưu TV](#tối-ưu-tv) · [Gặp lỗi](#gặp-lỗi) · [Bảo mật](#bảo-mật) · [Chi tiết kỹ thuật](#chi-tiết-kỹ-thuật)
+**Mục lục**
+
+- [Chọn cách dùng](#chọn-cách-dùng)
+- [Chuẩn bị TV](#chuẩn-bị-tv)
+- [Cài TV Setup bằng mã Downloader](#cài-tv-setup-bằng-mã-downloader)
+- Cài và dùng từng cách:
+  - [App điện thoại](#1-app-điện-thoại-android-tv-remote)
+  - [Trang do TV phục vụ](#2-trang-do-tv-phục-vụ-tv-setup)
+  - [Web trên máy tính](#3-web-trên-máy-tính)
+- [Dùng khi khác mạng](#dùng-khi-khác-mạng-tailscale)
+- [Khi TV tắt](#khi-tv-tắt)
+- [Tối ưu TV](#tối-ưu-tv)
+- [Gặp lỗi](#gặp-lỗi)
+- [Bảo mật](#bảo-mật)
+- [Chi tiết kỹ thuật](#chi-tiết-kỹ-thuật)
 
 ## Chọn cách dùng
 

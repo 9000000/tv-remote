@@ -14,7 +14,21 @@ Tested for real on a Sony BRAVIA (Android 9). Other brands are untested. Samsung
 </tr>
 </table>
 
-**Contents:** [Pick how to use it](#pick-how-to-use-it) · [Prepare the TV](#prepare-the-tv) · [Install TV Setup with a Downloader code](#install-tv-setup-with-a-downloader-code) · [Phone app](#1-android-phone-app-tv-remote) · [Page served by the TV](#2-page-served-by-the-tv-tv-setup) · [Web on the computer](#3-web-on-the-computer) · [From another network](#from-another-network-tailscale) · [When the TV is off](#when-the-tv-is-off) · [Optimize TV](#optimize-tv) · [Troubleshooting](#troubleshooting) · [Security](#security) · [Technical details](#technical-details)
+**Contents**
+
+- [Pick how to use it](#pick-how-to-use-it)
+- [Prepare the TV](#prepare-the-tv)
+- [Install TV Setup with a Downloader code](#install-tv-setup-with-a-downloader-code)
+- Setting up each way:
+  - [Phone app](#1-android-phone-app-tv-remote)
+  - [Page served by the TV](#2-page-served-by-the-tv-tv-setup)
+  - [Web on the computer](#3-web-on-the-computer)
+- [From another network](#from-another-network-tailscale)
+- [When the TV is off](#when-the-tv-is-off)
+- [Optimize TV](#optimize-tv)
+- [Troubleshooting](#troubleshooting)
+- [Security](#security)
+- [Technical details](#technical-details)
 
 ## Pick how to use it
 
