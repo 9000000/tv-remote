@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.16.1 - 2026-10-14
+
+Web 2.16.1 · app điện thoại 2.14.1 · app TV 2.13.1
+
+**Tiếng Việt**
+- Sửa: tab Tự động (và các thẻ xếp hai cột) tràn ngang trên điện thoại, phải kéo sang phải mới thấy hết. Thẻ giờ luôn vừa màn hình; ô chọn app của Giới hạn app xuống hàng trên màn rất hẹp.
+
+**English**
+- Fixed: the Automation tab (and other two-column cards) overflowed sideways on phones, needing a sideways scroll. Cards now always fit the screen; the app picker of App limits wraps on very narrow screens.
+
 ## 2.16.0 - 2026-10-14
 
 Web 2.16.0 · app điện thoại 2.14.0 · app TV 2.13.0

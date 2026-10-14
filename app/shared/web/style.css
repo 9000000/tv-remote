@@ -176,7 +176,7 @@
   .bar { height:6px; background:var(--btn); border-radius:3px; overflow:hidden; margin-top:6px; } .bar i { display:block; height:100%; width:0; background:var(--accent); transition:width .3s; }
   .job { padding:9px 0; border-top:1px solid var(--line); font-size:13px; } .job:first-child { border-top:0; }
   .job.error .msg { color:var(--bad); } .job.done .msg { color:var(--ok); }
-  .two-up { display:grid; gap:14px; grid-template-columns:1fr; } @media (min-width:900px) { .two-up { grid-template-columns:1fr 1fr; align-items:start; } }
+  .two-up { display:grid; gap:14px; grid-template-columns:minmax(0,1fr); } @media (min-width:900px) { .two-up { grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:start; } }   /* minmax: a card never grows past the screen for a long word or select */
 
   dialog { border:0; padding:0; background:transparent; max-width:96vw; max-height:96vh; } dialog::backdrop { background:rgba(0,0,0,.8); }
   .aboutbox { max-width:480px; margin:0; } .aboutbox h1 { margin-bottom:10px; } .aboutbox p { margin:8px 0; font-size:14px; line-height:1.5; } .aboutbox a { color:var(--accent); }
@@ -264,3 +264,4 @@
   .aihint { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-top:10px; } .aihint button { min-height:40px; padding:0 14px; font-size:14px; } .aihint .muted { font-size:12px; }
   #aitext { width:100%; box-sizing:border-box; font:12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; background:var(--bg); color:var(--ink); border:1px solid var(--line, #333); border-radius:10px; padding:10px; resize:vertical; }
   #appslist .item.off .appicon, #appslist .item.off .name > span { opacity:.5; }
+  @media (max-width:380px) { #limitf { flex-wrap:wrap; } #limitf select#limitpkg { flex:1 1 100%; } }
