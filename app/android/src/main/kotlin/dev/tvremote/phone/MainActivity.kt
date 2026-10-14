@@ -110,7 +110,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     private val SHOT = -1                                             // not a key: the screenshot button in the extra keys
     private val OPEN = -2                                             // not a key: "open on the TV" in the extra keys
     private lateinit var stage: FrameLayout                           // the picture with the full screen button over it
-    private var tv: Tv? = null
+    @Volatile private var tv: Tv? = null                              // read by the session thread to tell its own messages from a replaced one's
     private var basic: Atv? = null                                    // keys only, for a TV whose ADB is still off (see Atv)
     private lateinit var basicBar: Button
     private var host: String? = null                                  // the TV we want to be connected to, null on the picker
@@ -171,14 +171,21 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     override fun onStart() {
         super.onStart()
+        ui.removeCallbacks(idleStop)
         refreshSaved()
         startSession()
     }
 
-    override fun onStop() {                                           // not watching: stop the encoder on the TV
+    /**
+     * Not watching: stop the encoder on the TV. Buttons only (picture off) costs the TV nothing, so that session stays, and
+     * coming back from another app needs no new connection; only after a long while away is it closed.
+     */
+    override fun onStop() {
         super.onStop()
-        stopSession()
+        if (video) stopSession() else ui.postDelayed(idleStop, 10 * 60 * 1000L)
     }
+
+    private val idleStop = Runnable { stopSession() }
 
     override fun onDestroy() {
         managing.destroy()
@@ -400,7 +407,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 }
                 "starting" -> {
                     save(entry ?: h, detail)
-                    status.text = t("Đang mở hình từ ", "Opening the picture from ") + detail.ifEmpty { h } + "..."
+                    status.text = if (video) t("Đang mở hình từ ", "Opening the picture from ") + detail.ifEmpty { h } + "..."
+                        else t("Đang mở điều khiển ", "Opening the controls of ") + detail.ifEmpty { h } + "..."
                     waitName.text = title(entry ?: h)
                     waitStep.text = if (video) t("Đã kết nối, đang mở hình TV...", "Connected, opening the TV picture...") else t("Đã kết nối, đang mở điều khiển...", "Connected, opening the controls...")
                     val s = from

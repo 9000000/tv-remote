@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.14.1 - 2026-10-14
+
+Web 2.14.1 · app điện thoại 2.13.1 · app TV 2.11.2
+
+**Tiếng Việt**
+- Sửa (app điện thoại): đã tắt hình, chỉ dùng nút bấm, mà sang app khác rồi quay lại thì dòng trên cùng đứng ở “Đang mở hình từ ...”. Khi tắt hình, app giờ giữ kết nối lúc ở ngoài (tối đa 10 phút) nên quay lại là bấm được ngay; nếu phải kết nối lại thì ghi “Đang mở điều khiển” và không còn bị kẹt ở dòng đó.
+
+**English**
+- Fixed (phone app): with the picture off, using buttons only, switching to another app and back left the top line at “Opening the picture from ...”. With the picture off the app now keeps the connection while away (up to 10 minutes), so the buttons work straight away on return; when it does have to reconnect it says “Opening the controls” and no longer sticks there.
+
 ## 2.14.0 - 2026-10-14
 
 Web 2.14.0 · app điện thoại 2.13.0 · app TV 2.11.2
