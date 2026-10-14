@@ -221,6 +221,19 @@ footer{border-top:1px solid var(--line);padding:36px 0;color:var(--dim);font-siz
 footer .wrap{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-between}
 footer a{color:var(--muted)}footer a:hover{color:var(--text)}
 
+.hard{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:0 0 36px}
+.hard .mini b{display:block;color:var(--text);margin-bottom:6px}
+.nowrap{white-space:nowrap}
+.cmpwrap{max-width:100%;min-width:0;overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+.cmp{width:100%;min-width:720px;border-collapse:collapse;font-size:14.5px}
+.cmp th,.cmp td{padding:13px 16px;text-align:left;vertical-align:top;border-top:1px solid var(--line)}
+.cmp thead th{border-top:0;font-size:13px;color:var(--muted);font-weight:700;letter-spacing:.04em}
+.cmp tbody th{font-weight:600;color:var(--text);width:28%}
+.cmp td{color:var(--muted)} .cmp td small{display:block;font-size:12.5px;color:var(--dim);margin-top:2px}
+.cmp .us{background:rgba(91,140,255,.08);color:var(--text)} .cmp thead .us{color:var(--blue)}
+.cmp .y::before{content:"✓ ";color:var(--green);font-weight:800} .cmp .n::before{content:"✗ ";color:var(--red);font-weight:800} .cmp .m::before{content:"~ ";color:var(--orange);font-weight:800}
+.cmpnote{color:var(--dim);font-size:13px;margin-top:12px;text-align:center}
+@media (max-width:980px){.hard{grid-template-columns:1fr}}
 .reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}
 .reveal.in{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
@@ -267,6 +280,7 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
       <a href="#why"><span class="vi">Vì sao</span><span class="en">Why</span></a>
       <a href="#features"><span class="vi">Tính năng</span><span class="en">Features</span></a>
       <a href="#how"><span class="vi">Cách hoạt động</span><span class="en">How it works</span></a>
+      <a href="#compare"><span class="vi">So sánh</span><span class="en">Compare</span></a>
       <a href="#install"><span class="vi">Cài đặt</span><span class="en">Install</span></a>
       <a href="#faq">FAQ</a>
     </div>
@@ -293,8 +307,8 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
         <span class="en">Free · open source · no ads</span>
       </a>
       <h1>
-        <span class="vi">Remote <span class="grad">thông minh</span> cho Android TV.</span>
-        <span class="en">The <span class="grad">smart remote</span> for Android TV.</span>
+        <span class="vi">Remote <span class="grad nowrap">thông minh</span> cho Android TV.</span>
+        <span class="en">The <span class="grad nowrap">smart remote</span> for Android TV.</span>
       </h1>
       <p class="lead">
         <span class="vi">Điện thoại, iPhone hay máy tính đều thành remote: chạm thẳng lên màn hình TV, gõ tiếng Việt, hẹn giờ tắt, quản lý app. Đi thẳng tới TV, không qua máy chủ.</span>
@@ -491,6 +505,39 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
       <div class="fact"><b>~8 KB/s</b><span><span class="vi">để nghe tiếng TV</span><span class="en">to stream TV audio</span></span></div>
       <div class="fact"><b>100%</b><span><span class="vi">mã nguồn mở trên GitHub</span><span class="en">open source on GitHub</span></span></div>
     </div>
+  </div>
+</section>
+
+<!-- ============ COMPARE ============ -->
+<section id="compare" style="padding-top:40px">
+  <div class="wrap">
+    <div class="center reveal">
+      <span class="eyebrow"><span class="vi">So sánh</span><span class="en">Compare</span></span>
+      <h2><span class="vi">Cái khó không phải là bấm nút.</span><span class="en">The hard part isn’t the buttons.</span></h2>
+      <p class="lead"><span class="vi">Remote thì nhiều app làm được. Cái làm người ta bỏ cuộc là đưa được app lên TV và bật được ADB. TV Remote lo phần đó.</span><span class="en">Plenty of apps press buttons. What makes people give up is getting an app onto the TV and turning ADB on. TV Remote handles that.</span></p>
+    </div>
+    <div class="hard reveal">
+      <div class="mini"><div class="ic">📦</div><b><span class="vi">TV không cài được APK lạ</span><span class="en">The TV won’t take an outside APK</span></b><p><span class="vi">Gõ mã <span class="mono">2397346</span> vào Downloader là có TV Setup. App điện thoại còn tự gửi lệnh mở Downloader qua giao thức remote của Google, nên cài được khi TV chưa bật ADB.</span><span class="en">Type <span class="mono">2397346</span> into Downloader and TV Setup arrives. The phone app can even open Downloader for you through Google’s remote protocol, so it installs before ADB is on.</span></p></div>
+      <div class="mini"><div class="ic">🔓</div><b><span class="vi">Bật ADB giấu trong menu</span><span class="en">ADB is buried in menus</span></b><p><span class="vi">TV Setup mở thẳng Tùy chọn nhà phát triển. App điện thoại và web máy tính có trợ lý “Bật ADB giúp tôi”, chỉ dùng nút remote.</span><span class="en">TV Setup opens Developer options directly. The phone app and the computer web have a “Help me turn on ADB” assistant that only uses remote keys.</span></p></div>
+      <div class="mini"><div class="ic">🛡️</div><b><span class="vi">“Cho phép gỡ lỗi USB?” lúc không ở nhà</span><span class="en">“Allow USB debugging?” while you’re away</span></b><p><span class="vi">TV hỏi lại khi quên máy bạn. TV Setup tự bấm cho phép, nhưng chỉ khi mã khóa trùng đúng máy đã ghép, và báo trên TV mỗi lần.</span><span class="en">The TV asks again when it forgets your device. TV Setup allows it for you, only when the key matches a paired device, with a notice on the TV every time.</span></p></div>
+    </div>
+    <div class="cmpwrap reveal">
+      <table class="cmp">
+        <thead><tr><th></th><th class="us">TV Remote</th><th><span class="vi">App Google TV</span><span class="en">Google TV app</span></th><th><span class="vi">App remote trên store</span><span class="en">Store remote apps</span></th><th>scrcpy + adb</th></tr></thead>
+        <tbody>
+          <tr><th><span class="vi">Bấm nút, gõ chữ, nói lệnh</span><span class="en">Keys, typing, voice</span></th><td class="y us"><span class="vi">Có</span><span class="en">Yes</span></td><td class="y"><span class="vi">Có</span><span class="en">Yes</span></td><td class="y"><span class="vi">Có</span><span class="en">Yes</span></td><td class="m"><span class="vi">Gõ phím, không có giọng nói</span><span class="en">Keyboard, no voice</span></td></tr>
+          <tr><th><span class="vi">Xem màn hình TV, chạm lên hình</span><span class="en">See the TV screen, touch it</span></th><td class="y us"><span class="vi">Có, trên cả điện thoại</span><span class="en">Yes, on a phone too</span></td><td class="n"><span class="vi">Không</span><span class="en">No</span></td><td class="m"><span class="vi">Một số app</span><span class="en">Some apps</span><small><span class="vi">thường phải bật ADB hoặc root</span><span class="en">often needs ADB or root</span></small></td><td class="y"><span class="vi">Có, trên máy tính</span><span class="en">Yes, on a computer</span></td></tr>
+          <tr><th><span class="vi">Nghe tiếng TV trên điện thoại</span><span class="en">TV sound on the phone</span></th><td class="y us"><span class="vi">Có</span><span class="en">Yes</span><small><span class="vi">tai nghe, loa TV im</span><span class="en">headphones, TV speakers quiet</span></small></td><td class="n"><span class="vi">Không</span><span class="en">No</span></td><td class="n"><span class="vi">Hiếm có</span><span class="en">Rare</span></td><td class="m"><span class="vi">Trên máy tính</span><span class="en">On a computer</span></td></tr>
+          <tr><th><span class="vi">Dùng từ iPhone</span><span class="en">From an iPhone</span></th><td class="y us"><span class="vi">Có, qua trình duyệt</span><span class="en">Yes, in the browser</span><small><span class="vi">không phải cài gì</span><span class="en">nothing to install</span></small></td><td class="y"><span class="vi">Cài app</span><span class="en">Install an app</span></td><td class="m"><span class="vi">Tùy app</span><span class="en">Depends</span></td><td class="n"><span class="vi">Không</span><span class="en">No</span></td></tr>
+          <tr><th><span class="vi">Quản lý app, tệp, cài APK</span><span class="en">Apps, files, install APKs</span></th><td class="y us"><span class="vi">Có</span><span class="en">Yes</span></td><td class="n"><span class="vi">Không</span><span class="en">No</span></td><td class="m"><span class="vi">Thường là tính năng trả phí</span><span class="en">Often a paid feature</span></td><td class="m"><span class="vi">Gõ lệnh adb</span><span class="en">adb commands</span></td></tr>
+          <tr><th><span class="vi">Hẹn giờ tắt, giờ đi ngủ, giới hạn từng app</span><span class="en">Sleep timer, bedtime, per-app limits</span></th><td class="y us"><span class="vi">Có, chạy ngay trên TV</span><span class="en">Yes, enforced on the TV</span></td><td class="n"><span class="vi">Không có trong app</span><span class="en">Not in the app</span><small><span class="vi">Google TV có hồ sơ trẻ em trên một số máy</span><span class="en">Google TV has kids profiles on some devices</span></small></td><td class="n"><span class="vi">Hiếm có</span><span class="en">Rare</span></td><td class="n"><span class="vi">Không</span><span class="en">No</span></td></tr>
+          <tr><th><span class="vi">Điều khiển khi không ở nhà</span><span class="en">Control from away</span></th><td class="y us"><span class="vi">Có, Tailscale cài bằng một nút</span><span class="en">Yes, Tailscale in one button</span></td><td class="n"><span class="vi">Không, phải cùng Wi-Fi</span><span class="en">No, same Wi-Fi only</span></td><td class="n"><span class="vi">Thường không</span><span class="en">Usually not</span></td><td class="m"><span class="vi">Tự dựng VPN</span><span class="en">Set up a VPN yourself</span></td></tr>
+          <tr><th><span class="vi">Bật ADB, cài lên TV</span><span class="en">Turning on ADB, installing on the TV</span></th><td class="y us"><span class="vi">Dẫn từng bước</span><span class="en">Guided step by step</span><small><span class="vi">cài được chỉ bằng nút remote</span><span class="en">installs with remote keys alone</span></small></td><td class="y"><span class="vi">Không cần</span><span class="en">Not needed</span></td><td class="m"><span class="vi">Tự làm</span><span class="en">Do it yourself</span></td><td class="m"><span class="vi">Tự làm, gõ lệnh</span><span class="en">Yourself, by command</span></td></tr>
+          <tr><th><span class="vi">Quảng cáo, mã nguồn</span><span class="en">Ads, source code</span></th><td class="y us"><span class="vi">Không quảng cáo, mã nguồn mở</span><span class="en">No ads, open source</span></td><td class="m"><span class="vi">Không quảng cáo, mã đóng</span><span class="en">No ads, closed source</span></td><td class="n"><span class="vi">Thường có quảng cáo</span><span class="en">Often has ads</span></td><td class="y"><span class="vi">Không quảng cáo, mã nguồn mở</span><span class="en">No ads, open source</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="cmpnote"><span class="vi">So với kiểu app thường gặp ở mỗi nhóm; từng app cụ thể có thể khác. Thấy chỗ nào sai, mở issue trên GitHub giúp mình.</span><span class="en">Compared with what is typical in each group; a given app may differ. Spot a mistake? Open an issue on GitHub.</span></p>
   </div>
 </section>
 
