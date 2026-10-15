@@ -288,7 +288,6 @@ def prep():
     for k in range(1, 4):
         s.steps(k)
     # 1: TV Setup opens Developer options by itself; ADB on
-    s.show(".p0", (0, 1.2)); s.show(".p2", (1.2, 4))
     s.press(".p2 .adb", 2.0); s.show(".p2 .dlg", (2.2, 3.2)); s.press(".p2 .dlg .go", 3.0); s.toggle(".p2 .adb .tg", 3.1)
     s.show(".o1", (3.3, 4))
     # 2: no Developer options yet: Build pressed seven times
@@ -298,14 +297,14 @@ def prep():
     for i, (a, b) in enumerate([(taps[3], taps[4]), (taps[4], taps[5]), (taps[5], taps[6])]):
         s.show(f".p1 .left>:nth-child({i+1})", (a + .05, b), f=.05)
     s.show(".p1 .dev", (taps[6] + .1, 8), on="opacity:1;transform:none", off="opacity:0;transform:translateY(30%)")
-    # 3: an operator's box wants its own password: keys only, through Android TV Remote
-    s.show(".p3", (8, 10.6))
+    # 3: an operator's box asks for its own password at "Build": TV Setup opens Developer options by name instead
+    s.show(".p3", (8, 10))
     s.press(".p3 .bld", 8.4, 8.7, 9.0)
-    s.show(".p3 .pw", (9.2, 10.6))
-    s.show(".o3", (10.8, 12)); s.show(".dfoc", (11.0, 12), f=.12)
-    s.track(".dfoc", "transform:none", [(11.5, "transform:translateX(18.08cqw)", .2)])
+    s.show(".p3 .pw", (9.2, 10))
+    s.show(".p0", (0, 1.2), (10, 10.8)); s.show(".p2", (1.2, 4), (10.8, 12))
+    s.show(".o3", (10.9, 12))
     s.press(".rc .rk", 2.0, 3.0, *taps, 8.4, 8.7, 9.0)
-    s.press(".rc .rd", 1.6, 2.6, 4.2, 10.0)
+    s.press(".rc .rd", 1.6, 2.6, 4.2)
     return s.out
 
 
