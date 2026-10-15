@@ -18,6 +18,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="site.css">
 <link rel="stylesheet" href="demo.css">
+<link rel="stylesheet" href="stories.css">
 </head>
 <body>
 
@@ -333,9 +334,8 @@
       <h2><span class="vi">Máy của bạn kết nối thẳng tới TV.</span><span class="en">Your device talks straight to the TV.</span></h2>
       <p class="lead"><span class="vi">Không có máy chủ trung gian, không có tài khoản, không có gì lọt ra ngoài. Dữ liệu chỉ đi trong mạng nhà bạn, hoặc qua kết nối Tailscale riêng của bạn.</span><span class="en">No middle server, no account, nothing to leak. Data stays on your home network, or inside your own Tailscale tunnel.</span></p>
     </div>
-    <!-- the story's timeline is in dev/stories.py (captions in the order of .hcap's <p>s), its look in dev/stories.src.css;
-         run python3 dev/demo_css.py after changing them, never edit docs/demo.css -->
-    <div class="story st-h reveal" style="--T:40s" data-still="5.2,4.6,4.6,7.6">
+    <!-- the story's timeline is in stories.js (captions in the order of .hcap's <p>s), its look in stories.css -->
+    <div class="story st-h reveal" data-still="5.2,4.6,4.6,7.6">
       <div class="hst" aria-hidden="true">
         <div class="phone dph hph"><div class="dscr">
           <div class="hsb"><span>20:59</span><span class="nw">Wi-Fi ▾ ▮</span><span class="n4">4G ▾ ▮</span></div>
@@ -368,10 +368,10 @@
         <p><span class="vi">📶 Điện thoại và TV dùng chung Wi-Fi nhà, app tự tìm thấy TV.</span><span class="en">📶 Phone and TV on the same Wi-Fi: the app finds the TV.</span></p><p><span class="vi">🔌 App kết nối thẳng với TV qua ADB, hình trên TV hiện lên điện thoại.</span><span class="en">🔌 Straight to the TV over ADB: its picture comes to the phone.</span></p><p><span class="vi">👆 Chạm vào hình trên điện thoại, TV làm theo ngay.</span><span class="en">👆 Tap the picture, the TV follows.</span></p><p><span class="vi">🚫 Lỡ tắt Gỡ lỗi ADB, điện thoại mất hình.</span><span class="en">🚫 ADB debugging switched off: no picture.</span></p><p><span class="vi">🎮 App tự chuyển sang Android TV Remote nên vẫn bấm phím được.</span><span class="en">🎮 The app switches to Android TV Remote: keys still work.</span></p><p><span class="vi">⚡ TV Setup tự bật lại ADB, hình hiện lại như cũ.</span><span class="en">⚡ TV Setup turns ADB back on, the picture returns.</span></p><p><span class="vi">☕ Bạn đang ở quán cà phê, điện thoại dùng 4G.</span><span class="en">☕ You're at a café, on 4G.</span></p><p><span class="vi">🔒 Tailscale nối thẳng về TV ở nhà và mã hóa đường truyền, không đi qua máy chủ nào.</span><span class="en">🔒 Tailscale links straight to the TV at home, encrypted. No server in between.</span></p><p><span class="vi">📺 Xem và điều khiển TV như đang ngồi ở nhà.</span><span class="en">📺 Watch and tap as if you were home.</span></p><p><span class="vi">🍎 Trên iPhone, mở Safari và gõ địa chỉ của TV.</span><span class="en">🍎 iPhone: open Safari, type the TV's address.</span></p><p><span class="vi">🔢 TV hiện mã 6 số, nhập mã là kết nối xong.</span><span class="en">🔢 The TV shows a 6-digit code; enter it and you're paired.</span></p><p><span class="vi">🎛️ Có ngay remote đầy đủ trong trình duyệt, không cần cài app.</span><span class="en">🎛️ A full remote in the browser, nothing installed.</span></p>
       </div>
       <ol class="dchap">
-        <li><button type="button" data-ch="0" style="--c:dc1"><i style="--f:df1"></i><b>1</b><span class="vi">Ở nhà, qua Wi-Fi</span><span class="en">At home, on Wi-Fi</span></button></li>
-        <li><button type="button" data-ch="1" style="--c:dc2"><i style="--f:df2"></i><b>2</b><span class="vi">Tắt ADB vẫn bấm được</span><span class="en">Keys with ADB off</span></button></li>
-        <li><button type="button" data-ch="2" style="--c:dc3"><i style="--f:df3"></i><b>3</b><span class="vi">Đi xa, qua Tailscale</span><span class="en">Away, over Tailscale</span></button></li>
-        <li><button type="button" data-ch="3" style="--c:dc4"><i style="--f:df4"></i><b>4</b><span class="vi">iPhone, không cài gì</span><span class="en">iPhone, nothing to install</span></button></li>
+        <li><button type="button" data-ch="0"><i></i><b>1</b><span class="vi">Ở nhà, qua Wi-Fi</span><span class="en">At home, on Wi-Fi</span></button></li>
+        <li><button type="button" data-ch="1"><i></i><b>2</b><span class="vi">Tắt ADB vẫn bấm được</span><span class="en">Keys with ADB off</span></button></li>
+        <li><button type="button" data-ch="2"><i></i><b>3</b><span class="vi">Đi xa, qua Tailscale</span><span class="en">Away, over Tailscale</span></button></li>
+        <li><button type="button" data-ch="3"><i></i><b>4</b><span class="vi">iPhone, không cài gì</span><span class="en">iPhone, nothing to install</span></button></li>
       </ol>
     </div>
     <div class="facts reveal">
@@ -449,10 +449,10 @@
       </button>
     </div>
 
-    <!-- each panel below (and .prep) is a .story: its .sst stage acts out the steps, timed in dev/stories.py and styled in
-         dev/stories.src.css; run python3 dev/demo_css.py after changing them, never edit docs/demo.css -->
+    <!-- each panel below (and .prep) is a .story: its .sst stage acts out the steps, timed in stories.js (a part per
+         step, in the order of the .steps li) and styled in stories.css -->
     <!-- browser / TV Setup -->
-    <div class="panel on story st-b" id="p-browser" role="tabpanel" style="--T:20s">
+    <div class="panel on story st-b" id="p-browser" role="tabpanel">
       <div>
         <h3><span class="vi">Cài TV Setup bằng mã Downloader</span><span class="en">Install TV Setup with a Downloader code</span></h3>
         <p class="sub"><span class="vi">Chỉ cần remote của TV. Không cần máy tính, không cần cáp.</span><span class="en">All you need is the TV's remote. No computer, no cable.</span></p>
@@ -501,7 +501,7 @@
     </div>
 
     <!-- android -->
-    <div class="panel story st-a" id="p-android" role="tabpanel" style="--T:16s">
+    <div class="panel story st-a" id="p-android" role="tabpanel">
       <div>
         <h3><span class="vi">Cài App điện thoại</span><span class="en">Install the Phone app</span></h3>
         <p class="sub"><span class="vi">Android 7 trở lên. Điện thoại và TV cùng mạng Wi-Fi.</span><span class="en">Android 7 or newer. Phone and TV on the same Wi-Fi.</span></p>
@@ -544,7 +544,7 @@
     </div>
 
     <!-- computer -->
-    <div class="panel story st-c" id="p-computer" role="tabpanel" style="--T:16s">
+    <div class="panel story st-c" id="p-computer" role="tabpanel">
       <div>
         <h3><span class="vi">Cài App máy tính</span><span class="en">Install the Computer app</span></h3>
         <p class="sub"><span class="vi">Một app có cửa sổ riêng, khoảng 20 MB. Không cần cài Python, adb hay gì thêm.</span><span class="en">An app with its own window, about 20 MB. Nothing else to install: no Python, no adb.</span></p>
@@ -587,7 +587,7 @@
       </div>
     </div>
 
-    <div class="prep reveal story st-p" style="--T:12s">
+    <div class="prep reveal story st-p">
       <div>
         <span class="eyebrow"><span class="vi">Nếu bị kẹt</span><span class="en">If you get stuck</span></span>
         <h3><span class="vi">TV chưa bật ADB?</span><span class="en">ADB not on yet?</span></h3>
@@ -720,6 +720,8 @@
 <dialog id="qrbig"><div class="big"></div><button class="btn btn-ghost btn-sm" onclick="this.closest('dialog').close()"><span class="vi">Đóng</span><span class="en">Close</span></button></dialog>
 
 <script src="qr.js"></script>
+<script src="gsap.min.js"></script>
+<script src="stories.js"></script>
 <script src="site.js"></script>
 </body>
 </html>

@@ -57,29 +57,21 @@
     document.querySelectorAll(".reveal").forEach(function(el){ io.observe(el); });
   } else document.querySelectorAll(".reveal").forEach(function(el){ el.classList.add("in"); });
 
-  // the demo and the stories: each runs its --T clock only while on screen; a chapter button or a step plays from there,
-  // a tab shown again starts from the beginning. Reduced motion: no playing, each part shows its still (data-still,
-  // seconds into the part; the demo's are below)
+  // the demo (CSS keyframes on one --T clock; the stories are GSAP, in stories.js): it runs only while on screen, a
+  // chapter button plays from there. Reduced motion: no playing, each chapter shows its still (seconds into the chapter)
   (function(){
-    var calm = matchMedia("(prefers-reduced-motion:reduce)");
-    function T(el){ return parseFloat(getComputedStyle(el).getPropertyValue("--T")); }
-    function stills(el){ return (el.dataset.still || (el.classList.contains("demo") ? "8.5,4.8,4,6.5" : "")).split(",").filter(Boolean).map(Number); }
-    function go(el, k, n){                                             // part k of n
-      var q = T(el) / n, st = stills(el)[k];
-      if (calm.matches) { el.style.setProperty("--d", -(k * q + (st != null ? st : q * .92)) + "s"); return; }
+    var calm = matchMedia("(prefers-reduced-motion:reduce)"), stills = [8.5, 4.8, 4, 6.5];
+    function go(el, k, n){                                             // chapter k of n
+      var q = parseFloat(getComputedStyle(el).getPropertyValue("--T")) / n;
+      if (calm.matches) { el.style.setProperty("--d", -(k * q + stills[k]) + "s"); return; }
       el.style.setProperty("--d", -(k * q) + "s"); el.classList.add("rs"); void el.offsetWidth; el.classList.remove("rs");
     }
-    document.querySelectorAll(".demo, .story").forEach(function(el){
+    document.querySelectorAll(".demo").forEach(function(el){
       if ("IntersectionObserver" in window) new IntersectionObserver(function(es){ el.classList.toggle("run", es[0].isIntersecting); }, {threshold:.2}).observe(el);
       else el.classList.add("run");
-      var parts = el.querySelectorAll(".dchap button, .steps li"), n = parts.length;
+      var parts = el.querySelectorAll(".dchap button"), n = parts.length;
       parts.forEach(function(b, k){ b.addEventListener("click", function(){ go(el, k, n); }); });
       if (calm.matches && n) go(el, 0, n);
-    });
-    document.querySelectorAll(".opt").forEach(function(o){
-      o.addEventListener("click", function(){
-        var p = document.getElementById("p-" + o.dataset.tab); if (p) go(p, 0, p.querySelectorAll(".steps li").length);
-      });
     });
   })();
 

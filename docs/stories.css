@@ -1,16 +1,14 @@
-/* The intro page's other stories: How it works (.st-h) and the install tabs (.st-b, .st-a, .st-c, .st-p). The look is
-   here, the timelines in dev/stories.py; dev/demo_css.py writes both into docs/demo.css. They reuse the demo's TV and
-   phone (.dscr, .dcln, .dyt, .dfoc, .dfg). Each .story runs one --T clock: .run while on screen, --d to jump. */
-.story{--d:0s}
-.story *,.story *::before,.story *::after{animation-duration:var(--T);animation-iteration-count:infinite;animation-delay:var(--d);animation-fill-mode:both;animation-play-state:paused}
-.story.run *,.story.run *::before,.story.run *::after{animation-play-state:running}
-.story.rs *,.story.rs *::before,.story.rs *::after{animation:none !important}
-.story .dcln .ck .t1{animation-name:none}.story .dcln .ck .t2{display:none}
-.story .dyt .pl::after{animation-name:none;transform:scaleX(.3)}
+/* The intro page's other stories: How it works (.st-h) and the install tabs (.st-b, .st-a, .st-c, .st-p). Only their
+   still look is here; what moves, and when, is stories.js (GSAP). They reuse the demo's TV and phone (.dscr, .dcln,
+   .dyt, .dfoc, .dfg). Where GSAP moves a pseudo-element it moves a variable instead: --p (a bar's fill, 0 to 1) and
+   --k (a switch's knob, 0 to 1). */
+.story .dcln .ck .t2{display:none}
+.story .dyt .pl::after{transform:scaleX(.3)}
 .story .dyt,.story .dfoc{opacity:0}
-.story .sp{display:inline-block;width:1em;height:1em;border-radius:50%;border:.16em solid rgba(255,255,255,.2);border-top-color:#5b8cff;vertical-align:-.15em;animation:dspin .8s linear infinite !important}
+@keyframes sspin{to{transform:rotate(1turn)}}
+.story .sp{display:inline-block;width:1em;height:1em;border-radius:50%;border:.16em solid rgba(255,255,255,.2);border-top-color:#5b8cff;vertical-align:-.15em;animation:sspin .8s linear infinite}
 .story .rad{position:absolute;border-radius:50%;border:1cqw solid #5b8cff;opacity:0}
-.story .rad::after{content:"";position:absolute;inset:-1cqw;border-radius:50%;border:1cqw solid #5b8cff;animation:sping 1.6s infinite !important}
+.story .rad::after{content:"";position:absolute;inset:-1cqw;border-radius:50%;border:1cqw solid #5b8cff;animation:sping 1.6s infinite}
 @keyframes sping{0%{transform:scale(.3);opacity:1}100%{transform:scale(1);opacity:0}}
 .story .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
 .story .ty{display:inline-block;overflow:hidden;white-space:nowrap;vertical-align:bottom;width:0;font-family:"JetBrains Mono",ui-monospace,monospace}
@@ -23,13 +21,13 @@
 .story .tp .tr{display:flex;align-items:center;justify-content:space-between;gap:2cqw;padding:1.8cqw 2.6cqw;border-radius:1.2cqw;background:rgba(255,255,255,.06)}
 .story .tp .tr.on{box-shadow:0 0 0 .5cqw #fff;background:#34405a}
 .story .tg{position:relative;flex:none;width:6.4cqw;height:3.6cqw;border-radius:3cqw;background:#3a4258}
-.story .tg::after{content:"";position:absolute;left:.5cqw;top:.5cqw;width:2.6cqw;height:2.6cqw;border-radius:50%;background:#fff}
-.story .tg.is{background:#3ddc84}.tg.is::after{transform:translateX(108%)}
+.story .tg::after{content:"";position:absolute;left:.5cqw;top:.5cqw;width:2.6cqw;height:2.6cqw;border-radius:50%;background:#fff;transform:translateX(calc(var(--k,0)*108%))}
+.story .tg.is{background:#3ddc84;--k:1}
 .story .tb{display:inline-grid;align-self:flex-start;padding:1.3cqw 3.4cqw;border-radius:1cqw;background:#2a3348;font-weight:700}
 .story .tb>span{grid-area:1/1}
 .story .tbs{display:flex;gap:2cqw}
 .story .bar{height:1.2cqw;border-radius:1cqw;background:rgba(255,255,255,.12);overflow:hidden}
-.story .bar::after{content:"";display:block;height:100%;background:#5b8cff;transform-origin:left;transform:scaleX(0)}
+.story .bar::after{content:"";display:block;height:100%;background:#5b8cff;transform-origin:left;transform:scaleX(var(--p,0))}
 .story .okc{color:#3ddc84;font-weight:800}
 .story .tp .ok{opacity:0}
 .story .app{display:flex;align-items:center;gap:2.6cqw}
@@ -40,7 +38,7 @@
 .story .or{background:#0b0e15}
 .story .ohd{margin:-5cqw -6cqw 0;padding:2.6cqw 6cqw;background:#ff7a00;color:#fff;font-weight:800;font-size:3.6cqw}
 .story .inp{padding:1.8cqw 2.4cqw;border-radius:1cqw;border:.35cqw solid #5b8cff;background:#0d1119;font-size:3.8cqw}
-.story .car{display:inline-block;width:.1em;height:1em;margin-left:.08em;vertical-align:middle;background:currentColor;animation:sblink 1s steps(1) infinite !important}
+.story .car{display:inline-block;width:.1em;height:1em;margin-left:.08em;vertical-align:middle;background:currentColor;animation:sblink 1s steps(1) infinite}
 @keyframes sblink{50%{opacity:0}}
 .story .tp.ovl{opacity:0}
 .story .sto{position:absolute;right:3cqw;top:3cqw;padding:1.6cqw 2.6cqw;border-radius:1.4cqw;background:rgba(22,27,40,.96);border:1px solid rgba(255,255,255,.14);font-size:2.6cqw;font-weight:700;color:#fff;opacity:0;white-space:nowrap}
@@ -112,9 +110,9 @@
 .hpath{position:absolute;left:19%;width:20%;top:0;height:76%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;font-size:13.5px;font-weight:700;color:var(--muted)}
 .hpath .ln{position:relative;width:100%;height:4px;border-radius:4px;background:linear-gradient(90deg,var(--blue),var(--orange))}
 .lane{position:absolute;inset:0;opacity:0}
-.lane i{position:absolute;top:-5px;width:12px;height:12px;border-radius:50%;background:var(--blue);box-shadow:0 0 12px var(--blue);animation:sgo 1s linear infinite !important}
-.lane.dn i{top:3px;width:9px;height:9px;background:var(--orange);box-shadow:0 0 12px var(--orange);animation-name:sback !important}
-.lane i:nth-child(2){animation-delay:.33s !important}.lane i:nth-child(3){animation-delay:.66s !important}
+.lane i{position:absolute;top:-5px;width:12px;height:12px;border-radius:50%;background:var(--blue);box-shadow:0 0 12px var(--blue);animation:sgo 1s linear infinite}
+.lane.dn i{top:3px;width:9px;height:9px;background:var(--orange);box-shadow:0 0 12px var(--orange);animation-name:sback}
+.lane i:nth-child(2){animation-delay:.33s}.lane i:nth-child(3){animation-delay:.66s}
 @keyframes sgo{0%{left:0;opacity:0}15%,85%{opacity:1}100%{left:calc(100% - 12px);opacity:0}}
 @keyframes sback{0%{left:calc(100% - 9px);opacity:0}15%,85%{opacity:1}100%{left:0;opacity:0}}
 .hpath .proto,.hpath .hub{display:grid;min-height:1.4em}
@@ -134,19 +132,20 @@
 .htv .side small{color:#9aa4b8}
 .htv .vbar{position:absolute;right:4cqw;top:4cqw;display:flex;align-items:center;gap:1.6cqw;padding:1.4cqw 2.4cqw;border-radius:9cqw;background:rgba(10,13,20,.9);border:1px solid rgba(255,255,255,.14);font-size:2.6cqw;opacity:0}
 .htv .vbar i{width:22cqw;height:1cqw;border-radius:1cqw;background:rgba(255,255,255,.18);overflow:hidden}
-.htv .vbar i::after{content:"";display:block;height:100%;background:#fff;transform-origin:left;transform:scaleX(.4)}
+.htv .vbar i::after{content:"";display:block;height:100%;background:#fff;transform-origin:left;transform:scaleX(var(--p,.4))}
 .htv .pair{flex-direction:row;align-items:center;gap:3.4cqw;left:16cqw;right:16cqw}
 .htv .pair .qrx{width:15cqw}
 .htv .pair .big{font-size:6cqw;font-weight:700;letter-spacing:.08em;color:#fff}
 .hcap{position:relative;height:3.2em;margin-top:30px;font-weight:700;font-size:clamp(15px,1.9vw,20px);text-align:center}
 .hcap>p{position:absolute;left:0;right:0;top:0;margin:0;opacity:0}
 .st-h .dchap{margin-top:6px}
+.st-h .dchap i::after{transform:scaleX(var(--p,0))}
 @media (max-width:760px){
   .hst{aspect-ratio:auto;display:flex;flex-direction:column;align-items:center}
   .htv{position:relative;width:100%;order:1}
   .hpath{position:relative;order:2;left:auto;width:100%;height:auto;margin:14px 0 14px;flex-direction:column;gap:6px;font-size:12.5px}
   .hpath .ln{order:-1;width:4px;height:40px;flex:none;background:linear-gradient(var(--orange),var(--blue))}
-  .lane i{left:-4px !important;animation-name:sgov !important}.lane.dn i{left:-2.5px !important;animation-name:sbackv !important}
+  .lane i{left:-4px;animation-name:sgov}.lane.dn i{left:-2.5px;animation-name:sbackv}
   .hpath .proto{font-size:13.5px}
   .hpath .cloud{order:3}.hpath .cloud .via{display:none}
   .hph{position:relative;width:44%;order:3}
@@ -203,7 +202,7 @@
 .story .steps li{border-radius:12px;padding:6px 8px;margin:-6px -8px;cursor:pointer}
 .story .steps li:hover{background:rgba(255,255,255,.03)}
 @media (max-width:980px){.sst{max-width:560px;width:100%;margin:0 auto 6px}}
-@media (prefers-reduced-motion:reduce){.story *,.story.run *,.story *::after,.story.run *::after,.story *::before,.story.run *::before{animation-play-state:paused !important}.lane i{display:none}}
+@media (prefers-reduced-motion:reduce){.story *,.story *::before,.story *::after{animation-play-state:paused !important}.lane i{display:none}}
 /* the install stages are half a panel wide: everything on their TV a size up */
 .stv .tp{padding:6cqw 7cqw;gap:3cqw;font-size:4.2cqw}
 .stv .tp h5{font-size:6cqw}

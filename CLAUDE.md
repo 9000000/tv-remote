@@ -47,7 +47,7 @@ app/desktop/             the computer app on the shared Kotlin core (JVM, no adb
                          data in the user's app data folder); .github/workflows/desktop.yml builds and opens it on Mac, Windows, Linux
 app/shared/tests/        node tests of the page's scripts, and the case tables (fleet_cases.json, tvshell_cases.json) the Kotlin tests read
 dev/                     release.sh, gen_icons.py, emu.sh (the two test emulators: create, start, build + install),
-                         demo_css.py (the intro page's demo and stories: demo.src.css, stories.src.css, stories.py)
+                         demo_css.py (the intro page's main demo: demo.src.css; its stories are hand-written, docs/stories.js + stories.css)
 ```
 
 ## Rules that matter
@@ -59,9 +59,9 @@ dev/                     release.sh, gen_icons.py, emu.sh (the two test emulator
 - **Users first:** make things automatic; show an error only after every fallback has failed, in words a person can act on (`Errors.kt`, `friendly()` in `js/core.js`). Choices look like buttons. Long waits show what is going on and can be cancelled.
 - **Never commit** `cert.pem`, `key.pem`, `tvs.json`, `*.jks` (they pair with or sign for real devices). Never expose port 8765 to the Internet; away from home everything goes over Tailscale.
 - **"Allow USB debugging?"** is only ever answered for the key whose fingerprint matches the asking device (`AdbPrompt.kt`); never press Allow on an unknown key.
-- **Generated files are never edited by hand:** `docs/demo.css` (the intro page's demo, How it works and the install
-  stories) is written by `python3 dev/demo_css.py` from `dev/demo.src.css`, `dev/stories.src.css` and `dev/stories.py`;
-  change those and run it. Its first line and `.gitattributes` say so too.
+- **Generated files are never edited by hand:** `docs/demo.css` (the intro page's main demo) is written by
+  `python3 dev/demo_css.py` from `dev/demo.src.css`; change that and run it. Its first line and `.gitattributes` say so too.
+  The stories (How it works, the install tabs) are not generated: `docs/stories.js` (GSAP timelines) and `docs/stories.css` are edited directly.
 - Comments say why, not what; match the surrounding style (end-of-line comments aligned to column ~70).
 
 ## Build and run
@@ -135,7 +135,9 @@ What it takes care of, for doing it by hand:
 - The intro site https://tvremote.pages.dev is `docs/`, deployed by Cloudflare Pages (project `tvremote`) on every push to main
   that touches `docs/`. Its build watch path is `docs/*` (Cloudflare's `*` spans folders; `docs/**` matches nothing and
   skipped every build). A deployment stuck at "queued" with `is_skipped` was filtered out, not waiting.
-  The page is `index.html` + `site.css` + `site.js`; its animated demo and stories are `demo.css`, made by
-  `python3 dev/demo_css.py` from `dev/demo.src.css` (times as `@chapter:second`) and `dev/stories.src.css` + `dev/stories.py`
-  (How it works and the install tabs, as timelines), never edited by hand.
+  The page is `index.html` + `site.css` + `site.js`; its main demo is `demo.css`, made by `python3 dev/demo_css.py` from
+  `dev/demo.src.css` (times as `@chapter:second`), never edited by hand. Its stories (How it works, the install tabs) are
+  GSAP timelines in `stories.js` (vendored `gsap.min.js`, 3.13.0) with their look in `stories.css`; a story reads as a list
+  of "at second t, this changes" (`show`, `press`, `fill`, `type`, `toggle`, `focus`, `pointer`, `steps`). To look at a
+  moment: `storySeek(document.querySelector(".st-b"), 6.05)` in the console.
 - Release download links: `https://github.com/HoangTran0410/tv-remote/releases/latest/download/<tv-setup|tv-remote>.apk`.
