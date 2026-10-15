@@ -72,19 +72,9 @@ function drawTvset(t) {
   $('#tvset').replaceChildren(...rows);
 }
 
-// "90", "90 phút", "2 giờ", "1.5h": minutes unless it says hours. From 1 minute to 24 hours (what the cores accept); null when unreadable.
-function readWait(s) {
-  const m = String(s || '').trim().toLowerCase().replace(',', '.').match(/^(\d+(?:\.\d+)?)\s*(h|g|giờ|gio|hour|hours|m|p|phút|phut|min|mins|minutes)?$/);
-  if (!m) return null;
-  const ms = Math.round(parseFloat(m[1]) * (/^(h|g|gi|hour)/.test(m[2] || '') ? 60 : 1)) * MIN;
-  return ms >= MIN && ms <= 1440 * MIN ? ms : null;
-}
 async function askWait(now) {
-  const s = await ask('Tự tắt sau bao lâu không dùng? Ví dụ 90 (phút) hoặc 6 giờ', { value: now ? String(now % (60 * MIN) === 0 ? now / 60 / MIN + ' giờ' : now / MIN) : '' });
-  if (s === null || !s.trim()) return null;
-  const v = readWait(s);
-  if (!v) toast('Không hiểu thời gian này. Nhập số phút, hoặc số giờ kèm chữ “giờ” (tối đa 24 giờ).');
-  return v;
+  const m = await askTime('Tự tắt sau bao lâu không dùng?', now ? now / MIN : 0);
+  return m ? m * MIN : null;
 }
 
 async function setTv(key, value, done) {

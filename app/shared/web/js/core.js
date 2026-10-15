@@ -18,12 +18,15 @@ function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('s
 // Questions asked in the page, not with confirm() / prompt(): they look the same everywhere, and the computer app's window
 // (a bare web view) has no dialogs of its own. ask(text) → true / false; ask(text, { value }) → the typed text, or null.
 // { ok, danger }: the words and colour of the yes button. One question at a time; the button that asked keeps its spinner.
+// askTime(text, minutes, max) → minutes, or null: an hours box and a minutes box, so nobody guesses which unit a number is.
 let askQ = Promise.resolve();
 function ask(text, o = {}) {
   const from = clicked;
   const run = () => new Promise((done) => {
-    const typed = o.value !== undefined;
-    const input = typed ? el('input', { value: o.value, spellcheck: false }) : null;
+    const typed = o.value !== undefined || !!o.fields;
+    const boxes = o.fields ? o.fields.map((f) => el('input', { type: 'number', inputMode: 'numeric', min: 0, max: f.max, value: f.value, placeholder: '0' })) : null;
+    const input = o.fields ? el('div', { className: 'fields' }, ...o.fields.flatMap((f, i) => [el('label', {}, boxes[i], el('span', { textContent: tr(f.label) }))]))
+      : typed ? el('input', { value: o.value, spellcheck: false }) : null;
     const yes = el('button', { type: 'submit', className: o.danger ? 'danger' : 'primary', textContent: tr(o.ok || 'OK') });
     const no = el('button', { type: 'button', textContent: tr('Hủy'), onclick: () => d.close() });
     const d = el('dialog', { className: 'ask' }, el('form', { className: 'card', onsubmit: (e) => { e.preventDefault(); d.returnValue = 'yes'; d.close(); } },
@@ -32,12 +35,20 @@ function ask(text, o = {}) {
       d.remove();
       const ok = d.returnValue === 'yes';
       if (ok) { clicked = from; clickedAt = performance.now(); }       // its call starts now: the spinner goes on the button that asked
-      done(typed ? (ok ? input.value : null) : ok);
+      done(typed ? (ok ? (boxes ? boxes.map((b) => b.value) : input.value) : null) : ok);
     });
     document.body.append(d); d.showModal();
-    if (input) input.select(); else yes.focus();
+    if (boxes) boxes[0].select(); else if (input) input.select(); else yes.focus();
   });
   const p = askQ.then(run); askQ = p.catch(() => {}); return p;
+}
+async function askTime(text, minutes, max = 1440) {
+  const m = Math.round(minutes || 0);
+  const v = await ask(text, { fields: [{ label: 'giờ', value: m ? String(Math.floor(m / 60)) : '', max: Math.floor(max / 60) }, { label: 'phút', value: m ? String(m % 60) : '', max: 59 }] });
+  if (!v) return null;
+  const total = Math.round((+v[0] || 0) * 60 + (+v[1] || 0));
+  if (total < 1 || total > max) { toast('Chọn từ 1 phút tới ' + max / 60 + ' giờ.'); return null; }
+  return total;
 }
 
 // On a narrow screen some buttons show their icon alone (.lbl folded away, style.css). A tap there first says what it does, so

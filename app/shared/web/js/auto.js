@@ -53,7 +53,7 @@ function renderRules() {
       el('small', { textContent: 'Hôm nay đã dùng ' + mins(l.used) + ' / ' + mins(total) + (l.extra ? ' (cho thêm ' + mins(l.extra) + ')' : '') }), meter),
       el('div', { className: 'acts' },
         act('＋30 phút hôm nay', async () => { await loadRules({ do: 'extra', pkg: l.pkg, minutes: 30 }); toast('Đã cho thêm 30 phút: ' + name); }),
-        act('✏️', async () => { const v = await ask('Số phút mỗi ngày cho ' + name, { value: String(l.minutes) }); if (v && +v > 0) await loadRules({ do: 'limit', pkg: l.pkg, minutes: Math.round(+v) }); }),
+        act('✏️', async () => { const v = await askTime('Mỗi ngày được dùng ' + name + ' bao lâu?', l.minutes); if (v) await loadRules({ do: 'limit', pkg: l.pkg, minutes: v }); }),
         act('🗑', async () => { if (await ask('Bỏ giới hạn cho ' + name + '?', { ok: 'Bỏ giới hạn' })) await loadRules({ do: 'limit', pkg: l.pkg, minutes: 0 }); }, 'danger')));
   });
   $('#limits').replaceChildren(...(rows.length ? rows : [el('p', { className: 'muted', style: 'margin:0', textContent: 'Chưa giới hạn app nào.' })]));
