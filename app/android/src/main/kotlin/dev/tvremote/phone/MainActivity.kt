@@ -275,7 +275,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         video = !video
         prefs.edit().putBoolean("video", video).apply()
         layoutRemote()                                                // showing the picture creates the surface, which starts the session
-        status.text = t("Đang kết nối ", "Connecting to ") + host + "..."
+        status.text = title(host ?: "") + " · " + t("đang kết nối...", "connecting...")
         startSession()
     }
 
@@ -311,7 +311,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         host = h
         if (h.isEmpty()) return
         hideKeyboard()
-        status.text = t("Đang kết nối ", "Connecting to ") + h + "..."
+        status.text = title(h) + " · " + t("đang kết nối...", "connecting...")
         surface.visibility = View.VISIBLE                              // a fresh, black surface (see disconnect)
         show(true)
         waitFor(title(from ?: h), t("Đang tìm TV ở ", "Looking for the TV at ") + h + "...")
@@ -429,17 +429,16 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             allowAlert(key == "allow")
             when (key) {
                 "connecting" -> {
-                    status.text = t("Đang kết nối ", "Connecting to ") + detail + "..."
+                    status.text = title(entry ?: h) + " · " + t("đang kết nối...", "connecting...")
                     waitStep.text = t("Đang tìm TV ở ", "Looking for the TV at ") + detail + "..."
                 }
                 "allow" -> {
-                    status.text = t("Nhìn lên TV: tích “Luôn cho phép từ máy tính này” rồi chọn OK.", "Look at the TV: tick “Always allow from this computer”, then OK.")
+                    status.text = title(entry ?: h) + " · " + t("nhìn lên TV, chọn Cho phép", "look at the TV, choose Allow")
                     waitStep.text = t("Chờ cho phép trên TV: tích “Luôn cho phép” rồi chọn OK.", "Waiting for the TV: tick “Always allow”, then OK.")
                 }
                 "starting" -> {
                     save(entry ?: h, detail)
-                    status.text = if (video) t("Đang mở hình từ ", "Opening the picture from ") + detail.ifEmpty { h } + "..."
-                        else t("Đang mở điều khiển ", "Opening the controls of ") + detail.ifEmpty { h } + "..."
+                    status.text = title(entry ?: h) + " · " + (if (video) t("đang mở hình...", "opening the picture...") else t("đang mở điều khiển...", "opening the controls..."))
                     waitName.text = title(entry ?: h)
                     waitStep.text = if (video) t("Đã kết nối, đang mở hình TV...", "Connected, opening the TV picture...") else t("Đã kết nối, đang mở điều khiển...", "Connected, opening the controls...")
                     val s = from
