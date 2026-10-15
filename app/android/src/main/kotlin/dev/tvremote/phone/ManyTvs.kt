@@ -52,17 +52,17 @@ internal fun MainActivity.fleetButton(): android.widget.Button {
 
 private fun MainActivity.fleetMenu() = menu(t("Nhiều TV cùng lúc", "Several TVs at once"), 0, listOf(
     Triple("@package|" + t("Cài APK lên các TV", "Install an APK on the TVs"),
-        t("Chọn tệp APK trên điện thoại, rồi chọn TV", "Pick an APK file on the phone, then the TVs")) {
+        "") {
         try {
             @Suppress("DEPRECATION")
             startActivityForResult(Intent(Intent.ACTION_GET_CONTENT).setType("*/*").addCategory(Intent.CATEGORY_OPENABLE)
                 .putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/vnd.android.package-archive", "application/octet-stream")), PICK_FLEET)
         } catch (e: Exception) { toast(t("Điện thoại không có app chọn tệp.", "This phone has no file picker.")) }
     },
-    Triple("@close|" + t("Gỡ app", "Remove apps"), t("Khỏi mọi TV đã chọn có app đó", "From every TV picked that has them")) {
+    Triple("@close|" + t("Gỡ app", "Remove apps"), "") {
         fleetPick(t("Gỡ app trên TV nào?", "Remove apps on which TVs?")) { fleetUninstall(it) }
     },
-    Triple("@power|" + t("Khởi động lại", "Restart"), t("Các TV đã chọn tắt rồi bật lại", "The TVs picked turn off and on again")) {
+    Triple("@power|" + t("Khởi động lại", "Restart"), "") {
         fleetPick(t("Khởi động lại TV nào?", "Restart which TVs?")) { ips ->
             fleetRun(t("Khởi động lại", "Restart"), ips) { link, _ -> Fleet.reboot(link.get()); t("đang khởi động lại", "restarting") }
         }

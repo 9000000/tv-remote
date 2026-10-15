@@ -23,13 +23,12 @@ internal fun MainActivity.toggleListen() {
             else t("Đang mở tiếng TV trên điện thoại. Loa TV tạm im.", "Opening the TV’s sound on the phone. The TV’s speakers go quiet."), Toast.LENGTH_SHORT).show()
     }
     menu(t("Nghe tiếng TV", "Hear the TV"), if (prefs.getBoolean("listenShare", false)) 1 else 0, listOf(
-        Triple("@headphones|" + t("Chỉ điện thoại", "Only the phone"), t("Loa TV tạm im. Hợp khi đeo tai nghe, cả nhà ngủ.", "The TV’s speakers go quiet. For headphones while the house sleeps.")) { start(false) },
-        Triple("@vol_up|" + t("Cả TV và điện thoại", "TV and phone"), t("TV vẫn có tiếng (TV Android 13+). Điện thoại trễ hơn TV một chút; vài app như Netflix chặn thu tiếng kiểu này.",
-            "The TV keeps its sound (Android 13+ TVs). The phone lags the TV a little; some apps such as Netflix block this kind of capture.")) { start(true) },
+        Triple("@headphones|" + t("Chỉ điện thoại", "Only the phone"), t("Loa TV tạm im", "The TV goes quiet")) { start(false) },
+        Triple("@vol_up|" + t("Cả TV và điện thoại", "TV and phone"), t("Android 13+", "Android 13+")) { start(true) },
         if (prefs.getBoolean("listenHq", false))                        // a switch, not a way: the menu comes back to pick the way
-            Triple("@music|" + t("Chất lượng cao: đang bật", "High quality: on"), t("160 kbit/s, nghe nhạc rõ hơn. Bấm để về thường (64 kbit/s).", "160 kbit/s, clearer music. Tap for normal (64 kbit/s).")) { prefs.edit().putBoolean("listenHq", false).apply(); toggleListen() }
+            Triple("@music|" + t("Chất lượng cao: đang bật", "High quality: on"), t("160 kbit/s", "160 kbit/s")) { prefs.edit().putBoolean("listenHq", false).apply(); toggleListen() }
         else
-            Triple("@music|" + t("Chất lượng cao: đang tắt", "High quality: off"), t("Bật để nghe nhạc rõ hơn: 160 kbit/s thay vì 64.", "Turn on for clearer music: 160 kbit/s instead of 64.")) { prefs.edit().putBoolean("listenHq", true).apply(); toggleListen() }))
+            Triple("@music|" + t("Chất lượng cao: đang tắt", "High quality: off"), t("64 → 160 kbit/s", "64 → 160 kbit/s")) { prefs.edit().putBoolean("listenHq", true).apply(); toggleListen() }))
 }
 
 /** Back to the TV's speakers; [why] is said when it was not the person's choice (e.g. the TV cannot send its sound). */

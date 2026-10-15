@@ -10,11 +10,13 @@ Web 2.22.0 · app điện thoại 2.20.0 · app TV 2.19.0
 
 **Tiếng Việt**
 - TV Setup tự cập nhật trên mọi TV, cả Android 9 trở xuống (như TV Sony). Trên Android 10 trở lên, bản mới chạy lỗi thì tự quay về bản cũ.
-- Nút **Gỡ TV Setup** trên TV: bật lại các app đã tắt bằng Tối ưu TV rồi mới gỡ.
+- Ô **Cập nhật** trên TV có menu: Cập nhật ngay, Tự cập nhật bật/tắt, **Gỡ TV Setup** (bật lại các app đã tắt bằng Tối ưu TV rồi mới gỡ). Khung nhật ký rộng hơn.
+- Bớt chữ trên các màn: bỏ các đoạn giải thích luôn hiện, chữ ngắn hơn.
 
 **English**
 - TV Setup updates itself on every TV, Android 9 and older too (Sony TVs, for one). On Android 10 and up, a new version that fails is undone by itself.
-- A **Remove TV Setup** button on the TV: apps turned off by Optimize TV come back on before it goes.
+- The **Update** tile on the TV has a menu: Update now, Automatic updates on/off, **Remove TV Setup** (apps turned off by Optimize TV come back on first). A larger activity box.
+- Less text on every screen: no always-shown explanations, shorter words.
 
 ## 2.21.0 - 2026-10-15
 

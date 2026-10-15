@@ -129,22 +129,22 @@ internal fun MainActivity.quickOpen() {
     if (!live()) return
     val store = { id: String -> openLink("https://play.google.com/store/apps/details?id=$id") }
     val items = ArrayList<Triple<String, String, () -> Unit>>()
-    items.add(Triple("@search|" + t("Tìm app trên CH Play", "Search the Play Store"), t("Gõ tên app ở đây, TV mở kết quả tìm kiếm", "Type the name here; the TV shows the results")) {
+    items.add(Triple("@search|" + t("Tìm app trên CH Play", "Search the Play Store"), "") {
         askText(t("Tìm app trên CH Play", "Search the Play Store"), t("vd: vlc", "e.g. vlc"), t("Tìm", "Search")) { openLink("market://search?c=apps&q=" + java.net.URLEncoder.encode(it, "UTF-8")) }   // the TV's Play Store takes searches only this way
     })
-    items.add(Triple("@package|" + t("Mở trang CH Play theo app id", "Open a Play Store page by app id"), t("vd: org.videolan.vlc. Từ đó bấm Cài đặt hoặc Mở trên TV", "e.g. org.videolan.vlc. Then choose Install or Open on the TV")) {
+    items.add(Triple("@package|" + t("Mở trang CH Play theo app id", "Open a Play Store page by app id"), t("vd: org.videolan.vlc", "e.g. org.videolan.vlc")) {
         askText(t("App id (tên gói)", "App id (package name)"), "org.videolan.vlc", t("Mở", "Open")) { store(it) }
     })
-    items.add(Triple("@link|" + t("Mở đường dẫn trên TV", "Open a link on the TV"), t("Video YouTube, trang web, file tải về... TV mở bằng app phù hợp", "A YouTube video, a web page, a download... the TV opens it with a fitting app")) {
+    items.add(Triple("@link|" + t("Mở đường dẫn trên TV", "Open a link on the TV"), t("YouTube, web, tệp...", "YouTube, web, files...")) {
         askText(t("Đường dẫn", "Link"), "https://youtu.be/...", t("Mở", "Open")) { openLink(if (Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:").containsMatchIn(it)) it else "https://$it") }
     })
-    items.add(Triple("@image|" + t("Phát ảnh / video từ điện thoại", "Play a photo / video from the phone"), t("Chọn trong thư viện ảnh, app chép sang TV rồi TV tự mở. Cần ADB. Cũng dùng được nút Chia sẻ → TV Remote ở app khác", "Pick from the gallery; it is copied to the TV, which opens it. Needs ADB. Share → TV Remote in other apps does the same")) {
+    items.add(Triple("@image|" + t("Phát ảnh / video từ điện thoại", "Play a photo / video from the phone"), t("Cần ADB", "Needs ADB")) {
         pickMedia()
     })
-    items.add(Triple("@music|" + t("Phát nhạc / tệp khác", "Play a song / other file"), t("Chọn tệp bằng trình chọn tệp của điện thoại", "Pick a file with the phone’s file picker")) {
+    items.add(Triple("@music|" + t("Phát nhạc / tệp khác", "Play a song / other file"), "") {
         pickFile(arrayOf("audio/*", "video/*", "image/*"))
     })
-    items.add(Triple("@cast|" + t("Chiếu màn hình điện thoại lên TV", "Mirror the phone’s screen on the TV"), t("Mở phần Truyền (Cast) của Android: chọn TV trong danh sách. Điện thoại và TV phải cùng Wi-Fi", "Opens Android’s Cast screen: pick the TV in the list. Phone and TV must be on the same Wi-Fi")) {
+    items.add(Triple("@cast|" + t("Chiếu màn hình điện thoại lên TV", "Mirror the phone’s screen on the TV"), t("Cùng Wi-Fi", "Same Wi-Fi")) {
         try { startActivity(Intent("android.settings.CAST_SETTINGS")) }
         catch (e: Exception) { say(t("Điện thoại này không có phần Truyền (Cast) trong Cài đặt. Thử nút Truyền / Smart View ở thanh thông báo.", "This phone has no Cast screen in Settings. Try the Cast / Smart View tile in the notification shade."), true) }
     })

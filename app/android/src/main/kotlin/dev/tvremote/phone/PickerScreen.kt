@@ -105,8 +105,8 @@ internal fun MainActivity.showReach(ip: String, up: Boolean?) {
         null -> t("đang kiểm tra...", "checking...")
         true -> route[ip].let { r -> if (r == null || r == ip) t("● kết nối được", "● reachable")
             else if (r.startsWith("100.")) t("● kết nối được qua Tailscale", "● reachable through Tailscale") else t("● kết nối được trong nhà", "● reachable at home") }
-        false -> if (awayFrom[ip] == true) t("○ không thấy · bạn đang ngoài Wi-Fi của TV nên không đánh thức từ đây được", "○ no answer · you are not on the TV’s Wi-Fi, so it cannot be woken from here")
-            else t("○ không thấy · TV đang tắt? bấm nút nguồn để đánh thức", "○ no answer · is the TV off? tap power to wake it")
+        false -> if (awayFrom[ip] == true) t("○ không thấy · bạn ở ngoài Wi-Fi của TV", "○ no answer · you are off the TV’s Wi-Fi")
+            else t("○ không thấy · TV tắt?", "○ no answer · TV off?")
     }
     val text = android.text.SpannableString((if (name(ip).isEmpty()) ip else name(ip) + "\n" + ip) + "\n" + status)
     val from = text.length - status.length
@@ -280,7 +280,7 @@ internal fun MainActivity.buildPicker() {
     lp.width = dp(60)
     line.addView(go, lp)
     picker.addView(line, gap(6))
-    val help = button(t("Chưa biết IP? Xem cách kết nối", "No IP yet? How to connect"), 0)
+    val help = button(t("Cách kết nối", "How to connect"), 0)
     help.setTextColor(ACCENT)
     help.setOnClickListener {
         AlertDialog.Builder(this).setTitle(t("Cách kết nối", "How to connect")).setMessage(t(

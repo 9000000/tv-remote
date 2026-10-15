@@ -116,30 +116,21 @@ internal fun MainActivity.buildAbout(): View {
         qp.gravity = Gravity.CENTER_HORIZONTAL
         qp.topMargin = dp(14)
         box.addView(qr, qp)
-        val hint = note(t("Quét để tải app này cho điện thoại khác", "Scan to get this app on another phone"))
-        hint.gravity = Gravity.CENTER
-        box.addView(hint, gap(6))
-        val share = button(t("Chia sẻ đường dẫn tải app", "Share the app’s download link"), BTN)
+        val share = button(t("Chia sẻ link tải app", "Share the download link"), BTN)
         share.setOnClickListener { startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, appLink), null)) }
         box.addView(share, gap(8))
     }
-    val what = note(t("Remote cho Android TV / Google TV: hình trực tiếp, chạm, nút điều khiển, gõ chữ, mở app.",
-        "A remote for Android TV / Google TV: live picture, touch, remote buttons, typing, opening apps."))
-    what.gravity = Gravity.CENTER
-    box.addView(what)
 
     box.addView(head(t("TÁC GIẢ", "AUTHOR")), gap(22))
     box.addView(row("👤  Hoang Tran\n@HoangTran0410") { web("https://github.com/HoangTran0410") })
 
     box.addView(head(t("MÃ NGUỒN", "SOURCE CODE")), gap(18))
     box.addView(row("🔗  github.com/HoangTran0410/tv-remote") { web("https://github.com/" + Release.REPO) })
-    box.addView(row("📦  " + t("Các bản phát hành và nhật ký thay đổi", "Releases and change log")) { web("https://github.com/" + Release.REPO + "/releases") })
-    box.addView(row("🐞  " + t("Báo lỗi, góp ý", "Report a problem")) { web("https://github.com/" + Release.REPO + "/issues") })
+    box.addView(row("📦  " + t("Bản phát hành", "Releases")) { web("https://github.com/" + Release.REPO + "/releases") })
+    box.addView(row("🐞  " + t("Báo lỗi", "Report a problem")) { web("https://github.com/" + Release.REPO + "/issues") })
 
     box.addView(head(t("GHI CÔNG", "CREDITS")), gap(18))
-    box.addView(row("scrcpy · Genymobile · Apache-2.0\n" + t("hình trực tiếp và điều khiển", "live picture and input")) { web("https://github.com/Genymobile/scrcpy") })
-    box.addView(note(t("App nói chuyện thẳng với TV qua ADB, không qua máy chủ nào. Khóa ADB của app nằm trong điện thoại này; gỡ app là mất khóa và TV sẽ hỏi cho phép lại.",
-        "The app talks straight to the TV over ADB, with no server in between. Its ADB key lives on this phone; uninstalling the app loses it and the TV will ask for permission again.")), gap(12))
+    box.addView(row("scrcpy · Apache-2.0") { web("https://github.com/Genymobile/scrcpy") })
 
     val sv = ScrollView(this)
     sv.setBackgroundColor(BG)

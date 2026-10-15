@@ -25,10 +25,10 @@ internal fun MainActivity.tvJob(work: () -> Unit) {
 /** Everything the keys-only mode can do towards turning ADB on, in the order one needs it. */
 internal fun MainActivity.adbHelp() {
     menu(t("Bật ADB cho TV này", "Turn on ADB for this TV"), 0, listOf(
-        Triple("@zap|" + t("Tự động: cài TV Setup lên TV", "Automatic: install TV Setup on the TV"), t("App tự tải và mở app TV Setup trên TV; nó mở thẳng Tùy chọn nhà phát triển. Bạn chỉ xác nhận trên TV", "The app fetches and opens the TV Setup app on the TV, which opens Developer options directly. You only confirm on the TV")) { installSetup() },
-        Triple("@gear|" + t("Tự làm: mở Cài đặt TV", "By hand: open TV Settings"), t("App thử mọi cách mở Cài đặt, rồi chỉ các bước bật Gỡ lỗi ADB", "The app tries every way to open Settings, then shows the steps to turn ADB on")) { findSettings() },
-        Triple("@home|" + t("Cài màn hình chính khác", "Install another home screen"), t("Khi TV giấu Cài đặt: mở qua một launcher từ CH Play", "When the TV hides Settings: go through a launcher from the Play Store")) { otherHome() },
-        Triple("@refresh|" + t("Kết nối đầy đủ", "Full connection"), t("App tự chuyển khi TV bật ADB; bấm nếu muốn thử ngay", "The app switches by itself once ADB is on; tap to try now")) {
+        Triple("@zap|" + t("Tự động: cài TV Setup lên TV", "Automatic: install TV Setup on the TV"), t("Chỉ cần xác nhận trên TV", "Just confirm on the TV")) { installSetup() },
+        Triple("@gear|" + t("Tự làm: mở Cài đặt TV", "By hand: open TV Settings"), "") { findSettings() },
+        Triple("@home|" + t("Cài màn hình chính khác", "Install another home screen"), t("Khi TV giấu Cài đặt", "When the TV hides Settings")) { otherHome() },
+        Triple("@refresh|" + t("Kết nối đầy đủ", "Full connection"), "") {
             val ip = host
             adbFailed.remove(ip)
             val e = entry
@@ -36,7 +36,7 @@ internal fun MainActivity.adbHelp() {
             if (ip != null) connect(ip, e)
         },
         Triple("@store|" + t("Mở CH Play trên TV", "Open the Play Store on the TV"), "") { basic?.launch("https://play.google.com/store/apps"); Unit },
-        Triple("@package|" + t("Mở app theo tên gói", "Open an app by package name"), t("Đã cài thì mở app, chưa cài thì mở trang CH Play của nó", "Opens the app, or its Play Store page when not installed")) {
+        Triple("@package|" + t("Mở app theo tên gói", "Open an app by package name"), "") {
             val box = input("com.example.app")
             val wrap = FrameLayout(this)
             wrap.setPadding(dp(20), dp(8), dp(20), 0)
@@ -198,21 +198,21 @@ internal fun MainActivity.downloaderGo(a: Atv, link: String) {
 internal fun MainActivity.installSetupByHand() {
     val link = "github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"
     menu(t("Cài TV Setup lên TV", "Install TV Setup on the TV"), -1, listOf(
-        Triple(t("1. Mở Downloader trên TV", "1. Open Downloader on the TV"), t("Chưa cài thì TV mở trang CH Play của nó: bấm Cài đặt, rồi bấm lại mục này", "Not installed: the TV opens its Play Store page. Install it, then tap this again")) {
+        Triple(t("1. Mở Downloader trên TV", "1. Open Downloader on the TV"), t("Chưa có thì cài từ CH Play", "Not there? Install it from Play")) {
             basic?.let { b -> tvJob { openOnTv(b, "com.esaba.downloader") { false } } }
             ui.postDelayed({ if (basic != null && !isFinishing) installSetupByHand() }, 600)
         },
-        Triple(t("2. Tải TV Setup trong Downloader", "2. Download TV Setup in Downloader"), t("App bảo Downloader tải mã $DL_CODE. TV hỏi cài đặt: chọn Cài đặt", "The app has Downloader fetch the code $DL_CODE. The TV asks to install: choose Install")) {
+        Triple(t("2. Tải TV Setup trong Downloader", "2. Download TV Setup in Downloader"), t("Mã $DL_CODE", "Code $DL_CODE")) {
             basic?.let { b -> tvJob { b.launch("downloader://$DL_CODE") } }
             Toast.makeText(this, t("Đang bảo Downloader tải...", "Asking Downloader to download..."), Toast.LENGTH_LONG).show()
             ui.postDelayed({ if (basic != null && !isFinishing) installSetupByHand() }, 600)
         },
-        Triple(t("2b. Không được? Gõ mã vào Downloader", "2b. No luck? Type the code into Downloader"), t("Khi TV đang ở trang chủ Downloader: app tự tới ô địa chỉ, gõ mã và cho tải. Mất khoảng 5 giây", "With Downloader’s home page on the TV: the app goes to the address field, types the code and starts the download. About 5 seconds")) {
+        Triple(t("2b. Không được? Gõ mã vào Downloader", "2b. No luck? Type the code into Downloader"), t("App tự gõ mã", "The app types the code")) {
             basic?.let { b -> tvJob { downloaderGo(b, DL_CODE) } }
             Toast.makeText(this, t("Đang nhập đường dẫn trên TV...", "Entering the link on the TV..."), Toast.LENGTH_LONG).show()
             ui.postDelayed({ if (basic != null && !isFinishing) installSetupByHand() }, 600)
         },
-        Triple(t("3. Mở TV Setup trên TV", "3. Open TV Setup on the TV"), t("Trong đó bấm “Tùy chọn nhà phát triển” rồi bật Gỡ lỗi USB", "There choose “Developer options” and turn on USB debugging")) { basic?.let { b -> tvJob { openOnTv(b, "dev.tvremote.setup") { false } } }; Unit },
+        Triple(t("3. Mở TV Setup trên TV", "3. Open TV Setup on the TV"), t("Rồi bật Gỡ lỗi USB", "Then turn on USB debugging")) { basic?.let { b -> tvJob { openOnTv(b, "dev.tvremote.setup") { false } } }; Unit },
         Triple(t("Chép đường dẫn", "Copy the link"), t("Tự gõ trong Downloader: mã $DL_CODE, hoặc ", "To type in Downloader yourself: the code $DL_CODE, or ") + link) {
             (getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager).setPrimaryClip(android.content.ClipData.newPlainText("tv-setup", link))
             Toast.makeText(this, t("Đã chép", "Copied"), Toast.LENGTH_SHORT).show()

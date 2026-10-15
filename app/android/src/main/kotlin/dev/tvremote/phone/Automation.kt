@@ -80,7 +80,7 @@ internal fun MainActivity.timerMenu() {
                 if (m > 0) setTimer(m) else toast(t("Nhập số phút (vd 40) hoặc giờ tắt (vd 23:30)", "Type minutes (e.g. 40) or a time to turn off (e.g. 23:30)"))
             }
         })
-        items.add(Triple("@moon|" + t("Giờ đi ngủ, giới hạn app...", "Bedtime, app limits..."), t("Trên trang Tự động", "On the Automation page")) { managing.open(host, "auto") })
+        items.add(Triple("@moon|" + t("Giờ đi ngủ, giới hạn app...", "Bedtime, app limits..."), "") { managing.open(host, "auto") })
         menu(if (at > 0) t("TV tự tắt lúc ", "The TV turns off at ") + hm(at, r.optLong("now")) else t("Hẹn giờ tắt TV", "Sleep timer"), if (at > 0) 0 else -1, items)
     }
 }
@@ -88,7 +88,7 @@ internal fun MainActivity.timerMenu() {
 /** 🎬: this phone's scenes, and the way to make more. */
 internal fun MainActivity.scenesMenu() {
     val items = SceneStore.list(this).map { sc -> Triple((sc.optString("icon") + "  " + sc.optString("name")).trim(), "") { runScene(sc) } }.toMutableList<Triple<String, String, () -> Unit>>()
-    items.add(Triple("@scene|" + t("Tạo / sửa cảnh...", "Make / edit scenes..."), t("Một nút làm nhiều việc: bật TV, mở app, đặt âm lượng... Cũng có trong widget và ô Cài đặt nhanh", "One button, several things: wake the TV, open an app, set the volume... Also in the widget and the Quick Settings tile")) {
+    items.add(Triple("@scene|" + t("Tạo / sửa cảnh...", "Make / edit scenes..."), t("Một nút, nhiều việc", "One button, several steps")) {
         if (!needsAdb()) managing.open(host, "auto")
     })
     menu(t("Cảnh", "Scenes"), -1, items)

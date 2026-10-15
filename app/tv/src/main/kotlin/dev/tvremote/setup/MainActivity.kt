@@ -47,7 +47,6 @@ class MainActivity : Activity() {
     private lateinit var updateTile: Tile
     private lateinit var webCol: LinearLayout
     private lateinit var webBtn: Button
-    private var autoBtn: Button? = null
     private var lanIp = ""
     private var tsIp = ""
     private var adb: Adb? = null
@@ -178,25 +177,20 @@ class MainActivity : Activity() {
         left.addView(status, margins(top = 18))
 
         left.addView(section(t("THAO TÁC", "ACTIONS")), margins(top = 18))
-        tsTile = Tile(R.drawable.ic_globe, "Tailscale", t("Điều khiển TV khi không ở nhà", "Control the TV away from home")) { tailscale() }
-        updateTile = Tile(R.drawable.ic_download, t("Cập nhật", "Update"), t("Đang dùng bản ", "You have version ") + version()) { update() }
+        tsTile = Tile(R.drawable.ic_globe, "Tailscale", t("Dùng khi xa nhà", "Away from home")) { tailscale() }
+        updateTile = Tile(R.drawable.ic_download, t("Cập nhật", "Update"), t("Bản ", "Version ") + version()) { updateMenu() }
         tiles = listOf(
-            Tile(R.drawable.ic_zap, t("Tối ưu TV", "Optimize TV"), t("Bớt hiệu ứng và app thừa", "Fewer animations and extra apps")) { chooseOptimize() },
+            Tile(R.drawable.ic_zap, t("Tối ưu TV", "Optimize TV"), t("Bớt app thừa", "Fewer extra apps")) { chooseOptimize() },
             tsTile,
-            Tile(R.drawable.ic_undo, t("Hoàn tác", "Undo"), t("Trả TV về như trước khi tối ưu", "Put the TV back as it was")) { job { it.undo() } },
+            Tile(R.drawable.ic_undo, t("Hoàn tác", "Undo"), t("Như trước khi tối ưu", "As before Optimize")) { job { it.undo() } },
             updateTile,
-            Tile(R.drawable.ic_code, t("Gỡ lỗi ADB", "Debugging"), t("Mở Tùy chọn nhà phát triển", "Open Developer options for ADB")) { devOptions() },
-            Tile(R.drawable.ic_refresh, t("Kết nối lại", "Reconnect"), t("Nối lại ADB của TV", "Connect to the TV's ADB again")) { connect() })
+            Tile(R.drawable.ic_code, t("Gỡ lỗi ADB", "Debugging"), t("Tùy chọn nhà phát triển", "Developer options")) { devOptions() },
+            Tile(R.drawable.ic_refresh, t("Kết nối lại", "Reconnect"), t("ADB của TV", "The TV's ADB")) { connect() })
         for (row in tiles.chunked(if (phone) 2 else 3)) {
             val r = LinearLayout(this)
             row.forEachIndexed { i, tile -> r.addView(tile.view, LinearLayout.LayoutParams(0, dp(74), 1f).apply { if (i > 0) leftMargin = dp(12) }) }
             left.addView(r, margins(top = 10))
         }
-        val more = LinearLayout(this)
-        autoBtn = smallButton(autoText()) { AutoUpdate.set(this, !AutoUpdate.on(this)); autoBtn?.text = autoText() }
-        more.addView(autoBtn)
-        more.addView(smallButton(t("Gỡ TV Setup", "Remove TV Setup")) { askRemove() }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(10) })
-        left.addView(more, margins(top = 10))
 
         val actHead = LinearLayout(this)
         actHead.gravity = Gravity.CENTER_VERTICAL
@@ -238,8 +232,6 @@ class MainActivity : Activity() {
 
         if (RemoteService.enabled(this)) RemoteService.start(this)
         showWeb()
-        log(if (phone) t("Chào bạn. Chạm vào một ô để làm việc đó.", "Hello. Tap a tile to do what it says.")
-            else t("Chào bạn. Chọn một ô bằng các phím mũi tên và OK của remote.", "Hello. Pick a tile with the remote's arrow keys and OK."))
         connect()
         Thread {                                                      // asks GitHub for the latest release, nothing else is sent
             try {
@@ -274,6 +266,21 @@ class MainActivity : Activity() {
      * Downloads this app's APK from the latest GitHub release and installs it through the TV's own ADB (no "unknown sources"
      * needed), with SetupUpdate's script: it opens this screen again once the new version runs, or the old one if it does not.
      */
+    /** The Update tile: update now, automatic updates on or off, and removing this app, kept out of the way here. */
+    private fun updateMenu() {
+        if (busy) return
+        val items = arrayOf(t("Cập nhật ngay", "Update now"), autoText(), t("Gỡ TV Setup", "Remove TV Setup"))
+        android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle("TV Setup " + version())
+            .setItems(items) { _, i ->
+                when (i) {
+                    0 -> if (adb == null) log(t("✗ Cần ADB: bật Gỡ lỗi ADB trước.", "✗ Needs ADB: turn on Debugging first.")) else update()
+                    1 -> { AutoUpdate.set(this, !AutoUpdate.on(this)); log(autoText()) }
+                    2 -> askRemove()
+                }
+            }.show()
+    }
+
     private fun update() {
         job { _ ->
             log(t("Đang kiểm tra bản mới...", "Checking for a new version..."))
@@ -289,8 +296,7 @@ class MainActivity : Activity() {
             val apk = File(getExternalFilesDir("update"), "tv-setup-" + r.version + ".apk")
             var last = 0
             Release.download(r.url, apk, Release.Progress { pct -> if (pct >= last + 25) { last = pct; log("  $pct%") } })
-            log(t("Đang cài. TV Setup tự đóng rồi mở lại bản ", "Installing. TV Setup closes, then opens again as version ") + r.version +
-                t(" sau khoảng nửa phút. Bản mới chạy lỗi thì tự quay về bản đang dùng.", " in about half a minute. If the new one does not work, this one comes back by itself."))
+            log(t("Đang cài. TV Setup tự mở lại sau khoảng nửa phút.", "Installing. TV Setup opens again in about half a minute."))
             SetupUpdate.start(a, apk.absolutePath, r.version, true)
         }
     }
@@ -349,7 +355,6 @@ class MainActivity : Activity() {
         webCol.addView(text(t("Điều khiển từ điện thoại", "Control from a phone"), 18, INK, true))
         if (on && ip.isNotEmpty()) {
             val link = "http://" + ip + ":" + RemoteService.PORT
-            webCol.addView(text(t("Quét bằng camera, không cần cài gì.", "Scan with the camera, nothing to install."), 13, MUTED, false), margins(top = 4))
             qr(link)?.let { webCol.addView(it, LinearLayout.LayoutParams(dp(164), dp(164)).apply { topMargin = dp(14); gravity = Gravity.CENTER_HORIZONTAL }) }
             val addr = text(link.removePrefix("http://"), 16, INK, true)
             addr.gravity = Gravity.CENTER
@@ -360,12 +365,10 @@ class MainActivity : Activity() {
                 webCol.addView(ts)
             }
             val n = RemoteService.pairedCount(this)
-            webCol.addView(text(t("Lần đầu, TV hiện mã 6 số để nhập trên máy đó. Đã ghép: $n thiết bị.",
-                "The first time, the TV shows a 6-digit code to type there. Paired: $n " + (if (n == 1) "device." else "devices.")), 13, MUTED, false), margins(top = 10))
+            webCol.addView(text(t("Đã ghép: $n thiết bị", "Paired: $n " + (if (n == 1) "device" else "devices")), 13, MUTED, false), margins(top = 10))
         } else {
             webCol.addView(text(if (on) t("TV chưa có mạng: nối TV vào Wi-Fi.", "The TV has no network: connect it to Wi-Fi.")
-                else t("Đang tắt. Bật để điều khiển TV này từ trình duyệt của điện thoại hay máy tính, không cần cài gì.",
-                    "Off. Turn it on to control this TV from a phone or computer browser, with nothing to install."), 14, MUTED, false), margins(top = 8))
+                else t("Đang tắt.", "Off."), 14, MUTED, false), margins(top = 8))
         }
         webBtn.text = if (on) t("Remote qua web: Bật", "Web remote: On") else t("Remote qua web: Tắt", "Web remote: Off")
         (webBtn.parent as? LinearLayout)?.removeView(webBtn)
@@ -390,7 +393,7 @@ class MainActivity : Activity() {
         words.orientation = LinearLayout.VERTICAL
         words.setPadding(dp(12), 0, 0, 0)
         words.addView(text(t("App Android TV Remote", "TV Remote Android app"), 14, INK, true))
-        words.addView(text(t("Quét để tải. Trong app chọn Quét Wi-Fi.", "Scan to download. In the app, pick Scan Wi-Fi."), 12, MUTED, false))
+        words.addView(text(t("Quét để tải", "Scan to download"), 12, MUTED, false))
         app.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
         webCol.addView(app)
         if (focused != null && focused.parent == null) webBtn.requestFocus()   // the focused button was rebuilt: keep the focus on this card
@@ -557,8 +560,7 @@ class MainActivity : Activity() {
         words.orientation = LinearLayout.VERTICAL
         words.setPadding(dp(14), 0, 0, 0)
         words.addView(text(t("Tối ưu TV", "Optimize TV"), 22, INK, true))
-        words.addView(text(t("Chọn việc cần làm bằng phím mũi tên và OK. Tắt app là tạm ngưng, không gỡ; Hoàn tác bật lại tất cả.",
-            "Choose with the arrows and OK. Turning an app off only pauses it, nothing is uninstalled; Undo turns everything back on."), 13, MUTED, false))
+        words.addView(text(t("Tắt app chỉ là tạm ngưng; Hoàn tác bật lại hết.", "Turning an app off only pauses it; Undo turns all back on."), 13, MUTED, false))
         head.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
         card.addView(head)
 
@@ -614,9 +616,9 @@ class MainActivity : Activity() {
         val usingFl = plan.optString("home") == Setup.FL_PKG
         header(t("CHUNG", "GENERAL"))
         add(row(t("Tắt hiệu ứng chuyển cảnh", "Turn off transition animations"),
-            if (plan.optBoolean("anim", true)) t("Mở app, chuyển màn hình nhanh hơn", "Apps open and screens change faster") else t("Đang tắt sẵn", "Already off"), true, null))
+            if (plan.optBoolean("anim", true)) t("Nhanh hơn", "Faster") else t("Đang tắt sẵn", "Already off"), true, null))
         add(row(if (usingFl) t("Màn hình chính FLauncher (đang dùng)", "FLauncher home screen (in use)") else t("Dùng FLauncher làm màn hình chính", "Use FLauncher as the home screen"),
-            t("Chỉ lưới app, nhẹ, không quảng cáo; màn hình chính Google được tắt", "Just a grid of apps, light, no ads; Google’s home screen is turned off") + (if (plan.optBoolean("flauncher")) "" else t(" · tải 10 MB", " · 10 MB download")), true, null))
+            t("Nhẹ, không quảng cáo", "Light, no ads") + (if (plan.optBoolean("flauncher")) "" else t(" · tải 10 MB", " · 10 MB download")), true, null))
         val sug = plan.optJSONArray("suggest") ?: org.json.JSONArray()
         if (sug.length() > 0) header(t("TẮT APP ĐỀ XUẤT", "SUGGESTED APPS TO TURN OFF"))
         for (i in 0 until sug.length()) { val a = sug.getJSONObject(i); add(row(a.optString("label"), a.optString("pkg"), true, a.optString("pkg"))) }
@@ -744,7 +746,7 @@ class MainActivity : Activity() {
     /** Tiles that need ADB follow it; "Developer options" always works. Focus stays where it was, or goes to a tile that works. */
     private fun setEnabled(on: Boolean) {
         val had = currentFocus
-        tiles.forEachIndexed { i, tile -> tile.enable(on || i == 4) }
+        tiles.forEachIndexed { i, tile -> tile.enable(on || i == 3 || i == 4) }   // without ADB: Debugging to turn it on; Update for its menu (removing works without ADB)
         if (on && !focusedOnce) { focusedOnce = true; tiles[0].view.requestFocus() }   // ready for the first time: start on the first action
         else if (had == null || !had.isEnabled) (if (on) tiles[0] else tiles[4]).view.requestFocus()
     }
