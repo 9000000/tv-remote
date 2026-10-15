@@ -89,10 +89,12 @@ $('#drawclear').addEventListener('click', () => { drawLocal.length = 0; drawPain
 $('#drawcolor').addEventListener('click', (e) => { e.stopPropagation(); $('#drawcolors').hidden = !$('#drawcolors').hidden; });
 document.addEventListener('click', (e) => { if (!e.target.closest('#drawcolors')) $('#drawcolors').hidden = true; });
 document.querySelectorAll('#drawbar [data-color]').forEach((b) => b.addEventListener('click', () => {
-  drawColor = b.dataset.color; $('#drawcolor').style.setProperty('--c', drawColor); $('#drawcolors').hidden = true;
+  drawColor = b.dataset.color; $('#drawcolor').style.setProperty('--c', drawColor); drawDot(); $('#drawcolors').hidden = true;
   document.querySelectorAll('#drawbar [data-color]').forEach((x) => x.classList.toggle('on', x === b));
 }));
-$('#drawwidth').addEventListener('input', (e) => { drawWidth = +e.target.value; });
+// the dot beside the slider: the line's size and colour (a fifth of the TV-width units, as on a phone's picture)
+const drawDot = () => { const d = Math.max(4, drawWidth / 5) + 'px'; Object.assign($('#drawdot').style, { width: d, height: d, background: drawColor }); };
+$('#drawwidth').addEventListener('input', (e) => { drawWidth = +e.target.value; drawDot(); });
 
 // 🖼️ Pick, place (drag; size with two fingers or the wheel), then ✓ sends it. At most 1280 pixels: plenty for a TV
 // layer, and a phone photo stays a few hundred KB on its way.

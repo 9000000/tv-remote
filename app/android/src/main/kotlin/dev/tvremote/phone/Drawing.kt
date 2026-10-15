@@ -121,16 +121,27 @@ private fun MainActivity.drawPen(changed: () -> Unit) {
         }
         wrap.addView(line, LinearLayout.LayoutParams(-1, -2))
     }
+    // the dot beside the slider: the line's size and colour, so the slider says what it does
+    val dot = View(this)
+    dot.background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(drawColor); setStroke(1, 0x59ffffff) }
+    val dotBox = android.widget.FrameLayout(this)
+    dotBox.addView(dot)
+    val dotSize = { val d = dp(maxOf(4, drawWidth / 5)); dot.layoutParams = android.widget.FrameLayout.LayoutParams(d, d, Gravity.CENTER) }
+    dotSize()
     val size = android.widget.SeekBar(this)                         // 20..250, as on the web page
     size.max = 23
     size.progress = (drawWidth - 20) / 10
     size.contentDescription = t("Nét", "Line size")
     size.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
-        override fun onProgressChanged(b: android.widget.SeekBar, p: Int, user: Boolean) { drawWidth = 20 + p * 10; changed() }
+        override fun onProgressChanged(b: android.widget.SeekBar, p: Int, user: Boolean) { drawWidth = 20 + p * 10; changed(); dotSize() }
         override fun onStartTrackingTouch(b: android.widget.SeekBar) {}
         override fun onStopTrackingTouch(b: android.widget.SeekBar) {}
     })
-    wrap.addView(size, LinearLayout.LayoutParams(-1, dp(48)).also { it.topMargin = dp(8) })
+    val sizeRow = LinearLayout(this)
+    sizeRow.gravity = Gravity.CENTER_VERTICAL
+    sizeRow.addView(size, LinearLayout.LayoutParams(0, dp(48), 1f))
+    sizeRow.addView(dotBox, LinearLayout.LayoutParams(dp(56), dp(56)))
+    wrap.addView(sizeRow, LinearLayout.LayoutParams(-1, -2).also { it.topMargin = dp(8) })
     dlg = android.app.AlertDialog.Builder(this).setView(wrap).show()
 }
 
