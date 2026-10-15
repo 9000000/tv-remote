@@ -137,8 +137,8 @@ function showSetupUpd(r) {
     return;
   }
   $('#suptitle').textContent = '🆕 TV Setup trên TV có bản mới ' + r.latest + ' (đang dùng ' + r.installed + ')';
-  $('#supnote').textContent = 'Bấm Cập nhật: TV tự cài bản mới trong khoảng nửa phút. Bản mới chạy lỗi thì TV tự quay về bản đang dùng, hẹn giờ và ghép nối vẫn còn.'
-    + (CORE === 'tv' ? ' Trang này mất kết nối một lúc rồi tự nối lại.' : '');
+  $('#supnote').textContent = 'Mất khoảng nửa phút.'
+    + (CORE === 'tv' ? ' Trang này tự nối lại sau đó.' : '');
   $('#supgo').hidden = false; $('#suplater').textContent = 'Để sau';
   $('#suplater').onclick = () => { setupLater = r.latest; b.hidden = true; };
 }

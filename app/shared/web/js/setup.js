@@ -61,7 +61,7 @@ $('#aboutbtn').addEventListener('click', async () => {
   // scan with a phone: the Android app, and (when the TV Setup app is serving it) this TV's own remote page
   const code = (title, note, link) => { const s = qrSvg(link, 170); return s ? el('div', { className: 'qr' }, s, el('b', { textContent: title }), el('span', { className: 'muted', textContent: note }), el('br'), el('a', { href: link, target: '_blank', rel: 'noopener', textContent: link.replace(/^https?:\/\//, '') })) : null; };
   $('#qrs').replaceChildren(...[code('📱 App Android', 'Quét bằng điện thoại để tải app.', 'https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk'),
-    r && r.tv_web ? code('🌐 Remote trên điện thoại', 'Trang remote do chính TV phục vụ: quét khi điện thoại cùng Wi-Fi hoặc cùng Tailscale với TV.', r.tv_web) : null].filter(Boolean));
+    r && r.tv_web ? code('🌐 Remote trên điện thoại', 'Quét khi điện thoại chung mạng với TV.', r.tv_web) : null].filter(Boolean));
 });
 if (CORE === 'mac') fetch('/api/about').then((x) => x.json()).then((r) => {
   if (r.version) $('#ver').textContent = 'TV Remote ' + r.version + (r.released ? ' · ' + r.released : '');
@@ -157,7 +157,7 @@ $('#scan').addEventListener('click', async () => {
   let r = await api('/api/discover');
   if (r && !r.found.length) r = await api('/api/discover') || r;     // now and then a first scan misses TVs a second one finds
   b.disabled = false; b.textContent = '🔍 Quét mạng'; if (!r) return;
-  $('#scaninfo').textContent = (r.networks.length ? 'Đã quét ' + r.networks.join(', ') : 'Không thấy mạng nội bộ nào') + ' và Tailscale. ' + (r.found.length ? '' : 'Không thấy TV nào: TV có bật và cùng Wi-Fi với máy này không? Hoặc nhập IP bên dưới.');
+  $('#scaninfo').textContent = r.found.length ? '' : 'Không thấy TV nào. TV có bật và chung Wi-Fi không?';
   $('#scanlist').replaceChildren(...r.found.map((f) => el('div', { className: 'item', onclick: (e) => { if (!e.target.closest('button')) selectTv(f.ip); } },
     el('div', { className: 'name' }, el('span', { textContent: f.name || f.ip }),
       el('span', { className: 'badge' + (f.remote ? ' ok' : ''), textContent: f.remote ? 'Android TV' : 'chỉ có ADB' }), f.adb ? el('span', { className: 'badge ok', textContent: 'ADB đã bật' }) : el('span', { className: 'badge', textContent: 'ADB chưa bật' }),
@@ -241,7 +241,7 @@ async function installSetup() {
 
 // ---------- Tailscale: one button installs it on the TV, switches it on and fetches its sign-in link (Tailscale.kt) ----------
 // Nobody types on the TV: the link opens in a browser that is signed in to Tailscale, where one click adds the TV.
-const TS_PITCH = 'Một nút: tự cài Tailscale bản chính thức lên TV, cho nó tự chạy lại mỗi khi bật TV, và lấy link đăng nhập. Bạn chỉ cần bấm “Connect” bằng tài khoản Tailscale của mình. Chỉ dùng trong cùng Wi-Fi thì bỏ qua được.';
+const TS_PITCH = 'Trang này cài Tailscale lên TV, bạn chỉ cần bấm “Connect”.';
 const TS_STEP = { download: 'Đang tải Tailscale bản chính thức (khoảng 100 MB)...', install: 'Đang cài Tailscale lên TV...', start: 'Đang bật Tailscale trên TV...' };
 let tsGen = 0;
 function tsShow(...kids) { $('#tsbody').replaceChildren(...kids.filter(Boolean)); if (!$('#ts').open) $('#ts').showModal(); }
@@ -316,7 +316,7 @@ async function loadSteps() {
       pairing ? code : null,
       pairing ? act('✓ Xác nhận', async () => { const x = await api('/api/pair/finish', { code: code.value.trim() }); if (x) { pairing = false; toast('Đã ghép'); await refresh(); await loadSteps(); } }, 'primary') : null,
       act(pairing ? '🔄 Lấy mã mới' : '🔗 Ghép', async () => { if (await api('/api/pair/start', {})) { pairing = true; await loadSteps(); } }, pairing ? '' : 'primary')));
-  } else out.push(step(3, 'todo', 'Nút remote', r.error ? 'Chưa kết nối được tới dịch vụ remote của TV (cổng 6466): TV đang bật và cùng mạng chứ? Thiết bị này có phải Android TV / Google TV không?' : 'Đang kết nối...', act('🔗 Thử ghép', async () => { if (await api('/api/pair/start', {})) { pairing = true; await loadSteps(); } })));
+  } else out.push(step(3, 'todo', 'Nút remote', r.error ? 'Chưa kết nối được (cổng 6466). TV có bật và chung mạng không?' : 'Đang kết nối...', act('🔗 Thử ghép', async () => { if (await api('/api/pair/start', {})) { pairing = true; await loadSteps(); } })));
   // 4. save
   const move = s.tailscale_ip && s.tailscale_ip !== s.host;
   if (s.saved && !move) out.push(step(4, 'ok', 'Đã lưu: ' + s.saved.name, 'Lần sau mở lên là dùng TV này. ' + (s.saved.mac ? 'Đã ghi địa chỉ MAC để đánh thức TV.' : '')));

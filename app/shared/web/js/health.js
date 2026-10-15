@@ -170,8 +170,7 @@ async function loadErrors() {
   }
   const list = [...groups].map(([pkg, es]) => ({ pkg, es: es.sort((a, b) => b.at.localeCompare(a.at)) })).sort((a, b) => b.es[0].at.localeCompare(a.es[0].at));
   const reload = el('button', { type: 'button', textContent: '↻ Đọc lại', onclick: loadErrors });
-  const card = el('section', { className: 'card' }, el('div', { className: 'card-head' }, el('h2', { textContent: '🐞 App bị dừng, bị treo' }), reload),
-    el('p', { className: 'muted', style: 'margin:0 0 8px', textContent: 'Android tự ghi lại mỗi lần một app trên TV bị dừng hoặc không phản hồi, và giữ trong khoảng 3 ngày.' }));
+  const card = el('section', { className: 'card' }, el('div', { className: 'card-head' }, el('h2', { textContent: '🐞 App bị dừng, bị treo' }), reload));
   if (!list.length) card.append(el('p', { textContent: 'Không có app nào bị dừng hay bị treo gần đây. 👍' }));
   for (const { pkg, es } of list) {
     const n = { crash: 0, anr: 0 }; es.forEach((e) => { n[e.kind === 'anr' ? 'anr' : 'crash']++; });

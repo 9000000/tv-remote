@@ -39,7 +39,7 @@
   <div class="banner warn askother" id="askother" hidden>
     <b>TV đang hỏi “Cho phép gỡ lỗi USB?” cho một thiết bị</b>
     <p>Mã của thiết bị: <code id="askfp"></code></p>
-    <p class="muted">Chỉ cho phép khi chắc đó là máy của bạn: app TV Remote hiện mã của nó trong lúc chờ. Cho phép là thiết bị đó điều khiển được toàn bộ TV.</p>
+    <p class="muted">Chỉ cho phép nếu đó là máy của bạn.</p>
     <div class="actions"><button class="small primary" id="askyes">✓ Cho phép</button><button class="small" id="askno">Từ chối</button></div>
   </div>
 
@@ -58,7 +58,7 @@
   <!-- ============ The page served by the TV itself asks once for a code shown on the TV ============ -->
   <section class="card pair" id="pair" hidden>
     <h1>🔗 Ghép với TV</h1>
-    <p class="muted">Bấm “Hiện mã trên TV”: TV hiện một mã 6 số. Gõ mã đó vào đây. Mỗi thiết bị chỉ cần làm một lần.</p>
+    <p class="muted">Bấm “Hiện mã trên TV” rồi gõ mã 6 số vào đây.</p>
     <button class="primary" id="pairstart">📺 Hiện mã trên TV</button>
     <form class="line" id="pairf" hidden><input id="paircode" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="000 000"><button class="primary">✓ Ghép</button></form>
     <div class="muted" id="pairerr"></div>
@@ -72,8 +72,7 @@
         <div class="list" id="tvlist" style="margin-top:0"></div>
         <!-- the saved TVs at once (homestay, hotel, a house of TVs), Fleet.kt; the phone app has the same on its own list of TVs (Fleet.kt) -->
         <details id="fleet" hidden>
-          <summary>📦 Làm trên nhiều TV cùng lúc <span class="muted" id="fleetcount"></span></summary>
-          <p class="muted" style="margin:8px 0">Chọn TV rồi cài cùng một APK lên tất cả, gỡ một app hoặc khởi động lại. Mỗi TV cần bật ADB.</p>
+          <summary>📦 Nhiều TV cùng lúc <span class="muted" id="fleetcount"></span></summary>
           <div id="fleetlist"></div>
           <div class="actions" style="display:flex;gap:8px;align-items:center;margin-top:10px">
             <label class="linkbtn filebtn primary" id="fleetapk" style="padding:0 16px;min-height:44px"><input type="file" accept=".apk,application/vnd.android.package-archive"><span>📦 Cài APK lên TV đã chọn</span></label>
@@ -83,10 +82,9 @@
       </section>
       <section class="card">
         <div class="card-head"><h2>🔍 Tìm TV</h2><button class="small primary" id="scan">🔍 Quét mạng</button></div>
-        <p class="muted" id="scaninfo" style="margin:8px 0 0">Tìm TV trong cùng Wi-Fi với máy này và các thiết bị Android trong Tailscale của bạn.</p>
+        <p class="muted" id="scaninfo" style="margin:8px 0 0"></p>
         <div class="list" id="scanlist"></div>
-        <form class="line" id="ipf"><input id="ipin" placeholder="Hoặc nhập IP của TV, vd 192.168.1.88" autocomplete="off" inputmode="decimal"><button class="primary">✓ Chọn</button></form>
-        <p class="muted" style="margin:8px 0 0">Xem IP trên TV: Cài đặt → Mạng và Internet → bấm vào tên Wi-Fi đang kết nối.</p>
+        <form class="line" id="ipf"><input id="ipin" placeholder="Hoặc nhập IP của TV, vd 192.168.1.88" title="Xem IP trên TV: Cài đặt → Mạng và Internet → bấm vào tên Wi-Fi đang kết nối." autocomplete="off" inputmode="decimal"><button class="primary">✓ Chọn</button></form>
       </section>
     </div>
   </div>
@@ -173,7 +171,6 @@
             </div>
             <div class="pill"><button data-k="CH_UP" aria-label="Kênh +"><svg class="ic" aria-hidden="true"><use href="#i-up"/></svg></button><span>Kênh</span><button data-k="CH_DOWN" aria-label="Kênh −"><svg class="ic" aria-hidden="true"><use href="#i-down"/></svg></button></div>
           </div>
-          <div class="muted hint wide-hint">Giữ nút = nhấn giữ trên TV · Bàn phím máy tính gõ thẳng lên TV: chữ, ⌫ xóa, mũi tên, Enter, Esc = Back</div>
         </section>
 
         <section class="card" id="scenecard" data-adb-gated>
@@ -183,12 +180,11 @@
 
         <section class="card">
           <h2>⌨️ Bàn phím <span class="muted" data-for="mac" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
-          <p class="muted" id="kbdoff" hidden style="margin:0 0 8px">🔒 Gõ chữ cần ADB. TV này chưa mở ADB nên phần này tạm khóa; các nút mũi tên, OK, Back vẫn dùng được.</p>
+          <p class="muted" id="kbdoff" hidden style="margin:0 0 8px">🔒 Gõ chữ cần ADB.</p>
           <fieldset id="kbd">
           <form class="line" id="textf" style="margin-top:0"><button type="button" id="live" title="Gõ trực tiếp / gõ xong rồi gửi">⚡</button><input id="text" placeholder="Gõ chữ lên TV" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="primary" title="Gửi phím Enter">↵</button><button type="button" id="del" aria-label="Xóa ký tự">⌫</button><button type="button" id="digits" title="Bàn phím số">123</button></form>
           <div class="numpad" id="numpad" hidden><button class="rb" data-k="1">1</button><button class="rb" data-k="2">2</button><button class="rb" data-k="3">3</button><button class="rb" data-k="4">4</button><button class="rb" data-k="5">5</button><button class="rb" data-k="6">6</button><button class="rb" data-k="7">7</button><button class="rb" data-k="8">8</button><button class="rb" data-k="9">9</button><span></span><button class="rb" data-k="0">0</button><span></span></div>
           <form class="line" id="askf"><input id="ask" placeholder="Hỏi TV: mở YouTube" autocomplete="off"><button type="button" id="speak" title="Nói bằng micro của máy này" hidden>🎤</button><button class="primary" title="Gửi câu này cho Google Assistant của TV">🔍</button></form>
-          <p class="muted fine-only" style="margin:6px 0 0">Không cần bấm vào ô này: cứ gõ là chữ lên TV (TV phải đang ở một ô nhập chữ). Ô này dành cho gõ tiếng Việt có dấu. Bàn phím ảo trên TV không bấm bằng chuột được, hãy gõ từ đây.</p>
           </fieldset>
           <h2 style="margin-top:14px">🔗 Mở trên TV <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· link, CH Play</span></h2>
           <form class="line" id="linkf" style="margin-top:0"><input id="link" placeholder="youtube.com/watch?v=..." autocomplete="off" inputmode="url"><button class="primary">↗ Mở</button></form>
@@ -239,15 +235,13 @@
   <div class="panel" data-panel="files" hidden>
     <div class="two-up" data-adb-gated>
       <section class="card">
-        <h2>⬇️ Tải file từ link về TV</h2>
+        <h2>⬇️ Tải file về TV</h2>
         <form class="line" id="fetchf" style="margin-top:0"><input id="fetchurl" placeholder="https://.../file.zip" inputmode="url" autocomplete="off"><button class="primary">⬇️ Tải</button></form>
-        <p class="muted" style="margin:8px 0 0">Lưu vào thư mục Download của TV.<span data-for="mac phone"> Máy này tải về trước rồi đẩy sang TV.</span></p>
       </section>
       <section class="card">
         <h2>📦 Cài APK</h2>
         <form class="line" id="instf" style="margin-top:0"><input id="insturl" placeholder="Link tới file .apk" inputmode="url" autocomplete="off"><button class="primary">📦 Cài</button></form>
         <label class="drop"><input type="file" id="apkfile" accept=".apk,application/vnd.android.package-archive">Hoặc chọn file .apk từ máy này</label>
-        <p class="muted" style="margin:8px 0 0">Chỉ cài APK bạn tin tưởng. Cài đè bản cũ được (giữ dữ liệu). File .apk đã nằm trên TV thì bấm “Cài” cạnh nó trong danh sách tệp ở trên.</p>
       </section>
     </div>
   </div>
@@ -275,11 +269,11 @@
     </details>
     <!-- Terminal: for people who know shell commands, so folded away -->
     <details class="card" id="termcard" data-adb-gated>
-      <summary>⌨️ Terminal <span class="muted">· cho người rành dòng lệnh</span></summary>
+      <summary>⌨️ Terminal</summary>
       <pre class="term" id="termout"></pre>
       <select id="termhist" hidden style="width:100%;margin:0 0 10px;min-height:40px;border-radius:10px;background:var(--btn);color:var(--ink);border:0;padding:0 10px;font:inherit"></select>
       <form class="line" id="termf" style="margin-top:0"><input id="termin" class="mono" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ls /sdcard"><button class="primary" title="Chạy lệnh">↵</button></form>
-      <p class="muted" style="margin:8px 0 0">Chạy lệnh với quyền shell của TV (như adb shell). Mỗi lệnh chạy riêng, tối đa 30 giây; lệnh chờ gõ tiếp như top, logcat không dùng được. Phím ↑ ↓ gọi lại lệnh cũ.</p>
+      <p class="muted" style="margin:8px 0 0">Như adb shell, mỗi lệnh tối đa 30 giây. ↑ ↓ gọi lại lệnh cũ.</p>
     </details>
   </div>
   <!-- ============ Automation: TV Setup's timers and limits (they run on the TV), and scenes ============ -->
@@ -291,36 +285,31 @@
         <h2>😴 Hẹn giờ tắt TV</h2>
         <p class="state" id="sleepstate">Chưa hẹn giờ.</p>
         <div class="presets" id="sleepbtns"></div>
-        <form class="line" id="sleepf"><input id="sleepin" placeholder="Tự chọn: số phút (vd 40) hoặc giờ tắt (vd 23:30)" autocomplete="off"><button class="primary">😴 Hẹn</button></form>
+        <form class="line" id="sleepf"><input id="sleepin" placeholder="Số phút hoặc giờ tắt, vd 40, 23:30" autocomplete="off"><button class="primary">😴 Hẹn</button></form>
         <div class="actions" id="sleepacts"></div>
-        <p class="muted" style="margin:10px 0 0">Còn 1 phút, TV hiện thông báo kèm nút “＋15 phút”. Hết giờ TV về chế độ chờ.</p>
       </section>
       <section class="card">
         <h2>🌙 Giờ đi ngủ</h2>
-        <p class="muted" style="margin:0 0 10px">Trong khoảng giờ này, mỗi lần TV được bật, 1 phút sau TV tự tắt. Hợp cho trẻ nhỏ.</p>
+        <p class="muted" style="margin:0 0 10px">Bật TV trong giờ này thì 1 phút sau TV tự tắt.</p>
         <label class="check"><input type="checkbox" id="bedon"> Bật giờ đi ngủ</label>
         <div class="timerow"><label>Từ <input type="time" id="bedfrom" value="22:00"></label><label>đến <input type="time" id="bedto" value="06:30"></label><button class="small primary" id="bedsave">💾 Lưu</button></div>
         <p class="state" id="bedstate"></p>
         <div class="actions" id="bedacts"></div>
       </section>
       <section class="card">
-        <h2>⏳ Giới hạn giờ dùng app mỗi ngày</h2>
+        <h2>⏳ Giới hạn app mỗi ngày</h2>
         <div class="list" id="limits" style="margin-top:0"></div>
         <form class="line" id="limitf"><select id="limitpkg" aria-label="App"></select><select id="limitmin" aria-label="Số phút mỗi ngày"><option value="30">30 phút</option><option value="60" selected>1 giờ</option><option value="90">1 giờ 30</option><option value="120">2 giờ</option><option value="180">3 giờ</option><option value="240">4 giờ</option></select><button class="primary">＋ Thêm</button></form>
-        <p class="muted" style="margin:8px 0 0">Còn 5 phút, TV báo trước. Hết giờ, app tự đóng; cho thêm giờ ngay ở đây.</p>
       </section>
-      <p class="muted autonote">Ba mục trên chạy ngay trên TV (app TV Setup), không cần máy này bật. Đây không phải khóa trẻ em tuyệt đối: người rành có thể gỡ TV Setup.</p>
     </div>
     <section class="card" data-adb-gated>
-      <div class="card-head"><h2>🎬 Cảnh: một nút làm nhiều việc</h2><button class="small primary" id="scenenew">＋ Tạo cảnh</button></div>
+      <div class="card-head"><h2>🎬 Cảnh</h2><button class="small primary" id="scenenew">＋ Tạo cảnh</button></div>
       <div class="list" id="scenelist"></div>
       <div class="sceneio">
         <button class="small" id="sceneexport">⬇️ Xuất file sao lưu</button>
         <button class="small" id="sceneimport">⬆️ Nhập từ file</button>
         <input type="file" id="scenefile" accept=".json,application/json" hidden>
       </div>
-      <p class="muted" style="margin:8px 0 0" data-for="mac tv">Cảnh hiện thành nút trên tab Remote. Nói hoặc gõ tên cảnh vào ô “Hỏi TV” cũng chạy được.</p>
-      <p class="muted" style="margin:8px 0 0" data-for="phone">Cảnh hiện trong nút 🎬 trên remote của app, trong widget và ô Cài đặt nhanh.</p>
     </section>
   </div>
   <!-- ============ TVs: saved, discovery, first-time setup ============ -->
@@ -343,7 +332,6 @@
     </section>
     <section class="card" data-adb-gated>
       <h2>⚡ Tối ưu TV</h2>
-      <p class="muted" style="margin:0 0 12px">Bấm “Tối ưu TV” để chọn việc cần làm: tắt hiệu ứng chuyển cảnh, dùng FLauncher làm màn hình chính, tắt app không dùng (có sẵn đề xuất, chọn thêm app khác tùy ý). Không gỡ app nào; Hoàn tác bật lại tất cả.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="primary" id="setupapply" style="padding:0 18px">⚡ Tối ưu TV</button>
         <button id="setupundo" style="padding:0 18px">↩ Hoàn tác</button>
@@ -399,7 +387,7 @@
 <!-- the TV is asking "Allow USB debugging?": nothing works until somebody answers it there, so this takes the whole screen -->
 <dialog id="allow"><div class="allowbox"><div class="big">📺</div><h1>Nhìn lên TV</h1><p class="muted">TV đang hỏi “Cho phép gỡ lỗi USB?”</p>
   <ol><li>Tích “Luôn cho phép từ máy tính này”</li><li>Chọn OK (Cho phép)</li></ol>
-  <p class="muted">Màn hình này tự đóng khi TV đã cho phép.</p><button id="allowlater">Để sau</button></div></dialog>
+  <button id="allowlater">Để sau</button></div></dialog>
 <!-- a TV is being connected: nothing on the remote works yet -->
 <dialog id="connecting"><div class="allowbox"><div class="spin"></div><p class="muted">Đang kết nối</p><h1 id="conname"></h1><p class="muted" id="constep"></p><button id="concancel">Hủy</button></div></dialog>
 <dialog id="ts"><div class="card assistbox"><div class="card-head"><h2>🌐 Tailscale cho TV</h2><button class="small iconbtn" id="tsclose" title="Đóng" aria-label="Đóng">✕</button></div><div class="tsbox" id="tsbody" style="display:flex;flex-direction:column;gap:12px;margin-top:12px"></div></div></dialog>
@@ -420,12 +408,12 @@
   <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="primary" id="scenesave" style="padding:0 18px">💾 Lưu</button><button id="scenetry">▶ Thử</button><button class="danger" id="scenedel">🗑 Xóa</button></div>
 </div></dialog>
 <dialog id="aidlg"><div class="card assistbox"><div class="card-head"><h2>🤖 Hỏi AI nên tắt / gỡ app nào</h2><button class="small iconbtn" id="aiclose" title="Đóng" aria-label="Đóng">✕</button></div>
-  <p class="muted" style="margin:10px 0 8px">Sửa dòng “Người nhà vẫn dùng” cho đúng, bấm Sao chép rồi dán vào ChatGPT, Claude hay Gemini. AI có thể sai: tắt từng app một, thấy lỗi thì bật lại ở mục “App đã tắt” cuối danh sách Ứng dụng.</p>
+  <p class="muted" style="margin:10px 0 8px">Sửa dòng “Người nhà vẫn dùng”, bấm Sao chép rồi dán vào ChatGPT, Claude hay Gemini.</p>
   <textarea id="aitext" rows="14" spellcheck="false"></textarea>
   <div class="aihint"><button class="primary" id="aicopy">📋 Sao chép</button></div>
 </div></dialog>
 <dialog id="bulkdlg"><div class="card assistbox"><div class="card-head"><h2>📝 Bật / tắt / gỡ hàng loạt</h2><button class="small iconbtn" id="bulkclose" title="Đóng" aria-label="Đóng">✕</button></div>
-  <p class="muted" style="margin:10px 0 8px">Dán danh sách app id, mỗi dòng một app, hoặc dán nguyên câu trả lời của AI: mọi chuỗi dạng com.abc.xyz đều được nhận.</p>
+  <p class="muted" style="margin:10px 0 8px">Dán app id (mỗi dòng một app) hoặc cả câu trả lời của AI.</p>
   <textarea id="bulktext" rows="5" spellcheck="false" placeholder="com.sony.dtv.imanual&#10;com.google.android.marvin.talkback"></textarea>
   <div class="list" id="bulklist"></div>
   <div class="aihint"><button class="small" id="bulkoff">⏸ Tắt các app này</button><button class="small" id="bulkon">↩ Bật lại các app này</button><button class="small danger" id="bulkdel">🗑 Gỡ các app này</button></div>

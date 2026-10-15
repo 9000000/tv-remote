@@ -1,7 +1,7 @@
 // TV screen (live / screenshots) and tabs
 // ---------- screen: live MJPEG stream, or one screenshot at a time ----------
 let screenOn = false, screenUrl = null, screenGen = 0, streamCtl = null, frames = 0;
-const SCREEN_HINT = 'Bấm “Xem” để xem màn hình TV. Khi đang xem: bấm chuột lên hình để chạm, cuộn để cuộn, chuột phải = Back.';
+const SCREEN_HINT = 'Bấm “Xem” để xem màn hình TV.';
 if (CORE !== 'mac') document.querySelectorAll('#screenmode [data-for=mac]').forEach((o) => o.remove());   // an <option> cannot be hidden by CSS everywhere
 function setScreenPlaceholder(msg) { $('#screenph').textContent = msg || SCREEN_HINT; $('#screenph').hidden = false; $('#screen').hidden = $('#screenv').hidden = true; }
 function setScreenInfo(text, live) { $('#screeninfo').textContent = text; $('#screeninfo').classList.toggle('live', !!live); }
