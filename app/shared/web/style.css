@@ -129,8 +129,14 @@
   .seg button.on { background:var(--accent); color:var(--accent-ink, #fff); }
   .seg.mini { margin:0; flex:none; } .seg.mini button { flex:none; min-height:28px; font-size:12px; }
   .capsplain { list-style:none; margin:0; padding:0; display:grid; gap:6px; font-size:14px; } .capsplain .no { color:var(--muted); }
-  .setlist { max-height:60vh; overflow:auto; } .setrow1 { padding:5px 0; border-top:1px solid var(--line); font-size:12px; overflow-wrap:anywhere; cursor:pointer; }
-  .setrow1 .muted { margin-right:6px; } .setrow1 div { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; color:var(--muted); } .setrow1.full div { display:block; }
+  .setlist { max-height:60vh; overflow:auto; }
+  .setgroup { margin:14px 0 2px; font-size:13px; color:var(--muted); font-weight:700; } .setgroup:first-of-type { margin-top:4px; }
+  .setrow { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,auto); gap:4px 14px; align-items:center; padding:9px 0; border-top:1px solid var(--line); cursor:pointer; }
+  .setname { display:flex; flex-direction:column; gap:2px; min-width:0; font-size:14px; } .setname small { font-size:11px; color:var(--muted); overflow-wrap:anywhere; }
+  .setval { max-width:46vw; font-size:14px; font-weight:600; text-align:right; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .setval.mono { font-size:12px; font-weight:400; color:var(--muted); } .setval.long { font-size:12px; font-weight:500; }
+  .setrow.full { grid-template-columns:1fr; } .setrow.full .setval { display:block; max-width:none; text-align:left; }
+  .setother { margin-top:14px; } .setother > summary { cursor:pointer; font-size:13px; font-weight:700; color:var(--muted); padding:6px 0; }
   .linkbtn.primary { background:var(--accent); color:var(--accent-ink); font-weight:700; }
   #fleet { margin-top:12px; border-top:1px solid var(--line); padding-top:12px; } #fleet > summary { cursor:pointer; font-weight:600; }
   .fleetrow { display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-top:1px solid var(--line); cursor:pointer; } .fleetrow input { margin-top:4px; } .fleetrow .name { display:flex; flex-direction:column; gap:2px; min-width:0; } .fleetrow small { color:var(--muted); overflow-wrap:anywhere; } .fleetrow.off b { color:var(--muted); }

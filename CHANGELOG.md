@@ -4,6 +4,18 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.21.0 - 2026-10-15
+
+Web 2.21.0 · app điện thoại 2.19.0 · app TV 2.18.0
+
+**Tiếng Việt**
+- **Danh sách app hiện nhanh hơn trên điện thoại và máy tính:** để đọc tên và logo app, trước đây phải chép cả app điện thoại (1,1 MB) lên TV mỗi khi app được cập nhật. Giờ chỉ cần chép một tệp 6 KB.
+- **Cài đặt hệ thống dễ đọc hơn:** các cài đặt hay cần được chia theo nhóm (Màn hình & chờ, Mạng, Nhà phát triển & ADB, App & bàn phím, Âm thanh, Ngôn ngữ & giờ, Trợ năng, Thiết bị), mỗi mục có tên dễ hiểu và giá trị đọc được (“Bật”, “20 phút”, “Gboard” thay cho `1`, `1200000`, `com.google.android.inputmethod.latin/...`). Hàng trăm khóa kỹ thuật còn lại được gom vào mục “Khác”, mở khi cần hoặc khi tìm kiếm.
+
+**English**
+- **The app list shows faster on the phone and the computer:** to read app names and logos, the whole phone app (1.1 MB) used to be copied to the TV after every update. Now a 6 KB file is enough.
+- **System settings easier to read:** the settings people look for are grouped (Screen & sleep, Network, Developer & ADB, Apps & keyboard, Sound, Language & time, Accessibility, Device), each with a plain name and a readable value (“On”, “20 min”, “Gboard” instead of `1`, `1200000`, `com.google.android.inputmethod.latin/...`). The hundreds of other technical keys sit under “Other”, opened when needed or when searching.
+
 ## 2.20.0 - 2026-10-15
 
 Web 2.20.0 · app điện thoại 2.18.0 · app TV 2.17.0

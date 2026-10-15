@@ -21,8 +21,8 @@ import java.util.concurrent.atomic.AtomicLong
  */
 class Server(private val repo: File, private val keys: File, private val cache: File, private val saved: Saved, first: String?, private val stop: () -> Unit) : HttpServer.Handler {
     private val web = File(repo, "app/shared/web")
-    private val apk = listOf("app/android/tv-remote.apk", "app/desktop/build/phone/tv-remote.apk")   // carries Meta and Caps, started on
-        .map { File(repo, it) }.firstOrNull { it.isFile } ?: File(repo, "app/android/tv-remote.apk")   // the TV: inside the app, or a dev build's
+    private val helperFile = File(repo, "app/shared/assets/tvr-helper.jar")   // Meta and Caps, started on the TV
+    private val helper: () -> ByteArray = { helperFile.readBytes() }
     private val jarFile = File(repo, "app/shared/assets/scrcpy-server.jar")
     private val jar: () -> ByteArray = { jarFile.readBytes() }
     private val version = try { File(repo, "VERSION").readText().trim() } catch (e: IOException) { "" }
@@ -33,7 +33,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
     private val assist = Assist { cur }
     val updater = Updater(version, System.getProperty("tvr.res")?.let { File(it) }, stop).also { it.start() }
 
-    private fun session(host: String) = Session(host, keys, cache, apk, jar)
+    private fun session(host: String) = Session(host, keys, cache, helper, jar)
 
     /** Another TV: a whole new session; the old one is closed after (it may be in the middle of a request). */
     @Synchronized private fun switch(host: String) {

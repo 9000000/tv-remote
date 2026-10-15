@@ -109,7 +109,7 @@ private fun MainActivity.fleetUninstall(ips: List<String>) {
         val link = AdbLink(filesDir, route[ip] ?: ip)
         try {
             val info = Fleet.info(link.get())
-            val label = try { RemoteLabels(link, File(applicationInfo.sourceDir)).names() } catch (e: Exception) { emptyMap() }
+            val label = try { RemoteLabels(link, { assets.open("tvr-helper.jar").use { it.readBytes() } }).names() } catch (e: Exception) { emptyMap() }
             synchronized(apps) { info.apps.forEach { apps.getOrPut(it) { ArrayList() }.add(ip) }; names.putAll(label) }
         } catch (ignored: Exception) {                                // a TV that does not answer has nothing to remove
         } finally { link.close() }

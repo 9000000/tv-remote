@@ -118,7 +118,7 @@ internal fun MainActivity.voice(sentence: String) {
     if (appNamesFor != ip && ip != null && tv != null && tv.ready() && OPEN_APP.containsMatchIn(Voice.fold(sentence))) {
         Thread {                                                      // "open <app>": the names of this TV's apps, asked once per TV
             val link = AdbLink(filesDir, ip)
-            val names = try { RemoteLabels(link, File(applicationInfo.sourceDir)).names() } catch (e: Exception) { emptyMap() } finally { link.close() }
+            val names = try { RemoteLabels(link, { assets.open("tvr-helper.jar").use { it.readBytes() } }).names() } catch (e: Exception) { emptyMap() } finally { link.close() }
             ui.post {
                 if (isFinishing || host != ip) return@post
                 appNames = names; appNamesFor = ip

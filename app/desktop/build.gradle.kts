@@ -13,8 +13,9 @@ kotlin {
     jvmToolchain(17)
     sourceSets["main"].kotlin.srcDir("../shared/src/main/kotlin")
 }
-// Android only: decoding the picture and sound (TvAndroid, AudioOut), the classes started on the TV (Meta, Caps), the QR bitmap
-sourceSets["main"].kotlin.exclude("**/core/TvAndroid.kt", "**/core/AudioOut.kt", "**/core/Meta.kt", "**/core/Caps.kt", "**/core/Qr.kt")
+// Android only: decoding the picture and sound (TvAndroid, AudioOut), the QR bitmap. Meta and Caps, started on the TV, are Java
+// (src/main/java) and reach the computer as assets/tvr-helper.jar, already dexed.
+sourceSets["main"].kotlin.exclude("**/core/TvAndroid.kt", "**/core/AudioOut.kt", "**/core/Qr.kt")
 
 dependencies {
     implementation("org.json:json:20240303")                         // on Android org.json is part of the system
@@ -33,37 +34,14 @@ application {
 val os = System.getProperty("os.name").lowercase().let { if ("mac" in it) "mac" else if ("win" in it) "windows" else "linux" }
 val arch = System.getProperty("os.arch").let { if (it == "aarch64" || it == "arm64") "arm64" else "x64" }
 val stage = layout.buildDirectory.dir("package-input")
-// The phone's APK carries Meta and Caps (dex, which only the Android build makes), started on the TV for app names and
-// pictures. Not kept in git: the one just built (app/android/build.sh; the release workflow puts the release's there), else
-// the latest release's. Without it (offline) a dev run shows package names; the packaged app refuses to build.
-val phoneApk = layout.buildDirectory.file("phone/tv-remote.apk").get().asFile
-val fetchPhoneApk by tasks.registering {
-    outputs.upToDateWhen { false }
-    doLast {
-        val built = rootDir.resolve("../android/build/tv-remote.apk")
-        phoneApk.parentFile.mkdirs()
-        if (built.isFile) { built.copyTo(phoneApk, true); return@doLast }
-        if (phoneApk.isFile && System.currentTimeMillis() - phoneApk.lastModified() < 86_400_000) return@doLast
-        try {
-            URI("https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk").toURL().openStream().use { i ->
-                phoneApk.resolveSibling("tv-remote.apk.part").also { p -> p.outputStream().use { i.copyTo(it) }; p.renameTo(phoneApk) }
-            }
-        } catch (e: Exception) {
-            logger.warn("tv-remote.apk: not downloaded ($e); app names on the TV show as package names")
-        }
-    }
-}
-tasks.named("installDist") { dependsOn(fetchPhoneApk) }
 val stageApp by tasks.registering(Sync::class) {
     dependsOn("installDist")
-    doFirst { check(phoneApk.isFile) { "no tv-remote.apk: build it (app/android/build.sh) or go online" } }
     into(stage)
     from(layout.buildDirectory.dir("install/desktop/lib"))
     into("res") {                                                     // the repo's own layout: Server.kt reads the same paths
         from("../..") { include("VERSION", "CHANGELOG.md") }
         from("../shared/web") { into("app/shared/web") }
-        from("../shared/assets/scrcpy-server.jar") { into("app/shared/assets") }
-        from(phoneApk) { into("app/android") }                       // Meta and Caps, see fetchPhoneApk
+        from("../shared/assets") { include("scrcpy-server.jar", "tvr-helper.jar"); into("app/shared/assets") }
         from("native") { include(if (os == "mac") "mac/**" else "$os-$arch/**"); into("app/desktop/native") }   // the window (Window.kt)
     }
 }

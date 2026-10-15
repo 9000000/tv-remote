@@ -1,7 +1,7 @@
 // node --test app/shared/tests/   Reading what the TV printed for the Apps tab and the TV card (js/tvread.js).
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { cleanFreed, logNext, logLevel, readTvset, densityChoices, capsRead, sizeName, appInfoRead, permName, bootRead, settingsRead } = require('../web/js/tvread.js');
+const { cleanFreed, logNext, logLevel, readTvset, densityChoices, capsRead, sizeName, appInfoRead, permName, bootRead, settingsRead, settingInfo } = require('../web/js/tvread.js');
 
 test('bytes freed by the cache clean', () => {
   assert.equal(cleanFreed('1291592 4096 1291597 4096\n'), 5 * 4096);
@@ -126,4 +126,19 @@ test('apps that start with the TV, and the settings list', () => {
   assert.deepEqual([...bootRead('com.a.b/.Boot\ncom.a.b/.Other\n  dev.x/y.Z\nNo receivers\n')], ['com.a.b', 'dev.x']);
   assert.deepEqual(settingsRead('global adb_enabled=1\nsecure sleep_timeout=-1\nsystem a.b=x=y\nnot a line\nglobal =1\n'),
     [{ table: 'global', name: 'adb_enabled', value: '1' }, { table: 'secure', name: 'sleep_timeout', value: '-1' }, { table: 'system', name: 'a.b', value: 'x=y' }]);
+});
+
+test('settings in words', () => {
+  const i = (name, value, vi = true) => settingInfo({ table: 'x', name, value }, vi);
+  assert.deepEqual(i('adb_enabled', '1'), { group: 'dev', groupName: 'Nhà phát triển & ADB', title: 'Gỡ lỗi ADB', value: 'Bật', known: true, order: i('adb_enabled', '1').order });
+  assert.ok(i('screen_off_timeout', '1').order < i('sleep_timeout', '1').order);
+  assert.equal(i('adb_enabled', '0', false).value, 'Off');
+  assert.equal(i('sleep_timeout', '1200000').value, '20 phút'); assert.equal(i('sleep_timeout', '-1').value, 'Không bao giờ');
+  assert.equal(i('screen_off_timeout', '2147483647', false).value, 'Never'); assert.equal(i('screen_off_timeout', '3600000').value, '1 giờ');
+  assert.equal(i('screen_off_timeout', '15000').value, '15 giây');
+  assert.equal(i('window_animation_scale', '0').value, 'Tắt'); assert.equal(i('window_animation_scale', '0.5').value, '0.5×');
+  assert.equal(i('screen_brightness', '102').value, '40%'); assert.equal(i('private_dns_mode', 'opportunistic').value, 'Tự động');
+  assert.equal(i('default_input_method', 'com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME').value, 'com.google.android.inputmethod.latin');
+  assert.equal(i('display_density_forced', '').value, 'Mặc định'); assert.equal(i('stay_on_while_plugged_in', '3').value, 'Bật');
+  assert.deepEqual(i('ble_scan_balanced_interval_ms', '730'), { group: 'other', groupName: 'Khác (kỹ thuật)', title: 'Ble scan balanced interval ms', value: '730', known: false, order: 0 });
 });

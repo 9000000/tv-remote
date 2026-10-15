@@ -33,9 +33,6 @@ jobs:
         with: { distribution: temurin, java-version: "17" }
       - if: runner.os == 'Linux'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq libwebkit2gtk-4.1-0 xvfb >/dev/null
-      - if: inputs.tag != ''                                          # Meta and Caps of this very release (else the build takes the latest's)
-        env: { GH_TOKEN: "${{ github.token }}" }
-        run: gh release download "${{ inputs.tag }}" -p tv-remote.apk -D app/android/build
       - name: build
         run: cd app/gradle && ./gradlew --no-daemon -q :desktop:packageApp
       - name: open, check, quit

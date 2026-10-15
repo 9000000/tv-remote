@@ -20,7 +20,8 @@ The phone app and TV Setup speak ADB themselves (`app/shared/.../Adb.kt`) and pu
 app/shared/web/          THE web UI (index.html, style.css, js/*.js), used by all three clients
 app/shared/src/.../core/ Kotlin shared by both apps: Adb, Tv (scrcpy session, video/audio/control), Atv (keys without ADB),
                          Manage (the /api core for the web UI), Setup (Optimize TV), Tailscale, AdbPrompt ("Allow USB
-                         debugging?"), Errors, Meta, Scenes (scenes + key names), RulesClient (talks to TV Setup's rules),
+                         debugging?"), Errors, RemoteLabels (app names, pictures and Caps from the TV, through Meta and Caps:
+                         Java in src/main/java, dexed into assets/tvr-helper.jar by :shared:tvHelper, kept in git), Scenes (scenes + key names), RulesClient (talks to TV Setup's rules),
                          Voice (spoken commands), AudioOut (Opus playback, PCM downmix),
                          Fleet (several saved TVs at once)
 app/android/.../phone/   phone app, one file per part, as extension functions on MainActivity: MainActivity (state, lifecycle),
@@ -70,7 +71,7 @@ dev/                     release.sh, gen_icons.py
 Three numbers, each bumped only when its part changes: `VERSION` (every release; the tag and the computer app), `app/android/VERSION`, `app/tv/VERSION`.
 
 - A change in `app/shared` (Kotlin **or** web) changes both APKs, so bump both app versions.
-- Steps: bump versions → add `## <VERSION> - <YYYY-MM-DD>` to `CHANGELOG.md` (line `Web x · app điện thoại y · app TV z`, then **Tiếng Việt** and **English** lists) → commit → push → `dev/release.sh` (builds, creates the GitHub release with both APKs and `versions.json`; APKs are never committed, the computer app's build fetches the phone APK it needs for Meta and Caps). It needs `gh` logged in and both `signing.jks` files, and refuses when app code changed without a version bump.
+- Steps: bump versions → add `## <VERSION> - <YYYY-MM-DD>` to `CHANGELOG.md` (line `Web x · app điện thoại y · app TV z`, then **Tiếng Việt** and **English** lists) → commit → push → `dev/release.sh` (builds, creates the GitHub release with both APKs and `versions.json`; APKs are never committed). It needs `gh` logged in and both `signing.jks` files, and refuses when app code changed without a version bump.
 - The computer apps are not built by `release.sh`: when `app/desktop` or `app/shared` changed since the last tag it starts
   `.github/workflows/desktop.yml` with the new tag, which builds them on each system and attaches them (names without a version,
   so `releases/latest/download/TV-Remote-<os>-<arch>.zip` always works), and waits for it; otherwise it attaches the last

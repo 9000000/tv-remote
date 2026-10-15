@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit
  * without ADB), its ADB link and what is managed over it, the picture and sound for the page, and a scrcpy session for touch
  * and typing while nobody watches. Picking another TV swaps the whole thing.
  */
-class Session(val host: String, private val keys: File, cache: File, apk: File, private val jar: () -> ByteArray) {
+class Session(val host: String, private val keys: File, cache: File, helper: () -> ByteArray, private val jar: () -> ByteArray) {
     @Volatile var atv: Atv? = null
         private set
     @Volatile var paired: Boolean? = null                             // null: not known yet
@@ -30,7 +30,7 @@ class Session(val host: String, private val keys: File, cache: File, apk: File, 
     @Volatile private var pairer: Atv? = null
 
     val link: AdbLink? = if (host.isEmpty()) null else AdbLink(keys, host)
-    val labels: RemoteLabels? = link?.let { RemoteLabels(it, apk, File(cache, "meta/" + host.replace(Regex("[^\\w.-]"), "_"))) }
+    val labels: RemoteLabels? = link?.let { RemoteLabels(it, helper, File(cache, "meta/" + host.replace(Regex("[^\\w.-]"), "_"))) }
     val manage: Manage? = link?.let { Manage(it, labels, cache) }
     val feeds = Feeds()
 

@@ -20,3 +20,35 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
 }
+
+// assets/tvr-helper.jar: Meta and Caps alone, dexed for app_process on the TV, where the phone and the computer copy it for app
+// names, pictures and the hardware report (a few KB, where the whole phone APK was copied before). Java, so no Kotlin library
+// has to go along. Made again with every Android build and kept in git, so the computer app builds without the Android SDK.
+val helperClasses by tasks.registering(JavaCompile::class) {
+    source = fileTree("src/main/java") { include("dev/tvremote/core/Meta.java", "dev/tvremote/core/Caps.java") }
+    classpath = files()
+    options.bootstrapClasspath = files(android.bootClasspath)
+    sourceCompatibility = "1.8"
+    targetCompatibility = "1.8"
+    options.compilerArgs.add("-Xlint:-options")
+    destinationDirectory.set(layout.buildDirectory.dir("tvhelper/classes"))
+}
+val tvHelper by tasks.registering {
+    dependsOn(helperClasses)
+    val classes = layout.buildDirectory.dir("tvhelper/classes")
+    val out = file("assets/tvr-helper.jar")
+    inputs.dir(classes)
+    outputs.file(out)
+    doLast {
+        val d8 = android.sdkDirectory.resolve("build-tools/${android.buildToolsVersion}/" + if ("win" in System.getProperty("os.name").lowercase()) "d8.bat" else "d8")
+        val files = classes.get().asFile.walk().filter { it.isFile && it.name.endsWith(".class") }.map { it.path }.sorted().toList()
+        val tmp = layout.buildDirectory.file("tvhelper/tvr-helper.jar").get().asFile
+        tmp.delete()
+        val p = ProcessBuilder(listOf(d8.path, "--release", "--min-api", "21", "--lib", android.bootClasspath.first().path, "--output", tmp.path) + files)
+            .redirectErrorStream(true).start()
+        val said = p.inputStream.bufferedReader().readText()
+        check(p.waitFor() == 0) { "d8: $said" }
+        if (!out.isFile || !out.readBytes().contentEquals(tmp.readBytes())) tmp.copyTo(out, true)
+    }
+}
+tasks.named("preBuild") { dependsOn(tvHelper) }

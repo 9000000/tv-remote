@@ -7,9 +7,10 @@ import java.io.IOException
  * The remote's side (phone, computer): runs [Meta] on the TV and answers from what it printed and drew. With a [cache] (one
  * folder per TV) the names and pictures are kept on the remote: the next time the list shows at once from them, and Meta runs
  * in the background only to catch apps installed or updated since. Without one, every opening waited for Meta and fetched
- * each picture again. [apk] is any build of the phone app: it carries Meta and Caps, compiled for the TV.
+ * each picture again. [helper] gives assets/tvr-helper.jar: Meta and Caps, dexed for the TV (a few KB, made by :shared:tvHelper).
  */
-class RemoteLabels(private val link: AdbLink, private val apk: File, private val cache: File? = null) : Manage.Labels {
+class RemoteLabels(private val link: AdbLink, helper: () -> ByteArray, private val cache: File? = null) : Manage.Labels {
+    private val jar by lazy(helper)
     @Volatile private var names: Map<String, String>? = null
     @Volatile private var ok = false
     @Volatile private var stamps: Map<String, String>? = null         // package -> "time size" of its PNG on the TV, once Meta has run
@@ -55,22 +56,16 @@ class RemoteLabels(private val link: AdbLink, private val apk: File, private val
         names ?: out.also { names = it }                              // failed with nothing saved: package names are shown, as before
     }
 
-    /** The phone's APK on the TV, copied there if it is not yet; one file per build, written whole and then renamed: see CLEAN. */
+    /** tvr-helper.jar on the TV, copied there if it is not yet; one file per build, written whole and then renamed: see CLEAN. */
     private fun helper(a: Adb): String {
-        val remote = "/data/local/tmp/tvr-meta-${apk.length()}.apk"
+        val bytes = jar
+        val remote = "/data/local/tmp/tvr-helper-" + java.util.zip.CRC32().apply { update(bytes) }.value.toString(16) + ".jar"
         if (a.shell("[ -f $remote ] && echo y").trim() != "y") {
             a.shell(CLEAN)
             val s = a.open("exec:cat > $remote.part")
-            apk.inputStream().use { input ->
-                val buf = ByteArray(65536)
-                while (true) {
-                    val n = input.read(buf)
-                    if (n <= 0) break
-                    s.write(if (n == buf.size) buf else buf.copyOf(n))
-                }
-            }
+            s.write(bytes)
             s.close()
-            val size = apk.length().toString()
+            val size = bytes.size.toString()
             for (i in 0 until 40) {
                 if (a.shell("wc -c < $remote.part").trim() == size) break
                 Thread.sleep(150)
@@ -142,10 +137,10 @@ class RemoteLabels(private val link: AdbLink, private val apk: File, private val
     }
 
     private companion object {
-        // The computer, the phone app and TV Setup each bring their own APK. With one shared name one of them overwrote it while
-        // another started it: a crash on the TV each time. Builds older than a few days are cleared; one still in use stays
-        // readable to the process that has it open.
-        const val CLEAN = "find /data/local/tmp -maxdepth 1 -name 'tvr-meta*.apk' -mtime +3 -delete 2>/dev/null; rm -f /data/local/tmp/tvr-meta.apk"
+        // The computer and the phone app each bring their own build. With one shared name one of them overwrote it while another
+        // started it: a crash on the TV each time. Builds older than a few days are cleared (tvr-meta-*.apk: the whole phone
+        // APK, copied by versions before 2.20); one still in use stays readable to the process that has it open.
+        const val CLEAN = "find /data/local/tmp -maxdepth 1 \\( -name 'tvr-meta*.apk' -o -name 'tvr-helper-*.jar' \\) -mtime +3 -delete 2>/dev/null; rm -f /data/local/tmp/tvr-meta.apk"
         const val DIR = "/data/local/tmp/tvr-meta"
     }
 }

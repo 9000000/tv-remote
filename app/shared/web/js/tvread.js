@@ -149,7 +149,87 @@
     return out;
   }
 
+  // 🗂️ The settings people look for, in words, by topic, their values read out (1 → On, 600000 → 10 min); the rest of Android's
+  // hundreds of internal keys go under "Other", their names made readable. [group, vi, en, kind]: kind says how to read the value.
+  const SET_GROUPS = { screen: ['Màn hình & chờ', 'Screen & sleep'], net: ['Mạng', 'Network'], dev: ['Nhà phát triển & ADB', 'Developer & ADB'],
+    apps: ['App, bàn phím & giọng nói', 'Apps, keyboard & voice'], sound: ['Âm thanh', 'Sound'], time: ['Ngôn ngữ & giờ', 'Language & time'],
+    a11y: ['Trợ năng', 'Accessibility'], device: ['Thiết bị', 'Device'], other: ['Khác (kỹ thuật)', 'Other (technical)'] };
+  const SET_INFO = {
+    screen_off_timeout: ['screen', 'Tắt màn hình sau', 'Screen off after', 'ms'], sleep_timeout: ['screen', 'Ngủ sau', 'Sleep after', 'ms'],
+    attentive_timeout: ['screen', 'Tắt khi không dùng sau', 'Off when idle after', 'ms'],
+    screensaver_enabled: ['screen', 'Trình bảo vệ màn hình', 'Screen saver', 'bool'], screensaver_components: ['screen', 'Trình bảo vệ đang dùng', 'Screen saver in use', 'comp'],
+    screensaver_activate_on_sleep: ['screen', 'Bảo vệ màn hình khi ngủ', 'Screen saver when asleep', 'bool'],
+    stay_on_while_plugged_in: ['screen', 'Giữ màn hình sáng khi cắm điện', 'Stay awake while plugged in', 'bool'],
+    screen_brightness: ['screen', 'Độ sáng', 'Brightness', 'pct255'], screen_brightness_mode: ['screen', 'Độ sáng tự động', 'Auto brightness', 'bool'],
+    display_density_forced: ['screen', 'Cỡ hiển thị (mật độ điểm ảnh)', 'Display size (density)', 'dpi'],
+    user_disabled_hdr_formats: ['screen', 'Định dạng HDR đã tắt', 'HDR formats turned off', 'text'],
+    window_animation_scale: ['screen', 'Hiệu ứng cửa sổ', 'Window animations', 'scale'], transition_animation_scale: ['screen', 'Hiệu ứng chuyển cảnh', 'Transition animations', 'scale'],
+    animator_duration_scale: ['screen', 'Thời lượng hiệu ứng', 'Animation duration', 'scale'],
+    wifi_on: ['net', 'Wi‑Fi', 'Wi‑Fi', 'bool'], bluetooth_on: ['net', 'Bluetooth', 'Bluetooth', 'bool'], airplane_mode_on: ['net', 'Chế độ máy bay', 'Airplane mode', 'bool'],
+    private_dns_mode: ['net', 'DNS riêng tư', 'Private DNS', 'dns'], private_dns_specifier: ['net', 'Máy chủ DNS riêng tư', 'Private DNS server', 'text'],
+    http_proxy: ['net', 'Proxy', 'Proxy', 'text'], wifi_scan_always_enabled: ['net', 'Luôn quét Wi‑Fi', 'Always scan for Wi‑Fi', 'bool'],
+    adb_enabled: ['dev', 'Gỡ lỗi ADB', 'ADB debugging', 'bool'], adb_wifi_enabled: ['dev', 'Gỡ lỗi không dây', 'Wireless debugging', 'bool'],
+    development_settings_enabled: ['dev', 'Tùy chọn nhà phát triển', 'Developer options', 'bool'],
+    install_non_market_apps: ['dev', 'Cho cài app ngoài CH Play', 'Apps from unknown sources', 'bool'],
+    package_verifier_enable: ['dev', 'Quét app cài ngoài (Play Protect)', 'Scan sideloaded apps (Play Protect)', 'bool'],
+    verifier_verify_adb_installs: ['dev', 'Quét app cài qua ADB', 'Scan apps installed over ADB', 'bool'],
+    mock_location: ['dev', 'Vị trí giả', 'Mock location', 'bool'], always_finish_activities: ['dev', 'Không giữ hoạt động', 'Don’t keep activities', 'bool'],
+    default_input_method: ['apps', 'Bàn phím đang dùng', 'Keyboard in use', 'comp'], voice_interaction_service: ['apps', 'Trợ lý', 'Assistant', 'comp'],
+    voice_recognition_service: ['apps', 'Nhận dạng giọng nói', 'Speech recognition', 'comp'], autofill_service: ['apps', 'Tự động điền', 'Autofill', 'comp'],
+    backup_enabled: ['apps', 'Sao lưu', 'Backup', 'bool'], location_mode: ['apps', 'Vị trí', 'Location', 'loc'],
+    sound_effects_enabled: ['sound', 'Âm thanh khi bấm', 'Click sounds', 'bool'], volume_music: ['sound', 'Âm lượng phim, nhạc', 'Media volume', 'num'],
+    volume_system: ['sound', 'Âm lượng hệ thống', 'System volume', 'num'], encoded_surround_output: ['sound', 'Âm thanh vòm', 'Surround sound', 'surround'],
+    encoded_surround_output_enabled_formats: ['sound', 'Định dạng vòm đã chọn', 'Chosen surround formats', 'text'],
+    auto_time: ['time', 'Giờ tự động', 'Automatic time', 'bool'], auto_time_zone: ['time', 'Múi giờ tự động', 'Automatic time zone', 'bool'],
+    time_12_24: ['time', 'Kiểu giờ', 'Time format', 'h'], system_locales: ['time', 'Ngôn ngữ', 'Languages', 'text'],
+    accessibility_enabled: ['a11y', 'Trợ năng', 'Accessibility', 'bool'], touch_exploration_enabled: ['a11y', 'TalkBack (đọc màn hình)', 'TalkBack (screen reader)', 'bool'],
+    enabled_accessibility_services: ['a11y', 'Dịch vụ trợ năng đang bật', 'Accessibility services on', 'comp'], font_scale: ['a11y', 'Cỡ chữ', 'Font size', 'scale'],
+    accessibility_display_magnification_enabled: ['a11y', 'Phóng to', 'Magnification', 'bool'], high_text_contrast_enabled: ['a11y', 'Chữ tương phản cao', 'High contrast text', 'bool'],
+    accessibility_captioning_enabled: ['a11y', 'Phụ đề', 'Captions', 'bool'],
+    device_name: ['device', 'Tên thiết bị', 'Device name', 'text'], bluetooth_name: ['device', 'Tên Bluetooth', 'Bluetooth name', 'text'],
+    bluetooth_address: ['device', 'Địa chỉ Bluetooth', 'Bluetooth address', 'text'], android_id: ['device', 'Mã Android', 'Android ID', 'text'],
+    boot_count: ['device', 'Số lần khởi động', 'Times started', 'num'], user_setup_complete: ['device', 'Đã cài đặt lần đầu', 'First setup done', 'bool'],
+  };
+  const SET_KEYS = Object.keys(SET_INFO);
+  function msText(ms, vi) {
+    if (ms < 0 || ms >= 2147483647) return vi ? 'Không bao giờ' : 'Never';
+    const m = ms / 60000;
+    if (m >= 60 && m % 60 === 0) return (m / 60) + (vi ? ' giờ' : ' h');
+    if (m >= 1 && Number.isInteger(m)) return m + (vi ? ' phút' : ' min');
+    return Math.round(ms / 1000) + (vi ? ' giây' : ' s');
+  }
+  function settingValue(kind, v, vi) {
+    const on = vi ? 'Bật' : 'On', off = vi ? 'Tắt' : 'Off', unset = vi ? 'Mặc định' : 'Default';
+    if (v === 'null' || v === '') return kind === 'text' || kind === 'comp' ? (vi ? 'Không có' : 'None') : unset;
+    const n = Number(v);
+    switch (kind) {
+      case 'bool': return /^-?\d+$/.test(v) ? (n !== 0 ? on : off) : v === 'true' ? on : v === 'false' ? off : v;
+      case 'ms': return Number.isFinite(n) ? msText(n, vi) : v;
+      case 'scale': return n === 0 ? off : Number.isFinite(n) ? n + '×' : v;
+      case 'pct255': return Number.isFinite(n) ? Math.round(n / 2.55) + '%' : v;
+      case 'dpi': return v + ' dpi';
+      case 'dns': return { off: off, opportunistic: vi ? 'Tự động' : 'Automatic', hostname: vi ? 'Máy chủ riêng' : 'Own server' }[v] || v;
+      case 'loc': return [off, vi ? 'Chỉ thiết bị' : 'Device only', vi ? 'Tiết kiệm pin' : 'Battery saving', vi ? 'Chính xác cao' : 'High accuracy'][n] || v;
+      case 'surround': return [vi ? 'Tự động' : 'Automatic', vi ? 'Không bao giờ' : 'Never', vi ? 'Luôn luôn' : 'Always', vi ? 'Tự chọn' : 'Manual'][n] || v;
+      case 'h': return v === '24' ? (vi ? '24 giờ' : '24 h') : v === '12' ? (vi ? '12 giờ (SA/CH)' : '12 h (AM/PM)') : v;
+      case 'comp': return v.split(':').map((c) => c.split('/')[0]).join(', ');   // "pkg/.Service": the app is what matters
+      default: return v;
+    }
+  }
+  // one row of settingsRead in words: { group, title, value } (value as read out; s.value stays the raw one)
+  function settingInfo(s, vi) {
+    const i = SET_INFO[s.name], L = vi ? 0 : 1;
+    if (i) {
+      const out = { group: i[0], groupName: SET_GROUPS[i[0]][L], title: i[1 + L], value: settingValue(i[3], s.value, vi), known: true, order: SET_KEYS.indexOf(s.name) };
+      if (i[3] === 'comp' && s.value && s.value !== 'null') out.pkgs = out.value.split(', ');   // the page puts the apps' names in
+      return out;
+    }
+    const words = s.name.replace(/[_.:]+/g, ' ').trim();
+    return { group: 'other', groupName: SET_GROUPS.other[L], title: words.charAt(0).toUpperCase() + words.slice(1), value: s.value === 'null' ? '—' : s.value, known: false, order: 0 };
+  }
+  root.SET_GROUPS = SET_GROUPS; root.settingInfo = settingInfo;
+
   root.capsRead = capsRead; root.sizeName = sizeName; root.appInfoRead = appInfoRead; root.permName = permName; root.bootRead = bootRead; root.settingsRead = settingsRead;
   root.cleanFreed = cleanFreed; root.logNext = logNext; root.logLevel = logLevel; root.readTvset = readTvset; root.densityChoices = densityChoices;
-  if (typeof module !== 'undefined') module.exports = { cleanFreed, logNext, logLevel, readTvset, densityChoices, capsRead, sizeName, appInfoRead, permName, bootRead, settingsRead };
+  if (typeof module !== 'undefined') module.exports = { cleanFreed, logNext, logLevel, readTvset, densityChoices, capsRead, sizeName, appInfoRead, permName, bootRead, settingsRead, settingInfo, SET_GROUPS };
 })(typeof window !== 'undefined' ? window : globalThis);

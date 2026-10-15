@@ -101,11 +101,26 @@ $('#setlist').addEventListener('toggle', async (e) => {
   setRows = settingsRead(r.text); drawSettings();
 });
 function drawSettings() {
-  const q = $('#setlistq').value.trim().toLowerCase();
-  const rows = setRows.filter((s) => !q || (s.name + '=' + s.value).toLowerCase().includes(q));
-  $('#setlistbody').replaceChildren(el('p', { className: 'muted', style: 'margin:0 0 6px', textContent: rows.length + ' / ' + setRows.length + ' ' + tr('mục') }),
-    ...rows.slice(0, 400).map((s) => el('div', { className: 'setrow1', onclick: (e) => e.currentTarget.classList.toggle('full') },   // a long value opens in full on a tap
-      el('span', { className: 'muted', textContent: s.table }), el('b', { className: 'mono', textContent: s.name }), el('div', { className: 'mono', textContent: s.value === 'null' ? '—' : s.value }))));
+  const q = $('#setlistq').value.trim().toLowerCase(), vi = window.LANG !== 'en';
+  const rows = setRows.map((s) => ({ s, i: settingInfo(s, vi) }))
+    .filter(({ s, i }) => !q || (i.title + ' ' + s.name + '=' + s.value + ' ' + i.value).toLowerCase().includes(q));
+  const row = ({ s, i }) => el('div', { className: 'setrow', title: s.table + ' ' + s.name + '=' + s.value, onclick: (e) => e.currentTarget.classList.toggle('full') },   // a long value opens in full on a tap
+    el('div', { className: 'setname' }, el('span', { textContent: i.title }), el('small', { className: 'mono', textContent: s.name })),
+    el('div', { className: 'setval' + (i.known ? '' : ' mono') + (i.value.length > 24 ? ' long' : ''), textContent: i.value }));
+  const named = (div, pkgs) => pkgs.forEach((p) => onMeta(p, (m) => {   // "com.google.android.apps.tv.dreamx" -> the app's own name
+    if (m && m.label && m.label !== p.slice(p.lastIndexOf('.') + 1)) { div.textContent = div.textContent.split(', ').map((x) => x === p ? m.label : x).join(', '); div.classList.toggle('long', div.textContent.length > 24); }
+  }));
+  const parts = [el('p', { className: 'muted', style: 'margin:0 0 6px', textContent: rows.length + ' / ' + setRows.length + ' ' + tr('mục') })];
+  for (const g of Object.keys(SET_GROUPS)) {
+    const mine = rows.filter((r) => r.i.group === g); if (!mine.length) continue;
+    if (g !== 'other') {
+      const made = mine.sort((a, b) => a.i.order - b.i.order).map((r) => { const d = row(r); if (r.i.pkgs) named(d.lastChild, r.i.pkgs); return d; });
+      parts.push(el('h3', { className: 'setgroup', textContent: mine[0].i.groupName }), ...made); continue;
+    }
+    // Android's hundreds of internal keys: folded away unless searched for
+    parts.push(el('details', { className: 'setother', open: !!q }, el('summary', { textContent: mine[0].i.groupName + ' · ' + mine.length }), ...mine.slice(0, 400).map(row)));
+  }
+  $('#setlistbody').replaceChildren(...parts);
 }
 $('#setlistq').addEventListener('input', drawSettings);
 $('#setlistf').addEventListener('submit', (e) => e.preventDefault());
