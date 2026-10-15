@@ -83,6 +83,25 @@ object TvShell {
         return "p=\$(pidof $pkg); echo pid \$p; [ -n \"\$p\" ] && logcat -d -v threadtime --pid=\${p%% *} $pick | tail -n 500"
     }
 
+    /**
+     * The settings list (Health tab) changes simple settings. These stay read-only, here and on the page (js/tvread.js
+     * settingLocked, the same pattern): a wrong value could cut the TV off from every remote (ADB, Wi-Fi, DNS, proxy, VPN),
+     * leave it without a keyboard or stuck in a screen reader, open it to unknown apps, or break its first setup.
+     */
+    val SET_LOCKED = Regex("(?i).*(adb|develop|debug|provision|setup|verif|install|package|vpn|dns|proxy|wifi|airplane|bluetooth|mobile|tether|captive|ntp|" +
+        "lock|password|policy|service|input_method|accessibility_enabled|touch_exploration|location|android_id|_uri|component|hidden_api|database|locale|" +
+        "density|volume|boot|hdr|formats|user).*")
+    private val SET_NAME = Regex("[A-Za-z][A-Za-z0-9_.]{0,80}")
+    private val SET_VALUE = Regex("[A-Za-z0-9 ._:+-]{0,100}")
+
+    fun setting(table: String, name: String, value: String): String {
+        if (table !in setOf("global", "secure", "system")) throw IllegalArgumentException("bad table")
+        if (!name.matches(SET_NAME)) throw IllegalArgumentException("bad name")
+        if (SET_LOCKED.matches(name)) throw IllegalArgumentException("locked")
+        if (!value.matches(SET_VALUE)) throw IllegalArgumentException("bad value")
+        return "settings put $table $name '$value'; echo ok"
+    }
+
     fun tvset(key: String, raw: String): String {
         var value = raw.trim()
         when (key) {

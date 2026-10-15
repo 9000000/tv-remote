@@ -228,9 +228,32 @@
     const words = s.name.replace(/[_.:]+/g, ' ').trim();
     return { group: 'other', groupName: SET_GROUPS.other[L], title: words.charAt(0).toUpperCase() + words.slice(1), value: s.value === 'null' ? '—' : s.value, known: false, order: 0 };
   }
-  root.SET_GROUPS = SET_GROUPS; root.settingInfo = settingInfo;
+
+  // ✎ What the list lets a person change: simple settings, by a choice or a toggle. SET_LOCKED is TvShell.SET_LOCKED (the
+  // server checks it too): settings that could cut the TV off from the remotes or break it stay read-only, with a 🔒.
+  const SET_LOCKED = /^.*(adb|develop|debug|provision|setup|verif|install|package|vpn|dns|proxy|wifi|airplane|bluetooth|mobile|tether|captive|ntp|lock|password|policy|service|input_method|accessibility_enabled|touch_exploration|location|android_id|_uri|component|hidden_api|database|locale|density|volume|boot|hdr|formats|user).*$/i;
+  const NUMBER = /^-?\d+(\.\d+)?$/;
+  // { locked } · { kind: 'bool', on, off } · { kind: 'pick', values } · { kind: 'text', tech } (tech: Android's own internal key) · {} nothing simple to set
+  function settingEdit(s) {
+    if (SET_LOCKED.test(s.name)) return { locked: true };
+    const i = SET_INFO[s.name], kind = i ? i[3] : NUMBER.test(s.value) ? 'raw' : '';
+    const words = s.value === 'true' || s.value === 'false';
+    switch (kind) {
+      case 'bool': return { kind: 'bool', on: words ? 'true' : s.name === 'stay_on_while_plugged_in' ? '7' : '1', off: words ? 'false' : '0' };   // 7: on every kind of power
+      case 'ms': return { kind: 'pick', values: [5, 10, 15, 30, 60, 120, 240].map((m) => String(m * 60000)).concat(s.name === 'screen_off_timeout' ? '2147483647' : '-1') };
+      case 'scale': return { kind: 'pick', values: s.name === 'font_scale' ? ['0.85', '1.0', '1.15', '1.3'] : ['0', '0.5', '1.0', '1.5', '2.0'] };
+      case 'pct255': return { kind: 'pick', values: [10, 25, 50, 75, 100].map((p) => String(Math.round(p * 2.55))) };
+      case 'h': return { kind: 'pick', values: ['12', '24'] };
+      case 'surround': return { kind: 'pick', values: ['0', '1', '2', '3'] };
+      case 'text': return s.name === 'device_name' ? { kind: 'text' } : {};
+      case 'raw': return { kind: 'text', tech: true };
+    }
+    return {};
+  }
+  const settingWord = (s, v, vi) => settingValue((SET_INFO[s.name] || [])[3], v, vi);
+  root.SET_GROUPS = SET_GROUPS; root.settingInfo = settingInfo; root.settingEdit = settingEdit; root.settingWord = settingWord;
 
   root.capsRead = capsRead; root.sizeName = sizeName; root.appInfoRead = appInfoRead; root.permName = permName; root.bootRead = bootRead; root.settingsRead = settingsRead;
   root.cleanFreed = cleanFreed; root.logNext = logNext; root.logLevel = logLevel; root.readTvset = readTvset; root.densityChoices = densityChoices;
-  if (typeof module !== 'undefined') module.exports = { cleanFreed, logNext, logLevel, readTvset, densityChoices, capsRead, sizeName, appInfoRead, permName, bootRead, settingsRead, settingInfo, SET_GROUPS };
+  if (typeof module !== 'undefined') module.exports = { cleanFreed, logNext, logLevel, readTvset, densityChoices, capsRead, sizeName, appInfoRead, permName, bootRead, settingsRead, settingInfo, SET_GROUPS, settingEdit };
 })(typeof window !== 'undefined' ? window : globalThis);

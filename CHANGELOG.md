@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.23.0 - 2026-10-15
+
+Web 2.23.0 · app điện thoại 2.21.0 · app TV 2.20.0
+
+**Tiếng Việt**
+- **Cài đặt hệ thống** (tab Sức khỏe) giờ sửa được các mục đơn giản: thời gian tắt màn hình, ngủ, hiệu ứng, cỡ chữ, độ sáng, âm thanh khi bấm, kiểu giờ, tên thiết bị... Nút ↺ trả lại giá trị cũ. Mục có thể làm mất kết nối hay hỏng TV (ADB, Wi-Fi, DNS, bàn phím, trợ năng, cài app...) vẫn chỉ xem, có 🔒.
+
+**English**
+- **System settings** (Health tab) can now change the simple ones: screen off and sleep times, animations, font size, brightness, click sounds, time format, device name... ↺ puts the old value back. Settings that could cut the TV off or break it (ADB, Wi-Fi, DNS, keyboard, accessibility, app installs...) stay view-only, with a 🔒.
+
 ## 2.22.0 - 2026-10-15
 
 Web 2.22.0 · app điện thoại 2.20.0 · app TV 2.19.0

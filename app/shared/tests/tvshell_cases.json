@@ -375,6 +375,204 @@
     true
    ],
    "out": null
+  },
+  {
+   "call": [
+    "setting",
+    "system",
+    "screen_off_timeout",
+    "600000"
+   ],
+   "out": "settings put system screen_off_timeout '600000'; echo ok"
+  },
+  {
+   "call": [
+    "setting",
+    "secure",
+    "sleep_timeout",
+    "-1"
+   ],
+   "out": "settings put secure sleep_timeout '-1'; echo ok"
+  },
+  {
+   "call": [
+    "setting",
+    "global",
+    "window_animation_scale",
+    "0.5"
+   ],
+   "out": "settings put global window_animation_scale '0.5'; echo ok"
+  },
+  {
+   "call": [
+    "setting",
+    "system",
+    "font_scale",
+    "1.15"
+   ],
+   "out": "settings put system font_scale '1.15'; echo ok"
+  },
+  {
+   "call": [
+    "setting",
+    "global",
+    "device_name",
+    "Phong khach"
+   ],
+   "out": "settings put global device_name 'Phong khach'; echo ok"
+  },
+  {
+   "call": [
+    "setting",
+    "global",
+    "stay_on_while_plugged_in",
+    "7"
+   ],
+   "out": "settings put global stay_on_while_plugged_in '7'; echo ok"
+  },
+  {
+   "call": [
+    "setting",
+    "global",
+    "adb_enabled",
+    "0"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "setting",
+    "global",
+    "wifi_on",
+    "0"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "setting",
+    "global",
+    "private_dns_mode",
+    "off"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "setting",
+    "secure",
+    "default_input_method",
+    "x"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "setting",
+    "secure",
+    "enabled_accessibility_services",
+    "a/b"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "setting",
+    "global",
+    "airplane_mode_on",
+    "1"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "setting",
+    "secure",
+    "touch_exploration_enabled",
+    "1"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "setting",
+    "global",
+    "device_provisioned",
+    "0"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "setting",
+    "secure",
+    "user_setup_complete",
+    "0"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "setting",
+    "global",
+    "install_non_market_apps",
+    "1"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "setting",
+    "system",
+    "volume_music",
+    "5"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "setting",
+    "global",
+    "http_proxy",
+    "1.2.3.4:8"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "setting",
+    "secure",
+    "screensaver_components",
+    "a/b"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "setting",
+    "global",
+    "device_name",
+    "x'; reboot; '"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "setting",
+    "other",
+    "font_scale",
+    "1"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "setting",
+    "system",
+    "font scale",
+    "1"
+   ],
+   "out": null
   }
  ]
 }

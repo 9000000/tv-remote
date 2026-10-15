@@ -56,7 +56,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "log" -> return text(TvShell.log(r.q("pkg"), r.q("since")), 20000)
                 "apps/boot" -> return text(TvShell.BOOT, 20000)
                 "app/info" -> return text(TvShell.appInfo(r.q("pkg")), 20000)
-                "settings" -> return text(TvShell.SETTINGS_READ, 20000)
+                "settings" -> if (!post) return text(TvShell.SETTINGS_READ, 20000)
                 "caps" -> return HttpServer.Response.json(JSONObject().put("text", labels?.caps() ?: ""))
                 "app/backup" -> return backup(r.q("pkg"))
                 "tailscale" -> { val t = Tailscale(link.get(), dir); return HttpServer.Response.json(JSONObject().put("installed", t.installed()).put("ip", t.ip())) }
@@ -82,6 +82,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     text(TvShell.perm(pkg, d.optString("perm"), d.optBoolean("on")), 20000)
                 }
                 "tvset" -> { val d = r.json(); text(TvShell.tvset(d.optString("key"), d.optString("value")), 60000) }
+                "settings" -> { val d = r.json(); text(TvShell.setting(d.optString("table"), d.optString("name"), d.optString("value")), 20000) }
                 "reboot" -> {
                     sh(TvShell.REBOOT_PREP)
                     try { link.get().open("reboot:").use { it.readAll(3000) } } catch (ignored: Exception) { }   // the link drops as the TV goes down

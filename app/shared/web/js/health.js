@@ -106,7 +106,7 @@ function drawSettings() {
     .filter(({ s, i }) => !q || (i.title + ' ' + s.name + '=' + s.value + ' ' + i.value).toLowerCase().includes(q));
   const row = ({ s, i }) => el('div', { className: 'setrow', title: s.table + ' ' + s.name + '=' + s.value, onclick: (e) => e.currentTarget.classList.toggle('full') },   // a long value opens in full on a tap
     el('div', { className: 'setname' }, el('span', { textContent: i.title }), el('small', { className: 'mono', textContent: s.name })),
-    el('div', { className: 'setval' + (i.known ? '' : ' mono') + (i.value.length > 24 ? ' long' : ''), textContent: i.value }));
+    setControl(s, i, vi));
   const named = (div, pkgs) => pkgs.forEach((p) => onMeta(p, (m) => {   // "com.google.android.apps.tv.dreamx" -> the app's own name
     if (m && m.label && m.label !== p.slice(p.lastIndexOf('.') + 1)) { div.textContent = div.textContent.split(', ').map((x) => x === p ? m.label : x).join(', '); div.classList.toggle('long', div.textContent.length > 24); }
   }));
@@ -121,6 +121,37 @@ function drawSettings() {
     parts.push(el('details', { className: 'setother', open: !!q }, el('summary', { textContent: mine[0].i.groupName + ' · ' + mine.length }), ...mine.slice(0, 400).map(row)));
   }
   $('#setlistbody').replaceChildren(...parts);
+}
+// The value, or what changes it: a toggle, a choice, ✎ for a name or a number; 🔒 where a change could cut the TV off
+function setControl(s, i, vi) {
+  const e = settingEdit(s), shown = el('div', { className: 'setval' + (i.known ? '' : ' mono') + (i.value.length > 24 ? ' long' : ''), textContent: i.value });
+  const stop = (n) => { n.addEventListener('click', (ev) => ev.stopPropagation()); return n; };
+  const back = s.was !== undefined && s.was !== s.value && s.was !== 'null'
+    ? stop(el('button', { type: 'button', className: 'small', title: tr('Trả lại') + ': ' + s.was, textContent: '↺', onclick: () => setSetting(s, s.was) })) : null;
+  let ctl = null;
+  if (e.locked) { shown.textContent = '🔒 ' + i.value; shown.title = tr('Chỉ xem: đổi sai có thể mất kết nối tới TV'); }
+  else if (e.kind === 'bool') {
+    const on = s.value !== e.off && s.value !== 'null';
+    ctl = el('button', { type: 'button', className: 'small' + (on ? ' primary' : ''), textContent: settingWord(s, on ? e.on : e.off, vi), onclick: () => setSetting(s, on ? e.off : e.on) });
+  } else if (e.kind === 'pick') {
+    const vals = e.values.some((v) => Number(v) === Number(s.value)) ? e.values : [s.value, ...e.values];
+    ctl = el('select', { className: 'setpick', onchange: (ev) => setSetting(s, ev.target.value) },
+      ...vals.map((v) => el('option', { value: v, textContent: settingWord(s, v, vi), selected: Number(v) === Number(s.value) })));
+  } else if (e.kind === 'text') {
+    ctl = el('button', { type: 'button', className: 'small', title: tr('Đổi'), textContent: (s.value === 'null' ? '—' : i.value) + ' ✎', onclick: async () => {
+      const v = await ask(e.tech ? tr('Giá trị mới (mục kỹ thuật: đổi sai có thể làm TV chạy lạ)') : tr('Giá trị mới'), { value: s.value === 'null' ? '' : s.value, ok: 'Đổi' });
+      if (v !== null && v.trim() !== s.value) setSetting(s, v.trim());
+    } });
+  }
+  if (!ctl) return back ? el('div', { className: 'setctl' }, back, shown) : shown;
+  return el('div', { className: 'setctl' }, ...(back ? [back] : []), stop(ctl));
+}
+async function setSetting(s, value) {
+  if (!/^[A-Za-z0-9 ._:+-]{0,100}$/.test(value)) { toast(tr('Chỉ dùng chữ không dấu, số và . _ : + -')); return drawSettings(); }
+  const r = await api('/api/settings', { table: s.table, name: s.name, value });
+  if (!r || !/\bok\b/.test(r.text || '')) { if (r) toast('Lỗi: ' + (r.text || '').trim()); return drawSettings(); }
+  if (s.was === undefined) s.was = s.value;
+  s.value = value; drawSettings(); toast(tr('✓ Đã đổi'));
 }
 $('#setlistq').addEventListener('input', drawSettings);
 $('#setlistf').addEventListener('submit', (e) => e.preventDefault());

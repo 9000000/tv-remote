@@ -30,6 +30,7 @@ class TvShellTest {
                     "log" -> TvShell.log(a.getString(1), a.getString(2))
                     "app_info" -> TvShell.appInfo(a.getString(1))
                     "perm" -> TvShell.perm(a.getString(1), a.getString(2), a.getBoolean(3))
+                    "setting" -> TvShell.setting(a.getString(1), a.getString(2), a.getString(3))
                     else -> TvShell.tvset(a.getString(1), a.get(2).toString())
                 }
             } catch (e: IllegalArgumentException) { null }
