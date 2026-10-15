@@ -140,6 +140,8 @@ class MainActivity : Activity() {
         // ---- left: header, status, actions, activity
         val left = LinearLayout(this)
         left.orientation = LinearLayout.VERTICAL
+        left.clipChildren = false                                     // a focused tile grows 3%: drawn into the page's margin, not cut
+        page.clipChildren = false; page.clipToPadding = false
 
         val head = LinearLayout(this)
         head.gravity = Gravity.CENTER_VERTICAL
@@ -188,6 +190,7 @@ class MainActivity : Activity() {
             Tile(R.drawable.ic_refresh, t("Kết nối lại", "Reconnect"), t("ADB của TV", "The TV's ADB")) { connect() })
         for (row in tiles.chunked(if (phone) 2 else 3)) {
             val r = LinearLayout(this)
+            r.clipChildren = false
             row.forEachIndexed { i, tile -> r.addView(tile.view, LinearLayout.LayoutParams(0, dp(74), 1f).apply { if (i > 0) leftMargin = dp(12) }) }
             left.addView(r, margins(top = 10))
         }
