@@ -370,7 +370,7 @@
     <p><b>ADB đóng khi nào?</b> TV tắt hẳn hoặc đang standby sâu (mất Wi-Fi), TV vừa khởi động lại và chưa mở lại cổng, hoặc đã tắt “Gỡ lỗi ADB”. Chức năng Remote vẫn dùng được nếu TV còn mạng.</p>
     <p><b>Bật lại:</b> Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng” → Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB”. Lần đầu TV hỏi cho phép thì chọn “Luôn cho phép”.</p>
   </details>
-  <details class="card" id="jobscard" hidden open><summary><h2>⏳ Tiến trình tải lên / cài đặt</h2><button class="small iconbtn" id="jobsclose" title="Ẩn" aria-label="Ẩn">✕</button></summary><div id="jobs"></div></details>
+  <details class="card" id="jobscard" hidden open><summary><h2>⏳ Tiến trình <span id="jobsum"></span></h2><button class="small iconbtn" id="jobsclose" title="Ẩn" aria-label="Ẩn">✕</button></summary><div id="jobs"></div></details>
   <div class="muted" id="ver" style="text-align:center;font-size:12px;padding:6px 0 14px"></div>
 </main>
 <div id="pipslot"></div>
@@ -387,21 +387,21 @@
     <div style="text-align:right"><button class="small primary" id="aboutclose">✓ Đóng</button></div>
   </div>
 </dialog>
-<dialog id="assist"><div class="card assistbox"><div class="card-head"><h2 id="assisttitle"></h2><button class="small" id="assistclose">✕ Đóng</button></div><div id="assistbody"></div></div></dialog>
+<dialog id="assist"><div class="card assistbox"><div class="card-head"><h2 id="assisttitle"></h2><button class="small iconbtn" id="assistclose" title="Đóng" aria-label="Đóng">✕</button></div><div id="assistbody"></div></div></dialog>
 <!-- the TV is asking "Allow USB debugging?": nothing works until somebody answers it there, so this takes the whole screen -->
 <dialog id="allow"><div class="allowbox"><div class="big">📺</div><h1>Nhìn lên TV</h1><p class="muted">TV đang hỏi “Cho phép gỡ lỗi USB?”</p>
   <ol><li>Tích “Luôn cho phép từ máy tính này”</li><li>Chọn OK (Cho phép)</li></ol>
   <p class="muted">Màn hình này tự đóng khi TV đã cho phép.</p><button id="allowlater">Để sau</button></div></dialog>
 <!-- a TV is being connected: nothing on the remote works yet -->
 <dialog id="connecting"><div class="allowbox"><div class="spin"></div><p class="muted">Đang kết nối</p><h1 id="conname"></h1><p class="muted" id="constep"></p><button id="concancel">Hủy</button></div></dialog>
-<dialog id="ts"><div class="card assistbox"><div class="card-head"><h2>🌐 Tailscale cho TV</h2><button class="small" id="tsclose">✕ Đóng</button></div><div class="tsbox" id="tsbody" style="display:flex;flex-direction:column;gap:12px;margin-top:12px"></div></div></dialog>
+<dialog id="ts"><div class="card assistbox"><div class="card-head"><h2>🌐 Tailscale cho TV</h2><button class="small iconbtn" id="tsclose" title="Đóng" aria-label="Đóng">✕</button></div><div class="tsbox" id="tsbody" style="display:flex;flex-direction:column;gap:12px;margin-top:12px"></div></div></dialog>
 <dialog id="optdlg"><div class="card assistbox">
-  <div class="card-head"><h2>⚡ Tối ưu TV</h2><button class="small" id="optclose">✕ Đóng</button></div>
+  <div class="card-head"><h2>⚡ Tối ưu TV</h2><button class="small iconbtn" id="optclose" title="Đóng" aria-label="Đóng">✕</button></div>
   <div id="optbody" class="optbox"></div>
   <div class="actions" style="display:flex;gap:8px;margin-top:14px"><button class="primary" id="optgo" style="padding:0 18px">⚡ Chạy tối ưu</button><button id="optcancel">Hủy</button></div>
 </div></dialog>
 <dialog id="scenedlg"><div class="card assistbox">
-  <div class="card-head"><h2 id="scenetitle">🎬 Cảnh</h2><button class="small" id="sceneclose">✕ Đóng</button></div>
+  <div class="card-head"><h2 id="scenetitle">🎬 Cảnh</h2><button class="small iconbtn" id="sceneclose" title="Đóng" aria-label="Đóng">✕</button></div>
   <div class="scenebox">
     <div class="presets" id="scenetpl"></div>
     <div class="line2"><input id="sceneicon" maxlength="4" aria-label="Biểu tượng" placeholder="🎬"><input id="scenename" maxlength="40" placeholder="Tên cảnh, vd Xem phim"></div>
@@ -411,12 +411,12 @@
   </div>
   <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="primary" id="scenesave" style="padding:0 18px">💾 Lưu</button><button id="scenetry">▶ Thử</button><button class="danger" id="scenedel">🗑 Xóa</button></div>
 </div></dialog>
-<dialog id="aidlg"><div class="card assistbox"><div class="card-head"><h2>🤖 Hỏi AI nên tắt / gỡ app nào</h2><button class="small" id="aiclose">✕ Đóng</button></div>
+<dialog id="aidlg"><div class="card assistbox"><div class="card-head"><h2>🤖 Hỏi AI nên tắt / gỡ app nào</h2><button class="small iconbtn" id="aiclose" title="Đóng" aria-label="Đóng">✕</button></div>
   <p class="muted" style="margin:10px 0 8px">Sửa dòng “Người nhà vẫn dùng” cho đúng, bấm Sao chép rồi dán vào ChatGPT, Claude hay Gemini. AI có thể sai: tắt từng app một, thấy lỗi thì bật lại ở mục “App đã tắt” cuối danh sách Ứng dụng.</p>
   <textarea id="aitext" rows="14" spellcheck="false"></textarea>
   <div class="aihint"><button class="primary" id="aicopy">📋 Sao chép</button></div>
 </div></dialog>
-<dialog id="bulkdlg"><div class="card assistbox"><div class="card-head"><h2>📝 Bật / tắt / gỡ hàng loạt</h2><button class="small" id="bulkclose">✕ Đóng</button></div>
+<dialog id="bulkdlg"><div class="card assistbox"><div class="card-head"><h2>📝 Bật / tắt / gỡ hàng loạt</h2><button class="small iconbtn" id="bulkclose" title="Đóng" aria-label="Đóng">✕</button></div>
   <p class="muted" style="margin:10px 0 8px">Dán danh sách app id, mỗi dòng một app, hoặc dán nguyên câu trả lời của AI: mọi chuỗi dạng com.abc.xyz đều được nhận.</p>
   <textarea id="bulktext" rows="5" spellcheck="false" placeholder="com.sony.dtv.imanual&#10;com.google.android.marvin.talkback"></textarea>
   <div class="list" id="bulklist"></div>
@@ -424,11 +424,11 @@
   <div class="muted" id="bulklog"></div>
 </div></dialog>
 <dialog id="logdlg"><div class="card assistbox logbox"><div class="card-head"><h2 id="logtitle">📜 Log</h2>
-  <div class="tools"><button class="small" id="logpause"></button><button class="small" id="logcopy"><span class="ico">📋</span><span class="lbl"> Sao chép</span></button><button class="small" id="logclose">✕ Đóng</button></div></div>
+  <div class="tools"><button class="small" id="logpause"></button><button class="small" id="logcopy"><span class="ico">📋</span><span class="lbl"> Sao chép</span></button><button class="small iconbtn" id="logclose" title="Đóng" aria-label="Đóng">✕</button></div></div>
   <p class="muted" id="lognote" hidden>App chưa chạy: mở app, log hiện ở đây ngay khi app chạy. <button class="small" id="logopen">▶ Mở app</button></p>
   <div id="logpre" class="logpre"></div>
 </div></dialog>
-<dialog id="infodlg"><div class="card assistbox"><div class="card-head"><h2 id="infotitle">ℹ️</h2><div class="tools"><button class="small" id="infoclose">✕ Đóng</button></div></div>
+<dialog id="infodlg"><div class="card assistbox"><div class="card-head"><h2 id="infotitle">ℹ️</h2><div class="tools"><button class="small iconbtn" id="infoclose" title="Đóng" aria-label="Đóng">✕</button></div></div>
   <div id="infobody"></div>
 </div></dialog>
 <dialog id="rebootdlg"><div class="allowbox"><div class="spin" id="rebootspin"></div><h1 id="reboottitle">TV đang khởi động lại</h1><p class="muted" id="rebootstep"></p><button id="rebootclose">Ẩn</button></div></dialog>

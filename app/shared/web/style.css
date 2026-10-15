@@ -21,7 +21,9 @@
   .top { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
   .top .sub { color:var(--muted); font-size:13px; word-break:break-all; }
   .chips { display:flex; gap:8px; flex-wrap:wrap; }
-  @media (max-width:640px) { .chips { gap:5px; } .chip { padding:4px 9px; font-size:12px; gap:5px; } .chip i { display:none; } .chips button.small { min-height:30px; padding:0 8px; font-size:12px; } }
+  @media (max-width:640px) { .chips { gap:5px; } header .chips { flex-wrap:nowrap; } header .chips > * { flex:none; } header .chip { flex:0 1 auto; min-width:0; } header .chip span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    header .chips { gap:4px; } header .chip { padding:4px 8px; } header .chips button.small { min-width:30px; padding:0 6px; } #lang .globe { display:none; }   /* one line: a long state shortens, its whole text on hover */
+    .chip { padding:4px 9px; font-size:12px; gap:5px; } .chip i { display:none; } .chips button.small { min-height:30px; padding:0 8px; font-size:12px; } }
   @media (hover:none), (pointer:coarse) { .fine-only { display:none; } }   /* no computer keyboard to type with */
   /* One page, three cores (see core.js): the computer's server ("mac"), the TV Setup app on the TV ("tv") and the phone app's
      Manage screen ("phone"). An element marked data-for is only there on the cores it names. */
@@ -49,6 +51,9 @@
   @keyframes busyin { to { opacity:1; } }
   [data-busy] { pointer-events:none; } button[data-busy] > * { display:none; } button[data-busy]::after, .drop[data-busy]::after { content:attr(data-busy); font-weight:600; }   /* a job's progress on the control that started it (files.js mark) */
   .drop[data-busy]::after { margin-left:8px; }
+  @media (max-width:640px) { #jobscard { left:8px; right:8px; width:auto; bottom:calc(8px + env(safe-area-inset-bottom, 0px)); max-height:40vh; border-radius:16px; } }   /* a sheet along the bottom, thumbs' reach */
+  .bar.busy i { width:35% !important; animation:barslide 1.2s ease-in-out infinite; } @keyframes barslide { from { margin-left:-35%; } to { margin-left:100%; } }
+  #jobsum { font-weight:600; color:var(--muted); }
   #jobscard summary { cursor:pointer; display:flex; align-items:center; gap:8px; list-style:none; } #jobscard summary::-webkit-details-marker { display:none; }
   #jobscard summary h2 { display:inline; margin:0; flex:1; font-size:14px; } #jobscard[open] summary { margin-bottom:10px; }
   details.help summary { cursor:pointer; font-weight:600; font-size:14px; }

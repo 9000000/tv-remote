@@ -134,15 +134,16 @@ function setPicking(on, tvName) {
   } else showTab(currentTab);
 }
 let ADB = { state: 'unknown' }, autoView = new URLSearchParams(location.search).has('view');
+// a few words on the chip, so the header stays on one line on a phone; the whole sentence on hover
 const ADB_TEXT = {
-  ready: ['ok', 'ADB: sẵn sàng'],
-  unauthorized: ['warn', 'ADB: chờ TV cho phép'],
-  closed: ['bad', 'ADB: cổng đóng'],
-  offline: ['warn', 'ADB: offline'],
-  error: ['bad', 'ADB: lỗi'],
-  unknown: ['', 'ADB: ...'],
+  ready: ['ok', 'ADB ✓', 'ADB: sẵn sàng'],
+  unauthorized: ['warn', 'ADB: chờ', 'ADB: chờ TV cho phép'],
+  closed: ['bad', 'ADB đóng', 'ADB: cổng đóng'],
+  offline: ['warn', 'ADB offline', 'ADB: offline'],
+  error: ['bad', 'ADB lỗi', 'ADB: lỗi'],
+  unknown: ['', 'ADB ...', 'ADB: ...'],
 };
-function setChip(id, cls, text) { const c = $(id); c.className = 'chip ' + cls; c.lastElementChild.textContent = text; }
+function setChip(id, cls, text, long) { const c = $(id); c.className = 'chip ' + cls; c.lastElementChild.textContent = tr(text); c.title = tr(long || text); }
 
 let STATE = {};
 let tvOn = false;                                                    // the power button asks before turning a TV that is on off
@@ -155,13 +156,14 @@ async function refresh() {
   if (locked) return;
   tvOn = !!(s && s.connected && s.is_on); STATE = s || {};
   if (!s) {
-    setChip('#chipTv', 'bad', CORE === 'mac' ? 'Server tắt' : 'TV: mất kết nối'); setChip('#chipAdb', '', 'ADB: ?');
+    setChip('#chipTv', 'bad', CORE === 'mac' ? 'Server tắt' : 'Mất kết nối', CORE === 'mac' ? 'Server tắt' : 'TV: mất kết nối'); setChip('#chipAdb', '', 'ADB ?');
     $('#info').textContent = CORE === 'mac' ? 'Không gọi được server. Mở lại TV Remote trên máy này.' : 'Không gọi được TV: TV đang bật và cùng mạng với máy này chứ?'; return;
   }
   const adbUp = s.adb && s.adb.state === 'ready';                   // over ADB the TV answers even when the remote-button service does not
-  setChip('#chipTv', s.connected && s.is_on ? 'ok' : s.connected || adbUp ? 'warn' : 'bad', s.connected ? (s.is_on ? 'TV: đang bật' : 'TV: màn hình tắt') : adbUp ? 'Nút bấm: đi qua ADB' : 'TV: mất kết nối');
+  setChip('#chipTv', s.connected && s.is_on ? 'ok' : s.connected || adbUp ? 'warn' : 'bad', s.connected ? (s.is_on ? 'TV bật' : 'Màn hình tắt') : adbUp ? 'Phím qua ADB' : 'Mất kết nối',
+    s.connected ? (s.is_on ? 'TV: đang bật' : 'TV: màn hình tắt') : adbUp ? 'Nút bấm: đi qua ADB' : 'TV: mất kết nối');
   ADB = s.adb || { state: 'unknown' };
-  const [cls, txt] = ADB_TEXT[ADB.state] || ADB_TEXT.unknown; setChip('#chipAdb', cls, txt);
+  const [cls, txt, long] = ADB_TEXT[ADB.state] || ADB_TEXT.unknown; setChip('#chipAdb', cls, txt, long);
   const tvName = s.name || (s.device && s.device.model) || (s.host ? 'TV ' + s.host : '');
   if (CORE === 'mac') setPicking(!s.host || wantPick, tvName);
   if (s.version) $('#ver').textContent = (s.app_name || 'TV Remote') + ' ' + s.version + (s.released ? ' · ' + s.released : '');

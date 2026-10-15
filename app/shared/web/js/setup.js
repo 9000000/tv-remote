@@ -50,7 +50,7 @@ $('#setupapply').addEventListener('click', () => chooseOptimize());
 $('#setupundo').addEventListener('click', () => runSetup('undo'));
 
 // ---------- language: Vietnamese is the source, i18n.js renders English ----------
-$('#lang').textContent = LANG === 'vi' ? '🌐 EN' : '🌐 VI';
+$('#lang').replaceChildren(el('span', { className: 'globe', textContent: '🌐 ' }), LANG === 'vi' ? 'EN' : 'VI');   // the globe goes on a phone: room in the header
 $('#lang').addEventListener('click', () => setLang(LANG === 'vi' ? 'en' : 'vi'));
 
 // ---------- about ----------

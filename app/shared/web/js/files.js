@@ -73,7 +73,17 @@ function showJob(j, label) {
   let row = jobEls[j.id];
   if (!row) { $('#jobscard').hidden = false; $('#jobscard').open = true; row = jobEls[j.id] = { root: el('div', { className: 'job' }), msg: el('div', { className: 'msg' }), bar: el('i') }; row.root.append(el('div', { textContent: label || j.title }), row.msg, el('div', { className: 'bar' }, row.bar)); $('#jobs').prepend(row.root); }
   row.root.className = 'job ' + j.status; row.msg.textContent = j.msg; row.bar.style.width = j.pct + '%';
+  row.bar.parentElement.classList.toggle('busy', j.status === 'running' && !(j.pct >= 0));   // size unknown: moving, not stuck at 0
+  row.status = j.status; row.pct = j.pct;
+  // folded away, the title still tells how far things are
+  const run = Object.values(jobEls).filter((r) => r.status === 'running');
+  $('#jobsum').textContent = run.length ? '· ' + Math.round(run.reduce((s, r) => s + (r.pct > 0 ? r.pct : 0), 0) / run.length) + '%' : '';
 }
+// The phone app saves a TV file into its own Download folder itself (Managing.kt) and tells its progress here, in the same list.
+window.nativeJob = (j) => {
+  showJob(j, j.label);
+  if (j.status !== 'running') toast(j.msg);
+};
 async function trackJob(j, label, after, src) {
   showJob(j, label); mark(src, j);
   let misses = 0;                                                     // a blip in the network is not the end of the job; ten in a row are

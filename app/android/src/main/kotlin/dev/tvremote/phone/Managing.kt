@@ -188,6 +188,8 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
         return manage?.handle(r) ?: HttpServer.Response.error(404, "not found")
     }
 
+    private fun size(n: Long): String = if (n >= 1 shl 20) String.format(java.util.Locale.ROOT, "%.1f MB", n / 1048576.0) else "${n / 1024} KB"
+
     /** "Download to this device": copy the file from our own server into the phone's Download folder. */
     private fun saveToPhone(url: String, disposition: String?) {
         var fileName = "file"
@@ -196,9 +198,16 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
             if (m.find()) fileName = URLDecoder.decode(m.group(1), "UTF-8")
         } catch (ignored: Exception) {
         }
-        Toast.makeText(a, t("Đang tải ", "Downloading ") + fileName + "...", Toast.LENGTH_SHORT).show()
+        // its progress goes to the page's list of uploads and installs (window.nativeJob), the one place a person looks
+        val id = "dl" + System.nanoTime()
+        fun report(status: String, pct: Int, msg: String) {
+            val j = org.json.JSONObject().put("id", id).put("label", fileName).put("status", status).put("pct", pct).put("msg", msg)
+            a.ui.post { web.evaluateJavascript("window.nativeJob && nativeJob($j)", null) }
+        }
+        report("running", -1, t("đang tải về điện thoại...", "downloading to the phone..."))
         Thread {
             var result: String
+            var ok = false
             try {
                 val c = URL(url).openConnection() as HttpURLConnection
                 c.setRequestProperty("Cookie", "tvr=$token")
@@ -214,12 +223,29 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
                     out = FileOutputStream(f)
                     result = t("Đã lưu: ", "Saved: ") + f.absolutePath
                 }
-                out.use { o -> c.inputStream.use { it.copyTo(o, 65536) } }
+                val total = c.contentLengthLong
+                out.use { o -> c.inputStream.use { input ->
+                    val b = ByteArray(65536)
+                    var done = 0L
+                    var shown = 0L
+                    while (true) {
+                        val n = input.read(b)
+                        if (n < 0) break
+                        o.write(b, 0, n)
+                        done += n
+                        val now = System.currentTimeMillis()
+                        if (now - shown > 300) {                      // a few times a second is enough to look alive
+                            shown = now
+                            report("running", if (total > 0) (done * 100 / total).toInt() else -1,
+                                size(done) + if (total > 0) " / " + size(total) else "")
+                        }
+                    }
+                } }
+                ok = true
             } catch (e: Exception) {
                 result = t("Không tải được: ", "Download failed: ") + e.message
             }
-            val msg = result
-            a.ui.post { Toast.makeText(a, msg, Toast.LENGTH_LONG).show() }
+            report(if (ok) "done" else "error", 100, result)
         }.start()
     }
 }

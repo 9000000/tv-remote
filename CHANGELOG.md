@@ -15,6 +15,10 @@ Web 2.21.0 · app điện thoại 2.19.0 · app TV 2.18.0
 - **Tự sửa khi bản mới bị lỗi:** sau khi cài, TV kiểm tra bản mới có chạy được không. Nếu bản mới không chạy hoặc bị crash, TV tự trả về bản cũ và giữ nguyên dữ liệu (luật hẹn giờ, giới hạn app, thiết bị đã ghép, khóa ADB). Bản lỗi đó không bao giờ được đề nghị lại trên TV này, và TV cũng như trang web đều báo cho người dùng biết.
 - **Báo bản TV Setup mới ở cả ba nơi** (máy tính, trang của TV Setup, màn Quản lý trong app điện thoại): có bản mới thì đầu trang hiện “Cập nhật”, bấm một lần là xong, có báo từng bước (đang tải, đang cài, đang kiểm tra).
 - Sửa lỗi: điện thoại và máy tính giờ khởi động lại được dịch vụ của TV Setup khi nó bị dừng.
+- **App điện thoại không còn bị đẩy về danh sách TV** khi chuyển qua app khác rồi quay lại. Nếu kết nối bị rớt lúc app đang ở nền, app tự nối lại khi mở lên. Nếu mạng chưa kịp có (Wi-Fi vừa thức dậy), app thử lại vài lần trong khoảng 15 giây rồi mới báo lỗi. Cách này áp dụng cả cho chế độ chỉ bấm phím, và cả khi Android tự đóng app lúc nó ở nền.
+- **Tải tệp từ TV về điện thoại có thanh tiến độ** (bao nhiêu MB, bao nhiêu %), hiện chung trong khung “⏳ Tiến trình” với việc gửi tệp lên TV và cài APK. Trên điện thoại, khung này là một dải nằm dọc đáy màn hình; khi thu gọn, tiêu đề vẫn hiện phần trăm.
+- **Tab Ứng dụng gọn hơn:** có chip lọc nhanh (Tất cả · Tự chạy khi bật TV · Cần giữ · Đã tắt, kèm số lượng). “Bật / tắt / gỡ hàng loạt” mở trong cửa sổ riêng. Mỗi app chỉ còn nút ⋯, trong đó “Mở” nằm đầu tiên.
+- **Giao diện gọn hơn:** các nút đóng chỉ còn ✕; trạng thái ở đầu trang ngắn lại (“ADB ✓”, “TV bật”), di chuột vào để xem đầy đủ, nên trên điện thoại cả hàng nằm vừa một dòng.
 
 **English**
 - **The app list shows faster on the phone and the computer:** to read app names and logos, the whole phone app (1.1 MB) used to be copied to the TV after every update. Now a 6 KB file is enough.
@@ -23,6 +27,10 @@ Web 2.21.0 · app điện thoại 2.19.0 · app TV 2.18.0
 - **Self-repair when a new version is broken:** after installing, the TV checks that the new version runs. If it does not start or keeps crashing, the TV puts the old version back with all its data (timer rules, app limits, paired devices, ADB key). That version is never offered again on this TV, and both the TV and the web page tell the user what happened.
 - **A new TV Setup version is offered everywhere** (computer, TV Setup's page, the phone app's Manage screen): when one exists, the top of the page shows “Update”. One click does it all, with each step shown (downloading, installing, checking).
 - Fix: the phone and the computer can now restart TV Setup's service when it has stopped.
+- **The phone app no longer drops back to the list of TVs** when you switch to another app and back. A connection lost while the app was in the background is opened again on return. If the network is not ready yet (Wi-Fi just waking up), the app tries again a few times over about 15 seconds before showing an error. This also covers keys-only mode, and the case where Android closed the app in the background.
+- **Downloading a file from the TV to the phone shows its progress** (MB and %), in the same “⏳ Progress” panel as uploads and APK installs. On a phone the panel is a strip along the bottom of the screen; when folded, its title still shows the percentage.
+- **Tidier Apps tab:** quick filter chips (All · Starts with the TV · Must keep · Turned off, with counts). “Turn on / off / remove in bulk” opens in its own window. Each app keeps only its ⋯ button, with “Open” first in that menu.
+- **Tidier layout:** close buttons are just ✕; the states at the top are shorter (“ADB ✓”, “TV on”), with the full text on hover, so the whole row fits on one line on a phone.
 
 ## 2.20.0 - 2026-10-15
 

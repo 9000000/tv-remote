@@ -45,6 +45,8 @@
     'Ứng dụng': 'Apps', 'Tệp': 'Files', 'Tệp · Cài': 'Files · Install', 'Tải / Cài': 'Download / Install', 'cần ADB': 'needs ADB', 'Cần ADB: bấm vào để xem cách bật': 'Needs ADB: open it to see how to turn it on', '· cần ADB': '· needs ADB', 'thêm': 'add', 'cài đặt': 'setup',
     'ADB: sẵn sàng': 'ADB: ready', 'ADB: chờ TV cho phép': 'ADB: waiting for the TV', 'ADB: cổng đóng': 'ADB: port closed', 'ADB: lỗi': 'ADB: error',
     'Server tắt': 'Server stopped', 'Không gọi được server. Mở lại TV Remote trên máy này.': 'Cannot reach the server. Open TV Remote on this computer again.', 'Không gọi được server': 'Cannot reach the server',
+    'ADB: chờ': 'ADB: waiting', 'ADB đóng': 'ADB closed', 'ADB lỗi': 'ADB error', 'TV bật': 'TV on', 'Màn hình tắt': 'Screen off',
+    'Phím qua ADB': 'Keys over ADB', 'Mất kết nối': 'Disconnected',
     'TV: mất kết nối': 'TV: disconnected', 'TV: đang bật': 'TV: on', 'TV: màn hình tắt': 'TV: screen off', 'Chưa chọn TV': 'No TV chosen',
     'Mở tab “TV” để tìm và thêm TV': 'Open the “TV” tab to find and add a TV', 'chưa ghép remote (tab TV)': 'remote not paired (TV tab)', 'đã kết nối': 'connected',
     // screen
@@ -206,7 +208,7 @@
     'Tắt hiệu ứng chuyển cảnh cho TV nhanh hơn': 'Turn off transition animations so the TV feels faster',
     'Thay màn hình chính Google bằng FLauncher (chỉ lưới app, nhẹ CPU)': 'Replace the Google home screen with FLauncher (just a grid of apps, light on CPU)',
     'Tắt app hệ thống không dùng (chế độ khách sạn/trưng bày của Sony, Samba, Sony Select, Play Games, Play Movies, YouTube Music)': 'Turn off unused system apps (Sony hotel/demo modes, Samba, Sony Select, Play Games, Play Movies, YouTube Music)',
-    '⚡ Tối ưu TV': '⚡ Optimize TV', 'Hoàn tác': 'Undo', 'Tiến trình tải lên / cài đặt': 'Uploads / installs', 'đang gửi lên server...': 'sending to the server...',
+    '⚡ Tối ưu TV': '⚡ Optimize TV', 'Hoàn tác': 'Undo', '⏳ Tiến trình': '⏳ Progress', 'đang tải về điện thoại...': 'downloading to the phone...', 'đang gửi lên server...': 'sending to the server...',
     'Chạy tối ưu TV? Màn hình chính của TV sẽ là FLauncher.': 'Optimize TV? Its home screen will become FLauncher.',
     'Hoàn tác? Bật lại màn hình chính Google, các app đã tắt và hiệu ứng như cũ.': 'Undo? This turns the Google home screen, the disabled apps and normal animations back on.',
     'Đang chạy...': 'Running...', 'Đã xong': 'Done',
