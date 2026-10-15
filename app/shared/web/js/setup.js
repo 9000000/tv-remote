@@ -152,17 +152,27 @@ async function loadTvs() {
   $('#savedcard').hidden = !rows.length; $('#pickcols').classList.toggle('solo', !rows.length);   // nothing saved: no empty box, just the search
   fleetCheck(rows.length);
 }
-$('#scan').addEventListener('click', async () => {
-  const b = $('#scan'); b.disabled = true; b.textContent = '⏳ Đang quét...'; $('#scanlist').replaceChildren();
-  let r = await api('/api/discover');
-  if (r && !r.found.length) r = await api('/api/discover') || r;     // now and then a first scan misses TVs a second one finds
-  b.disabled = false; b.textContent = '🔍 Quét mạng'; if (!r) return;
-  $('#scaninfo').textContent = r.found.length ? '' : 'Không thấy TV nào. TV có bật và chung Wi-Fi không?';
-  $('#scanlist').replaceChildren(...r.found.map((f) => el('div', { className: 'item', onclick: (e) => { if (!e.target.closest('button')) selectTv(f.ip); } },
+function scanRow(f) {
+  const row = el('div', { className: 'item', onclick: (e) => { if (!e.target.closest('button')) selectTv(f.ip); } },
     el('div', { className: 'name' }, el('span', { textContent: f.name || f.ip }),
       el('span', { className: 'badge' + (f.remote ? ' ok' : ''), textContent: f.remote ? 'Android TV' : 'chỉ có ADB' }), f.adb ? el('span', { className: 'badge ok', textContent: 'ADB đã bật' }) : el('span', { className: 'badge', textContent: 'ADB chưa bật' }),
       el('small', { textContent: f.ip + (f.via === 'tailscale' ? ' · qua Tailscale' : ' · cùng mạng') })),
-    el('div', { className: 'acts' }, setLabel(el('button', { className: 'small primary', onclick: () => selectTv(f.ip) }), '✓', 'Chọn')))));
+    el('div', { className: 'acts' }, setLabel(el('button', { className: 'small primary', onclick: () => selectTv(f.ip) }), '✓', 'Chọn')));
+  row.dataset.ip = f.ip; return row;
+}
+// The scan runs on the computer; asked again every 400 ms, each TV shows up as soon as it answers instead of after the
+// whole network (and a second pass when the first finds nothing)
+$('#scan').addEventListener('click', async () => {
+  const b = $('#scan'), list = $('#scanlist'); b.disabled = true; b.textContent = '⏳ Đang quét...'; list.replaceChildren(); $('#scaninfo').textContent = '';
+  let r = await api('/api/discover?new=1');
+  while (r) {
+    for (const f of r.found) if (!list.querySelector(`[data-ip="${f.ip}"]`)) list.append(scanRow(f));
+    if (r.done) break;
+    await sleep(400);
+    r = await api('/api/discover', null, true);
+  }
+  b.disabled = false; b.textContent = '🔍 Quét mạng'; if (!r) return;
+  $('#scaninfo').textContent = r.found.length ? '' : 'Không thấy TV nào. TV có bật và chung Wi-Fi không?';
 });
 $('#ipf').addEventListener('submit', (e) => { e.preventDefault(); const ip = $('#ipin').value.trim(); if (ip) selectTv(ip); });
 $('#setuprefresh').addEventListener('click', () => loadSteps());

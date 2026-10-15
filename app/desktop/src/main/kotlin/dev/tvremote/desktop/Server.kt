@@ -104,7 +104,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
             "/api/about" -> return about(s)
             "/api/update" -> return Response.json(updater.json())
             "/api/tvs" -> return Response.json(JSONObject().put("current", s.host).put("tvs", saved.tvs))
-            "/api/discover" -> return Response.json(Discover.discover())
+            "/api/discover" -> return Response.json(Discover.poll(r.query.containsKey("new")))
             "/api/setup/status" -> return setupStatus(s)
             "/api/assist" -> return Response.json(assist.state())
             "/api/screen" -> return screenshot(s)

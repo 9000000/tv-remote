@@ -155,6 +155,9 @@ internal fun MainActivity.refreshSaved() {
 }
 
 // ---------------------------------------------------------------- finding TVs on the Wi-Fi
+private fun MainActivity.foundRow(ip: String, name: String, adb: Boolean) = row((if (name.isNotEmpty()) name + "\n" else "") + ip + " · " +
+    (if (adb) t("ADB đã bật", "ADB on") else t("ADB chưa bật: chỉ bấm phím, app sẽ giúp bật", "ADB off: keys only, the app helps turn it on"))) { connect(ip) }
+
 internal fun MainActivity.scan() {
     scanBtn.isEnabled = false
     scanBtn.text = t("Đang quét...", "Scanning...")
@@ -162,8 +165,6 @@ internal fun MainActivity.scan() {
     Thread {
         val nets = ArrayList<String>()
         val found = Collections.synchronizedList(ArrayList<String>())
-        val names = java.util.concurrent.ConcurrentHashMap<String, String>()
-        val adbOn = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
         try {
             val add = { a: java.net.InetAddress? ->
                 val ip = a?.hostAddress
@@ -183,10 +184,10 @@ internal fun MainActivity.scan() {
             } catch (ignored: Exception) {
             }
             val seen = { ip: String ->
-                if (!found.contains(ip)) {
-                    found.add(ip)
-                    adbOn[ip] = open(ip, 5555, 900)
-                    (name(ip).ifEmpty { castName(ip) }).let { if (it.isNotEmpty()) names[ip] = it }
+                if (synchronized(found) { if (ip in found) false else found.add(ip) }) {
+                    val adb = open(ip, 5555, 900)
+                    val n = name(ip).ifEmpty { castName(ip) }
+                    ui.post { foundList.addView(foundRow(ip, n, adb)) }   // shown as soon as it answers, not after the whole network
                 }
             }
             val stopMdns = announced { ip -> Thread { seen(ip) }.start() }   // TVs also announce themselves; this finds the slow ones
@@ -203,10 +204,7 @@ internal fun MainActivity.scan() {
         ui.post {
             scanBtn.isEnabled = true
             scanBtn.text = "🔍  " + t("Quét Wi-Fi", "Scan the Wi-Fi")
-            val ips = synchronized(found) { found.sorted() }
-            for (ip in ips) foundList.addView(row((names[ip]?.let { it + "\n" } ?: "") + ip + " · " +
-                (if (adbOn[ip] == true) t("ADB đã bật", "ADB on") else t("ADB chưa bật: chỉ bấm phím, app sẽ giúp bật", "ADB off: keys only, the app helps turn it on"))) { connect(ip) })
-            if (ips.isEmpty()) foundList.addView(note(
+            if (foundList.childCount == 0) foundList.addView(note(
                 if (nets.isEmpty()) t("Điện thoại chưa nối Wi-Fi. Khác mạng thì nhập IP Tailscale của TV bên dưới.", "The phone is not on Wi-Fi. On another network, type the TV’s Tailscale IP below.")
                 else t("Đã quét ", "Scanned ") + nets.joinToString(", ") { it + "x" } + t(": không thấy TV nào. TV có đang bật và cùng Wi-Fi này không?\n\nTV ở mạng khác (qua Tailscale) thì không quét được: nhập IP Tailscale của TV (100.x.x.x) bên dưới.",
                     ": no TV found. Is it on, and on this Wi-Fi?\n\nA TV on another network (through Tailscale) cannot be scanned for: type its Tailscale IP (100.x.x.x) below.")))

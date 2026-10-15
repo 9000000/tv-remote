@@ -78,8 +78,29 @@ object Discover {
         emptyMap()
     }
 
-    fun discover(): JSONObject {
+    /** One scan in the background: the page asks for it again and again and shows each TV as soon as it answers. */
+    private class Scan {
         val found = ConcurrentHashMap<String, JSONObject>()
+        @Volatile var networks: List<String> = emptyList()
+        @Volatile var done = false
+        fun json(): JSONObject = JSONObject().put("networks", JSONArray(networks)).put("done", done)
+            .put("found", JSONArray(found.values.sortedWith(compareBy({ it.optString("via") }, { it.optString("ip") }))))
+    }
+    @Volatile private var scan: Scan? = null
+
+    /** [fresh]: start a new scan unless one is running; otherwise what the current (or last) one has found so far. */
+    @Synchronized fun poll(fresh: Boolean): JSONObject {
+        val cur = scan
+        if (cur == null || fresh && cur.done) {
+            val s = Scan(); scan = s
+            Thread({ try { run(s); if (s.found.isEmpty()) run(s) } finally { s.done = true } }, "discover").apply { isDaemon = true }.start()   // now and then a first scan misses TVs a second one finds
+            return s.json()
+        }
+        return cur.json()
+    }
+
+    private fun run(s: Scan) {
+        val found = s.found
         val unknown = ConcurrentHashMap<String, String>()
         val pool = Executors.newFixedThreadPool(120) { Thread(it, "discover").apply { isDaemon = true } }
         fun probe(ip: String, via: String, name: String) = pool.submit {
@@ -89,6 +110,7 @@ object Discover {
         }
         try {
             val nets = localNetworks()
+            s.networks = nets.map { it.second }
             val peers = tailscalePeers()
             val jobs = ArrayList<java.util.concurrent.Future<*>>()
             for ((me, _) in nets) for (h in 1..254) { val ip = me.substringBeforeLast('.') + ".$h"; if (ip != me) jobs.add(probe(ip, "lan", "")) }
@@ -102,8 +124,6 @@ object Discover {
                 again.map { probe(it, if (it in peers) "tailscale" else "lan", peers[it] ?: "") }.forEach { it.get() }
             }
             if (found.isEmpty()) println("scan found nothing: tailscale ${peers.ifEmpty { "no peers" }}; errors ${unknown.values.groupingBy { it }.eachCount()}")
-            return JSONObject().put("networks", JSONArray(nets.map { it.second }))
-                .put("found", JSONArray(found.values.sortedWith(compareBy({ it.optString("via") }, { it.optString("ip") }))))
         } finally {
             pool.shutdownNow()
         }
