@@ -12,13 +12,13 @@ Web 2.24.2 · app điện thoại 2.22.2 · app TV 2.21.3
 - TV Setup tự bật lại Gỡ lỗi USB khi bị tắt (trẻ con, bản cập nhật TV, đặt lại Tùy chọn nhà phát triển), để hẹn giờ, giờ đi ngủ, giới hạn app và điện thoại vẫn chạy. Tắt được trong TV Setup → Gỡ lỗi ADB.
 - Sức khỏe: tiến trình tốn CPU nhất hiện thành bảng, CPU và RAM là tiêu đề cột.
 - Tự tắt khi không dùng và giới hạn app: nhập thời gian bằng hai ô giờ và phút.
-- Tất cả cài đặt: các nhóm gập lại được, danh sách cuộn bên trong (ô tìm luôn ở trên), lọc Chỉnh được / Chỉ xem, mã app hiện đủ; bấm dòng có 🔒 để biết vì sao bị khóa.
+- Tất cả cài đặt: các nhóm gập lại được, danh sách cuộn bên trong (ô tìm luôn ở trên), lọc Chỉnh được / Chỉ xem; giá trị dài gọn trên một dòng, bấm để xem đủ; bấm dòng có 🔒 để biết vì sao bị khóa.
 
 **English**
 - TV Setup turns USB debugging back on when it is switched off (by a child, a TV update, a reset of Developer options), so the sleep timer, bedtime, app limits and the phone keep working. It can be turned off in TV Setup → Debugging.
 - Health: the top CPU processes are a table, with CPU and RAM as column heads.
 - Turn off when unused and app limits: the time is typed in two boxes, hours and minutes.
-- All settings: groups fold, the list scrolls inside (the search box stays on top), Editable / View only filters, app ids shown in full; tapping a 🔒 row says why it is locked.
+- All settings: groups fold, the list scrolls inside (the search box stays on top), Editable / View only filters; a long value on one line, in full on a tap; tapping a 🔒 row says why it is locked.
 
 ## 2.24.1 - 2026-10-15
 

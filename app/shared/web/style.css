@@ -137,13 +137,12 @@
   .capsplain { list-style:none; margin:0; padding:0; display:grid; gap:6px; font-size:14px; } .capsplain .no { color:var(--muted); }
   .setlist .setrow { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,auto); gap:4px 14px; align-items:center; padding:9px 0; border-top:1px solid var(--line); cursor:pointer; }
   .setname { display:flex; flex-direction:column; gap:2px; min-width:0; font-size:14px; } .setname small { font-size:11px; color:var(--muted); overflow-wrap:anywhere; }
-  .setval { max-width:46vw; font-size:14px; font-weight:600; text-align:right; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .setval { max-width:46vw; font-size:14px; font-weight:600; text-align:right; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; word-break:break-all; }
   .setval.mono { font-size:12px; font-weight:400; color:var(--muted); } .setval.long { font-size:12px; font-weight:500; }
   .setctl { display:flex; align-items:center; justify-content:flex-end; gap:6px; } .setctl .small { min-height:32px; padding:0 12px; }
   .setpick { min-height:34px; max-width:46vw; border-radius:10px; background:var(--btn); color:var(--ink); border:0; padding:0 8px; font:inherit; font-size:14px; }
   .setlist .setrow.full { grid-template-columns:1fr; } .setlist .setrow.full .setval { display:block; max-width:none; text-align:left; }
   .setfilter { margin:10px 0 4px; } .setfilter button[data-n]::after { content:' · ' attr(data-n); opacity:.7; font-weight:500; }
-  .setlist .setrow.wide { grid-template-columns:1fr; } .setlist .setrow.wide .setval, .setlist .setrow.wide .setctl { max-width:none; text-align:left; justify-content:flex-start; -webkit-line-clamp:3; }
   #setlistbody { max-height:90vh; max-height:90dvh; overflow:auto; overscroll-behavior:contain; }   /* scrolls inside, under the search box */
   .setgroupbox { border-top:1px solid var(--line); } .setgroupbox > summary { cursor:pointer; font-size:14px; font-weight:700; padding:11px 0; }
   .setgroupbox[open] > summary { color:var(--muted); font-size:13px; } .setgroupbox .setrow:first-of-type { border-top:0; }
