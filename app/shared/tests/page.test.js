@@ -20,7 +20,7 @@ test('the page scripts declare no name twice', () => {
 // must stay the same, apart from its first line saying where it comes from
 test('docs/ has the same qr.js as the page', () => {
   const root = path.join(__dirname, '../../..');
-  const copy = ['docs/js/qr.js', 'docs/qr.js'].map((f) => path.join(root, f)).find((f) => fs.existsSync(f));
+  const copy = ['docs/js/qr.js'].map((f) => path.join(root, f)).find((f) => fs.existsSync(f));
   assert.ok(copy, 'docs/js/qr.js is missing');
   const body = fs.readFileSync(copy, 'utf8').split('\n').slice(1).join('\n');
   assert.equal(body, fs.readFileSync(path.join(__dirname, '../web/js/qr.js'), 'utf8'),

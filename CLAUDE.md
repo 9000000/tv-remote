@@ -133,7 +133,9 @@ What it takes care of, for doing it by hand:
 - The intro site https://tvremote.pages.dev is `docs/`, deployed by Cloudflare Pages (project `tvremote`) on every push to main
   that touches `docs/`. Its build watch path is `docs/*` (Cloudflare's `*` spans folders; `docs/**` matches nothing and
   skipped every build). A deployment stuck at "queued" with `is_skipped` was filtered out, not waiting.
-  The page is `index.html` + `site.css` + `site.js`. Its animations (the hero demo, How it works, the install tabs) are GSAP
+  The page is `index.html`, with `css/`, `js/`, `lib/` (third-party files as published: `gsap.min.js`) and `img/`; its
+  look is `css/site.css` and its behaviour `js/site.js` (`js/qr.js` is a copy of `app/shared/web/js/qr.js`, kept the same by
+  `page.test.js`). Its animations (the hero demo, How it works, the install tabs) are GSAP
   timelines: the runtime and helpers in `anim.js` (vendored `gsap.min.js`, 3.13.0), the demo in `demo.js` and the stories in
   `stories.js`, their look in `demo.css` and `stories.css`. A timeline reads as a list of "at second t, this changes"
   (`show`, `press`, `fill`, `type`, `toggle`, `focus`, `pointer`, `steps`, or `track` for anything else). To look at a
