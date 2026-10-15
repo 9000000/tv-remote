@@ -108,14 +108,17 @@
   </div>
 </section>
 
-<!-- ============ DEMO ============ -->
-<section id="demo" style="padding-top:40px">
+<!-- ============ FEATURES: the demo first, then each feature ============ -->
+<section id="features" style="padding-top:40px">
   <div class="wrap">
     <div class="center reveal">
-      <span class="eyebrow"><span class="vi">Xem nó chạy</span><span class="en">See it work</span></span>
+      <span class="eyebrow"><span class="vi">Tính năng</span><span class="en">Features</span></span>
       <h2><span class="vi">Những việc remote thường bó tay.</span><span class="en">What an ordinary remote can't do.</span></h2>
       <p class="lead"><span class="vi">Bốn chuyện thật, mỗi chuyện chưa tới 10 giây.</span><span class="en">Four real stories, under 10 seconds each.</span></p>
     </div>
+    <!-- GENERATED STYLE: the demo's animation is docs/demo.css, made by dev/demo_css.py from dev/demo.src.css; the
+         captions' timing is CAPS in dev/demo_css.py, in the order of the .dcap <p>s below. Edit those, then run
+         python3 dev/demo_css.py; never edit docs/demo.css by hand. -->
     <div class="demo reveal">
       <div class="dstage" aria-hidden="true">
         <div class="dtvb">
@@ -198,14 +201,8 @@
         <li><button type="button" data-ch="3" style="--c:dc4"><i style="--f:df4"></i><b>4</b><span class="vi">Nhiều TV</span><span class="en">Many TVs</span></button></li>
       </ol>
     </div>
-  </div>
-</section>
 
-<!-- ============ FEATURES ============ -->
-<section id="features" style="padding-top:40px">
-  <div class="wrap">
-    <div class="center reveal">
-      <span class="eyebrow"><span class="vi">Tính năng</span><span class="en">Features</span></span>
+    <div class="center reveal" style="margin-top:110px">
       <h2><span class="vi">Không chỉ là nút bấm.</span><span class="en">Much more than buttons.</span></h2>
       <p class="lead"><span class="vi">Một bộ công cụ đầy đủ để dùng, dọn dẹp và quản lý chiếc TV của bạn.</span><span class="en">A complete toolkit to use, look after and manage your TV.</span></p>
     </div>
@@ -344,9 +341,9 @@
         <div class="chip"><span class="e">💻</span><div><span class="vi">App máy tính</span><span class="en">Computer app</span><small>Mac · Windows · Linux</small></div></div>
       </div>
       <div class="wire">
-        <div class="line"></div>
+        <div class="line"><i></i><i></i><i></i><i class="r"></i><i class="r"></i></div>
         <div><span class="vi">Wi-Fi nhà<br>hoặc Tailscale</span><span class="en">Home Wi-Fi<br>or Tailscale</span></div>
-        <span class="noserver">☁️ <s><span class="vi">máy chủ</span><span class="en">cloud</span></s></span>
+        <span class="noserver"><span class="e">☁️</span> <s><span class="vi">máy chủ</span><span class="en">cloud</span></s></span>
       </div>
       <div class="node">
         <h4>📺 Android TV / Google TV</h4>
@@ -356,10 +353,10 @@
       </div>
     </div>
     <div class="facts reveal">
-      <div class="fact"><b>0</b><span><span class="vi">máy chủ trung gian</span><span class="en">servers in between</span></span></div>
-      <div class="fact"><b>3</b><span><span class="vi">app và Web của TV, chung một giao diện</span><span class="en">apps and a TV web page, one interface</span></span></div>
-      <div class="fact"><b>~8 KB/s</b><span><span class="vi">để nghe tiếng TV</span><span class="en">to stream TV audio</span></span></div>
-      <div class="fact"><b>100%</b><span><span class="vi">mã nguồn mở trên GitHub</span><span class="en">open source on GitHub</span></span></div>
+      <div class="fact"><b class="cu" style="--hn:0;--from:12"></b><span><span class="vi">máy chủ trung gian</span><span class="en">servers in between</span></span></div>
+      <div class="fact"><b class="cu" style="--hn:3"></b><span><span class="vi">app và Web của TV, chung một giao diện</span><span class="en">apps and a TV web page, one interface</span></span></div>
+      <div class="fact"><b class="cu" style="--hn:8;--from:64;--pre:'~';--suf:' KB/s'"></b><span><span class="vi">để nghe tiếng TV</span><span class="en">to stream TV audio</span></span></div>
+      <div class="fact"><b class="cu" style="--hn:100;--suf:'%'"></b><span><span class="vi">mã nguồn mở trên GitHub</span><span class="en">open source on GitHub</span></span></div>
     </div>
   </div>
 </section>
@@ -431,11 +428,11 @@
     </div>
 
     <!-- browser / TV Setup -->
-    <div class="panel on" id="p-browser" role="tabpanel">
+    <div class="panel on ianim" id="p-browser" role="tabpanel" style="--T:17.5s">
       <div>
         <h3><span class="vi">Cài TV Setup bằng mã Downloader</span><span class="en">Install TV Setup with a Downloader code</span></h3>
         <p class="sub"><span class="vi">Chỉ cần remote của TV. Không cần máy tính, không cần cáp.</span><span class="en">All you need is the TV's remote. No computer, no cable.</span></p>
-        <ol class="steps">
+        <ol class="steps n5">
           <li><div class="vi">Trên TV mở <b>CH Play</b>, tìm và cài <b>Downloader</b> (của AFTVnews, biểu tượng màu cam).</div><div class="en">On the TV open <b>Google Play</b>, find and install <b>Downloader</b> (by AFTVnews, orange icon).</div></li>
           <li><div class="vi">Mở Downloader, gõ mã <b class="mono">2397346</b> rồi chọn <b>Go</b>. Nó tải bản TV Setup mới nhất.</div><div class="en">Open Downloader, type <b class="mono">2397346</b> and choose <b>Go</b>. It fetches the latest TV Setup.</div></li>
           <li><div class="vi">Chọn <b>Cài đặt</b>. TV báo chưa cho phép nguồn này thì bật cho Downloader, quay lại, cài tiếp.</div><div class="en">Choose <b>Install</b>. If the TV blocks unknown sources, allow Downloader, go back, install.</div></li>
@@ -444,6 +441,14 @@
         </ol>
       </div>
       <div class="side">
+        <div class="im n5" aria-hidden="true">
+          <div class="f s1"><div class="sr">🔍 downloader</div><div class="ap"><i class="ico dl">⬇</i><div><b>Downloader</b><small>AFTVnews</small></div></div><span class="bt b1"><span class="vi">Cài đặt</span><span class="en">Install</span></span><div class="bar a1"></div></div>
+          <div class="f s2"><div class="hdr or">Downloader</div><small><span class="vi">Nhập URL hoặc mã</span><span class="en">Enter a URL or code</span></small><div class="in"><span class="ty a2">2397346</span><span class="car"></span></div><span class="bt b2">Go</span></div>
+          <div class="f s3"><div class="ap"><i class="ico ts">⚡</i><div><b>TV Setup</b><small><span class="vi">Bạn có muốn cài ứng dụng này?</span><span class="en">Do you want to install this app?</span></small></div></div><div class="bar a3"></div><div class="ok a3k">✓ <span class="vi">Đã cài</span><span class="en">Installed</span></div></div>
+          <div class="f s4"><div class="hdr">⚡ TV Setup</div><div class="row"><span class="vi">Gỡ lỗi ADB</span><span class="en">ADB debugging</span><i class="tg ta4"></i></div><div class="ok a4k">✓ <span class="vi">Sẵn sàng</span><span class="en">Ready</span></div></div>
+          <div class="f s5"><div class="pair"><div class="qrx"></div><div><small><span class="vi">Mã ghép</span><span class="en">Pairing code</span></small><div class="mono">482 913</div></div></div><div class="phs">📱 <span class="ty a5">482913</span><span class="ok a5k">✓</span></div></div>
+        </div>
+
         <div class="code">
           <small><span class="vi">Mã Downloader · TV Setup</span><span class="en">Downloader code · TV Setup</span></small>
           <div class="num">2397346</div>
@@ -457,11 +462,11 @@
     </div>
 
     <!-- android -->
-    <div class="panel" id="p-android" role="tabpanel">
+    <div class="panel ianim" id="p-android" role="tabpanel" style="--T:14s">
       <div>
         <h3><span class="vi">Cài App điện thoại</span><span class="en">Install the Phone app</span></h3>
         <p class="sub"><span class="vi">Android 7 trở lên. Điện thoại và TV cùng mạng Wi-Fi.</span><span class="en">Android 7 or newer. Phone and TV on the same Wi-Fi.</span></p>
-        <ol class="steps">
+        <ol class="steps n4">
           <li><div class="vi">Quét mã QR hoặc bấm <b>tv-remote.apk</b> để tải, rồi mở để cài. Android cảnh báo “ứng dụng không rõ nguồn” thì cho phép trình duyệt cài.</div><div class="en">Scan the QR code or tap <b>tv-remote.apk</b> to download it, then open it. If Android warns about unknown apps, allow your browser to install.</div></li>
           <li><div class="vi">Mở app, bấm <b>Quét Wi-Fi</b> rồi chọn TV (hoặc gõ IP của TV).</div><div class="en">Open the app, tap <b>Scan Wi-Fi</b> and pick your TV (or type its IP).</div></li>
           <li><div class="vi">TV hỏi <b>“Cho phép gỡ lỗi USB?”</b>: tích <b>Luôn cho phép</b> rồi OK. Chỉ một lần.</div><div class="en">The TV asks <b>“Allow USB debugging?”</b>: tick <b>Always allow</b>, then OK. Just once.</div></li>
@@ -469,6 +474,19 @@
         </ol>
       </div>
       <div class="side">
+        <div class="im n4" aria-hidden="true"><div class="stg">
+          <div class="mph">
+            <div class="f s1"><small>⬇ tv-remote.apk</small><div class="bar p1"></div><span class="bt p1k"><span class="vi">Cài đặt</span><span class="en">Install</span></span></div>
+            <div class="f s2"><b>TV Remote</b><div class="rad"></div><div class="row p2r p2t">📺 <span class="vi">Phòng khách</span><span class="en">Living room</span></div></div>
+            <div class="f s3"><b>TV Remote</b><small><span class="spin"></span> <span class="vi">Nhìn lên TV, chọn Cho phép</span><span class="en">On the TV, choose Allow</span></small></div>
+            <div class="f s4"><b class="ok" style="opacity:1">✓ <span class="vi">Đã kết nối</span><span class="en">Connected</span></b><div class="pad"></div></div>
+          </div>
+          <div class="mtv2">
+            <div class="f s3"><div class="dlg"><b><span class="vi">Cho phép gỡ lỗi USB?</span><span class="en">Allow USB debugging?</span></b><small>☑ <span class="vi">Luôn cho phép</span><span class="en">Always allow</span></small><span class="bt p3">OK</span></div></div>
+            <div class="f s4"><div class="tst">📱 <span class="vi">Điện thoại đã kết nối</span><span class="en">Phone connected</span></div></div>
+          </div>
+        </div></div>
+
         <div class="qr" data-qr="https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk"><div><b><span class="vi">📱 Quét để tải về điện thoại</span><span class="en">📱 Scan to get it on your phone</span></b><small><span class="vi">Mở camera điện thoại, quét mã rồi mở link: APK tải về ngay.</span><span class="en">Point the phone's camera here and open the link: the APK downloads right away.</span></small></div></div>
         <div class="code">
           <small><span class="vi">Mã Downloader · TV Remote</span><span class="en">Downloader code · TV Remote</span></small>
@@ -483,11 +501,11 @@
     </div>
 
     <!-- computer -->
-    <div class="panel" id="p-computer" role="tabpanel">
+    <div class="panel ianim" id="p-computer" role="tabpanel" style="--T:14s">
       <div>
         <h3><span class="vi">Cài App máy tính</span><span class="en">Install the Computer app</span></h3>
         <p class="sub"><span class="vi">Một app có cửa sổ riêng, khoảng 20 MB. Không cần cài Python, adb hay gì thêm.</span><span class="en">An app with its own window, about 20 MB. Nothing else to install: no Python, no adb.</span></p>
-        <ol class="steps">
+        <ol class="steps n4">
           <li><div class="vi">Bấm <b>Tải về</b> (đã chọn sẵn bản cho máy bạn) rồi giải nén.</div><div class="en">Press <b>Download</b> (the right file for your computer is picked) and unzip it.</div></li>
           <li><div class="vi"><b>Mac:</b> kéo <b>TV Remote</b> vào Applications rồi mở. Mac báo “chưa xác minh nhà phát triển” thì vào Cài đặt hệ thống → Quyền riêng tư &amp; Bảo mật → <b>Vẫn mở</b> (chỉ lần đầu).</div><div class="en"><b>Mac:</b> drag <b>TV Remote</b> into Applications and open it. If the Mac says the developer is “unverified”: System Settings → Privacy &amp; Security → <b>Open Anyway</b> (first time only).</div></li>
           <li><div class="vi"><b>Windows:</b> chạy <b class="mono">TV Remote.exe</b> trong thư mục vừa giải nén. Hiện “Windows đã bảo vệ PC của bạn” thì bấm <b>Thông tin bổ sung → Vẫn chạy</b>. <b>Linux:</b> chạy <b class="mono">tv-remote/bin/tv-remote</b>.</div><div class="en"><b>Windows:</b> run <b class="mono">TV Remote.exe</b> in the unzipped folder. If you see “Windows protected your PC”: <b>More info → Run anyway</b>. <b>Linux:</b> run <b class="mono">tv-remote/bin/tv-remote</b>.</div></li>
@@ -495,6 +513,13 @@
         </ol>
       </div>
       <div class="side">
+        <div class="im win n4" aria-hidden="true">
+          <div class="f s1"><div class="ap"><i class="ico ts">📦</i><div><b>TV-Remote-mac.zip</b><small>21 MB</small></div></div><div class="bar c1"></div><div class="ok c1k">✓ <span class="vi">Đã tải</span><span class="en">Downloaded</span></div></div>
+          <div class="f s2"><div class="drag"><div class="c2"><i class="ico ts">⚡</i>TV Remote</div><div><i class="ico fold c2f">📁</i>Applications</div></div></div>
+          <div class="f s3"><div class="dlg"><b><span class="vi">“TV Remote” chưa được xác minh</span><span class="en">“TV Remote” is not verified</span></b><small><span class="vi">Chỉ hỏi lần đầu.</span><span class="en">Asked the first time only.</span></small><span class="bt c3"><span class="vi">Vẫn mở</span><span class="en">Open Anyway</span></span></div></div>
+          <div class="f s4"><div class="hdr">⚡ TV Remote</div><small class="c4s"><span class="spin"></span> <span class="vi">Đang tìm TV…</span><span class="en">Looking for TVs…</span></small><div class="row c4r">📺 <span class="vi">TV phòng khách</span><span class="en">Living room TV</span><span class="ok c4k">✓</span></div></div>
+        </div>
+
         <a class="btn btn-primary" id="dl-pc" href="https://github.com/HoangTran0410/tv-remote/releases/latest">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
           <span><span class="vi">Tải về</span><span class="en">Download</span><span id="dl-os"></span></span>
@@ -509,13 +534,18 @@
       </div>
     </div>
 
-    <div class="prep reveal">
+    <div class="prep reveal ianim" style="--T:12s">
       <div>
         <span class="eyebrow"><span class="vi">Làm một lần</span><span class="en">One-time</span></span>
         <h3><span class="vi">Chuẩn bị TV</span><span class="en">Prepare the TV</span></h3>
         <p class="note"><span class="vi">Bằng remote của TV, khoảng 1 phút. Tên menu lấy theo TV Sony, hãng khác có thể hơi khác. TV Setup và app điện thoại đều có thể dẫn bạn tới đúng chỗ.</span><span class="en">With the TV's remote, about a minute. Menu names are from Sony; others differ slightly. TV Setup and the phone app can take you to the right screen.</span></p>
+        <div class="im n3" aria-hidden="true" style="margin-top:18px">
+          <div class="f s1"><div class="hdr"><span class="vi">Giới thiệu</span><span class="en">About</span></div><div class="row"><span class="vi">Tên thiết bị</span><span class="en">Device name</span><small>Sony</small></div><div class="row d1"><span class="vi">Bản dựng</span><span class="en">Build</span><small>×7</small></div><div class="ok d1k">🎉 <span class="vi">Bạn đã là nhà phát triển!</span><span class="en">You are now a developer!</span></div></div>
+          <div class="f s2"><div class="hdr"><span class="vi">Tùy chọn nhà phát triển</span><span class="en">Developer options</span></div><div class="row"><span class="vi">Gỡ lỗi ADB</span><span class="en">ADB debugging</span><i class="tg td2"></i></div><div class="row"><span class="vi">Thang đo hoạt ảnh</span><span class="en">Animation scale</span><small>1x</small></div></div>
+          <div class="f s3"><div class="hdr"><span class="vi">Mạng và Internet</span><span class="en">Network &amp; Internet</span></div><div class="row"><span class="vi">Khởi động từ xa</span><span class="en">Remote start</span><i class="tg td3"></i></div><div class="row">Wi-Fi<small>Nhà</small></div></div>
+        </div>
       </div>
-      <ol class="steps">
+      <ol class="steps n3">
         <li><div class="vi"><b>Bật Tùy chọn nhà phát triển:</b> <span class="path">Cài đặt → Tùy chọn thiết bị → Giới thiệu → Bản dựng</span>, bấm OK 7 lần.</div><div class="en"><b>Unlock Developer options:</b> <span class="path">Settings → Device Preferences → About → Build</span>, press OK 7 times.</div></li>
         <li><div class="vi"><b>Bật ADB:</b> <span class="path">Tùy chọn nhà phát triển → Gỡ lỗi ADB</span> (có TV ghi “Gỡ lỗi USB”).</div><div class="en"><b>Turn on ADB:</b> <span class="path">Developer options → ADB debugging</span> (some TVs say “USB debugging”).</div></li>
         <li><div class="vi"><b>Nên bật:</b> <span class="path">Mạng và Internet → Khởi động từ xa</span>, để bật lại được TV từ xa khi đã tắt.</div><div class="en"><b>Recommended:</b> <span class="path">Network &amp; Internet → Remote start</span>, so you can wake the TV remotely.</div></li>

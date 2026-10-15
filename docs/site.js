@@ -73,6 +73,27 @@
     });
   })();
 
+  // the install mocks: one clock per panel, running only while it is on screen; shown again = from the start;
+  // a click on a step plays from that step (reduced motion: shows how it ends)
+  (function(){
+    var all = document.querySelectorAll(".ianim"), calm = matchMedia("(prefers-reduced-motion:reduce)");
+    function restart(el, d){ el.style.setProperty("--d", d + "s"); el.classList.add("rs"); void el.offsetWidth; el.classList.remove("rs"); }
+    all.forEach(function(el){
+      if ("IntersectionObserver" in window) new IntersectionObserver(function(es){ el.classList.toggle("run", es[0].isIntersecting); }, {threshold:.2}).observe(el);
+      else el.classList.add("run");
+      var lis = el.querySelectorAll(".steps li"), n = lis.length;
+      lis.forEach(function(li, k){
+        li.onclick = function(){
+          var T = parseFloat(getComputedStyle(el).getPropertyValue("--T"));
+          restart(el, -(calm.matches ? (k + .92) : k) * T / n);
+        };
+      });
+    });
+    document.querySelectorAll(".opt").forEach(function(o){
+      o.addEventListener("click", function(){ var p = document.getElementById("p-" + o.dataset.tab); if (p) restart(p, calm.matches ? -1e-3 : 0); });
+    });
+  })();
+
   document.getElementById("yr").textContent = new Date().getFullYear();
 
   // the computer app: the file for this computer on the big button (one Mac app runs on both chips)

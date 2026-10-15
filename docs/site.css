@@ -283,3 +283,174 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
   .prep{padding:22px}
   .duo{gap:12px}
 }
+
+/* how it works: a device's requests going straight to the TV and back; the chips light up in turn, no cloud */
+.wire .line i{position:absolute;top:-4px;left:0;width:10px;height:10px;border-radius:50%;background:var(--blue);box-shadow:0 0 12px var(--blue);animation:hgo 2.4s linear infinite}
+.wire .line i:nth-child(2){animation-delay:.8s}.wire .line i:nth-child(3){animation-delay:1.6s}
+.wire .line i.r{background:var(--orange);box-shadow:0 0 12px var(--orange);width:7px;height:7px;top:-2.5px;animation-name:hback;animation-delay:.4s}
+.wire .line i.r+i.r{animation-delay:1.6s}
+@keyframes hgo{0%{left:0;opacity:0}15%{opacity:1}85%{opacity:1}100%{left:calc(100% - 10px);opacity:0}}
+@keyframes hback{0%{left:calc(100% - 7px);opacity:0}15%{opacity:1}85%{opacity:1}100%{left:0;opacity:0}}
+.flow .chip{transition:none;animation:hlit 9s infinite both}
+.flow .node .chip:nth-of-type(2){animation-delay:3s}.flow .node .chip:nth-of-type(3){animation-delay:6s}
+.flow .node+.wire+.node .chip{animation-delay:.9s}.flow .node+.wire+.node .chip:nth-of-type(2){animation-delay:3.9s}.flow .node+.wire+.node .chip:nth-of-type(3){animation-delay:6.9s}
+@keyframes hlit{0%,30%,100%{background:var(--card2);box-shadow:none}4%,26%{background:#1c2740;box-shadow:inset 0 0 0 1px rgba(91,140,255,.55)}}
+.noserver .e{display:inline-block;animation:hcloud 3s ease-in-out infinite}
+@keyframes hcloud{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.fact b.cu{counter-reset:hn var(--hn)}
+.fact b.cu::after{content:var(--pre,"") counter(hn) var(--suf,"")}
+.facts.in .fact b.cu{animation:hcount 1.6s cubic-bezier(.2,.7,.2,1) .2s both}
+@keyframes hcount{from{--hn:var(--from,0)}}
+@property --hn{syntax:"<integer>";inherits:false;initial-value:0}
+@media (max-width:980px){
+  .wire .line i{left:-4px;top:0;animation-name:hgov}.wire .line i.r{left:-2.5px;animation-name:hbackv}
+}
+@keyframes hgov{0%{top:0;opacity:0}15%,85%{opacity:1}100%{top:calc(100% - 10px);opacity:0}}
+@keyframes hbackv{0%{top:calc(100% - 7px);opacity:0}15%,85%{opacity:1}100%{top:0;opacity:0}}
+
+/* install: a small screen acting out each step while the step it shows lights up in the list; one --T clock per panel,
+   restarted when the panel is shown; a click on a step starts there (--d) */
+.ianim{--d:0s}
+.ianim:not(.run) .im *,.ianim:not(.run) .im *::after,.ianim:not(.run) .steps li{animation-play-state:paused}
+.ianim.rs .im *,.ianim.rs .im *::after,.ianim.rs .steps li{animation:none !important}
+.ianim .im,.ianim .im *,.ianim .im *::after,.ianim .steps li{animation-duration:var(--T);animation-iteration-count:infinite;animation-fill-mode:both;animation-delay:var(--d)}
+.ianim .steps li{border-radius:12px;padding:6px 8px;margin:-6px -8px;cursor:pointer}
+.ianim .steps li:hover{background:rgba(255,255,255,.03)}
+.im{position:relative;container-type:inline-size;aspect-ratio:16/10;border-radius:16px;border:1px solid var(--line2);background:#070a11;overflow:hidden;color:#e9edf5;line-height:1.3}
+.im .f{position:absolute;inset:0;padding:6cqw;opacity:0;display:flex;flex-direction:column;gap:3cqw;font-size:4cqw}
+.im small{color:#9aa4b8;font-size:3.4cqw}
+.im .sr{padding:2.4cqw 3.6cqw;border-radius:9cqw;background:#1a2030;color:#c9d1e0}
+.im .ap{display:flex;align-items:center;gap:3.4cqw}
+.im .ap b{display:block;font-size:4.6cqw}
+.im .ico{flex:none;width:12cqw;height:12cqw;border-radius:2.6cqw;display:grid;place-items:center;font-style:normal;font-size:6cqw;font-weight:800}
+.im .ico.dl{background:#ff7a00;color:#fff}.im .ico.ts{background:linear-gradient(135deg,#5b8cff,#3d6fe8)}
+.im .bt{align-self:flex-start;padding:2cqw 5cqw;border-radius:2cqw;background:#5b8cff;color:#06112b;font-weight:800}
+.im .bar{height:2cqw;border-radius:2cqw;background:#232a3a;overflow:hidden}
+.im .bar::after{content:"";display:block;height:100%;background:#5b8cff;transform-origin:left;animation-timing-function:linear}
+.im .ok{color:#3ddc84;font-weight:800;opacity:0}
+.im .hdr{font-weight:800;font-size:5cqw}
+.im .hdr.or{margin:-6cqw -6cqw 0;padding:3cqw 6cqw;background:#ff7a00;color:#fff}
+.im .in{padding:2.4cqw 3cqw;border-radius:1.6cqw;border:.4cqw solid #5b8cff;background:#0d1119;font-family:"JetBrains Mono",monospace;font-size:5cqw;letter-spacing:.06em}
+.im .ty{display:inline-block;overflow:hidden;white-space:nowrap;vertical-align:bottom;width:0}
+.im .car{display:inline-block;width:.1em;height:1em;margin-left:.06em;vertical-align:middle;background:currentColor;animation:hblink 1s steps(1) infinite !important}
+@keyframes hblink{50%{opacity:0}}
+.im .row{display:flex;align-items:center;justify-content:space-between;padding:2.6cqw 3.4cqw;border-radius:2cqw;background:#161c29;border:1px solid #232a3a}
+.im .row.fo{background:#232b3d}
+.im .tg{position:relative;flex:none;width:9cqw;height:5cqw;border-radius:5cqw;background:#3a4258}
+.im .tg::after{content:"";position:absolute;left:.6cqw;top:.6cqw;width:3.8cqw;height:3.8cqw;border-radius:50%;background:#fff}
+.im .pair{display:flex;gap:5cqw;align-items:center}
+.im .qrx{flex:none;width:24cqw;height:24cqw;border-radius:1cqw;border:1.6cqw solid #fff;background:conic-gradient(#000 25%,transparent 0 50%,#000 0 75%,transparent 0) 0 0/5cqw 5cqw,conic-gradient(#000 25%,transparent 0 50%,#000 0 75%,transparent 0) 1.5cqw 2.5cqw/7cqw 7cqw,#fff}
+.im .mono{font-family:"JetBrains Mono",monospace;font-size:6cqw;letter-spacing:.08em}
+.im .spin{display:inline-block;width:4cqw;height:4cqw;border-radius:50%;border:.6cqw solid #2f3850;border-top-color:#5b8cff;vertical-align:middle;animation:dspin .8s linear infinite !important}
+@keyframes dspin{to{transform:rotate(1turn)}}
+
+/* ① TV web page: Play Store → Downloader → install → TV Setup → pair */
+.im .b1{animation-name:ib1}.im .a1::after{animation-name:ia1}.im .a2{animation-name:ia2}.im .b2{animation-name:ib2}
+.im .a3::after{animation-name:ia3}.im .a3k{animation-name:ia3k}.im .a4k{animation-name:ia4k}.im .a5{animation-name:ia5}.im .a5k{animation-name:ia5k}
+.im .phs{position:absolute;right:6cqw;bottom:6cqw;width:24cqw;padding:3cqw;border-radius:3cqw;background:#161c29;border:1px solid #2f3850;text-align:center;font-family:"JetBrains Mono",monospace;font-size:4cqw}
+.im .phs .ok{display:block;margin-top:1cqw;font-family:inherit}
+@keyframes ib1{0%,3.40%{transform:none;}4.00%{transform:scale(.9);filter:brightness(1.4);}4.80%,100%{transform:none;filter:none;}}
+@keyframes ia1{0%,5%{transform:scaleX(0)}15%,100%{transform:scaleX(1)}}
+@keyframes ia2{0%,22%{width:0;animation-timing-function:steps(7,end)}31%,100%{width:7ch}}
+@keyframes ib2{0%,33.40%{transform:none;}34.00%{transform:scale(.9);filter:brightness(1.4);}34.80%,100%{transform:none;filter:none;}}
+@keyframes ia3{0%,43%{transform:scaleX(0)}54%,100%{transform:scaleX(1)}}
+@keyframes ia3k{0%,55%{opacity:0;transform:scale(.6)}56.20%,100%{opacity:1;transform:none}}
+.tg.ta4{animation-name:ta4}.tg.ta4::after{animation-name:ta4k}
+@keyframes ta4{0%,68%{background:#3a4258}69.00%,100%{background:#3ddc84}}
+@keyframes ta4k{0%,68%{transform:none}69.00%,100%{transform:translateX(100%)}}
+@keyframes ia4k{0%,71%{opacity:0;transform:scale(.6)}72.20%,100%{opacity:1;transform:none}}
+@keyframes ia5{0%,84%{width:0;animation-timing-function:steps(6,end)}93%,100%{width:6ch}}
+@keyframes ia5k{0%,95%{opacity:0;transform:scale(.6)}96.20%,100%{opacity:1;transform:none}}
+
+/* ② Phone app: download → scan → Allow on the TV → connected; the TV beside the phone */
+.im .stg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:7cqw}
+.im .mph{position:relative;width:28cqw;aspect-ratio:9/17;border-radius:4cqw;border:1.2cqw solid #20263a;background:#0d1119;overflow:hidden;container-type:inline-size}
+.im .mph .f{padding:9cqw 8cqw;gap:6cqw;font-size:10cqw}
+.im .mph small{font-size:8.5cqw}
+.im .mph .bar{height:4cqw}
+.im .mph .bt{padding:4cqw 10cqw;border-radius:4cqw}
+.im .mph .row{padding:5cqw;border-radius:5cqw;font-size:9cqw}
+.im .mtv2{position:relative;width:46cqw;aspect-ratio:16/9;border-radius:1.6cqw;border:1cqw solid #20263a;background:radial-gradient(120% 90% at 18% 0,#173a55,#0b1322 58%,#070a10);overflow:hidden;container-type:inline-size}
+.im .mtv2 .f{padding:8cqw;justify-content:center;align-items:center;font-size:6.4cqw}
+.im .dlg{display:flex;flex-direction:column;gap:1.6cqw;padding:4.4cqw;border-radius:2.4cqw;background:#262c3a;box-shadow:0 4cqw 10cqw rgba(0,0,0,.6)}
+.im .dlg b{font-size:4.6cqw}
+.im .dlg .bt{align-self:flex-end;margin-top:2cqw}
+.im .mtv2 .dlg b{font-size:6.6cqw}.im .mtv2 small{font-size:5.4cqw}.im .mtv2 .tst{font-size:6cqw}
+.im .tst{padding:4cqw 6cqw;border-radius:3cqw;background:rgba(22,27,40,.96);border:1px solid rgba(255,255,255,.14);font-weight:700}
+.im .rad{align-self:center;width:30cqw;height:30cqw;border-radius:50%;border:1cqw solid #5b8cff;animation:dping2 1.6s infinite !important}
+@keyframes dping2{0%{transform:scale(.3);opacity:1}100%{transform:scale(1);opacity:0}}
+.im .pad{align-self:center;width:56cqw;height:56cqw;border-radius:50%;background:#161c29;border:1px solid #232a3a;box-shadow:inset 0 0 0 16cqw #161c29,inset 0 0 0 17cqw #232a3a}
+.im .p1::after{animation-name:ip1}.im .p1k{animation-name:ip1k}.im .p2r{animation-name:ip2r}.im .p2t{animation-name:ip2t}.im .p3{animation-name:ip3}
+@keyframes ip1{0%,3%{transform:scaleX(0)}15%,100%{transform:scaleX(1)}}
+@keyframes ip1k{0%,19.40%{transform:none;}20.00%{transform:scale(.9);filter:brightness(1.4);}20.80%,100%{transform:none;filter:none;}}
+@keyframes ip2r{0%,33%{opacity:0;transform:scale(.6)}34.20%,100%{opacity:1;transform:none}}
+@keyframes ip2t{0%,41.40%{transform:none;background:#161c29}42.00%{transform:scale(.9);filter:brightness(1.4);background:#22304f}42.80%,100%{transform:none;filter:none;background:#22304f}}
+@keyframes ip3{0%,65.40%{transform:none;}66.00%{transform:scale(.9);filter:brightness(1.4);}66.80%,100%{transform:none;filter:none;}}
+
+/* ③ Computer app: download → into Applications → open anyway → finds the TV */
+.im.win{padding-top:7cqw}
+.im.win::before{content:"";position:absolute;left:0;right:0;top:0;height:7cqw;background:#161b27 radial-gradient(circle,#ff5f57 0 1.1cqw,transparent 1.3cqw) 3cqw 50%/3.6cqw 3.6cqw no-repeat;border-bottom:1px solid #232a3a}
+.im.win::after{content:"";position:absolute;left:7.6cqw;top:0;width:8cqw;height:7cqw;background:radial-gradient(circle,#febc2e 0 1.1cqw,transparent 1.3cqw) 0 50%/3.6cqw 3.6cqw no-repeat,radial-gradient(circle,#28c840 0 1.1cqw,transparent 1.3cqw) 4.6cqw 50%/3.6cqw 3.6cqw no-repeat;animation:none !important}
+.im.win .f{top:7cqw}
+.im .drag{display:flex;align-items:center;justify-content:space-around;flex:1}
+.im .drag div{text-align:center;font-size:3.6cqw}
+.im .drag .ico{margin:0 auto 1.6cqw;width:15cqw;height:15cqw;font-size:8cqw}
+.im .drag .fold{background:#3d6fe8}
+.im .c1::after{animation-name:ic1}.im .c1k{animation-name:ic1k}.im .c2{animation-name:ic2}.im .c2f{animation-name:ic2f}.im .c3{animation-name:ic3}
+.im .c4s{animation-name:ic4s}.im .c4r{animation-name:ic4r}.im .c4k{animation-name:ic4k}
+@keyframes ic2{0%,30%{transform:none;opacity:1}42%{transform:translateX(41cqw) scale(.7);opacity:1}43%,100%{transform:translateX(41cqw) scale(.4);opacity:0}}
+@keyframes ic2f{0%,42%{transform:none}44%{transform:scale(1.15)}46%,100%{transform:none}}
+@keyframes ic4s{0%,81%{opacity:1}82%,100%{opacity:0}}
+@keyframes ic1{0%,3%{transform:scaleX(0)}16%,100%{transform:scaleX(1)}}
+@keyframes ic1k{0%,17%{opacity:0;transform:scale(.6)}18.20%,100%{opacity:1;transform:none}}
+@keyframes ic3{0%,63.40%{transform:none;}64.00%{transform:scale(.9);filter:brightness(1.4);}64.80%,100%{transform:none;filter:none;}}
+@keyframes ic4r{0%,82%{opacity:0;transform:scale(.6)}83.20%,100%{opacity:1;transform:none}}
+@keyframes ic4k{0%,90%{opacity:0;transform:scale(.6)}91.20%,100%{opacity:1;transform:none}}
+
+/* prepare the TV: Build pressed 7 times → ADB on → Remote start on */
+.im .d1{animation-name:id1}.im .d1k{animation-name:id1k}
+@keyframes id1{0%,3.8%{background:#232b3d}3.8%{background:#232b3d}4.0%{background:#5b8cff}5.2%{background:#232b3d}6.8%{background:#232b3d}7.0%{background:#5b8cff}8.2%{background:#232b3d}9.8%{background:#232b3d}10.0%{background:#5b8cff}11.2%{background:#232b3d}12.8%{background:#232b3d}13.0%{background:#5b8cff}14.2%{background:#232b3d}15.8%{background:#232b3d}16.0%{background:#5b8cff}17.2%{background:#232b3d}18.8%{background:#232b3d}19.0%{background:#5b8cff}20.2%{background:#232b3d}21.8%{background:#232b3d}22.0%{background:#5b8cff}23.2%{background:#232b3d}100%{background:#232b3d}}
+@keyframes id1k{0%,25%{opacity:0;transform:scale(.6)}26.20%,100%{opacity:1;transform:none}}
+.tg.td2{animation-name:td2}.tg.td2::after{animation-name:td2k}
+@keyframes td2{0%,50%{background:#3a4258}51.00%,100%{background:#3ddc84}}
+@keyframes td2k{0%,50%{transform:none}51.00%,100%{transform:translateX(100%)}}
+.tg.td3{animation-name:td3}.tg.td3::after{animation-name:td3k}
+@keyframes td3{0%,83%{background:#3a4258}84.00%,100%{background:#3ddc84}}
+@keyframes td3k{0%,83%{transform:none}84.00%,100%{transform:translateX(100%)}}
+.n3 .s1{animation-name:f3_1}.ianim .steps.n3 li:nth-child(1){animation-name:h3_1}
+@keyframes f3_1{0%,32.73%{opacity:1}33.33%,99.4%{opacity:0}100%{opacity:1}}
+@keyframes h3_1{0%,33.03%{background:rgba(91,140,255,.1);box-shadow:inset 3px 0 var(--blue)}33.33%,99.7%{background:transparent;box-shadow:none}100%{background:rgba(91,140,255,.1);box-shadow:inset 3px 0 var(--blue)}}
+.n3 .s2{animation-name:f3_2}.ianim .steps.n3 li:nth-child(2){animation-name:h3_2}
+@keyframes f3_2{0%,33.33%{opacity:0}33.93%,66.07%{opacity:1}66.67%,100%{opacity:0}}
+@keyframes h3_2{0%,33.33%{background:transparent;box-shadow:none}33.63%,66.37%{background:rgba(91,140,255,.1);box-shadow:inset 3px 0 var(--blue)}66.67%,100%{background:transparent;box-shadow:none}}
+.n3 .s3{animation-name:f3_3}.ianim .steps.n3 li:nth-child(3){animation-name:h3_3}
+@keyframes f3_3{0%,66.67%{opacity:0}67.27%,99.4%{opacity:1}100%{opacity:0}}
+@keyframes h3_3{0%,66.67%{background:transparent;box-shadow:none}66.97%,99.7%{background:rgba(91,140,255,.1);box-shadow:inset 3px 0 var(--blue)}100%{background:transparent;box-shadow:none}}
+.n4 .s1{animation-name:f4_1}.ianim .steps.n4 li:nth-child(1){animation-name:h4_1}
+@keyframes f4_1{0%,24.40%{opacity:1}25.00%,99.4%{opacity:0}100%{opacity:1}}
+@keyframes h4_1{0%,24.70%{background:rgba(91,140,255,.1);box-shadow:inset 3px 0 var(--blue)}25.00%,99.7%{background:transparent;box-shadow:none}100%{background:rgba(91,140,255,.1);box-shadow:inset 3px 0 var(--blue)}}
+.n4 .s2{animation-name:f4_2}.ianim .steps.n4 li:nth-child(2){animation-name:h4_2}
+@keyframes f4_2{0%,25.00%{opacity:0}25.60%,49.40%{opacity:1}50.00%,100%{opacity:0}}
+@keyframes h4_2{0%,25.00%{background:transparent;box-shadow:none}25.30%,49.70%{background:rgba(91,140,255,.1);box-shadow:inset 3px 0 var(--blue)}50.00%,100%{background:transparent;box-shadow:none}}
+.n4 .s3{animation-name:f4_3}.ianim .steps.n4 li:nth-child(3){animation-name:h4_3}
+@keyframes f4_3{0%,50.00%{opacity:0}50.60%,74.40%{opacity:1}75.00%,100%{opacity:0}}
+@keyframes h4_3{0%,50.00%{background:transparent;box-shadow:none}50.30%,74.70%{background:rgba(91,140,255,.1);box-shadow:inset 3px 0 var(--blue)}75.00%,100%{background:transparent;box-shadow:none}}
+.n4 .s4{animation-name:f4_4}.ianim .steps.n4 li:nth-child(4){animation-name:h4_4}
+@keyframes f4_4{0%,75.00%{opacity:0}75.60%,99.4%{opacity:1}100%{opacity:0}}
+@keyframes h4_4{0%,75.00%{background:transparent;box-shadow:none}75.30%,99.7%{background:rgba(91,140,255,.1);box-shadow:inset 3px 0 var(--blue)}100%{background:transparent;box-shadow:none}}
+.n5 .s1{animation-name:f5_1}.ianim .steps.n5 li:nth-child(1){animation-name:h5_1}
+@keyframes f5_1{0%,19.40%{opacity:1}20.00%,99.4%{opacity:0}100%{opacity:1}}
+@keyframes h5_1{0%,19.70%{background:rgba(91,140,255,.1);box-shadow:inset 3px 0 var(--blue)}20.00%,99.7%{background:transparent;box-shadow:none}100%{background:rgba(91,140,255,.1);box-shadow:inset 3px 0 var(--blue)}}
+.n5 .s2{animation-name:f5_2}.ianim .steps.n5 li:nth-child(2){animation-name:h5_2}
+@keyframes f5_2{0%,20.00%{opacity:0}20.60%,39.40%{opacity:1}40.00%,100%{opacity:0}}
+@keyframes h5_2{0%,20.00%{background:transparent;box-shadow:none}20.30%,39.70%{background:rgba(91,140,255,.1);box-shadow:inset 3px 0 var(--blue)}40.00%,100%{background:transparent;box-shadow:none}}
+.n5 .s3{animation-name:f5_3}.ianim .steps.n5 li:nth-child(3){animation-name:h5_3}
+@keyframes f5_3{0%,40.00%{opacity:0}40.60%,59.40%{opacity:1}60.00%,100%{opacity:0}}
+@keyframes h5_3{0%,40.00%{background:transparent;box-shadow:none}40.30%,59.70%{background:rgba(91,140,255,.1);box-shadow:inset 3px 0 var(--blue)}60.00%,100%{background:transparent;box-shadow:none}}
+.n5 .s4{animation-name:f5_4}.ianim .steps.n5 li:nth-child(4){animation-name:h5_4}
+@keyframes f5_4{0%,60.00%{opacity:0}60.60%,79.40%{opacity:1}80.00%,100%{opacity:0}}
+@keyframes h5_4{0%,60.00%{background:transparent;box-shadow:none}60.30%,79.70%{background:rgba(91,140,255,.1);box-shadow:inset 3px 0 var(--blue)}80.00%,100%{background:transparent;box-shadow:none}}
+.n5 .s5{animation-name:f5_5}.ianim .steps.n5 li:nth-child(5){animation-name:h5_5}
+@keyframes f5_5{0%,80.00%{opacity:0}80.60%,99.4%{opacity:1}100%{opacity:0}}
+@keyframes h5_5{0%,80.00%{background:transparent;box-shadow:none}80.30%,99.7%{background:rgba(91,140,255,.1);box-shadow:inset 3px 0 var(--blue)}100%{background:transparent;box-shadow:none}}
+@media (prefers-reduced-motion:reduce){.wire .line i{display:none}.facts.in .fact b.cu{animation:none}.flow .chip,.noserver .e{animation:none}.ianim .im *,.ianim .im *::after,.ianim .steps li{animation-play-state:paused !important}}

@@ -58,6 +58,8 @@ dev/                     release.sh, gen_icons.py, emu.sh (the two test emulator
 - **Users first:** make things automatic; show an error only after every fallback has failed, in words a person can act on (`Errors.kt`, `friendly()` in `js/core.js`). Choices look like buttons. Long waits show what is going on and can be cancelled.
 - **Never commit** `cert.pem`, `key.pem`, `tvs.json`, `*.jks` (they pair with or sign for real devices). Never expose port 8765 to the Internet; away from home everything goes over Tailscale.
 - **"Allow USB debugging?"** is only ever answered for the key whose fingerprint matches the asking device (`AdbPrompt.kt`); never press Allow on an unknown key.
+- **Generated files are never edited by hand:** `docs/demo.css` (the intro page's demo) is written by `python3 dev/demo_css.py`
+  from `dev/demo.src.css`; change those two and run it. Its first line and `.gitattributes` say so too.
 - Comments say why, not what; match the surrounding style (end-of-line comments aligned to column ~70).
 
 ## Build and run
