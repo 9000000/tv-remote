@@ -9,26 +9,35 @@ import android.widget.Toast
 // the phone lags the TV a little and apps that refuse capture are silent). Opus at 64 kbit/s (160 with ✨), about 8 KB/s, decoded here (AudioOut): next to the picture's up to 2 Mbit/s it
 // costs the network and the TV almost nothing, and it keeps going with the phone's screen off (ListenService).
 
-/** Off, or the two ways to pick from (the one used last is marked). The session restarts either way, as for the picture. */
+/** 🎧 on the top bar: on or off at once, the way picked last (the chip under the picture, [listenMenu]). The session restarts either way, as for the picture. */
 internal fun MainActivity.toggleListen() {
     if (needsAdb()) return
     if (listen) { stopListen(null); return }
-    val start = { share: Boolean ->
-        listen = true
-        listenShare = share
-        prefs.edit().putBoolean("listenShare", share).apply()
-        restartForSound()
-        listenService(true)
-        Toast.makeText(this, if (share) t("Đang mở tiếng TV trên cả TV và điện thoại.", "Opening the TV’s sound on both the TV and the phone.")
-            else t("Đang mở tiếng TV trên điện thoại. Loa TV tạm im.", "Opening the TV’s sound on the phone. The TV’s speakers go quiet."), Toast.LENGTH_SHORT).show()
+    listen = true
+    listenShare = prefs.getBoolean("listenShare", false)
+    restartForSound()
+    listenService(true)
+    Toast.makeText(this, if (listenShare) t("Đang mở tiếng TV trên cả TV và điện thoại.", "Opening the TV’s sound on both the TV and the phone.")
+        else t("Đang mở tiếng TV trên điện thoại. Loa TV tạm im.", "Opening the TV’s sound on the phone. The TV’s speakers go quiet."), Toast.LENGTH_SHORT).show()
+}
+
+/** The way to hear the TV and its quality, from the chip under the picture; while listening, the change applies at once. */
+internal fun MainActivity.listenMenu() {
+    val share = prefs.getBoolean("listenShare", false)
+    val hq = prefs.getBoolean("listenHq", false)
+    val menu = android.widget.PopupMenu(this, listenChip)
+    menu.menu.add(0, 0, 0, t("Chỉ điện thoại · loa TV tạm im", "Only the phone · TV quiet") + (if (!share) "  ✓" else ""))
+    menu.menu.add(0, 1, 1, t("Cả TV và điện thoại · Android 13+", "TV and phone · Android 13+") + (if (share) "  ✓" else ""))
+    menu.menu.add(0, 2, 2, t("Chất lượng cao · 160 kbit/s", "High quality · 160 kbit/s") + (if (hq) "  ✓" else ""))
+    menu.setOnMenuItemClickListener { item ->
+        when (item.itemId) {
+            0, 1 -> prefs.edit().putBoolean("listenShare", item.itemId == 1).apply()
+            2 -> prefs.edit().putBoolean("listenHq", !hq).apply()
+        }
+        if (listen) { listenShare = prefs.getBoolean("listenShare", false); restartForSound() } else layoutRemote()
+        true
     }
-    menu(t("Nghe tiếng TV", "Hear the TV"), if (prefs.getBoolean("listenShare", false)) 1 else 0, listOf(
-        Triple("@headphones|" + t("Chỉ điện thoại", "Only the phone"), t("Loa TV tạm im", "The TV goes quiet")) { start(false) },
-        Triple("@vol_up|" + t("Cả TV và điện thoại", "TV and phone"), t("Android 13+", "Android 13+")) { start(true) },
-        if (prefs.getBoolean("listenHq", false))                        // a switch, not a way: the menu comes back to pick the way
-            Triple("@music|" + t("Chất lượng cao: đang bật", "High quality: on"), t("160 kbit/s", "160 kbit/s")) { prefs.edit().putBoolean("listenHq", false).apply(); toggleListen() }
-        else
-            Triple("@music|" + t("Chất lượng cao: đang tắt", "High quality: off"), t("64 → 160 kbit/s", "64 → 160 kbit/s")) { prefs.edit().putBoolean("listenHq", true).apply(); toggleListen() }))
+    menu.show()
 }
 
 /** Back to the TV's speakers; [why] is said when it was not the person's choice (e.g. the TV cannot send its sound). */

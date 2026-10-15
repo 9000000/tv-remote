@@ -43,35 +43,22 @@ internal fun MainActivity.layoutRemote() {
     if (!video && drawing) stopDrawing()                              // nothing to draw on
     frame.layoutParams = FrameLayout.LayoutParams(-1, if (full) -1 else -2)
     stage.visibility = if (video) View.VISIBLE else View.GONE
-    moreBtn.visibility = if (basic == null) View.VISIBLE else View.GONE   // hearing the TV needs ADB too
+    listenBtn.visibility = if (basic == null) View.VISIBLE else View.GONE   // hearing the TV needs ADB too
+    listenBtn.lit = listen
+    listenBtn.background = box(if (listen) ACCENT else BTN, 16)
+    listenBtn.contentDescription = if (listen) t("Dừng nghe trên điện thoại", "Stop listening on the phone") else t("Nghe tiếng TV trên điện thoại", "Hear the TV on the phone")
     exitBtn.visibility = if (full) View.VISIBLE else View.GONE
-    picBar.visibility = if (video && host != null && !full) View.VISIBLE else View.GONE   // right under the picture, where one looks: not hidden in ⋯
+    picBar.visibility = if ((video || listen && basic == null) && !full) View.VISIBLE else View.GONE   // with the picture or the sound: not hidden in a menu
+    qualBtn.visibility = if (video) View.VISIBLE else View.GONE
+    fullBtn.visibility = qualBtn.visibility
+    listenChip.text = "🎧 " + (if (prefs.getBoolean("listenShare", false)) t("TV và điện thoại", "TV and phone") else t("Chỉ điện thoại", "Only the phone")) +
+        (if (prefs.getBoolean("listenHq", false)) " · HQ" else "") + " ▾"
     qualBtn.text = Tv.QUALITY[prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)][0].toString() + "p ▾"
     window.decorView.systemUiVisibility = if (full) View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY else 0
     videoBtn.lit = video                                              // lit while the picture shows, like every on/off button
     videoBtn.background = box(if (video) ACCENT else BTN, 16)
     videoBtn.setIcon(if (video) "@eye_off" else "@eye", TEXT)
     videoBtn.contentDescription = if (video) t("Ẩn hình TV", "Hide the TV picture") else t("Xem hình TV", "Show the TV picture")
-}
-
-/** ⋯ at the end of the top line: hearing the TV here (🎧 Listen.kt; the line under the name says when it is on), and with the
- *  picture showing, its quality (the levels, lightest first) and full screen. */
-internal fun MainActivity.pictureMenu() {
-    val menu = android.widget.PopupMenu(this, moreBtn)
-    val now = prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)
-    menu.menu.add(0, -2, 0, if (listen) t("🎧  Dừng nghe trên điện thoại", "🎧  Stop listening on the phone") else t("🎧  Nghe tiếng TV trên điện thoại", "🎧  Hear the TV on the phone"))
-    if (video) {
-        val q = menu.menu.addSubMenu(0, Menu.NONE, 1, t("Chất lượng hình · ", "Picture quality · ") + Tv.QUALITY[now][0] + "p")
-        for (level in Tv.LEVELS) q.add(1, level, 0, Tv.QUALITY[level][0].toString() + "p" + (if (level == now) "  ✓" else ""))
-        menu.menu.add(0, -1, 2, t("⛶  Toàn màn hình", "⛶  Full screen"))
-    }
-    menu.setOnMenuItemClickListener { item ->
-        if (item.itemId == -2) toggleListen()
-        else if (item.itemId == -1) setFullscreen(true)
-        else if (item.groupId == 1) setQuality(item.itemId)
-        true
-    }
-    menu.show()
 }
 
 /** The quality chip under the picture: the levels, lightest first. */
@@ -114,9 +101,9 @@ internal fun MainActivity.buildRemote() {
     bar.addView(head, LinearLayout.LayoutParams(0, -2, 1f))
     val tools = LinearLayout(this)
     tools.gravity = Gravity.CENTER_VERTICAL or Gravity.END
-    moreBtn = icon("@more", t("Thêm: nghe tiếng TV, chất lượng hình, toàn màn hình", "More: hear the TV, picture quality, full screen"), BTN)   // used now and then: one line for the bar
-    moreBtn.setOnClickListener { pictureMenu() }
-    for (b in listOf(videoBtn, moreBtn)) tools.addView(b, LinearLayout.LayoutParams(dp(46), dp(40)).apply { rightMargin = dp(if (b === moreBtn) 10 else 6) })
+    listenBtn = icon("@headphones", t("Nghe tiếng TV trên điện thoại", "Hear the TV on the phone"), BTN)
+    listenBtn.setOnClickListener { toggleListen() }
+    for (b in listOf(videoBtn, listenBtn)) tools.addView(b, LinearLayout.LayoutParams(dp(46), dp(40)).apply { rightMargin = dp(if (b === listenBtn) 10 else 6) })
     bar.addView(tools, LinearLayout.LayoutParams(-2, -2))
     bar.setPadding(0, dp(8), 0, dp(10))                               // room between the buttons and the picture
     remote.addView(bar)
@@ -154,24 +141,29 @@ internal fun MainActivity.buildRemote() {
     fp.setMargins(dp(8), dp(8), dp(8), dp(8))
     stage.addView(exitBtn, fp)
     remote.addView(stage, LinearLayout.LayoutParams(-1, -2))
-    // a thin strip under the picture, not on it: nothing of the TV's screen is covered
-    picBar = LinearLayout(this)
-    picBar.gravity = Gravity.CENTER_VERTICAL
-    picBar.setPadding(dp(8), dp(6), dp(8), 0)
-    val chip = { s: String, says: String, go: () -> Unit -> android.widget.TextView(this).apply {
-        text = s; setTextColor(TEXT); textSize = 13f; gravity = Gravity.CENTER; setPadding(dp(12), 0, dp(12), 0)
-        background = box(BTN, 10); contentDescription = says; setOnClickListener { go() }
-    } }
-    qualBtn = chip("", t("Chất lượng hình", "Picture quality")) { qualityMenu() }
-    picBar.addView(qualBtn, LinearLayout.LayoutParams(-2, dp(32)))
-    picBar.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
-    picBar.addView(chip(t("⛶  Toàn màn hình", "⛶  Full screen"), t("Toàn màn hình", "Full screen")) { setFullscreen(true) }, LinearLayout.LayoutParams(-2, dp(32)))
-    remote.addView(picBar, LinearLayout.LayoutParams(-1, -2))
     drawBar = drawTools()
     remote.addView(drawBar, LinearLayout.LayoutParams(-1, -2))
 
     controls = col()
     controls.setPadding(dp(14), dp(12), dp(14), dp(20))
+    // the picture's quality and full screen, first in the scrolling part: not on the picture (it covers nothing) nor fixed under it
+    picBar = LinearLayout(this)
+    picBar.gravity = Gravity.CENTER_VERTICAL
+    qualBtn = android.widget.TextView(this).apply {
+        setTextColor(TEXT); textSize = 13f; gravity = Gravity.CENTER; setPadding(dp(12), 0, dp(12), 0)
+        background = box(BTN, 10); contentDescription = t("Chất lượng hình", "Picture quality"); setOnClickListener { qualityMenu() }
+    }
+    picBar.addView(qualBtn, LinearLayout.LayoutParams(-2, dp(34)))
+    fullBtn = icon("@expand", t("Toàn màn hình", "Full screen"), BTN)
+    fullBtn.setOnClickListener { setFullscreen(true) }
+    picBar.addView(fullBtn, LinearLayout.LayoutParams(dp(44), dp(34)).apply { leftMargin = dp(8) })
+    picBar.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+    listenChip = android.widget.TextView(this).apply {                // how 🎧 plays: picked here, used by 🎧 on the top bar
+        setTextColor(TEXT); textSize = 13f; gravity = Gravity.CENTER; setPadding(dp(12), 0, dp(12), 0); maxLines = 1
+        background = box(BTN, 10); contentDescription = t("Cách nghe tiếng TV", "How to hear the TV"); setOnClickListener { listenMenu() }
+    }
+    picBar.addView(listenChip, LinearLayout.LayoutParams(-2, dp(34)).apply { leftMargin = dp(8) })
+    controls.addView(picBar, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
     val bb = LinearLayout.LayoutParams(-1, dp(44))
     bb.bottomMargin = dp(12)
     controls.addView(basicBar, bb)

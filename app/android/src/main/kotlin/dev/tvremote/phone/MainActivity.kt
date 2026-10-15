@@ -91,10 +91,12 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal lateinit var tapMark: TapMark                            // where the finger is on the picture
     internal lateinit var stage: FrameLayout                           // the picture with the full screen button over it
     internal lateinit var videoBtn: IconButton
-    internal lateinit var moreBtn: IconButton
+    internal lateinit var listenBtn: IconButton
     internal lateinit var exitBtn: IconButton
     internal lateinit var picBar: LinearLayout
     internal lateinit var qualBtn: android.widget.TextView
+    internal lateinit var fullBtn: IconButton
+    internal lateinit var listenChip: android.widget.TextView
     internal lateinit var topBar: LinearLayout                         // the TV's name and state, with the buttons beside or under it
     internal lateinit var basicBar: Button
     internal val SHOT = -1                                             // not a key: the screenshot button in the extra keys
