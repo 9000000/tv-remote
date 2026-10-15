@@ -51,6 +51,25 @@ async function askTime(text, minutes, max = 1440) {
   return total;
 }
 
+// A menu whose choices look like what they are: buttons (the phone app's menu() in Ui.kt, which the remote's menus mirror).
+// items: ['@icon|Words', 'a line saying what it does', fn]; primary = the index drawn lit, or -1. The menu closes first, then fn
+// runs, so fn can ask the next question.
+function menuDlg(title, primary, items) {
+  const icon = (name) => el('span', { className: 'mi', innerHTML: '<svg class="ic" aria-hidden="true"><use href="#i-' + name + '"/></svg>' });
+  const d = el('dialog', { className: 'ask menu' }, el('div', { className: 'card' },
+    el('div', { className: 'card-head' }, el('h2', { textContent: title }), el('button', { className: 'small iconbtn', textContent: '✕', title: 'Đóng', 'aria-label': 'Đóng', onclick: () => d.close() })),
+    ...items.map(([token, sub, fn], i) => {
+      const bar = token.indexOf('|'), ic = token[0] === '@' && bar > 0;
+      return el('button', { className: 'mitem' + (i === primary ? ' primary' : ''), onclick: () => { d.close(); fn(); } },
+        ic ? icon(token.slice(1, bar)) : null,
+        el('span', { className: 'mt' }, el('b', { textContent: ic ? token.slice(bar + 1) : token }), sub ? el('small', { textContent: sub }) : null),
+        el('span', { className: 'mgo', textContent: '›' }));
+    })));
+  d.addEventListener('close', () => d.remove());
+  document.body.append(d); d.showModal();
+  return d;
+}
+
 // On a narrow screen some buttons show their icon alone (.lbl folded away, style.css). A tap there first says what it does, so
 // nobody acts on a guess at an icon; yes then does it. Not for ✕ and ⋯ (they say it by themselves), nor for buttons whose
 // own handler asks already (data-asks): one question is enough.
@@ -117,7 +136,7 @@ addEventListener('resize', closePop);
 // A phone or computer can be newer than TV Setup on the TV. What needs which TV Setup is SetupNeed.kt's table; any call that
 // meets one (its error says "setup:old|missing:<feature>:<min>:<have>") asks to update or install TV Setup, with the button.
 // A page that knows before starting asks setupFor(feature). The same names as SetupNeed.name.
-const SETUP_NEEDS = { rules: 'Hẹn giờ, giờ đi ngủ, giới hạn app', draw: 'Vẽ lên TV', pic: 'Đưa ảnh lên TV' };
+const SETUP_NEEDS = { rules: 'Hẹn giờ, giờ đi ngủ, giới hạn app', draw: 'Chức năng vẽ lên TV', pic: 'Đưa ảnh lên TV' };
 const SETUP_RE = /setup:(old|missing):(\w+):([0-9.]*):([0-9.]*)/;
 const setupSay = (m) => m[1] === 'missing' ? (SETUP_NEEDS[m[2]] || m[2]) + ' cần app TV Setup trên TV. Cài TV Setup?'
   : (SETUP_NEEDS[m[2]] || m[2]) + ' cần TV Setup ' + m[3] + ' trở lên (TV đang có ' + m[4] + '). Cập nhật TV Setup?';

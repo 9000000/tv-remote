@@ -35,14 +35,50 @@ async function openOnTv(link, label) {
   const r = await api('/api/app', { link });
   if (r) { toast(r.via === 'adb' ? 'Đã mở ' + label : 'Đã gửi cho TV (không qua ADB: vài TV bỏ qua lệnh này)'); setTimeout(refresh, 1500); }
 }
-$('#linkf').addEventListener('submit', (e) => { e.preventDefault(); const l = normalizeLink($('#link').value); if (l) openOnTv(l, 'link'); });
-// The Play Store on the TV, without its keyboard: an app id opens that app's page, anything else is searched for.
-$('#storef').addEventListener('submit', (e) => {
-  e.preventDefault(); const v = $('#store').value.trim(); if (!v) return;
-  const id = /^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$/i.test(v);
-  // the TV's Play Store takes a search only as market://search (a play.google.com search link ends in a browser error)
-  openOnTv(id ? 'https://play.google.com/store/apps/details?id=' + v : 'market://search?c=apps&q=' + encodeURIComponent(v), 'CH Play');
-});
+// ---------- "Thêm phím", third row: Mở trên TV, Hẹn giờ tắt, Cảnh, Vẽ lên TV ----------
+// The same four, in the same order, with the same menus as the phone app's remote (RemoteScreen.kt, Media.kt quickOpen,
+// Automation.kt timerMenu / scenesMenu). Keep the entries' icons and words equal to theirs: tests/remote.test.js compares them.
+const needAdb = () => { if (ADB.state === 'ready') return false; toast('Việc này cần ADB. Bật ADB cho TV này rồi thử lại.'); return true; };
+const storePage = (id) => openOnTv('https://play.google.com/store/apps/details?id=' + id, 'CH Play');
+// the TV's Play Store takes a search only as market://search (a play.google.com search link ends in a browser error)
+const storeSearch = (q) => openOnTv('market://search?c=apps&q=' + encodeURIComponent(q), 'CH Play');
+const castPick = (accept) => { if (needAdb()) return; const f = $('#castfile'); f.accept = accept; f.click(); };   // the picker must open within the tap
+function quickOpen() {
+  const items = [
+    ['@search|Tìm app trên CH Play', '', async () => { const v = await ask('Tìm app trên CH Play', { value: '', ok: 'Tìm' }); if (v && v.trim()) storeSearch(v.trim()); }],
+    ['@package|Mở trang CH Play theo app id', 'vd: org.videolan.vlc', async () => { const v = await ask('App id (tên gói)', { value: 'org.videolan.vlc', ok: 'Mở' }); if (v && v.trim()) storePage(v.trim()); }],
+    ['@link|Mở đường dẫn trên TV', 'YouTube, web, tệp...', async () => { const v = await ask('Đường dẫn', { value: 'https://youtu.be/', ok: 'Mở' }); const l = v && normalizeLink(v); if (l) openOnTv(l, 'link'); }],
+    ['@image|Phát ảnh / video từ máy này', 'Cần ADB', () => castPick('image/*,video/*')],
+    ['@music|Phát nhạc / tệp khác', '', () => castPick('audio/*,video/*,image/*')],
+    ...[['@play|YouTube', 'com.google.android.youtube.tv'], ['@play|Netflix', 'com.netflix.ninja'], ['@play|VLC', 'org.videolan.vlc'], ['@play|Kodi', 'org.xbmc.kodi'],
+      ['@download|Downloader', 'com.esaba.downloader'], ['@home|Projectivy Launcher', 'com.spocky.projengmenu'], ['@globe|Tailscale', 'com.tailscale.ipn']]
+      .map(([name, id]) => [name, 'Trang CH Play: cài hoặc mở', () => storePage(id)]),
+  ];
+  menuDlg('Mở trên TV', -1, items);
+}
+async function timerMenu() {
+  if (needAdb() || !await setupFor('rules')) return;                  // TV Setup runs the timer on the TV (SetupNeed "rules")
+  const r = await loadRules(null, true); if (!r) return;
+  const at = r.sleep_at || 0, hm = (m) => m < 60 ? m + ' phút' : Math.floor(m / 60) + ' giờ' + (m % 60 ? ' 30' : '');
+  const items = [15, 30, 45, 60, 90, 120].map((m) => ['Tắt sau ' + hm(m), '', () => setSleep(m)]);
+  if (at) items.unshift(
+    ['@plus|Thêm 15 phút', '', async () => { const x = await loadRules({ do: 'sleep_add', minutes: 15 }); if (x) toast('TV sẽ tự tắt lúc ' + clock(x.sleep_at)); }],
+    ['@close|Hủy hẹn giờ', '', () => setSleep(0)]);
+  items.push(['@timer|Tự chọn...', 'Số phút, hoặc giờ tắt như 23:30', async () => {
+    const v = await ask('Tắt TV sau bao lâu?', { value: '', ok: 'Hẹn' }); if (v === null) return;
+    const m = sleepMinutes(v); if (m) setSleep(m); else toast('Nhập số phút (vd 40) hoặc giờ tắt (vd 23:30)');
+  }], ['@moon|Giờ đi ngủ, giới hạn app...', '', () => showTab('auto')]);
+  menuDlg(at ? 'TV tự tắt lúc ' + clock(at) : 'Hẹn giờ tắt TV', at ? 0 : -1, items);
+}
+function scenesMenu() {
+  if (needAdb()) return;
+  menuDlg('Cảnh', -1, [...SCENES.map((sc) => [((sc.icon || '') + '  ' + sc.name).trim(), '', () => runScene(sc)]),
+    ['@scene|Tạo / sửa cảnh...', 'Một nút, nhiều việc', () => showTab('auto')]]);
+}
+$('#openmenu').addEventListener('click', quickOpen);
+$('#timermenu').addEventListener('click', timerMenu);
+$('#scenemenu').addEventListener('click', scenesMenu);
+$('#drawmore').addEventListener('click', () => { if (drawing) drawStop(); else if (!needAdb()) drawStart(); });
 // ---------- keyboard: whatever is typed in the box is mirrored on the TV, keystroke by keystroke ----------
 const txt = $('#text');
 let typed = '', inputQ = Promise.resolve();

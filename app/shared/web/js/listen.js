@@ -1,4 +1,4 @@
-// 🎧 the TV's sound on this device. scrcpy captures it on the TV (Android 11+). Two ways, picked each time:
+// 🎧 the TV's sound on this device. scrcpy captures it on the TV (Android 11+). Two ways, the last one used at once (the chip next to the button changes it):
 //   only here: the TV's own speakers are silent (headphones on, the rest of the house asleep); everything the TV plays
 //   both: the TV keeps playing (playback capture with audio_dup, Android 13+; older TVs answer "noshare" and go the first way).
 //         This device lags the TV a little, and apps that refuse playback capture (some with DRM) are silent here.
@@ -12,10 +12,10 @@
 // 4 bytes length, data.
 let listenShared = false;
 const listenHq = () => { try { return localStorage.getItem('listenHq') === '1'; } catch { return false; } };
-function showHq() {
-  const b = $('#listenpick .hq'), on = listenHq(); b.classList.toggle('primary', on);
-  b.innerHTML = on ? '<b>✨ Chất lượng cao: bật</b><span>Âm thanh như gốc, tốn mạng hơn. Bấm để về thường.</span>'
-    : '<b>✨ Chất lượng cao: tắt</b><span>Bật để nghe nhạc rõ hơn, tốn mạng hơn một chút.</span>';
+// While listening, a bar under the header: how it plays (menu) and HQ, as the phone app's chip and HQ under the picture (Listen.kt).
+function showWay() {
+  $('#listenway').textContent = (listenShared ? 'Cả hai' : 'Máy này') + ' ▾';
+  $('#listenhq').classList.toggle('on', listenHq());
 }
 let listenOn = false, listenCtl = null, actx = null, adec = null, anext = 0, abytes = 0, listenGen = 0, catchUp = false;
 
@@ -43,6 +43,7 @@ function playPcm(channels, rate) {
 
 function setListenUi(on, text) {
   const b = $('#listen'); setLabel(b, '🎧', on ? 'Đang nghe' : 'Nghe'); b.classList.toggle('on', on);
+  $('#listenbar').hidden = !on; if (on) showWay();
   $('#listeninfo').hidden = !text; $('#listeninfo').textContent = text || '';
 }
 
@@ -103,15 +104,19 @@ setInterval(() => {                                                    // what i
   if (listenOn && abytes) setListenUi(true, '🎧 Đang nghe trên máy này · ' + (listenShared ? 'TV vẫn có tiếng' : 'loa TV tạm im') + (listenHq() ? ' · ✨ chất lượng cao' : '') + ' · ' + Math.max(1, Math.round(abytes / 1024)) + ' KB/s');
   abytes = 0;
 }, 1000);
-$('#listen').addEventListener('click', () => {                       // off: show the two ways, the last one used first
+// 🎧: on or off at once, the way used last (picked with the chip under the header, once it plays); the session restarts either way
+$('#listen').addEventListener('click', () => {
   if (listenOn) { stopListen(); return; }
-  const pick = $('#listenpick'); pick.hidden = !pick.hidden; if (pick.hidden) return;
   let last = '0'; try { last = localStorage.getItem('listenShare') || '0'; } catch {}
-  pick.querySelectorAll('[data-share]').forEach((b) => b.classList.toggle('primary', b.dataset.share === last));
-  showHq();
+  startListen(last === '1');
 });
-$('#listenpick').querySelectorAll('[data-share]').forEach((b) => b.addEventListener('click', () => { $('#listenpick').hidden = true; startListen(b.dataset.share === '1'); }));
-$('#listenpick .hq').addEventListener('click', () => {                // a switch: the picker stays open to pick the way
+const relisten = (share) => { if (listenOn) { stopListen(); startListen(share); } else showWay(); };
+$('#listenway').addEventListener('click', () => {
+  menuDlg('Cách nghe tiếng TV', listenShared ? 1 : 0, [
+    ['@phone|Chỉ máy này', 'Loa TV tạm im. Hợp khi đeo tai nghe, cả nhà ngủ.', () => { if (listenShared) relisten(false); }],
+    ['@tv|Cả TV và máy này', 'TV vẫn có tiếng (TV Android 13+). Máy này trễ hơn TV một chút; vài app như Netflix chặn thu tiếng kiểu này.', () => { if (!listenShared) relisten(true); }]]);
+});
+$('#listenhq').addEventListener('click', () => {                      // 160 kbit/s instead of 64; applies at once
   try { localStorage.setItem('listenHq', listenHq() ? '0' : '1'); } catch {}
-  showHq();
+  relisten(listenShared);
 });

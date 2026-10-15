@@ -108,7 +108,7 @@
   /* remote card: line icons, a round D-pad with OK in the middle */
   .ic { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
   .rc { display:flex; flex-direction:column; align-items:center; gap:16px; padding:18px 16px; }
-  .rrow { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; width:100%; max-width:300px; } .rrow.three { grid-template-columns:repeat(3,1fr); } .rrow.four { grid-template-columns:repeat(4,1fr); } #more[hidden] { display:none; } #morebtn.on { background:var(--accent); color:var(--accent-ink); }
+  .rrow { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; width:100%; max-width:300px; } .rrow.three { grid-template-columns:repeat(3,1fr); } .rrow.four { grid-template-columns:repeat(4,1fr); } #more[hidden] { display:none; } #morebtn.on, #drawmore.on { background:var(--accent); color:var(--accent-ink); }
   .rb { min-height:52px; border-radius:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:0; }
   .rb.lab { min-height:60px; } .rb small { font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
   #speak.on { background:var(--bad); color:#fff; }
@@ -328,9 +328,8 @@
   .steprow span { flex:1; min-width:0; overflow-wrap:anywhere; }
   .homehint { background:var(--ok-bg); border-color:transparent; }
   .sceneio { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; } .sceneio button { min-height:40px; padding:0 14px; font-size:14px; }
-  .listenpick { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:14px 0; }     /* right under the 🎧 button, above the picture: below it, a tall picture hid the choice */ .listenpick button { display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding:10px 12px; text-align:left; } .listenpick span { font-size:12px; color:var(--muted); line-height:1.35; } .listenpick button.primary span { color:inherit; opacity:.85; }
-  .listenpick .hq { grid-column:1 / -1; }                            /* a switch for both ways, not a third way */
-  @media (max-width:520px) { .listenpick { grid-template-columns:1fr; } }
+  .listenbar { display:flex; gap:8px; margin:10px 0; } .listenbar button { min-height:36px; padding:0 12px; } #listenhq.on { background:var(--accent); color:var(--accent-ink); }
+  dialog.menu .card { gap:8px; } dialog.menu .card-head { margin:0 0 4px; } .mitem { display:flex; align-items:center; gap:12px; padding:10px 14px; min-height:52px; text-align:left; width:100%; } .mitem .mt { flex:1; display:flex; flex-direction:column; gap:2px; min-width:0; } .mitem small { font-size:12px; opacity:.7; line-height:1.3; } .mitem .mgo { opacity:.5; font-size:20px; } .mitem .mi { display:flex; flex:none; }
   .aihint { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-top:10px; } .aihint button { min-height:40px; padding:0 14px; font-size:14px; } .aihint .muted { font-size:12px; }
   #aitext { width:100%; box-sizing:border-box; font:12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; background:var(--bg); color:var(--ink); border:1px solid var(--line, #333); border-radius:10px; padding:10px; resize:vertical; }
   #appslist .item.off .appicon, #appslist .item.off .nameline > span:first-child { opacity:.5; }
