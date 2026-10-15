@@ -14,6 +14,20 @@ object TvShell {
     private val NUM = Regex("-?[0-9]{1,10}")
     private val PERM = Regex("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)+")
 
+    /**
+     * A sentence for the TV to look up, not a command: YouTube's results when the TV has YouTube, since the Assistant of Android
+     * TV knows no Vietnamese (an FPT Play box spun on it for good) and some TVs have no search at all; else the TV's own search /
+     * Assistant. Prints "yt" or "gs" for what took it, nothing when nothing did.
+     */
+    fun search(q: String): String {
+        val s = q.trim().take(300)
+        require(s.isNotEmpty()) { "empty query" }
+        return "if pm path $YOUTUBE >/dev/null 2>&1; then am start -a android.intent.action.VIEW -d " + Adb.q(youtube(s)) + " -p $YOUTUBE 2>&1 | grep -q Error || echo yt; " +
+            "else am start -a android.search.action.GLOBAL_SEARCH --es query " + Adb.q(s) + " 2>&1 | grep -q Error || echo gs; fi"
+    }
+    const val YOUTUBE = "com.google.android.youtube.tv"
+    fun youtube(q: String) = "https://www.youtube.com/results?search_query=" + java.net.URLEncoder.encode(q.trim(), "UTF-8")
+
     const val CLEAN = "a=\$(stat -f -c '%a %S' /data); pm trim-caches 999G >/dev/null 2>&1; sleep 2; echo \$a \$(stat -f -c '%a %S' /data)"
 
     const val REBOOT_PREP = "case \"\$(settings get secure always_on_vpn_app)\" in com.tailscale.ipn) ;; *) " +

@@ -132,6 +132,7 @@ const setupFor = async (feature) => !!await api('/api/setup/need?f=' + feature);
 // The errors people actually meet, from any core , in words they can act on; anything else as it came.
 const FRIENDLY = [
   [SETUP_RE, setupSay],
+  [/no YouTube and no Google search/, 'TV này không có YouTube hay tìm kiếm của Google để tìm câu này.'],
   [/SSLHandshake|CertPathValidator|Chain validation|CERTIFICATE_VERIFY|not yet valid/i, 'Không mở được kết nối bảo mật. Ngày giờ trên TV có đúng không? (Cài đặt → Hệ thống → Ngày và giờ)'],
   [/UnknownHost|Name or service not known|nodename nor servname|getaddrinfo/i, 'TV (hoặc máy này) chưa vào được Internet.'],
   [/SocketTimeout|timed out|ConnectException|Connection reset/i, 'Mạng chậm hoặc vừa mất kết nối. Thử lại sau ít phút.'],

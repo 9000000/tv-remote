@@ -18,6 +18,8 @@ Web 2.24.2 · app điện thoại 2.22.2 · app TV 2.21.3
 - App điện thoại: bỏ nút ⋯. Dưới khung hình: chất lượng hình và toàn màn hình; khi đang nghe thì thêm cách nghe (chỉ điện thoại / cả TV) và nút HQ. 🎧 trên thanh trên bấm là nghe hoặc dừng ngay.
 - Vẽ lên TV: nút màu nằm bên phải cùng các nút khác; ảnh đưa lên có nút − / + (giữ để đổi dần), từ 0.1x.
 - Biểu tượng Cài đặt là bánh răng.
+- Nói / hỏi TV: câu không phải lệnh giờ được tìm trên YouTube (Google Assistant trên TV không hiểu tiếng Việt, box FPT Play quay mãi); TV không có YouTube thì vẫn gửi cho tìm kiếm của TV. App điện thoại: nút 🎤 mở hộp để nói hoặc gõ.
+- App điện thoại: nút ‹ ở góc trên màn remote để về danh sách TV.
 
 **English**
 - TV Setup turns USB debugging back on when it is switched off (by a child, a TV update, a reset of Developer options), so the sleep timer, bedtime, app limits and the phone keep working. It can be turned off in TV Setup → Debugging.
@@ -29,6 +31,8 @@ Web 2.24.2 · app điện thoại 2.22.2 · app TV 2.21.3
 - Phone app: no more ⋯. Under the picture: picture quality and full screen; while listening, also how to hear the TV (phone only / both) and an HQ switch. 🎧 on the top bar starts or stops listening at once.
 - Drawing on the TV: the colour button sits on the right with the others; a picture being placed has − / + (hold to keep going), down to 0.1x.
 - The Settings icon is a gear.
+- Speak / ask the TV: a sentence that is not a command is now searched on YouTube (the TV's Google Assistant knows no Vietnamese, and an FPT Play box spun for good); a TV without YouTube still gets it in its own search. Phone app: 🎤 opens a box to speak or type.
+- Phone app: a ‹ button at the top of the remote goes back to the list of TVs.
 
 ## 2.24.1 - 2026-10-15
 

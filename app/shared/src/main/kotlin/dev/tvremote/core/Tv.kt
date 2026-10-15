@@ -390,10 +390,10 @@ class Tv(
     }
 
     /** Hands a sentence to the TV's own search / Assistant, as if it had been spoken to the TV's remote. */
-    fun search(query: String) {
-        val a = adb
-        if (a == null || query.trim().isEmpty()) return
-        Thread { try { a.shell("am start -a android.search.action.GLOBAL_SEARCH --es query " + Adb.q(query.trim())) } catch (ignored: IOException) { } }.start()
+    /** Looks [query] up on the TV ([TvShell.search]); blocks. "yt" (YouTube), "gs" (the TV's search), or null: nothing took it. */
+    fun search(query: String): String? {
+        val a = adb ?: return null
+        return try { a.shell(TvShell.search(query)).trim().takeIf { it == "yt" || it == "gs" } } catch (e: Exception) { null }
     }
 
     /** Opens the TV's Settings. The settings key of a remote does nothing on many TVs, the app itself always opens. */

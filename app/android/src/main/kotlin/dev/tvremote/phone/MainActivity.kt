@@ -27,6 +27,7 @@ import android.widget.Toast
 import dev.tvremote.core.Adb
 import dev.tvremote.core.Atv
 import dev.tvremote.core.Tv
+import dev.tvremote.core.TvShell
 import dev.tvremote.update.Release
 import java.util.Locale
 
@@ -456,10 +457,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                     wasLive = true; retries = 0
                     from?.let { checkSetup(it, h) }
                     waiting.visibility = View.GONE
-                    pendingAsk?.let {
-                        from?.search(it)
-                        pendingAsk = null
-                    }
+                    pendingAsk?.let { q -> pendingAsk = null; Thread { val to = from?.search(q); ui.post { searched(q, to) } }.start() }
                     status.text = title(entry ?: h) + " · " + (if (listen) t("🎧 đang nghe trên điện thoại", "🎧 listening on the phone")
                     else if (video) t("chạm hình để bấm", "touch the picture to tap")
                     else t("đang tắt hình", "picture off"))
@@ -571,11 +569,44 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         }
     }
 
+    /** Not a command: looked up on the TV, on YouTube when it has it (TvShell.search); keys only, YouTube by its link. */
     internal fun ask(sentence: String) {
-        if (needsAdb()) return
-        Toast.makeText(this, t("Đã gửi cho TV: ", "Sent to the TV: ") + sentence, Toast.LENGTH_SHORT).show()
         val tv = tv
-        if (tv != null && tv.ready()) tv.search(sentence) else pendingAsk = sentence
+        basic?.let { it.launch(TvShell.youtube(sentence)); searched(sentence, "yt"); return }
+        if (tv != null && tv.ready()) Thread { val to = tv.search(sentence); ui.post { searched(sentence, to) } }.start()
+        else { pendingAsk = sentence; Toast.makeText(this, t("Đang chờ TV: ", "Waiting for the TV: ") + sentence, Toast.LENGTH_SHORT).show() }
+    }
+
+    internal fun searched(sentence: String, to: String?) {
+        if (isFinishing) return
+        Toast.makeText(this, when (to) {
+            "yt" -> t("Đang tìm trên YouTube: ", "Searching YouTube for: ") + sentence
+            "gs" -> t("Đã gửi cho TV: ", "Sent to the TV: ") + sentence
+            else -> t("TV này không có YouTube hay tìm kiếm của Google để tìm câu này.", "This TV has neither YouTube nor Google search to look this up.")
+        }, Toast.LENGTH_SHORT).show()
+    }
+
+    /** 🎤: say it or type it, the phone's keyboard or its own mic key; a command is done here, anything else is looked up. */
+    internal fun talk() {
+        val box = LinearLayout(this)
+        box.gravity = Gravity.CENTER_VERTICAL
+        box.setPadding(dp(20), dp(12), dp(20), 0)
+        val field = input(t("vd: mở YouTube, Sơn Tùng", "e.g. open YouTube, lo-fi music"))
+        field.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_SEND
+        box.addView(field, LinearLayout.LayoutParams(0, dp(48), 1f))
+        val mic = icon("@mic", t("Nói", "Speak"), ACCENT)
+        mic.lit = true
+        box.addView(mic, LinearLayout.LayoutParams(dp(48), dp(48)).apply { leftMargin = dp(8) })
+        var dlg: android.app.AlertDialog? = null
+        val send = { val s = field.text.toString().trim(); if (s.isNotEmpty()) { dlg?.dismiss(); voice(s) } }
+        mic.setOnClickListener { dlg?.dismiss(); speak() }
+        field.setOnEditorActionListener { _, _, _ -> send(); true }
+        dlg = android.app.AlertDialog.Builder(this).setTitle(t("Nói hoặc gõ cho TV", "Speak or type to the TV")).setView(box)
+            .setPositiveButton(t("Gửi", "Send"), null).setNegativeButton(t("Đóng", "Close"), null).create()
+        dlg.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+        dlg.setOnShowListener { dlg.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener { send() } }
+        dlg.show()
+        field.requestFocus()
     }
 
     // ---------------------------------------------------------------- small view helpers

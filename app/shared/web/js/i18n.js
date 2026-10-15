@@ -223,7 +223,8 @@
     'Màn hình': 'Screen', 'Đánh thức': 'Wake', 'Đánh thức TV (Wake-on-LAN khi TV standby sâu)': 'Wake the TV (Wake-on-LAN when it is in deep standby)',
     'Chạy lệnh': 'Run', 'Như adb shell, mỗi lệnh tối đa 30 giây. ↑ ↓ gọi lại lệnh cũ.': 'Like adb shell, up to 30 seconds a command. ↑ ↓ bring back earlier ones.',
     'Mở Google Assistant trên TV': 'Open Google Assistant on the TV', 'Hỏi TV: mở YouTube': 'Ask the TV: open YouTube', 'Nói bằng micro của máy này': 'Speak into this computer’s microphone',
-    'Gửi câu này cho Google Assistant của TV': 'Send this sentence to the TV’s Google Assistant', 'trình duyệt chưa được phép dùng micro': 'the browser is not allowed to use the microphone', 'TV này không có tìm kiếm / Assistant của Google': 'This TV has no Google search / Assistant',
+    'Lệnh (mở YouTube, tắt tiếng...) thì làm ngay, câu khác thì tìm trên YouTube': 'Commands (open YouTube, mute...) run at once; anything else is searched on YouTube',
+    'TV này không có YouTube hay tìm kiếm của Google để tìm câu này.': 'This TV has neither YouTube nor Google search to look this up.', 'trình duyệt chưa được phép dùng micro': 'the browser is not allowed to use the microphone', 'TV này không có tìm kiếm / Assistant của Google': 'This TV has no Google search / Assistant',
     'Đang đọc từ TV...': 'Reading from the TV...',
     // about
     'Giới thiệu': 'About', 'Điều khiển Android TV / Google TV từ máy tính và điện thoại: nút remote, xem màn hình, ứng dụng, tệp, cài APK.': 'Control an Android TV / Google TV from a computer and a phone: remote buttons, live screen, apps, files, APK install.',
@@ -590,6 +591,7 @@
     [/^trong nhà (.+)$/, (m) => 'at home ' + m[1]],
     [/^Đang đọc tên và logo app từ TV \((\d+)\/(\d+)\), chỉ lần đầu\.\.\.$/, (m) => `Reading app names and icons from the TV (${m[1]}/${m[2]}), first time only...`],
     [/^Đã gửi cho TV: (.*)$/, (m) => 'Sent to the TV: ' + m[1]],
+    [/^Đang tìm trên YouTube: (.*)$/, (m) => 'Searching YouTube for: ' + m[1]],
     [/^Đã mở trên TV: (.*)$/, (m) => 'Opened on the TV: ' + m[1]],
     [/^Đã mở (.*)$/, (m) => 'Opened ' + tr(m[1])],
     [/^(Xóa dữ liệu|Tắt app|Bật lại): (.*)$/, (m) => ({ 'Xóa dữ liệu': 'Data cleared', 'Tắt app': 'Disabled', 'Bật lại': 'Turned on' })[m[1]] + ': ' + m[2]],

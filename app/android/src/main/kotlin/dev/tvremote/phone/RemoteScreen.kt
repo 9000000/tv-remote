@@ -109,7 +109,10 @@ internal fun MainActivity.buildRemote() {
     bar.gravity = Gravity.CENTER_VERTICAL
     val head = LinearLayout(this)
     head.gravity = Gravity.CENTER_VERTICAL
-    head.addView(logo(28), LinearLayout.LayoutParams(dp(28), dp(28)).apply { leftMargin = dp(10) })
+    val leave = icon("@left", t("Về danh sách TV", "Back to the TVs"), BTN)   // where the logo was: the way out, without the phone's own Back
+    leave.background = box(BTN, 16)
+    @Suppress("DEPRECATION") leave.setOnClickListener { onBackPressed() }
+    head.addView(leave, LinearLayout.LayoutParams(dp(40), dp(40)).apply { leftMargin = dp(10) })
     val words = col()
     words.setPadding(dp(10), dp(4), dp(8), dp(4))
     words.addView((status as StatusText).name)
@@ -216,7 +219,7 @@ internal fun MainActivity.buildRemote() {
     val apps = icon("@apps", t("Quản lý", "Manage"), BTN)          // apps, files, health, automation, setup
     apps.setOnClickListener { if (!needsAdb()) managing.open(host) }
     val mic = icon("@mic", t("Nói", "Speak"), BTN)
-    mic.setOnClickListener { speak() }                         // keys-only too: keys, apps and scenes spoken still work (Automation.kt)
+    mic.setOnClickListener { talk() }                          // keys-only too: keys, apps and scenes still work (Automation.kt)
     mic.setOnLongClickListener {                                  // the TV's own Assistant screen
         tv?.let { if (it.ready()) it.press(219) }
         true

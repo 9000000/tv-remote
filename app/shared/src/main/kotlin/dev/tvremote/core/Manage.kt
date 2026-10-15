@@ -94,10 +94,9 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "shell" -> shell(r.json().optString("cmd"))
                 "rules" -> HttpServer.Response.json(rules(r.json()))
                 "search" -> {
-                    val q = r.json().optString("query").trim()
-                    if (q.isEmpty()) throw IllegalArgumentException("empty query")
-                    if (sh("am start -a android.search.action.GLOBAL_SEARCH --es query " + Adb.q(q) + " 2>&1").contains("Error")) throw IllegalArgumentException("this TV has no Google search / Assistant")
-                    HttpServer.Response.ok()
+                    val to = sh(TvShell.search(r.json().optString("query"))).trim()
+                    if (to != "yt" && to != "gs") throw IllegalArgumentException("this TV has no YouTube and no Google search")
+                    HttpServer.Response.json(JSONObject().put("to", if (to == "yt") "youtube" else "assistant"))
                 }
                 "upload" -> HttpServer.Response.json(upload(r))
                 "file/delete", "file/rename", "file/mkdir", "file/open" -> fileOp(what.substring(5), r.json())

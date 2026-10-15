@@ -150,12 +150,13 @@ document.addEventListener('paste', (e) => {                           // Cmd+V a
 });
 
 
-// ---------- ask the TV: typed or spoken here, handed to the TV's own search / Assistant ----------
+// ---------- ask the TV: typed or spoken here; what is not a command is looked up on YouTube (else the TV's search) ----------
 async function askTv(q) {
   q = q.trim(); if (!q) return;
   const c = voiceCommand(q, voiceApps(), SCENES);                     // "mở YouTube", "tắt tiếng", a scene's name...: done here, at once (voice.js)
   if (c) { doCommand(c); return; }
-  if (await api('/api/search', { query: q })) { toast('Đã gửi cho TV: ' + q); setTimeout(refresh, 2500); }
+  const r = await api('/api/search', { query: q });
+  if (r) { toast((r.to === 'youtube' ? 'Đang tìm trên YouTube: ' : 'Đã gửi cho TV: ') + q); setTimeout(refresh, 2500); }
 }
 $('#askf').addEventListener('submit', (e) => { e.preventDefault(); askTv($('#ask').value); $('#ask').value = ''; });
 // speech is turned into text by the browser (Chrome, Safari), not by the TV. Browsers allow the microphone only on secure pages:
