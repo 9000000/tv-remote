@@ -57,40 +57,29 @@
     document.querySelectorAll(".reveal").forEach(function(el){ io.observe(el); });
   } else document.querySelectorAll(".reveal").forEach(function(el){ el.classList.add("in"); });
 
-  // the demo: runs only while on screen; a chapter button starts the loop at that chapter
+  // the demo and the stories: each runs its --T clock only while on screen; a chapter button or a step plays from there,
+  // a tab shown again starts from the beginning. Reduced motion: no playing, each part shows its still (data-still,
+  // seconds into the part; the demo's are below)
   (function(){
-    var d = document.querySelector(".demo"); if (!d) return;
-    var STILL = [8.5, 4.8, 4, 6.5];                                  // the second of each chapter that tells it best
-    if ("IntersectionObserver" in window) new IntersectionObserver(function(es){ d.classList.toggle("run", es[0].isIntersecting); }, {threshold:.25}).observe(d);
-    else d.classList.add("run");
-    d.querySelectorAll(".dchap button").forEach(function(b){
-      b.onclick = function(){
-        var q = parseFloat(getComputedStyle(d).getPropertyValue("--T")) / 4, k = +b.dataset.ch;
-        if (matchMedia("(prefers-reduced-motion:reduce)").matches) d.style.setProperty("--d", -(k * q + STILL[k]) + "s");
-        else { d.style.setProperty("--d", -(k * q) + "s"); d.classList.add("rs"); void d.offsetWidth; d.classList.remove("rs"); }
-      };
-
-    });
-  })();
-
-  // the install mocks: one clock per panel, running only while it is on screen; shown again = from the start;
-  // a click on a step plays from that step (reduced motion: shows how it ends)
-  (function(){
-    var all = document.querySelectorAll(".ianim"), calm = matchMedia("(prefers-reduced-motion:reduce)");
-    function restart(el, d){ el.style.setProperty("--d", d + "s"); el.classList.add("rs"); void el.offsetWidth; el.classList.remove("rs"); }
-    all.forEach(function(el){
+    var calm = matchMedia("(prefers-reduced-motion:reduce)");
+    function T(el){ return parseFloat(getComputedStyle(el).getPropertyValue("--T")); }
+    function stills(el){ return (el.dataset.still || (el.classList.contains("demo") ? "8.5,4.8,4,6.5" : "")).split(",").filter(Boolean).map(Number); }
+    function go(el, k, n){                                             // part k of n
+      var q = T(el) / n, st = stills(el)[k];
+      if (calm.matches) { el.style.setProperty("--d", -(k * q + (st != null ? st : q * .92)) + "s"); return; }
+      el.style.setProperty("--d", -(k * q) + "s"); el.classList.add("rs"); void el.offsetWidth; el.classList.remove("rs");
+    }
+    document.querySelectorAll(".demo, .story").forEach(function(el){
       if ("IntersectionObserver" in window) new IntersectionObserver(function(es){ el.classList.toggle("run", es[0].isIntersecting); }, {threshold:.2}).observe(el);
       else el.classList.add("run");
-      var lis = el.querySelectorAll(".steps li"), n = lis.length;
-      lis.forEach(function(li, k){
-        li.onclick = function(){
-          var T = parseFloat(getComputedStyle(el).getPropertyValue("--T"));
-          restart(el, -(calm.matches ? (k + .92) : k) * T / n);
-        };
-      });
+      var parts = el.querySelectorAll(".dchap button, .steps li"), n = parts.length;
+      parts.forEach(function(b, k){ b.addEventListener("click", function(){ go(el, k, n); }); });
+      if (calm.matches && n) go(el, 0, n);
     });
     document.querySelectorAll(".opt").forEach(function(o){
-      o.addEventListener("click", function(){ var p = document.getElementById("p-" + o.dataset.tab); if (p) restart(p, calm.matches ? -1e-3 : 0); });
+      o.addEventListener("click", function(){
+        var p = document.getElementById("p-" + o.dataset.tab); if (p) go(p, 0, p.querySelectorAll(".steps li").length);
+      });
     });
   })();
 
