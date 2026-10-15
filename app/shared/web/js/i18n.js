@@ -291,7 +291,7 @@
     '🔈 Cả TV và máy này': '🔈 TV and this device', 'TV vẫn có tiếng (TV Android 13+). Máy này trễ hơn TV một chút; vài app như Netflix chặn thu tiếng kiểu này.': 'The TV keeps its sound (Android 13+ TVs). This device lags the TV a little; some apps such as Netflix block this kind of capture.',
     'Nghe tiếng TV trên máy này': 'Hear the TV on this device', 'Đang nghe tiếng TV trên cả TV và máy này.': 'Playing the TV’s sound on both the TV and this device.',
     'TV này dưới Android 13 nên chỉ nghe riêng được: loa TV tạm im.': 'This TV is older than Android 13, so only private listening works: the TV’s speakers are quiet.', 'TV vẫn có tiếng': 'TV still playing',
-    '🤖 Hỏi AI nên tắt / gỡ app nào': '🤖 Ask an AI which apps to disable / remove', '🤖 Hỏi AI': '🤖 Ask AI', '📝 Hàng loạt': '📝 In bulk',
+    '🤖 Hỏi AI nên tắt / gỡ app nào': '🤖 Ask an AI which apps to disable / remove', '🤖 Hỏi AI': '🤖 Ask AI', 'Chép tên gói': 'Copy package name', '📝 Hàng loạt': '📝 In bulk',
     'Hỏi AI nên tắt / gỡ app nào': 'Ask an AI which apps to disable / remove', 'Bật / tắt / gỡ hàng loạt': 'Turn on / off / remove in bulk',
     'Sửa dòng “Người nhà vẫn dùng” cho đúng, bấm Sao chép rồi dán vào ChatGPT, Claude hay Gemini. AI có thể sai: tắt từng app một, thấy lỗi thì bật lại ở mục “App đã tắt” cuối danh sách Ứng dụng.': 'Fix the “My family still uses” line, press Copy and paste it into ChatGPT, Claude or Gemini. AI can be wrong: disable one app at a time; if something breaks, turn it back on under “Disabled apps” at the end of the Apps list.',
     'Đã tắt bằng Tối ưu TV hoặc nút Tắt app. Bấm ↩ để bật lại.': 'Turned off by Optimize TV or the Disable button. Press ↩ to turn one back on.',

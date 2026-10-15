@@ -111,6 +111,7 @@ function renderApps() {
     const more = el('button', { className: 'small iconbtn', title: 'Thêm thao tác', ariaLabel: 'Thêm thao tác', textContent: '⋯', onclick: (e) => popover(e.currentTarget, [
       info.off ? ['↩', 'Bật lại', () => run('enable', 'Bật lại')] : ['▶', 'Mở', () => run('launch', 'Mở')],
       ['ℹ️', 'Chi tiết & quyền', () => appDetails(pkg)],
+      ['📋', 'Chép tên gói', () => copyText(pkg)],
       info.off ? null : ['⏹', 'Dừng', () => run('stop', 'Dừng')],
       info.off ? null : ['📜', 'Xem log', () => appLog(pkg)],
       ['💾', 'Sao lưu (tải về)', () => appBackup(pkg)],
