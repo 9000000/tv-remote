@@ -192,6 +192,7 @@
 .lw .prow b{font-size:3.4cqw}.lw .prow small{font-size:2.6cqw}
 .lw .sp1,.lw .wait{left:0;right:0;top:60%;text-align:center;color:#9aa4b8;opacity:0}
 .lw .mirw{left:8%;right:8%;top:16%;aspect-ratio:16/9;border-radius:1.6cqw;overflow:hidden;background:#000;container-type:inline-size;opacity:0}
+.story .dfg,.story .cur{left:calc(var(--x,0)*1%);top:calc(var(--y,0)*1%)}
 .cur{position:absolute;width:5cqw;height:7cqw;margin:-.5cqw 0 0 -.5cqw;background:#fff;clip-path:polygon(0 0,0 85%,24% 66%,40% 100%,54% 94%,40% 62%,72% 62%);filter:drop-shadow(0 0 1px #000);opacity:0;z-index:3;transform-origin:0 0}
 .prep .rc .rb{display:block}
 .p1 .left{position:absolute;left:6cqw;right:6cqw;bottom:5cqw;display:grid}

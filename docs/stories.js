@@ -99,11 +99,12 @@
       this.show.apply(this, [sel].concat(a));
     },
     // a finger or a cursor, at each [t, x%, y%, hide|show|move|press]; it glides between them, from just below the
-    // first and away to the last
+    // first and away to the last. Moved through --x / --y (stories.css): GSAP tweening `top` in % now and then started
+    // from ten times the value and the finger shot off the phone
     pointer: function(sel, events){
       var ev = events.slice().sort(function(a, b){ return a[0] - b[0]; }), T = this.T;
       function st(x, y, kind){
-        return { left: x.toFixed(2) + "%", top: y.toFixed(2) + "%", opacity: kind === "hide" ? 0 : 1, scale: kind === "press" ? .75 : 1 };
+        return { "--x": +x.toFixed(2), "--y": +y.toFixed(2), opacity: kind === "hide" ? 0 : 1, scale: kind === "press" ? .75 : 1 };
       }
       var f = ev[0], l = ev[ev.length - 1];
       var pts = [[0, f[1], f[2] + 12, "hide"]].concat(ev.map(function(e){ return [e[0], e[1], e[2], e[3]]; }), [[T, l[1], l[2], "hide"]]);
