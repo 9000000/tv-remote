@@ -9,8 +9,8 @@ kotlin {
     jvmToolchain(17)
     sourceSets["main"].kotlin.srcDir("../shared/src/main/kotlin")
 }
-// Android only: decoding the picture and sound (Tv, AudioOut), the classes started on the TV (Meta, Caps), the QR bitmap
-sourceSets["main"].kotlin.exclude("**/core/Tv.kt", "**/core/AudioOut.kt", "**/core/Meta.kt", "**/core/Caps.kt", "**/core/Qr.kt")
+// Android only: decoding the picture and sound (TvAndroid, AudioOut), the classes started on the TV (Meta, Caps), the QR bitmap
+sourceSets["main"].kotlin.exclude("**/core/TvAndroid.kt", "**/core/AudioOut.kt", "**/core/Meta.kt", "**/core/Caps.kt", "**/core/Qr.kt")
 
 dependencies {
     implementation("org.json:json:20240303")                         // on Android org.json is part of the system

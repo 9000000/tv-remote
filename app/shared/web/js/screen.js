@@ -61,7 +61,7 @@ async function liveLoop(gen) {
 }
 // The TV core sends its own H.264 (no computer in between to turn it into pictures); JMuxer makes it playable by a <video>.
 // Packets: 1 byte kind (0 size, 1 codec config, 2 key frame, 3 frame, 4 nothing new), 4 bytes length, then the data.
-const H264_Q = { 480: 0, 720: 1, 960: 2, 360: 3, 240: 4 }, H264_FPS = { 480: 8, 720: 10, 960: 10, 360: 8, 240: 8 };
+const H264_Q = { 480: 0, 720: 1, 960: 2, 360: 3, 240: 4, hd: 'hd' }, H264_FPS = { 480: 8, 720: 10, 960: 10, 360: 8, 240: 8, hd: 30 };
 const H264_END = new Uint8Array([0, 0, 0, 1, 9, 0xf0]);                // access unit delimiter
 let muxer = null;
 function loadScript(src) { return new Promise((ok, no) => document.head.append(el('script', { src, onload: ok, onerror: no }))); }
@@ -119,7 +119,7 @@ function startScreen() {
   if (muxer) { try { muxer.destroy(); } catch {} muxer = null; }
   $('#screencard').classList.add('on'); $('#screenbox').style.aspectRatio = '';
   setLabel($('#screenbtn'), '⏹', 'Dừng'); setScreenPlaceholder('Đang lấy hình...');
-  ($('#screenmode').value === 'snap' ? snapLoop : CORE === 'mac' ? liveLoop : h264Loop)(gen);
+  ($('#screenmode').value === 'snap' ? snapLoop : CORE === 'mac' && STATE.video !== 'h264' ? liveLoop : h264Loop)(gen);   // the computer's Kotlin server sends H.264 too
 }
 setInterval(() => {
   if (screenOn && $('#screenmode').value !== 'snap' && streamCtl && !streamCtl.signal.aborted) {

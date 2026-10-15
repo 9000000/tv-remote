@@ -18,6 +18,7 @@ import android.os.Looper
 import android.os.PowerManager
 import dev.tvremote.core.AdbLink
 import dev.tvremote.core.Caps
+import dev.tvremote.core.Feeds
 import dev.tvremote.core.HttpServer
 import dev.tvremote.core.Manage
 import dev.tvremote.core.Scenes
@@ -103,7 +104,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     private var manage: Manage? = null
     private lateinit var prefs: SharedPreferences
     @Volatile private var tv: Tv? = null
-    @Volatile private var viewer: Tv? = null                         // a second session that carries the picture, only while a browser watches
+    private val feeds = Feeds()                                       // the picture and the sound for one browser each
     @Volatile private var stopping = false
     @Volatile private var lastUse = 0L                                // when a paired browser last asked for anything
     @Volatile private var resting = false                             // the input session is closed on purpose: nobody is using the remote
@@ -112,7 +113,6 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     @Volatile private var lockedUntil = 0L
     private var guard: Guard? = null
     private var tsWatch: TailscaleWatch? = null
-    @Volatile private var hearer: Tv? = null                         // a session that carries the TV's sound to one browser
     private val page by lazy { WebPage({ assets.open(it) }, "tv", try { packageManager.getPackageInfo(packageName, 0).let { it.versionName + "-" + it.lastUpdateTime / 1000 } } catch (e: Exception) { "0" }) }
 
     override fun onBind(i: Intent?): IBinder? = null
@@ -164,8 +164,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         stats.stopNet()
         link?.close()
         tv?.stop()
-        viewer?.stop()
-        hearer?.stop()
+        feeds.stop()
         ui.removeCallbacksAndMessages(null)
         super.onDestroy()
     }
@@ -219,7 +218,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         override fun run() {
             if (stopping) return
             val t = tv
-            if (t != null && viewer == null && adbState == "ready" && System.currentTimeMillis() - lastUse > REST_MS) {
+            if (t != null && feeds.viewer == null && adbState == "ready" && System.currentTimeMillis() - lastUse > REST_MS) {
                 resting = true
                 tv = null
                 t.stop()
@@ -247,85 +246,15 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     override fun onNetwork(mac: String, lan: String, tailscale: String) { }
 
     // ---------------------------------------------------------------- the picture, for one browser at a time
-    /**
-     * The TV's screen as a stream of packets: 1 byte kind (0 size: width, height; 1 codec config; 2 key frame; 3 frame;
-     * 4 nothing new), 4 bytes length, then the data. A still picture sends nothing, so kind 4 goes out now and then:
-     * that is how we notice the browser has left, and stop the encoder on the TV.
-     */
-    private fun video(quality: Int): HttpServer.Response {
-        viewer?.stop()                                                // a new viewer takes over
-        val q = java.util.concurrent.LinkedBlockingQueue<ByteArray>()
-        val end = ByteArray(0)
-        fun packet(kind: Int, data: ByteArray) = java.nio.ByteBuffer.allocate(5 + data.size).put(kind.toByte()).putInt(data.size).put(data).array()
-        var v0: Tv? = null
-        val v = Tv(this, "127.0.0.1", null, quality, 1280, false, object : Tv.Listener {
-            override fun onStatus(key: String, detail: String) { if (key == "closed" || key == "error") q.add(end) }
-            override fun onVideoSize(w: Int, h: Int) { q.add(packet(0, java.nio.ByteBuffer.allocate(8).putInt(w).putInt(h).array())) }
-            override fun onNetwork(mac: String, lan: String, tailscale: String) { }
-        }, Tv.Sink { config, key, data ->
-            if (q.size > 150) { if (q.size < 160) q.add(end); v0?.stop() }   // the browser cannot keep up: stop instead of filling memory
-            else q.add(packet(if (config) 1 else if (key) 2 else 3, data))
-        })
-        v0 = v
-        viewer = v
-        return HttpServer.Response.stream("application/octet-stream", -1) { out ->
-            try {
-                while (true) {
-                    val p = q.poll(5, java.util.concurrent.TimeUnit.SECONDS) ?: packet(4, end)
-                    if (p === end || viewer !== v) break                    // ended, or another browser took over
-                    out.write(p)
-                    out.flush()
-                }
-            } finally {
-                v.stop()
-                if (viewer === v) viewer = null
-            }
-        }
-    }
+    /** The picture for the page, from a second session made only while a browser watches: see Feeds. */
+    private fun video(quality: Int): HttpServer.Response = feeds.video { l, sink -> Tv(this, "127.0.0.1", null, quality, 1280, false, l, sink) }
 
     private fun scenes(): JSONArray = try { JSONArray(prefs.getString("scenes", "[]")) } catch (e: Exception) { JSONArray() }
 
     // ---------------------------------------------------------------- the sound, for one browser at a time
-    /**
-     * The TV's sound as packets in the picture's framing: kind 0 the format (codec 2 = PCM, then the rate and the channels),
-     * 2 a piece of sound, 4 nothing new, 5 an error word. The TV encodes nothing: scrcpy hands over its raw PCM, made 24 kHz
-     * mono here ([Downmix], 48 KB/s), because the page is plain HTTP, where browsers offer no Opus decoder to scripts.
-     * While someone listens the TV's own speakers are silent; they come back when the browser stops.
-     */
-    /** [hq]: the PCM as captured, 48 kHz stereo (1.5 Mbit/s, fine on the home network); else 24 kHz mono (384 kbit/s). */
-    private fun sound(share: Boolean, hq: Boolean): HttpServer.Response {
-        hearer?.stop()                                                // a new listener takes over
-        val q = java.util.concurrent.LinkedBlockingQueue<ByteArray>()
-        val end = ByteArray(0)
-        fun packet(kind: Int, data: ByteArray) = java.nio.ByteBuffer.allocate(5 + data.size).put(kind.toByte()).putInt(data.size).put(data).array()
-        q.add(packet(0, java.nio.ByteBuffer.allocate(6).put(2.toByte()).putInt(if (hq) 48000 else 24000).put((if (hq) 2 else 1).toByte()).array()))
-        val mix = dev.tvremote.core.Downmix()
-        val h = Tv(this, "127.0.0.1", null, 0, 0, false, object : Tv.Listener {
-            override fun onStatus(key: String, detail: String) {
-                if (key == "audio") q.add(if (detail == "noshare") packet(3, detail.toByteArray()) else packet(5, "unsupported".toByteArray()))
-                if (key == "closed" || key == "error") { if (key == "error") q.add(packet(5, detail.toByteArray())); q.add(end) }
-            }
-            override fun onVideoSize(w: Int, h: Int) { }
-            override fun onNetwork(mac: String, lan: String, tailscale: String) { }
-        }, null, "raw", Tv.AudioSink { config, data ->
-            if (config) return@AudioSink
-            if (q.size > 200) { if (q.size < 210) q.add(end) } else q.add(packet(2, if (hq) data else mix.feed(data)))   // the browser cannot keep up: stop instead of filling memory
-        }, false, share)
-        hearer = h
-        return HttpServer.Response.stream("application/octet-stream", -1) { out ->
-            try {
-                while (true) {
-                    val p = q.poll(5, java.util.concurrent.TimeUnit.SECONDS) ?: packet(4, end)
-                    if (p === end || hearer !== h) break                    // ended, or another browser took over
-                    out.write(p)
-                    out.flush()
-                }
-            } finally {
-                h.stop()
-                if (hearer === h) hearer = null
-            }
-        }
-    }
+    /** While someone listens the TV's own speakers are silent (unless [share] works there); they come back when the browser stops. */
+    private fun sound(share: Boolean, hq: Boolean): HttpServer.Response =
+        feeds.sound(hq, false) { l, sink -> Tv(this, "127.0.0.1", null, 0, 0, false, l, null, "raw", sink, false, share) }
 
     // ---------------------------------------------------------------- HTTP
     @Throws(Exception::class)
@@ -374,7 +303,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             "/api/touch" -> {
                 val d = r.json()
                 val a = when (d.optString("a")) { "down", "0" -> 0; "up", "1" -> 1; "move", "2" -> 2; else -> -1 }   // no wheel here
-                viewer?.let { if (a >= 0 && it.ready()) it.touch(a, d.optDouble("x").toFloat(), d.optDouble("y").toFloat()) }
+                feeds.viewer?.let { if (a >= 0 && it.ready()) it.touch(a, d.optDouble("x").toFloat(), d.optDouble("y").toFloat()) }
                 return ok()
             }
             "/api/apps" -> if (r.q("system") != "1") return HttpServer.Response.json(JSONObject().put("apps", apps()))   // every package: Manage

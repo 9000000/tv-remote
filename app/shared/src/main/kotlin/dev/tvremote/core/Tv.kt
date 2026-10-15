@@ -1,10 +1,6 @@
 package dev.tvremote.core
 
-import android.content.Context
-import android.media.MediaCodec
-import android.media.MediaFormat
-import android.os.Build
-import android.view.Surface
+import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.Locale
@@ -13,14 +9,18 @@ import java.util.concurrent.Executors
 import java.util.regex.Pattern
 
 /**
- * One session with a TV: ADB over the network, scrcpy-server started on the TV for the picture (H.264, decoded here
- * straight onto a Surface) and for input (keys, touch, text). Everything runs off the UI thread.
- * With no Surface the TV is asked for input only: no picture is encoded, so the TV does no extra work.
+ * One session with a TV: ADB over the network, scrcpy-server started on the TV for the picture (H.264, shown by a [Screen]
+ * or handed to a [Sink]) and for input (keys, touch, text). Everything runs off the UI thread.
+ * With neither the TV is asked for input only: no picture is encoded, so the TV does no extra work.
+ * Plain JVM, so the computer runs it too; on Android it is made by the Tv(context, …) in TvAndroid.kt.
  */
 class Tv(
-    ctx: Context,
+    /** where the ADB key lives */
+    private val dir: File,
+    /** scrcpy-server.jar, copied to the TV when it does not have this one */
+    private val jar: () -> ByteArray,
     private val host: String,
-    private val surface: Surface?,
+    private val screen: Screen?,
     /** index into QUALITY */
     quality: Int,
     /** longest side of the phone screen, there is no point sending more pixels than it shows */
@@ -28,11 +28,11 @@ class Tv(
     /** turn the screen on first (the TV answered but is in standby) */
     private val wake: Boolean,
     private val listener: Listener,
-    /** instead of a Surface: the encoded picture is handed over as it arrives (to pass on to a browser) */
+    /** instead of a Screen: the encoded picture is handed over as it arrives (to pass on to a browser) */
     private val sink: Sink? = null,
     /**
-     * The TV's sound (Android 11+; while it is captured the TV's own speakers are silent). null: none. "opus": played on this
-     * device ([AudioOut]), about 8 KB/s. "raw": 48 kHz 16-bit stereo PCM handed to [audioSink], no encoding at all on the TV.
+     * The TV's sound (Android 11+; while it is captured the TV's own speakers are silent), handed to [audioSink]. null: none.
+     * "opus": about 8 KB/s. "raw": 48 kHz 16-bit stereo PCM, no encoding at all on the TV.
      */
     private val audio: String? = null,
     private val audioSink: AudioSink? = null,
@@ -52,7 +52,19 @@ class Tv(
     fun interface Sink { fun video(config: Boolean, key: Boolean, data: ByteArray) }
 
     /** One packet of sound as scrcpy sends it. config: the codec's header (Opus: OpusHead), before the first packet. */
-    fun interface AudioSink { fun audio(config: Boolean, data: ByteArray) }
+    fun interface AudioSink {
+        fun audio(config: Boolean, data: ByteArray)
+        /** the sound has stopped for good */
+        fun end() {}
+    }
+
+    /** Shows the picture: [start] at each new size (the decoder is made again), then one H.264 packet at a time. */
+    interface Screen {
+        fun start(w: Int, h: Int)
+        /** false: the decoder took nothing for a long while, and the session ends */
+        fun feed(config: Boolean, pts: Long, data: ByteArray): Boolean
+        fun release()
+    }
 
     interface Listener {
         fun onStatus(key: String, detail: String)                     // connecting | allow | starting | live | closed | error; audio (detail "unsupported"); rate
@@ -78,13 +90,13 @@ class Tv(
         val OPENERS = setOf(82, 176, 178, 172, 170)
 
         val QUALITY = arrayOf(intArrayOf(480, 300_000, 8), intArrayOf(720, 800_000, 10), intArrayOf(960, 2_000_000, 10),
-            intArrayOf(360, 200_000, 8), intArrayOf(240, 120_000, 8))   // added later, at the end: the index is what people have saved
+            intArrayOf(360, 200_000, 8), intArrayOf(240, 120_000, 8),   // added later, at the end: the index is what people have saved
+            intArrayOf(1280, 4_000_000, 30))                          // the computer's "sharpest, heavy on the TV" (not in LEVELS: the phone never offers it)
 
         /** The levels from lightest to sharpest, as indexes into QUALITY. */
         val LEVELS = intArrayOf(4, 3, 0, 1, 2)
     }
 
-    private val ctx: Context = ctx.applicationContext
     private val video: String                                         // scrcpy video options
     private val io = Executors.newSingleThreadExecutor()
     @Volatile private var stopped = false
@@ -93,8 +105,7 @@ class Tv(
     @Volatile private var control: Adb.Stream? = null
     @Volatile private var width = 960
     @Volatile private var height = 540
-    private var codec: MediaCodec? = null
-    private val wantVideo = surface != null || sink != null
+    private val wantVideo = screen != null || sink != null
 
     init {
         val q = QUALITY[quality.coerceIn(0, QUALITY.size - 1)]
@@ -106,7 +117,7 @@ class Tv(
         val socks = arrayListOf<Adb.Stream>()
         try {
             listener.onStatus("connecting", host)
-            val a = Adb(ctx.filesDir)
+            val a = Adb(dir)
             adb = a
             a.connect(host, 5555) { listener.onStatus("allow", "") }
             if (stopped) return
@@ -160,7 +171,8 @@ class Tv(
             control = ctl
             if (hearing != null) capture = socks
             if (soundIn != null && (pictureIn != null || ctl != null))
-                Thread({ try { hear(soundIn, hearing!!) } catch (ignored: Throwable) { } }, "scrcpy-audio")   // a codec error ends the sound, not the app.apply { isDaemon = true }.start()
+                // a codec error ends the sound, not the app
+                Thread({ try { hear(soundIn, hearing!!) } catch (ignored: Throwable) { } }, "scrcpy-audio").apply { isDaemon = true }.start()
             if (pictureIn != null) {
                 if (ctl != null) Thread({ try { ctl.readAll() } catch (ignored: IOException) { } }, "scrcpy-ctl").apply { isDaemon = true }.start()   // clipboard etc: not needed
                 play(pictureIn)
@@ -176,7 +188,7 @@ class Tv(
             if (!stopped) listener.onStatus("error", e.message ?: e.javaClass.simpleName)
         } finally {
             control = null
-            releaseCodec()
+            screen?.release()
             if (capture != null) endCapture(socks)
             capture = null
             adb?.close()                                              // the heartbeat stops, the loop on the TV kills scrcpy-server
@@ -217,7 +229,7 @@ class Tv(
     /** Copies scrcpy-server from the APK to the TV unless the same file is already there. */
     @Throws(IOException::class)
     private fun pushServer(a: Adb) {
-        val jar = ctx.assets.open("scrcpy-server.jar").use { it.readBytes() }
+        val jar = jar()
         val check = "[ -f $REMOTE ] && wc -c < $REMOTE || echo 0"
         if (a.shell(check).trim() == jar.size.toString()) return
         val s = a.open("exec:cat > $REMOTE")
@@ -248,7 +260,7 @@ class Tv(
             val size = h.int
             if (flags < 0) {
                 width = (flags and 0xffffffffL).toInt(); height = size
-                if (surface != null) startCodec()
+                screen?.start(width, height)
                 listener.onVideoSize(width, height)
                 continue
             }
@@ -267,23 +279,15 @@ class Tv(
                 if (first && !config) { first = false; listener.onStatus("live", "") }
                 continue
             }
-            val c = codec ?: continue
-            var idx = -1
-            while (idx < 0 && !stopped) { idx = c.dequeueInputBuffer(20000); render(c) }
-            if (idx < 0) break
-            val input = c.getInputBuffer(idx)!!
-            input.clear()
-            input.put(data)
-            c.queueInputBuffer(idx, 0, size, if (config) 0L else flags and ((1L shl 61) - 1), if (config) MediaCodec.BUFFER_FLAG_CODEC_CONFIG else 0)
-            var tries = 0
-            while (tries < 6 && !render(c)) tries++                   // the TV only sends a frame when the picture changes: show it now
+            val sc = screen ?: continue
+            if (!sc.feed(config, if (config) 0L else flags and ((1L shl 61) - 1), data)) break
             if (first && !config) { first = false; listener.onStatus("live", "") }
         }
     }
 
     /**
      * scrcpy's sound socket: 4 bytes codec id (0 or 1: the TV could not capture sound), then the same 12-byte headers as the
-     * picture. Played here ([AudioOut]) or handed to [audioSink].
+     * picture, handed to [audioSink].
      */
     @Throws(IOException::class)
     private fun hear(s: Adb.Stream, codec: String) {
@@ -291,7 +295,6 @@ class Tv(
         s.readFully(head, 0, 4)
         val id = ByteBuffer.wrap(head, 0, 4).int
         if (id == 0 || id == 1) { listener.onStatus("audio", "unsupported"); return }   // e.g. the TV refused the capture
-        val out = if (codec == "opus" && audioSink == null) AudioOut() else null
         var bytes = 0L
         var since = System.currentTimeMillis()
         try {
@@ -304,45 +307,14 @@ class Tv(
                 val data = ByteArray(size)
                 s.readFully(data, 0, size)
                 val config = (flags and (1L shl 62)) != 0L
-                if (out != null) out.feed(config, data) else audioSink?.audio(config, data)
+                audioSink?.audio(config, data)
                 bytes += size + 12
                 val now = System.currentTimeMillis()
                 if (now - since >= 3000) { listener.onStatus("arate", (bytes * 1000.0 / (now - since) / 1024).let { if (it < 10) String.format(java.util.Locale.US, "%.1f", it) else it.toInt().toString() }); bytes = 0; since = now }   // Opus: under 1 KB/s while the TV is quiet
             }
         } finally {
-            out?.release()
+            audioSink?.end()
         }
-    }
-
-    private fun render(c: MediaCodec): Boolean {
-        val info = MediaCodec.BufferInfo()
-        var shown = false
-        while (true) {
-            val out = c.dequeueOutputBuffer(info, if (shown) 0 else 15000)
-            if (out < 0) break
-            c.releaseOutputBuffer(out, true)
-            shown = true
-        }
-        return shown
-    }
-
-    @Throws(IOException::class)
-    private fun startCodec() {
-        releaseCodec()
-        val f = MediaFormat.createVideoFormat("video/avc", width, height)
-        f.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 2 shl 20)
-        if (Build.VERSION.SDK_INT >= 30) f.setInteger(MediaFormat.KEY_LOW_LATENCY, 1)
-        val c = MediaCodec.createDecoderByType("video/avc")
-        codec = c
-        c.configure(f, surface, null, 0)
-        c.start()
-    }
-
-    private fun releaseCodec() {
-        val c = codec ?: return
-        try { c.stop() } catch (ignored: Exception) { }
-        try { c.release() } catch (ignored: Exception) { }
-        codec = null
     }
 
     fun stop() {
@@ -382,6 +354,15 @@ class Tv(
         val py = Math.round(y.coerceIn(0f, 1f) * (height - 1))
         send(ByteBuffer.allocate(32).put(2.toByte()).put(action.toByte()).putLong(-2L).putInt(px).putInt(py)
                 .putShort(width.toShort()).putShort(height.toShort()).putShort((if (action == 1) 0 else 0xffff).toShort()).putInt(0).putInt(0).array())
+    }
+
+    /** The mouse wheel at x, y (0..1 of the picture); [dy] as a browser's wheel: 16 is one notch, positive scrolls down. */
+    fun scroll(x: Float, y: Float, dy: Float) {
+        val px = Math.round(x.coerceIn(0f, 1f) * (width - 1))
+        val py = Math.round(y.coerceIn(0f, 1f) * (height - 1))
+        val v = Math.round(dy / 16 * 0x7FFF).coerceIn(-0x7FFF, 0x7FFF)
+        send(ByteBuffer.allocate(21).put(3.toByte()).putInt(px).putInt(py).putShort(width.toShort()).putShort(height.toShort())
+            .putShort(0).putShort(v.toShort()).putInt(0).array())
     }
 
     fun text(t: String) {

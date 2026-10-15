@@ -39,6 +39,16 @@ class Atv(dir: File, private val host: String) : Closeable {
     /** What the TV calls itself, known once connected. */
     @Volatile var model = ""
         private set
+    @Volatile var vendor = ""
+        private set
+    @Volatile var version = ""                                        // of the TV's remote service
+        private set
+    /** The screen is on (remote_start); null until the TV says. */
+    @Volatile var isOn: Boolean? = null
+        private set
+    /** level, max, muted, as the TV reports them on connecting and at each change; null until then. */
+    @Volatile var volume: Triple<Int, Int, Boolean>? = null
+        private set
 
     init {
         val k = File(dir, "atv.pk8")
@@ -148,7 +158,11 @@ class Atv(dir: File, private val host: String) : Closeable {
         val m = Pb.read(body)
         m[1]?.let {                                                   // remote_configure: who the TV is; answer with who we are
             val info = Pb.read(it[0] as ByteArray)[2]?.firstOrNull() as? ByteArray
-            if (info != null) model = (Pb.read(info)[1]?.firstOrNull() as? ByteArray)?.toString(Charsets.UTF_8) ?: ""
+            if (info != null) {
+                val d = Pb.read(info)
+                fun str(f: Int) = (d[f]?.firstOrNull() as? ByteArray)?.toString(Charsets.UTF_8) ?: ""
+                model = str(1); vendor = str(2); version = str(6)
+            }
             val me = Pb().str(1, "TV Remote").str(2, "tv-remote").int(3, 1).str(4, "1").str(5, "atvremote").str(6, "1.0.0").bytes()
             send(s, Pb().msg(1, Pb().int(1, 622).msg(2, me).bytes()).bytes())
         }
@@ -159,6 +173,12 @@ class Atv(dir: File, private val host: String) : Closeable {
         m[8]?.let {                                                   // ping
             val n = Pb.read(it[0] as ByteArray)[1]?.firstOrNull() as? Long ?: 0L
             send(s, Pb().msg(9, Pb().int(1, n).bytes()).bytes())
+        }
+        m[40]?.let { isOn = (Pb.read(it[0] as ByteArray)[1]?.firstOrNull() as? Long ?: 0L) != 0L }   // remote_start: screen on or off
+        m[50]?.let {                                                  // remote_set_volume_level
+            val v = Pb.read(it[0] as ByteArray)
+            fun n(f: Int) = (v[f]?.firstOrNull() as? Long ?: 0L).toInt()
+            volume = Triple(n(7), n(6), n(8) != 0)
         }
         m[21]?.let {                                                  // remote_ime_batch_edit: a text field on the TV has the focus
             val e = Pb.read(it[0] as ByteArray)
