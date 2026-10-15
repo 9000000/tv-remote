@@ -94,6 +94,8 @@ function capsSummary(c) {
 
 // 🗂️ all settings, under the Setup tab: read the first time it is opened (again after a failed read), searched as typed
 let setRows = [], setBusy = false;
+let setFilter = 'all';                                               // all · edit (has a control) · view (locked or nothing to set)
+const setOpen = new Set();                                            // groups opened by hand: kept open as the list redraws
 async function loadSettings() {
   if (setRows.length || setBusy || ADB.state !== 'ready') return;
   setBusy = true;
@@ -105,23 +107,27 @@ async function loadSettings() {
 $('#setlist').addEventListener('toggle', (e) => { if (e.target.open) loadSettings(); });
 function drawSettings() {
   const q = $('#setlistq').value.trim().toLowerCase(), vi = window.LANG !== 'en';
-  const rows = setRows.map((s) => ({ s, i: settingInfo(s, vi) }))
+  const all = setRows.map((s) => { const e = settingEdit(s); return { s, i: settingInfo(s, vi), edit: !e.locked && !!e.kind, locked: !!e.locked }; })
     .filter(({ s, i }) => !q || (i.title + ' ' + s.name + '=' + s.value + ' ' + i.value).toLowerCase().includes(q));
-  const row = ({ s, i }) => el('div', { className: 'setrow', title: s.table + ' ' + s.name + '=' + s.value, onclick: (e) => e.currentTarget.classList.toggle('full') },   // a long value opens in full on a tap
+  const counts = { all: all.length, edit: all.filter((r) => r.edit).length }; counts.view = counts.all - counts.edit;
+  document.querySelectorAll('#setfilter button').forEach((b) => { const f = b.dataset.f; b.classList.toggle('on', f === setFilter); b.dataset.n = counts[f]; });
+  const rows = all.filter((r) => setFilter === 'all' || (setFilter === 'edit') === r.edit);
+  const row = ({ s, i, locked }) => el('div', { className: 'setrow' + (i.pkgs || i.value.length > 24 ? ' wide' : ''), title: s.table + ' ' + s.name + '=' + s.value,
+    onclick: (e) => { e.currentTarget.classList.toggle('full'); if (locked) toast(tr('🔒 Chỉ xem: đổi sai có thể mất kết nối tới TV')); } },   // a long value opens in full on a tap
     el('div', { className: 'setname' }, el('span', { textContent: i.title }), el('small', { className: 'mono', textContent: s.name })),
     setControl(s, i, vi));
   const named = (div, pkgs) => pkgs.forEach((p) => onMeta(p, (m) => {   // "com.google.android.apps.tv.dreamx" -> the app's own name
     if (m && m.label && m.label !== p.slice(p.lastIndexOf('.') + 1)) { div.textContent = div.textContent.split(', ').map((x) => x === p ? m.label : x).join(', '); div.classList.toggle('long', div.textContent.length > 24); }
   }));
-  const parts = [el('p', { className: 'muted', style: 'margin:0 0 6px', textContent: rows.length + ' / ' + setRows.length + ' ' + tr('mục') })];
+  const parts = [];
   for (const g of Object.keys(SET_GROUPS)) {
     const mine = rows.filter((r) => r.i.group === g); if (!mine.length) continue;
-    if (g !== 'other') {
-      const made = mine.sort((a, b) => a.i.order - b.i.order).map((r) => { const d = row(r); if (r.i.pkgs) named(d.lastChild, r.i.pkgs); return d; });
-      parts.push(el('h3', { className: 'setgroup', textContent: mine[0].i.groupName }), ...made); continue;
-    }
-    // Android's hundreds of internal keys: folded away unless searched for
-    parts.push(el('details', { className: 'setother', open: !!q }, el('summary', { textContent: mine[0].i.groupName + ' · ' + mine.length }), ...mine.slice(0, 400).map(row)));
+    // every group folded, so the list fits and the search box stays in reach; a search opens the groups it finds something in
+    const made = g !== 'other' ? mine.sort((a, b) => a.i.order - b.i.order).map((r) => { const d = row(r); if (r.i.pkgs) named(d.lastChild, r.i.pkgs); return d; })
+      : mine.slice(0, 400).map(row);                                 // Android's hundreds of internal keys
+    const box = el('details', { className: 'setgroupbox', open: !!q || setOpen.has(g) }, el('summary', { textContent: mine[0].i.groupName + ' · ' + mine.length }), ...made);
+    box.addEventListener('toggle', () => { if (!q) { if (box.open) setOpen.add(g); else setOpen.delete(g); } });
+    parts.push(box);
   }
   $('#setlistbody').replaceChildren(...parts);
 }
@@ -157,6 +163,7 @@ async function setSetting(s, value) {
   s.value = value; drawSettings(); toast(tr('✓ Đã đổi'));
 }
 $('#setlistq').addEventListener('input', drawSettings);
+$('#setfilter').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { setFilter = b.dataset.f; drawSettings(); } });
 $('#setlistf').addEventListener('submit', (e) => e.preventDefault());
 $('#setlistcopy').addEventListener('click', () => {
   const q = $('#setlistq').value.trim().toLowerCase();

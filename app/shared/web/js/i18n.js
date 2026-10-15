@@ -438,6 +438,7 @@
     'mục': 'items',
     'Trả lại': 'Put back',
     'Chỉ xem: đổi sai có thể mất kết nối tới TV': 'View only: a wrong value could cut you off from the TV',
+    '🔒 Chỉ xem: đổi sai có thể mất kết nối tới TV': '🔒 View only: a wrong value could cut you off from the TV', '✎ Chỉnh được': '✎ Editable', '🔒 Chỉ xem': '🔒 View only',
     'Giá trị mới (mục kỹ thuật: đổi sai có thể làm TV chạy lạ)': 'New value (technical: a wrong one can make the TV act up)',
     'Giá trị mới': 'New value',
     'Chỉ dùng chữ không dấu, số và . _ : + -': 'Use only plain letters, digits and . _ : + -',
