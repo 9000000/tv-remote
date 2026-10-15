@@ -33,13 +33,14 @@
 
   // ⚙️ the TV card's "name value" lines
   function readTvset(text) {
-    const o = { sdk: 0, dnsMode: '', dnsHost: '', sleep: null, saver: false, saverAfter: null, physical: 0, override: 0, home: '', launchers: [] };
+    const o = { sdk: 0, dnsMode: '', dnsHost: '', dnsOff: null, sleep: null, saver: false, saverAfter: null, physical: 0, override: 0, home: '', launchers: [] };
     const val = (v) => (v === 'null' || v === undefined ? '' : v);
     for (const raw of String(text || '').replace(/\r/g, '').split('\n')) {
       const l = raw.trim(), sp = l.indexOf(' '), k = sp < 0 ? l : l.slice(0, sp), v = sp < 0 ? '' : l.slice(sp + 1).trim();
       if (k === 'sdk') o.sdk = parseInt(v, 10) || 0;
       else if (k === 'dns_mode') o.dnsMode = val(v);
       else if (k === 'dns_host') o.dnsHost = val(v);
+      else if (k === 'dns_off') { const m = /^(\S+) (\d+)$/.exec(val(v)); if (m) o.dnsOff = { host: m[1], at: Number(m[2]) * 1000 }; }   // TV Setup turned a filter off (DnsWatch.kt)
       else if (k === 'sleep') o.sleep = /^-?\d+$/.test(v) ? Number(v) : null;
       else if (k === 'saver') o.saver = v === '1';
       else if (k === 'saver_after') o.saverAfter = /^\d+$/.test(v) ? Number(v) : null;

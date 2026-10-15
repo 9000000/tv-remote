@@ -127,6 +127,11 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal val PICK_CAST = 71
     internal val PICK_FLEET = 72                                       // ManyTvs.kt: the APK for several TVs
 
+    // ---- SetupBanner.kt
+    internal lateinit var setupBar: Button
+    internal val setupChecked = HashMap<String, Long>()                // when each TV's TV Setup was last looked at
+    internal val setupNews = HashMap<String, SetupNews>()
+
     // ---- Updater.kt
     internal lateinit var updateBtn: Button
     internal lateinit var updateNote: TextView
@@ -377,6 +382,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         clearBox()                                                    // the next TV has received nothing from the box
         managing.close()
+        setupBar.visibility = View.GONE
         if (listen) { listen = false; bgListen = false; listenService(false) }
         stopSession()
         waiting.visibility = View.GONE
@@ -430,6 +436,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                     else stopListen(t("TV này chưa gửi được tiếng sang điện thoại (cần Android 11 trở lên).", "This TV cannot send its sound to the phone (Android 11 or newer is needed)."))
                 "live" -> {
                     wasLive = true; retries = 0
+                    from?.let { checkSetup(it, h) }
                     waiting.visibility = View.GONE
                     pendingAsk?.let {
                         from?.search(it)

@@ -49,6 +49,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
     private var labels: RemoteLabels? = null
     private var forHost: String? = null
     private var picking: ValueCallback<Array<Uri>>? = null
+    private var pending: String? = null                               // what to do on the page once it has loaded (open's "then")
     private val webPage by lazy { dev.tvremote.core.WebPage({ a.assets.open(it) }, "phone", a.version() + "-" + (try { a.packageManager.getPackageInfo(a.packageName, 0).lastUpdateTime / 1000 } catch (e: Exception) { 0L })) }
 
     init {
@@ -61,7 +62,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
         top.setPadding(a.dp(16), a.dp(10), a.dp(12), a.dp(6))
         top.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
         val done = a.icon("@close", t("Đóng", "Close"), BTN)
-        done.setOnClickListener { view.visibility = View.GONE }
+        done.setOnClickListener { hide() }
         top.addView(done, LinearLayout.LayoutParams(a.dp(48), a.dp(40)))
         view.addView(top)
         web = WebView(a)
@@ -76,6 +77,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
                 a.web(u.toString())
                 return true
             }
+            override fun onPageFinished(w: WebView?, url: String?) { pending?.let { pending = null; web.evaluateJavascript(it, null) } }
         }
         web.webChromeClient = object : WebChromeClient() {
             override fun onShowFileChooser(w: WebView?, cb: ValueCallback<Array<Uri>>?, params: FileChooserParams?): Boolean {
@@ -98,7 +100,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
     }
 
     /** Shows the page for [tvHost], on [tab] when one is named ("auto", "apps"...). */
-    fun open(tvHost: String?, tab: String? = null) {
+    fun open(tvHost: String?, tab: String? = null, then: String? = null) {
         if (tvHost == null) return
         try {
             if (http == null) {
@@ -116,10 +118,12 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
                 forHost = tvHost
                 val origin = "http://127.0.0.1:$port"
                 CookieManager.getInstance().setCookie(origin, "tvr=$token")
+                pending = then
                 web.loadUrl(origin + "/?embed=1&lang=" + (if (VI) "vi" else "en") + (if (tab != null) "#$tab" else ""))
             } else {
                 link?.check()                                         // the same TV again: make sure its connection still answers
                 if (tab != null) web.evaluateJavascript("showTab('" + tab.filter { it.isLetter() } + "')", null)
+                if (then != null) web.evaluateJavascript(then, null)
             }
             view.visibility = View.VISIBLE
         } catch (e: Exception) {
@@ -134,8 +138,18 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
 
     fun back(): Boolean {
         if (view.visibility != View.VISIBLE) return false
-        view.visibility = View.GONE
+        hide()
         return true
+    }
+
+    /** Back to the remote, which then shows what came of a TV Setup update started here (SetupBanner.kt). */
+    private fun hide() {
+        view.visibility = View.GONE
+        web.evaluateJavascript("(function(){ try { return localStorage.getItem('setupUndo') || '' } catch (e) { return '' } })()") { v ->
+            val seen = v?.trim('"') ?: ""                             // "Got it" on the page counts on the remote too
+            if (seen.isNotEmpty()) a.prefs.edit().putString("setupUndo", seen).apply()
+            a.setupAgain()
+        }
     }
 
     /** Leaving this TV: drop its ADB connection; the next TV gets a fresh page. */

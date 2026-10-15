@@ -2,7 +2,7 @@
  "consts": {
   "CLEAN": "a=$(stat -f -c '%a %S' /data); pm trim-caches 999G >/dev/null 2>&1; sleep 2; echo $a $(stat -f -c '%a %S' /data)",
   "REBOOT_PREP": "case \"$(settings get secure always_on_vpn_app)\" in com.tailscale.ipn) ;; *) pm path com.tailscale.ipn >/dev/null 2>&1 && ip addr | grep -qE 'inet 100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\.' && { settings put secure always_on_vpn_app com.tailscale.ipn; settings put secure always_on_vpn_lockdown 0; };; esac; echo ok",
-  "TVSET_READ": "echo sdk $(getprop ro.build.version.sdk); echo dns_mode $(settings get global private_dns_mode); echo dns_host $(settings get global private_dns_specifier); echo sleep $(settings get secure sleep_timeout); echo saver $(settings get secure screensaver_enabled); echo saver_after $(settings get system screen_off_timeout); wm density; echo home $(cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME | tail -n 1); cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME | grep / | sed 's/^ */launcher /'",
+  "TVSET_READ": "echo sdk $(getprop ro.build.version.sdk); echo dns_mode $(settings get global private_dns_mode); echo dns_host $(settings get global private_dns_specifier); echo dns_off $(settings get global tvr_dns_off); echo sleep $(settings get secure sleep_timeout); echo saver $(settings get secure screensaver_enabled); echo saver_after $(settings get system screen_off_timeout); wm density; echo home $(cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME | tail -n 1); cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME | grep / | sed 's/^ */launcher /'",
   "BOOT": "cmd package query-receivers --brief -a android.intent.action.BOOT_COMPLETED 2>/dev/null | grep / | sed 's/^ *//'",
   "SETTINGS_READ": "for n in global secure system; do settings list $n 2>/dev/null | sed \"s/^/$n /\"; done"
  },
@@ -123,7 +123,7 @@
     "dns",
     ""
    ],
-   "out": "settings put global private_dns_mode opportunistic; settings delete global private_dns_specifier >/dev/null 2>&1; echo ok"
+   "out": "settings put global private_dns_mode opportunistic; settings delete global private_dns_specifier >/dev/null 2>&1; settings delete global tvr_dns_off >/dev/null 2>&1; echo ok"
   },
   {
    "call": [
@@ -131,7 +131,7 @@
     "dns",
     "dns.adguard-dns.com"
    ],
-   "out": "trap '' HUP PIPE; m=$(settings get global private_dns_mode); h=$(settings get global private_dns_specifier); settings put global private_dns_specifier dns.adguard-dns.com; settings put global private_dns_mode hostname; e=$(($(date +%s)+30)); while [ $(date +%s) -lt $e ]; do sleep 2; timeout 4 ping -c 1 -W 2 www.google.com 2>&1 | grep -q '^PING ' && { echo ok; exit; }; done; if [ \"$h\" = null ]; then settings delete global private_dns_specifier >/dev/null 2>&1; else settings put global private_dns_specifier \"$h\"; fi; [ \"$m\" = null ] && m=opportunistic; settings put global private_dns_mode $m; echo failed"
+   "out": "trap '' HUP PIPE; m=$(settings get global private_dns_mode); h=$(settings get global private_dns_specifier); settings put global private_dns_specifier dns.adguard-dns.com; settings put global private_dns_mode hostname; e=$(($(date +%s)+30)); while [ $(date +%s) -lt $e ]; do sleep 2; { r=t$RANDOM$RANDOM; timeout 5 ping -c 1 -W 3 $r.1.2.3.4.sslip.io 2>&1 | grep -q '^PING ' || timeout 5 ping -c 1 -W 3 $r.1.2.3.4.nip.io 2>&1 | grep -q '^PING '; } && { settings delete global tvr_dns_off >/dev/null 2>&1; echo ok; exit; }; done; if [ \"$h\" = null ]; then settings delete global private_dns_specifier >/dev/null 2>&1; else settings put global private_dns_specifier \"$h\"; fi; [ \"$m\" = null ] && m=opportunistic; settings put global private_dns_mode $m; echo failed"
   },
   {
    "call": [
@@ -139,7 +139,7 @@
     "dns",
     " Family.AdGuard-DNS.com "
    ],
-   "out": "trap '' HUP PIPE; m=$(settings get global private_dns_mode); h=$(settings get global private_dns_specifier); settings put global private_dns_specifier family.adguard-dns.com; settings put global private_dns_mode hostname; e=$(($(date +%s)+30)); while [ $(date +%s) -lt $e ]; do sleep 2; timeout 4 ping -c 1 -W 2 www.google.com 2>&1 | grep -q '^PING ' && { echo ok; exit; }; done; if [ \"$h\" = null ]; then settings delete global private_dns_specifier >/dev/null 2>&1; else settings put global private_dns_specifier \"$h\"; fi; [ \"$m\" = null ] && m=opportunistic; settings put global private_dns_mode $m; echo failed"
+   "out": "trap '' HUP PIPE; m=$(settings get global private_dns_mode); h=$(settings get global private_dns_specifier); settings put global private_dns_specifier family.adguard-dns.com; settings put global private_dns_mode hostname; e=$(($(date +%s)+30)); while [ $(date +%s) -lt $e ]; do sleep 2; { r=t$RANDOM$RANDOM; timeout 5 ping -c 1 -W 3 $r.1.2.3.4.sslip.io 2>&1 | grep -q '^PING ' || timeout 5 ping -c 1 -W 3 $r.1.2.3.4.nip.io 2>&1 | grep -q '^PING '; } && { settings delete global tvr_dns_off >/dev/null 2>&1; echo ok; exit; }; done; if [ \"$h\" = null ]; then settings delete global private_dns_specifier >/dev/null 2>&1; else settings put global private_dns_specifier \"$h\"; fi; [ \"$m\" = null ] && m=opportunistic; settings put global private_dns_mode $m; echo failed"
   },
   {
    "call": [

@@ -147,6 +147,7 @@ async function updateSetup() {
   if (setupBusy) return;
   setupBusy = true; $('#supacts').hidden = true;
   const b = $('#setupupd'); b.hidden = false; b.className = 'banner ok';   // also from the Automation tab, with the banner put away
+  if (!$('#suptitle').textContent) $('#suptitle').textContent = '⬆️ Đang cập nhật TV Setup trên TV';   // or from the phone's remote screen, never shown
   const note = (t) => { $('#supnote').textContent = t; };
   try {
     note('Đang bắt đầu...');

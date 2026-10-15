@@ -208,7 +208,7 @@
     'Tắt hiệu ứng chuyển cảnh cho TV nhanh hơn': 'Turn off transition animations so the TV feels faster',
     'Thay màn hình chính Google bằng FLauncher (chỉ lưới app, nhẹ CPU)': 'Replace the Google home screen with FLauncher (just a grid of apps, light on CPU)',
     'Tắt app hệ thống không dùng (chế độ khách sạn/trưng bày của Sony, Samba, Sony Select, Play Games, Play Movies, YouTube Music)': 'Turn off unused system apps (Sony hotel/demo modes, Samba, Sony Select, Play Games, Play Movies, YouTube Music)',
-    '⚡ Tối ưu TV': '⚡ Optimize TV', 'Hoàn tác': 'Undo', '⏳ Tiến trình': '⏳ Progress', 'đang tải về điện thoại...': 'downloading to the phone...', 'đang gửi lên server...': 'sending to the server...',
+    '⚡ Tối ưu TV': '⚡ Optimize TV', 'Hoàn tác': 'Undo', '⏳ Tiến trình': '⏳ Progress', '⬆️ Đang cập nhật TV Setup trên TV': '⬆️ Updating TV Setup on the TV', 'đang tải về điện thoại...': 'downloading to the phone...', 'đang gửi lên server...': 'sending to the server...',
     'Chạy tối ưu TV? Màn hình chính của TV sẽ là FLauncher.': 'Optimize TV? Its home screen will become FLauncher.',
     'Hoàn tác? Bật lại màn hình chính Google, các app đã tắt và hiệu ứng như cũ.': 'Undo? This turns the Google home screen, the disabled apps and normal animations back on.',
     'Đang chạy...': 'Running...', 'Đã xong': 'Done',
@@ -498,6 +498,8 @@
   // Strings with a variable part. Captured pieces are passed through tr() again where they can be text of ours.
   const RULES = [
     [/^🆕 TV Setup trên TV có bản mới (\S+) \(đang dùng (\S+)\)$/, (m) => '🆕 TV Setup on the TV has a new version ' + m[1] + ' (it has ' + m[2] + ')'],
+    [/^⚠️ TV đã tự tắt lọc DNS (\S+) lúc (\S+) (\S+), vì với nó TV không tra được tên miền nào \(YouTube và các app báo mất mạng\)\. Hay gặp khi TV có VPN như Tailscale\. Chọn lại một bộ lọc để thử lại\.$/,
+      (m) => '⚠️ The TV turned the DNS filter ' + m[1] + ' off at ' + m[2] + ' on ' + m[3] + ': with it the TV could not look up any name (YouTube and other apps said there was no Internet). This happens on TVs with a VPN such as Tailscale. Pick a filter again to try once more.'],
     [/^⚠️ TV Setup (\S+) chạy lỗi trên TV này$/, (m) => '⚠️ TV Setup ' + m[1] + ' did not work on this TV'],
     [/^TV đã tự quay về bản (\S+)\. Hẹn giờ, ghép nối và cài đặt vẫn còn nguyên\. Có bản sau thì nó hiện ở đây\.$/, (m) => 'The TV went back to version ' + m[1] + ' by itself. Timers, pairings and settings are all still there. The next version shows up here when it comes out.'],
     [/^Đang tải bản mới về TV (\d+)%\.\.\.$/, (m) => 'Downloading the new version to the TV ' + m[1] + '%...'],

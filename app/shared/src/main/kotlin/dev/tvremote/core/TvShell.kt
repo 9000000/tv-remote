@@ -23,8 +23,19 @@ object TvShell {
     private const val HOME_LIST = "cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME"
     private const val HOME_NOW = "cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME | tail -n 1"
 
+    /**
+     * Shell test: does the TV resolve names right now? A name made up on the spot, that the wildcard services sslip.io and
+     * nip.io answer with the address written in it: never in the TV's cache, so a DNS that stopped working cannot pass on
+     * answers it gave earlier (www.google.com passed that way on a Sony with Tailscale, and YouTube then failed for good).
+     */
+    const val NAMES_WORK = "{ r=t\$RANDOM\$RANDOM; timeout 5 ping -c 1 -W 3 \$r.1.2.3.4.sslip.io 2>&1 | grep -q '^PING ' || " +
+            "timeout 5 ping -c 1 -W 3 \$r.1.2.3.4.nip.io 2>&1 | grep -q '^PING '; }"
+
+    /** Where TV Setup notes a DNS filter it turned off because names stopped resolving with it ("<host> <seconds>"). */
+    const val DNS_OFF = "tvr_dns_off"
+
     const val TVSET_READ = "echo sdk \$(getprop ro.build.version.sdk); echo dns_mode \$(settings get global private_dns_mode); " +
-            "echo dns_host \$(settings get global private_dns_specifier); echo sleep \$(settings get secure sleep_timeout); " +
+            "echo dns_host \$(settings get global private_dns_specifier); echo dns_off \$(settings get global $DNS_OFF); echo sleep \$(settings get secure sleep_timeout); " +
             "echo saver \$(settings get secure screensaver_enabled); echo saver_after \$(settings get system screen_off_timeout); " +
             "wm density; echo home \$(" + HOME_NOW + "); " + HOME_LIST + " | grep / | sed 's/^ */launcher /'"
 
@@ -76,13 +87,13 @@ object TvShell {
         var value = raw.trim()
         when (key) {
             "dns" -> {
-                if (value.isEmpty()) return "settings put global private_dns_mode opportunistic; settings delete global private_dns_specifier >/dev/null 2>&1; echo ok"
+                if (value.isEmpty()) return "settings put global private_dns_mode opportunistic; settings delete global private_dns_specifier >/dev/null 2>&1; settings delete global $DNS_OFF >/dev/null 2>&1; echo ok"
                 value = value.lowercase(java.util.Locale.ROOT)
                 if (!value.matches(HOST)) throw IllegalArgumentException("bad DNS name")
                 return "trap '' HUP PIPE; m=\$(settings get global private_dns_mode); h=\$(settings get global private_dns_specifier); " +
                     "settings put global private_dns_specifier $value; settings put global private_dns_mode hostname; " +
                     "e=\$((\$(date +%s)+30)); while [ \$(date +%s) -lt \$e ]; do sleep 2; " +
-                    "timeout 4 ping -c 1 -W 2 www.google.com 2>&1 | grep -q '^PING ' && { echo ok; exit; }; done; " +
+                    "$NAMES_WORK && { settings delete global $DNS_OFF >/dev/null 2>&1; echo ok; exit; }; done; " +
                     "if [ \"\$h\" = null ]; then settings delete global private_dns_specifier >/dev/null 2>&1; else settings put global private_dns_specifier \"\$h\"; fi; " +
                     "[ \"\$m\" = null ] && m=opportunistic; settings put global private_dns_mode \$m; echo failed"
             }
