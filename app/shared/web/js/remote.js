@@ -87,7 +87,15 @@ function tapMark(e, what) {
   const m = tapDot; if (!m) return; tapDot = null;
   m.classList.add('gone'); m.addEventListener('animationend', () => m.remove());
 }
-const touch = (a, p, extra) => queue('/api/touch', { a, x: p.x, y: p.y, ...extra });
+// Moves are only worth their latest position: a slow link keeps one waiting move and updates it, so the TV never replays a drag
+// seconds after the finger lifted. Scrolls past a few waiting ones are dropped for the same reason.
+let moveNext = null, waiting = 0;
+function touch(a, p, extra) {
+  const m = { a, x: p.x, y: p.y, ...extra };
+  if (a === 'move') { const had = moveNext; moveNext = m; if (!had) inputQ = inputQ.then(() => { const n = moveNext; moveNext = null; return api('/api/touch', n); }); return; }
+  if (a === 'scroll' && waiting > 2) return;
+  waiting++; inputQ = inputQ.then(() => api('/api/touch', m)).finally(() => { waiting--; });
+}
 [$('#screen'), $('#screenv')].forEach((scr) => {
   scr.draggable = false;
   const screenPos = (e) => {                                          // pointer -> 0..1 inside the picture (the box letterboxes it)

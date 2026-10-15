@@ -107,6 +107,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     @Volatile private var lastUse = 0L                                // when a paired browser last asked for anything
     @Volatile private var resting = false                             // the input session is closed on purpose: nobody is using the remote
     private var lastPairStart = 0L
+    @Volatile private var wrong = 0                                  // wrong codes since the last pairing or lockout
+    @Volatile private var lockedUntil = 0L
     private var guard: Guard? = null
     private var tsWatch: TailscaleWatch? = null
     @Volatile private var hearer: Tv? = null                         // a session that carries the TV's sound to one browser
@@ -199,7 +201,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             Thread({
                 val m = manage
                 val on = (getSystemService(POWER_SERVICE) as PowerManager).isInteractive
-                if (!usageAllowed) { m?.allowUsage(packageName); usageAllowed = true }
+                if (!usageAllowed) usageAllowed = m?.allowUsage(packageName) == true
                 stats.tick(if (on) m?.cpuNow() else null)             // asleep: do not wake ADB for a number nobody needs
             }, "diary").apply { isDaemon = true }.start()
             ui.postDelayed(this, 5 * 60 * 1000L)
@@ -250,20 +252,22 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         val q = java.util.concurrent.LinkedBlockingQueue<ByteArray>()
         val end = ByteArray(0)
         fun packet(kind: Int, data: ByteArray) = java.nio.ByteBuffer.allocate(5 + data.size).put(kind.toByte()).putInt(data.size).put(data).array()
+        var v0: Tv? = null
         val v = Tv(this, "127.0.0.1", null, quality, 1280, false, object : Tv.Listener {
             override fun onStatus(key: String, detail: String) { if (key == "closed" || key == "error") q.add(end) }
             override fun onVideoSize(w: Int, h: Int) { q.add(packet(0, java.nio.ByteBuffer.allocate(8).putInt(w).putInt(h).array())) }
             override fun onNetwork(mac: String, lan: String, tailscale: String) { }
         }, Tv.Sink { config, key, data ->
-            if (q.size > 150) q.add(end)                              // the browser cannot keep up: stop instead of filling memory
+            if (q.size > 150) { if (q.size < 160) q.add(end); v0?.stop() }   // the browser cannot keep up: stop instead of filling memory
             else q.add(packet(if (config) 1 else if (key) 2 else 3, data))
         })
+        v0 = v
         viewer = v
         return HttpServer.Response.stream("application/octet-stream", -1) { out ->
             try {
                 while (true) {
                     val p = q.poll(5, java.util.concurrent.TimeUnit.SECONDS) ?: packet(4, end)
-                    if (p === end) break
+                    if (p === end || viewer !== v) break                    // ended, or another browser took over
                     out.write(p)
                     out.flush()
                 }
@@ -300,14 +304,14 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             override fun onNetwork(mac: String, lan: String, tailscale: String) { }
         }, null, "raw", Tv.AudioSink { config, data ->
             if (config) return@AudioSink
-            if (q.size > 200) q.add(end) else q.add(packet(2, if (hq) data else mix.feed(data)))   // the browser cannot keep up: stop instead of filling memory
+            if (q.size > 200) { if (q.size < 210) q.add(end) } else q.add(packet(2, if (hq) data else mix.feed(data)))   // the browser cannot keep up: stop instead of filling memory
         }, false, share)
         hearer = h
         return HttpServer.Response.stream("application/octet-stream", -1) { out ->
             try {
                 while (true) {
                     val p = q.poll(5, java.util.concurrent.TimeUnit.SECONDS) ?: packet(4, end)
-                    if (p === end) break
+                    if (p === end || hearer !== h) break                    // ended, or another browser took over
                     out.write(p)
                     out.flush()
                 }
@@ -466,10 +470,14 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     private fun pairStart(): HttpServer.Response {
         val now = System.currentTimeMillis()
         if (now - lastPairStart < 3000) return HttpServer.Response.error(429, "wait a moment")
+        // asking for code after code would give five guesses each: wrong guesses count across codes, and too many lock it
+        if (now < lockedUntil) return HttpServer.Response.error(429, "Nhập sai mã nhiều lần: đợi 15 phút rồi thử lại.")
         lastPairStart = now
-        code = String.format("%06d", random.nextInt(1000000))
-        codeUntil = now + 120000
-        guesses = 0
+        if (pairingCode() == null || codeUntil - now < 30000) {          // the code on the TV stays the same when asked again
+            code = String.format("%06d", random.nextInt(1000000))
+            codeUntil = now + 120000
+            guesses = 0
+        }
         // Since Android 10 a service may not open a screen by itself; the shell user (our ADB session) still may.
         val t = tv
         var shown = false
@@ -488,9 +496,11 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         val got = r.json().optString("code").replace(Regex("\\D"), "")
         if (want != got) {
             if (++guesses >= 5) code = null
+            if (++wrong >= 15) { wrong = 0; code = null; lockedUntil = System.currentTimeMillis() + 15 * 60000 }
             return HttpServer.Response.error(400, if (code == null) "expired" else "wrong")
         }
         code = null
+        wrong = 0
         val token = newToken(this)
         val ok = ok()
         ok.headers["Set-Cookie"] = "$COOKIE=$token; Max-Age=315360000; Path=/; HttpOnly; SameSite=Strict"

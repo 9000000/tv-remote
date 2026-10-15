@@ -36,9 +36,10 @@ TVSET_READ = ("echo sdk $(getprop ro.build.version.sdk); echo dns_mode $(setting
 
 def backup(pkg):
     """💾 one app as a tar on stdout: apk/ (every split), obb/ and data/ (its folders in shared storage), package.txt,
-    version.txt. What the app keeps in /data/data cannot be read without root, so it is not in there."""
+    version.txt. What the app keeps in /data/data cannot be read without root, so it is not in there. Hang-ups are ignored so
+    the folder of links is still removed when the download is cancelled."""
     _pkg(pkg)
-    return (f"p={pkg}; d=/data/local/tmp/tvr-bk-$$; rm -rf $d; mkdir -p $d/apk && cd $d || exit 1; "
+    return (f"trap '' HUP PIPE; p={pkg}; d=/data/local/tmp/tvr-bk-$$; rm -rf $d; mkdir -p $d/apk && cd $d || exit 1; "
             "for f in $(pm path $p | sed 's/^package://'); do ln -s \"$f\" apk/${f##*/}; done; "
             "for k in obb data; do [ -d /sdcard/Android/$k/$p ] && ln -s /sdcard/Android/$k/$p $k; done; "
             "echo $p > package.txt; dumpsys package $p | grep -m1 versionName | cut -d= -f2 > version.txt; "

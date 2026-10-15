@@ -4,6 +4,26 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.18.1 - 2026-10-15
+
+Web 2.18.1 · app điện thoại 2.16.1 · app TV 2.15.1
+
+**Tiếng Việt**
+- **TV Setup không còn bị sập** khi có máy trong mạng gửi một địa chỉ lạ (ví dụ `?a=%zz`) hay mở cả trăm kết nối rồi bỏ đó; thêm giới hạn số kết nối cùng lúc.
+- **Ghép đôi an toàn hơn:** bấm “Hiện mã trên TV” lần nữa vẫn giữ mã cũ; nhập sai 15 lần thì khóa 15 phút, không còn đoán mã mãi được.
+- **Không xóa nhầm cả bộ nhớ:** tab Tệp từ chối xóa hay đổi tên `/storage/emulated/0` và `/storage/self/primary` (trước chỉ chặn `/sdcard`).
+- **Ít treo hơn khi TV chậm hay mất mạng:** lệnh ADB quá giờ bị dừng hẳn thay vì chạy ngầm; trang không dồn thêm lượt kiểm tra khi lượt trước chưa xong, và không hỏi TV khi tab đang ẩn; chờ khởi động lại tối đa 10 phút; kéo trên màn hình qua mạng chậm không còn trễ dần.
+- **App điện thoại:** đóng màn hình (đổi giao diện sáng/tối, cỡ chữ, ngôn ngữ) thì tắt luôn âm thanh và kết nối cũ; lỗi giải mã âm thanh chỉ tắt âm thanh, không làm sập app; cảnh chạy từ widget có bước chờ dài không còn bị cắt ở giây 15; câu nói “hẹn giờ tắt 99999999999 phút” không làm sập app.
+- Sao lưu app và tải tệp: ngắt giữa chừng không còn để lại tiến trình chạy trên TV; danh sách TV (`tvs.json`) được ghi trọn vẹn hay không ghi gì.
+
+**English**
+- **TV Setup no longer crashes** when a device on the network sends an odd address (such as `?a=%zz`) or opens a hundred connections and leaves them; concurrent connections are capped.
+- **Safer pairing:** pressing “Show the code on the TV” again keeps the same code; 15 wrong codes lock pairing for 15 minutes, so codes can't be guessed forever.
+- **No deleting a whole storage by mistake:** the Files tab refuses to delete or rename `/storage/emulated/0` and `/storage/self/primary` (before, only `/sdcard` was blocked).
+- **Fewer hangs when the TV is slow or offline:** timed-out ADB commands are stopped instead of running on; the page doesn't pile up checks while one is pending and doesn't poll the TV from a hidden tab; waiting for a restart stops after 10 minutes; dragging on the screen over a slow link no longer lags more and more.
+- **Phone app:** when the screen is recreated (light/dark switch, font size, language) the old sound and connection end with it; an audio decoding error stops the sound instead of crashing the app; scenes run from the widget with long waits are no longer cut at 15 s; saying “sleep in 99999999999 minutes” no longer crashes the app.
+- App backups and file downloads: stopping midway no longer leaves a process running on the TV; the TV list (`tvs.json`) is written whole or not at all.
+
 ## 2.18.0 - 2026-10-15
 
 Web 2.18.0 · app điện thoại 2.16.0 · app TV 2.15.0

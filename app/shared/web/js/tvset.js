@@ -106,7 +106,7 @@ $('#tvreboot').addEventListener('click', async () => {
 $('#rebootclose').addEventListener('click', () => $('#rebootdlg').close());
 async function watchReboot(t0) {
   let down = false;
-  while (rebootT0 === t0) {
+  while (rebootT0 === t0 && Date.now() - t0 < 10 * 60000) {             // 10 minutes: by then the note says what to do
     await sleep(3000);
     const s = await fetch('/api/state').then((r) => r.ok ? r.json() : null).catch(() => null);
     const up = !!(s && s.adb && s.adb.state === 'ready'), secs = Math.round((Date.now() - t0) / 1000);

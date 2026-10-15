@@ -280,6 +280,13 @@ class MainActivity : Activity() {
         else if (setup == null && retryOnResume && !connecting) { retryOnResume = false; connect() }   // back from Developer options: ADB may be on now
     }
 
+    override fun onDestroy() {
+        val a = adb                                                   // this screen's own connection; RemoteService has its own
+        adb = null; setup = null
+        Thread { try { a?.close() } catch (ignored: Exception) { } }.start()
+        super.onDestroy()
+    }
+
     private val APP_LINK = "https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk"
 
     /** This TV's address on the home network, read from the network interfaces (ADB not needed). */

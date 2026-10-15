@@ -25,7 +25,10 @@ def load():
 
 
 def save(cfg):
-    FILE.write_text(json.dumps(cfg, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    # all or nothing: a crash or a full disk mid-write must not leave half a file, which would lose every pairing
+    tmp = FILE.with_name(FILE.name + ".tmp")
+    tmp.write_text(json.dumps(cfg, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    os.replace(tmp, FILE)
 
 
 def find(cfg, host):

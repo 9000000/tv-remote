@@ -13,6 +13,7 @@ import java.net.Socket
 import java.net.URLDecoder
 import java.util.Locale
 import java.util.concurrent.Executors
+import java.util.concurrent.Semaphore
 
 /**
  * A very small HTTP server (one request per connection, no TLS) for the pages the apps serve themselves.
@@ -91,6 +92,9 @@ class HttpServer(private val handler: Handler) {
     }
 
     private val pool = Executors.newCachedThreadPool()
+    // TV Setup listens on the whole network: a host that opens connections without end must not use up the TV's threads and
+    // file descriptors (the scrcpy and ADB sockets need them too). A page uses a handful at once; video and sound one each.
+    private val slots = Semaphore(48)
     @Volatile private var server: ServerSocket? = null
 
     /** localOnly: reachable from this device alone (127.0.0.1); otherwise from every network the device is on. */
@@ -104,9 +108,11 @@ class HttpServer(private val handler: Handler) {
             while (!s.isClosed) {
                 try {
                     val c = s.accept()
-                    pool.execute { serve(c) }
+                    if (!slots.tryAcquire()) { try { c.close() } catch (ignored: IOException) { }; continue }
+                    pool.execute { try { serve(c) } finally { slots.release() } }
                 } catch (e: IOException) {
                     if (s.isClosed) break
+                    try { Thread.sleep(100) } catch (ignored: InterruptedException) { }   // out of descriptors: don't spin
                 }
             }
         }, "http-accept").apply { isDaemon = true }.start()
@@ -124,8 +130,9 @@ class HttpServer(private val handler: Handler) {
     private fun serve(c: Socket) {
         try {
             c.use { sock ->
-                sock.soTimeout = 30000
+                sock.soTimeout = 10000
                 val r = read(sock.getInputStream())
+                sock.soTimeout = 30000
                 val out = if (r == null) Response.error(400, "bad request") else try {
                     handler.handle(r)
                 } catch (e: Exception) {
@@ -144,6 +151,8 @@ class HttpServer(private val handler: Handler) {
             }
         } catch (ignored: IOException) {
             // the browser went away
+        } catch (e: Throwable) {
+            // anything else from a reply being written ends this connection only: an uncaught exception would end the app
         }
     }
 
@@ -151,10 +160,11 @@ class HttpServer(private val handler: Handler) {
         /** Request line and headers; the body stays in the stream for the handler. */
         private fun read(input: InputStream): Request? {
             val head = ByteArrayOutputStream()
+            val until = System.nanoTime() + 15_000_000_000L               // a head sent a byte at a time doesn't hold a thread
             var state = 0
             while (state < 4) {                                       // until the blank line
                 val b = input.read()
-                if (b < 0 || head.size() > 16384) return null
+                if (b < 0 || head.size() > 16384 || System.nanoTime() > until) return null
                 head.write(b)
                 state = when {
                     (b == '\r'.code && (state == 0 || state == 2)) || (b == '\n'.code && (state == 1 || state == 3)) -> state + 1
@@ -172,7 +182,11 @@ class HttpServer(private val handler: Handler) {
             r.path = if (q < 0) target else target.substring(0, q)
             if (q >= 0) for (kv in target.substring(q + 1).split("&")) {
                 val p = kv.split("=", limit = 2)
-                r.query[URLDecoder.decode(p[0], "UTF-8")] = if (p.size > 1) URLDecoder.decode(p[1], "UTF-8") else ""
+                try {
+                    r.query[URLDecoder.decode(p[0], "UTF-8")] = if (p.size > 1) URLDecoder.decode(p[1], "UTF-8") else ""
+                } catch (e: IllegalArgumentException) {                // "%zz": a bad request, not a reason to crash
+                    return null
+                }
             }
             for (line in lines.drop(1)) {
                 val colon = line.indexOf(':')

@@ -29,7 +29,7 @@ object TvShell {
 
     fun backup(pkg: String): String {
         pkg(pkg)
-        return "p=$pkg; d=/data/local/tmp/tvr-bk-\$\$; rm -rf \$d; mkdir -p \$d/apk && cd \$d || exit 1; " +
+        return "trap '' HUP PIPE; p=$pkg; d=/data/local/tmp/tvr-bk-\$\$; rm -rf \$d; mkdir -p \$d/apk && cd \$d || exit 1; " +
             "for f in \$(pm path \$p | sed 's/^package://'); do ln -s \"\$f\" apk/\${f##*/}; done; " +
             "for k in obb data; do [ -d /sdcard/Android/\$k/\$p ] && ln -s /sdcard/Android/\$k/\$p \$k; done; " +
             "echo \$p > package.txt; dumpsys package \$p | grep -m1 versionName | cut -d= -f2 > version.txt; " +

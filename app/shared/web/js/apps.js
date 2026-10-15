@@ -145,7 +145,7 @@ async function pollLog() {
   clearTimeout(logTimer);
   if (!$('#logdlg').open) return;
   const pkg = logPkg;
-  if (!logPaused) {
+  if (!logPaused && !document.hidden) {                               // a log left open in a hidden tab costs the TV nothing
     const r = await api('/api/log?pkg=' + encodeURIComponent(pkg) + '&since=' + encodeURIComponent(logSt.last), null, true);
     if (pkg !== logPkg || !$('#logdlg').open) return;
     if (r) {

@@ -2,6 +2,7 @@
 import asyncio, errno, ipaddress, json, os, re, socket
 from collections import Counter
 from tvtools import find
+from adbtools import reap
 
 TAILSCALE = find("tailscale", "/Applications/Tailscale.app/Contents/MacOS/Tailscale", r"C:\Program Files\Tailscale\tailscale.exe")
 TS_ENV = {**os.environ, "TAILSCALE_BE_CLI": "1"}                      # the Mac app's binary acts as the CLI only from a Terminal
@@ -81,7 +82,7 @@ async def discover():
         jobs += [probe(str(h), "lan") for h in net.hosts() if str(h) != me]
     try:
         p = await asyncio.create_subprocess_exec(TAILSCALE, "status", "--json", env=TS_ENV, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
-        out, _ = await asyncio.wait_for(p.communicate(), 8)
+        out, _ = await reap(p, 8)
         for peer in (json.loads(out).get("Peer") or {}).values():
             if peer.get("OS") == "android" and peer.get("Online") and peer.get("TailscaleIPs"):
                 peers[peer["TailscaleIPs"][0]] = peer.get("HostName", "")

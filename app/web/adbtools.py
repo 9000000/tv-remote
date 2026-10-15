@@ -76,6 +76,13 @@ def memory_by_app(meminfo):
     return sorted(((p, mb) for p, mb in by.items() if mb >= 5), key=lambda x: -x[1])[:25]
 
 
+def storage_root(p):
+    """A path that is a whole storage, never deleted or renamed: /sdcard and /storage themselves, a volume (/storage/XXXX-XXXX)
+    and the internal storage under its other names (/storage/emulated/0, /storage/self/primary)."""
+    parts = [x for x in p.split("/") if x]
+    return p in ROOTS or (parts[:1] == ["storage"] and (len(parts) <= 2 or (len(parts) == 3 and parts[1] in ("emulated", "self"))))
+
+
 def safe_path(p):
     p = "/" + "/".join(x for x in (p or DEFAULT_DEST).split("/") if x not in ("", "."))
     if ".." in p.split("/") or not (p in ROOTS or p.startswith(tuple(r + "/" for r in ROOTS))):
@@ -118,6 +125,30 @@ def apk_package(manifest):
     return None
 
 
+_background = set()
+
+
+def background(coro):
+    """A task nobody awaits, kept referenced until it ends: asyncio holds tasks weakly, so a bare create_task can vanish midway."""
+    t = asyncio.create_task(coro)
+    _background.add(t)
+    t.add_done_callback(_background.discard)
+    return t
+
+
+async def reap(p, timeout, stdin=None):
+    """p.communicate() with a time limit; a process that runs over (or whose caller gave up) is killed, never left behind."""
+    try:
+        return await asyncio.wait_for(p.communicate(stdin), timeout)
+    except BaseException:                                               # TimeoutError, or the request was cancelled
+        if p.returncode is None:
+            try:
+                p.kill()
+            except ProcessLookupError:
+                pass
+        raise
+
+
 def safe_name(n):
     n = re.sub(r"[^\w.\- ()\[\]]", "_", Path(n or "").name).strip(". ")
     return n[:120] or "file"
@@ -126,6 +157,7 @@ def safe_name(n):
 class Adb:
     def __init__(self, target):
         self.target = target
+        self._st_for = None
         self.jobs = {}
         self.apk_paths = {}
 
@@ -134,14 +166,17 @@ class Adb:
                                                  stdin=asyncio.subprocess.PIPE if stdin else None,
                                                  stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
         try:
-            out, err = await asyncio.wait_for(p.communicate(stdin), timeout)
+            out, err = await reap(p, timeout, stdin)
         except asyncio.TimeoutError:
-            p.kill(); raise AdbError("adb timed out")
+            raise AdbError("adb timed out")
         return p.returncode, out, err.decode(errors="replace")
 
     async def ensure(self):
         p = await asyncio.create_subprocess_exec(ADB, "connect", self.target, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
-        await asyncio.wait_for(p.communicate(), 10)
+        try:
+            await reap(p, 10)
+        except asyncio.TimeoutError:                                  # best effort: the next status check says how it went
+            pass
 
     async def status(self, force=False):
         """ready | unauthorized | offline | closed (port shut) | error.  Cached for a few seconds."""
@@ -149,7 +184,15 @@ class Adb:
             return {"state": "closed"}                                # no TV chosen yet
         if not force and time.time() - getattr(self, "_st_t", 0) < 4:
             return self._st
-        host, port = self.target.rsplit(":", 1)
+        # one check at a time: on a TV stuck "offline" a check takes 20-40 s, and every page polls every 4 s
+        running = getattr(self, "_st_task", None)
+        if running is None or running.done() or self._st_for != self.target:
+            self._st_for = self.target
+            running = self._st_task = asyncio.ensure_future(self._status(self.target))
+        return await asyncio.shield(running)
+
+    async def _status(self, target):
+        host, port = target.rsplit(":", 1)
         try:
             _, w = await asyncio.wait_for(asyncio.open_connection(host, int(port)), 2.5)
             w.close()
@@ -165,10 +208,14 @@ class Adb:
             if st["state"] in ("unauthorized", "offline") and time.time() - getattr(self, "_re_t", 0) > 30:
                 self._re_t = time.time()
                 p = await asyncio.create_subprocess_exec(ADB, "disconnect", self.target, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
-                await asyncio.wait_for(p.wait(), 6)
+                try:
+                    await reap(p, 6)
+                except asyncio.TimeoutError:
+                    pass
                 await self.ensure()
                 st = await self._state_once()
-        self._st, self._st_t = st, time.time()
+        if target == self.target:                                     # not a TV switched away from meanwhile
+            self._st, self._st_t = st, time.time()
         return st
 
     async def _state_once(self):
@@ -378,7 +425,7 @@ class Adb:
 
     async def delete(self, path):
         path = safe_path(path)
-        if path in ROOTS or path.count("/") < 3 and path.startswith("/storage"):
+        if storage_root(path):
             raise AdbError("refusing to delete a storage root")
         out = await self.shell(f"rm -rf {shlex.quote(path)}")
         if out.strip():
@@ -392,7 +439,7 @@ class Adb:
 
     async def rename(self, path, name):
         path = safe_path(path)
-        if path in ROOTS or name != safe_name(name):
+        if storage_root(path) or name != safe_name(name):
             raise AdbError("bad name")
         dst = shlex.quote(path.rsplit("/", 1)[0] + "/" + name)
         out = (await self.shell(f"if [ -e {dst} ]; then echo exists; else mv {shlex.quote(path)} {dst} 2>&1; fi")).strip()
@@ -443,7 +490,7 @@ class Adb:
                 j["status"], j["pct"] = "done", 100
             except Exception as e:
                 j["status"], j["msg"] = "error", str(e) or e.__class__.__name__
-        asyncio.create_task(runner())
+        background(runner())
         return j
 
     async def fetch_to_file(self, url, j, tmpdir):

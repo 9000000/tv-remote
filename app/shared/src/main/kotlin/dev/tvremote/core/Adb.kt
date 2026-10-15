@@ -176,7 +176,7 @@ class Adb(dir: File) : Closeable {
         var askAgainAt = 0L
         var asked = 1
         while (System.currentTimeMillis() < end) {
-            if (dead) throw IOException("closed")                     // whoever wanted this connection has let go of it
+            if (dead) { asking.close(); throw IOException("closed") }   // whoever wanted this connection has let go of it (and the TV's prompt with it)
             if (askingAlive) {
                 sock = asking
                 input = askingIn
@@ -212,7 +212,8 @@ class Adb(dir: File) : Closeable {
                 }
                 sock!!.close()
             } catch (retry: IOException) {
-                // adbd busy, try again
+                val s = sock                                          // adbd busy, try again: not with this half-open socket
+                if (s != null && s !== asking) try { s.close() } catch (ignored: IOException) { }
             }
         }
         asking.close()

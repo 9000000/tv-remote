@@ -19,7 +19,7 @@ internal class Headless(private val c: Context) {
     /** The TV's name for the words shown, and "" when none is saved. */
     fun tvName(): String = pref("ips").split(",").firstOrNull { it.isNotEmpty() }?.let { pref("name:$it").ifEmpty { it } } ?: ""
 
-    /** Runs [what] on the TV; the answer is what to tell the person. Blocks for up to about 15 s. */
+    /** Runs [what] on the TV; the answer is what to tell the person. Blocks for up to about 15 s, longer for a scene that waits. */
     fun run(what: (Scenes.Target, Boolean) -> String?): String {
         val ip = pref("ips").split(",").firstOrNull { it.isNotEmpty() } ?: return t("Chưa có TV nào: mở app và chọn TV trước.", "No TV yet: open the app and pick a TV first.")
         val name = pref("name:$ip").ifEmpty { ip }
@@ -28,14 +28,17 @@ internal class Headless(private val c: Context) {
             val link = AdbLink(c.filesDir, host)
             var err: String? = null
             var done = false
+            var linked = false
             val worker = Thread {
-                err = try { link.get(); what(Scenes.Shell({ link.get().shell(it) }), true) } catch (e: Exception) { "adb:" + (e.message ?: "") }
+                err = try { link.get(); linked = true; what(Scenes.Shell({ link.get().shell(it) }), true) } catch (e: Exception) { "adb:" + (e.message ?: "") }
                 done = true
             }
             worker.start()
-            worker.join(15000)
-            if (!done) { link.close(); return name + ": " + t("TV đang hỏi “Cho phép gỡ lỗi USB?”: mở app để cho phép.", "the TV is asking “Allow USB debugging?”: open the app to allow it.") }
+            worker.join(15000)                                        // connecting: longer means the TV is asking
+            if (linked && !done) worker.join(120000)                  // connected: a scene's waits take as long as they take
+            if (!done && link.waitingForUser()) { link.close(); return name + ": " + t("TV đang hỏi “Cho phép gỡ lỗi USB?”: mở app để cho phép.", "the TV is asking “Allow USB debugging?”: open the app to allow it.") }
             link.close()
+            if (!done) return name + ": " + t("TV không trả lời.", "the TV did not answer.")
             val e = err
             if (e == null) return "✓ $name"
             if (!e.startsWith("adb:")) return name + ": " + e

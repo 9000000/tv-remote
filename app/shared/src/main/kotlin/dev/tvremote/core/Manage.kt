@@ -30,7 +30,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     private val promptLock = Any()
 
     private val jobs: MutableMap<String, JSONObject> = Collections.synchronizedMap(LinkedHashMap<String, JSONObject>())
-    private var nextJob = 1
+    private val nextJob = java.util.concurrent.atomic.AtomicInteger(1)
 
     /** null when the path is not ours. */
     @Throws(Exception::class)
@@ -303,19 +303,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
 
     /** 💾 one app as a .tar, made on the TV and streamed straight through (TvShell.backup says what is in it). */
     private fun backup(pkg: String): HttpServer.Response {
-        val s = link.get().exec(TvShell.backup(pkg))
-        val out = HttpServer.Response.stream("application/x-tar", -1) { o ->
-            try {
-                val b = ByteArray(65536)
-                while (true) {
-                    val n = s.read(b, 0, b.size, 0)
-                    if (n < 0) break
-                    o.write(b, 0, n)
-                }
-            } finally {
-                s.close()
-            }
-        }
+        val adb = link.get()
+        val out = HttpServer.Response.stream("application/x-tar", -1) { o -> pipe(adb.exec(TvShell.backup(pkg)), o) }
         out.headers["Content-Disposition"] = "attachment; filename*=UTF-8''$pkg-backup.tar"   // the phone's WebView reads this form
         return out
     }
@@ -325,22 +314,26 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val adb = link.get()
         val size = adb.shell("stat -c %s " + Adb.q(path) + " 2>/dev/null").trim()
         if (!size.matches(DIGITS)) throw IllegalArgumentException("cannot read this file")
-        val s = adb.exec("cat " + Adb.q(path))
         val inline = r.q("inline") == "1"
         val out = HttpServer.Response.stream(if (inline) mime(path).replace("*/*", "application/octet-stream") else "application/octet-stream", size.toLong()) { o ->
-            try {
-                val b = ByteArray(65536)
-                while (true) {
-                    val n = s.read(b, 0, b.size, 0)
-                    if (n < 0) break
-                    o.write(b, 0, n)
-                }
-            } finally {
-                s.close()
-            }
+            pipe(adb.exec("cat " + Adb.q(path)), o)
         }
         if (!inline) out.headers["Content-Disposition"] = "attachment; filename*=UTF-8''" + URLEncoder.encode(path.substring(path.lastIndexOf('/') + 1), "UTF-8").replace("+", "%20")
         return out
+    }
+
+    /** A command's output to the browser. Opened only once the reply has started, so a browser that left never leaves it open. */
+    private fun pipe(s: Adb.Stream, o: java.io.OutputStream) {
+        try {
+            val b = ByteArray(65536)
+            while (true) {
+                val n = s.read(b, 0, b.size, 0)
+                if (n < 0) break
+                o.write(b, 0, n)
+            }
+        } finally {
+            s.close()
+        }
     }
 
     /** Copies `length` bytes into a file on the TV. */
@@ -377,7 +370,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
      */
     private fun upload(r: HttpServer.Request): JSONObject {
         val name = safeName(r.q("name"))
-        val done = { title: String, msg: String -> JSONObject().put("id", "u" + nextJob++).put("title", title).put("status", "done").put("pct", 100).put("msg", msg) }
+        val done = { title: String, msg: String -> JSONObject().put("id", "u" + nextJob.getAndIncrement()).put("title", title).put("status", "done").put("pct", 100).put("msg", msg) }
         if (r.q("kind") == "install") { installUpload(r); return done("install $name", "installed") }
         if (r.q("kind") == "restore") { restore(r); return done("restore $name", "restored") }
         val dest = safePath(r.q("dest")) + "/" + name
@@ -389,7 +382,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     private fun interface Work { fun run(job: JSONObject): String }
 
     private fun job(title: String, work: Work): JSONObject {
-        val j = JSONObject().put("id", (nextJob++).toString()).put("title", title).put("status", "running").put("pct", 0).put("msg", "")
+        val j = JSONObject().put("id", nextJob.getAndIncrement().toString()).put("title", title).put("status", "running").put("pct", 0).put("msg", "")
         jobs[j.getString("id")] = j
         while (jobs.size > 20) jobs.remove(jobs.keys.iterator().next())
         Thread({
@@ -524,7 +517,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     } catch (e: Exception) { null }
 
     /** Lets the TV Setup app on the TV read which app is on screen (it cannot ask for this itself). */
-    fun allowUsage(pkg: String) { try { sh("appops set $pkg GET_USAGE_STATS allow") } catch (ignored: Exception) { } }
+    /** false when it could not be asked (no ADB yet): the caller tries again later. */
+    fun allowUsage(pkg: String): Boolean = try { sh("appops set $pkg GET_USAGE_STATS allow"); true } catch (ignored: Exception) { false }
 
     /** What the TV Setup app on the TV has recorded (Stats.kt there), for the last [days] days. */
     private fun stats(days: Int): JSONObject {
@@ -697,7 +691,11 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             return if (s.isEmpty()) "file" else if (s.length > 120) s.substring(0, 120) else s
         }
 
-        private fun root(path: String): Boolean = path == "/sdcard" || path == "/storage" || path.startsWith("/storage/") && path.jsplit("/").size < 4
+        /** A whole storage, never deleted or renamed: /sdcard, /storage, a volume, and /storage/emulated/0 or /storage/self/primary. */
+        internal fun root(path: String): Boolean {
+            val parts = path.split("/").filter { it.isNotEmpty() }
+            return path == "/sdcard" || parts.firstOrNull() == "storage" && (parts.size <= 2 || parts.size == 3 && parts[1] in setOf("emulated", "self"))
+        }
 
         internal fun mime(path: String): String = when (path.substring(path.lastIndexOf('.') + 1).lowercase(Locale.ROOT)) {
             "jpg", "jpeg" -> "image/jpeg"

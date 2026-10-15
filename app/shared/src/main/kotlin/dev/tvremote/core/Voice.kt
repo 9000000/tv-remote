@@ -45,7 +45,7 @@ object Voice {
         if (CANCEL.matches(s)) return Command.Timer(0)
         TIMER.matchEntire(s)?.let { m ->
             val hours = m.groupValues[5].matches(Regex("gio|tieng|hours?|h"))
-            return Command.Timer(minOf(m.groupValues[4].toInt() * (if (hours) 60 else 1), 720))
+            return Command.Timer(minOf((m.groupValues[4].toIntOrNull() ?: 720) * (if (hours) 60 else 1), 720))   // "99999999999 phút": the most, not a crash
         }
         OPEN.matchEntire(s)?.let { m ->
             val want = m.groupValues[3]

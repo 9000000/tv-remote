@@ -55,6 +55,15 @@ class Recipes(unittest.TestCase):
                     self.assertNotIn(bad, out.replace("REBOOT", ""), c)
 
 
+class StorageRoot(unittest.TestCase):
+    def test_roots(self):
+        import adbtools
+        for p in ("/sdcard", "/storage", "/storage/emulated", "/storage/emulated/0", "/storage/self/primary", "/storage/1A2B-3C4D"):
+            self.assertTrue(adbtools.storage_root(p), p)
+        for p in ("/sdcard/Download", "/storage/emulated/0/Movies", "/storage/1A2B-3C4D/x"):
+            self.assertFalse(adbtools.storage_root(p), p)
+
+
 if __name__ == "__main__":
     if "--write" in sys.argv:
         CASES.write_text(json.dumps(table(), ensure_ascii=False, indent=1) + "\n")

@@ -11,7 +11,7 @@ from androidtvremote2.remotemessage_pb2 import RemoteKeyCode
 import tvconfig
 import tvshell
 import scenes as scn
-from adbtools import AdbError, PKG_RE, FP_RE, PROTECTED, my_fingerprint, memory_by_app
+from adbtools import AdbError, PKG_RE, FP_RE, PROTECTED, my_fingerprint, memory_by_app, reap, background
 from tvtools import ADB, ROOT, SCRIPTS
 from screen import scrcpy_launch, live_session, RESYNC
 from session import Session, Live
@@ -87,7 +87,7 @@ def build(S):
         entry = tvconfig.find(S.cfg, tv.host) or {}
         st = await adb.status()
         if st["state"] in ("ready", "unauthorized"):
-            asyncio.create_task(keep_trusted(st["state"]))
+            background(keep_trusted(st["state"]))
         return web.json_response({**tv.state(), "adb": st, "name": entry.get("name", ""), "saved": bool(entry)})
 
     @routes.post("/api/adb/connect")
@@ -339,6 +339,20 @@ def build(S):
         res = await getattr(adb, action)(pkg)
         return web.json_response({"ok": True, "result": res})
 
+    async def stream_out(request, proc, resp):
+        """A process's output as the response. A browser that cancels the download ends the process too (and so the command on
+        the TV), instead of leaving it blocked on a full pipe."""
+        try:
+            await resp.prepare(request)
+            while chunk := await proc.stdout.read(1 << 20):
+                await resp.write(chunk)
+            await proc.wait()
+        finally:
+            if proc.returncode is None:
+                proc.kill()
+                await proc.wait()
+        return resp
+
     @routes.get("/api/app/backup")
     @adb_errors
     async def app_backup(request):
@@ -347,11 +361,7 @@ def build(S):
         proc = await asyncio.create_subprocess_exec(ADB, "-s", adb.target, "exec-out", tvshell.backup(pkg),
                                                     stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
         resp = web.StreamResponse(headers={"Content-Type": "application/x-tar", "Content-Disposition": f"attachment; filename*=UTF-8''{pkg}-backup.tar"})
-        await resp.prepare(request)
-        while chunk := await proc.stdout.read(1 << 20):
-            await resp.write(chunk)
-        await proc.wait()
-        return resp
+        return await stream_out(request, proc, resp)
 
     @routes.get("/api/log")
     @adb_errors
@@ -400,11 +410,7 @@ def build(S):
         inline = request.query.get("inline") == "1" and kind in ("image/jpeg", "image/png", "image/webp", "image/gif")   # preview: bitmaps only
         resp = web.StreamResponse(headers={"Content-Type": kind if inline else "application/octet-stream", "X-Content-Type-Options": "nosniff",
                                            "Content-Disposition": '%s; filename="%s"' % ("inline" if inline else "attachment", path.rsplit("/", 1)[-1].replace('"', "_"))})
-        await resp.prepare(request)
-        while chunk := await proc.stdout.read(1 << 20):
-            await resp.write(chunk)
-        await proc.wait()
-        return resp
+        return await stream_out(request, proc, resp)
 
     @routes.post("/api/file/delete")
     @adb_errors
@@ -511,7 +517,7 @@ def build(S):
     @adb_errors
     async def setup_plan(_):
         p = await asyncio.create_subprocess_exec(sys.executable, str(SCRIPTS / "tv_setup.py"), "plan", adb.target, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
-        out, _ = await asyncio.wait_for(p.communicate(), 90)
+        out, _ = await reap(p, 90)
         try:
             plan = json.loads(out.decode(errors="replace").strip().splitlines()[-1])
         except Exception:
@@ -536,7 +542,10 @@ def build(S):
             env={**os.environ, "TV_HOST": tv.host, "TV_MAC": e.get("mac", ""), "TV_LAN": e.get("lan", ""), "RELAY_USER": e.get("relay_user", ""),
                  "RELAY_HOST": e.get("relay_host", ""), "RELAY_CMD": e.get("relay_cmd", "")},
             stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
-        out, _ = await p.communicate()
+        try:
+            out, _ = await reap(p, 90)                                # wake.py waits up to 60 s, plus an SSH relay that can hang
+        except asyncio.TimeoutError:
+            return web.json_response({"ok": False, "log": "timed out"})
         if p.returncode == 0 and not tv.remote.is_on:
             await asyncio.sleep(2)
             if tv.available:
@@ -801,7 +810,7 @@ def build(S):
                 pass
         finally:
             if proc:                                                  # on its own: the page has gone and this task may be cancelled
-                asyncio.create_task(scn.end_capture(adb, proc, writer, port))
+                background(scn.end_capture(adb, proc, writer, port))
         return resp
 
     @routes.post("/api/shell")

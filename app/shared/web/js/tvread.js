@@ -20,7 +20,8 @@
       if (!l.trim() || l.startsWith('---------')) continue;            // "--------- beginning of main"
       const at = l.slice(0, 18);
       if (STAMP.test(at)) {
-        if (at < st.last || (at === st.last && st.seen.has(l))) continue;
+        const newYear = st.last.startsWith('12-') && at.startsWith('01-');   // the stamps have no year
+        if ((at < st.last && !newYear) || (at === st.last && st.seen.has(l))) continue;
         if (at !== st.last) { st.last = at; st.seen = new Set(); }
         st.seen.add(l);
       }

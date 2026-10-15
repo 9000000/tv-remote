@@ -44,3 +44,8 @@ test('each log line is shown once across polls', () => {
   assert.equal(logNext({ last: '', seen: new Set() }, 'pid 1 2\n').pid, '1');
   assert.equal(logLevel(a.lines[0]), 'E'); assert.equal(logLevel(a.lines[1]), 'W'); assert.equal(logLevel('junk'), '');
 });
+
+test('the log goes on across New Year', () => {
+  const st = { last: '12-31 23:59:59.900', seen: new Set() };
+  assert.equal(logNext(st, 'pid 9\n01-01 00:00:00.100  9  9 I Tag: happy\n').lines.length, 1);
+});

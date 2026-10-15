@@ -120,6 +120,7 @@ class Atv(dir: File, private val host: String) : Closeable {
                     again = try { open() } catch (e: Exception) { null }
                     if (again != null) break
                 }
+                if (again != null && closed) { try { again.close() } catch (ignored: Exception) { }; break }   // closed while dialling
                 s = again ?: break
             }
             if (!closed) onClosed()

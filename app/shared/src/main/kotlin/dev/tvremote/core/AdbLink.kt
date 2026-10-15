@@ -10,6 +10,8 @@ class AdbLink(private val keyDir: File, private val host: String) {
     @Volatile private var waiting = false                             // the TV is showing "Allow USB debugging?"
     @Volatile private var failed = false                              // the last attempt did not get through
     @Volatile private var dialStart = 0L
+    @Volatile private var lastTry = 0L                                // state() dials again at most this often after a failure
+    private val spawning = java.util.concurrent.atomic.AtomicBoolean()
     private val lock = Any()
 
     @Throws(IOException::class)
@@ -28,12 +30,15 @@ class AdbLink(private val keyDir: File, private val host: String) {
                 return a
             } catch (e: IOException) {
                 failed = true
+                try { a.close() } catch (ignored: Exception) { }      // the socket of a refused attempt, not left to the GC
                 throw e
             } catch (e: Exception) {
                 failed = true
+                try { a.close() } catch (ignored: Exception) { }
                 throw IOException(e.message ?: e.javaClass.simpleName)
             } finally {
                 dialing = null
+                lastTry = System.currentTimeMillis()
             }
         }
     }
@@ -52,7 +57,9 @@ class AdbLink(private val keyDir: File, private val host: String) {
             try { d.close() } catch (ignored: Exception) { }
             return "closed"
         }
-        if (d == null) Thread({ try { get() } catch (ignored: Exception) { } }, "adb-link").apply { isDaemon = true }.start()
+        // one dial at a time, and a TV that is off is asked again every 10 s, not on every poll of every open page
+        if (d == null && (!failed || System.currentTimeMillis() - lastTry > 10000) && spawning.compareAndSet(false, true))
+            Thread({ try { get() } catch (ignored: Exception) { } finally { spawning.set(false) } }, "adb-link").apply { isDaemon = true }.start()
         return if (waiting) "unauthorized" else if (failed) "closed" else "unknown"
     }
 
@@ -60,6 +67,7 @@ class AdbLink(private val keyDir: File, private val host: String) {
     fun reconnect(): String {
         close()
         failed = false
+        lastTry = 0
         return state()
     }
 

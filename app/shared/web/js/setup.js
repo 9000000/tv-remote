@@ -297,5 +297,8 @@ const startTab = location.hash.slice(1) || new URLSearchParams(location.search).
 if (CORE !== 'mac') $('#wake').parentElement.className = 'rrow three';   // no wake button there: three keys fill the row
 if (['remote', 'apps', 'files', 'health', 'auto', 'tv'].includes(startTab)) showTab(startTab); else if (startTab === 'install') showTab('files');
 else if (startTab === 'term') { showTab('health'); $('#termcard').open = true; }   // the terminal used to be a tab of its own
-applyAdb(); refresh(); setInterval(refresh, 4000);
+// One check at a time, and none while the page is hidden: a TV that is slow to answer must not pile them up.
+let polling = false;
+applyAdb(); refresh(); setInterval(async () => { if (polling || document.hidden) return; polling = true; try { await refresh(); } finally { polling = false; } }, 4000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 homeHint();

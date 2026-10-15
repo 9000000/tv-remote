@@ -1,6 +1,6 @@
 """The TV's picture and input over ADB: screenshots, scrcpy (its control socket and video), the live MJPEG view."""
 import asyncio, hashlib, random, re, struct, time
-from adbtools import AdbError
+from adbtools import AdbError, background, reap
 from tvtools import ADB, FFMPEG, ROOT
 
 
@@ -12,7 +12,7 @@ class Screen:
     async def _run(self, *cmd, stdin=None, timeout=12):
         p = await asyncio.create_subprocess_exec(*cmd, stdin=asyncio.subprocess.PIPE if stdin else None,
                                                  stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-        out, err = await asyncio.wait_for(p.communicate(stdin), timeout)
+        out, err = await reap(p, timeout, stdin)
         return out, err.decode(errors="replace")
 
     async def grab(self, fresh=False):
@@ -70,14 +70,16 @@ class Control:
     W, H = 1920, 1080                                                 # without video, positions are raw display pixels
 
     def __init__(self, adb):
-        self.adb, self.lock, self.proc, self.port, self.writer, self.timer = adb, asyncio.Lock(), None, None, None, None
+        self.adb, self.lock, self.proc, self.port, self.writer, self.timer, self.drain = adb, asyncio.Lock(), None, None, None, None, None
 
     async def _open(self):
         size = re.search(r"(\d+)x(\d+)", await self.adb.shell("wm size"))
         if size:
             self.W, self.H = int(size.group(1)), int(size.group(2))
         self.proc, self.port = await scrcpy_launch(self.adb, "video=false audio=false control=true send_dummy_byte=true")
-        for _ in range(100):                                          # until the server listens, adb closes the socket at once
+        # until the server listens adb closes the socket at once; 15 s at most, as every key and touch waits for this
+        until = time.time() + 15
+        while time.time() < until:
             reader, writer = await asyncio.open_connection("127.0.0.1", self.port)
             try:
                 first = await asyncio.wait_for(reader.read(1), 4)
@@ -99,6 +101,8 @@ class Control:
             self.timer.cancel(); self.timer = None
         if self.writer:
             self.writer.close(); self.writer = None
+        if self.drain:
+            self.drain.cancel(); self.drain = None
         if self.proc and self.proc.returncode is None:
             self.proc.kill()
         if self.port:
@@ -118,7 +122,7 @@ class Control:
                         raise AdbError("control channel lost")
             if self.timer:
                 self.timer.cancel()
-            self.timer = asyncio.get_running_loop().call_later(self.IDLE, lambda: asyncio.create_task(self.close()))
+            self.timer = asyncio.get_running_loop().call_later(self.IDLE, lambda: background(self.close()))
 
     # scrcpy control messages (big-endian), see ControlMessageReader.java in scrcpy v5.0.1
     def touch(self, action, x, y):                                    # action: 0 down, 1 up, 2 move; x, y in 0..1

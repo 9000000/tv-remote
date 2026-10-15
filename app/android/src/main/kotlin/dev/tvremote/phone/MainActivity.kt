@@ -197,6 +197,13 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     override fun onDestroy() {
         managing.destroy()
+        // recreated (dark mode at sunset, a font size, the language): this instance's session, sound and keys end with it, or
+        // they would go on beside the new one's, with nothing left on screen that can stop them
+        ui.removeCallbacksAndMessages(null)
+        if (listen) { listen = false; listenService(false) }
+        stopSession()
+        basic?.close()
+        basic = null
         super.onDestroy()
     }
 

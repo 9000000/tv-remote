@@ -160,7 +160,7 @@ class Tv(
             control = ctl
             if (hearing != null) capture = socks
             if (soundIn != null && (pictureIn != null || ctl != null))
-                Thread({ try { hear(soundIn, hearing!!) } catch (ignored: IOException) { } }, "scrcpy-audio").apply { isDaemon = true }.start()
+                Thread({ try { hear(soundIn, hearing!!) } catch (ignored: Throwable) { } }, "scrcpy-audio")   // a codec error ends the sound, not the app.apply { isDaemon = true }.start()
             if (pictureIn != null) {
                 if (ctl != null) Thread({ try { ctl.readAll() } catch (ignored: IOException) { } }, "scrcpy-ctl").apply { isDaemon = true }.start()   // clipboard etc: not needed
                 play(pictureIn)

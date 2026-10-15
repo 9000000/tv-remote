@@ -261,6 +261,7 @@
     'Bật lại:': 'To turn it back on:', 'Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng” → Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB”. Lần đầu TV hỏi cho phép thì chọn “Luôn cho phép”.': 'Settings → Device Preferences → About → press OK 7 times on “Build” → Developer options → turn on “ADB debugging”. The first time the TV asks, choose “Always allow”.',
     // server messages that are in Vietnamese
     'sai mã, thử lại': 'wrong code, try again',
+    'Nhập sai mã nhiều lần: đợi 15 phút rồi thử lại.': 'Too many wrong codes: wait 15 minutes and try again.',
     // automation, scenes, the TV's sound, voice commands, the home screen icon
     '✨ Chất lượng cao: tắt': '✨ High quality: off', '✨ Chất lượng cao: bật': '✨ High quality: on',
     'Bật để nghe nhạc rõ hơn, tốn mạng hơn một chút.': 'Turn on for clearer music; uses a little more network.',
