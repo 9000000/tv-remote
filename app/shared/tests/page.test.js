@@ -15,3 +15,14 @@ test('the page scripts declare no name twice', () => {
   const all = srcs.map((s) => `// ${s}\n` + fs.readFileSync(path.join(web, s), 'utf8')).join('\n;\n');
   assert.doesNotThrow(() => new vm.Script(all, { filename: 'page' }));
 });
+
+// The intro site (docs/) is published on its own and cannot reach app/shared, so it carries a copy of qr.js: the copy
+// must stay the same, apart from its first line saying where it comes from
+test('docs/ has the same qr.js as the page', () => {
+  const root = path.join(__dirname, '../../..');
+  const copy = ['docs/js/qr.js', 'docs/qr.js'].map((f) => path.join(root, f)).find((f) => fs.existsSync(f));
+  assert.ok(copy, 'docs/js/qr.js is missing');
+  const body = fs.readFileSync(copy, 'utf8').split('\n').slice(1).join('\n');
+  assert.equal(body, fs.readFileSync(path.join(__dirname, '../web/js/qr.js'), 'utf8'),
+    'docs/js/qr.js differs from app/shared/web/js/qr.js: copy it again (keeping its first line)');
+});
