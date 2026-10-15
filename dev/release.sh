@@ -34,8 +34,7 @@ NOTES="$NOTES
 |---|---|
 | TV (TV Setup) | [tv-setup.apk]($D/tv-setup.apk) · Downloader \`2397346\` |
 | Android | [tv-remote.apk]($D/tv-remote.apk) · Downloader \`2973135\` |
-| Mac (Apple Silicon M1–M4) | [TV-Remote-mac-arm64.zip]($D/TV-Remote-mac-arm64.zip) |
-| Mac (Intel) | [TV-Remote-mac-x64.zip]($D/TV-Remote-mac-x64.zip) |
+| Mac (Apple Silicon + Intel) | [TV-Remote-mac.zip]($D/TV-Remote-mac.zip) |
 | Windows 10/11 | [TV-Remote-windows-x64.zip]($D/TV-Remote-windows-x64.zip) |
 | Linux x64 / arm64 | [TV-Remote-linux-x64.tar.gz]($D/TV-Remote-linux-x64.tar.gz) · [TV-Remote-linux-arm64.tar.gz]($D/TV-Remote-linux-arm64.tar.gz) |"
 # the APKs live only in releases, never in git

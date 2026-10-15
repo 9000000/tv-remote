@@ -1,7 +1,8 @@
 # The computer app (app/desktop) on each system it is made for: jpackage only builds for the system it runs on. Each job
 # builds the app, opens it (its window included: Linux under a virtual screen), checks that the server answers and that the
 # window came up, quits it through the page's /api/shutdown, and keeps the archive people download. A release (dev/release.sh)
-# gets the archives attached, under names without a version so releases/latest/download/<name> always works.
+# gets the archives attached, under names without a version so releases/latest/download/<name> always works. The two Mac
+# builds are joined into one app for both chips (job mac, universal.sh), tried on each, and only that one is attached.
 name: desktop
 on:
   workflow_dispatch:
@@ -55,11 +56,11 @@ jobs:
       - name: update itself                                            # Updater.kt: a copy that says 0.0.1, a fake GitHub serving this build
         run: |
           set -x
-          pkg="$PWD/app/desktop/build/package"; a=$(cd "$pkg" && ls TV-Remote-*); v=$(cat VERSION); top="${{ matrix.app }}"; top="${top%%/*}"
+          pkg="$PWD/app/desktop/build/package"; a=$(cd "$pkg" && ls TV-Remote-*); n=$a; [ "$RUNNER_OS" = macOS ] && n=TV-Remote-mac.zip; v=$(cat VERSION); top="${{ matrix.app }}"; top="${top%%/*}"
           srv=upd/serve; mkdir -p $srv/repos/HoangTran0410/tv-remote/releases upd/apps
-          cp "$pkg/$a" $srv/
+          cp "$pkg/$a" "$srv/$n"                                       # under the name Updater.kt asks for
           echo "{\"web\": \"$v\"}" > $srv/versions.json
-          echo "{\"tag_name\": \"v$v\", \"body\": \"\", \"assets\": [{\"name\": \"$a\", \"browser_download_url\": \"http://127.0.0.1:8099/$a\"},
+          echo "{\"tag_name\": \"v$v\", \"body\": \"\", \"assets\": [{\"name\": \"$n\", \"browser_download_url\": \"http://127.0.0.1:8099/$n\"},
             {\"name\": \"versions.json\", \"browser_download_url\": \"http://127.0.0.1:8099/versions.json\"}]}" > $srv/repos/HoangTran0410/tv-remote/releases/latest
           py=python3; [ "$RUNNER_OS" = Windows ] && py=python
           (cd $srv && $py -m http.server 8099 --bind 127.0.0.1 >/dev/null 2>&1 &)
@@ -82,12 +83,54 @@ jobs:
           curl -sf -X POST -H 'Content-Type: application/json' -d '{}' http://127.0.0.1:8765/api/shutdown
       - name: archive
         run: ls -l app/desktop/build/package/TV-Remote-*                # a missing archive fails here, not silently at upload
-      - if: github.event_name == 'release'
+      - if: github.event_name == 'release' && runner.os != 'macOS'   # the Mac ones go into the universal app first
         env: { GH_TOKEN: "${{ github.token }}" }
         run: gh release upload "${{ github.event.release.tag_name }}" app/desktop/build/package/TV-Remote-* --clobber
-      - if: github.event_name != 'release'                             # for trying a build; GitHub zips it once more
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4                               # for the job mac, and for trying a build (GitHub zips it once more)
         with:
           name: TV-Remote-${{ matrix.runner }}
           path: app/desktop/build/package/TV-Remote-*
           compression-level: 0
+          retention-days: 14
+
+  mac:                                                                 # one app for both chips, joined on each runner and tried there
+    needs: app
+    strategy:
+      fail-fast: false
+      matrix: { runner: [macos-14, macos-15-intel] }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { pattern: "TV-Remote-macos-*", path: arts }
+      - name: join
+        run: |
+          set -x
+          mkdir -p a x u
+          ditto -x -k arts/TV-Remote-macos-14/TV-Remote-mac-arm64.zip a
+          ditto -x -k arts/TV-Remote-macos-15-intel/TV-Remote-mac-x64.zip x
+          app/desktop/universal.sh "a/TV Remote.app" "x/TV Remote.app" "u/TV Remote.app"
+          lipo -info "u/TV Remote.app/Contents/MacOS/TV Remote" "u/TV Remote.app/Contents/runtime/Contents/Home/lib/server/libjvm.dylib"
+          codesign -v --deep "u/TV Remote.app"
+          (cd u && ditto -c -k --keepParent "TV Remote.app" ../TV-Remote-mac.zip); ls -l TV-Remote-mac.zip
+      - name: open, check, quit
+        run: |
+          set -x
+          log="$HOME/Library/Application Support/TV Remote/server.log"
+          "u/TV Remote.app/Contents/MacOS/TV Remote" &
+          for i in $(seq 60); do curl -sf http://127.0.0.1:8765/api/about && break; sleep 1; done
+          echo; sleep 5
+          cat "$log"
+          curl -sf -o page.html http://127.0.0.1:8765/
+          grep -q 'data-core="mac"' page.html
+          ! grep -q "no window" "$log"
+          curl -sf -X POST -H 'Content-Type: application/json' -d '{}' http://127.0.0.1:8765/api/shutdown
+          for i in $(seq 20); do curl -s http://127.0.0.1:8765/api/about >/dev/null || break; sleep 1; done
+          ! curl -s http://127.0.0.1:8765/api/about
+          grep -q "Window closed" "$log"
+      - if: github.event_name == 'release' && matrix.runner == 'macos-14'
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh release upload "${{ github.event.release.tag_name }}" TV-Remote-mac.zip --clobber
+      - if: github.event_name != 'release' && matrix.runner == 'macos-14'
+        uses: actions/upload-artifact@v4
+        with: { name: TV-Remote-mac-universal, path: TV-Remote-mac.zip, compression-level: 0 }

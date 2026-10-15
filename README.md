@@ -122,8 +122,7 @@ Một app có cửa sổ riêng, khoảng 20 MB, không cần cài Python, adb h
 
 | Máy | Tải về |
 |---|---|
-| Mac chip Apple (M1–M4) | [TV-Remote-mac-arm64.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac-arm64.zip) |
-| Mac chip Intel | [TV-Remote-mac-x64.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac-x64.zip) |
+| Mac (chip Apple và Intel) | [TV-Remote-mac.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac.zip) |
 | Windows 10 / 11 | [TV-Remote-windows-x64.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-windows-x64.zip) |
 | Linux x64 / arm64 | [TV-Remote-linux-x64.tar.gz](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-x64.tar.gz) · [arm64](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-arm64.tar.gz) |
 
@@ -276,7 +275,7 @@ VERSION, CHANGELOG.md
 tvs.json, cert.pem, key.pem, *.jks, .cache/      dữ liệu riêng của máy bạn, không đưa lên git
 ```
 
-- **Build app:** mở `app/` bằng Android Studio, hoặc chạy `app/android/build.sh`, `app/tv/build.sh` (cần JDK 17 và Android SDK). App máy tính: `cd app/gradle && ./gradlew :desktop:packageApp` (ra app cho đúng hệ điều hành đang dùng; GitHub Actions build đủ năm bản khi có release).
+- **Build app:** mở `app/` bằng Android Studio, hoặc chạy `app/android/build.sh`, `app/tv/build.sh` (cần JDK 17 và Android SDK). App máy tính: `cd app/gradle && ./gradlew :desktop:packageApp` (ra app cho đúng hệ điều hành đang dùng; GitHub Actions build đủ các bản khi có release, hai bản Mac được gộp thành một app chạy cả chip Apple lẫn Intel bằng `app/desktop/universal.sh`).
 - **Chạy từ mã nguồn:** tải mã nguồn (git clone hoặc zip). App máy tính: `./gradlew :desktop:installDist` rồi `app/desktop/build/install/desktop/bin/desktop --window`. Sửa `app/shared/web` thì chỉ cần tải lại trang; sửa Kotlin thì chạy lại lệnh trên (vài giây).
 - **Phiên bản:** ba số, mỗi số chỉ tăng khi phần của nó đổi: `VERSION` (bản phát hành và web), `app/android/VERSION`, `app/tv/VERSION`. Mỗi bản phát hành kèm `versions.json`, nên app không đổi thì không bị mời cập nhật. `dev/release.sh` dừng lại nếu code một app đã đổi mà quên tăng số.
 - **Giữ ba nơi đồng bộ:** sửa hay thêm gì ở phần điều khiển thì làm ở cả app điện thoại, trang trên TV và app máy tính.

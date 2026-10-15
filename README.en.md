@@ -122,8 +122,7 @@ An app with its own window, about 20 MB; nothing else to install (no Python, no 
 
 | Computer | Download |
 |---|---|
-| Mac with Apple chip (M1–M4) | [TV-Remote-mac-arm64.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac-arm64.zip) |
-| Mac with Intel chip | [TV-Remote-mac-x64.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac-x64.zip) |
+| Mac (Apple chip and Intel) | [TV-Remote-mac.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac.zip) |
 | Windows 10 / 11 | [TV-Remote-windows-x64.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-windows-x64.zip) |
 | Linux x64 / arm64 | [TV-Remote-linux-x64.tar.gz](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-x64.tar.gz) · [arm64](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-arm64.tar.gz) |
 
@@ -276,7 +275,7 @@ tvs.json, cert.pem, key.pem, *.jks, .cache/      your machine's own data, never 
 ```
 
 - **Building the apps:** open `app/` in Android Studio, or run `app/android/build.sh`, `app/tv/build.sh` (JDK 17 and the Android SDK).
-- **Computer app:** `cd app/gradle && ./gradlew :desktop:packageApp` builds the app for the system it runs on; GitHub Actions builds all five for each release.
+- **Computer app:** `cd app/gradle && ./gradlew :desktop:packageApp` builds the app for the system it runs on; GitHub Actions builds them all for each release (the two Mac builds joined into one app for both chips by `app/desktop/universal.sh`).
 - **Running from source:** get the source (git clone or zip). Computer app: `./gradlew :desktop:installDist`, then `app/desktop/build/install/desktop/bin/desktop --window`. A change in `app/shared/web` only needs the page reloaded; a Kotlin change, the command above again (a few seconds).
 - **Versions:** three numbers, each bumped only when its part changes: `VERSION` (the release and the web), `app/android/VERSION`, `app/tv/VERSION`. Every release carries `versions.json`, so an unchanged app is not offered an update. `dev/release.sh` stops if an app's code changed without a bump.
 - **Keep the three in sync:** any change to the controls goes into the phone app, the page on the TV and the app on the computer.

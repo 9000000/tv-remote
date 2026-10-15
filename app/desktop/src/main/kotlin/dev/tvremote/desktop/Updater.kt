@@ -18,7 +18,7 @@ import java.util.zip.ZipInputStream
 class Updater(private val version: String, res: File?, private val quit: () -> Unit) {
     private val os = System.getProperty("os.name").lowercase().let { if ("mac" in it) "mac" else if ("win" in it) "windows" else "linux" }
     private val arch = if (System.getProperty("os.arch").let { it == "aarch64" || it == "arm64" }) "arm64" else "x64"
-    val asset = "TV-Remote-$os-$arch." + if (os == "linux") "tar.gz" else "zip"
+    val asset = if (os == "mac") "TV-Remote-mac.zip" else "TV-Remote-$os-$arch." + if (os == "linux") "tar.gz" else "zip"   // Mac: one app for both chips
     /** The app itself: TV Remote.app, the "TV Remote" folder, tv-remote; $APPDIR (res's parent) is inside it. null: run from the repo. */
     private val root: File? = res?.absoluteFile?.parentFile?.let { if (os == "windows") it.parentFile else it.parentFile?.parentFile }
     private val work = root?.let { File(it.parentFile, ".tv-remote-update") }

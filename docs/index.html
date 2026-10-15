@@ -656,8 +656,7 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
           <span><span class="vi">Tải về</span><span class="en">Download</span><span id="dl-os"></span></span>
         </a>
         <div class="dl-all">
-          <a data-os="mac-arm64" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac-arm64.zip">Mac · <span class="vi">chip Apple</span><span class="en">Apple chip</span></a>
-          <a data-os="mac-x64" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac-x64.zip">Mac · Intel</a>
+          <a data-os="mac" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac.zip">Mac · <span class="vi">chip Apple và Intel</span><span class="en">Apple chip and Intel</span></a>
           <a data-os="windows-x64" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-windows-x64.zip">Windows 10 / 11</a>
           <a data-os="linux-x64" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-x64.tar.gz">Linux · x64</a>
           <a data-os="linux-arm64" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-arm64.tar.gz">Linux · arm64</a>
@@ -834,18 +833,15 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
 
   document.getElementById("yr").textContent = new Date().getFullYear();
 
-  // the computer app: the file for this computer on the big button (an Apple-chip Mac says "Intel" in its user agent:
-  // Chrome tells the truth through userAgentData, other browsers get the Apple-chip build, which nearly every Mac sold now is)
+  // the computer app: the file for this computer on the big button (one Mac app runs on both chips)
   (function(){
-    var ua = navigator.userAgent, os = /Windows/.test(ua) ? "windows-x64" : /Mac/.test(ua) && !/iPhone|iPad/.test(ua) ? "mac-arm64" : /Linux/.test(ua) && !/Android/.test(ua) ? (/aarch64|arm64/.test(ua) ? "linux-arm64" : "linux-x64") : "";
+    var ua = navigator.userAgent, os = /Windows/.test(ua) ? "windows-x64" : /Mac/.test(ua) && !/iPhone|iPad/.test(ua) ? "mac" : /Linux/.test(ua) && !/Android/.test(ua) ? (/aarch64|arm64/.test(ua) ? "linux-arm64" : "linux-x64") : "";
     function pick(o){
       var a = document.querySelector('.dl-all a[data-os="' + o + '"]'); if (!a) return;
       document.querySelectorAll(".dl-all a").forEach(function(x){ x.classList.toggle("mine", x === a); });
       document.getElementById("dl-pc").href = a.href; document.getElementById("dl-os").innerHTML = ' <span class="vi">cho</span><span class="en">for</span> ' + a.innerHTML;
     }
     pick(os);
-    if (os === "mac-arm64" && navigator.userAgentData && navigator.userAgentData.getHighEntropyValues)
-      navigator.userAgentData.getHighEntropyValues(["architecture"]).then(function(v){ if (v.architecture === "x86") pick("mac-x64"); }).catch(function(){});
   })();
 
   // latest release tag in the hero pill; the page still reads fine if GitHub is unreachable
