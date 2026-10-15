@@ -19,6 +19,7 @@ class Release private constructor(val version: String, val url: String, val note
 
     companion object {
         const val REPO = "HoangTran0410/tv-remote"
+        var api = "https://api.github.com"                            // tests of the computer app's updater: a fake GitHub (TVR_RELEASES)
 
         /**
          * The latest release, if it carries a newer version of this app. Each app has its own version number: a release lists
@@ -27,7 +28,7 @@ class Release private constructor(val version: String, val url: String, val note
          */
         @Throws(Exception::class)
         fun newer(current: String, app: String, asset: String): Release? {
-            val c = open("https://api.github.com/repos/$REPO/releases/latest")
+            val c = open("$api/repos/$REPO/releases/latest")
             c.setRequestProperty("Accept", "application/vnd.github+json")
             try {
                 if (c.responseCode == 404) return null                // no release published yet

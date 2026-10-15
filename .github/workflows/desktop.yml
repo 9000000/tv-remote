@@ -18,11 +18,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { runner: macos-14, app: "TV Remote.app/Contents/MacOS/TV Remote", log: "Library/Application Support/TV Remote" }
-          - { runner: macos-15-intel, app: "TV Remote.app/Contents/MacOS/TV Remote", log: "Library/Application Support/TV Remote" }
-          - { runner: windows-latest, app: "TV Remote/TV Remote.exe", log: "AppData/Roaming/TV Remote" }
-          - { runner: ubuntu-22.04, app: "tv-remote/bin/tv-remote", log: ".local/share/tv-remote", run: "xvfb-run -a" }
-          - { runner: ubuntu-22.04-arm, app: "tv-remote/bin/tv-remote", log: ".local/share/tv-remote", run: "xvfb-run -a" }
+          - { runner: macos-14, app: "TV Remote.app/Contents/MacOS/TV Remote", res: "TV Remote.app/Contents/app/res", log: "Library/Application Support/TV Remote" }
+          - { runner: macos-15-intel, app: "TV Remote.app/Contents/MacOS/TV Remote", res: "TV Remote.app/Contents/app/res", log: "Library/Application Support/TV Remote" }
+          - { runner: windows-latest, app: "TV Remote/TV Remote.exe", res: "TV Remote/app/res", log: "AppData/Roaming/TV Remote" }
+          - { runner: ubuntu-22.04, app: "tv-remote/bin/tv-remote", res: "tv-remote/lib/app/res", log: ".local/share/tv-remote", run: "xvfb-run -a" }
+          - { runner: ubuntu-22.04-arm, app: "tv-remote/bin/tv-remote", res: "tv-remote/lib/app/res", log: ".local/share/tv-remote", run: "xvfb-run -a" }
     runs-on: ${{ matrix.runner }}
     defaults: { run: { shell: bash } }
     steps:
@@ -51,6 +51,28 @@ jobs:
           for i in $(seq 20); do curl -s http://127.0.0.1:8765/api/about >/dev/null || break; sleep 1; done
           ! curl -s http://127.0.0.1:8765/api/about
           grep -q "Window closed" "$log"
+      - name: update itself                                            # Updater.kt: a copy that says 0.0.1, a fake GitHub serving this build
+        run: |
+          pkg="$PWD/app/desktop/build/package"; a=$(cd "$pkg" && ls TV-Remote-*); v=$(cat VERSION); top="${{ matrix.app }}"; top="${top%%/*}"
+          srv=upd/serve; mkdir -p $srv/repos/HoangTran0410/tv-remote/releases upd/apps
+          cp "$pkg/$a" $srv/
+          echo "{\"web\": \"$v\"}" > $srv/versions.json
+          echo "{\"tag_name\": \"v$v\", \"body\": \"\", \"assets\": [{\"name\": \"$a\", \"browser_download_url\": \"http://127.0.0.1:8099/$a\"},
+            {\"name\": \"versions.json\", \"browser_download_url\": \"http://127.0.0.1:8099/versions.json\"}]}" > $srv/repos/HoangTran0410/tv-remote/releases/latest
+          py=python3; [ "$RUNNER_OS" = Windows ] && py=python
+          (cd $srv && $py -m http.server 8099 >/dev/null 2>&1 &)
+          if [ "$RUNNER_OS" = macOS ]; then ditto "$pkg/$top" "upd/apps/$top"; else cp -R "$pkg/$top" upd/apps/; fi
+          echo 0.0.1 > "upd/apps/${{ matrix.res }}/VERSION"
+          TVR_RELEASES=http://127.0.0.1:8099 ${{ matrix.run }} "upd/apps/${{ matrix.app }}" &
+          for i in $(seq 90); do curl -s http://127.0.0.1:8765/api/update | grep -q '"state":"ready"' && break; sleep 1; done
+          curl -s http://127.0.0.1:8765/api/update; echo
+          curl -sf -X POST -H 'Content-Type: application/json' -d '{"do": "install"}' http://127.0.0.1:8765/api/update; echo
+          for i in $(seq 90); do curl -s http://127.0.0.1:8765/api/about | grep -q "\"version\":\"$v\"" && break; sleep 1; done
+          cat "$HOME/${{ matrix.log }}/server.log"; for d in "$TMPDIR" "$TEMP" /tmp; do cat "$d/tv-remote-update.log" 2>/dev/null; done || true
+          curl -s http://127.0.0.1:8765/api/about | grep "\"version\":\"$v\""     # the new one answers: swapped and opened again
+          grep -qx "$v" "upd/apps/${{ matrix.res }}/VERSION"
+          [ ! -e upd/apps/.tv-remote-update ]
+          curl -sf -X POST -H 'Content-Type: application/json' -d '{}' http://127.0.0.1:8765/api/shutdown
       - name: archive
         run: ls -l app/desktop/build/package/TV-Remote-*                # a missing archive fails here, not silently at upload
       - if: github.event_name == 'release'

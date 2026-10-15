@@ -31,6 +31,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
         private set
     private val fleets = Fleets(keys, cache)
     private val assist = Assist { cur }
+    val updater = Updater(version, System.getProperty("tvr.res")?.let { File(it) }, stop).also { it.start() }
 
     private fun session(host: String) = Session(host, keys, cache, apk, jar)
 
@@ -41,7 +42,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
         Thread { old.close() }.start()
     }
 
-    fun close() { cur.close(); fleets.close(); timer.shutdownNow() }
+    fun close() { cur.close(); fleets.close(); timer.shutdownNow(); updater.close() }
 
     // ---------------------------------------------------------------- the page
     @Volatile private var page: WebPage? = null
@@ -101,6 +102,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
         if (!post) when (r.path) {
             "/api/state" -> return state(s)
             "/api/about" -> return about(s)
+            "/api/update" -> return Response.json(updater.json())
             "/api/tvs" -> return Response.json(JSONObject().put("current", s.host).put("tvs", saved.tvs))
             "/api/discover" -> return Response.json(Discover.discover())
             "/api/setup/status" -> return setupStatus(s)
@@ -185,6 +187,11 @@ class Server(private val repo: File, private val keys: File, private val cache: 
                 Response.error(400, "sai mã, thử lại")
             } catch (e: Exception) {
                 Response.error(400, "ghép thất bại, bấm Ghép lại: ${e.message}")
+            }
+            "/api/update" -> when (d.optString("do")) {
+                "check" -> { updater.check(); Response.json(updater.json()) }
+                "install" -> { updater.install(); Response.json(updater.json()) }
+                else -> Response.error(400, "do: check or install")
             }
             "/api/shutdown" -> { Thread { Thread.sleep(300); stop() }.start(); Response.ok() }   // after this reply has gone out
             else -> null
@@ -449,7 +456,8 @@ class Server(private val repo: File, private val keys: File, private val cache: 
             "SLEEP", "WAKE")                                          // Sony ignores SLEEP sent over the remote protocol
         val OPENERS = setOf("MENU", "SETTINGS", "INPUT", "GUIDE", "LIVE")   // keys that should bring up a screen of their own
         val OURS = setOf("/api/key", "/api/app", "/api/volume", "/api/text", "/api/touch", "/api/type", "/api/wake", "/api/tv/select", "/api/tv/save",
-            "/api/tv/remove", "/api/scenes", "/api/scene/run", "/api/fleet/do", "/api/assist", "/api/pair/start", "/api/pair/finish", "/api/shutdown")
+            "/api/tv/remove", "/api/scenes", "/api/scene/run", "/api/fleet/do", "/api/assist", "/api/pair/start", "/api/pair/finish", "/api/shutdown",
+            "/api/update")
         const val HD = 5                                              // Tv.QUALITY's sharpest level, the page's "Nét nhất"
         val IP = Regex("((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)")   // IPv4: what ADB and the TV's page links are written for
         val PRIVATE = Regex("(10\\.|192\\.168\\.|172\\.(1[6-9]|2\\d|3[01])\\.)[0-9.]+")

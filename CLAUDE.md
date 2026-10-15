@@ -32,7 +32,7 @@ app/tv/                  TV Setup: MainActivity (the TV screen), RemoteService (
                          Rules + Guard + RulesReceiver + WarnActivity (sleep timer, bedtime, app limits)
 app/gradle/              the Gradle build of everything Kotlin (settings point at ../shared, ../android, ../tv, ../desktop); open it in Android Studio
 app/desktop/             the computer app on the shared Kotlin core (JVM, no adb/Python/ffmpeg), the "mac" core: Server.kt
-                         (the routes only the computer has) + Manage.kt; Window.kt shows the page in the system's web view
+                         (the routes only the computer has) + Manage.kt; Updater.kt (updates itself from releases, swapped in by a script once it quits); Window.kt shows the page in the system's web view
                          (native/: webview, built by native/build.sh and kept in git). `./gradlew :desktop:installDist`, then
                          `app/desktop/build/install/desktop/bin/desktop --port 8769 [--window]` (inside the repo: its tvs.json, keys in
                          .cache/keys). `./gradlew :desktop:packageApp` -> the app for this system + zip / tar.gz (own Java via jlink;

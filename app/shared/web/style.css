@@ -166,6 +166,7 @@
   /* ADB banner */
   .banner { border-radius:var(--radius); padding:14px; border:1px solid; display:flex; flex-direction:column; gap:8px; }
   .banner.warn { background:var(--warn-bg); border-color:transparent; } .banner.bad { background:var(--bad-bg); border-color:transparent; }
+  .banner.ok { background:var(--ok-bg); border-color:transparent; }
   .banner > b { font-size:15px; } .banner p { margin:0; font-size:13px; }
   .banner .actions { display:flex; gap:8px; flex-wrap:wrap; }
   .askother { margin-bottom:12px; }

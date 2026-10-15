@@ -229,7 +229,7 @@
     // about
     'Giới thiệu': 'About', 'Điều khiển Android TV / Google TV từ máy tính và điện thoại: nút remote, xem màn hình, ứng dụng, tệp, cài APK.': 'Control an Android TV / Google TV from a computer and a phone: remote buttons, live screen, apps, files, APK install.',
     'Tác giả:': 'Author:', 'Mã nguồn:': 'Source code:', 'Các bản phát hành': 'Releases', 'Nhật ký thay đổi': 'Change log', 'Báo lỗi': 'Report a problem', 'Đóng': 'Close',
-    'Hình trực tiếp và chuột dùng': 'The live picture and mouse use', '(Genymobile, Apache-2.0). Nút remote dùng thư viện androidtvremote2.': '(Genymobile, Apache-2.0). The remote buttons use the androidtvremote2 library.',
+    'Hình trực tiếp và chuột dùng': 'The live picture and mouse use', '(Genymobile, Apache-2.0). Nút remote dùng giao thức Android TV Remote.': '(Genymobile, Apache-2.0). The remote buttons use the Android TV Remote protocol.',
     // quit
     'Tắt TV Remote trên máy tính này?\nTV không bị ảnh hưởng. Muốn dùng lại thì mở lại app TV Remote.': 'Quit TV Remote on this computer?\nThe TV is not affected. To use it again, open the TV Remote app again.',
     'Đã tắt': 'Stopped', 'TV Remote trên máy tính này đã dừng. Mở lại app TV Remote để dùng tiếp. Có thể đóng trang này.': 'TV Remote on this computer has stopped. Open the TV Remote app again to carry on. You can close this page.',
@@ -345,6 +345,11 @@
     'TV Setup trên TV là bản cũ. Cần bản 2.13.0 trở lên: mở TV Setup trên TV → Cập nhật, hoặc bấm nút dưới.': 'TV Setup on the TV is too old. 2.13.0 or newer is needed: open TV Setup on the TV → Update, or use the button below.',
     'Các mục này chạy bằng app TV Setup trên TV (để TV tự tắt được cả khi máy này đã tắt). TV chưa có app đó.': 'These run in the TV Setup app on the TV (so the TV turns off even with this device off). The TV does not have it yet.',
     'Cập nhật TV Setup': 'Update TV Setup',
+    'Đang cập nhật: TV Remote đóng lại rồi tự mở bản mới.': 'Updating: TV Remote closes and opens the new version by itself.',
+    'App nằm ở thư mục không tự thay được: tải bản mới, giải nén, rồi thay cho bản đang dùng.': 'The app is in a folder it cannot replace itself in: download the new version, unzip it and put it in place of this one.',
+    'Bấm Cập nhật: TV Remote đóng lại rồi tự mở bản mới, mất vài giây. Để sau thì bản mới tự cài khi đóng app.': 'Press Update: TV Remote closes and opens the new version by itself, in a few seconds. Later: the new version is put in place when the app closes.',
+    'Cập nhật': 'Update', 'Tải bản mới': 'Download the new version', 'Kiểm tra bản mới': 'Check for a new version',
+    'Đang kiểm tra...': 'Checking...', 'Bản chạy từ mã nguồn: cập nhật bằng git pull.': 'Running from the source: update with git pull.',
     'Hủy hẹn giờ': 'Cancel the timer',
     'Đang trong giờ đi ngủ: TV bật lên sẽ tự tắt sau 1 phút.': 'Bedtime now: when the TV is turned on it goes back to standby a minute later.',
     'Thôi, áp dụng lại ngay': 'No, apply it again now',
@@ -474,6 +479,11 @@
   const RULES = [
     [/^Có, dùng (.+) RAM$/, (m) => 'Yes, using ' + m[1] + ' of RAM'],
     [/^· (\d+) TV$/, (m) => '· ' + m[1] + ' TVs'], [/^trống ([\d.,]+ \S*B \/ .+)$/, (m) => 'free ' + m[1]],
+    [/^🆕 Có bản mới (\S+) \(đang dùng (\S+)\)$/, (m) => '🆕 New version ' + m[1] + ' (you have ' + m[2] + ')'], [/^Đang tải bản mới (\d+)%$/, (m) => 'Downloading the new version ' + m[1] + '%'],
+    [/^Chưa tải được bản mới \((.*)\)\. Bấm Cập nhật để thử lại\.$/s, (m) => 'Could not download the new version (' + m[1] + '). Press Update to try again.'],
+    [/^Cập nhật lên (\S+)\? TV Remote sẽ đóng lại rồi tự mở bản mới\.([\s\S]*)$/, (m) => 'Update to ' + m[1] + '? TV Remote closes and opens the new version by itself.' + m[2]],
+    [/^Không kiểm tra được: (.*)$/, (m) => 'Could not check: ' + m[1]], [/^Có bản mới (\S+): xem thanh trên cùng trang\.$/, (m) => 'New version ' + m[1] + ': see the bar at the top of the page.'],
+    [/^Đang dùng bản mới nhất \((\S+)\)\.$/, (m) => 'You have the latest version (' + m[1] + ').'],
     [/^đang cài (\d+)%$/, (m) => 'installing ' + m[1] + '%'], [/^đang cài$/, () => 'installing'],
     [/^Cài (.+) lên các TV này\?$/, (m) => 'Install ' + m[1] + ' on these TVs?'], [/^Gỡ (.+) khỏi các TV này\?$/, (m) => 'Remove ' + m[1] + ' from these TVs?'],
     [/^Xong: (\d+) TV ✓, (\d+) TV ✗$/, (m) => 'Done: ' + m[1] + ' TVs ✓, ' + m[2] + ' TVs ✗'], [/^Xong trên cả (\d+) TV$/, (m) => 'Done on all ' + m[1] + ' TVs'],

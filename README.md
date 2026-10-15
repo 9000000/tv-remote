@@ -139,6 +139,8 @@ Nút **📺 Đổi TV** ở thanh trên quay về danh sách TV.
 
 Đóng cửa sổ (hoặc nút ⏻ Tắt) là app dừng hẳn, không có gì chạy ngầm. Link sang trang khác mở bằng trình duyệt; ảnh chụp màn hình và tệp sao lưu lưu vào thư mục Tải về (Downloads). App chỉ nghe ở `127.0.0.1`, máy khác trong mạng không vào được.
 
+**Cập nhật:** app tự tìm bản mới (lúc mở và vài giờ một lần) và tải sẵn, rồi báo ở đầu trang. Bấm **Cập nhật** là app tự thay bản mới và mở lại; bấm **Để sau** thì bản mới được cài khi đóng app. TV, mã ghép và cảnh đã lưu vẫn giữ nguyên. Nếu app nằm ở thư mục nó không ghi được (Program Files, hoặc trên Mac chạy thẳng từ Tải về mà chưa kéo vào Applications) thì nút thành **Tải bản mới**.
+
 **Khi ADB đóng**, chỉ còn nút bấm, nguồn, âm lượng từng nấc và đánh thức; trang ghi rõ điều này và có nút "Thử kết nối lại".
 
 <details>

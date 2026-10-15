@@ -67,6 +67,42 @@ if (CORE === 'mac') fetch('/api/about').then((x) => x.json()).then((r) => {
   if (r.version) $('#ver').textContent = 'TV Remote ' + r.version + (r.released ? ' · ' + r.released : '');
   if (r.stale) $('#stale').hidden = false;                            // its code was updated after it started: new buttons would answer "not found"
 }).catch(() => {});
+
+// ---------- updates of the computer app (Updater.kt): it checks and downloads by itself; this shows it and starts the swap ----------
+let updLater = false, updPoll = null;
+function showUpdate(u) {
+  const b = $('#update');
+  b.hidden = !u || !u.version || (updLater && u.state !== 'installing');
+  if (b.hidden) return;
+  $('#updtitle').textContent = '🆕 Có bản mới ' + u.version + ' (đang dùng ' + u.current + ')';
+  $('#updnote').textContent = u.state === 'downloading' ? 'Đang tải bản mới ' + u.pct + '%'
+    : u.state === 'installing' ? 'Đang cập nhật: TV Remote đóng lại rồi tự mở bản mới.'
+    : u.state === 'error' ? 'Chưa tải được bản mới (' + friendly(u.error) + '). Bấm Cập nhật để thử lại.'
+    : !u.auto ? 'App nằm ở thư mục không tự thay được: tải bản mới, giải nén, rồi thay cho bản đang dùng.'
+    : 'Bấm Cập nhật: TV Remote đóng lại rồi tự mở bản mới, mất vài giây. Để sau thì bản mới tự cài khi đóng app.';
+  $('#updgo').textContent = u.auto ? '⬆️ Cập nhật' : '⬇️ Tải bản mới';
+  $('#updacts').hidden = u.state === 'installing' || u.state === 'downloading' && !updPoll;
+  clearTimeout(updPoll); updPoll = null;
+  if (u.state === 'downloading' || u.state === 'installing') updPoll = setTimeout(pollUpdate, 1000);
+}
+const pollUpdate = () => fetch('/api/update').then((x) => x.json()).then(showUpdate).catch(() => { updPoll = setTimeout(pollUpdate, 2000); });   // gone while it swaps
+if (CORE === 'mac') { pollUpdate(); setInterval(() => { if (!updPoll) pollUpdate(); }, 30 * 60000); }
+$('#updlater').addEventListener('click', () => { updLater = true; $('#update').hidden = true; });
+$('#updgo').addEventListener('click', async () => {
+  const u = await api('/api/update'); if (!u) return;
+  if (!u.auto) { window.open(u.url, '_blank'); return; }
+  const notes = (u.notes || '').replace(/\*\*/g, '').replace(/\r/g, '');
+  if (!await ask('Cập nhật lên ' + u.version + '? TV Remote sẽ đóng lại rồi tự mở bản mới.' + (notes ? '\n\n' + (notes.length > 900 ? notes.slice(0, 900) + '...' : notes) : ''), { ok: 'Cập nhật' })) return;
+  const r = await api('/api/update', { do: 'install' }); if (r) showUpdate(r);
+});
+$('#updcheck').addEventListener('click', async () => {
+  $('#updcheckmsg').textContent = 'Đang kiểm tra...';
+  const u = await api('/api/update', { do: 'check' });
+  if (!u) { $('#updcheckmsg').textContent = ''; return; }
+  updLater = false; showUpdate(u);
+  $('#updcheckmsg').textContent = !u.packaged ? 'Bản chạy từ mã nguồn: cập nhật bằng git pull.' : u.error ? 'Không kiểm tra được: ' + friendly(u.error)
+    : u.version ? 'Có bản mới ' + u.version + ': xem thanh trên cùng trang.' : 'Đang dùng bản mới nhất (' + u.current + ').';
+});
 $('#aboutclose').addEventListener('click', () => $('#about').close());
 $('#about').addEventListener('click', (e) => { if (e.target === $('#about')) $('#about').close(); });   // click outside the box
 

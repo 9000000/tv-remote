@@ -51,11 +51,12 @@ fun main(args: Array<String>) {
     Runtime.getRuntime().addShutdownHook(Thread { http.stop(); server.close() })   // Ctrl+C, logging out: the TV's sessions end too
     if (window) {
         Thread({ done.await(); Window.close() }, "quit").apply { isDaemon = true }.start()   // the page's "Tắt" closes the window too
-        if (Window.show(repo, "http://127.0.0.1:$bound")) { println("Window closed."); System.exit(0) }
+        if (Window.show(repo, "http://127.0.0.1:$bound")) { println("Window closed."); server.updater.quitting(); System.exit(0) }
     }
     if (packaged) App.browse(url)
     done.await()                                                      // the page's "Tắt" button
     println("Stopping.")
+    server.updater.quitting()
     System.exit(0)
 }
 
