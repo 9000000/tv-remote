@@ -36,7 +36,8 @@ app/android/.../phone/   phone app, one file per part, as extension functions on
                          install / remove / restart on several at once), SetupBanner (a new TV Setup), Drawing (✏️ on the picture)
 app/tv/                  TV Setup: MainActivity (the TV screen), RemoteService (web server), PairActivity, Stats, TrustReceiver,
                          Rules + Guard + RulesReceiver + WarnActivity (sleep timer, bedtime, app limits), DnsWatch (turns off a
-                         DNS filter that cut the TV off), DrawLayer + DrawReceiver (the drawing over every app)
+                         DNS filter that cut the TV off), DrawLayer + DrawReceiver (the drawing over every app), KeepAdb (ADB debugging
+                         back on when switched off, with WRITE_SECURE_SETTINGS granted through ADB)
 app/gradle/              the Gradle build of everything Kotlin (settings point at ../shared, ../android, ../tv, ../desktop); open it in Android Studio
 app/desktop/             the computer app on the shared Kotlin core (JVM, no adb/Python/ffmpeg), the "pc" core: Server.kt
                          (the routes only the computer has) + Manage.kt; Updater.kt (updates itself from releases, swapped in by a script once it quits); Window.kt shows the page in the system's web view

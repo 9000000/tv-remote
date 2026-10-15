@@ -115,6 +115,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     private var guard: Guard? = null
     private var tsWatch: TailscaleWatch? = null
     private var dnsWatch: DnsWatch? = null
+    private var keepAdb: KeepAdb? = null
     private var updates: AutoUpdate? = null
     private var serving = true                                        // the web server started, when it is wanted
     @Volatile private var saidAlive = false
@@ -154,6 +155,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         guard = Guard(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         tsWatch = TailscaleWatch(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         dnsWatch = DnsWatch(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
+        keepAdb = KeepAdb(this).also { it.start() }
         updates = AutoUpdate(this, version, { try { link?.get() } catch (e: Exception) { null } }) { busyWhy() }.also { it.start() }
         ui.postDelayed(rest, 30000)
         ui.postDelayed(diary, 20000)
@@ -173,6 +175,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         guard?.stop()
         tsWatch?.stop()
         dnsWatch?.stop()
+        keepAdb?.stop()
         updates?.stop()
         stats.stopNet()
         link?.close()
@@ -245,7 +248,11 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         if (stopping) return
         when (key) {
             "allow" -> adbState = "allow"                             // the TV is asking "Allow USB debugging?"
-            "live" -> { adbState = "ready"; if (!saidAlive && serving) { saidAlive = true; afterUpdate() } }
+            "live" -> {
+                adbState = "ready"
+                if (!saidAlive && serving) { saidAlive = true; afterUpdate() }
+                if (!KeepAdb.can(this)) Thread({ try { link?.get()?.let { KeepAdb.grant(this, it) } } catch (e: Exception) { } }, "grant").apply { isDaemon = true }.start()
+            }
             "closed", "error" -> {                                    // ADB off, TV just booted, session dropped: keep trying
                 if (resting) return                                   // we closed it ourselves
                 adbState = if (key == "error") "error" else "connecting"

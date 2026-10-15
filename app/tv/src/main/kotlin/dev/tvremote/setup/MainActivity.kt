@@ -184,7 +184,7 @@ class MainActivity : Activity() {
             tsTile,
             Tile(R.drawable.ic_undo, t("Hoàn tác", "Undo"), t("Như trước khi tối ưu", "As before Optimize")) { job { it.undo() } },
             updateTile,
-            Tile(R.drawable.ic_code, t("Gỡ lỗi ADB", "Debugging"), t("Tùy chọn nhà phát triển", "Developer options")) { devOptions() },
+            Tile(R.drawable.ic_code, t("Gỡ lỗi ADB", "Debugging"), t("Tùy chọn nhà phát triển", "Developer options")) { debugMenu() },
             Tile(R.drawable.ic_refresh, t("Kết nối lại", "Reconnect"), t("ADB của TV", "The TV's ADB")) { connect() })
         for (row in tiles.chunked(if (phone) 2 else 3)) {
             val r = LinearLayout(this)
@@ -494,6 +494,22 @@ class MainActivity : Activity() {
      */
     private var openedDev = false
     private var retryOnResume = false                                // one more try when the person comes back from the screen we sent them to
+
+    private fun keepText() = if (KeepAdb.on(this)) t("✓ Tự bật lại khi bị tắt", "✓ Turn back on when switched off")
+        else t("Tự bật lại khi bị tắt: đang tắt", "Turn back on when switched off: off")
+
+    /** Developer options, and whether TV Setup turns ADB debugging back on (KeepAdb) when someone switches it off. */
+    private fun debugMenu() {
+        val items = arrayOf(t("Mở Tùy chọn nhà phát triển", "Open Developer options"), keepText())
+        android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(t("Gỡ lỗi ADB", "Debugging"))
+            .setItems(items) { _, i ->
+                when (i) {
+                    0 -> devOptions()
+                    1 -> { KeepAdb.set(this, !KeepAdb.on(this)); log(keepText()) }
+                }
+            }.show()
+    }
 
     private fun devOptions() {
         retryOnResume = true

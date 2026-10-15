@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.24.2 - 2026-10-15
+
+Web 2.24.2 · app điện thoại 2.22.1 · app TV 2.21.2
+
+**Tiếng Việt**
+- TV Setup tự bật lại Gỡ lỗi USB khi bị tắt (trẻ con, bản cập nhật TV, đặt lại Tùy chọn nhà phát triển), để hẹn giờ, giờ đi ngủ, giới hạn app và điện thoại vẫn chạy. Tắt được trong TV Setup → Gỡ lỗi ADB.
+
+**English**
+- TV Setup turns USB debugging back on when it is switched off (by a child, a TV update, a reset of Developer options), so the sleep timer, bedtime, app limits and the phone keep working. It can be turned off in TV Setup → Debugging.
+
 ## 2.24.1 - 2026-10-15
 
 Web 2.24.1 · app điện thoại 2.22.1 · app TV 2.21.1
