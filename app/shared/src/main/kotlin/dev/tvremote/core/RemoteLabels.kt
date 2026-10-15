@@ -15,11 +15,13 @@ class RemoteLabels(private val link: AdbLink, helper: () -> ByteArray, private v
     @Volatile private var ok = false
     @Volatile private var stamps: Map<String, String>? = null         // package -> "time size" of its PNG on the TV, once Meta has run
     private val running = Any()
+    @Volatile private var failedAt = 0L                              // when Meta last gave nothing: asked again after RETRY, not on every app of the list
 
     /** Every app's display name, by package. */
     @Synchronized
     fun names(): Map<String, String> {
         names?.let { return it }
+        if (System.currentTimeMillis() - failedAt < RETRY) return emptyMap()
         val saved = load()
         if (saved != null) {
             names = saved
@@ -33,13 +35,16 @@ class RemoteLabels(private val link: AdbLink, helper: () -> ByteArray, private v
     /** One run of Meta on the TV. */
     private fun ask(): Map<String, String> = synchronized(running) {
         val out = HashMap<String, String>()
+        var why = ""
         try {
             val a = link.get()
             val remote = helper(a)
-            for (line in a.shell("CLASSPATH=$remote app_process / dev.tvremote.core.Meta $DIR 2>/dev/null").split("\n")) {
+            val raw = a.shell("CLASSPATH=$remote app_process / dev.tvremote.core.Meta $DIR 2>&1")
+            for (line in raw.split("\n")) {
                 val tab = line.indexOf('\t')
-                if (tab > 0) out[line.substring(0, tab)] = line.substring(tab + 1).trim()
+                if (tab > 0 && line.substring(0, tab).matches(PKG)) out[line.substring(0, tab)] = line.substring(tab + 1).trim()
             }
+            if (out.isEmpty()) why = "Meta printed no app names: " + raw.trim().take(300)
             if (out.isNotEmpty()) {
                 val st = HashMap<String, String>()
                 for (line in a.shell("cd $DIR && stat -c '%n %Y %s' *.png 2>/dev/null").split("\n")) {
@@ -51,9 +56,14 @@ class RemoteLabels(private val link: AdbLink, helper: () -> ByteArray, private v
                 names = out
                 save(out)
             }
-        } catch (ignored: Exception) {
+        } catch (e: Exception) {
+            why = e.toString()
         }
-        names ?: out.also { names = it }                              // failed with nothing saved: package names are shown, as before
+        if (out.isEmpty()) {                                          // failed: package names are shown meanwhile, and it is tried again later
+            failedAt = System.currentTimeMillis()                     // (caching the empty answer once left a computer app without names until restarted)
+            System.err.println("RemoteLabels: no app names from the TV, trying again in ${RETRY / 1000} s: $why")
+        } else failedAt = 0
+        names ?: out
     }
 
     /** tvr-helper.jar on the TV, copied there if it is not yet; one file per build, written whole and then renamed: see CLEAN. */
@@ -139,6 +149,8 @@ class RemoteLabels(private val link: AdbLink, helper: () -> ByteArray, private v
         // started it: a crash on the TV each time. Builds older than a few days are cleared (tvr-meta-*.apk: the whole phone
         // APK, copied by versions before 2.20); one still in use stays readable to the process that has it open.
         const val CLEAN = "find /data/local/tmp -maxdepth 1 \\( -name 'tvr-meta*.apk' -o -name 'tvr-helper-*.jar' \\) -mtime +3 -delete 2>/dev/null; rm -f /data/local/tmp/tvr-meta.apk"
+        val PKG = Regex("[\\w.]+")                                  // 2>&1: a crash on the TV is told apart from a name
+        const val RETRY = 15000L
         const val DIR = "/data/local/tmp/tvr-meta"
     }
 }

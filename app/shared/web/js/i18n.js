@@ -8,7 +8,15 @@
   try { asked = new URLSearchParams(location.search).get('lang'); } catch {}
   const LANG = (asked === 'vi' || asked === 'en') ? asked : stored || ((navigator.language || 'vi').toLowerCase().startsWith('vi') ? 'vi' : 'en');
   window.LANG = LANG;
-  window.setLang = (l) => { try { localStorage.setItem('lang', l); } catch {} location.reload(); };
+  // The page reloads to switch language, so where the viewer is (tab, whether the TV list was open, scroll) is handed over once
+  // through sessionStorage: without it the computer app opened on the TV list again, kicking the viewer off the TV.
+  window.LANG_KEEP = null;
+  try { window.LANG_KEEP = JSON.parse(sessionStorage.getItem('langKeep')); sessionStorage.removeItem('langKeep'); } catch {}
+  window.setLang = (l) => {
+    try { localStorage.setItem('lang', l); } catch {}
+    try { sessionStorage.setItem('langKeep', JSON.stringify({ tab: typeof currentTab === 'string' ? currentTab : '', picking: typeof picking !== 'undefined' && picking, y: Math.round(window.scrollY) })); } catch {}
+    location.reload();
+  };
   document.documentElement.lang = LANG;
   if (LANG === 'vi') { window.tr = (s) => s; return; }
 

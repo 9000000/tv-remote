@@ -144,7 +144,6 @@
   .setpick { min-height:34px; max-width:46vw; border-radius:10px; background:var(--btn); color:var(--ink); border:0; padding:0 8px; font:inherit; font-size:14px; }
   .setlist .setrow.full { grid-template-columns:1fr; } .setlist .setrow.full .setval { display:block; max-width:none; text-align:left; }
   .setfilter { margin:10px 0 4px; } .setfilter button[data-n]::after { content:' · ' attr(data-n); opacity:.7; font-weight:500; }
-  #setlistbody { max-height:90vh; max-height:90dvh; overflow:auto; overscroll-behavior:contain; }   /* scrolls inside, under the search box */
   .setgroupbox { border-top:1px solid var(--line); } .setgroupbox > summary { cursor:pointer; font-size:14px; font-weight:700; padding:11px 0; }
   .setgroupbox[open] > summary { color:var(--muted); font-size:13px; } .setgroupbox .setrow:first-of-type { border-top:0; }
   .linkbtn.primary { background:var(--accent); color:var(--accent-ink); font-weight:700; }

@@ -168,7 +168,7 @@ const friendly = (m) => { m = String(m || ''); const f = FRIENDLY.find(([re]) =>
 let curHost = null;
 // The list of TVs comes first, as in the phone app: shown whenever no TV is chosen, or when "Change TV" asks for it.
 // It always opens on the list; "Change TV" comes back to it, and only then is there a TV to go back to.
-let picking = false, wantPick = CORE === 'pc', cameFromTv = false, justPicked = null, pickedAt = 0, scannedOnce = false;
+let picking = false, wantPick = CORE === 'pc' && !(window.LANG_KEEP && !window.LANG_KEEP.picking), cameFromTv = false, justPicked = null, pickedAt = 0, scannedOnce = false;
 function setPicking(on, tvName) {
   const b = $('#pickback'), back = cameFromTv && !!tvName;
   b.hidden = !back; if (back) b.textContent = '← ' + tr('Về lại') + ' ' + tvName;
