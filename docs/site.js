@@ -75,6 +75,20 @@
     });
   })();
 
+  // the header's link for the section being read: the last one whose top has passed a third of the way down the screen
+  (function(){
+    var links = [].slice.call(document.querySelectorAll(".navlinks a")), secs = links.map(function(a){ return document.querySelector(a.getAttribute("href")); }), busy = false;
+    function mark(){
+      busy = false;
+      var y = innerHeight / 3, k = -1;
+      secs.forEach(function(s, i){ if (s && s.getBoundingClientRect().top <= y) k = i; });
+      if (k >= 0 && secs[k].getBoundingClientRect().bottom < 0) k = -1;           // past the last one (the closing part)
+      links.forEach(function(a, i){ a.classList.toggle("on", i === k); });
+    }
+    addEventListener("scroll", function(){ if (!busy){ busy = true; requestAnimationFrame(mark); } }, {passive:true});
+    mark();
+  })();
+
   document.getElementById("yr").textContent = new Date().getFullYear();
 
   // the computer app: the file for this computer on the big button (one Mac app runs on both chips)
