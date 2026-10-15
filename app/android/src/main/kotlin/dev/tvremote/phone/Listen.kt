@@ -25,8 +25,9 @@ internal fun MainActivity.toggleListen() {
 internal fun MainActivity.listenMenu() {
     val share = prefs.getBoolean("listenShare", false)
     val menu = android.widget.PopupMenu(this, listenChip)
-    menu.menu.add(0, 0, 0, t("Chỉ điện thoại · loa TV tạm im", "Only the phone · TV quiet") + (if (!share) "  ✓" else ""))
-    menu.menu.add(0, 1, 1, t("Cả TV và điện thoại · Android 13+", "TV and phone · Android 13+") + (if (share) "  ✓" else ""))
+    menu.menu.add(0, 0, 0, t("Chỉ điện thoại", "Only the phone") + (if (!share) "  ✓" else "")).icon = listenArt(false)
+    menu.menu.add(0, 1, 1, t("Cả TV và điện thoại", "TV and phone") + (if (share) "  ✓" else "")).icon = listenArt(true)
+    if (android.os.Build.VERSION.SDK_INT >= 29) menu.setForceShowIcon(true)
     menu.setOnMenuItemClickListener { item ->
         if ((item.itemId == 1) != share) { prefs.edit().putBoolean("listenShare", item.itemId == 1).apply(); soundChanged() }
         true

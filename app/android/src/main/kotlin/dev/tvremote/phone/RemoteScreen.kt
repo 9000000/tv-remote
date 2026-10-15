@@ -51,8 +51,12 @@ internal fun MainActivity.layoutRemote() {
     picBar.visibility = if ((video || listen && basic == null) && !full) View.VISIBLE else View.GONE   // with the picture or the sound: not hidden in a menu
     qualBtn.visibility = if (video) View.VISIBLE else View.GONE
     fullBtn.visibility = qualBtn.visibility
-    listenChip.text = "🎧 " + (if (prefs.getBoolean("listenShare", false)) t("TV và điện thoại", "TV and phone") else t("Chỉ điện thoại", "Only the phone")) + " ▾"
+    listenChip.visibility = if (listen) View.VISIBLE else View.GONE  // the sound's own settings, only while it plays
+    val share = prefs.getBoolean("listenShare", false)
+    listenChip.text = (if (share) t("Cả hai", "Both") else t("Điện thoại", "Phone")) + " ▾"
+    listenChip.setCompoundDrawables(listenArt(share), null, null, null)
     val hq = prefs.getBoolean("listenHq", false)
+    hqBtn.visibility = listenChip.visibility
     hqBtn.background = box(if (hq) ACCENT else BTN, 10)               // lit while on, like every on/off button
     hqBtn.setTextColor(if (hq) Color.WHITE else 0xFF98A2B3.toInt())
     qualBtn.text = Tv.QUALITY[prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)][0].toString() + "p ▾"
@@ -64,6 +68,17 @@ internal fun MainActivity.layoutRemote() {
 }
 
 /** The quality chip under the picture: the levels, lightest first. */
+/** Where the sound plays, drawn: the phone alone, or the TV and the phone. */
+internal fun MainActivity.listenArt(share: Boolean): android.graphics.drawable.Drawable {
+    val art = { name: String -> resources.getDrawable(resources.getIdentifier("ic_$name", "drawable", packageName), null).mutate().apply { setTint(TEXT) } }
+    val s = dp(18)
+    val d = if (!share) art("phone") else android.graphics.drawable.LayerDrawable(arrayOf(art("tv"), art("phone"))).apply {
+        setLayerInset(0, 0, 0, s + dp(2), 0); setLayerInset(1, s + dp(2), 0, 0, 0)
+    }
+    d.setBounds(0, 0, if (share) s * 2 + dp(2) else s, s)
+    return d
+}
+
 internal fun MainActivity.qualityMenu() {
     val menu = android.widget.PopupMenu(this, qualBtn)
     val now = prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)
@@ -156,7 +171,7 @@ internal fun MainActivity.buildRemote() {
         background = box(BTN, 10); contentDescription = t("Chất lượng hình", "Picture quality"); setOnClickListener { qualityMenu() }
     }
     listenChip = android.widget.TextView(this).apply {                // how 🎧 plays: picked here, used by 🎧 on the top bar
-        setTextColor(TEXT); textSize = 13f; gravity = Gravity.CENTER; setPadding(dp(12), 0, dp(12), 0); maxLines = 1
+        setTextColor(TEXT); textSize = 13f; gravity = Gravity.CENTER; setPadding(dp(10), 0, dp(12), 0); maxLines = 1; compoundDrawablePadding = dp(6)
         background = box(BTN, 10); contentDescription = t("Cách nghe tiếng TV", "How to hear the TV"); setOnClickListener { listenMenu() }
     }
     picBar.addView(listenChip, LinearLayout.LayoutParams(-2, dp(34)))

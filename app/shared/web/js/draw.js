@@ -114,10 +114,24 @@ $('#drawfile').addEventListener('change', async (e) => {
   if (!data || data.length > 4e6) data = c.toDataURL('image/jpeg', 0.85);
   const shown = new Image(); shown.src = data; await shown.decode().catch(() => {});
   drawPic = { img: shown, b: data.slice(data.indexOf(',') + 1), x: 5000, y: 5000, w: 4000 };
-  $('#drawbar').hidden = true; $('#picbar').hidden = false; drawPaint();
+  $('#drawbar').hidden = true; $('#picbar').hidden = false; picWidth(drawPic.w);
 });
 function picEnd() { drawPic = null; picTouch.clear(); $('#picbar').hidden = true; if (drawing) $('#drawbar').hidden = false; drawPaint(); }
-function picWidth(w) { drawPic.w = Math.round(Math.min(10000, Math.max(300, w))); drawPaint(); }
+// 1x is the size it starts at (4000 = 40% of the screen's width); down to 0.1x, up to the screen's width
+function picWidth(w) { drawPic.w = Math.round(Math.min(10000, Math.max(400, w))); $('#picscale').textContent = (drawPic.w / 4000).toFixed(1) + 'x'; drawPaint(); }
+// − and +: a tap is one step, holding keeps going (faster the longer), like dragging a slider that springs back
+[['#picsmaller', 1 / 1.06], ['#picbigger', 1.06]].forEach(([id, k]) => {
+  let timer = null;
+  const stop = () => { clearTimeout(timer); timer = null; };
+  $(id).addEventListener('pointerdown', (e) => {
+    if (!drawPic || e.button) return;
+    e.preventDefault(); stop();
+    let n = 0;
+    const step = () => { if (!drawPic) return stop(); picWidth(drawPic.w * k); timer = setTimeout(step, n++ ? Math.max(30, 120 - n * 6) : 350); };
+    step();
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => $(id).addEventListener(ev, stop));
+});
 $('#piccancel').addEventListener('click', picEnd);
 $('#picok').addEventListener('click', () => {
   const p = drawPic; if (!p) return;

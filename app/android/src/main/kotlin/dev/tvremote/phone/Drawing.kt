@@ -87,8 +87,8 @@ internal fun MainActivity.drawTools(): LinearLayout {
     paint()
     pen.contentDescription = t("Màu", "Colour")
     pen.setOnClickListener { drawPen { paint() } }
-    bar.addView(pen, LinearLayout.LayoutParams(dp(30), dp(30)))
-    bar.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+    bar.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))       // all on the right, the swatch with the rest
+    bar.addView(pen, LinearLayout.LayoutParams(dp(30), dp(30)).also { it.rightMargin = dp(6) })
     val pic = icon("@image", t("Đưa một ảnh lên TV", "Put a picture on the TV"), BTN)
     pic.setOnClickListener { withSetup("pic") { pickDrawPic() } }    // an older TV Setup draws lines but no pictures
     val undo = icon("@undo", t("Bỏ nét vừa vẽ", "Take back the last line"), BTN)
@@ -105,6 +105,29 @@ internal fun MainActivity.drawTools(): LinearLayout {
     place.gravity = Gravity.CENTER_VERTICAL
     place.setPadding(dp(12), dp(8), dp(8), dp(8))
     place.visibility = View.GONE
+    // − and +: a tap is one step, holding keeps going (faster the longer), like a slider that springs back; 1x = the size it came at
+    val scale = android.widget.TextView(this).apply { setTextColor(TEXT); textSize = 14f; gravity = Gravity.CENTER }
+    drawView.onSize = { scale.text = String.format(java.util.Locale.US, "%.1fx", (drawView.placing?.w ?: 4000) / 4000f) }
+    for ((sign, k) in listOf("−" to 1 / 1.06f, "+" to 1.06f)) {
+        val b = button(sign, BTN)
+        b.textSize = 20f
+        b.contentDescription = if (k > 1) t("To lên", "Bigger") else t("Nhỏ lại", "Smaller")
+        var n = 0
+        val step = object : Runnable { override fun run() {
+            drawView.resize(k)
+            ui.postDelayed(this, if (n++ == 0) 350L else maxOf(30L, 120L - n * 6))
+        } }
+        b.setOnTouchListener { _, e ->
+            when (e.actionMasked) {
+                MotionEvent.ACTION_DOWN -> { n = 0; ui.removeCallbacks(step); step.run() }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> ui.removeCallbacks(step)
+            }
+            true
+        }
+        if (k > 1) place.addView(scale, LinearLayout.LayoutParams(dp(48), dp(40)))
+        b.setPadding(0, 0, 0, 0)
+        place.addView(b, LinearLayout.LayoutParams(dp(44), dp(40)))
+    }
     place.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
     val cancel = button(t("Hủy", "Cancel"), BTN)
     cancel.setOnClickListener { picEnd() }
@@ -195,6 +218,7 @@ internal fun MainActivity.drawPicked(uri: Uri) {
             if (p == null) { Toast.makeText(this, t("Không mở được ảnh này.", "Could not open this picture."), Toast.LENGTH_LONG).show(); return@post }
             if (!drawing) startDrawing()
             drawView.placing = p
+            drawView.onSize()
             drawView.invalidate()
             drawBar.findViewWithTag<View>("pen").visibility = View.GONE
             drawBar.findViewWithTag<View>("pic").visibility = View.VISIBLE
@@ -266,6 +290,7 @@ internal class DrawView(c: Context) : View(c) {
     private val strokes = ArrayList<Stroke>()
     private val landed = ArrayList<Pic>()                             // sent: shown here until the TV's own picture has it
     var placing: Pic? = null
+    var onSize: () -> Unit = {}                                       // the 1.0x beside − and +
     private val smooth = Paint(Paint.FILTER_BITMAP_FLAG)
     private val frame = Paint().apply { style = Paint.Style.STROKE; color = Color.WHITE; pathEffect = DashPathEffect(floatArrayOf(18f, 10f), 0f) }
     private val box = RectF()
@@ -299,7 +324,7 @@ internal class DrawView(c: Context) : View(c) {
         val d = if (two) Math.hypot((e.getX(0) - e.getX(1)).toDouble(), (e.getY(0) - e.getY(1)).toDouble()).toFloat() else 0f
         when (e.actionMasked) {
             MotionEvent.ACTION_MOVE -> {
-                if (two && lastD > 0) p.w = (p.w * d / lastD).toInt().coerceIn(300, 10000)
+                if (two && lastD > 0) { p.w = (p.w * d / lastD).toInt().coerceIn(400, 10000); onSize() }
                 else if (!two) {
                     p.x = (p.x + (e.x - lastX) / v.width * 10000).toInt().coerceIn(0, 10000)
                     p.y = (p.y + (e.y - lastY) / v.height * 10000).toInt().coerceIn(0, 10000)
@@ -310,6 +335,9 @@ internal class DrawView(c: Context) : View(c) {
         lastX = e.x; lastY = e.y; lastD = d                           // after a finger lifts, the next move starts from here
         if (e.actionMasked == MotionEvent.ACTION_POINTER_UP) { val i = if (e.actionIndex == 0) 1 else 0; lastX = e.getX(i); lastY = e.getY(i); lastD = 0f }
     }
+
+    /** − and + beside the picture: 0.1x (400) up to the screen's width. */
+    fun resize(k: Float) { val p = placing ?: return; p.w = (p.w * k).toInt().coerceIn(400, 10000); onSize(); invalidate() }
 
     private fun drawPic(c: Canvas, p: Pic, alpha: Int): RectF {
         val pw = p.w * width / 10000f
