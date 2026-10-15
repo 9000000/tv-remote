@@ -101,11 +101,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal lateinit var hqBtn: android.widget.TextView
     internal lateinit var topBar: LinearLayout                         // the TV's name and state, with the buttons beside or under it
     internal lateinit var basicBar: Button
-    internal val SHOT = -1                                             // not a key: the screenshot button in the extra keys
-    internal val OPEN = -2                                             // not a key: "open on the TV" in the extra keys
-    internal val TIMER = -3                                            // not a key: the sleep timer (Automation.kt)
-    internal val SCENES = -4                                           // not a key: the scenes (Automation.kt)
-    internal val DRAW = -5                                             // not a key: drawing on the TV's screen (Drawing.kt)
+
 
     // ---- Drawing.kt: the finger on the picture draws on the TV's screen instead of touching it.
     internal var drawing = false

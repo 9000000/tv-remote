@@ -1,4 +1,15 @@
 // remote keys, keyboard and mouse passthrough
+// ---------- the rows of keys the page draws from remote.json (the same file the phone app's remote reads) ----------
+// A key is bound below like the hand-made ones (data-k); an action ("do") runs its REMOTE_DO handler (remote_spec.js).
+document.querySelectorAll('[data-rows]').forEach((box) => {
+  for (const row of REMOTE.rows[box.dataset.rows] || []) for (const raw of row.filter(remoteHere)) {
+    const e = remoteEntry(raw);
+    const b = el('button', { className: 'rb lab' + (e.style ? ' ' + e.style : ''), id: 'r-' + e.id, innerHTML: '<svg class="ic" aria-hidden="true"><use href="#i-' + e.icon + '"/></svg><small></small>' });
+    b.querySelector('small').textContent = remoteWords(e);
+    if (e.key) b.dataset.k = e.key; else b.addEventListener('click', () => REMOTE_DO[e.do](e.arg));
+    box.append(b);
+  }
+});
 // ---------- keys ----------
 // A tap counts when the pointer lifts on the key (slide off it and nothing is sent). Hold (0.4 s) = the TV sees the key held down until you let go: fast scrolling, long-press menus.
 document.querySelectorAll('[data-k]').forEach((b) => {
@@ -35,50 +46,34 @@ async function openOnTv(link, label) {
   const r = await api('/api/app', { link });
   if (r) { toast(r.via === 'adb' ? 'Đã mở ' + label : 'Đã gửi cho TV (không qua ADB: vài TV bỏ qua lệnh này)'); setTimeout(refresh, 1500); }
 }
-// ---------- "Thêm phím", third row: Mở trên TV, Hẹn giờ tắt, Cảnh, Vẽ lên TV ----------
-// The same four, in the same order, with the same menus as the phone app's remote (RemoteScreen.kt, Media.kt quickOpen,
-// Automation.kt timerMenu / scenesMenu). Keep the entries' icons and words equal to theirs: tests/remote.test.js compares them.
+// ---------- "Thêm phím", third row: Mở trên TV, Hẹn giờ tắt, Cảnh, Vẽ lên TV; their menus' entries are in remote.json ----------
+// The same menus as the phone app's remote (RemoteScreen.kt, PhoneRemote.kt); the entries live in remote.json, what they do here in REMOTE_DO.
 const needAdb = () => { if (ADB.state === 'ready') return false; toast('Việc này cần ADB. Bật ADB cho TV này rồi thử lại.'); return true; };
 const storePage = (id) => openOnTv('https://play.google.com/store/apps/details?id=' + id, 'CH Play');
 // the TV's Play Store takes a search only as market://search (a play.google.com search link ends in a browser error)
 const storeSearch = (q) => openOnTv('market://search?c=apps&q=' + encodeURIComponent(q), 'CH Play');
 const castPick = (accept) => { if (needAdb()) return; const f = $('#castfile'); f.accept = accept; f.click(); };   // the picker must open within the tap
-function quickOpen() {
-  const items = [
-    ['@search|Tìm app trên CH Play', '', async () => { const v = await ask('Tìm app trên CH Play', { value: '', ok: 'Tìm' }); if (v && v.trim()) storeSearch(v.trim()); }],
-    ['@package|Mở trang CH Play theo app id', 'vd: org.videolan.vlc', async () => { const v = await ask('App id (tên gói)', { value: 'org.videolan.vlc', ok: 'Mở' }); if (v && v.trim()) storePage(v.trim()); }],
-    ['@link|Mở đường dẫn trên TV', 'YouTube, web, tệp...', async () => { const v = await ask('Đường dẫn', { value: 'https://youtu.be/', ok: 'Mở' }); const l = v && normalizeLink(v); if (l) openOnTv(l, 'link'); }],
-    ['@image|Phát ảnh / video từ máy này', 'Cần ADB', () => castPick('image/*,video/*')],
-    ['@music|Phát nhạc / tệp khác', '', () => castPick('audio/*,video/*,image/*')],
-    ...[['@play|YouTube', 'com.google.android.youtube.tv'], ['@play|Netflix', 'com.netflix.ninja'], ['@play|VLC', 'org.videolan.vlc'], ['@play|Kodi', 'org.xbmc.kodi'],
-      ['@download|Downloader', 'com.esaba.downloader'], ['@home|Projectivy Launcher', 'com.spocky.projengmenu'], ['@globe|Tailscale', 'com.tailscale.ipn']]
-      .map(([name, id]) => [name, 'Trang CH Play: cài hoặc mở', () => storePage(id)]),
-  ];
-  menuDlg('Mở trên TV', -1, items);
+async function askStoreSearch() { const v = await ask('Tìm app trên CH Play', { value: '', ok: 'Tìm' }); if (v && v.trim()) storeSearch(v.trim()); }
+async function askStorePage() { const v = await ask('App id (tên gói)', { value: 'org.videolan.vlc', ok: 'Mở' }); if (v && v.trim()) storePage(v.trim()); }
+async function askLink() { const v = await ask('Đường dẫn', { value: 'https://youtu.be/', ok: 'Mở' }); const l = v && normalizeLink(v); if (l) openOnTv(l, 'link'); }
+function screenshot() { const a = document.createElement('a'); a.href = '/api/screen'; a.download = 'tv-' + Math.floor(Date.now() / 1000) + (CORE === 'pc' && STATE.video !== 'h264' ? '.jpg' : '.png'); a.click(); }
+async function timerPlus() { const x = await loadRules({ do: 'sleep_add', minutes: 15 }); if (x) toast('TV sẽ tự tắt lúc ' + clock(x.sleep_at)); }
+async function timerCustom() {
+  const v = await ask('Tắt TV sau bao lâu?', { value: '', ok: 'Hẹn' }); if (v === null) return;
+  const m = sleepMinutes(v); if (m) setSleep(m); else toast('Nhập số phút (vd 40) hoặc giờ tắt (vd 23:30)');
 }
+const quickOpen = () => menuDlg('Mở trên TV', -1, remoteMenu('open'));
 async function timerMenu() {
   if (needAdb() || !await setupFor('rules')) return;                  // TV Setup runs the timer on the TV (SetupNeed "rules")
   const r = await loadRules(null, true); if (!r) return;
   const at = r.sleep_at || 0, hm = (m) => m < 60 ? m + ' phút' : Math.floor(m / 60) + ' giờ' + (m % 60 ? ' 30' : '');
-  const items = [15, 30, 45, 60, 90, 120].map((m) => ['Tắt sau ' + hm(m), '', () => setSleep(m)]);
-  if (at) items.unshift(
-    ['@plus|Thêm 15 phút', '', async () => { const x = await loadRules({ do: 'sleep_add', minutes: 15 }); if (x) toast('TV sẽ tự tắt lúc ' + clock(x.sleep_at)); }],
-    ['@close|Hủy hẹn giờ', '', () => setSleep(0)]);
-  items.push(['@timer|Tự chọn...', 'Số phút, hoặc giờ tắt như 23:30', async () => {
-    const v = await ask('Tắt TV sau bao lâu?', { value: '', ok: 'Hẹn' }); if (v === null) return;
-    const m = sleepMinutes(v); if (m) setSleep(m); else toast('Nhập số phút (vd 40) hoặc giờ tắt (vd 23:30)');
-  }], ['@moon|Giờ đi ngủ, giới hạn app...', '', () => showTab('auto')]);
+  const items = remoteMenu('timer', { when: { timerOn: !!at }, expand: { lengths: () => [15, 30, 45, 60, 90, 120].map((m) => ['Tắt sau ' + hm(m), '', () => setSleep(m)]) } });
   menuDlg(at ? 'TV tự tắt lúc ' + clock(at) : 'Hẹn giờ tắt TV', at ? 0 : -1, items);
 }
 function scenesMenu() {
   if (needAdb()) return;
-  menuDlg('Cảnh', -1, [...SCENES.map((sc) => [((sc.icon || '') + '  ' + sc.name).trim(), '', () => runScene(sc)]),
-    ['@scene|Tạo / sửa cảnh...', 'Một nút, nhiều việc', () => showTab('auto')]]);
+  menuDlg('Cảnh', -1, remoteMenu('scenes', { expand: { scenes: () => SCENES.map((sc) => [((sc.icon || '') + '  ' + sc.name).trim(), '', () => runScene(sc)]) } }));
 }
-$('#openmenu').addEventListener('click', quickOpen);
-$('#timermenu').addEventListener('click', timerMenu);
-$('#scenemenu').addEventListener('click', scenesMenu);
-$('#drawmore').addEventListener('click', () => { if (drawing) drawStop(); else if (!needAdb()) drawStart(); });
 // ---------- keyboard: whatever is typed in the box is mirrored on the TV, keystroke by keystroke ----------
 const txt = $('#text');
 let typed = '', inputQ = Promise.resolve();
@@ -108,7 +103,6 @@ $('#del').addEventListener('click', () => { if (txt.value) { txt.value = [...txt
 function setMore(on) { $('#more').hidden = !on; $('#morebtn').classList.toggle('on', on); try { localStorage.setItem('more', on ? '1' : ''); } catch {} }
 try { setMore(!!localStorage.getItem('more')); } catch {}
 $('#morebtn').addEventListener('click', () => setMore($('#more').hidden));
-$('#shot').addEventListener('click', () => { const a = document.createElement('a'); a.href = '/api/screen'; a.download = 'tv-' + Math.floor(Date.now() / 1000) + (CORE === 'pc' && STATE.video !== 'h264' ? '.jpg' : '.png'); a.click(); });
 $('#digits').addEventListener('click', () => { const p = $('#numpad'); p.hidden = !p.hidden; try { localStorage.setItem('numpad', p.hidden ? '' : '1'); } catch {} });
 try { setLive(localStorage.getItem('live') !== '0'); $('#numpad').hidden = !localStorage.getItem('numpad'); } catch { setLive(true); }
 

@@ -147,11 +147,7 @@
             <button class="rb" id="wake" data-for="pc" aria-label="Đánh thức" title="Đánh thức TV (Wake-on-LAN khi TV standby sâu)"><svg class="ic" aria-hidden="true"><use href="#i-wake"/></svg></button>
             <button class="rb" id="morebtn" aria-label="Thêm phím" title="Thêm phím"><svg class="ic" aria-hidden="true"><use href="#i-more"/></svg></button>
           </div>
-          <div class="rrow four" id="more" hidden>
-            <button class="rb lab" data-k="INPUT"><svg class="ic" aria-hidden="true"><use href="#i-input"/></svg><small>Ngõ vào</small></button><button class="rb lab" data-k="SETTINGS"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg><small>Cài đặt</small></button><button class="rb lab" data-k="INFO"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg><small>Thông tin</small></button><button class="rb lab" data-k="GUIDE"><svg class="ic" aria-hidden="true"><use href="#i-guide"/></svg><small>Lịch phát</small></button>
-            <button class="rb lab" data-k="LIVE"><svg class="ic" aria-hidden="true"><use href="#i-tv"/></svg><small>TV</small></button><button class="rb lab" data-k="SUBTITLE"><svg class="ic" aria-hidden="true"><use href="#i-subtitle"/></svg><small>Phụ đề</small></button><button class="rb lab" data-k="STOP"><svg class="ic" aria-hidden="true"><use href="#i-stop"/></svg><small>Dừng</small></button><button class="rb lab" id="shot"><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg><small>Chụp màn hình</small></button>
-            <button class="rb lab" id="openmenu"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg><small>Mở trên TV</small></button><button class="rb lab" id="timermenu"><svg class="ic" aria-hidden="true"><use href="#i-timer"/></svg><small>Hẹn giờ tắt</small></button><button class="rb lab" id="scenemenu"><svg class="ic" aria-hidden="true"><use href="#i-scene"/></svg><small>Cảnh</small></button><button class="rb lab" id="drawmore"><svg class="ic" aria-hidden="true"><use href="#i-pen"/></svg><small>Vẽ lên TV</small></button>
-          </div>
+          <div class="rrow four" id="more" data-rows="more" hidden></div>   <!-- the keys of these three blocks: remote.json -->
           <div class="dpad">
             <button class="up" data-k="UP" aria-label="Lên"><svg class="ic" aria-hidden="true"><use href="#i-up"/></svg></button>
             <button class="left" data-k="LEFT" aria-label="Trái"><svg class="ic" aria-hidden="true"><use href="#i-left"/></svg></button>
@@ -159,18 +155,10 @@
             <button class="right" data-k="RIGHT" aria-label="Phải"><svg class="ic" aria-hidden="true"><use href="#i-right"/></svg></button>
             <button class="down" data-k="DOWN" aria-label="Xuống"><svg class="ic" aria-hidden="true"><use href="#i-down"/></svg></button>
           </div>
-          <div class="rrow three">
-            <button class="rb lab" data-k="BACK"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg><small>Quay lại</small></button>
-            <button class="rb lab" data-k="HOME"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg><small>Home</small></button>
-            <button class="rb lab" data-k="MENU"><svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg><small>Menu</small></button>
-          </div>
+          <div class="rrow three" data-rows="nav"></div>
           <div class="cluster">
             <div class="pill"><button data-k="VOL_UP" aria-label="Tăng âm lượng"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></button><output id="volv">–</output><button data-k="VOL_DOWN" aria-label="Giảm âm lượng"><svg class="ic" aria-hidden="true"><use href="#i-minus"/></svg></button></div>
-            <div class="mid">
-              <button class="rb lab" data-k="MUTE" id="mute"><svg class="ic" aria-hidden="true"><use href="#i-mute"/></svg><small>Tắt tiếng</small></button><button class="rb lab play" data-k="PLAY_PAUSE"><svg class="ic" aria-hidden="true"><use href="#i-play_pause"/></svg><small>Phát/Dừng</small></button>
-              <button class="rb lab" data-k="PREV"><svg class="ic" aria-hidden="true"><use href="#i-prev"/></svg><small>Bài trước</small></button><button class="rb lab" data-k="NEXT"><svg class="ic" aria-hidden="true"><use href="#i-next"/></svg><small>Bài sau</small></button>
-              <button class="rb lab" data-k="REWIND"><svg class="ic" aria-hidden="true"><use href="#i-rewind"/></svg><small>Tua lại</small></button><button class="rb lab" data-k="FFWD"><svg class="ic" aria-hidden="true"><use href="#i-ffwd"/></svg><small>Tua tới</small></button>
-            </div>
+            <div class="mid" data-rows="media"></div>
             <div class="pill"><button data-k="CH_UP" aria-label="Kênh +"><svg class="ic" aria-hidden="true"><use href="#i-up"/></svg></button><span>Kênh</span><button data-k="CH_DOWN" aria-label="Kênh −"><svg class="ic" aria-hidden="true"><use href="#i-down"/></svg></button></div>
           </div>
         </section>
@@ -434,6 +422,7 @@
 <script src="js/i18n.js"></script>
 <script src="js/qr.js"></script>
 <script src="js/core.js"></script>
+<script src="js/remote_spec.js"></script>
 <script src="js/remote.js"></script>
 <script src="js/screen.js"></script>
 <script src="js/draw.js"></script>

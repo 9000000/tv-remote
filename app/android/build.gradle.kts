@@ -42,4 +42,8 @@ android {
     kotlinOptions { jvmTarget = "11" }
 }
 
-dependencies { implementation(project(":shared")) }
+dependencies {
+    implementation(project(":shared"))
+    testImplementation("junit:junit:4.13.2")                          // RemoteSpecTest: remote.json against the handlers of PhoneRemote.kt
+    testImplementation("org.json:json:20240303")                      // the real org.json: Android's own is only a stub off a device
+}

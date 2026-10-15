@@ -64,36 +64,37 @@ internal fun sleepMinutes(v: String, now: java.util.Calendar = java.util.Calenda
     return maxOf(1, Math.round((at.timeInMillis - now.timeInMillis) / 60000.0).toInt())
 }
 
-/** 😴: a few lengths to pick from, and where the timer stands. */
+internal fun MainActivity.timerPlus() {
+    rules(JSONObject().put("do", "sleep_add").put("minutes", 15)) { x -> toast(t("TV sẽ tự tắt lúc ", "The TV turns off at ") + hm(x.optLong("sleep_at"), x.optLong("now"))) }
+}
+
+internal fun MainActivity.timerCustom() {
+    askText(t("Tắt TV sau bao lâu?", "Turn the TV off when?"), t("vd 40 (phút) hoặc 23:30", "e.g. 40 (minutes) or 23:30"), t("Hẹn", "Set")) {
+        val m = sleepMinutes(it)
+        if (m > 0) setTimer(m) else toast(t("Nhập số phút (vd 40) hoặc giờ tắt (vd 23:30)", "Type minutes (e.g. 40) or a time to turn off (e.g. 23:30)"))
+    }
+}
+
+/** 😴: a few lengths to pick from, and where the timer stands (the other entries: remote.json). */
 internal fun MainActivity.timerMenu() {
     if (needsAdb()) return
     rules(null) { r ->
         if (needsSetup(r)) return@rules
         val at = r.optLong("sleep_at")
-        val items = ArrayList<Triple<String, String, () -> Unit>>()
-        for (m in intArrayOf(15, 30, 45, 60, 90, 120)) items.add(Triple(t("Tắt sau ", "Off in ") + (if (m < 60) "$m " + t("phút", "min") else "${m / 60} " + t("giờ", "h") + (if (m % 60 > 0) " 30" else "")), "") { setTimer(m) })
-        if (at > 0) {
-            items.add(0, Triple("@plus|" + t("Thêm 15 phút", "15 more minutes"), "") { rules(JSONObject().put("do", "sleep_add").put("minutes", 15)) { x -> toast(t("TV sẽ tự tắt lúc ", "The TV turns off at ") + hm(x.optLong("sleep_at"), x.optLong("now"))) } })
-            items.add(1, Triple("@close|" + t("Hủy hẹn giờ", "Cancel the timer"), "") { setTimer(0) })
-        }
-        items.add(Triple("@timer|" + t("Tự chọn...", "Custom..."), t("Số phút, hoặc giờ tắt như 23:30", "Minutes, or a time like 23:30")) {
-            askText(t("Tắt TV sau bao lâu?", "Turn the TV off when?"), t("vd 40 (phút) hoặc 23:30", "e.g. 40 (minutes) or 23:30"), t("Hẹn", "Set")) {
-                val m = sleepMinutes(it)
-                if (m > 0) setTimer(m) else toast(t("Nhập số phút (vd 40) hoặc giờ tắt (vd 23:30)", "Type minutes (e.g. 40) or a time to turn off (e.g. 23:30)"))
+        val lengths = {
+            intArrayOf(15, 30, 45, 60, 90, 120).map { m ->
+                Triple(t("Tắt sau ", "Off in ") + (if (m < 60) "$m " + t("phút", "min") else "${m / 60} " + t("giờ", "h") + (if (m % 60 > 0) " 30" else "")), "") { setTimer(m) }
             }
-        })
-        items.add(Triple("@moon|" + t("Giờ đi ngủ, giới hạn app...", "Bedtime, app limits..."), "") { managing.open(host, "auto") })
+        }
+        val items = remoteMenu("timer", if (at > 0) setOf("timerOn") else emptySet(), mapOf("lengths" to lengths))
         menu(if (at > 0) t("TV tự tắt lúc ", "The TV turns off at ") + hm(at, r.optLong("now")) else t("Hẹn giờ tắt TV", "Sleep timer"), if (at > 0) 0 else -1, items)
     }
 }
 
-/** 🎬: this phone's scenes, and the way to make more. */
+/** 🎬: this phone's scenes, and the way to make more (remote.json). */
 internal fun MainActivity.scenesMenu() {
-    val items = SceneStore.list(this).map { sc -> Triple((sc.optString("icon") + "  " + sc.optString("name")).trim(), "") { runScene(sc) } }.toMutableList<Triple<String, String, () -> Unit>>()
-    items.add(Triple("@scene|" + t("Tạo / sửa cảnh...", "Make / edit scenes..."), t("Một nút, nhiều việc", "One button, several steps")) {
-        if (!needsAdb()) managing.open(host, "auto")
-    })
-    menu(t("Cảnh", "Scenes"), -1, items)
+    val scenes = { SceneStore.list(this).map { sc -> Triple((sc.optString("icon") + "  " + sc.optString("name")).trim(), "") { runScene(sc) } } }
+    menu(t("Cảnh", "Scenes"), -1, remoteMenu("scenes", emptySet(), mapOf("scenes" to scenes)))
 }
 
 internal fun MainActivity.runScene(sc: JSONObject) {

@@ -246,7 +246,7 @@ async function refresh() {
   if (s.host !== curHost) { const first = curHost === null; curHost = s.host; if (!first) tvChanged(); }
   if (s.volume && Date.now() > volHold) {
     $('#volv').textContent = s.volume.level;
-    $('#mute').classList.toggle('on', !!s.volume.muted); $('#mute').title = s.volume.muted ? 'Đang tắt tiếng, bấm để bật' : 'Tắt tiếng';
+    $('#r-mute').classList.toggle('on', !!s.volume.muted); $('#r-mute').title = s.volume.muted ? 'Đang tắt tiếng, bấm để bật' : 'Tắt tiếng';
   }
   applyAdb(); allowAlert(); checkAsk();
   if ($('#assist').open && (ADB.state === 'ready' || ADB.state === 'unauthorized')) {   // the TV has opened its ADB port: nothing left to help with
