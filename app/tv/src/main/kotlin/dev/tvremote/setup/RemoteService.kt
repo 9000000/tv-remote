@@ -113,7 +113,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     private var guard: Guard? = null
     private var tsWatch: TailscaleWatch? = null
     @Volatile private var hearer: Tv? = null                         // a session that carries the TV's sound to one browser
-    private val page by lazy { WebPage(assets, "tv", try { packageManager.getPackageInfo(packageName, 0).let { it.versionName + "-" + it.lastUpdateTime / 1000 } } catch (e: Exception) { "0" }) }
+    private val page by lazy { WebPage({ assets.open(it) }, "tv", try { packageManager.getPackageInfo(packageName, 0).let { it.versionName + "-" + it.lastUpdateTime / 1000 } } catch (e: Exception) { "0" }) }
 
     override fun onBind(i: Intent?): IBinder? = null
 

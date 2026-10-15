@@ -31,6 +31,8 @@ app/android/.../phone/   phone app, one file per part, as extension functions on
 app/tv/                  TV Setup: MainActivity (the TV screen), RemoteService (web server), PairActivity, Stats, TrustReceiver,
                          Rules + Guard + RulesReceiver + WarnActivity (sleep timer, bedtime, app limits)
 app/gradle/              the Gradle build of the two apps (settings point at ../shared, ../android, ../tv); open it in Android Studio
+app/desktop/             TRIAL: the computer's server on the shared Kotlin core (JVM, no adb/Python), one TV, Manage.kt's /api;
+                         `./gradlew :desktop:installDist`, then `app/desktop/build/install/desktop/bin/desktop --tv <ip>`
 app/web/                 server.py (the computer's /api routes and main), session.py (one TV: remote protocol + ADB), screen.py
                          (screenshots, scrcpy, live view), discover.py (finding TVs), fleet.py (several TVs at once), scenes.py, adbtools.py, tvconfig.py
                          (tvs.json, also "scenes"), cli/ (command line tools), tests/

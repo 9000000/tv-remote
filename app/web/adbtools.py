@@ -310,7 +310,7 @@ class Adb:
             key = 20 if not f or t["y"] > f["y"] + 10 else 19 if t["y"] < f["y"] - 10 else 22 if t["x"] > f["x"] else 21
             await self.shell(f"input keyevent {key}")
             after = await self.prompt_read()
-            if not after:
+            if not after or after[0] != fp:                           # another key's question now: never a key press on it
                 return
 
     async def prompt_allow(self, want, wait=0, others=False):
@@ -328,10 +328,14 @@ class Adb:
                 await self._press(p, "cancel"); skipped += 1; await asyncio.sleep(1.2); continue
             if not (_part(p[1], "always") or {}).get("checked"):
                 await self._press(p, "always")
+            # Allow is pressed only on the question read just now, and only if it is still about this key: when it went away
+            # meanwhile and the TV put another key's question up (it queues them), the top of the loop treats that one as such
             now = await self.prompt_read()
-            if now and now[0] == want and not (_part(now[1], "always") or {}).get("checked"):
+            if not now or now[0] != want:
+                continue
+            if not (_part(now[1], "always") or {}).get("checked"):
                 return "failed"                                       # never answer without "Always allow"
-            await self._press(now or p, "allow")
+            await self._press(now, "allow")
             await asyncio.sleep(0.9)
             after = await self.prompt_read()
             return "allowed" if not after or after[0] != want else "failed"
@@ -692,6 +696,11 @@ class Adb:
                 if found:
                     j["url"] = "https://login.tailscale.com/a/" + found[0]; return "sign in"
                 btn = next((n for n in nodes if login.match(n[0].strip())), None)
+                # only ever on Tailscale's own screen: OK pressed while another app's box (above all "Allow USB debugging?"
+                # for someone else's key) is in front would answer that box instead
+                front = await self.shell("dumpsys window | grep -E 'mCurrentFocus|mFocusedWindow'")
+                if TS_PKG not in front or "UsbDebugging" in front:
+                    continue
                 if btn and pressed < 5:
                     x1, y1, x2, y2 = map(int, btn[1:])
                     await self.shell(f"input tap {(x1 + x2) // 2} {(y1 + y2) // 2}"); pressed += 1

@@ -20,6 +20,9 @@ object AdbPrompt {
         val focused get() = nodes.firstOrNull { it.focused }
     }
 
+    /** The TV's shell, as Adb.shell: (command, quiet ms) -> output. A pretend TV in the tests. */
+    fun interface Sh { fun shell(cmd: String, quietMs: Long): String }
+
     class Node(val id: String, val cls: String, val checked: Boolean, val focused: Boolean, val x: Int, val y: Int)
 
     private val FP = Regex("(?:[0-9A-F]{2}:){15}[0-9A-F]{2}")
@@ -27,7 +30,9 @@ object AdbPrompt {
 
     /** The question if it is on screen now, null otherwise. */
     @Throws(IOException::class)
-    fun read(adb: Adb): Seen? {
+    fun read(adb: Adb): Seen? = read(Sh(adb::shell))
+
+    internal fun read(adb: Sh): Seen? {
         if (!adb.shell("dumpsys window | grep -E 'mCurrentFocus|mFocusedWindow'", 15000).contains("UsbDebuggingActivity")) return null
         for (attempt in 0..2) {                                       // uiautomator sometimes finds the screen busy: try again
             val xml = adb.shell("uiautomator dump $DUMP >/dev/null 2>&1; cat $DUMP; rm -f $DUMP", 30000)
@@ -52,7 +57,9 @@ object AdbPrompt {
      * other:<fingerprint> (another key's question is on screen and was left alone).
      */
     @Throws(IOException::class)
-    fun allow(adb: Adb, fingerprint: String, waitMs: Long, skipOthers: Boolean): String {
+    fun allow(adb: Adb, fingerprint: String, waitMs: Long, skipOthers: Boolean): String = allow(Sh(adb::shell), fingerprint, waitMs, skipOthers)
+
+    internal fun allow(adb: Sh, fingerprint: String, waitMs: Long, skipOthers: Boolean, nap: (Long) -> Unit = Thread::sleep): String {
         val want = fingerprint.uppercase()
         val end = System.currentTimeMillis() + waitMs
         var skipped = 0
@@ -60,21 +67,24 @@ object AdbPrompt {
             val p = read(adb)
             if (p == null) {
                 if (System.currentTimeMillis() > end) return "none"
-                Thread.sleep(800)
+                nap(800)
                 continue
             }
             if (p.fingerprint != want) {
                 if (!skipOthers || skipped >= 6) return "other:" + p.fingerprint
-                press(adb, p) { it.cancel }
+                press(adb, p, { it.cancel }, nap)
                 skipped++
-                Thread.sleep(1200)
+                nap(1200)
                 continue
             }
-            if (p.always?.checked == false) press(adb, p) { it.always }
+            if (p.always?.checked == false) press(adb, p, { it.always }, nap)
+            // Allow is pressed only on the question read just now, and only if it is still about this key: when it went away
+            // meanwhile and the TV put another key's question up (it queues them), the top of the loop treats that one as such
             val now = read(adb)
-            if (now != null && now.fingerprint == want && now.always?.checked == false) return "failed"   // never answer without "Always"
-            press(adb, now ?: p) { it.allow }
-            Thread.sleep(900)
+            if (now == null || now.fingerprint != want) continue
+            if (now.always?.checked == false) return "failed"         // never answer without "Always"
+            press(adb, now, { it.allow }, nap)
+            nap(900)
             val after = read(adb)
             return if (after == null || after.fingerprint != want) "allowed" else "failed"
         }
@@ -82,25 +92,27 @@ object AdbPrompt {
 
     /** Declines the question about [fingerprint] if it is the one on screen. */
     @Throws(IOException::class)
-    fun deny(adb: Adb, fingerprint: String): Boolean {
+    fun deny(adb: Adb, fingerprint: String): Boolean = deny(Sh(adb::shell), fingerprint)
+
+    internal fun deny(adb: Sh, fingerprint: String): Boolean {
         val p = read(adb) ?: return false
         if (p.fingerprint != fingerprint.uppercase()) return false
-        press(adb, p) { it.cancel }
+        press(adb, p, { it.cancel })
         return true
     }
 
     /** A tap where the part is; if the TV ignores taps, the arrow keys to it and OK. Then checks that something changed. */
-    private fun press(adb: Adb, p: Seen, part: (Seen) -> Node?) {
+    private fun press(adb: Sh, p: Seen, part: (Seen) -> Node?, nap: (Long) -> Unit = Thread::sleep) {
         val n = part(p) ?: throw IOException("the question on the TV looks different than expected")
-        adb.shell("input tap ${n.x} ${n.y}")
-        Thread.sleep(500)
+        adb.shell("input tap ${n.x} ${n.y}", 120000)
+        nap(500)
         val after = read(adb)
         if (after == null || after.fingerprint != p.fingerprint || changed(part(after), n)) return
         var s: Seen = after
         for (i in 0 until 8) {                                        // keys: move the focus to the part, then OK
             val t = part(s) ?: return
             val f = s.focused
-            if (f != null && f.x == t.x && f.y == t.y) { adb.shell("input keyevent 23"); return }
+            if (f != null && f.x == t.x && f.y == t.y) { adb.shell("input keyevent 23", 120000); return }
             val key = when {
                 f == null -> 20
                 t.y > f.y + 10 -> 20
@@ -108,8 +120,9 @@ object AdbPrompt {
                 t.x > f.x -> 22
                 else -> 21
             }
-            adb.shell("input keyevent $key")
+            adb.shell("input keyevent $key", 120000)
             s = read(adb) ?: return
+            if (s.fingerprint != p.fingerprint) return                // another key's question now: never a key press on it
         }
     }
 

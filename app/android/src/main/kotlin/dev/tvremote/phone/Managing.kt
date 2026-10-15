@@ -49,7 +49,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
     private var labels: RemoteLabels? = null
     private var forHost: String? = null
     private var picking: ValueCallback<Array<Uri>>? = null
-    private val webPage by lazy { dev.tvremote.core.WebPage(a.assets, "phone", a.version() + "-" + (try { a.packageManager.getPackageInfo(a.packageName, 0).lastUpdateTime / 1000 } catch (e: Exception) { 0L })) }
+    private val webPage by lazy { dev.tvremote.core.WebPage({ a.assets.open(it) }, "phone", a.version() + "-" + (try { a.packageManager.getPackageInfo(a.packageName, 0).lastUpdateTime / 1000 } catch (e: Exception) { 0L })) }
 
     init {
         view.setBackgroundColor(BG)

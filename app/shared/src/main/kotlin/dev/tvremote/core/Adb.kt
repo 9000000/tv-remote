@@ -1,6 +1,5 @@
 package dev.tvremote.core
 
-import android.util.Base64
 import java.io.ByteArrayOutputStream
 import java.io.Closeable
 import java.io.DataInputStream
@@ -331,7 +330,7 @@ class Adb(dir: File) : Closeable {
 
     /** What the TV's "Allow USB debugging?" question shows for this key: MD5 of the key, as AB:CD:... */
     fun fingerprint(): String {
-        val blob = Base64.decode(publicKey().substringBefore(' '), Base64.NO_WRAP)
+        val blob = B64.decode(publicKey().substringBefore(' '))
         return java.security.MessageDigest.getInstance("MD5").digest(blob).joinToString(":") { String.format("%02X", it) }
     }
 
@@ -346,7 +345,7 @@ class Adb(dir: File) : Closeable {
         putWords(b, n)
         putWords(b, r.multiply(r).mod(n))
         b.putInt(k.publicExponent.toInt())
-        return Base64.encodeToString(b.array(), Base64.NO_WRAP) + " tvremote@phone"
+        return B64.encode(b.array()) + " tvremote@phone"
     }
 
     companion object {

@@ -85,6 +85,9 @@ class Tailscale(private val adb: Adb, private val dir: File?) {
             val nodes = NODE.findAll(adb.shell("uiautomator dump $UI >/dev/null 2>&1; cat $UI; rm -f $UI")).toList()
             nodes.firstOrNull { CODE.matches(it.groupValues[1]) }?.let { return "https://login.tailscale.com/a/" + it.groupValues[1] }
             val login = nodes.firstOrNull { LOGIN.matches(it.groupValues[1].trim()) }
+            // only ever on Tailscale's own screen: OK pressed while another app's box (above all "Allow USB debugging?" for
+            // someone else's key) is in front would answer that box instead
+            if (!adb.shell("dumpsys window | grep -E 'mCurrentFocus|mFocusedWindow'").let { it.contains(PKG) && !it.contains("UsbDebugging") }) continue
             if (login != null && pressed < 5) {
                 val (x1, y1, x2, y2) = login.groupValues.drop(2).map { it.toInt() }
                 adb.shell("input tap " + (x1 + x2) / 2 + " " + (y1 + y2) / 2)

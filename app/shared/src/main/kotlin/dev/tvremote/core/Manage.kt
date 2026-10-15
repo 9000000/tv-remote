@@ -413,7 +413,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val q = Adb.q(path)
         if (!adb.shell("head -c 2 $q 2>/dev/null").startsWith("PK")) throw IOException("not an APK file")
         val size = adb.shell("stat -c %s $q").trim()
-        val info = try { apkInfo(android.util.Base64.decode(adb.shell("unzip -p $q AndroidManifest.xml 2>/dev/null | base64"), android.util.Base64.DEFAULT)) }
+        val info = try { apkInfo(B64.decode(adb.shell("unzip -p $q AndroidManifest.xml 2>/dev/null | base64"))) }
                    catch (e: IllegalArgumentException) { emptyMap() }
         val pkg = info["package"]
         // said before installing, in words a person can act on, rather than pm's INSTALL_FAILED_... after it

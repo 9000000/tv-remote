@@ -1,12 +1,10 @@
 package dev.tvremote.core
 
-import android.content.res.AssetManager
-
 /**
- * The page all three remotes serve (app/shared/web), read from this app's assets. The computer's server sends the very same
+ * The page all three remotes serve (app/shared/web), read through [open]: this app's assets, or the folder itself on the computer. The computer's server sends the very same
  * files; [core] tells the page which of the three it is talking to ("tv" or "phone" here, see js/core.js).
  */
-class WebPage(private val assets: AssetManager, private val core: String, private val stamp: String) {
+class WebPage(private val open: (String) -> java.io.InputStream, private val core: String, private val stamp: String) {
     private val cache = HashMap<String, ByteArray>()
 
     /** null when the path is not one of the page's files. */
@@ -15,7 +13,7 @@ class WebPage(private val assets: AssetManager, private val core: String, privat
         if (!FILE.matches(name)) return null
         val bytes = synchronized(cache) {
             cache[name] ?: try {
-                var b = assets.open(name).use { it.readBytes() }
+                var b = open(name).use { it.readBytes() }
                 if (name == "index.html") b = page(String(b, Charsets.UTF_8)).toByteArray(Charsets.UTF_8)
                 b.also { if (cache.size < 30) cache[name] = it }
             } catch (e: Exception) { null }

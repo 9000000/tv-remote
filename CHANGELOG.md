@@ -15,6 +15,7 @@ Web 2.20.0 · app điện thoại 2.18.0 · app TV 2.17.0
 - **Nhãn trong danh sách app:** “cần giữ” cho app TV cần, “tự chạy khi bật TV” cho app khởi động cùng TV.
 - **Khả năng của TV** (Sức khỏe → Khả năng): độ phân giải, HDR, Dolby/DTS, giải mã video, Widevine, Bluetooth, USB... có nút sao chép.
 - **Cài đặt hệ thống · chỉ xem** (Sức khỏe): danh sách các cài đặt của TV, có tìm kiếm và sao chép.
+- **An toàn hơn khi tự bấm “Cho phép gỡ lỗi USB?”:** nếu hộp hỏi của thiết bị mình vừa biến mất và TV hiện ngay hộp của một khóa lạ vào đúng chỗ đó, giờ không bao giờ bấm Cho phép cho khóa lạ (trước đây có một khe rất nhỏ). Khi đăng nhập Tailscale, chỉ bấm khi màn hình của Tailscale đang ở trên cùng.
 
 **English**
 - **Several TVs at once** (homestays, hotels, homes with many TVs): on the list of saved TVs, on the computer and in the phone app, pick TVs, then install one APK on all of them, remove an app or restart them. Each TV gets its own progress line; a TV that is off or has ADB off is named plainly and the others carry on. The computer also shows each TV's model, Android, free storage, RAM and TV Setup version. (TV Setup manages only its own TV, so it has no such list.)
@@ -23,6 +24,7 @@ Web 2.20.0 · app điện thoại 2.18.0 · app TV 2.17.0
 - **Tags in the app list:** “must keep” for apps the TV needs, “starts with the TV” for apps that start at boot.
 - **TV capabilities** (Health → Capabilities): resolutions, HDR, Dolby/DTS, video decoders, Widevine, Bluetooth, USB... with a copy button.
 - **System settings, read only** (Health): the TV's settings in one list, with search and copy.
+- **Safer automatic answer to “Allow USB debugging?”:** if the question about our own device goes away and the TV puts a stranger's key's question up in its place, Allow is now never pressed for the stranger (there used to be a very small gap). When signing in to Tailscale, buttons are only pressed while Tailscale's own screen is in front.
 
 ## 2.19.0 - 2026-10-15
 
