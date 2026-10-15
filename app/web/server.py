@@ -10,6 +10,7 @@ from androidtvremote2 import CannotConnect, ConnectionClosed, InvalidAuth
 from androidtvremote2.remotemessage_pb2 import RemoteKeyCode
 import tvconfig
 import tvshell
+import fleet as fl
 import scenes as scn
 from adbtools import AdbError, PKG_RE, FP_RE, PROTECTED, my_fingerprint, memory_by_app, reap, background
 from tvtools import ADB, ROOT, SCRIPTS
@@ -587,6 +588,55 @@ def build(S):
     @routes.get("/api/tvs")
     async def tvs(_):
         return web.json_response({"current": tv.host, "tvs": S.cfg["tvs"]})
+
+    # ---- 📺📺 several saved TVs at once (fleet.py): compare them, install / remove / restart on the ones picked ----
+    S.fleet = getattr(S, "fleet", None) or fl.Fleet()
+
+    def fleet_targets(hosts):
+        hosts = [h for h in dict.fromkeys(str(hosts or "").split(",")) if h]
+        if not hosts or any(not tvconfig.find(S.cfg, h) for h in hosts):
+            raise ValueError("pick saved TVs")                       # only the saved list: never an address typed in a request
+        return [(h, S.fleet.adb(h, S.cur)) for h in hosts]
+
+    @routes.get("/api/fleet")
+    async def fleet_info(_):
+        saved = [t["host"] for t in S.cfg["tvs"]]
+        tvs = await asyncio.gather(*(S.fleet.info(h, S.fleet.adb(h, S.cur)) for h in saved))
+        names = {t["host"]: t.get("name", "") for t in S.cfg["tvs"]}
+        return web.json_response({"current": tv.host, "tvs": [{**t, "name": names.get(t["host"], "")} for t in tvs]})
+
+    @routes.post("/api/fleet/install")
+    @adb_errors
+    async def fleet_install(request):
+        targets = fleet_targets(request.query.get("hosts"))
+        tmp = tempfile.TemporaryDirectory(prefix="tvup-")
+        try:
+            local = await targets[0][1].save_upload(request, tmp.name, request.query.get("name", "upload.apk"))
+        except BaseException:
+            tmp.cleanup()
+            raise
+
+        async def one(a, part):
+            return await fl.install(a, part, local)
+        j = S.fleet.run("install " + local.name, targets, one)
+        async def clean():                                            # the copy goes once every TV has had it
+            while j["status"] != "done":
+                await asyncio.sleep(2)
+            tmp.cleanup()
+        background(clean())
+        return web.json_response(j)
+
+    @routes.post("/api/fleet/do")
+    @adb_errors
+    async def fleet_do(request):
+        d = await body(request)
+        work = fl.action(str(d.get("action", "")), str(d.get("pkg", "")))
+        return web.json_response(S.fleet.run(str(d.get("action")) + " " + str(d.get("pkg", "")), fleet_targets(",".join(d.get("hosts") or [])), work))
+
+    @routes.get("/api/fleet/job")
+    async def fleet_job(request):
+        j = S.fleet.jobs.get(request.query.get("id", ""))
+        return web.json_response(j) if j else web.json_response({"error": "unknown job"}, status=404)
 
     @routes.get("/api/discover")
     async def discover_(_):

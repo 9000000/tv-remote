@@ -21,16 +21,18 @@ app/shared/web/          THE web UI (index.html, style.css, js/*.js), used by al
 app/shared/src/.../core/ Kotlin shared by both apps: Adb, Tv (scrcpy session, video/audio/control), Atv (keys without ADB),
                          Manage (the /api core for the web UI), Setup (Optimize TV), Tailscale, AdbPrompt ("Allow USB
                          debugging?"), Errors, Meta, Scenes (scenes + key names), RulesClient (talks to TV Setup's rules),
-                         Voice (spoken commands), AudioOut (Opus playback, PCM downmix)
+                         Voice (spoken commands), AudioOut (Opus playback, PCM downmix),
+                         Fleet (several saved TVs at once, as app/web/fleet.py)
 app/android/.../phone/   phone app, one file per part, as extension functions on MainActivity: MainActivity (state, lifecycle),
                          Ui, Net, PickerScreen, RemoteScreen, Typing, InfoScreens, KeysOnly, AdbHelp, Media, Managing (the
                          web UI in a WebView), Updater, Listen + ListenService (🎧), Automation (timer, scenes, voice),
-                         SceneStore, Headless + SceneActivity/SceneService (widget, tiles, shortcuts), Tiles, RemoteWidget
+                         SceneStore, Headless + SceneActivity/SceneService (widget, tiles, shortcuts), Tiles, RemoteWidget, ManyTvs (the list of TVs:
+                         install / remove / restart on several at once)
 app/tv/                  TV Setup: MainActivity (the TV screen), RemoteService (web server), PairActivity, Stats, TrustReceiver,
                          Rules + Guard + RulesReceiver + WarnActivity (sleep timer, bedtime, app limits)
 app/gradle/              the Gradle build of the two apps (settings point at ../shared, ../android, ../tv); open it in Android Studio
 app/web/                 server.py (the computer's /api routes and main), session.py (one TV: remote protocol + ADB), screen.py
-                         (screenshots, scrcpy, live view), discover.py (finding TVs), scenes.py, adbtools.py, tvconfig.py
+                         (screenshots, scrcpy, live view), discover.py (finding TVs), fleet.py (several TVs at once), scenes.py, adbtools.py, tvconfig.py
                          (tvs.json, also "scenes"), cli/ (command line tools), tests/
 dev/                     release.sh, gen_icons.py
 ```

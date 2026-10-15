@@ -1,0 +1,51 @@
+{
+ "INFO": "getprop ro.product.manufacturer; getprop ro.product.model; getprop ro.build.version.release; getprop ro.build.version.sdk; printf '\\043~\\043\\n'; df -k /data | tail -1; printf '\\043~\\043\\n'; grep MemTotal /proc/meminfo; printf '\\043~\\043\\n'; pm list packages -3; printf '\\043~\\043\\n'; dumpsys package dev.tvremote.setup | grep -m1 versionName",
+ "cases": [
+  {
+   "out": "Google\nsdk_google_atv64_amati_arm64\n14\n34\n#~#\n/dev/block/dm-37   6082144 774704   5165228  14% /data/user/0\n#~#\nMemTotal:         997308 kB\n#~#\npackage:com.tailscale.ipn\npackage:com.esaba.downloader\npackage:dev.tvremote.setup\n#~#\n    versionName=2.16.0\n",
+   "info": {
+    "model": "Google sdk_google_atv64_amati_arm64",
+    "android": "14",
+    "sdk": 34,
+    "disk_total": 6228115456,
+    "disk_free": 5289193472,
+    "ram": 1021243392,
+    "apps": [
+     "com.esaba.downloader",
+     "com.tailscale.ipn",
+     "dev.tvremote.setup"
+    ],
+    "setup": "2.16.0"
+   }
+  },
+  {
+   "out": "Sony\r\nBRAVIA 4K GB ATV3\r\n9\r\n28\r\n#~#\r\n/dev/block/dm-0 11353240 9001200 2352040 80% /data\r\n#~#\r\nMemTotal:        2557064 kB\r\n#~#\r\npackage:com.netflix.ninja\r\npackage:com.esaba.downloader\r\n#~#\r\n",
+   "info": {
+    "model": "Sony BRAVIA 4K GB ATV3",
+    "android": "9",
+    "sdk": 28,
+    "disk_total": 11625717760,
+    "disk_free": 2408488960,
+    "ram": 2618433536,
+    "apps": [
+     "com.esaba.downloader",
+     "com.netflix.ninja"
+    ],
+    "setup": ""
+   }
+  },
+  {
+   "out": "",
+   "info": {
+    "model": "",
+    "android": "",
+    "sdk": 0,
+    "disk_total": 0,
+    "disk_free": 0,
+    "ram": 0,
+    "apps": [],
+    "setup": ""
+   }
+  }
+ ]
+}

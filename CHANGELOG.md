@@ -4,6 +4,26 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.20.0 - 2026-10-15
+
+Web 2.20.0 · app điện thoại 2.18.0 · app TV 2.17.0
+
+**Tiếng Việt**
+- **Làm trên nhiều TV cùng lúc** (homestay, khách sạn, nhà nhiều TV): ở danh sách TV đã lưu trên máy tính và trong app điện thoại, chọn các TV rồi cài cùng một APK lên tất cả, gỡ một app hoặc khởi động lại. Mỗi TV có một dòng báo tiến độ riêng; TV tắt hay chưa bật ADB thì báo rõ, các TV khác vẫn làm tiếp. Máy tính còn hiện model, Android, bộ nhớ trống, RAM và bản TV Setup của từng TV. (TV Setup chỉ quản lý chính TV của nó nên không có phần này.)
+- **Kiểm tra APK trước khi cài:** APK cần Android mới hơn TV hay dành cho loại chip khác thì báo ngay bằng lời dễ hiểu, không đợi lỗi `INSTALL_FAILED_...` sau khi chép lên TV.
+- **Chi tiết & quyền của app** (⋯ → ℹ️): phiên bản, ngày cài, dung lượng, nguồn cài, và bật/tắt từng quyền (micro, vị trí, bộ nhớ...).
+- **Nhãn trong danh sách app:** “cần giữ” cho app TV cần, “tự chạy khi bật TV” cho app khởi động cùng TV.
+- **Khả năng của TV** (Sức khỏe → Khả năng): độ phân giải, HDR, Dolby/DTS, giải mã video, Widevine, Bluetooth, USB... có nút sao chép.
+- **Cài đặt hệ thống · chỉ xem** (Sức khỏe): danh sách các cài đặt của TV, có tìm kiếm và sao chép.
+
+**English**
+- **Several TVs at once** (homestays, hotels, homes with many TVs): on the list of saved TVs, on the computer and in the phone app, pick TVs, then install one APK on all of them, remove an app or restart them. Each TV gets its own progress line; a TV that is off or has ADB off is named plainly and the others carry on. The computer also shows each TV's model, Android, free storage, RAM and TV Setup version. (TV Setup manages only its own TV, so it has no such list.)
+- **APK checked before installing:** an APK that needs a newer Android than the TV has, or is built for another chip, is reported at once in plain words instead of an `INSTALL_FAILED_...` after copying it over.
+- **App details & permissions** (⋯ → ℹ️): version, install date, size, installer, and each permission (microphone, location, storage...) on or off.
+- **Tags in the app list:** “must keep” for apps the TV needs, “starts with the TV” for apps that start at boot.
+- **TV capabilities** (Health → Capabilities): resolutions, HDR, Dolby/DTS, video decoders, Widevine, Bluetooth, USB... with a copy button.
+- **System settings, read only** (Health): the TV's settings in one list, with search and copy.
+
 ## 2.19.0 - 2026-10-15
 
 Web 2.19.0 · app điện thoại 2.17.0 · app TV 2.16.0

@@ -150,6 +150,7 @@ internal fun MainActivity.refreshSaved() {
         b.setOnLongClickListener { ask(); true }
         savedList.addView(line)
     }
+    if (savedList.childCount >= 2) savedList.addView(fleetButton(), LinearLayout.LayoutParams(-1, dp(48)).also { it.topMargin = dp(10) })
     if (savedList.childCount == 0) savedList.addView(note(t("Chưa có TV nào. Quét Wi-Fi hoặc nhập IP bên dưới.", "No TVs yet. Scan the Wi-Fi or type an IP below.")))
 }
 

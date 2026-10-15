@@ -114,6 +114,7 @@ async function loadTvs() {
       setLabel(el('button', { className: 'small danger', onclick: async () => { if (confirm('Xóa "' + (t.name || t.host) + '" khỏi danh sách? (Không đổi gì trên TV)')) { await api('/api/tv/remove', { host: t.host }); await refresh(); loadTvs(); loadSteps(); } } }), '🗑', 'Xóa'))));
   $('#tvlist').replaceChildren(...rows);
   $('#savedcard').hidden = !rows.length; $('#pickcols').classList.toggle('solo', !rows.length);   // nothing saved: no empty box, just the search
+  fleetCheck(rows.length);
 }
 $('#scan').addEventListener('click', async () => {
   const b = $('#scan'); b.disabled = true; b.textContent = '⏳ Đang quét...'; $('#scanlist').replaceChildren();

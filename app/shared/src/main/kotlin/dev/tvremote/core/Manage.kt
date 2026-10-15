@@ -430,6 +430,13 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         return "installed"
     }
 
+    /** An APK from this device, checked and installed as an upload is: the phone's "several TVs at once" (pct 0..90 while it copies). */
+    @Throws(IOException::class)
+    fun install(input: InputStream, length: Long, job: JSONObject?): String {
+        push(input, length, TMP_APK, job)
+        try { return pmInstall(TMP_APK) } finally { try { sh("rm -f $TMP_APK") } catch (ignored: IOException) { } }
+    }
+
     private fun installPath(path: String): JSONObject =
         job("install " + path.substring(path.lastIndexOf('/') + 1)) { j -> j.put("pct", 50); pmInstall(path) }
 

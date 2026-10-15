@@ -64,6 +64,16 @@
       <section class="card" id="savedcard">
         <h2>💾 TV đã lưu</h2>
         <div class="list" id="tvlist" style="margin-top:0"></div>
+        <!-- the saved TVs at once (homestay, hotel, a house of TVs), app/web/fleet.py; the phone app has the same on its own list of TVs (Fleet.kt) -->
+        <details id="fleet" hidden>
+          <summary>📦 Làm trên nhiều TV cùng lúc <span class="muted" id="fleetcount"></span></summary>
+          <p class="muted" style="margin:8px 0">Chọn TV rồi cài cùng một APK lên tất cả, gỡ một app hoặc khởi động lại. Mỗi TV cần bật ADB.</p>
+          <div id="fleetlist"></div>
+          <div class="actions" style="display:flex;gap:8px;align-items:center;margin-top:10px">
+            <label class="linkbtn filebtn primary" id="fleetapk" style="padding:0 16px;min-height:44px"><input type="file" accept=".apk,application/vnd.android.package-archive"><span>📦 Cài APK lên TV đã chọn</span></label>
+            <button class="small iconbtn" id="fleetmore" title="Thêm thao tác" aria-label="Thêm thao tác">⋯</button>
+          </div>
+        </details>
       </section>
       <section class="card">
         <div class="card-head"><h2>🔍 Tìm TV</h2><button class="small primary" id="scan">🔍 Quét mạng</button></div>
@@ -433,5 +443,6 @@
 <script src="js/auto.js"></script>
 <script src="js/setup.js"></script>
 <script src="js/tvset.js"></script>
+<script src="js/fleet.js"></script>
 </body>
 </html>
