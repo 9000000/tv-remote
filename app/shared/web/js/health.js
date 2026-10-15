@@ -45,7 +45,7 @@ async function loadCaps() {
   const r = await api('/api/caps'); if (hmode !== 'caps') return;
   if (!r) { box.replaceChildren(); return; }
   if (!r.text.trim()) {
-    box.replaceChildren(el('section', { className: 'card' }, el('p', { className: 'muted', style: 'margin:0', textContent: CORE === 'mac'
+    box.replaceChildren(el('section', { className: 'card' }, el('p', { className: 'muted', style: 'margin:0', textContent: CORE === 'pc'
       ? 'Bản TV Remote trên máy tính này chưa đọc được khả năng TV. Cập nhật lên bản mới nhất rồi mở lại.' : 'TV không trả lời câu hỏi này. Thử lại sau.' })));
     return;
   }

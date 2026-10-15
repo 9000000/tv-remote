@@ -9,20 +9,21 @@ Tested for real on a Sony BRAVIA (Android 9). Other brands are untested. Samsung
 <table>
 <tr>
 <td align="center"><img src="docs/img/phone-remote.webp" height="360" alt="Phone app"><br><sub>Phone app</sub></td>
-<td align="center"><img src="docs/img/tvpage-remote-en.webp" height="360" alt="Page served by the TV"><br><sub>Page served by the TV</sub></td>
-<td align="center"><img src="docs/img/web-remote-en.webp" height="360" alt="App on the computer"><br><sub>App on the computer</sub></td>
+<td align="center"><img src="docs/img/tvpage-remote-en.webp" height="360" alt="TV web page"><br><sub>TV web page</sub></td>
+<td align="center"><img src="docs/img/web-remote-en.webp" height="360" alt="Computer app"><br><sub>Computer app</sub></td>
 </tr>
 </table>
 
 **Contents**
 
 - [Pick how to use it](#pick-how-to-use-it)
+- [Three apps and a web page](#three-apps-and-a-web-page): names, comparison, diagrams
 - [Prepare the TV](#prepare-the-tv)
 - [Install TV Setup with a Downloader code](#install-tv-setup-with-a-downloader-code)
 - Setting up each way:
-  - [Phone app](#1-android-phone-app-tv-remote)
-  - [Page served by the TV](#2-page-served-by-the-tv-tv-setup)
-  - [App on the computer](#3-app-on-the-computer)
+  - [Phone app](#1-phone-app-android)
+  - [TV web page](#2-tv-web-page-through-the-tv-setup-app)
+  - [Computer app](#3-computer-app)
 - [From another network](#from-another-network-tailscale)
 - [When the TV is off](#when-the-tv-is-off)
 - [Optimize TV](#optimize-tv)
@@ -34,11 +35,74 @@ Tested for real on a Sony BRAVIA (Android 9). Other brands are untested. Samsung
 
 | You have | Use | Get it from |
 |---|---|---|
-| An Android phone | The **TV Remote** app | `tv-remote.apk` in [Releases](https://github.com/HoangTran0410/tv-remote/releases), or the Downloader code **`2973135`** |
-| Any browser, iPhone included | The **TV Setup** app installed on the TV, then open `http://<TV IP>:8765` | On the TV: the Downloader app, code **`2397346`** ([how](#install-tv-setup-with-a-downloader-code)) |
-| A computer (Mac, Windows, Linux) | The **TV Remote** computer app | The file for your computer on [Releases](https://github.com/HoangTran0410/tv-remote/releases/latest) ([see the table](#3-app-on-the-computer)) |
+| An Android phone | The **Phone app** (TV Remote) | `tv-remote.apk` in [Releases](https://github.com/HoangTran0410/tv-remote/releases), or the Downloader code **`2973135`** |
+| Any browser, iPhone included | The **TV web page**: install the **TV app** (TV Setup) on the TV, then open `http://<TV IP>:8765` | On the TV: the Downloader app, code **`2397346`** ([how](#install-tv-setup-with-a-downloader-code)) |
+| A computer (Mac, Windows, Linux) | The **Computer app** (TV Remote) | The file for your computer on [Releases](https://github.com/HoangTran0410/tv-remote/releases/latest) ([see the table](#3-computer-app)) |
 
-All three share one web UI; the site has the [feature list](https://tvremote.pages.dev/#features) and [the three ways compared](https://tvremote.pages.dev/#install).
+The site has the [feature list](https://tvremote.pages.dev/#features).
+
+## Three apps and a web page
+
+The README, the code and the site always call the parts by these names:
+
+| Name | What it is | Code | `data-core` |
+|---|---|---|---|
+| **Phone app** | The Android app, called *TV Remote* on the phone | `app/android` | `phone` |
+| **Computer app** | The app for Mac, Windows, Linux, called *TV Remote* there | `app/desktop` | `pc` |
+| **TV app** | The app installed on the TV, called *TV Setup* there: sleep timer, app limits, drawing, stats, Tailscale | `app/tv` | |
+| **TV web page** | The page the TV app serves on port 8765, opened from any browser after a 6-digit code | `app/tv` (`RemoteService`) | `tv` |
+
+**What each can do**
+
+| | Phone app | TV web page | Computer app |
+|---|---|---|---|
+| Remote, see and touch the TV's picture, ✏️ draw, 🖼️ put a picture on the TV | ✓ | ✓ | ✓ |
+| 🎧 Listen to the TV | ✓, with the screen off too | ✓, while the page is open | ✓, high quality |
+| Apps, Files, Health, Automation, Setup | ✓ | ✓ | ✓ |
+| *Sharpest* picture quality | | | ✓ |
+| Several TVs, switching TVs | ✓ | only that TV | ✓ |
+| Turning on a TV that is fully off (Wake-on-LAN) | ✓ | off with the TV | ✓ |
+| Keys while the TV has not allowed ADB | ✓ | | ✓ |
+| Widget, Quick Settings tiles, the phone's volume keys | ✓ | | |
+| Install on the controlling device | the app | nothing, fine on an iPhone | the app |
+
+**How the parts connect.** No server in between: everything goes straight to the TV.
+
+```mermaid
+flowchart LR
+    subgraph U["Controlling device"]
+        PH["📱 Phone app"]
+        PC["💻 Computer app"]
+        BR["🌐 Any browser<br/>iPhone, computer..."]
+    end
+    subgraph TV["📺 Android TV"]
+        RP["Google's remote service<br/>ports 6466/6467"]
+        ADB["ADB<br/>port 5555"]
+        SC["scrcpy-server<br/>picture, sound, touch, keys"]
+        APP["TV app (TV Setup)<br/>sleep timer, app limits, drawing layer, stats"]
+        WEB["TV web page<br/>port 8765"]
+        ADB --> SC
+        ADB -- "commands, broadcasts" --> APP
+        APP --- WEB
+        WEB -- "127.0.0.1:5555" --> ADB
+    end
+    PH & PC -- "keys, before ADB" --> RP
+    PH & PC -- "everything else" --> ADB
+    BR -- "HTTP + 6-digit pairing" --> WEB
+```
+
+**In the code**, the three apps share one Kotlin core and one web UI. Only the Phone app's remote screen is its own Kotlin, for smoothness, so a change to the remote screen goes in two places: `app/shared/web` and `app/android`.
+
+```mermaid
+flowchart TB
+    UI["app/shared/web<br/>ONE web UI"]
+    CORE["app/shared/src<br/>Kotlin core: Adb, Tv, Atv, Manage, Draw..."]
+    PH["📱 Phone app · app/android<br/>remote screen: its own Kotlin<br/>Manage screen: the web UI (phone)"]
+    PC["💻 Computer app · app/desktop<br/>window: the web UI (pc)"]
+    TVA["📺 TV app · app/tv<br/>TV web page: the web UI (tv)"]
+    CORE --> PH & PC & TVA
+    UI --> PH & PC & TVA
+```
 
 ## Prepare the TV
 
@@ -54,7 +118,7 @@ The first time each device connects, the TV asks "Allow USB debugging?": tick **
 <summary><b>When you are away and the TV asks again</b> (it forgot this device, Android 11+ revokes after 7 days unused...)</summary>
 
 - **Automatic:** the phone app and the computer app, whenever they have ADB, fetch a "pass" from TV Setup. The next time the TV asks, they have TV Setup press Allow, nobody needed at the TV. TV Setup presses only when **the key code in the question matches the asking device's own**, and shows a notice on the TV each time.
-- **By hand:** any page that has ADB (the TV's page once paired, the computer app, the phone app) shows a "The TV is asking... for a device" bar with the code and **Allow / Decline**. Allow only when the code matches the one the TV Remote app shows while it waits.
+- **By hand:** any page that has ADB (the TV web page once paired, the Computer app, the Phone app) shows a "The TV is asking... for a device" bar with the code and **Allow / Decline**. Allow only when the code matches the one the TV Remote app shows while it waits.
 - A device that never connected and never paired with TV Setup still needs someone at the TV. That is on purpose, so strangers cannot get in.
 </details>
 
@@ -86,14 +150,14 @@ The easiest way for a newcomer: only the TV's remote is needed, no computer or A
 
 The codes always point at the latest release. Without Downloader, opening `go.aftvnews.com/<code>` in a browser downloads it too.
 
-## 1. Android phone app: TV Remote
+## 1. Phone app (Android)
 
 1. Install `tv-remote.apk` from [Releases](https://github.com/HoangTran0410/tv-remote/releases) (or the Downloader code `2973135`).
 2. Open the app, tap **Scan Wi-Fi** and pick the TV, or type the TV's IP. With ADB still off the app can send keys after pairing with a code, and walks you step by step until TV Setup is installed.
 
 The phone's volume keys set the TV's volume; a widget, Quick Settings tiles and shortcuts control the TV used last without opening the app. The app tells you when a new version exists.
 
-## 2. Page served by the TV: TV Setup
+## 2. TV web page (through the TV Setup app)
 
 Works from any browser, with nothing to install on the phone or computer.
 
@@ -116,7 +180,7 @@ Works from any browser, with nothing to install on the phone or computer.
 <p align="center"><img src="docs/img/tvapp-en.webp" width="640" alt="The TV Setup app screen"></p>
 </details>
 
-## 3. App on the computer
+## 3. Computer app
 
 An app with its own window, about 20 MB; nothing else to install (no Python, no adb).
 
@@ -206,7 +270,7 @@ If the TV later shows no home screen: Settings → Apps → System apps → **An
 | **ADB: waiting for the TV** | Choose "Always allow" on the TV. Closed the question by mistake (Back, Home, Cancel)? The apps ask again a few times; on the web press "Retry connection". Away from home: see "When you are away and the TV asks again" above |
 | **ADB: port closed** | The TV is off, or just restarted: turn "ADB debugging" off and on |
 | Buttons do nothing (app on the computer) | The remote is not paired (the **Setup** tab), or two windows are open for the same TV |
-| The TV's page asks for the 6-digit code again | "Unpair all" was pressed on the TV, or the browser cleared the page's data: enter a new code |
+| The TV web page asks for the 6-digit code again | "Unpair all" was pressed on the TV, or the browser cleared the page's data: enter a new code |
 | Tailscale gives no sign-in link | The TV's screen must be on (not in standby) and online. Press the button again; failing that, open Tailscale on the TV and scan the QR code it shows |
 | Choppy picture, slow TV | Pick a lower quality; turn the picture off when not needed |
 | Cannot connect from far away | Are both devices in the same Tailscale account and online? |
@@ -217,7 +281,7 @@ If the TV later shows no home screen: Settings → Apps → System apps → **An
 - ADB over the network has no password: any device the TV has "Always allowed" has full control of it. Use it only on networks you trust and over Tailscale. To revoke: Developer options → Revoke USB debugging authorizations.
 - **Who may have TV Setup press Allow:** only a device paired with the 6-digit code (shown on the TV's screen, so someone was there) or one that already has ADB. The pass for a device with ADB is handed out through a broadcast only ADB's shell can send, so no other app on the TV can get one. Each Allow checks the key code and shows a notice on the TV. **Unpair all** on the TV voids every pass.
 - The computer app's `keys` folder (Mac: `~/Library/Application Support/TV Remote`, Windows: `%APPDATA%\TV Remote`, Linux: `~/.local/share/tv-remote`) holds the pairing keys. **Whoever has those files can control the TV.** Never share them.
-- The app on the computer listens on `127.0.0.1` only. The page on the TV listens on the home network and requires the pairing code.
+- The Computer app listens on `127.0.0.1` only. The TV web page listens on the home network and requires the pairing code.
 - Install APKs only from sources you trust.
 
 ## Technical details
@@ -228,15 +292,15 @@ If the TV later shows no home screen: Settings → Apps → System apps → **An
 ```mermaid
 flowchart LR
     subgraph C["Controlling device"]
-        PC["💻 App on the computer<br/>127.0.0.1:8765"]
-        PH["📱 TV Remote app"]
+        PC["💻 Computer app<br/>127.0.0.1:8765"]
+        PH["📱 Phone app"]
         BR["🌐 Any browser"]
     end
     subgraph T["📺 Android TV"]
         R["Google's remote service<br/>port 6466"]
         A["ADB<br/>port 5555"]
         S["scrcpy-server<br/>picture + touch, keys"]
-        W["TV Setup<br/>web page on port 8765"]
+        W["TV web page (TV Setup app)<br/>port 8765"]
         A --> S
         W --> A
     end
@@ -247,7 +311,7 @@ flowchart LR
 ```
 
 - **The phone app and TV Setup** speak the ADB protocol themselves and push `scrcpy-server` to the TV for H.264 video and for touch and key input. TV Setup connects to the TV's own ADB (`127.0.0.1:5555`).
-- **Picture on the TV's page:** H.264 over `/api/video`, played in the browser by JMuxer (MSE).
+- **Picture on the TV web page:** H.264 over `/api/video`, played in the browser by JMuxer (MSE).
 - **The computer app** (`app/desktop`) runs on the same Kotlin core as the two Android apps (ADB, scrcpy, the remote protocol), on its own bundled Java; its window is the system's web view (the [webview](https://github.com/webview/webview) library, through JNA). H.264 goes straight to the page, as on the TV's page. Remote buttons without ADB: the Android TV Remote v2 protocol, ports 6466/6467.
 - **Accented text:** put on the TV's clipboard, then pasted.
 - **Volume:** calls `AudioService.setStreamVolume` directly (Android 9), falls back to `media volume`, and without ADB presses step by step.
@@ -264,10 +328,10 @@ flowchart LR
 The full guide for people (and AI agents) changing the code: [CLAUDE.md](CLAUDE.md).
 
 ```
-app/desktop/  the TV Remote computer app (Kotlin, the same core as the two Android apps; the window is the system's web view)
-app/android/  the TV Remote app (Kotlin)            app/tv/   the TV Setup app (Kotlin) + the page the TV serves
+app/desktop/  the Computer app (Kotlin, the same core as the two Android apps; the window is the system's web view)
+app/android/  the Phone app (Kotlin)                app/tv/   the TV app (TV Setup, Kotlin) + the TV web page
 app/shared/   shared: ADB, the control session, TV management, updates; web/ = ONE web UI for all three places
-              (the computer, the page the TV serves, Manage in the phone app); only the core answering /api differs
+              (the Computer app, the TV web page, the Phone app's Manage screen); only the core answering /api differs
 app/gradle/   build setup of the two Android apps (open this folder in Android Studio)
 dev/          release.sh (build the APKs + create the GitHub release), gen_icons.py (one icon set for all three)
 docs/         the product page (GitHub Pages) and screenshots
@@ -279,7 +343,7 @@ tvs.json, cert.pem, key.pem, *.jks, .cache/      your machine's own data, never 
 - **Computer app:** `cd app/gradle && ./gradlew :desktop:packageApp` builds the app for the system it runs on; GitHub Actions builds them all for each release (the two Mac builds joined into one app for both chips by `app/desktop/universal.sh`).
 - **Running from source:** get the source (git clone or zip). Computer app: `./gradlew :desktop:installDist`, then `app/desktop/build/install/desktop/bin/desktop --window`. A change in `app/shared/web` only needs the page reloaded; a Kotlin change, the command above again (a few seconds).
 - **Versions:** three numbers, each bumped only when its part changes: `VERSION` (the release and the web), `app/android/VERSION`, `app/tv/VERSION`. Every release carries `versions.json`, so an unchanged app is not offered an update. `dev/release.sh` stops if an app's code changed without a bump.
-- **Keep the three in sync:** any change to the controls goes into the phone app, the page on the TV and the app on the computer.
+- **Keep the three in sync:** any change to the controls goes into the Phone app, the TV web page and the Computer app. Names and diagrams: [Three apps and a web page](#three-apps-and-a-web-page).
 - **Credits:** [scrcpy](https://github.com/Genymobile/scrcpy) v5.0.1 (Apache-2.0), [JMuxer](https://github.com/samirkumardas/jmuxer) 2.1.0 (MIT), [webview](https://github.com/webview/webview) 0.12.0 (MIT), [JNA](https://github.com/java-native-access/jna) (Apache-2.0).
 </details>
 

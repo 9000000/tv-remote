@@ -63,7 +63,7 @@ $('#aboutbtn').addEventListener('click', async () => {
   $('#qrs').replaceChildren(...[code('📱 App Android', 'Quét bằng điện thoại để tải app.', 'https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk'),
     r && r.tv_web ? code('🌐 Remote trên điện thoại', 'Quét khi điện thoại chung mạng với TV.', r.tv_web) : null].filter(Boolean));
 });
-if (CORE === 'mac') fetch('/api/about').then((x) => x.json()).then((r) => {
+if (CORE === 'pc') fetch('/api/about').then((x) => x.json()).then((r) => {
   if (r.version) $('#ver').textContent = 'TV Remote ' + r.version + (r.released ? ' · ' + r.released : '');
   if (r.stale) $('#stale').hidden = false;                            // its code was updated after it started: new buttons would answer "not found"
 }).catch(() => {});
@@ -86,7 +86,7 @@ function showUpdate(u) {
   if (u.state === 'downloading' || u.state === 'installing') updPoll = setTimeout(pollUpdate, 1000);
 }
 const pollUpdate = () => fetch('/api/update').then((x) => x.json()).then(showUpdate).catch(() => { updPoll = setTimeout(pollUpdate, 2000); });   // gone while it swaps
-if (CORE === 'mac') { pollUpdate(); setInterval(() => { if (!updPoll) pollUpdate(); }, 30 * 60000); }
+if (CORE === 'pc') { pollUpdate(); setInterval(() => { if (!updPoll) pollUpdate(); }, 30 * 60000); }
 $('#updlater').addEventListener('click', () => { updLater = true; $('#update').hidden = true; });
 $('#updgo').addEventListener('click', async () => {
   const u = await api('/api/update'); if (!u) return;
@@ -269,13 +269,13 @@ async function tailscaleGo() {
 }
 function tsDone(ip) {
   tsShow(el('p', { className: 'okline', textContent: '✓ TV đã vào Tailscale · ' + ip }),
-    el('p', { textContent: CORE === 'mac' ? 'Bấm “Lưu” ở bước cuối để từ nay nối tới TV qua IP này, dùng được cả khi không ở nhà.' : 'Ở ngoài nhà: bật Tailscale trên điện thoại hoặc máy tính (cùng tài khoản), rồi mở TV bằng IP này.' }),
+    el('p', { textContent: CORE === 'pc' ? 'Bấm “Lưu” ở bước cuối để từ nay nối tới TV qua IP này, dùng được cả khi không ở nhà.' : 'Ở ngoài nhà: bật Tailscale trên điện thoại hoặc máy tính (cùng tài khoản), rồi mở TV bằng IP này.' }),
     el('p', { className: 'muted', textContent: 'Nên làm thêm: trong trang quản trị Tailscale, mở menu ⋯ của TV → Disable key expiry, để TV không bị đăng xuất sau khoảng 180 ngày.' }),
     row(el('a', { className: 'linkbtn small', style: 'padding:0 14px;min-height:36px', href: 'https://login.tailscale.com/admin/machines', target: '_blank', rel: 'noopener', textContent: '↗ Trang quản trị Tailscale' }), act('✓ Xong', async () => $('#ts').close(), 'primary')));
-  tsState(); if (CORE === 'mac') loadSteps();
+  tsState(); if (CORE === 'pc') loadSteps();
 }
 async function tsState() {                                             // the card on the tv / phone cores (the computer has its step 2)
-  if (CORE === 'mac' || ADB.state !== 'ready') return;
+  if (CORE === 'pc' || ADB.state !== 'ready') return;
   const s = await api('/api/tailscale', null, true); if (!s) return;
   $('#tsstate').textContent = s.ip ? 'Đã vào Tailscale · IP ' + s.ip + '. Ở ngoài nhà, máy điều khiển bật Tailscale (cùng tài khoản) rồi dùng IP này.'
     : s.installed ? 'Tailscale đã cài nhưng chưa đăng nhập hoặc đang tắt. Bấm nút dưới để bật và đăng nhập.' : TS_PITCH;
@@ -292,7 +292,7 @@ function step(n, state, title, text, ...actions) {
 }
 const act = (label, fn, cls = '') => el('button', { className: 'small ' + cls, textContent: label, onclick: async (e) => { const b = e.currentTarget; b.disabled = true; try { await fn(); } finally { b.disabled = false; } } });
 async function loadSteps() {
-  if (stepsBusy || CORE !== 'mac') return; stepsBusy = true;
+  if (stepsBusy || CORE !== 'pc') return; stepsBusy = true;
   const s = await api('/api/setup/status', null, true); stepsBusy = false;
   if (!s) return;
   $('#setuphost').textContent = s.host ? (s.model ? s.model + ' · ' : '') + s.host : 'chưa chọn TV';
@@ -331,7 +331,7 @@ async function loadSteps() {
 setInterval(() => { if (currentTab === 'tv' && !document.hidden && !stopped) loadSteps(); }, 6000);
 
 const startTab = location.hash.slice(1) || new URLSearchParams(location.search).get('tab') || (CORE === 'phone' ? 'apps' : '');
-if (CORE !== 'mac') $('#wake').parentElement.className = 'rrow three';   // no wake button there: three keys fill the row
+if (CORE !== 'pc') $('#wake').parentElement.className = 'rrow three';   // no wake button there: three keys fill the row
 if (['remote', 'apps', 'files', 'health', 'auto', 'tv'].includes(startTab)) showTab(startTab); else if (startTab === 'install') showTab('files');
 else if (startTab === 'term') { showTab('health'); $('#termcard').open = true; }   // the terminal used to be a tab of its own
 // One check at a time, and none while the page is hidden: a TV that is slow to answer must not pile them up.

@@ -4,7 +4,7 @@
 //   tv     the TV Setup app on the TV itself: one TV, opened from any browser after typing a code shown on the TV
 //   phone  the phone app's Manage screen: apps, files, health and terminal only (the app has its own remote)
 // What one core cannot do is marked data-for="..." in index.html and hidden by style.css; the few differences in behaviour are asked here.
-const CORE = document.documentElement.dataset.core || 'mac';
+const CORE = document.documentElement.dataset.core || 'pc';
 document.documentElement.dataset.core = CORE;
 const $ = (s) => document.querySelector(s);
 // icon + words as separate spans, so narrow screens can show the icon alone (see .lbl in style.css)
@@ -75,7 +75,7 @@ async function call(path, data, quiet) {
     if (r.status === 401 && CORE === 'tv') { refresh(); return null; }   // this browser is no longer paired with the TV
     if (!r.ok) {
       let e = r.statusText; try { e = (await r.json()).error || e; } catch {}
-      if (r.status === 404 && CORE === 'mac') e = STALE;
+      if (r.status === 404 && CORE === 'pc') e = STALE;
       if (r.status === 503 && /^adb/.test(e)) { e = /allow/.test(e) ? 'TV đang hỏi cho phép gỡ lỗi: nhìn lên TV, chọn “Luôn cho phép”' : 'chưa nối được ADB tới TV'; setTimeout(refresh, 300); }
       if (!quiet) toast('Lỗi: ' + friendly(e)); return null;
     }
@@ -139,7 +139,7 @@ const friendly = (m) => { m = String(m || ''); const f = FRIENDLY.find(([re]) =>
 let curHost = null;
 // The list of TVs comes first, as in the phone app: shown whenever no TV is chosen, or when "Change TV" asks for it.
 // It always opens on the list; "Change TV" comes back to it, and only then is there a TV to go back to.
-let picking = false, wantPick = CORE === 'mac', cameFromTv = false, justPicked = null, pickedAt = 0, scannedOnce = false;
+let picking = false, wantPick = CORE === 'pc', cameFromTv = false, justPicked = null, pickedAt = 0, scannedOnce = false;
 function setPicking(on, tvName) {
   const b = $('#pickback'), back = cameFromTv && !!tvName;
   b.hidden = !back; if (back) b.textContent = '← ' + tr('Về lại') + ' ' + tvName;
@@ -175,8 +175,8 @@ async function refresh() {
   if (locked) return;
   tvOn = !!(s && s.connected && s.is_on); STATE = s || {};
   if (!s) {
-    setChip('#chipTv', 'bad', CORE === 'mac' ? 'Server tắt' : 'Mất kết nối', CORE === 'mac' ? 'Server tắt' : 'TV: mất kết nối'); setChip('#chipAdb', '', 'ADB ?');
-    $('#info').textContent = CORE === 'mac' ? 'Không gọi được server. Mở lại TV Remote trên máy này.' : 'Không gọi được TV: TV đang bật và cùng mạng với máy này chứ?'; return;
+    setChip('#chipTv', 'bad', CORE === 'pc' ? 'Server tắt' : 'Mất kết nối', CORE === 'pc' ? 'Server tắt' : 'TV: mất kết nối'); setChip('#chipAdb', '', 'ADB ?');
+    $('#info').textContent = CORE === 'pc' ? 'Không gọi được server. Mở lại TV Remote trên máy này.' : 'Không gọi được TV: TV đang bật và cùng mạng với máy này chứ?'; return;
   }
   const adbUp = s.adb && s.adb.state === 'ready';                   // over ADB the TV answers even when the remote-button service does not
   setChip('#chipTv', s.connected && s.is_on ? 'ok' : s.connected || adbUp ? 'warn' : 'bad', s.connected ? (s.is_on ? 'TV bật' : 'Màn hình tắt') : adbUp ? 'Phím qua ADB' : 'Mất kết nối',
@@ -184,11 +184,11 @@ async function refresh() {
   ADB = s.adb || { state: 'unknown' };
   const [cls, txt, long] = ADB_TEXT[ADB.state] || ADB_TEXT.unknown; setChip('#chipAdb', cls, txt, long);
   const tvName = s.name || (s.device && s.device.model) || (s.host ? 'TV ' + s.host : '');
-  if (CORE === 'mac') setPicking(!s.host || wantPick, tvName);
+  if (CORE === 'pc') setPicking(!s.host || wantPick, tvName);
   if (s.version) $('#ver').textContent = (s.app_name || 'TV Remote') + ' ' + s.version + (s.released ? ' · ' + s.released : '');
   document.title = tvName && !picking ? tvName + ' · Remote' : 'TV Remote';
   $('#name').textContent = picking ? 'TV Remote' : tvName;
-  $('#info').textContent = picking ? tr('Chọn TV để điều khiển') : [CORE === 'mac' ? s.host : '', appName(s.app), s.paired === false ? 'chưa ghép remote (tab Thiết lập)' : s.error ? 'nút remote chưa kết nối được (tab Thiết lập)' : ''].filter(Boolean).join(' · ') || 'đã kết nối';
+  $('#info').textContent = picking ? tr('Chọn TV để điều khiển') : [CORE === 'pc' ? s.host : '', appName(s.app), s.paired === false ? 'chưa ghép remote (tab Thiết lập)' : s.error ? 'nút remote chưa kết nối được (tab Thiết lập)' : ''].filter(Boolean).join(' · ') || 'đã kết nối';
   if (justPicked && s.host === justPicked) {                          // straight to the remote when the TV is ready, to the first-time steps when it is not
     const ready = s.connected || (s.adb && s.adb.state === 'ready');
     if (ready || Date.now() - pickedAt > 6000) { justPicked = null; showTab(ready ? 'remote' : 'tv'); }   // a TV takes a few seconds to answer
@@ -223,13 +223,13 @@ const BANNERS = {
 };
 let bannerKey = '', scenesLoaded = false, setupChecked = '';         // setupChecked: the TV whose TV Setup version was looked at (auto.js)
 function buildBanner() {
-  const set = CORE === 'mac' ? BANNERS : BANNERS_TV, [cls, title, text] = set[ADB.state] || set.unknown;
+  const set = CORE === 'pc' ? BANNERS : BANNERS_TV, [cls, title, text] = set[ADB.state] || set.unknown;
   const retry = el('button', { className: 'small primary', textContent: '🔄 Thử kết nối lại', onclick: async (e) => {
     const b = e.currentTarget; b.disabled = true; b.textContent = 'Đang kết nối...';
     const r = await api('/api/adb/connect', {}); if (r) { ADB = r; bannerKey = ''; applyAdb(); refresh(); }
     b.disabled = false; b.textContent = '🔄 Thử kết nối lại';
   } });
-  if (CORE !== 'mac') return el('div', { className: 'banner ' + cls }, el('b', { textContent: title }), el('p', { textContent: text }), el('div', { className: 'actions' }, retry));
+  if (CORE !== 'pc') return el('div', { className: 'banner ' + cls }, el('b', { textContent: title }), el('p', { textContent: text }), el('div', { className: 'actions' }, retry));
   const helpMe = ADB.state === 'closed' || ADB.state === 'error' ? el('button', { className: 'small primary', textContent: '🧭 Bật ADB giúp tôi', onclick: () => adbHelp() }) : null;
   if (helpMe) retry.className = 'small';
   const loss = el('p'); loss.append(el('b', { textContent: 'Mất chức năng: ' }), 'xem màn hình, mở app/link, danh sách app, tệp, tải link về TV, cài APK.');

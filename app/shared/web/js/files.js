@@ -105,7 +105,7 @@ function upload(file, kind, dest, after, src) {
   const xhr = new XMLHttpRequest();
   xhr.open('POST', '/api/upload?kind=' + kind + '&name=' + encodeURIComponent(file.name) + '&dest=' + encodeURIComponent(dest || ''));
   xhr.setRequestHeader('Content-Type', 'application/octet-stream');
-  xhr.upload.onprogress = (e) => { if (e.lengthComputable) { row.pct = Math.round(e.loaded * (CORE === 'mac' ? 45 : 95) / e.total); row.msg = 'đang gửi ' + fmtSize(e.loaded) + ' / ' + fmtSize(e.total); showJob(row); mark(src, row); } };
+  xhr.upload.onprogress = (e) => { if (e.lengthComputable) { row.pct = Math.round(e.loaded * (CORE === 'pc' ? 45 : 95) / e.total); row.msg = 'đang gửi ' + fmtSize(e.loaded) + ' / ' + fmtSize(e.total); showJob(row); mark(src, row); } };
   xhr.onerror = () => { row.status = 'error'; row.msg = 'Không gọi được server'; showJob(row); mark(src, row); };
   xhr.onload = () => {
     let r = {}; try { r = JSON.parse(xhr.responseText); } catch {}

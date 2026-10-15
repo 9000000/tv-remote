@@ -9,20 +9,21 @@
 <table>
 <tr>
 <td align="center"><img src="docs/img/phone-remote.webp" height="360" alt="App điện thoại"><br><sub>App điện thoại</sub></td>
-<td align="center"><img src="docs/img/tvpage-remote-vi.webp" height="360" alt="Trang do TV phục vụ"><br><sub>Trang do TV phục vụ</sub></td>
-<td align="center"><img src="docs/img/web-remote-vi.webp" height="360" alt="App trên máy tính"><br><sub>App trên máy tính</sub></td>
+<td align="center"><img src="docs/img/tvpage-remote-vi.webp" height="360" alt="Web của TV"><br><sub>Web của TV</sub></td>
+<td align="center"><img src="docs/img/web-remote-vi.webp" height="360" alt="App máy tính"><br><sub>App máy tính</sub></td>
 </tr>
 </table>
 
 **Mục lục**
 
 - [Chọn cách dùng](#chọn-cách-dùng)
+- [Ba app và một trang web](#ba-app-và-một-trang-web): tên gọi, so sánh, sơ đồ
 - [Chuẩn bị TV](#chuẩn-bị-tv)
 - [Cài TV Setup bằng mã Downloader](#cài-tv-setup-bằng-mã-downloader)
 - Cài và dùng từng cách:
-  - [App điện thoại](#1-app-điện-thoại-android-tv-remote)
-  - [Trang do TV phục vụ](#2-trang-do-tv-phục-vụ-tv-setup)
-  - [App trên máy tính](#3-app-trên-máy-tính)
+  - [App điện thoại](#1-app-điện-thoại-android)
+  - [Web của TV](#2-web-của-tv-qua-app-tv-setup)
+  - [App máy tính](#3-app-máy-tính)
 - [Dùng khi khác mạng](#dùng-khi-khác-mạng-tailscale)
 - [Khi TV tắt](#khi-tv-tắt)
 - [Tối ưu TV](#tối-ưu-tv)
@@ -34,11 +35,74 @@
 
 | Bạn có | Dùng | Lấy ở đâu |
 |---|---|---|
-| Điện thoại Android | App **TV Remote** | `tv-remote.apk` ở [Releases](https://github.com/HoangTran0410/tv-remote/releases), hoặc mã Downloader **`2973135`** |
-| Bất kỳ trình duyệt nào, kể cả iPhone | App **TV Setup** cài trên TV, rồi mở `http://<IP của TV>:8765` | Trên TV: app Downloader, mã **`2397346`** ([xem cách cài](#cài-tv-setup-bằng-mã-downloader)) |
-| Máy tính (Mac, Windows, Linux) | App **TV Remote** cho máy tính | Tệp cho đúng máy ở [Releases](https://github.com/HoangTran0410/tv-remote/releases/latest) ([xem bảng](#3-app-trên-máy-tính)) |
+| Điện thoại Android | **App điện thoại** (TV Remote) | `tv-remote.apk` ở [Releases](https://github.com/HoangTran0410/tv-remote/releases), hoặc mã Downloader **`2973135`** |
+| Bất kỳ trình duyệt nào, kể cả iPhone | **Web của TV**: cài **App TV** (TV Setup) lên TV, rồi mở `http://<IP của TV>:8765` | Trên TV: app Downloader, mã **`2397346`** ([xem cách cài](#cài-tv-setup-bằng-mã-downloader)) |
+| Máy tính (Mac, Windows, Linux) | **App máy tính** (TV Remote) | Tệp cho đúng máy ở [Releases](https://github.com/HoangTran0410/tv-remote/releases/latest) ([xem bảng](#3-app-máy-tính)) |
 
-Cả ba dùng chung một giao diện web; trang giới thiệu có [danh sách tính năng](https://tvremote.pages.dev/#features) và [so sánh ba cách](https://tvremote.pages.dev/#install).
+Trang giới thiệu có [danh sách tính năng](https://tvremote.pages.dev/#features).
+
+## Ba app và một trang web
+
+Trong README, code và trang giới thiệu, các phần luôn được gọi bằng những tên này:
+
+| Tên gọi | Là gì | Code | `data-core` |
+|---|---|---|---|
+| **App điện thoại** | App Android, tên trên máy là *TV Remote* | `app/android` | `phone` |
+| **App máy tính** | App cho Mac, Windows, Linux, tên trên máy là *TV Remote* | `app/desktop` | `pc` |
+| **App TV** | App cài trên TV, tên trên TV là *TV Setup*: hẹn giờ, giới hạn app, vẽ, thống kê, Tailscale | `app/tv` | |
+| **Web của TV** | Trang web App TV phát ra ở cổng 8765, mở từ trình duyệt nào cũng được sau khi nhập mã 6 số | `app/tv` (`RemoteService`) | `tv` |
+
+**Mỗi nơi làm được gì**
+
+| | App điện thoại | Web của TV | App máy tính |
+|---|---|---|---|
+| Remote, xem và chạm hình TV, ✏️ vẽ, 🖼️ đưa ảnh lên TV | ✓ | ✓ | ✓ |
+| 🎧 Nghe tiếng TV | ✓, cả khi tắt màn hình | ✓, khi trang đang mở | ✓, chất lượng cao |
+| Ứng dụng, Tệp, Sức khỏe, Tự động, Thiết lập | ✓ | ✓ | ✓ |
+| Chất lượng hình *Nét nhất* | | | ✓ |
+| Nhiều TV, đổi TV | ✓ | chỉ TV đó | ✓ |
+| Bật TV khi TV đã tắt hẳn (Wake-on-LAN) | ✓ | TV tắt thì trang cũng tắt | ✓ |
+| Bấm phím khi TV chưa cho ADB | ✓ | | ✓ |
+| Widget, ô Cài đặt nhanh, phím âm lượng của máy | ✓ | | |
+| Cần cài gì trên máy điều khiển | app | không, hợp với iPhone | app |
+
+**Các phần nối với nhau thế nào.** Không có máy chủ nào ở giữa: mọi thứ đi thẳng tới TV.
+
+```mermaid
+flowchart LR
+    subgraph U["Máy điều khiển"]
+        PH["📱 App điện thoại"]
+        PC["💻 App máy tính"]
+        BR["🌐 Trình duyệt bất kỳ<br/>iPhone, máy tính..."]
+    end
+    subgraph TV["📺 Android TV"]
+        RP["Dịch vụ remote của Google<br/>cổng 6466/6467"]
+        ADB["ADB<br/>cổng 5555"]
+        SC["scrcpy-server<br/>hình, tiếng, chạm, phím"]
+        APP["App TV (TV Setup)<br/>hẹn giờ, giới hạn app, lớp vẽ, thống kê"]
+        WEB["Web của TV<br/>cổng 8765"]
+        ADB --> SC
+        ADB -- "lệnh, broadcast" --> APP
+        APP --- WEB
+        WEB -- "127.0.0.1:5555" --> ADB
+    end
+    PH & PC -- "phím, khi chưa có ADB" --> RP
+    PH & PC -- "mọi thứ khác" --> ADB
+    BR -- "HTTP + mã ghép 6 số" --> WEB
+```
+
+**Trong code**, ba app dùng chung một lõi Kotlin và một giao diện web. Riêng màn remote của App điện thoại viết bằng Kotlin cho mượt, nên sửa màn remote thì sửa ở hai chỗ: `app/shared/web` và `app/android`.
+
+```mermaid
+flowchart TB
+    UI["app/shared/web<br/>MỘT giao diện web"]
+    CORE["app/shared/src<br/>lõi Kotlin: Adb, Tv, Atv, Manage, Draw..."]
+    PH["📱 App điện thoại · app/android<br/>màn remote: Kotlin riêng<br/>màn Quản lý: giao diện web (phone)"]
+    PC["💻 App máy tính · app/desktop<br/>cửa sổ: giao diện web (pc)"]
+    TVA["📺 App TV · app/tv<br/>Web của TV: giao diện web (tv)"]
+    CORE --> PH & PC & TVA
+    UI --> PH & PC & TVA
+```
 
 ## Chuẩn bị TV
 
@@ -54,11 +118,11 @@ Lần đầu mỗi máy kết nối, TV hỏi "Cho phép gỡ lỗi USB?": tích
 <summary><b>Khi không ở nhà mà TV lại hỏi</b> (TV quên máy này, Android 11+ tự thu hồi sau 7 ngày không dùng...)</summary>
 
 - **Tự động:** app điện thoại và app máy tính, mỗi lần đã kết nối được ADB, tự xin TV Setup một "thẻ". Lần sau TV hỏi, chúng nhờ TV Setup bấm cho phép, không cần ai ở TV. TV Setup chỉ bấm khi **mã khóa trong hộp hỏi trùng mã của chính máy đang xin**, và hiện thông báo trên TV mỗi lần cho phép.
-- **Bấm tay:** trang nào đang có ADB (trang của TV đã ghép mã, app máy tính, app điện thoại) hiện dải báo "TV đang hỏi... cho một thiết bị" kèm mã và nút **Cho phép / Từ chối**. Chỉ cho phép khi mã trùng với mã mà app TV Remote hiện trong lúc chờ.
+- **Bấm tay:** trang nào đang có ADB (Web của TV đã ghép mã, App máy tính, App điện thoại) hiện dải báo "TV đang hỏi... cho một thiết bị" kèm mã và nút **Cho phép / Từ chối**. Chỉ cho phép khi mã trùng với mã mà app TV Remote hiện trong lúc chờ.
 - Máy chưa từng kết nối và chưa ghép mã với TV Setup thì vẫn phải có người ở TV. Đó là chủ ý, để người lạ không vào được.
 </details>
 
-TV chưa bật được ADB (box nhà mạng giấu Cài đặt, đòi mật khẩu...)? Cài TV Setup bằng [mã Downloader](#cài-tv-setup-bằng-mã-downloader): app đó mở thẳng chỗ bật. App trên máy tính có nút **🧭 Bật ADB giúp tôi**, app điện thoại có trợ lý tương tự: chỉ dùng nút remote để tự cài TV Setup, hoặc mở Cài đặt TV bằng nhiều cách.
+TV chưa bật được ADB (box nhà mạng giấu Cài đặt, đòi mật khẩu...)? Cài TV Setup bằng [mã Downloader](#cài-tv-setup-bằng-mã-downloader): app đó mở thẳng chỗ bật. App máy tính có nút **🧭 Bật ADB giúp tôi**, app điện thoại có trợ lý tương tự: chỉ dùng nút remote để tự cài TV Setup, hoặc mở Cài đặt TV bằng nhiều cách.
 
 <details>
 <summary>Xem IP của TV ở đâu</summary>
@@ -86,14 +150,14 @@ Cách dễ nhất cho người mới: chỉ cần remote của TV, không cần 
 
 Mã luôn trỏ tới bản mới nhất. Không có Downloader thì mở `go.aftvnews.com/<mã>` trong trình duyệt cũng tải được.
 
-## 1. App điện thoại Android: TV Remote
+## 1. App điện thoại (Android)
 
 1. Cài `tv-remote.apk` từ [Releases](https://github.com/HoangTran0410/tv-remote/releases) (hoặc mã Downloader `2973135`).
 2. Mở app, bấm **Quét Wi-Fi** rồi chọn TV, hoặc gõ IP của TV. TV chưa bật ADB thì app vẫn bấm phím được sau khi ghép mã, và tự dẫn từng bước tới khi cài xong TV Setup.
 
 Phím âm lượng của điện thoại chỉnh âm lượng TV; widget, ô Cài đặt nhanh và phím tắt điều khiển TV dùng gần nhất mà không cần mở app. App tự báo khi có bản mới.
 
-## 2. Trang do TV phục vụ: TV Setup
+## 2. Web của TV (qua App TV Setup)
 
 Dùng được từ mọi trình duyệt, không cần cài gì trên điện thoại hay máy tính.
 
@@ -116,7 +180,7 @@ Dùng được từ mọi trình duyệt, không cần cài gì trên điện th
 <p align="center"><img src="docs/img/tvapp-vi.webp" width="640" alt="Màn hình app TV Setup"></p>
 </details>
 
-## 3. App trên máy tính
+## 3. App máy tính
 
 Một app có cửa sổ riêng, khoảng 20 MB, không cần cài Python, adb hay gì thêm.
 
@@ -159,7 +223,7 @@ Làm một lần, lúc đang ở nhà (cùng Wi-Fi với TV):
 2. Chờ khoảng nửa phút: TV tự tải Tailscale bản chính thức (kiểm checksum), cài, bỏ qua hộp hỏi VPN, cho nó tự chạy lại mỗi khi bật TV, bật lên và lấy link đăng nhập.
 3. Bấm **🔑 Mở trang đăng nhập Tailscale** (hoặc quét mã QR), đăng nhập tài khoản Tailscale của bạn (chưa có thì tạo miễn phí bằng Google, Microsoft, GitHub), bấm **Connect**. Không phải gõ gì trên TV. Trang tự nhận khi TV đã vào.
 4. Nên làm thêm: ở [trang quản trị Tailscale](https://login.tailscale.com/admin/machines), mở menu ⋯ của TV → **Disable key expiry**, nếu không khoảng 180 ngày sau TV bị đăng xuất.
-5. Cài Tailscale trên máy điều khiển (cùng tài khoản), rồi dùng IP `100.x.x.x` của TV thay cho IP trong nhà. App trên máy tính có bước **Lưu** để tự chuyển sang IP này.
+5. Cài Tailscale trên máy điều khiển (cùng tài khoản), rồi dùng IP `100.x.x.x` của TV thay cho IP trong nhà. App máy tính có bước **Lưu** để tự chuyển sang IP này.
 
 <details>
 <summary>Ảnh hộp Tailscale, và vì sao phải đăng nhập qua link</summary>
@@ -207,7 +271,7 @@ Nếu sau này TV không hiện màn hình chính: Cài đặt → Ứng dụng 
 | **ADB: chờ TV cho phép** | Trên TV chọn "Luôn cho phép". Lỡ đóng hộp hỏi (Back, Home, Hủy)? App tự hỏi lại vài lần; web thì bấm "Thử kết nối lại". Không ở nhà: xem "Khi không ở nhà mà TV lại hỏi" ở trên |
 | **ADB: cổng đóng** | TV đang tắt, hoặc vừa khởi động lại: tắt rồi bật lại "Gỡ lỗi ADB" |
 | Bấm nút không ăn (app máy tính) | Chưa ghép nút remote (tab **Thiết lập**), hoặc đang mở hai cửa sổ cho cùng một TV |
-| Trang của TV hỏi lại mã 6 số | Trên TV đã bấm "Hủy ghép", hoặc trình duyệt đã xóa dữ liệu trang: nhập mã mới |
+| Web của TV hỏi lại mã 6 số | Trên TV đã bấm "Hủy ghép", hoặc trình duyệt đã xóa dữ liệu trang: nhập mã mới |
 | Tailscale không ra link đăng nhập | TV phải đang mở màn hình (không ở chế độ chờ) và có Internet. Bấm lại nút; vẫn không được thì mở Tailscale trên TV và quét mã QR nó hiện |
 | Hình giật, TV chậm | Chọn chất lượng thấp hơn; tắt hình khi không cần |
 | Ở xa không kết nối được | Hai máy có cùng tài khoản Tailscale và đều đang bật không? |
@@ -218,7 +282,7 @@ Nếu sau này TV không hiện màn hình chính: Cài đặt → Ứng dụng 
 - ADB qua mạng không có mật khẩu: máy nào đã được TV "Luôn cho phép" là có toàn quyền trên TV. Chỉ dùng trong mạng bạn tin và qua Tailscale. Thu hồi: Tùy chọn nhà phát triển → Thu hồi quyền gỡ lỗi USB.
 - **Ai được nhờ TV Setup cho phép:** chỉ máy đã ghép mã 6 số (mã hiện trên màn hình TV, tức đã có người ở TV) hoặc máy đã có ADB. "Thẻ" cho máy có ADB được phát qua một broadcast chỉ lệnh shell của ADB gửi được, app khác trên TV không lấy được. Mỗi lần cho phép đều so mã khóa và hiện thông báo trên TV. **Hủy ghép** trên TV vô hiệu mọi thẻ.
 - Thư mục `keys` của app máy tính (Mac: `~/Library/Application Support/TV Remote`, Windows: `%APPDATA%\TV Remote`, Linux: `~/.local/share/tv-remote`) là chìa khóa ghép với TV. **Ai có các file trong đó là điều khiển được TV.** Đừng gửi cho ai.
-- App máy tính chỉ nghe ở `127.0.0.1`. Trang trên TV nghe trong mạng nhà và đòi ghép mã.
+- App máy tính chỉ nghe ở `127.0.0.1`. Web của TV nghe trong mạng nhà và đòi ghép mã.
 - Chỉ cài APK từ nguồn bạn tin.
 
 ## Chi tiết kỹ thuật
@@ -229,15 +293,15 @@ Nếu sau này TV không hiện màn hình chính: Cài đặt → Ứng dụng 
 ```mermaid
 flowchart LR
     subgraph C["Máy điều khiển"]
-        PC["💻 App trên máy tính<br/>127.0.0.1:8765"]
-        PH["📱 App TV Remote"]
+        PC["💻 App máy tính<br/>127.0.0.1:8765"]
+        PH["📱 App điện thoại"]
         BR["🌐 Trình duyệt bất kỳ"]
     end
     subgraph T["📺 Android TV"]
         R["Dịch vụ remote của Google<br/>cổng 6466"]
         A["ADB<br/>cổng 5555"]
         S["scrcpy-server<br/>hình + chạm, phím"]
-        W["TV Setup<br/>trang web cổng 8765"]
+        W["Web của TV (App TV Setup)<br/>cổng 8765"]
         A --> S
         W --> A
     end
@@ -248,7 +312,7 @@ flowchart LR
 ```
 
 - **App điện thoại và TV Setup** tự nói giao thức ADB, đẩy `scrcpy-server` lên TV để lấy hình H.264 và gửi chạm, phím. TV Setup nối vào ADB của chính TV (`127.0.0.1:5555`).
-- **Hình trên trang của TV:** H.264 đi qua `/api/video`, trình duyệt phát bằng JMuxer (MSE).
+- **Hình trên Web của TV:** H.264 đi qua `/api/video`, trình duyệt phát bằng JMuxer (MSE).
 - **App máy tính** (`app/desktop`) dùng chung lõi Kotlin với hai app Android (ADB, scrcpy, giao thức remote), chạy trên Java riêng đóng gói kèm; cửa sổ là WebView của hệ điều hành (thư viện [webview](https://github.com/webview/webview), qua JNA). Hình H.264 đi thẳng tới trang như trang của TV. Nút remote khi chưa có ADB: giao thức Android TV Remote v2, cổng 6466/6467.
 - **Chữ có dấu:** đưa vào clipboard của TV rồi dán.
 - **Âm lượng:** gọi thẳng `AudioService.setStreamVolume` (Android 9), không được thì `media volume`, không có ADB thì bấm từng nấc.
@@ -265,10 +329,10 @@ flowchart LR
 Hướng dẫn đầy đủ cho người (và AI agent) sửa code: [CLAUDE.md](CLAUDE.md).
 
 ```
-app/desktop/  app TV Remote cho máy tính (Kotlin, dùng chung lõi với hai app Android; cửa sổ là WebView của hệ điều hành)
-app/android/  app TV Remote (Kotlin)                app/tv/   app TV Setup (Kotlin) + trang web do TV phục vụ
+app/desktop/  App máy tính (Kotlin, dùng chung lõi với hai app Android; cửa sổ là WebView của hệ điều hành)
+app/android/  App điện thoại (Kotlin)               app/tv/   App TV (TV Setup, Kotlin) + Web của TV
 app/shared/   dùng chung: ADB, phiên điều khiển, quản lý TV, cập nhật; web/ = MỘT giao diện web cho cả ba nơi
-              (máy tính, trang do TV phục vụ, phần Quản lý trong app điện thoại); mỗi nơi chỉ khác phần lõi trả lời /api
+              (App máy tính, Web của TV, màn Quản lý của App điện thoại); mỗi nơi chỉ khác phần lõi trả lời /api
 app/gradle/   cấu hình build hai app Android (mở thư mục này trong Android Studio)
 dev/          release.sh (build APK + tạo GitHub release), gen_icons.py (một bộ icon cho cả ba nơi)
 docs/         trang giới thiệu (GitHub Pages) và ảnh chụp
@@ -279,7 +343,7 @@ tvs.json, cert.pem, key.pem, *.jks, .cache/      dữ liệu riêng của máy b
 - **Build app:** mở `app/` bằng Android Studio, hoặc chạy `app/android/build.sh`, `app/tv/build.sh` (cần JDK 17 và Android SDK). App máy tính: `cd app/gradle && ./gradlew :desktop:packageApp` (ra app cho đúng hệ điều hành đang dùng; GitHub Actions build đủ các bản khi có release, hai bản Mac được gộp thành một app chạy cả chip Apple lẫn Intel bằng `app/desktop/universal.sh`).
 - **Chạy từ mã nguồn:** tải mã nguồn (git clone hoặc zip). App máy tính: `./gradlew :desktop:installDist` rồi `app/desktop/build/install/desktop/bin/desktop --window`. Sửa `app/shared/web` thì chỉ cần tải lại trang; sửa Kotlin thì chạy lại lệnh trên (vài giây).
 - **Phiên bản:** ba số, mỗi số chỉ tăng khi phần của nó đổi: `VERSION` (bản phát hành và web), `app/android/VERSION`, `app/tv/VERSION`. Mỗi bản phát hành kèm `versions.json`, nên app không đổi thì không bị mời cập nhật. `dev/release.sh` dừng lại nếu code một app đã đổi mà quên tăng số.
-- **Giữ ba nơi đồng bộ:** sửa hay thêm gì ở phần điều khiển thì làm ở cả app điện thoại, trang trên TV và app máy tính.
+- **Giữ ba nơi đồng bộ:** sửa hay thêm gì ở phần điều khiển thì làm ở cả App điện thoại, Web của TV và App máy tính. Tên gọi và sơ đồ: [Ba app và một trang web](#ba-app-và-một-trang-web).
 - **Ghi công:** [scrcpy](https://github.com/Genymobile/scrcpy) v5.0.1 (Apache-2.0), [JMuxer](https://github.com/samirkumardas/jmuxer) 2.1.0 (MIT), [webview](https://github.com/webview/webview) 0.12.0 (MIT), [JNA](https://github.com/java-native-access/jna) (Apache-2.0).
 </details>
 

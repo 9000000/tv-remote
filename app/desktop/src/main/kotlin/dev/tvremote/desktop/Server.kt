@@ -15,7 +15,7 @@ import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * The computer's server on the shared Kotlin core: the "mac" core of the page.
+ * The computer's server on the shared Kotlin core: the "pc" core of the page.
  * The routes that only the computer has (many TVs, the remote buttons without ADB, the first-time setup, the picture and
  * sound for this browser) are here; everything managed over ADB is Manage.kt's, as for TV Setup and the phone.
  */
@@ -57,7 +57,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
         val stamp = web.walk().filter { it.isFile }.maxOfOrNull { it.lastModified() } ?: 0L
         if (p != null && stamp == pageStamp) return p
         pageStamp = stamp
-        return WebPage({ name -> File(web, name).inputStream() }, "mac", (stamp / 1000).toString()).also { page = it }
+        return WebPage({ name -> File(web, name).inputStream() }, "pc", (stamp / 1000).toString()).also { page = it }
     }
 
     // ---------------------------------------------------------------- requests

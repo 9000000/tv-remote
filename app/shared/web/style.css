@@ -25,9 +25,9 @@
     header .chips { gap:4px; } header .chip { padding:4px 8px; } header .chips button.small { min-width:30px; padding:0 6px; } #lang .globe { display:none; }   /* one line: a long state shortens, its whole text on hover */
     .chip { padding:4px 9px; font-size:12px; gap:5px; } .chip i { display:none; } .chips button.small { min-height:30px; padding:0 8px; font-size:12px; } }
   @media (hover:none), (pointer:coarse) { .fine-only { display:none; } }   /* no computer keyboard to type with */
-  /* One page, three cores (see core.js): the computer's server ("mac"), the TV Setup app on the TV ("tv") and the phone app's
+  /* One page, three cores (see core.js): the computer app ("pc"), the TV Setup app on the TV ("tv") and the phone app's
      Manage screen ("phone"). An element marked data-for is only there on the cores it names. */
-  html[data-core=mac] [data-for]:not([data-for~=mac]), html[data-core=tv] [data-for]:not([data-for~=tv]), html[data-core=phone] [data-for]:not([data-for~=phone]) { display:none !important; }
+  html[data-core=pc] [data-for]:not([data-for~=pc]), html[data-core=tv] [data-for]:not([data-for~=tv]), html[data-core=phone] [data-for]:not([data-for~=phone]) { display:none !important; }
   html[data-core=phone] header.top, html[data-core=phone] #ver { display:none; }   /* the app has its own title bar */
   main.locked > :not(header):not(#pair) { display:none !important; } main.locked .chips > :not(#lang) { display:none; }   /* not paired yet: only the code box */
   .pair { text-align:center; padding:28px 16px; } .pair p { max-width:420px; margin:10px auto 16px; } .pair form { max-width:320px; margin:14px auto 0; }
@@ -76,7 +76,7 @@
      made the bar heavy, a lock read as "pay to unlock", and emoji badges look different on every device. The words stay for
      screen readers. Elsewhere everything goes through ADB anyway. */
   .tabs .needs { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
-  html[data-core=mac] .tabs.noadb [data-needs-adb]:not([aria-selected=true]) :is(.ico, .lbl) { opacity:.45; }
+  html[data-core=pc] .tabs.noadb [data-needs-adb]:not([aria-selected=true]) :is(.ico, .lbl) { opacity:.45; }
 
   button { font:inherit; color:var(--ink); background:var(--btn); border:0; border-radius:12px; min-height:48px; cursor:pointer; touch-action:manipulation; transition:background .1s, transform .05s; }
   button:hover { background:var(--btn-hi); } button:active { transform:scale(.97); }

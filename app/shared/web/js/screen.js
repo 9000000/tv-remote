@@ -2,7 +2,7 @@
 // ---------- screen: live MJPEG stream, or one screenshot at a time ----------
 let screenOn = false, screenUrl = null, screenGen = 0, streamCtl = null, frames = 0;
 const SCREEN_HINT = 'Bấm “Xem” để xem màn hình TV.';
-if (CORE !== 'mac') document.querySelectorAll('#screenmode [data-for=mac]').forEach((o) => o.remove());   // an <option> cannot be hidden by CSS everywhere
+if (CORE !== 'pc') document.querySelectorAll('#screenmode [data-for=pc]').forEach((o) => o.remove());   // an <option> cannot be hidden by CSS everywhere
 function setScreenPlaceholder(msg) { $('#screenph').textContent = msg || SCREEN_HINT; $('#screenph').hidden = false; $('#screen').hidden = $('#screenv').hidden = true; }
 function setScreenInfo(text, live) { $('#screeninfo').textContent = text; $('#screeninfo').classList.toggle('live', !!live); }
 function showFrame(blob) {
@@ -120,7 +120,7 @@ function startScreen() {
   if (muxer) { try { muxer.destroy(); } catch {} muxer = null; }
   $('#screencard').classList.add('on'); $('#screenbox').style.aspectRatio = '';
   setLabel($('#screenbtn'), '⏹', 'Dừng'); setScreenPlaceholder('Đang lấy hình...');
-  ($('#screenmode').value === 'snap' ? snapLoop : CORE === 'mac' && STATE.video !== 'h264' ? liveLoop : h264Loop)(gen);   // the computer's Kotlin server sends H.264 too
+  ($('#screenmode').value === 'snap' ? snapLoop : CORE === 'pc' && STATE.video !== 'h264' ? liveLoop : h264Loop)(gen);   // the computer's Kotlin server sends H.264 too
 }
 setInterval(() => {
   if (screenOn && $('#screenmode').value !== 'snap' && streamCtl && !streamCtl.signal.aborted) {
@@ -146,7 +146,7 @@ function showTab(t) {
   document.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== t; });
   dockScreen();
   if (ADB.state === 'ready') { if (t === 'apps' && !appsLoaded) loadApps(); if (t === 'files' && !filesLoaded) loadFiles(cwd); }
-  if (t === 'tv' && CORE === 'mac') loadSteps();
+  if (t === 'tv' && CORE === 'pc') loadSteps();
   if (t === 'health') loadHealth();
   if (t === 'auto') autoTab();
   if (t === 'tv') { tsState(); loadTvset(); }

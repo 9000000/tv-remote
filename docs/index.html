@@ -240,6 +240,7 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
 .cmp td{color:var(--muted)} .cmp td small{display:block;font-size:12.5px;color:var(--dim);margin-top:2px}
 .cmp .us{background:rgba(91,140,255,.08);color:var(--text)} .cmp thead .us{color:var(--blue)}
 .cmp .y::before{content:"✓ ";color:var(--green);font-weight:800} .cmp .n::before{content:"✗ ";color:var(--red);font-weight:800} .cmp .m::before{content:"~ ";color:var(--orange);font-weight:800}
+.cmp.ways{min-width:560px} .cmp.ways tbody th{width:34%}
 .cmpnote{color:var(--dim);font-size:13px;margin-top:12px;text-align:center}
 @media (max-width:980px){.hard{grid-template-columns:1fr}}
 .reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}
@@ -530,9 +531,9 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
     <div class="flow reveal">
       <div class="node">
         <h4><span class="vi">Máy điều khiển</span><span class="en">Your device</span></h4>
-        <div class="chip"><span class="e">📱</span><div>TV Remote<small><span class="vi">App Android</span><span class="en">Android app</span></small></div></div>
-        <div class="chip"><span class="e">🌐</span><div><span class="vi">Trình duyệt bất kỳ</span><span class="en">Any browser</span><small>iPhone, iPad, laptop…</small></div></div>
-        <div class="chip"><span class="e">💻</span><div><span class="vi">App trên máy tính</span><span class="en">Computer app</span><small>Mac · Windows · Linux</small></div></div>
+        <div class="chip"><span class="e">📱</span><div><span class="vi">App điện thoại</span><span class="en">Phone app</span><small>Android</small></div></div>
+        <div class="chip"><span class="e">🌐</span><div><span class="vi">Trình duyệt bất kỳ</span><span class="en">Any browser</span><small><span class="vi">mở Web của TV</span><span class="en">opens the TV web page</span></small></div></div>
+        <div class="chip"><span class="e">💻</span><div><span class="vi">App máy tính</span><span class="en">Computer app</span><small>Mac · Windows · Linux</small></div></div>
       </div>
       <div class="wire">
         <div class="line"></div>
@@ -543,12 +544,12 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
         <h4>📺 Android TV / Google TV</h4>
         <div class="chip"><span class="e">🔌</span><div>ADB<small><span class="vi">hình, chạm, app, tệp</span><span class="en">screen, touch, apps, files</span></small></div></div>
         <div class="chip"><span class="e">🎮</span><div>Android TV Remote<small><span class="vi">nút bấm, kể cả khi ADB tắt</span><span class="en">keys, even with ADB off</span></small></div></div>
-        <div class="chip"><span class="e">⚡</span><div>TV Setup<small><span class="vi">trang web, hẹn giờ, giới hạn app</span><span class="en">web page, timers, app limits</span></small></div></div>
+        <div class="chip"><span class="e">⚡</span><div><span class="vi">App TV (TV Setup)</span><span class="en">TV app (TV Setup)</span><small><span class="vi">Web của TV, hẹn giờ, giới hạn app</span><span class="en">TV web page, timers, app limits</span></small></div></div>
       </div>
     </div>
     <div class="facts reveal">
       <div class="fact"><b>0</b><span><span class="vi">máy chủ trung gian</span><span class="en">servers in between</span></span></div>
-      <div class="fact"><b>3</b><span><span class="vi">cách dùng, chung một giao diện</span><span class="en">clients, one shared interface</span></span></div>
+      <div class="fact"><b>3</b><span><span class="vi">app và Web của TV, chung một giao diện</span><span class="en">apps and a TV web page, one interface</span></span></div>
       <div class="fact"><b>~8 KB/s</b><span><span class="vi">để nghe tiếng TV</span><span class="en">to stream TV audio</span></span></div>
       <div class="fact"><b>100%</b><span><span class="vi">mã nguồn mở trên GitHub</span><span class="en">open source on GitHub</span></span></div>
     </div>
@@ -600,21 +601,21 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
     <div class="choose reveal" role="tablist">
       <button class="opt" role="tab" data-tab="browser" aria-selected="true">
         <div class="big">📺→🌐</div>
-        <h3><span class="vi">Mọi trình duyệt</span><span class="en">Any browser</span></h3>
-        <div class="who"><span class="vi">iPhone, iPad, máy tính · dễ nhất</span><span class="en">iPhone, iPad, computer · easiest</span></div>
+        <h3><span class="vi">Web của TV</span><span class="en">TV web page</span></h3>
+        <div class="who"><span class="vi">Mọi trình duyệt: iPhone, iPad, máy tính</span><span class="en">Any browser: iPhone, iPad, computer</span></div>
         <p><span class="vi">Cài app <b>TV Setup</b> lên TV chỉ bằng remote của TV. Rồi máy nào có trình duyệt cũng điều khiển được.</span><span class="en">Install <b>TV Setup</b> on the TV using just the TV's remote. Then any device with a browser can control it.</span></p>
         <div class="go"><span class="vi">Xem các bước</span><span class="en">See steps</span> →</div>
       </button>
       <button class="opt" role="tab" data-tab="android" aria-selected="false">
         <div class="big">📱</div>
-        <h3><span class="vi">Điện thoại Android</span><span class="en">Android phone</span></h3>
-        <div class="who"><span class="vi">Trải nghiệm đầy đủ nhất</span><span class="en">The fullest experience</span></div>
-        <p><span class="vi">App <b>TV Remote</b>: nút âm lượng vật lý, widget, nghe tiếng TV, nói với TV, bấm phím cả khi chưa bật ADB.</span><span class="en">The <b>TV Remote</b> app: hardware volume keys, widgets, TV audio, voice, keys even before ADB is on.</span></p>
+        <h3><span class="vi">App điện thoại</span><span class="en">Phone app</span></h3>
+        <div class="who"><span class="vi">Android · đầy đủ nhất</span><span class="en">Android · the fullest</span></div>
+        <p><span class="vi">App <b>TV Remote</b> trên Android: nút âm lượng vật lý, widget, nghe tiếng TV, nói với TV, bấm phím cả khi chưa bật ADB.</span><span class="en">The <b>TV Remote</b> app: hardware volume keys, widgets, TV audio, voice, keys even before ADB is on.</span></p>
         <div class="go"><span class="vi">Xem các bước</span><span class="en">See steps</span> →</div>
       </button>
       <button class="opt" role="tab" data-tab="computer" aria-selected="false">
         <div class="big">💻</div>
-        <h3><span class="vi">Máy tính</span><span class="en">Computer</span></h3>
+        <h3><span class="vi">App máy tính</span><span class="en">Computer app</span></h3>
         <div class="who">Mac · Windows · Linux</div>
         <p><span class="vi">Màn hình lớn, chuột và bàn phím thật, quản lý nhiều TV, kéo thả tệp lên TV.</span><span class="en">Big screen, real mouse and keyboard, many TVs, drag and drop files onto the TV.</span></p>
         <div class="go"><span class="vi">Xem các bước</span><span class="en">See steps</span> →</div>
@@ -650,7 +651,7 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
     <!-- android -->
     <div class="panel" id="p-android" role="tabpanel">
       <div>
-        <h3><span class="vi">Cài app TV Remote cho điện thoại</span><span class="en">Install the TV Remote phone app</span></h3>
+        <h3><span class="vi">Cài App điện thoại</span><span class="en">Install the Phone app</span></h3>
         <p class="sub"><span class="vi">Android 7 trở lên. Điện thoại và TV cùng mạng Wi-Fi.</span><span class="en">Android 7 or newer. Phone and TV on the same Wi-Fi.</span></p>
         <ol class="steps">
           <li><div class="vi">Quét mã QR hoặc bấm <b>tv-remote.apk</b> để tải, rồi mở để cài. Android cảnh báo “ứng dụng không rõ nguồn” thì cho phép trình duyệt cài.</div><div class="en">Scan the QR code or tap <b>tv-remote.apk</b> to download it, then open it. If Android warns about unknown apps, allow your browser to install.</div></li>
@@ -676,7 +677,7 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
     <!-- computer -->
     <div class="panel" id="p-computer" role="tabpanel">
       <div>
-        <h3><span class="vi">Cài app TV Remote cho máy tính</span><span class="en">Install the TV Remote computer app</span></h3>
+        <h3><span class="vi">Cài App máy tính</span><span class="en">Install the Computer app</span></h3>
         <p class="sub"><span class="vi">Một app có cửa sổ riêng, khoảng 20 MB. Không cần cài Python, adb hay gì thêm.</span><span class="en">An app with its own window, about 20 MB. Nothing else to install: no Python, no adb.</span></p>
         <ol class="steps">
           <li><div class="vi">Bấm <b>Tải về</b> (đã chọn sẵn bản cho máy bạn) rồi giải nén.</div><div class="en">Press <b>Download</b> (the right file for your computer is picked) and unzip it.</div></li>
@@ -711,6 +712,16 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
         <li><div class="vi"><b>Bật ADB:</b> <span class="path">Tùy chọn nhà phát triển → Gỡ lỗi ADB</span> (có TV ghi “Gỡ lỗi USB”).</div><div class="en"><b>Turn on ADB:</b> <span class="path">Developer options → ADB debugging</span> (some TVs say “USB debugging”).</div></li>
         <li><div class="vi"><b>Nên bật:</b> <span class="path">Mạng và Internet → Khởi động từ xa</span>, để bật lại được TV từ xa khi đã tắt.</div><div class="en"><b>Recommended:</b> <span class="path">Network &amp; Internet → Remote start</span>, so you can wake the TV remotely.</div></li>
       </ol>
+    </div>
+
+    <div class="center reveal" style="margin-top:56px">
+      <h3><span class="vi">Mỗi cách làm được gì</span><span class="en">What each one does</span></h3>
+    </div>
+    <div class="cmpwrap reveal" style="margin-top:16px">
+      <table class="cmp ways">
+        <thead><tr><th></th><th>🌐 <span class="vi">Web của TV</span><span class="en">TV web page</span></th><th>📱 <span class="vi">App điện thoại</span><span class="en">Phone app</span></th><th>💻 <span class="vi">App máy tính</span><span class="en">Computer app</span></th></tr></thead>
+        <tbody><tr><th><span class="vi">Remote, xem và chạm hình TV, vẽ, đưa ảnh lên TV</span><span class="en">Remote, see and touch the TV picture, draw, put a picture on the TV</span></th><td class="y"></td><td class="y"></td><td class="y"></td></tr><tr><th><span class="vi">Nghe tiếng TV</span><span class="en">Listen to the TV</span></th><td class="y"><span class="vi">khi trang đang mở</span><span class="en">while the page is open</span></td><td class="y"><span class="vi">cả khi tắt màn hình</span><span class="en">screen off too</span></td><td class="y"><span class="vi">chất lượng cao</span><span class="en">high quality</span></td></tr><tr><th><span class="vi">Ứng dụng, tệp, sức khỏe, hẹn giờ, cài đặt</span><span class="en">Apps, files, health, timers, settings</span></th><td class="y"></td><td class="y"></td><td class="y"></td></tr><tr><th><span class="vi">Nhiều TV, đổi TV</span><span class="en">Several TVs</span></th><td class="m"><span class="vi">chỉ TV đó</span><span class="en">only that TV</span></td><td class="y"></td><td class="y"></td></tr><tr><th><span class="vi">Bật TV đã tắt hẳn (Wake-on-LAN)</span><span class="en">Turn on a fully-off TV (Wake-on-LAN)</span></th><td class="m"><span class="vi">TV tắt thì trang tắt</span><span class="en">off with the TV</span></td><td class="y"></td><td class="y"></td></tr><tr><th><span class="vi">Bấm phím khi chưa có ADB</span><span class="en">Keys before ADB</span></th><td class="n"></td><td class="y"></td><td class="y"></td></tr><tr><th><span class="vi">Widget, phím âm lượng của máy</span><span class="en">Widget, the phone's volume keys</span></th><td class="n"></td><td class="y"></td><td class="n"></td></tr><tr><th><span class="vi">Cài gì trên máy điều khiển</span><span class="en">Install on your device</span></th><td class="y"><span class="vi">không cần</span><span class="en">nothing</span></td><td class="m"><span class="vi">app</span><span class="en">the app</span></td><td class="m"><span class="vi">app</span><span class="en">the app</span></td></tr></tbody>
+      </table>
     </div>
   </div>
 </section>

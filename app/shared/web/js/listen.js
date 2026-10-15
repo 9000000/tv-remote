@@ -20,7 +20,7 @@ function showHq() {
 let listenOn = false, listenCtl = null, actx = null, adec = null, anext = 0, abytes = 0, listenGen = 0, catchUp = false;
 
 async function opusHere() {
-  if (CORE !== 'mac' || !window.AudioDecoder || !window.isSecureContext) return false;
+  if (CORE !== 'pc' || !window.AudioDecoder || !window.isSecureContext) return false;
   try { return !!(await AudioDecoder.isConfigSupported({ codec: 'opus', sampleRate: 48000, numberOfChannels: 2 })).supported; } catch { return false; }
 }
 
@@ -60,7 +60,7 @@ async function startListen(share) {
   let fmt = { codec: 2, rate: 24000, ch: 1 }, ts = 0, why = 'TV đã dừng gửi tiếng.';
   try {
     const r = await fetch('/api/audio?codec=' + (opus ? 'opus' : 'pcm') + (listenShared ? '&share=1' : '') + (listenHq() ? '&hq=1' : ''), { signal: listenCtl.signal });
-    if (!r.ok) { let e = r.statusText; try { e = (await r.json()).error || e; } catch {} throw new Error(r.status === 404 && CORE === 'mac' ? STALE : e); }
+    if (!r.ok) { let e = r.statusText; try { e = (await r.json()).error || e; } catch {} throw new Error(r.status === 404 && CORE === 'pc' ? STALE : e); }
     toast(listenShared ? 'Đang nghe tiếng TV trên cả TV và máy này.' : 'Đang nghe tiếng TV trên máy này. Loa TV tạm im.');
     const rd = r.body.getReader(); let buf = new Uint8Array(0);
     for (;;) {

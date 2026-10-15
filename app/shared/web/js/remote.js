@@ -72,7 +72,7 @@ $('#del').addEventListener('click', () => { if (txt.value) { txt.value = [...txt
 function setMore(on) { $('#more').hidden = !on; $('#morebtn').classList.toggle('on', on); try { localStorage.setItem('more', on ? '1' : ''); } catch {} }
 try { setMore(!!localStorage.getItem('more')); } catch {}
 $('#morebtn').addEventListener('click', () => setMore($('#more').hidden));
-$('#shot').addEventListener('click', () => { const a = document.createElement('a'); a.href = '/api/screen'; a.download = 'tv-' + Math.floor(Date.now() / 1000) + (CORE === 'mac' && STATE.video !== 'h264' ? '.jpg' : '.png'); a.click(); });
+$('#shot').addEventListener('click', () => { const a = document.createElement('a'); a.href = '/api/screen'; a.download = 'tv-' + Math.floor(Date.now() / 1000) + (CORE === 'pc' && STATE.video !== 'h264' ? '.jpg' : '.png'); a.click(); });
 $('#digits').addEventListener('click', () => { const p = $('#numpad'); p.hidden = !p.hidden; try { localStorage.setItem('numpad', p.hidden ? '' : '1'); } catch {} });
 try { setLive(localStorage.getItem('live') !== '0'); $('#numpad').hidden = !localStorage.getItem('numpad'); } catch { setLive(true); }
 

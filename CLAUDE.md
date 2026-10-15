@@ -4,20 +4,25 @@ A guide for agents (and people) changing this repo. User-facing docs: [README.md
 
 ## What this is
 
-Remote control for Android TV / Google TV with no server in between. Three clients, one shared web UI:
+Remote control for Android TV / Google TV with no server in between. Three apps and a web page, always called by these
+names (README, code comments, the site; Vietnamese in brackets):
 
-| Client | Code | Serves the web UI from |
-|---|---|---|
-| **TV Remote**, the Android phone app | `app/android` | its Manage screen (in-app HTTP core); the remote screen itself is native Kotlin |
-| **TV Setup**, the app on the TV | `app/tv` | `RemoteService` on port 8765, for any browser (iPhone included), after a 6-digit pairing code |
-| **TV Remote** for the computer (Mac, Windows, Linux) | `app/desktop` (Kotlin, JVM) | `Server.kt` on `127.0.0.1:8765`, shown in its own window (the system's web view, `Window.kt`) |
+| Name | Code | `data-core` | What it is |
+|---|---|---|---|
+| **Phone app** (App điện thoại) | `app/android` | `phone` | Android app "TV Remote"; its remote screen is native Kotlin, its Manage screen is the web UI (in-app HTTP core) |
+| **Computer app** (App máy tính) | `app/desktop` (Kotlin, JVM) | `pc` | "TV Remote" for Mac, Windows, Linux: `Server.kt` on `127.0.0.1:8765`, shown in its own window (the system's web view, `Window.kt`) |
+| **TV app** (App TV) | `app/tv` | | the app on the TV, shown as "TV Setup" (keep that label: it is on installed TVs, Downloader codes and file names) |
+| **TV web page** (Web của TV) | `app/tv` `RemoteService` | `tv` | the web UI the TV app serves on port 8765, for any browser (iPhone included), after a 6-digit pairing code |
 
-The phone app and TV Setup speak ADB themselves (`app/shared/.../Adb.kt`) and push `scrcpy-server` (`app/shared/assets`) for video, touch and keys. So does the computer app, on the same core. The phone app and the computer also send keys without ADB through the Android TV Remote protocol (`Atv.kt`, ports 6466/6467).
+What each can do, and diagrams of how they connect: README "Ba app và một trang web" / README.en "Three apps and a web page".
+Keep that table true when a feature lands on only some of them.
+
+The Phone app and the TV app speak ADB themselves (`app/shared/.../Adb.kt`) and push `scrcpy-server` (`app/shared/assets`) for video, touch and keys. So does the Computer app, on the same core. The Phone app and the Computer app also send keys without ADB through the Android TV Remote protocol (`Atv.kt`, ports 6466/6467).
 
 ## Layout
 
 ```
-app/shared/web/          THE web UI (index.html, style.css, js/*.js), used by all three clients
+app/shared/web/          THE web UI (index.html, style.css, js/*.js): the Computer app, the TV web page, the Phone app's Manage screen
 app/shared/src/.../core/ Kotlin shared by both apps: Adb, Tv (scrcpy session, video/audio/control), Atv (keys without ADB),
                          Manage (the /api core for the web UI), Setup (Optimize TV), Tailscale, AdbPrompt ("Allow USB
                          debugging?"), Errors, RemoteLabels (app names, pictures and Caps from the TV, through Meta and Caps:
@@ -33,7 +38,7 @@ app/tv/                  TV Setup: MainActivity (the TV screen), RemoteService (
                          Rules + Guard + RulesReceiver + WarnActivity (sleep timer, bedtime, app limits), DnsWatch (turns off a
                          DNS filter that cut the TV off), DrawLayer + DrawReceiver (the drawing over every app)
 app/gradle/              the Gradle build of everything Kotlin (settings point at ../shared, ../android, ../tv, ../desktop); open it in Android Studio
-app/desktop/             the computer app on the shared Kotlin core (JVM, no adb/Python/ffmpeg), the "mac" core: Server.kt
+app/desktop/             the computer app on the shared Kotlin core (JVM, no adb/Python/ffmpeg), the "pc" core: Server.kt
                          (the routes only the computer has) + Manage.kt; Updater.kt (updates itself from releases, swapped in by a script once it quits); Window.kt shows the page in the system's web view
                          (native/: webview, built by native/build.sh and kept in git). `./gradlew :desktop:installDist`, then
                          `app/desktop/build/install/desktop/bin/desktop --port 8769 [--window]` (inside the repo: its tvs.json, keys in
@@ -45,8 +50,8 @@ dev/                     release.sh, gen_icons.py
 
 ## Rules that matter
 
-- **Every change reaches all three clients.** UI changes go in `app/shared/web` once. A new `/api` endpoint used by the page goes in `Manage.kt` (all three cores), or where only some cores have it: `app/desktop` `Server.kt`, `RemoteService`, the phone's Manage screen. The phone's native remote screen is separate code: mirror the change there by hand, or say clearly why it cannot be.
-- The server stamps `<html data-core="mac|tv|phone">`; core-only markup uses `data-for="mac tv phone"`, JS checks `CORE`.
+- **Every change reaches the Phone app, the TV web page and the Computer app.** UI changes go in `app/shared/web` once. A new `/api` endpoint used by the page goes in `Manage.kt` (all three cores), or where only some cores have it: `app/desktop` `Server.kt`, `RemoteService`, the Phone app's Manage screen. The Phone app's native remote screen is separate code: mirror the change there by hand, or say clearly why it cannot be.
+- The server stamps `<html data-core="pc|tv|phone">`; core-only markup uses `data-for="pc tv phone"`, JS checks `CORE`.
 - **Vietnamese is the source language.** The web UI writes Vietnamese; `js/i18n.js` maps strings (and regexes) to English at render time, so every new user-visible string needs an entry there. Kotlin uses `t("vi", "en")`. README, CHANGELOG entries and release notes are written in both languages.
 - **Users first:** make things automatic; show an error only after every fallback has failed, in words a person can act on (`Errors.kt`, `friendly()` in `js/core.js`). Choices look like buttons. Long waits show what is going on and can be cancelled.
 - **Never commit** `cert.pem`, `key.pem`, `tvs.json`, `*.jks` (they pair with or sign for real devices). Never expose port 8765 to the Internet; away from home everything goes over Tailscale.
