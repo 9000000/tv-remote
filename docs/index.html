@@ -242,6 +242,30 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
 .reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}
 .reveal.in{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+/* moving pictures without video: CSS laid over the screenshots, in % of them, so they scale with the picture */
+.phone,.tv{position:relative}
+.anim{position:absolute;inset:7px;pointer-events:none;border-radius:24px;overflow:hidden;container-type:inline-size}
+.tv .anim{inset:10px;border-radius:6px}
+.anim svg{position:absolute;left:0;top:12.5%;width:100%;height:25.8%;overflow:visible}
+.anim .pen{fill:none;stroke:#ff3b30;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:300;stroke-dashoffset:300;animation:pen 6s ease-in-out infinite}
+@keyframes pen{0%,8%{stroke-dashoffset:300;opacity:1}38%{stroke-dashoffset:0;opacity:1}70%{stroke-dashoffset:0;opacity:1}82%,100%{stroke-dashoffset:0;opacity:0}}
+.anim .tap{position:absolute;left:50%;top:62.3%;width:16%;aspect-ratio:1;margin:-8% 0 0 -8%;border-radius:50%;background:rgba(255,255,255,.55);transform:scale(0);opacity:0;animation:tap 6s ease-out infinite}
+@keyframes tap{0%,84%{transform:scale(.2);opacity:0}86%{transform:scale(.4);opacity:.9}100%{transform:scale(1.4);opacity:0}}
+.anim .warn{position:absolute;right:4%;bottom:6%;width:40%;padding:2.2cqw 2.6cqw;border-radius:2cqw;background:rgba(22,27,40,.96);border:1px solid rgba(255,255,255,.12);box-shadow:0 2cqw 5cqw rgba(0,0,0,.6);color:#fff;font-size:2.4cqw;line-height:1.35;transform:translateY(130%);opacity:0;animation:warn 9s ease infinite}
+.anim .warn b{display:block;font-size:2.8cqw;margin-bottom:.4cqw}
+.anim .warn small{color:#aab3c5}
+.anim .warn i{display:block;height:.8cqw;margin-top:1.6cqw;border-radius:1cqw;background:#5b8cff;transform-origin:left;animation:count 9s linear infinite}
+@keyframes warn{0%,10%{transform:translateY(130%);opacity:0}16%,66%{transform:none;opacity:1}72%,100%{transform:none;opacity:0}}
+@keyframes count{0%,16%{transform:scaleX(1)}66%,100%{transform:scaleX(0)}}
+.anim .off{position:absolute;inset:0;background:#000;opacity:0;animation:off 9s ease infinite}
+@keyframes off{0%,66%{opacity:0}71%,82%{opacity:1}88%,100%{opacity:0}}
+.health{position:absolute;left:3%;bottom:-7%;width:42%;min-width:190px;padding:14px 16px;border-radius:14px;background:rgba(22,27,40,.97);border:1px solid var(--line2);box-shadow:0 30px 60px -20px rgba(0,0,0,.9);font-size:12px;color:var(--dim)}
+.health b{display:block;color:#fff;font-size:13px;margin-bottom:8px}
+.health div{display:flex;justify-content:space-between;margin-top:7px}
+.health i{display:block;height:6px;margin-top:4px;border-radius:4px;background:#2a3145;overflow:hidden}
+.health i::after{content:"";display:block;height:100%;width:var(--w);border-radius:4px;background:var(--c,#5b8cff);animation:load 4s ease-in-out infinite alternate;animation-delay:var(--d,0s)}
+@keyframes load{0%{width:calc(var(--w) * .45)}50%{width:var(--w)}100%{width:calc(var(--w) * .7)}}
+@media (prefers-reduced-motion:reduce){.anim .pen{animation:none;stroke-dashoffset:0}.anim .tap,.anim .off{display:none}.anim .warn{animation:none;transform:none;opacity:1}.anim .warn i,.health i::after{animation:none}}
 
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);background:var(--card2);border:1px solid var(--line2);padding:10px 18px;border-radius:12px;font-weight:600;font-size:14px;transition:transform .25s;z-index:99}
 .toast.show{transform:translateX(-50%) translateY(0)}
@@ -385,13 +409,16 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
           <li class="vi"><span><b>Chất lượng 240p tới 960p</b>, tắt hình thì TV không tốn thêm CPU.</span></li>
           <li class="en"><span><b>240p to 960p</b>; turn the picture off and the TV spends no extra CPU.</span></li>
           <li class="vi"><span><b>Nói với TV:</b> “mở YouTube”, “tăng âm lượng 5”, “hẹn giờ tắt 30 phút”.</span></li>
+          <li class="vi"><span><b>Vẽ lên màn hình TV</b> để chỉ cho người đang xem: bấm vào đâu, chọn cái nào.</span></li>
+          <li class="en"><span><b>Draw on the TV screen</b> to show whoever is watching where to go.</span></li>
           <li class="en"><span><b>Talk to it:</b> “open YouTube”, “volume up 5”, “sleep in 30 minutes”.</span></li>
           <li class="vi"><span><b>Widget, ô Cài đặt nhanh, phím tắt</b> bật/tắt TV mà không cần mở app.</span></li>
           <li class="en"><span><b>Widget, Quick Settings tiles, shortcuts</b> to control the TV without opening the app.</span></li>
         </ul>
       </div>
       <div class="shot duo">
-        <div class="phone"><img src="img/phone-remote.webp" width="480" height="1040" alt="" loading="lazy" decoding="async"></div>
+        <div class="phone"><img src="img/phone-remote.webp" width="480" height="1040" alt="" loading="lazy" decoding="async">
+          <div class="anim" aria-hidden="true"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><path class="pen" d="M47 47 C 48 38, 30 36, 14 40 C 4 44, 6 64, 16 68 C 30 72, 50 70, 52 58 C 53 52, 50 47, 44 46"/></svg><span class="tap"></span></div></div>
         <div class="phone small">
           <img src="img/tvpage-remote-vi.webp" data-lang-src="img/tvpage-remote-LANG.webp" width="400" height="867" alt="" loading="lazy" decoding="async">
         </div>
@@ -417,6 +444,7 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
       <div class="shot">
         <div class="tv">
           <img src="img/tvapp-vi.webp" data-lang-src="img/tvapp-LANG.webp" width="1280" height="720" alt="" loading="lazy" decoding="async">
+          <div class="anim" aria-hidden="true"><div class="warn"><b><span class="vi">🌙 Đến giờ đi ngủ</span><span class="en">🌙 It's bedtime</span></b><small><span class="vi">TV sẽ tắt sau 1 phút</span><span class="en">The TV turns off in 1 minute</span></small><i></i></div><div class="off"></div></div>
         </div>
       </div>
     </div>
@@ -446,6 +474,10 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
           <div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8765</span></div>
           <img src="img/web-remote-vi.webp" data-lang-src="img/web-remote-LANG.webp" width="1200" height="851" alt="" loading="lazy" decoding="async">
         </div>
+        <div class="health" aria-hidden="true"><b><span class="vi">📊 Sức khỏe</span><span class="en">📊 Health</span></b>
+          <div><span>CPU</span><span>4 <span class="vi">nhân</span><span class="en">cores</span></span></div><i style="--w:38%"></i>
+          <div><span>RAM</span><span>1.4 / 2 GB</span></div><i style="--w:72%;--c:#ffb340;--d:-1.3s"></i>
+          <div><span>Wi-Fi</span><span>-52 dBm</span></div><i style="--w:84%;--c:#32d74b;--d:-2.6s"></i></div>
       </div>
     </div>
 
