@@ -97,6 +97,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal lateinit var qualBtn: android.widget.TextView
     internal lateinit var fullBtn: IconButton
     internal lateinit var listenChip: android.widget.TextView
+    internal lateinit var hqBtn: android.widget.TextView
     internal lateinit var topBar: LinearLayout                         // the TV's name and state, with the buttons beside or under it
     internal lateinit var basicBar: Button
     internal val SHOT = -1                                             // not a key: the screenshot button in the extra keys

@@ -51,8 +51,10 @@ internal fun MainActivity.layoutRemote() {
     picBar.visibility = if ((video || listen && basic == null) && !full) View.VISIBLE else View.GONE   // with the picture or the sound: not hidden in a menu
     qualBtn.visibility = if (video) View.VISIBLE else View.GONE
     fullBtn.visibility = qualBtn.visibility
-    listenChip.text = "🎧 " + (if (prefs.getBoolean("listenShare", false)) t("TV và điện thoại", "TV and phone") else t("Chỉ điện thoại", "Only the phone")) +
-        (if (prefs.getBoolean("listenHq", false)) " · HQ" else "") + " ▾"
+    listenChip.text = "🎧 " + (if (prefs.getBoolean("listenShare", false)) t("TV và điện thoại", "TV and phone") else t("Chỉ điện thoại", "Only the phone")) + " ▾"
+    val hq = prefs.getBoolean("listenHq", false)
+    hqBtn.background = box(if (hq) ACCENT else BTN, 10)               // lit while on, like every on/off button
+    hqBtn.setTextColor(if (hq) Color.WHITE else 0xFF98A2B3.toInt())
     qualBtn.text = Tv.QUALITY[prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)][0].toString() + "p ▾"
     window.decorView.systemUiVisibility = if (full) View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY else 0
     videoBtn.lit = video                                              // lit while the picture shows, like every on/off button
@@ -103,7 +105,7 @@ internal fun MainActivity.buildRemote() {
     tools.gravity = Gravity.CENTER_VERTICAL or Gravity.END
     listenBtn = icon("@headphones", t("Nghe tiếng TV trên điện thoại", "Hear the TV on the phone"), BTN)
     listenBtn.setOnClickListener { toggleListen() }
-    for (b in listOf(videoBtn, listenBtn)) tools.addView(b, LinearLayout.LayoutParams(dp(46), dp(40)).apply { rightMargin = dp(if (b === listenBtn) 10 else 6) })
+    for (b in listOf(listenBtn, videoBtn)) tools.addView(b, LinearLayout.LayoutParams(dp(46), dp(40)).apply { rightMargin = dp(if (b === videoBtn) 10 else 6) })
     bar.addView(tools, LinearLayout.LayoutParams(-2, -2))
     bar.setPadding(0, dp(8), 0, dp(10))                               // room between the buttons and the picture
     remote.addView(bar)
@@ -153,16 +155,21 @@ internal fun MainActivity.buildRemote() {
         setTextColor(TEXT); textSize = 13f; gravity = Gravity.CENTER; setPadding(dp(12), 0, dp(12), 0)
         background = box(BTN, 10); contentDescription = t("Chất lượng hình", "Picture quality"); setOnClickListener { qualityMenu() }
     }
-    picBar.addView(qualBtn, LinearLayout.LayoutParams(-2, dp(34)))
-    fullBtn = icon("@expand", t("Toàn màn hình", "Full screen"), BTN)
-    fullBtn.setOnClickListener { setFullscreen(true) }
-    picBar.addView(fullBtn, LinearLayout.LayoutParams(dp(44), dp(34)).apply { leftMargin = dp(8) })
-    picBar.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
     listenChip = android.widget.TextView(this).apply {                // how 🎧 plays: picked here, used by 🎧 on the top bar
         setTextColor(TEXT); textSize = 13f; gravity = Gravity.CENTER; setPadding(dp(12), 0, dp(12), 0); maxLines = 1
         background = box(BTN, 10); contentDescription = t("Cách nghe tiếng TV", "How to hear the TV"); setOnClickListener { listenMenu() }
     }
-    picBar.addView(listenChip, LinearLayout.LayoutParams(-2, dp(34)).apply { leftMargin = dp(8) })
+    picBar.addView(listenChip, LinearLayout.LayoutParams(-2, dp(34)))
+    hqBtn = android.widget.TextView(this).apply {
+        text = "HQ"; textSize = 13f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER
+        contentDescription = t("Tiếng chất lượng cao (160 kbit/s)", "High quality sound (160 kbit/s)"); setOnClickListener { toggleHq() }
+    }
+    picBar.addView(hqBtn, LinearLayout.LayoutParams(dp(44), dp(34)).apply { leftMargin = dp(8) })
+    picBar.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+    picBar.addView(qualBtn, LinearLayout.LayoutParams(-2, dp(34)).apply { leftMargin = dp(8) })
+    fullBtn = icon("@expand", t("Toàn màn hình", "Full screen"), BTN)
+    fullBtn.setOnClickListener { setFullscreen(true) }
+    picBar.addView(fullBtn, LinearLayout.LayoutParams(dp(44), dp(34)).apply { leftMargin = dp(8) })
     controls.addView(picBar, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
     val bb = LinearLayout.LayoutParams(-1, dp(44))
     bb.bottomMargin = dp(12)
