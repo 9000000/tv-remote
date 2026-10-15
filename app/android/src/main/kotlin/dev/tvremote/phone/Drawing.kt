@@ -1,6 +1,14 @@
 package dev.tvremote.phone
 
 import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.DashPathEffect
+import android.graphics.RectF
+import android.net.Uri
+import android.os.Build
+import java.io.ByteArrayOutputStream
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -30,22 +38,36 @@ internal fun MainActivity.startDrawing() {
     if (!video) toggleVideo()                                         // the strokes go where the picture shows
     drawing = true
     drawBar.visibility = View.VISIBLE
+    drawLit()
 }
 
 internal fun MainActivity.stopDrawing() {
     drawing = false
     drawBar.visibility = View.GONE
+    drawLit()
+    picEnd()
     drawView.clear()
     synchronized(drawQ) { drawQ.clear() }
     drawIo.execute { drawer.close() }
 }
 
-/** The colours, thickness, undo, clear and done: a row under the picture, hidden until drawing starts. */
+/** ✏️ among the keys shows whether drawing is on. */
+internal fun MainActivity.drawLit() {
+    val b = drawBtn ?: return
+    b.background = box(if (drawing) ACCENT else BTN, 16)
+    b.lit = drawing
+}
+
+/** The colours, thickness, picture, undo, clear and done: a row under the picture, hidden until drawing starts; while a
+ *  picture is being placed, cancel and ✓ instead. */
 internal fun MainActivity.drawTools(): LinearLayout {
+    val tools = LinearLayout(this)
+    tools.orientation = LinearLayout.VERTICAL
+    tools.visibility = View.GONE
     val bar = LinearLayout(this)
+    bar.tag = "pen"
     bar.gravity = Gravity.CENTER_VERTICAL
     bar.setPadding(dp(8), dp(8), dp(8), dp(8))
-    bar.visibility = View.GONE
     val swatches = ArrayList<View>()
     val ring = { v: View, on: Boolean ->
         (v.background as GradientDrawable).setStroke(dp(if (on) 3 else 1), if (on) TEXT else 0x66ffffff)
@@ -66,18 +88,94 @@ internal fun MainActivity.drawTools(): LinearLayout {
         drawWidth = if (drawWidth == 60) 140 else 60
         thick.background = box(if (drawWidth > 60) ACCENT else BTN, 14)
     }
+    val pic = icon("@image", t("Đưa một ảnh lên TV", "Put a picture on the TV"), BTN)
+    pic.setOnClickListener { pickDrawPic() }
     val undo = icon("@undo", t("Bỏ nét vừa vẽ", "Take back the last line"), BTN)
     undo.setOnClickListener { drawSend(JSONObject().put("o", "u")) }
     val clear = icon("@trash", t("Xóa hết", "Clear all"), BTN)
     clear.setOnClickListener { drawView.clear(); drawSend(JSONObject().put("o", "x")) }
     val done = icon("@check", t("Xong", "Done"), ACCENT)
     done.setOnClickListener { stopDrawing() }
-    for (b in listOf(thick, undo, clear, done)) bar.addView(b, LinearLayout.LayoutParams(dp(40), dp(40)).also { it.leftMargin = dp(4) })
-    return bar
+    for (b in listOf(thick, pic, undo, clear, done)) bar.addView(b, LinearLayout.LayoutParams(dp(40), dp(40)).also { it.leftMargin = dp(4) })
+    tools.addView(bar, LinearLayout.LayoutParams(-1, -2))
+
+    val place = LinearLayout(this)
+    place.tag = "pic"
+    place.gravity = Gravity.CENTER_VERTICAL
+    place.setPadding(dp(12), dp(8), dp(8), dp(8))
+    place.visibility = View.GONE
+    place.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+    val cancel = button(t("Hủy", "Cancel"), BTN)
+    cancel.setOnClickListener { picEnd() }
+    val ok = button(t("✓ Đưa lên TV", "✓ Put on TV"), ACCENT)
+    ok.setOnClickListener { picSend() }
+    for (b in listOf(cancel, ok)) { b.setPadding(dp(12), 0, dp(12), 0); place.addView(b, LinearLayout.LayoutParams(-2, dp(40)).also { it.leftMargin = dp(6) }) }
+    tools.addView(place, LinearLayout.LayoutParams(-1, -2))
+    return tools
+}
+
+// 🖼️ A picture from the phone, as on the web page: placed here (one finger moves it, two fingers size it), sent
+// to the TV once on ✓, where it stays like a stroke. At most 1280 pixels: plenty over a TV's picture, and a photo stays a few
+// hundred KB; PNGs (a QR code, a screenshot) stay PNG, so their edges stay sharp.
+@Suppress("DEPRECATION")
+internal fun MainActivity.pickDrawPic() {
+    val sheet = Intent(android.provider.MediaStore.ACTION_PICK_IMAGES).setType("image/*")
+    if (Build.VERSION.SDK_INT >= 33 || sheet.resolveActivity(packageManager) != null) {
+        try { startActivityForResult(sheet, PICK_DRAW); return } catch (ignored: Exception) { }
+    }
+    val gms = Intent("androidx.activity.result.contract.action.PICK_IMAGES").setType("image/*")
+    if (gms.resolveActivity(packageManager) != null) {
+        try { startActivityForResult(gms, PICK_DRAW); return } catch (ignored: Exception) { }
+    }
+    try { startActivityForResult(Intent(Intent.ACTION_GET_CONTENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE), PICK_DRAW) }
+    catch (e: Exception) { Toast.makeText(this, t("Điện thoại không có app chọn ảnh.", "This phone has no picture picker."), Toast.LENGTH_LONG).show() }
+}
+
+internal fun MainActivity.drawPicked(uri: Uri) {
+    drawIo.execute {
+        val p = try {
+            val type = contentResolver.getType(uri) ?: ""
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+            var sample = 1
+            while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= 1280) sample *= 2
+            var bmp = contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample }) }
+                ?: throw IllegalArgumentException()
+            val k = 1280f / maxOf(bmp.width, bmp.height)
+            if (k < 1) bmp = Bitmap.createScaledBitmap(bmp, maxOf(1, (bmp.width * k).toInt()), maxOf(1, (bmp.height * k).toInt()), true)
+            val out = ByteArrayOutputStream()
+            if (Regex("png|webp|gif").containsMatchIn(type)) bmp.compress(Bitmap.CompressFormat.PNG, 100, out)   // may be see-through
+            if (out.size() == 0 || out.size() > 3_000_000) { out.reset(); bmp.compress(Bitmap.CompressFormat.JPEG, 85, out) }
+            DrawView.Pic(bmp, android.util.Base64.encodeToString(out.toByteArray(), android.util.Base64.NO_WRAP))
+        } catch (e: Exception) { null }
+        ui.post {
+            if (p == null) { Toast.makeText(this, t("Không mở được ảnh này.", "Could not open this picture."), Toast.LENGTH_LONG).show(); return@post }
+            if (!drawing) startDrawing()
+            drawView.placing = p
+            drawView.invalidate()
+            drawBar.findViewWithTag<View>("pen").visibility = View.GONE
+            drawBar.findViewWithTag<View>("pic").visibility = View.VISIBLE
+        }
+    }
+}
+
+internal fun MainActivity.picEnd() {
+    drawView.placing = null
+    drawView.invalidate()
+    drawBar.findViewWithTag<View>("pic")?.visibility = View.GONE
+    drawBar.findViewWithTag<View>("pen")?.visibility = View.VISIBLE
+}
+
+internal fun MainActivity.picSend() {
+    val p = drawView.placing ?: return
+    drawSend(JSONObject().put("o", "i").put("id", ++drawId).put("b", p.data).put("x", p.x).put("y", p.y).put("w", p.w))
+    drawView.landed(p)
+    picEnd()
 }
 
 /** The finger on the picture, in 0..10000 of the TV's screen (the picture is the TV's screen, letterboxed by its frame). */
 internal fun MainActivity.drawTouch(e: MotionEvent, v: View) {
+    if (drawView.placing != null) { drawView.place(e, v); return }
     val x = (e.x / v.width * 10000).toInt().coerceIn(0, 10000)
     val y = (e.y / v.height * 10000).toInt().coerceIn(0, 10000)
     when (e.actionMasked) {
@@ -112,6 +210,7 @@ internal fun MainActivity.drawSend(op: JSONObject) {
                 synchronized(drawQ) { drawQ.clear(); drawBusy = false }
                 val m = e.message ?: ""
                 val why = when {
+                    "draw:oldpic" in m -> t("Cập nhật TV Setup trên TV để đưa ảnh lên.", "Update TV Setup on the TV to put pictures on it.")
                     "draw:old" in m -> t("TV Setup trên TV cần bản mới hơn để vẽ: cập nhật TV Setup rồi thử lại.", "TV Setup on the TV needs a newer version to draw: update TV Setup, then try again.")
                     "draw:missing" in m -> t("Cần cài TV Setup lên TV để vẽ lên màn hình.", "TV Setup is needed on the TV to draw on its screen.")
                     "draw:nooverlay" in m -> t("TV này không cho app vẽ đè lên màn hình.", "This TV does not let apps draw over its screen.")
@@ -127,7 +226,15 @@ internal fun MainActivity.drawSend(op: JSONObject) {
 /** What the finger draws, here on the phone: each stroke fades soon after it is lifted. */
 internal class DrawView(c: Context) : View(c) {
     private class Stroke(val color: Int, val width: Int) { val pts = ArrayList<Int>(); var upAt = 0L }
+    /** A picture: centre and width in 0..10000 of the screen, and what goes to the TV. */
+    class Pic(val bmp: Bitmap, val data: String) { var x = 5000; var y = 5000; var w = 4000; var upAt = 0L }
     private val strokes = ArrayList<Stroke>()
+    private val landed = ArrayList<Pic>()                             // sent: shown here until the TV's own picture has it
+    var placing: Pic? = null
+    private val smooth = Paint(Paint.FILTER_BITMAP_FLAG)
+    private val frame = Paint().apply { style = Paint.Style.STROKE; color = Color.WHITE; pathEffect = DashPathEffect(floatArrayOf(18f, 10f), 0f) }
+    private val box = RectF()
+    private var lastX = 0f; private var lastY = 0f; private var lastD = 0f
     private val pen = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND }
     private val path = Path()
 
@@ -146,11 +253,43 @@ internal class DrawView(c: Context) : View(c) {
 
     fun lift() { strokes.lastOrNull()?.let { if (it.upAt == 0L) it.upAt = System.currentTimeMillis() }; invalidate() }
 
-    fun clear() { strokes.clear(); invalidate() }
+    fun clear() { strokes.clear(); landed.clear(); invalidate() }
+
+    fun landed(p: Pic) { p.upAt = System.currentTimeMillis(); landed.add(p); invalidate() }
+
+    /** One finger moves the picture being placed, two fingers size it. */
+    fun place(e: MotionEvent, v: View) {
+        val p = placing ?: return
+        val two = e.pointerCount >= 2
+        val d = if (two) Math.hypot((e.getX(0) - e.getX(1)).toDouble(), (e.getY(0) - e.getY(1)).toDouble()).toFloat() else 0f
+        when (e.actionMasked) {
+            MotionEvent.ACTION_MOVE -> {
+                if (two && lastD > 0) p.w = (p.w * d / lastD).toInt().coerceIn(300, 10000)
+                else if (!two) {
+                    p.x = (p.x + (e.x - lastX) / v.width * 10000).toInt().coerceIn(0, 10000)
+                    p.y = (p.y + (e.y - lastY) / v.height * 10000).toInt().coerceIn(0, 10000)
+                }
+                invalidate()
+            }
+        }
+        lastX = e.x; lastY = e.y; lastD = d                           // after a finger lifts, the next move starts from here
+        if (e.actionMasked == MotionEvent.ACTION_POINTER_UP) { val i = if (e.actionIndex == 0) 1 else 0; lastX = e.getX(i); lastY = e.getY(i); lastD = 0f }
+    }
+
+    private fun drawPic(c: Canvas, p: Pic, alpha: Int): RectF {
+        val pw = p.w * width / 10000f
+        val ph = pw * p.bmp.height / p.bmp.width
+        box.set(p.x * width / 10000f - pw / 2, p.y * height / 10000f - ph / 2, p.x * width / 10000f + pw / 2, p.y * height / 10000f + ph / 2)
+        smooth.alpha = alpha
+        c.drawBitmap(p.bmp, null, box, smooth)
+        return box
+    }
 
     override fun onDraw(c: Canvas) {
         val now = System.currentTimeMillis()
         strokes.removeAll { it.upAt > 0 && now - it.upAt > 1600 }
+        landed.removeAll { now - it.upAt > 1600 }
+        for (p in landed) drawPic(c, p, (255 * (1 - (now - p.upAt) / 1600f)).toInt().coerceIn(0, 255))
         val w = width / 10000f
         val h = height / 10000f
         for (s in strokes) {
@@ -164,6 +303,7 @@ internal class DrawView(c: Context) : View(c) {
             pen.strokeWidth = maxOf(2f, s.width * w)
             c.drawPath(path, pen)
         }
-        if (strokes.any { it.upAt > 0 }) postInvalidateOnAnimation()
+        placing?.let { c.drawRect(drawPic(c, it, 255), frame) }
+        if (strokes.any { it.upAt > 0 } || landed.isNotEmpty()) postInvalidateOnAnimation()
     }
 }

@@ -55,6 +55,9 @@ internal fun MainActivity.layoutRemote() {
     qualBtn.text = Tv.QUALITY[prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)][0].toString() + "p"
     exitBtn.visibility = if (full) View.VISIBLE else View.GONE
     window.decorView.systemUiVisibility = if (full) View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY else 0
+    videoBtn.lit = video                                              // lit while the picture shows, like every on/off button
+    videoBtn.background = box(if (video) ACCENT else BTN, 16)
+    listenBtn.lit = listen
     videoBtn.setIcon(if (video) "@eye_off" else "@eye", TEXT)
     videoBtn.contentDescription = if (video) t("Ẩn hình TV", "Hide the TV picture") else t("Xem hình TV", "Show the TV picture")
 }
@@ -227,6 +230,7 @@ internal fun MainActivity.buildRemote() {
         arrows.visibility = if (on) View.GONE else View.VISIBLE
         tpad.visibility = if (on) View.VISIBLE else View.GONE
         swap.text = if (on) t("Dùng phím mũi tên", "Use the arrows") else t("Dùng touchpad", "Use the touchpad")
+        swap.background = box(if (on) ACCENT else BTN, 14)            // lit while the touchpad is on
     }
     usePad(prefs.getBoolean("pad", false))
     swap.setOnClickListener {
@@ -407,7 +411,11 @@ internal fun MainActivity.keys(height: Int, vararg labelAndCode: Any): LinearLay
             else if (code == OPEN) b.setOnClickListener { quickOpen() }
             else if (code == TIMER) b.setOnClickListener { timerMenu() }
             else if (code == SCENES) b.setOnClickListener { scenesMenu() }
-            else if (code == DRAW) b.setOnClickListener { if (drawing) stopDrawing() else startDrawing() }
+            else if (code == DRAW) {
+                drawBtn = b as? IconButton
+                drawLit()
+                b.setOnClickListener { if (drawing) stopDrawing() else startDrawing() }
+            }
             else if (code in Tv.OPENERS) {
                 val held = box(HELD, 16)
                 b.setOnClickListener { flash(b, held); opens(code) }

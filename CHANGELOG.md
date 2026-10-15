@@ -4,6 +4,18 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.24.0 - 2026-10-15
+
+Web 2.24.0 · app điện thoại 2.22.0 · app TV 2.21.0
+
+**Tiếng Việt**
+- **🖼️ Đưa ảnh lên TV** khi đang ✏️ vẽ: chọn một ảnh trong máy, kéo để đặt chỗ, hai ngón (hay con lăn chuột) để phóng to thu nhỏ, bấm ✓ thì TV hiện ảnh đè lên màn hình. Hợp để gửi mã QR cho người nhà quét. Ảnh được thu nhỏ còn tối đa 1280px trước khi gửi (PNG giữ nguyên nét). Cần TV Setup 2.21.0.
+- Nút bật/tắt trên app điện thoại sáng lên khi đang bật: ✏️ Vẽ, 👁 Xem hình, 🎧 Nghe, Dùng touchpad.
+
+**English**
+- **🖼️ Put a picture on the TV** while ✏️ drawing: pick a picture, drag to place it, pinch (or the mouse wheel) to size it, tap ✓ and the TV shows it over its screen. Handy for a QR code someone at home should scan. Pictures are shrunk to at most 1280 px before sending (PNGs stay sharp). Needs TV Setup 2.21.0.
+- On/off buttons in the phone app light up while on: ✏️ Draw, 👁 Picture, 🎧 Listen, Use the touchpad.
+
 ## 2.23.0 - 2026-10-15
 
 Web 2.23.0 · app điện thoại 2.21.0 · app TV 2.20.0

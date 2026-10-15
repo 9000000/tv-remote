@@ -123,9 +123,14 @@
           <div class="drawbar" id="drawbar" hidden>
             <span class="swatches"><button class="swatch on" data-color="#ff3b30" style="--c:#ff3b30" aria-label="Đỏ" title="Đỏ"></button><button class="swatch" data-color="#ffd60a" style="--c:#ffd60a" aria-label="Vàng" title="Vàng"></button><button class="swatch" data-color="#32d74b" style="--c:#32d74b" aria-label="Xanh lá" title="Xanh lá"></button><button class="swatch" data-color="#40c8ff" style="--c:#40c8ff" aria-label="Xanh dương" title="Xanh dương"></button><button class="swatch" data-color="#ffffff" style="--c:#ffffff" aria-label="Trắng" title="Trắng"></button></span>
             <button class="small" id="drawthick" title="Nét to">━ Nét to</button>
+            <button class="small" id="drawpic" title="Đưa một ảnh trong máy lên TV">🖼️ Ảnh</button><input type="file" id="drawfile" accept="image/*" hidden>
             <button class="small" id="drawundo" title="Bỏ nét vừa vẽ">↩</button>
             <button class="small" id="drawclear">🗑 Xóa hết</button>
             <button class="small primary" id="drawdone">✓ Xong</button>
+          </div>
+          <div class="drawbar" id="picbar" hidden>
+            <button class="small" id="piccancel">Hủy</button>
+            <button class="small primary" id="picok">✓ Đưa lên TV</button>
           </div>
           <div class="muted" id="screeninfo"></div>
           <div class="muted" id="listeninfo" hidden></div>

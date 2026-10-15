@@ -4,11 +4,14 @@ import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PixelFormat
+import android.graphics.RectF
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -48,7 +51,7 @@ internal object DrawLayer {
             Thread({ accept(s) }, "draw-listen").apply { isDaemon = true }.start()
         }
         val overlay = Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(c)
-        return JSONObject().put("port", s.localPort).put("token", token).put("overlay", overlay)
+        return JSONObject().put("port", s.localPort).put("token", token).put("overlay", overlay).put("pic", true)
     }
 
     private fun accept(s: ServerSocket) {
@@ -74,7 +77,7 @@ internal object DrawLayer {
     private fun apply(o: JSONObject) {
         ui.removeCallbacks(idle)
         when (o.optString("o")) {
-            "s", "a" -> {
+            "s", "a", "i" -> {
                 val b = board() ?: return
                 b.add(o)
                 ui.postDelayed(idle, IDLE)
@@ -111,24 +114,40 @@ internal object DrawLayer {
         try { app?.getSystemService(WindowManager::class.java)?.removeView(b) } catch (e: Exception) { }
     }
 
-    /** The strokes, kept as points of 0..10000 so they fit the screen whatever its size. */
+    /** The strokes and pictures, kept in 0..10000 of the screen so they fit it whatever its size. */
     private class Board(c: Context) : View(c) {
         private class Stroke(val id: Int, val color: Int, val width: Int) { val pts = ArrayList<Int>() }
-        private val strokes = ArrayList<Stroke>()
+        private class Pic(val bmp: Bitmap, val x: Int, val y: Int, val w: Int)
+        private val strokes = ArrayList<Any>()                        // Stroke or Pic, in the order they came: undo takes the last
+        private val smooth = Paint(Paint.FILTER_BITMAP_FLAG)
+        private val box = RectF()
         private val pen = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND }
         private val path = Path()
 
         fun empty() = strokes.isEmpty()
 
         fun add(o: JSONObject) {
+            if (o.optString("o") == "i") { picture(o)?.let { strokes.add(it); invalidate() }; return }
             val id = o.optInt("id")
             val s = if (o.optString("o") == "s") {
                 val color = try { Color.parseColor(o.optString("c", "#ff3b30")) } catch (e: Exception) { Color.RED }
                 Stroke(id, color, o.optInt("w", 60).coerceIn(10, 400)).also { strokes.add(it) }
-            } else strokes.lastOrNull { it.id == id } ?: return
+            } else strokes.lastOrNull { it is Stroke && it.id == id } as Stroke? ?: return
             val p = o.optJSONArray("p") ?: return
             for (i in 0 until p.length() - 1 step 2) { s.pts.add(p.optInt(i).coerceIn(0, 10000)); s.pts.add(p.optInt(i + 1).coerceIn(0, 10000)) }
             invalidate()
+        }
+
+        /** Decoded no larger than the screen needs: a phone photo would take more memory than a TV app may use. */
+        private fun picture(o: JSONObject): Pic? {
+            val bytes = try { Base64.decode(o.optString("b"), Base64.DEFAULT) } catch (e: Exception) { return null }
+            val size = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, size)
+            if (size.outWidth <= 0) return null
+            var sample = 1
+            while (size.outWidth / (sample * 2) >= 1920) sample *= 2
+            val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample }) ?: return null
+            return Pic(bmp, o.optInt("x", 5000).coerceIn(0, 10000), o.optInt("y", 5000).coerceIn(0, 10000), o.optInt("w", 4000).coerceIn(100, 10000))
         }
 
         fun undo() { if (strokes.isNotEmpty()) strokes.removeAt(strokes.size - 1); invalidate() }
@@ -136,7 +155,15 @@ internal object DrawLayer {
         override fun onDraw(c: Canvas) {
             val w = width / 10000f
             val h = height / 10000f
-            for (s in strokes) {
+            for (item in strokes) {
+                if (item is Pic) {
+                    val pw = item.w * w
+                    val ph = pw * item.bmp.height / item.bmp.width
+                    box.set(item.x * w - pw / 2, item.y * h - ph / 2, item.x * w + pw / 2, item.y * h + ph / 2)
+                    c.drawBitmap(item.bmp, null, box, smooth)
+                    continue
+                }
+                val s = item as Stroke
                 if (s.pts.size < 2) continue
                 path.reset()
                 path.moveTo(s.pts[0] * w, s.pts[1] * h)

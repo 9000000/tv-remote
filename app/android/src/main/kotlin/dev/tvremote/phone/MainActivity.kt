@@ -106,6 +106,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     // ---- Drawing.kt: the finger on the picture draws on the TV's screen instead of touching it.
     internal var drawing = false
+    internal var drawBtn: IconButton? = null                          // ✏️ among the keys: lit while drawing
     internal lateinit var drawBar: LinearLayout
     internal lateinit var drawView: DrawView
     internal val drawer = dev.tvremote.core.Draw { tv?.link() ?: throw java.io.IOException("no TV") }
@@ -139,6 +140,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     // ---- Media.kt
     internal var shared: Intent? = null                                // shared from another app, kept until a TV is connected
     internal val PICK_CAST = 71
+    internal val PICK_DRAW = 72                                       // 🖼️ a picture to put on the TV's screen (Drawing.kt)
     internal val PICK_FLEET = 72                                       // ManyTvs.kt: the APK for several TVs
 
     // ---- SetupBanner.kt
@@ -544,6 +546,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         super.onActivityResult(request, result, data)
         if (request == PICK_FILE) managing.picked(result, data)
         if (request == PICK_CAST && result == RESULT_OK) data?.data?.let { castFile(it) }
+        if (request == PICK_DRAW && result == RESULT_OK) data?.data?.let { drawPicked(it) }
         if (request == PICK_FLEET && result == RESULT_OK) data?.data?.let { fleetApk(it) }
         if (request == SPEAK && result == RESULT_OK && data != null) {
             val heard = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
