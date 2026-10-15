@@ -45,7 +45,7 @@ jobs:
           echo; sleep 5
           cat "$log"
           curl -sf -o page.html http://127.0.0.1:8765/                 # not piped: grep -q stops early, curl then fails (23)
-          grep -q 'data-core="mac"' page.html
+          grep -q 'data-core="pc"' page.html
           ! grep -q "no window" "$log"
           curl -sf -X POST -H 'Content-Type: application/json' -d '{}' http://127.0.0.1:8765/api/shutdown
           for i in $(seq 20); do curl -s http://127.0.0.1:8765/api/about >/dev/null || break; sleep 1; done
@@ -121,7 +121,7 @@ jobs:
           echo; sleep 5
           cat "$log"
           curl -sf -o page.html http://127.0.0.1:8765/
-          grep -q 'data-core="mac"' page.html
+          grep -q 'data-core="pc"' page.html
           ! grep -q "no window" "$log"
           curl -sf -X POST -H 'Content-Type: application/json' -d '{}' http://127.0.0.1:8765/api/shutdown
           for i in $(seq 20); do curl -s http://127.0.0.1:8765/api/about >/dev/null || break; sleep 1; done
