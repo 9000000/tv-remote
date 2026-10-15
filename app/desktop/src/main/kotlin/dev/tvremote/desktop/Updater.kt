@@ -22,7 +22,6 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
     /** The app itself: TV Remote.app, the "TV Remote" folder, tv-remote; $APPDIR (res's parent) is inside it. null: run from the repo. */
     private val root: File? = res?.absoluteFile?.parentFile?.let { if (os == "windows") it.parentFile else it.parentFile?.parentFile }
     private val work = root?.let { File(it.parentFile, ".tv-remote-update") }
-    private val launcher = ProcessHandle.current().info().command().orElse(null)?.let { File(it) }
     private val timer = Executors.newSingleThreadScheduledExecutor { Thread(it, "update").apply { isDaemon = true } }
 
     @Volatile private var found: Release? = null
@@ -124,17 +123,17 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
             val tmp = File(System.getProperty("java.io.tmpdir"))     // not in [work]: the script removes that folder when done
             val log = File(tmp, "tv-remote-update.log")
             val cmd = if (os == "windows") {
-                val exe = launcher?.takeIf { it.path.startsWith(old.path) }?.relativeTo(old)?.path ?: "TV Remote.exe"
+                val exe = old.listFiles()?.firstOrNull { it.name.endsWith(".exe") }?.name ?: "TV Remote.exe"
                 val ps = File(tmp, "tv-remote-update.ps1").apply { writeText(PS1) }
                 listOf("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", ps.path,
                     pid, old.path, new.path, dir.path, if (open) exe else "")
             } else {
-                val run = if (!open) "" else if (os == "mac") "open" else launcher?.takeIf { it.path.startsWith(old.path) }?.relativeTo(old)?.path ?: "bin/tv-remote"
+                val run = if (!open) "" else if (os == "mac") "open" else "bin/" + (File(old, "bin").list()?.firstOrNull() ?: "tv-remote")
                 val sh = File(tmp, "tv-remote-update.sh").apply { writeText(SH) }
                 listOf("/usr/bin/nohup", "/bin/sh", sh.path, pid, old.path, new.path, dir.path, run)
             }
             ProcessBuilder(cmd).redirectErrorStream(true).redirectOutput(log).start()   // outlives this process
-            println("update: swapping in ${found?.version}${if (open) ", then opening it" else ""}")
+            println("update: swapping in ${found?.version}${if (open) ", then opening it" else ""} ($cmd, log $log)")
             true
         } catch (e: Exception) {
             error = e.message ?: e.javaClass.simpleName

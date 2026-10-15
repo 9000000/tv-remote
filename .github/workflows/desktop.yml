@@ -38,6 +38,7 @@ jobs:
         run: cd app/gradle && ./gradlew --no-daemon -q :desktop:packageApp
       - name: open, check, quit
         run: |
+          set -x
           app="app/desktop/build/package/${{ matrix.app }}"
           log="$HOME/${{ matrix.log }}/server.log"
           ${{ matrix.run }} "$app" &
@@ -53,6 +54,7 @@ jobs:
           grep -q "Window closed" "$log"
       - name: update itself                                            # Updater.kt: a copy that says 0.0.1, a fake GitHub serving this build
         run: |
+          set -x
           pkg="$PWD/app/desktop/build/package"; a=$(cd "$pkg" && ls TV-Remote-*); v=$(cat VERSION); top="${{ matrix.app }}"; top="${top%%/*}"
           srv=upd/serve; mkdir -p $srv/repos/HoangTran0410/tv-remote/releases upd/apps
           cp "$pkg/$a" $srv/
@@ -63,12 +65,14 @@ jobs:
           (cd $srv && $py -m http.server 8099 >/dev/null 2>&1 &)
           if [ "$RUNNER_OS" = macOS ]; then ditto "$pkg/$top" "upd/apps/$top"; else cp -R "$pkg/$top" upd/apps/; fi
           echo 0.0.1 > "upd/apps/${{ matrix.res }}/VERSION"
-          TVR_RELEASES=http://127.0.0.1:8099 ${{ matrix.run }} "upd/apps/${{ matrix.app }}" &
+          # one X server for both: xvfb-run's would go with the old app, and the new one would start with no screen
+          if [ "$RUNNER_OS" = Linux ]; then Xvfb :99 -screen 0 1280x800x24 >/dev/null 2>&1 & export DISPLAY=:99; sleep 1; fi
+          TVR_RELEASES=http://127.0.0.1:8099 "upd/apps/${{ matrix.app }}" &
           for i in $(seq 90); do curl -s http://127.0.0.1:8765/api/update | grep -q '"state":"ready"' && break; sleep 1; done
           curl -s http://127.0.0.1:8765/api/update; echo
           curl -sf -X POST -H 'Content-Type: application/json' -d '{"do": "install"}' http://127.0.0.1:8765/api/update; echo
           for i in $(seq 90); do curl -s http://127.0.0.1:8765/api/about | grep -q "\"version\":\"$v\"" && break; sleep 1; done
-          cat "$HOME/${{ matrix.log }}/server.log"; for d in "$TMPDIR" "$TEMP" /tmp; do cat "$d/tv-remote-update.log" 2>/dev/null; done || true
+          cat "$HOME/${{ matrix.log }}/server.log"; ls -a upd/apps; for d in "$TMPDIR" "$TEMP" /tmp; do cat "$d/tv-remote-update.log" 2>/dev/null; done || true
           curl -s http://127.0.0.1:8765/api/about | grep "\"version\":\"$v\""     # the new one answers: swapped and opened again
           grep -qx "$v" "upd/apps/${{ matrix.res }}/VERSION"
           [ ! -e upd/apps/.tv-remote-update ]
