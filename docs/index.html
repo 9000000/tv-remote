@@ -66,7 +66,10 @@ nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
 .hero{padding:72px 0 40px;overflow:hidden}
 .hero::before{content:"";position:absolute;inset:-200px -10% auto;height:900px;background:radial-gradient(600px 380px at 70% 30%,rgba(91,140,255,.22),transparent 70%),radial-gradient(500px 300px at 20% 10%,rgba(255,163,26,.10),transparent 70%);pointer-events:none}
 .hero .wrap{display:grid;grid-template-columns:1.02fr 1fr;gap:48px;align-items:center;position:relative}
-.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 14px 6px 8px;border-radius:999px;background:rgba(91,140,255,.1);border:1px solid rgba(91,140,255,.3);font-size:14px;color:#c4d4ff;font-weight:500}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 14px 6px 8px;border-radius:999px;background:rgba(91,140,255,.1);border:1px solid rgba(91,140,255,.3);font-size:14px;color:#c4d4ff;font-weight:500;white-space:nowrap;max-width:100%}
+.pill span{overflow:hidden;text-overflow:ellipsis}
+@media(max-width:420px){.pill{font-size:12px;gap:6px;padding:5px 11px 5px 6px}.pill b{font-size:11px;padding:2px 7px}}
+@media(max-width:380px){.pill{font-size:11px;gap:5px;padding:4px 9px 4px 5px}.pill b{font-size:10px;padding:2px 6px}}
 .pill b{background:var(--blue);color:#06112b;border-radius:999px;padding:2px 9px;font-size:12px}
 .hero h1{font-size:clamp(38px,5.6vw,66px);font-weight:800;margin:22px 0 20px}
 .hero .lead{font-size:clamp(17px,1.7vw,20px)}
