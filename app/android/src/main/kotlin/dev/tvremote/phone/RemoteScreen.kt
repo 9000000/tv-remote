@@ -40,7 +40,7 @@ internal fun MainActivity.layoutRemote() {
     basicBar.visibility = if (basic == null) View.GONE else View.VISIBLE
     val full = video && host != null && (fullscreen || resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)   // landscape: the picture fills the screen
     (controls.parent as View).visibility = if (full) View.GONE else View.VISIBLE
-    (status.parent as View).visibility = if (full) View.GONE else View.VISIBLE
+    topBar.visibility = if (full) View.GONE else View.VISIBLE
     stage.layoutParams = if (full) LinearLayout.LayoutParams(-1, 0, 1f) else LinearLayout.LayoutParams(-1, -2)   // weight: room for the drawing tools under it
     if (!video && drawing) stopDrawing()                              // nothing to draw on
     frame.layoutParams = FrameLayout.LayoutParams(-1, if (full) -1 else -2)
@@ -51,7 +51,7 @@ internal fun MainActivity.layoutRemote() {
     val stacked = video
     topBar.orientation = if (stacked) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
     topBar.gravity = if (stacked) Gravity.END else Gravity.CENTER_VERTICAL
-    status.layoutParams = if (stacked) LinearLayout.LayoutParams(-1, -2) else LinearLayout.LayoutParams(0, -2, 1f)
+    (status.parent as View).layoutParams = if (stacked) LinearLayout.LayoutParams(-1, -2) else LinearLayout.LayoutParams(0, -2, 1f)
     qualBtn.text = Tv.QUALITY[prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)][0].toString() + "p"
     exitBtn.visibility = if (full) View.VISIBLE else View.GONE
     window.decorView.systemUiVisibility = if (full) View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY else 0
@@ -66,7 +66,7 @@ internal fun MainActivity.layoutRemote() {
 internal fun MainActivity.buildRemote() {
     remote = col()
     status = label("", 13, MUTED)
-    status.setPadding(dp(14), dp(8), dp(8), dp(8))
+    status.setPadding(dp(10), dp(8), dp(8), dp(8))
     videoBtn = icon("@eye_off", "", BTN)
     videoBtn.setOnClickListener { toggleVideo() }
     basicBar = button(t("Chỉ bấm phím · Bật ADB để dùng đủ chức năng  ›", "Keys only · Turn on ADB for everything  ›"), ACCENT)
@@ -75,7 +75,11 @@ internal fun MainActivity.buildRemote() {
     topBar = LinearLayout(this)
     val bar = topBar
     bar.gravity = Gravity.CENTER_VERTICAL
-    bar.addView(status, LinearLayout.LayoutParams(0, -2, 1f))
+    val head = LinearLayout(this)                                     // the logo stays beside the words, stacked or not
+    head.gravity = Gravity.CENTER_VERTICAL
+    head.addView(logo(28), LinearLayout.LayoutParams(dp(28), dp(28)).apply { leftMargin = dp(10) })
+    head.addView(status, LinearLayout.LayoutParams(0, -2, 1f))
+    bar.addView(head, LinearLayout.LayoutParams(0, -2, 1f))
     topTools = LinearLayout(this)                                     // the buttons; under the words when there are many (layoutRemote)
     val tools = topTools
     tools.gravity = Gravity.CENTER_VERTICAL or Gravity.END

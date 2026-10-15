@@ -19,6 +19,7 @@
 
   /* top bar */
   .top { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .top .brand { display:flex; align-items:center; gap:10px; min-width:0; } .top .logo { width:36px; height:36px; border-radius:9px; flex:none; }
   .top .sub { color:var(--muted); font-size:13px; word-break:break-all; }
   .chips { display:flex; gap:8px; flex-wrap:wrap; }
   @media (max-width:640px) { .chips { gap:5px; } header .chips { flex-wrap:nowrap; } header .chips > * { flex:none; } header .chip { flex:0 1 auto; min-width:0; } header .chip span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

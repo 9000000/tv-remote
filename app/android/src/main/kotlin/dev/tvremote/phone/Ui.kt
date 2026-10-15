@@ -110,6 +110,15 @@ internal fun Context.button(s: String, color: Int): Button {
 }
 
 /** A button that shows only an icon; the words go to screen readers. "@name" = res/drawable/ic_name (dev/gen_icons.py), anything else is text. */
+/** The app's own icon, rounded, at the head of the list of TVs and of the remote. */
+internal fun Context.logo(sizeDp: Int): android.widget.ImageView = android.widget.ImageView(this).apply {
+    setImageResource(R.drawable.icon)
+    scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+    background = GradientDrawable().apply { cornerRadius = sizeDp * resources.displayMetrics.density / 4 }
+    clipToOutline = true
+    importantForAccessibility = android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO
+}
+
 internal fun Context.icon(symbol: String, says: String, color: Int): IconButton {
     val b = IconButton(this)
     b.setIcon(symbol, if (symbol == "@power") RED else TEXT)

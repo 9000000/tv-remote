@@ -225,6 +225,7 @@ internal fun MainActivity.buildPicker() {
     val names = col()
     names.addView(title)
     names.addView(label(t("Bản ", "Version ") + versionLine(), 12, MUTED))
+    top.addView(logo(40), LinearLayout.LayoutParams(dp(40), dp(40)).apply { rightMargin = dp(12) })
     top.addView(names, LinearLayout.LayoutParams(0, -2, 1f))
     val set = icon("@settings", t("Cài đặt", "Settings"), BTN)
     set.setOnClickListener {
