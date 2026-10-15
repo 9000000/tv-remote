@@ -110,6 +110,26 @@ internal fun Context.button(s: String, color: Int): Button {
 }
 
 /** A button that shows only an icon; the words go to screen readers. "@name" = res/drawable/ic_name (dev/gen_icons.py), anything else is text. */
+/** The remote's top line, "TV name · what is going on": the name above, the rest under it, smaller; one line each, so a long
+ *  name never pushes the rest away. Without " · " the words take both lines. [name] is the line above, added by the screen. */
+internal class StatusText(c: Context) : TextView(c) {
+    val name = TextView(c).apply {
+        setTextColor(TEXT); textSize = 15f; typeface = Typeface.DEFAULT_BOLD; isSingleLine = true
+        ellipsize = android.text.TextUtils.TruncateAt.END; visibility = GONE
+    }
+    init { setTextColor(MUTED); textSize = 12f; ellipsize = android.text.TextUtils.TruncateAt.END; maxLines = 2 }
+    override fun setText(text: CharSequence?, type: BufferType?) {
+        val s = text?.toString() ?: ""
+        val i = s.indexOf(" · ")
+        @Suppress("SENSELESS_COMPARISON") val n = name as TextView?          // null while TextView's own constructor sets its first text
+        if (n == null) { super.setText(text, type); return }
+        n.text = if (i < 0) "" else s.substring(0, i)
+        n.visibility = if (i < 0) GONE else VISIBLE
+        maxLines = if (i < 0) 2 else 1
+        super.setText(if (i < 0) s else s.substring(i + 3), type)
+    }
+}
+
 /** The app's own icon, rounded, at the head of the list of TVs and of the remote. */
 internal fun Context.logo(sizeDp: Int): android.widget.ImageView = android.widget.ImageView(this).apply {
     setImageResource(R.drawable.icon)

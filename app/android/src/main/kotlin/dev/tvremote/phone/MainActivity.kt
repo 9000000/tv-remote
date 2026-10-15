@@ -91,12 +91,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal lateinit var tapMark: TapMark                            // where the finger is on the picture
     internal lateinit var stage: FrameLayout                           // the picture with the full screen button over it
     internal lateinit var videoBtn: IconButton
-    internal lateinit var fullBtn: IconButton
+    internal lateinit var moreBtn: IconButton
     internal lateinit var exitBtn: IconButton
-    internal lateinit var qualBtn: Button
-    internal lateinit var listenBtn: IconButton
     internal lateinit var topBar: LinearLayout                         // the TV's name and state, with the buttons beside or under it
-    internal lateinit var topTools: LinearLayout
     internal lateinit var basicBar: Button
     internal val SHOT = -1                                             // not a key: the screenshot button in the extra keys
     internal val OPEN = -2                                             // not a key: "open on the TV" in the extra keys
@@ -446,7 +443,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                     val s = from
                     ui.postDelayed({ if (tv === s && s != null && s.ready()) waiting.visibility = View.GONE }, 10000)   // no picture yet, but the buttons work
                 }
-                "rate" -> if (video) status.text = title(entry ?: h) + " · " + detail + " KB/s"
+                "rate" -> if (video) status.text = title(entry ?: h) + " · " + (if (listen) "🎧 " else "") + detail + " KB/s"   // 🎧 sits in ⋯: said here
                 "arate" -> if (!video || bgListen) status.text = title(entry ?: h) + " · 🎧 " + detail + " KB/s"
                 "audio" -> if (detail == "noshare") { listenShare = false; Toast.makeText(this, t("TV này dưới Android 13 nên chỉ nghe riêng được: loa TV tạm im.", "This TV is older than Android 13, so only private listening works: the TV’s speakers are quiet."), Toast.LENGTH_LONG).show() }
                     else stopListen(t("TV này chưa gửi được tiếng sang điện thoại (cần Android 11 trở lên).", "This TV cannot send its sound to the phone (Android 11 or newer is needed)."))
@@ -459,7 +456,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                         pendingAsk = null
                     }
                     status.text = title(entry ?: h) + " · " + (if (listen) t("🎧 đang nghe trên điện thoại", "🎧 listening on the phone")
-                    else if (video) t("chạm vào hình để bấm trên TV", "touch the picture to tap on the TV")
+                    else if (video) t("chạm hình để bấm", "touch the picture to tap")
                     else t("đang tắt hình", "picture off"))
                 }
                 "closed" -> {
