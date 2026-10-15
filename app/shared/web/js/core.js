@@ -105,6 +105,11 @@ const FRIENDLY = [
   [/INSTALL_FAILED_UPDATE_INCOMPATIBLE|signatures do not match/i, 'TV đã có app này nhưng từ nguồn khác (khác chữ ký). Gỡ bản đang có rồi cài lại; dữ liệu của app sẽ mất.'],
   [/INSTALL_FAILED_VERSION_DOWNGRADE/i, 'TV đang có bản mới hơn của app này. Gỡ bản đang có nếu muốn cài bản cũ.'],
   [/INSTALL_FAILED_OLDER_SDK/i, 'APK này cần Android mới hơn bản trên TV. Tìm bản cũ hơn của app.'],
+  [/TV Setup is up to date/i, 'TV Setup trên TV đã là bản mới nhất.'],
+  [/an update of TV Setup is already running/i, 'TV Setup đang tự cập nhật. Chờ khoảng một phút.'],
+  [/TV Setup is not installed/i, 'TV chưa có app TV Setup.'],
+  [/the update did not start on the TV/i, 'TV chưa bắt đầu cập nhật được. Thử lại; vẫn vậy thì khởi động lại TV.'],
+  [/could not write the update script/i, 'Không ghi được tệp cập nhật lên TV. TV còn bộ nhớ trống không?'],
   [/INSTALL_FAILED_NO_MATCHING_ABIS/i, 'APK này dành cho loại chip khác với TV. Tải bản cho đúng loại chip (thường là armeabi-v7a).'],
 ];
 const ANDROID = { 21: '5.0', 22: '5.1', 23: '6', 24: '7', 25: '7.1', 26: '8', 27: '8.1', 28: '9', 29: '10', 30: '11', 31: '12', 32: '12L', 33: '13', 34: '14', 35: '15', 36: '16' };
@@ -195,7 +200,7 @@ const BANNERS = {
   error: ['bad', 'Không kết nối được ADB', 'Thử kết nối lại. Nếu vẫn lỗi, kiểm tra TV còn mạng và đã bật “Gỡ lỗi ADB”.'],
   unknown: ['warn', 'Đang kiểm tra ADB...', ''],
 };
-let bannerKey = '', scenesLoaded = false;
+let bannerKey = '', scenesLoaded = false, setupChecked = '';         // setupChecked: the TV whose TV Setup version was looked at (auto.js)
 function buildBanner() {
   const set = CORE === 'mac' ? BANNERS : BANNERS_TV, [cls, title, text] = set[ADB.state] || set.unknown;
   const retry = el('button', { className: 'small primary', textContent: '🔄 Thử kết nối lại', onclick: async (e) => {
@@ -225,6 +230,7 @@ function applyAdb() {
   $('#screenbtn').disabled = !ready && !screenOn;
   if (!ready && screenOn) stopScreen('ADB chưa sẵn sàng, đã dừng xem màn hình.');
   if (ready && autoView) { autoView = false; startScreen(); }           // bookmark ?view=1 to start watching right away
+  if (ready && !picking && setupChecked !== (curHost || '-')) checkSetup();   // a newer TV Setup: offered once per TV (auto.js)
   if (ready) { if (!quickLoaded) loadQuick(); if (currentTab === 'apps' && !appsLoaded) loadApps(); if (currentTab === 'files' && !filesLoaded) loadFiles(cwd); if (!scenesLoaded) { scenesLoaded = true; loadScenes(); } if (currentTab === 'auto' && !autoLoaded) autoTab(); }
   if (!ready && listenOn) stopListen('ADB chưa sẵn sàng, đã dừng nghe tiếng TV.');
 }

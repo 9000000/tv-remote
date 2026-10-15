@@ -26,7 +26,7 @@ function renderRules() {
       el('p', { textContent: r.error ? 'TV Setup trả lời lỗi: ' + friendly(r.error)
         : r.setup === 'old' ? 'TV Setup trên TV là bản cũ. Cần bản 2.13.0 trở lên: mở TV Setup trên TV → Cập nhật, hoặc bấm nút dưới.'
         : 'Các mục này chạy bằng app TV Setup trên TV (để TV tự tắt được cả khi máy này đã tắt). TV chưa có app đó.' }),
-      el('div', { className: 'actions' }, act(r.setup === 'old' ? '⬆️ Cập nhật TV Setup' : '⚡ Cài TV Setup lên TV', installSetupApk, 'primary'))));
+      el('div', { className: 'actions' }, act(r.setup === 'old' ? '⬆️ Cập nhật TV Setup' : '⚡ Cài TV Setup lên TV', r.setup === 'old' ? updateSetup : installSetupApk, 'primary'))));
     return;
   }
   box.replaceChildren(); $('#rulecards').hidden = false;
@@ -111,6 +111,67 @@ async function installSetupApk() {
   if (!j || j.status !== 'done') { toast('Không cài được: ' + friendly(j ? j.msg : 'mất kết nối')); return; }
   await api('/api/app/launch', { pkg: 'dev.tvremote.setup' }, true);    // opened once, it starts its service and keeps it across restarts
   toast('Đã cài TV Setup'); await sleep(2500); loadRules(null, true);
+}
+
+// ---------- TV Setup's own updates (SetupUpdate.kt): offered on every remote; the TV puts the old version back if a new one does not work ----------
+let setupLater = '', setupBusy = false;                               // setupChecked: core.js
+const SETUP_STEP = { download: 'Đang tải bản mới về TV', installing: 'Đang cài bản mới', checking: 'Đã cài, đang xem bản mới có chạy tốt không' };
+const seenUndo = () => { try { return localStorage.getItem('setupUndo') || ''; } catch (e) { return ''; } };
+async function checkSetup() {
+  setupChecked = curHost || '-';
+  const r = await fetch('/api/setup/version').then((x) => x.ok ? x.json() : null).catch(() => null);
+  if (!setupBusy) showSetupUpd(r);
+  return r;
+}
+function showSetupUpd(r) {
+  const b = $('#setupupd');
+  const undone = r && r.state === 'rolledback' && Date.now() - r.at < 3 * 86400000 && seenUndo() !== String(r.at);
+  b.hidden = picking || !r || !(undone || r.latest && r.latest !== setupLater);
+  if (b.hidden) return;
+  b.className = 'banner ' + (undone ? 'warn' : 'ok');
+  if (undone) {
+    $('#suptitle').textContent = '⚠️ TV Setup ' + r.version + ' chạy lỗi trên TV này';
+    $('#supnote').textContent = 'TV đã tự quay về bản ' + r.from + '. Hẹn giờ, ghép nối và cài đặt vẫn còn nguyên. Có bản sau thì nó hiện ở đây.';
+    $('#supgo').hidden = true; $('#suplater').textContent = '✓ Đã hiểu';
+    $('#suplater').onclick = () => { try { localStorage.setItem('setupUndo', String(r.at)); } catch (e) { } r.state = ''; showSetupUpd(r); };   // then the update, if there is one
+    return;
+  }
+  $('#suptitle').textContent = '🆕 TV Setup trên TV có bản mới ' + r.latest + ' (đang dùng ' + r.installed + ')';
+  $('#supnote').textContent = 'Bấm Cập nhật: TV tự cài bản mới trong khoảng nửa phút. Bản mới chạy lỗi thì TV tự quay về bản đang dùng, hẹn giờ và ghép nối vẫn còn.'
+    + (CORE === 'tv' ? ' Trang này mất kết nối một lúc rồi tự nối lại.' : '');
+  $('#supgo').hidden = false; $('#suplater').textContent = 'Để sau';
+  $('#suplater').onclick = () => { setupLater = r.latest; b.hidden = true; };
+}
+$('#supgo').addEventListener('click', () => updateSetup());
+async function updateSetup() {
+  if (setupBusy) return;
+  setupBusy = true; $('#supacts').hidden = true;
+  const note = (t) => { $('#supnote').textContent = t; };
+  try {
+    note('Đang bắt đầu...');
+    let j = await api('/api/setup/update', {}); if (!j) return;
+    for (let misses = 0; j && j.status === 'running' && misses < 4;) {
+      note((SETUP_STEP[j.msg] || 'Đang cập nhật') + (j.msg === 'download' ? ' ' + j.pct + '%' : '') + '...');
+      await sleep(1500);
+      const r = await fetch('/api/job?id=' + j.id).then((x) => x.ok ? x.json() : null).catch(() => null);
+      if (r) { j = r; misses = 0; } else misses++;
+    }
+    if (j && j.status === 'done') { toast('Đã cập nhật TV Setup lên ' + j.version); $('#setupupd').hidden = true; loadRules(null, true); return; }
+    if (j && j.status === 'error') {
+      if (!/^setup:(rolledback|broken)/.test(j.msg)) { note(j.msg === 'setup:slow' ? 'TV Setup cập nhật lâu hơn thường lệ. Xem lại sau ít phút.' : 'Chưa cập nhật được: ' + friendly(j.msg)); return; }
+    } else {                                                           // lost: on the TV's own page the update closes the server serving it
+      note('Đang cập nhật TV Setup. Trang này tự nối lại sau ít giây...');
+      for (let i = 0; i < 60; i++) {
+        await sleep(3000);
+        const r = await fetch('/api/setup/version').then((x) => x.ok ? x.json() : null).catch(() => null);
+        if (r && r.state !== 'installing' && r.state !== 'checking') { if (CORE === 'tv' && r.state === 'ok') { location.reload(); return; } break; }
+      }
+    }
+    const r = await checkSetup();                                       // ok, or put back: the banner says which
+    if (r && r.state === 'ok' && !r.latest) { toast('Đã cập nhật TV Setup lên ' + r.installed); $('#setupupd').hidden = true; }
+  } finally {
+    setupBusy = false; $('#supacts').hidden = false;
+  }
 }
 
 // ---------- scenes ----------

@@ -1,5 +1,6 @@
 package dev.tvremote.core
 
+import dev.tvremote.update.Release
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
@@ -58,6 +59,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "caps" -> return HttpServer.Response.json(JSONObject().put("text", labels?.caps() ?: ""))
                 "app/backup" -> return backup(r.q("pkg"))
                 "tailscale" -> { val t = Tailscale(link.get(), dir); return HttpServer.Response.json(JSONObject().put("installed", t.installed()).put("ip", t.ip())) }
+                "setup/version" -> return HttpServer.Response.json(setupVersion())
                 "setup/plan" -> return HttpServer.Response.json(Setup(link.get(), dir, true) { }.plan { labels?.label(it) })
                 "adb/prompt" -> {                                     // the TV's "Allow USB debugging?" question, if it is up
                     val p = if (link.state() == "ready") AdbPrompt.read(link.get()) else null
@@ -101,6 +103,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "setup" -> { val d = r.json(); HttpServer.Response.json(setup(d.optString("mode") == "undo", d.optString("lang") != "en", choice(d))) }
                 "fetch" -> HttpServer.Response.json(fetch(r.json().optString("url"), false))
                 "install" -> HttpServer.Response.json(fetch(r.json().optString("url"), true))
+                "setup/update" -> HttpServer.Response.json(setupUpdate())
                 "adb/allow" -> {                                      // only for the key named: see AdbPrompt
                     val d = r.json()
                     val fp = d.optString("fingerprint").uppercase()
@@ -518,6 +521,77 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             } finally {
                 c.disconnect()
             }
+        }
+    }
+
+    // ---------------------------------------------------------------- updates of TV Setup on the TV (SetupUpdate)
+    @Volatile private var latest: Release? = null
+    @Volatile private var latestAt = 0L
+    @Volatile private var latestFor = ""
+
+    /** The newest TV Setup for [installed], asked of GitHub at most every half hour (it allows 60 questions an hour). */
+    private fun latestSetup(installed: String): Release? {
+        if (installed != latestFor || System.currentTimeMillis() - latestAt > 30 * 60_000L) {
+            latest = Release.newer(installed, "tv", "tv-setup.apk")
+            latestAt = System.currentTimeMillis(); latestFor = installed
+        }
+        return latest
+    }
+
+    /** {installed, latest (when newer and not known to break here), notes, state...: how the last update went}. */
+    private fun setupVersion(): JSONObject {
+        val adb = link.get()
+        val installed = SetupUpdate.installed(adb)
+        val o = SetupUpdate.state(adb).put("installed", installed).put("latest", "")
+        if (installed.isEmpty()) return o
+        val r = try { latestSetup(installed) } catch (e: Exception) { o.put("error", e.message ?: e.javaClass.simpleName); null }
+        if (r != null && !SetupUpdate.bad(o, r.version)) o.put("latest", r.version).put("notes", r.notes)
+        return o
+    }
+
+    /**
+     * Brings the newest TV Setup to the TV and installs it with SetupUpdate's script, then follows it: done when the new version
+     * runs, an error when it was put back (the job's "msg" says which). Where TV Setup itself serves this, the job goes with it.
+     */
+    private fun setupUpdate(): JSONObject {
+        val adb = link.get()
+        val installed = SetupUpdate.installed(adb)
+        if (installed.isEmpty()) throw IllegalArgumentException("TV Setup is not installed")
+        latestAt = 0                                                  // ask GitHub again: a release may have come out meanwhile
+        val r = latestSetup(installed) ?: throw IllegalArgumentException("TV Setup is up to date")
+        if (SetupUpdate.busy(SetupUpdate.state(adb))) throw IllegalArgumentException("an update of TV Setup is already running")
+        return job("update TV Setup " + r.version) { j ->
+            j.put("msg", "download").put("version", r.version)
+            val c = URL(r.url).openConnection() as HttpURLConnection
+            c.connectTimeout = 15000
+            c.readTimeout = 30000
+            c.setRequestProperty("User-Agent", "tv-remote")
+            try {
+                if (c.responseCode != 200) throw IOException("HTTP " + c.responseCode)
+                sh("mkdir -p " + SetupUpdate.DIR)
+                c.inputStream.use { push(it, if (c.contentLength >= 0) c.contentLength.toLong() else -1L, SetupUpdate.APK, j) }
+            } finally {
+                c.disconnect()
+            }
+            SetupUpdate.start(link.get(), SetupUpdate.APK, r.version)
+            j.put("msg", "installing").put("pct", 92)
+            val t0 = System.currentTimeMillis()
+            while (System.currentTimeMillis() - t0 < 5 * 60_000L) {
+                Thread.sleep(2000)
+                val s = try { SetupUpdate.state(link.get()) } catch (e: IOException) { continue }   // the TV's ADB may blink meanwhile
+                if (s.optString("version") != r.version) {
+                    if (System.currentTimeMillis() - t0 > 30_000L) throw IOException("the update did not start on the TV")
+                    continue
+                }
+                when (s.optString("state")) {
+                    "checking" -> j.put("msg", "checking").put("pct", 96)
+                    "ok" -> return@job "updated " + r.version
+                    "rolledback" -> throw IOException("setup:rolledback " + r.version + " " + s.optString("from"))
+                    "broken" -> throw IOException("setup:broken " + r.version)
+                    "failed" -> throw IOException(s.optString("detail").ifEmpty { "install failed" })
+                }
+            }
+            throw IOException("setup:slow")
         }
     }
 

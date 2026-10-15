@@ -473,10 +473,30 @@
     'Chép': 'Copy',
     'TV không cho đổi quyền này: hệ thống giữ nó.': 'The TV does not let this permission change: the system keeps it.',
     'App này không xin quyền đó.': 'This app does not ask for that permission.',
+    'Bấm Cập nhật: TV tự cài bản mới trong khoảng nửa phút. Bản mới chạy lỗi thì TV tự quay về bản đang dùng, hẹn giờ và ghép nối vẫn còn.':
+      'Press Update: the TV installs the new version in about half a minute. If the new one does not work, the TV goes back to this one by itself, timers and pairings kept.',
+    'Bấm Cập nhật: TV tự cài bản mới trong khoảng nửa phút. Bản mới chạy lỗi thì TV tự quay về bản đang dùng, hẹn giờ và ghép nối vẫn còn. Trang này mất kết nối một lúc rồi tự nối lại.':
+      'Press Update: the TV installs the new version in about half a minute. If the new one does not work, the TV goes back to this one by itself, timers and pairings kept. This page loses its connection for a moment, then reconnects.',
+    'Đang bắt đầu...': 'Starting...', 'Đang cập nhật...': 'Updating...', 'Đang cài bản mới...': 'Installing the new version...',
+    'Đã cài, đang xem bản mới có chạy tốt không...': 'Installed; checking that the new version runs well...',
+    'TV Setup cập nhật lâu hơn thường lệ. Xem lại sau ít phút.': 'TV Setup is taking longer than usual to update. Look again in a few minutes.',
+    'Đang cập nhật TV Setup. Trang này tự nối lại sau ít giây...': 'Updating TV Setup. This page reconnects in a few seconds...',
+    '✓ Đã hiểu': '✓ Got it',
+    'TV Setup trên TV đã là bản mới nhất.': 'TV Setup on the TV is already the latest version.',
+    'TV Setup đang tự cập nhật. Chờ khoảng một phút.': 'TV Setup is updating itself. Wait about a minute.',
+    'TV chưa có app TV Setup.': 'The TV does not have the TV Setup app.',
+    'TV chưa bắt đầu cập nhật được. Thử lại; vẫn vậy thì khởi động lại TV.': 'The TV did not start the update. Try again; if it still does not, restart the TV.',
+    'Không ghi được tệp cập nhật lên TV. TV còn bộ nhớ trống không?': 'Could not write the update file on the TV. Does it have free storage?',
   };
 
   // Strings with a variable part. Captured pieces are passed through tr() again where they can be text of ours.
   const RULES = [
+    [/^🆕 TV Setup trên TV có bản mới (\S+) \(đang dùng (\S+)\)$/, (m) => '🆕 TV Setup on the TV has a new version ' + m[1] + ' (it has ' + m[2] + ')'],
+    [/^⚠️ TV Setup (\S+) chạy lỗi trên TV này$/, (m) => '⚠️ TV Setup ' + m[1] + ' did not work on this TV'],
+    [/^TV đã tự quay về bản (\S+)\. Hẹn giờ, ghép nối và cài đặt vẫn còn nguyên\. Có bản sau thì nó hiện ở đây\.$/, (m) => 'The TV went back to version ' + m[1] + ' by itself. Timers, pairings and settings are all still there. The next version shows up here when it comes out.'],
+    [/^Đang tải bản mới về TV (\d+)%\.\.\.$/, (m) => 'Downloading the new version to the TV ' + m[1] + '%...'],
+    [/^Đã cập nhật TV Setup lên (\S+)$/, (m) => 'TV Setup updated to ' + m[1]],
+    [/^Chưa cập nhật được: ([\s\S]*)$/, (m) => 'Could not update: ' + tr(m[1])],
     [/^Có, dùng (.+) RAM$/, (m) => 'Yes, using ' + m[1] + ' of RAM'],
     [/^· (\d+) TV$/, (m) => '· ' + m[1] + ' TVs'], [/^trống ([\d.,]+ \S*B \/ .+)$/, (m) => 'free ' + m[1]],
     [/^🆕 Có bản mới (\S+) \(đang dùng (\S+)\)$/, (m) => '🆕 New version ' + m[1] + ' (you have ' + m[2] + ')'], [/^Đang tải bản mới (\d+)%$/, (m) => 'Downloading the new version ' + m[1] + '%'],

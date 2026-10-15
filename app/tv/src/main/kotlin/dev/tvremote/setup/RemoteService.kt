@@ -23,6 +23,7 @@ import dev.tvremote.core.HttpServer
 import dev.tvremote.core.Manage
 import dev.tvremote.core.Scenes
 import dev.tvremote.core.Setup
+import dev.tvremote.core.SetupUpdate
 import dev.tvremote.core.Tv
 import dev.tvremote.core.WebPage
 import org.json.JSONArray
@@ -113,6 +114,10 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     @Volatile private var lockedUntil = 0L
     private var guard: Guard? = null
     private var tsWatch: TailscaleWatch? = null
+    private var updates: AutoUpdate? = null
+    private var serving = true                                        // the web server started, when it is wanted
+    @Volatile private var saidAlive = false
+    private val version by lazy { try { packageManager.getPackageInfo(packageName, 0).versionName ?: "0" } catch (e: Exception) { "0" } }
     private val page by lazy { WebPage({ assets.open(it) }, "tv", try { packageManager.getPackageInfo(packageName, 0).let { it.versionName + "-" + it.lastUpdateTime / 1000 } } catch (e: Exception) { "0" }) }
 
     override fun onBind(i: Intent?): IBinder? = null
@@ -142,11 +147,12 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         manage?.allowed = { fp ->                                      // whoever is at the TV sees that a device was let in
             ui.post { android.widget.Toast.makeText(this, (if (java.util.Locale.getDefault().language == "vi") "Đã cho phép gỡ lỗi USB cho một thiết bị đã ghép\n" else "USB debugging allowed for a paired device\n") + fp, android.widget.Toast.LENGTH_LONG).show() }
         }
-        if (enabled(this)) try { server.start(PORT, false) } catch (e: Exception) { adbState = "error" }
+        if (enabled(this)) try { server.start(PORT, false) } catch (e: Exception) { adbState = "error"; serving = false }
         lastUse = System.currentTimeMillis()
         connect()
         guard = Guard(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         tsWatch = TailscaleWatch(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
+        updates = AutoUpdate(this, version, { try { link?.get() } catch (e: Exception) { null } }) { busyWhy() }.also { it.start() }
         ui.postDelayed(rest, 30000)
         ui.postDelayed(diary, 20000)
         stats.watchNet()
@@ -161,6 +167,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         http?.stop()
         guard?.stop()
         tsWatch?.stop()
+        updates?.stop()
         stats.stopNet()
         link?.close()
         tv?.stop()
@@ -232,7 +239,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         if (stopping) return
         when (key) {
             "allow" -> adbState = "allow"                             // the TV is asking "Allow USB debugging?"
-            "live" -> adbState = "ready"
+            "live" -> { adbState = "ready"; if (!saidAlive && serving) { saidAlive = true; afterUpdate() } }
             "closed", "error" -> {                                    // ADB off, TV just booted, session dropped: keep trying
                 if (resting) return                                   // we closed it ourselves
                 adbState = if (key == "error") "error" else "connecting"
@@ -244,6 +251,27 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
 
     override fun onVideoSize(w: Int, h: Int) { }
     override fun onNetwork(mac: String, lan: String, tailscale: String) { }
+
+    // ---------------------------------------------------------------- updates of this app (AutoUpdate, SetupUpdate)
+    /** Up, serving and through to the TV's ADB: an update that is waiting to know whether this version works keeps it. */
+    private fun afterUpdate() = Thread({
+        try { link?.get()?.let { SetupUpdate.alive(it, version) } } catch (e: Exception) { }
+        if (!wanted(this)) ui.post { stopSelf() }                     // started by the update only: nothing for it to do
+    }, "alive").apply { isDaemon = true }.start()
+
+    /** Why an update would be noticed now, or null when nobody would. */
+    private fun busyWhy(): String? {
+        val now = System.currentTimeMillis()
+        if (now - lastUse < 30 * 60_000L) return "the remote was used lately"
+        if (tv != null || feeds.viewer != null) return "a remote session is open"
+        if (pairingCode() != null) return "pairing"
+        if (MainActivity.shown) return "TV Setup is on screen"
+        val o = Rules.load(this)
+        val at = o.optLong("sleep_at")
+        if (at > 0 && at - now < 15 * 60_000L) return "the sleep timer ends soon"
+        if (Rules.inBedtime(o, now) && (getSystemService(POWER_SERVICE) as PowerManager).isInteractive) return "bedtime"
+        return null
+    }
 
     // ---------------------------------------------------------------- the picture, for one browser at a time
     /** The picture for the page, from a second session made only while a browser watches: see Feeds. */

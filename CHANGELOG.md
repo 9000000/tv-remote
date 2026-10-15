@@ -11,10 +11,18 @@ Web 2.21.0 · app điện thoại 2.19.0 · app TV 2.18.0
 **Tiếng Việt**
 - **Danh sách app hiện nhanh hơn trên điện thoại và máy tính:** để đọc tên và logo app, trước đây phải chép cả app điện thoại (1,1 MB) lên TV mỗi khi app được cập nhật. Giờ chỉ cần chép một tệp 6 KB.
 - **Cài đặt hệ thống dễ đọc hơn:** các cài đặt hay cần được chia theo nhóm (Màn hình & chờ, Mạng, Nhà phát triển & ADB, App & bàn phím, Âm thanh, Ngôn ngữ & giờ, Trợ năng, Thiết bị), mỗi mục có tên dễ hiểu và giá trị đọc được (“Bật”, “20 phút”, “Gboard” thay cho `1`, `1200000`, `com.google.android.inputmethod.latin/...`). Hàng trăm khóa kỹ thuật còn lại được gom vào mục “Khác”, mở khi cần hoặc khi tìm kiếm.
+- **TV Setup tự cập nhật** (Android 10 trở lên; tắt được bằng nút “Tự cập nhật” trên màn hình TV Setup): app tìm bản mới vài giờ một lần và chỉ cài khi không ai đang dùng. Nghĩa là không ai bấm remote trên web trong 30 phút gần đây, không có hình hay phiên điều khiển nào đang mở (kể cả từ điện thoại hay máy tính), không đang ghép mã, màn hình TV Setup không mở, hẹn giờ tắt không sắp hết và không trong giờ đi ngủ khi TV đang bật. Những gì đang chiếu trên TV không bị ảnh hưởng.
+- **Tự sửa khi bản mới bị lỗi:** sau khi cài, TV kiểm tra bản mới có chạy được không. Nếu bản mới không chạy hoặc bị crash, TV tự trả về bản cũ và giữ nguyên dữ liệu (luật hẹn giờ, giới hạn app, thiết bị đã ghép, khóa ADB). Bản lỗi đó không bao giờ được đề nghị lại trên TV này, và TV cũng như trang web đều báo cho người dùng biết.
+- **Báo bản TV Setup mới ở cả ba nơi** (máy tính, trang của TV Setup, màn Quản lý trong app điện thoại): có bản mới thì đầu trang hiện “Cập nhật”, bấm một lần là xong, có báo từng bước (đang tải, đang cài, đang kiểm tra).
+- Sửa lỗi: điện thoại và máy tính giờ khởi động lại được dịch vụ của TV Setup khi nó bị dừng.
 
 **English**
 - **The app list shows faster on the phone and the computer:** to read app names and logos, the whole phone app (1.1 MB) used to be copied to the TV after every update. Now a 6 KB file is enough.
 - **System settings easier to read:** the settings people look for are grouped (Screen & sleep, Network, Developer & ADB, Apps & keyboard, Sound, Language & time, Accessibility, Device), each with a plain name and a readable value (“On”, “20 min”, “Gboard” instead of `1`, `1200000`, `com.google.android.inputmethod.latin/...`). The hundreds of other technical keys sit under “Other”, opened when needed or when searching.
+- **TV Setup updates itself** (Android 10 and up; it can be turned off with the “Automatic updates” button on TV Setup's screen): it looks for a new version every few hours and installs it only when nobody is using it. That means no one used the web remote in the last 30 minutes, no picture or control session is open (including from a phone or computer), no pairing is under way, TV Setup's screen is not open, the sleep timer is not about to end, and it is not bedtime with the TV on. Whatever is playing on the TV is not affected.
+- **Self-repair when a new version is broken:** after installing, the TV checks that the new version runs. If it does not start or keeps crashing, the TV puts the old version back with all its data (timer rules, app limits, paired devices, ADB key). That version is never offered again on this TV, and both the TV and the web page tell the user what happened.
+- **A new TV Setup version is offered everywhere** (computer, TV Setup's page, the phone app's Manage screen): when one exists, the top of the page shows “Update”. One click does it all, with each step shown (downloading, installing, checking).
+- Fix: the phone and the computer can now restart TV Setup's service when it has stopped.
 
 ## 2.20.0 - 2026-10-15
 

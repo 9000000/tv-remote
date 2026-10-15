@@ -16,6 +16,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import dev.tvremote.core.Adb
 import dev.tvremote.core.Setup
+import dev.tvremote.core.SetupUpdate
 import dev.tvremote.core.Tailscale
 import dev.tvremote.update.Release
 import java.io.File
@@ -28,6 +29,10 @@ import kotlin.math.roundToInt
  * Words follow the TV's language (Vietnamese, otherwise English).
  */
 class MainActivity : Activity() {
+    companion object {
+        @Volatile var shown = false                                   // on screen: no update in the background meanwhile (AutoUpdate)
+    }
+
     private val vi = Locale.getDefault().language == "vi"
     private fun t(v: String, e: String) = if (vi) v else e
 
@@ -42,6 +47,7 @@ class MainActivity : Activity() {
     private lateinit var updateTile: Tile
     private lateinit var webCol: LinearLayout
     private lateinit var webBtn: Button
+    private var autoBtn: Button? = null
     private var lanIp = ""
     private var tsIp = ""
     private var adb: Adb? = null
@@ -186,6 +192,14 @@ class MainActivity : Activity() {
             row.forEachIndexed { i, tile -> r.addView(tile.view, LinearLayout.LayoutParams(0, dp(74), 1f).apply { if (i > 0) leftMargin = dp(12) }) }
             left.addView(r, margins(top = 10))
         }
+        if (AutoUpdate.possible) {                                    // Android 10+: an update that does not work is undone (SetupUpdate)
+            val b = smallButton(autoText()) { AutoUpdate.set(this, !AutoUpdate.on(this)); autoBtn?.text = autoText()
+                log(if (AutoUpdate.on(this)) t("✓ Tự cập nhật: bật. Bản mới được cài lúc không ai dùng remote; bản nào chạy lỗi thì tự quay về bản cũ.",
+                    "✓ Automatic updates on. A new version is installed while nobody uses the remote; one that does not work is undone by itself.")
+                    else t("Tự cập nhật: tắt. Cập nhật bằng ô Cập nhật.", "Automatic updates off. Update with the Update tile.")) }
+            autoBtn = b
+            left.addView(b, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
+        }
 
         val actHead = LinearLayout(this)
         actHead.gravity = Gravity.CENTER_VERTICAL
@@ -257,23 +271,57 @@ class MainActivity : Activity() {
     private fun version(): String =
         try { packageManager.getPackageInfo(packageName, 0).versionName ?: "0" } catch (e: Exception) { "0" }
 
-    /** Downloads this app's APK from the latest GitHub release and installs it through the TV's own ADB (no "unknown sources" needed). */
+    private fun autoText() = if (AutoUpdate.on(this)) t("Tự cập nhật: Bật", "Automatic updates: On") else t("Tự cập nhật: Tắt", "Automatic updates: Off")
+
+    /**
+     * Downloads this app's APK from the latest GitHub release and installs it through the TV's own ADB (no "unknown sources"
+     * needed), with SetupUpdate's script: it opens this screen again once the new version runs, or the old one if it does not.
+     */
     private fun update() {
-        job { setup ->
+        job { _ ->
             log(t("Đang kiểm tra bản mới...", "Checking for a new version..."))
             val r = Release.newer(version(), "tv", "tv-setup.apk")
             if (r == null) { log(t("✓ Đang dùng bản mới nhất (", "✓ This is the newest version (") + version() + ")."); return@job }
+            val a = adb ?: throw java.io.IOException("ADB")
+            if (SetupUpdate.bad(SetupUpdate.state(a), r.version)) {
+                log(t("Bản ", "Version ") + r.version + t(" đã chạy lỗi trên TV này nên TV Setup đã quay về bản đang dùng. Chờ bản sau nhé.",
+                    " did not work on this TV, so TV Setup went back to this one. Wait for the next version."))
+                return@job
+            }
             log(t("Đang tải bản ", "Downloading version ") + r.version + "...")
-            val apk = File(getExternalFilesDir(null), "tv-setup-update.apk")
+            val apk = File(getExternalFilesDir("update"), "tv-setup-" + r.version + ".apk")
             var last = 0
             Release.download(r.url, apk, Release.Progress { pct -> if (pct >= last + 25) { last = pct; log("  $pct%") } })
-            log(t("Đang cài. App sẽ tự đóng; vài giây sau mở lại TV Setup là bản ", "Installing. The app closes by itself; open TV Setup again in a few seconds for version ") + r.version + ".")
-            log(setup.install(apk))
+            log(t("Đang cài. TV Setup tự đóng rồi mở lại bản ", "Installing. TV Setup closes, then opens again as version ") + r.version +
+                t(" sau khoảng nửa phút. Bản mới chạy lỗi thì tự quay về bản đang dùng.", " in about half a minute. If the new one does not work, this one comes back by itself."))
+            SetupUpdate.start(a, apk.absolutePath, r.version, true)
         }
     }
 
+    /** How the last update went, said once on this screen when it is recent: a version that was undone is worth knowing about. */
+    private fun lastUpdate(a: Adb) {
+        val s = SetupUpdate.state(a)
+        if (System.currentTimeMillis() - s.optLong("at") > 24 * 3600_000L) return
+        val seen = getSharedPreferences("remote", MODE_PRIVATE)
+        val key = s.optString("state") + s.optLong("at")
+        if (seen.getString("update_seen", "") == key) return
+        val line = when (s.optString("state")) {
+            "ok" -> if (s.optString("version") == version()) t("✓ Đã cập nhật lên bản ", "✓ Updated to version ") + version() + "." else null
+            "rolledback" -> "⚠️ " + t("Bản ", "Version ") + s.optString("version") + t(" chạy lỗi trên TV này nên TV Setup đã tự quay về bản ", " did not work on this TV, so TV Setup went back to version ") +
+                s.optString("from") + t(". Hẹn giờ, ghép nối và cài đặt vẫn còn nguyên.", ". Timers, pairings and settings are all still here.")
+            "broken" -> "⚠️ " + t("Bản ", "Version ") + s.optString("version") + t(" chạy chưa ổn trên TV này. Nếu có lỗi, cài lại TV Setup từ app TV Remote.", " may not work well on this TV. If something is wrong, reinstall TV Setup from the TV Remote app.")
+            "failed" -> t("Chưa cài được bản ", "Could not install version ") + s.optString("version") + ": " + s.optString("detail")
+            else -> null
+        } ?: return
+        seen.edit().putString("update_seen", key).apply()
+        log(line)
+    }
+
+    override fun onPause() { shown = false; super.onPause() }
+
     override fun onResume() {
         super.onResume()
+        shown = true
         showWeb()
         val s = setup
         if (s != null && !busy) Thread { try { showStatus(s) } catch (ignored: Exception) { } }.start()   // back from Tailscale / Play Store: refresh the IPs
@@ -390,6 +438,7 @@ class MainActivity : Activity() {
                 adb = a
                 val s = Setup(a, getExternalFilesDir(null), vi, Setup.Log { log(it) })
                 setup = s
+                try { lastUpdate(a) } catch (ignored: Exception) { }
                 showStatus(s)
                 connecting = false
                 ui { setEnabled(true) }
