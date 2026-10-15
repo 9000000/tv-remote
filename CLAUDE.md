@@ -45,7 +45,7 @@ app/desktop/             the computer app on the shared Kotlin core (JVM, no adb
                          `app/desktop/build/install/desktop/bin/desktop --port 8769 [--window]` (inside the repo: its tvs.json, keys in
                          .cache/keys). `./gradlew :desktop:packageApp` -> the app for this system + zip / tar.gz (own Java via jlink;
                          data in the user's app data folder); .github/workflows/desktop.yml builds and opens it on Mac, Windows, Linux
-app/shared/tests/        node tests of the page's scripts, and the case tables (fleet_cases.json, tvshell_cases.json) the Kotlin tests read
+app/shared/tests/        node tests of the page's scripts, and the case tables (fleet_cases.json, tvshell_cases.json, qr_cases.json) the Kotlin tests read
 dev/                     release.sh, gen_icons.py, emu.sh (the two test emulators: create, start, build + install),
                          demo_css.py (the intro page's main demo: demo.src.css; its stories are hand-written, docs/stories.js + stories.css)
 ```
