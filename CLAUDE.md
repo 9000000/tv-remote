@@ -46,7 +46,7 @@ app/desktop/             the computer app on the shared Kotlin core (JVM, no adb
                          .cache/keys). `./gradlew :desktop:packageApp` -> the app for this system + zip / tar.gz (own Java via jlink;
                          data in the user's app data folder); .github/workflows/desktop.yml builds and opens it on Mac, Windows, Linux
 app/shared/tests/        node tests of the page's scripts, and the case tables (fleet_cases.json, tvshell_cases.json) the Kotlin tests read
-dev/                     release.sh, gen_icons.py
+dev/                     release.sh, gen_icons.py, emu.sh (the two test emulators: create, start, build + install)
 ```
 
 ## Rules that matter
@@ -95,11 +95,25 @@ Three numbers, each bumped only when its part changes: `VERSION` (every release;
 
 ## Testing
 
-Test on emulators, not on real TVs. Two AVDs are used: `tvremote_gtv` (Google TV) and `tvremote_test` (phone).
+Test on emulators, not on real TVs. Two AVDs are used: `tvremote_gtv` (Google TV, Android 14) and `tvremote_test` (phone, Android 14).
+`dev/emu.sh` does the setup below; use it rather than doing it by hand:
 
-- Boot the TV emulator **first** so it is `emulator-5554`; its ADB port 5555 is then reachable from the phone emulator as `10.0.2.2:5555`. Check `getprop ro.product.model` before installing anything: the serials swap when the boot order differs.
+```
+dev/emu.sh create    # both AVDs, once (system images downloaded; arm64 or x86_64 to match the computer)
+dev/emu.sh           # start (the TV first) + build both APKs + install each on the right emulator; again after every change
+dev/emu.sh install   # build + install only, the emulators already running
+dev/emu.sh reset     # the phone app's saved TVs reduced to 10.0.2.2
+dev/emu.sh stop
+```
+
+Then in the phone app the TV is `10.0.2.2`; accept "Allow USB debugging?" on the TV emulator the first time (its window).
+Env: `SECURE=0` (no prompt), `HEADLESS=1` (no windows), `TV_AVD`/`PHONE_AVD`/`TV_PORT`/`PHONE_PORT` (a second pair beside the first).
+What it takes care of, for doing it by hand:
+
+- Boot the TV emulator **first** so it is `emulator-5554`; its ADB port 5555 is then reachable from the phone emulator as `10.0.2.2:5555`. Check which serial is the TV (`android.software.leanback` in `pm list features`) before installing anything: the serials swap when the boot order differs.
 - Boot the TV emulator with `-prop ro.adb.secure=1` to get the real "Allow USB debugging?" prompt. The TV shows one prompt at a time and queues prompts of dead connections first.
-- Emulator snapshots can bring back an old saved-TV list holding real TV addresses: before tapping anything, check `shared_prefs/tvs.xml` (`ips`) of `dev.tvremote.phone` (needs `adb root`) and reduce it to `10.0.2.2`.
+- Emulator snapshots can bring back an old saved-TV list holding real TV addresses: before tapping anything, check `shared_prefs/tvs.xml` (`ips`) of `dev.tvremote.phone` (needs `adb root`) and reduce it to `10.0.2.2` (`dev/emu.sh reset`).
+- The Google TV image is arm64-only (runs 64-bit apps only); an x86_64 image (Intel computers) behaves differently there.
 - Tap by text (find the node in `uiautomator dump`), never by fixed coordinates.
 - If `adb exec-out screencap` comes back blank on the phone emulator, use `adb emu screenrecord screenshot <file>`.
 - Web UI: headless Chrome through the DevTools protocol against the test server above.
