@@ -108,7 +108,7 @@
   /* remote card: line icons, a round D-pad with OK in the middle */
   .ic { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
   .rc { display:flex; flex-direction:column; align-items:center; gap:16px; padding:18px 16px; }
-  .rrow { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; width:100%; max-width:300px; } .rrow.three { grid-template-columns:repeat(3,1fr); } .rrow.four { grid-template-columns:repeat(4,1fr); } #more[hidden] { display:none; } #morebtn.on, #drawmore.on { background:var(--accent); color:var(--accent-ink); }
+  .rrow { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; width:100%; max-width:300px; } .rrow.three { grid-template-columns:repeat(3,1fr); } .rrow.four { grid-template-columns:repeat(4,1fr); } #more[hidden] { display:none; } #morebtn.on, #r-draw.on { background:var(--accent); color:var(--accent-ink); }
   .rb { min-height:52px; border-radius:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:0; }
   .rb.lab { min-height:60px; } .rb small { font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
   #speak.on { background:var(--bad); color:#fff; }
@@ -128,7 +128,7 @@
   /* volume */
   .cluster { display:grid; grid-template-columns:1fr 2.4fr 1fr; gap:10px; width:100%; max-width:300px; align-items:stretch; } .cluster .mid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .pill { display:flex; flex-direction:column; align-items:stretch; justify-content:space-between; background:var(--btn); border-radius:26px; overflow:hidden; } .pill button { flex:1; background:transparent; border-radius:0; min-height:60px; display:flex; align-items:center; justify-content:center; padding:0; } .pill button:hover { background:var(--btn-hi); }
-  .pill output, .pill span { text-align:center; font-weight:700; font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; } #mute.on { background:var(--bad-bg); color:var(--bad); }
+  .pill output, .pill span { text-align:center; font-weight:700; font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; } #r-mute.on { background:var(--bad-bg); color:var(--bad); }
   .rb.play small { color:inherit; opacity:.7; }
   /* a segmented switch: three short words that fit one line on a phone */
   .seg { display:flex; gap:2px; padding:3px; margin:0 0 12px; background:var(--card); border:1px solid var(--line); border-radius:12px; }

@@ -124,32 +124,8 @@ internal fun MainActivity.askText(title: String, hint: String, ok: String, then:
         .setNegativeButton(t("Hủy", "Cancel"), null).show()
 }
 
-/** Things the TV can be told to open straight from the phone, saving the hunt with the TV's own keyboard. */
+/** Things the TV can be told to open straight from the phone, saving the hunt with the TV's own keyboard (the entries: remote.json). */
 internal fun MainActivity.quickOpen() {
     if (!live()) return
-    val store = { id: String -> openLink("https://play.google.com/store/apps/details?id=$id") }
-    val items = ArrayList<Triple<String, String, () -> Unit>>()
-    items.add(Triple("@search|" + t("Tìm app trên CH Play", "Search the Play Store"), "") {
-        askText(t("Tìm app trên CH Play", "Search the Play Store"), t("vd: vlc", "e.g. vlc"), t("Tìm", "Search")) { openLink("market://search?c=apps&q=" + java.net.URLEncoder.encode(it, "UTF-8")) }   // the TV's Play Store takes searches only this way
-    })
-    items.add(Triple("@package|" + t("Mở trang CH Play theo app id", "Open a Play Store page by app id"), t("vd: org.videolan.vlc", "e.g. org.videolan.vlc")) {
-        askText(t("App id (tên gói)", "App id (package name)"), "org.videolan.vlc", t("Mở", "Open")) { store(it) }
-    })
-    items.add(Triple("@link|" + t("Mở đường dẫn trên TV", "Open a link on the TV"), t("YouTube, web, tệp...", "YouTube, web, files...")) {
-        askText(t("Đường dẫn", "Link"), "https://youtu.be/...", t("Mở", "Open")) { openLink(if (Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:").containsMatchIn(it)) it else "https://$it") }
-    })
-    items.add(Triple("@image|" + t("Phát ảnh / video từ điện thoại", "Play a photo / video from the phone"), t("Cần ADB", "Needs ADB")) {
-        pickMedia()
-    })
-    items.add(Triple("@music|" + t("Phát nhạc / tệp khác", "Play a song / other file"), "") {
-        pickFile(arrayOf("audio/*", "video/*", "image/*"))
-    })
-    items.add(Triple("@cast|" + t("Chiếu màn hình điện thoại lên TV", "Mirror the phone’s screen on the TV"), t("Cùng Wi-Fi", "Same Wi-Fi")) {
-        try { startActivity(Intent("android.settings.CAST_SETTINGS")) }
-        catch (e: Exception) { say(t("Điện thoại này không có phần Truyền (Cast) trong Cài đặt. Thử nút Truyền / Smart View ở thanh thông báo.", "This phone has no Cast screen in Settings. Try the Cast / Smart View tile in the notification shade."), true) }
-    })
-    for ((name, id) in listOf("@play|YouTube" to "com.google.android.youtube.tv", "@play|Netflix" to "com.netflix.ninja", "@play|VLC" to "org.videolan.vlc", "@play|Kodi" to "org.xbmc.kodi",
-        "@download|Downloader" to "com.esaba.downloader", "@home|Projectivy Launcher" to "com.spocky.projengmenu", "@globe|Tailscale" to "com.tailscale.ipn"))
-        items.add(Triple(name, t("Trang CH Play: cài hoặc mở", "Play Store page: install or open")) { store(id) })
-    menu(t("Mở trên TV", "Open on the TV"), -1, items)
+    menu(t("Mở trên TV", "Open on the TV"), -1, remoteMenu("open"))
 }

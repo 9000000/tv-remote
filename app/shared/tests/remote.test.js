@@ -1,56 +1,84 @@
 // node --test app/shared/tests/   The remote screen exists twice: native Kotlin in the Phone app, and the web page (the Computer app
-// and the TV web page). This keeps them from drifting apart: every key and menu entry the phone has, the web has too, in the same
-// order with the same icon and the same words (Vietnamese and English), unless remote_parity.json says why not.
-// Both sides spell an entry the same way, '@icon|Words', so it can be read out of the source of each.
+// and the TV web page). Both draw their keys and menu entries from ONE file, web/remote.json, so they cannot drift apart: a key or
+// entry is added, reordered or renamed there once. What is left to check is that the file is sound and that every action it
+// names has a handler on each side: here for the page (REMOTE_DO in js/remote_spec.js), in RemoteSpecTest.kt for the phone (the
+// Phone app's phoneActions in PhoneRemote.kt).
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const root = path.join(__dirname, '../../');
 const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
-const allow = JSON.parse(fs.readFileSync(path.join(__dirname, 'remote_parity.json'), 'utf8'));
-const KT = 'android/src/main/kotlin/dev/tvremote/phone/';
+const spec = JSON.parse(read('shared/web/remote.json'));
+const entries = [...Object.values(spec.rows).flat(2), ...Object.values(spec.menus).flat()];
 
-// the page's own English, as the EN button shows it
-global.window = {}; global.document = { documentElement: {}, addEventListener() {}, body: null };
-global.localStorage = { getItem: () => 'en' }; global.location = { search: '' }; global.navigator = { language: 'en' };
-(0, eval)(read('shared/web/js/i18n.js'));
-const en = (vi) => window.tr(vi);
-
-const swap = (s, pairs) => pairs.reduce((a, [from, to]) => a.split(from).join(to), s).replace(/\s*\/\s*/g, '/').trim();
-const norm = (e) => ({ icon: e.icon, vi: swap(e.vi, allow.words.vi), en: e.icon in allow.enDiffers ? '-' : e.en && swap(e.en, allow.words.en) });
-
-// Kotlin: "@icon|" + t("vi", "en")   or   "@icon|Words" (the same in both languages)
-function kotlinEntries(file, only) {
-  const out = [];
-  for (const line of read(KT + file).split('\n')) {
-    if (only && !only.test(line)) continue;
-    for (const m of line.matchAll(/"@(\w+)\|(?:"\s*\+\s*t\("([^"]+)",\s*"([^"]+)"\)|([^"]+)")/g)) out.push(m[4] ? { icon: m[1], vi: m[4], en: m[4] } : { icon: m[1], vi: m[2], en: m[3] });
-  }
-  return out;
+// remote_spec.js on its own, as the page would run it (no other script of the page is needed until a handler runs)
+function pageSpec(core, lang) {
+  const sandbox = { CORE: core, LANG: lang, document: {}, console };
+  vm.createContext(sandbox);
+  vm.runInContext(read('shared/web/js/remote_spec.js').replace('const REMOTE = ', 'var REMOTE = ').replace(/^const (\w+) =/gm, 'var $1 =') + '\nthis.REMOTE_DO = REMOTE_DO; this.remoteMenu = remoteMenu;', sandbox);
+  sandbox.REMOTE = spec;                                              // the page loads the file itself (XHR); here it is read from disk
+  return sandbox;
 }
-// JS: '@icon|Words'
-const webMenu = (file) => [...read('shared/web/js/' + file).matchAll(/'@(\w+)\|([^']+)'/g)].map((m) => ({ icon: m[1], vi: m[2], en: en(m[2]) }));
-const gone = (list) => list.filter((e) => !(e.icon in allow.phoneOnly));
-const show = (list) => list.map((e) => `${e.icon}|${e.vi}|${e.en}`);
+const webEntries = () => entries.filter((e) => !e.cores || e.cores.includes('web'));
+const phoneEntries = () => entries.filter((e) => !e.cores || e.cores.includes('phone'));
 
-test('the remote keys are the same on the phone and on the web page, in the same order', () => {
-  const phone = kotlinEntries('RemoteScreen.kt', /captioned\(keys\(/);
-  const html = read('shared/web/index.html');
-  const rc = html.slice(html.indexOf('aria-label="Điều hướng"'), html.indexOf('id="scenecard"'));
-  const web = [...rc.matchAll(/<button class="rb lab[^"]*"[^>]*><svg[^>]*><use href="#i-(\w+)"\/><\/svg><small>([^<]+)<\/small>/g)].map((m) => ({ icon: m[1], vi: m[2], en: en(m[2]) }));
-  assert.ok(phone.length > 15 && web.length > 15, 'found the keys');
-  assert.deepEqual(show(web.map(norm)), show(gone(phone).map(norm)));
+test('remote.json: unique ids, a key or an action or a list on each entry, both languages', () => {
+  const ids = entries.map((e) => e.id);
+  assert.equal(new Set(ids).size, ids.length, 'ids are unique');
+  assert.ok(entries.length > 30, 'found the entries');
+  for (const e of entries) {
+    assert.equal([e.key, e.do, e.expand].filter(Boolean).length, 1, e.id + ': one of key / do / expand');
+    if (e.expand) continue;
+    assert.ok(e.icon && e.vi && e.en, e.id + ': icon, vi and en');
+    if (e.sub) assert.ok(e.sub.vi && e.sub.en, e.id + ': sub in both languages');
+    for (const side of ['web', 'phone']) if (e[side]) assert.ok(e.why, e.id + ': says why it differs on the ' + side);
+    for (const c of e.cores || []) assert.ok(c === 'web' || c === 'phone', e.id + ': cores are web or phone');
+    if (e.cores) assert.ok(e.why, e.id + ': says why only some cores show it');
+    assert.equal(e.vi.trim(), e.vi); assert.equal(e.en.trim(), e.en);
+  }
 });
 
-test('the menus behind "More keys" are the same on the phone and on the web page', () => {
-  const phone = [...kotlinEntries('Media.kt'), ...kotlinEntries('Automation.kt')];
-  assert.ok(phone.length > 10, 'found the menu entries');
-  assert.deepEqual(show(webMenu('remote.js').map(norm)), show(gone(phone).map(norm)));
+test('remote.json: every icon is in the shared set, on the page and in the phone app', () => {
+  const sprite = new Set([...read('shared/web/index.html').matchAll(/<symbol id="i-(\w+)"/g)].map((m) => m[1]));
+  for (const e of entries.filter((x) => x.icon)) {
+    assert.ok(sprite.has(e.icon), e.id + ': icon ' + e.icon + ' is not in the page\'s sprite (dev/gen_icons.py)');
+    assert.ok(fs.existsSync(path.join(root, 'android/src/main/res/drawable/ic_' + e.icon + '.xml')), e.id + ': no drawable ic_' + e.icon + ' in the phone app');
+  }
 });
 
-test('every phone-only exception is still a phone entry', () => {
-  const phone = [...kotlinEntries('Media.kt'), ...kotlinEntries('Automation.kt'), ...kotlinEntries('RemoteScreen.kt')].map((e) => e.icon);
-  for (const k of Object.keys(allow.phoneOnly)) assert.ok(phone.includes(k), k + ' is no longer on the phone: drop it from remote_parity.json');
+test('remote.json: every key is a name the servers know', () => {
+  const known = new Set([...read('shared/src/main/kotlin/dev/tvremote/core/Scenes.kt').matchAll(/"([A-Z_]+)" to \d+/g)].map((m) => m[1]));
+  for (const e of entries.filter((x) => x.key)) assert.ok(known.has(e.key), e.id + ': ' + e.key + ' is not in Scenes.KEYS');
+});
+
+test('every action in remote.json has a handler on the web page', () => {
+  const { REMOTE_DO } = pageSpec('pc', 'en');
+  for (const e of webEntries().filter((x) => x.do)) assert.equal(typeof REMOTE_DO[e.do], 'function', e.id + ': no REMOTE_DO.' + e.do);
+  const named = new Set(entries.filter((x) => x.do).map((x) => x.do));
+  for (const k of Object.keys(REMOTE_DO)) assert.ok(named.has(k), 'REMOTE_DO.' + k + ' is not used by remote.json');
+});
+
+test('every action in remote.json has a handler in the phone app (PhoneRemote.kt)', () => {
+  const src = read('android/src/main/kotlin/dev/tvremote/phone/PhoneRemote.kt');
+  const have = new Set([...src.matchAll(/^\s+"(\w+)" to act\b/gm)].map((m) => m[1]));
+  for (const e of phoneEntries().filter((x) => x.do)) assert.ok(have.has(e.do), e.id + ': no phoneActions["' + e.do + '"]');
+  // (RemoteSpecTest.kt checks the same against the real map)
+});
+
+test('the menus are built the same way the page does, in both languages', () => {
+  for (const lang of ['vi', 'en']) {
+    const p = pageSpec('pc', lang);
+    const open = p.remoteMenu('open'), words = open.map((i) => i[0]);
+    assert.equal(open.length, spec.menus.open.filter((e) => !e.cores).length);   // the phone-only Cast entry is not on the page
+    assert.ok(words.every((w) => /^@\w+\|.+/.test(w)));
+    assert.ok(!words.some((w) => /^@cast\|/.test(w)));
+    const timer = p.remoteMenu('timer', { when: { timerOn: true }, expand: { lengths: () => [['Tắt sau 15 phút', '', () => {}]] } });
+    assert.deepEqual(Array.from(timer, (i) => i[0].split('|')[0]), ['@plus', '@close', 'Tắt sau 15 phút', '@timer', '@moon']);
+    assert.deepEqual(Array.from(p.remoteMenu('timer', { expand: { lengths: () => [] } }), (i) => i[0].split('|')[0]), ['@timer', '@moon']);
+    const media = p.remoteMenu('open').find((i) => i[0].startsWith('@image|'));
+    assert.match(media[0], lang === 'en' ? /from this device/ : /từ máy này/);   // the page's own words, not the phone's
+  }
 });

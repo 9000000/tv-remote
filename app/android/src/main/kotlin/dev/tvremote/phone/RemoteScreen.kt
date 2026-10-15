@@ -231,9 +231,7 @@ internal fun MainActivity.buildRemote() {
     first.addView(moreBtn, cell(58, true))
     controls.addView(captioned(first))
     val more = col()
-    more.addView(captioned(keys(58, "@input|" + t("Ngõ vào", "Input"), 178, "@settings|" + t("Cài đặt", "Settings"), 176, "@info|" + t("Thông tin", "Info"), 165, "@guide|" + t("Lịch phát", "Guide"), 172)), gap(8))
-    more.addView(captioned(keys(58, "@tv|" + t("TV", "Live TV"), 170, "@subtitle|" + t("Phụ đề", "Subtitles"), 175, "@stop|" + t("Dừng", "Stop"), 86, "@camera|" + t("Chụp màn hình", "Screenshot"), SHOT)), gap(8))
-    more.addView(captioned(keys(58, "@send|" + t("Mở trên TV", "Open on the TV"), OPEN, "@timer|" + t("Hẹn giờ tắt", "Sleep timer"), TIMER, "@scene|" + t("Cảnh", "Scenes"), SCENES, "@pen|" + t("Vẽ lên TV", "Draw on the TV"), DRAW)), gap(8))
+    for (i in remoteSpec().rows["more"]!!.indices) more.addView(remoteRow("more", i, 58), gap(8))    // remote.json (PhoneRemote.kt)
     val showMore = { on: Boolean ->
         more.visibility = if (on) View.VISIBLE else View.GONE
         moreBtn.background = box(if (on) ACCENT else BTN, 16)
@@ -273,14 +271,12 @@ internal fun MainActivity.buildRemote() {
     sp2.gravity = Gravity.CENTER_HORIZONTAL
     sp2.topMargin = dp(8)
     controls.addView(swap, sp2)
-    controls.addView(captioned(keys(58, "@back|" + t("Quay lại", "Back"), 4, "@home|Home", 3, "@menu|Menu", 82)), gap(16))
-    // the same rows, in the same order, as the two web remotes
+    controls.addView(remoteRow("nav", 0, 58), gap(16))
+    // the same rows, in the same order, as the two web remotes: remote.json
     // Volume on the left, channels on the right, each one tall bar for the thumb; the media keys between them.
     // The same block, in the same order, as the two web remotes.
     val mid = col()
-    mid.addView(captioned(keys(58, "@mute|" + t("Tắt tiếng", "Mute"), 164, "@play_pause|" + t("Phát / Dừng", "Play / Pause"), 85)))
-    mid.addView(captioned(keys(58, "@prev|" + t("Bài trước", "Previous"), 88, "@next|" + t("Bài sau", "Next"), 87)), gap(8))
-    mid.addView(captioned(keys(58, "@rewind|" + t("Tua lại", "Rewind"), 89, "@ffwd|" + t("Tua tới", "Forward"), 90)), gap(8))
+    for (i in remoteSpec().rows["media"]!!.indices) { val row = remoteRow("media", i, 58); if (i == 0) mid.addView(row) else mid.addView(row, gap(8)) }
     val cluster = LinearLayout(this)
     cluster.addView(pill("Vol", "@plus", 24, t("Tăng âm lượng", "Volume up"), "@minus", 25, t("Giảm âm lượng", "Volume down")), LinearLayout.LayoutParams(0, -1, 1f))
     val mp = LinearLayout.LayoutParams(0, -2, 2.4f)
@@ -436,16 +432,7 @@ internal fun MainActivity.keys(height: Int, vararg labelAndCode: Any): LinearLay
         else {
             val b = if (bar > 0) icon(label, say, BTN) else button(label, BTN)
             if (bar < 0) b.textSize = 18f
-            if (code == SHOT) b.setOnClickListener { shot() }
-            else if (code == OPEN) b.setOnClickListener { quickOpen() }
-            else if (code == TIMER) b.setOnClickListener { timerMenu() }
-            else if (code == SCENES) b.setOnClickListener { scenesMenu() }
-            else if (code == DRAW) {
-                drawBtn = b as? IconButton
-                drawLit()
-                b.setOnClickListener { if (drawing) stopDrawing() else startDrawing() }
-            }
-            else if (code in Tv.OPENERS) {
+            if (code in Tv.OPENERS) {
                 val held = box(HELD, 16)
                 b.setOnClickListener { flash(b, held); opens(code) }
             } else bindKey(b, code, box(HELD, 16))
