@@ -248,6 +248,7 @@
   /* health tab */
   #hnow, #hcaps { display:grid; gap:14px; grid-template-columns:1fr; } #hcaps > section { min-width:0; } @media (min-width:900px) { #hnow, #hcaps { grid-template-columns:1fr 1fr; align-items:start; } }
   .health .card-head { margin-bottom:8px; }
+  .ptable { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:6px 16px; font-size:14px; } .ptable .h { color:var(--muted); font-size:12px; font-weight:600; } .ptable .k { color:var(--muted); overflow-wrap:anywhere; min-width:0; } .ptable .v { font-weight:600; } .ptable .n { text-align:right; font-variant-numeric:tabular-nums; }
   .kv { display:grid; grid-template-columns:fit-content(55%) minmax(0,1fr); gap:6px 14px; font-size:14px; } .kv dt, .kv .k { color:var(--muted); overflow-wrap:anywhere; min-width:0; } #hnow > section { min-width:0; } .kv .v { font-weight:600; overflow-wrap:anywhere; text-align:right; }
   .meter { margin:10px 0 0; font-size:14px; } .meter .top { display:flex; justify-content:space-between; gap:8px; } .meter b { font-variant-numeric:tabular-nums; }
   .meter .bar { height:10px; border-radius:5px; } .meter .bar i { border-radius:5px; } .meter.warn .bar i { background:var(--warn); } .meter.bad .bar i { background:var(--bad); }

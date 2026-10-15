@@ -6,13 +6,15 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 ## 2.24.2 - 2026-10-15
 
-Web 2.24.2 · app điện thoại 2.22.1 · app TV 2.21.2
+Web 2.24.2 · app điện thoại 2.22.2 · app TV 2.21.2
 
 **Tiếng Việt**
 - TV Setup tự bật lại Gỡ lỗi USB khi bị tắt (trẻ con, bản cập nhật TV, đặt lại Tùy chọn nhà phát triển), để hẹn giờ, giờ đi ngủ, giới hạn app và điện thoại vẫn chạy. Tắt được trong TV Setup → Gỡ lỗi ADB.
+- Sức khỏe: tiến trình tốn CPU nhất hiện thành bảng, CPU và RAM là tiêu đề cột.
 
 **English**
 - TV Setup turns USB debugging back on when it is switched off (by a child, a TV update, a reset of Developer options), so the sleep timer, bedtime, app limits and the phone keep working. It can be turned off in TV Setup → Debugging.
+- Health: the top CPU processes are a table, with CPU and RAM as column heads.
 
 ## 2.24.1 - 2026-10-15
 

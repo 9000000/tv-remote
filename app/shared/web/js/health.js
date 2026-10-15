@@ -253,7 +253,9 @@ async function loadHealth() {
   if (h.mem_total) { const used = h.mem_total - h.mem_free; load.push(meter('RAM', used * 100 / h.mem_total, 'đã dùng ' + fmtSize(used) + ' / ' + fmtSize(h.mem_total))); }
   if (h.disk_total) { const used = h.disk_total - h.disk_free; load.push(meter('Bộ nhớ trong', used * 100 / h.disk_total, 'đã dùng ' + fmtSize(used) + ' / ' + fmtSize(h.disk_total))); }
   $('#hload').replaceChildren(...load);
-  $('#htop').replaceChildren(...kv(h.top.map((p) => [(typeof appName === 'function' && META.has(p.name) && appName(p.name)) || p.name, p.cpu + '% CPU · ' + p.mem + '% RAM'])));
+  const cell = (cls, text) => el('div', { className: cls, textContent: text });   // CPU and RAM said once, as column heads
+  $('#htop').replaceChildren(...(h.top.length ? [cell('h', 'Tiến trình'), cell('h n', 'CPU'), cell('h n', 'RAM')] : []),
+    ...h.top.flatMap((p) => [cell('k', (typeof appName === 'function' && META.has(p.name) && appName(p.name)) || p.name), cell('v n', p.cpu + '%'), cell('v n', p.mem + '%')]));
   const w = h.wifi;
   $('#hnet').replaceChildren(...kv([
     w ? ['Wi-Fi', w.ssid] : ['Wi-Fi', 'không kết nối'],

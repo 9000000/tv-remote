@@ -210,7 +210,7 @@
     'Hoàn tác? Bật lại màn hình chính Google, các app đã tắt và hiệu ứng như cũ.': 'Undo? This turns the Google home screen, the disabled apps and normal animations back on.',
     'Đang chạy...': 'Running...', 'Đã xong': 'Done',
     // health
-    'Sức khỏe': 'Health', 'Tổng quan': 'Overview', 'Tải hệ thống': 'System load', 'Tiến trình tốn CPU nhất': 'Top CPU processes', 'Mạng': 'Network', 'Phần cứng': 'Hardware',
+    'Sức khỏe': 'Health', 'Tổng quan': 'Overview', 'Tải hệ thống': 'System load', 'Tiến trình tốn CPU nhất': 'Top CPU processes', 'Tiến trình': 'Process', 'Mạng': 'Network', 'Phần cứng': 'Hardware',
     'cập nhật mỗi 5 giây': 'refreshes every 5 seconds', 'Nguồn': 'Power', 'không rõ (remote chưa kết nối)': 'unknown (remote not connected)', 'đang bật': 'on', 'màn hình tắt': 'screen off',
     'Ứng dụng đang mở': 'Current app', 'Độ trễ tới TV (ADB)': 'Latency to the TV (ADB)', 'Luồng hình': 'Picture stream', 'đang không xem': 'not viewing', 'ảnh chụp': 'screenshots',
     'TV chạy liên tục': 'Uptime', 'Bộ nhớ trong': 'Internal storage', 'không kết nối': 'not connected', 'Tín hiệu': 'Signal', 'Tốc độ kết nối': 'Link speed', 'Băng tần': 'Band',
