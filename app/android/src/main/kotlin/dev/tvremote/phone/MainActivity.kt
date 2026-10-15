@@ -45,6 +45,14 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal var basic: Atv? = null                                    // keys only, for a TV whose ADB is still off (see Atv, KeysOnly.kt)
     internal var host: String? = null                                  // the TV we want to be connected to, null on the picker
     internal var entry: String? = null                                 // the saved TV that [host] is another address of (its Tailscale or home IP), if so
+    // Switching to another app and back must find the TV again, not the list of TVs: a session that ends while away (the
+    // phone's Wi-Fi asleep, the TV's ADB restarted) is opened again on return, and one that worked before is retried a few
+    // times before giving up (the network often needs a moment after the screen comes back).
+    internal var foreground = false
+    internal var wasLive = false                                       // this TV's session has worked since it was picked
+    internal var retries = 0                                           // reconnects tried in a row since it last worked
+    internal var keysAway = false                                      // the keys-only connection ended while away: opened again on return
+    internal val retry = Runnable { if (host != null && tv == null && basic == null) startSession() }
     internal var wakeNext = false                                      // wakeNext: the next session turns the TV's screen on first
     internal var pendingAsk: String? = null                            // heard while the session was restarting; sent when it is live again
     internal var video = false                                         // video: show the TV picture (off = buttons only, no load on the TV)
@@ -156,7 +164,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         managing = Managing(this, root)
         setContentView(root)
         show(false)
-        if (b != null) host = b.getString("host")
+        if (b != null) { host = b.getString("host"); entry = b.getString("entry"); keysAway = b.getBoolean("keys"); wasLive = host != null }   // Android ended the app while away
+        if (keysAway && host != null) waitFor(title(entry ?: host!!), t("Đang kết nối lại...", "Reconnecting..."))
         if (host != null) show(true)
         takeShare(intent)
         if (b != null && b.getBoolean("settings")) settings.visibility = View.VISIBLE
@@ -168,17 +177,20 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     override fun onSaveInstanceState(out: Bundle) {
         super.onSaveInstanceState(out)
         out.putString("host", host)
+        out.putString("entry", entry)
+        out.putBoolean("keys", basic != null || keysAway)
         out.putBoolean("settings", settings.visibility == View.VISIBLE)
         out.putBoolean("about", about.visibility == View.VISIBLE)
     }
 
     override fun onStart() {
         super.onStart()
+        foreground = true
         ui.removeCallbacks(idleStop)
         refreshSaved()
         if (bgListen) { bgListen = false; stopSession() }             // back on screen: the picture again
         managing.resume()
-        startSession()
+        if (keysAway) { keysAway = false; host?.let { resumeBasic(it) } } else startSession()
     }
 
     /**
@@ -187,6 +199,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
      */
     override fun onStop() {
         super.onStop()
+        foreground = false
+        ui.removeCallbacks(retry)                                     // tried again on return instead
         if (listen) {                                                 // listening goes on with the phone's screen off, without the picture
             if (video && !bgListen && host != null) { bgListen = true; stopSession(); startSession() }
             return
@@ -272,6 +286,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     internal fun connect(ip: String, from: String? = null) {
         entry = from
+        wasLive = false; retries = 0
         val h = ip.trim()
         host = h
         if (h.isEmpty()) return
@@ -286,7 +301,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal fun startSession() {
         val h = host
         val picture = video && !bgListen
-        if (h == null || tv != null || basic != null || picture && !surfaceReady) return
+        if (h == null || tv != null || basic != null || keysAway || picture && !surfaceReady) return
         val dm = resources.displayMetrics
         tv = Tv(this, h, if (picture) surface.holder.surface else null, prefs.getInt("quality", 1), maxOf(dm.widthPixels, dm.heightPixels), wakeNext, this,
             audio = if (listen) "opus" else null, audioShare = listenShare, audioBitRate = if (prefs.getBoolean("listenHq", false)) 160000 else 64000)
@@ -369,6 +384,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         basic?.close()
         basic = null
         host = null
+        wasLive = false; retries = 0; keysAway = false
+        ui.removeCallbacks(retry)
         layoutRemote()                                                // also brings the system bars back
         show(false)
         message(message, true)
@@ -412,6 +429,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 "audio" -> if (detail == "noshare") { listenShare = false; Toast.makeText(this, t("TV này dưới Android 13 nên chỉ nghe riêng được: loa TV tạm im.", "This TV is older than Android 13, so only private listening works: the TV’s speakers are quiet."), Toast.LENGTH_LONG).show() }
                     else stopListen(t("TV này chưa gửi được tiếng sang điện thoại (cần Android 11 trở lên).", "This TV cannot send its sound to the phone (Android 11 or newer is needed)."))
                 "live" -> {
+                    wasLive = true; retries = 0
                     waiting.visibility = View.GONE
                     pendingAsk?.let {
                         from?.search(it)
@@ -423,15 +441,26 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 }
                 "closed" -> {
                     tv = null
-                    disconnect(t("TV đã ngắt kết nối.", "The TV closed the connection."))
+                    reconnect(t("TV đã ngắt kết nối.", "The TV closed the connection."))
                 }
                 else -> {
                     tv = null
+                    if (wasLive) { reconnect(explain(detail)); return@post }   // it worked a moment ago: the same way again, not keys only
                     waitStep.text = t("Không vào được bằng ADB, đang thử chế độ chỉ bấm phím...", "ADB did not work, trying keys only...")
                     offerBasic(h, explain(detail))                    // no ADB (refused, or filtered and timed out), but the TV may still take keys
                 }
             }
         }
+    }
+
+    /** The session ended or failed after it had worked: opened again on return when away, else tried again a few times. */
+    internal fun reconnect(error: String) {
+        val h = host ?: return
+        if (!foreground) { status.text = title(entry ?: h) + " · " + t("kết nối lại khi mở app", "reconnects when the app is open"); return }
+        if (retries >= 4) { disconnect(error); return }               // about 15 s in all: the TV is off or gone
+        retries++
+        waitFor(title(entry ?: h), t("Mất kết nối, đang kết nối lại", "Connection lost, reconnecting") + if (retries > 1) " ($retries)..." else "...")
+        ui.postDelayed(retry, 1000L * retries)
     }
 
     // ---------------------------------------------------------------- keys only, while the TV's ADB is off

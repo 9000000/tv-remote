@@ -158,7 +158,10 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         stats.watchNet()
     }
 
-    override fun onStartCommand(i: Intent?, flags: Int, id: Int): Int = START_STICKY
+    override fun onStartCommand(i: Intent?, flags: Int, id: Int): Int {
+        if (saidAlive) afterUpdate()                                  // started again by an update's script that missed the first word
+        return START_STICKY
+    }
 
     override fun onDestroy() {
         stopping = true

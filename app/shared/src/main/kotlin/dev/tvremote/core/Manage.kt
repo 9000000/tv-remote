@@ -559,21 +559,25 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         if (installed.isEmpty()) throw IllegalArgumentException("TV Setup is not installed")
         latestAt = 0                                                  // ask GitHub again: a release may have come out meanwhile
         val r = latestSetup(installed) ?: throw IllegalArgumentException("TV Setup is up to date")
-        if (SetupUpdate.busy(SetupUpdate.state(adb))) throw IllegalArgumentException("an update of TV Setup is already running")
+        if (SetupUpdate.busy(SetupUpdate.state(adb)) || !SetupUpdate.lock(adb)) throw IllegalArgumentException("an update of TV Setup is already running")
         return job("update TV Setup " + r.version) { j ->
-            j.put("msg", "download").put("version", r.version)
-            val c = URL(r.url).openConnection() as HttpURLConnection
-            c.connectTimeout = 15000
-            c.readTimeout = 30000
-            c.setRequestProperty("User-Agent", "tv-remote")
-            try {
-                if (c.responseCode != 200) throw IOException("HTTP " + c.responseCode)
-                sh("mkdir -p " + SetupUpdate.DIR)
-                c.inputStream.use { push(it, if (c.contentLength >= 0) c.contentLength.toLong() else -1L, SetupUpdate.APK, j) }
-            } finally {
-                c.disconnect()
+            try {                                                     // the APK in place under the lock: nobody else's install reads it half written
+                j.put("msg", "download").put("version", r.version)
+                val c = URL(r.url).openConnection() as HttpURLConnection
+                c.connectTimeout = 15000
+                c.readTimeout = 30000
+                c.setRequestProperty("User-Agent", "tv-remote")
+                try {
+                    if (c.responseCode != 200) throw IOException("HTTP " + c.responseCode)
+                    c.inputStream.use { push(it, if (c.contentLength >= 0) c.contentLength.toLong() else -1L, SetupUpdate.APK, j) }
+                } finally {
+                    c.disconnect()
+                }
+                SetupUpdate.start(link.get(), SetupUpdate.APK, r.version, locked = true)
+            } catch (e: Exception) {
+                try { SetupUpdate.unlock(link.get()) } catch (ignored: Exception) { }
+                throw e
             }
-            SetupUpdate.start(link.get(), SetupUpdate.APK, r.version)
             j.put("msg", "installing").put("pct", 92)
             val t0 = System.currentTimeMillis()
             while (System.currentTimeMillis() - t0 < 5 * 60_000L) {

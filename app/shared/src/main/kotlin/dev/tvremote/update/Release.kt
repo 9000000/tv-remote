@@ -110,6 +110,7 @@ class Release private constructor(val version: String, val url: String, val note
                 val pct = if (total > 0) (done * 100 / total).toInt() else 0
                 if (progress != null && pct != last) { last = pct; progress.at(pct) }
             }
+            if (total > 0 && done != total.toLong()) throw IOException("download incomplete ($done of $total bytes)")   // a dropped connection ends the stream like a finished one
         }
     }
 }

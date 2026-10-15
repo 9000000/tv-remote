@@ -2,6 +2,7 @@ package dev.tvremote.phone
 
 import android.app.AlertDialog
 import android.os.Build
+import android.view.View
 import android.text.InputType
 import android.widget.FrameLayout
 import android.widget.Toast
@@ -43,7 +44,7 @@ internal fun MainActivity.startBasic(ip: String, justPaired: Boolean) {
     Thread {
         val a = Atv(filesDir, ip)
         try {
-            a.connect { ui.post { if (basic === a) disconnect(t("TV đã ngắt kết nối.", "The TV closed the connection.")) } }
+            a.connect { ui.post { if (basic === a) keysLost(a, ip) } }
             ui.post {
                 if (isFinishing || host != null) { a.close(); return@post }
                 prefs.edit().putBoolean("atv:$ip", true).apply()
@@ -63,6 +64,35 @@ internal fun MainActivity.startBasic(ip: String, justPaired: Boolean) {
         } catch (e: Exception) {
             a.close()
             ui.post { message(explain(e.message), true) }
+        }
+    }.start()
+}
+
+/** The keys-only connection ended: away, it is opened again on return (onStart); on screen, at once. */
+internal fun MainActivity.keysLost(a: Atv, ip: String) {
+    basic = null
+    a.close()
+    if (foreground) resumeBasic(ip)
+    else { keysAway = true; status.text = title(entry ?: ip) + " · " + t("kết nối lại khi mở app", "reconnects when the app is open") }
+}
+
+/** The keys-only connection again, to a TV this phone is paired with, staying on the remote; the list of TVs only if it fails. */
+internal fun MainActivity.resumeBasic(ip: String) {
+    waitFor(title(entry ?: ip), t("Đang kết nối lại...", "Reconnecting..."))
+    Thread {
+        val a = Atv(filesDir, ip)
+        try {
+            a.connect { ui.post { if (basic === a) keysLost(a, ip) } }
+            ui.post {
+                if (isFinishing || host != ip || basic != null || tv != null) { a.close(); return@post }   // the person has moved on
+                basic = a
+                waiting.visibility = View.GONE
+                status.text = title(entry ?: ip) + " · " + t("chỉ bấm phím", "keys only")
+                watchAdb(a, ip)
+            }
+        } catch (e: Exception) {
+            a.close()
+            ui.post { if (host == ip && basic == null && tv == null) disconnect(explain(e.message)) }
         }
     }.start()
 }

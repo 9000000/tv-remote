@@ -146,6 +146,7 @@ $('#supgo').addEventListener('click', () => updateSetup());
 async function updateSetup() {
   if (setupBusy) return;
   setupBusy = true; $('#supacts').hidden = true;
+  const b = $('#setupupd'); b.hidden = false; b.className = 'banner ok';   // also from the Automation tab, with the banner put away
   const note = (t) => { $('#supnote').textContent = t; };
   try {
     note('Đang bắt đầu...');
@@ -167,6 +168,7 @@ async function updateSetup() {
         if (r && r.state !== 'installing' && r.state !== 'checking') { if (CORE === 'tv' && r.state === 'ok') { location.reload(); return; } break; }
       }
     }
+    setupBusy = false;
     const r = await checkSetup();                                       // ok, or put back: the banner says which
     if (r && r.state === 'ok' && !r.latest) { toast('Đã cập nhật TV Setup lên ' + r.installed); $('#setupupd').hidden = true; }
   } finally {

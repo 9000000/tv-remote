@@ -48,11 +48,24 @@ object SetupUpdate {
         return (0 until b.length()).any { b.optString(it) == version }
     }
 
+    /**
+     * One update at a time, whoever starts it (the TV itself, a phone, a computer): taken before the APK is put in place, given
+     * back by the script when it ends. mkdir is atomic; a lock older than 10 minutes is a script's that died with the TV.
+     */
+    fun lock(adb: Adb): Boolean = adb.shell("mkdir -p $DIR; if mkdir $DIR/lock 2>/dev/null || " +
+        "[ $(( $(date +%s) - $(stat -c %Y $DIR/lock 2>/dev/null || date +%s) )) -gt 600 ]; then touch $DIR/lock; echo got; fi").contains("got")
+
+    fun unlock(adb: Adb) { adb.shell("rmdir $DIR/lock 2>/dev/null") }
+
     /** Starts the script on [apk] (a file the shell can read) and returns at once; [state] follows it. [open]: TV Setup's screen after. */
     @Throws(IOException::class)
-    fun start(adb: Adb, apk: String, version: String, open: Boolean = false) {
+    fun start(adb: Adb, apk: String, version: String, open: Boolean = false, locked: Boolean = false) {
         require(version.matches(VERSION)) { "bad version" }
-        if (busy(state(adb))) throw IOException("an update of TV Setup is already running")
+        if (!locked && !lock(adb)) throw IOException("an update of TV Setup is already running")
+        try { launch(adb, apk, version, open) } catch (e: Exception) { unlock(adb); throw e }
+    }
+
+    private fun launch(adb: Adb, apk: String, version: String, open: Boolean) {
         adb.shell("mkdir -p $DIR; rm -f $DIR/run.sh")              // not an old one of the same size: see below
         val body = SCRIPT.toByteArray(Charsets.UTF_8)
         adb.exec("cat > $DIR/run.sh").use { it.write(body, 0, body.size) }
@@ -71,13 +84,15 @@ object SetupUpdate {
     }
 
     /** TV Setup, once it runs well after an update: the script waiting for this keeps the new version. */
-    fun alive(adb: Adb, version: String) {
-        if (version.matches(VERSION)) adb.shell("grep -q '^checking ' $DIR/state 2>/dev/null && echo $version > $DIR/ok")
+    fun alive(adb: Adb, version: String) {                            // "installing" too: Android may start it before the script says "checking"
+        if (version.matches(VERSION)) adb.shell("grep -qE '^(installing|checking) [0-9]+ $version ' $DIR/state 2>/dev/null && echo $version > $DIR/ok")
     }
 
     // $1 the APK, $2 its version, $3 "open" to show TV Setup's screen when done (an update started there). Each step says where it is in $D/state, so any device can follow it, and a person can read the log.
     private val SCRIPT = """
         D=$DIR; P=$PKG; A=${'$'}1; V=${'$'}2; O=${'$'}3; echo ${'$'}${'$'} > ${'$'}D/pid   # on its own now: see start()
+        trap 'rmdir ${'$'}D/lock 2>/dev/null' EXIT                    # the next update may start
+        svc() { am start-foreground-service -n ${'$'}P/.RemoteService >/dev/null 2>&1 || am startservice -n ${'$'}P/.RemoteService >/dev/null 2>&1; }   # Android 7 and older: startservice
         say() { echo "${'$'}1 ${'$'}(date +%s) ${'$'}V ${'$'}{old:--} ${'$'}2" > ${'$'}D/state; }
         ver() { dumpsys package ${'$'}P 2>/dev/null | grep -m1 versionName= | sed 's/.*versionName=//'; }
         crashes() { logcat -b crash -d 2>/dev/null | grep -c "Process: ${'$'}P,"; }
@@ -88,13 +103,13 @@ object SetupUpdate {
         [ "${'$'}A" = ${'$'}D/new.apk ] && rm -f "${'$'}A"
         case "${'$'}out" in *Success*) ;; *) say failed "${'$'}(echo ${'$'}out | tr -s ' \n' ' ' | cut -c1-200)"; exit 0 ;; esac
         echo "installed ${'$'}V (rollback ${'$'}rb)"; say checking
-        am start-foreground-service -n ${'$'}P/.RemoteService >/dev/null 2>&1
+        svc
         good=0; i=0
         while [ ${'$'}i -lt 90 ]; do                                    # up to 90 s for it to say it runs, fewer if it keeps crashing
           sleep 1; i=${'$'}((i + 1))
           [ "${'$'}(cat ${'$'}D/ok 2>/dev/null)" = "${'$'}V" ] && { good=1; break; }
           [ ${'$'}((${'$'}(crashes) - c0)) -ge 2 ] && break
-          [ ${'$'}((i % 20)) = 0 ] && am start-foreground-service -n ${'$'}P/.RemoteService >/dev/null 2>&1
+          [ ${'$'}((i % 20)) = 0 ] && svc
         done
         [ ${'$'}good = 1 ] && sleep 20                                  # and still running a little later
         show() { [ "${'$'}O" = open ] && am start -n ${'$'}P/.MainActivity >/dev/null 2>&1; }
@@ -104,7 +119,7 @@ object SetupUpdate {
           for t in 1 2 3 4 5; do pm rollback-app ${'$'}P 2>&1; [ "${'$'}(ver)" = "${'$'}old" ] && break; sleep 3; done
         fi
         if [ "${'$'}old" != "" ] && [ "${'$'}(ver)" = "${'$'}old" ]; then
-          am start-foreground-service -n ${'$'}P/.RemoteService >/dev/null 2>&1; say rolledback; show
+          svc; say rolledback; show
         else say broken; fi
         rm -f ${'$'}D/ok
     """.trimIndent() + "\n"

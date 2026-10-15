@@ -68,6 +68,14 @@ async function loadQuick() {
 // ---------- apps tab ----------
 let appsLoaded = false, appsAll = [], appsInfo = new Map(), appsOffOpen = false;          // pkg -> { off, keep }
 let appsBoot = new Set();                                             // the apps that start by themselves when the TV turns on
+let appsFilter = 'all';
+// the chips above the list: each narrows it to one kind of app, with how many there are
+const APPS_FILTERS = [
+  ['all', 'Tất cả', () => true],
+  ['boot', '🚀 Tự chạy khi bật TV', (p, i) => !i.off && appsBoot.has(p)],
+  ['keep', '🔒 Cần giữ', (p, i) => i.keep],
+  ['off', '⏸ Đã tắt', (p, i) => i.off],
+];
 async function loadApps() {
   $('#appslist').replaceChildren(el('div', { className: 'muted', textContent: 'Đang tải...' }));
   const r = await api('/api/apps' + ($('#appssys').checked ? '?system=1' : ''));
@@ -79,7 +87,11 @@ async function loadApps() {
 function renderApps() {
   const q = $('#appsq').value.trim().toLowerCase();
   lazyMeta.disconnect();
-  const rows = appsAll.filter((p) => !q || p.toLowerCase().includes(q) || appName(p).toLowerCase().includes(q))
+  const fit = APPS_FILTERS.find((f) => f[0] === appsFilter) || APPS_FILTERS[0];
+  const found = appsAll.filter((p) => !q || p.toLowerCase().includes(q) || appName(p).toLowerCase().includes(q));
+  $('#appsfilter').replaceChildren(...APPS_FILTERS.map(([key, label, ok]) => el('button', { className: key === fit[0] ? 'on' : '', type: 'button',
+    onclick: () => { appsFilter = key; renderApps(); } }, tr(label), el('b', { textContent: found.filter((p) => ok(p, appsInfo.get(p) || {})).length }))));
+  const rows = found.filter((p) => fit[2](p, appsInfo.get(p) || {}))
     .sort((a, b) => (appsInfo.get(a)?.off ? 1 : 0) - (appsInfo.get(b)?.off ? 1 : 0) || appName(a).localeCompare(appName(b))).map((pkg) => {   // turned off: last
     const run = async (name, label) => {
       if (name === 'uninstall' && !await ask('Gỡ cài đặt ' + appName(pkg) + ' khỏi TV?', { ok: 'Gỡ', danger: true })) return;
@@ -87,11 +99,11 @@ function renderApps() {
       if (name === 'clear' && !await ask('Xóa toàn bộ dữ liệu của ' + appName(pkg) + '? App trở lại như mới cài: mất đăng nhập, cài đặt và nội dung đã tải trong app. Không hoàn tác được.', { ok: 'Xóa dữ liệu', danger: true })) return;
       const r = await api('/api/app/' + name, { pkg }); if (r) { toast(label + ': ' + appName(pkg)); if (!['launch', 'stop', 'clear'].includes(name)) { quickLoaded = false; loadApps(); loadQuick(); } }
     };
-    const act = (name, icon, label, cls = '') => setLabel(el('button', { title: label, className: 'small ' + cls, onclick: () => run(name, label) }), icon, label);
     const icon = appIcon(pkg), title = el('span', { textContent: pkg.split('.').pop() });
     const info = appsInfo.get(pkg) || {};
     // one button for what is wanted most, everything else behind ⋯
     const more = el('button', { className: 'small iconbtn', title: 'Thêm thao tác', ariaLabel: 'Thêm thao tác', textContent: '⋯', onclick: (e) => popover(e.currentTarget, [
+      info.off ? ['↩', 'Bật lại', () => run('enable', 'Bật lại')] : ['▶', 'Mở', () => run('launch', 'Mở')],
       ['ℹ️', 'Chi tiết & quyền', () => appDetails(pkg)],
       info.off ? null : ['⏹', 'Dừng', () => run('stop', 'Dừng')],
       info.off ? null : ['📜', 'Xem log', () => appLog(pkg)],
@@ -102,17 +114,19 @@ function renderApps() {
     ]) });
     const row = el('div', { className: 'item' + (info.off ? ' off' : '') }, icon, el('div', { className: 'name' }, title, el('small', { textContent: [info.off ? '⏸ đã tắt' : '', pkg,
       info.keep ? 'cần giữ' : '', !info.off && appsBoot.has(pkg) ? 'tự chạy khi bật TV' : ''].filter(Boolean).map(tr).join(' · ') })),
-      el('div', { className: 'acts' }, info.off ? act('enable', '↩', 'Bật lại', 'primary') : act('launch', '▶', 'Mở', 'primary'), more));
+      el('div', { className: 'acts' }, more));
     row.loadMeta = () => onMeta(pkg, (m) => { icon.fill(info.off ? { label: m.label } : m); if (m.label) title.textContent = m.label; });   // a disabled app has no picture to give
     if (META.has(pkg)) row.loadMeta(); else lazyMeta.observe(row);
     row.off = !!info.off;
     return row;
   });
   // the disabled apps (Optimize TV's, or "Disable" here) fold away at the end, so "Turn on" is at hand but out of the way
-  const on = rows.filter((r) => !r.off), off = rows.filter((r) => r.off);
+  const fold0 = fit[0] === 'all';                                    // a chip picked: its apps, all in plain sight
+  const on = fold0 ? rows.filter((r) => !r.off) : rows, off = fold0 ? rows.filter((r) => r.off) : [];
+  const none = !$('#appssys').checked && (fit[0] === 'keep' || fit[0] === 'boot') ? 'Không có app nào. Bật “Hiện cả app hệ thống” để thấy cả app hệ thống.' : 'Không có app nào.';
   const fold = off.length ? [el('details', { className: 'appsoff', open: !!q || appsOffOpen, ontoggle: (e) => { if (!q) appsOffOpen = e.target.open; } },
     el('summary', { textContent: '⏸ App đã tắt (' + off.length + ')' }), el('p', { className: 'muted', textContent: 'Đã tắt bằng Tối ưu TV hoặc nút Tắt app. Bấm ↩ để bật lại.' }), ...off)] : [];
-  $('#appslist').replaceChildren(...(on.length ? on : [el('div', { className: 'muted', textContent: 'Không có app nào.' })]), ...fold);
+  $('#appslist').replaceChildren(...(on.length || off.length ? on : [el('div', { className: 'muted', textContent: none })]), ...fold);
 }
 $('#appsq').addEventListener('input', renderApps);
 $('#appsf').addEventListener('submit', (e) => e.preventDefault());
@@ -299,7 +313,8 @@ function renderBulk() {
 }
 let bulkT = 0;
 $('#bulktext').addEventListener('input', () => { clearTimeout(bulkT); bulkT = setTimeout(async () => { renderBulk(); await bulkStatus(); renderBulk(); }, 300); });
-$('#bulk').addEventListener('toggle', async (e) => { if (e.target.open) { renderBulk(); await bulkStatus(true); renderBulk(); } });
+$('#bulkopen').addEventListener('click', async () => { $('#bulkdlg').showModal(); renderBulk(); await bulkStatus(true); renderBulk(); });
+$('#bulkclose').addEventListener('click', () => $('#bulkdlg').close());
 async function bulkRun(action, label) {
   await bulkStatus();
   const pkgs = bulkPkgs().filter((p) => { const k = bulkKnown.get(p); return k && !(action === 'disable' && (k.keep || k.off)) && !(action === 'enable' && !k.off); });

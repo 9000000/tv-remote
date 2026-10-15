@@ -66,9 +66,12 @@ internal class AutoUpdate(private val c: Context, private val version: String, p
         val s = SetupUpdate.state(a)
         if (SetupUpdate.bad(s, r.version)) return 6 * 60 * MIN        // it broke here once: wait for the next version
         if (SetupUpdate.busy(s)) return 10 * MIN
-        if (s.optString("state") == "failed" && s.optString("version") == r.version) return 6 * 60 * MIN   // the TV refused it (storage full...): not every half hour
+        if (s.optString("state") == "failed" && s.optString("version") == r.version) {   // the TV refused it (storage full, a bad file...): not every half hour,
+            apk?.delete(); apk = null                                 // and downloaded again next time
+            return 6 * 60 * MIN
+        }
         val file = apk ?: File(dir ?: return 60 * MIN, "tv-setup-" + r.version + ".apk").also {
-            Release.download(r.url, it, null)
+            try { Release.download(r.url, it, null) } catch (e: Exception) { it.delete(); throw e }
             apk = it
         }
         if (!file.isFile) { apk = null; return 10 * MIN }
