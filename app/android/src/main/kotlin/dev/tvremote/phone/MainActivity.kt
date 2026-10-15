@@ -140,7 +140,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     // ---- Media.kt
     internal var shared: Intent? = null                                // shared from another app, kept until a TV is connected
     internal val PICK_CAST = 71
-    internal val PICK_DRAW = 72                                       // 🖼️ a picture to put on the TV's screen (Drawing.kt)
+    internal val PICK_DRAW = 73                                       // 🖼️ a picture to put on the TV's screen (Drawing.kt)
     internal val PICK_FLEET = 72                                       // ManyTvs.kt: the APK for several TVs
 
     // ---- SetupBanner.kt

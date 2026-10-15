@@ -202,8 +202,8 @@
     'Tắt app hệ thống không dùng (chế độ khách sạn/trưng bày của Sony, Samba, Sony Select, Play Games, Play Movies, YouTube Music)': 'Turn off unused system apps (Sony hotel/demo modes, Samba, Sony Select, Play Games, Play Movies, YouTube Music)',
     // ✏️ drawing on the TV's screen (draw.js)
     'Vẽ lên màn hình TV: chỉ chỗ cho người đang xem': 'Draw on the TV screen: show the person watching where to look', 'Vẽ lên màn hình TV': 'Draw on the TV screen',
-    'Đỏ': 'Red', 'Vàng': 'Yellow', 'Xanh lá': 'Green', 'Xanh dương': 'Blue', 'Trắng': 'White',
-    '━ Nét to': '━ Thick', 'Nét to': 'Thick line', 'Bỏ nét vừa vẽ': 'Take back the last line', '🗑 Xóa hết': '🗑 Clear all', '✓ Xong': '✓ Done',
+    'Đỏ': 'Red', 'Vàng': 'Yellow', 'Xanh lá': 'Green', 'Xanh dương': 'Blue', 'Trắng': 'White', 'Cam': 'Orange', 'Xanh đậm': 'Dark blue', 'Tím': 'Purple', 'Hồng': 'Pink', 'Đen': 'Black', 'Màu': 'Colour', 'Nét': 'Line size',
+    'Bỏ nét vừa vẽ': 'Take back the last line', '🗑 Xóa hết': '🗑 Clear all', '✓ Xong': '✓ Done',
     'TV Setup trên TV cần bản mới hơn để vẽ: cập nhật TV Setup rồi thử lại.': 'TV Setup on the TV needs a newer version to draw: update TV Setup, then try again.',
     'Cần cài TV Setup lên TV để vẽ lên màn hình.': 'TV Setup is needed on the TV to draw on its screen.',
     'TV này không cho app vẽ đè lên màn hình.': 'This TV does not let apps draw over its screen.',

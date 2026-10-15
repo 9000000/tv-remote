@@ -1,8 +1,7 @@
 // ✏️ Drawing on the TV's screen over the picture here: TV Setup draws the same strokes over whatever is on the TV, for the
 // person watching (DrawLayer.kt there, Draw.kt for the way strokes go). Points are sent in 0..10000 of the picture's size.
 // What is drawn here fades soon after the finger lifts: by then the TV's picture shows it, from the TV itself.
-const DRAW_COLORS = ['#ff3b30', '#ffd60a', '#32d74b', '#40c8ff', '#ffffff'];
-let drawing = false, drawColor = DRAW_COLORS[0], drawWidth = 60, drawId = 0, drawQ = [], drawSending = false, drawPen = null;
+let drawing = false, drawColor = '#ff3b30', drawWidth = 60, drawId = 0, drawQ = [], drawSending = false, drawPen = null;
 const drawLocal = [];                                                  // {pts, color, width, upAt} or {pic, x, y, w, upAt}: drawn here until they fade
 // 🖼️ a picture being placed: only here until ✓, then it goes to the TV once, where it stays put like a stroke
 let drawPic = null;                                                    // {img, b, x, y, w}: centre and width in 0..10000 of the screen
@@ -86,11 +85,14 @@ $('#drawbtn').addEventListener('click', () => { if (drawing) drawStop(); else dr
 $('#drawdone').addEventListener('click', drawStop);
 $('#drawundo').addEventListener('click', () => drawSend({ o: 'u' }));
 $('#drawclear').addEventListener('click', () => { drawLocal.length = 0; drawPaint(); drawSend({ o: 'x' }); });
+// one swatch for the colour in use; the colours and the line's size open under it, and close once one is picked (or on a tap elsewhere)
+$('#drawcolor').addEventListener('click', (e) => { e.stopPropagation(); $('#drawcolors').hidden = !$('#drawcolors').hidden; });
+document.addEventListener('click', (e) => { if (!e.target.closest('#drawcolors')) $('#drawcolors').hidden = true; });
 document.querySelectorAll('#drawbar [data-color]').forEach((b) => b.addEventListener('click', () => {
-  drawColor = b.dataset.color;
+  drawColor = b.dataset.color; $('#drawcolor').style.setProperty('--c', drawColor); $('#drawcolors').hidden = true;
   document.querySelectorAll('#drawbar [data-color]').forEach((x) => x.classList.toggle('on', x === b));
 }));
-$('#drawthick').addEventListener('click', () => { drawWidth = drawWidth === 60 ? 140 : 60; $('#drawthick').classList.toggle('on', drawWidth > 60); });
+$('#drawwidth').addEventListener('input', (e) => { drawWidth = +e.target.value; });
 
 // 🖼️ Pick, place (drag; size with two fingers or the wheel), then ✓ sends it. At most 1280 pixels: plenty for a TV
 // layer, and a phone photo stays a few hundred KB on its way.

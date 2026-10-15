@@ -28,7 +28,8 @@ import org.json.JSONObject
 // Draw.kt for the way). The strokes stay on the TV until cleared, or 10 minutes; here they fade once the finger lifts, since
 // the TV's own picture shows them by then.
 
-internal val DRAW_COLORS = intArrayOf(0xffff3b30.toInt(), 0xffffd60a.toInt(), 0xff32d74b.toInt(), 0xff40c8ff.toInt(), Color.WHITE)
+internal val DRAW_COLORS = intArrayOf(0xffff3b30.toInt(), 0xffff9f0a.toInt(), 0xffffd60a.toInt(), 0xff32d74b.toInt(), 0xff40c8ff.toInt(),
+    0xff0a5cff.toInt(), 0xffbf5af2.toInt(), 0xffff6ac1.toInt(), Color.WHITE, Color.BLACK)
 
 internal fun MainActivity.startDrawing() {
     if (basic != null || tv == null) {
@@ -58,7 +59,7 @@ internal fun MainActivity.drawLit() {
     b.lit = drawing
 }
 
-/** The colours, thickness, picture, undo, clear and done: a row under the picture, hidden until drawing starts; while a
+/** The colour (and size), picture, undo, clear and done: a row under the picture, hidden until drawing starts; while a
  *  picture is being placed, cancel and ✓ instead. */
 internal fun MainActivity.drawTools(): LinearLayout {
     val tools = LinearLayout(this)
@@ -68,26 +69,14 @@ internal fun MainActivity.drawTools(): LinearLayout {
     bar.tag = "pen"
     bar.gravity = Gravity.CENTER_VERTICAL
     bar.setPadding(dp(8), dp(8), dp(8), dp(8))
-    val swatches = ArrayList<View>()
-    val ring = { v: View, on: Boolean ->
-        (v.background as GradientDrawable).setStroke(dp(if (on) 3 else 1), if (on) TEXT else 0x66ffffff)
-    }
-    for (c in DRAW_COLORS) {
-        val s = View(this)
-        s.background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(c) }
-        ring(s, c == drawColor)
-        s.contentDescription = t("Màu", "Colour")
-        s.setOnClickListener { drawColor = c; swatches.forEach { ring(it, it === s) } }
-        swatches.add(s)
-        bar.addView(s, LinearLayout.LayoutParams(dp(26), dp(26)).also { it.rightMargin = dp(6) })
-    }
+    // one swatch for the colour in use (its ring as thick as the line): a tap opens the colours and the size
+    val pen = View(this)
+    val paint = { pen.background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(drawColor); setStroke(dp(1) + drawWidth / 30, TEXT) } }
+    paint()
+    pen.contentDescription = t("Màu", "Colour")
+    pen.setOnClickListener { drawPen { paint() } }
+    bar.addView(pen, LinearLayout.LayoutParams(dp(30), dp(30)))
     bar.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
-    val thick = button("━", BTN)
-    thick.contentDescription = t("Nét to", "Thick line")
-    thick.setOnClickListener {
-        drawWidth = if (drawWidth == 60) 140 else 60
-        thick.background = box(if (drawWidth > 60) ACCENT else BTN, 14)
-    }
     val pic = icon("@image", t("Đưa một ảnh lên TV", "Put a picture on the TV"), BTN)
     pic.setOnClickListener { pickDrawPic() }
     val undo = icon("@undo", t("Bỏ nét vừa vẽ", "Take back the last line"), BTN)
@@ -96,7 +85,7 @@ internal fun MainActivity.drawTools(): LinearLayout {
     clear.setOnClickListener { drawView.clear(); drawSend(JSONObject().put("o", "x")) }
     val done = icon("@check", t("Xong", "Done"), ACCENT)
     done.setOnClickListener { stopDrawing() }
-    for (b in listOf(thick, pic, undo, clear, done)) bar.addView(b, LinearLayout.LayoutParams(dp(40), dp(40)).also { it.leftMargin = dp(4) })
+    for (b in listOf(pic, undo, clear, done)) bar.addView(b, LinearLayout.LayoutParams(dp(40), dp(40)).also { it.leftMargin = dp(4) })
     tools.addView(bar, LinearLayout.LayoutParams(-1, -2))
 
     val place = LinearLayout(this)
@@ -112,6 +101,37 @@ internal fun MainActivity.drawTools(): LinearLayout {
     for (b in listOf(cancel, ok)) { b.setPadding(dp(12), 0, dp(12), 0); place.addView(b, LinearLayout.LayoutParams(-2, dp(40)).also { it.leftMargin = dp(6) }) }
     tools.addView(place, LinearLayout.LayoutParams(-1, -2))
     return tools
+}
+
+/** The colours (5 a row) and the line's size, in a small dialog; [changed] repaints the swatch on the bar. */
+private fun MainActivity.drawPen(changed: () -> Unit) {
+    val wrap = LinearLayout(this)
+    wrap.orientation = LinearLayout.VERTICAL
+    wrap.setPadding(dp(20), dp(16), dp(20), dp(4))
+    var dlg: android.app.AlertDialog? = null
+    for (row in DRAW_COLORS.toList().chunked(5)) {
+        val line = LinearLayout(this)
+        line.gravity = Gravity.CENTER
+        for (c in row) {
+            val s = View(this)
+            s.background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(c); setStroke(dp(if (c == drawColor) 4 else 1), if (c == drawColor) ACCENT else 0x66ffffff) }
+            s.contentDescription = t("Màu", "Colour")
+            s.setOnClickListener { drawColor = c; changed(); dlg?.dismiss() }
+            line.addView(s, LinearLayout.LayoutParams(dp(40), dp(40)).also { it.setMargins(dp(5), dp(5), dp(5), dp(5)) })
+        }
+        wrap.addView(line, LinearLayout.LayoutParams(-1, -2))
+    }
+    val size = android.widget.SeekBar(this)                         // 20..250, as on the web page
+    size.max = 23
+    size.progress = (drawWidth - 20) / 10
+    size.contentDescription = t("Nét", "Line size")
+    size.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
+        override fun onProgressChanged(b: android.widget.SeekBar, p: Int, user: Boolean) { drawWidth = 20 + p * 10; changed() }
+        override fun onStartTrackingTouch(b: android.widget.SeekBar) {}
+        override fun onStopTrackingTouch(b: android.widget.SeekBar) {}
+    })
+    wrap.addView(size, LinearLayout.LayoutParams(-1, dp(48)).also { it.topMargin = dp(8) })
+    dlg = android.app.AlertDialog.Builder(this).setView(wrap).show()
 }
 
 // 🖼️ A picture from the phone, as on the web page: placed here (one finger moves it, two fingers size it), sent
