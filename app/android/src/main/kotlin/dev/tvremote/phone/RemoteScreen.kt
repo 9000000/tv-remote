@@ -45,9 +45,8 @@ internal fun MainActivity.layoutRemote() {
     stage.visibility = if (video) View.VISIBLE else View.GONE
     moreBtn.visibility = if (basic == null) View.VISIBLE else View.GONE   // hearing the TV needs ADB too
     exitBtn.visibility = if (full) View.VISIBLE else View.GONE
-    qualBtn.visibility = if (video && host != null) View.VISIBLE else View.GONE   // on the picture, where one looks: not hidden in ⋯
+    picBar.visibility = if (video && host != null && !full) View.VISIBLE else View.GONE   // right under the picture, where one looks: not hidden in ⋯
     qualBtn.text = Tv.QUALITY[prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)][0].toString() + "p ▾"
-    fullBtn.visibility = if (video && host != null && !full) View.VISIBLE else View.GONE
     window.decorView.systemUiVisibility = if (full) View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY else 0
     videoBtn.lit = video                                              // lit while the picture shows, like every on/off button
     videoBtn.background = box(if (video) ACCENT else BTN, 16)
@@ -75,7 +74,7 @@ internal fun MainActivity.pictureMenu() {
     menu.show()
 }
 
-/** The quality chip on the picture: the levels, lightest first. */
+/** The quality chip under the picture: the levels, lightest first. */
 internal fun MainActivity.qualityMenu() {
     val menu = android.widget.PopupMenu(this, qualBtn)
     val now = prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)
@@ -154,17 +153,20 @@ internal fun MainActivity.buildRemote() {
     val fp = FrameLayout.LayoutParams(dp(42), dp(42), Gravity.TOP or Gravity.END)
     fp.setMargins(dp(8), dp(8), dp(8), dp(8))
     stage.addView(exitBtn, fp)
-    qualBtn = android.widget.TextView(this).apply {
-        setTextColor(TEXT); textSize = 12f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER
-        setPadding(dp(10), 0, dp(10), 0); background = box(0x99000000.toInt(), 10)
-        contentDescription = t("Chất lượng hình", "Picture quality")
-        setOnClickListener { qualityMenu() }
-    }
-    stage.addView(qualBtn, FrameLayout.LayoutParams(-2, dp(30), Gravity.BOTTOM or Gravity.START).apply { setMargins(dp(8), dp(8), dp(8), dp(8)) })
-    fullBtn = icon("@expand", t("Toàn màn hình", "Full screen"), 0x99000000.toInt())
-    fullBtn.setOnClickListener { setFullscreen(true) }
-    stage.addView(fullBtn, FrameLayout.LayoutParams(dp(36), dp(30), Gravity.BOTTOM or Gravity.END).apply { setMargins(dp(8), dp(8), dp(8), dp(8)) })
     remote.addView(stage, LinearLayout.LayoutParams(-1, -2))
+    // a thin strip under the picture, not on it: nothing of the TV's screen is covered
+    picBar = LinearLayout(this)
+    picBar.gravity = Gravity.CENTER_VERTICAL
+    picBar.setPadding(dp(8), dp(6), dp(8), 0)
+    val chip = { s: String, says: String, go: () -> Unit -> android.widget.TextView(this).apply {
+        text = s; setTextColor(TEXT); textSize = 13f; gravity = Gravity.CENTER; setPadding(dp(12), 0, dp(12), 0)
+        background = box(BTN, 10); contentDescription = says; setOnClickListener { go() }
+    } }
+    qualBtn = chip("", t("Chất lượng hình", "Picture quality")) { qualityMenu() }
+    picBar.addView(qualBtn, LinearLayout.LayoutParams(-2, dp(32)))
+    picBar.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+    picBar.addView(chip(t("⛶  Toàn màn hình", "⛶  Full screen"), t("Toàn màn hình", "Full screen")) { setFullscreen(true) }, LinearLayout.LayoutParams(-2, dp(32)))
+    remote.addView(picBar, LinearLayout.LayoutParams(-1, -2))
     drawBar = drawTools()
     remote.addView(drawBar, LinearLayout.LayoutParams(-1, -2))
 

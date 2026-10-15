@@ -15,7 +15,7 @@ Web 2.24.2 · app điện thoại 2.22.2 · app TV 2.21.3
 - Tất cả cài đặt: các nhóm gập lại được, danh sách cuộn bên trong (ô tìm luôn ở trên), lọc Chỉnh được / Chỉ xem; giá trị dài gọn trên một dòng, bấm để xem đủ; bấm dòng có 🔒 để biết vì sao bị khóa.
 - TV Setup: nút đang chọn không còn bị cắt mép khi phóng to.
 - Giờ đi ngủ: cho xem thêm từ điện thoại hay máy tính thì cảnh báo trên TV tắt ngay, không còn đếm tới hết.
-- App điện thoại: chất lượng hình và toàn màn hình nằm ngay trên khung hình (góc dưới), không còn giấu trong ⋯.
+- App điện thoại: chất lượng hình và toàn màn hình nằm ngay dưới khung hình, không còn giấu trong ⋯.
 
 **English**
 - TV Setup turns USB debugging back on when it is switched off (by a child, a TV update, a reset of Developer options), so the sleep timer, bedtime, app limits and the phone keep working. It can be turned off in TV Setup → Debugging.
@@ -24,7 +24,7 @@ Web 2.24.2 · app điện thoại 2.22.2 · app TV 2.21.3
 - All settings: groups fold, the list scrolls inside (the search box stays on top), Editable / View only filters; a long value on one line, in full on a tap; tapping a 🔒 row says why it is locked.
 - TV Setup: the focused tile is no longer cut at its edge as it grows.
 - Bedtime: more time given from a phone or computer closes the notice on the TV at once, instead of it counting down to the end.
-- Phone app: picture quality and full screen sit on the picture itself (bottom corners), no longer hidden in ⋯.
+- Phone app: picture quality and full screen sit right under the picture, no longer hidden in ⋯.
 
 ## 2.24.1 - 2026-10-15
 
