@@ -106,7 +106,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "fetch" -> HttpServer.Response.json(fetch(r.json().optString("url"), false))
                 "install" -> HttpServer.Response.json(fetch(r.json().optString("url"), true))
                 "setup/update" -> HttpServer.Response.json(setupUpdate())
-                "draw" -> { draw.send(r.json(Draw.MAX_BODY).getJSONArray("ops")); HttpServer.Response.json(JSONObject().put("ok", true)) }
+                "draw" -> { draw.send(r.json(Draw.MAX_BODY).getJSONArray("ops")); HttpServer.Response.json(JSONObject().put("ok", true).put("pic", draw.pics)) }
                 "adb/allow" -> {                                      // only for the key named: see AdbPrompt
                     val d = r.json()
                     val fp = d.optString("fingerprint").uppercase()

@@ -58,24 +58,33 @@ async function drawFlush() {
     const ops = drawQ; drawQ = [];
     const r = await fetch('/api/draw', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ops }) }).catch(() => null);
     if (!r || !r.ok) {
-      const why = r ? await r.text().catch(() => '') : '';
-      drawStop();
-      toast(/draw:oldpic/.test(why) ? 'Cập nhật TV Setup trên TV để đưa ảnh lên.'
-        : /draw:old/.test(why) ? 'TV Setup trên TV cần bản mới hơn để vẽ: cập nhật TV Setup rồi thử lại.'
-        : /draw:missing/.test(why) ? 'Cần cài TV Setup lên TV để vẽ lên màn hình.'
-        : /draw:nooverlay/.test(why) ? 'TV này không cho app vẽ đè lên màn hình.'
-        : 'Không vẽ được lên TV: ' + friendly(why || 'mất kết nối'));
+      drawStop(); drawFail(r ? await r.text().catch(() => '') : '');
       break;
     }
   }
   drawSending = false;
 }
 
-function drawStart() {
+// An old or missing TV Setup is told with a way out (update or install it), not after the drawing is lost.
+function drawFail(why) {
+  if (/draw:oldpic|draw:old/.test(why)) {
+    ask(/oldpic/.test(why) ? 'TV Setup trên TV là bản cũ, chưa đưa ảnh lên được. Cập nhật TV Setup (khoảng nửa phút)?' : 'TV Setup trên TV là bản cũ, chưa vẽ được. Cập nhật TV Setup (khoảng nửa phút)?', { ok: '⬆️ Cập nhật' })
+      .then((yes) => { if (yes) updateSetup(); });
+  } else if (/draw:missing/.test(why)) {
+    ask('Vẽ lên TV cần app TV Setup trên TV. Cài TV Setup ngay?', { ok: '⚡ Cài TV Setup' }).then((yes) => { if (yes) installSetupApk(); });
+  } else toast(/draw:nooverlay/.test(why) ? 'TV này không cho app vẽ đè lên màn hình.' : 'Không vẽ được lên TV: ' + friendly(why || 'mất kết nối'));
+}
+
+let drawPics = true;                                                   // this TV Setup takes pictures: known once drawing starts
+async function drawStart() {
   if (!screenOn) startScreen();                                        // the strokes go where the picture shows
   drawing = true; drawQ = [];
   $('#drawcv').hidden = false; $('#drawbar').hidden = false; $('#drawbtn').classList.add('primary');
   drawSize();
+  const r = await fetch('/api/draw', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"ops":[]}' }).catch(() => null);
+  if (!drawing) return;
+  if (!r || !r.ok) { const why = r ? await r.text().catch(() => '') : ''; drawStop(); drawFail(why); return; }
+  drawPics = (await r.json().catch(() => ({}))).pic !== false;
 }
 function drawStop() {
   drawing = false; drawPen = null; drawLocal.length = 0; picEnd();
@@ -98,7 +107,7 @@ $('#drawwidth').addEventListener('input', (e) => { drawWidth = +e.target.value; 
 
 // 🖼️ Pick, place (drag; size with two fingers or the wheel), then ✓ sends it. At most 1280 pixels: plenty for a TV
 // layer, and a phone photo stays a few hundred KB on its way.
-$('#drawpic').addEventListener('click', () => $('#drawfile').click());
+$('#drawpic').addEventListener('click', () => { if (drawPics) $('#drawfile').click(); else drawFail('draw:oldpic'); });
 $('#drawfile').addEventListener('change', async (e) => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
   const img = new Image(), url = URL.createObjectURL(f);

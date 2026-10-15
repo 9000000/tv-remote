@@ -23,18 +23,22 @@ class Draw(private val adb: () -> Adb) {
 
     private var stream: Adb.Stream? = null
     private var from: Adb? = null
-    private var pics = false                                          // this TV Setup draws pictures too (2.21.0 and later)
+    /** This TV Setup draws pictures too (2.21.0 and later); known once the way is open. */
+    @Volatile var pics = false
+        private set
 
-    /** Sends the operations, opening the way first when needed; once more on a fresh connection if the old one broke. */
+    /** Sends the operations, opening the way first when needed; once more on a fresh connection if the old one broke. No
+     *  operations only opens it: done as drawing starts, so an old or missing TV Setup is told before anything is drawn. */
     @Synchronized @Throws(IOException::class)
     fun send(ops: JSONArray) {
         val text = StringBuilder()
         for (i in 0 until ops.length()) text.append(ops.getJSONObject(i).toString()).append('\n')
         val bytes = text.toString().toByteArray(Charsets.UTF_8)
         val pic = (0 until ops.length()).any { ops.getJSONObject(it).optString("o") == "i" }
+        if (ops.length() == 0) close()                                // a check asks TV Setup afresh: it may have been removed or updated since
         for (attempt in 0..1) {
             val s = try { open().also { if (pic && !pics) throw IOException("draw:oldpic") } } catch (e: IOException) { if (attempt == 1 || e.message == "draw:oldpic") throw e; close(); continue }
-            try { s.write(bytes); return } catch (e: IOException) { close(); if (attempt == 1) throw e }
+            try { if (bytes.isNotEmpty()) s.write(bytes); return } catch (e: IOException) { close(); if (attempt == 1) throw e }
         }
     }
 
