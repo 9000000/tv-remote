@@ -48,10 +48,12 @@ async def guard(request, handler):
     host = request.headers.get("Host", "").split(":")[0]
     if host not in ("127.0.0.1", "localhost"):
         raise web.HTTPForbidden(text="bad host")                      # DNS-rebinding guard
+    origin = request.headers.get("Origin")                            # not even a GET: an <img>/<video> elsewhere pointed at /api/audio
+    if origin and origin.split("//", 1)[-1] != request.headers.get("Host"):
+        raise web.HTTPForbidden(text="cross-origin")
+    if request.path.startswith("/api/") and request.headers.get("Sec-Fetch-Site", "same-origin") not in ("same-origin", "none"):
+        raise web.HTTPForbidden(text="cross-origin")
     if request.method == "POST":
-        origin = request.headers.get("Origin")
-        if origin and origin.split("//", 1)[-1] != request.headers.get("Host"):
-            raise web.HTTPForbidden(text="cross-origin")
         if request.content_type not in ("application/json", "application/octet-stream"):
             raise web.HTTPUnsupportedMediaType(text="json only")
     return await handler(request)
