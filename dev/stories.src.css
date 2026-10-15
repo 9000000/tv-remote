@@ -39,7 +39,7 @@
 .story .srch{padding:1.6cqw 3cqw;border-radius:9cqw;background:#1a2030;color:#c9d1e0}
 .story .or{background:#0b0e15}
 .story .ohd{margin:-5cqw -6cqw 0;padding:2.6cqw 6cqw;background:#ff7a00;color:#fff;font-weight:800;font-size:3.6cqw}
-.story .inp{padding:1.8cqw 2.4cqw;border-radius:1cqw;border:.35cqw solid #5b8cff;background:#0d1119;font-size:3.8cqw;letter-spacing:.06em}
+.story .inp{padding:1.8cqw 2.4cqw;border-radius:1cqw;border:.35cqw solid #5b8cff;background:#0d1119;font-size:3.8cqw}
 .story .car{display:inline-block;width:.1em;height:1em;margin-left:.08em;vertical-align:middle;background:currentColor;animation:sblink 1s steps(1) infinite !important}
 @keyframes sblink{50%{opacity:0}}
 .story .tp.ovl{opacity:0}
@@ -187,8 +187,8 @@
 .ss p{left:8%;right:10%;top:34%;margin:0;font-size:3cqw;color:#dbe8f7}
 .ss .lnk{left:8%;top:54%;text-decoration:underline;font-size:3cqw}
 .ss .btns{left:0;right:0;bottom:0;padding:3cqw 6%;background:#08498b;display:flex;justify-content:flex-end;gap:2cqw}
-.ss .btns span{padding:1.2cqw 3.4cqw;border:1px solid #9cc3ec;font-size:3cqw}
-.ss .more{opacity:0;position:static}
+.ss .btns>span{padding:1.2cqw 3.4cqw;border:1px solid #9cc3ec;font-size:3cqw}
+.ss .more{opacity:0;position:static;background:#fff;color:#0a5cad;font-weight:700}
 .lw .prow{left:8%;right:8%;top:34%;height:auto;padding:2.4cqw 3cqw;border-radius:2cqw;font-size:3.4cqw;gap:2cqw;opacity:0}
 .lw .prow b{font-size:3.4cqw}.lw .prow small{font-size:2.6cqw}
 .lw .sp1,.lw .wait{left:0;right:0;top:60%;text-align:center;color:#9aa4b8;opacity:0}

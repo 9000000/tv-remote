@@ -270,14 +270,14 @@ def computer():
     s.track(".c2 .drag", "transform:none;opacity:1", [(4.4, "transform:translateX(45cqw) scale(.85);opacity:1", 1.0), (5.4, "transform:translateX(45cqw) scale(.4);opacity:0", .2)])
     s.press(".c2 .fold", 5.4)
     s.show(".c2 .dlg", (5.8, 8)); s.press(".c2 .go", 7.2)
-    s.show(".c3 .more", (9.2, 12), f=.15); s.press(".c3 .lnk", 9.0); s.press(".c3 .go", 10.4)
+    s.show(".c3 .more", (9.2, 12), f=.15); s.press(".c3 .lnk", 9.0); s.press(".c3 .more", 10.4)
     s.show(".c4 .sp1", (12, 12.5), f=.1); s.show(".c4 .prow", (12.5, 16), f=.2); s.press(".c4 .prow", 13.0)
     s.show(".c4 .wait", (13.1, 14.5), f=.1); s.show(".c4 .mirw", (14.5, 16))
     s.show(".stv .usb", (13.2, 14.4)); s.focus(".usb .q2", (13.6, 14.4)); s.show(".usb .q1 em", (0, 16)); s.press(".usb .q2", 14.2)
     s.show(".stv .o1", (14.5, 16))
     ev = click(3.0, 50, 66) + [(3.18, 50, 66, "press"), (3.3, 50, 66, "show"), (3.6, 60, 80, "hide")]
     ev += click(4.4, 25, 45) + [(5.4, 70, 45, "move"), (5.6, 70, 45, "show")] + click(7.2, 64, 68, (70, 45)) + [(7.7, 64, 68, "hide")]
-    ev += click(9.0, 22, 58) + click(10.4, 76, 86, (22, 58)) + [(10.9, 76, 86, "hide")]
+    ev += click(9.0, 22, 58) + click(10.4, 57, 86, (22, 58)) + [(10.9, 57, 86, "hide")]
     ev += click(13.0, 50, 42) + [(13.5, 50, 42, "hide")]
     s.pointer(".lap .cur", ev)
     return s.out
@@ -293,7 +293,7 @@ def prep():
     for i, (a, b) in enumerate([(taps[3], taps[4]), (taps[4], taps[5]), (taps[5], taps[6])]):
         s.show(f".p1 .left>:nth-child({i+1})", (a + .05, b), f=.05)
     s.show(".p1 .dev", (taps[6] + .1, 4), on="opacity:1;transform:none", off="opacity:0;transform:translateY(30%)")
-    s.press(".p2 .adb", 5.0); s.show(".p2 .dlg", (5.2, 6.4)); s.press(".p2 .dlg .tb", 6.2); s.toggle(".p2 .adb .tg", 6.3)
+    s.press(".p2 .adb", 5.0); s.show(".p2 .dlg", (5.2, 6.4)); s.press(".p2 .dlg .go", 6.2); s.toggle(".p2 .adb .tg", 6.3)
     s.press(".p3 .rs", 9.2); s.toggle(".p3 .rs .tg", 9.2)
     s.press(".rc .rk", *taps, 5.0, 6.2, 9.2)
     s.press(".rc .rd", 4.5, 8.5, 8.8)

@@ -382,7 +382,7 @@
 .story .srch{padding:1.6cqw 3cqw;border-radius:9cqw;background:#1a2030;color:#c9d1e0}
 .story .or{background:#0b0e15}
 .story .ohd{margin:-5cqw -6cqw 0;padding:2.6cqw 6cqw;background:#ff7a00;color:#fff;font-weight:800;font-size:3.6cqw}
-.story .inp{padding:1.8cqw 2.4cqw;border-radius:1cqw;border:.35cqw solid #5b8cff;background:#0d1119;font-size:3.8cqw;letter-spacing:.06em}
+.story .inp{padding:1.8cqw 2.4cqw;border-radius:1cqw;border:.35cqw solid #5b8cff;background:#0d1119;font-size:3.8cqw}
 .story .car{display:inline-block;width:.1em;height:1em;margin-left:.08em;vertical-align:middle;background:currentColor;animation:sblink 1s steps(1) infinite !important}
 @keyframes sblink{50%{opacity:0}}
 .story .tp.ovl{opacity:0}
@@ -530,8 +530,8 @@
 .ss p{left:8%;right:10%;top:34%;margin:0;font-size:3cqw;color:#dbe8f7}
 .ss .lnk{left:8%;top:54%;text-decoration:underline;font-size:3cqw}
 .ss .btns{left:0;right:0;bottom:0;padding:3cqw 6%;background:#08498b;display:flex;justify-content:flex-end;gap:2cqw}
-.ss .btns span{padding:1.2cqw 3.4cqw;border:1px solid #9cc3ec;font-size:3cqw}
-.ss .more{opacity:0;position:static}
+.ss .btns>span{padding:1.2cqw 3.4cqw;border:1px solid #9cc3ec;font-size:3cqw}
+.ss .more{opacity:0;position:static;background:#fff;color:#0a5cad;font-weight:700}
 .lw .prow{left:8%;right:8%;top:34%;height:auto;padding:2.4cqw 3cqw;border-radius:2cqw;font-size:3.4cqw;gap:2cqw;opacity:0}
 .lw .prow b{font-size:3.4cqw}.lw .prow small{font-size:2.6cqw}
 .lw .sp1,.lw .wait{left:0;right:0;top:60%;text-align:center;color:#9aa4b8;opacity:0}
@@ -862,9 +862,8 @@
 .st-c .c2 .fold{animation-name:sc14}
 .st-c .c2 .dlg{animation-name:sc15}
 .st-c .c2 .go{animation-name:sc16}
-.st-c .c3 .more{animation-name:sc17}
+.st-c .c3 .more{animation-name:sc17,sc19}
 .st-c .c3 .lnk{animation-name:sc18}
-.st-c .c3 .go{animation-name:sc19}
 .st-c .c4 .sp1{animation-name:sc20}
 .st-c .c4 .prow{animation-name:sc21,sc22}
 .st-c .c4 .wait{animation-name:sc23}
@@ -903,7 +902,7 @@
 @keyframes sc27{0%{opacity:1}100%{opacity:1}}
 @keyframes sc28{0%{transform:none;filter:none}88.75%{transform:none;filter:none}89.25%{transform:scale(.88);filter:brightness(1.4)}89.25%{transform:scale(.88);filter:brightness(1.4)}90.625%{transform:none;filter:none}100%{transform:none;filter:none}}
 @keyframes sc29{0%{opacity:0}89.062%{opacity:0}90.625%{opacity:1}98.438%{opacity:1}100%{opacity:0}}
-@keyframes sc30{0%{left:64.00%;top:96.00%;opacity:0;transform:none}15%{left:64.00%;top:84.00%;opacity:1;transform:scale(1)}18.125%{left:50.00%;top:66.00%;opacity:1;transform:scale(1)}18.75%{left:50.00%;top:66.00%;opacity:1;transform:scale(.75)}19.5%{left:50.00%;top:66.00%;opacity:1;transform:scale(1)}19.875%{left:50.00%;top:66.00%;opacity:1;transform:scale(.75)}20.625%{left:50.00%;top:66.00%;opacity:1;transform:scale(1)}22.5%{left:60.00%;top:80.00%;opacity:0;transform:scale(1)}23.75%{left:39.00%;top:63.00%;opacity:1;transform:scale(1)}26.875%{left:25.00%;top:45.00%;opacity:1;transform:scale(1)}27.5%{left:25.00%;top:45.00%;opacity:1;transform:scale(.75)}28.25%{left:25.00%;top:45.00%;opacity:1;transform:scale(1)}33.75%{left:70.00%;top:45.00%;opacity:1;transform:scale(1)}35%{left:70.00%;top:45.00%;opacity:1;transform:scale(1)}41.25%{left:70.00%;top:45.00%;opacity:1;transform:scale(1)}44.375%{left:64.00%;top:68.00%;opacity:1;transform:scale(1)}45%{left:64.00%;top:68.00%;opacity:1;transform:scale(.75)}45.75%{left:64.00%;top:68.00%;opacity:1;transform:scale(1)}48.125%{left:64.00%;top:68.00%;opacity:0;transform:scale(1)}52.5%{left:36.00%;top:76.00%;opacity:1;transform:scale(1)}55.625%{left:22.00%;top:58.00%;opacity:1;transform:scale(1)}56.25%{left:22.00%;top:58.00%;opacity:1;transform:scale(.75)}57%{left:22.00%;top:58.00%;opacity:1;transform:scale(1)}61.25%{left:22.00%;top:58.00%;opacity:1;transform:scale(1)}64.375%{left:76.00%;top:86.00%;opacity:1;transform:scale(1)}65%{left:76.00%;top:86.00%;opacity:1;transform:scale(.75)}65.75%{left:76.00%;top:86.00%;opacity:1;transform:scale(1)}68.125%{left:76.00%;top:86.00%;opacity:0;transform:scale(1)}77.5%{left:64.00%;top:60.00%;opacity:1;transform:scale(1)}80.625%{left:50.00%;top:42.00%;opacity:1;transform:scale(1)}81.25%{left:50.00%;top:42.00%;opacity:1;transform:scale(.75)}82%{left:50.00%;top:42.00%;opacity:1;transform:scale(1)}84.375%{left:50.00%;top:42.00%;opacity:0;transform:scale(1)}100%{left:50.00%;top:42.00%;opacity:0;transform:none}}
+@keyframes sc30{0%{left:64.00%;top:96.00%;opacity:0;transform:none}15%{left:64.00%;top:84.00%;opacity:1;transform:scale(1)}18.125%{left:50.00%;top:66.00%;opacity:1;transform:scale(1)}18.75%{left:50.00%;top:66.00%;opacity:1;transform:scale(.75)}19.5%{left:50.00%;top:66.00%;opacity:1;transform:scale(1)}19.875%{left:50.00%;top:66.00%;opacity:1;transform:scale(.75)}20.625%{left:50.00%;top:66.00%;opacity:1;transform:scale(1)}22.5%{left:60.00%;top:80.00%;opacity:0;transform:scale(1)}23.75%{left:39.00%;top:63.00%;opacity:1;transform:scale(1)}26.875%{left:25.00%;top:45.00%;opacity:1;transform:scale(1)}27.5%{left:25.00%;top:45.00%;opacity:1;transform:scale(.75)}28.25%{left:25.00%;top:45.00%;opacity:1;transform:scale(1)}33.75%{left:70.00%;top:45.00%;opacity:1;transform:scale(1)}35%{left:70.00%;top:45.00%;opacity:1;transform:scale(1)}41.25%{left:70.00%;top:45.00%;opacity:1;transform:scale(1)}44.375%{left:64.00%;top:68.00%;opacity:1;transform:scale(1)}45%{left:64.00%;top:68.00%;opacity:1;transform:scale(.75)}45.75%{left:64.00%;top:68.00%;opacity:1;transform:scale(1)}48.125%{left:64.00%;top:68.00%;opacity:0;transform:scale(1)}52.5%{left:36.00%;top:76.00%;opacity:1;transform:scale(1)}55.625%{left:22.00%;top:58.00%;opacity:1;transform:scale(1)}56.25%{left:22.00%;top:58.00%;opacity:1;transform:scale(.75)}57%{left:22.00%;top:58.00%;opacity:1;transform:scale(1)}61.25%{left:22.00%;top:58.00%;opacity:1;transform:scale(1)}64.375%{left:57.00%;top:86.00%;opacity:1;transform:scale(1)}65%{left:57.00%;top:86.00%;opacity:1;transform:scale(.75)}65.75%{left:57.00%;top:86.00%;opacity:1;transform:scale(1)}68.125%{left:57.00%;top:86.00%;opacity:0;transform:scale(1)}77.5%{left:64.00%;top:60.00%;opacity:1;transform:scale(1)}80.625%{left:50.00%;top:42.00%;opacity:1;transform:scale(1)}81.25%{left:50.00%;top:42.00%;opacity:1;transform:scale(.75)}82%{left:50.00%;top:42.00%;opacity:1;transform:scale(1)}84.375%{left:50.00%;top:42.00%;opacity:0;transform:scale(1)}100%{left:50.00%;top:42.00%;opacity:0;transform:none}}
 .st-p .steps li:nth-child(1){animation-name:sp1}
 .st-p .steps li:nth-child(2){animation-name:sp2}
 .st-p .steps li:nth-child(3){animation-name:sp3}
@@ -917,7 +916,7 @@
 .st-p .p1 .dev{animation-name:sp11}
 .st-p .p2 .adb{animation-name:sp12}
 .st-p .p2 .dlg{animation-name:sp13}
-.st-p .p2 .dlg .tb{animation-name:sp14}
+.st-p .p2 .dlg .go{animation-name:sp14}
 .st-p .p2 .adb .tg{animation-name:sp15}
 .st-p .p2 .adb .tg::after{animation-name:sp16}
 .st-p .p3 .rs{animation-name:sp17}
