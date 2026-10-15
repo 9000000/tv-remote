@@ -18,6 +18,9 @@ class Setup(private val adb: Adb, private val dir: File?, private val vi: Boolea
         const val FL_PKG = "me.efesser.flauncher"
         const val FL_URL = "https://github.com/osrosal/flauncher/releases/download/v2025.07.001/flauncher-armeabi-v7a-release.apk"
         const val FL_SHA = "467fd0befe6daa3993a8a34a3981a631858ace28b38d9836d691478af8b71e40"
+        /** For TVs that run 64-bit apps only (newer Google TV, the emulator): the 32-bit one does not install there. */
+        const val FL_URL64 = "https://github.com/osrosal/flauncher/releases/download/v2025.07.001/flauncher-arm64-v8a-release.apk"
+        const val FL_SHA64 = "6e366d960d1c42ff923bddf86a034a231800924c0d395aefa7c448b1c4e8896f"
         const val TS_PKG = "com.tailscale.ipn"
         val GOOGLE = arrayOf("com.google.android.play.games", "com.google.android.videos", "com.google.android.youtube.tvmusic")
         /** Only present on Sony BRAVIA sets; skipped elsewhere. */
@@ -134,12 +137,14 @@ class Setup(private val adb: Adb, private val dir: File?, private val vi: Boolea
         if (!c.home) { log.line(t("Xong.", "Done.")); return }
         if (!has(FL_PKG)) {
             log.line(t("… Đang tải FLauncher (10 MB)", "… Downloading FLauncher (10 MB)"))
-            val apk = download(FL_URL, "flauncher.apk", FL_SHA)
+            val abis = adb.shell("getprop ro.product.cpu.abilist")
+            val only64 = "arm64-v8a" in abis && "armeabi-v7a" !in abis
+            val apk = if (only64) download(FL_URL64, "flauncher.apk", FL_SHA64) else download(FL_URL, "flauncher.apk", FL_SHA)
             log.line(t("… Đang cài FLauncher", "… Installing FLauncher"))
             val out = install(apk)
             apk.delete()
             if (!out.contains("Success")) {
-                val why = if (out.contains("NO_MATCHING_ABIS")) t("TV này chỉ chạy app 64-bit, FLauncher chỉ có bản 32-bit", "this TV runs 64-bit apps only and FLauncher is 32-bit") else last(out)
+                val why = if (out.contains("NO_MATCHING_ABIS")) t("FLauncher không có bản cho chip của TV này", "FLauncher has no build for this TV's chip") else last(out)
                 log.line(t("– Không cài được FLauncher (", "– FLauncher could not be installed (") + why + t(") — giữ nguyên màn hình chính", "), the home screen is left as it is"))
                 log.line(t("Xong.", "Done."))
                 return
