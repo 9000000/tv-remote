@@ -2,7 +2,7 @@
 # Publishes a GitHub release. Three version numbers, each bumped only when its own part changed:
 #   VERSION               the release itself (the tag) and the web UI on the computer: bump it for every release
 #   app/android/VERSION   the phone app            app/tv/VERSION   the TV app
-# Both APKs are attached to every release together with versions.json; each app reads its own number from that file,
+# Both APKs are attached to every release together with versions.json (the computer apps follow, from GitHub Actions); each app reads its own number from that file,
 # so an app that did not change is not offered a pointless update.
 #
 #   1. bump VERSION, and app/android/VERSION and/or app/tv/VERSION if that app (or app/shared) changed
@@ -27,4 +27,24 @@ done
 cp app/android/build/tv-remote.apk app/android/tv-remote.apk && cp app/tv/build/tv-setup.apk app/tv/tv-setup.apk
 if [ -n "$(git status --porcelain)" ]; then git add app/android/tv-remote.apk app/tv/tv-setup.apk && git commit -q -m "Build $VER" && git push -q; fi
 printf '{"android": "%s", "tv": "%s", "web": "%s"}\n' "$(cat app/android/VERSION)" "$(cat app/tv/VERSION)" "$VER" > app/android/build/versions.json
+D=https://github.com/HoangTran0410/tv-remote/releases/latest/download
+NOTES="$NOTES
+
+**Tải về / Download**
+
+| | |
+|---|---|
+| TV (TV Setup) | [tv-setup.apk]($D/tv-setup.apk) · Downloader \`2397346\` |
+| Android | [tv-remote.apk]($D/tv-remote.apk) · Downloader \`2973135\` |
+| Mac (Apple Silicon M1–M4) | [TV-Remote-mac-arm64.zip]($D/TV-Remote-mac-arm64.zip) |
+| Mac (Intel) | [TV-Remote-mac-x64.zip]($D/TV-Remote-mac-x64.zip) |
+| Windows 10/11 | [TV-Remote-windows-x64.zip]($D/TV-Remote-windows-x64.zip) |
+| Linux x64 / arm64 | [TV-Remote-linux-x64.tar.gz]($D/TV-Remote-linux-x64.tar.gz) · [TV-Remote-linux-arm64.tar.gz]($D/TV-Remote-linux-arm64.tar.gz) |"
 gh release create "v$VER" app/android/tv-remote.apk app/tv/tv-setup.apk app/android/build/versions.json --title "v$VER" --notes "$NOTES"
+# the computer apps are built on each system by .github/workflows/desktop.yml, which the new release starts and which
+# attaches them to it: wait for it, so the release is only called done once every download link works
+echo "waiting for the computer apps (.github/workflows/desktop.yml)..."
+for i in $(seq 30); do RUN=$(gh run list --workflow desktop.yml --event release -L 5 --json databaseId,headBranch -q ".[] | select(.headBranch == \"v$VER\") | .databaseId" | head -1); [ -n "$RUN" ] && break; sleep 5; done
+[ -n "$RUN" ] || { echo "the desktop workflow did not start: gh workflow run desktop.yml, then gh release upload v$VER <archives>"; exit 1; }
+gh run watch "$RUN" --exit-status >/dev/null || { echo "a computer app failed to build: gh run view $RUN --log-failed"; exit 1; }
+gh release view "v$VER" --json assets -q '.assets[].name'

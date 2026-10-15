@@ -1,11 +1,16 @@
 # The computer app (app/desktop) on each system it is made for: jpackage only builds for the system it runs on. Each job
 # builds the app, opens it (its window included: Linux under a virtual screen), checks that the server answers and that the
-# window came up, quits it through the page's /api/shutdown, and keeps the archive people download.
+# window came up, quits it through the page's /api/shutdown, and keeps the archive people download. A release (dev/release.sh)
+# gets the archives attached, under names without a version so releases/latest/download/<name> always works.
 name: desktop
 on:
   workflow_dispatch:
   push:
     paths: ["app/desktop/**", "app/shared/**", "VERSION", ".github/workflows/desktop.yml"]
+  release:
+    types: [published]
+permissions:
+  contents: write
 
 jobs:
   app:
@@ -42,7 +47,14 @@ jobs:
           for i in $(seq 20); do curl -s http://127.0.0.1:8765/api/about >/dev/null || break; sleep 1; done
           ! curl -s http://127.0.0.1:8765/api/about
           grep -q "Window closed" "$log"
-      - uses: actions/upload-artifact@v4
+      - name: archive
+        run: ls -l app/desktop/build/package/TV-Remote-*                # a missing archive fails here, not silently at upload
+      - if: github.event_name == 'release'
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh release upload "${{ github.event.release.tag_name }}" app/desktop/build/package/TV-Remote-* --clobber
+      - if: github.event_name != 'release'                             # for trying a build; GitHub zips it once more
+        uses: actions/upload-artifact@v4
         with:
           name: TV-Remote-${{ matrix.runner }}
           path: app/desktop/build/package/TV-Remote-*
+          compression-level: 0

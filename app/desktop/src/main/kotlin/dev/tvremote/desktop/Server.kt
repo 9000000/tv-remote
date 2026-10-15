@@ -15,7 +15,7 @@ import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * The computer's server on the shared Kotlin core: the "mac" core of the page, answering what app/web/server.py answers.
+ * The computer's server on the shared Kotlin core: the "mac" core of the page.
  * The routes that only the computer has (many TVs, the remote buttons without ADB, the first-time setup, the picture and
  * sound for this browser) are here; everything managed over ADB is Manage.kt's, as for TV Setup and the phone.
  */
@@ -47,7 +47,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
     @Volatile private var pageStamp = 0L
     @Volatile private var pageChecked = 0L
 
-    /** Read again from disk when any of its files changed, as server.py does: a new page with the scripts it names. */
+    /** Read again from disk when any of its files changed: a new page with the scripts it names. */
     private fun page(): WebPage {
         val p = page
         if (p != null && System.currentTimeMillis() - pageChecked < 1500) return p   // a page load asks for a dozen files at once
@@ -444,7 +444,8 @@ class Server(private val repo: File, private val keys: File, private val cache: 
         /** The key names the page sends, to Android key codes. Over the remote protocol the search key opens the Assistant. */
         val KEYS: Map<String, Int> = Scenes.KEYS + mapOf("ASSIST" to 84, "SEARCH" to 84)
         /** The "More" keys go through ADB when it is open: TVs ignore some of them over the remote protocol (the input key, for one). */
-        val ADB_KEYS = setOf("INPUT", "INFO", "GUIDE", "LIVE", "SUBTITLE", "CH_UP", "CH_DOWN", "REWIND", "STOP", "FFWD")
+        val ADB_KEYS = setOf("INPUT", "INFO", "GUIDE", "LIVE", "SUBTITLE", "CH_UP", "CH_DOWN", "REWIND", "STOP", "FFWD",
+            "SLEEP", "WAKE")                                          // Sony ignores SLEEP sent over the remote protocol
         val OPENERS = setOf("MENU", "SETTINGS", "INPUT", "GUIDE", "LIVE")   // keys that should bring up a screen of their own
         val OURS = setOf("/api/key", "/api/app", "/api/volume", "/api/text", "/api/touch", "/api/type", "/api/wake", "/api/tv/select", "/api/tv/save",
             "/api/tv/remove", "/api/scenes", "/api/scene/run", "/api/fleet/do", "/api/assist", "/api/pair/start", "/api/pair/finish", "/api/shutdown")

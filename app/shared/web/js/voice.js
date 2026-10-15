@@ -1,6 +1,6 @@
 // Spoken or typed sentences the remote carries out itself, before handing anything to the TV's Assistant: "mở YouTube",
 // "tắt tiếng", "hẹn giờ tắt 30 phút", the name of a scene... Faster than the Assistant, and works on TVs without one.
-// The phone app has the same rules (app/shared .../Voice.kt). Tests: app/web/tests/voice.test.js.
+// The phone app has the same rules (app/shared .../Voice.kt). Tests: app/shared/tests/voice.test.js.
 (function (root) {
   // lower case, no accents, no punctuation: "Mở YouTube!" and "mo youtube" read the same
   const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[đĐ]/g, 'd').toLowerCase()

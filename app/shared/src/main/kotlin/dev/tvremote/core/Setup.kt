@@ -8,7 +8,7 @@ import java.net.URL
 import java.security.MessageDigest
 
 /**
- * "Optimize TV": the same steps as app/web/cli/tv_setup.py, run over an ADB connection. The TV app runs them on itself,
+ * "Optimize TV": the steps, run over an ADB connection. The TV app runs them on itself,
  * the phone app on the TV it is connected to. [dir] is where this device may keep a download for a moment.
  */
 class Setup(private val adb: Adb, private val dir: File?, private val vi: Boolean, private val log: Log) {

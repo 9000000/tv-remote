@@ -1,4 +1,7 @@
-// The computer's server on the same Kotlin core the two apps use (a trial, next to the Python one in app/web): the core's
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+
+// The computer's server on the same Kotlin core the two apps use (the computer app): the core's
 // files are compiled here as they are, without the few that only run on Android (picture, sound, the on-TV helpers).
 plugins {
     id("org.jetbrains.kotlin.jvm")
@@ -74,7 +77,13 @@ val packageArchive by tasks.registering {
         when (os) {
             "mac" -> exec { workingDir = packageOut; commandLine("ditto", "-c", "-k", "--keepParent", "TV Remote.app", "$base.zip") }
             "linux" -> exec { workingDir = packageOut; commandLine("tar", "-czf", "$base.tar.gz", appName) }
-            else -> ant.invokeMethod("zip", mapOf("destfile" to packageOut.resolve("$base.zip").path, "basedir" to packageOut.path, "includes" to "$appName/**"))
+            else -> ZipOutputStream(packageOut.resolve("$base.zip").outputStream()).use { z ->   // not Ant's zip: it splits "TV Remote/**" at the space
+                packageOut.resolve(appName).walkTopDown().filter { it.isFile }.forEach { f ->
+                    z.putNextEntry(ZipEntry(f.relativeTo(packageOut).invariantSeparatorsPath))
+                    f.inputStream().use { it.copyTo(z) }
+                    z.closeEntry()
+                }
+            }
         }
     }
 }

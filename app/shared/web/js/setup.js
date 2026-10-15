@@ -1,5 +1,5 @@
 // optimise, language, quit, and the TV tab (saved TVs, scan, first-time setup)
-// ---------- one-click TV setup (cli/tv_setup.py) ----------
+// ---------- one-click TV setup (Setup.kt) ----------
 async function runSetup(mode, choice) {
   if (mode === 'undo' && !await ask('Hoàn tác? Bật lại màn hình chính Google, các app đã tắt và hiệu ứng như cũ.', { ok: 'Hoàn tác' })) return;
   const btns = [$('#setupapply'), $('#setupundo')], log = $('#setuplog');
@@ -203,7 +203,7 @@ async function installSetup() {
   }
 }
 
-// ---------- Tailscale: one button installs it on the TV, switches it on and fetches its sign-in link (Tailscale.kt / adbtools.py) ----------
+// ---------- Tailscale: one button installs it on the TV, switches it on and fetches its sign-in link (Tailscale.kt) ----------
 // Nobody types on the TV: the link opens in a browser that is signed in to Tailscale, where one click adds the TV.
 const TS_PITCH = 'Một nút: tự cài Tailscale bản chính thức lên TV, cho nó tự chạy lại mỗi khi bật TV, và lấy link đăng nhập. Bạn chỉ cần bấm “Connect” bằng tài khoản Tailscale của mình. Chỉ dùng trong cùng Wi-Fi thì bỏ qua được.';
 const TS_STEP = { download: 'Đang tải Tailscale bản chính thức (khoảng 100 MB)...', install: 'Đang cài Tailscale lên TV...', start: 'Đang bật Tailscale trên TV...' };

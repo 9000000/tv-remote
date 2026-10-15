@@ -1,7 +1,7 @@
-// node --test app/web/tests/   Reading what the TV printed for the Apps tab and the TV card (js/tvread.js).
+// node --test app/shared/tests/   Reading what the TV printed for the Apps tab and the TV card (js/tvread.js).
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { cleanFreed, logNext, logLevel, readTvset, densityChoices, capsRead, sizeName, appInfoRead, permName, bootRead, settingsRead } = require('../../shared/web/js/tvread.js');
+const { cleanFreed, logNext, logLevel, readTvset, densityChoices, capsRead, sizeName, appInfoRead, permName, bootRead, settingsRead } = require('../web/js/tvread.js');
 
 test('bytes freed by the cache clean', () => {
   assert.equal(cleanFreed('1291592 4096 1291597 4096\n'), 5 * 4096);

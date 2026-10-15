@@ -3,7 +3,7 @@ package dev.tvremote.core
 import java.io.IOException
 
 /**
- * Several saved TVs at once, as the phone app does it from its list of TVs (the computer: app/web/fleet.py, same reading and
+ * Several saved TVs at once, as the phone app does it from its list of TVs (the computer: app/desktop Fleet.kt, same reading and
  * actions): what each TV is, in one round trip, and the actions that are not an install (that one is Manage.install).
  * TV Setup has no list of TVs: it manages only the TV it runs on.
  */

@@ -5,9 +5,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.File
 
-/** TvShell gives what app/web/tvshell.py gives, for every case in the table both test suites read. */
+/** TvShell gives what tests/tvshell_cases.json says, for every case (the page reads the same output: js/tvread.js). */
 class TvShellTest {
-    private val cases = JSONObject(File("../web/tests/tvshell_cases.json").readText())
+    private val cases = JSONObject(File("tests/tvshell_cases.json").readText())
 
     @Test fun constants() {
         val c = cases.getJSONObject("consts")

@@ -10,7 +10,7 @@ Tested for real on a Sony BRAVIA (Android 9). Other brands are untested. Samsung
 <tr>
 <td align="center"><img src="docs/img/phone-remote.webp" height="360" alt="Phone app"><br><sub>Phone app</sub></td>
 <td align="center"><img src="docs/img/tvpage-remote-en.webp" height="360" alt="Page served by the TV"><br><sub>Page served by the TV</sub></td>
-<td align="center"><img src="docs/img/web-remote-en.webp" height="360" alt="Web on the computer"><br><sub>Web on the computer</sub></td>
+<td align="center"><img src="docs/img/web-remote-en.webp" height="360" alt="App on the computer"><br><sub>App on the computer</sub></td>
 </tr>
 </table>
 
@@ -22,7 +22,7 @@ Tested for real on a Sony BRAVIA (Android 9). Other brands are untested. Samsung
 - Setting up each way:
   - [Phone app](#1-android-phone-app-tv-remote)
   - [Page served by the TV](#2-page-served-by-the-tv-tv-setup)
-  - [Web on the computer](#3-web-on-the-computer)
+  - [App on the computer](#3-app-on-the-computer)
 - [From another network](#from-another-network-tailscale)
 - [When the TV is off](#when-the-tv-is-off)
 - [Optimize TV](#optimize-tv)
@@ -36,7 +36,7 @@ Tested for real on a Sony BRAVIA (Android 9). Other brands are untested. Samsung
 |---|---|---|
 | An Android phone | The **TV Remote** app | `tv-remote.apk` in [Releases](https://github.com/HoangTran0410/tv-remote/releases), or the Downloader code **`2973135`** |
 | Any browser, iPhone included | The **TV Setup** app installed on the TV, then open `http://<TV IP>:8765` | On the TV: the Downloader app, code **`2397346`** ([how](#install-tv-setup-with-a-downloader-code)) |
-| A computer (Mac, Windows, Linux) | The **web on the computer** | Download the repo, double-click `TV Remote` (Mac) / `start-windows.cmd` |
+| A computer (Mac, Windows, Linux) | The **TV Remote** computer app | The file for your computer on [Releases](https://github.com/HoangTran0410/tv-remote/releases/latest) ([see the table](#3-app-on-the-computer)) |
 
 All three share one web UI; the site has the [feature list](https://tvremote.pages.dev/#features) and [the three ways compared](https://tvremote.pages.dev/#install).
 
@@ -53,12 +53,12 @@ The first time each device connects, the TV asks "Allow USB debugging?": tick **
 <details>
 <summary><b>When you are away and the TV asks again</b> (it forgot this device, Android 11+ revokes after 7 days unused...)</summary>
 
-- **Automatic:** the phone app and the computer web, whenever they have ADB, fetch a "pass" from TV Setup. The next time the TV asks, they have TV Setup press Allow, nobody needed at the TV. TV Setup presses only when **the key code in the question matches the asking device's own**, and shows a notice on the TV each time.
-- **By hand:** any page that has ADB (the TV's page once paired, the computer web, the phone app) shows a "The TV is asking... for a device" bar with the code and **Allow / Decline**. Allow only when the code matches the one the TV Remote app shows while it waits.
+- **Automatic:** the phone app and the computer app, whenever they have ADB, fetch a "pass" from TV Setup. The next time the TV asks, they have TV Setup press Allow, nobody needed at the TV. TV Setup presses only when **the key code in the question matches the asking device's own**, and shows a notice on the TV each time.
+- **By hand:** any page that has ADB (the TV's page once paired, the computer app, the phone app) shows a "The TV is asking... for a device" bar with the code and **Allow / Decline**. Allow only when the code matches the one the TV Remote app shows while it waits.
 - A device that never connected and never paired with TV Setup still needs someone at the TV. That is on purpose, so strangers cannot get in.
 </details>
 
-ADB cannot be turned on (an operator box hides Settings, asks for a password...)? Install TV Setup with the [Downloader code](#install-tv-setup-with-a-downloader-code): it opens the right place directly. The web on the computer has **🧭 Turn ADB on for me**, and the phone app a similar assistant: using only the remote buttons, it installs TV Setup on the TV, or opens the TV's Settings in every way it knows.
+ADB cannot be turned on (an operator box hides Settings, asks for a password...)? Install TV Setup with the [Downloader code](#install-tv-setup-with-a-downloader-code): it opens the right place directly. The app on the computer has **🧭 Turn ADB on for me**, and the phone app a similar assistant: using only the remote buttons, it installs TV Setup on the TV, or opens the TV's Settings in every way it knows.
 
 <details>
 <summary>Where to find the TV's IP</summary>
@@ -97,7 +97,7 @@ The phone's volume keys set the TV's volume; a widget, Quick Settings tiles and 
 
 Works from any browser, with nothing to install on the phone or computer.
 
-1. Install TV Setup on the TV: the [Downloader code `2397346`](#install-tv-setup-with-a-downloader-code), a USB stick, or let the phone app / computer web do it.
+1. Install TV Setup on the TV: the [Downloader code `2397346`](#install-tv-setup-with-a-downloader-code), a USB stick, or let the phone app / computer app do it.
 2. Open **TV Setup** on the TV and choose "Always allow" when the TV asks.
 3. On a phone or computer, open the address the app shows on the TV: `http://<TV IP>:8765`.
 4. Enter the **6-digit code** the TV shows. That device gets straight in from then on.
@@ -116,28 +116,36 @@ Works from any browser, with nothing to install on the phone or computer.
 <p align="center"><img src="docs/img/tvapp-en.webp" width="640" alt="The TV Setup app screen"></p>
 </details>
 
-## 3. Web on the computer
+## 3. App on the computer
 
-Only Python 3.10 or newer is needed. The first run fetches `adb` (Google's official build) and `ffmpeg` into `tools/` when the computer has neither; ones already installed (Homebrew, winget, apt) are used as they are.
+An app with its own window, about 20 MB; nothing else to install (no Python, no adb).
 
-1. Download the repo (git clone or the zip).
-2. Mac: double-click **`TV Remote`** (the app in the folder; it can go to Applications or the Dock too, it remembers where the tv-remote folder is, just keep that folder). Windows: **`start-windows.cmd`**. Linux: `./start-linux.sh`. The first run installs what it needs. If the Mac says the app is “unverified”: right-click → Open (or System Settings → Privacy & Security → Open Anyway). To stop: the ⏻ Quit button on the page.
-3. The browser opens `http://127.0.0.1:8765` with the list of TVs (it scans the network the first time). Pick a TV, or type its IP.
-4. A ready TV goes straight to the Remote tab. Otherwise the **Setup** tab lists the steps, each ticked when done: ADB → Tailscale (optional, one button) → Pair the remote (type the 6-character code the TV shows) → Save.
+| Computer | Download |
+|---|---|
+| Mac with Apple chip (M1–M4) | [TV-Remote-mac-arm64.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac-arm64.zip) |
+| Mac with Intel chip | [TV-Remote-mac-x64.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac-x64.zip) |
+| Windows 10 / 11 | [TV-Remote-windows-x64.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-windows-x64.zip) |
+| Linux x64 / arm64 | [TV-Remote-linux-x64.tar.gz](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-x64.tar.gz) · [arm64](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-arm64.tar.gz) |
+
+1. Download the file for your computer from the table and unzip it.
+   - **Mac:** drag **TV Remote** into Applications and open it. If the Mac refuses because the developer is “unverified”: System Settings → Privacy & Security → scroll down, **Open Anyway**. Only the first time.
+   - **Windows:** open the `TV Remote` folder and run **`TV Remote.exe`**. If Windows says “Windows protected your PC”: **More info → Run anyway**.
+   - **Linux:** run `tv-remote/bin/tv-remote`. The window needs `libwebkit2gtk-4.1-0` (usually there on Ubuntu 22.04 and newer); without it the app opens in the browser.
+2. The app's window lists the TVs (it scans the network the first time). Pick a TV, or type its IP. The first time, the TV asks “Allow USB debugging?”: choose Always allow.
+3. A ready TV goes straight to the Remote tab. Otherwise the **Setup** tab lists the steps, each ticked when done: ADB → Tailscale (optional, one button) → Pair the remote (type the 6-character code the TV shows) → Save.
 
 The **📺 Change TV** button at the top goes back to the list.
 
-After that, just double-click `TV Remote` (or the start file). The ⏻ Quit button on the page stops it; nothing keeps running on the computer.
+Closing the window (or the ⏻ Quit button) stops the app; nothing keeps running. Links to other sites open in the browser; screenshots and backups are saved to the Downloads folder. The app only listens on `127.0.0.1`: other devices on the network cannot reach it.
 
 **When ADB is closed**, only the buttons, power, step-by-step volume and wake remain; the page says so and has a "Retry connection" button.
 
 <details>
 <summary>Usage notes</summary>
 
-- Picture quality goes from 240p to 960p; lower is lighter on the TV and the network. The web on the computer adds *Sharpest* (slows the TV noticeably). *Screenshots* fetch one picture at a time, the lightest. On another tab the picture shrinks into a corner.
+- Picture quality goes from 240p to 960p; lower is lighter on the TV and the network. The app on the computer adds *Sharpest* (slows the TV noticeably). *Screenshots* fetch one picture at a time, the lightest. On another tab the picture shrinks into a corner.
 - Protected video (Netflix and the like) shows as black.
 - The TV's on-screen keyboard cannot be clicked with the mouse; type on the computer keyboard. For accented text, type in the "Keyboard" box.
-- Command line: `app/web/cli/tv-new.sh <IP>` (Windows: `tv-new.cmd`) runs the same add-a-TV steps.
 </details>
 
 ## From another network (Tailscale)
@@ -148,7 +156,7 @@ Once, while at home (on the TV's Wi-Fi):
 2. Wait about half a minute: the TV downloads the official Tailscale (checksum checked), installs it, skips the VPN question, has it start again whenever the TV turns on, switches it on and fetches its sign-in link.
 3. Press **🔑 Open the Tailscale sign-in page** (or scan the QR code), sign in to your Tailscale account (none yet? Create one for free with Google, Microsoft or GitHub) and press **Connect**. Nothing is typed on the TV. The page notices when the TV is in.
 4. Recommended: in the [Tailscale admin console](https://login.tailscale.com/admin/machines), open the TV's ⋯ menu → **Disable key expiry**, or the TV is signed out after about 180 days.
-5. Install Tailscale on the controlling device (same account), then use the TV's `100.x.x.x` IP instead of the home one. The web on the computer has a **Save** step that switches to that IP for you.
+5. Install Tailscale on the controlling device (same account), then use the TV's `100.x.x.x` IP instead of the home one. The app on the computer has a **Save** step that switches to that IP for you.
 
 <details>
 <summary>The Tailscale box, and why the sign-in goes through a link</summary>
@@ -167,7 +175,7 @@ The person at the TV: turn on ADB debugging, install TV Setup (or let the helper
 ## When the TV is off
 
 - **Standby (network still up):** Power or Wake is enough, over Tailscale too.
-- **Fully off (network down):** only a Wake-on-LAN packet reaches the TV, and it must be sent from **inside the home network**. The phone app and the web on the computer both send it when on the TV's network. From away, the web on the computer can ask a machine at home to send it over SSH: add `relay_user` and `relay_host` to the TV's entry in `tvs.json`.
+- **Fully off (network down):** only a Wake-on-LAN packet reaches the TV, and it must be sent from **inside the home network**. The phone app and the app on the computer both send it when on the TV's network. From away, the app on the computer can ask a machine at home to send it over SSH: add `relay_user` and `relay_host` to the TV's entry in `tvs.json`.
 - Holding the power key on the TV's own remote opens the full power-off menu; press it briefly if you want to wake the TV remotely later.
 - **After the TV restarts:** Tailscale starts again by itself if it was installed with the Tailscale button (or Optimize TV was run). If ADB does not reopen, turn "ADB debugging" off and on.
 
@@ -195,7 +203,7 @@ If the TV later shows no home screen: Settings → Apps → System apps → **An
 | Cannot connect | Same network as the TV? ADB debugging on? Right IP? Look at the TV for a permission dialog |
 | **ADB: waiting for the TV** | Choose "Always allow" on the TV. Closed the question by mistake (Back, Home, Cancel)? The apps ask again a few times; on the web press "Retry connection". Away from home: see "When you are away and the TV asks again" above |
 | **ADB: port closed** | The TV is off, or just restarted: turn "ADB debugging" off and on |
-| Buttons do nothing (web on the computer) | The remote is not paired (the **Setup** tab), or two windows are open for the same TV |
+| Buttons do nothing (app on the computer) | The remote is not paired (the **Setup** tab), or two windows are open for the same TV |
 | The TV's page asks for the 6-digit code again | "Unpair all" was pressed on the TV, or the browser cleared the page's data: enter a new code |
 | Tailscale gives no sign-in link | The TV's screen must be on (not in standby) and online. Press the button again; failing that, open Tailscale on the TV and scan the QR code it shows |
 | Choppy picture, slow TV | Pick a lower quality; turn the picture off when not needed |
@@ -206,8 +214,8 @@ If the TV later shows no home screen: Settings → Apps → System apps → **An
 
 - ADB over the network has no password: any device the TV has "Always allowed" has full control of it. Use it only on networks you trust and over Tailscale. To revoke: Developer options → Revoke USB debugging authorizations.
 - **Who may have TV Setup press Allow:** only a device paired with the 6-digit code (shown on the TV's screen, so someone was there) or one that already has ADB. The pass for a device with ADB is handed out through a broadcast only ADB's shell can send, so no other app on the TV can get one. Each Allow checks the key code and shows a notice on the TV. **Unpair all** on the TV voids every pass.
-- `cert.pem` / `key.pem` (web on the computer) are the pairing key. **Whoever has `key.pem` can control the TV.** They are never committed to git.
-- The web on the computer listens on `127.0.0.1` only. The page on the TV listens on the home network and requires the pairing code.
+- The computer app's `keys` folder (Mac: `~/Library/Application Support/TV Remote`, Windows: `%APPDATA%\TV Remote`, Linux: `~/.local/share/tv-remote`) holds the pairing keys. **Whoever has those files can control the TV.** Never share them.
+- The app on the computer listens on `127.0.0.1` only. The page on the TV listens on the home network and requires the pairing code.
 - Install APKs only from sources you trust.
 
 ## Technical details
@@ -218,7 +226,7 @@ If the TV later shows no home screen: Settings → Apps → System apps → **An
 ```mermaid
 flowchart LR
     subgraph C["Controlling device"]
-        PC["💻 Web on the computer<br/>127.0.0.1:8765"]
+        PC["💻 App on the computer<br/>127.0.0.1:8765"]
         PH["📱 TV Remote app"]
         BR["🌐 Any browser"]
     end
@@ -238,15 +246,14 @@ flowchart LR
 
 - **The phone app and TV Setup** speak the ADB protocol themselves and push `scrcpy-server` to the TV for H.264 video and for touch and key input. TV Setup connects to the TV's own ADB (`127.0.0.1:5555`).
 - **Picture on the TV's page:** H.264 over `/api/video`, played in the browser by JMuxer (MSE).
-- **Web on the computer, remote buttons:** the Android TV Remote v2 protocol (`androidtvremote2`), ports 6466/6467. Opening apps and links goes through ADB because this TV ignores the protocol's launch command.
-- **Web on the computer, live view:** H.264 from the TV → ffmpeg → MJPEG (`/api/stream`). Light mode uses scrcpy-server capped at 960 px (about 0.7 of the TV's 4 CPU cores); `?q=hd` uses `screenrecord` at 720p (about 1.8 cores).
+- **The computer app** (`app/desktop`) runs on the same Kotlin core as the two Android apps (ADB, scrcpy, the remote protocol), on its own bundled Java; its window is the system's web view (the [webview](https://github.com/webview/webview) library, through JNA). H.264 goes straight to the page, as on the TV's page. Remote buttons without ADB: the Android TV Remote v2 protocol, ports 6466/6467.
 - **Accented text:** put on the TV's clipboard, then pasted.
 - **Volume:** calls `AudioService.setStreamVolume` directly (Android 9), falls back to `media volume`, and without ADB presses step by step.
-- **App names and icons:** all three ask the TV's own system. TV Setup asks directly; the phone app and the web on the computer copy the phone app's APK to `/data/local/tmp` and start its `Meta` class with `app_process`. The web on the computer caches the result in `.cache/apps`.
-- **ADB still off:** the phone app and the computer web can still send keys after pairing with the 6-character code the TV shows (Android TV Remote protocol, ports 6466/6467). The picture, apps and files need ADB.
+- **App names and icons:** all three ask the TV's own system. TV Setup asks directly; the phone app and the app on the computer copy the phone app's APK to `/data/local/tmp` and start its `Meta` class with `app_process`. The app on the computer caches the result in `.cache/apps`.
+- **ADB still off:** the phone app and the computer app can still send keys after pairing with the 6-character code the TV shows (Android TV Remote protocol, ports 6466/6467). The picture, apps and files need ADB.
 - **History:** TV Setup writes to `/sdcard/Android/data/dev.tvremote.setup/files/stats/` (`usage.json` for 90 days, `samples.jsonl` for about 30); the remotes read it over ADB and draw it with `app/shared/web/stats.js`. Usage access is granted through ADB.
 - **Power (both apps):** the SLEEP (223) / WAKEUP (224) keys instead of POWER, so repeating a press never flips the state.
-- **Tailscale in one button** (`Tailscale.kt`, `adbtools.py`): downloads the APK from `pkgs.tailscale.com` and checks its SHA-256, installs it over ADB, `appops set com.tailscale.ipn ACTIVATE_VPN allow` so there is no VPN question, switches it on with the `CONNECT_VPN` broadcast; when it is still signed out, opens the app, presses "Log in" and reads the code under the QR with `uiautomator dump`. The sign-in link is `https://login.tailscale.com/a/<code>`.
+- **Tailscale in one button** (`Tailscale.kt`): downloads the APK from `pkgs.tailscale.com` and checks its SHA-256, installs it over ADB, `appops set com.tailscale.ipn ACTIVATE_VPN allow` so there is no VPN question, switches it on with the `CONNECT_VPN` broadcast; when it is still signed out, opens the app, presses "Log in" and reads the code under the QR with `uiautomator dump`. The sign-in link is `https://login.tailscale.com/a/<code>`.
 </details>
 
 <details>
@@ -255,8 +262,7 @@ flowchart LR
 The full guide for people (and AI agents) changing the code: [CLAUDE.md](CLAUDE.md).
 
 ```
-TV Remote.app, start-windows.cmd, start-linux.sh       run the web on the computer (start-mac.command: the same in Terminal)
-app/web/      web on the computer: server.py (aiohttp, 127.0.0.1 only), cli/ (command line); the UI comes from app/shared/web
+app/desktop/  the TV Remote computer app (Kotlin, the same core as the two Android apps; the window is the system's web view)
 app/android/  the TV Remote app (Kotlin)            app/tv/   the TV Setup app (Kotlin) + the page the TV serves
 app/shared/   shared: ADB, the control session, TV management, updates; web/ = ONE web UI for all three places
               (the computer, the page the TV serves, Manage in the phone app); only the core answering /api differs
@@ -264,13 +270,15 @@ app/gradle/   build setup of the two Android apps (open this folder in Android S
 dev/          release.sh (build the APKs + create the GitHub release), gen_icons.py (one icon set for all three)
 docs/         the product page (GitHub Pages) and screenshots
 VERSION, CHANGELOG.md
-tvs.json, cert.pem, key.pem, *.jks, venv/, .cache/      your machine's own data, never committed
+tvs.json, cert.pem, key.pem, *.jks, .cache/      your machine's own data, never committed
 ```
 
 - **Building the apps:** open `app/` in Android Studio, or run `app/android/build.sh`, `app/tv/build.sh` (JDK 17 and the Android SDK).
+- **Computer app:** `cd app/gradle && ./gradlew :desktop:packageApp` builds the app for the system it runs on; GitHub Actions builds all five for each release.
+- **Running from source:** get the source (git clone or zip). Computer app: `./gradlew :desktop:installDist`, then `app/desktop/build/install/desktop/bin/desktop --window`. A change in `app/shared/web` only needs the page reloaded; a Kotlin change, the command above again (a few seconds).
 - **Versions:** three numbers, each bumped only when its part changes: `VERSION` (the release and the web), `app/android/VERSION`, `app/tv/VERSION`. Every release carries `versions.json`, so an unchanged app is not offered an update. `dev/release.sh` stops if an app's code changed without a bump.
-- **Keep the three in sync:** any change to the controls goes into the phone app, the page on the TV and the web on the computer.
-- **Credits:** [scrcpy](https://github.com/Genymobile/scrcpy) v5.0.1 (Apache-2.0), [JMuxer](https://github.com/samirkumardas/jmuxer) 2.1.0 (MIT), [androidtvremote2](https://github.com/tronikos/androidtvremote2).
+- **Keep the three in sync:** any change to the controls goes into the phone app, the page on the TV and the app on the computer.
+- **Credits:** [scrcpy](https://github.com/Genymobile/scrcpy) v5.0.1 (Apache-2.0), [JMuxer](https://github.com/samirkumardas/jmuxer) 2.1.0 (MIT), [webview](https://github.com/webview/webview) 0.12.0 (MIT), [JNA](https://github.com/java-native-access/jna) (Apache-2.0).
 </details>
 
 Changes per release: [CHANGELOG.md](CHANGELOG.md).

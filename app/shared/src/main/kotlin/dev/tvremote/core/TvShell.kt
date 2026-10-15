@@ -2,8 +2,8 @@ package dev.tvremote.core
 
 /**
  * Shell recipes run on the TV for the Apps tab (clean, back up, restore, log) and the TV card (restart, DNS, quick settings).
- * The same text as app/web/tvshell.py, which says what each one does: app/web/tests/tvshell_cases.json holds what both must
- * give (TvShellTest), so the computer and the apps change a TV in exactly the same way. Anything a person typed is checked
+ * app/shared/tests/tvshell_cases.json holds what each must give (TvShellTest); all three remotes run these, so they change
+ * a TV in exactly the same way. Anything a person typed is checked
  * here first and throws IllegalArgumentException.
  */
 object TvShell {

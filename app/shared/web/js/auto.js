@@ -1,5 +1,5 @@
 // Automation tab: TV Setup's sleep timer, bedtime and daily app limits (they run on the TV itself, see app/tv .../Rules.kt),
-// and scenes, one button that does several things (each remote keeps its own list, see Scenes.kt / scenes.py).
+// and scenes, one button that does several things (each remote keeps its own list, see Scenes.kt).
 const SETUP_APK = 'https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-setup.apk';
 let RULES = null, rulesSkew = 0, rulesBusy = false;
 const pad2 = (n) => String(n).padStart(2, '0');

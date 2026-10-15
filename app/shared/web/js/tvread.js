@@ -1,5 +1,5 @@
-// Reading what the TV printed for the Apps tab and the TV card (the recipes are app/web/tvshell.py and TvShell.kt). Kept apart
-// from the page so node can test it: node --test app/web/tests/
+// Reading what the TV printed for the Apps tab and the TV card (the recipes are in TvShell.kt). Kept apart
+// from the page so node can test it: node --test app/shared/tests/
 ((root) => {
   const STAMP = /^\d\d-\d\d \d\d:\d\d:\d\d\.\d{3}$/;
 

@@ -1,4 +1,4 @@
-// 📺 Several TVs (computer only, app/web/fleet.py): every saved TV in one list to compare, the ones ticked get the same APK,
+// 📺 Several TVs (computer only, app/desktop Fleet.kt): every saved TV in one list to compare, the ones ticked get the same APK,
 // lose the same app, or restart, each with its own progress line. The card sits under the saved TVs on the picker, once there are two.
 let fleetTvs = [], fleetPick = new Set(), fleetRow = {};
 const FLEET_STEP = { waiting: 'đang chờ lượt', connecting: 'đang kết nối', 'installing on TV': 'đang cài', 'checking the TV kept it': 'đang kiểm tra TV giữ app',

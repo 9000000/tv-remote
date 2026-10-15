@@ -12,7 +12,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Semaphore
 
 /**
- * 📺📺 Several saved TVs at once, as app/web/fleet.py: one table that compares them, and one APK installed (or one app
+ * 📺📺 Several saved TVs at once: one table that compares them, and one APK installed (or one app
  * removed, or a restart) on each TV picked, each with its own progress. The reading and the actions are Fleet.kt's.
  */
 class Fleets(private val keys: File, private val cache: File) {

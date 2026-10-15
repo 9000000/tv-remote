@@ -7,7 +7,7 @@ import java.net.InetAddress
 import java.util.concurrent.TimeUnit
 
 /**
- * Waking a TV from standby with Wake-on-LAN, as app/web/cli/wake.py: the magic packet from here, and through a relay machine
+ * Waking a TV from standby with Wake-on-LAN: the magic packet from here, and through a relay machine
  * at home over SSH when one is saved (the packet only reaches the TV from its own network), then waiting for the TV.
  */
 object Wake {
@@ -22,7 +22,10 @@ object Wake {
         val relayHost = tv.optString("relay_host")
         if (relayHost.isNotEmpty()) {
             try {
-                val cmd = tv.optString("relay_cmd").ifEmpty { "python wake.py --local --mac $mac" }
+                val hex = mac.filter { it.isLetterOrDigit() }.take(12)      // the packet sent there: Python 3 is all the relay needs
+                val cmd = tv.optString("relay_cmd").ifEmpty { "python3 -c 'import socket;p=b\"\\xff\"*6+bytes.fromhex(\"$hex\")*16;" +
+                    "s=socket.socket(socket.AF_INET,socket.SOCK_DGRAM);s.setsockopt(socket.SOL_SOCKET,socket.SO_BROADCAST,1);" +
+                    "[s.sendto(p,(\"255.255.255.255\",n)) for n in (9,7) for _ in range(3)]'" }
                 val p = ProcessBuilder("ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=8", "-l", tv.optString("relay_user"), relayHost, cmd).redirectErrorStream(true).start()
                 val ok = p.waitFor(30, TimeUnit.SECONDS) && p.exitValue() == 0
                 if (p.isAlive) p.destroyForcibly()

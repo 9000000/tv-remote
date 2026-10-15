@@ -8,7 +8,6 @@ import java.net.URL
  * Tailscale on the TV with as little done by hand as possible, all over ADB: install the official APK, let it make its VPN without
  * the "Connection request" box, switch it on, and when it still has to be signed in, read the sign-in link off its screen.
  * Whoever opens that link in a browser already signed in to Tailscale adds the TV with one click; nobody types anything on the TV.
- * The same steps as app/web/tvtools.py (the computer's server).
  */
 class Tailscale(private val adb: Adb, private val dir: File?) {
     companion object {

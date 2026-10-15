@@ -9,6 +9,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 Web 2.20.0 · app điện thoại 2.18.0 · app TV 2.17.0
 
 **Tiếng Việt**
+- **App TV Remote cho máy tính** (Mac, Windows, Linux): tải một tệp ở Releases, giải nén là chạy, có cửa sổ riêng. Không còn phải tải mã nguồn, cài Python, adb hay ffmpeg. App dùng chung lõi với app điện thoại và TV Setup nên làm được đúng những việc như hai app đó. Link sang trang khác mở bằng trình duyệt, ảnh chụp và tệp sao lưu lưu vào thư mục Tải về, đóng cửa sổ là app dừng hẳn. Bản Python cũ (tải mã nguồn, `start-windows.cmd`...) đã bỏ; lần đầu mở app mới cần chọn lại TV và ghép lại nút remote.
 - **Làm trên nhiều TV cùng lúc** (homestay, khách sạn, nhà nhiều TV): ở danh sách TV đã lưu trên máy tính và trong app điện thoại, chọn các TV rồi cài cùng một APK lên tất cả, gỡ một app hoặc khởi động lại. Mỗi TV có một dòng báo tiến độ riêng; TV tắt hay chưa bật ADB thì báo rõ, các TV khác vẫn làm tiếp. Máy tính còn hiện model, Android, bộ nhớ trống, RAM và bản TV Setup của từng TV. (TV Setup chỉ quản lý chính TV của nó nên không có phần này.)
 - **Kiểm tra APK trước khi cài:** APK cần Android mới hơn TV hay dành cho loại chip khác thì báo ngay bằng lời dễ hiểu, không đợi lỗi `INSTALL_FAILED_...` sau khi chép lên TV.
 - **Chi tiết & quyền của app** (⋯ → ℹ️): phiên bản, ngày cài, dung lượng, nguồn cài, và bật/tắt từng quyền (micro, vị trí, bộ nhớ...).
@@ -18,8 +19,10 @@ Web 2.20.0 · app điện thoại 2.18.0 · app TV 2.17.0
 - **An toàn hơn khi tự bấm “Cho phép gỡ lỗi USB?”:** nếu hộp hỏi của thiết bị mình vừa biến mất và TV hiện ngay hộp của một khóa lạ vào đúng chỗ đó, giờ không bao giờ bấm Cho phép cho khóa lạ (trước đây có một khe rất nhỏ). Khi đăng nhập Tailscale, chỉ bấm khi màn hình của Tailscale đang ở trên cùng.
 - **Web trên máy tính an toàn hơn:** trang web khác đang mở trong trình duyệt không còn lén mở được tiếng hay hình của TV (trước đây chỉ chặn các lệnh bấm, chưa chặn việc xem/nghe).
 - **Hộp hỏi lại nằm ngay trong trang** (gỡ app, xóa tệp, đổi tên, tắt TV...): cùng kiểu với trang, nút ghi rõ việc sẽ làm (“Gỡ”, “Xóa”) và nút nguy hiểm màu đỏ, thay cho hộp thoại xám của trình duyệt.
+- **“Tắt TV” trên máy tính giờ tắt được cả TV Sony:** phím ngủ đi qua ADB khi có, vì TV Sony bỏ qua phím này khi gửi bằng giao thức remote.
 
 **English**
+- **The TV Remote computer app** (Mac, Windows, Linux): download one file from Releases, unzip, run; it has its own window. No more downloading the source or installing Python, adb or ffmpeg. It runs on the same core as the phone app and TV Setup, so it does exactly what they do. Links to other sites open in the browser, screenshots and backups go to the Downloads folder, closing the window quits it. The old Python version (the source download, `start-windows.cmd`...) is gone; the first time, pick the TV and pair the remote buttons again.
 - **Several TVs at once** (homestays, hotels, homes with many TVs): on the list of saved TVs, on the computer and in the phone app, pick TVs, then install one APK on all of them, remove an app or restart them. Each TV gets its own progress line; a TV that is off or has ADB off is named plainly and the others carry on. The computer also shows each TV's model, Android, free storage, RAM and TV Setup version. (TV Setup manages only its own TV, so it has no such list.)
 - **APK checked before installing:** an APK that needs a newer Android than the TV has, or is built for another chip, is reported at once in plain words instead of an `INSTALL_FAILED_...` after copying it over.
 - **App details & permissions** (⋯ → ℹ️): version, install date, size, installer, and each permission (microphone, location, storage...) on or off.
@@ -29,6 +32,7 @@ Web 2.20.0 · app điện thoại 2.18.0 · app TV 2.17.0
 - **Safer automatic answer to “Allow USB debugging?”:** if the question about our own device goes away and the TV puts a stranger's key's question up in its place, Allow is now never pressed for the stranger (there used to be a very small gap). When signing in to Tailscale, buttons are only pressed while Tailscale's own screen is in front.
 - **Safer web on the computer:** another website open in the browser can no longer quietly start the TV's sound or picture (only commands were blocked before, not watching or listening).
 - **Questions asked inside the page** (removing an app, deleting a file, renaming, turning the TV off...): in the page's own style, with buttons that say what they do (“Uninstall”, “Delete”) and dangerous ones in red, instead of the browser's grey box.
+- **“Turn the TV off” from the computer now works on Sony TVs too:** the sleep key goes over ADB when there is ADB, because Sony ignores it over the remote protocol.
 
 ## 2.19.0 - 2026-10-15
 

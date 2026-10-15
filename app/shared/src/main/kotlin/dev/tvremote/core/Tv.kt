@@ -199,7 +199,7 @@ class Tv(
     /**
      * The sound capture ends: closing the sockets lets scrcpy-server let it go itself (killed, Android notices the dead capture
      * seconds later and the TV's own sound stutters meanwhile). Then Google's remote service is started again: on some TVs it
-     * crashes on the capture's virtual output and Android waits hours to restart it (see REVIVE_REMOTE in scenes.py).
+     * crashes on the capture's virtual output and Android waits hours to restart it.
      */
     private fun endCapture(socks: List<Adb.Stream>) {
         val a = adb ?: return

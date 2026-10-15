@@ -50,7 +50,7 @@ class ApkPackageTest {
         assertEquals("dev.tvremote.setup", Manage.apkPackage(m))
     }
 
-    @Test fun infoAndFit() {                                          // test_adbtools.py checks the same
+    @Test fun infoAndFit() {
         val i = Manage.apkInfo(javaClass.classLoader!!.getResourceAsStream("setup-manifest.bin").readBytes())
         assertEquals("dev.tvremote.setup", i["package"])
         assertEquals("21", i["minSdkVersion"])

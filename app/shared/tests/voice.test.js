@@ -1,7 +1,7 @@
-// node --test app/web/tests/   (Node 18+, nothing to install)
+// node --test app/shared/tests/   (Node 18+, nothing to install)
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { fold, voiceCommand } = require('../../shared/web/js/voice.js');
+const { fold, voiceCommand } = require('../web/js/voice.js');
 
 const APPS = [
   { pkg: 'com.google.android.youtube.tv', name: 'YouTube' },

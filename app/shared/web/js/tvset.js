@@ -1,5 +1,5 @@
 // 📺 the TV card on the Setup tab: restart, DNS filter, sleep, screensaver, size and home screen. Read back from the TV after
-// every change, so the choice that is lit is what the TV really has. The commands are app/web/tvshell.py and TvShell.kt.
+// every change, so the choice that is lit is what the TV really has. The commands are in TvShell.kt.
 
 // Each filter is tried in turn until one answers on this network: a DNS that does not leaves the TV with no Internet, so the
 // TV checks, and puts the old setting back by itself when names stop resolving.

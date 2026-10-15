@@ -5,7 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** The same cases as app/web/tests/voice.test.js: the page and the phone app must understand the same sentences. */
+/** The same cases as app/shared/tests/voice.test.js: the page and the phone app must understand the same sentences. */
 class VoiceTest {
     private val apps = mapOf("com.google.android.youtube.tv" to "YouTube", "com.netflix.ninja" to "Netflix", "com.fptplay.tv" to "FPT Play", "org.videolan.vlc" to "VLC")
     private val scenes = mapOf("s1" to "Đi ngủ", "s2" to "Xem phim")

@@ -7,8 +7,7 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
 /**
- * Saved TVs: the same tvs.json as the Python server (app/web/tvconfig.py), read and written the same way, so either server
- * can run on it. Fields this code does not know (relay_*, setup_pass, scenes...) are kept as they are.
+ * Saved TVs, in tvs.json. Fields this code does not know (relay_*, setup_pass, scenes...) are kept as they are.
  */
 class Saved(private val file: File) {
     // one lock for every read and write: the page's requests and the background threads (TV Setup passes) share these objects,

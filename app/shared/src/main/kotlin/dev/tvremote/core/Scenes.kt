@@ -6,7 +6,7 @@ import java.util.regex.Pattern
 
 /**
  * Scenes: one button that does several things on the TV ("Movie night": wake it, open YouTube, volume 12). The same JSON in
- * the three remotes (app/web/scenes.py does it for the computer); each keeps its own list.
+ * the three remotes; each keeps its own list.
  *
  *   { "id": "s1", "name": "Xem phim", "icon": "🎬", "steps": [ {"do": "wake"}, {"do": "app", "pkg": "com.google.android.youtube.tv"} ] }
  *

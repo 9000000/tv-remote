@@ -115,7 +115,7 @@ $('#setlistcopy').addEventListener('click', () => {
 });
 
 // Errors: Android notes every app that stops or stops answering in its "dropbox" (kept about 3 days); the core sends those notes
-// cut to the lines that matter (CRASHES in server.py / Manage.kt), and this groups them per app, newest first.
+// cut to the lines that matter (CRASHES in Manage.kt), and this groups them per app, newest first.
 function parseCrashes(text) {
   const out = []; let e = null, sep = false;
   for (const line of text.split('\n')) {

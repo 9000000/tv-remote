@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
-/** Finding TVs, as discover.py: hosts answering on the remote (6466) or ADB (5555) port, on this computer's networks and the tailnet. */
+/** Finding TVs: hosts answering on the remote (6466) or ADB (5555) port, on this computer's networks and the tailnet. */
 object Discover {
     val TAILSCALE = listOf("/Applications/Tailscale.app/Contents/MacOS/Tailscale", "/opt/homebrew/bin/tailscale", "/usr/local/bin/tailscale",
         "/usr/bin/tailscale", "C:\\Program Files\\Tailscale\\tailscale.exe").firstOrNull { File(it).canExecute() } ?: "tailscale"

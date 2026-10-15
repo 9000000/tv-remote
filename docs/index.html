@@ -178,6 +178,10 @@ nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
 .side{display:flex;flex-direction:column;gap:14px}
 .side .alt{color:var(--muted);font-size:14px;padding:16px;border-radius:14px;border:1px dashed var(--line2)}
 .side .alt a{color:var(--blue);font-weight:600}
+.dl-all{display:flex;flex-direction:column;border:1px solid var(--line2);border-radius:14px;overflow:hidden}
+.dl-all a{padding:10px 16px;color:var(--text);font-size:14px;text-decoration:none;border-top:1px solid var(--line2)}
+.dl-all a:first-child{border-top:0}.dl-all a:hover{background:rgba(255,255,255,.05)}
+.dl-all a.mine{color:var(--blue);font-weight:600}
 .qr{display:flex;gap:16px;align-items:center;padding:14px;border-radius:16px;background:var(--card2);border:1px solid var(--line2)}
 .qr svg{flex:none;width:112px;height:112px;border-radius:10px}
 .qr b{display:block;font-size:15px;margin-bottom:4px}.qr small{display:block;color:var(--muted);font-size:13px;line-height:1.45}
@@ -493,7 +497,7 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
         <h4><span class="vi">Máy điều khiển</span><span class="en">Your device</span></h4>
         <div class="chip"><span class="e">📱</span><div>TV Remote<small><span class="vi">App Android</span><span class="en">Android app</span></small></div></div>
         <div class="chip"><span class="e">🌐</span><div><span class="vi">Trình duyệt bất kỳ</span><span class="en">Any browser</span><small>iPhone, iPad, laptop…</small></div></div>
-        <div class="chip"><span class="e">💻</span><div><span class="vi">Web trên máy tính</span><span class="en">Computer web</span><small>Mac · Windows · Linux</small></div></div>
+        <div class="chip"><span class="e">💻</span><div><span class="vi">App trên máy tính</span><span class="en">Computer app</span><small>Mac · Windows · Linux</small></div></div>
       </div>
       <div class="wire">
         <div class="line"></div>
@@ -526,7 +530,7 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
     </div>
     <div class="hard reveal">
       <div class="mini"><div class="ic">📦</div><b><span class="vi">TV không cài được APK lạ</span><span class="en">The TV won’t take an outside APK</span></b><p><span class="vi">Gõ mã <span class="mono">2397346</span> vào Downloader là có TV Setup. App điện thoại còn tự gửi lệnh mở Downloader qua giao thức remote của Google, nên cài được khi TV chưa bật ADB.</span><span class="en">Type <span class="mono">2397346</span> into Downloader and TV Setup arrives. The phone app can even open Downloader for you through Google’s remote protocol, so it installs before ADB is on.</span></p></div>
-      <div class="mini"><div class="ic">🔓</div><b><span class="vi">Bật ADB giấu trong menu</span><span class="en">ADB is buried in menus</span></b><p><span class="vi">TV Setup mở thẳng Tùy chọn nhà phát triển. App điện thoại và web máy tính có trợ lý “Bật ADB giúp tôi”, chỉ dùng nút remote.</span><span class="en">TV Setup opens Developer options directly. The phone app and the computer web have a “Help me turn on ADB” assistant that only uses remote keys.</span></p></div>
+      <div class="mini"><div class="ic">🔓</div><b><span class="vi">Bật ADB giấu trong menu</span><span class="en">ADB is buried in menus</span></b><p><span class="vi">TV Setup mở thẳng Tùy chọn nhà phát triển. App điện thoại và app máy tính có trợ lý “Bật ADB giúp tôi”, chỉ dùng nút remote.</span><span class="en">TV Setup opens Developer options directly. The phone app and the computer app have a “Help me turn on ADB” assistant that only uses remote keys.</span></p></div>
       <div class="mini"><div class="ic">🛡️</div><b><span class="vi">“Cho phép gỡ lỗi USB?” lúc không ở nhà</span><span class="en">“Allow USB debugging?” while you’re away</span></b><p><span class="vi">TV hỏi lại khi quên máy bạn. TV Setup tự bấm cho phép, nhưng chỉ khi mã khóa trùng đúng máy đã ghép, và báo trên TV mỗi lần.</span><span class="en">The TV asks again when it forgets your device. TV Setup allows it for you, only when the key matches a paired device, with a notice on the TV every time.</span></p></div>
     </div>
     <div class="cmpwrap reveal">
@@ -637,21 +641,28 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
     <!-- computer -->
     <div class="panel" id="p-computer" role="tabpanel">
       <div>
-        <h3><span class="vi">Chạy web trên máy tính</span><span class="en">Run the web app on your computer</span></h3>
-        <p class="sub"><span class="vi">Chỉ cần Python 3.10+. Lần đầu chạy tự tải mọi thứ còn lại (<code>adb</code>, <code>ffmpeg</code>), không phải gõ lệnh nào.</span><span class="en">Only Python 3.10+ is needed. The first run fetches everything else (<code>adb</code>, <code>ffmpeg</code>); no commands to type.</span></p>
+        <h3><span class="vi">Cài app TV Remote cho máy tính</span><span class="en">Install the TV Remote computer app</span></h3>
+        <p class="sub"><span class="vi">Một app có cửa sổ riêng, khoảng 20 MB. Không cần cài Python, adb hay gì thêm.</span><span class="en">An app with its own window, about 20 MB. Nothing else to install: no Python, no adb.</span></p>
         <ol class="steps">
-          <li><div class="vi">Tải mã nguồn về (nút <b>Tải ZIP</b> hoặc git clone) và giải nén.</div><div class="en">Get the source (<b>Download ZIP</b> or git clone) and unzip it.</div></li>
-          <li><div class="vi">Mac: bấm đúp <b class="mono">TV Remote</b>. Windows: <b class="mono">start-windows.cmd</b> (Linux: <b class="mono">./start-linux.sh</b>).</div><div class="en">Mac: double-click <b class="mono">TV Remote</b>. Windows: <b class="mono">start-windows.cmd</b> (Linux: <b class="mono">./start-linux.sh</b>).</div></li>
-          <li><div class="vi">Trình duyệt mở <b class="mono">127.0.0.1:8765</b> và tự quét mạng tìm TV. Chọn TV.</div><div class="en">Your browser opens <b class="mono">127.0.0.1:8765</b> and scans for TVs. Pick yours.</div></li>
-          <li><div class="vi">Chưa sẵn sàng thì tab <b>Thiết lập</b> dẫn từng bước có dấu ✓. TV chưa bật ADB thì bấm <b>🧭 Bật ADB giúp tôi</b>.</div><div class="en">If it isn't ready, the <b>Setup</b> tab walks you through with ✓ marks. ADB off? Press <b>🧭 Help me turn on ADB</b>.</div></li>
+          <li><div class="vi">Bấm <b>Tải về</b> (đã chọn sẵn bản cho máy bạn) rồi giải nén.</div><div class="en">Press <b>Download</b> (the right file for your computer is picked) and unzip it.</div></li>
+          <li><div class="vi"><b>Mac:</b> kéo <b>TV Remote</b> vào Applications rồi mở. Mac báo “chưa xác minh nhà phát triển” thì vào Cài đặt hệ thống → Quyền riêng tư &amp; Bảo mật → <b>Vẫn mở</b> (chỉ lần đầu).</div><div class="en"><b>Mac:</b> drag <b>TV Remote</b> into Applications and open it. If the Mac says the developer is “unverified”: System Settings → Privacy &amp; Security → <b>Open Anyway</b> (first time only).</div></li>
+          <li><div class="vi"><b>Windows:</b> chạy <b class="mono">TV Remote.exe</b> trong thư mục vừa giải nén. Hiện “Windows đã bảo vệ PC của bạn” thì bấm <b>Thông tin bổ sung → Vẫn chạy</b>. <b>Linux:</b> chạy <b class="mono">tv-remote/bin/tv-remote</b>.</div><div class="en"><b>Windows:</b> run <b class="mono">TV Remote.exe</b> in the unzipped folder. If you see “Windows protected your PC”: <b>More info → Run anyway</b>. <b>Linux:</b> run <b class="mono">tv-remote/bin/tv-remote</b>.</div></li>
+          <li><div class="vi">App tự quét mạng tìm TV. Chọn TV; chưa sẵn sàng thì tab <b>Thiết lập</b> dẫn từng bước. TV chưa bật ADB thì bấm <b>🧭 Bật ADB giúp tôi</b>.</div><div class="en">The app scans for TVs. Pick yours; if it isn't ready, the <b>Setup</b> tab walks you through. ADB off? Press <b>🧭 Help me turn on ADB</b>.</div></li>
         </ol>
       </div>
       <div class="side">
-        <a class="btn btn-primary" href="https://github.com/HoangTran0410/tv-remote/archive/refs/heads/main.zip">
+        <a class="btn btn-primary" id="dl-pc" href="https://github.com/HoangTran0410/tv-remote/releases/latest">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
-          <span class="vi">Tải ZIP</span><span class="en">Download ZIP</span>
+          <span><span class="vi">Tải về</span><span class="en">Download</span><span id="dl-os"></span></span>
         </a>
-        <div class="alt"><span class="vi">🔒 Web chỉ nghe ở 127.0.0.1, không ai khác trong mạng vào được. Bấm ⏻ Tắt trên trang là dừng hẳn, không để lại gì chạy ngầm.</span><span class="en">🔒 It only listens on 127.0.0.1, nobody else on the network can reach it. Press ⏻ Quit on the page and it is fully gone; nothing keeps running.</span></div>
+        <div class="dl-all">
+          <a data-os="mac-arm64" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac-arm64.zip">Mac · <span class="vi">chip Apple</span><span class="en">Apple chip</span></a>
+          <a data-os="mac-x64" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac-x64.zip">Mac · Intel</a>
+          <a data-os="windows-x64" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-windows-x64.zip">Windows 10 / 11</a>
+          <a data-os="linux-x64" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-x64.tar.gz">Linux · x64</a>
+          <a data-os="linux-arm64" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-arm64.tar.gz">Linux · arm64</a>
+        </div>
+        <div class="alt"><span class="vi">🔒 App chỉ nghe ở 127.0.0.1, máy khác trong mạng không vào được. Đóng cửa sổ là app dừng hẳn, không để lại gì chạy ngầm. Muốn sửa code thì xem <a href="https://github.com/HoangTran0410/tv-remote">mã nguồn</a>.</span><span class="en">🔒 It only listens on 127.0.0.1, nobody else on the network can reach it. Close the window and it is fully gone; nothing keeps running. Want to change the code? See the <a href="https://github.com/HoangTran0410/tv-remote">source</a>.</span></div>
       </div>
     </div>
 
@@ -710,8 +721,8 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
         <p class="vi">ADB là cổng mà Android dùng để máy khác điều khiển nó, cũng là thứ cho phép xem màn hình, cài app, quản lý tệp. Máy nào muốn dùng đều phải được bạn bấm “Cho phép” ngay trên TV. Chỉ dùng trong mạng nhà bạn tin và qua Tailscale; muốn thu hồi thì vào Tùy chọn nhà phát triển → Thu hồi quyền gỡ lỗi USB.</p>
         <p class="en">ADB is how Android lets another device control it; it's what makes screen viewing, app installs and file management possible. Every device must be approved by you, on the TV screen. Use it on a home network you trust and over Tailscale; revoke any time in Developer options → Revoke USB debugging authorizations.</p></details>
       <details class="reveal"><summary><span class="vi">Có cần bật ADB mới dùng được không?</span><span class="en">Do I need ADB at all?</span></summary>
-        <p class="vi">Để bấm nút thì không: app điện thoại và web máy tính dùng giao thức Android TV Remote của Google, chỉ cần ghép mã. Xem màn hình, quản lý app, tệp, hẹn giờ thì cần ADB.</p>
-        <p class="en">Not for buttons: the phone app and computer web use Google's Android TV Remote protocol, just pair a code. Screen view, apps, files and timers need ADB.</p></details>
+        <p class="vi">Để bấm nút thì không: app điện thoại và app máy tính dùng giao thức Android TV Remote của Google, chỉ cần ghép mã. Xem màn hình, quản lý app, tệp, hẹn giờ thì cần ADB.</p>
+        <p class="en">Not for buttons: the phone app and the computer app use Google's Android TV Remote protocol, just pair a code. Screen view, apps, files and timers need ADB.</p></details>
       <details class="reveal"><summary><span class="vi">Có dùng được trên iPhone không?</span><span class="en">Does it work on iPhone?</span></summary>
         <p class="vi">Có. Cài TV Setup lên TV (mã Downloader 2397346), rồi mở trang TV hiện ra trên Safari. Thêm vào Màn hình chính để dùng như một app.</p>
         <p class="en">Yes. Install TV Setup on the TV (Downloader code 2397346), then open the page it shows in Safari. Add it to your Home Screen to use it like an app.</p></details>
@@ -719,8 +730,8 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
         <p class="vi">Đúng vậy, đó là bảo vệ bản quyền của Android, không ứng dụng nào vượt qua được. Nút bấm, âm lượng, nghe tiếng vẫn dùng bình thường.</p>
         <p class="en">That's Android's copy protection; no app can capture it. Buttons, volume and audio still work normally.</p></details>
       <details class="reveal"><summary><span class="vi">TV tắt hẳn rồi có bật lại từ xa được không?</span><span class="en">Can I turn on a TV that's fully off?</span></summary>
-        <p class="vi">Ở chế độ chờ thì một nút là bật, kể cả qua Tailscale. Tắt hẳn thì cần Wake-on-LAN, gửi từ trong mạng nhà: app điện thoại và web máy tính đều tự gửi khi đang cùng mạng với TV. Ở xa thì chỉ web máy tính bật được, bằng cách nhờ một máy ở nhà gửi qua SSH.</p>
-        <p class="en">From standby, one press wakes it, even over Tailscale. Fully off needs Wake-on-LAN, sent from inside the home network: the phone app and the computer web both send it when on the TV's network. From away, only the computer web can, by asking a machine at home to send it over SSH.</p></details>
+        <p class="vi">Ở chế độ chờ thì một nút là bật, kể cả qua Tailscale. Tắt hẳn thì cần Wake-on-LAN, gửi từ trong mạng nhà: app điện thoại và app máy tính đều tự gửi khi đang cùng mạng với TV. Ở xa thì chỉ app máy tính bật được, bằng cách nhờ một máy ở nhà gửi qua SSH.</p>
+        <p class="en">From standby, one press wakes it, even over Tailscale. Fully off needs Wake-on-LAN, sent from inside the home network: the phone app and the computer app both send it when on the TV's network. From away, only the computer app can, by asking a machine at home to send it over SSH.</p></details>
       <details class="reveal"><summary><span class="vi">Lọc DNS có chặn quảng cáo YouTube không?</span><span class="en">Does the DNS filter block YouTube ads?</span></summary>
         <p class="vi">Không. Nó chặn quảng cáo và trang độc trong các app khác; YouTube phát quảng cáo từ chính máy chủ video của nó.</p>
         <p class="en">No. It blocks ads and bad sites in other apps; YouTube serves its ads from the same servers as the videos.</p></details>
@@ -822,6 +833,20 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
   } else document.querySelectorAll(".reveal").forEach(function(el){ el.classList.add("in"); });
 
   document.getElementById("yr").textContent = new Date().getFullYear();
+
+  // the computer app: the file for this computer on the big button (an Apple-chip Mac says "Intel" in its user agent:
+  // Chrome tells the truth through userAgentData, other browsers get the Apple-chip build, which nearly every Mac sold now is)
+  (function(){
+    var ua = navigator.userAgent, os = /Windows/.test(ua) ? "windows-x64" : /Mac/.test(ua) && !/iPhone|iPad/.test(ua) ? "mac-arm64" : /Linux/.test(ua) && !/Android/.test(ua) ? (/aarch64|arm64/.test(ua) ? "linux-arm64" : "linux-x64") : "";
+    function pick(o){
+      var a = document.querySelector('.dl-all a[data-os="' + o + '"]'); if (!a) return;
+      document.querySelectorAll(".dl-all a").forEach(function(x){ x.classList.toggle("mine", x === a); });
+      document.getElementById("dl-pc").href = a.href; document.getElementById("dl-os").innerHTML = ' <span class="vi">cho</span><span class="en">for</span> ' + a.innerHTML;
+    }
+    pick(os);
+    if (os === "mac-arm64" && navigator.userAgentData && navigator.userAgentData.getHighEntropyValues)
+      navigator.userAgentData.getHighEntropyValues(["architecture"]).then(function(v){ if (v.architecture === "x86") pick("mac-x64"); }).catch(function(){});
+  })();
 
   // latest release tag in the hero pill; the page still reads fine if GitHub is unreachable
   fetch("https://api.github.com/repos/HoangTran0410/tv-remote/releases/latest")

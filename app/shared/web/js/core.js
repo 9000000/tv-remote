@@ -1,6 +1,6 @@
 // shared helpers, status chips, ADB gating
 // The same page is served by three cores, and they answer the same /api calls:
-//   mac    the program on the computer (app/web/server.py): many TVs, remote buttons without ADB, first-time setup
+//   mac    the program on the computer (app/desktop): many TVs, remote buttons without ADB, first-time setup
 //   tv     the TV Setup app on the TV itself: one TV, opened from any browser after typing a code shown on the TV
 //   phone  the phone app's Manage screen: apps, files, health and terminal only (the app has its own remote)
 // What one core cannot do is marked data-for="..." in index.html and hidden by style.css; the few differences in behaviour are asked here.
@@ -83,7 +83,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && popEl) {
 addEventListener('scroll', (e) => { if (popEl && !popEl.contains(e.target)) closePop(); }, true);
 addEventListener('resize', closePop);
 
-// The errors people actually meet, from any core (Kotlin or Python words), in words they can act on; anything else as it came.
+// The errors people actually meet, from any core , in words they can act on; anything else as it came.
 const FRIENDLY = [
   [/SSLHandshake|CertPathValidator|Chain validation|CERTIFICATE_VERIFY|not yet valid/i, 'Không mở được kết nối bảo mật. Ngày giờ trên TV có đúng không? (Cài đặt → Hệ thống → Ngày và giờ)'],
   [/UnknownHost|Name or service not known|nodename nor servname|getaddrinfo/i, 'TV (hoặc máy này) chưa vào được Internet.'],

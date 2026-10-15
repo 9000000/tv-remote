@@ -7,9 +7,9 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 import java.io.File
 
-/** Fleet reads what app/web/fleet.py reads, for every case in the table both test suites use. */
+/** Fleet reads each case of tests/fleet_cases.json as the table says. */
 class FleetTest {
-    private val cases = JSONObject(File("../web/tests/fleet_cases.json").readText())
+    private val cases = JSONObject(File("tests/fleet_cases.json").readText())
 
     @Test fun command() = assertEquals(cases.getString("INFO"), Fleet.INFO)
 

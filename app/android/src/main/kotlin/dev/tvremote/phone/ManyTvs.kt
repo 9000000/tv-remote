@@ -20,7 +20,7 @@ import java.util.concurrent.Executors
 
 // 📦 Several TVs at once, from the list of saved TVs (homestay, hotel, a house of TVs): one APK installed on each TV ticked,
 // one app removed, or a restart, with a line per TV saying how it goes. The computer's page has the same on its own list of
-// TVs (app/web/fleet.py); TV Setup has no list, it manages only the TV it runs on.
+// TVs (app/desktop Fleet.kt); TV Setup has no list, it manages only the TV it runs on.
 
 private const val PARALLEL = 3                                        // an APK goes over the home Wi-Fi to each TV: a few at a time
 

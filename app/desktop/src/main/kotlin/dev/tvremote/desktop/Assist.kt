@@ -5,7 +5,7 @@ import dev.tvremote.core.HttpServer
 import org.json.JSONObject
 
 /**
- * Turning ADB on with the remote buttons alone (port 6466), as server.py's /api/assist: TV Setup is downloaded onto the TV
+ * Turning ADB on with the remote buttons alone (port 6466), the page's /api/assist: TV Setup is downloaded onto the TV
  * through links the TV opens (Downloader first when the TV has no app for links), and any app or the TV's Settings can be
  * brought to the front. [cur]: the session of the TV in use.
  */

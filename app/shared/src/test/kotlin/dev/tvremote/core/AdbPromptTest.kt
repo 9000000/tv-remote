@@ -7,7 +7,7 @@ import org.junit.Test
 /**
  * AdbPrompt.allow against a pretend TV that queues the "Allow USB debugging?" questions of several keys, as real TVs do: Allow
  * is only ever pressed on the question about the key asked for, never on a stranger's that takes its place, whether the TV
- * takes taps or only the arrow keys. The same scenes as app/web/tests/test_prompt.py.
+ * takes taps or only the arrow keys.
  */
 class AdbPromptTest {
     private val ours = "AA:".repeat(15) + "AA"

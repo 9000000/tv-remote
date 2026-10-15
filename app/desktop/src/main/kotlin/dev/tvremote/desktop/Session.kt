@@ -14,7 +14,7 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
 /**
- * Everything bound to the TV being controlled, as session.py's Session: the remote-protocol link (keys, volume, power state
+ * Everything bound to the TV being controlled: the remote-protocol link (keys, volume, power state
  * without ADB), its ADB link and what is managed over it, the picture and sound for the page, and a scrcpy session for touch
  * and typing while nobody watches. Picking another TV swaps the whole thing.
  */
@@ -69,7 +69,7 @@ class Session(val host: String, private val keys: File, cache: File, apk: File, 
         }, "atv-dial").apply { isDaemon = true }.start()
     }
 
-    /** What the page's status line shows (session.py Tv.state). */
+    /** What the page's status line shows. */
     fun state(): JSONObject {
         val a = atv
         val o = JSONObject().put("host", host).put("connected", available).put("paired", paired ?: JSONObject.NULL).put("error", error)

@@ -15,7 +15,7 @@ import java.util.regex.Pattern
 
 /**
  * Managing a TV over ADB for the page both apps serve: installed apps, files, APK installs and a health snapshot.
- * The paths and the answers are the ones the computer's server gives (app/web/server.py), because all three serve the same page
+ * The paths and the answers are the ones the computer's server gives (app/desktop Server.kt), because all three serve the same page
  * (app/shared/web). Whoever owns the HttpServer checks first that the caller may use it.
  */
 class Manage(private val link: AdbLink, private val labels: Labels?, private val dir: java.io.File?) {
@@ -639,7 +639,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "printf '\\043~\\043\\n'; dumpsys power | grep -m1 -o 'mWakefulness=[A-Za-z]*'; dumpsys activity activities | grep -m1 -E 'mResumedActivity|topResumedActivity'"
 
         /** Health → Errors: the dropbox's notes on apps that stopped, froze or crashed natively, cut on the TV to the lines the page
-         *  shows (ANR thread dumps are hundreds of KB). Same command as CRASHES in server.py. */
+         *  shows (ANR thread dumps are hundreds of KB). */
         private const val CRASHES = "for t in data_app_crash system_app_crash system_server_crash data_app_anr system_app_anr system_server_anr " +
                 "data_app_native_crash system_app_native_crash; do dumpsys dropbox --print \$t; done | grep -E '^(=====|[0-9]{4}-[0-9]{2}-[0-9]{2} " +
                 "[0-9:]{8} |Process: |Subject: |signal [0-9]|Abort message|Caused by: |[A-Za-z_\$][A-Za-z0-9_.\$]*(Exception|Error)(: |\$)|\tat )'"

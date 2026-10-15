@@ -6,7 +6,7 @@ import org.json.JSONObject
  * The timers and limits kept by the TV Setup app on the TV (Rules.kt there): the sleep timer, bedtime and daily app limits.
  * They run on the TV itself, so nothing else has to stay on. A phone or computer that has ADB asks for them with a broadcast
  * only the shell can send, the way it gets a TV Setup pass (TrustReceiver); the TV's own page asks the app directly.
- * app/web/server.py does the same for the computer.
+ * The computer app uses it too.
  */
 object RulesClient {
     const val SETUP = "dev.tvremote.setup"
