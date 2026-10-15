@@ -13,7 +13,8 @@ object RulesClient {
 
     /**
      * [change] is one action ({"do": "sleep", "minutes": 30}, see Rules.change), or null to read. The answer is the state the
-     * pages show, or {"setup": "missing" | "old"} when the TV has no TV Setup, or one too old to know about rules.
+     * pages show, or {"setup": "missing" | "old", "have", "min"} when the TV has no TV Setup, or one
+     * too old to know about rules.
      */
     fun call(sh: (String) -> String, change: JSONObject?): JSONObject {
         val arg = if (change == null) "" else " --es set " + B64.encode(change.toString().toByteArray(Charsets.UTF_8))
@@ -25,6 +26,7 @@ object RulesClient {
             if (state.optBoolean("wanted") && !state.optBoolean("running")) sh("am start-foreground-service -n $SETUP/.RemoteService 2>&1")
             return state
         }
-        return JSONObject().put("setup", if (sh("pm path $SETUP 2>/dev/null").contains("package:")) "old" else "missing")
+        val have = SetupNeed.have(sh)
+        return JSONObject().put("setup", if (have.isEmpty()) "missing" else "old").put("have", have).put("min", SetupNeed.MIN["rules"])
     }
 }

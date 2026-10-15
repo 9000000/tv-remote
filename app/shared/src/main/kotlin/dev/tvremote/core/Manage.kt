@@ -61,6 +61,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "app/backup" -> return backup(r.q("pkg"))
                 "tailscale" -> { val t = Tailscale(link.get(), dir); return HttpServer.Response.json(JSONObject().put("installed", t.installed()).put("ip", t.ip())) }
                 "setup/version" -> return HttpServer.Response.json(setupVersion())
+                "setup/need" -> { SetupNeed.check(link.get(), r.q("f")); return HttpServer.Response.json(JSONObject().put("ok", true)) }
                 "setup/plan" -> return HttpServer.Response.json(Setup(link.get(), dir, true) { }.plan { labels?.label(it) })
                 "adb/prompt" -> {                                     // the TV's "Allow USB debugging?" question, if it is up
                     val p = if (link.state() == "ready") AdbPrompt.read(link.get()) else null
@@ -125,6 +126,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             }
         } catch (e: IllegalArgumentException) {
             return HttpServer.Response.error(400, e.message.toString())
+        } catch (e: SetupNeed.Missing) {                              // the page asks to update or install TV Setup (needSetup in js/core.js)
+            return HttpServer.Response.error(409, e.message.toString())
         } catch (e: IOException) {
             return HttpServer.Response.error(503, if (link.waitingForUser()) "adb:allow" else "adb: " + e.message)
         }

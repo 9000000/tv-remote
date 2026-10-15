@@ -308,6 +308,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         when (r.path) {
             "/api/state" -> return HttpServer.Response.json(state(host))
             "/api/about" -> return HttpServer.Response.json(state(host))
+            "/api/setup/need" -> return HttpServer.Response.json(JSONObject().put("ok", true))   // this is TV Setup: it has what this page knows
             "/api/screen" -> {                                        // one picture of the screen: the Screenshots mode, and the camera key
                 val png = tv?.screenshot() ?: return HttpServer.Response.error(503, "no screenshot")
                 val shot = HttpServer.Response.of("image/png", png)

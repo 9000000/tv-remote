@@ -5,6 +5,7 @@ object Errors {
     fun say(e: Throwable, vi: Boolean): String {
         fun t(v: String, en: String) = if (vi) v else en
         val all = generateSequence(e) { it.cause }.joinToString(" ") { it.javaClass.simpleName + ": " + (it.message ?: "") }
+        SetupNeed.say(e, vi)?.let { return it }
         return when {
             Regex("SSLHandshake|CertPathValidator|Chain validation|CERTIFICATE_VERIFY|not yet valid|expired", RegexOption.IGNORE_CASE).containsMatchIn(all) ->
                 t("Không mở được kết nối bảo mật. Ngày giờ trên TV có đúng không? (Cài đặt → Hệ thống → Ngày và giờ)",

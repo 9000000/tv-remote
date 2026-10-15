@@ -11,13 +11,13 @@ Web 2.24.0 · app điện thoại 2.22.0 · app TV 2.21.0
 **Tiếng Việt**
 - **🖼️ Đưa ảnh lên TV** khi đang ✏️ vẽ: chọn một ảnh trong máy, kéo để đặt chỗ, hai ngón (hay con lăn chuột) để phóng to thu nhỏ, bấm ✓ thì TV hiện ảnh đè lên màn hình. Hợp để gửi mã QR cho người nhà quét. Ảnh được thu nhỏ còn tối đa 1280px trước khi gửi (PNG giữ nguyên nét). Cần TV Setup 2.21.0.
 - ✏️ Vẽ: một nút màu, bấm mở 10 màu cùng thanh trượt cỡ nét (chấm tròn bên cạnh cho thấy cỡ). Thanh công cụ vừa màn điện thoại.
-- TV Setup trên TV cũ hoặc chưa cài: bấm ✏️ (hay 🖼️) là báo ngay, kèm nút **Cập nhật** / **Cài TV Setup**, thay vì vẽ xong mới báo lỗi.
+- Chức năng nào cần TV Setup mới hơn bản đang có trên TV (hoặc TV chưa cài TV Setup) thì hỏi ngay, kèm nút **⬆️ Cập nhật** / **⚡ Cài TV Setup**, thay vì báo lỗi sau khi đã làm xong. Hiện có: vẽ ✏️, ảnh 🖼️, hẹn giờ trong cảnh. Có trên cả ba app.
 - Nút bật/tắt trên app điện thoại sáng lên khi đang bật: ✏️ Vẽ, 👁 Xem hình, 🎧 Nghe, Dùng touchpad.
 
 **English**
 - **🖼️ Put a picture on the TV** while ✏️ drawing: pick a picture, drag to place it, pinch (or the mouse wheel) to size it, tap ✓ and the TV shows it over its screen. Handy for a QR code someone at home should scan. Pictures are shrunk to at most 1280 px before sending (PNGs stay sharp). Needs TV Setup 2.21.0.
 - ✏️ Draw: one colour button opening 10 colours and a line-size slider (a dot beside it shows the size). The toolbar fits a phone.
-- An old or missing TV Setup on the TV is told as soon as ✏️ (or 🖼️) is pressed, with an **Update** / **Install TV Setup** button, instead of failing after drawing.
+- Any feature that needs a newer TV Setup than the TV has (or a TV without TV Setup) asks at once, with **⬆️ Update** / **⚡ Install TV Setup**, instead of an error after the work is done. For now: drawing ✏️, pictures 🖼️, the timer in a scene. In all three apps.
 - On/off buttons in the phone app light up while on: ✏️ Draw, 👁 Picture, 🎧 Listen, Use the touchpad.
 
 ## 2.23.0 - 2026-10-15

@@ -139,7 +139,8 @@ object Scenes {
         override fun timer(minutes: Int) {
             if (timer != null) { timer.invoke(minutes); return }
             val r = RulesClient.call(sh, JSONObject().put("do", "sleep").put("minutes", minutes))
-            if (r.has("setup") || r.has("error")) throw IllegalArgumentException("the sleep timer needs TV Setup 2.13.0 or newer on the TV")
+            if (r.has("setup")) throw SetupNeed.Missing("rules", r.optString("have"))
+            if (r.has("error")) throw IllegalArgumentException(r.optString("error"))
         }
     }
 }

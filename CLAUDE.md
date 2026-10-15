@@ -72,6 +72,13 @@ dev/                     release.sh, gen_icons.py
   the receiver needs the shell's DUMP permission, so apps cannot call it. No receiver = TV Setup missing or older than 2.13.0.
 - Scenes are kept per client (computer: `tvs.json` "scenes"; TV Setup: prefs; phone: `SceneStore`), cleaned by `Scenes.clean`; `GET /api/scenes?download=1` is the backup file the page imports back.
 
+## A feature that needs a newer TV Setup
+
+The phone or computer can be newer than TV Setup on the TV. Add the feature and its first TV Setup version to `SetupNeed.MIN`
+(and its name to `SetupNeed.name` and `SETUP_NEEDS` in `js/core.js`). Then check before starting it (`/api/setup/need?f=`,
+`setupFor()` on the page, `withSetup()` on the phone) or throw `SetupNeed.Missing` where it finds out. Every client turns
+that into one question with an Update / Install TV Setup button (`needSetup()` in `js/core.js`, `offerSetup()` on the phone).
+
 ## Versions and releases
 
 Three numbers, each bumped only when its part changes: `VERSION` (every release; the tag and the computer app), `app/android/VERSION`, `app/tv/VERSION`.

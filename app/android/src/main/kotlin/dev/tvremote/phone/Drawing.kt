@@ -46,23 +46,12 @@ internal fun MainActivity.startDrawing() {
     }
 }
 
-/** Why drawing cannot go on; an old or missing TV Setup comes with the way out (update or install it on the TV). */
+/** Why drawing cannot go on; an old or missing TV Setup comes as offerSetup's question (update or install it on the TV). */
 internal fun MainActivity.drawFail(e: Exception) {
+    if (isFinishing || offerSetup(e)) return
     val m = e.message ?: ""
-    if (isFinishing) return
-    when {
-        "draw:old" in m -> AlertDialog.Builder(this)
-            .setMessage(if ("draw:oldpic" in m) t("TV Setup trên TV là bản cũ, chưa đưa ảnh lên được. Cập nhật TV Setup (khoảng nửa phút)?", "TV Setup on the TV is too old to show pictures. Update TV Setup (about half a minute)?")
-                else t("TV Setup trên TV là bản cũ, chưa vẽ được. Cập nhật TV Setup (khoảng nửa phút)?", "TV Setup on the TV is too old to draw. Update TV Setup (about half a minute)?"))
-            .setPositiveButton(t("⬆️ Cập nhật", "⬆️ Update")) { _, _ -> setupChecked.remove(host); setupNews.remove(host); managing.open(host, then = "updateSetup()") }
-            .setNegativeButton(t("Để sau", "Later"), null).show()
-        "draw:missing" in m -> AlertDialog.Builder(this)
-            .setMessage(t("Vẽ lên TV cần app TV Setup trên TV. Cài TV Setup ngay?", "Drawing on the TV needs the TV Setup app on the TV. Install TV Setup now?"))
-            .setPositiveButton(t("⚡ Cài TV Setup", "⚡ Install TV Setup")) { _, _ -> managing.open(host, then = "installSetupApk()") }
-            .setNegativeButton(t("Để sau", "Later"), null).show()
-        else -> Toast.makeText(this, if ("draw:nooverlay" in m) t("TV này không cho app vẽ đè lên màn hình.", "This TV does not let apps draw over its screen.")
-            else t("Không vẽ được lên TV: ", "Could not draw on the TV: ") + Errors.say(e, VI), Toast.LENGTH_LONG).show()
-    }
+    Toast.makeText(this, if ("draw:nooverlay" in m) t("TV này không cho app vẽ đè lên màn hình.", "This TV does not let apps draw over its screen.")
+        else t("Không vẽ được lên TV: ", "Could not draw on the TV: ") + Errors.say(e, VI), Toast.LENGTH_LONG).show()
 }
 
 internal fun MainActivity.stopDrawing() {
@@ -101,12 +90,7 @@ internal fun MainActivity.drawTools(): LinearLayout {
     bar.addView(pen, LinearLayout.LayoutParams(dp(30), dp(30)))
     bar.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
     val pic = icon("@image", t("Đưa một ảnh lên TV", "Put a picture on the TV"), BTN)
-    pic.setOnClickListener {                                          // an older TV Setup draws lines but no pictures
-        drawIo.execute {
-            val ok = try { drawer.send(JSONArray()); drawer.pics } catch (e: Exception) { ui.post { if (drawing) stopDrawing(); drawFail(e) }; return@execute }
-            ui.post { if (ok) pickDrawPic() else drawFail(java.io.IOException("draw:oldpic")) }
-        }
-    }
+    pic.setOnClickListener { withSetup("pic") { pickDrawPic() } }    // an older TV Setup draws lines but no pictures
     val undo = icon("@undo", t("Bỏ nét vừa vẽ", "Take back the last line"), BTN)
     undo.setOnClickListener { drawSend(JSONObject().put("o", "u")) }
     val clear = icon("@trash", t("Xóa hết", "Clear all"), BTN)

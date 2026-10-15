@@ -23,7 +23,7 @@ class Draw(private val adb: () -> Adb) {
 
     private var stream: Adb.Stream? = null
     private var from: Adb? = null
-    /** This TV Setup draws pictures too (2.21.0 and later); known once the way is open. */
+    /** This TV Setup draws pictures too (SetupNeed "pic"); known once the way is open. */
     @Volatile var pics = false
         private set
 
@@ -37,7 +37,7 @@ class Draw(private val adb: () -> Adb) {
         val pic = (0 until ops.length()).any { ops.getJSONObject(it).optString("o") == "i" }
         if (ops.length() == 0) close()                                // a check asks TV Setup afresh: it may have been removed or updated since
         for (attempt in 0..1) {
-            val s = try { open().also { if (pic && !pics) throw IOException("draw:oldpic") } } catch (e: IOException) { if (attempt == 1 || e.message == "draw:oldpic") throw e; close(); continue }
+            val s = try { open().also { if (pic && !pics) throw SetupNeed.Missing("pic", SetupUpdate.installed(adb())) } } catch (e: IOException) { if (attempt == 1 || e is SetupNeed.Missing) throw e; close(); continue }
             try { if (bytes.isNotEmpty()) s.write(bytes); return } catch (e: IOException) { close(); if (attempt == 1) throw e }
         }
     }
@@ -55,7 +55,7 @@ class Draw(private val adb: () -> Adb) {
         val out = a.shell("appops set ${RulesClient.SETUP} SYSTEM_ALERT_WINDOW allow >/dev/null 2>&1; " +
             "am broadcast --include-stopped-packages -n $RECEIVER 2>&1", 20000)
         val m = Regex("data=\"([A-Za-z0-9+/=]+)\"").find(out)
-        if (m == null) throw IOException(if (a.shell("pm path ${RulesClient.SETUP} 2>/dev/null").contains("package:")) "draw:old" else "draw:missing")
+        if (m == null) throw SetupNeed.Missing("draw", SetupUpdate.installed(a))
         val o = JSONObject(String(B64.decode(m.groupValues[1]), Charsets.UTF_8))
         if (!o.optBoolean("overlay")) throw IOException("draw:nooverlay")
         pics = o.optBoolean("pic")

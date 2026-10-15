@@ -65,14 +65,9 @@ async function drawFlush() {
   drawSending = false;
 }
 
-// An old or missing TV Setup is told with a way out (update or install it), not after the drawing is lost.
+// An old or missing TV Setup comes as needSetup's question (update or install it), before anything is drawn when it can.
 function drawFail(why) {
-  if (/draw:oldpic|draw:old/.test(why)) {
-    ask(/oldpic/.test(why) ? 'TV Setup trên TV là bản cũ, chưa đưa ảnh lên được. Cập nhật TV Setup (khoảng nửa phút)?' : 'TV Setup trên TV là bản cũ, chưa vẽ được. Cập nhật TV Setup (khoảng nửa phút)?', { ok: '⬆️ Cập nhật' })
-      .then((yes) => { if (yes) updateSetup(); });
-  } else if (/draw:missing/.test(why)) {
-    ask('Vẽ lên TV cần app TV Setup trên TV. Cài TV Setup ngay?', { ok: '⚡ Cài TV Setup' }).then((yes) => { if (yes) installSetupApk(); });
-  } else toast(/draw:nooverlay/.test(why) ? 'TV này không cho app vẽ đè lên màn hình.' : 'Không vẽ được lên TV: ' + friendly(why || 'mất kết nối'));
+  if (!needSetup(why)) toast(/draw:nooverlay/.test(why) ? 'TV này không cho app vẽ đè lên màn hình.' : 'Không vẽ được lên TV: ' + friendly(why || 'mất kết nối'));
 }
 
 let drawPics = true;                                                   // this TV Setup takes pictures: known once drawing starts
@@ -107,7 +102,7 @@ $('#drawwidth').addEventListener('input', (e) => { drawWidth = +e.target.value; 
 
 // 🖼️ Pick, place (drag; size with two fingers or the wheel), then ✓ sends it. At most 1280 pixels: plenty for a TV
 // layer, and a phone photo stays a few hundred KB on its way.
-$('#drawpic').addEventListener('click', () => { if (drawPics) $('#drawfile').click(); else drawFail('draw:oldpic'); });
+$('#drawpic').addEventListener('click', () => { if (drawPics) $('#drawfile').click(); else setupFor('pic'); });   // the file picker must open within the tap: known beforehand
 $('#drawfile').addEventListener('change', async (e) => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
   const img = new Image(), url = URL.createObjectURL(f);

@@ -202,7 +202,7 @@
     'Tắt app hệ thống không dùng (chế độ khách sạn/trưng bày của Sony, Samba, Sony Select, Play Games, Play Movies, YouTube Music)': 'Turn off unused system apps (Sony hotel/demo modes, Samba, Sony Select, Play Games, Play Movies, YouTube Music)',
     // ✏️ drawing on the TV's screen (draw.js)
     'Vẽ lên màn hình TV: chỉ chỗ cho người đang xem': 'Draw on the TV screen: show the person watching where to look', 'Vẽ lên màn hình TV': 'Draw on the TV screen',
-    'Đỏ': 'Red', 'Vàng': 'Yellow', 'Xanh lá': 'Green', 'Xanh dương': 'Blue', 'Trắng': 'White', 'Cam': 'Orange', 'Xanh đậm': 'Dark blue', 'Tím': 'Purple', 'Hồng': 'Pink', 'Đen': 'Black', 'Màu': 'Colour', 'TV Setup trên TV là bản cũ, chưa đưa ảnh lên được. Cập nhật TV Setup (khoảng nửa phút)?': 'TV Setup on the TV is too old to show pictures. Update TV Setup (about half a minute)?', 'TV Setup trên TV là bản cũ, chưa vẽ được. Cập nhật TV Setup (khoảng nửa phút)?': 'TV Setup on the TV is too old to draw. Update TV Setup (about half a minute)?', 'Vẽ lên TV cần app TV Setup trên TV. Cài TV Setup ngay?': 'Drawing on the TV needs the TV Setup app on the TV. Install TV Setup now?', '⬆️ Cập nhật': '⬆️ Update', '⚡ Cài TV Setup': '⚡ Install TV Setup', 'Nét': 'Line size',
+    'Đỏ': 'Red', 'Vàng': 'Yellow', 'Xanh lá': 'Green', 'Xanh dương': 'Blue', 'Trắng': 'White', 'Cam': 'Orange', 'Xanh đậm': 'Dark blue', 'Tím': 'Purple', 'Hồng': 'Pink', 'Đen': 'Black', 'Màu': 'Colour', '⬆️ Cập nhật': '⬆️ Update', 'Hẹn giờ, giờ đi ngủ, giới hạn app': 'The sleep timer, bedtime and app limits', 'Vẽ lên TV': 'Drawing on the TV', 'Đưa ảnh lên TV': 'A picture on the TV', '⚡ Cài TV Setup': '⚡ Install TV Setup', 'Nét': 'Line size',
     'Bỏ nét vừa vẽ': 'Take back the last line', '🗑 Xóa hết': '🗑 Clear all', '✓ Xong': '✓ Done',
     'TV này không cho app vẽ đè lên màn hình.': 'This TV does not let apps draw over its screen.',
     '⚡ Tối ưu TV': '⚡ Optimize TV', 'Hoàn tác': 'Undo', '⏳ Tiến trình': '⏳ Progress', '⬆️ Đang cập nhật TV Setup trên TV': '⬆️ Updating TV Setup on the TV', 'đang tải về điện thoại...': 'downloading to the phone...', 'đang gửi lên server...': 'sending to the server...',
@@ -341,7 +341,6 @@
     'Thêm bước': 'Add step',
     'Hẹn giờ tắt · 🌙 Giờ đi ngủ · ⏳ Giới hạn app': 'Sleep timer · 🌙 Bedtime · ⏳ App limits',
     'Giới hạn app': 'App limits',
-    'TV Setup trên TV là bản cũ. Cần bản 2.13.0 trở lên: mở TV Setup trên TV → Cập nhật, hoặc bấm nút dưới.': 'TV Setup on the TV is too old. 2.13.0 or newer is needed: open TV Setup on the TV → Update, or use the button below.',
     'Các mục này chạy bằng app TV Setup trên TV (để TV tự tắt được cả khi máy này đã tắt). TV chưa có app đó.': 'These run in the TV Setup app on the TV (so the TV turns off even with this device off). The TV does not have it yet.',
     'Cập nhật TV Setup': 'Update TV Setup',
     'Đang cập nhật: TV Remote đóng lại rồi tự mở bản mới.': 'Updating: TV Remote closes and opens the new version by itself.',
@@ -497,6 +496,9 @@
 
   // Strings with a variable part. Captured pieces are passed through tr() again where they can be text of ours.
   const RULES = [
+    [/^(.+) cần TV Setup (\S+) trở lên \(TV đang có (\S*)\)\. Cập nhật TV Setup\?$/, (m) => tr(m[1]) + ' needs TV Setup ' + m[2] + ' or newer (the TV has ' + m[3] + '). Update TV Setup?'],
+    [/^(.+) cần app TV Setup trên TV\. Cài TV Setup\?$/, (m) => tr(m[1]) + ' needs the TV Setup app on the TV. Install TV Setup?'],
+    [/^TV Setup trên TV là bản cũ\. Cần bản (\S+) trở lên: mở TV Setup trên TV → Cập nhật, hoặc bấm nút dưới\.$/, (m) => 'TV Setup on the TV is too old. ' + m[1] + ' or newer is needed: open TV Setup on the TV → Update, or press the button below.'],
     [/^🆕 TV Setup trên TV có bản mới (\S+) \(đang dùng (\S+)\)$/, (m) => '🆕 TV Setup on the TV has a new version ' + m[1] + ' (it has ' + m[2] + ')'],
     [/^⚠️ TV đã tự tắt lọc DNS (\S+) lúc (\S+) (\S+), vì với nó TV không tra được tên miền nào \(YouTube và các app báo mất mạng\)\. Hay gặp khi TV có VPN như Tailscale\. Chọn lại một bộ lọc để thử lại\.$/,
       (m) => '⚠️ The TV turned the DNS filter ' + m[1] + ' off at ' + m[2] + ' on ' + m[3] + ': with it the TV could not look up any name (YouTube and other apps said there was no Internet). This happens on TVs with a VPN such as Tailscale. Pick a filter again to try once more.'],

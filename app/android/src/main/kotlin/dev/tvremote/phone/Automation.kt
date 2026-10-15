@@ -5,6 +5,7 @@ import android.widget.Toast
 import dev.tvremote.core.AdbLink
 import dev.tvremote.core.RemoteLabels
 import dev.tvremote.core.RulesClient
+import dev.tvremote.core.SetupNeed
 import dev.tvremote.core.Scenes
 import dev.tvremote.core.Voice
 import org.json.JSONArray
@@ -35,6 +36,7 @@ private fun MainActivity.rules(change: JSONObject?, then: (JSONObject) -> Unit) 
 
 private fun MainActivity.needsSetup(r: JSONObject): Boolean {
     if (!r.has("setup") && !r.has("error")) return false
+    if (r.has("setup") && offerSetup(SetupNeed.Missing("rules", r.optString("have")))) return true
     AlertDialog.Builder(this).setTitle(t("Cần TV Setup trên TV", "TV Setup is needed on the TV"))
         .setMessage(if (r.has("error")) r.optString("error") else t(
             "Hẹn giờ tắt, giờ đi ngủ và giới hạn app chạy ngay trên TV bằng app TV Setup (bản 2.13.0 trở lên), để TV tự tắt được cả khi điện thoại đã tắt. Trang Tự động có nút cài giúp.",
@@ -102,7 +104,10 @@ internal fun MainActivity.runScene(sc: JSONObject) {
     toast(t("Đang chạy: ", "Running: ") + sc.optString("name"))
     Thread {
         val failed = Scenes.run(steps, target)
-        ui.post { if (!isFinishing) toast(if (failed == null) "✓ " + sc.optString("name") else t("Có bước không làm được: ", "Some steps did not work: ") + failed) }
+        ui.post {
+            if (isFinishing || (failed != null && offerSetup(java.io.IOException(failed)))) return@post   // e.g. its timer needs a newer TV Setup
+            toast(if (failed == null) "✓ " + sc.optString("name") else t("Có bước không làm được: ", "Some steps did not work: ") + failed)
+        }
     }.start()
 }
 

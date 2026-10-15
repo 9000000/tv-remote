@@ -2,6 +2,8 @@ package dev.tvremote.phone
 
 import android.app.AlertDialog
 import android.view.View
+import dev.tvremote.core.Errors
+import dev.tvremote.core.SetupNeed
 import dev.tvremote.core.SetupUpdate
 import dev.tvremote.core.Tv
 import dev.tvremote.update.Release
@@ -71,4 +73,29 @@ internal fun MainActivity.showSetup(h: String? = host) {
             }
             .setNegativeButton(t("Để sau", "Later")) { _, _ -> prefs.edit().putString("setupLater", n.latest).apply(); showSetup(h) }.show()
     }
+}
+
+/** When [e] says TV Setup on the TV is missing or too old for a feature (SetupNeed), asks to install or update it, with the
+ *  button that does it on the Manage page; true when it did. Every feature's errors go through here first. */
+internal fun MainActivity.offerSetup(e: Throwable): Boolean {
+    val say = SetupNeed.say(e, VI) ?: return false
+    if (isFinishing) return true
+    val old = generateSequence(e) { it.cause }.any { "setup:old:" in (it.message ?: "") }
+    val h = host
+    AlertDialog.Builder(this).setMessage(say)
+        .setPositiveButton(if (old) t("⬆️ Cập nhật", "⬆️ Update") else t("⚡ Cài TV Setup", "⚡ Install TV Setup")) { _, _ ->
+            if (h != null) { setupNews.remove(h); setupChecked.remove(h) }      // asked again after: done, or put back
+            managing.open(h, then = if (old) "updateSetup()" else "installSetupApk()")
+        }
+        .setNegativeButton(t("Để sau", "Later"), null).show()
+    return true
+}
+
+/** Runs [then] once TV Setup on the TV has [feature] (SetupNeed.MIN); otherwise offerSetup asks for it instead. */
+internal fun MainActivity.withSetup(feature: String, then: () -> Unit) {
+    val tv = tv ?: return
+    Thread({
+        val e = try { SetupNeed.check(tv.link() ?: throw java.io.IOException("no TV"), feature); null } catch (e: Exception) { e }
+        ui.post { if (isFinishing) return@post; if (e == null) then() else if (!offerSetup(e)) android.widget.Toast.makeText(this, Errors.say(e, VI), android.widget.Toast.LENGTH_LONG).show() }
+    }, "setup-need").start()
 }

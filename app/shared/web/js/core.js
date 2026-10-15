@@ -75,6 +75,7 @@ async function call(path, data, quiet) {
     if (r.status === 401 && CORE === 'tv') { refresh(); return null; }   // this browser is no longer paired with the TV
     if (!r.ok) {
       let e = r.statusText; try { e = (await r.json()).error || e; } catch {}
+      if (!quiet && needSetup(e)) return null;                         // asked as a question with its button, not a toast
       if (r.status === 404 && CORE === 'pc') e = STALE;
       if (r.status === 503 && /^adb/.test(e)) { e = /allow/.test(e) ? 'TV đang hỏi cho phép gỡ lỗi: nhìn lên TV, chọn “Luôn cho phép”' : 'chưa nối được ADB tới TV'; setTimeout(refresh, 300); }
       if (!quiet) toast('Lỗi: ' + friendly(e)); return null;
@@ -102,8 +103,24 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && popEl) {
 addEventListener('scroll', (e) => { if (popEl && !popEl.contains(e.target)) closePop(); }, true);
 addEventListener('resize', closePop);
 
+// A phone or computer can be newer than TV Setup on the TV. What needs which TV Setup is SetupNeed.kt's table; any call that
+// meets one (its error says "setup:old|missing:<feature>:<min>:<have>") asks to update or install TV Setup, with the button.
+// A page that knows before starting asks setupFor(feature). The same names as SetupNeed.name.
+const SETUP_NEEDS = { rules: 'Hẹn giờ, giờ đi ngủ, giới hạn app', draw: 'Vẽ lên TV', pic: 'Đưa ảnh lên TV' };
+const SETUP_RE = /setup:(old|missing):(\w+):([0-9.]*):([0-9.]*)/;
+const setupSay = (m) => m[1] === 'missing' ? (SETUP_NEEDS[m[2]] || m[2]) + ' cần app TV Setup trên TV. Cài TV Setup?'
+  : (SETUP_NEEDS[m[2]] || m[2]) + ' cần TV Setup ' + m[3] + ' trở lên (TV đang có ' + m[4] + '). Cập nhật TV Setup?';
+function needSetup(why) {
+  const m = String(why || '').match(SETUP_RE); if (!m) return false;
+  const old = m[1] === 'old';
+  ask(setupSay(m), { ok: old ? '⬆️ Cập nhật' : '⚡ Cài TV Setup' }).then((yes) => { if (yes) (old ? updateSetup : installSetupApk)(); });
+  return true;
+}
+const setupFor = async (feature) => !!await api('/api/setup/need?f=' + feature);
+
 // The errors people actually meet, from any core , in words they can act on; anything else as it came.
 const FRIENDLY = [
+  [SETUP_RE, setupSay],
   [/SSLHandshake|CertPathValidator|Chain validation|CERTIFICATE_VERIFY|not yet valid/i, 'Không mở được kết nối bảo mật. Ngày giờ trên TV có đúng không? (Cài đặt → Hệ thống → Ngày và giờ)'],
   [/UnknownHost|Name or service not known|nodename nor servname|getaddrinfo/i, 'TV (hoặc máy này) chưa vào được Internet.'],
   [/SocketTimeout|timed out|ConnectException|Connection reset/i, 'Mạng chậm hoặc vừa mất kết nối. Thử lại sau ít phút.'],
