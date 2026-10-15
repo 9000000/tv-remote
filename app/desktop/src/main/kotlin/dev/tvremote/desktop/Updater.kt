@@ -133,7 +133,9 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
                 val sh = File(tmp, "tv-remote-update.sh").apply { writeText(SH) }
                 listOf("/usr/bin/nohup", "/bin/sh", sh.path, pid, old.path, new.path, dir.path, run)
             }
-            ProcessBuilder(cmd).redirectErrorStream(true).redirectOutput(log).start()   // outlives this process
+            val pb = ProcessBuilder(cmd).redirectErrorStream(true).redirectOutput(log)
+            pb.environment().keys.removeIf { it.startsWith("_JPACKAGE") }   // Linux: set by our launcher, the new one would skip its setup
+            pb.start()                                                // outlives this process
             println("update: swapping in ${found?.version}${if (open) ", then opening it" else ""} ($cmd, log $log)")
             true
         } catch (e: Exception) {
