@@ -92,8 +92,25 @@ class Story:
                   off="background:transparent;box-shadow:inset 0 0 transparent")
 
 
-def tap(t, x, y):
-    return [(t - .6, x + 6, y + 8, "hide"), (t - .3, x, y, "show"), (t, x, y, "press"), (t + .2, x, y, "show"), (t + .55, x + 5, y + 6, "hide")]
+def taps(*pts, near=1.4):
+    """a finger pressing each (t, x, y) in turn: it glides from one to the next when they are close in time, and lifts
+    away and comes back when they are not (separate taps written apart would jump between their spots)"""
+    ev, prev = [], None
+    for t, x, y in sorted(pts):
+        if prev and t - prev[0] < near:
+            g = min(.15, (t - prev[0]) / 3)
+            ev += [(prev[0] + g, prev[1], prev[2], "show"), (t - g, x, y, "move"), (t, x, y, "press")]
+        else:
+            if prev:
+                ev += [(prev[0] + .15, prev[1], prev[2], "show"), (prev[0] + .5, prev[1] + 5, prev[2] + 6, "hide")]
+            ev += [(t - .6, x + 6, y + 8, "hide"), (t - .3, x, y, "show"), (t, x, y, "press")]
+        prev = (t, x, y)
+    return ev + [(prev[0] + .15, prev[1], prev[2], "show"), (prev[0] + .5, prev[1] + 5, prev[2] + 6, "hide")]
+
+
+def key(d):
+    x, y = KEYS[d]
+    return x, y / PY
 
 
 def click(t, x, y, frm=None):
@@ -174,15 +191,11 @@ def how():
            (A(4, 1.5), A(4, 1.9)), (A(4, 2.9), A(4, 4.8)), (A(4, 6.7), A(4, 8.4)), f=.1)
     s.show(".lane.dn", (A(1, 2.0), A(2, 1.3)), (A(2, 7.2), A(3, 0)), (A(3, 3.2), A(4, 0)), (A(4, 5.2), 40), f=.1)
     # the finger
-    ev = tap(1.6, *P(*ROW)) + tap(A(1, 6.2), *mir(*YT))
-    ev += tap(A(2, 3.6), *P(*VOLUP)) + tap(A(2, 4.3), *P(*VOLUP)) + tap(A(2, 5.2), *P(*RIGHT))
-    ev += tap(A(3, 6.0), *mir(*MV))
-    for i, d in enumerate("482913"):
-        x, y = KEYS[d]
-        ev += [(A(4, 2.85 + .3 * i), x, y / PY, "show"), (A(4, 3.0 + .3 * i), x, y / PY, "press"), (A(4, 3.1 + .3 * i), x, y / PY, "show")]
-    ev.append((A(4, 4.9), 70, 75, "hide"))
-    ev += tap(A(4, 6.8), *P(*OK)) + tap(A(4, 8.0), *P(*RIGHT))
-    s.pointer(".hph .dfg", ev)
+    s.pointer(".hph .dfg", taps((1.6, *P(*ROW)), (A(1, 6.2), *mir(*YT)),
+                                (A(2, 3.6), *P(*VOLUP)), (A(2, 4.3), *P(*VOLUP)), (A(2, 5.2), *P(*RIGHT)),
+                                (A(3, 6.0), *mir(*MV)),
+                                *[(A(4, 3.0 + .3 * i), *key(d)) for i, d in enumerate("482913")],
+                                (A(4, 6.8), *P(*OK)), (A(4, 8.0), *P(*RIGHT))))
     # captions, in the order of .hcap's <p>s
     for i, (k, a, b) in enumerate([(1, 0, 2), (1, 2, 6), (1, 6, 10), (2, 0, 2.6), (2, 2.6, 6.4), (2, 6.4, 10),
                                    (3, 0, 2.4), (3, 2.4, 6), (3, 6, 10), (4, 0, 2), (4, 2, 5), (4, 5, 10)]):
@@ -218,13 +231,7 @@ def browser():
     s.show(".e1", (16, 17.3)); s.show(".e2", (17.3, 18.5)); s.show(".e3", (18.5, 20))
     for i in range(6):
         s.show(f".e2 .bx i:nth-child({i+1})", (17.5 + .16 * i, 20), f=.06, on="color:#fff;border-color:#5b8cff", off="color:transparent;border-color:#2f3850")
-    ev = tap(16.9, *P(50, 124))
-    for i, d in enumerate("482913"):
-        x, y = KEYS[d]
-        ev += [(17.4 + .16 * i, x, y / PY, "show"), (17.5 + .16 * i, x, y / PY, "press"), (17.56 + .16 * i, x, y / PY, "show")]
-    ev.append((18.5, 70, 75, "hide"))
-    ev += tap(19.4, *P(*OK))
-    s.pointer(".sph .dfg", ev)
+    s.pointer(".sph .dfg", taps((16.9, *P(50, 124)), *[(17.5 + .16 * i, *key(d)) for i, d in enumerate("482913")], (19.4, *P(*OK))))
     return s.out
 
 
@@ -247,7 +254,7 @@ def phone_app():
     s.show(".stv .dfoc", (13.8, 14.2), f=.12)
     s.show(".stv .dyt", (14.2, 16))
     s.show(".a4 .myt", (14.6, 16))
-    s.pointer(".sph .dfg", tap(1.7, *P(50, 62)) + tap(2.4, *P(72, 196)) + tap(4.5, *P(50, 39)) + tap(6.8, *P(*ROW)) + tap(13.6, *mir(*YT)))
+    s.pointer(".sph .dfg", taps((1.7, *P(50, 62)), (2.4, *P(72, 196)), (4.5, *P(50, 39)), (6.8, *P(*ROW)), (13.6, *mir(*YT))))
     s.press(".a1 .open", 1.7); s.press(".a1 .sheet .tb2", 2.4); s.press(".a2 .prow", 6.8)
     return s.out
 
