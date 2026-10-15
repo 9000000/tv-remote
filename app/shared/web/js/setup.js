@@ -147,7 +147,7 @@ async function loadTvs() {
       el('small', { textContent: t.host + (t.lan && t.lan !== t.host ? ' · trong nhà ' + t.lan : '') })),
     el('div', { className: 'acts' },
       setLabel(el('button', { className: 'small primary', onclick: () => openTv(t.host, r.current) }), '▶', 'Điều khiển'),
-      setLabel(el('button', { className: 'small danger', onclick: async () => { if (await ask('Xóa "' + (t.name || t.host) + '" khỏi danh sách? (Không đổi gì trên TV)', { ok: 'Xóa', danger: true })) { await api('/api/tv/remove', { host: t.host }); await refresh(); loadTvs(); loadSteps(); } } }), '🗑', 'Xóa'))));
+      setLabel(el('button', { className: 'small danger', onclick: async () => { if (await ask('Xóa "' + (t.name || t.host) + '" khỏi danh sách? (Không đổi gì trên TV)', { ok: 'Xóa', danger: true })) { await api('/api/tv/remove', { host: t.host }); await refresh(); loadTvs(); loadSteps(); } } }), '🗑', 'Xóa', true))));
   $('#tvlist').replaceChildren(...rows);
   $('#savedcard').hidden = !rows.length; $('#pickcols').classList.toggle('solo', !rows.length);   // nothing saved: no empty box, just the search
   fleetCheck(rows.length);

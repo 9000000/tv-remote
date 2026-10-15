@@ -8,7 +8,8 @@ const CORE = document.documentElement.dataset.core || 'mac';
 document.documentElement.dataset.core = CORE;
 const $ = (s) => document.querySelector(s);
 // icon + words as separate spans, so narrow screens can show the icon alone (see .lbl in style.css)
-const setLabel = (b, icon, text) => { b.replaceChildren(el('span', { className: 'ico', textContent: icon }), el('span', { className: 'lbl', textContent: ' ' + text })); if (!b.title) b.title = text; return b; };
+// asks: its handler asks before doing anything, so the icon-only question below is not asked as well
+const setLabel = (b, icon, text, asks) => { if (asks) b.dataset.asks = ''; b.replaceChildren(el('span', { className: 'ico', textContent: icon }), el('span', { className: 'lbl', textContent: ' ' + text })); if (!b.title) b.title = text; return b; };
 const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); kids.forEach((k) => k != null && e.append(k)); return e; };
 const fmtSize = (n) => n > 1e9 ? (n / 1e9).toFixed(1) + ' GB' : n > 1e6 ? (n / 1e6).toFixed(1) + ' MB' : n > 1e3 ? Math.round(n / 1e3) + ' KB' : n + ' B';
 const sleep = (ms) => new Promise((z) => setTimeout(z, ms));
@@ -38,6 +39,22 @@ function ask(text, o = {}) {
   });
   const p = askQ.then(run); askQ = p.catch(() => {}); return p;
 }
+
+// On a narrow screen some buttons show their icon alone (.lbl folded away, style.css). A tap there first says what it does, so
+// nobody acts on a guess at an icon; yes then does it. Not for ✕ and ⋯ (they say it by themselves), nor for buttons whose
+// own handler asks already (data-asks): one question is enough.
+let iconSure = false;
+document.addEventListener('click', async (e) => {
+  if (iconSure || !e.isTrusted || e.target.tagName === 'INPUT') return;   // a person's tap only: not our own click once sure, nor a label passing its click on
+  const b = e.target.closest && e.target.closest('button, label.linkbtn'); if (!b || b.disabled || 'asks' in b.dataset) return;
+  const l = b.querySelector(':scope > .lbl'); if (!l || l.getBoundingClientRect().width > 1) return;
+  const name = l.textContent.trim(); if (!name || /^(✕|⋯)$/.test(b.textContent.trim())) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  const ico = (b.querySelector(':scope > .ico') || {}).textContent || '', why = b.title && b.title.trim() !== name ? b.title.trim() : '';
+  if (!await ask((ico + ' ' + (why || name)).trim() + '?', { ok: name, danger: b.classList.contains('danger') })) return;
+  const input = b.tagName === 'LABEL' && b.querySelector('input');
+  iconSure = true; try { (input || b).click(); } finally { iconSure = false; }
+}, true);
 
 // The computer's page is read fresh from disk, its server's code only at start: a newer page's calls then answer 404.
 const STALE = 'Trang mới hơn phần đang chạy: bấm ⏻ Tắt rồi mở lại TV Remote.';

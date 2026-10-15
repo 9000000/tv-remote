@@ -69,13 +69,16 @@ async function loadQuick() {
 let appsLoaded = false, appsAll = [], appsInfo = new Map(), appsOffOpen = false;          // pkg -> { off, keep }
 let appsBoot = new Set();                                             // the apps that start by themselves when the TV turns on
 let appsFilter = 'all';
-// the chips above the list: each narrows it to one kind of app, with how many there are
+// the chips above the list: each narrows it to one kind of app, with how many there are. The same words and colour mark
+// those apps in the list (APP_TAGS), so a colour on a row says what the chip says.
 const APPS_FILTERS = [
   ['all', 'Tất cả', () => true],
-  ['boot', '🚀 Tự chạy khi bật TV', (p, i) => !i.off && appsBoot.has(p)],
-  ['keep', '🔒 Cần giữ', (p, i) => i.keep],
-  ['off', '⏸ Đã tắt', (p, i) => i.off],
+  ['boot', '🚀 Tự chạy', (p, i) => !i.off && appsBoot.has(p), 'Tự chạy mỗi khi bật TV'],
+  ['keep', '🔒 Cần giữ', (p, i) => i.keep, 'TV cần app này: đừng tắt hay gỡ'],
+  ['off', '⏸ Đã tắt', (p, i) => i.off, 'Đã tắt: bật lại trong nút ⋯ của app'],
 ];
+const appTags = (p, i) => APPS_FILTERS.filter((f) => f[0] !== 'all' && f[2](p, i))
+  .map(([key, label, , why]) => el('span', { className: 'tag ' + key, textContent: tr(label), title: tr(why) }));
 async function loadApps() {
   $('#appslist').replaceChildren(el('div', { className: 'muted', textContent: 'Đang tải...' }));
   const r = await api('/api/apps' + ($('#appssys').checked ? '?system=1' : ''));
@@ -89,8 +92,11 @@ function renderApps() {
   lazyMeta.disconnect();
   const fit = APPS_FILTERS.find((f) => f[0] === appsFilter) || APPS_FILTERS[0];
   const found = appsAll.filter((p) => !q || p.toLowerCase().includes(q) || appName(p).toLowerCase().includes(q));
-  $('#appsfilter').replaceChildren(...APPS_FILTERS.map(([key, label, ok]) => el('button', { className: key === fit[0] ? 'on' : '', type: 'button',
-    onclick: () => { appsFilter = key; renderApps(); } }, tr(label), el('b', { textContent: found.filter((p) => ok(p, appsInfo.get(p) || {})).length }))));
+  const sys = $('#appssys').checked;
+  $('#appsfilter').replaceChildren(...APPS_FILTERS.map(([key, label, ok, why]) => el('button', { className: key + (key === fit[0] ? ' on' : ''), type: 'button', title: why ? tr(why) : '',
+    onclick: () => { appsFilter = key; renderApps(); } }, tr(label), el('b', { textContent: found.filter((p) => ok(p, appsInfo.get(p) || {})).length }))),
+    el('button', { className: 'sys' + (sys ? ' on' : ''), type: 'button', ariaPressed: String(sys), title: tr('Hiện cả app hệ thống'),   // which apps are listed at all: a switch, not a kind
+      onclick: () => { $('#appssys').checked = !sys; loadApps(); } }, (sys ? '✓ ' : '') + tr('⚙️ App hệ thống')));
   const rows = found.filter((p) => fit[2](p, appsInfo.get(p) || {}))
     .sort((a, b) => (appsInfo.get(a)?.off ? 1 : 0) - (appsInfo.get(b)?.off ? 1 : 0) || appName(a).localeCompare(appName(b))).map((pkg) => {   // turned off: last
     const run = async (name, label) => {
@@ -112,8 +118,8 @@ function renderApps() {
       info.keep || info.off ? null : ['⏸', 'Tắt app', () => run('disable', 'Tắt app')],
       ['🗑', 'Gỡ', () => run('uninstall', 'Gỡ'), 'danger'],
     ]) });
-    const row = el('div', { className: 'item' + (info.off ? ' off' : '') }, icon, el('div', { className: 'name' }, title, el('small', { textContent: [info.off ? '⏸ đã tắt' : '', pkg,
-      info.keep ? 'cần giữ' : '', !info.off && appsBoot.has(pkg) ? 'tự chạy khi bật TV' : ''].filter(Boolean).map(tr).join(' · ') })),
+    const row = el('div', { className: 'item' + (info.off ? ' off' : '') }, icon, el('div', { className: 'name' },
+      el('div', { className: 'nameline' }, title, ...appTags(pkg, info)), el('small', { className: 'pkg', textContent: pkg, title: pkg })),
       el('div', { className: 'acts' }, more));
     row.loadMeta = () => onMeta(pkg, (m) => { icon.fill(info.off ? { label: m.label } : m); if (m.label) title.textContent = m.label; });   // a disabled app has no picture to give
     if (META.has(pkg)) row.loadMeta(); else lazyMeta.observe(row);
@@ -123,7 +129,7 @@ function renderApps() {
   // the disabled apps (Optimize TV's, or "Disable" here) fold away at the end, so "Turn on" is at hand but out of the way
   const fold0 = fit[0] === 'all';                                    // a chip picked: its apps, all in plain sight
   const on = fold0 ? rows.filter((r) => !r.off) : rows, off = fold0 ? rows.filter((r) => r.off) : [];
-  const none = !$('#appssys').checked && (fit[0] === 'keep' || fit[0] === 'boot') ? 'Không có app nào. Bật “Hiện cả app hệ thống” để thấy cả app hệ thống.' : 'Không có app nào.';
+  const none = !$('#appssys').checked && (fit[0] === 'keep' || fit[0] === 'boot') ? 'Không có app nào. Bấm “⚙️ App hệ thống” để thấy cả app hệ thống.' : 'Không có app nào.';
   const fold = off.length ? [el('details', { className: 'appsoff', open: !!q || appsOffOpen, ontoggle: (e) => { if (!q) appsOffOpen = e.target.open; } },
     el('summary', { textContent: '⏸ App đã tắt (' + off.length + ')' }), el('p', { className: 'muted', textContent: 'Đã tắt bằng Tối ưu TV hoặc nút Tắt app. Bấm ↩ để bật lại.' }), ...off)] : [];
   $('#appslist').replaceChildren(...(on.length || off.length ? on : [el('div', { className: 'muted', textContent: none })]), ...fold);

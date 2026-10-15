@@ -22,6 +22,8 @@ Web 2.21.0 · app điện thoại 2.19.0 · app TV 2.18.0
 - **Tab Ứng dụng gọn hơn:** có chip lọc nhanh (Tất cả · Tự chạy khi bật TV · Cần giữ · Đã tắt, kèm số lượng). “Bật / tắt / gỡ hàng loạt” mở trong cửa sổ riêng. Mỗi app chỉ còn nút ⋯, trong đó “Mở” nằm đầu tiên.
 - **Giao diện gọn hơn:** các nút đóng chỉ còn ✕; trạng thái ở đầu trang ngắn lại (“ADB ✓”, “TV bật”), di chuột vào để xem đầy đủ, nên trên điện thoại cả hàng nằm vừa một dòng.
 - **✏️ Vẽ lên màn hình TV** để chỉ chỗ cho người đang xem TV (“bấm vào đây”, khoanh một nút). Trên máy tính và trang của TV Setup: nút ✏️ cạnh hình TV. Trên app điện thoại: “Vẽ lên TV” trong Thêm phím. Vẽ bằng ngón tay hoặc chuột lên hình, TV hiện nét vẽ ngay, đè lên mọi app. Có 5 màu, nét to, bỏ nét vừa vẽ, xóa hết. Người xem vẫn dùng TV bình thường bên dưới nét vẽ. Nét vẽ tự mất sau 10 phút nếu không ai xóa. Cần TV Setup bản mới (2.18.0) và ADB.
+- **Trên màn hình hẹp, nút chỉ còn biểu tượng sẽ hỏi trước khi làm:** bấm vào thì trang hiện câu nói rõ nút đó làm gì (“🧹 Dọn bộ nhớ đệm của mọi app?”), đồng ý mới làm. Áp dụng cho mọi nút gập chữ, trừ ✕ và ⋯, và trừ những nút vốn đã tự hỏi.
+- **Danh sách app dễ nhìn hơn:** “Tự chạy”, “Cần giữ”, “Đã tắt” thành huy hiệu màu ngay cạnh tên app (tím, xanh lá, xám), cùng màu với chip lọc phía trên. Tên gói nằm riêng một dòng. “Hiện cả app hệ thống” thành chip “⚙️ App hệ thống” chung hàng với các chip lọc.
 
 **English**
 - **The app list shows faster on the phone and the computer:** to read app names and logos, the whole phone app (1.1 MB) used to be copied to the TV after every update. Now a 6 KB file is enough.
@@ -37,6 +39,8 @@ Web 2.21.0 · app điện thoại 2.19.0 · app TV 2.18.0
 - **Tidier Apps tab:** quick filter chips (All · Starts with the TV · Must keep · Turned off, with counts). “Turn on / off / remove in bulk” opens in its own window. Each app keeps only its ⋯ button, with “Open” first in that menu.
 - **Tidier layout:** close buttons are just ✕; the states at the top are shorter (“ADB ✓”, “TV on”), with the full text on hover, so the whole row fits on one line on a phone.
 - **✏️ Draw on the TV's screen** to show the person watching where to go (“press here”, a circle around a button). On the computer and TV Setup's page: the ✏️ button next to the TV picture. In the phone app: “Draw on the TV” under More keys. Draw on the picture with a finger or the mouse and the TV shows it at once, over every app. Five colours, a thick line, take back the last line, clear all. The person watching keeps using the TV under the drawing. It goes away by itself after 10 minutes if nobody clears it. Needs the new TV Setup (2.18.0) and ADB.
+- **On a narrow screen, a button showing only its icon asks first:** tapping it says what it does (“🧹 Clear the cache of every app?”) and acts only on yes. This holds for every button whose words are folded away, except ✕ and ⋯ and buttons that already ask.
+- **A clearer app list:** “Autostart”, “Must keep” and “Turned off” are coloured tags next to the app's name (purple, green, grey), the same colours as the filter chips above. The package name has its own line. “Show system apps too” is now the “⚙️ System apps” chip, in the row of filter chips.
 
 ## 2.20.0 - 2026-10-15
 

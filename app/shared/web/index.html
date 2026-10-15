@@ -31,7 +31,7 @@
       <button class="small" id="switchtv" data-for="mac" title="Chọn TV khác, tìm TV mới"><span class="ico">📺</span><span class="lbl"> Đổi TV</span></button>
       <button class="small" id="lang" title="Tiếng Việt / English">🌐 EN</button>
       <button class="small" id="aboutbtn" data-for="mac tv" title="Giới thiệu"><span class="ico">ℹ️</span><span class="lbl"> Giới thiệu</span></button>
-      <button class="small danger" id="quit" data-for="mac" title="Dừng chương trình trên máy tính này (TV không bị ảnh hưởng)"><span class="ico">⏻</span><span class="lbl"> Tắt</span></button>
+      <button class="small danger" id="quit" data-for="mac" data-asks title="Dừng chương trình trên máy tính này (TV không bị ảnh hưởng)"><span class="ico">⏻</span><span class="lbl"> Tắt</span></button>
     </div>
   </header>
 
@@ -212,7 +212,7 @@
         </div></div>
       <form class="line" id="appsf"><input type="search" id="appsq" placeholder="Tìm theo tên app" autocomplete="off"></form>
       <div class="fchips" id="appsfilter"></div>
-      <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px;color:var(--muted);cursor:pointer"><input type="checkbox" id="appssys"> Hiện cả app hệ thống</label>
+      <input type="checkbox" id="appssys" hidden>
       <div class="aihint"><button class="small" id="aiapps">🤖 Hỏi AI nên tắt / gỡ app nào</button><button class="small" id="bulkopen">📝 Bật / tắt / gỡ hàng loạt</button></div>
       <div class="list" id="appslist"></div>
     </section>
@@ -339,7 +339,7 @@
       <div class="actions"><button class="primary" id="tsgo" style="padding:0 18px">⚡ Cài và đăng nhập Tailscale</button></div>
     </section>
     <section class="card" data-adb-gated id="tvsetcard">
-      <div class="card-head"><h2>📺 TV</h2><button class="small" id="tvreboot"><span class="ico">🔁</span><span class="lbl"> Khởi động lại TV</span></button></div>
+      <div class="card-head"><h2>📺 TV</h2><button class="small" id="tvreboot" data-asks><span class="ico">🔁</span><span class="lbl"> Khởi động lại TV</span></button></div>
       <div class="tvset" id="tvset"><div class="muted">Đang đọc cài đặt TV...</div></div>
     </section>
     <section class="card" data-adb-gated>
