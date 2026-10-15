@@ -360,8 +360,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     @Throws(IOException::class)
     private fun push(input: InputStream, length: Long, dest: String, job: JSONObject?) {
         val adb = link.get()
-        val s = adb.exec("cat > " + Adb.q(dest))
-        try {
+        val feed = { s: Adb.Stream ->
             val b = ByteArray(65536)
             var done = 0L
             while (length < 0 || done < length) {
@@ -372,9 +371,9 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 if (job != null && length > 0) try { job.put("pct", (done * 90 / length).toInt()) } catch (ignored: Exception) { }
             }
             if (length >= 0 && done < length) throw IOException("upload cut short")
-        } finally {
-            s.close()
         }
+        if (length >= 0) adb.put(dest, length, feed)                  // the size known: the stream stays open until it is all there
+        else adb.exec("cat > " + Adb.q(dest)).use(feed)
         val want = if (length >= 0) length.toString() else null       // cat finishes writing shortly after the stream closes
         for (i in 0 until 40) {
             val got = adb.shell("stat -c %s " + Adb.q(dest) + " 2>/dev/null").trim()

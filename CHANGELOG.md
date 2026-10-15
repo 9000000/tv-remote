@@ -4,6 +4,16 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.24.1 - 2026-10-15
+
+Web 2.24.1 · app điện thoại 2.22.1 · app TV 2.21.1
+
+**Tiếng Việt**
+- Sửa: cập nhật TV Setup báo "Không ghi được tệp cập nhật lên TV" trên vài TV (Sony, Android 9). Tệp gửi lên TV giờ chỉ đóng khi TV đã ghi đủ.
+
+**English**
+- Fixed: updating TV Setup said "Could not write the update file on the TV" on some TVs (Sony, Android 9). A file sent to the TV is now closed only once the TV has written all of it.
+
 ## 2.24.0 - 2026-10-15
 
 Web 2.24.0 · app điện thoại 2.22.0 · app TV 2.21.0

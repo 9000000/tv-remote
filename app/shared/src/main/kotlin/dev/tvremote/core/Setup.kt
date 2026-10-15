@@ -175,20 +175,20 @@ class Setup(private val adb: Adb, private val dir: File?, private val vi: Boolea
 
     @Throws(IOException::class)
     private fun copyAndInstall(apk: File): String {
-        val s = adb.exec("cat > $TMP")
         var whole = false
         try {
-            apk.inputStream().use { input ->
-                val buf = ByteArray(1 shl 16)
-                while (true) {
-                    val n = input.read(buf)
-                    if (n <= 0) break
-                    s.write(buf, 0, n)
+            adb.put(TMP, apk.length()) { s ->
+                apk.inputStream().use { input ->
+                    val buf = ByteArray(1 shl 16)
+                    while (true) {
+                        val n = input.read(buf)
+                        if (n <= 0) break
+                        s.write(buf, 0, n)
+                    }
                 }
             }
             whole = true
         } finally {
-            s.close()
             if (!whole) try { adb.shell("rm -f $TMP", 10000) } catch (ignored: IOException) { }   // no half file left behind
         }
         // cat is still writing for a while after the stream closes (seconds for a big file on a slow TV): install only a whole file

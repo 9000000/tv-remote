@@ -289,6 +289,32 @@ class Adb(dir: File) : Closeable {
     fun exec(cmd: String): Stream = open("exec:$cmd")
 
     /**
+     * Writes [size] bytes from [feed] to [path] on the TV, the stream left open until the file holds them all: some TVs (a
+     * Sony on Android 9) end cat as the stream closes and lose what it had not written yet, all of a small file. True once whole.
+     */
+    @Throws(IOException::class)
+    fun put(path: String, size: Long, feed: (Stream) -> Unit): Boolean {
+        val s = exec("cat > " + q(path))
+        try {
+            feed(s)
+            var got = ""
+            var still = 0                                             // checks in a row without the file growing
+            while (still < 40) {                                      // 8 s without growing: it will not finish
+                val now = shell("stat -c %s " + q(path) + " 2>/dev/null").trim()
+                if (now == size.toString()) return true
+                still = if (now == got) still + 1 else 0
+                got = now
+                try { Thread.sleep(200) } catch (e: InterruptedException) { throw IOException("interrupted") }
+            }
+            return false
+        } finally {
+            s.close()
+        }
+    }
+
+    fun put(path: String, data: ByteArray): Boolean = put(path, data.size.toLong()) { it.write(data) }
+
+    /**
      * Runs a command in the TV's shell (as the `shell` user) and returns everything it printed. Throws when it prints nothing
      * for [quietMs] (2 minutes; longer for installs), so no caller waits for ever on a command that hangs.
      */

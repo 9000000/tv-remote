@@ -68,7 +68,7 @@ object SetupUpdate {
     private fun launch(adb: Adb, apk: String, version: String, open: Boolean) {
         adb.shell("mkdir -p $DIR; rm -f $DIR/run.sh")              // not an old one of the same size: see below
         val body = SCRIPT.toByteArray(Charsets.UTF_8)
-        adb.exec("cat > $DIR/run.sh").use { it.write(body, 0, body.size) }
+        adb.put("$DIR/run.sh", body)
         // cat finishes writing a moment after the stream closes, a slow TV later still: the script runs only once it is whole
         val whole = "[ \"$(stat -c %s $DIR/run.sh 2>/dev/null)\" = ${body.size} ]"
         for (i in 0 until 50) {

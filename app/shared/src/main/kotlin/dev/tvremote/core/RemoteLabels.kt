@@ -62,9 +62,7 @@ class RemoteLabels(private val link: AdbLink, helper: () -> ByteArray, private v
         val remote = "/data/local/tmp/tvr-helper-" + java.util.zip.CRC32().apply { update(bytes) }.value.toString(16) + ".jar"
         if (a.shell("[ -f $remote ] && echo y").trim() != "y") {
             a.shell(CLEAN)
-            val s = a.open("exec:cat > $remote.part")
-            s.write(bytes)
-            s.close()
+            a.put("$remote.part", bytes)
             val size = bytes.size.toString()
             for (i in 0 until 40) {
                 if (a.shell("wc -c < $remote.part").trim() == size) break

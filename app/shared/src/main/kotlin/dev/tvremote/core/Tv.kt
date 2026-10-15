@@ -232,9 +232,7 @@ class Tv(
         val jar = jar()
         val check = "[ -f $REMOTE ] && wc -c < $REMOTE || echo 0"
         if (a.shell(check).trim() == jar.size.toString()) return
-        val s = a.open("exec:cat > $REMOTE")
-        s.write(jar)
-        s.close()
+        a.put(REMOTE, jar)
         for (i in 0 until 20) {                                       // cat finishes writing shortly after the stream closes
             if (a.shell(check).trim() == jar.size.toString()) return
             try { Thread.sleep(150) } catch (e: InterruptedException) { break }
