@@ -45,6 +45,9 @@ internal fun MainActivity.layoutRemote() {
     stage.visibility = if (video) View.VISIBLE else View.GONE
     moreBtn.visibility = if (basic == null) View.VISIBLE else View.GONE   // hearing the TV needs ADB too
     exitBtn.visibility = if (full) View.VISIBLE else View.GONE
+    qualBtn.visibility = if (video && host != null) View.VISIBLE else View.GONE   // on the picture, where one looks: not hidden in ⋯
+    qualBtn.text = Tv.QUALITY[prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)][0].toString() + "p ▾"
+    fullBtn.visibility = if (video && host != null && !full) View.VISIBLE else View.GONE
     window.decorView.systemUiVisibility = if (full) View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY else 0
     videoBtn.lit = video                                              // lit while the picture shows, like every on/off button
     videoBtn.background = box(if (video) ACCENT else BTN, 16)
@@ -66,15 +69,27 @@ internal fun MainActivity.pictureMenu() {
     menu.setOnMenuItemClickListener { item ->
         if (item.itemId == -2) toggleListen()
         else if (item.itemId == -1) setFullscreen(true)
-        else if (item.groupId == 1 && item.itemId != now) {
-            prefs.edit().putInt("quality", item.itemId).apply()
-            stopSession()                                             // the size is fixed when the session starts
-            layoutRemote()
-            startSession()
-        }
+        else if (item.groupId == 1) setQuality(item.itemId)
         true
     }
     menu.show()
+}
+
+/** The quality chip on the picture: the levels, lightest first. */
+internal fun MainActivity.qualityMenu() {
+    val menu = android.widget.PopupMenu(this, qualBtn)
+    val now = prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)
+    for (level in Tv.LEVELS) menu.menu.add(1, level, 0, Tv.QUALITY[level][0].toString() + "p" + (if (level == now) "  ✓" else ""))
+    menu.setOnMenuItemClickListener { item -> setQuality(item.itemId); true }
+    menu.show()
+}
+
+private fun MainActivity.setQuality(level: Int) {
+    if (level == prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)) return
+    prefs.edit().putInt("quality", level).apply()
+    stopSession()                                                     // the size is fixed when the session starts
+    layoutRemote()
+    startSession()
 }
 
 // ---------------------------------------------------------------- remote screen
@@ -139,6 +154,16 @@ internal fun MainActivity.buildRemote() {
     val fp = FrameLayout.LayoutParams(dp(42), dp(42), Gravity.TOP or Gravity.END)
     fp.setMargins(dp(8), dp(8), dp(8), dp(8))
     stage.addView(exitBtn, fp)
+    qualBtn = android.widget.TextView(this).apply {
+        setTextColor(TEXT); textSize = 12f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER
+        setPadding(dp(10), 0, dp(10), 0); background = box(0x99000000.toInt(), 10)
+        contentDescription = t("Chất lượng hình", "Picture quality")
+        setOnClickListener { qualityMenu() }
+    }
+    stage.addView(qualBtn, FrameLayout.LayoutParams(-2, dp(30), Gravity.BOTTOM or Gravity.START).apply { setMargins(dp(8), dp(8), dp(8), dp(8)) })
+    fullBtn = icon("@expand", t("Toàn màn hình", "Full screen"), 0x99000000.toInt())
+    fullBtn.setOnClickListener { setFullscreen(true) }
+    stage.addView(fullBtn, FrameLayout.LayoutParams(dp(36), dp(30), Gravity.BOTTOM or Gravity.END).apply { setMargins(dp(8), dp(8), dp(8), dp(8)) })
     remote.addView(stage, LinearLayout.LayoutParams(-1, -2))
     drawBar = drawTools()
     remote.addView(drawBar, LinearLayout.LayoutParams(-1, -2))
