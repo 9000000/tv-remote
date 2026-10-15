@@ -14,6 +14,7 @@ Web 2.18.1 · app điện thoại 2.16.1 · app TV 2.15.1
 - **Không xóa nhầm cả bộ nhớ:** tab Tệp từ chối xóa hay đổi tên `/storage/emulated/0` và `/storage/self/primary` (trước chỉ chặn `/sdcard`).
 - **Ít treo hơn khi TV chậm hay mất mạng:** lệnh ADB quá giờ bị dừng hẳn thay vì chạy ngầm; trang không dồn thêm lượt kiểm tra khi lượt trước chưa xong, và không hỏi TV khi tab đang ẩn; chờ khởi động lại tối đa 10 phút; kéo trên màn hình qua mạng chậm không còn trễ dần.
 - **App điện thoại:** đóng màn hình (đổi giao diện sáng/tối, cỡ chữ, ngôn ngữ) thì tắt luôn âm thanh và kết nối cũ; lỗi giải mã âm thanh chỉ tắt âm thanh, không làm sập app; cảnh chạy từ widget có bước chờ dài không còn bị cắt ở giây 15; câu nói “hẹn giờ tắt 99999999999 phút” không làm sập app.
+- **Thanh tab gọn hơn:** bỏ dòng chữ “cần ADB” dưới mỗi tab; chỉ khi ADB chưa nối mới có ổ khóa nhỏ trên các tab cần ADB và chấm vàng trên tab Thiết lập.
 - Sao lưu app và tải tệp: ngắt giữa chừng không còn để lại tiến trình chạy trên TV; danh sách TV (`tvs.json`) được ghi trọn vẹn hay không ghi gì.
 
 **English**
@@ -22,6 +23,7 @@ Web 2.18.1 · app điện thoại 2.16.1 · app TV 2.15.1
 - **No deleting a whole storage by mistake:** the Files tab refuses to delete or rename `/storage/emulated/0` and `/storage/self/primary` (before, only `/sdcard` was blocked).
 - **Fewer hangs when the TV is slow or offline:** timed-out ADB commands are stopped instead of running on; the page doesn't pile up checks while one is pending and doesn't poll the TV from a hidden tab; waiting for a restart stops after 10 minutes; dragging on the screen over a slow link no longer lags more and more.
 - **Phone app:** when the screen is recreated (light/dark switch, font size, language) the old sound and connection end with it; an audio decoding error stops the sound instead of crashing the app; scenes run from the widget with long waits are no longer cut at 15 s; saying “sleep in 99999999999 minutes” no longer crashes the app.
+- **A lighter tab bar:** no more “needs ADB” line under each tab; only while ADB is not connected, a small lock marks the tabs that need it and a yellow dot marks Setup.
 - App backups and file downloads: stopping midway no longer leaves a process running on the TV; the TV list (`tvs.json`) is written whole or not at all.
 
 ## 2.18.0 - 2026-10-15

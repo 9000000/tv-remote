@@ -183,6 +183,7 @@ function applyAdb() {
     if (ready && currentTab === 'tv' && typeof tsState === 'function') { tsState(); loadTvset(); }
   }
   document.querySelectorAll('[data-adb-gated]').forEach((g) => { g.hidden = !ready; });
+  $('.tabs').classList.toggle('noadb', !ready && ADB.state !== 'unknown');   // not while still connecting: no flash of locks
   $('#kbd').disabled = !ready; $('#kbdoff').hidden = ready;           // typing goes through ADB: no half-working box without it
   $('#screenbtn').disabled = !ready && !screenOn;
   if (!ready && screenOn) stopScreen('ADB chưa sẵn sàng, đã dừng xem màn hình.');
