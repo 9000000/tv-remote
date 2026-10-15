@@ -330,7 +330,7 @@ async function loadSteps() {
 }
 setInterval(() => { if (currentTab === 'tv' && !document.hidden && !stopped) loadSteps(); }, 6000);
 
-const startTab = location.hash.slice(1) || new URLSearchParams(location.search).get('tab') || (CORE === 'phone' ? 'apps' : '');
+const startTab = (window.LANG_KEEP && window.LANG_KEEP.tab) || location.hash.slice(1) || new URLSearchParams(location.search).get('tab') || (CORE === 'phone' ? 'apps' : '');
 if (CORE !== 'pc') $('#wake').parentElement.className = 'rrow three';   // no wake button there: three keys fill the row
 if (['remote', 'apps', 'files', 'health', 'auto', 'tv'].includes(startTab)) showTab(startTab); else if (startTab === 'install') showTab('files');
 else if (startTab === 'term') { showTab('health'); $('#termcard').open = true; }   // the terminal used to be a tab of its own
@@ -339,3 +339,4 @@ let polling = false;
 applyAdb(); refresh(); setInterval(async () => { if (polling || document.hidden) return; polling = true; try { await refresh(); } finally { polling = false; } }, 4000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 homeHint();
+if (window.LANG_KEEP && window.LANG_KEEP.y) setTimeout(() => window.scrollTo(0, window.LANG_KEEP.y), 400);   // after the tab has filled in
