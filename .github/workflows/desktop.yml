@@ -3,13 +3,13 @@
 # window came up, quits it through the page's /api/shutdown, and keeps the archive people download. A release (dev/release.sh)
 # gets the archives attached, under names without a version so releases/latest/download/<name> always works. The two Mac
 # builds are joined into one app for both chips (job mac, universal.sh), tried on each, and only that one is attached.
+# Started only by dev/release.sh (with the release's tag, and only when the computer app changed) or by hand to try a build
+# (no tag: the archives are kept as the run's artifacts), never on push: runs are kept few.
 name: desktop
 on:
   workflow_dispatch:
-  push:
-    paths: ["app/desktop/**", "app/shared/**", "VERSION", ".github/workflows/desktop.yml"]
-  release:
-    types: [published]
+    inputs:
+      tag: { description: "release to attach the apps to (empty: just build and try)", required: false, default: "" }
 permissions:
   contents: write
 
@@ -28,13 +28,14 @@ jobs:
     defaults: { run: { shell: bash } }
     steps:
       - uses: actions/checkout@v4
+        with: { ref: "${{ inputs.tag || github.ref }}" }
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: "17" }
       - if: runner.os == 'Linux'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq libwebkit2gtk-4.1-0 xvfb >/dev/null
-      - if: github.event_name == 'release'                             # Meta and Caps of this very release (else the build takes the latest's)
+      - if: inputs.tag != ''                                          # Meta and Caps of this very release (else the build takes the latest's)
         env: { GH_TOKEN: "${{ github.token }}" }
-        run: gh release download "${{ github.event.release.tag_name }}" -p tv-remote.apk -D app/android/build
+        run: gh release download "${{ inputs.tag }}" -p tv-remote.apk -D app/android/build
       - name: build
         run: cd app/gradle && ./gradlew --no-daemon -q :desktop:packageApp
       - name: open, check, quit
@@ -83,9 +84,9 @@ jobs:
           curl -sf -X POST -H 'Content-Type: application/json' -d '{}' http://127.0.0.1:8765/api/shutdown
       - name: archive
         run: ls -l app/desktop/build/package/TV-Remote-*                # a missing archive fails here, not silently at upload
-      - if: github.event_name == 'release' && runner.os != 'macOS'   # the Mac ones go into the universal app first
+      - if: inputs.tag != '' && runner.os != 'macOS'                  # the Mac ones go into the universal app first
         env: { GH_TOKEN: "${{ github.token }}" }
-        run: gh release upload "${{ github.event.release.tag_name }}" app/desktop/build/package/TV-Remote-* --clobber
+        run: gh release upload "${{ inputs.tag }}" app/desktop/build/package/TV-Remote-* --clobber
       - uses: actions/upload-artifact@v4                               # for the job mac, and for trying a build (GitHub zips it once more)
         with:
           name: TV-Remote-${{ matrix.runner }}
@@ -101,6 +102,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
+        with: { ref: "${{ inputs.tag || github.ref }}" }
       - uses: actions/download-artifact@v4
         with: { pattern: "TV-Remote-macos-*", path: arts }
       - name: join
@@ -128,9 +130,9 @@ jobs:
           for i in $(seq 20); do curl -s http://127.0.0.1:8765/api/about >/dev/null || break; sleep 1; done
           ! curl -s http://127.0.0.1:8765/api/about
           grep -q "Window closed" "$log"
-      - if: github.event_name == 'release' && matrix.runner == 'macos-14'
+      - if: inputs.tag != '' && matrix.runner == 'macos-14'
         env: { GH_TOKEN: "${{ github.token }}" }
-        run: gh release upload "${{ github.event.release.tag_name }}" TV-Remote-mac.zip --clobber
-      - if: github.event_name != 'release' && matrix.runner == 'macos-14'
+        run: gh release upload "${{ inputs.tag }}" TV-Remote-mac.zip --clobber
+      - if: inputs.tag == '' && matrix.runner == 'macos-14'
         uses: actions/upload-artifact@v4
         with: { name: TV-Remote-mac-universal, path: TV-Remote-mac.zip, compression-level: 0 }

@@ -49,7 +49,7 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
         if (state == "downloading" || state == "ready" || state == "installing") return
         state = "checking"
         try {
-            found = Release.newer(version, "web", asset)
+            found = Release.newer(version, "web", asset)      // the computer app's number: a release may carry the last one's again
             error = ""
             state = "idle"
             if (found != null && writable) {                         // in the background: a "check" from the page answers at once

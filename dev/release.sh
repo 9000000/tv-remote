@@ -1,6 +1,7 @@
 #!/bin/bash
 # Publishes a GitHub release. Three version numbers, each bumped only when its own part changed:
-#   VERSION               the release itself (the tag) and the web UI on the computer: bump it for every release
+#   VERSION               the release itself (the tag) and the computer app: bump it for every release (the computer app
+#                         is only built again when app/desktop or app/shared changed; versions.json "web" says which it is)
 #   app/android/VERSION   the phone app            app/tv/VERSION   the TV app
 # Both APKs are attached to every release together with versions.json (the computer apps follow, from GitHub Actions); each app reads its own number from that file,
 # so an app that did not change is not offered a pointless update.
@@ -23,8 +24,14 @@ for a in android tv; do                                               # changed 
     echo "app/$a (or app/shared) changed since $LAST but app/$a/VERSION is still $old: bump it, or run with SKIP_CHECK=1"; exit 1
   fi
 done
+# the computer app is built again (on GitHub, each system) only when its code changed; otherwise the last release's archives
+# are attached again and "web" (what the computer app reads) keeps their version, so nobody is offered the same app again
+DESK=$VER
+if [ -n "$LAST" ] && git diff --quiet "$LAST" -- app/desktop app/shared ":(exclude)app/shared/tests"; then
+  DESK=$(gh release download "$LAST" -p versions.json -O - | python3 -c 'import json, sys; d = json.load(sys.stdin); print(d["web"])')
+fi
 ./app/android/build.sh && ./app/tv/build.sh
-printf '{"android": "%s", "tv": "%s", "web": "%s"}\n' "$(cat app/android/VERSION)" "$(cat app/tv/VERSION)" "$VER" > app/android/build/versions.json
+printf '{"android": "%s", "tv": "%s", "web": "%s"}\n' "$(cat app/android/VERSION)" "$(cat app/tv/VERSION)" "$DESK" > app/android/build/versions.json
 D=https://github.com/HoangTran0410/tv-remote/releases/latest/download
 NOTES="$NOTES
 
@@ -39,10 +46,17 @@ NOTES="$NOTES
 | Linux x64 / arm64 | [TV-Remote-linux-x64.tar.gz]($D/TV-Remote-linux-x64.tar.gz) · [TV-Remote-linux-arm64.tar.gz]($D/TV-Remote-linux-arm64.tar.gz) |"
 # the APKs live only in releases, never in git
 gh release create "v$VER" app/android/build/tv-remote.apk app/tv/build/tv-setup.apk app/android/build/versions.json --title "v$VER" --notes "$NOTES"
-# the computer apps are built on each system by .github/workflows/desktop.yml, which the new release starts and which
-# attaches them to it: wait for it, so the release is only called done once every download link works
-echo "waiting for the computer apps (.github/workflows/desktop.yml)..."
-for i in $(seq 30); do RUN=$(gh run list --workflow desktop.yml --event release -L 5 --json databaseId,headBranch -q ".[] | select(.headBranch == \"v$VER\") | .databaseId" | head -1); [ -n "$RUN" ] && break; sleep 5; done
-[ -n "$RUN" ] || { echo "the desktop workflow did not start: gh workflow run desktop.yml, then gh release upload v$VER <archives>"; exit 1; }
-gh run watch "$RUN" --exit-status >/dev/null || { echo "a computer app failed to build: gh run view $RUN --log-failed"; exit 1; }
+if [ "$DESK" != "$VER" ]; then
+  echo "computer app unchanged since $LAST: its $DESK archives attached again"
+  T=$(mktemp -d); gh release download "$LAST" -p 'TV-Remote-*' -D "$T" && gh release upload "v$VER" "$T"/TV-Remote-*; rm -rf "$T"
+else
+  # built on each system by .github/workflows/desktop.yml, which attaches them: waited for, so the release is only called
+  # done once every download link works
+  echo "building the computer apps (.github/workflows/desktop.yml)..."
+  START=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  gh workflow run desktop.yml -f tag="v$VER"
+  for i in $(seq 30); do RUN=$(gh run list --workflow desktop.yml --event workflow_dispatch -L 5 --json databaseId,createdAt -q ".[] | select(.createdAt >= \"$START\") | .databaseId" | head -1); [ -n "$RUN" ] && break; sleep 5; done
+  [ -n "$RUN" ] || { echo "the desktop workflow did not start: gh workflow run desktop.yml -f tag=v$VER"; exit 1; }
+  gh run watch "$RUN" --exit-status >/dev/null || { echo "a computer app failed to build: gh run view $RUN --log-failed"; exit 1; }
+fi
 gh release view "v$VER" --json assets -q '.assets[].name'

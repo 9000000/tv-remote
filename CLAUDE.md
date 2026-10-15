@@ -71,9 +71,11 @@ Three numbers, each bumped only when its part changes: `VERSION` (every release;
 
 - A change in `app/shared` (Kotlin **or** web) changes both APKs, so bump both app versions.
 - Steps: bump versions → add `## <VERSION> - <YYYY-MM-DD>` to `CHANGELOG.md` (line `Web x · app điện thoại y · app TV z`, then **Tiếng Việt** and **English** lists) → commit → push → `dev/release.sh` (builds, creates the GitHub release with both APKs and `versions.json`; APKs are never committed, the computer app's build fetches the phone APK it needs for Meta and Caps). It needs `gh` logged in and both `signing.jks` files, and refuses when app code changed without a version bump.
-- The computer apps are not built by `release.sh`: the release it creates starts `.github/workflows/desktop.yml`, which builds them on
-  each system and attaches them (names without a version, so `releases/latest/download/TV-Remote-<os>-<arch>.zip` always works);
-  `release.sh` waits for that run.
+- The computer apps are not built by `release.sh`: when `app/desktop` or `app/shared` changed since the last tag it starts
+  `.github/workflows/desktop.yml` with the new tag, which builds them on each system and attaches them (names without a version,
+  so `releases/latest/download/TV-Remote-<os>-<arch>.zip` always works), and waits for it; otherwise it attaches the last
+  release's archives again, and `versions.json` "web" (the number the computer app's Updater.kt reads) keeps theirs.
+- Release only when the user says so, and keep GitHub Actions runs few: the workflow never runs on push; try things locally.
 - Both apps update themselves from GitHub releases (`update/Release.kt`).
 
 ## Testing
