@@ -77,12 +77,15 @@ class WarnActivity : Activity() {
         tick.run()
     }
 
-    /** The countdown; the screen goes away by itself when the time is up or the timer was changed from a remote. */
+    /** The countdown; the screen goes away by itself when the time is up, or the timer or bedtime was changed from a remote. */
     private val tick = object : Runnable {
         override fun run() {
             if (kind == "limit") return
             val left = until - System.currentTimeMillis()
-            if (left <= 0 || kind == "sleep" && Rules.load(this@WarnActivity).optLong("sleep_at") != until) { finish(); return }
+            val o = Rules.load(this@WarnActivity)
+            val off = kind == "sleep" && o.optLong("sleep_at") != until
+                || kind == "bed" && !(Rules.inBedtime(o, System.currentTimeMillis()) && System.currentTimeMillis() >= o.optLong("snooze_until"))   // more time granted, bedtime off or moved: the Guard's own test
+            if (left <= 0 || off) { finish(); return }
             val s = ((left + 999) / 1000).toInt()
             count.text = t("TV tắt sau ", "Off in ") + "%d:%02d".format(s / 60, s % 60)
             ui.postDelayed(this, 500)
