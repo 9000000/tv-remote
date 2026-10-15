@@ -121,7 +121,7 @@ $('#quit').addEventListener('click', async () => {
 function tvChanged() {                                                // another TV: forget everything cached about the old one
   if (screenOn) stopScreen();
   if (listenOn) stopListen();
-  quickLoaded = appsLoaded = filesLoaded = scenesLoaded = autoLoaded = sceneNamesAsked = false; META.clear(); cwd = '/sdcard/Download'; bannerKey = ''; RULES = null; SCENES = []; renderScenes(); setupChecked = ''; $('#setupupd').hidden = true;
+  quickLoaded = appsLoaded = filesLoaded = scenesLoaded = autoLoaded = sceneNamesAsked = false; META.clear(); cwd = '/sdcard/Download'; bannerKey = ''; RULES = null; SCENES = []; setRows = []; $('#setlistbody').replaceChildren(); renderScenes(); setupChecked = ''; $('#setupupd').hidden = true;
   $('#quick').replaceChildren(el('div', { className: 'muted', textContent: 'Danh sách app hiện khi ADB sẵn sàng.' }));
   $('#appslist').replaceChildren(); $('#fileslist').replaceChildren();
   if (currentTab === 'tv') loadSteps();

@@ -9,10 +9,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 Web 2.23.0 · app điện thoại 2.21.0 · app TV 2.20.0
 
 **Tiếng Việt**
-- **Cài đặt hệ thống** (tab Sức khỏe) giờ sửa được các mục đơn giản: thời gian tắt màn hình, ngủ, hiệu ứng, cỡ chữ, độ sáng, âm thanh khi bấm, kiểu giờ, tên thiết bị... Nút ↺ trả lại giá trị cũ. Mục có thể làm mất kết nối hay hỏng TV (ADB, Wi-Fi, DNS, bàn phím, trợ năng, cài app...) vẫn chỉ xem, có 🔒.
+- **Tất cả cài đặt** (chuyển từ tab Sức khỏe sang cuối tab Thiết lập) giờ sửa được các mục đơn giản: thời gian tắt màn hình, ngủ, hiệu ứng, cỡ chữ, độ sáng, âm thanh khi bấm, kiểu giờ, tên thiết bị... Nút ↺ trả lại giá trị cũ. Mục có thể làm mất kết nối hay hỏng TV (ADB, Wi-Fi, DNS, bàn phím, trợ năng, cài app...) vẫn chỉ xem, có 🔒.
+- Sửa tab Thiết lập trên màn hình hẹp: chữ tên mục bị bóp thành cột dọc, và bấm vào tab hiện hộp hỏi xác nhận.
 
 **English**
-- **System settings** (Health tab) can now change the simple ones: screen off and sleep times, animations, font size, brightness, click sounds, time format, device name... ↺ puts the old value back. Settings that could cut the TV off or break it (ADB, Wi-Fi, DNS, keyboard, accessibility, app installs...) stay view-only, with a 🔒.
+- **All settings** (moved from the Health tab to the end of the Setup tab) can now change the simple ones: screen off and sleep times, animations, font size, brightness, click sounds, time format, device name... ↺ puts the old value back. Settings that could cut the TV off or break it (ADB, Wi-Fi, DNS, keyboard, accessibility, app installs...) stay view-only, with a 🔒.
+- Fixed the Setup tab on narrow screens: row titles squeezed into a column, and tapping the tab asked for confirmation.
 
 ## 2.22.0 - 2026-10-15
 

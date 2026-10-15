@@ -92,14 +92,17 @@ function capsSummary(c) {
     'HDR: ' + (c.hdr.join(', ') || '-'), 'Modes: ' + c.modes.join(', ')].join('\n');
 }
 
-// 🗂️ the settings list, read when opened, searched as typed
-let setRows = [];
-$('#setlist').addEventListener('toggle', async (e) => {
-  if (!e.target.open) return;
+// 🗂️ all settings, under the Setup tab: read the first time it is opened (again after a failed read), searched as typed
+let setRows = [], setBusy = false;
+async function loadSettings() {
+  if (setRows.length || setBusy || ADB.state !== 'ready') return;
+  setBusy = true;
   $('#setlistbody').replaceChildren(el('div', { className: 'muted', textContent: tr('Đang đọc từ TV...') }));
-  const r = await api('/api/settings'); if (!r) { $('#setlistbody').replaceChildren(); return; }
+  const r = await api('/api/settings'); setBusy = false;
+  if (!r) { $('#setlistbody').replaceChildren(); return; }
   setRows = settingsRead(r.text); drawSettings();
-});
+}
+$('#setlist').addEventListener('toggle', (e) => { if (e.target.open) loadSettings(); });
 function drawSettings() {
   const q = $('#setlistq').value.trim().toLowerCase(), vi = window.LANG !== 'en';
   const rows = setRows.map((s) => ({ s, i: settingInfo(s, vi) }))

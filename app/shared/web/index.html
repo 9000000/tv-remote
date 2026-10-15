@@ -261,12 +261,6 @@
       <section class="card"><h2>🧩 Phần cứng</h2><div class="kv" id="hhw"></div></section>
       </div>
     </div>
-    <!-- every setting the TV keeps, to look up; the simple ones can be changed here, the risky ones are shown locked (health.js) -->
-    <details class="card" id="setlist" data-adb-gated>
-      <summary>🗂️ Cài đặt hệ thống</summary>
-      <form class="line" id="setlistf" style="margin-top:0"><input id="setlistq" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Tìm tên hoặc giá trị, vd adb, dns, timeout"><button type="button" class="small" id="setlistcopy" title="Chép tất cả"><span class="ico">📋</span><span class="lbl"> Chép</span></button></form>
-      <div id="setlistbody" class="setlist"></div>
-    </details>
     <!-- Terminal: for people who know shell commands, so folded away -->
     <details class="card" id="termcard" data-adb-gated>
       <summary>⌨️ Terminal</summary>
@@ -338,6 +332,12 @@
       </div>
       <pre id="setuplog" hidden style="margin:12px 0 0;padding:10px;background:var(--bg);border:1px solid var(--line);border-radius:10px;font-size:12px;max-height:260px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere"></pre>
     </section>
+    <!-- every setting the TV keeps: the simple ones can be changed, the risky ones are shown locked (health.js) -->
+    <details class="card" id="setlist" data-adb-gated>
+      <summary>🗂️ Tất cả cài đặt</summary>
+      <form class="line" id="setlistf" style="margin-top:0"><input id="setlistq" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Tìm tên hoặc giá trị, vd adb, dns, timeout"><button type="button" class="small" id="setlistcopy" title="Chép tất cả"><span class="ico">📋</span><span class="lbl"> Chép</span></button></form>
+      <div id="setlistbody" class="setlist"></div>
+    </details>
   </div>
 
   <details class="card help" id="help" data-for="mac">

@@ -47,7 +47,9 @@ let iconSure = false;
 document.addEventListener('click', async (e) => {
   if (iconSure || !e.isTrusted || e.target.tagName === 'INPUT') return;   // a person's tap only: not our own click once sure, nor a label passing its click on
   const b = e.target.closest && e.target.closest('button, label.linkbtn'); if (!b || b.disabled || 'asks' in b.dataset) return;
-  const l = b.querySelector(':scope > .lbl'); if (!l || l.getBoundingClientRect().width > 1) return;
+  if (b.closest('.tabs')) return;                                      // a tab only shows a page: nothing to ask
+  const ls = [...b.querySelectorAll(':scope > .lbl')], l = ls[0];      // the tv tab has a word per core, one of them hidden
+  if (!l || ls.some((x) => x.getBoundingClientRect().width > 1)) return;
   const name = l.textContent.trim(); if (!name || /^(✕|⋯)$/.test(b.textContent.trim())) return;
   e.preventDefault(); e.stopImmediatePropagation();
   const ico = (b.querySelector(':scope > .ico') || {}).textContent || '', why = b.title && b.title.trim() !== name ? b.title.trim() : '';
@@ -250,7 +252,7 @@ function applyAdb() {
   if (!ready && screenOn) stopScreen('ADB chưa sẵn sàng, đã dừng xem màn hình.');
   if (ready && autoView) { autoView = false; startScreen(); }           // bookmark ?view=1 to start watching right away
   if (ready && !picking && setupChecked !== (curHost || '-')) checkSetup();   // a newer TV Setup: offered once per TV (auto.js)
-  if (ready) { if (!quickLoaded) loadQuick(); if (currentTab === 'apps' && !appsLoaded) loadApps(); if (currentTab === 'files' && !filesLoaded) loadFiles(cwd); if (!scenesLoaded) { scenesLoaded = true; loadScenes(); } if (currentTab === 'auto' && !autoLoaded) autoTab(); }
+  if (ready) { if (!quickLoaded) loadQuick(); if (currentTab === 'apps' && !appsLoaded) loadApps(); if (currentTab === 'files' && !filesLoaded) loadFiles(cwd); if (!scenesLoaded) { scenesLoaded = true; loadScenes(); } if (currentTab === 'auto' && !autoLoaded) autoTab(); if ($('#setlist').open) loadSettings(); }
   if (!ready && listenOn) stopListen('ADB chưa sẵn sàng, đã dừng nghe tiếng TV.');
 }
 
