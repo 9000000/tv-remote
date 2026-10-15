@@ -14,7 +14,8 @@ import java.util.Base64
  * paired with), so switching servers asks nothing again on any TV. Made fresh by Adb / Atv when there is nothing to take over.
  */
 object Keys {
-    fun prepare(dir: File, repo: File) {
+    /** [repo]: the tv-remote folder the Python server ran from, if known (its cert.pem / key.pem). */
+    fun prepare(dir: File, repo: File?) {
         dir.mkdirs()
         try {
             val adb = File(System.getProperty("user.home"), ".android/adbkey")
@@ -29,9 +30,9 @@ object Keys {
             System.err.println("could not take over ~/.android/adbkey (the TVs will ask once): $e")
         }
         try {
-            val cert = File(repo, "cert.pem")
-            val key = File(repo, "key.pem")
-            if (!File(dir, "atv.pk8").exists() && cert.isFile && key.isFile) {
+            val cert = File(repo ?: dir, "cert.pem")
+            val key = File(repo ?: dir, "key.pem")
+            if (repo != null && !File(dir, "atv.pk8").exists() && cert.isFile && key.isFile) {
                 val k = key.readText()
                 val pk8 = if (k.contains("BEGIN RSA PRIVATE KEY")) pkcs8(pem(k, "RSA PRIVATE KEY")) else pem(k, "PRIVATE KEY")
                 KeyFactory.getInstance("RSA").generatePrivate(PKCS8EncodedKeySpec(pk8))   // refuses a key it cannot read, before anything is written
@@ -41,7 +42,12 @@ object Keys {
         } catch (e: Exception) {
             System.err.println("could not take over cert.pem / key.pem (the TVs will need pairing again): $e")
         }
-        for (f in dir.listFiles().orEmpty()) { f.setReadable(false, false); f.setReadable(true, true) }   // like key.pem: this user only
+        try {                                                         // like key.pem: this user only, also the keys Adb / Atv make later
+            java.nio.file.Files.setPosixFilePermissions(dir.toPath(), java.nio.file.attribute.PosixFilePermissions.fromString("rwx------"))
+        } catch (e: Exception) {
+            dir.setReadable(false, false); dir.setReadable(true, true); dir.setExecutable(false, false); dir.setExecutable(true, true)
+        }
+        for (f in dir.listFiles().orEmpty()) { f.setReadable(false, false); f.setReadable(true, true) }
     }
 
     private fun pem(text: String, label: String): ByteArray {

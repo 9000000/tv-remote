@@ -17,10 +17,38 @@ import java.util.concurrent.Semaphore
  */
 class Fleets(private val keys: File, private val cache: File) {
     private val links = HashMap<String, AdbLink>()
+    private val used = HashMap<String, Long>()
+    private val working = HashMap<String, Int>()                      // TVs a job is busy with: never closed under it
     val jobs: MutableMap<String, JSONObject> = Collections.synchronizedMap(LinkedHashMap())
+    private val sweeper = Executors.newSingleThreadScheduledExecutor { Thread(it, "fleet-sweep").apply { isDaemon = true } }
 
-    /** The current TV's own connection, or one kept per other TV (so the next action does not connect again). */
-    @Synchronized fun link(host: String, cur: Session): AdbLink = if (cur.host == host && cur.link != null) cur.link else links.getOrPut(host) { AdbLink(keys, host) }
+    init {                                                            // a hotel's 30 TVs must not keep 30 connections open all day
+        sweeper.scheduleWithFixedDelay({
+            synchronized(this) {
+                val idle = links.keys.filter { (working[it] ?: 0) == 0 && System.currentTimeMillis() - (used[it] ?: 0) > IDLE_MS }
+                idle.forEach { drop(it) }
+            }
+        }, 1, 1, java.util.concurrent.TimeUnit.MINUTES)
+    }
+
+    /**
+     * A connection of its own per TV, kept a while so the next action does not connect again. Not the current TV's
+     * session link: picking another TV closes that one, which would cut an install half-way.
+     */
+    @Synchronized fun link(host: String): AdbLink {
+        used[host] = System.currentTimeMillis()
+        return links.getOrPut(host) { AdbLink(keys, host) }
+    }
+
+    @Synchronized fun drop(host: String) { links.remove(host)?.close(); used.remove(host) }
+
+    @Synchronized fun close() { sweeper.shutdownNow(); links.values.forEach { it.close() }; links.clear() }
+
+    /** A job as JSON while its TVs are writing their progress into it. */
+    fun snapshot(j: JSONObject): JSONObject {
+        repeat(20) { try { return JSONObject(j.toString()) } catch (e: ConcurrentModificationException) { Thread.sleep(5) } }
+        return JSONObject(j.toString())
+    }
 
     fun info(host: String, link: AdbLink): JSONObject {
         val o = JSONObject().put("host", host).put("state", "closed")
@@ -58,6 +86,7 @@ class Fleets(private val keys: File, private val cache: File) {
             jobs[id] = j
             while (jobs.size > 10) jobs.remove(jobs.keys.first())
         }
+        synchronized(this) { for ((h, _) in targets) working[h] = (working[h] ?: 0) + 1 }
         val gate = Semaphore(PARALLEL)
         val pool = Executors.newCachedThreadPool { Thread(it, "fleet").apply { isDaemon = true } }
         Thread({
@@ -75,6 +104,7 @@ class Fleets(private val keys: File, private val cache: File) {
                         part.put("status", "error").put("msg", e.message ?: e.javaClass.simpleName)
                     } finally {
                         gate.release()
+                        synchronized(this@Fleets) { working[host] = (working[host] ?: 1) - 1; used[host] = System.currentTimeMillis() }
                     }
                 }
             }.forEach { it.get() }
@@ -82,7 +112,7 @@ class Fleets(private val keys: File, private val cache: File) {
             pool.shutdown()
             done()
         }, "fleet-job").apply { isDaemon = true }.start()
-        return j
+        return snapshot(j)
     }
 
     fun install(link: AdbLink, part: JSONObject, apk: File): String {
@@ -102,6 +132,7 @@ class Fleets(private val keys: File, private val cache: File) {
     }
 
     companion object {
+        const val IDLE_MS = 10 * 60_000L                              // unused that long: closed, dialled again when needed
         const val PARALLEL = 3                                        // installs at once: an APK goes over the home Wi-Fi to each TV
     }
 }

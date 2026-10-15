@@ -33,10 +33,13 @@ class HttpServer(private val handler: Handler) {
 
         fun q(name: String): String = query[name] ?: ""
 
-        fun json(): JSONObject {
+        fun json(): JSONObject = jsonOrNull() ?: JSONObject()
+
+        /** null for a body that is not one JSON object (or too big): a caller that saves what it got must not save "nothing". */
+        fun jsonOrNull(): JSONObject? {
             try {
                 val bytes = small ?: run {
-                    if (length > 65536) return JSONObject()
+                    if (length > 65536) return null
                     val b = ByteArray(length.toInt())
                     var off = 0
                     while (off < b.size) {
@@ -49,7 +52,7 @@ class HttpServer(private val handler: Handler) {
                 }
                 return JSONObject(String(bytes, Charsets.UTF_8))
             } catch (e: Exception) {
-                return JSONObject()
+                return null
             }
         }
 

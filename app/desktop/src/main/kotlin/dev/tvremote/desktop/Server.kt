@@ -19,14 +19,14 @@ import java.util.concurrent.atomic.AtomicLong
  * The routes that only the computer has (many TVs, the remote buttons without ADB, the first-time setup, the picture and
  * sound for this browser) are here; everything managed over ADB is Manage.kt's, as for TV Setup and the phone.
  */
-class Server(private val repo: File, private val keys: File, private val cache: File, private val saved: Saved, private val stop: () -> Unit) : HttpServer.Handler {
+class Server(private val repo: File, private val keys: File, private val cache: File, private val saved: Saved, first: String?, private val stop: () -> Unit) : HttpServer.Handler {
     private val web = File(repo, "app/shared/web")
     private val apk = File(repo, "app/android/tv-remote.apk")          // carries Meta and Caps, started on the TV for app names and pictures
     private val jarFile = File(repo, "app/shared/assets/scrcpy-server.jar")
     private val jar: () -> ByteArray = { jarFile.readBytes() }
     private val version = try { File(repo, "VERSION").readText().trim() } catch (e: IOException) { "" }
 
-    @Volatile var cur = session(saved.current)
+    @Volatile var cur = session(first ?: saved.current)               // --tv: this run only, the saved choice stays
         private set
     private val fleets = Fleets(keys, cache)
     private val assist = Assist { cur }
@@ -40,16 +40,19 @@ class Server(private val repo: File, private val keys: File, private val cache: 
         Thread { old.close() }.start()
     }
 
-    fun close() = cur.close()
+    fun close() { cur.close(); fleets.close(); timer.shutdownNow() }
 
     // ---------------------------------------------------------------- the page
     @Volatile private var page: WebPage? = null
     @Volatile private var pageStamp = 0L
+    @Volatile private var pageChecked = 0L
 
     /** Read again from disk when any of its files changed, as server.py does: a new page with the scripts it names. */
     private fun page(): WebPage {
-        val stamp = web.walk().filter { it.isFile }.maxOfOrNull { it.lastModified() } ?: 0L
         val p = page
+        if (p != null && System.currentTimeMillis() - pageChecked < 1500) return p   // a page load asks for a dozen files at once
+        pageChecked = System.currentTimeMillis()
+        val stamp = web.walk().filter { it.isFile }.maxOfOrNull { it.lastModified() } ?: 0L
         if (p != null && stamp == pageStamp) return p
         pageStamp = stamp
         return WebPage({ name -> File(web, name).inputStream() }, "mac", (stamp / 1000).toString()).also { page = it }
@@ -59,13 +62,17 @@ class Server(private val repo: File, private val keys: File, private val cache: 
     override fun handle(r: HttpServer.Request): Response {
         val host = (r.headers["host"] ?: "").substringBeforeLast(':').removePrefix("[").removeSuffix("]")
         if (host != "127.0.0.1" && host != "localhost") return Response.error(403, "bad host")   // DNS-rebinding guard
-        if (r.method == "POST") {                                     // other websites open in this browser must not drive the TV
-            val origin = r.headers["origin"]
-            if (origin != null && origin.substringAfter("//") != r.headers["host"]) return Response.error(403, "cross-origin")
+        // other websites open in this browser must not drive the TV, not even through a picture or a <video> pointed at /api/...
+        val origin = r.headers["origin"]
+        if (origin != null && origin.substringAfter("//") != r.headers["host"]) return Response.error(403, "cross-origin")
+        val site = r.headers["sec-fetch-site"]
+        if (r.path.startsWith("/api/") && site != null && site != "same-origin" && site != "none") return Response.error(403, "cross-origin")
+        if (r.method == "POST") {
             val type = (r.headers["content-type"] ?: "").substringBefore(';').trim()
             if (type != "application/json" && type != "application/octet-stream") return Response.error(415, "json only")
+            if (type == "application/json" && r.jsonOrNull() == null) return Response.error(400, "bad json")   // never "save nothing"
         }
-        page().serve(r.path)?.let { return it }
+        if (!r.path.startsWith("/api/")) page().serve(r.path)?.let { return it }
         val s = cur
         return try {
             route(r, s) ?: s.manage?.handle(r) ?: if (r.path.startsWith("/api/") && s.host.isEmpty()) Response.error(400, "no TV selected")
@@ -76,8 +83,8 @@ class Server(private val repo: File, private val keys: File, private val cache: 
             Response.error(400, e.message ?: "bad request")
         } catch (e: IllegalStateException) {
             Response.error(400, e.message ?: "bad request")
-        } catch (e: IOException) {
-            Response.error(400, e.message ?: e.javaClass.simpleName)
+        } catch (e: IOException) {                                    // nearly always ADB: the words Manage uses, which the page explains
+            Response.error(503, if (s.link?.waitingForUser() == true) "adb:allow" else "adb: " + (e.message ?: e.javaClass.simpleName))
         }
     }
 
@@ -103,7 +110,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
             "/api/stream" -> return Response.error(404, "this server sends H.264: /api/video")
             "/api/scenes" -> return if (r.query.containsKey("download")) Scenes.backup(saved.scenes) else Response.json(JSONObject().put("scenes", saved.scenes))
             "/api/fleet" -> return fleetInfo(s)
-            "/api/fleet/job" -> return fleets.jobs[r.q("id")]?.let { Response.json(JSONObject(it.toString())) } ?: Response.error(404, "unknown job")
+            "/api/fleet/job" -> return fleets.jobs[r.q("id")]?.let { Response.json(fleets.snapshot(it)) } ?: Response.error(404, "unknown job")
             "/api/app/icon" -> {
                 val png = s.labels?.icon(r.q("pkg")) ?: return Response.error(404, "no icon")
                 return Response.of("image/png", png).also { it.headers["Cache-Control"] = "max-age=86400" }
@@ -143,11 +150,14 @@ class Server(private val repo: File, private val keys: File, private val cache: 
             "/api/tv/save" -> tvSave(s, d)
             "/api/tv/remove" -> {
                 val host = d.optString("host")
-                saved.remove(host); saved.save()
+                saved.remove(host); saved.save(); fleets.drop(host)
                 if (host == s.host) switch(saved.current)
                 Response.ok()
             }
-            "/api/scenes" -> { saved.scenes = Scenes.clean(d.optJSONArray("scenes") ?: JSONArray()); saved.save(); Response.json(JSONObject().put("scenes", saved.scenes)) }
+            "/api/scenes" -> {
+                val list = d.optJSONArray("scenes") ?: throw IllegalArgumentException("scenes required")   // a broken import must not wipe them
+                saved.scenes = Scenes.clean(list); saved.save(); Response.json(JSONObject().put("scenes", saved.scenes))
+            }
             "/api/scene/run" -> {
                 val steps = d.optJSONArray("steps") ?: (0 until saved.scenes.length()).map { saved.scenes.getJSONObject(it) }.firstOrNull { it.optString("id") == d.optString("id") }?.optJSONArray("steps")
                     ?: return Response.error(404, "no such scene")
@@ -190,6 +200,8 @@ class Server(private val repo: File, private val keys: File, private val cache: 
     }
 
     private val trustAsked = AtomicLong()
+    private val timer = java.util.concurrent.Executors.newSingleThreadScheduledExecutor { Thread(it, "server-timer").apply { isDaemon = true } }
+    private fun later(ms: Long, what: () -> Unit) { timer.schedule(what, ms, java.util.concurrent.TimeUnit.MILLISECONDS) }
     private val trustFetched = HashSet<String>()
 
     /**
@@ -200,7 +212,9 @@ class Server(private val repo: File, private val keys: File, private val cache: 
         val entry = saved.find(s.host) ?: return
         val host = s.host
         if (st == "ready" && entry.optString("setup_pass").isEmpty() && synchronized(trustFetched) { trustFetched.add(host) }) Thread({
-            try { AdbPrompt.token(s.link!!.get())?.let { entry.put("setup_pass", it); saved.save() } } catch (ignored: Exception) { }
+            val pass = try { AdbPrompt.token(s.link!!.get()) } catch (e: Exception) { null }
+            if (pass != null) saved.edit(host) { it.put("setup_pass", pass) }
+            else later(300_000) { synchronized(trustFetched) { trustFetched.remove(host) } }   // TV Setup not there yet: ask again later
         }, "trust").apply { isDaemon = true }.start()
         else if (st == "unauthorized" && entry.optString("setup_pass").isNotEmpty() && System.currentTimeMillis() - trustAsked.get() > 45000) {
             trustAsked.set(System.currentTimeMillis())
@@ -208,7 +222,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
                 try {
                     val fp = dev.tvremote.core.Adb(keys).fingerprint()
                     when (AdbPrompt.ask(host, entry.optString("setup_pass"), fp, 30)) {
-                        "forgotten" -> { entry.remove("setup_pass"); saved.save() }   // "Unpair all" was pressed on the TV
+                        "forgotten" -> saved.edit(host) { it.remove("setup_pass") }   // "Unpair all" was pressed on the TV
                         "allowed" -> { println("TV Setup allowed this computer on $host"); s.link?.reconnect() }
                     }
                 } catch (ignored: Exception) { }
@@ -259,7 +273,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
         synchronized(s.held) {
             if (dir != "SHORT") s.held.remove(code)?.cancel(false)
             if (dir == "START_LONG")                                  // safety net: never leave a key held if the page vanishes
-                s.held[code] = s.later(8000) { synchronized(s.held) { s.held.remove(code) }; if (a.ready()) a.key(code, Atv.UP) }
+                s.later(8000) { synchronized(s.held) { s.held.remove(code) }; if (a.ready()) a.key(code, Atv.UP) }?.let { s.held[code] = it }
         }
         a.key(code, when (dir) { "START_LONG" -> Atv.DOWN; "END_LONG" -> Atv.UP; else -> Atv.SHORT })
         return Response.ok()
@@ -392,13 +406,13 @@ class Server(private val repo: File, private val keys: File, private val cache: 
     /** Only the saved list: never an address typed in a request. */
     private fun targets(hosts: List<String>, s: Session) = hosts.filter { it.isNotEmpty() }.distinct().also { h ->
         if (h.isEmpty() || h.any { saved.find(it) == null }) throw IllegalArgumentException("pick saved TVs")
-    }.map { it to fleets.link(it, s) }
+    }.map { it to fleets.link(it) }
 
     private fun fleetInfo(s: Session): Response {
-        val hosts = (0 until saved.tvs.length()).map { saved.tvs.getJSONObject(it) }
+        val hosts = saved.tvs.let { a -> (0 until a.length()).map { a.getJSONObject(it) } }
         val pool = java.util.concurrent.Executors.newCachedThreadPool()
         try {
-            val rows = hosts.map { t -> pool.submit<JSONObject> { fleets.info(t.optString("host"), fleets.link(t.optString("host"), s)).put("name", t.optString("name")) } }.map { it.get() }
+            val rows = hosts.map { t -> pool.submit<JSONObject> { fleets.info(t.optString("host"), fleets.link(t.optString("host"))).put("name", t.optString("name")) } }.map { it.get() }
             return Response.json(JSONObject().put("current", s.host).put("tvs", JSONArray(rows)))
         } finally {
             pool.shutdown()
@@ -435,7 +449,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
         val OURS = setOf("/api/key", "/api/app", "/api/volume", "/api/text", "/api/touch", "/api/type", "/api/wake", "/api/tv/select", "/api/tv/save",
             "/api/tv/remove", "/api/scenes", "/api/scene/run", "/api/fleet/do", "/api/assist", "/api/pair/start", "/api/pair/finish", "/api/shutdown")
         const val HD = 5                                              // Tv.QUALITY's sharpest level, the page's "Nét nhất"
-        val IP = Regex("\\d{1,3}(\\.\\d{1,3}){3}|[0-9a-fA-F:]*:[0-9a-fA-F:.]+")
+        val IP = Regex("((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)")   // IPv4: what ADB and the TV's page links are written for
         val PRIVATE = Regex("(10\\.|192\\.168\\.|172\\.(1[6-9]|2\\d|3[01])\\.)[0-9.]+")
     }
 }

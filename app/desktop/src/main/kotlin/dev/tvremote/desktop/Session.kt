@@ -48,7 +48,7 @@ class Session(val host: String, private val keys: File, cache: File, apk: File, 
             while (!closed && gen == dialGen) {
                 val a = Atv(keys, host)
                 try {
-                    a.connect { if (!closed && gen == dialGen) { timers.schedule({ if (gen == dialGen) dial() }, 1, TimeUnit.SECONDS) } }
+                    a.connect { if (!closed && gen == dialGen) later(1000) { if (gen == dialGen) dial() } }
                     if (closed || gen != dialGen) { a.close(); return@Thread }
                     atv?.close()
                     atv = a
@@ -92,17 +92,26 @@ class Session(val host: String, private val keys: File, cache: File, apk: File, 
         atv?.close(); atv = null
         pairer?.close()
         val p = Atv(keys, host)
-        p.startPairing()
+        try {
+            p.startPairing()
+        } catch (e: Exception) {
+            p.close(); dial()                                         // the TV is unreachable now: keep trying the normal way
+            throw e
+        }
         pairer = p
-        timers.schedule({ if (pairer === p) { pairer = null; p.close(); dial() } }, 180, TimeUnit.SECONDS)
+        later(180_000) { if (pairer === p) { pairer = null; p.close(); dial() } }
     }
 
     /** IllegalArgumentException: wrong code (the TV drops the attempt). */
     fun pairFinish(code: String) {
         val p = pairer ?: throw IllegalStateException("pairing was not started")
-        try { p.finishPairing(code) } finally { pairer = null; p.close() }
-        error = ""
-        dial()
+        try {
+            p.finishPairing(code)
+            error = ""
+        } finally {
+            pairer = null; p.close()
+            dial()                                                    // a wrong code too: the TV dropped that attempt, Pair starts a new one
+        }
     }
 
     // ---------------------------------------------------------------- touch and typing (scrcpy's control socket)
@@ -120,6 +129,7 @@ class Session(val host: String, private val keys: File, cache: File, apk: File, 
                 override fun onVideoSize(w: Int, h: Int) { }
                 override fun onNetwork(mac: String, lan: String, tailscale: String) { }
             }).also { fresh ->
+                if (closed) throw IOException("TV changed")
                 ctl = fresh
                 timers.schedule(object : Runnable {
                     override fun run() {
@@ -138,7 +148,8 @@ class Session(val host: String, private val keys: File, cache: File, apk: File, 
         throw IOException("could not reach the TV's touch input")
     }
 
-    fun later(ms: Long, what: () -> Unit): ScheduledFuture<*> = timers.schedule(what, ms, TimeUnit.MILLISECONDS)
+    /** Null once the session is closed (another TV was picked while a request for this one was under way). */
+    fun later(ms: Long, what: () -> Unit): ScheduledFuture<*>? = try { timers.schedule(what, ms, TimeUnit.MILLISECONDS) } catch (e: java.util.concurrent.RejectedExecutionException) { null }
 
     fun close() {
         closed = true
