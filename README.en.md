@@ -145,6 +145,7 @@ Closing the window (or the ⏻ Quit button) stops the app; nothing keeps running
 <summary>Usage notes</summary>
 
 - Picture quality goes from 240p to 960p; lower is lighter on the TV and the network. The app on the computer adds *Sharpest* (slows the TV noticeably). *Screenshots* fetch one picture at a time, the lightest. On another tab the picture shrinks into a corner.
+- **✏️ Draw on the TV's screen** (the ✏️ next to the picture; in the phone app, *Draw on the TV* under More keys): what you draw on the picture shows on the TV at once, over every app, to show the person watching where to go. Needs TV Setup on the TV; it clears with 🗑 or goes by itself after 10 minutes.
 - Protected video (Netflix and the like) shows as black.
 - The TV's on-screen keyboard cannot be clicked with the mouse; type on the computer keyboard. For accented text, type in the "Keyboard" box.
 </details>

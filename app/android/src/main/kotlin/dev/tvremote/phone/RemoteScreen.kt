@@ -41,7 +41,8 @@ internal fun MainActivity.layoutRemote() {
     val full = video && host != null && (fullscreen || resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)   // landscape: the picture fills the screen
     (controls.parent as View).visibility = if (full) View.GONE else View.VISIBLE
     (status.parent as View).visibility = if (full) View.GONE else View.VISIBLE
-    stage.layoutParams = LinearLayout.LayoutParams(-1, if (full) -1 else -2)
+    stage.layoutParams = if (full) LinearLayout.LayoutParams(-1, 0, 1f) else LinearLayout.LayoutParams(-1, -2)   // weight: room for the drawing tools under it
+    if (!video && drawing) stopDrawing()                              // nothing to draw on
     frame.layoutParams = FrameLayout.LayoutParams(-1, if (full) -1 else -2)
     stage.visibility = if (video) View.VISIBLE else View.GONE
     fullBtn.visibility = if (video) View.VISIBLE else View.GONE
@@ -126,6 +127,7 @@ internal fun MainActivity.buildRemote() {
     surface.setOnTouchListener { v, e ->
         val tv = tv
         if (tv == null || !tv.ready()) return@setOnTouchListener true
+        if (drawing) { drawTouch(e, v); return@setOnTouchListener true }
         val action = when (e.actionMasked) {
             MotionEvent.ACTION_DOWN -> 0
             MotionEvent.ACTION_MOVE -> 2
@@ -138,6 +140,8 @@ internal fun MainActivity.buildRemote() {
     }
     tapMark = TapMark(this)
     frame.addView(tapMark, FrameLayout.LayoutParams(-1, -1))
+    drawView = DrawView(this)
+    frame.addView(drawView, FrameLayout.LayoutParams(-1, -1))
     stage = FrameLayout(this)
     stage.setBackgroundColor(Color.BLACK)
     stage.addView(frame, FrameLayout.LayoutParams(-1, -2))
@@ -148,6 +152,8 @@ internal fun MainActivity.buildRemote() {
     fp.setMargins(dp(8), dp(8), dp(8), dp(8))
     stage.addView(exitBtn, fp)
     remote.addView(stage, LinearLayout.LayoutParams(-1, -2))
+    drawBar = drawTools()
+    remote.addView(drawBar, LinearLayout.LayoutParams(-1, -2))
 
     controls = col()
     controls.setPadding(dp(14), dp(12), dp(14), dp(20))
@@ -195,7 +201,7 @@ internal fun MainActivity.buildRemote() {
     val more = col()
     more.addView(captioned(keys(58, "@input|" + t("Ngõ vào", "Input"), 178, "@settings|" + t("Cài đặt", "Settings"), 176, "@info|" + t("Thông tin", "Info"), 165, "@guide|" + t("Lịch phát", "Guide"), 172)), gap(8))
     more.addView(captioned(keys(58, "@tv|" + t("TV", "Live TV"), 170, "@subtitle|" + t("Phụ đề", "Subtitles"), 175, "@stop|" + t("Dừng", "Stop"), 86, "@camera|" + t("Chụp màn hình", "Screenshot"), SHOT)), gap(8))
-    more.addView(captioned(keys(58, "@send|" + t("Mở trên TV", "Open on the TV"), OPEN, "@timer|" + t("Hẹn giờ tắt", "Sleep timer"), TIMER, "@scene|" + t("Cảnh", "Scenes"), SCENES, "", 0)), gap(8))
+    more.addView(captioned(keys(58, "@send|" + t("Mở trên TV", "Open on the TV"), OPEN, "@timer|" + t("Hẹn giờ tắt", "Sleep timer"), TIMER, "@scene|" + t("Cảnh", "Scenes"), SCENES, "@pen|" + t("Vẽ lên TV", "Draw on the TV"), DRAW)), gap(8))
     val showMore = { on: Boolean ->
         more.visibility = if (on) View.VISIBLE else View.GONE
         moreBtn.background = box(if (on) ACCENT else BTN, 16)
@@ -401,6 +407,7 @@ internal fun MainActivity.keys(height: Int, vararg labelAndCode: Any): LinearLay
             else if (code == OPEN) b.setOnClickListener { quickOpen() }
             else if (code == TIMER) b.setOnClickListener { timerMenu() }
             else if (code == SCENES) b.setOnClickListener { scenesMenu() }
+            else if (code == DRAW) b.setOnClickListener { if (drawing) stopDrawing() else startDrawing() }
             else if (code in Tv.OPENERS) {
                 val held = box(HELD, 16)
                 b.setOnClickListener { flash(b, held); opens(code) }

@@ -441,6 +441,9 @@ class Tv(
     @Throws(IOException::class)
     fun shell(cmd: String): String = adb?.shell(cmd) ?: ""
 
+    /** The ADB connection under this session, for what goes its own way (drawing on the TV's screen: [Draw]). */
+    fun link(): Adb? = adb
+
     fun launch(component: String) {
         val a = adb
         if (a == null || !component.matches(Regex("[\\w.]+/[\\w.\$]+"))) return

@@ -146,6 +146,7 @@ Nút **📺 Đổi TV** ở thanh trên quay về danh sách TV.
 <summary>Lưu ý khi dùng</summary>
 
 - Chất lượng hình chọn từ 240p tới 960p; số nhỏ nhẹ cho TV và mạng. App máy tính có thêm *Nét nhất* (làm TV chậm hơn rõ rệt). *Ảnh chụp* thì tải từng ảnh, nhẹ nhất. Sang tab khác thì hình thu nhỏ ở góc.
+- **✏️ Vẽ lên màn hình TV** (nút ✏️ cạnh hình; trên app điện thoại là *Vẽ lên TV* trong Thêm phím): vẽ lên hình thì TV hiện ngay nét vẽ, đè lên mọi app, để chỉ chỗ cho người đang xem. Cần TV Setup trên TV. Bấm 🗑 để xóa, hoặc nét vẽ tự mất sau 10 phút.
 - Video có bản quyền (Netflix...) hiện màu đen.
 - Bàn phím ảo trên TV không bấm được bằng chuột; hãy gõ bằng bàn phím máy tính. Chữ có dấu thì gõ trong ô "Bàn phím".
 </details>

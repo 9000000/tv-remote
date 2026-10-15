@@ -32,6 +32,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     var allowed: ((String) -> Unit)? = null
     private val promptLock = Any()
 
+    private val draw = Draw { link.get() }                           // strokes for TV Setup to draw over the screen
     private val jobs: MutableMap<String, JSONObject> = Collections.synchronizedMap(LinkedHashMap<String, JSONObject>())
     private val nextJob = java.util.concurrent.atomic.AtomicInteger(1)
 
@@ -104,6 +105,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "fetch" -> HttpServer.Response.json(fetch(r.json().optString("url"), false))
                 "install" -> HttpServer.Response.json(fetch(r.json().optString("url"), true))
                 "setup/update" -> HttpServer.Response.json(setupUpdate())
+                "draw" -> { draw.send(r.json().getJSONArray("ops")); HttpServer.Response.json(JSONObject().put("ok", true)) }
                 "adb/allow" -> {                                      // only for the key named: see AdbPrompt
                     val d = r.json()
                     val fp = d.optString("fingerprint").uppercase()

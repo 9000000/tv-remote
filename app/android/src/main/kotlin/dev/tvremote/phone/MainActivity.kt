@@ -101,6 +101,19 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal val OPEN = -2                                             // not a key: "open on the TV" in the extra keys
     internal val TIMER = -3                                            // not a key: the sleep timer (Automation.kt)
     internal val SCENES = -4                                           // not a key: the scenes (Automation.kt)
+    internal val DRAW = -5                                             // not a key: drawing on the TV's screen (Drawing.kt)
+
+    // ---- Drawing.kt: the finger on the picture draws on the TV's screen instead of touching it.
+    internal var drawing = false
+    internal lateinit var drawBar: LinearLayout
+    internal lateinit var drawView: DrawView
+    internal val drawer = dev.tvremote.core.Draw { tv?.link() ?: throw java.io.IOException("no TV") }
+    internal val drawIo = java.util.concurrent.Executors.newSingleThreadExecutor()
+    internal val drawQ = ArrayList<org.json.JSONObject>()              // what waits for the request on its way (drawQ's lock)
+    internal var drawBusy = false
+    internal var drawColor = DRAW_COLORS[0]
+    internal var drawWidth = 60
+    internal var drawId = 0
 
     // ---- Typing.kt. Two ways to type. Send: write here, then send it in one go. Live (⚡): the TV follows every letter and
     // every deletion as it happens, so one wrong letter is fixed by fixing it here.

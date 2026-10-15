@@ -161,6 +161,12 @@
   .screenbox .tap.gone { animation:tapgone .45s ease-out forwards; }     /* let go: the dot spreads into a ring and fades */
   @keyframes tapgone { to { transform:scale(1.9); opacity:0; background:transparent; } }
   @media (prefers-reduced-motion:reduce) { .screenbox .tap.gone { animation-duration:.2s; } }
+  #drawcv { position:absolute; inset:0; width:100%; height:100%; z-index:3; cursor:crosshair; touch-action:none; }
+  .drawbar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px; } .drawbar p { flex-basis:100%; margin:0; font-size:12px; }
+  .drawbar .swatches { display:flex; gap:6px; margin-right:auto; }
+  .drawbar .swatch { width:30px; height:30px; min-height:0; padding:0; border-radius:50%; background:var(--c); border:2px solid var(--line, #444); }
+  .drawbar .swatch.on { outline:3px solid var(--accent); outline-offset:2px; }
+  #drawthick.on { background:var(--accent); color:var(--accent-ink); }
   .screenbox .ph { color:#9aa3af; font-size:14px; padding:16px; text-align:center; }
   .screenbox:fullscreen { border-radius:0; aspect-ratio:auto; }
   .card-head { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }

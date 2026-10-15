@@ -23,14 +23,15 @@ app/shared/src/.../core/ Kotlin shared by both apps: Adb, Tv (scrcpy session, vi
                          debugging?"), Errors, RemoteLabels (app names, pictures and Caps from the TV, through Meta and Caps:
                          Java in src/main/java, dexed into assets/tvr-helper.jar by :shared:tvHelper, kept in git), Scenes (scenes + key names), RulesClient (talks to TV Setup's rules),
                          Voice (spoken commands), AudioOut (Opus playback, PCM downmix),
-                         Fleet (several saved TVs at once)
+                         Fleet (several saved TVs at once), Draw (strokes to TV Setup's layer over the TV's screen)
 app/android/.../phone/   phone app, one file per part, as extension functions on MainActivity: MainActivity (state, lifecycle),
                          Ui, Net, PickerScreen, RemoteScreen, Typing, InfoScreens, KeysOnly, AdbHelp, Media, Managing (the
                          web UI in a WebView), Updater, Listen + ListenService (🎧), Automation (timer, scenes, voice),
                          SceneStore, Headless + SceneActivity/SceneService (widget, tiles, shortcuts), Tiles, RemoteWidget, ManyTvs (the list of TVs:
-                         install / remove / restart on several at once)
+                         install / remove / restart on several at once), SetupBanner (a new TV Setup), Drawing (✏️ on the picture)
 app/tv/                  TV Setup: MainActivity (the TV screen), RemoteService (web server), PairActivity, Stats, TrustReceiver,
-                         Rules + Guard + RulesReceiver + WarnActivity (sleep timer, bedtime, app limits)
+                         Rules + Guard + RulesReceiver + WarnActivity (sleep timer, bedtime, app limits), DnsWatch (turns off a
+                         DNS filter that cut the TV off), DrawLayer + DrawReceiver (the drawing over every app)
 app/gradle/              the Gradle build of everything Kotlin (settings point at ../shared, ../android, ../tv, ../desktop); open it in Android Studio
 app/desktop/             the computer app on the shared Kotlin core (JVM, no adb/Python/ffmpeg), the "mac" core: Server.kt
                          (the routes only the computer has) + Manage.kt; Updater.kt (updates itself from releases, swapped in by a script once it quits); Window.kt shows the page in the system's web view

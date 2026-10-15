@@ -10,6 +10,7 @@ function showFrame(blob) {
   if (screenUrl) URL.revokeObjectURL(screenUrl); screenUrl = u; frames++;
 }
 function stopScreen(msg) {
+  if (typeof drawing !== 'undefined' && drawing) drawStop();         // no picture to draw on
   screenOn = false; screenGen++; if (streamCtl) streamCtl.abort(); if (muxer) { try { muxer.destroy(); } catch {} muxer = null; }
   $('#screencard').classList.remove('on'); if (msg && matchMedia('(max-width:899px)').matches) toast(msg);   // on a phone the box is folded away: say it where it is seen
   setLabel($('#screenbtn'), '▶', 'Xem'); setScreenPlaceholder(msg); setScreenInfo(''); dockScreen();
