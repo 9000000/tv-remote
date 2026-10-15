@@ -20,3 +20,6 @@ app/gradle/.kotlin/
 app/gradle/build/
 app/gradle/local.properties
 .idea/
+# APKs are attached to releases, never committed
+app/android/*.apk
+app/tv/*.apk

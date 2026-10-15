@@ -21,7 +21,8 @@ import java.util.concurrent.atomic.AtomicLong
  */
 class Server(private val repo: File, private val keys: File, private val cache: File, private val saved: Saved, first: String?, private val stop: () -> Unit) : HttpServer.Handler {
     private val web = File(repo, "app/shared/web")
-    private val apk = File(repo, "app/android/tv-remote.apk")          // carries Meta and Caps, started on the TV for app names and pictures
+    private val apk = listOf("app/android/tv-remote.apk", "app/desktop/build/phone/tv-remote.apk")   // carries Meta and Caps, started on
+        .map { File(repo, it) }.firstOrNull { it.isFile } ?: File(repo, "app/android/tv-remote.apk")   // the TV: inside the app, or a dev build's
     private val jarFile = File(repo, "app/shared/assets/scrcpy-server.jar")
     private val jar: () -> ByteArray = { jarFile.readBytes() }
     private val version = try { File(repo, "VERSION").readText().trim() } catch (e: IOException) { "" }

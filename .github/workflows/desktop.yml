@@ -31,6 +31,9 @@ jobs:
         with: { distribution: temurin, java-version: "17" }
       - if: runner.os == 'Linux'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq libwebkit2gtk-4.1-0 xvfb >/dev/null
+      - if: github.event_name == 'release'                             # Meta and Caps of this very release (else the build takes the latest's)
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh release download "${{ github.event.release.tag_name }}" -p tv-remote.apk -D app/android/build
       - name: build
         run: cd app/gradle && ./gradlew --no-daemon -q :desktop:packageApp
       - name: open, check, quit
@@ -41,7 +44,8 @@ jobs:
           for i in $(seq 60); do curl -sf http://127.0.0.1:8765/api/about && break; sleep 1; done
           echo; sleep 5
           cat "$log"
-          curl -sf http://127.0.0.1:8765/ | grep -q 'data-core="mac"'
+          curl -sf -o page.html http://127.0.0.1:8765/                 # not piped: grep -q stops early, curl then fails (23)
+          grep -q 'data-core="mac"' page.html
           ! grep -q "no window" "$log"
           curl -sf -X POST -H 'Content-Type: application/json' -d '{}' http://127.0.0.1:8765/api/shutdown
           for i in $(seq 20); do curl -s http://127.0.0.1:8765/api/about >/dev/null || break; sleep 1; done

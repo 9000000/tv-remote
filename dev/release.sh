@@ -24,8 +24,6 @@ for a in android tv; do                                               # changed 
   fi
 done
 ./app/android/build.sh && ./app/tv/build.sh
-cp app/android/build/tv-remote.apk app/android/tv-remote.apk && cp app/tv/build/tv-setup.apk app/tv/tv-setup.apk
-if [ -n "$(git status --porcelain)" ]; then git add app/android/tv-remote.apk app/tv/tv-setup.apk && git commit -q -m "Build $VER" && git push -q; fi
 printf '{"android": "%s", "tv": "%s", "web": "%s"}\n' "$(cat app/android/VERSION)" "$(cat app/tv/VERSION)" "$VER" > app/android/build/versions.json
 D=https://github.com/HoangTran0410/tv-remote/releases/latest/download
 NOTES="$NOTES
@@ -40,7 +38,8 @@ NOTES="$NOTES
 | Mac (Intel) | [TV-Remote-mac-x64.zip]($D/TV-Remote-mac-x64.zip) |
 | Windows 10/11 | [TV-Remote-windows-x64.zip]($D/TV-Remote-windows-x64.zip) |
 | Linux x64 / arm64 | [TV-Remote-linux-x64.tar.gz]($D/TV-Remote-linux-x64.tar.gz) · [TV-Remote-linux-arm64.tar.gz]($D/TV-Remote-linux-arm64.tar.gz) |"
-gh release create "v$VER" app/android/tv-remote.apk app/tv/tv-setup.apk app/android/build/versions.json --title "v$VER" --notes "$NOTES"
+# the APKs live only in releases, never in git
+gh release create "v$VER" app/android/build/tv-remote.apk app/tv/build/tv-setup.apk app/android/build/versions.json --title "v$VER" --notes "$NOTES"
 # the computer apps are built on each system by .github/workflows/desktop.yml, which the new release starts and which
 # attaches them to it: wait for it, so the release is only called done once every download link works
 echo "waiting for the computer apps (.github/workflows/desktop.yml)..."
