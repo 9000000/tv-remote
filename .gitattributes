@@ -1,4 +1,2 @@
-# made by dev/demo_css.py from dev/demo.src.css: edit that and run the script, never this file
-docs/demo.css linguist-generated=true
 # gsap.min.js is GreenSock's file, vendored as is
 docs/gsap.min.js linguist-vendored=true
