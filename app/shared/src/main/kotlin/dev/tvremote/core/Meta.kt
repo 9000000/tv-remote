@@ -52,22 +52,41 @@ object Meta {
     }
 }
 
-/** The phone's side: runs [Meta] on the TV once per connection and answers from what it printed and drew. */
-class RemoteLabels(private val link: AdbLink, private val apk: File) : Manage.Labels {
-    private var names: Map<String, String>? = null
+/**
+ * The phone's side: runs [Meta] on the TV and answers from what it printed and drew. With a [cache] (one folder per TV) the
+ * names and pictures are kept on the phone: the next time the list shows at once from them, and Meta runs in the background
+ * only to catch apps installed or updated since. Without one, every opening waited for Meta and fetched each picture again.
+ */
+class RemoteLabels(private val link: AdbLink, private val apk: File, private val cache: File? = null) : Manage.Labels {
+    @Volatile private var names: Map<String, String>? = null
     @Volatile private var ok = false
+    @Volatile private var stamps: Map<String, String>? = null         // package -> "time size" of its PNG on the TV, once Meta has run
+    private val running = Any()
 
-    /** Every app's display name, by package; asked from the TV once per connection. */
+    /** Every app's display name, by package. */
     @Synchronized
     fun names(): Map<String, String> {
         names?.let { return it }
+        val saved = load()
+        if (saved != null) {
+            names = saved
+            ok = true
+            Thread({ ask() }, "meta-refresh").apply { isDaemon = true }.start()
+            return saved
+        }
+        return ask()
+    }
+
+    /** One run of Meta on the TV. */
+    private fun ask(): Map<String, String> = synchronized(running) {
         val out = HashMap<String, String>()
         try {
             val a = link.get()
-            val size = apk.length().toString()
-            val check = "[ -f $REMOTE ] && wc -c < $REMOTE || echo 0"
-            if (a.shell(check).trim() != size) {
-                val s = a.open("exec:cat > $REMOTE")
+            // one file per build, written whole and then renamed: see CLEAN
+            val remote = "/data/local/tmp/tvr-meta-${apk.length()}.apk"
+            if (a.shell("[ -f $remote ] && echo y").trim() != "y") {
+                a.shell(CLEAN)
+                val s = a.open("exec:cat > $remote.part")
                 apk.inputStream().use { input ->
                     val buf = ByteArray(65536)
                     while (true) {
@@ -77,29 +96,47 @@ class RemoteLabels(private val link: AdbLink, private val apk: File) : Manage.La
                     }
                 }
                 s.close()
+                val size = apk.length().toString()
                 for (i in 0 until 40) {
-                    if (a.shell(check).trim() == size) break
+                    if (a.shell("wc -c < $remote.part").trim() == size) break
                     Thread.sleep(150)
                 }
+                a.shell("mv $remote.part $remote")
             }
-            for (line in a.shell("CLASSPATH=$REMOTE app_process / dev.tvremote.core.Meta $DIR 2>/dev/null").split("\n")) {
+            for (line in a.shell("CLASSPATH=$remote app_process / dev.tvremote.core.Meta $DIR 2>/dev/null").split("\n")) {
                 val tab = line.indexOf('\t')
                 if (tab > 0) out[line.substring(0, tab)] = line.substring(tab + 1).trim()
             }
-            ok = out.isNotEmpty()
+            if (out.isNotEmpty()) {
+                val st = HashMap<String, String>()
+                for (line in a.shell("cd $DIR && stat -c '%n %Y %s' *.png 2>/dev/null").split("\n")) {
+                    val p = line.trim().split(" ")
+                    if (p.size == 3 && p[0].endsWith(".png")) st[p[0].removeSuffix(".png")] = p[1] + " " + p[2]
+                }
+                stamps = st
+                ok = true
+                names = out
+                save(out)
+            }
         } catch (ignored: Exception) {
         }
-        names = out                                                   // failed: package names are shown, as before
-        return out
+        names ?: out.also { names = it }                              // failed with nothing saved: package names are shown, as before
     }
 
     override fun label(pkg: String): String? = names()[pkg]
 
     override fun icons(): Boolean { names(); return ok }
 
-    /** The PNG [Meta] drew for this app, or null. */
+    /** The PNG [Meta] drew for this app, or null: the phone's copy while it is still the TV's, else fetched (and kept). */
     fun icon(pkg: String): ByteArray? {
         if (!ok || !pkg.matches(Regex("[\\w.]+"))) return null
+        val file = cache?.let { File(it, "$pkg.png") }
+        val stamp = cache?.let { File(it, "$pkg.stamp") }
+        val st = stamps
+        try {
+            if (file != null && file.length() > 0 && (st == null || st[pkg] != null && stamp!!.readText() == st[pkg])) return file.readBytes()
+        } catch (ignored: IOException) {
+        }
         return try {
             val s = link.get().open("exec:cat $DIR/$pkg.png")
             val out = java.io.ByteArrayOutputStream()
@@ -111,12 +148,39 @@ class RemoteLabels(private val link: AdbLink, private val apk: File) : Manage.La
                     out.write(buf, 0, n)
                 }
             }
-            if (out.size() > 0) out.toByteArray() else null
+            if (out.size() == 0) return null
+            val png = out.toByteArray()
+            if (file != null) try {
+                file.parentFile?.mkdirs()
+                file.writeBytes(png)
+                stamp!!.writeText(st?.get(pkg) ?: "")
+            } catch (ignored: IOException) {
+            }
+            png
         } catch (e: IOException) { null }
     }
 
+    private fun load(): Map<String, String>? = try {
+        val o = org.json.JSONObject(File(cache ?: return null, "names.json").readText())
+        o.keys().asSequence().associateWith { o.getString(it) }.takeIf { it.isNotEmpty() }
+    } catch (e: Exception) { null }
+
+    private fun save(m: Map<String, String>) {
+        val dir = cache ?: return
+        try {
+            dir.mkdirs()
+            val tmp = File(dir, "names.json.tmp")
+            tmp.writeText(org.json.JSONObject(m).toString())
+            tmp.renameTo(File(dir, "names.json"))
+        } catch (ignored: Exception) {
+        }
+    }
+
     private companion object {
-        const val REMOTE = "/data/local/tmp/tvr-meta.apk"
+        // The computer, the phone app and TV Setup each bring their own APK. With one shared name one of them overwrote it while
+        // another started it: a crash on the TV each time. Builds older than a few days are cleared; one still in use stays
+        // readable to the process that has it open.
+        const val CLEAN = "find /data/local/tmp -maxdepth 1 -name 'tvr-meta*.apk' -mtime +3 -delete 2>/dev/null; rm -f /data/local/tmp/tvr-meta.apk"
         const val DIR = "/data/local/tmp/tvr-meta"
     }
 }

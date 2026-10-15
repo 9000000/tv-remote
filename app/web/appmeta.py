@@ -5,20 +5,24 @@ to the TV once and its Meta class is started there with app_process. As the shel
 for every app's display name and draws each app's banner or icon into a PNG; we read the names from its output and pull
 the PNGs. One run covers every app. Results are cached in .cache/apps (keyed by the APK path, which changes on every update).
 """
-import asyncio, json, subprocess, threading
+import asyncio, json, subprocess, threading, time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 CACHE = ROOT / ".cache" / "apps"
 HELPER = ROOT / "app" / "android" / "tv-remote.apk"                   # carries dev.tvremote.core.Meta (app/shared/.../Meta.kt)
-REMOTE, DIR = "/data/local/tmp/tvr-meta.apk", "/data/local/tmp/tvr-meta"
+DIR = "/data/local/tmp/tvr-meta"
+# One file per helper build, written whole and then renamed: the computer, the phone app and TV Setup each bring their own APK,
+# and with one shared name one of them was overwriting it while another started it (a crash on the TV, every time).
+# Builds older than a few days are cleared; one still in use stays readable to the process that has it open.
+CLEAN = "find /data/local/tmp -maxdepth 1 -name 'tvr-meta*.apk' -mtime +3 -delete 2>/dev/null; rm -f /data/local/tmp/tvr-meta.apk"
 
 
 class AppMeta:
     def __init__(self, adb_bin, target):
         self.adb_bin, self.target = adb_bin, target
         self.sem, self.inflight = asyncio.Semaphore(4), {}
-        self.lock, self.labels = threading.Lock(), None
+        self.lock, self.labels, self.failed_at = threading.Lock(), None, 0
 
     def cached(self, pkg, apk_path):
         try:
@@ -39,13 +43,17 @@ class AppMeta:
     def _names(self, pkg=None):
         """{package: name} from one run of Meta on the TV; run again when an app installed since then is asked for."""
         with self.lock:
-            if self.labels is None or (pkg and pkg not in self.labels):
-                size = str(HELPER.stat().st_size)
-                if self._adb("shell", f"[ -f {REMOTE} ] && wc -c < {REMOTE} || echo 0").decode().strip() != size:
-                    self._adb("push", str(HELPER), REMOTE)
-                out = self._adb("shell", f"CLASSPATH={REMOTE} app_process / dev.tvremote.core.Meta {DIR} 2>/dev/null").decode(errors="replace")
+            if (self.labels is None or (pkg and pkg not in self.labels)) and time.monotonic() - self.failed_at > 300:
+                remote = f"/data/local/tmp/tvr-meta-{HELPER.stat().st_size}.apk"
+                if self._adb("shell", f"[ -f {remote} ] && echo y || true").decode().strip() != "y":
+                    self._adb("shell", CLEAN)
+                    self._adb("push", str(HELPER), remote + ".part")
+                    self._adb("shell", f"mv {remote}.part {remote}; touch {remote}")   # push keeps the APK's own date: CLEAN would take it for old
+                out = self._adb("shell", f"CLASSPATH={remote} app_process / dev.tvremote.core.Meta {DIR} 2>/dev/null").decode(errors="replace")
                 self.labels = dict(line.rstrip("\r").split("\t", 1) for line in out.splitlines() if "\t" in line)
-            return self.labels
+                if not self.labels:                                   # it did not run: not again for every app on the list
+                    self.failed_at = time.monotonic()
+            return self.labels or {}
 
     def _resolve(self, pkg, apk_path):
         meta, icon, failed = {"apk": apk_path, "v": 2, "label": "", "bg": "", "adaptive": False, "icon": False}, None, False

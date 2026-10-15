@@ -528,10 +528,13 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val samples = JSONArray()
         for (line in sh("tail -n " + (d * 300) + " $STATS/samples.jsonl 2>/dev/null").jsplit("\n"))
             try { val a = JSONArray(line); if (a.getLong(0) >= from) samples.put(a) } catch (ignored: Exception) { }
+        val net = JSONArray()                                         // the network going away and coming back (TV Setup 2.16+)
+        for (line in sh("tail -n 400 $STATS/net.jsonl 2>/dev/null || true").jsplit("\n"))
+            try { val a = JSONArray(line); if (a.getLong(0) >= from) net.put(a) } catch (ignored: Exception) { }
         val names = JSONObject()
         if (usage != null && labels != null)
             for (day in usage.keys()) for (pkg in usage.getJSONObject(day).keys()) if (!names.has(pkg)) labels.label(pkg)?.let { names.put(pkg, it) }
-        return JSONObject().put("days", d).put("collector", usage != null || samples.length() > 0).put("usage", usage ?: JSONObject()).put("samples", samples).put("labels", names)
+        return JSONObject().put("days", d).put("collector", usage != null || samples.length() > 0).put("usage", usage ?: JSONObject()).put("samples", samples).put("net", net).put("labels", names)
     }
 
     // ---------------------------------------------------------------- health

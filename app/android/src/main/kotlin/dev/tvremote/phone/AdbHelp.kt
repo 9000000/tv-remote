@@ -25,18 +25,18 @@ internal fun MainActivity.tvJob(work: () -> Unit) {
 /** Everything the keys-only mode can do towards turning ADB on, in the order one needs it. */
 internal fun MainActivity.adbHelp() {
     menu(t("Bật ADB cho TV này", "Turn on ADB for this TV"), 0, listOf(
-        Triple(t("Tự động: cài TV Setup lên TV", "Automatic: install TV Setup on the TV"), t("App tự tải và mở app TV Setup trên TV; nó mở thẳng Tùy chọn nhà phát triển. Bạn chỉ xác nhận trên TV", "The app fetches and opens the TV Setup app on the TV, which opens Developer options directly. You only confirm on the TV")) { installSetup() },
-        Triple(t("Tự làm: mở Cài đặt TV", "By hand: open TV Settings"), t("App thử mọi cách mở Cài đặt, rồi chỉ các bước bật Gỡ lỗi ADB", "The app tries every way to open Settings, then shows the steps to turn ADB on")) { findSettings() },
-        Triple(t("Cài màn hình chính khác", "Install another home screen"), t("Khi TV giấu Cài đặt: mở qua một launcher từ CH Play", "When the TV hides Settings: go through a launcher from the Play Store")) { otherHome() },
-        Triple(t("Kết nối đầy đủ", "Full connection"), t("App tự chuyển khi TV bật ADB; bấm nếu muốn thử ngay", "The app switches by itself once ADB is on; tap to try now")) {
+        Triple("@zap|" + t("Tự động: cài TV Setup lên TV", "Automatic: install TV Setup on the TV"), t("App tự tải và mở app TV Setup trên TV; nó mở thẳng Tùy chọn nhà phát triển. Bạn chỉ xác nhận trên TV", "The app fetches and opens the TV Setup app on the TV, which opens Developer options directly. You only confirm on the TV")) { installSetup() },
+        Triple("@gear|" + t("Tự làm: mở Cài đặt TV", "By hand: open TV Settings"), t("App thử mọi cách mở Cài đặt, rồi chỉ các bước bật Gỡ lỗi ADB", "The app tries every way to open Settings, then shows the steps to turn ADB on")) { findSettings() },
+        Triple("@home|" + t("Cài màn hình chính khác", "Install another home screen"), t("Khi TV giấu Cài đặt: mở qua một launcher từ CH Play", "When the TV hides Settings: go through a launcher from the Play Store")) { otherHome() },
+        Triple("@refresh|" + t("Kết nối đầy đủ", "Full connection"), t("App tự chuyển khi TV bật ADB; bấm nếu muốn thử ngay", "The app switches by itself once ADB is on; tap to try now")) {
             val ip = host
             adbFailed.remove(ip)
             val e = entry
             disconnect(null)
             if (ip != null) connect(ip, e)
         },
-        Triple(t("Mở CH Play trên TV", "Open the Play Store on the TV"), "") { basic?.launch("https://play.google.com/store/apps"); Unit },
-        Triple(t("Mở app theo tên gói", "Open an app by package name"), t("Đã cài thì mở app, chưa cài thì mở trang CH Play của nó", "Opens the app, or its Play Store page when not installed")) {
+        Triple("@store|" + t("Mở CH Play trên TV", "Open the Play Store on the TV"), "") { basic?.launch("https://play.google.com/store/apps"); Unit },
+        Triple("@package|" + t("Mở app theo tên gói", "Open an app by package name"), t("Đã cài thì mở app, chưa cài thì mở trang CH Play của nó", "Opens the app, or its Play Store page when not installed")) {
             val box = input("com.example.app")
             val wrap = FrameLayout(this)
             wrap.setPadding(dp(20), dp(8), dp(20), 0)

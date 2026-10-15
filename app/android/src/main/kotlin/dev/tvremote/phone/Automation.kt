@@ -71,16 +71,16 @@ internal fun MainActivity.timerMenu() {
         val items = ArrayList<Triple<String, String, () -> Unit>>()
         for (m in intArrayOf(15, 30, 45, 60, 90, 120)) items.add(Triple(t("Tắt sau ", "Off in ") + (if (m < 60) "$m " + t("phút", "min") else "${m / 60} " + t("giờ", "h") + (if (m % 60 > 0) " 30" else "")), "") { setTimer(m) })
         if (at > 0) {
-            items.add(0, Triple(t("＋15 phút", "+15 minutes"), "") { rules(JSONObject().put("do", "sleep_add").put("minutes", 15)) { x -> toast(t("TV sẽ tự tắt lúc ", "The TV turns off at ") + hm(x.optLong("sleep_at"), x.optLong("now"))) } })
-            items.add(1, Triple(t("Hủy hẹn giờ", "Cancel the timer"), "") { setTimer(0) })
+            items.add(0, Triple("@plus|" + t("Thêm 15 phút", "15 more minutes"), "") { rules(JSONObject().put("do", "sleep_add").put("minutes", 15)) { x -> toast(t("TV sẽ tự tắt lúc ", "The TV turns off at ") + hm(x.optLong("sleep_at"), x.optLong("now"))) } })
+            items.add(1, Triple("@close|" + t("Hủy hẹn giờ", "Cancel the timer"), "") { setTimer(0) })
         }
-        items.add(Triple(t("Tự chọn...", "Custom..."), t("Số phút, hoặc giờ tắt như 23:30", "Minutes, or a time like 23:30")) {
+        items.add(Triple("@timer|" + t("Tự chọn...", "Custom..."), t("Số phút, hoặc giờ tắt như 23:30", "Minutes, or a time like 23:30")) {
             askText(t("Tắt TV sau bao lâu?", "Turn the TV off when?"), t("vd 40 (phút) hoặc 23:30", "e.g. 40 (minutes) or 23:30"), t("Hẹn", "Set")) {
                 val m = sleepMinutes(it)
                 if (m > 0) setTimer(m) else toast(t("Nhập số phút (vd 40) hoặc giờ tắt (vd 23:30)", "Type minutes (e.g. 40) or a time to turn off (e.g. 23:30)"))
             }
         })
-        items.add(Triple(t("Giờ đi ngủ, giới hạn app...", "Bedtime, app limits..."), t("Trên trang Tự động", "On the Automation page")) { managing.open(host, "auto") })
+        items.add(Triple("@moon|" + t("Giờ đi ngủ, giới hạn app...", "Bedtime, app limits..."), t("Trên trang Tự động", "On the Automation page")) { managing.open(host, "auto") })
         menu(if (at > 0) t("TV tự tắt lúc ", "The TV turns off at ") + hm(at, r.optLong("now")) else t("Hẹn giờ tắt TV", "Sleep timer"), if (at > 0) 0 else -1, items)
     }
 }
@@ -88,7 +88,7 @@ internal fun MainActivity.timerMenu() {
 /** 🎬: this phone's scenes, and the way to make more. */
 internal fun MainActivity.scenesMenu() {
     val items = SceneStore.list(this).map { sc -> Triple((sc.optString("icon") + "  " + sc.optString("name")).trim(), "") { runScene(sc) } }.toMutableList<Triple<String, String, () -> Unit>>()
-    items.add(Triple(t("Tạo / sửa cảnh...", "Make / edit scenes..."), t("Một nút làm nhiều việc: bật TV, mở app, đặt âm lượng... Cũng có trong widget và ô Cài đặt nhanh", "One button, several things: wake the TV, open an app, set the volume... Also in the widget and the Quick Settings tile")) {
+    items.add(Triple("@scene|" + t("Tạo / sửa cảnh...", "Make / edit scenes..."), t("Một nút làm nhiều việc: bật TV, mở app, đặt âm lượng... Cũng có trong widget và ô Cài đặt nhanh", "One button, several things: wake the TV, open an app, set the volume... Also in the widget and the Quick Settings tile")) {
         if (!needsAdb()) managing.open(host, "auto")
     })
     menu(t("Cảnh", "Scenes"), -1, items)

@@ -146,6 +146,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         tsWatch = TailscaleWatch(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         ui.postDelayed(rest, 30000)
         ui.postDelayed(diary, 20000)
+        stats.watchNet()
     }
 
     override fun onStartCommand(i: Intent?, flags: Int, id: Int): Int = START_STICKY
@@ -157,6 +158,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         http?.stop()
         guard?.stop()
         tsWatch?.stop()
+        stats.stopNet()
         link?.close()
         tv?.stop()
         viewer?.stop()

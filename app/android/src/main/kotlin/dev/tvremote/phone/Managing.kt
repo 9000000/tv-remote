@@ -110,7 +110,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
                 link?.close()
                 val l = AdbLink(a.filesDir, tvHost)
                 link = l
-                val names = RemoteLabels(l, File(a.applicationInfo.sourceDir))   // app names and pictures, asked from the TV itself
+                val names = RemoteLabels(l, File(a.applicationInfo.sourceDir), File(a.cacheDir, "meta/" + tvHost.replace(Regex("[^\\w.-]"), "_")))   // app names and pictures, asked from the TV itself, kept per TV
                 labels = names
                 manage = Manage(l, names, a.cacheDir)
                 forHost = tvHost

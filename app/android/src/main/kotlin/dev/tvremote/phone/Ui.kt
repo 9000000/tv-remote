@@ -162,19 +162,31 @@ internal fun Context.oval(color: Int): GradientDrawable {
 
 /**
  * A menu whose choices look like what they are: buttons. Each has a title, a line saying what it does, and an arrow.
- * [primary] is the one to press first. Each item: title, explanation, action.
+ * [primary] is the one to press first. Each item: title, explanation, action. A title "@name|Title" gets the icon ic_name in
+ * front, so the list can be scanned without reading every line (drawn icons, not emoji: those look different on every phone).
  */
 internal fun Activity.menu(title: String, primary: Int, items: List<Triple<String, String, () -> Unit>>) {
     val list = col()
     list.setPadding(dp(16), dp(8), dp(16), dp(4))
     var dialog: AlertDialog? = null
-    items.forEachIndexed { i, (name, what, run) ->
+    items.forEachIndexed { i, (title, what, run) ->
+        val art = if (title.startsWith("@")) title.substringBefore("|").substring(1) else null
+        val name = if (art != null) title.substringAfter("|") else title
         val row = LinearLayout(this)
         row.gravity = Gravity.CENTER_VERTICAL
         row.setPadding(dp(14), dp(12), dp(10), dp(12))
         val color = if (i == primary) ACCENT else BTN
         val normal = box(color, 14)
         row.background = android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x40ffffff), normal, null)
+        val id = if (art != null) resources.getIdentifier("ic_$art", "drawable", packageName) else 0
+        if (id != 0) {
+            val img = android.widget.ImageView(this)
+            img.setImageResource(id)
+            img.setColorFilter(if (i == primary) Color.WHITE else ACCENT)
+            val ilp = LinearLayout.LayoutParams(dp(24), dp(24))
+            ilp.rightMargin = dp(14)
+            row.addView(img, ilp)
+        }
         val texts = col()
         val head = label(name, 16, if (i == primary) Color.WHITE else TEXT)
         head.typeface = Typeface.DEFAULT_BOLD

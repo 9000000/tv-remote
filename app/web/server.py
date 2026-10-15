@@ -629,12 +629,20 @@ def build(S):
                     samples.append(row)
             except (ValueError, IndexError, TypeError):
                 pass
+        net = []                                                      # the network going away and coming back (TV Setup 2.16+)
+        for line in (await adb.shell(f"tail -n 400 {STATS}/net.jsonl 2>/dev/null || true")).splitlines():
+            try:
+                row = json.loads(line)
+                if row[0] >= since:
+                    net.append(row)
+            except (ValueError, IndexError, TypeError):
+                pass
         try:                                                          # every package's display name, system apps included
             known = await asyncio.get_running_loop().run_in_executor(None, meta._names)
         except Exception:
             known = {}
         names = {pkg: known[pkg] for per_day in (usage or {}).values() for pkg in per_day if known.get(pkg)}
-        return web.json_response({"days": days, "collector": usage is not None or bool(samples), "usage": usage or {}, "samples": samples, "labels": names})
+        return web.json_response({"days": days, "collector": usage is not None or bool(samples), "usage": usage or {}, "samples": samples, "net": net, "labels": names})
 
     @routes.post("/api/free")
     @adb_errors

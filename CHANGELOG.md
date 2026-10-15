@@ -4,11 +4,17 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
-## 2.18.1 - 2026-10-15
+## 2.19.0 - 2026-10-15
 
-Web 2.18.1 · app điện thoại 2.16.1 · app TV 2.15.1
+Web 2.19.0 · app điện thoại 2.17.0 · app TV 2.16.0
 
 **Tiếng Việt**
+- **Wi-Fi trong Lịch sử (tab Sức khỏe):** TV Setup ghi độ mạnh sóng Wi-Fi 5 phút một lần và mỗi lần TV mất mạng rồi có lại. Lịch sử vẽ đường sóng theo ngày, kể các lần mất mạng khi đang dùng TV (bỏ qua lúc TV ngủ), và khuyên cách cải thiện khi sóng yếu. Phần “Hiện tại” cũng có thêm một dòng lời khuyên về Wi-Fi.
+- **Hết lỗi sập trên TV khi đọc tên và logo app:** máy tính, điện thoại và TV Setup từng dùng chung một tệp tạm trên TV và ghi đè lên nhau, làm TV ghi lại hàng loạt lỗi sập. Giờ mỗi bản dùng tệp riêng, ghi xong mới đổi tên; nếu lỗi thì 5 phút sau mới thử lại, không thử lại cho từng app.
+- **Logo app hiện nhanh hơn trên app điện thoại:** tên và logo được giữ trên điện thoại cho từng TV, mở Quản lý → Ứng dụng là hiện ngay; điện thoại chỉ hỏi lại TV ở chế độ nền để thấy app mới cài hay mới cập nhật.
+- **Tự tắt khi không dùng:** thêm 12 giờ, 24 giờ và “Tự nhập...” (số phút, hoặc số giờ như “6 giờ”).
+- **Nút Hiện tại / Lịch sử / Lỗi app** gọn thành một hàng, không còn xuống dòng trên điện thoại.
+- **App điện thoại:** các bảng chọn (Mở trên TV, Hẹn giờ, Cảnh, Nghe tiếng TV, Bật ADB) có icon trước mỗi mục để nhìn là biết, không cần đọc hết chữ.
 - **TV Setup không còn bị sập** khi có máy trong mạng gửi một địa chỉ lạ (ví dụ `?a=%zz`) hay mở cả trăm kết nối rồi bỏ đó; thêm giới hạn số kết nối cùng lúc.
 - **Ghép đôi an toàn hơn:** bấm “Hiện mã trên TV” lần nữa vẫn giữ mã cũ; nhập sai 15 lần thì khóa 15 phút, không còn đoán mã mãi được.
 - **Không xóa nhầm cả bộ nhớ:** tab Tệp từ chối xóa hay đổi tên `/storage/emulated/0` và `/storage/self/primary` (trước chỉ chặn `/sdcard`).
@@ -25,6 +31,12 @@ Web 2.18.1 · app điện thoại 2.16.1 · app TV 2.15.1
 - **Phone app:** when the screen is recreated (light/dark switch, font size, language) the old sound and connection end with it; an audio decoding error stops the sound instead of crashing the app; scenes run from the widget with long waits are no longer cut at 15 s; saying “sleep in 99999999999 minutes” no longer crashes the app.
 - **A lighter tab bar:** no more “needs ADB” line under each tab; while ADB is off the tabs that need it are only dimmed; they still open and show how to turn it on.
 - App backups and file downloads: stopping midway no longer leaves a process running on the TV; the TV list (`tvs.json`) is written whole or not at all.
+- **Wi-Fi in History (Health tab):** TV Setup records the Wi-Fi signal every 5 minutes and every time the TV loses and regains the network. History draws the signal per day, lists the network losses while the TV was in use (not while it slept), and suggests what to do about a weak signal. “Now” gains a Wi-Fi advice line too.
+- **No more crashes on the TV while reading app names and logos:** the computer, the phone and TV Setup used one shared temporary file on the TV and overwrote each other, so the TV logged a burst of crashes. Each build now has its own file, renamed into place once complete; after a failure the next try waits 5 minutes instead of retrying for every app.
+- **App logos show faster in the phone app:** names and logos are kept on the phone per TV, so Manage → Apps shows them at once; the phone asks the TV again in the background only to catch apps installed or updated since.
+- **Turn off when idle:** 12 hours, 24 hours and “Custom...” (minutes, or hours such as “6 h”).
+- **The Now / History / App errors switch** fits on one line and no longer wraps on phones.
+- **Phone app:** the choice lists (Open on the TV, Sleep timer, Scenes, Hear the TV, Turn on ADB) show an icon before each item, so they can be scanned without reading every line.
 
 ## 2.18.0 - 2026-10-15
 

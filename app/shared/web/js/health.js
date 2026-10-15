@@ -11,6 +11,13 @@ function fmtUptime(s) {
   const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
   return (d ? d + ' ngày ' : '') + (d || h ? h + ' giờ ' : '') + m + ' phút';
 }
+// One line on what to do about the Wi-Fi, the usual cause of stutter and a slow remote.
+function wifiTip(w) {
+  if (w.rssi < -75) return 'Sóng yếu: video dễ giật. Đặt router gần TV hơn, bỏ vật cản kim loại, hoặc cắm dây mạng.';
+  if (w.rssi < -67) return 'Sóng tạm được. Video 4K có thể giật; dây mạng hoặc router gần hơn sẽ ổn định hơn.';
+  if (w.freq && w.freq < 4000) return 'Sóng tốt nhưng đang ở 2.4 GHz (chậm, dễ nhiễu). Nếu router có mạng 5 GHz, cho TV dùng mạng đó.';
+  return 'Sóng tốt, không cần làm gì.';
+}
 function signal(rssi) { return rssi >= -55 ? 'rất tốt' : rssi >= -67 ? 'tốt' : rssi >= -75 ? 'trung bình' : 'yếu'; }
 $('#freeram').addEventListener('click', async () => {
   const b = $('#freeram'); b.disabled = true; const r = await api('/api/free', {}); b.disabled = false;
@@ -127,6 +134,7 @@ async function loadHealth() {
     w && w.speed ? ['Tốc độ kết nối', w.speed + ' Mbps'] : null,
     w && w.freq ? ['Băng tần', (w.freq > 4000 ? '5 GHz' : '2.4 GHz') + ' · ' + w.freq + ' MHz'] : null,
     ...h.ips.map((i) => [i.if.startsWith('tun') ? 'IP Tailscale' : i.if.startsWith('eth') ? 'IP dây mạng' : 'IP trong nhà', i.ip]),
+    w && w.rssi != null ? ['Lời khuyên', wifiTip(w)] : null,
   ]));
   $('#hhw').replaceChildren(...kv([
     ['Máy', (h.maker + ' ' + h.model).trim()], ['Android', h.android + (h.sdk ? ' (SDK ' + h.sdk + ')' : '')], ['Bản vá bảo mật', h.patch],

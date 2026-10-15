@@ -40,9 +40,13 @@ function drawTvset(t) {
   if (t.sdk && t.sdk < 28) dnsRow.querySelectorAll('button').forEach((b) => { b.disabled = true; });
   rows.push(dnsRow);
 
-  const sleeps = [[-1, 'Không tự tắt'], [30 * MIN, '30 phút'], [60 * MIN, '1 giờ'], [240 * MIN, '4 giờ']];
-  if (t.sleep !== null && !sleeps.some(([v]) => v === t.sleep)) sleeps.push([t.sleep, fmtWait(t.sleep)]);
-  rows.push(row('💤 Tự tắt khi không dùng', sleeps.map(([v, label]) => choice(label, t.sleep === v, () => setTv('sleep', v, 'Tự tắt: ' + label)))));
+  const sleeps = [[-1, 'Không tự tắt'], [30 * MIN, '30 phút'], [60 * MIN, '1 giờ'], [240 * MIN, '4 giờ'], [720 * MIN, '12 giờ'], [1440 * MIN, '24 giờ']];
+  const ownSleep = t.sleep !== null && !sleeps.some(([v]) => v === t.sleep);
+  rows.push(row('💤 Tự tắt khi không dùng', [...sleeps.map(([v, label]) => choice(label, t.sleep === v, () => setTv('sleep', v, 'Tự tắt: ' + label))),
+    choice(ownSleep ? fmtWait(t.sleep) : 'Tự nhập...', ownSleep, () => {
+      const v = askWait(ownSleep ? t.sleep : null);
+      if (v) setTv('sleep', v, 'Tự tắt: ' + fmtWait(v));
+    })]));
 
   // the screensaver comes on after this long without a key; "never" is how some TVs (Sony) say off
   const saverOn = t.saver && t.saverAfter !== null && t.saverAfter < 86400000;
@@ -63,6 +67,21 @@ function drawTvset(t) {
     rows.push(row('🏠 Màn hình chính', homes, t.launchers.length < 2 ? 'TV chỉ có một màn hình chính. Cài thêm FLauncher hay Projectivy (tab Tệp → cài APK) để có lựa chọn khác.' : 'Màn hình hiện ra khi bấm nút Home.'));
   }
   $('#tvset').replaceChildren(...rows);
+}
+
+// "90", "90 phút", "2 giờ", "1.5h": minutes unless it says hours. From 1 minute to 24 hours (what the cores accept); null when unreadable.
+function readWait(s) {
+  const m = String(s || '').trim().toLowerCase().replace(',', '.').match(/^(\d+(?:\.\d+)?)\s*(h|g|giờ|gio|hour|hours|m|p|phút|phut|min|mins|minutes)?$/);
+  if (!m) return null;
+  const ms = Math.round(parseFloat(m[1]) * (/^(h|g|gi|hour)/.test(m[2] || '') ? 60 : 1)) * MIN;
+  return ms >= MIN && ms <= 1440 * MIN ? ms : null;
+}
+function askWait(now) {
+  const s = prompt(tr('Tự tắt sau bao lâu không dùng? Ví dụ 90 (phút) hoặc 6 giờ'), now ? String(now % (60 * MIN) === 0 ? now / 60 / MIN + ' giờ' : now / MIN) : '');
+  if (s === null || !s.trim()) return null;
+  const v = readWait(s);
+  if (!v) toast('Không hiểu thời gian này. Nhập số phút, hoặc số giờ kèm chữ “giờ” (tối đa 24 giờ).');
+  return v;
 }
 
 async function setTv(key, value, done) {
