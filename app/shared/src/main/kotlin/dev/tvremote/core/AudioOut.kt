@@ -16,6 +16,7 @@ class AudioOut {
     private var codec: MediaCodec? = null
     private var track: AudioTrack? = null
     private var written = 0L                                          // frames given to the track, to tell how far behind it plays
+    private var room = 0                                              // the track's buffer in frames: it starts playing only once full
 
     /** [config] is scrcpy's first packet, the OpusHead; then one Opus packet at a time. */
     fun feed(config: Boolean, data: ByteArray) {
@@ -39,7 +40,7 @@ class AudioOut {
             val buf = c.getOutputBuffer(out)
             if (t != null && buf != null && info.size > 0) {
                 val behind = written - (t.playbackHeadPosition.toLong() and 0xffffffffL)
-                if (behind < RATE * 15 / 100) {                       // at most 0.15 s queued; more than that would only add delay
+                if (behind < maxOf(RATE * 15 / 100, room)) {          // about 0.15 s queued; less than a full buffer would never start
                     val pcm = ByteArray(info.size)
                     buf.position(info.offset)
                     buf.get(pcm)
@@ -64,7 +65,9 @@ class AudioOut {
         c.start()
         codec = c
         val min = AudioTrack.getMinBufferSize(RATE, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT)
-        val t = AudioTrack(AudioManager.STREAM_MUSIC, RATE, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, maxOf(min * 2, RATE / 5 * 4), AudioTrack.MODE_STREAM)
+        val size = maxOf(min * 2, RATE / 5 * 4)
+        val t = AudioTrack(AudioManager.STREAM_MUSIC, RATE, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, size, AudioTrack.MODE_STREAM)
+        room = size / 4
         t.play()
         track = t
         written = 0
