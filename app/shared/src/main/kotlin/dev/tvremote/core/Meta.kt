@@ -82,27 +82,7 @@ class RemoteLabels(private val link: AdbLink, private val apk: File, private val
         val out = HashMap<String, String>()
         try {
             val a = link.get()
-            // one file per build, written whole and then renamed: see CLEAN
-            val remote = "/data/local/tmp/tvr-meta-${apk.length()}.apk"
-            if (a.shell("[ -f $remote ] && echo y").trim() != "y") {
-                a.shell(CLEAN)
-                val s = a.open("exec:cat > $remote.part")
-                apk.inputStream().use { input ->
-                    val buf = ByteArray(65536)
-                    while (true) {
-                        val n = input.read(buf)
-                        if (n <= 0) break
-                        s.write(if (n == buf.size) buf else buf.copyOf(n))
-                    }
-                }
-                s.close()
-                val size = apk.length().toString()
-                for (i in 0 until 40) {
-                    if (a.shell("wc -c < $remote.part").trim() == size) break
-                    Thread.sleep(150)
-                }
-                a.shell("mv $remote.part $remote")
-            }
+            val remote = helper(a)
             for (line in a.shell("CLASSPATH=$remote app_process / dev.tvremote.core.Meta $DIR 2>/dev/null").split("\n")) {
                 val tab = line.indexOf('\t')
                 if (tab > 0) out[line.substring(0, tab)] = line.substring(tab + 1).trim()
@@ -122,6 +102,39 @@ class RemoteLabels(private val link: AdbLink, private val apk: File, private val
         }
         names ?: out.also { names = it }                              // failed with nothing saved: package names are shown, as before
     }
+
+    /** The phone's APK on the TV, copied there if it is not yet; one file per build, written whole and then renamed: see CLEAN. */
+    private fun helper(a: Adb): String {
+        val remote = "/data/local/tmp/tvr-meta-${apk.length()}.apk"
+        if (a.shell("[ -f $remote ] && echo y").trim() != "y") {
+            a.shell(CLEAN)
+            val s = a.open("exec:cat > $remote.part")
+            apk.inputStream().use { input ->
+                val buf = ByteArray(65536)
+                while (true) {
+                    val n = input.read(buf)
+                    if (n <= 0) break
+                    s.write(if (n == buf.size) buf else buf.copyOf(n))
+                }
+            }
+            s.close()
+            val size = apk.length().toString()
+            for (i in 0 until 40) {
+                if (a.shell("wc -c < $remote.part").trim() == size) break
+                Thread.sleep(150)
+            }
+            a.shell("mv $remote.part $remote")
+        }
+        return remote
+    }
+
+    /** What the TV's hardware can do ([Caps]), asked once per TV: it does not change. */
+    @Volatile private var caps: String? = null
+    override fun caps(): String? = caps ?: try {
+        val a = link.get()
+        val remote = synchronized(running) { helper(a) }
+        a.shell("CLASSPATH=$remote app_process / dev.tvremote.core.Caps 2>/dev/null", 20000).takeIf { it.isNotBlank() }?.also { caps = it }
+    } catch (e: IOException) { null }
 
     override fun label(pkg: String): String? = names()[pkg]
 

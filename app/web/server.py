@@ -330,6 +330,37 @@ def build(S):
         kind = "image/png" if data[:4] == b"\x89PNG" else "image/webp" if data[:4] == b"RIFF" else "image/jpeg"
         return web.Response(body=data, content_type=kind, headers={"Cache-Control": "max-age=86400", "X-Content-Type-Options": "nosniff"})
 
+    @routes.get("/api/app/info")
+    @adb_errors
+    async def app_info(request):
+        """ℹ️ one app's version, dates, memory, start at boot and runtime permissions (read by js/tvread.js appInfoRead)."""
+        return web.json_response({"text": await adb.shell(tvshell.app_info(request.query.get("pkg", "")), timeout=20)})
+
+    @routes.post("/api/app/perm")
+    @adb_errors
+    async def app_perm(request):
+        d = await body(request)
+        pkg = str(d.get("pkg", ""))
+        if PROTECTED.fullmatch(pkg):
+            raise AdbError("protected: the TV needs this app")
+        return web.json_response({"text": await adb.shell(tvshell.perm(pkg, str(d.get("perm", "")), d.get("on") is True), timeout=20)})
+
+    @routes.get("/api/apps/boot")
+    @adb_errors
+    async def apps_boot(_):
+        return web.json_response({"text": await adb.shell(tvshell.BOOT, timeout=20)})
+
+    @routes.get("/api/settings")
+    @adb_errors
+    async def settings_read(_):
+        return web.json_response({"text": await adb.shell(tvshell.SETTINGS_READ, timeout=20)})
+
+    @routes.get("/api/caps")
+    @adb_errors
+    async def caps(_):
+        cur = S.cur
+        return web.json_response({"text": await asyncio.get_running_loop().run_in_executor(None, cur.meta.caps)})
+
     @routes.post("/api/app/{action}")
     @adb_errors
     async def app_action(request):

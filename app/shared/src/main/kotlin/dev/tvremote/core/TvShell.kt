@@ -12,6 +12,7 @@ object TvShell {
     private val HOST = Regex("(?=.{4,253}\$)[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+")
     private val SINCE = Regex("[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}")
     private val NUM = Regex("-?[0-9]{1,10}")
+    private val PERM = Regex("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)+")
 
     const val CLEAN = "a=\$(stat -f -c '%a %S' /data); pm trim-caches 999G >/dev/null 2>&1; sleep 2; echo \$a \$(stat -f -c '%a %S' /data)"
 
@@ -26,6 +27,22 @@ object TvShell {
             "echo dns_host \$(settings get global private_dns_specifier); echo sleep \$(settings get secure sleep_timeout); " +
             "echo saver \$(settings get secure screensaver_enabled); echo saver_after \$(settings get system screen_off_timeout); " +
             "wm density; echo home \$(" + HOME_NOW + "); " + HOME_LIST + " | grep / | sed 's/^ */launcher /'"
+
+    const val BOOT = "cmd package query-receivers --brief -a android.intent.action.BOOT_COMPLETED 2>/dev/null | grep / | sed 's/^ *//'"
+
+    const val SETTINGS_READ = "for n in global secure system; do settings list \$n 2>/dev/null | sed \"s/^/\$n /\"; done"
+
+    fun appInfo(pkg: String): String {
+        pkg(pkg)
+        return "p=$pkg; dumpsys package \$p | sed -n '/^Packages:/,\$p'; printf '\\043~\\043\\n'; pidof \$p; printf '\\043~\\043\\n'; " +
+            "dumpsys meminfo \$p 2>/dev/null | grep -m1 -E '^ *TOTAL'; printf '\\043~\\043\\n'; $BOOT | grep \"^\$p/\""
+    }
+
+    fun perm(pkg: String, name: String, on: Boolean): String {
+        pkg(pkg)
+        if (!name.matches(PERM)) throw IllegalArgumentException("bad permission")
+        return "pm ${if (on) "grant" else "revoke"} $pkg $name 2>&1 && echo ok"
+    }
 
     fun backup(pkg: String): String {
         pkg(pkg)

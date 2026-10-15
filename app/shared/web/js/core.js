@@ -73,8 +73,19 @@ const FRIENDLY = [
   [/not a backup/i, 'Tệp này không phải bản sao lưu của TV Remote.'],
   [/^protected: the TV needs this app/i, 'App này cần cho TV chạy, không tắt hay xóa dữ liệu được.'],
   [/removed by the TV right after install/i, 'TV báo cài xong nhưng tự gỡ app này ngay sau đó. Box của nhà mạng (FPT Play...) chặn một số app; app này không dùng được trên TV này.'],
+  // the check before installing (apk_fits / Manage.apkFits), then what pm says when it was not caught there
+  [/apk needs sdk (\d+), the tv has sdk (\d+)/i, (m) => 'APK này cần Android ' + androidName(m[1]) + ' trở lên; TV đang chạy Android ' + androidName(m[2]) + '. Tìm bản cũ hơn của app (trang APKMirror ghi “Min: Android ...”).'],
+  [/apk is built for (\S+), the tv runs (\S+)/i, (m) => 'APK này dành cho chip ' + m[1].replace(/,/g, ', ') + ', còn TV dùng ' + m[2].replace(/,/g, ', ') + '. Tải bản cho đúng loại chip (thường là armeabi-v7a cho TV).'],
+  [/not a changeable permission|SYSTEM_FIXED|POLICY_FIXED|cannot (grant|revoke) system/i, 'TV không cho đổi quyền này: hệ thống giữ nó.'],
+  [/has not requested permission|Unknown permission/i, 'App này không xin quyền đó.'],
+  [/INSTALL_FAILED_UPDATE_INCOMPATIBLE|signatures do not match/i, 'TV đã có app này nhưng từ nguồn khác (khác chữ ký). Gỡ bản đang có rồi cài lại; dữ liệu của app sẽ mất.'],
+  [/INSTALL_FAILED_VERSION_DOWNGRADE/i, 'TV đang có bản mới hơn của app này. Gỡ bản đang có nếu muốn cài bản cũ.'],
+  [/INSTALL_FAILED_OLDER_SDK/i, 'APK này cần Android mới hơn bản trên TV. Tìm bản cũ hơn của app.'],
+  [/INSTALL_FAILED_NO_MATCHING_ABIS/i, 'APK này dành cho loại chip khác với TV. Tải bản cho đúng loại chip (thường là armeabi-v7a).'],
 ];
-const friendly = (m) => { m = String(m || ''); const f = FRIENDLY.find(([re]) => re.test(m)); return f ? f[1] : m; };
+const ANDROID = { 21: '5.0', 22: '5.1', 23: '6', 24: '7', 25: '7.1', 26: '8', 27: '8.1', 28: '9', 29: '10', 30: '11', 31: '12', 32: '12L', 33: '13', 34: '14', 35: '15', 36: '16' };
+const androidName = (sdk) => ANDROID[sdk] || 'SDK ' + sdk;
+const friendly = (m) => { m = String(m || ''); const f = FRIENDLY.find(([re]) => re.test(m)); return !f ? m : typeof f[1] === 'function' ? f[1](m.match(f[0])) : f[1]; };
 
 // ---------- status ----------
 let curHost = null;

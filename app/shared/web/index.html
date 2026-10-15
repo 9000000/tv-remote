@@ -237,8 +237,9 @@
   <div class="panel" data-panel="health" hidden>
     <div data-adb-banner></div>
     <div class="health" data-adb-gated>
-      <div id="hmode" class="seg" role="tablist"><button type="button" class="on" data-m="now">Hiện tại</button><button type="button" data-m="hist">Lịch sử</button><button type="button" data-m="err">Lỗi app</button></div>
+      <div id="hmode" class="seg" role="tablist"><button type="button" class="on" data-m="now">Hiện tại</button><button type="button" data-m="hist">Lịch sử</button><button type="button" data-m="err">Lỗi app</button><button type="button" data-m="caps">Khả năng</button></div>
       <div id="hhist" hidden></div>
+      <div id="hcaps" hidden></div>
       <div id="herr" hidden></div>
       <div id="hnow">
       <div class="muted" id="hwait">Đang đọc từ TV...</div>
@@ -248,6 +249,12 @@
       <section class="card"><h2>🧩 Phần cứng</h2><div class="kv" id="hhw"></div></section>
       </div>
     </div>
+    <!-- every setting the TV keeps, to look up (changing them stays on the TV card and in the TV's own Settings) -->
+    <details class="card" id="setlist" data-adb-gated>
+      <summary>🗂️ Cài đặt hệ thống <span class="muted">· chỉ xem</span></summary>
+      <form class="line" id="setlistf" style="margin-top:0"><input id="setlistq" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Tìm tên hoặc giá trị, vd adb, dns, timeout"><button type="button" class="small" id="setlistcopy" title="Chép tất cả"><span class="ico">📋</span><span class="lbl"> Chép</span></button></form>
+      <div id="setlistbody" class="setlist"></div>
+    </details>
     <!-- Terminal: for people who know shell commands, so folded away -->
     <details class="card" id="termcard" data-adb-gated>
       <summary>⌨️ Terminal <span class="muted">· cho người rành dòng lệnh</span></summary>
@@ -402,6 +409,9 @@
   <div class="tools"><button class="small" id="logpause"></button><button class="small" id="logcopy"><span class="ico">📋</span><span class="lbl"> Sao chép</span></button><button class="small" id="logclose">✕ Đóng</button></div></div>
   <p class="muted" id="lognote" hidden>App chưa chạy: mở app, log hiện ở đây ngay khi app chạy. <button class="small" id="logopen">▶ Mở app</button></p>
   <div id="logpre" class="logpre"></div>
+</div></dialog>
+<dialog id="infodlg"><div class="card assistbox"><div class="card-head"><h2 id="infotitle">ℹ️</h2><div class="tools"><button class="small" id="infoclose">✕ Đóng</button></div></div>
+  <div id="infobody"></div>
 </div></dialog>
 <dialog id="rebootdlg"><div class="allowbox"><div class="spin" id="rebootspin"></div><h1 id="reboottitle">TV đang khởi động lại</h1><p class="muted" id="rebootstep"></p><button id="rebootclose">Ẩn</button></div></dialog>
 <dialog id="preview"><img alt="Xem trước"></dialog>

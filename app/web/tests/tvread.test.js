@@ -1,7 +1,7 @@
 // node --test app/web/tests/   Reading what the TV printed for the Apps tab and the TV card (js/tvread.js).
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { cleanFreed, logNext, logLevel, readTvset, densityChoices } = require('../../shared/web/js/tvread.js');
+const { cleanFreed, logNext, logLevel, readTvset, densityChoices, capsRead, sizeName, appInfoRead, permName, bootRead, settingsRead } = require('../../shared/web/js/tvread.js');
 
 test('bytes freed by the cache clean', () => {
   assert.equal(cleanFreed('1291592 4096 1291597 4096\n'), 5 * 4096);
@@ -48,4 +48,82 @@ test('each log line is shown once across polls', () => {
 test('the log goes on across New Year', () => {
   const st = { last: '12-31 23:59:59.900', seen: new Set() };
   assert.equal(logNext(st, 'pid 9\n01-01 00:00:00.100  9  9 I Tag: happy\n').lines.length, 1);
+});
+
+test('what the TV can play (Caps.kt), the best decoder of each format', () => {
+  const c = capsRead(['sdk 28 9', 'codec dec sw OMX.google.h264.decoder video/avc 2048x2048 -', 'codec dec hw OMX.MS.AVC.Decoder video/avc 4096x2304 secure',
+    'codec dec hw OMX.MS.HEVC.Decoder video/hevc 4096x2304 10bit,hdr10', 'codec dec hw OMX.MS.HEVC.Decoder.secure video/hevc 4096x2304 10bit,secure',
+    'codec enc hw OMX.MS.AVC.Encoder video/avc 1920x1080 -', 'codec dec sw c2.android.ac3 audio/ac3 - -', 'hdr hdr10 hlg',
+    'mode 3840x2160@60.0', 'mode 3840x2160@60.0', 'mode 1920x1080@50.0', 'audio hdmi pcm ac3 eac3', 'feature android.software.leanback', 'nonsense'].join('\n'));
+  assert.equal(c.sdk, 28); assert.equal(c.release, '9');
+  assert.deepEqual(c.video.map((v) => [v.name, v.hw, v.w]), [['H.264', true, 4096], ['H.265 (HEVC)', true, 4096]]);   // the encoder is not a player
+  assert.deepEqual(c.video[1].flags, ['10bit', 'hdr10', 'secure']);
+  assert.deepEqual(c.audio, [{ mime: 'audio/ac3', name: 'Dolby Digital', hw: false }]);
+  assert.deepEqual(c.hdr, ['hdr10', 'hlg']); assert.deepEqual(c.modes, ['3840x2160@60.0', '1920x1080@50.0']);
+  assert.deepEqual(c.outputs, [{ dev: 'hdmi', enc: ['PCM', 'Dolby Digital', 'Dolby Digital Plus'] }]);
+  assert.deepEqual(c.features, ['android.software.leanback']);
+  assert.equal(sizeName(4096, 2304), '4K'); assert.equal(sizeName(2160, 3840), '4K'); assert.equal(sizeName(1920, 1088), '1080p'); assert.equal(sizeName(0, 0), '');
+  assert.deepEqual(capsRead(''), { sdk: 0, release: '', video: [], audio: [], hdr: [], modes: [], outputs: [], features: [] });
+});
+
+// trimmed from a Sony BRAVIA (Android 9): YouTube is an updated system app, with its factory copy listed after it
+const SONY_YT = `Packages:
+  Package [com.google.android.youtube.tv] (7d6bd5a):
+    userId=10131
+    versionCode=530340320 minSdk=24 targetSdk=34
+    versionName=5.30.340
+    flags=[ SYSTEM HAS_CODE ALLOW_CLEAR_USER_DATA UPDATED_SYSTEM_APP ALLOW_BACKUP ]
+    firstInstallTime=2020-10-12 19:46:22
+    lastUpdateTime=2026-09-18 09:55:12
+    installerPackageName=com.android.vending
+    requested permissions:
+      android.permission.INTERNET
+      android.permission.RECORD_AUDIO
+      android.permission.ACCESS_COARSE_LOCATION
+      android.permission.RECEIVE_BOOT_COMPLETED
+    install permissions:
+      android.permission.INTERNET: granted=true
+      android.permission.RECEIVE_BOOT_COMPLETED: granted=true
+    User 0: ceDataInode=-4294836662 installed=true hidden=false suspended=false stopped=false notLaunched=false enabled=0
+      gids=[3003]
+      runtime permissions:
+        android.permission.RECORD_AUDIO: granted=true
+      enabledComponents:
+        androidx.work.impl.background.systemalarm.RescheduleReceiver
+
+Hidden system packages:
+  Package [com.google.android.youtube.tv] (f5c5fc9):
+    versionCode=21017320 minSdk=21 targetSdk=28
+    versionName=2.10.17
+#~#
+4242 4243
+#~#
+        TOTAL    50064     5284     9684    30465    54744    42798    29292     9498
+#~#
+com.google.android.youtube.tv/androidx.work.impl.background.systemalarm.RescheduleReceiver
+`;
+
+test('one app in detail (tvshell.app_info)', () => {
+  const a = appInfoRead(SONY_YT);
+  assert.equal(a.found, true); assert.equal(a.version, '5.30.340'); assert.equal(a.code, '530340320');   // not the factory copy's
+  assert.equal(a.minSdk, 24); assert.equal(a.targetSdk, 34);
+  assert.equal(a.installed, '2020-10-12 19:46:22'); assert.equal(a.updated, '2026-09-18 09:55:12');
+  assert.equal(a.system, true); assert.equal(a.updatedSystem, true); assert.equal(a.installer, 'com.android.vending');
+  assert.deepEqual(a.pids, ['4242', '4243']); assert.equal(a.ramKb, 50064); assert.equal(a.boot, true);
+  // asked for but never given: Android 9 does not list it under runtime permissions
+  assert.deepEqual(a.perms, [{ name: 'android.permission.ACCESS_COARSE_LOCATION', granted: false, locked: false },
+    { name: 'android.permission.RECORD_AUDIO', granted: true, locked: false }]);
+  const b = appInfoRead(SONY_YT.replace('RECORD_AUDIO: granted=true', 'RECORD_AUDIO: granted=false, flags=[ SYSTEM_FIXED|USER_SENSITIVE_WHEN_GRANTED]')
+    .replace('4242 4243', '').replace(/TOTAL.*\n/, '').replace(/com\.google[^\n]*Receiver\n$/, ''));
+  assert.deepEqual(b.perms[1], { name: 'android.permission.RECORD_AUDIO', granted: false, locked: true });
+  assert.deepEqual([b.pids, b.ramKb, b.boot], [[], 0, false]);
+  assert.equal(appInfoRead('Unable to find package: x').found, false);
+  assert.equal(permName('android.permission.RECORD_AUDIO'), 'Micro'); assert.equal(permName('android.permission.READ_MEDIA_VIDEO'), 'Tệp, ảnh và video');
+  assert.equal(permName('com.x.permission.ODD'), 'ODD');
+});
+
+test('apps that start with the TV, and the settings list', () => {
+  assert.deepEqual([...bootRead('com.a.b/.Boot\ncom.a.b/.Other\n  dev.x/y.Z\nNo receivers\n')], ['com.a.b', 'dev.x']);
+  assert.deepEqual(settingsRead('global adb_enabled=1\nsecure sleep_timeout=-1\nsystem a.b=x=y\nnot a line\nglobal =1\n'),
+    [{ table: 'global', name: 'adb_enabled', value: '1' }, { table: 'secure', name: 'sleep_timeout', value: '-1' }, { table: 'system', name: 'a.b', value: 'x=y' }]);
 });

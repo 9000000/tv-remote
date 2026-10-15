@@ -67,11 +67,14 @@ async function loadQuick() {
 
 // ---------- apps tab ----------
 let appsLoaded = false, appsAll = [], appsInfo = new Map(), appsOffOpen = false;          // pkg -> { off, keep }
+let appsBoot = new Set();                                             // the apps that start by themselves when the TV turns on
 async function loadApps() {
   $('#appslist').replaceChildren(el('div', { className: 'muted', textContent: 'Đang tải...' }));
   const r = await api('/api/apps' + ($('#appssys').checked ? '?system=1' : ''));
   if (!r) { $('#appslist').replaceChildren(); return; }
   appsLoaded = true; appsAll = r.apps.map((a) => a.pkg); appsInfo = new Map(r.apps.map((a) => [a.pkg, { off: !!a.off, keep: !!a.keep }])); seedMeta(r.apps); renderApps();
+  const b = await api('/api/apps/boot', null, true);                 // after the list: a tag is worth no wait
+  if (b) { appsBoot = bootRead(b.text); renderApps(); }
 }
 function renderApps() {
   const q = $('#appsq').value.trim().toLowerCase();
@@ -89,6 +92,7 @@ function renderApps() {
     const info = appsInfo.get(pkg) || {};
     // one button for what is wanted most, everything else behind ⋯
     const more = el('button', { className: 'small iconbtn', title: 'Thêm thao tác', ariaLabel: 'Thêm thao tác', textContent: '⋯', onclick: (e) => popover(e.currentTarget, [
+      ['ℹ️', 'Chi tiết & quyền', () => appDetails(pkg)],
       info.off ? null : ['⏹', 'Dừng', () => run('stop', 'Dừng')],
       info.off ? null : ['📜', 'Xem log', () => appLog(pkg)],
       ['💾', 'Sao lưu (tải về)', () => appBackup(pkg)],
@@ -96,7 +100,8 @@ function renderApps() {
       info.keep || info.off ? null : ['⏸', 'Tắt app', () => run('disable', 'Tắt app')],
       ['🗑', 'Gỡ', () => run('uninstall', 'Gỡ'), 'danger'],
     ]) });
-    const row = el('div', { className: 'item' + (info.off ? ' off' : '') }, icon, el('div', { className: 'name' }, title, el('small', { textContent: (info.off ? '⏸ đã tắt · ' : '') + pkg })),
+    const row = el('div', { className: 'item' + (info.off ? ' off' : '') }, icon, el('div', { className: 'name' }, title, el('small', { textContent: [info.off ? '⏸ đã tắt' : '', pkg,
+      info.keep ? 'cần giữ' : '', !info.off && appsBoot.has(pkg) ? 'tự chạy khi bật TV' : ''].filter(Boolean).map(tr).join(' · ') })),
       el('div', { className: 'acts' }, info.off ? act('enable', '↩', 'Bật lại', 'primary') : act('launch', '▶', 'Mở', 'primary'), more));
     row.loadMeta = () => onMeta(pkg, (m) => { icon.fill(info.off ? { label: m.label } : m); if (m.label) title.textContent = m.label; });   // a disabled app has no picture to give
     if (META.has(pkg)) row.loadMeta(); else lazyMeta.observe(row);
@@ -113,6 +118,48 @@ $('#appsq').addEventListener('input', renderApps);
 $('#appsf').addEventListener('submit', (e) => e.preventDefault());
 $('#appssys').addEventListener('change', loadApps);
 $('#appsreload').addEventListener('click', loadApps);
+
+// ℹ️ one app in detail: version, dates, memory, start at boot, and the permissions a person can give or take back
+async function appDetails(pkg) {
+  const body = $('#infobody');
+  $('#infotitle').textContent = 'ℹ️ ' + appName(pkg); body.replaceChildren(el('p', { className: 'muted', textContent: 'Đang đọc từ TV...' }));
+  if (!$('#infodlg').open) $('#infodlg').showModal();
+  const r = await api('/api/app/info?pkg=' + encodeURIComponent(pkg));
+  if (!r || !$('#infodlg').open) return;
+  const a = appInfoRead(r.text), keep = (appsInfo.get(pkg) || {}).keep;
+  if (!a.found) { body.replaceChildren(el('p', { className: 'muted', textContent: 'TV không còn app này.' })); return; }
+  const kv = el('dl', { className: 'kv' });
+  const add = (k, v) => { if (v) kv.append(el('dt', { textContent: k }), el('dd', { className: 'v', textContent: v })); };
+  add('Phiên bản', a.version + (a.code ? ' (' + a.code + ')' : ''));
+  add('Cần Android', a.minSdk ? androidName(a.minSdk) + ' trở lên' : '');
+  add('Viết cho Android', a.targetSdk ? androidName(a.targetSdk) : '');
+  add('Cài lúc', a.installed.slice(0, 16));
+  add('Cập nhật lúc', a.updated !== a.installed ? a.updated.slice(0, 16) : '');
+  add('Loại', a.system ? (a.updatedSystem ? 'App hệ thống, đã cập nhật' : 'App hệ thống') : 'Tự cài');
+  add('Cài từ', a.installer === 'com.android.vending' ? 'Google Play' : a.installer ? appName(a.installer) : '');
+  add('Đang chạy', a.pids.length ? 'Có' + (a.ramKb ? ', dùng ' + fmtSize(a.ramKb * 1024) + ' RAM' : '') : 'Không');
+  add('Tự chạy khi bật TV', a.boot ? 'Có' : 'Không');
+  const parts = [kv];
+  if (a.perms.length) {
+    parts.push(el('h3', { textContent: 'Quyền' }));
+    if (keep) parts.push(el('p', { className: 'muted', textContent: 'TV cần app này để chạy: quyền của nó chỉ xem, không đổi ở đây.' }));
+    for (const p of a.perms) {
+      const seg = el('div', { className: 'seg mini' }, ...[[true, 'Cho phép'], [false, 'Không']].map(([on, label]) => el('button', {
+        className: p.granted === on ? 'on' : '', textContent: label, disabled: keep || p.locked,
+        onclick: async () => {
+          if (p.granted === on) return;
+          const x = await api('/api/app/perm', { pkg, perm: p.name, on });
+          if (!x) return;
+          if (/^ok$/m.test(x.text)) toast((on ? 'Đã cho phép: ' : 'Đã tắt quyền: ') + tr(permName(p.name))); else toast('TV không đổi quyền này: ' + friendly(x.text.trim()));
+          appDetails(pkg);
+        } })));
+      parts.push(el('div', { className: 'permrow' }, el('span', { textContent: permName(p.name), title: p.name }),
+        p.locked ? el('small', { className: 'muted', textContent: 'hệ thống giữ' }) : null, seg));
+    }
+  } else parts.push(el('p', { className: 'muted', textContent: 'App này không xin quyền nào cần người dùng cho phép (micro, vị trí, tệp...).' }));
+  body.replaceChildren(...parts);
+}
+$('#infoclose').addEventListener('click', () => $('#infodlg').close());
 
 // 💾 the app as a .tar: its APKs and its folders in shared storage. What it keeps in its private folder needs root to read.
 function appBackup(pkg) {

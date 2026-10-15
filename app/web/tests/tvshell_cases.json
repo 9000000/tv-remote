@@ -2,7 +2,9 @@
  "consts": {
   "CLEAN": "a=$(stat -f -c '%a %S' /data); pm trim-caches 999G >/dev/null 2>&1; sleep 2; echo $a $(stat -f -c '%a %S' /data)",
   "REBOOT_PREP": "case \"$(settings get secure always_on_vpn_app)\" in com.tailscale.ipn) ;; *) pm path com.tailscale.ipn >/dev/null 2>&1 && ip addr | grep -qE 'inet 100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\.' && { settings put secure always_on_vpn_app com.tailscale.ipn; settings put secure always_on_vpn_lockdown 0; };; esac; echo ok",
-  "TVSET_READ": "echo sdk $(getprop ro.build.version.sdk); echo dns_mode $(settings get global private_dns_mode); echo dns_host $(settings get global private_dns_specifier); echo sleep $(settings get secure sleep_timeout); echo saver $(settings get secure screensaver_enabled); echo saver_after $(settings get system screen_off_timeout); wm density; echo home $(cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME | tail -n 1); cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME | grep / | sed 's/^ */launcher /'"
+  "TVSET_READ": "echo sdk $(getprop ro.build.version.sdk); echo dns_mode $(settings get global private_dns_mode); echo dns_host $(settings get global private_dns_specifier); echo sleep $(settings get secure sleep_timeout); echo saver $(settings get secure screensaver_enabled); echo saver_after $(settings get system screen_off_timeout); wm density; echo home $(cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME | tail -n 1); cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME | grep / | sed 's/^ */launcher /'",
+  "BOOT": "cmd package query-receivers --brief -a android.intent.action.BOOT_COMPLETED 2>/dev/null | grep / | sed 's/^ *//'",
+  "SETTINGS_READ": "for n in global secure system; do settings list $n 2>/dev/null | sed \"s/^/$n /\"; done"
  },
  "calls": [
   {
@@ -312,6 +314,65 @@
     "tvset",
     "volume",
     "1"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "app_info",
+    "com.google.android.youtube.tv"
+   ],
+   "out": "p=com.google.android.youtube.tv; dumpsys package $p | sed -n '/^Packages:/,$p'; printf '\\043~\\043\\n'; pidof $p; printf '\\043~\\043\\n'; dumpsys meminfo $p 2>/dev/null | grep -m1 -E '^ *TOTAL'; printf '\\043~\\043\\n'; cmd package query-receivers --brief -a android.intent.action.BOOT_COMPLETED 2>/dev/null | grep / | sed 's/^ *//' | grep \"^$p/\""
+  },
+  {
+   "call": [
+    "app_info",
+    "a.b;reboot"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "perm",
+    "com.a.b",
+    "android.permission.RECORD_AUDIO",
+    true
+   ],
+   "out": "pm grant com.a.b android.permission.RECORD_AUDIO 2>&1 && echo ok"
+  },
+  {
+   "call": [
+    "perm",
+    "com.a.b",
+    "android.permission.RECORD_AUDIO",
+    false
+   ],
+   "out": "pm revoke com.a.b android.permission.RECORD_AUDIO 2>&1 && echo ok"
+  },
+  {
+   "call": [
+    "perm",
+    "com.a.b",
+    "android.permission.X;reboot",
+    true
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "perm",
+    "com.a.b",
+    "",
+    true
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "perm",
+    "a;b",
+    "android.permission.X",
+    true
    ],
    "out": null
   }

@@ -50,6 +50,18 @@ class ApkPackageTest {
         assertEquals("dev.tvremote.setup", Manage.apkPackage(m))
     }
 
+    @Test fun infoAndFit() {                                          // test_adbtools.py checks the same
+        val i = Manage.apkInfo(javaClass.classLoader!!.getResourceAsStream("setup-manifest.bin").readBytes())
+        assertEquals("dev.tvremote.setup", i["package"])
+        assertEquals("21", i["minSdkVersion"])
+        assertEquals(true, i["versionCode"]?.toIntOrNull() != null)
+        assertEquals(listOf("arm64-v8a", "x86"), Manage.apkAbis(listOf("lib/arm64-v8a/a.so", "lib/x86/a.so", "lib/x86/b.so", "lib/readme.txt", "assets/lib/x/c.so")))
+        assertEquals(null, Manage.apkFits(i, emptyList(), 28, listOf("armeabi-v7a")))
+        assertEquals("apk needs sdk 29, the tv has sdk 28", Manage.apkFits(mapOf("minSdkVersion" to "29"), emptyList(), 28, emptyList()))
+        assertEquals("apk is built for arm64-v8a, the tv runs armeabi-v7a,armeabi", Manage.apkFits(emptyMap(), listOf("arm64-v8a"), 28, listOf("armeabi-v7a", "armeabi")))
+        assertEquals(null, Manage.apkFits(emptyMap(), listOf("arm64-v8a", "armeabi-v7a"), 28, listOf("armeabi-v7a")))
+    }
+
     @Test fun garbageIsNull() {
         assertEquals(null, Manage.apkPackage(ByteArray(0)))
         assertEquals(null, Manage.apkPackage("not a manifest at all".toByteArray()))

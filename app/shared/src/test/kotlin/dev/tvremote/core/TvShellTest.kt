@@ -14,6 +14,8 @@ class TvShellTest {
         assertEquals(c.getString("CLEAN"), TvShell.CLEAN)
         assertEquals(c.getString("REBOOT_PREP"), TvShell.REBOOT_PREP)
         assertEquals(c.getString("TVSET_READ"), TvShell.TVSET_READ)
+        assertEquals(c.getString("BOOT"), TvShell.BOOT)
+        assertEquals(c.getString("SETTINGS_READ"), TvShell.SETTINGS_READ)
     }
 
     @Test fun calls() {
@@ -26,6 +28,8 @@ class TvShellTest {
                     "backup" -> TvShell.backup(a.getString(1))
                     "restore" -> TvShell.restore(a.getString(1))
                     "log" -> TvShell.log(a.getString(1), a.getString(2))
+                    "app_info" -> TvShell.appInfo(a.getString(1))
+                    "perm" -> TvShell.perm(a.getString(1), a.getString(2), a.getBoolean(3))
                     else -> TvShell.tvset(a.getString(1), a.get(2).toString())
                 }
             } catch (e: IllegalArgumentException) { null }

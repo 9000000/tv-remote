@@ -17,6 +17,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
 import dev.tvremote.core.AdbLink
+import dev.tvremote.core.Caps
 import dev.tvremote.core.HttpServer
 import dev.tvremote.core.Manage
 import dev.tvremote.core.Scenes
@@ -135,6 +136,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             override fun label(pkg: String): String? =
                 try { packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString() } catch (e: Exception) { null }
             override fun icons(): Boolean = true
+            private val caps by lazy { Caps.report(this@RemoteService) }   // the hardware does not change while TV Setup runs
+            override fun caps(): String = caps
         }, getExternalFilesDir(null))
         manage?.allowed = { fp ->                                      // whoever is at the TV sees that a device was let in
             ui.post { android.widget.Toast.makeText(this, (if (java.util.Locale.getDefault().language == "vi") "Đã cho phép gỡ lỗi USB cho một thiết bị đã ghép\n" else "USB debugging allowed for a paired device\n") + fp, android.widget.Toast.LENGTH_LONG).show() }

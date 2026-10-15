@@ -31,9 +31,88 @@ async function loadHist(days) {
 }
 document.querySelectorAll('#hmode button').forEach((b) => b.addEventListener('click', () => {
   hmode = b.dataset.m; document.querySelectorAll('#hmode button').forEach((x) => x.classList.toggle('on', x === b));
-  $('#hhist').hidden = hmode !== 'hist'; $('#hnow').hidden = hmode !== 'now'; $('#herr').hidden = hmode !== 'err';
-  if (hmode === 'hist') loadHist(); else if (hmode === 'err') loadErrors(); else loadHealth();
+  $('#hhist').hidden = hmode !== 'hist'; $('#hnow').hidden = hmode !== 'now'; $('#herr').hidden = hmode !== 'err'; $('#hcaps').hidden = hmode !== 'caps';
+  if (hmode === 'hist') loadHist(); else if (hmode === 'err') loadErrors(); else if (hmode === 'caps') loadCaps(); else loadHealth();
 }));
+
+// What the TV can play and do (Caps.kt asks the TV's own Android): first in plain words, then the details, and a copy as text
+// for a forum or a shop ("will this TV play Dolby Vision?").
+let capsFor = '', capsText = '';
+async function loadCaps() {
+  const box = $('#hcaps');
+  if (capsFor === (STATE.host || '') && capsText) return;
+  box.replaceChildren(el('section', { className: 'card' }, el('div', { className: 'muted', textContent: tr('Đang hỏi TV, lần đầu mất vài giây...') })));
+  const r = await api('/api/caps'); if (hmode !== 'caps') return;
+  if (!r) { box.replaceChildren(); return; }
+  if (!r.text.trim()) {
+    box.replaceChildren(el('section', { className: 'card' }, el('p', { className: 'muted', style: 'margin:0', textContent: CORE === 'mac'
+      ? 'Bản TV Remote trên máy tính này chưa đọc được khả năng TV. Cập nhật lên bản mới nhất rồi mở lại.' : 'TV không trả lời câu hỏi này. Thử lại sau.' })));
+    return;
+  }
+  capsFor = (STATE.host || ''); capsText = r.text; drawCaps(capsRead(r.text));
+}
+function drawCaps(c) {
+  const vid = (mime) => c.video.find((v) => v.mime === mime), feat = (f) => c.features.includes(f);
+  const biggest = c.modes.map((m) => m.split('@')[0].split('x').map(Number)).reduce((a, b) => (b[0] * b[1] > a[0] * a[1] ? b : a), [0, 0]);
+  const fourK = (v) => v && v.hw && Math.max(v.w, v.h) >= 3840;
+  const hdrs = { dv: 'Dolby Vision', hdr10: 'HDR10', 'hdr10+': 'HDR10+', hlg: 'HLG' };
+  const pass = [...new Set(c.outputs.filter((o) => /hdmi|arc|earc|optical/.test(o.dev)).flatMap((o) => o.enc).filter((e) => e !== 'PCM' && e !== 'bitstream'))];
+  const yes = (ok, text) => el('li', { className: ok ? 'yes' : 'no', textContent: (ok ? '✓ ' : '✗ ') + tr(text) });
+  const plain = el('ul', { className: 'capsplain' },
+    biggest[0] ? yes(true, 'Màn hình xuất tới ' + (sizeName(biggest[0], biggest[1]) || biggest.join('x'))) : null,
+    yes(fourK(vid('video/x-vnd.on2.vp9')) || fourK(vid('video/av01')), 'YouTube 4K (cần VP9 hoặc AV1 bằng phần cứng)'),
+    yes(fourK(vid('video/hevc')), 'Phim 4K H.265 (HEVC): Netflix, phim tải về'),
+    yes(!!(vid('video/av01') || {}).hw, 'AV1 bằng phần cứng (YouTube đỡ tốn mạng)'),
+    yes(c.hdr.length > 0, c.hdr.length ? 'HDR: ' + c.hdr.map((h) => hdrs[h] || h).join(', ') : 'HDR'),
+    yes(c.video.some((v) => v.hw && v.secure), 'Giải mã bảo mật (Netflix, Disney+ chất lượng cao)'),
+    yes(pass.length > 0, pass.length ? 'Đưa âm thanh ' + pass.join(', ') + ' ra loa/amply qua HDMI' : 'Đưa âm thanh Dolby/DTS ra loa/amply qua HDMI'),
+    c.sdk ? yes(c.sdk >= 30, 'Nghe tiếng TV trên điện thoại (🎧, cần Android 11)') : null,
+    c.sdk ? yes(c.sdk >= 28, 'Lọc DNS riêng (cần Android 9)') : null,
+    yes(feat('android.software.picture_in_picture'), 'Hình trong hình'),
+    yes(feat('android.hardware.hdmi.cec'), 'HDMI-CEC (một remote cho cả TV và đầu thu, loa)'),
+    yes(feat('android.hardware.usb.host'), 'Cắm USB (ổ cứng, chuột, bàn phím)'),
+    yes(feat('android.hardware.bluetooth'), 'Bluetooth (tai nghe, tay cầm)'));
+  const vrow = (v) => [v.name, [tr(v.hw ? 'phần cứng' : 'phần mềm'), sizeName(v.w, v.h), ...v.flags.filter((f) => f !== 'soft' && f !== 'tunnel').map((f) => ({ '10bit': '10-bit', hdr10: 'HDR10', 'hdr10+': 'HDR10+', secure: tr('bảo mật') }[f] || f))].filter(Boolean).join(' · ')];
+  const card = (title, ...kids) => el('section', { className: 'card' }, el('h2', { textContent: title }), ...kids);
+  $('#hcaps').replaceChildren(
+    el('section', { className: 'card' }, el('div', { className: 'card-head' }, el('h2', { textContent: '🎬 TV này làm được' }),
+      el('button', { className: 'small', onclick: () => copyText(capsSummary(c)) }, el('span', { className: 'ico', textContent: '📋' }), el('span', { className: 'lbl', textContent: ' Chép' }))), plain),
+    card('🎞️ Giải mã video', el('div', { className: 'kv' }, ...kv(c.video.map(vrow)))),
+    card('🔊 Âm thanh', el('div', { className: 'kv' }, ...kv([
+      ['Giải mã', c.audio.map((a) => a.name).join(', ')],
+      ...c.outputs.filter((o) => o.enc.length).map((o) => [{ hdmi: 'HDMI', arc: 'HDMI ARC', earc: 'HDMI eARC', optical: 'Quang (optical)', speaker: 'Loa TV', bluetooth: 'Bluetooth' }[o.dev] || o.dev, o.enc.join(', ') || '—'])]))),
+    c.modes.length ? card('🖥️ Chế độ màn hình', el('p', { className: 'muted', style: 'margin:0', textContent: c.modes.map((m) => m.replace(/\.0$/, '') + ' Hz').join(' · ') })) : null);
+}
+// the copy: the same plain lines, then the details, so it reads well pasted anywhere
+function capsSummary(c) {
+  const lines = [...$('#hcaps .capsplain').children].map((li) => li.textContent);
+  return [tr('Khả năng TV') + (c.release ? ' · Android ' + c.release : ''), ...lines, '',
+    ...c.video.map((v) => v.name + ': ' + (v.hw ? 'hw' : 'sw') + ' ' + v.w + 'x' + v.h + (v.flags.length ? ' ' + v.flags.join(',') : '')),
+    'Audio: ' + c.audio.map((a) => a.name).join(', '), ...c.outputs.map((o) => 'Out ' + o.dev + ': ' + o.enc.join(', ')),
+    'HDR: ' + (c.hdr.join(', ') || '-'), 'Modes: ' + c.modes.join(', ')].join('\n');
+}
+
+// 🗂️ the settings list, read when opened, searched as typed
+let setRows = [];
+$('#setlist').addEventListener('toggle', async (e) => {
+  if (!e.target.open) return;
+  $('#setlistbody').replaceChildren(el('div', { className: 'muted', textContent: tr('Đang đọc từ TV...') }));
+  const r = await api('/api/settings'); if (!r) { $('#setlistbody').replaceChildren(); return; }
+  setRows = settingsRead(r.text); drawSettings();
+});
+function drawSettings() {
+  const q = $('#setlistq').value.trim().toLowerCase();
+  const rows = setRows.filter((s) => !q || (s.name + '=' + s.value).toLowerCase().includes(q));
+  $('#setlistbody').replaceChildren(el('p', { className: 'muted', style: 'margin:0 0 6px', textContent: rows.length + ' / ' + setRows.length + ' ' + tr('mục') }),
+    ...rows.slice(0, 400).map((s) => el('div', { className: 'setrow1', onclick: (e) => e.currentTarget.classList.toggle('full') },   // a long value opens in full on a tap
+      el('span', { className: 'muted', textContent: s.table }), el('b', { className: 'mono', textContent: s.name }), el('div', { className: 'mono', textContent: s.value === 'null' ? '—' : s.value }))));
+}
+$('#setlistq').addEventListener('input', drawSettings);
+$('#setlistf').addEventListener('submit', (e) => e.preventDefault());
+$('#setlistcopy').addEventListener('click', () => {
+  const q = $('#setlistq').value.trim().toLowerCase();
+  copyText(setRows.filter((s) => !q || (s.name + '=' + s.value).toLowerCase().includes(q)).map((s) => s.table + ' ' + s.name + '=' + s.value).join('\n'));
+});
 
 // Errors: Android notes every app that stops or stops answering in its "dropbox" (kept about 3 days); the core sends those notes
 // cut to the lines that matter (CRASHES in server.py / Manage.kt), and this groups them per app, newest first.

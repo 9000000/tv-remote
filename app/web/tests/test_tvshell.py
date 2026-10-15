@@ -22,6 +22,9 @@ CALLS = [
     ["tvset", "density", "reset"], ["tvset", "density", "288"], ["tvset", "density", "2000"], ["tvset", "density", "28.8"],
     ["tvset", "home", "com.spocky.projengmenu/.ui.home.MainActivity"], ["tvset", "home", "a.b/.C$D"], ["tvset", "home", "a.b/c';reboot;'"],
     ["tvset", "home", "nohome"], ["tvset", "volume", "1"],
+    ["app_info", "com.google.android.youtube.tv"], ["app_info", "a.b;reboot"],
+    ["perm", "com.a.b", "android.permission.RECORD_AUDIO", True], ["perm", "com.a.b", "android.permission.RECORD_AUDIO", False],
+    ["perm", "com.a.b", "android.permission.X;reboot", True], ["perm", "com.a.b", "", True], ["perm", "a;b", "android.permission.X", True],
 ]
 
 
@@ -34,7 +37,7 @@ def run(call):
 
 
 def table():
-    return {"consts": {k: getattr(tvshell, k) for k in ("CLEAN", "REBOOT_PREP", "TVSET_READ")},
+    return {"consts": {k: getattr(tvshell, k) for k in ("CLEAN", "REBOOT_PREP", "TVSET_READ", "BOOT", "SETTINGS_READ")},
             "calls": [{"call": c, "out": run(c)} for c in CALLS]}
 
 

@@ -90,11 +90,17 @@ def safe_path(p):
     return p
 
 
-def apk_package(manifest):
-    """The package name in an APK's binary AndroidManifest.xml: the "package" attribute of the first element. None if unreadable."""
+# android:minSdkVersion, versionCode, versionName: what an attribute is when a shrunk manifest drops its name string
+_ATTR_IDS = {0x0101020c: "minSdkVersion", 0x0101021b: "versionCode", 0x0101021c: "versionName"}
+
+
+def apk_info(manifest):
+    """From an APK's binary AndroidManifest.xml: {"package", "versionName", "versionCode", "minSdkVersion"} (what was found).
+    Reads the <manifest> element and the <uses-sdk> after it. {} if unreadable."""
+    out = {}
     try:
         u16, u32 = (lambda o: struct.unpack_from("<H", manifest, o)[0]), (lambda o: struct.unpack_from("<I", manifest, o)[0])
-        strings, o = [], u16(2)                                     # chunks start after the file header
+        strings, ids, o = [], [], u16(2)                            # chunks start after the file header
         while o + 8 <= len(manifest):
             kind, size = u16(o), u32(o + 4)
             if kind == 0x0001:                                      # string pool
@@ -112,16 +118,45 @@ def apk_package(manifest):
                         if n & 0x8000:
                             n, at = ((n & 0x7FFF) << 16) | u16(at + 2), at + 2
                         strings.append(manifest[at + 2:at + 2 + 2 * n].decode("utf-16-le", "replace"))
-            elif kind == 0x0102:                                    # first start tag: <manifest>
+            elif kind == 0x0180:                                    # resource ids of the attribute names
+                ids = [u32(o + 8 + 4 * i) for i in range((size - 8) // 4)]
+            elif kind == 0x0102:                                    # a start tag: <manifest>, then <uses-sdk> if any
+                tag = strings[u32(o + 20)]
                 attrs, step = o + 16 + u16(o + 24), u16(o + 26)
                 for i in range(u16(o + 28)):
                     a = attrs + i * step
-                    if strings[u32(a + 4)] == "package":
-                        return strings[u32(a + 8)]
-                return None
+                    n = u32(a + 4)
+                    name = _ATTR_IDS.get(ids[n]) if n < len(ids) and ids[n] in _ATTR_IDS else strings[n]
+                    raw, kind_, data = u32(a + 8), manifest[a + 15], u32(a + 16)
+                    value = strings[raw] if raw != 0xFFFFFFFF else str(data) if kind_ in (0x10, 0x11) else None
+                    if tag == "manifest" and name in ("package", "versionName", "versionCode") or tag == "uses-sdk" and name == "minSdkVersion":
+                        if value is not None:
+                            out[name] = value
+                if tag not in ("manifest", "uses-sdk"):
+                    break                                           # <uses-sdk> comes first when it is there at all
             o += size or len(manifest)
     except (IndexError, struct.error):
         pass
+    return out
+
+
+def apk_package(manifest):
+    """The package name in an APK's binary AndroidManifest.xml. None if unreadable."""
+    return apk_info(manifest).get("package")
+
+
+def apk_abis(names):
+    """The CPU types an APK has native code for, from its file names (lib/<abi>/x.so); empty when it runs anywhere."""
+    return sorted({n.split("/")[1] for n in names if n.startswith("lib/") and n.endswith(".so") and n.count("/") >= 2})
+
+
+def apk_fits(info, abis, sdk, tv_abis):
+    """Why this APK cannot go on a TV of this Android level and CPU, in the words the page translates; None when it can."""
+    need = int(info.get("minSdkVersion") or 0) if str(info.get("minSdkVersion") or "").isdigit() else 0
+    if sdk and need > sdk:
+        return f"apk needs sdk {need}, the tv has sdk {sdk}"
+    if abis and tv_abis and not set(abis) & set(tv_abis):
+        return f"apk is built for {','.join(abis)}, the tv runs {','.join(tv_abis)}"
     return None
 
 
@@ -465,10 +500,13 @@ class Adb:
                 raise AdbError("cannot read file")
             j["msg"], j["pct"] = "installing on TV", 50
             _, manifest, _ = await self.run("exec-out", f"unzip -p {q} AndroidManifest.xml 2>/dev/null")
+            names = (await self.shell(f"unzip -l {q} 2>/dev/null | grep -o 'lib/[^ ]*\\.so' || true")).split()
+            info = apk_info(manifest)
+            await self.check_apk(info, apk_abis(names))
             out = await self.shell(f"cat {q} | pm install -r -S {size} 2>&1", timeout=1800)
             if "Success" not in out:
                 raise AdbError(out.strip()[-300:] or "install failed")
-            await self.kept(apk_package(manifest), j)
+            await self.kept(info.get("package"), j)
             return "installed"
         return self.job(go, f"install {path.rsplit('/', 1)[-1]}")
 
@@ -534,9 +572,11 @@ class Adb:
         j["msg"] = "installing on TV"; j["pct"] = max(j["pct"], 60)
         try:
             with zipfile.ZipFile(local) as z:
-                pkg = apk_package(z.read("AndroidManifest.xml"))
+                info, abis = apk_info(z.read("AndroidManifest.xml")), apk_abis(z.namelist())
         except (zipfile.BadZipFile, KeyError):
-            pkg = None
+            info, abis = {}, []
+        pkg = info.get("package")
+        await self.check_apk(info, abis)
         rc, out, err = await self.run("install", "-r", str(local), timeout=1800)
         text = (out.decode(errors="replace") + err).strip()
         if "Success" not in text:
@@ -555,6 +595,13 @@ class Adb:
         pkg = out.strip().splitlines()[-1][7:].strip()                # the last line names it: "package <name>"
         await self.kept(pkg if PKG_RE.match(pkg) else None, j)
         return "restored"
+
+    async def check_apk(self, info, abis):
+        """Before the copy, in words a person can act on, rather than pm's INSTALL_FAILED_... after it."""
+        tv = (await self.shell("getprop ro.build.version.sdk; getprop ro.product.cpu.abilist")).split("\n") + ["", ""]
+        why = apk_fits(info, abis, int(tv[0].strip()) if tv[0].strip().isdigit() else 0, [a for a in tv[1].strip().split(",") if a])
+        if why:
+            raise AdbError(why)
 
     async def kept(self, pkg, j):
         """Some boxes (FPT Play...) uninstall the apps they do not allow the moment they land, so "Success" alone proves nothing."""

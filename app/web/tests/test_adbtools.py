@@ -112,6 +112,18 @@ class ApkPackage(unittest.TestCase):
         self.assertIsNone(adbtools.apk_package(b""))
         self.assertIsNone(adbtools.apk_package(b"not a manifest at all"))
 
+    def test_info_and_fit(self):
+        """Version and minimum Android, and the check before installing; ApkPackageTest in ManagePathsTest.kt checks the same."""
+        m = (Path(__file__).resolve().parents[2] / "shared/src/test/resources/setup-manifest.bin").read_bytes()
+        i = adbtools.apk_info(m)
+        self.assertEqual((i["package"], i["minSdkVersion"]), ("dev.tvremote.setup", "21"))
+        self.assertTrue(i["versionName"] and i["versionCode"].isdigit())
+        self.assertEqual(adbtools.apk_abis(["lib/arm64-v8a/a.so", "lib/x86/a.so", "lib/x86/b.so", "lib/readme.txt", "assets/lib/x/c.so"]), ["arm64-v8a", "x86"])
+        self.assertIsNone(adbtools.apk_fits(i, [], 28, ["armeabi-v7a"]))
+        self.assertEqual(adbtools.apk_fits({"minSdkVersion": "29"}, [], 28, []), "apk needs sdk 29, the tv has sdk 28")
+        self.assertEqual(adbtools.apk_fits({}, ["arm64-v8a"], 28, ["armeabi-v7a", "armeabi"]), "apk is built for arm64-v8a, the tv runs armeabi-v7a,armeabi")
+        self.assertIsNone(adbtools.apk_fits({}, ["arm64-v8a", "armeabi-v7a"], 28, ["armeabi-v7a"]))
+
 
 if __name__ == "__main__":
     unittest.main()

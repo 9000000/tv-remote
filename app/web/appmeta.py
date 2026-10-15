@@ -5,7 +5,7 @@ to the TV once and its Meta class is started there with app_process. As the shel
 for every app's display name and draws each app's banner or icon into a PNG; we read the names from its output and pull
 the PNGs. One run covers every app. Results are cached in .cache/apps (keyed by the APK path, which changes on every update).
 """
-import asyncio, json, subprocess, threading, time
+import asyncio, json, subprocess, threading, time, zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -44,16 +44,30 @@ class AppMeta:
         """{package: name} from one run of Meta on the TV; run again when an app installed since then is asked for."""
         with self.lock:
             if (self.labels is None or (pkg and pkg not in self.labels)) and time.monotonic() - self.failed_at > 300:
-                remote = f"/data/local/tmp/tvr-meta-{HELPER.stat().st_size}.apk"
-                if self._adb("shell", f"[ -f {remote} ] && echo y || true").decode().strip() != "y":
-                    self._adb("shell", CLEAN)
-                    self._adb("push", str(HELPER), remote + ".part")
-                    self._adb("shell", f"mv {remote}.part {remote}; touch {remote}")   # push keeps the APK's own date: CLEAN would take it for old
-                out = self._adb("shell", f"CLASSPATH={remote} app_process / dev.tvremote.core.Meta {DIR} 2>/dev/null").decode(errors="replace")
+                out = self._helper("dev.tvremote.core.Meta " + DIR)
                 self.labels = dict(line.rstrip("\r").split("\t", 1) for line in out.splitlines() if "\t" in line)
                 if not self.labels:                                   # it did not run: not again for every app on the list
                     self.failed_at = time.monotonic()
             return self.labels or {}
+
+    def _helper(self, main):
+        """Runs a class of the phone app's APK on the TV (Meta, Caps) and gives what it printed; copies the APK there first."""
+        remote = f"/data/local/tmp/tvr-meta-{HELPER.stat().st_size}.apk"
+        if self._adb("shell", f"[ -f {remote} ] && echo y || true").decode().strip() != "y":
+            self._adb("shell", CLEAN)
+            self._adb("push", str(HELPER), remote + ".part")
+            self._adb("shell", f"mv {remote}.part {remote}; touch {remote}")   # push keeps the APK's own date: CLEAN would take it for old
+        return self._adb("shell", f"CLASSPATH={remote} app_process / {main} 2>/dev/null").decode(errors="replace")
+
+    def caps(self):
+        """What the TV's hardware can do (Caps.kt): kept per TV, it does not change."""
+        with self.lock:
+            if not getattr(self, "_caps", ""):
+                # an APK from before Caps existed would crash on the TV (ClassNotFoundException): look inside first
+                with zipfile.ZipFile(HELPER) as z:
+                    has = any(b"Ldev/tvremote/core/Caps;" in z.read(n) for n in z.namelist() if n.endswith(".dex"))
+                self._caps = self._helper("dev.tvremote.core.Caps") if has else ""
+            return self._caps                                         # "": the page says the computer's copy needs updating
 
     def _resolve(self, pkg, apk_path):
         meta, icon, failed = {"apk": apk_path, "v": 2, "label": "", "bg": "", "adaptive": False, "icon": False}, None, False

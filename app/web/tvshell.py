@@ -12,6 +12,7 @@ COMP = re.compile(r"[A-Za-z][A-Za-z0-9_.]*/[A-Za-z0-9_.$]+")
 HOST = re.compile(r"(?=.{4,253}$)[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+")
 SINCE = re.compile(r"[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}")   # a logcat threadtime stamp
 NUM = re.compile(r"-?[0-9]{1,10}")
+PERM = re.compile(r"[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+")
 
 # 🧹 every app's cache, through the system's own cleaner (asking for far more than there is frees all it can); free space
 # before and after as "blocks blocksize blocks blocksize"
@@ -32,6 +33,28 @@ TVSET_READ = ("echo sdk $(getprop ro.build.version.sdk); echo dns_mode $(setting
               "echo dns_host $(settings get global private_dns_specifier); echo sleep $(settings get secure sleep_timeout); "
               "echo saver $(settings get secure screensaver_enabled); echo saver_after $(settings get system screen_off_timeout); "
               "wm density; echo home $(" + HOME_NOW + "); " + HOME_LIST + " | grep / | sed 's/^ */launcher /'")
+
+# 🔁 the apps that ask to be started when the TV boots, one "package/receiver" a line (Android 8+: query-receivers)
+BOOT = "cmd package query-receivers --brief -a android.intent.action.BOOT_COMPLETED 2>/dev/null | grep / | sed 's/^ *//'"
+
+# ⚙️ every setting the TV keeps, "<table> <name>=<value>" a line, for the read-only list (writes stay on the TV card)
+SETTINGS_READ = "for n in global secure system; do settings list $n 2>/dev/null | sed \"s/^/$n /\"; done"
+
+
+def app_info(pkg):
+    """ℹ️ one app in detail, four parts between "#~#" lines: its dumpsys package from "Packages:" on (version, flags, dates,
+    permissions), its process ids, the TOTAL line of its meminfo, and its boot receivers. js/tvread.js appInfo reads it."""
+    _pkg(pkg)
+    return (f"p={pkg}; dumpsys package $p | sed -n '/^Packages:/,$p'; printf '\\043~\\043\\n'; pidof $p; printf '\\043~\\043\\n'; "
+            f"dumpsys meminfo $p 2>/dev/null | grep -m1 -E '^ *TOTAL'; printf '\\043~\\043\\n'; {BOOT} | grep \"^$p/\"")
+
+
+def perm(pkg, name, on):
+    """🔐 one runtime permission given or taken back; prints "ok", or why the TV said no (fixed by the system, not asked for...)."""
+    _pkg(pkg)
+    if not PERM.fullmatch(name or ""):
+        raise ValueError("bad permission")
+    return f"pm {'grant' if on is True or on == '1' else 'revoke'} {pkg} {name} 2>&1 && echo ok"
 
 
 def backup(pkg):
