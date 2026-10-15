@@ -37,9 +37,15 @@ private class Unreachable(msg: String) : Exception(msg)
 
 private fun MainActivity.toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
 
-/** Under the saved TVs once there are two of them. */
-internal fun MainActivity.fleetButton(): View {
-    val b = button(t("Làm trên nhiều TV cùng lúc", "Several TVs at once"), BTN)
+/** Beside the heading of the saved TVs once there are two of them: small, in the accent colour, so it is seen without a whole row. */
+internal fun MainActivity.fleetButton(): android.widget.Button {
+    val b = button(t("Nhiều TV  ›", "Several TVs  ›"), 0x335b8cff)
+    b.setTextColor(ACCENT)
+    b.textSize = 14f
+    b.typeface = android.graphics.Typeface.DEFAULT_BOLD
+    b.setPadding(dp(12), 0, dp(12), 0)
+    getDrawable(R.drawable.ic_tv)?.mutate()?.let { d -> d.setTint(ACCENT); d.setBounds(0, 0, dp(18), dp(18)); b.setCompoundDrawables(d, null, null, null); b.compoundDrawablePadding = dp(6) }
+    b.contentDescription = t("Làm trên nhiều TV cùng lúc: cài APK, gỡ app, khởi động lại", "Several TVs at once: install an APK, remove apps, restart")
     b.setOnClickListener { fleetMenu() }
     return b
 }
@@ -53,8 +59,8 @@ private fun MainActivity.fleetMenu() = menu(t("Nhiều TV cùng lúc", "Several 
                 .putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/vnd.android.package-archive", "application/octet-stream")), PICK_FLEET)
         } catch (e: Exception) { toast(t("Điện thoại không có app chọn tệp.", "This phone has no file picker.")) }
     },
-    Triple("@close|" + t("Gỡ một app", "Remove an app"), t("Khỏi mọi TV đã chọn có app đó", "From every TV picked that has it")) {
-        fleetPick(t("Gỡ app trên TV nào?", "Remove an app on which TVs?")) { fleetUninstall(it) }
+    Triple("@close|" + t("Gỡ app", "Remove apps"), t("Khỏi mọi TV đã chọn có app đó", "From every TV picked that has them")) {
+        fleetPick(t("Gỡ app trên TV nào?", "Remove apps on which TVs?")) { fleetUninstall(it) }
     },
     Triple("@power|" + t("Khởi động lại", "Restart"), t("Các TV đã chọn tắt rồi bật lại", "The TVs picked turn off and on again")) {
         fleetPick(t("Khởi động lại TV nào?", "Restart which TVs?")) { ips ->
@@ -123,15 +129,44 @@ private fun MainActivity.fleetUninstall(ips: List<String>) {
             val list = apps.filterKeys { Fleet.canUninstall(it) == null && it != "com.tailscale.ipn" }.toList()
                 .sortedWith(compareBy({ -it.second.size }, { names[it.first] ?: it.first }))
             if (list.isEmpty()) { toast(t("Các TV đã chọn không có app tự cài nào.", "The TVs picked have no apps you installed.")); return@post }
-            val rows = list.map { (pkg, on) -> (names[pkg] ?: pkg) + "\n" + pkg + " · " + on.size + "/" + ips.size + " TV" }.toTypedArray()
-            AlertDialog.Builder(this).setTitle(t("Gỡ app nào?", "Remove which app?")).setItems(rows) { _, i ->
-                val (pkg, on) = list[i]
-                val app = names[pkg] ?: pkg
-                AlertDialog.Builder(this).setMessage(t("Gỡ $app khỏi các TV này?", "Remove $app from these TVs?") + "\n\n" + on.joinToString("\n") { "• " + title(it) })
-                    .setPositiveButton(t("Gỡ", "Remove")) { _, _ ->
-                        fleetRun(t("Gỡ ", "Remove ") + app, on) { link, _ -> Fleet.uninstall(link.get(), pkg); t("đã gỡ", "removed") }
-                    }.setNegativeButton(t("Hủy", "Cancel"), null).show()
-            }.setNegativeButton(t("Đóng", "Close"), null).show()
+            // one row per app, ticked by a tap anywhere on it: its name, and under it, small, the package and how many TVs have it
+            val picked = BooleanArray(list.size)
+            val rows = col()
+            rows.setPadding(dp(12), dp(4), dp(20), dp(4))
+            lateinit var box: AlertDialog
+            val sync = {
+                val n = picked.count { it }
+                box.getButton(AlertDialog.BUTTON_POSITIVE)?.let { it.isEnabled = n > 0; it.text = t("Gỡ", "Remove") + if (n > 0) " ($n)" else "" }
+            }
+            list.forEachIndexed { i, (pkg, on) ->
+                val check = android.widget.CheckBox(this)
+                val text = col()
+                text.addView(label(names[pkg] ?: pkg, 16, TEXT))
+                text.addView(label(pkg + " · " + on.size + "/" + ips.size + " TV", 12, MUTED))
+                val row = LinearLayout(this)
+                row.gravity = android.view.Gravity.CENTER_VERTICAL
+                row.setPadding(0, dp(6), 0, dp(6))
+                row.addView(check)
+                row.addView(text, LinearLayout.LayoutParams(0, -2, 1f))
+                row.setOnClickListener { check.isChecked = !check.isChecked }
+                check.setOnCheckedChangeListener { _, c -> picked[i] = c; sync() }
+                rows.addView(row)
+            }
+            val sv = ScrollView(this)
+            sv.addView(rows)
+            box = AlertDialog.Builder(this).setTitle(t("Gỡ app nào?", "Remove which apps?")).setView(sv)
+                .setPositiveButton(t("Gỡ", "Remove")) { _, _ ->
+                    val chosen = list.filterIndexed { i, _ -> picked[i] }
+                    val pkgs = chosen.map { it.first }
+                    val on = chosen.flatMap { it.second }.distinct()
+                    val what = if (pkgs.size == 1) names[pkgs[0]] ?: pkgs[0] else t("${pkgs.size} app", "${pkgs.size} apps")
+                    AlertDialog.Builder(this).setMessage(t("Gỡ $what khỏi các TV này?", "Remove $what from these TVs?") +
+                        (if (pkgs.size > 1) "\n" + pkgs.joinToString("\n") { "• " + (names[it] ?: it) } else "") + "\n\n" + t("TV:", "TVs:") + "\n" + on.joinToString("\n") { "• " + title(it) })
+                        .setPositiveButton(t("Gỡ", "Remove")) { _, _ ->
+                            fleetRun(t("Gỡ ", "Remove ") + what, on) { link, _ -> val n = Fleet.uninstall(link.get(), pkgs); t("đã gỡ $n app", "removed $n apps") }
+                        }.setNegativeButton(t("Hủy", "Cancel"), null).show()
+                }.setNegativeButton(t("Hủy", "Cancel"), null).show()
+            sync()
         }
     }.start()
 }

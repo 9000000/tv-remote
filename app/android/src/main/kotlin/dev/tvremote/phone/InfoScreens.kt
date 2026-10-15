@@ -49,8 +49,6 @@ internal fun MainActivity.buildSettings(): View {
     }
     volLabel()
     box.addView(vol)
-    box.addView(note(t("Tắt đi thì nút âm lượng chỉnh điện thoại như bình thường. Lúc đang 🎧 nghe tiếng TV, nút luôn chỉnh điện thoại.",
-        "Off: the keys set the phone's volume as usual. While 🎧 listening to the TV they always set the phone's.")))
 
     box.addView(head(t("CẬP NHẬT", "UPDATES")), gap(18))
     lateinit var auto: Button

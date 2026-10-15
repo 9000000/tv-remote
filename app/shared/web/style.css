@@ -146,7 +146,8 @@
   #fleet { margin-top:12px; border-top:1px solid var(--line); padding-top:12px; } #fleet > summary { cursor:pointer; font-weight:600; }
   .fleetrow { display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-top:1px solid var(--line); cursor:pointer; } .fleetrow input { margin-top:4px; } .fleetrow .name { display:flex; flex-direction:column; gap:2px; min-width:0; } .fleetrow small { color:var(--muted); overflow-wrap:anywhere; } .fleetrow.off b { color:var(--muted); }
   .fleetstep:empty { display:none; } .fleetstep.done { color:var(--ok) !important; } .fleetstep.error { color:var(--bad) !important; } .fleetstep.running { color:var(--ink) !important; }
-  .fleetapps { display:grid; gap:6px; } .fleetapps button { display:flex; flex-direction:column; align-items:flex-start; gap:2px; padding:8px 12px; text-align:left; min-height:0; } .fleetapps small { overflow-wrap:anywhere; }
+  .fleetapps { display:grid; gap:4px; max-height:min(60vh, 520px); overflow-y:auto; } .fleetapps small { overflow-wrap:anywhere; }
+  .fleetgo { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; } .fleetgo button { padding:0 18px; }
   .permrow { display:flex; align-items:center; gap:8px; padding:6px 0; border-top:1px solid var(--line); } .permrow > span { flex:1; min-width:0; }
   .vol { display:flex; align-items:center; gap:8px; margin-top:12px; }
   .vol button { min-height:44px; width:44px; padding:0; flex:none; font-size:17px; display:flex; align-items:center; justify-content:center; border-radius:50%; } .vol .ic { width:20px; height:20px; }
@@ -162,7 +163,7 @@
   @keyframes tapgone { to { transform:scale(1.9); opacity:0; background:transparent; } }
   @media (prefers-reduced-motion:reduce) { .screenbox .tap.gone { animation-duration:.2s; } }
   #drawcv { position:absolute; inset:0; width:100%; height:100%; z-index:3; cursor:crosshair; touch-action:none; }
-  .drawbar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px; } .drawbar p { flex-basis:100%; margin:0; font-size:12px; }
+  .drawbar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px; }
   .drawbar .swatches { display:flex; gap:6px; margin-right:auto; }
   .drawbar .swatch { width:30px; height:30px; min-height:0; padding:0; border-radius:50%; background:var(--c); border:2px solid var(--line, #444); }
   .drawbar .swatch.on { outline:3px solid var(--accent); outline-offset:2px; }

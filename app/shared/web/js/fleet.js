@@ -79,21 +79,31 @@ async function fleetDo(action, pkg, what) {
   if (r) fleetFollow(r);
 }
 $('#fleetmore').addEventListener('click', (e) => popover(e.currentTarget, [
-  ['🗑', 'Gỡ một app...', () => fleetUninstall()],
+  ['🗑', 'Gỡ app...', () => fleetUninstall()],
   ['🔁', 'Khởi động lại', () => fleetDo('reboot', '', 'Khởi động lại các TV này?')],
   ['☑️', 'Chọn tất cả', () => { fleetTvs.forEach((t) => fleetPick.add(t.host)); fleetDraw(); }],
   ['↻', 'Đọc lại', () => fleetLoad()],
 ]));
-// the apps the user installed on the TVs ticked, most common first, to pick the one to remove everywhere
+// the apps the user installed on the TVs ticked, most common first: tick the ones to remove everywhere, then one question
 function fleetUninstall() {
   const tvs = fleetChosen().filter((t) => t.apps);
   if (!tvs.length) { toast('Chọn ít nhất một TV'); return; }
   const count = new Map();
   tvs.forEach((t) => t.apps.forEach((p) => count.set(p, (count.get(p) || 0) + 1)));
   const apps = [...count].filter(([p]) => !/^(dev\.tvremote\.setup|com\.tailscale\.ipn)$/.test(p)).sort((a, b) => b[1] - a[1] || appName(a[0]).localeCompare(appName(b[0])));
-  $('#infotitle').textContent = '🗑 Gỡ app nào?';
-  $('#infobody').replaceChildren(apps.length ? el('div', { className: 'fleetapps' }, ...apps.map(([p, n]) => el('button', { onclick: () => { $('#infodlg').close(); fleetDo('uninstall', p, 'Gỡ ' + appName(p) + ' khỏi các TV này?'); } },
-    el('span', { textContent: appName(p) }), el('small', { className: 'muted', textContent: p + ' · ' + n + '/' + tvs.length + ' TV' }))))
-    : el('p', { className: 'muted', textContent: 'Các TV đã chọn không có app tự cài nào.' }));
-  $('#infodlg').showModal();
+  $('#infotitle').textContent = tr('🗑 Gỡ app nào?');
+  if (!apps.length) { $('#infobody').replaceChildren(el('p', { className: 'muted', textContent: tr('Các TV đã chọn không có app tự cài nào.') })); $('#infodlg').showModal(); return; }
+  const picked = new Set();
+  const go = el('button', { className: 'danger', type: 'button', disabled: true });
+  const sync = () => { go.disabled = !picked.size; go.textContent = tr('Gỡ') + (picked.size ? ' (' + picked.size + ')' : ''); };
+  go.onclick = () => {
+    const ps = [...picked]; $('#infodlg').close();
+    fleetDo('uninstall', ps.join(','), (ps.length === 1 ? 'Gỡ ' + appName(ps[0]) : 'Gỡ ' + ps.length + ' app') + ' khỏi các TV này?' + (ps.length > 1 ? '\n' + ps.map((p) => '• ' + appName(p)).join('\n') : ''));
+  };
+  $('#infobody').replaceChildren(
+    el('div', { className: 'fleetapps' }, ...apps.map(([p, n]) => el('label', { className: 'fleetrow' },
+      el('input', { type: 'checkbox', onchange: (e) => { if (e.target.checked) picked.add(p); else picked.delete(p); sync(); } }),
+      el('div', { className: 'name' }, el('b', { textContent: appName(p) }), el('small', { className: 'muted', textContent: p + ' · ' + n + '/' + tvs.length + ' TV' }))))),
+    el('div', { className: 'acts fleetgo' }, el('button', { type: 'button', textContent: tr('Hủy'), onclick: () => $('#infodlg').close() }), go));
+  sync(); $('#infodlg').showModal();
 }

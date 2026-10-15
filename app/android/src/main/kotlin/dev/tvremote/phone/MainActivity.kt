@@ -69,6 +69,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     // ---- PickerScreen.kt
     internal lateinit var picker: LinearLayout
     internal lateinit var savedList: LinearLayout
+    internal lateinit var fleetBtn: android.widget.Button
     internal lateinit var foundList: LinearLayout
     internal lateinit var pickerMsg: TextView
     internal lateinit var ipBox: EditText

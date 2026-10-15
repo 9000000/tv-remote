@@ -44,6 +44,18 @@ object Fleet {
         if (!out.contains("Success")) throw IOException(out.ifEmpty { "uninstall failed" })
     }
 
+    /** Several apps off one TV: those it has (the others were picked for the other TVs). How many went; what failed, thrown. */
+    @Throws(IOException::class)
+    fun uninstall(adb: Adb, pkgs: List<String>): Int {
+        pkgs.forEach { p -> canUninstall(p)?.let { throw IOException(it) } }
+        val has = adb.shell("pm list packages 2>/dev/null").lines().map { it.removePrefix("package:").trim() }.toSet()
+        val bad = ArrayList<String>()
+        var n = 0
+        for (p in pkgs) if (p in has) try { uninstall(adb, p); n++ } catch (e: IOException) { bad += "$p: ${e.message}" }
+        if (bad.isNotEmpty()) throw IOException(bad.joinToString("; "))
+        return n
+    }
+
     @Throws(IOException::class)
     fun reboot(adb: Adb) {
         adb.shell(TvShell.REBOOT_PREP, 15000)
