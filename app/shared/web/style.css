@@ -67,17 +67,11 @@
     /* phone: each tab is its picture with its name in small letters underneath */
     .tabs { gap:2px; padding:4px; } .tabs button { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:50px; padding:4px 0; min-width:0; } .tabs .ico { font-size:18px; line-height:1.1; }
     .tabs .lbl { font-size:10px; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; } }
-  /* Tabs that need ADB say so only while ADB is off, and only by a small plug (a lock looked like "pay to unlock"); they still
-     open, and show how to turn ADB on: a line of text under every tab, all the time,
-     made the bar heavy. The dot on Setup points at where ADB is turned on. Elsewhere everything goes through ADB anyway. */
+  /* Without ADB the tabs that need it are only dimmed: they still open, and show how to turn ADB on. A line under each tab
+     made the bar heavy, a lock read as "pay to unlock", and emoji badges look different on every device. The words stay for
+     screen readers. Elsewhere everything goes through ADB anyway. */
   .tabs .needs { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
-  .tabs .ico { position:relative; }
-  .tabs .lock, .tabs .dot { display:none; font-style:normal; }
-  html[data-core=mac] .tabs.noadb .lock { display:block; position:absolute; right:-9px; top:-5px; font-size:8px; line-height:1; padding:2px; border-radius:50%; background:var(--warn-bg); box-shadow:0 0 0 1.5px var(--card); }
-  html[data-core=mac] .tabs.noadb button:has(.lock):not([aria-selected=true]) .lbl { opacity:.6; }
-  html[data-core=mac] .tabs.noadb .dot { display:block; position:absolute; right:-3px; top:-1px; width:8px; height:8px; border-radius:50%; background:var(--warn); box-shadow:0 0 0 2px var(--card); }
-  html[data-core=mac] .tabs.noadb button[aria-selected=true] .dot { box-shadow:0 0 0 2px var(--accent); }
-  @media (min-width:641px) { html[data-core=mac] .tabs.noadb .ico:has(.lock, .dot) { margin-right:10px; } }   /* icon and words side by side */
+  html[data-core=mac] .tabs.noadb [data-needs-adb]:not([aria-selected=true]) :is(.ico, .lbl) { opacity:.45; }
 
   button { font:inherit; color:var(--ink); background:var(--btn); border:0; border-radius:12px; min-height:48px; cursor:pointer; touch-action:manipulation; transition:background .1s, transform .05s; }
   button:hover { background:var(--btn-hi); } button:active { transform:scale(.97); }

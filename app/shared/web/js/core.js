@@ -183,10 +183,9 @@ function applyAdb() {
     if (ready && currentTab === 'tv' && typeof tsState === 'function') { tsState(); loadTvset(); }
   }
   document.querySelectorAll('[data-adb-gated]').forEach((g) => { g.hidden = !ready; });
-  // not while still connecting: no flash of plugs. The tabs stay open: inside, the banner says how to turn ADB on.
-  const noadb = !ready && ADB.state !== 'unknown';
+  const noadb = !ready && ADB.state !== 'unknown';                      // not while still connecting
   $('.tabs').classList.toggle('noadb', noadb);
-  document.querySelectorAll('.tabs .lock').forEach((l) => { const b = l.closest('button'); if (noadb) b.title = tr('Cần ADB: bấm vào để xem cách bật'); else b.removeAttribute('title'); });
+  document.querySelectorAll('.tabs [data-needs-adb]').forEach((b) => { if (noadb) b.title = tr('Cần ADB: bấm vào để xem cách bật'); else b.removeAttribute('title'); });
   $('#kbd').disabled = !ready; $('#kbdoff').hidden = ready;           // typing goes through ADB: no half-working box without it
   $('#screenbtn').disabled = !ready && !screenOn;
   if (!ready && screenOn) stopScreen('ADB chưa sẵn sàng, đã dừng xem màn hình.');
