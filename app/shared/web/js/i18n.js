@@ -21,7 +21,7 @@
     'Các nút chưa hoạt động. Trên TV: bật “Gỡ lỗi ADB” (hoặc “Gỡ lỗi USB”) trong Tùy chọn nhà phát triển, rồi mở app TV Setup.': 'The buttons do not work yet. On the TV: turn on “ADB debugging” (or “USB debugging”) in Developer options, then open the TV Setup app.',
     'TV đang hỏi cho phép gỡ lỗi': 'The TV is asking to allow debugging',
     'Nhìn lên TV: tích “Luôn cho phép” rồi chọn OK. Trang này tự chạy tiếp.': 'Look at the TV: tick “Always allow”, then OK. This page carries on by itself.',
-    'Đang kết nối ADB...': 'Connecting ADB...',
+    'Đang kết nối ADB…': 'Connecting to ADB…',
     'Chưa ghép với TV này': 'Not paired with this TV yet',
     'Nhìn lên TV: mã có hiệu lực trong 2 phút.': 'Look at the TV: the code is good for 2 minutes.',
     'Sai mã, thử lại.': 'Wrong code, try again.',
@@ -100,7 +100,7 @@
     'TV chưa cho phép máy này': 'The TV has not allowed this computer', 'Nhìn lên TV, chọn “Luôn cho phép” ở hộp thoại gỡ lỗi USB rồi bấm “Thử kết nối lại”.': 'On the TV choose “Always allow” in the USB debugging dialog, then press “Retry connection”.',
     'ADB đang offline': 'ADB is offline', 'Thiết bị có trong danh sách nhưng không trả lời. Thử kết nối lại, hoặc tắt/bật “Gỡ lỗi ADB” trên TV.': 'The device is listed but does not answer. Retry, or toggle “ADB debugging” on the TV.',
     'Không kết nối được ADB': 'Cannot connect ADB', 'Thử kết nối lại. Nếu vẫn lỗi, kiểm tra TV còn mạng và đã bật “Gỡ lỗi ADB”.': 'Retry. If it still fails, check the TV is online and “ADB debugging” is on.',
-    'Đang kiểm tra ADB...': 'Checking ADB...', 'Thử kết nối lại': 'Retry connection', 'Đang kết nối...': 'Connecting...', 'Mất chức năng:': 'Lost:',
+    'Thử kết nối lại': 'Retry connection', 'Đang kết nối...': 'Connecting...', 'Mất chức năng:': 'Lost:',
     'xem màn hình, mở app/link, danh sách app, tệp, tải link về TV, cài APK.': 'live screen, opening apps/links, app list, files, download to TV, installing APKs.', 'Cách bật ADB': 'How to enable ADB',
     // apps
     'Ứng dụng đã cài': 'Installed apps', 'Tải lại': 'Reload', 'Tìm theo tên app': 'Search by app name', 'Hiện cả app hệ thống': 'Show system apps too', 'Đang tải...': 'Loading...',

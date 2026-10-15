@@ -22,6 +22,7 @@ Web 2.24.2 · app điện thoại 2.22.2 · app TV 2.21.3
 - App điện thoại: nút ‹ ở góc trên màn remote để về danh sách TV.
 - Thanh tab trên cùng không còn khe hở để thấy nội dung cuộn bên dưới.
 - Tối ưu TV: TV chỉ chạy app 64-bit (Google TV mới) giờ được cài FLauncher bản 64-bit, thay vì báo không cài được.
+- "Đang kết nối ADB…" giờ là một dòng nhỏ có vòng quay, nút Thử lại chỉ hiện khi chờ lâu.
 
 **English**
 - TV Setup turns USB debugging back on when it is switched off (by a child, a TV update, a reset of Developer options), so the sleep timer, bedtime, app limits and the phone keep working. It can be turned off in TV Setup → Debugging.
@@ -37,6 +38,7 @@ Web 2.24.2 · app điện thoại 2.22.2 · app TV 2.21.3
 - Phone app: a ‹ button at the top of the remote goes back to the list of TVs.
 - The top tab bar no longer has gaps that show the page scrolling under it.
 - Optimize TV: a TV that runs 64-bit apps only (newer Google TV) now gets the 64-bit FLauncher instead of an error.
+- "Connecting to ADB…" is now a small line with a spinner; Retry shows only when it takes long.
 
 ## 2.24.1 - 2026-10-15
 

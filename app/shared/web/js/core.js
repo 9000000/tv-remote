@@ -240,7 +240,7 @@ async function refresh() {
 const BANNERS_TV = {
   closed: ['bad', 'App trên TV chưa nối được ADB', 'Các nút chưa hoạt động. Trên TV: bật “Gỡ lỗi ADB” (hoặc “Gỡ lỗi USB”) trong Tùy chọn nhà phát triển, rồi mở app TV Setup.'],
   unauthorized: ['warn', 'TV đang hỏi cho phép gỡ lỗi', 'Nhìn lên TV: tích “Luôn cho phép” rồi chọn OK. Trang này tự chạy tiếp.'],
-  unknown: ['warn', 'Đang kết nối ADB...', ''],
+  unknown: ['warn', 'Đang kết nối ADB…', ''],
 };
 BANNERS_TV.error = BANNERS_TV.offline = BANNERS_TV.closed;
 const BANNERS = {
@@ -248,16 +248,21 @@ const BANNERS = {
   unauthorized: ['warn', 'TV chưa cho phép máy này', 'Nhìn lên TV, chọn “Luôn cho phép” ở hộp thoại gỡ lỗi USB rồi bấm “Thử kết nối lại”.'],
   offline: ['warn', 'ADB đang offline', 'Thiết bị có trong danh sách nhưng không trả lời. Thử kết nối lại, hoặc tắt/bật “Gỡ lỗi ADB” trên TV.'],
   error: ['bad', 'Không kết nối được ADB', 'Thử kết nối lại. Nếu vẫn lỗi, kiểm tra TV còn mạng và đã bật “Gỡ lỗi ADB”.'],
-  unknown: ['warn', 'Đang kiểm tra ADB...', ''],
+  unknown: ['warn', 'Đang kết nối ADB…', ''],
 };
 let bannerKey = '', scenesLoaded = false, setupChecked = '';         // setupChecked: the TV whose TV Setup version was looked at (auto.js)
 function buildBanner() {
   const set = CORE === 'pc' ? BANNERS : BANNERS_TV, [cls, title, text] = set[ADB.state] || set.unknown;
   const retry = el('button', { className: 'small primary', textContent: '🔄 Thử kết nối lại', onclick: async (e) => {
-    const b = e.currentTarget; b.disabled = true; b.textContent = 'Đang kết nối...';
+    const b = e.currentTarget, label = b.textContent; b.disabled = true; b.textContent = 'Đang kết nối...';
     const r = await api('/api/adb/connect', {}); if (r) { ADB = r; bannerKey = ''; applyAdb(); refresh(); }
-    b.disabled = false; b.textContent = '🔄 Thử kết nối lại';
+    b.disabled = false; b.textContent = label;
   } });
+  if (ADB.state === 'unknown' || !ADB.state) {                       // still connecting: a quiet line, Retry only once it drags on
+    retry.className = 'small'; retry.textContent = 'Thử lại'; retry.hidden = true;
+    setTimeout(() => { retry.hidden = false; }, 8000);
+    return el('div', { className: 'banner wait' }, el('span', { className: 'minispin' }), el('span', { textContent: title }), retry);
+  }
   if (CORE !== 'pc') return el('div', { className: 'banner ' + cls }, el('b', { textContent: title }), el('p', { textContent: text }), el('div', { className: 'actions' }, retry));
   const helpMe = ADB.state === 'closed' || ADB.state === 'error' ? el('button', { className: 'small primary', textContent: '🧭 Bật ADB giúp tôi', onclick: () => adbHelp() }) : null;
   if (helpMe) retry.className = 'small';
