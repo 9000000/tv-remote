@@ -64,7 +64,8 @@
   @media (max-width:640px) { details.help .cols { grid-template-columns:1fr; } }
 
   /* tabs */
-  .tabs { display:flex; gap:6px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:5px; position:sticky; top:8px; z-index:5; }
+  .tabs { display:flex; gap:6px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:5px; position:sticky; top:8px; z-index:5;
+    box-shadow:0 -9px 0 8px var(--bg); }                                 /* the page's colour over the gap above and the round corners: nothing scrolls through */
   .tabs button { flex:1; min-height:42px; font-size:14px; background:transparent; border-radius:10px; }
   .tabs button:hover { background:var(--btn); }
   .tabs button[aria-selected=true] { background:var(--accent); color:var(--accent-ink); font-weight:700; }
