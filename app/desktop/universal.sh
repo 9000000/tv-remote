@@ -2,6 +2,8 @@
 # One TV Remote.app for both kinds of Mac: jpackage only builds for the chip it runs on, so the release workflow builds an
 # arm64 and an x64 app and this joins them. Every Mach-O file (the launcher, Java's libraries, the window's library) is
 # joined with lipo; any other file must be the same in both, and the ones that are not are listed (the arm64 copy is kept).
+# Expected: the signatures (made again here), desktop.jar (build times), Java's lib/modules (only the platform each module
+# names in its module-info, "macos-aarch64" or "macos-amd64", which nothing checks at run time: the classes are the same).
 #   app/desktop/universal.sh <arm64 TV Remote.app> <x64 TV Remote.app> <out TV Remote.app>
 set -e
 arm=$(cd "$1" && pwd); x64=$(cd "$2" && pwd); out=$3
