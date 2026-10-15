@@ -57,24 +57,6 @@
     document.querySelectorAll(".reveal").forEach(function(el){ io.observe(el); });
   } else document.querySelectorAll(".reveal").forEach(function(el){ el.classList.add("in"); });
 
-  // the demo (CSS keyframes on one --T clock; the stories are GSAP, in stories.js): it runs only while on screen, a
-  // chapter button plays from there. Reduced motion: no playing, each chapter shows its still (seconds into the chapter)
-  (function(){
-    var calm = matchMedia("(prefers-reduced-motion:reduce)"), stills = [8.5, 4.8, 4, 6.5];
-    function go(el, k, n){                                             // chapter k of n
-      var q = parseFloat(getComputedStyle(el).getPropertyValue("--T")) / n;
-      if (calm.matches) { el.style.setProperty("--d", -(k * q + stills[k]) + "s"); return; }
-      el.style.setProperty("--d", -(k * q) + "s"); el.classList.add("rs"); void el.offsetWidth; el.classList.remove("rs");
-    }
-    document.querySelectorAll(".demo").forEach(function(el){
-      if ("IntersectionObserver" in window) new IntersectionObserver(function(es){ el.classList.toggle("run", es[0].isIntersecting); }, {threshold:.2}).observe(el);
-      else el.classList.add("run");
-      var parts = el.querySelectorAll(".dchap button"), n = parts.length;
-      parts.forEach(function(b, k){ b.addEventListener("click", function(){ go(el, k, n); }); });
-      if (calm.matches && n) go(el, 0, n);
-    });
-  })();
-
   // the header's link for the section being read: the last one whose top has passed a third of the way down the screen
   (function(){
     var links = [].slice.call(document.querySelectorAll(".navlinks a")), secs = links.map(function(a){ return document.querySelector(a.getAttribute("href")); }), busy = false;

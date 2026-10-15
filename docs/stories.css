@@ -1,10 +1,9 @@
 /* The intro page's other stories: How it works (.st-h) and the install tabs (.st-b, .st-a, .st-c, .st-p). Only their
-   still look is here; what moves, and when, is stories.js (GSAP). They reuse the demo's TV and phone (.dscr, .dcln,
-   .dyt, .dfoc, .dfg). Where GSAP moves a pseudo-element it moves a variable instead: --p (a bar's fill, 0 to 1) and
+   still look is here; what moves, and when, is stories.js (GSAP). They reuse the demo's TV and phone (demo.css: .dscr,
+   .dcln, .dyt, .dfoc, .dfg, .dchap). Where GSAP moves a pseudo-element it moves a variable instead: --p (a bar's fill, 0 to 1) and
    --k (a switch's knob, 0 to 1). */
 .story .dcln .ck .t2{display:none}
 .story .dyt .pl::after{transform:scaleX(.3)}
-.story .dyt,.story .dfoc{opacity:0}
 @keyframes sspin{to{transform:rotate(1turn)}}
 .story .sp{display:inline-block;width:1em;height:1em;border-radius:50%;border:.16em solid rgba(255,255,255,.2);border-top-color:#5b8cff;vertical-align:-.15em;animation:sspin .8s linear infinite}
 .story .rad{position:absolute;border-radius:50%;border:1cqw solid #5b8cff;opacity:0}
@@ -139,7 +138,6 @@
 .hcap{position:relative;height:3.2em;margin-top:30px;font-weight:700;font-size:clamp(15px,1.9vw,20px);text-align:center}
 .hcap>p{position:absolute;left:0;right:0;top:0;margin:0;opacity:0}
 .st-h .dchap{margin-top:6px}
-.st-h .dchap i::after{transform:scaleX(var(--p,0))}
 @media (max-width:760px){
   .hst{aspect-ratio:auto;display:flex;flex-direction:column;align-items:center}
   .htv{position:relative;width:100%;order:1}
@@ -192,7 +190,7 @@
 .lw .prow b{font-size:3.4cqw}.lw .prow small{font-size:2.6cqw}
 .lw .sp1,.lw .wait{left:0;right:0;top:60%;text-align:center;color:#9aa4b8;opacity:0}
 .lw .mirw{left:8%;right:8%;top:16%;aspect-ratio:16/9;border-radius:1.6cqw;overflow:hidden;background:#000;container-type:inline-size;opacity:0}
-.story .dfg,.story .cur{left:calc(var(--x,0)*1%);top:calc(var(--y,0)*1%)}
+.story .cur{left:calc(var(--x,0)*1%);top:calc(var(--y,0)*1%)}
 .cur{position:absolute;width:5cqw;height:7cqw;margin:-.5cqw 0 0 -.5cqw;background:#fff;clip-path:polygon(0 0,0 85%,24% 66%,40% 100%,54% 94%,40% 62%,72% 62%);filter:drop-shadow(0 0 1px #000);opacity:0;z-index:3;transform-origin:0 0}
 .prep .rc .rb{display:block}
 .p1 .left{position:absolute;left:6cqw;right:6cqw;bottom:5cqw;display:grid}

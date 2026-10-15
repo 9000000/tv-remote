@@ -117,10 +117,9 @@
       <h2><span class="vi">Những việc remote thường bó tay.</span><span class="en">What an ordinary remote can't do.</span></h2>
       <p class="lead"><span class="vi">Bốn chuyện thật, mỗi chuyện chưa tới 10 giây.</span><span class="en">Four real stories, under 10 seconds each.</span></p>
     </div>
-    <!-- GENERATED STYLE: the demo's animation is docs/demo.css, made by dev/demo_css.py from dev/demo.src.css; the
-         captions' timing is CAPS in dev/demo_css.py, in the order of the .dcap <p>s below. Edit those, then run
-         python3 dev/demo_css.py; never edit docs/demo.css by hand. -->
-    <div class="demo reveal">
+    <!-- the demo's timeline is in demo.js (captions in the order of the .dcap <p>s below; data-still: the second of each
+         chapter that reduced motion shows), its look in demo.css -->
+    <div class="demo reveal" data-still="8.5,4.8,4,6.5">
       <div class="dstage" aria-hidden="true">
         <div class="dtvb">
           <div class="tv dtv"><div class="dscr">
@@ -196,10 +195,10 @@
         </div></div>
       </div>
       <ol class="dchap">
-        <li><button type="button" data-ch="0" style="--c:dc1"><i style="--f:df1"></i><b>1</b><span class="vi">Tối ưu TV</span><span class="en">Optimize TV</span></button></li>
-        <li><button type="button" data-ch="1" style="--c:dc2"><i style="--f:df2"></i><b>2</b><span class="vi">Chỉ bà từ xa</span><span class="en">Help grandma</span></button></li>
-        <li><button type="button" data-ch="2" style="--c:dc3"><i style="--f:df3"></i><b>3</b><span class="vi">TV tự canh con</span><span class="en">TV minds the kids</span></button></li>
-        <li><button type="button" data-ch="3" style="--c:dc4"><i style="--f:df4"></i><b>4</b><span class="vi">Nhiều TV</span><span class="en">Many TVs</span></button></li>
+        <li><button type="button" data-ch="0"><i></i><b>1</b><span class="vi">Tối ưu TV</span><span class="en">Optimize TV</span></button></li>
+        <li><button type="button" data-ch="1"><i></i><b>2</b><span class="vi">Chỉ bà từ xa</span><span class="en">Help grandma</span></button></li>
+        <li><button type="button" data-ch="2"><i></i><b>3</b><span class="vi">TV tự canh con</span><span class="en">TV minds the kids</span></button></li>
+        <li><button type="button" data-ch="3"><i></i><b>4</b><span class="vi">Nhiều TV</span><span class="en">Many TVs</span></button></li>
       </ol>
     </div>
 
@@ -721,6 +720,8 @@
 
 <script src="qr.js"></script>
 <script src="gsap.min.js"></script>
+<script src="anim.js"></script>
+<script src="demo.js"></script>
 <script src="stories.js"></script>
 <script src="site.js"></script>
 </body>
