@@ -423,8 +423,10 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
         <h3><span class="vi">Quản chiếc TV như quản một server.</span><span class="en">Run your TV like a server.</span></h3>
         <p class="lead"><span class="vi">Những việc trước đây phải cắm máy tính, gõ lệnh ADB, giờ chỉ là vài cú bấm.</span><span class="en">What used to take a laptop and ADB commands is now a few clicks.</span></p>
         <ul>
-          <li class="vi"><span><b>Ứng dụng:</b> mở, dừng, gỡ, tắt app hệ thống, làm hàng loạt.</span></li>
-          <li class="en"><span><b>Apps:</b> open, stop, uninstall, disable system apps, in bulk.</span></li>
+          <li class="vi"><span><b>Ứng dụng:</b> gỡ, tắt, sao lưu, xem log trực tiếp.</span></li>
+          <li class="en"><span><b>Apps:</b> remove, disable, back up, watch live logs.</span></li>
+          <li class="vi"><span><b>Một chạm:</b> khởi động lại, lọc DNS, đổi màn hình chính.</span></li>
+          <li class="en"><span><b>One tap:</b> reboot, DNS filter, swap the home screen.</span></li>
           <li class="vi"><span><b>Tệp · Cài:</b> duyệt bộ nhớ và USB, kéo thả gửi tệp, cài APK từ máy hay từ link.</span></li>
           <li class="en"><span><b>Files · Install:</b> browse storage and USB, drag and drop, install APKs from disk or a link.</span></li>
           <li class="vi"><span><b>Sức khỏe:</b> CPU, RAM, bộ nhớ, Wi-Fi, giải phóng RAM, biểu đồ theo thời gian.</span></li>
@@ -453,6 +455,8 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
           <li class="en"><span><b>A private, encrypted link</b> between you and the TV, no ports opened to the Internet.</span></li>
           <li class="vi"><span><b>Hỗ trợ người thân</b>: họ chỉ cần chụp mã QR trên TV gửi bạn.</span></li>
           <li class="en"><span><b>Help family remotely</b>: they just send you a photo of the QR code on their TV.</span></li>
+          <li class="vi"><span><b>Khởi động lại từ xa</b>, TV tự quay về.</span></li>
+          <li class="en"><span><b>Reboot from afar</b>, it comes right back.</span></li>
           <li class="vi"><span><b>Bật TV từ xa</b> khi đang ở chế độ chờ; Wake-on-LAN khi đã tắt hẳn.</span></li>
           <li class="en"><span><b>Wake the TV remotely</b> from standby; Wake-on-LAN when fully off.</span></li>
         </ul>
@@ -717,6 +721,9 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
       <details class="reveal"><summary><span class="vi">TV tắt hẳn rồi có bật lại từ xa được không?</span><span class="en">Can I turn on a TV that's fully off?</span></summary>
         <p class="vi">Ở chế độ chờ thì một nút là bật, kể cả qua Tailscale. Tắt hẳn thì cần Wake-on-LAN, gửi từ trong mạng nhà: app điện thoại và web máy tính đều tự gửi khi đang cùng mạng với TV. Ở xa thì chỉ web máy tính bật được, bằng cách nhờ một máy ở nhà gửi qua SSH.</p>
         <p class="en">From standby, one press wakes it, even over Tailscale. Fully off needs Wake-on-LAN, sent from inside the home network: the phone app and the computer web both send it when on the TV's network. From away, only the computer web can, by asking a machine at home to send it over SSH.</p></details>
+      <details class="reveal"><summary><span class="vi">Lọc DNS có chặn quảng cáo YouTube không?</span><span class="en">Does the DNS filter block YouTube ads?</span></summary>
+        <p class="vi">Không. Nó chặn quảng cáo và trang độc trong các app khác; YouTube phát quảng cáo từ chính máy chủ video của nó.</p>
+        <p class="en">No. It blocks ads and bad sites in other apps; YouTube serves its ads from the same servers as the videos.</p></details>
       <details class="reveal"><summary><span class="vi">Android báo app “có hại” khi cài?</span><span class="en">Android says the app is “harmful”?</span></summary>
         <p class="vi">Play Protect cảnh báo mọi app ngoài CH Play có quyền cài APK. Toàn bộ mã nguồn nằm trên <a href="https://github.com/HoangTran0410/tv-remote" target="_blank" rel="noopener">GitHub</a> để bạn tự kiểm tra; chọn “Vẫn cài” nếu bạn tin.</p>
         <p class="en">Play Protect warns about any non-Play app that can install APKs. All the source is on <a href="https://github.com/HoangTran0410/tv-remote" target="_blank" rel="noopener">GitHub</a> for you to check; choose “Install anyway” if you trust it.</p></details>
