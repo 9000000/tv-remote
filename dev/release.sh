@@ -26,9 +26,12 @@ for a in android tv; do                                               # changed 
 done
 # the computer app is built again (on GitHub, each system) only when its code changed; otherwise the last release's archives
 # are attached again and "web" (what the computer app reads) keeps their version, so nobody is offered the same app again
+# NO_DESKTOP=1: only the APKs, no GitHub Actions run (its minutes are limited). Changes are counted from the release that
+# last built the computer app, so what a NO_DESKTOP release skipped is built by the next one
 DESK=$VER
-if [ -n "$LAST" ] && git diff --quiet "$LAST" -- app/desktop app/shared ":(exclude)app/shared/tests"; then
-  DESK=$(gh release download "$LAST" -p versions.json -O - | python3 -c 'import json, sys; d = json.load(sys.stdin); print(d["web"])')
+if [ -n "$LAST" ]; then
+  BUILT=$(gh release download "$LAST" -p versions.json -O - | python3 -c 'import json, sys; d = json.load(sys.stdin); print(d["web"])')
+  if [ -n "$NO_DESKTOP" ] || git diff --quiet "v$BUILT" -- app/desktop app/shared ":(exclude)app/shared/tests"; then DESK=$BUILT; fi
 fi
 ./app/android/build.sh && ./app/tv/build.sh
 printf '{"android": "%s", "tv": "%s", "web": "%s"}\n' "$(cat app/android/VERSION)" "$(cat app/tv/VERSION)" "$DESK" > app/android/build/versions.json
@@ -47,7 +50,7 @@ NOTES="$NOTES
 # the APKs live only in releases, never in git
 gh release create "v$VER" app/android/build/tv-remote.apk app/tv/build/tv-setup.apk app/android/build/versions.json --title "v$VER" --notes "$NOTES"
 if [ "$DESK" != "$VER" ]; then
-  echo "computer app unchanged since $LAST: its $DESK archives attached again"
+  echo "computer app not built: the $DESK archives attached again"
   T=$(mktemp -d); gh release download "$LAST" -p 'TV-Remote-*' -D "$T" && gh release upload "v$VER" "$T"/TV-Remote-*; rm -rf "$T"
 else
   # built on each system by .github/workflows/desktop.yml, which attaches them: waited for, so the release is only called
