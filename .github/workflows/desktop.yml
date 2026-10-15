@@ -62,12 +62,15 @@ jobs:
           echo "{\"tag_name\": \"v$v\", \"body\": \"\", \"assets\": [{\"name\": \"$a\", \"browser_download_url\": \"http://127.0.0.1:8099/$a\"},
             {\"name\": \"versions.json\", \"browser_download_url\": \"http://127.0.0.1:8099/versions.json\"}]}" > $srv/repos/HoangTran0410/tv-remote/releases/latest
           py=python3; [ "$RUNNER_OS" = Windows ] && py=python
-          (cd $srv && $py -m http.server 8099 >/dev/null 2>&1 &)
+          (cd $srv && $py -m http.server 8099 --bind 127.0.0.1 >/dev/null 2>&1 &)
+          for i in $(seq 20); do curl -sf http://127.0.0.1:8099/versions.json && break; sleep 0.5; done
           if [ "$RUNNER_OS" = macOS ]; then ditto "$pkg/$top" "upd/apps/$top"; else cp -R "$pkg/$top" upd/apps/; fi
           echo 0.0.1 > "upd/apps/${{ matrix.res }}/VERSION"
           # one X server for both: xvfb-run's would go with the old app, and the new one would start with no screen
           if [ "$RUNNER_OS" = Linux ]; then Xvfb :99 -screen 0 1280x800x24 >/dev/null 2>&1 & export DISPLAY=:99; sleep 1; fi
           TVR_RELEASES=http://127.0.0.1:8099 "upd/apps/${{ matrix.app }}" &
+          for i in $(seq 60); do curl -sf http://127.0.0.1:8765/api/about && break; sleep 1; done
+          curl -s -X POST -H 'Content-Type: application/json' -d '{"do": "check"}' http://127.0.0.1:8765/api/update   # not waiting for its own first check
           for i in $(seq 90); do curl -s http://127.0.0.1:8765/api/update | grep -q '"state":"ready"' && break; sleep 1; done
           curl -s http://127.0.0.1:8765/api/update; echo
           curl -sf -X POST -H 'Content-Type: application/json' -d '{"do": "install"}' http://127.0.0.1:8765/api/update; echo

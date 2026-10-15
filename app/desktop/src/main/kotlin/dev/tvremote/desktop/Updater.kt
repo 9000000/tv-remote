@@ -58,8 +58,9 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
             }
         } catch (e: Exception) {
             error = e.message ?: e.javaClass.simpleName
-            state = "idle"                                            // offline: asked again later, nothing to show
+            state = "idle"                                            // offline: asked again soon, nothing to show
             println("update check: $error")
+            try { timer.schedule({ check() }, 15, TimeUnit.MINUTES) } catch (ignored: Exception) { }
         }
     }
 
@@ -167,7 +168,7 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
             if mv "$2" "$4/old"; then
               if mv "$3" "$2"; then rm -rf "$4"; else mv "$4/old" "$2"; fi
             fi
-            if [ "$5" = open ]; then open "$2"; elif [ -n "$5" ]; then "$2/$5" >/dev/null 2>&1 & fi
+            if [ "$5" = open ]; then open "$2"; elif [ -n "$5" ]; then "$2/$5" & fi   # its words go to the update log
         """.trimIndent() + "\n"
 
         // the same on Windows: files of a process just ended can stay locked a moment, so each move is tried for a while
