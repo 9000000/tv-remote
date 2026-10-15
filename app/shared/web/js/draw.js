@@ -74,7 +74,7 @@ let drawPics = true;                                                   // this T
 async function drawStart() {
   if (!screenOn) startScreen();                                        // the strokes go where the picture shows
   drawing = true; drawQ = [];
-  $('#drawcv').hidden = false; $('#drawbar').hidden = false; $('#drawbtn').classList.add('primary');
+  $('#drawcv').hidden = false; $('#drawbar').hidden = false; $('#drawbtn').classList.add('primary'); $('#drawmore').classList.add('on');
   drawSize();
   const r = await fetch('/api/draw', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"ops":[]}' }).catch(() => null);
   if (!drawing) return;
@@ -83,7 +83,7 @@ async function drawStart() {
 }
 function drawStop() {
   drawing = false; drawPen = null; drawLocal.length = 0; picEnd();
-  $('#drawcv').hidden = true; $('#drawbar').hidden = true; $('#drawbtn').classList.remove('primary');
+  $('#drawcv').hidden = true; $('#drawbar').hidden = true; $('#drawbtn').classList.remove('primary'); $('#drawmore').classList.remove('on');
 }
 $('#drawbtn').addEventListener('click', () => { if (drawing) drawStop(); else drawStart(); });
 $('#drawdone').addEventListener('click', drawStop);

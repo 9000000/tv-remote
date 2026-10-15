@@ -114,11 +114,7 @@
               <button class="small" id="pipback" hidden><span class="ico">↩</span><span class="lbl"> Về Remote</span></button>
             </div>
           </div>
-          <div class="listenpick" id="listenpick" hidden>
-            <button data-share="0"><b>🎧 Chỉ máy này</b><span>Loa TV tạm im. Hợp khi đeo tai nghe, cả nhà ngủ.</span></button>
-            <button data-share="1"><b>🔈 Cả TV và máy này</b><span>TV vẫn có tiếng (TV Android 13+). Máy này trễ hơn TV một chút; vài app như Netflix chặn thu tiếng kiểu này.</span></button>
-            <button data-hq class="hq"><b>✨ Chất lượng cao: tắt</b><span>Bật để nghe nhạc rõ hơn, tốn mạng hơn một chút.</span></button>
-          </div>
+          <div class="listenbar" id="listenbar" hidden><button class="small" id="listenway" title="Cách nghe tiếng TV"></button><button class="small" id="listenhq" title="Tiếng chất lượng cao (160 kbit/s)">HQ</button></div>
           <div class="screenbox" id="screenbox"><img id="screen" alt="Màn hình TV" hidden><video id="screenv" muted playsinline autoplay hidden></video><div class="ph" id="screenph"></div><canvas id="drawcv" hidden></canvas></div>
           <div class="drawbar" id="drawbar" hidden>
             <span class="pickc"><button class="swatch" id="drawcolor" style="--c:#ff3b30" aria-label="Màu" title="Màu"></button><span class="swatches" id="drawcolors" hidden><button class="swatch on" data-color="#ff3b30" style="--c:#ff3b30" aria-label="Đỏ" title="Đỏ"></button><button class="swatch" data-color="#ff9f0a" style="--c:#ff9f0a" aria-label="Cam" title="Cam"></button><button class="swatch" data-color="#ffd60a" style="--c:#ffd60a" aria-label="Vàng" title="Vàng"></button><button class="swatch" data-color="#32d74b" style="--c:#32d74b" aria-label="Xanh lá" title="Xanh lá"></button><button class="swatch" data-color="#40c8ff" style="--c:#40c8ff" aria-label="Xanh dương" title="Xanh dương"></button><button class="swatch" data-color="#0a5cff" style="--c:#0a5cff" aria-label="Xanh đậm" title="Xanh đậm"></button><button class="swatch" data-color="#bf5af2" style="--c:#bf5af2" aria-label="Tím" title="Tím"></button><button class="swatch" data-color="#ff6ac1" style="--c:#ff6ac1" aria-label="Hồng" title="Hồng"></button><button class="swatch" data-color="#ffffff" style="--c:#ffffff" aria-label="Trắng" title="Trắng"></button><button class="swatch" data-color="#000000" style="--c:#000000" aria-label="Đen" title="Đen"></button><span class="sizes"><input type="range" id="drawwidth" min="20" max="250" step="10" value="60" aria-label="Nét" title="Nét"><span class="dotbox"><i id="drawdot"></i></span></span></span></span>
@@ -154,6 +150,7 @@
           <div class="rrow four" id="more" hidden>
             <button class="rb lab" data-k="INPUT"><svg class="ic" aria-hidden="true"><use href="#i-input"/></svg><small>Ngõ vào</small></button><button class="rb lab" data-k="SETTINGS"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg><small>Cài đặt</small></button><button class="rb lab" data-k="INFO"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg><small>Thông tin</small></button><button class="rb lab" data-k="GUIDE"><svg class="ic" aria-hidden="true"><use href="#i-guide"/></svg><small>Lịch phát</small></button>
             <button class="rb lab" data-k="LIVE"><svg class="ic" aria-hidden="true"><use href="#i-tv"/></svg><small>TV</small></button><button class="rb lab" data-k="SUBTITLE"><svg class="ic" aria-hidden="true"><use href="#i-subtitle"/></svg><small>Phụ đề</small></button><button class="rb lab" data-k="STOP"><svg class="ic" aria-hidden="true"><use href="#i-stop"/></svg><small>Dừng</small></button><button class="rb lab" id="shot"><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg><small>Chụp màn hình</small></button>
+            <button class="rb lab" id="openmenu"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg><small>Mở trên TV</small></button><button class="rb lab" id="timermenu"><svg class="ic" aria-hidden="true"><use href="#i-timer"/></svg><small>Hẹn giờ tắt</small></button><button class="rb lab" id="scenemenu"><svg class="ic" aria-hidden="true"><use href="#i-scene"/></svg><small>Cảnh</small></button><button class="rb lab" id="drawmore"><svg class="ic" aria-hidden="true"><use href="#i-pen"/></svg><small>Vẽ lên TV</small></button>
           </div>
           <div class="dpad">
             <button class="up" data-k="UP" aria-label="Lên"><svg class="ic" aria-hidden="true"><use href="#i-up"/></svg></button>
@@ -191,10 +188,7 @@
           <div class="numpad" id="numpad" hidden><button class="rb" data-k="1">1</button><button class="rb" data-k="2">2</button><button class="rb" data-k="3">3</button><button class="rb" data-k="4">4</button><button class="rb" data-k="5">5</button><button class="rb" data-k="6">6</button><button class="rb" data-k="7">7</button><button class="rb" data-k="8">8</button><button class="rb" data-k="9">9</button><span></span><button class="rb" data-k="0">0</button><span></span></div>
           <form class="line" id="askf"><input id="ask" placeholder="Hỏi TV: mở YouTube" autocomplete="off"><button type="button" id="speak" title="Nói bằng micro của máy này" hidden>🎤</button><button class="primary" title="Lệnh (mở YouTube, tắt tiếng...) thì làm ngay, câu khác thì tìm trên YouTube">🔍</button></form>
           </fieldset>
-          <h2 style="margin-top:14px">🔗 Mở trên TV <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· link, CH Play</span></h2>
-          <form class="line" id="linkf" style="margin-top:0"><input id="link" placeholder="youtube.com/watch?v=..." autocomplete="off" inputmode="url"><button class="primary">↗ Mở</button></form>
-          <form class="line" id="storef"><input id="store" placeholder="Tìm app trên CH Play, hoặc app id (vd org.videolan.vlc)" autocomplete="off"><button class="primary">🛒 CH Play</button></form>
-          <label class="drop" data-adb-gated style="margin-top:8px"><input type="file" id="castfile" accept="image/*,video/*,audio/*">📤 Phát ảnh, video, nhạc từ máy này lên TV</label>
+          <input type="file" id="castfile" hidden>
         </section>
       </div>
     </div>
