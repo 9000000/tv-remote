@@ -42,7 +42,7 @@
     'Máy này tải về trước rồi đẩy sang TV.': 'This device downloads it first, then pushes it to the TV.',
     // header, tabs
     'đang kết nối...': 'connecting...', 'Tắt': 'Quit', 'Dừng chương trình trên máy tính này (TV không bị ảnh hưởng)': 'Stop the program on this computer (the TV is not affected)',
-    'Ứng dụng': 'Apps', 'Tệp': 'Files', 'Tệp · Cài': 'Files · Install', 'Tải / Cài': 'Download / Install', 'cần ADB': 'needs ADB', '· cần ADB': '· needs ADB', 'thêm': 'add', 'cài đặt': 'setup',
+    'Ứng dụng': 'Apps', 'Tệp': 'Files', 'Tệp · Cài': 'Files · Install', 'Tải / Cài': 'Download / Install', 'cần ADB': 'needs ADB', 'Cần ADB: bấm vào để xem cách bật': 'Needs ADB: open it to see how to turn it on', '· cần ADB': '· needs ADB', 'thêm': 'add', 'cài đặt': 'setup',
     'ADB: sẵn sàng': 'ADB: ready', 'ADB: chờ TV cho phép': 'ADB: waiting for the TV', 'ADB: cổng đóng': 'ADB: port closed', 'ADB: lỗi': 'ADB: error',
     'Server tắt': 'Server stopped', 'Không gọi được server. Mở lại TV Remote trên máy này.': 'Cannot reach the server. Open TV Remote on this computer again.', 'Không gọi được server': 'Cannot reach the server',
     'TV: mất kết nối': 'TV: disconnected', 'TV: đang bật': 'TV: on', 'TV: màn hình tắt': 'TV: screen off', 'Chưa chọn TV': 'No TV chosen',
