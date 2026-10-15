@@ -46,7 +46,8 @@ app/desktop/             the computer app on the shared Kotlin core (JVM, no adb
                          .cache/keys). `./gradlew :desktop:packageApp` -> the app for this system + zip / tar.gz (own Java via jlink;
                          data in the user's app data folder); .github/workflows/desktop.yml builds and opens it on Mac, Windows, Linux
 app/shared/tests/        node tests of the page's scripts, and the case tables (fleet_cases.json, tvshell_cases.json) the Kotlin tests read
-dev/                     release.sh, gen_icons.py, emu.sh (the two test emulators: create, start, build + install)
+dev/                     release.sh, gen_icons.py, emu.sh (the two test emulators: create, start, build + install),
+                         demo_css.py (the intro page's demo)
 ```
 
 ## Rules that matter
@@ -130,4 +131,6 @@ What it takes care of, for doing it by hand:
 - The intro site https://tvremote.pages.dev is `docs/`, deployed by Cloudflare Pages (project `tvremote`) on every push to main
   that touches `docs/`. Its build watch path is `docs/*` (Cloudflare's `*` spans folders; `docs/**` matches nothing and
   skipped every build). A deployment stuck at "queued" with `is_skipped` was filtered out, not waiting.
+  The page is `index.html` + `site.css` + `site.js`; its animated demo is `demo.css`, made by `python3 dev/demo_css.py`
+  from `dev/demo.src.css` (times as `@chapter:second`), never edited by hand.
 - Release download links: `https://github.com/HoangTran0410/tv-remote/releases/latest/download/<tv-setup|tv-remote>.apk`.

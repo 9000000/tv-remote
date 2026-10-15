@@ -16,506 +16,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:#0a0d14; --bg2:#0e121b; --card:#141924; --card2:#1a2030; --line:#232a3a; --line2:#2f3850;
-  --text:#e9edf5; --muted:#9aa4b8; --dim:#6b7489;
-  --blue:#5b8cff; --blue2:#3d6fe8; --orange:#ffa31a; --green:#3ddc84; --red:#ff6b6b;
-  --r:18px; --max:1160px;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-body{background:var(--bg);color:var(--text);font:16px/1.6 "Be Vietnam Pro",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-img{max-width:100%;height:auto;display:block}
-.hero .wrap>*,.feat>*,.panel>*,.prep>*,.flow>*{min-width:0}
-a{color:inherit;text-decoration:none}
-code,.mono{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace}
-html[data-lang="vi"] .en, html[data-lang="en"] .vi{display:none !important}
-
-.wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
-section{padding:96px 0;position:relative}
-.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--blue)}
-h1,h2,h3{line-height:1.15;letter-spacing:-.02em}
-h2{font-size:clamp(30px,4.2vw,46px);font-weight:800;margin:14px 0 16px}
-.lead{color:var(--muted);font-size:clamp(16px,1.6vw,19px);max-width:680px}
-.center{text-align:center}.center .lead{margin:0 auto}
-.grad{background:linear-gradient(100deg,#8fb0ff 0%,var(--blue) 45%,var(--orange) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
-
-/* nav */
-nav{position:sticky;top:0;z-index:50;background:rgba(10,13,20,.72);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid rgba(255,255,255,.06)}
-nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
-.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
-.brand img{width:32px;height:32px;border-radius:9px}
-.navlinks{display:flex;gap:4px;margin-left:auto}
-.navlinks a{padding:8px 12px;border-radius:10px;color:var(--muted);font-size:15px;font-weight:500}
-.navlinks a:hover{color:var(--text);background:rgba(255,255,255,.05)}
-.navtools{display:flex;gap:8px;align-items:center}
-.lang{display:flex;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:3px}
-.lang button{all:unset;cursor:pointer;padding:4px 10px;border-radius:7px;font-size:13px;font-weight:700;color:var(--muted)}
-.lang button[aria-pressed="true"]{background:var(--card2);color:var(--text)}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 22px;border-radius:14px;font-weight:700;font-size:16px;border:1px solid transparent;cursor:pointer;transition:transform .15s,background .15s,border-color .15s;white-space:nowrap}
-.btn:active{transform:scale(.98)}
-.btn-primary{background:var(--blue);color:#06112b;box-shadow:0 8px 30px -8px rgba(91,140,255,.7)}
-.btn-primary:hover{background:#6f9aff}
-.btn-ghost{background:rgba(255,255,255,.04);border-color:var(--line2);color:var(--text)}
-.btn-ghost:hover{background:rgba(255,255,255,.08)}
-.btn-sm{padding:8px 14px;font-size:14px;border-radius:10px}
-.btn svg{width:20px;height:20px;flex:none}
-
-/* hero */
-.hero{padding:72px 0 40px;overflow:hidden}
-.hero::before{content:"";position:absolute;inset:-200px -10% auto;height:900px;background:radial-gradient(600px 380px at 70% 30%,rgba(91,140,255,.22),transparent 70%),radial-gradient(500px 300px at 20% 10%,rgba(255,163,26,.10),transparent 70%);pointer-events:none}
-.hero .wrap{display:grid;grid-template-columns:1.02fr 1fr;gap:48px;align-items:center;position:relative}
-.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 14px 6px 8px;border-radius:999px;background:rgba(91,140,255,.1);border:1px solid rgba(91,140,255,.3);font-size:14px;color:#c4d4ff;font-weight:500;white-space:nowrap;max-width:100%}
-.pill span{overflow:hidden;text-overflow:ellipsis}
-@media(max-width:420px){.pill{font-size:12px;gap:6px;padding:5px 11px 5px 6px}.pill b{font-size:11px;padding:2px 7px}}
-@media(max-width:380px){.pill{font-size:11px;gap:5px;padding:4px 9px 4px 5px}.pill b{font-size:10px;padding:2px 6px}}
-.pill b{background:var(--blue);color:#06112b;border-radius:999px;padding:2px 9px;font-size:12px}
-.hero h1{font-size:clamp(38px,5.6vw,66px);font-weight:800;margin:22px 0 20px}
-.hero .lead{font-size:clamp(17px,1.7vw,20px)}
-.cta{display:flex;flex-wrap:wrap;gap:12px;margin:32px 0 26px}
-.trust{display:flex;flex-wrap:wrap;gap:8px 22px;color:var(--muted);font-size:14px}
-.trust span{display:inline-flex;align-items:center;gap:7px}
-.trust svg{width:17px;height:17px;color:var(--green)}
-
-.stage{position:relative;padding:0 0 70px}
-.stage .tv{margin-right:16%}
-.tv{position:relative;border-radius:14px;padding:10px;background:linear-gradient(#20263a,#151a28);box-shadow:0 40px 80px -30px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.07) inset}
-.tv img{border-radius:6px}
-.tv::after{content:"";position:absolute;left:50%;bottom:-26px;transform:translateX(-50%);width:34%;height:26px;background:linear-gradient(#1b2131,#10141f);clip-path:polygon(18% 0,82% 0,100% 100%,0 100%);border-radius:0 0 6px 6px}
-.phone{border-radius:30px;padding:7px;background:#0d1018;box-shadow:0 30px 60px -20px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.12) inset,0 0 0 2px #2a3145}
-.phone img{border-radius:24px}
-.stage .phone{position:absolute;right:0;bottom:0;width:24%;border-radius:22px;padding:5px}
-.stage .phone img{border-radius:18px}
-.signal{position:absolute;right:20%;bottom:44%;width:90px;height:90px;pointer-events:none}
-.signal i{position:absolute;inset:0;border:2px solid var(--blue);border-radius:50%;opacity:0;animation:ping 2.6s infinite}
-.signal i:nth-child(2){animation-delay:.85s}.signal i:nth-child(3){animation-delay:1.7s}
-@keyframes ping{0%{transform:scale(.3);opacity:.9}100%{transform:scale(1.5);opacity:0}}
-@media (prefers-reduced-motion:reduce){.signal i{animation:none;opacity:.3}}
-
-/* pains */
-.pains{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:48px}
-.pain{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:8px;transition:border-color .2s,transform .2s}
-.pain:hover{border-color:var(--line2);transform:translateY(-2px)}
-.pain .emo{font-size:28px;line-height:1}
-.pain q{font-weight:700;font-size:17px;line-height:1.3;quotes:"“" "”"}
-.pain p{color:var(--muted);font-size:14.5px;line-height:1.5;margin-top:auto}
-.pain p b{color:var(--green);font-weight:600}
-
-/* features */
-.feat{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;margin-top:88px}
-.feat.flip .shot{order:-1}
-.feat h3{font-size:clamp(26px,3vw,34px);font-weight:800;margin:12px 0 14px}
-.feat ul{list-style:none;margin-top:22px;display:grid;gap:12px}
-.feat li{display:flex;gap:12px;color:var(--muted)}
-.feat li b{color:var(--text);font-weight:600}
-.feat li::before{content:"";flex:none;width:22px;height:22px;margin-top:2px;border-radius:7px;background:rgba(91,140,255,.15) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b8cff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E") center/14px no-repeat}
-.shot{position:relative}
-.shot::before{content:"";position:absolute;inset:8% 4%;background:radial-gradient(closest-side,rgba(91,140,255,.25),transparent);filter:blur(30px);z-index:-1}
-.browser{border-radius:14px;overflow:hidden;background:var(--card);border:1px solid var(--line2);box-shadow:0 40px 80px -30px rgba(0,0,0,.8)}
-.browser .bar{display:flex;align-items:center;gap:7px;padding:11px 14px;background:#11151f;border-bottom:1px solid var(--line)}
-.browser .bar i{width:11px;height:11px;border-radius:50%;background:#3a4256}
-.browser .bar span{margin-left:12px;flex:1;max-width:280px;background:#1a2030;border-radius:7px;padding:3px 12px;font-size:12px;color:var(--dim)}
-.duo{display:flex;gap:20px;justify-content:center;align-items:flex-end;max-width:500px;margin:0 auto}
-.duo .phone{width:48%}
-.duo .phone.small{width:42%;margin-bottom:48px}
-.duo .phone img{aspect-ratio:720/1560;object-fit:cover;object-position:top}
-.tag{display:inline-block;font-size:12px;font-weight:700;color:var(--orange);background:rgba(255,163,26,.1);border:1px solid rgba(255,163,26,.25);border-radius:999px;padding:3px 10px;margin-left:6px;vertical-align:middle}
-
-.minis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:88px}
-.mini{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px}
-.mini .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--card2);font-size:22px;margin-bottom:14px}
-.mini h4{font-size:17px;margin-bottom:6px}
-.mini p{color:var(--muted);font-size:14.5px}
-
-/* how */
-.how{background:linear-gradient(180deg,transparent,var(--bg2) 20%,var(--bg2) 80%,transparent)}
-.flow{display:grid;grid-template-columns:1fr auto 1fr;gap:28px;align-items:center;margin-top:52px}
-.node{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px}
-.node h4{font-size:15px;color:var(--muted);font-weight:600;margin-bottom:14px;text-transform:uppercase;letter-spacing:.08em}
-.chip{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--card2);margin-top:8px;font-weight:600}
-.chip small{display:block;font-weight:400;color:var(--muted);font-size:13px}
-.chip .e{font-size:22px}
-.wire{display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--muted);font-size:13px;text-align:center;max-width:180px}
-.wire .line{width:150px;height:2px;background:linear-gradient(90deg,var(--blue),var(--orange));position:relative;border-radius:2px}
-.wire .line::after{content:"";position:absolute;right:-8px;top:-5px;border:6px solid transparent;border-right:0;border-left:9px solid var(--orange)}
-.noserver{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;border:1px dashed var(--line2);color:var(--muted);font-size:13px}
-.noserver s{color:var(--red)}
-.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:40px}
-.fact{padding:20px;border-radius:var(--r);border:1px solid var(--line)}
-.fact b{display:block;font-size:24px;font-weight:800;margin-bottom:4px}
-.fact span{color:var(--muted);font-size:14px}
-
-/* choose */
-.choose{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px}
-.opt{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:26px;display:flex;flex-direction:column;cursor:pointer;transition:border-color .2s,background .2s;text-align:left;color:inherit;font:inherit}
-.opt:hover{border-color:var(--line2)}
-.opt[aria-selected="true"]{border-color:var(--blue);background:linear-gradient(180deg,rgba(91,140,255,.08),var(--card) 60%)}
-.opt .big{font-size:34px;margin-bottom:14px}
-.opt h3{font-size:20px;margin-bottom:4px}
-.opt .who{color:var(--blue);font-weight:600;font-size:14px;margin-bottom:12px}
-.opt p{color:var(--muted);font-size:14.5px}
-.opt .go{margin-top:18px;font-weight:700;font-size:14px;color:var(--text);display:flex;align-items:center;gap:6px}
-
-/* install */
-.prep{margin-top:56px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px;display:grid;grid-template-columns:260px 1fr;gap:32px}
-.prep h3{font-size:22px;margin:8px 0 8px}
-.prep .note{color:var(--muted);font-size:14.5px}
-.steps{list-style:none;counter-reset:s;display:grid;gap:14px}
-.steps li{counter-increment:s;display:grid;grid-template-columns:36px 1fr;gap:14px;align-items:start}
-.steps li::before{content:counter(s);width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:var(--card2);border:1px solid var(--line2);font-weight:800;font-size:14px;color:var(--blue)}
-.steps li div{padding-top:4px;color:var(--muted)}
-.steps li div b{color:var(--text)}
-.path{display:inline;font-size:14px;color:var(--text);background:var(--card2);border:1px solid var(--line);padding:1px 8px;border-radius:7px;line-height:2}
-
-.panel{margin-top:20px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:32px;display:none}
-.panel.on{display:grid;grid-template-columns:1.15fr .85fr;gap:40px;animation:fade .3s}
-@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.panel h3{font-size:24px;margin-bottom:6px}
-.panel .sub{color:var(--muted);margin-bottom:22px}
-.code{border-radius:18px;padding:22px;background:linear-gradient(135deg,#1d1408,#24170a);border:1px solid rgba(255,163,26,.35);text-align:center}
-.code small{display:block;color:#ffcf8a;font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
-.code .num{font-family:"JetBrains Mono",monospace;font-size:clamp(40px,5vw,54px);font-weight:700;letter-spacing:.08em;color:#fff;margin:6px 0 10px}
-.code .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-.code .btn-ghost{border-color:rgba(255,163,26,.35)}
-.side{display:flex;flex-direction:column;gap:14px}
-.side .alt{color:var(--muted);font-size:14px;padding:16px;border-radius:14px;border:1px dashed var(--line2)}
-.side .alt a{color:var(--blue);font-weight:600}
-.dl-all{display:flex;flex-direction:column;border:1px solid var(--line2);border-radius:14px;overflow:hidden}
-.dl-all a{padding:10px 16px;color:var(--text);font-size:14px;text-decoration:none;border-top:1px solid var(--line2)}
-.dl-all a:first-child{border-top:0}.dl-all a:hover{background:rgba(255,255,255,.05)}
-.dl-all a.mine{color:var(--blue);font-weight:600}
-.qr{display:flex;gap:16px;align-items:center;padding:14px;border-radius:16px;background:var(--card2);border:1px solid var(--line2)}
-.qr svg{flex:none;width:112px;height:112px;border-radius:10px}
-.qr b{display:block;font-size:15px;margin-bottom:4px}.qr small{display:block;color:var(--muted);font-size:13px;line-height:1.45}
-.hero .qr{max-width:440px;margin-top:22px}.feat .qr{max-width:440px;margin-top:20px}
-.qr{cursor:zoom-in}
-#qrbig{margin:auto;inset:0;border:0;border-radius:22px;padding:22px;background:var(--card);color:inherit;text-align:center;max-width:min(92vw,420px)}
-#qrbig::backdrop{background:rgba(4,6,12,.78);backdrop-filter:blur(4px)}
-#qrbig svg{width:min(78vw,340px);height:auto;border-radius:14px;display:block;margin:0 auto 14px}
-#qrbig b{display:block;font-size:17px;margin-bottom:6px}#qrbig small{display:block;color:var(--muted);font-size:14px;margin-bottom:16px}
-@media (max-width:760px),(hover:none){.qr{display:none}}  /* a code to scan with a phone means nothing on the phone itself */
-.term{background:#07090e;border:1px solid var(--line);border-radius:14px;padding:16px 18px;font-size:14px;color:#cfd8ea;overflow-x:auto}
-.term .c{color:var(--dim)}
-.term .p{color:var(--green)}
-
-/* compat + security */
-.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:48px}
-.box{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px}
-.box h3{font-size:20px;margin-bottom:16px;display:flex;align-items:center;gap:10px}
-.list{list-style:none;display:grid;gap:12px}
-.list li{display:flex;gap:12px;color:var(--muted);font-size:15px}
-.list li .m{flex:none;width:22px;text-align:center}
-.list li b{color:var(--text);font-weight:600}
-
-/* faq */
-.faq{max-width:820px;margin:44px auto 0;display:grid;gap:10px}
-details{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:0 22px}
-details[open]{border-color:var(--line2)}
-summary{list-style:none;cursor:pointer;padding:18px 0;font-weight:600;font-size:16.5px;display:flex;justify-content:space-between;gap:16px}
-summary::-webkit-details-marker{display:none}
-summary::after{content:"+";font-size:22px;line-height:1;color:var(--muted);transition:transform .2s}
-details[open] summary::after{transform:rotate(45deg)}
-details p{color:var(--muted);padding:0 0 20px;font-size:15px}
-details p a{color:var(--blue)}
-
-/* final */
-.final{text-align:center;padding:100px 0 110px}
-.final .card{border-radius:28px;padding:64px 28px;background:radial-gradient(500px 240px at 50% 0%,rgba(91,140,255,.28),transparent 70%),var(--card);border:1px solid var(--line2)}
-.final h2{margin-top:0}
-.final .cta{justify-content:center}
-.final .lead{margin-left:auto;margin-right:auto}
-footer{border-top:1px solid var(--line);padding:36px 0;color:var(--dim);font-size:14px}
-footer .wrap{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-between}
-footer a{color:var(--muted)}footer a:hover{color:var(--text)}
-
-.hard{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:44px 0 36px}
-.hard .mini b{display:block;color:var(--text);margin-bottom:6px}
-.nowrap{white-space:nowrap}
-.cmpwrap{max-width:100%;min-width:0;overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
-.cmp{width:100%;min-width:720px;border-collapse:collapse;font-size:14.5px}
-.cmp th,.cmp td{padding:13px 16px;text-align:left;vertical-align:top;border-top:1px solid var(--line)}
-.cmp thead th{border-top:0;font-size:13px;color:var(--muted);font-weight:700;letter-spacing:.04em}
-.cmp tbody th{font-weight:600;color:var(--text);width:28%}
-.cmp td{color:var(--muted)} .cmp td small{display:block;font-size:12.5px;color:var(--dim);margin-top:2px}
-.cmp .us{background:rgba(91,140,255,.08);color:var(--text)} .cmp thead .us{color:var(--blue)}
-.cmp .y::before{content:"✓ ";color:var(--green);font-weight:800} .cmp .n::before{content:"✗ ";color:var(--red);font-weight:800} .cmp .m::before{content:"~ ";color:var(--orange);font-weight:800}
-.cmp.ways{min-width:560px} .cmp.ways tbody th{width:34%}
-.cmpnote{color:var(--dim);font-size:13px;margin-top:12px;text-align:center}
-@media (max-width:980px){.hard{grid-template-columns:1fr}}
-.reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}
-.reveal.in{opacity:1;transform:none}
-@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
-/* moving pictures without video: CSS laid over the screenshots, in % of them, so they scale with the picture */
-.phone,.tv{position:relative}
-.anim{position:absolute;inset:7px;pointer-events:none;border-radius:24px;overflow:hidden;container-type:inline-size}
-.tv .anim{inset:10px;border-radius:6px}
-.anim svg{position:absolute;left:0;top:12.5%;width:100%;height:25.8%;overflow:visible}
-.anim .pen{fill:none;stroke:#ff3b30;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:300;stroke-dashoffset:300;animation:pen 6s ease-in-out infinite}
-@keyframes pen{0%,8%{stroke-dashoffset:300;opacity:1}38%{stroke-dashoffset:0;opacity:1}70%{stroke-dashoffset:0;opacity:1}82%,100%{stroke-dashoffset:0;opacity:0}}
-.anim .tap{position:absolute;left:50%;top:62.3%;width:16%;aspect-ratio:1;margin:-8% 0 0 -8%;border-radius:50%;background:rgba(255,255,255,.55);transform:scale(0);opacity:0;animation:tap 6s ease-out infinite}
-@keyframes tap{0%,84%{transform:scale(.2);opacity:0}86%{transform:scale(.4);opacity:.9}100%{transform:scale(1.4);opacity:0}}
-.anim .warn{position:absolute;right:4%;bottom:6%;width:40%;padding:2.2cqw 2.6cqw;border-radius:2cqw;background:rgba(22,27,40,.96);border:1px solid rgba(255,255,255,.12);box-shadow:0 2cqw 5cqw rgba(0,0,0,.6);color:#fff;font-size:2.4cqw;line-height:1.35;transform:translateY(130%);opacity:0;animation:warn 9s ease infinite}
-.anim .warn b{display:block;font-size:2.8cqw;margin-bottom:.4cqw}
-.anim .warn small{color:#aab3c5}
-.anim .warn i{display:block;height:.8cqw;margin-top:1.6cqw;border-radius:1cqw;background:#5b8cff;transform-origin:left;animation:count 9s linear infinite}
-@keyframes warn{0%,10%{transform:translateY(130%);opacity:0}16%,66%{transform:none;opacity:1}72%,100%{transform:none;opacity:0}}
-@keyframes count{0%,16%{transform:scaleX(1)}66%,100%{transform:scaleX(0)}}
-.anim .off{position:absolute;inset:0;background:#000;opacity:0;animation:off 9s ease infinite}
-@keyframes off{0%,66%{opacity:0}71%,82%{opacity:1}88%,100%{opacity:0}}
-.health{position:absolute;left:3%;bottom:-7%;width:42%;min-width:190px;padding:14px 16px;border-radius:14px;background:rgba(22,27,40,.97);border:1px solid var(--line2);box-shadow:0 30px 60px -20px rgba(0,0,0,.9);font-size:12px;color:var(--dim)}
-.health b{display:block;color:#fff;font-size:13px;margin-bottom:8px}
-.health div{display:flex;justify-content:space-between;margin-top:7px}
-.health i{display:block;height:6px;margin-top:4px;border-radius:4px;background:#2a3145;overflow:hidden}
-.health i::after{content:"";display:block;height:100%;width:var(--w);border-radius:4px;background:var(--c,#5b8cff);animation:load 4s ease-in-out infinite alternate;animation-delay:var(--d,0s)}
-@keyframes load{0%{width:calc(var(--w) * .45)}50%{width:var(--w)}100%{width:calc(var(--w) * .7)}}
-@media (prefers-reduced-motion:reduce){.anim .pen{animation:none;stroke-dashoffset:0}.anim .tap,.anim .off{display:none}.anim .warn{animation:none;transform:none;opacity:1}.anim .warn i,.health i::after{animation:none}}
-/* demo: one loop of using the app, CSS only. Every moving part runs on the same --T clock (a quarter per chapter), so the
-   phone and the TV stay in step; .run starts it when it scrolls into view, --d jumps to a chapter */
-.demo{--T:28s;--d:0s;max-width:1000px;margin:44px auto 0}
-.demo *,.demo *::after{animation-duration:var(--T);animation-iteration-count:infinite;animation-delay:var(--d);animation-fill-mode:both;animation-play-state:paused}
-.demo.run *,.demo.run *::after{animation-play-state:running}
-.demo.rs *,.demo.rs *::after{animation:none !important}
-.dstage{position:relative;aspect-ratio:16/10}
-.dstage .dtv{position:absolute;left:0;top:0;width:73%}
-.dstage .dph{position:absolute;right:0;bottom:0;width:22%;border-radius:24px;padding:5px}
-.dscr{position:relative;overflow:hidden;container-type:inline-size;background:#000;border-radius:6px;aspect-ratio:16/9;font-family:"Be Vietnam Pro",system-ui,sans-serif;line-height:1.3}
-.dph .dscr{aspect-ratio:9/19.5;border-radius:19px;background:#0d1119}
-.dL{position:absolute;inset:0;opacity:0}
-.dq1{animation-name:dq1}.dq2{animation-name:dq2}.dq3{animation-name:dq3}.dq4{animation-name:dq4}
-@keyframes dq1{0%,23.5%{opacity:1}24.5%,100%{opacity:0}}
-@keyframes dq2{0%,24.5%{opacity:0}25.5%,48.5%{opacity:1}49.5%,100%{opacity:0}}
-@keyframes dq3{0%,49.5%{opacity:0}50.5%,73.5%{opacity:1}74.5%,100%{opacity:0}}
-@keyframes dq4{0%,74.5%{opacity:0}75.5%,99.5%{opacity:1}100%{opacity:0}}
-
-/* the TV's home screen; sized by its own width, so the same markup is the TV and the picture on the phone */
-.dhome{position:absolute;inset:0;container-type:inline-size;background:radial-gradient(80% 70% at 75% 0,#1f2c4d,#0a0e17 72%);color:#e9edf5}
-.dhome .hb{position:absolute;left:4cqw;top:3cqw;display:flex;gap:2.6cqw;align-items:center;font-size:2.1cqw;color:#9aa4b8}
-.dhome .hb b{background:#e9edf5;color:#0a0e17;padding:.5cqw 1.8cqw;border-radius:9cqw}
-.dhome .bn{position:absolute;left:4cqw;right:4cqw;top:9cqw;height:22cqw;border-radius:2cqw;background:linear-gradient(110deg,#341b57,#a8402e 58%,#f0a13a);padding:5cqw 4cqw}
-.dhome .bn i{display:block;height:2.6cqw;width:30cqw;border-radius:1cqw;background:rgba(255,255,255,.9)}
-.dhome .bn i+i{height:1.3cqw;width:40cqw;margin-top:1.6cqw;opacity:.55}
-.dhome .bn i+i+i{height:3.6cqw;width:13cqw;margin-top:3cqw;opacity:1;border-radius:9cqw}
-.dhome .rw{position:absolute;left:4cqw;right:4cqw;top:35cqw;display:grid;grid-template-columns:repeat(5,1fr);gap:2cqw}
-.dhome .rw>span{aspect-ratio:16/9;border-radius:1.4cqw;display:grid;place-items:center;font-weight:800;font-size:3.2cqw;color:#fff;background:#2a3145}
-.dhome .rw .y{background:#f00}.dhome .rw .y::after{content:"";width:3.4cqw;height:3.4cqw;background:#fff;clip-path:polygon(22% 8%,92% 50%,22% 92%)}
-.dhome .rw .n{background:#111;color:#e50914;font-size:5cqw}.dhome .rw .s{background:#1ed760;color:#06140b}.dhome .rw .p{background:#00a8e1;font-size:2.4cqw}
-.dhome .rw .y{animation-name:dfocus}
-@keyframes dfocus{0%,56.5%{transform:none;box-shadow:none}58%,72%{transform:scale(1.13);box-shadow:0 0 0 .5cqw #fff,0 1cqw 3cqw rgba(0,0,0,.6)}73.5%,100%{transform:none;box-shadow:none}}
-.dhome .lb{position:absolute;left:4cqw;top:47.5cqw;font-size:2cqw;color:#9aa4b8}
-
-/* YouTube: opened in chapter 3 and still playing in 4 */
-.dyt{position:absolute;inset:0;container-type:inline-size;background:#0f0f0f;color:#fff;opacity:0;animation-name:dyt}
-@keyframes dyt{0%,59%{opacity:0;transform:scale(.94)}60.5%,99.5%{opacity:1;transform:none}100%{opacity:0}}
-.dyt .lg,.dys .lg{position:absolute;left:4cqw;top:3cqw;display:flex;align-items:center;gap:1cqw;font-weight:800;font-size:2.6cqw;letter-spacing:-.04em}
-.dyt .lg::before,.dys .lg::before{content:"";width:4.4cqw;height:3.1cqw;border-radius:.9cqw;background:#f00 linear-gradient(#fff,#fff) center/1.3cqw 1.4cqw no-repeat;-webkit-mask:none}
-.dyt .pl{position:absolute;left:4cqw;top:9cqw;width:58cqw;aspect-ratio:16/9;border-radius:1.4cqw;background:linear-gradient(135deg,#1b3a5c,#5b2c6f 55%,#d9653b);overflow:hidden}
-.dyt .pl::after{content:"";position:absolute;left:0;bottom:0;height:.8cqw;width:100%;background:#f00;transform-origin:left;animation-name:dprog}
-@keyframes dprog{0%,60%{transform:scaleX(.02)}99%,100%{transform:scaleX(.6)}}
-.dyt .ls{position:absolute;left:65cqw;right:4cqw;top:9cqw;display:grid;gap:1.6cqw}
-.dyt .ls i,.dys .rs i{display:block;aspect-ratio:16/9;border-radius:1cqw;background:linear-gradient(135deg,var(--a),var(--b))}
-.dyt .ls i{aspect-ratio:auto;height:8cqw}
-
-/* chapter 2: typing into the TV's search; the same text on the phone */
-.dys{background:#0f0f0f;color:#fff}
-.dys .sb{position:absolute;left:16cqw;right:16cqw;top:9cqw;height:6.4cqw;border-radius:9cqw;background:#222;border:.25cqw solid #5b8cff;display:flex;align-items:center;padding:0 2.4cqw;gap:1.4cqw;font-size:2.8cqw}
-.dys .rs{position:absolute;left:4cqw;right:4cqw;top:20cqw;display:grid;grid-template-columns:repeat(3,1fr);gap:2.4cqw}
-.dys .rs i{opacity:0;animation-name:dres}
-.dys .rs i:nth-child(2){animation-delay:calc(var(--d) + .15s)}.dys .rs i:nth-child(3){animation-delay:calc(var(--d) + .3s)}
-.dys .rs i:nth-child(4){animation-delay:calc(var(--d) + .45s)}.dys .rs i:nth-child(5){animation-delay:calc(var(--d) + .6s)}.dys .rs i:nth-child(6){animation-delay:calc(var(--d) + .75s)}
-@keyframes dres{0%,43.5%{opacity:0;transform:translateY(2cqw)}45%,100%{opacity:1;transform:none}}
-.dty{display:inline-block;overflow:hidden;white-space:nowrap;vertical-align:bottom;font-family:"JetBrains Mono",ui-monospace,monospace;width:0;animation-name:dtype}
-@keyframes dtype{0%,29%{width:0;animation-timing-function:steps(12,end)}41%,100%{width:12ch}}
-.dcar{display:inline-block;width:.12em;height:1.1em;vertical-align:middle;background:currentColor;margin-left:.05em;animation-name:dblink;animation-duration:1s;animation-delay:0s}
-@keyframes dblink{50%{opacity:0}}
-
-/* chapter 1: the TV asks, once */
-.ddlg{position:absolute;left:50%;top:50%;width:48cqw;margin:-15cqw 0 0 -24cqw;padding:3cqw;border-radius:1.6cqw;background:#262c3a;color:#e9edf5;font-size:1.9cqw;box-shadow:0 3cqw 8cqw rgba(0,0,0,.7);opacity:0;animation-name:ddlg}
-@keyframes ddlg{0%,9.5%{opacity:0;transform:scale(.92)}10.5%,16.5%{opacity:1;transform:none}17.5%,100%{opacity:0;transform:none}}
-.ddlg b{display:block;font-size:2.6cqw;margin-bottom:1.2cqw}
-.ddlg code{display:block;margin:.6cqw 0 1.4cqw;color:#9aa4b8;font-size:1.7cqw}
-.ddlg .ck::before{content:"☑ ";color:#5b8cff}
-.ddlg .bt{display:flex;justify-content:flex-end;gap:1.4cqw;margin-top:2cqw}
-.ddlg .bt>span{padding:.8cqw 2.2cqw;border-radius:.8cqw;background:#323a4d}
-.ddlg .bt>span+span{animation-name:dok}
-@keyframes dok{0%,14.5%{background:#323a4d;transform:none}15%{background:#5b8cff;transform:scale(.94)}15.6%,100%{background:#5b8cff;transform:none}}
-.dtst{position:absolute;left:4cqw;bottom:4cqw;padding:1.4cqw 2.4cqw;border-radius:1.4cqw;background:rgba(22,27,40,.96);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:2.2cqw;font-weight:600;opacity:0}
-.dtst.t1{animation-name:dt1}.dtst.t4{animation-name:dt4}
-@keyframes dt1{0%,17.5%{opacity:0;transform:translateY(3cqw)}18.5%,23%{opacity:1;transform:none}24%,100%{opacity:0}}
-@keyframes dt4{0%,79.5%{opacity:0;transform:translateY(3cqw)}80.5%,85%{opacity:1;transform:none}86%,100%{opacity:0}}
-.dwarn{position:absolute;right:4cqw;bottom:4cqw;width:38cqw;padding:2cqw 2.4cqw;border-radius:1.6cqw;background:rgba(22,27,40,.97);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:2.1cqw;opacity:0;animation-name:dwarn}
-.dwarn b{display:block;font-size:2.6cqw}.dwarn small{color:#aab3c5}
-.dwarn i{display:block;height:.7cqw;margin-top:1.4cqw;border-radius:1cqw;background:#5b8cff;transform-origin:left;animation-name:dcount;animation-timing-function:linear}
-@keyframes dwarn{0%,88.5%{opacity:0;transform:translateY(130%)}89.5%,94%{opacity:1;transform:none}95%,100%{opacity:0;transform:none}}
-@keyframes dcount{0%,89.5%{transform:scaleX(1)}94.5%,100%{transform:scaleX(0)}}
-.doff{position:absolute;inset:0;background:#000;animation-name:doff}
-@keyframes doff{0%{opacity:1}1.5%,94.5%{opacity:0}96%,100%{opacity:1}}
-.dring{position:absolute;left:12.4%;top:70.6%;width:16cqw;aspect-ratio:1;margin:-8cqw 0 0 -8cqw;border-radius:50%;border:.6cqw solid #fff;opacity:0;animation-name:dring}
-@keyframes dring{0%,57%{opacity:0;transform:scale(.2)}57.6%{opacity:1;transform:scale(.3)}60%,100%{opacity:0;transform:scale(1.3)}}
-
-/* the phone */
-.dph .dscr{color:#e9edf5;font-size:5cqw}
-.dst{position:absolute;left:7cqw;right:7cqw;top:3cqw;display:flex;justify-content:space-between;font-size:3.6cqw;font-weight:600;color:#c9d1e0;z-index:2}
-.dhd{position:absolute;left:6cqw;right:6cqw;top:12cqw;font-weight:800;font-size:6.4cqw;display:flex;align-items:center;gap:2.4cqw}
-.dhd small{font-weight:500;font-size:4cqw;color:#9aa4b8}
-.dhd .dot{width:2.4cqw;height:2.4cqw;border-radius:50%;background:#3ddc84}
-.dcard{position:absolute;left:5cqw;right:5cqw;border-radius:4cqw;background:#161c29;border:1px solid #232a3a;padding:4cqw}
-.dp1 .row{top:26cqw;display:flex;gap:3cqw;align-items:center;opacity:0;animation-name:drow}
-@keyframes drow{0%,4.5%{opacity:0;transform:translateY(4cqw)}5.5%,100%{opacity:1;transform:none}}
-.dp1 .row .ic{font-size:8cqw}
-.dp1 .row b{display:block;font-size:5cqw}
-.dp1 .row small{position:relative;display:block;height:1.4em;font-size:3.8cqw;color:#9aa4b8}
-.dp1 .row small>span{position:absolute;left:0;top:0;white-space:nowrap;opacity:0}
-.dp1 .row .s1{animation-name:ds1}.dp1 .row .s2{animation-name:ds2}.dp1 .row .s3{animation-name:ds3;color:#3ddc84;font-weight:700}
-@keyframes ds1{0%,8.5%{opacity:1}9%,100%{opacity:0}}
-@keyframes ds2{0%,8.5%{opacity:0}9%,17%{opacity:1}17.5%,100%{opacity:0}}
-@keyframes ds3{0%,17%{opacity:0}17.5%,100%{opacity:1}}
-.dp1 .row{animation-name:drow,dpress}
-@keyframes dpress{0%,8%{background:#161c29}8.5%,10%{background:#22304f}11%,100%{background:#161c29}}
-.dp1 .ip{top:60cqw;color:#9aa4b8;font-size:4.4cqw;border-style:dashed}
-.drad{position:absolute;left:50%;top:118cqw;width:40cqw;aspect-ratio:1;margin-left:-20cqw;animation-name:drad}
-@keyframes drad{0%,17%{opacity:1}18.5%,100%{opacity:0}}
-.drad i{position:absolute;inset:0;border:.6cqw solid #5b8cff;border-radius:50%;opacity:0;animation:dping 2.4s infinite}
-.drad i:nth-child(2){animation-delay:.8s}.drad i:nth-child(3){animation-delay:1.6s}
-@keyframes dping{0%{transform:scale(.2);opacity:.9}100%{transform:scale(1);opacity:0}}
-.drad b{position:absolute;left:50%;top:50%;width:6cqw;height:6cqw;margin:-3cqw;border-radius:50%;background:#5b8cff}
-.dp1 .lk{position:absolute;left:0;right:0;top:162cqw;text-align:center;font-size:4cqw;color:#9aa4b8}
-.dp1 .lk span{display:block;animation-name:dlk1}.dp1 .lk span+span{position:absolute;inset:0;color:#3ddc84;font-weight:700;animation-name:dlk2}
-@keyframes dlk1{0%,8.5%{opacity:1}9%,100%{opacity:0}}
-@keyframes dlk2{0%,8.5%{opacity:0}9%,17%{opacity:1}17.5%,100%{opacity:0}}
-
-.dp2 .fld{top:26cqw}
-.dp2 .fld small{display:block;font-size:3.8cqw;color:#9aa4b8;margin-bottom:2cqw}
-.dp2 .fld div{background:#0d1119;border:1px solid #5b8cff;border-radius:2.4cqw;padding:2.4cqw 3cqw;font-size:4.6cqw;height:10.5cqw}
-.dpad{position:absolute;left:50%;top:76cqw;width:50cqw;aspect-ratio:1;margin-left:-25cqw;border-radius:50%;background:#161c29;border:1px solid #232a3a}
-.dpad::after{content:"";position:absolute;inset:32%;border-radius:50%;background:#1f2738}
-.dkb{position:absolute;left:0;right:0;bottom:0;height:62cqw;background:#1a1f2b;padding:3cqw 2cqw 0;display:grid;gap:2.2cqw;align-content:start}
-.dkb div{display:flex;justify-content:center;gap:1.4cqw}
-.dkb div>span{width:7.6cqw;height:10cqw;border-radius:1.4cqw;background:#323a4d;display:grid;place-items:center;font-size:3.6cqw;color:#e9edf5}
-.dkb .sp{width:48cqw}.dkb .ent{width:16cqw;background:#5b8cff;color:#06112b;font-weight:800;animation-name:denter}
-.dkb .k1{width:16cqw;font-size:3cqw}
-@keyframes denter{0%,42.5%{transform:none}43%{transform:scale(.9);background:#8fb0ff}44%,100%{transform:none}}
-
-.dp3 .mir{position:absolute;left:4cqw;right:4cqw;top:26cqw;aspect-ratio:16/9;border-radius:2cqw;overflow:hidden;background:#000}
-.dp3 .mir .dring{border-width:.9cqw}
-.dp3 .chs{position:absolute;left:4cqw;right:4cqw;top:82cqw;display:flex;justify-content:space-between;font-size:3.6cqw}
-.dp3 .chs>span{padding:1.4cqw 3cqw;border-radius:9cqw;background:#1f2738;color:#c9d1e0}
-.dp3 .btns{position:absolute;left:8cqw;right:8cqw;top:104cqw;display:grid;grid-template-columns:repeat(3,1fr);gap:5cqw}
-.dp3 .btns i{aspect-ratio:1;border-radius:50%;background:#161c29;border:1px solid #232a3a;display:grid;place-items:center;font-style:normal;font-size:5.6cqw;color:#9aa4b8}
-
-.dp4 .tm{top:26cqw}
-.dp4 .tm>b{display:block;font-size:4.8cqw;margin-bottom:3cqw}
-.dp4 .chp{display:grid;grid-template-columns:1fr 1fr;gap:2.6cqw}
-.dp4 .chp>span{text-align:center;padding:2.6cqw 0;border-radius:2.4cqw;background:#232a3a;font-size:4.2cqw;font-weight:600}
-.dp4 .chp .on{animation-name:dchip}
-@keyframes dchip{0%,78.5%{background:#232a3a;color:#e9edf5;transform:none}79%{transform:scale(.92);background:#5b8cff;color:#06112b}80%,100%{background:#5b8cff;color:#06112b;transform:none}}
-.dp4 .tm small{position:relative;display:block;height:1.4em;margin-top:3cqw;font-size:3.8cqw;color:#9aa4b8}
-.dp4 .tm small>span{position:absolute;left:0;top:0;opacity:0;white-space:nowrap}
-.dp4 .tm .w1{animation-name:dw1}.dp4 .tm .w2{animation-name:dw2;color:#ffa31a;font-weight:700}
-@keyframes dw1{0%,79.5%{opacity:0}80.5%,95%{opacity:1}95.5%,100%{opacity:0}}
-@keyframes dw2{0%,95%{opacity:0}95.5%,100%{opacity:1}}
-.dp4 .bd{top:84cqw;font-size:4.2cqw}.dp4 .lm{top:108cqw;font-size:4.2cqw}
-.dp4 .bd small,.dp4 .lm small{display:block;color:#9aa4b8;font-size:3.6cqw;margin-top:1cqw}
-
-/* the finger: one path through the whole loop, pressing where the phone reacts */
-.dfg{position:absolute;left:50%;top:70%;width:15cqw;aspect-ratio:1;margin:-7.5cqw 0 0 -7.5cqw;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.85) 0 30%,rgba(255,255,255,.35) 32% 60%,transparent 62%);opacity:0;z-index:3;animation-name:dfg}
-@keyframes dfg{
-  0%{left:60%;top:75%;opacity:0}
-  5%{left:60%;top:45%;opacity:0;transform:none}
-  7%{left:52%;top:17%;opacity:1;transform:none}
-  8.5%{left:52%;top:17%;transform:scale(.75)}
-  9.5%{left:52%;top:17%;opacity:1;transform:none}
-  11%{left:60%;top:30%;opacity:0}
-  26%{left:50%;top:95%;opacity:0}
-  28%{left:23%;top:80.6%;opacity:1}
-  29.5%{left:23%;top:80.6%}
-  30.5%{left:82%;top:75%}31.5%{left:68%;top:86.3%}32.5%{left:50%;top:92%}33.5%{left:45%;top:75%}
-  34.5%{left:63%;top:75%}35.5%{left:68%;top:86.3%}36.5%{left:50%;top:80.6%}37.5%{left:50%;top:92%}
-  38.5%{left:77%;top:86.3%}39.5%{left:45%;top:75%}40.5%{left:90%;top:75%;transform:none}
-  42.5%{left:83.4%;top:92%;transform:none;opacity:1}
-  43%{left:83.4%;top:92%;transform:scale(.75)}
-  44%{left:83.4%;top:92%;transform:none;opacity:1}
-  45.5%{left:83.4%;top:92%;opacity:0}
-  51%{left:60%;top:60%;opacity:0}
-  53.5%{left:40%;top:40%;opacity:1}
-  56.5%{left:15.4%;top:28.9%;transform:none}
-  57.3%{left:15.4%;top:28.9%;transform:scale(.75)}
-  58.3%{left:15.4%;top:28.9%;transform:none;opacity:1}
-  60%{left:24%;top:30%;opacity:0}
-  76%{left:60%;top:60%;opacity:0}
-  77.8%{left:71%;top:20.6%;opacity:1;transform:none}
-  78.8%{left:71%;top:20.6%;transform:scale(.75)}
-  79.8%{left:71%;top:20.6%;transform:none;opacity:1}
-  81.5%{left:78%;top:34%;opacity:0}
-  100%{left:60%;top:75%;opacity:0}}
-.dfg{animation-timing-function:ease-in-out}
-
-/* between the two: the phone's touch going to the TV */
-.dbeam{position:absolute;left:73%;width:5%;top:44%;height:2px;opacity:0;animation-name:dbeam}
-.dbeam i{position:absolute;top:-3px;right:0;width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 10px var(--blue);animation:dfly .7s linear infinite}
-.dbeam i:nth-child(2){animation-delay:.23s}.dbeam i:nth-child(3){animation-delay:.46s}
-@keyframes dfly{from{right:0;opacity:0}20%{opacity:1}to{right:100%;opacity:0}}
-@keyframes dbeam{0%,8.5%{opacity:0}9%,11.5%{opacity:1}12%,28.5%{opacity:0}29%,43.5%{opacity:1}44%,57%{opacity:0}57.5%,59.5%{opacity:1}60%,78.5%{opacity:0}79%,81%{opacity:1}81.5%,100%{opacity:0}}
-.dff{position:absolute;left:36.5%;top:31%;transform:translate(-50%,-50%);padding:10px 20px;border-radius:999px;background:rgba(10,13,20,.85);border:1px solid var(--line2);font-weight:700;font-size:clamp(13px,1.6vw,17px);white-space:nowrap;opacity:0;animation-name:dff}
-@keyframes dff{0%,85.5%{opacity:0}86.5%,88.5%{opacity:1}89.5%,100%{opacity:0}}
-
-/* the chapters under it; a click starts that one */
-.dchap{list-style:none;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:26px}
-.dchap button{appearance:none;background:none;border:0;margin:0;font:inherit;display:block;width:100%;cursor:pointer;padding:12px 4px 0;color:var(--dim);font-weight:700;font-size:15px;text-align:center;animation-name:var(--c)}
-.dchap button:focus-visible{outline:2px solid var(--blue);outline-offset:4px;border-radius:6px}
-.dchap b{display:inline-grid;place-items:center;width:22px;height:22px;margin-right:6px;border-radius:50%;background:var(--card2);font-size:12px}
-.dchap i{display:block;height:3px;margin-bottom:10px;border-radius:3px;background:var(--line);overflow:hidden}
-.dchap i::after{content:"";display:block;height:100%;background:var(--blue);transform-origin:left;transform:scaleX(0);animation-name:var(--f);animation-timing-function:linear}
-@keyframes df1{0%{transform:scaleX(0)}24.9%{transform:scaleX(1)}25%,100%{transform:scaleX(0)}}
-@keyframes df2{0%,25%{transform:scaleX(0)}49.9%{transform:scaleX(1)}50%,100%{transform:scaleX(0)}}
-@keyframes df3{0%,50%{transform:scaleX(0)}74.9%{transform:scaleX(1)}75%,100%{transform:scaleX(0)}}
-@keyframes df4{0%,75%{transform:scaleX(0)}99.9%{transform:scaleX(1)}100%{transform:scaleX(0)}}
-@keyframes dc1{0%,24.9%{color:var(--text)}25%,100%{color:var(--dim)}}
-@keyframes dc2{0%,24.9%{color:var(--dim)}25%,49.9%{color:var(--text)}50%,100%{color:var(--dim)}}
-@keyframes dc3{0%,49.9%{color:var(--dim)}50%,74.9%{color:var(--text)}75%,100%{color:var(--dim)}}
-@keyframes dc4{0%,74.9%{color:var(--dim)}75%,100%{color:var(--text)}}
-@media (max-width:620px){
-  .dstage{aspect-ratio:auto;display:flex;flex-direction:column;align-items:center}
-  .dstage .dtv{position:relative;width:100%}
-  .dstage .dph{position:relative;width:44%;margin-top:40px;border-radius:20px;padding:4px}
-  .dbeam{display:none}
-  .dff{left:50%;top:22%}
-  .dchap{gap:6px}.dchap button{font-size:12.5px;padding-top:10px}.dchap b{display:none}
-}
-@media (prefers-reduced-motion:reduce){.demo{--d:-4.4s}.demo *,.demo.run *,.demo *::after,.demo.run *::after{animation-play-state:paused}}
-
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);background:var(--card2);border:1px solid var(--line2);padding:10px 18px;border-radius:12px;font-weight:600;font-size:14px;transition:transform .25s;z-index:99}
-.toast.show{transform:translateX(-50%) translateY(0)}
-
-@media (max-width:980px){
-  .navlinks{display:none}
-  .navtools{margin-left:auto}
-  .hero .wrap,.feat,.panel.on,.prep,.two{grid-template-columns:1fr}
-  .feat{gap:36px}
-  .feat.flip .shot{order:0}
-  .pains{grid-template-columns:repeat(2,1fr)}
-  .minis,.choose{grid-template-columns:1fr 1fr}
-  .facts{grid-template-columns:repeat(2,1fr)}
-  .flow{grid-template-columns:1fr;justify-items:stretch}
-  .wire{max-width:none;flex-direction:row;justify-content:center}
-  .wire .line{width:2px;height:40px;background:linear-gradient(var(--blue),var(--orange))}
-  .wire .line::after{right:-5px;top:auto;bottom:-8px;border:6px solid transparent;border-bottom:0;border-top:9px solid var(--orange)}
-  .stage{max-width:620px;margin:0 auto;width:100%}
-}
-@media (max-width:620px){
-  .wrap{padding:0 16px}
-  section{padding:72px 0}
-  .hero{padding-top:44px}
-  .gh-label{display:none}
-  .minis,.choose{grid-template-columns:1fr}
-  .pains{gap:10px}.pain{padding:14px}.pain .emo{font-size:22px}.pain q{font-size:15px}.pain p{font-size:13.5px}
-  .cta .btn{flex:1 1 100%}
-  .stage{padding-bottom:56px}
-  .panel{padding:22px}
-  .prep{padding:22px}
-  .duo{gap:12px}
-}
-</style>
+<link rel="stylesheet" href="site.css">
+<link rel="stylesheet" href="demo.css">
 </head>
 <body>
 
@@ -611,54 +113,89 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
   <div class="wrap">
     <div class="center reveal">
       <span class="eyebrow"><span class="vi">Xem nó chạy</span><span class="en">See it work</span></span>
-      <h2><span class="vi">Từ lúc mở app tới lúc TV tự tắt.</span><span class="en">From opening the app to the TV turning itself off.</span></h2>
-      <p class="lead"><span class="vi">Kết nối một lần, rồi gõ, chạm, hẹn giờ ngay trên điện thoại.</span><span class="en">Connect once, then type, tap and set timers from your phone.</span></p>
+      <h2><span class="vi">Những việc remote thường bó tay.</span><span class="en">What an ordinary remote can't do.</span></h2>
+      <p class="lead"><span class="vi">Bốn chuyện thật, mỗi chuyện chưa tới 10 giây.</span><span class="en">Four real stories, under 10 seconds each.</span></p>
     </div>
     <div class="demo reveal">
       <div class="dstage" aria-hidden="true">
-        <div class="tv dtv"><div class="dscr">
-          <div class="dhome"><div class="hb"><b><span class="vi">Cho bạn</span><span class="en">For you</span></b><span class="vi">Phim</span><span class="en">Movies</span><span class="vi">Ứng dụng</span><span class="en">Apps</span></div><div class="bn"><i></i><i></i><i></i></div><div class="rw"><span class="y"></span><span class="n">N</span><span class="s">♫</span><span class="p">prime</span><span>⚙</span></div><div class="lb"><span class="vi">Ứng dụng của bạn</span><span class="en">Your apps</span></div></div>
-          <div class="dyt"><div class="lg">YouTube</div><div class="pl"></div><div class="ls"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i><i style="--a:#5a4a1f;--b:#e0b04a"></i></div></div>
-          <div class="dL dq2 dys"><div class="lg">YouTube</div><div class="sb">🔍 <span><span class="dty"><span class="vi">sơn tùng mtp</span><span class="en">lofi hip hop</span></span><span class="dcar"></span></span></div>
-            <div class="rs"><i style="--a:#1b3a5c;--b:#d9653b"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5a4a1f;--b:#e0b04a"></i><i style="--a:#3b2a6b;--b:#8f7ae0"></i></div></div>
-          <span class="dring"></span>
-          <div class="ddlg"><b><span class="vi">Cho phép gỡ lỗi USB?</span><span class="en">Allow USB debugging?</span></b><span class="vi">Vân tay khóa RSA của máy:</span><span class="en">The computer's RSA key fingerprint is:</span><code>3A:91:C4:5E:…:7F:02</code><span class="ck"><span class="vi">Luôn cho phép từ máy này</span><span class="en">Always allow from this computer</span></span><div class="bt"><span><span class="vi">Hủy</span><span class="en">Cancel</span></span><span><span class="vi">Cho phép</span><span class="en">Allow</span></span></div></div>
-          <div class="dtst t1">📱 <span class="vi">Điện thoại đã kết nối</span><span class="en">Phone connected</span></div>
-          <div class="dtst t4">⏰ <span class="vi">Tắt sau 30 phút</span><span class="en">Turning off in 30 min</span></div>
-          <div class="dwarn"><b><span class="vi">⏰ Hết giờ hẹn</span><span class="en">⏰ Time's up</span></b><small><span class="vi">TV sẽ tắt sau 1 phút</span><span class="en">The TV turns off in 1 minute</span></small><i></i></div>
-          <div class="doff"></div>
-        </div></div>
+        <div class="dtvb">
+          <div class="tv dtv"><div class="dscr">
+            <div class="dv dcln"><div class="ck"><span class="t1">20:59</span><span class="t2">21:30</span></div><div class="lb"><span class="vi">Ứng dụng</span><span class="en">Apps</span></div><div class="drw"><span class="y"></span><span class="n">N</span><span class="s">♫</span><span class="p">prime</span><span>⚙</span></div><div class="lb l2"><span class="vi">Xem tiếp</span><span class="en">Continue watching</span></div><div class="rw2"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i></div></div>
+            <div class="dv dblt"><div class="hb"><b><span class="vi">Cho bạn</span><span class="en">For you</span></b><span class="vi">Phim</span><span class="en">Movies</span><span class="vi">Ứng dụng</span><span class="en">Apps</span></div>
+              <div class="ad"><em><span class="vi">Tài trợ</span><span class="en">Sponsored</span></em><i></i><i></i></div>
+              <div class="lb"><span class="vi">Đề xuất cho bạn</span><span class="en">Suggested for you</span></div>
+              <div class="sg"><i style="--a:#7a2d2d;--b:#e06a4a"></i><i style="--a:#2d4f7a;--b:#4ac0e0"></i><i style="--a:#5a2d7a;--b:#c04ae0"></i><i style="--a:#7a6a2d;--b:#e0c04a"></i><i style="--a:#2d7a5a;--b:#4ae0a0"></i><i style="--a:#7a2d5a;--b:#e04aa0"></i></div>
+              <div class="lb l2"><span class="vi">Ứng dụng</span><span class="en">Apps</span></div>
+              <div class="drw"><span class="y"></span><span class="n">N</span><span class="s">♫</span><span class="p">prime</span><span>⚙</span><span>＋</span></div>
+              <span class="dlag"></span></div>
+            <div class="dv dyt"><div class="lg">YouTube</div><div class="pl"></div><div class="ls"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i><i style="--a:#5a4a1f;--b:#e0b04a"></i></div></div>
+            <span class="dfoc"></span>
+            <svg class="ddraw" viewBox="0 0 100 56.25" preserveAspectRatio="none"><path class="c" pathLength="100" d="M21.5 25.6C15 23.6 4.5 24.6 3.2 31C2 37 8 40.6 14.5 40.4C22 40.2 25.6 36.4 25 31.6C24.6 28.6 22.6 26.6 19.4 25.9"/><path class="a" pathLength="100" d="M40 14.5Q33.5 17.5 26.6 23.6L26.9 19.8M26.6 23.6L30.4 23"/></svg>
+            <div class="dlim">⏳ YouTube <b><span class="cn"></span><span class="full">60:00</span></b></div>
+            <div class="dwarn w3"><b><span class="vi">⏳ Hết 60 phút YouTube hôm nay</span><span class="en">⏳ 60 minutes of YouTube today</span></b><small><span class="vi">YouTube sẽ đóng sau 1 phút</span><span class="en">YouTube closes in 1 minute</span></small><i></i></div>
+            <div class="dff">⏩ 21:30</div>
+            <div class="dwarn w4"><b><span class="vi">🌙 Đến giờ đi ngủ</span><span class="en">🌙 It's bedtime</span></b><small><span class="vi">TV sẽ tắt sau 1 phút</span><span class="en">The TV turns off in 1 minute</span></small><i></i></div>
+            <div class="doff"></div>
+          </div></div>
+          <div class="dwall">
+            <div class="mtv"><div><div class="ms"><div class="t"><i style="--c:#f00"></i><i style="--c:#222"></i><i style="--c:#1ed760"></i><i style="--c:#00a8e1"></i><i></i></div><span class="pg"></span><span class="ok">✓</span><span class="bo"></span></div></div><span class="vi">Phòng khách</span><span class="en">Living room</span></div>
+            <div class="mtv"><div><div class="ms"><div class="t"><i style="--c:#f00"></i><i style="--c:#222"></i><i style="--c:#1ed760"></i><i style="--c:#00a8e1"></i><i></i></div><span class="pg"></span><span class="ok">✓</span><span class="bo"></span></div></div><span class="vi">Phòng ngủ</span><span class="en">Bedroom</span></div>
+            <div class="mtv"><div><div class="ms"><div class="t"><i style="--c:#f00"></i><i style="--c:#222"></i><i style="--c:#1ed760"></i><i style="--c:#00a8e1"></i><i></i></div><span class="pg"></span><span class="ok">✓</span><span class="bo"></span></div></div><span class="vi">Quán · tầng 1</span><span class="en">Café · floor 1</span></div>
+            <div class="mtv"><div><div class="ms"><div class="t"><i style="--c:#f00"></i><i style="--c:#222"></i><i style="--c:#1ed760"></i><i style="--c:#00a8e1"></i><i></i></div><span class="pg"></span><span class="ok">✓</span><span class="bo"></span></div></div><span class="vi">Quán · tầng 2</span><span class="en">Café · floor 2</span></div>
+          </div>
+        </div>
+        <div class="dcap">
+          <p><span class="vi">🐢 TV chậm, đầy quảng cáo.</span><span class="en">🐢 A slow TV, full of ads.</span></p>
+          <p><span class="vi">⚡ Một nút: tắt app rác, đổi màn hình chính.</span><span class="en">⚡ One button: junk apps off, a light home screen.</span></p>
+          <p><span class="vi">✨ Nhẹ hẳn. Không xóa gì, Hoàn tác được.</span><span class="en">✨ Much lighter. Nothing deleted, one tap to undo.</span></p>
+          <p><span class="vi">📍 TV nhà bà ở Huế, cách bạn 900 km.</span><span class="en">📍 Grandma's TV, 900 km away.</span></p>
+          <p><span class="vi">✏️ Khoanh chỗ cần bấm: nét vẽ hiện trên TV của bà.</span><span class="en">✏️ Circle what to press: it shows up on her TV.</span></p>
+          <p><span class="vi">👵 Bà bấm theo. Xong.</span><span class="en">👵 She presses it. Done.</span></p>
+          <p><span class="vi">📴 Mẹ cài một lần, rồi tắt điện thoại.</span><span class="en">📴 Mom sets it once, then turns her phone off.</span></p>
+          <p><span class="vi">⏳ TV tự đếm: đủ 60 phút là đóng YouTube.</span><span class="en">⏳ The TV keeps count: 60 minutes, then YouTube closes.</span></p>
+          <p><span class="vi">🌙 Tới giờ ngủ, TV tự tắt.</span><span class="en">🌙 At bedtime, the TV turns itself off.</span></p>
+          <p><span class="vi">🏠 Phòng khách, phòng ngủ, quán: 4 TV.</span><span class="en">🏠 Living room, bedroom, café: 4 TVs.</span></p>
+          <p><span class="vi">📦 Chọn hết, cài app cho cả 4 cùng lúc.</span><span class="en">📦 Select all, install on all 4 at once.</span></p>
+          <p><span class="vi">🔄 Khởi động lại cả loạt, cũng một nút.</span><span class="en">🔄 Restart them all, one button too.</span></p>
+        </div>
         <div class="dbeam"><i></i><i></i><i></i></div>
         <div class="phone dph"><div class="dscr">
-          <div class="dst"><span>21:58</span><span>▾ ▮</span></div>
-          <div class="dL dq1 dp1"><div class="dhd">TV Remote</div>
-            <div class="dcard row"><span class="ic">📺</span><div><b><span class="vi">TV phòng khách</span><span class="en">Living room TV</span></b><small><span class="s1"><span class="vi">Chạm để kết nối</span><span class="en">Tap to connect</span></span><span class="s2"><span class="vi">Đang kết nối…</span><span class="en">Connecting…</span></span><span class="s3">✓ <span class="vi">Đã kết nối</span><span class="en">Connected</span></span></small></div></div>
-            <div class="dcard ip">＋ <span class="vi">Nhập địa chỉ IP</span><span class="en">Type an IP address</span></div>
-            <div class="drad"><i></i><i></i><i></i><b></b></div>
-            <div class="lk"><span><span class="vi">Đang tìm TV trên mạng…</span><span class="en">Looking for TVs…</span></span><span><span class="vi">Nhìn lên TV, chọn Cho phép</span><span class="en">On the TV, choose Allow</span></span></div></div>
-          <div class="dL dq2 dp2"><div class="dhd">‹ <span class="vi">TV phòng khách</span><span class="en">Living room TV</span><span class="dot"></span></div>
-            <div class="dcard fld"><small>⌨️ <span class="vi">Gõ cho TV</span><span class="en">Type to the TV</span></small><div><span class="dty"><span class="vi">sơn tùng mtp</span><span class="en">lofi hip hop</span></span><span class="dcar"></span></div></div>
-            <div class="dpad"></div>
-            <div class="dkb"><div><span>q</span><span>w</span><span>e</span><span>r</span><span>t</span><span>y</span><span>u</span><span>i</span><span>o</span><span>p</span></div><div><span>a</span><span>s</span><span>d</span><span>f</span><span>g</span><span>h</span><span>j</span><span>k</span><span>l</span></div><div><span>z</span><span>x</span><span>c</span><span>v</span><span>b</span><span>n</span><span>m</span></div><div><span class="k1">?123</span><span class="sp"></span><span class="ent">↵</span></div></div></div>
-          <div class="dL dq3 dp3"><div class="dhd">‹ <span class="vi">TV phòng khách</span><span class="en">Living room TV</span><span class="dot"></span></div>
-            <div class="mir"><div class="dhome"><div class="hb"><b><span class="vi">Cho bạn</span><span class="en">For you</span></b><span class="vi">Phim</span><span class="en">Movies</span></div><div class="bn"><i></i><i></i><i></i></div><div class="rw"><span class="y"></span><span class="n">N</span><span class="s">♫</span><span class="p">prime</span><span>⚙</span></div></div>
-              <div class="dyt"><div class="lg">YouTube</div><div class="pl"></div><div class="ls"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i><i style="--a:#5a4a1f;--b:#e0b04a"></i></div></div><span class="dring"></span></div>
-            <div class="chs"><span>🎧</span><span>720p ▾</span><span>⛶</span></div>
-            <div class="btns"><i>⏻</i><i>⌂</i><i>‹</i><i>🔉</i><i>🔇</i><i>🔊</i></div></div>
-          <div class="dL dq4 dp4"><div class="dhd">⏰ <span class="vi">Tự động</span><span class="en">Automation</span></div>
-            <div class="dcard tm"><b><span class="vi">Hẹn giờ tắt</span><span class="en">Sleep timer</span></b><div class="chp"><span><span class="vi">15 phút</span><span class="en">15 min</span></span><span class="on"><span class="vi">30 phút</span><span class="en">30 min</span></span><span><span class="vi">1 giờ</span><span class="en">1 hour</span></span><span><span class="vi">Tắt</span><span class="en">Off</span></span></div>
-              <small><span class="w1"><span class="vi">TV tắt lúc 22:28</span><span class="en">TV off at 22:28</span></span><span class="w2">💤 <span class="vi">TV đã tắt</span><span class="en">The TV is off</span></span></small></div>
-            <div class="dcard bd">🌙 <span class="vi">Giờ đi ngủ</span><span class="en">Bedtime</span><small>21:30 – 6:30</small></div>
-            <div class="dcard lm">⏳ <span class="vi">Giới hạn YouTube</span><span class="en">YouTube limit</span><small><span class="vi">60 phút mỗi ngày</span><span class="en">60 minutes a day</span></small></div></div>
-          <span class="dfg"></span>
+          <div class="dst"><span>20:59</span><span>▾ ▮</span></div>
+          <div class="dL dq1 dp1"><div class="dhd">⚡ <span class="vi">Tối ưu TV</span><span class="en">Optimize TV</span></div>
+            <div class="dcard ram"><small><span class="vi">RAM trống</span><span class="en">Free RAM</span></small><b></b><em></em></div>
+            <div class="go"><span class="g1">⚡ <span class="vi">Tối ưu ngay</span><span class="en">Optimize now</span></span><span class="g2"><span class="vi">Đang tối ưu…</span><span class="en">Optimizing…</span></span><span class="g3">✓ <span class="vi">Xong</span><span class="en">Done</span></span></div>
+            <div class="cl c1"><i><u><s></s></u></i><span><span class="vi">Tắt hiệu ứng</span><span class="en">Animations off</span></span></div>
+            <div class="cl c2"><i><u><s></s></u></i><span><span class="vi">Tắt <b class="dn"></b> app đề xuất</span><span class="en"><b class="dn"></b> suggested apps off</span></span></div>
+            <div class="cl c3"><i><u><s></s></u></i><span><span class="vi">Màn hình chính nhẹ hơn</span><span class="en">A lighter home screen</span></span></div>
+            <div class="un">↶ <span class="vi">Hoàn tác</span><span class="en">Undo</span><small><span class="vi">App chỉ tạm tắt, không bị xóa</span><span class="en">Apps are only turned off, not deleted</span></small></div>
+            <span class="dfg"></span></div>
+          <div class="dL dq2 dp2"><div class="dhd">‹ <span class="vi">TV nhà bà</span><span class="en">Grandma's TV</span><span class="dot"></span></div>
+            <div class="ts">🛰️ Tailscale · 900 km</div>
+            <div class="mir"><div class="dv dcln"><div class="ck"><span class="t1">20:59</span><span class="t2">21:30</span></div><div class="lb"><span class="vi">Ứng dụng</span><span class="en">Apps</span></div><div class="drw"><span class="y"></span><span class="n">N</span><span class="s">♫</span><span class="p">prime</span><span>⚙</span></div><div class="lb l2"><span class="vi">Xem tiếp</span><span class="en">Continue watching</span></div><div class="rw2"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i></div></div>
+              <div class="dv dyt"><div class="lg">YouTube</div><div class="pl"></div><div class="ls"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i><i style="--a:#5a4a1f;--b:#e0b04a"></i></div></div>
+              <span class="dfoc"></span>
+              <svg class="ddraw" viewBox="0 0 100 56.25" preserveAspectRatio="none"><path class="c" pathLength="100" d="M21.5 25.6C15 23.6 4.5 24.6 3.2 31C2 37 8 40.6 14.5 40.4C22 40.2 25.6 36.4 25 31.6C24.6 28.6 22.6 26.6 19.4 25.9"/><path class="a" pathLength="100" d="M40 14.5Q33.5 17.5 26.6 23.6L26.9 19.8M26.6 23.6L30.4 23"/></svg></div>
+            <div class="tb"><span class="pen">✏️ <span class="vi">Vẽ</span><span class="en">Draw</span></span><i style="--c:#ffd23f"></i><i style="--c:#ff5c7a"></i><i style="--c:#5b8cff"></i><span class="x"><span class="vi">Xóa</span><span class="en">Clear</span></span></div>
+            <div class="btns"><i>⏻</i><i>⌂</i><i>‹</i><i>🔉</i><i>🔇</i><i>🔊</i></div>
+            <span class="dfg"></span></div>
+          <div class="dL dq3 dp3"><div class="dhd">⏰ <span class="vi">Tự động</span><span class="en">Automation</span></div>
+            <div class="dcard r1"><b>⏳ <span class="vi">Giới hạn YouTube</span><span class="en">YouTube limit</span></b><small><span class="vi">60 phút mỗi ngày</span><span class="en">60 minutes a day</span></small></div>
+            <div class="dcard r2"><b>🌙 <span class="vi">Giờ đi ngủ</span><span class="en">Bedtime</span></b><small>21:30 – 6:30</small></div>
+            <div class="lock"><b>20:59</b><small>🔒</small></div></div>
+          <div class="dL dq4 dp4"><div class="dhd">📺 <span class="vi">Các TV</span><span class="en">TVs</span><span class="all"><span class="vi">Chọn hết</span><span class="en">All</span></span></div>
+            <div class="fr f1"><i class="cb">✓</i><div><b><span class="vi">Phòng khách</span><span class="en">Living room</span></b><small><span class="sa"><span class="vi">Sẵn sàng</span><span class="en">Ready</span></span><span class="sb"><span class="vi">Đang cài…</span><span class="en">Installing…</span></span><span class="sc">✓ <span class="vi">Đã cài</span><span class="en">Installed</span></span><span class="se"><span class="vi">Khởi động lại…</span><span class="en">Restarting…</span></span><span class="sf">✓ <span class="vi">Sẵn sàng</span><span class="en">Ready</span></span></small></div><em></em></div>
+            <div class="fr f2"><i class="cb">✓</i><div><b><span class="vi">Phòng ngủ</span><span class="en">Bedroom</span></b><small><span class="sa"><span class="vi">Sẵn sàng</span><span class="en">Ready</span></span><span class="sb"><span class="vi">Đang cài…</span><span class="en">Installing…</span></span><span class="sc">✓ <span class="vi">Đã cài</span><span class="en">Installed</span></span><span class="se"><span class="vi">Khởi động lại…</span><span class="en">Restarting…</span></span><span class="sf">✓ <span class="vi">Sẵn sàng</span><span class="en">Ready</span></span></small></div><em></em></div>
+            <div class="fr f3"><i class="cb">✓</i><div><b><span class="vi">Quán · tầng 1</span><span class="en">Café · floor 1</span></b><small><span class="sa"><span class="vi">Sẵn sàng</span><span class="en">Ready</span></span><span class="sb"><span class="vi">Đang cài…</span><span class="en">Installing…</span></span><span class="sc">✓ <span class="vi">Đã cài</span><span class="en">Installed</span></span><span class="se"><span class="vi">Khởi động lại…</span><span class="en">Restarting…</span></span><span class="sf">✓ <span class="vi">Sẵn sàng</span><span class="en">Ready</span></span></small></div><em></em></div>
+            <div class="fr f4"><i class="cb">✓</i><div><b><span class="vi">Quán · tầng 2</span><span class="en">Café · floor 2</span></b><small><span class="sa"><span class="vi">Sẵn sàng</span><span class="en">Ready</span></span><span class="sb"><span class="vi">Đang cài…</span><span class="en">Installing…</span></span><span class="sc">✓ <span class="vi">Đã cài</span><span class="en">Installed</span></span><span class="se"><span class="vi">Khởi động lại…</span><span class="en">Restarting…</span></span><span class="sf">✓ <span class="vi">Sẵn sàng</span><span class="en">Ready</span></span></small></div><em></em></div>
+            <div class="act"><span class="in">📦 <span class="vi">Cài APK</span><span class="en">Install APK</span></span><span class="rb">↻ <span class="vi">Khởi động lại</span><span class="en">Restart</span></span></div>
+            <span class="dfg"></span></div>
         </div></div>
-        <div class="dff">⏩ <span class="vi">30 phút sau…</span><span class="en">30 minutes later…</span></div>
       </div>
       <ol class="dchap">
-        <li><button type="button" data-ch="0" style="--c:dc1"><i style="--f:df1"></i><b>1</b><span class="vi">Kết nối</span><span class="en">Connect</span></button></li>
-        <li><button type="button" data-ch="1" style="--c:dc2"><i style="--f:df2"></i><b>2</b><span class="vi">Gõ chữ</span><span class="en">Type</span></button></li>
-        <li><button type="button" data-ch="2" style="--c:dc3"><i style="--f:df3"></i><b>3</b><span class="vi">Chạm lên hình</span><span class="en">Tap the picture</span></button></li>
-        <li><button type="button" data-ch="3" style="--c:dc4"><i style="--f:df4"></i><b>4</b><span class="vi">Hẹn giờ tắt</span><span class="en">Sleep timer</span></button></li>
+        <li><button type="button" data-ch="0" style="--c:dc1"><i style="--f:df1"></i><b>1</b><span class="vi">Tối ưu TV</span><span class="en">Optimize TV</span></button></li>
+        <li><button type="button" data-ch="1" style="--c:dc2"><i style="--f:df2"></i><b>2</b><span class="vi">Chỉ bà từ xa</span><span class="en">Help grandma</span></button></li>
+        <li><button type="button" data-ch="2" style="--c:dc3"><i style="--f:df3"></i><b>3</b><span class="vi">TV tự canh con</span><span class="en">TV minds the kids</span></button></li>
+        <li><button type="button" data-ch="3" style="--c:dc4"><i style="--f:df4"></i><b>4</b><span class="vi">Nhiều TV</span><span class="en">Many TVs</span></button></li>
       </ol>
     </div>
   </div>
@@ -1088,98 +625,6 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
 <dialog id="qrbig"><div class="big"></div><button class="btn btn-ghost btn-sm" onclick="this.closest('dialog').close()"><span class="vi">Đóng</span><span class="en">Close</span></button></dialog>
 
 <script src="qr.js"></script>
-<script>
-(function(){
-  var root = document.documentElement;
-  var titles = {
-    vi: "TV Remote: điều khiển Android TV từ điện thoại, iPhone, máy tính",
-    en: "TV Remote: control Android TV from your phone, iPhone or computer"
-  };
-  function setLang(l){
-    root.dataset.lang = l; root.lang = l; document.title = titles[l];
-    document.querySelectorAll("img[data-lang-src]").forEach(function(i){ i.src = i.dataset.langSrc.replace("LANG", l); });
-    document.querySelectorAll(".lang button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.set === l); });
-    try { localStorage.setItem("lang", l); } catch(e){}
-  }
-  setLang(root.dataset.lang);
-  document.querySelectorAll(".lang button").forEach(function(b){ b.onclick = function(){ setLang(b.dataset.set); }; });
-
-  // install tabs
-  document.querySelectorAll(".opt").forEach(function(o){
-    o.onclick = function(){
-      document.querySelectorAll(".opt").forEach(function(x){ x.setAttribute("aria-selected", x === o); });
-      document.querySelectorAll(".panel").forEach(function(p){ p.classList.toggle("on", p.id === "p-" + o.dataset.tab); });
-      var p = document.getElementById("p-" + o.dataset.tab);
-      if (p.getBoundingClientRect().top > innerHeight - 120) p.scrollIntoView({behavior:"smooth", block:"start"});
-    };
-  });
-
-  // QR codes for the steps done on a phone ("here" = this page)
-  document.querySelectorAll("[data-qr]").forEach(function(d){
-    var u = d.dataset.qr === "here" ? (/^https?:$/.test(location.protocol) ? location.origin + location.pathname : "") : d.dataset.qr;
-    var s = u && typeof qrSvg === "function" ? qrSvg(u, 112) : null;
-    if (!s) { d.remove(); return; }
-    d.prepend(s);
-    d.addEventListener("click", function(){                            // small on the page: shown big to scan
-      var dlg = document.getElementById("qrbig"), box = dlg.querySelector(".big");
-      box.innerHTML = ""; box.appendChild(qrSvg(u, 340)); box.appendChild(d.querySelector("div").cloneNode(true));
-      dlg.showModal();
-    });
-  });
-  document.getElementById("qrbig").addEventListener("click", function(e){ if (e.target === this) this.close(); });   // a click outside closes it
-
-  // copy codes
-  var toast = document.getElementById("toast"), tt;
-  function say(s){ toast.textContent = s; toast.classList.add("show"); clearTimeout(tt); tt = setTimeout(function(){ toast.classList.remove("show"); }, 1800); }
-  document.querySelectorAll("[data-copy]").forEach(function(b){
-    b.onclick = function(){
-      var v = b.dataset.copy, en = root.dataset.lang === "en";
-      (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject())
-        .then(function(){ say((en ? "Copied " : "Đã chép ") + v); })
-        .catch(function(){ say((en ? "Code: " : "Mã: ") + v); });
-    };
-  });
-
-  // scroll reveal
-  if ("IntersectionObserver" in window){
-    var io = new IntersectionObserver(function(es){
-      es.forEach(function(e){ if (e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } });
-    }, {rootMargin:"0px 0px -8% 0px"});
-    document.querySelectorAll(".reveal").forEach(function(el){ io.observe(el); });
-  } else document.querySelectorAll(".reveal").forEach(function(el){ el.classList.add("in"); });
-
-  // the demo: runs only while on screen; a chapter button starts the loop at that chapter
-  (function(){
-    var d = document.querySelector(".demo"); if (!d) return;
-    if ("IntersectionObserver" in window) new IntersectionObserver(function(es){ d.classList.toggle("run", es[0].isIntersecting); }, {threshold:.25}).observe(d);
-    else d.classList.add("run");
-    d.querySelectorAll(".dchap button").forEach(function(b){
-      b.onclick = function(){
-        if (matchMedia("(prefers-reduced-motion:reduce)").matches) d.style.setProperty("--d", -(b.dataset.ch * 7 + 4.4) + "s");
-        else { d.style.setProperty("--d", -(b.dataset.ch * 7) + "s"); d.classList.add("rs"); void d.offsetWidth; d.classList.remove("rs"); }
-      };
-    });
-  })();
-
-  document.getElementById("yr").textContent = new Date().getFullYear();
-
-  // the computer app: the file for this computer on the big button (one Mac app runs on both chips)
-  (function(){
-    var ua = navigator.userAgent, os = /Windows/.test(ua) ? "windows-x64" : /Mac/.test(ua) && !/iPhone|iPad/.test(ua) ? "mac" : /Linux/.test(ua) && !/Android/.test(ua) ? (/aarch64|arm64/.test(ua) ? "linux-arm64" : "linux-x64") : "";
-    function pick(o){
-      var a = document.querySelector('.dl-all a[data-os="' + o + '"]'); if (!a) return;
-      document.querySelectorAll(".dl-all a").forEach(function(x){ x.classList.toggle("mine", x === a); });
-      document.getElementById("dl-pc").href = a.href; document.getElementById("dl-os").innerHTML = ' <span class="vi">cho</span><span class="en">for</span> ' + a.innerHTML;
-    }
-    pick(os);
-  })();
-
-  // latest release tag in the hero pill; the page still reads fine if GitHub is unreachable
-  fetch("https://api.github.com/repos/HoangTran0410/tv-remote/releases/latest")
-    .then(function(r){ return r.ok ? r.json() : null; })
-    .then(function(j){ if (j && j.tag_name) document.getElementById("ver").textContent = j.tag_name.replace(/^v?/, "v"); })
-    .catch(function(){});
-})();
-</script>
+<script src="site.js"></script>
 </body>
 </html>
