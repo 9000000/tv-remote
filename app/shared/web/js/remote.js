@@ -4,8 +4,8 @@
 document.querySelectorAll('[data-k]').forEach((b) => {
   const k = b.dataset.k; let t = null, long = false, down = false;
   const power = k === 'POWER';                                     // never a long press, and turning the TV off needs a yes
-  const send = (dir) => {
-    if (power && tvOn && !confirm('Đưa TV về chế độ chờ?\nNếu TV tắt cả mạng thì chỉ mở lại được bằng nút Đánh thức (cần một máy ở nhà đang bật) hoặc remote của TV.')) return;
+  const send = async (dir) => {
+    if (power && tvOn && !await ask('Đưa TV về chế độ chờ?\nNếu TV tắt cả mạng thì chỉ mở lại được bằng nút Đánh thức (cần một máy ở nhà đang bật) hoặc remote của TV.', { ok: 'Tắt TV' })) return;
     return api('/api/key', dir ? { key: k, dir } : { key: k }).then((r) => { if (r && r.noop) toast('TV đã nhận nút này, nhưng màn hình hiện tại không phản hồi'); return r; });
   };
   const release = (tap) => {
@@ -72,7 +72,7 @@ $('#del').addEventListener('click', () => { if (txt.value) { txt.value = [...txt
 function setMore(on) { $('#more').hidden = !on; $('#morebtn').classList.toggle('on', on); try { localStorage.setItem('more', on ? '1' : ''); } catch {} }
 try { setMore(!!localStorage.getItem('more')); } catch {}
 $('#morebtn').addEventListener('click', () => setMore($('#more').hidden));
-$('#shot').addEventListener('click', () => { const a = document.createElement('a'); a.href = '/api/screen'; a.download = 'tv-' + Math.floor(Date.now() / 1000) + (CORE === 'mac' ? '.jpg' : '.png'); a.click(); });
+$('#shot').addEventListener('click', () => { const a = document.createElement('a'); a.href = '/api/screen'; a.download = 'tv-' + Math.floor(Date.now() / 1000) + (CORE === 'mac' && STATE.video !== 'h264' ? '.jpg' : '.png'); a.click(); });
 $('#digits').addEventListener('click', () => { const p = $('#numpad'); p.hidden = !p.hidden; try { localStorage.setItem('numpad', p.hidden ? '' : '1'); } catch {} });
 try { setLive(localStorage.getItem('live') !== '0'); $('#numpad').hidden = !localStorage.getItem('numpad'); } catch { setLive(true); }
 

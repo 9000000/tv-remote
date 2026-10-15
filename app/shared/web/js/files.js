@@ -37,11 +37,11 @@ function renderFiles() {
     const full = join(i.name), [icon, kind] = kindOf(i);
     const btn = (text, title, fn, cls = '') => el('button', { textContent: text, title, ariaLabel: title, className: 'small ' + cls, onclick: (e) => { e.stopPropagation(); fn(e); } });
     const acts = el('div', { className: 'acts' });
-    if (kind === 'apk') acts.append(setLabel(btn('', 'Cài APK này lên TV', (e) => { const b = e.currentTarget; if (confirm('Cài ' + i.name + ' lên TV?')) startJob('/api/file/install', { path: full }, 'Cài ' + i.name, b); }, 'primary'), '📦', 'Cài'));
+    if (kind === 'apk') acts.append(setLabel(btn('', 'Cài APK này lên TV', async (e) => { const b = e.currentTarget; if (await ask('Cài ' + i.name + ' lên TV?', { ok: 'Cài' })) startJob('/api/file/install', { path: full }, 'Cài ' + i.name, b); }, 'primary'), '📦', 'Cài'));
     if (['video', 'audio', 'image'].includes(kind)) acts.append(btn('▶ TV', 'Mở trên TV', () => api('/api/file/open', { path: full }).then((r) => r && toast('Đã mở trên TV: ' + i.name))));
     if (!i.dir) acts.append(el('a', { className: 'linkbtn iconbtn', href: '/api/file?path=' + encodeURIComponent(full), textContent: '⬇', title: 'Tải về máy này', ariaLabel: 'Tải về máy này', onclick: (e) => e.stopPropagation() }));
-    acts.append(btn('✎', 'Đổi tên', () => { const n = prompt('Tên mới:', i.name); if (n && n !== i.name) fileAct('/api/file/rename', { path: full, name: n }, 'Đã đổi tên'); }, 'iconbtn'));
-    acts.append(btn('🗑', 'Xóa', () => { if (confirm('Xóa ' + (i.dir ? 'thư mục (và mọi thứ bên trong) ' : '') + full + '?')) fileAct('/api/file/delete', { path: full }, 'Đã xóa'); }, 'iconbtn danger'));
+    acts.append(btn('✎', 'Đổi tên', async () => { const n = await ask('Tên mới:', { value: i.name }); if (n && n !== i.name) fileAct('/api/file/rename', { path: full, name: n }, 'Đã đổi tên'); }, 'iconbtn'));
+    acts.append(btn('🗑', 'Xóa', async () => { if (await ask('Xóa ' + (i.dir ? 'thư mục (và mọi thứ bên trong) ' : '') + full + '?', { ok: 'Xóa', danger: true })) fileAct('/api/file/delete', { path: full }, 'Đã xóa'); }, 'iconbtn danger'));
     const open = i.dir ? () => loadFiles(full) : kind === 'image' ? () => { $('#preview img').src = '/api/file?inline=1&path=' + encodeURIComponent(full); $('#preview').showModal(); } : null;
     const row = el('div', { className: 'item' + (open ? ' click' : ''), onclick: open },
       el('div', { className: 'ficon' + (i.dir ? ' dir' : ''), textContent: icon }),
@@ -54,7 +54,7 @@ function renderFiles() {
 $('#filesq').addEventListener('input', renderFiles);
 $('#filessort').addEventListener('change', renderFiles);
 $('#filesreload').addEventListener('click', () => loadFiles(cwd));
-$('#mkdir').addEventListener('click', () => { const n = prompt('Tên thư mục mới:'); if (n) fileAct('/api/file/mkdir', { path: join(n.trim()) }, 'Đã tạo thư mục'); });
+$('#mkdir').addEventListener('click', async () => { const n = await ask('Tên thư mục mới:', { value: '' }); if (n) fileAct('/api/file/mkdir', { path: join(n.trim()) }, 'Đã tạo thư mục'); });
 $('#upfile').addEventListener('change', (e) => { [...e.target.files].forEach((f) => upload(f, 'file', cwd)); e.target.value = ''; });
 $('#preview').addEventListener('click', () => { $('#preview').close(); $('#preview img').removeAttribute('src'); });
 const fc = $('#filescard');
@@ -111,8 +111,8 @@ $('#castfile').addEventListener('change', (e) => {
 });
 async function startJob(path, data, label, src) { if (src) src.dataset.busy = '⏳'; const r = await api(path, data); if (r) trackJob(r, label, undefined, src); else mark(src, {}); }
 $('#fetchf').addEventListener('submit', (e) => { e.preventDefault(); const u = $('#fetchurl').value.trim(); if (u) { startJob('/api/fetch', { url: u, dest: '/sdcard/Download' }); $('#fetchurl').value = ''; } });
-$('#instf').addEventListener('submit', (e) => { e.preventDefault(); const u = $('#insturl').value.trim(); if (u && confirm('Cài APK từ link này lên TV?\n' + u)) { startJob('/api/install', { url: u }, undefined, $('#instf button')); $('#insturl').value = ''; } });
-$('#apkfile').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; if (f && confirm('Cài ' + f.name + ' lên TV?')) upload(f, 'install', '', undefined, e.target.closest('label')); });
+$('#instf').addEventListener('submit', async (e) => { e.preventDefault(); const u = $('#insturl').value.trim(); if (u && await ask('Cài APK từ link này lên TV?\n' + u, { ok: 'Cài' })) { startJob('/api/install', { url: u }, undefined, $('#instf button')); $('#insturl').value = ''; } });
+$('#apkfile').addEventListener('change', async (e) => { const f = e.target.files[0]; e.target.value = ''; if (f && await ask('Cài ' + f.name + ' lên TV?', { ok: 'Cài' })) upload(f, 'install', '', undefined, e.target.closest('label')); });
 
 
 $('#jobsclose').addEventListener('click', (e) => { e.preventDefault(); $('#jobscard').hidden = true; });   // the next upload or install brings it back

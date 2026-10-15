@@ -14,15 +14,20 @@ sourceSets["main"].kotlin.exclude("**/core/TvAndroid.kt", "**/core/AudioOut.kt",
 
 dependencies {
     implementation("org.json:json:20240303")                         // on Android org.json is part of the system
+    implementation("net.java.dev.jna:jna:5.15.0")                    // the window: Window.kt calls native/<system>/webview
 }
 
 application {
     mainClass.set("dev.tvremote.desktop.MainKt")
+    if ("mac" in System.getProperty("os.name").lowercase()) applicationDefaultJvmArgs = listOf("-XstartOnFirstThread")   // --window: Cocoa
 }
 
-// TV Remote.app (or the Windows / Linux app folder): its own trimmed Java, the page and the files the server sends to TVs,
-// all inside, so nothing has to be installed. jpackage builds for the machine it runs on (an arm64 Mac gives an arm64 app).
-//   ./gradlew :desktop:packageApp   ->  app/desktop/build/package/TV Remote.app  (+ TV-Remote-mac.zip)
+// TV Remote.app, TV Remote.exe or tv-remote: its own trimmed Java, the page and the files the server sends to TVs, all
+// inside, so nothing has to be installed. jpackage only builds for the system it runs on (an arm64 Mac gives an arm64 Mac app):
+// the GitHub workflow (.github/workflows/desktop.yml) runs this on each system for a release.
+//   ./gradlew :desktop:packageApp   ->  app/desktop/build/package/<the app>  +  TV-Remote-<os>-<arch>.zip / .tar.gz
+val os = System.getProperty("os.name").lowercase().let { if ("mac" in it) "mac" else if ("win" in it) "windows" else "linux" }
+val arch = System.getProperty("os.arch").let { if (it == "aarch64" || it == "arm64") "arm64" else "x64" }
 val stage = layout.buildDirectory.dir("package-input")
 val stageApp by tasks.registering(Sync::class) {
     dependsOn("installDist")
@@ -33,23 +38,44 @@ val stageApp by tasks.registering(Sync::class) {
         from("../shared/web") { into("app/shared/web") }
         from("../shared/assets/scrcpy-server.jar") { into("app/shared/assets") }
         from("../android/tv-remote.apk") { into("app/android") }      // the released phone app: Meta and Caps, run on the TV
+        from("native") { include(if (os == "mac") "mac/**" else "$os-$arch/**"); into("app/desktop/native") }   // the window (Window.kt)
     }
 }
-tasks.register<Exec>("packageApp") {
+val appName = if (os == "linux") "tv-remote" else "TV Remote"         // Linux: a launcher name without a space
+val packageOut = layout.buildDirectory.dir("package").get().asFile
+val packageApp by tasks.registering(Exec::class) {
     dependsOn(stageApp)
-    val out = layout.buildDirectory.dir("package").get().asFile
     val version = rootDir.resolve("../../VERSION").readText().trim()
-    val mac = System.getProperty("os.name").lowercase().contains("mac")
-    val jpackage = javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(17)) }.get().metadata.installationPath.file("bin/jpackage").asFile
-    doFirst { out.deleteRecursively(); out.mkdirs() }
-    commandLine(listOf(jpackage.path, "--type", "app-image", "--name", "TV Remote", "--app-version", version, "--vendor", "tv-remote",
-        "--input", stage.get().asFile.path, "--main-jar", "desktop.jar", "--main-class", "dev.tvremote.desktop.MainKt", "--dest", out.path,
-        "--add-modules", "java.base,java.desktop,jdk.crypto.ec",           // jdk.crypto.ec: the TLS of the remote protocol (6467, 6466)
+    val jpackage = javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(17)) }.get().metadata.installationPath
+        .file(if (os == "windows") "bin/jpackage.exe" else "bin/jpackage").asFile
+    doFirst { packageOut.deleteRecursively(); packageOut.mkdirs() }
+    commandLine(listOf(jpackage.path, "--type", "app-image", "--name", appName, "--app-version", version, "--vendor", "tv-remote",
+        "--input", stage.get().asFile.path, "--main-jar", "desktop.jar", "--main-class", "dev.tvremote.desktop.MainKt", "--dest", packageOut.path,
+        "--add-modules", "java.base,java.logging,jdk.crypto.ec",           // TLS of the remote protocol (6467, 6466); JNA logs
         "--jlink-options", "--strip-debug --no-man-pages --no-header-files --compress=2",
-        "--java-options", "-Dtvr.res=\$APPDIR/res", "--java-options", "-Dapple.awt.UIElement=true",   // no Dock icon: the page is the app, its "Tắt" quits
-        "--java-options", "-Xmx256m") +
-        (if (mac) listOf("--icon", rootDir.resolve("../../TV Remote.app/Contents/Resources/icon.icns").path, "--mac-package-identifier", "dev.tvremote.desktop") else emptyList()))
-    doLast {
-        if (mac) exec { workingDir = out; commandLine("ditto", "-c", "-k", "--keepParent", "TV Remote.app", "TV-Remote-mac.zip") }
+        "--java-options", "-Dtvr.res=\$APPDIR/res", "--java-options", "-Xmx256m") + when (os) {
+            "mac" -> listOf("--java-options", "-XstartOnFirstThread",   // the window's Cocoa loop must run on the first thread
+                "--icon", projectDir.resolve("icon.icns").path, "--mac-package-identifier", "dev.tvremote.desktop")
+            "windows" -> listOf("--icon", projectDir.resolve("icon.ico").path)   // no --win-console: no black window; the log is server.log
+            else -> listOf("--icon", rootDir.resolve("../shared/web/icon-512.png").path)
+        })
+    doLast {                                                          // without its languages listed, WebKit tells the page "en" on a Vietnamese Mac
+        if (os != "mac") return@doLast
+        val app = packageOut.resolve("TV Remote.app")
+        exec { commandLine("plutil", "-replace", "CFBundleLocalizations", "-json", "[\"vi\",\"en\"]", app.resolve("Contents/Info.plist").path) }
+        exec { commandLine("codesign", "--force", "--deep", "--sign", "-", app.path) }   // signed again over the changed Info.plist
     }
 }
+// the archive people download: zip on Mac (ditto keeps the app's signature and links) and Windows, tar.gz on Linux (modes)
+val packageArchive by tasks.registering {
+    dependsOn(packageApp)
+    doLast {
+        val base = "TV-Remote-$os-$arch"
+        when (os) {
+            "mac" -> exec { workingDir = packageOut; commandLine("ditto", "-c", "-k", "--keepParent", "TV Remote.app", "$base.zip") }
+            "linux" -> exec { workingDir = packageOut; commandLine("tar", "-czf", "$base.tar.gz", appName) }
+            else -> ant.invokeMethod("zip", mapOf("destfile" to packageOut.resolve("$base.zip").path, "basedir" to packageOut.path, "includes" to "$appName/**"))
+        }
+    }
+}
+packageApp { finalizedBy(packageArchive) }

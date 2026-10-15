@@ -53,8 +53,8 @@ function renderRules() {
       el('small', { textContent: 'Hôm nay đã dùng ' + mins(l.used) + ' / ' + mins(total) + (l.extra ? ' (cho thêm ' + mins(l.extra) + ')' : '') }), meter),
       el('div', { className: 'acts' },
         act('＋30 phút hôm nay', async () => { await loadRules({ do: 'extra', pkg: l.pkg, minutes: 30 }); toast('Đã cho thêm 30 phút: ' + name); }),
-        act('✏️', async () => { const v = prompt('Số phút mỗi ngày cho ' + name, String(l.minutes)); if (v && +v > 0) await loadRules({ do: 'limit', pkg: l.pkg, minutes: Math.round(+v) }); }),
-        act('🗑', async () => { if (confirm('Bỏ giới hạn cho ' + name + '?')) await loadRules({ do: 'limit', pkg: l.pkg, minutes: 0 }); }, 'danger')));
+        act('✏️', async () => { const v = await ask('Số phút mỗi ngày cho ' + name, { value: String(l.minutes) }); if (v && +v > 0) await loadRules({ do: 'limit', pkg: l.pkg, minutes: Math.round(+v) }); }),
+        act('🗑', async () => { if (await ask('Bỏ giới hạn cho ' + name + '?', { ok: 'Bỏ giới hạn' })) await loadRules({ do: 'limit', pkg: l.pkg, minutes: 0 }); }, 'danger')));
   });
   $('#limits').replaceChildren(...(rows.length ? rows : [el('p', { className: 'muted', style: 'margin:0', textContent: 'Chưa giới hạn app nào.' })]));
   if (CORE === 'tv' && r.adb && r.adb !== 'ready') $('#bedstate').append(el('span', { className: 'warnline', textContent: '⚠️ TV Setup chưa nối được ADB của TV nên chưa tự tắt TV / đóng app được.' }));
@@ -227,7 +227,7 @@ $('#scenesave').addEventListener('click', async () => {
   if (await saveScenes(list)) { $('#scenedlg').close(); toast('Đã lưu cảnh: ' + sc.name); }
 });
 $('#scenetry').addEventListener('click', () => { const sc = draftScene(); if (sc) runScene({ name: sc.name, steps: sc.steps }); });
-$('#scenedel').addEventListener('click', async () => { if (editing && confirm('Xóa cảnh “' + editing.name + '”?') && await saveScenes(SCENES.filter((x) => x.id !== editing.id))) $('#scenedlg').close(); });
+$('#scenedel').addEventListener('click', async () => { if (editing && await ask('Xóa cảnh “' + editing.name + '”?', { ok: 'Xóa', danger: true }) && await saveScenes(SCENES.filter((x) => x.id !== editing.id))) $('#scenedlg').close(); });
 $('#sceneclose').addEventListener('click', () => $('#scenedlg').close());
 $('#scenenew').addEventListener('click', () => editScene(null));
 

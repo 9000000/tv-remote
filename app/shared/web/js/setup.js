@@ -1,7 +1,7 @@
 // optimise, language, quit, and the TV tab (saved TVs, scan, first-time setup)
 // ---------- one-click TV setup (cli/tv_setup.py) ----------
 async function runSetup(mode, choice) {
-  if (mode === 'undo' && !confirm('Hoàn tác? Bật lại màn hình chính Google, các app đã tắt và hiệu ứng như cũ.')) return;
+  if (mode === 'undo' && !await ask('Hoàn tác? Bật lại màn hình chính Google, các app đã tắt và hiệu ứng như cũ.', { ok: 'Hoàn tác' })) return;
   const btns = [$('#setupapply'), $('#setupundo')], log = $('#setuplog');
   btns.forEach((b) => { b.disabled = true; }); log.hidden = false; log.textContent = 'Đang chạy...';
   let j = await api('/api/setup', { mode, lang: LANG, ...(choice || {}) });
@@ -73,12 +73,12 @@ $('#about').addEventListener('click', (e) => { if (e.target === $('#about')) $('
 // ---------- stop the local server from the page ----------
 let stopped = false;
 $('#quit').addEventListener('click', async () => {
-  if (!confirm('Tắt chương trình remote trên máy tính này?\nTV không bị ảnh hưởng. Muốn dùng lại thì mở TV Remote (Mac) hoặc start-windows.cmd.')) return;
+  if (!await ask('Tắt TV Remote trên máy tính này?\nTV không bị ảnh hưởng. Muốn dùng lại thì mở lại app TV Remote.', { ok: 'Tắt' })) return;
   if (screenOn) stopScreen();
   if (!await api('/api/shutdown', {})) return;
   stopped = true;
   document.querySelector('main').replaceChildren(el('section', { className: 'card', style: 'text-align:center;padding:40px 16px' },
-    el('h1', { textContent: 'Đã tắt' }), el('p', { className: 'muted', textContent: 'Chương trình remote trên máy tính này đã dừng. Mở TV Remote (Windows: start-windows.cmd) để dùng lại. Có thể đóng tab này.' })));
+    el('h1', { textContent: 'Đã tắt' }), el('p', { className: 'muted', textContent: 'TV Remote trên máy tính này đã dừng. Mở lại app TV Remote để dùng tiếp. Có thể đóng trang này.' })));
 });
 
 // ---------- TVs: saved list, discovery, first-time setup ----------
@@ -111,7 +111,7 @@ async function loadTvs() {
       el('small', { textContent: t.host + (t.lan && t.lan !== t.host ? ' · trong nhà ' + t.lan : '') })),
     el('div', { className: 'acts' },
       setLabel(el('button', { className: 'small primary', onclick: () => openTv(t.host, r.current) }), '▶', 'Điều khiển'),
-      setLabel(el('button', { className: 'small danger', onclick: async () => { if (confirm('Xóa "' + (t.name || t.host) + '" khỏi danh sách? (Không đổi gì trên TV)')) { await api('/api/tv/remove', { host: t.host }); await refresh(); loadTvs(); loadSteps(); } } }), '🗑', 'Xóa'))));
+      setLabel(el('button', { className: 'small danger', onclick: async () => { if (await ask('Xóa "' + (t.name || t.host) + '" khỏi danh sách? (Không đổi gì trên TV)', { ok: 'Xóa', danger: true })) { await api('/api/tv/remove', { host: t.host }); await refresh(); loadTvs(); loadSteps(); } } }), '🗑', 'Xóa'))));
   $('#tvlist').replaceChildren(...rows);
   $('#savedcard').hidden = !rows.length; $('#pickcols').classList.toggle('solo', !rows.length);   // nothing saved: no empty box, just the search
   fleetCheck(rows.length);
@@ -157,7 +157,7 @@ function adbHelp() {
     choice('🔧 Tự làm: mở Cài đặt TV', 'Thử mọi cách mở Cài đặt, rồi chỉ các bước bật Gỡ lỗi ADB.', findSettings),
     choice('🏠 Cài màn hình chính khác', 'Khi TV giấu Cài đặt: mở qua một launcher từ CH Play.', otherHome),
     choice('🛒 Mở CH Play trên TV', '', () => assist('open', { what: 'https://play.google.com/store/apps' })),
-    choice('📦 Mở app theo tên gói', 'Đã cài thì mở app, chưa cài thì mở trang CH Play của nó.', () => { const p = prompt('Tên gói hoặc đường dẫn', 'com.example.app'); if (p && p.trim()) assist('open', { what: p.trim() }); }),
+    choice('📦 Mở app theo tên gói', 'Đã cài thì mở app, chưa cài thì mở trang CH Play của nó.', async () => { const p = await ask('Tên gói hoặc đường dẫn', { value: 'com.example.app' }); if (p && p.trim()) assist('open', { what: p.trim() }); }),
     say(DL_TIP),
     say('Khi TV bật ADB xong, trang này tự nhận ra và kết nối. Các nút mũi tên, OK ở tab Remote vẫn dùng được trong lúc làm.'));
 }

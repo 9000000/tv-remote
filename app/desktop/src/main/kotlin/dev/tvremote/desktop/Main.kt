@@ -8,16 +8,16 @@ import java.net.URL
 import java.util.concurrent.CountDownLatch
 
 /**
- * The computer's server on the shared Kotlin core (a trial, next to the Python one in app/web): the same page, the same
- * tvs.json, the same pairings, and no Python, adb or ffmpeg. ADB and the remote protocol are spoken by Adb.kt and Atv.kt,
- * the picture goes to the browser as H.264 as TV Setup sends it.
+ * The computer's server on the shared Kotlin core: the same page as the two apps, and no Python, adb or ffmpeg. ADB and the
+ * remote protocol are spoken by Adb.kt and Atv.kt, the picture goes to the page as H.264 as TV Setup sends it.
  *
- *   ./gradlew :desktop:run --args="[--tv 192.168.1.88] [--port 8765]"     (inside the tv-remote folder: its tvs.json)
- *   ./gradlew :desktop:packageApp                                          (TV Remote.app with its own Java, see build.gradle.kts)
+ *   ./gradlew :desktop:run --args="[--tv 192.168.1.88] [--port 8765] [--window]"   (inside the tv-remote folder: its tvs.json)
+ *   ./gradlew :desktop:packageApp                                                  (the app with its own Java, see build.gradle.kts)
  *
- * The packaged app (system property tvr.res: the page and the files it needs, inside the app) keeps its TVs and keys in
- * the user's app data folder, taken over once from the tv-remote folder the Python app last ran from.
- * TVS_FILE: another list of TVs (tests); TVR_KEYS: another folder for this computer's keys (tests: a key no TV knows yet).
+ * The packaged app (system property tvr.res: the page and the files it needs, inside the app) shows the page in a window of
+ * its own (Window.kt; the browser where the system has no web view, or with --browser) and keeps its TVs and keys in the
+ * user's app data folder. Closing the window quits it. TVS_FILE: another list of TVs (tests); TVR_KEYS: another folder for
+ * this computer's keys (tests: a key no TV knows yet).
  */
 fun main(args: Array<String>) {
     val opt = args.toList().zipWithNext().filter { it.first.startsWith("--") }.associate { it.first.substring(2) to it.second }
@@ -26,19 +26,17 @@ fun main(args: Array<String>) {
     val packaged = res != null
     val repo = res ?: generateSequence(File(System.getProperty("user.dir")).absoluteFile) { it.parentFile }
         .firstOrNull { File(it, "app/shared/web/index.html").isFile } ?: run { System.err.println("run it inside the tv-remote folder"); kotlin.system.exitProcess(2) }
+    val window = (packaged || "--window" in args) && "--browser" !in args
     val data = if (packaged) App.data().also { it.mkdirs() } else repo
-    if (packaged) File(data, "server.log").let { System.setOut(PrintStream(it.outputStream(), true)); System.setErr(System.out) }   // nobody sees a terminal
+    if (packaged) File(data, "server.log").let { System.setOut(PrintStream(it.outputStream(), true, Charsets.UTF_8)); System.setErr(System.out) }   // nobody sees a terminal
     val url = "http://127.0.0.1:$port"
-    if (packaged && App.answers(url)) { App.browse(url); return }     // already running (or the Python server): just its page
-    val legacy = if (packaged) App.pythonFolder() else repo           // where the Python server kept its pairings and TVs
-    val keys = File(System.getenv("TVR_KEYS") ?: (if (packaged) File(data, "keys") else File(repo, ".cache/keys")).path)
-    Keys.prepare(keys, legacy)
-    val tvs = File(System.getenv("TVS_FILE") ?: File(data, "tvs.json").path)
-    if (packaged && !tvs.exists() && legacy != null && File(legacy, "tvs.json").isFile) {
-        File(legacy, "tvs.json").copyTo(tvs)                          // a copy: the Python server keeps its own list
-        tvs.setReadable(false, false); tvs.setReadable(true, true)    // it holds TV Setup passes
+    if (packaged && App.answers(url)) {                               // already running (Windows, Linux: opened twice): one more window onto it
+        if (!(window && Window.show(repo, url))) App.browse(url)
+        return
     }
-    val saved = Saved(tvs)
+    val keys = File(System.getenv("TVR_KEYS") ?: (if (packaged) File(data, "keys") else File(repo, ".cache/keys")).path)
+    Keys.prepare(keys, if (packaged) null else repo)
+    val saved = Saved(File(System.getenv("TVS_FILE") ?: File(data, "tvs.json").path))
     val first = opt["tv"]?.trim()?.also { if (!Server.IP.matches(it)) { System.err.println("--tv: not an IPv4 address: $it"); kotlin.system.exitProcess(2) } }
     val done = CountDownLatch(1)
     val server = Server(repo, keys, File(data, if (packaged) "cache" else ".cache/desktop").also { it.mkdirs() }, saved, first) { done.countDown() }
@@ -51,28 +49,25 @@ fun main(args: Array<String>) {
     }
     println("Remote: http://127.0.0.1:$bound  (TV ${(first ?: saved.current).ifEmpty { "not chosen yet" }})")
     Runtime.getRuntime().addShutdownHook(Thread { http.stop(); server.close() })   // Ctrl+C, logging out: the TV's sessions end too
-    if (packaged) { App.onReopen { println("opened again"); App.browse(url) }; App.browse(url) }   // opening the app again while it runs: the page again
+    if (window) {
+        Thread({ done.await(); Window.close() }, "quit").apply { isDaemon = true }.start()   // the page's "Tắt" closes the window too
+        if (Window.show(repo, "http://127.0.0.1:$bound")) { println("Window closed."); System.exit(0) }
+    }
+    if (packaged) App.browse(url)
     done.await()                                                      // the page's "Tắt" button
     println("Stopping.")
     System.exit(0)
 }
 
-/** What only the packaged app needs: where its data goes, the browser, the Python app's folder, a message box. */
+/** What only the packaged app needs: where its data goes, the browser, a message box. */
 object App {
     private val os = System.getProperty("os.name").lowercase()
     private val home = System.getProperty("user.home")
 
     fun data(): File = when {
-        "mac" in os -> File(home, "Library/Application Support/TV Remote")   // the Python app keeps its "folder" note there too
+        "mac" in os -> File(home, "Library/Application Support/TV Remote")
         "win" in os -> File(System.getenv("APPDATA") ?: home, "TV Remote")
         else -> File(System.getenv("XDG_DATA_HOME") ?: "$home/.local/share", "tv-remote")
-    }
-
-    /** The tv-remote folder the Python app (TV Remote.app in the repo) last ran from: its tvs.json, cert.pem and key.pem. */
-    fun pythonFolder(): File? = try {
-        File(File(home, "Library/Application Support/TV Remote/folder").readText().trim()).takeIf { File(it, "app/web/server.py").isFile }
-    } catch (e: Exception) {
-        null
     }
 
     fun answers(url: String) = try {
@@ -93,20 +88,15 @@ object App {
         }
     }
 
-    /** macOS sends a running app "reopen" when it is opened again; AWT is the only way to hear it from Java. */
-    fun onReopen(go: () -> Unit) {
-        if ("mac" !in os) return
-        try {
-            java.awt.Desktop.getDesktop().addAppEventListener(java.awt.desktop.AppReopenedListener { go() })
-        } catch (e: Throwable) {
-            println("no reopen events: $e")
-        }
-    }
-
+    /** A message box from the system, for what the page cannot say (the server did not start). */
     fun alert(text: String) {
-        if ("mac" !in os) return
-        try {
-            ProcessBuilder("osascript", "-e", "display dialog \"${text.replace("\"", "'")}\" buttons {\"OK\"} default button 1 with title \"TV Remote\" with icon caution").start().waitFor()
-        } catch (e: Exception) { }
+        val t = text.replace("\"", "'")
+        val cmd = when {
+            "mac" in os -> listOf("osascript", "-e", "display dialog \"$t\" buttons {\"OK\"} default button 1 with title \"TV Remote\" with icon caution")
+            "win" in os -> listOf("powershell", "-NoProfile", "-Command",
+                "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('${t.replace("'", "''")}', 'TV Remote')")
+            else -> listOf("zenity", "--warning", "--title=TV Remote", "--text=$t")   // GNOME; elsewhere only server.log has it
+        }
+        try { ProcessBuilder(cmd).start().waitFor() } catch (e: Exception) { }
     }
 }

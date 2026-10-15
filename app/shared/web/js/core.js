@@ -14,11 +14,35 @@ const fmtSize = (n) => n > 1e9 ? (n / 1e9).toFixed(1) + ' GB' : n > 1e6 ? (n / 1
 const sleep = (ms) => new Promise((z) => setTimeout(z, ms));
 let toastT;
 function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2500); }
+// Questions asked in the page, not with confirm() / prompt(): they look the same everywhere, and the computer app's window
+// (a bare web view) has no dialogs of its own. ask(text) → true / false; ask(text, { value }) → the typed text, or null.
+// { ok, danger }: the words and colour of the yes button. One question at a time; the button that asked keeps its spinner.
+let askQ = Promise.resolve();
+function ask(text, o = {}) {
+  const from = clicked;
+  const run = () => new Promise((done) => {
+    const typed = o.value !== undefined;
+    const input = typed ? el('input', { value: o.value, spellcheck: false }) : null;
+    const yes = el('button', { type: 'submit', className: o.danger ? 'danger' : 'primary', textContent: tr(o.ok || 'OK') });
+    const no = el('button', { type: 'button', textContent: tr('Hủy'), onclick: () => d.close() });
+    const d = el('dialog', { className: 'ask' }, el('form', { className: 'card', onsubmit: (e) => { e.preventDefault(); d.returnValue = 'yes'; d.close(); } },
+      el('p', { textContent: tr(text) }), input, el('div', { className: 'acts' }, no, yes)));
+    d.addEventListener('close', () => {
+      d.remove();
+      const ok = d.returnValue === 'yes';
+      if (ok) { clicked = from; clickedAt = performance.now(); }       // its call starts now: the spinner goes on the button that asked
+      done(typed ? (ok ? input.value : null) : ok);
+    });
+    document.body.append(d); d.showModal();
+    if (input) input.select(); else yes.focus();
+  });
+  const p = askQ.then(run); askQ = p.catch(() => {}); return p;
+}
 
 // The computer's page is read fresh from disk, its server's code only at start: a newer page's calls then answer 404.
 const STALE = 'Trang mới hơn phần đang chạy: bấm ⏻ Tắt rồi mở lại TV Remote.';
 // Every button that waits on the server shows it: the one just clicked spins until its call returns (style.css .busy, shown
-// only past 150 ms so quick calls do not flicker). Counted from the end of the click handler, so a confirm() in it is fine.
+// only past 150 ms so quick calls do not flicker). Counted from the end of the click handler, or from the yes to an ask() in it.
 let clicked = null, clickedAt = Infinity;
 document.addEventListener('click', (e) => { clicked = e.target.closest && e.target.closest('button'); clickedAt = Infinity; setTimeout(() => { clickedAt = performance.now(); }, 0); }, true);
 async function api(path, data, quiet) {
@@ -217,7 +241,7 @@ async function checkAsk() {
 }
 async function answerAsk(yes) {
   const fp = askSeen; if (!fp) return;
-  if (yes && !confirm(tr('Cho phép thiết bị có mã này điều khiển toàn bộ TV qua ADB?') + '\n\n' + fp)) return;
+  if (yes && !await ask(tr('Cho phép thiết bị có mã này điều khiển toàn bộ TV qua ADB?') + '\n\n' + fp, { ok: 'Cho phép' })) return;
   $('#askyes').disabled = $('#askno').disabled = true;
   const r = await api(yes ? '/api/adb/allow' : '/api/adb/deny', { fingerprint: fp });
   $('#askyes').disabled = $('#askno').disabled = false;

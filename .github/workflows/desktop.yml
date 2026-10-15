@@ -1,0 +1,48 @@
+# The computer app (app/desktop) on each system it is made for: jpackage only builds for the system it runs on. Each job
+# builds the app, opens it (its window included: Linux under a virtual screen), checks that the server answers and that the
+# window came up, quits it through the page's /api/shutdown, and keeps the archive people download.
+name: desktop
+on:
+  workflow_dispatch:
+  push:
+    paths: ["app/desktop/**", "app/shared/**", "VERSION", ".github/workflows/desktop.yml"]
+
+jobs:
+  app:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: macos-14, app: "TV Remote.app/Contents/MacOS/TV Remote", log: "Library/Application Support/TV Remote" }
+          - { runner: macos-15-intel, app: "TV Remote.app/Contents/MacOS/TV Remote", log: "Library/Application Support/TV Remote" }
+          - { runner: windows-latest, app: "TV Remote/TV Remote.exe", log: "AppData/Roaming/TV Remote" }
+          - { runner: ubuntu-22.04, app: "tv-remote/bin/tv-remote", log: ".local/share/tv-remote", run: "xvfb-run -a" }
+          - { runner: ubuntu-22.04-arm, app: "tv-remote/bin/tv-remote", log: ".local/share/tv-remote", run: "xvfb-run -a" }
+    runs-on: ${{ matrix.runner }}
+    defaults: { run: { shell: bash } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "17" }
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libwebkit2gtk-4.1-0 xvfb >/dev/null
+      - name: build
+        run: cd app/gradle && ./gradlew --no-daemon -q :desktop:packageApp
+      - name: open, check, quit
+        run: |
+          app="app/desktop/build/package/${{ matrix.app }}"
+          log="$HOME/${{ matrix.log }}/server.log"
+          ${{ matrix.run }} "$app" &
+          for i in $(seq 60); do curl -sf http://127.0.0.1:8765/api/about && break; sleep 1; done
+          echo; sleep 5
+          cat "$log"
+          curl -sf http://127.0.0.1:8765/ | grep -q 'data-core="mac"'
+          ! grep -q "no window" "$log"
+          curl -sf -X POST -H 'Content-Type: application/json' -d '{}' http://127.0.0.1:8765/api/shutdown
+          for i in $(seq 20); do curl -s http://127.0.0.1:8765/api/about >/dev/null || break; sleep 1; done
+          ! curl -s http://127.0.0.1:8765/api/about
+          grep -q "Window closed" "$log"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TV-Remote-${{ matrix.runner }}
+          path: app/desktop/build/package/TV-Remote-*

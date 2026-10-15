@@ -17,6 +17,7 @@ Web 2.20.0 · app điện thoại 2.18.0 · app TV 2.17.0
 - **Cài đặt hệ thống · chỉ xem** (Sức khỏe): danh sách các cài đặt của TV, có tìm kiếm và sao chép.
 - **An toàn hơn khi tự bấm “Cho phép gỡ lỗi USB?”:** nếu hộp hỏi của thiết bị mình vừa biến mất và TV hiện ngay hộp của một khóa lạ vào đúng chỗ đó, giờ không bao giờ bấm Cho phép cho khóa lạ (trước đây có một khe rất nhỏ). Khi đăng nhập Tailscale, chỉ bấm khi màn hình của Tailscale đang ở trên cùng.
 - **Web trên máy tính an toàn hơn:** trang web khác đang mở trong trình duyệt không còn lén mở được tiếng hay hình của TV (trước đây chỉ chặn các lệnh bấm, chưa chặn việc xem/nghe).
+- **Hộp hỏi lại nằm ngay trong trang** (gỡ app, xóa tệp, đổi tên, tắt TV...): cùng kiểu với trang, nút ghi rõ việc sẽ làm (“Gỡ”, “Xóa”) và nút nguy hiểm màu đỏ, thay cho hộp thoại xám của trình duyệt.
 
 **English**
 - **Several TVs at once** (homestays, hotels, homes with many TVs): on the list of saved TVs, on the computer and in the phone app, pick TVs, then install one APK on all of them, remove an app or restart them. Each TV gets its own progress line; a TV that is off or has ADB off is named plainly and the others carry on. The computer also shows each TV's model, Android, free storage, RAM and TV Setup version. (TV Setup manages only its own TV, so it has no such list.)
@@ -27,6 +28,7 @@ Web 2.20.0 · app điện thoại 2.18.0 · app TV 2.17.0
 - **System settings, read only** (Health): the TV's settings in one list, with search and copy.
 - **Safer automatic answer to “Allow USB debugging?”:** if the question about our own device goes away and the TV puts a stranger's key's question up in its place, Allow is now never pressed for the stranger (there used to be a very small gap). When signing in to Tailscale, buttons are only pressed while Tailscale's own screen is in front.
 - **Safer web on the computer:** another website open in the browser can no longer quietly start the TV's sound or picture (only commands were blocked before, not watching or listening).
+- **Questions asked inside the page** (removing an app, deleting a file, renaming, turning the TV off...): in the page's own style, with buttons that say what they do (“Uninstall”, “Delete”) and dangerous ones in red, instead of the browser's grey box.
 
 ## 2.19.0 - 2026-10-15
 

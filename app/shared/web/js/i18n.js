@@ -1,5 +1,5 @@
 // Vietnamese is the source language of the page; this file turns it into English when the viewer picks EN.
-// It works on the rendered page (text nodes, a few attributes, confirm/prompt), so index.html needs no changes when
+// It works on the rendered page (text nodes, a few attributes; ask() in core.js calls tr), so index.html needs no changes when
 // a string is added: untranslated text simply stays Vietnamese until it is listed here.
 (() => {
   let stored = null;
@@ -231,8 +231,9 @@
     'Tác giả:': 'Author:', 'Mã nguồn:': 'Source code:', 'Các bản phát hành': 'Releases', 'Nhật ký thay đổi': 'Change log', 'Báo lỗi': 'Report a problem', 'Đóng': 'Close',
     'Hình trực tiếp và chuột dùng': 'The live picture and mouse use', '(Genymobile, Apache-2.0). Nút remote dùng thư viện androidtvremote2.': '(Genymobile, Apache-2.0). The remote buttons use the androidtvremote2 library.',
     // quit
-    'Tắt chương trình remote trên máy tính này?\nTV không bị ảnh hưởng. Muốn dùng lại thì mở TV Remote (Mac) hoặc start-windows.cmd.': 'Stop the remote program on this computer?\nThe TV is not affected. To use it again, open TV Remote (Mac) or start-windows.cmd.',
-    'Đã tắt': 'Stopped', 'Chương trình remote trên máy tính này đã dừng. Mở TV Remote (Windows: start-windows.cmd) để dùng lại. Có thể đóng tab này.': 'The remote program on this computer has stopped. Open TV Remote (Windows: start-windows.cmd) to start it again. You can close this tab.',
+    'Tắt TV Remote trên máy tính này?\nTV không bị ảnh hưởng. Muốn dùng lại thì mở lại app TV Remote.': 'Quit TV Remote on this computer?\nThe TV is not affected. To use it again, open the TV Remote app again.',
+    'Đã tắt': 'Stopped', 'TV Remote trên máy tính này đã dừng. Mở lại app TV Remote để dùng tiếp. Có thể đóng trang này.': 'TV Remote on this computer has stopped. Open the TV Remote app again to carry on. You can close this page.',
+    'Bỏ giới hạn': 'Remove the limit', 'Khởi động lại': 'Restart',
     // TV tab
     'TV đã lưu': 'Saved TVs', 'Tìm TV': 'Find a TV', 'Quét mạng': 'Scan', 'Đang quét...': 'Scanning...', 'Chọn': 'Choose', 'Dùng': 'Use', 'đang dùng': 'in use', 'cùng mạng': 'same network', 'qua Tailscale': 'via Tailscale',
     'Tìm TV trong cùng Wi-Fi với máy này và các thiết bị Android trong Tailscale của bạn.': 'Looks for TVs on the same Wi-Fi as this computer and Android devices on your Tailscale network.',
@@ -622,7 +623,4 @@
   };
   if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
 
-  const nativeConfirm = window.confirm.bind(window), nativePrompt = window.prompt.bind(window);
-  window.confirm = (msg) => nativeConfirm(tr(msg));
-  window.prompt = (msg, def) => nativePrompt(tr(msg), def);
 })();

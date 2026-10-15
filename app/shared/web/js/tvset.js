@@ -31,8 +31,8 @@ function drawTvset(t) {
     choice('Không dùng', kind === 'off', () => setDns([''])),
     choice('Chặn quảng cáo', kind === 'ads', () => setDns(DNS_SETS.ads)),
     choice('Gia đình', kind === 'family', () => setDns(DNS_SETS.family)),
-    choice(kind === 'own' ? t.dnsHost : 'Tự nhập...', kind === 'own', () => {
-      const h = prompt('Tên máy chủ DNS riêng (DNS-over-TLS), ví dụ dns.nextdns.io', kind === 'own' ? t.dnsHost : '');
+    choice(kind === 'own' ? t.dnsHost : 'Tự nhập...', kind === 'own', async () => {
+      const h = await ask('Tên máy chủ DNS riêng (DNS-over-TLS), ví dụ dns.nextdns.io', { value: kind === 'own' ? t.dnsHost : '' });
       if (h && h.trim()) setDns([h.trim()]);
     }),
   ]);
@@ -43,8 +43,8 @@ function drawTvset(t) {
   const sleeps = [[-1, 'Không tự tắt'], [30 * MIN, '30 phút'], [60 * MIN, '1 giờ'], [240 * MIN, '4 giờ'], [720 * MIN, '12 giờ'], [1440 * MIN, '24 giờ']];
   const ownSleep = t.sleep !== null && !sleeps.some(([v]) => v === t.sleep);
   rows.push(row('💤 Tự tắt khi không dùng', [...sleeps.map(([v, label]) => choice(label, t.sleep === v, () => setTv('sleep', v, 'Tự tắt: ' + label))),
-    choice(ownSleep ? fmtWait(t.sleep) : 'Tự nhập...', ownSleep, () => {
-      const v = askWait(ownSleep ? t.sleep : null);
+    choice(ownSleep ? fmtWait(t.sleep) : 'Tự nhập...', ownSleep, async () => {
+      const v = await askWait(ownSleep ? t.sleep : null);
       if (v) setTv('sleep', v, 'Tự tắt: ' + fmtWait(v));
     })]));
 
@@ -76,8 +76,8 @@ function readWait(s) {
   const ms = Math.round(parseFloat(m[1]) * (/^(h|g|gi|hour)/.test(m[2] || '') ? 60 : 1)) * MIN;
   return ms >= MIN && ms <= 1440 * MIN ? ms : null;
 }
-function askWait(now) {
-  const s = prompt(tr('Tự tắt sau bao lâu không dùng? Ví dụ 90 (phút) hoặc 6 giờ'), now ? String(now % (60 * MIN) === 0 ? now / 60 / MIN + ' giờ' : now / MIN) : '');
+async function askWait(now) {
+  const s = await ask('Tự tắt sau bao lâu không dùng? Ví dụ 90 (phút) hoặc 6 giờ', { value: now ? String(now % (60 * MIN) === 0 ? now / 60 / MIN + ' giờ' : now / MIN) : '' });
   if (s === null || !s.trim()) return null;
   const v = readWait(s);
   if (!v) toast('Không hiểu thời gian này. Nhập số phút, hoặc số giờ kèm chữ “giờ” (tối đa 24 giờ).');
@@ -116,7 +116,7 @@ async function setDns(hosts) {
 // TVs this works with (the vendor's "ADB debugging" switch survives a restart); after 3 minutes the page says what to check.
 let rebootT0 = 0;
 $('#tvreboot').addEventListener('click', async () => {
-  if (!confirm('Khởi động lại TV? Mất khoảng 1–2 phút; trang tự kết nối lại khi TV lên.')) return;
+  if (!await ask('Khởi động lại TV? Mất khoảng 1–2 phút; trang tự kết nối lại khi TV lên.', { ok: 'Khởi động lại' })) return;
   if (!await api('/api/reboot', {})) return;
   rebootT0 = Date.now();
   $('#reboottitle').textContent = 'TV đang khởi động lại'; $('#rebootspin').hidden = false; $('#rebootdlg').showModal();

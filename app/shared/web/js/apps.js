@@ -82,9 +82,9 @@ function renderApps() {
   const rows = appsAll.filter((p) => !q || p.toLowerCase().includes(q) || appName(p).toLowerCase().includes(q))
     .sort((a, b) => (appsInfo.get(a)?.off ? 1 : 0) - (appsInfo.get(b)?.off ? 1 : 0) || appName(a).localeCompare(appName(b))).map((pkg) => {   // turned off: last
     const run = async (name, label) => {
-      if (name === 'uninstall' && !confirm('Gỡ cài đặt ' + appName(pkg) + ' khỏi TV?')) return;
-      if (name === 'disable' && !confirm('Tắt ' + appName(pkg) + '? App biến khỏi TV cho tới khi bật lại ở mục “App đã tắt” cuối danh sách này.')) return;
-      if (name === 'clear' && !confirm('Xóa toàn bộ dữ liệu của ' + appName(pkg) + '? App trở lại như mới cài: mất đăng nhập, cài đặt và nội dung đã tải trong app. Không hoàn tác được.')) return;
+      if (name === 'uninstall' && !await ask('Gỡ cài đặt ' + appName(pkg) + ' khỏi TV?', { ok: 'Gỡ', danger: true })) return;
+      if (name === 'disable' && !await ask('Tắt ' + appName(pkg) + '? App biến khỏi TV cho tới khi bật lại ở mục “App đã tắt” cuối danh sách này.', { ok: 'Tắt app' })) return;
+      if (name === 'clear' && !await ask('Xóa toàn bộ dữ liệu của ' + appName(pkg) + '? App trở lại như mới cài: mất đăng nhập, cài đặt và nội dung đã tải trong app. Không hoàn tác được.', { ok: 'Xóa dữ liệu', danger: true })) return;
       const r = await api('/api/app/' + name, { pkg }); if (r) { toast(label + ': ' + appName(pkg)); if (!['launch', 'stop', 'clear'].includes(name)) { quickLoaded = false; loadApps(); loadQuick(); } }
     };
     const act = (name, icon, label, cls = '') => setLabel(el('button', { title: label, className: 'small ' + cls, onclick: () => run(name, label) }), icon, label);
@@ -167,10 +167,10 @@ function appBackup(pkg) {
   toast('Đang sao lưu ' + appName(pkg) + ': tệp .tar sẽ tải về máy này');
 }
 // 📥 a backup back onto this TV (or onto another one: that is how an app moves between TVs)
-$('#restorefile').addEventListener('change', (e) => {
+$('#restorefile').addEventListener('change', async (e) => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
   if (!/\.tar$/i.test(f.name)) { toast('Chọn tệp .tar đã sao lưu bằng nút 💾'); return; }
-  if (confirm('Khôi phục ' + f.name + ' lên TV? App được cài lại (giữ dữ liệu nếu đang có trên TV), kèm thư mục dữ liệu trong bộ nhớ chung.'))
+  if (await ask('Khôi phục ' + f.name + ' lên TV? App được cài lại (giữ dữ liệu nếu đang có trên TV), kèm thư mục dữ liệu trong bộ nhớ chung.', { ok: 'Khôi phục' }))
     upload(f, 'restore', '', () => { quickLoaded = false; loadApps(); loadQuick(); }, e.target.closest('label'));
 });
 // 🧹 the system's own cache cleaner for every app: nothing anyone would miss, apps just rebuild what they need
@@ -304,8 +304,8 @@ async function bulkRun(action, label) {
   await bulkStatus();
   const pkgs = bulkPkgs().filter((p) => { const k = bulkKnown.get(p); return k && !(action === 'disable' && (k.keep || k.off)) && !(action === 'enable' && !k.off); });
   if (!pkgs.length) { $('#bulklog').textContent = 'Không có app nào cần ' + label.toLowerCase() + '.'; return; }
-  if (action === 'uninstall' && !confirm('Gỡ ' + pkgs.length + ' app khỏi TV? Gỡ rồi phải cài lại mới có (app hệ thống thì không gỡ được, hãy tắt).')) return;
-  if (action === 'disable' && !confirm('Tắt ' + pkgs.length + ' app? Bật lại được bất cứ lúc nào ở đây hoặc ở mục “App đã tắt”.')) return;
+  if (action === 'uninstall' && !await ask('Gỡ ' + pkgs.length + ' app khỏi TV? Gỡ rồi phải cài lại mới có (app hệ thống thì không gỡ được, hãy tắt).', { ok: 'Gỡ', danger: true })) return;
+  if (action === 'disable' && !await ask('Tắt ' + pkgs.length + ' app? Bật lại được bất cứ lúc nào ở đây hoặc ở mục “App đã tắt”.', { ok: 'Tắt app' })) return;
   const btns = ['#bulkoff', '#bulkon', '#bulkdel'].map((id) => $(id)); btns.forEach((b) => { b.disabled = true; });
   let ok = 0; const bad = [];
   for (let i = 0; i < pkgs.length; i++) {

@@ -34,10 +34,10 @@ function fleetDraw() {
 $('#fleet').addEventListener('toggle', (e) => { if (e.target.open) fleetLoad(); });
 
 const fleetChosen = () => fleetTvs.filter((t) => fleetPick.has(t.host));
-function fleetAsk(what) {
+async function fleetAsk(what) {
   const tvs = fleetChosen();
   if (!tvs.length) { toast('Chọn ít nhất một TV'); return null; }
-  return confirm(tr(what) + '\n\n' + tvs.map((t) => '• ' + (t.name || t.host)).join('\n')) ? tvs : null;
+  return await ask(tr(what) + '\n\n' + tvs.map((t) => '• ' + (t.name || t.host)).join('\n')) ? tvs : null;
 }
 // one line per TV under its name, until every TV is done
 async function fleetFollow(j) {
@@ -58,9 +58,9 @@ async function fleetFollow(j) {
   }
 }
 
-$('#fleetapk input').addEventListener('change', (e) => {
+$('#fleetapk input').addEventListener('change', async (e) => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-  const tvs = fleetAsk('Cài ' + f.name + ' lên các TV này?'); if (!tvs) return;
+  const tvs = await fleetAsk('Cài ' + f.name + ' lên các TV này?'); if (!tvs) return;
   const lbl = $('#fleetapk'), xhr = new XMLHttpRequest();
   xhr.open('POST', '/api/fleet/install?name=' + encodeURIComponent(f.name) + '&hosts=' + encodeURIComponent(tvs.map((t) => t.host).join(',')));
   xhr.setRequestHeader('Content-Type', 'application/octet-stream');
@@ -74,7 +74,7 @@ $('#fleetapk input').addEventListener('change', (e) => {
   lbl.dataset.busy = '⏳'; xhr.send(f);
 });
 async function fleetDo(action, pkg, what) {
-  const tvs = fleetAsk(what); if (!tvs) return;
+  const tvs = await fleetAsk(what); if (!tvs) return;
   const r = await api('/api/fleet/do', { action, pkg, hosts: tvs.map((t) => t.host) });
   if (r) fleetFollow(r);
 }
