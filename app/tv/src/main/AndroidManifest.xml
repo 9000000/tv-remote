@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />   <!-- "Remove TV Setup" without ADB: Android's own uninstall prompt -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />   <!-- drawing over the screen (DrawLayer); allowed through ADB -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />   <!-- which app is on screen, for the History view; granted through ADB -->
     <queries>                                                          <!-- to list the apps on the TV's home screen -->

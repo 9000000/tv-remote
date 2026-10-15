@@ -192,14 +192,11 @@ class MainActivity : Activity() {
             row.forEachIndexed { i, tile -> r.addView(tile.view, LinearLayout.LayoutParams(0, dp(74), 1f).apply { if (i > 0) leftMargin = dp(12) }) }
             left.addView(r, margins(top = 10))
         }
-        if (AutoUpdate.possible) {                                    // Android 10+: an update that does not work is undone (SetupUpdate)
-            val b = smallButton(autoText()) { AutoUpdate.set(this, !AutoUpdate.on(this)); autoBtn?.text = autoText()
-                log(if (AutoUpdate.on(this)) t("✓ Tự cập nhật: bật. Bản mới được cài lúc không ai dùng remote; bản nào chạy lỗi thì tự quay về bản cũ.",
-                    "✓ Automatic updates on. A new version is installed while nobody uses the remote; one that does not work is undone by itself.")
-                    else t("Tự cập nhật: tắt. Cập nhật bằng ô Cập nhật.", "Automatic updates off. Update with the Update tile.")) }
-            autoBtn = b
-            left.addView(b, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
-        }
+        val more = LinearLayout(this)
+        autoBtn = smallButton(autoText()) { AutoUpdate.set(this, !AutoUpdate.on(this)); autoBtn?.text = autoText() }
+        more.addView(autoBtn)
+        more.addView(smallButton(t("Gỡ TV Setup", "Remove TV Setup")) { askRemove() }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(10) })
+        left.addView(more, margins(top = 10))
 
         val actHead = LinearLayout(this)
         actHead.gravity = Gravity.CENTER_VERTICAL
@@ -661,6 +658,34 @@ class MainActivity : Activity() {
         d.setContentView(root)
         d.show()
         list.getChildAt(1)?.requestFocus()                                // the first choice, under its heading
+    }
+
+    /** Removing this app leaves the TV as it was before it: apps Optimize TV turned off come back on first (Undo). */
+    private fun askRemove() {
+        if (busy) return
+        android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(t("Gỡ TV Setup?", "Remove TV Setup?"))
+            .setMessage(t("App đã tắt bằng Tối ưu TV sẽ được bật lại.", "Apps turned off by Optimize TV come back on."))
+            .setPositiveButton(t("Gỡ", "Remove")) { _, _ ->
+                val s = setup
+                val a = adb
+                if (s == null || a == null) {                         // no ADB here: Android's own way
+                    try { startActivity(android.content.Intent(android.content.Intent.ACTION_DELETE, android.net.Uri.parse("package:$packageName"))) } catch (e: Exception) { log("✗ " + reason(e)) }
+                    return@setPositiveButton
+                }
+                busy = true
+                spinner.visibility = View.VISIBLE
+                log(t("Đang gỡ TV Setup...", "Removing TV Setup..."))
+                Thread {
+                    try {
+                        if (s.optimized()) s.undo()
+                        a.shell("pm uninstall $packageName 2>&1")              // the end of this app: nothing after this runs
+                    } catch (e: Exception) { ui { log("✗ " + reason(e)) } }
+                    busy = false
+                    ui { spinner.visibility = View.INVISIBLE }
+                }.start()
+            }
+            .setNegativeButton(t("Hủy", "Cancel"), null).show()
     }
 
     private fun job(job: Job) {

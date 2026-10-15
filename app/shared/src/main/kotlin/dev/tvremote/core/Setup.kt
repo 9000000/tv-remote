@@ -52,6 +52,14 @@ class Setup(private val adb: Adb, private val dir: File?, private val vi: Boolea
 
     fun interface Log { fun line(s: String) }
 
+    /** Whether Optimize TV left something to undo: an app of its lists, or of its own record, turned off. */
+    @Throws(IOException::class)
+    fun optimized(): Boolean {
+        val off = adb.shell("pm list packages -d 2>/dev/null").split("\n").map { it.removePrefix("package:").trim() }.toSet()
+        val mine = adb.shell("cat $OFF_LIST 2>/dev/null").split("\n").map { it.trim() }
+        return (LAUNCHER + GOOGLE + SONY + mine).any { it in off }
+    }
+
     @Throws(IOException::class)
     fun has(pkg: String): Boolean = adb.shell("pm path $pkg").contains("package:")
 

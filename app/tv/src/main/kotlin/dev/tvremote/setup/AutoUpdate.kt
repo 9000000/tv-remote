@@ -1,7 +1,6 @@
 package dev.tvremote.setup
 
 import android.content.Context
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import dev.tvremote.core.Adb
@@ -14,12 +13,12 @@ import java.io.File
  * it only at a moment nobody would notice ([busy] says why not yet): the install closes TV Setup for some seconds, which stops
  * the web remote, the picture and the timers' checks meanwhile. What is on the TV's screen is not touched.
  * The install is [SetupUpdate]'s: a new version that does not start well is replaced by the old one, data and all, and never
- * tried again. So this runs only where Android can do that (10 and up); older TVs update from the Update tile.
+ * tried again. Android 9 and older cannot put the old one back: there a version that fails is only noted, and the phone or
+ * computer app, which sees TV Setup missing or broken, offers to install the next one (SetupBanner).
  */
 internal class AutoUpdate(private val c: Context, private val version: String, private val adb: () -> Adb?, private val busy: () -> String?) {
     companion object {
         private const val PREFS = "remote"
-        val possible = Build.VERSION.SDK_INT >= 29                    // pm install --enable-rollback
         fun on(c: Context): Boolean = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean("auto_update", true)
         fun set(c: Context, on: Boolean) { c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean("auto_update", on).apply() }
         private const val MIN = 60_000L
@@ -52,7 +51,7 @@ internal class AutoUpdate(private val c: Context, private val version: String, p
 
     /** One step towards an update; returns how long until the next is worth trying. */
     private fun step(): Long {
-        if (!possible || !on(c)) return 60 * MIN
+        if (!on(c)) return 60 * MIN
         val now = System.currentTimeMillis()
         if (found == null && now - checkedAt < 6 * 60 * MIN) return 60 * MIN
         if (now - checkedAt >= 6 * 60 * MIN) {

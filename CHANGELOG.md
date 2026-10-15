@@ -4,6 +4,18 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## 2.22.0 - 2026-10-15
+
+Web 2.22.0 · app điện thoại 2.20.0 · app TV 2.19.0
+
+**Tiếng Việt**
+- TV Setup tự cập nhật trên mọi TV, cả Android 9 trở xuống (như TV Sony). Trên Android 10 trở lên, bản mới chạy lỗi thì tự quay về bản cũ.
+- Nút **Gỡ TV Setup** trên TV: bật lại các app đã tắt bằng Tối ưu TV rồi mới gỡ.
+
+**English**
+- TV Setup updates itself on every TV, Android 9 and older too (Sony TVs, for one). On Android 10 and up, a new version that fails is undone by itself.
+- A **Remove TV Setup** button on the TV: apps turned off by Optimize TV come back on before it goes.
+
 ## 2.21.0 - 2026-10-15
 
 Web 2.21.0 · app điện thoại 2.19.0 · app TV 2.18.0
