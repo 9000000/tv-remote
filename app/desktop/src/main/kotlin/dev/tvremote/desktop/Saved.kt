@@ -1,5 +1,6 @@
 package dev.tvremote.desktop
 
+import dev.tvremote.core.SameTv
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -18,7 +19,30 @@ class Saved(private val file: File) {
         val c = try { JSONObject(file.readText()) } catch (e: Exception) { JSONObject() }
         if (!c.has("current")) c.put("current", "")
         if (c.optJSONArray("tvs") == null) c.put("tvs", JSONArray())
+        fold(c)
         return c
+    }
+
+    /**
+     * Rows that are one TV (SameTv: picked once by its home IP, once by its Tailscale IP) become one, so that it is listed and
+     * acted on once. The first row stays, with what the others knew; its address is the Tailscale one, which works anywhere.
+     */
+    private fun fold(c: JSONObject) {
+        val tvs = c.getJSONArray("tvs").let { a -> (0 until a.length()).map { a.getJSONObject(it) } }
+        val groups = SameTv.groups(tvs) { SameTv.Tv(it.optString("host"), it.optString("lan"), mac = it.optString("mac")) }
+        if (groups.all { it.second.isEmpty() }) return
+        val was = groups.map { (k, d) -> (listOf(k) + d).map { it.optString("host") } }   // each kept row's hosts before the fold
+        for ((keep, dups) in groups) for (d in dups) {
+            for (k in d.keys()) if (keep.optString(k).isEmpty()) keep.put(k, d.get(k))
+            val h = d.optString("host")
+            if (h.startsWith("100.") && !keep.optString("host").startsWith("100.")) {
+                if (keep.optString("lan").isEmpty()) keep.put("lan", keep.optString("host"))
+                keep.put("host", h)
+            }
+        }
+        val cur = c.optString("current")
+        groups.indices.firstOrNull { cur in was[it] }?.let { c.put("current", groups[it].first.optString("host")) }
+        c.put("tvs", JSONArray(groups.map { it.first }))
     }
 
     private val list: JSONArray get() = cfg.getJSONArray("tvs")
@@ -57,7 +81,8 @@ class Saved(private val file: File) {
         for (i in 0 until list.length()) list.getJSONObject(i).let { if (it === kept || it.optString("host") != host) left.put(it) }
         cfg.put("tvs", left)
         cfg.put("current", host)
-        return copy(kept)
+        fold(cfg)
+        return copy(live(host) ?: kept)
     }
 
     @Synchronized fun remove(host: String) {

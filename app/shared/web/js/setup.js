@@ -140,8 +140,10 @@ async function selectTv(host, name) {
 $('#switchtv').addEventListener('click', () => { wantPick = true; cameFromTv = true; refresh(); });
 $('#pickback').addEventListener('click', () => { wantPick = false; cameFromTv = false; refresh(); });
 const openTv = (host, current, name) => { if (host === current) { wantPick = false; cameFromTv = false; justPicked = host; pickedAt = Date.now(); refresh(); } else selectTv(host, name); };
+let savedTvs = [];                                                     // the saved list, for the scan to know a TV's other address
 async function loadTvs() {
   const r = await api('/api/tvs', null, true); if (!r) return;
+  savedTvs = r.tvs;
   const rows = r.tvs.map((t) => el('div', { className: 'item', onclick: (e) => { if (!e.target.closest('button')) openTv(t.host, r.current, t.name); } },
     el('div', { className: 'name' }, el('span', { textContent: t.name || t.host }), t.host === r.current && cameFromTv ? el('span', { className: 'badge ok', textContent: 'đang dùng' }) : null,
       el('small', { textContent: t.host + (t.lan && t.lan !== t.host ? ' · trong nhà ' + t.lan : '') })),
@@ -156,7 +158,7 @@ function scanRow(f) {
   const row = el('div', { className: 'item', onclick: (e) => { if (!e.target.closest('button')) selectTv(f.ip); } },
     el('div', { className: 'name' }, el('span', { textContent: f.name || f.ip }),
       el('span', { className: 'badge' + (f.remote ? ' ok' : ''), textContent: f.remote ? 'Android TV' : 'chỉ có ADB' }), f.adb ? el('span', { className: 'badge ok', textContent: 'ADB đã bật' }) : el('span', { className: 'badge', textContent: 'ADB chưa bật' }),
-      el('small', { textContent: f.ip + (f.via === 'tailscale' ? ' · qua Tailscale' : ' · cùng mạng') })),
+      el('small', { textContent: f.ip + (f.via === 'tailscale' ? ' · qua Tailscale' : ' · cùng mạng') + (f.tailscale ? ' · Tailscale ' + f.tailscale : '') })),
     el('div', { className: 'acts' }, setLabel(el('button', { className: 'small primary', onclick: () => selectTv(f.ip) }), '✓', 'Chọn')));
   row.dataset.ip = f.ip; return row;
 }
@@ -166,7 +168,11 @@ $('#scan').addEventListener('click', async () => {
   const b = $('#scan'), list = $('#scanlist'); b.disabled = true; b.textContent = '⏳ Đang quét...'; list.replaceChildren(); $('#scaninfo').textContent = '';
   let r = await api('/api/discover?new=1');
   while (r) {
-    for (const f of r.found) if (!list.querySelector(`[data-ip="${f.ip}"]`)) list.append(scanRow(f));
+    for (const f of r.found) {                                        // one row per TV: a saved one is known by both its addresses
+      const tv = savedTvs.find((t) => t.host === f.ip || t.lan === f.ip || (f.tailscale && t.host === f.tailscale));
+      const key = tv ? tv.host : f.ip;
+      if (!list.querySelector(`[data-tv="${key}"]`)) { const row = scanRow(f); row.dataset.tv = key; list.append(row); }
+    }
     if (r.done) break;
     await sleep(400);
     r = await api('/api/discover', null, true);

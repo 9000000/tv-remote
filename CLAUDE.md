@@ -28,7 +28,7 @@ app/shared/src/.../core/ Kotlin shared by both apps: Adb, Tv (scrcpy session, vi
                          debugging?"), Errors, RemoteLabels (app names, pictures and Caps from the TV, through Meta and Caps:
                          Java in src/main/java, dexed into assets/tvr-helper.jar by :shared:tvHelper, kept in git), Scenes (scenes + key names), RulesClient (talks to TV Setup's rules),
                          Voice (spoken commands), AudioOut (Opus playback, PCM downmix),
-                         Fleet (several saved TVs at once), Draw (strokes to TV Setup's layer over the TV's screen)
+                         Fleet (several saved TVs at once), SameTv (one TV saved under two addresses), Draw (strokes to TV Setup's layer over the TV's screen)
 app/android/.../phone/   phone app, one file per part, as extension functions on MainActivity: MainActivity (state, lifecycle),
                          Ui, Net, PickerScreen, RemoteScreen, Typing, InfoScreens, KeysOnly, AdbHelp, Media, Managing (the
                          web UI in a WebView), Updater, Listen + ListenService (🎧), Automation (timer, scenes, voice),

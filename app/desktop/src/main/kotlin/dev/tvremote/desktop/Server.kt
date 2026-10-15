@@ -406,8 +406,9 @@ class Server(private val repo: File, private val keys: File, private val cache: 
         val entry = saved.upsert(JSONObject().put("name", d.optString("name").trim().take(60).ifEmpty { info.optString("model").ifEmpty { host } }).put("host", host)
             .put("lan", info.optString("lan_ip")).put("mac", info.optString("mac")), old)
         saved.save()
-        if (host != old) switch(host)
-        return Response.json(JSONObject().put("ok", true).put("tv", entry).put("moved", host != old))
+        val now = entry.optString("host")                             // another row of this TV may have brought its Tailscale IP
+        if (now != old) switch(now)
+        return Response.json(JSONObject().put("ok", true).put("tv", entry).put("moved", now != old))
     }
 
     // ---------------------------------------------------------------- several TVs at once

@@ -15,6 +15,7 @@ import java.net.NetworkInterface
 import java.util.Collections
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import dev.tvremote.core.SameTv
 
 // The first screen: saved TVs (with whether each answers now), waking one that is off, scanning the Wi-Fi, typing an IP.
 
@@ -75,6 +76,31 @@ internal fun MainActivity.name(ip: String): String = pref("name:$ip")
 
 internal fun MainActivity.savedIps(): MutableList<String> = pref("ips").split(",").filter { it.isNotEmpty() }.toMutableList()
 
+private val PER_TV = listOf("name", "mac", "lan", "ts", "tvs")         // the prefs kept per saved TV, as "<field>:<ip>" (and atv:)
+
+private fun MainActivity.savedTv(ip: String) = SameTv.Tv(ip, pref("lan:$ip"), pref("ts:$ip"), pref("mac:$ip"))
+
+/** The saved TV that [ip] is another address of (its home IP, its Tailscale IP), if any. */
+internal fun MainActivity.savedOwner(ip: String): String? = savedIps().firstOrNull { it != ip && ip in savedTv(it).addresses }
+
+/** Rows that are one TV (picked once on the Wi-Fi, once over Tailscale) become one, keeping what each knew. [first]: kept. */
+internal fun MainActivity.foldSaved(first: String? = null) {
+    val ips = savedIps().let { l -> if (first != null && first in l) listOf(first) + (l - first) else l }
+    val groups = SameTv.groups(ips) { savedTv(it) }
+    if (groups.all { it.second.isEmpty() }) return
+    val e = prefs.edit()
+    for ((k, dups) in groups) for (d in dups) {
+        for (f in listOf("name", "mac", "tvs")) if (pref("$f:$k").isEmpty() && pref("$f:$d").isNotEmpty()) e.putString("$f:$k", pref("$f:$d"))
+        val addr = (savedTv(d).addresses - k)
+        if (pref("lan:$k").isEmpty()) addr.firstOrNull { !it.startsWith("100.") }?.let { e.putString("lan:$k", it) }
+        if (pref("ts:$k").isEmpty()) addr.firstOrNull { it.startsWith("100.") }?.let { e.putString("ts:$k", it) }
+        if (prefs.getBoolean("atv:$d", false)) e.putBoolean("atv:$k", true)
+        for (f in PER_TV) e.remove("$f:$d")
+        e.remove("atv:$d")
+    }
+    e.putString("ips", TextUtils.join(",", groups.map { it.first })).apply()
+}
+
 internal fun MainActivity.save(ip: String, model: String) {
     val ips = savedIps()
     ips.remove(ip)
@@ -117,6 +143,7 @@ internal fun MainActivity.showReach(ip: String, up: Boolean?) {
 }
 
 internal fun MainActivity.refreshSaved() {
+    foldSaved()
     savedList.removeAllViews()
     savedRows.clear()
     for (ip in savedIps()) {
@@ -138,7 +165,7 @@ internal fun MainActivity.refreshSaved() {
                 .setPositiveButton(t("Xóa", "Remove")) { _, _ ->
                     val ips = savedIps()
                     ips.remove(ip)
-                    prefs.edit().putString("ips", TextUtils.join(",", ips)).remove("name:$ip").remove("mac:$ip").remove("lan:$ip").remove("ts:$ip").remove("tvs:$ip").remove("atv:$ip").apply()
+                    prefs.edit().putString("ips", TextUtils.join(",", ips)).also { e -> PER_TV.forEach { e.remove("$it:$ip") } }.remove("atv:$ip").apply()
                     refreshSaved()
                 }.setNegativeButton(android.R.string.cancel, null).show()
         }

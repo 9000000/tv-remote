@@ -65,15 +65,18 @@ object Discover {
         ""
     }
 
-    /** Online Android peers on the tailnet: IP to host name. Empty without the Tailscale CLI. */
-    fun tailscalePeers(): Map<String, String> = try {
+    class Peer(val name: String, val lan: String)
+
+    /** Online Android peers on the tailnet, by Tailscale IP; [Peer.lan]: its home IP, when this computer reaches it directly there. */
+    fun tailscalePeers(): Map<String, Peer> = try {
         val p = ProcessBuilder(TAILSCALE, "status", "--json").redirectError(ProcessBuilder.Redirect.DISCARD).also { it.environment()["TAILSCALE_BE_CLI"] = "1" }.start()
         val text = p.inputStream.bufferedReader().readText()
         if (!p.waitFor(8, TimeUnit.SECONDS)) p.destroyForcibly()
         val peers = JSONObject(text).optJSONObject("Peer") ?: JSONObject()
         peers.keys().asSequence().mapNotNull { peers.optJSONObject(it) }
             .filter { it.optString("OS") == "android" && it.optBoolean("Online") && (it.optJSONArray("TailscaleIPs")?.length() ?: 0) > 0 }
-            .associate { it.getJSONArray("TailscaleIPs").getString(0) to it.optString("HostName") }
+            .associate { p -> p.getJSONArray("TailscaleIPs").getString(0) to
+                Peer(p.optString("HostName"), Regex("^([0-9.]+):\\d+$").find(p.optString("CurAddr"))?.groupValues?.get(1)?.takeIf { Server.PRIVATE.matches(it) } ?: "") }
     } catch (e: Exception) {
         emptyMap()
     }
@@ -83,8 +86,18 @@ object Discover {
         val found = ConcurrentHashMap<String, JSONObject>()
         @Volatile var networks: List<String> = emptyList()
         @Volatile var done = false
-        fun json(): JSONObject = JSONObject().put("networks", JSONArray(networks)).put("done", done)
-            .put("found", JSONArray(found.values.sortedWith(compareBy({ it.optString("via") }, { it.optString("ip") }))))
+        @Volatile var lanOf: Map<String, String> = emptyMap()         // Tailscale IP to home IP, for the peers reached at home
+        /** A TV found at both its home IP and its Tailscale IP is one row: the home one, which also names the other. */
+        fun json(): JSONObject {
+            val rows = found.values.mapNotNull { f ->
+                val ip = f.optString("ip")
+                val lan = lanOf[ip] ?: ""
+                if (lan.isNotEmpty() && found.containsKey(lan)) null
+                else JSONObject(f.toString()).also { r -> lanOf.entries.firstOrNull { it.value == ip && found.containsKey(it.key) }?.let { r.put("tailscale", it.key) } }
+            }
+            return JSONObject().put("networks", JSONArray(networks)).put("done", done)
+                .put("found", JSONArray(rows.sortedWith(compareBy({ it.optString("via") }, { it.optString("ip") }))))
+        }
     }
     @Volatile private var scan: Scan? = null
 
@@ -112,16 +125,17 @@ object Discover {
             val nets = localNetworks()
             s.networks = nets.map { it.second }
             val peers = tailscalePeers()
+            s.lanOf = peers.filterValues { it.lan.isNotEmpty() }.mapValues { it.value.lan }
             val jobs = ArrayList<java.util.concurrent.Future<*>>()
             for ((me, _) in nets) for (h in 1..254) { val ip = me.substringBeforeLast('.') + ".$h"; if (ip != me) jobs.add(probe(ip, "lan", "")) }
-            for ((ip, name) in peers) jobs.add(probe(ip, "tailscale", name))
+            for ((ip, p) in peers) jobs.add(probe(ip, "tailscale", p.name))
             jobs.forEach { it.get() }
             // a first scan asks the whole network at once who has each address, and the Mac answers "Host is down" for many
             // hosts without waiting, the TV often among them: by now the answers are in, so those are asked once more
             val again = unknown.keys.filter { !found.containsKey(it) }
             if (again.isNotEmpty()) {
                 Thread.sleep(1000)
-                again.map { probe(it, if (it in peers) "tailscale" else "lan", peers[it] ?: "") }.forEach { it.get() }
+                again.map { probe(it, if (it in peers) "tailscale" else "lan", peers[it]?.name ?: "") }.forEach { it.get() }
             }
             if (found.isEmpty()) println("scan found nothing: tailscale ${peers.ifEmpty { "no peers" }}; errors ${unknown.values.groupingBy { it }.eachCount()}")
         } finally {

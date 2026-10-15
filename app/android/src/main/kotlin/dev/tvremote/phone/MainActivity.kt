@@ -305,7 +305,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal fun connectSaved(ip: String) { val r = route[ip] ?: ip; connect(r, if (r != ip) ip else null) }
 
     internal fun connect(ip: String, from: String? = null) {
-        entry = from
+        entry = from ?: savedOwner(ip.trim())                         // a saved TV's other address: the same row, not a second one
         wasLive = false; retries = 0
         val h = ip.trim()
         host = h
@@ -521,6 +521,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val e = prefs.edit().putString("mac:$ip", mac).putString("lan:$ip", lan)
         if (tailscale.isNotEmpty() && tailscale != ip) e.putString("ts:$ip", tailscale)   // remembered at home, used when away
         e.apply()
+        foldSaved(ip)                                                 // now known by its MAC: an older row of it (other address) goes
     }
 
     /** Android reports back here: a share from another app, or the progress of an update's install. */
