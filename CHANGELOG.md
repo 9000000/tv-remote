@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Số phiên bản bắt đầu lại từ 0.1.0 (bản thử nghiệm, chưa tới 1.0). Máy đã cài bản 2.x: cài đè app mới một lần (Downloader `2973135` cho điện thoại, `2397346` cho TV), sau đó app tự cập nhật như cũ.
 - ▶️ Đang phát: trên remote hiện TV đang phát gì (tên, kênh hoặc ca sĩ), kéo thanh để tua, bấm để tạm dừng hoặc qua bài. Có trên cả ba: app điện thoại, app máy tính, web của TV.
 - 📋 Clipboard của TV (Mở trên TV → Clipboard của TV): xem chữ TV đang sao chép, chép về máy mình, gửi chữ lên TV hoặc dán vào ô đang gõ.
 - Một TV lưu bằng cả IP nhà lẫn IP Tailscale giờ chỉ là một dòng; quét mạng cũng chỉ hiện TV đó một lần.
@@ -25,6 +26,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Trang giới thiệu: ảnh xem trước khi gửi link hiện lại; thêm llms.txt, sitemap và mô tả app cho máy tìm kiếm và AI. Máy bật Giảm chuyển động: hoạt cảnh đứng ở ảnh tĩnh, có nút ▶ để xem.
 
 **English**
+- Version numbers start again at 0.1.0 (an alpha, before 1.0). A device with a 2.x version: install the new app over it once (Downloader `2973135` for the phone, `2397346` for the TV); from then on the apps update themselves as before.
 - ▶️ Now playing: the remote shows what the TV is playing (title, channel or artist); drag the bar to seek, tap to pause or skip. On all three: the phone app, the computer app and the TV web page.
 - 📋 The TV's clipboard (Open on the TV → The TV's clipboard): see the text the TV has copied, copy it to your device, send text to the TV or paste it where the TV is typing.
 - A TV saved under both its home IP and its Tailscale IP is now one row; a scan shows it once too.

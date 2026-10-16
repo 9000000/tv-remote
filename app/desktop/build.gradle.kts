@@ -49,7 +49,10 @@ val appName = if (os == "linux") "tv-remote" else "TV Remote"         // Linux: 
 val packageOut = layout.buildDirectory.dir("package").get().asFile
 val packageApp by tasks.registering(Exec::class) {
     dependsOn(stageApp)
-    val version = rootDir.resolve("../../VERSION").readText().trim()
+    val version = rootDir.resolve("../../VERSION").readText().trim().let { v ->
+        // a Mac bundle's number must not start with 0: 0.1.0 → 100.1.0, still going up (the app reads VERSION, not this)
+        if (os == "mac") v.split(".").let { (it[0].toInt() + 100).toString() + "." + it.drop(1).joinToString(".") } else v
+    }
     val jpackage = javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(17)) }.get().metadata.installationPath
         .file(if (os == "windows") "bin/jpackage.exe" else "bin/jpackage").asFile
     doFirst { packageOut.deleteRecursively(); packageOut.mkdirs() }

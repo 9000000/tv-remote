@@ -78,6 +78,8 @@ class Release private constructor(val version: String, val url: String, val note
 
         /** "1.10.0" is newer than "1.9": compares the numbers between the dots. */
         fun compare(a: String, b: String): Int {
+            val la = legacy(a)
+            if (la != legacy(b)) return if (la) -1 else 1
             val x = a.trim().split(".")
             val y = b.trim().split(".")
             for (i in 0 until maxOf(x.size, y.size)) {
@@ -85,6 +87,15 @@ class Release private constructor(val version: String, val url: String, val note
                 if (d != 0) return d
             }
             return 0
+        }
+
+        /**
+         * The numbers before they restarted at 0.1.0 (October 2026: 1.3.0 up to 2.24.2) are older than every later one, so a TV
+         * or computer still on them is offered the update. dev/release.sh refuses to reach 1.3.0 while this is here: drop it then.
+         */
+        fun legacy(v: String): Boolean {
+            val p = v.trim().split(".")
+            return num(p, 0) == 2 || (num(p, 0) == 1 && num(p, 1) >= 3)
         }
 
         private fun num(parts: List<String>, i: Int): Int =

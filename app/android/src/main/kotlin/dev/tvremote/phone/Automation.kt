@@ -39,8 +39,8 @@ private fun MainActivity.needsSetup(r: JSONObject): Boolean {
     if (r.has("setup") && offerSetup(SetupNeed.Missing("rules", r.optString("have")))) return true
     AlertDialog.Builder(this).setTitle(t("Cần TV Setup trên TV", "TV Setup is needed on the TV"))
         .setMessage(if (r.has("error")) r.optString("error") else t(
-            "Hẹn giờ tắt, giờ đi ngủ và giới hạn app chạy ngay trên TV bằng app TV Setup (bản 2.13.0 trở lên), để TV tự tắt được cả khi điện thoại đã tắt. Trang Tự động có nút cài giúp.",
-            "The sleep timer, bedtime and app limits run on the TV itself, in the TV Setup app (2.13.0 or newer), so the TV turns off even with the phone off. The Automation page has a button to install it."))
+            "Hẹn giờ tắt, giờ đi ngủ và giới hạn app chạy ngay trên TV bằng app TV Setup, để TV tự tắt được cả khi điện thoại đã tắt. Trang Tự động có nút cài giúp.",
+            "The sleep timer, bedtime and app limits run on the TV itself, in the TV Setup app, so the TV turns off even with the phone off. The Automation page has a button to install it."))
         .setPositiveButton(t("Mở trang Tự động", "Open Automation")) { _, _ -> managing.open(host, "auto") }
         .setNegativeButton(t("Đóng", "Close"), null).show()
     return true

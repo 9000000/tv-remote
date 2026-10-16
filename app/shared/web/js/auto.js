@@ -24,7 +24,7 @@ function renderRules() {
     box.replaceChildren(el('section', { className: 'card' },
       el('h2', { textContent: '😴 Hẹn giờ tắt · 🌙 Giờ đi ngủ · ⏳ Giới hạn app' }),
       el('p', { textContent: r.error ? 'TV Setup trả lời lỗi: ' + friendly(r.error)
-        : r.setup === 'old' ? 'TV Setup trên TV là bản cũ. Cần bản ' + (r.min || '2.13.0') + ' trở lên: mở TV Setup trên TV → Cập nhật, hoặc bấm nút dưới.'
+        : r.setup === 'old' ? 'TV Setup trên TV là bản cũ. Cần bản ' + (r.min || '0.1.0') + ' trở lên: mở TV Setup trên TV → Cập nhật, hoặc bấm nút dưới.'
         : 'Các mục này chạy bằng app TV Setup trên TV (để TV tự tắt được cả khi máy này đã tắt). TV chưa có app đó.' }),
       el('div', { className: 'actions' }, act(r.setup === 'old' ? '⬆️ Cập nhật TV Setup' : '⚡ Cài TV Setup lên TV', r.setup === 'old' ? updateSetup : installSetupApk, 'primary'))));
     return;

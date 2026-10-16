@@ -18,7 +18,8 @@ android {
         targetSdk = 34
         versionName = appVersion
         resValue("string", "released", LocalDate.now().toString())   // shown next to the version
-        versionCode = appVersion.split(".").map { it.toInt() }.let { it[0] * 10000 + it[1] * 100 + it[2] }
+        // 100000 +: above every code of the numbers before the restart at 0.1.0 (2.24.x was 22400), so Android installs over them
+        versionCode = appVersion.split(".").map { it.toInt() }.let { 100000 + it[0] * 10000 + it[1] * 100 + it[2] }
     }
     signingConfigs {
         create("release") {

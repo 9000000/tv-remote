@@ -13,10 +13,10 @@ import java.io.IOException
 object SetupNeed {
     /** feature → the first TV Setup that has it */
     val MIN = linkedMapOf(
-        "rules" to "2.13.0",                                           // sleep timer, bedtime, app limits
-        "draw" to "2.18.0",                                            // ✏️ drawing over the screen
-        "pic" to "2.21.0",                                             // 🖼️ a picture over it
-        "volume" to "2.21.5",                                          // 🔊 volume limits
+        "rules" to "0.1.0",                                            // sleep timer, bedtime, app limits
+        "draw" to "0.1.0",                                             // ✏️ drawing over the screen
+        "pic" to "0.1.0",                                              // 🖼️ a picture over it
+        "volume" to "0.1.0",                                           // 🔊 volume limits
     )
 
     /** "setup:old:pic:2.21.0:2.20.0" or "setup:missing:draw:2.18.0:": the words every client looks for in an error. */

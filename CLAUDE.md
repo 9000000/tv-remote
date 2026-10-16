@@ -76,7 +76,7 @@ dev/                     release.sh, gen_icons.py, emu.sh (the two test emulator
 - The timer, bedtime and limits live **on the TV**, in TV Setup (`Rules.kt`, prefs), enforced by `Guard` (standby with keyevent 223,
   closing apps, the notice `WarnActivity`), so they work with every other device off. All three clients reach them the same way:
   `am broadcast -n dev.tvremote.setup/.RulesReceiver --es set <base64 json>` over ADB (`RulesClient.kt`);
-  the receiver needs the shell's DUMP permission, so apps cannot call it. No receiver = TV Setup missing or older than 2.13.0.
+  the receiver needs the shell's DUMP permission, so apps cannot call it. No receiver = TV Setup missing or older than the timer.
 - Scenes are kept per client (computer: `tvs.json` "scenes"; TV Setup: prefs; phone: `SceneStore`), cleaned by `Scenes.clean`; `GET /api/scenes?download=1` is the backup file the page imports back.
 
 ## A feature that needs a newer TV Setup
@@ -89,6 +89,11 @@ that into one question with an Update / Install TV Setup button (`needSetup()` i
 ## Versions and releases
 
 Three numbers, each bumped only when its part changes: `VERSION` (every release; the tag and the computer app), `app/android/VERSION`, `app/tv/VERSION`.
+
+The apps are an alpha: the numbers stay 0.x until the user calls a release 1.0.0. Patch (the default) for fixes and small changes,
+`BUMP=minor` for a release with new features, `BUMP=major` only when the user says so. The numbers restarted at 0.1.0 in October 2026
+(they had reached 2.24.2): `Release.legacy()` counts 1.3.0 … 2.x as older than every new number, `versionCode` is 100000 + the number
+so Android installs over the old APKs, and `release.sh` stops before 1.3.0 until `legacy()` is removed.
 
 - A change in `app/shared` (Kotlin **or** web) changes both APKs, so both app numbers go up (release.sh sees it).
 - Keep the next release's notes under `## Unreleased` at the top of `CHANGELOG.md` (**Tiếng Việt** and **English** lists), added to as features land.

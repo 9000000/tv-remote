@@ -8,7 +8,11 @@
 #
 #   1. write the notes under "## Unreleased" in CHANGELOG.md, commit        2. dev/release.sh
 # It bumps the numbers itself: VERSION when it is still the last tag's, an app's when that app (or app/shared) changed since
-# the last tag and its number did not (BUMP=minor: x.y+1.0 instead of x.y.z+1; SKIP_CHECK=1: the apps' numbers are left alone).
+# the last tag and its number did not (SKIP_CHECK=1: the apps' numbers are left alone). Which part goes up:
+#   patch (default)   x.y.z+1    fixes and small changes
+#   BUMP=minor        x.y+1.0    a release with new features
+#   BUMP=major        x+1.0.0    only when the user says so: 0.x is the alpha, 1.0.0 the first release for everyone
+# The numbers restarted at 0.1.0 in October 2026 (they had run up to 2.24.2 before anyone used the apps).
 # "## Unreleased" becomes "## <VERSION> - <date>" with the line of the three numbers; then it commits that and pushes.
 # Run again after a failure: nothing is bumped twice (VERSION is no longer the last tag's, and its section is there).
 # Needs the gh CLI logged in, and the two signing.jks files the earlier releases were signed with (or updates will not install).
@@ -17,7 +21,7 @@ cd "$(dirname "$0")/.."
 [ -f app/android/signing.jks ] && [ -f app/tv/signing.jks ] || { echo "signing.jks missing: an APK signed with a new key cannot update the installed apps"; exit 1; }
 [ -z "$(git status --porcelain)" ] || { echo "commit your changes first"; exit 1; }
 LAST=$(git describe --tags --abbrev=0 2>/dev/null || true)
-next() { python3 -c 'import sys; a = [int(x) for x in sys.argv[1].split(".")]; i = 1 if sys.argv[2] == "minor" else 2; a[i] += 1; a[i + 1:] = [0] * (2 - i); print(".".join(map(str, a)))' "$1" "${BUMP:-patch}"; }
+next() { python3 -c 'import sys; a = [int(x) for x in sys.argv[1].split(".")]; i = {"major": 0, "minor": 1}.get(sys.argv[2], 2); a[i] += 1; a[i + 1:] = [0] * (2 - i); print(".".join(map(str, a)))' "$1" "${BUMP:-patch}"; }
 if [ -n "$LAST" ]; then
   [ "$(cat VERSION)" = "${LAST#v}" ] && next "$(cat VERSION)" > VERSION
   for a in android tv; do                                             # changed code must come with a new number, or nobody gets it
@@ -28,6 +32,13 @@ if [ -n "$LAST" ]; then
     fi
   done
 fi
+# Release.legacy() takes 1.3.0 … 2.x for the numbers before the restart: past 1.2 the new ones would look old
+for v in VERSION app/android/VERSION app/tv/VERSION; do
+  if python3 -c 'import sys; a = [int(x) for x in open(sys.argv[1]).read().split(".")]; sys.exit(0 if a[0] >= 2 or (a[0] == 1 and a[1] >= 3) else 1)' "$v" &&
+     grep -q "fun legacy" app/shared/src/main/kotlin/dev/tvremote/update/Release.kt; then
+    echo "$v reaches $(cat $v): first remove Release.legacy() (and its tests), the numbers from before the restart at 0.1.0"; git checkout -- VERSION app/android/VERSION app/tv/VERSION; exit 1
+  fi
+done
 VER=$(cat VERSION)
 if ! grep -q "^## $VER " CHANGELOG.md; then
   grep -q "^## Unreleased$" CHANGELOG.md || { echo "CHANGELOG.md: write this release's notes under a \"## Unreleased\" heading"; git checkout -- VERSION app/android/VERSION app/tv/VERSION; exit 1; }
@@ -69,7 +80,7 @@ NOTES="$NOTES
 | Windows 10/11 | [TV-Remote-windows-x64.zip]($D/TV-Remote-windows-x64.zip) |
 | Linux x64 / arm64 | [TV-Remote-linux-x64.tar.gz]($D/TV-Remote-linux-x64.tar.gz) · [TV-Remote-linux-arm64.tar.gz]($D/TV-Remote-linux-arm64.tar.gz) |"
 # the APKs live only in releases, never in git
-gh release create "v$VER" app/android/build/tv-remote.apk app/tv/build/tv-setup.apk app/android/build/versions.json --title "v$VER" --notes "$NOTES"
+gh release create "v$VER" app/android/build/tv-remote.apk app/tv/build/tv-setup.apk app/android/build/versions.json --title "v$VER" --notes "$NOTES" --latest   # by date: GitHub would still call 2.24.2 the latest
 if [ "$DESK" != "$VER" ]; then
   echo "computer app not built: the $DESK archives attached again"
   T=$(mktemp -d); gh release download "$LAST" -p 'TV-Remote-*' -D "$T" && gh release upload "v$VER" "$T"/TV-Remote-*; rm -rf "$T"
