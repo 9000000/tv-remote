@@ -5,8 +5,14 @@
 set -e
 cd "$(dirname "$0")"
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
-[ -f signing.jks ] || keytool -genkeypair -keystore signing.jks -storepass tvremote -keypass tvremote -alias tvremote \
-  -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=tv-remote" >/dev/null 2>&1
+if [ ! -f signing.jks ]; then                                       # said out loud: a new key cannot update the installed apps
+  keytool -genkeypair -keystore signing.jks -storepass tvremote -keypass tvremote -alias tvremote \
+    -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=tv-remote" >/dev/null 2>&1
+  printf '\033[1;33m%s\033[0m\n' >&2 \
+    "WARNING: app/android/signing.jks was missing, a NEW signing key was made." \
+    "  An APK signed with it cannot update the app already installed on phones and TVs (Android refuses another key)." \
+    "  Fine for a first build or tests. For a release: rm app/android/signing.jks and get the old key back: dev/keys.sh restore <file>"
+fi
 ../gradle/gradlew -q -p ../gradle :android:assembleRelease
 cp build/outputs/apk/release/android-release.apk build/tv-remote.apk
 ls -l build/tv-remote.apk | awk '{print "built", $9, $5, "bytes"}'
