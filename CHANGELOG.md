@@ -11,14 +11,14 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Sức khỏe → Lịch sử: chú thích dưới biểu đồ gọn lại như trước. TV có đồng hồ từng nhảy sai (vd box FPT Play) giờ vẫn ghi được app đang mở; khoảng đã ghi trước đó thì không có tên app.
 - Tab Tệp: đổi tên, xóa, tải về nằm trong nút ⋯ (mỗi tệp một dòng trên điện thoại); các thư mục nhanh nằm một dòng vuốt ngang, đường dẫn gọn.
 - Sức khỏe → Lịch sử: bảng dưới biểu đồ hiện sẵn số liệu mới nhất, chạm vào biểu đồ để xem lúc khác.
-- 📱 🎧 Nghe tiếng TV chạy trên kết nối riêng: đưa app xuống nền, mở lại, đổi chất lượng hình không còn làm tiếng ngắt vài giây; hình không còn làm nghẽn tiếng khi mạng chậm (4G, Tailscale).
+- 📱 🎧 Nghe tiếng TV chạy trên kết nối riêng: đưa app xuống nền, mở lại, đổi chất lượng hình không còn làm tiếng ngắt vài giây; hình không còn làm nghẽn tiếng khi mạng chậm (4G, Tailscale). Qua Tailscale tiếng giữ sẵn 0,4 giây ngay từ đầu (trễ hơn hình một chút, đổi lại bớt giật).
 
 **English**
 - 📱 Phone app: copying a file, installing an app or updating TV Setup now shows in the notification shade with its percentage (Android 13+ hid it before, the app never having asked for notifications; it asks as the work starts).
 - Health → History: the legend under the chart is compact again. A TV whose clock once jumped (the FPT Play box, say) records the open app again; what was recorded before has no app names.
 - Files tab: rename, delete and download sit behind ⋯ (one line per file on a phone); the quick folders on one row you swipe, a tighter path.
 - Health → History: the table under the chart shows the latest figures; touch the chart for another moment.
-- 📱 🎧 Listening to the TV runs on a connection of its own: putting the app in the background, opening it again or changing the picture quality no longer cuts the sound for seconds, and the picture no longer holds up the sound on a slow network (4G, Tailscale).
+- 📱 🎧 Listening to the TV runs on a connection of its own: putting the app in the background, opening it again or changing the picture quality no longer cuts the sound for seconds, and the picture no longer holds up the sound on a slow network (4G, Tailscale). Through Tailscale 0.4 s of sound is kept queued from the start (a little behind the picture, much less stutter).
 
 ## 0.3.0 - 2026-10-16
 

@@ -11,6 +11,8 @@ import java.net.URL
  */
 class Tailscale(private val adb: Adb, private val dir: File?) {
     companion object {
+        /** A TV reached through Tailscale: its 100.64/10 address or a MagicDNS name. */
+        fun isAddress(host: String): Boolean = host.endsWith(".ts.net") || Regex("100\\.(?:6[4-9]|[7-9]\\d|1[01]\\d|12[0-7])\\..*").matches(host)
         const val PKG = "com.tailscale.ipn"
         private const val BASE = "https://pkgs.tailscale.com/stable/"
         private const val UI = "/sdcard/tvr-ui.xml"

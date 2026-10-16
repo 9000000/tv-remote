@@ -14,12 +14,15 @@ import java.nio.ByteOrder
  * is kept queued adapts (Android 7+): 0.15 s at home, more each time the sound ran dry (4G, Tailscale through a relay:
  * packets come in bursts), back down after a calm half minute.
  */
-class AudioOut {
+class AudioOut(far: Boolean = false) {
+    /** Kept queued at first: 0.15 s on the home network; through Tailscale ([far]: 4G, a relay) 0.4 s from the start, as
+     *  even at home a busy TV (the FPT Play box) sends its sound up to 0.25 s late at times. */
+    private val base = if (far) RATE * 4 / 10 else BASE
     private var codec: MediaCodec? = null
     private var track: AudioTrack? = null
     private var written = 0L                                          // frames given to the track, to tell how far behind it plays
     private var room = 0                                              // the track's buffer in frames: it starts playing only once full
-    private var target = BASE                                         // frames kept queued
+    private var target = base                                         // frames kept queued
     private var dry = 0                                               // the track's underruns seen so far
     private var calm = 0L                                             // since when it has not run dry
 
@@ -69,8 +72,8 @@ class AudioOut {
             t.write(ByteArray(pad * 4), 0, pad * 4)
             written += pad
             calm = now
-        } else if (target > BASE && now - calm > 30000) {
-            target = maxOf(BASE, target * 4 / 5)
+        } else if (target > base && now - calm > 30000) {
+            target = maxOf(base, target * 4 / 5)
             room = t.setBufferSizeInFrames(target + RATE / 20).coerceAtLeast(0)
             calm = now
         }
@@ -93,8 +96,8 @@ class AudioOut {
         val size = maxOf(min * 2, if (android.os.Build.VERSION.SDK_INT >= 24) (MAX + RATE / 10) * 4 else RATE / 5 * 4)   // room to grow into
         val t = AudioTrack(AudioManager.STREAM_MUSIC, RATE, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, size, AudioTrack.MODE_STREAM)
         room = size / 4
-        target = BASE; dry = 0; calm = System.currentTimeMillis()
-        if (android.os.Build.VERSION.SDK_INT >= 24) room = t.setBufferSizeInFrames(maxOf(min / 4 * 2, RATE / 5)).coerceAtLeast(0).let { if (it > 0) it else size / 4 }   // starts as before: 0.2 s
+        target = base; dry = 0; calm = System.currentTimeMillis()
+        if (android.os.Build.VERSION.SDK_INT >= 24) room = t.setBufferSizeInFrames(maxOf(min / 4 * 2, base + RATE / 20)).coerceAtLeast(0).let { if (it > 0) it else size / 4 }   // starts as before: 0.2 s
         t.play()
         track = t
         written = 0
