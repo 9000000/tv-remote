@@ -7,13 +7,25 @@ const DNS_SETS = {
   ads: ['dns.adguard-dns.com', 'adblock.dns.mullvad.net', 'p2.freedns.controld.com'],
   family: ['family.adguard-dns.com', 'family.dns.mullvad.net', 'family.cloudflare-dns.com'],
 };
-// Android's private DNS takes a host name only (DNS-over-TLS): the addresses people know are turned into their names
-const DNS_BY_IP = {
-  '8.8.8.8': 'dns.google', '8.8.4.4': 'dns.google', '1.1.1.1': 'one.one.one.one', '1.0.0.1': 'one.one.one.one',
-  '1.1.1.2': 'security.cloudflare-dns.com', '1.0.0.2': 'security.cloudflare-dns.com', '1.1.1.3': 'family.cloudflare-dns.com', '1.0.0.3': 'family.cloudflare-dns.com',
-  '9.9.9.9': 'dns.quad9.net', '149.112.112.112': 'dns.quad9.net', '94.140.14.14': 'dns.adguard-dns.com', '94.140.15.15': 'dns.adguard-dns.com',
-  '94.140.14.15': 'family.adguard-dns.com', '94.140.15.16': 'family.adguard-dns.com',
-};
+// The well-known ones, offered by name in "Tự nhập...". Android's private DNS takes a host name only (DNS-over-TLS): the
+// addresses people know (8.8.8.8) are turned into their names.
+const DNS_LIST = [
+  { host: 'dns.google', brand: 'Google', ips: ['8.8.8.8', '8.8.4.4'] },
+  { host: 'one.one.one.one', brand: 'Cloudflare', ips: ['1.1.1.1', '1.0.0.1'] },
+  { host: 'security.cloudflare-dns.com', brand: 'Cloudflare', kind: 'Chặn mã độc', ips: ['1.1.1.2', '1.0.0.2'] },
+  { host: 'family.cloudflare-dns.com', brand: 'Cloudflare', kind: 'Gia đình', ips: ['1.1.1.3', '1.0.0.3'] },
+  { host: 'dns.quad9.net', brand: 'Quad9', kind: 'Chặn mã độc', ips: ['9.9.9.9', '149.112.112.112'] },
+  { host: 'dns.adguard-dns.com', brand: 'AdGuard', kind: 'Chặn quảng cáo', ips: ['94.140.14.14', '94.140.15.15'] },
+  { host: 'family.adguard-dns.com', brand: 'AdGuard', kind: 'Gia đình', ips: ['94.140.14.15', '94.140.15.16'] },
+  { host: 'adblock.dns.mullvad.net', brand: 'Mullvad', kind: 'Chặn quảng cáo', ips: [] },
+  { host: 'family.dns.mullvad.net', brand: 'Mullvad', kind: 'Gia đình', ips: [] },
+  { host: 'p2.freedns.controld.com', brand: 'Control D', kind: 'Chặn quảng cáo', ips: [] },
+  { host: 'dns.nextdns.io', brand: 'NextDNS', ips: [] },
+];
+const DNS_BY_IP = Object.fromEntries(DNS_LIST.flatMap((d) => d.ips.map((ip) => [ip, d.host])));
+const dnsBrand = (host) => (DNS_LIST.find((d) => d.host === host) || {}).brand;
+const dnsLabel = (d) => d.brand + (d.kind ? ' · ' + tr(d.kind) : '') + ' — ' + d.host + (d.ips.length ? ' (' + d.ips[0] + ')' : '');
+const dnsWho = (hosts) => hosts.map(dnsBrand).join(', ');
 /** What was typed as the host name to set, or null after saying why it cannot be one. */
 function dnsHost(typed) {
   const words = typed.toLowerCase().replace(/^\w+:\/\//, '').split(/[\s,;/]+/).filter(Boolean);   // "8.8.8.8 / 8.8.4.4", a pasted URL
@@ -43,13 +55,14 @@ function drawTvset(t) {
   const dnsOn = t.dnsMode === 'hostname' && t.dnsHost;
   const kind = !dnsOn ? 'off' : DNS_SETS.ads.includes(t.dnsHost) ? 'ads' : DNS_SETS.family.includes(t.dnsHost) ? 'family' : 'own';
   const dnsNote = el('p', { className: 'muted', textContent: t.sdk && t.sdk < 28 ? 'TV Android 8 trở xuống chưa có DNS riêng.'
-    : (dnsOn ? 'Đang dùng ' + t.dnsHost + '. ' : '') + 'Áp dụng cho mọi app trên TV. Không chặn được quảng cáo trong YouTube.' });
+    : (dnsOn ? 'Đang dùng ' + t.dnsHost + (dnsBrand(t.dnsHost) ? ' (' + dnsBrand(t.dnsHost) + ')' : '') + '. ' : '') + 'Áp dụng cho mọi app trên TV. Không chặn được quảng cáo trong YouTube.' });
   const dnsRow = row('🛡️ Lọc DNS', [
     choice('Không dùng', kind === 'off', () => setDns([''])),
-    choice('Chặn quảng cáo', kind === 'ads', () => setDns(DNS_SETS.ads)),
-    choice('Gia đình', kind === 'family', () => setDns(DNS_SETS.family)),
+    Object.assign(choice('Chặn quảng cáo', kind === 'ads', () => setDns(DNS_SETS.ads)), { title: dnsWho(DNS_SETS.ads) }),
+    Object.assign(choice('Gia đình', kind === 'family', () => setDns(DNS_SETS.family)), { title: dnsWho(DNS_SETS.family) }),
     choice(kind === 'own' ? t.dnsHost : 'Tự nhập...', kind === 'own', async () => {
-      const typed = await ask('Máy chủ DNS riêng, vd dns.google hoặc 8.8.8.8', { value: kind === 'own' ? t.dnsHost : '' });
+      const typed = await ask('Máy chủ DNS riêng, vd dns.google hoặc 8.8.8.8', { value: kind === 'own' ? t.dnsHost : '',
+        choices: DNS_LIST.map((d) => ({ value: d.host, label: dnsLabel(d) })) });
       const h = typed && typed.trim() && dnsHost(typed);
       if (h) setDns([h]);
     }),

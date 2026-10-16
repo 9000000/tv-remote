@@ -27,10 +27,14 @@ function ask(text, o = {}) {
     const boxes = o.fields ? o.fields.map((f) => el('input', { type: 'number', inputMode: 'numeric', min: 0, max: f.max, value: f.value, placeholder: '0' })) : null;
     const input = o.fields ? el('div', { className: 'fields' }, ...o.fields.flatMap((f, i) => [el('label', {}, boxes[i], el('span', { textContent: tr(f.label) }))]))
       : typed ? el('input', { value: o.value, spellcheck: false }) : null;
+    // choices: a list to pick from that fills the box, "Tự nhập" leaving it to be typed
+    const pick = o.choices && el('select', { onchange: () => { input.value = pick.value; if (!pick.value) input.focus(); } },
+      el('option', { value: '', textContent: tr('✏️ Tự nhập') }), ...o.choices.map((c) => el('option', { value: c.value, textContent: c.label, selected: c.value === o.value })));
+    if (pick) input.addEventListener('input', () => { pick.value = o.choices.some((c) => c.value === input.value.trim()) ? input.value.trim() : ''; });
     const yes = el('button', { type: 'submit', className: o.danger ? 'danger' : 'primary', textContent: tr(o.ok || 'OK') });
     const no = el('button', { type: 'button', textContent: tr('Hủy'), onclick: () => d.close() });
     const d = el('dialog', { className: 'ask' }, el('form', { className: 'card', onsubmit: (e) => { e.preventDefault(); d.returnValue = 'yes'; d.close(); } },
-      el('p', { textContent: tr(text) }), input, el('div', { className: 'acts' }, no, yes)));
+      el('p', { textContent: tr(text) }), pick || null, input, el('div', { className: 'acts' }, no, yes)));
     d.addEventListener('close', () => {
       d.remove();
       const ok = d.returnValue === 'yes';

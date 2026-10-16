@@ -126,7 +126,7 @@
     'App này cần cho TV chạy, không tắt hay xóa dữ liệu được.': 'The TV needs this app: it cannot be disabled or cleared.',
     // the TV card on the Setup tab
     'Khởi động lại TV': 'Restart the TV', 'Đang đọc cài đặt TV...': 'Reading the TV’s settings...',
-    'Lọc DNS': 'DNS filter', 'Không dùng': 'Off', 'Chặn quảng cáo': 'Block ads', 'Gia đình': 'Family', 'Tự nhập...': 'Custom...',
+    'Lọc DNS': 'DNS filter', 'Chặn mã độc': 'Blocks malware', '✏️ Tự nhập': '✏️ Type one', 'Không dùng': 'Off', 'Chặn quảng cáo': 'Block ads', 'Gia đình': 'Family', 'Tự nhập...': 'Custom...',
     'TV Android 8 trở xuống chưa có DNS riêng.': 'TVs on Android 8 or older have no private DNS.',
     'Áp dụng cho mọi app trên TV. Không chặn được quảng cáo trong YouTube.': 'Applies to every app on the TV. It cannot block the ads inside YouTube.',
     'Máy chủ DNS riêng, vd dns.google hoặc 8.8.8.8': 'Private DNS server, e.g. dns.google or 8.8.8.8',
@@ -674,7 +674,7 @@
     [/^Đang sao lưu (.+): tệp \.tar sẽ tải về máy này$/, (m) => `Backing up ${m[1]}: a .tar file will download to this device`],
     [/^Khôi phục (.+) lên TV\? App được cài lại \(giữ dữ liệu nếu đang có trên TV\), kèm thư mục dữ liệu trong bộ nhớ chung\.$/, (m) => `Restore ${m[1]} to the TV? The app is installed again (keeping its data if it is on the TV), with its folders in shared storage.`],
     [/^Đã dọn bộ nhớ đệm, lấy lại (.+)$/, (m) => 'Caches cleaned, ' + m[1] + ' freed'],
-    [/^Đang dùng (\S+)\. (.*)$/, (m) => 'Using ' + m[1] + '. ' + tr(m[2])],
+    [/^Đang dùng (\S+(?: \([^)]+\))?)\. (.*)$/, (m) => 'Using ' + m[1] + '. ' + tr(m[2])],
     [/^TV đang thử (\S+), tối đa 30 giây\.\.\.$/, (m) => `The TV is trying ${m[1]}, up to 30 seconds...`],
     [/^Đã bật lọc DNS: (.+)$/, (m) => 'DNS filter on: ' + m[1]],
     [/^(Tự tắt|Màn hình chờ|Màn hình chính): (.+)$/, (m) => ({ 'Tự tắt': 'Turn off when idle', 'Màn hình chờ': 'Screensaver', 'Màn hình chính': 'Home screen' })[m[1]] + ': ' + tr(m[2])],

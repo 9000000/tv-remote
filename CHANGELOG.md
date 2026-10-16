@@ -15,6 +15,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Thiết lập → Lọc DNS → Tự nhập: gõ IP quen thuộc (8.8.8.8, 1.1.1.1, 9.9.9.9, AdGuard) cũng được, app đổi sang tên máy chủ tương ứng, vì Android chỉ nhận tên.
 
 - 🌙 Giờ đi ngủ có nhiều khoảng giờ (vd 22:00–06:30 và 13:00–14:00 giờ ngủ trưa): thêm, xóa từng khoảng. Cần TV Setup mới.
+- Lọc DNS → Tự nhập: chọn sẵn từ danh sách DNS nổi tiếng (Google, Cloudflare, Quad9, AdGuard, Mullvad, Control D, NextDNS), có ghi rõ nhà cung cấp, tên máy chủ và IP. Rê chuột lên “Chặn quảng cáo” / “Gia đình” để xem dùng DNS của ai.
 **English**
 - 📱 Phone app: copying a file, installing an app or updating TV Setup now shows in the notification shade with its percentage (Android 13+ hid it before, the app never having asked for notifications; it asks as the work starts).
 - Health → History: the legend under the chart is compact again. A TV whose clock once jumped (the FPT Play box, say) records the open app again; what was recorded before has no app names.
@@ -23,6 +24,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - 📱 🎧 Listening to the TV runs on a connection of its own: putting the app in the background, opening it again or changing the picture quality no longer cuts the sound for seconds, and the picture no longer holds up the sound on a slow network (4G, Tailscale). Through Tailscale 0.4 s of sound is kept queued from the start (a little behind the picture, much less stutter). When the network stalls, the app waits until enough sound is in before playing on: one clean gap instead of crackling.
 - Setup → DNS filter → Type one: well-known IPs (8.8.8.8, 1.1.1.1, 9.9.9.9, AdGuard) work too, turned into their server names, as Android takes names only.
 - 🌙 Bedtime takes several time ranges (e.g. 22:00–06:30 and a 13:00–14:00 nap): add or remove each. Needs the new TV Setup.
+- DNS filter → Type one: pick from a list of well-known DNS (Google, Cloudflare, Quad9, AdGuard, Mullvad, Control D, NextDNS) showing the provider, server name and IP. Hover “Block ads” / “Family” to see whose DNS they use.
 
 ## 0.3.0 - 2026-10-16
 
