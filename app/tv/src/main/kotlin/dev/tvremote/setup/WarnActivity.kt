@@ -19,7 +19,8 @@ import kotlin.math.roundToInt
 /**
  * Shown over whatever is on the TV by [Guard]: the sleep timer is about to end (with +15 minutes, now, or cancel), bedtime
  * has come (the TV goes to standby in a minute), or an app's minutes for today are used up. Bedtime and limits offer no way
- * out here, on purpose: more time is granted from a paired phone or computer.
+ * out here, on purpose: more time is granted from a paired phone or computer. Or the memory has stayed nearly full: free it
+ * (the apps waiting in the background closed), see what holds it (the Health tab, on the TV), or skip.
  */
 class WarnActivity : Activity() {
     private val vi = Locale.getDefault().language == "vi"
@@ -44,16 +45,20 @@ class WarnActivity : Activity() {
         card.gravity = Gravity.CENTER_HORIZONTAL
         card.background = GradientDrawable().apply { setColor(Color.rgb(25, 29, 35)); cornerRadius = dp(20).toFloat() }
         card.setPadding(dp(40), dp(32), dp(40), dp(28))
-        val icon = when (kind) { "sleep" -> "😴"; "bed" -> "🌙"; else -> "⏳" }
+        val icon = when (kind) { "sleep" -> "😴"; "bed" -> "🌙"; "ram" -> "🧠"; else -> "⏳" }
+        val (total, avail) = Guard.memory()
         card.addView(text(icon, 48, false))
         card.addView(text(when (kind) {
             "sleep" -> t("Sắp tắt TV", "The TV is turning off")
             "bed" -> t("Đã tới giờ đi ngủ", "It is bedtime")
+            "ram" -> t("RAM của TV gần đầy", "The TV's memory is nearly full")
             else -> t("Hết giờ dùng $name hôm nay", "Time is up for $name today")
         }, 28, true), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(8) })
         val bed = Rules.bedNow(Rules.load(this), System.currentTimeMillis())
         card.addView(text(when (kind) {
             "sleep" -> t("Hẹn giờ tắt TV sắp hết.", "The sleep timer is about to end.")
+            "ram" -> t("Đang dùng ", "In use: ") + "${(total - avail) * 100 / maxOf(1L, total)}% (${total - avail} / $total MB)" +
+                t(". TV có thể chậm, giật. Dọn RAM đóng các app chạy ngầm; app đang xem vẫn giữ.", ". The TV may slow down or stutter. Free RAM closes the apps in the background; what is on screen stays.")
             "bed" -> t("Giờ đi ngủ: ", "Bedtime: ") + (bed?.optString("from") ?: "") + " – " + (bed?.optString("to") ?: "") + t(". Muốn xem thêm, nhờ người lớn cho thêm giờ từ điện thoại.", ". For more time, ask a grown-up to allow it from their phone.")
             else -> t("App đã được đóng. Muốn thêm thời gian, nhờ người lớn cho thêm từ điện thoại.", "The app was closed. For more time, ask a grown-up to allow it from their phone.")
         }, 16, false).apply { setTextColor(Color.rgb(170, 178, 189)); maxWidth = dp(560) }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
@@ -67,6 +72,13 @@ class WarnActivity : Activity() {
             buttons.add(button(t("＋15 phút", "+15 min")) { Rules.change(this, JSONObject().put("do", "sleep_add").put("minutes", 15)); finish() })
             buttons.add(button(t("Tắt ngay", "Turn off now")) { Rules.change(this, JSONObject().put("do", "sleep").put("minutes", 0)); standby(); finish() })
             buttons.add(button(t("Hủy hẹn giờ", "Cancel the timer")) { Rules.change(this, JSONObject().put("do", "sleep").put("minutes", 0)); finish() })
+        } else if (kind == "ram") {
+            buttons.add(button(t("🧹 Dọn RAM", "🧹 Free RAM")) { freeRam(buttons) })
+            buttons.add(button(t("Xem app", "See the apps")) {
+                startActivity(android.content.Intent(this, ManageActivity::class.java).putExtra(ManageActivity.PASS, RemoteService.selfPass).putExtra(ManageActivity.TAB, "health"))
+                finish()
+            })
+            buttons.add(button(t("Bỏ qua", "Skip")) { finish() })
         } else buttons.add(button("OK") { finish() })
         buttons.forEachIndexed { i, b -> row.addView(b, LinearLayout.LayoutParams(-2, dp(52)).apply { if (i > 0) leftMargin = dp(12) }) }
         card.addView(row, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(22) })
@@ -80,7 +92,7 @@ class WarnActivity : Activity() {
     /** The countdown; the screen goes away by itself when the time is up, or the timer or bedtime was changed from a remote. */
     private val tick = object : Runnable {
         override fun run() {
-            if (kind == "limit") return
+            if (kind == "limit" || kind == "ram") return
             val left = until - System.currentTimeMillis()
             val o = Rules.load(this@WarnActivity)
             val off = kind == "sleep" && o.optLong("sleep_at") != until
@@ -90,6 +102,21 @@ class WarnActivity : Activity() {
             count.text = t("TV tắt sau ", "Off in ") + "%d:%02d".format(s / 60, s % 60)
             ui.postDelayed(this, 500)
         }
+    }
+
+    /** Free RAM: the Guard closes what waits in the background, then the screen says how much came back and goes. */
+    private fun freeRam(buttons: List<Button>) {
+        buttons.forEach { it.isEnabled = false }
+        count.text = t("Đang dọn…", "Freeing…")
+        Thread {
+            val got = try { Guard.freeNow() } catch (e: Exception) { null }
+            ui.post {
+                if (isFinishing || isDestroyed) return@post
+                count.text = if (got == null) t("Chưa dọn được: TV Setup chưa nối được ADB của TV.", "Could not: TV Setup has no ADB on this TV yet.")
+                    else t("Đã lấy lại $got MB", "Got back $got MB")
+                ui.postDelayed({ finish() }, if (got == null) 4000 else 2500)
+            }
+        }.start()
     }
 
     override fun onDestroy() { ui.removeCallbacks(tick); super.onDestroy() }

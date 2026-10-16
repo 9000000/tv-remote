@@ -221,6 +221,8 @@ Closing the window (or ⏻ Quit in 🛠️ Settings) stops the app; nothing keep
 - **📲 Share** (More keys → *Share*): a QR code another phone scans to open the TV's remote in its browser with no code to type (once, within 10 minutes; needs TV Setup), and a QR code for the phone app. When this device reaches the TV through Tailscale it says so: the phone that scans must be on the TV's Wi-Fi.
 - **💬 A message on the TV** (the 💬 Text button while drawing): type a sentence; it shows in big letters on the TV, moved and sized like a picture.
 - **Screen off, keep listening** (*Sleep timer* → *Screen off, keep listening*): the TV's screen goes off and the music plays on. Any key, the TV's own remote too, turns the screen back on.
+- **📱 Running apps** (Health tab): which apps run, in the background too, and how much memory each takes; ⏹ Stop closes one. Only apps you installed or with a home screen tile can be stopped; the home screen, keyboard, Android's own parts, TV Remote and Tailscale show 🔒 Must keep.
+- **🧹 Full memory notice** (Automation tab, off by default): past the level picked (80–95%), the TV shows a notice over the app on screen: Free RAM, See the apps or Skip. Needs TV Setup.
 - **🔊 Volume limits** (Automation tab): pick times of day and the highest volume for each, e.g. 22:00 – 06:00 at most 30%. Turned up past it, the TV turns it back down and says why on screen. Needs TV Setup; a TV whose volume is kept by an external speaker (over HDMI) cannot be limited.
 - Protected video (Netflix and the like) shows as black.
 - The TV's on-screen keyboard cannot be clicked with the mouse; type on the computer keyboard. For accented text, type in the "Keyboard" box.

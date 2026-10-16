@@ -7,12 +7,16 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- 📱 Sức khỏe → App đang chạy: xem app nào đang chạy, chạy ngầm, tốn bao nhiêu RAM, và bấm Dừng từng app. Chỉ dừng được app người dùng cài hoặc app có trên màn hình chính; màn hình chính, bàn phím, Android, TV Remote, TV Setup và Tailscale bị khóa (🔒 Cần giữ) để không dừng nhầm.
+- 🧹 Báo khi RAM đầy (tab Tự động, mặc định tắt): RAM của TV dùng quá mức đã chọn (80–95%) thì TV Setup hiện một bảng đè lên mọi app, bấm Dọn RAM, Xem app (mở Quản lý trên TV ở tab Sức khỏe) hoặc Bỏ qua; báo lại sau ít nhất 30 phút. Cần TV Setup mới.
 - 📺 TV Setup → Quản lý trên TV: mở luôn giao diện quản lý (Ứng dụng, Tệp, Sức khỏe, Tự động, Thiết lập) trên màn hình TV, điều khiển bằng remote của TV, không cần điện thoại hay máy tính. Chạy được cả khi đã tắt remote qua web.
 - 📲 Chia sẻ (Thêm phím → Chia sẻ): mã QR cho điện thoại khác quét là vào thẳng remote của TV, không cần gõ mã (dùng 1 lần, trong 10 phút), kèm mã QR tải app điện thoại. Đang nối TV qua Tailscale thì có cảnh báo; TV chưa có TV Setup thì chỉ hiện mã tải app. Cần TV Setup mới.
 - ▶️ Đang phát: bấm tạm dừng / chạy tiếp / qua bài thì nút quay chờ tới khi TV làm xong; bấm liên tục không còn làm nút và TV lệch nhau.
 - Tự động: lúc TV Setup đang cập nhật, trang không còn báo nhầm "TV Setup là bản cũ" kèm nút Cập nhật; nó chờ TV Setup chạy lại rồi tự hiện.
 
 **English**
+- 📱 Health → Running apps: which apps run, in the background too, how much memory each takes, and a Stop button for each. Only apps the user installed or with a tile on the home screen can be stopped; the home screen, keyboard, Android, TV Remote, TV Setup and Tailscale are locked (🔒 Must keep), so nothing vital is stopped by mistake.
+- 🧹 Full memory notice (Automation tab, off by default): when the TV uses more memory than the level picked (80–95%), TV Setup shows a notice over any app: Free RAM, See the apps (Manage on this TV, Health tab) or Skip; again 30 minutes later at the soonest. Needs the new TV Setup.
 - 📺 TV Setup → Manage on this TV: the manage screens (Apps, Files, Health, Automation, Setup) right on the TV, driven with the TV's remote, no phone or computer needed. Works with the web remote turned off too.
 - 📲 Share (More keys → Share): a QR code another phone scans to open the TV's remote straight away, no code to type (once, within 10 minutes), with a QR code for the phone app. A warning when this device reaches the TV through Tailscale; without TV Setup only the app's code shows. Needs the new TV Setup.
 - ▶️ Now playing: pause / play / next show a spinner until the TV has done it; pressing fast no longer leaves the button and the TV out of step.

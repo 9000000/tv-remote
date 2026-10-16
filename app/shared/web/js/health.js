@@ -21,8 +21,38 @@ function wifiTip(w) {
 function signal(rssi) { return rssi >= -55 ? 'rất tốt' : rssi >= -67 ? 'tốt' : rssi >= -75 ? 'trung bình' : 'yếu'; }
 $('#freeram').addEventListener('click', async () => {
   const b = $('#freeram'); b.disabled = true; const r = await api('/api/free', {}); b.disabled = false;
-  if (r) { toast(tr('Đã lấy lại') + ' ' + r.freed + ' MB · ' + tr('còn trống') + ' ' + r.after + ' MB'); loadHealth(); }
+  if (r) { toast(tr('Đã lấy lại') + ' ' + r.freed + ' MB · ' + tr('còn trống') + ' ' + r.after + ' MB'); loadHealth(); loadProcs(true); }
 });
+// The task manager: the apps holding memory, what each is doing, and Stop where stopping cannot hurt the TV (the server
+// decides which: Manage.keepWhy). dumpsys meminfo is slow on a TV, so at most every 15 s while the tab is open.
+const PROC_STATE = { front: 'Đang hiện', bg: 'Chạy ngầm', home: 'Màn hình chính', cached: 'Đang nghỉ', system: 'Hệ thống' };
+const PROC_KEEP = { us: 'TV Remote cần app này', home: 'Màn hình chính của TV', keyboard: 'Bàn phím của TV', system: 'Một phần của Android' };
+let procsAt = 0, procsBusy = false;
+async function loadProcs(now) {
+  if (procsBusy || (!now && Date.now() - procsAt < 15000)) return;
+  procsBusy = true; procsAt = Date.now();
+  const r = await api('/api/procs', null, true);
+  procsBusy = false;
+  if (!r || !r.apps) return;
+  const row = (a) => {
+    const icon = appIcon(a.pkg), name = META.get(a.pkg)?.label || a.label;
+    const title = el('span', { textContent: name });
+    if (a.keep === 'system') icon.fill({ label: name });                 // Android's own: no picture worth asking for
+    else onMeta(a.pkg, (m) => { icon.fill(m.label ? m : { ...m, label: name }); if (m.label) title.textContent = m.label; });
+    const stop = async () => {
+      if (a.state === 'front' && !await ask('Dừng ' + name + '? App đang hiện trên TV.', { ok: 'Dừng' })) return;
+      if (await api('/api/procs/kill', { pkg: a.pkg })) { toast('Đã dừng app: ' + name); setTimeout(() => loadProcs(true), 800); }
+    };
+    return el('div', { className: 'item' }, icon, el('div', { className: 'name' }, title,
+      el('small', { textContent: a.mb + ' MB · ' + tr(PROC_STATE[a.state] || a.state) })),
+      el('div', { className: 'acts' }, a.keep ? el('span', { className: 'tag keep', textContent: tr('🔒 Cần giữ'), title: tr(PROC_KEEP[a.keep] || '') }) : act('⏹ Dừng', stop)));
+  };
+  const apps = r.apps.filter((a) => a.keep !== 'system'), sys = r.apps.filter((a) => a.keep === 'system');   // Android's own, folded away
+  $('#procs').replaceChildren(...apps.map(row), ...(sys.length ? [el('details', { className: 'appsoff' },
+    el('summary', { textContent: tr('Hệ thống Android') + ' (' + sys.length + ')' }), ...sys.map(row))] : []));
+}
+$('#procsre').addEventListener('click', () => loadProcs(true));
+
 // Now: the live figures. History: what the TV Setup app on the TV has written down (drawn by stats.js).
 let hmode = 'now';
 async function loadHist(days) {
@@ -259,6 +289,7 @@ async function loadHealth() {
   if (h.mem_total) { const used = h.mem_total - h.mem_free; load.push(meter('RAM', used * 100 / h.mem_total, 'đã dùng ' + fmtSize(used) + ' / ' + fmtSize(h.mem_total))); }
   if (h.disk_total) { const used = h.disk_total - h.disk_free; load.push(meter('Bộ nhớ trong', used * 100 / h.disk_total, 'đã dùng ' + fmtSize(used) + ' / ' + fmtSize(h.disk_total))); }
   $('#hload').replaceChildren(...load);
+  loadProcs();
   const cell = (cls, text) => el('div', { className: cls, textContent: text });   // CPU and RAM said once, as column heads
   $('#htop').replaceChildren(...(h.top.length ? [cell('h', 'Tiến trình'), cell('h n', 'CPU'), cell('h n', 'RAM')] : []),
     ...h.top.flatMap((p) => [cell('k', (typeof appName === 'function' && META.has(p.name) && appName(p.name)) || p.name), cell('v n', p.cpu + '%'), cell('v n', p.mem + '%')]));

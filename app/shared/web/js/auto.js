@@ -77,6 +77,12 @@ function renderRules() {
   const now = r.volume_now;
   $('#volstate').textContent = r.volume === undefined ? '' : r.volume_fixed ? '⚠️ Âm lượng của TV này do loa ngoài / TV giữ (qua HDMI), không giới hạn được.'
     : now ? 'Đang giới hạn tối đa ' + now.max + '% tới ' + now.to + '.' : '';
+  // the memory notice; a TV Setup older than it has no "ram" in its answer
+  const ram = r.ram || { on: false, pct: 90 };
+  if (document.activeElement !== $('#ramon')) $('#ramon').checked = !!ram.on;
+  $('#rampct').replaceChildren(...[80, 85, 90, 95].map((p) => el('button', { type: 'button', className: p === ram.pct ? 'on' : '', textContent: p + '%',
+    onclick: () => saveRam(true, p) })));
+  $('#ramstate').textContent = ram.on ? 'Đang bật: báo khi RAM dùng từ ' + ram.pct + '%.' : '';
   if (CORE === 'tv' && r.adb && r.adb !== 'ready') $('#bedstate').append(el('span', { className: 'warnline', textContent: '⚠️ TV Setup chưa nối được ADB của TV nên chưa tự tắt TV / đóng app được.' }));
 }
 
@@ -122,6 +128,11 @@ $('#bedon').addEventListener('change', async () => {
   const r = await saveBeds(list, $('#bedon').checked);
   if (r && r.bedtime.on) toast('Đã bật giờ đi ngủ');
 });
+async function saveRam(on, pct) {
+  if (RULES && RULES.ram === undefined && !await setupFor('ram')) { $('#ramon').checked = false; return null; }
+  return loadRules({ do: 'ram', on, pct: pct || (RULES && RULES.ram && RULES.ram.pct) || 90 });
+}
+$('#ramon').addEventListener('change', () => saveRam($('#ramon').checked));
 async function saveVols(list) {
   if (RULES && RULES.volume === undefined && !await setupFor('volume')) return null;
   return loadRules({ do: 'volume', ranges: list });

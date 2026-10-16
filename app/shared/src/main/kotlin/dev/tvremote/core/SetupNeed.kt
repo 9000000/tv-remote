@@ -19,6 +19,7 @@ object SetupNeed {
         "volume" to "0.1.0",                                           // 🔊 volume limits
         "bedtimes" to "0.3.1",                                         // 🌙 more than one bedtime
         "invite" to "0.4.2",                                           // 📲 sharing the remote by QR (an older one answers with a pass)
+        "ram" to "0.4.2",                                              // 🧠 the notice when the memory is nearly full
     )
 
     /** "setup:old:pic:2.21.0:2.20.0" or "setup:missing:draw:2.18.0:": the words every client looks for in an error. */
@@ -33,6 +34,7 @@ object SetupNeed {
         "volume" -> if (vi) "Giới hạn âm lượng" else "Volume limits"
         "bedtimes" -> if (vi) "Nhiều khoảng giờ đi ngủ" else "Several bedtimes"
         "invite" -> if (vi) "Chia sẻ remote bằng QR" else "Sharing the remote by QR"
+        "ram" -> if (vi) "Báo khi RAM đầy" else "The full memory notice"
         else -> feature
     }
 

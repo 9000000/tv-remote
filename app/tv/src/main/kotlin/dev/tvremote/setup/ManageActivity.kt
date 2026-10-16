@@ -29,14 +29,15 @@ class ManageActivity : Activity() {
     private lateinit var web: WebView
     private var tries = 0
     private var picked: ValueCallback<Array<Uri>>? = null
-    private val url = "http://127.0.0.1:${RemoteService.PORT}/?ontv=1"
+    private var url = "http://127.0.0.1:${RemoteService.PORT}/?ontv=1"
     private var pass = ""
 
-    companion object { const val PASS = "pass" }
+    companion object { const val PASS = "pass"; const val TAB = "tab" }
 
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
-        pass = intent.getStringExtra(PASS) ?: run { finish(); return }   // only MainActivity opens it, with the pass
+        pass = intent.getStringExtra(PASS) ?: run { finish(); return }   // only TV Setup's own screens open it, with the pass
+        intent.getStringExtra(TAB)?.takeIf { Regex("[a-z]+").matches(it) }?.let { url += "&tab=$it" }   // the RAM notice: straight to Health
         val box = android.widget.FrameLayout(this)
         box.setBackgroundColor(Color.rgb(13, 16, 20))
         val wait = android.widget.TextView(this)

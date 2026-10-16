@@ -69,6 +69,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "files" -> return HttpServer.Response.json(files(r.q("path")))
                 "file" -> return download(r)
                 "health" -> return HttpServer.Response.json(health())
+                "procs" -> return HttpServer.Response.json(procs())
                 "crashes" -> return HttpServer.Response.json(JSONObject().put("text", sh(CRASHES).replace("\r\n", "\n").takeLast(500000)))
                 "stats" -> return HttpServer.Response.json(stats(r.q("days").toIntOrNull() ?: 7))
                 "rules" -> if (!post) return HttpServer.Response.json(rules(null))
@@ -125,6 +126,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "file/delete", "file/rename", "file/mkdir", "file/open" -> fileOp(what.substring(5), r.json())
                 "file/install" -> HttpServer.Response.json(installPath(safePath(r.json().optString("path"))))
                 "free" -> HttpServer.Response.json(free())
+                "procs/kill" -> { val pkg = r.json().optString("pkg"); keepCheck(pkg); sh("am force-stop " + Adb.q(pkg)); HttpServer.Response.ok() }
                 "setup" -> { val d = r.json(); HttpServer.Response.json(setup(d.optString("mode") == "undo", d.optString("lang") != "en", choice(d))) }
                 "fetch" -> HttpServer.Response.json(fetch(r.json().optString("url"), false))
                 "install" -> HttpServer.Response.json(fetch(r.json().optString("url"), true))
@@ -216,7 +218,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         if (!PKG.matcher(pkg).matches()) throw IllegalArgumentException("bad package name")
         when (action) {
             "launch" -> { Scenes.launch({ sh(it) }, pkg); return HttpServer.Response.ok() }
-            "stop" -> { sh("am force-stop $pkg"); return HttpServer.Response.ok() }
+            "stop" -> { keepCheck(pkg); sh("am force-stop $pkg"); return HttpServer.Response.ok() }
             "uninstall" -> {
                 val out = sh("pm uninstall $pkg 2>&1").trim()
                 if (!out.contains("Success")) throw IllegalArgumentException(if (out.isEmpty()) "uninstall failed" else out)
@@ -499,6 +501,26 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             Thread.sleep(3000)
             if (!adb.shell("pm path $pkg 2>/dev/null; echo .").contains("package:")) throw IllegalArgumentException("removed by the TV right after install: $pkg")
         }
+    }
+
+    /**
+     * The task manager (Health tab): the apps holding memory now, what each is doing ([Proc.state]) and whether it may be
+     * stopped. One shell round trip; meminfo takes a second or more on a slow TV, so the page asks only while it is open.
+     */
+    private fun procs(): JSONObject {
+        val p = sh("grep -E '^(MemTotal|MemAvailable):' /proc/meminfo; printf '\\043~\\043\\n'; dumpsys meminfo; printf '\\043~\\043\\n'; " + KEEP_NOW).split("#~#\n")
+        val kb = { k: String -> (find("$k:\\s+(\\d+)", p[0])?.toLong() ?: 0L) * 1024 }
+        val list = JSONArray()
+        for (a in procsOf(p.getOrElse(1) { "" }, keepNow(p.getOrElse(2) { "" }))) list.put(JSONObject().put("pkg", a.pkg)
+            .put("label", labels?.label(a.pkg) ?: a.pkg).put("mb", a.mb).put("state", a.state).put("keep", a.keep ?: JSONObject.NULL))
+        return JSONObject().put("apps", list).put("mem_total", kb("MemTotal")).put("mem_free", kb("MemAvailable"))
+    }
+
+    /** Stopping [pkg] would hurt the TV (its home screen, keyboard, a part of Android) or cut this remote off: refused. */
+    private fun keepCheck(pkg: String) {
+        if (!PKG.matcher(pkg).matches()) throw IllegalArgumentException("bad package name")
+        val keep = keepNow(sh(KEEP_NOW))
+        if (keepWhy(pkg, keep) != null) throw IllegalArgumentException("protected: the TV needs this app")
     }
 
     /** Closes the apps that are only waiting in the background (what is on screen stays); says how much memory came back, in MB. */
@@ -845,6 +867,77 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 by[pkg] = (by[pkg] ?: 0) + (m.groupValues[1].replace(",", "").toInt() / 1024)
             }
             return by.entries.filter { it.value >= 5 }.sortedByDescending { it.value }.take(25).map { it.key to it.value }
+        }
+
+        /** The home screen and the keyboard in use, the apps the user installed and the ones with a tile, as [keepNow] reads them. */
+        private const val KEEP_NOW = "cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN | tail -1; " +
+            "settings get secure default_input_method; pm list packages -3; for c in LEANBACK_LAUNCHER LAUNCHER; do " +
+            "cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.\$c 2>/dev/null; done"
+
+        /**
+         * What may be stopped on this TV: the apps a person installed or can open from a tile (YouTube is a system app on most
+         * TVs), but never its home screen or keyboard (they differ per TV). Everything else of the system's stays.
+         */
+        internal data class Keep(val home: String, val keyboard: String, val people: Set<String>)
+
+        /** [Keep] from the output of [KEEP_NOW]. */
+        internal fun keepNow(out: String): Keep {
+            val lines = out.split("\n").map { it.trim() }
+            val pkg = { i: Int -> lines.getOrElse(i) { "" }.substringBefore('/') }
+            val people = lines.drop(2).mapNotNull { if (it.startsWith("package:")) it.substring(8) else if (it.contains('/')) it.substringBefore('/') else null }
+            return Keep(pkg(0), pkg(1), people.toSet())
+        }
+
+        /** Why [pkg] may not be stopped ("us", "home", "keyboard", "system"), or null when it may. */
+        internal fun keepWhy(pkg: String, k: Keep): String? = when {
+            pkg.startsWith("dev.tvremote.") || pkg == "com.tailscale.ipn" -> "us"   // this remote, and the way to it from outside
+            pkg == k.home -> "home"
+            pkg == k.keyboard -> "keyboard"
+            Setup.PROTECTED.matches(pkg) || pkg !in k.people -> "system"   // and Android's shared processes (android.process.acore)
+            else -> null
+        }
+
+        /** One app in the task manager: MB in memory (all its processes), what it is doing, why it must stay (null: may be stopped). */
+        internal data class Proc(val pkg: String, val mb: Int, val state: String, val keep: String?)
+
+        /**
+         * "Total PSS by OOM adjustment" of dumpsys meminfo: each app once, its processes summed, under the most active of their
+         * groups: "front" (on screen), "bg" (working in the background: music, downloads, services), "home", "cached" (kept in
+         * memory, doing nothing: Android lets them go first), "system" (Android itself: never stopped). Largest first.
+         */
+        internal fun procsOf(meminfo: String, k: Keep): List<Proc> {
+            val start = meminfo.indexOf("Total PSS by OOM adjustment:")
+            if (start < 0) return emptyList()
+            val rank = listOf("system", "front", "home", "bg", "cached")
+            val mb = HashMap<String, Int>(); val state = HashMap<String, String>()
+            var group = "cached"
+            for (line in meminfo.substring(start).split("\n").drop(1)) {
+                if (line.isBlank()) break
+                val g = if (line.contains("(pid ")) null else Regex("^\\s*[\\d,]+K: (.+)$").find(line)   // a group's head: no pid
+                if (g != null) {
+                    val name = g.groupValues[1].trim()
+                    group = when {
+                        name == "Native" -> "native"                  // daemons, not apps: left out
+                        name == "System" || name.startsWith("Persistent") -> "system"
+                        name == "Foreground" || name == "Visible" -> "front"
+                        name == "Home" -> "home"
+                        name == "Previous" || name.startsWith("Cached") -> "cached"
+                        else -> "bg"                                  // Perceptible, A / B Services, Backup, Heavy Weight, ...
+                    }
+                    continue
+                }
+                val m = Regex("^\\s+([\\d,]+)K: ([^\\s(]+)").find(line) ?: continue
+                val pkg = m.groupValues[2].substringBefore(':')
+                if (group == "native" || !pkg.contains('.')) continue   // "system" itself (Android's core) shows in the RAM meter
+                if (pkg == "com.google.android.webview" && m.groupValues[2].contains("sandboxed")) continue   // another app's page renderer: counted nowhere rather than wrongly
+                mb[pkg] = (mb[pkg] ?: 0) + m.groupValues[1].replace(",", "").toInt() / 1024
+                val was = state[pkg]
+                if (was == null || rank.indexOf(group) < rank.indexOf(was)) state[pkg] = group   // an app's busiest process says what it is doing
+            }
+            return mb.entries.filter { it.value >= 1 }.map { (pkg, v) ->
+                val st = state[pkg] ?: "cached"
+                Proc(pkg, v, st, if (st == "system") "system" else keepWhy(pkg, k))
+            }.sortedByDescending { it.mb }
         }
 
         /** Only the shared storage and USB drives; no "..". */

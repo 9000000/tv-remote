@@ -3,6 +3,8 @@ package dev.tvremote.core
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
+private typealias Proc = Manage.Companion.Proc
+
 /** The checks that keep the file manager inside the TV's shared storage. */
 class ManagePathsTest {
     @Test fun pathsStayInSharedStorage() {
@@ -34,6 +36,52 @@ Total PSS by OOM adjustment:
 """
         assertEquals(listOf("com.google.android.youtube.tv" to 116, "com.google.android.katniss" to 110), Manage.memoryByApp(sample))
         assertEquals(emptyList<Pair<String, Int>>(), Manage.memoryByApp("nothing"))
+    }
+
+    @Test fun taskManager() {
+        val sample = """Total PSS by OOM adjustment:
+    307,656K: Native
+         49,156K: app_process (pid 5284)
+         16,486K: android.hardware.graphics.composer3-service.ranchu (pid 356)
+    148,979K: System
+        148,979K: system (pid 511)
+     70,393K: Persistent
+         47,985K: com.android.systemui (pid 732)
+           4,995K: com.android.se (pid 871)
+    148,933K: Foreground
+         77,285K: com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0 (pid 5417)
+         71,648K: com.netflix.ninja (pid 5382 / activities)
+    115,189K: Perceptible
+         61,749K: com.google.android.inputmethod.latin (pid 1076)
+         22,557K: com.google.android.apps.tv.launcherx:coreservices (pid 1171)
+     46,319K: A Services
+         46,319K: com.spotify.tv.android (pid 1134)
+     62,429K: Home
+         62,429K: com.google.android.apps.tv.launcherx (pid 1175 / activities)
+    352,376K: Cached
+         31,952K: com.spotify.tv.android:background (pid 2489)
+         21,124K: com.google.android.youtube.tv (pid 2016)
+         10,977K: android.process.acore (pid 1287)
+          8,406K: com.android.keychain (pid 1257)
+
+Total PSS by category:
+"""
+        val keep = Manage.keepNow("com.google.android.apps.tv.launcherx/.home.HomeActivity\ncom.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME\n" +
+            "package:com.netflix.ninja\npackage:com.spotify.tv.android\n" +
+            "com.google.android.youtube.tv/com.google.android.apps.youtube.tv.activity.ShellActivity\ncom.netflix.ninja/.MainActivity")
+        assertEquals(listOf(
+            Proc("com.google.android.apps.tv.launcherx", 82, "home", "home"),   // its coreservices process counts for it
+            Proc("com.spotify.tv.android", 76, "bg", null),                      // the busiest of its processes: playing
+            Proc("com.netflix.ninja", 69, "front", null),
+            Proc("com.google.android.inputmethod.latin", 60, "bg", "keyboard"),
+            Proc("com.android.systemui", 46, "system", "system"),
+            Proc("com.google.android.youtube.tv", 20, "cached", null),
+            Proc("android.process.acore", 10, "cached", "system"),
+            Proc("com.android.keychain", 8, "cached", "system"),          // a system app with no tile: not for people to stop
+            Proc("com.android.se", 4, "system", "system"),
+        ), Manage.procsOf(sample, keep))
+        assertEquals("us", Manage.keepWhy("dev.tvremote.setup", keep))
+        assertEquals(emptyList<Proc>(), Manage.procsOf("nothing", keep))
     }
 
     @Test fun mimeTypes() {

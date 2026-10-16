@@ -17,7 +17,8 @@ import java.util.Locale
  * Enforces [Rules] on the TV, from RemoteService. A check runs every few seconds to a minute (sooner when a deadline is close):
  * standby when the sleep timer ends or during bedtime (each after a minute's warning on screen, [WarnActivity]), and an app
  * closed once its minutes for the day are used up, and the volume turned down to the highest the hour allows, the moment it
- * goes higher (with a word on screen saying why, so nobody thinks the volume keys broke). Standby, closing apps and putting the warning over another app all need
+ * goes higher (with a word on screen saying why, so nobody thinks the volume keys broke), and a notice offering to free the memory
+ * when it stays fuller than the share set (once per half hour at most, so "Skip" means it). Standby, closing apps and putting the warning over another app all need
  * the TV's own ADB, which this app holds (as for everything else it does).
  */
 internal class Guard(private val c: Context, private val adb: () -> Adb?) {
@@ -29,6 +30,15 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         fun standbyNow() { running?.standby() }
         /** The TV's volume is not its own to set (sent on to a sound bar or the TV set over HDMI): no limit can hold it. */
         fun volumeFixed(c: Context): Boolean = (c.getSystemService(Context.AUDIO_SERVICE) as AudioManager).isVolumeFixed
+        /** "Free RAM" on the notice: the apps waiting in the background closed; the MB that came back, null without ADB. */
+        fun freeNow(): Long? = running?.free()
+
+        /** (total, available) memory in MB, from /proc/meminfo, which any app may read. */
+        fun memory(): Pair<Long, Long> {
+            val m = try { java.io.File("/proc/meminfo").readText() } catch (e: Exception) { "" }
+            val kb = { k: String -> Regex("$k:\\s+(\\d+)").find(m)?.groupValues?.get(1)?.toLongOrNull() ?: 0L }
+            return kb("MemTotal") / 1024 to kb("MemAvailable") / 1024
+        }
     }
 
     private val ui = Handler(Looper.getMainLooper())
@@ -41,6 +51,8 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
     private var lastStop = HashMap<String, Long>()
     private val audio = c.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private var volSaidAt = 0L
+    private var ramHigh = 0                                           // checks in a row with the memory past the line
+    private var ramQuietUntil = 0L                                    // the notice was shown: not again before this
     private val volume = object : BroadcastReceiver() {                // every change, from any remote: turned down at once
         override fun onReceive(ctx: Context, i: Intent) { capVolume() }
     }
@@ -117,6 +129,16 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
             next = minOf(next, 30_000)
         }
 
+        // ---- memory: full at two checks in a row (half a minute apart), not a moment's peak while an app starts
+        val ram = Rules.ram(o)
+        if (ram.optBoolean("on")) {
+            val (total, avail) = memory()
+            if (on && total > 0 && (total - avail) * 100 >= total * ram.optInt("pct", 90)) {
+                if (++ramHigh >= 2 && now >= ramQuietUntil) { ramQuietUntil = now + 30 * 60_000L; ramHigh = 0; warn("ram", 0, "") }
+            } else ramHigh = 0
+            next = minOf(next, 30_000)
+        }
+
         // ---- daily app limits, for the app on screen
         val limits = o.optJSONObject("limits")
         if (on && limits != null && limits.length() > 0) {
@@ -148,6 +170,14 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
 
     private fun standby() { sh("input keyevent 223") }
 
+    /** The same as the pages' "Free up RAM" (Manage.free): what waits in the background goes, what is on screen stays. */
+    private fun free(): Long? {
+        val before = memory().second
+        if (sh("am kill-all") == null) return null
+        Thread.sleep(1500)
+        return maxOf(0L, memory().second - before)
+    }
+
     /** The app's minutes are used up: back to the home screen, the app closed, and a word on screen saying why. */
     private fun close(pkg: String) {
         sh("input keyevent 3; am force-stop " + q(pkg))
@@ -160,6 +190,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         if (out == null || out.contains("Error")) say(when (kind) {
             "sleep" -> t("TV sẽ tắt sau 1 phút (hẹn giờ)", "The TV turns off in 1 minute (sleep timer)")
             "bed" -> t("Đã tới giờ đi ngủ: TV sẽ tắt sau 1 phút", "Bedtime: the TV turns off in 1 minute")
+            "ram" -> t("RAM của TV gần đầy: mở TV Setup → Quản lý trên TV → Sức khỏe để dọn", "The TV's memory is nearly full: TV Setup → Manage on this TV → Health frees it")
             else -> t("Hết giờ dùng ", "Time is up for ") + label(pkg) + t(" hôm nay", " today")
         })
     }

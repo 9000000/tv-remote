@@ -45,7 +45,7 @@ app/android/.../phone/   phone app, one file per part, as extension functions on
                          (the now playing strip, the TV's clipboard)
 app/tv/                  TV Setup: MainActivity (the TV screen), RemoteService (web server), ManageActivity (the web UI on the
                          TV itself: a WebView in its own process, `?ontv=1`, D-pad focus in `js/ontv.js`), PairActivity, Stats, TrustReceiver,
-                         Rules + Guard + RulesReceiver + WarnActivity (sleep timer, bedtime, app limits), DnsWatch (turns off a
+                         Rules + Guard + RulesReceiver + WarnActivity (sleep timer, bedtime, app limits, the full memory notice), DnsWatch (turns off a
                          DNS filter that cut the TV off), DrawLayer + DrawReceiver (the drawing over every app), KeepAdb (ADB debugging
                          back on when switched off, with WRITE_SECURE_SETTINGS granted through ADB)
 app/gradle/              the Gradle build of everything Kotlin (settings point at ../shared, ../android, ../tv, ../desktop); open it in Android Studio

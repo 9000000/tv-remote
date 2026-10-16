@@ -158,7 +158,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && scr
 setScreenPlaceholder();
 
 // ---------- tabs ----------
-let currentTab = window.ONTV ? 'apps' : 'remote', streamFps = 0;   // on the TV itself there is no Remote tab
+let currentTab = window.ONTV ? (location.search.match(/[?&]tab=(\w+)/) || [])[1] || 'apps' : 'remote', streamFps = 0;   // on the TV itself there is no Remote tab; TV Setup may name one
 function showTab(t) {
   if ((CORE === 'phone' || window.ONTV) && (t === 'remote' || !document.querySelector('[data-tab="' + t + '"]'))) t = 'apps';   // the phone app has its own remote; the TV itself needs none
   currentTab = t; document.querySelector('main').classList.toggle('wide', t === 'remote' && !picking);

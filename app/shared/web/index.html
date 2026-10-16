@@ -250,6 +250,7 @@
       <div class="muted" id="hwait">Đang đọc từ TV...</div>
       <section class="card"><div class="card-head"><h2>📊 Tổng quan</h2><span class="muted" id="hwhen"></span></div><div class="kv" id="hsum"></div></section>
       <section class="card"><h2>⚙️ Tải hệ thống</h2><div id="hload"></div><button id="freeram">🧹 Giải phóng RAM</button><h3>🔥 Tiến trình tốn CPU nhất</h3><div class="ptable" id="htop"></div></section>
+      <section class="card"><div class="card-head"><h2>📱 App đang chạy</h2><button class="small" id="procsre" title="Tải lại">🔄</button></div><div class="list" id="procs"><p class="muted">Đang đọc từ TV...</p></div></section>
       <section class="card"><h2>📶 Mạng</h2><div class="kv" id="hnet"></div></section>
       <section class="card"><h2>🧩 Phần cứng</h2><div class="kv" id="hhw"></div></section>
       </div>
@@ -294,6 +295,12 @@
         <div class="list" id="vols"></div>
         <p class="state" id="volstate"></p>
         <form id="volf"><div class="timerow"><label>Từ <input type="time" id="volfrom" value="22:00"></label><label>đến <input type="time" id="volto" value="06:00"></label></div><div class="line"><select id="volmax" aria-label="Âm lượng tối đa"><option value="10">10%</option><option value="20">20%</option><option value="30" selected>30%</option><option value="40">40%</option><option value="50">50%</option><option value="60">60%</option><option value="70">70%</option><option value="80">80%</option><option value="90">90%</option></select><button class="primary">＋ Thêm</button></div></form>
+      </section>
+      <section class="card">
+        <h2>🧹 Báo khi RAM đầy</h2>
+        <label class="check"><input type="checkbox" id="ramon"> Hiện trên TV khi RAM đầy, để dọn</label>
+        <div class="fchips" id="rampct" role="group" aria-label="Mức RAM"></div>
+        <p class="state" id="ramstate"></p>
       </section>
     </div>
     <div data-kindintro="rules" hidden></div>

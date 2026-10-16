@@ -16,10 +16,11 @@ import java.util.Locale
  *   bedtime       in any of a few times of day (22:00–06:30, 13:00–14:00) the TV goes to standby a minute after it is turned on
  *   app limits    minutes per day for an app; when they are used up the app is closed (more can be granted for today)
  *   volume        times of day with a highest volume each (22:00–06:00 at most 30%): louder is turned down, with a word on screen
+ *   memory        a notice over whatever is on when the TV's memory stays fuller than a set share, to free it or not
  *
  * Stored as one JSON object: { sleep_at, bedtime: {on, ranges: [{from, to}], from, to (the first range, for
  * remotes older than ranges)}, snooze_until, limits: {pkg: minutes}, extra: {day: {pkg: minutes}},
- * volume: [{from, to, max (percent)}] }.
+ * volume: [{from, to, max (percent)}], ram: {on, pct (used, percent)} }.
  * The remotes reach it through [RulesReceiver] (phone, computer: over ADB) or RemoteService (the TV's own page).
  */
 internal object Rules {
@@ -39,7 +40,7 @@ internal object Rules {
     fun active(c: Context): Boolean {
         val o = load(c)
         return o.optLong("sleep_at") > System.currentTimeMillis() || o.optJSONObject("bedtime")?.optBoolean("on") == true || (o.optJSONObject("limits")?.length() ?: 0) > 0
-            || (o.optJSONArray("volume")?.length() ?: 0) > 0
+            || (o.optJSONArray("volume")?.length() ?: 0) > 0 || ram(o).optBoolean("on")
     }
 
     fun day(t: Long): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(t))
@@ -47,7 +48,8 @@ internal object Rules {
     /**
      * One action from a remote, then the state they show. Actions ("do"): sleep {minutes} (0 cancels), sleep_add {minutes},
      * bedtime {on, ranges: [{from, to}] ("22:00"), or from, to for one}, snooze {minutes} (bedtime paused, 0 resumes), limit {pkg, minutes} (0 removes),
-     * extra {pkg, minutes} (more for today only), volume {ranges: [{from, to, max}]} (the whole list). An empty "do" only reads.
+     * extra {pkg, minutes} (more for today only), volume {ranges: [{from, to, max}]} (the whole list),
+     * ram {on, pct} (the memory notice, at pct% used). An empty "do" only reads.
      */
     @Synchronized
     fun change(c: Context, d: JSONObject): JSONObject {
@@ -80,6 +82,7 @@ internal object Rules {
                 }
                 o.put("volume", list)
             }
+            "ram" -> o.put("ram", JSONObject().put("on", d.optBoolean("on")).put("pct", d.optInt("pct", ram(o).optInt("pct")).coerceIn(RAM_MIN, RAM_MAX)))
             "snooze" -> o.put("snooze_until", if (minutes > 0) now + minutes * 60_000L else 0L)
             "limit", "extra" -> {
                 val pkg = d.optString("pkg")
@@ -108,6 +111,12 @@ internal object Rules {
         val o = load(c)
         if (o.optLong("sleep_at") == at) save(c, o.put("sleep_at", 0L))
     }
+
+    const val RAM_MIN = 75
+    const val RAM_MAX = 97
+
+    /** The memory notice: {on, pct}, off at 90% until a remote turns it on. */
+    fun ram(o: JSONObject): JSONObject = o.optJSONObject("ram") ?: JSONObject().put("on", false).put("pct", 90)
 
     private fun pad(hhmm: String): String = hhmm.split(":").let { it[0].padStart(2, '0') + ":" + it[1] }
 
@@ -174,7 +183,7 @@ internal object Rules {
             .put("bedtime", bedtime(o))
             .put("in_bedtime", inBedtime(o, now)).put("snooze_until", o.optLong("snooze_until").let { if (it > now) it else 0L })
             .put("limits", limits).put("volume", o.optJSONArray("volume") ?: JSONArray()).put("volume_now", volumeCap(o, now) ?: JSONObject.NULL)
-            .put("volume_fixed", Guard.volumeFixed(c)).put("running", RemoteService.isRunning()).put("wanted", active(c))
+            .put("ram", ram(o)).put("volume_fixed", Guard.volumeFixed(c)).put("running", RemoteService.isRunning()).put("wanted", active(c))
             .put("adb", RemoteService.adbState())
     }
 
