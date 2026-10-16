@@ -69,6 +69,9 @@ dev/                     release.sh, churn.sh (how often the /api still changes;
   `UI.card` / `UI.say`. **One size per kind of control**: a field and the button beside it `--ctl`, `.small` (`--ctl-sm`) for
   tools in a head and acts in a list, a choice among several a chip (`.places` / `.fchips`, `--chip`). No `style="…"` / `style:`
   in markup and no new `min-height` in px: a look needed twice is a class. Checked by `tests/ui.test.js`.
+  **Icons:** write a title or button with its emoji as before (i18n keys keep it); `ICON` in `js/ui.js` draws it as a line
+  icon from the sprite (a title's in its own hue, a tab's in a coloured tile, a button's in the button's colour). A new emoji
+  in a title: add it to `ICON` (its path to `dev/gen_icons.py`). Content (scene icons, app tiles, sentences, the remote) keeps emoji.
 - The server stamps `<html data-core="pc|tv|phone">`; core-only markup uses `data-for="pc tv phone"`, JS checks `CORE`.
 - **Vietnamese is the source language.** The web UI writes Vietnamese; `js/i18n.js` maps strings (and regexes) to English at render time, so every new user-visible string needs an entry there. Kotlin uses `t("vi", "en")`. README, CHANGELOG entries and release notes are written in both languages.
 - **Users first:** make things automatic; show an error only after every fallback has failed, in words a person can act on (`Errors.kt`, `friendly()` in `js/core.js`). Choices look like buttons. Long waits show what is going on and can be cancelled.

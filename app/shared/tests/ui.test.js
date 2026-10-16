@@ -49,3 +49,13 @@ test('control heights come from the tokens', () => {
     .map((m) => m[1].trim().split('\n').pop().replace(/^.*\*\/\s*/, '').trim()).filter((sel) => !ok.has(sel));
   assert.deepEqual(bad, [], 'use min-height:var(--ctl) (a field and its button), var(--ctl-sm) (.small) or var(--chip)');
 });
+
+test('a title or a tab starting with an emoji has an icon for it', () => {
+  // ui.js draws these as line icons (ICON); an emoji it does not know would stay an emoji among icons
+  const ui = scripts.find(([f]) => f === 'ui.js')[1];
+  const known = new Set([...ui.slice(ui.indexOf('const ICON = {'), ui.indexOf('};', ui.indexOf('const ICON = {'))).matchAll(/'([^']+)': \['/g)].map((m) => m[1]));
+  const lead = /^\s*([\p{Extended_Pictographic}←-⇿✀-➿][️]?)/u;
+  const bad = [...html.matchAll(/<(h2|h3|summary)\b[^>]*>([^<]*)|<span class="ico">([^<]*)/g)]
+    .map((m) => (m[2] ?? m[3] ?? '').match(lead)?.[1]).filter((e) => e && !known.has(e) && !known.has(e.replace('️', '')));
+  assert.deepEqual([...new Set(bad)], [], 'add it to ICON in js/ui.js (and its path to dev/gen_icons.py)');
+});

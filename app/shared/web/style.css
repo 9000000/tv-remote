@@ -431,3 +431,10 @@
   .actions > button:not(.small):not(.iconbtn), .actions > label.filebtn:not(.small) { padding:0 18px; min-height:var(--ctl); font-size:14px; }
   .empty.pad { padding:14px 0; } .crash .crashcopy { margin:0 0 12px; } .card.stopped { text-align:center; padding:40px 16px; }
   .optbox .optbox { margin-top:0; }
+  /* icons in titles, tabs and buttons (js/ui.js ICON): a title's in its own colour, a button's in the button's */
+  .ui-ic { display:inline-flex; vertical-align:-.2em; margin-right:.4em; flex:none; } .ui-ic .ic { width:1.15em; height:1.15em; }
+  .ui-ic.hue { color:hsl(var(--h) 70% 44%); } @media (prefers-color-scheme: dark) { .ui-ic.hue { color:hsl(var(--h) 80% 68%); } } h2 .ui-ic .ic { width:15px; height:15px; } h2 .ui-ic { vertical-align:-3px; }
+  .ico > .ui-ic { margin:0; } .lbl:empty { display:none; }
+  .tabs .ico > .ui-ic { background:hsl(var(--h) 65% 52%); color:#fff; border-radius:7px; padding:4px; } .tabs .ico > .ui-ic .ic { width:15px; height:15px; }
+  .tabs [aria-selected=true] .ico > .ui-ic { background:rgba(255,255,255,.22); }
+  @media (max-width:640px) { .tabs .ico > .ui-ic { padding:5px; } .tabs .ico > .ui-ic .ic { width:17px; height:17px; } }
