@@ -7,6 +7,23 @@ const DNS_SETS = {
   ads: ['dns.adguard-dns.com', 'adblock.dns.mullvad.net', 'p2.freedns.controld.com'],
   family: ['family.adguard-dns.com', 'family.dns.mullvad.net', 'family.cloudflare-dns.com'],
 };
+// Android's private DNS takes a host name only (DNS-over-TLS): the addresses people know are turned into their names
+const DNS_BY_IP = {
+  '8.8.8.8': 'dns.google', '8.8.4.4': 'dns.google', '1.1.1.1': 'one.one.one.one', '1.0.0.1': 'one.one.one.one',
+  '1.1.1.2': 'security.cloudflare-dns.com', '1.0.0.2': 'security.cloudflare-dns.com', '1.1.1.3': 'family.cloudflare-dns.com', '1.0.0.3': 'family.cloudflare-dns.com',
+  '9.9.9.9': 'dns.quad9.net', '149.112.112.112': 'dns.quad9.net', '94.140.14.14': 'dns.adguard-dns.com', '94.140.15.15': 'dns.adguard-dns.com',
+  '94.140.14.15': 'family.adguard-dns.com', '94.140.15.16': 'family.adguard-dns.com',
+};
+/** What was typed as the host name to set, or null after saying why it cannot be one. */
+function dnsHost(typed) {
+  const words = typed.toLowerCase().replace(/^\w+:\/\//, '').split(/[\s,;/]+/).filter(Boolean);   // "8.8.8.8 / 8.8.4.4", a pasted URL
+  const ip = words.find((w) => DNS_BY_IP[w]);
+  if (ip) return DNS_BY_IP[ip];
+  if (words.some((w) => /^[\d.]+$|:/.test(w))) { toast('TV chỉ nhận tên máy chủ DNS, không nhận địa chỉ IP: hãy nhập tên, vd dns.google'); return null; }
+  const h = words[0] || '';
+  if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(h)) { toast('Tên máy chủ chưa đúng, vd dns.google'); return null; }
+  return h;
+}
 const MIN = 60000;
 const fmtWait = (ms) => ms % (60 * MIN) === 0 ? ms / 60 / MIN + ' giờ' : Math.round(ms / MIN) + ' phút';
 let tvsetBusy = false;
@@ -32,8 +49,9 @@ function drawTvset(t) {
     choice('Chặn quảng cáo', kind === 'ads', () => setDns(DNS_SETS.ads)),
     choice('Gia đình', kind === 'family', () => setDns(DNS_SETS.family)),
     choice(kind === 'own' ? t.dnsHost : 'Tự nhập...', kind === 'own', async () => {
-      const h = await ask('Tên máy chủ DNS riêng (DNS-over-TLS), ví dụ dns.nextdns.io', { value: kind === 'own' ? t.dnsHost : '' });
-      if (h && h.trim()) setDns([h.trim()]);
+      const typed = await ask('Máy chủ DNS riêng, vd dns.google hoặc 8.8.8.8', { value: kind === 'own' ? t.dnsHost : '' });
+      const h = typed && typed.trim() && dnsHost(typed);
+      if (h) setDns([h]);
     }),
   ]);
   dnsRow.append(dnsNote);
