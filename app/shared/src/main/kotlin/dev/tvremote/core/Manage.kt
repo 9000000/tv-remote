@@ -511,7 +511,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
      */
     private fun procs(): JSONObject {
         val p = sh("grep -E '^(MemTotal|MemAvailable):' /proc/meminfo; printf '\\043~\\043\\n'; dumpsys meminfo; printf '\\043~\\043\\n'; " + KEEP_NOW).split("#~#\n")
-        val kb = { k: String -> (find("$k:\\s+(\\d+)", p[0])?.toLong() ?: 0L) * 1024 }
+        val kb = { k: String -> (Meminfo.kb(p[0], k) ?: 0L) * 1024 }
         val list = JSONArray()
         for (a in procsOf(p.getOrElse(1) { "" }, keepNow(p.getOrElse(2) { "" }))) list.put(JSONObject().put("pkg", a.pkg)
             .put("label", labels?.label(a.pkg) ?: a.pkg).put("mb", a.mb).put("state", a.state).put("keep", a.keep ?: JSONObject.NULL))

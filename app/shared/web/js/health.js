@@ -35,7 +35,7 @@ const PROC_STATE = { front: 'Đang hiện', bg: 'Chạy ngầm', home: 'Màn hì
 const PROC_KEEP = { us: 'TV Remote cần app này', home: 'Màn hình chính của TV', keyboard: 'Bàn phím của TV', system: 'Một phần của Android' };
 let procsAt = 0, procsBusy = false;
 async function loadProcs(now) {
-  if (procsBusy || (!now && Date.now() - procsAt < 15000)) return;
+  if (procsBusy || (!now && Date.now() - procsAt < 45000)) return;   // dumpsys meminfo costs the TV a second or more: ↻ asks at once
   procsBusy = true; procsAt = Date.now();
   const r = await api('/api/procs', null, true);
   procsBusy = false;
