@@ -44,6 +44,7 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "automation" to act { if (!needsAdb()) managing.open(host, "auto") },
     "clip" to act { clipDialog() },
     "screenOff" to act { screenOff() },
+    "share" to act { shareDialog() },
 )
 
 /** Things an action's button needs to know about itself once drawn (the ✏️ is lit while drawing). */
@@ -79,6 +80,7 @@ internal fun MainActivity.greyRows() {
 /** A row of the remote's keys from remote.json: one icon button each, the key held / tapped like the hand-made ones, or the action run. */
 internal fun MainActivity.remoteRow(name: String, index: Int, height: Int): LinearLayout {
     val row = LinearLayout(this)
+    row.weightSum = maxOf(4f, remoteSpec().rows[name]!![index].size.toFloat())   // a short row keeps the others' key width
     remoteSpec().rows[name]!![index].forEachIndexed { i, e ->
         val b = icon("@" + e.icon, t(e.vi, e.en), BTN)
         val action = e.action

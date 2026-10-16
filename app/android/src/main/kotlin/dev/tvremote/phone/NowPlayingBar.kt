@@ -39,6 +39,7 @@ internal class PlayingBar(private val a: MainActivity) {
     private var at = 0L                                               // when [o] came
     private var dragging = false
     private var asking = false
+    private val spins = HashMap<android.view.View, android.widget.ProgressBar>()
 
     init {
         view.background = a.box(CARD, 16)
@@ -52,15 +53,16 @@ internal class PlayingBar(private val a: MainActivity) {
         head.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
         val prev = a.icon("@prev", t("Bài trước", "Previous"), BTN)
         val next = a.icon("@next", t("Bài sau", "Next"), BTN)
-        prev.setOnClickListener { send("prev", 0) }
-        next.setOnClickListener { send("next", 0) }
-        play.setOnClickListener {
-            val playing = o.optString("state") == "playing"
-            o.put("pos", now()); at = System.currentTimeMillis(); o.put("state", if (playing) "paused" else "playing")
-            send(if (playing) "pause" else "play", 0)
-            draw()
+        prev.setOnClickListener { send("prev", 0, prev) }
+        next.setOnClickListener { send("next", 0, next) }
+        play.setOnClickListener { send(if (o.optString("state") == "playing") "pause" else "play", 0, play) }   // the icon turns when the TV says so
+        for (b in listOf(prev, play, next)) {
+            val spin = android.widget.ProgressBar(a).apply { isIndeterminate = true; visibility = View.GONE; spins[b] = this }
+            val cell = FrameLayout(a)
+            cell.addView(b, FrameLayout.LayoutParams(-1, -1))
+            cell.addView(spin, FrameLayout.LayoutParams(a.dp(20), a.dp(20), Gravity.CENTER))
+            head.addView(cell, LinearLayout.LayoutParams(a.dp(44), a.dp(40)).apply { leftMargin = a.dp(6) })
         }
-        for (b in listOf(prev, play, next)) head.addView(b, LinearLayout.LayoutParams(a.dp(44), a.dp(40)).apply { leftMargin = a.dp(6) })
         view.addView(head)
         times.gravity = Gravity.CENTER_VERTICAL
         seek.max = 1000
@@ -70,8 +72,9 @@ internal class PlayingBar(private val a: MainActivity) {
             override fun onStopTrackingTouch(s: SeekBar) {
                 dragging = false
                 val ms = (s.progress / 1000.0 * o.optLong("dur")).toLong()
+                if (busy) return
                 o.put("pos", ms); at = System.currentTimeMillis()
-                send("seek", ms)
+                send("seek", ms, null)
             }
         })
         times.addView(pos)
@@ -82,8 +85,7 @@ internal class PlayingBar(private val a: MainActivity) {
         ListenService.control = { what ->                             // the buttons of the listening notification
             if (what == ListenService.STOP) a.stopListen(null)
             else if (a.tv != null) {
-                if (what == "play" || what == "pause") { o.put("pos", now()); at = System.currentTimeMillis(); o.put("state", if (what == "pause") "paused" else "playing"); ListenService.show(o, a.title(a.host ?: "")) }
-                send(what, 0)
+                send(what, 0, null)
             }
         }
     }
@@ -149,9 +151,41 @@ internal class PlayingBar(private val a: MainActivity) {
         np!!
     }
 
-    private fun send(what: String, ms: Long) {
+    @Volatile private var busy = false                                // a press is out until the TV's own state shows it done
+
+    private fun mark(b: View?, on: Boolean) {
+        if (b == null) return
+        b.alpha = if (on) 0.25f else 1f
+        spins[b]?.visibility = if (on) View.VISIBLE else View.GONE
+    }
+
+    private fun sig(j: JSONObject) = "${j.optString("state")}|${j.opt("title")}|${j.optString("pkg")}"
+
+    /** Sends [what] and keeps [btn] busy (further presses are ignored) until the TV's state or track has changed, 2.5 s at most,
+     *  so presses cannot pile up faster than its media session follows. Nothing is flipped before the TV says so. */
+    private fun send(what: String, ms: Long, btn: View?) {
         val tv = a.tv ?: return
-        work.execute { try { player(tv).command(what, ms) } catch (ignored: Exception) { } }
+        if (busy) return
+        busy = true; mark(btn, true)
+        val before = sig(o)
+        work.execute {
+            var failed = false
+            try {
+                player(tv).command(what, ms)
+                val end = System.currentTimeMillis() + if (what == "seek") 600 else 2500
+                while (System.currentTimeMillis() < end) {
+                    Thread.sleep(400)
+                    val got = try { player(tv).state() } catch (e: Exception) { continue }
+                    a.ui.post { o = got; at = System.currentTimeMillis(); draw() }
+                    if (what == "seek" || sig(got) != before) break
+                }
+            } catch (e: Exception) { failed = true }
+            a.ui.post {
+                busy = false; mark(btn, false)
+                if (failed) a.say(t("TV không nhận lệnh. Thử lại.", "The TV did not take that. Try again."), true)
+                else ListenService.show(o, a.title(a.host ?: ""))
+            }
+        }
     }
 
     private fun draw() {

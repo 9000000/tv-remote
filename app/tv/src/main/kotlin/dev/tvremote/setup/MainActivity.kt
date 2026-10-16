@@ -349,10 +349,7 @@ class MainActivity : Activity() {
     private val APP_LINK = "https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk"
 
     /** This TV's address on the home network, read from the network interfaces (ADB not needed). */
-    private fun wifiIp(): String = try {
-        java.util.Collections.list(java.net.NetworkInterface.getNetworkInterfaces()).filter { it.isUp && !it.isLoopback && !it.name.startsWith("tun") }
-            .flatMap { java.util.Collections.list(it.inetAddresses) }.firstOrNull { it is java.net.Inet4Address && it.isSiteLocalAddress }?.hostAddress ?: ""
-    } catch (e: Exception) { "" }
+    private fun wifiIp(): String = RemoteService.lanIp()
 
     /** The right-hand card: the web remote's QR code and address, pairing, and the phone app. */
     private fun showWeb() {

@@ -18,6 +18,7 @@ object SetupNeed {
         "pic" to "0.1.0",                                              // 🖼️ a picture over it
         "volume" to "0.1.0",                                           // 🔊 volume limits
         "bedtimes" to "0.3.1",                                         // 🌙 more than one bedtime
+        "invite" to "0.4.2",                                           // 📲 sharing the remote by QR (an older one answers with a pass)
     )
 
     /** "setup:old:pic:2.21.0:2.20.0" or "setup:missing:draw:2.18.0:": the words every client looks for in an error. */
@@ -31,6 +32,7 @@ object SetupNeed {
         "pic" -> if (vi) "Đưa ảnh lên TV" else "A picture on the TV"
         "volume" -> if (vi) "Giới hạn âm lượng" else "Volume limits"
         "bedtimes" -> if (vi) "Nhiều khoảng giờ đi ngủ" else "Several bedtimes"
+        "invite" -> if (vi) "Chia sẻ remote bằng QR" else "Sharing the remote by QR"
         else -> feature
     }
 

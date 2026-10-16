@@ -218,6 +218,7 @@ Nút **📺 Đổi TV** ở thanh trên quay về danh sách TV.
 - **▶️ Đang phát**: trên remote hiện app trên TV đang phát gì (tên, kênh hoặc ca sĩ), kéo thanh để tua, bấm để tạm dừng hoặc qua bài. Cần ADB; app nào không báo thời lượng thì không có thanh tua.
 - **📋 Clipboard của TV** (*Mở trên TV* → *Clipboard của TV*): xem chữ TV đang sao chép, chép về máy mình, hoặc gửi chữ lên TV và dán vào ô đang gõ.
 - **✏️ Vẽ lên màn hình TV** (nút ✏️ cạnh hình; trên app điện thoại là *Vẽ lên TV* trong Thêm phím): vẽ lên hình thì TV hiện ngay nét vẽ, đè lên mọi app, để chỉ chỗ cho người đang xem. Cần TV Setup trên TV. Bấm 🗑 để xóa, hoặc nét vẽ tự mất sau 10 phút.
+- **📲 Chia sẻ** (Thêm phím → *Chia sẻ*): mã QR cho điện thoại khác quét là mở ngay remote của TV trên trình duyệt, không cần gõ mã (dùng 1 lần, trong 10 phút; cần TV Setup), và mã QR tải app điện thoại. Máy này nối TV qua Tailscale thì app nhắc: điện thoại quét phải cùng Wi-Fi với TV.
 - **💬 Lời nhắn lên TV** (nút 💬 Chữ khi đang vẽ): gõ một câu, chữ to hiện trên TV, kéo và chỉnh cỡ như ảnh.
 - **Tắt màn hình, vẫn nghe** (*Hẹn giờ tắt* → *Tắt màn hình, vẫn nghe*): màn hình TV tắt, nhạc vẫn phát. Bấm phím bất kỳ, kể cả remote của TV, là màn hình bật lại.
 - **🔊 Giới hạn âm lượng** (tab Tự động): chọn các khoảng giờ và mức tối đa mỗi khoảng, vd 22:00 – 06:00 tối đa 30%. Ai tăng quá mức thì TV hạ lại và báo trên màn hình vì sao. Cần TV Setup; TV mà âm lượng do loa ngoài giữ (qua HDMI) thì không giới hạn được.

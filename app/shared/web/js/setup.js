@@ -65,10 +65,30 @@ $('#aboutbtn').addEventListener('click', async () => {
   const r = await fetch('/api/about').then((x) => x.json()).catch(() => null);
   if (r && r.version) $('#aboutver').textContent = r.version + (r.released ? ' · ' + r.released : '');
   // scan with a phone: the Android app, and (when the TV Setup app is serving it) this TV's own remote page
-  const code = (title, note, link) => { const s = qrSvg(link, 170); return s ? el('div', { className: 'qr' }, s, el('b', { textContent: title }), el('span', { className: 'muted', textContent: note }), el('br'), el('a', { href: link, target: '_blank', rel: 'noopener', textContent: link.replace(/^https?:\/\//, '').replace(/^github\.com\/.*\//, '') })) : null; };   // the file's name: the whole release link is wider than the box
-  $('#qrs').replaceChildren(...[code('📱 App Android', 'Quét bằng điện thoại để tải app.', 'https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk'),
-    r && r.tv_web ? code('🌐 Remote trên điện thoại', 'Quét khi điện thoại chung mạng với TV.', r.tv_web) : null].filter(Boolean));
+  $('#qrs').replaceChildren(...[qrBlock('📱 App Android', 'Quét bằng điện thoại để tải app.', APP_APK),
+    r && r.tv_web ? qrBlock('🌐 Remote trên điện thoại', 'Quét khi điện thoại chung mạng với TV.', r.tv_web) : null].filter(Boolean));
 });
+const APP_APK = 'https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk';
+// a QR with its title and line; the link under it unless [hide] (an invite is for scanning, not for reading out)
+const qrBlock = (title, note, link, hide) => { const s = qrSvg(link, 170); return s ? el('div', { className: 'qr' }, s, el('b', { textContent: title }), el('span', { className: 'muted', textContent: note }),
+  hide ? null : el('br'), hide ? null : el('a', { href: link, target: '_blank', rel: 'noopener', textContent: link.replace(/^https?:\/\//, '').replace(/^github\.com\/.*\//, '') })) : null; };   // the file's name: the whole release link is wider than the box
+
+// ---------- share (⋯ More keys → Chia sẻ): a QR that opens this TV's web page already paired, and one for the phone app ----------
+// The invite is one-time and lasts ten minutes (Invite.kt); without TV Setup (or an older one) only the app's QR is shown.
+async function shareDialog() {
+  const r = await api('/api/share', {}) || {};
+  const warn = { tailscale: 'Máy này đang nối TV qua Tailscale: điện thoại quét phải ở cùng Wi-Fi với TV.', tailscale_only: 'TV không có địa chỉ Wi-Fi: điện thoại quét cần bật Tailscale.' }[r.warn];
+  const d = el('dialog', { className: 'ask share' }, el('div', { className: 'card' },
+    UI.head('📲 Chia sẻ', el('button', { className: 'small iconbtn', textContent: '✕', title: 'Đóng', 'aria-label': 'Đóng', onclick: () => d.close() })),
+    warn ? UI.warn(warn) : null,
+    r.setup === 'missing' ? UI.note('TV chưa có TV Setup: chỉ chia sẻ được app.') : null,
+    r.setup === 'old' ? UI.note('Cập nhật TV Setup để chia sẻ remote.') : null,
+    r.setup === 'old' ? UI.actions(UI.btn('⬆️ Cập nhật TV Setup', () => { d.close(); return updateSetup(); }, 'small')) : null,
+    el('div', { className: 'qrs' }, ...[r.url ? qrBlock('🌐 Mở remote', 'Quét để điều khiển TV này, không cần mã. Dùng 1 lần, trong 10 phút.', r.url, true) : null,
+      qrBlock('📱 App Android', 'Quét để tải app.', APP_APK)].filter(Boolean))));
+  d.addEventListener('close', () => d.remove());
+  document.body.append(d); d.showModal();
+}
 if (CORE === 'pc') fetch('/api/about').then((x) => x.json()).then((r) => {
   if (r.version) $('#ver').textContent = 'TV Remote ' + r.version + (r.released ? ' · ' + r.released : '');
   if (r.stale) $('#stale').hidden = false;                            // its code was updated after it started: new buttons would answer "not found"

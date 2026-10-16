@@ -20,6 +20,7 @@ import dev.tvremote.core.AdbLink
 import dev.tvremote.core.Caps
 import dev.tvremote.core.Feeds
 import dev.tvremote.core.HttpServer
+import dev.tvremote.core.Invite
 import dev.tvremote.core.Manage
 import dev.tvremote.core.Scenes
 import dev.tvremote.core.Setup
@@ -29,6 +30,7 @@ import dev.tvremote.core.WebPage
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
+import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
@@ -55,6 +57,29 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         @Volatile private var guesses = 0
         @Volatile private var running: RemoteService? = null
         @Volatile private var adbState = "connecting"
+
+        // sharing (Invite.kt): one invite at a time, ten minutes, one browser; 128 random bits, so no count of guesses
+        @Volatile private var invite: String? = null
+        @Volatile private var inviteUntil = 0L
+
+        fun newInvite(): String {
+            val b = ByteArray(16).also { SecureRandom().nextBytes(it) }
+            return b.joinToString("") { String.format("%02x", it) }.also { invite = it; inviteUntil = System.currentTimeMillis() + 600000 }
+        }
+
+        /** True once for the invite handed out last, in its ten minutes; it is used up then. */
+        @Synchronized fun takeInvite(got: String): Boolean {
+            val want = invite ?: return false
+            if (System.currentTimeMillis() > inviteUntil || !MessageDigest.isEqual(want.toByteArray(), got.toByteArray())) return false
+            invite = null
+            return true
+        }
+
+        /** This TV's address on the home network, from its interfaces (no ADB needed): what a phone beside it can reach. */
+        fun lanIp(): String = try {
+            java.util.Collections.list(java.net.NetworkInterface.getNetworkInterfaces()).filter { it.isUp && !it.isLoopback && !it.name.startsWith("tun") }
+                .flatMap { java.util.Collections.list(it.inetAddresses) }.firstOrNull { it is java.net.Inet4Address && it.isSiteLocalAddress }?.hostAddress ?: ""
+        } catch (e: Exception) { "" }
 
         fun pairingCode(): String? { val c = code; return if (c != null && System.currentTimeMillis() < codeUntil) c else null }
         fun cancelPairing() { code = null }
@@ -318,6 +343,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         page.serve(r.path)?.let { return it }                        // the page and its scripts need no pairing: they hold no secrets
         if (r.path == "/api/pair/start" && r.method == "POST") return pairStart()
         if (r.path == "/api/pair/finish" && r.method == "POST") return pairFinish(r)
+        if (r.path == "/api/pair/invite" && r.method == "POST") return pairInvite(r)
         // a pass made over TLS is only taken over TLS; the Secure cookie never comes over HTTP anyway
         var token = if (r.tls) r.cookie(COOKIE_TLS) else ""
         var hit = Paired.check(this, token, r.tls)
@@ -344,6 +370,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 return out
             }
             "/api/state" -> return HttpServer.Response.json(state(host))
+            "/api/share" -> if (post) return HttpServer.Response.json(Invite.link(lanIp(), newInvite(), host))   // a paired page shares the TV it is on
             "/api/about" -> return HttpServer.Response.json(state(host))
             "/api/setup/need" -> return HttpServer.Response.json(JSONObject().put("ok", true))   // this is TV Setup: it has what this page knows
             "/api/screen" -> {                                        // one picture of the screen: the Screenshots mode, and the camera key
@@ -512,6 +539,15 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         }
         code = null
         wrong = 0
+        val token = Paired.add(this, "web", Paired.deviceName(r.headers["user-agent"] ?: ""), r.peer, r.tls)
+        val ok = ok()
+        ok.headers["Set-Cookie"] = cookie(token, r.tls)
+        return ok
+    }
+
+    /** A shared QR's link: its invite pairs this browser as a code would, once. */
+    private fun pairInvite(r: HttpServer.Request): HttpServer.Response {
+        if (!takeInvite(r.json().optString("invite"))) return HttpServer.Response.error(400, "expired")
         val token = Paired.add(this, "web", Paired.deviceName(r.headers["user-agent"] ?: ""), r.peer, r.tls)
         val ok = ok()
         ok.headers["Set-Cookie"] = cookie(token, r.tls)

@@ -7,9 +7,13 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- 📲 Chia sẻ (Thêm phím → Chia sẻ): mã QR cho điện thoại khác quét là vào thẳng remote của TV, không cần gõ mã (dùng 1 lần, trong 10 phút), kèm mã QR tải app điện thoại. Đang nối TV qua Tailscale thì có cảnh báo; TV chưa có TV Setup thì chỉ hiện mã tải app. Cần TV Setup mới.
+- ▶️ Đang phát: bấm tạm dừng / chạy tiếp / qua bài thì nút quay chờ tới khi TV làm xong; bấm liên tục không còn làm nút và TV lệch nhau.
 - Tự động: lúc TV Setup đang cập nhật, trang không còn báo nhầm "TV Setup là bản cũ" kèm nút Cập nhật; nó chờ TV Setup chạy lại rồi tự hiện.
 
 **English**
+- 📲 Share (More keys → Share): a QR code another phone scans to open the TV's remote straight away, no code to type (once, within 10 minutes), with a QR code for the phone app. A warning when this device reaches the TV through Tailscale; without TV Setup only the app's code shows. Needs the new TV Setup.
+- ▶️ Now playing: pause / play / next show a spinner until the TV has done it; pressing fast no longer leaves the button and the TV out of step.
 - Automation: while TV Setup is being updated, the page no longer says "TV Setup is too old" with an Update button; it waits for TV Setup to start again and shows itself.
 
 ## 0.4.1 - 2026-10-16

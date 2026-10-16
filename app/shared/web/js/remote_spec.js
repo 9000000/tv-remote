@@ -45,4 +45,5 @@ const REMOTE_DO = {
   automation: () => showTab('auto'),
   clip: () => clipDialog(),
   screenOff: () => screenOff(),
+  share: () => shareDialog(),
 };

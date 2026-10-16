@@ -140,7 +140,7 @@ addEventListener('resize', closePop);
 // A phone or computer can be newer than TV Setup on the TV. What needs which TV Setup is SetupNeed.kt's table; any call that
 // meets one (its error says "setup:old|missing:<feature>:<min>:<have>") asks to update or install TV Setup, with the button.
 // A page that knows before starting asks setupFor(feature). The same names as SetupNeed.name.
-const SETUP_NEEDS = { rules: 'Hẹn giờ, giờ đi ngủ, giới hạn app', draw: 'Chức năng vẽ lên TV', pic: 'Đưa ảnh lên TV', volume: 'Giới hạn âm lượng', bedtimes: 'Nhiều khoảng giờ đi ngủ' };
+const SETUP_NEEDS = { rules: 'Hẹn giờ, giờ đi ngủ, giới hạn app', draw: 'Chức năng vẽ lên TV', invite: 'Chia sẻ remote bằng QR', pic: 'Đưa ảnh lên TV', volume: 'Giới hạn âm lượng', bedtimes: 'Nhiều khoảng giờ đi ngủ' };
 const SETUP_RE = /setup:(old|missing):(\w+):([0-9.]*):([0-9.]*)/;
 const setupSay = (m) => m[1] === 'missing' ? (SETUP_NEEDS[m[2]] || m[2]) + ' cần app TV Setup trên TV. Cài TV Setup?'
   : (SETUP_NEEDS[m[2]] || m[2]) + ' cần TV Setup ' + m[3] + ' trở lên (TV đang có ' + m[4] + '). Cập nhật TV Setup?';
@@ -223,11 +223,19 @@ function setChip(id, cls, text, long) { const c = $(id); c.className = 'chip ' +
 let STATE = {};
 let tvOn = false;                                                    // the power button asks before turning a TV that is on off
 let volHold = 0;                                                      // don't yank the slider while the user drags it
+// a shared QR's link (Invite.kt) carries an invite after #: it pairs this browser once, instead of a code; taken off the address
+// at once, so a bookmark or a screenshot of it holds nothing
+const INVITE = (location.hash.match(/invite=([0-9a-f]{32})/) || [])[1];
+if (INVITE) history.replaceState(null, '', location.pathname + location.search);
+let inviteBad = false, invited = INVITE ? fetch('/api/pair/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invite: INVITE }) })
+  .then((x) => x.ok).catch(() => false) : null;
 async function refresh() {
   if (stopped) return;
   let locked = false;
+  if (invited) { inviteBad = !await invited; invited = null; }     // the invite first: then this very read is let in
   const s = await fetch('/api/state').then((r) => { locked = r.status === 401; return r.json(); }).catch(() => null);
   if (CORE === 'tv') setLocked(locked, s);
+  if (locked && inviteBad) { inviteBad = false; $('#pairerr').textContent = tr('Mã QR đã dùng hoặc hết hạn: quét mã mới, hoặc bấm “Hiện mã trên TV”.'); }
   if (locked) return;
   tvOn = !!(s && s.connected && s.is_on); STATE = s || {};
   if (s) applyKind(s);

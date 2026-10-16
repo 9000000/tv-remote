@@ -4,7 +4,7 @@ import java.io.File
 import java.io.IOException
 
 /** An ADB connection to one TV that is opened when first needed and opened again after it drops. */
-class AdbLink(private val keyDir: File, private val host: String) {
+class AdbLink(private val keyDir: File, val host: String) {
     @Volatile private var adb: Adb? = null
     @Volatile private var dialing: Adb? = null                        // being connected right now: it may sit for minutes waiting for the person at the TV
     @Volatile private var waiting = false                             // the TV is showing "Allow USB debugging?"

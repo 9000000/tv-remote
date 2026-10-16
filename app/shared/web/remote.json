@@ -20,6 +20,9 @@
         { "id": "timer", "icon": "timer", "vi": "Hẹn giờ tắt", "en": "Sleep timer", "do": "timer", "needs": ["screen_off"] },
         { "id": "scenes", "icon": "scene", "vi": "Cảnh", "en": "Scenes", "do": "scenes" },
         { "id": "draw", "icon": "pen", "vi": "Vẽ lên TV", "en": "Draw on the TV", "do": "draw", "needs": ["adb"] }
+      ],
+      [
+        { "id": "share", "icon": "share", "vi": "Chia sẻ", "en": "Share", "do": "share", "needs": ["adb"] }
       ]
     ],
     "nav": [

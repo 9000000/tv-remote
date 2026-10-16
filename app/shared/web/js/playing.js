@@ -23,13 +23,29 @@ async function plPoll() {
   plDraw();
   PL.timer = setTimeout(plPoll, looking ? 1000 : 3000);
 }
-const plDo = (what, ms) => call('/api/playing', { do: what, ms }, true).then(() => setTimeout(plPoll, 500));
-$('#plplay').addEventListener('click', () => { const p = PL.o.state === 'playing'; plDo(p ? 'pause' : 'play'); PL.o.pos = plPos(); PL.at = performance.now(); PL.o.state = p ? 'paused' : 'playing'; });
-$('#plprev').addEventListener('click', () => plDo('prev'));
-$('#plnext').addEventListener('click', () => plDo('next'));
+// A press is busy until the TV's own answer shows it done (state or track changed, 2.5 s at most): a second press meanwhile
+// is ignored, so presses cannot pile up faster than the TV's media session follows. No icon is flipped before the TV says so.
+const plSig = (o) => [o.state, o.title, o.pkg].join('|');
+async function plDo(what, ms, btn) {
+  if (PL.busy) return; PL.busy = true; if (btn) btn.classList.add('busy');
+  try {
+    const before = plSig(PL.o);
+    if (!await call('/api/playing', { do: what, ms })) return;     // not sent: the toast says why, the button is free again
+    for (let t = performance.now(); performance.now() - t < (what === 'seek' ? 600 : 2500);) {
+      await new Promise((r) => setTimeout(r, 400));
+      const o = await call('/api/playing', null, true); if (!o) continue;
+      PL.o = o; PL.at = performance.now(); plDraw();
+      if (what === 'seek' || plSig(o) !== before) break;
+    }
+  } finally { PL.busy = false; if (btn) btn.classList.remove('busy'); setTimeout(plPoll, 100); }
+}
+$('#plplay').addEventListener('click', (e) => plDo(PL.o.state === 'playing' ? 'pause' : 'play', 0, e.currentTarget));
+$('#plprev').addEventListener('click', (e) => plDo('prev', 0, e.currentTarget));
+$('#plnext').addEventListener('click', (e) => plDo('next', 0, e.currentTarget));
 $('#plseek').addEventListener('input', (e) => { PL.dragging = true; $('#plpos').textContent = mmss(e.target.value / 1000 * PL.o.dur); });
 $('#plseek').addEventListener('change', (e) => {
   const ms = Math.round(e.target.value / 1000 * PL.o.dur); PL.dragging = false;
+  if (PL.busy) return;
   PL.o.pos = ms; PL.at = performance.now(); plDo('seek', ms);
 });
 setInterval(() => { if (!$('#playing').hidden && PL.o.state === 'playing') plDraw(); }, 250);   // the time moves on between polls
