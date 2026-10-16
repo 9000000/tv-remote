@@ -4,6 +4,14 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- Tự động: lúc TV Setup đang cập nhật, trang không còn báo nhầm "TV Setup là bản cũ" kèm nút Cập nhật; nó chờ TV Setup chạy lại rồi tự hiện.
+
+**English**
+- Automation: while TV Setup is being updated, the page no longer says "TV Setup is too old" with an Update button; it waits for TV Setup to start again and shows itself.
+
 ## 0.4.1 - 2026-10-16
 
 Web 0.4.1 · app điện thoại 0.4.1 · app TV 0.4.1

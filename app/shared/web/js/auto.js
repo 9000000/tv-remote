@@ -19,6 +19,12 @@ async function loadRules(change, quiet) {
 function renderRules() {
   const r = RULES || {};
   const box = $('#autosetup');
+  if (r.setup === 'busy') {                                            // being updated or starting: no button, asked again soon
+    $('#rulecards').hidden = true;
+    box.replaceChildren(UI.say('TV Setup đang khởi động lại (vd vừa cập nhật), đợi chút…'));
+    clearTimeout(renderRules.again); renderRules.again = setTimeout(() => loadRules(null, true), 4000);
+    return;
+  }
   if (r.setup || r.error) {                                            // no TV Setup on the TV (or one too old): say what it brings and offer it
     $('#rulecards').hidden = true;
     box.replaceChildren(UI.card('😴 Hẹn giờ tắt · 🌙 Giờ đi ngủ · ⏳ Giới hạn app', {},

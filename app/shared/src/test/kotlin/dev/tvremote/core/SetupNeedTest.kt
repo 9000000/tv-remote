@@ -24,4 +24,12 @@ class SetupNeedTest {
         assertEquals("Drawing on the TV needs the TV Setup app on the TV. Install TV Setup?", SetupNeed.say(SetupNeed.Missing("draw", ""), false))
         assertNull(SetupNeed.say(java.io.IOException("timed out"), true))
     }
+
+    @Test fun rulesWithNoAnswer() {
+        // the broadcast finds no receiver: what dumpsys says decides whether TV Setup is missing, old, or only starting again
+        fun kind(version: String?) = RulesClient.call({ c -> if (c.startsWith("dumpsys")) version?.let { "    versionName=$it" } ?: "" else "Broadcast completed: result=0" }, null).optString("setup")
+        assertEquals("missing", kind(null))
+        assertEquals("old", kind("0.0.9"))
+        assertEquals("busy", kind("0.3.0"))                           // being updated: no Update button for it
+    }
 }

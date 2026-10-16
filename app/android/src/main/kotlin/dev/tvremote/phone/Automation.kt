@@ -37,6 +37,10 @@ private fun MainActivity.rules(change: JSONObject?, then: (JSONObject) -> Unit) 
 
 private fun MainActivity.needsSetup(r: JSONObject): Boolean {
     if (!r.has("setup") && !r.has("error")) return false
+    if (r.optString("setup") == "busy") {                             // new enough, starting again after an update: not a question
+        toast(t("TV Setup đang khởi động lại (vd vừa cập nhật), thử lại sau chút nữa.", "TV Setup is starting again (just updated?), try again in a moment."))
+        return true
+    }
     if (r.has("setup") && offerSetup(SetupNeed.Missing("rules", r.optString("have")))) return true
     AlertDialog.Builder(this).setTitle(t("Cần TV Setup trên TV", "TV Setup is needed on the TV"))
         .setMessage(if (r.has("error")) r.optString("error") else t(

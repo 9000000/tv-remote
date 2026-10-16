@@ -353,7 +353,7 @@
     'Tắt TV sau bao lâu?': 'Turn the TV off when?', 'Hẹn': 'Set',
     'Cách nghe tiếng TV': 'How to hear the TV', 'Chỉ máy này': 'Only this device', 'Cả TV và máy này': 'TV and this device',
     'Máy này ▾': 'This device ▾', 'Cả hai ▾': 'Both ▾', 'Tiếng chất lượng cao (160 kbit/s)': 'High quality sound (160 kbit/s)',
-    'Chưa hẹn giờ.': 'No timer set.',
+    'TV Setup đang khởi động lại (vd vừa cập nhật), đợi chút…': 'TV Setup is starting again (just updated?), one moment…', 'Chưa hẹn giờ.': 'No timer set.',
     'Giờ đi ngủ': 'Bedtime',
     'Bật TV trong giờ này thì 1 phút sau TV tự tắt.': 'Switched on in these hours, the TV goes off a minute later.',
     'Bật giờ đi ngủ': 'Bedtime on',

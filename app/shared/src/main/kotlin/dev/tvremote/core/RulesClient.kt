@@ -13,8 +13,8 @@ object RulesClient {
 
     /**
      * [change] is one action ({"do": "sleep", "minutes": 30}, see Rules.change), or null to read. The answer is the state the
-     * pages show, or {"setup": "missing" | "old", "have", "min"} when the TV has no TV Setup, or one
-     * too old to know about rules.
+     * pages show, or {"setup": "missing" | "old" | "busy", "have", "min"} when the TV has no TV Setup, one
+     * too old to know about rules, or one that did not answer though new enough (being updated or starting).
      */
     fun call(sh: (String) -> String, change: JSONObject?): JSONObject {
         val arg = if (change == null) "" else " --es set " + B64.encode(change.toString().toByteArray(Charsets.UTF_8))
@@ -27,6 +27,8 @@ object RulesClient {
             return state
         }
         val have = SetupNeed.have(sh)
-        return JSONObject().put("setup", if (have.isEmpty()) "missing" else "old").put("have", have).put("min", SetupNeed.MIN["rules"])
+        // new enough but no answer: it is being installed or starting again (an update just now), not old: the page waits
+        val kind = if (have.isEmpty()) "missing" else if (SetupNeed.ok(have, "rules")) "busy" else "old"
+        return JSONObject().put("setup", kind).put("have", have).put("min", SetupNeed.MIN["rules"])
     }
 }
