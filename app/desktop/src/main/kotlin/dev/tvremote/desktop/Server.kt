@@ -197,12 +197,8 @@ class Server(private val repo: File, private val keys: File, private val pass: P
                 val list = d.optJSONArray("scenes") ?: throw IllegalArgumentException("scenes required")   // a broken import must not wipe them
                 saved.scenes = Scenes.clean(list); saved.save(); Response.json(JSONObject().put("scenes", saved.scenes))
             }
-            "/api/scene/run" -> {
-                val steps = d.optJSONArray("steps") ?: (0 until saved.scenes.length()).map { saved.scenes.getJSONObject(it) }.firstOrNull { it.optString("id") == d.optString("id") }?.optJSONArray("steps")
-                    ?: return Response.error(404, "no such scene")
-                val clean = Scenes.clean(JSONArray().put(JSONObject().put("name", "x").put("steps", steps))).optJSONObject(0)?.optJSONArray("steps") ?: JSONArray()
-                val failed = Scenes.run(clean, if (native(s)) RemoteSteps(s.need()) { wake(s) } else Scenes.Shell({ sh(s, it) }))
-                Response.json(JSONObject().put("ok", failed == null).put("failed", failed ?: ""))
+            "/api/scene/run" -> Scenes.runRequest(d, { id -> (0 until saved.scenes.length()).map { saved.scenes.getJSONObject(it) }.firstOrNull { it.optString("id") == id } }, "TV not connected") {
+                if (native(s)) RemoteSteps(s.need()) { wake(s) } else Scenes.Shell({ sh(s, it) })
             }
             "/api/fleet/do" -> {
                 val work = fleets.action(d.optString("action"), d.optString("pkg"))

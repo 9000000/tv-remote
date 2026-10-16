@@ -415,14 +415,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 if (r.query["download"] != null) return Scenes.backup(scenes())
                 return HttpServer.Response.json(JSONObject().put("scenes", scenes()))
             }
-            "/api/scene/run" -> {
-                val d = r.json()
-                val steps = d.optJSONArray("steps") ?: (0 until scenes().length()).map { scenes().getJSONObject(it) }.firstOrNull { it.optString("id") == d.optString("id") }?.optJSONArray("steps")
-                    ?: return HttpServer.Response.error(404, "no such scene")
-                val l = link ?: return HttpServer.Response.error(503, "adb:$adbState")
-                val failed = Scenes.run(Scenes.clean(JSONArray().put(JSONObject().put("name", "x").put("steps", steps))).optJSONObject(0)?.optJSONArray("steps") ?: JSONArray(),
-                    Scenes.Shell({ l.get().shell(it) }) { m -> Rules.change(this, JSONObject().put("do", "sleep").put("minutes", m)) })
-                return HttpServer.Response.json(JSONObject().put("ok", failed == null).put("failed", failed ?: ""))
+            "/api/scene/run" -> return Scenes.runRequest(r.json(), { id -> (0 until scenes().length()).map { scenes().getJSONObject(it) }.firstOrNull { it.optString("id") == id } }, "adb:$adbState") {
+                link?.let { l -> Scenes.Shell({ l.get().shell(it) }) { m -> Rules.change(this, JSONObject().put("do", "sleep").put("minutes", m)) } }
             }
             "/api/touch" -> {
                 val d = r.json()

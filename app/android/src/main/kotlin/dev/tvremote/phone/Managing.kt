@@ -193,14 +193,8 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
             if (r.query["download"] != null) return Scenes.backup(SceneStore.all(a))   // "Export": lands in the phone's Download folder
             return HttpServer.Response.json(JSONObject().put("scenes", SceneStore.all(a)))
         }
-        if (r.path == "/api/scene/run" && r.method == "POST") {
-            val l = link ?: return HttpServer.Response.error(503, "adb: not connected")
-            val d = r.json()
-            val steps = d.optJSONArray("steps") ?: SceneStore.find(a, d.optString("id"))?.optJSONArray("steps") ?: return HttpServer.Response.error(404, "no such scene")
-            val clean = Scenes.clean(JSONArray().put(JSONObject().put("name", "x").put("steps", steps))).optJSONObject(0)?.optJSONArray("steps") ?: JSONArray()
-            val failed = Scenes.run(clean, Scenes.Shell({ l.get().shell(it) }))
-            return HttpServer.Response.json(JSONObject().put("ok", failed == null).put("failed", failed ?: ""))
-        }
+        if (r.path == "/api/scene/run" && r.method == "POST")
+            return Scenes.runRequest(r.json(), { id -> SceneStore.find(a, id) }, "adb: not connected") { link?.let { l -> Scenes.Shell({ l.get().shell(it) }) } }
         if (r.path == "/api/app/icon") {
             val png = labels?.icon(r.query["pkg"].toString()) ?: return HttpServer.Response.error(404, "no icon")
             val icon = HttpServer.Response.of("image/png", png)
