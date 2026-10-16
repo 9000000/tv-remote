@@ -39,9 +39,11 @@ function renderFiles() {
     const acts = el('div', { className: 'acts' });
     if (kind === 'apk') acts.append(setLabel(btn('', 'Cài APK này lên TV', async (e) => { const b = e.currentTarget; if (await ask('Cài ' + i.name + ' lên TV?', { ok: 'Cài' })) startJob('/api/file/install', { path: full }, 'Cài ' + i.name, b); }, 'primary'), '📦', 'Cài', true));
     if (['video', 'audio', 'image'].includes(kind)) acts.append(btn('▶ TV', 'Mở trên TV', () => api('/api/file/open', { path: full }).then((r) => r && toast('Đã mở trên TV: ' + i.name))));
-    if (!i.dir) acts.append(el('a', { className: 'linkbtn iconbtn', href: '/api/file?path=' + encodeURIComponent(full), textContent: '⬇', title: 'Tải về máy này', ariaLabel: 'Tải về máy này', onclick: (e) => e.stopPropagation() }));
-    acts.append(btn('✎', 'Đổi tên', async () => { const n = await ask('Tên mới:', { value: i.name }); if (n && n !== i.name) fileAct('/api/file/rename', { path: full, name: n }, 'Đã đổi tên'); }, 'iconbtn'));
-    acts.append(btn('🗑', 'Xóa', async () => { if (await ask('Xóa ' + (i.dir ? 'thư mục (và mọi thứ bên trong) ' : '') + full + '?', { ok: 'Xóa', danger: true })) fileAct('/api/file/delete', { path: full }, 'Đã xóa'); }, 'iconbtn danger'));
+    acts.append(btn('⋯', 'Thêm thao tác', (e) => popover(e.currentTarget, [   // one row on a phone too: the rest behind ⋯, as on the Apps tab
+      i.dir ? null : ['⬇', 'Tải về máy này', () => el('a', { href: '/api/file?path=' + encodeURIComponent(full), download: i.name }).click()],
+      ['✎', 'Đổi tên', async () => { const n = await ask('Tên mới:', { value: i.name }); if (n && n !== i.name) fileAct('/api/file/rename', { path: full, name: n }, 'Đã đổi tên'); }],
+      ['🗑', 'Xóa', async () => { if (await ask('Xóa ' + (i.dir ? 'thư mục (và mọi thứ bên trong) ' : '') + full + '?', { ok: 'Xóa', danger: true })) fileAct('/api/file/delete', { path: full }, 'Đã xóa'); }, 'danger'],
+    ]), 'iconbtn'));
     const open = i.dir ? () => loadFiles(full) : kind === 'image' ? () => { $('#preview img').src = '/api/file?inline=1&path=' + encodeURIComponent(full); $('#preview').showModal(); } : null;
     const row = el('div', { className: 'item' + (open ? ' click' : ''), onclick: open },
       el('div', { className: 'ficon' + (i.dir ? ' dir' : ''), textContent: icon }),
