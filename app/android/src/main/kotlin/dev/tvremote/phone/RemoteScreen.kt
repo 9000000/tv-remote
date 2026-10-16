@@ -339,7 +339,7 @@ internal fun MainActivity.buildRemote() {
 
     val bye = button(t("Ngắt kết nối", "Disconnect"), 0)
     bye.setTextColor(RED)
-    bye.setOnClickListener { disconnect(null) }
+    bye.setOnClickListener { leave() }
     val bp = LinearLayout.LayoutParams(-1, dp(48))
     bp.topMargin = dp(10)
     controls.addView(bye, bp)

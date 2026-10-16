@@ -6,6 +6,7 @@
     <!-- the TV's sound on the phone with its screen off (ListenService), and the widget / tiles' short jobs (SceneService) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />   <!-- a copy to the TV goes on in the background -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- the photo picker sheet: Android's own, or Google Play services' on Android 12 and older -->
@@ -35,6 +36,7 @@
             android:taskAffinity="" android:noHistory="true" />
         <service android:name=".SceneService" android:exported="false" android:foregroundServiceType="shortService" />
         <service android:name=".ListenService" android:exported="false" android:foregroundServiceType="mediaPlayback" />
+        <service android:name=".WorkService" android:exported="false" android:foregroundServiceType="dataSync" />
         <receiver android:name=".RemoteWidget" android:exported="true" android:label="@string/widget_name">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_info" />

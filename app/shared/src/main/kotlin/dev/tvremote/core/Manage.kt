@@ -37,6 +37,20 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     private val jobs: MutableMap<String, JSONObject> = Collections.synchronizedMap(LinkedHashMap<String, JSONObject>())
     private val nextJob = java.util.concurrent.atomic.AtomicInteger(1)
 
+    private val working = java.util.concurrent.ConcurrentHashMap<Any, String>()
+    /** Told when work starts or ends (the phone keeps itself running meanwhile, and asks before leaving the TV). */
+    @Volatile var onWork: ((String) -> Unit)? = null
+
+    /** What is under way, as upload / install / update / tailscale / work; "" when nothing. */
+    fun working(): String = working.values.firstOrNull() ?: ""
+
+    private inline fun <T> at(what: String, f: () -> T): T {
+        val k = Any()
+        working[k] = what
+        onWork?.invoke(working())
+        try { return f() } finally { working.remove(k); onWork?.invoke(working()) }
+    }
+
     /** null when the path is not ours. */
     @Throws(Exception::class)
     fun handle(r: HttpServer.Request): HttpServer.Response? {
@@ -362,7 +376,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
 
     /** Copies `length` bytes into a file on the TV. */
     @Throws(IOException::class)
-    private fun push(input: InputStream, length: Long, dest: String, job: JSONObject?) {
+    private fun push(input: InputStream, length: Long, dest: String, job: JSONObject?) { at("upload") {
         val adb = link.get()
         val feed = { s: Adb.Stream ->
             val b = ByteArray(65536)
@@ -385,7 +399,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             try { Thread.sleep(150) } catch (e: InterruptedException) { break }
         }
         if (want != null) throw IOException("the TV did not store the whole file (is its storage full?)")
-    }
+    } }
 
     /**
      * A file from the browser, into a folder on the TV or (kind=install) straight into the installer. The file arrives in the
@@ -408,9 +422,10 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val j = JSONObject().put("id", nextJob.getAndIncrement().toString()).put("title", title).put("status", "running").put("pct", 0).put("msg", "")
         jobs[j.getString("id")] = j
         while (jobs.size > 20) jobs.remove(jobs.keys.iterator().next())
+        val what = title.substringBefore(' ').takeIf { it in setOf("install", "update", "tailscale") } ?: "work"
         Thread({
             try {
-                val msg = work.run(j)
+                val msg = at(what) { work.run(j) }
                 j.put("status", "done").put("pct", 100).put("msg", msg)
             } catch (e: Exception) {
                 try { j.put("status", "error").put("msg", e.message ?: e.javaClass.simpleName) } catch (ignored: Exception) { }

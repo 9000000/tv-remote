@@ -1,7 +1,9 @@
 package dev.tvremote.phone
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
+import android.os.Build
 import android.content.SharedPreferences
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
@@ -288,7 +290,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         if (fullscreen) { setFullscreen(false); return }
         if (about.visibility == View.VISIBLE) about.visibility = View.GONE
         else if (settings.visibility == View.VISIBLE) settings.visibility = View.GONE
-        else if (host != null) disconnect(null)
+        else if (host != null) leave()
         else super.onBackPressed()
     }
 
@@ -393,6 +395,29 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         d.setContentView(col)
         allowBox = d
         try { d.show() } catch (e: Exception) { allowBox = null }
+    }
+
+    private var workOn = false
+
+    /** Work under way on the Manage screen ([what], "" when over): kept running in the background by WorkService. */
+    internal fun working(what: String) {
+        try {
+            if (what.isNotEmpty()) {
+                val i = Intent(this, WorkService::class.java).putExtra(WorkService.WHAT, what)
+                if (!workOn) { if (Build.VERSION.SDK_INT >= 26) startForegroundService(i) else startService(i) } else WorkService.show(this, what)
+                workOn = true
+            } else if (workOn) { workOn = false; stopService(Intent(this, WorkService::class.java)) }
+        } catch (e: Exception) { }                                    // not allowed from the background: it only runs until Android freezes the app
+    }
+
+    /** Leaving the TV by choice: asks first when something is under way there, which leaving would cut off. */
+    internal fun leave() {
+        val w = managing.working()
+        if (w.isEmpty()) { disconnect(null); return }
+        AlertDialog.Builder(this).setTitle(WorkService.say(w) + "...")
+            .setMessage(t("Rời TV này sẽ hủy việc đang làm.", "Leaving this TV cancels it."))
+            .setPositiveButton(t("Ở lại", "Stay"), null)
+            .setNegativeButton(t("Vẫn rời", "Leave anyway")) { _, _ -> disconnect(null) }.show()
     }
 
     internal fun disconnect(message: String?) {
