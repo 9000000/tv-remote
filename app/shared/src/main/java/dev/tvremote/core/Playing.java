@@ -111,23 +111,18 @@ public final class Playing {
         report();
     }
 
-    /** The session the person means: one that plays, else a paused one that has a title or was the one playing (a player
-     *  that tells no title, FPT Play, stays in the bar once paused) while its app is still on the screen, else none: a paused
-     *  app left for another keeps its session, and the bar would otherwise stay for good. */
+    /** The session the person means: one that plays, else a paused one whose app is on the screen, else none. A paused app
+     *  left for another keeps its session (the bar would stay for good); one with no title (FPT Play) still counts. */
     private static MediaController current() {
         MediaController paused = null;
         for (MediaController c : watched) {
             PlaybackState s = c.getPlaybackState();
             int st = s == null ? 0 : s.getState();
-            if (st == PlaybackState.STATE_PLAYING || st == PlaybackState.STATE_BUFFERING) { shown = c.getSessionToken(); return c; }
-            if (st != PlaybackState.STATE_PAUSED || !inFront(c.getPackageName())) continue;
-            if (c.getSessionToken().equals(shown)) paused = c;
-            else if (paused == null && title(c.getMetadata()) != null) paused = c;
+            if (st == PlaybackState.STATE_PLAYING || st == PlaybackState.STATE_BUFFERING) return c;
+            if (paused == null && st == PlaybackState.STATE_PAUSED && inFront(c.getPackageName())) paused = c;
         }
-        if (paused == null) shown = null;
         return paused;
     }
-    private static android.media.session.MediaSession.Token shown;
 
     private static boolean inFront(String pkg) {
         try {
