@@ -9,16 +9,6 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 Web 0.4.1 · app điện thoại 0.4.1 · app TV 0.4.1
 
 **Tiếng Việt**
-- Có app máy tính: bản 0.4.0 chưa có (bài thử tự cập nhật chưa biết bản cập nhật giờ phải có chữ ký). Các thay đổi của 0.4.0 ở bên dưới.
-
-**English**
-- The computer app is here: 0.4.0 had none (its self-update test did not know updates are now signed). What changed in 0.4.0 is below.
-
-## 0.4.0 - 2026-10-16
-
-Web 0.4.0 · app điện thoại 0.4.0 · app TV 0.4.0
-
-**Tiếng Việt**
 - Cài đặt: các phần thẳng một lề trái; nút Theo máy / Sáng / Tối có icon. 📱 App điện thoại: icon nét thay emoji trong Cài đặt, Giới thiệu và các nút; icon trên nền xanh luôn trắng (nút ẩn hình, 🎧, Thêm phím). Chữ xám, xanh, xanh lá đậm hơn trên giao diện sáng cho dễ đọc.
 - 📱 App điện thoại: chép tệp, cài app, cập nhật TV Setup giờ hiện trên thanh thông báo kèm phần trăm (trước đó Android 13+ ẩn đi vì app chưa xin quyền thông báo; giờ xin ngay lúc việc bắt đầu).
 - Sức khỏe → Lịch sử: chú thích dưới biểu đồ gọn lại như trước. TV có đồng hồ từng nhảy sai (vd box FPT Play) giờ vẫn ghi được app đang mở; khoảng đã ghi trước đó thì không có tên app.
