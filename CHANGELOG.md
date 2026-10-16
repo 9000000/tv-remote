@@ -8,9 +8,13 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - 📱 App điện thoại: chép tệp, cài app, cập nhật TV Setup giờ hiện trên thanh thông báo kèm phần trăm (trước đó Android 13+ ẩn đi vì app chưa xin quyền thông báo; giờ xin ngay lúc việc bắt đầu).
+- Sức khỏe → Lịch sử: chú thích dưới biểu đồ gọn lại như trước. TV có đồng hồ từng nhảy sai (vd box FPT Play) giờ vẫn ghi được app đang mở; khoảng đã ghi trước đó thì không có tên app.
+- Tab Tệp trên điện thoại: các thư mục nhanh nằm một dòng vuốt ngang, đường dẫn gọn, nút sửa/xóa nằm cạnh tên.
 
 **English**
 - 📱 Phone app: copying a file, installing an app or updating TV Setup now shows in the notification shade with its percentage (Android 13+ hid it before, the app never having asked for notifications; it asks as the work starts).
+- Health → History: the legend under the chart is compact again. A TV whose clock once jumped (the FPT Play box, say) records the open app again; what was recorded before has no app names.
+- Files tab on a phone: the quick folders on one row you swipe, a tighter path, the rename/delete buttons beside the name.
 
 ## 0.3.0 - 2026-10-16
 

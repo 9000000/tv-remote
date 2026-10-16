@@ -397,10 +397,14 @@
 
   /* One size per kind of control, in every tab but the remote (whose keys are made to be hit without looking):
      a field and the button beside it --ctl, a card's own actions .small (--ctl-sm), a choice among several a chip (--chip). */
-  .panel:not([data-panel=remote]) :is(button, select, input[type=text], input:not([type]), input[type=url], input[type=search], input[type=time]):not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.scene):not(.drop) { min-height:var(--ctl); }
-  .panel:not([data-panel=remote]) button:not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.scene) { font-size:14px; padding:0 16px; }
+  .panel:not([data-panel=remote]) :is(button, select, input[type=text], input:not([type]), input[type=url], input[type=search], input[type=time]):not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.scene):not(.drop):not(.st-key):not(.crumbs button) { min-height:var(--ctl); }
+  .panel:not([data-panel=remote]) button:not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.scene):not(.st-key):not(.crumbs button) { font-size:14px; padding:0 16px; }
   .panel:not([data-panel=remote]) select { font-size:14px; padding:0 10px; }
   .panel > div:empty { display:none; }                                /* an empty slot (no ADB banner, nothing to set up) leaves no gap */
   details.card > summary { font-size:14px; font-weight:600; cursor:pointer; }   /* every fold-out card reads the same */
-  @media (max-width:640px) { .ftools input { flex:1 1 100%; } }      /* the filter gets its own line, its buttons the next */
+  @media (max-width:640px) {                                          /* the filter gets its own line, its buttons the next */
+    .ftools input { flex:1 1 100%; } .ftools select { flex:1; }
+    #places { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; margin:0 -14px; padding:0 14px; } #places::-webkit-scrollbar { display:none; } #places button { flex:none; }   /* one row to swipe */
+    #fileslist .acts { gap:4px; } #fileslist .item:not(:has(.acts > :nth-child(4))) .name { flex-basis:0; } }   /* three buttons fit beside the name */
+  @media (pointer:coarse) { .drop .fine { display:none; } }           /* nothing to drag a file from on a touch screen */
   .panel .timerow button.small { min-height:var(--ctl); }            /* beside the time fields: as tall as they are */

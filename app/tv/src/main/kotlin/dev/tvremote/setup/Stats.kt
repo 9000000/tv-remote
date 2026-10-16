@@ -12,6 +12,7 @@ import android.net.wifi.WifiManager
 import android.os.Handler
 import android.os.Looper
 import android.os.Environment
+import android.os.Build
 import android.os.PowerManager
 import android.os.StatFs
 import org.json.JSONArray
@@ -75,6 +76,30 @@ internal class Stats(private val ctx: Context) {
         }
     }
 
+    /** The app last brought to the screen over the past days: what is on screen when nothing moved since midnight, or since the
+     *  TV woke up (standby keeps the app it was showing). Without it a TV left on one app (an operator's launcher) has no name. */
+    private fun lastFront(now: Long): String {
+        val events = (ctx.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager).queryEvents(now - 3 * 86400000L, now)
+        val e = UsageEvents.Event()
+        var cur = ""
+        var any = false
+        while (events.hasNextEvent()) {
+            events.getNextEvent(e)
+            any = true
+            when (e.eventType) {
+                UsageEvents.Event.MOVE_TO_FOREGROUND -> cur = e.packageName
+                UsageEvents.Event.MOVE_TO_BACKGROUND -> if (cur == e.packageName) cur = ""
+            }
+        }
+        if (any) return cur
+        // no events at all: a clock that once jumped ahead (a box booted before it knew the time) leaves Android's current
+        // stretch of events ending in the future, and every query of it comes back empty. The totals per app still move on:
+        // the app seen last is the one on screen.
+        val seen = { u: android.app.usage.UsageStats -> if (Build.VERSION.SDK_INT >= 29) u.lastTimeVisible else u.lastTimeUsed }
+        return (ctx.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager).queryUsageStats(UsageStatsManager.INTERVAL_BEST, now - 3 * 86400000L, now)
+            ?.filter { seen(it) in 1..now }?.maxByOrNull(seen)?.packageName ?: ""
+    }
+
     /** Seconds on screen per app since midnight, and the app on screen now ("" when unknown). */
     fun today(now: Long, on: Boolean): Pair<JSONObject, String> {
         val start = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }.timeInMillis
@@ -92,7 +117,7 @@ internal class Stats(private val ctx: Context) {
                 16 -> close(e.timeStamp)                              // SCREEN_NON_INTERACTIVE: the TV went to standby with the app still open
             }
         }
-        val front = cur ?: ""
+        val front = cur ?: if (on) lastFront(now) else ""
         if (on) close(now)
         val out = JSONObject()
         for ((pkg, ms) in total) if (ms >= 1000) out.put(pkg, ms / 1000)

@@ -145,7 +145,7 @@
     'TV vẫn chưa mở lại ADB. Nếu TV đã lên màn hình chính: vào Cài đặt → Tùy chọn nhà phát triển, bật lại “Gỡ lỗi ADB”.': 'The TV has not opened ADB again. If it shows its home screen: Settings → Developer options, turn “ADB debugging” on again.',
     // files
     'Lọc trong thư mục này': 'Filter this folder', 'Sắp xếp': 'Sort', 'Theo tên': 'By name', 'Mới nhất': 'Newest', 'Lớn nhất': 'Largest', '＋ Thư mục': '＋ Folder',
-    '＋ Bấm để chọn file gửi lên thư mục này (hoặc kéo thả vào đây)': '＋ Choose files to send to this folder (or drop them here)',
+    '＋ Chọn file gửi lên thư mục này': '＋ Choose files to send to this folder', '(hoặc kéo thả vào đây)': '(or drop them here)',
     'Bộ nhớ TV': 'TV storage', 'Phim': 'Movies', 'Ảnh': 'Pictures', 'Nhạc': 'Music', 'Thư mục': 'Folder', 'Cài APK này lên TV': 'Install this APK on the TV', 'Mở trên TV': 'Open on the TV',
     'Tải về máy này': 'Download to this computer', 'Đổi tên': 'Rename', 'Tên mới:': 'New name:', 'Đã đổi tên': 'Renamed', 'Xóa': 'Delete', 'Đã xóa': 'Deleted',
     'Không có mục nào khớp.': 'Nothing matches.', 'Thư mục trống.': 'Empty folder.', 'Tên thư mục mới:': 'New folder name:', 'Đã tạo thư mục': 'Folder created', 'Xem trước': 'Preview',
