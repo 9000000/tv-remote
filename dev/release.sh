@@ -95,3 +95,4 @@ else
   gh run watch "$RUN" --exit-status >/dev/null || { echo "a computer app failed to build: gh run view $RUN --log-failed"; exit 1; }
 fi
 gh release view "v$VER" --json assets -q '.assets[].name'
+echo; dev/churn.sh || true                                           # how settled the /api is: says when 1.0 is worth thinking about

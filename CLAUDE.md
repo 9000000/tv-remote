@@ -55,7 +55,7 @@ app/desktop/             the computer app on the shared Kotlin core (JVM, no adb
                          .cache/keys). `./gradlew :desktop:packageApp` -> the app for this system + zip / tar.gz (own Java via jlink;
                          data in the user's app data folder); .github/workflows/desktop.yml builds and opens it on Mac, Windows, Linux
 app/shared/tests/        node tests of the page's scripts, and the case tables (fleet_cases.json, tvshell_cases.json, qr_cases.json) the Kotlin tests read
-dev/                     release.sh, gen_icons.py, emu.sh (the two test emulators: create, start, build + install), shots.py (docs screenshots)
+dev/                     release.sh, churn.sh (how often the /api still changes; release.sh prints it and says when 1.0 is near), gen_icons.py, emu.sh (the two test emulators: create, start, build + install), shots.py (docs screenshots)
 ```
 
 ## Rules that matter
