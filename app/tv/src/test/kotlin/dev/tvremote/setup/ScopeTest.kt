@@ -24,6 +24,13 @@ class ScopeTest {
         for (p in listOf("/api/files", "/api/file", "/api/health", "/api/procs", "/api/log", "/api/wirelog", "/api/app/backup")) assertFalse(p, may(Scope.REMOTE, p))
     }
 
+    @Test fun aNotificationIsForRemoteAndUpButNotForViewOnly() {
+        assertTrue(may(Scope.FULL, "/api/notify", true))
+        assertTrue(may(Scope.REMOTE, "/api/notify", true))
+        assertFalse(may(Scope.VIEW, "/api/notify", true))
+        assertFalse(may(Scope.REMOTE, "/api/notify"))               // a GET is nothing
+    }
+
     @Test fun remoteSleepTimerOnly() {
         assertTrue(may(Scope.REMOTE, "/api/rules", true, body = JSONObject().put("do", "sleep").put("minutes", 30)))
         assertTrue(may(Scope.REMOTE, "/api/rules", true, body = JSONObject().put("do", "sleep_add").put("minutes", 15)))

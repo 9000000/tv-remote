@@ -250,6 +250,7 @@ function stepText(s) {
     case 'key': return '🎮 Phím ' + ((STEP_KEYS.find((k) => k[0] === s.key) || [0, s.key])[1]);
     case 'link': return '🔗 ' + s.url.replace(/^https?:\/\//, '').slice(0, 40);
     case 'wait': return '⏱️ Chờ ' + s.s + ' giây';
+    case 'notify': return '🔔 Thông báo: ' + (s.text || s.title || '').slice(0, 30);
     case 'timer': return s.min ? '😴 Hẹn giờ tắt ' + mins(s.min) : '😴 Hủy hẹn giờ tắt';
   }
   return s.do;
@@ -325,6 +326,12 @@ function stepArgs() {
   else if (k === 'wait') box.replaceChildren(num(2, 0, 30, 'giây'));
   else if (k === 'timer') box.replaceChildren(num(30, 0, 720, 'phút'));
   else if (k === 'link') box.replaceChildren(el('input', { id: 'steparg', placeholder: 'https://youtu.be/...', inputMode: 'url' }));
+  else if (k === 'notify') {                                         // the corner and the seconds start from what the Gửi thông báo dialog last used (notify.js)
+    const p = notifyPrefs();
+    box.replaceChildren(el('input', { id: 'steparg', placeholder: 'Nội dung hiện trên TV', maxLength: 300 }),
+      el('select', { id: 'stepcorner', 'aria-label': tr('Góc màn hình') }, ...NOTIFY_CORNERS.map(([v, t]) => el('option', { value: v, textContent: t, selected: v === p.corner }))),
+      el('select', { id: 'stepsecs', 'aria-label': tr('Hiện trong') }, ...NOTIFY_SECONDS.map((n) => el('option', { value: n, textContent: n + ' giây', selected: n === p.seconds }))));
+  }
   else box.replaceChildren();
 }
 $('#stepkind').addEventListener('change', stepArgs);
@@ -336,6 +343,7 @@ $('#stepadd').addEventListener('click', () => {
   if (k === 'volume') s.level = Math.max(0, Math.min(100, Math.round(+v || 0)));
   if (k === 'wait') s.s = Math.max(0, Math.min(30, +v || 1));
   if (k === 'timer') s.min = Math.max(0, Math.min(720, Math.round(+v || 0)));
+  if (k === 'notify') { if (!v) return toast('Nhập nội dung thông báo'); s.text = v.slice(0, 300); s.corner = notifyCorner($('#stepcorner').value); s.seconds = notifySeconds($('#stepsecs').value); }
   if (k === 'link') { const l = normalizeLink(v); if (!l) return toast('Nhập một đường dẫn'); s.url = l; }
   if (draft.length >= 30) return toast('Tối đa 30 bước');
   draft.push(s); drawSteps();

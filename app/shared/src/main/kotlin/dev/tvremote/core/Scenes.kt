@@ -10,7 +10,8 @@ import java.util.regex.Pattern
  *
  *   { "id": "s1", "name": "Xem phim", "icon": "🎬", "steps": [ {"do": "wake"}, {"do": "app", "pkg": "com.google.android.youtube.tv"} ] }
  *
- * Steps: wake, sleep, key {key}, app {pkg}, link {url}, volume {level}, wait {s}, timer {min} (TV Setup's sleep timer, 0 cancels).
+ * Steps: wake, sleep, key {key}, app {pkg}, link {url}, volume {level}, wait {s}, timer {min} (TV Setup's sleep timer, 0 cancels),
+ * notify {title, text, corner, seconds} (a card on the TV's screen, see [Notify]).
  */
 object Scenes {
     /** What the steps need from the TV. ADB does all of it ([Shell]); the keys-only connection some. */
@@ -20,6 +21,8 @@ object Scenes {
         fun link(url: String)
         fun volume(level: Int)
         fun timer(minutes: Int)
+        /** [msg] is already [Notify.clean]ed. Only a TV with TV Setup and ADB can show one. */
+        fun notify(msg: JSONObject) { throw IllegalArgumentException("a message on the TV needs ADB and TV Setup") }
     }
 
     /** The key names the pages use, to Android key codes. */
@@ -33,7 +36,7 @@ object Scenes {
 
     private val PKG = Pattern.compile(Pkg.PATTERN)
     private val APP_ID = Pattern.compile("[A-Za-z0-9][A-Za-z0-9_.-]{0,127}")   // an LG app ("netflix", "spotify-beehive") or a Samsung one ("3201907018807") too; [launch] still wants a package
-    private val STEPS = setOf("wake", "sleep", "key", "app", "link", "volume", "wait", "timer")
+    private val STEPS = setOf("wake", "sleep", "key", "app", "link", "volume", "wait", "timer", "notify")
 
     /**
      * Runs the steps in order. A step that fails is skipped (the TV may simply not have that app) and named in the answer;
@@ -54,6 +57,7 @@ object Scenes {
                     "volume" -> tv.volume(s.optInt("level").coerceIn(0, 100))
                     "wait" -> Thread.sleep((s.optDouble("s", 1.0).coerceIn(0.0, 30.0) * 1000).toLong())
                     "timer" -> tv.timer(s.optInt("min").coerceIn(0, 720))
+                    "notify" -> tv.notify(Notify.clean(s))
                 }
             } catch (e: InterruptedException) {
                 break
@@ -105,6 +109,7 @@ object Scenes {
                     "volume" -> c.put("level", s.optInt("level").coerceIn(0, 100))
                     "wait" -> c.put("s", s.optDouble("s", 1.0).coerceIn(0.0, 30.0))
                     "timer" -> c.put("min", s.optInt("min").coerceIn(0, 720))
+                    "notify" -> try { val n = Notify.clean(s); for (k in n.keys()) c.put(k, n.get(k)) } catch (e: IllegalArgumentException) { continue }   // nothing to say: no step
                 }
                 steps.put(c)
             }
@@ -159,6 +164,7 @@ object Scenes {
             if (out.contains("Error") || out.lowercase().contains("unable to resolve")) throw IllegalArgumentException("the TV has no app that can open this")
         }
         override fun volume(level: Int) = volume(sh, level)
+        override fun notify(msg: JSONObject) = Notify.send(sh, msg)
         override fun timer(minutes: Int) {
             if (timer != null) { timer.invoke(minutes); return }
             val r = RulesClient.call(sh, JSONObject().put("do", "sleep").put("minutes", minutes))

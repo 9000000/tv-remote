@@ -141,7 +141,7 @@ addEventListener('resize', closePop);
 // A phone or computer can be newer than TV Setup on the TV. What needs which TV Setup is SetupNeed.kt's table; any call that
 // meets one (its error says "setup:old|missing:<feature>:<min>:<have>") asks to update or install TV Setup, with the button.
 // A page that knows before starting asks setupFor(feature). The same names as SetupNeed.name.
-const SETUP_NEEDS = { rules: 'Hẹn giờ, giờ đi ngủ, giới hạn app', draw: 'Chức năng vẽ lên TV', invite: 'Chia sẻ remote bằng QR', ram: 'Báo khi RAM đầy', pic: 'Đưa ảnh lên TV', volume: 'Giới hạn âm lượng', bedtimes: 'Nhiều khoảng giờ đi ngủ' };
+const SETUP_NEEDS = { rules: 'Hẹn giờ, giờ đi ngủ, giới hạn app', draw: 'Chức năng vẽ lên TV', invite: 'Chia sẻ remote bằng QR', ram: 'Báo khi RAM đầy', pic: 'Đưa ảnh lên TV', volume: 'Giới hạn âm lượng', bedtimes: 'Nhiều khoảng giờ đi ngủ', notify: 'Gửi thông báo lên TV' };
 const SETUP_RE = /setup:(old|missing):(\w+):([0-9.]*):([0-9.]*)/;
 const setupSay = (m) => m[1] === 'missing' ? (SETUP_NEEDS[m[2]] || m[2]) + ' cần app TV Setup trên TV. Cài TV Setup?'
   : (SETUP_NEEDS[m[2]] || m[2]) + ' cần TV Setup ' + m[3] + ' trở lên (TV đang có ' + m[4] + '). Cập nhật TV Setup?';
@@ -156,6 +156,7 @@ const setupFor = async (feature) => !!await api('/api/setup/need?f=' + feature);
 // The errors people actually meet, from any core , in words they can act on; anything else as it came.
 const FRIENDLY = [
   [SETUP_RE, setupSay],
+  [/notify:nooverlay/, 'TV này không cho app hiện thông báo đè lên màn hình.'],
   [/no YouTube and no Google search/, 'TV này không có YouTube hay tìm kiếm của Google để tìm câu này.'],
   [/^unsupported: (LG|Samsung)$/, (m) => 'TV ' + m[1] + ' không hỗ trợ'],
   [/^refused$/, 'TV đã từ chối. Bấm Hỏi lại TV ở tab Thiết lập rồi chọn Cho phép.'],
