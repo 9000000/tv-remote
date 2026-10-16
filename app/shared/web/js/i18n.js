@@ -550,6 +550,15 @@
     'TV Samsung': 'Samsung TV',
     'TV LG không hỗ trợ': 'LG TVs cannot do this',
     'TV Samsung không hỗ trợ': 'Samsung TVs cannot do this',
+    'Chỉ có trên Android TV / Google TV': 'Only on Android TV / Google TV', 'Tự động trên TV': 'Automation on the TV',
+    'Xem và chạm màn hình TV trên máy này': 'See and touch the TV’s screen here', 'Nghe tiếng TV': 'Listen to the TV',
+    'Vẽ, 🖼️ ảnh, 💬 lời nhắn lên TV': 'Draw, 🖼️ a picture, 💬 a message on the TV', 'Đang phát, 📋 clipboard của TV': 'Now playing, 📋 the TV’s clipboard',
+    'Mọi app đã cài trên TV': 'Every app installed on the TV', 'Mở, buộc dừng, tắt hoặc gỡ app': 'Open, force stop, turn off or uninstall apps',
+    'Xóa dữ liệu app': 'Clear an app’s data', 'Duyệt tệp trên TV, gửi lên, tải về': 'Browse the TV’s files, upload, download',
+    'Tải file từ link thẳng về TV': 'Download a link straight to the TV', 'Cài APK từ máy này': 'Install an APK from this device',
+    'Bộ nhớ, RAM, tải hệ thống': 'Storage, RAM, system load', 'Mạng và phần cứng của TV': 'The TV’s network and hardware',
+    'Giải phóng RAM bằng một nút': 'Free RAM with one button', 'Hẹn giờ tắt TV': 'Sleep timer', 'Giờ đi ngủ': 'Bedtime',
+    'Giới hạn app mỗi ngày': 'Daily app limits', 'Giới hạn âm lượng theo giờ': 'Volume limits by time of day',
   };
 
   // Strings with a variable part. Captured pieces are passed through tr() again where they can be text of ours.

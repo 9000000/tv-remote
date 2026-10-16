@@ -507,8 +507,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     /** True, with a word of explanation, when the button needs ADB and there is only the keys-only connection. */
     internal fun needsAdb(): Boolean {
         val b = basic ?: return false
-        Toast.makeText(this, if (b.kind != Remote.Kind.ANDROID) t("TV " + Remote.Kind.name(b.kind) + " không hỗ trợ việc này", Remote.Kind.name(b.kind) + " TVs cannot do this")
-            else t("Cần bật Gỡ lỗi ADB trên TV cho chức năng này", "This needs ADB debugging on for the TV"), Toast.LENGTH_SHORT).show()
+        if (b.kind != Remote.Kind.ANDROID) kindOff()
+        else Toast.makeText(this, t("Cần bật Gỡ lỗi ADB trên TV cho chức năng này", "This needs ADB debugging on for the TV"), Toast.LENGTH_SHORT).show()
         return true
     }
 

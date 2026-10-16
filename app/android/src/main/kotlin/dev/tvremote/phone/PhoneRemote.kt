@@ -60,12 +60,18 @@ internal fun MainActivity.caps(): Set<String> = Remote.Kind.caps(kind())
 /** The buttons drawn from remote.json, to grey those this TV cannot do ([greyRows], from layoutRemote). */
 private val drawn = ArrayList<Pair<IconButton, RemoteSpec.Entry>>()
 
+/** The tag of a button this TV cannot do: greyed, not disabled, so a press can tell what it would need. */
+internal const val KIND_OFF = "kind-off"
+
+internal fun MainActivity.kindOff() =
+    android.widget.Toast.makeText(this, t("Chỉ có trên Android TV / Google TV", "Only on Android TV / Google TV"), android.widget.Toast.LENGTH_SHORT).show()
+
 internal fun MainActivity.greyRows() {
     val caps = caps()
     val keys = basic?.takeIf { kind() != Remote.Kind.ANDROID }?.keys
     for ((b, e) in drawn) {
         val ok = e.can(caps) && (keys == null || e.key == null || Scenes.KEYS[e.key] in keys)
-        b.isEnabled = ok
+        b.tag = if (ok) null else KIND_OFF                            // still pressable: a press says why (kindOff)
         b.alpha = if (ok) 1f else 0.3f
     }
 }
@@ -78,13 +84,13 @@ internal fun MainActivity.remoteRow(name: String, index: Int, height: Int): Line
         val action = e.action
         if (action != null) {
             val run = phoneActions[action] ?: error("remote.json: no phone handler for \"$action\"")
-            b.setOnClickListener { run(this, e.arg) }
+            b.setOnClickListener { if (b.tag === KIND_OFF) kindOff() else run(this, e.arg) }
             phoneButtonHooks[action]?.invoke(this, b)
         } else {
             val code = Scenes.KEYS[e.key] ?: error("remote.json: unknown key ${e.key}")
             if (code in Tv.OPENERS) {
                 val held = box(HELD, 16)
-                b.setOnClickListener { flash(b, held); opens(code) }
+                b.setOnClickListener { if (b.tag === KIND_OFF) kindOff() else { flash(b, held); opens(code) } }
             } else bindKey(b, code, box(HELD, 16))
         }
         row.addView(b, cell(height, i > 0))

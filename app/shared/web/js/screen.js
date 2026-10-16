@@ -143,8 +143,10 @@ function showTab(t) {
   if (CORE === 'phone' && (t === 'remote' || !document.querySelector('[data-tab="' + t + '"]'))) t = 'apps';   // the phone app has its own remote
   currentTab = t; document.querySelector('main').classList.toggle('wide', t === 'remote' && !picking);
   document.querySelectorAll('[data-tab]').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === t));
-  document.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== t; });
+  const off = document.querySelector('[data-tab="' + t + '"]')?.hasAttribute('data-kind-tab');   // this TV cannot: what it would do
+  document.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== (off ? 'kind' : t); });
   dockScreen();
+  if (off) { $('#kindtab').replaceChildren(kindIntro(t)); return; }
   if (ADB.state === 'ready') { if (t === 'apps' && !appsLoaded) loadApps(); if (t === 'files' && !filesLoaded) loadFiles(cwd); }
   if (t === 'tv' && CORE === 'pc') loadSteps();
   if (t === 'health') loadHealth();

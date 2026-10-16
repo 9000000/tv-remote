@@ -262,17 +262,38 @@ async function refresh() {
 
 // ---------- the kind of TV: Android TV, LG or Samsung (Remote.kt: Kind) ----------
 // An LG or Samsung TV is driven through its own remote link and has no ADB: what needs a capability it lacks is marked
-// data-needs="cap ..." and hidden (tabs, cards) or greyed with the reason on hover (buttons); keys it has no name for are greyed.
+// data-needs="cap ..." and hidden (cards), greyed (buttons, keys it has no name for: a press says why) or, for a tab, kept
+// greyed with a card of what it does on an Android TV ([data-kindintro], KIND_INTRO): a feature to find out about, not a gap.
 let TV_KIND = 'android', CAPS = null, kindSig = '';
 const NATIVE = () => TV_KIND !== 'android';
 const can = (cap) => !CAPS || CAPS.has(cap);
 const KIND_NAME = { android: 'Android TV', lg: 'LG', samsung: 'Samsung' };
-const kindWhy = () => 'TV ' + KIND_NAME[TV_KIND] + ' không hỗ trợ';
+const kindWhy = () => 'Chỉ có trên Android TV / Google TV';
 function unsupported(e, off) {
-  const control = e.matches('button:not([data-tab]), input, select, fieldset');
-  if (!control) { e.classList.toggle('kind-off', off); return; }
-  if (off) { e.disabled = true; e.title = kindWhy(); e.dataset.kindOff = ''; }
-  else if ('kindOff' in e.dataset) { e.disabled = false; e.removeAttribute('title'); delete e.dataset.kindOff; }
+  if (e.matches('[data-tab]')) { e.toggleAttribute('data-kind-tab', off); return; }
+  if (e.matches('input, select, fieldset')) { e.disabled = off; return; }
+  if (!e.matches('button')) { e.classList.toggle('kind-off', off); return; }
+  if (off && !('kindOff' in e.dataset)) { e.dataset.kindOff = e.title; e.title = kindWhy(); e.setAttribute('aria-disabled', 'true'); }
+  else if (!off && 'kindOff' in e.dataset) { e.title = e.dataset.kindOff; if (!e.title) e.removeAttribute('title'); delete e.dataset.kindOff; e.removeAttribute('aria-disabled'); }
+}
+// a greyed button still answers a press, with why: not disabled, so the press reaches here before its own handlers
+for (const ev of ['pointerdown', 'click']) document.addEventListener(ev, (e) => {
+  if (!e.target.closest?.('[data-kind-off]')) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  if (ev === 'click') toast(kindWhy());
+}, true);
+const KIND_INTRO = {
+  screen: ['🖥️ Màn hình TV', ['Xem và chạm màn hình TV trên máy này', '🎧 Nghe tiếng TV', '✏️ Vẽ, 🖼️ ảnh, 💬 lời nhắn lên TV', '▶️ Đang phát, 📋 clipboard của TV']],
+  apps: ['📱 Ứng dụng', ['Mọi app đã cài trên TV', 'Mở, buộc dừng, tắt hoặc gỡ app', 'Xóa dữ liệu app']],
+  files: ['📁 Tệp · Cài', ['Duyệt tệp trên TV, gửi lên, tải về', 'Tải file từ link thẳng về TV', '📦 Cài APK từ máy này']],
+  health: ['🩺 Sức khỏe', ['Bộ nhớ, RAM, tải hệ thống', 'Mạng và phần cứng của TV', 'Giải phóng RAM bằng một nút']],
+  rules: ['⏰ Tự động trên TV', ['😴 Hẹn giờ tắt TV', '🌙 Giờ đi ngủ', '⏳ Giới hạn app mỗi ngày', '🔊 Giới hạn âm lượng theo giờ']],
+};
+function kindIntro(key) {
+  const [title, items] = KIND_INTRO[key];
+  return el('section', { className: 'card kintro' },
+    el('div', { className: 'card-head' }, el('h2', { textContent: title }), el('span', { className: 'badge', textContent: kindWhy() })),
+    el('ul', {}, ...items.map((t) => el('li', { textContent: t }))));
 }
 function applyKind(s) {
   const kind = s.kind || 'android', sig = kind + '|' + (s.caps || []).join() + '|' + (s.keys || []).join();
@@ -282,7 +303,8 @@ function applyKind(s) {
   const keys = kind !== 'android' && s.keys ? new Set(s.keys) : null;
   document.querySelectorAll('[data-needs]').forEach((e) => unsupported(e, !e.dataset.needs.split(' ').every(can)));
   document.querySelectorAll('[data-k]').forEach((b) => unsupported(b, !!keys && !keys.has(b.dataset.k)));
-  if (NATIVE() && ['apps', 'files', 'health'].includes(currentTab)) showTab('remote');
+  document.querySelectorAll('[data-kindintro]').forEach((b) => { b.hidden = !NATIVE(); b.replaceChildren(...NATIVE() ? [kindIntro(b.dataset.kindintro)] : []); });
+  if (currentTab) showTab(currentTab);                                // a tab now greyed shows its card, and back
 }
 
 // ---------- ADB gating + banners ----------

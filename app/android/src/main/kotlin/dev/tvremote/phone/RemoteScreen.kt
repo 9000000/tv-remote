@@ -475,6 +475,7 @@ internal fun MainActivity.bindKey(b: Button, code: Int, held: Drawable) {
     }
     b.setOnTouchListener { v, e ->
         val inside = e.x >= 0 && e.y >= 0 && e.x <= v.width && e.y <= v.height
+        if (b.tag === KIND_OFF) { if (e.actionMasked == MotionEvent.ACTION_UP && inside) kindOff(); return@setOnTouchListener true }
         when (e.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 val go = Runnable {
