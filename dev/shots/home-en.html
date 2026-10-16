@@ -1,0 +1,62 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0}
+body{width:1280px;height:720px;overflow:hidden;background:#0b0d12;font-family:-apple-system,"Helvetica Neue",Roboto,sans-serif;color:#fff;position:relative}
+.hero{position:absolute;inset:0 0 auto 0;height:430px;overflow:hidden;
+ background:radial-gradient(ellipse 60% 70% at 78% 30%,#ffb56b 0%,#e8664a 22%,#7a2c5c 48%,transparent 70%),
+ linear-gradient(180deg,#1a2a55 0%,#3b2a63 45%,#0b0d12 100%)}
+.sun{position:absolute;right:250px;top:70px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,#fff3d6,#ffc27a 60%,rgba(255,170,90,0) 72%)}
+.mt{position:absolute;bottom:0;left:0;right:0;height:300px}
+.mt i{position:absolute;bottom:0;border-left:solid transparent;border-right:solid transparent}
+.fade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(11,13,18,.92) 0%,rgba(11,13,18,.55) 38%,transparent 65%),linear-gradient(0deg,#0b0d12 0%,transparent 22%)}
+.top{position:absolute;top:28px;left:56px;right:56px;display:flex;align-items:center;gap:10px;z-index:3}
+.chip{padding:9px 20px;border-radius:22px;font-size:17px;color:#d8dbe6}
+.chip.on{background:#e8eaf0;color:#111;font-weight:600}
+.top .r{margin-left:auto;display:flex;gap:16px;align-items:center;font-size:20px;color:#d8dbe6}
+.av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#6ee7b7,#3b82f6)}
+.info{position:absolute;left:56px;top:150px;z-index:3;width:520px}
+.tag{font-size:14px;letter-spacing:.12em;color:#ffcf9a;font-weight:700}
+.title{font-size:54px;font-weight:800;line-height:1.05;margin:10px 0 12px;letter-spacing:-.01em}
+.meta{font-size:16px;color:#c7cbd8}
+.btns{display:flex;gap:12px;margin-top:20px}
+.b{padding:11px 22px;border-radius:10px;background:rgba(255,255,255,.16);font-size:16px;font-weight:600}
+.b.p{background:#fff;color:#111}
+.dots{position:absolute;left:56px;top:398px;display:flex;gap:6px;z-index:3}.dots i{width:8px;height:8px;border-radius:4px;background:rgba(255,255,255,.35)}.dots i:first-child{width:24px;background:#fff}
+.row{position:absolute;left:56px;right:0;z-index:3}
+.row h4{font-size:19px;font-weight:600;color:#e6e8ef;margin-bottom:12px}
+.apps{top:424px}.tiles{display:flex;gap:18px}
+.app{width:150px;height:84px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:9px;font-size:17px;font-weight:700;color:#fff}
+.app.f{outline:4px solid #fff;outline-offset:3px;transform:scale(1.06)}
+.app span{font-size:26px}
+.cont{top:566px}
+.th{width:200px;height:112px;border-radius:12px;position:relative;overflow:hidden;flex:none}
+.th b{position:absolute;left:12px;bottom:12px;font-size:15px}
+.th u{position:absolute;left:0;bottom:0;height:4px;background:#ff5a4e}
+</style></head><body>
+<div class="hero"><div class="sun"></div>
+<div class="mt">
+<i style="left:520px;border-width:0 260px 230px;border-bottom-color:#3d2a5e"></i>
+<i style="left:780px;border-width:0 300px 280px;border-bottom-color:#2e2050"></i>
+<i style="left:980px;border-width:0 220px 190px;border-bottom-color:#241a40"></i>
+<i style="left:640px;border-width:0 200px 140px;border-bottom-color:#140f24"></i>
+</div><div class="fade"></div></div>
+<div class="top"><span class="chip">🔍</span><span class="chip on">For you</span><span class="chip">Movies</span><span class="chip">Shows</span><span class="chip">Apps</span><span class="chip">Library</span><span class="r">⚙︎ <span style="font-size:19px">21:30</span><span class="av"></span></span></div>
+<div class="info"><div class="tag">NEW MOVIE · ADVENTURE</div><div class="title">Journey<br>to the North</div><div class="meta">2026 · 2 h 4 min · 4K HDR</div>
+<div class="btns"><span class="b p">▶ Watch now</span><span class="b">＋ My list</span></div></div>
+<div class="dots"><i></i><i></i><i></i><i></i></div>
+<div class="row apps"><h4>Apps</h4><div class="tiles">
+<div class="app f" style="background:linear-gradient(135deg,#ff5f6d,#c2185b)"><span>▶</span>Vidi</div>
+<div class="app" style="background:linear-gradient(135deg,#1e3c72,#2a5298)"><span>🎬</span>Phim+</div>
+<div class="app" style="background:linear-gradient(135deg,#11998e,#38ef7d)"><span>♪</span>Melo</div>
+<div class="app" style="background:linear-gradient(135deg,#f7971e,#ffd200);color:#3a2500"><span>⚽</span>Sport</div>
+<div class="app" style="background:linear-gradient(135deg,#8e2de2,#4a00e0)"><span>📺</span>LiveTV</div>
+<div class="app" style="background:linear-gradient(135deg,#232526,#414345)"><span>🧩</span>Kids</div>
+<div class="app" style="background:linear-gradient(135deg,#00b4db,#0083b0)"><span>☁︎</span>Cloud</div>
+</div></div>
+<div class="row cont"><h4>Continue watching</h4><div class="tiles">
+<div class="th" style="background:radial-gradient(circle at 70% 30%,#ffd17a,#e0603b 40%,#3a1c4a)"><b>Red sunset</b><u style="width:62%"></u></div>
+<div class="th" style="background:linear-gradient(160deg,#0f2027,#2c5364 60%,#6dd5ed)"><b>Deep sea</b><u style="width:35%"></u></div>
+<div class="th" style="background:radial-gradient(circle at 30% 70%,#a8ff78,#2a9d8f 45%,#16302b)"><b>Green forest</b><u style="width:80%"></u></div>
+<div class="th" style="background:linear-gradient(135deg,#41295a,#2f0743 50%,#ff6a88)"><b>City nights</b><u style="width:20%"></u></div>
+<div class="th" style="background:linear-gradient(135deg,#c79081,#dfa579)"><b>Desert</b><u style="width:50%"></u></div>
+</div></div>
+</body></html>

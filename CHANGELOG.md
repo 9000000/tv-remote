@@ -20,7 +20,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Tắt màn hình, vẫn nghe (trong Hẹn giờ tắt): màn hình TV tắt, nhạc vẫn phát; bấm phím bất kỳ, kể cả remote của TV, là màn hình bật lại.
 - 🔊 Giới hạn âm lượng (tab Tự động): nhiều khoảng giờ, mỗi khoảng một mức tối đa. Tăng quá mức thì TV tự hạ lại và báo trên màn hình. Cần TV Setup mới.
 - Tìm TV: nút mở TV là ▶ như TV đã lưu; nút cạnh ô nhập IP là "Kết nối".
-- Logo app trong Mở ứng dụng hiện lại trên Chrome (trước chỉ hiện chữ cái đầu).
+- Logo app trong Mở ứng dụng hiện lại trên Chrome, Edge, app máy tính trên Windows và màn Quản lý của app điện thoại (trước chỉ hiện chữ cái đầu).
 - Hộp Tailscale cho TV gọn hơn: mã QR, hai bước ngắn và một nút; xong thì hiện IP to rõ.
 - Trang giới thiệu: ảnh xem trước khi gửi link hiện lại; thêm llms.txt, sitemap và mô tả app cho máy tìm kiếm và AI. Máy bật Giảm chuyển động: hoạt cảnh đứng ở ảnh tĩnh, có nút ▶ để xem.
 
@@ -37,7 +37,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Screen off, keep listening (in Sleep timer): the TV's screen goes off while the music plays on; any key, the TV's own remote too, turns it back on.
 - 🔊 Volume limits (Automation tab): several times of day, each with its own highest volume. Turned up past it, the TV turns it back down and says why on screen. Needs the new TV Setup.
 - Find a TV: the button that opens a TV is ▶, as for saved TVs; the one beside the IP box says "Connect".
-- App logos in Open an app show again in Chrome (only the first letter showed before).
+- App logos in Open an app show again in Chrome, Edge, the computer app on Windows and the phone app’s Manage screen (only the first letter showed before).
 - The Tailscale for the TV box is tidier: the QR code, two short steps and one button; when done, the IP shown large.
 - The app's logo has rounded corners everywhere (apps, web, computer app, intro page).
 - Intro page: the link preview picture is back; llms.txt, a sitemap and an app description for search engines and AI. With Reduce motion on, the animations stand on a still with a ▶ button to play them.

@@ -48,7 +48,7 @@ app/desktop/             the computer app on the shared Kotlin core (JVM, no adb
                          .cache/keys). `./gradlew :desktop:packageApp` -> the app for this system + zip / tar.gz (own Java via jlink;
                          data in the user's app data folder); .github/workflows/desktop.yml builds and opens it on Mac, Windows, Linux
 app/shared/tests/        node tests of the page's scripts, and the case tables (fleet_cases.json, tvshell_cases.json, qr_cases.json) the Kotlin tests read
-dev/                     release.sh, gen_icons.py, emu.sh (the two test emulators: create, start, build + install)
+dev/                     release.sh, gen_icons.py, emu.sh (the two test emulators: create, start, build + install), shots.py (docs screenshots)
 ```
 
 ## Rules that matter
@@ -128,6 +128,9 @@ What it takes care of, for doing it by hand:
   `cd app/gradle && ./gradlew :shared:testDebugUnitTest :tv:testDebugUnitTest`. The voice tests exist on both sides
   (`voice.test.js`, `VoiceTest.kt`): keep `js/voice.js` and `Voice.kt` understanding the same sentences.
 - The TV's sound: the Google TV emulator cannot run YouTube; press D-pad keys on the TV during a capture to get click sounds.
+- The intro site's screenshots (`docs/img`: web, Tailscale box, TV web page, phone app, TV Setup, og previews): `dev/shots.py [web ts tv phone tvapp]`,
+  with the computer app built and, for the last three, both emulators running (`dev/emu.sh`). The TV's picture is the made-up home
+  screen `dev/shots/home-<lang>.html`; names are "TV phòng khách" / "Living room TV". Then check each `<img>`'s width/height in `docs/index.html`.
 
 ## Handy facts
 
