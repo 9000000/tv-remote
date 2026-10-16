@@ -591,6 +591,7 @@
 
   // Strings with a variable part. Captured pieces are passed through tr() again where they can be text of ours.
   const RULES = [
+    [/^Đợi (\d+) giây rồi thử lại\.$/, (m) => 'Wait ' + m[1] + ' seconds and try again.'],
     [/^(.+) cần TV Setup (\S+) trở lên \(TV đang có (\S*)\)\. Cập nhật TV Setup\?$/, (m) => tr(m[1]) + ' needs TV Setup ' + m[2] + ' or newer (the TV has ' + m[3] + '). Update TV Setup?'],
     [/^(.+) cần app TV Setup trên TV\. Cài TV Setup\?$/, (m) => tr(m[1]) + ' needs the TV Setup app on the TV. Install TV Setup?'],
     [/^TV Setup trên TV là bản cũ\. Cần bản (\S+) trở lên: mở TV Setup trên TV → Cập nhật, hoặc bấm nút dưới\.$/, (m) => 'TV Setup on the TV is too old. ' + m[1] + ' or newer is needed: open TV Setup on the TV → Update, or press the button below.'],
