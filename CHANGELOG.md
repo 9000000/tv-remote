@@ -16,7 +16,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Đổi ngôn ngữ vẫn giữ TV, tab và vị trí đang xem.
 - App điện thoại: ô nhập chữ trong các hộp thoại to và rõ hơn; nút Chia sẻ link tải app không còn bị hẹp.
 - Logo app bo góc ở mọi nơi (app, web, app máy tính, trang giới thiệu).
-- Trang giới thiệu: ảnh xem trước khi gửi link hiện lại; thêm llms.txt, sitemap và mô tả app cho máy tìm kiếm và AI. Máy bật Giảm chuyển động: hoạt cảnh đứng ở ảnh tĩnh, có nút ▶ Xem hoạt cảnh.
+- Trang giới thiệu: ảnh xem trước khi gửi link hiện lại; thêm llms.txt, sitemap và mô tả app cho máy tìm kiếm và AI. Máy bật Giảm chuyển động: hoạt cảnh đứng ở ảnh tĩnh, có nút ▶ để xem.
 
 **English**
 - ▶️ Now playing: the remote shows what the TV is playing (title, channel or artist); drag the bar to seek, tap to pause or skip. On all three: the phone app, the computer app and the TV web page.
@@ -28,7 +28,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Switching the language keeps the TV, tab and scroll position.
 - Phone app: text boxes in dialogs are bigger and clearer; the Share the download link button is no longer squashed.
 - The app's logo has rounded corners everywhere (apps, web, computer app, intro page).
-- Intro page: the link preview picture is back; llms.txt, a sitemap and an app description for search engines and AI. With Reduce motion on, the animations stand on a still with a ▶ Play the animation button.
+- Intro page: the link preview picture is back; llms.txt, a sitemap and an app description for search engines and AI. With Reduce motion on, the animations stand on a still with a ▶ button to play them.
 
 ## 2.24.2 - 2026-10-15
 

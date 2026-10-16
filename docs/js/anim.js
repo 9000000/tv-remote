@@ -194,9 +194,21 @@
     var b = document.createElement("button");
     b.type = "button";
     b.className = "motion-go";
-    b.innerHTML = '<span class="vi">▶ Xem hoạt cảnh</span><span class="en">▶ Play the animation</span>';
+    b.innerHTML = '<span class="vi">Xem hoạt cảnh</span><span class="en">Play the animation</span>';   // read out; seen as ▶
+    b.title = document.documentElement.lang === "en" ? "Play the animation" : "Xem hoạt cảnh";
     b.addEventListener("click", motion);
     el.insertBefore(b, el.firstChild);
+    var scr = [].slice.call(el.querySelectorAll(".dscr")).sort(function(x, y){ return area(y) - area(x); })[0];
+    function area(e){ return e.offsetWidth * e.offsetHeight; }        // over the biggest screen (the TV), like a paused video
+    function place(){
+      if (!b.isConnected || !scr) return;
+      var e = el.getBoundingClientRect(), r = scr.getBoundingClientRect();
+      b.style.left = (r.left - e.left + r.width / 2) + "px";
+      b.style.top = (r.top - e.top + r.height / 2) + "px";
+    }
+    place();
+    addEventListener("resize", place);
+    if (window.ResizeObserver) new ResizeObserver(place).observe(el);
   }
 
   function define(name, T, parts, build){

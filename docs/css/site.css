@@ -282,5 +282,7 @@ footer a{color:var(--muted)}footer a:hover{color:var(--text)}
 @media (prefers-reduced-motion:reduce){html:not(.motion) .facts.in .fact b.cu{animation:none}}
 /* reduced motion: the stories stand on a still with this button over them (anim.js) */
 .demo,.story{position:relative}
-.motion-go{position:absolute;z-index:5;top:10px;right:10px;padding:8px 14px;border:1px solid rgba(255,255,255,.25);border-radius:999px;background:rgba(10,13,20,.8);color:#fff;font:inherit;font-size:14px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px)}
-.motion-go:hover{background:rgba(40,60,110,.9)}
+.motion-go{position:absolute;z-index:5;top:10px;right:10px;width:64px;height:64px;padding:0;border:1px solid rgba(255,255,255,.35);border-radius:50%;background:rgba(10,13,20,.7);cursor:pointer;backdrop-filter:blur(6px);font-size:0;color:transparent;box-shadow:0 6px 24px rgba(0,0,0,.45)}
+.motion-go[style]{right:auto;transform:translate(-50%,-50%)}
+.motion-go::before{content:"";position:absolute;left:25px;top:20px;border-style:solid;border-width:12px 0 12px 20px;border-color:transparent transparent transparent #fff}
+.motion-go:hover{background:rgba(59,110,245,.85)}
