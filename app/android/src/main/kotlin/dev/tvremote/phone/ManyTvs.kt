@@ -27,7 +27,8 @@ private const val PARALLEL = 3                                        // an APK 
 /** One TV in a run: what its line shows, read by the ticker on the UI thread. */
 private class Part(val ip: String, val line: TextView) {
     @Volatile var step = ""
-    @Volatile var state = 0                                           // 0 working, 1 done, 2 failed
+    @Volatile var state = 0                                           // 0 working, 1 done, 2 failed, 3 stopped by the person
+    val cancel = dev.tvremote.core.Cancel()                           // the Stop button of the run reaches every TV through this
     @Volatile var link: AdbLink? = null
     val job = JSONObject()                                            // Manage.install puts the copy's progress here
 }
@@ -95,8 +96,8 @@ internal fun MainActivity.fleetApk(uri: Uri) {
             if (isFinishing) return@post
             if (!ok) { toast(t("Không đọc được tệp này.", "Could not read this file.")); return@post }
             fleetPick(t("Cài $name lên TV nào?", "Install $name on which TVs?")) { ips ->
-                fleetRun(t("Cài ", "Install ") + name, ips) { link, p ->
-                    FileInputStream(apk).use { Manage(link, null, cacheDir).install(it, apk.length(), p.job) }
+                fleetRun(t("Cài ", "Install ") + name, ips, stoppable = true) { link, p ->
+                    FileInputStream(apk).use { Manage(link, null, cacheDir).install(it, apk.length(), p.job, p.cancel) }
                     t("đã cài", "installed")
                 }
             }
@@ -171,7 +172,7 @@ private fun MainActivity.fleetUninstall(ips: List<String>) {
 }
 
 /** One line per TV under its name, until every TV is done; the work goes on if the box is closed. */
-private fun MainActivity.fleetRun(title: String, ips: List<String>, work: (AdbLink, Part) -> String) {
+private fun MainActivity.fleetRun(title: String, ips: List<String>, stoppable: Boolean = false, work: (AdbLink, Part) -> String) {
     val list = col()
     list.setPadding(dp(20), dp(8), dp(20), dp(8))
     val parts = ips.map { ip ->
@@ -184,9 +185,14 @@ private fun MainActivity.fleetRun(title: String, ips: List<String>, work: (AdbLi
     }
     val sv = ScrollView(this)
     sv.addView(list)
-    val box = AlertDialog.Builder(this).setTitle(title).setView(sv).setPositiveButton(t("Đóng", "Close"), null).show()
+    val box = AlertDialog.Builder(this).setTitle(title).setView(sv).setPositiveButton(t("Đóng", "Close"), null)
+        .setNeutralButton(t("■ Dừng", "■ Stop"), null).show()
+    val stopAll = box.getButton(AlertDialog.BUTTON_NEUTRAL)            // set after show(): the dialog must stay open while the TVs wind down
+    if (!stoppable) stopAll.visibility = android.view.View.GONE   // a removal or a restart has no half way to stop at
+    stopAll.setOnClickListener { parts.forEach { it.cancel.stop() }; stopAll.isEnabled = false }
     val pool = Executors.newFixedThreadPool(PARALLEL)
     for (p in parts) pool.execute {
+        if (p.cancel.stopped) { p.step = "■ " + t("Đã dừng", "Stopped"); p.state = 3; return@execute }   // never started
         p.step = t("đang kết nối", "connecting")
         val link = AdbLink(filesDir, route[p.ip] ?: p.ip)
         p.link = link
@@ -196,8 +202,8 @@ private fun MainActivity.fleetRun(title: String, ips: List<String>, work: (AdbLi
             p.step = "✓ " + work(link, p)
             p.state = 1
         } catch (e: Exception) {
-            p.step = "✗ " + (if (e is Unreachable) e.message else Errors.say(e, VI))
-            p.state = 2
+            if (p.cancel.stopped) { p.step = "■ " + t("Đã dừng", "Stopped"); p.state = 3 }
+            else { p.step = "✗ " + (if (e is Unreachable) e.message else Errors.say(e, VI)); p.state = 2 }
         } finally { link.close() }
     }
     pool.shutdown()
@@ -216,7 +222,8 @@ private fun MainActivity.fleetRun(title: String, ips: List<String>, work: (AdbLi
             }
             if (parts.all { it.state != 0 }) {
                 val bad = parts.count { it.state == 2 }
-                box.setTitle(if (bad == 0) t("Xong trên cả ${parts.size} TV", "Done on all ${parts.size} TVs")
+                stopAll.visibility = android.view.View.GONE
+                box.setTitle(if (parts.any { it.state == 3 }) t("Đã dừng", "Stopped") else if (bad == 0) t("Xong trên cả ${parts.size} TV", "Done on all ${parts.size} TVs")
                     else t("Xong: ${parts.size - bad} TV ✓, $bad TV ✗", "Done: ${parts.size - bad} TVs ✓, $bad TVs ✗"))
             } else if (!isFinishing) ui.postDelayed(this, 500)
         }

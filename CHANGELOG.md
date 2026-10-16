@@ -4,6 +4,16 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- Gửi tệp / cài APK có nút **■ Dừng** thật: dừng cả phía máy chủ (ngắt việc chép, ngắt `pm install`, ngắt tải về), xóa phần tệp gửi dở trên TV và tệp tạm; trang ghi "Đã dừng" chứ không báo lỗi. Cũng có ở "Nhiều TV cùng lúc" (máy tính và điện thoại) và khi 📱 phát tệp từ điện thoại lên TV.
+- Trước khi nhận tệp, TV được hỏi còn trống bao nhiêu; không đủ thì từ chối ngay, chưa gửi byte nào: "TV chỉ còn trống 1.2 GB, không đủ chép tệp 3.4 GB... Xóa bớt app hoặc tệp rồi thử lại." APK cần chỗ cho cả bản chép lẫn app sau khi cài (gấp đôi) và một phần dự phòng.
+
+**English**
+- Sending a file or installing an APK has a real **■ Stop**: it stops the server side too (the copy, `pm install`, the download), deletes the half-sent file on the TV and the temp files, and the page says "Stopped" rather than showing an error. Also in "Several TVs at once" (computer and phone) and when the phone app plays a file on the TV.
+- Before a file is accepted the TV is asked how much room it has; if it is not enough the file is refused before a byte is sent: "The TV has only 1.2 GB free, not enough for this 3.4 GB file... Remove some apps or files, then try again." An APK needs room for the copy and the installed app (twice its size) plus a reserve.
+
 ## 0.4.1 - 2026-10-16
 
 Web 0.4.1 · app điện thoại 0.4.1 · app TV 0.4.1

@@ -40,14 +40,23 @@ async function fleetAsk(what) {
   return await ask(tr(what) + '\n\n' + tvs.map((t) => '• ' + (t.name || t.host)).join('\n')) ? tvs : null;
 }
 // one line per TV under its name, until every TV is done
+let fleetStop = null;                                                  // what ■ Dừng does now: abort the upload, or tell the computer to stop the install on every TV
+$('#fleetstop').addEventListener('click', () => { if (fleetStop) fleetStop(); $('#fleetstop').disabled = true; });
+const fleetStopShow = (fn) => { fleetStop = fn; $('#fleetstop').hidden = !fn; $('#fleetstop').disabled = false; };
 async function fleetFollow(j) {
+  const id = j.id;
+  if (/^install/.test(j.title)) fleetStopShow(() => api('/api/fleet/cancel', { id }, true));   // only an install has a half way to stop at
+  try { await fleetFollowing(j); } finally { fleetStopShow(null); }
+}
+async function fleetFollowing(j) {
   while (j && j.tvs) {
     for (const [host, p] of Object.entries(j.tvs)) {
       const s = fleetRow[host]; if (!s) continue;
       s.className = 'fleetstep ' + p.status;
-      s.textContent = p.status === 'error' ? '✗ ' + (/^adb:/.test(p.msg) ? FLEET_ADB[p.msg.slice(4)] || p.msg : friendly(p.msg))
+      s.textContent = p.status === 'cancelled' ? '■ Đã dừng' : p.status === 'error' ? '✗ ' + (/^adb:/.test(p.msg) ? FLEET_ADB[p.msg.slice(4)] || p.msg : friendly(p.msg))
         : (FLEET_STEP[p.msg] || p.msg) + (p.status === 'running' && p.pct ? ' ' + p.pct + '%' : '');
     }
+    if (j.status === 'cancelled') { toast('Đã dừng'); return; }   // every part says "Đã dừng" above
     if (j.status === 'done') {
       const parts = Object.values(j.tvs), bad = parts.filter((p) => p.status === 'error').length;
       toast(bad ? 'Xong: ' + (parts.length - bad) + ' TV ✓, ' + bad + ' TV ✗' : 'Xong trên cả ' + parts.length + ' TV');
@@ -67,11 +76,12 @@ $('#fleetapk input').addEventListener('change', async (e) => {
   xhr.upload.onprogress = (ev) => { if (ev.lengthComputable) lbl.dataset.busy = '⏳ ' + Math.round(ev.loaded * 100 / ev.total) + '%'; };
   xhr.onloadend = () => {
     delete lbl.dataset.busy;
+    if (xhr.status === 0) { fleetStopShow(null); return; }               // aborted by ■ Dừng (the computer drops the copy it had)
     let r = {}; try { r = JSON.parse(xhr.responseText); } catch {}
     if (xhr.status !== 200) { toast('Lỗi: ' + friendly(r.error || xhr.statusText || 'không gọi được server')); return; }
     fleetFollow(r);
   };
-  lbl.dataset.busy = '⏳'; xhr.send(f);
+  lbl.dataset.busy = '⏳'; fleetStopShow(() => { xhr.abort(); toast('Đã dừng'); }); xhr.send(f);
 });
 async function fleetDo(action, pkg, what) {
   const tvs = await fleetAsk(what); if (!tvs) return;

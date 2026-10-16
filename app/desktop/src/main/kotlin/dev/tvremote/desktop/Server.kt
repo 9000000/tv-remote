@@ -160,6 +160,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
             return Response.error(400, "unsupported: " + Remote.Kind.name(s.kind))
         if (!post) return null
         if (r.path == "/api/fleet/install") return fleetInstall(r, s)
+        if (r.path == "/api/fleet/cancel") { fleets.stop(r.json().optString("id")); return Response.json(org.json.JSONObject().put("ok", true)) }
         if (r.path !in OURS) return null                              // Manage's: uploads among them, whose body is not JSON
         val d = r.json()
         return when (r.path) {
@@ -501,7 +502,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
             "/api/update")
         /** What the page reads from an LG or Samsung TV besides [OURS]. */
         val NATIVE_TOO = setOf("/api/state", "/api/about", "/api/wirelog", "/api/update", "/api/tvs", "/api/discover", "/api/setup/status", "/api/scenes", "/api/apps", "/api/app/icon", "/api/app/meta", "/api/setup/need",
-            "/api/fleet", "/api/fleet/job", "/api/fleet/install")
+            "/api/fleet", "/api/fleet/job", "/api/fleet/install", "/api/fleet/cancel")
         const val HD = 5                                              // Tv.QUALITY's sharpest level, the page's "Nét nhất"
         val IP = Regex("((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)")   // IPv4: what ADB and the TV's page links are written for
         val PRIVATE = Regex("(10\\.|192\\.168\\.|172\\.(1[6-9]|2\\d|3[01])\\.)[0-9.]+")
