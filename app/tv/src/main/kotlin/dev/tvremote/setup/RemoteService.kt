@@ -114,8 +114,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     @Volatile private var lastSeen = 0L                               // when a paired browser last asked for anything but a poll: updates wait for it
     @Volatile private var resting = false                             // the input session is closed on purpose: nobody is using the remote
     private var lastPairStart = 0L
-    private var lastShown = 0L                                        // when the code screen last went up on the TV
-    private var asked = 0                                             // code screens shown since a browser last got in: the more, the longer the wait
+    private val backoff = PairBackoff()                               // per peer: code screens shown that nobody finished
     @Volatile private var wrong = 0                                  // wrong codes since the last pairing or lockout
     @Volatile private var lockedUntil = 0L
     private var guard: Guard? = null
@@ -329,7 +328,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         if (!host.matches(Regex("[0-9.]+|localhost|\\[[0-9a-fA-F:]+\\]"))) return HttpServer.Response.error(403, "open this page by the TV's IP address")
 
         page.serve(r.path)?.let { return it }                        // the page and its scripts need no pairing: they hold no secrets
-        if (r.path == "/api/pair/start" && r.method == "POST") return pairStart()
+        if (r.path == "/api/pair/start" && r.method == "POST") return pairStart(r.peer)
         if (r.path == "/api/pair/finish" && r.method == "POST") return pairFinish(r)
         // a pass made over TLS is only taken over TLS; the Secure cookie never comes over HTTP anyway
         var token = if (r.tls) r.cookie(COOKIE_TLS) else ""
@@ -494,7 +493,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
 
     // ---------------------------------------------------------------- pairing
     @Synchronized @Throws(Exception::class)
-    private fun pairStart(): HttpServer.Response {
+    private fun pairStart(peer: String): HttpServer.Response {
         val now = System.currentTimeMillis()
         if (now - lastPairStart < 3000) return HttpServer.Response.error(429, "wait a moment")
         // asking for code after code would give five guesses each: wrong guesses count across codes, and too many lock it
@@ -502,8 +501,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         // /api/pair/start needs no pass (it is how a pass is got), so anyone on the network can call it: never pile a second
         // code screen on the first, and after a few that nobody finished, wait longer and longer (30 s, 1, 2, 4, 5 min)
         if (pairingCode() != null && PairActivity.showing) return HttpServer.Response.json(JSONObject().put("ok", true).put("seconds", ((codeUntil - now) / 1000).toInt()))
-        val wait = if (asked < 3) 0L else minOf(30000L shl (asked - 3).coerceAtMost(4), 5 * 60000L)
-        if (now - lastShown < wait) return HttpServer.Response.error(429, "Đợi " + ((wait - (now - lastShown)) / 1000 + 1) + " giây rồi thử lại.")
+        val wait = backoff.wait(peer, now)
+        if (wait > 0) return HttpServer.Response.error(429, "Đợi " + (wait / 1000 + 1) + " giây rồi thử lại.")
         lastPairStart = now
         if (pairingCode() == null || codeUntil - now < 30000) {          // the code on the TV stays the same when asked again
             code = String.format("%06d", random.nextInt(1000000))
@@ -519,8 +518,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         if (!shown) {
             try { startActivity(Intent(this, PairActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (ignored: Exception) { }
         }
-        lastShown = now
-        asked++
+        backoff.shown(peer, now)
         return HttpServer.Response.json(JSONObject().put("ok", true).put("seconds", 120))
     }
 
@@ -535,7 +533,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         }
         code = null
         wrong = 0
-        asked = 0                                                     // somebody really paired: the next one starts fresh
+        backoff.paired(r.peer)                                        // somebody really paired: the next one starts fresh
         val token = Paired.add(this, "web", Paired.deviceName(r.headers["user-agent"] ?: ""), r.peer, r.tls)
         val ok = ok()
         ok.headers["Set-Cookie"] = cookie(token, r.tls)
