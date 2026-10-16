@@ -29,7 +29,7 @@ function appIcon(pkg) {
   letter('');
   box.fill = (m) => {
     if (!m.icon) { letter(m.label); return; }
-    const img = el('img', { src: '/api/app/icon?pkg=' + encodeURIComponent(pkg), alt: '', loading: 'lazy' });
+    const img = el('img', { src: '/api/app/icon?pkg=' + encodeURIComponent(pkg), alt: '' });   // not lazy: hidden until it loads, a lazy image never would (Chrome)
     img.onerror = () => letter(m.label);
     img.onload = () => {
       box.replaceChildren(img); box.className = 'appicon'; box.style.background = m.bg || '';

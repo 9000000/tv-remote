@@ -207,10 +207,10 @@
   /* app icons */
   .appicon { width:44px; height:44px; border-radius:11px; background:var(--btn); flex:none; display:flex; align-items:center; justify-content:center; overflow:hidden; font-weight:700; color:var(--muted); font-size:18px; }
   .appicon img { width:100%; height:100%; object-fit:contain; display:block; } .appicon.adaptive img { transform:scale(1.45); } .appicon.adaptive:not([style]) { background:#30343b; }
-  .tiles { display:grid; grid-template-columns:repeat(auto-fill,minmax(76px,1fr)); gap:6px; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:6px; }
   .tile { display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 4px 8px; background:transparent; min-height:0; border-radius:12px; font-size:12px; line-height:1.2; }
   .tile .appicon { width:52px; height:52px; border-radius:13px; }
-  .appicon.wide { width:78px; border-radius:8px; } .tile .appicon.wide { width:92px; border-radius:9px; } .appicon.wide img { object-fit:cover; } html[data-core=tv] .tiles { grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); }   /* the TV's own wide tile for the app */
+  .appicon.wide { width:78px; border-radius:8px; } .tile .appicon.wide { width:92px; border-radius:9px; } .appicon.wide img { object-fit:cover; }   /* the TV's own wide tile for the app: .tiles columns fit it */
   .tile span { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center; overflow-wrap:anywhere; }
 
   .list { display:flex; flex-direction:column; margin-top:8px; }
