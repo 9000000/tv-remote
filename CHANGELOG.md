@@ -4,7 +4,9 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
-## Unreleased
+## 0.4.0 - 2026-10-16
+
+Web 0.4.0 · app điện thoại 0.4.0 · app TV 0.4.0
 
 **Tiếng Việt**
 - Cài đặt: các phần thẳng một lề trái; nút Theo máy / Sáng / Tối có icon. 📱 App điện thoại: icon nét thay emoji trong Cài đặt, Giới thiệu và các nút; icon trên nền xanh luôn trắng (nút ẩn hình, 🎧, Thêm phím). Chữ xám, xanh, xanh lá đậm hơn trên giao diện sáng cho dễ đọc.
