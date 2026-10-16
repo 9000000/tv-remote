@@ -12,8 +12,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Tab Tệp: đổi tên, xóa, tải về nằm trong nút ⋯ (mỗi tệp một dòng trên điện thoại); các thư mục nhanh nằm một dòng vuốt ngang, đường dẫn gọn.
 - Sức khỏe → Lịch sử: bảng dưới biểu đồ hiện sẵn số liệu mới nhất, chạm vào biểu đồ để xem lúc khác.
 - 📱 🎧 Nghe tiếng TV chạy trên kết nối riêng: đưa app xuống nền, mở lại, đổi chất lượng hình không còn làm tiếng ngắt vài giây; hình không còn làm nghẽn tiếng khi mạng chậm (4G, Tailscale). Qua Tailscale tiếng giữ sẵn 0,4 giây ngay từ đầu (trễ hơn hình một chút, đổi lại bớt giật).
-
 - Thiết lập → Lọc DNS → Tự nhập: gõ IP quen thuộc (8.8.8.8, 1.1.1.1, 9.9.9.9, AdGuard) cũng được, app đổi sang tên máy chủ tương ứng, vì Android chỉ nhận tên.
+
 **English**
 - 📱 Phone app: copying a file, installing an app or updating TV Setup now shows in the notification shade with its percentage (Android 13+ hid it before, the app never having asked for notifications; it asks as the work starts).
 - Health → History: the legend under the chart is compact again. A TV whose clock once jumped (the FPT Play box, say) records the open app again; what was recorded before has no app names.
