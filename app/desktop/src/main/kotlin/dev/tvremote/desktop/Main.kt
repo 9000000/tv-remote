@@ -30,7 +30,7 @@ fun main(args: Array<String>) {
     val data = if (packaged) App.data().also { it.mkdirs() } else repo
     if (packaged) File(data, "server.log").let { System.setOut(PrintStream(it.outputStream(), true, Charsets.UTF_8)); System.setErr(System.out) }   // nobody sees a terminal
     val url = "http://127.0.0.1:$port"
-    val passFile = File(if (packaged) data else File(repo, ".cache/desktop").also { it.mkdirs() }, "pass")
+    val passFile = File(if (packaged) data else File(repo, ".cache/desktop").also { it.mkdirs() }, if (port == 8765) "pass" else "pass-$port")   // a test server on its own port keeps its own
     if (packaged && App.answers(url, Pass.read(passFile))) {          // already running (Windows, Linux: opened twice): one more window onto it
         val link = "$url/?k=" + Pass.read(passFile)
         if (!(window && Window.show(repo, link, Pass.read(passFile)))) App.browse(link)
@@ -50,6 +50,7 @@ fun main(args: Array<String>) {
             "Port $port is used by another program, so TV Remote cannot start. Quit that program and open TV Remote again.")
         return
     }
+    pass.save()
     val link = pass.link("http://127.0.0.1:$bound")
     println("Remote: $link  (TV ${(first ?: saved.current).ifEmpty { "not chosen yet" }})")
     Runtime.getRuntime().addShutdownHook(Thread { http.stop(); server.close() })   // Ctrl+C, logging out: the TV's sessions end too

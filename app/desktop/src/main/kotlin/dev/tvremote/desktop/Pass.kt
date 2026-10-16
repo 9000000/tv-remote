@@ -13,19 +13,18 @@ import java.security.SecureRandom
  * opened twice) reads it from [file] to open one more window. TVR_PASS fixes it, for test servers and dev/shots.py.
  */
 class Pass(private val file: File) {
-    val key: String = make()
+    val key: String = System.getenv("TVR_PASS")?.takeIf { it.length >= 8 }
+        ?: ByteArray(18).also { SecureRandom().nextBytes(it) }.joinToString("") { "%02x".format(it) }
 
-    private fun make(): String {
-        val k = System.getenv("TVR_PASS")?.takeIf { it.length >= 8 }
-            ?: ByteArray(18).also { SecureRandom().nextBytes(it) }.joinToString("") { "%02x".format(it) }
+    /** Written once the port is ours: a start that then finds the port taken must not leave the running app's key unreadable. */
+    fun save() {
         try {
             file.delete()
             file.createNewFile()
             file.setReadable(false, false); file.setReadable(true, true)   // this user only (Windows: the profile is already theirs)
             file.setWritable(false, false); file.setWritable(true, true)
-            file.writeText(k)
+            file.writeText(key)
         } catch (e: Exception) { println("pass: $e") }               // only the second window needs it
-        return k
     }
 
     fun link(base: String) = "$base/?k=$key"
