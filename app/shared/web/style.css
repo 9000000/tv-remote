@@ -295,9 +295,22 @@
   .allowbox button { display:block; width:100%; max-width:280px; margin:22px auto 0; }
 
   /* Tailscale: one button, then a sign-in link (and its QR code) for a browser that is signed in to Tailscale */
-  .tsbox p { margin:0; font-size:14px; line-height:1.55; } .tsbox ol { margin:0; padding-left:20px; font-size:14px; line-height:1.6; }
-  .tsbox .go { display:flex; align-items:center; justify-content:center; gap:8px; min-height:52px; padding:0 18px; border-radius:12px; text-decoration:none; font-size:16px; }
-  .tsbox .qr { max-width:220px; margin:0 auto; } .tsbox .wait::before { content:"⏳ "; } .tsbox .okline { color:var(--ok); font-weight:700; font-size:16px; }
+  .tsbox p { margin:0; font-size:14px; line-height:1.55; }
+  .tsbox .go { display:flex; align-items:center; justify-content:center; gap:8px; min-height:50px; padding:0 18px; border-radius:12px; text-decoration:none; font-size:16px; font-weight:700; }
+  .tslogin { display:flex; gap:20px; align-items:center; }
+  .tsqr { flex:none; display:flex; flex-direction:column; align-items:center; gap:8px; font-size:12.5px; color:var(--muted); }
+  .tsqr svg { display:block; padding:8px; background:#fff; border-radius:16px; }
+  .tsside { flex:1; min-width:0; display:flex; flex-direction:column; gap:16px; }
+  .tssteps { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:12px; }
+  .tssteps li { display:flex; align-items:center; gap:12px; font-size:15.5px; font-weight:600; }
+  .tssteps b { flex:none; width:30px; height:30px; border-radius:50%; display:grid; place-items:center; background:color-mix(in srgb, var(--accent) 18%, transparent); color:var(--accent); font-size:14px; }
+  .tsbox .tswait { display:flex; align-items:center; padding:11px 14px; border-radius:12px; background:var(--btn); color:var(--muted); font-size:13.5px; }
+  .tsbox .tsnote { font-size:13px; } .tsbox .bar { margin-top:0; }
+  .tsdone { display:flex; flex-direction:column; align-items:center; gap:6px; padding:6px 0 2px; text-align:center; }
+  .tsok { width:56px; height:56px; border-radius:50%; display:grid; place-items:center; background:var(--ok-bg); color:var(--ok); font-size:28px; font-weight:800; margin-bottom:4px; }
+  .tsdone b { font-size:17px; } .tsdone code { font-size:15px; padding:3px 10px; border-radius:8px; background:var(--btn); }
+  .tsbox .tstip { padding:10px 14px; border-radius:12px; background:var(--warn-bg); font-size:13.5px; }
+  @media (max-width:480px) { .tslogin { flex-direction:column; align-items:stretch; } .tsqr { align-self:center; } }
   #tscard .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
 
   /* 🎧 the TV's sound here */

@@ -196,14 +196,21 @@
     'Cài và đăng nhập Tailscale': 'Install and sign in to Tailscale', 'Bật và đăng nhập Tailscale': 'Switch on and sign in to Tailscale', 'Tailscale cho TV': 'Tailscale for the TV', 'Tailscale (để điều khiển khi không ở nhà)': 'Tailscale (to control the TV away from home)',
     'Trang này cài Tailscale lên TV, bạn chỉ cần bấm “Connect”.': 'This installs Tailscale on the TV; you only press “Connect”.',
     'Đang tải Tailscale bản chính thức (khoảng 100 MB)...': 'Downloading the official Tailscale (about 100 MB)...', 'Đang cài Tailscale lên TV...': 'Installing Tailscale on the TV...', 'Đang bật Tailscale trên TV...': 'Turning on Tailscale on the TV...',
-    'Đang bắt đầu...': 'Starting...', 'Đang làm...': 'Working...', 'Có thể đóng hộp này: TV vẫn làm tiếp.': 'You can close this box: the TV carries on.',
-    'mất kết nối tới TV': 'lost the connection to the TV', 'Còn một bước: cho TV vào tài khoản Tailscale của bạn.': 'One step left: let the TV into your Tailscale account.',
-    'Mở trang đăng nhập Tailscale': 'Open the Tailscale sign-in page', 'Đăng nhập Tailscale (chưa có tài khoản thì tạo miễn phí bằng Google, Microsoft hoặc GitHub).': 'Sign in to Tailscale (no account yet? Create one for free with Google, Microsoft or GitHub).',
-    'Bấm “Connect” để thêm TV.': 'Press “Connect” to add the TV.', 'Hoặc quét mã này bằng điện thoại đã đăng nhập Tailscale. TV cũng đang hiện đúng mã này.': 'Or scan this code with a phone signed in to Tailscale. The TV shows the same code.',
-    'Đang chờ TV vào Tailscale... Trang này tự nhận ra.': 'Waiting for the TV to join Tailscale... This page notices by itself.',
-    'Bấm “Lưu” ở bước cuối để từ nay nối tới TV qua IP này, dùng được cả khi không ở nhà.': 'Press “Save” in the last step to reach the TV through this IP from now on, also away from home.',
-    'Ở ngoài nhà: bật Tailscale trên điện thoại hoặc máy tính (cùng tài khoản), rồi mở TV bằng IP này.': 'Away from home: turn on Tailscale on the phone or computer (same account), then open the TV by this IP.',
-    'Trang quản trị Tailscale': 'Tailscale admin console', 'TV đã vào Tailscale': 'The TV is in Tailscale', 'Xong': 'Done',
+    'Đang bắt đầu...': 'Starting...', 'Đang làm...': 'Working...', 
+    'mất kết nối tới TV': 'lost the connection to the TV', 
+    
+    
+    
+    
+    
+    'Trang quản trị Tailscale': 'Tailscale admin console', 'Đóng được: TV vẫn làm tiếp.': 'You can close this: the TV carries on.',
+    'Quét bằng điện thoại đã đăng nhập Tailscale. TV cũng đang hiện đúng mã này.': 'Scan with a phone signed in to Tailscale. The TV shows the same code.', 'Quét bằng điện thoại': 'Scan with a phone',
+    'Đăng nhập Tailscale': 'Sign in to Tailscale', 'Chưa có tài khoản thì tạo miễn phí bằng Google, Microsoft hoặc GitHub.': 'No account yet? Create one for free with Google, Microsoft or GitHub.',
+    'Bấm “Connect”': 'Press “Connect”', 'Tailscale hỏi có thêm TV này vào tài khoản không.': 'Tailscale asks whether to add this TV to the account.',
+    'Mở trang đăng nhập': 'Open the sign-in page', 'Đang chờ TV vào Tailscale...': 'Waiting for the TV to join Tailscale...',
+    'Bấm “Lưu” ở bước cuối để dùng IP này cả khi không ở nhà.': 'Press “Save” in the last step to use this IP away from home too.',
+    'Ở ngoài nhà: bật Tailscale trên máy này (cùng tài khoản) rồi mở TV bằng IP này.': 'Away from home: turn on Tailscale on this device (same account), then open the TV by this IP.',
+    '💡 Tắt “key expiry” cho TV để không bị đăng xuất sau 180 ngày.': '💡 Turn off “key expiry” for the TV so it is not signed out after 180 days.', '↗ Trang quản trị': '↗ Admin console', 'TV đã vào Tailscale': 'The TV is in Tailscale', 'Xong': 'Done',
     'Tailscale đã cài nhưng chưa đăng nhập hoặc đang tắt. Bấm nút dưới để bật và đăng nhập.': 'Tailscale is installed but signed out or switched off. Press the button below to switch it on and sign in.',
     'Tối ưu TV': 'Optimize TV', 'Một lần bấm, chạy lại bao nhiêu lần cũng được, không gỡ cài đặt gì:': 'One press, safe to run again, nothing is uninstalled:',
     'Tắt hiệu ứng chuyển cảnh cho TV nhanh hơn': 'Turn off transition animations so the TV feels faster',

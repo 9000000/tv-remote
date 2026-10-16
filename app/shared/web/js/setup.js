@@ -262,8 +262,8 @@ const TS_STEP = { download: 'Đang tải Tailscale bản chính thức (khoảng
 let tsGen = 0;
 function tsShow(...kids) { $('#tsbody').replaceChildren(...kids.filter(Boolean)); if (!$('#ts').open) $('#ts').showModal(); }
 async function tailscaleGo() {
-  const gen = ++tsGen, msg = el('p', { className: 'wait', textContent: 'Đang bắt đầu...' }), bar = el('div', { className: 'bar' }, el('i'));
-  tsShow(msg, bar, el('p', { className: 'muted', textContent: 'Có thể đóng hộp này: TV vẫn làm tiếp.' }));
+  const gen = ++tsGen, msg = el('span', { textContent: 'Đang bắt đầu...' }), bar = el('div', { className: 'bar' }, el('i'));
+  tsShow(el('p', { className: 'tswait' }, el('span', { className: 'minispin' }), msg), bar, el('p', { className: 'muted tsnote', textContent: 'Đóng được: TV vẫn làm tiếp.' }));
   let j = await api('/api/tailscale/start', {}), misses = 0;
   while (j && j.status === 'running' && misses < 10) {
     const k = Object.keys(TS_STEP).find((w) => (j.msg || '').startsWith(w)); msg.textContent = k ? TS_STEP[k] : 'Đang làm...'; bar.firstChild.style.width = (j.pct || 0) + '%';
@@ -273,21 +273,27 @@ async function tailscaleGo() {
   if (gen !== tsGen) return;
   if (!j || j.status !== 'done') return tsShow(el('p', { textContent: 'Không làm được: ' + (j && j.status === 'error' ? friendly(j.msg) : 'mất kết nối tới TV') }), row(act('↻ Thử lại', async () => tailscaleGo(), 'primary')));
   if (j.ip) return tsDone(j.ip);
-  const qr = qrSvg(j.url, 200), wait = el('p', { className: 'muted wait', textContent: 'Đang chờ TV vào Tailscale... Trang này tự nhận ra.' });
-  tsShow(el('p', { textContent: 'Còn một bước: cho TV vào tài khoản Tailscale của bạn.' }),
-    el('a', { className: 'go primary', href: j.url, target: '_blank', rel: 'noopener', textContent: '🔑 Mở trang đăng nhập Tailscale' }),
-    el('ol', {}, el('li', { textContent: 'Đăng nhập Tailscale (chưa có tài khoản thì tạo miễn phí bằng Google, Microsoft hoặc GitHub).' }), el('li', { textContent: 'Bấm “Connect” để thêm TV.' })),
-    qr ? el('div', { className: 'qr' }, qr, el('span', { className: 'muted', textContent: 'Hoặc quét mã này bằng điện thoại đã đăng nhập Tailscale. TV cũng đang hiện đúng mã này.' })) : null, wait);
+  // the QR code and two short steps; what each step means in full sits in its tooltip
+  const qr = qrSvg(j.url, 168), step = (n, text, tip) => el('li', { title: tip }, el('b', { textContent: n }), el('span', { textContent: text }));
+  tsShow(el('div', { className: 'tslogin' },
+    qr ? el('div', { className: 'tsqr', title: 'Quét bằng điện thoại đã đăng nhập Tailscale. TV cũng đang hiện đúng mã này.' }, qr, el('span', { textContent: 'Quét bằng điện thoại' })) : null,
+    el('div', { className: 'tsside' },
+      el('ol', { className: 'tssteps' },
+        step('1', 'Đăng nhập Tailscale', 'Chưa có tài khoản thì tạo miễn phí bằng Google, Microsoft hoặc GitHub.'),
+        step('2', 'Bấm “Connect”', 'Tailscale hỏi có thêm TV này vào tài khoản không.')),
+      el('a', { className: 'go primary', href: j.url, target: '_blank', rel: 'noopener', textContent: 'Mở trang đăng nhập' }))),
+    el('p', { className: 'tswait' }, el('span', { className: 'minispin' }), el('span', { textContent: 'Đang chờ TV vào Tailscale...' })));
   for (;;) {
     await sleep(2500); if (gen !== tsGen || !$('#ts').open) return;
     const s = await api('/api/tailscale', null, true); if (s && s.ip) return tsDone(s.ip);
   }
 }
 function tsDone(ip) {
-  tsShow(el('p', { className: 'okline', textContent: '✓ TV đã vào Tailscale · ' + ip }),
-    el('p', { textContent: CORE === 'pc' ? 'Bấm “Lưu” ở bước cuối để từ nay nối tới TV qua IP này, dùng được cả khi không ở nhà.' : 'Ở ngoài nhà: bật Tailscale trên điện thoại hoặc máy tính (cùng tài khoản), rồi mở TV bằng IP này.' }),
-    el('p', { className: 'muted', textContent: 'Nên làm thêm: trong trang quản trị Tailscale, mở menu ⋯ của TV → Disable key expiry, để TV không bị đăng xuất sau khoảng 180 ngày.' }),
-    row(el('a', { className: 'linkbtn small', style: 'padding:0 14px;min-height:36px', href: 'https://login.tailscale.com/admin/machines', target: '_blank', rel: 'noopener', textContent: '↗ Trang quản trị Tailscale' }), act('✓ Xong', async () => $('#ts').close(), 'primary')));
+  tsShow(el('div', { className: 'tsdone' }, el('div', { className: 'tsok', textContent: '✓' }), el('b', { textContent: 'TV đã vào Tailscale' }), el('code', { textContent: ip })),
+    el('p', { className: 'muted tsnote', textContent: CORE === 'pc' ? 'Bấm “Lưu” ở bước cuối để dùng IP này cả khi không ở nhà.' : 'Ở ngoài nhà: bật Tailscale trên máy này (cùng tài khoản) rồi mở TV bằng IP này.' }),
+    el('p', { className: 'tstip', title: 'Nên làm thêm: trong trang quản trị Tailscale, mở menu ⋯ của TV → Disable key expiry, để TV không bị đăng xuất sau khoảng 180 ngày.' },
+      el('span', { textContent: '💡 Tắt “key expiry” cho TV để không bị đăng xuất sau 180 ngày.' })),
+    row(el('a', { className: 'linkbtn small', style: 'padding:0 14px;min-height:36px', href: 'https://login.tailscale.com/admin/machines', target: '_blank', rel: 'noopener', textContent: '↗ Trang quản trị' }), act('✓ Xong', async () => $('#ts').close(), 'primary')));
   tsState(); if (CORE === 'pc') loadSteps();
 }
 async function tsState() {                                             // the card on the tv / phone cores (the computer has its step 2)
