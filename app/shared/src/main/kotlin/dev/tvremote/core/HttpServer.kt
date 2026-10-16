@@ -141,6 +141,7 @@ class HttpServer(private val handler: Handler) {
                 } catch (e: Exception) {
                     Response.error(500, e.message ?: e.javaClass.simpleName)
                 }
+                if (out.status >= 400 && r != null) WireLog.all.add("·", "api " + r.method + " " + r.path + " " + out.status + " " + String(out.body.take(300).toByteArray(), Charsets.UTF_8))
                 val stream = out.stream
                 val len = if (stream == null) out.body.size.toLong() else out.length
                 val h = StringBuilder("HTTP/1.1 ").append(out.status).append(if (out.status == 200) " OK" else " Error").append("\r\n")

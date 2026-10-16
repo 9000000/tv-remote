@@ -113,15 +113,21 @@ class Tv(
         Thread({ run() }, "tv-session").apply { isDaemon = true }.start()
     }
 
+    /** To the listener, and into the log (not the rate: every second). */
+    private fun status(key: String, detail: String) {
+        WireLog.all.add("·", "picture $host $key $detail")
+        listener.onStatus(key, detail)
+    }
+
     private fun run() {
         val socks = arrayListOf<Adb.Stream>()
         try {
-            listener.onStatus("connecting", host)
+            status("connecting", host)
             val a = Adb(dir)
             adb = a
-            a.connect(host, 5555) { listener.onStatus("allow", "") }
+            a.connect(host, 5555) { status("allow", "") }
             if (stopped) return
-            listener.onStatus("starting", a.shell("getprop ro.product.model").trim())
+            status("starting", a.shell("getprop ro.product.model").trim())
             if (wake) a.shell("input keyevent KEYCODE_WAKEUP")
             reportNetwork(a)
             if (listener.wantsPass()) try { AdbPrompt.token(a)?.let { listener.onPass(it) } } catch (ignored: IOException) { }
@@ -129,9 +135,9 @@ class Tv(
             var hearing = audio
             val sdk = if (hearing != null) a.shell("getprop ro.build.version.sdk").trim().toIntOrNull() ?: 0 else 0
             val share = hearing != null && audioShare && sdk >= 33
-            if (hearing != null && audioShare && !share && sdk >= 30) listener.onStatus("audio", "noshare")
+            if (hearing != null && audioShare && !share && sdk >= 30) status("audio", "noshare")
             if (hearing != null && sdk < 30) {                        // scrcpy captures sound from Android 11
-                listener.onStatus("audio", "unsupported")
+                status("audio", "unsupported")
                 hearing = null
                 if (!wantVideo && !wantControl) throw IOException("this TV cannot send its sound (Android 11 or newer is needed)")
             }
@@ -177,15 +183,15 @@ class Tv(
                 if (ctl != null) Thread({ try { deviceMessages(ctl) } catch (ignored: IOException) { } }, "scrcpy-ctl").apply { isDaemon = true }.start()
                 play(pictureIn)
             } else if (ctl != null) {
-                listener.onStatus("live", "")
+                status("live", "")
                 try { deviceMessages(ctl) } catch (ignored: IOException) { }   // returns when the TV closes the session
             } else if (soundIn != null) {
-                listener.onStatus("live", "")
+                status("live", "")
                 hear(soundIn, hearing!!)
             }
-            if (!stopped) listener.onStatus("closed", "")
+            if (!stopped) status("closed", "")
         } catch (e: Throwable) {
-            if (!stopped) listener.onStatus("error", e.message ?: e.javaClass.simpleName)
+            if (!stopped) status("error", e.message ?: e.javaClass.simpleName)
         } finally {
             control = null
             screen?.release()
@@ -274,12 +280,12 @@ class Tv(
             val config = (flags and (1L shl 62)) != 0L
             if (sink != null) {
                 sink.video(config, (flags and (1L shl 61)) != 0L, data)
-                if (first && !config) { first = false; listener.onStatus("live", "") }
+                if (first && !config) { first = false; status("live", "") }
                 continue
             }
             val sc = screen ?: continue
             if (!sc.feed(config, if (config) 0L else flags and ((1L shl 61) - 1), data)) break
-            if (first && !config) { first = false; listener.onStatus("live", "") }
+            if (first && !config) { first = false; status("live", "") }
         }
     }
 
@@ -292,7 +298,7 @@ class Tv(
         val head = ByteArray(12)
         s.readFully(head, 0, 4)
         val id = ByteBuffer.wrap(head, 0, 4).int
-        if (id == 0 || id == 1) { listener.onStatus("audio", "unsupported"); return }   // e.g. the TV refused the capture
+        if (id == 0 || id == 1) { status("audio", "unsupported"); return }   // e.g. the TV refused the capture
         var bytes = 0L
         var since = System.currentTimeMillis()
         try {

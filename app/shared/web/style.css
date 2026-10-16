@@ -86,6 +86,7 @@
   button:disabled { opacity:.45; cursor:not-allowed; transform:none; }
   .kind-off, html[data-kind=lg] .adbnote, html[data-kind=samsung] .adbnote { display:none !important; }   /* LG / Samsung: what needs ADB (applyKind) */
   button[data-kind-off] { opacity:.3; cursor:help; } .tabs [data-kind-tab] { opacity:.5; } .tabs [data-kind-tab][aria-selected=true] { opacity:1; }
+  .aboutacts { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:8px; }   /* in line with the QR code below */
   .kintro ul { margin:0; padding-left:20px; color:var(--muted); line-height:1.9; font-size:14px; } .kintro .badge { text-transform:none; letter-spacing:0; } .kintro h2 .badge { margin-left:8px; vertical-align:1px; }
   button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, a:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   .primary { background:var(--accent); color:var(--accent-ink); font-weight:700; } .primary:hover { background:var(--accent); filter:brightness(1.08); }
@@ -100,9 +101,9 @@
     main.wide { max-width:1800px; }                                   /* Remote tab: give the TV picture all the room there is */
     .remote-grid { grid-template-columns:minmax(0,1fr) 340px; }
     .remote-grid > .col:last-child { position:sticky; top:70px; }      /* controls stay next to the picture while scrolling */
-    /* LG / Samsung: no picture, so the remote comes first, on the left, and the apps take the room beside it */
-    html[data-kind=lg] .remote-grid, html[data-kind=samsung] .remote-grid { grid-template-columns:340px minmax(0,1fr); }
-    html[data-kind=lg] .remote-grid > .col:last-child, html[data-kind=samsung] .remote-grid > .col:last-child { order:-1; }
+    /* only the picture needs all that room: without it (not watching, or an LG / Samsung TV) the left column keeps to a
+       readable width beside the remote, which stays on the right */
+    .remote-grid:not(:has(#screencard.on)) { grid-template-columns:minmax(0,720px) 340px; justify-content:center; }
     .screenbox { max-height:calc(100vh - 215px); min-height:240px; }
   }
   /* phone: the two columns become one list, so the app tiles can go below the buttons and the picture stays right above them;

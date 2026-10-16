@@ -23,16 +23,19 @@ class AdbLink(private val keyDir: File, private val host: String) {
             dialing = a
             dialStart = System.currentTimeMillis()
             try {
-                a.connect(host, 5555) { waiting = true }
+                a.connect(host, 5555) { waiting = true; WireLog.all.add("·", "adb $host asking on the TV") }
+                WireLog.all.add("·", "adb $host connected")
                 waiting = false
                 failed = false
                 adb = a
                 return a
             } catch (e: IOException) {
+                WireLog.all.add("·", "adb $host $e")
                 failed = true
                 try { a.close() } catch (ignored: Exception) { }      // the socket of a refused attempt, not left to the GC
                 throw e
             } catch (e: Exception) {
+                WireLog.all.add("·", "adb $host $e")
                 failed = true
                 try { a.close() } catch (ignored: Exception) { }
                 throw IOException(e.message ?: e.javaClass.simpleName)

@@ -16,6 +16,14 @@ class WireLogTest {
         assertTrue(WireLog.clean("""{"Cmd":"aGVsbG8="}""").contains("…(8)"))
     }
 
+    @Test fun theSameLineAgainIsCounted() {
+        val l = WireLog()
+        repeat(3) { l.add("·", "adb 10.0.0.2 ConnectException") }
+        l.add("·", "adb 10.0.0.2 connected")
+        assertEquals(2, l.text().lines().size)
+        assertTrue(l.text(), l.text().lines()[0].endsWith("(×3)"))
+    }
+
     @Test fun keepsOnlyTheLastLines() {
         val l = WireLog(3)
         for (i in 1..5) l.add("→", "m$i")

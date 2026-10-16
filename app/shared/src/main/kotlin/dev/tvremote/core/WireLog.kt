@@ -6,37 +6,52 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * The last messages between the app and an LG or Samsung TV, for the person to send when something does not work: these
- * adapters were written against libraries and fakes, not real sets, so what a real TV answered is what tells a bug apart.
+ * What happened between the app and the TVs, for the person to send when something does not work: every message to and from
+ * an LG or Samsung TV (written against libraries and fakes, not real sets), and for Android TV the ADB and remote-protocol
+ * connections, the picture's session, the keys, and every error a page or screen was given. What a real TV did is what
+ * tells a bug apart.
  * Nothing that lets someone else in is kept: client keys, tokens and MAC addresses are blanked, typed text is only its length,
  * long answers are cut. One log for every TV ([all]), each line saying which.
  */
-class WireLog(private val max: Int = 300) {
+class WireLog(private val max: Int = 500) {
     private val lines = ArrayDeque<String>()
     private val clock = SimpleDateFormat("HH:mm:ss.SSS", Locale.ROOT)
 
     /** [dir]: "→" sent, "←" received, "·" what happened (connected, closed, an error). */
     fun add(dir: String, text: String) {
-        val line = clock.format(Date()) + " " + dir + " " + clean(text)
+        val what = dir + " " + clean(text)
+        val now = clock.format(Date())
         synchronized(lines) {
-            lines.addLast(line)
+            if (what == last) {                                       // a TV that is off, asked every 10 s: one line, counted
+                repeats++
+                lines.removeLast()
+                lines.addLast("$now $what (×${repeats + 1})")
+                return
+            }
+            last = what; repeats = 0
+            lines.addLast("$now $what")
             while (lines.size > max) lines.removeFirst()
         }
     }
+    private var last = ""
+    private var repeats = 0
 
     fun text(): String = synchronized(lines) { lines.joinToString("\n") }
 
-    /** The log with what it came from on top: which app, which TV ([r], the one in use, if any). */
-    fun report(app: String, r: Remote?): String {
+    /** The log with what it came from on top: which app ([app]), which TV ([r], an LG or Samsung one in use). */
+    fun report(r: Remote? = null): String {
         val tv = r?.let { listOf("TV " + Remote.Kind.name(it.kind), it.model, it.version).filter { s -> s.isNotEmpty() }.joinToString(" · ") } ?: ""
-        return listOf(app, System.getProperty("os.name") + " " + System.getProperty("os.version"), tv).filter { it.isNotEmpty() }.joinToString("\n") +
+        val os = if ("Android" in app) "" else System.getProperty("os.name") + " " + System.getProperty("os.version")   // Android's says Linux
+        return listOf(app, os, tv).filter { it.isNotEmpty() }.joinToString("\n") +
             "\n\n" + text().ifEmpty { "(empty)" }
     }
 
     companion object {
         private val SECRET = Regex("(\"(?:client-key|token)\"\\s*:\\s*\")[^\"]*(\")|([?&]token=)[^&\\s\"]*")
-        /** What the Phone app and the Computer app show behind "Gửi nhật ký". */
+        /** What every app sends behind "Gửi nhật ký". */
         val all = WireLog()
+        /** Which app and version, set by each app when it starts. */
+        @Volatile var app = "TV Remote"
 
         private val TYPED = Regex("(\"(?:text|Cmd)\"\\s*:\\s*\")([^\"]*)(\")")
         private val KEEP = setOf("Click", "Press", "Release")

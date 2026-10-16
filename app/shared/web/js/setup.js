@@ -104,6 +104,7 @@ $('#updcheck').addEventListener('click', async () => {
     : u.version ? 'Có bản mới ' + u.version + ': xem thanh trên cùng trang.' : 'Đang dùng bản mới nhất (' + u.current + ').';
 });
 $('#aboutclose').addEventListener('click', () => $('#about').close());
+$('#sendlog').addEventListener('click', sendWireLog);
 $('#about').addEventListener('click', (e) => { if (e.target === $('#about')) $('#about').close(); });   // click outside the box
 
 // ---------- stop the local server from the page ----------

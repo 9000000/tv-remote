@@ -8,11 +8,13 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - 🧪 Thử nghiệm: điều khiển được TV LG (webOS) và Samsung (Tizen, từ 2016) bằng app điện thoại và app máy tính: phím, gõ chữ, mở app, Wake-on-LAN, cảnh; LG thêm chỉnh âm lượng theo số và tắt màn hình (nút hẹn giờ). Việc chỉ Android TV làm được thì làm mờ, bấm vào để xem giới thiệu. Đã đối chiếu với thư viện Home Assistant dùng (aiowebostv, samsungtvws) nhưng chưa thử trên TV thật.
-- 📋 Gửi nhật ký: TV LG / Samsung làm sai thì gửi các lệnh đã gửi và câu TV trả lời (app máy tính: tab Remote, mở sẵn trang báo lỗi; app điện thoại: Giới thiệu). Không có mã ghép đôi, địa chỉ MAC hay chữ đã gõ.
+- 📋 Gửi nhật ký (Giới thiệu, trong cả ba app và web của TV): app làm sai thì gửi các lệnh đã gửi tới TV, câu TV trả lời, kết nối ADB / remote / xem hình và các lỗi đã hiện; app máy tính và web của TV mở sẵn trang báo lỗi. Không có mã ghép đôi, địa chỉ MAC hay chữ đã gõ.
+- Tab Remote: khi không xem hình, cột bên trái gọn lại cạnh remote thay vì kéo hết màn hình.
 
 **English**
 - 🧪 Beta: LG (webOS) and Samsung (Tizen, 2016 on) TVs work in the phone app and the computer app: keys, typing, opening apps, Wake-on-LAN, scenes; on LG also the volume as a number and the screen off (the sleep timer button). What only Android TV can do is greyed out; press it to see what it is. Checked against the libraries Home Assistant uses (aiowebostv, samsungtvws), not yet on a real TV.
-- 📋 Send the log: when an LG / Samsung TV gets something wrong, send what was sent and what the TV answered (computer app: the Remote tab, with a bug report opened for you; phone app: About). No pairing keys, MAC addresses or typed text.
+- 📋 Send the log (About, in every app and the TV web page): when something goes wrong, send what was sent to the TV, what it answered, the ADB / remote / picture connections and the errors shown; the computer app and the TV web page open a bug report for you. No pairing keys, MAC addresses or typed text.
+- Remote tab: with no picture showing, the left column keeps a sensible width beside the remote instead of filling the screen.
 
 ## 0.1.0 - 2026-10-16
 

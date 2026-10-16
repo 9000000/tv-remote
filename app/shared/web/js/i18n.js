@@ -552,7 +552,7 @@
     'TV Samsung không hỗ trợ': 'Samsung TVs cannot do this',
     'Chỉ có trên Android TV / Google TV': 'Only on Android TV / Google TV', 'Gửi nhật ký': 'Send the log', 'Đã chép nhật ký': 'Log copied', 'Không chép được nhật ký': 'Could not copy the log',
     'Không đọc được nhật ký': 'Could not read the log', 'Mô tả: bấm gì, TV làm gì': 'Describe it: what you pressed, what the TV did', 'thử nghiệm': 'beta',
-    'LG / Samsung còn thử nghiệm. TV làm sai thì gửi các lệnh đã gửi và câu TV trả lời (không có mã ghép đôi) để sửa.': 'LG / Samsung support is in beta. If the TV gets something wrong, send what was sent and what the TV answered (no pairing keys) so it can be fixed.', 'Tự động trên TV': 'Automation on the TV',
+    'App làm sai? Gửi các lệnh đã gửi tới TV, câu TV trả lời và các lỗi (không có mã ghép đôi, địa chỉ MAC, chữ đã gõ). Trang báo lỗi mở sẵn.': 'Something wrong? Send what was sent to the TV, what it answered and the errors (no pairing keys, MAC addresses or typed text). A bug report opens for you.', 'Tự động trên TV': 'Automation on the TV',
     'Xem và chạm màn hình TV trên máy này': 'See and touch the TV’s screen here', 'Nghe tiếng TV': 'Listen to the TV',
     'Vẽ, 🖼️ ảnh, 💬 lời nhắn lên TV': 'Draw, 🖼️ a picture, 💬 a message on the TV', 'Đang phát, 📋 clipboard của TV': 'Now playing, 📋 the TV’s clipboard',
     'Mọi app đã cài trên TV': 'Every app installed on the TV', 'Mở, buộc dừng, tắt hoặc gỡ app': 'Open, force stop, turn off or uninstall apps',

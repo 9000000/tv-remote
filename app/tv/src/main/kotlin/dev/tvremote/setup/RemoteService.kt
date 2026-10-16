@@ -128,6 +128,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         super.onCreate()
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         running = this
+        dev.tvremote.core.WireLog.app = "TV Setup " + (try { packageManager.getPackageInfo(packageName, 0).versionName } catch (e: Exception) { "" }) +
+            " (TV web page, Android " + Build.VERSION.RELEASE + ")"
         if (Build.VERSION.SDK_INT >= 26) {
             val ch = NotificationChannel("remote", "TV Remote", NotificationManager.IMPORTANCE_LOW)
             (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(ch)

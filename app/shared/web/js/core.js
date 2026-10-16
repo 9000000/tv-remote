@@ -294,21 +294,19 @@ function kindIntro(key) {
   return el('section', { className: 'card kintro' },
     el('div', { className: 'card-head' }, el('h2', {}, title, key === 'screen' ? el('span', { className: 'badge', textContent: 'thử nghiệm' }) : ''),
       el('span', { className: 'badge', textContent: kindWhy() })),
-    el('ul', {}, ...items.map((t) => el('li', { textContent: t }))),
-    key === 'screen' && CORE === 'pc' ? el('button', { className: 'small', textContent: '📋 ' + tr('Gửi nhật ký'), onclick: sendWireLog,
-      title: tr('LG / Samsung còn thử nghiệm. TV làm sai thì gửi các lệnh đã gửi và câu TV trả lời (không có mã ghép đôi) để sửa.') }) : null);
+    el('ul', {}, ...items.map((t) => el('li', { textContent: t }))));
 }
-// LG / Samsung were written against libraries and fake TVs: what a real set said is what tells the bug. Copied whole (the
-// GitHub link holds only its end) and a new issue opened with it.
+// What the TVs said and the errors shown (WireLog.kt): what a real TV did is what tells a bug apart. Copied whole (the GitHub
+// link holds only its end) and a new issue opened with it.
 async function sendWireLog() {
   let text;
-  try { const r = await fetch('/api/kind/log'); text = await r.text(); } catch { toast('Không đọc được nhật ký'); return; }
+  try { const r = await fetch('/api/wirelog'); if (!r.ok) throw 0; text = await r.text(); } catch { toast('Không đọc được nhật ký'); return; }
   let ok = false;
   try { await navigator.clipboard.writeText(text); ok = true; } catch {}
   if (!ok) { const a = el('textarea', { value: text }); document.body.append(a); a.select(); try { ok = document.execCommand('copy'); } catch {} a.remove(); }
   const head = text.split('\n\n')[0], tail = text.slice(-5000);
   const body = '<!-- ' + tr('Mô tả: bấm gì, TV làm gì') + ' -->\n\n```\n' + (tail.length < text.length ? head + '\n…\n' + tail.slice(tail.indexOf('\n') + 1) : text) + '\n```';
-  window.open('https://github.com/HoangTran0410/tv-remote/issues/new?title=' + encodeURIComponent(head.split('\n').pop() || 'LG / Samsung') + '&body=' + encodeURIComponent(body), '_blank');
+  window.open('https://github.com/HoangTran0410/tv-remote/issues/new?title=' + encodeURIComponent(head.split('\n')[0]) + '&body=' + encodeURIComponent(body), '_blank');
   toast(ok ? 'Đã chép nhật ký' : 'Không chép được nhật ký');
 }
 function applyKind(s) {

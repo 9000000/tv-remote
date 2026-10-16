@@ -2,7 +2,7 @@
 
 > Free, open-source remote control for Android TV and Google TV (and LG, Samsung TVs) from an Android phone, an iPhone (any browser) or a computer (Mac, Windows, Linux). It talks straight to the TV over the home network (or Tailscale when away), with no server in between, no account and no ads. Site: https://tvremote.pages.dev · Source: https://github.com/HoangTran0410/tv-remote
 
-Works on TVs that run Android TV / Google TV (Sony, TCL, Xiaomi, Philips, Google TV boxes, operator boxes such as FPT Play Box...). Tested for real on a Sony BRAVIA (Android 9). LG (webOS) and Samsung (Tizen, 2016 on) TVs work in the phone and computer apps for keys, typing, opening apps, Wake-on-LAN and scenes (LG also: volume to a number, screen off); screen view, apps, files, health and timers need Android TV. LG and Samsung support is a beta, not yet tried on a real TV; the apps have a "Send the log" button (commands sent and the TV's answers, no pairing keys) for reporting what a real TV did.
+Works on TVs that run Android TV / Google TV (Sony, TCL, Xiaomi, Philips, Google TV boxes, operator boxes such as FPT Play Box...). Tested for real on a Sony BRAVIA (Android 9). LG (webOS) and Samsung (Tizen, 2016 on) TVs work in the phone and computer apps for keys, typing, opening apps, Wake-on-LAN and scenes (LG also: volume to a number, screen off); screen view, apps, files, health and timers need Android TV. LG and Samsung support is a beta, not yet tried on a real TV; every app has "Send the log" in About (commands sent, the TV's answers and the errors shown, no pairing keys) for reporting what a real TV did.
 
 ## Three apps and a web page
 

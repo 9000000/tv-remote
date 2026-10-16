@@ -262,6 +262,7 @@ class Adb(dir: File) : Closeable {
                 }
             }
         } catch (e: IOException) {
+            if (!dead) WireLog.all.add("·", "adb connection lost: $e")
             dead = true
             for (s in streams.values.toList()) s.end()
         }

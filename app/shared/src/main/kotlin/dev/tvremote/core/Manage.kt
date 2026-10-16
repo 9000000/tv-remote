@@ -55,6 +55,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "rules" -> if (!post) return HttpServer.Response.json(rules(null))
                 "tvset" -> if (!post) return text(TvShell.TVSET_READ, 60000)
                 "log" -> return text(TvShell.log(r.q("pkg"), r.q("since")), 20000)
+                "wirelog" -> return HttpServer.Response.of("text/plain; charset=utf-8", WireLog.all.report().toByteArray())   // ours, not the TV's: "Gửi nhật ký"
                 "apps/boot" -> return text(TvShell.BOOT, 20000)
                 "app/info" -> return text(TvShell.appInfo(r.q("pkg")), 20000)
                 "settings" -> if (!post) return text(TvShell.SETTINGS_READ, 20000)

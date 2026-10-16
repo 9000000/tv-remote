@@ -68,6 +68,7 @@ class Atv(dir: File, private val host: String) : Remote {
     // ---------------------------------------------------------------- pairing (port 6467)
     /** Asks the TV to show its code. Then [finishPairing] with what the person reads there. */
     fun startPairing() {
+        WireLog.all.add("·", "remote $host pairing")
         val s = dial(6467)
         sock = s
         fun step(field: Int, body: ByteArray, expect: Int) {
@@ -119,10 +120,13 @@ class Atv(dir: File, private val host: String) : Remote {
      * the connection ends for good: a TV that drops it (some do after a link they cannot open) is simply dialled again.
      */
     override fun connect(onClosed: () -> Unit) {
-        var s = open() ?: throw NotPaired()
+        var s = try { open() } catch (e: Exception) { WireLog.all.add("·", "remote $host $e"); throw e }
+            ?: run { WireLog.all.add("·", "remote $host not paired"); throw NotPaired() }
+        WireLog.all.add("·", "remote $host connected: $vendor $model $version")
         Thread({
             while (true) {
-                try { while (true) handle(s, frame(s.inputStream) ?: break) } catch (ignored: Exception) { }
+                try { while (true) handle(s, frame(s.inputStream) ?: break) } catch (e: Exception) { WireLog.all.add("·", "remote $host $e") }
+                WireLog.all.add("·", "remote $host dropped, dialling again")
                 live = false
                 var again: SSLSocket? = null
                 for (i in 0 until 4) {
@@ -134,7 +138,7 @@ class Atv(dir: File, private val host: String) : Remote {
                 if (again != null && closed) { try { again.close() } catch (ignored: Exception) { }; break }   // closed while dialling
                 s = again ?: break
             }
-            if (!closed) onClosed()
+            if (!closed) { WireLog.all.add("·", "remote $host gone"); onClosed() }
         }, "atv").apply { isDaemon = true }.start()
     }
 
@@ -157,6 +161,7 @@ class Atv(dir: File, private val host: String) : Remote {
 
     private fun handle(s: SSLSocket, body: ByteArray) {
         val m = Pb.read(body)
+        if (8 !in m) WireLog.all.add("←", "remote $host " + m.keys.sorted().joinToString(",", "message ") + " (${body.size} B)")   // pings: every 5 s
         m[1]?.let {                                                   // remote_configure: who the TV is; answer with who we are
             val info = Pb.read(it[0] as ByteArray)[2]?.firstOrNull() as? ByteArray
             if (info != null) {
@@ -195,7 +200,10 @@ class Atv(dir: File, private val host: String) : Remote {
     }
 
     /** [direction]: [DOWN] and [UP] for a held key, [SHORT] for a tap. */
-    override fun key(code: Int, direction: Int) = post(Pb().msg(10, Pb().int(1, code.toLong()).int(2, direction.toLong()).bytes()).bytes())
+    override fun key(code: Int, direction: Int) {
+        WireLog.all.add("→", "remote $host key $code " + (if (direction == SHORT) "tap" else if (direction == DOWN) "down" else "up"))
+        post(Pb().msg(10, Pb().int(1, code.toLong()).int(2, direction.toLong()).bytes()).bytes())
+    }
 
     /**
      * The key held down for [ms], as a finger on a real remote holds it. Apps that move a pointer with the arrows (TV browsers)
