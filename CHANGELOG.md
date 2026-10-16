@@ -16,6 +16,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 - 🌙 Giờ đi ngủ có nhiều khoảng giờ (vd 22:00–06:30 và 13:00–14:00 giờ ngủ trưa): thêm, xóa từng khoảng. Cần TV Setup mới.
 - Lọc DNS → Tự nhập: chọn sẵn từ danh sách DNS nổi tiếng (Google, Cloudflare, Quad9, AdGuard, Mullvad, Control D, NextDNS), có ghi rõ nhà cung cấp, tên máy chủ và IP. Rê chuột lên “Chặn quảng cáo” / “Gia đình” để xem dùng DNS của ai.
+- Các tab (trừ Remote) chung một khuôn: thẻ nào cũng mở bằng tiêu đề, khoảng cách, cỡ nút và dòng chú thích giống nhau. Hộp Tối ưu TV không còn hiện chữ “null”.
+
 **English**
 - 📱 Phone app: copying a file, installing an app or updating TV Setup now shows in the notification shade with its percentage (Android 13+ hid it before, the app never having asked for notifications; it asks as the work starts).
 - Health → History: the legend under the chart is compact again. A TV whose clock once jumped (the FPT Play box, say) records the open app again; what was recorded before has no app names.
@@ -25,6 +27,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Setup → DNS filter → Type one: well-known IPs (8.8.8.8, 1.1.1.1, 9.9.9.9, AdGuard) work too, turned into their server names, as Android takes names only.
 - 🌙 Bedtime takes several time ranges (e.g. 22:00–06:30 and a 13:00–14:00 nap): add or remove each. Needs the new TV Setup.
 - DNS filter → Type one: pick from a list of well-known DNS (Google, Cloudflare, Quad9, AdGuard, Mullvad, Control D, NextDNS) showing the provider, server name and IP. Hover “Block ads” / “Family” to see whose DNS they use.
+- The tabs (all but Remote) share one pattern: every card opens with its title, with the same spacing, button sizes and notes. The Optimize TV box no longer shows “null”.
 
 ## 0.3.0 - 2026-10-16
 

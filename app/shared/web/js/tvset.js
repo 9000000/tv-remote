@@ -69,7 +69,7 @@ function drawTvset(t) {
   ]);
   dnsRow.append(dnsNote);
   const off = t.dnsOff && new Date(t.dnsOff.at), p2 = (n) => String(n).padStart(2, '0');
-  if (!dnsOn && off && Date.now() - t.dnsOff.at < 7 * 86400000) dnsRow.append(el('p', { style: 'color:var(--warn)',
+  if (!dnsOn && off && Date.now() - t.dnsOff.at < 7 * 86400000) dnsRow.append(el('p', { className: 'warnline',
     textContent: '⚠️ TV đã tự tắt lọc DNS ' + t.dnsOff.host + ' lúc ' + p2(off.getHours()) + ':' + p2(off.getMinutes()) + ' ' + p2(off.getDate()) + '/' + p2(off.getMonth() + 1) + ', vì với nó TV không tra được tên miền nào (YouTube và các app báo mất mạng). Hay gặp khi TV có VPN như Tailscale. Chọn lại một bộ lọc để thử lại.' }));
   if (t.sdk && t.sdk < 28) dnsRow.querySelectorAll('button').forEach((b) => { b.disabled = true; });
   rows.push(dnsRow);

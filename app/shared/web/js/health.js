@@ -41,12 +41,12 @@ let capsFor = '', capsText = '';
 async function loadCaps() {
   const box = $('#hcaps');
   if (capsFor === (STATE.host || '') && capsText) return;
-  box.replaceChildren(el('section', { className: 'card' }, el('div', { className: 'muted', textContent: tr('Đang hỏi TV, lần đầu mất vài giây...') })));
+  box.replaceChildren(UI.say(tr('Đang hỏi TV, lần đầu mất vài giây...')));
   const r = await api('/api/caps'); if (hmode !== 'caps') return;
   if (!r) { box.replaceChildren(); return; }
   if (!r.text.trim()) {
-    box.replaceChildren(el('section', { className: 'card' }, el('p', { className: 'muted', style: 'margin:0', textContent: CORE === 'pc'
-      ? 'Bản TV Remote trên máy tính này chưa đọc được khả năng TV. Cập nhật lên bản mới nhất rồi mở lại.' : 'TV không trả lời câu hỏi này. Thử lại sau.' })));
+    box.replaceChildren(UI.say(CORE === 'pc'
+      ? 'Bản TV Remote trên máy tính này chưa đọc được khả năng TV. Cập nhật lên bản mới nhất rồi mở lại.' : 'TV không trả lời câu hỏi này. Thử lại sau.'));
     return;
   }
   capsFor = (STATE.host || ''); capsText = r.text; drawCaps(capsRead(r.text));
@@ -73,15 +73,14 @@ function drawCaps(c) {
     yes(feat('android.hardware.usb.host'), 'Cắm USB (ổ cứng, chuột, bàn phím)'),
     yes(feat('android.hardware.bluetooth'), 'Bluetooth (tai nghe, tay cầm)'));
   const vrow = (v) => [v.name, [tr(v.hw ? 'phần cứng' : 'phần mềm'), sizeName(v.w, v.h), ...v.flags.filter((f) => f !== 'soft' && f !== 'tunnel').map((f) => ({ '10bit': '10-bit', hdr10: 'HDR10', 'hdr10+': 'HDR10+', secure: tr('bảo mật') }[f] || f))].filter(Boolean).join(' · ')];
-  const card = (title, ...kids) => el('section', { className: 'card' }, el('h2', { textContent: title }), ...kids);
+  const card = (title, ...kids) => UI.card(title, {}, ...kids);
   $('#hcaps').replaceChildren(
-    el('section', { className: 'card' }, el('div', { className: 'card-head' }, el('h2', { textContent: '🎬 TV này làm được' }),
-      el('button', { className: 'small', onclick: () => copyText(capsSummary(c)) }, el('span', { className: 'ico', textContent: '📋' }), el('span', { className: 'lbl', textContent: ' Chép' }))), plain),
+    UI.card('🎬 TV này làm được', { tools: [el('button', { className: 'small', onclick: () => copyText(capsSummary(c)) }, el('span', { className: 'ico', textContent: '📋' }), el('span', { className: 'lbl', textContent: ' Chép' }))] }, plain),
     card('🎞️ Giải mã video', el('div', { className: 'kv' }, ...kv(c.video.map(vrow)))),
     card('🔊 Âm thanh', el('div', { className: 'kv' }, ...kv([
       ['Giải mã', c.audio.map((a) => a.name).join(', ')],
       ...c.outputs.filter((o) => o.enc.length).map((o) => [{ hdmi: 'HDMI', arc: 'HDMI ARC', earc: 'HDMI eARC', optical: 'Quang (optical)', speaker: 'Loa TV', bluetooth: 'Bluetooth' }[o.dev] || o.dev, o.enc.join(', ') || '—'])]))),
-    c.modes.length ? card('🖥️ Chế độ màn hình', el('p', { className: 'muted', style: 'margin:0', textContent: c.modes.map((m) => m.replace(/\.0$/, '') + ' Hz').join(' · ') })) : null);
+    c.modes.length ? card('🖥️ Chế độ màn hình', el('p', { className: 'note', textContent: c.modes.map((m) => m.replace(/\.0$/, '') + ' Hz').join(' · ') })) : null);
 }
 // the copy: the same plain lines, then the details, so it reads well pasted anywhere
 function capsSummary(c) {
@@ -201,7 +200,7 @@ async function copyText(t) {
 }
 async function loadErrors() {
   const box = $('#herr');
-  box.replaceChildren(el('section', { className: 'card' }, el('div', { className: 'muted', textContent: tr('Đang đọc từ TV...') })));
+  box.replaceChildren(UI.say(tr('Đang đọc từ TV...')));
   const r = await api('/api/crashes'); if (!r || hmode !== 'err') return;
   const groups = new Map();
   for (const e of parseCrashes(r.text)) {
@@ -210,9 +209,9 @@ async function loadErrors() {
     groups.get(key).push(e);
   }
   const list = [...groups].map(([pkg, es]) => ({ pkg, es: es.sort((a, b) => b.at.localeCompare(a.at)) })).sort((a, b) => b.es[0].at.localeCompare(a.es[0].at));
-  const reload = el('button', { type: 'button', textContent: '↻ Đọc lại', onclick: loadErrors });
-  const card = el('section', { className: 'card' }, el('div', { className: 'card-head' }, el('h2', { textContent: '🐞 App bị dừng, bị treo' }), reload));
-  if (!list.length) card.append(el('p', { textContent: 'Không có app nào bị dừng hay bị treo gần đây. 👍' }));
+  const reload = el('button', { type: 'button', className: 'small', textContent: '↻ Đọc lại', onclick: loadErrors });
+  const card = UI.card('🐞 App bị dừng, bị treo', { tools: [reload] });
+  if (!list.length) card.append(el('p', { className: 'note', textContent: 'Không có app nào bị dừng hay bị treo gần đây. 👍' }));
   for (const { pkg, es } of list) {
     const n = { crash: 0, anr: 0 }; es.forEach((e) => { n[e.kind === 'anr' ? 'anr' : 'crash']++; });
     const name = el('b', { textContent: pkg === 'android' ? 'Hệ thống Android' : appName(pkg) });
@@ -231,7 +230,7 @@ async function loadErrors() {
       const text = (e.proc ? 'Process: ' + e.proc + '\n' : '') + e.lines.join('\n');
       d.append(el('pre', { className: 'term', textContent: text }));
     }
-    d.append(el('button', { type: 'button', textContent: '📋 Chép để gửi hỏi', style: 'margin:0 0 12px;padding:0 14px',
+    d.append(el('button', { type: 'button', className: 'small crashcopy', textContent: '📋 Chép để gửi hỏi',
       onclick: () => copyText([...whys.values()].map(({ e, n: t }) => `[${e.at}] ${pkg} ${e.kind} ×${t}\n${e.lines.join('\n')}`).join('\n\n')) }));
     card.append(d);
   }

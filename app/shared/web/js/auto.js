@@ -21,8 +21,7 @@ function renderRules() {
   const box = $('#autosetup');
   if (r.setup || r.error) {                                            // no TV Setup on the TV (or one too old): say what it brings and offer it
     $('#rulecards').hidden = true;
-    box.replaceChildren(el('section', { className: 'card' },
-      el('h2', { textContent: '😴 Hẹn giờ tắt · 🌙 Giờ đi ngủ · ⏳ Giới hạn app' }),
+    box.replaceChildren(UI.card('😴 Hẹn giờ tắt · 🌙 Giờ đi ngủ · ⏳ Giới hạn app', {},
       el('p', { textContent: r.error ? 'TV Setup trả lời lỗi: ' + friendly(r.error)
         : r.setup === 'old' ? 'TV Setup trên TV là bản cũ. Cần bản ' + (r.min || '0.1.0') + ' trở lên: mở TV Setup trên TV → Cập nhật, hoặc bấm nút dưới.'
         : 'Các mục này chạy bằng app TV Setup trên TV (để TV tự tắt được cả khi máy này đã tắt). TV chưa có app đó.' }),
@@ -61,14 +60,14 @@ function renderRules() {
         act('✏️', async () => { const v = await askTime('Mỗi ngày được dùng ' + name + ' bao lâu?', l.minutes); if (v) await loadRules({ do: 'limit', pkg: l.pkg, minutes: v }); }),
         act('🗑', async () => { if (await ask('Bỏ giới hạn cho ' + name + '?', { ok: 'Bỏ giới hạn' })) await loadRules({ do: 'limit', pkg: l.pkg, minutes: 0 }); }, 'danger')));
   });
-  $('#limits').replaceChildren(...(rows.length ? rows : [el('p', { className: 'muted', style: 'margin:0', textContent: 'Chưa giới hạn app nào.' })]));
+  $('#limits').replaceChildren(...(rows.length ? rows : [UI.empty('Chưa giới hạn app nào.')]));
   // volume limits; a TV Setup older than them has no "volume" in its answer
   const vols = r.volume || [];
   $('#vols').replaceChildren(...(vols.length ? vols.map((v, i) => el('div', { className: 'item' },
     el('div', { className: 'name' }, el('span', { textContent: v.from + ' – ' + v.to }), el('small', { textContent: 'Tối đa ' + v.max + '%' })),
     el('div', { className: 'acts' },
       act('🗑', async () => { if (await ask('Bỏ giới hạn ' + v.from + ' – ' + v.to + '?', { ok: 'Bỏ giới hạn' })) await saveVols(vols.filter((x, j) => j !== i)); }, 'danger'))))
-    : [el('p', { className: 'muted', style: 'margin:0', textContent: 'Chưa giới hạn âm lượng.' })]));
+    : [UI.empty('Chưa giới hạn âm lượng.')]));
   const now = r.volume_now;
   $('#volstate').textContent = r.volume === undefined ? '' : r.volume_fixed ? '⚠️ Âm lượng của TV này do loa ngoài / TV giữ (qua HDMI), không giới hạn được.'
     : now ? 'Đang giới hạn tối đa ' + now.max + '% tới ' + now.to + '.' : '';
@@ -267,7 +266,7 @@ function renderScenes() {
     el('div', { className: 'name' }, el('span', { textContent: sc.name }), el('small', { textContent: sc.steps.map(stepText).join(' → ') })),
     el('div', { className: 'acts' }, setLabel(el('button', { className: 'small primary', onclick: () => runScene(sc) }), '▶', 'Chạy'),
       setLabel(el('button', { className: 'small', onclick: () => editScene(sc) }), '✏️', 'Sửa'))))
-    : [el('p', { className: 'muted', style: 'margin:0', textContent: 'Chưa có cảnh nào. Bấm “＋ Tạo cảnh”, có sẵn mẫu để bắt đầu.' })]));
+    : [UI.empty('Chưa có cảnh nào. Bấm “＋ Tạo cảnh”, có sẵn mẫu để bắt đầu.')]));
   $('#scenebtns').replaceChildren(...(SCENES.length ? SCENES.map((sc) => el('button', { className: 'scene', title: sc.steps.map(stepText).join(' → '), onclick: () => runScene(sc) },
     el('span', { className: 'ico', textContent: sc.icon || '🎬' }), el('span', { textContent: sc.name })))
     : [el('button', { className: 'scene add', onclick: () => { showTab('auto'); editScene(null); } }, el('span', { className: 'ico', textContent: '＋' }), el('span', { textContent: 'Tạo cảnh: một nút làm nhiều việc' }))]));
@@ -293,7 +292,7 @@ function drawSteps() {
     el('button', { className: 'small iconbtn', textContent: '↑', disabled: i === 0, title: 'Lên', onclick: () => { [draft[i - 1], draft[i]] = [draft[i], draft[i - 1]]; drawSteps(); } }),
     el('button', { className: 'small iconbtn', textContent: '↓', disabled: i === draft.length - 1, title: 'Xuống', onclick: () => { [draft[i + 1], draft[i]] = [draft[i], draft[i + 1]]; drawSteps(); } }),
     el('button', { className: 'small iconbtn danger', textContent: '✕', title: 'Bỏ bước này', onclick: () => { draft.splice(i, 1); drawSteps(); } })))
-    : [el('p', { className: 'muted', style: 'margin:0', textContent: 'Chưa có bước nào: chọn loại bước bên dưới rồi bấm “＋ Thêm bước”.' })]));
+    : [UI.empty('Chưa có bước nào: chọn loại bước bên dưới rồi bấm “＋ Thêm bước”.')]));
 }
 // what the chosen kind of step needs: an app, a key, a number, a link
 function stepArgs() {

@@ -31,13 +31,13 @@ async function chooseOptimize() {
     optRow(usingFl ? 'Màn hình chính FLauncher (đang dùng)' : 'Dùng FLauncher làm màn hình chính', 'Chỉ lưới app, nhẹ, không quảng cáo; màn hình chính Google được tắt' + (p.flauncher ? '' : ' · tải 10 MB'), true, { what: 'home' })];
   if (p.suggest.length) parts.push(el('h3', { textContent: 'Tắt app đề xuất' }), ...p.suggest.map((a) => optRow(a.label, a.pkg, true, { pkg: a.pkg })));
   if (p.apps.length) {
-    const list = el('div', { className: 'optbox', style: 'margin:0' }, ...p.apps.map((a) => optRow(a.label, a.pkg, false, { pkg: a.pkg })));
+    const list = el('div', { className: 'optbox' }, ...p.apps.map((a) => optRow(a.label, a.pkg, false, { pkg: a.pkg })));
     const filter = el('input', { className: 'filter', type: 'search', placeholder: 'Lọc theo tên...', oninput: () => {
       const q = filter.value.trim().toLowerCase(); list.querySelectorAll('.optrow').forEach((r) => { r.hidden = q && !r.textContent.toLowerCase().includes(q); });
     } });
-    parts.push(el('h3', { textContent: 'Tắt thêm app khác' }), el('p', { className: 'muted', style: 'margin:0;font-size:13px', textContent: 'Tắt là tạm ngưng, không gỡ; app biến khỏi TV cho tới khi Hoàn tác.' }), p.apps.length > 7 ? filter : null, list);
+    parts.push(el('h3', { textContent: 'Tắt thêm app khác' }), el('p', { className: 'note', textContent: 'Tắt là tạm ngưng, không gỡ; app biến khỏi TV cho tới khi Hoàn tác.' }), p.apps.length > 7 ? filter : null, list);
   }
-  body.replaceChildren(...parts); $('#optgo').disabled = false;
+  body.replaceChildren(...parts.filter(Boolean)); $('#optgo').disabled = false;
 }
 $('#optgo').addEventListener('click', () => {
   const boxes = [...$('#optbody').querySelectorAll('input[type=checkbox]')], on = (w) => boxes.some((b) => b.dataset.what === w && b.checked);
@@ -114,7 +114,7 @@ $('#quit').addEventListener('click', async () => {
   if (screenOn) stopScreen();
   if (!await api('/api/shutdown', {})) return;
   stopped = true;
-  document.querySelector('main').replaceChildren(el('section', { className: 'card', style: 'text-align:center;padding:40px 16px' },
+  document.querySelector('main').replaceChildren(el('section', { className: 'card stopped' },
     el('h1', { textContent: 'Đã tắt' }), el('p', { className: 'muted', textContent: 'TV Remote trên máy tính này đã dừng. Mở lại app TV Remote để dùng tiếp. Có thể đóng trang này.' })));
 });
 
@@ -298,7 +298,7 @@ function tsDone(ip) {
     el('p', { className: 'muted tsnote', textContent: CORE === 'pc' ? 'Bấm “Lưu” ở bước cuối để dùng IP này cả khi không ở nhà.' : 'Ở ngoài nhà: bật Tailscale trên máy này (cùng tài khoản) rồi mở TV bằng IP này.' }),
     el('p', { className: 'tstip', title: 'Nên làm thêm: trong trang quản trị Tailscale, mở menu ⋯ của TV → Disable key expiry, để TV không bị đăng xuất sau khoảng 180 ngày.' },
       el('span', { textContent: '💡 Tắt “key expiry” cho TV để không bị đăng xuất sau 180 ngày.' })),
-    row(el('a', { className: 'linkbtn small', style: 'padding:0 14px;min-height:36px', href: 'https://login.tailscale.com/admin/machines', target: '_blank', rel: 'noopener', textContent: '↗ Trang quản trị' }), act('✓ Xong', async () => $('#ts').close(), 'primary')));
+    row(el('a', { className: 'linkbtn small', href: 'https://login.tailscale.com/admin/machines', target: '_blank', rel: 'noopener', textContent: '↗ Trang quản trị' }), act('✓ Xong', async () => $('#ts').close(), 'primary')));
   tsState(); if (CORE === 'pc') loadSteps();
 }
 async function tsState() {                                             // the card on the tv / phone cores (the computer has its step 2)

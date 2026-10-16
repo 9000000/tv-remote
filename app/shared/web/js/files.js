@@ -51,7 +51,7 @@ function renderFiles() {
     if (open) { row.tabIndex = 0; row.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target === row) open(); }); }
     return row;
   });
-  $('#fileslist').replaceChildren(...(rows.length ? rows : [el('div', { className: 'muted', style: 'padding:14px 0', textContent: q ? 'Không có mục nào khớp.' : 'Thư mục trống.' })]));
+  $('#fileslist').replaceChildren(...(rows.length ? rows : [el('p', { className: 'empty pad', textContent: q ? 'Không có mục nào khớp.' : 'Thư mục trống.' })]));
 }
 $('#filesq').addEventListener('input', renderFiles);
 $('#filessort').addEventListener('change', renderFiles);

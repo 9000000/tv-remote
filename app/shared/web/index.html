@@ -65,24 +65,24 @@
   </section>
 
   <div id="picker" data-for="pc">
-    <button class="small" id="pickback" hidden style="align-self:flex-start"></button>
+    <button class="small" id="pickback" hidden></button>
     <div class="two-up" id="pickcols">
       <section class="card" id="savedcard">
         <h2>💾 TV đã lưu</h2>
-        <div class="list" id="tvlist" style="margin-top:0"></div>
+        <div class="list" id="tvlist"></div>
         <!-- the saved TVs at once (homestay, hotel, a house of TVs), Fleet.kt; the phone app has the same on its own list of TVs (Fleet.kt) -->
         <details id="fleet" hidden>
           <summary>📦 Nhiều TV cùng lúc <span class="muted" id="fleetcount"></span></summary>
           <div id="fleetlist"></div>
-          <div class="actions" style="display:flex;gap:8px;align-items:center;margin-top:10px">
-            <label class="linkbtn filebtn primary" id="fleetapk" style="padding:0 16px;min-height:44px"><input type="file" accept=".apk,application/vnd.android.package-archive"><span>📦 Cài APK lên TV đã chọn</span></label>
+          <div class="actions">
+            <label class="linkbtn filebtn primary" id="fleetapk"><input type="file" accept=".apk,application/vnd.android.package-archive"><span>📦 Cài APK lên TV đã chọn</span></label>
             <button class="small iconbtn" id="fleetmore" title="Thêm thao tác" aria-label="Thêm thao tác">⋯</button>
           </div>
         </details>
       </section>
       <section class="card">
         <div class="card-head"><h2>🔍 Tìm TV</h2><button class="small primary" id="scan">🔍 Quét mạng</button></div>
-        <p class="muted" id="scaninfo" style="margin:8px 0 0"></p>
+        <p class="note" id="scaninfo"></p>
         <div class="list" id="scanlist"></div>
         <form class="line" id="ipf"><input id="ipin" placeholder="Hoặc nhập IP của TV, vd 192.168.1.88" title="Xem IP trên TV: Cài đặt → Mạng và Internet → bấm vào tên Wi-Fi đang kết nối." autocomplete="off" inputmode="decimal"><button class="primary">Kết nối</button></form>
       </section>
@@ -104,7 +104,7 @@
       <div class="col">
         <section class="card" id="screencard" data-needs="adb" aria-label="Màn hình TV">
           <div class="card-head">
-            <h2>🖥️ Màn hình TV <span class="muted adbnote" data-for="pc" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
+            <h2>🖥️ Màn hình TV <span class="muted adbnote lower" data-for="pc">· cần ADB</span></h2>
             <div class="tools">
               <select id="screenmode" aria-label="Chất lượng hình" title="Chất lượng hình: số nhỏ thì nhẹ cho TV và mạng"><option value="240">240p</option><option value="360">360p</option><option value="480">480p</option><option value="720">720p</option><option value="960" selected>960p</option><option value="hd" data-for="pc">Nét nhất · nặng TV</option><option value="snap">Ảnh chụp</option></select>
               <button class="small" id="listen" data-adb-gated title="Nghe tiếng TV trên máy này"><span class="ico">🎧</span><span class="lbl"> Nghe</span></button>
@@ -133,8 +133,8 @@
         </section>
         <div data-adb-banner></div>
         <section class="card wide-only">
-          <h2>🚀 Mở ứng dụng <span class="muted adbnote" data-for="pc" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
-          <input id="quickq" type="search" placeholder="Tìm theo tên app" autocomplete="off" style="margin-bottom:10px;width:100%">
+          <h2>🚀 Mở ứng dụng <span class="muted adbnote lower" data-for="pc">· cần ADB</span></h2>
+          <input id="quickq" type="search" placeholder="Tìm theo tên app" autocomplete="off">
           <div class="tiles" id="quick"><div class="muted">Danh sách app hiện khi ADB sẵn sàng.</div></div>
         </section>
         <div data-kindintro="screen" hidden></div>
@@ -175,10 +175,10 @@
         </section>
 
         <section class="card">
-          <h2>⌨️ Bàn phím <span class="muted adbnote" data-for="pc" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
-          <p class="muted" id="kbdoff" hidden style="margin:0 0 8px">🔒 Gõ chữ cần ADB.</p>
+          <h2>⌨️ Bàn phím <span class="muted adbnote lower" data-for="pc">· cần ADB</span></h2>
+          <p class="note" id="kbdoff" hidden>🔒 Gõ chữ cần ADB.</p>
           <fieldset id="kbd">
-          <form class="line" id="textf" style="margin-top:0"><button type="button" id="live" title="Gõ trực tiếp / gõ xong rồi gửi">⚡</button><input id="text" placeholder="Gõ chữ lên TV" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="primary" title="Gửi phím Enter">↵</button><button type="button" id="del" aria-label="Xóa ký tự">⌫</button><button type="button" id="digits" title="Bàn phím số">123</button></form>
+          <form class="line" id="textf"><button type="button" id="live" title="Gõ trực tiếp / gõ xong rồi gửi">⚡</button><input id="text" placeholder="Gõ chữ lên TV" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="primary" title="Gửi phím Enter">↵</button><button type="button" id="del" aria-label="Xóa ký tự">⌫</button><button type="button" id="digits" title="Bàn phím số">123</button></form>
           <div class="numpad" id="numpad" hidden><button class="rb" data-k="1">1</button><button class="rb" data-k="2">2</button><button class="rb" data-k="3">3</button><button class="rb" data-k="4">4</button><button class="rb" data-k="5">5</button><button class="rb" data-k="6">6</button><button class="rb" data-k="7">7</button><button class="rb" data-k="8">8</button><button class="rb" data-k="9">9</button><span></span><button class="rb" data-k="0">0</button><span></span></div>
           <form class="line" id="askf"><input id="ask" placeholder="Hỏi TV: mở YouTube" autocomplete="off"><button type="button" id="speak" title="Nói bằng micro của máy này" hidden>🎤</button><button class="primary" title="Lệnh (mở YouTube, tắt tiếng...) thì làm ngay, câu khác thì tìm trên YouTube">🔍</button></form>
           </fieldset>
@@ -219,7 +219,7 @@
         <button class="small" id="mkdir">＋ Thư mục</button>
         <button class="small iconbtn" id="filesreload" aria-label="Tải lại" title="Tải lại">↻</button>
       </div>
-      <div class="muted" id="space" style="margin-top:8px"></div>
+      <p class="note" id="space"></p>
       <div class="list" id="fileslist"></div>
       <label class="drop"><input type="file" id="upfile" multiple><span>＋ Chọn file gửi lên thư mục này<span class="fine"> (hoặc kéo thả vào đây)</span></span></label>
     </section>
@@ -230,11 +230,11 @@
     <div class="two-up" data-adb-gated>
       <section class="card">
         <h2>⬇️ Tải file về TV</h2>
-        <form class="line" id="fetchf" style="margin-top:0"><input id="fetchurl" placeholder="https://.../file.zip" inputmode="url" autocomplete="off"><button class="primary">⬇️ Tải</button></form>
+        <form class="line" id="fetchf"><input id="fetchurl" placeholder="https://.../file.zip" inputmode="url" autocomplete="off"><button class="primary">⬇️ Tải</button></form>
       </section>
       <section class="card">
         <h2>📦 Cài APK</h2>
-        <form class="line" id="instf" style="margin-top:0"><input id="insturl" placeholder="Link tới file .apk" inputmode="url" autocomplete="off"><button class="primary">📦 Cài</button></form>
+        <form class="line" id="instf"><input id="insturl" placeholder="Link tới file .apk" inputmode="url" autocomplete="off"><button class="primary">📦 Cài</button></form>
         <label class="drop"><input type="file" id="apkfile" accept=".apk,application/vnd.android.package-archive">Hoặc chọn file .apk từ máy này</label>
       </section>
     </div>
@@ -250,7 +250,7 @@
       <div id="hnow">
       <div class="muted" id="hwait">Đang đọc từ TV...</div>
       <section class="card"><div class="card-head"><h2>📊 Tổng quan</h2><span class="muted" id="hwhen"></span></div><div class="kv" id="hsum"></div></section>
-      <section class="card"><h2>⚙️ Tải hệ thống</h2><div id="hload"></div><button id="freeram" style="margin-top:12px;padding:0 16px">🧹 Giải phóng RAM</button><h2 style="margin-top:14px">🔥 Tiến trình tốn CPU nhất</h2><div class="ptable" id="htop"></div></section>
+      <section class="card"><h2>⚙️ Tải hệ thống</h2><div id="hload"></div><button id="freeram">🧹 Giải phóng RAM</button><h3>🔥 Tiến trình tốn CPU nhất</h3><div class="ptable" id="htop"></div></section>
       <section class="card"><h2>📶 Mạng</h2><div class="kv" id="hnet"></div></section>
       <section class="card"><h2>🧩 Phần cứng</h2><div class="kv" id="hhw"></div></section>
       </div>
@@ -259,9 +259,9 @@
     <details class="card" id="termcard" data-adb-gated>
       <summary>⌨️ Terminal</summary>
       <pre class="term" id="termout"></pre>
-      <select id="termhist" hidden style="width:100%;margin:0 0 10px;min-height:40px;border-radius:10px;background:var(--btn);color:var(--ink);border:0;padding:0 10px;font:inherit"></select>
-      <form class="line" id="termf" style="margin-top:0"><input id="termin" class="mono" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ls /sdcard"><button class="primary" title="Chạy lệnh">↵</button></form>
-      <p class="muted" style="margin:8px 0 0">Như adb shell, mỗi lệnh tối đa 30 giây. ↑ ↓ gọi lại lệnh cũ.</p>
+      <select id="termhist" hidden></select>
+      <form class="line" id="termf"><input id="termin" class="mono" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ls /sdcard"><button class="primary" title="Chạy lệnh">↵</button></form>
+      <p class="note">Như adb shell, mỗi lệnh tối đa 30 giây. ↑ ↓ gọi lại lệnh cũ.</p>
     </details>
   </div>
   <!-- ============ Automation: TV Setup's timers and limits (they run on the TV), and scenes ============ -->
@@ -278,7 +278,7 @@
       </section>
       <section class="card">
         <h2>🌙 Giờ đi ngủ</h2>
-        <p class="muted" style="margin:0 0 10px">Bật TV trong giờ này thì 1 phút sau TV tự tắt.</p>
+        <p class="note">Bật TV trong giờ này thì 1 phút sau TV tự tắt.</p>
         <label class="check"><input type="checkbox" id="bedon"> Bật giờ đi ngủ</label>
         <div class="list" id="beds"></div>
         <form id="bedf"><div class="timerow"><label>Từ <input type="time" id="bedfrom" value="22:00"></label><label>đến <input type="time" id="bedto" value="06:30"></label><button class="primary">＋ Thêm</button></div></form>
@@ -287,12 +287,12 @@
       </section>
       <section class="card">
         <h2>⏳ Giới hạn app mỗi ngày</h2>
-        <div class="list" id="limits" style="margin-top:0"></div>
+        <div class="list" id="limits"></div>
         <form class="line" id="limitf"><select id="limitpkg" aria-label="App"></select><select id="limitmin" aria-label="Số phút mỗi ngày"><option value="30">30 phút</option><option value="60" selected>1 giờ</option><option value="90">1 giờ 30</option><option value="120">2 giờ</option><option value="180">3 giờ</option><option value="240">4 giờ</option></select><button class="primary">＋ Thêm</button></form>
       </section>
       <section class="card">
         <h2>🔊 Giới hạn âm lượng</h2>
-        <div class="list" id="vols" style="margin-top:0"></div>
+        <div class="list" id="vols"></div>
         <p class="state" id="volstate"></p>
         <form id="volf"><div class="timerow"><label>Từ <input type="time" id="volfrom" value="22:00"></label><label>đến <input type="time" id="volto" value="06:00"></label></div><div class="line"><select id="volmax" aria-label="Âm lượng tối đa"><option value="10">10%</option><option value="20">20%</option><option value="30" selected>30%</option><option value="40">40%</option><option value="50">50%</option><option value="60">60%</option><option value="70">70%</option><option value="80">80%</option><option value="90">90%</option></select><button class="primary">＋ Thêm</button></div></form>
       </section>
@@ -311,7 +311,7 @@
   <!-- ============ TVs: saved, discovery, first-time setup ============ -->
   <div class="panel" data-panel="tv" data-for="pc" hidden>
     <section class="card">
-      <div class="card-head"><h2>🧭 Cài đặt lần đầu · <span id="setuphost" style="text-transform:none;letter-spacing:0"></span></h2><button class="small" id="setuprefresh">↻ Kiểm tra lại</button></div>
+      <div class="card-head"><h2>🧭 Cài đặt lần đầu · <span id="setuphost" class="lower"></span></h2><button class="small" id="setuprefresh">↻ Kiểm tra lại</button></div>
       <div id="steps"></div>
     </section>
   </div>
@@ -319,8 +319,8 @@
   <div class="panel" data-panel="tv" hidden>
     <section class="card" data-adb-gated id="tscard" data-for="tv phone">
       <h2>🌐 Tailscale · điều khiển khi không ở nhà</h2>
-      <p class="muted" id="tsstate" style="margin:0">Đang xem TV đã có Tailscale chưa...</p>
-      <div class="actions"><button class="primary" id="tsgo" style="padding:0 18px">⚡ Cài và đăng nhập Tailscale</button></div>
+      <p class="note" id="tsstate">Đang xem TV đã có Tailscale chưa...</p>
+      <div class="actions"><button class="primary" id="tsgo">⚡ Cài và đăng nhập Tailscale</button></div>
     </section>
     <section class="card" data-adb-gated id="tvsetcard">
       <div class="card-head"><h2>📺 TV</h2><button class="small" id="tvreboot" data-asks><span class="ico">🔁</span><span class="lbl"> Khởi động lại TV</span></button></div>
@@ -328,16 +328,16 @@
     </section>
     <section class="card" data-adb-gated>
       <h2>⚡ Tối ưu TV</h2>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="primary" id="setupapply" style="padding:0 18px">⚡ Tối ưu TV</button>
-        <button id="setupundo" style="padding:0 18px">↩ Hoàn tác</button>
+      <div class="actions">
+        <button class="primary" id="setupapply">⚡ Tối ưu TV</button>
+        <button id="setupundo">↩ Hoàn tác</button>
       </div>
-      <pre id="setuplog" hidden style="margin:12px 0 0;padding:10px;background:var(--bg);border:1px solid var(--line);border-radius:10px;font-size:12px;max-height:260px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere"></pre>
+      <pre class="log" id="setuplog" hidden></pre>
     </section>
     <!-- every setting the TV keeps: the simple ones can be changed, the risky ones are shown locked (health.js) -->
     <details class="card" id="setlist" data-adb-gated>
       <summary>🗂️ Tất cả cài đặt</summary>
-      <form class="line" id="setlistf" style="margin-top:0"><input id="setlistq" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Tìm tên hoặc giá trị, vd adb, dns, timeout"><button type="button" class="small" id="setlistcopy" title="Chép tất cả"><span class="ico">📋</span><span class="lbl"> Chép</span></button></form>
+      <form class="line" id="setlistf"><input id="setlistq" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Tìm tên hoặc giá trị, vd adb, dns, timeout"><button type="button" id="setlistcopy" title="Chép tất cả"><span class="ico">📋</span><span class="lbl"> Chép</span></button></form>
       <div class="places setfilter" id="setfilter"><button type="button" class="on" data-f="all">Tất cả</button><button type="button" data-f="edit">✎ Chỉnh được</button><button type="button" data-f="view">🔒 Chỉ xem</button></div>
       <div id="setlistbody" class="setlist"></div>
     </details>
@@ -370,7 +370,7 @@
     <p><b>Bật lại:</b> Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng” → Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB”. Lần đầu TV hỏi cho phép thì chọn “Luôn cho phép”.</p>
   </details>
   <details class="card" id="jobscard" hidden open><summary><h2>⏳ Tiến trình <span id="jobsum"></span></h2><button class="small iconbtn" id="jobsclose" title="Ẩn" aria-label="Ẩn">✕</button></summary><div id="jobs"></div></details>
-  <div class="muted" id="ver" style="text-align:center;font-size:12px;padding:6px 0 14px"></div>
+  <div class="muted" id="ver"></div>
 </main>
 <div id="pipslot"></div>
 <dialog id="about">
@@ -384,7 +384,7 @@
     <p class="aboutacts"><button class="small" id="sendlog" title="App làm sai? Gửi các lệnh đã gửi tới TV, câu TV trả lời và các lỗi (không có mã ghép đôi, địa chỉ MAC, chữ đã gõ). Trang báo lỗi mở sẵn.">📋 Gửi nhật ký</button>
       <span data-for="pc"><button class="small" id="updcheck">🔄 Kiểm tra bản mới</button> <span class="muted" id="updcheckmsg"></span></span></p>
     <div class="qrs" id="qrs"></div>
-    <div style="text-align:right"><button class="small primary" id="aboutclose">✓ Đóng</button></div>
+    <div class="actions end"><button class="small primary" id="aboutclose">✓ Đóng</button></div>
   </div>
 </dialog>
 <dialog id="assist"><div class="card assistbox"><div class="card-head"><h2 id="assisttitle"></h2><button class="small iconbtn" id="assistclose" title="Đóng" aria-label="Đóng">✕</button></div><div id="assistbody"></div></div></dialog>
@@ -394,11 +394,11 @@
   <button id="allowlater">Để sau</button></div></dialog>
 <!-- a TV is being connected: nothing on the remote works yet -->
 <dialog id="connecting"><div class="allowbox"><div class="spin"></div><p class="muted">Đang kết nối</p><h1 id="conname"></h1><p class="muted" id="constep"></p><button id="concancel">Hủy</button></div></dialog>
-<dialog id="ts"><div class="card assistbox"><div class="card-head"><h2>🌐 Tailscale cho TV</h2><button class="small iconbtn" id="tsclose" title="Đóng" aria-label="Đóng">✕</button></div><div class="tsbox" id="tsbody" style="display:flex;flex-direction:column;gap:12px;margin-top:12px"></div></div></dialog>
+<dialog id="ts"><div class="card assistbox"><div class="card-head"><h2>🌐 Tailscale cho TV</h2><button class="small iconbtn" id="tsclose" title="Đóng" aria-label="Đóng">✕</button></div><div class="tsbox" id="tsbody"></div></div></dialog>
 <dialog id="optdlg"><div class="card assistbox">
   <div class="card-head"><h2>⚡ Tối ưu TV</h2><button class="small iconbtn" id="optclose" title="Đóng" aria-label="Đóng">✕</button></div>
   <div id="optbody" class="optbox"></div>
-  <div class="actions" style="display:flex;gap:8px;margin-top:14px"><button class="primary" id="optgo" style="padding:0 18px">⚡ Chạy tối ưu</button><button id="optcancel">Hủy</button></div>
+  <div class="actions"><button class="primary" id="optgo">⚡ Chạy tối ưu</button><button id="optcancel">Hủy</button></div>
 </div></dialog>
 <dialog id="scenedlg"><div class="card assistbox">
   <div class="card-head"><h2 id="scenetitle">🎬 Cảnh</h2><button class="small iconbtn" id="sceneclose" title="Đóng" aria-label="Đóng">✕</button></div>
@@ -409,15 +409,15 @@
     <div id="scenesteps"></div>
     <div class="line2"><select id="stepkind" aria-label="Loại bước"><option value="wake">☀️ Bật TV</option><option value="app">📱 Mở app</option><option value="volume">🔊 Đặt âm lượng</option><option value="key">🎮 Bấm phím</option><option value="link">🔗 Mở link</option><option value="wait">⏱️ Chờ</option><option value="timer">😴 Hẹn giờ tắt</option><option value="sleep">🌙 Tắt TV</option></select><span id="stepargs"></span><button class="small" id="stepadd">＋ Thêm bước</button></div>
   </div>
-  <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="primary" id="scenesave" style="padding:0 18px">💾 Lưu</button><button id="scenetry">▶ Thử</button><button class="danger" id="scenedel">🗑 Xóa</button></div>
+  <div class="actions"><button class="primary" id="scenesave">💾 Lưu</button><button id="scenetry">▶ Thử</button><button class="danger" id="scenedel">🗑 Xóa</button></div>
 </div></dialog>
 <dialog id="aidlg"><div class="card assistbox"><div class="card-head"><h2>🤖 Hỏi AI nên tắt / gỡ app nào</h2><button class="small iconbtn" id="aiclose" title="Đóng" aria-label="Đóng">✕</button></div>
-  <p class="muted" style="margin:10px 0 8px">Sửa dòng “Người nhà vẫn dùng”, bấm Sao chép rồi dán vào ChatGPT, Claude hay Gemini.</p>
+  <p class="note">Sửa dòng “Người nhà vẫn dùng”, bấm Sao chép rồi dán vào ChatGPT, Claude hay Gemini.</p>
   <textarea id="aitext" rows="14" spellcheck="false"></textarea>
   <div class="aihint"><button class="primary" id="aicopy">📋 Sao chép</button></div>
 </div></dialog>
 <dialog id="bulkdlg"><div class="card assistbox"><div class="card-head"><h2>📝 Bật / tắt / gỡ hàng loạt</h2><button class="small iconbtn" id="bulkclose" title="Đóng" aria-label="Đóng">✕</button></div>
-  <p class="muted" style="margin:10px 0 8px">Dán app id (mỗi dòng một app) hoặc cả câu trả lời của AI.</p>
+  <p class="note">Dán app id (mỗi dòng một app) hoặc cả câu trả lời của AI.</p>
   <textarea id="bulktext" rows="5" spellcheck="false" placeholder="com.sony.dtv.imanual&#10;com.google.android.marvin.talkback"></textarea>
   <div class="list" id="bulklist"></div>
   <div class="aihint"><button class="small" id="bulkoff">⏸ Tắt các app này</button><button class="small" id="bulkon">↩ Bật lại các app này</button><button class="small danger" id="bulkdel">🗑 Gỡ các app này</button></div>
@@ -438,6 +438,7 @@
 <script src="js/i18n.js"></script>
 <script src="js/qr.js"></script>
 <script src="js/core.js"></script>
+<script src="js/ui.js"></script>
 <script src="js/remote_spec.js"></script>
 <script src="js/remote.js"></script>
 <script src="js/screen.js"></script>

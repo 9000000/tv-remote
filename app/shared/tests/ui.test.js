@@ -1,0 +1,51 @@
+// node --test app/shared/tests/   The tabs are made of the same few shapes (js/ui.js says which): these keep new markup
+// from drifting into a look of its own, one inline style or one more control height at a time.
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const web = path.join(__dirname, '../web');
+const html = fs.readFileSync(path.join(web, 'index.html'), 'utf8');
+const css = fs.readFileSync(path.join(web, 'style.css'), 'utf8');
+const scripts = fs.readdirSync(path.join(web, 'js')).filter((f) => f.endsWith('.js')).map((f) => [f, fs.readFileSync(path.join(web, 'js', f), 'utf8')]);
+
+test('no inline style in the page', () => {
+  const bad = [...html.matchAll(/<(\w+)[^>]*\sstyle="([^"]*)"/g)]
+    .filter(([, tag, s]) => !/^--c:#[0-9a-f]{6}$/i.test(s) && !(tag === 'svg' && s === 'display:none'))   // a swatch's colour is data
+    .map((m) => m[0].slice(0, 90));
+  assert.deepEqual(bad, [], 'give it a class in style.css (UI kit) instead');
+});
+
+test('no style: in scripts building markup', () => {
+  const bad = scripts.flatMap(([f, s]) => [...s.matchAll(/\bstyle:\s*['"`]/g)].map((m) => f + ':' + s.slice(0, m.index).split('\n').length));
+  assert.deepEqual(bad, [], 'give it a class in style.css (UI kit), or use UI.note / UI.empty / UI.warn');
+});
+
+test('every card starts with its title', () => {
+  // the now playing strip and the D-pad are parts of the remote; the files card opens on its places, which are its title
+  const ok = ['playing', 'rc', 'filescard'];
+  const bad = [...html.matchAll(/<(section|details)\b([^>]*\bclass="card\b[^"]*"[^>]*)>\s*(?:<!--.*?-->\s*)?<(\w+)([^>]*)>/g)]
+    .filter(([, , attrs, tag, rest]) => !/^(h1|h2|summary)$/.test(tag) && !/class="card-head"/.test(rest) && !ok.some((k) => attrs.includes(`id="${k}"`) || attrs.includes(`card ${k}`)))
+    .map((m) => m[0].slice(0, 90));
+  assert.deepEqual(bad, [], 'a card begins with <h2>, <div class="card-head"><h2>, or (folded) <summary>');
+  // ui.js makes them; core.js has the card of a TV kind's intro; 'card stopped' is the whole page once the app quit
+  const built = scripts.filter(([f]) => f !== 'ui.js' && f !== 'core.js')
+    .flatMap(([f, s]) => [...s.matchAll(/el\('section', \{ className: 'card(?! stopped')/g)].map((m) => f + ':' + s.slice(0, m.index).split('\n').length));
+  assert.deepEqual(built, [], 'build cards with UI.card (or UI.say for a card of one line)');
+});
+
+test('a button beside a field is as tall as the field', () => {
+  const bad = [...html.matchAll(/<form class="line"[^>]*>(.*?)<\/form>/gs)].filter((m) => /class="small\b/.test(m[1])).map((m) => m[0].slice(0, 90));
+  assert.deepEqual(bad, [], 'no .small in a form.line: the field is --ctl tall, so is its button');
+});
+
+test('control heights come from the tokens', () => {
+  // made to be hit without looking (the remote), the page's base sizes, or a box of their own (not a control)
+  const ok = new Set(['.chips button.small', '#pairerr', '.tabs button', 'button', '.screenbox', '.rb', '.rb.lab',
+    'input[type=text], input:not([type]), input[type=url], input[type=search]', '.pill button', '.seg button', '.seg.mini button',
+    '.setpick', '.vol button', '#screeninfo', '.drop', '.tsbox .go', '.scene', '.mitem', 'dialog.ask textarea']);
+  const bad = [...css.matchAll(/([^{}]*)\{([^{}]*\bmin-height:\s*\d+px[^{}]*)\}/g)]
+    .map((m) => m[1].trim().split('\n').pop().replace(/^.*\*\/\s*/, '').trim()).filter((sel) => !ok.has(sel));
+  assert.deepEqual(bad, [], 'use min-height:var(--ctl) (a field and its button), var(--ctl-sm) (.small) or var(--chip)');
+});
