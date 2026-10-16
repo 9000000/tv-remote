@@ -13,11 +13,12 @@ import java.util.Locale
  * The timers and limits the remotes set, kept and enforced here on the TV (see [Guard]), so nothing else has to stay on:
  *
  *   sleep timer   the TV goes to standby at a set time (a minute's warning on screen, with "+15 min")
- *   bedtime       between two times of day the TV goes to standby a minute after it is turned on
+ *   bedtime       in any of a few times of day (22:00–06:30, 13:00–14:00) the TV goes to standby a minute after it is turned on
  *   app limits    minutes per day for an app; when they are used up the app is closed (more can be granted for today)
  *   volume        times of day with a highest volume each (22:00–06:00 at most 30%): louder is turned down, with a word on screen
  *
- * Stored as one JSON object: { sleep_at, bedtime: {on, from, to}, snooze_until, limits: {pkg: minutes}, extra: {day: {pkg: minutes}},
+ * Stored as one JSON object: { sleep_at, bedtime: {on, ranges: [{from, to}], from, to (the first range, for
+ * remotes older than ranges)}, snooze_until, limits: {pkg: minutes}, extra: {day: {pkg: minutes}},
  * volume: [{from, to, max (percent)}] }.
  * The remotes reach it through [RulesReceiver] (phone, computer: over ADB) or RemoteService (the TV's own page).
  */
@@ -45,7 +46,7 @@ internal object Rules {
 
     /**
      * One action from a remote, then the state they show. Actions ("do"): sleep {minutes} (0 cancels), sleep_add {minutes},
-     * bedtime {on, from, to} ("22:00"), snooze {minutes} (bedtime paused, 0 resumes), limit {pkg, minutes} (0 removes),
+     * bedtime {on, ranges: [{from, to}] ("22:00"), or from, to for one}, snooze {minutes} (bedtime paused, 0 resumes), limit {pkg, minutes} (0 removes),
      * extra {pkg, minutes} (more for today only), volume {ranges: [{from, to, max}]} (the whole list). An empty "do" only reads.
      */
     @Synchronized
@@ -58,10 +59,15 @@ internal object Rules {
             "sleep" -> o.put("sleep_at", if (minutes > 0) now + minutes * 60_000L else 0L)
             "sleep_add" -> o.put("sleep_at", maxOf(o.optLong("sleep_at"), now) + minutes * 60_000L)
             "bedtime" -> {
-                val from = d.optString("from", "22:00")
-                val to = d.optString("to", "06:30")
-                if (!HHMM.matches(from) || !HHMM.matches(to)) throw IllegalArgumentException("bad time")
-                o.put("bedtime", JSONObject().put("on", d.optBoolean("on")).put("from", pad(from)).put("to", pad(to)))
+                val given = d.optJSONArray("ranges") ?: JSONArray().put(JSONObject().put("from", d.optString("from", "22:00")).put("to", d.optString("to", "06:30")))
+                val list = JSONArray()
+                for (i in 0 until minOf(given.length(), 8)) {
+                    val r = given.getJSONObject(i)
+                    val from = r.optString("from"); val to = r.optString("to")
+                    if (!HHMM.matches(from) || !HHMM.matches(to)) throw IllegalArgumentException("bad time")
+                    list.put(JSONObject().put("from", pad(from)).put("to", pad(to)))
+                }
+                o.put("bedtime", bedtime(d.optBoolean("on") && list.length() > 0, list))
             }
             "volume" -> {
                 val list = JSONArray()
@@ -108,11 +114,28 @@ internal object Rules {
     /** Minutes of today granted on top of [pkg]'s limit. */
     fun extra(o: JSONObject, pkg: String, now: Long): Int = o.optJSONObject("extra")?.optJSONObject(day(now))?.optInt(pkg) ?: 0
 
-    /** Whether [now] falls in the bedtime window (which may run past midnight). */
-    fun inBedtime(o: JSONObject, now: Long): Boolean {
-        val b = o.optJSONObject("bedtime") ?: return false
-        return b.optBoolean("on") && within(b.optString("from", "22:00"), b.optString("to", "06:30"), now)
+    /** {on, ranges, from, to}: from and to are the first range, what remotes older than several ranges read. */
+    private fun bedtime(on: Boolean, ranges: JSONArray): JSONObject {
+        val first = ranges.optJSONObject(0)
+        return JSONObject().put("on", on).put("ranges", ranges).put("from", first?.optString("from") ?: "22:00").put("to", first?.optString("to") ?: "06:30")
     }
+
+    /** The bedtime as stored, a TV Setup older than several ranges having kept only from and to. */
+    fun bedtime(o: JSONObject): JSONObject {
+        val b = o.optJSONObject("bedtime") ?: return bedtime(false, JSONArray().put(JSONObject().put("from", "22:00").put("to", "06:30")))
+        return bedtime(b.optBoolean("on"), b.optJSONArray("ranges")
+            ?: JSONArray().put(JSONObject().put("from", b.optString("from", "22:00")).put("to", b.optString("to", "06:30"))))
+    }
+
+    /** The bedtime range [now] falls in ({from, to}, which may run past midnight), null outside them or with bedtime off. */
+    fun bedNow(o: JSONObject, now: Long): JSONObject? {
+        val b = bedtime(o)
+        if (!b.optBoolean("on")) return null
+        val list = b.getJSONArray("ranges")
+        return (0 until list.length()).map { list.getJSONObject(it) }.firstOrNull { within(it.optString("from"), it.optString("to"), now) }
+    }
+
+    fun inBedtime(o: JSONObject, now: Long): Boolean = bedNow(o, now) != null
 
     /** The volume range [now] is in ({from, to, max}), the lowest when two overlap; null outside them all. */
     fun volumeCap(o: JSONObject, now: Long): JSONObject? {
@@ -148,7 +171,7 @@ internal object Rules {
         }
         val sleepAt = o.optLong("sleep_at").let { if (it > now) it else 0L }
         return JSONObject().put("ok", true).put("now", now).put("sleep_at", sleepAt)
-            .put("bedtime", o.optJSONObject("bedtime") ?: JSONObject().put("on", false).put("from", "22:00").put("to", "06:30"))
+            .put("bedtime", bedtime(o))
             .put("in_bedtime", inBedtime(o, now)).put("snooze_until", o.optLong("snooze_until").let { if (it > now) it else 0L })
             .put("limits", limits).put("volume", o.optJSONArray("volume") ?: JSONArray()).put("volume_now", volumeCap(o, now) ?: JSONObject.NULL)
             .put("volume_fixed", Guard.volumeFixed(c)).put("running", RemoteService.isRunning()).put("wanted", active(c))

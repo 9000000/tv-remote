@@ -37,10 +37,15 @@ function renderRules() {
   $('#sleepbtns').replaceChildren(...[15, 30, 45, 60, 90, 120].map((m) => el('button', { className: 'small', textContent: mins(m), onclick: () => setSleep(m) })));
   $('#sleepacts').replaceChildren(...(r.sleep_at ? [act('＋15 phút', async () => { await loadRules({ do: 'sleep_add', minutes: 15 }); }), act('✕ Hủy hẹn giờ', async () => setSleep(0), 'danger')] : []));
   // bedtime
-  const b = r.bedtime || {};
-  if (!$('#rulecards').contains(document.activeElement)) { $('#bedon').checked = !!b.on; $('#bedfrom').value = b.from || '22:00'; $('#bedto').value = b.to || '06:30'; }
+  const b = r.bedtime || {}, beds = bedRanges();
+  if (!$('#rulecards').contains(document.activeElement)) $('#bedon').checked = !!b.on;
+  $('#beds').replaceChildren(...beds.map((v, i) => el('div', { className: 'item' },
+    el('div', { className: 'name' }, el('span', { textContent: v.from + ' – ' + v.to })),
+    el('div', { className: 'acts' },
+      act('🗑', async () => { if (await ask('Bỏ giờ đi ngủ ' + v.from + ' – ' + v.to + '?', { ok: 'Bỏ' })) await saveBeds(beds.filter((x, j) => j !== i)); }, 'danger')))));
   const snoozed = r.snooze_until > r.now;
-  $('#bedstate').textContent = !b.on ? '' : snoozed ? 'Đang cho xem thêm tới ' + clock(r.snooze_until) + '.' : r.in_bedtime ? 'Đang trong giờ đi ngủ: TV bật lên sẽ tự tắt sau 1 phút.' : 'Đang bật: ' + b.from + ' – ' + b.to + ' mỗi ngày.';
+  $('#bedstate').textContent = !b.on ? '' : snoozed ? 'Đang cho xem thêm tới ' + clock(r.snooze_until) + '.' : r.in_bedtime ? 'Đang trong giờ đi ngủ: TV bật lên sẽ tự tắt sau 1 phút.'
+    : 'Đang bật: ' + beds.map((v) => v.from + ' – ' + v.to).join(', ') + ' mỗi ngày.';
   $('#bedacts').replaceChildren(...(!b.on ? [] : snoozed ? [act('Thôi, áp dụng lại ngay', async () => { await loadRules({ do: 'snooze', minutes: 0 }); })]
     : r.in_bedtime ? [act('Cho xem thêm 30 phút', async () => { await loadRules({ do: 'snooze', minutes: 30 }); })] : []));
   // app limits
@@ -91,11 +96,27 @@ async function setSleep(m) {
   if (r) toast(m ? 'TV sẽ tự tắt lúc ' + clock(r.sleep_at) : 'Đã hủy hẹn giờ tắt');
 }
 
-$('#bedsave').addEventListener('click', async () => {
-  const r = await loadRules({ do: 'bedtime', on: $('#bedon').checked, from: $('#bedfrom').value || '22:00', to: $('#bedto').value || '06:30' });
-  if (r) toast(r.bedtime.on ? 'Đã lưu giờ đi ngủ: ' + r.bedtime.from + ' – ' + r.bedtime.to : 'Đã tắt giờ đi ngủ');
+// a TV Setup older than several ranges answers with from and to only
+const bedRanges = () => { const b = (RULES && RULES.bedtime) || {}; return b.ranges || (b.from ? [{ from: b.from, to: b.to }] : []); };
+async function saveBeds(list, on = list.length > 0) {
+  const r = await loadRules({ do: 'bedtime', on: on && list.length > 0, ranges: list, from: list.length ? list[0].from : '22:00', to: list.length ? list[0].to : '06:30' });
+  if (r && !r.bedtime.on) toast('Đã tắt giờ đi ngủ');
+  return r;
+}
+$('#bedf').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const v = { from: $('#bedfrom').value || '22:00', to: $('#bedto').value || '06:30' };
+  if (v.from === v.to) return toast('Giờ bắt đầu và kết thúc phải khác nhau');
+  const b = (RULES && RULES.bedtime) || {};
+  const keep = b.on ? bedRanges() : [];                                // turned off, the old ranges are not wanted back
+  if (keep.length && !b.ranges && !await setupFor('bedtimes')) return;
+  if (await saveBeds([...keep, v])) toast('Đã thêm giờ đi ngủ: ' + v.from + ' – ' + v.to);
 });
-$('#bedon').addEventListener('change', () => $('#bedsave').click());
+$('#bedon').addEventListener('change', async () => {
+  const list = bedRanges().length ? bedRanges() : [{ from: $('#bedfrom').value || '22:00', to: $('#bedto').value || '06:30' }];
+  const r = await saveBeds(list, $('#bedon').checked);
+  if (r && r.bedtime.on) toast('Đã bật giờ đi ngủ');
+});
 async function saveVols(list) {
   if (RULES && RULES.volume === undefined && !await setupFor('volume')) return null;
   return loadRules({ do: 'volume', ranges: list });

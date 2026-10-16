@@ -17,6 +17,7 @@ object SetupNeed {
         "draw" to "0.1.0",                                             // ✏️ drawing over the screen
         "pic" to "0.1.0",                                              // 🖼️ a picture over it
         "volume" to "0.1.0",                                           // 🔊 volume limits
+        "bedtimes" to "0.3.1",                                         // 🌙 more than one bedtime
     )
 
     /** "setup:old:pic:2.21.0:2.20.0" or "setup:missing:draw:2.18.0:": the words every client looks for in an error. */
@@ -29,6 +30,7 @@ object SetupNeed {
         "draw" -> if (vi) "Vẽ lên TV" else "Drawing on the TV"
         "pic" -> if (vi) "Đưa ảnh lên TV" else "A picture on the TV"
         "volume" -> if (vi) "Giới hạn âm lượng" else "Volume limits"
+        "bedtimes" -> if (vi) "Nhiều khoảng giờ đi ngủ" else "Several bedtimes"
         else -> feature
     }
 

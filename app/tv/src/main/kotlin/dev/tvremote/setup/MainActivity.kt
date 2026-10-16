@@ -409,7 +409,7 @@ class MainActivity : Activity() {
         val at = o.optLong("sleep_at")
         val sleeping = at > System.currentTimeMillis()
         if (sleeping) lines.add("😴 " + t("TV tự tắt lúc ", "The TV turns off at ") + java.text.SimpleDateFormat("HH:mm", Locale.US).format(java.util.Date(at)))
-        o.optJSONObject("bedtime")?.let { if (it.optBoolean("on")) lines.add("🌙 " + t("Giờ đi ngủ ", "Bedtime ") + it.optString("from") + " – " + it.optString("to")) }
+        Rules.bedtime(o).let { b -> if (b.optBoolean("on")) lines.add("🌙 " + t("Giờ đi ngủ ", "Bedtime ") + b.getJSONArray("ranges").let { l -> (0 until l.length()).joinToString(", ") { l.getJSONObject(it).let { r -> r.optString("from") + " – " + r.optString("to") } } }) }
         val n = o.optJSONObject("limits")?.length() ?: 0
         if (n > 0) lines.add("⏳ " + t("Giới hạn giờ dùng: $n app", "Daily limits: $n " + (if (n == 1) "app" else "apps")))
         return if (lines.isEmpty()) null else Pair(lines.joinToString("\n"), sleeping)

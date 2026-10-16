@@ -34,6 +34,22 @@ class BedtimeTest {
         assertFalse(Rules.inBedtime(JSONObject(), at(23, 0)))
     }
 
+    @Test fun severalRanges() {                                       // the night and an afternoon nap
+        val r = JSONObject().put("bedtime", JSONObject().put("on", true).put("ranges", org.json.JSONArray()
+            .put(JSONObject().put("from", "22:00").put("to", "06:30")).put(JSONObject().put("from", "13:00").put("to", "14:00"))))
+        assertTrue(Rules.inBedtime(r, at(23, 0)))
+        assertEquals("13:00", Rules.bedNow(r, at(13, 30))?.optString("from"))
+        assertFalse(Rules.inBedtime(r, at(14, 0)))
+        assertFalse(Rules.inBedtime(r, at(10, 0)))
+        assertEquals("22:00", Rules.bedtime(r).optString("from"))     // what older remotes read: the first range
+    }
+
+    @Test fun oneRangeFromAnOlderTvSetup() {
+        val b = Rules.bedtime(rules(true, "21:30", "06:00"))
+        assertEquals(1, b.getJSONArray("ranges").length())
+        assertEquals("21:30", b.getJSONArray("ranges").getJSONObject(0).optString("from"))
+    }
+
     @Test fun extraTimeCountsForTodayOnly() {
         val now = at(12, 0)
         val o = JSONObject().put("extra", JSONObject().put(Rules.day(now), JSONObject().put("com.a.b", 30)))

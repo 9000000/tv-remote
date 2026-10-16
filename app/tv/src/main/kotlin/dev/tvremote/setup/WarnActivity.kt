@@ -51,7 +51,7 @@ class WarnActivity : Activity() {
             "bed" -> t("Đã tới giờ đi ngủ", "It is bedtime")
             else -> t("Hết giờ dùng $name hôm nay", "Time is up for $name today")
         }, 28, true), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(8) })
-        val bed = Rules.load(this).optJSONObject("bedtime")
+        val bed = Rules.bedNow(Rules.load(this), System.currentTimeMillis())
         card.addView(text(when (kind) {
             "sleep" -> t("Hẹn giờ tắt TV sắp hết.", "The sleep timer is about to end.")
             "bed" -> t("Giờ đi ngủ: ", "Bedtime: ") + (bed?.optString("from") ?: "") + " – " + (bed?.optString("to") ?: "") + t(". Muốn xem thêm, nhờ người lớn cho thêm giờ từ điện thoại.", ". For more time, ask a grown-up to allow it from their phone.")
