@@ -7,9 +7,11 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
+import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -173,8 +175,18 @@ internal fun Context.input(hint: String): EditText {
     e.textSize = 15f
     e.setSingleLine(true)
     e.background = box(CARD, 12)
-    e.setPadding(dp(12), 0, dp(12), 0)
+    e.setPadding(dp(14), dp(12), dp(14), dp(12))
+    e.minHeight = dp(48)
     return e
+}
+
+/** [v] as a dialog's body: room around it, and a box lighter than the dialog, which is CARD itself. */
+internal fun Context.inDialog(v: View): FrameLayout {
+    v.background = box(BTN, 12)
+    val wrap = FrameLayout(this)
+    wrap.setPadding(dp(24), dp(12), dp(24), dp(4))
+    wrap.addView(v, FrameLayout.LayoutParams(-1, -2))
+    return wrap
 }
 
 internal fun Activity.hideKeyboard() {

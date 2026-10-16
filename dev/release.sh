@@ -6,24 +6,45 @@
 # Both APKs are attached to every release together with versions.json (the computer apps follow, from GitHub Actions); each app reads its own number from that file,
 # so an app that did not change is not offered a pointless update.
 #
-#   1. bump VERSION, and app/android/VERSION and/or app/tv/VERSION if that app (or app/shared) changed
-#   2. add a "## <VERSION> - <date>" section to CHANGELOG.md        3. commit, push        4. dev/release.sh
+#   1. write the notes under "## Unreleased" in CHANGELOG.md, commit        2. dev/release.sh
+# It bumps the numbers itself: VERSION when it is still the last tag's, an app's when that app (or app/shared) changed since
+# the last tag and its number did not (BUMP=minor: x.y+1.0 instead of x.y.z+1; SKIP_CHECK=1: the apps' numbers are left alone).
+# "## Unreleased" becomes "## <VERSION> - <date>" with the line of the three numbers; then it commits that and pushes.
+# Run again after a failure: nothing is bumped twice (VERSION is no longer the last tag's, and its section is there).
 # Needs the gh CLI logged in, and the two signing.jks files the earlier releases were signed with (or updates will not install).
 set -e
 cd "$(dirname "$0")/.."
-VER=$(cat VERSION)
 [ -f app/android/signing.jks ] && [ -f app/tv/signing.jks ] || { echo "signing.jks missing: an APK signed with a new key cannot update the installed apps"; exit 1; }
 [ -z "$(git status --porcelain)" ] || { echo "commit your changes first"; exit 1; }
+LAST=$(git describe --tags --abbrev=0 2>/dev/null || true)
+next() { python3 -c 'import sys; a = [int(x) for x in sys.argv[1].split(".")]; i = 1 if sys.argv[2] == "minor" else 2; a[i] += 1; a[i + 1:] = [0] * (2 - i); print(".".join(map(str, a)))' "$1" "${BUMP:-patch}"; }
+if [ -n "$LAST" ]; then
+  [ "$(cat VERSION)" = "${LAST#v}" ] && next "$(cat VERSION)" > VERSION
+  for a in android tv; do                                             # changed code must come with a new number, or nobody gets it
+    [ -z "$SKIP_CHECK" ] || continue
+    old=$(git show "$LAST:app/$a/VERSION" 2>/dev/null || true)
+    if [ -n "$old" ] && [ "$old" = "$(cat app/$a/VERSION)" ] && ! git diff --quiet "$LAST" -- "app/$a" app/shared ":(exclude)app/$a/*.apk" ":(exclude)app/shared/tests"; then
+      next "$old" > "app/$a/VERSION"
+    fi
+  done
+fi
+VER=$(cat VERSION)
+if ! grep -q "^## $VER " CHANGELOG.md; then
+  grep -q "^## Unreleased$" CHANGELOG.md || { echo "CHANGELOG.md: write this release's notes under a \"## Unreleased\" heading"; git checkout -- VERSION app/android/VERSION app/tv/VERSION; exit 1; }
+  python3 - "$VER" "$(date +%F)" "$(cat app/android/VERSION)" "$(cat app/tv/VERSION)" <<'PY'
+import sys
+v, day, phone, tv = sys.argv[1:]
+s = open("CHANGELOG.md").read().replace("## Unreleased\n", f"## {v} - {day}\n\nWeb {v} · app điện thoại {phone} · app TV {tv}\n", 1)
+open("CHANGELOG.md", "w").write(s)
+PY
+fi
 NOTES=$(awk -v v="## $VER " 'index($0, v) == 1 {on = 1; next} on && /^## / {exit} on' CHANGELOG.md)
 [ -n "$NOTES" ] || { echo "CHANGELOG.md has no section for $VER"; exit 1; }
-LAST=$(git describe --tags --abbrev=0 2>/dev/null || true)
-for a in android tv; do                                               # changed code must come with a new number, or nobody gets it
-  [ -n "$LAST" ] && [ -z "$SKIP_CHECK" ] || continue
-  old=$(git show "$LAST:app/$a/VERSION" 2>/dev/null || true)
-  if [ "$old" = "$(cat app/$a/VERSION)" ] && ! git diff --quiet "$LAST" -- "app/$a" app/shared ":(exclude)app/$a/*.apk"; then
-    echo "app/$a (or app/shared) changed since $LAST but app/$a/VERSION is still $old: bump it, or run with SKIP_CHECK=1"; exit 1
-  fi
-done
+if [ -n "$(git status --porcelain)" ]; then
+  git commit -qam "Release v$VER (app điện thoại $(cat app/android/VERSION), app TV $(cat app/tv/VERSION))"
+  echo "numbers: web $VER, phone $(cat app/android/VERSION), TV $(cat app/tv/VERSION)"
+fi
+git push -q origin HEAD                                               # the release is made from what GitHub has
 # the computer app is built again (on GitHub, each system) only when its code changed; otherwise the last release's archives
 # are attached again and "web" (what the computer app reads) keeps their version, so nobody is offered the same app again
 # NO_DESKTOP=1: only the APKs, no GitHub Actions run (its minutes are limited). Changes are counted from the release that

@@ -146,25 +146,45 @@ internal fun MainActivity.clipDialog() {
             if (text == null) { say(t("TV không trả lời. Thử lại.", "The TV did not answer. Try again."), true); return@post }
             val box = input(t("Clipboard của TV đang trống. Gõ hoặc dán chữ vào đây để gửi lên TV.", "The TV’s clipboard is empty. Type or paste text here to send it to the TV."))
             box.setText(text)
-            box.maxLines = 6
-            val wrap = FrameLayout(this)
-            wrap.setPadding(dp(20), dp(8), dp(20), 0)
-            wrap.addView(box)
+            box.setSingleLine(false)                                  // a box to read and edit, not input()'s one line
+            box.minLines = 4
+            box.maxLines = 8
+            box.gravity = Gravity.TOP or Gravity.START
+            box.background = box(BTN, 12)                             // the dialog is CARD: the box must stand out from it
+            val body = col()
+            body.setPadding(dp(24), dp(12), dp(24), dp(20))           // no dialog buttons under it: the row is the last thing
+            body.addView(box, LinearLayout.LayoutParams(-1, -2))
+            val acts = LinearLayout(this)
+            body.addView(acts, LinearLayout.LayoutParams(-1, dp(44)).apply { topMargin = dp(12) })
+            val d = AlertDialog.Builder(this).setTitle(t("Clipboard của TV", "The TV’s clipboard")).setView(body).create()
             val toTv = { paste: Boolean ->
                 val s = box.text.toString()
                 if (s.isEmpty()) say(t("Chưa có chữ", "No text yet"), false)
-                else Thread {
-                    val ok = try { tv.setClipboard(s.take(100000), paste); true } catch (e: Exception) { false }
-                    ui.post { say(if (!ok) t("TV không nhận. Thử lại.", "The TV did not take it. Try again.") else if (paste) t("Đã dán trên TV", "Pasted on the TV") else t("Đã chép lên TV", "Copied to the TV"), !ok) }
-                }.start()
+                else {
+                    d.dismiss()
+                    Thread {
+                        val ok = try { tv.setClipboard(s.take(100000), paste); true } catch (e: Exception) { false }
+                        ui.post { say(if (!ok) t("TV không nhận. Thử lại.", "The TV did not take it. Try again.") else if (paste) t("Đã dán trên TV", "Pasted on the TV") else t("Đã chép lên TV", "Copied to the TV"), !ok) }
+                    }.start()
+                }
             }
-            AlertDialog.Builder(this).setTitle(t("Clipboard của TV", "The TV’s clipboard")).setView(wrap)
-                .setPositiveButton(t("Dán trên TV", "Paste on TV")) { _, _ -> toTv(true) }
-                .setNegativeButton(t("Chép lên TV", "Copy to TV")) { _, _ -> toTv(false) }
-                .setNeutralButton(t("Chép về máy", "Copy here")) { _, _ ->
+            // one row of short words: the title says whose clipboard it is; what each does in full goes to screen readers
+            for ((i, b) in listOf(
+                Triple(t("Chép về", "Copy"), t("Chép về điện thoại", "Copy to the phone"), {
                     (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("TV", box.text.toString()))
                     if (android.os.Build.VERSION.SDK_INT < 33) Toast.makeText(this, t("Đã sao chép vào máy này", "Copied to this device"), Toast.LENGTH_SHORT).show()   // Android 13+ says it itself
-                }.show()
+                    d.dismiss()
+                }),
+                Triple(t("Gửi lên", "Send"), t("Chép lên clipboard của TV", "Put on the TV’s clipboard"), { toTv(false) }),
+                Triple(t("Dán", "Paste"), t("Dán vào ô đang gõ trên TV", "Paste where the TV is typing"), { toTv(true) }),
+            ).withIndex()) {
+                val btn = button(b.first, if (i == 2) ACCENT else BTN)
+                btn.contentDescription = b.second
+                btn.setPadding(dp(4), 0, dp(4), 0)
+                btn.setOnClickListener { b.third() }
+                acts.addView(btn, LinearLayout.LayoutParams(0, -1, 1f).apply { if (i > 0) leftMargin = dp(8) })
+            }
+            d.show()
         }
     }.start()
 }

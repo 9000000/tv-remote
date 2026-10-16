@@ -590,6 +590,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         box.setPadding(dp(20), dp(12), dp(20), 0)
         val field = input(t("vd: mở YouTube, Sơn Tùng", "e.g. open YouTube, lo-fi music"))
         field.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_SEND
+        field.background = box(BTN, 12)                                // the dialog is CARD: the box must stand out from it
         box.addView(field, LinearLayout.LayoutParams(0, dp(48), 1f))
         val mic = icon("@mic", t("Nói", "Speak"), ACCENT)
         mic.lit = true

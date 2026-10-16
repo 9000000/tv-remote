@@ -89,8 +89,9 @@ that into one question with an Update / Install TV Setup button (`needSetup()` i
 
 Three numbers, each bumped only when its part changes: `VERSION` (every release; the tag and the computer app), `app/android/VERSION`, `app/tv/VERSION`.
 
-- A change in `app/shared` (Kotlin **or** web) changes both APKs, so bump both app versions.
-- Steps: bump versions → add `## <VERSION> - <YYYY-MM-DD>` to `CHANGELOG.md` (line `Web x · app điện thoại y · app TV z`, then **Tiếng Việt** and **English** lists) → commit → push → `dev/release.sh` (builds, creates the GitHub release with both APKs and `versions.json`; APKs are never committed). It needs `gh` logged in and both `signing.jks` files, and refuses when app code changed without a version bump.
+- A change in `app/shared` (Kotlin **or** web) changes both APKs, so both app numbers go up (release.sh sees it).
+- Keep the next release's notes under `## Unreleased` at the top of `CHANGELOG.md` (**Tiếng Việt** and **English** lists), added to as features land.
+- `dev/release.sh` does the rest: bumps `VERSION` and the number of each app whose code (or `app/shared`) changed since the last tag (patch; `BUMP=minor`), turns `## Unreleased` into `## <VERSION> - <date>` with the line `Web x · app điện thoại y · app TV z`, commits, pushes, builds and creates the GitHub release with both APKs and `versions.json` (APKs are never committed). It needs `gh` logged in and both `signing.jks` files. Run again after a failure: nothing is bumped twice.
 - The computer apps are not built by `release.sh`: when `app/desktop` or `app/shared` changed since the last tag it starts
   `.github/workflows/desktop.yml` with the new tag, which builds them on each system and attaches them (names without a version,
   so `releases/latest/download/TV-Remote-<os>-<arch>.zip` always works), and waits for it; otherwise it attaches the last

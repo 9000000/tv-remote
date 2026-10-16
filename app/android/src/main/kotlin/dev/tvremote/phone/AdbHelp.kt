@@ -38,9 +38,7 @@ internal fun MainActivity.adbHelp() {
         Triple("@store|" + t("Mở CH Play trên TV", "Open the Play Store on the TV"), "") { basic?.launch("https://play.google.com/store/apps"); Unit },
         Triple("@package|" + t("Mở app theo tên gói", "Open an app by package name"), "") {
             val box = input("com.example.app")
-            val wrap = FrameLayout(this)
-            wrap.setPadding(dp(20), dp(8), dp(20), 0)
-            wrap.addView(box)
+            val wrap = inDialog(box)
             AlertDialog.Builder(this).setTitle(t("Tên gói hoặc đường dẫn", "Package name or link")).setView(wrap)
                 .setPositiveButton(t("Mở", "Open")) { _, _ ->
                     val what = box.text.toString().trim()

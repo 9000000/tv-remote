@@ -118,7 +118,7 @@ internal fun MainActivity.buildAbout(): View {
         box.addView(qr, qp)
         val share = button(t("Chia sẻ link tải app", "Share the download link"), BTN)
         share.setOnClickListener { startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, appLink), null)) }
-        box.addView(share, gap(8))
+        box.addView(share, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(12) })
     }
 
     box.addView(head(t("TÁC GIẢ", "AUTHOR")), gap(22))

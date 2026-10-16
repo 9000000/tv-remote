@@ -4,6 +4,28 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- ▶️ Đang phát: trên remote hiện TV đang phát gì (tên, kênh hoặc ca sĩ), kéo thanh để tua, bấm để tạm dừng hoặc qua bài. Có trên cả ba: app điện thoại, app máy tính, web của TV.
+- 📋 Clipboard của TV (Mở trên TV → Clipboard của TV): xem chữ TV đang sao chép, chép về máy mình, gửi chữ lên TV hoặc dán vào ô đang gõ.
+- Một TV lưu bằng cả IP nhà lẫn IP Tailscale giờ chỉ là một dòng; quét mạng cũng chỉ hiện TV đó một lần.
+- Quét mạng: TV nào trả lời là hiện ngay, không chờ quét xong.
+- Remote trên web có Thêm phím giống app điện thoại: Mở trên TV, Hẹn giờ tắt, Cảnh, Vẽ lên TV. 🎧 bắt đầu nghe ngay.
+- Hộp FPT (hoặc hộp nhà mạng) có mật khẩu ADB: TV Setup tự mở Tùy chọn nhà phát triển để vượt qua.
+- Đổi ngôn ngữ vẫn giữ TV, tab và vị trí đang xem.
+- App điện thoại: ô nhập chữ trong các hộp thoại to và rõ hơn; nút Chia sẻ link tải app không còn bị hẹp.
+
+**English**
+- ▶️ Now playing: the remote shows what the TV is playing (title, channel or artist); drag the bar to seek, tap to pause or skip. On all three: the phone app, the computer app and the TV web page.
+- 📋 The TV's clipboard (Open on the TV → The TV's clipboard): see the text the TV has copied, copy it to your device, send text to the TV or paste it where the TV is typing.
+- A TV saved under both its home IP and its Tailscale IP is now one row; a scan shows it once too.
+- Scan: each TV shows up as soon as it answers, without waiting for the whole scan.
+- The web remote has More keys like the phone app: Open on the TV, Sleep timer, Scenes, Draw on the TV. 🎧 starts listening at once.
+- FPT (or other operator) boxes with an ADB password: TV Setup opens Developer options itself to get past it.
+- Switching the language keeps the TV, tab and scroll position.
+- Phone app: text boxes in dialogs are bigger and clearer; the Share the download link button is no longer squashed.
+
 ## 2.24.2 - 2026-10-15
 
 Web 2.24.2 · app điện thoại 2.22.2 · app TV 2.21.3

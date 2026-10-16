@@ -116,9 +116,7 @@ internal fun MainActivity.pickFile(types: Array<String>) {
 
 internal fun MainActivity.askText(title: String, hint: String, ok: String, then: (String) -> Unit) {
     val box = input(hint)
-    val wrap = FrameLayout(this)
-    wrap.setPadding(dp(20), dp(8), dp(20), 0)
-    wrap.addView(box)
+    val wrap = inDialog(box)
     AlertDialog.Builder(this).setTitle(title).setView(wrap)
         .setPositiveButton(ok) { _, _ -> box.text.toString().trim().let { if (it.isNotEmpty()) then(it) } }
         .setNegativeButton(t("Hủy", "Cancel"), null).show()

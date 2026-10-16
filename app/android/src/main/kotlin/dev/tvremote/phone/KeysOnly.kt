@@ -129,9 +129,7 @@ internal fun MainActivity.pair(ip: String) {
         message(null, false)
         val code = input(t("Mã 6 ký tự trên TV", "The 6 characters on the TV"))
         code.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-        val wrap = FrameLayout(this)
-        wrap.setPadding(dp(20), dp(8), dp(20), 0)
-        wrap.addView(code)
+        val wrap = inDialog(code)
         AlertDialog.Builder(this).setTitle(t("Nhập mã đang hiện trên TV", "Type the code shown on the TV")).setView(wrap)
             .setPositiveButton(t("Ghép", "Pair")) { _, _ ->
                 val typed = code.text.toString()
