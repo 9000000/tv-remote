@@ -17,6 +17,7 @@ class ScenesTest {
         override fun volume(level: Int) { did.add("volume $level") }
         override fun timer(minutes: Int) { did.add("timer $minutes") }
         override fun input(id: String) { did.add("input $id") }
+        override fun notify(msg: JSONObject) { did.add("notify " + msg.getString("text") + " " + msg.getString("corner") + " " + msg.getInt("seconds")) }
     }
 
     private fun steps(vararg s: String) = JSONArray(s.map { JSONObject(it) })
@@ -26,6 +27,34 @@ class ScenesTest {
         assertNull(Scenes.run(steps("""{"do":"wake"}""", """{"do":"app","pkg":"com.a.b"}""", """{"do":"volume","level":12}""",
             """{"do":"key","key":"mute"}""", """{"do":"timer","min":30}""", """{"do":"sleep"}"""), tv))
         assertEquals(listOf("key 224", "app com.a.b", "volume 12", "key 164", "timer 30", "key 223"), tv.did)
+    }
+
+    @Test fun aNotifyStepSendsTheCleanedMessage() {
+        val tv = Fake()
+        assertNull(Scenes.run(steps("""{"do":"notify","text":"Dinner","corner":"bottom-left","seconds":500}""", """{"do":"notify","text":"x","corner":"??"}"""), tv))
+        assertEquals(listOf("notify Dinner bottom-left 60", "notify x top-right 5"), tv.did)
+    }
+
+    @Test fun cleanKeepsNotifyStepsWithSaneValuesAndDropsEmptyOnes() {
+        val out = Scenes.clean(JSONArray().put(JSONObject("""{"name":"Call","steps":[
+            {"do":"notify","title":" Hi ","text":"Dinner","corner":"nope","seconds":0},{"do":"notify","text":"  "},{"do":"notify"}]}""")))
+        val st = out.getJSONObject(0).getJSONArray("steps")
+        assertEquals(1, st.length())
+        val n = st.getJSONObject(0)
+        assertEquals("Hi", n.getString("title"))
+        assertEquals("top-right", n.getString("corner"))
+        assertEquals(1, n.getInt("seconds"))
+    }
+
+    @Test fun aTargetThatCannotShowAMessageNamesTheStep() {
+        val bare = object : Scenes.Target {
+            override fun key(code: Int) {}
+            override fun app(pkg: String) {}
+            override fun link(url: String) {}
+            override fun volume(level: Int) {}
+            override fun timer(minutes: Int) {}
+        }
+        assertTrue(Scenes.run(steps("""{"do":"notify","text":"x"}"""), bare)!!.startsWith("1: "))
     }
 
     @Test fun aFailingStepIsNamedAndTheRestRuns() {

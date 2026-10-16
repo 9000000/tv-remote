@@ -18,6 +18,7 @@ object SetupNeed {
         "pic" to "0.1.0",                                              // 🖼️ a picture over it
         "volume" to "0.1.0",                                           // 🔊 volume limits
         "bedtimes" to "0.3.1",                                         // 🌙 more than one bedtime
+        "notify" to "0.4.2",                                           // 🔔 a card with a message over the TV's screen
         "invite" to "0.4.2",                                           // 📲 sharing the remote by QR (an older one answers with a pass)
         "ram" to "0.4.2",                                              // 🧠 the notice when the memory is nearly full
     )
@@ -33,6 +34,7 @@ object SetupNeed {
         "pic" -> if (vi) "Đưa ảnh lên TV" else "A picture on the TV"
         "volume" -> if (vi) "Giới hạn âm lượng" else "Volume limits"
         "bedtimes" -> if (vi) "Nhiều khoảng giờ đi ngủ" else "Several bedtimes"
+        "notify" -> if (vi) "Gửi thông báo lên TV" else "Sending a notification to the TV"
         "invite" -> if (vi) "Chia sẻ remote bằng QR" else "Sharing the remote by QR"
         "ram" -> if (vi) "Báo khi RAM đầy" else "The full memory notice"
         else -> feature

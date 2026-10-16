@@ -64,7 +64,7 @@ const ICON = {
   '🔗': ['link', 210], '🎧': ['headphones', 290], '🐞': ['bug', 0], '🤖': ['bot', 265], '📝': ['list', 210], '🔒': ['lock', 0],
   '📜': ['log', 210], '🔌': ['plug', 45], '💬': ['message', 200], '🎤': ['mic', 0], '🛒': ['store', 140], '🔧': ['wrench', 30],
   '📲': ['phone', 265], '🧽': ['eraser', 0], '⏸': ['pause', 210], '⏹': ['stop', 0], '☀️': ['wake', 45], '⏱️': ['timer', 280],
-  '🛠️': ['settings', 210], '▶': ['play', 210], '↩': ['undo', 210], '✅': ['check', 145],
+  '🛠️': ['settings', 210], '🔔': ['bell', 45], '▶': ['play', 210], '↩': ['undo', 210], '✅': ['check', 145],
 };
 const TAB_HUE = { remote: 220, apps: 265, files: 38, health: 350, auto: 20, tv: 175 };
 // where: titles (coloured) and buttons; not inside these

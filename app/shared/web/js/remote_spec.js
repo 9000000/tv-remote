@@ -36,6 +36,7 @@ const REMOTE_DO = {
   open: () => quickOpen(),
   timer: () => timerMenu(),
   scenes: () => scenesMenu(),
+  notify: () => notifyDialog(),
   draw: () => { if (drawing) drawStop(); else if (!needAdb()) drawStart(); },
   search: () => askStoreSearch(),
   package: () => askStorePage(),

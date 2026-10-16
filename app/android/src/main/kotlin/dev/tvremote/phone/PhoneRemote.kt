@@ -27,6 +27,7 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "open" to act { quickOpen() },
     "timer" to act { timerMenu() },
     "scenes" to act { scenesMenu() },
+    "notify" to act { notifyDialog() },
     "draw" to act { if (drawing) stopDrawing() else startDrawing() },
     "search" to act { askText(t("Tìm app trên CH Play", "Search the Play Store"), t("vd: vlc", "e.g. vlc"), t("Tìm", "Search")) { openLink("market://search?c=apps&q=" + java.net.URLEncoder.encode(it, "UTF-8")) } },   // the TV's Play Store takes searches only this way
     "package" to act { askText(t("App id (tên gói)", "App id (package name)"), "org.videolan.vlc", t("Mở", "Open")) { storePage(it) } },
