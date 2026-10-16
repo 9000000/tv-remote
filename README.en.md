@@ -2,7 +2,7 @@
 
 [Tiếng Việt](README.md) · **English** · 🌐 [tvremote.pages.dev](https://tvremote.pages.dev)
 
-Control an Android TV / Google TV from a phone or a computer, straight to the TV with no server in between. **Features, screenshots and downloads: [tvremote.pages.dev](https://tvremote.pages.dev).** This README covers setup, troubleshooting and the technical details.
+Control an Android TV / Google TV (and LG, Samsung TVs) from a phone or a computer, straight to the TV with no server in between. **Features, screenshots and downloads: [tvremote.pages.dev](https://tvremote.pages.dev).** This README covers setup, troubleshooting and the technical details.
 
 Tested for real on a Sony BRAVIA (Android 9). Other brands are untested. Samsung (Tizen) and LG (webOS) do not work at all, not even the keys: they do not run Android, so they have neither ADB nor Google's remote protocol.
 
@@ -69,7 +69,7 @@ The README, the code and the site always call the parts by these names:
 | Install on the controlling device | the app | nothing, fine on an iPhone | the app |
 | LG (webOS) and Samsung (Tizen, 2016 on) TVs | ✓ | | ✓ |
 
-**LG and Samsung TVs.** The Phone app and the Computer app also control LG (webOS) and Samsung (Tizen, 2016 on) TVs, through each maker's own remote protocol, no ADB: the first time, choose Allow on the TV. They can: remote keys, typing, opening apps, opening YouTube links, Wake-on-LAN, scenes; on LG also setting the volume to a number, turning the screen off and searching YouTube. What needs ADB (seeing and touching the picture, listening, Apps, Files, Health, sleep timer, drawing) is hidden or greyed out with "TV LG/Samsung không hỗ trợ" ("LG/Samsung TVs can't do this"). The TV web page is Android TV only, since the TV app runs only on Android.
+**LG and Samsung TVs.** The Phone app and the Computer app also control LG (webOS) and Samsung (Tizen, 2016 on) TVs, through each maker's own remote protocol, no ADB: the first time, choose Allow on the TV. They can: remote keys, typing, opening apps, opening YouTube links, Wake-on-LAN, scenes; on LG also setting the volume to a number, turning the screen off and searching YouTube. What needs ADB (seeing and touching the picture, listening, Apps, Files, Health, sleep timer, drawing) is greyed out; pressing it says it is only on Android TV / Google TV, and those tabs list what they do. The TV web page is Android TV only, since the TV app runs only on Android.
 
 **How the parts connect.** No server in between: everything goes straight to the TV.
 

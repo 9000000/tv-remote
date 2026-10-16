@@ -2,7 +2,7 @@
 
 **Tiếng Việt** · [English](README.en.md) · 🌐 [tvremote.pages.dev](https://tvremote.pages.dev)
 
-Điều khiển Android TV / Google TV từ điện thoại hoặc máy tính, đi thẳng tới TV, không qua máy chủ nào. **Tính năng, ảnh chụp và nút tải: [tvremote.pages.dev](https://tvremote.pages.dev).** README này là hướng dẫn cài đặt, xử lý lỗi và chi tiết kỹ thuật.
+Điều khiển Android TV / Google TV (và TV LG, Samsung) từ điện thoại hoặc máy tính, đi thẳng tới TV, không qua máy chủ nào. **Tính năng, ảnh chụp và nút tải: [tvremote.pages.dev](https://tvremote.pages.dev).** README này là hướng dẫn cài đặt, xử lý lỗi và chi tiết kỹ thuật.
 
 Đã chạy thật với Sony BRAVIA (Android 9). TV hãng khác chưa thử. Samsung (Tizen) và LG (webOS) không dùng được gì, kể cả bấm phím: hai hãng này không chạy Android nên không có ADB lẫn giao thức remote của Google.
 
@@ -69,7 +69,7 @@ Trong README, code và trang giới thiệu, các phần luôn được gọi b�
 | Cần cài gì trên máy điều khiển | app | không, hợp với iPhone | app |
 | TV LG (webOS) và Samsung (Tizen, từ 2016) | ✓ | | ✓ |
 
-**TV LG và Samsung.** App điện thoại và App máy tính điều khiển được cả TV LG (webOS) và Samsung (Tizen, từ 2016), qua cách điều khiển riêng của mỗi hãng, không cần ADB: lần đầu TV hỏi, chọn Cho phép trên TV. Làm được: phím remote, gõ chữ, mở app, mở link YouTube, Wake-on-LAN, cảnh; với LG thêm chỉnh âm lượng theo số, tắt màn hình, tìm trên YouTube. Việc cần ADB (xem và chạm hình, nghe tiếng, ứng dụng, tệp, sức khỏe, hẹn giờ, vẽ) bị ẩn hoặc làm mờ với "TV LG/Samsung không hỗ trợ". Web của TV chỉ có trên Android TV, vì App TV chỉ chạy trên Android.
+**TV LG và Samsung.** App điện thoại và App máy tính điều khiển được cả TV LG (webOS) và Samsung (Tizen, từ 2016), qua cách điều khiển riêng của mỗi hãng, không cần ADB: lần đầu TV hỏi, chọn Cho phép trên TV. Làm được: phím remote, gõ chữ, mở app, mở link YouTube, Wake-on-LAN, cảnh; với LG thêm chỉnh âm lượng theo số, tắt màn hình, tìm trên YouTube. Việc cần ADB (xem và chạm hình, nghe tiếng, ứng dụng, tệp, sức khỏe, hẹn giờ, vẽ) được làm mờ; bấm vào thì app cho biết việc đó chỉ có trên Android TV / Google TV, các tab đó hiện danh sách những gì nó làm. Web của TV chỉ có trên Android TV, vì App TV chỉ chạy trên Android.
 
 **Các phần nối với nhau thế nào.** Không có máy chủ nào ở giữa: mọi thứ đi thẳng tới TV.
 
