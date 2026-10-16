@@ -29,7 +29,7 @@ import javax.crypto.Cipher
  * A small ADB client over TCP: authenticates with this app's own RSA key and multiplexes several streams (shell
  * commands, sockets on the TV) over the one connection. The first connection makes the TV ask "Allow USB debugging?".
  */
-class Adb(dir: File) : Closeable {
+class Adb(private val dir: File) : Closeable {
     fun interface Prompt { fun waitingForUser() }
 
     private class Msg(val cmd: Int, val arg0: Int, val arg1: Int, val data: ByteArray)
@@ -131,7 +131,7 @@ class Adb(dir: File) : Closeable {
         }
     }
 
-    private val key: KeyPair
+    internal val key: KeyPair
     private val streams = ConcurrentHashMap<Int, Stream>()
     private var sock: Socket? = null
     private lateinit var input: DataInputStream
@@ -162,6 +162,63 @@ class Adb(dir: File) : Closeable {
             prompt.waitingForUser()
             awaitApproval(host, port)
         }
+        sock!!.soTimeout = 0
+        sock!!.keepAlive = true
+        Thread(::pump, "adb-reader").apply { isDaemon = true }.start()
+    }
+
+    /**
+     * Connects to a TV the way [connect] does, but first through the TLS port Wireless debugging gave it (see [AdbTls]) when
+     * this TV was paired that way; the port changes whenever Wireless debugging is switched on again, so a refused one is
+     * looked for again (mDNS) before giving up on it. A TV never paired this way, or whose TLS port is gone, is dialled on 5555.
+     */
+    @Throws(Exception::class)
+    fun connectTo(host: String, prompt: Prompt) {
+        val saved = AdbTls.saved(dir, host)
+        if (saved > 0) {
+            var failure: Exception? = null
+            for (round in 0..1) {
+                val port = if (round == 0) saved else AdbTls.discoverConnect(host)
+                if (port <= 0 || (round == 1 && port == saved)) continue
+                try {
+                    connectTls(host, port)
+                    if (port != saved) AdbTls.save(dir, host, port)
+                    return
+                } catch (e: Exception) {
+                    if (failure == null) failure = e
+                    WireLog.all.add("·", "adb $host tls port $port: $e")
+                    close0()
+                }
+            }
+            if (!AdbTls.plainOpen(host)) throw failure ?: IOException("adb tls: no port")   // nothing on 5555 to fall back to: say what the TLS port said
+        }
+        connect(host, 5555, prompt)
+    }
+
+    /** A new socket for the next try: this object is used once, so only the dead one is dropped. */
+    private fun close0() { try { sock?.close() } catch (ignored: IOException) { } }
+
+    /**
+     * Connects to the port Wireless debugging announces for connecting (Android 11+): plain ADB first, then the device asks
+     * for TLS (A_STLS) and both sides switch to TLS 1.3 with our key as the client certificate. The key was trusted at
+     * pairing, so there is no "Allow USB debugging?" question; an unpaired key is refused here.
+     */
+    @Throws(Exception::class)
+    fun connectTls(host: String, port: Int) {
+        dial(host, port)
+        send(CNXN, 0x01000001, 1 shl 18, "host::\u0000".toByteArray())
+        var m = read()
+        if (m.cmd == STLS) {
+            send(STLS, m.arg0, 0, EMPTY)
+            val ssl = AdbTls.handshake(this, sock!!, host, port)
+            sock = ssl
+            input = DataInputStream(ssl.inputStream)
+            output = ssl.outputStream
+            m = try { read() } catch (quiet: SocketTimeoutException) { send(CNXN, 0x01000001, 1 shl 18, "host::\u0000".toByteArray()); read() }
+        }
+        if (m.cmd == AUTH) throw IOException("adb tls: this device is not paired")
+        if (m.cmd != CNXN) throw IOException("adb tls: unexpected answer")
+        maxData = m.arg1.coerceIn(4096, 1 shl 18)
         sock!!.soTimeout = 0
         sock!!.keepAlive = true
         Thread(::pump, "adb-reader").apply { isDaemon = true }.start()
@@ -362,7 +419,7 @@ class Adb(dir: File) : Closeable {
     }
 
     /** The public key in adb's own format: little-endian words of n, R^2 mod n and -1/n mod 2^32, base64 encoded. */
-    private fun publicKey(): String {
+    internal fun publicKey(): String {
         val k = key.public as RSAPublicKey
         val n = k.modulus
         val r32 = BigInteger.ONE.shiftLeft(32)
@@ -380,6 +437,7 @@ class Adb(dir: File) : Closeable {
         private const val WRITE_WAIT = 30
         private const val CNXN = 0x4e584e43
         private const val AUTH = 0x48545541
+        private const val STLS = 0x534c5453
         private const val OPEN = 0x4e45504f
         private const val OKAY = 0x59414b4f
         private const val CLSE = 0x45534c43

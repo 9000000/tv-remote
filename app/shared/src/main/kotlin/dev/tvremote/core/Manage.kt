@@ -32,6 +32,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
 
     /** Told when a device was let in through the TV's question (TV Setup shows it on the TV). */
     var allowed: ((String) -> Unit)? = null
+    /** Pairing through Wireless debugging needs TLS 1.3 from a library the TV app does not carry: only the Phone and Computer apps turn this on. */
+    var canPair = false
     private val promptLock = Any()
 
     private val playing = helper?.let { NowPlaying({ link.get() }, it) }      // the now playing bar: null where tvr-helper.jar is not at hand
@@ -125,6 +127,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     val via = Inputs.switch({ sh(it) }, id, inputCache.peek())
                     HttpServer.Response.json(JSONObject().put("ok", true).put("via", via))
                 }
+                "adb/discover" -> { if (canPair) return discoverPairing(); HttpServer.Response.error(404, "not here") }
+                "adb/pair" -> { if (canPair && post) return pairing(r.json()); HttpServer.Response.error(404, "not here") }
                 "adb/connect" -> HttpServer.Response.json(JSONObject().put("state", link.reconnect()))
                 "shell" -> shell(r.json().optString("cmd"))
                 "rules" -> HttpServer.Response.json(rules(r.json()))
@@ -179,6 +183,30 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
 
     /** The TV's inputs, kept a minute (reading two dumpsys takes a second or two on a slow TV). */
     private fun inputs(fresh: Boolean): List<Inputs.Input> = inputCache.get(fresh) { Inputs.parse(sh(Inputs.READ)) }
+    /** The pairing and connect ports heard on the network (mDNS), for the page to prefill; empty lists when nothing answers. */
+    private fun discoverPairing(): HttpServer.Response {
+        fun list(l: List<Mdns.Service>) = org.json.JSONArray().also { a -> l.forEach { a.put(JSONObject().put("ip", it.ip).put("port", it.port)) } }
+        val (pairing, connect) = AdbTls.discover()
+        return HttpServer.Response.json(JSONObject().put("host", link.host).put("pairing", list(pairing)).put("connect", list(connect)))
+    }
+
+    /** Wireless debugging: pairs with the 6-digit code, then connects through the TLS port (found by mDNS unless the page sent it). */
+    private fun pairing(d: JSONObject): HttpServer.Response {
+        val host = d.optString("host").trim().ifEmpty { link.host }
+        var cp = d.optInt("connectPort", 0)
+        if (d.optString("code").isNotBlank() || cp <= 0) {            // no code, only a connect port: pairing was done, the port was missing
+            val port = d.optInt("port", 0)
+            val code = AdbTls.cleanCode(d.optString("code")) ?: throw IllegalArgumentException("the pairing code is 6 digits")
+            if (port !in 1..65535) throw IllegalArgumentException("the pairing port is a number")
+            AdbTls.pair(Adb(link.keyDir), host, port, code)
+        }
+        var tries = 0
+        while (cp <= 0 && tries++ < 3) cp = AdbTls.discoverConnect(host)
+        val out = JSONObject().put("ok", true).put("paired", true)
+        if (cp <= 0) return HttpServer.Response.json(out.put("needPort", true))   // paired, but the connect port is still to be typed
+        AdbTls.save(link.keyDir, host, cp)
+        return HttpServer.Response.json(out.put("port", cp).put("state", link.reconnect()))
+    }
 
     /** ready, unauthorized (the TV is asking) or closed: the words the page knows. */
     fun adbState(): String = link.state()

@@ -12,6 +12,7 @@ plugins {
 kotlin {
     jvmToolchain(17)
     sourceSets["main"].kotlin.srcDir("../shared/src/main/kotlin")
+    sourceSets["main"].kotlin.srcDir("../shared/conscrypt")           // ConscryptBackend: TLS 1.3 for Wireless debugging (core/AdbTls.kt)
 }
 // Android only: decoding the picture and sound (TvAndroid, AudioOut), the QR bitmap. Meta and Caps, started on the TV, are Java
 // (src/main/java) and reach the computer as assets/tvr-helper.jar, already dexed.
@@ -19,6 +20,7 @@ sourceSets["main"].kotlin.exclude("**/core/TvAndroid.kt", "**/core/AudioOut.kt",
 
 dependencies {
     implementation("org.json:json:20240303")                         // on Android org.json is part of the system
+    implementation("org.conscrypt:conscrypt-openjdk-uber:2.7.0")    // adb pairing: TLS 1.3 and the exported keying material (natives of every system inside)
     implementation("net.java.dev.jna:jna:5.15.0")                    // the window: Window.kt calls native/<system>/webview
     testImplementation("junit:junit:4.13.2")                         // ./gradlew :desktop:test
 }

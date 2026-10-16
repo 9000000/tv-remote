@@ -126,7 +126,7 @@ class Tv(
             status("connecting", host)
             val a = Adb(dir)
             adb = a
-            a.connect(host, 5555) { status("allow", "") }
+            a.connectTo(host) { status("allow", "") }
             if (stopped) return
             status("starting", a.shell("getprop ro.product.model").trim())
             if (wake) a.shell("input keyevent KEYCODE_WAKEUP")

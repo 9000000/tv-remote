@@ -41,10 +41,12 @@ android {
     lint { checkReleaseBuilds = false }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11 }
     kotlinOptions { jvmTarget = "11" }
+    sourceSets["main"].java.srcDir("../shared/conscrypt")             // ConscryptBackend: TLS 1.3 for Wireless debugging (core/AdbTls.kt)
 }
 
 dependencies {
     implementation(project(":shared"))
+    implementation("org.conscrypt:conscrypt-android:2.7.0")           // adb pairing: TLS 1.3 and the exported keying material, on Android 10+
     testImplementation("junit:junit:4.13.2")                          // RemoteSpecTest: remote.json against the handlers of PhoneRemote.kt
     testImplementation("org.json:json:20240303")                      // the real org.json: Android's own is only a stub off a device
 }

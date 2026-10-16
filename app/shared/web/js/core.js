@@ -112,7 +112,7 @@ async function call(path, data, quiet) {
       if (!quiet && needSetup(e)) return null;                         // asked as a question with its button, not a toast
       if (r.status === 403 && e === 'scope') { refresh(); if (!quiet) toast(scopeWhy()); return null; }   // the owner may have just changed it
       if (r.status === 404 && CORE === 'pc') e = STALE;
-      if (r.status === 503 && /^adb/.test(e)) { e = /allow/.test(e) ? 'TV đang hỏi cho phép gỡ lỗi: nhìn lên TV, chọn “Luôn cho phép”' : 'chưa nối được ADB tới TV'; setTimeout(refresh, 300); }
+      if (r.status === 503 && /^adb/.test(e) && !/adb (pair|tls)/.test(e)) { e = /allow/.test(e) ? 'TV đang hỏi cho phép gỡ lỗi: nhìn lên TV, chọn “Luôn cho phép”' : 'chưa nối được ADB tới TV'; setTimeout(refresh, 300); }
       if (!quiet) toast('Lỗi: ' + friendly(e)); return null;
     }
     return await r.json();
@@ -174,6 +174,10 @@ const FRIENDLY = [
   [/INSUFFICIENT_STORAGE|No space left/i, 'TV hết bộ nhớ trống.'],
   [/no app that can open/i, 'TV không có app mở loại tệp này (cài VLC rồi thử lại).'],
   [/cannot be opened \(no launcher screen\)|no launcher activity/i, 'App này không có màn hình để mở: nó chỉ chạy nền, hoặc là một phần của app khác.'],
+  [/adb pair: wrong code/i, 'Mã ghép nối không đúng hoặc đã hết hạn. Xem mã mới trên TV rồi nhập lại.'],
+  [/adb pair: not a pairing port/i, 'Cổng này không phải cổng ghép nối. Dùng đúng địa chỉ IP và cổng trong hộp “Ghép nối thiết bị” trên TV.'],
+  [/adb tls: this device is not paired/i, 'TV chưa ghép với app này. Ghép nối bằng Gỡ lỗi không dây trước.'],
+  [/adb tls: this app cannot pair/i, 'App này không ghép nối được bằng Gỡ lỗi không dây trên thiết bị này.'],
   [/not a backup/i, 'Tệp này không phải bản sao lưu của TV Remote.'],
   [/^protected: the TV needs this app/i, 'App này cần cho TV chạy, không tắt hay xóa dữ liệu được.'],
   [/removed by the TV right after install/i, 'TV báo cài xong nhưng tự gỡ app này ngay sau đó. Box của nhà mạng (FPT Play...) chặn một số app; app này không dùng được trên TV này.'],
