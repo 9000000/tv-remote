@@ -98,6 +98,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     val p = if (link.state() == "ready") AdbPrompt.read(link.get()) else null
                     return HttpServer.Response.json(JSONObject().put("fingerprint", p?.fingerprint ?: ""))
                 }
+                "adb/discover" -> if (canPair) return discoverPairing()     // the phone and computer only: the TV web page has its TV on localhost
                 "space" -> return HttpServer.Response.json(space(r.q("path"), r.q("size").toLongOrNull() ?: 0L, r.q("apk") == "1"))
                 "job" -> {
                     val j = jobs[r.q("id")]
@@ -127,7 +128,6 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     val via = Inputs.switch({ sh(it) }, id, inputCache.peek())
                     HttpServer.Response.json(JSONObject().put("ok", true).put("via", via))
                 }
-                "adb/discover" -> { if (canPair) return discoverPairing(); HttpServer.Response.error(404, "not here") }
                 "adb/pair" -> { if (canPair && post) return pairing(r.json()); HttpServer.Response.error(404, "not here") }
                 "adb/connect" -> HttpServer.Response.json(JSONObject().put("state", link.reconnect()))
                 "shell" -> shell(r.json().optString("cmd"))

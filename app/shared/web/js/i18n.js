@@ -477,7 +477,7 @@
     'Ghép bằng Gỡ lỗi không dây': 'Pair with Wireless debugging', 'Android 11 trở lên: dùng mã 6 số TV hiện ra, không cần bật Gỡ lỗi USB.': 'Android 11 or newer: use the 6-digit code the TV shows, no USB debugging needed.',
     'Trên TV: Cài đặt → Tùy chọn nhà phát triển → Gỡ lỗi không dây → Ghép nối thiết bị bằng mã ghép nối.': 'On the TV: Settings → Developer options → Wireless debugging → Pair device with pairing code.',
     'IP:cổng ghép nối': 'Pairing IP:port', 'Mã 6 số': '6-digit code', 'Cổng kết nối (nếu hỏi)': 'Connect port (if asked)', '🔗 Ghép': '🔗 Pair',
-    'Nhập IP:cổng và mã 6 số hiện trên TV.': 'Type the IP:port and the 6-digit code the TV shows.', 'Đang ghép nối...': 'Pairing...',
+    'Nhập IP:cổng và mã 6 số hiện trên TV.': 'Type the IP:port and the 6-digit code the TV shows.', 'Nhập cổng kết nối (số sau dấu : ).': 'Type the connect port (the number after the colon).', 'Đang ghép nối...': 'Pairing...',
     'Đã ghép. Nhập cổng kết nối (ở màn hình Gỡ lỗi không dây, dưới “Địa chỉ IP và cổng”) rồi bấm Ghép lại.': 'Paired. Type the connect port (on the Wireless debugging screen, under “IP address & Port”), then press Pair again.',
     'Đã ghép và kết nối': 'Paired and connected',
     'Mã ghép nối không đúng hoặc đã hết hạn. Xem mã mới trên TV rồi nhập lại.': 'The pairing code is wrong or has expired. Read the new code on the TV and type it again.',

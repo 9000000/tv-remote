@@ -64,7 +64,7 @@ private fun MainActivity.showNotifyDialog() {
     body.addView(corners)
     body.addView(head(t("HIỆN TRONG", "STAYS FOR")), gap(14))
     body.addView(seconds2, gap(6))
-    AlertDialog.Builder(this).setTitle(t("Gửi thông báo lên TV", "Notify the TV")).setView(inDialog(body).also { it.getChildAt(0).background = null })
+    AlertDialog.Builder(this).setTitle(t("Gửi thông báo lên TV", "Notify the TV")).setView(inDialog(body))
         .setPositiveButton(t("Gửi", "Send")) { _, _ ->
             val msg = JSONObject().put("title", title.text.toString().trim()).put("text", text.text.toString().trim()).put("corner", corner).put("seconds", seconds)
             if (msg.getString("title").isEmpty() && msg.getString("text").isEmpty()) {

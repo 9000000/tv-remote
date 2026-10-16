@@ -282,11 +282,13 @@ async function wirelessPair() {
   const status = el('p', { className: 'note' });
   const pair = async () => {
     const m = addr.value.trim().match(/^(?:(.+):)?(\d{2,5})$/);
-    if (!m || !/^\s*\d{3}\s?\d{3}\s*$/.test(code.value)) { status.textContent = 'Nhập IP:cổng và mã 6 số hiện trên TV.'; return; }
+    if (!m || (code.hidden ? !/^\d{2,5}$/.test(port.value.trim()) : !/^\s*\d{3}\s?\d{3}\s*$/.test(code.value))) {   // paired already: only the connect port is left
+      status.textContent = code.hidden ? 'Nhập cổng kết nối (số sau dấu : ).' : 'Nhập IP:cổng và mã 6 số hiện trên TV.'; return;
+    }
     status.textContent = 'Đang ghép nối...';
-    const r = await api('/api/adb/pair', { host: m[1] || '', port: +m[2], code: code.value, connectPort: +port.value || 0 });
+    const r = await api('/api/adb/pair', { host: m[1] || '', port: +m[2], code: code.hidden ? '' : code.value, connectPort: +port.value || 0 });
     if (!r) { status.textContent = ''; return; }
-    if (r.needPort) { status.textContent = 'Đã ghép. Nhập cổng kết nối (ở màn hình Gỡ lỗi không dây, dưới “Địa chỉ IP và cổng”) rồi bấm Ghép lại.'; code.value = ''; port.hidden = false; return; }
+    if (r.needPort) { status.textContent = 'Đã ghép. Nhập cổng kết nối (ở màn hình Gỡ lỗi không dây, dưới “Địa chỉ IP và cổng”) rồi bấm Ghép lại.'; code.value = ''; code.hidden = true; port.hidden = false; port.focus(); return; }
     ADB = { state: r.state }; bannerKey = ''; $('#assist').close(); toast('Đã ghép và kết nối'); await refresh();
   };
   port.hidden = true;

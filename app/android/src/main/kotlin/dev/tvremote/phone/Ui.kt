@@ -148,6 +148,27 @@ internal fun TextView.setLabel(s: String) {
     d.setTint(currentTextColor)
     setCompoundDrawablesRelative(d, null, null, null)
     compoundDrawablePadding = (10 * resources.displayMetrics.density).roundToInt()
+    removeOnLayoutChangeListener(IconBesideText); addOnLayoutChangeListener(IconBesideText)
+    post { IconBesideText.place(this) }                               // new words on a button of the same size: no layout follows
+}
+
+/** A compound icon is drawn at the padding's edge while centred words sit in the middle: on a wide button the two drift
+ *  apart. Moved (its bounds, not its room) to just before the words, so icon and words are centred together, as on the page. */
+private object IconBesideText : View.OnLayoutChangeListener {
+    override fun onLayoutChange(v: View, l: Int, t: Int, r: Int, b: Int, ol: Int, ot: Int, or: Int, ob: Int) = place(v as TextView)
+    fun place(tv: TextView) {
+        val d = tv.compoundDrawablesRelative[0] ?: return
+        val lay = tv.layout ?: return
+        val z = d.bounds.height()
+        var off = 0
+        if (tv.gravity and Gravity.HORIZONTAL_GRAVITY_MASK == Gravity.CENTER_HORIZONTAL) {
+            var w = 0f
+            for (i in 0 until lay.lineCount) w = maxOf(w, lay.getLineWidth(i))
+            val room = tv.width - tv.compoundPaddingLeft - tv.compoundPaddingRight
+            off = ((room - w) / 2).toInt().coerceAtLeast(0)
+        }
+        if (d.bounds.left != off) { d.setBounds(off, 0, off + z, z); tv.invalidate() }
+    }
 }
 
 /** The words' colour, and the icon in front of them (if any) with it. */
@@ -241,9 +262,10 @@ internal fun Context.input(hint: String): EditText {
     return e
 }
 
-/** [v] as a dialog's body: room around it, and a box lighter than the dialog, which is CARD itself. */
+/** [v] as a dialog's body: room around it, and a field a box lighter than the dialog, which is CARD itself (a column of
+ *  fields and words keeps the dialog's own colour: its fields have their boxes). */
 internal fun Context.inDialog(v: View): FrameLayout {
-    v.background = box(BTN, 12)
+    if (v !is android.view.ViewGroup) v.background = box(BTN, 12)
     val wrap = FrameLayout(this)
     wrap.setPadding(dp(24), dp(12), dp(24), dp(4))
     wrap.addView(v, FrameLayout.LayoutParams(-1, -2))
