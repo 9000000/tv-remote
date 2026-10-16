@@ -79,6 +79,13 @@ internal class PlayingBar(private val a: MainActivity) {
         times.addView(dur)
         view.addView(times, LinearLayout.LayoutParams(-1, -2).apply { topMargin = a.dp(4) })
         a.ui.post { tick.run() }                                      // declared below the init block
+        ListenService.control = { what ->                             // the buttons of the listening notification
+            if (what == ListenService.STOP) a.stopListen(null)
+            else if (a.tv != null) {
+                if (what == "play" || what == "pause") { o.put("pos", now()); at = System.currentTimeMillis(); o.put("state", if (what == "pause") "paused" else "playing"); ListenService.show(o, a.title(a.host ?: "")) }
+                send(what, 0)
+            }
+        }
     }
 
     /** Where it is now: the last answer moved on by the time since, as NowPlaying does between the helper's lines. */
@@ -93,12 +100,13 @@ internal class PlayingBar(private val a: MainActivity) {
         override fun run() {
             val tv = a.tv
             val looking = a.foreground && a.remote.visibility == View.VISIBLE && a.basic == null && tv != null && tv.ready()
-            if (!looking) { o = JSONObject().put("state", "none"); draw(); a.ui.postDelayed(this, 2000); return }
+            val listening = a.listen && a.basic == null && tv != null && tv.ready()   // the phone's media controls show it too
+            if (!looking && !listening) { o = JSONObject().put("state", "none"); draw(); a.ui.postDelayed(this, 2000); return }
             if (!asking) {
                 asking = true
                 work.execute {
                     val got = try { player(tv!!).state() } catch (e: Exception) { JSONObject().put("state", "none") }
-                    a.ui.post { asking = false; o = got; at = System.currentTimeMillis(); draw() }
+                    a.ui.post { asking = false; o = got; at = System.currentTimeMillis(); draw(); ListenService.show(o, a.title(a.host ?: "")) }
                 }
             }
             draw()

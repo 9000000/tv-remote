@@ -15,6 +15,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Các tab Ứng dụng, Tệp, Sức khỏe, Tự động, Thiết lập dùng chung một cỡ cho nút, ô nhập và lựa chọn; trên điện thoại ô lọc tệp có dòng riêng.
 - Đang phát: app không gửi tên phim (vd FPT Play) giờ hiện tên app thay vì “null”, và tạm dừng không làm mất thanh nữa. Đang tạm dừng mà chuyển sang app khác thì thanh tự ẩn.
 - Xem hình TV: video không chiếu lên được (chip của TV, vd box FPT Play, hay phim có bản quyền) thì báo ngay trên khung hình, thay vì để màn hình đen như bị lỗi.
+- 📱 🎧 Nghe tiếng TV: hiện trong điều khiển media của điện thoại (thanh thông báo, màn hình khóa) với tên phim TV đang phát, ⏮ ⏯ ⏭ cho TV và ✕ để thôi nghe; app xin quyền thông báo lần đầu. Mạng chập chờn (4G, Tailscale) thì tự giữ nhiều tiếng hơn để bớt giật.
 
 **English**
 - 📱 Phone app: Scan the Wi-Fi goes straight onto the Wi-Fi while Tailscale (or another VPN) is on, so TVs at home are still found. On mobile data only, it says the phone is not on Wi-Fi instead of scanning the carrier's network.
@@ -25,6 +26,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - The Apps, Files, Health, Automation and Setup tabs share one size for buttons, fields and choices; on a phone the file filter gets its own line.
 - Now playing: an app that sends no title (FPT Play, say) shows its name instead of “null”, and pausing no longer hides the bar; a paused app left for another hides it.
 - Watching the TV: when its video cannot be shown (the TV's chip, as on the FPT Play box, or a copy-protected film), the picture says so instead of staying black like a fault.
+- 📱 🎧 Listening to the TV: shown in the phone's media controls (notification shade, lock screen) with what the TV plays, ⏮ ⏯ ⏭ for the TV and ✕ to stop listening; the app asks for notifications the first time. On a shaky network (4G, Tailscale) it keeps more sound queued so it stutters less.
 
 ## 0.2.1 - 2026-10-16
 
