@@ -9,10 +9,20 @@ import android.content.Intent
  * Gives a TV Setup pass to a phone or computer that already has ADB on this TV (it could do everything anyway). With it,
  * that device can later ask TV Setup to answer the TV's "Allow USB debugging?" for its own key, when the person is away.
  * Only the shell can send this broadcast (see the manifest), so no app on the TV can get a pass this way.
+ * With `--es want fp` it answers the fingerprint of the HTTPS certificate instead (no pass): the shell is the one channel
+ * already trusted, so the device pins the HTTPS port to it. An older TV Setup ignores that and gives a pass, which the
+ * device takes for what it is.
  */
 class TrustReceiver : BroadcastReceiver() {
     override fun onReceive(c: Context, i: Intent) {
         resultCode = Activity.RESULT_OK
-        resultData = RemoteService.newToken(c)
+        if (i.getStringExtra("want") == "fp") { resultData = Tls.fingerprint(c); return }
+        val vi = java.util.Locale.getDefault().language == "vi"
+        val name = when (i.getStringExtra("app")) {
+            "phone" -> if (vi) "App điện thoại" else "Phone app"
+            "computer" -> if (vi) "App máy tính" else "Computer app"
+            else -> "App"
+        }
+        resultData = RemoteService.newToken(c, "app", name, "", false)
     }
 }

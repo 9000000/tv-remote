@@ -10,6 +10,8 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLDecoder
 import java.net.URLEncoder
+import java.security.DigestInputStream
+import java.security.MessageDigest
 import java.util.Collections
 import java.util.Locale
 import java.util.regex.Pattern
@@ -527,7 +529,10 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     private fun fetch(url: String, install: Boolean): JSONObject {
         if (!url.matches(Regex("(?i)https?://\\S+"))) throw IllegalArgumentException("only http/https links")
         return job((if (install) "install " else "download ") + (if (url.length > 60) url.substring(0, 60) else url)) { j ->
-            val c = URL(url).openConnection() as HttpURLConnection
+            // TV Setup itself, the first time: the release's file, checked against its signed SHA256SUMS like every update
+            val setup = if (install && url.endsWith("/releases/latest/download/tv-setup.apk"))
+                Release.newer("0", "tv", "tv-setup.apk") ?: throw IOException(Release.UNSIGNED) else null
+            val c = URL(setup?.url ?: url).openConnection() as HttpURLConnection
             c.connectTimeout = 15000
             c.readTimeout = 30000
             c.setRequestProperty("User-Agent", "tv-remote")
@@ -542,7 +547,9 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 name = safeName(name)
                 val dest = if (install) TMP_APK else "/sdcard/Download/$name"
                 j.put("msg", name)
-                c.inputStream.use { push(it, len, dest, j) }
+                val md = MessageDigest.getInstance("SHA-256")
+                DigestInputStream(c.inputStream, md).use { push(it, len, dest, j) }
+                if (setup != null) try { setup.check(md) } catch (e: IOException) { sh("rm -f $TMP_APK"); throw e }
                 if (!install) "saved $dest"
                 else try { pmInstall(dest) } finally { sh("rm -f $TMP_APK") }
             } finally {
@@ -596,7 +603,9 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 c.setRequestProperty("User-Agent", "tv-remote")
                 try {
                     if (c.responseCode != 200) throw IOException("HTTP " + c.responseCode)
-                    c.inputStream.use { push(it, if (c.contentLength >= 0) c.contentLength.toLong() else -1L, SetupUpdate.APK, j) }
+                    val md = MessageDigest.getInstance("SHA-256")
+                    DigestInputStream(c.inputStream, md).use { push(it, if (c.contentLength >= 0) c.contentLength.toLong() else -1L, SetupUpdate.APK, j) }
+                    try { r.check(md) } catch (e: IOException) { sh("rm -f " + SetupUpdate.APK); throw e }
                 } finally {
                     c.disconnect()
                 }

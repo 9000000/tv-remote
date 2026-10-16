@@ -16,8 +16,13 @@
 # "## Unreleased" becomes "## <VERSION> - <date>" with the line of the three numbers; then it commits that and pushes.
 # Run again after a failure: nothing is bumped twice (VERSION is no longer the last tag's, and its section is there).
 # Needs the gh CLI logged in, and the two signing.jks files the earlier releases were signed with (or updates will not install).
+# Last it lists every file's SHA-256 in SHA256SUMS and signs that with the release key (dev/Sign.java; RELEASE_KEY, by default
+# ~/.tv-remote-release/ed25519.pem): the apps install nothing a release does not list there, signed by a key in Release.KEYS.
 set -e
 cd "$(dirname "$0")/.."
+KEY=${RELEASE_KEY:-$HOME/.tv-remote-release/ed25519.pem}
+[ -f "$KEY" ] || { echo "release key missing ($KEY): without SHA256SUMS.sig no app takes the update"; exit 1; }
+grep -q "$(java dev/Sign.java pub "$KEY")" app/shared/src/main/kotlin/dev/tvremote/update/Release.kt || { echo "$KEY is not one of Release.KEYS"; exit 1; }
 [ -f app/android/signing.jks ] && [ -f app/tv/signing.jks ] || { echo "signing.jks missing: an APK signed with a new key cannot update the installed apps"; exit 1; }
 [ -z "$(git status --porcelain)" ] || { echo "commit your changes first"; exit 1; }
 LAST=$(git describe --tags --abbrev=0 2>/dev/null || true)
@@ -94,5 +99,6 @@ else
   [ -n "$RUN" ] || { echo "the desktop workflow did not start: gh workflow run desktop.yml -f tag=v$VER"; exit 1; }
   gh run watch "$RUN" --exit-status >/dev/null || { echo "a computer app failed to build: gh run view $RUN --log-failed"; exit 1; }
 fi
+dev/sums.sh "v$VER"                                                   # the signed list of every file, last: until it is there no app offers this release
 gh release view "v$VER" --json assets -q '.assets[].name'
 echo; dev/churn.sh || true                                           # how settled the /api is: says when 1.0 is worth thinking about

@@ -120,7 +120,11 @@ so Android installs over the old APKs, and `release.sh` stops before 1.3.0 until
   so `releases/latest/download/TV-Remote-<os>-<arch>.zip` always works), and waits for it; otherwise it attaches the last
   release's archives again, and `versions.json` "web" (the number the computer app's Updater.kt reads) keeps theirs.
 - Release only when the user says so, and keep GitHub Actions runs few: the workflow never runs on push; try things locally.
-- Both apps update themselves from GitHub releases (`update/Release.kt`).
+- Both apps update themselves from GitHub releases (`update/Release.kt`). Every app installs only a file listed in the
+  release's `SHA256SUMS` with its SHA-256, signed (`SHA256SUMS.sig`, Ed25519) by a key in `Release.KEYS`; a release without
+  them is not offered. `release.sh` runs `dev/sums.sh <tag>` last (after the computer apps are attached); run it again after
+  replacing any file of a release by hand. The keys live in `~/.tv-remote-release/` (`ed25519.pem` in use, `ed25519-spare.pem`
+  kept elsewhere: losing both means every installed app refuses updates), made by `java dev/Sign.java new`; never on GitHub.
 
 ## Testing
 

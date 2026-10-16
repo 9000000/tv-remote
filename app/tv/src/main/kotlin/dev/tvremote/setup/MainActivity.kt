@@ -298,7 +298,7 @@ class MainActivity : Activity() {
             log(t("Đang tải bản ", "Downloading version ") + r.version + "...")
             val apk = File(getExternalFilesDir("update"), "tv-setup-" + r.version + ".apk")
             var last = 0
-            Release.download(r.url, apk, Release.Progress { pct -> if (pct >= last + 25) { last = pct; log("  $pct%") } })
+            r.download(apk, Release.Progress { pct -> if (pct >= last + 25) { last = pct; log("  $pct%") } })
             log(t("Đang cài. TV Setup tự mở lại sau khoảng nửa phút.", "Installing. TV Setup opens again in about half a minute."))
             SetupUpdate.start(a, apk.absolutePath, r.version, true)
         }
@@ -357,13 +357,19 @@ class MainActivity : Activity() {
         webCol.removeAllViews()
         webCol.addView(text(t("Điều khiển từ điện thoại", "Control from a phone"), 18, INK, true))
         if (on && ip.isNotEmpty()) {
-            val link = "http://" + ip + ":" + RemoteService.PORT
+            val secure = RemoteService.secure()                       // HTTPS once its certificate exists; plain HTTP before and on an older browser's bookmark
+            val scheme = if (secure) "https://" else "http://"
+            val port = if (secure) RemoteService.HTTPS_PORT else RemoteService.PORT
+            val link = scheme + ip + ":" + port
             qr(link)?.let { webCol.addView(it, LinearLayout.LayoutParams(dp(164), dp(164)).apply { topMargin = dp(14); gravity = Gravity.CENTER_HORIZONTAL }) }
-            val addr = text(link.removePrefix("http://"), 16, INK, true)
+            val addr = text(link.removePrefix(scheme), 16, INK, true)
             addr.gravity = Gravity.CENTER
             webCol.addView(addr, margins(top = 10))
+            if (secure) Tls.shortFingerprintIfReady(this)?.let {      // to compare with what the browser shows for the certificate
+                webCol.addView(text(t("Dấu vân tay: ", "Fingerprint: ") + it, 12, MUTED, false).apply { gravity = Gravity.CENTER })
+            }
             if (tsIp.isNotEmpty()) {
-                val ts = text(t("Ngoài nhà: ", "Away from home: ") + tsIp + ":" + RemoteService.PORT, 13, MUTED, false)
+                val ts = text(t("Ngoài nhà: ", "Away from home: ") + tsIp + ":" + port, 13, MUTED, false)
                 ts.gravity = Gravity.CENTER
                 webCol.addView(ts)
             }

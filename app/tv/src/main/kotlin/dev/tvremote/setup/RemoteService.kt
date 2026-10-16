@@ -41,8 +41,12 @@ import java.util.concurrent.ConcurrentHashMap
 class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     companion object {
         const val PORT = 8765
+        const val HTTPS_PORT = 8766                                   // the same page over TLS, with a certificate of its own (Tls.kt)
         private const val PREFS = "remote"
+        // two names, as a cookie does not tell ports apart: a Secure one set over HTTPS must not shadow the one set over HTTP
         private const val COOKIE = "tvr"
+        private const val COOKIE_TLS = "tvrs"
+        private const val COOKIE_AGE = Paired.WEB_DAYS * 24 * 3600
         private val KEYS: Map<String, Int> = Scenes.KEYS
 
         // pairing: one code at a time, shown on the TV, good for two minutes and five guesses
@@ -55,6 +59,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         fun pairingCode(): String? { val c = code; return if (c != null && System.currentTimeMillis() < codeUntil) c else null }
         fun cancelPairing() { code = null }
         fun isRunning(): Boolean = running != null
+        /** The HTTPS port is up: the TV's screen shows that address then. */
+        fun secure(): Boolean = running?.https != null
         /** connecting | allow | ready | error: the state of the input session, for the app's own screen. */
         fun adbState(): String = adbState
 
@@ -74,23 +80,15 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             if (Build.VERSION.SDK_INT >= 26) c.startForegroundService(i) else c.startService(i)
         }
 
-        fun pairedCount(c: Context): Int = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getStringSet("tokens", HashSet())?.size ?: 0
+        fun pairedCount(c: Context): Int = Paired.count(c)
 
         /** A new pass for a device, kept with the others (pairing hands them out, and TrustReceiver to ADB). */
-        fun newToken(c: Context): String {
-            val raw = ByteArray(24)
-            java.security.SecureRandom().nextBytes(raw)
-            val token = raw.joinToString("") { String.format("%02x", it) }
-            val p = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            synchronized(RemoteService::class.java) {
-                val tokens = HashSet(p.getStringSet("tokens", HashSet()) ?: emptySet())
-                tokens.add(token)
-                p.edit().putStringSet("tokens", tokens).commit()
-            }
-            return token
-        }
+        fun newToken(c: Context, kind: String, name: String, ip: String, tls: Boolean): String = Paired.add(c, kind, name, ip, tls)
 
-        fun forgetAll(c: Context) { c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove("tokens").apply() }
+        fun forgetAll(c: Context) { Paired.forgetAll(c) }
+
+        private fun cookie(token: String, tls: Boolean, age: Int = COOKIE_AGE): String =
+            (if (tls) COOKIE_TLS else COOKIE) + "=$token; Max-Age=$age; Path=/; HttpOnly; SameSite=Strict" + (if (tls) "; Secure" else "")
 
         private const val REST_MS = 3 * 60 * 1000L
         private fun ok(): HttpServer.Response = HttpServer.Response.ok()
@@ -101,6 +99,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     private val icons: MutableMap<String, ByteArray> = ConcurrentHashMap()
     private val held = HashMap<Int, Runnable>()
     private var http: HttpServer? = null
+    private var https: HttpServer? = null
     private var link: AdbLink? = null                                 // for apps, files, installs and health; the keys go through `tv`
     private var manage: Manage? = null
     private lateinit var prefs: SharedPreferences
@@ -151,7 +150,16 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         manage?.allowed = { fp ->                                      // whoever is at the TV sees that a device was let in
             ui.post { android.widget.Toast.makeText(this, (if (java.util.Locale.getDefault().language == "vi") "Đã cho phép gỡ lỗi USB cho một thiết bị đã ghép\n" else "USB debugging allowed for a paired device\n") + fp, android.widget.Toast.LENGTH_LONG).show() }
         }
-        if (enabled(this)) try { server.start(PORT, false) } catch (e: Exception) { adbState = "error"; serving = false }
+        if (enabled(this)) {
+            try { server.start(PORT, false) } catch (e: Exception) { adbState = "error"; serving = false }
+            Thread({                                                  // the first time this makes a key: a few seconds on a slow TV
+                try {
+                    val s = HttpServer(this)
+                    s.start(HTTPS_PORT, false, Tls.context(this))
+                    if (stopping) s.stop() else https = s
+                } catch (e: Exception) { dev.tvremote.core.WireLog.all.add("·", "https: " + e.message) }   // plain HTTP still works
+            }, "https").apply { isDaemon = true }.start()
+        }
         lastUse = System.currentTimeMillis()
         connect()
         guard = Guard(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
@@ -174,6 +182,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         running = null
         code = null
         http?.stop()
+        https?.stop()
         guard?.stop()
         tsWatch?.stop()
         dnsWatch?.stop()
@@ -309,12 +318,31 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         page.serve(r.path)?.let { return it }                        // the page and its scripts need no pairing: they hold no secrets
         if (r.path == "/api/pair/start" && r.method == "POST") return pairStart()
         if (r.path == "/api/pair/finish" && r.method == "POST") return pairFinish(r)
-        if (!tokens().contains(r.cookie(COOKIE)) || r.cookie(COOKIE).isEmpty())
-            return HttpServer.Response.json(401, JSONObject().put("error", "not paired").put("name", Build.MODEL))
+        // a pass made over TLS is only taken over TLS; the Secure cookie never comes over HTTP anyway
+        var token = if (r.tls) r.cookie(COOKIE_TLS) else ""
+        var hit = Paired.check(this, token, r.tls)
+        if (hit == null) { token = r.cookie(COOKIE); hit = Paired.check(this, token, r.tls) }
+        if (hit == null) return HttpServer.Response.json(401, JSONObject().put("error", "not paired").put("name", Build.MODEL))
 
         inUse()
+        val out = route(r, host, hit.entry)
+        if (hit.renew) out.headers["Set-Cookie"] = cookie(token, r.tls)   // a browser in use keeps its 30 days
+        return out
+    }
+
+    @Throws(Exception::class)
+    private fun route(r: HttpServer.Request, host: String, me: Paired.Entry): HttpServer.Response {
         val post = r.method == "POST"
         when (r.path) {
+            "/api/paired" -> if (!post) return HttpServer.Response.json(JSONObject().put("devices", JSONArray(Paired.list(this).map { it.json(it.id == me.id) })))
+            "/api/paired/forget" -> if (post) {
+                val d = r.json()
+                if (d.optBoolean("all")) Paired.forgetAll(this) else Paired.forget(this, d.optString("id"))
+                val gone = d.optBoolean("all") || d.optString("id") == me.id
+                val out = ok()
+                if (gone) { out.headers["Set-Cookie"] = cookie("", r.tls, 0) }   // forgetting oneself logs out: the page asks for a code
+                return out
+            }
             "/api/state" -> return HttpServer.Response.json(state(host))
             "/api/about" -> return HttpServer.Response.json(state(host))
             "/api/setup/need" -> return HttpServer.Response.json(JSONObject().put("ok", true))   // this is TV Setup: it has what this page knows
@@ -395,8 +423,6 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             else -> return HttpServer.Response.error(404, "not found")
         }
     }
-
-    private fun tokens(): Set<String> = prefs.getStringSet("tokens", HashSet()) ?: emptySet()
 
     /**
      * down / up are separate so holding a button in the browser is a long press on the TV. While it is held the key repeats
@@ -486,9 +512,9 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         }
         code = null
         wrong = 0
-        val token = newToken(this)
+        val token = Paired.add(this, "web", Paired.deviceName(r.headers["user-agent"] ?: ""), r.peer, r.tls)
         val ok = ok()
-        ok.headers["Set-Cookie"] = "$COOKIE=$token; Max-Age=315360000; Path=/; HttpOnly; SameSite=Strict"
+        ok.headers["Set-Cookie"] = cookie(token, r.tls)
         return ok
     }
 

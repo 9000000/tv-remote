@@ -78,7 +78,7 @@ internal fun MainActivity.startUpdate(r: Release) {
         var error: String? = null
         try {
             val apk = File(cacheDir, "update.apk")
-            Release.download(r.url, apk) { pct -> ui.post { progress(t("Đang tải bản ", "Downloading ") + r.version + "... " + pct + "%") } }
+            r.download(apk) { pct -> ui.post { progress(t("Đang tải bản ", "Downloading ") + r.version + "... " + pct + "%") } }
             val pi = packageManager.packageInstaller
             val id = pi.createSession(PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL))
             pi.openSession(id).use { session ->

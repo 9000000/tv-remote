@@ -4,6 +4,14 @@ import org.json.JSONObject
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.MessageDigest
+import java.security.cert.CertificateException
+import java.security.cert.X509Certificate
+import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 /**
  * The TV's "Allow USB debugging?" question, answered from an ADB session that the TV already trusts (TV Setup's own, or
@@ -130,20 +138,47 @@ object AdbPrompt {
 
     // ---------------------------------------------------------------- asking TV Setup, from a device it has paired with
 
-    /** A TV Setup pass for this device, handed out over ADB only (a broadcast only the shell may send). Null without TV Setup. */
+    /**
+     * A TV Setup pass for this device, handed out over ADB only (a broadcast only the shell may send). Null without TV Setup.
+     * [app] ("phone" / "computer") is what the TV lists the device as. A TV Setup with HTTPS also sends the fingerprint of
+     * its certificate, and the answer is "pass:fingerprint": [ask] then pins it, over the one channel that is already trusted.
+     */
     @Throws(IOException::class)
-    fun token(adb: Adb): String? =
-        Regex("data=\"([0-9a-f]{48})\"").find(adb.shell("am broadcast -n dev.tvremote.setup/.TrustReceiver 2>&1", 15000))?.groupValues?.get(1)
+    fun token(adb: Adb, app: String = ""): String? {
+        val to = "am broadcast -n dev.tvremote.setup/.TrustReceiver" + (if (app.matches(Regex("[a-z]+"))) " --es app $app" else "")
+        val first = adb.shell("$to --es want fp 2>&1", 15000)
+        val fp = Regex("data=\"([0-9a-f]{64})\"").find(first)?.groupValues?.get(1)
+        if (fp == null) return Regex("data=\"([0-9a-f]{48})\"").find(first)?.groupValues?.get(1)   // an older TV Setup: it made the pass already
+        val pass = Regex("data=\"([0-9a-f]{48})\"").find(adb.shell("$to 2>&1", 15000))?.groupValues?.get(1) ?: return null
+        return "$pass:$fp"
+    }
+
+    /** Trusts one certificate only: the one whose SHA-256 is [fingerprint]. Names do not matter, the TV has none to check. */
+    private class Pin(private val fingerprint: String) : X509TrustManager {
+        override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) = throw CertificateException("no clients")
+        override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {
+            val got = SelfSigned.fingerprint(chain[0].encoded)
+            if (!MessageDigest.isEqual(got.toByteArray(), fingerprint.toByteArray())) throw CertificateException("not the TV's certificate")
+        }
+        override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
+    }
 
     /** Asks TV Setup on [host] to answer the TV's question about [fingerprint]. allowed, none, other:…, forgotten (pass no longer valid) or an error. */
-    fun ask(host: String, token: String, fingerprint: String, waitS: Int): String {
+    fun ask(host: String, pass: String, fingerprint: String, waitS: Int): String {
+        val token = pass.substringBefore(':')
+        val pin = pass.substringAfter(':', "")
         return try {
-            val c = URL("http://$host:8765/api/adb/allow").openConnection() as HttpURLConnection
+            // a pass with a fingerprint is only ever sent over TLS to that certificate; plain HTTP is for a TV Setup too old to have it
+            val c = (if (pin.isEmpty()) URL("http://$host:8765/api/adb/allow") else URL("https://$host:8766/api/adb/allow")).openConnection() as HttpURLConnection
+            if (c is HttpsURLConnection) {
+                c.sslSocketFactory = SSLContext.getInstance("TLS").apply { init(null, arrayOf<TrustManager>(Pin(pin)), null) }.socketFactory
+                c.hostnameVerifier = HostnameVerifier { _, _ -> true }
+            }
             c.connectTimeout = 4000
             c.readTimeout = (waitS + 30) * 1000
             c.requestMethod = "POST"
             c.doOutput = true
-            c.setRequestProperty("Cookie", "tvr=$token")
+            c.setRequestProperty("Cookie", (if (pin.isEmpty()) "tvr=" else "tvrs=") + token)
             c.setRequestProperty("Content-Type", "application/json")
             c.outputStream.use { it.write(JSONObject().put("fingerprint", fingerprint).put("wait", waitS).put("others", true).toString().toByteArray()) }
             when (c.responseCode) {
@@ -151,6 +186,8 @@ object AdbPrompt {
                 401, 403 -> "forgotten"
                 else -> "error"
             }
+        } catch (e: javax.net.ssl.SSLException) {
+            "error"                                                   // pinned and it did not match: never fall back to plain HTTP
         } catch (e: Exception) {
             "unreachable"
         }

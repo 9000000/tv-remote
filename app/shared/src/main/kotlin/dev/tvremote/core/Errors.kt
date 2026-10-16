@@ -8,6 +8,9 @@ object Errors {
         WireLog.all.add("·", "error " + all)
         SetupNeed.say(e, vi)?.let { return it }
         return when {
+            all.contains(dev.tvremote.update.Release.MISMATCH) || all.contains(dev.tvremote.update.Release.UNSIGNED) ->
+                t("Bản cập nhật tải về không khớp chữ ký của dự án nên đã bị xóa, không cài. Thử lại sau.",
+                    "The downloaded update does not match the project's signature, so it was deleted, not installed. Try again later.")
             Regex("SSLHandshake|CertPathValidator|Chain validation|CERTIFICATE_VERIFY|not yet valid|expired", RegexOption.IGNORE_CASE).containsMatchIn(all) ->
                 t("Không mở được kết nối bảo mật. Ngày giờ trên TV có đúng không? (Cài đặt → Hệ thống → Ngày và giờ)",
                     "Could not open a secure connection. Is the TV's date and time right? (Settings → System → Date & time)")

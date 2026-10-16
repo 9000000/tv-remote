@@ -387,3 +387,26 @@ applyAdb(); refresh(); setInterval(async () => { if (polling || document.hidden)
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 homeHint();
 if (window.LANG_KEEP && window.LANG_KEEP.y) setTimeout(() => window.scrollTo(0, window.LANG_KEEP.y), 400);   // after the tab has filled in
+
+// ---------- devices paired with this TV (the TV web page only: TV Setup keeps the list, RemoteService /api/paired) ----------
+const agoText = (t) => {
+  const m = Math.max(0, (Date.now() - t) / 60000);
+  if (m < 2) return 'vừa xong';
+  if (m < 60) return Math.round(m) + ' phút trước';
+  if (m < 2880) return Math.round(m / 60) + ' giờ trước';
+  return Math.round(m / 1440) + ' ngày trước';
+};
+async function loadPaired() {
+  const box = $('#paired'); if (!box || CORE !== 'tv') return;
+  const r = await api('/api/paired', null, true); if (!r) return;
+  const out = async (body, me) => { if (await api('/api/paired/forget', body)) { if (me) refresh(); else loadPaired(); } };
+  const rows = r.devices.map((d) => UI.item({
+    name: d.name || 'Thiết bị cũ',
+    sub: [d.ip, d.me ? 'thiết bị này' : agoText(d.seen)].filter(Boolean).join(' · '),
+    acts: [el('button', { className: 'small danger', textContent: '🗑', title: 'Quên thiết bị này',
+      onclick: async () => { if (await ask('Quên ' + (d.name || 'thiết bị này') + (d.me ? ' (chính là máy này, sẽ phải nhập mã lại)' : '') + '?', { ok: 'Quên', danger: true })) out({ id: d.id }, d.me); } })],
+  }));
+  box.replaceChildren(UI.card('📱 Thiết bị đã ghép', { tools: r.devices.length > 1 ? [el('button', { className: 'small danger', textContent: 'Gỡ tất cả', title: 'Quên mọi thiết bị: ai muốn điều khiển phải nhập mã mới',
+    onclick: async () => { if (await ask('Gỡ mọi thiết bị đã ghép, cả máy này?', { ok: 'Gỡ tất cả', danger: true })) out({ all: true }, true); } })] : [] },
+    UI.list(rows, 'Chưa ghép thiết bị nào')));
+}

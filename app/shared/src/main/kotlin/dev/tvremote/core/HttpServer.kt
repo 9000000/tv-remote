@@ -14,9 +14,11 @@ import java.net.URLDecoder
 import java.util.Locale
 import java.util.concurrent.Executors
 import java.util.concurrent.Semaphore
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLServerSocket
 
 /**
- * A very small HTTP server (one request per connection, no TLS) for the pages the apps serve themselves.
+ * A very small HTTP server (one request per connection; TLS when start() is given a context) for the pages the apps serve themselves.
  * It only knows how to read a request and write a reply; what the paths mean is up to the Handler.
  */
 class HttpServer(private val handler: Handler) {
@@ -29,6 +31,8 @@ class HttpServer(private val handler: Handler) {
         /** The request body: read it as a stream (uploads), or call json() for a small JSON body. */
         var body: InputStream = ByteArrayInputStream(ByteArray(0))
         var length = 0L
+        var tls = false                                           // arrived over TLS (the secure port)
+        var peer = ""                                             // the address it came from
         private var small: ByteArray? = null
 
         fun q(name: String): String = query[name] ?: ""
@@ -99,11 +103,16 @@ class HttpServer(private val handler: Handler) {
     // file descriptors (the scrcpy and ADB sockets need them too). A page uses a handful at once; video and sound one each.
     private val slots = Semaphore(48)
     @Volatile private var server: ServerSocket? = null
+    @Volatile private var secure = false
 
-    /** localOnly: reachable from this device alone (127.0.0.1); otherwise from every network the device is on. */
+    /** localOnly: reachable from this device alone (127.0.0.1); otherwise from every network the device is on. [tls]: serve HTTPS. */
     @Throws(IOException::class)
-    fun start(port: Int, localOnly: Boolean): Int {
-        val s = ServerSocket()
+    fun start(port: Int, localOnly: Boolean, tls: SSLContext? = null): Int {
+        val s = if (tls == null) ServerSocket() else tls.serverSocketFactory.createServerSocket().also {
+            val ok = setOf("TLSv1.2", "TLSv1.3")                  // nothing older, whatever the platform still offers
+            (it as SSLServerSocket).enabledProtocols = it.supportedProtocols.filter { p -> p in ok }.toTypedArray()
+        }
+        secure = tls != null
         s.reuseAddress = true
         s.bind(if (localOnly) InetSocketAddress(InetAddress.getByAddress(byteArrayOf(127, 0, 0, 1)), port) else InetSocketAddress(port))
         server = s
@@ -134,7 +143,7 @@ class HttpServer(private val handler: Handler) {
         try {
             c.use { sock ->
                 sock.soTimeout = 10000
-                val r = read(sock.getInputStream())
+                val r = read(sock.getInputStream())?.also { it.tls = secure; it.peer = sock.inetAddress?.hostAddress ?: "" }
                 sock.soTimeout = 30000
                 val out = if (r == null) Response.error(400, "bad request") else try {
                     handler.handle(r)

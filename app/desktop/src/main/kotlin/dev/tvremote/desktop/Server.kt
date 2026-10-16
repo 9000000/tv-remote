@@ -255,7 +255,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
         val entry = saved.find(s.host) ?: return
         val host = s.host
         if (st == "ready" && entry.optString("setup_pass").isEmpty() && synchronized(trustFetched) { trustFetched.add(host) }) Thread({
-            val pass = try { AdbPrompt.token(s.link!!.get()) } catch (e: Exception) { null }
+            val pass = try { AdbPrompt.token(s.link!!.get(), "computer") } catch (e: Exception) { null }
             if (pass != null) saved.edit(host) { it.put("setup_pass", pass) }
             else later(300_000) { synchronized(trustFetched) { trustFetched.remove(host) } }   // TV Setup not there yet: ask again later
         }, "trust").apply { isDaemon = true }.start()

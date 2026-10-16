@@ -70,7 +70,7 @@ internal class AutoUpdate(private val c: Context, private val version: String, p
             return 6 * 60 * MIN
         }
         val file = apk ?: File(dir ?: return 60 * MIN, "tv-setup-" + r.version + ".apk").also {
-            try { Release.download(r.url, it, null) } catch (e: Exception) { it.delete(); throw e }
+            r.download(it, null)                                      // deletes what does not match its signed checksum
             apk = it
         }
         if (!file.isFile) { apk = null; return 10 * MIN }

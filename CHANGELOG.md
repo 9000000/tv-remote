@@ -18,6 +18,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Lọc DNS → Tự nhập: chọn sẵn từ danh sách DNS nổi tiếng (Google, Cloudflare, Quad9, AdGuard, Mullvad, Control D, NextDNS), có ghi rõ nhà cung cấp, tên máy chủ và IP. Rê chuột lên “Chặn quảng cáo” / “Gia đình” để xem dùng DNS của ai.
 - Các tab (trừ Remote) chung một khuôn: thẻ nào cũng mở bằng tiêu đề, khoảng cách, cỡ nút và dòng chú thích giống nhau. Hộp Tối ưu TV không còn hiện chữ “null”.
 - Tiêu đề, các tab và nút dùng icon nét thay cho emoji (mỗi tab một màu riêng), trông giống nhau trên mọi máy, kể cả TV cũ thiếu emoji.
+- Cập nhật an toàn hơn: mọi bản cập nhật (app điện thoại, TV Setup, app máy tính) và lần cài TV Setup đầu tiên đều được kiểm SHA-256 theo danh sách có chữ ký của dự án; file không khớp bị xóa, không cài.
+- Chữ dễ đọc hơn: nút và tab đang chọn màu xanh đậm hơn với chữ trắng, chữ xanh / xanh lá / cam / đỏ trên nền sáng đậm hơn.
+- 🔒 Remote qua web của TV có HTTPS (cổng 8766, chứng chỉ tự ký): màn hình TV và mã QR hiện địa chỉ https cùng dấu vân tay ngắn để so với trình duyệt; cookie ghép nối ở đó có `Secure` và không dùng được qua HTTP. App điện thoại / máy tính nhận dấu vân tay qua ADB và chỉ nói chuyện với đúng chứng chỉ đó (sai thì từ chối, không lùi về HTTP). Cổng 8765 (HTTP) vẫn chạy cho máy cũ.
+- 📱 Thiết bị đã ghép có hạn dùng: trình duyệt giữ 30 ngày kể từ lần dùng cuối (dùng thì tự gia hạn), TV chỉ lưu mã băm; Thiết lập → “Thiết bị đã ghép” liệt kê từng máy (tên, IP, lần cuối) để quên từng máy hoặc gỡ tất cả. Cần TV Setup mới.
 
 **English**
 - 📱 Phone app: copying a file, installing an app or updating TV Setup now shows in the notification shade with its percentage (Android 13+ hid it before, the app never having asked for notifications; it asks as the work starts).
@@ -30,6 +34,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - DNS filter → Type one: pick from a list of well-known DNS (Google, Cloudflare, Quad9, AdGuard, Mullvad, Control D, NextDNS) showing the provider, server name and IP. Hover “Block ads” / “Family” to see whose DNS they use.
 - The tabs (all but Remote) share one pattern: every card opens with its title, with the same spacing, button sizes and notes. The Optimize TV box no longer shows “null”.
 - Titles, tabs and buttons use line icons instead of emoji (each tab its own colour), the same on every device, old TVs missing emoji included.
+- Safer updates: every update (phone app, TV Setup, computer app) and the first install of TV Setup is checked against the project's signed list of SHA-256 checksums; a file that does not match is deleted, not installed.
+- Easier to read: buttons and the selected tab are a deeper blue with white text; blue, green, orange and red words on the light theme are darker.
+- 🔒 The TV's web remote has HTTPS (port 8766, self-signed certificate): the TV screen and QR show the https address with a short fingerprint to compare with the browser's; the pairing cookie there is `Secure` and does not work over HTTP. The phone / computer app learns the fingerprint over ADB and only talks to that exact certificate (a mismatch is refused, no fallback to HTTP). Port 8765 (HTTP) still runs for older devices.
+- 📱 Paired devices expire: a browser lasts 30 days from its last use (renewed while used), and the TV keeps only a hash of each pass; Setup → “Paired devices” lists each one (name, IP, last seen) to forget one or remove all. Needs the new TV Setup.
 
 ## 0.3.0 - 2026-10-16
 

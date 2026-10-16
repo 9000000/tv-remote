@@ -172,7 +172,7 @@ function showTab(t) {
   if (t === 'tv' && CORE === 'pc') loadSteps();
   if (t === 'health') loadHealth();
   if (t === 'auto') autoTab();
-  if (t === 'tv') { tsState(); loadTvset(); }
+  if (t === 'tv') { tsState(); loadTvset(); loadPaired(); }
 }
 document.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
 

@@ -9,7 +9,6 @@ import java.security.KeyPairGenerator
 import java.security.KeyStore
 import java.security.MessageDigest
 import java.security.PrivateKey
-import java.security.Signature
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.security.interfaces.RSAPublicKey
@@ -56,7 +55,7 @@ class Atv(dir: File, private val host: String) : Remote {
         val c = File(dir, "atv.crt")
         if (!k.exists() || !c.exists()) {
             val pair = KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.generateKeyPair()
-            c.writeBytes(selfSigned(pair.public.encoded, pair.private))
+            c.writeBytes(SelfSigned.certificate(pair.public.encoded, pair.private))
             k.writeBytes(pair.private.encoded)
         }
         key = KeyFactory.getInstance("RSA").generatePrivate(PKCS8EncodedKeySpec(k.readBytes()))
@@ -371,25 +370,5 @@ class Atv(dir: File, private val host: String) : Remote {
 
         /** The number as the TV hashes it: its hexadecimal digits, padded to whole bytes, without a sign byte. */
         private fun unsigned(n: BigInteger): ByteArray = n.toByteArray().let { if (it.size > 1 && it[0] == 0.toByte()) it.copyOfRange(1, it.size) else it }
-
-        // A certificate for our own key, written out by hand (DER): the TV only wants one to recognise this phone by.
-        private fun der(tag: Int, vararg parts: ByteArray): ByteArray {
-            val body = ByteArrayOutputStream().also { o -> parts.forEach { o.write(it) } }.toByteArray()
-            val o = ByteArrayOutputStream()
-            o.write(tag)
-            if (body.size < 128) o.write(body.size) else { val l = BigInteger.valueOf(body.size.toLong()).toByteArray().dropWhile { it == 0.toByte() }; o.write(0x80 or l.size); o.write(l.toByteArray()) }
-            o.write(body)
-            return o.toByteArray()
-        }
-
-        private fun selfSigned(publicKey: ByteArray, key: PrivateKey): ByteArray {
-            val alg = der(0x30, hex("06092A864886F70D01010B"), hex("0500"))                 // sha256WithRSAEncryption
-            val name = der(0x30, der(0x31, der(0x30, hex("0603550403"), der(0x0C, "tv-remote".toByteArray()))))
-            val years = der(0x30, der(0x17, "240101000000Z".toByteArray()), der(0x17, "491231235959Z".toByteArray()))
-            val serial = der(0x02, BigInteger(63, java.security.SecureRandom()).add(BigInteger.ONE).toByteArray())
-            val tbs = der(0x30, der(0xA0, hex("020102")), serial, alg, name, years, name, publicKey)
-            val sig = Signature.getInstance("SHA256withRSA").apply { initSign(key); update(tbs) }.sign()
-            return der(0x30, tbs, alg, der(0x03, byteArrayOf(0), sig))
-        }
     }
 }

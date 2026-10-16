@@ -71,7 +71,7 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
         try {
             dir.deleteRecursively(); dir.mkdirs()
             val file = File(dir, asset)
-            Release.download(r.url, file) { pct = it }
+            r.download(file) { pct = it }
             val out = File(dir, "new").also { it.mkdirs() }
             when (os) {
                 "mac" -> run("ditto", "-x", "-k", file.path, out.path)   // keeps the app's signature and links

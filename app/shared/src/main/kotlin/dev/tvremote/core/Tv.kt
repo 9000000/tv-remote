@@ -130,7 +130,7 @@ class Tv(
             status("starting", a.shell("getprop ro.product.model").trim())
             if (wake) a.shell("input keyevent KEYCODE_WAKEUP")
             reportNetwork(a)
-            if (listener.wantsPass()) try { AdbPrompt.token(a)?.let { listener.onPass(it) } } catch (ignored: IOException) { }
+            if (listener.wantsPass()) try { AdbPrompt.token(a, "phone")?.let { listener.onPass(it) } } catch (ignored: IOException) { }
             pushServer(a)
             var hearing = audio
             val sdk = if (hearing != null) a.shell("getprop ro.build.version.sdk").trim().toIntOrNull() ?: 0 else 0
