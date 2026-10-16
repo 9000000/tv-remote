@@ -150,8 +150,7 @@ document.querySelectorAll('[data-tab]').forEach((b) => { b.id = 'tab-' + b.datas
 document.querySelectorAll('[data-panel]').forEach((p) => { p.setAttribute('role', 'tabpanel'); p.setAttribute('aria-labelledby', 'tab-' + p.dataset.panel); });
 document.querySelector('nav.tabs').addEventListener('keydown', (e) => {   // ← → Home End between the tabs that are shown
   const k = { ArrowRight: 1, ArrowLeft: -1, Home: 0, End: 0 }[e.key]; if (k === undefined) return;
-  const on = document.activeElement;
-  if (e.defaultPrevented) { if (on && on.matches('nav.tabs [data-tab]')) showTab(on.dataset.tab); return; }   // on the TV js/ontv.js has moved the focus already: one step, not two
+  if (e.defaultPrevented) return;                                   // on the TV js/ontv.js has moved the focus: OK opens the tab, so passing one loads nothing
   const all = [...document.querySelectorAll('nav.tabs [data-tab]')].filter((b) => b.offsetParent !== null), i = all.indexOf(document.activeElement); if (i < 0) return;
   e.preventDefault(); const n = e.key === 'Home' ? all[0] : e.key === 'End' ? all[all.length - 1] : all[(i + k + all.length) % all.length];
   n.focus(); showTab(n.dataset.tab);

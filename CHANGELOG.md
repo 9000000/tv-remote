@@ -35,7 +35,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - App đang chạy: chip 🔒 Cần giữ không còn rớt xuống dòng; các nút chú thích của biểu đồ CPU / RAM / bộ nhớ nhỏ lại như cũ.
 - 📱 App điện thoại: phím media và hàng Quay lại / Home / Menu trải hết chiều ngang; hình TV cao tối đa nửa màn hình.
 - 📺 Màn TV Setup gọn hơn: ô thao tác, thẻ ADB và cột Điều khiển từ điện thoại nhỏ lại, phần Hoạt động rộng hơn.
-- 📺 Quản lý trên TV: không còn thoáng hiện tab Remote khi mở; ← → trên thanh tab đi đúng một tab; chọn quyền trong Thiết bị đã ghép (hay danh sách nào vẽ lại) thì ô sáng vẫn ở đó, mũi tên xuống đi tiếp từng thiết bị thay vì nhảy lên đầu trang. Cuộn lên trong một danh sách không còn nhảy lên thanh tab giữa chừng (vào thanh tab là về tab đang mở), và chọn được nút Khôi phục (các nút chọn tệp).
+- 📺 Quản lý trên TV: không còn thoáng hiện tab Remote khi mở; ← → trên thanh tab chỉ dời ô sáng từng tab một, bấm OK mới mở tab (không phải tải các tab đi ngang qua); chọn quyền trong Thiết bị đã ghép (hay danh sách nào vẽ lại) thì ô sáng vẫn ở đó, mũi tên xuống đi tiếp từng thiết bị thay vì nhảy lên đầu trang. Cuộn lên trong một danh sách không còn nhảy lên thanh tab giữa chừng (vào thanh tab là về tab đang mở), và chọn được nút Khôi phục (các nút chọn tệp).
 **English**
 - The tabs lay their cards out like a gallery: each card sits right under the one above it in its column, no holes; up to 3 columns on wide screens (Health, Automation), and a wider page. Switching language no longer flashes the Remote tab before going back to the tab on screen.
 - 📱 Health → Running apps: which apps run, in the background too, how much memory each takes, and a Stop button for each. Only apps the user installed or with a tile on the home screen can be stopped; the home screen, keyboard, Android, TV Remote, TV Setup and Tailscale are locked (🔒 Must keep), so nothing vital is stopped by mistake.
@@ -65,7 +65,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Running apps: the 🔒 Keep chip no longer drops to a new line; the CPU / RAM / storage chart's legend keys are small again.
 - 📱 Phone app: the media keys and the Back / Home / Menu row use the full width; the TV picture is at most half the screen high.
 - 📺 TV Setup's screen is more compact: smaller action tiles, ADB card and Control from a phone column, more room for Activity.
-- 📺 Manage on this TV: the Remote tab no longer flashes on opening; ← → on the tabs moves one tab; picking an access level in Paired devices (or any list drawn again) keeps the focus there, so the down arrow goes on to the next device instead of jumping to the top. Moving up a list no longer jumps to the tabs halfway (reaching the tabs lands on the open one), and Restore (the file picker buttons) can be reached.
+- 📺 Manage on this TV: the Remote tab no longer flashes on opening; ← → on the tabs moves the focus one tab at a time and OK opens it (the tabs passed on the way are not loaded); picking an access level in Paired devices (or any list drawn again) keeps the focus there, so the down arrow goes on to the next device instead of jumping to the top. Moving up a list no longer jumps to the tabs halfway (reaching the tabs lands on the open one), and Restore (the file picker buttons) can be reached.
 ## 0.4.1 - 2026-10-16
 
 Web 0.4.1 · app điện thoại 0.4.1 · app TV 0.4.1
