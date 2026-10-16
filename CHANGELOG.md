@@ -10,14 +10,14 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - 📱 App điện thoại: Quét Wi-Fi đi thẳng ra Wi-Fi khi Tailscale (hay VPN khác) đang bật, để vẫn tìm được TV trong nhà. Chỉ có 4G thì báo chưa nối Wi-Fi, không quét nhầm mạng của nhà mạng.
 - Mất kết nối với TV giữa chừng (vd lúc cập nhật TV Setup) giờ báo bằng lời dễ hiểu thay vì “stream closed”.
 - 📱 App điện thoại: chép tệp, cài app, cập nhật TV Setup vẫn chạy khi chuyển sang app khác (có thông báo); rời TV giữa chừng thì hỏi trước.
-- Sức khỏe → Lịch sử: dải màu dưới biểu đồ RAM/CPU cho biết app nào đang mở, có vạch ở mỗi lần chuyển app, rê chuột hay chạm thì làm nổi khoảng app đó; biểu đồ Wi-Fi cũng rê/chạm để xem sóng từng lúc, có cùng dải app và tô xám lúc TV ngủ.
+- Sức khỏe → Lịch sử: dải màu dưới biểu đồ RAM/CPU cho biết app nào đang mở, có vạch ở mỗi lần chuyển app, rê chuột hay chạm thì làm nổi khoảng app đó; lúc TV ngủ tô xám. Sóng Wi-Fi nằm chung biểu đồ đó; số liệu tại điểm đang chỉ hiện thành bảng.
 - Mất ADB giữa chừng (vd khi đưa app xuống nền): tab đang xem giữ nguyên dữ liệu và chỗ đang cuộn, chỉ phủ một lớp “Đang kết nối ADB…”; không nối lại được thì báo lỗi ngay trên lớp đó, kèm nút Thử lại.
 
 **English**
 - 📱 Phone app: Scan the Wi-Fi goes straight onto the Wi-Fi while Tailscale (or another VPN) is on, so TVs at home are still found. On mobile data only, it says the phone is not on Wi-Fi instead of scanning the carrier's network.
 - Losing the TV halfway (while updating TV Setup, say) is said in plain words instead of “stream closed”.
 - 📱 Phone app: copying a file, installing an app or updating TV Setup goes on while you use another app (with a notification); leaving the TV halfway asks first.
-- Health → History: a coloured strip under the RAM/CPU chart shows which app was open, with a line at each switch, and hovering or touching lights up that app's stretch; the Wi-Fi chart can be hovered or touched for the signal at each moment, with the same app strip and the TV's sleep greyed out.
+- Health → History: a coloured strip under the RAM/CPU chart shows which app was open, with a line at each switch, and hovering or touching lights up that app's stretch; the TV's sleep is greyed out. The Wi-Fi signal is drawn on the same chart; the figures at the cursor show as a table.
 - ADB dropping halfway (putting the app in the background, say): the open tab keeps its data and scroll position under a “Connecting ADB…” layer; if it cannot reconnect, the error and a Retry button show on that layer.
 
 ## 0.2.1 - 2026-10-16

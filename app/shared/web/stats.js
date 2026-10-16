@@ -16,7 +16,8 @@
   .st-app { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 10px; padding:7px 0; border-top:1px solid var(--line); font-size:14px; } .st-app:first-child { border-top:0; }
   .st-app span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .st-app b { font-variant-numeric:tabular-nums; } .st-app i { grid-column:1 / -1; height:6px; border-radius:3px; background:var(--accent); opacity:.7; }
   .st-chart { position:relative; margin-top:6px; } .st-chart svg { display:block; width:100%; height:150px; touch-action:pan-y; } .st-leg { display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin:8px 0 0; }
-  .st-leg i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px; } .st-tip { font-size:13px; min-height:38px; margin-top:8px; } .st-axis { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); }
+  .st-leg i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px; } .st-tip { font-size:13px; min-height:54px; margin-top:8px; overflow-x:auto; } .st-tip table { border-collapse:collapse; white-space:nowrap; }
+  .st-tip th { font-size:11px; font-weight:600; color:var(--muted); text-align:left; padding:0 10px 2px 0; } .st-tip td { padding:0 10px 0 0; white-space:pre; vertical-align:top; font-variant-numeric:tabular-nums; } .st-axis { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); }
   .st-strip { display:block; width:100%; height:14px; margin-top:4px; border-radius:4px; } .st-strip rect { transition:opacity .12s; } .st-chart svg, .st-strip { cursor:crosshair; }
   .st-note { color:var(--muted); font-size:13px; margin:0; } .st-cuts { margin:8px 0 0; padding:0; list-style:none; font-size:13px; } .st-cuts li { padding:5px 0; border-top:1px solid var(--line); font-variant-numeric:tabular-nums; } .st-range ~ section.card { margin-top:12px; }`;
   const RAM = '#f59e0b', CPU = '#5b8cff', DISK = '#22c55e', WIFI = '#14b8a6';
@@ -61,6 +62,10 @@
       };
       svg.addEventListener('pointerdown', show); svg.addEventListener('pointermove', show);
     };
+    const cells = (box, pairs) => {                                 // what the cursor is on: one row of headings over one row of figures
+      pairs = pairs.filter(Boolean);
+      box.replaceChildren(el('table', {}, el('tr', {}, ...pairs.map(([h]) => el('th', { textContent: h }))), el('tr', {}, ...pairs.map(([, v]) => el('td', { textContent: v })))));
+    };
     const curLine = (H) => '<line class="st-cur" y1="0" y2="' + H + '" stroke="currentColor" stroke-opacity=".5" visibility="hidden" vector-effect="non-scaling-stroke"/>';
 
     // Which app was in front, and when the TV slept: runs of the same state, under a chart as a coloured strip with a faint line
@@ -93,7 +98,7 @@
         const i = runs.findIndex((u) => r[0] >= u.a && r[0] < u.b), u = runs[i], band = chart.querySelector('.st-run'), lit = u && u.p !== '';
         s.querySelectorAll('rect').forEach((q) => q.setAttribute('opacity', lit && +q.dataset.i !== i ? '.3' : '1'));
         if (lit) { band.setAttribute('x', x(u.a)); band.setAttribute('width', wide(u)); band.setAttribute('visibility', 'visible'); } else band.setAttribute('visibility', 'hidden');
-        return lit ? ' (' + hm(u.a) + '–' + hm(u.b) + ')' : '';
+        return lit ? '\n' + hm(u.a) + '–' + hm(u.b) : '';   // its own line in the table under the chart
       };
       const legend = ranked.length || asleep.length ? el('div', { className: 'st-leg' }, ...ranked.slice(0, 5).map((p) => el('span', { innerHTML: '<i style="background:' + color(p) + '"></i>' }, name(p))),
         asleep.length ? el('span', { innerHTML: '<i style="background:currentColor;opacity:.25"></i>' }, T('TV ngủ', 'TV asleep')) : null) : null;
@@ -113,25 +118,10 @@
       const wifi = known.filter((r) => r[9] === 'wifi' && r[8] != null);
       if (known.every((r) => r[9] === 'eth')) kids.push(el('p', { className: 'st-note', textContent: T('TV dùng dây mạng suốt khoảng này: không có sóng Wi-Fi để đo.', 'The TV was on a network cable the whole time: no Wi-Fi signal to measure.') }));
       if (wifi.length >= 2) {
-        const W = 600, H = 110, x = (t) => (t - from) * W / (to - from), y = (dbm) => H - 4 - Math.max(0, Math.min(100, (dbm + 100) * 2)) * (H - 8) / 100;
-        let d = '', last = 0;
-        wifi.forEach((r) => { d += (r[0] - last > 900 ? 'M' : 'L') + x(r[0]).toFixed(1) + ' ' + y(r[8]).toFixed(1); last = r[0]; });
-        const guide = [-55, -67, -75].map((v) => '<line x1="0" x2="' + W + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="currentColor" stroke-opacity=".12" stroke-dasharray="4 4"/>').join('');
-        const track = appTrack(rows, x, W, H);
-        const chart = el('div', { className: 'st-chart', innerHTML: '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" style="height:110px">' + guide
-          + track.under + '<path d="' + d + '" fill="none" stroke="' + WIFI + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' + curLine(H) + '</svg>' });
-        const strip = track.strip(chart), mark = track.mark(chart, strip);
-        const wtip = el('div', { className: 'st-tip', textContent: T('Chạm vào biểu đồ để xem sóng tại thời điểm đó.', 'Touch the chart to read the signal at that moment.') });
-        scrub(chart, known, x, (r) => {
-          const span = mark(r);
-          wtip.textContent = hm(r[0]) + ' · ' + (r[9] === 'wifi' && r[8] != null ? r[8] + ' dBm · ' + level(r[8]) + (r[10] ? ' · ' + r[10] + ' Mbps' : '')
-            : r[9] === 'eth' ? T('dây mạng', 'cable') : T('mất mạng', 'no network')) + (r[1] ? (r[7] ? ' · ' + name(r[7]) + span : '') : ' · ' + T('TV đang ngủ', 'TV asleep') + span);
-        });
-        kids.push(chart, strip, el('div', { className: 'st-axis' }, el('span', { textContent: hm(from) }), el('span', { textContent: hm((from + to) / 2) }), el('span', { textContent: hm(to) })));
         const dbm = wifi.map((r) => r[8]), avg = Math.round(dbm.reduce((a, b) => a + b, 0) / dbm.length), low = Math.min(...dbm);
         const mbps = wifi.map((r) => r[10]).filter((v) => v);
         kids.push(el('div', { className: 'st-leg' }, el('span', { innerHTML: '<i style="background:' + WIFI + '"></i>' }, T('Sóng trung bình ', 'Average signal ') + avg + ' dBm · ' + level(avg)),
-          el('span', { textContent: T('Yếu nhất ', 'Weakest ') + low + ' dBm' }), mbps.length ? el('span', { textContent: T('Tốc độ kết nối ', 'Link speed ') + Math.min(...mbps) + '–' + Math.max(...mbps) + ' Mbps' }) : null), track.legend, wtip);
+          el('span', { textContent: T('Yếu nhất ', 'Weakest ') + low + ' dBm' }), mbps.length ? el('span', { textContent: T('Tốc độ kết nối ', 'Link speed ') + Math.min(...mbps) + '–' + Math.max(...mbps) + ' Mbps' }) : null));
         if (avg < -70) kids.push(el('p', { className: 'st-note', style: 'margin-top:8px', textContent: T('Sóng yếu là lý do hay gặp nhất của video giật, tự giảm chất lượng và remote trễ. Đặt router gần TV hơn, bỏ vật cản kim loại, hoặc cắm dây mạng.',
           'A weak signal is the most common reason for stutter, lower video quality and a slow remote. Move the router closer, clear metal out of the way, or use a network cable.') }));
       }
@@ -172,7 +162,7 @@
       if (picked) { const d = new Date(picked + 'T00:00:00'); from = d.getTime() / 1000; to = from + 86400; } else { to = Date.now() / 1000; from = to - 86400; }
       const rows = (data.samples || []).filter((r) => r[0] >= from && r[0] <= to);
       drawNet(from, to, rows, picked ? picked.slice(8) + '/' + picked.slice(5, 7) : T('24 giờ qua', 'last 24 hours'));
-      chartTitle.textContent = 'RAM · CPU · ' + T('Bộ nhớ', 'Storage') + ' · ' + (picked ? picked.slice(8) + '/' + picked.slice(5, 7) : T('24 giờ qua', 'last 24 hours'));
+      chartTitle.textContent = 'RAM · CPU · ' + T('Bộ nhớ', 'Storage') + ' · Wi-Fi · ' + (picked ? picked.slice(8) + '/' + picked.slice(5, 7) : T('24 giờ qua', 'last 24 hours'));
       if (rows.length < 2) { chartBox.replaceChildren(el('p', { className: 'st-note', textContent: T('Chưa đủ số liệu cho khoảng này (TV ghi 5 phút một lần khi đang bật).', 'Not enough samples for this period (the TV records every 5 minutes while it is on).') })); return; }
       const W = 600, H = 150, x = (t) => (t - from) * W / (to - from), y = (pct) => H - 4 - pct * (H - 8) / 100;
       const line = (pick, color) => {                                // broken where the TV was off or asleep for a while
@@ -183,21 +173,22 @@
       const grid = [0, 25, 50, 75, 100].map((p) => '<line x1="0" x2="' + W + '" y1="' + y(p) + '" y2="' + y(p) + '" stroke="currentColor" stroke-opacity=".12"/>').join('');
       const track = appTrack(rows, x, W, H);
       const svg = el('div', { className: 'st-chart', innerHTML: '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + grid + track.under
-        + line((r) => r[6] ? r[5] * 100 / r[6] : null, DISK) + line((r) => r[4] ? r[3] * 100 / r[4] : null, RAM) + line((r) => r[1] ? r[2] : null, CPU)
+        + line((r) => r[9] === 'wifi' && r[8] != null ? Math.max(0, Math.min(100, (r[8] + 100) * 2)) : null, WIFI) + line((r) => r[6] ? r[5] * 100 / r[6] : null, DISK) + line((r) => r[4] ? r[3] * 100 / r[4] : null, RAM) + line((r) => r[1] ? r[2] : null, CPU)
         + curLine(H) + '</svg>' });
       const strip = track.strip(svg), mark = track.mark(svg, strip);
       const tip = el('div', { className: 'st-tip', textContent: T('Chạm vào biểu đồ để xem số liệu tại thời điểm đó.', 'Touch the chart to read the figures at that moment.') });
       scrub(svg, rows, x, (r) => {
         const span = mark(r);
-        tip.textContent = hm(r[0]) + ' · RAM ' + (r[3] / 1024).toFixed(1) + ' / ' + (r[4] / 1024).toFixed(1) + ' GB · CPU ' + (r[1] && r[2] != null ? r[2] + '%' : '–')
-          + ' · ' + T('bộ nhớ ', 'storage ') + (r[5] / 1024).toFixed(1) + ' GB' + (r[1] ? (r[7] ? ' · ' + name(r[7]) + span : '') : ' · ' + T('TV đang ngủ', 'TV asleep') + span)
-          + (r[9] === 'wifi' && r[8] != null ? ' · Wi-Fi ' + r[8] + ' dBm' : r[9] === 'eth' ? T(' · dây mạng', ' · cable') : r.length > 9 && r[9] === '' ? T(' · mất mạng', ' · no network') : '');
+        cells(tip, [[T('Lúc', 'Time'), hm(r[0])], ['RAM', (r[3] / 1024).toFixed(1) + ' GB\n/ ' + (r[4] / 1024).toFixed(1) + ' GB'], ['CPU', r[1] && r[2] != null ? r[2] + '%' : '–'],
+          [T('Bộ nhớ', 'Storage'), (r[5] / 1024).toFixed(1) + ' GB'], [T('TV', 'TV'), r[1] ? (r[7] ? name(r[7]) + span : T('đang bật', 'on')) : T('đang ngủ', 'asleep') + span],
+          r[9] === 'wifi' && r[8] != null ? ['Wi-Fi', r[8] + ' dBm\n' + level(r[8]) + (r[10] ? ' · ' + r[10] + ' Mbps' : '')] : r[9] === 'eth' ? [T('Mạng', 'Network'), T('dây mạng', 'cable')] : r.length > 9 && r[9] === '' ? [T('Mạng', 'Network'), T('mất mạng', 'no network')] : null]);
       });
       const ram = rows.map((r) => r[3]), cpu = rows.filter((r) => r[1] && r[2] != null).map((r) => r[2]);
       chartBox.replaceChildren(svg, strip, el('div', { className: 'st-axis' }, el('span', { textContent: hm(from) }), el('span', { textContent: hm((from + to) / 2) }), el('span', { textContent: hm(to) })),
         el('div', { className: 'st-leg' }, el('span', { innerHTML: '<i style="background:' + RAM + '"></i>RAM ' + (Math.min(...ram) / 1024).toFixed(1) + '–' + (Math.max(...ram) / 1024).toFixed(1) + ' GB' }),
           el('span', { innerHTML: '<i style="background:' + CPU + '"></i>CPU ' + (cpu.length ? Math.min(...cpu) + '–' + Math.max(...cpu) + '%' : '–') }),
-          el('span', { innerHTML: '<i style="background:' + DISK + '"></i>' + T('Bộ nhớ ', 'Storage ') + (rows[rows.length - 1][5] / 1024).toFixed(1) + ' / ' + (rows[rows.length - 1][6] / 1024).toFixed(1) + ' GB' })), track.legend, tip);
+          el('span', { innerHTML: '<i style="background:' + DISK + '"></i>' + T('Bộ nhớ ', 'Storage ') + (rows[rows.length - 1][5] / 1024).toFixed(1) + ' / ' + (rows[rows.length - 1][6] / 1024).toFixed(1) + ' GB' }),
+          rows.some((r) => r[9] === 'wifi' && r[8] != null) ? el('span', { title: T('-100 dBm ở đáy, -50 dBm trở lên ở đỉnh', '-100 dBm at the bottom, -50 dBm or better at the top'), innerHTML: '<i style="background:' + WIFI + '"></i>' + T('Sóng Wi-Fi', 'Wi-Fi signal') }) : null), track.legend, tip);
     };
     draw();
   };
