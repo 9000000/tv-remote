@@ -88,9 +88,24 @@ test('the menus are built the same way the page does, in both languages', () => 
 test('on an LG or Samsung TV the menus leave out what it cannot do, and list its apps', () => {
   const p = pageSpec('pc', 'en');
   const lg = new Set(['keys', 'text', 'apps', 'app_list', 'volume_set', 'link', 'screen_off', 'wol', 'scenes']);
-  p.can = (c) => lg.has(c);                                           // core.js's can(), from /api/state "caps"
+  p.can = (c) => c === 'control' || c === 'full' || lg.has(c);       // core.js's can(): an owner, and the caps from /api/state
   const open = p.remoteMenu('open', { expand: { tvapps: () => [['@play|Netflix', '', () => {}]] } }).map((i) => i[0]);
   assert.equal(open[0], '@play|Netflix');
   assert.ok(open.some((w) => w.startsWith('@link|')));
   assert.ok(!open.some((w) => /^@(search|package|image|music)\|/.test(w) || /YouTube$/.test(w)), 'no Play Store or ADB entries: ' + open);
+});
+
+test('a guest from a shared QR: "remote" opens apps but sends no files and shares nothing, "view" presses nothing', () => {
+  const p = pageSpec('tv', 'en'), guest = (scope) => (c) => c === 'full' ? false : c === 'control' ? scope === 'remote' : true;   // core.js's can()
+  p.can = guest('remote');
+  const open = p.remoteMenu('open').map((i) => i[0]);
+  assert.ok(open.some((w) => w.startsWith('@link|')), 'opening a link is pressing a key: ' + open);
+  assert.ok(!open.some((w) => /^@(image|music)\|/.test(w)), 'no files sent: ' + open);
+  const more = (spec.rows.more || []).flat().map(p.remoteEntry);
+  assert.ok(!p.remoteCan(more.find((e) => e.do === 'share')), 'only the owner shares');
+  assert.ok(p.remoteCan(more.find((e) => e.do === 'shot')));
+  p.can = guest('view');
+  assert.equal(p.remoteMenu('open').length, 0);
+  assert.ok(p.remoteCan(more.find((e) => e.do === 'shot')), 'a screenshot only looks');
+  assert.ok(!p.remoteCan(more.find((e) => e.do === 'draw')));
 });

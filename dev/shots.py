@@ -24,6 +24,7 @@ CHROME = os.environ.get("CHROME") or next((p for p in ["/Applications/Google Chr
 def free_port():
     with socket.socket() as s: s.bind(("127.0.0.1", 0)); return s.getsockname()[1]
 WEB_PORT, PIC_PORT, CDP_PORT, TV_FWD = free_port(), free_port(), free_port(), free_port()   # beside a running app or another run
+PASS = "shots-" + os.urandom(8).hex()                                 # the computer app's key (Pass.kt), carried in each link
 TV, PHONE = os.environ.get("TV_SERIAL", "emulator-5554"), os.environ.get("PHONE_SERIAL", "emulator-5556")
 NAME = {"vi": "TV phòng khách", "en": "Living room TV"}
 FONT = os.path.join(ROOT, "dev", "shots", "Roboto.ttf")            # Android's own face, for the words drawn over the emulators' names
@@ -166,10 +167,10 @@ def desktop():
     t = (old.get("tvs") or [{}])[0]
     t.update(host="127.0.0.1", name=NAME["vi"])                       # keeps setup_pass, so TV Setup is not asked again
     json.dump({"tvs": [t], "current": "127.0.0.1"}, open(tvs, "w"), ensure_ascii=False, indent=1)
-    env = dict(os.environ, TVS_FILE=tvs, TVR_KEYS=os.path.join(CACHE, "keys"))
+    env = dict(os.environ, TVS_FILE=tvs, TVR_KEYS=os.path.join(CACHE, "keys"), TVR_PASS=PASS)
     p = subprocess.Popen([exe, "--port", str(WEB_PORT)], env=env, stdout=open(os.path.join(TMP, "desktop.log"), "w"), stderr=subprocess.STDOUT)
     for _ in range(100):
-        try: urllib.request.urlopen(f"http://127.0.0.1:{WEB_PORT}/"); return p
+        try: urllib.request.urlopen(urllib.request.Request(f"http://127.0.0.1:{WEB_PORT}/api/about", headers={"x-tvr-pass": PASS})); return p
         except Exception: time.sleep(0.2)
     p.kill(); sys.exit("The computer app did not start:\n" + open(os.path.join(TMP, "desktop.log")).read()[-2000:])
 
@@ -186,7 +187,7 @@ def shot_web():
           scrollTo(0, 0);
           return (document.querySelector('[role=tablist]') || $('[data-tab]').parentElement).getBoundingClientRect().top;
         })()""" % SHOW_PICTURE
-        img, top = chrome_shot(f"http://127.0.0.1:{WEB_PORT}/?lang={lang}", js, 1200, 1000)
+        img, top = chrome_shot(f"http://127.0.0.1:{WEB_PORT}/?lang={lang}&k={PASS}", js, 1200, 1000)
         save_webp(img.crop((0, int(top), 1200, int(top) + 852)), f"web-remote-{lang}")
 
 
@@ -202,7 +203,7 @@ def shot_ts():
           const box = e => { const r = e.getBoundingClientRect(); return [r.x, r.y, r.right, r.bottom] };
           return [box($('#ts .card') || $('#ts')), box($('#ts .tsqr svg'))];
         })()"""
-        img, (card, qr) = chrome_shot(f"http://127.0.0.1:{WEB_PORT}/?lang={lang}", js, 400, 900, dpr=2)
+        img, (card, qr) = chrome_shot(f"http://127.0.0.1:{WEB_PORT}/?lang={lang}&k={PASS}", js, 400, 900, dpr=2)
         q = tuple(int(v * 2) for v in qr)
         img.paste(img.crop(q).filter(ImageFilter.GaussianBlur(10)), q[:2])
         c = img.crop(tuple(int(v * 2) for v in card))

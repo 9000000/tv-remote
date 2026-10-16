@@ -107,7 +107,7 @@
             <div class="tools">
               <select id="screenmode" aria-label="Chất lượng hình" title="Chất lượng hình: số nhỏ thì nhẹ cho TV và mạng"><option value="240">240p</option><option value="360">360p</option><option value="480">480p</option><option value="720">720p</option><option value="960" selected>960p</option><option value="hd" data-for="pc">Nét nhất · nặng TV</option><option value="snap">Ảnh chụp</option></select>
               <button class="small" id="listen" data-adb-gated title="Nghe tiếng TV trên máy này"><span class="ico">🎧</span><span class="lbl"> Nghe</span></button>
-              <button class="small iconbtn" id="drawbtn" data-adb-gated title="Vẽ lên màn hình TV: chỉ chỗ cho người đang xem" aria-label="Vẽ lên màn hình TV">✏️</button>
+              <button class="small iconbtn" id="drawbtn" data-adb-gated data-needs="control" title="Vẽ lên màn hình TV: chỉ chỗ cho người đang xem" aria-label="Vẽ lên màn hình TV">✏️</button>
               <button class="small iconbtn" id="screenfull" aria-label="Toàn màn hình" title="Toàn màn hình">⛶</button>
               <button class="small primary" id="screenbtn"><span class="ico">▶</span><span class="lbl"> Xem</span></button>
               <button class="small" id="pipback" hidden><span class="ico">↩</span><span class="lbl"> Về Remote</span></button>
@@ -131,7 +131,7 @@
           <div class="muted" id="listeninfo" hidden></div>
         </section>
         <div data-adb-banner></div>
-        <section class="card wide-only">
+        <section class="card wide-only" data-needs="control">
           <h2>🚀 Mở ứng dụng <span class="muted adbnote lower" data-for="pc">· cần ADB</span></h2>
           <input id="quickq" type="search" placeholder="Tìm theo tên app" autocomplete="off">
           <div class="tiles" id="quick"><div class="muted">Danh sách app hiện khi ADB sẵn sàng.</div></div>
@@ -142,10 +142,10 @@
       <div class="col">
         <section class="card playing" id="playing" aria-label="Đang phát" hidden>   <!-- js/playing.js: what the TV plays, from its media session -->
           <div class="plhead"><img id="plicon" alt="" onerror="this.hidden=true" onload="this.hidden=false"><div class="pltext"><b id="pltitle"></b><small id="plsub"></small></div>
-            <button class="small iconbtn" id="plprev" aria-label="Bài trước" title="Bài trước"><svg class="ic" aria-hidden="true"><use href="#i-prev"/></svg></button><button class="small iconbtn primary" id="plplay" aria-label="Phát / Dừng" title="Phát / Dừng"><svg class="ic" aria-hidden="true"><use href="#i-pause"/></svg></button><button class="small iconbtn" id="plnext" aria-label="Bài sau" title="Bài sau"><svg class="ic" aria-hidden="true"><use href="#i-next"/></svg></button></div>
-          <div class="plbar" id="plbar"><output id="plpos">0:00</output><input type="range" id="plseek" min="0" max="1000" value="0" aria-label="Tua"><output id="pldur"></output></div>
+            <button class="small iconbtn" id="plprev" data-needs="control" aria-label="Bài trước" title="Bài trước"><svg class="ic" aria-hidden="true"><use href="#i-prev"/></svg></button><button class="small iconbtn primary" id="plplay" data-needs="control" aria-label="Phát / Dừng" title="Phát / Dừng"><svg class="ic" aria-hidden="true"><use href="#i-pause"/></svg></button><button class="small iconbtn" id="plnext" data-needs="control" aria-label="Bài sau" title="Bài sau"><svg class="ic" aria-hidden="true"><use href="#i-next"/></svg></button></div>
+          <div class="plbar" id="plbar"><output id="plpos">0:00</output><input type="range" id="plseek" data-needs="control" min="0" max="1000" value="0" aria-label="Tua"><output id="pldur"></output></div>
         </section>
-        <section class="card rc" aria-label="Điều hướng">
+        <section class="card rc" aria-label="Điều hướng" data-needs="control">
           <div class="rrow four">
             <button class="rb power" data-k="POWER" aria-label="Nguồn" title="Nguồn"><svg class="ic" aria-hidden="true"><use href="#i-power"/></svg></button>
             <button class="rb" data-k="ASSIST" aria-label="Google Assistant" title="Mở Google Assistant trên TV"><svg class="ic" aria-hidden="true"><use href="#i-mic"/></svg></button>
@@ -168,12 +168,12 @@
           </div>
         </section>
 
-        <section class="card" id="scenecard" data-adb-gated data-native>
-          <div class="card-head"><h2>🎬 Cảnh</h2><button class="small" id="sceneedit">✏️ Sửa</button></div>
+        <section class="card" id="scenecard" data-adb-gated data-native data-needs="control">
+          <div class="card-head"><h2>🎬 Cảnh</h2><button class="small" id="sceneedit" data-needs="full">✏️ Sửa</button></div>
           <div class="scenebtns" id="scenebtns"></div>
         </section>
 
-        <section class="card">
+        <section class="card" data-needs="control">
           <h2>⌨️ Bàn phím <span class="muted adbnote lower" data-for="pc">· cần ADB</span></h2>
           <p class="note" id="kbdoff" hidden>🔒 Gõ chữ cần ADB.</p>
           <fieldset id="kbd">

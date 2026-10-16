@@ -58,7 +58,8 @@ object Window {
      * -XstartOnFirstThread). false: this system has no web view to show it in (no WebKitGTK on a Linux, no WebView2 runtime
      * on an old Windows), nothing was shown.
      */
-    fun show(root: File, url: String): Boolean {
+    fun show(root: File, url: String, pass: String): Boolean {
+        val base = url.substringBefore("/?")
         val l = try {
             Native.load(library(root).path, Lib::class.java, mapOf(Library.OPTION_STRING_ENCODING to "UTF-8"))
         } catch (e: Throwable) {
@@ -75,7 +76,7 @@ object Window {
             else -> l.webview_get_window(w)?.let { gtkIcon(it, File(root, "app/shared/web/icon-512.png")) }
         }
         bind(l, w, "tvrOpen") { a -> a.optString(0).takeIf { it.startsWith("https://") || it.startsWith("http://") }?.let { App.browse(it) } }
-        bind(l, w, "tvrSave") { a -> Thread({ save(url, a.optString(0), a.optString(1)) }, "save").apply { isDaemon = true }.start() }
+        bind(l, w, "tvrSave") { a -> Thread({ save(base, pass, a.optString(0), a.optString(1)) }, "save").apply { isDaemon = true }.start() }
         l.webview_init(w, PAGE)
         l.webview_navigate(w, url)
         l.webview_run(w)
@@ -113,10 +114,11 @@ object Window {
     }
 
     /** A download the page asked for: fetched from this server again and written to Downloads, under a name not yet taken. */
-    private fun save(base: String, path: String, asked: String) {
+    private fun save(base: String, pass: String, path: String, asked: String) {
         try {
             if (!path.startsWith("/")) return
             val c = URL(base + path).openConnection() as HttpURLConnection
+            c.setRequestProperty(Pass.HEADER, pass)
             c.readTimeout = 60000
             val given = Regex("filename=\"?([^\";]+)").find(c.getHeaderField("Content-Disposition") ?: "")?.groupValues?.get(1)
             val name = (asked.ifEmpty { given ?: path.substringAfterLast('/').substringBefore('?') }).replace(Regex("[\\\\/:*?\"<>|]"), "_").ifEmpty { "tv-remote" }

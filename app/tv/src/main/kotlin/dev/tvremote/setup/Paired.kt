@@ -17,10 +17,11 @@ object Paired {
     private const val DAY = 24 * 3600_000L
     private const val WRITE_EVERY = 60_000L                           // `seen` is written to the prefs once a minute at most, not per request
 
-    class Entry(val id: String, val h: String, var name: String, val ip: String, val created: Long, var seen: Long, val kind: String, val tls: Boolean) {
+    /** [scope]: what it may do here (Scope.kt); apps and the code on the TV's screen give "full", a shared QR what its maker picked. */
+    class Entry(val id: String, val h: String, var name: String, val ip: String, val created: Long, var seen: Long, val kind: String, val tls: Boolean, var scope: String = Scope.FULL) {
         fun json(me: Boolean = false): JSONObject =
-            JSONObject().put("id", id).put("name", name).put("ip", ip).put("created", created).put("seen", seen).put("kind", kind).put("tls", tls).put("me", me)
-        fun store(): JSONObject = JSONObject().put("id", id).put("h", h).put("name", name).put("ip", ip).put("created", created).put("seen", seen).put("kind", kind).put("tls", tls)
+            JSONObject().put("id", id).put("name", name).put("ip", ip).put("created", created).put("seen", seen).put("kind", kind).put("tls", tls).put("me", me).put("scope", scope)
+        fun store(): JSONObject = JSONObject().put("id", id).put("h", h).put("name", name).put("ip", ip).put("created", created).put("seen", seen).put("kind", kind).put("tls", tls).put("scope", scope)
     }
 
     /** What [check] found: the device, and whether its cookie should be sent again with a new lifetime. */
@@ -45,7 +46,7 @@ object Paired {
             try {
                 val a = JSONArray(raw)
                 for (i in 0 until a.length()) a.getJSONObject(i).let {
-                    out.add(Entry(it.getString("id"), it.getString("h"), it.optString("name"), it.optString("ip"), it.optLong("created"), it.optLong("seen"), it.optString("kind", "web"), it.optBoolean("tls")))
+                    out.add(Entry(it.getString("id"), it.getString("h"), it.optString("name"), it.optString("ip"), it.optLong("created"), it.optLong("seen"), it.optString("kind", "web"), it.optBoolean("tls"), Scope.of(it.optString("scope", Scope.FULL))))
                 }
             } catch (e: Exception) { out.clear() }
         } else {                                                      // before 0.x: a plain set of passes; each becomes a device, seen now
@@ -75,10 +76,10 @@ object Paired {
 
     /** A new pass, returned in the clear this once. */
     @Synchronized
-    fun add(c: Context, kind: String, name: String, ip: String, tls: Boolean): String {
+    fun add(c: Context, kind: String, name: String, ip: String, tls: Boolean, scope: String = Scope.FULL): String {
         val token = hex(24)
         val now = System.currentTimeMillis()
-        all(c).add(Entry(hex(4), sha256(token), name.take(60), ip, now, now, kind, tls))
+        all(c).add(Entry(hex(4), sha256(token), name.take(60), ip, now, now, kind, tls, Scope.of(scope)))
         save(c)
         return token
     }
@@ -99,6 +100,13 @@ object Paired {
     }
 
     @Synchronized fun forget(c: Context, id: String): Boolean { val r = all(c).removeAll { it.id == id }; if (r) save(c); return r }
+
+    /** The owner changes what a device may do; an app (the Phone or Computer app, over ADB) stays the owner's. */
+    @Synchronized fun setScope(c: Context, id: String, scope: String): Boolean {
+        val e = all(c).firstOrNull { it.id == id && it.kind == "web" } ?: return false
+        if (scope !in Scope.ALL) return false
+        e.scope = scope; save(c); return true
+    }
 
     @Synchronized fun forgetAll(c: Context) { all(c).clear(); save(c) }
 

@@ -10,7 +10,8 @@ import dev.tvremote.core.SetupNeed
 import org.json.JSONObject
 
 // ⋯ More keys → Chia sẻ, as shareDialog() on the page: a QR that opens this TV's web page already paired (a one-time invite from
-// TV Setup, Invite.kt), and one that downloads this app. Without TV Setup, or with an older one, only the app's.
+// TV Setup, Invite.kt), and one that downloads this app. Without TV Setup, or with an older one, only the app's. The invite
+// carries what the one who scans may do (Scope.kt in TV Setup); another choice makes a new QR, as one invite is out at a time.
 
 private const val APP_APK = "https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk"
 
@@ -19,13 +20,16 @@ internal fun MainActivity.shareDialog() {
     val tv = tv
     if (tv == null || !tv.ready()) { say(t("Đang kết nối TV, thử lại sau giây lát.", "Still connecting to the TV, try again in a moment."), false); return }
     val at = host ?: return
-    Thread {
-        val r = try { Invite.share({ tv.shell(it) }, at) } catch (e: Exception) { JSONObject().put("error", e.message ?: "") }
-        ui.post { if (!isFinishing) showShare(r) }
-    }.start()
+    val ask = { scope: String, then: (JSONObject) -> Unit ->
+        Thread {
+            val r = try { Invite.share({ tv.shell(it) }, at, scope) } catch (e: Exception) { JSONObject().put("error", e.message ?: "") }
+            ui.post { if (!isFinishing) then(r) }
+        }.start()
+    }
+    ask("remote") { showShare(it, ask) }                              // what a guest on the sofa needs; the owner can pick more
 }
 
-private fun MainActivity.showShare(r: JSONObject) {
+private fun MainActivity.showShare(r: JSONObject, ask: (String, (JSONObject) -> Unit) -> Unit) {
     val body = col()
     body.setPadding(dp(24), dp(8), dp(24), dp(20))
     val warn = when (r.optString("warn")) {
@@ -35,7 +39,32 @@ private fun MainActivity.showShare(r: JSONObject) {
     }
     if (warn != null) body.addView(label(warn, 14, ERR_TEXT), gap(4))
     val url = r.optString("url")
-    if (url.isNotEmpty()) qr(body, url, t("Mở remote", "Open the remote"), t("Quét để điều khiển TV này, không cần mã. Dùng 1 lần, trong 10 phút.", "Scan to control this TV, no code needed. Once, within 10 minutes."))
+    if (url.isNotEmpty()) {
+        val qrBox = col()
+        val scopes = listOf("full" to t("Toàn quyền", "Full access"), "remote" to t("Chỉ remote", "Remote only"), "view" to t("Chỉ xem", "View only"))
+        val row = LinearLayout(this)
+        var scope = "remote"
+        val draw = { link: String ->
+            qrBox.removeAllViews()
+            if (link.isNotEmpty()) qr(qrBox, link, if (scope == "view") t("Xem TV", "Watch the TV") else t("Mở remote", "Open the remote"),
+                if (scope == "view") t("Quét để xem TV này, không cần mã. Dùng 1 lần, trong 10 phút.", "Scan to watch this TV, no code needed. Once, within 10 minutes.")
+                else t("Quét để điều khiển TV này, không cần mã. Dùng 1 lần, trong 10 phút.", "Scan to control this TV, no code needed. Once, within 10 minutes."))
+        }
+        val buttons = scopes.map { (k, words) -> button(words, if (k == scope) ACCENT else BTN).also { it.setPadding(dp(6), 0, dp(6), 0) } }
+        buttons.forEachIndexed { i, b ->
+            b.setOnClickListener {
+                val k = scopes[i].first
+                if (k == scope) return@setOnClickListener
+                scope = k
+                buttons.forEachIndexed { j, o -> o.background = box(if (j == i) ACCENT else BTN, 14); o.setInk(if (j == i) android.graphics.Color.WHITE else TEXT) }
+                ask(k) { n -> if (scope == k) draw(n.optString("url")) }   // on a failure no QR rather than the last one under the wrong choice
+            }
+            row.addView(b, cell(44, i > 0))
+        }
+        body.addView(row, gap(8))
+        body.addView(qrBox)
+        draw(url)
+    }
     else when (r.optString("setup")) {
         "missing" -> body.addView(label(t("TV chưa có TV Setup: chỉ chia sẻ được app.", "The TV has no TV Setup: only the app can be shared."), 14, MUTED), gap(4))
         "old" -> {

@@ -153,7 +153,7 @@ class HttpServer(private val handler: Handler) {
                 if (out.status >= 400 && r != null) WireLog.all.add("·", "api " + r.method + " " + r.path + " " + out.status + " " + String(out.body.take(300).toByteArray(), Charsets.UTF_8))
                 val stream = out.stream
                 val len = if (stream == null) out.body.size.toLong() else out.length
-                val h = StringBuilder("HTTP/1.1 ").append(out.status).append(if (out.status == 200) " OK" else " Error").append("\r\n")
+                val h = StringBuilder("HTTP/1.1 ").append(out.status).append(when (out.status) { 200 -> " OK"; 206 -> " Partial Content"; 302 -> " Found"; else -> " Error" }).append("\r\n")
                     .append("Content-Type: ").append(out.type).append("\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\n")
                 if (len >= 0) h.append("Content-Length: ").append(len).append("\r\n")
                 for ((k, v) in out.headers) h.append(k).append(": ").append(v).append("\r\n")

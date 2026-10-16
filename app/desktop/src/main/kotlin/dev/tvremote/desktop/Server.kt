@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong
  * The routes that only the computer has (many TVs, the remote buttons without ADB, the first-time setup, the picture and
  * sound for this browser) are here; everything managed over ADB is Manage.kt's, as for TV Setup and the phone.
  */
-class Server(private val repo: File, private val keys: File, private val cache: File, private val saved: Saved, first: String?, private val stop: () -> Unit) : HttpServer.Handler {
+class Server(private val repo: File, private val keys: File, private val pass: Pass, private val cache: File, private val saved: Saved, first: String?, private val stop: () -> Unit) : HttpServer.Handler {
     private val web = File(repo, "app/shared/web")
     private val helperFile = File(repo, "app/shared/assets/tvr-helper.jar")   // Meta and Caps, started on the TV
     private val helper: () -> ByteArray = { helperFile.readBytes() }
@@ -79,6 +79,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
         if (origin != null && origin.substringAfter("//") != r.headers["host"]) return Response.error(403, "cross-origin")
         val site = r.headers["sec-fetch-site"]
         if (r.path.startsWith("/api/") && site != null && site != "same-origin" && site != "none") return Response.error(403, "cross-origin")
+        pass.check(r)?.let { return it }                              // other programs and users of this computer: Pass.kt
         if (r.method == "POST") {
             val type = (r.headers["content-type"] ?: "").substringBefore(';').trim()
             if (type != "application/json" && type != "application/octet-stream") return Response.error(415, "json only")

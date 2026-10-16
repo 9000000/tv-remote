@@ -30,8 +30,10 @@ fun main(args: Array<String>) {
     val data = if (packaged) App.data().also { it.mkdirs() } else repo
     if (packaged) File(data, "server.log").let { System.setOut(PrintStream(it.outputStream(), true, Charsets.UTF_8)); System.setErr(System.out) }   // nobody sees a terminal
     val url = "http://127.0.0.1:$port"
-    if (packaged && App.answers(url)) {                               // already running (Windows, Linux: opened twice): one more window onto it
-        if (!(window && Window.show(repo, url))) App.browse(url)
+    val passFile = File(if (packaged) data else File(repo, ".cache/desktop").also { it.mkdirs() }, "pass")
+    if (packaged && App.answers(url, Pass.read(passFile))) {          // already running (Windows, Linux: opened twice): one more window onto it
+        val link = "$url/?k=" + Pass.read(passFile)
+        if (!(window && Window.show(repo, link, Pass.read(passFile)))) App.browse(link)
         return
     }
     val keys = File(System.getenv("TVR_KEYS") ?: (if (packaged) File(data, "keys") else File(repo, ".cache/keys")).path)
@@ -39,7 +41,8 @@ fun main(args: Array<String>) {
     val saved = Saved(File(System.getenv("TVS_FILE") ?: File(data, "tvs.json").path))
     val first = opt["tv"]?.trim()?.also { if (!Server.IP.matches(it)) { System.err.println("--tv: not an IPv4 address: $it"); kotlin.system.exitProcess(2) } }
     val done = CountDownLatch(1)
-    val server = Server(repo, keys, File(data, if (packaged) "cache" else ".cache/desktop").also { it.mkdirs() }, saved, first) { done.countDown() }
+    val pass = Pass(passFile)
+    val server = Server(repo, keys, pass, File(data, if (packaged) "cache" else ".cache/desktop").also { it.mkdirs() }, saved, first) { done.countDown() }
     val http = HttpServer(server)
     val bound = try { http.start(port, true) } catch (e: java.io.IOException) {
         System.err.println("port $port is taken: is TV Remote already running? ($e)")
@@ -47,13 +50,14 @@ fun main(args: Array<String>) {
             "Port $port is used by another program, so TV Remote cannot start. Quit that program and open TV Remote again.")
         return
     }
-    println("Remote: http://127.0.0.1:$bound  (TV ${(first ?: saved.current).ifEmpty { "not chosen yet" }})")
+    val link = pass.link("http://127.0.0.1:$bound")
+    println("Remote: $link  (TV ${(first ?: saved.current).ifEmpty { "not chosen yet" }})")
     Runtime.getRuntime().addShutdownHook(Thread { http.stop(); server.close() })   // Ctrl+C, logging out: the TV's sessions end too
     if (window) {
         Thread({ done.await(); Window.close() }, "quit").apply { isDaemon = true }.start()   // the page's "Tắt" closes the window too
-        if (Window.show(repo, "http://127.0.0.1:$bound")) { println("Window closed."); server.updater.quitting(); System.exit(0) }
+        if (Window.show(repo, link, pass.key)) { println("Window closed."); server.updater.quitting(); System.exit(0) }
     }
-    if (packaged) App.browse(url)
+    if (packaged) App.browse(link)
     done.await()                                                      // the page's "Tắt" button
     println("Stopping.")
     server.updater.quitting()
@@ -71,8 +75,9 @@ object App {
         else -> File(System.getenv("XDG_DATA_HOME") ?: "$home/.local/share", "tv-remote")
     }
 
-    fun answers(url: String) = try {
-        (URL("$url/api/about").openConnection() as HttpURLConnection).run { connectTimeout = 1000; readTimeout = 2000; responseCode == 200 }
+    fun answers(url: String, pass: String) = try {
+        (URL("$url/api/about").openConnection() as HttpURLConnection).run {
+            setRequestProperty(Pass.HEADER, pass); connectTimeout = 1000; readTimeout = 2000; responseCode == 200 }
     } catch (e: Exception) {
         false
     }

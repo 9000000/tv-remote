@@ -75,8 +75,17 @@ const qrBlock = (title, note, link, hide) => { const s = qrSvg(link, 170); retur
 
 // ---------- share (⋯ More keys → Chia sẻ): a QR that opens this TV's web page already paired, and one for the phone app ----------
 // The invite is one-time and lasts ten minutes (Invite.kt); without TV Setup (or an older one) only the app's QR is shown.
+// It carries what the one who scans may do (Scope.kt in TV Setup); picking another makes a new QR, as one invite is out at a time.
+const SCOPE_WORDS = {
+  full: ['Toàn quyền', 'Như chủ TV: cả Quản lý, cài app, tệp, chia sẻ'],
+  remote: ['Chỉ remote', 'Bấm phím, gõ chữ, xem hình, mở app; không vào được Quản lý'],
+  view: ['Chỉ xem', 'Xem hình và bài đang phát, không bấm được gì'],
+};
+const scopeChips = (now, fn) => UI.chips(Object.keys(SCOPE_WORDS).map((k) => ({ label: SCOPE_WORDS[k][0], title: SCOPE_WORDS[k][1], on: k === now, fn: () => fn(k) })));
 async function shareDialog() {
-  const r = await api('/api/share', {}) || {};
+  let scope = 'remote';                                               // what a guest on the sofa needs; the owner can pick more
+  const r = await api('/api/share', { scope }) || {};
+  const qrs = el('div', { className: 'qrs' }), pick = el('div');
   const warn = { tailscale: 'Máy này đang nối TV qua Tailscale: điện thoại quét phải ở cùng Wi-Fi với TV.', tailscale_only: 'TV không có địa chỉ Wi-Fi: điện thoại quét cần bật Tailscale.' }[r.warn];
   const d = el('dialog', { className: 'ask share' }, el('div', { className: 'card' },
     UI.head('📲 Chia sẻ', el('button', { className: 'small iconbtn', textContent: '✕', title: 'Đóng', 'aria-label': 'Đóng', onclick: () => d.close() })),
@@ -84,8 +93,14 @@ async function shareDialog() {
     r.setup === 'missing' ? UI.note('TV chưa có TV Setup: chỉ chia sẻ được app.') : null,
     r.setup === 'old' ? UI.note('Cập nhật TV Setup để chia sẻ remote.') : null,
     r.setup === 'old' ? UI.actions(UI.btn('⬆️ Cập nhật TV Setup', () => { d.close(); return updateSetup(); }, 'small')) : null,
-    el('div', { className: 'qrs' }, ...[r.url ? qrBlock('🌐 Mở remote', 'Quét để điều khiển TV này, không cần mã. Dùng 1 lần, trong 10 phút.', r.url, true) : null,
-      qrBlock('📱 App Android', 'Quét để tải app.', APP_APK)].filter(Boolean))));
+    r.url ? pick : null, qrs));
+  const draw = (url) => qrs.replaceChildren(...[url ? qrBlock(scope === 'view' ? '🌐 Xem TV' : '🌐 Mở remote', scope === 'view' ? 'Quét để xem TV này, không cần mã. Dùng 1 lần, trong 10 phút.'
+    : 'Quét để điều khiển TV này, không cần mã. Dùng 1 lần, trong 10 phút.', url, true) : null, qrBlock('📱 App Android', 'Quét để tải app.', APP_APK)].filter(Boolean));
+  const choose = async (k) => {
+    if (k === scope) return; scope = k; pick.replaceChildren(scopeChips(scope, choose));
+    const n = await api('/api/share', { scope }); draw(n && n.url);   // on a failure no QR rather than the last one under the wrong choice
+  };
+  pick.replaceChildren(scopeChips(scope, choose)); draw(r.url);
   d.addEventListener('close', () => d.remove());
   document.body.append(d); d.showModal();
 }
@@ -433,14 +448,17 @@ async function loadPaired() {
   const box = $('#paired'); if (!box || CORE !== 'tv') return;
   const r = await api('/api/paired', null, true); if (!r) return;
   const out = async (body, me) => { if (await api('/api/paired/forget', body)) { if (me) refresh(); else loadPaired(); } };
+  const owner = SCOPE === 'full';
+  const setScope = async (d, k) => { if (k !== d.scope && await api('/api/paired/scope', { id: d.id, scope: k })) loadPaired(); };
   const rows = r.devices.map((d) => UI.item({
     name: d.name || 'Thiết bị cũ',
     sub: [d.created ? tr('Ghép lúc') + ' ' + new Date(d.created).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' }) : '',
       d.me ? tr('thiết bị này') : tr('dùng') + ' ' + tr(agoText(d.seen)), d.ip].filter(Boolean).join(' · '),
+    extra: owner && d.kind === 'web' && !d.me ? [scopeChips(d.scope || 'full', (k) => setScope(d, k))] : [],   // what it may do: Scope.kt
     acts: [el('button', { className: 'small danger', textContent: 'Hủy ghép', title: 'Quên thiết bị này',
       onclick: async () => { if (await ask('Quên ' + (d.name || 'thiết bị này') + (d.me ? ' (chính là máy này, sẽ phải nhập mã lại)' : '') + '?', { ok: 'Quên', danger: true })) out({ id: d.id }, d.me); } })],
   }));
-  box.replaceChildren(UI.card('📱 Thiết bị đã ghép', { tools: r.devices.length > 1 ? [el('button', { className: 'small danger', textContent: 'Gỡ tất cả', title: 'Quên mọi thiết bị: ai muốn điều khiển phải nhập mã mới',
+  box.replaceChildren(UI.card('📱 Thiết bị đã ghép', { tools: owner && r.devices.length > 1 ? [el('button', { className: 'small danger', textContent: 'Gỡ tất cả', title: 'Quên mọi thiết bị: ai muốn điều khiển phải nhập mã mới',
     onclick: async () => { if (await ask('Gỡ mọi thiết bị đã ghép, cả máy này?', { ok: 'Gỡ tất cả', danger: true })) out({ all: true }, true); } })] : [] },
     UI.list(rows, 'Chưa ghép thiết bị nào')));
 }

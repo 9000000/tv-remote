@@ -12,7 +12,7 @@ function plDraw() {
   const icon = '/api/app/icon?pkg=' + encodeURIComponent(o.pkg); if ($('#plicon').dataset.src !== icon) { $('#plicon').dataset.src = icon; $('#plicon').src = icon; }
   $('#plbar').hidden = !o.dur;
   if (o.dur && !PL.dragging) { $('#plseek').value = Math.round(plPos() / o.dur * 1000); $('#plpos').textContent = mmss(plPos()); $('#pldur').textContent = mmss(o.dur); }
-  $('#plseek').disabled = !o.seek;
+  $('#plseek').disabled = !o.seek || !can('control');               // a guest who may only watch sees where it is, and no more
   $('#plplay use').setAttribute('href', o.state === 'paused' ? '#i-play' : '#i-pause');
 }
 async function plPoll() {

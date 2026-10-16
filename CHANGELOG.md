@@ -26,6 +26,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Thông báo nhỏ ở góc hiện lâu hơn khi dài. Nút hủy hẹn giờ và hỏi xóa cảnh (tên có · hoặc →) có tiếng Anh.
 - Thanh tab dùng được bằng phím ← → cho người dùng bàn phím và trình đọc màn hình. Cài TV Setup báo lỗi khi mất kết nối thay vì chờ mãi.
 
+- 🔐 Chia sẻ có quyền: chọn **Toàn quyền**, **Chỉ remote** (phím, gõ chữ, hình, mở app, hẹn giờ tắt, chạy cảnh có sẵn) hoặc **Chỉ xem** (hình TV và đang phát). Chủ TV (app điện thoại, app máy tính, ai nhập mã 6 số trên TV) đổi quyền từng thiết bị trong Thiết lập → Thiết bị đã ghép; khách chỉ thấy và gỡ được chính mình. Cần TV Setup mới.
+- Ghép bằng mã không còn bị một trình duyệt chậm chặn lại.
+- 💻 App máy tính: mỗi lần mở có một khóa mới, cửa sổ app và trình duyệt tự mang theo (không phải gõ gì); chương trình khác trên máy không điều khiển TV được nữa.
+- 📱 App điện thoại: hỏi “Gửi lên TV?” trước khi gửi tệp hay đường link mà app khác chia sẻ sang.
 **English**
 - The tabs lay their cards out like a gallery: each card sits right under the one above it in its column, no holes; up to 3 columns on wide screens (Health, Automation), and a wider page. Switching language no longer flashes the Remote tab before going back to the tab on screen.
 - 📱 Health → Running apps: which apps run, in the background too, how much memory each takes, and a Stop button for each. Only apps the user installed or with a tile on the home screen can be stopped; the home screen, keyboard, Android, TV Remote, TV Setup and Tailscale are locked (🔒 Must keep), so nothing vital is stopped by mistake.
@@ -46,6 +50,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Toasts stay longer when long. The cancel-timer button and the delete-scene question (names with · or →) are translated.
 - The tab bar works with ← → for keyboard and screen-reader users. Install TV Setup says so when the connection is lost instead of waiting for ever.
 
+- 🔐 Share with access levels: pick **Full access**, **Remote only** (keys, typing, the picture, opening apps, the sleep timer, running saved scenes) or **View only** (the TV's picture and what is playing). The TV's owner (the phone app, the computer app, whoever typed the 6-digit code from the TV) changes each device's access in Setup → Paired devices; a guest sees and unpairs only itself. Needs the new TV Setup.
+- Pairing by code is no longer held up by a slow browser.
+- 💻 Computer app: a new key at each start, carried by its window and the browser it opens (nothing to type); other programs on the computer can no longer drive the TV.
+- 📱 Phone app: asks “Send to the TV?” before sending a file or link another app shared.
 ## 0.4.1 - 2026-10-16
 
 Web 0.4.1 · app điện thoại 0.4.1 · app TV 0.4.1

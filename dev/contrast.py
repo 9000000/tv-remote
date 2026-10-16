@@ -2,6 +2,7 @@
 """Contrast scanner for the web UI, on real rendering. See CLAUDE.md "Testing".
 
     dev/contrast.py [URL]        default http://127.0.0.1:8772/ (any core: the computer app's test server, a TV, ...)
+    TVR_PASS=...                 the key the computer app was started with (Pass.kt); a TV's page needs its pairing instead
 
 For both themes (?theme=light|dark) x widths 1100 and 400 x every tab + the settings dialog, it walks the visible elements
 and reports text under 4.5:1 (3:1 for text >= 24px, or >= 18.66px bold) and line icons (svg.ic / .ui-ic) under 3:1, using
@@ -91,7 +92,8 @@ SCAN = r"""(root) => {
 def main():
     url = (sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8772/").rstrip("/") + "/"
     if not CHROME: sys.exit("Chrome not found (set CHROME=...)")
-    try: urllib.request.urlopen(url, timeout=5).read(1)
+    key = os.environ.get("TVR_PASS", "")
+    try: urllib.request.urlopen(urllib.request.Request(url, headers={"x-tvr-pass": key}), timeout=5).read(1)
     except Exception as e: sys.exit(f"{url} does not answer: {e}")
     with socket.socket() as s: s.bind(("127.0.0.1", 0)); port = s.getsockname()[1]
     prof = tempfile.mkdtemp(prefix="tvr-contrast-")
@@ -106,7 +108,7 @@ def main():
         for theme in ("light", "dark"):
             for width in (1100, 400):
                 ws.call("Emulation.setDeviceMetricsOverride", width=width, height=900, deviceScaleFactor=1, mobile=width < 700)
-                ws.call("Page.navigate", url=f"{url}?theme={theme}"); time.sleep(3)
+                ws.call("Page.navigate", url=f"{url}?theme={theme}" + (f"&k={key}" if key else "")); time.sleep(3)
                 ws.js("wantPick=false; refresh()"); time.sleep(1)
                 for tab in TABS + ["settings"]:
                     if tab == "settings": ws.js("document.getElementById('aboutbtn')?.click()"); root = "document.querySelector('dialog[open]') || document.body"

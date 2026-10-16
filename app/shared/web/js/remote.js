@@ -7,7 +7,8 @@ document.querySelectorAll('[data-rows]').forEach((box) => {
     const b = el('button', { className: 'rb lab' + (e.style ? ' ' + e.style : ''), id: 'r-' + e.id, innerHTML: '<svg class="ic" aria-hidden="true"><use href="#i-' + e.icon + '"/></svg><small></small>' });
     b.querySelector('small').textContent = remoteWords(e);
     if (e.key) b.dataset.k = e.key; else b.addEventListener('click', () => REMOTE_DO[e.do](e.arg));
-    if (e.needs) b.dataset.needs = e.needs.join(' ');                 // greyed on a TV that cannot (applyKind in core.js)
+    const needs = [...e.needs || [], ...remoteRole(e)];
+    if (needs.length) b.dataset.needs = needs.join(' ');              // greyed on a TV that cannot, or for a guest (applyKind in core.js)
     box.append(b);
   }
 });
@@ -137,7 +138,7 @@ function touch(a, p, extra) {
     return x < 0 || x > 1 || y < 0 || y > 1 ? null : { x, y };
   };
   scr.addEventListener('pointerdown', (e) => {
-    const p = screenPos(e); if (e.button || !p) return;
+    const p = screenPos(e); if (e.button || !p || !can('control')) return;   // a guest who may only watch: the picture is not a touchpad
     e.preventDefault(); touching = true; lastPos = p; try { scr.setPointerCapture(e.pointerId); } catch {} touch('down', p); tapMark(e, 'down');
   });
   scr.addEventListener('pointermove', (e) => {
@@ -147,7 +148,7 @@ function touch(a, p, extra) {
   });
   ['pointerup', 'pointercancel'].forEach((ev) => scr.addEventListener(ev, (e) => { if (touching) { touching = false; touch('up', screenPos(e) || lastPos); tapMark(e, 'up'); } }));
   scr.addEventListener('wheel', (e) => {
-    const p = screenPos(e); if (!p) return;
+    const p = screenPos(e); if (!p || !can('control')) return;
     e.preventDefault(); if (Date.now() - lastWheel < 90) return;
     lastWheel = Date.now(); touch('scroll', p, { dy: e.deltaY > 0 ? -1 : 1 });
   }, { passive: false });

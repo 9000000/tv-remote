@@ -110,6 +110,7 @@ async function call(path, data, quiet) {
     if (!r.ok) {
       let e = r.statusText; try { e = (await r.json()).error || e; } catch {}
       if (!quiet && needSetup(e)) return null;                         // asked as a question with its button, not a toast
+      if (r.status === 403 && e === 'scope') { refresh(); if (!quiet) toast(scopeWhy()); return null; }   // the owner may have just changed it
       if (r.status === 404 && CORE === 'pc') e = STALE;
       if (r.status === 503 && /^adb/.test(e)) { e = /allow/.test(e) ? 'TV đang hỏi cho phép gỡ lỗi: nhìn lên TV, chọn “Luôn cho phép”' : 'chưa nối được ADB tới TV'; setTimeout(refresh, 300); }
       if (!quiet) toast('Lỗi: ' + friendly(e)); return null;
@@ -255,7 +256,8 @@ async function refresh() {
   if (s.version) $('#ver').textContent = (s.app_name || 'TV Remote') + ' ' + s.version + (s.released ? ' · ' + s.released : '');
   document.title = tvName && !picking ? tvName + ' · Remote' : 'TV Remote';
   $('#name').textContent = picking ? 'TV Remote' : tvName;
-  $('#info').textContent = picking ? tr('Chọn TV để điều khiển') : [CORE === 'pc' ? s.host : '', appName(s.app), s.asking ? 'nhìn lên TV: chọn Cho phép' : s.paired === false ? 'chưa ghép remote (tab Thiết lập)' : s.error ? 'nút remote chưa kết nối được (tab Thiết lập)' : ''].filter(Boolean).join(' · ') || 'đã kết nối';
+  $('#info').textContent = picking ? tr('Chọn TV để điều khiển') : [CORE === 'pc' ? s.host : '', appName(s.app), s.asking ? 'nhìn lên TV: chọn Cho phép' : s.paired === false ? 'chưa ghép remote (tab Thiết lập)' : s.error ? 'nút remote chưa kết nối được (tab Thiết lập)' : '',
+    s.scope === 'view' ? tr('Chỉ xem') : s.scope === 'remote' ? tr('Chỉ remote') : ''].filter(Boolean).join(' · ') || 'đã kết nối';   // a guest knows what it was given
   if (justPicked && s.host === justPicked) {                          // straight to the remote when the TV is ready, to the first-time steps when it is not
     const ready = s.connected || (s.adb && s.adb.state === 'ready') || s.asking;   // LG / Samsung asking: the remote tab says what to do
     if (ready || Date.now() - pickedAt > 6000) { justPicked = null; showTab(ready ? 'remote' : 'tv'); }   // a TV takes a few seconds to answer
@@ -278,10 +280,15 @@ async function refresh() {
 // data-needs="cap ..." and hidden (cards), greyed (buttons, keys it has no name for: a press says why) or, for a tab, kept
 // greyed with a card of what it does on an Android TV ([data-kindintro], KIND_INTRO): a feature to find out about, not a gap.
 let TV_KIND = 'android', CAPS = null, kindSig = '';
+// A browser let in by a shared QR may have less than the owner (Scope.kt in TV Setup): "remote" presses keys and opens apps,
+// "view" only watches. The page marks those parts data-needs="control" (pressing anything) or "full" (the owner's), as for a
+// TV that cannot; the other tabs are left out for a guest, as they are the owner's only.
+let SCOPE = 'full';
 const NATIVE = () => TV_KIND !== 'android';
-const can = (cap) => !CAPS || CAPS.has(cap);
+const can = (cap) => cap === 'full' ? SCOPE === 'full' : cap === 'control' ? SCOPE !== 'view' : !CAPS || CAPS.has(cap);
 const KIND_NAME = { android: 'Android TV', lg: 'LG', samsung: 'Samsung' };
-const kindWhy = () => 'Chỉ có trên Android TV / Google TV';
+const scopeWhy = () => SCOPE === 'view' ? 'Bạn chỉ được xem TV này' : 'Chỉ chủ TV dùng được phần này';
+const kindWhy = () => SCOPE !== 'full' ? scopeWhy() : 'Chỉ có trên Android TV / Google TV';
 function unsupported(e, off) {
   if (e.matches('[data-tab]')) { e.toggleAttribute('data-kind-tab', off); return; }
   if (e.matches('input, select, fieldset')) { e.disabled = off; return; }
@@ -323,10 +330,12 @@ async function sendWireLog() {
   toast(ok ? 'Đã chép nhật ký' : 'Không chép được nhật ký');
 }
 function applyKind(s) {
-  const kind = s.kind || 'android', sig = kind + '|' + (s.caps || []).join() + '|' + (s.keys || []).join();
+  const scope = s.scope || 'full', kind = s.kind || 'android', sig = kind + '|' + scope + '|' + (s.caps || []).join() + '|' + (s.keys || []).join();
   if (sig === kindSig) return;
-  kindSig = sig; TV_KIND = kind; CAPS = s.caps ? new Set(s.caps) : null;
-  document.documentElement.dataset.kind = kind;
+  kindSig = sig; TV_KIND = kind; CAPS = s.caps ? new Set(s.caps) : null; SCOPE = scope;
+  document.documentElement.dataset.kind = kind; document.documentElement.dataset.scope = scope;
+  document.querySelectorAll('nav.tabs [data-tab]').forEach((t) => { t.hidden = scope !== 'full' && t.dataset.tab !== 'remote'; });
+  if (scope !== 'full' && currentTab && currentTab !== 'remote') currentTab = 'remote';
   const keys = kind !== 'android' && s.keys ? new Set(s.keys) : null;
   document.querySelectorAll('[data-needs]').forEach((e) => unsupported(e, !e.dataset.needs.split(' ').every(can)));
   document.querySelectorAll('[data-k]').forEach((b) => unsupported(b, !!keys && !keys.has(b.dataset.k)));

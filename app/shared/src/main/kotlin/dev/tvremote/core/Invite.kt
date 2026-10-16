@@ -9,15 +9,19 @@ import java.io.IOException
  * that can already do everything here asks for one: through the shell (TrustReceiver, like a pass) or from a paired page.
  */
 object Invite {
+    val SCOPES = listOf("full", "remote", "view")
+
     /**
-     * [host] is how this device reaches the TV. The answer: {"url", "warn"} or, without a TV Setup that has invites,
+     * [host] is how this device reaches the TV; [scope]: what the browser that opens the link may do (full, remote, view:
+     * Scope.kt in TV Setup). The answer: {"url", "warn"} or, without a TV Setup that has invites,
      * {"setup": "missing" | "old", "have", "min"} (the page then shows only the QR that downloads the phone app).
      */
     @Throws(IOException::class)
-    fun share(sh: (String) -> String, host: String): JSONObject {
+    fun share(sh: (String) -> String, host: String, scope: String): JSONObject {
+        val sc = if (scope in SCOPES) scope else "remote"
         val have = SetupNeed.have(sh)
         if (!SetupNeed.ok(have, "invite")) return JSONObject().put("setup", if (have.isEmpty()) "missing" else "old").put("have", have).put("min", SetupNeed.MIN["invite"])
-        val out = sh("am broadcast --include-stopped-packages -n ${RulesClient.SETUP}/.TrustReceiver --es want invite 2>&1")
+        val out = sh("am broadcast --include-stopped-packages -n ${RulesClient.SETUP}/.TrustReceiver --es want invite --es scope $sc 2>&1")
         val m = Regex("data=\"([0-9a-f]{32}) ?([0-9.]*)\"").find(out) ?: throw IOException("TV Setup did not answer")
         // the page is served by TV Setup's service; a receiver may not start it from the background, the shell may
         sh("am start-foreground-service -n ${RulesClient.SETUP}/.RemoteService 2>&1")

@@ -70,6 +70,7 @@
   /* tabs */
   .tabs { display:flex; gap:6px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:5px; position:sticky; top:8px; z-index:5;
     box-shadow:0 -9px 0 8px var(--bg); }                                 /* the page's colour over the gap above and the round corners: nothing scrolls through */
+  html[data-scope=remote] .tabs, html[data-scope=view] .tabs { display:none; }   /* a guest has the Remote tab only (applyKind) */
   .tabs button { flex:1; min-height:42px; font-size:14px; background:transparent; border-radius:10px; }
   .tabs button:hover { background:var(--btn); }
   .tabs button[aria-selected=true] { background:var(--accent); color:var(--accent-ink); font-weight:700; }

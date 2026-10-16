@@ -12,7 +12,8 @@ import android.content.Intent
  * With `--es want fp` it answers the fingerprint of the HTTPS certificate instead (no pass): the shell is the one channel
  * already trusted, so the device pins the HTTPS port to it. An older TV Setup ignores that and gives a pass, which the
  * device takes for what it is. With `--es want invite`: a one-time invite and this TV's home address, for a QR another phone
- * scans (Invite.kt); clients check the TV Setup version first, as an older one would hand out a pass instead.
+ * scans (Invite.kt), with `--es scope full|remote|view` for what the browser that opens it may do (Scope.kt); clients
+ * check the TV Setup version first, as an older one would hand out a pass instead.
  */
 class TrustReceiver : BroadcastReceiver() {
     override fun onReceive(c: Context, i: Intent) {
@@ -20,7 +21,7 @@ class TrustReceiver : BroadcastReceiver() {
         if (i.getStringExtra("want") == "fp") { resultData = Tls.fingerprint(c); return }
         if (i.getStringExtra("want") == "invite") {                  // a QR to share (Invite.kt): the web page must be on to open it
             if (!RemoteService.enabled(c)) RemoteService.setEnabled(c, true)
-            resultData = RemoteService.newInvite() + " " + RemoteService.lanIp()
+            resultData = RemoteService.newInvite(i.getStringExtra("scope") ?: Scope.REMOTE) + " " + RemoteService.lanIp()
             return
         }
         val vi = java.util.Locale.getDefault().language == "vi"

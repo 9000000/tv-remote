@@ -12,7 +12,11 @@ const REMOTE = (() => {
 const remoteEntry = (e) => ({ ...e, ...e.web, sub: (e.web && e.web.sub) || e.sub });
 const remoteWords = (e) => (LANG === 'en' ? e.en : e.vi);
 const remoteHere = (e) => !e.cores || e.cores.includes('web');   // "cores" says "phone" (the native remote) or "web" (the pages)
-const remoteCan = (e) => !e.needs || typeof can !== 'function' || e.needs.every(can);   // can(): what this TV does (core.js)
+// What a guest let in by a shared QR needs for an entry (SCOPE in core.js): pressing anything is "control"; sending files and
+// what the owner set up is "full"; a screenshot only looks. On the TV web page only: the apps are the owner's.
+const REMOTE_ROLE = { shot: '', share: 'full', automation: 'full', file: 'full', media: 'full', cast: 'full' };
+const remoteRole = (e) => { const r = e.do in REMOTE_ROLE ? REMOTE_ROLE[e.do] : 'control'; return r ? [r] : []; };
+const remoteCan = (e) => typeof can !== 'function' || [...e.needs || [], ...remoteRole(e)].every(can);   // can(): what this TV does, and this browser may (core.js)
 
 // A menu from remote.json as menuDlg wants it. ctx.when: the conditions an entry may name; ctx.expand: the lists that stand in for an
 // "expand" entry (each already in menuDlg's form).

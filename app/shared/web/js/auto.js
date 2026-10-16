@@ -286,7 +286,8 @@ function renderScenes() {
     : [UI.empty('Chưa có cảnh nào. Bấm “＋ Tạo cảnh”, có sẵn mẫu để bắt đầu.')]));
   $('#scenebtns').replaceChildren(...(SCENES.length ? SCENES.map((sc) => el('button', { className: 'scene', title: sc.steps.map(stepText).join(' → '), onclick: () => runScene(sc) },
     el('span', { className: 'ico', textContent: sc.icon || '🎬' }), el('span', { textContent: sc.name })))
-    : [el('button', { className: 'scene add', onclick: () => { showTab('auto'); editScene(null); } }, el('span', { className: 'ico', textContent: '＋' }), el('span', { textContent: 'Tạo cảnh: một nút làm nhiều việc' }))]));
+    : can('full') ? [el('button', { className: 'scene add', onclick: () => { showTab('auto'); editScene(null); } }, el('span', { className: 'ico', textContent: '＋' }), el('span', { textContent: 'Tạo cảnh: một nút làm nhiều việc' }))] : []));
+  $('#scenecard').hidden = !SCENES.length && !can('full');            // a guest runs the owner's scenes, and makes none
 }
 
 // the editor: a name, an emoji, and steps added one by one

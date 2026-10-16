@@ -61,18 +61,21 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         // sharing (Invite.kt): one invite at a time, ten minutes, one browser; 128 random bits, so no count of guesses
         @Volatile private var invite: String? = null
         @Volatile private var inviteUntil = 0L
+        @Volatile private var inviteScope = Scope.REMOTE
 
-        fun newInvite(): String {
+        /** [scope]: what the browser that opens it may do (Scope.kt), picked by whoever shares. */
+        @Synchronized fun newInvite(scope: String): String {
             val b = ByteArray(16).also { SecureRandom().nextBytes(it) }
+            inviteScope = if (scope in Scope.ALL) scope else Scope.REMOTE
             return b.joinToString("") { String.format("%02x", it) }.also { invite = it; inviteUntil = System.currentTimeMillis() + 600000 }
         }
 
-        /** True once for the invite handed out last, in its ten minutes; it is used up then. */
-        @Synchronized fun takeInvite(got: String): Boolean {
-            val want = invite ?: return false
-            if (System.currentTimeMillis() > inviteUntil || !MessageDigest.isEqual(want.toByteArray(), got.toByteArray())) return false
+        /** The scope of the invite handed out last, once, in its ten minutes; it is used up then. */
+        @Synchronized fun takeInvite(got: String): String? {
+            val want = invite ?: return null
+            if (System.currentTimeMillis() > inviteUntil || !MessageDigest.isEqual(want.toByteArray(), got.toByteArray())) return null
             invite = null
-            return true
+            return inviteScope
         }
 
         /** This TV's address on the home network, from its interfaces (no ADB needed): what a phone beside it can reach. */
@@ -126,7 +129,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         private fun ok(): HttpServer.Response = HttpServer.Response.ok()
     }
 
-    private val ME = Paired.Entry("tv", "", "TV", "127.0.0.1", 0L, 0L, "tv", false)   // the Manage screen on the TV: never in the list
+    private val ME = Paired.Entry("tv", "", "TV", "127.0.0.1", 0L, 0L, "tv", false, Scope.FULL)   // the Manage screen on the TV: never in the list
 
     private val ui = Handler(Looper.getMainLooper())
     private val random = SecureRandom()
@@ -373,18 +376,26 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     @Throws(Exception::class)
     private fun route(r: HttpServer.Request, host: String, me: Paired.Entry): HttpServer.Response {
         val post = r.method == "POST"
+        if (!Scope.allows(me.scope, r.path, post, r.query) { r.json() }) return HttpServer.Response.json(403, JSONObject().put("error", "scope").put("scope", me.scope))
+        val owner = me.scope == Scope.FULL
         when (r.path) {
-            "/api/paired" -> if (!post) return HttpServer.Response.json(JSONObject().put("devices", JSONArray(Paired.list(this).map { it.json(it.id == me.id) })))
+            // a guest sees only itself, to forget it; the owner sees everyone and what each may do
+            "/api/paired" -> if (!post) return HttpServer.Response.json(JSONObject().put("devices", JSONArray(Paired.list(this).filter { owner || it.id == me.id }.map { it.json(it.id == me.id) })))
+            "/api/paired/scope" -> if (post) {
+                val d = r.json()
+                return if (Paired.setScope(this, d.optString("id"), d.optString("scope"))) ok() else HttpServer.Response.error(400, "no such device")
+            }
             "/api/paired/forget" -> if (post) {
                 val d = r.json()
+                if (!owner && (d.optBoolean("all") || d.optString("id") != me.id)) return HttpServer.Response.json(403, JSONObject().put("error", "scope").put("scope", me.scope))
                 if (d.optBoolean("all")) Paired.forgetAll(this) else Paired.forget(this, d.optString("id"))
                 val gone = d.optBoolean("all") || d.optString("id") == me.id
                 val out = ok()
                 if (gone) { out.headers["Set-Cookie"] = cookie("", r.tls, 0) }   // forgetting oneself logs out: the page asks for a code
                 return out
             }
-            "/api/state" -> return HttpServer.Response.json(state(host))
-            "/api/share" -> if (post) return HttpServer.Response.json(Invite.link(lanIp(), newInvite(), host))   // a paired page shares the TV it is on
+            "/api/state" -> return HttpServer.Response.json(state(host).put("scope", me.scope))
+            "/api/share" -> if (post) return HttpServer.Response.json(Invite.link(lanIp(), newInvite(r.json().optString("scope")), host))   // a paired page shares the TV it is on
             "/api/about" -> return HttpServer.Response.json(state(host))
             "/api/setup/need" -> return HttpServer.Response.json(JSONObject().put("ok", true))   // this is TV Setup: it has what this page knows
             "/api/screen" -> {                                        // one picture of the screen: the Screenshots mode, and the camera key
@@ -542,10 +553,13 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         return HttpServer.Response.json(JSONObject().put("ok", true).put("seconds", 120))
     }
 
+    // the body is read before taking the lock: a browser that sends it slowly must not hold up everyone else's pairing
+    @Throws(Exception::class)
+    private fun pairFinish(r: HttpServer.Request): HttpServer.Response = pairCheck(r, r.json().optString("code").replace(Regex("\\D"), ""))
+
     @Synchronized @Throws(Exception::class)
-    private fun pairFinish(r: HttpServer.Request): HttpServer.Response {
+    private fun pairCheck(r: HttpServer.Request, got: String): HttpServer.Response {
         val want = pairingCode() ?: return HttpServer.Response.error(400, "expired")
-        val got = r.json().optString("code").replace(Regex("\\D"), "")
         if (want != got) {
             if (++guesses >= 5) code = null
             if (++wrong >= 15) { wrong = 0; code = null; lockedUntil = System.currentTimeMillis() + 15 * 60000 }
@@ -561,8 +575,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
 
     /** A shared QR's link: its invite pairs this browser as a code would, once. */
     private fun pairInvite(r: HttpServer.Request): HttpServer.Response {
-        if (!takeInvite(r.json().optString("invite"))) return HttpServer.Response.error(400, "expired")
-        val token = Paired.add(this, "web", Paired.deviceName(r.headers["user-agent"] ?: ""), r.peer, r.tls)
+        val scope = takeInvite(r.json().optString("invite")) ?: return HttpServer.Response.error(400, "expired")
+        val token = Paired.add(this, "web", Paired.deviceName(r.headers["user-agent"] ?: ""), r.peer, r.tls, scope)
         val ok = ok()
         ok.headers["Set-Cookie"] = cookie(token, r.tls)
         return ok
