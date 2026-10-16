@@ -45,6 +45,7 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "clip" to act { clipDialog() },
     "screenOff" to act { screenOff() },
     "share" to act { shareDialog() },
+    "inputs" to act { inputsMenu() },
 )
 
 /** Things an action's button needs to know about itself once drawn (the ✏️ is lit while drawing). */

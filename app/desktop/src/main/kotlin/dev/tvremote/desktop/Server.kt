@@ -5,6 +5,7 @@ import dev.tvremote.core.Atv
 import dev.tvremote.core.HttpServer
 import dev.tvremote.core.WireLog
 import dev.tvremote.core.HttpServer.Response
+import dev.tvremote.core.Inputs
 import dev.tvremote.core.Remote
 import dev.tvremote.core.RemoteSteps
 import dev.tvremote.core.Scenes
@@ -137,6 +138,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             "/api/fleet" -> return fleetInfo(s)
             "/api/fleet/job" -> return fleets.jobs[r.q("id")]?.let { Response.json(fleets.snapshot(it)) } ?: Response.error(404, "unknown job")
             "/api/apps" -> if (native(s)) return nativeApps(s)
+            "/api/inputs" -> if (native(s)) return Response.json(Inputs.json(s.need().inputs()))   // LG's own list; Samsung has none (empty)
             "/api/app/icon" -> {
                 val png = (if (native(s)) s.atv?.icon(r.q("pkg")) else s.labels?.icon(r.q("pkg"))) ?: return Response.error(404, "no icon")
                 return Response.of("image/png", png).also { it.headers["Cache-Control"] = "max-age=86400" }
@@ -152,6 +154,10 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         if (native(s) && post && r.path == "/api/search") {                // LG: YouTube's own search; Samsung cannot
             if (!s.need().search(r.json().optString("query").take(200))) throw IllegalArgumentException("this TV has no YouTube and no Google search")
             return Response.json(JSONObject().put("to", "youtube"))
+        }
+        if (native(s) && post && r.path == "/api/input") {                 // LG's switchInput; Manage's goes through ADB
+            if (!s.need().switchInput(r.json().optString("id"))) throw IllegalArgumentException("this TV cannot switch inputs from here")
+            return Response.json(JSONObject().put("ok", true).put("via", "remote"))
         }
         if (native(s) && post && r.path == "/api/screen/off") {            // LG's own: Manage's goes through ADB
             if (!s.need().screenOff()) throw IllegalArgumentException("this TV cannot turn its screen off alone")
@@ -507,7 +513,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             "/api/tv/remove", "/api/scenes", "/api/scene/run", "/api/fleet/do", "/api/assist", "/api/pair/start", "/api/pair/finish", "/api/shutdown",
             "/api/update")
         /** What the page reads from an LG or Samsung TV besides [OURS]. */
-        val NATIVE_TOO = setOf("/api/state", "/api/about", "/api/wirelog", "/api/update", "/api/tvs", "/api/discover", "/api/setup/status", "/api/scenes", "/api/apps", "/api/app/icon", "/api/app/meta", "/api/setup/need",
+        val NATIVE_TOO = setOf("/api/state", "/api/about", "/api/wirelog", "/api/update", "/api/tvs", "/api/discover", "/api/setup/status", "/api/scenes", "/api/apps", "/api/inputs", "/api/app/icon", "/api/app/meta", "/api/setup/need",
             "/api/fleet", "/api/fleet/job", "/api/fleet/install", "/api/fleet/cancel")
         const val HD = 5                                              // Tv.QUALITY's sharpest level, the page's "Nét nhất"
         val IP = Regex("((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)")   // IPv4: what ADB and the TV's page links are written for

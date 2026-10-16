@@ -84,6 +84,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "apps/boot" -> return text(TvShell.BOOT, 20000)
                 "app/info" -> return text(TvShell.appInfo(r.q("pkg")), 20000)
                 "settings" -> if (!post) return text(TvShell.SETTINGS_READ, 20000)
+                "inputs" -> if (!post) return HttpServer.Response.json(Inputs.json(inputs(r.q("fresh") == "1")))   // HDMI 1 · PlayStation...
                 "caps" -> return HttpServer.Response.json(JSONObject().put("text", labels?.caps() ?: ""))
                 "playing" -> if (!post) return HttpServer.Response.json(playing?.state() ?: JSONObject().put("state", "none"))
                 "app/backup" -> return backup(r.q("pkg"))
@@ -118,6 +119,11 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     try { link.get().open("reboot:").use { it.readAll(3000) } } catch (ignored: Exception) { }   // the link drops as the TV goes down
                     link.close()                                      // so the page's next state() dials again instead of trusting it
                     HttpServer.Response.ok()
+                }
+                "input" -> {
+                    val id = r.json().optString("id")
+                    val via = Inputs.switch({ sh(it) }, id, inputCache.peek())
+                    HttpServer.Response.json(JSONObject().put("ok", true).put("via", via))
                 }
                 "adb/connect" -> HttpServer.Response.json(JSONObject().put("state", link.reconnect()))
                 "shell" -> shell(r.json().optString("cmd"))
@@ -167,6 +173,11 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             return HttpServer.Response.error(503, if (link.waitingForUser()) "adb:allow" else "adb: " + e.message)
         }
     }
+
+    private val inputCache = Inputs.Cache()
+
+    /** The TV's inputs, kept a minute (reading two dumpsys takes a second or two on a slow TV). */
+    private fun inputs(fresh: Boolean): List<Inputs.Input> = inputCache.get(fresh) { Inputs.parse(sh(Inputs.READ)) }
 
     /** ready, unauthorized (the TV is asking) or closed: the words the page knows. */
     fun adbState(): String = link.state()

@@ -57,6 +57,10 @@ interface Remote : Closeable {
     fun search(q: String): Boolean = false
     /** Sets the volume to [level] where the TV takes a number; false when it only has the volume keys. */
     fun setVolume(level: Int): Boolean = false
+    /** The TV's inputs (HDMI 1, AV...) by its remote link; empty when this kind cannot list them ("inputs" in [Kind.caps]). */
+    fun inputs(): List<Inputs.Input> = emptyList()
+    /** Switches to the input [id] of [inputs]; false when this kind cannot. */
+    fun switchInput(id: String): Boolean = false
     /** The screen off with the sound playing on; false when this kind cannot ("screen_off" in [Kind.caps]). */
     fun screenOff(): Boolean = false
     /** The keys this TV has, by Android code; null: all of them. */
@@ -81,12 +85,13 @@ interface Remote : Closeable {
          * adb: everything that goes through ADB (the picture, touch, 🎧, drawing, now playing, the clipboard, the Apps / Files /
          * Health tabs, Optimize TV, TV Setup and its rules); pair_code: pairing with a code typed here; volume_set: a level, not
          * only steps; link: open a web link; store: the Play Store pages; screen_off: the screen off with the sound on; app_list:
-         * the TV's apps come from its remote link (Android TVs list them over ADB, on the Apps tab).
+         * the TV's apps come from its remote link (Android TVs list them over ADB, on the Apps tab); inputs: the list of HDMI / AV
+         * inputs and switching to one ([Inputs]; Android TVs over ADB, LG by its link; Samsung only has its source key).
          */
         fun caps(kind: String): Set<String> = when (kind) {
-            LG -> setOf("keys", "text", "apps", "app_list", "volume_set", "link", "screen_off", "wol", "scenes")
+            LG -> setOf("keys", "text", "apps", "app_list", "volume_set", "link", "screen_off", "wol", "scenes", "inputs")
             SAMSUNG -> setOf("keys", "text", "apps", "app_list", "wol", "scenes")
-            else -> setOf("keys", "text", "apps", "volume_set", "link", "screen_off", "wol", "scenes", "adb", "pair_code", "store")
+            else -> setOf("keys", "text", "apps", "volume_set", "link", "screen_off", "wol", "scenes", "adb", "pair_code", "store", "inputs")
         }
 
         fun name(kind: String): String = when (kind) { LG -> "LG"; SAMSUNG -> "Samsung"; else -> "Android TV" }
@@ -146,6 +151,7 @@ class RemoteSteps(private val r: Remote, private val wake: () -> Unit) : Scenes.
         throw IllegalArgumentException("this TV only has the volume keys")
     }
     override fun timer(minutes: Int) = throw IllegalArgumentException("the sleep timer needs TV Setup on an Android TV")
+    override fun input(id: String) { if (!r.switchInput(id)) throw IllegalArgumentException("this TV cannot switch inputs from here") }
 }
 
 /** Looks up and saves small files beside the keys (an LG client key, a Samsung token), one per TV and port. */

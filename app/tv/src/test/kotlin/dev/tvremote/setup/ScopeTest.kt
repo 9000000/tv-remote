@@ -18,6 +18,7 @@ class ScopeTest {
     @Test fun remotePressesButNeverManages() {
         for (p in listOf("/api/key", "/api/type", "/api/touch", "/api/app/launch", "/api/draw", "/api/playing")) assertTrue(p, may(Scope.REMOTE, p, true))
         assertTrue(may(Scope.REMOTE, "/api/apps"))
+        assertTrue(may(Scope.REMOTE, "/api/inputs")); assertTrue(may(Scope.REMOTE, "/api/input", true)); assertFalse(may(Scope.VIEW, "/api/input", true))
         assertFalse(may(Scope.REMOTE, "/api/apps", q = mapOf("system" to "1")))   // every package: Manage
         for (p in listOf("/api/shell", "/api/install", "/api/upload", "/api/adb/allow", "/api/share", "/api/app/uninstall", "/api/paired/scope", "/api/setup", "/api/reboot", "/api/procs/kill"))
             assertFalse(p, may(Scope.REMOTE, p, true))

@@ -3,7 +3,7 @@
   "rows": {
     "more": [
       [
-        { "id": "input", "icon": "input", "vi": "Ngõ vào", "en": "Input", "key": "INPUT" },
+        { "id": "input", "icon": "input", "vi": "Ngõ vào", "en": "Input", "do": "inputs" },
         { "id": "settings", "icon": "settings", "vi": "Cài đặt", "en": "Settings", "key": "SETTINGS" },
         { "id": "info", "icon": "info", "vi": "Thông tin", "en": "Info", "key": "INFO" },
         { "id": "guide", "icon": "guide", "vi": "Lịch phát", "en": "Guide", "key": "GUIDE" }

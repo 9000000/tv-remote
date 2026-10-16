@@ -21,9 +21,9 @@ object Scope {
     private val VIEW_GET = setOf("/api/state", "/api/about", "/api/setup/need", "/api/screen", "/api/video", "/api/audio",
         "/api/app/icon", "/api/playing", "/api/caps", "/api/rules", "/api/scenes", "/api/paired")
     private val VIEW_POST = setOf("/api/adb/connect", "/api/paired/forget")   // forget: only itself (RemoteService.route)
-    private val REMOTE_GET = VIEW_GET + setOf("/api/apps", "/api/clip")
+    private val REMOTE_GET = VIEW_GET + setOf("/api/apps", "/api/clip", "/api/inputs")
     private val REMOTE_POST = VIEW_POST + setOf("/api/key", "/api/type", "/api/touch", "/api/clip", "/api/app", "/api/app/launch",
-        "/api/playing", "/api/search", "/api/draw", "/api/screen/off", "/api/scene/run", "/api/rules")
+        "/api/playing", "/api/search", "/api/draw", "/api/screen/off", "/api/scene/run", "/api/rules", "/api/input")
 
     /** Whether [scope] may make this request; [body] is read only for the routes that look into it. */
     fun allows(scope: String, path: String, post: Boolean, query: Map<String, String>, body: () -> JSONObject): Boolean {
