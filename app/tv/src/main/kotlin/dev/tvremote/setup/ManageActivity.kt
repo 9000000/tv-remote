@@ -81,6 +81,9 @@ class ManageActivity : Activity() {
             }
         }
         box.addView(web)
+        // the D-pad's first press must reach the page (js/ontv.js); a WebView without focus would take it to pick its own first
+        // control that way (Settings, top right) instead
+        web.requestFocus()
         web.loadUrl(url)
     }
 
@@ -97,11 +100,22 @@ class ManageActivity : Activity() {
             else if (e.action == KeyEvent.ACTION_UP) web.evaluateJavascript("window.tvBack ? tvBack() : false") { if (it != "true") finish() }
             return true
         }
+        // OK reaches the page as Enter: WebView keeps the remote's DPAD_CENTER to itself on a text field (to raise a keyboard
+        // the page holds down), so js/ontv.js would never learn the field was picked
+        if (e.keyCode == KeyEvent.KEYCODE_DPAD_CENTER) return super.dispatchKeyEvent(KeyEvent(e.downTime, e.eventTime, e.action,
+            KeyEvent.KEYCODE_ENTER, e.repeatCount, e.metaState, e.deviceId, e.scanCode, e.flags, e.source))
         return super.dispatchKeyEvent(e)
     }
 
     // no MainActivity.shown here (another process): the page's requests keep RemoteService from updating meanwhile (inUse)
-    override fun onResume() { super.onResume(); if (::web.isInitialized) web.onResume() }
-    override fun onPause() { super.onPause(); if (::web.isInitialized) web.onPause() }
-    override fun onDestroy() { if (::web.isInitialized) web.destroy(); super.onDestroy() }
+    override fun onResume() { super.onResume(); if (::web.isInitialized) { web.onResume(); web.resumeTimers() } }
+    // out of sight (Home, another app): the page stops asking the TV for its state; timers are per process, and this one is ours
+    override fun onPause() { super.onPause(); if (::web.isInitialized) { web.onPause(); web.pauseTimers() } }
+    override fun onDestroy() {
+        if (::web.isInitialized) web.destroy()
+        super.onDestroy()
+        // left for good: this process and its WebView renderer (about 145 MB together) go now, instead of lingering as a
+        // cached process on a TV that is short of memory; nothing else lives in it
+        if (isFinishing) ui.post { android.os.Process.killProcess(android.os.Process.myPid()) }
+    }
 }

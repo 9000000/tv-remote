@@ -8,7 +8,11 @@ if (window.ONTV) (() => {
   const scope = () => [...document.querySelectorAll('dialog[open]')].pop() || document;   // an open dialog keeps the focus in it
   const items = () => [...scope().querySelectorAll(SEL)].filter((e) => seen(e) && !(e.closest('details:not([open])') && e.tagName !== 'SUMMARY' && !e.closest('summary')));
   const start = () => { col = null; const s = scope(); return (s === document && document.querySelector('[data-tab][aria-selected="true"]')) || items()[0]; };
-  const go = (e) => { if (!e) return false; e.focus({ preventScroll: true }); e.scrollIntoView({ block: 'nearest', inline: 'nearest' }); return true; };
+  // a text field the focus passes over keeps the TV's keyboard down (it would take the arrows); OK opens it (keydown below)
+  const TEXT = 'textarea, input:not([type]), input[type=text], input[type=search], input[type=number], input[type=password], input[type=url], input[type=email], input[type=tel]';
+  const quiet = (e) => { if (e.matches(TEXT) && !e.dataset.im) { e.dataset.im = e.inputMode || '-'; e.inputMode = 'none'; } };
+  document.addEventListener('focusout', (ev) => { const e = ev.target; if (e.dataset && e.dataset.im) { e.inputMode = e.dataset.im === '-' ? '' : e.dataset.im; delete e.dataset.im; } }, true);
+  const go = (e) => { if (!e) return false; quiet(e); e.focus({ preventScroll: true }); e.scrollIntoView({ block: 'nearest', inline: 'nearest' }); return true; };
 
   // Left / right: the nearest control on the same row, or none (the focus stays). Up / down: the next row that way, and on it
   // the control under the column the focus keeps since the last move sideways (a wide search box does not throw it off).
@@ -45,6 +49,9 @@ if (window.ONTV) (() => {
     if (!d) {
       // OK on what Enter does not press by itself (a checkbox, a radio, a label)
       if (ev.key === 'Enter' && cur && cur.matches('input[type=checkbox], input[type=radio], label')) { ev.preventDefault(); cur.click(); }
+      else if (ev.key === 'Enter' && cur && cur.matches(TEXT) && cur.inputMode === 'none') {   // OK on a field: now the keyboard
+        ev.preventDefault(); cur.inputMode = cur.dataset.im === '-' ? '' : cur.dataset.im; delete cur.dataset.im; cur.blur(); cur.focus();
+      }
       return;
     }
     const typing = cur && (cur.matches('textarea') || (cur.matches('input') && !cur.matches('[type=checkbox], [type=radio], [type=range], [type=button], [type=submit], [type=file]')));
