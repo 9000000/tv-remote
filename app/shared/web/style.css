@@ -406,5 +406,5 @@
     .ftools input { flex:1 1 100%; } .ftools select { flex:1; }
     #places { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; margin:0 -14px; padding:0 14px; } #places::-webkit-scrollbar { display:none; } #places button { flex:none; }   /* one row to swipe */
     #fileslist .acts { gap:4px; } #fileslist .name { flex-basis:0; } }   /* at most two buttons: they fit beside the name */
-  @media (pointer:coarse) { .drop .fine { display:none; } }           /* nothing to drag a file from on a touch screen */
+  @media (pointer:coarse), (max-width:640px) { .drop .fine { display:none; } }   /* a phone: nothing to drag a file from */
   .panel .timerow button.small { min-height:var(--ctl); }            /* beside the time fields: as tall as they are */

@@ -46,6 +46,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     // ---- the session (this file)
     @Volatile internal var tv: Tv? = null                              // read by the session thread to tell its own messages from a replaced one's
+    @Volatile internal var sound: Tv? = null                           // the TV's sound, a session of its own (Listen.kt)
+    internal var soundTries = 0
     internal var basic: Remote? = null                                 // keys only: an Android TV whose ADB is still off (Atv), or an LG / Samsung TV (KeysOnly.kt)
     internal var host: String? = null                                  // the TV we want to be connected to, null on the picker
     internal var entry: String? = null                                 // the saved TV that [host] is another address of (its Tailscale or home IP), if so
@@ -213,7 +215,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         foreground = true
         ui.removeCallbacks(idleStop)
         refreshSaved()
-        if (bgListen) { bgListen = false; stopSession() }             // back on screen: the picture again
+        if (bgListen) { bgListen = false; stopSession() }             // back on screen: the picture again (the sound plays on: its own session)
+        startSound()                                                  // given up on while away: once more
         managing.resume()
         if (keysAway) { keysAway = false; host?.let { resumeBasic(it) } } else startSession()
     }
@@ -240,7 +243,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         // recreated (dark mode at sunset, a font size, the language): this instance's session, sound and keys end with it, or
         // they would go on beside the new one's, with nothing left on screen that can stop them
         ui.removeCallbacksAndMessages(null)
-        if (listen) { listen = false; listenService(false) }
+        if (listen) { listen = false; listenService(false); stopSound() }
         stopSession()
         basic?.close()
         basic = null
@@ -329,8 +332,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val picture = video && !bgListen
         if (h == null || tv != null || basic != null || keysAway || picture && !surfaceReady || kindOf(entry ?: h) != Remote.Kind.ANDROID) return
         val dm = resources.displayMetrics
-        tv = Tv(this, h, if (picture) surface.holder.surface else null, prefs.getInt("quality", 1), maxOf(dm.widthPixels, dm.heightPixels), wakeNext, this,
-            audio = if (listen) "opus" else null, audioShare = listenShare, audioBitRate = if (prefs.getBoolean("listenHq", false)) 160000 else 64000)
+        tv = Tv(this, h, if (picture) surface.holder.surface else null, prefs.getInt("quality", 1), maxOf(dm.widthPixels, dm.heightPixels), wakeNext, this)
         wakeNext = false
     }
 
@@ -447,7 +449,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         clearBox()                                                    // the next TV has received nothing from the box
         managing.close()
         setupBar.visibility = View.GONE
-        if (listen) { listen = false; bgListen = false; listenService(false) }
+        if (listen) { listen = false; bgListen = false; listenService(false); stopSound() }
         stopSession()
         waiting.visibility = View.GONE
         surface.visibility = View.GONE                                 // drops the surface, or the next TV opens on this one's last frame
@@ -494,9 +496,6 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                     ui.postDelayed({ if (tv === s && s != null && s.ready()) waiting.visibility = View.GONE }, 10000)   // no picture yet, but the buttons work
                 }
                 "rate" -> if (video) status.text = title(entry ?: h) + " · " + (if (listen) "🎧 " else "") + detail + " KB/s"   // 🎧 sits in ⋯: said here
-                "arate" -> if (!video || bgListen) status.text = title(entry ?: h) + " · 🎧 " + detail + " KB/s"
-                "audio" -> if (detail == "noshare") { listenShare = false; Toast.makeText(this, t("TV này dưới Android 13 nên chỉ nghe riêng được: loa TV tạm im.", "This TV is older than Android 13, so only private listening works: the TV’s speakers are quiet."), Toast.LENGTH_LONG).show() }
-                    else stopListen(t("TV này chưa gửi được tiếng sang điện thoại (cần Android 11 trở lên).", "This TV cannot send its sound to the phone (Android 11 or newer is needed)."))
                 "live" -> {
                     wasLive = true; retries = 0
                     from?.let { checkSetup(it, h) }

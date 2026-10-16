@@ -3,6 +3,8 @@ package dev.tvremote.phone
 import android.content.Intent
 import android.os.Build
 import android.widget.Toast
+import dev.tvremote.core.Remote
+import dev.tvremote.core.Tv
 
 // 🎧 The TV's sound on the phone, two ways, picked each time: only here (the TV's speakers quiet: headphones on, the house
 // asleep; they come back the moment listening stops), or both (the TV keeps playing: scrcpy's playback capture, Android 13+;
@@ -15,6 +17,7 @@ internal fun MainActivity.toggleListen() {
     if (listen) { stopListen(null); return }
     listen = true
     listenShare = prefs.getBoolean("listenShare", false)
+    soundTries = 0
     restartForSound()
     listenService(true)
     Toast.makeText(this, if (listenShare) t("Đang mở tiếng TV trên cả TV và điện thoại.", "Opening the TV’s sound on both the TV and the phone.")
@@ -50,15 +53,53 @@ internal fun MainActivity.stopListen(why: String?) {
     if (!listen) return
     listen = false
     listenService(false)
-    if (host != null) restartForSound()
+    stopSound()
+    layoutRemote()
     if (why != null) Toast.makeText(this, why, Toast.LENGTH_LONG).show()
 }
 
 private fun MainActivity.restartForSound() {
-    stopSession()
-    bgListen = false
+    stopSound()
     layoutRemote()
-    startSession()
+    startSound()
+}
+
+/**
+ * The sound in a session of its own, on its own connection: the picture stops and starts again as the app goes to the
+ * background and back, a quality changes, the session reconnects, and none of it cuts the sound; nor does the picture
+ * crowd it out on a slow network (one TCP connection waits for whatever is late on it, the sound included).
+ */
+internal fun MainActivity.startSound() {
+    val h = host ?: return
+    if (!listen || sound != null || basic != null || kindOf(entry ?: h) != Remote.Kind.ANDROID) return
+    lateinit var s: Tv
+    s = Tv(this, h, null, 0, 0, false, object : Tv.Listener {
+        override fun onStatus(key: String, detail: String) { ui.post { if (sound === s) soundStatus(key, detail) } }
+        override fun onVideoSize(w: Int, h: Int) {}
+        override fun onNetwork(mac: String, lan: String, tailscale: String) {}
+    }, audio = "opus", wantControl = false, audioShare = listenShare, audioBitRate = if (prefs.getBoolean("listenHq", false)) 160000 else 64000)
+    sound = s
+}
+
+internal fun MainActivity.stopSound() {
+    sound?.stop()
+    sound = null
+}
+
+private fun MainActivity.soundStatus(key: String, detail: String) {
+    val h = host ?: return
+    when (key) {
+        "live" -> soundTries = 0
+        "arate" -> if (!video || bgListen) status.text = title(entry ?: h) + " · 🎧 " + detail + " KB/s"
+        "audio" -> if (detail == "noshare") { listenShare = false; Toast.makeText(this, t("TV này dưới Android 13 nên chỉ nghe riêng được: loa TV tạm im.", "This TV is older than Android 13, so only private listening works: the TV’s speakers are quiet."), Toast.LENGTH_LONG).show() }
+            else stopListen(t("TV này chưa gửi được tiếng sang điện thoại (cần Android 11 trở lên).", "This TV cannot send its sound to the phone (Android 11 or newer is needed)."))
+        "closed", "error" -> {                                        // the network dropped (4G, a tunnel): dialled again, a few times
+            sound = null
+            if (!listen) return
+            if (detail.contains("cannot send its sound")) { stopListen(t("TV này chưa gửi được tiếng sang điện thoại (cần Android 11 trở lên).", "This TV cannot send its sound to the phone (Android 11 or newer is needed).")); return }
+            if (soundTries++ < 6) ui.postDelayed({ startSound() }, 1000L * soundTries)   // and once more each time the app is opened
+        }
+    }
 }
 
 internal fun MainActivity.listenService(on: Boolean) {
