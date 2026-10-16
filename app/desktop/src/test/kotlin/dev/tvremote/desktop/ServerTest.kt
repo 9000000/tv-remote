@@ -80,6 +80,8 @@ class ServerTest {
     }
 
     @Test fun theKeyIsKeptOnDiskForASecondStart() {
+        assertEquals("", Pass.read(File(dir.root, "pass")))            // not before the port is ours (Main: a start that finds it taken)
+        pass.save()
         assertEquals(pass.key, Pass.read(File(dir.root, "pass")))
     }
 
