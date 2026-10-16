@@ -156,14 +156,16 @@
         + line('ram', (r) => r[4] ? r[3] * 100 / r[4] : null, RAM) + line('cpu', (r) => r[1] ? r[2] : null, CPU)
         + curLine(H) + '</svg>' });
       const strip = track.strip(svg), mark = track.mark(svg, strip);
-      const tip = el('div', { className: 'st-tip', textContent: T('Chạm vào biểu đồ để xem số liệu tại thời điểm đó.', 'Touch the chart to read the figures at that moment.') });
+      const tip = el('div', { className: 'st-tip' });
       const cutAt = (t) => { const c = cuts.find(([a, b]) => t >= a - 150 && t <= (b || to) + 150); return c ? '\n' + hm(c[0]) + (c[1] ? '–' + hm(c[1]) : '') : ''; };   // within half a sample
-      scrub(svg, rows, x, (r) => {
-        const span = mark(r);
+      const say = (r, now) => {                                     // now: the latest figures, until the chart is touched
+        const span = now ? '' : mark(r);
         cells(tip, [[T('Lúc', 'Time'), hm(r[0])], ['RAM', (r[3] / 1024).toFixed(1) + ' GB\n/ ' + (r[4] / 1024).toFixed(1) + ' GB'], ['CPU', r[1] && r[2] != null ? r[2] + '%' : '–'],
           [T('Bộ nhớ', 'Storage'), (r[5] / 1024).toFixed(1) + ' GB'], [T('TV', 'TV'), r[1] ? (r[7] ? name(r[7]) + span : T('đang bật', 'on')) : T('đang ngủ', 'asleep') + span],
           cutAt(r[0]) ? [T('Mạng', 'Network'), T('mất mạng', 'no network') + cutAt(r[0])] : r[9] === 'wifi' && r[8] != null ? ['Wi-Fi', r[8] + ' dBm\n' + level(r[8]) + (r[10] ? ' · ' + r[10] + ' Mbps' : '')] : r[9] === 'eth' ? [T('Mạng', 'Network'), T('dây mạng', 'cable')] : r.length > 9 && r[9] === '' ? [T('Mạng', 'Network'), T('mất mạng', 'no network')] : null]);
-      });
+      };
+      scrub(svg, rows, x, (r) => say(r));
+      say(rows[rows.length - 1], true);
       const ram = rows.map((r) => r[3]), cpu = rows.filter((r) => r[1] && r[2] != null).map((r) => r[2]);
       const wifi = rows.filter((r) => r[9] === 'wifi' && r[8] != null), dbm = wifi.map((r) => r[8]), mbps = wifi.map((r) => r[10]).filter((v) => v);
       const avg = dbm.length ? Math.round(dbm.reduce((a, b) => a + b, 0) / dbm.length) : 0;
