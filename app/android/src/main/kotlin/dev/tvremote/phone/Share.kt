@@ -56,6 +56,7 @@ private fun MainActivity.showShare(r: JSONObject, ask: (String, (JSONObject) -> 
         else -> null
     }
     if (warn != null) tvPane.addView(label(warn, 14, ERR_TEXT), gap(12))
+    val wifi = r.optString("warn") != "tailscale_only"                 // the link is the TV's Wi-Fi address: say so, unless only Tailscale reaches it (warned above)
     val url = r.optString("url")
     if (url.isNotEmpty()) {
         val qrBox = col()
@@ -66,8 +67,10 @@ private fun MainActivity.showShare(r: JSONObject, ask: (String, (JSONObject) -> 
         val draw = { link: String ->
             qrBox.removeAllViews()
             if (link.isNotEmpty()) qr(qrBox, link, if (scope == "view") t("Xem TV", "Watch the TV") else t("Mở remote", "Open the remote"),
-                if (scope == "view") t("Quét để xem TV này, không cần mã. Dùng 1 lần, trong 10 phút.", "Scan to watch this TV, no code needed. Once, within 10 minutes.")
-                else t("Quét để điều khiển TV này, không cần mã. Dùng 1 lần, trong 10 phút.", "Scan to control this TV, no code needed. Once, within 10 minutes."))
+                (if (scope == "view") t("Quét để xem TV này, không cần mã.", "Scan to watch this TV, no code needed.")
+                else t("Quét để điều khiển TV này, không cần mã.", "Scan to control this TV, no code needed.")) +
+                (if (wifi) t(" Điện thoại quét phải cùng Wi-Fi với TV.", " The phone that scans must be on the TV's Wi-Fi.") else "") +
+                t(" Dùng 1 lần, trong 10 phút.", " Once, within 10 minutes."))
         }
         val buttons = scopes.map { (k, icon, words) -> chip(icon, words, k == scope) }
         buttons.forEachIndexed { i, b ->

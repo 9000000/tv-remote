@@ -355,6 +355,8 @@
     '🌐 Mở remote': "🌐 Open the remote",
     'Quét để điều khiển TV này, không cần mã. Dùng 1 lần, trong 10 phút.': "Scan to control this TV, no code needed. Once, within 10 minutes.",
     'Quét để xem TV này, không cần mã. Dùng 1 lần, trong 10 phút.': "Scan to watch this TV, no code needed. Once, within 10 minutes.",
+    'Quét để điều khiển TV này, không cần mã. Điện thoại quét phải cùng Wi-Fi với TV. Dùng 1 lần, trong 10 phút.': "Scan to control this TV, no code needed. The phone that scans must be on the TV's Wi-Fi. Once, within 10 minutes.",
+    'Quét để xem TV này, không cần mã. Điện thoại quét phải cùng Wi-Fi với TV. Dùng 1 lần, trong 10 phút.': "Scan to watch this TV, no code needed. The phone that scans must be on the TV's Wi-Fi. Once, within 10 minutes.",
     '🌐 Xem TV': '🌐 Watch the TV',
     'Toàn quyền': 'Full access',
     '🛡️ Toàn quyền': '🛡️ Full access',

@@ -104,8 +104,10 @@ async function shareDialog() {
   const d = el('dialog', { className: 'ask share' }, el('div', { className: 'card' },
     UI.head('📲 Chia sẻ', el('button', { className: 'small iconbtn', textContent: '✕', title: 'Đóng', 'aria-label': 'Đóng', onclick: () => d.close() })),
     tabs, tv, app));
-  const draw = (url) => qr.replaceChildren(...[url ? qrBlock(scope === 'view' ? '🌐 Xem TV' : '🌐 Mở remote', scope === 'view' ? 'Quét để xem TV này, không cần mã. Dùng 1 lần, trong 10 phút.'
-    : 'Quét để điều khiển TV này, không cần mã. Dùng 1 lần, trong 10 phút.', url, true) : null].filter(Boolean));
+  const wifi = r.warn !== 'tailscale_only';                           // the link is the TV's Wi-Fi address: say so, unless only Tailscale reaches it (warned above)
+  const draw = (url) => qr.replaceChildren(...[url ? qrBlock(scope === 'view' ? '🌐 Xem TV' : '🌐 Mở remote', scope === 'view'
+    ? (wifi ? 'Quét để xem TV này, không cần mã. Điện thoại quét phải cùng Wi-Fi với TV. Dùng 1 lần, trong 10 phút.' : 'Quét để xem TV này, không cần mã. Dùng 1 lần, trong 10 phút.')
+    : (wifi ? 'Quét để điều khiển TV này, không cần mã. Điện thoại quét phải cùng Wi-Fi với TV. Dùng 1 lần, trong 10 phút.' : 'Quét để điều khiển TV này, không cần mã. Dùng 1 lần, trong 10 phút.'), url, true) : null].filter(Boolean));
   const choose = async (k) => {
     if (k === scope) return; scope = k; pick.replaceChildren(scopeChips(scope, choose));
     const n = await api('/api/share', { scope }); draw(n && n.url);   // on a failure no QR rather than the last one under the wrong choice
