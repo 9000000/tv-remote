@@ -15,6 +15,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Hộp FPT (hoặc hộp nhà mạng) có mật khẩu ADB: TV Setup tự mở Tùy chọn nhà phát triển để vượt qua.
 - Đổi ngôn ngữ vẫn giữ TV, tab và vị trí đang xem.
 - App điện thoại: ô nhập chữ trong các hộp thoại to và rõ hơn; nút Chia sẻ link tải app không còn bị hẹp.
+- Logo app bo góc ở mọi nơi (app, web, app máy tính, trang giới thiệu).
 
 **English**
 - ▶️ Now playing: the remote shows what the TV is playing (title, channel or artist); drag the bar to seek, tap to pause or skip. On all three: the phone app, the computer app and the TV web page.
@@ -25,6 +26,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - FPT (or other operator) boxes with an ADB password: TV Setup opens Developer options itself to get past it.
 - Switching the language keeps the TV, tab and scroll position.
 - Phone app: text boxes in dialogs are bigger and clearer; the Share the download link button is no longer squashed.
+- The app's logo has rounded corners everywhere (apps, web, computer app, intro page).
 
 ## 2.24.2 - 2026-10-15
 
