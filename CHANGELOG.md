@@ -7,10 +7,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
-- 📱 App điện thoại: Quét Wi-Fi đi thẳng ra Wi-Fi khi Tailscale (hay VPN khác) đang bật, để vẫn tìm được TV trong nhà.
+- 📱 App điện thoại: Quét Wi-Fi đi thẳng ra Wi-Fi khi Tailscale (hay VPN khác) đang bật, để vẫn tìm được TV trong nhà. Chỉ có 4G thì báo chưa nối Wi-Fi, không quét nhầm mạng của nhà mạng.
 
 **English**
-- 📱 Phone app: Scan the Wi-Fi goes straight onto the Wi-Fi while Tailscale (or another VPN) is on, so TVs at home are still found.
+- 📱 Phone app: Scan the Wi-Fi goes straight onto the Wi-Fi while Tailscale (or another VPN) is on, so TVs at home are still found. On mobile data only, it says the phone is not on Wi-Fi instead of scanning the carrier's network.
 
 ## 0.2.1 - 2026-10-16
 

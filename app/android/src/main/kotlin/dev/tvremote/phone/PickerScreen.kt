@@ -196,6 +196,8 @@ private fun MainActivity.foundRow(f: Ssdp.Found) = row((if (f.name.isNotEmpty())
     prefs.edit().putString("kind:${f.ip}", f.kind).apply(); connect(f.ip)
 }
 
+private val MOBILE = Regex("^(rmnet|ccmni|pdp|v4-|clat|seth|wwan|tun|ppp|ipsec)")   // mobile data and VPNs; Wi-Fi, Ethernet and the hotspot stay
+
 internal fun MainActivity.scan() {
     scanBtn.isEnabled = false
     scanBtn.text = t("Đang quét...", "Scanning...")
@@ -210,7 +212,7 @@ internal fun MainActivity.scan() {
             }
             try {
                 for (ni in Collections.list(NetworkInterface.getNetworkInterfaces())) {
-                    if (!ni.isUp || ni.isLoopback) continue
+                    if (!ni.isUp || ni.isLoopback || MOBILE.containsMatchIn(ni.name)) continue   // 4G's 10.x is the carrier's, no TV there
                     for (a in Collections.list(ni.inetAddresses)) add(a)
                 }
             } catch (ignored: Exception) {
@@ -218,7 +220,8 @@ internal fun MainActivity.scan() {
             try {                                                 // a second source: with a VPN (Tailscale) on, the list above can miss the Wi-Fi
                 val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
                 @Suppress("DEPRECATION")
-                for (n in cm.allNetworks) cm.getLinkProperties(n)?.linkAddresses?.forEach { add(it.address) }
+                for (n in cm.allNetworks) if (cm.getNetworkCapabilities(n)?.let { c -> c.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) ||
+                        c.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET) } == true) cm.getLinkProperties(n)?.linkAddresses?.forEach { add(it.address) }
             } catch (ignored: Exception) {
             }
             val lan = lanNetwork()
