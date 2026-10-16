@@ -24,7 +24,8 @@ internal const val BG = 0xff111418.toInt()
 internal const val DL_CODE = "2397346"                         // AFTVnews short code for releases/latest/download/tv-setup.apk: Downloader takes it as downloader://<code> or in its address field
 internal const val CARD = 0xff1c2026.toInt()
 internal const val BTN = 0xff2a3038.toInt()
-internal const val ACCENT = 0xff5b8cff.toInt()
+internal const val ACCENT = 0xff3366e8.toInt()                 // fills, with white on top (5:1); the old light #5b8cff took only 3:1 with light text
+internal const val ACCENT_TEXT = 0xff7ba2ff.toInt()            // the same blue as words or an icon on the dark screen (6.7:1)
 internal const val HELD = 0xffe0a030.toInt()
 internal const val TEXT = 0xffe8eaed.toInt()
 internal const val MUTED = 0xff9aa0a6.toInt()
@@ -101,7 +102,7 @@ internal fun Context.button(s: String, color: Int): Button {
     val b = Button(this)
     b.text = s
     b.setAllCaps(false)
-    b.setTextColor(TEXT)
+    b.setTextColor(if (color == ACCENT) Color.WHITE else TEXT)
     b.textSize = 15f
     b.background = box(color, 14)
     b.stateListAnimator = null
@@ -143,9 +144,10 @@ internal fun Context.logo(sizeDp: Int): android.widget.ImageView = android.widge
 
 internal fun Context.icon(symbol: String, says: String, color: Int): IconButton {
     val b = IconButton(this)
-    b.setIcon(symbol, if (symbol == "@power") RED else TEXT)
+    val ink = if (color == ACCENT) Color.WHITE else TEXT
+    b.setIcon(symbol, if (symbol == "@power") RED else ink)
     b.setAllCaps(false)
-    b.setTextColor(TEXT)
+    b.setTextColor(ink)
     b.textSize = 20f
     b.contentDescription = says
     b.background = box(color, 16)
@@ -223,7 +225,7 @@ internal fun Activity.menu(title: String, primary: Int, items: List<Triple<Strin
         if (id != 0) {
             val img = android.widget.ImageView(this)
             img.setImageResource(id)
-            img.setColorFilter(if (i == primary) Color.WHITE else ACCENT)
+            img.setColorFilter(if (i == primary) Color.WHITE else ACCENT_TEXT)
             val ilp = LinearLayout.LayoutParams(dp(24), dp(24))
             ilp.rightMargin = dp(14)
             row.addView(img, ilp)

@@ -389,7 +389,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         line(t("1. Tích “Luôn cho phép”\n2. Chọn OK (Cho phép)", "1. Tick “Always allow”\n2. Choose OK (Allow)"), 20f, TEXT, true, 26)
         val fp = try { dev.tvremote.core.Adb(filesDir).fingerprint() } catch (e: Exception) { "" }
         if (fp.isNotEmpty()) line(t("Mã trên TV phải trùng mã của máy này:\n", "The code on the TV must match this phone’s:\n") + fp, 13f, MUTED, false, 18)
-        val helper = TextView(this).apply { textSize = 15f; setTextColor(ACCENT); gravity = Gravity.CENTER; visibility = View.GONE }
+        val helper = TextView(this).apply { textSize = 15f; setTextColor(ACCENT_TEXT); gravity = Gravity.CENTER; visibility = View.GONE }
         col.addView(helper, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
         line(t("Màn hình này tự đóng khi TV đã cho phép.", "This screen closes by itself once the TV has allowed it."), 15f, MUTED, false, 26)
         askSetup(fp, helper)

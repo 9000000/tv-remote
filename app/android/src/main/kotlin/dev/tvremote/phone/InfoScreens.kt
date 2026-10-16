@@ -36,7 +36,7 @@ internal fun MainActivity.buildSettings(): View {
             prefs.edit().putString("lang", code).apply()
             recreate()                                            // every label is built in onCreate
         }
-        if (code == now) b.setTextColor(ACCENT)
+        if (code == now) b.setTextColor(ACCENT_TEXT)
         box.addView(b)
     }
 

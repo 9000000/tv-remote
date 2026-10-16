@@ -324,7 +324,7 @@ internal fun MainActivity.buildPicker() {
     line.addView(go, lp)
     picker.addView(line, gap(6))
     val help = button(t("Cách kết nối", "How to connect"), 0)
-    help.setTextColor(ACCENT)
+    help.setTextColor(ACCENT_TEXT)
     help.setOnClickListener {
         AlertDialog.Builder(this).setTitle(t("Cách kết nối", "How to connect")).setMessage(t(
             "1. BẬT ADB TRÊN TV (một lần)\nCài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng”. Rồi Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB”.\n\n" +
