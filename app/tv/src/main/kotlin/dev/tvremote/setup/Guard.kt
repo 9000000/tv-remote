@@ -57,11 +57,12 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         override fun onReceive(ctx: Context, i: Intent) { capVolume() }
     }
 
+    private val checking = Any()                                     // a poke during a slow check waits for it, then looks at the new rules
     private val tick = object : Runnable {
         override fun run() {
             if (stopped) return
             Thread({
-                val next = try { check() } catch (e: Exception) { 30_000L }
+                val next = try { synchronized(checking) { check() } } catch (e: Exception) { 30_000L }
                 ui.removeCallbacks(this)                              // a poke meanwhile: still one chain of checks
                 ui.postDelayed(this, next.coerceIn(3_000L, 60_000L))
             }, "guard").apply { isDaemon = true }.start()

@@ -25,7 +25,7 @@ import java.util.Locale
  */
 internal object Rules {
     private const val PREFS = "rules"
-    private val PKG = Regex("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)+")
+    private val PKG = dev.tvremote.core.Pkg.RE
     private val HHMM = Regex("([01]?\\d|2[0-3]):([0-5]\\d)")
 
     @Synchronized
@@ -54,34 +54,25 @@ internal object Rules {
     @Synchronized
     fun change(c: Context, d: JSONObject): JSONObject {
         val o = load(c)
-        val now = System.currentTimeMillis()
+        if (!apply(o, d, System.currentTimeMillis())) return state(c)
+        save(c, o)
+        Guard.poke()
+        return state(c)
+    }
+
+    /** [change] without the phone's storage: [o] becomes the new rules. False for a read ("" / "get"), which changes nothing. */
+    internal fun apply(o: JSONObject, d: JSONObject, now: Long): Boolean {
         val minutes = d.optInt("minutes").coerceIn(0, 24 * 60)
         when (d.optString("do")) {
-            "", "get" -> return state(c)
+            "", "get" -> return false
             "sleep" -> o.put("sleep_at", if (minutes > 0) now + minutes * 60_000L else 0L)
             "sleep_add" -> o.put("sleep_at", maxOf(o.optLong("sleep_at"), now) + minutes * 60_000L)
             "bedtime" -> {
                 val given = d.optJSONArray("ranges") ?: JSONArray().put(JSONObject().put("from", d.optString("from", "22:00")).put("to", d.optString("to", "06:30")))
-                val list = JSONArray()
-                for (i in 0 until minOf(given.length(), 8)) {
-                    val r = given.getJSONObject(i)
-                    val from = r.optString("from"); val to = r.optString("to")
-                    if (!HHMM.matches(from) || !HHMM.matches(to)) throw IllegalArgumentException("bad time")
-                    list.put(JSONObject().put("from", pad(from)).put("to", pad(to)))
-                }
+                val list = ranges(given, false)
                 o.put("bedtime", bedtime(d.optBoolean("on") && list.length() > 0, list))
             }
-            "volume" -> {
-                val list = JSONArray()
-                val ranges = d.optJSONArray("ranges") ?: JSONArray()
-                for (i in 0 until minOf(ranges.length(), 8)) {
-                    val r = ranges.getJSONObject(i)
-                    val from = r.optString("from"); val to = r.optString("to")
-                    if (!HHMM.matches(from) || !HHMM.matches(to)) throw IllegalArgumentException("bad time")
-                    list.put(JSONObject().put("from", pad(from)).put("to", pad(to)).put("max", r.optInt("max", 30).coerceIn(0, 100)))
-                }
-                o.put("volume", list)
-            }
+            "volume" -> o.put("volume", ranges(d.optJSONArray("ranges") ?: JSONArray(), true))
             "ram" -> o.put("ram", JSONObject().put("on", d.optBoolean("on")).put("pct", d.optInt("pct", ram(o).optInt("pct")).coerceIn(RAM_MIN, RAM_MAX)))
             "snooze" -> o.put("snooze_until", if (minutes > 0) now + minutes * 60_000L else 0L)
             "limit", "extra" -> {
@@ -100,9 +91,21 @@ internal object Rules {
             }
             else -> throw IllegalArgumentException("unknown action")
         }
-        save(c, o)
-        Guard.poke()
-        return state(c)
+        return true
+    }
+
+    /** At most 8 {from, to} ranges ("H:MM" padded to "HH:MM"), each with a "max" percent when [withMax]; a bad time throws. */
+    private fun ranges(given: JSONArray, withMax: Boolean): JSONArray {
+        val list = JSONArray()
+        for (i in 0 until minOf(given.length(), 8)) {
+            val r = given.getJSONObject(i)
+            val from = r.optString("from"); val to = r.optString("to")
+            if (!HHMM.matches(from) || !HHMM.matches(to)) throw IllegalArgumentException("bad time")
+            val one = JSONObject().put("from", pad(from)).put("to", pad(to))
+            if (withMax) one.put("max", r.optInt("max", 30).coerceIn(0, 100))
+            list.put(one)
+        }
+        return list
     }
 
     /** The sleep timer has gone off (unless it was set again meanwhile). */

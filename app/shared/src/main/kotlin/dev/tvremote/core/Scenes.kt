@@ -31,7 +31,7 @@ object Scenes {
         for (d in 0..9) put(d.toString(), 7 + d)
     }
 
-    private val PKG = Pattern.compile("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)+")
+    private val PKG = Pattern.compile(Pkg.PATTERN)
     private val APP_ID = Pattern.compile("[A-Za-z0-9][A-Za-z0-9_.-]{0,127}")   // an LG app ("netflix", "spotify-beehive") or a Samsung one ("3201907018807") too; [launch] still wants a package
     private val STEPS = setOf("wake", "sleep", "key", "app", "link", "volume", "wait", "timer")
 

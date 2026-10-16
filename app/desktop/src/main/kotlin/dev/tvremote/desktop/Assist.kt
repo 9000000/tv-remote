@@ -154,6 +154,6 @@ class Assist(private val cur: () -> Session) {
         const val SETUP_APK = "https://github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"
         const val DOWNLOADER = "com.esaba.downloader"
         const val SETUP_CODE = "downloader://2397346"                 // Downloader's own link for the AFTVnews code of SETUP_APK: opens Downloader alone, no "Open with"
-        val PKG = Regex("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)+")
+        val PKG = dev.tvremote.core.Pkg.RE
     }
 }

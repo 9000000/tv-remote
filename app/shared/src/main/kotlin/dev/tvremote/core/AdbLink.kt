@@ -11,6 +11,7 @@ class AdbLink(private val keyDir: File, val host: String) {
     @Volatile private var failed = false                              // the last attempt did not get through
     @Volatile private var dialStart = 0L
     @Volatile private var lastTry = 0L                                // state() dials again at most this often after a failure
+    @Volatile private var gen = 0                                     // bumped by reconnect(): a dial of an older generation was cut on purpose, not a failure
     private val spawning = java.util.concurrent.atomic.AtomicBoolean()
     private val lock = Any()
 
@@ -20,6 +21,7 @@ class AdbLink(private val keyDir: File, val host: String) {
         synchronized(lock) {
             adb?.let { if (!it.isDead()) return it }
             val a = Adb(keyDir)
+            val mine = gen
             dialing = a
             dialStart = System.currentTimeMillis()
             try {
@@ -31,17 +33,17 @@ class AdbLink(private val keyDir: File, val host: String) {
                 return a
             } catch (e: IOException) {
                 WireLog.all.add("·", "adb $host $e")
-                failed = true
+                if (mine == gen) failed = true
                 try { a.close() } catch (ignored: Exception) { }      // the socket of a refused attempt, not left to the GC
                 throw e
             } catch (e: Exception) {
                 WireLog.all.add("·", "adb $host $e")
-                failed = true
+                if (mine == gen) failed = true
                 try { a.close() } catch (ignored: Exception) { }
                 throw IOException(e.message ?: e.javaClass.simpleName)
             } finally {
                 dialing = null
-                lastTry = System.currentTimeMillis()
+                if (mine == gen) lastTry = System.currentTimeMillis()
             }
         }
     }
@@ -68,6 +70,7 @@ class AdbLink(private val keyDir: File, val host: String) {
 
     /** "Try again": a fresh connection, whatever the old one thought of itself. */
     fun reconnect(): String {
+        gen++
         close()
         failed = false
         lastTry = 0

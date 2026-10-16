@@ -526,7 +526,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
 
     /** Closes the apps that are only waiting in the background (what is on screen stays); says how much memory came back, in MB. */
     private fun free(): JSONObject {
-        val avail = { (find("MemAvailable:\\s+(\\d+)", sh("cat /proc/meminfo"))?.toLong() ?: 0L) / 1024 }
+        val avail = { (Meminfo.kb(sh("cat /proc/meminfo"), "MemAvailable") ?: 0L) / 1024 }
         val before = avail()
         sh("am kill-all")
         Thread.sleep(1500)
@@ -671,10 +671,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     // ---------------------------------------------------------------- history
     /** CPU load in percent over one second, or null. */
     fun cpuNow(): Int? = try {
-        val f = sh("head -1 /proc/stat; sleep 1; head -1 /proc/stat").trim().jsplit("\n").map { it.trim().jsplit("\\s+").drop(1).map { n -> n.toLong() } }
-        val total = f[1].sum() - f[0].sum()
-        val idle = f[1][3] + f[1][4] - f[0][3] - f[0][4]
-        if (total > 0) Math.round(100.0 * (total - idle) / total).toInt() else null
+        val f = sh("head -1 /proc/stat; sleep 1; head -1 /proc/stat").trim().jsplit("\n")
+        Meminfo.cpu(f[0], f[1])
     } catch (e: Exception) { null }
 
     /** Lets the TV Setup app on the TV read which app is on screen (it cannot ask for this itself). */
@@ -723,10 +721,10 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             val idle = stat[1][1] - stat[0][1]
             o.put("cpu", Math.round(100.0 * (total - idle) / total))
         }
-        val memTotal = find("MemTotal:\\s+(\\d+)", part[2])
-        val memFree = find("MemAvailable:\\s+(\\d+)", part[2])
-        if (memTotal != null) o.put("mem_total", memTotal.toLong() * 1024)
-        if (memFree != null) o.put("mem_free", memFree.toLong() * 1024)
+        val memTotal = Meminfo.kb(part[2], "MemTotal")
+        val memFree = Meminfo.kb(part[2], "MemAvailable")
+        if (memTotal != null) o.put("mem_total", memTotal * 1024)
+        if (memFree != null) o.put("mem_free", memFree * 1024)
         val df = part[3].trim().jsplit("\\s+")
         if (df.size > 3 && df[1].matches(DIGITS) && df[3].matches(DIGITS)) o.put("disk_total", df[1].toLong() * 1024).put("disk_free", df[3].toLong() * 1024)
         val up = find("^\\s*([\\d.]+)", part[4])
@@ -762,7 +760,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
 
     companion object {
         const val CAST_DIR = "/sdcard/Download"
-        private val PKG = Pattern.compile("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)+")
+        private val PKG = Pattern.compile(Pkg.PATTERN)
         private val LS = Pattern.compile("^([dl-])\\S+\\s+\\d+\\s+\\S+\\s+\\S+\\s+(\\d+)\\s+(\\d{4}-\\d\\d-\\d\\d \\d\\d:\\d\\d)\\s+(.+)\$")
         private val DIGITS = Regex("\\d+")
         private const val TMP_APK = "/data/local/tmp/tvremote-install.apk"

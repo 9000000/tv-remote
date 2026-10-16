@@ -7,7 +7,7 @@ package dev.tvremote.core
  * here first and throws IllegalArgumentException.
  */
 object TvShell {
-    private val PKG = Regex("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+")
+    private val PKG = Pkg.RE
     private val COMP = Regex("[A-Za-z][A-Za-z0-9_.]*/[A-Za-z0-9_.\$]+")
     private val HOST = Regex("(?=.{4,253}\$)[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+")
     private val SINCE = Regex("[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}")
@@ -82,7 +82,7 @@ object TvShell {
         if (!tar.matches(Regex("/data/local/tmp/tvr-rs-[0-9a-f]{8}\\.tar"))) throw IllegalArgumentException("bad restore path")
         return "t=$tar; d=\${t%.tar}; rm -rf \$d; mkdir -p \$d && cd \$d && tar -xf \$t 2>/dev/null; " +
             "ls apk/*.apk >/dev/null 2>&1 || { echo 'not a backup'; cd /; rm -rf \$d \$t; exit; }; " +
-            "p=\$(cat package.txt 2>/dev/null); echo \"\$p\" | grep -qE '^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)+\$' || p=; " +
+            "p=\$(cat package.txt 2>/dev/null); echo \"\$p\" | grep -qE '^" + Pkg.PATTERN + "\$' || p=; " +
             "s=\$(pm install-create -r | tr -dc 0-9); " +
             "for f in apk/*.apk; do cat \$f | pm install-write -S \$(stat -c %s \$f) \$s \${f##*/} - >/dev/null; done; " +
             "pm install-commit \$s 2>&1; " +

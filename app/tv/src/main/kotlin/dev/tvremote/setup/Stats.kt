@@ -40,6 +40,33 @@ internal class Stats(private val ctx: Context) {
     private val dir = File(ctx.getExternalFilesDir(null), "stats")
     private val day = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
+    /** One usage event, reduced to what the count needs (so it can be tested without a device). */
+    internal class Ev(val type: Int, val pkg: String, val time: Long)
+
+    internal companion object {
+        const val SCREEN_INTERACTIVE = 15
+        const val SCREEN_NON_INTERACTIVE = 16
+
+        /** Milliseconds per app from the events, and the app still open at the end (null when none was opened today). */
+        fun count(events: List<Ev>, start: Long, now: Long, on: Boolean): Pair<HashMap<String, Long>, String?> {
+            val total = HashMap<String, Long>()
+            var cur: String? = null
+            var since = start
+            val close = { until: Long -> cur?.let { total[it] = (total[it] ?: 0L) + maxOf(0L, until - since) }; cur = null }
+            for (e in events) when (e.type) {
+                UsageEvents.Event.MOVE_TO_FOREGROUND -> if (cur != e.pkg) { close(e.time); cur = e.pkg; since = e.time }
+                UsageEvents.Event.MOVE_TO_BACKGROUND -> if (cur == e.pkg) close(e.time)
+                SCREEN_NON_INTERACTIVE -> close(e.time)               // the TV went to standby with the app still open
+            }
+            val open = cur
+            if (on) close(now)
+            return Pair(total, open)
+        }
+
+        /** When the screen last came on today (0 when it did not): an app on screen with no foreground event since is counted from then. */
+        fun lastWake(events: List<Ev>): Long = events.lastOrNull { it.type == SCREEN_INTERACTIVE }?.time ?: 0L
+    }
+
     /** [cpu] is the CPU load in percent, or null when it could not be read. */
     @Synchronized
     fun tick(cpu: Int?) {
@@ -104,21 +131,12 @@ internal class Stats(private val ctx: Context) {
     fun today(now: Long, on: Boolean): Pair<JSONObject, String> {
         val start = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }.timeInMillis
         val events = (ctx.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager).queryEvents(start, now)
-        val total = HashMap<String, Long>()
+        val list = ArrayList<Ev>()
         val e = UsageEvents.Event()
-        var cur: String? = null
-        var since = 0L
-        val close = { until: Long -> cur?.let { total[it] = (total[it] ?: 0L) + maxOf(0L, until - since) }; cur = null }
-        while (events.hasNextEvent()) {
-            events.getNextEvent(e)
-            when (e.eventType) {
-                UsageEvents.Event.MOVE_TO_FOREGROUND -> if (cur != e.packageName) { close(e.timeStamp); cur = e.packageName; since = e.timeStamp }
-                UsageEvents.Event.MOVE_TO_BACKGROUND -> if (cur == e.packageName) close(e.timeStamp)
-                16 -> close(e.timeStamp)                              // SCREEN_NON_INTERACTIVE: the TV went to standby with the app still open
-            }
-        }
-        val front = cur ?: if (on) lastFront(now) else ""
-        if (on) close(now)
+        while (events.hasNextEvent()) { events.getNextEvent(e); list.add(Ev(e.eventType, e.packageName ?: "", e.timeStamp)) }
+        val (total, open) = count(list, start, now, on)
+        val front = open ?: if (on) lastFront(now) else ""
+        if (open == null && on && front.isNotEmpty()) total[front] = (total[front] ?: 0L) + maxOf(0L, now - maxOf(start, lastWake(list)))
         val out = JSONObject()
         for ((pkg, ms) in total) if (ms >= 1000) out.put(pkg, ms / 1000)
         return Pair(out, front)

@@ -17,6 +17,9 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Cập nhật: số phiên bản nằm trong danh sách có chữ ký; app từ chối bản có số phiên bản không khớp với danh sách (chống cài lại bản cũ).
 - 📱 App điện thoại: chia sẻ từ app khác chỉ nhận tệp dạng content:// của app đó và liên kết http/https.
 - App máy tính: tệp cập nhật tạm nằm trong thư mục riêng của người dùng.
+- Giới hạn giờ dùng app: app đang mở từ trước nửa đêm hoặc từ lúc TV bật lại (không có sự kiện mới) giờ cũng được tính giờ, hết giờ vẫn bị đóng.
+- Hẹn giờ, giờ đi ngủ, giới hạn app: hai lần kiểm tra không còn chạy chồng nhau (tránh hiện cảnh báo hai lần).
+- Bấm “Thử lại” khi TV đang hỏi “Cho phép gỡ lỗi USB?” kết nối lại ngay, không còn đứng yên khoảng 10 giây.
 
 **English**
 - The tabs lay their cards out like a gallery: each card sits right under the one above it in its column, no holes; up to 3 columns on wide screens (Health, Automation), and a wider page. Switching language no longer flashes the Remote tab before going back to the tab on screen.
@@ -29,6 +32,9 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Updates: the version number is inside the signed list; the app refuses a release whose number does not match it (no replaying an old release).
 - 📱 Phone app: sharing from another app takes only that app's content:// files and http/https links.
 - Computer app: the update's temporary script goes in a private folder.
+- App limits: an app already open since before midnight or since the TV woke (no new usage event) is now counted, so it is still closed when its time is up.
+- Sleep timer, bedtime, app limits: two checks no longer run at once (no double warning).
+- "Try again" while the TV is asking "Allow USB debugging?" reconnects at once instead of sitting idle for about 10 seconds.
 
 ## 0.4.1 - 2026-10-16
 
