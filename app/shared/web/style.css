@@ -2,7 +2,7 @@
     --bg:#f3f4f7; --card:#fff; --ink:#1a1d23; --muted:#667080; --line:#e1e4ea;
     --btn:#eceff3; --btn-hi:#dde2e9; --accent:#2f6df6; --accent-ink:#fff;
     --ok:#17894a; --warn:#b26a00; --bad:#d23d3d; --ok-bg:#e3f5ea; --warn-bg:#fdf0d8; --bad-bg:#fbe5e5;
-    --radius:14px; --boot:#6d4bdc;
+    --radius:14px; --ctl:40px; --ctl-sm:36px; --chip:32px; --boot:#6d4bdc;
   }
   @media (prefers-color-scheme: dark) { :root {
     --bg:#111418; --card:#1b1f25; --ink:#e9ecf1; --muted:#99a3b0; --line:#2b3139;
@@ -91,8 +91,8 @@
   button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, a:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   .primary { background:var(--accent); color:var(--accent-ink); font-weight:700; } .primary:hover { background:var(--accent); filter:brightness(1.08); }
   .danger { color:var(--bad); } .power { color:var(--bad); font-weight:700; }
-  .small { min-height:36px; padding:0 12px; font-size:13px; }
-  .iconbtn { min-height:36px; width:38px; padding:0; font-size:15px; flex:none; }
+  .small { min-height:var(--ctl-sm); padding:0 12px; font-size:13px; }
+  .iconbtn { min-height:var(--ctl-sm); width:38px; padding:0; font-size:15px; flex:none; }
   select { font:inherit; font-size:13px; color:var(--ink); background:var(--btn); border:0; border-radius:12px; min-height:36px; padding:0 8px; cursor:pointer; }
 
   .panel { display:flex; flex-direction:column; gap:14px; position:relative; }
@@ -232,12 +232,12 @@
 
   /* files */
   .places { display:flex; gap:6px; flex-wrap:wrap; }
-  .places button { min-height:34px; padding:0 12px; font-size:13px; border-radius:999px; } .places button.on { background:var(--accent); color:var(--accent-ink); font-weight:600; }
+  .places button { min-height:var(--chip); padding:0 12px; font-size:13px; border-radius:999px; } .places button.on { background:var(--accent); color:var(--accent-ink); font-weight:600; }
   .crumbs { display:flex; flex-wrap:wrap; align-items:center; gap:2px; margin-top:12px; font-size:14px; }
   .crumbs button { min-height:32px; padding:0 8px; background:transparent; font-size:14px; border-radius:8px; } .crumbs button:hover { background:var(--btn); }
   .crumbs button:last-of-type { font-weight:700; } .crumbs i { color:var(--muted); font-style:normal; }
   .ftools { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center; }
-  .ftools input { min-height:36px; font-size:14px; flex:1 1 140px; }
+  .ftools input { font-size:14px; flex:1 1 140px; }
   .drop { display:flex; align-items:center; justify-content:center; min-height:52px; border:1.5px dashed var(--line); border-radius:12px; margin-top:10px; cursor:pointer; color:var(--muted); font-size:14px; text-align:center; padding:6px 10px; }
   .drop:hover, .dragging .drop { border-color:var(--accent); color:var(--ink); } .drop input { display:none; }
   .dragging { outline:2px dashed var(--accent); outline-offset:-2px; }
@@ -338,21 +338,21 @@
   .timerow { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:10px 0; font-size:14px; }
   input[type=time], input[type=number] { font:inherit; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:0 10px; min-height:40px; }
   input[type=number] { width:84px; }
-  #limitf select { flex:1; min-width:0; min-height:48px; } #limitf select#limitmin { flex:none; }
-  #volf .line { display:flex; gap:8px; margin-top:8px; } #volf select { flex:1; min-width:0; min-height:48px; } #volf button { padding:0 16px; }
+  #limitf select { flex:1; min-width:0; } #limitf select#limitmin { flex:none; }
+  #volf .line { display:flex; gap:8px; margin-top:8px; } #volf select { flex:1; min-width:0; } #volf button { padding:0 16px; }
   #limits .name .bar { max-width:260px; } .bar.full i { background:var(--bad); }
   .autonote { grid-column:1/-1; margin:0; }
   /* the scene editor */
   .scenebox { display:flex; flex-direction:column; gap:10px; margin-top:12px; } .scenebox h3 { margin:4px 0 0; font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
   .line2 { display:flex; gap:8px; flex-wrap:wrap; align-items:center; } .line2 > input:first-child { flex:0 0 64px; text-align:center; font-size:20px; }
-  .line2 select { min-height:44px; } #stepargs { display:contents; } #stepargs select, #stepargs input:not([type=number]) { flex:1 1 160px; min-height:44px; }
+  .line2 select { min-height:var(--ctl); } #stepargs { display:contents; } #stepargs select, #stepargs input:not([type=number]) { flex:1 1 160px; min-height:var(--ctl); }
   .steprow { display:flex; gap:6px; align-items:center; padding:6px 0; border-top:1px solid var(--line); font-size:14px; } .steprow:first-child { border-top:0; }
   .steprow span { flex:1; min-width:0; overflow-wrap:anywhere; }
   .homehint { background:var(--ok-bg); border-color:transparent; }
-  .sceneio { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; } .sceneio button { min-height:40px; padding:0 14px; font-size:14px; }
+  .sceneio { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; } .sceneio button { padding:0 14px; }
   .listenbar { display:flex; gap:8px; margin:10px 0; } .listenbar button { min-height:36px; padding:0 12px; } #listenhq.on { background:var(--accent); color:var(--accent-ink); }
   dialog.menu .card { gap:8px; } dialog.menu .card-head { margin:0 0 4px; } .mitem { display:flex; align-items:center; gap:12px; padding:10px 14px; min-height:52px; text-align:left; width:100%; } .mitem .mt { flex:1; display:flex; flex-direction:column; gap:2px; min-width:0; } .mitem small { font-size:12px; opacity:.7; line-height:1.3; } .mitem .mgo { opacity:.5; font-size:20px; } .mitem .mi { display:flex; flex:none; }
-  .aihint { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-top:10px; } .aihint button { min-height:40px; padding:0 14px; font-size:14px; } .aihint .muted { font-size:12px; }
+  .aihint { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-top:10px; } .aihint button { padding:0 14px; } .aihint .muted { font-size:12px; }
   #aitext { width:100%; box-sizing:border-box; font:12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; background:var(--bg); color:var(--ink); border:1px solid var(--line, #333); border-radius:10px; padding:10px; resize:vertical; }
   #appslist .item.off .appicon, #appslist .item.off .nameline > span:first-child { opacity:.5; }
   @media (max-width:380px) { #limitf { flex-wrap:wrap; } #limitf select#limitpkg { flex:1 1 100%; } }
@@ -360,7 +360,7 @@
   .appicon.placeholder { color:#fff; font-weight:700; font-size:20px; display:flex; align-items:center; justify-content:center; }
   .minispin { display:inline-block; width:14px; height:14px; margin-right:8px; vertical-align:-2px; border-radius:50%; border:2px solid var(--muted); border-top-color:var(--accent); animation:spin .9s linear infinite; }
   .fchips { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
-  .fchips button { flex:none; min-height:32px; padding:0 12px; border-radius:999px; font-size:13px; font-weight:600; white-space:nowrap; color:var(--muted); }
+  .fchips button { flex:none; min-height:var(--chip); padding:0 12px; border-radius:999px; font-size:13px; font-weight:600; white-space:nowrap; color:var(--muted); }
   /* one colour per kind of app, the same on its chip and on the tags in the list */
   .fchips button, .tag { --c:var(--accent); } :is(.fchips button, .tag).boot { --c:var(--boot); } :is(.fchips button, .tag).keep { --c:var(--ok); } :is(.fchips button, .tag).off { --c:var(--muted); } .fchips .sys { --c:var(--muted); }
   .fchips button.on { background:color-mix(in srgb, var(--c) 20%, transparent); color:var(--c); box-shadow:inset 0 0 0 1.5px var(--c); }
@@ -390,3 +390,13 @@
   /* the TV card (tvset.js): each setting a row of choices, the current one lit */
   .tvset { display:flex; flex-direction:column; gap:14px; } .tvset .setrow b { display:block; font-size:14px; margin-bottom:6px; } .tvset .setrow .muted { margin:6px 0 0; font-size:12px; }
   .tvset .setrow .places button:disabled { opacity:.5; }
+
+  /* One size per kind of control, in every tab but the remote (whose keys are made to be hit without looking):
+     a field and the button beside it --ctl, a card's own actions .small (--ctl-sm), a choice among several a chip (--chip). */
+  .panel:not([data-panel=remote]) :is(button, select, input[type=text], input:not([type]), input[type=url], input[type=search], input[type=time]):not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.scene):not(.drop) { min-height:var(--ctl); }
+  .panel:not([data-panel=remote]) button:not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.scene) { font-size:14px; padding:0 16px; }
+  .panel:not([data-panel=remote]) select { font-size:14px; padding:0 10px; }
+  .panel > div:empty { display:none; }                                /* an empty slot (no ADB banner, nothing to set up) leaves no gap */
+  details.card > summary { font-size:14px; font-weight:600; cursor:pointer; }   /* every fold-out card reads the same */
+  @media (max-width:640px) { .ftools input { flex:1 1 100%; } }      /* the filter gets its own line, its buttons the next */
+  .panel .timerow button.small { min-height:var(--ctl); }            /* beside the time fields: as tall as they are */
