@@ -40,6 +40,22 @@ internal fun MainActivity.buildSettings(): View {
         box.addView(b)
     }
 
+    box.addView(head(t("GIAO DIỆN", "APPEARANCE")), gap(18))
+    val theme = pref("theme").ifEmpty { "auto" }
+    val modes = LinearLayout(this)
+    for ((i, m) in listOf("auto" to t("Tự động", "Auto"), "light" to t("Sáng", "Light"), "dark" to t("Tối", "Dark")).withIndex()) {
+        val on = m.first == theme
+        val b = button(m.second, if (on) ACCENT else BTN)
+        b.contentDescription = m.second
+        b.setOnClickListener {
+            if (on) return@setOnClickListener
+            prefs.edit().putString("theme", m.first).apply()
+            recreate()                                            // the colours are read while the views are built
+        }
+        modes.addView(b, cell(44, i > 0))
+    }
+    box.addView(modes, gap(6))
+
     box.addView(head(t("NÚT ÂM LƯỢNG CỦA ĐIỆN THOẠI", "THE PHONE'S VOLUME KEYS")), gap(18))
     lateinit var vol: Button
     val volLabel = { vol.text = (if (prefs.getBoolean("volKeysTv", true)) "✅  " else "⬜  ") + t("Chỉnh âm lượng TV", "Set the TV's volume") }

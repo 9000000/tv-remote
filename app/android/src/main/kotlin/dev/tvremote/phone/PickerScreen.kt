@@ -142,7 +142,7 @@ internal fun MainActivity.showReach(ip: String, up: Boolean?) {
     }
     val text = android.text.SpannableString((if (name(ip).isEmpty()) ip else name(ip) + "\n" + ip) + "\n" + status)
     val from = text.length - status.length
-    text.setSpan(android.text.style.ForegroundColorSpan(if (up == true) 0xff4ade80.toInt() else MUTED), from, text.length, 0)
+    text.setSpan(android.text.style.ForegroundColorSpan(if (up == true) OK_TEXT else MUTED), from, text.length, 0)
     text.setSpan(android.text.style.RelativeSizeSpan(0.82f), from, text.length, 0)
     b.text = text
     wk.visibility = if (up == false) View.VISIBLE else View.GONE

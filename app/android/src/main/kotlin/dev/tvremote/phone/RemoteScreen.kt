@@ -59,12 +59,12 @@ internal fun MainActivity.layoutRemote() {
     val hq = prefs.getBoolean("listenHq", false)
     hqBtn.visibility = listenChip.visibility
     hqBtn.background = box(if (hq) ACCENT else BTN, 10)               // lit while on, like every on/off button
-    hqBtn.setTextColor(if (hq) Color.WHITE else 0xFF98A2B3.toInt())
+    hqBtn.setTextColor(if (hq) Color.WHITE else DIM)
     qualBtn.text = Tv.QUALITY[prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)][0].toString() + "p ▾"
-    window.decorView.systemUiVisibility = if (full) View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY else 0
+    window.decorView.systemUiVisibility = if (full) View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY else barFlags()
     videoBtn.lit = video                                              // lit while the picture shows, like every on/off button
     videoBtn.background = box(if (video) ACCENT else BTN, 16)
-    videoBtn.setIcon(if (video) "@eye_off" else "@eye", TEXT)
+    videoBtn.setIcon(if (video) "@eye_off" else "@eye", if (video) Color.WHITE else TEXT)
     videoBtn.contentDescription = if (video) t("Ẩn hình TV", "Hide the TV picture") else t("Xem hình TV", "Show the TV picture")
 }
 

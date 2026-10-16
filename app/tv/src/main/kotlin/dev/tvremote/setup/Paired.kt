@@ -49,7 +49,7 @@ object Paired {
                 }
             } catch (e: Exception) { out.clear() }
         } else {                                                      // before 0.x: a plain set of passes; each becomes a device, seen now
-            for (tok in p.getStringSet("tokens", null) ?: emptySet()) out.add(Entry(hex(4), sha256(tok), "", "", now, now, "web", false))
+            for (tok in p.getStringSet("tokens", null) ?: emptySet()) out.add(Entry(hex(4), sha256(tok), "", "", 0L, now, "web", false))   // created 0: when is not known
             if (out.isNotEmpty()) p.edit().putString("paired", JSONArray(out.map { it.store() }).toString()).remove("tokens").apply()
         }
         out.forEach { written[it.id] = it.seen }

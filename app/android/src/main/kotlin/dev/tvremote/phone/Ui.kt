@@ -20,19 +20,61 @@ import kotlin.math.roundToInt
 
 // Colours, words in two languages, and the small view helpers every screen is built from.
 
-internal const val BG = 0xff111418.toInt()
+// The palette: dark or light, set by [loadLang] before any view is built (Settings -> Appearance, or the phone's own mode).
+internal var LIGHT = false
+internal var BG = 0xff111418.toInt()
 internal const val DL_CODE = "2397346"                         // AFTVnews short code for releases/latest/download/tv-setup.apk: Downloader takes it as downloader://<code> or in its address field
-internal const val CARD = 0xff1c2026.toInt()
-internal const val BTN = 0xff2a3038.toInt()
-internal const val ACCENT = 0xff3366e8.toInt()                 // fills, with white on top (5:1); the old light #5b8cff took only 3:1 with light text
-internal const val ACCENT_TEXT = 0xff7ba2ff.toInt()            // the same blue as words or an icon on the dark screen (6.7:1)
-internal const val HELD = 0xffe0a030.toInt()
-internal const val TEXT = 0xffe8eaed.toInt()
-internal const val MUTED = 0xff9aa0a6.toInt()
-internal const val RED = 0xffff8a80.toInt()                    // the power icon, "Disconnect"
-internal const val GREEN = 0xff2e7d4f.toInt()                  // the update banner
-internal const val ERR_TEXT = 0xffffb4a8.toInt()
-internal const val ERR_BG = 0xff3a2020.toInt()
+internal var CARD = 0xff1c2026.toInt()
+internal var BTN = 0xff2a3038.toInt()
+internal var ACCENT = 0xff3366e8.toInt()                       // fills, with white on top (5:1); the old light #5b8cff took only 3:1 with light text
+internal var ACCENT_TEXT = 0xff7ba2ff.toInt()                  // the same blue as words or an icon on the dark screen (6.7:1)
+internal var HELD = 0xffe0a030.toInt()
+internal var TEXT = 0xffe8eaed.toInt()
+internal var MUTED = 0xff9aa0a6.toInt()
+internal var RED = 0xffff8a80.toInt()                          // the power icon, "Disconnect"
+internal var GREEN = 0xff2e7d4f.toInt()                        // the update banner
+internal var ERR_TEXT = 0xffffb4a8.toInt()
+internal var ERR_BG = 0xff3a2020.toInt()
+internal var DIM = 0xff98a2b3.toInt()                          // an icon or label that is off
+internal var OK_TEXT = 0xff4ade80.toInt()                      // "up", "done" as words
+internal var RIPPLE = 0x40ffffff
+internal var PILL = 0xd91e2128.toInt()                         // the now playing strip
+internal var SOFT = 0x335b8cff                                 // a quiet blue button
+
+/** Dark, light, or the phone's own mode ("theme" in the app's prefs: "" / auto, light, dark), and the colours to match. */
+internal fun applyPalette(c: Context) {
+    val pick = c.getSharedPreferences("tvs", Context.MODE_PRIVATE).getString("theme", "") ?: ""
+    LIGHT = when (pick) {
+        "light" -> true
+        "dark" -> false
+        else -> (c.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) != android.content.res.Configuration.UI_MODE_NIGHT_YES
+    }
+    if (LIGHT) {
+        BG = 0xfff3f4f7.toInt(); CARD = 0xffffffff.toInt(); BTN = 0xffeceff3.toInt()
+        ACCENT = 0xff2f6df6.toInt(); ACCENT_TEXT = 0xff2559d6.toInt(); HELD = 0xfff0b040.toInt()
+        TEXT = 0xff1a1d23.toInt(); MUTED = 0xff667080.toInt(); RED = 0xffc02f2f.toInt(); GREEN = 0xff137a41.toInt()
+        ERR_TEXT = 0xffb3261e.toInt(); ERR_BG = 0xfffbe5e5.toInt(); DIM = 0xff667080.toInt(); OK_TEXT = 0xff137a41.toInt()
+        RIPPLE = 0x30000000; PILL = 0xe6ffffff.toInt(); SOFT = 0x262f6df6
+    } else {
+        BG = 0xff111418.toInt(); CARD = 0xff1c2026.toInt(); BTN = 0xff2a3038.toInt()
+        ACCENT = 0xff3366e8.toInt(); ACCENT_TEXT = 0xff7ba2ff.toInt(); HELD = 0xffe0a030.toInt()
+        TEXT = 0xffe8eaed.toInt(); MUTED = 0xff9aa0a6.toInt(); RED = 0xffff8a80.toInt(); GREEN = 0xff2e7d4f.toInt()
+        ERR_TEXT = 0xffffb4a8.toInt(); ERR_BG = 0xff3a2020.toInt(); DIM = 0xff98a2b3.toInt(); OK_TEXT = 0xff4ade80.toInt()
+        RIPPLE = 0x40ffffff; PILL = 0xd91e2128.toInt(); SOFT = 0x335b8cff
+    }
+}
+
+/** Dark icons on the status and navigation bars when the screen is light (they are painted in BG). */
+internal fun barFlags(): Int =
+    if (!LIGHT) 0 else View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or (if (android.os.Build.VERSION.SDK_INT >= 26) View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR else 0)
+
+/** Once the window exists: bars in the screen's colour, with icons that show on it. */
+internal fun Activity.paintBars() {
+    window.statusBarColor = BG
+    window.navigationBarColor = BG
+    window.decorView.systemUiVisibility = barFlags()
+}
+
 internal const val INSTALL_RESULT = "dev.tvremote.phone.INSTALL_RESULT"
 internal const val PICK_FILE = 77
 internal const val SPEAK = 78
@@ -46,6 +88,7 @@ internal fun t(vi: String, en: String): String = if (VI) vi else en
 internal fun loadLang(c: Context) {
     val lang = c.getSharedPreferences("tvs", Context.MODE_PRIVATE).getString("lang", "") ?: ""
     VI = "vi" == (if (lang.isEmpty()) Locale.getDefault().language else lang)
+    applyPalette(c)
 }
 
 internal fun Context.dp(v: Float): Int = (v * resources.displayMetrics.density).roundToInt()
@@ -220,7 +263,7 @@ internal fun Activity.menu(title: String, primary: Int, items: List<Triple<Strin
         row.setPadding(dp(14), dp(12), dp(10), dp(12))
         val color = if (i == primary) ACCENT else BTN
         val normal = box(color, 14)
-        row.background = android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x40ffffff), normal, null)
+        row.background = android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(RIPPLE), normal, null)
         val id = if (art != null) resources.getIdentifier("ic_$art", "drawable", packageName) else 0
         if (id != 0) {
             val img = android.widget.ImageView(this)

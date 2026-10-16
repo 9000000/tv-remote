@@ -14,11 +14,11 @@ internal class IconButton(c: Context) : Button(c) {
     var caption: String? = null
     private val ink = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = android.graphics.Paint.Align.CENTER
-        color = 0xFF98A2B3.toInt()
+        color = DIM
     }
     /** White on a lit (accent) button, where the usual grey is hard to read. */
     var lit = false
-        set(v) { field = v; ink.color = if (v) TEXT else 0xFF98A2B3.toInt(); invalidate() }
+        set(v) { field = v; ink.color = if (v) android.graphics.Color.WHITE else DIM; invalidate() }
 
     fun setIcon(symbol: String, tint: Int) {
         if (!symbol.startsWith("@")) {

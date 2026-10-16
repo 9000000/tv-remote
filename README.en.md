@@ -204,7 +204,7 @@ An app with its own window, about 20 MB; nothing else to install (no Python, no 
 
 The **📺 Change TV** button at the top goes back to the list.
 
-Closing the window (or the ⏻ Quit button) stops the app; nothing keeps running. Links to other sites open in the browser; screenshots and backups are saved to the Downloads folder. The app only listens on `127.0.0.1`: other devices on the network cannot reach it.
+Closing the window (or ⏻ Quit in 🛠️ Settings) stops the app; nothing keeps running. Links to other sites open in the browser; screenshots and backups are saved to the Downloads folder. The app only listens on `127.0.0.1`: other devices on the network cannot reach it.
 
 **Updates:** the app looks for a new version (when it opens and every few hours), downloads it in the background and says so at the top of the page. **Update** swaps it in and opens it again; **Later** puts it in place when the app closes. Saved TVs, pairing and scenes stay. If the app sits in a folder it cannot write (Program Files, or on a Mac run straight from Downloads without moving it to Applications) the button becomes **Download the new version**.
 

@@ -4,13 +4,13 @@
     --ok:#137a41; --warn:#8f5300; --bad:#c02f2f; --ok-bg:#e3f5ea; --warn-bg:#fdf0d8; --bad-bg:#fbe5e5;
     --radius:14px; --ctl:40px; --ctl-sm:36px; --chip:32px; --boot:#6d4bdc;
   }
-  @media (prefers-color-scheme: dark) { :root {
+  :root[data-theme=dark] {                                           /* js/theme.js: the system's choice, or the one picked in Settings */
     --bg:#111418; --card:#1b1f25; --ink:#e9ecf1; --muted:#99a3b0; --line:#2b3139;
     --btn:#272d35; --btn-hi:#363e49; --accent:#3366e8; --accent-ink:#fff; --accent-text:#7ba2ff;
     --ok:#46d283; --warn:#f0b34a; --bad:#ff7070; --ok-bg:#16301f; --warn-bg:#3a2e12; --bad-bg:#3b1c1c; --boot:#a48bff;
-  } }
+  }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html { color-scheme:light dark; }
+  html { color-scheme:light; } html[data-theme=dark] { color-scheme:dark; }
   body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; }
   main { max-width:1040px; transition:max-width .15s; margin:0 auto; padding:16px; display:flex; flex-direction:column; gap:14px; }
   h1 { font-size:18px; margin:0; } h2 { font-size:12px; margin:0 0 8px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
@@ -433,7 +433,7 @@
   .optbox .optbox { margin-top:0; }
   /* icons in titles, tabs and buttons (js/ui.js ICON): a title's in its own colour, a button's in the button's */
   .ui-ic { display:inline-flex; vertical-align:-.2em; margin-right:.4em; flex:none; } .ui-ic .ic { width:1.15em; height:1.15em; }
-  .ui-ic.hue { color:hsl(var(--h) 70% 36%); } @media (prefers-color-scheme: dark) { .ui-ic.hue { color:hsl(var(--h) 80% 68%); } } h2 .ui-ic .ic { width:15px; height:15px; } h2 .ui-ic { vertical-align:-3px; }
+  .ui-ic.hue { color:hsl(var(--h) 70% 36%); } [data-theme=dark] .ui-ic.hue { color:hsl(var(--h) 80% 68%); } h2 .ui-ic .ic { width:15px; height:15px; } h2 .ui-ic { vertical-align:-3px; }
   .ico > .ui-ic { margin:0; } .lbl:empty { display:none; }
   .tabs .ico > .ui-ic { background:hsl(var(--h) 65% 38%); color:#fff; border-radius:7px; padding:4px; } .tabs .ico > .ui-ic .ic { width:15px; height:15px; }
   .tabs [aria-selected=true] .ico > .ui-ic { background:rgba(255,255,255,.22); }

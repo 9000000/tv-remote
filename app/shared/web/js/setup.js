@@ -49,13 +49,19 @@ $('#optcancel').addEventListener('click', () => $('#optdlg').close());
 $('#setupapply').addEventListener('click', () => chooseOptimize());
 $('#setupundo').addEventListener('click', () => runSetup('undo'));
 
-// ---------- language: Vietnamese is the source, i18n.js renders English ----------
-$('#lang').replaceChildren(el('span', { className: 'globe', textContent: '🌐 ' }), LANG === 'vi' ? 'EN' : 'VI');   // the globe goes on a phone: room in the header
-$('#lang').addEventListener('click', () => setLang(LANG === 'vi' ? 'en' : 'vi'));
+// ---------- settings: theme (js/theme.js) and language (Vietnamese is the source, i18n.js renders English) ----------
+function showPicks() {
+  $('#themepick').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.v === THEME));
+  $('#langpick').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.v === LANG));
+}
+$('#themepick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { setTheme(b.dataset.v); showPicks(); } });
+$('#langpick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && b.dataset.v !== LANG) setLang(b.dataset.v); });
+showPicks();
+if (window.LANG_KEEP && window.LANG_KEEP.settings) setTimeout(() => $('#aboutbtn').click(), 0);   // it reloaded for the new language: back where it was
 
 // ---------- about ----------
 $('#aboutbtn').addEventListener('click', async () => {
-  $('#about').showModal();
+  showPicks(); $('#about').showModal();
   const r = await fetch('/api/about').then((x) => x.json()).catch(() => null);
   if (r && r.version) $('#aboutver').textContent = r.version + (r.released ? ' · ' + r.released : '');
   // scan with a phone: the Android app, and (when the TV Setup app is serving it) this TV's own remote page
@@ -111,6 +117,7 @@ $('#about').addEventListener('click', (e) => { if (e.target === $('#about')) $('
 let stopped = false;
 $('#quit').addEventListener('click', async () => {
   if (!await ask('Tắt TV Remote trên máy tính này?\nTV không bị ảnh hưởng. Muốn dùng lại thì mở lại app TV Remote.', { ok: 'Tắt' })) return;
+  $('#about').close();
   if (screenOn) stopScreen();
   if (!await api('/api/shutdown', {})) return;
   stopped = true;
@@ -402,8 +409,9 @@ async function loadPaired() {
   const out = async (body, me) => { if (await api('/api/paired/forget', body)) { if (me) refresh(); else loadPaired(); } };
   const rows = r.devices.map((d) => UI.item({
     name: d.name || 'Thiết bị cũ',
-    sub: [d.ip, d.me ? 'thiết bị này' : agoText(d.seen)].filter(Boolean).join(' · '),
-    acts: [el('button', { className: 'small danger', textContent: '🗑', title: 'Quên thiết bị này',
+    sub: [d.created ? tr('Ghép lúc') + ' ' + new Date(d.created).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' }) : '',
+      d.me ? tr('thiết bị này') : tr('dùng') + ' ' + tr(agoText(d.seen)), d.ip].filter(Boolean).join(' · '),
+    acts: [el('button', { className: 'small danger', textContent: 'Hủy ghép', title: 'Quên thiết bị này',
       onclick: async () => { if (await ask('Quên ' + (d.name || 'thiết bị này') + (d.me ? ' (chính là máy này, sẽ phải nhập mã lại)' : '') + '?', { ok: 'Quên', danger: true })) out({ id: d.id }, d.me); } })],
   }));
   box.replaceChildren(UI.card('📱 Thiết bị đã ghép', { tools: r.devices.length > 1 ? [el('button', { className: 'small danger', textContent: 'Gỡ tất cả', title: 'Quên mọi thiết bị: ai muốn điều khiển phải nhập mã mới',

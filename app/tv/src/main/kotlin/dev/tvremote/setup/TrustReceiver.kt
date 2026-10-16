@@ -23,6 +23,6 @@ class TrustReceiver : BroadcastReceiver() {
             "computer" -> if (vi) "App máy tính" else "Computer app"
             else -> "App"
         }
-        resultData = RemoteService.newToken(c, "app", name, "", false)
+        resultData = RemoteService.newToken(c, "app", name, "", i.getStringExtra("tls") == "1")   // an app that pins the HTTPS port says so: its pass is no good over HTTP
     }
 }

@@ -120,7 +120,8 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
                 val origin = "http://127.0.0.1:$port"
                 CookieManager.getInstance().setCookie(origin, "tvr=$token")
                 pending = then
-                web.loadUrl(origin + "/?embed=1&lang=" + (if (VI) "vi" else "en") + (if (tab != null) "#$tab" else ""))
+                web.loadUrl(origin + "/?embed=1&lang=" + (if (VI) "vi" else "en") + "&theme=" + (if (LIGHT) "light" else "dark") +   // the resolved choice: a WebView reports the system mode unreliably
+                     (if (tab != null) "#$tab" else ""))
             } else {
                 link?.check()                                         // the same TV again: make sure its connection still answers
                 if (tab != null) web.evaluateJavascript("showTab('" + tab.filter { it.isLetter() } + "')", null)

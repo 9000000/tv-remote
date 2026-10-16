@@ -141,7 +141,8 @@ object AdbPrompt {
     /**
      * A TV Setup pass for this device, handed out over ADB only (a broadcast only the shell may send). Null without TV Setup.
      * [app] ("phone" / "computer") is what the TV lists the device as. A TV Setup with HTTPS also sends the fingerprint of
-     * its certificate, and the answer is "pass:fingerprint": [ask] then pins it, over the one channel that is already trusted.
+     * its certificate, and the answer is "pass:fingerprint": [ask] then pins it, over the one channel that is already trusted;
+     * the pass is then asked for as a TLS one (`tls`), which the TV never takes over plain HTTP.
      */
     @Throws(IOException::class)
     fun token(adb: Adb, app: String = ""): String? {
@@ -149,7 +150,7 @@ object AdbPrompt {
         val first = adb.shell("$to --es want fp 2>&1", 15000)
         val fp = Regex("data=\"([0-9a-f]{64})\"").find(first)?.groupValues?.get(1)
         if (fp == null) return Regex("data=\"([0-9a-f]{48})\"").find(first)?.groupValues?.get(1)   // an older TV Setup: it made the pass already
-        val pass = Regex("data=\"([0-9a-f]{48})\"").find(adb.shell("$to 2>&1", 15000))?.groupValues?.get(1) ?: return null
+        val pass = Regex("data=\"([0-9a-f]{48})\"").find(adb.shell("$to --es tls 1 2>&1", 15000))?.groupValues?.get(1) ?: return null
         return "$pass:$fp"
     }
 

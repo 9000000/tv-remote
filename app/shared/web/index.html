@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TV Remote</title>
 <link rel="stylesheet" href="style.css">
+<script src="js/theme.js"></script>
 <!-- "Add to Home screen": an icon that opens this page like an app (manifest.json; the apple- lines are for iPhone) -->
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -19,7 +20,7 @@
 <main class="wide">
   <div class="banner ok" id="update" data-for="pc" hidden><b id="updtitle"></b><span id="updnote"></span>
     <div class="actions" id="updacts"><button class="primary" id="updgo">⬆️ Cập nhật</button><button id="updlater">Để sau</button></div></div>
-  <div class="banner warn" id="stale" data-for="pc" hidden><b>🔄 Phần chạy trên máy này vừa được cập nhật</b><span>Bấm ⏻ Tắt ở góc trên rồi mở lại TV Remote để dùng bản mới. Chưa làm thì vài nút sẽ báo lỗi.</span></div>
+  <div class="banner warn" id="stale" data-for="pc" hidden><b>🔄 Phần chạy trên máy này vừa được cập nhật</b><span>Vào 🛠️ Cài đặt, bấm ⏻ Tắt rồi mở lại TV Remote để dùng bản mới. Chưa làm thì vài nút sẽ báo lỗi.</span></div>
   <header class="card top">
     <div class="brand"><img class="logo" src="icon-192.png" alt="" width="36" height="36">
       <div><h1 id="name">TV Remote</h1>
@@ -29,9 +30,7 @@
       <span class="chip" id="chipTv"><i></i><span>TV: ...</span></span>
       <span class="chip" id="chipAdb"><i></i><span>ADB: ...</span></span>
       <button class="small" id="switchtv" data-for="pc" title="Chọn TV khác, tìm TV mới"><span class="ico">📺</span><span class="lbl"> Đổi TV</span></button>
-      <button class="small" id="lang" title="Tiếng Việt / English">🌐 EN</button>
-      <button class="small" id="aboutbtn" data-for="pc tv" title="Giới thiệu"><span class="ico">ℹ️</span><span class="lbl"> Giới thiệu</span></button>
-      <button class="small danger" id="quit" data-for="pc" data-asks title="Dừng chương trình trên máy tính này (TV không bị ảnh hưởng)"><span class="ico">⏻</span><span class="lbl"> Tắt</span></button>
+      <button class="small" id="aboutbtn" data-for="pc tv" title="Cài đặt, giới thiệu"><span class="ico">🛠️</span><span class="lbl"> Cài đặt</span></button>
     </div>
   </header>
 
@@ -376,16 +375,20 @@
 <div id="pipslot"></div>
 <dialog id="about">
   <div class="card aboutbox">
+    <div class="card-head"><h2>🛠️ Cài đặt</h2><button class="small iconbtn" id="aboutclose" title="Đóng" aria-label="Đóng">✕</button></div>
+    <div class="group"><h3>Giao diện</h3><div class="places" id="themepick"><button data-v="auto">Theo máy</button><button data-v="light">Sáng</button><button data-v="dark">Tối</button></div></div>
+    <div class="group"><h3>Ngôn ngữ</h3><div class="places" id="langpick"><button data-v="vi">Tiếng Việt</button><button data-v="en">English</button></div></div>
+    <div class="group" data-for="pc"><h3>App trên máy tính</h3>
+      <div class="actions"><button class="small" id="updcheck">🔄 Kiểm tra bản mới</button><button class="small danger" id="quit" data-asks title="Dừng chương trình trên máy tính này (TV không bị ảnh hưởng)">⏻ Tắt</button></div>
+      <p class="note" id="updcheckmsg"></p></div>
     <h1>📺 TV Remote <span class="muted" id="aboutver"></span></h1>
     <p>Điều khiển Android TV / Google TV từ máy tính và điện thoại: nút remote, xem màn hình, ứng dụng, tệp, cài APK.</p>
     <p><b>Tác giả:</b> Hoang Tran · <a href="https://github.com/HoangTran0410" target="_blank" rel="noopener">@HoangTran0410</a></p>
     <p><b>Mã nguồn:</b> <a href="https://github.com/HoangTran0410/tv-remote" target="_blank" rel="noopener">github.com/HoangTran0410/tv-remote</a></p>
     <p><a href="https://github.com/HoangTran0410/tv-remote/releases" target="_blank" rel="noopener">Các bản phát hành</a> · <a href="https://github.com/HoangTran0410/tv-remote/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Nhật ký thay đổi</a> · <a href="https://github.com/HoangTran0410/tv-remote/issues" target="_blank" rel="noopener">Báo lỗi</a></p>
     <p class="muted">Hình trực tiếp và chuột dùng <a href="https://github.com/Genymobile/scrcpy" target="_blank" rel="noopener">scrcpy</a> (Genymobile, Apache-2.0). Nút remote dùng giao thức Android TV Remote.</p>
-    <p class="aboutacts"><button class="small" id="sendlog" title="App làm sai? Gửi các lệnh đã gửi tới TV, câu TV trả lời và các lỗi (không có mã ghép đôi, địa chỉ MAC, chữ đã gõ). Trang báo lỗi mở sẵn.">📋 Gửi nhật ký</button>
-      <span data-for="pc"><button class="small" id="updcheck">🔄 Kiểm tra bản mới</button> <span class="muted" id="updcheckmsg"></span></span></p>
+    <p class="aboutacts"><button class="small" id="sendlog" title="App làm sai? Gửi các lệnh đã gửi tới TV, câu TV trả lời và các lỗi (không có mã ghép đôi, địa chỉ MAC, chữ đã gõ). Trang báo lỗi mở sẵn.">📋 Gửi nhật ký</button></p>
     <div class="qrs" id="qrs"></div>
-    <div class="actions end"><button class="small primary" id="aboutclose">✓ Đóng</button></div>
   </div>
 </dialog>
 <dialog id="assist"><div class="card assistbox"><div class="card-head"><h2 id="assisttitle"></h2><button class="small iconbtn" id="assistclose" title="Đóng" aria-label="Đóng">✕</button></div><div id="assistbody"></div></div></dialog>

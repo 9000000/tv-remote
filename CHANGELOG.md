@@ -22,6 +22,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Chữ dễ đọc hơn: nút và tab đang chọn màu xanh đậm hơn với chữ trắng, chữ xanh / xanh lá / cam / đỏ trên nền sáng đậm hơn.
 - 🔒 Remote qua web của TV có HTTPS (cổng 8766, chứng chỉ tự ký): màn hình TV và mã QR hiện địa chỉ https cùng dấu vân tay ngắn để so với trình duyệt; cookie ghép nối ở đó có `Secure` và không dùng được qua HTTP. App điện thoại / máy tính nhận dấu vân tay qua ADB và chỉ nói chuyện với đúng chứng chỉ đó (sai thì từ chối, không lùi về HTTP). Cổng 8765 (HTTP) vẫn chạy cho máy cũ.
 - 📱 Thiết bị đã ghép có hạn dùng: trình duyệt giữ 30 ngày kể từ lần dùng cuối (dùng thì tự gia hạn), TV chỉ lưu mã băm; Thiết lập → “Thiết bị đã ghép” liệt kê từng máy (tên, IP, lần cuối) để quên từng máy hoặc gỡ tất cả. Cần TV Setup mới.
+- 🛠️ Nút Cài đặt trên đầu trang (app máy tính, web của TV) gộp Ngôn ngữ, Giới thiệu và ⏻ Tắt; thêm Giao diện: Theo máy / Sáng / Tối. App điện thoại có Giao diện Tự động / Sáng / Tối trong Cài đặt (màn remote cũng có giao diện sáng).
+- TV Setup: “Thiết bị đã ghép (n)” mở danh sách từng máy, có giờ ghép, lần dùng cuối và nút Hủy ghép riêng; giờ đi ngủ / hẹn giờ nằm trong thẻ trạng thái; các ô Thao tác nhỏ gọn hơn. Pass của app điện thoại / máy tính mới chỉ dùng được qua HTTPS.
 
 **English**
 - 📱 Phone app: copying a file, installing an app or updating TV Setup now shows in the notification shade with its percentage (Android 13+ hid it before, the app never having asked for notifications; it asks as the work starts).
@@ -38,6 +40,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Easier to read: buttons and the selected tab are a deeper blue with white text; blue, green, orange and red words on the light theme are darker.
 - 🔒 The TV's web remote has HTTPS (port 8766, self-signed certificate): the TV screen and QR show the https address with a short fingerprint to compare with the browser's; the pairing cookie there is `Secure` and does not work over HTTP. The phone / computer app learns the fingerprint over ADB and only talks to that exact certificate (a mismatch is refused, no fallback to HTTP). Port 8765 (HTTP) still runs for older devices.
 - 📱 Paired devices expire: a browser lasts 30 days from its last use (renewed while used), and the TV keeps only a hash of each pass; Setup → “Paired devices” lists each one (name, IP, last seen) to forget one or remove all. Needs the new TV Setup.
+- 🛠️ A Settings button at the top of the page (computer app, the TV's web page) holds Language, About and ⏻ Quit, plus a Theme: System / Light / Dark. The phone app has Appearance Auto / Light / Dark in Settings (the remote screen has a light theme too).
+- TV Setup: “Paired devices (n)” opens a list of each device with when it was paired, when last used and its own Unpair; the bedtime / sleep timer sit in the status card; smaller action tiles. A pass of the new phone / computer app works over HTTPS only.
 
 ## 0.3.0 - 2026-10-16
 

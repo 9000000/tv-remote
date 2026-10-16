@@ -47,6 +47,7 @@ class MainActivity : Activity() {
     private lateinit var updateTile: Tile
     private lateinit var webCol: LinearLayout
     private lateinit var webBtn: Button
+    private lateinit var rulesCard: LinearLayout                     // timers and limits set from a phone or computer (Rules.kt)
     private var lanIp = ""
     private var tsIp = ""
     private var adb: Adb? = null
@@ -72,30 +73,30 @@ class MainActivity : Activity() {
         private val wheel = ProgressBar(this@MainActivity)              // in place of the icon while this tile's work runs
         init {
             view.gravity = Gravity.CENTER_VERTICAL
-            view.setPadding(dp(14), dp(10), dp(14), dp(10))
+            view.setPadding(dp(12), dp(6), dp(12), dp(6))
             view.isFocusable = true
             view.isClickable = true
             view.background = box(TILE, 14, 0)
             badge.setImageResource(icon)
             badge.setColorFilter(INK)
             badge.background = box(CARD, 10, 0)
-            badge.setPadding(dp(8), dp(8), dp(8), dp(8))
+            badge.setPadding(dp(6), dp(6), dp(6), dp(6))
             val slot = android.widget.FrameLayout(this@MainActivity)
-            slot.addView(badge, android.widget.FrameLayout.LayoutParams(dp(40), dp(40)))
+            slot.addView(badge, android.widget.FrameLayout.LayoutParams(dp(30), dp(30)))
             wheel.isIndeterminate = true
             wheel.indeterminateTintList = android.content.res.ColorStateList.valueOf(Color.WHITE)
             wheel.visibility = View.GONE
-            slot.addView(wheel, android.widget.FrameLayout.LayoutParams(dp(28), dp(28), Gravity.CENTER))
-            view.addView(slot, LinearLayout.LayoutParams(dp(40), dp(40)))
+            slot.addView(wheel, android.widget.FrameLayout.LayoutParams(dp(22), dp(22), Gravity.CENTER))
+            view.addView(slot, LinearLayout.LayoutParams(dp(30), dp(30)))
             val words = LinearLayout(this@MainActivity)
             words.orientation = LinearLayout.VERTICAL
-            words.setPadding(dp(12), 0, 0, 0)
-            val head = text(title, 16, INK, true)
+            words.setPadding(dp(10), 0, 0, 0)
+            val head = text(title, 14, INK, true)
             head.isSingleLine = true
             head.ellipsize = TextUtils.TruncateAt.END
             words.addView(head)
-            subView = text(sub, 12, MUTED, false)
-            subView.maxLines = 2
+            subView = text(sub, 11, MUTED, false)
+            subView.maxLines = 1
             subView.ellipsize = TextUtils.TruncateAt.END
             words.addView(subView)
             view.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
@@ -176,6 +177,10 @@ class MainActivity : Activity() {
         st.addView(statusTitle)
         st.addView(statusDetail)
         status.addView(st, LinearLayout.LayoutParams(0, -2, 1f))
+        rulesCard = LinearLayout(this)                               // on the right of the status: the page keeps its height, the log its room
+        rulesCard.orientation = LinearLayout.VERTICAL
+        rulesCard.gravity = Gravity.END or Gravity.CENTER_VERTICAL
+        status.addView(rulesCard, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(16) })
         left.addView(status, margins(top = 18))
 
         left.addView(section(t("THAO TÁC", "ACTIONS")), margins(top = 18))
@@ -191,7 +196,7 @@ class MainActivity : Activity() {
         for (row in tiles.chunked(if (phone) 2 else 3)) {
             val r = LinearLayout(this)
             r.clipChildren = false
-            row.forEachIndexed { i, tile -> r.addView(tile.view, LinearLayout.LayoutParams(0, dp(74), 1f).apply { if (i > 0) leftMargin = dp(12) }) }
+            row.forEachIndexed { i, tile -> r.addView(tile.view, LinearLayout.LayoutParams(0, dp(52), 1f).apply { if (i > 0) leftMargin = dp(12) }) }
             left.addView(r, margins(top = 10))
         }
 
@@ -373,26 +378,15 @@ class MainActivity : Activity() {
                 ts.gravity = Gravity.CENTER
                 webCol.addView(ts)
             }
-            val n = RemoteService.pairedCount(this)
-            webCol.addView(text(t("Đã ghép: $n thiết bị", "Paired: $n " + (if (n == 1) "device" else "devices")), 13, MUTED, false), margins(top = 10))
         } else {
             webCol.addView(text(if (on) t("TV chưa có mạng: nối TV vào Wi-Fi.", "The TV has no network: connect it to Wi-Fi.")
                 else t("Đang tắt.", "Off."), 14, MUTED, false), margins(top = 8))
         }
         webBtn.text = if (on) t("Remote qua web: Bật", "Web remote: On") else t("Remote qua web: Tắt", "Web remote: Off")
         (webBtn.parent as? LinearLayout)?.removeView(webBtn)
-        val btns = LinearLayout(this)
-        btns.addView(webBtn, LinearLayout.LayoutParams(0, -2, 1f))
-        if (on) btns.addView(smallButton(t("Hủy ghép", "Unpair all")) {
-            RemoteService.forgetAll(this); log(t("✓ Đã hủy ghép. Thiết bị nào muốn điều khiển phải nhập mã mới.", "✓ Unpaired. Any device that wants control must enter a new code.")); showWeb()
-        }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(8) })
-        webCol.addView(btns, margins(top = 12))
-        rulesLine()?.let { (line, sleeping) ->                       // timers and limits set from a phone or computer (Rules.kt)
-            webCol.addView(text(line, 13, INK, false).apply { setLineSpacing(dp(2).toFloat(), 1f) }, margins(top = 14))
-            if (sleeping) webCol.addView(smallButton(t("Hủy hẹn giờ tắt", "Cancel the sleep timer")) {
-                Rules.change(this, org.json.JSONObject().put("do", "sleep").put("minutes", 0)); showWeb()
-            }, margins(top = 8))
-        }
+        webCol.addView(webBtn, margins(top = 14))
+        if (on) webCol.addView(smallButton(t("Thiết bị đã ghép (", "Paired devices (") + RemoteService.pairedCount(this) + ")") { pairedMenu() }, margins(top = 8))
+        showRules()
 
         webCol.addView(View(this), if (phone) LinearLayout.LayoutParams(1, dp(16)) else LinearLayout.LayoutParams(1, 0, 1f))
         val app = LinearLayout(this)
@@ -406,6 +400,61 @@ class MainActivity : Activity() {
         app.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
         webCol.addView(app)
         if (focused != null && focused.parent == null) webBtn.requestFocus()   // the focused button was rebuilt: keep the focus on this card
+    }
+
+    /** The timers and limits, on the right of the status card: nothing there when none is set. */
+    private fun showRules() {
+        rulesCard.removeAllViews()
+        val (line, sleeping) = rulesLine() ?: run { rulesCard.visibility = View.GONE; return }
+        rulesCard.visibility = View.VISIBLE
+        rulesCard.addView(text(line, 14, INK, false).apply { setLineSpacing(dp(3).toFloat(), 1f); gravity = Gravity.END })
+        if (sleeping) rulesCard.addView(smallButton(t("Hủy hẹn giờ tắt", "Cancel the sleep timer")) {
+            Rules.change(this, org.json.JSONObject().put("do", "sleep").put("minutes", 0)); showWeb()
+        }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(6); gravity = Gravity.END })
+    }
+
+    /** The devices let in, one row each with when it was paired and its own Forget: the same list the TV web page shows (Paired.kt). */
+    private fun pairedMenu() {
+        val fmt = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US)
+        val now = System.currentTimeMillis()
+        val rows = LinearLayout(this)
+        rows.orientation = LinearLayout.VERTICAL
+        rows.setPadding(dp(24), dp(4), dp(24), dp(4))
+        var dlg: android.app.AlertDialog? = null
+        val list = Paired.list(this)
+        for (d in list) {
+            val days = ((now - d.seen) / (24 * 3600_000L)).toInt()
+            val seen = if (days <= 0) t("hôm nay", "today") else if (days == 1) t("hôm qua", "yesterday") else t("$days ngày trước", "$days days ago")
+            val name = d.name.ifEmpty { t("Thiết bị cũ", "Older device") }
+            val row = LinearLayout(this)
+            row.gravity = Gravity.CENTER_VERTICAL
+            row.setPadding(0, dp(8), 0, dp(8))
+            val words = LinearLayout(this)
+            words.orientation = LinearLayout.VERTICAL
+            words.addView(text(name, 15, INK, true))
+            words.addView(text(listOf(if (d.created > 0) t("Ghép lúc ", "Paired ") + fmt.format(java.util.Date(d.created)) else "", t("dùng ", "used ") + seen, d.ip)
+                .filter { it.isNotEmpty() }.joinToString("   ·   "), 12, MUTED, false))
+            row.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
+            row.addView(smallButton(t("Hủy ghép", "Unpair")) { confirmForget(name) { Paired.forget(this, d.id); dlg?.dismiss(); pairedMenu() } },
+                LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
+            rows.addView(row)
+        }
+        if (list.isEmpty()) rows.addView(text(t("Chưa có thiết bị nào.", "No device yet."), 14, MUTED, false))
+        val scroll = ScrollView(this)
+        scroll.addView(rows)
+        val b = android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(t("Thiết bị đã ghép", "Paired devices"))
+            .setView(scroll)
+            .setNegativeButton(t("Đóng", "Close"), null)
+        if (list.size > 1) b.setNeutralButton(t("Hủy ghép tất cả", "Unpair all")) { _, _ -> confirmForget(t("tất cả thiết bị", "every device")) { RemoteService.forgetAll(this) } }
+        dlg = b.show()
+    }
+
+    private fun confirmForget(what: String, forget: () -> Unit) {
+        android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setMessage(t("Hủy ghép $what? Muốn điều khiển lại phải nhập mã mới.", "Unpair $what? It will need a new code to control the TV."))
+            .setPositiveButton(t("Hủy ghép", "Unpair")) { _, _ -> forget(); log(t("✓ Đã hủy ghép ", "✓ Unpaired ") + what); showWeb() }
+            .setNegativeButton(t("Hủy", "Cancel"), null).show()
     }
 
     /** One line per timer or limit that is set, and whether the sleep timer is running; null when nothing is set. */
@@ -482,7 +531,7 @@ class MainActivity : Activity() {
         lanIp = lan; tsIp = ts
         ui {
             showWeb()
-            setStatus(OK, t("Đã kết nối ADB", "ADB connected"), name + "\n" + t("Trong nhà ", "Home network ") + lan.ifEmpty { "?" } + "    ·    Tailscale " +
+            setStatus(OK, t("Đã kết nối ADB", "ADB connected"), name + "\n" + t("Trong nhà ", "Home network ") + lan.ifEmpty { "?" } + "\nTailscale " +
                 (if (ts.isNotEmpty()) ts else if (tsInstalled) t("chưa đăng nhập", "signed out") else t("chưa cài", "not installed")))
             tsTile.say(if (ts.isNotEmpty()) t("Đã vào · ", "Connected · ") + ts else if (tsInstalled) t("Chưa đăng nhập · chọn để vào", "Signed out · select to sign in")
                 else t("Chưa cài · chọn để cài", "Not installed · select to install"))

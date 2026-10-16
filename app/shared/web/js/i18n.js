@@ -14,7 +14,7 @@
   try { window.LANG_KEEP = JSON.parse(sessionStorage.getItem('langKeep')); sessionStorage.removeItem('langKeep'); } catch {}
   window.setLang = (l) => {
     try { localStorage.setItem('lang', l); } catch {}
-    try { sessionStorage.setItem('langKeep', JSON.stringify({ tab: typeof currentTab === 'string' ? currentTab : '', picking: typeof picking !== 'undefined' && picking, y: Math.round(window.scrollY) })); } catch {}
+    try { sessionStorage.setItem('langKeep', JSON.stringify({ tab: typeof currentTab === 'string' ? currentTab : '', picking: typeof picking !== 'undefined' && picking, settings: !!document.querySelector('#about[open]'), y: Math.round(window.scrollY) })); } catch {}
     location.reload();
   };
   document.documentElement.lang = LANG;
@@ -189,8 +189,8 @@
     'APK này cần Android mới hơn bản trên TV. Tìm bản cũ hơn của app.': 'This APK needs a newer Android than the TV has. Look for an older version of the app.',
     'APK này dành cho loại chip khác với TV. Tải bản cho đúng loại chip (thường là armeabi-v7a).': 'This APK is for a different kind of chip than the TV’s. Get the build for the right chip (usually armeabi-v7a).',
     'TV báo cài xong nhưng tự gỡ app này ngay sau đó. Box của nhà mạng (FPT Play...) chặn một số app; app này không dùng được trên TV này.': 'The TV said it installed the app, then removed it right away. Operator boxes (FPT Play...) block some apps; this one cannot be used on this TV.',
-    'Trang mới hơn phần đang chạy: bấm ⏻ Tắt rồi mở lại TV Remote.': 'This page is newer than the running server: press ⏻ Quit, then open TV Remote again.', 'Ẩn': 'Hide', 'App này không có màn hình để mở: nó chỉ chạy nền, hoặc là một phần của app khác.': 'This app has no screen to open: it only runs in the background, or is part of another app.', 'Số phút hoặc giờ tắt, vd 40, 23:30': 'Minutes or an end time, e.g. 40, 23:30', '😴 Hẹn': '😴 Set', 'Nhập số phút (vd 40) hoặc giờ tắt (vd 23:30)': 'Type minutes (e.g. 40) or a time to turn off (e.g. 23:30)',
-    '🔄 Phần chạy trên máy này vừa được cập nhật': '🔄 The part running on this computer was just updated', 'Bấm ⏻ Tắt ở góc trên rồi mở lại TV Remote để dùng bản mới. Chưa làm thì vài nút sẽ báo lỗi.': 'Press ⏻ Quit at the top, then open TV Remote again to use the new version. Until then some buttons will fail.', 'TV không có app mở loại tệp này (cài VLC rồi thử lại).': 'The TV has no app for this kind of file (install VLC, then retry).',
+    'Trang mới hơn phần đang chạy: vào 🛠️ Cài đặt, bấm ⏻ Tắt rồi mở lại TV Remote.': 'This page is newer than the running server: in 🛠️ Settings press ⏻ Quit, then open TV Remote again.', 'Ẩn': 'Hide', 'App này không có màn hình để mở: nó chỉ chạy nền, hoặc là một phần của app khác.': 'This app has no screen to open: it only runs in the background, or is part of another app.', 'Số phút hoặc giờ tắt, vd 40, 23:30': 'Minutes or an end time, e.g. 40, 23:30', '😴 Hẹn': '😴 Set', 'Nhập số phút (vd 40) hoặc giờ tắt (vd 23:30)': 'Type minutes (e.g. 40) or a time to turn off (e.g. 23:30)',
+    '🔄 Phần chạy trên máy này vừa được cập nhật': '🔄 The part running on this computer was just updated', 'Vào 🛠️ Cài đặt, bấm ⏻ Tắt rồi mở lại TV Remote để dùng bản mới. Chưa làm thì vài nút sẽ báo lỗi.': 'In 🛠️ Settings press ⏻ Quit, then open TV Remote again to use the new version. Until then some buttons will fail.', 'TV không có app mở loại tệp này (cài VLC rồi thử lại).': 'The TV has no app for this kind of file (install VLC, then retry).',
     'Không đọc được link đăng nhập trên màn hình TV. Mở Tailscale trên TV và quét mã QR nó hiện.': 'Could not read the sign-in link off the TV\'s screen. Open Tailscale on the TV and scan the QR code it shows.',
     'mất kết nối, không rõ đã xong chưa': 'connection lost, unknown whether it finished',
     'Trực tiếp · hình đứng yên': 'Live · picture unchanged', 'hình đứng yên': 'picture unchanged',
@@ -245,7 +245,8 @@
     'Lệnh (mở YouTube, tắt tiếng...) thì làm ngay, câu khác thì tìm trên YouTube': 'Commands (open YouTube, mute...) run at once; anything else is searched on YouTube',
     'TV này không có YouTube hay tìm kiếm của Google để tìm câu này.': 'This TV has neither YouTube nor Google search to look this up.', 'trình duyệt chưa được phép dùng micro': 'the browser is not allowed to use the microphone', 'TV này không có tìm kiếm / Assistant của Google': 'This TV has no Google search / Assistant',
     'Đang đọc từ TV...': 'Reading from the TV...',
-    // about
+    // settings, about
+    'Cài đặt, giới thiệu': 'Settings, about', 'Giao diện': 'Theme', 'Theo máy': 'System', 'Sáng': 'Light', 'Tối': 'Dark', 'Ngôn ngữ': 'Language', 'App trên máy tính': 'App on this computer',
     'Giới thiệu': 'About', 'Điều khiển Android TV / Google TV từ máy tính và điện thoại: nút remote, xem màn hình, ứng dụng, tệp, cài APK.': 'Control an Android TV / Google TV from a computer and a phone: remote buttons, live screen, apps, files, APK install.',
     'Tác giả:': 'Author:', 'Mã nguồn:': 'Source code:', 'Các bản phát hành': 'Releases', 'Nhật ký thay đổi': 'Change log', 'Báo lỗi': 'Report a problem', 'Đóng': 'Close',
     'Hình trực tiếp và chuột dùng': 'The live picture and mouse use', '(Genymobile, Apache-2.0). Nút remote dùng giao thức Android TV Remote.': '(Genymobile, Apache-2.0). The remote buttons use the Android TV Remote protocol.',
@@ -513,7 +514,7 @@
     'Tin nhắn': 'Messages',
     'Lịch': 'Calendar',
     'Thiết bị ở gần': 'Nearby devices',
-    '📱 Thiết bị đã ghép': '📱 Paired devices', 'Thiết bị cũ': 'Older device', 'thiết bị này': 'this device', 'vừa xong': 'just now', 'Chưa ghép thiết bị nào': 'No device is paired',
+    '📱 Thiết bị đã ghép': '📱 Paired devices', 'Ghép lúc': 'Paired', 'dùng': 'used', 'Hủy ghép': 'Unpair', 'Thiết bị cũ': 'Older device', 'thiết bị này': 'this device', 'vừa xong': 'just now', 'Chưa ghép thiết bị nào': 'No device is paired',
     'Quên thiết bị này': 'Forget this device', 'Quên': 'Forget', 'Gỡ tất cả': 'Remove all', 'Quên mọi thiết bị: ai muốn điều khiển phải nhập mã mới': 'Forget every device: anyone who wants control must enter a new code',
     'Gỡ mọi thiết bị đã ghép, cả máy này?': 'Remove every paired device, this one too?', 'App điện thoại': 'Phone app', 'App máy tính': 'Computer app',
     'Cảm biến và hoạt động': 'Sensors and activity',

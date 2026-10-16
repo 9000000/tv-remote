@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark or light, picked in MainActivity.onCreate from Settings → Appearance; the manifest's default is the dark one -->
+    <style name="AppDark" parent="@android:style/Theme.DeviceDefault.NoActionBar" />
+    <style name="AppLight" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar" />
+</resources>

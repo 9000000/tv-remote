@@ -163,6 +163,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     // ---------------------------------------------------------------- lifecycle
     override fun onCreate(b: Bundle?) {
+        applyPalette(this)                                        // before the theme and every view: they read the colours
+        setTheme(if (LIGHT) R.style.AppLight else R.style.AppDark)   // dialogs and the keyboard's look follow
         super.onCreate(b)
         prefs = getSharedPreferences("tvs", MODE_PRIVATE)
         dev.tvremote.core.WireLog.app = "TV Remote " + version() + " (phone, Android " + android.os.Build.VERSION.RELEASE + ")"
@@ -170,8 +172,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         loadLang(this)
         volumeControlStream = android.media.AudioManager.STREAM_MUSIC     // while listening the phone's own volume keys set the sound here
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        window.statusBarColor = BG
-        window.navigationBarColor = BG
+        paintBars()
         val root = FrameLayout(this)
         root.setBackgroundColor(BG)
         root.fitsSystemWindows = true

@@ -123,7 +123,7 @@ internal class PlayingBar(private val a: MainActivity) {
     private val blackHint by lazy {
         a.label(t("TV không cho chiếu hình lên đây\n(do chip của TV hoặc phim có bản quyền)",
             "The TV does not let its picture show here\n(the TV's chip, or a copy-protected film)"), 13, TEXT).apply {
-            gravity = Gravity.CENTER; background = a.box(0xD91E2128.toInt(), 10); setPadding(a.dp(12), a.dp(8), a.dp(12), a.dp(8)); visibility = View.GONE
+            gravity = Gravity.CENTER; background = a.box(PILL, 10); setPadding(a.dp(12), a.dp(8), a.dp(12), a.dp(8)); visibility = View.GONE
             a.frame.addView(this, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER).apply { leftMargin = a.dp(24); rightMargin = a.dp(24) })
         }
     }

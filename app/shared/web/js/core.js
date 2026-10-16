@@ -93,7 +93,7 @@ document.addEventListener('click', async (e) => {
 }, true);
 
 // The computer's page is read fresh from disk, its server's code only at start: a newer page's calls then answer 404.
-const STALE = 'Trang mới hơn phần đang chạy: bấm ⏻ Tắt rồi mở lại TV Remote.';
+const STALE = 'Trang mới hơn phần đang chạy: vào 🛠️ Cài đặt, bấm ⏻ Tắt rồi mở lại TV Remote.';
 // Every button that waits on the server shows it: the one just clicked spins until its call returns (style.css .busy, shown
 // only past 150 ms so quick calls do not flicker). Counted from the end of the click handler, or from the yes to an ask() in it.
 let clicked = null, clickedAt = Infinity;

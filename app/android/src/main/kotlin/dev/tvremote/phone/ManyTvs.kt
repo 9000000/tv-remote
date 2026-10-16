@@ -39,7 +39,7 @@ private fun MainActivity.toast(text: String) = Toast.makeText(this, text, Toast.
 
 /** Beside the heading of the saved TVs once there are two of them: small, in the accent colour, so it is seen without a whole row. */
 internal fun MainActivity.fleetButton(): android.widget.Button {
-    val b = button(t("Nhiều TV  ›", "Several TVs  ›"), 0x335b8cff)
+    val b = button(t("Nhiều TV  ›", "Several TVs  ›"), SOFT)
     b.setTextColor(ACCENT_TEXT)
     b.textSize = 14f
     b.typeface = android.graphics.Typeface.DEFAULT_BOLD
@@ -213,7 +213,7 @@ private fun MainActivity.fleetRun(title: String, ips: List<String>, work: (AdbLi
                     pct >= 90 -> t("đang cài...", "installing...")
                     else -> p.step
                 }
-                p.line.setTextColor(when (p.state) { 1 -> 0xff4ade80.toInt(); 2 -> ERR_TEXT; else -> MUTED })
+                p.line.setTextColor(when (p.state) { 1 -> OK_TEXT; 2 -> ERR_TEXT; else -> MUTED })
             }
             if (parts.all { it.state != 0 }) {
                 val bad = parts.count { it.state == 2 }
