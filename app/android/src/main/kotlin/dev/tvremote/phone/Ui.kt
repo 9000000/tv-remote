@@ -22,24 +22,24 @@ import kotlin.math.roundToInt
 
 // The palette: dark or light, set by [loadLang] before any view is built (Settings -> Appearance, or the phone's own mode).
 internal var LIGHT = false
-internal var BG = 0xff111418.toInt()
+internal var BG = Palette.dark.bg
 internal const val DL_CODE = "2397346"                         // AFTVnews short code for releases/latest/download/tv-setup.apk: Downloader takes it as downloader://<code> or in its address field
-internal var CARD = 0xff1c2026.toInt()
-internal var BTN = 0xff2a3038.toInt()
-internal var ACCENT = 0xff3366e8.toInt()                       // fills, with white on top (5:1); the old light #5b8cff took only 3:1 with light text
-internal var ACCENT_TEXT = 0xff7ba2ff.toInt()                  // the same blue as words or an icon on the dark screen (6.7:1)
-internal var HELD = 0xffe0a030.toInt()
-internal var TEXT = 0xffe8eaed.toInt()
-internal var MUTED = 0xff9aa0a6.toInt()
-internal var RED = 0xffff8a80.toInt()                          // the power icon, "Disconnect"
-internal var GREEN = 0xff2e7d4f.toInt()                        // the update banner
-internal var ERR_TEXT = 0xffffb4a8.toInt()
-internal var ERR_BG = 0xff3a2020.toInt()
-internal var DIM = 0xff98a2b3.toInt()                          // an icon or label that is off
-internal var OK_TEXT = 0xff4ade80.toInt()                      // "up", "done" as words
-internal var RIPPLE = 0x40ffffff
-internal var PILL = 0xd91e2128.toInt()                         // the now playing strip
-internal var SOFT = 0x335b8cff                                 // a quiet blue button
+internal var CARD = Palette.dark.card
+internal var BTN = Palette.dark.btn
+internal var ACCENT = Palette.dark.accent                      // fills, with white on top (Palette.kt)
+internal var ACCENT_TEXT = Palette.dark.accentText             // the same blue as words or an icon
+internal var HELD = Palette.dark.held
+internal var TEXT = Palette.dark.text
+internal var MUTED = Palette.dark.muted
+internal var RED = Palette.dark.red                            // the power icon, "Disconnect"
+internal var GREEN = Palette.dark.green                        // the update banner (a fill: white on top)
+internal var ERR_TEXT = Palette.dark.errText
+internal var ERR_BG = Palette.dark.errBg
+internal var DIM = Palette.dark.dim                            // an icon or label that is off
+internal var OK_TEXT = Palette.dark.okText                     // "up", "done" as words
+internal var RIPPLE = Palette.dark.ripple
+internal var PILL = Palette.dark.pill                          // the now playing strip
+internal var SOFT = Palette.dark.soft                          // a quiet blue button
 
 /** Dark, light, or the phone's own mode ("theme" in the app's prefs: "" / auto, light, dark), and the colours to match. */
 internal fun applyPalette(c: Context) {
@@ -49,19 +49,10 @@ internal fun applyPalette(c: Context) {
         "dark" -> false
         else -> (c.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) != android.content.res.Configuration.UI_MODE_NIGHT_YES
     }
-    if (LIGHT) {
-        BG = 0xfff3f4f7.toInt(); CARD = 0xffffffff.toInt(); BTN = 0xffeceff3.toInt()
-        ACCENT = 0xff2f6df6.toInt(); ACCENT_TEXT = 0xff2559d6.toInt(); HELD = 0xfff0b040.toInt()
-        TEXT = 0xff1a1d23.toInt(); MUTED = 0xff667080.toInt(); RED = 0xffc02f2f.toInt(); GREEN = 0xff137a41.toInt()
-        ERR_TEXT = 0xffb3261e.toInt(); ERR_BG = 0xfffbe5e5.toInt(); DIM = 0xff667080.toInt(); OK_TEXT = 0xff137a41.toInt()
-        RIPPLE = 0x30000000; PILL = 0xe6ffffff.toInt(); SOFT = 0x262f6df6
-    } else {
-        BG = 0xff111418.toInt(); CARD = 0xff1c2026.toInt(); BTN = 0xff2a3038.toInt()
-        ACCENT = 0xff3366e8.toInt(); ACCENT_TEXT = 0xff7ba2ff.toInt(); HELD = 0xffe0a030.toInt()
-        TEXT = 0xffe8eaed.toInt(); MUTED = 0xff9aa0a6.toInt(); RED = 0xffff8a80.toInt(); GREEN = 0xff2e7d4f.toInt()
-        ERR_TEXT = 0xffffb4a8.toInt(); ERR_BG = 0xff3a2020.toInt(); DIM = 0xff98a2b3.toInt(); OK_TEXT = 0xff4ade80.toInt()
-        RIPPLE = 0x40ffffff; PILL = 0xd91e2128.toInt(); SOFT = 0x335b8cff
-    }
+    val p = if (LIGHT) Palette.light else Palette.dark
+    BG = p.bg; CARD = p.card; BTN = p.btn; ACCENT = p.accent; ACCENT_TEXT = p.accentText; HELD = p.held; TEXT = p.text; MUTED = p.muted
+    RED = p.red; GREEN = p.green; ERR_TEXT = p.errText; ERR_BG = p.errBg; DIM = p.dim; OK_TEXT = p.okText
+    RIPPLE = p.ripple; PILL = p.pill; SOFT = p.soft
 }
 
 /** Dark icons on the status and navigation bars when the screen is light (they are painted in BG). */
@@ -141,12 +132,36 @@ internal fun Context.note(s: String): TextView {
     return v
 }
 
+/** A fill that takes white words and icons in both themes (the blue and the green are dark enough for it; BTN and CARD are not). */
+internal fun onFill(color: Int): Boolean = color == ACCENT || color == GREEN
+
+/** [s] as a button's or row's words; "@name|Words" puts the line icon ic_name (dev/gen_icons.py, the one js/ui.js ICON gives that
+ *  emoji) in front, in the text's colour. Anything else is plain text, and an icon left from before is dropped. */
+internal fun TextView.setLabel(s: String) {
+    val art = if (s.startsWith("@") && '|' in s) s.substring(1, s.indexOf('|')) else null
+    text = if (art != null) s.substringAfter("|") else s
+    val id = if (art != null) resources.getIdentifier("ic_$art", "drawable", context.packageName) else 0
+    if (id == 0) { setCompoundDrawablesRelative(null, null, null, null); return }
+    val d = resources.getDrawable(id, null).mutate()
+    val z = (textSize * 1.25f).roundToInt()
+    d.setBounds(0, 0, z, z)
+    d.setTint(currentTextColor)
+    setCompoundDrawablesRelative(d, null, null, null)
+    compoundDrawablePadding = (10 * resources.displayMetrics.density).roundToInt()
+}
+
+/** The words' colour, and the icon in front of them (if any) with it. */
+internal fun TextView.setInk(c: Int) {
+    setTextColor(c)
+    for (d in compoundDrawablesRelative) d?.setTint(c)
+}
+
 internal fun Context.button(s: String, color: Int): Button {
     val b = Button(this)
-    b.text = s
     b.setAllCaps(false)
-    b.setTextColor(if (color == ACCENT) Color.WHITE else TEXT)
+    b.setTextColor(if (onFill(color)) Color.WHITE else TEXT)
     b.textSize = 15f
+    b.setLabel(s)
     b.background = box(color, 14)
     b.stateListAnimator = null
     b.setPadding(dp(14), 0, dp(14), 0)
@@ -187,7 +202,8 @@ internal fun Context.logo(sizeDp: Int): android.widget.ImageView = android.widge
 
 internal fun Context.icon(symbol: String, says: String, color: Int): IconButton {
     val b = IconButton(this)
-    val ink = if (color == ACCENT) Color.WHITE else TEXT
+    val ink = if (onFill(color)) Color.WHITE else TEXT
+    b.lit = onFill(color)
     b.setIcon(symbol, if (symbol == "@power") RED else ink)
     b.setAllCaps(false)
     b.setTextColor(ink)

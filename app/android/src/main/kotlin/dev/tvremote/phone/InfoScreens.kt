@@ -29,14 +29,14 @@ internal fun MainActivity.buildSettings(): View {
 
     box.addView(head(t("NGÔN NGỮ", "LANGUAGE")), gap(18))
     val now = pref("lang")
-    val langs = listOf("" to "📱  " + t("Theo điện thoại", "Same as the phone"), "vi" to "🇻🇳  Tiếng Việt", "en" to "🇬🇧  English")
+    val langs = listOf("" to "@phone|" + t("Theo điện thoại", "Same as the phone"), "vi" to "@globe|Tiếng Việt", "en" to "@globe|English")
     for ((code, words) in langs) {
         val b = row(words + (if (code == now) "   ✓" else "")) {
             if (code == now) return@row
             prefs.edit().putString("lang", code).apply()
             recreate()                                            // every label is built in onCreate
         }
-        if (code == now) b.setTextColor(ACCENT_TEXT)
+        if (code == now) b.setInk(ACCENT_TEXT)
         box.addView(b)
     }
 
@@ -45,7 +45,9 @@ internal fun MainActivity.buildSettings(): View {
     val modes = LinearLayout(this)
     for ((i, m) in listOf("auto" to t("Tự động", "Auto"), "light" to t("Sáng", "Light"), "dark" to t("Tối", "Dark")).withIndex()) {
         val on = m.first == theme
-        val b = button(m.second, if (on) ACCENT else BTN)
+        val art = mapOf("auto" to "contrast", "light" to "wake", "dark" to "moon")[m.first]
+        val b = button("@$art|" + m.second, if (on) ACCENT else BTN)
+        b.setPadding(dp(6), 0, dp(6), 0)
         b.contentDescription = m.second
         b.setOnClickListener {
             if (on) return@setOnClickListener
@@ -58,7 +60,7 @@ internal fun MainActivity.buildSettings(): View {
 
     box.addView(head(t("NÚT ÂM LƯỢNG CỦA ĐIỆN THOẠI", "THE PHONE'S VOLUME KEYS")), gap(18))
     lateinit var vol: Button
-    val volLabel = { vol.text = (if (prefs.getBoolean("volKeysTv", true)) "✅  " else "⬜  ") + t("Chỉnh âm lượng TV", "Set the TV's volume") }
+    val volLabel = { vol.setLabel((if (prefs.getBoolean("volKeysTv", true)) "@check|" else "@close|") + t("Chỉnh âm lượng TV", "Set the TV's volume")) }
     vol = row("") {
         prefs.edit().putBoolean("volKeysTv", !prefs.getBoolean("volKeysTv", true)).apply()
         volLabel()
@@ -68,19 +70,19 @@ internal fun MainActivity.buildSettings(): View {
 
     box.addView(head(t("CẬP NHẬT", "UPDATES")), gap(18))
     lateinit var auto: Button
-    val autoLabel = { auto.text = (if (prefs.getBoolean("autoUpdate", true)) "✅  " else "⬜  ") + t("Tự kiểm tra bản mới", "Check for updates automatically") }
+    val autoLabel = { auto.setLabel((if (prefs.getBoolean("autoUpdate", true)) "@check|" else "@close|") + t("Tự kiểm tra bản mới", "Check for updates automatically")) }
     auto = row("") {
         prefs.edit().putBoolean("autoUpdate", !prefs.getBoolean("autoUpdate", true)).apply()
         autoLabel()
     }
     autoLabel()
     box.addView(auto)
-    box.addView(row("🔄  " + t("Kiểm tra ngay", "Check now")) { checkUpdate(true) })
+    box.addView(row("@refresh|" + t("Kiểm tra ngay", "Check now")) { checkUpdate(true) })
     updateNote = note("")
     box.addView(updateNote)
 
     box.addView(head(t("GIỚI THIỆU", "ABOUT")), gap(18))
-    box.addView(row("ℹ️  " + t("Giới thiệu", "About")) { about.visibility = View.VISIBLE })
+    box.addView(row("@info|" + t("Giới thiệu", "About")) { about.visibility = View.VISIBLE })
 
     val sv = ScrollView(this)
     sv.setBackgroundColor(BG)
@@ -138,14 +140,14 @@ internal fun MainActivity.buildAbout(): View {
     }
 
     box.addView(head(t("TÁC GIẢ", "AUTHOR")), gap(22))
-    box.addView(row("👤  Hoang Tran\n@HoangTran0410") { web("https://github.com/HoangTran0410") })
+    box.addView(row("@user|Hoang Tran\n@HoangTran0410") { web("https://github.com/HoangTran0410") })
 
     box.addView(head(t("MÃ NGUỒN", "SOURCE CODE")), gap(18))
-    box.addView(row("🔗  github.com/HoangTran0410/tv-remote") { web("https://github.com/" + Release.REPO) })
-    box.addView(row("📦  " + t("Bản phát hành", "Releases")) { web("https://github.com/" + Release.REPO + "/releases") })
-    box.addView(row("🐞  " + t("Báo lỗi", "Report a problem")) { web("https://github.com/" + Release.REPO + "/issues") })
+    box.addView(row("@link|github.com/HoangTran0410/tv-remote") { web("https://github.com/" + Release.REPO) })
+    box.addView(row("@package|" + t("Bản phát hành", "Releases")) { web("https://github.com/" + Release.REPO + "/releases") })
+    box.addView(row("@bug|" + t("Báo lỗi", "Report a problem")) { web("https://github.com/" + Release.REPO + "/issues") })
     // what the TVs said and the errors shown (WireLog): what a real TV did is what tells a bug apart
-    box.addView(row("📋  " + t("Gửi nhật ký", "Send the log")) {
+    box.addView(row("@clipboard|" + t("Gửi nhật ký", "Send the log")) {
         val log = dev.tvremote.core.WireLog.all.report(basic?.takeIf { it.kind != dev.tvremote.core.Remote.Kind.ANDROID })
         startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain")
             .putExtra(Intent.EXTRA_SUBJECT, "TV Remote: " + t("nhật ký", "log")).putExtra(Intent.EXTRA_TEXT, log), null))

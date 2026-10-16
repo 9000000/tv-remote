@@ -290,7 +290,7 @@ internal fun MainActivity.buildRemote() {
     controls.addView(cluster, gap(16))
 
     val line = LinearLayout(this)
-    liveBtn = button("⚡", BTN)
+    liveBtn = icon("@zap", t("Gõ trực tiếp", "Live typing"), BTN)    // lit while on (Typing.kt)
     liveBtn.setPadding(0, 0, 0, 0)
     liveBtn.setOnClickListener { setLive(!live) }
     val lb = LinearLayout.LayoutParams(dp(48), dp(48))

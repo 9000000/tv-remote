@@ -125,6 +125,8 @@ so Android installs over the old APKs, and `release.sh` stops before 1.3.0 until
   them is not offered. `release.sh` runs `dev/sums.sh <tag>` last (after the computer apps are attached); run it again after
   replacing any file of a release by hand. The keys live in `~/.tv-remote-release/` (`ed25519.pem` in use, `ed25519-spare.pem`
   kept elsewhere: losing both means every installed app refuses updates), made by `java dev/Sign.java new`; never on GitHub.
+  `dev/keys.sh backup` packs both of them and both `signing.jks` into one password-locked file (`dev/Keys.java`, AES-GCM;
+  `*.tvrkeys`, never committed) to keep off this computer; `dev/keys.sh list <file>` checks a copy, `restore <file>` puts them back.
 
 ## Testing
 
@@ -153,6 +155,7 @@ What it takes care of, for doing it by hand:
 - Unit tests (no device needed): `node --test app/shared/tests/`,
   `cd app/gradle && ./gradlew :shared:testDebugUnitTest :tv:testDebugUnitTest`. The voice tests exist on both sides
   (`voice.test.js`, `VoiceTest.kt`): keep `js/voice.js` and `Voice.kt` understanding the same sentences.
+- Contrast: `node --test app/shared/tests/` includes `contrast.test.js` (WCAG ratios of the style.css tokens in both themes); `dev/contrast.py [URL]` (Chrome, default the test server on 8772) scans the rendered page, both themes x 1100/400 px x every tab + Settings, exit 1 under 4.5:1 (3:1 icons, large text). Run it after colour changes.
 - The TV's sound: the Google TV emulator cannot run YouTube; press D-pad keys on the TV during a capture to get click sounds.
 - The intro site's screenshots (`docs/img`: web, Tailscale box, TV web page, phone app, TV Setup, og previews): `dev/shots.py [web ts tv phone tvapp]`,
   with the computer app built and, for the last three, both emulators running (`dev/emu.sh`). The TV's picture is the made-up home

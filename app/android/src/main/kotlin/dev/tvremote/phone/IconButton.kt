@@ -16,9 +16,10 @@ internal class IconButton(c: Context) : Button(c) {
         textAlign = android.graphics.Paint.Align.CENTER
         color = DIM
     }
-    /** White on a lit (accent) button, where the usual grey is hard to read. */
+    private var tint = DIM
+    /** White icon and caption on a lit (accent) button, whatever tint was asked for: dark ink on the blue is unreadable. */
     var lit = false
-        set(v) { field = v; ink.color = if (v) android.graphics.Color.WHITE else DIM; invalidate() }
+        set(v) { field = v; ink.color = if (v) android.graphics.Color.WHITE else DIM; art?.setTint(if (v) android.graphics.Color.WHITE else tint); invalidate() }
 
     fun setIcon(symbol: String, tint: Int) {
         if (!symbol.startsWith("@")) {
@@ -28,7 +29,8 @@ internal class IconButton(c: Context) : Button(c) {
         }
         val id = resources.getIdentifier("ic_" + symbol.substring(1), "drawable", context.packageName)
         art = if (id == 0) null else resources.getDrawable(id, null).mutate()
-        art?.setTint(tint)
+        this.tint = tint
+        art?.setTint(if (lit) android.graphics.Color.WHITE else tint)
         text = ""
         invalidate()
     }

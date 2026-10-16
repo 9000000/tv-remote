@@ -23,3 +23,4 @@ app/gradle/local.properties
 # APKs are attached to releases, never committed
 app/android/*.apk
 app/tv/*.apk
+*.tvrkeys

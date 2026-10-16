@@ -39,12 +39,11 @@ private fun MainActivity.toast(text: String) = Toast.makeText(this, text, Toast.
 
 /** Beside the heading of the saved TVs once there are two of them: small, in the accent colour, so it is seen without a whole row. */
 internal fun MainActivity.fleetButton(): android.widget.Button {
-    val b = button(t("Nhiều TV  ›", "Several TVs  ›"), SOFT)
-    b.setTextColor(ACCENT_TEXT)
+    val b = button("@tv|" + t("Nhiều TV  ›", "Several TVs  ›"), SOFT)
+    b.setInk(ACCENT_TEXT)
     b.textSize = 14f
     b.typeface = android.graphics.Typeface.DEFAULT_BOLD
     b.setPadding(dp(12), 0, dp(12), 0)
-    getDrawable(R.drawable.ic_tv)?.mutate()?.let { d -> d.setTint(ACCENT_TEXT); d.setBounds(0, 0, dp(18), dp(18)); b.setCompoundDrawables(d, null, null, null); b.compoundDrawablePadding = dp(6) }
     b.contentDescription = t("Làm trên nhiều TV cùng lúc: cài APK, gỡ app, khởi động lại", "Several TVs at once: install an APK, remove apps, restart")
     b.setOnClickListener { fleetMenu() }
     return b

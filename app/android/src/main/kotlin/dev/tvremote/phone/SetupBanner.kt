@@ -1,6 +1,7 @@
 package dev.tvremote.phone
 
 import android.app.AlertDialog
+import android.graphics.Color
 import android.view.View
 import dev.tvremote.core.Errors
 import dev.tvremote.core.SetupNeed
@@ -55,9 +56,9 @@ internal fun MainActivity.showSetup(h: String? = host) {
     setupBar.visibility = if (undone || offer) View.VISIBLE else View.GONE
     if (n == null || !(undone || offer)) return
     setupBar.background = box(if (undone) ERR_BG else GREEN, 14)
-    setupBar.setTextColor(if (undone) ERR_TEXT else TEXT)
-    setupBar.text = if (undone) t("⚠️ TV Setup ${n.version} chạy lỗi, TV đã tự quay về ${n.from}  ›", "⚠️ TV Setup ${n.version} failed, the TV went back to ${n.from}  ›")
-        else t("🆕 TV Setup trên TV có bản mới ${n.latest}  ›", "🆕 New TV Setup for the TV: ${n.latest}  ›")
+    setupBar.setTextColor(if (undone) ERR_TEXT else Color.WHITE)       // white on the green fill, in both themes
+    setupBar.setLabel(if (undone) t("@alert|TV Setup ${n.version} chạy lỗi, TV đã tự quay về ${n.from}  ›", "@alert|TV Setup ${n.version} failed, the TV went back to ${n.from}  ›")
+        else t("@download|TV Setup trên TV có bản mới ${n.latest}  ›", "@download|New TV Setup for the TV: ${n.latest}  ›"))
     setupBar.setOnClickListener {
         if (undone) AlertDialog.Builder(this).setTitle(t("TV Setup ${n.version} chạy lỗi trên TV này", "TV Setup ${n.version} failed on this TV"))
             .setMessage(t("TV đã tự quay về bản ${n.from}. Hẹn giờ, ghép nối và cài đặt vẫn còn nguyên. Có bản sau thì nó hiện ở đây.",
@@ -83,7 +84,7 @@ internal fun MainActivity.offerSetup(e: Throwable): Boolean {
     val old = generateSequence(e) { it.cause }.any { "setup:old:" in (it.message ?: "") }
     val h = host
     AlertDialog.Builder(this).setMessage(say)
-        .setPositiveButton(if (old) t("⬆️ Cập nhật", "⬆️ Update") else t("⚡ Cài TV Setup", "⚡ Install TV Setup")) { _, _ ->
+        .setPositiveButton(if (old) t("Cập nhật", "Update") else t("Cài TV Setup", "Install TV Setup")) { _, _ ->
             if (h != null) { setupNews.remove(h); setupChecked.remove(h) }      // asked again after: done, or put back
             managing.open(h, then = if (old) "updateSetup()" else "installSetupApk()")
         }

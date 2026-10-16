@@ -247,7 +247,7 @@ internal fun MainActivity.scan() {
         }
         ui.post {
             scanBtn.isEnabled = true
-            scanBtn.text = "🔍  " + t("Quét Wi-Fi", "Scan the Wi-Fi")
+            scanBtn.setLabel("@search|" + t("Quét Wi-Fi", "Scan the Wi-Fi"))
             if (foundList.childCount == 0) foundList.addView(note(
                 if (nets.isEmpty()) t("Điện thoại chưa nối Wi-Fi. Khác mạng thì nhập IP Tailscale của TV bên dưới.", "The phone is not on Wi-Fi. On another network, type the TV’s Tailscale IP below.")
                 else t("Đã quét ", "Scanned ") + nets.joinToString(", ") { it + "x" } + t(": không thấy TV nào. TV có đang bật và cùng Wi-Fi này không?\n\nTV ở mạng khác (qua Tailscale) thì không quét được: nhập IP Tailscale của TV (100.x.x.x) bên dưới.",
@@ -298,7 +298,7 @@ internal fun MainActivity.buildPicker() {
     picker.addView(savedList)
 
     picker.addView(head(t("TÌM TRONG WI-FI", "FIND ON THE WI-FI")), gap(18))
-    scanBtn = button("🔍  " + t("Quét Wi-Fi", "Scan the Wi-Fi"), ACCENT)
+    scanBtn = button("@search|" + t("Quét Wi-Fi", "Scan the Wi-Fi"), ACCENT)
     scanBtn.setOnClickListener { scan() }
     val sp = LinearLayout.LayoutParams(-1, dp(48))
     sp.topMargin = dp(6)

@@ -50,12 +50,12 @@ internal fun MainActivity.checkUpdate(manual: Boolean) {
 internal fun MainActivity.showUpdate() {
     val u = update
     updateBtn.visibility = if (u == null) View.GONE else View.VISIBLE
-    if (u != null && !updating) updateBtn.text = "🆕  " + t("Có bản mới ", "New version ") + u.version + t(" · bấm để cập nhật", " · tap to update")
+    if (u != null && !updating) updateBtn.setLabel("@download|" + t("Có bản mới ", "New version ") + u.version + t(" · bấm để cập nhật", " · tap to update"))
 }
 
 /** The download shows both on the TV list and in Settings, wherever the update was started from. */
 internal fun MainActivity.progress(s: String) {
-    updateBtn.text = s
+    updateBtn.setLabel(s)
     updateNote.text = s
 }
 

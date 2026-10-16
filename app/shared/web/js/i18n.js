@@ -246,7 +246,7 @@
     'TV này không có YouTube hay tìm kiếm của Google để tìm câu này.': 'This TV has neither YouTube nor Google search to look this up.', 'trình duyệt chưa được phép dùng micro': 'the browser is not allowed to use the microphone', 'TV này không có tìm kiếm / Assistant của Google': 'This TV has no Google search / Assistant',
     'Đang đọc từ TV...': 'Reading from the TV...',
     // settings, about
-    'Cài đặt, giới thiệu': 'Settings, about', 'Giao diện': 'Theme', 'Theo máy': 'System', 'Sáng': 'Light', 'Tối': 'Dark', 'Ngôn ngữ': 'Language', 'App trên máy tính': 'App on this computer',
+    'Cài đặt, giới thiệu': 'Settings, about', 'Giao diện': 'Theme', 'Theo máy': 'System', 'Sáng': 'Light', 'Tối': 'Dark', 'Ngôn ngữ': 'Language', 'Tải app': 'Get the app', 'App trên máy tính': 'App on this computer',
     'Giới thiệu': 'About', 'Điều khiển Android TV / Google TV từ máy tính và điện thoại: nút remote, xem màn hình, ứng dụng, tệp, cài APK.': 'Control an Android TV / Google TV from a computer and a phone: remote buttons, live screen, apps, files, APK install.',
     'Tác giả:': 'Author:', 'Mã nguồn:': 'Source code:', 'Các bản phát hành': 'Releases', 'Nhật ký thay đổi': 'Change log', 'Báo lỗi': 'Report a problem', 'Đóng': 'Close',
     'Hình trực tiếp và chuột dùng': 'The live picture and mouse use', '(Genymobile, Apache-2.0). Nút remote dùng giao thức Android TV Remote.': '(Genymobile, Apache-2.0). The remote buttons use the Android TV Remote protocol.',

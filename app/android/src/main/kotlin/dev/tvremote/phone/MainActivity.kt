@@ -124,7 +124,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     // ---- Typing.kt. Two ways to type. Send: write here, then send it in one go. Live (⚡): the TV follows every letter and
     // every deletion as it happens, so one wrong letter is fixed by fixing it here.
     internal lateinit var textBox: EditText
-    internal lateinit var liveBtn: Button
+    internal lateinit var liveBtn: IconButton
     internal var live = false
     internal var onTv = ""                                             // what the TV has received from the box so far
     internal var quiet = false                                         // the box is being changed by the app, not typed in

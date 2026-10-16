@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Cài đặt: các phần thẳng một lề trái; nút Theo máy / Sáng / Tối có icon. 📱 App điện thoại: icon nét thay emoji trong Cài đặt, Giới thiệu và các nút; icon trên nền xanh luôn trắng (nút ẩn hình, 🎧, Thêm phím). Chữ xám, xanh, xanh lá đậm hơn trên giao diện sáng cho dễ đọc.
 - 📱 App điện thoại: chép tệp, cài app, cập nhật TV Setup giờ hiện trên thanh thông báo kèm phần trăm (trước đó Android 13+ ẩn đi vì app chưa xin quyền thông báo; giờ xin ngay lúc việc bắt đầu).
 - Sức khỏe → Lịch sử: chú thích dưới biểu đồ gọn lại như trước. TV có đồng hồ từng nhảy sai (vd box FPT Play) giờ vẫn ghi được app đang mở; khoảng đã ghi trước đó thì không có tên app.
 - Tab Tệp: đổi tên, xóa, tải về nằm trong nút ⋯ (mỗi tệp một dòng trên điện thoại); các thư mục nhanh nằm một dòng vuốt ngang, đường dẫn gọn.
@@ -26,6 +27,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Setup: “Thiết bị đã ghép (n)” mở danh sách từng máy, có giờ ghép, lần dùng cuối và nút Hủy ghép riêng; giờ đi ngủ / hẹn giờ nằm trong thẻ trạng thái; các ô Thao tác nhỏ gọn hơn. Pass của app điện thoại / máy tính mới chỉ dùng được qua HTTPS.
 
 **English**
+- Settings: every part on one left edge; System / Light / Dark have icons. 📱 Phone app: line icons instead of emoji in Settings, About and buttons; an icon on blue is always white (hide picture, 🎧, More keys). Grey, blue and green words darker on the light theme, easier to read.
 - 📱 Phone app: copying a file, installing an app or updating TV Setup now shows in the notification shade with its percentage (Android 13+ hid it before, the app never having asked for notifications; it asks as the work starts).
 - Health → History: the legend under the chart is compact again. A TV whose clock once jumped (the FPT Play box, say) records the open app again; what was recorded before has no app names.
 - Files tab: rename, delete and download sit behind ⋯ (one line per file on a phone); the quick folders on one row you swipe, a tighter path.

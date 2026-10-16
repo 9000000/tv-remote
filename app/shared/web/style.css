@@ -1,8 +1,8 @@
   :root {
-    --bg:#f3f4f7; --card:#fff; --ink:#1a1d23; --muted:#667080; --line:#e1e4ea;
-    --btn:#eceff3; --btn-hi:#dde2e9; --accent:#2f6df6; --accent-ink:#fff; --accent-text:#2559d6;   /* accent: fills with white text; accent-text: blue used as words */
-    --ok:#137a41; --warn:#8f5300; --bad:#c02f2f; --ok-bg:#e3f5ea; --warn-bg:#fdf0d8; --bad-bg:#fbe5e5;
-    --radius:14px; --ctl:40px; --ctl-sm:36px; --chip:32px; --boot:#6d4bdc;
+    --bg:#f3f4f7; --card:#fff; --ink:#1a1d23; --muted:#586272; --line:#e1e4ea;
+    --btn:#eceff3; --btn-hi:#dde2e9; --accent:#2f6df6; --accent-ink:#fff; --accent-text:#1f50c4;   /* accent: fills with white text; accent-text: blue used as words */
+    --ok:#106537; --warn:#8f5300; --bad:#c02f2f; --ok-bg:#e3f5ea; --warn-bg:#fdf0d8; --bad-bg:#fbe5e5;
+    --radius:14px; --ctl:40px; --ctl-sm:36px; --chip:32px; --boot:#5b38c8;
   }
   :root[data-theme=dark] {                                           /* js/theme.js: the system's choice, or the one picked in Settings */
     --bg:#111418; --card:#1b1f25; --ink:#e9ecf1; --muted:#99a3b0; --line:#2b3139;
@@ -86,7 +86,6 @@
   button:disabled { opacity:.45; cursor:not-allowed; transform:none; }
   .kind-off, html[data-kind=lg] .adbnote, html[data-kind=samsung] .adbnote { display:none !important; }   /* LG / Samsung: what needs ADB (applyKind) */
   button[data-kind-off] { opacity:.3; cursor:help; } .tabs [data-kind-tab] { opacity:.5; } .tabs [data-kind-tab][aria-selected=true] { opacity:1; }
-  .aboutacts { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:8px; }   /* in line with the QR code below */
   .kintro ul { margin:0; padding-left:20px; color:var(--muted); line-height:1.9; font-size:14px; } .kintro .badge { text-transform:none; letter-spacing:0; } .kintro h2 .badge { margin-left:8px; vertical-align:1px; }
   button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, a:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   .primary { background:var(--accent); color:var(--accent-ink); font-weight:700; } .primary:hover { background:var(--accent); filter:brightness(1.08); }
@@ -253,7 +252,8 @@
 
   dialog { border:0; padding:0; background:transparent; max-width:96vw; max-height:96vh; } dialog::backdrop { background:rgba(0,0,0,.8); }
   dialog.ask .card { width:min(440px, 92vw); display:flex; flex-direction:column; gap:14px; } dialog.ask p { margin:0; white-space:pre-line; line-height:1.45; overflow-wrap:anywhere; } dialog.ask .fields { display:flex; gap:12px; } dialog.ask .fields label { flex:1; display:flex; align-items:center; gap:8px; } dialog.ask .fields input { flex:1; min-width:0; text-align:center; font-size:18px; } dialog.ask .acts { display:flex; justify-content:flex-end; gap:8px; } dialog.ask .acts button { min-width:88px; padding:0 18px; } dialog.ask button.danger { background:var(--bad); color:#fff; font-weight:700; }
-  .aboutbox { max-width:480px; margin:0; } .aboutbox h1 { margin-bottom:10px; } .aboutbox p { margin:8px 0; font-size:14px; line-height:1.5; } .aboutbox a { color:var(--accent-text); }
+  .aboutbox { max-width:480px; margin:0; } .aboutbox p { font-size:14px; line-height:1.5; }   /* every part a .group: one left edge */
+  .aboutbox .qrs { margin:0; } .aboutbox .qr { text-align:left; flex:0 1 200px; } .aboutbox .qr svg { margin:0 0 6px; } .aboutbox a { color:var(--accent-text); }
   fieldset#kbd { border:0; padding:0; margin:0; min-width:0; } fieldset#kbd:disabled { opacity:.4; pointer-events:none; }
   .qrs { display:flex; gap:14px; flex-wrap:wrap; margin:12px 0; } .qr { flex:1; min-width:150px; text-align:center; font-size:12.5px; line-height:1.4; } .qr svg { border-radius:8px; display:block; margin:0 auto 6px; max-width:100%; height:auto; }
   .qr b { display:block; font-size:13.5px; } .qr a { word-break:break-all; }

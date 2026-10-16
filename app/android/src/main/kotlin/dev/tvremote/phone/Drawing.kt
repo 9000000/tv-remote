@@ -133,7 +133,7 @@ internal fun MainActivity.drawTools(): LinearLayout {
     place.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
     val cancel = button(t("Hủy", "Cancel"), BTN)
     cancel.setOnClickListener { picEnd() }
-    val ok = button(t("✓ Đưa lên TV", "✓ Put on TV"), ACCENT)
+    val ok = button("@check|" + t("Đưa lên TV", "Put on TV"), ACCENT)
     ok.setOnClickListener { picSend() }
     for (b in listOf(cancel, ok)) { b.setPadding(dp(12), 0, dp(12), 0); place.addView(b, LinearLayout.LayoutParams(-2, dp(40)).also { it.leftMargin = dp(6) }) }
     tools.addView(place, LinearLayout.LayoutParams(-1, -2))
