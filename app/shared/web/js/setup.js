@@ -70,7 +70,7 @@ $('#aboutbtn').addEventListener('click', async () => {
 });
 const APP_APK = 'https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk';
 // a QR with its title and line; the link under it unless [hide] (an invite is for scanning, not for reading out)
-const qrBlock = (title, note, link, hide) => { const s = qrSvg(link, 170); return s ? el('div', { className: 'qr' }, s, el('b', { textContent: title }), el('span', { className: 'muted', textContent: note }),
+const qrBlock = (title, note, link, hide) => { const s = qrSvg(link, 170); return s ? el('div', { className: 'qr' }, s, el('b', { textContent: title }), ...[].concat(note).flatMap((n, i) => [i ? el('br') : null, el('span', { className: 'muted', textContent: n })]).filter(Boolean),   // note: one line, or several kept apart
   hide ? null : el('br'), hide ? null : el('a', { href: link, target: '_blank', rel: 'noopener', textContent: link.replace(/^https?:\/\//, '').replace(/^github\.com\/.*\//, '') })) : null; };   // the file's name: the whole release link is wider than the box
 
 // ---------- share (⋯ More keys → Chia sẻ): a QR that opens this TV's web page already paired, and one for the phone app ----------
@@ -105,9 +105,8 @@ async function shareDialog() {
     UI.head('📲 Chia sẻ', el('button', { className: 'small iconbtn', textContent: '✕', title: 'Đóng', 'aria-label': 'Đóng', onclick: () => d.close() })),
     tabs, tv, app));
   const wifi = r.warn !== 'tailscale_only';                           // the link is the TV's Wi-Fi address: say so, unless only Tailscale reaches it (warned above)
-  const draw = (url) => qr.replaceChildren(...[url ? qrBlock(scope === 'view' ? '🌐 Xem TV' : '🌐 Mở remote', scope === 'view'
-    ? (wifi ? 'Quét để xem TV này, không cần mã. Điện thoại quét phải cùng Wi-Fi với TV. Dùng 1 lần, trong 10 phút.' : 'Quét để xem TV này, không cần mã. Dùng 1 lần, trong 10 phút.')
-    : (wifi ? 'Quét để điều khiển TV này, không cần mã. Điện thoại quét phải cùng Wi-Fi với TV. Dùng 1 lần, trong 10 phút.' : 'Quét để điều khiển TV này, không cần mã. Dùng 1 lần, trong 10 phút.'), url, true) : null].filter(Boolean));
+  const draw = (url) => qr.replaceChildren(...[url ? qrBlock(scope === 'view' ? '🌐 Xem TV' : '🌐 Mở remote',
+    [wifi ? 'Điện thoại phải cùng Wi-Fi với TV' : null, 'Dùng 1 lần, trong 10 phút'].filter(Boolean), url, true) : null].filter(Boolean));
   const choose = async (k) => {
     if (k === scope) return; scope = k; pick.replaceChildren(scopeChips(scope, choose));
     const n = await api('/api/share', { scope }); draw(n && n.url);   // on a failure no QR rather than the last one under the wrong choice

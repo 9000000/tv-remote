@@ -67,10 +67,8 @@ private fun MainActivity.showShare(r: JSONObject, ask: (String, (JSONObject) -> 
         val draw = { link: String ->
             qrBox.removeAllViews()
             if (link.isNotEmpty()) qr(qrBox, link, if (scope == "view") t("Xem TV", "Watch the TV") else t("Mở remote", "Open the remote"),
-                (if (scope == "view") t("Quét để xem TV này, không cần mã.", "Scan to watch this TV, no code needed.")
-                else t("Quét để điều khiển TV này, không cần mã.", "Scan to control this TV, no code needed.")) +
-                (if (wifi) t(" Điện thoại quét phải cùng Wi-Fi với TV.", " The phone that scans must be on the TV's Wi-Fi.") else "") +
-                t(" Dùng 1 lần, trong 10 phút.", " Once, within 10 minutes."))
+                (if (wifi) t("Điện thoại phải cùng Wi-Fi với TV", "The phone must be on the TV's Wi-Fi") + "\n" else "") +
+                t("Dùng 1 lần, trong 10 phút", "Once, within 10 minutes"))
         }
         val buttons = scopes.map { (k, icon, words) -> chip(icon, words, k == scope) }
         buttons.forEachIndexed { i, b ->
