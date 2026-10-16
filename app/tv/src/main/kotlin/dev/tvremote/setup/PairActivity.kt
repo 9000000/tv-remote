@@ -27,6 +27,11 @@ class PairActivity : Activity() {
         }
     }
 
+    companion object {
+        /** On screen now: RemoteService does not start a second one over it. */
+        @Volatile var showing = false
+    }
+
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
         val code = RemoteService.pairingCode()
@@ -56,13 +61,14 @@ class PairActivity : Activity() {
         card.addView(line(t("Mã dùng được 2 phút. Không phải bạn thì bấm Back.", "The code is good for 2 minutes. If this is not you, press Back."), 15, Color.rgb(140, 150, 163), false), gap(22))
         root.addView(card)
         setContentView(root)
+        showing = true
         ui.postDelayed(watch, 500)
     }
 
     @Suppress("DEPRECATION")
     override fun onBackPressed() { RemoteService.cancelPairing(); super.onBackPressed() }
 
-    override fun onDestroy() { ui.removeCallbacks(watch); super.onDestroy() }
+    override fun onDestroy() { showing = false; ui.removeCallbacks(watch); super.onDestroy() }
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).roundToInt()
 

@@ -70,6 +70,7 @@ class Tv(
         fun onStatus(key: String, detail: String)                     // connecting | allow | starting | live | closed | error; audio (detail "unsupported"); rate
         fun onVideoSize(w: Int, h: Int)
         fun onNetwork(mac: String, lan: String, tailscale: String)    // the TV's home-network address (for Wake-on-LAN), and its 100.x one if any
+        fun wantsNetwork(): Boolean = true                            // false: nobody uses the address (TV Setup's own session), so skip the `ip addr show`
         fun wantsPass(): Boolean = false                              // no TV Setup pass for this TV yet: fetch one while ADB works
         fun onPass(token: String) {}                                  // lets TV Setup answer "Allow USB debugging?" for us later, see AdbPrompt
     }
@@ -129,7 +130,7 @@ class Tv(
             if (stopped) return
             status("starting", a.shell("getprop ro.product.model").trim())
             if (wake) a.shell("input keyevent KEYCODE_WAKEUP")
-            reportNetwork(a)
+            if (listener.wantsNetwork()) reportNetwork(a)
             if (listener.wantsPass()) try { AdbPrompt.token(a, "phone")?.let { listener.onPass(it) } } catch (ignored: IOException) { }
             pushServer(a)
             var hearing = audio
@@ -156,14 +157,14 @@ class Tv(
             var first: Adb.Stream? = null                             // the first of the sockets: video, then sound, then control, whichever are asked for
             val one = ByteArray(1)
             var i = 0
-            while (i < 80 && first == null && !stopped) {             // until the server listens, the TV refuses the socket
+            while (i < 200 && first == null && !stopped) {             // until the server listens, the TV refuses the socket
                 try {
                     val s = a.open("localabstract:scrcpy_$scid")
                     if (s.read(one, 0, 1, 4000) == 1 && one[0].toInt() == 0) first = s else s.close()
                 } catch (notYet: IOException) {
                     if (a.isDead()) throw notYet
                 }
-                if (first == null) Thread.sleep(250)
+                if (first == null) Thread.sleep(100)     // app_process takes a second or so; polling often wins the tail of it
                 i++
             }
             if (first == null) throw IOException("scrcpy-server did not start on the TV")

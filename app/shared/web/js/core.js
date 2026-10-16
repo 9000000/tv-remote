@@ -464,3 +464,13 @@ function homeHint() {
   $('#homehint').hidden = false;
 }
 $('#homeok').addEventListener('click', () => { $('#homehint').hidden = true; try { localStorage.setItem('homehint', '1'); } catch {} });
+
+// ---------- the TV web page: a hand on the remote wakes the TV's input session ----------
+// TV Setup stops its scrcpy process after 3 minutes nobody uses it (polls do not count); this wakes it before the first key.
+let warmAt = -1e9;
+function warmTv() {
+  if (CORE !== 'tv' || stopped || document.hidden || currentTab !== 'remote' || performance.now() - warmAt < 20000) return;
+  warmAt = performance.now(); fetch('/api/warm', { method: 'POST' }).catch(() => {});
+}
+['pointerdown', 'keydown'].forEach((ev) => document.addEventListener(ev, warmTv, true));
+document.addEventListener('visibilitychange', warmTv);

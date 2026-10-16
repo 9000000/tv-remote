@@ -91,6 +91,10 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             (if (tls) COOKIE_TLS else COOKIE) + "=$token; Max-Age=$age; Path=/; HttpOnly; SameSite=Strict" + (if (tls) "; Secure" else "")
 
         private const val REST_MS = 3 * 60 * 1000L
+        /** Needs the input session (`tv`) or is a hand on the remote: wakes it when resting and keeps it from resting. */
+        private val SESSION = setOf("/api/key", "/api/type", "/api/touch", "/api/clip", "/api/screen", "/api/video", "/api/adb/connect", "/api/warm")
+        /** What a page asks by itself every few seconds: says nothing about anyone using the remote. */
+        private val PASSIVE = setOf("/api/state", "/api/about", "/api/playing", "/api/health", "/api/stats", "/api/paired", "/api/app/icon", "/api/setup/need", "/api/wirelog")
         private fun ok(): HttpServer.Response = HttpServer.Response.ok()
     }
 
@@ -106,9 +110,12 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     @Volatile private var tv: Tv? = null
     private val feeds = Feeds()                                       // the picture and the sound for one browser each
     @Volatile private var stopping = false
-    @Volatile private var lastUse = 0L                                // when a paired browser last asked for anything
+    @Volatile private var lastUse = 0L                                // when a paired browser last used the input session (keys, touch, picture...)
+    @Volatile private var lastSeen = 0L                               // when a paired browser last asked for anything but a poll: updates wait for it
     @Volatile private var resting = false                             // the input session is closed on purpose: nobody is using the remote
     private var lastPairStart = 0L
+    private var lastShown = 0L                                        // when the code screen last went up on the TV
+    private var asked = 0                                             // code screens shown since a browser last got in: the more, the longer the wait
     @Volatile private var wrong = 0                                  // wrong codes since the last pairing or lockout
     @Volatile private var lockedUntil = 0L
     private var guard: Guard? = null
@@ -161,6 +168,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             }, "https").apply { isDaemon = true }.start()
         }
         lastUse = System.currentTimeMillis()
+        lastSeen = lastUse
         connect()
         guard = Guard(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         tsWatch = TailscaleWatch(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
@@ -207,19 +215,24 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             override fun onStatus(key: String, detail: String) { if (mine == null || tv === mine) this@RemoteService.onStatus(key, detail) }
             override fun onVideoSize(w: Int, h: Int) { }
             override fun onNetwork(mac: String, lan: String, tailscale: String) { }
+            override fun wantsNetwork() = false                        // the address is not used here: one shell less on every wake
         })
         tv = mine
     }
 
     /**
      * The input session keeps a scrcpy-server process alive on the TV, about 70 MB of its 2 GB. So it only runs while
-     * somebody has the remote open: every request from a paired browser counts as use, and after [REST_MS] without one
-     * the session is closed. The next request opens it again and waits a moment for it, so the first key still works.
+     * somebody really uses it: a key, typing, touch, the clipboard, a screenshot, the picture (SESSION), or the page saying a
+     * hand is on the remote (/api/warm). Polls (/api/state, /api/playing, health: PASSIVE) do not count, so a tab left open
+     * lets it rest. After [REST_MS] without use only the scrcpy process is stopped: the saved key, the pushed scrcpy-server.jar
+     * and the ADB link used by everything else stay, so waking costs one ADB login and the start of app_process on the TV.
+     * The next use opens it again; [wait] holds the request for it (up to 4 s) so the first key still works.
      */
-    private fun inUse() {
+    private fun inUse(wait: Boolean = true) {
         lastUse = System.currentTimeMillis()
+        lastSeen = lastUse
         if (tv == null && resting) connect()
-        if (adbState == "connecting") for (i in 0 until 40) {         // up to 4 s, usually well under one
+        if (wait && adbState == "connecting") for (i in 0 until 40) { // up to 4 s, usually about a second
             if (adbState != "connecting") break
             try { Thread.sleep(100) } catch (e: InterruptedException) { break }
         }
@@ -286,7 +299,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     /** Why an update would be noticed now, or null when nobody would. */
     private fun busyWhy(): String? {
         val now = System.currentTimeMillis()
-        if (now - lastUse < 30 * 60_000L) return "the remote was used lately"
+        if (now - lastSeen < 30 * 60_000L) return "the remote was used lately"
         if (tv != null || feeds.viewer != null) return "a remote session is open"
         if (pairingCode() != null) return "pairing"
         if (MainActivity.shown) return "TV Setup is on screen"
@@ -324,7 +337,9 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         if (hit == null) { token = r.cookie(COOKIE); hit = Paired.check(this, token, r.tls) }
         if (hit == null) return HttpServer.Response.json(401, JSONObject().put("error", "not paired").put("name", Build.MODEL))
 
-        inUse()
+        if (r.path == "/api/audio") lastUse = System.currentTimeMillis()   // someone listens: not idle, but it needs no input session
+        if (r.path in SESSION) inUse(wait = r.path != "/api/warm" && r.path != "/api/video")
+        else if (r.path !in PASSIVE) lastSeen = System.currentTimeMillis()
         val out = route(r, host, hit.entry)
         if (hit.renew) out.headers["Set-Cookie"] = cookie(token, r.tls)   // a browser in use keeps its 30 days
         return out
@@ -392,6 +407,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 val text = t.clipboard() ?: return HttpServer.Response.error(504, "the TV did not answer")
                 return HttpServer.Response.json(JSONObject().put("text", text))
             }
+            "/api/warm" -> return ok()                                // inUse() has done it: the page's hand is on the remote
             "/api/adb/connect" -> { if (tv == null) connect(); inUse(); return HttpServer.Response.json(JSONObject().put("state", adbWord())) }
         }
         val managed = manage?.handle(r)
@@ -483,6 +499,11 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         if (now - lastPairStart < 3000) return HttpServer.Response.error(429, "wait a moment")
         // asking for code after code would give five guesses each: wrong guesses count across codes, and too many lock it
         if (now < lockedUntil) return HttpServer.Response.error(429, "Nhập sai mã nhiều lần: đợi 15 phút rồi thử lại.")
+        // /api/pair/start needs no pass (it is how a pass is got), so anyone on the network can call it: never pile a second
+        // code screen on the first, and after a few that nobody finished, wait longer and longer (30 s, 1, 2, 4, 5 min)
+        if (pairingCode() != null && PairActivity.showing) return HttpServer.Response.json(JSONObject().put("ok", true).put("seconds", ((codeUntil - now) / 1000).toInt()))
+        val wait = if (asked < 3) 0L else minOf(30000L shl (asked - 3).coerceAtMost(4), 5 * 60000L)
+        if (now - lastShown < wait) return HttpServer.Response.error(429, "Đợi " + ((wait - (now - lastShown)) / 1000 + 1) + " giây rồi thử lại.")
         lastPairStart = now
         if (pairingCode() == null || codeUntil - now < 30000) {          // the code on the TV stays the same when asked again
             code = String.format("%06d", random.nextInt(1000000))
@@ -498,6 +519,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         if (!shown) {
             try { startActivity(Intent(this, PairActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (ignored: Exception) { }
         }
+        lastShown = now
+        asked++
         return HttpServer.Response.json(JSONObject().put("ok", true).put("seconds", 120))
     }
 
@@ -512,6 +535,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         }
         code = null
         wrong = 0
+        asked = 0                                                     // somebody really paired: the next one starts fresh
         val token = Paired.add(this, "web", Paired.deviceName(r.headers["user-agent"] ?: ""), r.peer, r.tls)
         val ok = ok()
         ok.headers["Set-Cookie"] = cookie(token, r.tls)

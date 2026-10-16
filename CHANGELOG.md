@@ -4,6 +4,16 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- 📺 App TV: mở sẵn tab Web của TV (hoặc để trang poll trạng thái) không còn giữ tiến trình scrcpy-server (~70 MB) chạy mãi: chỉ phím, gõ, chạm, hình/ảnh chụp mới tính là đang dùng, 3 phút không dùng thì nghỉ. Chạm vào remote trên trang là đánh thức lại trước phím đầu tiên; mỗi lần đánh thức bớt một lệnh ADB và dò scrcpy-server nhanh hơn.
+- 🔒 App TV: màn hình mã ghép không bật lại chồng lên màn hình đang hiện; hỏi mã liên tục mà không ai nhập thì phải đợi 30 giây, rồi lâu dần (tối đa 5 phút). Màn hình mã và màn cảnh báo hẹn giờ chỉ app TV và ADB shell mới mở được, app khác trên TV thì không.
+
+**English**
+- 📺 TV app: an open TV web page (or one polling the state) no longer keeps the scrcpy-server process (~70 MB) running forever: only keys, typing, touch, the picture and screenshots count as use, and after 3 minutes without it the session rests. A touch on the page's remote wakes it before the first key; waking now skips one ADB command and finds scrcpy-server sooner.
+- 🔒 TV app: the pairing code screen is not started again over itself; asking for codes nobody types makes the TV wait 30 seconds, then longer (up to 5 minutes). Only the TV app and the ADB shell can open the code screen and the timer warning; other apps on the TV cannot.
+
 ## 0.4.1 - 2026-10-16
 
 Web 0.4.1 · app điện thoại 0.4.1 · app TV 0.4.1
