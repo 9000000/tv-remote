@@ -177,4 +177,4 @@
   .dchap{gap:6px}.dchap button{font-size:12.5px;padding-top:10px}.dchap b{display:none}
 }
 /* reduced motion: the timeline is held on a still (anim.js), the spinners and the flying dots stand too */
-@media (prefers-reduced-motion:reduce){.demo *,.demo *::after{animation-play-state:paused !important}}
+@media (prefers-reduced-motion:reduce){html:not(.motion) .demo *,html:not(.motion) .demo *::after{animation-play-state:paused !important}}

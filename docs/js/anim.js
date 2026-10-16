@@ -165,7 +165,12 @@
 
   /* ---------- playback ---------- */
 
-  var calm = matchMedia("(prefers-reduced-motion:reduce)");
+  // Reduced motion (often switched on only to lighten a slow computer) holds each story on a still with a ▶ button: the
+  // stories are what the page shows, so one press plays them all, then and on later visits (html.motion lifts the CSS holds)
+  var reduce = matchMedia("(prefers-reduced-motion:reduce)"), asked = false;
+  try { asked = localStorage.getItem("motion") === "1"; } catch(e){}
+  var calm = { get matches(){ return reduce.matches && !asked; } };
+  if (asked) document.documentElement.classList.add("motion");
   var made = [];                                                   // [Story]
   function of(el){ return made.filter(function(s){ return s.el === el; })[0]; }
 
@@ -176,6 +181,23 @@
     if (calm.matches) this.tl.pause(k * this.L + (still != null ? still : this.L * .92));
     else this.tl.play(k * this.L);
   };
+
+  function seen(el){ var r = el.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight; }
+  function motion(){
+    asked = true;
+    try { localStorage.setItem("motion", "1"); } catch(e){}
+    document.documentElement.classList.add("motion");
+    document.querySelectorAll(".motion-go").forEach(function(b){ b.remove(); });
+    made.forEach(function(s){ if (!s.held && seen(s.el)) s.tl.play(); });
+  }
+  function offer(el){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "motion-go";
+    b.innerHTML = '<span class="vi">▶ Xem hoạt cảnh</span><span class="en">▶ Play the animation</span>';
+    b.addEventListener("click", motion);
+    el.insertBefore(b, el.firstChild);
+  }
 
   function define(name, T, parts, build){
     document.querySelectorAll("." + name).forEach(function(el){
@@ -189,8 +211,10 @@
           if (es[0].isIntersecting) s.tl.play(); else s.tl.pause();
         }, { threshold: .2 }).observe(el);
       } else if (!calm.matches) s.tl.play();
-      el.querySelectorAll(".dchap button, .steps li").forEach(function(b, k){ b.addEventListener("click", function(){ s.go(k); }); });
-      if (calm.matches) s.go(0);
+      el.querySelectorAll(".dchap button, .steps li").forEach(function(b, k){
+        b.addEventListener("click", function(){ if (calm.matches) motion(); s.go(k); });   // picking a chapter asks to see it
+      });
+      if (calm.matches){ s.go(0); offer(el); }
     });
   }
 

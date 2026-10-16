@@ -201,7 +201,7 @@
 .story .steps li{border-radius:12px;padding:6px 8px;margin:-6px -8px;cursor:pointer}
 .story .steps li:hover{background:rgba(255,255,255,.03)}
 @media (max-width:980px){.sst{max-width:560px;width:100%;margin:0 auto 6px}}
-@media (prefers-reduced-motion:reduce){.story *,.story *::before,.story *::after{animation-play-state:paused !important}.lane i{display:none}}
+@media (prefers-reduced-motion:reduce){html:not(.motion) :is(.story *,.story *::before,.story *::after){animation-play-state:paused !important}html:not(.motion) .lane i{display:none}}
 /* the install stages are half a panel wide: everything on their TV a size up */
 .stv .tp{padding:6cqw 7cqw;gap:3cqw;font-size:4.2cqw}
 .stv .tp h5{font-size:6cqw}
