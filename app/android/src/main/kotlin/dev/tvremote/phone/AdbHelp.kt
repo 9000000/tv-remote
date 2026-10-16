@@ -28,6 +28,7 @@ internal fun MainActivity.adbHelp() {
         Triple("@zap|" + t("Tự động: cài TV Setup lên TV", "Automatic: install TV Setup on the TV"), t("Chỉ cần xác nhận trên TV", "Just confirm on the TV")) { installSetup() },
         Triple("@gear|" + t("Tự làm: mở Cài đặt TV", "By hand: open TV Settings"), "") { findSettings() },
         Triple("@home|" + t("Cài màn hình chính khác", "Install another home screen"), t("Khi TV giấu Cài đặt", "When the TV hides Settings")) { otherHome() },
+        Triple("@wifi|" + t("Ghép bằng Gỡ lỗi không dây", "Pair with Wireless debugging"), t("Android 11 trở lên: mã 6 số TV hiện ra", "Android 11 or newer: the 6-digit code the TV shows")) { wirelessPair() },
         Triple("@refresh|" + t("Kết nối đầy đủ", "Full connection"), "") {
             val ip = host
             adbFailed.remove(ip)
@@ -48,6 +49,65 @@ internal fun MainActivity.adbHelp() {
                 .setNegativeButton(t("Hủy", "Cancel"), null).show()
             Unit
         }))
+}
+
+/**
+ * Wireless debugging (Android 11+): the TV shows a 6-digit code and an IP:port to pair with. Pairing, then the TLS connect
+ * port (found by mDNS, typed when nothing answered), then the usual connection; no "Allow USB debugging?" question.
+ */
+internal fun MainActivity.wirelessPair() {
+    val ip = host
+    val addr = input(t("IP:cổng ghép nối", "Pairing IP:port"))
+    val code = input(t("Mã 6 số", "6-digit code"))
+    addr.setSingleLine(true); code.inputType = android.text.InputType.TYPE_CLASS_NUMBER
+    val body = col()
+    body.addView(label(t("Trên TV: Cài đặt → Tùy chọn nhà phát triển → Gỡ lỗi không dây → Ghép nối thiết bị bằng mã ghép nối.",
+        "On the TV: Settings → Developer options → Wireless debugging → Pair device with pairing code."), 14, TEXT))
+    body.addView(addr, gap(8)); body.addView(code, gap(8))
+    Thread {                                                               // prefilled when the TV announces itself on the network
+        try {
+            val (pairing, _) = dev.tvremote.core.AdbTls.discover()
+            val p = pairing.firstOrNull { it.ip == ip } ?: pairing.firstOrNull()
+            if (p != null) ui.post { if (addr.text.isEmpty()) addr.setText("${p.ip}:${p.port}") }
+        } catch (ignored: Exception) { }
+    }.start()
+    AlertDialog.Builder(this).setTitle(t("Ghép bằng Gỡ lỗi không dây", "Pair with Wireless debugging")).setView(inDialog(body))
+        .setPositiveButton(t("Ghép", "Pair")) { _, _ ->
+            val m = Regex("^(?:(.+):)?(\\d{2,5})$").find(addr.text.toString().trim())
+            val c = dev.tvremote.core.AdbTls.cleanCode(code.text.toString())
+            if (m == null || c == null) { Toast.makeText(this, t("Nhập IP:cổng và mã 6 số hiện trên TV.", "Type the IP:port and the 6-digit code the TV shows."), Toast.LENGTH_LONG).show(); return@setPositiveButton }
+            val target = m.groupValues[1].ifEmpty { ip ?: "" }
+            Toast.makeText(this, t("Đang ghép nối...", "Pairing..."), Toast.LENGTH_SHORT).show()
+            Thread {
+                try {
+                    dev.tvremote.core.AdbTls.pair(dev.tvremote.core.Adb(filesDir), target, m.groupValues[2].toInt(), c)
+                    var port = 0
+                    for (i in 0..2) if (port <= 0) port = dev.tvremote.core.AdbTls.discoverConnect(target)
+                    if (port > 0) ui.post { pairedAt(target, port) } else ui.post { askConnectPort(target) }
+                } catch (e: Exception) {
+                    ui.post { Toast.makeText(this, dev.tvremote.core.Errors.say(e, VI), Toast.LENGTH_LONG).show() }
+                }
+            }.start()
+        }
+        .setNegativeButton(t("Hủy", "Cancel"), null).show()
+}
+
+private fun MainActivity.askConnectPort(target: String) {
+    val box = input(t("Cổng kết nối", "Connect port"))
+    box.inputType = android.text.InputType.TYPE_CLASS_NUMBER
+    AlertDialog.Builder(this).setTitle(t("Đã ghép. Cổng kết nối?", "Paired. Connect port?"))
+        .setMessage(t("Ở màn hình Gỡ lỗi không dây, dưới “Địa chỉ IP và cổng”.", "On the Wireless debugging screen, under “IP address & Port”."))
+        .setView(inDialog(box))
+        .setPositiveButton(t("Kết nối", "Connect")) { _, _ -> box.text.toString().trim().toIntOrNull()?.let { pairedAt(target, it) } }
+        .setNegativeButton(t("Hủy", "Cancel"), null).show()
+}
+
+private fun MainActivity.pairedAt(target: String, port: Int) {
+    dev.tvremote.core.AdbTls.save(filesDir, target, port)
+    adbFailed.remove(target)
+    val e = entry
+    disconnect(null)
+    connect(target, e)
 }
 
 /**

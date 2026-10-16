@@ -213,17 +213,42 @@ function adbHelp() {
   if (!STATE.connected) {                                             // everything here goes through the remote buttons
     assistShow('Bật ADB cho TV này', say(STATE.paired === false ? 'Trước hết cần ghép nút remote với TV (TV hiện mã 6 ký tự, gõ vào đây). Sau đó trang này tự làm giúp phần còn lại.'
       : 'Chưa kết nối được nút remote tới TV (cổng 6466): TV đang bật và cùng mạng với máy này chứ?'),
-      row(act('🔗 Tới bước ghép remote', async () => { $('#assist').close(); showTab('tv'); }, 'primary')), say('Hoặc tự làm bằng remote của TV:'), say(ADB_STEPS), say(DL_TIP));
+      row(act('🔗 Tới bước ghép remote', async () => { $('#assist').close(); showTab('tv'); }, 'primary')), say('Hoặc tự làm bằng remote của TV:'), say(ADB_STEPS), say(DL_TIP),
+      CORE !== 'tv' ? choice('📡 Ghép bằng Gỡ lỗi không dây', '', wirelessPair) : null);
     return;
   }
   assistShow('Bật ADB cho TV này',
     choice('⚡ Tự động: cài TV Setup lên TV', 'Trang này cho TV tự tải và mở app TV Setup; app đó mở thẳng Tùy chọn nhà phát triển. Bạn chỉ xác nhận trên TV.', installSetup, 'primary'),
     choice('🔧 Tự làm: mở Cài đặt TV', 'Thử mọi cách mở Cài đặt, rồi chỉ các bước bật Gỡ lỗi ADB.', findSettings),
     choice('🏠 Cài màn hình chính khác', 'Khi TV giấu Cài đặt: mở qua một launcher từ CH Play.', otherHome),
+    CORE !== 'tv' ? choice('📡 Ghép bằng Gỡ lỗi không dây', 'Android 11 trở lên: dùng mã 6 số TV hiện ra, không cần bật Gỡ lỗi USB.', wirelessPair) : null,
     choice('🛒 Mở CH Play trên TV', '', () => assist('open', { what: 'https://play.google.com/store/apps' })),
     choice('📦 Mở app theo tên gói', 'Đã cài thì mở app, chưa cài thì mở trang CH Play của nó.', async () => { const p = await ask('Tên gói hoặc đường dẫn', { value: 'com.example.app' }); if (p && p.trim()) assist('open', { what: p.trim() }); }),
     say(DL_TIP),
     say('Khi TV bật ADB xong, trang này tự nhận ra và kết nối. Các nút mũi tên, OK ở tab Remote vẫn dùng được trong lúc làm.'));
+}
+const WIRELESS_STEPS = 'Trên TV: Cài đặt → Tùy chọn nhà phát triển → Gỡ lỗi không dây → Ghép nối thiết bị bằng mã ghép nối.';
+// Wireless debugging (Android 11+): the TV shows a 6-digit code and an IP:port to pair with; the port to connect to is found by itself
+async function wirelessPair() {
+  const addr = el('input', { type: 'text', placeholder: 'IP:cổng ghép nối', inputMode: 'decimal', autocomplete: 'off' });
+  const code = el('input', { type: 'text', placeholder: 'Mã 6 số', inputMode: 'numeric', maxLength: 7, autocomplete: 'off' });
+  const port = el('input', { type: 'text', placeholder: 'Cổng kết nối (nếu hỏi)', inputMode: 'numeric', autocomplete: 'off' });
+  const status = el('p', { className: 'note' });
+  const pair = async () => {
+    const m = addr.value.trim().match(/^(?:(.+):)?(\d{2,5})$/);
+    if (!m || !/^\s*\d{3}\s?\d{3}\s*$/.test(code.value)) { status.textContent = 'Nhập IP:cổng và mã 6 số hiện trên TV.'; return; }
+    status.textContent = 'Đang ghép nối...';
+    const r = await api('/api/adb/pair', { host: m[1] || '', port: +m[2], code: code.value, connectPort: +port.value || 0 });
+    if (!r) { status.textContent = ''; return; }
+    if (r.needPort) { status.textContent = 'Đã ghép. Nhập cổng kết nối (ở màn hình Gỡ lỗi không dây, dưới “Địa chỉ IP và cổng”) rồi bấm Ghép lại.'; code.value = ''; port.hidden = false; return; }
+    ADB = { state: r.state }; bannerKey = ''; $('#assist').close(); toast('Đã ghép và kết nối'); await refresh();
+  };
+  port.hidden = true;
+  assistShow('Ghép bằng Gỡ lỗi không dây', say(WIRELESS_STEPS), UI.line(addr), UI.line(code), UI.line(port), status,
+    row(act('🔗 Ghép', pair, 'primary'), act('← Các cách khác', async () => adbHelp())));
+  const f = await api('/api/adb/discover', null, true);              // prefilled when the TV announces itself on the network
+  const p = f && (f.pairing || []).find((s) => s.ip === f.host) || f && (f.pairing || [])[0];
+  if (p && !addr.value) addr.value = p.ip + ':' + p.port;
 }
 const DL_TIP = 'Cài TV Setup bằng tay: trên TV cài app Downloader từ CH Play, mở nó, nhập mã 2397346 rồi Go. TV Setup tự mở chỗ bật Gỡ lỗi ADB.';
 const ADB_STEPS = '1. Trong Cài đặt: Tùy chọn thiết bị (hoặc Hệ thống) → Giới thiệu → bấm OK 7 lần vào “Bản dựng”.\n2. Quay lại, vào Tùy chọn nhà phát triển → bật “Gỡ lỗi USB” (hoặc “Gỡ lỗi ADB”).\n3. Trên TV tích “Luôn cho phép” rồi chọn OK.\n\nNếu TV đòi “mật khẩu ADB” khi bấm 7 lần: dùng cách “Tự động: cài TV Setup lên TV”.';

@@ -35,7 +35,7 @@ app/shared/src/.../core/ Kotlin shared by both apps: Adb, Tv (scrcpy session, vi
                          debugging?"), Errors, RemoteLabels (app names, pictures and Caps from the TV, through Meta and Caps:
                          Java in src/main/java, dexed into assets/tvr-helper.jar by :shared:tvHelper, kept in git), Scenes (scenes + key names), RulesClient (talks to TV Setup's rules),
                          Voice (spoken commands), AudioOut (Opus playback, PCM downmix),
-                         Fleet (several saved TVs at once), WireLog (what the TVs said and the errors shown, keys blanked: About → Send the log, `/api/wirelog`), SameTv (one TV saved under two addresses), Draw (strokes to TV Setup's layer over the TV's screen),
+                         Spake2 + AdbTls + Mdns (pairing and connecting through Android 11+ Wireless debugging: SPAKE2 with BoringSSL's own M/N, TLS 1.3 through `app/shared/conscrypt` ConscryptBackend, found by mDNS; Phone and Computer apps only, `Manage.canPair`), Fleet (several saved TVs at once), WireLog (what the TVs said and the errors shown, keys blanked: About → Send the log, `/api/wirelog`), SameTv (one TV saved under two addresses), Draw (strokes to TV Setup's layer over the TV's screen),
                          NowPlaying (the now playing bar, through Playing, a third tvr-helper.jar class reading the TV's media sessions)
 app/android/.../phone/   phone app, one file per part, as extension functions on MainActivity: MainActivity (state, lifecycle),
                          Ui, Net, PickerScreen, RemoteScreen, Typing, InfoScreens, KeysOnly, AdbHelp, Media, Managing (the

@@ -4,6 +4,14 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- 📡 Ghép bằng Gỡ lỗi không dây (Android 11 trở lên): với TV không có “Gỡ lỗi USB” qua cổng 5555, vào Bật ADB giúp tôi → Ghép bằng Gỡ lỗi không dây, nhập IP:cổng và mã 6 số TV hiện ra (IP:cổng điền sẵn nếu tìm thấy trên mạng). App tự tìm cổng kết nối, nhớ cổng cho từng TV, và không còn hỏi “Cho phép gỡ lỗi USB?”. Có trên app điện thoại và app máy tính (app TV và trang web của TV không cần).
+
+**English**
+- 📡 Pair with Wireless debugging (Android 11+): for a TV with no “USB debugging” on port 5555, open Turn on ADB for me → Pair with Wireless debugging, then type the IP:port and the 6-digit code the TV shows (the IP:port is prefilled when found on the network). The app finds the connect port by itself, remembers it per TV, and never asks “Allow USB debugging?”. In the Phone app and the Computer app (the TV app and the TV web page do not need it).
+
 ## 0.4.1 - 2026-10-16
 
 Web 0.4.1 · app điện thoại 0.4.1 · app TV 0.4.1

@@ -11,6 +11,10 @@ object Errors {
             all.contains(dev.tvremote.update.Release.MISMATCH) || all.contains(dev.tvremote.update.Release.UNSIGNED) ->
                 t("Bản cập nhật tải về không khớp chữ ký của dự án nên đã bị xóa, không cài. Thử lại sau.",
                     "The downloaded update does not match the project's signature, so it was deleted, not installed. Try again later.")
+            all.contains("adb pair: wrong code") -> t("Mã ghép nối không đúng hoặc đã hết hạn. Xem mã mới trên TV rồi nhập lại.", "The pairing code is wrong or has expired. Read the new code on the TV and type it again.")
+            all.contains("adb pair: not a pairing port") -> t("Cổng này không phải cổng ghép nối. Dùng đúng địa chỉ IP và cổng trong hộp \"Ghép nối thiết bị\" trên TV.", "That is not the pairing port. Use the IP address and port from the TV's \"Pair device\" box.")
+            all.contains("adb tls: this device is not paired") -> t("TV chưa ghép với app này. Ghép nối bằng Gỡ lỗi không dây trước.", "The TV is not paired with this app yet. Pair through Wireless debugging first.")
+            all.contains("adb tls: this app cannot pair") -> t("App này không ghép nối được bằng Gỡ lỗi không dây trên thiết bị này.", "This app cannot pair through Wireless debugging on this device.")
             Regex("SSLHandshake|CertPathValidator|Chain validation|CERTIFICATE_VERIFY|not yet valid|expired", RegexOption.IGNORE_CASE).containsMatchIn(all) ->
                 t("Không mở được kết nối bảo mật. Ngày giờ trên TV có đúng không? (Cài đặt → Hệ thống → Ngày và giờ)",
                     "Could not open a secure connection. Is the TV's date and time right? (Settings → System → Date & time)")
