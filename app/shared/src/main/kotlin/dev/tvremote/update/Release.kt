@@ -57,6 +57,7 @@ class Release private constructor(val version: String, val url: String, val note
         const val MISMATCH = "update file does not match its signed checksum"   // Errors.say words it
         const val UNSIGNED = "update list not signed by this project"
         var api = "https://api.github.com"                            // tests of the computer app's updater: a fake GitHub (TVR_RELEASES)
+        var testKeys = emptyList<String>()                            // with that fake GitHub only: the key it signs with (TVR_RELEASE_KEY)
 
         /**
          * The latest release, if it carries a newer version of this app. Each app has its own version number: a release lists
@@ -112,7 +113,7 @@ class Release private constructor(val version: String, val url: String, val note
         /** [sig] (base64) is one of [KEYS]' signature of [list]. */
         fun signed(list: ByteArray, sig: String): Boolean {
             val raw = try { Base64.getDecoder().decode(sig.trim()) } catch (e: IllegalArgumentException) { return false }
-            return KEYS.any { k -> Ed25519.verify(ByteArray(32) { k.substring(it * 2, it * 2 + 2).toInt(16).toByte() }, list, raw) }
+            return (KEYS + testKeys).any { k -> Ed25519.verify(ByteArray(32) { k.substring(it * 2, it * 2 + 2).toInt(16).toByte() }, list, raw) }
         }
 
         /** The SHA-256 of [name] in a SHA256SUMS list ("<hex>  <name>" per line, as sha256sum writes it). */

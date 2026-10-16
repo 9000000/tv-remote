@@ -57,9 +57,12 @@ jobs:
           pkg="$PWD/app/desktop/build/package"; a=$(cd "$pkg" && ls TV-Remote-*); n=$a; [ "$RUNNER_OS" = macOS ] && n=TV-Remote-mac.zip; v=$(cat VERSION); top="${{ matrix.app }}"; top="${top%%/*}"
           srv=upd/serve; mkdir -p $srv/repos/HoangTran0410/tv-remote/releases upd/apps
           cp "$pkg/$a" "$srv/$n"                                       # under the name Updater.kt asks for
+          key=$(java dev/Sign.java new upd/test.pem)                   # a throwaway key: the real ones never come to GitHub
+          (cd $srv && { sha256sum "$n" 2>/dev/null || shasum -a 256 "$n"; } > SHA256SUMS) && java dev/Sign.java sign upd/test.pem $srv/SHA256SUMS
           echo "{\"web\": \"$v\"}" > $srv/versions.json
           echo "{\"tag_name\": \"v$v\", \"body\": \"\", \"assets\": [{\"name\": \"$n\", \"browser_download_url\": \"http://127.0.0.1:8099/$n\"},
-            {\"name\": \"versions.json\", \"browser_download_url\": \"http://127.0.0.1:8099/versions.json\"}]}" > $srv/repos/HoangTran0410/tv-remote/releases/latest
+            {\"name\": \"versions.json\", \"browser_download_url\": \"http://127.0.0.1:8099/versions.json\"},
+            {\"name\": \"SHA256SUMS\", \"browser_download_url\": \"http://127.0.0.1:8099/SHA256SUMS\"}, {\"name\": \"SHA256SUMS.sig\", \"browser_download_url\": \"http://127.0.0.1:8099/SHA256SUMS.sig\"}]}" > $srv/repos/HoangTran0410/tv-remote/releases/latest
           py=python3; [ "$RUNNER_OS" = Windows ] && py=python
           (cd $srv && $py -m http.server 8099 --bind 127.0.0.1 >/dev/null 2>&1 &)
           for i in $(seq 20); do curl -sf http://127.0.0.1:8099/versions.json && break; sleep 0.5; done
@@ -67,7 +70,7 @@ jobs:
           echo 0.0.1 > "upd/apps/${{ matrix.res }}/VERSION"
           # one X server for both: xvfb-run's would go with the old app, and the new one would start with no screen
           if [ "$RUNNER_OS" = Linux ]; then Xvfb :99 -screen 0 1280x800x24 >/dev/null 2>&1 & export DISPLAY=:99; sleep 1; fi
-          TVR_RELEASES=http://127.0.0.1:8099 "upd/apps/${{ matrix.app }}" &
+          TVR_RELEASES=http://127.0.0.1:8099 TVR_RELEASE_KEY=$key "upd/apps/${{ matrix.app }}" &
           for i in $(seq 60); do curl -sf http://127.0.0.1:8765/api/about && break; sleep 1; done
           curl -s -X POST -H 'Content-Type: application/json' -d '{"do": "check"}' http://127.0.0.1:8765/api/update   # not waiting for its own first check
           for i in $(seq 90); do curl -s http://127.0.0.1:8765/api/update | grep -q '"state":"ready"' && break; sleep 1; done

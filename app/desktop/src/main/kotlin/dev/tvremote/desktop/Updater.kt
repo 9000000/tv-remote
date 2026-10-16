@@ -37,7 +37,10 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
     }
 
     fun start() {
-        System.getenv("TVR_RELEASES")?.let { Release.api = it }       // tests: releases from a fake GitHub
+        System.getenv("TVR_RELEASES")?.let {                          // tests: releases from a fake GitHub, signed with a key of its own
+            Release.api = it
+            Release.testKeys = listOfNotNull(System.getenv("TVR_RELEASE_KEY"))
+        }
         if (root == null) return                                      // the repo: git pull is the update
         if (state == "idle") work?.deleteRecursively()                // an earlier download that was never swapped in
         timer.scheduleWithFixedDelay({ check() }, 5, 6 * 3600L, TimeUnit.SECONDS)
