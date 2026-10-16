@@ -15,12 +15,13 @@
   .st-day small { font-size:10px; color:var(--muted); margin-top:4px; white-space:nowrap; } .st-day.on small { color:var(--ink); font-weight:700; }
   .st-app { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 10px; padding:7px 0; border-top:1px solid var(--line); font-size:14px; } .st-app:first-child { border-top:0; }
   .st-app span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .st-app b { font-variant-numeric:tabular-nums; } .st-app i { grid-column:1 / -1; height:6px; border-radius:3px; background:var(--accent); opacity:.7; }
-  .st-chart { position:relative; margin-top:6px; } .st-chart svg { display:block; width:100%; height:150px; touch-action:pan-y; } .st-leg { display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin:8px 0 0; }
-  .st-leg i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px; } .st-tip { font-size:13px; min-height:54px; margin-top:8px; overflow-x:auto; } .st-tip table { border-collapse:collapse; white-space:nowrap; }
+  .st-chart { position:relative; margin-top:6px; } .st-chart svg { display:block; width:100%; height:150px; touch-action:pan-y; } .st-leg { display:flex; gap:6px 14px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin:10px 0 0; } .st-leg + .st-leg { margin-top:6px; }
+  .st-key { all:unset; cursor:pointer; border-radius:4px; transition:opacity .12s; } .st-key:focus-visible { outline:2px solid var(--accent); outline-offset:2px; } .st-key.off { opacity:.4; text-decoration:line-through; }
+  .st-leg i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px; } .st-tip { font-size:13px; min-height:54px; margin-top:12px; padding-top:10px; border-top:1px solid var(--line); overflow-x:auto; } .st-tip table { border-collapse:collapse; white-space:nowrap; }
   .st-tip th { font-size:11px; font-weight:600; color:var(--muted); text-align:left; padding:0 10px 2px 0; } .st-tip td { padding:0 10px 0 0; white-space:pre; vertical-align:top; font-variant-numeric:tabular-nums; } .st-axis { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); }
   .st-strip { display:block; width:100%; height:14px; margin-top:4px; border-radius:4px; } .st-strip rect { transition:opacity .12s; } .st-chart svg, .st-strip { cursor:crosshair; }
-  .st-note { color:var(--muted); font-size:13px; margin:0; } .st-cuts { margin:8px 0 0; padding:0; list-style:none; font-size:13px; } .st-cuts li { padding:5px 0; border-top:1px solid var(--line); font-variant-numeric:tabular-nums; } .st-range ~ section.card { margin-top:12px; }`;
-  const RAM = '#f59e0b', CPU = '#5b8cff', DISK = '#22c55e', WIFI = '#14b8a6';
+  .st-note { color:var(--muted); font-size:13px; margin:0; } .st-leg ~ .st-note { margin-top:10px; } .st-range ~ section.card { margin-top:12px; }`;
+  const RAM = '#f59e0b', CPU = '#5b8cff', DISK = '#22c55e', WIFI = '#14b8a6', CUT = '#ef4444';
   const APPS = ['#e879f9', '#38bdf8', '#fb7185', '#a3e635', '#fde047', '#c084fc', '#fb923c', '#2dd4bf'];   // the apps in front, most used first
   const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); kids.forEach((k) => k != null && e.append(k)); return e; };
   const pad = (n) => String(n).padStart(2, '0');
@@ -38,7 +39,8 @@
 
     const range = el('div', { className: 'st-range' }, ...[7, 30].map((d) => el('button', { type: 'button', className: d === n ? 'on' : '', textContent: d + T(' ngày', ' days'), onclick: () => reload(d) })));
     const sum = el('div', { className: 'st-sum' }), bars = el('div', { className: 'st-days' }), apps = el('div'), appsTitle = el('h2'), chartBox = el('div'), chartTitle = el('h2');
-    const netBox = el('div'), netTitle = el('h2');
+    let off = new Set();                                            // the lines turned off in the legend, kept for the next visit
+    try { off = new Set(JSON.parse(localStorage.getItem('st-off') || '[]')); } catch {}
     root.replaceChildren(range);
     if (!data.collector) {
       root.append(el('section', { className: 'card' }, el('p', { className: 'st-note', textContent: T(
@@ -47,7 +49,7 @@
       return;
     }
     root.append(el('section', { className: 'card' }, el('h2', { textContent: T('Thời gian dùng TV', 'TV time') }), sum, bars),
-      el('section', { className: 'card' }, appsTitle, apps), el('section', { className: 'card' }, chartTitle, chartBox), el('section', { className: 'card' }, netTitle, netBox));
+      el('section', { className: 'card' }, appsTitle, apps), el('section', { className: 'card' }, chartTitle, chartBox));
     const hm = (t) => { const d = new Date(t * 1000); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
     const level = (dbm) => dbm >= -55 ? T('rất tốt', 'excellent') : dbm >= -67 ? T('tốt', 'good') : dbm >= -75 ? T('trung bình', 'fair') : T('yếu', 'weak');
 
@@ -105,27 +107,8 @@
       return { under, strip, mark, legend };
     };
 
-    // 📶 the signal over the period, and every time the network went away while the TV was in use
-    const drawNet = (from, to, rows, when) => {
-      netTitle.textContent = 'Wi-Fi · ' + when;
-      const known = rows.filter((r) => r.length > 9);
-      if (!known.length) {
-        netBox.replaceChildren(el('p', { className: 'st-note', textContent: rows.length ? T('Cần TV Setup 2.16.0 trở lên trên TV để ghi Wi-Fi (app tự cập nhật).', 'Needs TV Setup 2.16.0 or newer on the TV to record the Wi-Fi (it updates itself).')
-          : T('Chưa đủ số liệu cho khoảng này.', 'Not enough samples for this period.') }));
-        return;
-      }
-      const kids = [];
-      const wifi = known.filter((r) => r[9] === 'wifi' && r[8] != null);
-      if (known.every((r) => r[9] === 'eth')) kids.push(el('p', { className: 'st-note', textContent: T('TV dùng dây mạng suốt khoảng này: không có sóng Wi-Fi để đo.', 'The TV was on a network cable the whole time: no Wi-Fi signal to measure.') }));
-      if (wifi.length >= 2) {
-        const dbm = wifi.map((r) => r[8]), avg = Math.round(dbm.reduce((a, b) => a + b, 0) / dbm.length), low = Math.min(...dbm);
-        const mbps = wifi.map((r) => r[10]).filter((v) => v);
-        kids.push(el('div', { className: 'st-leg' }, el('span', { innerHTML: '<i style="background:' + WIFI + '"></i>' }, T('Sóng trung bình ', 'Average signal ') + avg + ' dBm · ' + level(avg)),
-          el('span', { textContent: T('Yếu nhất ', 'Weakest ') + low + ' dBm' }), mbps.length ? el('span', { textContent: T('Tốc độ kết nối ', 'Link speed ') + Math.min(...mbps) + '–' + Math.max(...mbps) + ' Mbps' }) : null));
-        if (avg < -70) kids.push(el('p', { className: 'st-note', style: 'margin-top:8px', textContent: T('Sóng yếu là lý do hay gặp nhất của video giật, tự giảm chất lượng và remote trễ. Đặt router gần TV hơn, bỏ vật cản kim loại, hoặc cắm dây mạng.',
-          'A weak signal is the most common reason for stutter, lower video quality and a slow remote. Move the router closer, clear metal out of the way, or use a network cable.') }));
-      }
-      // cuts: a "lost" and the "back" after it; the ones that began while the TV slept are its own power saving, not a fault
+    // every time the network went away while the TV was in use; the ones that began while it slept are its own power saving, not a fault
+    const cutsIn = (from, to) => {
       const cuts = [];
       let open = null;
       (data.net || []).forEach((e) => {
@@ -133,14 +116,9 @@
         if (open) { if (open[3] && e[0] >= from && open[0] <= to) cuts.push([open[0], e[0]]); open = null; }
       });
       if (open && open[3] && open[0] <= to) cuts.push([open[0], null]);
-      const mins = (s) => s < 60 ? s + T(' giây', ' s') : Math.round(s / 60) + T(' phút', ' min');
-      kids.push(el('p', { className: 'st-note', style: 'margin-top:10px', textContent: !(data.net || []).length && !cuts.length ? T('Chưa có lần mất mạng nào được ghi.', 'No network loss recorded yet.')
-        : cuts.length ? T('Mất mạng ', 'Lost the network ') + cuts.length + T(' lần khi đang dùng TV', cuts.length > 1 ? ' times while the TV was in use' : ' time while the TV was in use')
-        : T('Không mất mạng lần nào khi đang dùng TV.', 'Never lost the network while the TV was in use.') }));
-      if (cuts.length) kids.push(el('ul', { className: 'st-cuts' }, ...cuts.slice(-8).reverse().map(([a, b]) => el('li', { textContent: (picked ? '' : new Date(a * 1000).getDate() + '/' + (new Date(a * 1000).getMonth() + 1) + ' ') + hm(a)
-        + (b ? ' → ' + hm(b) + ' · ' + mins(b - a) : ' · ' + T('chưa có lại', 'not back yet')) }))));
-      netBox.replaceChildren(...kids);
+      return cuts;
     };
+    const mins = (s) => s < 60 ? s + T(' giây', ' s') : Math.round(s / 60) + T(' phút', ' min');
 
     const draw = () => {
       const all = days.map(total), max = Math.max(1, ...all), used = all.filter((s) => s > 60).length;
@@ -161,34 +139,53 @@
       let from, to;
       if (picked) { const d = new Date(picked + 'T00:00:00'); from = d.getTime() / 1000; to = from + 86400; } else { to = Date.now() / 1000; from = to - 86400; }
       const rows = (data.samples || []).filter((r) => r[0] >= from && r[0] <= to);
-      drawNet(from, to, rows, picked ? picked.slice(8) + '/' + picked.slice(5, 7) : T('24 giờ qua', 'last 24 hours'));
       chartTitle.textContent = 'RAM · CPU · ' + T('Bộ nhớ', 'Storage') + ' · Wi-Fi · ' + (picked ? picked.slice(8) + '/' + picked.slice(5, 7) : T('24 giờ qua', 'last 24 hours'));
       if (rows.length < 2) { chartBox.replaceChildren(el('p', { className: 'st-note', textContent: T('Chưa đủ số liệu cho khoảng này (TV ghi 5 phút một lần khi đang bật).', 'Not enough samples for this period (the TV records every 5 minutes while it is on).') })); return; }
       const W = 600, H = 150, x = (t) => (t - from) * W / (to - from), y = (pct) => H - 4 - pct * (H - 8) / 100;
-      const line = (pick, color) => {                                // broken where the TV was off or asleep for a while
+      const line = (key, pick, color) => {                                // broken where the TV was off or asleep for a while
         let d = '', last = 0;
         rows.forEach((r) => { const v = pick(r); if (v == null) return; d += (r[0] - last > 900 ? 'M' : 'L') + x(r[0]).toFixed(1) + ' ' + y(v).toFixed(1); last = r[0]; });
-        return '<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+        return '<path data-s="' + key + '" d="' + d + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"' + (off.has(key) ? ' display="none"' : '') + '/>';
       };
       const grid = [0, 25, 50, 75, 100].map((p) => '<line x1="0" x2="' + W + '" y1="' + y(p) + '" y2="' + y(p) + '" stroke="currentColor" stroke-opacity=".12"/>').join('');
-      const track = appTrack(rows, x, W, H);
+      const track = appTrack(rows, x, W, H), cuts = cutsIn(from, to);
       const svg = el('div', { className: 'st-chart', innerHTML: '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + grid + track.under
-        + line((r) => r[9] === 'wifi' && r[8] != null ? Math.max(0, Math.min(100, (r[8] + 100) * 2)) : null, WIFI) + line((r) => r[6] ? r[5] * 100 / r[6] : null, DISK) + line((r) => r[4] ? r[3] * 100 / r[4] : null, RAM) + line((r) => r[1] ? r[2] : null, CPU)
+        + '<g data-s="cut"' + (off.has('cut') ? ' display="none"' : '') + '>' + cuts.map(([a, b]) => { const x0 = x(Math.max(a, from)), x1 = x(Math.min(b || to, to));
+          return '<rect x="' + x0.toFixed(1) + '" width="' + Math.max(2, x1 - x0).toFixed(1) + '" y="0" height="' + H + '" fill="' + CUT + '" fill-opacity=".22"><title>' + T('Mất mạng ', 'No network ') + hm(a) + (b ? '–' + hm(b) + ' · ' + mins(b - a) : T(', chưa có lại', ', not back yet')) + '</title></rect>'; }).join('') + '</g>'
+        + line('wifi', (r) => r[9] === 'wifi' && r[8] != null ? Math.max(0, Math.min(100, (r[8] + 100) * 2)) : null, WIFI) + line('disk', (r) => r[6] ? r[5] * 100 / r[6] : null, DISK)
+        + line('ram', (r) => r[4] ? r[3] * 100 / r[4] : null, RAM) + line('cpu', (r) => r[1] ? r[2] : null, CPU)
         + curLine(H) + '</svg>' });
       const strip = track.strip(svg), mark = track.mark(svg, strip);
       const tip = el('div', { className: 'st-tip', textContent: T('Chạm vào biểu đồ để xem số liệu tại thời điểm đó.', 'Touch the chart to read the figures at that moment.') });
+      const cutAt = (t) => { const c = cuts.find(([a, b]) => t >= a - 150 && t <= (b || to) + 150); return c ? '\n' + hm(c[0]) + (c[1] ? '–' + hm(c[1]) : '') : ''; };   // within half a sample
       scrub(svg, rows, x, (r) => {
         const span = mark(r);
         cells(tip, [[T('Lúc', 'Time'), hm(r[0])], ['RAM', (r[3] / 1024).toFixed(1) + ' GB\n/ ' + (r[4] / 1024).toFixed(1) + ' GB'], ['CPU', r[1] && r[2] != null ? r[2] + '%' : '–'],
           [T('Bộ nhớ', 'Storage'), (r[5] / 1024).toFixed(1) + ' GB'], [T('TV', 'TV'), r[1] ? (r[7] ? name(r[7]) + span : T('đang bật', 'on')) : T('đang ngủ', 'asleep') + span],
-          r[9] === 'wifi' && r[8] != null ? ['Wi-Fi', r[8] + ' dBm\n' + level(r[8]) + (r[10] ? ' · ' + r[10] + ' Mbps' : '')] : r[9] === 'eth' ? [T('Mạng', 'Network'), T('dây mạng', 'cable')] : r.length > 9 && r[9] === '' ? [T('Mạng', 'Network'), T('mất mạng', 'no network')] : null]);
+          cutAt(r[0]) ? [T('Mạng', 'Network'), T('mất mạng', 'no network') + cutAt(r[0])] : r[9] === 'wifi' && r[8] != null ? ['Wi-Fi', r[8] + ' dBm\n' + level(r[8]) + (r[10] ? ' · ' + r[10] + ' Mbps' : '')] : r[9] === 'eth' ? [T('Mạng', 'Network'), T('dây mạng', 'cable')] : r.length > 9 && r[9] === '' ? [T('Mạng', 'Network'), T('mất mạng', 'no network')] : null]);
       });
       const ram = rows.map((r) => r[3]), cpu = rows.filter((r) => r[1] && r[2] != null).map((r) => r[2]);
+      const wifi = rows.filter((r) => r[9] === 'wifi' && r[8] != null), dbm = wifi.map((r) => r[8]), mbps = wifi.map((r) => r[10]).filter((v) => v);
+      const avg = dbm.length ? Math.round(dbm.reduce((a, b) => a + b, 0) / dbm.length) : 0;
+      const key = (k, color, text, more) => el('button', { type: 'button', className: 'st-key' + (off.has(k) ? ' off' : ''), title: (more ? more + '\n' : '') + T('Bấm để ẩn/hiện', 'Press to hide or show'),
+        innerHTML: '<i style="background:' + color + '"></i>', onclick: (e) => {          // a line on or off, the others kept as they are
+          if (off.has(k)) off.delete(k); else off.add(k);
+          e.currentTarget.classList.toggle('off', off.has(k));
+          svg.querySelectorAll('[data-s="' + k + '"]').forEach((q) => q.setAttribute('display', off.has(k) ? 'none' : 'inline'));
+          try { localStorage.setItem('st-off', JSON.stringify([...off])); } catch {}
+        } }, text);
+      const notes = [];
+      if (rows.some((r) => r.length > 9) && rows.filter((r) => r.length > 9).every((r) => r[9] === 'eth')) notes.push(el('p', { className: 'st-note', textContent: T('TV dùng dây mạng suốt khoảng này: không có sóng Wi-Fi để đo.', 'The TV was on a network cable the whole time: no Wi-Fi signal to measure.') }));
+      if (dbm.length && avg < -70) notes.push(el('p', { className: 'st-note', textContent: T('Sóng yếu là lý do hay gặp nhất của video giật, tự giảm chất lượng và remote trễ. Đặt router gần TV hơn, bỏ vật cản kim loại, hoặc cắm dây mạng.',
+        'A weak signal is the most common reason for stutter, lower video quality and a slow remote. Move the router closer, clear metal out of the way, or use a network cable.') }));
       chartBox.replaceChildren(svg, strip, el('div', { className: 'st-axis' }, el('span', { textContent: hm(from) }), el('span', { textContent: hm((from + to) / 2) }), el('span', { textContent: hm(to) })),
-        el('div', { className: 'st-leg' }, el('span', { innerHTML: '<i style="background:' + RAM + '"></i>RAM ' + (Math.min(...ram) / 1024).toFixed(1) + '–' + (Math.max(...ram) / 1024).toFixed(1) + ' GB' }),
-          el('span', { innerHTML: '<i style="background:' + CPU + '"></i>CPU ' + (cpu.length ? Math.min(...cpu) + '–' + Math.max(...cpu) + '%' : '–') }),
-          el('span', { innerHTML: '<i style="background:' + DISK + '"></i>' + T('Bộ nhớ ', 'Storage ') + (rows[rows.length - 1][5] / 1024).toFixed(1) + ' / ' + (rows[rows.length - 1][6] / 1024).toFixed(1) + ' GB' }),
-          rows.some((r) => r[9] === 'wifi' && r[8] != null) ? el('span', { title: T('-100 dBm ở đáy, -50 dBm trở lên ở đỉnh', '-100 dBm at the bottom, -50 dBm or better at the top'), innerHTML: '<i style="background:' + WIFI + '"></i>' + T('Sóng Wi-Fi', 'Wi-Fi signal') }) : null), track.legend, tip);
+        el('div', { className: 'st-leg' }, key('ram', RAM, 'RAM ' + (Math.min(...ram) / 1024).toFixed(1) + '–' + (Math.max(...ram) / 1024).toFixed(1) + ' GB'),
+          key('cpu', CPU, 'CPU ' + (cpu.length ? Math.min(...cpu) + '–' + Math.max(...cpu) + '%' : '–')),
+          key('disk', DISK, T('Bộ nhớ ', 'Storage ') + (rows[rows.length - 1][5] / 1024).toFixed(1) + ' / ' + (rows[rows.length - 1][6] / 1024).toFixed(1) + ' GB'),
+          dbm.length ? key('wifi', WIFI, 'Wi-Fi ' + avg + ' dBm · ' + level(avg), T('Trung bình. Yếu nhất ', 'Average. Weakest ') + Math.min(...dbm) + ' dBm' + (mbps.length ? T(' · tốc độ ', ' · link ') + Math.min(...mbps) + '–' + Math.max(...mbps) + ' Mbps' : '')
+            + T('\nThang: -100 dBm ở đáy, -50 dBm trở lên ở đỉnh', '\nScale: -100 dBm at the bottom, -50 dBm or better at the top')) : null,
+          cuts.length ? key('cut', CUT, T('Mất mạng ', 'No network ') + cuts.length + T(' lần', cuts.length > 1 ? ' times' : ' time'), T('Khi đang dùng TV', 'While the TV was in use')) : null),
+        track.legend, ...notes, tip);
     };
     draw();
   };
