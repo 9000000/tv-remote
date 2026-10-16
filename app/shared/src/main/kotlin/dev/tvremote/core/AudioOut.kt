@@ -10,9 +10,7 @@ import java.nio.ByteOrder
 
 /**
  * Plays the TV's sound on this device: Opus packets from scrcpy, decoded by Android's own decoder, out through an AudioTrack.
- * Kept close to live: when the network hands over a burst after a stall, what would play late is dropped instead. How much
- * is kept queued adapts (Android 7+): 0.15 s at home, more each time the sound ran dry (4G, Tailscale through a relay:
- * packets come in bursts), back down after a calm half minute.
+ * How much is kept queued, and what waits or is dropped, is [SoundQueue]'s.
  */
 class AudioOut(far: Boolean = false) {
     /** Kept queued at first: 0.15 s on the home network; through Tailscale ([far]: 4G, a relay) 0.4 s from the start, as
@@ -21,10 +19,9 @@ class AudioOut(far: Boolean = false) {
     private var codec: MediaCodec? = null
     private var track: AudioTrack? = null
     private var written = 0L                                          // frames given to the track, to tell how far behind it plays
-    private var room = 0                                              // the track's buffer in frames: it starts playing only once full
-    private var target = base                                         // frames kept queued
-    private var dry = 0                                               // the track's underruns seen so far
-    private var calm = 0L                                             // since when it has not run dry
+    private var q = SoundQueue(base, MAX)
+    private var room = 0                                              // the track's buffer asked for, in frames
+    private val held = ArrayList<ByteArray>()                         // decoded while refilling after running dry
 
     /** [config] is scrcpy's first packet, the OpusHead; then one Opus packet at a time. */
     fun feed(config: Boolean, data: ByteArray) {
@@ -47,37 +44,27 @@ class AudioOut(far: Boolean = false) {
             val t = track
             val buf = c.getOutputBuffer(out)
             if (t != null && buf != null && info.size > 0) {
-                if (android.os.Build.VERSION.SDK_INT >= 24) adapt(t)
                 val behind = written - (t.playbackHeadPosition.toLong() and 0xffffffffL)
-                if (behind < maxOf(target, room)) {                   // less than a full buffer would never start
-                    val pcm = ByteArray(info.size)
-                    buf.position(info.offset)
-                    buf.get(pcm)
-                    t.write(pcm, 0, pcm.size)
-                    written += pcm.size / 4
+                val pcm = ByteArray(info.size)
+                buf.position(info.offset)
+                buf.get(pcm)
+                val was = q.target
+                when (q.next(pcm.size / 4, behind, System.currentTimeMillis())) {
+                    SoundQueue.Do.PLAY -> {
+                        for (b in held) { t.write(b, 0, b.size); written += b.size / 4 }
+                        held.clear()
+                        t.write(pcm, 0, pcm.size); written += pcm.size / 4
+                    }
+                    SoundQueue.Do.HOLD -> held.add(pcm)
+                    SoundQueue.Do.DROP -> {}
+                }
+                if (q.target != was) {
+                    if (q.target > was) WireLog.all.add("·", "sound ran dry: keeping ${q.target * 1000 / RATE} ms")
+                    if (android.os.Build.VERSION.SDK_INT >= 24 && q.room != room) room = q.room.also { t.setBufferSizeInFrames(it) }
                 }
             }
             c.releaseOutputBuffer(out, false)
         }
-    }
-
-    @android.annotation.TargetApi(24)
-    private fun adapt(t: AudioTrack) {
-        val now = System.currentTimeMillis()
-        val u = t.underrunCount
-        if (u > dry && written > room) {                              // it ran dry: keep more from now on, and a cushion now
-            target = minOf(target * 3 / 2, MAX)
-            room = t.setBufferSizeInFrames(target + RATE / 20).coerceAtLeast(0)
-            val pad = target / 2
-            t.write(ByteArray(pad * 4), 0, pad * 4)
-            written += pad
-            calm = now
-        } else if (target > base && now - calm > 30000) {
-            target = maxOf(base, target * 4 / 5)
-            room = t.setBufferSizeInFrames(target + RATE / 20).coerceAtLeast(0)
-            calm = now
-        }
-        dry = u
     }
 
     @Suppress("DEPRECATION")
@@ -93,11 +80,11 @@ class AudioOut(far: Boolean = false) {
         c.start()
         codec = c
         val min = AudioTrack.getMinBufferSize(RATE, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT)
-        val size = maxOf(min * 2, if (android.os.Build.VERSION.SDK_INT >= 24) (MAX + RATE / 10) * 4 else RATE / 5 * 4)   // room to grow into
+        val size = maxOf(min * 2, if (android.os.Build.VERSION.SDK_INT >= 24) (MAX * 2 + RATE / 10) * 4 else RATE / 5 * 4)   // room to grow into
         val t = AudioTrack(AudioManager.STREAM_MUSIC, RATE, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, size, AudioTrack.MODE_STREAM)
-        room = size / 4
-        target = base; dry = 0; calm = System.currentTimeMillis()
-        if (android.os.Build.VERSION.SDK_INT >= 24) room = t.setBufferSizeInFrames(maxOf(min / 4 * 2, base + RATE / 20)).coerceAtLeast(0).let { if (it > 0) it else size / 4 }   // starts as before: 0.2 s
+        q = SoundQueue(base, MAX); held.clear()
+        room = q.room
+        if (android.os.Build.VERSION.SDK_INT >= 24) t.setBufferSizeInFrames(room)
         t.play()
         track = t
         written = 0

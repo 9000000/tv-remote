@@ -11,7 +11,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Sức khỏe → Lịch sử: chú thích dưới biểu đồ gọn lại như trước. TV có đồng hồ từng nhảy sai (vd box FPT Play) giờ vẫn ghi được app đang mở; khoảng đã ghi trước đó thì không có tên app.
 - Tab Tệp: đổi tên, xóa, tải về nằm trong nút ⋯ (mỗi tệp một dòng trên điện thoại); các thư mục nhanh nằm một dòng vuốt ngang, đường dẫn gọn.
 - Sức khỏe → Lịch sử: bảng dưới biểu đồ hiện sẵn số liệu mới nhất, chạm vào biểu đồ để xem lúc khác.
-- 📱 🎧 Nghe tiếng TV chạy trên kết nối riêng: đưa app xuống nền, mở lại, đổi chất lượng hình không còn làm tiếng ngắt vài giây; hình không còn làm nghẽn tiếng khi mạng chậm (4G, Tailscale). Qua Tailscale tiếng giữ sẵn 0,4 giây ngay từ đầu (trễ hơn hình một chút, đổi lại bớt giật).
+- 📱 🎧 Nghe tiếng TV chạy trên kết nối riêng: đưa app xuống nền, mở lại, đổi chất lượng hình không còn làm tiếng ngắt vài giây; hình không còn làm nghẽn tiếng khi mạng chậm (4G, Tailscale). Qua Tailscale tiếng giữ sẵn 0,4 giây ngay từ đầu (trễ hơn hình một chút, đổi lại bớt giật). Khi mạng khựng, app chờ gom đủ tiếng rồi mới phát tiếp: một khoảng ngắt gọn thay vì tiếng lụp bụp.
 - Thiết lập → Lọc DNS → Tự nhập: gõ IP quen thuộc (8.8.8.8, 1.1.1.1, 9.9.9.9, AdGuard) cũng được, app đổi sang tên máy chủ tương ứng, vì Android chỉ nhận tên.
 
 **English**
@@ -19,7 +19,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Health → History: the legend under the chart is compact again. A TV whose clock once jumped (the FPT Play box, say) records the open app again; what was recorded before has no app names.
 - Files tab: rename, delete and download sit behind ⋯ (one line per file on a phone); the quick folders on one row you swipe, a tighter path.
 - Health → History: the table under the chart shows the latest figures; touch the chart for another moment.
-- 📱 🎧 Listening to the TV runs on a connection of its own: putting the app in the background, opening it again or changing the picture quality no longer cuts the sound for seconds, and the picture no longer holds up the sound on a slow network (4G, Tailscale). Through Tailscale 0.4 s of sound is kept queued from the start (a little behind the picture, much less stutter).
+- 📱 🎧 Listening to the TV runs on a connection of its own: putting the app in the background, opening it again or changing the picture quality no longer cuts the sound for seconds, and the picture no longer holds up the sound on a slow network (4G, Tailscale). Through Tailscale 0.4 s of sound is kept queued from the start (a little behind the picture, much less stutter). When the network stalls, the app waits until enough sound is in before playing on: one clean gap instead of crackling.
 - Setup → DNS filter → Type one: well-known IPs (8.8.8.8, 1.1.1.1, 9.9.9.9, AdGuard) work too, turned into their server names, as Android takes names only.
 
 ## 0.3.0 - 2026-10-16
