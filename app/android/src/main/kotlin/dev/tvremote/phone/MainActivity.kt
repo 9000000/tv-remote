@@ -144,6 +144,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     // ---- SetupBanner.kt
     internal lateinit var setupBar: Button
+    internal lateinit var playing: PlayingBar                          // NowPlayingBar.kt
     internal val setupChecked = HashMap<String, Long>()                // when each TV's TV Setup was last looked at
     internal val setupNews = HashMap<String, SetupNews>()
 

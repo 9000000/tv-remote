@@ -1,0 +1,177 @@
+package dev.tvremote.core;
+
+import android.content.Context;
+import android.media.MediaMetadata;
+import android.media.session.MediaController;
+import android.media.session.MediaSessionManager;
+import android.media.session.PlaybackState;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * What the TV is playing, for the "now playing" bar of the remotes: the app, the title, where it is and how long it is, and
+ * play / pause / seek. `dumpsys media_session` has neither the length nor a way to seek, so this is asked from the media
+ * sessions themselves; the shell (where app_process runs it, as for Meta and Caps) may read and drive them.
+ *
+ * It keeps running: a line of JSON each time something changes, read by NowPlaying.kt. Commands come on stdin, one per line
+ * (play, pause, seek <ms>, next, prev, or an empty heartbeat); it quits when stdin closes or stays quiet for 30 s, so a remote
+ * that went away leaves nothing behind on the TV.
+ */
+public final class Playing {
+    private Playing() { }
+
+    private static MediaSessionManager sessions;
+    private static final List<MediaController> watched = new ArrayList<>();
+    private static Handler main;
+    private static String last = "";
+    private static long lastPos, lastAt;
+    private static float lastSpeed;
+    private static volatile long heard = SystemClock.elapsedRealtime();
+
+    private static final MediaController.Callback changed = new MediaController.Callback() {
+        @Override public void onPlaybackStateChanged(PlaybackState s) { report(); }
+        @Override public void onMetadataChanged(MediaMetadata m) { report(); }
+        @Override public void onSessionDestroyed() { watch(); }
+    };
+
+    public static void main(String[] args) throws Exception {
+        Looper.prepareMainLooper();
+        Class<?> at = Class.forName("android.app.ActivityThread");
+        Context ctx = (Context) at.getMethod("getSystemContext").invoke(at.getMethod("systemMain").invoke(null));
+        main = new Handler(Looper.myLooper());
+        try {
+            mediaServices();
+            sessions = (MediaSessionManager) ctx.getSystemService(Context.MEDIA_SESSION_SERVICE);
+            sessions.addOnActiveSessionsChangedListener(list -> watch(), null, main);
+        } catch (Throwable e) {
+            System.out.println("{\"error\":" + q(String.valueOf(e)) + "}");
+            System.exit(0);
+        }
+        watch();
+        Thread in = new Thread(() -> {
+            try (BufferedReader r = new BufferedReader(new InputStreamReader(System.in))) {
+                for (String line; (line = r.readLine()) != null; ) {
+                    heard = SystemClock.elapsedRealtime();
+                    final String c = line.trim();
+                    if (!c.isEmpty()) main.post(() -> command(c));
+                }
+            } catch (Throwable ignored) { }
+            System.exit(0);
+        });
+        in.setDaemon(true);
+        in.start();
+        main.postDelayed(new Runnable() {                             // stdin does not always close when the remote's link drops
+            @Override public void run() {
+                if (SystemClock.elapsedRealtime() - heard > 30000) System.exit(0);
+                main.postDelayed(this, 5000);
+            }
+        }, 5000);
+        Looper.loop();
+    }
+
+    /** Android 12+: an app's process is handed the media services as it starts; app_process is not, so it is done here. */
+    private static void mediaServices() {
+        for (String name : new String[] { "android.media.MediaFrameworkPlatformInitializer", "android.media.MediaFrameworkInitializer" }) try {
+            Class<?> init = Class.forName(name);                      // the first since Android 13, the second in 12
+            Class<?> services = Class.forName("android.media.MediaServiceManager");
+            if (init.getMethod("getMediaServiceManager").invoke(null) == null)
+                init.getMethod("setMediaServiceManager", services).invoke(null, services.getConstructor().newInstance());
+        } catch (ClassNotFoundException | NoSuchMethodException older) {
+        } catch (Throwable e) {
+            System.err.println("media services: " + e);
+        }
+    }
+
+    private static void watch() {
+        for (MediaController c : watched) try { c.unregisterCallback(changed); } catch (Throwable ignored) { }
+        watched.clear();
+        try { watched.addAll(sessions.getActiveSessions(null)); } catch (Throwable ignored) { }
+        for (MediaController c : watched) try { c.registerCallback(changed, main); } catch (Throwable ignored) { }
+        report();
+    }
+
+    /** The session the person means: one that plays, else a paused one that has a title, else none. */
+    private static MediaController current() {
+        MediaController paused = null;
+        for (MediaController c : watched) {
+            PlaybackState s = c.getPlaybackState();
+            int st = s == null ? 0 : s.getState();
+            if (st == PlaybackState.STATE_PLAYING || st == PlaybackState.STATE_BUFFERING) return c;
+            if (paused == null && st == PlaybackState.STATE_PAUSED && title(c.getMetadata()) != null) paused = c;
+        }
+        return paused;
+    }
+
+    private static String title(MediaMetadata m) {
+        if (m == null) return null;
+        CharSequence t = m.getText(MediaMetadata.METADATA_KEY_DISPLAY_TITLE);
+        if (t == null || t.length() == 0) t = m.getText(MediaMetadata.METADATA_KEY_TITLE);
+        return t == null || t.length() == 0 ? null : t.toString();
+    }
+
+    private static void report() {
+        MediaController c = current();
+        String line;
+        if (c == null) line = "{\"state\":\"none\"}";
+        else {
+            PlaybackState s = c.getPlaybackState();
+            MediaMetadata m = c.getMetadata();
+            int st = s == null ? 0 : s.getState();
+            long pos = s == null ? 0 : s.getPosition();
+            float speed = s == null ? 0 : s.getPlaybackSpeed();
+            if (st == PlaybackState.STATE_PLAYING && s.getLastPositionUpdateTime() > 0)   // where it is now, not at its last report
+                pos += (long) ((SystemClock.elapsedRealtime() - s.getLastPositionUpdateTime()) * speed);
+            String sub = null;
+            if (m != null) for (String k : new String[] { MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE, MediaMetadata.METADATA_KEY_ARTIST, MediaMetadata.METADATA_KEY_ALBUM }) {
+                CharSequence v = m.getText(k);
+                if (v != null && v.length() > 0) { sub = v.toString(); break; }
+            }
+            long dur = m == null ? 0 : m.getLong(MediaMetadata.METADATA_KEY_DURATION);
+            line = "{\"state\":" + q(st == PlaybackState.STATE_PLAYING ? "playing" : st == PlaybackState.STATE_BUFFERING ? "buffering" : "paused")
+                + ",\"pkg\":" + q(c.getPackageName()) + ",\"title\":" + q(title(m)) + ",\"sub\":" + q(sub)
+                + ",\"pos\":" + Math.max(0, pos) + ",\"dur\":" + Math.max(0, dur) + ",\"speed\":" + speed
+                + ",\"seek\":" + ((s != null && (s.getActions() & PlaybackState.ACTION_SEEK_TO) != 0) ? "true" : "false") + "}";
+        }
+        // a position that only moved on with time is not news; one that jumped (a seek on the TV) is
+        String key = line.replaceAll("\"pos\":\\d+", "");
+        long now = SystemClock.elapsedRealtime();
+        long pos = c == null ? 0 : Long.parseLong(line.replaceAll(".*\"pos\":(\\d+).*", "$1"));
+        boolean jumped = Math.abs(pos - (lastPos + (long) ((now - lastAt) * lastSpeed))) > 2000;
+        if (key.equals(last) && !jumped) return;
+        last = key; lastPos = pos; lastAt = now;
+        lastSpeed = c != null && line.contains("\"state\":\"playing\"") ? c.getPlaybackState().getPlaybackSpeed() : 0;
+        System.out.println(line);
+        System.out.flush();
+    }
+
+    private static void command(String c) {
+        MediaController m = current();
+        if (m == null) return;
+        MediaController.TransportControls t = m.getTransportControls();
+        try {
+            if (c.equals("play")) t.play();
+            else if (c.equals("pause")) t.pause();
+            else if (c.equals("next")) t.skipToNext();
+            else if (c.equals("prev")) t.skipToPrevious();
+            else if (c.startsWith("seek ")) t.seekTo(Long.parseLong(c.substring(5).trim()));
+        } catch (Throwable ignored) { }
+        last = "";                                                    // say where it is now, even if the app does not
+        main.postDelayed(Playing::report, 400);
+    }
+
+    private static String q(String s) {
+        if (s == null) return "null";
+        StringBuilder b = new StringBuilder("\"");
+        for (char ch : s.toCharArray()) {
+            if (ch == '"' || ch == '\\') b.append('\\').append(ch);
+            else if (ch < 0x20) b.append(String.format("\\u%04x", (int) ch));
+            else b.append(ch);
+        }
+        return b.append('"').toString();
+    }
+}

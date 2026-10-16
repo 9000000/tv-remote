@@ -112,6 +112,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
             "/api/audio" -> return audio(s, r)
             "/api/stream" -> return Response.error(404, "this server sends H.264: /api/video")
             "/api/scenes" -> return if (r.query.containsKey("download")) Scenes.backup(saved.scenes) else Response.json(JSONObject().put("scenes", saved.scenes))
+            "/api/clip" -> return clip(s.control().clipboard())
             "/api/fleet" -> return fleetInfo(s)
             "/api/fleet/job" -> return fleets.jobs[r.q("id")]?.let { Response.json(fleets.snapshot(it)) } ?: Response.error(404, "unknown job")
             "/api/app/icon" -> {
@@ -142,6 +143,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
             "/api/text" -> { s.need().text(d.optString("text").take(500)); Response.ok() }
             "/api/touch" -> touch(s, d)
             "/api/type" -> type(s, d)
+            "/api/clip" -> { s.control().setClipboard(d.optString("text").take(100000), d.optBoolean("paste")); Response.ok() }
             "/api/wake" -> wake(s)
             "/api/tv/select" -> {
                 val host = d.optString("host").trim()
@@ -319,6 +321,9 @@ class Server(private val repo: File, private val keys: File, private val cache: 
         return Response.ok()
     }
 
+    /** The TV's clipboard as the page shows it; null: the TV did not answer in time. */
+    private fun clip(text: String?) = if (text == null) Response.error(504, "the TV did not answer") else Response.json(JSONObject().put("text", text))
+
     private fun type(s: Session, d: JSONObject): Response {
         val t = s.control()
         repeat(minOf(d.optInt("del"), 500)) { t.press(67) }             // live typing: what changed is deleted, then typed again
@@ -456,7 +461,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
         val ADB_KEYS = setOf("INPUT", "INFO", "GUIDE", "LIVE", "SUBTITLE", "CH_UP", "CH_DOWN", "REWIND", "STOP", "FFWD",
             "SLEEP", "WAKE")                                          // Sony ignores SLEEP sent over the remote protocol
         val OPENERS = setOf("MENU", "SETTINGS", "INPUT", "GUIDE", "LIVE")   // keys that should bring up a screen of their own
-        val OURS = setOf("/api/key", "/api/app", "/api/volume", "/api/text", "/api/touch", "/api/type", "/api/wake", "/api/tv/select", "/api/tv/save",
+        val OURS = setOf("/api/key", "/api/app", "/api/volume", "/api/text", "/api/clip", "/api/touch", "/api/type", "/api/wake", "/api/tv/select", "/api/tv/save",
             "/api/tv/remove", "/api/scenes", "/api/scene/run", "/api/fleet/do", "/api/assist", "/api/pair/start", "/api/pair/finish", "/api/shutdown",
             "/api/update")
         const val HD = 5                                              // Tv.QUALITY's sharpest level, the page's "Nét nhất"

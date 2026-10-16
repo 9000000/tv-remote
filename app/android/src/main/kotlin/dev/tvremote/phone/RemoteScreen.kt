@@ -196,6 +196,8 @@ internal fun MainActivity.buildRemote() {
     setupBar.textSize = 13f
     setupBar.visibility = View.GONE
     controls.addView(setupBar, LinearLayout.LayoutParams(-1, dp(44)).apply { bottomMargin = dp(12) })
+    playing = PlayingBar(this)
+    controls.addView(playing.view, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
     val first = LinearLayout(this)
     val power = icon("@power", t("Nguồn", "Power"), BTN)
     power.setOnClickListener {

@@ -137,7 +137,7 @@ class Tv(
             }
             val scid = String.format("%08x", Random().nextInt(0x7fffffff))
             val log = a.open("shell:CLASSPATH=" + REMOTE + " app_process / com.genymobile.scrcpy.Server " + VER + " scid=" + scid
-                    + " tunnel_forward=true cleanup=false control=$wantControl send_dummy_byte=true send_device_meta=false "
+                    + " tunnel_forward=true cleanup=false control=$wantControl send_dummy_byte=true send_device_meta=false clipboard_autosync=false "   // autosync on, GET_CLIPBOARD answers nothing
                     + (if (wantVideo) "video=true $video" else "video=false")
                     + (if (hearing == null) " audio=false" else " audio=true audio_codec=$hearing" + (if (hearing == "opus") " audio_bit_rate=$audioBitRate" else "") + (if (sdk >= 33) " audio_source=playback" else "") + (if (share) " audio_dup=true" else ""))
                     // scrcpy-server does not always notice that we left (a still picture sends nothing), and a leftover one keeps
@@ -174,11 +174,11 @@ class Tv(
                 // a codec error ends the sound, not the app
                 Thread({ try { hear(soundIn, hearing!!) } catch (ignored: Throwable) { } }, "scrcpy-audio").apply { isDaemon = true }.start()
             if (pictureIn != null) {
-                if (ctl != null) Thread({ try { ctl.readAll() } catch (ignored: IOException) { } }, "scrcpy-ctl").apply { isDaemon = true }.start()   // clipboard etc: not needed
+                if (ctl != null) Thread({ try { deviceMessages(ctl) } catch (ignored: IOException) { } }, "scrcpy-ctl").apply { isDaemon = true }.start()
                 play(pictureIn)
             } else if (ctl != null) {
                 listener.onStatus("live", "")
-                try { ctl.readAll() } catch (ignored: IOException) { }   // returns when the TV closes the session
+                try { deviceMessages(ctl) } catch (ignored: IOException) { }   // returns when the TV closes the session
             } else if (soundIn != null) {
                 listener.onStatus("live", "")
                 hear(soundIn, hearing!!)
@@ -363,6 +363,52 @@ class Tv(
             .putShort(0).putShort(v.toShort()).putInt(0).array())
     }
 
+    // ---- the TV's clipboard ----
+    private val clipLock = Object()
+    private var clipGot = 0                                           // device CLIPBOARD messages so far (guarded by clipLock)
+    private var clip = ""
+
+    /** What scrcpy-server tells (DeviceMessage.java): the TV's clipboard, on change and when asked; the rest is skipped. */
+    private fun deviceMessages(ctl: Adb.Stream) {
+        val head = ByteArray(4)
+        while (true) {
+            if (ctl.read(head, 0, 1, 0) < 0) return
+            when (head[0].toInt()) {
+                0 -> {                                                // CLIPBOARD: int length, UTF-8
+                    ctl.readFully(head, 0, 4)
+                    val n = ByteBuffer.wrap(head).int
+                    if (n < 0 || n > (1 shl 20)) { ctl.readAll(); return }
+                    val text = ByteArray(n).also { ctl.readFully(it, 0, n) }
+                    synchronized(clipLock) { clip = String(text, Charsets.UTF_8); clipGot++; clipLock.notifyAll() }
+                }
+                1 -> ctl.readFully(ByteArray(8), 0, 8)                // ACK_CLIPBOARD: the sequence of a set
+                2 -> { ctl.readFully(head, 0, 4); val n = ByteBuffer.wrap(head).getShort(2).toInt() and 0xffff; ctl.readFully(ByteArray(n), 0, n) }   // UHID_OUTPUT
+                else -> { ctl.readAll(); return }                     // a newer server's message: nothing after it can be read
+            }
+        }
+    }
+
+    /** The text on the TV's clipboard ("" when empty), or null when the TV did not say within [timeoutMs]. Blocks. */
+    fun clipboard(timeoutMs: Long = 2500): String? {
+        val before = synchronized(clipLock) { clipGot }
+        send(byteArrayOf(8, 0))                                       // GET_CLIPBOARD, no copy key pressed first
+        val end = System.currentTimeMillis() + timeoutMs
+        synchronized(clipLock) {
+            while (clipGot == before) {
+                val left = end - System.currentTimeMillis()
+                if (left <= 0) return null
+                clipLock.wait(left)
+            }
+            return clip
+        }
+    }
+
+    /** Puts [t] on the TV's clipboard; [paste]: and pastes it where the TV's cursor is. */
+    fun setClipboard(t: String, paste: Boolean) {
+        val raw = t.toByteArray(Charsets.UTF_8)
+        send(ByteBuffer.allocate(14 + raw.size).put(9.toByte()).putLong(0L).put((if (paste) 1 else 0).toByte()).putInt(raw.size).put(raw).array())
+    }
+
     fun text(t: String) {
         val raw = t.toByteArray(Charsets.UTF_8)
         val ascii = raw.size == t.length
@@ -371,7 +417,7 @@ class Tv(
             return
         }
         // accents, CJK...: key events cannot type them, so put the text on the TV clipboard and press Ctrl+V
-        send(ByteBuffer.allocate(14 + raw.size).put(9.toByte()).putLong(0L).put(0.toByte()).putInt(raw.size).put(raw).array())
+        setClipboard(t, false)
         val ctrl = 0x3000                                             // META_CTRL_ON | META_CTRL_LEFT_ON
         key(0, 113, 0, ctrl); key(0, 50, 0, ctrl); key(1, 50, 0, ctrl); key(1, 113, 0, 0)
     }
@@ -438,6 +484,9 @@ class Tv(
     /** Runs a shell command on the TV through this session's ADB connection; "" when not connected. */
     @Throws(IOException::class)
     fun shell(cmd: String): String = adb?.shell(cmd) ?: ""
+
+    /** The ADB connection this session runs on, for helpers beside it (NowPlaying on the phone's remote). */
+    fun adb(): Adb = adb ?: throw IOException("not connected")
 
     /** The ADB connection under this session, for what goes its own way (drawing on the TV's screen: [Draw]). */
     fun link(): Adb? = adb

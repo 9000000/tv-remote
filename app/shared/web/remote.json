@@ -56,6 +56,7 @@
         "sub": { "vi": "Cần ADB", "en": "Needs ADB" },
         "web": { "vi": "Phát ảnh / video từ máy này", "en": "Play a photo / video from this device" }, "why": "the web page may be a computer, not a phone" },
       { "id": "open-file", "icon": "music", "vi": "Phát nhạc / tệp khác", "en": "Play a song / other file", "do": "file" },
+      { "id": "open-clip", "icon": "clipboard", "vi": "Clipboard của TV", "en": "The TV’s clipboard", "do": "clip", "sub": { "vi": "Lấy về, gửi lên, dán", "en": "Get, send, paste" } },
       { "id": "open-cast", "icon": "cast", "vi": "Chiếu màn hình điện thoại lên TV", "en": "Mirror the phone’s screen on the TV", "do": "cast",
         "sub": { "vi": "Cùng Wi-Fi", "en": "Same Wi-Fi" }, "cores": ["phone"], "why": "Android's Cast settings can only be opened from the phone itself; a browser cannot" },
       { "id": "open-youtube", "icon": "play", "vi": "YouTube", "en": "YouTube", "do": "store", "arg": "com.google.android.youtube.tv", "sub": { "vi": "Trang CH Play: cài hoặc mở", "en": "Play Store page: install or open" } },

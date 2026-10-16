@@ -145,7 +145,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             override fun icons(): Boolean = true
             private val caps by lazy { Caps.report(this@RemoteService) }   // the hardware does not change while TV Setup runs
             override fun caps(): String = caps
-        }, getExternalFilesDir(null))
+        }, getExternalFilesDir(null)) { assets.open("tvr-helper.jar").use { it.readBytes() } }
         manage?.allowed = { fp ->                                      // whoever is at the TV sees that a device was let in
             ui.post { android.widget.Toast.makeText(this, (if (java.util.Locale.getDefault().language == "vi") "Đã cho phép gỡ lỗi USB cho một thiết bị đã ghép\n" else "USB debugging allowed for a paired device\n") + fp, android.widget.Toast.LENGTH_LONG).show() }
         }
@@ -354,6 +354,13 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 val icon = HttpServer.Response.of("image/png", png)
                 icon.headers["Cache-Control"] = "max-age=86400"
                 return icon
+            }
+            "/api/clip" -> {                                          // the TV's clipboard: through scrcpy, whose shell may read it
+                val t = tv
+                if (t == null || !t.ready()) return HttpServer.Response.error(503, "adb:$adbState")
+                if (post) { val d = r.json(); t.setClipboard(d.optString("text").take(100000), d.optBoolean("paste")); return ok() }
+                val text = t.clipboard() ?: return HttpServer.Response.error(504, "the TV did not answer")
+                return HttpServer.Response.json(JSONObject().put("text", text))
             }
             "/api/adb/connect" -> { if (tv == null) connect(); inUse(); return HttpServer.Response.json(JSONObject().put("state", adbWord())) }
         }

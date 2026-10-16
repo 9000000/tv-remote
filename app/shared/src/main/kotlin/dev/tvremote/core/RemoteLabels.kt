@@ -66,22 +66,7 @@ class RemoteLabels(private val link: AdbLink, helper: () -> ByteArray, private v
         names ?: out
     }
 
-    /** tvr-helper.jar on the TV, copied there if it is not yet; one file per build, written whole and then renamed: see CLEAN. */
-    private fun helper(a: Adb): String {
-        val bytes = jar
-        val remote = "/data/local/tmp/tvr-helper-" + java.util.zip.CRC32().apply { update(bytes) }.value.toString(16) + ".jar"
-        if (a.shell("[ -f $remote ] && echo y").trim() != "y") {
-            a.shell(CLEAN)
-            a.put("$remote.part", bytes)
-            val size = bytes.size.toString()
-            for (i in 0 until 40) {
-                if (a.shell("wc -c < $remote.part").trim() == size) break
-                Thread.sleep(150)
-            }
-            a.shell("mv $remote.part $remote")
-        }
-        return remote
-    }
+    private fun helper(a: Adb): String = install(a, jar)
 
     /** What the TV's hardware can do ([Caps]), asked once per TV: it does not change. */
     @Volatile private var caps: String? = null
@@ -144,13 +129,30 @@ class RemoteLabels(private val link: AdbLink, helper: () -> ByteArray, private v
         }
     }
 
-    private companion object {
+    companion object {
+        /** tvr-helper.jar on the TV, copied there if it is not yet; one file per build, written whole and then renamed: see CLEAN. */
+        @Synchronized fun install(a: Adb, bytes: ByteArray): String {
+            val remote = "/data/local/tmp/tvr-helper-" + java.util.zip.CRC32().apply { update(bytes) }.value.toString(16) + ".jar"
+            if (a.shell("[ -f $remote ] && echo y").trim() != "y") {
+                a.shell(CLEAN)
+                a.put("$remote.part", bytes)
+                val size = bytes.size.toString()
+                for (i in 0 until 40) {
+                    if (a.shell("wc -c < $remote.part").trim() == size) break
+                    Thread.sleep(150)
+                }
+                a.shell("mv $remote.part $remote")
+            }
+            return remote
+        }
+
+
         // The computer and the phone app each bring their own build. With one shared name one of them overwrote it while another
         // started it: a crash on the TV each time. Builds older than a few days are cleared (tvr-meta-*.apk: the whole phone
         // APK, copied by versions before 2.20); one still in use stays readable to the process that has it open.
-        const val CLEAN = "find /data/local/tmp -maxdepth 1 \\( -name 'tvr-meta*.apk' -o -name 'tvr-helper-*.jar' \\) -mtime +3 -delete 2>/dev/null; rm -f /data/local/tmp/tvr-meta.apk"
-        val PKG = Regex("[\\w.]+")                                  // 2>&1: a crash on the TV is told apart from a name
-        const val RETRY = 15000L
-        const val DIR = "/data/local/tmp/tvr-meta"
+        private const val CLEAN = "find /data/local/tmp -maxdepth 1 \\( -name 'tvr-meta*.apk' -o -name 'tvr-helper-*.jar' \\) -mtime +3 -delete 2>/dev/null; rm -f /data/local/tmp/tvr-meta.apk"
+        private val PKG = Regex("[\\w.]+")                                  // 2>&1: a crash on the TV is told apart from a name
+        private const val RETRY = 15000L
+        private const val DIR = "/data/local/tmp/tvr-meta"
     }
 }

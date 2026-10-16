@@ -57,6 +57,7 @@ Trong README, code và trang giới thiệu, các phần luôn được gọi b�
 | | App điện thoại | Web của TV | App máy tính |
 |---|---|---|---|
 | Remote, xem và chạm hình TV, ✏️ vẽ, 🖼️ đưa ảnh lên TV | ✓ | ✓ | ✓ |
+| ▶️ Đang phát (tên bài, tua, tạm dừng), 📋 clipboard của TV | ✓ | ✓ | ✓ |
 | 🎧 Nghe tiếng TV | ✓, cả khi tắt màn hình | ✓, khi trang đang mở | ✓, chất lượng cao |
 | Ứng dụng, Tệp, Sức khỏe, Tự động, Thiết lập | ✓ | ✓ | ✓ |
 | Chất lượng hình *Nét nhất* | | | ✓ |
@@ -210,6 +211,8 @@ Nút **📺 Đổi TV** ở thanh trên quay về danh sách TV.
 <summary>Lưu ý khi dùng</summary>
 
 - Chất lượng hình chọn từ 240p tới 960p; số nhỏ nhẹ cho TV và mạng. App máy tính có thêm *Nét nhất* (làm TV chậm hơn rõ rệt). *Ảnh chụp* thì tải từng ảnh, nhẹ nhất. Sang tab khác thì hình thu nhỏ ở góc.
+- **▶️ Đang phát**: trên remote hiện app trên TV đang phát gì (tên, kênh hoặc ca sĩ), kéo thanh để tua, bấm để tạm dừng hoặc qua bài. Cần ADB; app nào không báo thời lượng thì không có thanh tua.
+- **📋 Clipboard của TV** (*Mở trên TV* → *Clipboard của TV*): xem chữ TV đang sao chép, chép về máy mình, hoặc gửi chữ lên TV và dán vào ô đang gõ.
 - **✏️ Vẽ lên màn hình TV** (nút ✏️ cạnh hình; trên app điện thoại là *Vẽ lên TV* trong Thêm phím): vẽ lên hình thì TV hiện ngay nét vẽ, đè lên mọi app, để chỉ chỗ cho người đang xem. Cần TV Setup trên TV. Bấm 🗑 để xóa, hoặc nét vẽ tự mất sau 10 phút.
 - Video có bản quyền (Netflix...) hiện màu đen.
 - Bàn phím ảo trên TV không bấm được bằng chuột; hãy gõ bằng bàn phím máy tính. Chữ có dấu thì gõ trong ô "Bàn phím".

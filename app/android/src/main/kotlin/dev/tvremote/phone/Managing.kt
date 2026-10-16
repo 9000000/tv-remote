@@ -114,7 +114,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
                 link = l
                 val names = RemoteLabels(l, { a.assets.open("tvr-helper.jar").use { it.readBytes() } }, File(a.cacheDir, "meta/" + tvHost.replace(Regex("[^\\w.-]"), "_")))   // app names and pictures, asked from the TV itself, kept per TV
                 labels = names
-                manage = Manage(l, names, a.cacheDir)
+                manage = Manage(l, names, a.cacheDir) { a.assets.open("tvr-helper.jar").use { it.readBytes() } }
                 forHost = tvHost
                 val origin = "http://127.0.0.1:$port"
                 CookieManager.getInstance().setCookie(origin, "tvr=$token")

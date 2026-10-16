@@ -118,6 +118,7 @@
     'Dọn bộ nhớ đệm': 'Clean caches', 'Dọn bộ nhớ đệm của mọi app': 'Clean every app’s cache', 'Khôi phục': 'Restore', 'Khôi phục app từ tệp sao lưu .tar': 'Restore an app from a .tar backup',
     'Đã dọn bộ nhớ đệm': 'Caches cleaned', 'Bộ nhớ đệm đã sạch, không còn gì để dọn': 'The caches are already clean',
     'Chọn tệp .tar đã sao lưu bằng nút 💾': 'Pick a .tar file made with the 💾 button',
+    'Đang phát': 'Now playing', 'Bài trước': 'Previous', 'Bài sau': 'Next', 'Tua': 'Seek', 'Clipboard của TV': 'The TV’s clipboard', '📋 Clipboard của TV': '📋 The TV’s clipboard', 'Clipboard của TV đang trống. Gõ hoặc dán chữ vào đây để gửi lên TV.': 'The TV’s clipboard is empty. Type or paste text here to send it to the TV.', 'Chưa có chữ': 'No text yet', 'Đã dán trên TV': 'Pasted on the TV', 'Đã chép lên TV': 'Copied to the TV', 'Đã sao chép vào máy này': 'Copied to this device', 'Chép về máy': 'Copy here', 'Chép lên TV': 'Copy to TV', 'Dán trên TV': 'Paste on TV',
     'Tạm dừng': 'Pause', 'Chạy tiếp': 'Resume', 'Sao chép': 'Copy', 'Đã sao chép log': 'Log copied', 'Không sao chép được: chọn chữ rồi sao chép tay': 'Could not copy: select the text and copy it by hand',
     'App chưa chạy: mở app, log hiện ở đây ngay khi app chạy.': 'The app is not running: open it, and its log shows here as soon as it runs.', 'Mở app': 'Open the app',
     'Tệp này không phải bản sao lưu của TV Remote.': 'This file is not a TV Remote backup.',

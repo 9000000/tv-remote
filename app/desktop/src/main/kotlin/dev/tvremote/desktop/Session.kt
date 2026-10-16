@@ -31,7 +31,7 @@ class Session(val host: String, private val keys: File, cache: File, helper: () 
 
     val link: AdbLink? = if (host.isEmpty()) null else AdbLink(keys, host)
     val labels: RemoteLabels? = link?.let { RemoteLabels(it, helper, File(cache, "meta/" + host.replace(Regex("[^\\w.-]"), "_"))) }
-    val manage: Manage? = link?.let { Manage(it, labels, cache) }
+    val manage: Manage? = link?.let { Manage(it, labels, cache, helper) }
     val feeds = Feeds()
 
     private val timers = Executors.newSingleThreadScheduledExecutor { Thread(it, "session-timers").apply { isDaemon = true } }

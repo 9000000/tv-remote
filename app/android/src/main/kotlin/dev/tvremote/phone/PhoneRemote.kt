@@ -41,6 +41,7 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "timerCancel" to act { setTimer(0) },
     "timerCustom" to act { timerCustom() },
     "automation" to act { if (!needsAdb()) managing.open(host, "auto") },
+    "clip" to act { clipDialog() },
 )
 
 /** Things an action's button needs to know about itself once drawn (the ✏️ is lit while drawing). */

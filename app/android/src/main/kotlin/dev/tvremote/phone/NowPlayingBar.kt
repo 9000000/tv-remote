@@ -1,0 +1,170 @@
+package dev.tvremote.phone
+
+import android.app.AlertDialog
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.view.Gravity
+import android.view.View
+import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.SeekBar
+import android.widget.TextView
+import android.widget.Toast
+import dev.tvremote.core.NowPlaying
+import dev.tvremote.core.Tv
+import org.json.JSONObject
+import java.util.concurrent.Executors
+
+/**
+ * The now playing strip above the remote's keys, the same as the web page's (js/playing.js): what the TV plays, from its media
+ * session (NowPlaying, tvr-helper's Playing on the TV), with ⏮ ⏯ ⏭ and a bar that seeks. Asked once a second while the remote
+ * is on screen with ADB; hidden when nothing plays.
+ */
+internal class PlayingBar(private val a: MainActivity) {
+    val view = a.col()
+    private val title = a.label("", 15, TEXT)
+    private val sub = a.label("", 12, MUTED)
+    private val play = a.icon("@pause", t("Phát / Dừng", "Play / Pause"), ACCENT)
+    private val seek = SeekBar(a)
+    private val pos = a.label("0:00", 12, MUTED)
+    private val dur = a.label("", 12, MUTED)
+    private val times = LinearLayout(a)
+    private val work = Executors.newSingleThreadExecutor()            // NowPlaying starts its helper over ADB: never on the UI thread
+    private var np: NowPlaying? = null
+    private var npFor: Tv? = null
+    private var o = JSONObject().put("state", "none")
+    private var at = 0L                                               // when [o] came
+    private var dragging = false
+    private var asking = false
+
+    init {
+        view.background = a.box(CARD, 16)
+        view.setPadding(a.dp(12), a.dp(10), a.dp(12), a.dp(6))
+        view.visibility = View.GONE
+        val head = LinearLayout(a)
+        head.gravity = Gravity.CENTER_VERTICAL
+        val words = a.col()
+        for (w in listOf(title, sub)) { w.maxLines = 1; w.ellipsize = android.text.TextUtils.TruncateAt.END; words.addView(w) }
+        title.typeface = android.graphics.Typeface.DEFAULT_BOLD
+        head.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
+        val prev = a.icon("@prev", t("Bài trước", "Previous"), BTN)
+        val next = a.icon("@next", t("Bài sau", "Next"), BTN)
+        prev.setOnClickListener { send("prev", 0) }
+        next.setOnClickListener { send("next", 0) }
+        play.setOnClickListener {
+            val playing = o.optString("state") == "playing"
+            o.put("pos", now()); at = System.currentTimeMillis(); o.put("state", if (playing) "paused" else "playing")
+            send(if (playing) "pause" else "play", 0)
+            draw()
+        }
+        for (b in listOf(prev, play, next)) head.addView(b, LinearLayout.LayoutParams(a.dp(44), a.dp(40)).apply { leftMargin = a.dp(6) })
+        view.addView(head)
+        times.gravity = Gravity.CENTER_VERTICAL
+        seek.max = 1000
+        seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(s: SeekBar, p: Int, user: Boolean) { if (user) pos.text = clock(p / 1000.0 * o.optLong("dur")) }
+            override fun onStartTrackingTouch(s: SeekBar) { dragging = true }
+            override fun onStopTrackingTouch(s: SeekBar) {
+                dragging = false
+                val ms = (s.progress / 1000.0 * o.optLong("dur")).toLong()
+                o.put("pos", ms); at = System.currentTimeMillis()
+                send("seek", ms)
+            }
+        })
+        times.addView(pos)
+        times.addView(seek, LinearLayout.LayoutParams(0, -2, 1f))
+        times.addView(dur)
+        view.addView(times, LinearLayout.LayoutParams(-1, -2).apply { topMargin = a.dp(4) })
+        a.ui.post { tick.run() }                                      // declared below the init block
+    }
+
+    /** Where it is now: the last answer moved on by the time since, as NowPlaying does between the helper's lines. */
+    private fun now(): Long {
+        var p = o.optLong("pos")
+        if (o.optString("state") == "playing") p += ((System.currentTimeMillis() - at) * o.optDouble("speed", 1.0)).toLong()
+        val d = o.optLong("dur")
+        return if (d > 0) minOf(p, d) else p
+    }
+
+    private val tick = object : Runnable {
+        override fun run() {
+            val tv = a.tv
+            val looking = a.foreground && a.remote.visibility == View.VISIBLE && a.basic == null && tv != null && tv.ready()
+            if (!looking) { o = JSONObject().put("state", "none"); draw(); a.ui.postDelayed(this, 2000); return }
+            if (!asking) {
+                asking = true
+                work.execute {
+                    val got = try { player(tv!!).state() } catch (e: Exception) { JSONObject().put("state", "none") }
+                    a.ui.post { asking = false; o = got; at = System.currentTimeMillis(); draw() }
+                }
+            }
+            draw()
+            a.ui.postDelayed(this, 1000)
+        }
+    }
+
+    private fun player(tv: Tv): NowPlaying = synchronized(this) {
+        if (npFor !== tv) { np = NowPlaying({ tv.adb() }) { a.assets.open("tvr-helper.jar").use { it.readBytes() } }; npFor = tv }
+        np!!
+    }
+
+    private fun send(what: String, ms: Long) {
+        val tv = a.tv ?: return
+        work.execute { try { player(tv).command(what, ms) } catch (ignored: Exception) { } }
+    }
+
+    private fun draw() {
+        val on = o.optString("state", "none") != "none" && o.optString("title").isNotEmpty()
+        view.visibility = if (on) View.VISIBLE else View.GONE
+        if (!on) return
+        title.text = o.optString("title")
+        sub.text = o.optString("sub").takeIf { o.has("sub") && !o.isNull("sub") } ?: ""
+        sub.visibility = if (sub.text.isEmpty()) View.GONE else View.VISIBLE
+        play.setIcon(if (o.optString("state") == "paused") "@play" else "@pause", TEXT)
+        val d = o.optLong("dur")
+        times.visibility = if (d > 0) View.VISIBLE else View.GONE
+        seek.isEnabled = o.optBoolean("seek")
+        if (d > 0 && !dragging) { seek.progress = (now() * 1000 / d).toInt(); pos.text = clock(now().toDouble()); dur.text = clock(d.toDouble()) }
+    }
+
+    private fun clock(ms: Double): String {
+        val s = (ms / 1000).toLong()
+        return if (s >= 3600) String.format("%d:%02d:%02d", s / 3600, s / 60 % 60, s % 60) else String.format("%d:%02d", s / 60, s % 60)
+    }
+}
+
+/** The TV's clipboard (the "clip" entry of Open on the TV): shown in a box, then copied to the phone, set on the TV, or pasted there. */
+internal fun MainActivity.clipDialog() {
+    if (needsAdb()) return
+    val tv = tv
+    if (tv == null || !tv.ready()) return
+    Thread {
+        val text = try { tv.clipboard() } catch (e: Exception) { null }
+        ui.post {
+            if (isFinishing) return@post
+            if (text == null) { say(t("TV không trả lời. Thử lại.", "The TV did not answer. Try again."), true); return@post }
+            val box = input(t("Clipboard của TV đang trống. Gõ hoặc dán chữ vào đây để gửi lên TV.", "The TV’s clipboard is empty. Type or paste text here to send it to the TV."))
+            box.setText(text)
+            box.maxLines = 6
+            val wrap = FrameLayout(this)
+            wrap.setPadding(dp(20), dp(8), dp(20), 0)
+            wrap.addView(box)
+            val toTv = { paste: Boolean ->
+                val s = box.text.toString()
+                if (s.isEmpty()) say(t("Chưa có chữ", "No text yet"), false)
+                else Thread {
+                    val ok = try { tv.setClipboard(s.take(100000), paste); true } catch (e: Exception) { false }
+                    ui.post { say(if (!ok) t("TV không nhận. Thử lại.", "The TV did not take it. Try again.") else if (paste) t("Đã dán trên TV", "Pasted on the TV") else t("Đã chép lên TV", "Copied to the TV"), !ok) }
+                }.start()
+            }
+            AlertDialog.Builder(this).setTitle(t("Clipboard của TV", "The TV’s clipboard")).setView(wrap)
+                .setPositiveButton(t("Dán trên TV", "Paste on TV")) { _, _ -> toTv(true) }
+                .setNegativeButton(t("Chép lên TV", "Copy to TV")) { _, _ -> toTv(false) }
+                .setNeutralButton(t("Chép về máy", "Copy here")) { _, _ ->
+                    (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("TV", box.text.toString()))
+                    if (android.os.Build.VERSION.SDK_INT < 33) Toast.makeText(this, t("Đã sao chép vào máy này", "Copied to this device"), Toast.LENGTH_SHORT).show()   // Android 13+ says it itself
+                }.show()
+        }
+    }.start()
+}

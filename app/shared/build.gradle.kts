@@ -23,11 +23,11 @@ dependencies {
 // The tests read tests/*_cases.json and web/remote.json from disk: inputs, so a changed case table runs them again
 tasks.withType<Test>().configureEach { inputs.dir("tests"); inputs.file("web/remote.json") }
 
-// assets/tvr-helper.jar: Meta and Caps alone, dexed for app_process on the TV, where the phone and the computer copy it for app
-// names, pictures and the hardware report (a few KB, where the whole phone APK was copied before). Java, so no Kotlin library
+// assets/tvr-helper.jar: Meta, Caps and Playing alone, dexed for app_process on the TV, where the phone and the computer copy it for app
+// names, pictures, the hardware report and what is playing (a few KB, where the whole phone APK was copied before). Java, so no Kotlin library
 // has to go along. Made again with every Android build and kept in git, so the computer app builds without the Android SDK.
 val helperClasses by tasks.registering(JavaCompile::class) {
-    source = fileTree("src/main/java") { include("dev/tvremote/core/Meta.java", "dev/tvremote/core/Caps.java") }
+    source = fileTree("src/main/java") { include("dev/tvremote/core/Meta.java", "dev/tvremote/core/Caps.java", "dev/tvremote/core/Playing.java") }
     classpath = files()
     options.bootstrapClasspath = files(android.bootClasspath)
     sourceCompatibility = "1.8"
