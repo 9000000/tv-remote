@@ -10,11 +10,16 @@ import org.json.JSONObject
  * common one, and entries other cores show are left out.
  */
 object RemoteSpec {
-    /** One key or menu entry. [key]: a name from [Scenes.KEYS]; [action]: what the side's handler map does (with [arg]); [expand] stands in for a list the handler supplies. */
+    /**
+     * One key or menu entry. [key]: a name from [Scenes.KEYS]; [action]: what the side's handler map does (with [arg]); [expand] stands
+     * in for a list the handler supplies; [needs]: what the TV must be able to do ([Remote.Kind.caps]), else greyed or left out.
+     */
     class Entry(
         val id: String, val icon: String, val vi: String, val en: String, val subVi: String, val subEn: String,
         val key: String?, val action: String?, val arg: String?, val whenCond: String?, val expand: String?, val style: String?,
+        val needs: List<String> = emptyList(),
     ) {
+        fun can(caps: Set<String>) = needs.all { it in caps }
         fun words(vietnamese: Boolean) = if (vietnamese) vi else en
         fun sub(vietnamese: Boolean) = if (vietnamese) subVi else subEn
     }
@@ -43,6 +48,7 @@ object RemoteSpec {
             e.getString("id"), e.optString("icon"), text("vi"), text("en"), sub?.optString("vi") ?: "", sub?.optString("en") ?: "",
             e.optString("key").ifEmpty { null }, e.optString("do").ifEmpty { null }, e.optString("arg").ifEmpty { null },
             e.optString("when").ifEmpty { null }, e.optString("expand").ifEmpty { null }, e.optString("style").ifEmpty { null },
+            e.optJSONArray("needs")?.let { n -> (0 until n.length()).map { n.getString(it) } } ?: emptyList(),
         )
     }
 }

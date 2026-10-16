@@ -9,7 +9,7 @@ internal fun MainActivity.sendText() {
     basic?.let {                                                  // keys only: the text goes into the field that has the focus on the TV
         if (live) { it.key(66, Atv.SHORT); clearBox() }           // everything is on the TV already: this is Enter
         else if (s.isEmpty()) it.key(66, Atv.SHORT)
-        else { if (it.hasField && !Atv.typable(s)) it.text(s) else it.keys(s); textBox.setText("") }
+        else { val a = it as? Atv; if (a == null) it.text(s) else if (a.hasField && !Atv.typable(s)) a.text(s) else a.keys(s); textBox.setText("") }
         return
     }
     val tv = tv
@@ -43,7 +43,15 @@ internal fun MainActivity.clearBox() {
 /** Live typing: make the TV's text follow the box by deleting what changed at the end and typing the new end. */
 internal fun MainActivity.typedLive(now: String) {
     if (!live || quiet) return
-    basic?.let {                                                  // keys only: through the TV's keyboard service when the app uses it, as key presses otherwise
+    basic?.let { r ->                                             // keys only: through the TV's keyboard service when the app uses it, as key presses otherwise
+        val it = r as? Atv
+        if (it == null) {                                             // LG / Samsung: their keyboard link takes the change
+            var keep = 0
+            while (keep < onTv.length && keep < now.length && onTv[keep] == now[keep]) keep++
+            r.type(onTv.length - keep, now.substring(keep), false)
+            onTv = now
+            return
+        }
         if (it.hasField && !Atv.typable(now)) { if (now.isNotEmpty()) it.text(now) }
         else {
             var keep = 0

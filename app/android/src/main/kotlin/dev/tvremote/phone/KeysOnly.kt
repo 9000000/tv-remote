@@ -7,9 +7,17 @@ import android.text.InputType
 import android.widget.FrameLayout
 import android.widget.Toast
 import dev.tvremote.core.Atv
+import dev.tvremote.core.Remote
 import java.util.Locale
 
 // When the TV's ADB is off: the keys-only connection (Android TV Remote protocol), pairing it, and noticing when ADB comes on.
+// LG and Samsung TVs only ever have this connection, through their own adapter (Remote.kt): the TV asks itself whether to let
+// the phone in, there is no code to type and no ADB to wait for.
+
+/** What the TV at [ip] is: saved with it ("kind:<ip>"), found by the scan, or Android TV. */
+internal fun MainActivity.kindOf(ip: String): String = Remote.Kind.of(pref("kind:$ip"))
+
+private fun MainActivity.keysLine(a: Remote) = if (a.kind == Remote.Kind.ANDROID) t("chỉ bấm phím", "keys only") else "TV " + Remote.Kind.name(a.kind)
 
 internal fun MainActivity.refused(err: String?): Boolean {
     val e = err?.lowercase(Locale.ROOT) ?: ""
@@ -24,8 +32,10 @@ internal fun MainActivity.offerBasic(ip: String, error: String) {
     Thread {
         if (open(ip, 5555, 1500)) adbFailed.add(ip)                // the port answers, yet ADB did not work (not allowed on the TV, say): do not keep retrying by ourselves
         val keys = open(ip, 6466, 2500)                            // an Android TV: it takes keys
+        val other = if (keys) null else Remote.Kind.detect(ip)?.takeIf { it != Remote.Kind.ANDROID }   // an address typed in: maybe an LG or Samsung TV
         ui.post {
             if (isFinishing || host != ip || tv != null) return@post   // the person has moved on
+            if (other != null) { prefs.edit().putString("kind:$ip", other).apply(); disconnect(null); startBasic(ip, false); return@post }
             if (!keys) { disconnect(error); return@post }
             disconnect(null)
             if (prefs.getBoolean("atv:$ip", false)) startBasic(ip, false)
@@ -41,22 +51,39 @@ internal fun MainActivity.offerBasic(ip: String, error: String) {
 
 internal fun MainActivity.startBasic(ip: String, justPaired: Boolean) {
     message(t("Đang kết nối ", "Connecting to ") + ip + "...", false)
+    val a = Remote.of(kindOf(entry ?: ip), filesDir, ip)
     Thread {
-        val a = Atv(filesDir, ip)
+        var asked = false
+        while (!a.ready() && !isFinishing) {                          // LG / Samsung: the TV asks; say so while it does
+            if (a.asking && !asked) { asked = true; ui.post { message(t("Nhìn lên TV: chọn Cho phép để điện thoại này điều khiển TV.", "Look at the TV: choose Allow to let this phone control it."), false) } }
+            try { Thread.sleep(300) } catch (e: InterruptedException) { break }
+            if (a.kind == Remote.Kind.ANDROID) break
+        }
+    }.apply { isDaemon = true }.start()
+    Thread {
         try {
             a.connect { ui.post { if (basic === a) keysLost(a, ip) } }
             ui.post {
                 if (isFinishing || host != null) { a.close(); return@post }
-                prefs.edit().putBoolean("atv:$ip", true).apply()
+                if (a.kind == Remote.Kind.ANDROID) prefs.edit().putBoolean("atv:$ip", true).apply()
+                else {
+                    val e = prefs.edit().putString("kind:" + (entry ?: ip), a.kind)
+                    if (a.mac.isNotEmpty()) e.putString("mac:" + (entry ?: ip), a.mac)
+                    if (Regex("^(10|192\\.168|172\\.(1[6-9]|2\\d|3[01]))\\.").containsMatchIn(ip)) e.putString("lan:" + (entry ?: ip), ip)   // for Wake-on-LAN from home
+                    e.apply()
+                }
                 basic = a
                 host = ip
                 save(entry ?: ip, a.model)
                 message(null, false)
                 show(true)
                 layoutRemote()
-                status.text = title(ip) + " · " + t("chỉ bấm phím", "keys only")
-                watchAdb(a, ip)
+                status.text = title(ip) + " · " + keysLine(a)
+                if (a is Atv) watchAdb(a, ip)
             }
+        } catch (e: Remote.Refused) {
+            a.close()
+            ui.post { message(t("TV đã từ chối. Bấm vào TV trong danh sách để thử lại, rồi chọn Cho phép trên TV.", "The TV said no. Tap the TV in the list to try again, then choose Allow on the TV."), true) }
         } catch (e: Atv.NotPaired) {
             a.close()
             if (justPaired) ui.post { message(t("TV không nhận kết nối sau khi ghép. Thử lại.", "The TV did not accept the connection after pairing. Try again."), true) }
@@ -69,7 +96,7 @@ internal fun MainActivity.startBasic(ip: String, justPaired: Boolean) {
 }
 
 /** The keys-only connection ended: away, it is opened again on return (onStart); on screen, at once. */
-internal fun MainActivity.keysLost(a: Atv, ip: String) {
+internal fun MainActivity.keysLost(a: Remote, ip: String) {
     basic = null
     a.close()
     if (foreground) resumeBasic(ip)
@@ -80,15 +107,16 @@ internal fun MainActivity.keysLost(a: Atv, ip: String) {
 internal fun MainActivity.resumeBasic(ip: String) {
     waitFor(title(entry ?: ip), t("Đang kết nối lại...", "Reconnecting..."))
     Thread {
-        val a = Atv(filesDir, ip)
+        val a = Remote.of(kindOf(entry ?: ip), filesDir, ip)
         try {
             a.connect { ui.post { if (basic === a) keysLost(a, ip) } }
             ui.post {
                 if (isFinishing || host != ip || basic != null || tv != null) { a.close(); return@post }   // the person has moved on
                 basic = a
                 waiting.visibility = View.GONE
-                status.text = title(entry ?: ip) + " · " + t("chỉ bấm phím", "keys only")
-                watchAdb(a, ip)
+                status.text = title(entry ?: ip) + " · " + keysLine(a)
+                layoutRemote()
+                if (a is Atv) watchAdb(a, ip)
             }
         } catch (e: Exception) {
             a.close()

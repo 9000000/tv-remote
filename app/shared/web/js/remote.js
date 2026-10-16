@@ -7,6 +7,7 @@ document.querySelectorAll('[data-rows]').forEach((box) => {
     const b = el('button', { className: 'rb lab' + (e.style ? ' ' + e.style : ''), id: 'r-' + e.id, innerHTML: '<svg class="ic" aria-hidden="true"><use href="#i-' + e.icon + '"/></svg><small></small>' });
     b.querySelector('small').textContent = remoteWords(e);
     if (e.key) b.dataset.k = e.key; else b.addEventListener('click', () => REMOTE_DO[e.do](e.arg));
+    if (e.needs) b.dataset.needs = e.needs.join(' ');                 // greyed on a TV that cannot (applyKind in core.js)
     box.append(b);
   }
 });
@@ -28,7 +29,7 @@ document.querySelectorAll('[data-k]').forEach((b) => {
   const inside = (e) => { const r = b.getBoundingClientRect(); return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; };
   const flash = () => { b.classList.add('held'); setTimeout(() => { if (!long) b.classList.remove('held'); }, 160); };
   b.addEventListener('pointerdown', (e) => {
-    if (e.button) return; down = true; long = false; try { b.setPointerCapture(e.pointerId); } catch {}
+    if (e.button || b.disabled) return; down = true; long = false; try { b.setPointerCapture(e.pointerId); } catch {}   // disabled: a key this TV does not have (applyKind)
     if (!power) t = setTimeout(() => { long = true; b.classList.add('held'); send('START_LONG'); }, 400);
   });
   b.addEventListener('pointermove', (e) => { if (down && !inside(e)) release(false); });
@@ -44,11 +45,11 @@ function normalizeLink(v) {
 }
 async function openOnTv(link, label) {
   const r = await api('/api/app', { link });
-  if (r) { toast(r.via === 'adb' ? 'Đã mở ' + label : 'Đã gửi cho TV (không qua ADB: vài TV bỏ qua lệnh này)'); setTimeout(refresh, 1500); }
+  if (r) { toast(r.via === 'adb' || NATIVE() ? 'Đã mở ' + label : 'Đã gửi cho TV (không qua ADB: vài TV bỏ qua lệnh này)'); setTimeout(refresh, 1500); }
 }
 // ---------- "Thêm phím", third row: Mở trên TV, Hẹn giờ tắt, Cảnh, Vẽ lên TV; their menus' entries are in remote.json ----------
 // The same menus as the phone app's remote (RemoteScreen.kt, PhoneRemote.kt); the entries live in remote.json, what they do here in REMOTE_DO.
-const needAdb = () => { if (ADB.state === 'ready') return false; toast('Việc này cần ADB. Bật ADB cho TV này rồi thử lại.'); return true; };
+const needAdb = () => { if (ADB.state === 'ready') return false; toast(NATIVE() ? kindWhy() : 'Việc này cần ADB. Bật ADB cho TV này rồi thử lại.'); return true; };
 const storePage = (id) => openOnTv('https://play.google.com/store/apps/details?id=' + id, 'CH Play');
 // the TV's Play Store takes a search only as market://search (a play.google.com search link ends in a browser error)
 const storeSearch = (q) => openOnTv('market://search?c=apps&q=' + encodeURIComponent(q), 'CH Play');
@@ -62,7 +63,7 @@ async function timerCustom() {
   const v = await ask('Tắt TV sau bao lâu?', { value: '', ok: 'Hẹn' }); if (v === null) return;
   const m = sleepMinutes(v); if (m) setSleep(m); else toast('Nhập số phút (vd 40) hoặc giờ tắt (vd 23:30)');
 }
-const quickOpen = () => menuDlg('Mở trên TV', -1, remoteMenu('open'));
+const quickOpen = () => menuDlg('Mở trên TV', -1, remoteMenu('open', { expand: { tvapps: () => quickApps.slice().sort((a, b) => appName(a).localeCompare(appName(b))).map((p) => ['@play|' + appName(p), '', () => openOnTv(p, appName(p))]) } }));   // LG / Samsung: their apps first
 async function timerMenu() {
   if (needAdb() || !await setupFor('rules')) return;                  // TV Setup runs the timer on the TV (SetupNeed "rules")
   const r = await loadRules(null, true); if (!r) return;
@@ -71,7 +72,7 @@ async function timerMenu() {
   menuDlg(at ? 'TV tự tắt lúc ' + clock(at) : 'Hẹn giờ tắt TV', at ? 0 : -1, items);
 }
 function scenesMenu() {
-  if (needAdb()) return;
+  if (!NATIVE() && needAdb()) return;                                 // LG / Samsung run scenes by their remote link
   menuDlg('Cảnh', -1, remoteMenu('scenes', { expand: { scenes: () => SCENES.map((sc) => [((sc.icon || '') + '  ' + sc.name).trim(), '', () => runScene(sc)]) } }));
 }
 // ---------- keyboard: whatever is typed in the box is mirrored on the TV, keystroke by keystroke ----------
@@ -166,7 +167,7 @@ document.addEventListener('keydown', (e) => {
   const onButton = ['BUTTON', 'SUMMARY', 'A'].includes(document.activeElement.tagName);
   if (onButton && (e.key === 'Enter' || e.key === ' ' || e.key === 'Tab')) return;   // keyboard users still operate the page
   if (e.key === 'Escape' && document.fullscreenElement) return;       // let Esc leave fullscreen
-  const adb = ADB.state === 'ready';
+  const adb = ADB.state === 'ready' || NATIVE() && can('text');      // letters: ADB, or LG's / Samsung's keyboard link
   if (keymap[e.key]) { e.preventDefault(); api('/api/key', { key: keymap[e.key] }); }
   else if (e.key === 'Enter') { e.preventDefault(); if (adb) queue('/api/type', { enter: true }); else api('/api/key', { key: 'OK' }); }
   else if (e.key === 'Backspace') { e.preventDefault(); if (adb) queue('/api/type', { del: 1 }); else api('/api/key', { key: 'DEL' }); }
@@ -175,7 +176,7 @@ document.addEventListener('keydown', (e) => {
   else if (e.key.length === 1) { e.preventDefault(); queue('/api/type', { text: e.key }); }
 });
 document.addEventListener('paste', (e) => {                           // Cmd+V anywhere on the Remote tab pastes onto the TV
-  if (currentTab !== 'remote' || typingHere() || ADB.state !== 'ready') return;
+  if (currentTab !== 'remote' || typingHere() || !(ADB.state === 'ready' || NATIVE() && can('text'))) return;
   const t = (e.clipboardData || window.clipboardData).getData('text'); if (t) { e.preventDefault(); queue('/api/type', { text: t.slice(0, 500) }); }
 });
 

@@ -4,6 +4,8 @@ import dev.tvremote.core.AdbPrompt
 import dev.tvremote.core.Atv
 import dev.tvremote.core.HttpServer
 import dev.tvremote.core.HttpServer.Response
+import dev.tvremote.core.Remote
+import dev.tvremote.core.RemoteSteps
 import dev.tvremote.core.Scenes
 import dev.tvremote.core.Tv
 import dev.tvremote.core.WebPage
@@ -33,7 +35,13 @@ class Server(private val repo: File, private val keys: File, private val cache: 
     private val assist = Assist { cur }
     val updater = Updater(version, System.getProperty("tvr.res")?.let { File(it) }, stop).also { it.start() }
 
-    private fun session(host: String) = Session(host, keys, cache, helper, jar)
+    private val kinds = java.util.concurrent.ConcurrentHashMap<String, String>()   // what an unsaved TV is, from the scan or a look at its ports
+
+    /** An LG or Samsung TV gets a session with only its remote link; the kind is saved with the TV. */
+    private fun kindOf(host: String): String = saved.find(host)?.optString("kind")?.takeIf { it.isNotEmpty() }?.let { Remote.Kind.of(it) }
+        ?: kinds[host] ?: (if (host.isEmpty()) null else Remote.Kind.detect(host)?.also { kinds[host] = it }) ?: Remote.Kind.ANDROID
+
+    private fun session(host: String) = Session(host, keys, cache, helper, jar, kindOf(host))
 
     /** Another TV: a whole new session; the old one is closed after (it may be in the middle of a request). */
     @Synchronized private fun switch(host: String) {
@@ -92,6 +100,15 @@ class Server(private val repo: File, private val keys: File, private val cache: 
 
     private fun adbReady(s: Session) = s.link?.state() == "ready"
 
+    private fun native(s: Session) = s.kind != Remote.Kind.ANDROID
+
+    /** An LG or Samsung TV's apps, from its remote link, in the shape Manage gives the page (names and pictures included). */
+    private fun nativeApps(s: Session): Response {
+        val apps = JSONArray()
+        for (a in s.need().apps()) apps.put(JSONObject().put("pkg", a.id).put("meta", JSONObject().put("label", a.label).put("icon", a.icon.isNotEmpty())))
+        return Response.json(JSONObject().put("apps", apps))
+    }
+
     private fun sh(s: Session, cmd: String): String = (s.link ?: throw IOException("no TV selected")).get().shell(cmd)
 
     /** The window in front, to tell whether a key that should open something did. */
@@ -115,8 +132,9 @@ class Server(private val repo: File, private val keys: File, private val cache: 
             "/api/clip" -> return clip(s.control().clipboard())
             "/api/fleet" -> return fleetInfo(s)
             "/api/fleet/job" -> return fleets.jobs[r.q("id")]?.let { Response.json(fleets.snapshot(it)) } ?: Response.error(404, "unknown job")
+            "/api/apps" -> if (native(s)) return nativeApps(s)
             "/api/app/icon" -> {
-                val png = s.labels?.icon(r.q("pkg")) ?: return Response.error(404, "no icon")
+                val png = (if (native(s)) s.atv?.icon(r.q("pkg")) else s.labels?.icon(r.q("pkg"))) ?: return Response.error(404, "no icon")
                 return Response.of("image/png", png).also { it.headers["Cache-Control"] = "max-age=86400" }
             }
             "/api/app/meta" -> {
@@ -126,8 +144,14 @@ class Server(private val repo: File, private val keys: File, private val cache: 
                 val icons = try { s.labels?.icons() == true } catch (e: Exception) { false }
                 return Response.json(JSONObject().put("label", label ?: pkg.substringAfterLast('.')).put("icon", icons).put("banner", icons))
             }
-            else -> return null
         }
+        if (native(s) && post && r.path == "/api/search") {                // LG: YouTube's own search; Samsung cannot
+            if (!s.need().search(r.json().optString("query").take(200))) throw IllegalArgumentException("this TV has no YouTube and no Google search")
+            return Response.json(JSONObject().put("to", "youtube"))
+        }
+        if (native(s) && r.path !in OURS && r.path !in NATIVE_TOO)            // LG / Samsung: no ADB, so nothing of Manage's
+            return Response.error(400, "unsupported: " + Remote.Kind.name(s.kind))
+        if (!post) return null
         if (r.path == "/api/fleet/install") return fleetInstall(r, s)
         if (r.path !in OURS) return null                              // Manage's: uploads among them, whose body is not JSON
         val d = r.json()
@@ -137,17 +161,19 @@ class Server(private val repo: File, private val keys: File, private val cache: 
                 val link = d.optString("link").trim()
                 if (link.isEmpty()) throw IllegalArgumentException("link required")
                 if (adbReady(s)) null                                 // Manage: ADB reports whether the TV really opened it
+                else if (native(s) && link == "settings") { s.need().key(176, Atv.SHORT); Response.json(JSONObject().put("ok", true).put("via", "remote")) }
                 else { s.need().launch(if (link == "settings") "android-app://com.android.tv.settings" else link); Response.json(JSONObject().put("ok", true).put("via", "remote")) }   // best effort: many TVs ignore it
             }
             "/api/volume" -> volume(s, d)
             "/api/text" -> { s.need().text(d.optString("text").take(500)); Response.ok() }
-            "/api/touch" -> touch(s, d)
-            "/api/type" -> type(s, d)
-            "/api/clip" -> { s.control().setClipboard(d.optString("text").take(100000), d.optBoolean("paste")); Response.ok() }
+            "/api/touch" -> if (native(s)) Response.error(400, "unsupported: " + Remote.Kind.name(s.kind)) else touch(s, d)
+            "/api/type" -> if (native(s)) { s.need().type(minOf(d.optInt("del"), 500), d.optString("text").take(500), d.optBoolean("enter")); Response.ok() } else type(s, d)
+            "/api/clip" -> if (native(s)) Response.error(400, "unsupported: " + Remote.Kind.name(s.kind)) else { s.control().setClipboard(d.optString("text").take(100000), d.optBoolean("paste")); Response.ok() }
             "/api/wake" -> wake(s)
             "/api/tv/select" -> {
                 val host = d.optString("host").trim()
                 if (!IP.matches(host)) throw IllegalArgumentException("not an IP address")
+                if (d.has("kind")) kinds[host] = Remote.Kind.of(d.optString("kind"))   // from the scan: no need to look at its ports
                 if (saved.find(host) != null) { saved.setCurrent(host); saved.save() }
                 if (host != s.host) switch(host)                      // the TV in use again: keep its connections
                 Response.ok()
@@ -167,7 +193,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
                 val steps = d.optJSONArray("steps") ?: (0 until saved.scenes.length()).map { saved.scenes.getJSONObject(it) }.firstOrNull { it.optString("id") == d.optString("id") }?.optJSONArray("steps")
                     ?: return Response.error(404, "no such scene")
                 val clean = Scenes.clean(JSONArray().put(JSONObject().put("name", "x").put("steps", steps))).optJSONObject(0)?.optJSONArray("steps") ?: JSONArray()
-                val failed = Scenes.run(clean, Scenes.Shell({ sh(s, it) }))
+                val failed = Scenes.run(clean, if (native(s)) RemoteSteps(s.need()) { wake(s) } else Scenes.Shell({ sh(s, it) }))
                 Response.json(JSONObject().put("ok", failed == null).put("failed", failed ?: ""))
             }
             "/api/fleet/do" -> {
@@ -179,7 +205,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
             "/api/pair/start" -> try {
                 s.pairStart(); Response.ok()
             } catch (e: Exception) {
-                Response.error(400, "không tới được dịch vụ remote của TV (cổng 6467): ${e.message}")
+                Response.error(400, "không tới được dịch vụ remote của TV (cổng ${if (native(s)) Remote.Kind.ports(s.kind).joinToString("/") else "6467"}): ${e.message}")
             }
             "/api/pair/finish" -> try {
                 s.pairFinish(d.optString("code").trim())
@@ -203,7 +229,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
     // ---------------------------------------------------------------- state
     private fun state(s: Session): Response {
         val entry = saved.find(s.host)
-        val adb = s.link?.state() ?: "closed"
+        val adb = if (native(s)) "none" else s.link?.state() ?: "closed"   // none: this kind of TV has no ADB at all
         if (adb == "ready" || adb == "unauthorized") keepTrusted(s, adb)
         return Response.json(s.state().put("adb", JSONObject().put("state", adb)).put("name", entry?.optString("name") ?: "").put("saved", entry != null)
             .put("video", "h264"))                                    // the picture comes as H.264 (js/screen.js h264Loop), as from TV Setup
@@ -245,7 +271,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
             Regex("^## " + Regex.escape(version) + " - (\\d{4})-(\\d{2})-(\\d{2})", RegexOption.MULTILINE).find(File(repo, "CHANGELOG.md").readText())
                 ?.groupValues?.let { "${it[3]}/${it[2]}/${it[1]}" } ?: ""
         } catch (e: IOException) { "" }
-        val tvWeb = if (s.host.isNotEmpty() && s.host != "127.0.0.1" && s.host != "localhost" && Discover.portOpen(s.host, 8765)) "http://${s.host}:8765" else ""   // the TV Setup app's page
+        val tvWeb = if (!native(s) && s.host.isNotEmpty() && s.host != "127.0.0.1" && s.host != "localhost" && Discover.portOpen(s.host, 8765)) "http://${s.host}:8765" else ""   // the TV Setup app's page
         return Response.json(JSONObject().put("version", version).put("released", released).put("tv_web", tvWeb).put("stale", false))
     }
 
@@ -297,6 +323,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
             try { Scenes.volume({ sh(s, it) }, want); return Response.json(JSONObject().put("ok", true).put("via", "adb")) } catch (e: Exception) { }
         }
         val a = s.need()
+        if (native(s) && a.setVolume(want)) return Response.json(JSONObject().put("ok", true).put("via", "remote").put("level", want))
         for (i in 0 until 60) {                                       // no ADB: step with the volume keys
             val now = a.volume?.first ?: break
             if (now == want) break
@@ -334,8 +361,8 @@ class Server(private val repo: File, private val keys: File, private val cache: 
     }
 
     private fun wake(s: Session): Response {
-        val r = Wake.wake(s.host, saved.find(s.host) ?: JSONObject(), 60)
-        if (r.ok && s.atv?.isOn != true) {
+        val r = Wake.wake(s.host, (saved.find(s.host) ?: JSONObject()).put("kind", s.kind), 60, s.atv?.mac ?: "")
+        if (r.ok && !native(s) && s.atv?.isOn != true) {
             Thread.sleep(2000)
             if (s.available) s.atv?.key(26, Atv.SHORT)                 // screen off but the network alive
         }
@@ -396,20 +423,21 @@ class Server(private val repo: File, private val keys: File, private val cache: 
     }
 
     private fun setupStatus(s: Session): Response {
-        val st = settled(s)
+        val st = if (native(s)) "none" else settled(s)
         val o = JSONObject().put("host", s.host).put("adb", JSONObject().put("state", st)).put("remote", s.state()).put("saved", saved.find(s.host) ?: JSONObject.NULL)
         if (st == "ready") try { val i = tvInfo(s); for (k in i.keys()) o.put(k, i.get(k)) } catch (e: IOException) { }
-        return Response.json(o)
+        if (native(s)) s.atv?.let { a -> o.put("model", a.model).put("mac", a.mac) }
+        return Response.json(o.put("kind", s.kind))
     }
 
     /** Remember the current TV. Once it has a Tailscale IP that becomes its address, so it works from anywhere. */
     private fun tvSave(s: Session, d: JSONObject): Response {
-        val info = if (adbReady(s)) tvInfo(s) else JSONObject()
+        val info = if (adbReady(s)) tvInfo(s) else if (native(s)) JSONObject().put("model", s.atv?.model ?: "").put("mac", s.atv?.mac ?: "") else JSONObject()
         val old = s.host
         val host = info.optString("tailscale_ip").ifEmpty { old }
         if (host.isEmpty()) throw IllegalArgumentException("no TV selected")
         val entry = saved.upsert(JSONObject().put("name", d.optString("name").trim().take(60).ifEmpty { info.optString("model").ifEmpty { host } }).put("host", host)
-            .put("lan", info.optString("lan_ip")).put("mac", info.optString("mac")), old)
+            .put("lan", info.optString("lan_ip")).put("mac", info.optString("mac")).put("kind", s.kind), old)
         saved.save()
         val now = entry.optString("host")                             // another row of this TV may have brought its Tailscale IP
         if (now != old) switch(now)
@@ -419,11 +447,11 @@ class Server(private val repo: File, private val keys: File, private val cache: 
     // ---------------------------------------------------------------- several TVs at once
     /** Only the saved list: never an address typed in a request. */
     private fun targets(hosts: List<String>, s: Session) = hosts.filter { it.isNotEmpty() }.distinct().also { h ->
-        if (h.isEmpty() || h.any { saved.find(it) == null }) throw IllegalArgumentException("pick saved TVs")
+        if (h.isEmpty() || h.any { saved.find(it) == null || Remote.Kind.of(saved.find(it)?.optString("kind")) != Remote.Kind.ANDROID }) throw IllegalArgumentException("pick saved TVs")
     }.map { it to fleets.link(it) }
 
     private fun fleetInfo(s: Session): Response {
-        val hosts = saved.tvs.let { a -> (0 until a.length()).map { a.getJSONObject(it) } }
+        val hosts = saved.tvs.let { a -> (0 until a.length()).map { a.getJSONObject(it) } }.filter { Remote.Kind.of(it.optString("kind")) == Remote.Kind.ANDROID }   // the others have no ADB
         val pool = java.util.concurrent.Executors.newCachedThreadPool()
         try {
             val rows = hosts.map { t -> pool.submit<JSONObject> { fleets.info(t.optString("host"), fleets.link(t.optString("host"))).put("name", t.optString("name")) } }.map { it.get() }
@@ -464,6 +492,9 @@ class Server(private val repo: File, private val keys: File, private val cache: 
         val OURS = setOf("/api/key", "/api/app", "/api/volume", "/api/text", "/api/clip", "/api/touch", "/api/type", "/api/wake", "/api/tv/select", "/api/tv/save",
             "/api/tv/remove", "/api/scenes", "/api/scene/run", "/api/fleet/do", "/api/assist", "/api/pair/start", "/api/pair/finish", "/api/shutdown",
             "/api/update")
+        /** What the page reads from an LG or Samsung TV besides [OURS]. */
+        val NATIVE_TOO = setOf("/api/state", "/api/about", "/api/update", "/api/tvs", "/api/discover", "/api/setup/status", "/api/scenes", "/api/apps", "/api/app/icon", "/api/app/meta", "/api/setup/need",
+            "/api/fleet", "/api/fleet/job", "/api/fleet/install")
         const val HD = 5                                              // Tv.QUALITY's sharpest level, the page's "Nét nhất"
         val IP = Regex("((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)")   // IPv4: what ADB and the TV's page links are written for
         val PRIVATE = Regex("(10\\.|192\\.168\\.|172\\.(1[6-9]|2\\d|3[01])\\.)[0-9.]+")

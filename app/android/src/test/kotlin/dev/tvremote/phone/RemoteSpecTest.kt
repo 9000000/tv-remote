@@ -19,9 +19,9 @@ class RemoteSpecTest {
         assertTrue(phoneButtonHooks.keys.all { it in phoneActions })
     }
 
-    @Test fun everyConditionAndListIsOneTheMenusSupply() {          // timerMenu / scenesMenu in Automation.kt
+    @Test fun everyConditionAndListIsOneTheMenusSupply() {          // timerMenu / scenesMenu in Automation.kt, quickOpen in Media.kt
         assertTrue(entries.mapNotNull { it.whenCond }.all { it == "timerOn" })
-        assertTrue(entries.mapNotNull { it.expand }.all { it == "lengths" || it == "scenes" })
+        assertTrue(entries.mapNotNull { it.expand }.all { it == "lengths" || it == "scenes" || it == "tvapps" })
     }
 
     @Test fun theRowsAndMenusTheScreenAsksFor() {                    // RemoteScreen.kt, Media.kt, Automation.kt

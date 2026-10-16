@@ -4,6 +4,7 @@ import dev.tvremote.core.AdbLink
 import dev.tvremote.core.Atv
 import dev.tvremote.core.Feeds
 import dev.tvremote.core.Manage
+import dev.tvremote.core.Remote
 import dev.tvremote.core.RemoteLabels
 import dev.tvremote.core.Tv
 import org.json.JSONObject
@@ -16,10 +17,12 @@ import java.util.concurrent.TimeUnit
 /**
  * Everything bound to the TV being controlled: the remote-protocol link (keys, volume, power state
  * without ADB), its ADB link and what is managed over it, the picture and sound for the page, and a scrcpy session for touch
- * and typing while nobody watches. Picking another TV swaps the whole thing.
+ * and typing while nobody watches. Picking another TV swaps the whole thing. [kind]: an LG or Samsung TV has only its remote
+ * link ([Remote]): no ADB, nothing managed, no picture.
  */
-class Session(val host: String, private val keys: File, cache: File, helper: () -> ByteArray, private val jar: () -> ByteArray) {
-    @Volatile var atv: Atv? = null
+class Session(val host: String, private val keys: File, cache: File, helper: () -> ByteArray, private val jar: () -> ByteArray, val kind: String = Remote.Kind.ANDROID) {
+    private val native = kind != Remote.Kind.ANDROID
+    @Volatile var atv: Remote? = null
         private set
     @Volatile var paired: Boolean? = null                             // null: not known yet
         private set
@@ -28,8 +31,9 @@ class Session(val host: String, private val keys: File, cache: File, helper: () 
     @Volatile private var closed = false
     @Volatile private var dialGen = 0
     @Volatile private var pairer: Atv? = null
+    @Volatile private var dialing: Remote? = null                     // LG / Samsung: the TV may be asking the person about us
 
-    val link: AdbLink? = if (host.isEmpty()) null else AdbLink(keys, host)
+    val link: AdbLink? = if (host.isEmpty() || native) null else AdbLink(keys, host)
     val labels: RemoteLabels? = link?.let { RemoteLabels(it, helper, File(cache, "meta/" + host.replace(Regex("[^\\w.-]"), "_"))) }
     val manage: Manage? = link?.let { Manage(it, labels, cache, helper) }
     val feeds = Feeds()
@@ -46,7 +50,8 @@ class Session(val host: String, private val keys: File, cache: File, helper: () 
         val gen = ++dialGen
         Thread({
             while (!closed && gen == dialGen) {
-                val a = Atv(keys, host)
+                val a = Remote.of(kind, keys, host)
+                dialing = a
                 try {
                     a.connect { if (!closed && gen == dialGen) later(1000) { if (gen == dialGen) dial() } }
                     if (closed || gen != dialGen) { a.close(); return@Thread }
@@ -60,10 +65,22 @@ class Session(val host: String, private val keys: File, cache: File, helper: () 
                     paired = false
                     error = "not paired"
                     return@Thread
+                } catch (e: Remote.Refused) {                         // LG / Samsung: the person said no; asked again only on Pair
+                    a.close()
+                    paired = false
+                    error = "refused"
+                    return@Thread
+                } catch (e: IOException) {
+                    a.close()
+                    if (native && e.message == "nobody accepted on the TV") { paired = false; error = "not accepted"; return@Thread }   // not again by itself: the question would keep popping up
+                    error = "cannot connect: " + (e.message ?: e.javaClass.simpleName)
+                    try { Thread.sleep(5000) } catch (stop: InterruptedException) { return@Thread }
                 } catch (e: Exception) {
                     a.close()
                     error = "cannot connect: " + (e.message ?: e.javaClass.simpleName)
                     try { Thread.sleep(5000) } catch (stop: InterruptedException) { return@Thread }
+                } finally {
+                    if (dialing === a) dialing = null
                 }
             }
         }, "atv-dial").apply { isDaemon = true }.start()
@@ -77,17 +94,21 @@ class Session(val host: String, private val keys: File, cache: File, helper: () 
         val v = a?.volume
         o.put("volume", if (v == null) JSONObject.NULL else JSONObject().put("level", v.first).put("max", v.second).put("muted", v.third))
         o.put("device", if (a == null || a.model.isEmpty()) JSONObject.NULL else JSONObject().put("manufacturer", a.vendor).put("model", a.model).put("sw_version", a.version))
+        val k = Remote.Kind.json(kind)
+        for (n in k.keys()) o.put(n, k.get(n))
+        o.put("asking", dialing?.asking == true)
         return o
     }
 
     /** The link, or why there is none, in the words the page shows. */
-    fun need(): Atv = atv?.takeIf { it.ready() } ?: throw Unavailable(error.ifEmpty { "TV not connected" })
+    fun need(): Remote = atv?.takeIf { it.ready() } ?: throw Unavailable(error.ifEmpty { "TV not connected" })
 
     class Unavailable(message: String) : Exception(message)
 
     // ---------------------------------------------------------------- pairing (port 6467)
     /** Makes the TV show a 6-character code. Nobody typing it within 3 minutes: back to normal dialling. */
     fun pairStart() {
+        if (native) { dialGen++; atv?.close(); atv = null; paired = null; error = ""; dial(); return }   // LG / Samsung: the TV asks again
         dialGen++
         atv?.close(); atv = null
         pairer?.close()
@@ -157,6 +178,7 @@ class Session(val host: String, private val keys: File, cache: File, helper: () 
         feeds.stop()
         ctl?.stop()
         atv?.close()
+        dialing?.close()
         pairer?.close()
         link?.close()
         timers.shutdownNow()

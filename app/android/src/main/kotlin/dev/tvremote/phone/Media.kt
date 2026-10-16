@@ -125,5 +125,13 @@ internal fun MainActivity.askText(title: String, hint: String, ok: String, then:
 /** Things the TV can be told to open straight from the phone, saving the hunt with the TV's own keyboard (the entries: remote.json). */
 internal fun MainActivity.quickOpen() {
     if (!live()) return
-    menu(t("Mở trên TV", "Open on the TV"), -1, remoteMenu("open"))
+    val b = basic
+    if (b == null || kind() == dev.tvremote.core.Remote.Kind.ANDROID) { menu(t("Mở trên TV", "Open on the TV"), -1, remoteMenu("open")); return }
+    Thread {                                                          // LG / Samsung: their apps, from their remote link, first
+        val apps = try { b.apps().sortedBy { it.label.lowercase() } } catch (e: Exception) { emptyList() }
+        ui.post {
+            if (isFinishing || basic !== b) return@post
+            menu(t("Mở trên TV", "Open on the TV"), -1, remoteMenu("open", lists = mapOf("tvapps" to { apps.map { a -> Triple("@play|" + a.label, "") { b.launch(a.id) } } })))
+        }
+    }.start()
 }

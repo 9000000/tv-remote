@@ -67,6 +67,9 @@ The README, the code and the site always call the parts by these names:
 | Keys while the TV has not allowed ADB | ✓ | | ✓ |
 | Widget, Quick Settings tiles, the phone's volume keys | ✓ | | |
 | Install on the controlling device | the app | nothing, fine on an iPhone | the app |
+| LG (webOS) and Samsung (Tizen, 2016 on) TVs | ✓ | | ✓ |
+
+**LG and Samsung TVs.** The Phone app and the Computer app also control LG (webOS) and Samsung (Tizen, 2016 on) TVs, through each maker's own remote protocol, no ADB: the first time, choose Allow on the TV. They can: remote keys, typing, opening apps, opening YouTube links, Wake-on-LAN, scenes; on LG also setting the volume to a number, turning the screen off and searching YouTube. What needs ADB (seeing and touching the picture, listening, Apps, Files, Health, sleep timer, drawing) is hidden or greyed out with "TV LG/Samsung không hỗ trợ" ("LG/Samsung TVs can't do this"). The TV web page is Android TV only, since the TV app runs only on Android.
 
 **How the parts connect.** No server in between: everything goes straight to the TV.
 

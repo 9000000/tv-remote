@@ -133,8 +133,8 @@ function connecting(name, host) {                                   // covers th
 }
 $('#concancel').addEventListener('click', () => { justPicked = null; $('#connecting').close(); wantPick = true; refresh(); });
 $('#connecting').addEventListener('cancel', (e) => { e.preventDefault(); $('#concancel').click(); });   // Esc: the same as Cancel
-async function selectTv(host, name) {
-  const r = await api('/api/tv/select', { host }); if (!r) return;
+async function selectTv(host, name, kind) {
+  const r = await api('/api/tv/select', kind ? { host, kind } : { host }); if (!r) return;
   connecting(name || host, host); wantPick = false; cameFromTv = false; justPicked = host; pickedAt = Date.now(); showTab('remote'); await sleep(1200); await refresh(); loadSteps();
 }
 $('#switchtv').addEventListener('click', () => { wantPick = true; cameFromTv = true; refresh(); });
@@ -155,11 +155,13 @@ async function loadTvs() {
   fleetCheck(rows.length);
 }
 function scanRow(f) {
-  const row = el('div', { className: 'item', onclick: (e) => { if (!e.target.closest('button')) selectTv(f.ip); } },
+  const native = f.kind && f.kind !== 'android';                      // LG / Samsung: found by SSDP, no ADB to report
+  const row = el('div', { className: 'item', onclick: (e) => { if (!e.target.closest('button')) selectTv(f.ip, f.name, f.kind); } },
     el('div', { className: 'name' }, el('span', { textContent: f.name || f.ip }),
-      el('span', { className: 'badge' + (f.remote ? ' ok' : ''), textContent: f.remote ? 'Android TV' : 'chỉ có ADB' }), f.adb ? el('span', { className: 'badge ok', textContent: 'ADB đã bật' }) : el('span', { className: 'badge', textContent: 'ADB chưa bật' }),
+      el('span', { className: 'badge' + (f.remote ? ' ok' : ''), textContent: native ? 'TV ' + KIND_NAME[f.kind] : f.remote ? 'Android TV' : 'chỉ có ADB' }),
+      native ? null : f.adb ? el('span', { className: 'badge ok', textContent: 'ADB đã bật' }) : el('span', { className: 'badge', textContent: 'ADB chưa bật' }),
       el('small', { textContent: f.ip + (f.via === 'tailscale' ? ' · qua Tailscale' : ' · cùng mạng') + (f.tailscale ? ' · Tailscale ' + f.tailscale : '') })),
-    el('div', { className: 'acts' }, setLabel(el('button', { className: 'small primary', onclick: () => selectTv(f.ip) }), '▶', 'Điều khiển')));
+    el('div', { className: 'acts' }, setLabel(el('button', { className: 'small primary', onclick: () => selectTv(f.ip, f.name, f.kind) }), '▶', 'Điều khiển')));
   row.dataset.ip = f.ip; return row;
 }
 // The scan runs on the computer; asked again every 400 ms, each TV shows up as soon as it answers instead of after the
@@ -319,6 +321,7 @@ async function loadSteps() {
   if (!s) return;
   $('#setuphost').textContent = s.host ? (s.model ? s.model + ' · ' : '') + s.host : 'chưa chọn TV';
   if (!s.host) { $('#steps').replaceChildren(el('p', { className: 'muted', textContent: 'Chọn một TV ở trên (Quét mạng hoặc nhập IP) để bắt đầu.' })); return; }
+  if (s.kind && s.kind !== 'android') { showSteps(nativeSteps(s)); return; }
   const adb = s.adb.state, ready = adb === 'ready', out = [];
   // 1. ADB
   out.push(ready ? step(1, 'ok', 'ADB đã kết nối', 'Máy này đã được TV cho phép.')
@@ -347,8 +350,27 @@ async function loadSteps() {
     out.push(step(4, 'todo', move ? 'Lưu và chuyển sang IP Tailscale' : 'Lưu TV này', move ? 'TV đã có IP Tailscale ' + s.tailscale_ip + '. Lưu để từ nay kết nối qua IP đó, dùng được cả khi không ở nhà.' : 'Để lần sau mở lên là dùng ngay, không phải tìm lại.',
       name, act('💾 Lưu', async () => { const x = await api('/api/tv/save', { name: name.value }); if (x) { toast(x.moved ? 'Đã lưu, chuyển sang ' + x.tv.host : 'Đã lưu'); await refresh(); await loadSteps(); } }, 'primary')));
   }
+  showSteps(out);
+}
+function showSteps(out) {
   if (document.activeElement && $('#steps').contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;   // don't wipe what is being typed
   $('#steps').replaceChildren(...out);
+}
+// An LG or Samsung TV: no ADB, no code to type. The TV asks itself whether to let this computer in; then save it.
+function nativeSteps(s) {
+  const r = s.remote, out = [], again = act('🔄 Hỏi lại TV', async () => { if (await api('/api/pair/start', {})) { toast('Nhìn lên TV'); await sleep(800); await loadSteps(); } }, 'primary');
+  out.push(r.connected ? step(1, 'ok', 'TV đã cho phép', 'Các nút điều khiển dùng được.')
+    : r.asking ? step(1, 'wait', 'Nhìn lên TV: chọn Cho phép', 'TV đang hỏi có cho máy này điều khiển không.')
+    : r.error === 'refused' ? step(1, 'todo', 'TV đã từ chối', 'Bấm “Hỏi lại TV” rồi chọn Cho phép trên TV.', again)
+    : r.error === 'not accepted' ? step(1, 'todo', 'Chưa ai chọn Cho phép trên TV', 'Bấm “Hỏi lại TV”, rồi chọn Cho phép trong lúc TV hỏi.', again)
+    : step(1, 'todo', 'Kết nối TV', r.error ? 'Chưa kết nối được. TV có bật và chung mạng không?' : 'Đang kết nối...', r.error ? again : null));
+  if (s.saved) out.push(step(2, 'ok', 'Đã lưu: ' + s.saved.name, 'Lần sau mở lên là dùng TV này. ' + (s.saved.mac ? 'Đã ghi địa chỉ MAC để đánh thức TV.' : '')));
+  else {
+    const name = el('input', { placeholder: 'Tên gọi, vd TV phòng khách', value: s.model || '' });
+    out.push(step(2, 'todo', 'Lưu TV này', 'Để lần sau mở lên là dùng ngay, không phải tìm lại.',
+      name, act('💾 Lưu', async () => { const x = await api('/api/tv/save', { name: name.value }); if (x) { toast('Đã lưu'); await refresh(); await loadSteps(); } }, 'primary')));
+  }
+  return out;
 }
 setInterval(() => { if (currentTab === 'tv' && !document.hidden && !stopped) loadSteps(); }, 6000);
 

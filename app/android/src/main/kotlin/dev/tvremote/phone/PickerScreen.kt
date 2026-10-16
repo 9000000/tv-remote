@@ -10,6 +10,8 @@ import android.view.Gravity
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.LinearLayout
+import dev.tvremote.core.Remote
+import dev.tvremote.core.Ssdp
 import java.net.Inet4Address
 import java.net.NetworkInterface
 import java.util.Collections
@@ -38,15 +40,16 @@ internal fun MainActivity.wake(ip: String) {
     val mac = pref("mac:$ip")
     val lan = pref("lan:$ip")
     message(t("Đang đánh thức ", "Waking ") + title(ip) + "...", false)
+    val port = upPort(ip)
     Thread {
-        var up = open(ip, 5555, 1500)
+        var up = open(ip, port, 1500)
         var sent = 0
         var i = 0
         val hopeless = mac.isEmpty() || !Wol.sameNetwork(lan)     // no packet can reach the TV from here: say so at once instead of waiting
         while (i < 22 && !up && !hopeless) {
             if (i % 6 == 0 && mac.isNotEmpty()) sent += Wol.send(mac, lan)
             try { Thread.sleep(1000) } catch (e: InterruptedException) { break }
-            up = open(ip, 5555, 600) || lan.isNotEmpty() && lan != ip && Wol.sameNetwork(lan) && open(lan, 5555, 400)
+            up = open(ip, port, 600) || lan.isNotEmpty() && lan != ip && Wol.sameNetwork(lan) && open(lan, port, 400)
             i++
         }
         val ok = up
@@ -71,12 +74,15 @@ internal fun MainActivity.wake(ip: String) {
     }.start()
 }
 
+/** The port that answers while the TV is on: ADB's on an Android TV, the remote link's on an LG or Samsung TV. */
+internal fun MainActivity.upPort(ip: String): Int = kindOf(ip).let { if (it == Remote.Kind.ANDROID) 5555 else Remote.Kind.ports(it).first() }
+
 // ---------------------------------------------------------------- saved TVs
 internal fun MainActivity.name(ip: String): String = pref("name:$ip")
 
 internal fun MainActivity.savedIps(): MutableList<String> = pref("ips").split(",").filter { it.isNotEmpty() }.toMutableList()
 
-private val PER_TV = listOf("name", "mac", "lan", "ts", "tvs")         // the prefs kept per saved TV, as "<field>:<ip>" (and atv:)
+private val PER_TV = listOf("name", "mac", "lan", "ts", "tvs", "kind") // the prefs kept per saved TV, as "<field>:<ip>" (and atv:)
 
 private fun MainActivity.savedTv(ip: String) = SameTv.Tv(ip, pref("lan:$ip"), pref("ts:$ip"), pref("mac:$ip"))
 
@@ -116,7 +122,7 @@ internal fun MainActivity.probeSaved() {
     if (host == null && !waking) for (ip in savedIps()) Thread {
         // the saved address first, then the TV's other one: its Tailscale IP when away, its home IP when at home
         val via = listOf(ip, pref("ts:$ip"), pref("lan:$ip")).filter { it.isNotEmpty() }.distinct()
-            .firstOrNull { open(it, 5555, 2500) || prefs.getBoolean("atv:$ip", false) && open(it, 6466, 1500) }
+            .firstOrNull { h -> kindOf(ip).let { k -> if (k != Remote.Kind.ANDROID) Remote.Kind.ports(k).any { open(h, it, 1500) } else open(h, 5555, 2500) || prefs.getBoolean("atv:$ip", false) && open(h, 6466, 1500) } }
         val up = via != null
         val lan = pref("lan:$ip")
         val away = lan.isNotEmpty() && !Wol.sameNetwork(lan)   // the phone is not on the TV's own Wi-Fi
@@ -183,7 +189,12 @@ internal fun MainActivity.refreshSaved() {
 
 // ---------------------------------------------------------------- finding TVs on the Wi-Fi
 private fun MainActivity.foundRow(ip: String, name: String, adb: Boolean) = row((if (name.isNotEmpty()) name + "\n" else "") + ip + " · " +
-    (if (adb) t("ADB đã bật", "ADB on") else t("ADB chưa bật: chỉ bấm phím, app sẽ giúp bật", "ADB off: keys only, the app helps turn it on"))) { connect(ip) }
+    (if (adb) t("ADB đã bật", "ADB on") else t("ADB chưa bật: chỉ bấm phím, app sẽ giúp bật", "ADB off: keys only, the app helps turn it on"))) { prefs.edit().remove("kind:$ip").apply(); connect(ip) }
+
+/** An LG or Samsung TV the SSDP search found: its own remote link, no ADB. */
+private fun MainActivity.foundRow(f: Ssdp.Found) = row((if (f.name.isNotEmpty()) f.name + "\n" else "") + f.ip + " · TV " + Remote.Kind.name(f.kind)) {
+    prefs.edit().putString("kind:${f.ip}", f.kind).apply(); connect(f.ip)
+}
 
 internal fun MainActivity.scan() {
     scanBtn.isEnabled = false
@@ -218,6 +229,7 @@ internal fun MainActivity.scan() {
                 }
             }
             val stopMdns = announced { ip -> Thread { seen(ip) }.start() }   // TVs also announce themselves; this finds the slow ones
+            val ssdp = Thread { Ssdp.find(3000) { f -> if (synchronized(found) { if (f.ip in found) false else found.add(f.ip) }) ui.post { foundList.addView(foundRow(f)) } } }.apply { start() }   // LG and Samsung TVs answer this
             val pool = Executors.newFixedThreadPool(96)
             for (net in nets) for (i in 1 until 255) {
                 val ip = net + i
@@ -225,6 +237,7 @@ internal fun MainActivity.scan() {
             }
             pool.shutdown()
             pool.awaitTermination(25, TimeUnit.SECONDS)
+            ssdp.join(5000)
             stopMdns()
         } catch (ignored: Exception) {
         }

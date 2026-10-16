@@ -67,6 +67,9 @@ Trong README, code và trang giới thiệu, các phần luôn được gọi b�
 | Bấm phím khi TV chưa cho ADB | ✓ | | ✓ |
 | Widget, ô Cài đặt nhanh, phím âm lượng của máy | ✓ | | |
 | Cần cài gì trên máy điều khiển | app | không, hợp với iPhone | app |
+| TV LG (webOS) và Samsung (Tizen, từ 2016) | ✓ | | ✓ |
+
+**TV LG và Samsung.** App điện thoại và App máy tính điều khiển được cả TV LG (webOS) và Samsung (Tizen, từ 2016), qua cách điều khiển riêng của mỗi hãng, không cần ADB: lần đầu TV hỏi, chọn Cho phép trên TV. Làm được: phím remote, gõ chữ, mở app, mở link YouTube, Wake-on-LAN, cảnh; với LG thêm chỉnh âm lượng theo số, tắt màn hình, tìm trên YouTube. Việc cần ADB (xem và chạm hình, nghe tiếng, ứng dụng, tệp, sức khỏe, hẹn giờ, vẽ) bị ẩn hoặc làm mờ với "TV LG/Samsung không hỗ trợ". Web của TV chỉ có trên Android TV, vì App TV chỉ chạy trên Android.
 
 **Các phần nối với nhau thế nào.** Không có máy chủ nào ở giữa: mọi thứ đi thẳng tới TV.
 
