@@ -14,6 +14,28 @@ import java.net.URL
  * multicast lock. Android TVs are found by their ports as before (Discover.kt, the phone's scan).
  */
 object Ssdp {
+    /** The name an Android TV gives itself, from its Chromecast service (every Android TV has one). "" when it does not answer. */
+    fun castName(ip: String, port: Int = 8008): String = try {
+        java.net.Socket().use { so ->
+            so.connect(java.net.InetSocketAddress(ip, port), 800)
+            so.soTimeout = 1500
+            so.getOutputStream().write("GET /setup/eureka_info HTTP/1.1\r\nHost: $ip:$port\r\nConnection: close\r\n\r\n".toByteArray())
+            val got = java.io.ByteArrayOutputStream()
+            val buf = ByteArray(2048)
+            var found = ""
+            try {
+                while (found.isEmpty() && got.size() < 20000) {       // the TV may keep the connection open: stop at the name
+                    val n = so.getInputStream().read(buf)
+                    if (n < 0) break
+                    got.write(buf, 0, n)
+                    found = Regex("\"name\"\\s*:\\s*\"([^\"]{1,60})\"").find(got.toString("UTF-8"))?.groupValues?.get(1) ?: ""
+                }
+            } catch (timeout: Exception) {                            // a read timeout keeps what was read so far
+            }
+            found
+        }
+    } catch (e: Exception) { "" }
+
     class Found(val ip: String, val kind: String, val name: String)
 
     private val SEARCH = listOf("urn:lge-com:service:webos-second-screen:1", "urn:samsung.com:device:RemoteControlReceiver:1")

@@ -48,28 +48,6 @@ object Discover {
         return out.distinctBy { it.first }.sortedBy { it.first }
     }
 
-    /** The name an Android TV gives itself, from its Chromecast service. "" when it does not answer. */
-    fun castName(ip: String): String = try {
-        Socket().use { s ->
-            s.connect(InetSocketAddress(ip, 8008), 800)
-            s.soTimeout = 1500
-            s.getOutputStream().write("GET /setup/eureka_info HTTP/1.1\r\nHost: $ip:8008\r\nConnection: close\r\n\r\n".toByteArray())
-            val got = StringBuilder()
-            val buf = ByteArray(2048)
-            var name = ""
-            while (got.length < 20000) {                              // the TV may keep the connection open: stop at the name
-                val n = s.getInputStream().read(buf)
-                if (n <= 0) break
-                got.append(String(buf, 0, n, Charsets.UTF_8))
-                Regex("\"name\"\\s*:\\s*\"([^\"]{1,60})\"").find(got)?.let { name = it.groupValues[1] }
-                if (name.isNotEmpty()) break
-            }
-            name
-        }
-    } catch (e: Exception) {
-        ""
-    }
-
     class Peer(val name: String, val lan: String)
 
     /** Online Android peers on the tailnet, by Tailscale IP; [Peer.lan]: its home IP, when this computer reaches it directly there. */
@@ -124,7 +102,7 @@ object Discover {
         fun probe(ip: String, via: String, name: String) = pool.submit {
             val remote = portOpen(ip, 6466, unknown = unknown)
             val adb = portOpen(ip, 5555, unknown = unknown)
-            if (remote || adb) found[ip] = JSONObject().put("ip", ip).put("remote", remote).put("adb", adb).put("via", via).put("name", castName(ip).ifEmpty { name })
+            if (remote || adb) found[ip] = JSONObject().put("ip", ip).put("remote", remote).put("adb", adb).put("via", via).put("name", Ssdp.castName(ip).ifEmpty { name })
                 .put("kind", Remote.Kind.ANDROID)
         }
         try {

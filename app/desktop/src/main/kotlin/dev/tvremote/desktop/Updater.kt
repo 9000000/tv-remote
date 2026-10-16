@@ -124,7 +124,9 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
         val dir = work ?: return false
         val pid = ProcessHandle.current().pid().toString()
         return try {
-            val tmp = File(System.getProperty("java.io.tmpdir"))     // not in [work]: the script removes that folder when done
+            // not in [work]: the script removes that folder when done. A folder of our own (0700 where there are modes), never a
+            // fixed name in a shared /tmp that another user could pre-create as a link or rewrite before it runs.
+            val tmp = java.nio.file.Files.createTempDirectory("tv-remote-update").toFile()
             val log = File(tmp, "tv-remote-update.log")
             val cmd = if (os == "windows") {
                 val exe = old.listFiles()?.firstOrNull { it.name.endsWith(".exe") }?.name ?: "TV Remote.exe"

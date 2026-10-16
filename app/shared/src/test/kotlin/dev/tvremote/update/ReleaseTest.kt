@@ -1,5 +1,7 @@
 package dev.tvremote.update
 
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -16,5 +18,15 @@ class ReleaseTest {
         assertTrue(Release.compare("2.22.3", "0.1.1") < 0)
         assertTrue(Release.compare("2.24.2", "2.21.4") > 0)        // among themselves as before
         assertTrue(Release.compare("1.2.0", "0.9.0") > 0)          // the new numbers reach 1.0 as usual
+    }
+
+    @Test fun signedVersion() {                                    // the version line of SHA256SUMS: a list without it still works
+        val list = "${"a".repeat(64)}  tv-remote.apk\nversion android=0.4.1 tv=0.4.0 web=0.4.2\n"
+        assertEquals("0.4.1", Release.signedVersion(list, "android"))
+        assertEquals("0.4.2", Release.signedVersion(list, "web"))
+        assertNull(Release.signedVersion(list, "pc"))
+        assertNull(Release.signedVersion("${"a".repeat(64)}  tv-remote.apk\n", "android"))
+        assertEquals("a".repeat(64), Release.sum(list, "tv-remote.apk"))
+        assertNull(Release.sum(list, "version"))
     }
 }

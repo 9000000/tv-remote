@@ -93,6 +93,8 @@ class Release private constructor(val version: String, val url: String, val note
                 if (compare(version, current) <= 0) return null
                 val list = get(sums)
                 if (!signed(list.toByteArray(Charsets.UTF_8), get(sig))) throw IOException(UNSIGNED)
+                val signedVersion = signedVersion(list, app)
+                if (signedVersion != null && signedVersion != version) throw IOException(UNSIGNED)   // an old signed list under a newer version.json
                 val sha = sum(list, asset) ?: return null
                 return Release(version, apk, o.optString("body", "").trim(), sha)
             } finally {
@@ -120,6 +122,12 @@ class Release private constructor(val version: String, val url: String, val note
         fun sum(list: String, name: String): String? = list.lineSequence()
             .map { it.trim().split(Regex("\\s+\\*?"), 2) }
             .firstOrNull { it.size == 2 && it[1] == name && it[0].matches(Regex("[0-9a-fA-F]{64}")) }?.get(0)?.lowercase()
+
+        /** The version [app] has in the signed "version web=0.4.1 android=0.4.1 tv=0.4.1" line, null for releases without it. */
+        fun signedVersion(list: String, app: String): String? = list.lineSequence()
+            .map { it.trim() }.firstOrNull { it.startsWith("version ") }
+            ?.removePrefix("version ")?.split(Regex("\\s+"))
+            ?.map { it.split("=", limit = 2) }?.firstOrNull { it.size == 2 && it[0] == app }?.get(1)
 
         fun hex(b: ByteArray): String = b.joinToString("") { String.format("%02x", it) }
 

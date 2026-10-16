@@ -14,6 +14,9 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - 📲 Chia sẻ (Thêm phím → Chia sẻ): mã QR cho điện thoại khác quét là vào thẳng remote của TV, không cần gõ mã (dùng 1 lần, trong 10 phút), kèm mã QR tải app điện thoại. Đang nối TV qua Tailscale thì có cảnh báo; TV chưa có TV Setup thì chỉ hiện mã tải app. Cần TV Setup mới.
 - ▶️ Đang phát: bấm tạm dừng / chạy tiếp / qua bài thì nút quay chờ tới khi TV làm xong; bấm liên tục không còn làm nút và TV lệch nhau.
 - Tự động: lúc TV Setup đang cập nhật, trang không còn báo nhầm "TV Setup là bản cũ" kèm nút Cập nhật; nó chờ TV Setup chạy lại rồi tự hiện.
+- Cập nhật: số phiên bản nằm trong danh sách có chữ ký; app từ chối bản có số phiên bản không khớp với danh sách (chống cài lại bản cũ).
+- 📱 App điện thoại: chia sẻ từ app khác chỉ nhận tệp dạng content:// của app đó và liên kết http/https.
+- App máy tính: tệp cập nhật tạm nằm trong thư mục riêng của người dùng.
 
 **English**
 - The tabs lay their cards out like a gallery: each card sits right under the one above it in its column, no holes; up to 3 columns on wide screens (Health, Automation), and a wider page. Switching language no longer flashes the Remote tab before going back to the tab on screen.
@@ -23,6 +26,9 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - 📲 Share (More keys → Share): a QR code another phone scans to open the TV's remote straight away, no code to type (once, within 10 minutes), with a QR code for the phone app. A warning when this device reaches the TV through Tailscale; without TV Setup only the app's code shows. Needs the new TV Setup.
 - ▶️ Now playing: pause / play / next show a spinner until the TV has done it; pressing fast no longer leaves the button and the TV out of step.
 - Automation: while TV Setup is being updated, the page no longer says "TV Setup is too old" with an Update button; it waits for TV Setup to start again and shows itself.
+- Updates: the version number is inside the signed list; the app refuses a release whose number does not match it (no replaying an old release).
+- 📱 Phone app: sharing from another app takes only that app's content:// files and http/https links.
+- Computer app: the update's temporary script goes in a private folder.
 
 ## 0.4.1 - 2026-10-16
 

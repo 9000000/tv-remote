@@ -64,25 +64,3 @@ internal fun Context.announced(onTv: (String) -> Unit): () -> Unit {
         return {}
     }
 }
-
-/** The name an Android TV gives itself, asked from its Chromecast service (every Android TV has one). "" when it does not answer. */
-internal fun Context.castName(ip: String): String = try {
-    java.net.Socket().use { so ->
-        so.connect(java.net.InetSocketAddress(ip, 8008), 800)
-        so.soTimeout = 1500
-        so.getOutputStream().write(("GET /setup/eureka_info HTTP/1.1\r\nHost: $ip:8008\r\nConnection: close\r\n\r\n").toByteArray())
-        val got = java.io.ByteArrayOutputStream()
-        val buf = ByteArray(2048)
-        var found = ""
-        try {
-            while (found.isEmpty() && got.size() < 20000) {       // the TV may keep the connection open: stop at the name
-                val n = so.getInputStream().read(buf)
-                if (n < 0) break
-                got.write(buf, 0, n)
-                found = Regex("\"name\"\\s*:\\s*\"([^\"]{1,60})\"").find(got.toString("UTF-8"))?.groupValues?.get(1) ?: ""
-            }
-        } catch (timeout: Exception) {
-        }
-        found
-    }
-} catch (e: Exception) { "" }

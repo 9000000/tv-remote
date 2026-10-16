@@ -349,6 +349,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
 
     /** 💾 one app as a .tar, made on the TV and streamed straight through (TvShell.backup says what is in it). */
     private fun backup(pkg: String): HttpServer.Response {
+        TvShell.backup(pkg)                                           // checks the name before it reaches a header
         val adb = link.get()
         val out = HttpServer.Response.stream("application/x-tar", -1) { o -> pipe(adb.exec(TvShell.backup(pkg)), o) }
         out.headers["Content-Disposition"] = "attachment; filename*=UTF-8''$pkg-backup.tar"   // the phone's WebView reads this form

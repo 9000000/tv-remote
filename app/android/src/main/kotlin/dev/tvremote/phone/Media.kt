@@ -47,8 +47,14 @@ internal fun MainActivity.sendShared(tries: Int) {
     shared = null
     @Suppress("DEPRECATION")
     val file = i.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
-    if (file != null) { castFile(file); return }
-    val link = Regex("[a-zA-Z][a-zA-Z0-9+.-]*://\\S+").find(i.getStringExtra(Intent.EXTRA_TEXT) ?: "")?.value
+    // Any app can send us this: only a content:// of another app (file:// would be opened with our own rights, our keys included),
+    // and only web links (market://, intent: … would be run on the TV unseen).
+    if (file != null) {
+        if (file.scheme == "content" && file.authority?.startsWith(packageName) != true) castFile(file)
+        else say(t("Không gửi được tệp này lên TV.", "This file cannot be sent to the TV."), true)
+        return
+    }
+    val link = Regex("(?i)https?://\\S+").find(i.getStringExtra(Intent.EXTRA_TEXT) ?: "")?.value
     if (link == null) say(t("Nội dung chia sẻ không có đường dẫn nào để mở trên TV.", "What was shared has no link to open on the TV."), true)
     else { openLink(link); Toast.makeText(this, t("Đã gửi lên TV", "Sent to the TV"), Toast.LENGTH_SHORT).show() }
 }

@@ -20,6 +20,7 @@ sourceSets["main"].kotlin.exclude("**/core/TvAndroid.kt", "**/core/AudioOut.kt",
 dependencies {
     implementation("org.json:json:20240303")                         // on Android org.json is part of the system
     implementation("net.java.dev.jna:jna:5.15.0")                    // the window: Window.kt calls native/<system>/webview
+    testImplementation("junit:junit:4.13.2")                         // ./gradlew :desktop:test
 }
 
 application {

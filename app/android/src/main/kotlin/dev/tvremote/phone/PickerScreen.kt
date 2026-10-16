@@ -228,7 +228,7 @@ internal fun MainActivity.scan() {
             val seen = { ip: String ->
                 if (synchronized(found) { if (ip in found) false else found.add(ip) }) {
                     val adb = open(ip, 5555, 900, lan)
-                    val n = name(ip).ifEmpty { castName(ip) }
+                    val n = name(ip).ifEmpty { dev.tvremote.core.Ssdp.castName(ip) }
                     ui.post { foundList.addView(foundRow(ip, n, adb)) }   // shown as soon as it answers, not after the whole network
                 }
             }
