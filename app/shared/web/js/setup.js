@@ -65,7 +65,7 @@ $('#aboutbtn').addEventListener('click', async () => {
   const r = await fetch('/api/about').then((x) => x.json()).catch(() => null);
   if (r && r.version) $('#aboutver').textContent = r.version + (r.released ? ' · ' + r.released : '');
   // scan with a phone: the Android app, and (when the TV Setup app is serving it) this TV's own remote page
-  const code = (title, note, link) => { const s = qrSvg(link, 170); return s ? el('div', { className: 'qr' }, s, el('b', { textContent: title }), el('span', { className: 'muted', textContent: note }), el('br'), el('a', { href: link, target: '_blank', rel: 'noopener', textContent: link.replace(/^https?:\/\//, '') })) : null; };
+  const code = (title, note, link) => { const s = qrSvg(link, 170); return s ? el('div', { className: 'qr' }, s, el('b', { textContent: title }), el('span', { className: 'muted', textContent: note }), el('br'), el('a', { href: link, target: '_blank', rel: 'noopener', textContent: link.replace(/^https?:\/\//, '').replace(/^github\.com\/.*\//, '') })) : null; };   // the file's name: the whole release link is wider than the box
   $('#qrs').replaceChildren(...[code('📱 App Android', 'Quét bằng điện thoại để tải app.', 'https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk'),
     r && r.tv_web ? code('🌐 Remote trên điện thoại', 'Quét khi điện thoại chung mạng với TV.', r.tv_web) : null].filter(Boolean));
 });
