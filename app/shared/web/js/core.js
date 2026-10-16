@@ -160,6 +160,7 @@ const FRIENDLY = [
   [/SocketTimeout|timed out|ConnectException|Connection reset/i, 'Mạng chậm hoặc vừa mất kết nối. Thử lại sau ít phút.'],
   [/stopped answering|stopped taking data/i, 'TV ngừng trả lời giữa chừng. Thử lại; vẫn vậy thì khởi động lại TV.'],
   [/copy to the TV incomplete/i, 'Chép tệp lên TV không trọn vẹn. Thử lại.'],
+  [/stream closed|socket closed|broken pipe/i, 'Mất kết nối với TV giữa chừng. Thử lại.'],   // ADB cut: another TV chosen, or the network dropped
   [/no sign-in link/i, 'Không đọc được link đăng nhập trên màn hình TV. Mở Tailscale trên TV và quét mã QR nó hiện.'],
   [/INSUFFICIENT_STORAGE|No space left/i, 'TV hết bộ nhớ trống.'],
   [/no app that can open/i, 'TV không có app mở loại tệp này (cài VLC rồi thử lại).'],

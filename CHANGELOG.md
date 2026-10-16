@@ -8,9 +8,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - 📱 App điện thoại: Quét Wi-Fi đi thẳng ra Wi-Fi khi Tailscale (hay VPN khác) đang bật, để vẫn tìm được TV trong nhà. Chỉ có 4G thì báo chưa nối Wi-Fi, không quét nhầm mạng của nhà mạng.
+- Mất kết nối với TV giữa chừng (vd lúc cập nhật TV Setup) giờ báo bằng lời dễ hiểu thay vì “stream closed”.
 
 **English**
 - 📱 Phone app: Scan the Wi-Fi goes straight onto the Wi-Fi while Tailscale (or another VPN) is on, so TVs at home are still found. On mobile data only, it says the phone is not on Wi-Fi instead of scanning the carrier's network.
+- Losing the TV halfway (while updating TV Setup, say) is said in plain words instead of “stream closed”.
 
 ## 0.2.1 - 2026-10-16
 

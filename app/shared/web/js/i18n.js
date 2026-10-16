@@ -180,7 +180,7 @@
     'Không mở được kết nối bảo mật. Ngày giờ trên TV có đúng không? (Cài đặt → Hệ thống → Ngày và giờ)': 'Could not open a secure connection. Is the TV\'s date and time right? (Settings → System → Date & time)',
     'TV (hoặc máy này) chưa vào được Internet.': 'The TV (or this device) cannot reach the Internet.', 'Mạng chậm hoặc vừa mất kết nối. Thử lại sau ít phút.': 'The network is slow or dropped. Try again in a few minutes.',
     'TV ngừng trả lời giữa chừng. Thử lại; vẫn vậy thì khởi động lại TV.': 'The TV stopped answering midway. Try again; if it keeps happening, restart the TV.',
-    'Chép tệp lên TV không trọn vẹn. Thử lại.': 'The file did not reach the TV whole. Try again.', 'TV hết bộ nhớ trống.': 'The TV is out of storage.',
+    'Chép tệp lên TV không trọn vẹn. Thử lại.': 'The file did not reach the TV whole. Try again.', 'Mất kết nối với TV giữa chừng. Thử lại.': 'Lost the TV halfway. Try again.', 'TV hết bộ nhớ trống.': 'The TV is out of storage.',
     'TV đã có app này nhưng từ nguồn khác (khác chữ ký). Gỡ bản đang có rồi cài lại; dữ liệu của app sẽ mất.': 'The TV already has this app from another source (a different signature). Uninstall it first, then install again; the app’s data will be lost.',
     'TV đang có bản mới hơn của app này. Gỡ bản đang có nếu muốn cài bản cũ.': 'The TV has a newer version of this app. Uninstall it first to install an older one.',
     'APK này cần Android mới hơn bản trên TV. Tìm bản cũ hơn của app.': 'This APK needs a newer Android than the TV has. Look for an older version of the app.',
