@@ -4,6 +4,14 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- Ngõ vào thật: nút “Ngõ vào” giờ liệt kê các ngõ của TV theo tên TV đặt (vd “HDMI 1 · PlayStation 5”, AV) và chạm là chuyển. Android TV / Google TV đọc qua ADB (HDMI-CEC cho tên thiết bị), LG qua kết nối remote; chuyển bằng đường dẫn của Live TV, không được thì dùng phím HDMI. TV không có ngõ nào để chọn (box, máy ảo) hoặc Samsung: hiện một dòng và mở bảng chọn của TV như trước. Có ở app điện thoại, app máy tính và Web của TV; thêm bước “Chuyển ngõ vào” cho Cảnh.
+
+**English**
+- Real input switching: the “Input” button now lists the TV’s inputs under the names the TV gives them (e.g. “HDMI 1 · PlayStation 5”, AV) and a tap switches. Android TV / Google TV read them over ADB (HDMI-CEC for the device names), LG through its remote link; the switch is Live TV’s own link, falling back to the HDMI key codes. A TV with no inputs to choose (a box, an emulator) or a Samsung shows one line and opens the TV’s own picker as before. In the Phone app, the Computer app and the TV web page; Scenes get a “Switch input” step.
+
 ## 0.4.1 - 2026-10-16
 
 Web 0.4.1 · app điện thoại 0.4.1 · app TV 0.4.1

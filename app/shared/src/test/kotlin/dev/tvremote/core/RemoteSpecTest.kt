@@ -34,7 +34,7 @@ class RemoteSpecTest {
     }
 
     @Test fun theKeysKeepTheirCodes() {                                  // what the phone sent before the keys moved into the file
-        val codes = mapOf("INPUT" to 178, "SETTINGS" to 176, "INFO" to 165, "GUIDE" to 172, "LIVE" to 170, "SUBTITLE" to 175, "STOP" to 86, "BACK" to 4, "HOME" to 3,
+        val codes = mapOf("SETTINGS" to 176, "INFO" to 165, "GUIDE" to 172, "LIVE" to 170, "SUBTITLE" to 175, "STOP" to 86, "BACK" to 4, "HOME" to 3,
             "MENU" to 82, "MUTE" to 164, "PLAY_PAUSE" to 85, "PREV" to 88, "NEXT" to 87, "REWIND" to 89, "FFWD" to 90)
         assertEquals(codes, all(phone).mapNotNull { e -> e.key?.let { it to Scenes.KEYS[it] } }.toMap())
     }

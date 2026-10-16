@@ -16,6 +16,7 @@ class ScenesTest {
         override fun link(url: String) { did.add("link $url") }
         override fun volume(level: Int) { did.add("volume $level") }
         override fun timer(minutes: Int) { did.add("timer $minutes") }
+        override fun input(id: String) { did.add("input $id") }
     }
 
     private fun steps(vararg s: String) = JSONArray(s.map { JSONObject(it) })
@@ -86,5 +87,21 @@ class ScenesTest {
         val asked = ArrayList<String>()
         Scenes.volume({ asked.add(it); if (it.contains("--get")) "[V] volume is 6 in range [0..15]" else "" }, 4)
         assertEquals("input keyevent 25; input keyevent 25", asked.last())
+    }
+
+    @Test fun inputStepRunsAndIsCleaned() {
+        val tv = Fake()
+        assertNull(Scenes.run(steps("""{"do":"input","id":"com.a/.B/HW5"}"""), tv))
+        assertEquals(listOf("input com.a/.B/HW5"), tv.did)
+        val kept = Scenes.clean(JSONArray("""[{"name":"Game","steps":[{"do":"input","id":"HDMI_1","label":"HDMI 1 · PS5"},{"do":"input","id":"x; reboot"},{"do":"input"}]}]"""))
+        val st = kept.getJSONObject(0).getJSONArray("steps")
+        assertEquals(1, st.length()); assertEquals("HDMI_1", st.getJSONObject(0).getString("id")); assertEquals("HDMI 1 · PS5", st.getJSONObject(0).getString("label"))
+    }
+
+    @Test fun targetsWithoutInputsSayNo() {
+        val t = object : Scenes.Target {
+            override fun key(code: Int) {}; override fun app(pkg: String) {}; override fun link(url: String) {}; override fun volume(level: Int) {}; override fun timer(minutes: Int) {}
+        }
+        assertTrue(Scenes.run(steps("""{"do":"input","id":"HDMI_1"}"""), t)!!.contains("cannot switch inputs"))
     }
 }

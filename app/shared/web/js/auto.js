@@ -230,6 +230,7 @@ function stepText(s) {
     case 'key': return '🎮 Phím ' + ((STEP_KEYS.find((k) => k[0] === s.key) || [0, s.key])[1]);
     case 'link': return '🔗 ' + s.url.replace(/^https?:\/\//, '').slice(0, 40);
     case 'wait': return '⏱️ Chờ ' + s.s + ' giây';
+    case 'input': return '📺 Ngõ vào ' + (s.label || s.id);
     case 'timer': return s.min ? '😴 Hẹn giờ tắt ' + mins(s.min) : '😴 Hủy hẹn giờ tắt';
   }
   return s.do;
@@ -303,6 +304,14 @@ function stepArgs() {
   else if (k === 'volume') box.replaceChildren(num(10, 0, 100, ''));
   else if (k === 'wait') box.replaceChildren(num(2, 0, 30, 'giây'));
   else if (k === 'timer') box.replaceChildren(num(30, 0, 720, 'phút'));
+  else if (k === 'input') {                                          // the TV's own list, read now
+    const sel = el('select', { id: 'steparg' }, el('option', { value: '', textContent: 'Đang đọc ngõ vào...' })); box.replaceChildren(sel);
+    api('/api/inputs', null, true).then((r) => {
+      if (box.firstChild !== sel) return;
+      const list = (r && r.inputs) || [];
+      sel.replaceChildren(...(list.length ? list.map((i) => el('option', { value: i.id, textContent: i.label })) : [el('option', { value: '', textContent: r ? 'TV này không có ngõ vào để chọn' : 'Chưa đọc được ngõ vào của TV' })]));
+    });
+  }
   else if (k === 'link') box.replaceChildren(el('input', { id: 'steparg', placeholder: 'https://youtu.be/...', inputMode: 'url' }));
   else box.replaceChildren();
 }
@@ -315,6 +324,7 @@ $('#stepadd').addEventListener('click', () => {
   if (k === 'volume') s.level = Math.max(0, Math.min(100, Math.round(+v || 0)));
   if (k === 'wait') s.s = Math.max(0, Math.min(30, +v || 1));
   if (k === 'timer') s.min = Math.max(0, Math.min(720, Math.round(+v || 0)));
+  if (k === 'input') { if (!v) return toast('Chọn một ngõ vào'); s.id = v; s.label = a.selectedOptions[0].textContent; }
   if (k === 'link') { const l = normalizeLink(v); if (!l) return toast('Nhập một đường dẫn'); s.url = l; }
   if (draft.length >= 30) return toast('Tối đa 30 bước');
   draft.push(s); drawSteps();

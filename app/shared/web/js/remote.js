@@ -72,6 +72,19 @@ async function timerMenu() {
   const items = remoteMenu('timer', { when: { timerOn: !!at }, expand: { lengths: () => [15, 30, 45, 60, 90, 120].map((m) => ['Tắt sau ' + hm(m), '', () => setSleep(m)]) } });
   menuDlg(at ? 'TV tự tắt lúc ' + clock(at) : 'Hẹn giờ tắt TV', at ? 0 : -1, items);
 }
+// "Ngõ vào": the TV's real inputs by name ("HDMI 1 · PlayStation") and a tap to switch. A TV with none to list (a box, the emulator,
+// Samsung) or no ADB: one short line, and the TV's own picker opens, as the key always did.
+const pressInput = () => api('/api/key', { key: 'INPUT' });
+async function inputsMenu() {
+  if (!can('inputs')) return pressInput();
+  const r = await api('/api/inputs', null, true), list = (r && r.inputs) || [];
+  if (!list.length) { toast(r ? 'TV này không có ngõ vào để chọn' : 'Chưa đọc được ngõ vào của TV'); return pressInput(); }
+  menuDlg('Ngõ vào', -1, [...list.map((i) => ['@input|' + i.label, i.connected === false ? 'Chưa cắm' : '', () => switchTo(i)]), ['@menu|Bảng chọn của TV', '', pressInput]]);
+}
+async function switchTo(i) {
+  const r = await api('/api/input', { id: i.id });
+  if (r) { toast('Đã chuyển sang ' + i.label); setTimeout(refresh, 1500); }
+}
 function scenesMenu() {
   if (!NATIVE() && needAdb()) return;                                 // LG / Samsung run scenes by their remote link
   menuDlg('Cảnh', -1, remoteMenu('scenes', { expand: { scenes: () => SCENES.map((sc) => [((sc.icon || '') + '  ' + sc.name).trim(), '', () => runScene(sc)]) } }));

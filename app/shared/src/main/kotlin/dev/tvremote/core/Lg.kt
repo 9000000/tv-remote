@@ -328,6 +328,10 @@ class Lg(private val dir: File, private val host: String, private val ports: Lis
     }
 
     /** The screen off, the sound on (webOS 4.5+; "Screen Off" in the power state until a key lights it again). */
+    private val inputList = Inputs.Cache()
+    override fun inputs(): List<Inputs.Input> = inputList.get { Inputs.parseLg(request("ssap://tv/getExternalInputList")) }
+    override fun switchInput(id: String): Boolean = Inputs.valid(id) && request("ssap://tv/switchInput", JSONObject().put("inputId", id)) != null
+
     override fun screenOff(): Boolean = request("ssap://com.webos.service.tvpower/power/turnOffScreen") != null
 
     override fun close() {
