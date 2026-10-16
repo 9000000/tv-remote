@@ -2,6 +2,7 @@ package dev.tvremote.phone
 
 import android.content.Intent
 import android.widget.LinearLayout
+import dev.tvremote.core.Remote
 import dev.tvremote.core.RemoteSpec
 import dev.tvremote.core.Scenes
 import dev.tvremote.core.Tv
@@ -50,6 +51,23 @@ internal val phoneButtonHooks: Map<String, MainActivity.(IconButton) -> Unit> = 
 
 internal fun MainActivity.storePage(id: String) = openLink("https://play.google.com/store/apps/details?id=$id")
 
+/** What the connected TV can do: an LG or Samsung TV lacks ADB, the Play Store and some keys (Remote.Kind). */
+internal fun MainActivity.kind(): String = basic?.kind ?: Remote.Kind.ANDROID
+internal fun MainActivity.caps(): Set<String> = Remote.Kind.caps(kind())
+
+/** The buttons drawn from remote.json, to grey those this TV cannot do ([greyRows], from layoutRemote). */
+private val drawn = ArrayList<Pair<IconButton, RemoteSpec.Entry>>()
+
+internal fun MainActivity.greyRows() {
+    val caps = caps()
+    val keys = basic?.takeIf { kind() != Remote.Kind.ANDROID }?.keys
+    for ((b, e) in drawn) {
+        val ok = e.can(caps) && (keys == null || e.key == null || Scenes.KEYS[e.key] in keys)
+        b.isEnabled = ok
+        b.alpha = if (ok) 1f else 0.3f
+    }
+}
+
 /** A row of the remote's keys from remote.json: one icon button each, the key held / tapped like the hand-made ones, or the action run. */
 internal fun MainActivity.remoteRow(name: String, index: Int, height: Int): LinearLayout {
     val row = LinearLayout(this)
@@ -68,6 +86,7 @@ internal fun MainActivity.remoteRow(name: String, index: Int, height: Int): Line
             } else bindKey(b, code, box(HELD, 16))
         }
         row.addView(b, cell(height, i > 0))
+        drawn.removeAll { it.second.id == e.id }; drawn.add(b to e)
     }
     return captioned(row)
 }
@@ -75,9 +94,10 @@ internal fun MainActivity.remoteRow(name: String, index: Int, height: Int): Line
 /** A menu from remote.json for [menu]: [conditions] says which "when" entries show, [lists] stands in for each "expand" entry. */
 internal fun MainActivity.remoteMenu(name: String, conditions: Set<String> = emptySet(), lists: Map<String, () -> List<Triple<String, String, () -> Unit>>> = emptyMap()): List<Triple<String, String, () -> Unit>> {
     val items = ArrayList<Triple<String, String, () -> Unit>>()
+    val caps = caps()
     for (e in remoteSpec().menus[name]!!) {
-        if (e.whenCond != null && e.whenCond !in conditions) continue
-        if (e.expand != null) { items.addAll(lists[e.expand]!!()); continue }
+        if (e.whenCond != null && e.whenCond !in conditions || !e.can(caps)) continue   // what this TV cannot do is left out
+        if (e.expand != null) { lists[e.expand]?.let { items.addAll(it()) }; continue }
         val run = phoneActions[e.action!!] ?: error("remote.json: no phone handler for \"${e.action}\"")
         items.add(Triple("@" + e.icon + "|" + t(e.vi, e.en), t(e.subVi, e.subEn)) { run(this, e.arg) })
     }

@@ -1,7 +1,6 @@
 package dev.tvremote.core
 
 import java.io.ByteArrayOutputStream
-import java.io.Closeable
 import java.io.File
 import java.io.InputStream
 import java.math.BigInteger
@@ -26,7 +25,9 @@ import javax.net.ssl.X509TrustManager
  * ports 6467 (pairing, once, with the code the TV shows) and 6466 (keys and "open this"). It is what the Google TV phone
  * app speaks, and what the computer web uses through androidtvremote2. No picture, no apps, no files: those need ADB.
  */
-class Atv(dir: File, private val host: String) : Closeable {
+class Atv(dir: File, private val host: String) : Remote {
+    override val kind = Remote.Kind.ANDROID
+
     class NotPaired : Exception("not paired")
 
     private val key: PrivateKey
@@ -37,17 +38,17 @@ class Atv(dir: File, private val host: String) : Closeable {
     @Volatile private var closed = false
 
     /** What the TV calls itself, known once connected. */
-    @Volatile var model = ""
+    @Volatile override var model = ""
         private set
-    @Volatile var vendor = ""
+    @Volatile override var vendor = ""
         private set
-    @Volatile var version = ""                                        // of the TV's remote service
+    @Volatile override var version = ""                               // of the TV's remote service
         private set
     /** The screen is on (remote_start); null until the TV says. */
-    @Volatile var isOn: Boolean? = null
+    @Volatile override var isOn: Boolean? = null
         private set
     /** level, max, muted, as the TV reports them on connecting and at each change; null until then. */
-    @Volatile var volume: Triple<Int, Int, Boolean>? = null
+    @Volatile override var volume: Triple<Int, Int, Boolean>? = null
         private set
 
     init {
@@ -62,7 +63,7 @@ class Atv(dir: File, private val host: String) : Closeable {
         cert = CertificateFactory.getInstance("X.509").generateCertificate(c.inputStream()) as X509Certificate
     }
 
-    fun ready(): Boolean = live && !closed
+    override fun ready(): Boolean = live && !closed
 
     // ---------------------------------------------------------------- pairing (port 6467)
     /** Asks the TV to show its code. Then [finishPairing] with what the person reads there. */
@@ -110,14 +111,14 @@ class Atv(dir: File, private val host: String) : Closeable {
         private set
 
     /** The package on the TV's screen, as the TV reports it ("" until it does). */
-    @Volatile var app = ""
+    @Volatile override var app = ""
         private set
 
     /**
      * Blocks until the TV accepts keys. [NotPaired]: the TV does not know this phone yet. [onClosed] is called once, later, if
      * the connection ends for good: a TV that drops it (some do after a link they cannot open) is simply dialled again.
      */
-    fun connect(onClosed: () -> Unit) {
+    override fun connect(onClosed: () -> Unit) {
         var s = open() ?: throw NotPaired()
         Thread({
             while (true) {
@@ -194,13 +195,13 @@ class Atv(dir: File, private val host: String) : Closeable {
     }
 
     /** [direction]: [DOWN] and [UP] for a held key, [SHORT] for a tap. */
-    fun key(code: Int, direction: Int) = post(Pb().msg(10, Pb().int(1, code.toLong()).int(2, direction.toLong()).bytes()).bytes())
+    override fun key(code: Int, direction: Int) = post(Pb().msg(10, Pb().int(1, code.toLong()).int(2, direction.toLong()).bytes()).bytes())
 
     /**
      * The key held down for [ms], as a finger on a real remote holds it. Apps that move a pointer with the arrows (TV browsers)
      * move it for as long as the key is down, so a key that goes down and up in the same instant moves nothing there.
      */
-    fun pulse(code: Int, ms: Long) {
+    override fun pulse(code: Int, ms: Long) {
         if (closed || sock == null) return
         val down = Pb().msg(10, Pb().int(1, code.toLong()).int(2, DOWN.toLong()).bytes()).bytes()
         val up = Pb().msg(10, Pb().int(1, code.toLong()).int(2, UP.toLong()).bytes()).bytes()
@@ -216,7 +217,7 @@ class Atv(dir: File, private val host: String) : Closeable {
     }
 
     /** Fills the text field that has the focus on the TV with [t] (it replaces what is there). Nothing happens when no field has it. */
-    fun text(t: String) {
+    override fun text(t: String) {
         if (t.isEmpty()) return
         val at = (t.length - 1).toLong()
         val edit = Pb().int(1, 1).msg(2, Pb().int(1, at).int(2, at).str(3, t).bytes()).bytes()
@@ -233,7 +234,7 @@ class Atv(dir: File, private val host: String) : Closeable {
     }
 
     /** Opens a link on the TV, or an app by its package name: the app when it is installed, its Play Store page when it is not. */
-    fun launch(link: String) {
+    override fun launch(link: String) {
         val full = if (Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:").containsMatchIn(link)) link else "market://launch?id=$link"
         post(Pb().msg(90, Pb().str(1, full).bytes()).bytes())
     }

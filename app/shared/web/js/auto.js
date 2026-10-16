@@ -339,4 +339,6 @@ const voiceApps = () => [...META.entries()].filter(([, m]) => m && m.label).map(
 
 setInterval(() => { if (currentTab === 'auto' && !document.hidden && !stopped && ADB.state === 'ready') loadRules(null, true); }, 20000);
 let autoLoaded = false;
-function autoTab() { if (ADB.state !== 'ready') return; autoLoaded = true; loadRules(null, true); loadScenes(); loadPickApps(); }
+function autoTab() {
+  if (NATIVE()) { loadScenes(); return; }                             // LG / Samsung: scenes only, by their remote link
+  if (ADB.state !== 'ready') return; autoLoaded = true; loadRules(null, true); loadScenes(); loadPickApps(); }

@@ -508,6 +508,26 @@
     'TV chưa có app TV Setup.': 'The TV does not have the TV Setup app.',
     'TV chưa bắt đầu cập nhật được. Thử lại; vẫn vậy thì khởi động lại TV.': 'The TV did not start the update. Try again; if it still does not, restart the TV.',
     'Không ghi được tệp cập nhật lên TV. TV còn bộ nhớ trống không?': 'Could not write the update file on the TV. Does it have free storage?',
+    // LG and Samsung TVs: no ADB, the TV itself asks whether to let this device in
+    'Chưa ghép': 'Not paired',
+    'Chờ TV cho phép': 'Waiting for the TV',
+    'nhìn lên TV: chọn Cho phép': 'look at the TV: choose Allow',
+    'Nhìn lên TV: chọn Cho phép': 'Look at the TV: choose Allow',
+    'Kết nối TV': 'Connect to the TV',
+    'Chưa kết nối được. TV có bật và chung mạng không?': 'Not connected yet. Is the TV on and on the same network?',
+    'TV đã cho phép': 'The TV allowed this device',
+    'TV đang hỏi có cho máy này điều khiển không.': 'The TV is asking whether to let this device control it.',
+    'TV đã từ chối': 'The TV said no',
+    'Bấm “Hỏi lại TV” rồi chọn Cho phép trên TV.': 'Press “Ask the TV again”, then choose Allow on the TV.',
+    'Chưa ai chọn Cho phép trên TV': 'Nobody chose Allow on the TV',
+    'Bấm “Hỏi lại TV”, rồi chọn Cho phép trong lúc TV hỏi.': 'Press “Ask the TV again”, then choose Allow while the TV asks.',
+    'Hỏi lại TV': 'Ask the TV again',
+    'TV đã từ chối. Bấm Hỏi lại TV ở tab Thiết lập rồi chọn Cho phép.': 'The TV said no. Press Ask the TV again on the Setup tab, then choose Allow.',
+    'Chưa ai chọn Cho phép trên TV. Bấm Hỏi lại TV ở tab Thiết lập.': 'Nobody chose Allow on the TV. Press Ask the TV again on the Setup tab.',
+    'TV LG': 'LG TV',
+    'TV Samsung': 'Samsung TV',
+    'TV LG không hỗ trợ': 'LG TVs cannot do this',
+    'TV Samsung không hỗ trợ': 'Samsung TVs cannot do this',
   };
 
   // Strings with a variable part. Captured pieces are passed through tr() again where they can be text of ours.

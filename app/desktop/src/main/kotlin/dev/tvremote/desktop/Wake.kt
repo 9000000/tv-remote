@@ -1,5 +1,6 @@
 package dev.tvremote.desktop
 
+import dev.tvremote.core.Remote
 import org.json.JSONObject
 import java.net.DatagramPacket
 import java.net.DatagramSocket
@@ -13,10 +14,12 @@ import java.util.concurrent.TimeUnit
 object Wake {
     class Result(val ok: Boolean, val log: String)
 
-    fun wake(host: String, tv: JSONObject, waitS: Int): Result {
+    fun wake(host: String, tv: JSONObject, waitS: Int, mac0: String = ""): Result {
         val log = StringBuilder()
-        val mac = tv.optString("mac")
-        if (host.isNotEmpty() && Discover.portOpen(host, 6466, 1500)) return Result(true, "TV already reachable")
+        val mac = tv.optString("mac").ifEmpty { mac0 }
+        val ports = Remote.Kind.ports(Remote.Kind.of(tv.optString("kind")))
+        fun up() = host.isNotEmpty() && ports.any { Discover.portOpen(host, it, 1500) }
+        if (up()) return Result(true, "TV already reachable")
         if (mac.isEmpty()) return Result(false, "No MAC address saved for this TV (save the TV in the web UI while ADB is connected).")
         log.append("local broadcast: ${sendLocal(mac, tv.optString("lan"))} packets\n")
         val relayHost = tv.optString("relay_host")
@@ -37,7 +40,7 @@ object Wake {
             log.append("no relay machine configured: this only works when this computer is on the TV's own network\n")
         }
         for (i in 0 until waitS / 3) {
-            if (host.isNotEmpty() && Discover.portOpen(host, 6466, 1500)) return Result(true, log.append("TV is up after ~${i * 3}s").toString())
+            if (up()) return Result(true, log.append("TV is up after ~${i * 3}s").toString())
             Thread.sleep(3000)
         }
         return Result(false, log.append("TV did not come back. Check that 'Remote start' is enabled on the TV and that a machine on its network relayed the packet.").toString())

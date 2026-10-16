@@ -12,14 +12,15 @@ const REMOTE = (() => {
 const remoteEntry = (e) => ({ ...e, ...e.web, sub: (e.web && e.web.sub) || e.sub });
 const remoteWords = (e) => (LANG === 'en' ? e.en : e.vi);
 const remoteHere = (e) => !e.cores || e.cores.includes('web');   // "cores" says "phone" (the native remote) or "web" (the pages)
+const remoteCan = (e) => !e.needs || typeof can !== 'function' || e.needs.every(can);   // can(): what this TV does (core.js)
 
 // A menu from remote.json as menuDlg wants it. ctx.when: the conditions an entry may name; ctx.expand: the lists that stand in for an
 // "expand" entry (each already in menuDlg's form).
 function remoteMenu(name, ctx = {}) {
   const out = [];
   for (const raw of REMOTE.menus[name]) {
-    if (!remoteHere(raw) || (raw.when && !(ctx.when || {})[raw.when])) continue;
-    if (raw.expand) { out.push(...ctx.expand[raw.expand]()); continue; }
+    if (!remoteHere(raw) || !remoteCan(raw) || (raw.when && !(ctx.when || {})[raw.when])) continue;
+    if (raw.expand) { const f = (ctx.expand || {})[raw.expand]; if (f) out.push(...f()); continue; }
     const e = remoteEntry(raw);
     out.push(['@' + e.icon + '|' + remoteWords(e), e.sub ? remoteWords(e.sub) : '', () => REMOTE_DO[e.do](e.arg)]);
   }

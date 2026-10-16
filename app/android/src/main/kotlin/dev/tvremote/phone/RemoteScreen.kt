@@ -35,7 +35,8 @@ import java.io.OutputStream
 internal fun MainActivity.layoutRemote() {
     val video = video && basic == null                            // keys only: there is no picture to show
     videoBtn.visibility = if (basic == null) View.VISIBLE else View.GONE
-    basicBar.visibility = if (basic == null) View.GONE else View.VISIBLE
+    basicBar.visibility = if (basic == null || kind() != dev.tvremote.core.Remote.Kind.ANDROID) View.GONE else View.VISIBLE   // LG / Samsung have no ADB to turn on
+    greyRows()
     val full = video && host != null && (fullscreen || resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)   // landscape: the picture fills the screen
     (controls.parent as View).visibility = if (full) View.GONE else View.VISIBLE
     topBar.visibility = if (full) View.GONE else View.VISIBLE

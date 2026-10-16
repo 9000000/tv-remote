@@ -19,6 +19,13 @@ Keep that table true when a feature lands on only some of them.
 
 The Phone app and the TV app speak ADB themselves (`app/shared/.../Adb.kt`) and push `scrcpy-server` (`app/shared/assets`) for video, touch and keys. So does the Computer app, on the same core. The Phone app and the Computer app also send keys without ADB through the Android TV Remote protocol (`Atv.kt`, ports 6466/6467).
 
+LG (webOS, `Lg.kt`, SSAP on 3000/3001) and Samsung (Tizen, `Samsung.kt`, 8001/8002) TVs are adapters behind the same
+`Remote` interface as `Atv` (`Remote.kt`: `Remote.Kind` with its `caps`, `RemoteSteps` for scenes), found by `Ssdp.kt`.
+Only the Phone app and the Computer app have them (the TV web page needs TV Setup, Android only). The page reads `kind` /
+`caps` from `/api/state` (`applyKind()` in `js/core.js`): `data-needs="cap"` hides a part or greys a control, and a
+`remote.json` entry's `needs` does the same for keys and menu entries on both sides. A new feature that needs ADB: give it
+`needs: ["adb"]` / `data-needs="adb"`.
+
 ## Layout
 
 ```

@@ -4,6 +4,14 @@ Có ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `V
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the web UI on the computer), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). The headings below are release numbers. Releases with the APK files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; both apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- App điện thoại và App máy tính điều khiển được TV LG (webOS) và Samsung (Tizen, từ 2016): tìm thấy khi quét, lần đầu chọn Cho phép trên TV. Phím, gõ chữ, mở app, link YouTube, Wake-on-LAN, cảnh; LG thêm âm lượng theo số, tắt màn hình, tìm trên YouTube. Việc cần ADB bị ẩn hoặc làm mờ.
+
+**English**
+- The Phone app and the Computer app control LG (webOS) and Samsung (Tizen, 2016 on) TVs: found by the scan, Allow on the TV the first time. Keys, typing, opening apps, YouTube links, Wake-on-LAN, scenes; on LG also volume to a number, screen off, YouTube search. What needs ADB is hidden or greyed out.
+
 ## 2.24.2 - 2026-10-15
 
 Web 2.24.2 · app điện thoại 2.22.2 · app TV 2.21.3

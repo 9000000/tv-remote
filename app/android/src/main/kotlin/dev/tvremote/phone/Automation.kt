@@ -101,7 +101,7 @@ internal fun MainActivity.runScene(sc: JSONObject) {
     val steps = sc.optJSONArray("steps") ?: JSONArray()
     val tv = tv
     val b = basic
-    val target = if (tv != null && tv.ready()) Scenes.Shell({ tv.shell(it) }) else if (b != null) Headless.keysOnly(b) else return
+    val target = if (tv != null && tv.ready()) Scenes.Shell({ tv.shell(it) }) else if (b is dev.tvremote.core.Atv) Headless.keysOnly(b) else if (b != null) dev.tvremote.core.RemoteSteps(b) { } else return
     toast(t("Đang chạy: ", "Running: ") + sc.optString("name"))
     Thread {
         val failed = Scenes.run(steps, target)

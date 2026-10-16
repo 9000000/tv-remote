@@ -43,12 +43,12 @@ function appIcon(pkg) {
 const lazyMeta = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { lazyMeta.unobserve(e.target); e.target.loadMeta(); } }), { rootMargin: '300px' });
 
 // quick launch tiles on the Remote tab
-let quickLoaded = false;
+let quickLoaded = false, quickApps = [];                              // quickApps: the TV's apps, for the Open on the TV menu too
 async function loadQuick() {
   quickLoaded = true;
   const r = await api('/api/apps', null, true);
   if (!r) { quickLoaded = false; return; }
-  seedMeta(r.apps);
+  seedMeta(r.apps); quickApps = r.apps.map((a) => a.pkg);
   const missing = r.apps.filter((a) => !META.has(a.pkg));
   if (missing.length) {                                               // first run: wait for every name/icon, then draw once so tiles never jump
     let done = 0;

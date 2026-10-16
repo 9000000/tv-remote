@@ -39,6 +39,16 @@ class RemoteSpecTest {
         assertEquals(codes, all(phone).mapNotNull { e -> e.key?.let { it to Scenes.KEYS[it] } }.toMap())
     }
 
+    @Test fun anLgOrSamsungTvGetsOnlyWhatItCanDo() {
+        val all = Remote.Kind.ALL.flatMap { Remote.Kind.caps(it) }.toSet()
+        for (e in all(phone) + all(web)) for (n in e.needs) assertTrue("${e.id} needs $n, which no kind of TV has", n in all)
+        val lg = Remote.Kind.caps(Remote.Kind.LG)
+        val open = phone.menus["open"]!!.filter { it.can(lg) }.map { it.id }
+        assertTrue("open-tvapps" in open && "open-link" in open)
+        assertFalse(open.any { it.startsWith("open-search") || it == "open-youtube" || it == "open-media" })
+        assertFalse(phone.menus["open"]!!.single { it.id == "open-tvapps" }.can(Remote.Kind.caps(Remote.Kind.ANDROID)))   // Android TVs list their apps on the Apps tab
+    }
+
     @Test fun eachSideShowsItsOwnWordsAndItsOwnEntries() {
         fun find(s: RemoteSpec.Spec, id: String) = all(s).single { it.id == id }
         assertEquals("Live TV", find(phone, "tv").en)

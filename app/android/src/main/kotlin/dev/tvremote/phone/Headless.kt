@@ -3,6 +3,8 @@ package dev.tvremote.phone
 import android.content.Context
 import dev.tvremote.core.AdbLink
 import dev.tvremote.core.Atv
+import dev.tvremote.core.Remote
+import dev.tvremote.core.RemoteSteps
 import dev.tvremote.core.Scenes
 import org.json.JSONArray
 
@@ -24,6 +26,20 @@ internal class Headless(private val c: Context) {
         val ip = pref("ips").split(",").firstOrNull { it.isNotEmpty() } ?: return t("Chưa có TV nào: mở app và chọn TV trước.", "No TV yet: open the app and pick a TV first.")
         val name = pref("name:$ip").ifEmpty { ip }
         val via = listOf(ip, pref("ts:$ip"), pref("lan:$ip")).filter { it.isNotEmpty() }.distinct()
+        val kind = Remote.Kind.of(pref("kind:$ip"))
+        if (kind != Remote.Kind.ANDROID) {                            // LG / Samsung: their own remote link, already allowed on the TV
+            val host = via.firstOrNull { h -> Remote.Kind.ports(kind).any { open(h, it, 1500) } }
+                ?: return name + ": " + t("không tới được TV. TV có đang bật và cùng mạng (hoặc Tailscale) không?", "cannot reach the TV. Is it on, and on the same network (or Tailscale)?")
+            val a = Remote.of(kind, c.filesDir, host)
+            return try {
+                a.connect { }
+                for (i in 0 until 20) { if (a.ready()) break; Thread.sleep(100) }
+                val e = what(RemoteSteps(a) { }, false)
+                Thread.sleep(400)                                     // the last key leaves before the connection closes
+                if (e == null) "✓ $name" else "$name: $e"
+            } catch (e: Remote.Refused) { name + ": " + t("TV không cho phép: mở app và kết nối lại.", "the TV said no: open the app and connect again.")
+            } catch (e: Exception) { name + ": " + (e.message ?: e.javaClass.simpleName) } finally { a.close() }
+        }
         via.firstOrNull { open(it, 5555, 2000) }?.let { host ->
             val link = AdbLink(c.filesDir, host)
             var err: String? = null

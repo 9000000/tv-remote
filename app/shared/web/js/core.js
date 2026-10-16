@@ -152,6 +152,9 @@ const setupFor = async (feature) => !!await api('/api/setup/need?f=' + feature);
 const FRIENDLY = [
   [SETUP_RE, setupSay],
   [/no YouTube and no Google search/, 'TV này không có YouTube hay tìm kiếm của Google để tìm câu này.'],
+  [/^unsupported: (LG|Samsung)$/, (m) => 'TV ' + m[1] + ' không hỗ trợ'],
+  [/^refused$/, 'TV đã từ chối. Bấm Hỏi lại TV ở tab Thiết lập rồi chọn Cho phép.'],
+  [/^not accepted$/, 'Chưa ai chọn Cho phép trên TV. Bấm Hỏi lại TV ở tab Thiết lập.'],
   [/SSLHandshake|CertPathValidator|Chain validation|CERTIFICATE_VERIFY|not yet valid/i, 'Không mở được kết nối bảo mật. Ngày giờ trên TV có đúng không? (Cài đặt → Hệ thống → Ngày và giờ)'],
   [/UnknownHost|Name or service not known|nodename nor servname|getaddrinfo/i, 'TV (hoặc máy này) chưa vào được Internet.'],
   [/SocketTimeout|timed out|ConnectException|Connection reset/i, 'Mạng chậm hoặc vừa mất kết nối. Thử lại sau ít phút.'],
@@ -222,6 +225,7 @@ async function refresh() {
   if (CORE === 'tv') setLocked(locked, s);
   if (locked) return;
   tvOn = !!(s && s.connected && s.is_on); STATE = s || {};
+  if (s) applyKind(s);
   if (!s) {
     setChip('#chipTv', 'bad', CORE === 'pc' ? 'Server tắt' : 'Mất kết nối', CORE === 'pc' ? 'Server tắt' : 'TV: mất kết nối'); setChip('#chipAdb', '', 'ADB ?');
     $('#info').textContent = CORE === 'pc' ? 'Không gọi được server. Mở lại TV Remote trên máy này.' : 'Không gọi được TV: TV đang bật và cùng mạng với máy này chứ?'; return;
@@ -231,14 +235,16 @@ async function refresh() {
     s.connected ? (s.is_on ? 'TV: đang bật' : 'TV: màn hình tắt') : adbUp ? 'Nút bấm: đi qua ADB' : 'TV: mất kết nối');
   ADB = s.adb || { state: 'unknown' };
   const [cls, txt, long] = ADB_TEXT[ADB.state] || ADB_TEXT.unknown; setChip('#chipAdb', cls, txt, long);
+  $('#chipAdb').hidden = NATIVE();                                    // no ADB on this kind of TV: nothing to report
+  if (NATIVE() && !s.connected) setChip('#chipTv', s.asking ? 'warn' : 'bad', s.asking ? 'Chờ TV cho phép' : s.paired === false ? 'Chưa ghép' : 'Mất kết nối');
   const tvName = s.name || (s.device && s.device.model) || (s.host ? 'TV ' + s.host : '');
   if (CORE === 'pc') setPicking(!s.host || wantPick, tvName);
   if (s.version) $('#ver').textContent = (s.app_name || 'TV Remote') + ' ' + s.version + (s.released ? ' · ' + s.released : '');
   document.title = tvName && !picking ? tvName + ' · Remote' : 'TV Remote';
   $('#name').textContent = picking ? 'TV Remote' : tvName;
-  $('#info').textContent = picking ? tr('Chọn TV để điều khiển') : [CORE === 'pc' ? s.host : '', appName(s.app), s.paired === false ? 'chưa ghép remote (tab Thiết lập)' : s.error ? 'nút remote chưa kết nối được (tab Thiết lập)' : ''].filter(Boolean).join(' · ') || 'đã kết nối';
+  $('#info').textContent = picking ? tr('Chọn TV để điều khiển') : [CORE === 'pc' ? s.host : '', appName(s.app), s.asking ? 'nhìn lên TV: chọn Cho phép' : s.paired === false ? 'chưa ghép remote (tab Thiết lập)' : s.error ? 'nút remote chưa kết nối được (tab Thiết lập)' : ''].filter(Boolean).join(' · ') || 'đã kết nối';
   if (justPicked && s.host === justPicked) {                          // straight to the remote when the TV is ready, to the first-time steps when it is not
-    const ready = s.connected || (s.adb && s.adb.state === 'ready');
+    const ready = s.connected || (s.adb && s.adb.state === 'ready') || s.asking;   // LG / Samsung asking: the remote tab says what to do
     if (ready || Date.now() - pickedAt > 6000) { justPicked = null; showTab(ready ? 'remote' : 'tv'); }   // a TV takes a few seconds to answer
     else { setTimeout(refresh, 1000); if (s.name) $('#conname').textContent = s.name; }
   }
@@ -252,6 +258,31 @@ async function refresh() {
   if ($('#assist').open && (ADB.state === 'ready' || ADB.state === 'unauthorized')) {   // the TV has opened its ADB port: nothing left to help with
     $('#assist').close(); toast(ADB.state === 'ready' ? 'ADB đã kết nối' : 'ADB đã bật: nhìn lên TV, chọn “Luôn cho phép”');
   }
+}
+
+// ---------- the kind of TV: Android TV, LG or Samsung (Remote.kt: Kind) ----------
+// An LG or Samsung TV is driven through its own remote link and has no ADB: what needs a capability it lacks is marked
+// data-needs="cap ..." and hidden (tabs, cards) or greyed with the reason on hover (buttons); keys it has no name for are greyed.
+let TV_KIND = 'android', CAPS = null, kindSig = '';
+const NATIVE = () => TV_KIND !== 'android';
+const can = (cap) => !CAPS || CAPS.has(cap);
+const KIND_NAME = { android: 'Android TV', lg: 'LG', samsung: 'Samsung' };
+const kindWhy = () => 'TV ' + KIND_NAME[TV_KIND] + ' không hỗ trợ';
+function unsupported(e, off) {
+  const control = e.matches('button:not([data-tab]), input, select, fieldset');
+  if (!control) { e.classList.toggle('kind-off', off); return; }
+  if (off) { e.disabled = true; e.title = kindWhy(); e.dataset.kindOff = ''; }
+  else if ('kindOff' in e.dataset) { e.disabled = false; e.removeAttribute('title'); delete e.dataset.kindOff; }
+}
+function applyKind(s) {
+  const kind = s.kind || 'android', sig = kind + '|' + (s.caps || []).join() + '|' + (s.keys || []).join();
+  if (sig === kindSig) return;
+  kindSig = sig; TV_KIND = kind; CAPS = s.caps ? new Set(s.caps) : null;
+  document.documentElement.dataset.kind = kind;
+  const keys = kind !== 'android' && s.keys ? new Set(s.keys) : null;
+  document.querySelectorAll('[data-needs]').forEach((e) => unsupported(e, !e.dataset.needs.split(' ').every(can)));
+  document.querySelectorAll('[data-k]').forEach((b) => unsupported(b, !!keys && !keys.has(b.dataset.k)));
+  if (NATIVE() && ['apps', 'files', 'health'].includes(currentTab)) showTab('remote');
 }
 
 // ---------- ADB gating + banners ----------
@@ -271,6 +302,7 @@ const BANNERS = {
 };
 let bannerKey = '', scenesLoaded = false, setupChecked = '';         // setupChecked: the TV whose TV Setup version was looked at (auto.js)
 function buildBanner() {
+  if (ADB.state === 'none') return el('span');                        // LG / Samsung: no ADB to turn on
   const set = CORE === 'pc' ? BANNERS : BANNERS_TV, [cls, title, text] = set[ADB.state] || set.unknown;
   const retry = el('button', { className: 'small primary', textContent: '🔄 Thử kết nối lại', onclick: async (e) => {
     const b = e.currentTarget, label = b.textContent; b.disabled = true; b.textContent = 'Đang kết nối...';
@@ -296,15 +328,17 @@ function applyAdb() {
     document.querySelectorAll('[data-adb-banner]').forEach((b) => b.replaceChildren(...(ready ? [] : [buildBanner()])));
     if (ready && currentTab === 'tv' && typeof tsState === 'function') { tsState(); loadTvset(); }
   }
-  document.querySelectorAll('[data-adb-gated]').forEach((g) => { g.hidden = !ready; });
-  const noadb = !ready && ADB.state !== 'unknown';                      // not while still connecting
+  document.querySelectorAll('[data-adb-gated]').forEach((g) => { g.hidden = !ready && !(NATIVE() && 'native' in g.dataset); });   // data-native: works without ADB on LG / Samsung
+  const noadb = !ready && ADB.state !== 'unknown' && !NATIVE();         // not while still connecting; LG / Samsung hide those tabs instead
   $('.tabs').classList.toggle('noadb', noadb);
   document.querySelectorAll('.tabs [data-needs-adb]').forEach((b) => { if (noadb) b.title = tr('Cần ADB: bấm vào để xem cách bật'); else b.removeAttribute('title'); });
-  $('#kbd').disabled = !ready; $('#kbdoff').hidden = ready;           // typing goes through ADB: no half-working box without it
+  const typing = ready || NATIVE() && can('text');                    // typing goes through ADB, or LG's / Samsung's own keyboard link
+  $('#kbd').disabled = !typing; $('#kbdoff').hidden = typing;         // no half-working box without it
   $('#screenbtn').disabled = !ready && !screenOn;
   if (!ready && screenOn) stopScreen('ADB chưa sẵn sàng, đã dừng xem màn hình.');
   if (ready && autoView) { autoView = false; startScreen(); }           // bookmark ?view=1 to start watching right away
   if (ready && !picking && setupChecked !== (curHost || '-')) checkSetup();   // a newer TV Setup: offered once per TV (auto.js)
+  if (NATIVE() && STATE.connected) { if (!quickLoaded && can('app_list')) loadQuick(); if (!scenesLoaded) { scenesLoaded = true; loadScenes(); } }   // the TV's apps from its remote link
   if (ready) { if (!quickLoaded) loadQuick(); if (currentTab === 'apps' && !appsLoaded) loadApps(); if (currentTab === 'files' && !filesLoaded) loadFiles(cwd); if (!scenesLoaded) { scenesLoaded = true; loadScenes(); } if (currentTab === 'auto' && !autoLoaded) autoTab(); if ($('#setlist').open) loadSettings(); }
   if (!ready && listenOn) stopListen('ADB chưa sẵn sàng, đã dừng nghe tiếng TV.');
 }

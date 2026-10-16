@@ -29,8 +29,10 @@ test('remote.json: unique ids, a key or an action or a list on each entry, both 
   const ids = entries.map((e) => e.id);
   assert.equal(new Set(ids).size, ids.length, 'ids are unique');
   assert.ok(entries.length > 30, 'found the entries');
+  const caps = new Set([...read('shared/src/main/kotlin/dev/tvremote/core/Remote.kt').matchAll(/setOf\(([^)]*)\)/g)].flatMap((m) => [...m[1].matchAll(/"(\w+)"/g)].map((x) => x[1])));
   for (const e of entries) {
     assert.equal([e.key, e.do, e.expand].filter(Boolean).length, 1, e.id + ': one of key / do / expand');
+    for (const n of e.needs || []) assert.ok(caps.has(n), e.id + ': needs ' + n + ', which no kind of TV has (Remote.Kind.caps)');
     if (e.expand) continue;
     assert.ok(e.icon && e.vi && e.en, e.id + ': icon, vi and en');
     if (e.sub) assert.ok(e.sub.vi && e.sub.en, e.id + ': sub in both languages');
@@ -72,7 +74,7 @@ test('the menus are built the same way the page does, in both languages', () => 
   for (const lang of ['vi', 'en']) {
     const p = pageSpec('pc', lang);
     const open = p.remoteMenu('open'), words = open.map((i) => i[0]);
-    assert.equal(open.length, spec.menus.open.filter((e) => !e.cores).length);   // the phone-only Cast entry is not on the page
+    assert.equal(open.length, spec.menus.open.filter((e) => !e.cores && !e.expand).length);   // the phone-only Cast entry is not on the page; no TV apps given
     assert.ok(words.every((w) => /^@\w+\|.+/.test(w)));
     assert.ok(!words.some((w) => /^@cast\|/.test(w)));
     const timer = p.remoteMenu('timer', { when: { timerOn: true }, expand: { lengths: () => [['Tắt sau 15 phút', '', () => {}]] } });
@@ -81,4 +83,14 @@ test('the menus are built the same way the page does, in both languages', () => 
     const media = p.remoteMenu('open').find((i) => i[0].startsWith('@image|'));
     assert.match(media[0], lang === 'en' ? /from this device/ : /từ máy này/);   // the page's own words, not the phone's
   }
+});
+
+test('on an LG or Samsung TV the menus leave out what it cannot do, and list its apps', () => {
+  const p = pageSpec('pc', 'en');
+  const lg = new Set(['keys', 'text', 'apps', 'app_list', 'volume_set', 'link', 'screen_off', 'wol', 'scenes']);
+  p.can = (c) => lg.has(c);                                           // core.js's can(), from /api/state "caps"
+  const open = p.remoteMenu('open', { expand: { tvapps: () => [['@play|Netflix', '', () => {}]] } }).map((i) => i[0]);
+  assert.equal(open[0], '@play|Netflix');
+  assert.ok(open.some((w) => w.startsWith('@link|')));
+  assert.ok(!open.some((w) => /^@(search|package|image|music)\|/.test(w) || /YouTube$/.test(w)), 'no Play Store or ADB entries: ' + open);
 });

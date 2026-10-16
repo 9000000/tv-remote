@@ -32,6 +32,7 @@ object Scenes {
     }
 
     private val PKG = Pattern.compile("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)+")
+    private val APP_ID = Pattern.compile("[A-Za-z0-9][A-Za-z0-9_.-]{0,127}")   // an LG app ("netflix", "spotify-beehive") or a Samsung one ("3201907018807") too; [launch] still wants a package
     private val STEPS = setOf("wake", "sleep", "key", "app", "link", "volume", "wait", "timer")
 
     /**
@@ -77,7 +78,7 @@ object Scenes {
                 val c = JSONObject().put("do", what)
                 when (what) {
                     "key" -> { val k = s.optString("key").uppercase(); if (k !in KEYS) continue; c.put("key", k) }
-                    "app" -> { val p = s.optString("pkg"); if (!PKG.matcher(p).matches()) continue; c.put("pkg", p) }
+                    "app" -> { val p = s.optString("pkg"); if (!APP_ID.matcher(p).matches()) continue; c.put("pkg", p) }
                     "link" -> { val u = s.optString("url").trim(); if (!u.matches(Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:\\S+$")) || u.length > 2000) continue; c.put("url", u) }
                     "volume" -> c.put("level", s.optInt("level").coerceIn(0, 100))
                     "wait" -> c.put("s", s.optDouble("s", 1.0).coerceIn(0.0, 30.0))

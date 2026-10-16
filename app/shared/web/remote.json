@@ -1,5 +1,5 @@
 {
-  "_": "THE keys and menu entries of the remote screen, for both remotes: the Phone app's native one (RemoteScreen.kt, PhoneRemote.kt) and the web one (js/remote.js; the Computer app, the TV web page). Add, reorder or rename here and both change. Text: vi and en; sub = the small line under a menu entry. 'phone' / 'web' override fields for that side only, with the reason in 'why'. 'cores': [\"phone\"] or [\"web\"], only that side shows the entry. An entry is either a key ('key': a name from Scenes.KEYS / the /api/key names) or an action ('do': a handler name, 'arg' passed to it); every 'do' needs a handler on both sides (app/shared/tests/remote.test.js and RemoteSpecTest.kt check it). A menu entry may carry 'when' (a condition the handler supplies) or be 'expand' (the handler supplies several entries there). Icons: dev/gen_icons.py. The top row (power, speak, manage / wake, more), the arrows, the number keys and the volume / channel bars are laid out by hand on each side.",
+  "_": "THE keys and menu entries of the remote screen, for both remotes: the Phone app's native one (RemoteScreen.kt, PhoneRemote.kt) and the web one (js/remote.js; the Computer app, the TV web page). Add, reorder or rename here and both change. Text: vi and en; sub = the small line under a menu entry. 'phone' / 'web' override fields for that side only, with the reason in 'why'. 'cores': [\"phone\"] or [\"web\"], only that side shows the entry. An entry is either a key ('key': a name from Scenes.KEYS / the /api/key names) or an action ('do': a handler name, 'arg' passed to it); every 'do' needs a handler on both sides (app/shared/tests/remote.test.js and RemoteSpecTest.kt check it). A menu entry may carry 'when' (a condition the handler supplies) or be 'expand' (the handler supplies several entries there). 'needs': what the TV must be able to do (Remote.Kind.caps: adb, store, link, app_list...); on an LG or Samsung TV that lacks one a row key is greyed and a menu entry left out. Icons: dev/gen_icons.py. The top row (power, speak, manage / wake, more), the arrows, the number keys and the volume / channel bars are laid out by hand on each side.",
   "rows": {
     "more": [
       [
@@ -13,13 +13,13 @@
           "web": { "en": "TV" }, "why": "the page's label is the bare word TV, which i18n.js cannot translate on its own without changing every TV on the page" },
         { "id": "subtitles", "icon": "subtitle", "vi": "Phụ đề", "en": "Subtitles", "key": "SUBTITLE" },
         { "id": "stop", "icon": "stop", "vi": "Dừng", "en": "Stop", "key": "STOP" },
-        { "id": "screenshot", "icon": "camera", "vi": "Chụp màn hình", "en": "Screenshot", "do": "shot" }
+        { "id": "screenshot", "icon": "camera", "vi": "Chụp màn hình", "en": "Screenshot", "do": "shot", "needs": ["adb"] }
       ],
       [
         { "id": "open", "icon": "send", "vi": "Mở trên TV", "en": "Open on the TV", "do": "open" },
-        { "id": "timer", "icon": "timer", "vi": "Hẹn giờ tắt", "en": "Sleep timer", "do": "timer" },
+        { "id": "timer", "icon": "timer", "vi": "Hẹn giờ tắt", "en": "Sleep timer", "do": "timer", "needs": ["adb"] },
         { "id": "scenes", "icon": "scene", "vi": "Cảnh", "en": "Scenes", "do": "scenes" },
-        { "id": "draw", "icon": "pen", "vi": "Vẽ lên TV", "en": "Draw on the TV", "do": "draw" }
+        { "id": "draw", "icon": "pen", "vi": "Vẽ lên TV", "en": "Draw on the TV", "do": "draw", "needs": ["adb"] }
       ]
     ],
     "nav": [
@@ -47,24 +47,25 @@
   },
   "menus": {
     "open": [
-      { "id": "open-search", "icon": "search", "vi": "Tìm app trên CH Play", "en": "Search the Play Store", "do": "search" },
-      { "id": "open-package", "icon": "package", "vi": "Mở trang CH Play theo app id", "en": "Open a Play Store page by app id", "do": "package",
+      { "id": "open-tvapps", "expand": "tvapps", "needs": ["app_list"] },
+      { "id": "open-search", "icon": "search", "vi": "Tìm app trên CH Play", "en": "Search the Play Store", "do": "search", "needs": ["store"] },
+      { "id": "open-package", "icon": "package", "vi": "Mở trang CH Play theo app id", "en": "Open a Play Store page by app id", "do": "package", "needs": ["store"],
         "sub": { "vi": "vd: org.videolan.vlc", "en": "e.g. org.videolan.vlc" } },
-      { "id": "open-link", "icon": "link", "vi": "Mở đường dẫn trên TV", "en": "Open a link on the TV", "do": "link",
+      { "id": "open-link", "icon": "link", "vi": "Mở đường dẫn trên TV", "en": "Open a link on the TV", "do": "link", "needs": ["link"],
         "sub": { "vi": "YouTube, web, tệp...", "en": "YouTube, web, files..." } },
-      { "id": "open-media", "icon": "image", "vi": "Phát ảnh / video từ điện thoại", "en": "Play a photo / video from the phone", "do": "media",
+      { "id": "open-media", "icon": "image", "vi": "Phát ảnh / video từ điện thoại", "en": "Play a photo / video from the phone", "do": "media", "needs": ["adb"],
         "sub": { "vi": "Cần ADB", "en": "Needs ADB" },
         "web": { "vi": "Phát ảnh / video từ máy này", "en": "Play a photo / video from this device" }, "why": "the web page may be a computer, not a phone" },
-      { "id": "open-file", "icon": "music", "vi": "Phát nhạc / tệp khác", "en": "Play a song / other file", "do": "file" },
+      { "id": "open-file", "icon": "music", "vi": "Phát nhạc / tệp khác", "en": "Play a song / other file", "do": "file", "needs": ["adb"] },
       { "id": "open-cast", "icon": "cast", "vi": "Chiếu màn hình điện thoại lên TV", "en": "Mirror the phone’s screen on the TV", "do": "cast",
         "sub": { "vi": "Cùng Wi-Fi", "en": "Same Wi-Fi" }, "cores": ["phone"], "why": "Android's Cast settings can only be opened from the phone itself; a browser cannot" },
-      { "id": "open-youtube", "icon": "play", "vi": "YouTube", "en": "YouTube", "do": "store", "arg": "com.google.android.youtube.tv", "sub": { "vi": "Trang CH Play: cài hoặc mở", "en": "Play Store page: install or open" } },
-      { "id": "open-netflix", "icon": "play", "vi": "Netflix", "en": "Netflix", "do": "store", "arg": "com.netflix.ninja", "sub": { "vi": "Trang CH Play: cài hoặc mở", "en": "Play Store page: install or open" } },
-      { "id": "open-vlc", "icon": "play", "vi": "VLC", "en": "VLC", "do": "store", "arg": "org.videolan.vlc", "sub": { "vi": "Trang CH Play: cài hoặc mở", "en": "Play Store page: install or open" } },
-      { "id": "open-kodi", "icon": "play", "vi": "Kodi", "en": "Kodi", "do": "store", "arg": "org.xbmc.kodi", "sub": { "vi": "Trang CH Play: cài hoặc mở", "en": "Play Store page: install or open" } },
-      { "id": "open-downloader", "icon": "download", "vi": "Downloader", "en": "Downloader", "do": "store", "arg": "com.esaba.downloader", "sub": { "vi": "Trang CH Play: cài hoặc mở", "en": "Play Store page: install or open" } },
-      { "id": "open-projectivy", "icon": "home", "vi": "Projectivy Launcher", "en": "Projectivy Launcher", "do": "store", "arg": "com.spocky.projengmenu", "sub": { "vi": "Trang CH Play: cài hoặc mở", "en": "Play Store page: install or open" } },
-      { "id": "open-tailscale", "icon": "globe", "vi": "Tailscale", "en": "Tailscale", "do": "store", "arg": "com.tailscale.ipn", "sub": { "vi": "Trang CH Play: cài hoặc mở", "en": "Play Store page: install or open" } }
+      { "id": "open-youtube", "icon": "play", "vi": "YouTube", "en": "YouTube", "do": "store", "needs": ["store"], "arg": "com.google.android.youtube.tv", "sub": { "vi": "Trang CH Play: cài hoặc mở", "en": "Play Store page: install or open" } },
+      { "id": "open-netflix", "icon": "play", "vi": "Netflix", "en": "Netflix", "do": "store", "needs": ["store"], "arg": "com.netflix.ninja", "sub": { "vi": "Trang CH Play: cài hoặc mở", "en": "Play Store page: install or open" } },
+      { "id": "open-vlc", "icon": "play", "vi": "VLC", "en": "VLC", "do": "store", "needs": ["store"], "arg": "org.videolan.vlc", "sub": { "vi": "Trang CH Play: cài hoặc mở", "en": "Play Store page: install or open" } },
+      { "id": "open-kodi", "icon": "play", "vi": "Kodi", "en": "Kodi", "do": "store", "needs": ["store"], "arg": "org.xbmc.kodi", "sub": { "vi": "Trang CH Play: cài hoặc mở", "en": "Play Store page: install or open" } },
+      { "id": "open-downloader", "icon": "download", "vi": "Downloader", "en": "Downloader", "do": "store", "needs": ["store"], "arg": "com.esaba.downloader", "sub": { "vi": "Trang CH Play: cài hoặc mở", "en": "Play Store page: install or open" } },
+      { "id": "open-projectivy", "icon": "home", "vi": "Projectivy Launcher", "en": "Projectivy Launcher", "do": "store", "needs": ["store"], "arg": "com.spocky.projengmenu", "sub": { "vi": "Trang CH Play: cài hoặc mở", "en": "Play Store page: install or open" } },
+      { "id": "open-tailscale", "icon": "globe", "vi": "Tailscale", "en": "Tailscale", "do": "store", "needs": ["store"], "arg": "com.tailscale.ipn", "sub": { "vi": "Trang CH Play: cài hoặc mở", "en": "Play Store page: install or open" } }
     ],
     "timer": [
       { "id": "timer-plus", "icon": "plus", "vi": "Thêm 15 phút", "en": "15 more minutes", "do": "timerPlus", "when": "timerOn" },

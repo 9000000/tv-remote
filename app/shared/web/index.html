@@ -91,9 +91,9 @@
 
   <nav class="tabs" role="tablist">
     <button role="tab" data-tab="remote" data-for="pc tv" aria-selected="true"><span class="ico">🎮</span><span class="lbl"> Remote</span></button>
-    <button role="tab" data-tab="apps" data-needs-adb aria-selected="false"><span class="ico">📱</span><span class="lbl"> Ứng dụng</span><span class="needs">cần ADB</span></button>
-    <button role="tab" data-tab="files" data-needs-adb aria-selected="false"><span class="ico">📁</span><span class="lbl"> Tệp · Cài</span><span class="needs">cần ADB</span></button>
-    <button role="tab" data-tab="health" data-needs-adb aria-selected="false"><span class="ico">🩺</span><span class="lbl"> Sức khỏe</span><span class="needs">cần ADB</span></button>
+    <button role="tab" data-tab="apps" data-needs-adb data-needs="adb" aria-selected="false"><span class="ico">📱</span><span class="lbl"> Ứng dụng</span><span class="needs">cần ADB</span></button>
+    <button role="tab" data-tab="files" data-needs-adb data-needs="adb" aria-selected="false"><span class="ico">📁</span><span class="lbl"> Tệp · Cài</span><span class="needs">cần ADB</span></button>
+    <button role="tab" data-tab="health" data-needs-adb data-needs="adb" aria-selected="false"><span class="ico">🩺</span><span class="lbl"> Sức khỏe</span><span class="needs">cần ADB</span></button>
     <button role="tab" data-tab="auto" data-needs-adb aria-selected="false"><span class="ico">⏰</span><span class="lbl"> Tự động</span><span class="needs">cần ADB</span></button>
     <button role="tab" data-tab="tv" aria-selected="false"><span class="ico" data-for="pc">📺</span><span class="lbl" data-for="pc"> Thiết lập</span><span class="ico" data-for="tv phone">🧭</span><span class="lbl" data-for="tv phone"> Thiết lập</span></button>
   </nav>
@@ -102,9 +102,9 @@
   <div class="panel" data-panel="remote" data-for="pc tv">
     <div class="remote-grid">
       <div class="col">
-        <section class="card" id="screencard" aria-label="Màn hình TV">
+        <section class="card" id="screencard" data-needs="adb" aria-label="Màn hình TV">
           <div class="card-head">
-            <h2>🖥️ Màn hình TV <span class="muted" data-for="pc" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
+            <h2>🖥️ Màn hình TV <span class="muted adbnote" data-for="pc" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
             <div class="tools">
               <select id="screenmode" aria-label="Chất lượng hình" title="Chất lượng hình: số nhỏ thì nhẹ cho TV và mạng"><option value="240">240p</option><option value="360">360p</option><option value="480">480p</option><option value="720">720p</option><option value="960" selected>960p</option><option value="hd" data-for="pc">Nét nhất · nặng TV</option><option value="snap">Ảnh chụp</option></select>
               <button class="small" id="listen" data-adb-gated title="Nghe tiếng TV trên máy này"><span class="ico">🎧</span><span class="lbl"> Nghe</span></button>
@@ -133,7 +133,7 @@
         </section>
         <div data-adb-banner></div>
         <section class="card wide-only">
-          <h2>🚀 Mở ứng dụng <span class="muted" data-for="pc" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
+          <h2>🚀 Mở ứng dụng <span class="muted adbnote" data-for="pc" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
           <input id="quickq" type="search" placeholder="Tìm theo tên app" autocomplete="off" style="margin-bottom:10px;width:100%">
           <div class="tiles" id="quick"><div class="muted">Danh sách app hiện khi ADB sẵn sàng.</div></div>
         </section>
@@ -163,13 +163,13 @@
           </div>
         </section>
 
-        <section class="card" id="scenecard" data-adb-gated>
+        <section class="card" id="scenecard" data-adb-gated data-native>
           <div class="card-head"><h2>🎬 Cảnh</h2><button class="small" id="sceneedit">✏️ Sửa</button></div>
           <div class="scenebtns" id="scenebtns"></div>
         </section>
 
         <section class="card">
-          <h2>⌨️ Bàn phím <span class="muted" data-for="pc" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
+          <h2>⌨️ Bàn phím <span class="muted adbnote" data-for="pc" style="text-transform:none;letter-spacing:0;font-weight:500">· cần ADB</span></h2>
           <p class="muted" id="kbdoff" hidden style="margin:0 0 8px">🔒 Gõ chữ cần ADB.</p>
           <fieldset id="kbd">
           <form class="line" id="textf" style="margin-top:0"><button type="button" id="live" title="Gõ trực tiếp / gõ xong rồi gửi">⚡</button><input id="text" placeholder="Gõ chữ lên TV" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="primary" title="Gửi phím Enter">↵</button><button type="button" id="del" aria-label="Xóa ký tự">⌫</button><button type="button" id="digits" title="Bàn phím số">123</button></form>
@@ -283,7 +283,7 @@
         <form class="line" id="limitf"><select id="limitpkg" aria-label="App"></select><select id="limitmin" aria-label="Số phút mỗi ngày"><option value="30">30 phút</option><option value="60" selected>1 giờ</option><option value="90">1 giờ 30</option><option value="120">2 giờ</option><option value="180">3 giờ</option><option value="240">4 giờ</option></select><button class="primary">＋ Thêm</button></form>
       </section>
     </div>
-    <section class="card" data-adb-gated>
+    <section class="card" data-adb-gated data-native>
       <div class="card-head"><h2>🎬 Cảnh</h2><button class="small primary" id="scenenew">＋ Tạo cảnh</button></div>
       <div class="list" id="scenelist"></div>
       <div class="sceneio">
@@ -328,7 +328,7 @@
     </details>
   </div>
 
-  <details class="card help" id="help" data-for="pc">
+  <details class="card help" id="help" data-for="pc" data-needs="adb">
     <summary>❓ Chức năng nào cần ADB (cổng 5555)?</summary>
     <div class="cols">
       <div>

@@ -26,6 +26,7 @@ import android.widget.TextView
 import android.widget.Toast
 import dev.tvremote.core.Adb
 import dev.tvremote.core.Atv
+import dev.tvremote.core.Remote
 import dev.tvremote.core.Tv
 import dev.tvremote.core.TvShell
 import dev.tvremote.update.Release
@@ -43,7 +44,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     // ---- the session (this file)
     @Volatile internal var tv: Tv? = null                              // read by the session thread to tell its own messages from a replaced one's
-    internal var basic: Atv? = null                                    // keys only, for a TV whose ADB is still off (see Atv, KeysOnly.kt)
+    internal var basic: Remote? = null                                 // keys only: an Android TV whose ADB is still off (Atv), or an LG / Samsung TV (KeysOnly.kt)
     internal var host: String? = null                                  // the TV we want to be connected to, null on the picker
     internal var entry: String? = null                                 // the saved TV that [host] is another address of (its Tailscale or home IP), if so
     // Switching to another app and back must find the TV again, not the list of TVs: a session that ends while away (the
@@ -311,6 +312,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         host = h
         if (h.isEmpty()) return
         hideKeyboard()
+        if (kindOf(h) != Remote.Kind.ANDROID) { host = null; startBasic(h, false); return }   // LG / Samsung: their own remote link, no ADB
         status.text = title(h) + " · " + t("đang kết nối...", "connecting...")
         surface.visibility = View.VISIBLE                              // a fresh, black surface (see disconnect)
         show(true)
@@ -321,7 +323,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal fun startSession() {
         val h = host
         val picture = video && !bgListen
-        if (h == null || tv != null || basic != null || keysAway || picture && !surfaceReady) return
+        if (h == null || tv != null || basic != null || keysAway || picture && !surfaceReady || kindOf(entry ?: h) != Remote.Kind.ANDROID) return
         val dm = resources.displayMetrics
         tv = Tv(this, h, if (picture) surface.holder.surface else null, prefs.getInt("quality", 1), maxOf(dm.widthPixels, dm.heightPixels), wakeNext, this,
             audio = if (listen) "opus" else null, audioShare = listenShare, audioBitRate = if (prefs.getBoolean("listenHq", false)) 160000 else 64000)
@@ -503,8 +505,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     /** True, with a word of explanation, when the button needs ADB and there is only the keys-only connection. */
     internal fun needsAdb(): Boolean {
-        if (basic == null) return false
-        Toast.makeText(this, t("Cần bật Gỡ lỗi ADB trên TV cho chức năng này", "This needs ADB debugging on for the TV"), Toast.LENGTH_SHORT).show()
+        val b = basic ?: return false
+        Toast.makeText(this, if (b.kind != Remote.Kind.ANDROID) t("TV " + Remote.Kind.name(b.kind) + " không hỗ trợ việc này", Remote.Kind.name(b.kind) + " TVs cannot do this")
+            else t("Cần bật Gỡ lỗi ADB trên TV cho chức năng này", "This needs ADB debugging on for the TV"), Toast.LENGTH_SHORT).show()
         return true
     }
 
@@ -567,7 +570,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     /** Not a command: looked up on the TV, on YouTube when it has it (TvShell.search); keys only, YouTube by its link. */
     internal fun ask(sentence: String) {
         val tv = tv
-        basic?.let { it.launch(TvShell.youtube(sentence)); searched(sentence, "yt"); return }
+        basic?.let { if (!it.search(sentence)) it.launch(TvShell.youtube(sentence)); searched(sentence, "yt"); return }
         if (tv != null && tv.ready()) Thread { val to = tv.search(sentence); ui.post { searched(sentence, to) } }.start()
         else { pendingAsk = sentence; Toast.makeText(this, t("Đang chờ TV: ", "Waiting for the TV: ") + sentence, Toast.LENGTH_SHORT).show() }
     }

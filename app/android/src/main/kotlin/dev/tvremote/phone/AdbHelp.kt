@@ -161,7 +161,7 @@ internal fun MainActivity.installSetup() {
  * presses the main button. That is "Open" when the app is installed; when it is not, the same press starts installing it,
  * and this returns false.
  */
-internal fun MainActivity.openOnTv(a: Atv, pkg: String, stop: () -> Boolean): Boolean {
+internal fun MainActivity.openOnTv(a: dev.tvremote.core.Remote, pkg: String, stop: () -> Boolean): Boolean {
     val front = { want: String, seconds: Int ->
         var ok = false
         for (i in 0 until seconds * 5) { if (stop() || basic !== a) break; if (a.app == want) { ok = true; break }; Thread.sleep(200) }
@@ -182,14 +182,14 @@ internal fun MainActivity.openOnTv(a: Atv, pkg: String, stop: () -> Boolean): Bo
  * hold Up until the pointer leaves the page and the toolbar takes the focus; go to its right end and two back, which is
  * the address field wherever the focus first landed; OK opens the field with the TV's keyboard; type; Enter loads.
  */
-internal fun MainActivity.downloaderGo(a: Atv, link: String) {
+internal fun MainActivity.downloaderGo(a: dev.tvremote.core.Remote, link: String) {
     for (i in 0 until 40) a.pulse(19, 70)                          // many short holds: over this protocol a key cannot be kept down, each one nudges the pointer
     for (i in 0 until 4) a.pulse(22, 110)
     for (i in 0 until 2) a.pulse(21, 110)
     Thread.sleep(40 * 90L + 6 * 350L)                             // the keys above are queued; let them play out
     a.pulse(23, 110)
     Thread.sleep(2500)                                            // the field and the keyboard open
-    a.keys(link)
+    (a as? Atv)?.keys(link) ?: a.text(link)
     Thread.sleep(link.length * 60L + 1000)
     a.key(66, Atv.SHORT)
 }

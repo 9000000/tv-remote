@@ -1,5 +1,7 @@
 package dev.tvremote.desktop
 
+import dev.tvremote.core.Remote
+import dev.tvremote.core.Ssdp
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -12,7 +14,10 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
-/** Finding TVs: hosts answering on the remote (6466) or ADB (5555) port, on this computer's networks and the tailnet. */
+/**
+ * Finding TVs: hosts answering on the remote (6466) or ADB (5555) port, on this computer's networks and the tailnet; LG and
+ * Samsung TVs by their answer to an SSDP search (Ssdp.kt). Each row says its "kind".
+ */
 object Discover {
     val TAILSCALE = listOf("/Applications/Tailscale.app/Contents/MacOS/Tailscale", "/opt/homebrew/bin/tailscale", "/usr/local/bin/tailscale",
         "/usr/bin/tailscale", "C:\\Program Files\\Tailscale\\tailscale.exe").firstOrNull { File(it).canExecute() } ?: "tailscale"
@@ -107,12 +112,14 @@ object Discover {
             val remote = portOpen(ip, 6466, unknown = unknown)
             val adb = portOpen(ip, 5555, unknown = unknown)
             if (remote || adb) found[ip] = JSONObject().put("ip", ip).put("remote", remote).put("adb", adb).put("via", via).put("name", castName(ip).ifEmpty { name })
+                .put("kind", Remote.Kind.ANDROID)
         }
         try {
             val nets = localNetworks()
             s.networks = nets.map { it.second }
-            val peers = tailscalePeers()
             val jobs = ArrayList<java.util.concurrent.Future<*>>()
+            jobs.add(pool.submit { Ssdp.find { f -> if (!found.containsKey(f.ip)) found[f.ip] = JSONObject().put("ip", f.ip).put("remote", true).put("adb", false).put("via", "lan").put("name", f.name).put("kind", f.kind) } })
+            val peers = tailscalePeers()
             for ((me, _) in nets) for (h in 1..254) { val ip = me.substringBeforeLast('.') + ".$h"; if (ip != me) jobs.add(probe(ip, "lan", "")) }
             for ((ip, name) in peers) jobs.add(probe(ip, "tailscale", name))
             jobs.forEach { it.get() }
