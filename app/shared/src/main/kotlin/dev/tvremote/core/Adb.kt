@@ -43,6 +43,9 @@ class Adb(private val dir: File) : Closeable {
         internal val acked = Semaphore(0)
         private var cur = EMPTY
         private var pos = 0
+        internal var pace: ((Long) -> Unit)? = null                  // set by writeTo: called every PACE_STEP bytes with the count sent
+        private var sent = 0L
+        private var paced = PACE_STEP
 
         /** Reads up to len bytes; -1 at end of stream; 0 if nothing arrived within timeoutMs (0 = wait for ever). */
         @Throws(IOException::class)
@@ -111,11 +114,15 @@ class Adb(private val dir: File) : Closeable {
                 }
                 at += n
                 left -= n
+                sent += n
+                if (sent >= paced) { paced = sent + PACE_STEP; pace?.invoke(sent) }
             }
         }
 
         @Throws(IOException::class)
         fun write(data: ByteArray) = write(data, 0, data.size)
+
+        val isClosed: Boolean get() = closed
 
         override fun close() {
             if (closed) return
@@ -350,9 +357,33 @@ class Adb(private val dir: File) : Closeable {
      * Writes [size] bytes from [feed] to [path] on the TV, the stream left open until the file holds them all: some TVs (a
      * Sony on Android 9) end cat as the stream closes and lose what it had not written yet, all of a small file. True once whole.
      */
+    /**
+     * A stream whose bytes `cat` writes to [path], kept at most [AHEAD] bytes in front of what the file holds. Without that
+     * the TV's adbd (Android 14 at least) acknowledges a fast sender long before a slow disk takes the data, and once some
+     * 70 MB wait in it, it stops answering for good: an upload to /sdcard died at 75 MB, every time.
+     */
+    @Throws(IOException::class)
+    fun writeTo(path: String): Stream {
+        val s = exec("cat > " + q(path))
+        s.pace = { sent ->
+            var got = -1L
+            var still = 0                                             // checks in a row without the file growing
+            while (true) {
+                if (s.isClosed) throw IOException("stream closed")    // a Stop closes it
+                val now = shell("stat -c %s " + q(path) + " 2>/dev/null").trim().toLongOrNull() ?: 0
+                if (now >= sent - AHEAD) break
+                still = if (now == got) still + 1 else 0
+                got = now
+                if (still >= WRITE_WAIT * 5) { s.close(); throw IOException("the TV stopped taking data") }
+                try { Thread.sleep(200) } catch (e: InterruptedException) { throw IOException("interrupted") }
+            }
+        }
+        return s
+    }
+
     @Throws(IOException::class)
     fun put(path: String, size: Long, feed: (Stream) -> Unit): Boolean {
-        val s = exec("cat > " + q(path))
+        val s = writeTo(path)
         try {
             feed(s)
             var got = ""
@@ -435,6 +466,9 @@ class Adb(private val dir: File) : Closeable {
     companion object {
         /** Seconds a write may wait for the TV to take it. */
         private const val WRITE_WAIT = 30
+        /** How far a file upload may run ahead of the TV's disk, and how often that is checked (see [writeTo]). */
+        private const val AHEAD = 8L shl 20
+        private const val PACE_STEP = 2L shl 20
         private const val CNXN = 0x4e584e43
         private const val AUTH = 0x48545541
         private const val STLS = 0x534c5453

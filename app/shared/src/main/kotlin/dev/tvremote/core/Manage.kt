@@ -460,7 +460,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 if (length >= 0 && done < length) throw IOException("upload cut short")
             }
             if (length >= 0) adb.put(dest, length, feed)                  // the size known: the stream stays open until it is all there
-            else adb.exec("cat > " + Adb.q(dest)).use(feed)
+            else adb.writeTo(dest).use(feed)
             val want = if (length >= 0) length.toString() else null       // cat finishes writing shortly after the stream closes
             for (i in 0 until 40) {
                 cancel?.check()
@@ -596,6 +596,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         push(r.body, r.length, TMP_APK, null, 2)
         try {
             pmInstall(TMP_APK)
+        } catch (e: Cancelled) {
+            throw e                                                   // a Stop, answered 410 like the copy's
         } catch (e: IOException) {
             throw IllegalArgumentException(e.message)
         } finally {
