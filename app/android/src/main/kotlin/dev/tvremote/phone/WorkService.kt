@@ -54,20 +54,21 @@ class WorkService : Service() {
             else -> t("Đang làm việc trên TV", "Working on the TV")
         }
 
-        fun show(c: Context, what: String) {
-            try { (c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(ID, note(c, what)) } catch (ignored: Exception) { }
+        /** [pct] 0..100, or below 0 when the work does not tell (a bar that only moves). */
+        fun show(c: Context, what: String, pct: Int = -1) {
+            try { (c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(ID, note(c, what, pct)) } catch (ignored: Exception) { }
         }
 
         @Suppress("DEPRECATION")
-        private fun note(c: Context, what: String): Notification {
+        private fun note(c: Context, what: String, pct: Int = -1): Notification {
             val b = if (Build.VERSION.SDK_INT >= 26) {
                 (c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(NotificationChannel("work", t("Việc đang làm trên TV", "Work on the TV"), NotificationManager.IMPORTANCE_LOW))
                 Notification.Builder(c, "work")
             } else Notification.Builder(c)
             val open = PendingIntent.getActivity(c, 3, Intent(c, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-            return b.setSmallIcon(R.drawable.ic_tv).setContentTitle(say(what) + "...")
+            return b.setSmallIcon(R.drawable.ic_tv).setContentTitle(say(what) + (if (pct >= 0) " · $pct%" else "..."))
                 .setContentText(t("Vẫn chạy khi chuyển sang app khác.", "Goes on while you use other apps."))
-                .setContentIntent(open).setOngoing(true).setProgress(0, 0, true).build()
+                .setContentIntent(open).setOngoing(true).setOnlyAlertOnce(true).setProgress(100, pct.coerceAtLeast(0), pct < 0).build()
         }
     }
 }

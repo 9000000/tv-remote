@@ -398,16 +398,36 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     }
 
     private var workOn = false
+    private var workWhat = ""
+    private var workPct = -2
 
-    /** Work under way on the Manage screen ([what], "" when over): kept running in the background by WorkService. */
+    /** Work under way on the Manage screen ([what], "" when over): kept running in the background by WorkService, its
+     *  notification showing how far it is. */
     internal fun working(what: String) {
         try {
             if (what.isNotEmpty()) {
+                workWhat = what
                 val i = Intent(this, WorkService::class.java).putExtra(WorkService.WHAT, what)
-                if (!workOn) { if (Build.VERSION.SDK_INT >= 26) startForegroundService(i) else startService(i) } else WorkService.show(this, what)
+                if (!workOn) { askNotifications(); if (Build.VERSION.SDK_INT >= 26) startForegroundService(i) else startService(i); ui.postDelayed(workTick, 1000) }
+                else WorkService.show(this, what, managing.progress())
                 workOn = true
-            } else if (workOn) { workOn = false; stopService(Intent(this, WorkService::class.java)) }
+            } else if (workOn) { workOn = false; workPct = -2; ui.removeCallbacks(workTick); stopService(Intent(this, WorkService::class.java)) }
         } catch (e: Exception) { }                                    // not allowed from the background: it only runs until Android freezes the app
+    }
+    private val workTick = object : Runnable {
+        override fun run() {
+            if (!workOn) return
+            val p = managing.progress()
+            if (p != workPct) { workPct = p; WorkService.show(this@MainActivity, workWhat, p) }
+            ui.postDelayed(this, 1000)
+        }
+    }
+
+    /** Android 13+ shows no notification until allowed, and asks only when an app asks: without it nothing says the TV's
+     *  sound plays or a copy goes on in the background. Asked the first time either starts; Android itself stops asking after "Don't allow" twice. */
+    internal fun askNotifications() {
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
+            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 7)
     }
 
     /** Leaving the TV by choice: asks first when something is under way there, which leaving would cut off. */

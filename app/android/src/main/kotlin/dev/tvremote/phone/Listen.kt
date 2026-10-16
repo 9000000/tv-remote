@@ -63,8 +63,7 @@ private fun MainActivity.restartForSound() {
 
 internal fun MainActivity.listenService(on: Boolean) {
     val i = Intent(this, ListenService::class.java)
-    if (on && Build.VERSION.SDK_INT >= 33 && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
-        requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 7)   // asked once by Android; without it nothing says the sound plays
+    if (on) askNotifications()
     try {
         if (!on) stopService(i)
         else if (Build.VERSION.SDK_INT >= 26) startForegroundService(i) else startService(i)

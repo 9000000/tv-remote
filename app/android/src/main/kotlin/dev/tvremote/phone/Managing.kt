@@ -155,6 +155,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
 
     /** What the page is doing on the TV (Manage.working), "" when nothing. */
     fun working(): String = manage?.working() ?: ""
+    fun progress(): Int = manage?.progress() ?: -1
 
     /** Leaving this TV: drop its ADB connection; the next TV gets a fresh page. */
     fun close() {

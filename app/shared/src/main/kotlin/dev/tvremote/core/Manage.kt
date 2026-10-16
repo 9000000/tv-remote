@@ -44,6 +44,9 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     /** What is under way, as upload / install / update / tailscale / work; "" when nothing. */
     fun working(): String = working.values.firstOrNull() ?: ""
 
+    /** How far the newest running job is, 0..100, or -1 when none tells (the phone's notification bar). */
+    fun progress(): Int = synchronized(jobs) { jobs.values.lastOrNull { it.optString("status") == "running" }?.optInt("pct", -1) ?: -1 }
+
     private inline fun <T> at(what: String, f: () -> T): T {
         val k = Any()
         working[k] = what
