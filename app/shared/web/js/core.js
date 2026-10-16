@@ -365,7 +365,23 @@ function applyAdb() {
     document.querySelectorAll('[data-adb-banner]').forEach((b) => b.replaceChildren(...(ready ? [] : [buildBanner()])));
     if (ready && currentTab === 'tv' && typeof tsState === 'function') { tsState(); loadTvset(); }
   }
-  document.querySelectorAll('[data-adb-gated]').forEach((g) => { g.hidden = !ready && !(NATIVE() && 'native' in g.dataset); });   // data-native: works without ADB on LG / Samsung
+  // a tab already shown with its data keeps it, scroll and all, under a veil that says ADB is coming back (or why not, with Retry);
+  // the banner in place of the tab only when nothing was shown yet
+  const key = curHost || '-';
+  document.querySelectorAll('.panel').forEach((p) => {
+    if (p.dataset.panel === 'remote' || p.dataset.panel === 'tv' || p.dataset.panel === 'kind') return;
+    if (ready && !p.hidden) p.dataset.seen = key;
+    const held = !ready && ADB.state !== 'none' && !NATIVE() && p.dataset.seen === key;
+    p.classList.toggle('held', held);
+    p.querySelectorAll('[data-adb-banner]').forEach((b) => { b.hidden = held; });
+    let v = p.querySelector(':scope > .veil');
+    if (!held) { if (v) v.remove(); return; }
+    if (!v) { v = el('div', { className: 'veil' }); p.append(v); }
+    if (v.dataset.k !== ADB.state) { v.dataset.k = ADB.state; v.replaceChildren(el('div', { className: 'veilcard' }, buildBanner())); }
+  });
+  document.querySelectorAll('[data-adb-gated]').forEach((g) => {   // data-native: works without ADB on LG / Samsung
+    g.hidden = !ready && !(NATIVE() && 'native' in g.dataset) && !(g.tagName !== 'BUTTON' && g.closest('.panel.held'));
+  });
   const noadb = !ready && ADB.state !== 'unknown' && !NATIVE();         // not while still connecting; LG / Samsung hide those tabs instead
   $('.tabs').classList.toggle('noadb', noadb);
   document.querySelectorAll('.tabs [data-needs-adb]').forEach((b) => { if (noadb) b.title = tr('Cần ADB: bấm vào để xem cách bật'); else b.removeAttribute('title'); });

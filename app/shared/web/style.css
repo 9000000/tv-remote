@@ -95,7 +95,9 @@
   .iconbtn { min-height:36px; width:38px; padding:0; font-size:15px; flex:none; }
   select { font:inherit; font-size:13px; color:var(--ink); background:var(--btn); border:0; border-radius:12px; min-height:36px; padding:0 8px; cursor:pointer; }
 
-  .panel { display:flex; flex-direction:column; gap:14px; } .panel[hidden], [hidden] { display:none !important; }
+  .panel { display:flex; flex-direction:column; gap:14px; position:relative; }
+  .panel > .veil { position:absolute; inset:-6px; z-index:20; border-radius:var(--radius); background:color-mix(in srgb, var(--bg) 62%, transparent); }   /* ADB dropped: the data stays, dimmed */
+  .panel > .veil .veilcard { position:sticky; top:12px; max-width:480px; margin:10px auto 0; border-radius:var(--radius); background:var(--card); box-shadow:0 10px 32px rgba(0,0,0,.3); } .panel[hidden], [hidden] { display:none !important; }
   .remote-grid { display:grid; gap:14px; grid-template-columns:minmax(0,1fr); align-items:start; } .remote-grid > .col > * { min-width:0; }
   @media (min-width:900px) {
     main.wide { max-width:1800px; }                                   /* Remote tab: give the TV picture all the room there is */

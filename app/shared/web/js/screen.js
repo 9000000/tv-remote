@@ -147,6 +147,7 @@ function showTab(t) {
   document.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== (off ? 'kind' : t); });
   dockScreen();
   if (off) { $('#kindtab').replaceChildren(kindIntro(t)); return; }
+  if (ADB.state === 'ready') document.querySelectorAll('[data-panel="' + t + '"]').forEach((p) => { p.dataset.seen = curHost || '-'; });   // kept on screen if ADB drops (applyAdb)
   if (ADB.state === 'ready') { if (t === 'apps' && !appsLoaded) loadApps(); if (t === 'files' && !filesLoaded) loadFiles(cwd); }
   if (t === 'tv' && CORE === 'pc') loadSteps();
   if (t === 'health') loadHealth();
