@@ -221,19 +221,20 @@ internal fun MainActivity.scan() {
                 for (n in cm.allNetworks) cm.getLinkProperties(n)?.linkAddresses?.forEach { add(it.address) }
             } catch (ignored: Exception) {
             }
+            val lan = lanNetwork()
             val seen = { ip: String ->
                 if (synchronized(found) { if (ip in found) false else found.add(ip) }) {
-                    val adb = open(ip, 5555, 900)
+                    val adb = open(ip, 5555, 900, lan)
                     val n = name(ip).ifEmpty { castName(ip) }
                     ui.post { foundList.addView(foundRow(ip, n, adb)) }   // shown as soon as it answers, not after the whole network
                 }
             }
             val stopMdns = announced { ip -> Thread { seen(ip) }.start() }   // TVs also announce themselves; this finds the slow ones
-            val ssdp = Thread { Ssdp.find(3000) { f -> if (synchronized(found) { if (f.ip in found) false else found.add(f.ip) }) ui.post { foundList.addView(foundRow(f)) } } }.apply { start() }   // LG and Samsung TVs answer this
+            val ssdp = Thread { Ssdp.find(3000, { so -> lan?.bindSocket(so) }) { f -> if (synchronized(found) { if (f.ip in found) false else found.add(f.ip) }) ui.post { foundList.addView(foundRow(f)) } } }.apply { start() }   // LG and Samsung TVs answer this
             val pool = Executors.newFixedThreadPool(96)
             for (net in nets) for (i in 1 until 255) {
                 val ip = net + i
-                pool.execute { if (open(ip, 6466, 900) || open(ip, 5555, 900)) seen(ip) }
+                pool.execute { if (open(ip, 6466, 900, lan) || open(ip, 5555, 900, lan)) seen(ip) }
             }
             pool.shutdown()
             pool.awaitTermination(25, TimeUnit.SECONDS)

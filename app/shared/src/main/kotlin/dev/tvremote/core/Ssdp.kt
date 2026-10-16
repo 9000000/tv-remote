@@ -19,10 +19,12 @@ object Ssdp {
     private val SEARCH = listOf("urn:lge-com:service:webos-second-screen:1", "urn:samsung.com:device:RemoteControlReceiver:1")
 
     /** Every TV that answers within [ms], each once, with the name it gives itself; [each] as soon as one is known. */
-    fun find(ms: Int = 2500, each: (Found) -> Unit = {}): List<Found> {
+    /** [bind]: puts the socket on the Wi-Fi itself (Android, with a VPN such as Tailscale taking the traffic). */
+    fun find(ms: Int = 2500, bind: (DatagramSocket) -> Unit = {}, each: (Found) -> Unit = {}): List<Found> {
         val seen = LinkedHashMap<String, Found>()
         try {
             DatagramSocket().use { s ->
+                bind(s)
                 s.soTimeout = 300
                 val to = InetAddress.getByName("239.255.255.250")
                 repeat(2) {                                           // UDP: a second ask for the one that got lost
