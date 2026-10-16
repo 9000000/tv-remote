@@ -102,8 +102,38 @@ internal class PlayingBar(private val a: MainActivity) {
                 }
             }
             draw()
+            checkBlack()
             a.ui.postDelayed(this, 1000)
         }
+    }
+
+    /** As the web page's (screen.js): some TVs draw a video on a plane no capture sees (the FPT Play box), and protected
+     *  films are never captured, so the picture is black but for subtitles and logos. Said once a film is open and the
+     *  picture has stayed nearly all black for 4 s, so nobody takes it for a fault. PixelCopy reads a SurfaceView from 7.0 on. */
+    private var blackFor = 0
+    private val blackBmp by lazy { android.graphics.Bitmap.createBitmap(32, 18, android.graphics.Bitmap.Config.ARGB_8888) }
+    private val blackHint by lazy {
+        a.label(t("TV không cho chiếu hình video lên đây (do chip của TV hoặc phim có bản quyền)",
+            "The TV does not let its video show here (the TV's chip, or a copy-protected film)"), 13, TEXT).apply {
+            gravity = Gravity.CENTER; background = a.box(0xD91E2128.toInt(), 10); setPadding(a.dp(12), a.dp(8), a.dp(12), a.dp(8)); visibility = View.GONE
+            a.frame.addView(this, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER).apply { leftMargin = a.dp(24); rightMargin = a.dp(24) })
+        }
+    }
+    private fun checkBlack() {
+        val shown = o.optString("state", "none") != "none" && a.stage.visibility == View.VISIBLE && a.surface.visibility == View.VISIBLE &&
+            a.surface.holder.surface.isValid && android.os.Build.VERSION.SDK_INT >= 24
+        if (!shown) { blackFor = 0; blackHint.visibility = View.GONE; return }
+        try {
+            android.view.PixelCopy.request(a.surface, blackBmp, { r ->
+                var dark = 0
+                if (r == android.view.PixelCopy.SUCCESS) for (y in 0 until 18) for (x in 0 until 32) {
+                    val c = blackBmp.getPixel(x, y)
+                    if ((c shr 16 and 255) + (c shr 8 and 255) + (c and 255) < 60) dark++
+                }
+                blackFor = if (r == android.view.PixelCopy.SUCCESS && dark > 32 * 18 * 9 / 10) blackFor + 1 else 0
+                blackHint.visibility = if (blackFor >= 4) View.VISIBLE else View.GONE
+            }, a.ui)
+        } catch (e: Exception) { blackFor = 0 }
     }
 
     private fun player(tv: Tv): NowPlaying = synchronized(this) {

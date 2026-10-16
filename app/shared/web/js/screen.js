@@ -130,6 +130,26 @@ setInterval(() => {
   }
   frames = 0;
 }, 1000);
+// Some TVs draw a video on a plane of its own that no capture sees (FPT Play box: YouTube too), and protected films (Netflix)
+// are never captured: the picture is black but for subtitles and logos. Said once the TV has a film open (playing or paused) and the picture has stayed
+// nearly all black for a few seconds, so nobody takes it for a fault; a dark scene rarely lasts that long that black.
+const blackCv = document.createElement('canvas'); blackCv.width = 32; blackCv.height = 18;
+let blackFor = 0;
+function blackPicture() {
+  const src = !$('#screenv').hidden ? $('#screenv') : !$('#screen').hidden ? $('#screen') : null;
+  if (!src || (src.videoWidth === 0 && !src.naturalWidth)) return false;
+  try {
+    const c = blackCv.getContext('2d', { willReadFrequently: true }); c.drawImage(src, 0, 0, 32, 18);
+    const d = c.getImageData(0, 0, 32, 18).data; let dark = 0;
+    for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] < 60) dark++;
+    return dark / (d.length / 4) > 0.9;
+  } catch { return false; }
+}
+setInterval(() => {
+  const black = screenOn && typeof PL !== 'undefined' && (PL.o.state || 'none') !== 'none' && blackPicture();
+  blackFor = black ? blackFor + 1 : 0;
+  $('#screenblack').hidden = blackFor < 4;
+}, 1000);
 $('#screenbtn').addEventListener('click', () => { if (screenOn) stopScreen(); else startScreen(); });
 try { const q = localStorage.getItem('quality'); if (q && [...$('#screenmode').options].some((o) => o.value === q)) $('#screenmode').value = q; } catch {}   // the level picked last time
 $('#screenmode').addEventListener('change', () => { try { localStorage.setItem('quality', $('#screenmode').value); } catch {} if (screenOn) startScreen(); });

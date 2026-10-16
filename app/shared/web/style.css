@@ -186,6 +186,8 @@
   .drawbar .swatch.on { outline:3px solid var(--accent); outline-offset:2px; }
   #picbar { justify-content:flex-end; }
   .screenbox .ph { color:#9aa3af; font-size:14px; padding:16px; text-align:center; }
+  .screenbox .blackhint { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); max-width:80%; z-index:3; pointer-events:none; padding:8px 12px; border-radius:10px; background:rgba(30,33,40,.85); color:#e5e7eb; font-size:13px; line-height:1.4; text-align:center; }
+  .screenbox .blackhint[hidden] { display:none; }
   .screenbox:fullscreen { border-radius:0; aspect-ratio:auto; }
   .card-head { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
   .card-head h2 { margin:0; } .card-head .tools { display:flex; gap:6px; align-items:center; }

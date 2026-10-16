@@ -14,6 +14,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Mất ADB giữa chừng (vd khi đưa app xuống nền): tab đang xem giữ nguyên dữ liệu và chỗ đang cuộn, chỉ phủ một lớp “Đang kết nối ADB…”; không nối lại được thì báo lỗi ngay trên lớp đó, kèm nút Thử lại.
 - Các tab Ứng dụng, Tệp, Sức khỏe, Tự động, Thiết lập dùng chung một cỡ cho nút, ô nhập và lựa chọn; trên điện thoại ô lọc tệp có dòng riêng.
 - Đang phát: app không gửi tên phim (vd FPT Play) giờ hiện tên app thay vì “null”, và tạm dừng không làm mất thanh nữa. Đang tạm dừng mà chuyển sang app khác thì thanh tự ẩn.
+- Xem hình TV: video không chiếu lên được (chip của TV, vd box FPT Play, hay phim có bản quyền) thì báo ngay trên khung hình, thay vì để màn hình đen như bị lỗi.
 
 **English**
 - 📱 Phone app: Scan the Wi-Fi goes straight onto the Wi-Fi while Tailscale (or another VPN) is on, so TVs at home are still found. On mobile data only, it says the phone is not on Wi-Fi instead of scanning the carrier's network.
@@ -23,6 +24,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - ADB dropping halfway (putting the app in the background, say): the open tab keeps its data and scroll position under a “Connecting ADB…” layer; if it cannot reconnect, the error and a Retry button show on that layer.
 - The Apps, Files, Health, Automation and Setup tabs share one size for buttons, fields and choices; on a phone the file filter gets its own line.
 - Now playing: an app that sends no title (FPT Play, say) shows its name instead of “null”, and pausing no longer hides the bar; a paused app left for another hides it.
+- Watching the TV: when its video cannot be shown (the TV's chip, as on the FPT Play box, or a copy-protected film), the picture says so instead of staying black like a fault.
 
 ## 0.2.1 - 2026-10-16
 
