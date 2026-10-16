@@ -3,6 +3,7 @@ package dev.tvremote.phone
 import android.app.AlertDialog
 import android.widget.Toast
 import dev.tvremote.core.AdbLink
+import dev.tvremote.core.Remote
 import dev.tvremote.core.RemoteLabels
 import dev.tvremote.core.RulesClient
 import dev.tvremote.core.SetupNeed
@@ -77,6 +78,7 @@ internal fun MainActivity.timerCustom() {
 
 /** 😴: a few lengths to pick from, and where the timer stands (the other entries: remote.json). */
 internal fun MainActivity.timerMenu() {
+    if (kind() != Remote.Kind.ANDROID) { menu(t("Màn hình TV", "TV screen"), -1, remoteMenu("timer")); return }   // LG: the screen off only
     if (needsAdb()) return
     rules(null) { r ->
         if (needsSetup(r)) return@rules

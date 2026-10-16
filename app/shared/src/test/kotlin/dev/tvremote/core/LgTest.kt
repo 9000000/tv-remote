@@ -14,14 +14,22 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 /** The LG adapter against a fake webOS TV: SSAP over a WebSocket, the prompt, the client key, the Magic Remote socket. */
 class LgTest {
-    /** Enough of a webOS TV: how it answers a register ([pairing]), the requests it got, the buttons on its pointer socket. */
-    private class FakeLg(var pairing: String = "prompt") : AutoCloseable {
+    /**
+     * Enough of a webOS TV: how it answers a register ([pairing]), the requests it got, the buttons on its pointer socket.
+     * [webos]: "mid" (answers what it is asked), "new" (webOS 23+: drops a register that came without a hello, and tells its
+     * system info only before the register, as aiowebostv found), "old" (no hello, no power state, no screen off).
+     */
+    private class FakeLg(var pairing: String = "prompt", val webos: String = "mid") : AutoCloseable {
         val requests = CopyOnWriteArrayList<String>()
         val payloads = CopyOnWriteArrayList<JSONObject>()
         val buttons = CopyOnWriteArrayList<String>()
         val known = HashSet<String>()
         var registers = 0
         var volume = 12
+        @Volatile var power = "Active"
+        private val hello = HashSet<FakeWs.Conn>()
+        private val registered = HashSet<FakeWs.Conn>()
+        private val powerSubs = CopyOnWriteArrayList<Pair<FakeWs.Conn, String>>()
         val pointer = FakeWs({ _, t -> buttons.add(Regex("name:(\\S+)").find(t)?.groupValues?.get(1) ?: t) })
         val ws = FakeWs({ c, t -> answer(c, JSONObject(t)) })
 
@@ -29,8 +37,11 @@ class LgTest {
             val id = m.optString("id")
             fun reply(p: JSONObject) = c.send(JSONObject().put("type", "response").put("id", id).put("payload", p.put("returnValue", true)).toString())
             when (m.optString("type")) {
-                "hello" -> c.send(JSONObject().put("type", "error").put("id", id).put("error", "404 unknown").toString())
+                "hello" -> if (webos == "old") c.send(JSONObject().put("type", "error").put("id", id).put("error", "404 unknown").toString())
+                    else { hello.add(c); c.send(JSONObject().put("type", "hello").put("id", id).put("payload", JSONObject().put("deviceOS", "webOS")).toString()) }
                 "register" -> {
+                    if (webos == "new" && c !in hello) { c.drop(); return }
+                    registered.add(c)
                     registers++
                     val offered = m.getJSONObject("payload").optString("client-key")
                     fun grant() { val k = if (offered in known) offered else "key-" + registers; known.add(k)
@@ -49,22 +60,32 @@ class LgTest {
                     when (uri) {
                         "ssap://audio/getVolume" -> reply(JSONObject().put("volumeStatus", JSONObject().put("volume", volume).put("muteStatus", false).put("soundOutput", "tv_speaker").put("maxVolume", 100)))
                         "ssap://audio/setVolume" -> { volume = m.getJSONObject("payload").getInt("volume"); reply(JSONObject()) }
-                        "ssap://system/getSystemInfo" -> reply(JSONObject().put("modelName", "OLED55C3"))
+                        "ssap://system/getSystemInfo" -> if (webos == "new" && c in registered) c.send(JSONObject().put("type", "error").put("id", id).put("error", "401 insufficient permissions").toString())
+                            else reply(JSONObject().put("modelName", "OLED55C3"))
                         "ssap://com.webos.service.update/getCurrentSWInformation" -> reply(JSONObject().put("product_name", "webOSTV 23").put("major_ver", "33").put("minor_ver", "10"))
                         "ssap://com.webos.service.connectionmanager/getinfo" -> reply(JSONObject().put("wiredInfo", JSONObject().put("macAddress", "aa:bb:cc:00:11:22")).put("wifiInfo", JSONObject().put("macAddress", "aa:bb:cc:00:11:33")))
                         "ssap://com.webos.service.connectionmanager/getstatus" -> reply(JSONObject().put("wired", JSONObject().put("state", "connected")))
                         "ssap://com.webos.applicationManager/getForegroundAppInfo" -> reply(JSONObject().put("appId", "netflix"))
-                        "ssap://com.webos.service.tvpower/power/getPowerState" -> reply(JSONObject().put("state", "Active"))
+                        "ssap://com.webos.service.tvpower/power/getPowerState" -> if (webos == "old") c.send(JSONObject().put("type", "error").put("id", id).put("error", "404 no such service or method").toString())
+                            else { powerSubs.add(c to id); reply(JSONObject().put("state", power)) }
+                        "ssap://com.webos.service.tvpower/power/turnOffScreen" -> if (webos == "old") c.send(JSONObject().put("type", "error").put("id", id).put("error", "404 no such service or method").toString())
+                            else { reply(JSONObject()); pushPower("Screen Off") }
+                        "ssap://system/turnOff" -> { }                       // a TV shutting down answers nothing
                         "ssap://com.webos.applicationManager/listLaunchPoints" -> reply(JSONObject().put("launchPoints", org.json.JSONArray()
                             .put(JSONObject().put("id", "netflix").put("title", "Netflix").put("icon", "http://127.0.0.1:1/n.png"))
                             .put(JSONObject().put("id", "youtube.leanback.v4").put("title", "YouTube"))))
                         "ssap://com.webos.service.networkinput/getPointerInputSocket" -> reply(JSONObject().put("socketPath", "ws://127.0.0.1:${pointer.port}/resources/x/netinput.pointer.sock"))
-                        "ssap://system.launcher/launch", "ssap://system.launcher/open", "ssap://system/turnOff",
+                        "ssap://system.launcher/launch", "ssap://system.launcher/open",
                         "ssap://com.webos.service.ime/insertText", "ssap://com.webos.service.ime/sendEnterKey", "ssap://audio/setMute" -> reply(JSONObject())
                         else -> c.send(JSONObject().put("type", "error").put("id", id).put("error", "404 no such service or method").toString())
                     }
                 }
             }
+        }
+
+        fun pushPower(state: String) {
+            power = state
+            for ((c, id) in powerSubs) c.send(JSONObject().put("type", "response").put("id", id).put("payload", JSONObject().put("state", state).put("returnValue", true)).toString())
         }
 
         override fun close() { ws.close(); pointer.close() }
@@ -73,7 +94,7 @@ class LgTest {
     private val dir: File = Files.createTempDirectory("lgtest").toFile()
     private val tvs = ArrayList<FakeLg>()
     private val remotes = ArrayList<Lg>()
-    private fun tv(pairing: String = "prompt") = FakeLg(pairing).also { tvs.add(it) }
+    private fun tv(pairing: String = "prompt", webos: String = "mid") = FakeLg(pairing, webos).also { tvs.add(it) }
     private fun lg(vararg ports: Int) = Lg(dir, "127.0.0.1", ports.map { it to false }).also { remotes.add(it) }
     private fun until(what: () -> Boolean) { for (i in 0 until 50) { if (what()) return; Thread.sleep(50) }; fail("timed out") }
 
@@ -189,5 +210,60 @@ class LgTest {
         assertTrue(Remote.Kind.keyNames(Remote.Kind.LG).containsAll(listOf("UP", "OK", "BACK", "HOME", "VOL_UP", "MUTE", "POWER", "0")))
         assertFalse("ASSIST" in Remote.Kind.keyNames(Remote.Kind.LG))
         assertEquals(Scenes.KEYS.keys.sorted(), Remote.Kind.keyNames(Remote.Kind.ANDROID))
+    }
+
+    @Test fun newWebosWantsAHelloAndTellsItsModelOnlyBeforeTheRegister() {
+        val tv = tv(webos = "new")
+        val a = lg(tv.ws.port)
+        a.connect { }
+        assertTrue(a.ready())
+        until { a.isOn != null }
+        assertEquals("OLED55C3", a.model)
+    }
+
+    @Test fun oldWebosHasNoPowerStateAndNoScreenOff() {
+        val tv = tv(webos = "old")
+        val a = lg(tv.ws.port)
+        a.connect { }
+        until { a.isOn != null && a.app.isNotEmpty() }
+        assertEquals(true, a.isOn)                                    // connected at all means on
+        assertFalse(a.screenOff())                                    // the TV said no: not reported as done
+    }
+
+    @Test fun theScreenOffIsStillOnAndPowerStillTurnsItOff() {
+        val tv = tv()
+        val a = lg(tv.ws.port)
+        a.connect { }
+        until { a.isOn == true }
+        assertTrue(a.screenOff())
+        until { tv.power == "Screen Off" }
+        Thread.sleep(200)
+        assertEquals(true, a.isOn)                                    // the sound plays on: on, not standby
+        a.key(26, Atv.SHORT)
+        until { "ssap://system/turnOff" in tv.requests }
+        tv.pushPower("Active Standby")
+        until { a.isOn == false }
+    }
+
+    @Test fun turningOffBlocksNoKeysWhileTheTvSaysNothing() {
+        val tv = tv()
+        val a = lg(tv.ws.port)
+        a.connect { }
+        until { a.isOn == true }
+        a.key(26, Atv.SHORT)                                          // the fake never answers turnOff
+        a.key(19, Atv.SHORT)
+        val t0 = System.currentTimeMillis()
+        until { "UP" in tv.buttons }
+        assertTrue(System.currentTimeMillis() - t0 < 2000)
+    }
+
+    @Test fun aDroppedConnectionIsReported() {
+        val tv = tv()
+        val a = lg(tv.ws.port)
+        var closed = false
+        a.connect { closed = true }
+        tv.ws.conns.forEach { it.drop() }
+        until { closed }
+        assertFalse(a.ready())
     }
 }

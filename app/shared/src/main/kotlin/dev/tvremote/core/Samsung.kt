@@ -10,8 +10,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import javax.net.ssl.HttpsURLConnection
-import javax.net.ssl.SSLContext
 
 /**
  * Samsung Tizen TVs (2016 on): the remote channel Samsung's SmartThings app uses, JSON over a WebSocket on port 8002 (TLS,
@@ -43,7 +41,10 @@ class Samsung(private val dir: File, private val host: String, private val ports
     private val out = Executors.newSingleThreadExecutor { Thread(it, "samsung-out").apply { isDaemon = true } }
     @Volatile private var appsWait: CountDownLatch? = null
     @Volatile private var appsGot: JSONArray? = null
-    private val icons = ConcurrentHashMap<String, String>()
+    private val icons = ConcurrentHashMap<String, String>()           // app id -> its picture's path on the TV
+    private val deep = ConcurrentHashMap<String, Boolean>()           // app id -> launched as DEEP_LINK (app_type 2), from the app list
+    private val iconWait = ConcurrentHashMap<String, Pair<CountDownLatch, Array<ByteArray?>>>()
+    @Volatile private var keyboardNew = true                          // the TV's keyboard just came up: it wants a hello first
     @Volatile private var playing = false
 
     override fun ready(): Boolean = live && !closed
@@ -113,9 +114,18 @@ class Samsung(private val dir: File, private val host: String, private val ports
             while (true) {
                 val text = s.read() ?: break
                 val m = try { JSONObject(text) } catch (e: Exception) { continue }
-                if (m.optString("event") == "ed.installedApp.get") {
-                    appsGot = m.optJSONObject("data")?.optJSONArray("data") ?: JSONArray()
-                    appsWait?.countDown()
+                when (m.optString("event")) {
+                    "ed.installedApp.get" -> {
+                        appsGot = m.optJSONObject("data")?.optJSONArray("data") ?: JSONArray()
+                        appsWait?.countDown()
+                    }
+                    "ms.remote.imeStart", "ms.remote.imeEnd" -> { keyboardNew = true; typed = "" }   // a new field: nothing typed in it yet
+                    "ed.apps.icon" -> m.optJSONObject("data")?.let { d ->
+                        iconWait.remove(d.optString("iconPath"))?.let { (w, got) ->
+                            got[0] = try { B64.decode(d.optString("imageBase64")) } catch (e: Exception) { null }
+                            w.countDown()
+                        }
+                    }
                 }
             }
         } catch (ignored: Exception) {
@@ -148,6 +158,10 @@ class Samsung(private val dir: File, private val host: String, private val ports
     /** Into the focused field (the TV's keyboard has to be up); Enter after, as the TV's own keyboard wants. */
     override fun text(t: String) {
         out.execute {
+            if (keyboardNew) {                                        // some TVs take no text before this (samsungtvws does the same)
+                keyboardNew = false
+                send(JSONObject().put("method", "ms.channel.emit").put("params", JSONObject().put("event", "custom.remote.textReceived").put("to", "broadcast")))
+            }
             send(JSONObject().put("method", "ms.remote.control").put("params", JSONObject()
                 .put("Cmd", B64.encode(t.toByteArray(Charsets.UTF_8))).put("DataOfCmd", "base64").put("TypeOfRemote", "SendInputString")))
         }
@@ -169,7 +183,7 @@ class Samsung(private val dir: File, private val host: String, private val ports
             val (id, type, meta) = when {
                 yt != null -> Triple(YOUTUBE, "DEEP_LINK", yt)
                 web -> Triple(BROWSER, "NATIVE_LAUNCH", link)
-                else -> Triple(link, if (link.contains('.')) "NATIVE_LAUNCH" else "DEEP_LINK", "")
+                else -> Triple(link, if (deep[link] ?: !link.contains('.')) "DEEP_LINK" else "NATIVE_LAUNCH", "")   // the list says; else Tizen web apps are numbers
             }
             send(JSONObject().put("method", "ms.channel.emit").put("params", JSONObject().put("event", "ed.apps.launch").put("to", "host")
                 .put("data", JSONObject().put("appId", id).put("action_type", type).put("metaTag", meta))))
@@ -181,7 +195,7 @@ class Samsung(private val dir: File, private val host: String, private val ports
         if (!ready()) return emptyList()
         val w = CountDownLatch(1)
         appsWait = w; appsGot = null
-        send(JSONObject().put("method", "ms.channel.emit").put("params", JSONObject().put("event", "ed.installedApp.get").put("to", "host").put("data", "")))
+        send(JSONObject().put("method", "ms.channel.emit").put("params", JSONObject().put("event", "ed.installedApp.get").put("to", "host")))
         w.await(6, TimeUnit.SECONDS)
         val list = appsGot ?: return emptyList()
         val o = ArrayList<Remote.App>()
@@ -190,24 +204,23 @@ class Samsung(private val dir: File, private val host: String, private val ports
             val id = a.optString("appId"); if (id.isEmpty()) continue
             val icon = a.optString("icon")
             if (icon.isNotEmpty()) icons[id] = icon
+            if (a.has("app_type")) deep[id] = a.optInt("app_type") == 2
             o.add(Remote.App(id, a.optString("name").ifEmpty { id }, icon))
         }
         return o
     }
 
-    /** The app list names a path on the TV: fetched over the same TLS port as the remote. */
+    /** The app list names a file on the TV: the TV sends it back over the remote channel, as SmartThings asks for it. */
     override fun icon(id: String): ByteArray? {
         val path = icons[id] ?: return null
-        return try {
-            val at = if (path.startsWith("http")) path else "https://$host:${ports.first().first}/api/v2/applications/$id/icon"
-            val c = URL(at).openConnection() as HttpURLConnection
-            if (c is HttpsURLConnection) {
-                c.sslSocketFactory = SSLContext.getInstance("TLS").apply { init(null, arrayOf(WebSocket.TRUST_ANY), null) }.socketFactory
-                c.setHostnameVerifier { _, _ -> true }
-            }
-            c.connectTimeout = 3000; c.readTimeout = 5000
-            if (c.responseCode != 200) null else c.inputStream.use { it.readBytes() }
-        } catch (e: Exception) { null }
+        if (!ready()) return null
+        val w = CountDownLatch(1); val got = arrayOfNulls<ByteArray>(1)
+        iconWait[path] = w to got
+        send(JSONObject().put("method", "ms.channel.emit").put("params", JSONObject().put("event", "ed.apps.icon").put("to", "host")
+            .put("data", JSONObject().put("iconPath", path))))
+        w.await(4, TimeUnit.SECONDS)
+        iconWait.remove(path)
+        return got[0]
     }
 
     override fun close() {

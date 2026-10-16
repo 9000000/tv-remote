@@ -17,7 +17,7 @@
       ],
       [
         { "id": "open", "icon": "send", "vi": "Mở trên TV", "en": "Open on the TV", "do": "open" },
-        { "id": "timer", "icon": "timer", "vi": "Hẹn giờ tắt", "en": "Sleep timer", "do": "timer", "needs": ["adb"] },
+        { "id": "timer", "icon": "timer", "vi": "Hẹn giờ tắt", "en": "Sleep timer", "do": "timer", "needs": ["screen_off"] },
         { "id": "scenes", "icon": "scene", "vi": "Cảnh", "en": "Scenes", "do": "scenes" },
         { "id": "draw", "icon": "pen", "vi": "Vẽ lên TV", "en": "Draw on the TV", "do": "draw", "needs": ["adb"] }
       ]
@@ -69,14 +69,14 @@
       { "id": "open-tailscale", "icon": "globe", "vi": "Tailscale", "en": "Tailscale", "do": "store", "needs": ["store"], "arg": "com.tailscale.ipn", "sub": { "vi": "Trang CH Play: cài hoặc mở", "en": "Play Store page: install or open" } }
     ],
     "timer": [
-      { "id": "timer-plus", "icon": "plus", "vi": "Thêm 15 phút", "en": "15 more minutes", "do": "timerPlus", "when": "timerOn" },
-      { "id": "timer-cancel", "icon": "close", "vi": "Hủy hẹn giờ", "en": "Cancel the timer", "do": "timerCancel", "when": "timerOn" },
-      { "id": "timer-lengths", "expand": "lengths" },
-      { "id": "timer-custom", "icon": "timer", "vi": "Tự chọn...", "en": "Custom...", "do": "timerCustom",
+      { "id": "timer-plus", "icon": "plus", "vi": "Thêm 15 phút", "en": "15 more minutes", "do": "timerPlus", "needs": ["adb"], "when": "timerOn" },
+      { "id": "timer-cancel", "icon": "close", "vi": "Hủy hẹn giờ", "en": "Cancel the timer", "do": "timerCancel", "needs": ["adb"], "when": "timerOn" },
+      { "id": "timer-lengths", "expand": "lengths", "needs": ["adb"] },
+      { "id": "timer-custom", "icon": "timer", "vi": "Tự chọn...", "en": "Custom...", "do": "timerCustom", "needs": ["adb"],
         "sub": { "vi": "Số phút, hoặc giờ tắt như 23:30", "en": "Minutes, or a time like 23:30" } },
-      { "id": "screen-off", "icon": "eye_off", "vi": "Tắt màn hình, vẫn nghe", "en": "Screen off, keep listening", "do": "screenOff",
+      { "id": "screen-off", "icon": "eye_off", "vi": "Tắt màn hình, vẫn nghe", "en": "Screen off, keep listening", "do": "screenOff", "needs": ["screen_off"],
         "sub": { "vi": "Bấm phím bất kỳ để bật lại", "en": "Any key turns it back on" } },
-      { "id": "timer-bedtime", "icon": "moon", "vi": "Giờ đi ngủ, giới hạn app...", "en": "Bedtime, app limits...", "do": "automation" }
+      { "id": "timer-bedtime", "icon": "moon", "vi": "Giờ đi ngủ, giới hạn app...", "en": "Bedtime, app limits...", "do": "automation", "needs": ["adb"] }
     ],
     "scenes": [
       { "id": "scenes-list", "expand": "scenes" },

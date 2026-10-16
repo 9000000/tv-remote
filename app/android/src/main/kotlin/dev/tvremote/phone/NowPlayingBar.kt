@@ -12,6 +12,7 @@ import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import dev.tvremote.core.NowPlaying
+import dev.tvremote.core.Remote
 import dev.tvremote.core.ScreenOff
 import dev.tvremote.core.Tv
 import org.json.JSONObject
@@ -137,6 +138,13 @@ internal class PlayingBar(private val a: MainActivity) {
 
 /** The screen off while the sound plays on (ScreenOff in the shared core): any key, on any remote, turns it back on. */
 internal fun MainActivity.screenOff() {
+    basic?.takeIf { it.kind != Remote.Kind.ANDROID }?.let { b ->       // LG: by its remote link, no ADB
+        Thread {
+            val ok = b.screenOff()
+            ui.post { say(if (ok) t("Đã tắt màn hình TV. Bấm phím bất kỳ để bật lại.", "The TV’s screen is off. Any key turns it back on.") else t("TV này không tắt được màn hình riêng.", "This TV cannot turn its screen off alone."), !ok) }
+        }.start()
+        return
+    }
     if (needsAdb()) return
     val tv = tv
     if (tv == null || !tv.ready()) return

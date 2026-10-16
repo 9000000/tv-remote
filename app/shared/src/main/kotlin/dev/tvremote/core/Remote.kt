@@ -57,6 +57,8 @@ interface Remote : Closeable {
     fun search(q: String): Boolean = false
     /** Sets the volume to [level] where the TV takes a number; false when it only has the volume keys. */
     fun setVolume(level: Int): Boolean = false
+    /** The screen off with the sound playing on; false when this kind cannot ("screen_off" in [Kind.caps]). */
+    fun screenOff(): Boolean = false
     /** The keys this TV has, by Android code; null: all of them. */
     val keys: Set<Int>? get() = null
 

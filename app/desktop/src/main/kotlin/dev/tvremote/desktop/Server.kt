@@ -149,6 +149,10 @@ class Server(private val repo: File, private val keys: File, private val cache: 
             if (!s.need().search(r.json().optString("query").take(200))) throw IllegalArgumentException("this TV has no YouTube and no Google search")
             return Response.json(JSONObject().put("to", "youtube"))
         }
+        if (native(s) && post && r.path == "/api/screen/off") {            // LG's own: Manage's goes through ADB
+            if (!s.need().screenOff()) throw IllegalArgumentException("this TV cannot turn its screen off alone")
+            return Response.ok()
+        }
         if (native(s) && r.path !in OURS && r.path !in NATIVE_TOO)            // LG / Samsung: no ADB, so nothing of Manage's
             return Response.error(400, "unsupported: " + Remote.Kind.name(s.kind))
         if (!post) return null

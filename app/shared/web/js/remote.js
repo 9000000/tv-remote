@@ -65,6 +65,7 @@ async function timerCustom() {
 }
 const quickOpen = () => menuDlg('Mở trên TV', -1, remoteMenu('open', { expand: { tvapps: () => quickApps.slice().sort((a, b) => appName(a).localeCompare(appName(b))).map((p) => ['@play|' + appName(p), '', () => openOnTv(p, appName(p))]) } }));   // LG / Samsung: their apps first
 async function timerMenu() {
+  if (NATIVE()) { menuDlg('Màn hình TV', -1, remoteMenu('timer')); return; }   // LG: the screen off only; the timer lives in TV Setup
   if (needAdb() || !await setupFor('rules')) return;                  // TV Setup runs the timer on the TV (SetupNeed "rules")
   const r = await loadRules(null, true); if (!r) return;
   const at = r.sleep_at || 0, hm = (m) => m < 60 ? m + ' phút' : Math.floor(m / 60) + ' giờ' + (m % 60 ? ' 30' : '');

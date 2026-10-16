@@ -14,7 +14,10 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 /** The Samsung adapter against a fake Tizen TV: the remote channel, its token, keys, text, apps, and /api/v2/. */
 class SamsungTest {
-    /** [pairing]: "prompt" (answers after a while, as when the person accepts), "deny", "timeout". */
+    /**
+     * [pairing]: "prompt" (answers after a while, as when the person accepts), "deny", "timeout", "open" (a 2016 set on
+     * 8001: no prompt, no token). It says a few things first, as real sets do (ed.edenTV.update, ms.voiceApp.hide).
+     */
     private class FakeSamsung(var pairing: String = "prompt") : AutoCloseable {
         val got = CopyOnWriteArrayList<JSONObject>()
         val tokens = HashSet<String>()
@@ -26,10 +29,17 @@ class SamsungTest {
                 val p = m.optJSONObject("params")
                 if (m.optString("method") == "ms.channel.emit" && p?.optString("event") == "ed.installedApp.get")
                     c.send(JSONObject().put("event", "ed.installedApp.get").put("data", JSONObject().put("data", JSONArray()
-                        .put(JSONObject().put("appId", "111299001912").put("name", "YouTube").put("icon", "/opt/x.png"))
-                        .put(JSONObject().put("appId", "3201907018807").put("name", "Netflix")))).toString())
+                        .put(JSONObject().put("appId", "111299001912").put("name", "YouTube").put("icon", "/opt/x.png").put("app_type", 2))
+                        .put(JSONObject().put("appId", "3201907018807").put("name", "Netflix"))
+                        .put(JSONObject().put("appId", "3201601007250").put("name", "Plex").put("app_type", 4)))).toString())
+                if (m.optString("method") == "ms.channel.emit" && p?.optString("event") == "ed.apps.icon")
+                    c.send(JSONObject().put("event", "ed.apps.icon").put("data", JSONObject().put("iconPath", p.getJSONObject("data").getString("iconPath"))
+                        .put("imageBase64", B64.encode(byteArrayOf(-119, 80, 78, 71)))).toString())
             },
             onOpen = { c ->
+                c.send(JSONObject().put("event", "ed.edenTV.update").put("data", JSONObject()).toString())
+                c.send(JSONObject().put("event", "ms.voiceApp.hide").put("data", JSONObject()).toString())
+                if (pairing == "open") { c.send(JSONObject().put("event", "ms.channel.connect").put("data", JSONObject().put("clients", JSONArray())).toString()); return@FakeWs }
                 val token = Regex("token=([^&]+)").find(c.path)?.groupValues?.get(1)
                 if (token != null && token in tokens) { connected(c, token); return@FakeWs }
                 prompts++
@@ -109,7 +119,7 @@ class SamsungTest {
         assertEquals(Samsung.YOUTUBE, launches[1].getString("appId"))
         assertEquals("dQw4w9WgXcQ", launches[1].getString("metaTag"))
         val apps = a.apps()
-        assertEquals(listOf("YouTube", "Netflix"), apps.map { it.label })
+        assertEquals(listOf("YouTube", "Netflix", "Plex"), apps.map { it.label })
         assertFalse(a.setVolume(10))                                  // steps only
     }
 
@@ -122,5 +132,42 @@ class SamsungTest {
         assertTrue(b.ready())
         assertEquals(1, tv.prompts)
         assertTrue(System.currentTimeMillis() - t0 < 1500)
+    }
+
+    @Test fun aSetWithoutTokensConnectsAfterTheDeadSecurePort() {
+        val tv = tv("open")
+        val a = Samsung(dir, "127.0.0.1", listOf(FakeWs.deadPort() to false, tv.ws.port to false), tv.ws.port).also { remotes.add(it) }
+        a.connect { }
+        assertTrue(a.ready())
+        assertEquals("", TvKeys(dir, "samsung").get("127.0.0.1"))      // nothing to keep
+    }
+
+    @Test fun eachNewKeyboardOnTheTvGetsAHelloBeforeText() {
+        val tv = tv()
+        val a = samsung(tv)
+        a.connect { }
+        a.text("a"); a.text("ab")
+        until { tv.got.count { it.optJSONObject("params")?.optString("TypeOfRemote") == "SendInputString" } == 2 }
+        tv.ws.conns.last().send(JSONObject().put("event", "ms.remote.imeEnd").toString())
+        Thread.sleep(200)
+        a.text("c")
+        until { tv.got.count { it.optJSONObject("params")?.optString("TypeOfRemote") == "SendInputString" } == 3 }
+        val seq = tv.got.map { it.optJSONObject("params")?.let { p -> p.optString("TypeOfRemote").ifEmpty { p.optString("event") } } }
+            .filter { it == "SendInputString" || it == "custom.remote.textReceived" }
+        assertEquals(listOf("custom.remote.textReceived", "SendInputString", "SendInputString", "custom.remote.textReceived", "SendInputString"), seq)
+    }
+
+    @Test fun appsLaunchTheWayTheListSaysAndTheirPicturesComeOverTheChannel() {
+        val tv = tv()
+        val a = samsung(tv)
+        a.connect { }
+        a.apps()
+        a.launch("3201601007250")                                     // app_type 4: a native app, though its id is a number
+        a.launch("111299001912")
+        until { tv.got.count { it.optJSONObject("params")?.optString("event") == "ed.apps.launch" } == 2 }
+        val types = tv.got.filter { it.optJSONObject("params")?.optString("event") == "ed.apps.launch" }.map { it.getJSONObject("params").getJSONObject("data").getString("action_type") }
+        assertEquals(listOf("NATIVE_LAUNCH", "DEEP_LINK"), types)
+        assertEquals(listOf(-119, 80, 78, 71), a.icon("111299001912")!!.map { it.toInt() })
+        assertEquals(null, a.icon("3201907018807"))                  // no picture in the list
     }
 }

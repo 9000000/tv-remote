@@ -80,6 +80,8 @@ class Lg(private val dir: File, private val host: String, private val ports: Lis
         try {
             // webOS 23+ wants a hello first and drops a register that comes without one; older sets answer it with an error, harmless
             send(JSONObject().put("id", "hello_0").put("type", "hello").put("payload", JSONObject()))
+            // and answers getSystemInfo only before the register (aiowebostv does the same); later it says no
+            request("ssap://system/getSystemInfo", ms = 2000)?.let { model = it.optString("modelName") }
             val key = if (knownPort == port) known.substringAfter(' ', "") else ""
             val manifest = JSONObject(MANIFEST)
             if (key.isNotEmpty()) manifest.put("client-key", key)
@@ -111,7 +113,7 @@ class Lg(private val dir: File, private val host: String, private val ports: Lis
 
     /** Who the TV is and what it does now, once paired; each answer is optional (older firmware lacks some). */
     private fun learn() {
-        request("ssap://system/getSystemInfo")?.let { model = it.optString("modelName") }
+        if (model.isEmpty()) request("ssap://system/getSystemInfo")?.let { model = it.optString("modelName") }
         request("ssap://com.webos.service.update/getCurrentSWInformation")?.let {
             version = listOf(it.optString("product_name"), listOf(it.optString("major_ver"), it.optString("minor_ver")).filter { v -> v.isNotEmpty() }.joinToString(".")).filter { v -> v.isNotEmpty() }.joinToString(" ")
             if (model.isEmpty()) model = it.optString("model_name")
@@ -136,7 +138,7 @@ class Lg(private val dir: File, private val host: String, private val ports: Lis
         }
         if (!subscribe("ssap://com.webos.service.tvpower/power/getPowerState") { p ->
                 val st2 = p.optString("state")
-                if (st2.isNotEmpty()) isOn = st2 == "Active"                 // "Screen Off", "Active Standby", "Suspend"
+                if (st2.isNotEmpty()) isOn = st2 !in OFF                   // "Screen Off" is on: the sound plays, any key lights it
             }) { powerUnknown = true; if (isOn == null) isOn = true }      // older firmware: connected at all means on
         if (isOn == null) isOn = true
     }
@@ -179,6 +181,9 @@ class Lg(private val dir: File, private val host: String, private val ports: Lis
         val body = m.optJSONObject("payload") ?: JSONObject()
         return if (body.optBoolean("returnValue", true)) body else null
     }
+
+    /** A request whose answer nobody waits for. */
+    private fun fire(uri: String) { try { send(JSONObject().put("id", "f" + ids.incrementAndGet()).put("type", "request").put("uri", uri)) } catch (ignored: IOException) { } }
 
     /** Follows [uri]: its first answer and every change after. False when the TV does not have it. */
     private fun subscribe(uri: String, on: (JSONObject) -> Unit): Boolean {
@@ -231,7 +236,7 @@ class Lg(private val dir: File, private val host: String, private val ports: Lis
     private fun tap(code: Int) {
         if (!ready()) return
         when (code) {
-            26, 223 -> if (isOn != false) request("ssap://system/turnOff")
+            26, 223 -> if (isOn != false) fire("ssap://system/turnOff")   // a TV shutting down may never answer
             224 -> { }                                                // waking is Wake-on-LAN's job: the TV is not on the network while off
             66 -> request("ssap://com.webos.service.ime/sendEnterKey")
             67 -> request("ssap://com.webos.service.ime/deleteCharacters", JSONObject().put("count", 1))
@@ -311,8 +316,8 @@ class Lg(private val dir: File, private val host: String, private val ports: Lis
         return request("ssap://system.launcher/launch", JSONObject().put("id", "youtube.leanback.v4").put("params", JSONObject().put("contentTarget", target))) != null
     }
 
-    /** The screen off, the sound on (webOS 5+). */
-    fun screenOff(): Boolean = request("ssap://com.webos.service.tvpower/power/turnOffScreen") != null
+    /** The screen off, the sound on (webOS 4.5+; "Screen Off" in the power state until a key lights it again). */
+    override fun screenOff(): Boolean = request("ssap://com.webos.service.tvpower/power/turnOffScreen") != null
 
     override fun close() {
         closed = true
@@ -325,6 +330,7 @@ class Lg(private val dir: File, private val host: String, private val ports: Lis
     companion object {
         val PORTS = listOf(3000 to false, 3001 to true)
         const val PROMPT_S = 60
+        private val OFF = setOf("Power Off", "Suspend", "Active Standby")    // getPowerState's off states (aiowebostv)
         const val REPEAT_MS = 180L
         private const val REG = "register_0"
         private val REPEATS = setOf(19, 20, 21, 22, 24, 25, 166, 167, 89, 90, 67)

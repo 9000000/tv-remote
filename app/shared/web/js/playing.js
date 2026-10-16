@@ -39,7 +39,7 @@ plPoll();
 // the TV's clipboard: shown in a box anyone can edit, then copied here, set on the TV, or set and pasted where the TV's cursor is
 // The screen off while the sound plays on (ScreenOff.kt): any key, on any remote, turns it back on.
 async function screenOff() {
-  if (needAdb()) return;
+  if (!NATIVE() && needAdb()) return;                                // LG turns it off by its remote link
   if (await api('/api/screen/off', {})) toast('Đã tắt màn hình TV. Bấm phím bất kỳ để bật lại.');
 }
 
