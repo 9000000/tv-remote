@@ -6,7 +6,30 @@ if (window.ONTV) (() => {
   const DIR = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
   const seen = (e) => { if (e.disabled || e.closest('[hidden], [inert]')) return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; };
   const scope = () => [...document.querySelectorAll('dialog[open]')].pop() || document;   // an open dialog keeps the focus in it
-  const items = () => [...scope().querySelectorAll(SEL)].filter((e) => seen(e) && !(e.closest('details:not([open])') && e.tagName !== 'SUMMARY' && !e.closest('summary')));
+  // a field drawn as something else (a file picker inside a label that looks like a button) is reached through its label
+  const stand = (e) => {
+    if (seen(e) || !e.matches('input, select, textarea')) return e;
+    const l = e.closest('label') || (e.id && document.querySelector(`label[for="${e.id}"]`));
+    if (l && l.tabIndex < 0) l.tabIndex = 0;                         // a label takes no focus by itself
+    return l;
+  };
+  const items = () => [...new Set([...scope().querySelectorAll(SEL)].map(stand))].filter((e) => e && seen(e) && !(e.closest('details:not([open])') && e.tagName !== 'SUMMARY' && !e.closest('summary')));
+  // what stays on screen while the page scrolls (the tabs, once stuck) is placed where it sits in the page, between what is
+  // above and below it: so the row above, scrolled out of sight under it, still comes first going up
+  let pins = new Map();                                              // per key press: the same parents are asked again and again
+  const shift = (e) => {
+    if (!e || e === document.body) return 0;
+    if (!pins.has(e)) {
+      const c = getComputedStyle(e);
+      let d = 0;
+      if (c.position === 'sticky' && e.getBoundingClientRect().top <= parseFloat(c.top) + 1) {   // stuck: how far it is from its place
+        const was = e.getBoundingClientRect().top, keep = e.style.position;
+        e.style.position = 'static'; d = e.getBoundingClientRect().top - was; e.style.position = keep;
+      }
+      pins.set(e, d + shift(e.parentElement));
+    }
+    return pins.get(e);
+  };
   const start = () => { col = null; const s = scope(); return (s === document && document.querySelector('[data-tab][aria-selected="true"]')) || items()[0]; };
   // a list drawn again (a choice made in it, a refresh) takes the focused control away: the focus goes back to the control
   // drawn in its place (same words, nearest to where it was), not to the tabs at the top
@@ -32,7 +55,9 @@ if (window.ONTV) (() => {
   let col = null;
   function next(from, [dx, dy]) {
     const a = from.getBoundingClientRect();
-    const all = items().filter((e) => e !== from && !e.contains(from)).map((e) => [e, e.getBoundingClientRect()]);
+    pins = new Map();
+    const base = shift(from), at = (e) => { const r = e.getBoundingClientRect(), d = shift(e) - base; return d ? new DOMRect(r.x, r.y + d, r.width, r.height) : r; };
+    const all = items().filter((e) => e !== from && !e.contains(from)).map((e) => [e, at(e)]);
     if (dx) {
       let best = null, score = Infinity;
       for (const [e, b] of all) {
@@ -54,7 +79,9 @@ if (window.ONTV) (() => {
       const s = (b.left > x ? b.left - x : b.right < x ? x - b.right : 0) * 4 + Math.abs((dy > 0 ? b.top : b.bottom) - (dy > 0 ? near.top : near.bottom));
       if (s < score) { score = s; best = e; }
     }
-    return best;
+    // into a row of tabs from outside: the open one, not whichever stands above the column
+    const tabs = best && !from.closest('[role=tablist], .tabs') && best.closest('[role=tablist], .tabs');
+    return (tabs && tabs.querySelector('[aria-selected="true"]')) || best;
   }
 
   document.addEventListener('keydown', (ev) => {
