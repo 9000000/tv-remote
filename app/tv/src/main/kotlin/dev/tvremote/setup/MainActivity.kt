@@ -73,25 +73,25 @@ class MainActivity : Activity() {
         private val wheel = ProgressBar(this@MainActivity)              // in place of the icon while this tile's work runs
         init {
             view.gravity = Gravity.CENTER_VERTICAL
-            view.setPadding(dp(12), dp(6), dp(12), dp(6))
+            view.setPadding(dp(10), dp(4), dp(10), dp(4))
             view.isFocusable = true
             view.isClickable = true
             view.background = box(TILE, 14, 0)
             badge.setImageResource(icon)
             badge.setColorFilter(INK)
             badge.background = box(CARD, 10, 0)
-            badge.setPadding(dp(6), dp(6), dp(6), dp(6))
+            badge.setPadding(dp(5), dp(5), dp(5), dp(5))
             val slot = android.widget.FrameLayout(this@MainActivity)
-            slot.addView(badge, android.widget.FrameLayout.LayoutParams(dp(30), dp(30)))
+            slot.addView(badge, android.widget.FrameLayout.LayoutParams(dp(26), dp(26)))
             wheel.isIndeterminate = true
             wheel.indeterminateTintList = android.content.res.ColorStateList.valueOf(Color.WHITE)
             wheel.visibility = View.GONE
-            slot.addView(wheel, android.widget.FrameLayout.LayoutParams(dp(22), dp(22), Gravity.CENTER))
-            view.addView(slot, LinearLayout.LayoutParams(dp(30), dp(30)))
+            slot.addView(wheel, android.widget.FrameLayout.LayoutParams(dp(20), dp(20), Gravity.CENTER))
+            view.addView(slot, LinearLayout.LayoutParams(dp(26), dp(26)))
             val words = LinearLayout(this@MainActivity)
             words.orientation = LinearLayout.VERTICAL
             words.setPadding(dp(10), 0, 0, 0)
-            val head = text(title, 14, INK, true)
+            val head = text(title, 13, INK, true)
             head.isSingleLine = true
             head.ellipsize = TextUtils.TruncateAt.END
             words.addView(head)
@@ -136,7 +136,7 @@ class MainActivity : Activity() {
         if (phone) {
             page.orientation = LinearLayout.VERTICAL
             page.setPadding(dp(16), dp(20), dp(16), dp(24))
-        } else page.setPadding(dp(36), dp(28), dp(36), dp(24))
+        } else page.setPadding(dp(32), dp(20), dp(32), dp(20))
 
         // ---- left: header, status, actions, activity
         val left = LinearLayout(this)
@@ -152,11 +152,11 @@ class MainActivity : Activity() {
             override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, dp(10).toFloat()) }
         }
         logo.clipToOutline = true
-        head.addView(logo, LinearLayout.LayoutParams(dp(44), dp(44)))
+        head.addView(logo, LinearLayout.LayoutParams(dp(38), dp(38)))
         val names = LinearLayout(this)
         names.orientation = LinearLayout.VERTICAL
         names.setPadding(dp(14), 0, 0, 0)
-        names.addView(text("TV Setup", 24, INK, true))
+        names.addView(text("TV Setup", 20, INK, true))
         names.addView(text(t("Phiên bản ", "Version ") + version() + released().let { if (it.isEmpty()) "" else " · $it" } +
             "   ·   Hoang Tran   ·   github.com/HoangTran0410/tv-remote", 12, MUTED, false))
         head.addView(names)
@@ -165,15 +165,14 @@ class MainActivity : Activity() {
         val status = LinearLayout(this)
         status.gravity = Gravity.CENTER_VERTICAL
         status.background = box(CARD, 16, 0)
-        status.setPadding(dp(18), dp(14), dp(18), dp(14))
+        status.setPadding(dp(16), dp(10), dp(16), dp(10))
         dot = View(this)
-        status.addView(dot, LinearLayout.LayoutParams(dp(12), dp(12)))
+        status.addView(dot, LinearLayout.LayoutParams(dp(10), dp(10)))
         val st = LinearLayout(this)
         st.orientation = LinearLayout.VERTICAL
         st.setPadding(dp(14), 0, 0, 0)
-        statusTitle = text("", 17, INK, true)
-        statusDetail = text("", 13, MUTED, false)
-        statusDetail.setLineSpacing(dp(2).toFloat(), 1f)
+        statusTitle = text("", 15, INK, true)
+        statusDetail = text("", 12, MUTED, false)
         st.addView(statusTitle)
         st.addView(statusDetail)
         status.addView(st, LinearLayout.LayoutParams(0, -2, 1f))
@@ -181,9 +180,9 @@ class MainActivity : Activity() {
         rulesCard.orientation = LinearLayout.VERTICAL
         rulesCard.gravity = Gravity.END or Gravity.CENTER_VERTICAL
         status.addView(rulesCard, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(16) })
-        left.addView(status, margins(top = 18))
+        left.addView(status, margins(top = 12))
 
-        left.addView(section(t("THAO TÁC", "ACTIONS")), margins(top = 18))
+        left.addView(section(t("THAO TÁC", "ACTIONS")), margins(top = 14))
         tsTile = Tile(R.drawable.ic_globe, "Tailscale", t("Dùng khi xa nhà", "Away from home")) { tailscale() }
         updateTile = Tile(R.drawable.ic_download, t("Cập nhật", "Update"), t("Bản ", "Version ") + version()) { updateMenu() }
         tiles = listOf(
@@ -198,12 +197,12 @@ class MainActivity : Activity() {
             RemoteService.start(this)                                 // serves 127.0.0.1 even with the web remote off
             startActivity(android.content.Intent(this, ManageActivity::class.java).putExtra(ManageActivity.PASS, RemoteService.selfPass))
         }
-        left.addView(manage.view, LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(10) })
+        left.addView(manage.view, LinearLayout.LayoutParams(-1, dp(42)).apply { topMargin = dp(8) })
         for (row in tiles.chunked(if (phone) 2 else 3)) {
             val r = LinearLayout(this)
             r.clipChildren = false
-            row.forEachIndexed { i, tile -> r.addView(tile.view, LinearLayout.LayoutParams(0, dp(52), 1f).apply { if (i > 0) leftMargin = dp(12) }) }
-            left.addView(r, margins(top = 10))
+            row.forEachIndexed { i, tile -> r.addView(tile.view, LinearLayout.LayoutParams(0, dp(42), 1f).apply { if (i > 0) leftMargin = dp(10) }) }
+            left.addView(r, margins(top = 8))
         }
 
         val actHead = LinearLayout(this)
@@ -225,7 +224,7 @@ class MainActivity : Activity() {
         webCol = LinearLayout(this)
         webCol.orientation = LinearLayout.VERTICAL
         webCol.background = box(CARD, 18, 0)
-        webCol.setPadding(dp(20), dp(18), dp(20), dp(18))
+        webCol.setPadding(dp(18), dp(14), dp(18), dp(14))
         webBtn = smallButton("") { RemoteService.setEnabled(this, !RemoteService.enabled(this)); showWeb(); webBtn.requestFocus() }
         if (phone) {                                                  // header, status, then the card (what a phone is mostly here for), the tiles, the log
             left.addView(webCol, 2, margins(top = 16))
@@ -240,7 +239,7 @@ class MainActivity : Activity() {
         } else {
             left.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f).apply { topMargin = dp(8) })
             page.addView(left, LinearLayout.LayoutParams(0, -1, 1f))
-            page.addView(webCol, LinearLayout.LayoutParams(dp(290), -1).apply { leftMargin = dp(24) })
+            page.addView(webCol, LinearLayout.LayoutParams(dp(260), -1).apply { leftMargin = dp(20) })
             setContentView(page)
         }
 
@@ -363,16 +362,16 @@ class MainActivity : Activity() {
         val ip = lanIp.ifEmpty { wifiIp() }
         val focused = currentFocus
         webCol.removeAllViews()
-        webCol.addView(text(t("Điều khiển từ điện thoại", "Control from a phone"), 18, INK, true))
+        webCol.addView(text(t("Điều khiển từ điện thoại", "Control from a phone"), 16, INK, true))
         if (on && ip.isNotEmpty()) {
             val secure = RemoteService.secure()                       // HTTPS once its certificate exists; plain HTTP before and on an older browser's bookmark
             val scheme = if (secure) "https://" else "http://"
             val port = if (secure) RemoteService.HTTPS_PORT else RemoteService.PORT
             val link = scheme + ip + ":" + port
-            qr(link)?.let { webCol.addView(it, LinearLayout.LayoutParams(dp(164), dp(164)).apply { topMargin = dp(14); gravity = Gravity.CENTER_HORIZONTAL }) }
-            val addr = text(link.removePrefix(scheme), 16, INK, true)
+            qr(link)?.let { webCol.addView(it, LinearLayout.LayoutParams(dp(136), dp(136)).apply { topMargin = dp(10); gravity = Gravity.CENTER_HORIZONTAL }) }
+            val addr = text(link.removePrefix(scheme), 15, INK, true)
             addr.gravity = Gravity.CENTER
-            webCol.addView(addr, margins(top = 10))
+            webCol.addView(addr, margins(top = 8))
             if (secure) Tls.shortFingerprintIfReady(this)?.let {      // to compare with what the browser shows for the certificate
                 webCol.addView(text(t("Dấu vân tay: ", "Fingerprint: ") + it, 12, MUTED, false).apply { gravity = Gravity.CENTER })
             }
@@ -387,14 +386,14 @@ class MainActivity : Activity() {
         }
         webBtn.text = if (on) t("Remote qua web: Bật", "Web remote: On") else t("Remote qua web: Tắt", "Web remote: Off")
         (webBtn.parent as? LinearLayout)?.removeView(webBtn)
-        webCol.addView(webBtn, margins(top = 14))
-        if (on) webCol.addView(smallButton(t("Thiết bị đã ghép (", "Paired devices (") + RemoteService.pairedCount(this) + ")") { pairedMenu() }, margins(top = 8))
+        webCol.addView(webBtn, margins(top = 10))
+        if (on) webCol.addView(smallButton(t("Thiết bị đã ghép (", "Paired devices (") + RemoteService.pairedCount(this) + ")") { pairedMenu() }, margins(top = 6))
         showRules()
 
         webCol.addView(View(this), if (phone) LinearLayout.LayoutParams(1, dp(16)) else LinearLayout.LayoutParams(1, 0, 1f))
         val app = LinearLayout(this)
         app.gravity = Gravity.CENTER_VERTICAL
-        qr(APP_LINK)?.let { app.addView(it, LinearLayout.LayoutParams(dp(72), dp(72))) }
+        qr(APP_LINK)?.let { app.addView(it, LinearLayout.LayoutParams(dp(60), dp(60))) }
         val words = LinearLayout(this)
         words.orientation = LinearLayout.VERTICAL
         words.setPadding(dp(12), 0, 0, 0)
@@ -534,7 +533,7 @@ class MainActivity : Activity() {
         lanIp = lan; tsIp = ts
         ui {
             showWeb()
-            setStatus(OK, t("Đã kết nối ADB", "ADB connected"), name + "\n" + t("Trong nhà ", "Home network ") + lan.ifEmpty { "?" } + "\nTailscale " +
+            setStatus(OK, t("Đã kết nối ADB", "ADB connected"), name + "\n" + t("Trong nhà ", "Home network ") + lan.ifEmpty { "?" } + "   ·   Tailscale " +
                 (if (ts.isNotEmpty()) ts else if (tsInstalled) t("chưa đăng nhập", "signed out") else t("chưa cài", "not installed")))
             tsTile.say(if (ts.isNotEmpty()) t("Đã vào · ", "Connected · ") + ts else if (tsInstalled) t("Chưa đăng nhập · chọn để vào", "Signed out · select to sign in")
                 else t("Chưa cài · chọn để cài", "Not installed · select to install"))
@@ -859,7 +858,7 @@ class MainActivity : Activity() {
     private fun smallButton(label: String, l: View.OnClickListener): Button {
         val b = Button(this)
         b.text = label
-        b.textSize = 14f
+        b.textSize = 13f
         b.isAllCaps = false
         b.setOnClickListener(l)
         b.isFocusable = true
@@ -870,7 +869,8 @@ class MainActivity : Activity() {
         b.minimumHeight = 0
         b.minWidth = 0
         b.minimumWidth = 0
-        b.setPadding(dp(12), dp(10), dp(12), dp(10))
+        b.setPadding(dp(12), dp(7), dp(12), dp(7))
+        b.stateListAnimator = null                                   // no raised shadow, and none of the theme's extra room around it
         return b
     }
 }

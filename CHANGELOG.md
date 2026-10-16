@@ -34,6 +34,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - 📲 Chia sẻ có hai tab, Chia sẻ TV (chọn quyền, nút quyền có icon) và Chia sẻ app, trên cả app điện thoại và trang web.
 - App đang chạy: chip 🔒 Cần giữ không còn rớt xuống dòng; các nút chú thích của biểu đồ CPU / RAM / bộ nhớ nhỏ lại như cũ.
 - 📱 App điện thoại: phím media và hàng Quay lại / Home / Menu trải hết chiều ngang; hình TV cao tối đa nửa màn hình.
+- 📺 Màn TV Setup gọn hơn: ô thao tác, thẻ ADB và cột Điều khiển từ điện thoại nhỏ lại, phần Hoạt động rộng hơn.
 **English**
 - The tabs lay their cards out like a gallery: each card sits right under the one above it in its column, no holes; up to 3 columns on wide screens (Health, Automation), and a wider page. Switching language no longer flashes the Remote tab before going back to the tab on screen.
 - 📱 Health → Running apps: which apps run, in the background too, how much memory each takes, and a Stop button for each. Only apps the user installed or with a tile on the home screen can be stopped; the home screen, keyboard, Android, TV Remote, TV Setup and Tailscale are locked (🔒 Must keep), so nothing vital is stopped by mistake.
@@ -62,6 +63,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - 📲 Share has two tabs, Share the TV (pick the access, the access buttons with icons) and Share the app, on the phone app and the page.
 - Running apps: the 🔒 Keep chip no longer drops to a new line; the CPU / RAM / storage chart's legend keys are small again.
 - 📱 Phone app: the media keys and the Back / Home / Menu row use the full width; the TV picture is at most half the screen high.
+- 📺 TV Setup's screen is more compact: smaller action tiles, ADB card and Control from a phone column, more room for Activity.
 ## 0.4.1 - 2026-10-16
 
 Web 0.4.1 · app điện thoại 0.4.1 · app TV 0.4.1
