@@ -406,6 +406,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         if (length > 0) ensureRoom(dest.substringBeforeLast('/', "/").ifEmpty { "/" }, length, factor)
         try {
             val feed = { s: Adb.Stream ->
+                cancel?.onStop { s.close() }                              // a write waiting on a slow TV lets go at once
                 val b = ByteArray(65536)
                 var done = 0L
                 while (length < 0 || done < length) {
@@ -430,6 +431,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             if (want != null) throw IOException("the TV did not store the whole file (is its storage full?)")
         } catch (e: Exception) {                                          // stopped, cut, or the TV full: nothing half written is left
             try { Thread.sleep(200); adb.shell("rm -f " + Adb.q(dest)) } catch (ignored: Exception) { }
+            if (cancel?.stopped == true && e !is Cancelled) throw Cancelled()   // the Stop broke the stream first: still a stop, not an error
             throw e
         }
     } }
