@@ -73,7 +73,10 @@ function mark(src, j) {
 }
 function showJob(j, label) {
   let row = jobEls[j.id];
-  if (!row) { $('#jobscard').hidden = false; $('#jobscard').open = true; row = jobEls[j.id] = { root: el('div', { className: 'job' }), msg: el('div', { className: 'msg' }), bar: el('i') }; row.root.append(el('div', { textContent: label || j.title }), row.msg, el('div', { className: 'bar' }, row.bar)); $('#jobs').prepend(row.root); }
+  if (!row) { $('#jobscard').hidden = false; $('#jobscard').open = true; row = jobEls[j.id] = { root: el('div', { className: 'job' }), msg: el('div', { className: 'msg' }), bar: el('i') };
+    row.stop = el('button', { type: 'button', className: 'small', hidden: true, textContent: '■ Dừng', onclick: () => row.onStop && row.onStop() });   // set by upload() / trackJob(): a long wait can be cancelled
+    row.root.append(el('div', { textContent: label || j.title }), row.msg, el('div', { className: 'bar' }, row.bar), row.stop); $('#jobs').prepend(row.root); }
+  row.stop.hidden = !(row.onStop && j.status === 'running');
   row.root.className = 'job ' + j.status; row.msg.textContent = j.msg; row.bar.style.width = j.pct + '%';
   row.bar.parentElement.classList.toggle('busy', j.status === 'running' && !(j.pct >= 0));   // size unknown: moving, not stuck at 0
   row.status = j.status; row.pct = j.pct;
@@ -88,9 +91,12 @@ window.nativeJob = (j) => {
 };
 async function trackJob(j, label, after, src) {
   showJob(j, label); mark(src, j);
-  let misses = 0;                                                     // a blip in the network is not the end of the job; ten in a row are
+  let misses = 0, stopped = false;                                    // a blip in the network is not the end of the job; ten in a row are
+  const jr = jobEls[j.id]; if (jr) jr.onStop = () => { stopped = true; };   // the TV may still finish it: we only stop watching
   while (j.status === 'running') {
-    await sleep(1000); const r = await api('/api/job?id=' + j.id, null, true);
+    await sleep(1000);
+    if (stopped) { j = { ...j, status: 'error', msg: 'đã dừng theo dõi, TV có thể vẫn làm tiếp' }; showJob(j, label); break; }
+    const r = await api('/api/job?id=' + j.id, null, true);
     if (r) { misses = 0; j = r; showJob(j, label); mark(src, j); continue; }
     if (++misses >= 10) { j = { ...j, status: 'error', msg: 'mất kết nối, không rõ đã xong chưa' }; showJob(j, label); break; }
   }
@@ -109,9 +115,14 @@ function upload(file, kind, dest, after, src) {
   xhr.setRequestHeader('Content-Type', 'application/octet-stream');
   xhr.upload.onprogress = (e) => { if (e.lengthComputable) { row.pct = Math.round(e.loaded * (CORE === 'pc' ? 45 : 95) / e.total); row.msg = 'đang gửi ' + fmtSize(e.loaded) + ' / ' + fmtSize(e.total); showJob(row); mark(src, row); } };
   xhr.onerror = () => { row.status = 'error'; row.msg = 'Không gọi được server'; showJob(row); mark(src, row); };
+  xhr.onabort = () => { row.status = 'error'; row.msg = 'đã dừng'; showJob(row); mark(src, row); };
+  jobEls[row.id].onStop = () => xhr.abort();
   xhr.onload = () => {
     let r = {}; try { r = JSON.parse(xhr.responseText); } catch {}
-    if (xhr.status !== 200) { row.status = 'error'; row.msg = r.error || xhr.statusText; showJob(row); mark(src, row); return; }
+    if (xhr.status !== 200) {
+      const why = r.error || xhr.statusText;
+      row.status = 'error'; row.msg = friendly(why); showJob(row); mark(src, row); needSetup(why); return;   // a TV Setup that is missing or old becomes the Install / Update question
+    }
     jobEls[row.id].root.remove(); delete jobEls[row.id]; trackJob(r, file.name, after, src);
   };
   xhr.send(file);

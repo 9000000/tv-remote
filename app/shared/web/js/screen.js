@@ -133,7 +133,7 @@ let currentTab = window.ONTV ? (location.search.match(/[?&]tab=(\w+)/) || [])[1]
 function showTab(t) {
   if ((CORE === 'phone' || window.ONTV) && (t === 'remote' || !document.querySelector('[data-tab="' + t + '"]'))) t = 'apps';   // the phone app has its own remote; the TV itself needs none
   currentTab = t; document.querySelector('main').classList.toggle('wide', t === 'remote' && !picking);
-  document.querySelectorAll('[data-tab]').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === t));
+  document.querySelectorAll('[data-tab]').forEach((b) => { b.setAttribute('aria-selected', b.dataset.tab === t); b.tabIndex = b.dataset.tab === t ? 0 : -1; });   // roving tabindex: one stop in the bar, arrows move along it
   const off = document.querySelector('[data-tab="' + t + '"]')?.hasAttribute('data-kind-tab');   // this TV cannot: what it would do
   document.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== (off ? 'kind' : t); });
   dockScreen();
@@ -145,5 +145,12 @@ function showTab(t) {
   if (t === 'auto') autoTab();
   if (t === 'tv') { tsState(); loadTvset(); loadPaired(); }
 }
-document.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
+document.querySelectorAll('[data-tab]').forEach((b) => { b.id = 'tab-' + b.dataset.tab; b.addEventListener('click', () => showTab(b.dataset.tab)); });
+document.querySelectorAll('[data-panel]').forEach((p) => { p.setAttribute('role', 'tabpanel'); p.setAttribute('aria-labelledby', 'tab-' + p.dataset.panel); });
+document.querySelector('nav.tabs').addEventListener('keydown', (e) => {   // ← → Home End between the tabs that are shown
+  const k = { ArrowRight: 1, ArrowLeft: -1, Home: 0, End: 0 }[e.key]; if (k === undefined) return;
+  const all = [...document.querySelectorAll('nav.tabs [data-tab]')].filter((b) => b.offsetParent !== null), i = all.indexOf(document.activeElement); if (i < 0) return;
+  e.preventDefault(); const n = e.key === 'Home' ? all[0] : e.key === 'End' ? all[all.length - 1] : all[(i + k + all.length) % all.length];
+  n.focus(); showTab(n.dataset.tab);
+});
 

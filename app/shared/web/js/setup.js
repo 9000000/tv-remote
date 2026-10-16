@@ -272,14 +272,16 @@ function otherHome() {
 }
 async function installSetup() {
   if (!await assist('setup')) return;
-  const msg = say('Đang bắt đầu...'); msg.style.minHeight = '5em';       // the words change as it goes; the buttons below must not jump
+  const msg = say('Đang bắt đầu...'); msg.classList.add('setupmsg');   // the words change as it goes; the buttons below must not jump
   const done = el('button', { className: 'small', textContent: '✓ Đã cài xong', onclick: async () => { setDone(true); await assist('installed'); } });
   const setDone = (busy) => { done.disabled = busy; done.textContent = tr(busy ? '⏳ Đang kiểm tra...' : '✓ Đã cài xong'); };
   assistShow('Cài TV Setup lên TV', msg, row(done, act('■ Dừng', async () => { await assist('stop'); await sleep(400); adbHelp(); })));
-  const gen = assistGen;
+  const gen = assistGen; let misses = 0;
   for (;;) {
     await sleep(1000); if (gen !== assistGen) return;
     const r = await api('/api/assist', null, true); if (gen !== assistGen) return;
+    misses = r ? 0 : misses + 1;                                      // ten in a row: say so, instead of waiting for ever
+    if (misses >= 10) return assistShow('Cài TV Setup lên TV', say('Không gọi được server'), row(act('↻ Thử lại', async () => installSetup(), 'primary'), act('← Các cách khác', async () => adbHelp())));
     if (!r || r.status === 'running') { if (r) { if (r.msg) msg.textContent = tr(r.msg); setDone(!!r.checking); } continue; }
     if (r.status === 'look') return assistShow('Nhìn lên TV', say('TV đã nhận đường dẫn và tải TV Setup.\n\n1. TV hỏi cài đặt: chọn Cài đặt (Install). Nếu TV hỏi quyền cài từ nguồn này: bật cho app đang tải, bấm Quay lại, rồi chọn Install.\n2. Cài xong chọn Mở (hoặc bấm “Mở TV Setup” bên dưới).\n3. TV Setup tự mở Tùy chọn nhà phát triển: bật “Gỡ lỗi USB”.\n4. TV hỏi cho phép gỡ lỗi: tích “Luôn cho phép”, chọn OK. Trang này tự kết nối.'),
       row(act('📺 Mở TV Setup', async () => { await assist('open', { what: 'dev.tvremote.setup' }); }, 'primary'), act('↻ Làm lại', async () => installSetup()), act('← Các cách khác', async () => adbHelp())));

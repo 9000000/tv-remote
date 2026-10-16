@@ -14,7 +14,7 @@ const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.crea
 const fmtSize = (n) => n > 1e9 ? (n / 1e9).toFixed(1) + ' GB' : n > 1e6 ? (n / 1e6).toFixed(1) + ' MB' : n > 1e3 ? Math.round(n / 1e3) + ' KB' : n + ' B';
 const sleep = (ms) => new Promise((z) => setTimeout(z, ms));
 let toastT;
-function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2500); }
+function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), Math.min(10000, Math.max(2500, 70 * m.length))); }   // time to read it: a long message with the next step stays longer
 // Questions asked in the page, not with confirm() / prompt(): they look the same everywhere, and the computer app's window
 // (a bare web view) has no dialogs of its own. ask(text) → true / false; ask(text, { value }) → the typed text, or null.
 // { ok, danger }: the words and colour of the yes button. One question at a time; the button that asked keeps its spinner.

@@ -164,8 +164,9 @@ $('#wake').addEventListener('click', async () => {
 const keymap = { ArrowUp:'UP', ArrowDown:'DOWN', ArrowLeft:'LEFT', ArrowRight:'RIGHT', Escape:'BACK', Home:'HOME' };
 const typingHere = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
 document.addEventListener('keydown', (e) => {
-  if (window.ONTV || currentTab !== 'remote' || picking || typingHere() || e.metaKey || e.ctrlKey || e.altKey || e.isComposing || $('#preview').open || $('#about').open || $('#assist').open || $('#ts').open) return;
+  if (window.ONTV || currentTab !== 'remote' || picking || typingHere() || e.metaKey || e.ctrlKey || e.altKey || e.isComposing || document.querySelector('dialog[open]')) return;   // any dialog open: its keys are its own
   const onButton = ['BUTTON', 'SUMMARY', 'A'].includes(document.activeElement.tagName);
+  if (document.activeElement.closest('nav.tabs') && /^(Arrow(Left|Right)|Home|End)$/.test(e.key)) return;   // the tab bar's own arrows
   if (onButton && (e.key === 'Enter' || e.key === ' ' || e.key === 'Tab')) return;   // keyboard users still operate the page
   if (e.key === 'Escape' && document.fullscreenElement) return;       // let Esc leave fullscreen
   const adb = ADB.state === 'ready' || NATIVE() && can('text');      // letters: ADB, or LG's / Samsung's keyboard link
@@ -177,7 +178,7 @@ document.addEventListener('keydown', (e) => {
   else if (e.key.length === 1) { e.preventDefault(); queue('/api/type', { text: e.key }); }
 });
 document.addEventListener('paste', (e) => {                           // Cmd+V anywhere on the Remote tab pastes onto the TV
-  if (window.ONTV || currentTab !== 'remote' || typingHere() || !(ADB.state === 'ready' || NATIVE() && can('text'))) return;
+  if (window.ONTV || currentTab !== 'remote' || typingHere() || document.querySelector('dialog[open]') || !(ADB.state === 'ready' || NATIVE() && can('text'))) return;
   const t = (e.clipboardData || window.clipboardData).getData('text'); if (t) { e.preventDefault(); queue('/api/type', { text: t.slice(0, 500) }); }
 });
 

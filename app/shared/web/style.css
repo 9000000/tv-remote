@@ -25,7 +25,6 @@
   @media (max-width:640px) { .chips { gap:5px; } header .chips { flex-wrap:nowrap; } header .chips > * { flex:none; } header .chip { flex:0 1 auto; min-width:0; } header .chip span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     header .chips { gap:4px; } header .chip { padding:4px 8px; } header .chips button.small { min-width:30px; padding:0 6px; } #lang .globe { display:none; }   /* one line: a long state shortens, its whole text on hover */
     .chip { padding:4px 9px; font-size:12px; gap:5px; } .chip i { display:none; } .chips button.small { min-height:30px; padding:0 8px; font-size:12px; } }
-  @media (hover:none), (pointer:coarse) { .fine-only { display:none; } }   /* no computer keyboard to type with */
   /* One page, three cores (see core.js): the computer app ("pc"), the TV Setup app on the TV ("tv") and the phone app's
      Manage screen ("phone"). An element marked data-for is only there on the cores it names. */
   html[data-core=pc] [data-for]:not([data-for~=pc]), html[data-core=tv] [data-for]:not([data-for~=tv]), html[data-core=phone] [data-for]:not([data-for~=phone]) { display:none !important; }
@@ -114,7 +113,7 @@
   }
   /* phone: the two columns become one list, so the app tiles can go below the buttons and the picture stays right above them;
      the picture's box takes no room until somebody is watching */
-  @media (max-width:899px) { .remote-grid > .col { display:contents; } .wide-only { order:5; } .wide-hint { display:none; }
+  @media (max-width:899px) { .remote-grid > .col { display:contents; } .wide-only { order:5; }
     #screencard:not(.on) .screenbox, #screencard:not(.on) #screeninfo, #screencard:not(.on) #screenfull { display:none; } #screencard:not(.on) h2 { margin:0; } }
   .col { display:flex; flex-direction:column; gap:14px; min-width:0; }
 
@@ -132,7 +131,7 @@
   .dpad .up { top:2%; left:33%; } .dpad .down { bottom:2%; left:33%; } .dpad .left { left:2%; top:33%; } .dpad .right { right:2%; top:33%; }
   .dpad .ok { top:31%; left:31%; width:38%; height:38%; background:var(--accent); color:var(--accent-ink); font-size:17px; font-weight:700; box-shadow:0 4px 14px rgba(0,0,0,.25); }
   .dpad .ok:hover { background:var(--accent); color:var(--accent-ink); filter:brightness(1.08); }
-  .rc .vol { width:100%; margin-top:0; } .rc .hint { text-align:center; font-size:12px; }
+  .rc .vol { width:100%; margin-top:0; }
   .row { display:grid; gap:8px; margin-top:10px; grid-template-columns:repeat(3,1fr); } .row.two { grid-template-columns:repeat(2,1fr); } .row button { font-size:14px; white-space:nowrap; padding:0 4px; }
   form.line { display:flex; gap:8px; margin-top:8px; } form.line button { padding:0 16px; }
   input[type=text], input:not([type]), input[type=url], input[type=search] { flex:1; min-width:0; font:inherit; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:0 12px; min-height:48px; }
@@ -251,6 +250,7 @@
   .dragging { outline:2px dashed var(--accent); outline-offset:-2px; }
   .linkbtn { display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:var(--ink); background:var(--btn); border-radius:12px; } .linkbtn:hover { background:var(--btn-hi); }
   .bar { height:6px; background:var(--btn); border-radius:3px; overflow:hidden; margin-top:6px; } .bar i { display:block; height:100%; width:0; background:var(--accent); transition:width .3s; }
+  .setupmsg { min-height:5em; }
   .job { padding:9px 0; border-top:1px solid var(--line); font-size:13px; } .job:first-child { border-top:0; }
   .job.error .msg { color:var(--bad); } .job.done .msg { color:var(--ok); }
   .two-up { display:grid; gap:14px; grid-template-columns:minmax(0,1fr); }   /* minmax: a card never grows past the screen for a long word or select */
@@ -359,7 +359,6 @@
   #limitf select { flex:1; min-width:0; } #limitf select#limitmin { flex:none; }
   #volf .line { display:flex; gap:8px; margin-top:8px; } #volf select { flex:1; min-width:0; } #volf button { padding:0 16px; }
   #limits .name .bar { max-width:260px; } .bar.full i { background:var(--bad); }
-  .autonote { grid-column:1/-1; margin:0; }
   /* the scene editor */
   .scenebox { display:flex; flex-direction:column; gap:10px; margin-top:12px; } .scenebox h3 { margin:4px 0 0; font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
   .line2 { display:flex; gap:8px; flex-wrap:wrap; align-items:center; } .line2 > input:first-child { flex:0 0 64px; text-align:center; font-size:20px; }
@@ -411,8 +410,8 @@
 
   /* One size per kind of control, in every tab but the remote (whose keys are made to be hit without looking):
      a field and the button beside it --ctl, a card's own actions .small (--ctl-sm), a choice among several a chip (--chip). */
-  .panel:not([data-panel=remote]) :is(button, select, input[type=text], input:not([type]), input[type=url], input[type=search], input[type=time]):not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.scene):not(.drop):not(.st-key):not(.crumbs button) { min-height:var(--ctl); }
-  .panel:not([data-panel=remote]) button:not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.scene):not(.st-key):not(.crumbs button) { font-size:14px; padding:0 16px; }
+  .panel:not([data-panel=remote]) :is(button, select, input[type=text], input:not([type]), input[type=url], input[type=search], input[type=time]):not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.scene):not(.drop):not(.crumbs button) { min-height:var(--ctl); }
+  .panel:not([data-panel=remote]) button:not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.scene):not(.crumbs button) { font-size:14px; padding:0 16px; }
   .panel:not([data-panel=remote]) select { font-size:14px; padding:0 10px; }
   .panel > div:empty { display:none; }                                /* an empty slot (no ADB banner, nothing to set up) leaves no gap */
   details.card > summary { font-size:14px; font-weight:600; cursor:pointer; }   /* every fold-out card reads the same */
