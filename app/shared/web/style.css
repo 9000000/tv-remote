@@ -317,6 +317,7 @@
   input[type=time], input[type=number] { font:inherit; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:0 10px; min-height:40px; }
   input[type=number] { width:84px; }
   #limitf select { flex:1; min-width:0; min-height:48px; } #limitf select#limitmin { flex:none; }
+  #volf .line { display:flex; gap:8px; margin-top:8px; } #volf select { flex:1; min-width:0; min-height:48px; } #volf button { padding:0 16px; }
   #limits .name .bar { max-width:260px; } .bar.full i { background:var(--bad); }
   .autonote { grid-column:1/-1; margin:0; }
   /* the scene editor */

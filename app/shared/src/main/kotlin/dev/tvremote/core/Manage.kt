@@ -19,7 +19,7 @@ import java.util.regex.Pattern
  * The paths and the answers are the ones the computer's server gives (app/desktop Server.kt), because all three serve the same page
  * (app/shared/web). Whoever owns the HttpServer checks first that the caller may use it.
  */
-class Manage(private val link: AdbLink, private val labels: Labels?, private val dir: java.io.File?, helper: (() -> ByteArray)? = null) {
+class Manage(private val link: AdbLink, private val labels: Labels?, private val dir: java.io.File?, private val helper: (() -> ByteArray)? = null) {
     /** Names and icons for packages, where the app can ask the system for them (the TV app); otherwise package names are shown. */
     interface Labels {
         fun label(pkg: String): String?
@@ -109,6 +109,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "install" -> HttpServer.Response.json(fetch(r.json().optString("url"), true))
                 "setup/update" -> HttpServer.Response.json(setupUpdate())
                 "playing" -> { val d = r.json(); (playing ?: throw IllegalStateException("not here")).command(d.optString("do"), d.optLong("ms")); HttpServer.Response.json(JSONObject().put("ok", true)) }
+                "screen/off" -> { ScreenOff.off(link.get(), (helper ?: throw IllegalStateException("not here"))()); HttpServer.Response.json(JSONObject().put("ok", true)) }
                 "draw" -> { draw.send(r.json(Draw.MAX_BODY).getJSONArray("ops")); HttpServer.Response.json(JSONObject().put("ok", true).put("pic", draw.pics)) }
                 "adb/allow" -> {                                      // only for the key named: see AdbPrompt
                     val d = r.json()

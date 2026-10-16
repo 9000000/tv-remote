@@ -112,13 +112,45 @@ $('#drawfile').addEventListener('change', async (e) => {
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
   let data = /png|webp|gif/.test(f.type) ? c.toDataURL('image/png') : '';             // these may be see-through: keep that
   if (!data || data.length > 4e6) data = c.toDataURL('image/jpeg', 0.85);
+  picPlace(data, 4000);
+});
+async function picPlace(data, w) {
   const shown = new Image(); shown.src = data; await shown.decode().catch(() => {});
-  drawPic = { img: shown, b: data.slice(data.indexOf(',') + 1), x: 5000, y: 5000, w: 4000 };
+  drawPic = { img: shown, b: data.slice(data.indexOf(',') + 1), x: 5000, y: 5000, w, base: w };   // base: 1x
   $('#drawbar').hidden = true; $('#picbar').hidden = false; picWidth(drawPic.w);
+}
+
+// 💬 A message, as big words on the TV ("Xuống ăn cơm!"): drawn here into a picture, then placed and sent like one, so it
+// moves, sizes and goes away with the strokes, and any TV Setup that takes pictures shows it. The same look as the phone
+// app's (messagePic in Drawing.kt): the pen's colour on a dark box (a light one for black), lines kept under 1100 pixels.
+$('#drawtext').addEventListener('click', async () => {
+  if (!drawPics) { setupFor('pic'); return; }
+  const text = (await ask('Lời nhắn hiện trên TV', { value: '', ok: 'Tiếp' }) || '').trim();
+  if (!text) return;
+  const c = document.createElement('canvas'), g = c.getContext('2d'), font = '700 72px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+  g.font = font;
+  const lines = [];
+  for (const para of text.split(/\n/)) {
+    let line = '';
+    for (const word of para.split(/\s+/)) {
+      const next = line ? line + ' ' + word : word;
+      if (line && g.measureText(next).width > 1100) { lines.push(line); line = word; } else line = next;
+    }
+    lines.push(line);
+  }
+  const pad = 40, lh = 92, w = Math.ceil(Math.max(...lines.map((l) => g.measureText(l).width))) + pad * 2, h = lines.length * lh + pad * 2 - 20;
+  c.width = w; c.height = h;
+  const dark = drawColor === '#000000';
+  g.fillStyle = dark ? 'rgba(255,255,255,.9)' : 'rgba(0,0,0,.85)';
+  g.beginPath(); g.roundRect(0, 0, w, h, 32); g.fill();
+  g.font = font; g.fillStyle = drawColor; g.textBaseline = 'top'; g.textAlign = 'center';
+  lines.forEach((l, i) => g.fillText(l, w / 2, pad + i * lh));
+  if (!drawing) await drawStart();
+  picPlace(c.toDataURL('image/png'), Math.min(9000, Math.round(w / 1920 * 10000)));   // 72px words as on a 1080p TV
 });
 function picEnd() { drawPic = null; picTouch.clear(); $('#picbar').hidden = true; if (drawing) $('#drawbar').hidden = false; drawPaint(); }
-// 1x is the size it starts at (4000 = 40% of the screen's width); down to 0.1x, up to the screen's width
-function picWidth(w) { drawPic.w = Math.round(Math.min(10000, Math.max(400, w))); $('#picscale').textContent = (drawPic.w / 4000).toFixed(1) + 'x'; drawPaint(); }
+// 1x is the size it starts at (a picture: 4000 = 40% of the screen's width); down to 0.1x, up to the screen's width
+function picWidth(w) { drawPic.w = Math.round(Math.min(10000, Math.max(400, w))); $('#picscale').textContent = (drawPic.w / drawPic.base).toFixed(1) + 'x'; drawPaint(); }
 // − and +: a tap is one step, holding keeps going (faster the longer), like dragging a slider that springs back
 [['#picsmaller', 1 / 1.06], ['#picbigger', 1.06]].forEach(([id, k]) => {
   let timer = null;

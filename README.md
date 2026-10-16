@@ -56,8 +56,9 @@ Trong README, code và trang giới thiệu, các phần luôn được gọi b�
 
 | | App điện thoại | Web của TV | App máy tính |
 |---|---|---|---|
-| Remote, xem và chạm hình TV, ✏️ vẽ, 🖼️ đưa ảnh lên TV | ✓ | ✓ | ✓ |
-| ▶️ Đang phát (tên bài, tua, tạm dừng), 📋 clipboard của TV | ✓ | ✓ | ✓ |
+| Remote, xem và chạm hình TV, ✏️ vẽ, 🖼️ đưa ảnh, 💬 lời nhắn lên TV | ✓ | ✓ | ✓ |
+| ▶️ Đang phát (tên bài, tua, tạm dừng), 📋 clipboard của TV, tắt màn hình vẫn nghe | ✓ | ✓ | ✓ |
+| 🔊 Giới hạn âm lượng theo giờ (cùng hẹn giờ tắt, giờ đi ngủ, giới hạn app) | ✓ | ✓ | ✓ |
 | 🎧 Nghe tiếng TV | ✓, cả khi tắt màn hình | ✓, khi trang đang mở | ✓, chất lượng cao |
 | Ứng dụng, Tệp, Sức khỏe, Tự động, Thiết lập | ✓ | ✓ | ✓ |
 | Chất lượng hình *Nét nhất* | | | ✓ |
@@ -214,6 +215,9 @@ Nút **📺 Đổi TV** ở thanh trên quay về danh sách TV.
 - **▶️ Đang phát**: trên remote hiện app trên TV đang phát gì (tên, kênh hoặc ca sĩ), kéo thanh để tua, bấm để tạm dừng hoặc qua bài. Cần ADB; app nào không báo thời lượng thì không có thanh tua.
 - **📋 Clipboard của TV** (*Mở trên TV* → *Clipboard của TV*): xem chữ TV đang sao chép, chép về máy mình, hoặc gửi chữ lên TV và dán vào ô đang gõ.
 - **✏️ Vẽ lên màn hình TV** (nút ✏️ cạnh hình; trên app điện thoại là *Vẽ lên TV* trong Thêm phím): vẽ lên hình thì TV hiện ngay nét vẽ, đè lên mọi app, để chỉ chỗ cho người đang xem. Cần TV Setup trên TV. Bấm 🗑 để xóa, hoặc nét vẽ tự mất sau 10 phút.
+- **💬 Lời nhắn lên TV** (nút 💬 Chữ khi đang vẽ): gõ một câu, chữ to hiện trên TV, kéo và chỉnh cỡ như ảnh.
+- **Tắt màn hình, vẫn nghe** (*Hẹn giờ tắt* → *Tắt màn hình, vẫn nghe*): màn hình TV tắt, nhạc vẫn phát. Bấm phím bất kỳ, kể cả remote của TV, là màn hình bật lại.
+- **🔊 Giới hạn âm lượng** (tab Tự động): chọn các khoảng giờ và mức tối đa mỗi khoảng, vd 22:00 – 06:00 tối đa 30%. Ai tăng quá mức thì TV hạ lại và báo trên màn hình vì sao. Cần TV Setup; TV mà âm lượng do loa ngoài giữ (qua HDMI) thì không giới hạn được.
 - Video có bản quyền (Netflix...) hiện màu đen.
 - Bàn phím ảo trên TV không bấm được bằng chuột; hãy gõ bằng bàn phím máy tính. Chữ có dấu thì gõ trong ô "Bàn phím".
 </details>

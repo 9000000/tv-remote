@@ -73,6 +73,8 @@
       { "id": "timer-lengths", "expand": "lengths" },
       { "id": "timer-custom", "icon": "timer", "vi": "Tự chọn...", "en": "Custom...", "do": "timerCustom",
         "sub": { "vi": "Số phút, hoặc giờ tắt như 23:30", "en": "Minutes, or a time like 23:30" } },
+      { "id": "screen-off", "icon": "eye_off", "vi": "Tắt màn hình, vẫn nghe", "en": "Screen off, keep listening", "do": "screenOff",
+        "sub": { "vi": "Bấm phím bất kỳ để bật lại", "en": "Any key turns it back on" } },
       { "id": "timer-bedtime", "icon": "moon", "vi": "Giờ đi ngủ, giới hạn app...", "en": "Bedtime, app limits...", "do": "automation" }
     ],
     "scenes": [

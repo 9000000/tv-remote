@@ -43,4 +43,5 @@ const REMOTE_DO = {
   timerCustom: () => timerCustom(),
   automation: () => showTab('auto'),
   clip: () => clipDialog(),
+  screenOff: () => screenOff(),
 };

@@ -12,6 +12,7 @@ import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import dev.tvremote.core.NowPlaying
+import dev.tvremote.core.ScreenOff
 import dev.tvremote.core.Tv
 import org.json.JSONObject
 import java.util.concurrent.Executors
@@ -132,6 +133,17 @@ internal class PlayingBar(private val a: MainActivity) {
         val s = (ms / 1000).toLong()
         return if (s >= 3600) String.format("%d:%02d:%02d", s / 3600, s / 60 % 60, s % 60) else String.format("%d:%02d", s / 60, s % 60)
     }
+}
+
+/** The screen off while the sound plays on (ScreenOff in the shared core): any key, on any remote, turns it back on. */
+internal fun MainActivity.screenOff() {
+    if (needsAdb()) return
+    val tv = tv
+    if (tv == null || !tv.ready()) return
+    Thread {
+        val err = try { ScreenOff.off(tv.adb(), assets.open("tvr-helper.jar").use { it.readBytes() }); null } catch (e: Exception) { e }
+        ui.post { say(if (err == null) t("Đã tắt màn hình TV. Bấm phím bất kỳ để bật lại.", "The TV’s screen is off. Any key turns it back on.") else t("TV này không tắt được màn hình riêng.", "This TV cannot turn its screen off alone."), err != null) }
+    }.start()
 }
 
 /** The TV's clipboard (the "clip" entry of Open on the TV): shown in a box, then copied to the phone, set on the TV, or pasted there. */

@@ -91,13 +91,15 @@ internal fun MainActivity.drawTools(): LinearLayout {
     bar.addView(pen, LinearLayout.LayoutParams(dp(30), dp(30)).also { it.rightMargin = dp(6) })
     val pic = icon("@image", t("Đưa một ảnh lên TV", "Put a picture on the TV"), BTN)
     pic.setOnClickListener { withSetup("pic") { pickDrawPic() } }    // an older TV Setup draws lines but no pictures
+    val say = icon("@type", t("Gõ lời nhắn lên TV", "Type a message on the TV"), BTN)
+    say.setOnClickListener { withSetup("pic") { askText(t("Lời nhắn hiện trên TV", "A message for the TV"), t("vd Xuống ăn cơm!", "e.g. Dinner's ready!"), t("Tiếp", "Next")) { placeMessage(it) } } }
     val undo = icon("@undo", t("Bỏ nét vừa vẽ", "Take back the last line"), BTN)
     undo.setOnClickListener { drawSend(JSONObject().put("o", "u")) }
     val clear = icon("@trash", t("Xóa hết", "Clear all"), BTN)
     clear.setOnClickListener { drawView.clear(); drawSend(JSONObject().put("o", "x")) }
     val done = icon("@check", t("Xong", "Done"), ACCENT)
     done.setOnClickListener { stopDrawing() }
-    for (b in listOf(pic, undo, clear, done)) bar.addView(b, LinearLayout.LayoutParams(dp(40), dp(40)).also { it.leftMargin = dp(4) })
+    for (b in listOf(pic, say, undo, clear, done)) bar.addView(b, LinearLayout.LayoutParams(dp(40), dp(40)).also { it.leftMargin = dp(4) })
     tools.addView(bar, LinearLayout.LayoutParams(-1, -2))
 
     val place = LinearLayout(this)
@@ -107,7 +109,7 @@ internal fun MainActivity.drawTools(): LinearLayout {
     place.visibility = View.GONE
     // − and +: a tap is one step, holding keeps going (faster the longer), like a slider that springs back; 1x = the size it came at
     val scale = android.widget.TextView(this).apply { setTextColor(TEXT); textSize = 14f; gravity = Gravity.CENTER }
-    drawView.onSize = { scale.text = String.format(java.util.Locale.US, "%.1fx", (drawView.placing?.w ?: 4000) / 4000f) }
+    drawView.onSize = { scale.text = String.format(java.util.Locale.US, "%.1fx", drawView.placing?.let { it.w.toFloat() / it.base } ?: 1f) }
     for ((sign, k) in listOf("−" to 1 / 1.06f, "+" to 1.06f)) {
         val b = button(sign, BTN)
         b.textSize = 20f
@@ -226,6 +228,38 @@ internal fun MainActivity.drawPicked(uri: Uri) {
     }
 }
 
+/** 💬 A message as big words, drawn into a picture and placed like one, the same look as the web page's (draw.js): the pen's
+ *  colour on a dark box (a light one for black), lines kept under 1100 pixels, 72px words as on a 1080p TV. */
+internal fun MainActivity.placeMessage(text: String) {
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 72f; typeface = android.graphics.Typeface.DEFAULT_BOLD; textAlign = Paint.Align.CENTER }
+    val lines = ArrayList<String>()
+    for (para in text.split('\n')) {
+        var line = ""
+        for (word in para.split(Regex("\\s+"))) {
+            val next = if (line.isEmpty()) word else "$line $word"
+            if (line.isNotEmpty() && paint.measureText(next) > 1100) { lines.add(line); line = word } else line = next
+        }
+        lines.add(line)
+    }
+    val pad = 40; val lh = 92
+    val w = lines.maxOf { paint.measureText(it) }.toInt() + 1 + pad * 2
+    val h = lines.size * lh + pad * 2 - 20
+    val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+    val c = Canvas(bmp)
+    val dark = drawColor == Color.BLACK
+    c.drawRoundRect(RectF(0f, 0f, w.toFloat(), h.toFloat()), 32f, 32f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = if (dark) 0xe6ffffff.toInt() else 0xd9000000.toInt() })
+    paint.color = drawColor
+    lines.forEachIndexed { i, l -> c.drawText(l, w / 2f, pad + i * lh - paint.ascent(), paint) }
+    val out = ByteArrayOutputStream()
+    bmp.compress(Bitmap.CompressFormat.PNG, 100, out)
+    if (!drawing) startDrawing()
+    drawView.placing = DrawView.Pic(bmp, android.util.Base64.encodeToString(out.toByteArray(), android.util.Base64.NO_WRAP)).also { it.w = minOf(9000, w * 10000 / 1920); it.base = it.w }
+    drawView.onSize()
+    drawView.invalidate()
+    drawBar.findViewWithTag<View>("pen").visibility = View.GONE
+    drawBar.findViewWithTag<View>("pic").visibility = View.VISIBLE
+}
+
 internal fun MainActivity.picEnd() {
     drawView.placing = null
     drawView.invalidate()
@@ -286,7 +320,7 @@ internal fun MainActivity.drawSend(op: JSONObject) {
 internal class DrawView(c: Context) : View(c) {
     private class Stroke(val color: Int, val width: Int) { val pts = ArrayList<Int>(); var upAt = 0L }
     /** A picture: centre and width in 0..10000 of the screen, and what goes to the TV. */
-    class Pic(val bmp: Bitmap, val data: String) { var x = 5000; var y = 5000; var w = 4000; var upAt = 0L }
+    class Pic(val bmp: Bitmap, val data: String) { var x = 5000; var y = 5000; var w = 4000; var base = 4000; var upAt = 0L }   // base: 1x
     private val strokes = ArrayList<Stroke>()
     private val landed = ArrayList<Pic>()                             // sent: shown here until the TV's own picture has it
     var placing: Pic? = null

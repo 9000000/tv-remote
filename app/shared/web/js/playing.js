@@ -37,6 +37,12 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) plPo
 plPoll();
 
 // the TV's clipboard: shown in a box anyone can edit, then copied here, set on the TV, or set and pasted where the TV's cursor is
+// The screen off while the sound plays on (ScreenOff.kt): any key, on any remote, turns it back on.
+async function screenOff() {
+  if (needAdb()) return;
+  if (await api('/api/screen/off', {})) toast('Đã tắt màn hình TV. Bấm phím bất kỳ để bật lại.');
+}
+
 async function clipDialog() {
   if (needAdb()) return;
   const got = await api('/api/clip'); if (!got) return;

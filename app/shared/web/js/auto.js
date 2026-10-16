@@ -57,6 +57,16 @@ function renderRules() {
         act('🗑', async () => { if (await ask('Bỏ giới hạn cho ' + name + '?', { ok: 'Bỏ giới hạn' })) await loadRules({ do: 'limit', pkg: l.pkg, minutes: 0 }); }, 'danger')));
   });
   $('#limits').replaceChildren(...(rows.length ? rows : [el('p', { className: 'muted', style: 'margin:0', textContent: 'Chưa giới hạn app nào.' })]));
+  // volume limits; a TV Setup older than them has no "volume" in its answer
+  const vols = r.volume || [];
+  $('#vols').replaceChildren(...(vols.length ? vols.map((v, i) => el('div', { className: 'item' },
+    el('div', { className: 'name' }, el('span', { textContent: v.from + ' – ' + v.to }), el('small', { textContent: 'Tối đa ' + v.max + '%' })),
+    el('div', { className: 'acts' },
+      act('🗑', async () => { if (await ask('Bỏ giới hạn ' + v.from + ' – ' + v.to + '?', { ok: 'Bỏ giới hạn' })) await saveVols(vols.filter((x, j) => j !== i)); }, 'danger'))))
+    : [el('p', { className: 'muted', style: 'margin:0', textContent: 'Chưa giới hạn âm lượng.' })]));
+  const now = r.volume_now;
+  $('#volstate').textContent = r.volume === undefined ? '' : r.volume_fixed ? '⚠️ Âm lượng của TV này do loa ngoài / TV giữ (qua HDMI), không giới hạn được.'
+    : now ? 'Đang giới hạn tối đa ' + now.max + '% tới ' + now.to + '.' : '';
   if (CORE === 'tv' && r.adb && r.adb !== 'ready') $('#bedstate').append(el('span', { className: 'warnline', textContent: '⚠️ TV Setup chưa nối được ADB của TV nên chưa tự tắt TV / đóng app được.' }));
 }
 
@@ -86,6 +96,16 @@ $('#bedsave').addEventListener('click', async () => {
   if (r) toast(r.bedtime.on ? 'Đã lưu giờ đi ngủ: ' + r.bedtime.from + ' – ' + r.bedtime.to : 'Đã tắt giờ đi ngủ');
 });
 $('#bedon').addEventListener('change', () => $('#bedsave').click());
+async function saveVols(list) {
+  if (RULES && RULES.volume === undefined && !await setupFor('volume')) return null;
+  return loadRules({ do: 'volume', ranges: list });
+}
+$('#volf').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const v = { from: $('#volfrom').value || '22:00', to: $('#volto').value || '06:00', max: +$('#volmax').value };
+  if (v.from === v.to) return toast('Giờ bắt đầu và kết thúc phải khác nhau');
+  if (await saveVols([...((RULES && RULES.volume) || []), v])) toast('Đã giới hạn âm lượng: tối đa ' + v.max + '%, ' + v.from + ' – ' + v.to);
+});
 $('#limitf').addEventListener('submit', async (e) => {
   e.preventDefault(); const pkg = $('#limitpkg').value; if (!pkg) return;
   if (await loadRules({ do: 'limit', pkg, minutes: +$('#limitmin').value })) toast('Đã giới hạn ' + appName(pkg) + ': ' + mins(+$('#limitmin').value) + ' mỗi ngày');

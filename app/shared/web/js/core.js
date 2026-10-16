@@ -136,7 +136,7 @@ addEventListener('resize', closePop);
 // A phone or computer can be newer than TV Setup on the TV. What needs which TV Setup is SetupNeed.kt's table; any call that
 // meets one (its error says "setup:old|missing:<feature>:<min>:<have>") asks to update or install TV Setup, with the button.
 // A page that knows before starting asks setupFor(feature). The same names as SetupNeed.name.
-const SETUP_NEEDS = { rules: 'Hẹn giờ, giờ đi ngủ, giới hạn app', draw: 'Chức năng vẽ lên TV', pic: 'Đưa ảnh lên TV' };
+const SETUP_NEEDS = { rules: 'Hẹn giờ, giờ đi ngủ, giới hạn app', draw: 'Chức năng vẽ lên TV', pic: 'Đưa ảnh lên TV', volume: 'Giới hạn âm lượng' };
 const SETUP_RE = /setup:(old|missing):(\w+):([0-9.]*):([0-9.]*)/;
 const setupSay = (m) => m[1] === 'missing' ? (SETUP_NEEDS[m[2]] || m[2]) + ' cần app TV Setup trên TV. Cài TV Setup?'
   : (SETUP_NEEDS[m[2]] || m[2]) + ' cần TV Setup ' + m[3] + ' trở lên (TV đang có ' + m[4] + '). Cập nhật TV Setup?';

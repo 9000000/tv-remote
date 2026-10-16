@@ -159,7 +159,7 @@ function scanRow(f) {
     el('div', { className: 'name' }, el('span', { textContent: f.name || f.ip }),
       el('span', { className: 'badge' + (f.remote ? ' ok' : ''), textContent: f.remote ? 'Android TV' : 'chỉ có ADB' }), f.adb ? el('span', { className: 'badge ok', textContent: 'ADB đã bật' }) : el('span', { className: 'badge', textContent: 'ADB chưa bật' }),
       el('small', { textContent: f.ip + (f.via === 'tailscale' ? ' · qua Tailscale' : ' · cùng mạng') + (f.tailscale ? ' · Tailscale ' + f.tailscale : '') })),
-    el('div', { className: 'acts' }, setLabel(el('button', { className: 'small primary', onclick: () => selectTv(f.ip) }), '✓', 'Chọn')));
+    el('div', { className: 'acts' }, setLabel(el('button', { className: 'small primary', onclick: () => selectTv(f.ip) }), '▶', 'Điều khiển')));
   row.dataset.ip = f.ip; return row;
 }
 // The scan runs on the computer; asked again every 400 ms, each TV shows up as soon as it answers instead of after the

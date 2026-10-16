@@ -42,7 +42,7 @@ internal fun MainActivity.buildSettings(): View {
 
     box.addView(head(t("NÚT ÂM LƯỢNG CỦA ĐIỆN THOẠI", "THE PHONE'S VOLUME KEYS")), gap(18))
     lateinit var vol: Button
-    val volLabel = { vol.text = (if (prefs.getBoolean("volKeysTv", true)) "✅  " else "⬜  ") + t("Chỉnh âm lượng TV khi đang mở remote", "Set the TV's volume while the remote is open") }
+    val volLabel = { vol.text = (if (prefs.getBoolean("volKeysTv", true)) "✅  " else "⬜  ") + t("Chỉnh âm lượng TV", "Set the TV's volume") }
     vol = row("") {
         prefs.edit().putBoolean("volKeysTv", !prefs.getBoolean("volKeysTv", true)).apply()
         volLabel()

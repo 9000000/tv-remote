@@ -16,6 +16,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Đổi ngôn ngữ vẫn giữ TV, tab và vị trí đang xem.
 - App điện thoại: ô nhập chữ trong các hộp thoại to và rõ hơn; nút Chia sẻ link tải app không còn bị hẹp.
 - Logo app bo góc ở mọi nơi (app, web, app máy tính, trang giới thiệu).
+- 💬 Lời nhắn lên TV: khi vẽ, bấm 💬 Chữ, gõ một câu là chữ to hiện trên TV (đặt và chỉnh cỡ như ảnh).
+- Tắt màn hình, vẫn nghe (trong Hẹn giờ tắt): màn hình TV tắt, nhạc vẫn phát; bấm phím bất kỳ, kể cả remote của TV, là màn hình bật lại.
+- 🔊 Giới hạn âm lượng (tab Tự động): nhiều khoảng giờ, mỗi khoảng một mức tối đa. Tăng quá mức thì TV tự hạ lại và báo trên màn hình. Cần TV Setup mới.
+- Tìm TV: nút mở TV là ▶ như TV đã lưu; nút cạnh ô nhập IP là "Kết nối".
 - Trang giới thiệu: ảnh xem trước khi gửi link hiện lại; thêm llms.txt, sitemap và mô tả app cho máy tìm kiếm và AI. Máy bật Giảm chuyển động: hoạt cảnh đứng ở ảnh tĩnh, có nút ▶ để xem.
 
 **English**
@@ -27,6 +31,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - FPT (or other operator) boxes with an ADB password: TV Setup opens Developer options itself to get past it.
 - Switching the language keeps the TV, tab and scroll position.
 - Phone app: text boxes in dialogs are bigger and clearer; the Share the download link button is no longer squashed.
+- 💬 A message on the TV: while drawing, press 💬 Text and type a sentence; it shows in big letters on the TV (placed and sized like a picture).
+- Screen off, keep listening (in Sleep timer): the TV's screen goes off while the music plays on; any key, the TV's own remote too, turns it back on.
+- 🔊 Volume limits (Automation tab): several times of day, each with its own highest volume. Turned up past it, the TV turns it back down and says why on screen. Needs the new TV Setup.
+- Find a TV: the button that opens a TV is ▶, as for saved TVs; the one beside the IP box says "Connect".
 - The app's logo has rounded corners everywhere (apps, web, computer app, intro page).
 - Intro page: the link preview picture is back; llms.txt, a sitemap and an app description for search engines and AI. With Reduce motion on, the animations stand on a still with a ▶ button to play them.
 

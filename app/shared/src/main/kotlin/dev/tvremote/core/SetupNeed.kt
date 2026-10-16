@@ -16,6 +16,7 @@ object SetupNeed {
         "rules" to "2.13.0",                                           // sleep timer, bedtime, app limits
         "draw" to "2.18.0",                                            // ✏️ drawing over the screen
         "pic" to "2.21.0",                                             // 🖼️ a picture over it
+        "volume" to "2.21.5",                                          // 🔊 volume limits
     )
 
     /** "setup:old:pic:2.21.0:2.20.0" or "setup:missing:draw:2.18.0:": the words every client looks for in an error. */
@@ -27,6 +28,7 @@ object SetupNeed {
         "rules" -> if (vi) "Hẹn giờ, giờ đi ngủ, giới hạn app" else "The sleep timer, bedtime and app limits"
         "draw" -> if (vi) "Vẽ lên TV" else "Drawing on the TV"
         "pic" -> if (vi) "Đưa ảnh lên TV" else "A picture on the TV"
+        "volume" -> if (vi) "Giới hạn âm lượng" else "Volume limits"
         else -> feature
     }
 

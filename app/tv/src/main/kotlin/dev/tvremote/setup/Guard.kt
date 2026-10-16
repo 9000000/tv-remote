@@ -1,6 +1,10 @@
 package dev.tvremote.setup
 
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
@@ -12,7 +16,8 @@ import java.util.Locale
 /**
  * Enforces [Rules] on the TV, from RemoteService. A check runs every few seconds to a minute (sooner when a deadline is close):
  * standby when the sleep timer ends or during bedtime (each after a minute's warning on screen, [WarnActivity]), and an app
- * closed once its minutes for the day are used up. Standby, closing apps and putting the warning over another app all need
+ * closed once its minutes for the day are used up, and the volume turned down to the highest the hour allows, the moment it
+ * goes higher (with a word on screen saying why, so nobody thinks the volume keys broke). Standby, closing apps and putting the warning over another app all need
  * the TV's own ADB, which this app holds (as for everything else it does).
  */
 internal class Guard(private val c: Context, private val adb: () -> Adb?) {
@@ -22,6 +27,8 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         fun poke() { running?.let { g -> g.ui.removeCallbacks(g.tick); g.ui.post(g.tick) } }
         /** "Turn off now" on the warning screen. */
         fun standbyNow() { running?.standby() }
+        /** The TV's volume is not its own to set (sent on to a sound bar or the TV set over HDMI): no limit can hold it. */
+        fun volumeFixed(c: Context): Boolean = (c.getSystemService(Context.AUDIO_SERVICE) as AudioManager).isVolumeFixed
     }
 
     private val ui = Handler(Looper.getMainLooper())
@@ -32,6 +39,11 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
     private var bedWarnedAt = 0L                                      // bedtime: when this turn-on was warned about, 0 when not yet
     private val nearlyWarned = HashSet<String>()                      // "pkg day": the five-minute notice was shown
     private var lastStop = HashMap<String, Long>()
+    private val audio = c.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private var volSaidAt = 0L
+    private val volume = object : BroadcastReceiver() {                // every change, from any remote: turned down at once
+        override fun onReceive(ctx: Context, i: Intent) { capVolume() }
+    }
 
     private val tick = object : Runnable {
         override fun run() {
@@ -44,9 +56,33 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         }
     }
 
-    fun start() { running = this; ui.postDelayed(tick, 5_000) }
+    fun start() {
+        running = this
+        ui.postDelayed(tick, 5_000)
+        val f = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
+        if (android.os.Build.VERSION.SDK_INT >= 33) c.registerReceiver(volume, f, Context.RECEIVER_NOT_EXPORTED) else c.registerReceiver(volume, f)
+    }
 
-    fun stop() { stopped = true; if (running === this) running = null; ui.removeCallbacks(tick) }
+    fun stop() {
+        stopped = true
+        if (running === this) running = null
+        ui.removeCallbacks(tick)
+        try { c.unregisterReceiver(volume) } catch (e: Exception) { }
+    }
+
+    /** Louder than the range allows: down to its highest, and said on screen each time (at most every 3 s, keys repeat). */
+    private fun capVolume() {
+        val cap = Rules.volumeCap(Rules.load(c), System.currentTimeMillis()) ?: return
+        if (audio.isVolumeFixed) return
+        val top = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        val most = cap.optInt("max") * top / 100
+        if (audio.getStreamVolume(AudioManager.STREAM_MUSIC) <= most) return
+        try { audio.setStreamVolume(AudioManager.STREAM_MUSIC, most, 0) } catch (e: Exception) { return }
+        val now = System.currentTimeMillis()
+        if (now - volSaidAt < 3_000) return
+        volSaidAt = now
+        say(t("🔊 Âm lượng tối đa ", "🔊 Volume at most ") + cap.optInt("max") + "% (" + cap.optString("from") + "–" + cap.optString("to") + t(", giới hạn đặt trong TV Remote)", ", a limit set in TV Remote)"))
+    }
 
     /** One look at the rules; returns how long until the next one is worth doing. */
     private fun check(): Long {
@@ -74,6 +110,12 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
             else if (now - bedWarnedAt >= 60_000) { bedWarnedAt = 0; standby() }
             next = minOf(next, 5_000)
         } else bedWarnedAt = 0
+
+        // ---- volume: a range may just have begun with the sound up
+        if ((o.optJSONArray("volume")?.length() ?: 0) > 0) {
+            ui.post { capVolume() }
+            next = minOf(next, 30_000)
+        }
 
         // ---- daily app limits, for the app on screen
         val limits = o.optJSONObject("limits")

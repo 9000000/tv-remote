@@ -56,8 +56,9 @@ The README, the code and the site always call the parts by these names:
 
 | | Phone app | TV web page | Computer app |
 |---|---|---|---|
-| Remote, see and touch the TV's picture, ✏️ draw, 🖼️ put a picture on the TV | ✓ | ✓ | ✓ |
-| ▶️ Now playing (title, seek, pause), 📋 the TV's clipboard | ✓ | ✓ | ✓ |
+| Remote, see and touch the TV's picture, ✏️ draw, 🖼️ put a picture or 💬 a message on the TV | ✓ | ✓ | ✓ |
+| ▶️ Now playing (title, seek, pause), 📋 the TV's clipboard, screen off while it keeps playing | ✓ | ✓ | ✓ |
+| 🔊 Volume limits by time of day (with the sleep timer, bedtime, app limits) | ✓ | ✓ | ✓ |
 | 🎧 Listen to the TV | ✓, with the screen off too | ✓, while the page is open | ✓, high quality |
 | Apps, Files, Health, Automation, Setup | ✓ | ✓ | ✓ |
 | *Sharpest* picture quality | | | ✓ |
@@ -213,6 +214,9 @@ Closing the window (or the ⏻ Quit button) stops the app; nothing keeps running
 - **▶️ Now playing**: the remote shows what the TV is playing (title, channel or artist); drag the bar to seek, tap to pause or skip. Needs ADB; an app that does not tell its length gets no seek bar.
 - **📋 The TV's clipboard** (*Open on the TV* → *The TV's clipboard*): see the text the TV has copied, copy it to your device, or send text to the TV and paste it where it is typing.
 - **✏️ Draw on the TV's screen** (the ✏️ next to the picture; in the phone app, *Draw on the TV* under More keys): what you draw on the picture shows on the TV at once, over every app, to show the person watching where to go. Needs TV Setup on the TV; it clears with 🗑 or goes by itself after 10 minutes.
+- **💬 A message on the TV** (the 💬 Text button while drawing): type a sentence; it shows in big letters on the TV, moved and sized like a picture.
+- **Screen off, keep listening** (*Sleep timer* → *Screen off, keep listening*): the TV's screen goes off and the music plays on. Any key, the TV's own remote too, turns the screen back on.
+- **🔊 Volume limits** (Automation tab): pick times of day and the highest volume for each, e.g. 22:00 – 06:00 at most 30%. Turned up past it, the TV turns it back down and says why on screen. Needs TV Setup; a TV whose volume is kept by an external speaker (over HDMI) cannot be limited.
 - Protected video (Netflix and the like) shows as black.
 - The TV's on-screen keyboard cannot be clicked with the mouse; type on the computer keyboard. For accented text, type in the "Keyboard" box.
 </details>
