@@ -7,10 +7,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
-- 📺 Điều khiển được TV LG (webOS) và Samsung (Tizen, từ 2016) bằng app điện thoại và app máy tính: phím, gõ chữ, mở app, Wake-on-LAN, cảnh. Việc chỉ Android TV làm được thì làm mờ, bấm vào để xem giới thiệu.
+- 🧪 Thử nghiệm: điều khiển được TV LG (webOS) và Samsung (Tizen, từ 2016) bằng app điện thoại và app máy tính: phím, gõ chữ, mở app, Wake-on-LAN, cảnh; LG thêm chỉnh âm lượng theo số và tắt màn hình (nút hẹn giờ). Việc chỉ Android TV làm được thì làm mờ, bấm vào để xem giới thiệu. Đã đối chiếu với thư viện Home Assistant dùng (aiowebostv, samsungtvws) nhưng chưa thử trên TV thật.
+- 📋 Gửi nhật ký: TV LG / Samsung làm sai thì gửi các lệnh đã gửi và câu TV trả lời (app máy tính: tab Remote, mở sẵn trang báo lỗi; app điện thoại: Giới thiệu). Không có mã ghép đôi, địa chỉ MAC hay chữ đã gõ.
 
 **English**
-- 📺 LG (webOS) and Samsung (Tizen, 2016 on) TVs work in the phone app and the computer app: keys, typing, opening apps, Wake-on-LAN, scenes. What only Android TV can do is greyed out; press it to see what it is.
+- 🧪 Beta: LG (webOS) and Samsung (Tizen, 2016 on) TVs work in the phone app and the computer app: keys, typing, opening apps, Wake-on-LAN, scenes; on LG also the volume as a number and the screen off (the sleep timer button). What only Android TV can do is greyed out; press it to see what it is. Checked against the libraries Home Assistant uses (aiowebostv, samsungtvws), not yet on a real TV.
+- 📋 Send the log: when an LG / Samsung TV gets something wrong, send what was sent and what the TV answered (computer app: the Remote tab, with a bug report opened for you; phone app: About). No pairing keys, MAC addresses or typed text.
 
 ## 0.1.0 - 2026-10-16
 

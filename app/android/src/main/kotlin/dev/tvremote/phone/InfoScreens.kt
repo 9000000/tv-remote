@@ -1,6 +1,7 @@
 package dev.tvremote.phone
 
 import android.content.Intent
+import android.os.Build
 import android.graphics.Typeface
 import android.net.Uri
 import android.view.Gravity
@@ -128,6 +129,13 @@ internal fun MainActivity.buildAbout(): View {
     box.addView(row("🔗  github.com/HoangTran0410/tv-remote") { web("https://github.com/" + Release.REPO) })
     box.addView(row("📦  " + t("Bản phát hành", "Releases")) { web("https://github.com/" + Release.REPO + "/releases") })
     box.addView(row("🐞  " + t("Báo lỗi", "Report a problem")) { web("https://github.com/" + Release.REPO + "/issues") })
+    // LG / Samsung are a beta written against libraries and fake TVs: what a real set answered is what tells the bug
+    box.addView(row("📋  " + t("Gửi nhật ký LG / Samsung", "Send the LG / Samsung log")) {
+        val log = dev.tvremote.core.WireLog.all.report("TV Remote " + version() + " (phone, Android " + Build.VERSION.RELEASE + ")",
+            basic?.takeIf { it.kind != dev.tvremote.core.Remote.Kind.ANDROID })
+        startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain")
+            .putExtra(Intent.EXTRA_SUBJECT, "TV Remote: LG / Samsung").putExtra(Intent.EXTRA_TEXT, log), null))
+    })
 
     box.addView(head(t("GHI CÔNG", "CREDITS")), gap(18))
     box.addView(row("scrcpy · Apache-2.0") { web("https://github.com/Genymobile/scrcpy") })

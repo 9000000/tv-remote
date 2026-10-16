@@ -70,11 +70,12 @@ class Lg(private val dir: File, private val host: String, private val ports: Lis
         var last: IOException? = null
         var socket: WebSocket? = null
         for ((p, tls) in ports.sortedBy { if (it.first == knownPort) 0 else 1 }) {
-            try { socket = WebSocket.open(host, p, "/", tls); port = p; secure = tls; break } catch (e: IOException) { last = e }
+            try { socket = WebSocket.open(host, p, "/", tls); port = p; secure = tls; break } catch (e: IOException) { last = e; WireLog.all.add("·", "LG $host:$p $e") }
         }
         val s = socket ?: throw last ?: IOException("no port")
         if (closed) { s.close(); throw IOException("closed") }
         ws = s
+        WireLog.all.add("·", "LG $host:$port open" + (if (secure) " (wss)" else ""))
         s.timeout(0)
         Thread({ read(s, onClosed) }, "lg-in").apply { isDaemon = true }.start()
         try {
@@ -103,6 +104,7 @@ class Lg(private val dir: File, private val host: String, private val ports: Lis
             saved.put(host, "$port $k")
             live = true
         } catch (e: Exception) {
+            WireLog.all.add("·", "LG $host pairing: $e")
             asking = false
             subs.remove(REG)
             s.close(); ws = null
@@ -148,20 +150,28 @@ class Lg(private val dir: File, private val host: String, private val ports: Lis
         try {
             while (true) {
                 val text = s.read() ?: break
+                WireLog.all.add("←", "LG $host $text")
                 val m = try { JSONObject(text) } catch (e: Exception) { continue }
                 val id = m.optString("id")
                 subs[id]?.let { f -> try { f(m) } catch (ignored: Exception) { } }
                 pending.remove(id)?.let { p -> p.got = m; p.done.countDown() }
             }
-        } catch (ignored: Exception) {
+        } catch (e: Exception) {
+            WireLog.all.add("·", "LG $host read: $e")
         }
+        WireLog.all.add("·", "LG $host closed")
         val was = live
         live = false
         for (p in pending.values) p.done.countDown()
         if (was && !closed) onClosed()
     }
 
-    private fun send(m: JSONObject) { (ws ?: throw IOException("not connected")).send(m.toString()) }
+    private fun send(m: JSONObject) {
+        val s = ws ?: throw IOException("not connected")
+        val t = m.toString()
+        WireLog.all.add("→", "LG $host $t")                          // before: the answer can come back first
+        s.send(t)
+    }
 
     /** One request and its answer's payload; null when the TV says no or does not answer in [ms]. */
     fun request(uri: String, payload: JSONObject? = null, ms: Long = 5000): JSONObject? {
@@ -214,6 +224,7 @@ class Lg(private val dir: File, private val host: String, private val ports: Lis
     }
 
     private fun button(name: String) {
+        WireLog.all.add("→", "LG $host button $name")
         try { pointer().send("type:button\nname:$name\n\n") } catch (e: IOException) {
             pointer?.close(); pointer = null
             try { pointer().send("type:button\nname:$name\n\n") } catch (ignored: IOException) { }   // once more on a fresh socket

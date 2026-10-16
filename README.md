@@ -4,7 +4,7 @@
 
 Điều khiển Android TV / Google TV (và TV LG, Samsung) từ điện thoại hoặc máy tính, đi thẳng tới TV, không qua máy chủ nào. **Tính năng, ảnh chụp và nút tải: [tvremote.pages.dev](https://tvremote.pages.dev).** README này là hướng dẫn cài đặt, xử lý lỗi và chi tiết kỹ thuật.
 
-Đã chạy thật với Sony BRAVIA (Android 9). TV hãng khác chưa thử. Samsung (Tizen) và LG (webOS) không dùng được gì, kể cả bấm phím: hai hãng này không chạy Android nên không có ADB lẫn giao thức remote của Google.
+Đã chạy thật với Sony BRAVIA (Android 9). TV hãng khác chưa thử. TV LG (webOS) và Samsung (Tizen) đang **thử nghiệm**: bấm phím, gõ chữ, mở app được, nhưng chưa thử trên TV thật (xem [TV LG và Samsung](#ba-app-và-một-trang-web)).
 
 <table>
 <tr>
@@ -69,7 +69,7 @@ Trong README, code và trang giới thiệu, các phần luôn được gọi b�
 | Cần cài gì trên máy điều khiển | app | không, hợp với iPhone | app |
 | TV LG (webOS) và Samsung (Tizen, từ 2016) | ✓ | | ✓ |
 
-**TV LG và Samsung.** App điện thoại và App máy tính điều khiển được cả TV LG (webOS) và Samsung (Tizen, từ 2016), qua cách điều khiển riêng của mỗi hãng, không cần ADB: lần đầu TV hỏi, chọn Cho phép trên TV. Làm được: phím remote, gõ chữ, mở app, mở link YouTube, Wake-on-LAN, cảnh; với LG thêm chỉnh âm lượng theo số, tắt màn hình, tìm trên YouTube. Việc cần ADB (xem và chạm hình, nghe tiếng, ứng dụng, tệp, sức khỏe, hẹn giờ, vẽ) được làm mờ; bấm vào thì app cho biết việc đó chỉ có trên Android TV / Google TV, các tab đó hiện danh sách những gì nó làm. Web của TV chỉ có trên Android TV, vì App TV chỉ chạy trên Android.
+**TV LG và Samsung.** App điện thoại và App máy tính điều khiển được cả TV LG (webOS) và Samsung (Tizen, từ 2016), qua cách điều khiển riêng của mỗi hãng, không cần ADB: lần đầu TV hỏi, chọn Cho phép trên TV. Làm được: phím remote, gõ chữ, mở app, mở link YouTube, Wake-on-LAN, cảnh; với LG thêm chỉnh âm lượng theo số, tắt màn hình, tìm trên YouTube. Việc cần ADB (xem và chạm hình, nghe tiếng, ứng dụng, tệp, sức khỏe, hẹn giờ, vẽ) được làm mờ; bấm vào thì app cho biết việc đó chỉ có trên Android TV / Google TV, các tab đó hiện danh sách những gì nó làm. Web của TV chỉ có trên Android TV, vì App TV chỉ chạy trên Android. Phần này còn **thử nghiệm**, viết theo thư viện Home Assistant dùng và TV giả, chưa thử trên TV thật: TV làm sai thì gửi nhật ký (app máy tính: nút 📋 Gửi nhật ký trên tab Remote; app điện thoại: Giới thiệu → Gửi nhật ký LG / Samsung). Nhật ký có các lệnh đã gửi và câu TV trả lời, không có mã ghép đôi, địa chỉ MAC hay chữ đã gõ.
 
 **Các phần nối với nhau thế nào.** Không có máy chủ nào ở giữa: mọi thứ đi thẳng tới TV.
 

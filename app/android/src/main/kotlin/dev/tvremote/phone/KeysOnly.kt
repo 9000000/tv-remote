@@ -17,7 +17,7 @@ import java.util.Locale
 /** What the TV at [ip] is: saved with it ("kind:<ip>"), found by the scan, or Android TV. */
 internal fun MainActivity.kindOf(ip: String): String = Remote.Kind.of(pref("kind:$ip"))
 
-private fun MainActivity.keysLine(a: Remote) = if (a.kind == Remote.Kind.ANDROID) t("chỉ bấm phím", "keys only") else "TV " + Remote.Kind.name(a.kind)
+private fun MainActivity.keysLine(a: Remote) = if (a.kind == Remote.Kind.ANDROID) t("chỉ bấm phím", "keys only") else "TV " + Remote.Kind.name(a.kind) + t(" (thử nghiệm)", " (beta)")
 
 internal fun MainActivity.refused(err: String?): Boolean {
     val e = err?.lowercase(Locale.ROOT) ?: ""

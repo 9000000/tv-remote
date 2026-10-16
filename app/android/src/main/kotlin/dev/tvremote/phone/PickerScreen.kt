@@ -192,7 +192,7 @@ private fun MainActivity.foundRow(ip: String, name: String, adb: Boolean) = row(
     (if (adb) t("ADB đã bật", "ADB on") else t("ADB chưa bật: chỉ bấm phím, app sẽ giúp bật", "ADB off: keys only, the app helps turn it on"))) { prefs.edit().remove("kind:$ip").apply(); connect(ip) }
 
 /** An LG or Samsung TV the SSDP search found: its own remote link, no ADB. */
-private fun MainActivity.foundRow(f: Ssdp.Found) = row((if (f.name.isNotEmpty()) f.name + "\n" else "") + f.ip + " · TV " + Remote.Kind.name(f.kind)) {
+private fun MainActivity.foundRow(f: Ssdp.Found) = row((if (f.name.isNotEmpty()) f.name + "\n" else "") + f.ip + " · TV " + Remote.Kind.name(f.kind) + t(" (thử nghiệm)", " (beta)")) {
     prefs.edit().putString("kind:${f.ip}", f.kind).apply(); connect(f.ip)
 }
 

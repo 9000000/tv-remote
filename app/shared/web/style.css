@@ -86,7 +86,7 @@
   button:disabled { opacity:.45; cursor:not-allowed; transform:none; }
   .kind-off, html[data-kind=lg] .adbnote, html[data-kind=samsung] .adbnote { display:none !important; }   /* LG / Samsung: what needs ADB (applyKind) */
   button[data-kind-off] { opacity:.3; cursor:help; } .tabs [data-kind-tab] { opacity:.5; } .tabs [data-kind-tab][aria-selected=true] { opacity:1; }
-  .kintro ul { margin:0; padding-left:20px; color:var(--muted); line-height:1.9; font-size:14px; } .kintro .badge { text-transform:none; letter-spacing:0; }
+  .kintro ul { margin:0; padding-left:20px; color:var(--muted); line-height:1.9; font-size:14px; } .kintro .badge { text-transform:none; letter-spacing:0; } .kintro h2 .badge { margin-left:8px; vertical-align:1px; }
   button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, a:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   .primary { background:var(--accent); color:var(--accent-ink); font-weight:700; } .primary:hover { background:var(--accent); filter:brightness(1.08); }
   .danger { color:var(--bad); } .power { color:var(--bad); font-weight:700; }

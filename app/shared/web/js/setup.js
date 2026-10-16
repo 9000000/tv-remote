@@ -159,6 +159,7 @@ function scanRow(f) {
   const row = el('div', { className: 'item', onclick: (e) => { if (!e.target.closest('button')) selectTv(f.ip, f.name, f.kind); } },
     el('div', { className: 'name' }, el('span', { textContent: f.name || f.ip }),
       el('span', { className: 'badge' + (f.remote ? ' ok' : ''), textContent: native ? 'TV ' + KIND_NAME[f.kind] : f.remote ? 'Android TV' : 'chỉ có ADB' }),
+      native ? el('span', { className: 'badge', textContent: 'thử nghiệm' }) : null,
       native ? null : f.adb ? el('span', { className: 'badge ok', textContent: 'ADB đã bật' }) : el('span', { className: 'badge', textContent: 'ADB chưa bật' }),
       el('small', { textContent: f.ip + (f.via === 'tailscale' ? ' · qua Tailscale' : ' · cùng mạng') + (f.tailscale ? ' · Tailscale ' + f.tailscale : '') })),
     el('div', { className: 'acts' }, setLabel(el('button', { className: 'small primary', onclick: () => selectTv(f.ip, f.name, f.kind) }), '▶', 'Điều khiển')));

@@ -3,6 +3,7 @@ package dev.tvremote.desktop
 import dev.tvremote.core.AdbPrompt
 import dev.tvremote.core.Atv
 import dev.tvremote.core.HttpServer
+import dev.tvremote.core.WireLog
 import dev.tvremote.core.HttpServer.Response
 import dev.tvremote.core.Remote
 import dev.tvremote.core.RemoteSteps
@@ -119,6 +120,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
         if (!post) when (r.path) {
             "/api/state" -> return state(s)
             "/api/about" -> return about(s)
+            "/api/kind/log" -> return Response.of("text/plain; charset=utf-8", WireLog.all.report("TV Remote $version (computer)", s.atv?.takeIf { native(s) }).toByteArray())
             "/api/update" -> return Response.json(updater.json())
             "/api/tvs" -> return Response.json(JSONObject().put("current", s.host).put("tvs", saved.tvs))
             "/api/discover" -> return Response.json(Discover.poll(r.query.containsKey("new")))
@@ -497,7 +499,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
             "/api/tv/remove", "/api/scenes", "/api/scene/run", "/api/fleet/do", "/api/assist", "/api/pair/start", "/api/pair/finish", "/api/shutdown",
             "/api/update")
         /** What the page reads from an LG or Samsung TV besides [OURS]. */
-        val NATIVE_TOO = setOf("/api/state", "/api/about", "/api/update", "/api/tvs", "/api/discover", "/api/setup/status", "/api/scenes", "/api/apps", "/api/app/icon", "/api/app/meta", "/api/setup/need",
+        val NATIVE_TOO = setOf("/api/state", "/api/about", "/api/kind/log", "/api/update", "/api/tvs", "/api/discover", "/api/setup/status", "/api/scenes", "/api/apps", "/api/app/icon", "/api/app/meta", "/api/setup/need",
             "/api/fleet", "/api/fleet/job", "/api/fleet/install")
         const val HD = 5                                              // Tv.QUALITY's sharpest level, the page's "Nét nhất"
         val IP = Regex("((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)")   // IPv4: what ADB and the TV's page links are written for

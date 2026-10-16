@@ -63,7 +63,7 @@ class Samsung(private val dir: File, private val host: String, private val ports
      * meanwhile; the TV gives up by itself after about 30 s). [Remote.Refused]: they chose Deny.
      */
     override fun connect(onClosed: () -> Unit) {
-        probe()?.let { d ->
+        probe().also { WireLog.all.add("←", "Samsung $host /api/v2/ " + (it ?: "no answer")) }?.let { d ->
             model = d.optString("modelName").ifEmpty { d.optString("name") }
             version = listOf(d.optString("OS"), d.optString("firmwareVersion").takeIf { it != "Unknown" } ?: "").filter { it.isNotEmpty() }.joinToString(" ")
             mac = d.optString("wifiMac").uppercase()
@@ -73,10 +73,13 @@ class Samsung(private val dir: File, private val host: String, private val ports
         val token = saved.get(host)
         var last: IOException? = null
         for ((p, tls) in ports) {
+            val path = "/api/v2/channels/samsung.remote.control?name=$name" + (if (token.isNotEmpty()) "&token=$token" else "")
             val s = try {
-                WebSocket.open(host, p, "/api/v2/channels/samsung.remote.control?name=$name" + (if (token.isNotEmpty()) "&token=$token" else ""), tls)   // 8001 ignores the token
-            } catch (e: IOException) { last = e; continue }
-            try { hello(s, onClosed); return } catch (e: Remote.Refused) { s.close(); throw e } catch (e: IOException) { s.close(); last = e }
+                WebSocket.open(host, p, path, tls)                     // 8001 ignores the token
+            } catch (e: IOException) { last = e; WireLog.all.add("·", "Samsung $host:$p $e"); continue }
+            WireLog.all.add("·", "Samsung $host:$p open $path")
+            try { hello(s, onClosed); return } catch (e: Remote.Refused) { WireLog.all.add("·", "Samsung $host refused: ${e.message}"); s.close(); throw e }
+                catch (e: IOException) { WireLog.all.add("·", "Samsung $host:$p $e"); s.close(); last = e }
         }
         throw last ?: IOException("no port")
     }
@@ -90,6 +93,7 @@ class Samsung(private val dir: File, private val host: String, private val ports
                 asking = true                                         // no answer at once: the TV is asking the person
                 continue
             } ?: throw IOException("the TV closed the connection")
+            WireLog.all.add("←", "Samsung $host $text")
             val m = try { JSONObject(text) } catch (e: Exception) { continue }
             when (m.optString("event")) {
                 "ms.channel.connect" -> {
@@ -113,6 +117,7 @@ class Samsung(private val dir: File, private val host: String, private val ports
         try {
             while (true) {
                 val text = s.read() ?: break
+                WireLog.all.add("←", "Samsung $host $text")
                 val m = try { JSONObject(text) } catch (e: Exception) { continue }
                 when (m.optString("event")) {
                     "ed.installedApp.get" -> {
@@ -128,15 +133,21 @@ class Samsung(private val dir: File, private val host: String, private val ports
                     }
                 }
             }
-        } catch (ignored: Exception) {
+        } catch (e: Exception) {
+            WireLog.all.add("·", "Samsung $host read: $e")
         }
+        WireLog.all.add("·", "Samsung $host closed")
         val was = live
         live = false
         appsWait?.countDown()
         if (was && !closed) onClosed()
     }
 
-    private fun send(m: JSONObject) { try { ws?.send(m.toString()) } catch (ignored: IOException) { } }
+    private fun send(m: JSONObject) {
+        val t = m.toString()
+        WireLog.all.add("→", "Samsung $host $t")
+        try { ws?.send(t) } catch (e: IOException) { WireLog.all.add("·", "Samsung $host send: $e") }
+    }
 
     private fun press(name: String, cmd: String) = send(JSONObject().put("method", "ms.remote.control").put("params", JSONObject()
         .put("Cmd", cmd).put("DataOfCmd", name).put("Option", "false").put("TypeOfRemote", "SendRemoteKey")))
