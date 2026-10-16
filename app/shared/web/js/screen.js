@@ -158,9 +158,9 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && scr
 setScreenPlaceholder();
 
 // ---------- tabs ----------
-let currentTab = 'remote', streamFps = 0;
+let currentTab = window.ONTV ? 'apps' : 'remote', streamFps = 0;   // on the TV itself there is no Remote tab
 function showTab(t) {
-  if (CORE === 'phone' && (t === 'remote' || !document.querySelector('[data-tab="' + t + '"]'))) t = 'apps';   // the phone app has its own remote
+  if ((CORE === 'phone' || window.ONTV) && (t === 'remote' || !document.querySelector('[data-tab="' + t + '"]'))) t = 'apps';   // the phone app has its own remote; the TV itself needs none
   currentTab = t; document.querySelector('main').classList.toggle('wide', t === 'remote' && !picking);
   document.querySelectorAll('[data-tab]').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === t));
   const off = document.querySelector('[data-tab="' + t + '"]')?.hasAttribute('data-kind-tab');   // this TV cannot: what it would do

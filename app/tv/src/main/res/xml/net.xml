@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the Manage screen (ManageActivity) loads this app's own page from 127.0.0.1 over plain HTTP; everything else stays HTTPS only -->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true"><domain includeSubdomains="false">127.0.0.1</domain></domain-config>
+</network-security-config>

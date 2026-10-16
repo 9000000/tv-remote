@@ -50,7 +50,7 @@ The README, the code and the site always call the parts by these names:
 | **Phone app** | The Android app, called *TV Remote* on the phone | `app/android` | `phone` |
 | **Computer app** | The app for Mac, Windows, Linux, called *TV Remote* there | `app/desktop` | `pc` |
 | **TV app** | The app installed on the TV, called *TV Setup* there: sleep timer, app limits, drawing, stats, Tailscale | `app/tv` | |
-| **TV web page** | The page the TV app serves on port 8765, opened from any browser after a 6-digit code | `app/tv` (`RemoteService`) | `tv` |
+| **TV web page** | The page the TV app serves on port 8765, opened from any browser after a 6-digit code; also on the TV's own screen (*Manage on this TV*, no Remote tab) | `app/tv` (`RemoteService`) | `tv` |
 
 **What each can do**
 
@@ -177,6 +177,7 @@ Works from any browser, with nothing to install on the phone or computer.
 - **iPhone:** in Safari tap Share → "Add to Home Screen" for an icon that opens like an app (opened from the icon, it asks for the pairing code once more).
 - No address to type: the TV Setup app shows a QR code for this page; scan it with the phone's camera.
 - It starts again by itself when the TV boots.
+- **No phone or computer at hand?** On the TV pick **Manage on this TV**: the Apps, Files, Health, Automation and Setup tabs right on the TV, driven with the TV's remote (Back closes / leaves). Works with the web remote turned off too.
 - On the TV, the app also offers **Optimize TV** / **Undo**, **Tailscale** (installs it and brings up its sign-in code), **Update**, turning the web remote on and off, and **Unpair all**.
 - The connection is plain HTTP, not encrypted. **Do not expose port 8765 to the Internet**; away from home, go through Tailscale.
 - It needs the TV's ADB on port 5555. Some newer Google TVs that only have pairing-code "Wireless debugging" may not work.

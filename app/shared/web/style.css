@@ -29,6 +29,11 @@
   /* One page, three cores (see core.js): the computer app ("pc"), the TV Setup app on the TV ("tv") and the phone app's
      Manage screen ("phone"). An element marked data-for is only there on the cores it names. */
   html[data-core=pc] [data-for]:not([data-for~=pc]), html[data-core=tv] [data-for]:not([data-for~=tv]), html[data-core=phone] [data-for]:not([data-for~=phone]) { display:none !important; }
+  /* the page on the TV itself (TV Setup's Manage screen, js/ontv.js): it has no remote of its own, and the focus is all there
+     is to see what OK will press, so it is drawn plainly on everything */
+  html[data-ontv] [data-tab=remote] { display:none !important; }
+  html[data-ontv] :focus { outline:3px solid var(--accent); outline-offset:2px; }
+  html[data-ontv] { scroll-padding-top:90px; }                       /* moving up, the focus lands below the sticky tabs, not under them */
   html[data-core=phone] header.top, html[data-core=phone] #ver { display:none; }   /* the app has its own title bar */
   main.locked > :not(header):not(#pair) { display:none !important; } main.locked .chips > :not(#lang) { display:none; }   /* not paired yet: only the code box */
   .pair { text-align:center; padding:28px 16px; } .pair p { max-width:420px; margin:10px auto 16px; } .pair form { max-width:320px; margin:14px auto 0; }

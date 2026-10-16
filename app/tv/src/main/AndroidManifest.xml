@@ -19,7 +19,7 @@
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <application android:label="TV Setup" android:icon="@drawable/icon" android:banner="@drawable/banner"
-        android:theme="@android:style/Theme.DeviceDefault.NoActionBar" android:allowBackup="false">
+        android:theme="@android:style/Theme.DeviceDefault.NoActionBar" android:allowBackup="false" android:networkSecurityConfig="@xml/net">
         <activity android:name=".MainActivity" android:exported="true" android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -27,6 +27,8 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- the web UI on the TV itself (RemoteService's page, let in by a pass only this process has) -->
+        <activity android:name=".ManageActivity" android:exported="false" android:process=":web" android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize" />
         <activity android:name=".PairActivity" android:exported="true" android:excludeFromRecents="true" />
         <!-- the sleep timer, bedtime and app limits warn over whatever is on screen; started through the TV's ADB (Guard.kt) -->
         <activity android:name=".WarnActivity" android:exported="true" android:excludeFromRecents="true" android:launchMode="singleTop"

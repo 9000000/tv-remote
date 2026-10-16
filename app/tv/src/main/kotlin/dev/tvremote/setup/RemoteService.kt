@@ -81,6 +81,13 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 .flatMap { java.util.Collections.list(it.inetAddresses) }.firstOrNull { it is java.net.Inet4Address && it.isSiteLocalAddress }?.hostAddress ?: ""
         } catch (e: Exception) { "" }
 
+        /**
+         * The pass of the Manage screen on the TV itself (ManageActivity): made anew each time TV Setup starts, kept in its
+         * memory only, and taken only from 127.0.0.1, so neither another app on the TV nor a device on the network has it.
+         */
+        val selfPass: String = ByteArray(24).also { SecureRandom().nextBytes(it) }.joinToString("") { String.format("%02x", it) }
+        const val SELF_COOKIE = COOKIE
+
         fun pairingCode(): String? { val c = code; return if (c != null && System.currentTimeMillis() < codeUntil) c else null }
         fun cancelPairing() { code = null }
         fun isRunning(): Boolean = running != null
@@ -118,6 +125,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         private const val REST_MS = 3 * 60 * 1000L
         private fun ok(): HttpServer.Response = HttpServer.Response.ok()
     }
+
+    private val ME = Paired.Entry("tv", "", "TV", "127.0.0.1", 0L, 0L, "tv", false)   // the Manage screen on the TV: never in the list
 
     private val ui = Handler(Looper.getMainLooper())
     private val random = SecureRandom()
@@ -175,6 +184,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         manage?.allowed = { fp ->                                      // whoever is at the TV sees that a device was let in
             ui.post { android.widget.Toast.makeText(this, (if (java.util.Locale.getDefault().language == "vi") "Đã cho phép gỡ lỗi USB cho một thiết bị đã ghép\n" else "USB debugging allowed for a paired device\n") + fp, android.widget.Toast.LENGTH_LONG).show() }
         }
+        if (!enabled(this)) try { server.start(PORT, true) } catch (e: Exception) { }   // the web remote is off: only the Manage screen on the TV
         if (enabled(this)) {
             try { server.start(PORT, false) } catch (e: Exception) { adbState = "error"; serving = false }
             Thread({                                                  // the first time this makes a key: a few seconds on a slow TV
@@ -346,6 +356,10 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         if (r.path == "/api/pair/invite" && r.method == "POST") return pairInvite(r)
         // a pass made over TLS is only taken over TLS; the Secure cookie never comes over HTTP anyway
         var token = if (r.tls) r.cookie(COOKIE_TLS) else ""
+        if (!r.tls && r.peer == "127.0.0.1" && MessageDigest.isEqual(r.cookie(COOKIE).toByteArray(), selfPass.toByteArray())) {
+            inUse()
+            return route(r, host, ME)
+        }
         var hit = Paired.check(this, token, r.tls)
         if (hit == null) { token = r.cookie(COOKIE); hit = Paired.check(this, token, r.tls) }
         if (hit == null) return HttpServer.Response.json(401, JSONObject().put("error", "not paired").put("name", Build.MODEL))

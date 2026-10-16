@@ -50,7 +50,7 @@ Trong README, code và trang giới thiệu, các phần luôn được gọi b�
 | **App điện thoại** | App Android, tên trên máy là *TV Remote* | `app/android` | `phone` |
 | **App máy tính** | App cho Mac, Windows, Linux, tên trên máy là *TV Remote* | `app/desktop` | `pc` |
 | **App TV** | App cài trên TV, tên trên TV là *TV Setup*: hẹn giờ, giới hạn app, vẽ, thống kê, Tailscale | `app/tv` | |
-| **Web của TV** | Trang web App TV phát ra ở cổng 8765, mở từ trình duyệt nào cũng được sau khi nhập mã 6 số | `app/tv` (`RemoteService`) | `tv` |
+| **Web của TV** | Trang web App TV phát ra ở cổng 8765, mở từ trình duyệt nào cũng được sau khi nhập mã 6 số; cũng hiện ngay trên màn hình TV (*Quản lý trên TV*, không có tab Remote) | `app/tv` (`RemoteService`) | `tv` |
 
 **Mỗi nơi làm được gì**
 
@@ -177,6 +177,7 @@ Dùng được từ mọi trình duyệt, không cần cài gì trên điện th
 - **iPhone:** trong Safari bấm Chia sẻ → "Thêm vào MH chính" để có biểu tượng như một app (mở từ biểu tượng thì nhập mã ghép thêm một lần).
 - Không cần gõ địa chỉ: app TV Setup hiện mã QR trỏ tới trang này, quét bằng camera điện thoại là mở.
 - Trang tự chạy lại khi TV khởi động.
+- **Không có điện thoại hay máy tính?** Trên TV chọn **Quản lý trên TV**: các tab Ứng dụng, Tệp, Sức khỏe, Tự động, Thiết lập hiện ngay trên TV, dùng remote của TV để chọn (Back để đóng / thoát). Chạy được cả khi đã tắt remote qua web.
 - Trên TV, app còn có: **Tối ưu TV** / **Hoàn tác**, **Tailscale** (tự cài và mở mã đăng nhập), **Cập nhật**, bật/tắt remote qua web, **Hủy ghép** (mọi thiết bị).
 - Kết nối là HTTP thường, không mã hóa. **Đừng mở cổng 8765 ra Internet**; ở ngoài nhà hãy đi qua Tailscale.
 - Cần TV mở ADB ở cổng 5555. Một số Google TV đời mới chỉ có "Gỡ lỗi không dây" kiểu ghép mã có thể không dùng được.

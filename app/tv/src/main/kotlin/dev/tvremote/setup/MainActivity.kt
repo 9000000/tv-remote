@@ -193,6 +193,12 @@ class MainActivity : Activity() {
             updateTile,
             Tile(R.drawable.ic_code, t("Gỡ lỗi ADB", "Debugging"), t("Tùy chọn nhà phát triển", "Developer options")) { debugMenu() },
             Tile(R.drawable.ic_refresh, t("Kết nối lại", "Reconnect"), t("ADB của TV", "The TV's ADB")) { connect() })
+        // the web UI right here, for when no phone or computer is at hand (ManageActivity): first, as it does most
+        val manage = Tile(R.drawable.ic_apps, t("Quản lý trên TV", "Manage on this TV"), t("Ứng dụng, tệp, sức khỏe, tự động: không cần điện thoại", "Apps, files, health, automation: no phone needed")) {
+            RemoteService.start(this)                                 // serves 127.0.0.1 even with the web remote off
+            startActivity(android.content.Intent(this, ManageActivity::class.java).putExtra(ManageActivity.PASS, RemoteService.selfPass))
+        }
+        left.addView(manage.view, LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(10) })
         for (row in tiles.chunked(if (phone) 2 else 3)) {
             val r = LinearLayout(this)
             r.clipChildren = false

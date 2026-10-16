@@ -465,7 +465,7 @@ $('#pairf').addEventListener('submit', async (e) => {
 function homeHint() {
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   let seen = false; try { seen = !!localStorage.getItem('homehint'); } catch {}
-  if (CORE !== 'tv' || standalone || seen || !matchMedia('(pointer:coarse)').matches) return;
+  if (CORE !== 'tv' || window.ONTV || standalone || seen || !matchMedia('(pointer:coarse)').matches) return;
   const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   $('#homehow').textContent = ios ? 'Trong Safari: bấm nút Chia sẻ (ô vuông có mũi tên lên) → “Thêm vào MH chính”. Mở từ biểu tượng đó, trang hỏi mã ghép một lần nữa (iPhone giữ dữ liệu riêng cho nó).'
     : 'Trong Chrome: bấm menu ⋮ → “Thêm vào màn hình chính”. Lần sau mở thẳng từ biểu tượng, như một app.';

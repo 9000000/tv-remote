@@ -1,5 +1,8 @@
 // Light or dark: the system's choice unless the viewer picked one (Settings), or the phone app says which its own screens
 // use (?theme=, like ?lang=). Loaded in <head>, before the page is drawn, so it never flashes the other theme first.
+// TV Setup's Manage screen on the TV itself (ManageActivity) opens the page with ?ontv=1: no Remote tab, D-pad focus (js/ontv.js)
+window.ONTV = /[?&]ontv=1(&|$)/.test(location.search);
+if (window.ONTV) document.documentElement.dataset.ontv = '1';
 (() => {
   let stored = null;
   try { stored = localStorage.getItem('theme'); } catch {}

@@ -164,7 +164,7 @@ $('#wake').addEventListener('click', async () => {
 const keymap = { ArrowUp:'UP', ArrowDown:'DOWN', ArrowLeft:'LEFT', ArrowRight:'RIGHT', Escape:'BACK', Home:'HOME' };
 const typingHere = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
 document.addEventListener('keydown', (e) => {
-  if (currentTab !== 'remote' || picking || typingHere() || e.metaKey || e.ctrlKey || e.altKey || e.isComposing || $('#preview').open || $('#about').open || $('#assist').open || $('#ts').open) return;
+  if (window.ONTV || currentTab !== 'remote' || picking || typingHere() || e.metaKey || e.ctrlKey || e.altKey || e.isComposing || $('#preview').open || $('#about').open || $('#assist').open || $('#ts').open) return;
   const onButton = ['BUTTON', 'SUMMARY', 'A'].includes(document.activeElement.tagName);
   if (onButton && (e.key === 'Enter' || e.key === ' ' || e.key === 'Tab')) return;   // keyboard users still operate the page
   if (e.key === 'Escape' && document.fullscreenElement) return;       // let Esc leave fullscreen
@@ -177,7 +177,7 @@ document.addEventListener('keydown', (e) => {
   else if (e.key.length === 1) { e.preventDefault(); queue('/api/type', { text: e.key }); }
 });
 document.addEventListener('paste', (e) => {                           // Cmd+V anywhere on the Remote tab pastes onto the TV
-  if (currentTab !== 'remote' || typingHere() || !(ADB.state === 'ready' || NATIVE() && can('text'))) return;
+  if (window.ONTV || currentTab !== 'remote' || typingHere() || !(ADB.state === 'ready' || NATIVE() && can('text'))) return;
   const t = (e.clipboardData || window.clipboardData).getData('text'); if (t) { e.preventDefault(); queue('/api/type', { text: t.slice(0, 500) }); }
 });
 

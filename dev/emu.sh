@@ -86,7 +86,8 @@ start() {
   local busy; busy="$(running $TV_PORT)"
   if [ -n "$busy" ] && ! is_tv "$busy"; then echo "emulator-$TV_PORT is not a TV: stop it (dev/emu.sh stop) so the TV gets that port"; exit 1; fi
   local secure=(); [ "${SECURE:-1}" = 1 ] && secure=(-prop ro.adb.secure=1)   # the real "Allow USB debugging?" for the phone's key
-  boot "$TV_AVD" $TV_PORT ${secure[@]+"${secure[@]}"}
+  # 2 GB like most Google TVs: with 1.5 the TV swaps itself stiff once TV Setup's Manage screen (a WebView) is open
+  boot "$TV_AVD" $TV_PORT -memory 2048 ${secure[@]+"${secure[@]}"}
   boot "$PHONE_AVD" $PHONE_PORT
 }
 
