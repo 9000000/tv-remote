@@ -234,6 +234,7 @@
   .item .name { flex:1 1 170px; min-width:0; overflow-wrap:anywhere; font-size:14px; } .item .name small { display:block; color:var(--muted); font-size:12px; }
   .item .name .badges { display:flex; flex-wrap:wrap; gap:4px; margin:3px 0 2px; } .item .name .badges .badge { margin-left:0; }
   .item .acts { display:flex; gap:6px; margin-left:auto; }
+  #procs .item { flex-wrap:nowrap; } #procs .item .name { flex-basis:0; }   /* one short act (Stop, Must keep): it fits beside even a wide tile */
   .item.click { cursor:pointer; border-radius:8px; } .item.click:hover .name > span { color:var(--accent-text); }
   .ficon { width:40px; height:40px; border-radius:10px; background:var(--btn); display:flex; align-items:center; justify-content:center; font-size:20px; flex:none; }
   .ficon.dir { background:var(--warn-bg); }
@@ -261,6 +262,7 @@
   .aboutbox { max-width:480px; margin:0; } .aboutbox p { font-size:14px; line-height:1.5; }   /* every part a .group: one left edge */
   .aboutbox .qrs { margin:0; } .aboutbox a { color:var(--accent-text); }
   fieldset#kbd { border:0; padding:0; margin:0; min-width:0; } fieldset#kbd:disabled { opacity:.4; pointer-events:none; }
+  .share .places button { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:8px 12px; border-radius:14px; } .share .places .ui-ic { margin:0; }
   .qrs { display:flex; gap:14px; flex-wrap:wrap; margin:12px 0; } .qr { flex:1; min-width:150px; text-align:center; font-size:12.5px; line-height:1.4; } .qr svg { border-radius:8px; display:block; margin:0 auto 6px; max-width:100%; height:auto; }
   .qr b { display:block; font-size:13.5px; } .qr a { overflow-wrap:anywhere; }   /* breaks only where the line ends, not every few letters */
   .assistbox { width:min(560px, 94vw); margin:0; max-height:90vh; overflow:auto; } .assistbox h2 { text-transform:none; letter-spacing:0; font-size:17px; }
@@ -355,6 +357,8 @@
   .state { font-size:16px; font-weight:600; margin:0 0 10px; } .state:empty { display:none; } #sleepstate.on { color:var(--accent-text); }
   .check { display:flex; gap:8px; align-items:center; font-size:14px; cursor:pointer; }
   .timerow { display:flex; gap:10px; flex-wrap:wrap; align-items:center; font-size:14px; } form > .timerow + .line { margin-top:10px; }
+  .smallbox { width:min(400px, 94vw); } .dlgform { display:flex; flex-direction:column; gap:12px; }   /* ＋ Thêm of a rule card: its few fields, one per line */
+  .dlgform :is(select, input[type=time], button) { min-height:var(--ctl); } .dlgform .timerow { flex-wrap:nowrap; } .dlgform .timerow label { flex:1; display:flex; align-items:center; gap:8px; min-width:0; } .dlgform .timerow input { flex:1; min-width:0; }
   input[type=time], input[type=number] { font:inherit; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:0 10px; min-height:var(--ctl); }
   input[type=number] { width:84px; }
   #limitf select { flex:1; min-width:0; } #limitf select#limitmin { flex:none; }
@@ -411,8 +415,8 @@
 
   /* One size per kind of control, in every tab but the remote (whose keys are made to be hit without looking):
      a field and the button beside it --ctl, a card's own actions .small (--ctl-sm), a choice among several a chip (--chip). */
-  .panel:not([data-panel=remote]) :is(button, select, input[type=text], input:not([type]), input[type=url], input[type=search], input[type=time]):not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.scene):not(.drop):not(.crumbs button) { min-height:var(--ctl); }
-  .panel:not([data-panel=remote]) button:not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.scene):not(.crumbs button) { font-size:14px; padding:0 16px; }
+  .panel:not([data-panel=remote]) :is(button, select, input[type=text], input:not([type]), input[type=url], input[type=search], input[type=time]):not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.scene):not(.drop):not(.st-key):not(.crumbs button) { min-height:var(--ctl); }
+  .panel:not([data-panel=remote]) button:not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.scene):not(.st-key):not(.crumbs button) { font-size:14px; padding:0 16px; }
   .panel:not([data-panel=remote]) select { font-size:14px; padding:0 10px; }
   .panel > div:empty { display:none; }                                /* an empty slot (no ADB banner, nothing to set up) leaves no gap */
   details.card > summary { font-size:14px; font-weight:600; cursor:pointer; }   /* every fold-out card reads the same */

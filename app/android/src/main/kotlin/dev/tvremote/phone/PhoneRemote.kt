@@ -78,9 +78,9 @@ internal fun MainActivity.greyRows() {
 }
 
 /** A row of the remote's keys from remote.json: one icon button each, the key held / tapped like the hand-made ones, or the action run. */
-internal fun MainActivity.remoteRow(name: String, index: Int, height: Int): LinearLayout {
+internal fun MainActivity.remoteRow(name: String, index: Int, height: Int, minKeys: Int = 4): LinearLayout {
     val row = LinearLayout(this)
-    row.weightSum = maxOf(4f, remoteSpec().rows[name]!![index].size.toFloat())   // a short row keeps the others' key width
+    row.weightSum = maxOf(minKeys.toFloat(), remoteSpec().rows[name]!![index].size.toFloat())   // a short row keeps the others' key width
     remoteSpec().rows[name]!![index].forEachIndexed { i, e ->
         val b = icon("@" + e.icon, t(e.vi, e.en), BTN)
         val action = e.action

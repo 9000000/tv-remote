@@ -114,6 +114,9 @@ async function saveBeds(list, on = list.length > 0) {
   if (r && !r.bedtime.on) toast('Đã tắt giờ đi ngủ');
   return r;
 }
+// ＋ Thêm opens its form in a dialog: the cards keep to what is set
+document.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => $('#' + b.dataset.open).showModal()));
+document.querySelectorAll('dialog [data-close]').forEach((b) => b.addEventListener('click', () => b.closest('dialog').close()));
 $('#bedf').addEventListener('submit', async (e) => {
   e.preventDefault();
   const v = { from: $('#bedfrom').value || '22:00', to: $('#bedto').value || '06:30' };
@@ -121,7 +124,7 @@ $('#bedf').addEventListener('submit', async (e) => {
   const b = (RULES && RULES.bedtime) || {};
   const keep = b.on ? bedRanges() : [];                                // turned off, the old ranges are not wanted back
   if (keep.length && !b.ranges && !await setupFor('bedtimes')) return;
-  if (await saveBeds([...keep, v])) toast('Đã thêm giờ đi ngủ: ' + v.from + ' – ' + v.to);
+  if (await saveBeds([...keep, v])) $('#beddlg').close(), toast('Đã thêm giờ đi ngủ: ' + v.from + ' – ' + v.to);
 });
 $('#bedon').addEventListener('change', async () => {
   const list = bedRanges().length ? bedRanges() : [{ from: $('#bedfrom').value || '22:00', to: $('#bedto').value || '06:30' }];
@@ -141,11 +144,11 @@ $('#volf').addEventListener('submit', async (e) => {
   e.preventDefault();
   const v = { from: $('#volfrom').value || '22:00', to: $('#volto').value || '06:00', max: +$('#volmax').value };
   if (v.from === v.to) return toast('Giờ bắt đầu và kết thúc phải khác nhau');
-  if (await saveVols([...((RULES && RULES.volume) || []), v])) toast('Đã giới hạn âm lượng: tối đa ' + v.max + '%, ' + v.from + ' – ' + v.to);
+  if (await saveVols([...((RULES && RULES.volume) || []), v])) $('#voldlg').close(), toast('Đã giới hạn âm lượng: tối đa ' + v.max + '%, ' + v.from + ' – ' + v.to);
 });
 $('#limitf').addEventListener('submit', async (e) => {
   e.preventDefault(); const pkg = $('#limitpkg').value; if (!pkg) return;
-  if (await loadRules({ do: 'limit', pkg, minutes: +$('#limitmin').value })) toast('Đã giới hạn ' + appName(pkg) + ': ' + mins(+$('#limitmin').value) + ' mỗi ngày');
+  if (await loadRules({ do: 'limit', pkg, minutes: +$('#limitmin').value })) $('#limitdlg').close(), toast('Đã giới hạn ' + appName(pkg) + ': ' + mins(+$('#limitmin').value) + ' mỗi ngày');
 });
 
 // the apps to choose from: the ones with an icon on the TV's home screen

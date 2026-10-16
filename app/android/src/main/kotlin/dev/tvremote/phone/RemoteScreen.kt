@@ -274,12 +274,12 @@ internal fun MainActivity.buildRemote() {
     sp2.gravity = Gravity.CENTER_HORIZONTAL
     sp2.topMargin = dp(8)
     controls.addView(swap, sp2)
-    controls.addView(remoteRow("nav", 0, 58), gap(16))
+    controls.addView(remoteRow("nav", 0, 58, 0), gap(16))                    // Back, Home, Menu across the width
     // the same rows, in the same order, as the two web remotes: remote.json
     // Volume on the left, channels on the right, each one tall bar for the thumb; the media keys between them.
     // The same block, in the same order, as the two web remotes.
     val mid = col()
-    for (i in remoteSpec().rows["media"]!!.indices) { val row = remoteRow("media", i, 58); if (i == 0) mid.addView(row) else mid.addView(row, gap(8)) }
+    for (i in remoteSpec().rows["media"]!!.indices) { val row = remoteRow("media", i, 58, 0); if (i == 0) mid.addView(row) else mid.addView(row, gap(8)) }   // two keys across the middle, not half of it
     val cluster = LinearLayout(this)
     cluster.addView(pill("Vol", "@plus", 24, t("Tăng âm lượng", "Volume up"), "@minus", 25, t("Giảm âm lượng", "Volume down")), LinearLayout.LayoutParams(0, -1, 1f))
     val mp = LinearLayout.LayoutParams(0, -2, 2.4f)

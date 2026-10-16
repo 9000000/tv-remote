@@ -277,24 +277,21 @@
         <div class="actions" id="sleepacts"></div>
       </section>
       <section class="card">
-        <h2>🌙 Giờ đi ngủ</h2>
+        <div class="card-head"><h2>🌙 Giờ đi ngủ</h2><button class="small primary" data-open="beddlg">＋ Thêm</button></div>
         <p class="note">Bật TV trong giờ này thì 1 phút sau TV tự tắt.</p>
         <label class="check"><input type="checkbox" id="bedon"> Bật giờ đi ngủ</label>
         <div class="list" id="beds"></div>
-        <form id="bedf"><div class="timerow"><label>Từ <input type="time" id="bedfrom" value="22:00"></label><label>đến <input type="time" id="bedto" value="06:30"></label><button class="primary">＋ Thêm</button></div></form>
         <p class="state" id="bedstate"></p>
         <div class="actions" id="bedacts"></div>
       </section>
       <section class="card">
-        <h2>⏳ Giới hạn app mỗi ngày</h2>
+        <div class="card-head"><h2>⏳ Giới hạn app mỗi ngày</h2><button class="small primary" data-open="limitdlg">＋ Thêm</button></div>
         <div class="list" id="limits"></div>
-        <form class="line" id="limitf"><select id="limitpkg" aria-label="App"></select><select id="limitmin" aria-label="Số phút mỗi ngày"><option value="30">30 phút</option><option value="60" selected>1 giờ</option><option value="90">1 giờ 30</option><option value="120">2 giờ</option><option value="180">3 giờ</option><option value="240">4 giờ</option></select><button class="primary">＋ Thêm</button></form>
       </section>
       <section class="card">
-        <h2>🔊 Giới hạn âm lượng</h2>
+        <div class="card-head"><h2>🔊 Giới hạn âm lượng</h2><button class="small primary" data-open="voldlg">＋ Thêm</button></div>
         <div class="list" id="vols"></div>
         <p class="state" id="volstate"></p>
-        <form id="volf"><div class="timerow"><label>Từ <input type="time" id="volfrom" value="22:00"></label><label>đến <input type="time" id="volto" value="06:00"></label></div><div class="line"><select id="volmax" aria-label="Âm lượng tối đa"><option value="10">10%</option><option value="20">20%</option><option value="30" selected>30%</option><option value="40">40%</option><option value="50">50%</option><option value="60">60%</option><option value="70">70%</option><option value="80">80%</option><option value="90">90%</option></select><button class="primary">＋ Thêm</button></div></form>
       </section>
       <section class="card">
         <h2>🧹 Báo khi RAM đầy</h2>
@@ -413,6 +410,15 @@
   <div class="card-head"><h2>⚡ Tối ưu TV</h2><button class="small iconbtn" id="optclose" title="Đóng" aria-label="Đóng">✕</button></div>
   <div id="optbody" class="optbox"></div>
   <div class="actions"><button class="primary" id="optgo">⚡ Chạy tối ưu</button><button id="optcancel">Hủy</button></div>
+</div></dialog>
+<dialog id="beddlg"><div class="card assistbox smallbox"><div class="card-head"><h2>🌙 Thêm giờ đi ngủ</h2><button class="small iconbtn" data-close title="Đóng" aria-label="Đóng">✕</button></div>
+  <form class="dlgform" id="bedf"><div class="timerow"><label>Từ <input type="time" id="bedfrom" value="22:00"></label><label>đến <input type="time" id="bedto" value="06:30"></label></div><div class="actions"><button class="primary">＋ Thêm</button></div></form>
+</div></dialog>
+<dialog id="limitdlg"><div class="card assistbox smallbox"><div class="card-head"><h2>⏳ Thêm giới hạn app</h2><button class="small iconbtn" data-close title="Đóng" aria-label="Đóng">✕</button></div>
+  <form class="dlgform" id="limitf"><select id="limitpkg" aria-label="App"></select><select id="limitmin" aria-label="Số phút mỗi ngày"><option value="30">30 phút</option><option value="60" selected>1 giờ</option><option value="90">1 giờ 30</option><option value="120">2 giờ</option><option value="180">3 giờ</option><option value="240">4 giờ</option></select><div class="actions"><button class="primary">＋ Thêm</button></div></form>
+</div></dialog>
+<dialog id="voldlg"><div class="card assistbox smallbox"><div class="card-head"><h2>🔊 Thêm giới hạn âm lượng</h2><button class="small iconbtn" data-close title="Đóng" aria-label="Đóng">✕</button></div>
+  <form class="dlgform" id="volf"><div class="timerow"><label>Từ <input type="time" id="volfrom" value="22:00"></label><label>đến <input type="time" id="volto" value="06:00"></label></div><select id="volmax" aria-label="Âm lượng tối đa"><option value="10">10%</option><option value="20">20%</option><option value="30" selected>30%</option><option value="40">40%</option><option value="50">50%</option><option value="60">60%</option><option value="70">70%</option><option value="80">80%</option><option value="90">90%</option></select><div class="actions"><button class="primary">＋ Thêm</button></div></form>
 </div></dialog>
 <dialog id="scenedlg"><div class="card assistbox">
   <div class="card-head"><h2 id="scenetitle">🎬 Cảnh</h2><button class="small iconbtn" id="sceneclose" title="Đóng" aria-label="Đóng">✕</button></div>

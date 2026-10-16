@@ -59,3 +59,10 @@ test('a title or a tab starting with an emoji has an icon for it', () => {
     .map((m) => (m[2] ?? m[3] ?? '').match(lead)?.[1]).filter((e) => e && !known.has(e) && !known.has(e.replace('️', '')));
   assert.deepEqual([...new Set(bad)], [], 'add it to ICON in js/ui.js (and its path to dev/gen_icons.py)');
 });
+
+test('the chart legend keeps its small keys', () => {
+  // .st-key is a button only to be pressed: the tabs' rule that sizes every button must pass it by, or the legend swells
+  const rules = css.split('}').filter((r) => /\.panel:not\(\[data-panel=remote\]\)[^{]*button/.test(r) && /min-height:var\(--ctl\)|padding:0 16px/.test(r));
+  assert.ok(rules.length >= 2);
+  for (const r of rules) assert.match(r, /:not\(\.st-key\)/, r.slice(0, 80));
+});

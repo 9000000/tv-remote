@@ -77,30 +77,40 @@ const qrBlock = (title, note, link, hide) => { const s = qrSvg(link, 170); retur
 // The invite is one-time and lasts ten minutes (Invite.kt); without TV Setup (or an older one) only the app's QR is shown.
 // It carries what the one who scans may do (Scope.kt in TV Setup); picking another makes a new QR, as one invite is out at a time.
 const SCOPE_WORDS = {
-  full: ['Toàn quyền', 'Như chủ TV: cả Quản lý, cài app, tệp, chia sẻ'],
-  remote: ['Chỉ remote', 'Bấm phím, gõ chữ, xem hình, mở app; không vào được Quản lý'],
-  view: ['Chỉ xem', 'Xem hình và bài đang phát, không bấm được gì'],
+  full: ['🛡️ Toàn quyền', 'Như chủ TV: cả Quản lý, cài app, tệp, chia sẻ'],
+  remote: ['🎮 Chỉ remote', 'Bấm phím, gõ chữ, xem hình, mở app; không vào được Quản lý'],
+  view: ['👁️ Chỉ xem', 'Xem hình và bài đang phát, không bấm được gì'],
 };
 const scopeChips = (now, fn) => UI.chips(Object.keys(SCOPE_WORDS).map((k) => ({ label: SCOPE_WORDS[k][0], title: SCOPE_WORDS[k][1], on: k === now, fn: () => fn(k) })));
+// two tabs: the TV (a one-time QR, with what the scanner may do) and the app (the APK's QR), as on the phone (Share.kt)
 async function shareDialog() {
   let scope = 'remote';                                               // what a guest on the sofa needs; the owner can pick more
   const r = await api('/api/share', { scope }) || {};
-  const qrs = el('div', { className: 'qrs' }), pick = el('div');
+  const qr = el('div', { className: 'qrs' }), pick = el('div');
   const warn = { tailscale: 'Máy này đang nối TV qua Tailscale: điện thoại quét phải ở cùng Wi-Fi với TV.', tailscale_only: 'TV không có địa chỉ Wi-Fi: điện thoại quét cần bật Tailscale.' }[r.warn];
-  const d = el('dialog', { className: 'ask share' }, el('div', { className: 'card' },
-    UI.head('📲 Chia sẻ', el('button', { className: 'small iconbtn', textContent: '✕', title: 'Đóng', 'aria-label': 'Đóng', onclick: () => d.close() })),
+  const tv = el('div', { className: 'sharetab' },
     warn ? UI.warn(warn) : null,
     r.setup === 'missing' ? UI.note('TV chưa có TV Setup: chỉ chia sẻ được app.') : null,
     r.setup === 'old' ? UI.note('Cập nhật TV Setup để chia sẻ remote.') : null,
     r.setup === 'old' ? UI.actions(UI.btn('⬆️ Cập nhật TV Setup', () => { d.close(); return updateSetup(); }, 'small')) : null,
-    r.url ? pick : null, qrs));
-  const draw = (url) => qrs.replaceChildren(...[url ? qrBlock(scope === 'view' ? '🌐 Xem TV' : '🌐 Mở remote', scope === 'view' ? 'Quét để xem TV này, không cần mã. Dùng 1 lần, trong 10 phút.'
-    : 'Quét để điều khiển TV này, không cần mã. Dùng 1 lần, trong 10 phút.', url, true) : null, qrBlock('📱 App Android', 'Quét để tải app.', APP_APK)].filter(Boolean));
+    r.url ? UI.note('Người quét được làm gì') : null, r.url ? pick : null, qr);
+  const app = el('div', { className: 'sharetab', hidden: true }, el('div', { className: 'qrs' }, qrBlock('📱 App Android', 'Quét để tải app.', APP_APK)));
+  const tabs = el('div', { className: 'seg' });
+  const show = (k) => {
+    tabs.replaceChildren(...[['tv', '📺 Chia sẻ TV'], ['app', '📱 Chia sẻ app']].map(([id, label]) =>
+      el('button', { className: id === k ? 'on' : '', textContent: label, onclick: () => show(id) })));
+    tv.hidden = k !== 'tv'; app.hidden = k !== 'app';
+  };
+  const d = el('dialog', { className: 'ask share' }, el('div', { className: 'card' },
+    UI.head('📲 Chia sẻ', el('button', { className: 'small iconbtn', textContent: '✕', title: 'Đóng', 'aria-label': 'Đóng', onclick: () => d.close() })),
+    tabs, tv, app));
+  const draw = (url) => qr.replaceChildren(...[url ? qrBlock(scope === 'view' ? '🌐 Xem TV' : '🌐 Mở remote', scope === 'view' ? 'Quét để xem TV này, không cần mã. Dùng 1 lần, trong 10 phút.'
+    : 'Quét để điều khiển TV này, không cần mã. Dùng 1 lần, trong 10 phút.', url, true) : null].filter(Boolean));
   const choose = async (k) => {
     if (k === scope) return; scope = k; pick.replaceChildren(scopeChips(scope, choose));
     const n = await api('/api/share', { scope }); draw(n && n.url);   // on a failure no QR rather than the last one under the wrong choice
   };
-  pick.replaceChildren(scopeChips(scope, choose)); draw(r.url);
+  pick.replaceChildren(scopeChips(scope, choose)); draw(r.url); show('tv');
   d.addEventListener('close', () => d.remove());
   document.body.append(d); d.showModal();
 }

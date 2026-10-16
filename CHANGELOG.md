@@ -30,6 +30,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Ghép bằng mã không còn bị một trình duyệt chậm chặn lại.
 - 💻 App máy tính: mỗi lần mở có một khóa mới, cửa sổ app và trình duyệt tự mang theo (không phải gõ gì); chương trình khác trên máy không điều khiển TV được nữa.
 - 📱 App điện thoại: hỏi “Gửi lên TV?” trước khi gửi tệp hay đường link mà app khác chia sẻ sang.
+- Giờ đi ngủ, giới hạn app, giới hạn âm lượng: nút ＋ Thêm mở một hộp nhỏ để chọn giờ và mức, không còn bày sẵn cả form trên thẻ.
+- 📲 Chia sẻ có hai tab, Chia sẻ TV (chọn quyền, nút quyền có icon) và Chia sẻ app, trên cả app điện thoại và trang web.
+- App đang chạy: chip 🔒 Cần giữ không còn rớt xuống dòng; các nút chú thích của biểu đồ CPU / RAM / bộ nhớ nhỏ lại như cũ.
+- 📱 App điện thoại: phím media và hàng Quay lại / Home / Menu trải hết chiều ngang; hình TV cao tối đa nửa màn hình.
 **English**
 - The tabs lay their cards out like a gallery: each card sits right under the one above it in its column, no holes; up to 3 columns on wide screens (Health, Automation), and a wider page. Switching language no longer flashes the Remote tab before going back to the tab on screen.
 - 📱 Health → Running apps: which apps run, in the background too, how much memory each takes, and a Stop button for each. Only apps the user installed or with a tile on the home screen can be stopped; the home screen, keyboard, Android, TV Remote, TV Setup and Tailscale are locked (🔒 Must keep), so nothing vital is stopped by mistake.
@@ -54,6 +58,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Pairing by code is no longer held up by a slow browser.
 - 💻 Computer app: a new key at each start, carried by its window and the browser it opens (nothing to type); other programs on the computer can no longer drive the TV.
 - 📱 Phone app: asks “Send to the TV?” before sending a file or link another app shared.
+- Bedtime, app limits, volume limits: ＋ Add opens a small dialog to pick the times and levels, instead of the whole form laid out on the card.
+- 📲 Share has two tabs, Share the TV (pick the access, the access buttons with icons) and Share the app, on the phone app and the page.
+- Running apps: the 🔒 Keep chip no longer drops to a new line; the CPU / RAM / storage chart's legend keys are small again.
+- 📱 Phone app: the media keys and the Back / Home / Menu row use the full width; the TV picture is at most half the screen high.
 ## 0.4.1 - 2026-10-16
 
 Web 0.4.1 · app điện thoại 0.4.1 · app TV 0.4.1
