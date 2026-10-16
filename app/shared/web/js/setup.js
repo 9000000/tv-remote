@@ -382,9 +382,12 @@ async function loadSteps() {
   }
   showSteps(out);
 }
+let stepsSig = '';
 function showSteps(out) {
   if (document.activeElement && $('#steps').contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;   // don't wipe what is being typed
-  $('#steps').replaceChildren(...out);
+  const sig = out.map((n) => n.outerHTML).join('');                   // the poll often brings the same steps: leave them be
+  if (sig === stepsSig && $('#steps').childElementCount === out.length) return;
+  stepsSig = sig; $('#steps').replaceChildren(...out);
 }
 // An LG or Samsung TV: no ADB, no code to type. The TV asks itself whether to let this computer in; then save it.
 function nativeSteps(s) {

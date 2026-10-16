@@ -20,6 +20,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Giới hạn giờ dùng app: app đang mở từ trước nửa đêm hoặc từ lúc TV bật lại (không có sự kiện mới) giờ cũng được tính giờ, hết giờ vẫn bị đóng.
 - Hẹn giờ, giờ đi ngủ, giới hạn app: hai lần kiểm tra không còn chạy chồng nhau (tránh hiện cảnh báo hai lần).
 - Bấm “Thử lại” khi TV đang hỏi “Cho phép gỡ lỗi USB?” kết nối lại ngay, không còn đứng yên khoảng 10 giây.
+- Sức khỏe nhẹ cho TV hơn: thông tin ít đổi (model, màn hình, Wi-Fi, IP) chỉ hỏi TV mỗi phút một lần; thẻ Mạng và Phần cứng không vẽ lại khi không đổi nên chọn và chép IP, SSID được. Tab Thiết lập trên máy tính hỏi TV ít hơn và không vẽ lại các bước khi không đổi. Tab Ứng dụng bớt một lần hỏi TV. Xem hình TV mượt hơn, tốn ít bộ nhớ hơn.
 
 **English**
 - The tabs lay their cards out like a gallery: each card sits right under the one above it in its column, no holes; up to 3 columns on wide screens (Health, Automation), and a wider page. Switching language no longer flashes the Remote tab before going back to the tab on screen.
@@ -35,6 +36,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - App limits: an app already open since before midnight or since the TV woke (no new usage event) is now counted, so it is still closed when its time is up.
 - Sleep timer, bedtime, app limits: two checks no longer run at once (no double warning).
 - "Try again" while the TV is asking "Allow USB debugging?" reconnects at once instead of sitting idle for about 10 seconds.
+- Lighter Health for the TV: facts that rarely change (model, screen, Wi-Fi, IPs) are asked once a minute; the Network and Hardware cards are not redrawn when nothing changed, so an IP or SSID can be selected and copied. The Setup tab on the computer asks the TV less and does not redraw its steps when unchanged. The Apps tab makes one request less. Watching the TV picture is smoother and uses less memory.
 
 ## 0.4.1 - 2026-10-16
 

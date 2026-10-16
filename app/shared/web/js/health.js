@@ -1,6 +1,12 @@
 // health tab: a snapshot of the TV (load, memory, Wi-Fi, hardware), refreshed while the tab is open
 let healthBusy = false;
 const kv = (pairs) => pairs.filter((p) => p && p[1] != null && p[1] !== '').flatMap(([k, v]) => [el('div', { className: 'k', textContent: k }), el('div', { className: 'v', textContent: String(v) })]);
+// The network and hardware cards hardly change: redrawn only when their figures do, so an IP or SSID can be selected and copied.
+const drawn = new Map();
+function redrawIfChanged(sel, pairs) {
+  const sig = JSON.stringify(pairs) + window.LANG; if (drawn.get(sel) === sig) return;
+  drawn.set(sel, sig); $(sel).replaceChildren(...kv(pairs));
+}
 function meter(label, pct, detail) {
   const m = el('div', { className: 'meter' + (pct >= 90 ? ' bad' : pct >= 75 ? ' warn' : '') },
     el('div', { className: 'top' }, el('span', { textContent: label }), el('b', { textContent: detail })), el('div', { className: 'bar' }, el('i')));
@@ -294,18 +300,18 @@ async function loadHealth() {
   $('#htop').replaceChildren(...(h.top.length ? [cell('h', 'Tiến trình'), cell('h n', 'CPU'), cell('h n', 'RAM')] : []),
     ...h.top.flatMap((p) => [cell('k', (typeof appName === 'function' && META.has(p.name) && appName(p.name)) || p.name), cell('v n', p.cpu + '%'), cell('v n', p.mem + '%')]));
   const w = h.wifi;
-  $('#hnet').replaceChildren(...kv([
+  redrawIfChanged('#hnet', [
     w ? ['Wi-Fi', w.ssid] : ['Wi-Fi', 'không kết nối'],
     w && w.rssi != null ? ['Tín hiệu', w.rssi + ' dBm · ' + signal(w.rssi)] : null,
     w && w.speed ? ['Tốc độ kết nối', w.speed + ' Mbps'] : null,
     w && w.freq ? ['Băng tần', (w.freq > 4000 ? '5 GHz' : '2.4 GHz') + ' · ' + w.freq + ' MHz'] : null,
     ...h.ips.map((i) => [i.if.startsWith('tun') ? 'IP Tailscale' : i.if.startsWith('eth') ? 'IP dây mạng' : 'IP trong nhà', i.ip]),
     w && w.rssi != null ? ['Lời khuyên', wifiTip(w)] : null,
-  ]));
-  $('#hhw').replaceChildren(...kv([
+  ]);
+  redrawIfChanged('#hhw', [
     ['Máy', (h.maker + ' ' + h.model).trim()], ['Android', h.android + (h.sdk ? ' (SDK ' + h.sdk + ')' : '')], ['Bản vá bảo mật', h.patch],
     ['Chip', h.chip], ['Kiến trúc', h.abi], ['Số nhân CPU', h.cores], ['RAM', h.mem_total ? fmtSize(h.mem_total) : ''],
     ['Màn hình', h.screen + (h.fps ? ' · ' + h.fps + ' Hz' : '')], ['Mật độ điểm ảnh', h.density ? h.density + ' dpi' : ''],
-  ]));
+  ]);
 }
 setInterval(() => { if (currentTab === 'health' && !document.hidden && !stopped) loadHealth(); }, 5000);

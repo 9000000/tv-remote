@@ -192,12 +192,13 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     private fun apps(system: Boolean): JSONObject {
         val pkgs = ArrayList<String>()
         // the apps turned off are always listed, so "Turn on" is at hand without showing every system app
-        for (line in sh("pm list packages" + (if (system) "" else " -3; pm list packages -d")).jsplit("\n"))
+        val listing = sh("pm list packages" + (if (system) "" else " -3") + "; echo '#~#'; pm list packages -d").split("#~#")
+        val off = (listing.getOrElse(1) { "" }).jsplit("\n").filter { it.startsWith("package:") }.map { it.substring(8).trim() }.toSet()
+        for (line in listing[0].jsplit("\n") + (if (system) emptyList() else off.map { "package:$it" }))
             if (line.startsWith("package:") && line.substring(8).trim() !in pkgs) pkgs.add(line.substring(8).trim())
         pkgs.sort()
         val out = JSONArray()
         val icons = labels != null && labels.icons()
-        val off = sh("pm list packages -d").jsplit("\n").filter { it.startsWith("package:") }.map { it.substring(8).trim() }.toSet()
         for (p in pkgs) {
             val label = labels?.label(p)
             out.put(JSONObject().put("pkg", p).put("off", p in off).put("keep", Setup.PROTECTED.matches(p))
@@ -534,13 +535,13 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         return JSONObject().put("before", before).put("after", after).put("freed", maxOf(0L, after - before))
     }
 
-    /** "Optimize TV" or its undo; the job's message grows a line per step. */
     /** The person's choices from the Optimize dialog; a page that sends none gets everything, as before. */
     private fun choice(d: JSONObject): Setup.Choice {
         val list = d.optJSONArray("disable") ?: return Setup.Choice(d.optBoolean("anim", true), d.optBoolean("home", true), null)
         return Setup.Choice(d.optBoolean("anim", true), d.optBoolean("home", true), (0 until list.length()).map { list.optString(it) })
     }
 
+    /** "Optimize TV" or its undo; the job's message grows a line per step. */
     private fun setup(undo: Boolean, vi: Boolean, c: Setup.Choice): JSONObject =
         job(if (undo) "undo" else "optimize") { j ->
             val lines = StringBuilder()
@@ -675,8 +676,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         Meminfo.cpu(f[0], f[1])
     } catch (e: Exception) { null }
 
-    /** Lets the TV Setup app on the TV read which app is on screen (it cannot ask for this itself). */
-    /** false when it could not be asked (no ADB yet): the caller tries again later. */
+    /** Lets the TV Setup app on the TV read which app is on screen (it cannot ask for this itself); false when it could not be asked (no ADB yet): the caller tries again later. */
     fun allowUsage(pkg: String): Boolean = try { sh("appops set $pkg GET_USAGE_STATS allow"); true } catch (ignored: Exception) { false }
 
     /** What the TV Setup app on the TV has recorded (Stats.kt there), for the last [days] days. */
@@ -697,12 +697,29 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     }
 
     // ---------------------------------------------------------------- health
+    // what a health snapshot says that hardly changes (model, screen, Wi-Fi, IPs): read once a minute, not on every 5 s tick
+    private var slowAt = 0L
+    private var slowFor: Any? = null
+    private var slowParts: List<String> = emptyList()
+
+    @Synchronized private fun slowFacts(adb: Adb): List<String> {
+        val now = System.currentTimeMillis()
+        if (slowFor !== adb || now - slowAt > 60_000 || slowParts.isEmpty()) {
+            slowParts = (adb.shell(HEALTH_STATIC) + "#~##~##~#").jsplit("#~#", -1).take(4)
+            slowFor = adb; slowAt = now
+        }
+        return slowParts
+    }
+
     private fun health(): JSONObject {
         val adb = link.get()
         val t0 = System.currentTimeMillis()
         adb.shell(":")
         val ping = System.currentTimeMillis() - t0
-        val part = (adb.shell(HEALTH) + "#~##~##~##~##~##~##~##~##~#").jsplit("#~#", -1)
+        val slow = slowFacts(adb)
+        val live = (adb.shell(HEALTH_LIVE) + "#~##~##~##~##~##~#").jsplit("#~#", -1)
+        // same numbering as before: the facts that hardly change come from the cache, the rest was just read
+        val part = listOf(slow[0], live[0], live[1], live[2], live[3], slow[1], slow[2], slow[3], live[4], live[5])
         val props = (part[0].trim() + "\n\n\n\n\n\n\n\n").jsplit("\n", -1)
         val o = JSONObject().put("ping_ms", ping).put("maker", props[0].trim()).put("model", props[1].trim()).put("android", props[2].trim()).put("sdk", props[3].trim())
                 .put("patch", props[4].trim()).put("chip", props[5].trim()).put("abi", props[6].trim())
@@ -767,11 +784,13 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         private const val STATS = "/sdcard/Android/data/dev.tvremote.setup/files/stats"
 
         /** The separator is printed from octal codes, so it does not appear in this command's own line in the `top` output. */
-        private const val HEALTH = "getprop ro.product.manufacturer; getprop ro.product.model; getprop ro.build.version.release; getprop ro.build.version.sdk; " +
+        private const val HEALTH_STATIC = "getprop ro.product.manufacturer; getprop ro.product.model; getprop ro.build.version.release; getprop ro.build.version.sdk; " +
                 "getprop ro.build.version.security_patch; getprop ro.board.platform; getprop ro.product.cpu.abi; cat /sys/devices/system/cpu/present; " +
-                "printf '\\043~\\043\\n'; head -1 /proc/stat; sleep 0.6; head -1 /proc/stat; printf '\\043~\\043\\n'; grep -E '^(MemTotal|MemAvailable):' /proc/meminfo; printf '\\043~\\043\\n'; df -k /data | tail -1; " +
-                "printf '\\043~\\043\\n'; cat /proc/uptime; printf '\\043~\\043\\n'; wm size; wm density; dumpsys display | grep -m1 -o 'fps=[0-9.]*'; printf '\\043~\\043\\n'; dumpsys wifi | grep -m1 mWifiInfo; " +
-                "printf '\\043~\\043\\n'; ip -o -4 addr show; printf '\\043~\\043\\n'; top -n 1 -b -m 7 -o %CPU,%MEM,ARGS -s 1 | tail -7; " +
+                "printf '\\043~\\043\\n'; wm size; wm density; dumpsys display | grep -m1 -o 'fps=[0-9.]*'; printf '\\043~\\043\\n'; dumpsys wifi | grep -m1 mWifiInfo; " +
+                "printf '\\043~\\043\\n'; ip -o -4 addr show"
+
+        private const val HEALTH_LIVE = "head -1 /proc/stat; sleep 0.6; head -1 /proc/stat; printf '\\043~\\043\\n'; grep -E '^(MemTotal|MemAvailable):' /proc/meminfo; printf '\\043~\\043\\n'; df -k /data | tail -1; " +
+                "printf '\\043~\\043\\n'; cat /proc/uptime; printf '\\043~\\043\\n'; top -n 1 -b -m 7 -o %CPU,%MEM,ARGS -s 1 | tail -7; " +
                 "printf '\\043~\\043\\n'; dumpsys power | grep -m1 -o 'mWakefulness=[A-Za-z]*'; dumpsys activity activities | grep -m1 -E 'mResumedActivity|topResumedActivity'"
 
         /** Health → Errors: the dropbox's notes on apps that stopped, froze or crashed natively, cut on the TV to the lines the page

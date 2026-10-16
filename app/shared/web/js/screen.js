@@ -29,37 +29,6 @@ async function snapLoop(gen) {
     if (b instanceof Blob) { showFrame(b); await sleep(150); } else { setScreenPlaceholder(b); await sleep(3000); }
   }
 }
-function findSeq(buf, seq, from) {
-  outer: for (let i = from; i <= buf.length - seq.length; i++) { for (let j = 0; j < seq.length; j++) if (buf[i + j] !== seq[j]) continue outer; return i; }
-  return -1;
-}
-async function liveLoop(gen) {
-  setScreenInfo('Đang mở luồng trực tiếp...', true);
-  const first = await snapOnce(); if (gen !== screenGen) return;       // the stream only sends a frame when the picture changes
-  if (first instanceof Blob) showFrame(first);
-  streamCtl = new AbortController();
-  try {
-    const mode = $('#screenmode').value;
-    const r = await fetch('/api/stream?' + (mode === 'hd' ? 'q=hd' : 'q=eco&size=' + mode), { signal: streamCtl.signal });
-    if (!r.ok) throw new Error('stream');
-    const rd = r.body.getReader(); let buf = new Uint8Array(0);
-    for (;;) {
-      const { done, value } = await rd.read(); if (done || gen !== screenGen) break;
-      const nb = new Uint8Array(buf.length + value.length); nb.set(buf); nb.set(value, buf.length); buf = nb;
-      for (;;) {                                                      // multipart: headers, blank line, Content-length bytes of JPEG
-        const h = findSeq(buf, [13, 10, 13, 10], 0); if (h < 0) break;
-        const m = /content-length:\s*(\d+)/i.exec(new TextDecoder().decode(buf.subarray(0, h)));
-        if (!m) { buf = buf.slice(h + 4); continue; }
-        const start = h + 4, n = +m[1]; if (buf.length < start + n) break;
-        showFrame(new Blob([buf.slice(start, start + n)], { type: 'image/jpeg' }));
-        buf = buf.slice(start + n);
-      }
-    }
-  } catch (e) { if (gen !== screenGen) return; }
-  if (screenOn && gen === screenGen) {                                 // recorder not available: keep going with screenshots
-    toast('Luồng trực tiếp bị ngắt, chuyển sang ảnh chụp'); $('#screenmode').value = 'snap'; snapLoop(gen);
-  }
-}
 // The TV core sends its own H.264 (no computer in between to turn it into pictures); JMuxer makes it playable by a <video>.
 // Packets: 1 byte kind (0 size, 1 codec config, 2 key frame, 3 frame, 4 nothing new), 4 bytes length, then the data.
 const H264_Q = { 480: 0, 720: 1, 960: 2, 360: 3, 240: 4, hd: 'hd' }, H264_FPS = { 480: 8, 720: 10, 960: 10, 360: 8, 240: 8, hd: 30 };
@@ -82,15 +51,17 @@ async function h264Loop(gen) {
   let why = 'TV đã dừng gửi hình.';
   try {
     const r = await fetch('/api/video?q=' + (H264_Q[size] ?? 1), { signal: streamCtl.signal }); if (!r.ok) throw new Error('http');
-    const rd = r.body.getReader(); let buf = new Uint8Array(0), config = null;
+    const rd = r.body.getReader(); let buf = new Uint8Array(0), off = 0, config = null;   // off: where the next packet starts in buf (no copy per packet)
     for (;;) {
       const { done, value } = await rd.read(); if (done || gen !== screenGen) break;
-      const nb = new Uint8Array(buf.length + value.length); nb.set(buf); nb.set(value, buf.length); buf = nb;
-      while (buf.length >= 5) {
-        const len = new DataView(buf.buffer, buf.byteOffset + 1, 4).getUint32(0); if (buf.length < 5 + len) break;
-        const kind = buf[0], data = buf.slice(5, 5 + len); buf = buf.slice(5 + len);
-        if (kind === 0) { const d = new DataView(data.buffer); $('#screenbox').style.aspectRatio = d.getUint32(0) + ' / ' + d.getUint32(4); }
-        else if (kind === 1) config = data;                           // goes in front of the next frame
+      if (off >= buf.length) buf = value;                              // nothing pending: take the chunk as it is
+      else { const nb = new Uint8Array(buf.length - off + value.length); nb.set(buf.subarray(off)); nb.set(value, buf.length - off); buf = nb; }   // only the unfinished packet is copied
+      off = 0;
+      while (buf.length - off >= 5) {
+        const len = new DataView(buf.buffer, buf.byteOffset + off + 1, 4).getUint32(0); if (buf.length - off < 5 + len) break;
+        const kind = buf[off], data = buf.subarray(off + 5, off + 5 + len); off += 5 + len;
+        if (kind === 0) { const d = new DataView(data.buffer, data.byteOffset, data.length); $('#screenbox').style.aspectRatio = d.getUint32(0) + ' / ' + d.getUint32(4); }
+        else if (kind === 1) config = data.slice();                         // goes in front of the next frame
         else if (kind === 2 || kind === 3) {
           // JMuxer shows a frame only once it sees the start of the next one, and a still picture has no next one:
           // an empty delimiter after each frame makes it show the frame now.
@@ -120,7 +91,7 @@ function startScreen() {
   if (muxer) { try { muxer.destroy(); } catch {} muxer = null; }
   $('#screencard').classList.add('on'); $('#screenbox').style.aspectRatio = '';
   setLabel($('#screenbtn'), '⏹', 'Dừng'); setScreenPlaceholder('Đang lấy hình...');
-  ($('#screenmode').value === 'snap' ? snapLoop : CORE === 'pc' && STATE.video !== 'h264' ? liveLoop : h264Loop)(gen);   // the computer's Kotlin server sends H.264 too
+  ($('#screenmode').value === 'snap' ? snapLoop : h264Loop)(gen);   // every core sends H.264
 }
 setInterval(() => {
   if (screenOn && $('#screenmode').value !== 'snap' && streamCtl && !streamCtl.signal.aborted) {

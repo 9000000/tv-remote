@@ -57,7 +57,7 @@ const castPick = (accept) => { if (needAdb()) return; const f = $('#castfile'); 
 async function askStoreSearch() { const v = await ask('Tìm app trên CH Play', { value: '', ok: 'Tìm' }); if (v && v.trim()) storeSearch(v.trim()); }
 async function askStorePage() { const v = await ask('App id (tên gói)', { value: 'org.videolan.vlc', ok: 'Mở' }); if (v && v.trim()) storePage(v.trim()); }
 async function askLink() { const v = await ask('Đường dẫn', { value: 'https://youtu.be/', ok: 'Mở' }); const l = v && normalizeLink(v); if (l) openOnTv(l, 'link'); }
-function screenshot() { const a = document.createElement('a'); a.href = '/api/screen'; a.download = 'tv-' + Math.floor(Date.now() / 1000) + (CORE === 'pc' && STATE.video !== 'h264' ? '.jpg' : '.png'); a.click(); }
+function screenshot() { const a = document.createElement('a'); a.href = '/api/screen'; a.download = 'tv-' + Math.floor(Date.now() / 1000) + '.png'; a.click(); }
 async function timerPlus() { const x = await loadRules({ do: 'sleep_add', minutes: 15 }); if (x) toast('TV sẽ tự tắt lúc ' + clock(x.sleep_at)); }
 async function timerCustom() {
   const v = await ask('Tắt TV sau bao lâu?', { value: '', ok: 'Hẹn' }); if (v === null) return;

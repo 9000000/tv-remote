@@ -118,6 +118,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
 
     private fun route(r: HttpServer.Request, s: Session): Response? {
         val post = r.method == "POST"
+        if (post) infoAt.clear()                                      // an action (install, save...) may have changed what the status shows
         if (!post) when (r.path) {
             "/api/state" -> return state(s)
             "/api/about" -> return about(s)
@@ -130,7 +131,6 @@ class Server(private val repo: File, private val keys: File, private val cache: 
             "/api/screen" -> return screenshot(s)
             "/api/video" -> return video(s, r.q("q"))
             "/api/audio" -> return audio(s, r)
-            "/api/stream" -> return Response.error(404, "this server sends H.264: /api/video")
             "/api/scenes" -> return if (r.query.containsKey("download")) Scenes.backup(saved.scenes) else Response.json(JSONObject().put("scenes", saved.scenes))
             "/api/clip" -> return clip(s.control().clipboard())
             "/api/fleet" -> return fleetInfo(s)
@@ -407,6 +407,15 @@ class Server(private val repo: File, private val keys: File, private val cache: 
     private fun packet(kind: Int, data: ByteArray) = ByteBuffer.allocate(5 + data.size).put(kind.toByte()).putInt(data.size).put(data).array()
 
     // ---------------------------------------------------------------- saved TVs, first-time setup
+    private val infoAt = java.util.concurrent.ConcurrentHashMap<String, Pair<Long, JSONObject>>()
+
+    /** tvInfo for the status poll (every 6 s while the Setup tab is open): the facts are static, so a TV is asked at most every 30 s. */
+    private fun tvInfoCached(s: Session): JSONObject {
+        val now = System.currentTimeMillis()
+        infoAt[s.host]?.let { if (now - it.first < 30_000) return it.second }
+        return tvInfo(s).also { infoAt[s.host] = now to it }
+    }
+
     /** What the first-time setup needs to know about the current TV (needs ADB). */
     private fun tvInfo(s: Session): JSONObject {
         val part = sh(s, "getprop ro.product.manufacturer; echo '#'; getprop ro.product.model; echo '#'; pm path com.tailscale.ipn; echo '#'; " +
@@ -432,7 +441,7 @@ class Server(private val repo: File, private val keys: File, private val cache: 
     private fun setupStatus(s: Session): Response {
         val st = if (native(s)) "none" else settled(s)
         val o = JSONObject().put("host", s.host).put("adb", JSONObject().put("state", st)).put("remote", s.state()).put("saved", saved.find(s.host) ?: JSONObject.NULL)
-        if (st == "ready") try { val i = tvInfo(s); for (k in i.keys()) o.put(k, i.get(k)) } catch (e: IOException) { }
+        if (st == "ready") try { val i = tvInfoCached(s); for (k in i.keys()) o.put(k, i.get(k)) } catch (e: IOException) { }
         if (native(s)) s.atv?.let { a -> o.put("model", a.model).put("mac", a.mac) }
         return Response.json(o.put("kind", s.kind))
     }
