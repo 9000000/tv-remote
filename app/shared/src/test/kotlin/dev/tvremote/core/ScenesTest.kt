@@ -74,6 +74,54 @@ class ScenesTest {
         assertTrue(asked.last().startsWith("am start -n 'com.a.b/.Main'"))
     }
 
+    // ---- runRequest: the one /api/scene/run of the phone, TV Setup and the computer
+    private val saved = JSONObject("""{"id":"s1","name":"Night","steps":[{"do":"wake"},{"do":"key","key":"nope"},{"do":"volume","level":9}]}""")
+    private val find = { id: String -> if (id == "s1") saved else null }
+    private fun body(r: dev.tvremote.core.HttpServer.Response) = JSONObject(String(r.body, Charsets.UTF_8))
+
+    @Test fun runRequestRunsASavedSceneByIdWithItsStepsCleaned() {
+        val tv = Fake()
+        val r = Scenes.runRequest(JSONObject().put("id", "s1"), find, "off") { tv }
+        assertEquals(200, r.status)
+        assertEquals(true, body(r).getBoolean("ok"))
+        assertEquals(listOf("key 224", "volume 9"), tv.did)               // the unknown key was cleaned away
+    }
+
+    @Test fun runRequestRunsStepsOfItsOwnAndStepsWinOverTheId() {
+        val tv = Fake()
+        Scenes.runRequest(JSONObject().put("id", "s1").put("steps", steps("""{"do":"key","key":"home"}""")), find, "off") { tv }
+        assertEquals(listOf("key 3"), tv.did)
+    }
+
+    @Test fun runRequestNamesTheFailedStepsInAnOkAnswer() {
+        val r = body(Scenes.runRequest(JSONObject().put("steps", steps("""{"do":"app","pkg":"com.a.b"}""")), find, "off") { Fake(failApp = true) })
+        assertEquals(false, r.getBoolean("ok"))
+        assertTrue(r.getString("failed").startsWith("1: no such app"))
+    }
+
+    @Test fun runRequestUnknownSceneIs404BeforeTheTvIsAsked() {
+        var asked = false
+        val r = Scenes.runRequest(JSONObject().put("id", "zzz"), find, "off") { asked = true; Fake() }
+        assertEquals(404, r.status)
+        assertEquals(false, asked)
+        assertEquals(404, Scenes.runRequest(JSONObject(), find, "off") { Fake() }.status)
+    }
+
+    @Test fun runRequestWithNoTvIs503WithTheCoresWords() {
+        val r = Scenes.runRequest(JSONObject().put("id", "s1"), find, "adb:closed") { null }
+        assertEquals(503, r.status)
+        assertEquals("adb:closed", body(r).getString("error"))
+    }
+
+    @Test fun runRequestTurnsATimerOnAMissingTvSetupIntoTheInstallQuestion() {
+        val tv = object : Scenes.Target by Fake() {
+            override fun timer(minutes: Int) { throw SetupNeed.Missing("rules", "") }
+        }
+        val r = Scenes.runRequest(JSONObject().put("steps", steps("""{"do":"timer","min":30}""")), find, "off") { tv }
+        assertEquals(409, r.status)
+        assertTrue(body(r).getString("error").startsWith("setup:missing:rules:"))
+    }
+
     @Test(expected = IllegalArgumentException::class) fun launchRefusesBadPackageNames() { Scenes.launch({ "" }, "x; reboot") }
 
     @Test fun volumeFallsBackToTheOldCommand() {

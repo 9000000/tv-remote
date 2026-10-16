@@ -64,6 +64,28 @@ object Scenes {
         return if (failed.isEmpty()) null else failed.joinToString("; ")
     }
 
+    /**
+     * POST /api/scene/run for every core: [d] is the body, either `steps` of its own or the `id` of a saved scene ([find]: where
+     * this core keeps them). Unknown scene: 404 before the TV is touched. [target] is null when the TV cannot be reached now:
+     * 503 with [offline] (the words differ per core). A timer step on a TV Setup that is missing or too old is answered with
+     * the 409 "setup:..." words every client turns into an Install / Update TV Setup question (needSetup in js/core.js),
+     * instead of a failed step the person cannot act on. (TV Setup's own "remote" guests may run only a saved scene by id:
+     * Scope.kt checks that before the request gets here.)
+     */
+    fun runRequest(d: JSONObject, find: (String) -> JSONObject?, offline: String, target: () -> Target?): HttpServer.Response {
+        val steps = d.optJSONArray("steps") ?: find(d.optString("id"))?.optJSONArray("steps")
+            ?: return HttpServer.Response.error(404, "no such scene")
+        val tv = target() ?: return HttpServer.Response.error(503, offline)
+        var missing: SetupNeed.Missing? = null
+        val watched = object : Target by tv {
+            override fun timer(minutes: Int) = try { tv.timer(minutes) } catch (e: SetupNeed.Missing) { missing = e; throw e }
+        }
+        val clean = clean(JSONArray().put(JSONObject().put("name", "x").put("steps", steps))).optJSONObject(0)?.optJSONArray("steps") ?: JSONArray()
+        val failed = run(clean, watched)
+        missing?.let { return HttpServer.Response.error(409, it.message.toString()) }
+        return HttpServer.Response.json(JSONObject().put("ok", failed == null).put("failed", failed ?: ""))
+    }
+
     /** Keeps only what can be run: at most 24 scenes of 30 steps, known steps with sane values, short names. */
     fun clean(list: JSONArray): JSONArray {
         val out = JSONArray()
