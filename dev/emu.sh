@@ -52,7 +52,7 @@ make_avd() {   # name image device
   out="$(echo no | "$BIN/avdmanager" create avd -n "$name" -k "$img" -d "$device" 2>&1)" || true
   [ -f "$cfg" ] || { echo "$out" | grep -v "SDK XML" | tail -3; echo "Could not create $name"; exit 1; }
   for kv in hw.ramSize=1536M hw.keyboard=yes "sdcard.size=512 MB"; do   # the computer's keyboard types into the emulator
-    grep -v "^${kv%%=*}=" "$cfg" > "$cfg.tmp" || true
+    grep -v "^${kv%%=*} *=" "$cfg" > "$cfg.tmp" || true                 # avdmanager writes "key = value", with spaces
     echo "$kv" >> "$cfg.tmp"; mv "$cfg.tmp" "$cfg"
   done
   echo "✓ $name created ($img)"

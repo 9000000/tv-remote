@@ -12,7 +12,7 @@
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html { color-scheme:light; } html[data-theme=dark] { color-scheme:dark; }
   body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; }
-  main { max-width:1040px; transition:max-width .15s; margin:0 auto; padding:16px; display:flex; flex-direction:column; gap:14px; }
+  main { max-width:1360px; transition:max-width .15s; margin:0 auto; padding:16px; display:flex; flex-direction:column; gap:14px; }
   h1 { font-size:18px; margin:0; } h2 { font-size:12px; margin:0 0 8px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; }
   .muted { color:var(--muted); font-size:13px; }
@@ -99,7 +99,7 @@
   .iconbtn { min-height:var(--ctl-sm); width:38px; padding:0; font-size:15px; flex:none; }
   select { font:inherit; font-size:13px; color:var(--ink); background:var(--btn); border:0; border-radius:12px; min-height:var(--ctl-sm); padding:0 8px; cursor:pointer; }
 
-  .panel { display:flex; flex-direction:column; gap:14px; position:relative; }
+  .panel { display:flex; flex-direction:column; gap:14px; position:relative; } html:not(.tabbed) .panel { visibility:hidden; }   /* theme.js, setup.js */
   .panel > .veil { position:absolute; inset:-6px; z-index:20; border-radius:var(--radius); background:color-mix(in srgb, var(--bg) 62%, transparent); }   /* ADB dropped: the data stays, dimmed */
   .panel > .veil .veilcard { position:sticky; top:12px; max-width:480px; margin:10px auto 0; border-radius:var(--radius); background:var(--card); box-shadow:0 10px 32px rgba(0,0,0,.3); } .panel[hidden], [hidden] { display:none !important; }
   .remote-grid { display:grid; gap:14px; grid-template-columns:minmax(0,1fr); align-items:start; } .remote-grid > .col > * { min-width:0; }
@@ -253,7 +253,7 @@
   .bar { height:6px; background:var(--btn); border-radius:3px; overflow:hidden; margin-top:6px; } .bar i { display:block; height:100%; width:0; background:var(--accent); transition:width .3s; }
   .job { padding:9px 0; border-top:1px solid var(--line); font-size:13px; } .job:first-child { border-top:0; }
   .job.error .msg { color:var(--bad); } .job.done .msg { color:var(--ok); }
-  .two-up { display:grid; gap:14px; grid-template-columns:minmax(0,1fr); } @media (min-width:900px) { .two-up { grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:start; } }   /* minmax: a card never grows past the screen for a long word or select */
+  .two-up { display:grid; gap:14px; grid-template-columns:minmax(0,1fr); }   /* minmax: a card never grows past the screen for a long word or select */
 
   dialog { border:0; padding:0; background:transparent; max-width:96vw; max-height:96vh; } dialog::backdrop { background:rgba(0,0,0,.8); }
   dialog.ask .card { width:min(440px, 92vw); display:flex; flex-direction:column; gap:14px; } dialog.ask p { margin:0; white-space:pre-line; line-height:1.45; overflow-wrap:anywhere; } dialog.ask .fields { display:flex; gap:12px; } dialog.ask .fields label { flex:1; display:flex; align-items:center; gap:8px; } dialog.ask .fields input { flex:1; min-width:0; text-align:center; font-size:18px; } dialog.ask .acts { display:flex; justify-content:flex-end; gap:8px; } dialog.ask .acts button { min-width:88px; padding:0 18px; } dialog.ask button.danger { background:var(--bad); color:#fff; font-weight:700; }
@@ -269,7 +269,17 @@
   dialog img { max-width:96vw; max-height:92vh; display:block; border-radius:8px; cursor:zoom-out; }
 
   /* health tab */
-  #hnow, #hcaps { display:grid; gap:14px; grid-template-columns:1fr; } #hcaps > section { min-width:0; } @media (min-width:900px) { #hnow, #hcaps { grid-template-columns:1fr 1fr; align-items:start; } }
+  #hnow, #hcaps { display:grid; gap:14px; grid-template-columns:1fr; } #hcaps > section { min-width:0; }
+  /* wide screens: cards stack in columns like a gallery, each under the one above it, instead of rows as tall as their
+     tallest card leaving holes; up to 3 where there are many (Health, Automation), 2 elsewhere */
+  @media (min-width:900px) {
+    .two-up, #hnow, #hcaps { display:block; columns:2; column-gap:14px; }
+    #hnow, #hcaps, #rulecards { columns:3 380px; }
+    /* the gap above each card: cut where a later column starts (a margin at a column break is), none on the very first */
+    .two-up > *, #hnow > *, #hcaps > * { break-inside:avoid; margin:14px 0 0; }
+    .two-up > :first-child, #hnow > :first-child, #hcaps > :first-child, #hwait + * { margin-top:0; }
+    #pickcols.solo { columns:1; }
+  }
   .ptable { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:6px 16px; font-size:14px; } .ptable .h { color:var(--muted); font-size:12px; font-weight:600; } .ptable .k { color:var(--muted); overflow-wrap:anywhere; min-width:0; } .ptable .v { font-weight:600; } .ptable .n { text-align:right; font-variant-numeric:tabular-nums; }
   .kv { display:grid; grid-template-columns:fit-content(55%) minmax(0,1fr); gap:6px 14px; font-size:14px; } .kv dt, .kv .k { color:var(--muted); overflow-wrap:anywhere; min-width:0; } #hnow > section { min-width:0; } .kv .v { font-weight:600; overflow-wrap:anywhere; text-align:right; }
   .meter { margin:10px 0 0; font-size:14px; } .meter .top { display:flex; justify-content:space-between; gap:8px; } .meter b { font-variant-numeric:tabular-nums; }
@@ -298,7 +308,7 @@
   #toast.show { opacity:.94; }
 
   /* health: one line of text until the first snapshot arrives, so the tab never looks empty or broken */
-  #hwait { text-align:center; padding:18px 0; grid-column:1/-1; } .health.ready #hwait, .health:not(.ready) #hnow > section { display:none; }
+  #hwait { text-align:center; padding:18px 0; grid-column:1/-1; column-span:all; } .health.ready #hwait, .health:not(.ready) #hnow > section { display:none; }
   /* typing: ⚡ switches between live typing and type-then-send; 123 shows the number keys */
   #live { padding:0 12px; } #live.on { background:var(--accent); color:var(--accent-ink); }
   .numpad { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:300px; margin-top:8px; } .numpad[hidden] { display:none; }

@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Các tab xếp thẻ kiểu gallery: thẻ nào nằm ngay dưới thẻ trên cột của nó, không còn khoảng trống; màn rộng có tới 3 cột (Sức khỏe, Tự động) và trang rộng hơn. Đổi ngôn ngữ không còn nháy màn Remote trước khi về lại tab đang xem.
 - 📱 Sức khỏe → App đang chạy: xem app nào đang chạy, chạy ngầm, tốn bao nhiêu RAM, và bấm Dừng từng app. Chỉ dừng được app người dùng cài hoặc app có trên màn hình chính; màn hình chính, bàn phím, Android, TV Remote, TV Setup và Tailscale bị khóa (🔒 Cần giữ) để không dừng nhầm.
 - 🧹 Báo khi RAM đầy (tab Tự động, mặc định tắt): RAM của TV dùng quá mức đã chọn (80–95%) thì TV Setup hiện một bảng đè lên mọi app, bấm Dọn RAM, Xem app (mở Quản lý trên TV ở tab Sức khỏe) hoặc Bỏ qua; báo lại sau ít nhất 30 phút. Cần TV Setup mới.
 - 📺 TV Setup → Quản lý trên TV: mở luôn giao diện quản lý (Ứng dụng, Tệp, Sức khỏe, Tự động, Thiết lập) trên màn hình TV, điều khiển bằng remote của TV, không cần điện thoại hay máy tính. Chạy được cả khi đã tắt remote qua web.
@@ -15,6 +16,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Tự động: lúc TV Setup đang cập nhật, trang không còn báo nhầm "TV Setup là bản cũ" kèm nút Cập nhật; nó chờ TV Setup chạy lại rồi tự hiện.
 
 **English**
+- The tabs lay their cards out like a gallery: each card sits right under the one above it in its column, no holes; up to 3 columns on wide screens (Health, Automation), and a wider page. Switching language no longer flashes the Remote tab before going back to the tab on screen.
 - 📱 Health → Running apps: which apps run, in the background too, how much memory each takes, and a Stop button for each. Only apps the user installed or with a tile on the home screen can be stopped; the home screen, keyboard, Android, TV Remote, TV Setup and Tailscale are locked (🔒 Must keep), so nothing vital is stopped by mistake.
 - 🧹 Full memory notice (Automation tab, off by default): when the TV uses more memory than the level picked (80–95%), TV Setup shows a notice over any app: Free RAM, See the apps (Manage on this TV, Health tab) or Skip; again 30 minutes later at the soonest. Needs the new TV Setup.
 - 📺 TV Setup → Manage on this TV: the manage screens (Apps, Files, Health, Automation, Setup) right on the TV, driven with the TV's remote, no phone or computer needed. Works with the web remote turned off too.

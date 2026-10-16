@@ -323,23 +323,25 @@
   </div>
 
   <div class="panel" data-panel="tv" hidden>
-    <section class="card" data-adb-gated id="tscard" data-for="tv phone">
-      <h2>🌐 Tailscale · điều khiển khi không ở nhà</h2>
-      <p class="note" id="tsstate">Đang xem TV đã có Tailscale chưa...</p>
-      <div class="actions"><button class="primary" id="tsgo">⚡ Cài và đăng nhập Tailscale</button></div>
-    </section>
-    <section class="card" data-adb-gated id="tvsetcard">
-      <div class="card-head"><h2>📺 TV</h2><button class="small" id="tvreboot" data-asks><span class="ico">🔁</span><span class="lbl"> Khởi động lại TV</span></button></div>
-      <div class="tvset" id="tvset"><div class="muted">Đang đọc cài đặt TV...</div></div>
-    </section>
-    <section class="card" data-adb-gated>
-      <h2>⚡ Tối ưu TV</h2>
-      <div class="actions">
-        <button class="primary" id="setupapply">⚡ Tối ưu TV</button>
-        <button id="setupundo">↩ Hoàn tác</button>
-      </div>
-      <pre class="log" id="setuplog" hidden></pre>
-    </section>
+    <div class="two-up">
+      <section class="card" data-adb-gated id="tvsetcard">
+        <div class="card-head"><h2>📺 TV</h2><button class="small" id="tvreboot" data-asks><span class="ico">🔁</span><span class="lbl"> Khởi động lại TV</span></button></div>
+        <div class="tvset" id="tvset"><div class="muted">Đang đọc cài đặt TV...</div></div>
+      </section>
+      <section class="card" data-adb-gated id="tscard" data-for="tv phone">
+        <h2>🌐 Tailscale · điều khiển khi không ở nhà</h2>
+        <p class="note" id="tsstate">Đang xem TV đã có Tailscale chưa...</p>
+        <div class="actions"><button class="primary" id="tsgo">⚡ Cài và đăng nhập Tailscale</button></div>
+      </section>
+      <section class="card" data-adb-gated>
+        <h2>⚡ Tối ưu TV</h2>
+        <div class="actions">
+          <button class="primary" id="setupapply">⚡ Tối ưu TV</button>
+          <button id="setupundo">↩ Hoàn tác</button>
+        </div>
+        <pre class="log" id="setuplog" hidden></pre>
+      </section>
+    </div>
     <!-- every setting the TV keeps: the simple ones can be changed, the risky ones are shown locked (health.js) -->
     <details class="card" id="setlist" data-adb-gated>
       <summary>🗂️ Tất cả cài đặt</summary>

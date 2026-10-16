@@ -408,6 +408,7 @@ const startTab = (window.LANG_KEEP && window.LANG_KEEP.tab) || location.hash.sli
 if (CORE !== 'pc') $('#wake').parentElement.className = 'rrow three';   // no wake button there: three keys fill the row
 if (['remote', 'apps', 'files', 'health', 'auto', 'tv'].includes(startTab)) showTab(startTab); else if (startTab === 'install') showTab('files');
 else if (startTab === 'term') { showTab('health'); $('#termcard').open = true; }   // the terminal used to be a tab of its own
+document.documentElement.classList.add('tabbed');                     // the right tab is open: show it (theme.js)
 // One check at a time, and none while the page is hidden: a TV that is slow to answer must not pile them up.
 let polling = false;
 applyAdb(); refresh(); setInterval(async () => { if (polling || document.hidden) return; polling = true; try { await refresh(); } finally { polling = false; } }, 4000);

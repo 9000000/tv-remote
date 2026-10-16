@@ -3,6 +3,9 @@
 // TV Setup's Manage screen on the TV itself (ManageActivity) opens the page with ?ontv=1: no Remote tab, D-pad focus (js/ontv.js)
 window.ONTV = /[?&]ontv=1(&|$)/.test(location.search);
 if (window.ONTV) document.documentElement.dataset.ontv = '1';
+// the tabs stay unseen until setup.js has picked the one to open (style.css): the page reloads to switch language, and the
+// Remote tab, open in the markup, flashed up before going back to the tab the viewer was on; a stuck script still shows them
+setTimeout(() => document.documentElement.classList.add('tabbed'), 3000);
 (() => {
   let stored = null;
   try { stored = localStorage.getItem('theme'); } catch {}
