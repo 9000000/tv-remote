@@ -167,6 +167,9 @@ const FRIENDLY = [
   [/copy to the TV incomplete/i, 'Chép tệp lên TV không trọn vẹn. Thử lại.'],
   [/stream closed|socket closed|broken pipe/i, 'Mất kết nối với TV giữa chừng. Thử lại.'],   // ADB cut: another TV chosen, or the network dropped
   [/no sign-in link/i, 'Không đọc được link đăng nhập trên màn hình TV. Mở Tailscale trên TV và quét mã QR nó hiện.'],
+  [/storage full: file=(\d+) free=(\d+) need=(\d+) apk=([01])/, (m) => m[4] === '1'
+    ? 'TV chỉ còn trống ' + fmtSize(+m[2]) + ', không đủ cài APK ' + fmtSize(+m[1]) + ' (cần trống ít nhất ' + fmtSize(+m[3]) + ': bản chép và app sau khi cài). Xóa bớt app hoặc tệp (tab Sức khỏe / Tệp) rồi thử lại.'
+    : 'TV chỉ còn trống ' + fmtSize(+m[2]) + ', không đủ chép tệp ' + fmtSize(+m[1]) + ' (cần trống ít nhất ' + fmtSize(+m[3]) + '). Xóa bớt app hoặc tệp (tab Sức khỏe / Tệp) rồi thử lại.'],
   [/INSUFFICIENT_STORAGE|No space left/i, 'TV hết bộ nhớ trống.'],
   [/no app that can open/i, 'TV không có app mở loại tệp này (cài VLC rồi thử lại).'],
   [/cannot be opened \(no launcher screen\)|no launcher activity/i, 'App này không có màn hình để mở: nó chỉ chạy nền, hoặc là một phần của app khác.'],

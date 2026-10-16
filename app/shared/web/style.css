@@ -254,6 +254,7 @@
   .bar { height:6px; background:var(--btn); border-radius:3px; overflow:hidden; margin-top:6px; } .bar i { display:block; height:100%; width:0; background:var(--accent); transition:width .3s; }
   .setupmsg { min-height:5em; }
   .job { padding:9px 0; border-top:1px solid var(--line); font-size:13px; } .job:first-child { border-top:0; }
+  .jobhead { display:flex; align-items:center; gap:8px; } .jobhead > :first-child { flex:1; min-width:0; overflow-wrap:anywhere; }
   .job.error .msg { color:var(--bad); } .job.done .msg { color:var(--ok); }
   .two-up { display:grid; gap:14px; grid-template-columns:minmax(0,1fr); }   /* minmax: a card never grows past the screen for a long word or select */
 

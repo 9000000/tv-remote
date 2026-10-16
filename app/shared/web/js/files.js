@@ -71,13 +71,17 @@ function mark(src, j) {
   if (!src) return;
   if (j.status === 'running') src.dataset.busy = '⏳ ' + (j.pct || 0) + '%'; else delete src.dataset.busy;
 }
-function showJob(j, label) {
+// `stop`: what ■ Dừng does for this job (abort the upload, tell the server to end the install or download); without it no button.
+function showJob(j, label, stop) {
   let row = jobEls[j.id];
-  if (!row) { $('#jobscard').hidden = false; $('#jobscard').open = true; row = jobEls[j.id] = { root: el('div', { className: 'job' }), msg: el('div', { className: 'msg' }), bar: el('i') };
-    row.stop = el('button', { type: 'button', className: 'small', hidden: true, textContent: '■ Dừng', onclick: () => row.onStop && row.onStop() });   // set by upload() / trackJob(): a long wait can be cancelled
-    row.root.append(el('div', { textContent: label || j.title }), row.msg, el('div', { className: 'bar' }, row.bar), row.stop); $('#jobs').prepend(row.root); }
-  row.stop.hidden = !(row.onStop && j.status === 'running');
-  row.root.className = 'job ' + j.status; row.msg.textContent = j.msg; row.bar.style.width = j.pct + '%';
+  if (!row) {
+    $('#jobscard').hidden = false; $('#jobscard').open = true;
+    row = jobEls[j.id] = { root: el('div', { className: 'job' }), msg: el('div', { className: 'msg' }), bar: el('i'), stop: null };
+    if (stop) row.stop = el('button', { className: 'small', type: 'button', textContent: '■ Dừng', title: 'Dừng việc này và xóa phần đã gửi dở trên TV', onclick: (e) => { e.currentTarget.disabled = true; row.msg.textContent = 'đang dừng...'; stop(); } });
+    row.root.append(el('div', { className: 'jobhead' }, el('div', { textContent: label || j.title }), row.stop), row.msg, el('div', { className: 'bar' }, row.bar)); $('#jobs').prepend(row.root);
+  }
+  if (row.stop) row.stop.hidden = j.status !== 'running';
+  row.root.className = 'job ' + j.status; row.msg.textContent = j.status === 'cancelled' ? 'Đã dừng' : j.msg; row.bar.style.width = j.pct + '%';
   row.bar.parentElement.classList.toggle('busy', j.status === 'running' && !(j.pct >= 0));   // size unknown: moving, not stuck at 0
   row.status = j.status; row.pct = j.pct;
   // folded away, the title still tells how far things are
@@ -90,9 +94,9 @@ window.nativeJob = (j) => {
   if (j.status !== 'running') toast(j.msg);
 };
 async function trackJob(j, label, after, src) {
-  showJob(j, label); mark(src, j);
-  let misses = 0, stopped = false;                                    // a blip in the network is not the end of the job; ten in a row are
-  const jr = jobEls[j.id]; if (jr) jr.onStop = () => { stopped = true; };   // the TV may still finish it: we only stop watching
+  const id = j.id, stop = () => api('/api/cancel', { id }, true);    // the server ends the download / install and removes what it had put on the TV
+  showJob(j, label, stop); mark(src, j);
+  let misses = 0;                                                     // a blip in the network is not the end of the job; ten in a row are
   while (j.status === 'running') {
     await sleep(1000);
     if (stopped) { j = { ...j, status: 'error', msg: 'đã dừng theo dõi, TV có thể vẫn làm tiếp' }; showJob(j, label); break; }
@@ -102,23 +106,38 @@ async function trackJob(j, label, after, src) {
   }
   mark(src, j);
   if (j.status === 'error') { j.msg = friendly(j.msg); showJob(j, label); }
-  toast(j.status === 'done' ? 'Xong: ' + j.msg : 'Lỗi: ' + j.msg);
+  toast(j.status === 'done' ? 'Xong: ' + j.msg : j.status === 'cancelled' ? 'Đã dừng' : 'Lỗi: ' + j.msg);
   if (j.status === 'done' && after) after(j);
   if (j.status === 'done' && filesLoaded) loadFiles(cwd);
   if (j.status === 'done') { appsLoaded = false; if (/install/.test(j.title)) loadQuick(); }
 }
-function upload(file, kind, dest, after, src) {
-  const row = { id: 'up' + Math.random().toString(36).slice(2), title: 'Gửi ' + file.name, status: 'running', msg: 'đang gửi lên server...', pct: 0 };
-  showJob(row); mark(src, row);
+// What the TV must have free for this file, asked of it before a byte is sent (Manage.space); '' when there is room or the TV did not say.
+async function roomError(size, kind, dest) {
+  const r = await api('/api/space?size=' + size + (kind === 'file' ? '&path=' + encodeURIComponent(dest || '') : '&apk=1'), null, true);
+  return r && r.ok === false ? friendly(r.error) : '';
+}
+async function upload(file, kind, dest, after, src) {
+  const uid = 'up' + Math.random().toString(36).slice(2);
+  const row = { id: uid, title: 'Gửi ' + file.name, status: 'running', msg: 'đang kiểm tra chỗ trống trên TV...', pct: 0 };
   const xhr = new XMLHttpRequest();
-  xhr.open('POST', '/api/upload?kind=' + kind + '&name=' + encodeURIComponent(file.name) + '&dest=' + encodeURIComponent(dest || ''));
+  let stopped = false;
+  const stop = () => {                                                // abort the upload; the server drops what arrived, and ends an install under way
+    stopped = true; xhr.abort(); api('/api/cancel', { id: uid }, true);
+    row.status = 'cancelled'; showJob(row); mark(src, row); toast('Đã dừng');
+  };
+  showJob(row, undefined, stop); mark(src, row);
+  const full = await roomError(file.size, kind === 'file' ? 'file' : 'apk', dest);
+  if (stopped) return;
+  if (full) { row.status = 'error'; row.msg = full; showJob(row); mark(src, row); return; }   // refused before a byte leaves
+  row.msg = 'đang gửi lên server...'; showJob(row);
+  xhr.open('POST', '/api/upload?kind=' + kind + '&uid=' + uid + '&name=' + encodeURIComponent(file.name) + '&dest=' + encodeURIComponent(dest || ''));
   xhr.setRequestHeader('Content-Type', 'application/octet-stream');
-  xhr.upload.onprogress = (e) => { if (e.lengthComputable) { row.pct = Math.round(e.loaded * (CORE === 'pc' ? 45 : 95) / e.total); row.msg = 'đang gửi ' + fmtSize(e.loaded) + ' / ' + fmtSize(e.total); showJob(row); mark(src, row); } };
-  xhr.onerror = () => { row.status = 'error'; row.msg = 'Không gọi được server'; showJob(row); mark(src, row); };
-  xhr.onabort = () => { row.status = 'error'; row.msg = 'đã dừng'; showJob(row); mark(src, row); };
-  jobEls[row.id].onStop = () => xhr.abort();
+  xhr.upload.onprogress = (e) => { if (e.lengthComputable && !stopped) { row.pct = Math.round(e.loaded * (CORE === 'pc' ? 45 : 95) / e.total); row.msg = 'đang gửi ' + fmtSize(e.loaded) + ' / ' + fmtSize(e.total); showJob(row); mark(src, row); } };
+  xhr.onerror = () => { if (stopped) return; row.status = 'error'; row.msg = 'Không gọi được server'; showJob(row); mark(src, row); };
   xhr.onload = () => {
+    if (stopped) return;
     let r = {}; try { r = JSON.parse(xhr.responseText); } catch {}
+    if (xhr.status === 410) { row.status = 'cancelled'; showJob(row); mark(src, row); return; }
     if (xhr.status !== 200) {
       const why = r.error || xhr.statusText;
       row.status = 'error'; row.msg = friendly(why); showJob(row); mark(src, row); needSetup(why); return;   // a TV Setup that is missing or old becomes the Install / Update question

@@ -183,6 +183,7 @@
     'Không mở được kết nối bảo mật. Ngày giờ trên TV có đúng không? (Cài đặt → Hệ thống → Ngày và giờ)': 'Could not open a secure connection. Is the TV\'s date and time right? (Settings → System → Date & time)',
     'TV (hoặc máy này) chưa vào được Internet.': 'The TV (or this device) cannot reach the Internet.', 'Mạng chậm hoặc vừa mất kết nối. Thử lại sau ít phút.': 'The network is slow or dropped. Try again in a few minutes.',
     'TV ngừng trả lời giữa chừng. Thử lại; vẫn vậy thì khởi động lại TV.': 'The TV stopped answering midway. Try again; if it keeps happening, restart the TV.',
+    '■ Dừng': '■ Stop', 'Dừng việc này và xóa phần đã gửi dở trên TV': 'Stop this and delete the half-sent part on the TV', 'đang dừng...': 'stopping...', 'Đã dừng': 'Stopped', '■ Đã dừng': '■ Stopped', 'đang kiểm tra chỗ trống trên TV...': 'checking the TV has room...',
     'Chép tệp lên TV không trọn vẹn. Thử lại.': 'The file did not reach the TV whole. Try again.', 'Mất kết nối với TV giữa chừng. Thử lại.': 'Lost the TV halfway. Try again.', 'TV hết bộ nhớ trống.': 'The TV is out of storage.',
     'TV đã có app này nhưng từ nguồn khác (khác chữ ký). Gỡ bản đang có rồi cài lại; dữ liệu của app sẽ mất.': 'The TV already has this app from another source (a different signature). Uninstall it first, then install again; the app’s data will be lost.',
     'TV đang có bản mới hơn của app này. Gỡ bản đang có nếu muốn cài bản cũ.': 'The TV has a newer version of this app. Uninstall it first to install an older one.',
@@ -620,6 +621,8 @@
     [/^Màn hình xuất tới (.+)$/, (m) => 'Screen output up to ' + m[1]],
     [/^Đưa âm thanh (.+) ra loa\/amply qua HDMI$/, (m) => m[1] + ' sound out to a soundbar/receiver over HDMI'],
     [/^(\d+) \/ (\d+) mục$/, (m) => m[1] + ' / ' + m[2] + ' items'],
+    [/^TV chỉ còn trống (.+), không đủ cài APK (.+) \(cần trống ít nhất (.+): bản chép và app sau khi cài\)\. Xóa bớt app hoặc tệp \(tab Sức khỏe \/ Tệp\) rồi thử lại\.$/, (m) => `The TV has only ${m[1]} free, not enough to install this ${m[2]} APK (it needs at least ${m[3]}: the copy and the installed app). Remove some apps or files (Health / Files tab), then try again.`],
+    [/^TV chỉ còn trống (.+), không đủ chép tệp (.+) \(cần trống ít nhất (.+)\)\. Xóa bớt app hoặc tệp \(tab Sức khỏe \/ Tệp\) rồi thử lại\.$/, (m) => `The TV has only ${m[1]} free, not enough for this ${m[2]} file (it needs at least ${m[3]}). Remove some apps or files (Health / Files tab), then try again.`],
     [/^APK này cần Android (\S+) trở lên; TV đang chạy Android (\S+)\. Tìm bản cũ hơn của app \(trang APKMirror ghi “Min: Android \.\.\.”\)\.$/, (m) => 'This APK needs Android ' + m[1] + ' or newer; the TV runs Android ' + m[2] + '. Look for an older version of the app (APKMirror lists “Min: Android ...”).'],
     [/^APK này dành cho chip (.+), còn TV dùng (.+)\. Tải bản cho đúng loại chip \(thường là armeabi-v7a cho TV\)\.$/, (m) => 'This APK is for ' + m[1] + ' chips, the TV uses ' + m[2] + '. Get the build for the right chip (usually armeabi-v7a on TVs).'],
     // automation, scenes, the TV's sound

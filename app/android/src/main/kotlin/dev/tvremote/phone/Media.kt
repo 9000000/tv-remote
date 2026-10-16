@@ -94,19 +94,35 @@ internal fun MainActivity.castFile(uri: Uri) {
     } catch (ignored: Exception) {
     }
     if (!name.contains('.')) android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(contentResolver.getType(uri))?.let { name += ".$it" }
-    say(t("Đang gửi lên TV: ", "Sending to the TV: ") + name + "...", false)
+    // a box with the progress and a Stop: a big video sent by mistake can be called back (the part already on the TV is deleted)
+    val cancel = dev.tvremote.core.Cancel()
+    val job = org.json.JSONObject()
+    val sending = t("Đang gửi lên TV: ", "Sending to the TV: ") + name
+    val box = AlertDialog.Builder(this).setMessage("$sending...").setCancelable(false)
+        .setNegativeButton(t("■ Dừng", "■ Stop")) { _, _ -> cancel.stop() }.show()
+    val tick = object : Runnable {
+        override fun run() {
+            if (!box.isShowing || isFinishing) return
+            val pct = job.optInt("pct", 0)
+            box.setMessage(sending + if (pct > 0) " · $pct%" else "...")
+            ui.postDelayed(this, 500)
+        }
+    }
+    ui.post(tick)
     Thread {
         val link = AdbLink(filesDir, ip)
         val err = try {
             contentResolver.openInputStream(uri).use { input ->
                 if (input == null) throw java.io.IOException("cannot read the file")
-                Manage(link, null, cacheDir).cast(input, size, name)
+                Manage(link, null, cacheDir).cast(input, size, name, job, cancel)
             }
             null
         } catch (e: Exception) { dev.tvremote.core.Errors.say(e, VI) } finally { link.close() }
         ui.post {
+            try { box.dismiss() } catch (ignored: Exception) { }
             if (isFinishing) return@post
-            if (err == null) say(t("Đang phát trên TV: ", "Playing on the TV: ") + name, false)
+            if (cancel.stopped) say(t("Đã dừng, tệp gửi dở đã xóa khỏi TV.", "Stopped; the half-sent file was removed from the TV."), false)
+            else if (err == null) say(t("Đang phát trên TV: ", "Playing on the TV: ") + name, false)
             else say(t("Không phát được: ", "Could not play it: ") + err, true)
         }
     }.start()

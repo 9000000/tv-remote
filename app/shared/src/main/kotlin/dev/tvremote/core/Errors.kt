@@ -7,6 +7,8 @@ object Errors {
         val all = generateSequence(e) { it.cause }.joinToString(" ") { it.javaClass.simpleName + ": " + (it.message ?: "") }
         WireLog.all.add("·", "error " + all)
         SetupNeed.say(e, vi)?.let { return it }
+        if (all.contains("stopped") && generateSequence(e) { it.cause }.any { it is Cancelled }) return t("Đã dừng.", "Stopped.")
+        NoRoom.parse(all)?.let { return it.say(vi) }                  // the TV has no room: sizes, and what to do
         return when {
             all.contains(dev.tvremote.update.Release.MISMATCH) || all.contains(dev.tvremote.update.Release.UNSIGNED) ->
                 t("Bản cập nhật tải về không khớp chữ ký của dự án nên đã bị xóa, không cài. Thử lại sau.",

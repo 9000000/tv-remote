@@ -1,6 +1,7 @@
 package dev.tvremote.desktop
 
 import dev.tvremote.core.AdbLink
+import dev.tvremote.core.Cancel
 import dev.tvremote.core.Fleet
 import dev.tvremote.core.Manage
 import org.json.JSONArray
@@ -20,6 +21,8 @@ class Fleets(private val keys: File, private val cache: File) {
     private val used = HashMap<String, Long>()
     private val working = HashMap<String, Int>()                      // TVs a job is busy with: never closed under it
     val jobs: MutableMap<String, JSONObject> = Collections.synchronizedMap(LinkedHashMap())
+    private val stops = java.util.concurrent.ConcurrentHashMap<String, Cancel>()   // a job's Stop, by its id (POST /api/fleet/cancel)
+    private val current = ThreadLocal<Cancel?>()                      // the Stop of the job the thread is working for
     private val sweeper = Executors.newSingleThreadScheduledExecutor { Thread(it, "fleet-sweep").apply { isDaemon = true } }
 
     init {                                                            // a hotel's 30 TVs must not keep 30 connections open all day
@@ -43,6 +46,9 @@ class Fleets(private val keys: File, private val cache: File) {
     @Synchronized fun drop(host: String) { links.remove(host)?.close(); used.remove(host) }
 
     @Synchronized fun close() { sweeper.shutdownNow(); links.values.forEach { it.close() }; links.clear() }
+
+    /** The person pressed Stop: every TV of the job stops copying (the part on the TV is deleted) and says so. */
+    fun stop(id: String) { stops[id]?.stop() }
 
     /** A job as JSON while its TVs are writing their progress into it. */
     fun snapshot(j: JSONObject): JSONObject {
@@ -87,6 +93,8 @@ class Fleets(private val keys: File, private val cache: File) {
             while (jobs.size > 10) jobs.remove(jobs.keys.first())
         }
         synchronized(this) { for ((h, _) in targets) working[h] = (working[h] ?: 0) + 1 }
+        val cancel = Cancel()
+        stops[id] = cancel
         val gate = Semaphore(PARALLEL)
         val pool = Executors.newCachedThreadPool { Thread(it, "fleet").apply { isDaemon = true } }
         Thread({
@@ -94,21 +102,26 @@ class Fleets(private val keys: File, private val cache: File) {
                 pool.submit {
                     val part = parts.getJSONObject(host)
                     gate.acquire()
+                    current.set(cancel)
                     try {
+                        cancel.check()
                         part.put("status", "running").put("msg", "connecting")
                         val st = ready(link, 20000)
                         if (st != "ready") throw java.io.IOException("adb:$st")
                         part.put("msg", work(link, part))
                         part.put("status", "done").put("pct", 100)
                     } catch (e: Exception) {
-                        part.put("status", "error").put("msg", e.message ?: e.javaClass.simpleName)
+                        if (cancel.stopped) part.put("status", "cancelled").put("msg", "stopped")   // not an error
+                        else part.put("status", "error").put("msg", e.message ?: e.javaClass.simpleName)
                     } finally {
+                        current.remove()
                         gate.release()
                         synchronized(this@Fleets) { working[host] = (working[host] ?: 1) - 1; used[host] = System.currentTimeMillis() }
                     }
                 }
             }.forEach { it.get() }
-            j.put("status", "done")
+            j.put("status", if (cancel.stopped) "cancelled" else "done")
+            stops.remove(id)
             pool.shutdown()
             done()
         }, "fleet-job").apply { isDaemon = true }.start()
@@ -117,7 +130,7 @@ class Fleets(private val keys: File, private val cache: File) {
 
     fun install(link: AdbLink, part: JSONObject, apk: File): String {
         part.put("pct", 10)
-        return apk.inputStream().use { Manage(link, null, cache).install(it, apk.length(), part) }
+        return apk.inputStream().use { Manage(link, null, cache).install(it, apk.length(), part, current.get()) }
     }
 
     /** The work for one of the bulk actions that are not an install, refused here before any TV is touched. */
