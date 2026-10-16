@@ -31,13 +31,13 @@ class Server(private val repo: File, private val keys: File, private val cache: 
     private val version = try { File(repo, "VERSION").readText().trim() } catch (e: IOException) { "" }
     init { WireLog.app = "TV Remote $version (computer)" }
 
+    private val kinds = java.util.concurrent.ConcurrentHashMap<String, String>()   // before cur, which needs it: what an unsaved TV is (scan, ports)
+
     @Volatile var cur = session(first ?: saved.current)               // --tv: this run only, the saved choice stays
         private set
     private val fleets = Fleets(keys, cache)
     private val assist = Assist { cur }
     val updater = Updater(version, System.getProperty("tvr.res")?.let { File(it) }, stop).also { it.start() }
-
-    private val kinds = java.util.concurrent.ConcurrentHashMap<String, String>()   // what an unsaved TV is, from the scan or a look at its ports
 
     /** An LG or Samsung TV gets a session with only its remote link; the kind is saved with the TV. */
     private fun kindOf(host: String): String = saved.find(host)?.optString("kind")?.takeIf { it.isNotEmpty() }?.let { Remote.Kind.of(it) }

@@ -4,6 +4,14 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- 💻 App máy tính: sửa lỗi không mở được khi chưa lưu TV nào (máy mới cài).
+
+**English**
+- 💻 Computer app: fixed it not starting when no TV was saved yet (a fresh install).
+
 ## 0.2.0 - 2026-10-16
 
 Web 0.2.0 · app điện thoại 0.2.0 · app TV 0.2.0
