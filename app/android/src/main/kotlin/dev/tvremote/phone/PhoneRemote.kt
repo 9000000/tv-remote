@@ -100,6 +100,7 @@ internal fun MainActivity.remoteRow(name: String, index: Int, height: Int, minKe
         row.addView(b, cell(height, i > 0))
         drawn.removeAll { it.second.id == e.id }; drawn.add(b to e)
     }
+    for (i in row.childCount until minKeys) row.addView(android.view.View(this), cell(height, true))   // empty cells: their gaps too, or the short row's keys come out wider
     return captioned(row)
 }
 

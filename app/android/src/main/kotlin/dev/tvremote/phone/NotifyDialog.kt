@@ -26,6 +26,8 @@ private fun MainActivity.chips(options: List<Pair<String, String>>, now: String,
     options.forEachIndexed { i, (value, words) ->
         val b = button(words, if (value == now) ACCENT else BTN)
         b.textSize = 13f
+        b.isSingleLine = true                                         // "10 giây" on one line: a wrapped chip was cut at the bottom
+        b.setPadding(0, b.paddingTop, 0, b.paddingBottom)
         b.setOnClickListener { pick(value) }
         row.addView(b, cell(40, i > 0))
     }

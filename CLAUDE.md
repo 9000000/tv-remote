@@ -131,6 +131,12 @@ so Android installs over the old APKs, and `release.sh` stops before 1.3.0 until
 
 ## Testing
 
+**A feature is done only once it has been run on every platform it touches, logic and UI**: the Phone app's native
+screens (phone emulator), the Computer app's page (Chrome, 1100 and 400 px), the TV web page / Manage on the TV, TV Setup
+(TV emulator). Logic: the action really happens on the TV, plus its errors, Stop, and an old TV Setup. UI: a screenshot
+of each new or changed screen, looked at: no label cut or overflowing, no row wrapping, chips on one line, nothing
+clipped. Unit tests alone do not count. Report what was tested where, and what could not be (e.g. HDMI needs a real TV).
+
 Test on emulators, not on real TVs. Two AVDs are used: `tvremote_gtv` (Google TV, Android 14) and `tvremote_test` (phone, Android 14).
 `dev/emu.sh` does the setup below; use it rather than doing it by hand:
 

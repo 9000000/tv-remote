@@ -22,9 +22,7 @@
         { "id": "draw", "icon": "pen", "vi": "Vẽ lên TV", "en": "Draw on the TV", "do": "draw", "needs": ["adb"] }
       ],
       [
-        { "id": "notify", "icon": "bell", "vi": "Gửi thông báo lên TV", "en": "Notify the TV", "do": "notify", "needs": ["adb"] }
-      ],
-      [
+        { "id": "notify", "icon": "bell", "vi": "Thông báo", "en": "Notify", "do": "notify", "needs": ["adb"] },
         { "id": "share", "icon": "share", "vi": "Chia sẻ", "en": "Share", "do": "share", "needs": ["adb"] }
       ]
     ],

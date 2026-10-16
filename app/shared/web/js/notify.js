@@ -27,6 +27,7 @@ async function notifyDialog() {
   const corners = el('div'), secs = el('div');
   const draw = () => {
     corners.replaceChildren(UI.chips(NOTIFY_CORNERS.map(([v, label]) => ({ label, on: p.corner === v, fn: () => { p.corner = v; draw(); } }))));
+    corners.firstChild.classList.add('two');                        // 2 x 2 like the screen's corners: four in a row wrap one alone on a phone
     secs.replaceChildren(UI.chips(NOTIFY_SECONDS.map((n) => ({ label: n + ' giây', on: p.seconds === n, fn: () => { p.seconds = n; draw(); } }))));
   };
   draw();
