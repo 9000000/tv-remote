@@ -30,7 +30,7 @@
   html[data-core=pc] [data-for]:not([data-for~=pc]), html[data-core=tv] [data-for]:not([data-for~=tv]), html[data-core=phone] [data-for]:not([data-for~=phone]) { display:none !important; }
   /* the page on the TV itself (TV Setup's Manage screen, js/ontv.js): it has no remote of its own, and the focus is all there
      is to see what OK will press, so it is drawn plainly on everything */
-  html[data-ontv] [data-tab=remote] { display:none !important; }
+  html[data-ontv] :is([data-tab=remote], [data-panel=remote]) { display:none !important; }   /* from the first paint: the TV itself has no Remote tab */
   html[data-ontv] :focus { outline:3px solid var(--accent); outline-offset:2px; }
   html[data-ontv] { scroll-padding-top:90px; }                       /* moving up, the focus lands below the sticky tabs, not under them */
   html[data-core=phone] header.top, html[data-core=phone] #ver { display:none; }   /* the app has its own title bar */

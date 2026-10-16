@@ -8,6 +8,19 @@ if (window.ONTV) (() => {
   const scope = () => [...document.querySelectorAll('dialog[open]')].pop() || document;   // an open dialog keeps the focus in it
   const items = () => [...scope().querySelectorAll(SEL)].filter((e) => seen(e) && !(e.closest('details:not([open])') && e.tagName !== 'SUMMARY' && !e.closest('summary')));
   const start = () => { col = null; const s = scope(); return (s === document && document.querySelector('[data-tab][aria-selected="true"]')) || items()[0]; };
+  // a list drawn again (a choice made in it, a refresh) takes the focused control away: the focus goes back to the control
+  // drawn in its place (same words, nearest to where it was), not to the tabs at the top
+  let last = null;
+  document.addEventListener('focusin', (ev) => { const e = ev.target, r = e.getBoundingClientRect && e.getBoundingClientRect(); if (r && e !== document.body) last = { e, text: e.textContent.trim(), x: r.left + r.width / 2 + scrollX, y: r.top + r.height / 2 + scrollY }; }, true);
+  const back = () => {
+    if (!last || last.e.isConnected) return null;
+    let best = null, score = Infinity;
+    for (const e of items()) {
+      const r = e.getBoundingClientRect(), s = Math.hypot(r.left + r.width / 2 + scrollX - last.x, r.top + r.height / 2 + scrollY - last.y) + (e.textContent.trim() === last.text ? 0 : 200);
+      if (s < score) { score = s; best = e; }
+    }
+    return score < 400 ? best : null;
+  };
   // a text field the focus passes over keeps the TV's keyboard down (it would take the arrows); OK opens it (keydown below)
   const TEXT = 'textarea, input:not([type]), input[type=text], input[type=search], input[type=number], input[type=password], input[type=url], input[type=email], input[type=tel]';
   const quiet = (e) => { if (e.matches(TEXT) && !e.dataset.im) { e.dataset.im = e.inputMode || '-'; e.inputMode = 'none'; } };
@@ -45,7 +58,7 @@ if (window.ONTV) (() => {
   }
 
   document.addEventListener('keydown', (ev) => {
-    const d = DIR[ev.key], cur = document.activeElement;
+    const d = DIR[ev.key]; let cur = document.activeElement;
     if (!d) {
       // OK on what Enter does not press by itself (a checkbox, a radio, a label)
       if (ev.key === 'Enter' && cur && cur.matches('input[type=checkbox], input[type=radio], label')) { ev.preventDefault(); cur.click(); }
@@ -58,7 +71,7 @@ if (window.ONTV) (() => {
     if (typing && d[0]) { const v = cur.value || '', at = cur.selectionStart; if (at != null && ((d[0] < 0 && at > 0) || (d[0] > 0 && at < v.length))) return; }   // the caret moves inside the words first
     if (cur && cur.matches('input[type=range]') && d[0]) return;    // a slider takes left / right
     ev.preventDefault();
-    if (!cur || cur === document.body || !seen(cur) || !scope().contains(cur)) { go(start()); return; }
+    if (!cur || cur === document.body || !seen(cur) || !scope().contains(cur)) { const e = back(); if (!e) { go(start()); return; } go(e); cur = e; }
     if (!go(next(cur, d)) && d[1]) window.scrollBy({ top: d[1] * innerHeight * 0.4, behavior: 'smooth' });   // nothing that way: a long text still scrolls
   }, true);
 
@@ -70,7 +83,11 @@ if (window.ONTV) (() => {
     return false;
   };
   // a dialog that opens takes the focus to its first control
-  new MutationObserver(() => { const d = [...document.querySelectorAll('dialog[open]')].pop(); if (d && !d.contains(document.activeElement)) setTimeout(() => { if (d.open && !d.contains(document.activeElement)) go(items()[0]); }, 60); })
+  new MutationObserver(() => {
+    const d = [...document.querySelectorAll('dialog[open]')].pop();
+    if (d && !d.contains(document.activeElement)) setTimeout(() => { if (d.open && !d.contains(document.activeElement)) go(items()[0]); }, 60);
+    else if (!d && document.activeElement === document.body) { const e = back(); if (e) { quiet(e); e.focus({ preventScroll: true }); } }   // drawn again: keep the ring on screen
+  })
     .observe(document.body, { subtree: true, attributes: true, attributeFilter: ['open'], childList: true });
   addEventListener('load', () => setTimeout(() => go(start()), 300));
 })();
