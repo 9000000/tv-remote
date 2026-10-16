@@ -1,0 +1,47 @@
+# TV Remote
+
+> Free, open-source remote control for Android TV and Google TV from an Android phone, an iPhone (any browser) or a computer (Mac, Windows, Linux). It talks straight to the TV over the home network (or Tailscale when away), with no server in between, no account and no ads. Site: https://tvremote.pages.dev · Source: https://github.com/HoangTran0410/tv-remote
+
+Works on TVs that run Android TV / Google TV (Sony, TCL, Xiaomi, Philips, Google TV boxes, operator boxes such as FPT Play Box...). Tested for real on a Sony BRAVIA (Android 9). Samsung (Tizen) and LG (webOS) are not supported: they do not run Android.
+
+## Three apps and a web page
+
+- **Phone app** ("TV Remote", Android): remote, see and touch the TV's screen, widget, Quick Settings tiles, the phone's volume keys control the TV. Download: https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk (Downloader code 2973135)
+- **TV app** ("TV Setup", installed on the TV): sleep timer, bedtime, daily app limits, drawing over the TV's screen, usage stats, one-button Tailscale. It also serves the **TV web page** on port 8765, so any browser (iPhone included) controls the TV after typing a 6-digit code shown on the TV. Download: https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-setup.apk (Downloader code 2397346)
+- **Computer app** ("TV Remote" for Mac, Windows, Linux, about 20 MB, nothing else to install): https://github.com/HoangTran0410/tv-remote/releases/latest
+
+## What it does
+
+- Remote keys, D-pad, volume, power; typing on the TV with the phone's keyboard (accented text included); voice commands.
+- See the TV's screen live and touch / click on it (scrcpy); screenshots; listen to the TV's sound on the phone or computer.
+- Now playing: title, seek, pause, next; the TV's clipboard (copy from / send to the TV).
+- Apps (open, install APKs, turn off, uninstall), files, TV health (RAM, storage, temperature).
+- Optimize TV: turn off unused system apps and animations, a lighter home screen; nothing deleted, one-tap Undo.
+- Parental controls on the TV itself: daily limits per app, bedtime, sleep timer; enforced by the TV with every phone off.
+- Draw on the picture: the strokes show on the TV over any app (to guide someone far away).
+- Several TVs at once: install / restart on all; scenes (a list of steps run with one tap).
+- Away from home through Tailscale, installed and signed in from the app with one button. Wake-on-LAN for a TV that is fully off.
+
+## Setup in short
+
+1. On the TV: Settings → Device Preferences → About → Build, press OK 7 times; then Developer options → ADB debugging on.
+2. Install the app for your device (links above). The first time, the TV asks "Allow USB debugging?": choose Always allow.
+3. Easiest with only the TV remote: install Downloader (AFTVnews) from the Play Store on the TV, type code 2397346, install TV Setup, scan its QR code with the phone and type the 6-digit code.
+
+Keys work without ADB on the phone and computer apps (Google's Android TV Remote protocol, pairing code); the screen, apps, files and timers need ADB.
+
+## FAQ
+
+- Cost: free, no ads, no paid tier; the source is public.
+- iPhone: yes, through the TV web page (install TV Setup on the TV, open the page in Safari, Add to Home Screen).
+- Netflix and other protected video show black on the mirrored screen (Android's copy protection); keys, volume and sound still work.
+- A TV fully off can be woken with Wake-on-LAN from inside the home network; from standby one press wakes it, over Tailscale too.
+- Android may call the APK "harmful" (Play Protect warns about any non-Play app that can install APKs); the full source is on GitHub.
+- Security: ADB has no password, so every device must be approved on the TV's screen; never expose port 8765 to the Internet, use Tailscale away from home.
+
+## Docs
+
+- [README (English)](https://github.com/HoangTran0410/tv-remote/blob/main/README.en.md): setup for each app, Tailscale, troubleshooting, security, technical details
+- [README (Tiếng Việt)](https://github.com/HoangTran0410/tv-remote/blob/main/README.md)
+- [Changelog](https://github.com/HoangTran0410/tv-remote/blob/main/CHANGELOG.md)
+- [Releases](https://github.com/HoangTran0410/tv-remote/releases)

@@ -143,5 +143,7 @@ What it takes care of, for doing it by hand:
   timelines: the runtime and helpers in `anim.js` (vendored `gsap.min.js`, 3.13.0), the demo in `demo.js` and the stories in
   `stories.js`, their look in `demo.css` and `stories.css`. A timeline reads as a list of "at second t, this changes"
   (`show`, `press`, `fill`, `type`, `toggle`, `focus`, `pointer`, `steps`, or `track` for anything else). To look at a
-  moment: `storySeek(document.querySelector(".st-b"), 6.05)` in the console.
+  moment: `storySeek(document.querySelector(".st-b"), 6.05)` in the console. For search engines and AI agents: `llms.txt`
+  (the app in plain words: keep it true when features or download links change), the JSON-LD in `index.html`, `robots.txt`,
+  `sitemap.xml`; the link preview is `img/og-<lang>.jpg` (1200×630, from `tvapp-<lang>.webp`).
 - Release download links: `https://github.com/HoangTran0410/tv-remote/releases/latest/download/<tv-setup|tv-remote>.apk`.
