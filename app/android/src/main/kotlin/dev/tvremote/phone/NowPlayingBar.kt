@@ -117,11 +117,13 @@ internal class PlayingBar(private val a: MainActivity) {
     }
 
     private fun draw() {
-        val on = o.optString("state", "none") != "none" && o.optString("title").isNotEmpty()
+        val text = { k: String -> if (o.isNull(k)) "" else o.optString(k) }   // optString of a JSON null is "null"
+        val name = text("title").ifEmpty { text("app") }              // a player with no title (FPT Play): its app's name
+        val on = o.optString("state", "none") != "none" && name.isNotEmpty()
         view.visibility = if (on) View.VISIBLE else View.GONE
         if (!on) return
-        title.text = o.optString("title")
-        sub.text = o.optString("sub").takeIf { o.has("sub") && !o.isNull("sub") } ?: ""
+        title.text = name
+        sub.text = text("sub").takeIf { text("title").isNotEmpty() } ?: ""
         sub.visibility = if (sub.text.isEmpty()) View.GONE else View.VISIBLE
         play.setIcon(if (o.optString("state") == "paused") "@play" else "@pause", TEXT)
         val d = o.optLong("dur")

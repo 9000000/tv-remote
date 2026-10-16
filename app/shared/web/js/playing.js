@@ -5,10 +5,10 @@ const PL = { o: { state: 'none' }, at: 0, timer: 0, dragging: false };
 const mmss = (ms) => { const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = String(s % 60).padStart(2, '0'); return h ? h + ':' + String(m).padStart(2, '0') + ':' + x : m + ':' + x; };
 const plPos = () => { const o = PL.o; let p = o.pos || 0; if (o.state === 'playing') p += (performance.now() - PL.at) * (o.speed || 1); return o.dur ? Math.min(p, o.dur) : p; };
 function plDraw() {
-  const o = PL.o, on = o.state && o.state !== 'none' && !!o.title;
+  const o = PL.o, name = o.title || o.app, on = o.state && o.state !== 'none' && !!name;   // no title (FPT Play): the app's name
   $('#playing').hidden = !on; if (!on) return;
-  $('#pltitle').textContent = o.title; $('#pltitle').title = o.title;
-  $('#plsub').textContent = [o.sub, appName(o.pkg)].filter(Boolean).join(' · ');
+  $('#pltitle').textContent = name; $('#pltitle').title = name;
+  $('#plsub').textContent = o.title ? [o.sub, appName(o.pkg)].filter(Boolean).join(' · ') : '';
   const icon = '/api/app/icon?pkg=' + encodeURIComponent(o.pkg); if ($('#plicon').dataset.src !== icon) { $('#plicon').dataset.src = icon; $('#plicon').src = icon; }
   $('#plbar').hidden = !o.dur;
   if (o.dur && !PL.dragging) { $('#plseek').value = Math.round(plPos() / o.dur * 1000); $('#plpos').textContent = mmss(plPos()); $('#pldur').textContent = mmss(o.dur); }

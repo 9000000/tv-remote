@@ -39,10 +39,23 @@ public final class Playing {
         @Override public void onSessionDestroyed() { watch(); }
     };
 
+    private static Context ctx;
+    private static final java.util.Map<String, String> labels = new java.util.HashMap<>();
+
+    /** The app's own name, for a player that tells no title (FPT Play): the bar then says which app plays. */
+    private static String label(String pkg) {
+        if (!labels.containsKey(pkg)) {
+            String l = null;
+            try { android.content.pm.PackageManager pm = ctx.getPackageManager(); l = String.valueOf(pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0))); } catch (Throwable ignored) { }
+            labels.put(pkg, l);
+        }
+        return labels.get(pkg);
+    }
+
     public static void main(String[] args) throws Exception {
         Looper.prepareMainLooper();
         Class<?> at = Class.forName("android.app.ActivityThread");
-        Context ctx = (Context) at.getMethod("getSystemContext").invoke(at.getMethod("systemMain").invoke(null));
+        ctx = (Context) at.getMethod("getSystemContext").invoke(at.getMethod("systemMain").invoke(null));
         main = new Handler(Looper.myLooper());
         try {
             mediaServices();
@@ -71,6 +84,9 @@ public final class Playing {
                 main.postDelayed(this, 5000);
             }
         }, 5000);
+        main.postDelayed(new Runnable() {                             // leaving a paused app tells its session nothing: looked at
+            @Override public void run() { report(); main.postDelayed(this, 2000); }
+        }, 2000);
         Looper.loop();
     }
 
@@ -95,16 +111,32 @@ public final class Playing {
         report();
     }
 
-    /** The session the person means: one that plays, else a paused one that has a title, else none. */
+    /** The session the person means: one that plays, else a paused one that has a title or was the one playing (a player
+     *  that tells no title, FPT Play, stays in the bar once paused) while its app is still on the screen, else none: a paused
+     *  app left for another keeps its session, and the bar would otherwise stay for good. */
     private static MediaController current() {
         MediaController paused = null;
         for (MediaController c : watched) {
             PlaybackState s = c.getPlaybackState();
             int st = s == null ? 0 : s.getState();
-            if (st == PlaybackState.STATE_PLAYING || st == PlaybackState.STATE_BUFFERING) return c;
-            if (paused == null && st == PlaybackState.STATE_PAUSED && title(c.getMetadata()) != null) paused = c;
+            if (st == PlaybackState.STATE_PLAYING || st == PlaybackState.STATE_BUFFERING) { shown = c.getSessionToken(); return c; }
+            if (st != PlaybackState.STATE_PAUSED || !inFront(c.getPackageName())) continue;
+            if (c.getSessionToken().equals(shown)) paused = c;
+            else if (paused == null && title(c.getMetadata()) != null) paused = c;
         }
+        if (paused == null) shown = null;
         return paused;
+    }
+    private static android.media.session.MediaSession.Token shown;
+
+    private static boolean inFront(String pkg) {
+        try {
+            android.app.ActivityManager am = (android.app.ActivityManager) ctx.getSystemService(Context.ACTIVITY_SERVICE);
+            for (android.app.ActivityManager.RunningAppProcessInfo p : am.getRunningAppProcesses())
+                if (p.importance == android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND && p.pkgList != null)
+                    for (String k : p.pkgList) if (k.equals(pkg)) return true;
+            return false;
+        } catch (Throwable cannotTell) { return true; }               // as before: the paused one stays
     }
 
     private static String title(MediaMetadata m) {
@@ -133,7 +165,7 @@ public final class Playing {
             }
             long dur = m == null ? 0 : m.getLong(MediaMetadata.METADATA_KEY_DURATION);
             line = "{\"state\":" + q(st == PlaybackState.STATE_PLAYING ? "playing" : st == PlaybackState.STATE_BUFFERING ? "buffering" : "paused")
-                + ",\"pkg\":" + q(c.getPackageName()) + ",\"title\":" + q(title(m)) + ",\"sub\":" + q(sub)
+                + ",\"pkg\":" + q(c.getPackageName()) + ",\"app\":" + q(label(c.getPackageName())) + ",\"title\":" + q(title(m)) + ",\"sub\":" + q(sub)
                 + ",\"pos\":" + Math.max(0, pos) + ",\"dur\":" + Math.max(0, dur) + ",\"speed\":" + speed
                 + ",\"seek\":" + ((s != null && (s.getActions() & PlaybackState.ACTION_SEEK_TO) != 0) ? "true" : "false") + "}";
         }

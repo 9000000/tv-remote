@@ -13,6 +13,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Sức khỏe → Lịch sử: dải màu dưới biểu đồ RAM/CPU cho biết app nào đang mở, có vạch ở mỗi lần chuyển app, rê chuột hay chạm thì làm nổi khoảng app đó; lúc TV ngủ tô xám. Sóng Wi-Fi và các lần mất mạng (vạch đỏ) nằm chung biểu đồ đó; bấm vào chú thích để ẩn/hiện từng đường; số liệu tại điểm đang chỉ hiện thành bảng.
 - Mất ADB giữa chừng (vd khi đưa app xuống nền): tab đang xem giữ nguyên dữ liệu và chỗ đang cuộn, chỉ phủ một lớp “Đang kết nối ADB…”; không nối lại được thì báo lỗi ngay trên lớp đó, kèm nút Thử lại.
 - Các tab Ứng dụng, Tệp, Sức khỏe, Tự động, Thiết lập dùng chung một cỡ cho nút, ô nhập và lựa chọn; trên điện thoại ô lọc tệp có dòng riêng.
+- Đang phát: app không gửi tên phim (vd FPT Play) giờ hiện tên app thay vì “null”, và tạm dừng không làm mất thanh nữa. Đang tạm dừng mà chuyển sang app khác thì thanh tự ẩn.
 
 **English**
 - 📱 Phone app: Scan the Wi-Fi goes straight onto the Wi-Fi while Tailscale (or another VPN) is on, so TVs at home are still found. On mobile data only, it says the phone is not on Wi-Fi instead of scanning the carrier's network.
@@ -21,6 +22,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Health → History: a coloured strip under the RAM/CPU chart shows which app was open, with a line at each switch, and hovering or touching lights up that app's stretch; the TV's sleep is greyed out. The Wi-Fi signal and each network loss (a red band) are drawn on the same chart; press a legend entry to hide or show its line; the figures at the cursor show as a table.
 - ADB dropping halfway (putting the app in the background, say): the open tab keeps its data and scroll position under a “Connecting ADB…” layer; if it cannot reconnect, the error and a Retry button show on that layer.
 - The Apps, Files, Health, Automation and Setup tabs share one size for buttons, fields and choices; on a phone the file filter gets its own line.
+- Now playing: an app that sends no title (FPT Play, say) shows its name instead of “null”, and pausing no longer hides the bar; a paused app left for another hides it.
 
 ## 0.2.1 - 2026-10-16
 

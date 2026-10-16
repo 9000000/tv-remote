@@ -16,7 +16,7 @@ class NowPlaying(private val adb: () -> Adb, private val helper: () -> ByteArray
     @Volatile private var failedAt = 0L
     private val lock = Any()
 
-    /** {state: none | playing | paused | buffering, pkg, title, sub, pos, dur (ms, 0 unknown), seek (it can be sought)}. */
+    /** {state: none | playing | paused | buffering, pkg, app (its name), title (null when the player tells none), sub, pos, dur (ms, 0 unknown), seek (it can be sought)}. */
     fun state(): JSONObject {
         asked = System.currentTimeMillis()
         start()
