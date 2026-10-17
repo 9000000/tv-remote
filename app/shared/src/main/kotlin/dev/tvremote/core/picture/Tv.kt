@@ -194,7 +194,6 @@ class Tv(
             val one = ByteArray(1)
             var i = 0
             val giveUp = System.nanoTime() + 20_000_000_000L
-            if (Trace.on) Trace.log("s.launch")
             while (System.nanoTime() < giveUp && first == null && !stopped) {   // until the server listens, the TV refuses the socket
                 try {
                     val s = a.open("localabstract:scrcpy_$scid")
