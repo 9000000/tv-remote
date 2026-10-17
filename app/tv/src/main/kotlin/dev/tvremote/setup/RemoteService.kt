@@ -356,7 +356,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
 
     // ---------------------------------------------------------------- the picture, for one browser at a time
     /** The picture for the page, from a second session made only while a browser watches: see Feeds. */
-    private fun video(quality: Int): HttpServer.Response = feeds.video { l, sink -> Tv(this, "127.0.0.1", null, quality, 1280, false, l, sink) }
+    private fun video(quality: Int, fps: Int, rate: Int): HttpServer.Response =
+        feeds.video { l, sink -> Tv(this, "127.0.0.1", null, quality, 1280, false, l, sink, fps = fps, bitRate = rate) }
 
     private fun scenes(): JSONArray = try { JSONArray(prefs.getString("scenes", "[]")) } catch (e: Exception) { JSONArray() }
 
@@ -423,7 +424,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 shot.headers["Cache-Control"] = "no-store"
                 return shot
             }
-            "/api/video" -> return video(r.q("q").toIntOrNull() ?: 1)
+            "/api/video" -> return video(r.q("q").toIntOrNull() ?: 1, r.q("fps").toIntOrNull() ?: 0, r.q("rate").toIntOrNull() ?: 0)
             "/api/audio" -> return sound(r.query["share"] == "1", r.query["hq"] == "1")
             "/api/rules" -> return try {
                 val st = Rules.change(this, if (r.method == "POST") r.json() else JSONObject())

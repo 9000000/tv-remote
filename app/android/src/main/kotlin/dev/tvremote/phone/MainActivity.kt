@@ -353,7 +353,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val h = host ?: return
         if (pic != null || tv == null || !video || bgListen || !surfaceReady) return
         val dm = resources.displayMetrics
-        pic = Tv(this, h, surface.holder.surface, prefs.getInt("quality", 1), maxOf(dm.widthPixels, dm.heightPixels), false, picListener)
+        pic = Tv(this, h, surface.holder.surface, prefs.getInt("quality", 1), maxOf(dm.widthPixels, dm.heightPixels), false, picListener,
+            fps = prefs.getInt("picFps", 0), bitRate = prefs.getInt("picRate", 0) * 1_000_000)
     }
 
     internal fun stopPicture() {

@@ -47,6 +47,9 @@ class Tv(
     private val audioShare: Boolean = false,
     /** Opus bit rate: 64 kbit/s is plenty for speech and TV, 160 sounds like the source for music */
     private val audioBitRate: Int = 64000,
+    /** the person's own frames per second and bit rate (Advanced picture), 0: the level's */
+    fps: Int = 0,
+    bitRate: Int = 0,
 ) {
     /** One H.264 packet as scrcpy sends it (Annex B). config: SPS/PPS, needed before the first frame; key: a key frame. */
     fun interface Sink { fun video(config: Boolean, key: Boolean, data: ByteArray) }
@@ -110,7 +113,8 @@ class Tv(
 
     init {
         val q = QUALITY[quality.coerceIn(0, QUALITY.size - 1)]
-        video = "video_bit_rate=" + q[1] + " max_fps=" + q[2] + " max_size=" + maxOf(160, minOf(q[0], maxSide) / 8 * 8)
+        video = "video_bit_rate=" + (if (bitRate > 0) bitRate.coerceIn(100_000, 20_000_000) else q[1]) +
+            " max_fps=" + (if (fps > 0) fps.coerceIn(1, 60) else q[2]) + " max_size=" + maxOf(160, minOf(q[0], maxSide) / 8 * 8)
         Thread({ run() }, "tv-session").apply { isDaemon = true }.start()
     }
 

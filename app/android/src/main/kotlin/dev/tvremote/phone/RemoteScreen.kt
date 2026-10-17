@@ -68,7 +68,6 @@ internal fun MainActivity.layoutRemote() {
     videoBtn.contentDescription = if (video) t("Ẩn hình TV", "Hide the TV picture") else t("Xem hình TV", "Show the TV picture")
 }
 
-/** The quality chip under the picture: the levels, lightest first. */
 /** Where the sound plays, drawn: the phone alone, or the TV and the phone. */
 internal fun MainActivity.listenArt(share: Boolean): android.graphics.drawable.Drawable {
     val art = { name: String -> resources.getDrawable(resources.getIdentifier("ic_$name", "drawable", packageName), null).mutate().apply { setTint(TEXT) } }
@@ -80,12 +79,42 @@ internal fun MainActivity.listenArt(share: Boolean): android.graphics.drawable.D
     return d
 }
 
+/** The quality chip under the picture: the levels, lightest first, then the advanced settings. */
 internal fun MainActivity.qualityMenu() {
     val menu = android.widget.PopupMenu(this, qualBtn)
     val now = prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)
     for (level in Tv.LEVELS) menu.menu.add(1, level, 0, Tv.QUALITY[level][0].toString() + "p" + (if (level == now) "  ✓" else ""))
-    menu.setOnMenuItemClickListener { item -> setQuality(item.itemId); true }
+    menu.menu.add(2, -1, 1, t("⚙️ Nâng cao…", "⚙️ Advanced…"))
+    menu.setOnMenuItemClickListener { item -> if (item.itemId < 0) picAdvanced() else setQuality(item.itemId); true }
     menu.show()
+}
+
+private val PIC_FPS = intArrayOf(0, 15, 30, 60)                       // the same chips as the page's (js/screen.js)
+private val PIC_RATE = intArrayOf(0, 1, 2, 4, 8)                      // Mbit/s
+
+/** Frames per second and bit rate of the person's own, over the level's (0: the level's): each tap restarts the picture. */
+private fun MainActivity.picAdvanced() {
+    val body = col()
+    val fps = LinearLayout(this); val rate = LinearLayout(this)
+    fun draw() {
+        val words = { v: Int -> if (v == 0) t("Mặc định", "Default") else v.toString() }
+        fps.removeAllViews(); rate.removeAllViews()
+        fps.addView(chips(PIC_FPS.map { it.toString() to words(it) }, prefs.getInt("picFps", 0).toString()) { tune("picFps", it.toInt()); draw() }, LinearLayout.LayoutParams(-1, -2))
+        rate.addView(chips(PIC_RATE.map { it.toString() to words(it) }, prefs.getInt("picRate", 0).toString()) { tune("picRate", it.toInt()); draw() }, LinearLayout.LayoutParams(-1, -2))
+    }
+    draw()
+    body.addView(head(t("KHUNG/GIÂY", "FRAMES PER SECOND")))
+    body.addView(fps, gap(6))
+    body.addView(head(t("BITRATE (MBIT/S)", "BIT RATE (MBIT/S)")), gap(14))
+    body.addView(rate, gap(6))
+    AlertDialog.Builder(this).setTitle(t("Hình nâng cao", "Advanced picture")).setView(inDialog(body))
+        .setPositiveButton(t("Xong", "Done"), null).show()
+}
+
+private fun MainActivity.tune(key: String, v: Int) {
+    if (prefs.getInt(key, 0) == v) return
+    prefs.edit().putInt(key, v).apply()
+    if (pic != null) { stopPicture(); startPicture() }                // fixed when the picture's session starts
 }
 
 private fun MainActivity.setQuality(level: Int) {

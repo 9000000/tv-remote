@@ -4,6 +4,16 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+
+- Hình nâng cao: chọn khung/giây (15, 30, 60) và bitrate (1–8 Mbit/s) cho hình TV, ở mục ⚙️ Nâng cao trong ô chất lượng hình. Có trên app máy tính, Web của TV và app điện thoại.
+
+**English**
+
+- Advanced picture: pick the frames per second (15, 30, 60) and bit rate (1–8 Mbit/s) of the TV's picture, under ⚙️ Advanced in the quality picker. On the computer app, the TV web page and the phone app.
+
 ## 0.6.0 - 2026-10-17
 
 Web 0.6.0 · app điện thoại 0.6.0 · app TV 0.6.0

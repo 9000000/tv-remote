@@ -55,6 +55,8 @@
     'TV: mất kết nối': 'TV: disconnected', 'TV: đang bật': 'TV: on', 'TV: màn hình tắt': 'TV: screen off', 
     'chưa ghép remote (tab TV)': 'remote not paired (TV tab)', 'đã kết nối': 'connected',
     // screen
+    '⚙️ Nâng cao…': '⚙️ Advanced…', '⚙️ Hình nâng cao': '⚙️ Advanced picture', 'Khung/giây': 'Frames per second', 'Mặc định': 'Default',
+    'Cao hơn thì mượt, nét hơn nhưng nặng TV và mạng hơn.': 'Higher is smoother and sharper, but heavier on the TV and the network.',
     'Màn hình TV': 'TV screen', 'Trực tiếp · nhẹ': 'Live · light', 'Trực tiếp · nét': 'Live · sharp', 'Ảnh chụp': 'Screenshots',
     'Toàn màn hình': 'Full screen', 'Xem': 'View', 'Về Remote': 'Back to Remote', 'Trực tiếp': 'Live', 'đang chờ hình': 'waiting for a picture',
     'chế độ nét làm TV chậm hơn rõ rệt': 'sharp mode slows the TV noticeably', 'chế độ nhẹ cho TV': 'light on the TV',

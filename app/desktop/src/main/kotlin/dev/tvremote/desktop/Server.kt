@@ -131,7 +131,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             "/api/setup/status" -> return setupStatus(s)
             "/api/assist" -> return Response.json(assist.state())
             "/api/screen" -> return screenshot(s)
-            "/api/video" -> return video(s, r.q("q"))
+            "/api/video" -> return video(s, r)
             "/api/audio" -> return audio(s, r)
             "/api/scenes" -> return if (r.query.containsKey("download")) Scenes.backup(saved.scenes) else Response.json(JSONObject().put("scenes", saved.scenes))
             "/api/clip" -> return clip(s.control().clipboard())
@@ -393,10 +393,12 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         Response.error(503, "screen: ${e.message}")
     }
 
-    private fun video(s: Session, q: String): Response {
+    private fun video(s: Session, r: HttpServer.Request): Response {
         if (s.host.isEmpty()) return Response.error(400, "no TV selected")
+        val q = r.q("q")
         val level = if (q == "hd") HD else q.toIntOrNull() ?: 1
-        return s.feeds.video { l, sink -> Tv(keys, jar, s.host, null, level, 4096, false, l, sink) }
+        val fps = r.q("fps").toIntOrNull() ?: 0; val rate = r.q("rate").toIntOrNull() ?: 0   // Advanced picture
+        return s.feeds.video { l, sink -> Tv(keys, jar, s.host, null, level, 4096, false, l, sink, fps = fps, bitRate = rate) }
     }
 
     private fun audio(s: Session, r: HttpServer.Request): Response {

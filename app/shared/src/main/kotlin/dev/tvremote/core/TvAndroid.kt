@@ -13,7 +13,7 @@ import android.view.Surface
 fun Tv(
     ctx: Context, host: String, surface: Surface?, quality: Int, maxSide: Int, wake: Boolean, listener: Tv.Listener,
     sink: Tv.Sink? = null, audio: String? = null, audioSink: Tv.AudioSink? = null, wantControl: Boolean = true,
-    audioShare: Boolean = false, audioBitRate: Int = 64000,
+    audioShare: Boolean = false, audioBitRate: Int = 64000, fps: Int = 0, bitRate: Int = 0,
 ): Tv {
     val app = ctx.applicationContext
     val hear = audioSink ?: if (audio == "opus") object : Tv.AudioSink {
@@ -22,7 +22,7 @@ fun Tv(
         override fun end() = out.release()
     } else null
     return Tv(app.filesDir, { app.assets.open("scrcpy-server.jar").use { it.readBytes() } }, host, surface?.let { SurfaceScreen(it) },
-        quality, maxSide, wake, listener, sink, audio, hear, wantControl, audioShare, audioBitRate)
+        quality, maxSide, wake, listener, sink, audio, hear, wantControl, audioShare, audioBitRate, fps, bitRate)
 }
 
 /** Android's own H.264 decoder, drawing onto a Surface. */

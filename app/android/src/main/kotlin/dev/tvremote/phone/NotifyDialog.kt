@@ -21,7 +21,7 @@ private fun cornerWords(c: String) = when (c) {
 }
 
 /** A row of choices that look like buttons, the picked one lit; [pick] is told the new choice. */
-private fun MainActivity.chips(options: List<Pair<String, String>>, now: String, pick: (String) -> Unit): LinearLayout {
+internal fun MainActivity.chips(options: List<Pair<String, String>>, now: String, pick: (String) -> Unit): LinearLayout {
     val row = LinearLayout(this)
     options.forEachIndexed { i, (value, words) ->
         val b = button(words, if (value == now) ACCENT else BTN)
