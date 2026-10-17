@@ -42,7 +42,7 @@ fun main(args: Array<String>) {
     val first = opt["tv"]?.trim()?.also { if (!Server.IP.matches(it)) { System.err.println("--tv: not an IPv4 address: $it"); kotlin.system.exitProcess(2) } }
     val done = CountDownLatch(1)
     val pass = Pass(passFile)
-    val server = Server(repo, keys, pass, File(data, if (packaged) "cache" else ".cache/desktop").also { it.mkdirs() }, saved, first) { done.countDown() }
+    val server = Server(repo, keys, pass, File(data, if (packaged) "cache" else ".cache/desktop").also { it.mkdirs() }, saved, first, port + 1) { done.countDown() }
     val http = HttpServer(server)
     val bound = try { http.start(port, true) } catch (e: java.io.IOException) {
         System.err.println("port $port is taken: is TV Remote already running? ($e)")
@@ -51,6 +51,7 @@ fun main(args: Array<String>) {
         return
     }
     pass.save()
+    server.startHook()
     val link = pass.link("http://127.0.0.1:$bound")
     println("Remote: $link  (TV ${(first ?: saved.current).ifEmpty { "not chosen yet" }})")
     Runtime.getRuntime().addShutdownHook(Thread { http.stop(); server.close() })   // Ctrl+C, logging out: the TV's sessions end too

@@ -9,10 +9,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 
 - Xem màn hình TV: sau khi trang tự hạ cỡ hình vì mạng chậm, mạng ổn lại khoảng 30 giây thì cỡ hình tự tăng lại từng bậc, không vượt cỡ người dùng đã chọn. Vừa tăng mà lại chậm thì lần chờ sau lâu gấp đôi (không nhấp nhô).
+- Home Assistant và Phím tắt (Siri) điều khiển TV trong mạng nhà: 🛠️ Cài đặt → “Home Assistant · Phím tắt” (web của TV và app máy tính). Đường dẫn `/api/hook?k=<mã>&key=HOME` (cũng `scene=`, `app=`, `text=`, `volume=`, `power=`) và `/api/hook/state`. Mã riêng, không phải mã ghép, tắt sẵn, đổi mã mới được, sai 5 lần bị chặn 1 phút. App máy tính chỉ mở cổng thêm (cổng app + 1) khi đang bật.
 
 **English**
 
 - Watching the TV screen: after the page lowered the picture size on a slow network, it now steps back up one size at a time once the network has been fine for about 30 s, never above the size the person picked. If it falls behind again soon after a step up, the next wait is doubled (no flapping).
+- Home Assistant and Shortcuts (Siri) can control the TV on the home network: 🛠️ Settings → “Home Assistant · Shortcuts” (TV web page and Computer app). `/api/hook?k=<token>&key=HOME` (also `scene=`, `app=`, `text=`, `volume=`, `power=`) and `/api/hook/state`. Its own token, not the pairing code; off by default; a new token can be made; five wrong tries block an address for a minute. The Computer app opens one extra port (the app's port + 1) only while it is on.
 
 ## 0.8.0 - 2026-10-18
 

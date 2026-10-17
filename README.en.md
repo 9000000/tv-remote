@@ -70,6 +70,7 @@ The README, the code and the site always call the parts by these names:
 | Turning on a TV that is fully off (Wake-on-LAN) | ✓ | off with the TV | ✓ |
 | Keys while the TV has not allowed ADB | ✓ | | ✓ |
 | Widget, Quick Settings tiles, the phone's volume keys | ✓ | | |
+| Link for Home Assistant, Shortcuts (Siri) | | ✓ | ✓, its own port while on |
 | Install on the controlling device | the app | nothing, fine on an iPhone | the app |
 | LG, Samsung, Roku, VIDAA TVs | ✓ | | ✓ |
 
@@ -265,6 +266,28 @@ Why not send the account from the phone to the TV? Tailscale only takes a sign-i
 The person at the TV: turn on ADB debugging, install TV Setup (or let the helper install it remotely with "Turn ADB on for me"), open TV Setup and press **Tailscale**. The TV shows a QR code: take a photo and send it to the helper. The helper scans it with a phone signed in to their Tailscale, presses Connect, then connects to the TV's `100.x` IP.
 </details>
 
+## Home Assistant and Shortcuts (Siri)
+
+Press keys, open apps and run scenes on the TV from Home Assistant or an iPhone Shortcut, on the home network. Open 🛠️ Settings → **Home Assistant · Shortcuts**, choose **On**, copy the link. Its token is its own, not the pairing code; **New token** ends the old link. Home only, never open it to the Internet (away from home: Tailscale).
+
+- TV web page (TV Setup): it uses port 8765 as it is. Computer app: it opens one more port, `8766` (the app's port + 1), **only while on**, and that port answers `/api/hook` and nothing else. A sleeping computer cannot be called: for a TV, use TV Setup.
+- One thing per call: `key=HOME`, `scene=Movie night`, `app=com.netflix.ninja`, `text=...`, `volume=20` (or `up` / `down` / `mute`), `power=on|off|toggle`. `GET /api/hook/state` returns `{"on","volume","app"}`.
+
+Shortcuts: “Get contents of URL” with the copied link. Home Assistant (`configuration.yaml`, the token goes in the `x-tvr-hook` header):
+
+```yaml
+rest_command:
+  tv_key:
+    url: "http://192.168.1.20:8766/api/hook"
+    method: post
+    headers:
+      x-tvr-hook: "<token>"
+    content_type: "application/json"
+    payload: '{"key": "{{ key }}"}'
+```
+
+Then in an automation: `action: rest_command.tv_key` with `data: { key: HOME }`. Five wrong tokens from one address block it for a minute.
+
 ## When the TV is off
 
 - **Standby (network still up):** Power or Wake is enough, over Tailscale too.
@@ -308,7 +331,7 @@ If the TV later shows no home screen: Settings → Apps → System apps → **An
 - ADB over the network has no password: any device the TV has "Always allowed" has full control of it. Use it only on networks you trust and over Tailscale. To revoke: Developer options → Revoke USB debugging authorizations.
 - **Who may have TV Setup press Allow:** only a device paired with the 6-digit code (shown on the TV's screen, so someone was there) or one that already has ADB. The pass for a device with ADB is handed out through a broadcast only ADB's shell can send, so no other app on the TV can get one. Each Allow checks the key code and shows a notice on the TV. **Unpair all** on the TV voids every pass.
 - The computer app's `keys` folder (Mac: `~/Library/Application Support/TV Remote`, Windows: `%APPDATA%\TV Remote`, Linux: `~/.local/share/tv-remote`) holds the pairing keys. **Whoever has those files can control the TV.** Never share them.
-- The Computer app listens on `127.0.0.1` only, with a new key each time it starts: its window and the browser it opens carry the key by themselves; other programs or users of the computer cannot get in. The TV web page listens on the home network and requires the pairing code.
+- The Computer app listens on `127.0.0.1` only, with a new key each time it starts: its window and the browser it opens carry the key by themselves; other programs or users of the computer cannot get in. The one exception is the Home Assistant · Shortcuts port, opened only when you switch it on, which serves `/api/hook` with its own token and nothing else. The TV web page listens on the home network and requires the pairing code.
 - **The TV's owner** is whoever reached the TV itself: the phone app, the computer app (over ADB), Manage on this TV, and a browser that typed the 6-digit code shown on the TV's screen. They have full access. Someone given a shared QR code gets what the sharer picked: **Full access**, **Remote only** (keys, typing, the picture, opening apps, the sleep timer, running saved scenes; no installing, files or Setup) or **View only** (the TV's picture and what is playing). The owner changes each device's access in Setup → Paired devices.
 - The phone app asks before sending a file or link that another app shared to the TV.
 - Install APKs only from sources you trust.

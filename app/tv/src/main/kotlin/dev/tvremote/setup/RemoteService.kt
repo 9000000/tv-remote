@@ -146,6 +146,16 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     private val ME = Paired.Entry("tv", "", "TV", "127.0.0.1", 0L, 0L, "tv", false, Scope.FULL)   // the Manage screen on the TV: never in the list
 
     private val ui = Handler(Looper.getMainLooper())
+
+    // Home Assistant and Shortcuts (Hook.kt): on this port already, so no listener of its own. /api/hook has its token and no
+    // pairing; the switch and the token are changed only by the owner's page (/api/hook/config, Scope.FULL).
+    private val hook: dev.tvremote.core.web.Hook by lazy {
+        dev.tvremote.core.web.Hook(object : dev.tvremote.core.web.Hook.Store {
+            override var enabled: Boolean get() = prefs.getBoolean("hook_on", false); set(v) { prefs.edit().putBoolean("hook_on", v).apply() }
+            override var token: String get() = prefs.getString("hook_token", "") ?: ""; set(v) { prefs.edit().putString("hook_token", v).apply() }
+        }, dev.tvremote.core.web.Hook.Routes(), { used(it.path); route(it, "127.0.0.1", ME) }, { state("127.0.0.1") }, { scenes() },
+            { lanIp().takeIf { it.isNotEmpty() }?.let { "http://$it:$PORT" } ?: "" })
+    }
     private val random = SecureRandom()
     private val icons: MutableMap<String, ByteArray> = ConcurrentHashMap()
     private val held = HashMap<Int, Runnable>()
@@ -391,6 +401,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         if (!host.matches(Regex("[0-9.]+|localhost|\\[[0-9a-fA-F:]+\\]"))) return HttpServer.Response.error(403, "open this page by the TV's IP address")
 
         page.serve(r.path)?.let { return it }                        // the page and its scripts need no pairing: they hold no secrets
+        hook.handle(r)?.let { return it }                            // its own token instead of a pairing (Hook.kt); off until switched on
         if (r.path == "/api/pair/start" && r.method == "POST") return pairStart(r.peer)
         if (r.path == "/api/pair/finish" && r.method == "POST") return pairFinish(r)
         if (r.path == "/api/pair/invite" && r.method == "POST") return pairInvite(r)
@@ -431,6 +442,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 if (gone) { out.headers["Set-Cookie"] = cookie("", r.tls, 0) }   // forgetting oneself logs out: the page asks for a code
                 return out
             }
+            "/api/hook/config" -> return hook.config(r)               // Scope.allows keeps everyone but the owner out
             "/api/state" -> return HttpServer.Response.json(state(host).put("scope", me.scope))
             "/api/share" -> if (post) return HttpServer.Response.json(Invite.link(lanIp(), newInvite(r.json().optString("scope")), host))   // a paired page shares the TV it is on
             "/api/about" -> return HttpServer.Response.json(state(host))

@@ -21,6 +21,19 @@
   if (LANG === 'vi') { window.tr = (s) => s; return; }
 
   const EN = {
+    'Home Assistant · Phím tắt': 'Home Assistant · Shortcuts',
+    'Cho Home Assistant và Phím tắt (Siri) bấm phím trên TV trong nhà. Chỉ dùng trong mạng nhà, đừng mở ra Internet.': 'Lets Home Assistant and Shortcuts (Siri) press the TV’s keys at home. Home network only: never open it to the Internet.',
+    'Đường dẫn cho Phím tắt': 'Link for Shortcuts',
+    'Dán vào “Lấy nội dung của URL” trong Phím tắt. Sau “key=” có thể dùng scene=, app=, volume=, power=, text=.': 'Paste it into “Get contents of URL” in Shortcuts. Instead of “key=” you can use scene=, app=, volume=, power=, text=.',
+    'Không bật': 'Off', 'Cho dùng': 'On', '📋 YAML cho Home Assistant': '📋 YAML for Home Assistant', '🔄 Đổi mã mới': '🔄 New token',
+    'YAML cho Home Assistant': 'YAML for Home Assistant',
+    'Đổi mã mới': 'New token',
+    'Ai có đường dẫn này bấm được phím trên TV. Đổi mã mới thì đường dẫn cũ hết dùng.': 'Anyone with this link can press the TV’s keys. A new token ends the old link.',
+    'Đổi mã mới? Các Phím tắt và Home Assistant đang dùng mã cũ sẽ ngừng chạy cho đến khi bạn dán đường dẫn mới.': 'Make a new token? Shortcuts and Home Assistant using the old one stop working until you paste the new link.',
+    'Đổi mã': 'Change',
+    'Đã đổi mã mới': 'New token made',
+    'Đã sao chép đường dẫn': 'Link copied',
+    'Đã sao chép YAML': 'YAML copied',
     // one page for the three cores: pairing with the page from the TV, the allow-debugging screen
     'Không gọi được TV: TV đang bật và cùng mạng với máy này chứ?': 'Cannot reach the TV: is it on and on the same network as this device?',
     'TV đang hỏi cho phép gỡ lỗi: nhìn lên TV, chọn “Luôn cho phép”': 'the TV is asking to allow debugging: look at the TV and choose “Always allow”',

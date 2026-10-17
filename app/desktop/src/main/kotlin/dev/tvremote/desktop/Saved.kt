@@ -95,4 +95,9 @@ class Saved(private val file: File) {
     var scenes: JSONArray
         @Synchronized get() = JSONArray((cfg.optJSONArray("scenes") ?: JSONArray()).toString())
         @Synchronized set(v) { cfg.put("scenes", v) }
+
+    /** The Home Assistant / Shortcuts hook: `on`, and its own `token` (Hook.kt). */
+    var hook: JSONObject
+        @Synchronized get() = JSONObject((cfg.optJSONObject("hook") ?: JSONObject()).toString())
+        @Synchronized set(v) { cfg.put("hook", v) }
 }

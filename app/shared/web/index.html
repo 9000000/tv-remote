@@ -381,6 +381,16 @@
     <div class="group" data-for="pc"><h3>App trên máy tính</h3>
       <div class="actions"><button class="small" id="updcheck">🔄 Kiểm tra bản mới</button><button class="small danger" id="quit" data-asks title="Dừng chương trình trên máy tính này (TV không bị ảnh hưởng)">⏻ Tắt</button></div>
       <p class="note" id="updcheckmsg"></p></div>
+    <div class="group" id="hookgroup" data-for="pc tv"><h3>Home Assistant · Phím tắt</h3>
+      <p class="note">Cho Home Assistant và Phím tắt (Siri) bấm phím trên TV trong nhà. Chỉ dùng trong mạng nhà, đừng mở ra Internet.</p>
+      <div class="places" id="hookpick"><button data-v="off">Không bật</button><button data-v="on">Cho dùng</button></div>
+      <div class="group" id="hookbody" hidden>
+        <div class="line"><input id="hookurl" readonly aria-label="Đường dẫn cho Phím tắt" spellcheck="false"><button id="hookcopyurl">📋 Sao chép</button></div>
+        <p class="note">Dán vào “Lấy nội dung của URL” trong Phím tắt. Sau “key=” có thể dùng scene=, app=, volume=, power=, text=.</p>
+        <div class="actions"><button class="small" id="hookcopyyaml">📋 YAML cho Home Assistant</button><button class="small danger" id="hooknew">🔄 Đổi mã mới</button></div>
+        <p class="note">Ai có đường dẫn này bấm được phím trên TV. Đổi mã mới thì đường dẫn cũ hết dùng.</p>
+      </div>
+    </div>
     <div class="group about"><h3>Giới thiệu</h3>
     <p><b>TV Remote</b> <span class="muted" id="aboutver"></span></p>
     <p>Điều khiển Android TV / Google TV từ máy tính và điện thoại: nút remote, xem màn hình, ứng dụng, tệp, cài APK.</p>
