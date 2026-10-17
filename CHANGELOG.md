@@ -4,7 +4,9 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
-## Unreleased
+## 0.5.0 - 2026-10-17
+
+Web 0.5.0 · app điện thoại 0.5.0 · app TV 0.5.0
 
 **Tiếng Việt**
 - 🔔 Gửi thông báo lên TV (Thêm phím → Gửi thông báo lên TV): gõ tiêu đề (không bắt buộc) và vài chữ, TV hiện thành thẻ nhỏ đè lên mọi app, không giành phím remote và tự biến mất. Chọn góc (trên trái / trên phải / dưới trái / dưới phải, mặc định trên phải) và thời gian hiện (3 / 5 / 10 / 30 giây, mặc định 5); lần sau nhớ lựa chọn. Có trong app điện thoại, app máy tính và trang web của TV (khách “Chỉ remote” cũng gửi được). Cảnh có thêm bước “🔔 Gửi thông báo”, nên hẹn giờ và cảnh gửi được. Cần TV Setup 0.4.2 trở lên.
