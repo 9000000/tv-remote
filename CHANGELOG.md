@@ -9,7 +9,6 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 
 - Cài TV Setup lên TV chưa bật ADB: luôn đi qua Downloader. Trước đây trình duyệt có sẵn của TV (như TCL) nhận đường dẫn APK, tải về rồi đứng ở trang trắng, không mở được trình cài. Cách gửi link thẳng vẫn còn, ở cuối danh sách “Bật ADB”, ghi rõ là dự phòng; sau một phút chưa thấy báo cài xong thì app gợi ý cài qua Downloader.
-
 - Bật ADB lần đầu: TV chỉ hỏi “Cho phép gỡ lỗi USB?” một lần. Trước đây mỗi phần của app (hình, quản lý, nhạc...) hỏi riêng, và TV Setup hỏi thêm cho chính nó; giờ các phần chờ chung một câu trả lời, và điện thoại / máy tính vừa được cho phép tự trả lời giúp câu hỏi của TV Setup.
 
 **English**
