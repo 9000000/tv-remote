@@ -13,6 +13,8 @@ function meter(label, pct, detail) {
   m.querySelector('i').style.width = Math.max(0, Math.min(100, pct)) + '%';
   return m;
 }
+// the thermal service's status: from 3 on, Android slows the TV down to cool it
+const HEAT = ['bình thường', 'hơi ấm', 'ấm', 'nóng · TV có thể chạy chậm lại', 'rất nóng · TV đang chạy chậm lại', 'quá nóng', 'sắp tự tắt vì quá nóng'];
 function fmtUptime(s) {
   const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
   return (d ? d + ' ngày ' : '') + (d || h ? h + ' giờ ' : '') + m + ' phút';
@@ -292,6 +294,7 @@ async function loadHealth() {
   ]));
   const load = [];
   if (h.cpu != null) load.push(meter('CPU' + (h.cores ? ' · ' + h.cores + ' nhân' : ''), h.cpu, h.cpu + '%'));
+  if (h.gpu != null) load.push(meter('GPU', h.gpu, h.gpu + '%'));
   if (h.mem_total) { const used = h.mem_total - h.mem_free; load.push(meter('RAM', used * 100 / h.mem_total, 'đã dùng ' + fmtSize(used) + ' / ' + fmtSize(h.mem_total))); }
   if (h.disk_total) { const used = h.disk_total - h.disk_free; load.push(meter('Bộ nhớ trong', used * 100 / h.disk_total, 'đã dùng ' + fmtSize(used) + ' / ' + fmtSize(h.disk_total))); }
   $('#hload').replaceChildren(...load);
@@ -299,6 +302,19 @@ async function loadHealth() {
   const cell = (cls, text) => el('div', { className: cls, textContent: text });   // CPU and RAM said once, as column heads
   $('#htop').replaceChildren(...(h.top.length ? [cell('h', 'Tiến trình'), cell('h n', 'CPU'), cell('h n', 'RAM')] : []),
     ...h.top.flatMap((p) => [cell('k', (typeof appName === 'function' && META.has(p.name) && appName(p.name)) || p.name), cell('v n', p.cpu + '%'), cell('v n', p.mem + '%')]));
+  const t = h.thermal;
+  $('#htempc').hidden = !t;
+  if (t) redrawIfChanged('#htemp', [
+    t.status != null ? ['Mức nhiệt', HEAT[t.status] || String(t.status)] : null,
+    ...t.temps.map((s) => [s.name, Math.round(s.c) + ' °C']),
+  ]);
+  $('#hrate').replaceChildren(...kv(h.net && h.net.rx != null ? [['Đang tải xuống', fmtSize(h.net.rx) + '/s'], ['Đang tải lên', fmtSize(h.net.tx) + '/s']] : []));
+  const bt = h.bt;
+  $('#hbtc').hidden = !bt;
+  if (bt) redrawIfChanged('#hbt', [
+    ['Bluetooth', bt.on ? 'đang bật' : 'đang tắt'],
+    ...(bt.devices.length ? bt.devices.map((d) => [d.name, d.connected ? 'đã kết nối' : 'đã ghép']) : [['Thiết bị', 'chưa ghép thiết bị nào']]),
+  ]);
   const w = h.wifi;
   redrawIfChanged('#hnet', [
     w ? ['Wi-Fi', w.ssid] : ['Wi-Fi', 'không kết nối'],

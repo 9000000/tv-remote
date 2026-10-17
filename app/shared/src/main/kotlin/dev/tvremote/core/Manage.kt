@@ -821,7 +821,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     @Synchronized private fun slowFacts(adb: Adb): List<String> {
         val now = System.currentTimeMillis()
         if (slowFor !== adb || now - slowAt > 60_000 || slowParts.isEmpty()) {
-            slowParts = (adb.shell(HEALTH_STATIC) + "#~##~##~#").jsplit("#~#", -1).take(4)
+            slowParts = (adb.shell(HEALTH_STATIC) + "#~##~##~##~#").jsplit("#~#", -1).take(5)
             slowFor = adb; slowAt = now
         }
         return slowParts
@@ -833,7 +833,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         adb.shell(":")
         val ping = System.currentTimeMillis() - t0
         val slow = slowFacts(adb)
-        val live = (adb.shell(HEALTH_LIVE) + "#~##~##~##~##~##~#").jsplit("#~#", -1)
+        val live = (adb.shell(HEALTH_LIVE) + "#~#".repeat(10)).jsplit("#~#", -1)
         // same numbering as before: the facts that hardly change come from the cache, the rest was just read
         val part = listOf(slow[0], live[0], live[1], live[2], live[3], slow[1], slow[2], slow[3], live[4], live[5])
         val props = (part[0].trim() + "\n\n\n\n\n\n\n\n").jsplit("\n", -1)
@@ -888,7 +888,24 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         if (app != null) o.put("app", labels?.label(app) ?: app)
         // the computer's server reports what its remote-control session sees; here the same facts come from ADB
         o.put("remote", JSONObject().put("connected", awake != null).put("is_on", awake == "Awake").put("app", o.optString("app")))
+        Sensors.thermal(live[6], live[7])?.let { o.put("thermal", it) }
+        Sensors.gpu(live[8])?.let { o.put("gpu", it) }
+        Sensors.netBytes(live[9])?.let { o.put("net", netRate(adb, it)) }
+        Sensors.bluetooth(slow[4])?.let { o.put("bt", it) }
         return o
+    }
+
+    private var netLast: Triple<Any, Long, LongArray>? = null
+
+    /** {rx, tx} in bytes per second since the last snapshot of this TV; nothing on the first (no rate yet) or after a counter reset. */
+    @Synchronized private fun netRate(adb: Adb, now: LongArray): JSONObject {
+        val t = System.currentTimeMillis()
+        val last = netLast
+        netLast = Triple(adb, t, now)
+        val o = JSONObject()
+        if (last == null || last.first !== adb || t - last.second < 1000 || now[0] < last.third[0] || now[1] < last.third[1]) return o
+        val s = (t - last.second) / 1000.0
+        return o.put("rx", Math.round((now[0] - last.third[0]) / s)).put("tx", Math.round((now[1] - last.third[1]) / s))
     }
 
     companion object {
@@ -916,11 +933,12 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         private const val HEALTH_STATIC = "getprop ro.product.manufacturer; getprop ro.product.model; getprop ro.build.version.release; getprop ro.build.version.sdk; " +
                 "getprop ro.build.version.security_patch; getprop ro.board.platform; getprop ro.product.cpu.abi; cat /sys/devices/system/cpu/present; " +
                 "printf '\\043~\\043\\n'; wm size; wm density; dumpsys display | grep -m1 -o 'fps=[0-9.]*'; printf '\\043~\\043\\n'; dumpsys wifi | grep -m1 mWifiInfo; " +
-                "printf '\\043~\\043\\n'; ip -o -4 addr show"
+                "printf '\\043~\\043\\n'; ip -o -4 addr show; printf '\\043~\\043\\n'; " + Sensors.SLOW
 
         private const val HEALTH_LIVE = "head -1 /proc/stat; sleep 0.6; head -1 /proc/stat; printf '\\043~\\043\\n'; grep -E '^(MemTotal|MemAvailable):' /proc/meminfo; printf '\\043~\\043\\n'; df -k /data | tail -1; " +
                 "printf '\\043~\\043\\n'; cat /proc/uptime; printf '\\043~\\043\\n'; top -n 1 -b -m 7 -o %CPU,%MEM,ARGS -s 1 | tail -7; " +
-                "printf '\\043~\\043\\n'; dumpsys power | grep -m1 -o 'mWakefulness=[A-Za-z]*'; dumpsys activity activities | grep -m1 -E 'mResumedActivity|topResumedActivity'"
+                "printf '\\043~\\043\\n'; dumpsys power | grep -m1 -o 'mWakefulness=[A-Za-z]*'; dumpsys activity activities | grep -m1 -E 'mResumedActivity|topResumedActivity'; " +
+                "printf '\\043~\\043\\n'; " + Sensors.LIVE
 
         /** Health → Errors: the dropbox's notes on apps that stopped, froze or crashed natively, cut on the TV to the lines the page
          *  shows (ANR thread dumps are hundreds of KB). */
