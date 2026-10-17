@@ -4,6 +4,16 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+
+- Home Assistant và Phím tắt (Siri) điều khiển TV trong mạng nhà: 🛠️ Cài đặt → “Home Assistant · Phím tắt” (web của TV và app máy tính). Đường dẫn `/api/hook?k=<mã>&key=HOME` (cũng `scene=`, `app=`, `text=`, `volume=`, `power=`) và `/api/hook/state`. Mã riêng, không phải mã ghép, tắt sẵn, đổi mã mới được, sai 5 lần bị chặn 1 phút. App máy tính chỉ mở cổng thêm (cổng app + 1) khi đang bật.
+
+**English**
+
+- Home Assistant and Shortcuts (Siri) can control the TV on the home network: 🛠️ Settings → “Home Assistant · Shortcuts” (TV web page and Computer app). `/api/hook?k=<token>&key=HOME` (also `scene=`, `app=`, `text=`, `volume=`, `power=`) and `/api/hook/state`. Its own token, not the pairing code; off by default; a new token can be made; five wrong tries block an address for a minute. The Computer app opens one extra port (the app's port + 1) only while it is on.
+
 ## 0.8.0 - 2026-10-18
 
 Web 0.8.0 · app điện thoại 0.8.0 · app TV 0.8.0

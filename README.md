@@ -70,6 +70,7 @@ Trong README, code và trang giới thiệu, các phần luôn được gọi b�
 | Bật TV khi TV đã tắt hẳn (Wake-on-LAN) | ✓ | TV tắt thì trang cũng tắt | ✓ |
 | Bấm phím khi TV chưa cho ADB | ✓ | | ✓ |
 | Widget, ô Cài đặt nhanh, phím âm lượng của máy | ✓ | | |
+| Link cho Home Assistant, Phím tắt (Siri) | | ✓ | ✓, mở cổng riêng khi bật |
 | Cần cài gì trên máy điều khiển | app | không, hợp với iPhone | app |
 | TV LG, Samsung, Roku, VIDAA | ✓ | | ✓ |
 
@@ -266,6 +267,28 @@ Vì sao không gửi thẳng tài khoản từ điện thoại sang TV? Tailscal
 Người ở cạnh TV: bật Gỡ lỗi ADB, cài TV Setup (hoặc nhờ người hỗ trợ cài từ xa qua nút "Bật ADB giúp tôi"), mở TV Setup, bấm nút **Tailscale**. TV hiện mã QR: chụp ảnh gửi cho người hỗ trợ. Người hỗ trợ quét mã bằng điện thoại đã đăng nhập Tailscale của mình, bấm Connect, rồi kết nối tới IP `100.x` của TV.
 </details>
 
+## Home Assistant và Phím tắt (Siri)
+
+Bấm phím, mở app, chạy cảnh trên TV từ Home Assistant hay Phím tắt của iPhone, trong mạng nhà. Vào 🛠️ Cài đặt → **Home Assistant · Phím tắt**, chọn **Cho dùng**, sao chép đường dẫn. Mã của nó riêng, không phải mã ghép; **Đổi mã mới** thì đường dẫn cũ hết dùng. Chỉ dùng trong nhà, đừng mở ra Internet (ở xa: Tailscale).
+
+- Web của TV (TV Setup): dùng ngay cổng 8765. App máy tính: mở thêm cổng `8766` (cổng app + 1) **chỉ khi đang bật**, chỉ trả lời `/api/hook`. Máy tính ngủ thì không gọi được: cho TV thì dùng TV Setup.
+- Mỗi lần gọi một việc: `key=HOME`, `scene=Xem phim`, `app=com.netflix.ninja`, `text=...`, `volume=20` (hay `up` / `down` / `mute`), `power=on|off|toggle`. `GET /api/hook/state` trả `{"on","volume","app"}`.
+
+Phím tắt: “Lấy nội dung của URL” với đường dẫn đã sao chép. Home Assistant (`configuration.yaml`, mã đặt trong header `x-tvr-hook`):
+
+```yaml
+rest_command:
+  tv_key:
+    url: "http://192.168.1.20:8766/api/hook"
+    method: post
+    headers:
+      x-tvr-hook: "<mã>"
+    content_type: "application/json"
+    payload: '{"key": "{{ key }}"}'
+```
+
+Rồi trong tự động hóa: `action: rest_command.tv_key` với `data: { key: HOME }`. Gọi sai mã 5 lần thì địa chỉ đó bị chặn 1 phút.
+
 ## Khi TV tắt
 
 - **Chế độ chờ (còn mạng):** nút Nguồn hoặc Đánh thức là đủ, kể cả qua Tailscale.
@@ -309,7 +332,7 @@ Nếu sau này TV không hiện màn hình chính: Cài đặt → Ứng dụng 
 - ADB qua mạng không có mật khẩu: máy nào đã được TV "Luôn cho phép" là có toàn quyền trên TV. Chỉ dùng trong mạng bạn tin và qua Tailscale. Thu hồi: Tùy chọn nhà phát triển → Thu hồi quyền gỡ lỗi USB.
 - **Ai được nhờ TV Setup cho phép:** chỉ máy đã ghép mã 6 số (mã hiện trên màn hình TV, tức đã có người ở TV) hoặc máy đã có ADB. "Thẻ" cho máy có ADB được phát qua một broadcast chỉ lệnh shell của ADB gửi được, app khác trên TV không lấy được. Mỗi lần cho phép đều so mã khóa và hiện thông báo trên TV. **Hủy ghép** trên TV vô hiệu mọi thẻ.
 - Thư mục `keys` của app máy tính (Mac: `~/Library/Application Support/TV Remote`, Windows: `%APPDATA%\TV Remote`, Linux: `~/.local/share/tv-remote`) là chìa khóa ghép với TV. **Ai có các file trong đó là điều khiển được TV.** Đừng gửi cho ai.
-- App máy tính chỉ nghe ở `127.0.0.1`, và mỗi lần mở có một khóa mới: cửa sổ app và trình duyệt nó mở tự mang khóa, chương trình hay người dùng khác trên máy không vào được. Web của TV nghe trong mạng nhà và đòi ghép mã.
+- App máy tính chỉ nghe ở `127.0.0.1`, và mỗi lần mở có một khóa mới: cửa sổ app và trình duyệt nó mở tự mang khóa, chương trình hay người dùng khác trên máy không vào được. Ngoại lệ duy nhất là cổng Home Assistant · Phím tắt, mở khi bạn bật, chỉ có `/api/hook` với mã riêng. Web của TV nghe trong mạng nhà và đòi ghép mã.
 - **Chủ TV** là người với tới được chính TV: app điện thoại, app máy tính (qua ADB), Quản lý trên TV, và trình duyệt nhập mã 6 số hiện trên màn hình TV. Họ có toàn quyền. Người được chia sẻ bằng mã QR nhận quyền người chia sẻ chọn: **Toàn quyền**, **Chỉ remote** (phím, gõ chữ, hình, mở app, hẹn giờ tắt, chạy cảnh có sẵn; không cài gỡ, không tệp, không Thiết lập) hoặc **Chỉ xem** (hình TV và đang phát). Chủ TV đổi quyền từng thiết bị trong Thiết lập → Thiết bị đã ghép.
 - App điện thoại hỏi trước khi gửi tệp hay đường link mà app khác chia sẻ sang lên TV.
 - Chỉ cài APK từ nguồn bạn tin.

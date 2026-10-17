@@ -4,6 +4,7 @@ import dev.tvremote.core.ontv.Draw
 import dev.tvremote.core.adb.AdbPrompt
 import dev.tvremote.core.remote.Atv
 import dev.tvremote.core.web.HttpServer
+import dev.tvremote.core.web.Hook
 import dev.tvremote.core.WireLog
 import dev.tvremote.core.web.HttpServer.Response
 import dev.tvremote.core.remote.Inputs
@@ -25,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLong
  * The routes that only the computer has (many TVs, the remote buttons without ADB, the first-time setup, the picture and
  * sound for this browser) are here; everything managed over ADB is Manage.kt's, as for TV Setup and the phone.
  */
-class Server(private val repo: File, private val keys: File, private val pass: Pass, private val cache: File, private val saved: Saved, first: String?, private val stop: () -> Unit) : HttpServer.Handler {
+class Server(private val repo: File, private val keys: File, private val pass: Pass, private val cache: File, private val saved: Saved, first: String?, private val hookPort: Int, private val stop: () -> Unit) : HttpServer.Handler {
     private val web = File(repo, "app/shared/web")
     private val helperFile = File(repo, "app/shared/assets/tvr-helper.jar")   // Meta and Caps, started on the TV
     private val helper: () -> ByteArray = { helperFile.readBytes() }
@@ -55,7 +56,46 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         Thread { old.close() }.start()
     }
 
-    fun close() { cur.close(); fleets.close(); timer.shutdownNow(); updater.close() }
+    fun close() { cur.close(); fleets.close(); timer.shutdownNow(); updater.close(); hookHttp?.stop() }
+
+    // ---------------------------------------------------------------- Home Assistant and Shortcuts (Hook.kt)
+    // The page's own port listens on 127.0.0.1 only, and must stay so: the TVs' keys are behind it. A hook has to be reached
+    // from the home network, so it gets a listener of its own, opened only while the owner has switched the hook on, that
+    // serves /api/hook and /api/hook/state and nothing else (no page, no other /api route), and every call needs the hook's token.
+    private val hook: Hook = Hook(object : Hook.Store {
+        override var enabled: Boolean get() = saved.hook.optBoolean("on"); set(v) { saved.hook = saved.hook.put("on", v) }
+        override var token: String get() = saved.hook.optString("token"); set(v) { saved.hook = saved.hook.put("token", v) }
+    }, Hook.Routes(text = "/api/text", wake = "/api/wake"), { dispatch(it) }, { JSONObject(String(state(cur).body)) }, { saved.scenes },
+        { lanIp()?.let { "http://$it:$hookPort" } ?: "" }).also { it.onChange = { saved.save() } }
+    @Volatile private var hookHttp: HttpServer? = null
+
+    /** At start: the listener again if the hook was left on. */
+    fun startHook() { hookListen()?.let { println("hook: $it") } }
+
+    @Synchronized private fun hookListen(): String? {
+        val want = saved.hook.optBoolean("on") && saved.hook.optString("token").isNotEmpty()
+        if (!want) { hookHttp?.stop(); hookHttp = null; return null }
+        if (hookHttp?.running() == true) return null
+        val h = HttpServer { hook.handle(it) ?: Response.error(404, "not found") }
+        return try { h.start(hookPort, false); hookHttp = h; null } catch (e: IOException) { e.message ?: "port $hookPort" }
+    }
+
+    private fun hookConfig(r: HttpServer.Request): Response {
+        val out = hook.config(r)
+        val bad = if (r.method == "POST") hookListen() else null
+        if (bad != null) {                                           // the port is taken: it stays off, and the page says why
+            saved.hook = saved.hook.put("on", false); saved.save()
+            return Response.error(503, "hook port $hookPort: $bad")
+        }
+        return out
+    }
+
+    /** This computer's address on the home network, for the examples (the hook's own port is on every network the computer is on). */
+    private fun lanIp(): String? = try {
+        java.net.NetworkInterface.getNetworkInterfaces().toList().filter { it.isUp && !it.isLoopback && !it.isVirtual }
+            .flatMap { it.inetAddresses.toList() }.filterIsInstance<java.net.Inet4Address>().map { it.hostAddress }
+            .filter { PRIVATE.matches(it) }.minByOrNull { if (it.startsWith("192.168.")) 0 else if (it.startsWith("10.")) 1 else 2 }
+    } catch (e: Exception) { null }
 
     // ---------------------------------------------------------------- the page
     @Volatile private var page: WebPage? = null
@@ -89,6 +129,12 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             if (type == "application/json" && r.jsonOrNull(Draw.MAX_BODY) == null) return Response.error(400, "bad json")   // never "save nothing"; as big as the biggest body taken: a picture to draw
         }
         if (!r.path.startsWith("/api/")) page().serve(r.path)?.let { return it }
+        if (r.path == "/api/hook/config") return hookConfig(r)
+        return dispatch(r)
+    }
+
+    /** The route of a request that is allowed in, whoever made it: the page (checked by [handle]) or a hook call ([hook]). */
+    private fun dispatch(r: HttpServer.Request): Response {
         val s = cur
         return try {
             route(r, s) ?: s.manage?.handle(r) ?: if (r.path.startsWith("/api/") && s.host.isEmpty()) Response.error(400, "no TV selected")

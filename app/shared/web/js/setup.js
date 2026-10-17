@@ -160,6 +160,33 @@ $('#updcheck').addEventListener('click', async () => {
   $('#updcheckmsg').textContent = !u.packaged ? 'Bản chạy từ mã nguồn: cập nhật bằng git pull.' : u.error ? 'Không kiểm tra được: ' + friendly(u.error)
     : u.version ? 'Có bản mới ' + u.version + ': xem thanh trên cùng trang.' : 'Đang dùng bản mới nhất (' + u.current + ').';
 });
+// ---------- Home Assistant · Phím tắt (Hook.kt): its own switch and token, shown only to the owner ----------
+let hookNow = null;
+function hookShow(h) {
+  hookNow = h;
+  $('#hookpick').querySelectorAll('button').forEach((b) => b.classList.toggle('on', (b.dataset.v === 'on') === !!(h && h.on)));
+  $('#hookbody').hidden = !(h && h.on);
+  if (h && h.on) $('#hookurl').value = h.shortcut;
+}
+async function hookLoad() {
+  $('#hookgroup').hidden = SCOPE !== 'full';
+  if (SCOPE !== 'full') return;
+  hookShow(await api('/api/hook/config', null, true));
+}
+const hookCopy = async (text, done) => { try { await navigator.clipboard.writeText(text); toast(done); } catch { $('#hookurl').select(); toast('Không sao chép được: chọn chữ rồi sao chép tay'); } };
+$('#aboutbtn').addEventListener('click', hookLoad);
+$('#hookpick').addEventListener('click', async (e) => {
+  const b = e.target.closest('button'); if (!b || (b.dataset.v === 'on') === !!(hookNow && hookNow.on)) return;
+  const h = await api('/api/hook/config', { do: b.dataset.v });
+  if (h) hookShow(h);
+});
+$('#hookcopyurl').addEventListener('click', () => hookNow && hookCopy(hookNow.shortcut, 'Đã sao chép đường dẫn'));
+$('#hookcopyyaml').addEventListener('click', () => hookNow && hookCopy(hookNow.yaml, 'Đã sao chép YAML'));
+$('#hooknew').addEventListener('click', async () => {
+  if (!await ask('Đổi mã mới? Các Phím tắt và Home Assistant đang dùng mã cũ sẽ ngừng chạy cho đến khi bạn dán đường dẫn mới.', { ok: 'Đổi mã' })) return;
+  const h = await api('/api/hook/config', { do: 'new' });
+  if (h) { hookShow(h); toast('Đã đổi mã mới'); }
+});
 $('#aboutclose').addEventListener('click', () => $('#about').close());
 $('#sendlog').addEventListener('click', sendWireLog);
 $('#about').addEventListener('click', (e) => { if (e.target === $('#about')) $('#about').close(); });   // click outside the box
