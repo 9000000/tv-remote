@@ -4,7 +4,6 @@ import java.io.Closeable
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import java.net.InetSocketAddress
 import java.net.Socket
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -37,7 +36,7 @@ class WebSocket private constructor(private val sock: Socket) : Closeable {
             var len = (b1 and 0x7f).toLong()
             if (len == 126L) len = ((byte() shl 8) or byte()).toLong()
             else if (len == 127L) { len = 0; repeat(8) { len = (len shl 8) or byte().toLong() } }
-            if (len > 16L shl 20) throw IOException("message too big")     // an app list with icons is far below this
+            if (len < 0 || len > 16L shl 20 || msg.size() + len > 16L shl 20) throw IOException("message too big")   // an app list with icons is far below this; < 0: the top bit of the 8-byte form
             val mask = if (b1 and 0x80 != 0) ByteArray(4) { byte().toByte() } else null
             val body = ByteArray(len.toInt())
             var got = 0
@@ -88,8 +87,7 @@ class WebSocket private constructor(private val sock: Socket) : Closeable {
         /** Connects and upgrades to [path] on [host]:[port]. IOException with the TV's status line when it says no. */
         @Throws(IOException::class)
         fun open(host: String, port: Int, path: String, secure: Boolean, timeoutMs: Int = 4000): WebSocket {
-            val plain = Socket()
-            plain.connect(InetSocketAddress(host, port), timeoutMs)
+            val plain = dev.tvremote.core.Lan.connect(host, port, timeoutMs)
             plain.soTimeout = timeoutMs
             val s: Socket = if (!secure) plain else {
                 val ctx = SSLContext.getInstance("TLS").apply { init(null, arrayOf(TRUST_ANY), RANDOM) }

@@ -90,6 +90,7 @@ async function startListen(share) {
       }
     }
   } catch (e) { if (gen !== listenGen) return; why = e.name === 'AbortError' ? '' : 'Không lấy được tiếng TV: ' + friendly(e.message); }
+  if (gen === listenGen && why && afterWake('listen')) { stopListen(); startListen(listenShared); return; }   // this device slept, not the TV
   if (gen === listenGen) stopListen(why);
 }
 

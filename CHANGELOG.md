@@ -4,6 +4,28 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+
+- Xem màn hình TV qua mạng chậm (Wi-Fi yếu, Tailscale qua relay): hình không còn trễ dần cả chục giây rồi tắt. Khi trình duyệt không nhận kịp, các khung cũ bị bỏ, TV gửi ngay một khung mới, hình nhảy về lúc hiện tại. Bị chậm nhiều lần thì trang tự hạ cỡ hình một bậc (cả ba nơi).
+- App máy tính hiện hình TV bằng WebCodecs: trễ ít hơn, luôn vẽ khung mới nhất.
+- Chất lượng hình có thêm “Nhịp hình”: “Đều hơn” giữ mỗi khung 33 ms rồi hiện cách đều, ít giật hơn khi Wi-Fi chập chờn (mặc định “Nhanh nhất”; trên trình duyệt có WebCodecs: app máy tính, Chrome / Safari mới).
+- Kết nối ADB đang chờ không còn bị tính là quá hạn vì máy tính hay điện thoại vừa ngủ dậy.
+- App điện thoại: bật VPN vẫn điều khiển được TV ở nhà, app tự đi qua Wi-Fi tới địa chỉ trong nhà (Tailscale vẫn đi qua VPN). Nếu vẫn không tới được, app nhắc cho phép mạng nội bộ trong app VPN.
+- Web của TV: lúc TV Setup chờ người bấm “Cho phép gỡ lỗi USB?” trên TV, trang vẫn trả lời (cả ghép mã); phần cần ADB báo ngay “nhìn lên TV, chọn Luôn cho phép” thay vì treo tới khi trang không mở được nữa. Tên app hiện đúng thay cho tên gói.
+- Máy tính vừa ngủ dậy (gập máy) hay điện thoại vừa mở khóa: hình và tiếng TV đang xem tự mở lại thay vì báo “TV đã dừng gửi hình”; một lần hỏi TV không được ngay lúc thức dậy không còn hiện “Mất kết nối”. TV giữ phiên xem 60 giây (trước là 25) khi điện thoại bị treo ở nền (cả ba nơi).
+
+**English**
+
+- Watching the TV's screen over a slow network (weak Wi-Fi, Tailscale through a relay): the picture no longer drifts tens of seconds behind and then stops. When the browser can't keep up, old frames are dropped, the TV sends a fresh one at once and the picture jumps to now; after several such jumps the page steps the picture size down one level (all three).
+- The computer app shows the TV's picture through WebCodecs: less delay, always the newest frame.
+- Picture quality has a new “Frame pace”: “Even” holds each frame 33 ms and shows them evenly spaced, stuttering less on a patchy Wi-Fi (default “Fastest”; in browsers with WebCodecs: the computer app, recent Chrome / Safari).
+- An ADB connection being set up no longer times out because the computer or phone just woke from sleep.
+- Phone app: with a VPN on, the TV at home is still reachable; the app goes over the Wi-Fi to home addresses (Tailscale still goes through the VPN). If it still can't reach the TV, it asks to allow the local network in the VPN app.
+- TV web page: while TV Setup waits for someone to answer “Allow USB debugging?” on the TV, the page keeps answering (pairing too); the parts that need ADB say at once “look at the TV, choose Always allow” instead of hanging until the page no longer opens. App names show instead of package names.
+- A computer that just woke (lid opened) or a phone just unlocked: the TV picture and sound being watched start again by themselves instead of “The TV stopped sending the picture”; one failed check right on waking no longer shows “Connection lost”. The TV keeps a viewing session 60 s (was 25) while the phone is frozen in the background (all three).
+
 ## 0.7.1 - 2026-10-17
 
 Web 0.7.1 · app điện thoại 0.7.1 · app TV 0.7.1

@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.File
 import java.io.IOException
-import java.net.InetSocketAddress
 import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -75,7 +74,7 @@ object AdbTls {
     }
 
     /** Port 5555 answers (so a TV whose Wireless debugging is off still connects the old way). */
-    fun plainOpen(host: String): Boolean = try { Socket().use { it.connect(InetSocketAddress(host, 5555), 1500) }; true } catch (e: Exception) { false }
+    fun plainOpen(host: String): Boolean = try { dev.tvremote.core.Lan.connect(host, 5555, 1500).close(); true } catch (e: Exception) { false }
 
     // ---------- finding the ports ----------
 
@@ -161,9 +160,8 @@ object AdbTls {
     @Throws(Exception::class)
     fun pair(adb: Adb, host: String, port: Int, code: String) {
         val be = backend ?: throw IOException("adb tls: this app cannot pair (no TLS 1.3)")
-        val plain = Socket()
+        val plain = dev.tvremote.core.Lan.connect(host, port, 6000)
         try {
-            plain.connect(InetSocketAddress(host, port), 6000)
             plain.tcpNoDelay = true
             plain.soTimeout = 15000
             val ssl = context(adb).socketFactory.createSocket(plain, host, port, true) as SSLSocket

@@ -38,7 +38,7 @@ class Roku(@Suppress("UNUSED_PARAMETER") dir: File, private val host: String, pr
 
     /** [method] [path] → (HTTP code, body); code 0: no answer. */
     private fun http(path: String, method: String = "GET", ms: Int = 3000): Pair<Int, ByteArray> = try {
-        val c = URL("http://$host:$port$path").openConnection() as HttpURLConnection
+        val c = dev.tvremote.core.Lan.open(URL("http://$host:$port$path")) as HttpURLConnection
         c.connectTimeout = ms; c.readTimeout = ms; c.requestMethod = method
         if (method == "POST") { c.doOutput = true; c.setFixedLengthStreamingMode(0) }
         try {

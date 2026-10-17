@@ -7,7 +7,6 @@ import java.io.File
 import java.io.IOException
 import java.io.OutputStream
 import java.math.BigInteger
-import java.net.InetSocketAddress
 import java.net.Socket
 import java.net.SocketTimeoutException
 import java.nio.ByteBuffer
@@ -289,7 +288,7 @@ class Adb(private val dir: File) : Closeable {
         var askingAlive = true
         var askAgainAt = 0L
         var asked = 1
-        var askedAt = System.currentTimeMillis()
+        var askedAt = System.nanoTime() / 1_000_000
         while (System.currentTimeMillis() < end) {
             if (dead) { asking.close(); throw IOException("closed") }   // whoever wanted this connection has let go of it (and the TV's prompt with it)
             if (askingAlive) {
@@ -306,7 +305,7 @@ class Adb(private val dir: File) : Closeable {
                     // still undecided on that connection
                 } catch (closedByTv: IOException) {
                     askingAlive = false
-                    askAgainAt = System.currentTimeMillis() + 6000
+                    askAgainAt = System.nanoTime() / 1_000_000 + 6000
                 }
             } else {
                 Thread.sleep(2000)
@@ -315,7 +314,7 @@ class Adb(private val dir: File) : Closeable {
             try {
                 dial(host, port)
                 if (authenticate() == null) { asking.close(); return }
-                val now = System.currentTimeMillis()
+                val now = System.nanoTime() / 1_000_000
                 // the question went away on the TV without "Always allow" (Back, Home, Cancel, a timeout): ask it once more.
                 // Or it never showed: the TV shows one question at a time and drops a new one while another (a dead
                 // connection's, someone else's) is up; once that is answered, only asking again brings ours up.
@@ -341,9 +340,7 @@ class Adb(private val dir: File) : Closeable {
     }
 
     private fun dial(host: String, port: Int) {
-        val s = Socket()
-        sock = s
-        s.connect(InetSocketAddress(host, port), 6000)
+        val s = dev.tvremote.core.Lan.connect(host, port, 6000) { sock = it }         // set before it connects: a wait elsewhere can close it
         s.tcpNoDelay = true
         s.soTimeout = 15000
         input = DataInputStream(s.getInputStream())
@@ -362,6 +359,7 @@ class Adb(private val dir: File) : Closeable {
             }
             if (m.cmd != AUTH || m.arg0 != AUTH_TOKEN) continue
             if (signed) return m.data
+            if (m.data.size > 200) throw IOException("bad adb token")     // adb's are 20 bytes; a longer one makes RSA throw, not an IOException
             signed = true
             val c = Cipher.getInstance("RSA/ECB/PKCS1Padding")
             c.init(Cipher.ENCRYPT_MODE, key.private)

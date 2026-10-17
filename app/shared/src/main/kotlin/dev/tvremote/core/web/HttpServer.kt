@@ -81,6 +81,7 @@ class HttpServer(private val handler: Handler) {
         var body = ByteArray(0)
         var stream: Body? = null                                      // instead of body; length < 0 = unknown, sent until the connection closes
         var length = -1L
+        var sendBuffer = 0                                            // > 0: the socket's send buffer, kept small for a live stream (Feeds)
         val headers: MutableMap<String, String> = HashMap()
 
         companion object {
@@ -157,6 +158,7 @@ class HttpServer(private val handler: Handler) {
                     .append("Content-Type: ").append(out.type).append("\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\n")
                 if (len >= 0) h.append("Content-Length: ").append(len).append("\r\n")
                 for ((k, v) in out.headers) h.append(k).append(": ").append(v).append("\r\n")
+                if (out.sendBuffer > 0) try { sock.sendBufferSize = out.sendBuffer } catch (ignored: Exception) { }
                 val o = sock.getOutputStream()
                 o.write(bytes(h.append("\r\n").toString()))
                 if (stream != null) stream.write(o) else o.write(out.body)

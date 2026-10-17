@@ -163,7 +163,7 @@ class Atv(dir: File, private val host: String) : Remote, CodePairing {
         val m = Pb.read(body)
         if (8 !in m) WireLog.all.add("←", "remote $host " + m.keys.sorted().joinToString(",", "message ") + " (${body.size} B)")   // pings: every 5 s
         m[1]?.let {                                                   // remote_configure: who the TV is; answer with who we are
-            val info = Pb.read(it[0] as ByteArray)[2]?.firstOrNull() as? ByteArray
+            val info = Pb.read(it[0] as? ByteArray ?: ByteArray(0))[2]?.firstOrNull() as? ByteArray
             if (info != null) {
                 val d = Pb.read(info)
                 fun str(f: Int) = (d[f]?.firstOrNull() as? ByteArray)?.toString(Charsets.UTF_8) ?: ""
@@ -177,23 +177,23 @@ class Atv(dir: File, private val host: String) : Remote, CodePairing {
             live = true
         }
         m[8]?.let {                                                   // ping
-            val n = Pb.read(it[0] as ByteArray)[1]?.firstOrNull() as? Long ?: 0L
+            val n = Pb.read(it[0] as? ByteArray ?: ByteArray(0))[1]?.firstOrNull() as? Long ?: 0L
             send(s, Pb().msg(9, Pb().int(1, n).bytes()).bytes())
         }
-        m[40]?.let { isOn = (Pb.read(it[0] as ByteArray)[1]?.firstOrNull() as? Long ?: 0L) != 0L }   // remote_start: screen on or off
+        m[40]?.let { isOn = (Pb.read(it[0] as? ByteArray ?: ByteArray(0))[1]?.firstOrNull() as? Long ?: 0L) != 0L }   // remote_start: screen on or off
         m[50]?.let {                                                  // remote_set_volume_level
-            val v = Pb.read(it[0] as ByteArray)
+            val v = Pb.read(it[0] as? ByteArray ?: ByteArray(0))
             fun n(f: Int) = (v[f]?.firstOrNull() as? Long ?: 0L).toInt()
             volume = Triple(n(7), n(6), n(8) != 0)
         }
         m[21]?.let {                                                  // remote_ime_batch_edit: a text field on the TV has the focus
-            val e = Pb.read(it[0] as ByteArray)
+            val e = Pb.read(it[0] as? ByteArray ?: ByteArray(0))
             ime = e[1]?.firstOrNull() as? Long ?: 0L
             field = e[2]?.firstOrNull() as? Long ?: 0L
             hasField = true
         }
         m[20]?.let {                                                  // remote_ime_key_inject: sent whenever another app comes to the front
-            val info = Pb.read(it[0] as ByteArray)[1]?.firstOrNull() as? ByteArray
+            val info = Pb.read(it[0] as? ByteArray ?: ByteArray(0))[1]?.firstOrNull() as? ByteArray
             val pkg = info?.let { i -> Pb.read(i)[12]?.firstOrNull() as? ByteArray }?.toString(Charsets.UTF_8)
             if (!pkg.isNullOrEmpty()) { if (pkg != app) hasField = false; app = pkg }
         }
@@ -274,8 +274,7 @@ class Atv(dir: File, private val host: String) : Remote, CodePairing {
             override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
         }
         val ctx = SSLContext.getInstance("TLS").apply { init(km.keyManagers, arrayOf(anyTv), null) }
-        val plain = java.net.Socket()
-        plain.connect(java.net.InetSocketAddress(host, port), 5000)
+        val plain = dev.tvremote.core.Lan.connect(host, port, 5000)
         val s = ctx.socketFactory.createSocket(plain, host, port, true) as SSLSocket
         s.soTimeout = 15000
         s.startHandshake()
@@ -292,29 +291,8 @@ class Atv(dir: File, private val host: String) : Remote, CodePairing {
         s.outputStream.flush()
     }
 
-    /** One message: its length, then that many bytes. null at the end of the stream. */
-    private fun frame(i: InputStream): ByteArray? {
-        var len = 0
-        var shift = 0
-        while (true) {
-            val b = i.read()
-            if (b < 0) return null
-            len = len or ((b and 0x7f) shl shift)
-            if (b and 0x80 == 0) break
-            shift += 7
-        }
-        val buf = ByteArray(len)
-        var got = 0
-        while (got < len) {
-            val n = i.read(buf, got, len - got)
-            if (n < 0) return null
-            got += n
-        }
-        return buf
-    }
-
     /** Just enough protocol buffers: numbers, strings/bytes and nested messages. */
-    private class Pb {
+    internal class Pb {
         private val o = ByteArrayOutputStream()
         fun int(field: Int, v: Long): Pb { varint(o, (field shl 3).toLong()); varint(o, v); return this }
         fun raw(field: Int, v: ByteArray): Pb { varint(o, (field shl 3 or 2).toLong()); varint(o, v.size.toLong()); o.write(v); return this }
@@ -330,18 +308,20 @@ class Atv(dir: File, private val host: String) : Remote, CodePairing {
             }
 
             /** field number -> its values in order: Long for numbers, ByteArray for everything with a length. */
+            /** A broken message throws IOException, never an index error that would end the reader thread. */
             fun read(b: ByteArray): Map<Int, List<Any>> {
                 val out = HashMap<Int, MutableList<Any>>()
                 var p = 0
-                fun num(): Long { var v = 0L; var s = 0; while (true) { val x = b[p++].toInt(); v = v or ((x and 0x7f).toLong() shl s); if (x and 0x80 == 0) return v; s += 7 } }
+                fun bad(): Nothing = throw java.io.IOException("bad message")
+                fun num(): Long { var v = 0L; var s = 0; while (true) { if (p >= b.size || s > 63) bad(); val x = b[p++].toInt(); v = v or ((x and 0x7f).toLong() shl s); if (x and 0x80 == 0) return v; s += 7 } }
                 while (p < b.size) {
                     val tag = num().toInt()
                     val v: Any = when (tag and 7) {
                         0 -> num()
-                        2 -> { val n = num().toInt(); b.copyOfRange(p, p + n).also { p += n } }
-                        1 -> { p += 8; 0L }
-                        5 -> { p += 4; 0L }
-                        else -> throw java.io.IOException("bad message")
+                        2 -> { val n = num(); if (n < 0 || n > b.size - p) bad(); b.copyOfRange(p, p + n.toInt()).also { p += n.toInt() } }
+                        1 -> { p += 8; if (p > b.size) bad(); 0L }
+                        5 -> { p += 4; if (p > b.size) bad(); 0L }
+                        else -> bad()
                     }
                     out.getOrPut(tag ushr 3) { ArrayList() }.add(v)
                 }
@@ -351,6 +331,29 @@ class Atv(dir: File, private val host: String) : Remote, CodePairing {
     }
 
     companion object {
+        /** One message: its length, then that many bytes. null at the end of the stream. */
+        internal fun frame(i: InputStream): ByteArray? {
+            var len = 0
+            var shift = 0
+            while (true) {
+                val b = i.read()
+                if (b < 0) return null
+                len = len or ((b and 0x7f) shl shift)
+                if (b and 0x80 == 0) break
+                shift += 7
+                if (shift > 21) throw java.io.IOException("bad message")   // over 4 bytes: no real message, and the length would overflow
+            }
+            if (len > 1 shl 20) throw java.io.IOException("bad message")  // the TV's messages are a few KB: never allocate what a broken one claims
+            val buf = ByteArray(len)
+            var got = 0
+            while (got < len) {
+                val n = i.read(buf, got, len - got)
+                if (n < 0) return null
+                got += n
+            }
+            return buf
+        }
+
         const val DOWN = 1
         const val UP = 2
         const val SHORT = 3

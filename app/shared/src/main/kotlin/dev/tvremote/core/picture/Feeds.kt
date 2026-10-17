@@ -17,27 +17,31 @@ class Feeds {
 
     private val end = ByteArray(0)
 
-    private fun packet(kind: Int, data: ByteArray) = ByteBuffer.allocate(5 + data.size).put(kind.toByte()).putInt(data.size).put(data).array()
+    private fun packet(kind: Int, data: ByteArray) = CatchUp.Packet(kind, CatchUp.packet(kind, data), 0)
+    private val endPacket = CatchUp.Packet(-1, end, 0)
 
     /**
-     * Kinds: 0 size (width, height), 1 codec config, 2 key frame, 3 frame, 4 nothing new. A still picture sends nothing, so
-     * kind 4 goes out now and then: that is how we notice the browser has left, and stop the encoder on the TV.
+     * Kinds: 0 size (width, height), 1 codec config, 2 key frame, 3 frame, 4 nothing new, 5 it fell behind and caught up
+     * ([CatchUp]: the page steps the picture down after a few). A still picture sends nothing, so kind 4 goes out now and
+     * then: that is how we notice the browser has left, and stop the encoder on the TV.
      */
     fun video(make: (Tv.Listener, Tv.Sink) -> Tv): HttpServer.Response {
         viewer?.stop()
-        val q = LinkedBlockingQueue<ByteArray>()
         var self: Tv? = null
+        val c = CatchUp(LAG_MS) { self?.resetVideo() }
+        val q = c.q
         val v = make(object : Tv.Listener {
-            override fun onStatus(key: String, detail: String) { if (key == "closed" || key == "error") q.add(end) }
-            override fun onVideoSize(w: Int, h: Int) { q.add(packet(0, ByteBuffer.allocate(8).putInt(w).putInt(h).array())) }
+            override fun onStatus(key: String, detail: String) { if (key == "closed" || key == "error") c.put(endPacket) }
+            override fun onVideoSize(w: Int, h: Int) { c.put(packet(0, ByteBuffer.allocate(8).putInt(w).putInt(h).array())) }
             override fun onNetwork(mac: String, lan: String, tailscale: String) { }
         }, Tv.Sink { config, key, data ->
-            if (q.size > 150) { if (q.size < 160) q.add(end); self?.stop() }   // the browser cannot keep up: stop instead of filling memory
-            else q.add(packet(if (config) 1 else if (key) 2 else 3, data))
+            if (q.size > 150) { if (q.size < 160) c.put(endPacket); self?.stop() }   // still too much (no key frame came): stop instead of filling memory
+            else c.add(if (config) 1 else if (key) 2 else 3, data, System.currentTimeMillis())
         })
         self = v
         viewer = v
-        return pump(q, v, { viewer }) { if (viewer === v) viewer = null }
+        // the system grows a socket's send buffer to megabytes: seconds of picture waiting where CatchUp cannot see them
+        return pump(q, v, { viewer }) { if (viewer === v) viewer = null }.apply { sendBuffer = 64 * 1024 }
     }
 
     /**
@@ -49,32 +53,32 @@ class Feeds {
      */
     fun sound(hq: Boolean, opus: Boolean, make: (Tv.Listener, Tv.AudioSink) -> Tv): HttpServer.Response {
         hearer?.stop()
-        val q = LinkedBlockingQueue<ByteArray>()
+        val q = LinkedBlockingQueue<CatchUp.Packet>()
         val whole = opus || hq
         q.add(packet(0, ByteBuffer.allocate(6).put((if (opus) 1 else 2).toByte()).putInt(if (whole) 48000 else 24000).put((if (whole) 2 else 1).toByte()).array()))
         val mix = Downmix()
         val h = make(object : Tv.Listener {
             override fun onStatus(key: String, detail: String) {
                 if (key == "audio") q.add(if (detail == "noshare") packet(3, detail.toByteArray()) else packet(5, "unsupported".toByteArray()))
-                if (key == "closed" || key == "error") { if (key == "error") q.add(packet(5, detail.toByteArray())); q.add(end) }
+                if (key == "closed" || key == "error") { if (key == "error") q.add(packet(5, detail.toByteArray())); q.add(endPacket) }
             }
             override fun onVideoSize(w: Int, h: Int) { }
             override fun onNetwork(mac: String, lan: String, tailscale: String) { }
         }, Tv.AudioSink { config, data ->
             if (config) { if (opus) q.add(packet(1, data)); return@AudioSink }
-            if (q.size > 200) { if (q.size < 210) q.add(end) } else q.add(packet(2, if (whole) data else mix.feed(data)))   // the browser cannot keep up: stop instead of filling memory
+            if (q.size > 200) { if (q.size < 210) q.add(endPacket) } else q.add(packet(2, if (whole) data else mix.feed(data)))   // the browser cannot keep up: stop instead of filling memory
         })
         hearer = h
         return pump(q, h, { hearer }) { if (hearer === h) hearer = null }
     }
 
-    private fun pump(q: LinkedBlockingQueue<ByteArray>, t: Tv, now: () -> Tv?, done: () -> Unit) =
+    private fun pump(q: LinkedBlockingQueue<CatchUp.Packet>, t: Tv, now: () -> Tv?, done: () -> Unit) =
         HttpServer.Response.stream("application/octet-stream", -1) { out ->
             try {
                 while (true) {
                     val p = q.poll(5, TimeUnit.SECONDS) ?: packet(4, end)
-                    if (p === end || now() !== t) break                // ended, or another browser took over
-                    out.write(p)
+                    if (p === endPacket || now() !== t) break          // ended, or another browser took over
+                    out.write(p.bytes)
                     out.flush()
                 }
             } finally {
@@ -86,5 +90,10 @@ class Feeds {
     fun stop() {
         viewer?.stop()
         hearer?.stop()
+    }
+
+    companion object {
+        /** How far behind the TV the picture may fall before it jumps to now: 6 frames at the usual 10 a second */
+        const val LAG_MS = 600L
     }
 }

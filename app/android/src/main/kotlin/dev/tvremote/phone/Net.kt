@@ -1,6 +1,7 @@
 package dev.tvremote.phone
 
 import android.content.Context
+import dev.tvremote.core.Lan
 import java.io.ByteArrayOutputStream
 import java.net.Inet4Address
 import java.net.InetSocketAddress
@@ -9,8 +10,36 @@ import java.net.Socket
 // Small network helpers: is a port open, TVs announcing themselves on the Wi-Fi, the name an Android TV gives itself.
 
 /** True when something accepts a TCP connection at [ip]:[port] within [timeoutMs]. */
-internal fun open(ip: String, port: Int, timeoutMs: Int, via: android.net.Network? = null): Boolean =
-    try { (via?.socketFactory?.createSocket() ?: Socket()).use { it.connect(InetSocketAddress(ip, port), timeoutMs) }; true } catch (e: Exception) { false }
+internal fun open(ip: String, port: Int, timeoutMs: Int, via: android.net.Network? = null): Boolean = try {
+    if (via == null) Lan.connect(ip, port, timeoutMs).close()
+    else via.socketFactory.createSocket().use { it.connect(InetSocketAddress(ip, port), timeoutMs) }
+    true
+} catch (e: Exception) { false }
+
+/**
+ * Tells the shared core how to go around a VPN (Lan): while one is up, a TV at a home address is dialed on the Wi-Fi under
+ * it. Set from every way into the app (the screens, the widget's and tiles' Headless, the services); setting it twice is fine.
+ */
+internal fun Context.reachAroundVpn() {
+    val cm = applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+    Lan.wifi = wifi@{
+        if (android.os.Build.VERSION.SDK_INT < 23) return@wifi null  // no activeNetwork: as before
+        val vpn = try { cm.getNetworkCapabilities(cm.activeNetwork)?.hasTransport(android.net.NetworkCapabilities.TRANSPORT_VPN) == true } catch (e: Exception) { false }
+        if (!vpn) return@wifi null
+        @Suppress("DEPRECATION")
+        val n = cm.allNetworks.firstOrNull { n ->
+            cm.getNetworkCapabilities(n)?.let { c ->
+                !c.hasTransport(android.net.NetworkCapabilities.TRANSPORT_VPN) &&
+                    (c.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) || c.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET))
+            } == true
+        } ?: return@wifi null
+        object : Lan.Wifi {
+            override fun bind(s: Socket) = n.bindSocket(s)
+            override fun onLink(ip: java.net.InetAddress) = cm.getLinkProperties(n)?.linkAddresses?.any { Lan.inSubnet(ip, it.address, it.prefixLength) } == true
+            override fun open(url: java.net.URL): java.net.URLConnection = n.openConnection(url)
+        }
+    }
+}
 
 /** The Wi-Fi (or Ethernet) itself, under any VPN: with Tailscale on (an exit node above all) the home network is not reachable
  *  through the default route, so the scan's sockets go straight onto it. Null when there is none, or the VPN forbids it. */

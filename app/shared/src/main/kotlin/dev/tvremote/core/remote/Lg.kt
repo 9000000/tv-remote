@@ -93,8 +93,8 @@ class Lg(private val dir: File, private val host: String, private val ports: Lis
                 else { got = m; done.countDown() }
             }
             send(JSONObject().put("id", REG).put("type", "register").put("payload", manifest))
-            val until = System.currentTimeMillis() + PROMPT_S * 1000L
-            while (got == null && System.currentTimeMillis() < until && !closed && !s.closed) done.await(300, TimeUnit.MILLISECONDS)
+            val until = System.nanoTime() / 1_000_000 + PROMPT_S * 1000L
+            while (got == null && System.nanoTime() / 1_000_000 < until && !closed && !s.closed) done.await(300, TimeUnit.MILLISECONDS)
             subs.remove(REG)
             asking = false
             val m = got ?: throw IOException(if (s.closed) "the TV closed the connection" else "nobody accepted on the TV")
@@ -298,7 +298,7 @@ class Lg(private val dir: File, private val host: String, private val ports: Lis
     override fun icon(id: String): ByteArray? {
         val at = icons[id] ?: run { apps(); icons[id] } ?: return null
         return try {
-            val c = URL(at).openConnection() as HttpURLConnection
+            val c = dev.tvremote.core.Lan.open(URL(at)) as HttpURLConnection
             if (c is HttpsURLConnection) {
                 c.sslSocketFactory = SSLContext.getInstance("TLS").apply { init(null, arrayOf(WebSocket.TRUST_ANY), null) }.socketFactory
                 c.setHostnameVerifier { _, _ -> true }

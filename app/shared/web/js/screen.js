@@ -3,15 +3,18 @@
 let screenOn = false, screenUrl = null, screenGen = 0, streamCtl = null, frames = 0;
 const SCREEN_HINT = 'Bấm “Xem” để xem màn hình TV.';
 if (CORE !== 'pc') document.querySelectorAll('#screenmode [data-for=pc]').forEach((o) => o.remove());   // an <option> cannot be hidden by CSS everywhere
-function setScreenPlaceholder(msg) { $('#screenph').textContent = msg || SCREEN_HINT; $('#screenph').hidden = false; $('#screen').hidden = $('#screenv').hidden = true; }
+function setScreenPlaceholder(msg) { $('#screenph').textContent = msg || SCREEN_HINT; $('#screenph').hidden = false; $('#screen').hidden = $('#screenv').hidden = $('#screenc').hidden = true; }
+// The element showing the picture now (a screenshot, the <video> of JMuxer, the canvas of WebCodecs), and its own size.
+function screenEl() { return ['#screenc', '#screenv', '#screen'].map((s) => $(s)).find((m) => !m.hidden) || null; }
+function picSize(m) { return m && m.tagName === 'CANVAS' ? [m.width, m.height] : m ? [m.naturalWidth || m.videoWidth || 0, m.naturalHeight || m.videoHeight || 0] : [0, 0]; }
 function setScreenInfo(text, live) { $('#screeninfo').textContent = text; $('#screeninfo').classList.toggle('live', !!live); }
 function showFrame(blob) {
-  const u = URL.createObjectURL(blob); $('#screen').src = u; $('#screen').hidden = false; $('#screenph').hidden = $('#screenv').hidden = true;
+  const u = URL.createObjectURL(blob); $('#screen').src = u; $('#screen').hidden = false; $('#screenph').hidden = $('#screenv').hidden = $('#screenc').hidden = true;
   if (screenUrl) URL.revokeObjectURL(screenUrl); screenUrl = u; frames++;
 }
 function stopScreen(msg) {
   if (typeof drawing !== 'undefined' && drawing) drawStop();         // no picture to draw on
-  screenOn = false; screenGen++; if (streamCtl) streamCtl.abort(); if (muxer) { try { muxer.destroy(); } catch {} muxer = null; }
+  screenOn = false; screenGen++; if (streamCtl) streamCtl.abort(); if (player) { player.destroy(); player = null; }
   $('#screencard').classList.remove('on'); if (msg && matchMedia('(max-width:899px)').matches) toast(msg);   // on a phone the box is folded away: say it where it is seen
   setLabel($('#screenbtn'), '▶', 'Xem'); setScreenPlaceholder(msg); setScreenInfo(''); dockScreen();
 }
@@ -29,15 +32,109 @@ async function snapLoop(gen) {
     if (b instanceof Blob) { showFrame(b); await sleep(150); } else { setScreenPlaceholder(b); await sleep(3000); }
   }
 }
-// The TV core sends its own H.264 (no computer in between to turn it into pictures); JMuxer makes it playable by a <video>.
-// Packets: 1 byte kind (0 size, 1 codec config, 2 key frame, 3 frame, 4 nothing new), 4 bytes length, then the data.
+// Every core sends H.264 as scrcpy makes it. Packets: 1 byte kind (0 size, 1 codec config, 2 key frame, 3 frame, 4 nothing
+// new, 5 it fell behind and jumped to now: CatchUp.kt), 4 bytes length, then the data. Shown by WebCodecs where the page
+// may use it (a secure page: the computer's 127.0.0.1), each frame drawn the moment it is decoded; elsewhere (the TV web page
+// over http) JMuxer makes it playable by a <video>, which buffers a little.
 const H264_Q = { 480: 0, 720: 1, 960: 2, 360: 3, 240: 4, hd: 'hd' }, H264_FPS = { 480: 8, 720: 10, 960: 10, 360: 8, 240: 8, hd: 30 };
 const H264_END = new Uint8Array([0, 0, 0, 1, 9, 0xf0]);                // access unit delimiter
-let muxer = null;
+let player = null, wcBroken = false;                                   // wcBroken: WebCodecs failed once here, JMuxer until reload
+const wcUsable = () => !wcBroken && window.isSecureContext && typeof VideoDecoder === 'function';
+// "avc1.PPCCLL" from the SPS in scrcpy's codec config (Annex B)
+function avcCodec(b) {
+  for (let i = 0; i + 7 < b.length; i++) {
+    if (b[i] === 0 && b[i + 1] === 0 && b[i + 2] === 1 && (b[i + 3] & 0x1f) === 7) return 'avc1.' + [b[i + 4], b[i + 5], b[i + 6]].map((x) => x.toString(16).padStart(2, '0')).join('');
+  }
+  return null;
+}
+function shownIn(m) { if (m.hidden) { ['#screen', '#screenv', '#screenc', '#screenph'].forEach((s) => { $(s).hidden = $(s) !== m; }); } }
+// smooth: Deskhub's "frame pacing is not latency": a frame shown the moment it arrives turns Wi-Fi's bunching into a jerky
+// picture, so each waits SMOOTH_MS and two that came together are shown a frame apart. Never a backlog: a frame later than
+// three waits behind its arrival makes the queue start again from now.
+const SMOOTH_MS = 33;
+function wcPlayer(broken, smooth) {
+  const cv = $('#screenc'), g = cv.getContext('2d');
+  let dec = null, codec = null, config = null, keyed = false, latest = null, raf = 0, ts = 0;
+  let q = [], every = 0, lastAt = 0, nextDue = 0;                     // smooth: frames waiting with when to show them
+  const paint = (f) => {
+    if (cv.width !== f.displayWidth || cv.height !== f.displayHeight) { cv.width = f.displayWidth; cv.height = f.displayHeight; }
+    g.drawImage(f, 0, 0); f.close(); frames++; shownIn(cv);
+  };
+  const draw = () => {
+    raf = 0;
+    if (!smooth) { const f = latest; latest = null; if (f) paint(f); return; }
+    const now = performance.now();
+    while (q.length > 1 && q[1].due <= now && q[0].due < now - SMOOTH_MS * 2) q.shift().f.close();   // far behind: skip ahead
+    if (q.length && q[0].due <= now) paint(q.shift().f);                // one per screen refresh, in order: none thrown away
+    if (q.length) raf = requestAnimationFrame(draw);
+  };
+  const arrived = (f) => {
+    const now = performance.now();
+    if (lastAt && now - lastAt < 1000) every = every ? every * 0.9 + (now - lastAt) * 0.1 : now - lastAt;
+    lastAt = now;
+    let due = Math.max(now + SMOOTH_MS, nextDue);
+    if (due - now > SMOOTH_MS * 3) due = now + SMOOTH_MS;
+    nextDue = due + Math.max(every * 0.95, 17);                       // a little under the TV's pace (the wait drains back), a refresh at least
+    q.push({ f, due }); while (q.length > 8) q.shift().f.close();
+    if (!raf) raf = requestAnimationFrame(draw);
+  };
+  const fail = () => { if (dec) { try { dec.close(); } catch {} } dec = null; broken(); };
+  const open = () => {
+    if (dec) { try { dec.close(); } catch {} }
+    dec = new VideoDecoder({ output: smooth ? arrived : (f) => { if (latest) latest.close(); latest = f; if (!raf) raf = requestAnimationFrame(draw); }, error: fail });   // only the newest waits to be drawn
+    try { dec.configure({ codec, optimizeForLatency: true }); } catch { fail(); }
+    keyed = false;
+  };
+  return {
+    feed(kind, data) {
+      if (kind === 1) { config = data.slice(); const c = avcCodec(config); if (c && (c !== codec || !dec)) { codec = c; open(); } return; }
+      if (!dec || dec.state !== 'configured' || (kind === 3 && !keyed)) return;   // a frame needs the key frame before it
+      let buf = data;
+      if (kind === 2) { keyed = true; if (config) { buf = new Uint8Array(config.length + data.length); buf.set(config); buf.set(data, config.length); } }
+      try { dec.decode(new EncodedVideoChunk({ type: kind === 2 ? 'key' : 'delta', timestamp: ts += 1000, data: buf })); } catch { fail(); }
+    },
+    destroy() { if (raf) cancelAnimationFrame(raf); if (latest) latest.close(); latest = null; q.forEach((w) => w.f.close()); q = []; if (dec && dec.state !== 'closed') { try { dec.close(); } catch {} } dec = null; },
+  };
+}
+function jmuxPlayer(fps) {
+  const video = $('#screenv'), step = Math.round(1000 / fps);
+  const mux = new JMuxer({ node: video, mode: 'video', flushingTime: 0, fps, clearBuffer: true, onError: () => {} });
+  let config = null;
+  const edge = setInterval(() => {                                    // stay on the newest frame instead of playing a growing backlog
+    const b = video.buffered; if (!b.length) return;
+    const end = b.end(b.length - 1); if (end - video.currentTime > 0.3) video.currentTime = end - 0.05;
+    if (video.paused && end - video.currentTime > 0.1) video.play().catch(() => {});   // at the last frame: WebKit's play() would rewind to 0 (a flicker)
+  }, 250);
+  return {
+    feed(kind, data) {
+      if (kind === 1) { config = data.slice(); return; }              // goes in front of the next frame
+      // JMuxer shows a frame only once it sees the start of the next one, and a still picture has no next one:
+      // an empty delimiter after each frame makes it show the frame now.
+      const frame = new Uint8Array((config ? config.length : 0) + data.length + H264_END.length);
+      if (config) frame.set(config); frame.set(data, config ? config.length : 0); frame.set(H264_END, frame.length - H264_END.length); config = null;
+      mux.feed({ video: frame, duration: step }); frames++; shownIn(video);
+    },
+    destroy() { clearInterval(edge); try { mux.destroy(); } catch {} },
+  };
+}
+// A browser that keeps falling behind (CatchUp on the server jumped to now 3 times in half a minute): one level down, for this
+// time only, unless the person set their own frames per second or bit rate.
+const PIC_STEPS = ['240', '360', '480', '720', '960', 'hd'];
+let behindAt = [];
+function fellBehind() {
+  const now = Date.now(); behindAt = behindAt.filter((t) => now - t < 30000).concat(now);
+  if (behindAt.length < 3) return;
+  behindAt = [];
+  const t = picTune(), i = PIC_STEPS.indexOf($('#screenmode').value);
+  if (i <= 0 || t.fps || t.rate) { toast('Mạng chậm, hình bị giật. Thử hạ chất lượng hình.'); return; }
+  $('#screenmode').value = PIC_STEPS[i - 1]; picLevelSay();
+  toast('Mạng chậm: hạ hình xuống ' + $('#screenmode').selectedOptions[0].textContent + ' cho kịp.');
+  startScreen();
+}
 // ⚙ Advanced: frames per second and bit rate of the person's own, over the level's (0: the level's). Kept in this browser.
 const PIC_FPS = [0, 15, 30, 60], PIC_RATE = [0, 1, 2, 4, 8];          // Mbit/s
-function picTune() { let t = {}; try { t = JSON.parse(localStorage.getItem('picTune') || '{}'); } catch {} return { fps: +t.fps || 0, rate: +t.rate || 0, enc: ['hw', 'sw'].includes(t.enc) ? t.enc : 0 }; }
-function picTuneSay() { const t = picTune(); return (t.fps ? ' · ≤' + t.fps + ' fps' : '') + (t.rate ? ' · ' + t.rate + ' Mbit/s' : '') + (t.enc ? ' · ' + PIC_ENC_SAY[t.enc] : ''); }
+function picTune() { let t = {}; try { t = JSON.parse(localStorage.getItem('picTune') || '{}'); } catch {} return { fps: +t.fps || 0, rate: +t.rate || 0, enc: ['hw', 'sw'].includes(t.enc) ? t.enc : 0, smooth: t.smooth ? 1 : 0 }; }
+function picTuneSay() { const t = picTune(); return (t.fps ? ' · ≤' + t.fps + ' fps' : '') + (t.rate ? ' · ' + t.rate + ' Mbit/s' : '') + (t.enc ? ' · ' + PIC_ENC_SAY[t.enc] : '') + (t.smooth && wcUsable() ? ' · nhịp đều' : ''); }
 const PIC_ENC = { 0: 'Tự chọn', hw: 'Phần cứng', sw: 'Phần mềm' };   // the TV's video encoder; auto: hardware, software if it sends nothing
 const PIC_ENC_SAY = { hw: 'mã hóa phần cứng', sw: 'mã hóa phần mềm' };
 // The quality button under the picture: one dialog with the levels, then frames per second, bit rate and encoder.
@@ -61,6 +158,8 @@ function picDialog() {
     el('h3', { textContent: 'Khung/giây' }), tune('fps', PIC_FPS),
     el('h3', { textContent: 'Bitrate (Mbit/s)' }), tune('rate', PIC_RATE),
     el('h3', { textContent: 'Bộ mã hóa' }), tune('enc', [0, 'hw', 'sw'], (v) => PIC_ENC[v]),
+    ...(wcUsable() ? [el('h3', { textContent: 'Nhịp hình' }), tune('smooth', [0, 1], (v) => v ? 'Đều hơn' : 'Nhanh nhất'),   // JMuxer keeps its own buffer: nothing to choose there
+      el('p', { className: 'note', textContent: 'Đều hơn: hình chậm thêm 33 ms nhưng ít giật hơn khi Wi-Fi chập chờn.' })] : []),
     el('p', { className: 'note', textContent: 'Cao hơn thì mượt, nét hơn nhưng nặng TV và mạng hơn. Hình đứng mãi ở “Đang lấy hình”: thử Phần mềm.' })));
   d.addEventListener('close', () => d.remove());
   document.body.append(d); d.showModal();
@@ -69,23 +168,20 @@ function picLevelSay() { const o = $('#screenmode').selectedOptions[0]; $('#scre
 function loadScript(src) { return new Promise((ok, no) => document.head.append(el('script', { src, onload: ok, onerror: no }))); }
 async function h264Loop(gen) {
   setScreenInfo('Đang mở luồng trực tiếp...', true);
-  const size = $('#screenmode').value, video = $('#screenv'), tune = picTune(), fps = tune.fps || H264_FPS[size] || 10, step = Math.round(1000 / fps);
-  try { if (!window.JMuxer) await loadScript('jmuxer.min.js'); } catch { if (gen === screenGen) stopScreen('Không tải được phần phát hình.'); return; }
-  if (gen !== screenGen) return;
-  let mux;
-  try { mux = muxer = new JMuxer({ node: video, mode: 'video', flushingTime: 0, fps, clearBuffer: true, onError: () => {} }); }
-  catch { $('#screenmode').value = 'snap'; snapLoop(gen); return; }   // no MediaSource (an iPhone before iOS 17.1): pictures instead
+  const size = $('#screenmode').value, tune = picTune(), fps = tune.fps || H264_FPS[size] || 10;
+  if (wcUsable()) player = wcPlayer(() => { wcBroken = true; if (gen === screenGen) startScreen(); }, tune.smooth);   // this browser cannot after all: again with JMuxer
+  else {
+    try { if (!window.JMuxer) await loadScript('jmuxer.min.js'); } catch { if (gen === screenGen) stopScreen('Không tải được phần phát hình.'); return; }
+    if (gen !== screenGen) return;
+    try { player = jmuxPlayer(fps); }
+    catch { $('#screenmode').value = 'snap'; snapLoop(gen); return; }   // no MediaSource (an iPhone before iOS 17.1): pictures instead
+  }
+  const mine = player;
   streamCtl = new AbortController();
-  const edge = setInterval(() => {                                    // stay on the newest frame instead of playing a growing backlog
-    if (gen !== screenGen) { clearInterval(edge); return; }
-    const b = video.buffered; if (!b.length) return;
-    const end = b.end(b.length - 1); if (end - video.currentTime > 0.3) video.currentTime = end - 0.05;
-    if (video.paused && end - video.currentTime > 0.1) video.play().catch(() => {});   // at the last frame: WebKit's play() would rewind to 0 (a flicker)
-  }, 250);
   let why = 'TV đã dừng gửi hình.';
   try {
     const r = await fetch('/api/video?q=' + (H264_Q[size] ?? 1) + (tune.fps ? '&fps=' + tune.fps : '') + (tune.rate ? '&rate=' + tune.rate * 1000000 : '') + (tune.enc ? '&enc=' + tune.enc : ''), { signal: streamCtl.signal }); if (!r.ok) throw new Error('http');
-    const rd = r.body.getReader(); let buf = new Uint8Array(0), off = 0, config = null;   // off: where the next packet starts in buf (no copy per packet)
+    const rd = r.body.getReader(); let buf = new Uint8Array(0), off = 0;   // off: where the next packet starts in buf (no copy per packet)
     for (;;) {
       const { done, value } = await rd.read(); if (done || gen !== screenGen) break;
       if (off >= buf.length) buf = value;                              // nothing pending: take the chunk as it is
@@ -95,19 +191,12 @@ async function h264Loop(gen) {
         const len = new DataView(buf.buffer, buf.byteOffset + off + 1, 4).getUint32(0); if (buf.length - off < 5 + len) break;
         const kind = buf[off], data = buf.subarray(off + 5, off + 5 + len); off += 5 + len;
         if (kind === 0) { const d = new DataView(data.buffer, data.byteOffset, data.length); $('#screenbox').style.aspectRatio = d.getUint32(0) + ' / ' + d.getUint32(4); }
-        else if (kind === 1) config = data.slice();                         // goes in front of the next frame
-        else if (kind === 2 || kind === 3) {
-          // JMuxer shows a frame only once it sees the start of the next one, and a still picture has no next one:
-          // an empty delimiter after each frame makes it show the frame now.
-          const frame = new Uint8Array((config ? config.length : 0) + data.length + H264_END.length);
-          if (config) frame.set(config); frame.set(data, config ? config.length : 0); frame.set(H264_END, frame.length - H264_END.length); config = null;
-          mux.feed({ video: frame, duration: step }); frames++;
-          if (video.hidden) { video.hidden = false; $('#screen').hidden = $('#screenph').hidden = true; }
-        }
+        else if (kind >= 1 && kind <= 3) { if (player === mine) mine.feed(kind, data); }
+        else if (kind === 5) fellBehind();
       }
     }
   } catch (e) { why = 'Không lấy được hình từ TV.'; }
-  clearInterval(edge);
+  if (screenOn && gen === screenGen && afterWake('screen')) { startScreen(); return; }   // this device slept, not the TV
   if (screenOn && gen === screenGen) stopScreen(why);                 // back to the plain remote: no dead picture left on the page
 }
 // Keep watching on the other tabs: move the picture card into a floating corner slot, and back on the Remote tab.
@@ -122,7 +211,7 @@ $('#pipback').addEventListener('click', () => showTab('remote'));
 function startScreen() {
   screenOn = true; const gen = ++screenGen; if (streamCtl) streamCtl.abort();
   dockScreen();
-  if (muxer) { try { muxer.destroy(); } catch {} muxer = null; }
+  if (player) { player.destroy(); player = null; }
   $('#screencard').classList.add('on'); $('#screenbox').style.aspectRatio = '';
   setLabel($('#screenbtn'), '⏹', 'Dừng'); setScreenPlaceholder('Đang lấy hình...');
   ($('#screenmode').value === 'snap' ? snapLoop : h264Loop)(gen);   // every core sends H.264
@@ -130,7 +219,7 @@ function startScreen() {
 setInterval(() => {
   if (screenOn && $('#screenmode').value !== 'snap' && streamCtl && !streamCtl.signal.aborted) {
     streamFps = frames;
-    const shown = !$('#screen').hidden || !$('#screenv').hidden;           // the TV sends a frame only when the picture changes
+    const shown = !!screenEl();           // the TV sends a frame only when the picture changes
     setScreenInfo((frames ? `Trực tiếp · ${frames} khung/giây` : shown ? 'Trực tiếp · hình đứng yên' : 'Trực tiếp · đang chờ hình') + ($('#screenmode').value === 'hd' ? ' · chế độ nét nhất làm TV chậm hơn rõ rệt' : ' · ' + $('#screenmode').value + 'p') + picTuneSay(), true);
   }
   frames = 0;
@@ -141,8 +230,8 @@ setInterval(() => {
 const blackCv = document.createElement('canvas'); blackCv.width = 32; blackCv.height = 18;
 let blackFor = 0;
 function blackPicture() {
-  const src = !$('#screenv').hidden ? $('#screenv') : !$('#screen').hidden ? $('#screen') : null;
-  if (!src || (src.videoWidth === 0 && !src.naturalWidth)) return false;
+  const src = screenEl();
+  if (!src || !picSize(src)[0]) return false;
   try {
     const c = blackCv.getContext('2d', { willReadFrequently: true }); c.drawImage(src, 0, 0, 32, 18);
     const d = c.getImageData(0, 0, 32, 18).data; let dark = 0;

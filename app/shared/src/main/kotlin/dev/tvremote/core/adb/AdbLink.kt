@@ -9,21 +9,35 @@ class AdbLink(val keyDir: File, val host: String) {
     @Volatile private var dialing: Adb? = null                        // being connected right now: it may sit for minutes waiting for the person at the TV
     @Volatile private var waiting = false                             // the TV is showing "Allow USB debugging?"
     @Volatile private var failed = false                              // the last attempt did not get through
-    @Volatile private var dialStart = 0L
+    @Volatile private var dialStart = 0L                              // nanoTime: it stops while the device sleeps, so a dial it froze in is not "stuck"
     @Volatile private var lastTry = 0L                                // state() dials again at most this often after a failure
     @Volatile private var gen = 0                                     // bumped by reconnect(): a dial of an older generation was cut on purpose, not a failure
     private val spawning = java.util.concurrent.atomic.AtomicBoolean()
-    private val lock = Any()
+    private val lock = java.util.concurrent.locks.ReentrantLock()
 
+    /**
+     * The connection, made now if there is none. Whoever starts the dial waits for it (minutes, while the TV asks the person);
+     * the others don't queue behind it: they give up at once while the TV is asking (the server answers "adb:allow") and
+     * after [WAIT_MS] otherwise. Queued for good, the page's requests used to take every thread of TV Setup's server, so
+     * nothing answered any more, the pairing code included.
+     */
     @Throws(IOException::class)
     fun get(): Adb {
         adb?.let { if (!it.isDead()) return it }
-        synchronized(lock) {
+        if (!lock.tryLock()) {
+            val until = System.nanoTime() + WAIT_MS * 1_000_000
+            while (true) {
+                if (waiting) throw IOException(ASKING)
+                if (lock.tryLock(200, java.util.concurrent.TimeUnit.MILLISECONDS)) break
+                if (System.nanoTime() > until) throw IOException(STILL)
+            }
+        }
+        try {
             adb?.let { if (!it.isDead()) return it }
             val a = Adb(keyDir)
             val mine = gen
+            dialStart = System.nanoTime()
             dialing = a
-            dialStart = System.currentTimeMillis()
             try {
                 a.connectTo(host) { waiting = true; WireLog.all.add("·", "adb $host asking on the TV") }
                 WireLog.all.add("·", "adb $host connected")
@@ -46,6 +60,8 @@ class AdbLink(val keyDir: File, val host: String) {
                 waiting = false                                       // asked, then refused or left: the question is gone with the dial
                 if (mine == gen) lastTry = System.currentTimeMillis()
             }
+        } finally {
+            lock.unlock()
         }
     }
 
@@ -58,7 +74,7 @@ class AdbLink(val keyDir: File, val host: String) {
     fun state(): String {
         adb?.let { if (!it.isDead()) return "ready" }
         val d = dialing
-        if (d != null && !waiting && System.currentTimeMillis() - dialStart > 25000) {   // stuck dialing (a network that changed under it): cut it, say so
+        if (d != null && !waiting && (System.nanoTime() - dialStart) / 1_000_000 > 25000) {   // stuck dialing (a network that changed under it): cut it, say so
             failed = true
             try { d.close() } catch (ignored: Exception) { }
             return "closed"
@@ -92,5 +108,11 @@ class AdbLink(val keyDir: File, val host: String) {
         waiting = false
         try { d?.close() } catch (ignored: Exception) { }
         try { a?.close() } catch (ignored: Exception) { }
+    }
+
+    companion object {
+        const val ASKING = "the TV is asking to allow USB debugging"   // Errors.say
+        const val STILL = "adb still connecting"
+        const val WAIT_MS = 20000L                                    // a dial that gets through takes a second or two, TLS with mDNS a few more
     }
 }

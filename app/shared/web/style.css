@@ -175,7 +175,7 @@
   .vol button.on { background:var(--bad-bg); color:var(--bad); }
 
   .screenbox { position:relative; background:#000; border-radius:10px; overflow:hidden; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; margin-top:10px; }
-  .screenbox img, .screenbox video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; display:block; cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none; }
+  .screenbox img, .screenbox video, .screenbox #screenc { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; display:block; cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none; }
   .screenbox .tap { position:absolute; width:34px; height:34px; margin:-17px 0 0 -17px; border-radius:50%; pointer-events:none; z-index:2;
     background:rgba(255,255,255,.3); border:2px solid rgba(255,255,255,.9); box-shadow:0 0 0 1px rgba(0,0,0,.35), 0 0 12px rgba(0,0,0,.35); }
   .screenbox .tap.gone { animation:tapgone .45s ease-out forwards; }     /* let go: the dot spreads into a ring and fades */

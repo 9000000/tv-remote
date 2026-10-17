@@ -15,8 +15,7 @@ import java.net.URL
 object Ssdp {
     /** The name an Android TV gives itself, from its Chromecast service (every Android TV has one). "" when it does not answer. */
     fun castName(ip: String, port: Int = 8008): String = try {
-        java.net.Socket().use { so ->
-            so.connect(java.net.InetSocketAddress(ip, port), 800)
+        dev.tvremote.core.Lan.connect(ip, port, 800).use { so ->
             so.soTimeout = 1500
             so.getOutputStream().write("GET /setup/eureka_info HTTP/1.1\r\nHost: $ip:$port\r\nConnection: close\r\n\r\n".toByteArray())
             val got = java.io.ByteArrayOutputStream()
@@ -63,7 +62,7 @@ object Ssdp {
                     if (seen.containsKey(ip)) continue
                     val head = String(p.data, 0, p.length, Charsets.UTF_8)
                     val kind = kind(head) ?: continue
-                    val f = Found(ip, kind, name(ip, kind, Regex("(?im)^location:\\s*(\\S+)").find(head)?.groupValues?.get(1)))
+                    val f = Found(ip, kind, name(ip, kind, location(head, ip)))
                     seen[ip] = f
                     each(f)
                 }
@@ -94,9 +93,29 @@ object Ssdp {
         return Regex("<friendlyName>([^<]{1,80})</friendlyName>").find(xml)?.groupValues?.get(1)?.trim()?.removePrefix("[TV] ") ?: ""
     }
 
+    /** The answer's description URL, only when it is http(s) on the device that answered: anyone on the Wi-Fi can answer. */
+    internal fun location(head: String, ip: String): String? {
+        val at = Regex("(?im)^location:\\s*(\\S+)").find(head)?.groupValues?.get(1) ?: return null
+        val u = try { URL(at) } catch (e: Exception) { return null }
+        return at.takeIf { (u.protocol == "http" || u.protocol == "https") && u.host.removePrefix("[").removeSuffix("]") == ip }
+    }
+
     private fun get(at: String): String? = try {
-        val c = URL(at).openConnection() as HttpURLConnection
+        val c = dev.tvremote.core.Lan.open(URL(at)) as HttpURLConnection
         c.connectTimeout = 1200; c.readTimeout = 1500
-        try { if (c.responseCode != 200) null else c.inputStream.use { String(it.readBytes(), Charsets.UTF_8) } } finally { c.disconnect() }
+        try { if (c.responseCode != 200) null else c.inputStream.use { atMost(it, 256 * 1024, 4000) } } finally { c.disconnect() }
     } catch (e: Exception) { null }
+
+    /** At most [max] bytes within [ms]: a description is a few KB, and an endless one must not fill the memory or hold the scan. */
+    internal fun atMost(input: java.io.InputStream, max: Int, ms: Long): String {
+        val out = java.io.ByteArrayOutputStream()
+        val buf = ByteArray(8192)
+        val until = System.currentTimeMillis() + ms
+        while (out.size() < max && System.currentTimeMillis() < until) {
+            val n = input.read(buf, 0, minOf(buf.size, max - out.size()))
+            if (n < 0) break
+            out.write(buf, 0, n)
+        }
+        return String(out.toByteArray(), Charsets.UTF_8)
+    }
 }

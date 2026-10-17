@@ -163,6 +163,7 @@ const setupFor = async (feature) => !!await api('/api/setup/need?f=' + feature);
 // The errors people actually meet, from any core , in words they can act on; anything else as it came.
 const FRIENDLY = [
   [SETUP_RE, setupSay],
+  [/the home network is out of reach under the VPN/, 'Đang bật VPN nên không tới được TV trong nhà. TV có đang bật và cùng Wi-Fi không? Nếu có, trong app VPN bật cho phép mạng LAN (Local network / Bypass LAN), hoặc tắt VPN.'],   // Lan.BLOCKED: the phone's Manage screen
   [/notify:nooverlay/, 'TV này không cho app hiện thông báo đè lên màn hình.'],
   [/no YouTube and no Google search/, 'TV này không có YouTube hay tìm kiếm của Google để tìm câu này.'],
   [/^unsupported: (LG|Samsung|Roku|Hisense VIDAA)$/, (m) => 'TV ' + m[1] + ' không hỗ trợ'],
@@ -248,6 +249,7 @@ const INVITE = (location.hash.match(/invite=([0-9a-f]{32})/) || [])[1];
 if (INVITE) history.replaceState(null, '', location.pathname + location.search);
 let inviteBad = false, invited = INVITE ? fetch('/api/pair/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invite: INVITE }) })
   .then((x) => x.ok).catch(() => false) : null;
+let stateMiss = 0;
 async function refresh() {
   if (stopped) return;
   let locked = false;
@@ -258,6 +260,8 @@ async function refresh() {
   if (locked) return;
   tvOn = !!(s && s.connected && s.is_on); STATE = s || {};
   if (s) applyKind(s);
+  if (!s && ++stateMiss < 2) { setTimeout(refresh, 1500); return; }    // one miss is often this device waking (its Wi-Fi back a moment later)
+  if (s) stateMiss = 0;
   if (!s) {
     setChip('#chipTv', 'bad', CORE === 'pc' ? 'Server tắt' : 'Mất kết nối', CORE === 'pc' ? 'Server tắt' : 'TV: mất kết nối'); setChip('#chipAdb', '', 'ADB ?');
     $('#info').textContent = CORE === 'pc' ? 'Không gọi được server. Mở lại TV Remote trên máy này.' : 'Không gọi được TV: TV đang bật và cùng mạng với máy này chứ?'; return;
@@ -512,3 +516,17 @@ function warmTv() {
 }
 ['pointerdown', 'keydown'].forEach((ev) => document.addEventListener(ev, warmTv, true));
 document.addEventListener('visibilitychange', warmTv);
+
+// ---------- this device slept (a laptop's lid, a phone's screen) ----------
+// Its timers stood still and its streams broke under it: not the TV's fault. A stream that ends right after gets one more go
+// instead of "the TV stopped sending" (what Deskhub learnt: a watchdog must not count its own device's sleep).
+let tickAt = Date.now(), wokeAt = -1e9;
+const wakeUsed = {};                                                 // per stream: the picture and the sound each get their go
+const slept = () => Date.now() - tickAt > 10000;                      // ticks every 2 s; a hidden tab's slower ticks count too (harmless)
+setInterval(() => { if (slept()) wokeAt = performance.now(); tickAt = Date.now(); }, 2000);
+/** True once per sleep for [what], a stream that broke within 20 s of waking: start it again rather than give up. */
+function afterWake(what) {
+  if (slept()) { wokeAt = performance.now(); tickAt = Date.now(); }  // the stream noticed before the tick did
+  if (performance.now() - wokeAt > 20000 || wakeUsed[what] === wokeAt) return false;
+  wakeUsed[what] = wokeAt; return true;
+}

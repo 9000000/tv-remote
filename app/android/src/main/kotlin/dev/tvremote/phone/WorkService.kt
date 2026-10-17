@@ -25,6 +25,7 @@ class WorkService : Service() {
     override fun onCreate() {
         super.onCreate()
         loadLang(this)
+        reachAroundVpn()
         val n = note(this, "")
         if (Build.VERSION.SDK_INT >= 29) startForeground(ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC) else startForeground(ID, n)
         wake = (getSystemService(Context.POWER_SERVICE) as PowerManager).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "tvremote:work")

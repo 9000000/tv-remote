@@ -73,11 +73,11 @@ class Fleets(private val keys: File, private val cache: File) {
 
     /** How the link stands once it has had [ms] to connect: ready, unauthorized, closed. */
     private fun ready(link: AdbLink, ms: Long): String {
-        val until = System.currentTimeMillis() + ms
+        val until = System.nanoTime() / 1_000_000 + ms
         while (true) {
             val st = link.state()
             if (st != "unknown") return st
-            if (System.currentTimeMillis() > until) return "closed"
+            if (System.nanoTime() / 1_000_000 > until) return "closed"
             Thread.sleep(200)
         }
     }

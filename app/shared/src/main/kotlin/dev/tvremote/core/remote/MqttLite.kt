@@ -4,7 +4,6 @@ import java.io.Closeable
 import java.io.DataInputStream
 import java.io.IOException
 import java.io.OutputStream
-import java.net.InetSocketAddress
 import java.net.Socket
 
 /**
@@ -124,6 +123,6 @@ class MqttLite(private val socket: Socket, private val onMessage: (String, ByteA
     }
 
     companion object {
-        fun dial(host: String, port: Int, ms: Int): Socket = Socket().apply { connect(InetSocketAddress(host, port), ms); tcpNoDelay = true }
+        fun dial(host: String, port: Int, ms: Int): Socket = dev.tvremote.core.Lan.connect(host, port, ms).apply { tcpNoDelay = true }
     }
 }

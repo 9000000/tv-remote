@@ -192,7 +192,7 @@ internal fun MainActivity.pair(ip: String) {
 
 internal fun MainActivity.explain(err: String?): String {
     val e = err?.lowercase(Locale.ROOT) ?: ""
-    if (e.contains(dev.tvremote.core.remote.Roku.LIMITED) || err?.contains(Vidaa.NO_CERT) == true) return dev.tvremote.core.Errors.say(java.io.IOException(err), VI)
+    if (e.contains(dev.tvremote.core.remote.Roku.LIMITED) || err?.contains(Vidaa.NO_CERT) == true || err?.contains(dev.tvremote.core.Lan.BLOCKED) == true) return dev.tvremote.core.Errors.say(java.io.IOException(err), VI)
     if (refused(err))
         return t("TV từ chối kết nối: chưa bật “Gỡ lỗi ADB”.\n\nTrên TV: Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng”. Rồi Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB” (hoặc “Gỡ lỗi USB”).",
             "The TV refused the connection: “ADB debugging” is off.\n\nOn the TV: Settings → Device Preferences → About → press OK 7 times on “Build”. Then Developer options → turn on “ADB debugging” (or “USB debugging”).")

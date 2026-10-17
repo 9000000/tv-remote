@@ -95,6 +95,13 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             when (what) {
                 "apps" -> return HttpServer.Response.json(apps(r.q("system") == "1"))
                 "apps/report" -> return HttpServer.Response.json(appsReport())
+                "app/meta" -> {                                       // a name and whether /api/app/icon has a picture (the computer app answers it first)
+                    val pkg = r.q("pkg")
+                    if (!PKG.matcher(pkg).matches()) return HttpServer.Response.error(404, "not found")
+                    val label = try { labels?.label(pkg) } catch (e: Exception) { null }
+                    val icons = try { labels?.icons() == true } catch (e: Exception) { false }
+                    return HttpServer.Response.json(JSONObject().put("label", label ?: pkg.substringAfterLast('.')).put("icon", icons).put("banner", icons))
+                }
                 "files" -> return HttpServer.Response.json(files(r.q("path")))
                 "file" -> return download(r)
                 "health" -> return HttpServer.Response.json(health())
@@ -328,11 +335,11 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val s = link.get().open("shell:$cmd 2>&1")
         val out = ByteArrayOutputStream()
         val b = ByteArray(16384)
-        val until = System.currentTimeMillis() + 30000
+        val until = System.nanoTime() / 1_000_000 + 30000
         var cut = false
         try {
             while (true) {
-                val left = until - System.currentTimeMillis()
+                val left = until - System.nanoTime() / 1_000_000
                 if (left <= 0 || out.size() > 200000) { cut = true; break }
                 val n = s.read(b, 0, b.size, left)
                 if (n < 0) break
@@ -797,12 +804,12 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 throw e
             }
             j.put("msg", "installing").put("pct", 92)
-            val t0 = System.currentTimeMillis()
-            while (System.currentTimeMillis() - t0 < 5 * 60_000L) {
+            val t0 = System.nanoTime() / 1_000_000
+            while (System.nanoTime() / 1_000_000 - t0 < 5 * 60_000L) {
                 Thread.sleep(2000)
                 val s = try { SetupUpdate.state(link.get()) } catch (e: IOException) { continue }   // the TV's ADB may blink meanwhile
                 if (s.optString("version") != r.version) {
-                    if (System.currentTimeMillis() - t0 > 30_000L) throw IOException("the update did not start on the TV")
+                    if (System.nanoTime() / 1_000_000 - t0 > 30_000L) throw IOException("the update did not start on the TV")
                     continue
                 }
                 when (s.optString("state")) {

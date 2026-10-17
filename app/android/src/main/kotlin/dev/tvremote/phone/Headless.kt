@@ -16,6 +16,7 @@ import org.json.JSONArray
  */
 internal class Headless(private val c: Context) {
     private val prefs = c.getSharedPreferences("tvs", Context.MODE_PRIVATE)
+    init { c.reachAroundVpn() }
     private fun pref(k: String) = prefs.getString(k, "") ?: ""
 
     /** The TV's name for the words shown, and "" when none is saved. */

@@ -7,8 +7,7 @@ const drawLocal = [];                                                  // {pts, 
 let drawPic = null;                                                    // {img, b, x, y, w}: centre and width in 0..10000 of the screen
 
 function drawRect() {                                                  // where the picture is inside the box (it letterboxes)
-  const box = $('#screenbox').getBoundingClientRect(), m = !$('#screenv').hidden ? $('#screenv') : $('#screen');
-  const nw = m.naturalWidth || m.videoWidth || 16, nh = m.naturalHeight || m.videoHeight || 9;
+  const box = $('#screenbox').getBoundingClientRect(), [nw, nh] = picSize(screenEl()).map((v, i) => v || [16, 9][i]);
   const k = Math.min(box.width / nw, box.height / nh), w = nw * k, h = nh * k;
   return { box, x: (box.width - w) / 2, y: (box.height - h) / 2, w, h };
 }

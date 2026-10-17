@@ -214,7 +214,7 @@ object AdbPrompt {
         val pin = pass.substringAfter(':', "")
         return try {
             // a pass with a fingerprint is only ever sent over TLS to that certificate; plain HTTP is for a TV Setup too old to have it
-            val c = (if (pin.isEmpty()) URL("http://$host:8765/api/adb/allow") else URL("https://$host:8766/api/adb/allow")).openConnection() as HttpURLConnection
+            val c = dev.tvremote.core.Lan.open(if (pin.isEmpty()) URL("http://$host:8765/api/adb/allow") else URL("https://$host:8766/api/adb/allow")) as HttpURLConnection
             if (c is HttpsURLConnection) {
                 c.sslSocketFactory = SSLContext.getInstance("TLS").apply { init(null, arrayOf<TrustManager>(Pin(pin)), null) }.socketFactory
                 c.hostnameVerifier = HostnameVerifier { _, _ -> true }

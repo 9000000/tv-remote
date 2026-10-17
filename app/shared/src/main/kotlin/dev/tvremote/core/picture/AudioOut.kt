@@ -61,7 +61,7 @@ class AudioOut(far: Boolean = false) {
                 buf.position(info.offset)
                 buf.get(pcm)
                 val was = q.target
-                when (q.next(pcm.size / 4, behind, System.currentTimeMillis())) {
+                when (q.next(pcm.size / 4, behind, System.nanoTime() / 1_000_000)) {   // not the wall clock: a phone asleep is not 30 s of steady sound
                     SoundQueue.Do.PLAY -> {
                         for (b in held) { t.write(b, 0, b.size); written += b.size / 4 }
                         held.clear()

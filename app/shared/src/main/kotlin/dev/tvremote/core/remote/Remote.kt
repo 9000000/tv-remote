@@ -121,7 +121,7 @@ interface Remote : Closeable {
         }
 
         private fun open(host: String, port: Int, ms: Int): Boolean = try {
-            java.net.Socket().use { it.connect(java.net.InetSocketAddress(host, port), ms) }; true
+            dev.tvremote.core.Lan.connect(host, port, ms).close(); true
         } catch (e: Exception) { false }
 
         /** The ports that answer while the TV is on: Wake-on-LAN waits for one. */

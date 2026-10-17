@@ -170,6 +170,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         setTheme(if (LIGHT) R.style.AppLight else R.style.AppDark)   // dialogs and the keyboard's look follow
         super.onCreate(b)
         prefs = getSharedPreferences("tvs", MODE_PRIVATE)
+        reachAroundVpn()                                          // a TV at home stays reachable with a VPN on
         dev.tvremote.core.WireLog.app = "TV Remote " + version() + " (phone, Android " + android.os.Build.VERSION.RELEASE + ")"
         video = prefs.getBoolean("video", true)
         loadLang(this)

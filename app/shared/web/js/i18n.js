@@ -43,6 +43,7 @@
     'Để sau': 'Later', 'Cài TV Setup bằng tay: trên TV cài app Downloader từ CH Play, mở nó, nhập mã 2397346 rồi Go. TV Setup tự mở chỗ bật Gỡ lỗi ADB.': 'Install TV Setup by hand: on the TV install the Downloader app from the Play Store, open it, enter the code 2397346 and press Go. TV Setup then opens the place to turn ADB debugging on.', 'Đang kết nối': 'Connecting',
     'Tối ưu': 'Optimize',
     'TV đã dừng gửi hình.': 'The TV stopped sending the picture.',
+    'Mạng chậm, hình bị giật. Thử hạ chất lượng hình.': 'The network is slow and the picture skips. Try a lower picture quality.',
     'Không lấy được hình từ TV.': 'Could not get the picture from the TV.',
     'Không tải được phần phát hình.': 'Could not load the video player.',
     // header, tabs
@@ -185,6 +186,7 @@
     'Không mở được kết nối bảo mật. Ngày giờ trên TV có đúng không? (Cài đặt → Hệ thống → Ngày và giờ)': 'Could not open a secure connection. Is the TV\'s date and time right? (Settings → System → Date & time)',
     'TV (hoặc máy này) chưa vào được Internet.': 'The TV (or this device) cannot reach the Internet.', 'Mạng chậm hoặc vừa mất kết nối. Thử lại sau ít phút.': 'The network is slow or dropped. Try again in a few minutes.',
     'TV ngừng trả lời giữa chừng. Thử lại; vẫn vậy thì khởi động lại TV.': 'The TV stopped answering midway. Try again; if it keeps happening, restart the TV.',
+    'Đang bật VPN nên không tới được TV trong nhà. TV có đang bật và cùng Wi-Fi không? Nếu có, trong app VPN bật cho phép mạng LAN (Local network / Bypass LAN), hoặc tắt VPN.': 'A VPN is on, so the TV at home is out of reach. Is the TV on and on the same Wi-Fi? If so, allow the local network in the VPN app (Local network / Bypass LAN), or turn the VPN off.',
     '■ Dừng': '■ Stop', 'Dừng việc này và xóa phần đã gửi dở trên TV': 'Stop this and delete the half-sent part on the TV', 'đang dừng...': 'stopping...', 'Đã dừng': 'Stopped', '■ Đã dừng': '■ Stopped', 'đang kiểm tra chỗ trống trên TV...': 'checking the TV has room...',
     'Chép tệp lên TV không trọn vẹn. Thử lại.': 'The file did not reach the TV whole. Try again.', 'Mất kết nối với TV giữa chừng. Thử lại.': 'Lost the TV halfway. Try again.', 'TV hết bộ nhớ trống.': 'The TV is out of storage.',
     'TV đã có app này nhưng từ nguồn khác (khác chữ ký). Gỡ bản đang có rồi cài lại; dữ liệu của app sẽ mất.': 'The TV already has this app from another source (a different signature). Uninstall it first, then install again; the app’s data will be lost.',
@@ -607,7 +609,7 @@
     'TV Samsung không hỗ trợ': 'Samsung TVs cannot do this',
     'TV Roku': 'Roku TV', 'TV Hisense VIDAA': 'Hisense VIDAA TV', 'TV Hisense VIDAA không hỗ trợ': 'Hisense VIDAA TVs cannot do this', 'TV Roku không hỗ trợ': 'Roku TVs cannot do this', 'Roku đang chặn điều khiển': 'The Roku blocks control',
     'Roku đang chặn điều khiển từ điện thoại, máy tính. Trên Roku: Settings → System → Advanced system settings → Control by mobile apps → chọn Enabled (hoặc Permissive).': 'The Roku blocks control from phones and computers. On the Roku: Settings → System → Advanced system settings → Control by mobile apps → choose Enabled (or Permissive).',
-    'Chỉ có trên Android TV / Google TV': 'Only on Android TV / Google TV', 'Gửi nhật ký': 'Send the log', 'Bộ mã hóa': 'Encoder', 'Tự chọn': 'Auto', 'Phần cứng': 'Hardware', 'Phần mềm': 'Software', 'mã hóa phần cứng': 'hardware encoder', 'mã hóa phần mềm': 'software encoder', 'Bitrate (Mbit/s)': 'Bit rate (Mbit/s)', 'Nhật ký dài nên chỉ có đoạn cuối. Bản đầy đủ đã được chép: dán (Ctrl/⌘+V) đè lên đoạn dưới.': 'The log is long, so only its end is here. The whole log was copied: paste it (Ctrl/⌘+V) over the part below.', 'Đã chép nhật ký': 'Log copied', 'Không chép được nhật ký': 'Could not copy the log',
+    'Chỉ có trên Android TV / Google TV': 'Only on Android TV / Google TV', 'Gửi nhật ký': 'Send the log', 'Bộ mã hóa': 'Encoder', 'Tự chọn': 'Auto', 'Phần cứng': 'Hardware', 'Phần mềm': 'Software', 'mã hóa phần cứng': 'hardware encoder', 'mã hóa phần mềm': 'software encoder', 'nhịp đều': 'even pace', 'Nhịp hình': 'Frame pace', 'Đều hơn': 'Even', 'Nhanh nhất': 'Fastest', 'Đều hơn: hình chậm thêm 33 ms nhưng ít giật hơn khi Wi-Fi chập chờn.': 'Even: the picture is 33 ms later but stutters less on a patchy Wi-Fi.', 'Bitrate (Mbit/s)': 'Bit rate (Mbit/s)', 'Nhật ký dài nên chỉ có đoạn cuối. Bản đầy đủ đã được chép: dán (Ctrl/⌘+V) đè lên đoạn dưới.': 'The log is long, so only its end is here. The whole log was copied: paste it (Ctrl/⌘+V) over the part below.', 'Đã chép nhật ký': 'Log copied', 'Không chép được nhật ký': 'Could not copy the log',
     'Không đọc được nhật ký': 'Could not read the log', 'Mô tả: bấm gì, TV làm gì': 'Describe it: what you pressed, what the TV did', 'thử nghiệm': 'beta',
     'App làm sai? Gửi các lệnh đã gửi tới TV, câu TV trả lời và các lỗi (không có mã ghép đôi, địa chỉ MAC, chữ đã gõ). Trang báo lỗi mở sẵn.': 'Something wrong? Send what was sent to the TV, what it answered and the errors (no pairing keys, MAC addresses or typed text). A bug report opens for you.', 'Tự động trên TV': 'Automation on the TV',
     'Xem và chạm màn hình TV trên máy này': 'See and touch the TV’s screen here', 'Nghe tiếng TV': 'Listen to the TV',
@@ -629,6 +631,7 @@
   // Strings with a variable part. Captured pieces are passed through tr() again where they can be text of ours.
   const RULES = [
     [/^Bước (\d+)\/(\d+)$/, (m) => 'Step ' + m[1] + '/' + m[2]],
+    [/^Mạng chậm: hạ hình xuống (.+) cho kịp\.$/, (m) => 'Slow network: the picture went down to ' + tr(m[1]) + ' to keep up.'],
     [/^Đợi (\d+) giây rồi thử lại\.$/, (m) => 'Wait ' + m[1] + ' seconds and try again.'],
     [/^(.+) cần TV Setup (\S+) trở lên \(TV đang có (\S*)\)\. Cập nhật TV Setup\?$/, (m) => tr(m[1]) + ' needs TV Setup ' + m[2] + ' or newer (the TV has ' + m[3] + '). Update TV Setup?'],
     [/^(.+) cần app TV Setup trên TV\. Cài TV Setup\?$/, (m) => tr(m[1]) + ' needs the TV Setup app on the TV. Install TV Setup?'],

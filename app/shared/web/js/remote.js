@@ -142,10 +142,10 @@ function touch(a, p, extra) {
   if (a === 'scroll' && waiting > 2) return;
   waiting++; inputQ = inputQ.then(() => api('/api/touch', m)).finally(() => { waiting--; });
 }
-[$('#screen'), $('#screenv')].forEach((scr) => {
+[$('#screen'), $('#screenv'), $('#screenc')].forEach((scr) => {
   scr.draggable = false;
   const screenPos = (e) => {                                          // pointer -> 0..1 inside the picture (the box letterboxes it)
-    const r = scr.getBoundingClientRect(), nw = scr.naturalWidth || scr.videoWidth || 16, nh = scr.naturalHeight || scr.videoHeight || 9;
+    const r = scr.getBoundingClientRect(), [nw, nh] = picSize(scr).map((v, i) => v || [16, 9][i]);
     const k = Math.min(r.width / nw, r.height / nh), w = nw * k, h = nh * k;
     const x = (e.clientX - r.left - (r.width - w) / 2) / w, y = (e.clientY - r.top - (r.height - h) / 2) / h;
     return x < 0 || x > 1 || y < 0 || y > 1 ? null : { x, y };

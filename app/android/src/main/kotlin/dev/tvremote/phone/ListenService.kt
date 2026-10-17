@@ -34,6 +34,7 @@ class ListenService : Service() {
     override fun onCreate() {
         super.onCreate()
         loadLang(this)
+        reachAroundVpn()
         if (Build.VERSION.SDK_INT >= 26)
             (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(NotificationChannel("listen", t("Nghe tiếng TV", "TV sound"), NotificationManager.IMPORTANCE_LOW))
         session = MediaSession(this, "tvremote-listen").apply {

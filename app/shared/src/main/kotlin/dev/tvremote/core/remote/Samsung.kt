@@ -54,7 +54,7 @@ class Samsung(private val dir: File, private val host: String, private val ports
     fun probe(): JSONObject? = try { get("/api/v2/")?.let { JSONObject(String(it, Charsets.UTF_8)).optJSONObject("device") } } catch (e: Exception) { null }
 
     private fun get(path: String, method: String = "GET"): ByteArray? {
-        val c = URL("http://$host:$rest$path").openConnection() as HttpURLConnection
+        val c = dev.tvremote.core.Lan.open(URL("http://$host:$rest$path")) as HttpURLConnection
         c.connectTimeout = 2500; c.readTimeout = 4000; c.requestMethod = method
         return try { if (c.responseCode !in 200..299) null else c.inputStream.use { it.readBytes() } } finally { c.disconnect() }
     }
@@ -87,10 +87,10 @@ class Samsung(private val dir: File, private val host: String, private val ports
 
     private fun hello(s: WebSocket, onClosed: () -> Unit) {
         s.timeout(1500)
-        val until = System.currentTimeMillis() + 40_000
+        val until = System.nanoTime() / 1_000_000 + 40_000
         while (!closed) {
             val text = try { s.read() } catch (e: java.net.SocketTimeoutException) {
-                if (System.currentTimeMillis() > until) throw IOException("nobody accepted on the TV")
+                if (System.nanoTime() / 1_000_000 > until) throw IOException("nobody accepted on the TV")
                 asking = true                                         // no answer at once: the TV is asking the person
                 continue
             } ?: throw IOException("the TV closed the connection")

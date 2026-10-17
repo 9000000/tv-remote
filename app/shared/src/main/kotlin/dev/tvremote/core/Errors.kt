@@ -26,6 +26,10 @@ object Errors {
             Regex("SSLHandshake|CertPathValidator|Chain validation|CERTIFICATE_VERIFY|not yet valid|expired", RegexOption.IGNORE_CASE).containsMatchIn(all) ->
                 t("Không mở được kết nối bảo mật. Ngày giờ trên TV có đúng không? (Cài đặt → Hệ thống → Ngày và giờ)",
                     "Could not open a secure connection. Is the TV's date and time right? (Settings → System → Date & time)")
+            all.contains(Lan.BLOCKED) -> t("Đang bật VPN nên không tới được TV trong nhà. TV có đang bật và cùng Wi-Fi không? Nếu có, trong app VPN bật cho phép mạng LAN (Local network / Bypass LAN), hoặc tắt VPN.",
+                "A VPN is on, so the TV at home is out of reach. Is the TV on and on the same Wi-Fi? If so, allow the local network in the VPN app (Local network / Bypass LAN), or turn the VPN off.")
+            all.contains(dev.tvremote.core.adb.AdbLink.ASKING) -> t("TV đang hỏi “Cho phép gỡ lỗi USB?”: nhìn lên TV, chọn “Luôn cho phép”.", "The TV asks “Allow USB debugging?”: look at the TV, choose “Always allow”.")
+            all.contains(dev.tvremote.core.adb.AdbLink.STILL) -> t("Vẫn đang kết nối ADB tới TV. Thử lại sau giây lát.", "Still connecting to the TV over ADB. Try again in a moment.")
             all.contains("UnknownHost") -> t("TV chưa vào được Internet.", "The TV cannot reach the Internet.")
             Regex("SocketTimeout|timed out|ConnectException|Connection reset", RegexOption.IGNORE_CASE).containsMatchIn(all) ->
                 t("Mạng chậm hoặc vừa mất kết nối. Thử lại sau ít phút.", "The network is slow or dropped. Try again in a few minutes.")

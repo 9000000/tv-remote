@@ -252,7 +252,7 @@ class Vidaa(private val dir: File, private val host: String, private val port: I
     /** The TV's clock (its web server's Date header: the login is made from it) and its protocol number; ours when it does not say. */
     private fun tvClock(): Pair<Long, Int> {
         for (p in listOf(38400, 18400)) try {
-            val c = URL("http://$host:$p/MediaServer/rendererdevicedesc.xml").openConnection() as HttpURLConnection
+            val c = dev.tvremote.core.Lan.open(URL("http://$host:$p/MediaServer/rendererdevicedesc.xml")) as HttpURLConnection
             c.connectTimeout = 1500; c.readTimeout = 1500
             try {
                 val body = c.inputStream.use { String(it.readBytes(), Charsets.UTF_8) }
@@ -523,7 +523,7 @@ class Vidaa(private val dir: File, private val host: String, private val port: I
         }
 
         private fun download(url: String): ByteArray? = try {
-            val c = URL(url).openConnection() as HttpURLConnection
+            val c = dev.tvremote.core.Lan.open(URL(url)) as HttpURLConnection
             c.connectTimeout = 6000; c.readTimeout = 8000
             try { if (c.responseCode == 200) c.inputStream.use { it.readBytes() }.takeIf { it.size < 64 * 1024 } else null } finally { c.disconnect() }
         } catch (e: Exception) { null }

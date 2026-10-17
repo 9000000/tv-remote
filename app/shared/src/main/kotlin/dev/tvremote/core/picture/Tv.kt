@@ -175,8 +175,9 @@ class Tv(
                     + (if (wantVideo) "video=true $video" + (soft?.let { " video_encoder=$it" } ?: "") else "video=false")
                     + (if (hearing == null) " audio=false" else " audio=true audio_codec=$hearing" + (if (hearing == "opus") " audio_bit_rate=$audioBitRate" else "") + (if (sdk >= 33) " audio_source=playback" else "") + (if (share) " audio_dup=true" else ""))
                     // scrcpy-server does not always notice that we left (a still picture sends nothing), and a leftover one keeps
-                    // loading the TV. So a shell loop on the TV waits for our heartbeat and kills the server when it stops.
-                    + " & P=\$!; while read -t 25 x; do :; done; kill \$P")
+                    // loading the TV. So a shell loop on the TV waits for our heartbeat and kills the server when it stops; 60 s,
+                    // not less: a phone frozen in the background or a laptop that slept a moment is not a viewer gone.
+                    + " & P=\$!; while read -t 60 x; do :; done; kill \$P")
             Thread({
                 try { while (!stopped) { log.write("\n".toByteArray()); Thread.sleep(8000) } } catch (gone: Exception) { }
             }, "scrcpy-heartbeat").apply { isDaemon = true }.start()
@@ -407,6 +408,9 @@ class Tv(
     }
 
     fun press(code: Int) { key(0, code, 0, 0); key(1, code, 0, 0) }
+
+    /** scrcpy starts its capture again: a new codec config and a key frame now, instead of at the next i-frame interval. */
+    fun resetVideo() = send(byteArrayOf(17))
 
     /** A finger on the TV screen. action: 0 down, 1 up, 2 move; x, y in 0..1 of the picture. */
     fun touch(action: Int, x: Float, y: Float) {
