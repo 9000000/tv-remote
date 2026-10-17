@@ -2,6 +2,10 @@
 
 **Tiếng Việt** · [English](README.en.md) · 🌐 [tvremote.pages.dev](https://tvremote.pages.dev)
 
+<!-- aio-desktop-badge:start -->
+[![AIO Desktop](https://img.shields.io/badge/Try-AIO_Desktop-7c3aed?style=for-the-badge&logo=googlechrome&logoColor=white)](https://fbaio.org/#/desktop)
+<!-- aio-desktop-badge:end -->
+
 Điều khiển Android TV / Google TV (và TV LG, Samsung, Roku, Hisense / Toshiba VIDAA) từ điện thoại hoặc máy tính, đi thẳng tới TV, không qua máy chủ nào. **Tính năng, ảnh chụp và nút tải: [tvremote.pages.dev](https://tvremote.pages.dev).** README này là hướng dẫn cài đặt, xử lý lỗi và chi tiết kỹ thuật.
 
 Đã chạy thật với Sony BRAVIA (Android 9). TV hãng khác chưa thử. TV LG, Samsung, Roku, VIDAA: **thử nghiệm** ([xem bảng](#ba-app-và-một-trang-web)).
@@ -414,3 +418,9 @@ Sửa `app/shared/web` thì chỉ cần tải lại trang (app đọc thẳng t�
 </details>
 
 Thay đổi từng bản: [CHANGELOG.md](CHANGELOG.md).
+
+<!-- aio-desktop:start -->
+### 🖥️ AIO Desktop
+
+Xem app này cùng nhiều công cụ, trò chơi miễn phí khác trong **[AIO Desktop](https://fbaio.org/#/desktop)**, màn kiểu Windows/macOS của Social AIO. [▶ Mở AIO Desktop](https://fbaio.org/#/desktop)
+<!-- aio-desktop:end -->

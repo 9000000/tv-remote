@@ -2,6 +2,10 @@
 
 [Tiếng Việt](README.md) · **English** · 🌐 [tvremote.pages.dev](https://tvremote.pages.dev)
 
+<!-- aio-desktop-badge:start -->
+[![AIO Desktop](https://img.shields.io/badge/Try-AIO_Desktop-7c3aed?style=for-the-badge&logo=googlechrome&logoColor=white)](https://fbaio.org/#/desktop)
+<!-- aio-desktop-badge:end -->
+
 Control an Android TV / Google TV (and LG, Samsung, Roku, Hisense / Toshiba VIDAA TVs) from a phone or a computer, straight to the TV with no server in between. **Features, screenshots and downloads: [tvremote.pages.dev](https://tvremote.pages.dev).** This README covers setup, troubleshooting and the technical details.
 
 Tested for real on a Sony BRAVIA (Android 9). Other brands are untested. LG, Samsung, Roku, VIDAA TVs: **beta** ([see the table](#three-apps-and-a-web-page)).
@@ -413,3 +417,9 @@ The TV emulator's address: from the phone app (an emulator) it is **`10.0.2.2`**
 </details>
 
 Changes per release: [CHANGELOG.md](CHANGELOG.md).
+
+<!-- aio-desktop:start -->
+### 🖥️ AIO Desktop
+
+Find this app and many more free tools & games in **[AIO Desktop](https://fbaio.org/#/desktop)**, a Windows/macOS-style web desktop by Social AIO. [▶ Open AIO Desktop](https://fbaio.org/#/desktop)
+<!-- aio-desktop:end -->
