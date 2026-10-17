@@ -149,16 +149,19 @@ class Tv(
     private fun session() {
         val socks = arrayListOf<Adb.Stream>()
         try {
+            if (Trace.on) Trace.log("s.begin")
             status("connecting", host)
             val a = Adb(dir)
             adb = a
             a.connectTo(host) { status("allow", "") }
+            if (Trace.on) Trace.log("s.adb")
             if (stopped) return
             status("starting", a.shell("getprop ro.product.model").trim())
             if (wake) a.shell("input keyevent KEYCODE_WAKEUP")
             if (listener.wantsNetwork()) reportNetwork(a)
             if (listener.wantsPass()) try { AdbPrompt.token(a, "phone")?.let { listener.onPass(it) } } catch (ignored: IOException) { }
             pushServer(a)
+            if (Trace.on) Trace.log("s.pushed")
             var hearing = audio
             val sdk = if (hearing != null) a.shell("getprop ro.build.version.sdk").trim().toIntOrNull() ?: 0 else 0
             val share = hearing != null && audioShare && sdk >= 33
@@ -178,6 +181,7 @@ class Tv(
                     // loading the TV. So a shell loop on the TV waits for our heartbeat and kills the server when it stops; 60 s,
                     // not less: a phone frozen in the background or a laptop that slept a moment is not a viewer gone.
                     + " & P=\$!; while read -t 60 x; do :; done; kill \$P")
+            if (Trace.on) Trace.log("s.launch")
             Thread({
                 try { while (!stopped) { log.write("\n".toByteArray()); Thread.sleep(8000) } } catch (gone: Exception) { }
             }, "scrcpy-heartbeat").apply { isDaemon = true }.start()
@@ -196,6 +200,7 @@ class Tv(
                 i++
             }
             if (first == null) throw IOException("scrcpy-server did not start on the TV")
+            if (Trace.on) Trace.log("s.listening", "tries=$i")
             socks.add(first)                                          // the server takes the connections in this order
             val count = (if (wantVideo) 1 else 0) + (if (hearing != null) 1 else 0) + (if (wantControl) 1 else 0)
             while (socks.size < count) socks.add(a.open("localabstract:scrcpy_$scid"))
@@ -335,6 +340,7 @@ class Tv(
                 bytes = 0; since = now
             }
             val config = (flags and (1L shl 62)) != 0L
+            if (Trace.on) Trace.log("v.in", "pts=${(flags and ((1L shl 61) - 1)) / 1000} cfg=${if (config) 1 else 0} key=${if ((flags and (1L shl 61)) != 0L) 1 else 0} n=$size")
             if (sink != null) {
                 sink.video(config, (flags and (1L shl 61)) != 0L, data)
                 if (first && !config) { first = false; framed = true; status("live", "") }
@@ -368,6 +374,7 @@ class Tv(
                 val data = ByteArray(size)
                 s.readFully(data, 0, size)
                 val config = (flags and (1L shl 62)) != 0L
+                if (Trace.on) Trace.log("a.in", "pts=${(flags and ((1L shl 62) - 1)) / 1000} cfg=${if (config) 1 else 0} n=$size")
                 audioSink?.audio(config, data)
                 bytes += size + 12
                 val now = System.currentTimeMillis()

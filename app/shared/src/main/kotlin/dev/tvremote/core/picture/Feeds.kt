@@ -41,7 +41,7 @@ class Feeds {
         self = v
         viewer = v
         // the system grows a socket's send buffer to megabytes: seconds of picture waiting where CatchUp cannot see them
-        return pump(q, v, { viewer }) { if (viewer === v) viewer = null }.apply { sendBuffer = 64 * 1024 }
+        return pump("v", q, v, { viewer }) { if (viewer === v) viewer = null }.apply { sendBuffer = 64 * 1024 }
     }
 
     /**
@@ -66,13 +66,13 @@ class Feeds {
             override fun onNetwork(mac: String, lan: String, tailscale: String) { }
         }, Tv.AudioSink { config, data ->
             if (config) { if (opus) q.add(packet(1, data)); return@AudioSink }
-            if (q.size > 200) { if (q.size < 210) q.add(endPacket) } else q.add(packet(2, if (whole) data else mix.feed(data)))   // the browser cannot keep up: stop instead of filling memory
+            if (q.size > 200) { if (q.size < 210) q.add(endPacket) } else q.add(CatchUp.Packet(2, CatchUp.packet(2, if (whole) data else mix.feed(data)), System.currentTimeMillis()))   // the browser cannot keep up: stop instead of filling memory
         })
         hearer = h
-        return pump(q, h, { hearer }) { if (hearer === h) hearer = null }
+        return pump("a", q, h, { hearer }) { if (hearer === h) hearer = null }
     }
 
-    private fun pump(q: LinkedBlockingQueue<CatchUp.Packet>, t: Tv, now: () -> Tv?, done: () -> Unit) =
+    private fun pump(tag: String, q: LinkedBlockingQueue<CatchUp.Packet>, t: Tv, now: () -> Tv?, done: () -> Unit) =
         HttpServer.Response.stream("application/octet-stream", -1) { out ->
             try {
                 while (true) {
@@ -80,6 +80,7 @@ class Feeds {
                     if (p === endPacket || now() !== t) break          // ended, or another browser took over
                     out.write(p.bytes)
                     out.flush()
+                    if (Trace.on && p.at > 0) Trace.log("w", "$tag kind=${p.kind} age=${System.currentTimeMillis() - p.at} n=${p.bytes.size - 5}")
                 }
             } finally {
                 t.stop()

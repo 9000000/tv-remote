@@ -17,6 +17,14 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
 - **The phone app needs no key frame request after the screen comes back**: the surface is recreated, the session restarts,
   and scrcpy opens every session with a config and a key frame.
 
+- **Where the picture's delay goes (measured on the TV emulator, computer app, Chrome on loopback; `TVR_TRACE=file` on the
+  server and `?stats=1` on the page log every stage).** TV capture to server 30 ms median / 60-77 p90; server queue 0 ms;
+  server to page 1 ms; WebCodecs decode 2-3 ms + wait for the next frame draw 10 ms: server to painted 14 ms median / 22 p90.
+  JMuxer (TV web page) adds about one frame interval on top: 124 ms median at 10 fps, 51 ms at 30 fps (WebCodecs: 14 / 12).
+  So the browser and server are not where the time is: the frame rate (10 fps = up to 100 ms before a change is even sent) and the
+  TV's encoder are. Start of a picture: 0.93 s median, of which app_process 0.55 s, encoder start 0.23 s, ADB shells 0.13 s; the
+  jar is pushed only when its size differs (cold push +0.26 s). Emulator numbers: only the page and server stages transfer.
+
 ## Waits
 
 - **Waits and watchdogs use `System.nanoTime()`**, never the wall clock: a laptop lid closed mid-wait, or the TV setting its
