@@ -106,9 +106,8 @@
           <div class="card-head">
             <h2>🖥️ Màn hình TV <span class="muted adbnote lower" data-for="pc">· cần ADB</span></h2>
             <div class="tools">
-              <select id="screenmode" aria-label="Chất lượng hình" title="Chất lượng hình: số nhỏ thì nhẹ cho TV và mạng"><option value="240">240p</option><option value="360">360p</option><option value="480">480p</option><option value="720">720p</option><option value="960" selected>960p</option><option value="hd" data-for="pc">Nét nhất · nặng TV</option><option value="snap">Ảnh chụp</option><option value="adv">⚙️ Nâng cao…</option></select>
+              <select id="screenmode" aria-label="Chất lượng hình" title="Chất lượng hình: số nhỏ thì nhẹ cho TV và mạng"><option value="240">240p</option><option value="360">360p</option><option value="480">480p</option><option value="720">720p</option><option value="960" selected>960p</option><option value="hd" data-for="pc">Nét nhất</option><option value="snap">Ảnh chụp</option><option value="adv">⚙️ Nâng cao…</option></select>
               <button class="small" id="listen" data-adb-gated title="Nghe tiếng TV trên máy này"><span class="ico">🎧</span><span class="lbl"> Nghe</span></button>
-              <button class="small iconbtn" id="drawbtn" data-adb-gated data-needs="control" title="Vẽ lên màn hình TV: chỉ chỗ cho người đang xem" aria-label="Vẽ lên màn hình TV">✏️</button>
               <button class="small iconbtn" id="screenfull" aria-label="Toàn màn hình" title="Toàn màn hình">⛶</button>
               <button class="small primary" id="screenbtn"><span class="ico">▶</span><span class="lbl"> Xem</span></button>
               <button class="small" id="pipback" hidden><span class="ico">↩</span><span class="lbl"> Về Remote</span></button>
@@ -147,6 +146,7 @@
           <div class="plbar" id="plbar"><output id="plpos">0:00</output><input type="range" id="plseek" data-needs="control" min="0" max="1000" value="0" aria-label="Tua"><output id="pldur"></output></div>
         </section>
         <section class="card rc" aria-label="Điều hướng" data-needs="control">
+          <div class="nowapp" id="nowapp" hidden></div>   <!-- the app on the TV's screen: apps.js showNowApp -->
           <div class="rrow four">
             <button class="rb lab power" data-k="POWER" aria-label="Nguồn" title="Nguồn"><svg class="ic" aria-hidden="true"><use href="#i-power"/></svg><small>Nguồn</small></button>
             <button class="rb lab" data-k="ASSIST" aria-label="Google Assistant" title="Mở Google Assistant trên TV"><svg class="ic" aria-hidden="true"><use href="#i-mic"/></svg><small>Trợ lý</small></button>

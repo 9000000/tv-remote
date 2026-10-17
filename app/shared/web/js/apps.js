@@ -16,6 +16,16 @@ function onMeta(pkg, fn) {
   if (!metaWaiters.has(pkg)) { metaWaiters.set(pkg, []); metaQueue.push(pkg); }
   metaWaiters.get(pkg).push(fn); pumpMeta();
 }
+// The remote's "now open" line: the app on the TV's screen, from its remote link or ADB; hidden when the TV does not say.
+let nowApp = '';
+function showNowApp(id, label) {
+  if (id + '|' + (label || '') === nowApp) return; nowApp = id + '|' + (label || '');
+  const box = $('#nowapp'); box.hidden = !id; if (!id) return;
+  const pkg = /^[\w]+(\.[\w]+)+$/.test(id) && !label, icon = appIcon(id), name = el('b', { textContent: label || appName(id) });
+  box.replaceChildren(el('small', { textContent: 'Đang mở' }), icon, name);
+  if (!pkg) icon.fill({ label: label || id });                         // an LG / Roku id: its name's first letter
+  if (pkg) onMeta(id, (m) => { if (nowApp.startsWith(id + '|')) { icon.fill(m); name.textContent = appName(id); } });
+}
 function seedMeta(apps) { apps.forEach((a) => { if (a.meta && !META.has(a.pkg)) META.set(a.pkg, a.meta); }); }
 // An app's picture, or a placeholder until there is one (and for good when there is none, or it fails to load): the first
 // letter of its name on a colour taken from the package name, so apps without a logo still look apart.

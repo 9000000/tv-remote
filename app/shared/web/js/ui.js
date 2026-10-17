@@ -88,7 +88,11 @@ function iconize(e) {
     const tab = e.closest('.tabs [data-tab]'), [name, hue] = ICON[k];
     t.nodeValue = s.slice(k.length).replace(/^️/, '').trimStart();
     if (t.parentNode.classList.contains('ico') && !t.nodeValue) t.parentNode.replaceChildren(UI.icon(name, tab ? TAB_HUE[tab.dataset.tab] : null));
-    else t.parentNode.insertBefore(UI.icon(name, title ? hue : null), t);
+    else {
+      const ic = UI.icon(name, title ? hue : null);
+      if (!t.nodeValue && !e.textContent.trim()) ic.classList.add('solo');   // an icon-only button: no gap after it, or it sits left of centre
+      t.parentNode.insertBefore(ic, t);
+    }
     return;
   }
 }

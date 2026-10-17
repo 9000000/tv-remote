@@ -178,8 +178,9 @@ let setupLater = '', setupBusy = false;                               // setupCh
 const SETUP_STEP = { download: 'Đang tải bản mới về TV', installing: 'Đang cài bản mới', checking: 'Đã cài, đang xem bản mới có chạy tốt không' };
 const seenUndo = () => { try { return localStorage.getItem('setupUndo') || ''; } catch (e) { return ''; } };
 async function checkSetup() {
-  setupChecked = curHost || '-';
+  const host = setupChecked = curHost || '-';
   const r = await fetch('/api/setup/version').then((x) => x.ok ? x.json() : null).catch(() => null);
+  if (host !== (curHost || '-')) return null;                         // another TV was picked meanwhile: not its banner
   if (!setupBusy) showSetupUpd(r);
   return r;
 }

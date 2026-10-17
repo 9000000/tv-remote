@@ -153,6 +153,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     // ---- SetupBanner.kt
     internal lateinit var setupBar: Button
     internal lateinit var playing: PlayingBar                          // NowPlayingBar.kt
+    internal lateinit var nowApp: NowApp                              // NowApp.kt
     internal val setupChecked = HashMap<String, Long>()                // when each TV's TV Setup was last looked at
     internal val setupNews = HashMap<String, SetupNews>()
 
@@ -354,7 +355,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         if (pic != null || tv == null || !video || bgListen || !surfaceReady) return
         val dm = resources.displayMetrics
         pic = Tv(this, h, surface.holder.surface, prefs.getInt("quality", 1), maxOf(dm.widthPixels, dm.heightPixels), false, picListener,
-            fps = prefs.getInt("picFps", 0), bitRate = prefs.getInt("picRate", 0) * 1_000_000)
+            fps = prefs.getInt("picFps", 0), bitRate = prefs.getInt("picRate", 0) * 1_000_000, encoder = prefs.getString("picEnc", "auto")!!)
     }
 
     internal fun stopPicture() {

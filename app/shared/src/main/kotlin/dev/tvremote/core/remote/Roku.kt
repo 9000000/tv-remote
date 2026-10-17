@@ -72,7 +72,8 @@ class Roku(@Suppress("UNUSED_PARAMETER") dir: File, private val host: String, pr
         model = field(info, "friendly-model-name").ifEmpty { field(info, "model-name") }
         vendor = field(info, "vendor-name").ifEmpty { "Roku" }
         version = field(info, "software-version")
-        mac = field(info, "ethernet-mac").ifEmpty { field(info, "wifi-mac") }.uppercase()
+        val wifi = field(info, "network-type") == "wifi"                // a Roku lists both MACs: the one in use wakes it
+        mac = (if (wifi) field(info, "wifi-mac").ifEmpty { field(info, "ethernet-mac") } else field(info, "ethernet-mac").ifEmpty { field(info, "wifi-mac") }).uppercase()
         tv = field(info, "is-tv") == "true"
         field(info, "power-mode").takeIf { it.isNotEmpty() }?.let { isOn = it == "PowerOn" }
     }
@@ -94,13 +95,21 @@ class Roku(@Suppress("UNUSED_PARAMETER") dir: File, private val host: String, pr
         if (was && !closed) { WireLog.all.add("·", "Roku $host stopped answering"); onClosed() }
     }
 
+    /** On the keys' thread; nothing once closed (close() and a key may cross). */
+    private fun run(task: () -> Unit) {
+        try { out.execute { try { task() } catch (gone: InterruptedException) { } } } catch (closing: java.util.concurrent.RejectedExecutionException) { }
+    }
+
     override fun key(code: Int, direction: Int) {
         var name = KEYS[code] ?: return
         if (closed || (!tv && code in TV_ONLY)) return
-        if (code == 26) name = if (isOn == false) "PowerOn" else "PowerOff"   // a toggle on the remote; ECP has both halves
-        out.execute {
-            if (!ready()) return@execute
-            when (direction) {
+        if (code == 26) {                                             // a toggle on the remote; ECP has both halves, sent as one press
+            if (direction == Atv.UP) return
+            name = if (isOn == false) "PowerOn" else "PowerOff"
+        }
+        run {
+            if (!ready()) return@run
+            when (if (code == 26) Atv.SHORT else direction) {
                 Atv.DOWN -> post("/keydown/$name")
                 Atv.UP -> post("/keyup/$name")
                 else -> post("/keypress/$name")
@@ -111,9 +120,10 @@ class Roku(@Suppress("UNUSED_PARAMETER") dir: File, private val host: String, pr
 
     /** One Lit_ key per character, into the keyboard the Roku shows (there is no way to read or replace what it holds). */
     override fun text(t: String) {
-        out.execute {
+        if (closed) return
+        run {
             for (ch in t.codePoints().toArray()) {
-                if (!ready()) return@execute
+                if (!ready()) return@run
                 post("/keypress/Lit_" + URLEncoder.encode(String(Character.toChars(ch)), "UTF-8").replace("+", "%20"))
                 Thread.sleep(30)
             }
@@ -128,7 +138,8 @@ class Roku(@Suppress("UNUSED_PARAMETER") dir: File, private val host: String, pr
             Regex("^[\\w.-]{1,80}$").matches(link) -> "/launch/$link"
             else -> return                                            // no web browser on a Roku
         }
-        out.execute { post(path); if (yt == null) app = link }
+        if (closed) return
+        run { post(path); if (yt == null) app = link }
     }
 
     override fun apps(): List<Remote.App> = parseApps(fetch("/query/apps") ?: "").filter { it.second == "appl" }.map { Remote.App(it.first, it.third, "/query/icon/" + it.first) }
@@ -179,8 +190,8 @@ class Roku(@Suppress("UNUSED_PARAMETER") dir: File, private val host: String, pr
         internal fun parseApps(xml: String): List<Triple<String, String, String>> =
             Regex("<app\\s+([^>]*)>([^<]*)</app>").findAll(xml).mapNotNull { m ->
                 val attrs = m.groupValues[1]
-                val id = Regex("id=\"([^\"]+)\"").find(attrs)?.groupValues?.get(1) ?: return@mapNotNull null
-                Triple(id, Regex("type=\"([^\"]+)\"").find(attrs)?.groupValues?.get(1) ?: "appl", unescape(m.groupValues[2].trim()).ifEmpty { id })
+                val id = Regex("(?:^|\\s)id=\"([^\"]+)\"").find(attrs)?.groupValues?.get(1) ?: return@mapNotNull null
+                Triple(id, Regex("(?:^|\\s)type=\"([^\"]+)\"").find(attrs)?.groupValues?.get(1) ?: "appl", unescape(m.groupValues[2].trim()).ifEmpty { id })
             }.toList()
 
         /** The app on screen, "" on the home screen (the screensaver counts as home). */

@@ -207,7 +207,7 @@ async function loadTvs() {
     el('div', { className: 'name' }, el('span', { textContent: t.name || t.host }), t.host === r.current && cameFromTv ? el('span', { className: 'badge ok', textContent: 'đang dùng' }) : null,
       el('small', { textContent: t.host + (t.lan && t.lan !== t.host ? ' · trong nhà ' + t.lan : '') })),
     el('div', { className: 'acts' },
-      setLabel(el('button', { className: 'small primary', onclick: () => openTv(t.host, r.current) }), '▶', 'Điều khiển'),
+      setLabel(el('button', { className: 'small primary', onclick: () => openTv(t.host, r.current) }), '▶', OPEN_TV),
       setLabel(el('button', { className: 'small danger', onclick: async () => { if (await ask('Xóa "' + (t.name || t.host) + '" khỏi danh sách? (Không đổi gì trên TV)', { ok: 'Xóa', danger: true })) { await api('/api/tv/remove', { host: t.host }); await refresh(); loadTvs(); loadSteps(); } } }), '🗑', 'Xóa', true))));
   $('#tvlist').replaceChildren(...rows);
   $('#savedcard').hidden = !rows.length; $('#pickcols').classList.toggle('solo', !rows.length);   // nothing saved: no empty box, just the search
@@ -222,7 +222,7 @@ function scanRow(f) {
       native ? el('span', { className: 'badge', textContent: 'thử nghiệm' }) : null,
       native ? null : f.adb ? el('span', { className: 'badge ok', textContent: 'ADB đã bật' }) : el('span', { className: 'badge', textContent: 'ADB chưa bật' })),
       el('small', { textContent: f.ip + (f.via === 'tailscale' ? ' · qua Tailscale' : ' · cùng mạng') + (f.tailscale ? ' · Tailscale ' + f.tailscale : '') })),
-    el('div', { className: 'acts' }, setLabel(el('button', { className: 'small primary', onclick: () => selectTv(f.ip, f.name, f.kind) }), '▶', 'Điều khiển')));
+    el('div', { className: 'acts' }, setLabel(el('button', { className: 'small primary', onclick: () => selectTv(f.ip, f.name, f.kind) }), '▶', OPEN_TV)));
   row.dataset.ip = f.ip; return row;
 }
 // The scan runs on the computer; asked again every 400 ms, each TV shows up as soon as it answers instead of after the
@@ -368,6 +368,7 @@ async function installSetup() {
 
 // ---------- Tailscale: one button installs it on the TV, switches it on and fetches its sign-in link (Tailscale.kt) ----------
 // Nobody types on the TV: the link opens in a browser that is signed in to Tailscale, where one click adds the TV.
+const OPEN_TV = LANG === 'vi' ? 'Mở' : 'Connect';                // the list's buttons: short, one word (not through i18n: “Mở” is “Open” elsewhere)
 const TS_PITCH = 'Trang này cài Tailscale lên TV, bạn chỉ cần bấm “Connect”.';
 const TS_STEP = { download: 'Đang tải Tailscale bản chính thức (khoảng 100 MB)...', install: 'Đang cài Tailscale lên TV...', start: 'Đang bật Tailscale trên TV...' };
 let tsGen = 0;
@@ -444,6 +445,8 @@ async function loadSteps() {
   // 3. remote pairing
   const r = s.remote;
   if (r.connected) out.push(step(3, 'ok', 'Nút remote đã ghép', 'Các nút điều khiển dùng được.'));
+  else if (ready && !pairing) out.push(step(3, 'ok', 'Nút remote chạy qua ADB', 'Ghép thêm để bấm được cả khi ADB tắt.',   // keys already work: pairing is only a spare way in
+    act('🔗 Ghép', async () => { if (await api('/api/pair/start', {})) { pairing = true; await loadSteps(); } })));
   else if (r.paired === false || pairing) {
     const code = el('input', { placeholder: 'Mã 6 ký tự trên TV', maxLength: 6, autocomplete: 'off' });
     out.push(step(3, 'wait', 'Ghép nút remote', pairing ? 'TV đang hiện mã 6 ký tự. Gõ mã vào đây.' : 'Bấm “Ghép”, TV sẽ hiện mã 6 ký tự.',
@@ -468,10 +471,29 @@ function showSteps(out) {
   if (sig === stepsSig && $('#steps').childElementCount === out.length) return;
   stepsSig = sig; $('#steps').replaceChildren(...out);
 }
+// Hisense VIDAA: newer TVs want the certificate of Hisense's own app (never shipped with ours), then a 4-digit code.
+function vidaaStep(r) {
+  const ask = act(pairing ? '🔄 Lấy mã mới' : '🔗 Ghép', async () => { if (await api('/api/pair/start', {})) { pairing = true; await loadSteps(); } }, pairing ? '' : 'primary');
+  if (/certificate from Hisense/.test(r.error || '')) {
+    const f = el('input', { type: 'file', accept: '.apk,.p12,.pfx', hidden: true, onchange: async () => {
+      const file = f.files[0]; if (!file) return;
+      const x = await fetch('/api/vidaa/cert', { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: file }).then((y) => y.json().catch(() => ({}))).catch(() => ({}));
+      if (x.ok) { toast('Đã nhận chứng chỉ'); await sleep(1500); await loadSteps(); } else toast(friendly(x.error || 'vidaa: no certificate in this file'));
+    } });
+    return step(1, 'todo', 'Cần chứng chỉ của Hisense', 'Chọn file .apk của app “VIDAA Smart TV” (hoặc file .p12). Chỉ giữ trên máy này.', f, act('📂 Chọn file', async () => f.click(), 'primary'));
+  }
+  if (r.paired === false || pairing) {
+    const code = el('input', { placeholder: 'Mã 4 số trên TV', maxLength: 4, inputMode: 'numeric', autocomplete: 'off' });
+    return step(1, 'wait', 'Ghép với TV', pairing ? 'TV đang hiện mã 4 số. Gõ mã vào đây.' : 'Bấm “Ghép”, TV sẽ hiện mã 4 số.', pairing ? code : null,
+      pairing ? act('✓ Xác nhận', async () => { const x = await api('/api/pair/finish', { code: code.value.trim() }); if (x) { pairing = false; toast('Đã ghép'); await refresh(); await loadSteps(); } }, 'primary') : null, ask);
+  }
+  return step(1, 'todo', 'Kết nối TV', r.error ? 'Chưa kết nối được. TV có bật và chung mạng không?' : 'Đang kết nối...', r.error ? ask : null);
+}
 // An LG, Samsung or Roku TV: no ADB, no code to type. LG and Samsung ask themselves (a Roku asks nothing) whether to let this computer in; then save it.
 function nativeSteps(s) {
   const r = s.remote, out = [], again = act('🔄 Hỏi lại TV', async () => { if (await api('/api/pair/start', {})) { toast('Nhìn lên TV'); await sleep(800); await loadSteps(); } }, 'primary');
   out.push(r.connected ? step(1, 'ok', 'TV đã cho phép', 'Các nút điều khiển dùng được.')
+    : s.kind === 'vidaa' ? vidaaStep(r)
     : r.asking ? step(1, 'wait', 'Nhìn lên TV: chọn Cho phép', 'TV đang hỏi có cho máy này điều khiển không.')
     : r.error === 'refused' ? step(1, 'todo', 'TV đã từ chối', 'Bấm “Hỏi lại TV” rồi chọn Cho phép trên TV.', again)
     : r.error === 'not accepted' ? step(1, 'todo', 'Chưa ai chọn Cho phép trên TV', 'Bấm “Hỏi lại TV”, rồi chọn Cho phép trong lúc TV hỏi.', again)

@@ -7,6 +7,8 @@ import android.text.InputType
 import android.widget.FrameLayout
 import android.widget.Toast
 import dev.tvremote.core.remote.Atv
+import dev.tvremote.core.remote.CodePairing
+import dev.tvremote.core.remote.Vidaa
 import dev.tvremote.core.remote.Remote
 import java.util.Locale
 
@@ -62,6 +64,7 @@ internal fun MainActivity.startBasic(ip: String, justPaired: Boolean) {
     }.apply { isDaemon = true }.start()
     Thread {
         try {
+            if (a is Vidaa) vidaaCert()
             a.connect { ui.post { if (basic === a) keysLost(a, ip) } }
             ui.post {
                 if (isFinishing || host != null) { a.close(); return@post }
@@ -145,9 +148,20 @@ internal fun MainActivity.watchAdb(a: Atv, ip: String) {
     }.apply { isDaemon = true }.start()
 }
 
-/** On a worker thread: the TV shows a code, the person types it here. */
+/** Hisense's certificate, read once from Hisense's own app on this phone (never shipped with ours): VIDAA TVs from 2022 on want it. */
+internal fun MainActivity.vidaaCert() {
+    if (Vidaa.hasCert(filesDir)) return
+    for (pkg in Vidaa.APPS) try {
+        val info = packageManager.getApplicationInfo(pkg, 0)
+        for (apk in listOfNotNull(info.sourceDir) + (info.splitSourceDirs ?: emptyArray()))
+            if (java.io.File(apk).let { f -> f.inputStream().use { Vidaa.importCert(filesDir, it, f.length()) } }) return
+    } catch (ignored: Exception) { }
+}
+
+/** On a worker thread: the TV shows a code, the person types it here (6 characters on an Android TV, 4 digits on a Hisense). */
 internal fun MainActivity.pair(ip: String) {
-    val p = Atv(filesDir, ip)
+    val vidaa = kindOf(entry ?: ip) == Remote.Kind.VIDAA
+    val p = Remote.of(kindOf(entry ?: ip), filesDir, ip) as CodePairing
     try { p.startPairing() } catch (e: Exception) {
         p.close()
         ui.post { message(t("Không ghép được với TV: ", "Could not pair with the TV: ") + e.message, true) }
@@ -155,8 +169,9 @@ internal fun MainActivity.pair(ip: String) {
     }
     ui.post {
         message(null, false)
-        val code = input(t("Mã 6 ký tự trên TV", "The 6 characters on the TV"))
-        code.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+        val code = input(if (vidaa) t("Mã 4 số trên TV", "The 4 digits on the TV") else t("Mã 6 ký tự trên TV", "The 6 characters on the TV"))
+        code.inputType = if (vidaa) android.text.InputType.TYPE_CLASS_NUMBER
+            else android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         val wrap = inDialog(code)
         AlertDialog.Builder(this).setTitle(t("Nhập mã đang hiện trên TV", "Type the code shown on the TV")).setView(wrap)
             .setPositiveButton(t("Ghép", "Pair")) { _, _ ->
@@ -178,7 +193,7 @@ internal fun MainActivity.pair(ip: String) {
 
 internal fun MainActivity.explain(err: String?): String {
     val e = err?.lowercase(Locale.ROOT) ?: ""
-    if (e.contains(dev.tvremote.core.remote.Roku.LIMITED)) return dev.tvremote.core.Errors.say(java.io.IOException(err), VI)
+    if (e.contains(dev.tvremote.core.remote.Roku.LIMITED) || err?.contains(Vidaa.NO_CERT) == true) return dev.tvremote.core.Errors.say(java.io.IOException(err), VI)
     if (refused(err))
         return t("TV từ chối kết nối: chưa bật “Gỡ lỗi ADB”.\n\nTrên TV: Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng”. Rồi Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB” (hoặc “Gỡ lỗi USB”).",
             "The TV refused the connection: “ADB debugging” is off.\n\nOn the TV: Settings → Device Preferences → About → press OK 7 times on “Build”. Then Developer options → turn on “ADB debugging” (or “USB debugging”).")

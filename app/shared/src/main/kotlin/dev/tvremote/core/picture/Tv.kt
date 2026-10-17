@@ -53,6 +53,8 @@ class Tv(
     /** the person's own frames per second and bit rate (Advanced picture), 0: the level's */
     fps: Int = 0,
     bitRate: Int = 0,
+    /** "auto": the hardware encoder, the software one if it sends nothing ([watchFirstFrame]); "hw" or "sw": that one only */
+    private val encoder: String = "auto",
 ) {
     /** One H.264 packet as scrcpy sends it (Annex B). config: SPS/PPS, needed before the first frame; key: a key frame. */
     fun interface Sink { fun video(config: Boolean, key: Boolean, data: ByteArray) }
@@ -84,6 +86,9 @@ class Tv(
     companion object {
         private const val VER = "5.0.1"
         private const val REMOTE = "/data/local/tmp/scrcpy-server.jar"
+        /** TVs whose hardware encoder takes the picture and sends nothing back (a TCL's Realtek one): their software encoder */
+        private val softEncoder = java.util.concurrent.ConcurrentHashMap<String, String>()
+        private const val FIRST_FRAME_MS = 8000L
         /** Waits for the capture's virtual output to go, then starts Google's remote service: see endCapture */
         private const val REVIVE_REMOTE = "for i in 1 2 3 4 5 6 7 8 9 10; do dumpsys audio | grep -qi remote_submix || break; sleep 0.5; done; " +
             "pm path com.google.android.tv.remote.service >/dev/null 2>&1 && am startservice -n com.google.android.tv.remote.service/.RemoteService >/dev/null 2>&1; true"
@@ -105,8 +110,10 @@ class Tv(
     }
 
     private val video: String                                         // scrcpy video options
-    private val io = Executors.newSingleThreadExecutor()
+    @Volatile private var io = Executors.newSingleThreadExecutor()
     @Volatile private var stopped = false
+    @Volatile private var stalled = false                             // the encoder sent no picture: once more with the software one
+    @Volatile private var framed = false
     @Volatile private var capture: List<Adb.Stream>? = null           // the sockets while the TV's sound is captured
     @Volatile private var adb: Adb? = null
     @Volatile private var control: Adb.Stream? = null
@@ -128,6 +135,15 @@ class Tv(
     }
 
     private fun run() {
+        session()
+        if (stalled && !stopped) {
+            stalled = false
+            io = Executors.newSingleThreadExecutor()
+            session()
+        }
+    }
+
+    private fun session() {
         val socks = arrayListOf<Adb.Stream>()
         try {
             status("connecting", host)
@@ -149,10 +165,11 @@ class Tv(
                 hearing = null
                 if (!wantVideo && !wantControl) throw IOException("this TV cannot send its sound (Android 11 or newer is needed)")
             }
+            val soft = if (!wantVideo) null else when (encoder) { "hw" -> null; "sw" -> softFor(a); else -> softEncoder[host] }
             val scid = String.format("%08x", Random().nextInt(0x7fffffff))
             val log = a.open("shell:CLASSPATH=" + REMOTE + " app_process / com.genymobile.scrcpy.Server " + VER + " scid=" + scid
                     + " tunnel_forward=true cleanup=false control=$wantControl send_dummy_byte=true send_device_meta=false clipboard_autosync=false "   // autosync on, GET_CLIPBOARD answers nothing
-                    + (if (wantVideo) "video=true $video" else "video=false")
+                    + (if (wantVideo) "video=true $video" + (soft?.let { " video_encoder=$it" } ?: "") else "video=false")
                     + (if (hearing == null) " audio=false" else " audio=true audio_codec=$hearing" + (if (hearing == "opus") " audio_bit_rate=$audioBitRate" else "") + (if (sdk >= 33) " audio_source=playback" else "") + (if (share) " audio_dup=true" else ""))
                     // scrcpy-server does not always notice that we left (a still picture sends nothing), and a leftover one keeps
                     // loading the TV. So a shell loop on the TV waits for our heartbeat and kills the server when it stops.
@@ -188,6 +205,7 @@ class Tv(
                 // a codec error ends the sound, not the app
                 Thread({ try { hear(soundIn, hearing!!) } catch (ignored: Throwable) { } }, "scrcpy-audio").apply { isDaemon = true }.start()
             if (pictureIn != null) {
+                if (encoder == "auto" && soft == null) watchFirstFrame(a, pictureIn)
                 if (ctl != null) Thread({ try { deviceMessages(ctl) } catch (ignored: IOException) { } }, "scrcpy-ctl").apply { isDaemon = true }.start()
                 play(pictureIn)
             } else if (ctl != null) {
@@ -197,9 +215,9 @@ class Tv(
                 status("live", "")
                 hear(soundIn, hearing!!)
             }
-            if (!stopped) status("closed", "")
+            if (!stopped && !stalled) status("closed", "")
         } catch (e: Throwable) {
-            if (!stopped) status("error", e.message ?: e.javaClass.simpleName)
+            if (!stopped && !stalled) status("error", e.message ?: e.javaClass.simpleName)
         } finally {
             control = null
             screen?.release()
@@ -208,6 +226,32 @@ class Tv(
             adb?.close()                                              // the heartbeat stops, the loop on the TV kills scrcpy-server
             io.shutdownNow()
         }
+    }
+
+    /**
+     * Some hardware encoders open, take the screen and never put out a frame (a TCL on Android 11: one session header after
+     * five seconds, then nothing), and the picture waits forever. The TV's software H.264 encoder is found with scrcpy's
+     * list_encoders, kept for this TV, and the session starts again with it.
+     */
+    private fun watchFirstFrame(a: Adb, video: Adb.Stream) {
+        Thread({
+            try { Thread.sleep(FIRST_FRAME_MS) } catch (e: InterruptedException) { return@Thread }
+            if (stopped || framed) return@Thread
+            val soft = softFor(a) ?: return@Thread
+            if (stopped || framed) return@Thread
+            WireLog.all.add("·", "picture $host no frame from the hardware encoder: $soft")
+            stalled = true
+            video.close()
+        }, "scrcpy-first-frame").apply { isDaemon = true }.start()
+    }
+
+    /** The TV's software H.264 encoder, from scrcpy's list_encoders (asked once per TV); null if it has none or did not say. */
+    private fun softFor(a: Adb): String? {
+        softEncoder[host]?.let { return it }
+        val list = try { a.shell("CLASSPATH=$REMOTE app_process / com.genymobile.scrcpy.Server $VER cleanup=false list_encoders=true 2>&1", 15000) } catch (e: IOException) { return null }   // cleanup=false: or scrcpy deletes its jar
+        val soft = Regex("--video-codec=h264 --video-encoder=(\\S+)\\s+\\(sw\\)").find(list)?.groupValues?.get(1) ?: return null
+        softEncoder[host] = soft
+        return soft
     }
 
     /**
@@ -288,12 +332,12 @@ class Tv(
             val config = (flags and (1L shl 62)) != 0L
             if (sink != null) {
                 sink.video(config, (flags and (1L shl 61)) != 0L, data)
-                if (first && !config) { first = false; status("live", "") }
+                if (first && !config) { first = false; framed = true; status("live", "") }
                 continue
             }
             val sc = screen ?: continue
             if (!sc.feed(config, if (config) 0L else flags and ((1L shl 61) - 1), data)) break
-            if (first && !config) { first = false; status("live", "") }
+            if (first && !config) { first = false; framed = true; status("live", "") }
         }
     }
 

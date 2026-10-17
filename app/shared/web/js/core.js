@@ -162,7 +162,9 @@ const FRIENDLY = [
   [SETUP_RE, setupSay],
   [/notify:nooverlay/, 'TV này không cho app hiện thông báo đè lên màn hình.'],
   [/no YouTube and no Google search/, 'TV này không có YouTube hay tìm kiếm của Google để tìm câu này.'],
-  [/^unsupported: (LG|Samsung|Roku)$/, (m) => 'TV ' + m[1] + ' không hỗ trợ'],
+  [/^unsupported: (LG|Samsung|Roku|Hisense VIDAA)$/, (m) => 'TV ' + m[1] + ' không hỗ trợ'],
+  [/vidaa: the certificate from Hisense/, 'TV Hisense này cần chứng chỉ từ app “VIDAA Smart TV” của Hisense. Vào tab Thiết lập để chọn file .apk của app đó.'],
+  [/vidaa: no certificate in this file/, 'Không tìm thấy chứng chỉ trong file này. Chọn file .apk của app “VIDAA Smart TV”, hoặc file .p12.'],
   [/roku: control by mobile apps is off/, 'Roku đang chặn điều khiển từ điện thoại, máy tính. Trên Roku: Settings → System → Advanced system settings → Control by mobile apps → chọn Enabled (hoặc Permissive).'],   // Roku.LIMITED: newer Roku OS keeps phones out
   [/^refused$/, 'TV đã từ chối. Bấm Hỏi lại TV ở tab Thiết lập rồi chọn Cho phép.'],
   [/^not accepted$/, 'Chưa ai chọn Cho phép trên TV. Bấm Hỏi lại TV ở tab Thiết lập.'],
@@ -269,8 +271,9 @@ async function refresh() {
   if (s.version) $('#ver').textContent = (s.app_name || 'TV Remote') + ' ' + s.version + (s.released ? ' · ' + s.released : '');
   document.title = tvName && !picking ? tvName + ' · Remote' : 'TV Remote';
   $('#name').textContent = picking ? 'TV Remote' : tvName;
-  $('#info').textContent = picking ? tr('Chọn TV để điều khiển') : [CORE === 'pc' ? s.host : '', appName(s.app), s.asking ? 'nhìn lên TV: chọn Cho phép' : s.paired === false ? 'chưa ghép remote (tab Thiết lập)' : s.error ? 'nút remote chưa kết nối được (tab Thiết lập)' : '',
+  $('#info').textContent = picking ? tr('Chọn TV để điều khiển') : [CORE === 'pc' ? s.host : '', s.asking ? 'nhìn lên TV: chọn Cho phép' : s.paired === false ? 'chưa ghép remote (tab Thiết lập)' : s.error ? 'nút remote chưa kết nối được (tab Thiết lập)' : '',
     s.scope === 'view' ? tr('Chỉ xem') : s.scope === 'remote' ? tr('Chỉ remote') : ''].filter(Boolean).join(' · ') || 'đã kết nối';   // a guest knows what it was given
+  showNowApp(picking ? '' : s.app || '', s.app_label);
   if (justPicked && s.host === justPicked) {                          // straight to the remote when the TV is ready, to the first-time steps when it is not
     const ready = s.connected || (s.adb && s.adb.state === 'ready') || s.asking;   // LG / Samsung asking: the remote tab says what to do
     if (ready || Date.now() - pickedAt > 6000) { justPicked = null; showTab(ready ? 'remote' : 'tv'); }   // a TV takes a few seconds to answer
@@ -299,7 +302,7 @@ let TV_KIND = 'android', CAPS = null, kindSig = '';
 let SCOPE = 'full';
 const NATIVE = () => TV_KIND !== 'android';
 const can = (cap) => cap === 'full' ? SCOPE === 'full' : cap === 'control' ? SCOPE !== 'view' : !CAPS || CAPS.has(cap);
-const KIND_NAME = { android: 'Android TV', lg: 'LG', samsung: 'Samsung', roku: 'Roku' };
+const KIND_NAME = { android: 'Android TV', lg: 'LG', samsung: 'Samsung', roku: 'Roku', vidaa: 'Hisense VIDAA' };
 const scopeWhy = () => SCOPE === 'view' ? 'Bạn chỉ được xem TV này' : 'Chỉ chủ TV dùng được phần này';
 const kindWhy = () => SCOPE !== 'full' ? scopeWhy() : 'Chỉ có trên Android TV / Google TV';
 function unsupported(e, off) {
@@ -338,7 +341,9 @@ async function sendWireLog() {
   try { await navigator.clipboard.writeText(text); ok = true; } catch {}
   if (!ok) { const a = el('textarea', { value: text }); document.body.append(a); a.select(); try { ok = document.execCommand('copy'); } catch {} a.remove(); }
   const head = text.split('\n\n')[0], tail = text.slice(-5000);
-  const body = '<!-- ' + tr('Mô tả: bấm gì, TV làm gì') + ' -->\n\n```\n' + (tail.length < text.length ? head + '\n…\n' + tail.slice(tail.indexOf('\n') + 1) : text) + '\n```';
+  const cut = tail.length < text.length;
+  const body = '<!-- ' + tr('Mô tả: bấm gì, TV làm gì') + ' -->\n\n' + (cut && ok ? '<!-- ' + tr('Nhật ký dài nên chỉ có đoạn cuối. Bản đầy đủ đã được chép: dán (Ctrl/⌘+V) đè lên đoạn dưới.') + ' -->\n' : '')
+    + '```\n' + (cut ? head + '\n…\n' + tail.slice(tail.indexOf('\n') + 1) : text) + '\n```';
   window.open('https://github.com/HoangTran0410/tv-remote/issues/new?title=' + encodeURIComponent(head.split('\n')[0]) + '&body=' + encodeURIComponent(body), '_blank');
   toast(ok ? 'Đã chép nhật ký' : 'Không chép được nhật ký');
 }

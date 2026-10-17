@@ -36,12 +36,14 @@ const H264_END = new Uint8Array([0, 0, 0, 1, 9, 0xf0]);                // access
 let muxer = null;
 // ⚙ Advanced: frames per second and bit rate of the person's own, over the level's (0: the level's). Kept in this browser.
 const PIC_FPS = [0, 15, 30, 60], PIC_RATE = [0, 1, 2, 4, 8];          // Mbit/s
-function picTune() { let t = {}; try { t = JSON.parse(localStorage.getItem('picTune') || '{}'); } catch {} return { fps: +t.fps || 0, rate: +t.rate || 0 }; }
-function picTuneSay() { const t = picTune(); return (t.fps ? ' · ≤' + t.fps + ' fps' : '') + (t.rate ? ' · ' + t.rate + ' Mbit/s' : ''); }
+function picTune() { let t = {}; try { t = JSON.parse(localStorage.getItem('picTune') || '{}'); } catch {} return { fps: +t.fps || 0, rate: +t.rate || 0, enc: ['hw', 'sw'].includes(t.enc) ? t.enc : 0 }; }
+function picTuneSay() { const t = picTune(); return (t.fps ? ' · ≤' + t.fps + ' fps' : '') + (t.rate ? ' · ' + t.rate + ' Mbit/s' : '') + (t.enc ? ' · ' + PIC_ENC_SAY[t.enc] : ''); }
+const PIC_ENC = { 0: 'Tự chọn', hw: 'Phần cứng', sw: 'Phần mềm' };   // the TV's video encoder; auto: hardware, software if it sends nothing
+const PIC_ENC_SAY = { hw: 'mã hóa phần cứng', sw: 'mã hóa phần mềm' };
 function picAdvanced() {
-  const row = (key, list) => {
+  const row = (key, list, words = (v) => v ? String(v) : 'Mặc định') => {
     const box = el('div', { className: 'fchips' });
-    const draw = () => box.replaceChildren(...list.map((v) => el('button', { className: picTune()[key] === v ? 'on' : '', textContent: v ? String(v) : 'Mặc định', onclick: () => {
+    const draw = () => box.replaceChildren(...list.map((v) => el('button', { className: picTune()[key] === v ? 'on' : '', textContent: words(v), onclick: () => {
       const t = picTune(); t[key] = v; try { localStorage.setItem('picTune', JSON.stringify(t)); } catch {}
       draw(); if (screenOn && $('#screenmode').value !== 'snap') startScreen();
     } })));
@@ -51,7 +53,8 @@ function picAdvanced() {
     el('div', { className: 'card-head' }, el('h2', { textContent: '⚙️ Hình nâng cao' }), el('button', { className: 'small iconbtn', textContent: '✕', title: 'Đóng', 'aria-label': 'Đóng', onclick: () => d.close() })),
     el('h3', { textContent: 'Khung/giây' }), row('fps', PIC_FPS),
     el('h3', { textContent: 'Bitrate (Mbit/s)' }), row('rate', PIC_RATE),
-    el('p', { className: 'note', textContent: 'Cao hơn thì mượt, nét hơn nhưng nặng TV và mạng hơn.' })));
+    el('h3', { textContent: 'Bộ mã hóa' }), row('enc', [0, 'hw', 'sw'], (v) => PIC_ENC[v]),
+    el('p', { className: 'note', textContent: 'Cao hơn thì mượt, nét hơn nhưng nặng TV và mạng hơn. Hình đứng mãi ở “Đang lấy hình”: thử Phần mềm.' })));
   d.addEventListener('close', () => d.remove());
   document.body.append(d); d.showModal();
 }
@@ -67,11 +70,11 @@ async function h264Loop(gen) {
     if (gen !== screenGen) { clearInterval(edge); return; }
     const b = video.buffered; if (!b.length) return;
     const end = b.end(b.length - 1); if (end - video.currentTime > 0.3) video.currentTime = end - 0.05;
-    if (video.paused) video.play().catch(() => {});
+    if (video.paused && end - video.currentTime > 0.1) video.play().catch(() => {});   // at the last frame: WebKit's play() would rewind to 0 (a flicker)
   }, 250);
   let why = 'TV đã dừng gửi hình.';
   try {
-    const r = await fetch('/api/video?q=' + (H264_Q[size] ?? 1) + (tune.fps ? '&fps=' + tune.fps : '') + (tune.rate ? '&rate=' + tune.rate * 1000000 : ''), { signal: streamCtl.signal }); if (!r.ok) throw new Error('http');
+    const r = await fetch('/api/video?q=' + (H264_Q[size] ?? 1) + (tune.fps ? '&fps=' + tune.fps : '') + (tune.rate ? '&rate=' + tune.rate * 1000000 : '') + (tune.enc ? '&enc=' + tune.enc : ''), { signal: streamCtl.signal }); if (!r.ok) throw new Error('http');
     const rd = r.body.getReader(); let buf = new Uint8Array(0), off = 0, config = null;   // off: where the next packet starts in buf (no copy per packet)
     for (;;) {
       const { done, value } = await rd.read(); if (done || gen !== screenGen) break;

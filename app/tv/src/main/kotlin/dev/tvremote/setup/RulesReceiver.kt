@@ -19,7 +19,7 @@ class RulesReceiver : BroadcastReceiver() {
             val change = if (set.isNullOrEmpty()) JSONObject() else JSONObject(String(Base64.decode(set, Base64.DEFAULT), Charsets.UTF_8))
             val state = Rules.change(c, change)
             if (Rules.active(c) && !RemoteService.isRunning()) {
-                try { RemoteService.start(c) } catch (e: Exception) { }   // may be refused from the background: RulesClient starts it through the shell then
+                try { RemoteService.start(c, true) } catch (e: Exception) { }   // may be refused from the background: RulesClient starts it through the shell then
             }
             state.put("running", RemoteService.isRunning())
         } catch (e: Exception) {

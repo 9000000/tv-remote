@@ -8,6 +8,6 @@ import android.content.Intent
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, i: Intent) {
         // Android 12+ may refuse a foreground service at boot on some TVs: the next app open or TV Setup broadcast starts it
-        if (RemoteService.wanted(ctx)) try { RemoteService.start(ctx) } catch (e: Exception) { }
+        if (RemoteService.wanted(ctx)) try { RemoteService.start(ctx, true) } catch (e: Exception) { }
     }
 }

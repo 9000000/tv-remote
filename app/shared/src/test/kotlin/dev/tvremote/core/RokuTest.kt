@@ -75,7 +75,7 @@ class RokuTest {
         r.key(85, Atv.DOWN); r.key(85, Atv.UP)
         r.key(24, Atv.SHORT)                                          // a Roku TV has volume keys
         r.key(7, Atv.SHORT)                                           // no number keys: nothing sent
-        r.key(26, Atv.SHORT)                                          // on: power goes off
+        r.key(26, Atv.DOWN); r.key(26, Atv.UP)                        // on: power goes off, one press however long it is held
         r.text("a b")
         r.launch("837")
         r.launch("https://youtu.be/dQw4w9WgXcQ")
@@ -122,5 +122,6 @@ class RokuTest {
         assertTrue(24 in r.keys)                                      // the TV above
         r.close()
         assertEquals("", Roku.activeApp("<active-app><app>Roku</app><screensaver id=\"5\" type=\"ssvr\">x</screensaver></active-app>"))
+        assertEquals("12", Roku.activeApp("<active-app><app id=\"12\" subtype=\"rsga\" type=\"appl\">Netflix</app></active-app>"))   // not "subtype"
     }
 }

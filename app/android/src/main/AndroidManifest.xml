@@ -12,6 +12,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- the photo picker sheet: Android's own, or Google Play services' on Android 12 and older -->
     <queries>
+        <package android:name="com.universal.remote.multi" />   <!-- Hisense's VIDAA app: its certificate (Vidaa.kt) -->
+        <package android:name="com.vidaa.smarttv" />
+        <package android:name="com.hisense.tv.remotenow" />
         <intent><action android:name="android.provider.action.PICK_IMAGES" /></intent>
         <intent><action android:name="androidx.activity.result.contract.action.PICK_IMAGES" /></intent>
     </queries>

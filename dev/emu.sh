@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The two emulators this project is tested on, made, started and loaded with the apps in one go (Mac, Linux; on Windows use
-# Git Bash with the SDK's tools on PATH, or run the steps by hand). See CLAUDE.md "Testing".
+# Git Bash with the SDK's tools on PATH, or run the steps by hand). See AGENTS.md "Testing".
 #
 #   dev/emu.sh            start + install
 #   dev/emu.sh create     the Google TV and phone AVDs (Android 14), system images downloaded when missing

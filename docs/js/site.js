@@ -59,7 +59,7 @@
 
   // the header's link for the section being read: the last one whose top has passed a third of the way down the screen
   (function(){
-    var links = [].slice.call(document.querySelectorAll(".navlinks a")), secs = links.map(function(a){ return document.querySelector(a.getAttribute("href")); }), busy = false;
+    var links = [].slice.call(document.querySelectorAll(".navlinks a, .navsheet a")), secs = links.map(function(a){ return document.querySelector(a.getAttribute("href")); }), busy = false;
     function mark(){
       busy = false;
       var y = innerHeight / 3, k = -1;
@@ -67,8 +67,29 @@
       if (k >= 0 && secs[k].getBoundingClientRect().bottom < 0) k = -1;           // past the last one (the closing part)
       links.forEach(function(a, i){ a.classList.toggle("on", i === k); });
     }
-    addEventListener("scroll", function(){ if (!busy){ busy = true; requestAnimationFrame(mark); } }, {passive:true});
-    mark();
+    var prog = document.querySelector(".navprog");
+    function bar(){                                                    // reading progress along the header's bottom edge
+      var max = document.documentElement.scrollHeight - innerHeight;
+      prog.style.setProperty("--p", max > 0 ? Math.min(1, Math.max(0, scrollY / max)).toFixed(4) : 0);
+    }
+    function tick(){ mark(); bar(); }
+    addEventListener("scroll", function(){ if (!busy){ busy = true; requestAnimationFrame(tick); } }, {passive:true});
+    addEventListener("resize", bar);
+    tick();
+  })();
+
+  // the narrow screens' menu: the same links in a sheet under the header; closes on a tap on a link, outside, or Escape
+  (function(){
+    var btn = document.querySelector(".menubtn"), sheet = document.getElementById("navsheet");
+    function set(open, back){
+      sheet.hidden = !open; btn.setAttribute("aria-expanded", open);
+      if (!open && back) btn.focus();
+    }
+    btn.onclick = function(){ set(sheet.hidden); if (!sheet.hidden) sheet.querySelector("a").focus({preventScroll:true}); };
+    sheet.addEventListener("click", function(e){ if (e.target.closest("a")) set(false); });
+    document.addEventListener("click", function(e){ if (!sheet.hidden && !e.target.closest("nav")) set(false); });
+    document.addEventListener("keydown", function(e){ if (e.key === "Escape" && !sheet.hidden) set(false, true); });
+    matchMedia("(min-width:981px)").addEventListener("change", function(m){ if (m.matches) set(false); });
   })();
 
   document.getElementById("yr").textContent = new Date().getFullYear();

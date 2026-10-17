@@ -104,15 +104,25 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         /** The service runs for the web remote, and also, with the web remote off, while timers or limits need watching. */
         fun wanted(c: Context): Boolean = enabled(c) || Rules.active(c)
 
-        fun setEnabled(c: Context, on: Boolean) {
+        fun setEnabled(c: Context, on: Boolean, background: Boolean = false) {
             c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean("on", on).commit()
             c.stopService(Intent(c, RemoteService::class.java))       // started again with or without its web server
-            if (wanted(c)) start(c)
+            if (wanted(c)) start(c, background)
         }
 
-        fun start(c: Context) {
+        /**
+         * [background]: from a receiver (boot, update, the shell's broadcast). Some TVs (TCL's TclAppBoot) refuse a foreground start
+         * from there, and then startForegroundService() kills the whole process 10 s later ("did not then call startForeground()").
+         * A plain startService() has no such deadline; the receiver is let start a service for a few seconds, and onCreate asks
+         * for the foreground itself, in a try. Only where the system refuses the plain start does it fall back.
+         */
+        fun start(c: Context, background: Boolean = false) {
             val i = Intent(c, RemoteService::class.java)
-            if (Build.VERSION.SDK_INT >= 26) c.startForegroundService(i) else c.startService(i)
+            if (Build.VERSION.SDK_INT < 26) { c.startService(i); return }
+            if (background) {
+                try { c.startService(i); return } catch (e: IllegalStateException) { }   // "not allowed to start service": background limits
+            }
+            try { c.startForegroundService(i) } catch (e: IllegalStateException) { }   // Android 12+ refuses it from the background: the next boot or opening TV Setup starts it
         }
 
         fun pairedCount(c: Context): Int = Paired.count(c)
@@ -141,6 +151,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     private val held = HashMap<Int, Runnable>()
     private var http: HttpServer? = null
     private var https: HttpServer? = null
+    private val front = dev.tvremote.core.ontv.Foreground()
     private var link: AdbLink? = null                                 // for apps, files, installs and health; the keys go through `tv`
     private var manage: Manage? = null
     private lateinit var prefs: SharedPreferences
@@ -179,7 +190,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         }
         @Suppress("DEPRECATION")
         val n = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(this, "remote") else Notification.Builder(this)
-        startForeground(1, n.setSmallIcon(R.drawable.ic_power).setContentTitle("TV Remote").setContentText("Web remote: port $PORT").setOngoing(true).build())
+        try { startForeground(1, n.setSmallIcon(R.drawable.ic_power).setContentTitle("TV Remote").setContentText("Web remote: port $PORT").setOngoing(true).build()) }
+        catch (e: Exception) { }                                   // refused (vendor block, Android 12+ background): it still serves as a plain service
         val server = HttpServer(this)
         http = server
         val l = AdbLink(filesDir, "127.0.0.1")
@@ -356,8 +368,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
 
     // ---------------------------------------------------------------- the picture, for one browser at a time
     /** The picture for the page, from a second session made only while a browser watches: see Feeds. */
-    private fun video(quality: Int, fps: Int, rate: Int): HttpServer.Response =
-        feeds.video { l, sink -> Tv(this, "127.0.0.1", null, quality, 1280, false, l, sink, fps = fps, bitRate = rate) }
+    private fun video(quality: Int, fps: Int, rate: Int, enc: String): HttpServer.Response =
+        feeds.video { l, sink -> Tv(this, "127.0.0.1", null, quality, 1280, false, l, sink, fps = fps, bitRate = rate, encoder = enc) }
 
     private fun scenes(): JSONArray = try { JSONArray(prefs.getString("scenes", "[]")) } catch (e: Exception) { JSONArray() }
 
@@ -424,7 +436,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 shot.headers["Cache-Control"] = "no-store"
                 return shot
             }
-            "/api/video" -> return video(r.q("q").toIntOrNull() ?: 1, r.q("fps").toIntOrNull() ?: 0, r.q("rate").toIntOrNull() ?: 0)
+            "/api/video" -> return video(r.q("q").toIntOrNull() ?: 1, r.q("fps").toIntOrNull() ?: 0, r.q("rate").toIntOrNull() ?: 0, r.q("enc").takeIf { it == "hw" || it == "sw" } ?: "auto")
             "/api/audio" -> return sound(r.query["share"] == "1", r.query["hq"] == "1")
             "/api/rules" -> return try {
                 val st = Rules.change(this, if (r.method == "POST") r.json() else JSONObject())
@@ -539,6 +551,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             .put("version", version).put("app_name", "TV Setup")
             .put("released", try { getString(resources.getIdentifier("released", "string", packageName)).split("-").let { it[2] + "/" + it[1] + "/" + it[0] } } catch (e: Exception) { "" })
             .put("adb", JSONObject().put("state", adbWord()))
+            .put("app", front.get(link?.takeIf { adbState == "ready" }?.let { l -> { c: String -> l.get().shell(c) } }).ifEmpty { JSONObject.NULL })   // the remote screen's "now open" line
             .put("volume", JSONObject().put("level", am.getStreamVolume(AudioManager.STREAM_MUSIC)).put("max", am.getStreamMaxVolume(AudioManager.STREAM_MUSIC))
                 .put("muted", Build.VERSION.SDK_INT >= 23 && am.isStreamMute(AudioManager.STREAM_MUSIC)))
     }

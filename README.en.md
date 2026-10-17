@@ -341,26 +341,65 @@ flowchart LR
 <details>
 <summary>For people changing the code</summary>
 
-The full guide for people (and AI agents) changing the code: [CLAUDE.md](CLAUDE.md).
+The full guide for people (and AI agents) changing the code: [AGENTS.md](AGENTS.md).
+
+**You need:** JDK 17, the Android SDK (with Emulator and Command-line Tools), Node.js (the web tests), Python 3 (the tools in `dev/`). Mac and Linux run it as is; on Windows use Git Bash.
+
+**Where the code is**
 
 ```
-app/desktop/  the Computer app (Kotlin, the same core as the two Android apps; the window is the system's web view)
-app/android/  the Phone app (Kotlin)                app/tv/   the TV app (TV Setup, Kotlin) + the TV web page
-app/shared/   shared: ADB, the control session, TV management, updates; web/ = ONE web UI for all three places
-              (the Computer app, the TV web page, the Phone app's Manage screen); only the core answering /api differs
-app/gradle/   build setup of the two Android apps (open this folder in Android Studio)
-dev/          release.sh (build the APKs + create the GitHub release), gen_icons.py (one icon set for all three)
-docs/         the product page (GitHub Pages) and screenshots
-VERSION, CHANGELOG.md
+app/shared/web/  ONE web UI for all three places (the Computer app, the TV web page, the Phone app's Manage screen)
+app/shared/src/  the shared Kotlin core: ADB, picture and sound (scrcpy), the remote of each TV brand, /api
+app/desktop/     the Computer app (Kotlin JVM; the window is the system's web view)
+app/android/     the Phone app (remote screen in Kotlin, Manage screen is the web UI)
+app/tv/          the TV app (TV Setup) + the TV web page
+app/gradle/      the Gradle build of everything Kotlin (open this folder in Android Studio)
+dev/             emu.sh (emulators), release.sh (releases), gen_icons.py, contrast.py, shots.py (dev/README.md)
+docs/            the product page https://tvremote.pages.dev (docs/README.md)
 tvs.json, cert.pem, key.pem, *.jks, .cache/      your machine's own data, never committed
 ```
 
-- **Building the apps:** open `app/` in Android Studio, or run `app/android/build.sh`, `app/tv/build.sh` (JDK 17 and the Android SDK).
-- **Computer app:** `cd app/gradle && ./gradlew :desktop:packageApp` builds the app for the system it runs on; GitHub Actions builds them all for each release (the two Mac builds joined into one app for both chips by `app/desktop/universal.sh`).
-- **Trying it on emulators:** `dev/emu.sh create` makes a Google TV emulator and a phone emulator (Android 14; system images downloaded, ARM or Intel to match the computer), `dev/emu.sh` starts both (the TV first), then builds and installs TV Setup on the TV and TV Remote on the phone. In the phone app the TV is `10.0.2.2`. Needs JDK 17 and the Android SDK (with Emulator and Command-line Tools); runs on Mac and Linux (Linux needs KVM), on Windows use Git Bash. `dev/emu.sh help` lists the other commands.
-- **Running from source:** get the source (git clone or zip). Computer app: `./gradlew :desktop:installDist`, then `app/desktop/build/install/desktop/bin/desktop --window`. A change in `app/shared/web` only needs the page reloaded; a Kotlin change, the command above again (a few seconds).
-- **Versions:** three numbers, each bumped only when its part changes: `VERSION` (the release and the web), `app/android/VERSION`, `app/tv/VERSION`. Every release carries `versions.json`, so an unchanged app is not offered an update. `dev/release.sh` bumps the number of each part that changed since the last release.
-- **Keep the three in sync:** any change to the controls goes into the Phone app, the TV web page and the Computer app. Names and diagrams: [Three apps and a web page](#three-apps-and-a-web-page).
+**The Computer app from source**
+
+| To | Run |
+|---|---|
+| Build | `cd app/gradle && ./gradlew :desktop:installDist` |
+| Open in its own window | `app/desktop/build/install/desktop/bin/desktop --window` |
+| Open in a browser | `app/desktop/build/install/desktop/bin/desktop` (prints the link with its `?k=` key) |
+| Try things without touching your real TV list | `TVS_FILE=/tmp/x.json TVR_KEYS=/tmp/keys TVR_PASS=testtest app/desktop/build/install/desktop/bin/desktop --port 8769`, open `http://127.0.0.1:8769/?k=testtest` (curl: header `x-tvr-pass: testtest`) |
+| Package the app for people | `./gradlew :desktop:packageApp` → `app/desktop/build/package/` |
+
+A change in `app/shared/web` only needs the page reloaded (the app reads that folder); a Kotlin change, a build again (a few seconds). Run inside the repo, the app uses the repo's `tvs.json` and ADB keys in `.cache/keys`, apart from the installed app.
+
+**The Android apps**
+
+- `app/android/build.sh`, `app/tv/build.sh` → `app/*/build/*.apk`. The web UI is packed into both APKs.
+
+**Emulators** (`dev/emu.sh help` lists every command)
+
+| To | Run |
+|---|---|
+| Make a Google TV emulator and a phone emulator (Android 14), once | `dev/emu.sh create` |
+| Start both (the TV first), build and install TV Setup on the TV and TV Remote on the phone | `dev/emu.sh` |
+| Only build and install again (emulators running) | `dev/emu.sh install` |
+| Reduce the phone app's TV list to `10.0.2.2` | `dev/emu.sh reset` |
+| Stop | `dev/emu.sh stop` |
+
+The TV emulator's address: from the phone app (an emulator) it is **`10.0.2.2`**, from the Computer app **`127.0.0.1`**. The `10.0.2.15` the TV emulator shows means something only inside itself. The first time, choose Allow on "Allow USB debugging?" in the TV emulator's window. Emulators open only the ADB port, so the Android TV remote pairing (without ADB) cannot be tried on them.
+
+**Checks**
+
+| To | Run |
+|---|---|
+| Web UI tests | `node --test app/shared/tests/` |
+| Kotlin tests | `cd app/gradle && ./gradlew :shared:testDebugUnitTest :android:testDebugUnitTest :tv:testDebugUnitTest` |
+| Colour contrast on the real page | `dev/contrast.py` |
+| Screenshots for the product page | `dev/shots.py` |
+
+**Other**
+
+- **Versions:** three numbers, each bumped only when its part changes: `VERSION` (the release and the Computer app), `app/android/VERSION`, `app/tv/VERSION`. `dev/release.sh` bumps the number of each part that changed, builds the APKs and creates the GitHub release; the next release's notes go under `## Unreleased` in `CHANGELOG.md`.
+- **Keep the three in sync:** any change to the controls goes into the Phone app, the TV web page and the Computer app. The remote screen's keys live in one place: `app/shared/web/remote.json`. Names and diagrams: [Three apps and a web page](#three-apps-and-a-web-page).
 - **Credits:** [scrcpy](https://github.com/Genymobile/scrcpy) v5.0.1 (Apache-2.0), [JMuxer](https://github.com/samirkumardas/jmuxer) 2.1.0 (MIT), [webview](https://github.com/webview/webview) 0.12.0 (MIT), [JNA](https://github.com/java-native-access/jna) (Apache-2.0).
 </details>
 

@@ -95,7 +95,9 @@ object SetupUpdate {
         svc() { am start-foreground-service -n ${'$'}P/.RemoteService >/dev/null 2>&1 || am startservice -n ${'$'}P/.RemoteService >/dev/null 2>&1; }   # Android 7 and older: startservice
         say() { echo "${'$'}1 ${'$'}(date +%s) ${'$'}V ${'$'}{old:--} ${'$'}2" > ${'$'}D/state; }
         ver() { dumpsys package ${'$'}P 2>/dev/null | grep -m1 versionName= | sed 's/.*versionName=//'; }
-        crashes() { logcat -b crash -d 2>/dev/null | grep -c "Process: ${'$'}P,"; }
+        # Not the TV's own refusal to let a background start become a foreground service ("did not then call Service.startForeground()", seen on TCL):
+        # that says nothing about this version, and the old one dies the same way. awk drops those crashes from the count.
+        crashes() { logcat -b crash -d 2>/dev/null | awk -v p="Process: ${'$'}P," 'index(${'$'}0, p) { n++; c = 1; next } /FATAL EXCEPTION/ { c = 0 } c && /did not then call Service.startForeground/ { n--; c = 0 } END { print n + 0 }'; }
         old=${'$'}(ver); rm -f ${'$'}D/ok; say installing
         size=${'$'}(stat -c %s "${'$'}A"); c0=${'$'}(crashes); rb=1
         out=${'$'}(cat "${'$'}A" | pm install -r --enable-rollback -S ${'$'}size 2>&1)

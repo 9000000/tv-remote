@@ -3,6 +3,7 @@ package dev.tvremote.core
 import dev.tvremote.core.web.Cancelled
 import dev.tvremote.core.web.NoRoom
 import dev.tvremote.core.remote.Roku
+import dev.tvremote.core.remote.Vidaa
 import dev.tvremote.core.ontv.SetupNeed
 import dev.tvremote.core.ontv.Tailscale
 /** Turns the errors people actually meet (a TV with the wrong date, no Internet, a TV that stops answering) into words they can act on. */
@@ -54,6 +55,8 @@ object Errors {
             all.contains("not an APK file") -> t("Tệp này không phải APK.", "This file is not an APK.")
             all.contains(Roku.LIMITED) -> t("Roku đang chặn điều khiển từ điện thoại, máy tính. Trên Roku: Settings → System → Advanced system settings → Control by mobile apps → chọn Enabled (hoặc Permissive).",
                 "The Roku blocks control from phones and computers. On the Roku: Settings → System → Advanced system settings → Control by mobile apps → choose Enabled (or Permissive).")
+            all.contains(Vidaa.NO_CERT) -> t("TV Hisense này cần chứng chỉ từ app “VIDAA Smart TV” của Hisense. Cài app đó một lần (không cần mở), rồi thử lại.",
+                "This Hisense TV needs the certificate from Hisense’s “VIDAA Smart TV” app. Install that app once (no need to open it), then try again.")
             all.contains("protected: the TV needs this app") -> t("TV cần app này, không gỡ được.", "The TV needs this app; it cannot be removed.")
             else -> e.message ?: e.javaClass.simpleName
         }

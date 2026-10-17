@@ -25,7 +25,7 @@ import dev.tvremote.core.WireLog
  * ports 6467 (pairing, once, with the code the TV shows) and 6466 (keys and "open this"). It is what the Google TV phone
  * app speaks, and what the computer web uses through androidtvremote2. No picture, no apps, no files: those need ADB.
  */
-class Atv(dir: File, private val host: String) : Remote {
+class Atv(dir: File, private val host: String) : Remote, CodePairing {
     override val kind = Remote.Kind.ANDROID
 
     class NotPaired : Exception("not paired")
@@ -67,7 +67,7 @@ class Atv(dir: File, private val host: String) : Remote {
 
     // ---------------------------------------------------------------- pairing (port 6467)
     /** Asks the TV to show its code. Then [finishPairing] with what the person reads there. */
-    fun startPairing() {
+    override fun startPairing() {
         WireLog.all.add("·", "remote $host pairing")
         val s = dial(6467)
         sock = s
@@ -82,7 +82,7 @@ class Atv(dir: File, private val host: String) : Remote {
     }
 
     /** Throws when the code is wrong; the TV then drops the attempt and [startPairing] has to be run again. */
-    fun finishPairing(code: String) {
+    override fun finishPairing(code: String) {
         val s = sock ?: throw IllegalStateException("startPairing first")
         val c = code.trim().uppercase()
         require(c.length == 6 && c.all { it in "0123456789ABCDEF" }) { "bad code" }

@@ -112,10 +112,11 @@
     .remote-grid:not(:has(#screencard.on)) { grid-template-columns:minmax(0,720px) 340px; justify-content:center; }
     .screenbox { max-height:calc(100vh - 215px); min-height:240px; }
   }
+  #screencard:not(.on) #screenfull { display:none; }                  /* nothing to show full screen yet */
   /* phone: the two columns become one list, so the app tiles can go below the buttons and the picture stays right above them;
      the picture's box takes no room until somebody is watching */
   @media (max-width:899px) { .remote-grid > .col { display:contents; } .wide-only { order:5; }
-    #screencard:not(.on) .screenbox, #screencard:not(.on) #screeninfo, #screencard:not(.on) #screenfull { display:none; } #screencard:not(.on) h2 { margin:0; } }
+    #screencard:not(.on) .screenbox, #screencard:not(.on) #screeninfo { display:none; } #screencard:not(.on) h2 { margin:0; } }
   .col { display:flex; flex-direction:column; gap:14px; min-width:0; }
 
   /* remote card: line icons, a round D-pad with OK in the middle */
@@ -195,6 +196,7 @@
   .screenbox .blackhint[hidden] { display:none; }
   .screenbox:fullscreen { border-radius:0; aspect-ratio:auto; }
   .card-head { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+  #screenmode { width:8.2em; text-overflow:ellipsis; }                /* as wide as its levels, not as “⚙️ Advanced…” */
   .card-head h2 { margin:0; } .card-head .tools { display:flex; gap:6px; align-items:center; }
   /* mini player: the TV picture floats in the corner while another tab is open */
   #pipslot { position:fixed; right:16px; bottom:16px; width:min(440px, calc(100vw - 32px)); z-index:15; }
@@ -403,6 +405,8 @@
   .logbox { width:min(980px, 96vw); display:flex; flex-direction:column; gap:8px; }
   /* now playing (js/playing.js): the app's icon, the title, three buttons; the bar under them seeks */
   .playing { display:flex; flex-direction:column; gap:8px; padding:10px 12px; } .playing[hidden] { display:none; }
+  .nowapp { display:flex; align-items:center; gap:8px; min-width:0; } .nowapp small { color:var(--muted); flex:none; }
+  .nowapp .appicon { width:24px; height:24px; border-radius:6px; flex:none; font-size:12px; } .nowapp b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .plhead { display:flex; align-items:center; gap:8px; min-width:0; } .plhead img { width:36px; height:36px; border-radius:8px; flex:none; object-fit:contain; }
   .pltext { flex:1; min-width:0; display:flex; flex-direction:column; } .pltext b, .pltext small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .pltext small { color:var(--muted); font-size:12px; }
   .plbar { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; } .plbar[hidden] { display:none; }
@@ -455,7 +459,7 @@
   /* icons in titles, tabs and buttons (js/ui.js ICON): a title's in its own colour, a button's in the button's */
   .ui-ic { display:inline-flex; vertical-align:-.2em; margin-right:.4em; flex:none; } .ui-ic .ic { width:1.15em; height:1.15em; }
   .ui-ic.hue { color:hsl(var(--h) 70% 36%); } [data-theme=dark] .ui-ic.hue { color:hsl(var(--h) 80% 68%); } h2 .ui-ic .ic { width:15px; height:15px; } h2 .ui-ic { vertical-align:-3px; }
-  .ico > .ui-ic { margin:0; } .lbl:empty { display:none; }
+  .ico > .ui-ic, .ui-ic.solo { margin:0; } .lbl:empty { display:none; }
   .tabs .ico > .ui-ic { background:hsl(var(--h) 65% 38%); color:#fff; border-radius:7px; padding:4px; } .tabs .ico > .ui-ic .ic { width:15px; height:15px; }
   .tabs [aria-selected=true] .ico > .ui-ic { background:rgba(255,255,255,.22); }
   @media (max-width:640px) { .tabs .ico > .ui-ic { padding:5px; } .tabs .ico > .ui-ic .ic { width:17px; height:17px; } }

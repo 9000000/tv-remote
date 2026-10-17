@@ -92,21 +92,25 @@ internal fun MainActivity.qualityMenu() {
 private val PIC_FPS = intArrayOf(0, 15, 30, 60)                       // the same chips as the page's (js/screen.js)
 private val PIC_RATE = intArrayOf(0, 1, 2, 4, 8)                      // Mbit/s
 
-/** Frames per second and bit rate of the person's own, over the level's (0: the level's): each tap restarts the picture. */
+/** Frames per second, bit rate and the TV's encoder of the person's own, over the level's (0: the level's): each tap restarts the picture. */
 private fun MainActivity.picAdvanced() {
     val body = col()
-    val fps = LinearLayout(this); val rate = LinearLayout(this)
+    val fps = LinearLayout(this); val rate = LinearLayout(this); val enc = LinearLayout(this)
     fun draw() {
         val words = { v: Int -> if (v == 0) t("Mặc định", "Default") else v.toString() }
-        fps.removeAllViews(); rate.removeAllViews()
+        fps.removeAllViews(); rate.removeAllViews(); enc.removeAllViews()
         fps.addView(chips(PIC_FPS.map { it.toString() to words(it) }, prefs.getInt("picFps", 0).toString()) { tune("picFps", it.toInt()); draw() }, LinearLayout.LayoutParams(-1, -2))
         rate.addView(chips(PIC_RATE.map { it.toString() to words(it) }, prefs.getInt("picRate", 0).toString()) { tune("picRate", it.toInt()); draw() }, LinearLayout.LayoutParams(-1, -2))
+        enc.addView(chips(listOf("auto" to t("Tự chọn", "Auto"), "hw" to t("Phần cứng", "Hardware"), "sw" to t("Phần mềm", "Software")),
+            prefs.getString("picEnc", "auto")!!) { if (prefs.getString("picEnc", "auto") != it) { prefs.edit().putString("picEnc", it).apply(); if (pic != null) { stopPicture(); startPicture() } }; draw() }, LinearLayout.LayoutParams(-1, -2))
     }
     draw()
     body.addView(head(t("KHUNG/GIÂY", "FRAMES PER SECOND")))
     body.addView(fps, gap(6))
     body.addView(head(t("BITRATE (MBIT/S)", "BIT RATE (MBIT/S)")), gap(14))
     body.addView(rate, gap(6))
+    body.addView(head(t("BỘ MÃ HÓA", "ENCODER")), gap(14))           // auto: the TV's hardware one, its software one when that sends nothing
+    body.addView(enc, gap(6))
     AlertDialog.Builder(this).setTitle(t("Hình nâng cao", "Advanced picture")).setView(inDialog(body))
         .setPositiveButton(t("Xong", "Done"), null).show()
 }
@@ -228,6 +232,8 @@ internal fun MainActivity.buildRemote() {
     controls.addView(setupBar, LinearLayout.LayoutParams(-1, dp(44)).apply { bottomMargin = dp(12) })
     playing = PlayingBar(this)
     controls.addView(playing.view, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
+    nowApp = NowApp(this)                                             // NowApp.kt
+    controls.addView(nowApp.view, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
     val first = LinearLayout(this)
     val power = icon("@power", t("Nguồn", "Power"), BTN)
     power.setOnClickListener {

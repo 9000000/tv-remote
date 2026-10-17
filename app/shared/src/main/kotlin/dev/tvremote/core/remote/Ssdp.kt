@@ -37,7 +37,7 @@ object Ssdp {
 
     class Found(val ip: String, val kind: String, val name: String)
 
-    private val SEARCH = listOf("urn:lge-com:service:webos-second-screen:1", "urn:samsung.com:device:RemoteControlReceiver:1", "roku:ecp")
+    private val SEARCH = listOf("urn:lge-com:service:webos-second-screen:1", "urn:samsung.com:device:RemoteControlReceiver:1", "roku:ecp", "urn:schemas-upnp-org:device:MediaRenderer:1")   // the last: Hisense VIDAA has no search of its own
 
     /** Every TV that answers within [ms], each once, with the name it gives itself; [each] as soon as one is known. */
     /** [bind]: puts the socket on the Wi-Fi itself (Android, with a VPN such as Tailscale taking the traffic). */
@@ -78,6 +78,7 @@ object Ssdp {
         Regex("(?i)roku:ecp").containsMatchIn(head) -> Remote.Kind.ROKU   // first: a Roku TV's answer names its maker too
         Regex("(?i)lge-com|webos").containsMatchIn(head) -> Remote.Kind.LG
         Regex("(?i)samsung|tizen").containsMatchIn(head) -> Remote.Kind.SAMSUNG
+        Regex("(?i)vidaa|:38400/|:18400/").containsMatchIn(head) -> Remote.Kind.VIDAA   // VIDAA's media renderer answers from these ports
         else -> null
     }
 

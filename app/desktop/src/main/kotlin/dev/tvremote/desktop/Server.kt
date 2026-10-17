@@ -7,6 +7,7 @@ import dev.tvremote.core.WireLog
 import dev.tvremote.core.web.HttpServer.Response
 import dev.tvremote.core.remote.Inputs
 import dev.tvremote.core.remote.Remote
+import dev.tvremote.core.remote.Vidaa
 import dev.tvremote.core.remote.RemoteSteps
 import dev.tvremote.core.scenes.Scenes
 import dev.tvremote.core.picture.Tv
@@ -167,6 +168,12 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             return Response.error(400, "unsupported: " + Remote.Kind.name(s.kind))
         if (!post) return null
         if (r.path == "/api/fleet/install") return fleetInstall(r, s)
+        if (r.path == "/api/vidaa/cert") {                              // Hisense's certificate: the official app's .apk or its .p12, kept only here
+            if (r.length <= 0 || r.length > 400L shl 20) throw IllegalArgumentException("empty upload")
+            if (!Vidaa.importCert(keys, r.body, r.length)) return Response.error(400, "vidaa: no certificate in this file")
+            if (s.kind == Remote.Kind.VIDAA) s.redial()
+            return Response.ok()
+        }
         if (r.path == "/api/fleet/cancel") { fleets.stop(r.json().optString("id")); return Response.json(org.json.JSONObject().put("ok", true)) }
         if (r.path !in OURS) return null                              // Manage's: uploads among them, whose body is not JSON
         val d = r.json()
@@ -242,7 +249,11 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         val entry = saved.find(s.host)
         val adb = if (native(s)) "none" else s.link?.state() ?: "closed"   // none: this kind of TV has no ADB at all
         if (adb == "ready" || adb == "unauthorized") keepTrusted(s, adb)
-        return Response.json(s.state().put("adb", JSONObject().put("state", adb)).put("name", entry?.optString("name") ?: "").put("saved", entry != null)
+        val o = s.state()
+        val l = s.link
+        val front = s.front.get(if (adb == "ready" && l != null) { c -> l.get().shell(c) } else null)
+        if (o.isNull("app") && front.isNotEmpty()) o.put("app", front)
+        return Response.json(o.put("adb", JSONObject().put("state", adb)).put("name", entry?.optString("name") ?: "").put("saved", entry != null)
             .put("video", "h264"))                                    // the picture comes as H.264 (js/screen.js h264Loop), as from TV Setup
     }
 
@@ -398,7 +409,8 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         val q = r.q("q")
         val level = if (q == "hd") HD else q.toIntOrNull() ?: 1
         val fps = r.q("fps").toIntOrNull() ?: 0; val rate = r.q("rate").toIntOrNull() ?: 0   // Advanced picture
-        return s.feeds.video { l, sink -> Tv(keys, jar, s.host, null, level, 4096, false, l, sink, fps = fps, bitRate = rate) }
+        val enc = r.q("enc").takeIf { it == "hw" || it == "sw" } ?: "auto"
+        return s.feeds.video { l, sink -> Tv(keys, jar, s.host, null, level, 4096, false, l, sink, fps = fps, bitRate = rate, encoder = enc) }
     }
 
     private fun audio(s: Session, r: HttpServer.Request): Response {
@@ -512,7 +524,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             "SLEEP", "WAKE")                                          // Sony ignores SLEEP sent over the remote protocol
         val OPENERS = setOf("MENU", "SETTINGS", "INPUT", "GUIDE", "LIVE")   // keys that should bring up a screen of their own
         val OURS = setOf("/api/key", "/api/app", "/api/volume", "/api/text", "/api/clip", "/api/touch", "/api/type", "/api/wake", "/api/tv/select", "/api/tv/save",
-            "/api/tv/remove", "/api/scenes", "/api/scene/run", "/api/fleet/do", "/api/assist", "/api/pair/start", "/api/pair/finish", "/api/shutdown",
+            "/api/tv/remove", "/api/scenes", "/api/scene/run", "/api/fleet/do", "/api/assist", "/api/pair/start", "/api/pair/finish", "/api/vidaa/cert", "/api/shutdown",
             "/api/update")
         /** What the page reads from an LG or Samsung TV besides [OURS]. */
         val NATIVE_TOO = setOf("/api/state", "/api/about", "/api/wirelog", "/api/update", "/api/tvs", "/api/discover", "/api/setup/status", "/api/scenes", "/api/apps", "/api/inputs", "/api/app/icon", "/api/app/meta", "/api/setup/need",

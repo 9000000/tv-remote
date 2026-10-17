@@ -8,13 +8,38 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 
+- TV TCL: TV Setup không còn sập khi tự khởi động lại sau cập nhật hoặc bật TV (TV chặn dịch vụ nền chạy nổi, trước đây tiến trình chết sau 10 giây). Kiểm tra bản mới cũng không còn tưởng bản mới bị lỗi vì chuyện này rồi quay về bản cũ.
 - Hình nâng cao: chọn khung/giây (15, 30, 60) và bitrate (1–8 Mbit/s) cho hình TV, ở mục ⚙️ Nâng cao trong ô chất lượng hình. Có trên app máy tính, Web của TV và app điện thoại.
+- TV Hisense / Toshiba chạy VIDAA (thử nghiệm): bấm phím, gõ chữ, mở app, đổi nguồn vào, chỉnh âm lượng, tìm thấy khi quét. Ghép bằng mã 4 số hiện trên TV. TV đời mới cần chứng chỉ của Hisense: app tự tải về lần đầu (không kèm trong app); không tải được thì app điện thoại lấy từ app “VIDAA Smart TV” nếu đã cài, app máy tính cho chọn file .apk / .p12. Có trên app máy tính và app điện thoại.
+- Danh sách TV: nút chọn TV ngắn lại, “Mở”.
+- Xem hình TV: TV có bộ mã hóa hình phần cứng không chạy (như TCL Android 11, nhất là khi đang mở YouTube) không còn đứng mãi ở “Đang lấy hình”: sau 8 giây không có hình, app tự chuyển sang bộ mã hóa phần mềm của TV và nhớ cho lần sau.
+- App máy tính trên Mac (và Safari): hình không còn nháy khi màn hình TV đứng yên.
+- Màn remote có dòng “Đang mở” với tên và icon của app trên màn hình TV: lấy từ kết nối remote của TV, không có thì qua ADB; TV không cho biết thì ẩn. Có trên app máy tính, Web của TV và app điện thoại.
+- Đổi TV: cảnh báo “TV Setup … chạy lỗi” của TV trước không còn hiện nhầm trên TV vừa chọn.
+- Khung hình TV: bỏ nút vẽ (đã có trong Thêm nút); nút toàn màn hình chỉ hiện khi đang xem; ô chất lượng hình gọn lại.
+- Hình nâng cao có thêm “Bộ mã hóa”: Tự chọn (mặc định), Phần cứng hoặc Phần mềm. Có trên app máy tính, Web của TV và app điện thoại.
+- Nút chỉ có icon (bàn phím, micro, tìm...) giờ đặt icon chính giữa.
+- Gửi nhật ký: nhật ký dài thì trang báo lỗi ghi rõ chỉ có đoạn cuối, bản đầy đủ đã được chép để dán vào.
+- Roku: nút nguồn giữ lâu vẫn chỉ bật/tắt một lần; đầu Roku (không phải TV) không còn hiện phím âm lượng, kênh; Wake-on-LAN dùng đúng MAC của mạng đang dùng.
 - TV Roku và đầu Roku (thử nghiệm): bấm phím, gõ chữ, mở app, đổi nguồn vào, tìm thấy khi quét. Roku đời mới chặn điều khiển từ điện thoại thì app chỉ cách bật lại. Có trên app máy tính và app điện thoại.
 - Trang web: hàng nút trên cùng của remote (Nguồn, Trợ lý, Đánh thức, Thêm phím) có chữ dưới icon như app điện thoại.
 
 **English**
 
+- TCL TVs: TV Setup no longer crashes when it restarts itself after an update or boot (the TV blocks a background foreground-service start, which used to kill the process after 10 s). The update check no longer takes that for a broken new version and rolls back.
 - Advanced picture: pick the frames per second (15, 30, 60) and bit rate (1–8 Mbit/s) of the TV's picture, under ⚙️ Advanced in the quality picker. On the computer app, the TV web page and the phone app.
+- Hisense / Toshiba TVs on VIDAA (beta): keys, typing, apps, inputs, volume, found by the scan. Paired with a 4-digit code the TV shows. Newer TVs want Hisense's certificate: the app downloads it the first time (it is not shipped with the app); when that fails, the phone app takes it from the “VIDAA Smart TV” app if installed, and the computer app lets you pick its .apk or a .p12. On the computer app and the phone app.
+- TV list: the buttons that pick a TV are shorter, “Connect”.
+- TV picture: a TV whose hardware video encoder does not work (such as a TCL on Android 11, above all while YouTube is open) no longer sits at “Getting the picture” forever: after 8 s with no picture the app switches to the TV's software encoder and keeps it for next time.
+- The computer app on a Mac (and Safari): the picture no longer flickers while the TV's screen stays still.
+- The remote screen has a “Now open” line with the name and picture of the app on the TV's screen: from the TV's remote link, else over ADB; hidden when the TV does not say. On the computer app, the TV web page and the phone app.
+- English: the picture button reads “Watch”, as its hint says.
+- Switching TVs: the previous TV's “TV Setup … did not work” notice no longer shows on the one just picked.
+- The TV picture card: the draw button is gone (it is under More keys); Full screen shows only while watching; the quality list is narrower.
+- Advanced picture has an “Encoder” choice: Auto (the default), Hardware or Software. On the computer app, the TV web page and the phone app.
+- Icon-only buttons (keyboard, microphone, search...) have their icon centred.
+- Send the log: when the log is long, the report page says only its end is there and the whole log was copied to paste in.
+- Roku: holding the power key turns it on or off once; Roku players (not TVs) no longer show volume and channel keys; Wake-on-LAN uses the MAC of the network in use.
 - Roku TVs and players (beta): keys, typing, apps, inputs, found by the scan. When a newer Roku blocks control from phones, the app says how to allow it. On the computer app and the phone app.
 - Web page: the remote's top row (Power, Assistant, Wake, More keys) has words under its icons, as in the phone app.
 

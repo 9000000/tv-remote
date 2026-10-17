@@ -28,7 +28,7 @@ class TrustReceiver : BroadcastReceiver() {
             return
         }
         if (i.getStringExtra("want") == "invite") {                  // a QR to share (Invite.kt): the web page must be on to open it
-            if (!RemoteService.enabled(c)) RemoteService.setEnabled(c, true)
+            if (!RemoteService.enabled(c)) RemoteService.setEnabled(c, true, background = true)   // a shell broadcast: TV Setup may be in the background
             resultData = RemoteService.newInvite(i.getStringExtra("scope") ?: Scope.REMOTE) + " " + RemoteService.lanIp()
             return
         }

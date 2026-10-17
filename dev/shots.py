@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The screenshots of the intro site (docs/img), taken again from today's UI in one go. See CLAUDE.md "Testing".
+"""The screenshots of the intro site (docs/img), taken again from today's UI in one go. See AGENTS.md "Testing".
 
     dev/shots.py                  every picture
     dev/shots.py web ts           only some: web (computer app's remote), ts (Tailscale box), tv (TV web page),

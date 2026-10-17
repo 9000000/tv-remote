@@ -2,10 +2,13 @@ package dev.tvremote.desktop
 
 import dev.tvremote.core.adb.AdbLink
 import dev.tvremote.core.remote.Atv
+import dev.tvremote.core.remote.CodePairing
+import dev.tvremote.core.remote.Vidaa
 import dev.tvremote.core.picture.Feeds
 import dev.tvremote.core.web.Manage
 import dev.tvremote.core.remote.Remote
 import dev.tvremote.core.ontv.RemoteLabels
+import dev.tvremote.core.scenes.Scenes
 import dev.tvremote.core.picture.Tv
 import org.json.JSONObject
 import java.io.File
@@ -30,10 +33,11 @@ class Session(val host: String, private val keys: File, cache: File, helper: () 
         private set
     @Volatile private var closed = false
     @Volatile private var dialGen = 0
-    @Volatile private var pairer: Atv? = null
+    @Volatile private var pairer: CodePairing? = null
     @Volatile private var dialing: Remote? = null                     // LG / Samsung: the TV may be asking the person about us
 
     val link: AdbLink? = if (host.isEmpty() || native) null else AdbLink(keys, host)
+    val front = dev.tvremote.core.ontv.Foreground()                  // the app on screen over ADB, when the remote link does not say
     val labels: RemoteLabels? = link?.let { RemoteLabels(it, helper, File(cache, "meta/" + host.replace(Regex("[^\\w.-]"), "_"))) }
     val manage: Manage? = link?.let { Manage(it, labels, cache, helper).apply { canPair = true } }
     val feeds = Feeds()
@@ -72,6 +76,7 @@ class Session(val host: String, private val keys: File, cache: File, helper: () 
                     return@Thread
                 } catch (e: IOException) {
                     a.close()
+                    if (e.message == Vidaa.NO_CERT) { paired = false; error = Vidaa.NO_CERT; return@Thread }   // waits for the certificate (/api/vidaa/cert)
                     if (native && e.message == "nobody accepted on the TV") { paired = false; error = "not accepted"; return@Thread }   // not again by itself: the question would keep popping up
                     error = "cannot connect: " + (e.message ?: e.javaClass.simpleName)
                     try { Thread.sleep(5000) } catch (stop: InterruptedException) { return@Thread }
@@ -91,13 +96,31 @@ class Session(val host: String, private val keys: File, cache: File, helper: () 
         val a = atv
         val o = JSONObject().put("host", host).put("connected", available).put("paired", paired ?: JSONObject.NULL).put("error", error)
             .put("is_on", a?.isOn ?: JSONObject.NULL).put("app", a?.app?.ifEmpty { null } ?: JSONObject.NULL)
+        a?.let { appLabel(it) }?.let { o.put("app_label", it) }       // an LG / Roku / Samsung says an id ("12"): its name for the page
         val v = a?.volume
         o.put("volume", if (v == null) JSONObject.NULL else JSONObject().put("level", v.first).put("max", v.second).put("muted", v.third))
         o.put("device", if (a == null || a.model.isEmpty()) JSONObject.NULL else JSONObject().put("manufacturer", a.vendor).put("model", a.model).put("sw_version", a.version))
         val k = Remote.Kind.json(kind)
         for (n in k.keys()) o.put(n, k.get(n))
+        a?.keys?.let { have -> o.put("keys", org.json.JSONArray(Scenes.KEYS.filter { it.value in have }.keys.sorted())) }   // this one TV's (a Roku player has no volume)
         o.put("asking", dialing?.asking == true)
         return o
+    }
+
+    @Volatile private var appNames: Map<String, String> = emptyMap()
+    @Volatile private var namesAt = 0L
+    private val namesBusy = java.util.concurrent.atomic.AtomicBoolean()
+
+    /** The name of the app [a] says is open, from its list of apps, read in the background (again at most once a minute for one it does not know). */
+    private fun appLabel(a: Remote): String? {
+        val id = a.app
+        if (id.isEmpty() || kind == Remote.Kind.ANDROID) return null       // Android TV says a package: the page names it
+        appNames[id]?.let { return it }
+        if (System.currentTimeMillis() - namesAt > 60000 && namesBusy.compareAndSet(false, true)) Thread({
+            try { appNames = a.apps().associate { it.id to it.label } } catch (ignored: Exception) { }
+            namesAt = System.currentTimeMillis(); namesBusy.set(false)
+        }, "app-names").apply { isDaemon = true }.start()
+        return null
     }
 
     /** The link, or why there is none, in the words the page shows. */
@@ -108,11 +131,11 @@ class Session(val host: String, private val keys: File, cache: File, helper: () 
     // ---------------------------------------------------------------- pairing (port 6467)
     /** Makes the TV show a 6-character code. Nobody typing it within 3 minutes: back to normal dialling. */
     fun pairStart() {
-        if (native) { dialGen++; atv?.close(); atv = null; paired = null; error = ""; dial(); return }   // LG / Samsung: the TV asks again
+        if (native && kind != Remote.Kind.VIDAA) { dialGen++; atv?.close(); atv = null; paired = null; error = ""; dial(); return }   // LG / Samsung: the TV asks again
         dialGen++
         atv?.close(); atv = null
         pairer?.close()
-        val p = Atv(keys, host)
+        val p = Remote.of(kind, keys, host) as CodePairing
         try {
             p.startPairing()
         } catch (e: Exception) {
@@ -122,6 +145,9 @@ class Session(val host: String, private val keys: File, cache: File, helper: () 
         pairer = p
         later(180_000) { if (pairer === p) { pairer = null; p.close(); dial() } }
     }
+
+    /** Dials again, after something changed (Hisense's certificate imported). */
+    fun redial() { dialGen++; atv?.close(); atv = null; paired = null; error = ""; dial() }
 
     /** IllegalArgumentException: wrong code (the TV drops the attempt). */
     fun pairFinish(code: String) {
