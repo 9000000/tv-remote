@@ -12,7 +12,9 @@ import android.os.Handler
 import android.os.Looper
 import android.speech.RecognizerIntent
 import android.view.Gravity
+import android.view.InputDevice
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
@@ -315,12 +317,36 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     /** The phone's volume buttons change the TV's volume while connected. */
     override fun dispatchKeyEvent(e: KeyEvent): Boolean {
         val c = e.keyCode
+        // a game controller (Bluetooth / USB) drives the TV, as on the page (PadMap); a text field in focus keeps its keys
+        if (live() && e.source and (InputDevice.SOURCE_GAMEPAD or InputDevice.SOURCE_JOYSTICK) != 0 && currentFocus !is EditText) {
+            val k = PadMap.key(c, tv != null)
+            if (k != null) {
+                val moves = c in KeyEvent.KEYCODE_DPAD_UP..KeyEvent.KEYCODE_DPAD_RIGHT || c == KeyEvent.KEYCODE_BUTTON_L1 || c == KeyEvent.KEYCODE_BUTTON_R1 || c == KeyEvent.KEYCODE_BUTTON_L2 || c == KeyEvent.KEYCODE_BUTTON_R2
+                if (e.action == KeyEvent.ACTION_DOWN && (e.repeatCount == 0 || moves)) press(k)   // the system repeats a held key
+                return true
+            }
+        }
         // the TV's volume, unless the sound plays here (🎧) or Settings says the keys are the phone's
         if (live() && !listen && prefs.getBoolean("volKeysTv", true) && (c == KeyEvent.KEYCODE_VOLUME_UP || c == KeyEvent.KEYCODE_VOLUME_DOWN)) {
             if (e.action == KeyEvent.ACTION_DOWN) press(c, false)
             return true
         }
         return super.dispatchKeyEvent(e)
+    }
+
+    private var stickKey: Int? = null; private var stickAt = 0L; private var stickLast = 0L
+    /** The left stick / hat of a game controller: one arrow while it is past the deadzone, repeating when held (PadMap.arrow). */
+    override fun onGenericMotionEvent(e: MotionEvent): Boolean {
+        if (e.source and InputDevice.SOURCE_JOYSTICK != 0 && e.action == MotionEvent.ACTION_MOVE && live() && currentFocus !is EditText) {
+            val k = PadMap.arrow(e.getAxisValue(MotionEvent.AXIS_X).let { if (it == 0f) e.getAxisValue(MotionEvent.AXIS_HAT_X) else it },
+                e.getAxisValue(MotionEvent.AXIS_Y).let { if (it == 0f) e.getAxisValue(MotionEvent.AXIS_HAT_Y) else it })
+            val now = android.os.SystemClock.uptimeMillis()
+            if (k == null) stickKey = null
+            else if (k != stickKey) { stickKey = k; stickAt = now; stickLast = now; press(k) }
+            else if (now - stickAt >= 400 && now - stickLast >= 130) { stickLast = now; press(k) }
+            return true
+        }
+        return super.onGenericMotionEvent(e)
     }
 
     // ---------------------------------------------------------------- session
