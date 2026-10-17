@@ -91,9 +91,9 @@ internal fun MainActivity.qualityMenu() {
 private fun MainActivity.setQuality(level: Int) {
     if (level == prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)) return
     prefs.edit().putInt("quality", level).apply()
-    stopSession()                                                     // the size is fixed when the session starts
+    stopPicture()                                                     // the size is fixed when the picture's session starts
     layoutRemote()
-    startSession()
+    startPicture()
 }
 
 // ---------------------------------------------------------------- remote screen
@@ -135,7 +135,7 @@ internal fun MainActivity.buildRemote() {
     surface.holder.addCallback(this)
     frame.addView(surface, FrameLayout.LayoutParams(-1, -1, Gravity.CENTER))
     surface.setOnTouchListener { v, e ->
-        val tv = tv
+        val tv = pic                                                  // the picture's session: its size places the finger
         if (tv == null || !tv.ready()) return@setOnTouchListener true
         if (drawing) { drawTouch(e, v); return@setOnTouchListener true }
         val action = when (e.actionMasked) {

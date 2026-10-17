@@ -13,7 +13,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Rung nhẹ khi bấm nút remote trên điện thoại (app điện thoại, và trang web mở bằng Chrome trên Android). Tắt được trong Cài đặt → Khi bấm nút.
 - Nghe tiếng TV trên điện thoại (🎧) không còn nhanh và giật: một số điện thoại (như Xiaomi) báo vị trí phát theo từng nấc lớn, app tưởng bị trễ nên bỏ gần 1/3 số gói âm thanh. Giờ đo vị trí phát chính xác và chỉ bỏ gói khi thật sự trễ.
 - TV Setup tự lo câu hỏi “Cho phép gỡ lỗi USB?” mà không cần điện thoại: câu hỏi bị màn TV Setup che thì TV Setup tự lùi xuống cho thấy, xong tự quay lại; câu hỏi cũ kẹt lại thì hỏi lại; nếu TV vẫn không hiện câu hỏi thì chỉ cách tắt/bật Gỡ lỗi USB. Sửa lỗi TV Setup mới cài tạo nhiều khóa cùng lúc, làm TV hỏi liên tục cho những khóa lạ.
-- Bật/tắt xem hình TV trên app điện thoại không còn làm thanh đang phát (media control) biến mất vài giây.
+- App điện thoại: hình TV chạy một kết nối riêng, như app máy tính. Bật/tắt hình, đổi chất lượng hay ra ngoài app chỉ mở/đóng phần hình; phím, thanh đang phát và tiếng vẫn chạy liền, không phải kết nối lại.
 
 **English**
 
@@ -22,7 +22,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - A light tap under the finger when pressing a remote key on a phone (the phone app, and the page in Chrome on Android). Off in Settings → When pressing a key.
 - Listening to the TV on the phone (🎧) no longer plays fast and choppy: some phones (Xiaomi, for one) report the playback position in big steps, so the app thought it was behind and dropped about a third of the sound. It now reads the position exactly and drops only when really behind.
 - TV Setup handles “Allow USB debugging?” on its own, no phone needed: a question hidden behind its screen makes it step aside and come back after; a stuck question is asked again; and if the TV still shows none it says how to switch USB debugging off and on. A newly installed TV Setup no longer makes several keys at once, which had the TV asking again and again for strange keys.
-- Turning the TV picture on or off in the phone app no longer hides the now playing bar for a few seconds.
+- Phone app: the TV picture has a connection of its own, as in the computer app. Turning it on or off, changing its quality or leaving the app opens or closes only the picture; keys, the now playing bar and the sound go on without reconnecting.
 
 ## 0.5.0 - 2026-10-17
 

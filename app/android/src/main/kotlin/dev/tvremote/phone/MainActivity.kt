@@ -46,6 +46,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     // ---- the session (this file)
     @Volatile internal var tv: Tv? = null                              // read by the session thread to tell its own messages from a replaced one's
+    @Volatile internal var pic: Tv? = null                             // the picture: a session of its own, as on the computer, so that
+                                                                      // switching it on or off leaves the keys' one (and what rides on it) alone
+    private var picTries = 0
     @Volatile internal var sound: Tv? = null                           // the TV's sound, a session of its own (Listen.kt)
     internal var soundTries = 0
     internal var basic: Remote? = null                                 // keys only: an Android TV whose ADB is still off (Atv), or an LG / Samsung TV (KeysOnly.kt)
@@ -216,25 +219,28 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         foreground = true
         ui.removeCallbacks(idleStop)
         refreshSaved()
-        if (bgListen) { bgListen = false; stopSession() }             // back on screen: the picture again (the sound plays on: its own session)
+        bgListen = false                                              // back on screen: the picture again (the sound plays on: its own session)
         startSound()                                                  // given up on while away: once more
         managing.resume()
         if (keysAway) { keysAway = false; host?.let { resumeBasic(it) } } else startSession()
     }
 
     /**
-     * Not watching: stop the encoder on the TV. Buttons only (picture off) costs the TV nothing, so that session stays, and
-     * coming back from another app needs no new connection; only after a long while away is it closed.
+     * Not watching: stop the encoder on the TV. The keys' session costs the TV nothing, so it stays, and coming back from
+     * another app needs no new connection; only after a long while away is it closed.
      */
     override fun onStop() {
         super.onStop()
         foreground = false
         ui.removeCallbacks(retry)                                     // tried again on return instead
+        ui.removeCallbacks(picRetry)
         if (listen) {                                                 // listening goes on with the phone's screen off, without the picture
-            if (video && !bgListen && host != null) { bgListen = true; stopSession(); startSession() }
+            if (video && host != null) bgListen = true
+            stopPicture()
             return
         }
-        if (video) stopSession() else ui.postDelayed(idleStop, 10 * 60 * 1000L)
+        stopPicture()
+        ui.postDelayed(idleStop, 10 * 60 * 1000L)
     }
 
     internal val idleStop = Runnable { stopSession() }
@@ -260,7 +266,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     override fun surfaceDestroyed(h: SurfaceHolder) {
         surfaceReady = false
-        if (video && !bgListen) stopSession()
+        stopPicture()
     }
 
     override fun onConfigurationChanged(c: Configuration) {
@@ -278,13 +284,18 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         layoutRemote()
     }
 
-    /** Picture on or off. Off: the TV encodes nothing, only the buttons work. The session restarts either way. */
+    /** Picture on or off. Off: the TV encodes nothing, only the buttons work. Only the picture's session starts or stops. */
     internal fun toggleVideo() {
-        stopSession()
         video = !video
         prefs.edit().putBoolean("video", video).apply()
-        layoutRemote()                                                // showing the picture creates the surface, which starts the session
-        status.text = title(host ?: "") + " · " + t("đang kết nối...", "connecting...")
+        if (!video) stopPicture()
+        picTries = 0
+        layoutRemote()                                                // showing the picture creates the surface, which starts it
+        status.text = title(entry ?: host ?: "") + " · " + when {
+            tv?.ready() != true -> t("đang kết nối...", "connecting...")
+            video -> t("đang mở hình...", "opening the picture...")
+            else -> t("đang tắt hình", "picture off")
+        }
         startSession()
     }
 
@@ -328,18 +339,63 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         startSession()
     }
 
+    /** The keys' session (no picture: keys, text, the clipboard, what the TV plays), then the picture's when it is wanted. */
     internal fun startSession() {
         val h = host
-        val picture = video && !bgListen
-        if (h == null || tv != null || basic != null || keysAway || picture && !surfaceReady || kindOf(entry ?: h) != Remote.Kind.ANDROID) return
+        if (h == null || basic != null || keysAway || kindOf(entry ?: h) != Remote.Kind.ANDROID) return
+        if (tv == null) { tv = Tv(this, h, null, 0, 0, wakeNext, this); wakeNext = false }
+        startPicture()
+    }
+
+    /** Beside the keys' session, at once (the TV asks "Allow USB debugging?" once for both). It carries the touches too:
+     *  scrcpy places a finger by the size of the picture it sends. */
+    internal fun startPicture() {
+        val h = host ?: return
+        if (pic != null || tv == null || !video || bgListen || !surfaceReady) return
         val dm = resources.displayMetrics
-        tv = Tv(this, h, if (picture) surface.holder.surface else null, prefs.getInt("quality", 1), maxOf(dm.widthPixels, dm.heightPixels), wakeNext, this)
-        wakeNext = false
+        pic = Tv(this, h, surface.holder.surface, prefs.getInt("quality", 1), maxOf(dm.widthPixels, dm.heightPixels), false, picListener)
+    }
+
+    internal fun stopPicture() {
+        ui.removeCallbacks(picRetry)
+        pic?.stop()
+        pic = null
     }
 
     internal fun stopSession() {
+        stopPicture()
         tv?.stop()
         tv = null
+    }
+
+    private val picRetry = Runnable { startPicture() }
+
+    /** The picture's session says only how it shows; whether the TV is there at all is the keys' session's to tell. */
+    private val picListener = object : Tv.Listener {
+        override fun onStatus(key: String, detail: String) {
+            val from = pic
+            ui.post {
+                val h = host
+                if (pic !== from || from == null || h == null) return@post
+                when (key) {
+                    "rate" -> status.text = title(entry ?: h) + " · " + (if (listen) "🎧 " else "") + detail + " KB/s"
+                    "live" -> {
+                        picTries = 0
+                        waiting.visibility = View.GONE
+                        status.text = title(entry ?: h) + " · " + if (listen) t("🎧 đang nghe trên điện thoại", "🎧 listening on the phone") else t("chạm hình để bấm", "touch the picture to tap")
+                    }
+                    "closed", "error" -> {
+                        pic = null
+                        if (tv?.ready() != true) return@post          // the TV is gone: the keys' session reconnects both
+                        if (++picTries <= 3) ui.postDelayed(picRetry, 1000L * picTries)
+                        else status.text = title(entry ?: h) + " · " + t("TV không mở được hình", "the TV did not open its picture")
+                    }
+                }
+            }
+        }
+        override fun onVideoSize(w: Int, h: Int) = this@MainActivity.onVideoSize(w, h)
+        override fun onNetwork(mac: String, lan: String, tailscale: String) {}
+        override fun wantsNetwork(): Boolean = false
     }
 
     internal var allowBox: android.app.Dialog? = null
@@ -490,28 +546,29 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 }
                 "starting" -> {
                     save(entry ?: h, detail)
-                    status.text = title(entry ?: h) + " · " + (if (video) t("đang mở hình...", "opening the picture...") else t("đang mở điều khiển...", "opening the controls..."))
+                    status.text = title(entry ?: h) + " · " + t("đang mở điều khiển...", "opening the controls...")
                     waitName.text = title(entry ?: h)
-                    waitStep.text = if (video) t("Đã kết nối, đang mở hình TV...", "Connected, opening the TV picture...") else t("Đã kết nối, đang mở điều khiển...", "Connected, opening the controls...")
+                    waitStep.text = t("Đã kết nối, đang mở điều khiển...", "Connected, opening the controls...")
                     val s = from
                     ui.postDelayed({ if (tv === s && s != null && s.ready()) waiting.visibility = View.GONE }, 10000)   // no picture yet, but the buttons work
                 }
-                "rate" -> if (video) status.text = title(entry ?: h) + " · " + (if (listen) "🎧 " else "") + detail + " KB/s"   // 🎧 sits in ⋯: said here
                 "live" -> {
                     wasLive = true; retries = 0
                     from?.let { checkSetup(it, h) }
                     waiting.visibility = View.GONE
                     pendingAsk?.let { q -> pendingAsk = null; Thread { val to = from?.search(q); ui.post { searched(q, to) } }.start() }
-                    status.text = title(entry ?: h) + " · " + (if (listen) t("🎧 đang nghe trên điện thoại", "🎧 listening on the phone")
-                    else if (video) t("chạm hình để bấm", "touch the picture to tap")
-                    else t("đang tắt hình", "picture off"))
+                    if (pic?.ready() != true) status.text = title(entry ?: h) + " · " + when {   // the picture's session says the rest
+                        listen -> t("🎧 đang nghe trên điện thoại", "🎧 listening on the phone")
+                        video -> t("đang mở hình...", "opening the picture...")
+                        else -> t("đang tắt hình", "picture off")
+                    }
                 }
                 "closed" -> {
-                    tv = null
+                    tv = null; stopPicture()
                     reconnect(t("TV đã ngắt kết nối.", "The TV closed the connection."))
                 }
                 else -> {
-                    tv = null
+                    tv = null; stopPicture()
                     if (wasLive) { reconnect(explain(detail)); return@post }   // it worked a moment ago: the same way again, not keys only
                     waitStep.text = t("Không vào được bằng ADB, đang thử chế độ chỉ bấm phím...", "ADB did not work, trying keys only...")
                     offerBasic(h, explain(detail))                    // no ADB (refused, or filtered and timed out), but the TV may still take keys
