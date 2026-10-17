@@ -110,6 +110,29 @@ object AdbPrompt {
         return true
     }
 
+    /**
+     * Once logged in: closes the copies of our own question still queued on the TV. Android 12 and older keep every question
+     * asked (each time we asked again, each part of the app) and show them one after another, even after "Always allow";
+     * Android 13+ drops a question while one is up. Ours are known by the fingerprint, and Cancel on a copy changes nothing:
+     * the key is trusted already. Stops after a few seconds with none.
+     */
+    internal fun leftovers(adb: Sh, fingerprint: String, nap: (Long) -> Unit = Thread::sleep): Int {
+        var closed = 0; var none = 0
+        while (none < 2 && closed < 15) {
+            val p = read(adb)
+            val c = p?.cancel
+            if (p != null && c != null && p.fingerprint == fingerprint.uppercase()) {
+                adb.shell("input tap ${c.x} ${c.y}", 120000)              // a tap only: the next copy looks the same, so [press]'s check would misread it
+                closed++; none = 0; nap(1500)
+            }
+            else { none++; nap(2500) }
+        }
+        if (closed > 0) WireLog.all.add("·", "closed $closed leftover copies of our own question")
+        return closed
+    }
+
+    fun leftovers(adb: Adb, fingerprint: String): Int = leftovers(Sh(adb::shell), fingerprint)
+
     /** A tap where the part is; if the TV ignores taps, the arrow keys to it and OK. Then checks that something changed. */
     private fun press(adb: Sh, p: Seen, part: (Seen) -> Node?, nap: (Long) -> Unit = Thread::sleep) {
         val n = part(p) ?: throw IOException("the question on the TV looks different than expected")

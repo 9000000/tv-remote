@@ -523,6 +523,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     internal fun show(remoteScreen: Boolean) {
         remote.visibility = if (remoteScreen) View.VISIBLE else View.GONE
+        // the focus leaving the picker's address field would land on the text box below the keys, and the remote would open
+        // scrolled down to it (Android 8 and older): the screen itself takes it first
+        if (remoteScreen) { remote.isFocusableInTouchMode = true; remote.requestFocus() }
         (picker.parent as View).visibility = if (remoteScreen) View.GONE else View.VISIBLE
     }
 

@@ -77,6 +77,15 @@ class AdbPromptTest {
         assertEquals(listOf(ours to "allowed"), tv.answers)
     }
 
+    /** Android 12: copies of our question queued, then a stranger's; ours are closed, the stranger's is never touched. */
+    @Test fun leftoverCopiesOfOursAreClosedAndAStrangerIsNot() {
+        val tv = FakeTv(listOf(ours, ours, ours, stranger))
+        assertEquals(3, AdbPrompt.leftovers(tv, ours) { })
+        assertEquals(List(3) { ours to "declined" }, tv.answers)
+        assertEquals(listOf(stranger), tv.queue.map { it.fp })
+        assertEquals(0, AdbPrompt.leftovers(FakeTv(listOf()), ours) { })
+    }
+
     @Test fun aStrangerFirstIsLeftAlone() {
         val tv = FakeTv(listOf(stranger, ours))
         assertEquals("other:$stranger", run(tv))

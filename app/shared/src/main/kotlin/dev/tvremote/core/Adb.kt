@@ -176,10 +176,10 @@ class Adb(private val dir: File) : Closeable {
         dial(host, port)
         if (authenticate() != null) try {
             if (!askOnce(host, port, prompt)) {
+                ASKED[host] = System.currentTimeMillis()
                 send(AUTH, AUTH_RSAPUBLICKEY, 0, (publicKey() + "\u0000").toByteArray())   // unknown key: the TV asks the person
                 prompt.waitingForUser()
                 awaitApproval(host, port)
-                Thread({ try { AdbPrompt.helpSetup(this) } catch (ignored: Exception) { } }, "adb-help-setup").apply { isDaemon = true }.start()
             }
         } finally {
             ASKING.remove("$host:$port", this)                        // the others waiting on this one go on, whatever happened to it
@@ -187,6 +187,12 @@ class Adb(private val dir: File) : Closeable {
         sock!!.soTimeout = 0
         sock!!.keepAlive = true
         Thread(::pump, "adb-reader").apply { isDaemon = true }.start()
+        // the first connection in after we asked, whichever it is (the one that asked may have been let go and another got in)
+        val asked = ASKED.remove(host)
+        if (asked != null && System.currentTimeMillis() - asked < 600000) Thread({
+            try { AdbPrompt.leftovers(this, fingerprint()) } catch (ignored: Exception) { }
+            try { AdbPrompt.helpSetup(this) } catch (ignored: Exception) { }
+        }, "adb-after-question").apply { isDaemon = true }.start()
     }
 
     /**
@@ -515,6 +521,7 @@ class Adb(private val dir: File) : Closeable {
 
     companion object {
         private val ASKING = ConcurrentHashMap<String, Adb>()         // host:port -> the connection of this app whose question is on the TV
+        private val ASKED = ConcurrentHashMap<String, Long>()         // host -> when this app last put its question on that TV
         private val KEY_LOCK = Any()                                  // a file lock is per process: this keeps threads apart
         @Volatile private var holdMs = 0L
         @Volatile private var holdSet = false

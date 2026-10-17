@@ -9,8 +9,9 @@
 #   dev/emu.sh reset      the phone app's saved TVs back to the TV emulator only (a snapshot can bring back real TVs)
 #   dev/emu.sh stop       both emulators off
 #
-# Settings (environment): TV_AVD, PHONE_AVD (names), TV_PORT, PHONE_PORT (5554, 5556), API (34), SECURE=0 to start the TV without the real
-# "Allow USB debugging?" prompt, HEADLESS=1 for no windows (CI, a server), ANDROID_HOME (the SDK).
+# Settings (environment): TV_AVD, PHONE_AVD (names), TV_IMG, PHONE_IMG (system images), TV_PORT, PHONE_PORT (5554, 5556),
+# API (34), SECURE=0 to start the TV without the real "Allow USB debugging?" prompt, HEADLESS=1 for no windows (CI, a
+# server), ANDROID_HOME (the SDK).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -30,8 +31,10 @@ EMU="$SDK/emulator/emulator"
 BIN="$SDK/cmdline-tools/latest/bin"
 
 case "$(uname -m)" in arm64|aarch64) ABI=arm64-v8a ;; *) ABI=x86_64 ;; esac   # an image of another chip runs far too slowly
-TV_IMG="system-images;android-$API;google-tv;$ABI"
-PHONE_IMG="system-images;android-$API;default;$ABI"
+# an older TV: TV_IMG="system-images;android-31;android-tv;arm64-v8a" (Android 12; it cannot save "Always allow":
+# adb_keys is not writable there, so every new connection asks again; test the questions on the Android 14 image)
+TV_IMG="${TV_IMG:-system-images;android-$API;google-tv;$ABI}"
+PHONE_IMG="${PHONE_IMG:-system-images;android-$API;default;$ABI}"
 
 need() { [ -x "$1" ] || { echo "Missing $1 — install \"$2\" in Android Studio → SDK Manager → SDK Tools"; exit 1; }; }
 
