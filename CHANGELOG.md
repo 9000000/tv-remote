@@ -4,6 +4,16 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+
+- Tay cầm chơi game (Bluetooth / USB) nối vào máy tính, điện thoại hay trình duyệt điều khiển được TV, không cần cài đặt: D-pad / cần trái = mũi tên (giữ thì lặp), A = OK, B = Quay lại, Start = Home, Select = Menu, X = Phát / Tạm dừng, Y = Tắt tiếng, LB / RB = âm lượng, LT / RT = kênh. Đang xem hình TV thì các nút gửi đi là nút tay cầm thật (BUTTON_A…), game trên TV nhận như tay cầm. Đang gõ chữ hay mở hộp thoại thì tay cầm không can thiệp. App điện thoại: màn điều khiển cũng nhận tay cầm.
+
+**English**
+
+- A game controller (Bluetooth / USB) connected to the computer, phone or browser now drives the TV, with nothing to set up: D-pad / left stick = arrows (repeating when held), A = OK, B = Back, Start = Home, Select = Menu, X = Play / Pause, Y = Mute, LB / RB = volume, LT / RT = channel. While the TV picture is open the buttons go as real gamepad buttons (BUTTON_A...), so games on the TV see a gamepad. It stays out of the way while you type or a dialog is open. Phone app: the remote screen takes the controller too.
+
 ## 0.8.0 - 2026-10-18
 
 Web 0.8.0 · app điện thoại 0.8.0 · app TV 0.8.0
