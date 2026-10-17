@@ -4,6 +4,16 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+
+- Không kết nối được TV: app tự kiểm tra nhanh (dưới 4 giây) rồi đưa ra MỘT kết luận kèm cách sửa, thay vì báo lỗi thô. Kiểm tra: máy này có Wi-Fi và cùng mạng với TV không, TV trả lời ở cổng nào, VPN, ADB đang chờ “Cho phép”, ngày giờ TV sai. Các kết luận: TV tắt hoặc ngủ, TV đã đổi địa chỉ (tìm lại theo tên, bấm một nút để dùng địa chỉ mới), “Gỡ lỗi ADB” đang tắt (phím vẫn bấm được), VPN chặn đường, TV đang chờ bạn bấm Cho phép. Có ở App máy tính, màn Quản lý trên điện thoại và màn chọn TV của app điện thoại.
+
+**English**
+
+- When the TV cannot be reached, the app runs a quick self-check (under 4 seconds) and gives ONE conclusion with the fix instead of a raw error. It looks at: whether this device is on Wi-Fi and on the TV's network, which of the TV's ports answer, a VPN, ADB waiting for “Allow”, a wrong date on the TV. Conclusions: the TV is off or asleep, the TV has a new address (found again by name, one button to use it), “ADB debugging” is off (keys still work), a VPN is in the way, the TV is waiting for you to press Allow. In the Computer app, the phone's Manage screen and the phone app's TV list.
+
 ## 0.8.0 - 2026-10-18
 
 Web 0.8.0 · app điện thoại 0.8.0 · app TV 0.8.0

@@ -21,6 +21,9 @@
   if (LANG === 'vi') { window.tr = (s) => s; return; }
 
   const EN = {
+    // js/diagnose.js: the self-check after the TV stays out of reach (Diagnose.kt words its own conclusion in the asked language)
+    'Đang kiểm tra mạng và TV…': 'Checking the network and the TV…',
+    'Đã kiểm tra': 'What was checked',
     // one page for the three cores: pairing with the page from the TV, the allow-debugging screen
     'Không gọi được TV: TV đang bật và cùng mạng với máy này chứ?': 'Cannot reach the TV: is it on and on the same network as this device?',
     'TV đang hỏi cho phép gỡ lỗi: nhìn lên TV, chọn “Luôn cho phép”': 'the TV is asking to allow debugging: look at the TV and choose “Always allow”',
@@ -630,6 +633,7 @@
 
   // Strings with a variable part. Captured pieces are passed through tr() again where they can be text of ours.
   const RULES = [
+    [/^📍 Dùng địa chỉ (.+)$/, (m) => '📍 Use the address ' + m[1]],
     [/^Bước (\d+)\/(\d+)$/, (m) => 'Step ' + m[1] + '/' + m[2]],
     [/^Mạng chậm: hạ hình xuống (.+) cho kịp\.$/, (m) => 'Slow network: the picture went down to ' + tr(m[1]) + ' to keep up.'],
     [/^Đợi (\d+) giây rồi thử lại\.$/, (m) => 'Wait ' + m[1] + ' seconds and try again.'],

@@ -112,6 +112,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "rules" -> if (!post) return HttpServer.Response.json(rules(null))
                 "tvset" -> if (!post) return text(TvShell.TVSET_READ, 60000)
                 "log" -> return text(TvShell.log(r.q("pkg"), r.q("since")), 20000)
+                "diagnose" -> return diagnose(r, link)                // why the TV does not answer: one conclusion (Diagnose.kt)
                 "wirelog" -> return HttpServer.Response.of("text/plain; charset=utf-8", WireLog.all.report().toByteArray())   // ours, not the TV's: "Gửi nhật ký"
                 "apps/boot" -> return text(TvShell.BOOT, 20000)
                 "app/info" -> return text(TvShell.appInfo(r.q("pkg")), 20000)
@@ -957,6 +958,19 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     }
 
     companion object {
+        /**
+         * `/api/diagnose?ip=&kind=&name=&err=&lang=`: the quick self-check after a failed connect, answered as one conclusion with
+         * what to do. It needs no ADB and no session, so the computer app answers it itself too (Server.kt). [link] is this app's
+         * own ADB link when it has one, for "the TV is waiting for Allow".
+         */
+        fun diagnose(r: HttpServer.Request, link: AdbLink?): HttpServer.Response {
+            val ip = r.q("ip").trim().ifEmpty { link?.host ?: "" }
+            if (ip.isEmpty() || ip.length > 80 || !Regex("[0-9A-Za-z.:\\[\\]-]+").matches(ip)) return HttpServer.Response.error(400, "ip")
+            val vi = r.q("lang") != "en"
+            val res = dev.tvremote.core.Diagnose.run(dev.tvremote.core.Diagnose.Real(link), ip, dev.tvremote.core.remote.Remote.Kind.of(r.q("kind")), r.q("name").take(80), r.q("err").take(2000), vi)
+            return HttpServer.Response.json(dev.tvremote.core.Diagnose.json(res, vi))
+        }
+
         const val CAST_DIR = "/sdcard/Download"
         private val PKG = Pattern.compile(Pkg.PATTERN)
         private val LS = Pattern.compile("^([dl-])\\S+\\s+\\d+\\s+\\S+\\s+\\S+\\s+(\\d+)\\s+(\\d{4}-\\d\\d-\\d\\d \\d\\d:\\d\\d)\\s+(.+)\$")

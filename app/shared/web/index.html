@@ -35,6 +35,9 @@
     </div>
   </header>
 
+  <!-- the TV stays out of reach: one quick self-check and one conclusion (js/diagnose.js, Diagnose.kt) -->
+  <div class="banner" id="diag" data-for="pc phone" hidden></div>
+
   <!-- The TV is asking "Allow USB debugging?" for some other device: answered from here, for that key only -->
   <div class="banner warn askother" id="askother" hidden>
     <b>TV đang hỏi “Cho phép gỡ lỗi USB?” cho một thiết bị</b>
@@ -467,6 +470,7 @@
 <script src="js/voice.js"></script>
 <script src="js/listen.js"></script>
 <script src="js/auto.js"></script>
+<script src="js/diagnose.js"></script>
 <script src="js/setup.js"></script>
 <script src="js/tvset.js"></script>
 <script src="js/fleet.js"></script>

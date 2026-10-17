@@ -504,6 +504,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     }
 
     internal fun disconnect(message: String?) {
+        val was = host; val wasEntry = entry                         // diagnose() below needs them after host is cleared
         allowAlert(false)
         fullscreen = false
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
@@ -523,6 +524,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         show(false)
         message(message, true)
         refreshSaved()
+        if (message != null && was != null) diagnose(was, wasEntry, message)   // a failed connect: one conclusion in place of the raw error (Diagnosing.kt)
     }
 
     internal fun show(remoteScreen: Boolean) {

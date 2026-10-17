@@ -1,0 +1,33 @@
+package dev.tvremote.phone
+
+import dev.tvremote.core.Diagnose
+
+// "Why can't I reach the TV?" on the native screens: where a failed connect would put its raw error on the picker, a quick
+// self-check (Diagnose.kt, the same one the page asks at /api/diagnose) puts ONE conclusion and what to do. The progress line
+// stays until the answer; any other message (a TV tapped, a new try) replaces it, and then the answer is dropped: that is the
+// cancel. The raw error comes back if the check itself breaks.
+
+/** Replaces [error], shown on the picker for the TV at [ip] (saved as [entry]), by the conclusion. */
+internal fun MainActivity.diagnose(ip: String, entry: String?, error: String) {
+    val wait = t("Đang kiểm tra mạng và TV...", "Checking the network and the TV...")
+    message(wait, false)
+    val kind = kindOf(entry ?: ip)
+    val saved = name(entry ?: ip)
+    Thread {
+        val r = try { Diagnose.run(Diagnose.Real(), ip, kind, saved, error, VI) } catch (e: Exception) { null }
+        ui.post {
+            if (isFinishing || pickerMsg.text.toString() != wait) return@post     // the person has moved on
+            if (r == null) { message(error, true); return@post }
+            var text = Diagnose.text(r, VI)
+            if (r.code == Diagnose.OFF || r.code == Diagnose.CLOSED)
+                text += "\n" + t("Hoặc bấm nút nguồn cạnh tên TV trong danh sách để đánh thức.", "Or tap the power button next to the TV in the list to wake it.")
+            if (r.code == Diagnose.UP) text += "\n\n(" + error + ")"                // it answers now: the error may still say more
+            message(text, r.code != Diagnose.UP)
+            val found = r.found
+            if (r.code == Diagnose.MOVED && found != null) Popup.Builder(this).setTitle(t("TV đã đổi địa chỉ", "The TV has a new address"))
+                .setMessage(t("“${found.name}” đang ở ${found.ip} (trước là $ip). Dùng địa chỉ mới?", "“${found.name}” is at ${found.ip} (it was $ip). Use the new address?"))
+                .setPositiveButton(t("Dùng địa chỉ mới", "Use the new address")) { _, _ -> connect(found.ip, entry) }
+                .setNegativeButton(t("Đóng", "Close"), null).show()
+        }
+    }.start()
+}

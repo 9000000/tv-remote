@@ -292,7 +292,7 @@ async function refresh() {
     $('#volv').textContent = s.volume.level;
     $('#r-mute').classList.toggle('on', !!s.volume.muted); $('#r-mute').title = s.volume.muted ? 'Đang tắt tiếng, bấm để bật' : 'Tắt tiếng';
   }
-  applyAdb(); allowAlert(); checkAsk();
+  applyAdb(); allowAlert(); checkAsk(); diagWatch(s);
   if ($('#assist').open && (ADB.state === 'ready' || ADB.state === 'unauthorized')) {   // the TV has opened its ADB port: nothing left to help with
     $('#assist').close(); toast(ADB.state === 'ready' ? 'ADB đã kết nối' : 'ADB đã bật: nhìn lên TV, chọn “Luôn cho phép”');
   }
