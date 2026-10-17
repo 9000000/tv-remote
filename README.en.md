@@ -2,9 +2,9 @@
 
 [Tiếng Việt](README.md) · **English** · 🌐 [tvremote.pages.dev](https://tvremote.pages.dev)
 
-Control an Android TV / Google TV (and LG, Samsung TVs) from a phone or a computer, straight to the TV with no server in between. **Features, screenshots and downloads: [tvremote.pages.dev](https://tvremote.pages.dev).** This README covers setup, troubleshooting and the technical details.
+Control an Android TV / Google TV (and LG, Samsung, Roku, Hisense / Toshiba VIDAA TVs) from a phone or a computer, straight to the TV with no server in between. **Features, screenshots and downloads: [tvremote.pages.dev](https://tvremote.pages.dev).** This README covers setup, troubleshooting and the technical details.
 
-Tested for real on a Sony BRAVIA (Android 9). Other brands are untested. LG (webOS) and Samsung (Tizen) TVs are in **beta**: keys, typing and opening apps, not yet tried on a real TV (see [LG and Samsung TVs](#three-apps-and-a-web-page)).
+Tested for real on a Sony BRAVIA (Android 9). Other brands are untested. LG, Samsung, Roku, VIDAA TVs: **beta** ([see the table](#three-apps-and-a-web-page)).
 
 <table>
 <tr>
@@ -67,9 +67,18 @@ The README, the code and the site always call the parts by these names:
 | Keys while the TV has not allowed ADB | ✓ | | ✓ |
 | Widget, Quick Settings tiles, the phone's volume keys | ✓ | | |
 | Install on the controlling device | the app | nothing, fine on an iPhone | the app |
-| LG (webOS) and Samsung (Tizen, 2016 on) TVs | ✓ | | ✓ |
+| LG, Samsung, Roku, VIDAA TVs | ✓ | | ✓ |
 
-**LG and Samsung TVs.** The Phone app and the Computer app also control LG (webOS) and Samsung (Tizen, 2016 on) TVs, through each maker's own remote protocol, no ADB: the first time, choose Allow on the TV. They can: remote keys, typing, opening apps, opening YouTube links, Wake-on-LAN, scenes; on LG also setting the volume to a number, turning the screen off and searching YouTube. What needs ADB (seeing and touching the picture, listening, Apps, Files, Health, sleep timer, drawing) is greyed out; pressing it says it is only on Android TV / Google TV, and those tabs list what they do. The TV web page is Android TV only, since the TV app runs only on Android. This is a **beta**, written against the libraries Home Assistant uses and fake TVs, not yet tried on a real TV: if the TV gets something wrong, send the log (About → 📋 Send the log, there for every TV). It holds what was sent and what the TV answered, without pairing keys, MAC addresses or typed text.
+**LG, Samsung, Roku, VIDAA TVs** (beta, not yet tried on a real TV). The Phone app and the Computer app control them without ADB, found by the network scan. The first time, choose Allow on the TV (VIDAA: type the 4-digit code).
+
+| | LG | Samsung | Roku | VIDAA |
+|---|:-:|:-:|:-:|:-:|
+| Keys, typing, apps, power on, scenes | ✓ | ✓ | ✓ | ✓ |
+| Inputs | ✓ | | ✓ | ✓ |
+| Volume to a number | ✓ | | | ✓ |
+| YouTube links, screen off | ✓ | | | |
+
+The picture, files, health and timers need Android TV. If the TV gets something wrong: About → 📋 Send the log.
 
 **How the parts connect.** No server in between: everything goes straight to the TV.
 
