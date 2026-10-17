@@ -168,6 +168,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
 
     override fun onCreate() {
         super.onCreate()
+        dev.tvremote.core.Adb.holdFirstAsk(10000)                       // a phone turning ADB on asks first, then allows us too (AdbPrompt.helpSetup)
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         running = this
         dev.tvremote.core.WireLog.app = "TV Setup " + (try { packageManager.getPackageInfo(packageName, 0).versionName } catch (e: Exception) { "" }) +

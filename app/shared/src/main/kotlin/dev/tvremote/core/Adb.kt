@@ -164,10 +164,15 @@ class Adb(private val dir: File) : Closeable {
     @Throws(Exception::class)
     fun connect(host: String, port: Int, prompt: Prompt) {
         dial(host, port)
-        if (authenticate() != null) {
-            send(AUTH, AUTH_RSAPUBLICKEY, 0, (publicKey() + "\u0000").toByteArray())   // unknown key: the TV asks the person
-            prompt.waitingForUser()
-            awaitApproval(host, port)
+        if (authenticate() != null) try {
+            if (!askOnce(host, port, prompt)) {
+                send(AUTH, AUTH_RSAPUBLICKEY, 0, (publicKey() + "\u0000").toByteArray())   // unknown key: the TV asks the person
+                prompt.waitingForUser()
+                awaitApproval(host, port)
+                Thread({ try { AdbPrompt.helpSetup(this) } catch (ignored: Exception) { } }, "adb-help-setup").apply { isDaemon = true }.start()
+            }
+        } finally {
+            ASKING.remove("$host:$port", this)                        // the others waiting on this one go on, whatever happened to it
         }
         sock!!.soTimeout = 0
         sock!!.keepAlive = true
@@ -200,6 +205,35 @@ class Adb(private val dir: File) : Closeable {
             if (!AdbTls.plainOpen(host)) throw failure ?: IOException("adb tls: no port")   // nothing on 5555 to fall back to: say what the TLS port said
         }
         connect(host, 5555, prompt)
+    }
+
+    /**
+     * Each part of an app (the picture, Manage, the now playing bar...) has its own connection, and each would put its own
+     * "Allow USB debugging?" on the TV, one after another, for the same key. So one connection per TV asks, and the others
+     * wait for its answer and then just log in. Returns true when logged in that way; false when this one is to ask.
+     * TV Setup's first question waits a little too ([holdFirstAsk]): a phone connecting at the same moment then asks first,
+     * and once allowed it answers TV Setup's question itself, so the person sees one question instead of two.
+     */
+    private fun askOnce(host: String, port: Int, prompt: Prompt): Boolean {
+        val k = "$host:$port"
+        val end = System.currentTimeMillis() + 180000
+        while (ASKING.putIfAbsent(k, this) != null) {
+            prompt.waitingForUser()
+            close0()
+            while (ASKING[k] != null && !dead && System.currentTimeMillis() < end) Thread.sleep(400)
+            if (dead) throw IOException("closed")
+            if (System.currentTimeMillis() >= end) throw IOException("timeout")
+            dial(host, port)
+            if (authenticate() == null) return true
+        }
+        val hold = holdMs
+        if (hold <= 0) return false
+        holdMs = 0                                                    // the first question only: a later one is not kept waiting
+        holding = true
+        try { synchronized(poke) { if (!poked) (poke as Object).wait(hold) } } finally { holding = false }
+        close0()                                                      // the socket sat unused meanwhile: a fresh one asks
+        dial(host, port)
+        return authenticate() == null
     }
 
     /** A new socket for the next try: this object is used once, so only the dead one is dropped. */
@@ -464,6 +498,22 @@ class Adb(private val dir: File) : Closeable {
     }
 
     companion object {
+        private val ASKING = ConcurrentHashMap<String, Adb>()         // host:port -> the connection of this app whose question is on the TV
+        @Volatile private var holdMs = 0L
+        @Volatile private var holdSet = false
+        @Volatile private var holding = false
+        @Volatile private var poked = false
+        private val poke = Any()
+
+        /** TV Setup: its first "Allow USB debugging?" waits up to [ms] (see [askOnce]), or until [askNow]. Once per process. */
+        fun holdFirstAsk(ms: Long) { if (!holdSet) { holdSet = true; holdMs = ms } }
+
+        /** A device with ADB is ready to answer the question for this app: ask it now. */
+        fun askNow() = synchronized(poke) { poked = true; (poke as Object).notifyAll() }
+
+        /** "hold" (waiting to ask), "ask" (the question is on the TV) or "" (nothing asked: trusted, or not connecting). */
+        fun askState(): String = if (holding) "hold" else if (ASKING.isNotEmpty()) "ask" else ""
+
         /** Seconds a write may wait for the TV to take it. */
         private const val WRITE_WAIT = 30
         /** How far a file upload may run ahead of the TV's disk, and how often that is checked (see [writeTo]). */

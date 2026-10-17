@@ -154,6 +154,21 @@ object AdbPrompt {
         return "$pass:$fp"
     }
 
+    /**
+     * Just allowed on this TV: answers TV Setup's own "Allow USB debugging?" too. TV Setup asks for its own key (it talks to
+     * the TV over ADB as well) and cannot press Allow for itself before it has ADB. It says which key is its own over the
+     * shell-only broadcast, and whether it is asking (or waiting to); only a question about exactly that key is answered.
+     * An older TV Setup hands out a pass instead, which matches nothing here.
+     */
+    @Throws(IOException::class)
+    fun helpSetup(adb: Adb) {
+        val out = adb.shell("am broadcast -n dev.tvremote.setup/.TrustReceiver --es want adbkey 2>&1", 15000)
+        val m = Regex("data=\"([0-9A-F]{2}(?::[0-9A-F]{2}){15}) (hold|ask)\"").find(out) ?: return
+        val fp = m.groupValues[1]
+        if (fp == adb.fingerprint()) return                           // TV Setup itself, on its own TV
+        WireLog.all.add("·", "adb answering TV Setup's question: " + allow(adb, fp, 25000, false))
+    }
+
     /** Trusts one certificate only: the one whose SHA-256 is [fingerprint]. Names do not matter, the TV has none to check. */
     private class Pin(private val fingerprint: String) : X509TrustManager {
         override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) = throw CertificateException("no clients")

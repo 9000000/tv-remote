@@ -131,6 +131,7 @@ class MainActivity : Activity() {
 
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
+        dev.tvremote.core.Adb.holdFirstAsk(10000)                       // a phone turning ADB on asks first, then allows us too (AdbPrompt.helpSetup)
         val page = LinearLayout(this)
         page.setBackgroundColor(BG)
         if (phone) {
