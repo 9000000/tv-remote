@@ -11,12 +11,18 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Cài TV Setup lên TV chưa bật ADB: luôn đi qua Downloader. Trước đây trình duyệt có sẵn của TV (như TCL) nhận đường dẫn APK, tải về rồi đứng ở trang trắng, không mở được trình cài. Cách gửi link thẳng vẫn còn, ở cuối danh sách “Bật ADB”, ghi rõ là dự phòng; sau một phút chưa thấy báo cài xong thì app gợi ý cài qua Downloader.
 - Bật ADB lần đầu: TV chỉ hỏi “Cho phép gỡ lỗi USB?” một lần. Trước đây mỗi phần của app (hình, quản lý, nhạc...) hỏi riêng, và TV Setup hỏi thêm cho chính nó; giờ các phần chờ chung một câu trả lời, và điện thoại / máy tính vừa được cho phép tự trả lời giúp câu hỏi của TV Setup.
 - Rung nhẹ khi bấm nút remote trên điện thoại (app điện thoại, và trang web mở bằng Chrome trên Android). Tắt được trong Cài đặt → Khi bấm nút.
+- Nghe tiếng TV trên điện thoại (🎧) không còn nhanh và giật: một số điện thoại (như Xiaomi) báo vị trí phát theo từng nấc lớn, app tưởng bị trễ nên bỏ gần 1/3 số gói âm thanh. Giờ đo vị trí phát chính xác và chỉ bỏ gói khi thật sự trễ.
+- TV Setup tự lo câu hỏi “Cho phép gỡ lỗi USB?” mà không cần điện thoại: câu hỏi bị màn TV Setup che thì TV Setup tự lùi xuống cho thấy, xong tự quay lại; câu hỏi cũ kẹt lại thì hỏi lại; nếu TV vẫn không hiện câu hỏi thì chỉ cách tắt/bật Gỡ lỗi USB. Sửa lỗi TV Setup mới cài tạo nhiều khóa cùng lúc, làm TV hỏi liên tục cho những khóa lạ.
+- Bật/tắt xem hình TV trên app điện thoại không còn làm thanh đang phát (media control) biến mất vài giây.
 
 **English**
 
 - Installing TV Setup on a TV without ADB always goes through Downloader. The TV's own browser (TCL's, for one) used to take the APK link, download it and then sit on a white page, unable to open the installer. Sending the link straight to the TV is still there, last in “Turn on ADB”, marked as a fallback; after a minute with no word that it installed, the app offers Downloader.
 - Turning ADB on the first time: the TV asks “Allow USB debugging?” once. Each part of the app (picture, Manage, now playing...) used to ask on its own, and TV Setup asked for itself too; now they wait for one answer, and the phone or computer just allowed answers TV Setup's question for it.
 - A light tap under the finger when pressing a remote key on a phone (the phone app, and the page in Chrome on Android). Off in Settings → When pressing a key.
+- Listening to the TV on the phone (🎧) no longer plays fast and choppy: some phones (Xiaomi, for one) report the playback position in big steps, so the app thought it was behind and dropped about a third of the sound. It now reads the position exactly and drops only when really behind.
+- TV Setup handles “Allow USB debugging?” on its own, no phone needed: a question hidden behind its screen makes it step aside and come back after; a stuck question is asked again; and if the TV still shows none it says how to switch USB debugging off and on. A newly installed TV Setup no longer makes several keys at once, which had the TV asking again and again for strange keys.
+- Turning the TV picture on or off in the phone app no longer hides the now playing bar for a few seconds.
 
 ## 0.5.0 - 2026-10-17
 

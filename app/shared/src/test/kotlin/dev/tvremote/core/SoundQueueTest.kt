@@ -14,7 +14,7 @@ import kotlin.random.Random
 class SoundQueueTest {
     private class Heard(val gaps: Int, val silentPct: Double, val lateMs: Int, val droppedPct: Double)
 
-    private fun listen(base: Int, jitter: Double, spikePct: Double, spikeMs: Int, minutes: Int = 5, far: Boolean = false): Heard {
+    private fun listen(base: Int, jitter: Double, spikePct: Double, spikeMs: Int, minutes: Int = 5, far: Boolean = false, headStepMs: Int = 0): Heard {
         val rnd = Random(7)
         val q = SoundQueue(if (far) 48000 * 4 / 10 else 48000 * 15 / 100, 48000)
         val n = 960
@@ -22,6 +22,7 @@ class SoundQueueTest {
         var queued = 0.0                                              // frames in the track
         var held = 0
         var clock = 0.0
+        var playedAll = 0.0                                           // frames the track really played
         var playing = false
         var gaps = 0; var silent = 0.0; var dropped = 0; var late = 0.0; var lateN = 0
         val packets = minutes * 60 * 50
@@ -34,13 +35,16 @@ class SoundQueueTest {
             val dt = arrived - clock
             if (playing) {
                 val left = queued - dt * 48
+                playedAll += minOf(queued, dt * 48)
                 if (left <= 0) {
                     if (i >= skip) { gaps++; silent += -left / 48 }
                     queued = 0.0; playing = false
                 } else queued = left
             }
             clock = arrived
-            when (q.next(n, queued.toLong(), arrived.toLong())) {
+            val step = headStepMs * 48.0                              // a phone whose playback head moves in steps
+            val seen = if (step > 0) queued + (playedAll - Math.floor(playedAll / step) * step) else queued
+            when (q.next(n, seen.toLong(), arrived.toLong())) {
                 SoundQueue.Do.PLAY -> { queued += held + n; held = 0; playing = true }
                 SoundQueue.Do.HOLD -> held += n
                 SoundQueue.Do.DROP -> if (i >= skip) dropped++
@@ -76,5 +80,11 @@ class SoundQueueTest {
     @Test fun badMobile() {
         val h = listen(base = 60, jitter = 60.0, spikePct = 3.0, spikeMs = 600, far = true).also { show("bad 4G", it) }
         assertTrue(h.silentPct < 2.0)
+    }
+
+    @Test fun phoneWithACoarsePlaybackHead() {                        // a Xiaomi: the head moves 200 ms at a time
+        val h = listen(base = 5, jitter = 3.0, spikePct = 0.0, spikeMs = 0, headStepMs = 200).also { show("coarse head", it) }
+        assertEquals(0, h.gaps)
+        assertTrue(h.droppedPct < 1.0)                                // dropped one after another, the song sounded sped up
     }
 }

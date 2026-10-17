@@ -14,7 +14,7 @@ const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.crea
 const fmtSize = (n) => n > 1e9 ? (n / 1e9).toFixed(1) + ' GB' : n > 1e6 ? (n / 1e6).toFixed(1) + ' MB' : n > 1e3 ? Math.round(n / 1e3) + ' KB' : n + ' B';
 const sleep = (ms) => new Promise((z) => setTimeout(z, ms));
 // the tap a key gives under the finger, on a touch screen that can vibrate (Settings: Vibrate on key press, on by default)
-const CAN_BUZZ = !!navigator.vibrate && matchMedia('(pointer: coarse)').matches;
+const CAN_BUZZ = CORE !== 'phone' && !!navigator.vibrate && matchMedia('(pointer: coarse)').matches;   // the phone app has its own switch (Settings)
 const buzzOn = () => { try { return localStorage.getItem('buzz') !== '0'; } catch { return true; } };
 const buzz = () => { if (CAN_BUZZ && buzzOn()) try { navigator.vibrate(15); } catch {} };
 let toastT;

@@ -483,6 +483,53 @@ class MainActivity : Activity() {
     }
 
     @Volatile private var connecting = false
+    private var watching = false
+
+    private fun questionUp(a: dev.tvremote.core.Adb) = (a.shell("dumpsys activity activities | grep -c 'Hist.*UsbDebuggingActivity'", 10000).trim().toIntOrNull() ?: 0) > 0
+
+    /** While this screen is in front, never hide the TV's question: one left behind it (it opened over one, or one queued
+     *  came up just as it returned) keeps the TV from showing any other, a phone's included, and nobody sees why. With ADB
+     *  at hand this screen looks every 3 s: it steps aside for such a question, and answers a leftover copy of its own. */
+    private fun unblock(a: dev.tvremote.core.Adb) = Thread {
+        val mine = a.fingerprint()
+        while (adb === a) {
+            try {
+                Thread.sleep(3000)
+                if (!shown || !questionUp(a)) continue
+                ui { if (shown) moveTaskToBack(true) }
+                val r = dev.tvremote.core.AdbPrompt.allow(a, mine, 6000, false)   // a copy of its own: already trusted
+                dev.tvremote.core.WireLog.all.add("·", "TV Setup stepped aside for a question: $r")
+                if (r == "allowed" && !questionUp(a)) a.shell("am start -n $packageName/.MainActivity", 10000)
+            } catch (e: InterruptedException) { return@Thread } catch (ignored: Exception) { }
+        }
+    }.apply { isDaemon = true }.start()
+    @Volatile private var backed = false                              // stepped aside for the TV's question (uncover)
+
+    /** The TV's question comes up over this screen. Still in front 4 s into asking: the TV dropped it, as another question
+     *  (a dead connection's, from before this screen opened) is up behind this one. Stepping aside shows it; once it is
+     *  answered, Adb asks again and ours comes up. Then this screen comes back. */
+    private fun uncover() {
+        if (watching) return
+        watching = true
+        var askingFor = 0; var hinted = false
+        val v = window.decorView
+        val tick = object : Runnable {
+            override fun run() {
+                if (!connecting) { watching = false; return }
+                askingFor = if (dev.tvremote.core.Adb.askState() != "ask") 0 else if (shown) askingFor + 1 else askingFor   // in front, no question over it
+                if (askingFor == 2) { backed = true; moveTaskToBack(true) }
+                // still no answer: the TV's ADB can stay sure a question is up when none is on screen; off and on clears that
+                if (askingFor >= 20 && !hinted) {
+                    hinted = true
+                    setStatus(WARN, t("TV không hiện câu hỏi?", "No question on the TV?"),
+                        t("Tắt rồi bật lại “Gỡ lỗi USB” (Gỡ lỗi ADB → Tùy chọn nhà phát triển).", "Turn “USB debugging” off and on again (Debugging → Developer options)."))
+                    tiles[4].view.requestFocus()
+                }
+                v.postDelayed(this, 2000)
+            }
+        }
+        v.postDelayed(tick, 2000)
+    }
 
     private fun connect() {
         setEnabled(false)
@@ -494,9 +541,14 @@ class MainActivity : Activity() {
                 val a = Adb(filesDir)
                 a.connect("127.0.0.1", 5555, Adb.Prompt {
                     ui { setStatus(WARN, t("TV đang hỏi “Cho phép gỡ lỗi USB?”", "The TV is asking “Allow USB debugging?”"),
-                        t("Tích “Luôn cho phép”, rồi chọn OK.", "Tick “Always allow”, then choose OK.")) }
+                        t("Tích “Luôn cho phép”, rồi chọn OK.", "Tick “Always allow”, then choose OK."))
+                        uncover() }
                 })
                 adb = a
+                // back in front: Android lets an app in the background start no screen, the shell it just got may; but
+                // never over a question still up (another key's, queued): that one would then block every later one
+                if (backed) { backed = false; try { if (!questionUp(a)) a.shell("am start -n $packageName/.MainActivity", 10000) } catch (ignored: Exception) { } }
+                unblock(a)
                 val s = Setup(a, getExternalFilesDir(null), vi, Setup.Log { log(it) })
                 setup = s
                 try { lastUpdate(a) } catch (ignored: Exception) { }

@@ -37,6 +37,8 @@ internal class PlayingBar(private val a: MainActivity) {
     private var npFor: Tv? = null
     private var o = JSONObject().put("state", "none")
     private var at = 0L                                               // when [o] came
+    private var oHost: String? = null                                 // the TV [o] is about
+    @Volatile private var swapAt = 0L                                 // when a new session (picture on / off, reconnect) came
     private var dragging = false
     private var asking = false
     private val spins = HashMap<android.view.View, android.widget.ProgressBar>()
@@ -103,12 +105,19 @@ internal class PlayingBar(private val a: MainActivity) {
             val tv = a.tv
             val looking = a.foreground && a.remote.visibility == View.VISIBLE && a.basic == null && tv != null && tv.ready()
             val listening = a.listen && a.basic == null && tv != null && tv.ready()   // the phone's media controls show it too
-            if (!looking && !listening) { o = JSONObject().put("state", "none"); draw(); a.ui.postDelayed(this, 2000); return }
+            if (!looking && !listening) {
+                if (!held()) o = JSONObject().put("state", "none")           // the picture switched on or off: the same TV, back in a moment
+                draw(); a.ui.postDelayed(this, if (held()) 1000 else 2000); return
+            }
             if (!asking) {
                 asking = true
                 work.execute {
                     val got = try { player(tv!!).state() } catch (e: Exception) { JSONObject().put("state", "none") }
-                    a.ui.post { asking = false; o = got; at = System.currentTimeMillis(); draw(); ListenService.show(o, a.title(a.host ?: "")) }
+                    a.ui.post {
+                        asking = false
+                        if (got.optString("state", "none") == "none" && held()) return@post   // the new session's helper still starting
+                        o = got; oHost = a.host; at = System.currentTimeMillis(); draw(); ListenService.show(o, a.title(a.host ?: ""))
+                    }
                 }
             }
             draw()
@@ -146,8 +155,13 @@ internal class PlayingBar(private val a: MainActivity) {
         } catch (e: Exception) { blackFor = 0 }
     }
 
+    /** The bar stays as it was for up to 10 s while the same TV's session restarts (the picture switched on or off), rather than
+     *  vanishing and coming back once the new session's helper speaks. */
+    private fun held() = o.optString("state", "none") != "none" && oHost != null && oHost == a.host && a.basic == null &&
+        System.currentTimeMillis() - maxOf(at, swapAt) < 10000
+
     private fun player(tv: Tv): NowPlaying = synchronized(this) {
-        if (npFor !== tv) { np = NowPlaying({ tv.adb() }) { a.assets.open("tvr-helper.jar").use { it.readBytes() } }; npFor = tv }
+        if (npFor !== tv) { np = NowPlaying({ tv.adb() }) { a.assets.open("tvr-helper.jar").use { it.readBytes() } }; npFor = tv; swapAt = System.currentTimeMillis() }
         np!!
     }
 

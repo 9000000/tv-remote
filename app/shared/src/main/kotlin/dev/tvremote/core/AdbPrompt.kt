@@ -67,7 +67,7 @@ object AdbPrompt {
     @Throws(IOException::class)
     fun allow(adb: Adb, fingerprint: String, waitMs: Long, skipOthers: Boolean): String = allow(Sh(adb::shell), fingerprint, waitMs, skipOthers)
 
-    internal fun allow(adb: Sh, fingerprint: String, waitMs: Long, skipOthers: Boolean, nap: (Long) -> Unit = Thread::sleep): String {
+    internal fun allow(adb: Sh, fingerprint: String, waitMs: Long, skipOthers: Boolean, nap: (Long) -> Unit = Thread::sleep, skippedOne: () -> Unit = {}): String {
         val want = fingerprint.uppercase()
         val end = System.currentTimeMillis() + waitMs
         var skipped = 0
@@ -82,6 +82,7 @@ object AdbPrompt {
                 if (!skipOthers || skipped >= 6) return "other:" + p.fingerprint
                 press(adb, p, { it.cancel }, nap)
                 skipped++
+                skippedOne()
                 nap(1200)
                 continue
             }
@@ -166,7 +167,10 @@ object AdbPrompt {
         val m = Regex("data=\"([0-9A-F]{2}(?::[0-9A-F]{2}){15}) (hold|ask)\"").find(out) ?: return
         val fp = m.groupValues[1]
         if (fp == adb.fingerprint()) return                           // TV Setup itself, on its own TV
-        WireLog.all.add("·", "adb answering TV Setup's question: " + allow(adb, fp, 25000, false))
+        // a question about another key in front of it (a dead connection's, left on the screen) is declined, never allowed;
+        // the TV dropped TV Setup's question meanwhile, so it is told to ask again
+        val poke = { try { adb.shell("am broadcast -n dev.tvremote.setup/.TrustReceiver --es want adbkey", 15000) } catch (ignored: Exception) { } ; Unit }
+        WireLog.all.add("·", "adb answering TV Setup's question: " + allow(Sh(adb::shell), fp, 40000, true, skippedOne = poke))
     }
 
     /** Trusts one certificate only: the one whose SHA-256 is [fingerprint]. Names do not matter, the TV has none to check. */

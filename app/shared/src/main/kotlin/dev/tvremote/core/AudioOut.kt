@@ -22,6 +22,18 @@ class AudioOut(far: Boolean = false) {
     private var q = SoundQueue(base, MAX)
     private var room = 0                                              // the track's buffer asked for, in frames
     private val held = ArrayList<ByteArray>()                         // decoded while refilling after running dry
+    private var drops = 0; private var dry = 0; private var told = 0L
+    private val stamp = android.media.AudioTimestamp()
+
+    /** Frames the track has played. Its playback head moves in steps of 100 ms and more on some phones (Xiaomi): read
+     *  alone it made the queue look full, and packets were dropped one after another. The timestamp, carried on by the
+     *  clock, moves smoothly; the larger of the two counts. */
+    private fun played(t: AudioTrack): Long {
+        val head = t.playbackHeadPosition.toLong() and 0xffffffffL
+        if (android.os.Build.VERSION.SDK_INT < 19 || !t.getTimestamp(stamp)) return head
+        val now = stamp.framePosition + (System.nanoTime() - stamp.nanoTime) * RATE / 1_000_000_000L
+        return minOf(written, maxOf(head, now))
+    }
 
     /** [config] is scrcpy's first packet, the OpusHead; then one Opus packet at a time. */
     fun feed(config: Boolean, data: ByteArray) {
@@ -44,7 +56,7 @@ class AudioOut(far: Boolean = false) {
             val t = track
             val buf = c.getOutputBuffer(out)
             if (t != null && buf != null && info.size > 0) {
-                val behind = written - (t.playbackHeadPosition.toLong() and 0xffffffffL)
+                val behind = written - played(t)
                 val pcm = ByteArray(info.size)
                 buf.position(info.offset)
                 buf.get(pcm)
@@ -56,10 +68,15 @@ class AudioOut(far: Boolean = false) {
                         t.write(pcm, 0, pcm.size); written += pcm.size / 4
                     }
                     SoundQueue.Do.HOLD -> held.add(pcm)
-                    SoundQueue.Do.DROP -> {}
+                    SoundQueue.Do.DROP -> drops++
+                }
+                val now = System.currentTimeMillis()
+                if (now - told > 30000) {                             // About → Send the log: how the sound held up
+                    if (drops > 0 || dry > 0) WireLog.all.add("·", "sound: $drops packets dropped, ran dry $dry times, keeping ${q.target * 1000 / RATE} ms")
+                    told = now; drops = 0; dry = 0
                 }
                 if (q.target != was) {
-                    if (q.target > was) WireLog.all.add("·", "sound ran dry: keeping ${q.target * 1000 / RATE} ms")
+                    if (q.target > was) dry++
                     if (android.os.Build.VERSION.SDK_INT >= 24 && q.room != room) room = q.room.also { t.setBufferSizeInFrames(it) }
                 }
             }

@@ -148,15 +148,25 @@ class Adb(private val dir: File) : Closeable {
     @Volatile private var dead = false
 
     init {
-        val priv = File(dir, "adbkey.pk8")
-        val pub = File(dir, "adbkey.x509")
-        val kf = KeyFactory.getInstance("RSA")
-        if (priv.exists() && pub.exists()) {
-            key = KeyPair(kf.generatePublic(X509EncodedKeySpec(pub.readBytes())), kf.generatePrivate(PKCS8EncodedKeySpec(priv.readBytes())))
-        } else {
-            key = KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.generateKeyPair()
-            priv.writeBytes(key.private.encoded)
-            pub.writeBytes(key.public.encoded)
+        // one key per app, made once: on the first start TV Setup's screen, its service and its Manage process (another
+        // process) all reach here at the same moment; each made its own, one overwrote the others', and the rest kept
+        // asking the TV with keys nobody would ever use again (the strange extra "Allow USB debugging?" questions)
+        key = synchronized(KEY_LOCK) {
+            java.io.RandomAccessFile(File(dir, "adbkey.lock"), "rw").channel.use { ch ->
+                ch.lock().use {
+                    val priv = File(dir, "adbkey.pk8")
+                    val pub = File(dir, "adbkey.x509")
+                    val kf = KeyFactory.getInstance("RSA")
+                    if (priv.exists() && pub.exists()) {
+                        KeyPair(kf.generatePublic(X509EncodedKeySpec(pub.readBytes())), kf.generatePrivate(PKCS8EncodedKeySpec(priv.readBytes())))
+                    } else {
+                        val k = KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.generateKeyPair()
+                        priv.writeBytes(k.private.encoded)
+                        pub.writeBytes(k.public.encoded)
+                        k
+                    }
+                }
+            }
         }
     }
 
@@ -272,6 +282,7 @@ class Adb(private val dir: File) : Closeable {
         var askingAlive = true
         var askAgainAt = 0L
         var asked = 1
+        var askedAt = System.currentTimeMillis()
         while (System.currentTimeMillis() < end) {
             if (dead) { asking.close(); throw IOException("closed") }   // whoever wanted this connection has let go of it (and the TV's prompt with it)
             if (askingAlive) {
@@ -297,8 +308,13 @@ class Adb(private val dir: File) : Closeable {
             try {
                 dial(host, port)
                 if (authenticate() == null) { asking.close(); return }
-                if (!askingAlive && asked < 4 && System.currentTimeMillis() > askAgainAt) {
-                    // the question went away on the TV without "Always allow" (Back, Home, Cancel, a timeout): ask it once more
+                val now = System.currentTimeMillis()
+                // the question went away on the TV without "Always allow" (Back, Home, Cancel, a timeout): ask it once more.
+                // Or it never showed: the TV shows one question at a time and drops a new one while another (a dead
+                // connection's, someone else's) is up; once that is answered, only asking again brings ours up.
+                val stale = askingAlive && (reask || now - askedAt > 20000)
+                if ((!askingAlive && asked < 4 && now > askAgainAt) || (stale && asked < 12)) {
+                    reask = false; askedAt = now
                     send(AUTH, AUTH_RSAPUBLICKEY, 0, (publicKey() + "\u0000").toByteArray())
                     asking.close()
                     asking = sock!!
@@ -499,6 +515,7 @@ class Adb(private val dir: File) : Closeable {
 
     companion object {
         private val ASKING = ConcurrentHashMap<String, Adb>()         // host:port -> the connection of this app whose question is on the TV
+        private val KEY_LOCK = Any()                                  // a file lock is per process: this keeps threads apart
         @Volatile private var holdMs = 0L
         @Volatile private var holdSet = false
         @Volatile private var holding = false
@@ -509,7 +526,8 @@ class Adb(private val dir: File) : Closeable {
         fun holdFirstAsk(ms: Long) { if (!holdSet) { holdSet = true; holdMs = ms } }
 
         /** A device with ADB is ready to answer the question for this app: ask it now. */
-        fun askNow() = synchronized(poke) { poked = true; (poke as Object).notifyAll() }
+        fun askNow() = synchronized(poke) { poked = true; reask = true; (poke as Object).notifyAll() }
+        @Volatile private var reask = false                           // askNow while asking: a helper just cleared the TV's screen, ask again
 
         /** "hold" (waiting to ask), "ask" (the question is on the TV) or "" (nothing asked: trusted, or not connecting). */
         fun askState(): String = if (holding) "hold" else if (ASKING.isNotEmpty()) "ask" else ""
