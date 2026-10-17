@@ -104,7 +104,7 @@ class Assist(private val cur: () -> Session) {
             "installed" -> { if (!checking) installed = true; return ok() }
             else -> {
                 cur().need()
-                if ((what == "open" || what == "settings") && (status == "running" || opening))   // one job on the TV at a time
+                if ((what == "open" || what == "settings" || what == "direct") && (status == "running" || opening))   // one job on the TV at a time
                     return HttpServer.Response.error(409, "TV đang làm việc vừa yêu cầu, chờ vài giây rồi bấm lại")
                 when (what) {
                     "setup" -> {
@@ -123,6 +123,11 @@ class Assist(private val cur: () -> Session) {
                         if (!PKG.matches(target)) return HttpServer.Response.error(400, "not a package name")
                         opening = true
                         try { return HttpServer.Response.json(JSONObject().put("ok", openOnTv(target, false)).put("front", front())) } finally { opening = false }
+                    }
+                    "direct" -> {                                     // the fallback: the APK link to whatever app takes it; some TVs never install it
+                        opening = true
+                        try { sendLink(SETUP_APK); answerChooser() } finally { opening = false }
+                        return HttpServer.Response.json(JSONObject().put("ok", true).put("front", front()))
                     }
                     "settings" -> {                                   // every way a TV may open its Settings when asked
                         val isSettings = { a: String -> "settings" in a.lowercase() }
@@ -144,7 +149,8 @@ class Assist(private val cur: () -> Session) {
 
     companion object {
         const val DOWNLOADER = "com.esaba.downloader"
-        const val SETUP_CODE = "downloader://2397346"                 // Downloader's own link for the AFTVnews code of the latest tv-setup.apk: opens Downloader alone, no "Open with"
+        const val SETUP_APK = "https://github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"
+        const val SETUP_CODE = "downloader://2397346"                 // Downloader's own link for the AFTVnews code of SETUP_APK: opens Downloader alone, no "Open with"
         val PKG = dev.tvremote.core.Pkg.RE
     }
 }

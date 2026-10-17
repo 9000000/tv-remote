@@ -270,6 +270,7 @@ function adbHelp() {
     CORE !== 'tv' ? choice('📡 Ghép bằng Gỡ lỗi không dây', 'Android 11 trở lên: dùng mã 6 số TV hiện ra, không cần bật Gỡ lỗi USB.', wirelessPair) : null,
     choice('🛒 Mở CH Play trên TV', '', () => assist('open', { what: 'https://play.google.com/store/apps' })),
     choice('📦 Mở app theo tên gói', 'Đã cài thì mở app, chưa cài thì mở trang CH Play của nó.', async () => { const p = await ask('Tên gói hoặc đường dẫn', { value: 'com.example.app' }); if (p && p.trim()) assist('open', { what: p.trim() }); }),
+    choice('🔗 Gửi link cài thẳng cho TV', 'Dự phòng, chưa ổn định: TV có thể tải về mà không tự cài.', installDirect),
     say(DL_TIP),
     say('Khi TV bật ADB xong, trang này tự nhận ra và kết nối. Các nút mũi tên, OK ở tab Remote vẫn dùng được trong lúc làm.'));
 }
@@ -322,6 +323,24 @@ function otherHome() {
     assistShow(name, say('Nhìn lên TV.\n\n• Thấy trang CH Play: chọn Cài đặt, xong bấm “Mở lại” bên dưới.\n• CH Play báo không tương thích hoặc không tìm thấy: bấm “Chọn cái khác”.\n• Thấy màn hình chính mới: tìm biểu tượng bánh răng → Cài đặt Android, rồi bấm “Các bước bật ADB”.\n\nCH Play cần TV đã đăng nhập tài khoản Google.'),
       row(act('Các bước bật ADB', async () => adbSteps(), 'primary'), act('↻ Mở lại', async () => { await assist('open', { what: pkg }); }), act('Chọn cái khác', async () => otherHome())));
   })), row(act('← Các cách khác', async () => adbHelp())));
+}
+// The old short way, kept as a fallback: some TVs install what their browser downloaded, others (TCL) sit on a white page.
+// A minute with no answer (and no installer in front): offer the Downloader ways.
+async function installDirect() {
+  assistShow('Gửi link cài thẳng cho TV', say('Đang gửi đường dẫn tải cho TV...')); const gen = assistGen;
+  const r = await assist('direct'); if (gen !== assistGen) return;
+  if (!r) return adbHelp();
+  assistShow('Gửi link cài thẳng cho TV', say('Nhìn lên TV: nếu TV hỏi tải tv-setup.apk, chọn OK, rồi chọn Cài đặt (Install). Cài xong bấm “Đã cài xong”.\n\nCách này chưa ổn định: có TV chỉ tải về mà không tự cài, hoặc đứng ở trang trắng. Khi đó bấm “Cách khác”.'),
+    row(act('✓ Đã cài xong', async () => { await assist('open', { what: 'dev.tvremote.setup' }); }, 'primary'), act('← Cách khác', async () => adbHelp())));
+  const shown = assistGen;
+  for (let waited = 0; ; waited += 5) {
+    await sleep(5000); if (shown !== assistGen) return;               // any button, or closing, moves on
+    if (waited < 60) continue;
+    const s = await api('/api/assist', null, true); if (shown !== assistGen) return;
+    if (s && /installer/.test(s.front || '')) continue;               // the TV's installer is up: the person is busy there
+    return assistShow('TV chưa cài được?', say('Nhiều TV không tự cài file tải bằng trình duyệt. Cài qua app Downloader thì chắc hơn: trang này mở Downloader (chưa có thì cài từ CH Play) rồi cho nó tải TV Setup.'),
+      row(act('⚡ Cài qua Downloader', async () => installSetup(), 'primary'), act('← Các cách khác', async () => adbHelp())), say(DL_TIP));
+  }
 }
 async function installSetup() {
   if (!await assist('setup')) return;

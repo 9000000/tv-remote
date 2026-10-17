@@ -48,7 +48,55 @@ internal fun MainActivity.adbHelp() {
                 }
                 .setNegativeButton(t("Hủy", "Cancel"), null).show()
             Unit
-        }))
+        },
+        Triple("@link|" + t("Gửi link cài thẳng cho TV", "Send the install link to the TV"), t("Dự phòng, chưa ổn định: TV có thể tải về mà không tự cài", "A fallback, not reliable: the TV may download it and not install it")) { installSetupDirect() }))
+}
+
+/**
+ * The old short way, kept as a fallback: the TV gets the APK link itself and whatever app takes it downloads it. Some TVs
+ * then install it; others (TCL's browser) download it and sit on a white page. So when nobody says it worked within a
+ * minute, the Downloader ways are offered.
+ */
+internal fun MainActivity.installSetupDirect() {
+    val a = basic ?: return
+    if (!tvFree()) return
+    var answered = false
+    val box = AlertDialog.Builder(this).setTitle(t("Gửi link cài thẳng cho TV", "Send the install link to the TV"))
+        .setMessage(t("Đang gửi đường dẫn tải cho TV...", "Sending the download link to the TV..."))
+        .setPositiveButton(t("Đã cài xong", "Installed")) { _, _ -> answered = true; tvJob { openOnTv(a, "dev.tvremote.setup") { false } } }
+        .setNeutralButton(t("Cách khác", "Other ways")) { _, _ -> answered = true; installSetupByHand() }
+        .setNegativeButton(t("Đóng", "Close")) { _, _ -> answered = true }.setOnCancelListener { answered = true }.show()
+    box.setCanceledOnTouchOutside(false)
+    Thread {
+        try {
+            a.launch("https://github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk")
+            for (press in 0 until 3) {                                // "Open with": OK takes what is offered
+                Thread.sleep(1500)
+                if (a.app != "android" || answered) break
+                a.pulse(23, 110)
+            }
+        } catch (ignored: Exception) {
+        } finally {
+            tvBusy.set(false)
+        }
+        ui.post {
+            if (box.isShowing) box.setMessage(t("Nhìn lên TV: nếu TV hỏi tải tv-setup.apk, chọn OK, rồi chọn Cài đặt (Install). Cài xong bấm “Đã cài xong”.\n\nCách này chưa ổn định: có TV chỉ tải về mà không tự cài, hoặc đứng ở trang trắng. Khi đó bấm “Cách khác”.",
+                "Look at the TV: if it asks to download tv-setup.apk, choose OK, then Install. Once installed, tap “Installed”.\n\nThis way is not reliable: some TVs only download the file and do not install it, or stay on a white page. Then tap “Other ways”."))
+        }
+    }.start()
+    lateinit var later: Runnable
+    later = Runnable {                                            // a minute with no answer: most likely stuck, show the sure way
+        if (answered || !box.isShowing || isFinishing) return@Runnable
+        if (basic === a && a.app.contains("installer")) { ui.postDelayed(later, 30000); return@Runnable }   // the TV's installer is up: the person is busy there
+        box.dismiss()
+        AlertDialog.Builder(this).setTitle(t("TV chưa cài được?", "Not installed yet?"))
+            .setMessage(t("Nhiều TV không tự cài file tải bằng trình duyệt. Cài qua app Downloader thì chắc hơn: app mở Downloader (chưa có thì cài từ CH Play) rồi cho nó tải TV Setup.",
+                "Many TVs do not install a file their browser downloaded. Going through the Downloader app is surer: the app opens Downloader (installing it from the Play Store if needed) and has it fetch TV Setup."))
+            .setPositiveButton(t("Cài qua Downloader", "Install through Downloader")) { _, _ -> installSetup() }
+            .setNeutralButton(t("Làm từng bước", "Step by step")) { _, _ -> installSetupByHand() }
+            .setNegativeButton(t("Đóng", "Close"), null).show()
+    }
+    ui.postDelayed(later, 60000)
 }
 
 /**
