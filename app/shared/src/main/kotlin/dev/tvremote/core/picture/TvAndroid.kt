@@ -1,10 +1,17 @@
 package dev.tvremote.core.picture
 import android.content.Context
 import android.media.MediaCodec
+import android.media.MediaCodecInfo
 import android.media.MediaFormat
 import android.os.Build
+import android.os.Handler
+import android.os.HandlerThread
+import android.os.SystemClock
+import android.util.Log
 import android.view.Surface
 import dev.tvremote.core.ontv.Tailscale
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 
 /**
  * A [Tv] session on Android: the key in the app's files, scrcpy-server from the APK's assets, the picture decoded straight
@@ -21,56 +28,146 @@ fun Tv(
         override fun audio(config: Boolean, data: ByteArray) = out.feed(config, data)
         override fun end() = out.release()
     } else null
-    return Tv(app.filesDir, { app.assets.open("scrcpy-server.jar").use { it.readBytes() } }, host, surface?.let { SurfaceScreen(it) },
+    val screen = surface?.let { SurfaceScreen(it) }
+    val tv = Tv(app.filesDir, { app.assets.open("scrcpy-server.jar").use { it.readBytes() } }, host, screen,
         quality, maxSide, wake, listener, sink, audio, hear, wantControl, audioShare, audioBitRate, fps, bitRate, encoder)
+    screen?.askKey = { Thread { try { tv.resetVideo() } catch (ignored: Exception) { } }.start() }   // off the reading thread
+    return tv
 }
 
-/** Android's own H.264 decoder, drawing onto a Surface. */
+private const val TAG = "TvrPic"
+
+/**
+ * Android's own H.264 decoder, drawing onto a Surface. Input and output are apart: the reading thread only hands packets over
+ * ([feed]), the decoder's own callbacks draw what comes out as soon as it does, and skip a late frame when newer ones are
+ * right behind it. [LiveGate] (LiveDecode.kt) decides, this carries it out. If the decoder falls too far behind it is made
+ * again and the TV is asked ([askKey]) for a key frame. Debug: `adb shell setprop log.tag.TvrPic DEBUG` (a line a second:
+ * frames in and out, age at the decoder's output; VERBOSE: one line per frame), then restart the picture.
+ */
 private class SurfaceScreen(private val surface: Surface) : Tv.Screen {
-    private var codec: MediaCodec? = null
+    /** how the TV is asked for a key frame (scrcpy: reset video); set by [Tv] right after the session exists */
+    @Volatile var askKey: (() -> Unit)? = null
+
+    private class Dec(val codec: MediaCodec, val thread: HandlerThread) { val inputs = LinkedBlockingQueue<Int>() }
+
+    private val gate = LiveGate()
+    private val stats = LatencyStats()
+    private val debug = Log.isLoggable(TAG, Log.DEBUG)
+    private val verbose = Log.isLoggable(TAG, Log.VERBOSE)
+    @Volatile private var dec: Dec? = null
+    @Volatile private var broken = false                              // a decoder error: made again at the next packet
+    private var w = 0
+    private var h = 0
+    private var config: ByteArray? = null                             // the last codec config, fed again to a decoder made again
 
     override fun start(w: Int, h: Int) {
         release()
-        val f = MediaFormat.createVideoFormat("video/avc", w, h)
-        f.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 2 shl 20)
-        if (Build.VERSION.SDK_INT >= 30) f.setInteger(MediaFormat.KEY_LOW_LATENCY, 1)
+        this.w = w; this.h = h
+        gate.clear()
+        open()
+    }
+
+    @Synchronized private fun open() {
+        // vendor keys first; a decoder that refuses them is made again without
+        val d = try { build(vendor = true) } catch (e: Exception) { Log.w(TAG, "decoder without vendor keys: $e"); build(vendor = false) }
+        dec = d
+        broken = false
+    }
+
+    private fun build(vendor: Boolean): Dec {
         val c = MediaCodec.createDecoderByType("video/avc")
-        codec = c
-        c.configure(f, surface, null, 0)
-        c.start()
+        val t = HandlerThread("tvr-decode")
+        try {
+            val lowOk = Build.VERSION.SDK_INT >= 30 && c.codecInfo.getCapabilitiesForType("video/avc")
+                .isFeatureSupported(MediaCodecInfo.CodecCapabilities.FEATURE_LowLatency)
+            val keys = LiveDecode.tuning(Build.VERSION.SDK_INT, lowOk, vendor)
+            val f = MediaFormat.createVideoFormat("video/avc", w, h)
+            f.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 2 shl 20)
+            for ((k, v) in keys) f.setInteger(k, v)
+            t.start()
+            val d = Dec(c, t)
+            c.setCallback(object : MediaCodec.Callback() {
+                override fun onInputBufferAvailable(codec: MediaCodec, index: Int) { d.inputs.add(index) }
+                override fun onOutputBufferAvailable(codec: MediaCodec, index: Int, info: MediaCodec.BufferInfo) = shown(d, index, info)
+                override fun onError(codec: MediaCodec, e: MediaCodec.CodecException) { Log.w(TAG, "decoder error: $e"); if (dec === d) broken = true }
+                override fun onOutputFormatChanged(codec: MediaCodec, format: MediaFormat) {}
+            }, Handler(t.looper))
+            c.configure(f, surface, null, 0)
+            c.start()
+            if (debug) Log.d(TAG, "decoder ${c.name} lowLatencySupported=$lowOk keys=$keys")
+            return d
+        } catch (e: Exception) {
+            try { c.release() } catch (ignored: Exception) { }
+            t.quitSafely()
+            throw e
+        }
+    }
+
+    /** A frame came out (on the decoder's thread): drawn now, unless it is late and newer ones are right behind it. */
+    private fun shown(d: Dec, index: Int, info: MediaCodec.BufferInfo) {
+        if (d !== dec || info.size == 0) { try { d.codec.releaseOutputBuffer(index, false) } catch (ignored: Exception) { }; return }
+        val now = SystemClock.elapsedRealtime()
+        val (age, draw) = gate.out(info.presentationTimeUs, now)
+        try { d.codec.releaseOutputBuffer(index, draw) } catch (ignored: IllegalStateException) { return }
+        if (verbose) Log.v(TAG, "pts=${info.presentationTimeUs} age=${age}ms ${if (draw) "drawn" else "skipped"}")
+        if (debug) stats.out(age, draw, now, gate.catchUps)?.let { Log.d(TAG, it) }
     }
 
     override fun feed(config: Boolean, pts: Long, data: ByteArray): Boolean {
-        val c = codec ?: return true
+        if (config) this.config = data
+        var now = SystemClock.elapsedRealtime()
+        if (broken || (!config && gate.lagged(now))) catchUp(now)
+        if (!gate.admit(config, !config && LiveDecode.isKey(data))) {
+            if (gate.wantKey(now)) askKey?.invoke()                   // the key frame asked for did not come: ask again
+            return true
+        }
+        val d = dec ?: return true
+        val t0 = now
         var idx = -1
-        var waited = 0
-        while (idx < 0 && waited < 500) { idx = c.dequeueInputBuffer(20000); render(c); waited++ }   // 10 s or more: stuck
-        if (idx < 0) return false
-        val input = c.getInputBuffer(idx)!!
-        input.clear()
-        input.put(data)
-        c.queueInputBuffer(idx, 0, data.size, pts, if (config) MediaCodec.BUFFER_FLAG_CODEC_CONFIG else 0)
-        var tries = 0
-        while (tries < 6 && !render(c)) tries++                       // the TV only sends a frame when the picture changes: show it now
+        while (idx < 0) {
+            idx = d.inputs.poll(20, TimeUnit.MILLISECONDS) ?: -1
+            if (idx >= 0) break
+            if (dec !== d) return true                                // released meanwhile
+            now = SystemClock.elapsedRealtime()
+            if (!config && gate.lagged(now)) { catchUp(now); return true }   // the decoder takes nothing: this frame goes with the rest
+            if (now - t0 > 10000) return false                        // stuck: the session ends
+        }
+        if (!queue(d, idx, data, pts, config)) return true
+        if (!config) { gate.fed(pts, now); stats.fed() }
         return true
     }
 
-    private fun render(c: MediaCodec): Boolean {
-        val info = MediaCodec.BufferInfo()
-        var shown = false
-        while (true) {
-            val out = c.dequeueOutputBuffer(info, if (shown) 0 else 15000)
-            if (out < 0) break
-            c.releaseOutputBuffer(out, true)
-            shown = true
-        }
-        return shown
+    private fun queue(d: Dec, idx: Int, data: ByteArray, pts: Long, config: Boolean): Boolean = try {
+        val input = d.codec.getInputBuffer(idx)!!
+        input.clear()
+        input.put(data)
+        d.codec.queueInputBuffer(idx, 0, data.size, pts, if (config) MediaCodec.BUFFER_FLAG_CODEC_CONFIG else 0)
+        true
+    } catch (e: RuntimeException) {
+        Log.w(TAG, "queue failed: $e"); broken = true; false
     }
 
-    override fun release() {
-        val c = codec ?: return
-        try { c.stop() } catch (ignored: Exception) { }
-        try { c.release() } catch (ignored: Exception) { }
-        codec = null
+    /** The decoder is far behind (or failed): made again, frames skipped up to the next key frame, which the TV is asked for. */
+    private fun catchUp(now: Long) {
+        if (debug) Log.d(TAG, "catch up: decoder made again")
+        closeDec()
+        try { open() } catch (e: Exception) { Log.w(TAG, "decoder not made again: $e"); return }
+        val d = dec
+        val cfg = config
+        if (d != null && cfg != null) {
+            val idx = d.inputs.poll(1000, TimeUnit.MILLISECONDS)
+            if (idx != null) queue(d, idx, cfg, 0, true)              // a new decoder needs the SPS / PPS before any frame
+        }
+        if (gate.caughtUp(now)) askKey?.invoke()
     }
+
+    @Synchronized private fun closeDec() {
+        val d = dec ?: return
+        dec = null
+        try { d.codec.stop() } catch (ignored: Exception) { }
+        try { d.codec.release() } catch (ignored: Exception) { }
+        d.thread.quitSafely()
+    }
+
+    override fun release() = closeDec()
 }
