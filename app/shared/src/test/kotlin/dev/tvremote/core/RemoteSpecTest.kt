@@ -5,6 +5,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
+import dev.tvremote.core.remote.Remote
+import dev.tvremote.core.scenes.RemoteSpec
+import dev.tvremote.core.scenes.Scenes
 
 /**
  * web/remote.json is what both remotes draw from. Same checks as tests/remote.test.js for the file itself (the phone's handler map is

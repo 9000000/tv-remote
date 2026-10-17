@@ -4,6 +4,7 @@ import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.File
+import dev.tvremote.core.adb.TvShell
 
 /** TvShell gives what tests/tvshell_cases.json says, for every case (the page reads the same output: js/tvread.js). */
 class TvShellTest {

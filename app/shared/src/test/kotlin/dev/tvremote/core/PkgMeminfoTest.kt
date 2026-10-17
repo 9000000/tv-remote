@@ -5,6 +5,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import dev.tvremote.core.ontv.Meminfo
+import dev.tvremote.core.adb.Pkg
 
 class PkgMeminfoTest {
     @Test fun packageNames() {

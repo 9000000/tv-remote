@@ -14,10 +14,10 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
-import dev.tvremote.core.Adb
-import dev.tvremote.core.Setup
-import dev.tvremote.core.SetupUpdate
-import dev.tvremote.core.Tailscale
+import dev.tvremote.core.adb.Adb
+import dev.tvremote.core.ontv.Setup
+import dev.tvremote.core.ontv.SetupUpdate
+import dev.tvremote.core.ontv.Tailscale
 import dev.tvremote.update.Release
 import java.io.File
 import java.util.Locale
@@ -131,7 +131,7 @@ class MainActivity : Activity() {
 
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
-        dev.tvremote.core.Adb.holdFirstAsk(10000)                       // a phone turning ADB on asks first, then allows us too (AdbPrompt.helpSetup)
+        dev.tvremote.core.adb.Adb.holdFirstAsk(10000)                       // a phone turning ADB on asks first, then allows us too (AdbPrompt.helpSetup)
         val page = LinearLayout(this)
         page.setBackgroundColor(BG)
         if (phone) {
@@ -474,7 +474,7 @@ class MainActivity : Activity() {
     }
 
     private fun qr(link: String): View? {
-        val bmp = dev.tvremote.core.Qr.bitmap(link, 6) ?: return null
+        val bmp = dev.tvremote.core.web.Qr.bitmap(link, 6) ?: return null
         val img = ImageView(this)
         img.setImageBitmap(bmp)
         img.background = box(Color.WHITE, 10, 0)
@@ -485,19 +485,19 @@ class MainActivity : Activity() {
     @Volatile private var connecting = false
     private var watching = false
 
-    private fun questionUp(a: dev.tvremote.core.Adb) = (a.shell("dumpsys activity activities | grep -c 'Hist.*UsbDebuggingActivity'", 10000).trim().toIntOrNull() ?: 0) > 0
+    private fun questionUp(a: dev.tvremote.core.adb.Adb) = (a.shell("dumpsys activity activities | grep -c 'Hist.*UsbDebuggingActivity'", 10000).trim().toIntOrNull() ?: 0) > 0
 
     /** While this screen is in front, never hide the TV's question: one left behind it (it opened over one, or one queued
      *  came up just as it returned) keeps the TV from showing any other, a phone's included, and nobody sees why. With ADB
      *  at hand this screen looks every 3 s: it steps aside for such a question, and answers a leftover copy of its own. */
-    private fun unblock(a: dev.tvremote.core.Adb) = Thread {
+    private fun unblock(a: dev.tvremote.core.adb.Adb) = Thread {
         val mine = a.fingerprint()
         while (adb === a) {
             try {
                 Thread.sleep(3000)
                 if (!shown || !questionUp(a)) continue
                 ui { if (shown) moveTaskToBack(true) }
-                val r = dev.tvremote.core.AdbPrompt.allow(a, mine, 6000, false)   // a copy of its own: already trusted
+                val r = dev.tvremote.core.adb.AdbPrompt.allow(a, mine, 6000, false)   // a copy of its own: already trusted
                 dev.tvremote.core.WireLog.all.add("·", "TV Setup stepped aside for a question: $r")
                 if (r == "allowed" && !questionUp(a)) a.shell("am start -n $packageName/.MainActivity", 10000)
             } catch (e: InterruptedException) { return@Thread } catch (ignored: Exception) { }
@@ -516,7 +516,7 @@ class MainActivity : Activity() {
         val tick = object : Runnable {
             override fun run() {
                 if (!connecting) { watching = false; return }
-                askingFor = if (dev.tvremote.core.Adb.askState() != "ask") 0 else if (shown) askingFor + 1 else askingFor   // in front, no question over it
+                askingFor = if (dev.tvremote.core.adb.Adb.askState() != "ask") 0 else if (shown) askingFor + 1 else askingFor   // in front, no question over it
                 if (askingFor == 2) { backed = true; moveTaskToBack(true) }
                 // still no answer: the TV's ADB can stay sure a question is up when none is on screen; off and on clears that
                 if (askingFor >= 20 && !hinted) {

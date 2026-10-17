@@ -25,7 +25,7 @@ import java.util.Locale
  */
 internal object Rules {
     private const val PREFS = "rules"
-    private val PKG = dev.tvremote.core.Pkg.RE
+    private val PKG = dev.tvremote.core.adb.Pkg.RE
     private val HHMM = Regex("([01]?\\d|2[0-3]):([0-5]\\d)")
 
     @Synchronized

@@ -10,8 +10,8 @@ import android.view.Gravity
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.LinearLayout
-import dev.tvremote.core.Remote
-import dev.tvremote.core.Ssdp
+import dev.tvremote.core.remote.Remote
+import dev.tvremote.core.remote.Ssdp
 import java.net.Inet4Address
 import java.net.NetworkInterface
 import java.util.Collections
@@ -228,7 +228,7 @@ internal fun MainActivity.scan() {
             val seen = { ip: String ->
                 if (synchronized(found) { if (ip in found) false else found.add(ip) }) {
                     val adb = open(ip, 5555, 900, lan)
-                    val n = name(ip).ifEmpty { dev.tvremote.core.Ssdp.castName(ip) }
+                    val n = name(ip).ifEmpty { dev.tvremote.core.remote.Ssdp.castName(ip) }
                     ui.post { foundList.addView(foundRow(ip, n, adb)) }   // shown as soon as it answers, not after the whole network
                 }
             }

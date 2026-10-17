@@ -1,0 +1,124 @@
+package dev.tvremote.core.picture
+import android.media.AudioFormat
+import android.media.AudioManager
+import android.media.AudioTrack
+import android.media.MediaCodec
+import android.media.MediaFormat
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import dev.tvremote.core.WireLog
+
+/**
+ * Plays the TV's sound on this device: Opus packets from scrcpy, decoded by Android's own decoder, out through an AudioTrack.
+ * How much is kept queued, and what waits or is dropped, is [SoundQueue]'s.
+ */
+class AudioOut(far: Boolean = false) {
+    /** Kept queued at first: 0.15 s on the home network; through Tailscale ([far]: 4G, a relay) 0.4 s from the start, as
+     *  even at home a busy TV (the FPT Play box) sends its sound up to 0.25 s late at times. */
+    private val base = if (far) RATE * 4 / 10 else BASE
+    private var codec: MediaCodec? = null
+    private var track: AudioTrack? = null
+    private var written = 0L                                          // frames given to the track, to tell how far behind it plays
+    private var q = SoundQueue(base, MAX)
+    private var room = 0                                              // the track's buffer asked for, in frames
+    private val held = ArrayList<ByteArray>()                         // decoded while refilling after running dry
+    private var drops = 0; private var dry = 0; private var told = 0L
+    private val stamp = android.media.AudioTimestamp()
+
+    /** Frames the track has played. Its playback head moves in steps of 100 ms and more on some phones (Xiaomi): read
+     *  alone it made the queue look full, and packets were dropped one after another. The timestamp, carried on by the
+     *  clock, moves smoothly; the larger of the two counts. */
+    private fun played(t: AudioTrack): Long {
+        val head = t.playbackHeadPosition.toLong() and 0xffffffffL
+        if (android.os.Build.VERSION.SDK_INT < 19 || !t.getTimestamp(stamp)) return head
+        val now = stamp.framePosition + (System.nanoTime() - stamp.nanoTime) * RATE / 1_000_000_000L
+        return minOf(written, maxOf(head, now))
+    }
+
+    /** [config] is scrcpy's first packet, the OpusHead; then one Opus packet at a time. */
+    fun feed(config: Boolean, data: ByteArray) {
+        if (config) { start(data); return }
+        val c = codec ?: return
+        val idx = c.dequeueInputBuffer(20000)
+        if (idx < 0) return                                           // the decoder is behind: this packet is skipped
+        val input = c.getInputBuffer(idx) ?: return
+        input.clear()
+        input.put(data)
+        c.queueInputBuffer(idx, 0, data.size, 0, 0)
+        drain(c)
+    }
+
+    private fun drain(c: MediaCodec) {
+        val info = MediaCodec.BufferInfo()
+        while (true) {
+            val out = c.dequeueOutputBuffer(info, 0)
+            if (out < 0) break
+            val t = track
+            val buf = c.getOutputBuffer(out)
+            if (t != null && buf != null && info.size > 0) {
+                val behind = written - played(t)
+                val pcm = ByteArray(info.size)
+                buf.position(info.offset)
+                buf.get(pcm)
+                val was = q.target
+                when (q.next(pcm.size / 4, behind, System.currentTimeMillis())) {
+                    SoundQueue.Do.PLAY -> {
+                        for (b in held) { t.write(b, 0, b.size); written += b.size / 4 }
+                        held.clear()
+                        t.write(pcm, 0, pcm.size); written += pcm.size / 4
+                    }
+                    SoundQueue.Do.HOLD -> held.add(pcm)
+                    SoundQueue.Do.DROP -> drops++
+                }
+                val now = System.currentTimeMillis()
+                if (now - told > 30000) {                             // About → Send the log: how the sound held up
+                    if (drops > 0 || dry > 0) WireLog.all.add("·", "sound: $drops packets dropped, ran dry $dry times, keeping ${q.target * 1000 / RATE} ms")
+                    told = now; drops = 0; dry = 0
+                }
+                if (q.target != was) {
+                    if (q.target > was) dry++
+                    if (android.os.Build.VERSION.SDK_INT >= 24 && q.room != room) room = q.room.also { t.setBufferSizeInFrames(it) }
+                }
+            }
+            c.releaseOutputBuffer(out, false)
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun start(head: ByteArray) {
+        release()
+        val f = MediaFormat.createAudioFormat("audio/opus", RATE, 2)
+        f.setByteBuffer("csd-0", ByteBuffer.wrap(head))
+        val preSkip = if (head.size >= 12) (head[10].toInt() and 0xff) or ((head[11].toInt() and 0xff) shl 8) else 312
+        f.setByteBuffer("csd-1", le64(preSkip * 1_000_000_000L / RATE))   // in nanoseconds, as MediaCodec wants it
+        f.setByteBuffer("csd-2", le64(80_000_000L))                   // the seek pre-roll Opus asks for
+        val c = MediaCodec.createDecoderByType("audio/opus")
+        c.configure(f, null, null, 0)
+        c.start()
+        codec = c
+        val min = AudioTrack.getMinBufferSize(RATE, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT)
+        val size = maxOf(min * 2, if (android.os.Build.VERSION.SDK_INT >= 24) (MAX * 2 + RATE / 10) * 4 else RATE / 5 * 4)   // room to grow into
+        val t = AudioTrack(AudioManager.STREAM_MUSIC, RATE, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, size, AudioTrack.MODE_STREAM)
+        q = SoundQueue(base, MAX); held.clear()
+        room = q.room
+        if (android.os.Build.VERSION.SDK_INT >= 24) t.setBufferSizeInFrames(room)
+        t.play()
+        track = t
+        written = 0
+    }
+
+    fun release() {
+        codec?.let { try { it.stop() } catch (ignored: Exception) { }; try { it.release() } catch (ignored: Exception) { } }
+        codec = null
+        track?.let { try { it.stop() } catch (ignored: Exception) { }; try { it.release() } catch (ignored: Exception) { } }
+        track = null
+    }
+
+    private fun le64(v: Long): ByteBuffer = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(v).apply { flip() }
+
+    private companion object {
+        const val RATE = 48000
+        const val BASE = RATE * 15 / 100                              // 0.15 s
+        const val MAX = RATE                                          // 1 s: later than that the sound is too far behind the picture
+    }
+}

@@ -11,6 +11,11 @@ import java.io.IOException
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.util.Collections
+import dev.tvremote.core.remote.Atv
+import dev.tvremote.core.remote.Remote
+import dev.tvremote.core.remote.Roku
+import dev.tvremote.core.scenes.Scenes
+import dev.tvremote.core.remote.Ssdp
 
 class RokuTest {
     private val hits: MutableList<String> = Collections.synchronizedList(ArrayList())

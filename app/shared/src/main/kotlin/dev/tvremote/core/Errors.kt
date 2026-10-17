@@ -1,5 +1,10 @@
 package dev.tvremote.core
 
+import dev.tvremote.core.web.Cancelled
+import dev.tvremote.core.web.NoRoom
+import dev.tvremote.core.remote.Roku
+import dev.tvremote.core.ontv.SetupNeed
+import dev.tvremote.core.ontv.Tailscale
 /** Turns the errors people actually meet (a TV with the wrong date, no Internet, a TV that stops answering) into words they can act on. */
 object Errors {
     fun say(e: Throwable, vi: Boolean): String {

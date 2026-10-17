@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import dev.tvremote.core.ontv.SetupUpdate
 
 /** The state line the update script writes on the TV, as the pages and TV Setup read it. */
 class SetupUpdateTest {

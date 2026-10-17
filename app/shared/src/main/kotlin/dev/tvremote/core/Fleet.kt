@@ -1,6 +1,9 @@
 package dev.tvremote.core
-
 import java.io.IOException
+import dev.tvremote.core.adb.Adb
+import dev.tvremote.core.adb.Pkg
+import dev.tvremote.core.ontv.Setup
+import dev.tvremote.core.adb.TvShell
 
 /**
  * Several saved TVs at once, as the phone app does it from its list of TVs (the computer: app/desktop Fleet.kt, same reading and

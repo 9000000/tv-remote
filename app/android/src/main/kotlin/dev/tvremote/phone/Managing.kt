@@ -18,10 +18,10 @@ import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.Toast
-import dev.tvremote.core.AdbLink
-import dev.tvremote.core.HttpServer
-import dev.tvremote.core.Manage
-import dev.tvremote.core.RemoteLabels
+import dev.tvremote.core.adb.AdbLink
+import dev.tvremote.core.web.HttpServer
+import dev.tvremote.core.web.Manage
+import dev.tvremote.core.ontv.RemoteLabels
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
@@ -30,7 +30,7 @@ import java.net.URL
 import java.net.URLDecoder
 import java.util.UUID
 import java.util.regex.Pattern
-import dev.tvremote.core.Scenes
+import dev.tvremote.core.scenes.Scenes
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -50,7 +50,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
     private var forHost: String? = null
     private var picking: ValueCallback<Array<Uri>>? = null
     private var pending: String? = null                               // what to do on the page once it has loaded (open's "then")
-    private val webPage by lazy { dev.tvremote.core.WebPage({ a.assets.open(it) }, "phone", a.version() + "-" + (try { a.packageManager.getPackageInfo(a.packageName, 0).lastUpdateTime / 1000 } catch (e: Exception) { 0L })) }
+    private val webPage by lazy { dev.tvremote.core.web.WebPage({ a.assets.open(it) }, "phone", a.version() + "-" + (try { a.packageManager.getPackageInfo(a.packageName, 0).lastUpdateTime / 1000 } catch (e: Exception) { 0L })) }
 
     init {
         view.setBackgroundColor(BG)

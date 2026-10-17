@@ -6,6 +6,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
+import dev.tvremote.core.ontv.Notify
+import dev.tvremote.core.ontv.SetupNeed
 
 class NotifyTest {
     private fun clean(s: String) = Notify.clean(JSONObject(s))

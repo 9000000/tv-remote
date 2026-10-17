@@ -11,6 +11,10 @@ import org.junit.Test
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.CopyOnWriteArrayList
+import dev.tvremote.core.remote.Atv
+import dev.tvremote.core.remote.Remote
+import dev.tvremote.core.remote.Samsung
+import dev.tvremote.core.remote.TvKeys
 
 /** The Samsung adapter against a fake Tizen TV: the remote channel, its token, keys, text, apps, and /api/v2/. */
 class SamsungTest {

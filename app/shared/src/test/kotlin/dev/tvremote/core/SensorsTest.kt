@@ -6,6 +6,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import dev.tvremote.core.remote.Remote
+import dev.tvremote.core.ontv.Sensors
 
 class SensorsTest {
     // the Google TV emulator (Android 14)

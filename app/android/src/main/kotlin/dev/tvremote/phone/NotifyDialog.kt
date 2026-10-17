@@ -5,7 +5,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
 import dev.tvremote.core.Errors
-import dev.tvremote.core.Notify
+import dev.tvremote.core.ontv.Notify
 import org.json.JSONObject
 
 // 🔔 A message on the TV: a card in a corner over whatever is playing, as on the web page (js/notify.js). TV Setup draws it; the

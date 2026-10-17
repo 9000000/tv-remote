@@ -16,17 +16,17 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
-import dev.tvremote.core.AdbLink
 import dev.tvremote.core.Caps
-import dev.tvremote.core.Feeds
-import dev.tvremote.core.HttpServer
-import dev.tvremote.core.Invite
-import dev.tvremote.core.Manage
-import dev.tvremote.core.Scenes
-import dev.tvremote.core.Setup
-import dev.tvremote.core.SetupUpdate
-import dev.tvremote.core.Tv
-import dev.tvremote.core.WebPage
+import dev.tvremote.core.adb.AdbLink
+import dev.tvremote.core.picture.Feeds
+import dev.tvremote.core.web.HttpServer
+import dev.tvremote.core.web.Invite
+import dev.tvremote.core.web.Manage
+import dev.tvremote.core.scenes.Scenes
+import dev.tvremote.core.ontv.Setup
+import dev.tvremote.core.ontv.SetupUpdate
+import dev.tvremote.core.picture.Tv
+import dev.tvremote.core.web.WebPage
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
@@ -168,7 +168,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
 
     override fun onCreate() {
         super.onCreate()
-        dev.tvremote.core.Adb.holdFirstAsk(10000)                       // a phone turning ADB on asks first, then allows us too (AdbPrompt.helpSetup)
+        dev.tvremote.core.adb.Adb.holdFirstAsk(10000)                       // a phone turning ADB on asks first, then allows us too (AdbPrompt.helpSetup)
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         running = this
         dev.tvremote.core.WireLog.app = "TV Setup " + (try { packageManager.getPackageInfo(packageName, 0).versionName } catch (e: Exception) { "" }) +

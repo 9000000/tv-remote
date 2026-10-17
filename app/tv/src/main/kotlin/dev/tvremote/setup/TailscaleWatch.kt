@@ -12,8 +12,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import dev.tvremote.core.Adb
-import dev.tvremote.core.Tailscale
+import dev.tvremote.core.adb.Adb
+import dev.tvremote.core.ontv.Tailscale
 
 /**
  * Switches Tailscale back on after the Play Store updates it. An update kills the app and nothing starts it again (always-on

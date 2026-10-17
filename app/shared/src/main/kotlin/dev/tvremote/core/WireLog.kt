@@ -1,9 +1,9 @@
 package dev.tvremote.core
-
 import java.text.SimpleDateFormat
 import java.util.ArrayDeque
 import java.util.Date
 import java.util.Locale
+import dev.tvremote.core.remote.Remote
 
 /**
  * What happened between the app and the TVs, for the person to send when something does not work: every message to and from

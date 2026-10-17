@@ -1,6 +1,6 @@
 package dev.tvremote.desktop
 
-import dev.tvremote.core.HttpServer
+import dev.tvremote.core.web.HttpServer
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After

@@ -6,7 +6,7 @@ import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import android.graphics.drawable.Icon
 import android.os.Build
-import dev.tvremote.core.Scenes
+import dev.tvremote.core.scenes.Scenes
 import org.json.JSONArray
 import org.json.JSONObject
 

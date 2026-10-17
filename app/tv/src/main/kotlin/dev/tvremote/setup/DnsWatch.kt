@@ -9,8 +9,8 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
-import dev.tvremote.core.Adb
-import dev.tvremote.core.TvShell
+import dev.tvremote.core.adb.Adb
+import dev.tvremote.core.adb.TvShell
 
 /**
  * A DNS filter (the Setup tab's 🛡️) that stops working leaves every app on the TV without names, while the TV still looks

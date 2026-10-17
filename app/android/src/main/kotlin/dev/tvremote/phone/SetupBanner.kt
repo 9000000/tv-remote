@@ -4,9 +4,9 @@ import android.app.AlertDialog
 import android.graphics.Color
 import android.view.View
 import dev.tvremote.core.Errors
-import dev.tvremote.core.SetupNeed
-import dev.tvremote.core.SetupUpdate
-import dev.tvremote.core.Tv
+import dev.tvremote.core.ontv.SetupNeed
+import dev.tvremote.core.ontv.SetupUpdate
+import dev.tvremote.core.picture.Tv
 import dev.tvremote.update.Release
 
 // A newer TV Setup on the connected TV, offered on the remote screen itself: most people manage the TV from here and never

@@ -3,6 +3,7 @@ package dev.tvremote.core
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Test
+import dev.tvremote.core.adb.AdbPrompt
 
 /**
  * AdbPrompt.allow against a pretend TV that queues the "Allow USB debugging?" questions of several keys, as real TVs do: Allow

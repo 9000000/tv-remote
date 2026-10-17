@@ -7,7 +7,7 @@ import android.os.Build
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
-import dev.tvremote.core.Atv
+import dev.tvremote.core.remote.Atv
 
 // Helping somebody turn ADB on with the keys alone: installing TV Setup through Downloader, finding Settings, other home screens.
 
@@ -114,7 +114,7 @@ internal fun MainActivity.wirelessPair() {
     body.addView(addr, gap(8)); body.addView(code, gap(8))
     Thread {                                                               // prefilled when the TV announces itself on the network
         try {
-            val (pairing, _) = dev.tvremote.core.AdbTls.discover()
+            val (pairing, _) = dev.tvremote.core.adb.AdbTls.discover()
             val p = pairing.firstOrNull { it.ip == ip } ?: pairing.firstOrNull()
             if (p != null) ui.post { if (addr.text.isEmpty()) addr.setText("${p.ip}:${p.port}") }
         } catch (ignored: Exception) { }
@@ -122,15 +122,15 @@ internal fun MainActivity.wirelessPair() {
     AlertDialog.Builder(this).setTitle(t("Ghép bằng Gỡ lỗi không dây", "Pair with Wireless debugging")).setView(inDialog(body))
         .setPositiveButton(t("Ghép", "Pair")) { _, _ ->
             val m = Regex("^(?:(.+):)?(\\d{2,5})$").find(addr.text.toString().trim())
-            val c = dev.tvremote.core.AdbTls.cleanCode(code.text.toString())
+            val c = dev.tvremote.core.adb.AdbTls.cleanCode(code.text.toString())
             if (m == null || c == null) { Toast.makeText(this, t("Nhập IP:cổng và mã 6 số hiện trên TV.", "Type the IP:port and the 6-digit code the TV shows."), Toast.LENGTH_LONG).show(); return@setPositiveButton }
             val target = m.groupValues[1].ifEmpty { ip ?: "" }
             Toast.makeText(this, t("Đang ghép nối...", "Pairing..."), Toast.LENGTH_SHORT).show()
             Thread {
                 try {
-                    dev.tvremote.core.AdbTls.pair(dev.tvremote.core.Adb(filesDir), target, m.groupValues[2].toInt(), c)
+                    dev.tvremote.core.adb.AdbTls.pair(dev.tvremote.core.adb.Adb(filesDir), target, m.groupValues[2].toInt(), c)
                     var port = 0
-                    for (i in 0..2) if (port <= 0) port = dev.tvremote.core.AdbTls.discoverConnect(target)
+                    for (i in 0..2) if (port <= 0) port = dev.tvremote.core.adb.AdbTls.discoverConnect(target)
                     if (port > 0) ui.post { pairedAt(target, port) } else ui.post { askConnectPort(target) }
                 } catch (e: Exception) {
                     ui.post { Toast.makeText(this, dev.tvremote.core.Errors.say(e, VI), Toast.LENGTH_LONG).show() }
@@ -151,7 +151,7 @@ private fun MainActivity.askConnectPort(target: String) {
 }
 
 private fun MainActivity.pairedAt(target: String, port: Int) {
-    dev.tvremote.core.AdbTls.save(filesDir, target, port)
+    dev.tvremote.core.adb.AdbTls.save(filesDir, target, port)
     adbFailed.remove(target)
     val e = entry
     disconnect(null)
@@ -253,7 +253,7 @@ internal fun MainActivity.installSetup() {
  * presses the main button. That is "Open" when the app is installed; when it is not, the same press starts installing it,
  * and this returns false.
  */
-internal fun MainActivity.openOnTv(a: dev.tvremote.core.Remote, pkg: String, stop: () -> Boolean): Boolean {
+internal fun MainActivity.openOnTv(a: dev.tvremote.core.remote.Remote, pkg: String, stop: () -> Boolean): Boolean {
     val front = { want: String, seconds: Int ->
         var ok = false
         for (i in 0 until seconds * 5) { if (stop() || basic !== a) break; if (a.app == want) { ok = true; break }; Thread.sleep(200) }
@@ -274,7 +274,7 @@ internal fun MainActivity.openOnTv(a: dev.tvremote.core.Remote, pkg: String, sto
  * hold Up until the pointer leaves the page and the toolbar takes the focus; go to its right end and two back, which is
  * the address field wherever the focus first landed; OK opens the field with the TV's keyboard; type; Enter loads.
  */
-internal fun MainActivity.downloaderGo(a: dev.tvremote.core.Remote, link: String) {
+internal fun MainActivity.downloaderGo(a: dev.tvremote.core.remote.Remote, link: String) {
     for (i in 0 until 40) a.pulse(19, 70)                          // many short holds: over this protocol a key cannot be kept down, each one nudges the pointer
     for (i in 0 until 4) a.pulse(22, 110)
     for (i in 0 until 2) a.pulse(21, 110)

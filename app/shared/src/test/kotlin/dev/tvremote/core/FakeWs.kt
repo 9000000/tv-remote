@@ -9,6 +9,7 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.security.MessageDigest
 import java.util.concurrent.CopyOnWriteArrayList
+import dev.tvremote.core.remote.WebSocket
 
 /**
  * A stand-in for a TV's WebSocket server (LgTest, SamsungTest): plain sockets, text frames, and plain HTTP GETs on the same

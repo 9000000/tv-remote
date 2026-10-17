@@ -7,6 +7,8 @@ import java.net.URL
 import java.security.KeyPairGenerator
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.HttpsURLConnection
+import dev.tvremote.core.web.HttpServer
+import dev.tvremote.core.ontv.Setup
 
 class SelfSignedTest {
     @Test fun servesOverTlsAndPinningWorks() {

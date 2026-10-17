@@ -4,7 +4,7 @@ import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import dev.tvremote.core.Adb
+import dev.tvremote.core.adb.Adb
 
 /**
  * Gives a TV Setup pass to a phone or computer that already has ADB on this TV (it could do everything anyway). With it,

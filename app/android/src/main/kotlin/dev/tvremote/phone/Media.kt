@@ -8,9 +8,9 @@ import android.provider.MediaStore
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.Toast
-import dev.tvremote.core.Adb
-import dev.tvremote.core.AdbLink
-import dev.tvremote.core.Manage
+import dev.tvremote.core.adb.Adb
+import dev.tvremote.core.adb.AdbLink
+import dev.tvremote.core.web.Manage
 
 // Things sent to the TV: links, shared links and files from other apps, photos / videos / songs from this phone, the Play Store.
 
@@ -95,7 +95,7 @@ internal fun MainActivity.castFile(uri: Uri) {
     }
     if (!name.contains('.')) android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(contentResolver.getType(uri))?.let { name += ".$it" }
     // a box with the progress and a Stop: a big video sent by mistake can be called back (the part already on the TV is deleted)
-    val cancel = dev.tvremote.core.Cancel()
+    val cancel = dev.tvremote.core.web.Cancel()
     val job = org.json.JSONObject()
     val sending = t("Đang gửi lên TV: ", "Sending to the TV: ") + name
     val box = AlertDialog.Builder(this).setMessage("$sending...").setCancelable(false)
@@ -162,7 +162,7 @@ internal fun MainActivity.askText(title: String, hint: String, ok: String, then:
 internal fun MainActivity.quickOpen() {
     if (!live()) return
     val b = basic
-    if (b == null || kind() == dev.tvremote.core.Remote.Kind.ANDROID) { menu(t("Mở trên TV", "Open on the TV"), -1, remoteMenu("open")); return }
+    if (b == null || kind() == dev.tvremote.core.remote.Remote.Kind.ANDROID) { menu(t("Mở trên TV", "Open on the TV"), -1, remoteMenu("open")); return }
     Thread {                                                          // LG / Samsung: their apps, from their remote link, first
         val apps = try { b.apps().sortedBy { it.label.lowercase() } } catch (e: Exception) { emptyList() }
         ui.post {

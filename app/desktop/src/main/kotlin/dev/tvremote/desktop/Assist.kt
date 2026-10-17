@@ -1,7 +1,7 @@
 package dev.tvremote.desktop
 
-import dev.tvremote.core.Atv
-import dev.tvremote.core.HttpServer
+import dev.tvremote.core.remote.Atv
+import dev.tvremote.core.web.HttpServer
 import org.json.JSONObject
 
 /**
@@ -151,6 +151,6 @@ class Assist(private val cur: () -> Session) {
         const val DOWNLOADER = "com.esaba.downloader"
         const val SETUP_APK = "https://github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"
         const val SETUP_CODE = "downloader://2397346"                 // Downloader's own link for the AFTVnews code of SETUP_APK: opens Downloader alone, no "Open with"
-        val PKG = dev.tvremote.core.Pkg.RE
+        val PKG = dev.tvremote.core.adb.Pkg.RE
     }
 }

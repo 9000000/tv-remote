@@ -4,6 +4,7 @@ import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.File
+import dev.tvremote.core.web.Qr
 
 /** Qr.kt draws the same codes as the page's js/qr.js: the ones in tests/qr_cases.json (checked on the JS side by qr.test.js). */
 class QrTest {

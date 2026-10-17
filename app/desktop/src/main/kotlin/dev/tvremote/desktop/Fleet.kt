@@ -1,9 +1,9 @@
 package dev.tvremote.desktop
 
-import dev.tvremote.core.AdbLink
-import dev.tvremote.core.Cancel
+import dev.tvremote.core.adb.AdbLink
+import dev.tvremote.core.web.Cancel
 import dev.tvremote.core.Fleet
-import dev.tvremote.core.Manage
+import dev.tvremote.core.web.Manage
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File

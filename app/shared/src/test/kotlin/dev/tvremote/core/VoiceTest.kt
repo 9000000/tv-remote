@@ -1,9 +1,10 @@
 package dev.tvremote.core
 
-import dev.tvremote.core.Voice.Command
+import dev.tvremote.core.scenes.Voice.Command
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import dev.tvremote.core.scenes.Voice
 
 /** The same cases as app/shared/tests/voice.test.js: the page and the phone app must understand the same sentences. */
 class VoiceTest {

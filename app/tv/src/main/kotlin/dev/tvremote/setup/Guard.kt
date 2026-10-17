@@ -9,8 +9,8 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.widget.Toast
-import dev.tvremote.core.Adb
-import dev.tvremote.core.Adb.Companion.q
+import dev.tvremote.core.adb.Adb
+import dev.tvremote.core.adb.Adb.Companion.q
 import java.util.Locale
 
 /**
@@ -36,7 +36,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         /** (total, available) memory in MB, from /proc/meminfo, which any app may read. */
         fun memory(): Pair<Long, Long> {
             val m = try { java.io.File("/proc/meminfo").readText() } catch (e: Exception) { "" }
-            val kb = { k: String -> dev.tvremote.core.Meminfo.kb(m, k) ?: 0L }
+            val kb = { k: String -> dev.tvremote.core.ontv.Meminfo.kb(m, k) ?: 0L }
             return kb("MemTotal") / 1024 to kb("MemAvailable") / 1024
         }
     }

@@ -1,6 +1,6 @@
 package dev.tvremote.desktop
 
-import dev.tvremote.core.HttpServer
+import dev.tvremote.core.web.HttpServer
 import java.io.File
 import java.io.PrintStream
 import java.net.HttpURLConnection

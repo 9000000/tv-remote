@@ -26,11 +26,11 @@ import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
-import dev.tvremote.core.Adb
-import dev.tvremote.core.Atv
-import dev.tvremote.core.Remote
-import dev.tvremote.core.Tv
-import dev.tvremote.core.TvShell
+import dev.tvremote.core.adb.Adb
+import dev.tvremote.core.remote.Atv
+import dev.tvremote.core.remote.Remote
+import dev.tvremote.core.picture.Tv
+import dev.tvremote.core.adb.TvShell
 import dev.tvremote.update.Release
 import java.util.Locale
 
@@ -116,7 +116,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal var drawBtn: IconButton? = null                          // ✏️ among the keys: lit while drawing
     internal lateinit var drawBar: LinearLayout
     internal lateinit var drawView: DrawView
-    internal val drawer = dev.tvremote.core.Draw { tv?.link() ?: throw java.io.IOException("no TV") }
+    internal val drawer = dev.tvremote.core.ontv.Draw { tv?.link() ?: throw java.io.IOException("no TV") }
     internal val drawIo = java.util.concurrent.Executors.newSingleThreadExecutor()
     internal val drawQ = ArrayList<org.json.JSONObject>()              // what waits for the request on its way (drawQ's lock)
     internal var drawBusy = false
@@ -417,7 +417,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         helper.visibility = View.VISIBLE
         helper.text = t("TV Setup trên TV đang tự cho phép máy này...", "TV Setup on the TV is allowing this phone...")
         Thread {
-            val r = dev.tvremote.core.AdbPrompt.ask(ip, token, fp, 30)
+            val r = dev.tvremote.core.adb.AdbPrompt.ask(ip, token, fp, 30)
             if (r == "forgotten") prefs.edit().remove("tvs:$key").apply()   // "Unpair all" was pressed on the TV
             ui.post {
                 if (allowBox == null) return@post
@@ -445,7 +445,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         line(t("Nhìn lên TV", "Look at the TV"), 30f, TEXT, true, 8)
         line(t("TV đang hỏi “Cho phép gỡ lỗi USB?”", "The TV is asking “Allow USB debugging?”"), 18f, MUTED, false, 10)
         line(t("1. Tích “Luôn cho phép”\n2. Chọn OK (Cho phép)", "1. Tick “Always allow”\n2. Choose OK (Allow)"), 20f, TEXT, true, 26)
-        val fp = try { dev.tvremote.core.Adb(filesDir).fingerprint() } catch (e: Exception) { "" }
+        val fp = try { dev.tvremote.core.adb.Adb(filesDir).fingerprint() } catch (e: Exception) { "" }
         if (fp.isNotEmpty()) line(t("Mã trên TV phải trùng mã của máy này:\n", "The code on the TV must match this phone’s:\n") + fp, 13f, MUTED, false, 18)
         val helper = TextView(this).apply { textSize = 15f; setTextColor(ACCENT_TEXT); gravity = Gravity.CENTER; visibility = View.GONE }
         col.addView(helper, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })

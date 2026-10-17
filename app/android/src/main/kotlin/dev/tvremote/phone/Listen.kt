@@ -3,8 +3,8 @@ package dev.tvremote.phone
 import android.content.Intent
 import android.os.Build
 import android.widget.Toast
-import dev.tvremote.core.Remote
-import dev.tvremote.core.Tv
+import dev.tvremote.core.remote.Remote
+import dev.tvremote.core.picture.Tv
 
 // 🎧 The TV's sound on the phone, two ways, picked each time: only here (the TV's speakers quiet: headphones on, the house
 // asleep; they come back the moment listening stops), or both (the TV keeps playing: scrcpy's playback capture, Android 13+;

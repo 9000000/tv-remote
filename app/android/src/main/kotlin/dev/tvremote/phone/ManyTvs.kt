@@ -8,11 +8,11 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
-import dev.tvremote.core.AdbLink
+import dev.tvremote.core.adb.AdbLink
 import dev.tvremote.core.Errors
 import dev.tvremote.core.Fleet
-import dev.tvremote.core.Manage
-import dev.tvremote.core.RemoteLabels
+import dev.tvremote.core.web.Manage
+import dev.tvremote.core.ontv.RemoteLabels
 import org.json.JSONObject
 import java.io.File
 import java.io.FileInputStream
@@ -28,7 +28,7 @@ private const val PARALLEL = 3                                        // an APK 
 private class Part(val ip: String, val line: TextView) {
     @Volatile var step = ""
     @Volatile var state = 0                                           // 0 working, 1 done, 2 failed, 3 stopped by the person
-    val cancel = dev.tvremote.core.Cancel()                           // the Stop button of the run reaches every TV through this
+    val cancel = dev.tvremote.core.web.Cancel()                           // the Stop button of the run reaches every TV through this
     @Volatile var link: AdbLink? = null
     val job = JSONObject()                                            // Manage.install puts the copy's progress here
 }

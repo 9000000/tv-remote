@@ -137,7 +137,7 @@ internal fun MainActivity.buildAbout(): View {
     box.addView(name, gap(10))
     // The app's own download link as a code: someone next to you scans it and has the app
     val appLink = "https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk"
-    dev.tvremote.core.Qr.bitmap(appLink, 6)?.let { bmp ->
+    dev.tvremote.core.web.Qr.bitmap(appLink, 6)?.let { bmp ->
         val qr = ImageView(this)
         qr.setImageBitmap(bmp)
         qr.contentDescription = t("Mã QR tải app", "QR code to download the app")
@@ -159,7 +159,7 @@ internal fun MainActivity.buildAbout(): View {
     box.addView(row("@bug|" + t("Báo lỗi", "Report a problem")) { web("https://github.com/" + Release.REPO + "/issues") })
     // what the TVs said and the errors shown (WireLog): what a real TV did is what tells a bug apart
     box.addView(row("@clipboard|" + t("Gửi nhật ký", "Send the log")) {
-        val log = dev.tvremote.core.WireLog.all.report(basic?.takeIf { it.kind != dev.tvremote.core.Remote.Kind.ANDROID })
+        val log = dev.tvremote.core.WireLog.all.report(basic?.takeIf { it.kind != dev.tvremote.core.remote.Remote.Kind.ANDROID })
         startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain")
             .putExtra(Intent.EXTRA_SUBJECT, "TV Remote: " + t("nhật ký", "log")).putExtra(Intent.EXTRA_TEXT, log), null))
     })

@@ -3,8 +3,8 @@ package dev.tvremote.setup
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import dev.tvremote.core.Adb
-import dev.tvremote.core.SetupUpdate
+import dev.tvremote.core.adb.Adb
+import dev.tvremote.core.ontv.SetupUpdate
 import dev.tvremote.update.Release
 import java.io.File
 

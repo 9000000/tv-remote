@@ -3,6 +3,7 @@ package dev.tvremote.core
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import dev.tvremote.core.web.Invite
 
 class InviteTest {
     private val code = "0123456789abcdef0123456789abcdef"

@@ -6,6 +6,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import dev.tvremote.core.web.HttpServer
+import dev.tvremote.core.scenes.Scenes
+import dev.tvremote.core.ontv.SetupNeed
 
 class ScenesTest {
     /** Records what the steps asked of the TV. */
@@ -107,7 +110,7 @@ class ScenesTest {
     // ---- runRequest: the one /api/scene/run of the phone, TV Setup and the computer
     private val saved = JSONObject("""{"id":"s1","name":"Night","steps":[{"do":"wake"},{"do":"key","key":"nope"},{"do":"volume","level":9}]}""")
     private val find = { id: String -> if (id == "s1") saved else null }
-    private fun body(r: dev.tvremote.core.HttpServer.Response) = JSONObject(String(r.body, Charsets.UTF_8))
+    private fun body(r: dev.tvremote.core.web.HttpServer.Response) = JSONObject(String(r.body, Charsets.UTF_8))
 
     @Test fun runRequestRunsASavedSceneByIdWithItsStepsCleaned() {
         val tv = Fake()

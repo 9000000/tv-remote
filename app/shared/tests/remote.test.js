@@ -29,7 +29,7 @@ test('remote.json: unique ids, a key or an action or a list on each entry, both 
   const ids = entries.map((e) => e.id);
   assert.equal(new Set(ids).size, ids.length, 'ids are unique');
   assert.ok(entries.length > 30, 'found the entries');
-  const caps = new Set([...read('shared/src/main/kotlin/dev/tvremote/core/Remote.kt').matchAll(/setOf\(([^)]*)\)/g)].flatMap((m) => [...m[1].matchAll(/"(\w+)"/g)].map((x) => x[1])));
+  const caps = new Set([...read('shared/src/main/kotlin/dev/tvremote/core/remote/Remote.kt').matchAll(/setOf\(([^)]*)\)/g)].flatMap((m) => [...m[1].matchAll(/"(\w+)"/g)].map((x) => x[1])));
   for (const e of entries) {
     assert.equal([e.key, e.do, e.expand].filter(Boolean).length, 1, e.id + ': one of key / do / expand');
     for (const n of e.needs || []) assert.ok(caps.has(n), e.id + ': needs ' + n + ', which no kind of TV has (Remote.Kind.caps)');
@@ -52,7 +52,7 @@ test('remote.json: every icon is in the shared set, on the page and in the phone
 });
 
 test('remote.json: every key is a name the servers know', () => {
-  const known = new Set([...read('shared/src/main/kotlin/dev/tvremote/core/Scenes.kt').matchAll(/"([A-Z_]+)" to \d+/g)].map((m) => m[1]));
+  const known = new Set([...read('shared/src/main/kotlin/dev/tvremote/core/scenes/Scenes.kt').matchAll(/"([A-Z_]+)" to \d+/g)].map((m) => m[1]));
   for (const e of entries.filter((x) => x.key)) assert.ok(known.has(e.key), e.id + ': ' + e.key + ' is not in Scenes.KEYS');
 });
 

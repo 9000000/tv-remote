@@ -2,10 +2,10 @@ package dev.tvremote.phone
 
 import android.content.Intent
 import android.widget.LinearLayout
-import dev.tvremote.core.Remote
-import dev.tvremote.core.RemoteSpec
-import dev.tvremote.core.Scenes
-import dev.tvremote.core.Tv
+import dev.tvremote.core.remote.Remote
+import dev.tvremote.core.scenes.RemoteSpec
+import dev.tvremote.core.scenes.Scenes
+import dev.tvremote.core.picture.Tv
 
 // The remote's keys and menu entries are in app/shared/web/remote.json, which the web remote draws from too (js/remote_spec.js):
 // this file draws them as native views and says what each action name in the file does on the phone. Add, reorder or rename an

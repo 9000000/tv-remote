@@ -1,5 +1,6 @@
 package dev.tvremote.core
 
+import dev.tvremote.core.picture.Tv
 /**
  * One TV saved twice: picked once on the home Wi-Fi and once over Tailscale, it would be two rows, and an action on
  * several TVs would run twice on it. Both apps fold such rows into one with this rule.

@@ -1,7 +1,7 @@
 package dev.tvremote.desktop
 
-import dev.tvremote.core.Remote
-import dev.tvremote.core.Ssdp
+import dev.tvremote.core.remote.Remote
+import dev.tvremote.core.remote.Ssdp
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File

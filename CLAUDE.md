@@ -30,13 +30,22 @@ Only the Phone app and the Computer app have them (the TV web page needs TV Setu
 
 ```
 app/shared/web/          THE web UI (index.html, style.css, js/*.js): the Computer app, the TV web page, the Phone app's Manage screen
-app/shared/src/.../core/ Kotlin shared by both apps: Adb, Tv (scrcpy session, video/audio/control), Atv (keys without ADB),
-                         Manage (the /api core for the web UI), Setup (Optimize TV), Tailscale, AdbPrompt ("Allow USB
-                         debugging?"), Errors, RemoteLabels (app names, pictures and Caps from the TV, through Meta and Caps:
-                         Java in src/main/java, dexed into assets/tvr-helper.jar by :shared:tvHelper, kept in git), Scenes (scenes + key names), RulesClient (talks to TV Setup's rules),
-                         Voice (spoken commands), AudioOut (Opus playback, PCM downmix),
-                         Spake2 + AdbTls + Mdns (pairing and connecting through Android 11+ Wireless debugging: SPAKE2 with BoringSSL's own M/N, TLS 1.3 through `app/shared/conscrypt` ConscryptBackend, found by mDNS; Phone and Computer apps only, `Manage.canPair`), Fleet (several saved TVs at once), WireLog (what the TVs said and the errors shown, keys blanked: About → Send the log, `/api/wirelog`), SameTv (one TV saved under two addresses), Draw (strokes to TV Setup's layer over the TV's screen),
-                         NowPlaying (the now playing bar, through Playing, a third tvr-helper.jar class reading the TV's media sessions)
+app/shared/src/.../core/ Kotlin shared by the apps, one package per kind of work (Java helpers Meta / Caps / Playing / Screen stay
+                         in `core`: TV Setup and app_process call them by name):
+  remote/                one TV's own remote link, by brand, behind `Remote`: Atv (Android TV, keys without ADB), Lg, Samsung,
+                         Roku, Ssdp (finding them), WebSocket, Inputs (HDMI and other sources)
+  adb/                   Adb, AdbLink, AdbPrompt ("Allow USB debugging?"), Spake2 + AdbTls + Mdns (pairing and connecting through
+                         Android 11+ Wireless debugging: SPAKE2 with BoringSSL's own M/N, TLS 1.3 through `app/shared/conscrypt`
+                         ConscryptBackend, found by mDNS; Phone and Computer apps only, `Manage.canPair`), TvShell, Pkg
+  picture/               Tv (scrcpy session, video/audio/control), Feeds, AudioOut (Opus playback), Downmix, SoundQueue
+  web/                   Manage (the /api core for the web UI), HttpServer, WebPage, Invite, Qr, Transfer (Stop, no room)
+  ontv/                  things done on the TV over ADB: Setup (Optimize TV), SetupNeed / SetupUpdate, RulesClient (TV Setup's
+                         rules), Draw (strokes to TV Setup's layer), Notify, NowPlaying (through Playing), RemoteLabels (app
+                         names, pictures and Caps, through Meta and Caps: Java in src/main/java, dexed into
+                         assets/tvr-helper.jar by :shared:tvHelper, kept in git), ScreenOff, Sensors, Meminfo, Tailscale
+  scenes/                Scenes (scenes + key names), Voice (spoken commands), RemoteSpec (remote.json)
+  (core itself)          Errors, WireLog (what the TVs said and the errors shown, keys blanked: About → Send the log,
+                         `/api/wirelog`), Fleet (several saved TVs at once), SameTv (one TV saved under two addresses), B64, SelfSigned
 app/android/.../phone/   phone app, one file per part, as extension functions on MainActivity: MainActivity (state, lifecycle),
                          Ui, Net, PickerScreen, RemoteScreen, Typing, InfoScreens, KeysOnly, AdbHelp, Media, Managing (the
                          web UI in a WebView), Updater, Listen + ListenService (🎧), Automation (timer, scenes, voice),

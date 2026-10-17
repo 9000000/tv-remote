@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import dev.tvremote.core.picture.Tv
 
 class SameTvTest {
     private val home = SameTv.Tv("100.64.0.7", lan = "192.168.1.5", mac = "AA:BB:CC:00:00:01")

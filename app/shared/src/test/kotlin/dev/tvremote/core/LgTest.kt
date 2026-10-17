@@ -11,6 +11,11 @@ import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import java.util.concurrent.CopyOnWriteArrayList
+import dev.tvremote.core.remote.Atv
+import dev.tvremote.core.remote.Lg
+import dev.tvremote.core.remote.Remote
+import dev.tvremote.core.remote.Samsung
+import dev.tvremote.core.scenes.Scenes
 
 /** The LG adapter against a fake webOS TV: SSAP over a WebSocket, the prompt, the client key, the Magic Remote socket. */
 class LgTest {

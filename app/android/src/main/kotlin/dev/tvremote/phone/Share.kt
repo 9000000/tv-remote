@@ -4,9 +4,9 @@ import android.app.AlertDialog
 import android.view.Gravity
 import android.widget.ImageView
 import android.widget.LinearLayout
-import dev.tvremote.core.Invite
-import dev.tvremote.core.Qr
-import dev.tvremote.core.SetupNeed
+import dev.tvremote.core.web.Invite
+import dev.tvremote.core.web.Qr
+import dev.tvremote.core.ontv.SetupNeed
 import org.json.JSONObject
 
 // ⋯ More keys → Chia sẻ, as shareDialog() on the page, in two tabs: the TV, a QR that opens its web page already paired (a

@@ -1,11 +1,11 @@
 package dev.tvremote.phone
 
 import android.content.Context
-import dev.tvremote.core.AdbLink
-import dev.tvremote.core.Atv
-import dev.tvremote.core.Remote
-import dev.tvremote.core.RemoteSteps
-import dev.tvremote.core.Scenes
+import dev.tvremote.core.adb.AdbLink
+import dev.tvremote.core.remote.Atv
+import dev.tvremote.core.remote.Remote
+import dev.tvremote.core.remote.RemoteSteps
+import dev.tvremote.core.scenes.Scenes
 import org.json.JSONArray
 
 /**

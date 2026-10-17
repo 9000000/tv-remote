@@ -21,7 +21,7 @@ import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import dev.tvremote.core.Notify
+import dev.tvremote.core.ontv.Notify
 import org.json.JSONObject
 
 /**

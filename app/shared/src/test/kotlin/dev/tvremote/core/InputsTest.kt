@@ -7,6 +7,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import dev.tvremote.core.remote.Inputs
 
 /**
  * The dumps below are written from the shape of AOSP's TvInputManagerService / TvInputHardwareManager / HdmiControlService dumps

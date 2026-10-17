@@ -42,7 +42,7 @@ test('the seconds are whole and between 1 and 60, else 5', () => {
 
 test('the same corners as Notify.kt, and chips inside its limits', () => {
   const { NOTIFY_CORNERS, NOTIFY_SECONDS } = page({});
-  const kt = read('shared/src/main/kotlin/dev/tvremote/core/Notify.kt');
+  const kt = read('shared/src/main/kotlin/dev/tvremote/core/ontv/Notify.kt');
   const corners = [...kt.match(/val CORNERS = listOf\(([^)]*)\)/)[1].matchAll(/"([\w-]+)"/g)].map((m) => m[1]);
   assert.deepEqual([...NOTIFY_CORNERS].map((c) => c[0]), corners);
   const [lo, hi] = ['MIN_SECONDS', 'MAX_SECONDS'].map((n) => +kt.match(new RegExp('const val ' + n + ' = (\\d+)'))[1]);
@@ -72,6 +72,6 @@ test('it is in More keys, a scene step, and a feature that needs a newer TV Setu
   assert.ok(html.includes('<option value="notify">'));
   assert.ok(auto.includes("case 'notify'") && auto.includes("k === 'notify'"));
   assert.ok(/SETUP_NEEDS = \{[^}]*notify:/.test(core));
-  assert.ok(read('shared/src/main/kotlin/dev/tvremote/core/SetupNeed.kt').includes('"notify" to "0.4.2"'));
+  assert.ok(read('shared/src/main/kotlin/dev/tvremote/core/ontv/SetupNeed.kt').includes('"notify" to "0.4.2"'));
   assert.ok(read('tv/src/main/kotlin/dev/tvremote/setup/Scope.kt').includes('"/api/notify"'));
 });

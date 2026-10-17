@@ -1,6 +1,6 @@
 package dev.tvremote.phone
 
-import dev.tvremote.core.Atv
+import dev.tvremote.core.remote.Atv
 
 // The text box: type then send, or live (the TV follows every letter); with or without ADB.
 

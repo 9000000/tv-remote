@@ -1,6 +1,6 @@
 package dev.tvremote.phone
 
-import dev.tvremote.core.RemoteSpec
+import dev.tvremote.core.scenes.RemoteSpec
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File

@@ -2,6 +2,7 @@ package dev.tvremote.core
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import dev.tvremote.core.web.Manage
 
 private typealias Proc = Manage.Companion.Proc
 

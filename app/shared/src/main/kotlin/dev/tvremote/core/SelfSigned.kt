@@ -1,5 +1,4 @@
 package dev.tvremote.core
-
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.math.BigInteger

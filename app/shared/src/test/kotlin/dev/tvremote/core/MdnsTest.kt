@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import dev.tvremote.core.adb.Mdns
 
 class MdnsTest {
     private fun name(o: ByteArrayOutputStream, n: String) { for (l in n.split('.')) { o.write(l.length); o.write(l.toByteArray()) }; o.write(0) }

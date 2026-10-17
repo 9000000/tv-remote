@@ -1,12 +1,12 @@
 package dev.tvremote.desktop
 
-import dev.tvremote.core.AdbLink
-import dev.tvremote.core.Atv
-import dev.tvremote.core.Feeds
-import dev.tvremote.core.Manage
-import dev.tvremote.core.Remote
-import dev.tvremote.core.RemoteLabels
-import dev.tvremote.core.Tv
+import dev.tvremote.core.adb.AdbLink
+import dev.tvremote.core.remote.Atv
+import dev.tvremote.core.picture.Feeds
+import dev.tvremote.core.web.Manage
+import dev.tvremote.core.remote.Remote
+import dev.tvremote.core.ontv.RemoteLabels
+import dev.tvremote.core.picture.Tv
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException

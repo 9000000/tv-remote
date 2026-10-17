@@ -2,13 +2,13 @@ package dev.tvremote.phone
 
 import android.app.AlertDialog
 import android.widget.Toast
-import dev.tvremote.core.AdbLink
-import dev.tvremote.core.Remote
-import dev.tvremote.core.RemoteLabels
-import dev.tvremote.core.RulesClient
-import dev.tvremote.core.SetupNeed
-import dev.tvremote.core.Scenes
-import dev.tvremote.core.Voice
+import dev.tvremote.core.adb.AdbLink
+import dev.tvremote.core.remote.Remote
+import dev.tvremote.core.ontv.RemoteLabels
+import dev.tvremote.core.ontv.RulesClient
+import dev.tvremote.core.ontv.SetupNeed
+import dev.tvremote.core.scenes.Scenes
+import dev.tvremote.core.scenes.Voice
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -107,7 +107,7 @@ internal fun MainActivity.runScene(sc: JSONObject) {
     val steps = sc.optJSONArray("steps") ?: JSONArray()
     val tv = tv
     val b = basic
-    val target = if (tv != null && tv.ready()) Scenes.Shell({ tv.shell(it) }) else if (b is dev.tvremote.core.Atv) Headless.keysOnly(b) else if (b != null) dev.tvremote.core.RemoteSteps(b) { } else return
+    val target = if (tv != null && tv.ready()) Scenes.Shell({ tv.shell(it) }) else if (b is dev.tvremote.core.remote.Atv) Headless.keysOnly(b) else if (b != null) dev.tvremote.core.remote.RemoteSteps(b) { } else return
     toast(t("Đang chạy: ", "Running: ") + sc.optString("name"))
     Thread {
         val failed = Scenes.run(steps, target)

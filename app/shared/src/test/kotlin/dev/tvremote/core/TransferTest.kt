@@ -6,6 +6,10 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import dev.tvremote.core.web.Cancel
+import dev.tvremote.core.web.Cancelled
+import dev.tvremote.core.web.Manage
+import dev.tvremote.core.web.NoRoom
 
 /** Stop, and the check that the TV has room before a file is sent. */
 class TransferTest {

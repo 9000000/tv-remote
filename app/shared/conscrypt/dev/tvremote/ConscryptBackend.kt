@@ -1,6 +1,6 @@
 package dev.tvremote
 
-import dev.tvremote.core.TlsBackend
+import dev.tvremote.core.adb.TlsBackend
 import org.conscrypt.Conscrypt
 import java.security.Provider
 import javax.net.ssl.KeyManager

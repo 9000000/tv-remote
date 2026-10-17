@@ -1,8 +1,8 @@
 package dev.tvremote.phone
 
 import android.widget.Toast
-import dev.tvremote.core.Inputs
-import dev.tvremote.core.Remote
+import dev.tvremote.core.remote.Inputs
+import dev.tvremote.core.remote.Remote
 
 // "Ngõ vào" on the native remote (the "inputs" action of remote.json; the page's inputsMenu in js/remote.js): the TV's real inputs by
 // name, a tap switches. Android TV over ADB (dumpsys, Inputs.kt), LG by its remote link. A TV with none to list (a box, the

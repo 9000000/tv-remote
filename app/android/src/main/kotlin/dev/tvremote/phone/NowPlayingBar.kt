@@ -11,10 +11,10 @@ import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
-import dev.tvremote.core.NowPlaying
-import dev.tvremote.core.Remote
-import dev.tvremote.core.ScreenOff
-import dev.tvremote.core.Tv
+import dev.tvremote.core.ontv.NowPlaying
+import dev.tvremote.core.remote.Remote
+import dev.tvremote.core.ontv.ScreenOff
+import dev.tvremote.core.picture.Tv
 import org.json.JSONObject
 import java.util.concurrent.Executors
 

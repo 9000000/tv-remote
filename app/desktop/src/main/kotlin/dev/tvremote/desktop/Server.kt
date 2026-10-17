@@ -1,16 +1,16 @@
 package dev.tvremote.desktop
 
-import dev.tvremote.core.AdbPrompt
-import dev.tvremote.core.Atv
-import dev.tvremote.core.HttpServer
+import dev.tvremote.core.adb.AdbPrompt
+import dev.tvremote.core.remote.Atv
+import dev.tvremote.core.web.HttpServer
 import dev.tvremote.core.WireLog
-import dev.tvremote.core.HttpServer.Response
-import dev.tvremote.core.Inputs
-import dev.tvremote.core.Remote
-import dev.tvremote.core.RemoteSteps
-import dev.tvremote.core.Scenes
-import dev.tvremote.core.Tv
-import dev.tvremote.core.WebPage
+import dev.tvremote.core.web.HttpServer.Response
+import dev.tvremote.core.remote.Inputs
+import dev.tvremote.core.remote.Remote
+import dev.tvremote.core.remote.RemoteSteps
+import dev.tvremote.core.scenes.Scenes
+import dev.tvremote.core.picture.Tv
+import dev.tvremote.core.web.WebPage
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -267,7 +267,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             trustAsked.set(System.currentTimeMillis())
             Thread({
                 try {
-                    val fp = dev.tvremote.core.Adb(keys).fingerprint()
+                    val fp = dev.tvremote.core.adb.Adb(keys).fingerprint()
                     when (AdbPrompt.ask(host, entry.optString("setup_pass"), fp, 30)) {
                         "forgotten" -> saved.edit(host) { it.remove("setup_pass") }   // "Unpair all" was pressed on the TV
                         "allowed" -> { println("TV Setup allowed this computer on $host"); s.link?.reconnect() }

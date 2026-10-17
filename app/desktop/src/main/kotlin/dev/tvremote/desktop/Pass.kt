@@ -1,6 +1,6 @@
 package dev.tvremote.desktop
 
-import dev.tvremote.core.HttpServer
+import dev.tvremote.core.web.HttpServer
 import java.io.File
 import java.net.URLEncoder
 import java.security.MessageDigest

@@ -5,6 +5,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import dev.tvremote.core.ontv.RulesClient
+import dev.tvremote.core.ontv.Setup
+import dev.tvremote.core.ontv.SetupNeed
 
 class SetupNeedTest {
     @Test fun versions() {

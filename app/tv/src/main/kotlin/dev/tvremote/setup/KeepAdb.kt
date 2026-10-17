@@ -6,7 +6,7 @@ import android.database.ContentObserver
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
-import dev.tvremote.core.Adb
+import dev.tvremote.core.adb.Adb
 
 /**
  * Keeps the TV's ADB debugging on. Without it the sleep timer, bedtime and app limits cannot turn the TV off or close an

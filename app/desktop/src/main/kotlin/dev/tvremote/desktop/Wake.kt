@@ -1,6 +1,6 @@
 package dev.tvremote.desktop
 
-import dev.tvremote.core.Remote
+import dev.tvremote.core.remote.Remote
 import org.json.JSONObject
 import java.net.DatagramPacket
 import java.net.DatagramSocket

@@ -1,5 +1,4 @@
 package dev.tvremote.core
-
 /**
  * Base64 without android.util or java.util (the first is Android only, the second Android 8+ only, and the core runs on
  * Android 5 phones and on the computer alike). Encodes on one line; decodes skipping line breaks, as `base64` on the TV prints.

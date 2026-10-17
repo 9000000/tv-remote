@@ -3,6 +3,7 @@ package dev.tvremote.core
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.net.ServerSocket
+import dev.tvremote.core.remote.Ssdp
 
 class CastNameTest {
     private fun serve(body: String, hold: Boolean = false): ServerSocket {
