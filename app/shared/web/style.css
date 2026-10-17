@@ -215,6 +215,8 @@
   .banner.wait > span:nth-child(2) { flex:1; } .banner.wait button { padding:4px 10px; }
   .banner > b { font-size:15px; } .banner p { margin:0; font-size:13px; }
   .banner .actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .banner details.checks { font-size:13px; color:var(--muted); } .banner details.checks summary { cursor:pointer; }
+  .banner details.checks ul { list-style:none; margin:6px 0 0; padding:0; display:flex; flex-direction:column; gap:4px; }
   .askother { margin-bottom:12px; }
   .optbox { display:flex; flex-direction:column; gap:8px; margin-top:12px; } .optbox h3 { margin:10px 0 2px; font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
   .optrow { display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; cursor:pointer; background:var(--card); }

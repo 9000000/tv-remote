@@ -176,6 +176,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             "/api/update" -> return Response.json(updater.json())
             "/api/tvs" -> return Response.json(JSONObject().put("current", s.host).put("tvs", saved.tvs))
             "/api/discover" -> return Response.json(Discover.poll(r.query.containsKey("new")))
+            "/api/diagnose" -> return dev.tvremote.core.web.Manage.diagnose(r, s.link)   // no session needed: a TV that never connected has none (Diagnose.kt)
             "/api/setup/status" -> return setupStatus(s)
             "/api/assist" -> return Response.json(assist.state())
             "/api/screen" -> return screenshot(s)
