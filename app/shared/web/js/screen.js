@@ -118,11 +118,19 @@ function jmuxPlayer(fps) {
   };
 }
 // A browser that keeps falling behind (CatchUp on the server jumped to now 3 times in half a minute): one level down, for this
-// time only, unless the person set their own frames per second or bit rate.
+// time only, unless the person set their own frames per second or bit rate. After PIC_UP_MS without another catch-up it goes one
+// level back up, never past the level the person picked; if that fell behind again within PIC_FLAP_MS the next wait is doubled.
 const PIC_STEPS = ['240', '360', '480', '720', '960', 'hd'];
-let behindAt = [];
+const PIC_UP_MS = 30000, PIC_UP_MAX = 480000, PIC_FLAP_MS = 60000;
+function picNext(s, now) {                                           // s: { mode, chosen, calmFrom, wait }: the level to try now, or null
+  const i = PIC_STEPS.indexOf(s.mode), c = PIC_STEPS.indexOf(s.chosen);
+  return i < 0 || c < 0 || i >= c || now - s.calmFrom < s.wait ? null : PIC_STEPS[i + 1];
+}
+function picWaitAfter(wait, upAt, now) { return upAt && now - upAt < PIC_FLAP_MS ? Math.min(wait * 2, PIC_UP_MAX) : wait; }   // fell behind again soon after a step up
+let behindAt = [], picChosen = null, picWait = PIC_UP_MS, picCalm = 0, picUpAt = 0;
 function fellBehind() {
-  const now = Date.now(); behindAt = behindAt.filter((t) => now - t < 30000).concat(now);
+  const now = Date.now(); picWait = picWaitAfter(picWait, picUpAt, now); picUpAt = 0; picCalm = now;
+  behindAt = behindAt.filter((t) => now - t < 30000).concat(now);
   if (behindAt.length < 3) return;
   behindAt = [];
   const t = picTune(), i = PIC_STEPS.indexOf($('#screenmode').value);
@@ -131,6 +139,16 @@ function fellBehind() {
   toast('Mạng chậm: hạ hình xuống ' + $('#screenmode').selectedOptions[0].textContent + ' cho kịp.');
   startScreen();
 }
+setInterval(() => {                                                  // quiet for long enough: one level back up
+  if (!screenOn || !streamCtl || streamCtl.signal.aborted) return;
+  const now = Date.now(), mode = $('#screenmode').value;
+  if (mode === picChosen) { if (picWait > PIC_UP_MS && now - picCalm > PIC_UP_MAX) picWait = PIC_UP_MS; return; }
+  const up = picNext({ mode, chosen: picChosen, calmFrom: picCalm, wait: picWait }, now);
+  if (!up) return;
+  $('#screenmode').value = up; picLevelSay(); picUpAt = picCalm = now;
+  toast('Mạng ổn lại: tăng hình lên ' + $('#screenmode').selectedOptions[0].textContent + '.');
+  startScreen();
+}, 5000);
 // ⚙ Advanced: frames per second and bit rate of the person's own, over the level's (0: the level's). Kept in this browser.
 const PIC_FPS = [0, 15, 30, 60], PIC_RATE = [0, 1, 2, 4, 8];          // Mbit/s
 function picTune() { let t = {}; try { t = JSON.parse(localStorage.getItem('picTune') || '{}'); } catch {} return { fps: +t.fps || 0, rate: +t.rate || 0, enc: ['hw', 'sw'].includes(t.enc) ? t.enc : 0, smooth: t.smooth ? 1 : 0 }; }
@@ -246,10 +264,12 @@ setInterval(() => {
 }, 1000);
 $('#screenbtn').addEventListener('click', () => { if (screenOn) stopScreen(); else startScreen(); });
 try { const q = localStorage.getItem('quality'); if (q && [...$('#screenmode').options].some((o) => o.value === q)) $('#screenmode').value = q; } catch {}   // the level picked last time
+picChosen = $('#screenmode').value;
 picLevelSay();
 $('#screenmodebtn').addEventListener('click', picDialog);
 $('#screenmode').addEventListener('change', () => {
-  picLevelSay(); try { localStorage.setItem('quality', $('#screenmode').value); } catch {} if (screenOn) startScreen(); });
+  picLevelSay(); picChosen = $('#screenmode').value; picWait = PIC_UP_MS;   // the person's own pick is the ceiling
+  try { localStorage.setItem('quality', $('#screenmode').value); } catch {} if (screenOn) startScreen(); });
 $('#screenfull').addEventListener('click', () => { const b = $('#screenbox'); if (document.fullscreenElement) document.exitFullscreen(); else if (b.requestFullscreen) b.requestFullscreen(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && screenOn) stopScreen(); });
 setScreenPlaceholder();

@@ -12,6 +12,9 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
 - **WebCodecs only in a secure context**: the computer app (127.0.0.1) and the phone app's Manage (127.0.0.1 in its WebView)
   have one; the TV web page over LAN http does not and keeps JMuxer. Chrome on loopback never fell behind (big buffers);
   `fellBehind()` was tested directly (960 → 720, picture kept playing).
+- **The picture steps back up** (`picNext` in `js/screen.js`): 30 s without a catch-up notice = one size up, never above the person's pick
+  (`picChosen`, set by the level dialog only). Fell behind again within 60 s of a step up: the next wait doubles (cap 8 min). The
+  phone app's native screen has no downsizing, so nothing to mirror there.
 - **"Nhịp hình: Đều hơn" (33 ms pacing) is off by default.** With Wi-Fi bunching (bursts every 150 ms) off drew ~78% of
   frames, on ~98%; the rest of the unevenness is the TV's own (gaps up to ~300 ms). Not worth 33 ms for everyone.
 - **The phone app needs no key frame request after the screen comes back**: the surface is recreated, the session restarts,

@@ -4,6 +4,16 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+
+- Xem màn hình TV: sau khi trang tự hạ cỡ hình vì mạng chậm, mạng ổn lại khoảng 30 giây thì cỡ hình tự tăng lại từng bậc, không vượt cỡ người dùng đã chọn. Vừa tăng mà lại chậm thì lần chờ sau lâu gấp đôi (không nhấp nhô).
+
+**English**
+
+- Watching the TV screen: after the page lowered the picture size on a slow network, it now steps back up one size at a time once the network has been fine for about 30 s, never above the size the person picked. If it falls behind again soon after a step up, the next wait is doubled (no flapping).
+
 ## 0.8.0 - 2026-10-18
 
 Web 0.8.0 · app điện thoại 0.8.0 · app TV 0.8.0

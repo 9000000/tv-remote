@@ -632,6 +632,7 @@
   const RULES = [
     [/^Bước (\d+)\/(\d+)$/, (m) => 'Step ' + m[1] + '/' + m[2]],
     [/^Mạng chậm: hạ hình xuống (.+) cho kịp\.$/, (m) => 'Slow network: the picture went down to ' + tr(m[1]) + ' to keep up.'],
+    [/^Mạng ổn lại: tăng hình lên (.+)\.$/, (m) => 'Network is fine again: picture back up to ' + tr(m[1]) + '.'],
     [/^Đợi (\d+) giây rồi thử lại\.$/, (m) => 'Wait ' + m[1] + ' seconds and try again.'],
     [/^(.+) cần TV Setup (\S+) trở lên \(TV đang có (\S*)\)\. Cập nhật TV Setup\?$/, (m) => tr(m[1]) + ' needs TV Setup ' + m[2] + ' or newer (the TV has ' + m[3] + '). Update TV Setup?'],
     [/^(.+) cần app TV Setup trên TV\. Cài TV Setup\?$/, (m) => tr(m[1]) + ' needs the TV Setup app on the TV. Install TV Setup?'],
