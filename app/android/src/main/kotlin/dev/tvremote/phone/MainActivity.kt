@@ -303,7 +303,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val c = e.keyCode
         // the TV's volume, unless the sound plays here (🎧) or Settings says the keys are the phone's
         if (live() && !listen && prefs.getBoolean("volKeysTv", true) && (c == KeyEvent.KEYCODE_VOLUME_UP || c == KeyEvent.KEYCODE_VOLUME_DOWN)) {
-            if (e.action == KeyEvent.ACTION_DOWN) press(c)
+            if (e.action == KeyEvent.ACTION_DOWN) press(c, false)
             return true
         }
         return super.dispatchKeyEvent(e)
@@ -533,7 +533,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     // ---------------------------------------------------------------- keys only, while the TV's ADB is off
     internal fun live(): Boolean = tv?.ready() == true || basic?.ready() == true
 
-    internal fun press(code: Int) {
+    /** [feel]: a short buzz, as a key under a finger gives; not for keys sent without a touch (voice, the volume buttons). */
+    internal fun press(code: Int, feel: Boolean = true) {
+        if (feel) buzz()
         val tv = tv
         if (tv != null) { if (tv.ready()) tv.press(code) }
         else if (code in 19..23) basic?.pulse(code, 110)              // arrows and OK are held for a moment: see Atv.pulse
@@ -541,8 +543,29 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     }
 
     internal fun keyDown(code: Int, repeat: Int) {
+        if (repeat == 0) buzz()
         val tv = tv
         if (tv != null) tv.key(0, code, repeat, 0) else if (repeat == 0) basic?.key(code, Atv.DOWN)
+    }
+
+    private val vibrator by lazy { getSystemService(android.content.Context.VIBRATOR_SERVICE) as? android.os.Vibrator }
+
+    /** The tap a key gives under the finger (Settings: Vibrate on key press, on by default). */
+    @Suppress("DEPRECATION")
+    internal fun buzz() {
+        if (!prefs.getBoolean("buzz", true)) return
+        val v = vibrator ?: return
+        if (!v.hasVibrator()) return
+        try {
+            when {
+                // a remote's key, not a touch: the system's "touch feedback" switch (often off) does not silence it
+                Build.VERSION.SDK_INT >= 33 -> v.vibrate(android.os.VibrationEffect.createPredefined(android.os.VibrationEffect.EFFECT_CLICK),
+                    android.os.VibrationAttributes.createForUsage(android.os.VibrationAttributes.USAGE_HARDWARE_FEEDBACK))
+                Build.VERSION.SDK_INT >= 29 -> v.vibrate(android.os.VibrationEffect.createPredefined(android.os.VibrationEffect.EFFECT_CLICK))
+                Build.VERSION.SDK_INT >= 26 -> v.vibrate(android.os.VibrationEffect.createOneShot(18, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                else -> v.vibrate(18)
+            }
+        } catch (ignored: Exception) { }
     }
 
     internal fun keyUp(code: Int) {

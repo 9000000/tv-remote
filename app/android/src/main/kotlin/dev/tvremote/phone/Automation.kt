@@ -154,7 +154,7 @@ private fun MainActivity.doVoice(c: Voice.Command) {
         }
         is Voice.Command.Key -> {
             val code = Scenes.KEYS[c.key] ?: return
-            for (i in 0 until c.times) ui.postDelayed({ press(code) }, i * 150L)
+            for (i in 0 until c.times) ui.postDelayed({ press(code, false) }, i * 150L)
             toast(t("Đã bấm: ", "Pressed: ") + c.key.lowercase().replace('_', ' ') + if (c.times > 1) " × ${c.times}" else "")
         }
     }

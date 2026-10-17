@@ -68,6 +68,17 @@ internal fun MainActivity.buildSettings(): View {
     volLabel()
     box.addView(vol)
 
+    box.addView(head(t("KHI BẤM NÚT", "WHEN PRESSING A KEY")), gap(18))
+    lateinit var buzzRow: Button
+    val buzzLabel = { buzzRow.setLabel((if (prefs.getBoolean("buzz", true)) "@check|" else "@close|") + t("Rung", "Vibrate")) }
+    buzzRow = row("") {
+        prefs.edit().putBoolean("buzz", !prefs.getBoolean("buzz", true)).apply()
+        buzzLabel()
+        buzz()
+    }
+    buzzLabel()
+    box.addView(buzzRow)
+
     box.addView(head(t("CẬP NHẬT", "UPDATES")), gap(18))
     lateinit var auto: Button
     val autoLabel = { auto.setLabel((if (prefs.getBoolean("autoUpdate", true)) "@check|" else "@close|") + t("Tự kiểm tra bản mới", "Check for updates automatically")) }

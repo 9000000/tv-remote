@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.VIBRATE" />   <!-- the tap a key gives under the finger -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />   <!-- which Wi-Fi network to scan for TVs -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />   <!-- installing its own update -->
     <!-- the TV's sound on the phone with its screen off (ListenService), and the widget / tiles' short jobs (SceneService) -->

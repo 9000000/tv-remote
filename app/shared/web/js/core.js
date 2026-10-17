@@ -13,6 +13,10 @@ const setLabel = (b, icon, text, asks) => { if (asks) b.dataset.asks = ''; b.rep
 const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); kids.forEach((k) => k != null && e.append(k)); return e; };
 const fmtSize = (n) => n > 1e9 ? (n / 1e9).toFixed(1) + ' GB' : n > 1e6 ? (n / 1e6).toFixed(1) + ' MB' : n > 1e3 ? Math.round(n / 1e3) + ' KB' : n + ' B';
 const sleep = (ms) => new Promise((z) => setTimeout(z, ms));
+// the tap a key gives under the finger, on a touch screen that can vibrate (Settings: Vibrate on key press, on by default)
+const CAN_BUZZ = !!navigator.vibrate && matchMedia('(pointer: coarse)').matches;
+const buzzOn = () => { try { return localStorage.getItem('buzz') !== '0'; } catch { return true; } };
+const buzz = () => { if (CAN_BUZZ && buzzOn()) try { navigator.vibrate(15); } catch {} };
 let toastT;
 function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), Math.min(10000, Math.max(2500, 70 * m.length))); }   // time to read it: a long message with the next step stays longer
 // Questions asked in the page, not with confirm() / prompt(): they look the same everywhere, and the computer app's window

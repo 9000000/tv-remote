@@ -55,6 +55,11 @@ function showPicks() {
   $('#langpick').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.v === LANG));
 }
 $('#themepick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { setTheme(b.dataset.v); showPicks(); } });
+// a tap under the finger on phones (Chrome on Android; Safari on iPhone has no vibration for pages)
+$('#buzzgroup').hidden = !CAN_BUZZ;
+const showBuzz = () => $('#buzzpick').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.v === (buzzOn() ? '1' : '0')));
+showBuzz();
+$('#buzzpick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; try { localStorage.setItem('buzz', b.dataset.v); } catch {} showBuzz(); buzz(); });
 $('#langpick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && b.dataset.v !== LANG) setLang(b.dataset.v); });
 showPicks();
 if (window.LANG_KEEP && window.LANG_KEEP.settings) setTimeout(() => $('#aboutbtn').click(), 0);   // it reloaded for the new language: back where it was
