@@ -4,6 +4,16 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+
+- Mở hình và tiếng TV nhanh hơn: các lệnh khởi động (tên máy, bản Android, địa chỉ mạng, kiểm tra file scrcpy-server) gộp thành một lượt hỏi TV, chờ cổng scrcpy mở thì hỏi dày hơn (25 ms thay vì 100 ms). File scrcpy-server trên TV được so bằng MD5 (trước chỉ so dung lượng, file đổi mà cùng dung lượng thì không được chép lại).
+
+**English**
+
+- Picture and sound open faster: the start-up commands (model, Android version, network address, the scrcpy-server check) are one round trip to the TV, and the wait for scrcpy's socket polls every 25 ms instead of 100 ms. The scrcpy-server on the TV is compared by MD5 (it was size only, so a changed file of the same size was never copied).
+
 ## 0.8.0 - 2026-10-18
 
 Web 0.8.0 · app điện thoại 0.8.0 · app TV 0.8.0

@@ -91,6 +91,8 @@ class Tv(
         /** Each TV's software encoder by name, from list_encoders: asked once, whether chosen by hand or after a stall */
         private val softName = java.util.concurrent.ConcurrentHashMap<String, String>()
         private const val FIRST_FRAME_MS = 8000L
+        private const val POLL_MS = 25L
+        private const val SEP = "#tvr-sep#"
         /** Waits for the capture's virtual output to go, then starts Google's remote service: see endCapture */
         private const val REVIVE_REMOTE = "for i in 1 2 3 4 5 6 7 8 9 10; do dumpsys audio | grep -qi remote_submix || break; sleep 0.5; done; " +
             "pm path com.google.android.tv.remote.service >/dev/null 2>&1 && am startservice -n com.google.android.tv.remote.service/.RemoteService >/dev/null 2>&1; true"
@@ -149,18 +151,23 @@ class Tv(
     private fun session() {
         val socks = arrayListOf<Adb.Stream>()
         try {
+            if (Trace.on) Trace.log("s.begin", host)
             status("connecting", host)
             val a = Adb(dir)
             adb = a
             a.connectTo(host) { status("allow", "") }
             if (stopped) return
-            status("starting", a.shell("getprop ro.product.model").trim())
-            if (wake) a.shell("input keyevent KEYCODE_WAKEUP")
-            if (listener.wantsNetwork()) reportNetwork(a)
+            if (Trace.on) Trace.log("s.adb", host)
+            // one round trip for what used to be five: the model, the Android version, the address, the jar on the TV
+            val facts = startFacts(a, jar())
+            if (Trace.on) Trace.log("s.facts")
+            status("starting", facts.model)
+            if (listener.wantsNetwork()) reportNetwork(facts.ipAddr)
             if (listener.wantsPass()) try { AdbPrompt.token(a, "phone")?.let { listener.onPass(it) } } catch (ignored: IOException) { }
-            pushServer(a)
+            pushServer(a, facts.jarOk)
+            if (Trace.on) Trace.log("s.pushed")
             var hearing = audio
-            val sdk = if (hearing != null) a.shell("getprop ro.build.version.sdk").trim().toIntOrNull() ?: 0 else 0
+            val sdk = facts.sdk
             val share = hearing != null && audioShare && sdk >= 33
             if (hearing != null && audioShare && !share && sdk >= 30) status("audio", "noshare")
             if (hearing != null && sdk < 30) {                        // scrcpy captures sound from Android 11
@@ -185,17 +192,20 @@ class Tv(
             var first: Adb.Stream? = null                             // the first of the sockets: video, then sound, then control, whichever are asked for
             val one = ByteArray(1)
             var i = 0
-            while (i < 200 && first == null && !stopped) {             // until the server listens, the TV refuses the socket
+            val giveUp = System.nanoTime() + 20_000_000_000L
+            if (Trace.on) Trace.log("s.launch")
+            while (System.nanoTime() < giveUp && first == null && !stopped) {   // until the server listens, the TV refuses the socket
                 try {
                     val s = a.open("localabstract:scrcpy_$scid")
                     if (s.read(one, 0, 1, 4000) == 1 && one[0].toInt() == 0) first = s else s.close()
                 } catch (notYet: IOException) {
                     if (a.isDead()) throw notYet
                 }
-                if (first == null) Thread.sleep(100)     // app_process takes a second or so; polling often wins the tail of it
+                if (first == null) Thread.sleep(if (i < 60) POLL_MS else 100)   // a refused socket costs the TV nothing: tight for ~2 s, then easier
                 i++
             }
             if (first == null) throw IOException("scrcpy-server did not start on the TV")
+            if (Trace.on) Trace.log("s.listening", "tries=$i")
             socks.add(first)                                          // the server takes the connections in this order
             val count = (if (wantVideo) 1 else 0) + (if (hearing != null) 1 else 0) + (if (wantControl) 1 else 0)
             while (socks.size < count) socks.add(a.open("localabstract:scrcpy_$scid"))
@@ -270,34 +280,53 @@ class Tv(
         try { a.shell(REVIVE_REMOTE) } catch (ignored: IOException) { }   // waits there for the virtual output to go
     }
 
+    /** What the first shell call brings back. [jarOk]: the jar on the TV is the one we hold. */
+    private class Facts(val model: String, val sdk: Int, val ipAddr: String, val jarOk: Boolean)
+
+    /**
+     * One shell round trip for everything the start needs to know (each costs ~40 ms over Wi-Fi): wake, the model, the Android
+     * version, `ip addr` (if wanted) and the jar's state on the TV. The jar is compared by MD5 (size alone would miss a changed
+     * jar of the same size); a TV without md5sum falls back to the size.
+     */
+    private fun startFacts(a: Adb, jar: ByteArray): Facts {
+        val cmd = (if (wake) "input keyevent KEYCODE_WAKEUP; " else "") +
+            "getprop ro.product.model; echo '$SEP'; getprop ro.build.version.sdk; echo '$SEP'; " +
+            "if [ -f $REMOTE ]; then wc -c < $REMOTE; md5sum $REMOTE 2>/dev/null; else echo 0; fi; echo '$SEP'" +
+            (if (listener.wantsNetwork()) "; ip addr show" else "")
+        val parts = a.shell(cmd).split(SEP, limit = 4).map { it.trim() }
+        val jarLines = parts.getOrElse(2) { "" }.lines()
+        val md5 = jarLines.getOrNull(1)?.trim()?.substringBefore(' ')?.takeIf { it.length == 32 }
+        val ok = if (md5 != null) md5.equals(md5Of(jar), true) else jarLines.firstOrNull()?.trim() == jar.size.toString()
+        return Facts(parts.getOrElse(0) { "" }, parts.getOrElse(1) { "" }.toIntOrNull() ?: 0, parts.getOrElse(3) { "" }, ok)
+    }
+
+    private fun md5Of(b: ByteArray) = java.security.MessageDigest.getInstance("MD5").digest(b).joinToString("") { "%02x".format(it) }
+
     /** MAC and IP of the interface that is on the home network, and the Tailscale 100.x address (no MAC) if the TV has one. */
-    private fun reportNetwork(a: Adb) {
-        try {
-            val all = a.shell("ip addr show")
-            val ts = Regex("inet (100\\.(?:6[4-9]|[7-9]\\d|1[01]\\d|12[0-7])\\.[0-9.]+)/").find(all)?.groupValues?.get(1) ?: ""
-            for (block in Pattern.compile("(?m)^\\d+: ").split(all)) {
-                val ip = Pattern.compile("inet ([0-9.]+)/").matcher(block)
-                val mac = Pattern.compile("link/ether ([0-9a-f:]{17})").matcher(block)
-                if (!ip.find() || !mac.find()) continue
-                val lan = ip.group(1)!!
-                if (lan.startsWith("192.168.") || lan.startsWith("10.") || lan.matches(Regex("172\\.(1[6-9]|2\\d|3[01])\\..*"))) {
-                    listener.onNetwork(mac.group(1)!!.uppercase(Locale.ROOT), lan, ts)
-                    return
-                }
+    private fun reportNetwork(all: String) {
+        val ts = Regex("inet (100\\.(?:6[4-9]|[7-9]\\d|1[01]\\d|12[0-7])\\.[0-9.]+)/").find(all)?.groupValues?.get(1) ?: ""
+        for (block in Pattern.compile("(?m)^\\d+: ").split(all)) {
+            val ip = Pattern.compile("inet ([0-9.]+)/").matcher(block)
+            val mac = Pattern.compile("link/ether ([0-9a-f:]{17})").matcher(block)
+            if (!ip.find() || !mac.find()) continue
+            val lan = ip.group(1)!!
+            if (lan.startsWith("192.168.") || lan.startsWith("10.") || lan.matches(Regex("172\\.(1[6-9]|2\\d|3[01])\\..*"))) {
+                listener.onNetwork(mac.group(1)!!.uppercase(Locale.ROOT), lan, ts)
+                return
             }
-        } catch (ignored: IOException) {
         }
     }
 
-    /** Copies scrcpy-server from the APK to the TV unless the same file is already there. */
+    /** Copies scrcpy-server from the APK to the TV unless [same] says the same file is already there. */
     @Throws(IOException::class)
-    private fun pushServer(a: Adb) {
+    private fun pushServer(a: Adb, same: Boolean) {
+        if (same) return
         val jar = jar()
-        val check = "[ -f $REMOTE ] && wc -c < $REMOTE || echo 0"
-        if (a.shell(check).trim() == jar.size.toString()) return
+        val want = md5Of(jar)
         a.put(REMOTE, jar)
         for (i in 0 until 20) {                                       // cat finishes writing shortly after the stream closes
-            if (a.shell(check).trim() == jar.size.toString()) return
+            val out = a.shell("md5sum $REMOTE 2>/dev/null || wc -c < $REMOTE").trim()
+            if (out.startsWith(want) || out == jar.size.toString()) return
             try { Thread.sleep(150) } catch (e: InterruptedException) { break }
         }
         throw IOException("could not copy scrcpy-server to the TV")
@@ -337,12 +366,12 @@ class Tv(
             val config = (flags and (1L shl 62)) != 0L
             if (sink != null) {
                 sink.video(config, (flags and (1L shl 61)) != 0L, data)
-                if (first && !config) { first = false; framed = true; status("live", "") }
+                if (first && !config) { first = false; framed = true; if (Trace.on) Trace.log("v.first"); status("live", "") }
                 continue
             }
             val sc = screen ?: continue
             if (!sc.feed(config, if (config) 0L else flags and ((1L shl 61) - 1), data)) break
-            if (first && !config) { first = false; framed = true; status("live", "") }
+            if (first && !config) { first = false; framed = true; if (Trace.on) Trace.log("v.first"); status("live", "") }
         }
     }
 
@@ -357,6 +386,7 @@ class Tv(
         val id = ByteBuffer.wrap(head, 0, 4).int
         if (id == 0 || id == 1) { status("audio", "unsupported"); return }   // e.g. the TV refused the capture
         var bytes = 0L
+        var heard = false
         var since = System.currentTimeMillis()
         try {
             while (!stopped) {
@@ -369,6 +399,7 @@ class Tv(
                 s.readFully(data, 0, size)
                 val config = (flags and (1L shl 62)) != 0L
                 audioSink?.audio(config, data)
+                if (Trace.on && !config && !heard) { heard = true; Trace.log("a.first") }
                 bytes += size + 12
                 val now = System.currentTimeMillis()
                 if (now - since >= 3000) { listener.onStatus("arate", (bytes * 1000.0 / (now - since) / 1024).let { if (it < 10) String.format(java.util.Locale.US, "%.1f", it) else it.toInt().toString() }); bytes = 0; since = now }   // Opus: under 1 KB/s while the TV is quiet
