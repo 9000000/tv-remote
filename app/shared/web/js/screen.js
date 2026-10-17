@@ -37,6 +37,10 @@ async function snapLoop(gen) {
 // may use it (a secure page: the computer's 127.0.0.1), each frame drawn the moment it is decoded; elsewhere (the TV web page
 // over http) JMuxer makes it playable by a <video>, which buffers a little.
 const H264_Q = { 480: 0, 720: 1, 960: 2, 360: 3, 240: 4, hd: 'hd' }, H264_FPS = { 480: 8, 720: 10, 960: 10, 360: 8, 240: 8, hd: 30 };
+// ?stats=1: per-stage timestamps (wall ms) of every frame in window.VT, for measuring latency by hand; nothing is recorded otherwise.
+const VT = /[?&]stats=1/.test(location.search) ? (window.VT = { rx: [], dec: [], paint: [], jm: [], audio: [], arx: [], seq: 0 }) : null;
+const vtOff = VT ? Date.now() - performance.timeOrigin - performance.now() : 0;   // timeOrigin can sit tens of ms off the wall clock the server logs
+const vtNow = () => performance.timeOrigin + performance.now() + vtOff;
 const H264_END = new Uint8Array([0, 0, 0, 1, 9, 0xf0]);                // access unit delimiter
 let player = null, wcBroken = false;                                   // wcBroken: WebCodecs failed once here, JMuxer until reload
 const wcUsable = () => !wcBroken && window.isSecureContext && typeof VideoDecoder === 'function';
@@ -58,7 +62,7 @@ function wcPlayer(broken, smooth) {
   let q = [], every = 0, lastAt = 0, nextDue = 0;                     // smooth: frames waiting with when to show them
   const paint = (f) => {
     if (cv.width !== f.displayWidth || cv.height !== f.displayHeight) { cv.width = f.displayWidth; cv.height = f.displayHeight; }
-    g.drawImage(f, 0, 0); f.close(); frames++; shownIn(cv);
+    g.drawImage(f, 0, 0); if (VT) VT.paint.push([Math.round(f.timestamp / 1000), vtNow()]); f.close(); frames++; shownIn(cv);
   };
   const draw = () => {
     raf = 0;
@@ -81,7 +85,7 @@ function wcPlayer(broken, smooth) {
   const fail = () => { if (dec) { try { dec.close(); } catch {} } dec = null; broken(); };
   const open = () => {
     if (dec) { try { dec.close(); } catch {} }
-    dec = new VideoDecoder({ output: smooth ? arrived : (f) => { if (latest) latest.close(); latest = f; if (!raf) raf = requestAnimationFrame(draw); }, error: fail });   // only the newest waits to be drawn
+    dec = new VideoDecoder({ output: smooth ? arrived : (f) => { if (VT) VT.dec.push([Math.round(f.timestamp / 1000), vtNow(), 1]); if (latest) latest.close(); latest = f; if (!raf) raf = requestAnimationFrame(draw); }, error: fail });   // only the newest waits to be drawn
     try { dec.configure({ codec, optimizeForLatency: true }); } catch { fail(); }
     keyed = false;
   };
@@ -91,6 +95,7 @@ function wcPlayer(broken, smooth) {
       if (!dec || dec.state !== 'configured' || (kind === 3 && !keyed)) return;   // a frame needs the key frame before it
       let buf = data;
       if (kind === 2) { keyed = true; if (config) { buf = new Uint8Array(config.length + data.length); buf.set(config); buf.set(data, config.length); } }
+      if (VT) VT.dec.push([ts / 1000 + 1, vtNow(), 0]);
       try { dec.decode(new EncodedVideoChunk({ type: kind === 2 ? 'key' : 'delta', timestamp: ts += 1000, data: buf })); } catch { fail(); }
     },
     destroy() { if (raf) cancelAnimationFrame(raf); if (latest) latest.close(); latest = null; q.forEach((w) => w.f.close()); q = []; if (dec && dec.state !== 'closed') { try { dec.close(); } catch {} } dec = null; },
@@ -100,6 +105,10 @@ function jmuxPlayer(fps) {
   const video = $('#screenv'), step = Math.round(1000 / fps);
   const mux = new JMuxer({ node: video, mode: 'video', flushingTime: 0, fps, clearBuffer: true, onError: () => {} });
   let config = null;
+  if (VT && video.requestVideoFrameCallback) {
+    const cb = (now, m) => { const b = video.buffered; VT.jm.push([vtNow(), m.mediaTime, m.presentedFrames, b.length ? b.end(b.length - 1) - video.currentTime : -1, m.expectedDisplayTime - now]); video.requestVideoFrameCallback(cb); };
+    video.requestVideoFrameCallback(cb);
+  }
   const edge = setInterval(() => {                                    // stay on the newest frame instead of playing a growing backlog
     const b = video.buffered; if (!b.length) return;
     const end = b.end(b.length - 1); if (end - video.currentTime > 0.3) video.currentTime = end - 0.05;
@@ -112,6 +121,7 @@ function jmuxPlayer(fps) {
       // an empty delimiter after each frame makes it show the frame now.
       const frame = new Uint8Array((config ? config.length : 0) + data.length + H264_END.length);
       if (config) frame.set(config); frame.set(data, config ? config.length : 0); frame.set(H264_END, frame.length - H264_END.length); config = null;
+      if (VT) VT.jm.push([vtNow(), -1, VT.seq, video.buffered.length ? video.buffered.end(video.buffered.length - 1) - video.currentTime : -1, 0]);
       mux.feed({ video: frame, duration: step }); frames++; shownIn(video);
     },
     destroy() { clearInterval(edge); try { mux.destroy(); } catch {} },
@@ -209,7 +219,7 @@ async function h264Loop(gen) {
         const len = new DataView(buf.buffer, buf.byteOffset + off + 1, 4).getUint32(0); if (buf.length - off < 5 + len) break;
         const kind = buf[off], data = buf.subarray(off + 5, off + 5 + len); off += 5 + len;
         if (kind === 0) { const d = new DataView(data.buffer, data.byteOffset, data.length); $('#screenbox').style.aspectRatio = d.getUint32(0) + ' / ' + d.getUint32(4); }
-        else if (kind >= 1 && kind <= 3) { if (player === mine) mine.feed(kind, data); }
+        else if (kind >= 1 && kind <= 3) { if (VT) VT.rx.push([kind === 1 ? -1 : ++VT.seq, vtNow(), len]); if (player === mine) mine.feed(kind, data); }
         else if (kind === 5) fellBehind();
       }
     }

@@ -35,6 +35,7 @@ function playPcm(channels, rate) {
   // After a stall the network hands over the late sound in one burst; played in turn, it would keep the whole stall as delay
   // for good. Too far ahead: drop pieces until close to live again (one short skip instead of a lasting lag).
   const ahead = anext - now;
+  if (VT) VT.audio.push([vtNow(), ahead * 1000, now, anext, actx.baseLatency, actx.outputLatency]);   // ?stats=1
   if (ahead > 0.25) catchUp = true; else if (ahead < 0.1) catchUp = false;
   if (catchUp) return;
   const src = actx.createBufferSource(); src.buffer = buf; src.connect(actx.destination); src.start(anext);
@@ -80,6 +81,7 @@ async function startListen(share) {
           }, error: () => {} });
           adec.configure({ codec: 'opus', sampleRate: fmt.rate, numberOfChannels: fmt.ch, description: data });
         } else if (kind === 2) {
+          if (VT) VT.arx.push([vtNow(), data.length]);
           if (fmt.codec === 1) { if (adec && adec.state === 'configured') adec.decode(new EncodedAudioChunk({ type: 'key', timestamp: ts += 20000, data })); }
           else {                                                       // 16-bit little-endian PCM, channels interleaved
             const v = new DataView(data.buffer), n = Math.floor(data.length / 2 / fmt.ch), chs = Array.from({ length: fmt.ch }, () => new Float32Array(n));
