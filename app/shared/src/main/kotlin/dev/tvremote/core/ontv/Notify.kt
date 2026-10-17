@@ -37,6 +37,19 @@ object Notify {
         return JSONObject().put("title", title).put("text", text).put("corner", corner(o.opt("corner") as? String)).put("seconds", seconds(o.opt("seconds")))
     }
 
+    /**
+     * The card that asks whoever is at the TV to leave its remote alone while a job presses keys on its screen ([what]: what
+     * the job does), or, with null, the one that says it is over (it takes the first one's place). Best effort: a TV without
+     * TV Setup, or one that will not let it draw, just goes without.
+     */
+    fun busy(sh: (String) -> String, vi: Boolean, what: String?) {
+        fun t(v: String, e: String) = if (vi) v else e
+        val msg = if (what != null) JSONObject().put("title", t("TV Remote đang làm việc trên TV", "TV Remote is working on the TV"))
+            .put("text", what + t(". Đừng bấm remote của TV cho tới khi xong.", ". Leave the TV's remote alone until this is done.")).put("seconds", MAX_SECONDS)
+        else JSONObject().put("title", t("TV Remote đã xong", "TV Remote is done")).put("seconds", 3)
+        try { send(sh, msg) } catch (e: Exception) { }                // top right: sign-in screens keep their buttons low
+    }
+
     /** Shows [msg] on the TV. Throws [SetupNeed.Missing] when TV Setup is absent or too old to have the receiver. */
     @Throws(IOException::class)
     fun send(sh: (String) -> String, msg: JSONObject) {

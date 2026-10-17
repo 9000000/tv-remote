@@ -88,6 +88,8 @@ class Tv(
         private const val REMOTE = "/data/local/tmp/scrcpy-server.jar"
         /** TVs whose hardware encoder takes the picture and sends nothing back (a TCL's Realtek one): their software encoder */
         private val softEncoder = java.util.concurrent.ConcurrentHashMap<String, String>()
+        /** Each TV's software encoder by name, from list_encoders: asked once, whether chosen by hand or after a stall */
+        private val softName = java.util.concurrent.ConcurrentHashMap<String, String>()
         private const val FIRST_FRAME_MS = 8000L
         /** Waits for the capture's virtual output to go, then starts Google's remote service: see endCapture */
         private const val REVIVE_REMOTE = "for i in 1 2 3 4 5 6 7 8 9 10; do dumpsys audio | grep -qi remote_submix || break; sleep 0.5; done; " +
@@ -124,7 +126,8 @@ class Tv(
     init {
         val q = QUALITY[quality.coerceIn(0, QUALITY.size - 1)]
         video = "video_bit_rate=" + (if (bitRate > 0) bitRate.coerceIn(100_000, 20_000_000) else q[1]) +
-            " max_fps=" + (if (fps > 0) fps.coerceIn(1, 60) else q[2]) + " max_size=" + maxOf(160, minOf(q[0], maxSide) / 8 * 8)
+            " max_fps=" + (if (fps > 0) fps.coerceIn(1, 60) else q[2]) + " max_size=" + maxOf(160, minOf(q[0], maxSide) / 32 * 32)
+        // a multiple of 32, not of 8: some hardware encoders (TCL's Realtek) shear the picture into streaks at 720 or 240 wide
         Thread({ run() }, "tv-session").apply { isDaemon = true }.start()
     }
 
@@ -240,6 +243,7 @@ class Tv(
             val soft = softFor(a) ?: return@Thread
             if (stopped || framed) return@Thread
             WireLog.all.add("·", "picture $host no frame from the hardware encoder: $soft")
+            softEncoder[host] = soft
             stalled = true
             video.close()
         }, "scrcpy-first-frame").apply { isDaemon = true }.start()
@@ -247,10 +251,10 @@ class Tv(
 
     /** The TV's software H.264 encoder, from scrcpy's list_encoders (asked once per TV); null if it has none or did not say. */
     private fun softFor(a: Adb): String? {
-        softEncoder[host]?.let { return it }
+        softName[host]?.let { return it }
         val list = try { a.shell("CLASSPATH=$REMOTE app_process / com.genymobile.scrcpy.Server $VER cleanup=false list_encoders=true 2>&1", 15000) } catch (e: IOException) { return null }   // cleanup=false: or scrcpy deletes its jar
         val soft = Regex("--video-codec=h264 --video-encoder=(\\S+)\\s+\\(sw\\)").find(list)?.groupValues?.get(1) ?: return null
-        softEncoder[host] = soft
+        softName[host] = soft                                         // not [softEncoder]: "Software" picked once is not Auto's choice
         return soft
     }
 

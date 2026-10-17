@@ -69,7 +69,7 @@ class Tailscale(private val adb: Adb, private val dir: File?) {
      * or the link to sign it in with. Leaves Tailscale's own sign-in screen up on the TV, with the same link as a QR code.
      */
     @Throws(Exception::class)
-    fun start(step: Step): String {
+    fun start(busy: (Boolean) -> Unit = {}, step: Step): String {   // [busy]: while keys are pressed on its screen
         if (!installed()) install(step)
         step.at("start", 80)
         keepAlive()
@@ -79,6 +79,11 @@ class Tailscale(private val adb: Adb, private val dir: File?) {
         adb.shell("am broadcast -a com.tailscale.ipn.CONNECT_VPN -n $PKG/.IPNReceiver")   // signed in but switched off: this is enough
         for (i in 0 until 6) { Thread.sleep(1000); if (ip().isNotEmpty()) return "" }
         adb.shell("am start -n $PKG/.MainActivity")
+        busy(true)                                                    // from here keys are pressed on its screen: hands off the TV's remote
+        try { return signIn() } finally { busy(false) }
+    }
+
+    private fun signIn(): String {
         var pressed = 0
         for (i in 0 until 20) {
             Thread.sleep(1500)

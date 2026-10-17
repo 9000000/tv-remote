@@ -107,6 +107,9 @@ async function api(path, data, quiet) {
   if (b) { b.classList.add('busy'); b.busyN = (b.busyN || 0) + 1; }
   try { return await call(path, data, quiet); } finally { if (b && !--b.busyN) b.classList.remove('busy'); }
 }
+// "adb:allow", "adb: <Java's words>": what a person can do about it
+const adbWords = (status, e) => status === 503 && /^adb/.test(e) && !/adb (pair|tls)/.test(e)
+  ? (/allow/.test(e) ? 'TV đang hỏi cho phép gỡ lỗi: nhìn lên TV, chọn “Luôn cho phép”' : 'chưa nối được ADB tới TV') : e;
 async function call(path, data, quiet) {
   try {
     const r = await fetch(path, data ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) } : undefined);
@@ -116,7 +119,7 @@ async function call(path, data, quiet) {
       if (!quiet && needSetup(e)) return null;                         // asked as a question with its button, not a toast
       if (r.status === 403 && e === 'scope') { refresh(); if (!quiet) toast(scopeWhy()); return null; }   // the owner may have just changed it
       if (r.status === 404 && CORE === 'pc') e = STALE;
-      if (r.status === 503 && /^adb/.test(e) && !/adb (pair|tls)/.test(e)) { e = /allow/.test(e) ? 'TV đang hỏi cho phép gỡ lỗi: nhìn lên TV, chọn “Luôn cho phép”' : 'chưa nối được ADB tới TV'; setTimeout(refresh, 300); }
+      if (adbWords(r.status, e) !== e) { e = adbWords(r.status, e); setTimeout(refresh, 300); }
       if (!quiet) toast('Lỗi: ' + friendly(e)); return null;
     }
     return await r.json();
@@ -145,7 +148,7 @@ addEventListener('resize', closePop);
 // A phone or computer can be newer than TV Setup on the TV. What needs which TV Setup is SetupNeed.kt's table; any call that
 // meets one (its error says "setup:old|missing:<feature>:<min>:<have>") asks to update or install TV Setup, with the button.
 // A page that knows before starting asks setupFor(feature). The same names as SetupNeed.name.
-const SETUP_NEEDS = { rules: 'Hẹn giờ, giờ đi ngủ, giới hạn app', draw: 'Chức năng vẽ lên TV', invite: 'Chia sẻ remote bằng QR', ram: 'Báo khi RAM đầy', pic: 'Đưa ảnh lên TV', volume: 'Giới hạn âm lượng', bedtimes: 'Nhiều khoảng giờ đi ngủ', notify: 'Gửi thông báo lên TV' };
+const SETUP_NEEDS = { rules: 'Hẹn giờ, giờ đi ngủ, giới hạn app', draw: 'Chức năng vẽ lên TV', invite: 'Chia sẻ remote bằng QR', ram: 'Báo khi RAM đầy', pic: 'Đưa ảnh lên TV', volume: 'Giới hạn âm lượng', bedtimes: 'Nhiều khoảng giờ đi ngủ', notify: 'Gửi thông báo lên TV', awake: 'Giữ kết nối khi tắt TV' };
 const SETUP_RE = /setup:(old|missing):(\w+):([0-9.]*):([0-9.]*)/;
 const setupSay = (m) => m[1] === 'missing' ? (SETUP_NEEDS[m[2]] || m[2]) + ' cần app TV Setup trên TV. Cài TV Setup?'
   : (SETUP_NEEDS[m[2]] || m[2]) + ' cần TV Setup ' + m[3] + ' trở lên (TV đang có ' + m[4] + '). Cập nhật TV Setup?';

@@ -1,6 +1,5 @@
 package dev.tvremote.phone
 
-import android.app.AlertDialog
 import android.content.ContentValues
 import android.content.res.Configuration
 import android.view.Menu
@@ -79,39 +78,36 @@ internal fun MainActivity.listenArt(share: Boolean): android.graphics.drawable.D
     return d
 }
 
-/** The quality chip under the picture: the levels, lightest first, then the advanced settings. */
-internal fun MainActivity.qualityMenu() {
-    val menu = android.widget.PopupMenu(this, qualBtn)
-    val now = prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)
-    for (level in Tv.LEVELS) menu.menu.add(1, level, 0, Tv.QUALITY[level][0].toString() + "p" + (if (level == now) "  ✓" else ""))
-    menu.menu.add(2, -1, 1, t("⚙️ Nâng cao…", "⚙️ Advanced…"))
-    menu.setOnMenuItemClickListener { item -> if (item.itemId < 0) picAdvanced() else setQuality(item.itemId); true }
-    menu.show()
-}
-
-private val PIC_FPS = intArrayOf(0, 15, 30, 60)                       // the same chips as the page's (js/screen.js)
+private val PIC_FPS = intArrayOf(0, 15, 30, 60)                       // the same chips as the page's (js/screen.js picDialog)
 private val PIC_RATE = intArrayOf(0, 1, 2, 4, 8)                      // Mbit/s
 
-/** Frames per second, bit rate and the TV's encoder of the person's own, over the level's (0: the level's): each tap restarts the picture. */
-private fun MainActivity.picAdvanced() {
+/**
+ * The quality chip under the picture: one dialog with the levels, lightest first, then frames per second, bit rate and the TV's
+ * encoder of the person's own, over the level's (0: the level's). Each tap restarts the picture.
+ */
+internal fun MainActivity.qualityMenu() {
     val body = col()
-    val fps = LinearLayout(this); val rate = LinearLayout(this); val enc = LinearLayout(this)
+    val level = LinearLayout(this); val fps = LinearLayout(this); val rate = LinearLayout(this); val enc = LinearLayout(this)
     fun draw() {
-        val words = { v: Int -> if (v == 0) t("Mặc định", "Default") else v.toString() }
-        fps.removeAllViews(); rate.removeAllViews(); enc.removeAllViews()
+        val words = { v: Int -> if (v == 0) t("Tự chọn", "Auto") else v.toString() }   // as the encoder row; "Mặc định" is cut in a fifth of a 360dp box
+        val now = prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)
+        level.removeAllViews(); fps.removeAllViews(); rate.removeAllViews(); enc.removeAllViews()
+        level.addView(chips(Tv.LEVELS.map { it.toString() to Tv.QUALITY[it][0].toString() + "p" }, now.toString()) { setQuality(it.toInt()); draw() }, LinearLayout.LayoutParams(-1, -2))
         fps.addView(chips(PIC_FPS.map { it.toString() to words(it) }, prefs.getInt("picFps", 0).toString()) { tune("picFps", it.toInt()); draw() }, LinearLayout.LayoutParams(-1, -2))
         rate.addView(chips(PIC_RATE.map { it.toString() to words(it) }, prefs.getInt("picRate", 0).toString()) { tune("picRate", it.toInt()); draw() }, LinearLayout.LayoutParams(-1, -2))
         enc.addView(chips(listOf("auto" to t("Tự chọn", "Auto"), "hw" to t("Phần cứng", "Hardware"), "sw" to t("Phần mềm", "Software")),
             prefs.getString("picEnc", "auto")!!) { if (prefs.getString("picEnc", "auto") != it) { prefs.edit().putString("picEnc", it).apply(); if (pic != null) { stopPicture(); startPicture() } }; draw() }, LinearLayout.LayoutParams(-1, -2))
     }
     draw()
-    body.addView(head(t("KHUNG/GIÂY", "FRAMES PER SECOND")))
+    body.addView(head(t("CỠ HÌNH", "SIZE")))                       // a smaller number is lighter on the TV and the network
+    body.addView(level, gap(6))
+    body.addView(head(t("KHUNG/GIÂY", "FRAMES PER SECOND")), gap(14))
     body.addView(fps, gap(6))
     body.addView(head(t("BITRATE (MBIT/S)", "BIT RATE (MBIT/S)")), gap(14))
     body.addView(rate, gap(6))
     body.addView(head(t("BỘ MÃ HÓA", "ENCODER")), gap(14))           // auto: the TV's hardware one, its software one when that sends nothing
     body.addView(enc, gap(6))
-    AlertDialog.Builder(this).setTitle(t("Hình nâng cao", "Advanced picture")).setView(inDialog(body))
+    Popup.Builder(this).setTitle(t("Chất lượng hình", "Picture quality")).setView(inDialog(body))
         .setPositiveButton(t("Xong", "Done"), null).show()
 }
 
@@ -247,7 +243,7 @@ internal fun MainActivity.buildRemote() {
                 if (!awake) {
                     tv.press(224)
                     Toast.makeText(this, t("Đang bật TV...", "Waking the TV..."), Toast.LENGTH_SHORT).show()
-                } else AlertDialog.Builder(this).setMessage(t("Đưa TV về chế độ chờ?", "Put the TV in standby?"))
+                } else Popup.Builder(this).setMessage(t("Đưa TV về chế độ chờ?", "Put the TV in standby?"))
                     .setPositiveButton(t("Chế độ chờ", "Standby")) { _, _ -> if (tv.ready()) tv.press(223) }
                     .setNegativeButton(t("Hủy", "Cancel"), null).show()
             }

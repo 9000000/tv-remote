@@ -1,6 +1,5 @@
 package dev.tvremote.phone
 
-import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -61,7 +60,7 @@ internal fun MainActivity.sendShared(tries: Int) {
 
 /** Any app can hand us a file or a link: it reaches the TV only once the person has seen what and where. */
 private fun MainActivity.confirmShare(what: String, send: () -> Unit) {
-    AlertDialog.Builder(this).setTitle(t("Gửi lên TV?", "Send to the TV?"))
+    Popup.Builder(this).setTitle(t("Gửi lên TV?", "Send to the TV?"))
         .setMessage(what + "\n\u2192 " + title(host ?: ""))
         .setPositiveButton(t("Gửi", "Send")) { _, _ -> send() }
         .setNegativeButton(t("Hủy", "Cancel"), null).show()
@@ -98,7 +97,7 @@ internal fun MainActivity.castFile(uri: Uri) {
     val cancel = dev.tvremote.core.web.Cancel()
     val job = org.json.JSONObject()
     val sending = t("Đang gửi lên TV: ", "Sending to the TV: ") + name
-    val box = AlertDialog.Builder(this).setMessage("$sending...").setCancelable(false)
+    val box = Popup.Builder(this).setMessage("$sending...").setCancelable(false)
         .setNegativeButton(t("■ Dừng", "■ Stop")) { _, _ -> cancel.stop() }.show()
     val tick = object : Runnable {
         override fun run() {
@@ -153,7 +152,7 @@ internal fun MainActivity.pickFile(types: Array<String>) {
 internal fun MainActivity.askText(title: String, hint: String, ok: String, then: (String) -> Unit) {
     val box = input(hint)
     val wrap = inDialog(box)
-    AlertDialog.Builder(this).setTitle(title).setView(wrap)
+    Popup.Builder(this).setTitle(title).setView(wrap)
         .setPositiveButton(ok) { _, _ -> box.text.toString().trim().let { if (it.isNotEmpty()) then(it) } }
         .setNegativeButton(t("Hủy", "Cancel"), null).show()
 }

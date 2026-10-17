@@ -1,6 +1,5 @@
 package dev.tvremote.phone
 
-import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -145,7 +144,7 @@ private fun MainActivity.drawPen(changed: () -> Unit) {
     val wrap = LinearLayout(this)
     wrap.orientation = LinearLayout.VERTICAL
     wrap.setPadding(dp(20), dp(16), dp(20), dp(4))
-    var dlg: android.app.AlertDialog? = null
+    var dlg: Popup? = null
     for (row in DRAW_COLORS.toList().chunked(5)) {
         val line = LinearLayout(this)
         line.gravity = Gravity.CENTER
@@ -179,7 +178,7 @@ private fun MainActivity.drawPen(changed: () -> Unit) {
     sizeRow.addView(size, LinearLayout.LayoutParams(0, dp(48), 1f))
     sizeRow.addView(dotBox, LinearLayout.LayoutParams(dp(56), dp(56)))
     wrap.addView(sizeRow, LinearLayout.LayoutParams(-1, -2).also { it.topMargin = dp(8) })
-    dlg = android.app.AlertDialog.Builder(this).setView(wrap).show()
+    dlg = Popup.Builder(this).setView(wrap).show()
 }
 
 // 🖼️ A picture from the phone, as on the web page: placed here (one finger moves it, two fingers size it), sent

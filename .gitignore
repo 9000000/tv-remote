@@ -24,3 +24,8 @@ app/gradle/local.properties
 app/android/*.apk
 app/tv/*.apk
 *.tvrkeys
+
+# dev/layout.js: Playwright, installed with npm install --prefix dev playwright
+dev/node_modules/
+dev/package.json
+dev/package-lock.json

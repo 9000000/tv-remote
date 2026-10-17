@@ -169,6 +169,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     private var tsWatch: TailscaleWatch? = null
     private var dnsWatch: DnsWatch? = null
     private var keepAdb: KeepAdb? = null
+    internal var keepAwake: KeepAwake? = null
     private var updates: AutoUpdate? = null
     private var serving = true                                        // the web server started, when it is wanted
     @Volatile private var saidAlive = false
@@ -224,10 +225,12 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         tsWatch = TailscaleWatch(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         dnsWatch = DnsWatch(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         keepAdb = KeepAdb(this).also { it.start() }
+        keepAwake = KeepAwake(this).also { it.start(); it.check() }
         updates = AutoUpdate(this, version, { try { link?.get() } catch (e: Exception) { null } }) { busyWhy() }.also { it.start() }
         ui.postDelayed(rest, 30000)
         ui.postDelayed(diary, 20000)
         stats.watchNet()
+        stats.watchPower()
     }
 
     override fun onStartCommand(i: Intent?, flags: Int, id: Int): Int {
@@ -245,8 +248,10 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         tsWatch?.stop()
         dnsWatch?.stop()
         keepAdb?.stop()
+        keepAwake?.stop()
         updates?.stop()
         stats.stopNet()
+        stats.stopPower()
         link?.close()
         tv?.stop()
         feeds.stop()
@@ -452,8 +457,9 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             }
             "/api/touch" -> {
                 val d = r.json()
-                val a = when (d.optString("a")) { "down", "0" -> 0; "up", "1" -> 1; "move", "2" -> 2; else -> -1 }   // no wheel here
-                feeds.viewer?.let { if (a >= 0 && it.ready()) it.touch(a, d.optDouble("x").toFloat(), d.optDouble("y").toFloat()) }
+                val a = when (d.optString("a")) { "down", "0" -> 0; "up", "1" -> 1; "move", "2" -> 2; "scroll" -> 8; else -> -1 }
+                val x = d.optDouble("x").toFloat(); val y = d.optDouble("y").toFloat()
+                feeds.viewer?.let { if (a == 8 && it.ready()) it.scroll(x, y, d.optDouble("dy", 0.0).toFloat()) else if (a >= 0 && it.ready()) it.touch(a, x, y) }   // the wheel, as on the computer
                 return ok()
             }
             "/api/apps" -> if (r.q("system") != "1") return HttpServer.Response.json(JSONObject().put("apps", apps()))   // every package: Manage
@@ -466,7 +472,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             "/api/clip" -> {                                          // the TV's clipboard: through scrcpy, whose shell may read it
                 val t = tv
                 if (t == null || !t.ready()) return HttpServer.Response.error(503, "adb:$adbState")
-                if (post) { val d = r.json(); t.setClipboard(d.optString("text").take(100000), d.optBoolean("paste")); return ok() }
+                if (post) { val d = r.json(1_000_000); t.setClipboard(d.optString("text").take(100000), d.optBoolean("paste")); return ok() }
                 val text = t.clipboard() ?: return HttpServer.Response.error(504, "the TV did not answer")
                 return HttpServer.Response.json(JSONObject().put("text", text))
             }

@@ -3,7 +3,10 @@ package dev.tvremote.setup
 import android.app.ActivityManager
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -33,6 +36,9 @@ import java.util.Locale
  *                          Wi-Fi signal dBm (null off Wi-Fi), "wifi" | "eth" | "" (no network), Wi-Fi link Mbps]   30 days
  *   stats/net.jsonl       [time, 0 lost / 1 back, "wifi" | "eth" | "", screen on]: every time the TV's network went away and
  *                          came back, which the samples five minutes apart would miss
+ *   stats/power.jsonl     [time, what] for the Health tab's Sleep view: "on" / "off" (the screen), "start" (TV Setup started:
+ *                          after a boot, an update, or the TV killing it), "vpn_up" / "vpn_down" (Tailscale), "ts_restart"
+ *                          (TailscaleWatch started it again). Begun with the screen's last 7 days from Android's usage events.
  *
  * Reading which app is on screen needs the "usage access" permission, which the TV grants to our ADB session.
  */
@@ -61,6 +67,22 @@ internal class Stats(private val ctx: Context) {
             val open = cur
             if (on) close(now)
             return Pair(total, open)
+        }
+
+        private val powerLock = Any()
+
+        /** One line of power.jsonl. From any thread; TailscaleWatch calls it too. */
+        fun note(ctx: Context, what: String, at: Long = System.currentTimeMillis()) {
+            try {
+                synchronized(powerLock) {
+                    val f = File(ctx.getExternalFilesDir(null), "stats/power.jsonl")
+                    f.parentFile?.mkdirs()
+                    f.appendText(JSONArray().put(at / 1000).put(what).toString() + "\n")
+                    if (f.length() > 120_000) f.readLines().let { l ->     // a few thousand lines: months of an ordinary TV
+                        val tmp = File(f.path + ".tmp"); tmp.writeText(l.subList(l.size / 2, l.size).joinToString("\n") + "\n"); tmp.renameTo(f)
+                    }
+                }
+            } catch (ignored: Exception) { }
         }
 
         /** When the screen last came on today (0 when it did not): an app on screen with no foreground event since is counted from then. */
@@ -190,6 +212,43 @@ internal class Stats(private val ctx: Context) {
             f.appendText(JSONArray().put(System.currentTimeMillis() / 1000).put(if (down) 0 else 1).put(kind).put(if (on) 1 else 0).toString() + "\n")
             if (f.length() > 60_000) write(f, f.readLines().let { it.subList(it.size / 2, it.size) }.joinToString("\n") + "\n")
         } catch (ignored: Exception) {
+        }
+    }
+
+    private val screen = object : BroadcastReceiver() {
+        override fun onReceive(c: Context, i: Intent) { note(ctx, if (i.action == Intent.ACTION_SCREEN_ON) "on" else "off") }
+    }
+
+    /** Starts writing power.jsonl; the service calls it once, as it starts. */
+    fun watchPower() {
+        Thread({
+            try {
+                val prefs = ctx.getSharedPreferences("stats", Context.MODE_PRIVATE)
+                if (!prefs.getBoolean("power_backfilled", false)) { backfill(); prefs.edit().putBoolean("power_backfilled", true).apply() }
+            } catch (ignored: Exception) { }
+            note(ctx, "start")
+        }, "powerlog").apply { isDaemon = true }.start()
+        try { ctx.registerReceiver(screen, IntentFilter().apply { addAction(Intent.ACTION_SCREEN_ON); addAction(Intent.ACTION_SCREEN_OFF) }) } catch (ignored: Exception) { }
+    }
+
+    fun stopPower() { try { ctx.unregisterReceiver(screen) } catch (ignored: Exception) { } }
+
+    /** The first power.jsonl: the screen going on and off over the last week, as Android's usage events remember it. */
+    private fun backfill() {
+        val now = System.currentTimeMillis()
+        val events = (ctx.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager).queryEvents(now - 7 * 86400000L, now)
+        val e = UsageEvents.Event()
+        val out = StringBuilder()
+        while (events.hasNextEvent()) {
+            events.getNextEvent(e)
+            if (e.eventType == SCREEN_INTERACTIVE || e.eventType == SCREEN_NON_INTERACTIVE)
+                out.append(JSONArray().put(e.timeStamp / 1000).put(if (e.eventType == SCREEN_INTERACTIVE) "on" else "off")).append('\n')
+        }
+        synchronized(powerLock) {                                      // ahead of what note() wrote meanwhile (a VPN coming up)
+            dir.mkdirs()
+            val f = File(dir, "power.jsonl")
+            val had = if (f.exists()) f.readText() else ""
+            if (!Regex("\"(on|off)\"]").containsMatchIn(had)) write(f, out.toString() + had)   // a TV Setup from before the pref: done already
         }
     }
 

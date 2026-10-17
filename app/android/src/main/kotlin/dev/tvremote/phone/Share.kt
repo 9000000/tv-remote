@@ -1,6 +1,5 @@
 package dev.tvremote.phone
 
-import android.app.AlertDialog
 import android.view.Gravity
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -99,7 +98,7 @@ private fun MainActivity.showShare(r: JSONObject, ask: (String, (JSONObject) -> 
     pick(true)
     val scroll = android.widget.ScrollView(this)
     scroll.addView(body)
-    AlertDialog.Builder(this).setTitle(t("Chia sẻ", "Share")).setView(scroll).setPositiveButton(t("Xong", "Done"), null).show()
+    Popup.Builder(this).setTitle(t("Chia sẻ", "Share")).setView(scroll).setPositiveButton(t("Xong", "Done"), null).show()
 }
 
 /** A choice among the three scopes: its icon above the words, so three fit across a phone. */

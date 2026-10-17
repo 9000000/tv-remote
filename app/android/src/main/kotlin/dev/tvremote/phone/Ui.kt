@@ -1,7 +1,6 @@
 package dev.tvremote.phone
 
 import android.app.Activity
-import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
@@ -292,7 +291,7 @@ internal fun Context.oval(color: Int): GradientDrawable {
 internal fun Activity.menu(title: String, primary: Int, items: List<Triple<String, String, () -> Unit>>) {
     val list = col()
     list.setPadding(dp(16), dp(8), dp(16), dp(4))
-    var dialog: AlertDialog? = null
+    var dialog: Popup? = null
     items.forEachIndexed { i, (title, what, run) ->
         val art = if (title.startsWith("@")) title.substringBefore("|").substring(1) else null
         val name = if (art != null) title.substringAfter("|") else title
@@ -328,5 +327,5 @@ internal fun Activity.menu(title: String, primary: Int, items: List<Triple<Strin
     }
     val sv = ScrollView(this)
     sv.addView(list)
-    dialog = AlertDialog.Builder(this).setTitle(title).setView(sv).setNegativeButton(t("Đóng", "Close"), null).show()
+    dialog = Popup.Builder(this).setTitle(title).setView(sv).setNegativeButton(t("Đóng", "Close"), null).show()
 }

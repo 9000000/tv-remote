@@ -1,6 +1,5 @@
 package dev.tvremote.phone
 
-import android.app.AlertDialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -250,7 +249,7 @@ internal fun MainActivity.clipDialog() {
             body.addView(box, LinearLayout.LayoutParams(-1, -2))
             val acts = LinearLayout(this)
             body.addView(acts, LinearLayout.LayoutParams(-1, dp(44)).apply { topMargin = dp(12) })
-            val d = AlertDialog.Builder(this).setTitle(t("Clipboard của TV", "The TV’s clipboard")).setView(body).create()
+            val d = Popup.Builder(this).setTitle(t("Clipboard của TV", "The TV’s clipboard")).setView(body).create()
             val toTv = { paste: Boolean ->
                 val s = box.text.toString()
                 if (s.isEmpty()) say(t("Chưa có chữ", "No text yet"), false)

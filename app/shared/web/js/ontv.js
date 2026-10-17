@@ -52,6 +52,13 @@ if (window.ONTV) (() => {
 
   // Left / right: the nearest control on the same row, or none (the focus stays). Up / down: the next row that way, and on it
   // the control under the column the focus keeps since the last move sideways (a wide search box does not throw it off).
+  // the card a control sits in, and whether two cards share a column (the tabs lay cards out in 2 or 3 columns, js-free)
+  const lane = (e) => e.closest('.card');
+  const sameLane = (e, f) => {                                       // a control in no card (the page's foot) is in none
+    if (!lane(e) || !lane(f)) return false;
+    const p = lane(e).getBoundingClientRect(), q = lane(f).getBoundingClientRect();
+    return Math.min(p.right, q.right) - Math.max(p.left, q.left) > Math.min(p.width, q.width) / 2;
+  };
   let col = null;
   function next(from, [dx, dy]) {
     const a = from.getBoundingClientRect();
@@ -66,11 +73,19 @@ if (window.ONTV) (() => {
         const s = Math.max(0, edge) + Math.abs(b.top + b.bottom - a.top - a.bottom) / 8;
         if (s < score) { score = s; best = e; }
       }
+      if (!best) for (const [e, b] of all) {                         // nothing level with it: the nearest in the next column of cards
+        const edge = dx > 0 ? b.left - a.right : a.left - b.right;
+        if (edge < 0 || !lane(e) || lane(e) === lane(from)) continue;
+        const s = edge + Math.max(0, b.top - a.bottom, a.top - b.bottom) * 2;
+        if (s < score) { score = s; best = e; }
+      }
       if (best) { const b = best.getBoundingClientRect(); col = (b.left + b.right) / 2; }
       return best;
     }
-    const ahead = all.filter(([, b]) => (dy > 0 ? b.top >= a.top + a.height / 2 : b.bottom <= a.bottom - a.height / 2))
+    let ahead = all.filter(([, b]) => (dy > 0 ? b.top >= a.top + a.height / 2 : b.bottom <= a.bottom - a.height / 2))
       .sort((p, q) => dy > 0 ? p[1].top - q[1].top : q[1].bottom - p[1].bottom);
+    const own = ahead.filter(([e]) => sameLane(e, from));               // cards in columns: down the same column first
+    if (own.length) ahead = own;
     if (!ahead.length) return null;
     const near = ahead[0][1], row = ahead.filter(([, b]) => dy > 0 ? b.top < near.bottom - 2 : b.bottom > near.top + 2);   // the row: what overlaps the nearest one
     const x = Math.min(Math.max(col ?? a.left + 1, a.left), a.right);

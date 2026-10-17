@@ -1,5 +1,6 @@
 package dev.tvremote.desktop
 
+import dev.tvremote.core.ontv.Draw
 import dev.tvremote.core.adb.AdbPrompt
 import dev.tvremote.core.remote.Atv
 import dev.tvremote.core.web.HttpServer
@@ -85,7 +86,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         if (r.method == "POST") {
             val type = (r.headers["content-type"] ?: "").substringBefore(';').trim()
             if (type != "application/json" && type != "application/octet-stream") return Response.error(415, "json only")
-            if (type == "application/json" && r.jsonOrNull() == null) return Response.error(400, "bad json")   // never "save nothing"
+            if (type == "application/json" && r.jsonOrNull(Draw.MAX_BODY) == null) return Response.error(400, "bad json")   // never "save nothing"; as big as the biggest body taken: a picture to draw
         }
         if (!r.path.startsWith("/api/")) page().serve(r.path)?.let { return it }
         val s = cur

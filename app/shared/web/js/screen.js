@@ -19,7 +19,7 @@ async function snapOnce() {
   try {
     const r = await fetch('/api/screen');
     if (r.ok) { const b = await r.blob(); return b; }
-    let e = r.statusText; try { e = (await r.json()).error || e; } catch {} return e;
+    let e = r.statusText; try { e = (await r.json()).error || e; } catch {} return friendly(adbWords(r.status, e));
   } catch { return 'Không gọi được server'; }
 }
 async function snapLoop(gen) {
@@ -40,32 +40,42 @@ function picTune() { let t = {}; try { t = JSON.parse(localStorage.getItem('picT
 function picTuneSay() { const t = picTune(); return (t.fps ? ' · ≤' + t.fps + ' fps' : '') + (t.rate ? ' · ' + t.rate + ' Mbit/s' : '') + (t.enc ? ' · ' + PIC_ENC_SAY[t.enc] : ''); }
 const PIC_ENC = { 0: 'Tự chọn', hw: 'Phần cứng', sw: 'Phần mềm' };   // the TV's video encoder; auto: hardware, software if it sends nothing
 const PIC_ENC_SAY = { hw: 'mã hóa phần cứng', sw: 'mã hóa phần mềm' };
-function picAdvanced() {
-  const row = (key, list, words = (v) => v ? String(v) : 'Mặc định') => {
+// The quality button under the picture: one dialog with the levels, then frames per second, bit rate and encoder.
+function picDialog() {
+  const chips = (list, on, pick) => {
     const box = el('div', { className: 'fchips' });
-    const draw = () => box.replaceChildren(...list.map((v) => el('button', { className: picTune()[key] === v ? 'on' : '', textContent: words(v), onclick: () => {
-      const t = picTune(); t[key] = v; try { localStorage.setItem('picTune', JSON.stringify(t)); } catch {}
-      draw(); if (screenOn && $('#screenmode').value !== 'snap') startScreen();
-    } })));
-    draw(); return box;
+    const draw = () => box.replaceChildren(...list.map(([v, words]) => el('button', { className: on() === v ? 'on' : '', textContent: words, onclick: () => { pick(v); draw(); } })));
+    draw(); box.redraw = draw; return box;
   };
+  const tune = (key, list, words = (v) => v ? String(v) : 'Mặc định') => chips(list.map((v) => [v, words(v)]), () => picTune()[key], (v) => {
+    const t = picTune(); t[key] = v; try { localStorage.setItem('picTune', JSON.stringify(t)); } catch {}
+    if (screenOn && $('#screenmode').value !== 'snap') startScreen();
+  });
+  const levels = [...$('#screenmode').options].map((o) => [o.value, o.textContent]), sized = (v) => /^\d+$/.test(v);
+  const pickLevel = (v) => { $('#screenmode').value = v; $('#screenmode').dispatchEvent(new Event('change')); d.querySelectorAll('.fchips.level').forEach((c) => c.redraw()); };
+  const level = (list) => { const c = chips(list, () => $('#screenmode').value, pickLevel); c.classList.add('level'); return c; };   // two rows, one choice: each on one line
   const d = el('dialog', { className: 'ask menu' }, el('div', { className: 'card' },
-    el('div', { className: 'card-head' }, el('h2', { textContent: '⚙️ Hình nâng cao' }), el('button', { className: 'small iconbtn', textContent: '✕', title: 'Đóng', 'aria-label': 'Đóng', onclick: () => d.close() })),
-    el('h3', { textContent: 'Khung/giây' }), row('fps', PIC_FPS),
-    el('h3', { textContent: 'Bitrate (Mbit/s)' }), row('rate', PIC_RATE),
-    el('h3', { textContent: 'Bộ mã hóa' }), row('enc', [0, 'hw', 'sw'], (v) => PIC_ENC[v]),
+    el('div', { className: 'card-head' }, el('h2', { textContent: '🖥️ Chất lượng hình' }), el('button', { className: 'small iconbtn', textContent: '✕', title: 'Đóng', 'aria-label': 'Đóng', onclick: () => d.close() })),
+    el('h3', { textContent: 'Cỡ hình' }), level(levels.filter(([v]) => sized(v))),
+    el('h3', { textContent: 'Hoặc' }), level(levels.filter(([v]) => !sized(v))),
+    el('h3', { textContent: 'Khung/giây' }), tune('fps', PIC_FPS),
+    el('h3', { textContent: 'Bitrate (Mbit/s)' }), tune('rate', PIC_RATE),
+    el('h3', { textContent: 'Bộ mã hóa' }), tune('enc', [0, 'hw', 'sw'], (v) => PIC_ENC[v]),
     el('p', { className: 'note', textContent: 'Cao hơn thì mượt, nét hơn nhưng nặng TV và mạng hơn. Hình đứng mãi ở “Đang lấy hình”: thử Phần mềm.' })));
   d.addEventListener('close', () => d.remove());
   document.body.append(d); d.showModal();
 }
+function picLevelSay() { const o = $('#screenmode').selectedOptions[0]; $('#screenmodebtn').replaceChildren(el('span', { textContent: o ? o.textContent : '' }), ' ▾'); }
 function loadScript(src) { return new Promise((ok, no) => document.head.append(el('script', { src, onload: ok, onerror: no }))); }
 async function h264Loop(gen) {
   setScreenInfo('Đang mở luồng trực tiếp...', true);
   const size = $('#screenmode').value, video = $('#screenv'), tune = picTune(), fps = tune.fps || H264_FPS[size] || 10, step = Math.round(1000 / fps);
   try { if (!window.JMuxer) await loadScript('jmuxer.min.js'); } catch { if (gen === screenGen) stopScreen('Không tải được phần phát hình.'); return; }
   if (gen !== screenGen) return;
+  let mux;
+  try { mux = muxer = new JMuxer({ node: video, mode: 'video', flushingTime: 0, fps, clearBuffer: true, onError: () => {} }); }
+  catch { $('#screenmode').value = 'snap'; snapLoop(gen); return; }   // no MediaSource (an iPhone before iOS 17.1): pictures instead
   streamCtl = new AbortController();
-  const mux = muxer = new JMuxer({ node: video, mode: 'video', flushingTime: 0, fps, clearBuffer: true, onError: () => {} });
   const edge = setInterval(() => {                                    // stay on the newest frame instead of playing a growing backlog
     if (gen !== screenGen) { clearInterval(edge); return; }
     const b = video.buffered; if (!b.length) return;
@@ -147,10 +157,10 @@ setInterval(() => {
 }, 1000);
 $('#screenbtn').addEventListener('click', () => { if (screenOn) stopScreen(); else startScreen(); });
 try { const q = localStorage.getItem('quality'); if (q && [...$('#screenmode').options].some((o) => o.value === q)) $('#screenmode').value = q; } catch {}   // the level picked last time
-let picLevel = $('#screenmode').value;
+picLevelSay();
+$('#screenmodebtn').addEventListener('click', picDialog);
 $('#screenmode').addEventListener('change', () => {
-  if ($('#screenmode').value === 'adv') { $('#screenmode').value = picLevel; picAdvanced(); return; }   // a dialog, not a level
-  picLevel = $('#screenmode').value; try { localStorage.setItem('quality', $('#screenmode').value); } catch {} if (screenOn) startScreen(); });
+  picLevelSay(); try { localStorage.setItem('quality', $('#screenmode').value); } catch {} if (screenOn) startScreen(); });
 $('#screenfull').addEventListener('click', () => { const b = $('#screenbox'); if (document.fullscreenElement) document.exitFullscreen(); else if (b.requestFullscreen) b.requestFullscreen(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && screenOn) stopScreen(); });
 setScreenPlaceholder();

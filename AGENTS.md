@@ -169,6 +169,10 @@ What it takes care of, for doing it by hand:
 - Unit tests (no device needed): `node --test app/shared/tests/`,
   `cd app/gradle && ./gradlew :shared:testDebugUnitTest :tv:testDebugUnitTest`. The voice tests exist on both sides
   (`voice.test.js`, `VoiceTest.kt`): keep `js/voice.js` and `Voice.kt` understanding the same sentences.
+- Real network and real browsers: `dev/smoke.py tv` asks every `/api` route of TV Setup on the TV emulator through the emulator's
+  own port redirect (adb forward hid a reply lost to a reset); `TVR_PASS=… dev/smoke.py URL` does the same for the computer app.
+  `TVR_PASS=… node dev/layout.js` checks the layout in Chrome and WebKit (the Mac app's window and iPhones are WebKit). Run both
+  after a change to HttpServer / the routes, or to the page's CSS.
 - Contrast: `node --test app/shared/tests/` includes `contrast.test.js` (WCAG ratios of the style.css tokens in both themes); `dev/contrast.py [URL]` (Chrome, default the test server on 8772) scans the rendered page, both themes x 1100/400 px x every tab + Settings, exit 1 under 4.5:1 (3:1 icons, large text). Run it after colour changes.
 - The TV's sound: the Google TV emulator cannot run YouTube; press D-pad keys on the TV during a capture to get click sounds.
 - The intro site's screenshots: `dev/shots.py` (`docs/README.md`).

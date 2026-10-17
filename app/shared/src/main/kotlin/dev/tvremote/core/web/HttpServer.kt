@@ -161,6 +161,10 @@ class HttpServer(private val handler: Handler) {
                 o.write(bytes(h.append("\r\n").toString()))
                 if (stream != null) stream.write(o) else o.write(out.body)
                 o.flush()
+                // the body a handler did not want (POST /api/pair/start's "{}"), read before closing: a socket closed with bytes
+                // unread sends a reset, and over a real network that throws away the reply the browser had not taken in yet
+                try { (r?.body as? Left)?.let { sock.soTimeout = 2000; it.skipAll(30_000) } } catch (ignored: IOException) { }
+                sock.shutdownOutput()
             }
         } catch (ignored: IOException) {
             // the browser went away
@@ -207,10 +211,37 @@ class HttpServer(private val handler: Handler) {
             }
             r.length = r.headers["content-length"]?.toLongOrNull() ?: 0
             if (r.length < 0) return null
-            r.body = input
+            r.body = Left(input, r.length)
             return r
         }
 
         fun bytes(s: String): ByteArray = s.toByteArray(Charsets.UTF_8)
+    }
+
+    /** The request body: [left] bytes of [input] and no more, so what a handler leaves of it can be read away before closing. */
+    private class Left(private val input: InputStream, private var left: Long) : InputStream() {
+        override fun read(): Int {
+            if (left <= 0) return -1
+            val b = input.read()
+            if (b >= 0) left-- else left = 0
+            return b
+        }
+
+        override fun read(b: ByteArray, off: Int, len: Int): Int {
+            if (left <= 0) return -1
+            val n = input.read(b, off, minOf(len.toLong(), left).toInt())
+            if (n > 0) left -= n else left = 0
+            return n
+        }
+
+        override fun available(): Int = minOf(input.available().toLong(), left).toInt()
+
+        /** Reads away what is left, for [ms] at most: an upload refused before its first byte (ADB not allowed, no room) still
+         *  gets its answer to the browser, and a sender that never stops does not hold the thread. */
+        fun skipAll(ms: Long) {
+            val until = System.currentTimeMillis() + ms
+            val buf = ByteArray(65536)
+            while (System.currentTimeMillis() < until && read(buf, 0, buf.size) > 0) { }
+        }
     }
 }

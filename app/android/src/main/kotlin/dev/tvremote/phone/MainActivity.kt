@@ -1,7 +1,6 @@
 package dev.tvremote.phone
 
 import android.app.Activity
-import android.app.AlertDialog
 import android.content.Intent
 import android.os.Build
 import android.content.SharedPreferences
@@ -248,6 +247,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     override fun onDestroy() {
         managing.destroy()
+        Popup.closeAll(this)                                           // or the window leaks, in the old colours
+        if (::nowApp.isInitialized) nowApp.close()
         // recreated (dark mode at sunset, a font size, the language): this instance's session, sound and keys end with it, or
         // they would go on beside the new one's, with nothing left on screen that can stop them
         ui.removeCallbacksAndMessages(null)
@@ -495,7 +496,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal fun leave() {
         val w = managing.working()
         if (w.isEmpty()) { disconnect(null); return }
-        AlertDialog.Builder(this).setTitle(WorkService.say(w) + "...")
+        Popup.Builder(this).setTitle(WorkService.say(w) + "...")
             .setMessage(t("Rời TV này sẽ hủy việc đang làm.", "Leaving this TV cancels it."))
             .setPositiveButton(t("Ở lại", "Stay"), null)
             .setNegativeButton(t("Vẫn rời", "Leave anyway")) { _, _ -> disconnect(null) }.show()
@@ -729,14 +730,14 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val mic = icon("@mic", t("Nói", "Speak"), ACCENT)
         mic.lit = true
         box.addView(mic, LinearLayout.LayoutParams(dp(48), dp(48)).apply { leftMargin = dp(8) })
-        var dlg: android.app.AlertDialog? = null
+        var dlg: Popup? = null
         val send = { val s = field.text.toString().trim(); if (s.isNotEmpty()) { dlg?.dismiss(); voice(s) } }
         mic.setOnClickListener { dlg?.dismiss(); speak() }
         field.setOnEditorActionListener { _, _, _ -> send(); true }
-        dlg = android.app.AlertDialog.Builder(this).setTitle(t("Nói hoặc gõ cho TV", "Speak or type to the TV")).setView(box)
+        dlg = Popup.Builder(this).setTitle(t("Nói hoặc gõ cho TV", "Speak or type to the TV")).setView(box)
             .setPositiveButton(t("Gửi", "Send"), null).setNegativeButton(t("Đóng", "Close"), null).create()
         dlg.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-        dlg.setOnShowListener { dlg.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener { send() } }
+        dlg.setOnShowListener { dlg.getButton(Popup.BUTTON_POSITIVE).setOnClickListener { send() } }
         dlg.show()
         field.requestFocus()
     }

@@ -58,13 +58,20 @@ async function drawFlush() {
     const ops = drawQ; drawQ = [];
     const r = await fetch('/api/draw', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ops }) }).catch(() => null);
     if (!r || !r.ok) {
-      drawStop(); drawFail(r ? await r.text().catch(() => '') : '');
+      drawStop(); drawFail(await drawWhy(r));
       break;
     }
   }
   drawSending = false;
 }
 
+// the server's {"error": ...} in words, not the reply's raw text
+async function drawWhy(r) {
+  if (!r) return '';
+  let e = r.statusText; try { e = (await r.json()).error || e; } catch {}
+  if (r.status === 401 && CORE === 'tv' || r.status === 403 && e === 'scope') refresh();
+  return adbWords(r.status, e);
+}
 // An old or missing TV Setup comes as needSetup's question (update or install it), before anything is drawn when it can.
 function drawFail(why) {
   if (!needSetup(why)) toast(/draw:nooverlay/.test(why) ? 'TV này không cho app vẽ đè lên màn hình.' : 'Không vẽ được lên TV: ' + friendly(why || 'mất kết nối'));
@@ -78,7 +85,7 @@ async function drawStart() {
   drawSize();
   const r = await fetch('/api/draw', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"ops":[]}' }).catch(() => null);
   if (!drawing) return;
-  if (!r || !r.ok) { const why = r ? await r.text().catch(() => '') : ''; drawStop(); drawFail(why); return; }
+  if (!r || !r.ok) { const why = await drawWhy(r); drawStop(); drawFail(why); return; }
   drawPics = (await r.json().catch(() => ({}))).pic !== false;
 }
 function drawStop() {

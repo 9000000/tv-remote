@@ -1,6 +1,5 @@
 package dev.tvremote.phone
 
-import android.app.AlertDialog
 import android.os.Build
 import android.view.View
 import android.text.InputType
@@ -41,7 +40,7 @@ internal fun MainActivity.offerBasic(ip: String, error: String) {
             if (!keys) { disconnect(error); return@post }
             disconnect(null)
             if (prefs.getBoolean("atv:$ip", false)) startBasic(ip, false)
-            else AlertDialog.Builder(this).setTitle(t("TV chưa bật Gỡ lỗi ADB", "ADB debugging is off on this TV"))
+            else Popup.Builder(this).setTitle(t("TV chưa bật Gỡ lỗi ADB", "ADB debugging is off on this TV"))
                 .setMessage(t("Vẫn bấm phím điều khiển được, sau khi ghép bằng mã hiện trên TV. Từ đó bạn mở Cài đặt của TV để bật ADB, rồi dùng đủ chức năng (xem hình, ứng dụng, tệp...).",
                     "You can still press keys, after pairing with a code the TV shows. From there open the TV’s Settings to turn ADB on, then everything works (picture, apps, files...)."))
                 .setPositiveButton(t("Ghép bằng mã", "Pair with a code")) { _, _ -> startBasic(ip, false) }
@@ -173,7 +172,7 @@ internal fun MainActivity.pair(ip: String) {
         code.inputType = if (vidaa) android.text.InputType.TYPE_CLASS_NUMBER
             else android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         val wrap = inDialog(code)
-        AlertDialog.Builder(this).setTitle(t("Nhập mã đang hiện trên TV", "Type the code shown on the TV")).setView(wrap)
+        Popup.Builder(this).setTitle(t("Nhập mã đang hiện trên TV", "Type the code shown on the TV")).setView(wrap)
             .setPositiveButton(t("Ghép", "Pair")) { _, _ ->
                 val typed = code.text.toString()
                 Thread {

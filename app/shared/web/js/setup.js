@@ -180,11 +180,12 @@ $('#quit').addEventListener('click', async () => {
 function tvChanged() {                                                // another TV: forget everything cached about the old one
   if (screenOn) stopScreen();
   if (listenOn) stopListen();
-  quickLoaded = appsLoaded = filesLoaded = scenesLoaded = autoLoaded = sceneNamesAsked = false; META.clear(); cwd = '/sdcard/Download'; bannerKey = ''; RULES = null; SCENES = []; setRows = []; $('#setlistbody').replaceChildren(); renderScenes(); setupChecked = ''; $('#setupupd').hidden = true;
+  quickLoaded = appsLoaded = filesLoaded = scenesLoaded = autoLoaded = sceneNamesAsked = false; META.clear(); metaFailed.clear(); cwd = '/sdcard/Download'; bannerKey = ''; RULES = null; SCENES = []; setRows = []; $('#setlistbody').replaceChildren(); renderScenes(); setupChecked = ''; $('#setupupd').hidden = true;
   $('#quick').replaceChildren(el('div', { className: 'muted', textContent: 'Danh sách app hiện khi ADB sẵn sàng.' }));
   $('#appslist').replaceChildren(); $('#fileslist').replaceChildren();
   if (currentTab === 'tv') loadSteps();
   if (picking) loadTvs();
+  sleepReset();
 }
 function connecting(name, host) {                                   // covers the remote until the TV answers (see refresh)
   $('#conname').textContent = name; $('#constep').textContent = 'Đang tìm TV ở ' + host + '...';
@@ -352,14 +353,17 @@ async function installSetup() {
   const msg = say('Đang bắt đầu...'); msg.classList.add('setupmsg');   // the words change as it goes; the buttons below must not jump
   const done = el('button', { className: 'small', textContent: '✓ Đã cài xong', onclick: async () => { setDone(true); await assist('installed'); } });
   const setDone = (busy) => { done.disabled = busy; done.textContent = tr(busy ? '⏳ Đang kiểm tra...' : '✓ Đã cài xong'); };
-  assistShow('Cài TV Setup lên TV', msg, row(done, act('■ Dừng', async () => { await assist('stop'); await sleep(400); adbHelp(); })));
+  const hands = el('p', { className: 'note', textContent: 'Đừng bấm remote của TV cho tới khi xong.' });   // a key pressed in the middle sends the job elsewhere
+  assistShow('Cài TV Setup lên TV', msg, hands, row(done, act('■ Dừng', async () => { await assist('stop'); await sleep(400); adbHelp(); })));
   const gen = assistGen; let misses = 0;
   for (;;) {
     await sleep(1000); if (gen !== assistGen) return;
     const r = await api('/api/assist', null, true); if (gen !== assistGen) return;
     misses = r ? 0 : misses + 1;                                      // ten in a row: say so, instead of waiting for ever
     if (misses >= 10) return assistShow('Cài TV Setup lên TV', say('Không gọi được server'), row(act('↻ Thử lại', async () => installSetup(), 'primary'), act('← Các cách khác', async () => adbHelp())));
-    if (!r || r.status === 'running') { if (r) { if (r.msg) msg.textContent = tr(r.msg); setDone(!!r.checking); } continue; }
+    if (!r || r.status === 'running') { if (r) { if (r.msg) msg.textContent = (r.step ? tr(`Bước ${r.step}/${r.steps}`) + ' · ' : '') + tr(r.msg); setDone(!!r.checking); } continue; }
+    if (r.status === 'moved') return assistShow('Cài TV Setup lên TV', say('Màn hình TV đã đổi giữa chừng, có ai vừa bấm remote của TV? Để yên remote rồi thử lại.'),
+      row(act('↻ Thử lại', async () => installSetup(), 'primary'), act('← Các cách khác', async () => adbHelp())));
     if (r.status === 'look') return assistShow('Nhìn lên TV', say('TV đã nhận đường dẫn và tải TV Setup.\n\n1. TV hỏi cài đặt: chọn Cài đặt (Install). Nếu TV hỏi quyền cài từ nguồn này: bật cho app đang tải, bấm Quay lại, rồi chọn Install.\n2. Cài xong chọn Mở (hoặc bấm “Mở TV Setup” bên dưới).\n3. TV Setup tự mở Tùy chọn nhà phát triển: bật “Gỡ lỗi USB”.\n4. TV hỏi cho phép gỡ lỗi: tích “Luôn cho phép”, chọn OK. Trang này tự kết nối.'),
       row(act('📺 Mở TV Setup', async () => { await assist('open', { what: 'dev.tvremote.setup' }); }, 'primary'), act('↻ Làm lại', async () => installSetup()), act('← Các cách khác', async () => adbHelp())));
     return assistShow('Cài TV Setup lên TV', say(tr(r.msg) || 'Không làm được.'), row(act('↻ Thử lại', async () => installSetup(), 'primary'), act('← Các cách khác', async () => adbHelp())));
@@ -376,7 +380,7 @@ function tsShow(...kids) { $('#tsbody').replaceChildren(...kids.filter(Boolean))
 async function tailscaleGo() {
   const gen = ++tsGen, msg = el('span', { textContent: 'Đang bắt đầu...' }), bar = el('div', { className: 'bar' }, el('i'));
   tsShow(el('p', { className: 'tswait' }, el('span', { className: 'minispin' }), msg), bar, el('p', { className: 'muted tsnote', textContent: 'Đóng được: TV vẫn làm tiếp.' }));
-  let j = await api('/api/tailscale/start', {}), misses = 0;
+  let j = await api('/api/tailscale/start', { lang: LANG }), misses = 0;
   while (j && j.status === 'running' && misses < 10) {
     const k = Object.keys(TS_STEP).find((w) => (j.msg || '').startsWith(w)); msg.textContent = k ? TS_STEP[k] : 'Đang làm...'; bar.firstChild.style.width = (j.pct || 0) + '%';
     await sleep(1000); if (gen !== tsGen) return;
@@ -442,6 +446,7 @@ async function loadSteps() {
   if (!ready) out.push(step(2, 'todo', 'Tailscale (để điều khiển khi không ở nhà)', 'Làm sau khi ADB đã kết nối. Chỉ dùng trong cùng Wi-Fi thì bỏ qua bước này được.'));
   else if (s.tailscale_ip) out.push(step(2, 'ok', 'Tailscale đã vào mạng', 'IP Tailscale của TV: ' + s.tailscale_ip + '. ' + 'Nên làm thêm: trong trang quản trị Tailscale, mở menu ⋯ của TV → Disable key expiry, để TV không bị đăng xuất sau khoảng 180 ngày.'));
   else out.push(step(2, 'todo', 'Tailscale (để điều khiển khi không ở nhà)', TS_PITCH, act('⚡ Cài và đăng nhập Tailscale', async () => tailscaleGo(), 'primary')));
+  out[out.length - 1].classList.add('optional');                     // only for away from home: the steps count as done without it
   // 3. remote pairing
   const r = s.remote;
   if (r.connected) out.push(step(3, 'ok', 'Nút remote đã ghép', 'Các nút điều khiển dùng được.'));
@@ -464,12 +469,18 @@ async function loadSteps() {
   }
   showSteps(out);
 }
-let stepsSig = '';
+let stepsSig = '', stepsHost = '';
 function showSteps(out) {
   if (document.activeElement && $('#steps').contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;   // don't wipe what is being typed
   const sig = out.map((n) => n.outerHTML).join('');                   // the poll often brings the same steps: leave them be
-  if (sig === stepsSig && $('#steps').childElementCount === out.length) return;
-  stepsSig = sig; $('#steps').replaceChildren(...out);
+  if (sig === stepsSig) return;
+  stepsSig = sig;
+  // all done: one line, opened on a click, so the tab starts with the TV
+  const done = out.every((n) => n.classList.contains('ok') || n.classList.contains('optional'));
+  const host = $('#setuphost').textContent, fold = $('#steps > details.stepsdone');
+  const open = fold && host === stepsHost ? fold.open : false;
+  stepsHost = host;
+  $('#steps').replaceChildren(...(done ? [el('details', { className: 'stepsdone', open }, el('summary', { textContent: tr('✓ Đã cài đặt xong') }), ...out)] : out));
 }
 // Hisense VIDAA: newer TVs want the certificate of Hisense's own app (never shipped with ours), then a 4-digit code.
 function vidaaStep(r) {
@@ -512,7 +523,7 @@ setInterval(() => { if (currentTab === 'tv' && !document.hidden && !stopped) loa
 const startTab = (window.LANG_KEEP && window.LANG_KEEP.tab) || location.hash.slice(1) || new URLSearchParams(location.search).get('tab') || (CORE === 'phone' ? 'apps' : '');
 if (CORE !== 'pc') $('#wake').parentElement.className = 'rrow three';   // no wake button there: three keys fill the row
 if (['remote', 'apps', 'files', 'health', 'auto', 'tv'].includes(startTab)) showTab(startTab); else if (startTab === 'install') showTab('files');
-else if (startTab === 'term') { showTab('health'); $('#termcard').open = true; }   // the terminal used to be a tab of its own
+else if (startTab === 'term') { showTab('files'); $('#termcard').open = true; }   // the terminal used to be a tab of its own
 document.documentElement.classList.add('tabbed');                     // the right tab is open: show it (theme.js)
 // One check at a time, and none while the page is hidden: a TV that is slow to answer must not pile them up.
 let polling = false;

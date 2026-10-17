@@ -12,6 +12,20 @@ import dev.tvremote.core.ontv.SetupNeed
 class NotifyTest {
     private fun clean(s: String) = Notify.clean(JSONObject(s))
 
+    @Test fun busyAsksToLeaveTheRemoteAloneThenSaysDoneAndNeverThrows() {
+        val sent = ArrayList<JSONObject>()
+        val tv = { cmd: String ->
+            sent.add(JSONObject(String(B64.decode(Regex("--es n (\\S+)").find(cmd)!!.groupValues[1]), Charsets.UTF_8)))
+            "Broadcast completed: result=-1, data=\"" + B64.encode("{\"ok\":true}".toByteArray()) + "\""
+        }
+        Notify.busy(tv, true, "Đang bật Tailscale")
+        Notify.busy(tv, false, null)
+        assertTrue(sent[0].getString("text").startsWith("Đang bật Tailscale. Đừng bấm remote"))
+        assertEquals(Notify.MAX_SECONDS, sent[0].getInt("seconds"))   // outlasts the job; the next card takes its place
+        assertEquals("TV Remote is done", sent[1].getString("title"))
+        Notify.busy({ "Broadcast completed: result=0" }, true, "x")   // no TV Setup: goes without, no error
+    }
+
     @Test fun cornerIsOneOfFourOrTheDefault() {
         for (c in Notify.CORNERS) assertEquals(c, Notify.corner(c))
         assertEquals("bottom-left", Notify.corner("  Bottom-Left "))

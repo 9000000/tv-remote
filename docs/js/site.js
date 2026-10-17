@@ -62,10 +62,10 @@
     var links = [].slice.call(document.querySelectorAll(".navlinks a, .navsheet a")), secs = links.map(function(a){ return document.querySelector(a.getAttribute("href")); }), busy = false;
     function mark(){
       busy = false;
-      var y = innerHeight / 3, k = -1;
-      secs.forEach(function(s, i){ if (s && s.getBoundingClientRect().top <= y) k = i; });
-      if (k >= 0 && secs[k].getBoundingClientRect().bottom < 0) k = -1;           // past the last one (the closing part)
-      links.forEach(function(a, i){ a.classList.toggle("on", i === k); });
+      var y = innerHeight / 3, cur = null;
+      secs.forEach(function(s){ if (s && s.getBoundingClientRect().top <= y) cur = s; });   // links in page order (the bar's, then the sheet's)
+      if (cur && cur.getBoundingClientRect().bottom < 0) cur = null;                     // past the last one (the closing part)
+      links.forEach(function(a, i){ a.classList.toggle("on", secs[i] === cur); });     // the bar's link and the sheet's both
     }
     var prog = document.querySelector(".navprog");
     function bar(){                                                    // reading progress along the header's bottom edge

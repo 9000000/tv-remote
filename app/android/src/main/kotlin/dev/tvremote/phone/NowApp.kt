@@ -14,8 +14,8 @@ import java.util.concurrent.Executors
 
 /**
  * The remote's "now open" line, as the web page's (apps.js showNowApp): the app on the TV's screen, from the TV's own remote link
- * (Android TV paired, LG, Samsung, Roku, VIDAA) or else over ADB. Hidden when the TV does not say, and while the now playing strip
- * shows (it names the app already). Names and pictures come from the Manage screen's copy per TV (RemoteLabels' cache), which
+ * (Android TV paired, LG, Samsung, Roku, VIDAA) or else over ADB. Hidden when the TV does not say; kept beside the now playing
+ * strip, as on the page. Names and pictures come from the Manage screen's copy per TV (RemoteLabels' cache), which
  * this fills when ADB is there; without ADB only that copy is read, so the TV is never asked "Allow USB debugging?" for it.
  */
 internal class NowApp(private val a: MainActivity) {
@@ -36,22 +36,27 @@ internal class NowApp(private val a: MainActivity) {
         view.gravity = Gravity.CENTER
         view.visibility = View.GONE
         view.addView(a.label(t("Đang mở", "Now open"), 13, MUTED))
-        view.addView(icon, LinearLayout.LayoutParams(a.dp(24), a.dp(24)).apply { leftMargin = a.dp(8) })
+        view.addView(icon, LinearLayout.LayoutParams(-2, a.dp(24)).apply { leftMargin = a.dp(8) })   // its own shape: a wide banner is not cut to a square
         icon.outlineProvider = object : android.view.ViewOutlineProvider() {   // rounded like the page's app pictures
             override fun getOutline(v: View, o: android.graphics.Outline) = o.setRoundRect(0, 0, v.width, v.height, a.dp(6).toFloat())
         }
         icon.clipToOutline = true
-        icon.scaleType = ImageView.ScaleType.CENTER_CROP
+        icon.adjustViewBounds = true
+        icon.maxWidth = a.dp(96)
+        icon.scaleType = ImageView.ScaleType.FIT_CENTER
         name.typeface = android.graphics.Typeface.DEFAULT_BOLD
         name.maxLines = 1; name.ellipsize = android.text.TextUtils.TruncateAt.END
         view.addView(name, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = a.dp(8) })   // its own gap: the picture may be missing
         a.ui.post { tick.run() }
     }
 
+    fun close() { work.shutdownNow(); link?.close(); link = null }
+
     private fun cacheDir(host: String) = File(a.cacheDir, "meta/" + host.replace(Regex("[^\\w.-]"), "_"))   // the Manage screen's (Managing.kt)
 
     private val tick = object : Runnable {
         override fun run() {
+            if (work.isShutdown) return
             a.ui.postDelayed(this, 2000)
             val host = a.host
             val tv = a.tv
@@ -89,7 +94,7 @@ internal class NowApp(private val a: MainActivity) {
     }
 
     private fun show(id: String, label: String, png: ByteArray?) {
-        val hide = id.isEmpty() || a.playing.view.visibility == View.VISIBLE
+        val hide = id.isEmpty() || label.isEmpty() && '.' in id && png == null   // a bare package name says nothing to most people
         view.visibility = if (hide) View.GONE else View.VISIBLE
         if (hide || "$id|$label|${png?.size}" == shown) return
         shown = "$id|$label|${png?.size}"

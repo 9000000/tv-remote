@@ -25,6 +25,7 @@ import dev.tvremote.core.adb.Mdns
 import dev.tvremote.core.ontv.Meminfo
 import dev.tvremote.core.ontv.Notify
 import dev.tvremote.core.ontv.NowPlaying
+import dev.tvremote.core.ontv.Power
 import dev.tvremote.core.adb.Pkg
 import dev.tvremote.core.ontv.RulesClient
 import dev.tvremote.core.scenes.Scenes
@@ -97,6 +98,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "files" -> return HttpServer.Response.json(files(r.q("path")))
                 "file" -> return download(r)
                 "health" -> return HttpServer.Response.json(health())
+                "power" -> return HttpServer.Response.json(Power.parse(link.get().shell(Power.CMD, 20000)) { RulesClient.power { sh(it) } }.let { if (it.has("now")) it else it.put("now", System.currentTimeMillis() / 1000) })
                 "procs" -> return HttpServer.Response.json(procs())
                 "crashes" -> return HttpServer.Response.json(JSONObject().put("text", sh(CRASHES).replace("\r\n", "\n").takeLast(500000)))
                 "stats" -> return HttpServer.Response.json(stats(r.q("days").toIntOrNull() ?: 7))
@@ -182,11 +184,13 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     HttpServer.Response.json(JSONObject().put("result", result))
                 }
                 "adb/deny" -> HttpServer.Response.json(JSONObject().put("ok", synchronized(promptLock) { AdbPrompt.deny(link.get(), r.json().optString("fingerprint")) }))
-                "tailscale/start" -> HttpServer.Response.json(job("tailscale") { j ->
+                "tailscale/start" -> { val vi = r.json().optString("lang") != "en"; HttpServer.Response.json(job("tailscale") { j ->
                     val t = Tailscale(link.get(), dir)
-                    val url = t.start { what, pct -> j.put("msg", what).put("pct", pct) }
+                    val url = t.start({ on -> Notify.busy(::sh, vi, if (on) (if (vi) "Đang bật Tailscale" else "Turning Tailscale on") else null) }) { what, pct ->
+                        j.put("msg", what).put("pct", pct)
+                    }
                     if (url.isEmpty()) { j.put("ip", t.ip()); "in" } else { j.put("url", url); "sign in" }
-                })
+                }) }
                 else -> null
             }
         } catch (e: Cancelled) {                                      // before IOException: stopping is not a broken link
@@ -405,7 +409,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             }
             else -> {                                                 // open on the TV with whatever app handles the type
                 val real = if (path.startsWith("/sdcard")) "/storage/emulated/0" + path.substring(7) else path
-                val args = "-a android.intent.action.VIEW -d " + Adb.q("file://" + real.replace(" ", "%20")) + " -t " + Adb.q(mime(path))
+                val args = "-a android.intent.action.VIEW -d " + Adb.q("file://" + real.split('/').joinToString("/") { URLEncoder.encode(it, "UTF-8").replace("+", "%20") }) + " -t " + Adb.q(mime(path))
                 // Google TV answers files it cannot show with a do-nothing stub (frameworkpackagestubs): that is "no app" too
                 out = if (sh("cmd package resolve-activity --brief $args 2>&1").contains("frameworkpackagestubs")) "Error" else sh("am start $args 2>&1")
                 out = if (out.contains("Error") || out.lowercase(Locale.ROOT).contains("unable to resolve")) "the TV has no app that can open this" else ""
@@ -431,11 +435,12 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     private fun download(r: HttpServer.Request): HttpServer.Response {
         val path = safePath(r.q("path"))
         val adb = link.get()
-        val size = adb.shell("stat -c %s " + Adb.q(path) + " 2>/dev/null").trim()
+        // a file this shell may read, or the size promised would be followed by cat's complaint (a folder, a file of an app's own)
+        val size = adb.shell("[ -f ${Adb.q(path)} ] && [ -r ${Adb.q(path)} ] && stat -c %s " + Adb.q(path) + " 2>/dev/null").trim()
         if (!size.matches(DIGITS)) throw IllegalArgumentException("cannot read this file")
         val inline = r.q("inline") == "1"
         val out = HttpServer.Response.stream(if (inline) mime(path).replace("*/*", "application/octet-stream") else "application/octet-stream", size.toLong()) { o ->
-            pipe(adb.exec("cat " + Adb.q(path)), o)
+            pipe(adb.exec("cat " + Adb.q(path) + " 2>/dev/null"), o)
         }
         if (!inline) out.headers["Content-Disposition"] = "attachment; filename*=UTF-8''" + URLEncoder.encode(path.substring(path.lastIndexOf('/') + 1), "UTF-8").replace("+", "%20")
         return out
@@ -686,6 +691,25 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             "ok"
         }
 
+    /** The link opened, its redirects followed: also from http to https, which the computer's Java will not do by itself
+     *  (Android's does), so a short link or an old http one works the same everywhere. */
+    private fun follow(url: String): HttpURLConnection {
+        var u = URL(url)
+        repeat(6) {
+            val c = u.openConnection() as HttpURLConnection
+            c.connectTimeout = 15000
+            c.readTimeout = 30000
+            c.setRequestProperty("User-Agent", "tv-remote")
+            current.get()?.onStop { c.disconnect() }                  // a download waiting on a slow server ends at once
+            val to = if (c.responseCode in 301..308 && c.responseCode != 304) c.getHeaderField("Location") else null
+            if (to == null) return c
+            c.disconnect()
+            u = URL(u, to)
+            if (u.protocol != "http" && u.protocol != "https") throw IOException("only http/https links")
+        }
+        throw IOException("too many redirects")
+    }
+
     /** This device downloads the link and passes it on to the TV, into Download or straight into the installer. */
     private fun fetch(url: String, install: Boolean): JSONObject {
         if (!url.matches(Regex("(?i)https?://\\S+"))) throw IllegalArgumentException("only http/https links")
@@ -693,11 +717,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             // TV Setup itself, the first time: the release's file, checked against its signed SHA256SUMS like every update
             val setup = if (install && url.endsWith("/releases/latest/download/tv-setup.apk"))
                 Release.newer("0", "tv", "tv-setup.apk") ?: throw IOException(Release.UNSIGNED) else null
-            val c = URL(setup?.url ?: url).openConnection() as HttpURLConnection
-            c.connectTimeout = 15000
-            c.readTimeout = 30000
-            c.setRequestProperty("User-Agent", "tv-remote")
-            current.get()?.onStop { c.disconnect() }                  // a download waiting on a slow server ends at once
+            val c = follow(setup?.url ?: url)
             try {
                 if (c.responseCode != 200) throw IOException("HTTP " + c.responseCode)
                 val len = if (c.contentLength >= 0) c.contentLength.toLong() else -1L

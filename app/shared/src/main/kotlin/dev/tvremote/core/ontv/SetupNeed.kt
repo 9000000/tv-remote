@@ -21,6 +21,7 @@ object SetupNeed {
         "notify" to "0.4.2",                                           // 🔔 a card with a message over the TV's screen
         "invite" to "0.4.2",                                           // 📲 sharing the remote by QR (an older one answers with a pass)
         "ram" to "0.4.2",                                              // 🧠 the notice when the memory is nearly full
+        "awake" to "0.7.1",                                            // 😴 the chip kept up while the TV is off (KeepAwake)
     )
 
     /** "setup:old:pic:2.21.0:2.20.0" or "setup:missing:draw:2.18.0:": the words every client looks for in an error. */
@@ -37,6 +38,7 @@ object SetupNeed {
         "notify" -> if (vi) "Gửi thông báo lên TV" else "Sending a notification to the TV"
         "invite" -> if (vi) "Chia sẻ remote bằng QR" else "Sharing the remote by QR"
         "ram" -> if (vi) "Báo khi RAM đầy" else "The full memory notice"
+        "awake" -> if (vi) "Giữ kết nối khi tắt TV" else "Staying reachable while the TV is off"
         else -> feature
     }
 

@@ -106,3 +106,31 @@ function iconizeIn(n) {
 iconizeIn(document.body);
 new MutationObserver((list) => { for (const m of list) m.type === 'characterData' ? iconizeIn(m.target) : m.addedNodes.forEach(iconizeIn); })
   .observe(document.body, { subtree: true, childList: true, characterData: true });
+
+// a row of chips wider than its card scrolls sideways: the chosen one brought into view, the side with more faded, and the
+// mouse wheel turned sideways over it (a computer has no swipe)
+const CHIP_ROWS = '.places, .fchips', chipSeen = new WeakSet();
+const chipEdges = (r) => { const more = r.scrollWidth - r.clientWidth > 2;
+  r.classList.toggle('more-l', more && r.scrollLeft > 2); r.classList.toggle('more-r', more && r.scrollLeft < r.scrollWidth - r.clientWidth - 2); };
+const chipFit = (r) => { const on = r.querySelector(':scope > .on');
+  if (on && r.scrollWidth > r.clientWidth) r.scrollLeft = Math.max(0, on.offsetLeft - r.offsetLeft - (r.clientWidth - on.offsetWidth) / 2);
+  chipEdges(r); };
+const chipObs = new ResizeObserver((list) => list.forEach((e) => chipFit(e.target)));
+function chipRows(n) {
+  if (n.nodeType !== 1) return;
+  const rows = n.matches(CHIP_ROWS) ? [n] : [...n.querySelectorAll(CHIP_ROWS)];
+  const own = n.closest && n.parentElement && n.parentElement.closest(CHIP_ROWS); if (own) rows.push(own);   // a chip added or made .on
+  for (const r of rows) {
+    if (!chipSeen.has(r)) { chipSeen.add(r); chipObs.observe(r); r.addEventListener('scroll', () => chipEdges(r), { passive: true });
+      r.addEventListener('wheel', (e) => { if (r.scrollWidth <= r.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+        const left = r.scrollLeft; r.scrollLeft += e.deltaY; if (r.scrollLeft !== left) e.preventDefault(); }, { passive: false });
+      r.addEventListener('focusin', (e) => {   // the D-pad or Tab on a chip half under the fade: browsers leave it there
+        let c = e.target; while (c && c.parentElement !== r) c = c.parentElement; if (!c) return; const room = 40;
+        const x = c.offsetLeft - r.offsetLeft, w = c.offsetWidth;
+        if (x - room < r.scrollLeft) r.scrollLeft = x - room; else if (x + w + room > r.scrollLeft + r.clientWidth) r.scrollLeft = x + w + room - r.clientWidth; }); }
+    requestAnimationFrame(() => chipFit(r));
+  }
+}
+chipRows(document.body);
+new MutationObserver((list) => { for (const m of list) { m.addedNodes.forEach(chipRows); if (m.type === 'attributes' && !m.target.matches(CHIP_ROWS)) chipRows(m.target); } })   // not the row's own fade classes
+  .observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });

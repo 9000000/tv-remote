@@ -1,7 +1,6 @@
 package dev.tvremote.phone
 
 import android.content.Context
-import android.app.AlertDialog
 import android.graphics.Typeface
 import android.os.Build
 import android.text.InputType
@@ -166,14 +165,14 @@ internal fun MainActivity.refreshSaved() {
         line.addView(wk, wp)
         line.layoutParams = gap(6)
         val ask = {
-            AlertDialog.Builder(this).setMessage(t("Xóa TV này khỏi danh sách?", "Remove this TV from the list?") + "\n" + title(ip) + (if (name(ip).isEmpty()) "" else " · $ip") + "\n\n" +
+            Popup.Builder(this).setMessage(t("Xóa TV này khỏi danh sách?", "Remove this TV from the list?") + "\n" + title(ip) + (if (name(ip).isEmpty()) "" else " · $ip") + "\n\n" +
                     t("Không đổi gì trên TV. Muốn dùng lại thì quét hoặc nhập IP như lần đầu.", "Nothing changes on the TV. To use it again, scan or type its IP as the first time."))
                 .setPositiveButton(t("Xóa", "Remove")) { _, _ ->
                     val ips = savedIps()
                     ips.remove(ip)
                     prefs.edit().putString("ips", TextUtils.join(",", ips)).also { e -> PER_TV.forEach { e.remove("$it:$ip") } }.remove("atv:$ip").apply()
                     refreshSaved()
-                }.setNegativeButton(android.R.string.cancel, null).show()
+                }.setNegativeButton(t("Hủy", "Cancel"), null).show()
         }
         val del = icon("@close", t("Xóa TV này khỏi danh sách", "Remove this TV from the list"), BTN)
         del.setOnClickListener { ask() }
@@ -326,7 +325,7 @@ internal fun MainActivity.buildPicker() {
     val help = button(t("Cách kết nối", "How to connect"), 0)
     help.setTextColor(ACCENT_TEXT)
     help.setOnClickListener {
-        AlertDialog.Builder(this).setTitle(t("Cách kết nối", "How to connect")).setMessage(t(
+        Popup.Builder(this).setTitle(t("Cách kết nối", "How to connect")).setMessage(t(
             "1. BẬT ADB TRÊN TV (một lần)\nCài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng”. Rồi Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB”.\n\n" +
                 "2A. CÙNG WI-FI VỚI TV\nBấm “Quét Wi-Fi” rồi chọn TV. Hoặc xem IP trên TV: Cài đặt → Mạng và Internet → tên Wi-Fi.\n\n" +
                 "2B. KHÁC MẠNG\nBật Tailscale trên cả điện thoại và TV. TV đã kết nối ở nhà một lần thì app nhớ IP Tailscale của nó, ra ngoài chỉ cần bấm TV trong danh sách. Chưa thì nhập IP 100.x của TV (xem trong app Tailscale).\n\n" +

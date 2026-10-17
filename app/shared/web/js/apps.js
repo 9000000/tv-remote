@@ -1,18 +1,19 @@
 // app names, icons and the apps tab
 // ---------- app names + icons (read from the APK on the TV, cached by the server) ----------
-const META = new Map(), metaWaiters = new Map(), metaQueue = [];
+const META = new Map(), metaWaiters = new Map(), metaQueue = [], metaFailed = new Map();   // failed: asked again after 30 s, not never
 let metaBusy = 0;
 function appName(pkg) { const m = META.get(pkg); return (m && m.label) || pkg; }
 function pumpMeta() {
   while (metaBusy < 4 && metaQueue.length) {
     const pkg = metaQueue.shift(); metaBusy++;
     api('/api/app/meta?pkg=' + encodeURIComponent(pkg), null, true).then((m) => {
-      metaBusy--; META.set(pkg, m || {}); (metaWaiters.get(pkg) || []).forEach((fn) => fn(m || {})); metaWaiters.delete(pkg); pumpMeta();
+      metaBusy--; if (m) META.set(pkg, m); else metaFailed.set(pkg, Date.now()); (metaWaiters.get(pkg) || []).forEach((fn) => fn(m || {})); metaWaiters.delete(pkg); pumpMeta();
     });
   }
 }
 function onMeta(pkg, fn) {
   if (META.has(pkg)) { fn(META.get(pkg)); return; }
+  if (Date.now() - (metaFailed.get(pkg) || 0) < 30000) { fn({}); return; }
   if (!metaWaiters.has(pkg)) { metaWaiters.set(pkg, []); metaQueue.push(pkg); }
   metaWaiters.get(pkg).push(fn); pumpMeta();
 }

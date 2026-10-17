@@ -20,7 +20,7 @@
   /* top bar */
   .top { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
   .top .brand { display:flex; align-items:center; gap:10px; min-width:0; } .top .logo { width:36px; height:36px; border-radius:9px; flex:none; }
-  .top .sub { color:var(--muted); font-size:13px; word-break:break-all; }
+  .top .sub { color:var(--muted); font-size:13px; overflow-wrap:anywhere; }   /* breaks a long address, not a word mid-way */
   .chips { display:flex; gap:8px; flex-wrap:wrap; }
   @media (max-width:640px) { .chips { gap:5px; } header .chips { flex-wrap:nowrap; } header .chips > * { flex:none; } header .chip { flex:0 1 auto; min-width:0; } header .chip span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     header .chips { gap:4px; } header .chip { padding:4px 8px; } header .chips button.small { min-width:30px; padding:0 6px; } #lang .globe { display:none; }   /* one line: a long state shortens, its whole text on hover */
@@ -35,7 +35,8 @@
   html[data-ontv] { scroll-padding-top:90px; }                       /* moving up, the focus lands below the sticky tabs, not under them */
   html[data-core=phone] header.top, html[data-core=phone] #ver { display:none; }   /* the app has its own title bar */
   main.locked > :not(header):not(#pair) { display:none !important; } main.locked .chips > :not(#lang) { display:none; }   /* not paired yet: only the code box */
-  .pair { text-align:center; padding:28px 16px; } .pair p { max-width:420px; margin:10px auto 16px; } .pair form { max-width:320px; margin:14px auto 0; }
+  section.card.pair { text-align:center; padding:28px 16px; align-items:center; } #pair > * { max-width:420px; align-self:center; }   /* over the card's left-aligned children */
+  #pair > form { width:100%; max-width:320px; }
   .pair #paircode { text-align:center; font-size:22px; letter-spacing:.12em; } .pair #pairstart { padding:0 22px; } #pairerr { min-height:20px; margin-top:10px; }
   /* Until a TV is chosen there is only the list of TVs: no tabs, no remote, nothing that needs a TV. */
   main:not(.picking) #picker { display:none; }
@@ -196,13 +197,12 @@
   .screenbox .blackhint[hidden] { display:none; }
   .screenbox:fullscreen { border-radius:0; aspect-ratio:auto; }
   .card-head { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
-  #screenmode { width:8.2em; text-overflow:ellipsis; }                /* as wide as its levels, not as “⚙️ Advanced…” */
   .card-head h2 { margin:0; } .card-head .tools { display:flex; gap:6px; align-items:center; }
   /* mini player: the TV picture floats in the corner while another tab is open */
   #pipslot { position:fixed; right:16px; bottom:16px; width:min(440px, calc(100vw - 32px)); z-index:15; }
   body.pip main { padding-bottom:320px; }                              /* room to scroll the last rows out from under it */
   #pipslot .card { padding:10px; box-shadow:0 10px 34px rgba(0,0,0,.4); }
-  #pipslot h2 span, #pipslot #screenmode, #pipslot #screeninfo { display:none; }
+  #pipslot h2 span, #pipslot #screenmodebtn, #pipslot #screeninfo { display:none; }
   #pipslot .screenbox { margin-top:8px; max-height:none; min-height:0; }
   @media (max-width:640px) { #pipslot { width:230px; right:8px; bottom:8px; } #pipslot #screenfull { display:none; } }
   #screeninfo { margin-top:8px; min-height:19px; } #screeninfo.live::before { content:"● "; color:var(--bad); }
@@ -242,7 +242,13 @@
   .ficon.dir { background:var(--warn-bg); }
 
   /* files */
-  .places { display:flex; gap:6px; flex-wrap:wrap; }
+  .places { display:flex; gap:6px; }
+  /* chips stay on one line: more than fits scrolls sideways (the wheel too, js/ui.js), faded at the side that has more */
+  :is(.places, .fchips) { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; padding:6px; margin:-6px; }   /* room for the focus ring (5px on the TV) */ :is(.places, .fchips)::-webkit-scrollbar { display:none; }
+  :is(.places, .fchips) > * { flex-shrink:0; }
+  :is(.places, .fchips).more-r { mask-image:linear-gradient(to right, #000 calc(100% - 36px), transparent); }
+  :is(.places, .fchips).more-l { mask-image:linear-gradient(to left, #000 calc(100% - 36px), transparent); }
+  :is(.places, .fchips).more-l.more-r { mask-image:linear-gradient(to right, transparent, #000 36px, #000 calc(100% - 36px), transparent); }
   .places button { min-height:var(--chip); padding:0 12px; font-size:13px; border-radius:999px; white-space:nowrap; }
   .places.two { display:grid; grid-template-columns:1fr 1fr; } .places button.on { background:var(--accent); color:var(--accent-ink); font-weight:600; }
   .crumbs { display:flex; flex-wrap:wrap; align-items:center; gap:2px; margin-top:12px; font-size:14px; }
@@ -259,6 +265,7 @@
   .job { padding:9px 0; border-top:1px solid var(--line); font-size:13px; } .job:first-child { border-top:0; }
   .jobhead { display:flex; align-items:center; gap:8px; } .jobhead > :first-child { flex:1; min-width:0; overflow-wrap:anywhere; }
   .job.error .msg { color:var(--bad); } .job.done .msg { color:var(--ok); }
+  .stack { display:flex; flex-direction:column; gap:14px; min-width:0; }
   .two-up { display:grid; gap:14px; grid-template-columns:minmax(0,1fr); }   /* minmax: a card never grows past the screen for a long word or select */
 
   dialog { border:0; padding:0; background:transparent; max-width:96vw; max-height:96vh; } dialog::backdrop { background:rgba(0,0,0,.8); }
@@ -276,21 +283,28 @@
   dialog img { max-width:96vw; max-height:92vh; display:block; border-radius:8px; cursor:zoom-out; }
 
   /* health tab */
-  #hnow, #hcaps { display:grid; gap:14px; grid-template-columns:1fr; } #hcaps > section { min-width:0; }
+  #hnow, #hcaps, #hsleep { display:grid; gap:14px; grid-template-columns:1fr; } #hcaps > section, #hsleep > * { min-width:0; }
   /* wide screens: cards stack in columns like a gallery, each under the one above it, instead of rows as tall as their
      tallest card leaving holes; up to 3 where there are many (Health, Automation), 2 elsewhere */
   @media (min-width:900px) {
-    .two-up, #hnow, #hcaps { display:block; columns:2; column-gap:14px; }
-    #hnow, #hcaps, #rulecards { columns:3 380px; }
-    /* the gap above each card: cut where a later column starts (a margin at a column break is), none on the very first */
-    .two-up > *, #hnow > *, #hcaps > * { break-inside:avoid; margin:14px 0 0; }
-    .two-up > :first-child, #hnow > :first-child, #hcaps > :first-child, #hwait + * { margin-top:0; }
+    .two-up, #hnow, #hcaps, #hsleep { display:block; columns:2; column-gap:14px; orphans:1; widows:1; }   /* the cards are lines (inline, below): two of them may part */
+    #hnow, #hcaps, #hsleep, #rulecards { columns:3 380px; }
+    /* inline boxes, each with the gap below it: a block's margin is moved across a column break by WebKit (Safari, the Mac
+       window: a column's first card sat 14px low), an inline box's stays its own; at a column's foot it is out of sight */
+    .two-up > *, #hnow > *, #hcaps > *, #hsleep > * { break-inside:avoid; display:inline-block; width:100%; vertical-align:top; margin:0 0 14px; }
+    :is(.two-up, #hnow, #hcaps, #hsleep) > section.card:not(.rc):not(.playing) { display:inline-flex; } .health:not(.ready) #hnow > #hwait { display:block; } .two-up > .stack { display:inline-flex; }
     #pickcols.solo { columns:1; }
   }
   .ptable { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:6px 16px; font-size:14px; } .ptable .h { color:var(--muted); font-size:12px; font-weight:600; } .ptable .k { color:var(--muted); overflow-wrap:anywhere; min-width:0; } .ptable .v { font-weight:600; } .ptable .n { text-align:right; font-variant-numeric:tabular-nums; }
   .kv { display:grid; grid-template-columns:fit-content(55%) minmax(0,1fr); gap:6px 14px; font-size:14px; } .kv dt, .kv .k { color:var(--muted); overflow-wrap:anywhere; min-width:0; } #hnow > section { min-width:0; } .kv .v { font-weight:600; overflow-wrap:anywhere; text-align:right; }
   .meter { margin:10px 0 0; font-size:14px; } .meter .top { display:flex; justify-content:space-between; gap:8px; } .meter b { font-variant-numeric:tabular-nums; }
   .meter .bar { height:10px; border-radius:5px; } .meter .bar i { border-radius:5px; } .meter.warn .bar i { background:var(--warn); } .meter.bad .bar i { background:var(--bad); }
+  /* Health › Sleep: a strip per day, 24 h wide, the screen's on stretches and Tailscale's drops */
+  .sl-day + .sl-day { margin-top:10px; } .sl-top { display:flex; justify-content:space-between; gap:8px; font-size:14px; } .sl-top small { color:var(--muted); font-size:12px; text-align:right; }
+  .sl-strip { display:block; width:100%; height:12px; margin-top:4px; border-radius:4px; overflow:hidden; }
+  .sl-bg { fill:var(--btn); } rect.sl-on { fill:var(--accent); } rect.sl-ts { fill:var(--bad); } i.sl-on { background:var(--accent); color:var(--accent-ink); } i.sl-ts { background:var(--bad); }
+  .sl-leg { display:flex; gap:6px 14px; flex-wrap:wrap; font-size:12px; color:var(--muted); } .sl-leg i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px; }
+  .sl-axis { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:4px; }
   .tile { background:var(--bg); border:1px solid var(--line); }
   .crash { border-top:1px solid var(--line); } .crash:first-of-type { border-top:0; }
   .crash > summary { display:flex; gap:12px; align-items:center; padding:10px 0; cursor:pointer; list-style:none; } .crash > summary::-webkit-details-marker { display:none; }
@@ -303,6 +317,7 @@
   .term .cmd { color:#7fb0ff; } .term .err { color:#ff8a80; } .mono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:14px; }
 
   /* setup checklist */
+  .stepsdone > summary { cursor:pointer; font-weight:600; color:var(--ok); padding:4px 0; } .stepsdone[open] > summary { margin-bottom:4px; }
   .step { display:flex; gap:12px; padding:14px 0; border-top:1px solid var(--line); align-items:flex-start; } .step:first-child { border-top:0; }
   .step .mark { width:30px; height:30px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; background:var(--btn); color:var(--muted); }
   .step.ok .mark { background:var(--ok-bg); color:var(--ok); } .step.wait .mark { background:var(--warn-bg); color:var(--warn); }
@@ -315,7 +330,7 @@
   #toast.show { opacity:.94; }
 
   /* health: one line of text until the first snapshot arrives, so the tab never looks empty or broken */
-  #hwait { text-align:center; padding:18px 0; grid-column:1/-1; column-span:all; } .health.ready #hwait, .health:not(.ready) #hnow > section { display:none; }
+  #hwait, .waiting { text-align:center; padding:18px 0; grid-column:1/-1; column-span:all; } :is(#hsleep, #hcaps) > .waiting { display:block; } .health.ready #hwait, .health:not(.ready) #hnow > section { display:none !important; }   /* over the columns' inline-flex */
   /* typing: ⚡ switches between live typing and type-then-send; 123 shows the number keys */
   #live { padding:0 12px; } #live.on { background:var(--accent); color:var(--accent-ink); }
   .numpad { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:300px; margin-top:8px; } .numpad[hidden] { display:none; }
@@ -385,7 +400,7 @@
   .appsoff { margin-top:12px; border-top:1px solid var(--line); padding-top:10px; } .appsoff summary { cursor:pointer; font-weight:600; color:var(--muted); padding:6px 0; } .appsoff > p { margin:4px 0 6px; font-size:12px; }
   .appicon.placeholder { color:#fff; font-weight:700; font-size:20px; display:flex; align-items:center; justify-content:center; }
   .minispin { display:inline-block; width:14px; height:14px; margin-right:8px; vertical-align:-2px; border-radius:50%; border:2px solid var(--muted); border-top-color:var(--accent); animation:spin .9s linear infinite; }
-  .fchips { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .fchips { display:flex; gap:6px; margin-top:4px; }
   .fchips button { flex:none; min-height:var(--chip); padding:0 12px; border-radius:999px; font-size:13px; font-weight:600; white-space:nowrap; color:var(--muted); }
   /* one colour per kind of app, the same on its chip and on the tags in the list */
   .fchips button, .tag { --c:var(--accent-text); } :is(.fchips button, .tag).boot { --c:var(--boot); } :is(.fchips button, .tag).keep { --c:var(--ok); } :is(.fchips button, .tag).off { --c:var(--muted); } .fchips .sys { --c:var(--muted); }
@@ -407,6 +422,7 @@
   .playing { display:flex; flex-direction:column; gap:8px; padding:10px 12px; } .playing[hidden] { display:none; }
   .nowapp { display:flex; align-items:center; gap:8px; min-width:0; } .nowapp small { color:var(--muted); flex:none; }
   .nowapp .appicon { width:24px; height:24px; border-radius:6px; flex:none; font-size:12px; } .nowapp b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .nowapp .appicon:not(.placeholder):not(.adaptive) { width:auto; max-width:96px; } .nowapp .appicon:not(.adaptive) img { width:auto; max-width:96px; height:24px; object-fit:contain; }   /* the picture's own shape: a wide banner is not cut to a square */
   .plhead { display:flex; align-items:center; gap:8px; min-width:0; } .plhead img { width:36px; height:36px; border-radius:8px; flex:none; object-fit:contain; }
   .pltext { flex:1; min-width:0; display:flex; flex-direction:column; } .pltext b, .pltext small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .pltext small { color:var(--muted); font-size:12px; }
   .plbar { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; } .plbar[hidden] { display:none; }
@@ -428,7 +444,7 @@
   details.card > summary { font-size:14px; font-weight:600; cursor:pointer; }   /* every fold-out card reads the same */
   @media (max-width:640px) {                                          /* the filter gets its own line, its buttons the next */
     .ftools input { flex:1 1 100%; } .ftools select { flex:1; }
-    #places { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; margin:0 -14px; padding:0 14px; } #places::-webkit-scrollbar { display:none; } #places button { flex:none; }   /* one row to swipe */
+    #places { margin:-6px -14px; padding:6px 14px; }   /* one row to swipe, to the screen's edges */
     #fileslist .acts { gap:4px; } #fileslist .name { flex-basis:0; } }   /* at most two buttons: they fit beside the name */
   @media (pointer:coarse), (max-width:640px) { .drop .fine { display:none; } }   /* a phone: nothing to drag a file from */
   .panel .timerow button.small { min-height:var(--ctl); }            /* beside the time fields: as tall as they are */

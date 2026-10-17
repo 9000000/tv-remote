@@ -4,6 +4,40 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+
+- Lúc app tự làm nhiều bước trên TV: cài TV Setup bằng nút remote ghi “Bước 1/3…” và nhắc đừng bấm remote của TV; ai lỡ bấm làm TV rời khỏi bước đang làm thì app dừng lại, báo và cho thử lại, không bấm tiếp vào chỗ sai (app máy tính, app điện thoại). Bật Tailscale qua ADB hiện thẻ “TV Remote đang làm việc trên TV” ở góc màn hình TV cho tới khi xong (cả ba nơi).
+- App điện thoại: các hộp thoại là của app, cùng màu và kiểu nút với app (không còn hộp thoại của Android).
+- Chất lượng hình gom vào một hộp: cỡ hình, khung/giây, bitrate, bộ mã hóa (cả ba nơi).
+- Logo của app “Đang mở” giữ đúng hình, logo chữ nhật không còn bị cắt vuông.
+- Thanh đang phát: video YouTube mới mở không còn nhảy lên khoảng 2:15 (YouTube trên Google TV gửi vị trí kèm giờ cũ). App điện thoại giữ dòng “Đang mở” cạnh thanh đang phát, như trên web.
+- Tab Sức khỏe có mục “Giấc ngủ”: TV tắt / bật lúc nào và vì sao, tự tắt sau bao lâu, Tailscale và TV Setup còn chạy không và bị TV tắt lúc nào, lịch sử bật / tắt từng ngày (xem được các ngày cũ hơn); chi tiết kỹ thuật (thời gian chip ngủ sâu, số lần ngủ sâu của TV TCL…) gập lại bên dưới (cả ba nơi).
+- TV Setup tự bật lại Tailscale khi TV tắt nó để lấy bộ nhớ (TV TCL tắt Tailscale cùng nhiều app khác khi thiếu RAM, trước đây phải về nhà mở lại). Tailscale người dùng tự tắt thì để yên.
+- Tùy chọn “Giữ kết nối khi tắt TV” (TV Setup 0.7.1): giữ chip thức khi tắt màn hình. Không có trên TV TCL, vì TV này vẫn tự ngủ sâu dù app giữ.
+- Tab Tệp · Cài và mục Giấc ngủ chia cột trên màn hình rộng như các tab khác; trên Mac (Safari) thẻ đầu mỗi cột không còn thấp hơn các cột bên. Tab Sức khỏe lúc đang đọc chỉ hiện dòng “Đang đọc từ TV...” ở giữa. Trên TV, nút Trái / Phải sang được cột bên cạnh, Lên / Xuống đi trong cùng cột.
+- Xem màn hình TV: chọn bộ mã hóa “Phần cứng” trên TV TCL không còn ra hình sọc ngang kéo xéo ở cỡ 720p và 240p (bộ mã hóa của TV cần chiều ngang chia hết cho 32). Cả ba nơi.
+- Web của TV: bấm “Hiện mã trên TV” không còn báo “Không gọi được server” dù TV đã hiện mã (máy chủ đóng kết nối trước khi đọc hết yêu cầu, làm mất câu trả lời). Thẻ ghép mã nằm giữa trang.
+- Sửa nhiều lỗi ngầm: app máy tính không gửi được ảnh vẽ lên TV hay đoạn chữ dán dài (quá 64 KB); TV web page bỏ qua đoạn chữ dán dài; tải về một thư mục hoặc file không đọc được ra file hỏng; mở file có “#”, “%”, “?” trong tên; link http chuyển sang https không tải được trên app máy tính; báo lỗi của tải lên file lớn bị mất; “TV đang hỏi cho phép” không tắt sau khi câu hỏi đã đi; cập nhật app máy tính tải hai lần và “Kiểm tra bản mới” bị treo khi đang tải; chọn “Phần mềm” một lần làm chế độ Tự chọn dùng phần mềm mãi; tên và hình app không hiện lại sau một lần hỏi lỗi; lỗi vẽ và lỗi ảnh chụp hiện chữ kỹ thuật; trình duyệt không phát được luồng trực tiếp thì tự chuyển sang ảnh chụp; con lăn chuột trên hình ở Web của TV.
+- Các hàng lựa chọn (Tự tắt, Lọc DNS, bộ lọc ứng dụng...) luôn nằm một dòng: dài hơn chỗ thì vuốt hoặc lăn chuột sang ngang, lựa chọn đang bật tự hiện ra; dòng dưới tên TV không còn ngắt giữa chữ.
+
+**English**
+
+- While the app works through several steps on the TV: installing TV Setup with the remote keys says “Step 1/3…” and asks to leave the TV's remote alone; when someone's key press takes the TV away from the step, the app stops, says so and offers to try again, instead of pressing on in the wrong place (computer app, phone app). Turning Tailscale on over ADB shows a “TV Remote is working on the TV” card in a corner of the TV until it is done (all three).
+- Phone app: its dialogs are the app's own, in its colours and buttons (no more Android system dialogs).
+- Picture quality in one dialog: size, frames per second, bit rate, encoder (all three).
+- The “Now open” app's logo keeps its shape: a wide logo is no longer cut to a square.
+- Now playing bar: a YouTube video just opened no longer jumps to about 2:15 (YouTube on Google TV stamps its position with an old time). The phone app keeps the “Now open” line beside the now playing bar, as the page does.
+- Health tab, “Sleep” view: when the TV went off and on and why, when it turns itself off, whether Tailscale and TV Setup are running and when the TV stopped them, and an on / off history day by day (older days on request); the technical details (time the chip spent in deep sleep, a TCL TV's count of deep sleeps…) folded below (all three).
+- TV Setup turns Tailscale back on when the TV stopped it to free memory (TCL TVs stop it with many other apps when short of RAM; it used to stay off until someone at home opened it). A Tailscale switched off by its user is left off.
+- “Stay reachable when the TV is off” (TV Setup 0.7.1): keeps the chip awake with the screen off. Not offered on TCL TVs, which sleep deeply whatever an app holds.
+- The Files · Install tab and the Sleep view are laid out in columns on wide screens, like the other tabs; on a Mac (Safari) a column's first card no longer sits lower than its neighbours. The Health tab shows only a centred “Reading from the TV...” while it reads. On the TV itself, Left / Right reach the next column and Up / Down stay in the same one.
+- Watching the TV: the “Hardware” encoder on TCL TVs no longer gives a picture sheared into streaks at 720p and 240p (the TV's encoder needs a width that is a multiple of 32). All three.
+- TV web page: “Show the code on the TV” no longer says “Cannot reach the server” while the TV shows the code (the server closed the connection before reading the whole request, which lost the reply). The pairing card is centred.
+- Hidden faults fixed: the computer app could not send a drawing's picture or a long pasted text to the TV (over 64 KB); the TV web page dropped a long pasted text; downloading a folder or an unreadable file gave a broken file; opening a file with “#”, “%” or “?” in its name; an http link that redirects to https did not download on the computer app; the error of a big upload was lost; “The TV is asking for permission” stayed after the question had gone; the computer app's update downloaded twice and “Check for a new version” hung while it downloaded; picking “Software” once made Auto use software for good; app names and pictures did not come back after one failed read; drawing and screenshot errors in technical words; a browser that cannot play the live picture now gets snapshots; the mouse wheel on the picture on the TV web page.
+- Rows of choices (Turn off when idle, DNS filter, the app filter...) stay on one line: longer than the room, they scroll sideways (swipe or mouse wheel) with the chosen one in view; the line under the TV's name no longer breaks inside a word.
+
 ## 0.7.0 - 2026-10-17
 
 Web 0.7.0 · app điện thoại 0.7.0 · app TV 0.7.0

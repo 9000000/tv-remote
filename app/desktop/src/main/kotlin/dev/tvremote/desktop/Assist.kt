@@ -16,6 +16,7 @@ class Assist(private val cur: () -> Session) {
     @Volatile private var installed = false
     @Volatile private var checking = false
     @Volatile private var opening = false
+    @Volatile private var step = 0                                    // of STEPS, for the page's "Step n/3"
     @Volatile private var task: Thread? = null
 
     private fun front(): String = cur().let { s -> if (s.available) s.atv?.app ?: "" else "" }
@@ -45,6 +46,9 @@ class Assist(private val cur: () -> Session) {
         sendLink("https://play.google.com/store/apps/details?id=$pkg")
         if (!untilFront(10.0, stoppable) { it == "com.android.vending" }) return false
         Thread.sleep(3000)                                            // the page draws, with its main button in focus
+        if (front() != "com.android.vending") {                       // someone used the TV's remote: OK would press something else
+            if (stoppable) throw Moved() else return false
+        }
         pressOk()
         return untilFront(15.0, stoppable) { it == pkg }
     }
@@ -65,7 +69,7 @@ class Assist(private val cur: () -> Session) {
             }
             // Downloader first, always: a TV's own browser takes the APK link too and downloads it, then stays on a white page,
             // unable to hand the file to the installer. Downloader's own link (SETUP_CODE) opens nothing else.
-            msg = "Đang mở Downloader trên TV..."
+            step = 1; msg = "Đang mở Downloader trên TV..."
             var there = openOnTv(DOWNLOADER)
             while (!there && !stop) {                                 // its Play Store page was told to install it
                 msg = "TV chưa có app Downloader: đang cài từ CH Play. Nếu TV không tự cài, chọn “Cài đặt” trên màn hình TV. Khi TV báo cài xong, bấm “Đã cài xong”."
@@ -77,24 +81,28 @@ class Assist(private val cur: () -> Session) {
                 installed = false; checking = false
             }
             if (stop) { status = "idle"; msg = ""; return }
-            msg = "Đang đưa đường dẫn tải cho Downloader..."
+            step = 2; msg = "Đang đưa đường dẫn tải cho Downloader..."
             Thread.sleep(3000)
             sendLink(SETUP_CODE)
             answerChooser(); Thread.sleep(2500)
             val was = front()
-            msg = "TV đang tải TV Setup..."
+            step = 3; msg = "TV đang tải TV Setup..."
             untilFront(120.0) { it != was }                           // until the TV's installer (or its permission screen) comes up
+            if (HOME.containsMatchIn(front())) throw Moved()          // back home instead: Back or Home pressed on the TV
             status = if (stop) "idle" else "look"; msg = ""
+        } catch (e: Moved) {
+            status = "moved"; msg = ""
         } catch (e: InterruptedException) {
             status = "idle"; msg = ""
         } catch (e: Exception) {
             status = "failed"; msg = "Mất kết nối với TV giữa chừng, thử lại: ${e.message ?: e.javaClass.simpleName}"
         } finally {
-            checking = false
+            checking = false; step = 0
         }
     }
 
     fun state(): JSONObject = JSONObject().put("status", status).put("msg", msg).put("front", front()).put("connected", cur().available)
+        .put("step", step).put("steps", STEPS)
         .put("checking", checking || installed)
 
     fun handle(d: JSONObject): HttpServer.Response {
@@ -147,7 +155,12 @@ class Assist(private val cur: () -> Session) {
         }
     }
 
+    /** The TV's screen is not where the job left it: someone pressed keys on the TV in the middle. */
+    private class Moved : Exception()
+
     companion object {
+        const val STEPS = 3
+        val HOME = Regex("launcher|\\.home\\b|tvhome", RegexOption.IGNORE_CASE)   // the TV's home screens (Google TV, Android TV, makers')
         const val DOWNLOADER = "com.esaba.downloader"
         const val SETUP_APK = "https://github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"
         const val SETUP_CODE = "downloader://2397346"                 // Downloader's own link for the AFTVnews code of SETUP_APK: opens Downloader alone, no "Open with"

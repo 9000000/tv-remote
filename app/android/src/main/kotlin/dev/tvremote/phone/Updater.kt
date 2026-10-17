@@ -1,6 +1,5 @@
 package dev.tvremote.phone
 
-import android.app.AlertDialog
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.PackageInstaller
@@ -65,7 +64,7 @@ internal fun MainActivity.askUpdate() {
     val all = r.notes.replace("**", "").replace("\r", "")         // release notes are Markdown
     val notes = if (all.length > 900) all.substring(0, 900) + "..." else all
 
-    AlertDialog.Builder(this).setTitle(t("Bản mới ", "Version ") + r.version + t(" (đang dùng ", " (you have ") + version() + ")")
+    Popup.Builder(this).setTitle(t("Bản mới ", "Version ") + r.version + t(" (đang dùng ", " (you have ") + version() + ")")
         .setMessage(notes.ifEmpty { t("Tải và cài bản mới?", "Download and install the new version?") })
         .setPositiveButton(t("Cập nhật", "Update")) { _, _ -> startUpdate(r) }.setNegativeButton(t("Để sau", "Later"), null).show()
 }

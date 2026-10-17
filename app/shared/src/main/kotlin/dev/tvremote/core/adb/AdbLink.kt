@@ -43,6 +43,7 @@ class AdbLink(val keyDir: File, val host: String) {
                 throw IOException(e.message ?: e.javaClass.simpleName)
             } finally {
                 dialing = null
+                waiting = false                                       // asked, then refused or left: the question is gone with the dial
                 if (mine == gen) lastTry = System.currentTimeMillis()
             }
         }

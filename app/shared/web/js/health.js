@@ -64,14 +64,131 @@ $('#procsre').addEventListener('click', () => loadProcs(true));
 // Now: the live figures. History: what the TV Setup app on the TV has written down (drawn by stats.js).
 let hmode = 'now';
 async function loadHist(days) {
-  $('#hhist').replaceChildren(el('div', { className: 'muted', textContent: tr('Đang đọc từ TV...') }));
+  $('#hhist').replaceChildren(el('div', { className: 'muted waiting', textContent: tr('Đang đọc từ TV...') }));
   const d = await api('/api/stats?days=' + (days || 7)); if (d && hmode === 'hist') renderStats($('#hhist'), d, window.LANG === 'vi', loadHist);
 }
 document.querySelectorAll('#hmode button').forEach((b) => b.addEventListener('click', () => {
   hmode = b.dataset.m; document.querySelectorAll('#hmode button').forEach((x) => x.classList.toggle('on', x === b));
   $('#hhist').hidden = hmode !== 'hist'; $('#hnow').hidden = hmode !== 'now'; $('#herr').hidden = hmode !== 'err'; $('#hcaps').hidden = hmode !== 'caps';
-  if (hmode === 'hist') loadHist(); else if (hmode === 'err') loadErrors(); else if (hmode === 'caps') loadCaps(); else loadHealth();
+  $('#hsleep').hidden = hmode !== 'sleep';
+  if (hmode === 'hist') loadHist(); else if (hmode === 'sleep') loadSleep(true); else if (hmode === 'err') loadErrors(); else if (hmode === 'caps') loadCaps(); else loadHealth();
 }));
+
+// Sleep: how the TV sleeps and wakes (Power.kt), whether Tailscale and TV Setup outlive it, and the screen's last 7 days from
+// TV Setup's power.jsonl. The reasons are Android's own words, said in plain ones.
+const SLEEP_WHY = { power_button: 'bấm nút nguồn', timeout: 'hết giờ chờ', inattentive: 'lâu không ai dùng', hdmi: 'theo thiết bị HDMI',
+  application: 'do một app', sleep_button: 'nút ngủ', device_admin: 'do quản trị máy', force_suspend: 'bị ép ngủ', quiescent: 'khởi động im lặng' };
+const WAKE_WHY = { power_button: 'bấm nút nguồn', wake_key: 'bấm phím remote', application: 'do một app', hdmi: 'theo thiết bị HDMI', plugged_in: 'cắm điện' };
+const WATCHED = { 'com.tailscale.ipn': 'Tailscale', 'dev.tvremote.setup': 'TV Setup' };
+function deathWhy(w) {
+  if (/^tguard:lowSwap|^tguard:lowMem/i.test(w)) return 'TV thiếu bộ nhớ (TCL TGuard)';
+  if (/^tguard/.test(w)) return 'TCL TGuard dọn app';
+  if (w === 'lmk' || /lmk|low ?mem/i.test(w)) return 'TV thiếu bộ nhớ';
+  if (/install|update|replace/i.test(w)) return 'đang cập nhật';
+  if (/^(empty|cached)/.test(w)) return 'Android dọn app chạy nền';
+  if (w === 'died') return 'bị dừng';
+  return w;
+}
+const ms2say = (ms) => ms == null ? '' : ms <= 0 || ms >= 2147483647 ? 'không bao giờ' : fmtUptime(ms / 1000);
+const slClock = (t) => new Date(t * 1000).toLocaleTimeString(window.LANG === 'vi' ? 'vi-VN' : 'en-GB', { hour: '2-digit', minute: '2-digit' });
+const slWhen = (t) => { const d = new Date(t * 1000), today = new Date().toDateString() === d.toDateString();
+  return slClock(t) + (today ? '' : ' ' + d.getDate() + '/' + (d.getMonth() + 1)); };
+let sleepAt = 0, sleepBusy = false, sleepGen = 0, sleepSeen = '', sleepShown = 7;
+function sleepReset() { sleepGen++; sleepAt = 0; sleepSeen = ''; sleepShown = 7; $('#hsleep').replaceChildren(); }   // another TV (tvChanged)
+async function loadSleep(now) {
+  if (hmode !== 'sleep' || sleepBusy || (!now && Date.now() - sleepAt < 60000)) return;
+  const box = $('#hsleep'), gen = sleepGen;
+  if (!now && box.contains(document.activeElement) && document.activeElement !== document.body) return;   // not under a D-pad's focus
+  if (!box.childElementCount) box.replaceChildren(el('div', { className: 'muted waiting', textContent: tr('Đang đọc từ TV...') }));
+  sleepBusy = true; sleepAt = Date.now();
+  const [p, rules] = await Promise.all([api('/api/power', null, true), api('/api/rules', null, true)]);
+  sleepBusy = false;
+  if (gen !== sleepGen || hmode !== 'sleep') return;
+  if (!p) {
+    if (!sleepSeen) box.replaceChildren(UI.say(tr('Không đọc được từ TV.')), el('div', { className: 'actions' }, el('button', { textContent: tr('↻ Thử lại'), onclick: () => loadSleep(true) })));
+    return;
+  }
+  const seen = JSON.stringify([p, rules && rules.awake]).replace(/"now":\d+/, '');
+  if (seen === sleepSeen) return;                                      // nothing new: keep what is on screen
+  sleepSeen = seen;
+  const skew = Math.round(Date.now() / 1000 - p.now), at = (t) => Math.abs(skew) > 120 ? t + skew : t;   // the TV's clock to this one's
+  p.events = (p.events || []).map(([t, w]) => [at(t), w]);
+  const b = p.boot || {}, t = p.timeouts || {}, ts = p.tailscale || {};
+  const lastEv = (w) => { for (let i = p.events.length - 1; i >= 0; i--) if (p.events[i][1] === w) return p.events[i][0]; return null; };
+  const tNow = Date.now() / 1000;
+  const offAt = lastEv('off') ?? (p.last_sleep?.ago != null ? tNow - p.last_sleep.ago : null), onAt = lastEv('on') ?? (p.last_wake?.ago != null ? tNow - p.last_wake.ago : null);
+  const deepPct = b.up && b.deep != null ? Math.round(b.deep * 100 / b.up) : null;
+  const sum = UI.card(tr('😴 Giấc ngủ'), {}, UI.state(tr(p.state === 'Awake' ? 'TV đang bật' : p.state ? 'Màn hình đang tắt' : 'Không rõ TV đang bật hay tắt')),
+    el('div', { className: 'kv' }, ...kv([
+      offAt != null ? [tr('Tắt gần nhất'), slWhen(offAt) + (SLEEP_WHY[p.last_sleep?.why] ? ' · ' + tr(SLEEP_WHY[p.last_sleep.why]) : '')] : null,
+      onAt != null ? [tr('Bật gần nhất'), slWhen(onAt) + (WAKE_WHY[p.last_wake?.why] ? ' · ' + tr(WAKE_WHY[p.last_wake.why]) : '')] : null,
+      [tr('Tự tắt khi không dùng'), tr(ms2say(t.attentive > 0 ? t.attentive : t.sleep))],
+    ])));
+  const more = UI.card(tr('🔧 Chi tiết'), {}, el('div', { className: 'kv' }, ...kv([
+      [tr('Bật máy từ'), b.up != null ? fmtUptime(b.up) + ' trước' : ''],
+      [tr('Chip ngủ sâu'), b.deep != null ? fmtUptime(b.deep) + ' (' + deepPct + '%)' : ''],
+      p.deep ? ['Số lần ngủ sâu (' + p.deep.by + ')', p.deep.count] : null,
+      [tr('Số lần khởi động'), b.count],
+      p.hdmi_off != null ? [tr('Tắt theo thiết bị HDMI'), tr(p.hdmi_off ? 'có' : 'không')] : null,
+      p.wifi_sleep != null ? [tr('Wi-Fi khi tắt màn hình'), tr(p.wifi_sleep === 2 ? 'vẫn giữ' : 'có thể tắt')] : null,
+      p.low_power_standby != null ? [tr('Chờ tiết kiệm điện'), tr(p.low_power_standby ? 'bật (cắt mạng khi tắt)' : 'tắt')] : null,
+      [tr('Đang giữ TV thức'), p.locks.length ? p.locks.map((l) => l.tag).join(', ') : tr('không có')],
+    ])));
+  // TCL powers its chip down whatever an app holds (measured): the switch would only cost power there, so it is not offered
+  const keepable = !(p.deep && p.deep.by === 'TCL') || (rules && rules.awake);
+  const keep = keepable ? el('label', { className: 'check', title: tr('Giữ chip thức khi tắt màn hình. Có TV vẫn tự ngủ sâu; tốn điện hơn một chút.') },
+    el('input', { type: 'checkbox', checked: !!(rules && rules.awake), onchange: async (e) => {
+      const box = e.currentTarget, on = box.checked; box.disabled = true;
+      const ok = await setupFor('awake') && await api('/api/rules', { do: 'awake', on });
+      box.disabled = false; if (!ok) box.checked = !on; else { sleepSeen = ''; toast(tr(on ? 'TV sẽ giữ kết nối khi tắt' : 'TV sẽ ngủ sâu như cũ')); }
+    } }), ' ' + tr('Giữ kết nối khi tắt TV')) : null;
+  const deaths = (p.deaths || []).slice(-6).reverse().map((d) => UI.item({ name: (WATCHED[d.pkg] || d.pkg) + ' · ' + slWhen(at(d.t)), sub: tr(deathWhy(d.why)) }));
+  const net = UI.card(tr('🛡️ Kết nối khi tắt TV'), {}, el('div', { className: 'kv' }, ...kv([
+      ['Tailscale', !ts.installed ? tr('chưa cài') : ts.running ? tr('đang chạy') + (ts.ip ? ' · ' + ts.ip : '') : tr('không chạy')],
+      ts.installed ? [tr('Tự bật cùng TV'), tr(ts.always_on ? 'có' : 'không')] : null,
+      ['TV Setup', tr(p.setup_running ? 'đang chạy' : 'không chạy')],
+    ])), keep, deaths.length ? UI.group(tr('Bị TV tắt gần đây'), el('div', { className: 'list' }, ...deaths)) : null);
+  box.replaceChildren(sum, net, sleepDays(p), more);
+}
+// One strip a day, newest first (7, then 7 more while TV Setup's log goes back further): when the screen was on, and when
+// Tailscale's VPN went away.
+function sleepDays(p) {
+  if (!p.logged) return UI.say(tr('Cập nhật TV Setup để xem lịch bật / tắt từng ngày.'));
+  const ev = p.events, day0 = new Date(); day0.setHours(0, 0, 0, 0);
+  const nowS = Date.now() / 1000;
+  const rows = [];
+  for (let i = 0; i < sleepShown; i++) {
+    const from = day0.getTime() / 1000 - i * 86400, to = from + 86400, end = Math.min(to, nowS);
+    let on = null, since = from, secs = 0, wakes = 0;
+    const bars = [], ticks = [];
+    for (const [t, w] of ev) {
+      if (w === 'on' || w === 'off') {
+        if (t < from) { on = w === 'on'; continue; }
+        if (t >= to) break;
+        if (on === null) on = w === 'off';                             // the first word of the window says what came before
+        if (w === 'on' && !on) { on = true; since = t; wakes++; }
+        else if (w === 'off' && on) { bars.push([since, t]); secs += t - since; on = false; }
+      } else if (w === 'vpn_down' && t >= from && t < to) ticks.push(t);
+    }
+    if (on && end > since) { bars.push([Math.max(since, from), end]); secs += end - Math.max(since, from); }
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'sl-strip'); svg.setAttribute('viewBox', '0 0 1440 10'); svg.setAttribute('preserveAspectRatio', 'none');
+    const rect = (x, w, cls) => { const r = document.createElementNS(svg.namespaceURI, 'rect');
+      r.setAttribute('x', x); r.setAttribute('width', Math.max(w, 2)); r.setAttribute('height', 10); r.setAttribute('class', cls); svg.append(r); };
+    rect(0, 1440, 'sl-bg');
+    for (const [a, z] of bars) rect((a - from) / 60, (z - a) / 60, 'sl-on');
+    for (const t of ticks) rect((t - from) / 60, 6, 'sl-ts');
+    const d = new Date(from * 1000);
+    const name = i === 0 ? tr('Hôm nay') : i === 1 ? tr('Hôm qua') : d.toLocaleDateString(window.LANG === 'vi' ? 'vi-VN' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'numeric' });
+    rows.push(el('div', { className: 'sl-day' }, el('div', { className: 'sl-top' }, el('b', { textContent: name }),
+      el('small', { textContent: 'bật ' + wakes + ' lần · ' + fmtUptime(secs) + (ticks.length ? ' · Tailscale mất ' + ticks.length + ' lần' : '') })), svg));
+  }
+  const first = ev.find(([, w]) => w === 'on' || w === 'off'), oldest = day0.getTime() / 1000 - (sleepShown - 1) * 86400;
+  const more = first && first[0] < oldest ? el('div', { className: 'actions' }, el('button', { textContent: tr('Xem ngày cũ hơn'),
+    onclick: (e) => { sleepShown += 7; e.target.closest('.card').replaceWith(sleepDays(p)); } })) : null;
+  return UI.card(tr('📊 Lịch sử bật / tắt'), {}, ...rows, el('div', { className: 'sl-axis' }, ...['0h', '6h', '12h', '18h', '24h'].map((x) => el('span', { textContent: x }))),
+    el('div', { className: 'sl-leg' }, el('span', {}, el('i', { className: 'sl-on' }), tr('Màn hình bật')), el('span', {}, el('i', { className: 'sl-ts' }), tr('Tailscale mất kết nối'))), more);
+}
 
 // What the TV can play and do (Caps.kt asks the TV's own Android): first in plain words, then the details, and a copy as text
 // for a forum or a shop ("will this TV play Dolby Vision?").
@@ -79,7 +196,7 @@ let capsFor = '', capsText = '';
 async function loadCaps() {
   const box = $('#hcaps');
   if (capsFor === (STATE.host || '') && capsText) return;
-  box.replaceChildren(UI.say(tr('Đang hỏi TV, lần đầu mất vài giây...')));
+  box.replaceChildren(el('div', { className: 'muted waiting', textContent: tr('Đang hỏi TV, lần đầu mất vài giây...') }));
   const r = await api('/api/caps'); if (hmode !== 'caps') return;
   if (!r) { box.replaceChildren(); return; }
   if (!r.text.trim()) {
@@ -238,7 +355,7 @@ async function copyText(t) {
 }
 async function loadErrors() {
   const box = $('#herr');
-  box.replaceChildren(UI.say(tr('Đang đọc từ TV...')));
+  box.replaceChildren(el('div', { className: 'muted waiting', textContent: tr('Đang đọc từ TV...') }));
   const r = await api('/api/crashes'); if (!r || hmode !== 'err') return;
   const groups = new Map();
   for (const e of parseCrashes(r.text)) {
@@ -330,4 +447,4 @@ async function loadHealth() {
     ['Màn hình', h.screen + (h.fps ? ' · ' + h.fps + ' Hz' : '')], ['Mật độ điểm ảnh', h.density ? h.density + ' dpi' : ''],
   ]);
 }
-setInterval(() => { if (currentTab === 'health' && !document.hidden && !stopped) loadHealth(); }, 5000);
+setInterval(() => { if (currentTab === 'health' && !document.hidden && !stopped) { loadHealth(); loadSleep(); } }, 5000);

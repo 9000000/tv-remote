@@ -106,7 +106,8 @@
           <div class="card-head">
             <h2>🖥️ Màn hình TV <span class="muted adbnote lower" data-for="pc">· cần ADB</span></h2>
             <div class="tools">
-              <select id="screenmode" aria-label="Chất lượng hình" title="Chất lượng hình: số nhỏ thì nhẹ cho TV và mạng"><option value="240">240p</option><option value="360">360p</option><option value="480">480p</option><option value="720">720p</option><option value="960" selected>960p</option><option value="hd" data-for="pc">Nét nhất</option><option value="snap">Ảnh chụp</option><option value="adv">⚙️ Nâng cao…</option></select>
+              <button class="small" id="screenmodebtn" aria-haspopup="dialog" title="Chất lượng hình: số nhỏ thì nhẹ cho TV và mạng"></button>
+              <select id="screenmode" hidden aria-hidden="true"><option value="240">240p</option><option value="360">360p</option><option value="480">480p</option><option value="720">720p</option><option value="960" selected>960p</option><option value="hd" data-for="pc">Nét nhất</option><option value="snap">Ảnh chụp</option></select>
               <button class="small" id="listen" data-adb-gated title="Nghe tiếng TV trên máy này"><span class="ico">🎧</span><span class="lbl"> Nghe</span></button>
               <button class="small iconbtn" id="screenfull" aria-label="Toàn màn hình" title="Toàn màn hình">⛶</button>
               <button class="small primary" id="screenbtn"><span class="ico">▶</span><span class="lbl"> Xem</span></button>
@@ -208,43 +209,51 @@
   </div>
 
   <!-- ============ Files ============ -->
+  <!-- ============ Files and Install ============ -->
   <div class="panel" data-panel="files" hidden>
     <div data-adb-banner></div>
-    <section class="card" data-adb-gated id="filescard">
-      <div class="places" id="places"></div>
-      <div class="crumbs" id="crumbs"></div>
-      <div class="ftools">
-        <input type="search" id="filesq" placeholder="Lọc trong thư mục này" autocomplete="off">
-        <select id="filessort" aria-label="Sắp xếp"><option value="name">Theo tên</option><option value="new">Mới nhất</option><option value="big">Lớn nhất</option></select>
-        <button class="small" id="mkdir">＋ Thư mục</button>
-        <button class="small iconbtn" id="filesreload" aria-label="Tải lại" title="Tải lại">↻</button>
-      </div>
-      <p class="note" id="space"></p>
-      <div class="list" id="fileslist"></div>
-      <label class="drop"><input type="file" id="upfile" multiple><span>＋ Chọn file gửi lên thư mục này<span class="fine"> (hoặc kéo thả vào đây)</span></span></label>
-    </section>
-  </div>
-
-  <!-- ============ Install ============ -->
-  <div class="panel" data-panel="files" hidden>
     <div class="two-up" data-adb-gated>
-      <section class="card">
-        <h2>⬇️ Tải file về TV</h2>
-        <form class="line" id="fetchf"><input id="fetchurl" placeholder="https://.../file.zip" inputmode="url" autocomplete="off"><button class="primary">⬇️ Tải</button></form>
+      <section class="card" id="filescard">
+        <div class="places" id="places"></div>
+        <div class="crumbs" id="crumbs"></div>
+        <div class="ftools">
+          <input type="search" id="filesq" placeholder="Lọc trong thư mục này" autocomplete="off">
+          <select id="filessort" aria-label="Sắp xếp"><option value="name">Theo tên</option><option value="new">Mới nhất</option><option value="big">Lớn nhất</option></select>
+          <button class="small" id="mkdir">＋ Thư mục</button>
+          <button class="small iconbtn" id="filesreload" aria-label="Tải lại" title="Tải lại">↻</button>
+        </div>
+        <p class="note" id="space"></p>
+        <div class="list" id="fileslist"></div>
+        <label class="drop"><input type="file" id="upfile" multiple><span>＋ Chọn file gửi lên thư mục này<span class="fine"> (hoặc kéo thả vào đây)</span></span></label>
       </section>
-      <section class="card">
-        <h2>📦 Cài APK</h2>
-        <form class="line" id="instf"><input id="insturl" placeholder="Link tới file .apk" inputmode="url" autocomplete="off"><button class="primary">📦 Cài</button></form>
-        <label class="drop"><input type="file" id="apkfile" accept=".apk,application/vnd.android.package-archive">Hoặc chọn file .apk từ máy này</label>
-      </section>
+      <div class="stack">   <!-- one column: opening the terminal does not send cards to the other one -->
+        <section class="card">
+          <h2>⬇️ Tải file về TV</h2>
+          <form class="line" id="fetchf"><input id="fetchurl" placeholder="https://.../file.zip" inputmode="url" autocomplete="off"><button class="primary">⬇️ Tải</button></form>
+        </section>
+        <section class="card">
+          <h2>📦 Cài APK</h2>
+          <form class="line" id="instf"><input id="insturl" placeholder="Link tới file .apk" inputmode="url" autocomplete="off"><button class="primary">📦 Cài</button></form>
+          <label class="drop"><input type="file" id="apkfile" accept=".apk,application/vnd.android.package-archive">Hoặc chọn file .apk từ máy này</label>
+        </section>
+        <!-- Terminal: for people who know shell commands, so folded away -->
+        <details class="card" id="termcard">
+          <summary>⌨️ Terminal</summary>
+          <pre class="term" id="termout"></pre>
+          <select id="termhist" hidden></select>
+          <form class="line" id="termf"><input id="termin" class="mono" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ls /sdcard"><button class="primary" title="Chạy lệnh">↵</button></form>
+          <p class="note">Như adb shell, mỗi lệnh tối đa 30 giây. ↑ ↓ gọi lại lệnh cũ.</p>
+        </details>
+      </div>
     </div>
   </div>
   <!-- ============ Health ============ -->
   <div class="panel" data-panel="health" hidden>
     <div data-adb-banner></div>
     <div class="health" data-adb-gated>
-      <div id="hmode" class="seg" role="tablist"><button type="button" class="on" data-m="now">Hiện tại</button><button type="button" data-m="hist">Lịch sử</button><button type="button" data-m="err">Lỗi app</button><button type="button" data-m="caps">Khả năng</button></div>
+      <div id="hmode" class="seg" role="tablist"><button type="button" class="on" data-m="now">Hiện tại</button><button type="button" data-m="hist">Lịch sử</button><button type="button" data-m="sleep">Giấc ngủ</button><button type="button" data-m="err">Lỗi app</button><button type="button" data-m="caps">Khả năng</button></div>
       <div id="hhist" hidden></div>
+      <div id="hsleep" hidden></div>
       <div id="hcaps" hidden></div>
       <div id="herr" hidden></div>
       <div id="hnow">
@@ -258,14 +267,6 @@
       <section class="card"><h2>🧩 Phần cứng</h2><div class="kv" id="hhw"></div></section>
       </div>
     </div>
-    <!-- Terminal: for people who know shell commands, so folded away -->
-    <details class="card" id="termcard" data-adb-gated>
-      <summary>⌨️ Terminal</summary>
-      <pre class="term" id="termout"></pre>
-      <select id="termhist" hidden></select>
-      <form class="line" id="termf"><input id="termin" class="mono" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ls /sdcard"><button class="primary" title="Chạy lệnh">↵</button></form>
-      <p class="note">Như adb shell, mỗi lệnh tối đa 30 giây. ↑ ↓ gọi lại lệnh cũ.</p>
-    </details>
   </div>
   <!-- ============ Automation: TV Setup's timers and limits (they run on the TV), and scenes ============ -->
   <div class="panel" data-panel="auto" hidden>
@@ -353,30 +354,18 @@
   </div>
 
   <details class="card help" id="help" data-for="pc" data-needs="adb">
-    <summary>❓ Chức năng nào cần ADB (cổng 5555)?</summary>
+    <summary>❓ Chức năng nào cần ADB?</summary>
     <div class="cols">
       <div>
-        <h3>✅ Không cần ADB, chỉ cần Remote (cổng 6466)</h3>
-        <ul>
-          <li>Các nút điều khiển: mũi tên, OK, Back, Home, nguồn, tắt tiếng</li>
-          <li>Âm lượng (không có ADB thì thanh trượt chỉnh từng nấc, chậm hơn)</li>
-          <li>Đánh thức TV khi standby (Wake-on-LAN qua máy ở nhà)</li>
-        </ul>
+        <h3>✅ Không cần ADB</h3>
+        <ul><li>Nút remote, âm lượng</li><li>Bật TV khi đang chờ</li></ul>
       </div>
       <div>
-        <h3>🔌 Cần ADB, mất khi ADB đóng</h3>
-        <ul>
-          <li>Xem màn hình TV (trực tiếp và ảnh chụp)</li>
-          <li>Chuột trên hình (bấm, kéo, cuộn; chuột phải = Back) và gõ bằng bàn phím máy tính</li>
-          <li>Mở app, mở link (TV này bỏ qua lệnh mở app gửi qua Remote)</li>
-          <li>Danh sách app kèm logo, dừng / gỡ app</li>
-          <li>Duyệt, tải về, đổi tên, xóa tệp trên TV; mở tệp trên TV</li>
-          <li>Tải file từ link về TV, cài APK</li>
-        </ul>
+        <h3>🔌 Cần ADB</h3>
+        <ul><li>Xem và bấm trên màn hình TV</li><li>Mở app, tệp, cài APK</li><li>Sức khỏe, Tự động</li></ul>
       </div>
     </div>
-    <p><b>ADB đóng khi nào?</b> TV tắt hẳn hoặc đang standby sâu (mất Wi-Fi), TV vừa khởi động lại và chưa mở lại cổng, hoặc đã tắt “Gỡ lỗi ADB”. Chức năng Remote vẫn dùng được nếu TV còn mạng.</p>
-    <p><b>Bật lại:</b> Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng” → Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB”. Lần đầu TV hỏi cho phép thì chọn “Luôn cho phép”.</p>
+    <p class="note">ADB mất khi TV tắt hẳn, vừa khởi động lại, hoặc ai đó tắt “Gỡ lỗi ADB”. Lúc đó app sẽ chỉ cách bật lại.</p>
   </details>
   <details class="card" id="jobscard" hidden open><summary><h2>⏳ Tiến trình <span id="jobsum"></span></h2><button class="small iconbtn" id="jobsclose" title="Ẩn" aria-label="Ẩn">✕</button></summary><div id="jobs"></div></details>
   <div class="muted" id="ver"></div>

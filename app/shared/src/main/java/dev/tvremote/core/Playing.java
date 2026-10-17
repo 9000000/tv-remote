@@ -65,7 +65,9 @@ public final class Playing {
             System.out.println("{\"error\":" + q(String.valueOf(e)) + "}");
             System.exit(0);
         }
+        loadStamps();
         watch();
+        started = true;
         Thread in = new Thread(() -> {
             try (BufferedReader r = new BufferedReader(new InputStreamReader(System.in))) {
                 for (String line; (line = r.readLine()) != null; ) {
@@ -101,6 +103,40 @@ public final class Playing {
         } catch (Throwable e) {
             System.err.println("media services: " + e);
         }
+    }
+
+    /** Per app: the update time its last state carried, and when that state was first seen here. YouTube (Google TV) sends
+     *  "playing from 0:00" stamped about two minutes in the past, so its videos seemed to start at 2:15; a state is never older
+     *  than its arrival, so a stamp from before then is replaced by the arrival. */
+    private static final java.util.Map<String, long[]> stamps = new java.util.HashMap<>();
+    private static boolean started;                                  // states there before this ran: their arrival is unknown
+
+    private static final java.io.File STAMPS = new java.io.File("/data/local/tmp/tvr-playing.txt");   // kept for the next run: a remote reopened mid-video
+
+    private static synchronized long since(String pkg, PlaybackState s) {
+        long t = s.getLastPositionUpdateTime(), now = SystemClock.elapsedRealtime();
+        long[] k = stamps.get(pkg);
+        if (k == null || k[0] != t) {
+            k = new long[] { t, started && t < now - 2000 ? now : t };
+            stamps.put(pkg, k);
+            if (k[1] != t) saveStamps();
+        }
+        return k[1];
+    }
+
+    private static synchronized void loadStamps() {
+        try (BufferedReader r = new BufferedReader(new java.io.FileReader(STAMPS))) {
+            for (String line; (line = r.readLine()) != null; ) {
+                String[] f = line.split(" ");
+                if (f.length == 3) stamps.put(f[0], new long[] { Long.parseLong(f[1]), Long.parseLong(f[2]) });
+            }
+        } catch (Throwable none) { }
+    }
+
+    private static synchronized void saveStamps() {
+        StringBuilder b = new StringBuilder();
+        for (java.util.Map.Entry<String, long[]> e : stamps.entrySet()) b.append(e.getKey()).append(' ').append(e.getValue()[0]).append(' ').append(e.getValue()[1]).append('\n');
+        try (java.io.FileWriter w = new java.io.FileWriter(STAMPS)) { w.write(b.toString()); } catch (Throwable ignored) { }
     }
 
     private static void watch() {
@@ -151,8 +187,9 @@ public final class Playing {
             int st = s == null ? 0 : s.getState();
             long pos = s == null ? 0 : s.getPosition();
             float speed = s == null ? 0 : s.getPlaybackSpeed();
-            if (st == PlaybackState.STATE_PLAYING && s.getLastPositionUpdateTime() > 0)   // where it is now, not at its last report
-                pos += (long) ((SystemClock.elapsedRealtime() - s.getLastPositionUpdateTime()) * speed);
+            long since = s == null ? 0 : since(c.getPackageName(), s);
+            if (st == PlaybackState.STATE_PLAYING && since > 0)        // where it is now, not at its last report
+                pos += (long) ((SystemClock.elapsedRealtime() - since) * speed);
             String sub = null;
             if (m != null) for (String k : new String[] { MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE, MediaMetadata.METADATA_KEY_ARTIST, MediaMetadata.METADATA_KEY_ALBUM }) {
                 CharSequence v = m.getText(k);

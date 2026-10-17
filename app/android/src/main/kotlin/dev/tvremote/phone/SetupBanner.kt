@@ -1,6 +1,5 @@
 package dev.tvremote.phone
 
-import android.app.AlertDialog
 import android.graphics.Color
 import android.view.View
 import dev.tvremote.core.Errors
@@ -60,11 +59,11 @@ internal fun MainActivity.showSetup(h: String? = host) {
     setupBar.setLabel(if (undone) t("@alert|TV Setup ${n.version} chạy lỗi, TV đã tự quay về ${n.from}  ›", "@alert|TV Setup ${n.version} failed, the TV went back to ${n.from}  ›")
         else t("@download|TV Setup trên TV có bản mới ${n.latest}  ›", "@download|New TV Setup for the TV: ${n.latest}  ›"))
     setupBar.setOnClickListener {
-        if (undone) AlertDialog.Builder(this).setTitle(t("TV Setup ${n.version} chạy lỗi trên TV này", "TV Setup ${n.version} failed on this TV"))
+        if (undone) Popup.Builder(this).setTitle(t("TV Setup ${n.version} chạy lỗi trên TV này", "TV Setup ${n.version} failed on this TV"))
             .setMessage(t("TV đã tự quay về bản ${n.from}. Hẹn giờ, ghép nối và cài đặt vẫn còn nguyên. Có bản sau thì nó hiện ở đây.",
                 "The TV went back to ${n.from} by itself. Timers, pairings and settings are all still there. A later version will show up here."))
             .setPositiveButton(t("Đã hiểu", "Got it")) { _, _ -> prefs.edit().putString("setupUndo", n.at.toString()).apply(); showSetup(h) }.show()
-        else AlertDialog.Builder(this).setTitle(t("TV Setup ${n.latest} (đang dùng ${n.installed})", "TV Setup ${n.latest} (the TV has ${n.installed})"))
+        else Popup.Builder(this).setTitle(t("TV Setup ${n.latest} (đang dùng ${n.installed})", "TV Setup ${n.latest} (the TV has ${n.installed})"))
             .setMessage(t("TV tự cài bản mới trong khoảng nửa phút, remote vẫn dùng bình thường. Bản mới chạy lỗi thì TV tự quay về bản đang dùng, hẹn giờ và ghép nối vẫn còn.",
                 "The TV installs it by itself in about half a minute; the remote keeps working. If the new version does not work, the TV goes back to the one it has, timers and pairings included."))
             .setPositiveButton(t("Cập nhật", "Update")) { _, _ ->
@@ -83,7 +82,7 @@ internal fun MainActivity.offerSetup(e: Throwable): Boolean {
     if (isFinishing) return true
     val old = generateSequence(e) { it.cause }.any { "setup:old:" in (it.message ?: "") }
     val h = host
-    AlertDialog.Builder(this).setMessage(say)
+    Popup.Builder(this).setMessage(say)
         .setPositiveButton(if (old) t("Cập nhật", "Update") else t("Cài TV Setup", "Install TV Setup")) { _, _ ->
             if (h != null) { setupNews.remove(h); setupChecked.remove(h) }      // asked again after: done, or put back
             managing.open(h, then = if (old) "updateSetup()" else "installSetupApk()")

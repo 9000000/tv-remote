@@ -1,6 +1,5 @@
 package dev.tvremote.phone
 
-import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
 import android.view.View
@@ -73,7 +72,7 @@ private fun MainActivity.fleetPick(title: String, then: (List<String>) -> Unit) 
     val ips = savedIps()
     val names = ips.map { title(it) + if (reach[it] == false) t(" · không thấy", " · no answer") else "" }.toTypedArray()
     val on = BooleanArray(ips.size) { reach[ips[it]] != false }
-    AlertDialog.Builder(this).setTitle(title)
+    Popup.Builder(this).setTitle(title)
         .setMultiChoiceItems(names, on) { _, i, c -> on[i] = c }
         .setPositiveButton(t("Tiếp", "Next")) { _, _ ->
             val chosen = ips.filterIndexed { i, _ -> on[i] }
@@ -107,7 +106,7 @@ internal fun MainActivity.fleetApk(uri: Uri) {
 
 /** Asks each TV picked for its apps, then which one to remove from the TVs that have it. */
 private fun MainActivity.fleetUninstall(ips: List<String>) {
-    val wait = AlertDialog.Builder(this).setMessage(t("Đang hỏi từng TV...", "Asking each TV...")).setCancelable(false).show()
+    val wait = Popup.Builder(this).setMessage(t("Đang hỏi từng TV...", "Asking each TV...")).setCancelable(false).show()
     val apps = HashMap<String, MutableList<String>>()                 // package -> the TVs that have it
     val names = HashMap<String, String>()
     val pool = Executors.newFixedThreadPool(PARALLEL)
@@ -133,10 +132,10 @@ private fun MainActivity.fleetUninstall(ips: List<String>) {
             val picked = BooleanArray(list.size)
             val rows = col()
             rows.setPadding(dp(12), dp(4), dp(20), dp(4))
-            lateinit var box: AlertDialog
+            lateinit var box: Popup
             val sync = {
                 val n = picked.count { it }
-                box.getButton(AlertDialog.BUTTON_POSITIVE)?.let { it.isEnabled = n > 0; it.text = t("Gỡ", "Remove") + if (n > 0) " ($n)" else "" }
+                box.getButton(Popup.BUTTON_POSITIVE)?.let { it.isEnabled = n > 0; it.text = t("Gỡ", "Remove") + if (n > 0) " ($n)" else "" }
             }
             list.forEachIndexed { i, (pkg, on) ->
                 val check = android.widget.CheckBox(this)
@@ -154,13 +153,13 @@ private fun MainActivity.fleetUninstall(ips: List<String>) {
             }
             val sv = ScrollView(this)
             sv.addView(rows)
-            box = AlertDialog.Builder(this).setTitle(t("Gỡ app nào?", "Remove which apps?")).setView(sv)
+            box = Popup.Builder(this).setTitle(t("Gỡ app nào?", "Remove which apps?")).setView(sv)
                 .setPositiveButton(t("Gỡ", "Remove")) { _, _ ->
                     val chosen = list.filterIndexed { i, _ -> picked[i] }
                     val pkgs = chosen.map { it.first }
                     val on = chosen.flatMap { it.second }.distinct()
                     val what = if (pkgs.size == 1) names[pkgs[0]] ?: pkgs[0] else t("${pkgs.size} app", "${pkgs.size} apps")
-                    AlertDialog.Builder(this).setMessage(t("Gỡ $what khỏi các TV này?", "Remove $what from these TVs?") +
+                    Popup.Builder(this).setMessage(t("Gỡ $what khỏi các TV này?", "Remove $what from these TVs?") +
                         (if (pkgs.size > 1) "\n" + pkgs.joinToString("\n") { "• " + (names[it] ?: it) } else "") + "\n\n" + t("TV:", "TVs:") + "\n" + on.joinToString("\n") { "• " + title(it) })
                         .setPositiveButton(t("Gỡ", "Remove")) { _, _ ->
                             fleetRun(t("Gỡ ", "Remove ") + what, on) { link, _ -> val n = Fleet.uninstall(link.get(), pkgs); t("đã gỡ $n app", "removed $n apps") }
@@ -185,9 +184,9 @@ private fun MainActivity.fleetRun(title: String, ips: List<String>, stoppable: B
     }
     val sv = ScrollView(this)
     sv.addView(list)
-    val box = AlertDialog.Builder(this).setTitle(title).setView(sv).setPositiveButton(t("Đóng", "Close"), null)
+    val box = Popup.Builder(this).setTitle(title).setView(sv).setPositiveButton(t("Đóng", "Close"), null)
         .setNeutralButton(t("■ Dừng", "■ Stop"), null).show()
-    val stopAll = box.getButton(AlertDialog.BUTTON_NEUTRAL)            // set after show(): the dialog must stay open while the TVs wind down
+    val stopAll = box.getButton(Popup.BUTTON_NEUTRAL)            // set after show(): the dialog must stay open while the TVs wind down
     if (!stoppable) stopAll.visibility = android.view.View.GONE   // a removal or a restart has no half way to stop at
     stopAll.setOnClickListener { parts.forEach { it.cancel.stop() }; stopAll.isEnabled = false }
     val pool = Executors.newFixedThreadPool(PARALLEL)

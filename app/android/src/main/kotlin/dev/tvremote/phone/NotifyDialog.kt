@@ -1,6 +1,5 @@
 package dev.tvremote.phone
 
-import android.app.AlertDialog
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
@@ -29,7 +28,8 @@ internal fun MainActivity.chips(options: List<Pair<String, String>>, now: String
         b.isSingleLine = true                                         // "10 giây" on one line: a wrapped chip was cut at the bottom
         b.setPadding(0, b.paddingTop, 0, b.paddingBottom)
         b.setOnClickListener { pick(value) }
-        row.addView(b, cell(40, i > 0))
+        val wide = options.any { it.second.length <= 2 } && words.length > 2   // "Tự động" beside "1", "2": more room for the word
+        row.addView(b, cell(40, i > 0).apply { if (wide) weight = 1.6f })
     }
     return row
 }
@@ -64,7 +64,7 @@ private fun MainActivity.showNotifyDialog() {
     body.addView(corners)
     body.addView(head(t("HIỆN TRONG", "STAYS FOR")), gap(14))
     body.addView(seconds2, gap(6))
-    AlertDialog.Builder(this).setTitle(t("Gửi thông báo lên TV", "Notify the TV")).setView(inDialog(body))
+    Popup.Builder(this).setTitle(t("Gửi thông báo lên TV", "Notify the TV")).setView(inDialog(body))
         .setPositiveButton(t("Gửi", "Send")) { _, _ ->
             val msg = JSONObject().put("title", title.text.toString().trim()).put("text", text.text.toString().trim()).put("corner", corner).put("seconds", seconds)
             if (msg.getString("title").isEmpty() && msg.getString("text").isEmpty()) {

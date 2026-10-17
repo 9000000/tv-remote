@@ -57,7 +57,7 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
             state = "idle"
             if (found != null && writable) {                         // in the background: a "check" from the page answers at once
                 state = "downloading"; pct = 0
-                Thread({ synchronized(this) { download() } }, "update-download").apply { isDaemon = true }.start()
+                Thread({ synchronized(dl) { download() } }, "update-download").apply { isDaemon = true }.start()
             }
         } catch (e: Exception) {
             error = e.message ?: e.javaClass.simpleName
@@ -67,9 +67,13 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
         }
     }
 
+    private val dl = Any()                                            // the download's own lock: check() is not held up for minutes
+    @Volatile private var freshFor: Release? = null
+
     private fun download() {
         val r = found ?: return
         val dir = work ?: return
+        if (freshFor === r && fresh?.isDirectory == true) { state = "ready"; return }   // Update pressed while it was downloading
         state = "downloading"; pct = 0
         try {
             dir.deleteRecursively(); dir.mkdirs()
@@ -83,6 +87,7 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
             }
             file.delete()
             fresh = out.listFiles()?.singleOrNull { it.isDirectory } ?: throw java.io.IOException("unexpected archive")
+            freshFor = r
             state = "ready"
             println("update ${r.version} ready: $fresh")
         } catch (e: Exception) {
@@ -107,7 +112,7 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
         val ready = state == "ready"
         state = if (ready) "installing" else "downloading"            // the page shows it from this very answer
         Thread({
-            if (!ready) synchronized(this) { download() }
+            if (!ready) synchronized(dl) { download() }       // after the one in the background: it finds that one's
             if (!ready && state != "ready") return@Thread
             state = "installing"
             if (swap(true)) quit() else state = "error"

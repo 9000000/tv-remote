@@ -41,6 +41,7 @@ internal object Rules {
         val o = load(c)
         return o.optLong("sleep_at") > System.currentTimeMillis() || o.optJSONObject("bedtime")?.optBoolean("on") == true || (o.optJSONObject("limits")?.length() ?: 0) > 0
             || (o.optJSONArray("volume")?.length() ?: 0) > 0 || ram(o).optBoolean("on")
+            || o.optBoolean("awake")                                   // KeepAwake lives in the service
     }
 
     fun day(t: Long): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(t))
@@ -57,6 +58,7 @@ internal object Rules {
         if (!apply(o, d, System.currentTimeMillis())) return state(c)
         save(c, o)
         Guard.poke()
+        KeepAwake.live?.check()
         return state(c)
     }
 
@@ -74,6 +76,7 @@ internal object Rules {
             }
             "volume" -> o.put("volume", ranges(d.optJSONArray("ranges") ?: JSONArray(), true))
             "ram" -> o.put("ram", JSONObject().put("on", d.optBoolean("on")).put("pct", d.optInt("pct", ram(o).optInt("pct")).coerceIn(RAM_MIN, RAM_MAX)))
+            "awake" -> o.put("awake", d.optBoolean("on"))                   // KeepAwake: the chip kept up while the TV is "off"
             "snooze" -> o.put("snooze_until", if (minutes > 0) now + minutes * 60_000L else 0L)
             "limit", "extra" -> {
                 val pkg = d.optString("pkg")
@@ -187,7 +190,7 @@ internal object Rules {
             .put("in_bedtime", inBedtime(o, now)).put("snooze_until", o.optLong("snooze_until").let { if (it > now) it else 0L })
             .put("limits", limits).put("volume", o.optJSONArray("volume") ?: JSONArray()).put("volume_now", volumeCap(o, now) ?: JSONObject.NULL)
             .put("ram", ram(o)).put("volume_fixed", Guard.volumeFixed(c)).put("running", RemoteService.isRunning()).put("wanted", active(c))
-            .put("adb", RemoteService.adbState())
+            .put("adb", RemoteService.adbState()).put("awake", o.optBoolean("awake"))
     }
 
     private fun label(c: Context, pkg: String): String = try {
