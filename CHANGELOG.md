@@ -4,6 +4,16 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+
+- Cài TV Setup lên TV chưa bật ADB: luôn đi qua Downloader. Trước đây trình duyệt có sẵn của TV (như TCL) nhận đường dẫn APK, tải về rồi đứng ở trang trắng, không mở được trình cài.
+
+**English**
+
+- Installing TV Setup on a TV without ADB always goes through Downloader. The TV's own browser (TCL's, for one) used to take the APK link, download it and then sit on a white page, unable to open the installer.
+
 ## 0.5.0 - 2026-10-17
 
 Web 0.5.0 · app điện thoại 0.5.0 · app TV 0.5.0

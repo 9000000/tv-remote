@@ -63,16 +63,10 @@ class Assist(private val cur: () -> Session) {
                 status = "blind"; msg = "TV này không cho biết đang mở gì nên không tự làm được. Làm theo cách “Tự làm” bên dưới."
                 return
             }
-            msg = "Đang gửi đường dẫn tải cho TV..."
-            sendLink(SETUP_APK)
-            untilFront(6.0) { it == DOWNLOADER || it == "android" }
-            if (front() == "android") {
-                msg = "TV đang hỏi “Mở bằng”: đang chọn giúp..."
-                answerChooser(); Thread.sleep(1500)
-            }
-            val a = front()
-            val direct = !stop && (a == DOWNLOADER || "chrome" in a || "browser" in a)
-            var there = direct || openOnTv(DOWNLOADER)
+            // Downloader first, always: a TV's own browser takes the APK link too and downloads it, then stays on a white page,
+            // unable to hand the file to the installer. Downloader's own link (SETUP_CODE) opens nothing else.
+            msg = "Đang mở Downloader trên TV..."
+            var there = openOnTv(DOWNLOADER)
             while (!there && !stop) {                                 // its Play Store page was told to install it
                 msg = "TV chưa có app Downloader: đang cài từ CH Play. Nếu TV không tự cài, chọn “Cài đặt” trên màn hình TV. Khi TV báo cài xong, bấm “Đã cài xong”."
                 for (i in 0 until 600) { if (stop || installed || front() == DOWNLOADER) break; Thread.sleep(200) }
@@ -83,12 +77,10 @@ class Assist(private val cur: () -> Session) {
                 installed = false; checking = false
             }
             if (stop) { status = "idle"; msg = ""; return }
-            if (!direct) {
-                msg = "Đang đưa đường dẫn tải cho Downloader..."
-                Thread.sleep(3000)
-                sendLink(SETUP_CODE)
-                answerChooser(); Thread.sleep(2500)
-            }
+            msg = "Đang đưa đường dẫn tải cho Downloader..."
+            Thread.sleep(3000)
+            sendLink(SETUP_CODE)
+            answerChooser(); Thread.sleep(2500)
             val was = front()
             msg = "TV đang tải TV Setup..."
             untilFront(120.0) { it != was }                           // until the TV's installer (or its permission screen) comes up
@@ -151,9 +143,8 @@ class Assist(private val cur: () -> Session) {
     }
 
     companion object {
-        const val SETUP_APK = "https://github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"
         const val DOWNLOADER = "com.esaba.downloader"
-        const val SETUP_CODE = "downloader://2397346"                 // Downloader's own link for the AFTVnews code of SETUP_APK: opens Downloader alone, no "Open with"
+        const val SETUP_CODE = "downloader://2397346"                 // Downloader's own link for the AFTVnews code of the latest tv-setup.apk: opens Downloader alone, no "Open with"
         val PKG = dev.tvremote.core.Pkg.RE
     }
 }

@@ -146,21 +146,9 @@ internal fun MainActivity.installSetup() {
                 ui.post { box.dismiss(); installSetupByHand() }
                 return@Thread
             }
-            // The short way: hand the TV the link itself. A TV with an app that takes web links (Downloader, a browser) opens
-            // it there, after asking "Open with" when it has several; OK takes what is offered, and either of them downloads.
-            a.launch("https://$link")
-            for (i in 0 until 30) { if (stop || a.app == dl || a.app == "android") break; Thread.sleep(200) }
-            if (a.app == "android" && !stop) {
-                say("TV đang hỏi “Mở bằng”: app tự chọn giúp...", "The TV asks “Open with”: choosing for you...")
-                for (press in 0 until 3) {
-                    Thread.sleep(1500)
-                    if (a.app != "android" || stop) break
-                    a.pulse(23, 110)
-                }
-                Thread.sleep(1500)
-            }
-            val direct = !stop && a.app != "android" && a.app != "com.fptplay.launcher" && a.app.isNotEmpty() && (a.app == dl || a.app.contains("chrome") || a.app.contains("browser"))
-            var there = direct || openOnTv(a, dl) { stop }
+            // Downloader first, always: a TV's own browser takes the APK link too and downloads it, then stays on a white page,
+            // unable to hand the file to the installer. Downloader's own link (downloader://) opens nothing else.
+            var there = openOnTv(a, dl) { stop }
             if (!there && !stop && basic === a) {                     // its Play Store page was told to install it
                 say("TV chưa có Downloader: đang cài từ CH Play...\n\nNếu TV không tự cài, bấm “Cài đặt” trên màn hình TV. Khi TV báo cài xong, bấm “Đã cài xong” bên dưới.",
                     "The TV has no Downloader yet: installing it from the Play Store...\n\nIf the TV does not start by itself, choose “Install” on its screen. When the TV says it is installed, tap “Installed” below.")
@@ -179,17 +167,15 @@ internal fun MainActivity.installSetup() {
                 ui.post { if (box.isShowing) box.dismiss(); if (!stop && basic === a) installSetupByHand() }
                 return@Thread
             }
-            if (!direct) {                                            // Downloader is there now: its own link opens it alone, no "Open with"
-                say("Đang đưa đường dẫn tải cho Downloader...", "Handing the download link to Downloader...")
-                Thread.sleep(3000)
-                a.launch("downloader://$DL_CODE")
-                for (press in 0 until 3) {                            // "Open with", when a browser is installed too
-                    Thread.sleep(1500)
-                    if (a.app != "android" || stop) break
-                    a.pulse(23, 110)
-                }
-                Thread.sleep(2500)
+            say("Đang đưa đường dẫn tải cho Downloader...", "Handing the download link to Downloader...")
+            Thread.sleep(3000)
+            a.launch("downloader://$DL_CODE")                         // its own link: opens Downloader alone
+            for (press in 0 until 3) {                                // "Open with", should another app claim it too
+                Thread.sleep(1500)
+                if (a.app != "android" || stop) break
+                a.pulse(23, 110)
             }
+            Thread.sleep(2500)
             val from = a.app
             say("Đã nhập đường dẫn. Đang chờ TV tải xong...", "Link entered. Waiting for the TV to finish the download...")
             for (i in 0 until 240) {                                  // up to 2 minutes, until the TV's installer (or its permission screen) comes up
