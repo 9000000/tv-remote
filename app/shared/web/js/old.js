@@ -1,0 +1,42 @@
+// A browser too old for the page's scripts (Chrome before 80: ?. ?? catch {} {...a}) runs none of them and shows empty tabs.
+// Seen on an Android 8 phone and old TVs whose "Android System WebView" was never updated. Written in ES5 on purpose: it
+// must run where the rest cannot, and says in both languages (i18n.js cannot run either) what to update.
+(function () {
+  try { new Function('var a = { ...{} }; try { a?.b ?? 0 } catch { }'); return; } catch (e) { }
+  var vi = /[?&]lang=vi(&|$)/.test(location.search) || (!/[?&]lang=/.test(location.search) && /^vi/i.test(navigator.language || ''));
+  var webview = /; wv\)/.test(navigator.userAgent);                // an app's web view: updated as "Android System WebView"
+  var store = 'https://play.google.com/store/apps/details?id=com.google.android.webview';
+  window.OLD_BROWSER = true;
+  document.addEventListener('DOMContentLoaded', function () {
+    if (!document.documentElement.getAttribute('data-theme')) document.documentElement.setAttribute('data-theme', /[?&]theme=dark(&|$)/.test(location.search) ? 'dark' : 'light');
+    document.documentElement.className += ' tabbed';
+    var main = document.createElement('main');
+    main.className = 'wide';
+    var card = document.createElement('section');
+    card.className = 'card old';
+    var h = document.createElement('h2');
+    h.textContent = vi ? 'Cần cập nhật trình duyệt' : 'The browser needs an update';
+    var p = document.createElement('p');
+    p.className = 'note';
+    p.textContent = webview
+      ? (vi ? 'Trang này cần “Android System WebView” mới hơn. Cập nhật nó trên Play Store, rồi mở lại.'
+            : 'This page needs a newer “Android System WebView”. Update it on the Play Store, then open this again.')
+      : (vi ? 'Trình duyệt này quá cũ để mở trang (cần Chrome 80, Safari 14 trở lên). Cập nhật trình duyệt, rồi mở lại.'
+            : 'This browser is too old for this page (it needs Chrome 80, Safari 14 or newer). Update it, then open this again.');
+    card.appendChild(h);
+    card.appendChild(p);
+    if (webview) {
+      var acts = document.createElement('div');
+      acts.className = 'actions';
+      var b = document.createElement('button');
+      b.className = 'primary';
+      b.textContent = vi ? 'Mở Play Store' : 'Open the Play Store';
+      b.onclick = function () { location.href = store; };          // the app sends links that leave the page to the store / browser
+      acts.appendChild(b);
+      card.appendChild(acts);
+    }
+    main.appendChild(card);
+    document.body.innerHTML = '';
+    document.body.appendChild(main);
+  });
+})();

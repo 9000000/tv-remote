@@ -15,6 +15,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - App điện thoại: bật VPN vẫn điều khiển được TV ở nhà, app tự đi qua Wi-Fi tới địa chỉ trong nhà (Tailscale vẫn đi qua VPN). Nếu vẫn không tới được, app nhắc cho phép mạng nội bộ trong app VPN.
 - Web của TV: lúc TV Setup chờ người bấm “Cho phép gỡ lỗi USB?” trên TV, trang vẫn trả lời (cả ghép mã); phần cần ADB báo ngay “nhìn lên TV, chọn Luôn cho phép” thay vì treo tới khi trang không mở được nữa. Tên app hiện đúng thay cho tên gói.
 - Máy tính vừa ngủ dậy (gập máy) hay điện thoại vừa mở khóa: hình và tiếng TV đang xem tự mở lại thay vì báo “TV đã dừng gửi hình”; một lần hỏi TV không được ngay lúc thức dậy không còn hiện “Mất kết nối”. TV giữ phiên xem 60 giây (trước là 25) khi điện thoại bị treo ở nền (cả ba nơi).
+- Điện thoại hay TV đời cũ chưa cập nhật “Android System WebView” (và trình duyệt quá cũ): màn Quản lý báo cần cập nhật, có nút mở Play Store, thay vì hiện các tab trống.
 
 **English**
 
@@ -25,6 +26,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Phone app: with a VPN on, the TV at home is still reachable; the app goes over the Wi-Fi to home addresses (Tailscale still goes through the VPN). If it still can't reach the TV, it asks to allow the local network in the VPN app.
 - TV web page: while TV Setup waits for someone to answer “Allow USB debugging?” on the TV, the page keeps answering (pairing too); the parts that need ADB say at once “look at the TV, choose Always allow” instead of hanging until the page no longer opens. App names show instead of package names.
 - A computer that just woke (lid opened) or a phone just unlocked: the TV picture and sound being watched start again by themselves instead of “The TV stopped sending the picture”; one failed check right on waking no longer shows “Connection lost”. The TV keeps a viewing session 60 s (was 25) while the phone is frozen in the background (all three).
+- Older phones and TVs whose “Android System WebView” was never updated (and browsers that are too old): the Manage screen says to update it, with a button to the Play Store, instead of showing empty tabs.
 
 ## 0.7.1 - 2026-10-17
 

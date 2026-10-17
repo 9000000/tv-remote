@@ -1,6 +1,7 @@
 # AGENTS.md
 
 A guide for agents (and people) changing this repo. User-facing docs: [README.md](README.md) (Vietnamese) and [README.en.md](README.en.md).
+Why some code looks odd (measured bugs, VPNs, the TV's ADB questions): [dev/DECISIONS.md](dev/DECISIONS.md).
 
 ## What this is
 

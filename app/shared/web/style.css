@@ -456,6 +456,7 @@
   section.card:not(.rc):not(.playing) > *, dialog .card > * { margin:0; }
   :is(section.card:not(.rc):not(.playing), dialog .card) > div:empty { display:none !important; }   /* a slot with nothing in it yet leaves no gap */
   section.card:not(.rc):not(.playing) > :is(button, label.filebtn) { align-self:flex-start; }
+  section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* js/old.js: browsers before flex gap (Chrome 84) */
   details.card[open] > summary { margin-bottom:var(--gap); } details.card > :not(summary) + :not(summary) { margin-top:var(--gap); }
   h2 .lower { text-transform:none; letter-spacing:0; font-weight:500; }   /* "· cần ADB", a TV's name: words beside a title */
   h3 { font-size:14px; font-weight:600; margin:0; }
