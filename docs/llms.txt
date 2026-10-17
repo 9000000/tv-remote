@@ -1,8 +1,8 @@
 # TV Remote
 
-> Free, open-source remote control for Android TV and Google TV (and LG, Samsung TVs) from an Android phone, an iPhone (any browser) or a computer (Mac, Windows, Linux). It talks straight to the TV over the home network (or Tailscale when away), with no server in between, no account and no ads. Site: https://tvremote.pages.dev · Source: https://github.com/HoangTran0410/tv-remote
+> Free, open-source remote control for Android TV and Google TV (and LG, Samsung, Roku, Hisense / Toshiba VIDAA TVs) from an Android phone, an iPhone (any browser) or a computer (Mac, Windows, Linux). It talks straight to the TV over the home network (or Tailscale when away), with no server in between, no account and no ads. Site: https://tvremote.pages.dev · Source: https://github.com/HoangTran0410/tv-remote
 
-Works on TVs that run Android TV / Google TV (Sony, TCL, Xiaomi, Philips, Google TV boxes, operator boxes such as FPT Play Box...). Tested for real on a Sony BRAVIA (Android 9). LG (webOS) and Samsung (Tizen, 2016 on) TVs work in the phone and computer apps for keys, typing, opening apps, Wake-on-LAN and scenes (LG also: volume to a number, screen off); screen view, apps, files, health and timers need Android TV. LG and Samsung support is a beta, not yet tried on a real TV; every app has "Send the log" in About (commands sent, the TV's answers and the errors shown, no pairing keys) for reporting what a real TV did.
+Works on TVs that run Android TV / Google TV (Sony, TCL, Xiaomi, Philips, Google TV boxes, operator boxes such as FPT Play Box...). Tested for real on a Sony BRAVIA (Android 9). LG (webOS), Samsung (Tizen, 2016 on), Roku (TVs and players) and Hisense / Toshiba (VIDAA) TVs work in the phone and computer apps for keys, typing, opening apps, inputs, Wake-on-LAN and scenes (LG also: volume to a number, screen off; VIDAA pairs with a 4-digit code on the TV); screen view, apps, files, health and timers need Android TV. These are a beta, not yet tried on a real TV; every app has "Send the log" in About (commands sent, the TV's answers and the errors shown, no pairing keys) for reporting what a real TV did.
 
 ## Three apps and a web page
 
@@ -15,12 +15,12 @@ Works on TVs that run Android TV / Google TV (Sony, TCL, Xiaomi, Philips, Google
 - Remote keys, D-pad, volume, power; typing on the TV with the phone's keyboard (accented text included); voice commands.
 - See the TV's screen live and touch / click on it (scrcpy); screenshots; listen to the TV's sound on the phone or computer.
 - Now playing: title, seek, pause, next; the TV's clipboard (copy from / send to the TV).
-- Apps (open, install APKs, turn off, uninstall), files, TV health (RAM, storage, temperature).
+- Apps (open, install APKs, turn off, uninstall), files, TV health (RAM, storage, temperature) and its sleep: when the TV went off and on and why, day by day.
 - Optimize TV: turn off unused system apps and animations, a lighter home screen; nothing deleted, one-tap Undo.
 - Parental controls on the TV itself: daily limits per app, bedtime, sleep timer; enforced by the TV with every phone off.
 - Draw on the picture: the strokes show on the TV over any app (to guide someone far away).
 - Several TVs at once: install / restart on all; scenes (a list of steps run with one tap).
-- Away from home through Tailscale, installed and signed in from the app with one button. Wake-on-LAN for a TV that is fully off.
+- Away from home through Tailscale, installed and signed in from the app with one button; TV Setup turns Tailscale back on when the TV stops it to free memory, and can keep the TV reachable while it is off. Wake-on-LAN for a TV that is fully off.
 
 ## Setup in short
 
