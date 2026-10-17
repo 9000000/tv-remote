@@ -54,3 +54,17 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
   (MD5 of each base64 blob). Never Allow a key you cannot match.
 - **On the Google TV emulator the "Set up Google TV" reminder hides the question**, and TV Setup steps aside for a question it
   cannot see. Bring the question up (`cmd activity stack remove <its task>`, then start TV Setup again).
+
+## Start-up speed (computer app, TV emulator, `TVR_TRACE`)
+
+- **One shell call for the start** (`Tv.startFacts`): wake, model, SDK, `ip addr`, the jar's size and MD5 were 3-5 calls, ~127 ms
+  from "ADB ready" to "jar checked"; now one, 55-120 ms. The jar is compared by MD5 (a changed jar of the same size was never
+  pushed; tested by overwriting it with zeros of the same size: pushed again). No `md5sum` on the TV: falls back to the size.
+- **The socket poll is 25 ms for the first 60 tries**, then 100 ms (until 20 s, by `nanoTime`). A refused `localabstract:` open
+  costs the TV nothing. app_process to a listening scrcpy takes 380-480 ms here (13-16 tries).
+- **Click to first key frame, 10 cold starts each (HTTP request to first kind-2 packet; the emulator is bimodal, ~750 ms or
+  ~2 s, so best and median both shown):** picture before 729 / 832 ms, after 649 / 882; sound before 745 / 1066, after 755 / 839;
+  both at once before 748 / 1805, after 796 / 865 (the "before" runs had a slow stretch of the emulator, so read the best).
+- **Sound and picture stay two sessions.** scrcpy fixes `audio=` when it starts; adding sound to an open picture means a
+  second app_process or restarting the picture. Capturing sound by default would silence the TV's speakers. A joined session
+  would only help when the page asks for both in the same moment (after waking), which needs both fetches to name each other.
