@@ -468,13 +468,14 @@ function showSteps(out) {
   if (sig === stepsSig && $('#steps').childElementCount === out.length) return;
   stepsSig = sig; $('#steps').replaceChildren(...out);
 }
-// An LG or Samsung TV: no ADB, no code to type. The TV asks itself whether to let this computer in; then save it.
+// An LG, Samsung or Roku TV: no ADB, no code to type. LG and Samsung ask themselves (a Roku asks nothing) whether to let this computer in; then save it.
 function nativeSteps(s) {
   const r = s.remote, out = [], again = act('🔄 Hỏi lại TV', async () => { if (await api('/api/pair/start', {})) { toast('Nhìn lên TV'); await sleep(800); await loadSteps(); } }, 'primary');
   out.push(r.connected ? step(1, 'ok', 'TV đã cho phép', 'Các nút điều khiển dùng được.')
     : r.asking ? step(1, 'wait', 'Nhìn lên TV: chọn Cho phép', 'TV đang hỏi có cho máy này điều khiển không.')
     : r.error === 'refused' ? step(1, 'todo', 'TV đã từ chối', 'Bấm “Hỏi lại TV” rồi chọn Cho phép trên TV.', again)
     : r.error === 'not accepted' ? step(1, 'todo', 'Chưa ai chọn Cho phép trên TV', 'Bấm “Hỏi lại TV”, rồi chọn Cho phép trong lúc TV hỏi.', again)
+    : /control by mobile apps/.test(r.error || '') ? step(1, 'todo', 'Roku đang chặn điều khiển', friendly(r.error))
     : step(1, 'todo', 'Kết nối TV', r.error ? 'Chưa kết nối được. TV có bật và chung mạng không?' : 'Đang kết nối...', r.error ? again : null));
   if (s.saved) out.push(step(2, 'ok', 'Đã lưu: ' + s.saved.name, 'Lần sau mở lên là dùng TV này. ' + (s.saved.mac ? 'Đã ghi địa chỉ MAC để đánh thức TV.' : '')));
   else {

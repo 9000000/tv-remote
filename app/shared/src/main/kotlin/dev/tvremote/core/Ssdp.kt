@@ -9,7 +9,7 @@ import java.net.SocketTimeoutException
 import java.net.URL
 
 /**
- * Finding LG and Samsung TVs on the home network: they answer an SSDP search (UPnP's "who is there?") for their remote
+ * Finding LG, Samsung and Roku TVs on the home network: they answer an SSDP search (UPnP's "who is there?") for their remote
  * services, which a port scan would only find slowly. The answers come back to this socket alone, so Android needs no
  * multicast lock. Android TVs are found by their ports as before (Discover.kt, the phone's scan).
  */
@@ -38,7 +38,7 @@ object Ssdp {
 
     class Found(val ip: String, val kind: String, val name: String)
 
-    private val SEARCH = listOf("urn:lge-com:service:webos-second-screen:1", "urn:samsung.com:device:RemoteControlReceiver:1")
+    private val SEARCH = listOf("urn:lge-com:service:webos-second-screen:1", "urn:samsung.com:device:RemoteControlReceiver:1", "roku:ecp")
 
     /** Every TV that answers within [ms], each once, with the name it gives itself; [each] as soon as one is known. */
     /** [bind]: puts the socket on the Wi-Fi itself (Android, with a VPN such as Tailscale taking the traffic). */
@@ -74,15 +74,19 @@ object Ssdp {
         return seen.values.toList()
     }
 
-    /** LG or Samsung, from the answer's headers. */
+    /** LG, Samsung or Roku, from the answer's headers. */
     fun kind(head: String): String? = when {
+        Regex("(?i)roku:ecp").containsMatchIn(head) -> Remote.Kind.ROKU   // first: a Roku TV's answer names its maker too
         Regex("(?i)lge-com|webos").containsMatchIn(head) -> Remote.Kind.LG
         Regex("(?i)samsung|tizen").containsMatchIn(head) -> Remote.Kind.SAMSUNG
         else -> null
     }
 
-    /** The name the person gave the TV: Samsung's REST description, else the UPnP description's friendlyName. */
+    /** The name the person gave the TV: Samsung's REST description, Roku's device-info, else the UPnP description's friendlyName. */
     private fun name(ip: String, kind: String, location: String?): String {
+        if (kind == Remote.Kind.ROKU) get("http://$ip:8060/query/device-info")?.let { t ->
+            Roku.field(t, "user-device-name").ifEmpty { Roku.field(t, "friendly-device-name") }.takeIf { it.isNotEmpty() }?.let { return it }
+        }
         if (kind == Remote.Kind.SAMSUNG) get("http://$ip:8001/api/v2/")?.let { t ->
             try { JSONObject(t).optJSONObject("device")?.optString("name")?.takeIf { it.isNotEmpty() }?.let { return it.removePrefix("[TV] ") } } catch (ignored: Exception) { }
         }

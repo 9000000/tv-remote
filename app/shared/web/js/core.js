@@ -162,7 +162,8 @@ const FRIENDLY = [
   [SETUP_RE, setupSay],
   [/notify:nooverlay/, 'TV này không cho app hiện thông báo đè lên màn hình.'],
   [/no YouTube and no Google search/, 'TV này không có YouTube hay tìm kiếm của Google để tìm câu này.'],
-  [/^unsupported: (LG|Samsung)$/, (m) => 'TV ' + m[1] + ' không hỗ trợ'],
+  [/^unsupported: (LG|Samsung|Roku)$/, (m) => 'TV ' + m[1] + ' không hỗ trợ'],
+  [/roku: control by mobile apps is off/, 'Roku đang chặn điều khiển từ điện thoại, máy tính. Trên Roku: Settings → System → Advanced system settings → Control by mobile apps → chọn Enabled (hoặc Permissive).'],   // Roku.LIMITED: newer Roku OS keeps phones out
   [/^refused$/, 'TV đã từ chối. Bấm Hỏi lại TV ở tab Thiết lập rồi chọn Cho phép.'],
   [/^not accepted$/, 'Chưa ai chọn Cho phép trên TV. Bấm Hỏi lại TV ở tab Thiết lập.'],
   [/SSLHandshake|CertPathValidator|Chain validation|CERTIFICATE_VERIFY|not yet valid/i, 'Không mở được kết nối bảo mật. Ngày giờ trên TV có đúng không? (Cài đặt → Hệ thống → Ngày và giờ)'],
@@ -287,7 +288,7 @@ async function refresh() {
   }
 }
 
-// ---------- the kind of TV: Android TV, LG or Samsung (Remote.kt: Kind) ----------
+// ---------- the kind of TV: Android TV, LG, Samsung or Roku (Remote.kt: Kind) ----------
 // An LG or Samsung TV is driven through its own remote link and has no ADB: what needs a capability it lacks is marked
 // data-needs="cap ..." and hidden (cards), greyed (buttons, keys it has no name for: a press says why) or, for a tab, kept
 // greyed with a card of what it does on an Android TV ([data-kindintro], KIND_INTRO): a feature to find out about, not a gap.
@@ -298,7 +299,7 @@ let TV_KIND = 'android', CAPS = null, kindSig = '';
 let SCOPE = 'full';
 const NATIVE = () => TV_KIND !== 'android';
 const can = (cap) => cap === 'full' ? SCOPE === 'full' : cap === 'control' ? SCOPE !== 'view' : !CAPS || CAPS.has(cap);
-const KIND_NAME = { android: 'Android TV', lg: 'LG', samsung: 'Samsung' };
+const KIND_NAME = { android: 'Android TV', lg: 'LG', samsung: 'Samsung', roku: 'Roku' };
 const scopeWhy = () => SCOPE === 'view' ? 'Bạn chỉ được xem TV này' : 'Chỉ chủ TV dùng được phần này';
 const kindWhy = () => SCOPE !== 'full' ? scopeWhy() : 'Chỉ có trên Android TV / Google TV';
 function unsupported(e, off) {

@@ -9,10 +9,14 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 
 - Hình nâng cao: chọn khung/giây (15, 30, 60) và bitrate (1–8 Mbit/s) cho hình TV, ở mục ⚙️ Nâng cao trong ô chất lượng hình. Có trên app máy tính, Web của TV và app điện thoại.
+- TV Roku và đầu Roku (thử nghiệm): bấm phím, gõ chữ, mở app, đổi nguồn vào, tìm thấy khi quét. Roku đời mới chặn điều khiển từ điện thoại thì app chỉ cách bật lại. Có trên app máy tính và app điện thoại.
+- Trang web: hàng nút trên cùng của remote (Nguồn, Trợ lý, Đánh thức, Thêm phím) có chữ dưới icon như app điện thoại.
 
 **English**
 
 - Advanced picture: pick the frames per second (15, 30, 60) and bit rate (1–8 Mbit/s) of the TV's picture, under ⚙️ Advanced in the quality picker. On the computer app, the TV web page and the phone app.
+- Roku TVs and players (beta): keys, typing, apps, inputs, found by the scan. When a newer Roku blocks control from phones, the app says how to allow it. On the computer app and the phone app.
+- Web page: the remote's top row (Power, Assistant, Wake, More keys) has words under its icons, as in the phone app.
 
 ## 0.6.0 - 2026-10-17
 

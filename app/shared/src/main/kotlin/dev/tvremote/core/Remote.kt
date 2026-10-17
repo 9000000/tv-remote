@@ -7,8 +7,8 @@ import java.io.File
 import java.io.IOException
 
 /**
- * A TV's own remote-control link, whatever brand: the Android TV Remote protocol ([Atv]), LG webOS ([Lg]) or Samsung Tizen
- * ([Samsung]). The Phone app and the Computer app press keys, type, open apps and set the volume through this alone, so one
+ * A TV's own remote-control link, whatever brand: the Android TV Remote protocol ([Atv]), LG webOS ([Lg]), Samsung Tizen
+ * ([Samsung]) or Roku ([Roku]). The Phone app and the Computer app press keys, type, open apps and set the volume through this alone, so one
  * remote screen and one page drive all three; what a kind cannot do is in [caps] (and [Kind]), and the UIs hide or grey it.
  * Keys are Android key codes (the values of [Scenes.KEYS]); each adapter turns them into its TV's own names.
  */
@@ -79,7 +79,8 @@ interface Remote : Closeable {
         const val ANDROID = "android"
         const val LG = "lg"
         const val SAMSUNG = "samsung"
-        val ALL = listOf(ANDROID, LG, SAMSUNG)
+        const val ROKU = "roku"
+        val ALL = listOf(ANDROID, LG, SAMSUNG, ROKU)
 
         /**
          * adb: everything that goes through ADB (the picture, touch, 🎧, drawing, now playing, the clipboard, the Apps / Files /
@@ -91,25 +92,26 @@ interface Remote : Closeable {
         fun caps(kind: String): Set<String> = when (kind) {
             LG -> setOf("keys", "text", "apps", "app_list", "volume_set", "link", "screen_off", "wol", "scenes", "inputs")
             SAMSUNG -> setOf("keys", "text", "apps", "app_list", "wol", "scenes")
+            ROKU -> setOf("keys", "text", "apps", "app_list", "wol", "scenes", "inputs")
             else -> setOf("keys", "text", "apps", "volume_set", "link", "screen_off", "wol", "scenes", "adb", "pair_code", "store", "inputs")
         }
 
-        fun name(kind: String): String = when (kind) { LG -> "LG"; SAMSUNG -> "Samsung"; else -> "Android TV" }
+        fun name(kind: String): String = when (kind) { LG -> "LG"; SAMSUNG -> "Samsung"; ROKU -> "Roku"; else -> "Android TV" }
 
         fun of(s: String?): String = s?.lowercase()?.takeIf { it in ALL } ?: ANDROID
 
         /** The key names (Scenes.KEYS) this kind has: the page greys the others. */
         fun keyNames(kind: String): List<String> {
-            val have = when (kind) { LG -> Lg.KEYS.keys; SAMSUNG -> Samsung.KEYS.keys; else -> null }
+            val have = when (kind) { LG -> Lg.KEYS.keys; SAMSUNG -> Samsung.KEYS.keys; ROKU -> Roku.KEYS.keys; else -> null }
             return Scenes.KEYS.filter { have == null || it.value in have }.keys.sorted()
         }
 
         /**
          * What a TV at [host] is, from the ports it answers on: Android TV's remote (6466) or ADB (5555), LG's (3000 / 3001),
-         * Samsung's (8001 / 8002). Null: none answer (off, or not a TV). Asked when an address is typed in with no kind.
+         * Samsung's (8001 / 8002), Roku's (8060). Null: none answer (off, or not a TV). Asked when an address is typed in with no kind.
          */
         fun detect(host: String, timeoutMs: Int = 800): String? {
-            val ports = listOf(6466 to ANDROID, 5555 to ANDROID, 3000 to LG, 3001 to LG, 8002 to SAMSUNG, 8001 to SAMSUNG)
+            val ports = listOf(6466 to ANDROID, 5555 to ANDROID, 3000 to LG, 3001 to LG, 8002 to SAMSUNG, 8001 to SAMSUNG, 8060 to ROKU)
             val open = java.util.concurrent.ConcurrentHashMap<Int, Boolean>()
             ports.map { (p, _) -> Thread { if (open(host, p, timeoutMs)) open[p] = true }.apply { isDaemon = true; start() } }.forEach { it.join(timeoutMs + 300L) }
             return ports.firstOrNull { open[it.first] == true }?.second
@@ -120,7 +122,7 @@ interface Remote : Closeable {
         } catch (e: Exception) { false }
 
         /** The ports that answer while the TV is on: Wake-on-LAN waits for one. */
-        fun ports(kind: String): List<Int> = when (kind) { LG -> listOf(3000, 3001); SAMSUNG -> listOf(8001, 8002); else -> listOf(6466) }
+        fun ports(kind: String): List<Int> = when (kind) { LG -> listOf(3000, 3001); SAMSUNG -> listOf(8001, 8002); ROKU -> listOf(8060); else -> listOf(6466) }
 
         /** The kind's caps and keys as /api/state carries them. */
         fun json(kind: String): JSONObject = JSONObject().put("kind", kind).put("caps", JSONArray(caps(kind).sorted())).put("keys", JSONArray(keyNames(kind)))
@@ -131,6 +133,7 @@ interface Remote : Closeable {
         fun of(kind: String, dir: File, host: String): Remote = when (kind) {
             Kind.LG -> Lg(dir, host)
             Kind.SAMSUNG -> Samsung(dir, host)
+            Kind.ROKU -> Roku(dir, host)
             else -> Atv(dir, host)
         }
     }

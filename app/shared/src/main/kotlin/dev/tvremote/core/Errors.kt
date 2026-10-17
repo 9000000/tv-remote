@@ -47,6 +47,8 @@ object Errors {
                 t("TV đã có app này nhưng từ nguồn khác (khác chữ ký). Gỡ bản đang có rồi cài lại.", "The TV has this app from another source (another signature). Remove it, then install again.")
             all.contains("INSTALL_FAILED_VERSION_DOWNGRADE") -> t("TV đang có bản mới hơn của app này.", "The TV has a newer version of this app.")
             all.contains("not an APK file") -> t("Tệp này không phải APK.", "This file is not an APK.")
+            all.contains(Roku.LIMITED) -> t("Roku đang chặn điều khiển từ điện thoại, máy tính. Trên Roku: Settings → System → Advanced system settings → Control by mobile apps → chọn Enabled (hoặc Permissive).",
+                "The Roku blocks control from phones and computers. On the Roku: Settings → System → Advanced system settings → Control by mobile apps → choose Enabled (or Permissive).")
             all.contains("protected: the TV needs this app") -> t("TV cần app này, không gỡ được.", "The TV needs this app; it cannot be removed.")
             else -> e.message ?: e.javaClass.simpleName
         }

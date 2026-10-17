@@ -32,7 +32,7 @@ internal fun MainActivity.offerBasic(ip: String, error: String) {
     Thread {
         if (open(ip, 5555, 1500)) adbFailed.add(ip)                // the port answers, yet ADB did not work (not allowed on the TV, say): do not keep retrying by ourselves
         val keys = open(ip, 6466, 2500)                            // an Android TV: it takes keys
-        val other = if (keys) null else Remote.Kind.detect(ip)?.takeIf { it != Remote.Kind.ANDROID }   // an address typed in: maybe an LG or Samsung TV
+        val other = if (keys) null else Remote.Kind.detect(ip)?.takeIf { it != Remote.Kind.ANDROID }   // an address typed in: maybe an LG, Samsung or Roku TV
         ui.post {
             if (isFinishing || host != ip || tv != null) return@post   // the person has moved on
             if (other != null) { prefs.edit().putString("kind:$ip", other).apply(); disconnect(null); startBasic(ip, false); return@post }
@@ -178,6 +178,7 @@ internal fun MainActivity.pair(ip: String) {
 
 internal fun MainActivity.explain(err: String?): String {
     val e = err?.lowercase(Locale.ROOT) ?: ""
+    if (e.contains(dev.tvremote.core.Roku.LIMITED)) return dev.tvremote.core.Errors.say(java.io.IOException(err), VI)
     if (refused(err))
         return t("TV từ chối kết nối: chưa bật “Gỡ lỗi ADB”.\n\nTrên TV: Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng”. Rồi Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB” (hoặc “Gỡ lỗi USB”).",
             "The TV refused the connection: “ADB debugging” is off.\n\nOn the TV: Settings → Device Preferences → About → press OK 7 times on “Build”. Then Developer options → turn on “ADB debugging” (or “USB debugging”).")
