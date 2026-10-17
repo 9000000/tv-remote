@@ -4,6 +4,16 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+
+- Hình TV trên app điện thoại ít trễ hơn: bộ giải mã chạy chế độ độ trễ thấp (ưu tiên thời gian thực), vẽ khung ngay khi giải xong và bỏ qua khung cũ khi đã có khung mới ngay sau. Máy chậm quá 0,6 giây thì tạo lại bộ giải mã, bỏ đến khung chính kế tiếp và xin TV gửi ngay một khung (như trên trình duyệt). Đo: `adb shell setprop log.tag.TvrPic DEBUG`, xem logcat thẻ `TvrPic`.
+
+**English**
+
+- The TV picture in the phone app lags less: the decoder runs in low-latency, real-time priority mode, draws a frame as soon as it is decoded and skips an old one when a newer one is right behind it. If the phone falls 0.6 s behind, the decoder is made again, frames are skipped up to the next key frame and the TV is asked for one (as for the browser). To measure: `adb shell setprop log.tag.TvrPic DEBUG`, then logcat tag `TvrPic`.
+
 ## 0.8.0 - 2026-10-18
 
 Web 0.8.0 · app điện thoại 0.8.0 · app TV 0.8.0
