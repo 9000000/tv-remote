@@ -333,7 +333,7 @@
     'TV thiếu bộ nhớ (TCL TGuard)': 'the TV ran short of memory (TCL TGuard)', 'TCL TGuard dọn app': 'TCL TGuard cleared apps', 'TV thiếu bộ nhớ': 'the TV ran short of memory',
     'đang cập nhật': 'being updated', 'Android dọn app chạy nền': 'Android cleared background apps', 'bị dừng': 'stopped',
     'Giữ chip thức khi tắt màn hình. Có TV vẫn tự ngủ sâu; tốn điện hơn một chút.': 'Keeps the chip awake with the screen off. Some TVs still sleep deeply; uses a little more power.',
-    'TV sẽ giữ kết nối khi tắt': 'The TV stays reachable when off', 'TV sẽ ngủ sâu như cũ': 'The TV sleeps deeply again', 'Giữ kết nối khi tắt TV': 'Stay reachable when the TV is off',
+    'TV sẽ giữ kết nối khi tắt': 'The TV stays reachable when off', 'TV sẽ ngủ sâu như cũ': 'The TV sleeps deeply again', 'Giữ kết nối khi tắt TV': 'Stay reachable when the TV is off', 'Đọc lịch sử, giấc ngủ trên TV này': 'Reading the history and sleep on this TV',
     '🛡️ Kết nối khi tắt TV': '🛡️ Reachable when off', 'chưa cài': 'not installed', 'chưa kết nối': 'not connected', 'đang chạy': 'running', 'không chạy': 'not running',
     'Tự bật cùng TV': 'Starts with the TV', 'Bị TV tắt gần đây': 'Recently stopped by the TV', 'Cập nhật TV Setup để xem lịch bật / tắt từng ngày.': 'Update TV Setup to see when the TV was on each day.',
     'Hôm nay': 'Today', 'Hôm qua': 'Yesterday', '📊 Lịch sử bật / tắt': '📊 On / off history', 'Xem ngày cũ hơn': 'Show older days', 'Màn hình bật': 'Screen on', 'Tailscale mất kết nối': 'Tailscale disconnected',

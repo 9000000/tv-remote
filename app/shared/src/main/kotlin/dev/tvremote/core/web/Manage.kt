@@ -32,6 +32,7 @@ import dev.tvremote.core.scenes.Scenes
 import dev.tvremote.core.ontv.ScreenOff
 import dev.tvremote.core.ontv.Sensors
 import dev.tvremote.core.ontv.Setup
+import dev.tvremote.core.ontv.SetupFiles
 import dev.tvremote.core.ontv.SetupNeed
 import dev.tvremote.core.ontv.SetupUpdate
 import dev.tvremote.core.ontv.Tailscale
@@ -105,7 +106,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "files" -> return HttpServer.Response.json(files(r.q("path")))
                 "file" -> return download(r)
                 "health" -> return HttpServer.Response.json(health())
-                "power" -> return HttpServer.Response.json(Power.parse(link.get().shell(Power.CMD, 20000)) { RulesClient.power { sh(it) } }.let { if (it.has("now")) it else it.put("now", System.currentTimeMillis() / 1000) })
+                "power" -> return HttpServer.Response.json(Power.parse(link.get().shell(Power.CMD, 20000)) { try { SetupFiles.read({ sh(it) }, "stats/power.jsonl", 3000) } catch (e: SetupNeed.Missing) { "" } }.let { if (it.has("now")) it else it.put("now", System.currentTimeMillis() / 1000) })
                 "procs" -> return HttpServer.Response.json(procs())
                 "crashes" -> return HttpServer.Response.json(JSONObject().put("text", sh(CRASHES).replace("\r\n", "\n").takeLast(500000)))
                 "stats" -> return HttpServer.Response.json(stats(r.q("days").toIntOrNull() ?: 7))
@@ -848,12 +849,13 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     private fun stats(days: Int): JSONObject {
         val d = days.coerceIn(1, 90)
         val from = System.currentTimeMillis() / 1000 - d * 86400L
-        val usage = try { JSONObject(sh("cat $STATS/usage.json 2>/dev/null")) } catch (e: Exception) { null }
+        val read = { name: String, lines: Int -> SetupFiles.read({ sh(it) }, "stats/$name", lines) }
+        val usage = try { JSONObject(read("usage.json", 1000)) } catch (e: Exception) { null }
         val samples = JSONArray()
-        for (line in sh("tail -n " + (d * 300) + " $STATS/samples.jsonl 2>/dev/null").jsplit("\n"))
+        for (line in read("samples.jsonl", d * 300).jsplit("\n"))
             try { val a = JSONArray(line); if (a.getLong(0) >= from) samples.put(a) } catch (ignored: Exception) { }
         val net = JSONArray()                                         // the network going away and coming back (TV Setup 2.16+)
-        for (line in sh("tail -n 400 $STATS/net.jsonl 2>/dev/null || true").jsplit("\n"))
+        for (line in read("net.jsonl", 400).jsplit("\n"))
             try { val a = JSONArray(line); if (a.getLong(0) >= from) net.put(a) } catch (ignored: Exception) { }
         val names = JSONObject()
         if (usage != null && labels != null)
@@ -989,7 +991,6 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             val at = if (last.size >= 6 && last[1].matches(DIGITS)) 3 else if (last.size == 5 && last[0].matches(DIGITS)) 2 else return null
             return last[at].takeIf { it.matches(DIGITS) }?.toLong()?.times(1024)
         }
-        private const val STATS = "/sdcard/Android/data/dev.tvremote.setup/files/stats"
 
         /** The separator is printed from octal codes, so it does not appear in this command's own line in the `top` output. */
         private const val HEALTH_STATIC = "getprop ro.product.manufacturer; getprop ro.product.model; getprop ro.build.version.release; getprop ro.build.version.sdk; " +

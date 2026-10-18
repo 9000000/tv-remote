@@ -31,10 +31,4 @@ object RulesClient {
         val kind = if (have.isEmpty()) "missing" else if (SetupNeed.ok(have, "rules")) "busy" else "old"
         return JSONObject().put("setup", kind).put("have", have).put("min", SetupNeed.MIN["rules"])
     }
-
-    /** TV Setup's power.jsonl through the app itself, for a shell that may not read its folder; "" without an answer. */
-    fun power(sh: (String) -> String): String {
-        val m = Regex("data=\"([A-Za-z0-9+/=]+)\"").find(sh("am broadcast -n $SETUP/.RulesReceiver --es get power 2>&1")) ?: return ""
-        return try { JSONObject(String(B64.decode(m.groupValues[1]), Charsets.UTF_8)).optString("power") } catch (e: Exception) { "" }
-    }
 }

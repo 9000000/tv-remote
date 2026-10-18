@@ -13,7 +13,6 @@ import org.json.JSONObject
  */
 object Power {
     private const val SEP = "printf '\\043~\\043\\n'"
-    private const val STATS = "/sdcard/Android/data/dev.tvremote.setup/files/stats"
     private const val WATCHED = "com.tailscale.ipn|dev.tvremote.setup"
 
     /** Settings that decide when the TV sleeps, and what it keeps up meanwhile: "table name". */
@@ -32,9 +31,9 @@ object Power {
         "ip -o -4 addr show 2>/dev/null | grep -E '(tailscale|tun)[0-9]*[[:space:]]+inet 100\\.'; $SEP; " +
         "logcat -d -v epoch 2>/dev/null | grep -E 'has died|tguard-kill|lowmemorykiller|lmkd' | grep -E '$WATCHED' | tail -n 40; " +
         "logcat -d -b events -v epoch 2>/dev/null | grep -E 'am_kill' | grep -E '$WATCHED' | tail -n 40; $SEP; " +
-        "tail -n 3000 $STATS/power.jsonl 2>/dev/null"
+        "tail -n 3000 ${SetupFiles.DIR}/stats/power.jsonl 2>/dev/null"
 
-    /** [out]: what [CMD] printed; [log]: power.jsonl another way, asked only when [out] has none. Times are the TV's clock, in seconds
+    /** [out]: what [CMD] printed; [log]: power.jsonl another way (SetupFiles), asked only when [out] has none. Times are the TV's clock, in seconds
      *  ("now" too, so the page compares like with like); "ago" ones are seconds before the reading. */
     fun parse(out: String, log: () -> String = { "" }): JSONObject {
         val part = (out + "#~#".repeat(6)).split("#~#").toMutableList()

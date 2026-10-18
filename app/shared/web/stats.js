@@ -44,8 +44,8 @@
     root.replaceChildren(range);
     if (!data.collector) {
       root.append(el('section', { className: 'card' }, el('p', { className: 'st-note', textContent: T(
-        'Chưa có dữ liệu. Phần ghi lịch sử chạy trong app TV Setup trên TV (bản 2.6.0 trở lên): cài và mở app đó một lần, vài phút sau quay lại đây.',
-        'No data yet. The history is recorded by the TV Setup app on the TV (2.6.0 or newer): install and open it once, then come back in a few minutes.') })));
+        'Chưa có dữ liệu. Phần ghi lịch sử chạy trong app TV Setup trên TV: cài và mở app đó một lần, vài phút sau quay lại đây.',
+        'No data yet. The history is recorded by the TV Setup app on the TV: install and open it once, then come back in a few minutes.') })));
       return;
     }
     root.append(el('section', { className: 'card' }, el('h2', { textContent: T('Thời gian dùng TV', 'TV time') }), sum, bars),
