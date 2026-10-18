@@ -182,7 +182,7 @@
   .vol { display:flex; align-items:center; gap:8px; margin-top:12px; }
   .vol button { min-height:44px; width:44px; padding:0; flex:none; font-size:17px; display:flex; align-items:center; justify-content:center; border-radius:50%; } .vol .ic { width:20px; height:20px; }
   .vol input[type=range] { flex:1; min-width:0; height:32px; accent-color:var(--accent); cursor:pointer; }
-  .vol output { width:34px; text-align:right; font-variant-numeric:tabular-nums; font-weight:700; font-size:15px; }
+  .vol.boost output { width:auto; min-width:4ch; } .vol output { width:34px; text-align:right; font-variant-numeric:tabular-nums; font-weight:700; font-size:15px; }
   .vol button.on { background:var(--bad-bg); color:var(--bad); }
 
   .screenbox { position:relative; background:#000; border-radius:10px; overflow:hidden; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; margin-top:10px; }

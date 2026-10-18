@@ -11,7 +11,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Tất cả cài đặt: Gỡ lỗi ADB và Gỡ lỗi không dây bật lên được, có hỏi lại trước (không tắt được, để không mất kết nối); TV tự tắt lại (Gỡ lỗi không dây cần Wi‑Fi) thì app nói rõ. Độ sáng là thanh kéo. Âm lượng phim, nhạc và âm lượng hệ thống hiện mức thật của TV và mức tối đa (ví dụ 9 / 15), gõ số hoặc bấm − / +, đổi qua lệnh âm lượng thật (TV không nhận lệnh thì bấm phím âm lượng). Thêm tên và nhóm mới “HDMI & loa ngoài” (HDMI‑CEC, eARC), bấm giữ, tốc độ con trỏ, thông báo nổi, VPN luôn bật; cờ nhà máy và công tắc riêng của TCL chỉ xem.
 - TCL (Android 11): TV Setup bị tắt rồi sập mỗi lần app điện thoại / máy tính mở lại nó (TCL chặn chạy nền dạng foreground, Android giết app sau 10 giây). Giờ app mở TV Setup bằng đường thường và đưa nó vào danh sách không bị tiết kiệm pin, nên không sập và ít bị TV tắt hơn.
 - Màn remote: “Thêm phím” và bàn số mở / đóng trượt mượt, phần bên dưới trượt theo thay vì nhảy (web và app điện thoại). TV Setup: mỗi dòng trong ô Hoạt động có giờ.
-- 🎧 Nút 🔊 ×1 / ×2 / ×4 cạnh HQ: tiếng TV to hơn trên điện thoại / máy tính, có bộ giới hạn để không rè.
+- 🎧 Nút 🔊 cạnh HQ: thanh kéo ×0.5 … ×10 cho tiếng TV to hơn trên điện thoại / máy tính, có bộ giới hạn để không rè.
+- Chữ chạy (đang phát, tên app…) hết khựng, nhất là trên app máy tính cho Mac.
 - Nút Nói trên app máy tính và trang web của TV làm như app điện thoại: nói (trình duyệt tự nhận giọng) hoặc gõ vào ô Hỏi TV; giữ nút để mở Trợ lý của TV.
 - Chọn bộ mã hóa Phần cứng / Phần mềm mà 10 giây chưa thấy hình: app hỏi có chuyển về Tự chọn không.
 - 🎧 Nghe tiếng TV hết bị nhanh và giật trên TV gửi tiếng từng đợt (TCL): app không bỏ lẻ từng mẩu tiếng suốt vài giây nữa mà nhảy về gần hiện tại một lần; sau mỗi lần đứt tiếng thì giữ sẵn nhiều tiếng hơn (cả trên trang web).
@@ -23,7 +24,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - All settings: ADB and Wireless debugging can be turned on after a question (never off, so the remotes are not cut off); when the TV turns it straight back off (Wireless debugging needs Wi‑Fi) the app says so. Brightness is a slider. Media and system volume show the TV's live level and its top (such as 9 / 15), typed or with − / +, set through the real volume command (the volume keys where the TV ignores it). New names and a new group “HDMI & audio out” (HDMI‑CEC, eARC), long‑press delay, pointer speed, pop‑up notifications, always‑on VPN; factory flags and TCL's own switches are view only.
 - TCL (Android 11): TV Setup was stopped, then crashed each time the phone or computer app started it again (TCL refuses a foreground service, Android kills the app 10 s later). The apps now start it the plain way and put it on the battery allow list: no crash, and the TV stops it less.
 - Remote: “More keys” and the number pad slide open and shut, what is below follows instead of jumping (web and phone app). TV Setup: each line in Activity has its time.
-- 🎧 A 🔊 ×1 / ×2 / ×4 button next to HQ: the TV's sound louder on the phone / computer, with a limiter so it does not crack.
+- 🎧 A 🔊 button next to HQ: a ×0.5 … ×10 slider for the TV's sound on the phone / computer, with a limiter so it does not crack.
+- Running lines of text (now playing, app names…) no longer hitch, above all in the Mac computer app.
 - The Speak button on the computer app and the TV's web page works as on the phone app: speak (the browser hears it) or type in the Ask the TV box; hold it to open the TV's Assistant.
 - With the Hardware / Software encoder picked by hand and no picture after 10 seconds, the app offers to go back to Auto.
 - 🎧 Listening no longer sounds fast and stuttering on a TV that sends its sound in bursts (a TCL): instead of dropping a scrap every half second for seconds, it skips back near live once; after each break it keeps more sound queued (the web page too).

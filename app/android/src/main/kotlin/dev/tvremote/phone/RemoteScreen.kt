@@ -59,12 +59,12 @@ internal fun MainActivity.layoutRemote() {
     hqBtn.visibility = listenChip.visibility
     hqBtn.background = box(if (hq) ACCENT else BTN, 10)               // lit while on, like every on/off button
     hqBtn.setTextColor(if (hq) Color.WHITE else DIM)
-    val boost = prefs.getInt("listenBoost", 1).takeIf { it == 2 || it == 4 } ?: 1
+    val boost = listenGain()
     dev.tvremote.core.picture.SoundBoost.times = boost
     boostBtn.visibility = listenChip.visibility
-    boostBtn.text = "🔊 ×$boost"
-    boostBtn.background = box(if (boost > 1) ACCENT else BTN, 10)
-    boostBtn.setTextColor(if (boost > 1) Color.WHITE else DIM)
+    boostBtn.text = "🔊 " + gainWords(boost)
+    boostBtn.background = box(if (boost != 1f) ACCENT else BTN, 10)
+    boostBtn.setTextColor(if (boost != 1f) Color.WHITE else DIM)
     qualBtn.text = Tv.QUALITY[prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)][0].toString() + "p ▾"
     window.decorView.systemUiVisibility = if (full) View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY else barFlags()
     videoBtn.lit = video                                              // lit while the picture shows, like every on/off button
@@ -219,10 +219,10 @@ internal fun MainActivity.buildRemote() {
         contentDescription = t("Tiếng chất lượng cao (160 kbit/s)", "High quality sound (160 kbit/s)"); setOnClickListener { toggleHq() }
     }
     picBar.addView(hqBtn, LinearLayout.LayoutParams(dp(44), dp(34)).apply { leftMargin = dp(8) })
-    boostBtn = android.widget.TextView(this).apply {                 // louder here: ×1 ×2 ×4, at once (the page's 🔊)
+    boostBtn = android.widget.TextView(this).apply {                 // louder here, ×0.5 … ×10 on a slider (the page's 🔊)
         textSize = 13f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER; setPadding(dp(10), 0, dp(10), 0)
-        contentDescription = t("Tiếng to hơn trên điện thoại", "Louder on the phone")
-        setOnClickListener { prefs.edit().putInt("listenBoost", when (prefs.getInt("listenBoost", 1)) { 1 -> 2; 2 -> 4; else -> 1 }).apply(); layoutRemote() }
+        contentDescription = t("Độ to trên điện thoại", "Loudness on the phone")
+        setOnClickListener { gainDialog() }
     }
     picBar.addView(boostBtn, LinearLayout.LayoutParams(-2, dp(34)).apply { leftMargin = dp(8) })
     picBar.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
@@ -663,4 +663,34 @@ internal class TapMark(c: Context) : View(c) {
 /** The keys shown or hidden below [v] slide open / shut and what is under them follows, instead of jumping (as on the page). */
 internal fun slide(v: View) {
     android.transition.TransitionManager.beginDelayedTransition(v.rootView as android.view.ViewGroup, android.transition.AutoTransition().setDuration(220))
+}
+
+internal fun MainActivity.listenGain(): Float = (Math.round(prefs.getFloat("listenGain", 1f) * 2) / 2f).coerceIn(0.5f, 10f)
+private fun gainWords(g: Float) = "×" + (if (g % 1f == 0f) g.toInt().toString() else g.toString())
+
+/** 🔊: a slider from ×0.5 to ×10 in halves, heard as it moves (nothing restarts), as the page's. */
+internal fun MainActivity.gainDialog() {
+    val out = label(gainWords(listenGain()), 17, Color.WHITE).apply { typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.END or Gravity.CENTER_VERTICAL }
+    val bar = android.widget.SeekBar(this)
+    bar.max = 19
+    bar.contentDescription = t("Độ to", "Loudness")
+    val set = { g: Float -> prefs.edit().putFloat("listenGain", g).apply(); out.text = gainWords(g); layoutRemote() }
+    bar.progress = ((listenGain() - 0.5f) * 2).toInt()
+    bar.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
+        override fun onProgressChanged(b: android.widget.SeekBar, p: Int, user: Boolean) { if (user) set(0.5f + p / 2f) }
+        override fun onStartTrackingTouch(b: android.widget.SeekBar) {}
+        override fun onStopTrackingTouch(b: android.widget.SeekBar) {}
+    })
+    val row = LinearLayout(this)
+    row.gravity = Gravity.CENTER_VERTICAL
+    row.addView(bar, LinearLayout.LayoutParams(0, dp(48), 1f))
+    row.addView(out, LinearLayout.LayoutParams(dp(56), -2))
+    val wrap = LinearLayout(this)
+    wrap.orientation = LinearLayout.VERTICAL
+    wrap.addView(row)
+    wrap.addView(label(t("Nhân tiếng TV gửi sang, có bộ giới hạn để không rè. Vẫn nhỏ: tăng âm lượng trên TV.",
+        "Multiplies the sound the TV sends, with a limiter so it does not crack. Still quiet: turn the TV up."), 14, DIM), LinearLayout.LayoutParams(-1, -2).also { it.topMargin = dp(8) })
+    val p = Popup.Builder(this).setTitle(t("🔊 Độ to trên điện thoại", "🔊 Loudness on the phone")).setView(inDialog(wrap))
+        .setNeutralButton(t("Về ×1", "Back to ×1"), null).setPositiveButton(t("Xong", "Done"), null).show()
+    p.getButton(android.content.DialogInterface.BUTTON_NEUTRAL).setOnClickListener { bar.progress = 1; set(1f) }
 }

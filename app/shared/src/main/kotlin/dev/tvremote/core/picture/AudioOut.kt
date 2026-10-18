@@ -12,8 +12,8 @@ import dev.tvremote.core.WireLog
  * Plays the TV's sound on this device: Opus packets from scrcpy, decoded by Android's own decoder, out through an AudioTrack.
  * How much is kept queued, and what waits or is dropped, is [SoundQueue]'s.
  */
-/** 🔊 ×2 ×4: the TV's sound louder here than it is sent (a TV turned down sends it quiet). Read by every [AudioOut] as it plays. */
-object SoundBoost { @Volatile var times = 1 }
+/** 🔊 ×0.5 … ×10: the TV's sound louder (or softer) here than it is sent (a TV turned down sends it quiet). Read by every [AudioOut] as it plays. */
+object SoundBoost { @Volatile var times = 1f }
 
 class AudioOut(far: Boolean = false) {
     /** Kept queued at first: 0.15 s on the home network; through Tailscale ([far]: 4G, a relay) 0.4 s from the start, as
@@ -28,14 +28,16 @@ class AudioOut(far: Boolean = false) {
     private var drops = 0; private var dry = 0; private var told = 0L
     private val stamp = android.media.AudioTimestamp()
     private var loud: android.media.audiofx.LoudnessEnhancer? = null  // gain with its own limiter, so loud parts do not crack
-    private var loudAt = 1
+    private var loudAt = 1f
 
     private fun boost(t: AudioTrack) {
         loudAt = SoundBoost.times
+        try { t.setVolume(minOf(1f, loudAt)) } catch (ignored: Exception) { }   // softer: the track's own volume
         try {
+            if (loudAt <= 1f && loud == null) return
             val l = loud ?: android.media.audiofx.LoudnessEnhancer(t.audioSessionId).also { loud = it }
-            l.setTargetGain((600 * Integer.numberOfTrailingZeros(loudAt)))   // ×2 = +6 dB, ×4 = +12 dB, in millibels
-            l.enabled = loudAt > 1
+            if (loudAt > 1f) l.setTargetGain((2000 * Math.log10(loudAt.toDouble())).toInt())   // in millibels: ×2 = +6 dB, ×10 = +20 dB
+            l.enabled = loudAt > 1f
         } catch (ignored: Exception) { }                               // a phone without the effect: as sent
     }
 
@@ -119,7 +121,7 @@ class AudioOut(far: Boolean = false) {
         if (android.os.Build.VERSION.SDK_INT >= 24) t.setBufferSizeInFrames(room)
         t.play()
         track = t
-        if (SoundBoost.times > 1) boost(t)
+        if (SoundBoost.times != 1f) boost(t)
         written = 0
     }
 
@@ -127,7 +129,7 @@ class AudioOut(far: Boolean = false) {
         codec?.let { try { it.stop() } catch (ignored: Exception) { }; try { it.release() } catch (ignored: Exception) { } }
         codec = null
         loud?.let { try { it.release() } catch (ignored: Exception) { } }
-        loud = null; loudAt = 1
+        loud = null; loudAt = 1f
         track?.let { try { it.stop() } catch (ignored: Exception) { }; try { it.release() } catch (ignored: Exception) { } }
         track = null
     }

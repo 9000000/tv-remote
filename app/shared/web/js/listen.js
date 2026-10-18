@@ -16,11 +16,11 @@ const listenHq = () => { try { return localStorage.getItem('listenHq') === '1'; 
 function showWay() {
   $('#listenway').textContent = (listenShared ? 'Cả hai' : 'Máy này') + ' ▾';
   $('#listenhq').classList.toggle('on', listenHq());
-  $('#listenboost').textContent = '🔊 ×' + listenBoost(); $('#listenboost').classList.toggle('on', listenBoost() > 1);
+  $('#listenboost').textContent = '🔊 ×' + listenBoost(); $('#listenboost').classList.toggle('on', listenBoost() !== 1);
 }
-// 🔊 ×2 ×4: louder here than the TV sends it (a TV turned down sends it quiet), a limiter after it so loud parts do not crack
-const BOOSTS = [1, 2, 4];
-const listenBoost = () => { let b = 1; try { b = +localStorage.getItem('listenBoost') || 1; } catch {} return BOOSTS.includes(b) ? b : 1; };
+// 🔊 ×0.5 … ×10: louder (or softer) here than the TV sends it (a TV turned down sends it quiet), a limiter after it so loud parts do not crack
+const BOOST_MIN = 0.5, BOOST_MAX = 10;
+const listenBoost = () => { let b = 1; try { b = +localStorage.getItem('listenBoost') || 1; } catch {} return Math.min(BOOST_MAX, Math.max(BOOST_MIN, Math.round(b * 2) / 2)); };
 let aout = null;
 function soundOut() {
   if (!aout || aout.context !== actx) {
@@ -137,10 +137,17 @@ $('#listenway').addEventListener('click', () => {
     ['@phone|Chỉ máy này', 'Loa TV tạm im. Hợp khi đeo tai nghe, cả nhà ngủ.', () => { if (listenShared) relisten(false); }],
     ['@tv|Cả TV và máy này', 'TV vẫn có tiếng (TV Android 13+). Máy này trễ hơn TV một chút; vài app như Netflix chặn thu tiếng kiểu này.', () => { if (!listenShared) relisten(true); }]]);
 });
-$('#listenboost').addEventListener('click', () => {                   // applies at once, nothing restarts
-  const b = BOOSTS[(BOOSTS.indexOf(listenBoost()) + 1) % BOOSTS.length];
-  try { localStorage.setItem('listenBoost', String(b)); } catch {}
-  if (actx) soundOut(); showWay();
+$('#listenboost').addEventListener('click', () => {                   // a slider that applies as it moves, nothing restarts
+  const set = (b) => { try { localStorage.setItem('listenBoost', String(b)); } catch {} if (actx) soundOut(); showWay(); out.textContent = '×' + listenBoost(); r.value = listenBoost(); };
+  const out = el('output', { textContent: '×' + listenBoost() });
+  const r = el('input', { type: 'range', min: BOOST_MIN, max: BOOST_MAX, step: 0.5, value: listenBoost(), ariaLabel: 'Độ to', oninput: (e) => set(+e.target.value) });
+  const d = el('dialog', { className: 'ask menu' }, el('div', { className: 'card' },
+    el('div', { className: 'card-head' }, el('h2', { textContent: '🔊 Độ to trên máy này' }), el('button', { className: 'small iconbtn', textContent: '✕', title: 'Đóng', 'aria-label': 'Đóng', onclick: () => d.close() })),
+    el('div', { className: 'vol boost' }, r, out),
+    el('p', { className: 'note', textContent: 'Nhân tiếng TV gửi sang, có bộ giới hạn để không rè. Vẫn nhỏ: tăng âm lượng trên TV.' }),
+    el('div', { className: 'actions' }, el('button', { textContent: 'Về ×1', onclick: () => set(1) }))));
+  d.addEventListener('close', () => d.remove());
+  document.body.append(d); d.showModal();
 });
 $('#listenhq').addEventListener('click', () => {                      // 160 kbit/s instead of 64; applies at once
   try { localStorage.setItem('listenHq', listenHq() ? '0' : '1'); } catch {}
