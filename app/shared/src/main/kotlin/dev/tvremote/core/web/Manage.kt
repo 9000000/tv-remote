@@ -114,7 +114,10 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "tvset" -> if (!post) return text(TvShell.TVSET_READ, 60000)
                 "log" -> return text(TvShell.log(r.q("pkg"), r.q("since")), 20000)
                 "diagnose" -> return diagnose(r, link)                // why the TV does not answer: one conclusion (Diagnose.kt)
-                "wirelog" -> return HttpServer.Response.of("text/plain; charset=utf-8", WireLog.all.report().toByteArray())   // ours, not the TV's: "Gửi nhật ký"
+                "wirelog" -> {
+                    if (post) { WireLog.all.add("page", r.json().optString("said").take(500)); return HttpServer.Response.json(JSONObject().put("ok", true)) }   // what went wrong inside the page (a decoder that gave nothing), for the same log
+                    return HttpServer.Response.of("text/plain; charset=utf-8", WireLog.all.report().toByteArray())   // ours, not the TV's: "Gửi nhật ký"
+                }
                 "apps/boot" -> return text(TvShell.BOOT, 20000)
                 "app/info" -> return text(TvShell.appInfo(r.q("pkg")), 20000)
                 "settings" -> if (!post) return text(TvShell.SETTINGS_READ, 20000)

@@ -58,7 +58,7 @@ function shownIn(m) { if (m.hidden) { ['#screen', '#screenv', '#screenc', '#scre
 const SMOOTH_MS = 33;
 function wcPlayer(broken, smooth) {
   const cv = $('#screenc'), g = cv.getContext('2d');
-  let dec = null, codec = null, config = null, keyed = false, latest = null, raf = 0, ts = 0;
+  let dec = null, codec = null, config = null, keyed = false, latest = null, raf = 0, ts = 0, outs = 0, watch = 0;
   let q = [], every = 0, lastAt = 0, nextDue = 0;                     // smooth: frames waiting with when to show them
   const paint = (f) => {
     if (cv.width !== f.displayWidth || cv.height !== f.displayHeight) { cv.width = f.displayWidth; cv.height = f.displayHeight; }
@@ -82,11 +82,12 @@ function wcPlayer(broken, smooth) {
     q.push({ f, due }); while (q.length > 8) q.shift().f.close();
     if (!raf) raf = requestAnimationFrame(draw);
   };
-  const fail = () => { if (dec) { try { dec.close(); } catch {} } dec = null; broken(); };
+  const fail = (why) => { clearTimeout(watch); if (dec) { try { dec.close(); } catch {} } dec = null; pageSaid('picture: VideoDecoder ' + codec + ' ' + (why && why.message || why || 'failed') + ', JMuxer instead'); broken(); };
   const open = () => {
     if (dec) { try { dec.close(); } catch {} }
-    dec = new VideoDecoder({ output: smooth ? arrived : (f) => { if (VT) VT.dec.push([Math.round(f.timestamp / 1000), vtNow(), 1]); if (latest) latest.close(); latest = f; if (!raf) raf = requestAnimationFrame(draw); }, error: fail });   // only the newest waits to be drawn
-    try { dec.configure({ codec, optimizeForLatency: true }); } catch { fail(); }
+    outs = 0; clearTimeout(watch); watch = 0;
+    dec = new VideoDecoder({ output: smooth ? (f) => { outs++; arrived(f); } : (f) => { outs++; if (VT) VT.dec.push([Math.round(f.timestamp / 1000), vtNow(), 1]); if (latest) latest.close(); latest = f; if (!raf) raf = requestAnimationFrame(draw); }, error: fail });   // only the newest waits to be drawn
+    try { dec.configure({ codec, optimizeForLatency: true }); } catch (e) { fail(e); }
     keyed = false;
   };
   return {
@@ -96,9 +97,11 @@ function wcPlayer(broken, smooth) {
       let buf = data;
       if (kind === 2) { keyed = true; if (config) { buf = new Uint8Array(config.length + data.length); buf.set(config); buf.set(data, config.length); } }
       if (VT) VT.dec.push([ts / 1000 + 1, vtNow(), 0]);
-      try { dec.decode(new EncodedVideoChunk({ type: kind === 2 ? 'key' : 'delta', timestamp: ts += 1000, data: buf })); } catch { fail(); }
+      try { dec.decode(new EncodedVideoChunk({ type: kind === 2 ? 'key' : 'delta', timestamp: ts += 1000, data: buf })); } catch (e) { fail(e); return; }
+      // a decoder that takes the key frame and never gives a picture, nor an error (seen in the Mac app's web view): 4 s, then JMuxer
+      if (kind === 2 && !outs && !watch) watch = setTimeout(() => { watch = 0; if (dec && !outs) fail('gave no frame in 4 s (queue ' + dec.decodeQueueSize + ')'); }, 4000);
     },
-    destroy() { if (raf) cancelAnimationFrame(raf); if (latest) latest.close(); latest = null; q.forEach((w) => w.f.close()); q = []; if (dec && dec.state !== 'closed') { try { dec.close(); } catch {} } dec = null; },
+    destroy() { clearTimeout(watch); if (raf) cancelAnimationFrame(raf); if (latest) latest.close(); latest = null; q.forEach((w) => w.f.close()); q = []; if (dec && dec.state !== 'closed') { try { dec.close(); } catch {} } dec = null; },
   };
 }
 function jmuxPlayer(fps) {
@@ -308,7 +311,14 @@ $('#screenmode').addEventListener('change', () => {
   picLevelSay(); picChosen = $('#screenmode').value; picWait = PIC_UP_MS;   // the person's own pick is the ceiling
   try { localStorage.setItem('quality', $('#screenmode').value); } catch {} if (screenOn) startScreen(); });
 $('#screenfull').addEventListener('click', () => { const b = $('#screenbox'); if (document.fullscreenElement) document.exitFullscreen(); else if (b.requestFullscreen) b.requestFullscreen(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden && screenOn) stopScreen(); });
+// Away (another app in front, a window over this one): the picture goes on for a while, so a glance elsewhere does not cut
+// it; away longer it stops, sparing the TV its encoder, and comes back by itself on return.
+let picAwayT = 0, picBack = false;
+document.addEventListener('visibilitychange', () => {
+  clearTimeout(picAwayT);
+  if (document.hidden) { if (screenOn) picAwayT = setTimeout(() => { if (document.hidden && screenOn) { picBack = true; stopScreen(); } }, 15000); }
+  else if (picBack) { picBack = false; if (!screenOn && !picking) startScreen(); }
+});
 setScreenPlaceholder();
 
 // ---------- tabs ----------

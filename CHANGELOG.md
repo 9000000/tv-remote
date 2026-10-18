@@ -22,6 +22,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - 🎧 Nghe tiếng TV hết bị nhanh và giật trên TV gửi tiếng từng đợt (TCL): app không bỏ lẻ từng mẩu tiếng suốt vài giây nữa mà nhảy về gần hiện tại một lần; sau mỗi lần đứt tiếng thì giữ sẵn nhiều tiếng hơn (cả trên trang web).
 - Chữ một dòng không đủ chỗ (tên bài và kênh đang phát, giá trị cài đặt, tên gói app, tên cảnh; trên app điện thoại: tên TV, tên bài và kênh, tên app đang mở) tự chạy qua lại thay vì bị “…”. Máy bật giảm chuyển động thì vẫn là “…”.
 - Hàng tab và hàng tab con (Sức khỏe: Hiện tại … Khả năng) không còn đẩy chữ ra ngoài khi màn hình hẹp hoặc chữ to: hàng cuộn ngang, cạnh còn nội dung có lớp mờ, tab đang chọn tự cuộn vào giữa. Tab “Tệp · Cài” đổi tên thành “Tệp”.
+- Sang app khác rồi quay lại không còn mất hình: chỉ dừng sau 15 giây bị che, và tự xem lại khi quay về. Trình giải mã không ra hình sau 4 giây thì tự chuyển cách khác, có ghi vào nhật ký.
 
 **English**
 
@@ -39,6 +40,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - 🎧 Listening no longer sounds fast and stuttering on a TV that sends its sound in bursts (a TCL): instead of dropping a scrap every half second for seconds, it skips back near live once; after each break it keeps more sound queued (the web page too).
 - A line of text with no room (now playing title and channel, setting values, package names, scene names; in the phone app: the TV name, the title and channel, the open app) slides to its end and back instead of ending in “…”; with reduced motion it stays “…”.
 - The tab bar and the sub‑tabs (Health: Now … Capabilities) no longer push words out on a narrow screen or with large text: the row scrolls sideways, a fade shows the side with more, the selected tab scrolls into the middle. The “Files · Install” tab is now “Files”.
+- Switching to another app and back no longer loses the picture: it stops only after 15 s out of sight and starts again on return. A decoder that gives no frame in 4 s is swapped for the other one, and logged.
 
 ## 0.9.0 - 2026-10-18
 

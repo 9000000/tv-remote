@@ -532,3 +532,6 @@ function afterWake(what) {
   if (performance.now() - wokeAt > 20000 || wakeUsed[what] === wokeAt) return false;
   wakeUsed[what] = wokeAt; return true;
 }
+
+// A line in the app's own log (About → Send the log): what went wrong inside the page, where nobody sees its console
+function pageSaid(said) { try { fetch('/api/wirelog', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ said: said + ' · ' + navigator.userAgent.replace(/^Mozilla\/5\.0 /, '') }) }).catch(() => {}); } catch {} }
