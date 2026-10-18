@@ -164,13 +164,28 @@ function runFit(t) {
     if (!t.textContent.trim() || t.querySelector('input, button, select')) return;
     s = el('span', { className: 'rin' }); s.append(...t.childNodes); t.append(s); fresh = true;
   }
-  const over = Math.max(0, t.scrollWidth - t.clientWidth), same = t.dataset.at === s.textContent, w = s.textContent;
+  // its own width, not the box's scrollWidth: that counts the copy that follows it round (::after)
+  const over = Math.max(0, Math.ceil(s.getBoundingClientRect().width) - t.clientWidth), same = t.dataset.at === s.textContent, w = s.textContent;
   if (!runT0.has(w)) { if (runT0.size > 300) runT0.clear(); runT0.set(w, performance.now()); }
-  if (fresh || !same) s.style.animationDelay = (runT0.get(w) - performance.now()) / 1000 + 's';   // drawn again (a list redrawn, the same title) it carries on where it was; set on every call (each second's change on the page) it restarted the animation, a hitch a second in WebKit
-  if (String(over) === t.dataset.over && same) return;
+  if (String(over) === t.dataset.over && same && !fresh) return;     // started again on every call (each second's change on the page) it hitched in WebKit
   t.dataset.over = over; t.dataset.at = s.textContent;
   t.classList.toggle('run', over > 0);
-  t.style.setProperty('--over', -over + 'px'); t.style.setProperty('--run', (3 + over / 30).toFixed(1) + 's');   // 30 px/s, plus the pauses at each end
+  runSlide(t, s, over > 0, runT0.get(w));
+}
+// As the phone app's marquee: one way round, a copy of the words following a gap behind (::after, from data-t), a pause at the
+// start of each round. A transform with its distance in px, run by the compositor: a margin was drawn on the page's own
+// thread and jerked in the Mac app; the box's contain:paint keeps WebKit drawing the whole moving line (without it the words
+// went blank as they slid). Drawn again (a list redrawn, the same title) it carries on where it was ([t0]).
+const RUN_PX_S = 30, RUN_REST = 1500;
+function runSlide(t, s, on, t0) {
+  if (s.run) { s.run.cancel(); s.run = null; }
+  if (!on || matchMedia('(prefers-reduced-motion: reduce)').matches || s.closest('.setrow.full')) { delete s.dataset.t; return; }
+  const gap = Math.max(40, Math.round(t.clientWidth / 3)), dist = Math.ceil(s.getBoundingClientRect().width) + gap;
+  s.dataset.t = s.textContent; s.style.setProperty('--gap', gap + 'px');
+  const ms = RUN_REST + dist / RUN_PX_S * 1000;
+  s.run = s.animate([{ transform: 'none', offset: 0 }, { transform: 'none', offset: RUN_REST / ms }, { transform: 'translateX(' + -dist + 'px)', offset: 1 }],
+    { duration: ms, iterations: Infinity });
+  s.run.currentTime = (performance.now() - t0) % ms;
 }
 let runQ = new Set(), runT = 0;
 function runLater(n) {

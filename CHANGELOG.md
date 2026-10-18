@@ -24,7 +24,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Hàng tab và hàng tab con (Sức khỏe: Hiện tại … Khả năng) không còn đẩy chữ ra ngoài khi màn hình hẹp hoặc chữ to: hàng cuộn ngang, cạnh còn nội dung có lớp mờ, tab đang chọn tự cuộn vào giữa. Tab “Tệp · Cài” đổi tên thành “Tệp”.
 - Sang app khác rồi quay lại không còn mất hình: chỉ dừng sau 15 giây bị che, và tự xem lại khi quay về. Trình giải mã không ra hình sau 4 giây thì tự chuyển cách khác, có ghi vào nhật ký.
 - 🎧 Nút **Đều**: tiếng trễ khoảng nửa giây nhưng không giật. Không bật thì app vẫn tự học: nhớ mức đệm của từng TV, lần sau mở là êm ngay, không phải giật vài lần mới học lại.
-- Chữ chạy ở dải Đang phát trên app Mac hết bị cắt giữa chừng hoặc mất hẳn.
+- Chữ chạy (tên bài, tên gói, giá trị cài đặt) giờ chạy vòng một chiều như app điện thoại, mượt hơn, và trên app Mac hết bị cắt giữa chừng hoặc mất hẳn.
 
 **English**
 
@@ -44,7 +44,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - The tab bar and the sub‑tabs (Health: Now … Capabilities) no longer push words out on a narrow screen or with large text: the row scrolls sideways, a fade shows the side with more, the selected tab scrolls into the middle. The “Files · Install” tab is now “Files”.
 - Switching to another app and back no longer loses the picture: it stops only after 15 s out of sight and starts again on return. A decoder that gives no frame in 4 s is swapped for the other one, and logged.
 - 🎧 **Even** button: the sound plays about half a second late, never stutters. Without it the app still learns: it remembers how much to keep queued for each TV, so the next time is smooth from the start instead of stuttering a few times first.
-- The running line in the Now playing strip on the Mac app is no longer cut off midway or blank.
+- Running lines (song titles, package names, setting values) now loop one way as in the phone app, smoother, and on the Mac app are no longer cut off midway or blank.
 
 ## 0.9.0 - 2026-10-18
 
