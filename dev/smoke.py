@@ -11,6 +11,8 @@ Each is asked with GET and with a POST whose body it may not want (64 KB, not JS
   - not fail with 500 (an exception the handler did not expect), nor take longer than 15 s;
   - give JSON when it says JSON.
 Routes that change the TV or the saved TVs (reboot, install, delete, keys, scenes, ...) are left out: SKIP below.
+First, the lock: every route asked without the pass (and on the TV with a made-up pairing cookie) must be refused, 401 on the
+TV, 403 on the computer app; only the pairing itself and the hook (its own token, off: 404) answer a stranger.
 Exit 1 if any route fails; V=1 prints each route as it is asked. Needs only python3 (and adb for `tv`).
 """
 import http.client, json, os, re, socket, subprocess, sys, time, urllib.parse
@@ -69,6 +71,27 @@ def ask(base, path, method, headers):
     finally: c.close()
 
 
+OPEN = re.compile(r"^/api/(pair/(start|finish|invite)|hook)$")    # a stranger's way in: the pairing, or the hook's own token
+
+
+def locked(base, tv):
+    """Every route without the pass. A stranger must get nothing done: GET everywhere, POST where nothing changes even if let in."""
+    bad = 0
+    for path in routes():
+        if OPEN.search(path): continue
+        for method in ("GET",) if SKIP.search(path) else ("GET", "POST"):
+            for headers in ({}, {"Cookie": "tvr=0123456789abcdef"}) if tv else ({},):
+                u = urllib.parse.urlparse(base)
+                c = http.client.HTTPConnection(u.hostname, u.port, timeout=15)
+                try:
+                    c.request(method, path, body=b"{}" if method == "POST" else None, headers={**headers, "Content-Type": "application/json"})
+                    st = c.getresponse().status
+                except Exception as e: st = f"{e.__class__.__name__}"
+                finally: c.close()
+                if st != (401 if tv else 403): bad += 1; print(f"OPEN {method:4} {path} {headers or ''}: {st}, not refused", flush=True)
+    return bad
+
+
 def adb(*a): return subprocess.run(["adb", "-s", "emulator-5554", *a], capture_output=True, text=True, timeout=60).stdout
 
 
@@ -102,11 +125,12 @@ def main():
         port = 18766
         adb("emu", "redir", "del", f"tcp:{port}"); adb("emu", "redir", "add", f"tcp:{port}:8765")
         base = f"http://127.0.0.1:{port}"
+        bad = locked(base, True)
         headers = pair_tv(base)
     else:
         base = arg.rstrip("/")
         headers = {"x-tvr-pass": os.environ["TVR_PASS"]} if os.environ.get("TVR_PASS") else {}
-    bad = 0
+        bad = locked(base, False)
     try:
         for path in routes():
             if SKIP.search(path): continue

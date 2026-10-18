@@ -86,13 +86,7 @@ class Atv(dir: File, private val host: String) : Remote, CodePairing {
         val s = sock ?: throw IllegalStateException("startPairing first")
         val c = code.trim().uppercase()
         require(c.length == 6 && c.all { it in "0123456789ABCDEF" }) { "bad code" }
-        val mine = cert.publicKey as RSAPublicKey
-        val theirs = s.session.peerCertificates[0].publicKey as RSAPublicKey
-        val h = MessageDigest.getInstance("SHA-256")
-        for (n in listOf(mine.modulus, mine.publicExponent, theirs.modulus, theirs.publicExponent)) h.update(unsigned(n))
-        h.update(hex(c.substring(2)))
-        val secret = h.digest()
-        require(secret[0] == hex(c.substring(0, 2))[0]) { "bad code" }
+        val secret = secret(cert.publicKey as RSAPublicKey, s.session.peerCertificates[0].publicKey as RSAPublicKey, c) ?: throw IllegalArgumentException("bad code")
         send(s, Pb().int(1, 2).int(2, 200).msg(40, Pb().raw(1, secret).bytes()).bytes())
         answer(s, 41)
         close()
@@ -408,6 +402,17 @@ class Atv(dir: File, private val host: String) : Remote, CodePairing {
 
         /** True when [keys] types [t] exactly: every character has a key of its own. */
         fun typable(t: String): Boolean = t.all { code(it) != 0 }
+
+        /**
+         * What proves the code was read off the TV: SHA-256 of both keys (ours first) and the code's last four characters. Its
+         * first byte is the code's first two: null when they differ, a mistyped code, caught before the TV drops the attempt.
+         */
+        internal fun secret(mine: RSAPublicKey, theirs: RSAPublicKey, code: String): ByteArray? {
+            val h = MessageDigest.getInstance("SHA-256")
+            for (n in listOf(mine.modulus, mine.publicExponent, theirs.modulus, theirs.publicExponent)) h.update(unsigned(n))
+            h.update(hex(code.substring(2)))
+            return h.digest().takeIf { it[0] == hex(code.substring(0, 2))[0] }
+        }
 
         private fun hex(s: String): ByteArray = ByteArray(s.length / 2) { s.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
 

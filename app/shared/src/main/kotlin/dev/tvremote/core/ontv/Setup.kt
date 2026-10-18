@@ -12,7 +12,9 @@ import dev.tvremote.core.adb.Adb
  * "Optimize TV": the steps, run over an ADB connection. The TV app runs them on itself,
  * the phone app on the TV it is connected to. [dir] is where this device may keep a download for a moment.
  */
-class Setup(private val adb: Adb, private val dir: File?, private val lang: String, private val log: Log) {
+class Setup internal constructor(private val adb: Adb?, private val dir: File?, private val lang: String,
+                                 private val sh: (String) -> String, private val log: Log) {   // sh: a test's TV in place of ADB (SetupTest)
+    constructor(adb: Adb, dir: File?, lang: String, log: Log) : this(adb, dir, lang, { adb.shell(it) }, log)
     private fun t(id: String, vararg a: Pair<String, Any?>) = Words.get(lang, id, *a)
 
     companion object {
@@ -59,33 +61,33 @@ class Setup(private val adb: Adb, private val dir: File?, private val lang: Stri
     /** Whether Optimize TV left something to undo: an app of its lists, or of its own record, turned off. */
     @Throws(IOException::class)
     fun optimized(): Boolean {
-        val off = adb.shell("pm list packages -d 2>/dev/null").split("\n").map { it.removePrefix("package:").trim() }.filter { it.isNotEmpty() }.toSet()
-        val mine = adb.shell("cat $OFF_LIST 2>/dev/null").split("\n").map { it.trim() }.filter { it.isNotEmpty() }   // "" is in no list
+        val off = sh("pm list packages -d 2>/dev/null").split("\n").map { it.removePrefix("package:").trim() }.filter { it.isNotEmpty() }.toSet()
+        val mine = sh("cat $OFF_LIST 2>/dev/null").split("\n").map { it.trim() }.filter { it.isNotEmpty() }   // "" is in no list
         return (LAUNCHER + GOOGLE + SONY + mine).any { it in off }
     }
 
     @Throws(IOException::class)
-    fun has(pkg: String): Boolean = adb.shell("pm path $pkg").contains("package:")
+    fun has(pkg: String): Boolean = sh("pm path $pkg").contains("package:")
 
     @Throws(IOException::class)
     fun describe(): String =
-        adb.shell("getprop ro.product.manufacturer") + " " + adb.shell("getprop ro.product.model") + ", Android " + adb.shell("getprop ro.build.version.release")
+        sh("getprop ro.product.manufacturer") + " " + sh("getprop ro.product.model") + ", Android " + sh("getprop ro.build.version.release")
 
     /** "100.x.y.z" once Tailscale is signed in, else "". */
     @Throws(IOException::class)
     fun tailscaleIp(): String =
-        Regex("inet (100\\.[0-9.]+)/32").find(adb.shell("ip -4 addr show"))?.groupValues?.get(1) ?: ""
+        Regex("inet (100\\.[0-9.]+)/32").find(sh("ip -4 addr show"))?.groupValues?.get(1) ?: ""
 
     @Throws(IOException::class)
     fun lanIp(): String =
-        Regex("inet ((?:192\\.168|10|172\\.(?:1[6-9]|2[0-9]|3[01]))\\.[0-9.]+)/").find(adb.shell("ip -4 addr show"))?.groupValues?.get(1) ?: ""
+        Regex("inet ((?:192\\.168|10|172\\.(?:1[6-9]|2[0-9]|3[01]))\\.[0-9.]+)/").find(sh("ip -4 addr show"))?.groupValues?.get(1) ?: ""
 
     /**
      * Optimize swaps the home screen and turns system apps off, which suits a TV only: a phone or tablet running TV Setup is
      * refused. Only a plain "false" counts, so an old TV whose pm has no has-feature is not turned away.
      */
     private fun tvOnly() {
-        if (adb.shell("pm has-feature android.software.leanback").trim() == "false")
+        if (sh("pm has-feature android.software.leanback").trim() == "false")
             throw IOException(t("optimize.device_not_tv_optimize"))
     }
 
@@ -93,17 +95,17 @@ class Setup(private val adb: Adb, private val dir: File?, private val lang: Stri
     @Throws(IOException::class)
     fun plan(label: (String) -> String?): org.json.JSONObject {
         tvOnly()
-        val enabled = adb.shell("pm list packages -e").split("\n").filter { it.startsWith("package:") }.map { it.substring(8).trim() }.toSet()
+        val enabled = sh("pm list packages -e").split("\n").filter { it.startsWith("package:") }.map { it.substring(8).trim() }.toSet()
         val suggest = (GOOGLE + SONY).filter { it in enabled }
-        val home = last(adb.shell("cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN")).substringBefore('/')
+        val home = last(sh("cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN")).substringBefore('/')
         val shown = HashSet<String>()
         for (cat in arrayOf("LEANBACK_LAUNCHER", "LAUNCHER"))              // the apps a person sees on the TV
-            for (line in adb.shell("cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.$cat 2>/dev/null").split("\n"))
+            for (line in sh("cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.$cat 2>/dev/null").split("\n"))
                 if (line.contains('/')) shown.add(line.trim().substringBefore('/'))
         val others = shown.filter { it in enabled && it !in suggest && it != home && !PROTECTED.matches(it) }.sortedBy { (label(it) ?: it).lowercase() }
         fun item(p: String) = org.json.JSONObject().put("pkg", p).put("label", label(p) ?: NAMES[p] ?: p.split('.').let { s -> if (s.last().length <= 3 && s.size > 1) s.takeLast(2).joinToString(".") else s.last() })
         return org.json.JSONObject()
-            .put("anim", adb.shell("settings get global window_animation_scale").trim() != "0.0")
+            .put("anim", sh("settings get global window_animation_scale").trim() != "0.0")
             .put("flauncher", has(FL_PKG)).put("home", home)
             .put("suggest", org.json.JSONArray(suggest.map { item(it) }))
             .put("apps", org.json.JSONArray(others.map { item(it) }))
@@ -116,11 +118,11 @@ class Setup(private val adb: Adb, private val dir: File?, private val lang: Stri
     fun apply(c: Choice = Choice()) {
         tvOnly()
         if (has(TS_PKG)) {                                            // the Tailscale button does this too; here for a Tailscale installed by hand
-            Tailscale(adb, dir).keepAlive()
+            Tailscale(adb!!, dir).keepAlive()
             log.line(t("optimize.tailscale_starts_again_by"))
         }
         if (c.anim) {
-            adb.shell("settings put global window_animation_scale 0; settings put global transition_animation_scale 0; settings put global animator_duration_scale 0.5")   // not 0 for the last one: loading spinners would freeze
+            sh("settings put global window_animation_scale 0; settings put global transition_animation_scale 0; settings put global animator_duration_scale 0.5")   // not 0 for the last one: loading spinners would freeze
             log.line(t("optimize.transition_animations_off"))
         }
 
@@ -128,8 +130,8 @@ class Setup(private val adb: Adb, private val dir: File?, private val lang: Stri
         var off = 0
         for (p in pick.distinct()) {
             if (!p.matches(Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")) || PROTECTED.matches(p) || !has(p)) continue
-            adb.shell("pm disable-user --user 0 $p; am force-stop $p")
-            if (p !in GOOGLE && p !in SONY) adb.shell("grep -qx '$p' $OFF_LIST 2>/dev/null || echo '$p' >> $OFF_LIST")   // for Undo
+            sh("pm disable-user --user 0 $p; am force-stop $p")
+            if (p !in GOOGLE && p !in SONY) sh("grep -qx '$p' $OFF_LIST 2>/dev/null || echo '$p' >> $OFF_LIST")   // for Undo
             off++
         }
         if (off > 0) log.line(t("optimize.turned_off_apps", "n" to off))
@@ -137,7 +139,7 @@ class Setup(private val adb: Adb, private val dir: File?, private val lang: Stri
         if (!c.home) { log.line(t("optimize.done")); return }
         if (!has(FL_PKG)) {
             log.line(t("optimize.downloading_flauncher_10_mb"))
-            val abis = adb.shell("getprop ro.product.cpu.abilist")
+            val abis = sh("getprop ro.product.cpu.abilist")
             val only64 = "arm64-v8a" in abis && "armeabi-v7a" !in abis
             val apk = if (only64) download(FL_URL64, "flauncher.apk", FL_SHA64) else download(FL_URL, "flauncher.apk", FL_SHA)
             log.line(t("optimize.installing_flauncher"))
@@ -151,8 +153,8 @@ class Setup(private val adb: Adb, private val dir: File?, private val lang: Stri
             }
         }
         for (p in LAUNCHER)
-            if (has(p)) adb.shell("pm disable-user --user 0 $p; am force-stop $p")
-        val home = last(adb.shell("cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN"))
+            if (has(p)) sh("pm disable-user --user 0 $p; am force-stop $p")
+        val home = last(sh("cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN"))
         log.line(t("optimize.home_screen", "home" to home))
         log.line(t("optimize.done_press_home_see"))
     }
@@ -160,11 +162,11 @@ class Setup(private val adb: Adb, private val dir: File?, private val lang: Stri
     @Throws(Exception::class)
     fun undo() {
         var on = 0
-        val mine = adb.shell("cat $OFF_LIST 2>/dev/null").split("\n").map { it.trim() }.filter { it.isNotEmpty() }
+        val mine = sh("cat $OFF_LIST 2>/dev/null").split("\n").map { it.trim() }.filter { it.isNotEmpty() }
         for (p in (LAUNCHER + GOOGLE + SONY + mine).distinct())
-            if (has(p)) { adb.shell("pm enable --user 0 $p"); on++ }
-        adb.shell("rm -f $OFF_LIST")
-        adb.shell("for k in $ANIM; do settings put global \$k 1.0; done")
+            if (has(p)) { sh("pm enable --user 0 $p"); on++ }
+        sh("rm -f $OFF_LIST")
+        sh("for k in $ANIM; do settings put global \$k 1.0; done")
         log.line(t("optimize.re_enabled_apps_google", "n" to on))
         log.line(t("optimize.flauncher_tailscale_settings_left"))
     }
@@ -174,8 +176,8 @@ class Setup(private val adb: Adb, private val dir: File?, private val lang: Stri
     fun install(apk: File): String {
         // On the TV itself the file sits in this app's folder on shared storage, which the shell user can read: no copy at all
         val q = "'" + apk.absolutePath.replace("'", "'\\''") + "'"
-        if (adb.shell("stat -c %s $q 2>/dev/null").trim() == apk.length().toString())
-            return adb.shell("cat $q | pm install -r -S " + apk.length() + " 2>&1", 600000)
+        if (sh("stat -c %s $q 2>/dev/null").trim() == apk.length().toString())
+            return adb!!.shell("cat $q | pm install -r -S " + apk.length() + " 2>&1", 600000)
         return try { copyAndInstall(apk) } catch (e: IOException) { copyAndInstall(apk) }   // a copy that stalled: once more
     }
 
@@ -183,7 +185,7 @@ class Setup(private val adb: Adb, private val dir: File?, private val lang: Stri
     private fun copyAndInstall(apk: File): String {
         var whole = false
         try {
-            adb.put(TMP, apk.length()) { s ->
+            adb!!.put(TMP, apk.length()) { s ->
                 apk.inputStream().use { input ->
                     val buf = ByteArray(1 shl 16)
                     while (true) {
@@ -195,20 +197,20 @@ class Setup(private val adb: Adb, private val dir: File?, private val lang: Stri
             }
             whole = true
         } finally {
-            if (!whole) try { adb.shell("rm -f $TMP", 10000) } catch (ignored: IOException) { }   // no half file left behind
+            if (!whole) try { adb!!.shell("rm -f $TMP", 10000) } catch (ignored: IOException) { }   // no half file left behind
         }
         // cat is still writing for a while after the stream closes (seconds for a big file on a slow TV): install only a whole file
         var size = ""
         var still = 0                                                 // checks in a row without the file growing
         while (still < 30) {                                          // 15 s without growing: it will not finish
-            val now = adb.shell("stat -c %s $TMP 2>/dev/null").trim()
+            val now = sh("stat -c %s $TMP 2>/dev/null").trim()
             if (now == apk.length().toString()) { size = now; break }
             still = if (now == size) still + 1 else 0
             size = now
             Thread.sleep(500)
         }
-        if (size != apk.length().toString()) { adb.shell("rm -f $TMP"); throw IOException("copy to the TV incomplete ($size of ${apk.length()} bytes)") }
-        return try { adb.shell("cat $TMP | pm install -r -S " + apk.length() + " 2>&1", 600000) } finally { adb.shell("rm -f $TMP") }
+        if (size != apk.length().toString()) { sh("rm -f $TMP"); throw IOException("copy to the TV incomplete ($size of ${apk.length()} bytes)") }
+        return try { adb!!.shell("cat $TMP | pm install -r -S " + apk.length() + " 2>&1", 600000) } finally { sh("rm -f $TMP") }
     }
 
     @Throws(Exception::class)
