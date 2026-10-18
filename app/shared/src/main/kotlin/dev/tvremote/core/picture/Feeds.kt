@@ -25,6 +25,7 @@ class Feeds {
     @Volatile private var config: ByteArray? = null
     @Volatile private var opusHead: ByteArray? = null
     @Volatile private var notice: CatchUp.Packet? = null
+    @Volatile private var hush: Hush? = null                          // raw PCM's silences left out (Opus makes almost nothing of them)
 
     /** How many browsers of this server watch and listen now. */
     val watching: Int get() = watchers.size
@@ -95,7 +96,8 @@ class Feeds {
 
     /**
      * Kinds: 0 the format (codec 1 Opus or 2 PCM, then the rate and the channels), 1 Opus's header, 2 a piece of sound, 3 a
-     * notice ("noshare": the TV's speakers go silent meanwhile), 4 nothing new, 5 an error word. With [opus] the session is
+     * notice ("noshare": the TV's speakers go silent meanwhile), 4 nothing new, 5 an error word, 6 the TV went silent
+     * (raw only: nothing is sent until it is not, [Hush]). With [opus] the session is
      * asked for "opus" (a browser on a secure page decodes it: the computer's 127.0.0.1); otherwise for "raw" and the TV
      * encodes nothing: scrcpy hands over PCM, made 24 kHz mono here for each browser ([Downmix], 48 KB/s) unless [hq] (as
      * captured, 48 kHz stereo, fine on the home network). [key]: what [make] asks for; one session for all asking the same.
@@ -109,6 +111,7 @@ class Feeds {
         if (running != null) {
             opusHead?.let { q.add(packet(1, it)) }
             notice?.let { q.add(it) }
+            if (hush?.held == true) q.add(packet(6, end))
             listeners += ear
         } else {
             listeners += ear
@@ -120,6 +123,8 @@ class Feeds {
     private fun startSound(key: String, opus: Boolean, make: (Tv.Listener, Tv.AudioSink) -> Tv) {
         hearer?.stop()                                                // a browser asking another codec: every listener goes on with the new one
         soundKey = key; opusHead = null; notice = null
+        val quiet = if (opus) null else Hush()
+        hush = quiet
         var self: Tv? = null
         val mine = { self != null && hearer === self }
         val h = make(object : Tv.Listener {
@@ -132,6 +137,10 @@ class Feeds {
             override fun onNetwork(mac: String, lan: String, tailscale: String) { }
         }, Tv.AudioSink { config, data ->
             if (config) { if (opus) { opusHead = data; listeners.forEach { it.q.add(packet(1, data)) } }; return@AudioSink }
+            when (quiet?.feed(data)) {
+                Hush.HELD -> return@AudioSink
+                Hush.START -> { val p = packet(6, end); listeners.forEach { it.q.add(p) }; return@AudioSink }
+            }
             val now = System.currentTimeMillis()
             for (e in listeners) {
                 if (e.q.size > 200) { if (e.q.size < 210) e.q.add(endPacket) }   // this browser cannot keep up: it goes, not the others

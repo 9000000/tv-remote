@@ -140,7 +140,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
 
         private const val REST_MS = 3 * 60 * 1000L
         /** Needs the input session (`tv`) or is a hand on the remote: wakes it when resting and keeps it from resting. */
-        private val SESSION = setOf("/api/key", "/api/type", "/api/touch", "/api/clip", "/api/screen", "/api/video", "/api/adb/connect", "/api/warm")
+        private val SESSION = setOf("/api/key", "/api/type", "/api/touch", "/api/clip", "/api/screen", "/api/adb/connect", "/api/warm")
         /** What a page asks by itself every few seconds: says nothing about anyone using the remote. */
         private val PASSIVE = setOf("/api/state", "/api/watchers", "/api/about", "/api/playing", "/api/health", "/api/stats", "/api/paired", "/api/app/icon", "/api/app/meta", "/api/setup/need", "/api/wirelog")
         private fun ok(): HttpServer.Response = HttpServer.Response.ok()
@@ -289,16 +289,23 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     }
 
     /**
-     * The input session keeps a scrcpy-server process alive on the TV, about 70 MB of its 2 GB. So it only runs while
-     * somebody really uses it: a key, typing, touch, the clipboard, a screenshot, the picture (SESSION), or the page saying a
-     * hand is on the remote (/api/warm). Polls (/api/state, /api/playing, health: PASSIVE) do not count, so a tab left open
-     * lets it rest. After [REST_MS] without use only the scrcpy process is stopped: the saved key, the pushed scrcpy-server.jar
+     * The input session keeps a scrcpy-server process alive on the TV, about 50 MB of its 2 GB. So it only runs while
+     * somebody really uses it: a key, typing, touch, the clipboard, a screenshot (SESSION), or the page saying a hand is on
+     * the remote (/api/warm); not while a browser watches, whose picture's session takes them ([input]). Polls (/api/state,
+     * /api/playing, health: PASSIVE) do not count, so a tab left open lets it rest. After [REST_MS] without use only the scrcpy process is stopped: the saved key, the pushed scrcpy-server.jar
      * and the ADB link used by everything else stay, so waking costs one ADB login and the start of app_process on the TV.
      * The next use opens it again; [wait] holds the request for it (up to 4 s) so the first key still works.
      */
+    /**
+     * Where keys, typing and the clipboard go: the picture's session while a browser watches (it is a scrcpy-server with
+     * control too), so the input session's own (~50 MB of the TV's memory) can rest meanwhile ([rest]); else the input session.
+     */
+    private fun input(): Tv? = feeds.viewer?.takeIf { it.ready() } ?: tv
+
     private fun used(path: String) {
-        if (path == "/api/audio") lastUse = System.currentTimeMillis()   // someone listens: not idle, but it needs no input session
-        if (path in SESSION) inUse(wait = path != "/api/warm" && path != "/api/video")
+        if (path == "/api/audio" || path == "/api/video") lastUse = System.currentTimeMillis()   // not idle, but they need no input session
+        if (path in SESSION && feeds.viewer?.ready() == true && path != "/api/adb/connect") lastUse = System.currentTimeMillis()   // the picture's session takes it: see input()
+        else if (path in SESSION) inUse(wait = path != "/api/warm")
         else if (path !in PASSIVE) lastSeen = System.currentTimeMillis()
     }
 
@@ -335,7 +342,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         override fun run() {
             if (stopping) return
             val t = tv
-            if (t != null && feeds.viewer == null && adbState == "ready" && System.currentTimeMillis() - lastUse > REST_MS) {
+            if (t != null && adbState == "ready" && (feeds.viewer?.ready() == true || System.currentTimeMillis() - lastUse > REST_MS)) {
                 resting = true
                 tv = null
                 t.stop()
@@ -456,7 +463,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             "/api/about" -> return HttpServer.Response.json(state(host))
             "/api/setup/need" -> return HttpServer.Response.json(JSONObject().put("ok", true))   // this is TV Setup: it has what this page knows
             "/api/screen" -> {                                        // one picture of the screen: the Screenshots mode, and the camera key
-                val png = tv?.screenshot() ?: return HttpServer.Response.error(503, "no screenshot")
+                val png = input()?.screenshot() ?: return HttpServer.Response.error(503, "no screenshot")
                 val shot = HttpServer.Response.of("image/png", png)
                 shot.headers["Cache-Control"] = "no-store"
                 return shot
@@ -491,7 +498,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 return icon
             }
             "/api/clip" -> {                                          // the TV's clipboard: through scrcpy, whose shell may read it
-                val t = tv
+                val t = input()
                 if (t == null || !t.ready()) return HttpServer.Response.error(503, "adb:$adbState")
                 if (post) { val d = r.json(1_000_000); t.setClipboard(d.optString("text").take(100000), d.optBoolean("paste")); return ok() }
                 val text = t.clipboard() ?: return HttpServer.Response.error(504, "the TV did not answer")
@@ -503,7 +510,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         val managed = manage?.handle(r)
         if (managed != null) return managed
         if (!post) return HttpServer.Response.error(404, "not found")
-        val t = tv
+        val t = input()
         val d = r.json()
         when (r.path) {
             "/api/key" -> {

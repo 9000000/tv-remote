@@ -10,11 +10,15 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 - Nhiều máy cùng xem / nghe một TV: góc hình hiện **👁 2** (và 🎧) khi có máy khác cũng đang xem, trên web và app điện thoại. Các trình duyệt mở cùng app máy tính hoặc cùng trang web của TV giờ dùng chung một luồng hình và một luồng tiếng (một scrcpy-server trên TV thay vì mỗi máy một cái, đỡ ~50 MB RAM TV mỗi máy). Trước đây trình duyệt thứ hai giành mất hình của trình duyệt đầu, trình duyệt đầu báo "Không lấy được hình từ TV".
 - TV chỉ gửi được một luồng hình mà máy khác đang xem: báo "TV đang gửi hình cho máy khác" thay vì "TV không gửi hình".
+- Nghe 🎧 trên trang web của TV: khi TV im (menu, phim tạm dừng) không gửi gì nữa, thay vì 47 KB/s (192 KB/s với HQ) toàn tiếng im; có tiếng lại thì nghe ngay, không thêm độ trễ. Đỡ hẳn khi nghe qua Tailscale hay 4G.
+- Trang web của TV: lúc đang xem hình, phím đi qua luồng hình, nên TV bớt một tiến trình (~50 MB RAM) trong lúc xem. Phím không chậm hơn (đo trên emulator).
 
 **English**
 
 - Several devices on one TV: the picture shows **👁 2** (and 🎧) when another device watches too, on the web and in the phone app. Browsers on the same computer app or the same TV web page now share one picture stream and one sound stream (one scrcpy-server on the TV instead of one each, ~50 MB of the TV's memory saved per device). Before, a second browser took the picture from the first, which then said it could not get the picture.
 - A TV that can send only one picture, already watched by another device, now says "The TV is sending its picture to another device" instead of "no picture".
+- 🎧 on the TV's web page: nothing is sent while the TV is silent (a menu, a paused film) instead of 47 KB/s (192 KB/s with HQ) of silence; sound comes back at once, with no added delay. Much lighter over Tailscale or 4G.
+- The TV's web page: while the picture is on, keys go through the picture's session, so the TV runs one process less (~50 MB of memory) meanwhile. Keys are no slower (measured on the emulator).
 
 ## 0.10.0 - 2026-10-19
 

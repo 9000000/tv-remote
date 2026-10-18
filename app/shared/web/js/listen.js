@@ -37,7 +37,7 @@ function soundOut() {
   aout.gain.value = listenBoost();
   return aout;
 }
-let listenOn = false, listenCtl = null, actx = null, adec = null, anext = 0, abytes = 0, listenGen = 0, catchUp = false, alead = 0.08, acalm = 0;
+let listenOn = false, listenCtl = null, actx = null, adec = null, anext = 0, abytes = 0, listenGen = 0, catchUp = false, alead = 0.08, acalm = 0, aquiet = false;
 
 async function opusHere() {
   if (CORE !== 'pc' || !window.AudioDecoder || !window.isSecureContext) return false;
@@ -83,7 +83,7 @@ async function startListen(share) {
     await actx.resume();                                              // inside the tap: browsers start sound only then
   } catch { stopListen(T('listen.no_browser_sound')); return; }
   const opus = await opusHere(); if (gen !== listenGen) return;
-  listenCtl = new AbortController(); anext = 0; abytes = 0; alead = Math.min(0.6, Math.max(leadBase(), leadOf()));
+  listenCtl = new AbortController(); anext = 0; abytes = 0; aquiet = false; alead = Math.min(0.6, Math.max(leadBase(), leadOf()));
   let fmt = { codec: 2, rate: 24000, ch: 1 }, ts = 0, why = T('listen.tv_stopped_sending');
   try {
     const r = await fetch('/api/audio?codec=' + (opus ? 'opus' : 'pcm') + (listenShared ? '&share=1' : '') + (listenHq() ? '&hq=1' : ''), { signal: listenCtl.signal });
@@ -106,6 +106,7 @@ async function startListen(share) {
           }, error: () => {} });
           adec.configure({ codec: 'opus', sampleRate: fmt.rate, numberOfChannels: fmt.ch, description: data });
         } else if (kind === 2) {
+          aquiet = false;
           if (VT) VT.arx.push([vtNow(), data.length]);
           if (fmt.codec === 1) { if (adec && adec.state === 'configured') adec.decode(new EncodedAudioChunk({ type: 'key', timestamp: ts += 20000, data })); }
           else {                                                       // 16-bit little-endian PCM, channels interleaved
@@ -113,7 +114,8 @@ async function startListen(share) {
             for (let i = 0; i < n; i++) for (let c = 0; c < fmt.ch; c++) chs[c][i] = v.getInt16((i * fmt.ch + c) * 2, true) / 32768;
             playPcm(chs, fmt.rate);
           }
-        } else if (kind === 5) { why = new TextDecoder().decode(data) === 'unsupported' ? T('listen.needs_android_11') : friendly(new TextDecoder().decode(data)); }
+        } else if (kind === 6) { anext = 0; aquiet = true; }           // the TV went silent and nothing comes until it is not: no stall, no longer lead
+        else if (kind === 5) { why = new TextDecoder().decode(data) === 'unsupported' ? T('listen.needs_android_11') : friendly(new TextDecoder().decode(data)); }
       }
     }
   } catch (e) { if (gen !== listenGen) return; why = e.name === 'AbortError' ? '' : T('listen.no_sound', { why: friendly(e.message) }); }
@@ -129,7 +131,7 @@ function stopListen(msg) {
 }
 
 setInterval(() => {                                                    // what it costs, next to the button
-  if (listenOn && abytes) setListenUi(true, T('listen.listening_here') + ' · ' + (listenShared ? T('listen.tv_has_sound') : T('listen.tv_quiet')) + (listenHq() ? ' · ✨ ' + T('listen.high_quality') : '') + ' · ' + Math.max(1, Math.round(abytes / 1024)) + ' KB/s');
+  if (listenOn && (abytes || aquiet)) setListenUi(true, T('listen.listening_here') + ' · ' + (listenShared ? T('listen.tv_has_sound') : T('listen.tv_quiet')) + (listenHq() ? ' · ✨ ' + T('listen.high_quality') : '') + ' · ' + Math.round(abytes / 1024) + ' KB/s');
   abytes = 0;
 }, 1000);
 // 🎧: on or off at once, the way used last (picked with the chip under the header, once it plays); the session restarts either way
