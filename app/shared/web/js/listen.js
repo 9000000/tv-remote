@@ -17,26 +17,30 @@ function showWay() {
   $('#listenway').textContent = (listenShared ? 'Cả hai' : 'Máy này') + ' ▾';
   $('#listenhq').classList.toggle('on', listenHq());
 }
-let listenOn = false, listenCtl = null, actx = null, adec = null, anext = 0, abytes = 0, listenGen = 0, catchUp = false;
+let listenOn = false, listenCtl = null, actx = null, adec = null, anext = 0, abytes = 0, listenGen = 0, catchUp = false, alead = 0.08, acalm = 0;
 
 async function opusHere() {
   if (CORE !== 'pc' || !window.AudioDecoder || !window.isSecureContext) return false;
   try { return !!(await AudioDecoder.isConfigSupported({ codec: 'opus', sampleRate: 48000, numberOfChannels: 2 })).supported; } catch { return false; }
 }
 
-// Plays one piece of sound right after the previous one. Kept close to live: a piece that would start more than 0.6 s from
-// now is dropped (the network handed over a burst after a stall), and after a gap playback starts again a little ahead.
+// Plays one piece of sound right after the previous one. After a gap playback starts again a little ahead ([alead]: 80 ms,
+// twice as much after each stall up to 0.6 s, as SoundQueue.kt does on the phone, back down after a calm half minute: a TCL
+// sends its sound in bursts, a fixed 80 ms broke every few seconds). Too far ahead, it skips back to live in one go.
 function playPcm(channels, rate) {
   if (!actx || !channels.length || !channels[0].length) return;
   const buf = actx.createBuffer(channels.length, channels[0].length, rate);
   channels.forEach((c, i) => buf.copyToChannel(c, i));
   const now = actx.currentTime;
-  if (anext < now + 0.02) anext = now + 0.08;                         // ran dry (a stall): start again a little ahead
+  if (anext < now + 0.02) {                                          // ran dry (a stall): start again a little ahead
+    if (anext) alead = Math.min(0.6, alead * 2);
+    anext = now + alead; acalm = now;
+  } else if (alead > 0.08 && now - acalm > 30) { alead = Math.max(0.08, alead * 0.8); acalm = now; }
   // After a stall the network hands over the late sound in one burst; played in turn, it would keep the whole stall as delay
   // for good. Too far ahead: drop pieces until close to live again (one short skip instead of a lasting lag).
   const ahead = anext - now;
   if (VT) VT.audio.push([vtNow(), ahead * 1000, now, anext, actx.baseLatency, actx.outputLatency]);   // ?stats=1
-  if (ahead > 0.25) catchUp = true; else if (ahead < 0.1) catchUp = false;
+  if (ahead > alead + 0.2) catchUp = true; else if (ahead < alead + 0.02) catchUp = false;
   if (catchUp) return;
   const src = actx.createBufferSource(); src.buffer = buf; src.connect(actx.destination); src.start(anext);
   anext += buf.duration;
@@ -58,7 +62,7 @@ async function startListen(share) {
     await actx.resume();                                              // inside the tap: browsers start sound only then
   } catch { stopListen('Trình duyệt này không phát được âm thanh.'); return; }
   const opus = await opusHere(); if (gen !== listenGen) return;
-  listenCtl = new AbortController(); anext = 0; abytes = 0;
+  listenCtl = new AbortController(); anext = 0; abytes = 0; alead = 0.08;
   let fmt = { codec: 2, rate: 24000, ch: 1 }, ts = 0, why = 'TV đã dừng gửi tiếng.';
   try {
     const r = await fetch('/api/audio?codec=' + (opus ? 'opus' : 'pcm') + (listenShared ? '&share=1' : '') + (listenHq() ? '&hq=1' : ''), { signal: listenCtl.signal });

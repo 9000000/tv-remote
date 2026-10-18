@@ -15,7 +15,7 @@ import dev.tvremote.core.picture.SoundQueue
 class SoundQueueTest {
     private class Heard(val gaps: Int, val silentPct: Double, val lateMs: Int, val droppedPct: Double)
 
-    private fun listen(base: Int, jitter: Double, spikePct: Double, spikeMs: Int, minutes: Int = 5, far: Boolean = false, headStepMs: Int = 0): Heard {
+    private fun listen(base: Int, jitter: Double, spikePct: Double, spikeMs: Int, minutes: Int = 5, far: Boolean = false, headStepMs: Int = 0, real: List<Int>? = null): Heard {
         val rnd = Random(7)
         val q = SoundQueue(if (far) 48000 * 4 / 10 else 48000 * 15 / 100, 48000)
         val n = 960
@@ -26,11 +26,11 @@ class SoundQueueTest {
         var playedAll = 0.0                                           // frames the track really played
         var playing = false
         var gaps = 0; var silent = 0.0; var dropped = 0; var late = 0.0; var lateN = 0
-        val packets = minutes * 60 * 50
-        val skip = 30 * 50                                            // the first half minute: it is still learning
+        val packets = real?.size ?: (minutes * 60 * 50)
+        val skip = if (real != null) 0 else 30 * 50                   // the first half minute: it is still learning
         for (i in 0 until packets) {
             val sent = i * 20.0
-            val delay = base + (if (jitter > 0) -jitter * kotlin.math.ln(1 - rnd.nextDouble()) else 0.0) +
+            val delay = if (real != null) real[i].toDouble() else base + (if (jitter > 0) -jitter * kotlin.math.ln(1 - rnd.nextDouble()) else 0.0) +
                 (if (rnd.nextDouble() * 100 < spikePct) spikeMs.toDouble() else 0.0)
             arrived = maxOf(arrived, sent + delay)
             val dt = arrived - clock
@@ -87,5 +87,12 @@ class SoundQueueTest {
         val h = listen(base = 5, jitter = 3.0, spikePct = 0.0, spikeMs = 0, headStepMs = 200).also { show("coarse head", it) }
         assertEquals(0, h.gaps)
         assertTrue(h.droppedPct < 1.0)                                // dropped one after another, the song sounded sped up
+    }
+
+    @Test fun tclAtHome() {                                           // a TCL (2 GB, Android 11) playing YouTube: a minute of how late each packet came, measured
+        val late = javaClass.getResource("/sound_tcl.txt")!!.readText().trim().split(" ").map { it.toInt() }
+        val h = listen(base = 0, jitter = 0.0, spikePct = 0.0, spikeMs = 0, real = late).also { show("TCL", it) }
+        assertTrue(h.gaps <= 3)                                       // while it learns how late this TV can be
+        assertTrue(h.droppedPct < 0.2)                                // was 12 packets a minute, a few seconds apart: a song played fast
     }
 }
