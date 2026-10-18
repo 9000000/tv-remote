@@ -170,8 +170,9 @@ function runFit(t) {
     if (!t.textContent.trim() || t.querySelector('input, button, select')) return;
     s = el('span', { className: 'rin' }); s.append(...t.childNodes); t.append(s); fresh = true;
   }
-  // its own width, not the box's scrollWidth: that counts the copy that follows it round (::after)
-  const over = Math.max(0, Math.ceil(s.getBoundingClientRect().width) - t.clientWidth), same = t.dataset.at === s.textContent, w = s.textContent;
+  // its own width, not the box's scrollWidth: that counts the copy that follows it round (::after). Less than a pixel over is
+  // the rounding of clientWidth (80.08 px of words in an 80.08 px box read as 81 > 80): "Google TV" slid with room to spare
+  const over = Math.max(0, Math.ceil(s.getBoundingClientRect().width - 1) - t.clientWidth), same = t.dataset.at === s.textContent, w = s.textContent;
   if (!runT0.has(w)) { if (runT0.size > 300) runT0.clear(); runT0.set(w, performance.now()); }
   if (String(over) === t.dataset.over && same && !fresh) return;     // started again on every call (each second's change on the page) it hitched in WebKit
   t.dataset.over = over; t.dataset.at = s.textContent;
