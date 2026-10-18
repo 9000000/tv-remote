@@ -138,6 +138,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     // ---- Typing.kt. Two ways to type. Send: write here, then send it in one go. Live (⚡): the TV follows every letter and
     // every deletion as it happens, so one wrong letter is fixed by fixing it here.
     internal lateinit var textBox: EditText
+    internal var askBox: () -> Unit = {}                              // the "Hỏi TV" box opened and focused (RemoteScreen.kt)
     internal lateinit var liveBtn: IconButton
     internal var live = false
     internal var onTv = ""                                             // what the TV has received from the box so far
@@ -753,8 +754,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         try {
             @Suppress("DEPRECATION")
             startActivityForResult(i, SPEAK)
-        } catch (noRecognizer: Exception) {                           // no speech service on this phone: open the TV's own Assistant instead
-            tv?.let { if (it.ready()) it.press(219) }
+        } catch (noRecognizer: Exception) {                           // no speech service on this phone: typed, as the web does (held: the TV's Assistant)
+            askBox()
         }
     }
 
@@ -773,30 +774,6 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             "gs" -> T("phone.sent_to_the_tv", "sentence" to sentence)
             else -> T("core.fr_no_search")
         }, Toast.LENGTH_SHORT).show()
-    }
-
-    /** 🎤: say it or type it, the phone's keyboard or its own mic key; a command is done here, anything else is looked up. */
-    internal fun talk() {
-        val box = LinearLayout(this)
-        box.gravity = Gravity.CENTER_VERTICAL
-        box.setPadding(dp(20), dp(12), dp(20), 0)
-        val field = input(T("phone.e_g_open_youtube"))
-        field.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_SEND
-        field.background = box(BTN, 12)                                // the dialog is CARD: the box must stand out from it
-        box.addView(field, LinearLayout.LayoutParams(0, dp(48), 1f))
-        val mic = icon("@mic", T("remote.speak"), ACCENT)
-        mic.lit = true
-        box.addView(mic, LinearLayout.LayoutParams(dp(48), dp(48)).apply { leftMargin = dp(8) })
-        var dlg: Popup? = null
-        val send = { val s = field.text.toString().trim(); if (s.isNotEmpty()) { dlg?.dismiss(); voice(s) } }
-        mic.setOnClickListener { dlg?.dismiss(); speak() }
-        field.setOnEditorActionListener { _, _, _ -> send(); true }
-        dlg = Popup.Builder(this).setTitle(T("phone.speak_or_type_to")).setView(box)
-            .setPositiveButton(T("notify.send"), null).setNegativeButton(T("common.close"), null).create()
-        dlg.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-        dlg.setOnShowListener { dlg.getButton(Popup.BUTTON_POSITIVE).setOnClickListener { send() } }
-        dlg.show()
-        field.requestFocus()
     }
 
     // ---------------------------------------------------------------- small view helpers

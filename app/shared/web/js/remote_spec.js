@@ -51,6 +51,5 @@ const REMOTE_DO = {
   clip: () => clipDialog(),
   screenOff: () => screenOff(),
   share: () => shareDialog(),
-  keyboard: () => kbdGo(),
   inputs: () => inputsMenu(),
 };

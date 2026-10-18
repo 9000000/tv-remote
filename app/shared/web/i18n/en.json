@@ -1739,8 +1739,6 @@
  "phone.waiting_for_the_tv_2": "Waiting for the TV: {sentence}",
  "phone.searching_youtube_for": "Searching YouTube for: {sentence}",
  "phone.sent_to_the_tv": "Sent to the TV: {sentence}",
- "phone.e_g_open_youtube": "e.g. open YouTube, lo-fi music",
- "phone.speak_or_type_to": "Speak or type to the TV",
  "many_tvs.several_tvs": "Several TVs  ›",
  "many_tvs.several_tvs_at_once": "Several TVs at once: install an APK, remove apps, restart",
  "many_tvs.several_tvs_at_once_2": "Several TVs at once",

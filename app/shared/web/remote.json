@@ -1,28 +1,26 @@
 {
-  "_": "THE keys and menu entries of the remote screen, for both remotes: the Phone app's native one (RemoteScreen.kt, PhoneRemote.kt) and the web one (js/remote.js; the Computer app, the TV web page). Add, reorder or rename here and both change. Words: 't' is an id in i18n/<lang>.json (rkey.*), 'sub' the id of the small line under a menu entry. 'phone' / 'web' override fields for that side only, with the reason in 'why'. 'cores': [\"phone\"] or [\"web\"], only that side shows the entry. An entry is either a key ('key': a name from Scenes.KEYS / the /api/key names) or an action ('do': a handler name, 'arg' passed to it); every 'do' needs a handler on both sides (app/shared/tests/remote.test.js and RemoteSpecTest.kt check it). A menu entry may carry 'when' (a condition the handler supplies) or be 'expand' (the handler supplies several entries there). 'needs': what the TV must be able to do (Remote.Kind.caps: adb, store, link, app_list...); on an LG or Samsung TV that lacks one a row key is greyed and a menu entry left out. Icons: dev/gen_icons.py. The top row (power, speak, manage / wake, more), the arrows, the number keys and the volume / channel bars are laid out by hand on each side.",
+  "_": "THE keys and menu entries of the remote screen, for both remotes: the Phone app's native one (RemoteScreen.kt, PhoneRemote.kt) and the web one (js/remote.js; the Computer app, the TV web page). Add, reorder or rename here and both change. Words: 't' is an id in i18n/<lang>.json (rkey.*), 'sub' the id of the small line under a menu entry. 'phone' / 'web' override fields for that side only, with the reason in 'why'. 'cores': [\"phone\"] or [\"web\"], only that side shows the entry. An entry is either a key ('key': a name from Scenes.KEYS / the /api/key names) or an action ('do': a handler name, 'arg' passed to it); every 'do' needs a handler on both sides (app/shared/tests/remote.test.js and RemoteSpecTest.kt check it). A menu entry may carry 'when' (a condition the handler supplies) or be 'expand' (the handler supplies several entries there). 'needs': what the TV must be able to do (Remote.Kind.caps: adb, store, link, app_list...); on an LG or Samsung TV that lacks one a row key is greyed and a menu entry left out. Icons: dev/gen_icons.py. The top row (power, speak, keyboard, more), the arrows, the number keys and the volume / channel bars are laid out by hand on each side.",
   "rows": {
     "more": [
       [
         { "id": "open", "icon": "send", "t": "rkey.open", "do": "open" },
-        { "id": "keyboard", "icon": "keyboard", "t": "rkey.keyboard", "do": "keyboard", "cores": ["phone"],
-          "why": "the web remote has it on its top row, where the computer app's Wake key was" },
         { "id": "input", "icon": "input", "t": "rkey.input", "do": "inputs" },
-        { "id": "subtitles", "icon": "subtitle", "t": "rkey.subtitles", "key": "SUBTITLE" }
+        { "id": "subtitles", "icon": "subtitle", "t": "rkey.subtitles", "key": "SUBTITLE" },
+        { "id": "timer", "icon": "timer", "t": "rkey.timer", "do": "timer", "needs": ["screen_off"] }
       ],
       [
-        { "id": "timer", "icon": "timer", "t": "rkey.timer", "do": "timer", "needs": ["screen_off"] },
         { "id": "settings", "icon": "settings", "t": "rkey.settings", "key": "SETTINGS" },
         { "id": "scenes", "icon": "scene", "t": "rkey.scenes", "do": "scenes" },
-        { "id": "screenshot", "icon": "camera", "t": "rkey.screenshot", "do": "shot", "needs": ["adb"] }
+        { "id": "screenshot", "icon": "camera", "t": "rkey.screenshot", "do": "shot", "needs": ["adb"] },
+        { "id": "share", "icon": "share", "t": "rkey.share", "do": "share", "needs": ["adb"] }
       ],
       [
-        { "id": "share", "icon": "share", "t": "rkey.share", "do": "share", "needs": ["adb"] },
         { "id": "info", "icon": "info", "t": "rkey.info", "key": "INFO" },
         { "id": "stop", "icon": "stop", "t": "rkey.stop", "key": "STOP" },
-        { "id": "draw", "icon": "pen", "t": "rkey.draw", "do": "draw", "needs": ["adb"] }
+        { "id": "draw", "icon": "pen", "t": "rkey.draw", "do": "draw", "needs": ["adb"] },
+        { "id": "notify", "icon": "bell", "t": "rkey.notify", "do": "notify", "needs": ["adb"] }
       ],
       [
-        { "id": "notify", "icon": "bell", "t": "rkey.notify", "do": "notify", "needs": ["adb"] },
         { "id": "guide", "icon": "guide", "t": "rkey.guide", "key": "GUIDE" },
         { "id": "tv", "icon": "tv", "t": "rkey.tv", "key": "LIVE",
           "web": { "t": "rkey.tv_web" }, "why": "the web button is narrower: the bare word TV" }

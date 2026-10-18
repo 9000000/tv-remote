@@ -85,7 +85,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
     /** Louder than the range allows: down to its highest, and said on screen each time (at most every 3 s, keys repeat). */
     private fun capVolume() {
         val cap = Rules.volumeCap(Rules.load(c), System.currentTimeMillis()) ?: return
-        if (audio.isVolumeFixed) return
+        if (audio.isVolumeFixed || toListener()) return
         val top = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
         val most = cap.optInt("max") * top / 100
         if (audio.getStreamVolume(AudioManager.STREAM_MUSIC) <= most) return
@@ -94,6 +94,18 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         if (now - volSaidAt < 3_000) return
         volSaidAt = now
         say(T("guard.volume_cap", "max" to cap.optInt("max"), "from" to cap.optString("from"), "to" to cap.optString("to")))
+    }
+
+    /**
+     * The sound goes to a 🎧 listener, not the room: before Android 13 scrcpy takes the whole output (the remote submix) and the
+     * speakers fall silent. The volume keys then move the submix's volume, not the speakers': capped, the TV stayed silent with
+     * every key press saying "limited" (a TCL at 0 on its speakers, 30 % on the submix). The limit is for the room.
+     */
+    private fun toListener(): Boolean = try {
+        val m = AudioManager::class.java.getMethod("getDevicesForStream", Int::class.javaPrimitiveType)   // hidden, kept for apps
+        (m.invoke(audio, AudioManager.STREAM_MUSIC) as Int) and 0x8000 != 0                          // AudioSystem.DEVICE_OUT_REMOTE_SUBMIX
+    } catch (e: Throwable) {
+        audio.activeRecordingConfigurations.any { it.clientAudioSource == android.media.MediaRecorder.AudioSource.REMOTE_SUBMIX }
     }
 
     /** One look at the rules; returns how long until the next one is worth doing. */

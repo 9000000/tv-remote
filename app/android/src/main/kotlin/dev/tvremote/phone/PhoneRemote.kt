@@ -47,10 +47,6 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "clip" to act { clipDialog() },
     "screenOff" to act { screenOff() },
     "share" to act { shareDialog() },
-    "keyboard" to act {                                                       // the box at the foot of the remote: focused, the keyboard up
-        textBox.requestFocus()
-        (getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).showSoftInput(textBox, 0)
-    },
     "inputs" to act { inputsMenu() },
 )
 

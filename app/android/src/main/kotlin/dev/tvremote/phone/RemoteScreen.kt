@@ -161,7 +161,12 @@ internal fun MainActivity.buildRemote() {
     tools.gravity = Gravity.CENTER_VERTICAL or Gravity.END
     listenBtn = icon("@headphones", T("remote_screen.hear_the_tv_on"), BTN)
     listenBtn.setOnClickListener { toggleListen() }
-    for (b in listOf(listenBtn, videoBtn)) tools.addView(b, LinearLayout.LayoutParams(dp(46), dp(40)).apply { rightMargin = dp(if (b === videoBtn) 10 else 6) })
+    val apps = icon("@apps", T("remote_screen.manage"), BTN)          // apps, files, health, automation, setup: the web's tabs, up here as there
+    apps.setOnClickListener {
+        (getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).hideSoftInputFromWindow(it.windowToken, 0)
+        if (!needsAdb()) managing.open(host)
+    }
+    for (b in listOf(listenBtn, videoBtn, apps)) tools.addView(b, LinearLayout.LayoutParams(dp(46), dp(40)).apply { rightMargin = dp(if (b === apps) 10 else 6) })
     bar.addView(tools, LinearLayout.LayoutParams(-2, -2))
     bar.setPadding(0, dp(8), 0, dp(10))                               // room between the buttons and the picture
     remote.addView(bar)
@@ -272,16 +277,16 @@ internal fun MainActivity.buildRemote() {
         }.start()
     }
     first.addView(power, cell(58, false))
-    val apps = icon("@apps", T("remote_screen.manage"), BTN)          // apps, files, health, automation, setup
-    apps.setOnClickListener { if (!needsAdb()) managing.open(host) }
     val mic = icon("@mic", T("remote.speak"), BTN)
-    mic.setOnClickListener { talk() }                          // keys-only too: keys, apps and scenes still work (Automation.kt)
+    mic.setOnClickListener { speak() }                         // keys-only too: keys, apps and scenes still work (Automation.kt)
     mic.setOnLongClickListener {                                  // the TV's own Assistant screen
         tv?.let { if (it.ready()) it.press(219) }
         true
     }
     first.addView(mic, cell(58, true))
-    first.addView(apps, cell(58, true))
+    // The typing box and the "Hỏi TV" box fold out under this row, as the extra keys do: the arrows stay close (the web's ⌨️)
+    val kbdBtn = icon("@keyboard", T("rkey.keyboard"), BTN)
+    first.addView(kbdBtn, cell(58, true))
     // Everything used less often sits behind this button: one tap shows the extra keys, another hides them.
     val moreBtn = icon("@more", T("remote.more_keys"), BTN)
     first.addView(moreBtn, cell(58, true))
@@ -289,18 +294,24 @@ internal fun MainActivity.buildRemote() {
     moreBtn.caption = T("remote.more")                               // short under the icon; read out in full
     val more = col()
     for (i in remoteSpec().rows["more"]!!.indices) more.addView(remoteRow("more", i, 58), gap(8))    // remote.json (PhoneRemote.kt)
-    val showMore = { on: Boolean ->
-        more.visibility = if (on) View.VISIBLE else View.GONE
-        moreBtn.setOn(on, 16)
+    val kbd = col()
+    val fold = { which: View, btn: IconButton, key: String, on: Boolean ->
+        which.visibility = if (on) View.VISIBLE else View.GONE
+        btn.setOn(on, 16)
+        prefs.edit().putBoolean(key, on).apply()
     }
-    showMore(prefs.getBoolean("more", false))
-    moreBtn.setOnClickListener {
-        val on = more.visibility != View.VISIBLE
-        prefs.edit().putBoolean("more", on).apply()
-        slide(controls)
-        showMore(on)
+    val showMore = { on: Boolean -> if (on) fold(kbd, kbdBtn, "kbd", false); fold(more, moreBtn, "more", on) }
+    val showKbd = { on: Boolean -> if (on) fold(more, moreBtn, "more", false); fold(kbd, kbdBtn, "kbd", on) }   // one at a time
+    if (prefs.getBoolean("kbd", false)) showKbd(true) else showMore(prefs.getBoolean("more", false))
+    moreBtn.setOnClickListener { slide(controls); showMore(more.visibility != View.VISIBLE) }
+    val ime = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+    val kbdGo = { at: android.widget.EditText -> if (kbd.visibility != View.VISIBLE) { slide(controls); showKbd(true) }; at.requestFocus(); ime.showSoftInput(at, 0) }
+    kbdBtn.setOnClickListener {
+        if (kbd.visibility != View.VISIBLE) kbdGo(textBox)
+        else { slide(controls); showKbd(false); ime.hideSoftInputFromWindow(textBox.windowToken, 0) }
     }
     controls.addView(more)
+    controls.addView(kbd)
     // The arrows, or a touchpad in their place: swipes become arrow keys, a tap is OK. Handy where the TV shows a pointer
     // that follows the arrows (a browser, Downloader), and for long lists.
     val arrows = dpad()
@@ -369,14 +380,14 @@ internal fun MainActivity.buildRemote() {
     lp.leftMargin = dp(6)
     lp.width = dp(60)
     line.addView(send, lp)
-    controls.addView(line, gap(12))
+    kbd.addView(line, gap(8))
     val edit = keys(48, "@backspace|" + T("auto.delete"), 67, "@enter|Enter", 66)
     val digits = button("123", BTN)                               // shows / hides the number keys (channels, PIN codes)
     digits.contentDescription = T("remote.number_keys")
     val dl = LinearLayout.LayoutParams(dp(64), dp(48))
     dl.rightMargin = dp(8)
     edit.addView(digits, 0, dl)
-    controls.addView(edit, gap(8))
+    kbd.addView(edit, gap(8))
     val pad = col()
     pad.addView(keys(48, "1", 8, "2", 9, "3", 10), gap(8))
     pad.addView(keys(48, "4", 11, "5", 12, "6", 13), gap(8))
@@ -389,7 +400,20 @@ internal fun MainActivity.buildRemote() {
         pad.visibility = if (show) View.VISIBLE else View.GONE
         prefs.edit().putBoolean("numpad", show).apply()
     }
-    controls.addView(pad)
+    kbd.addView(pad)
+    // a sentence rather than letters: a command is done here, anything else is looked up (the web's "Hỏi TV" box)
+    val askLine = LinearLayout(this)
+    val ask = input(T("remote.ask_the_tv_open"))
+    ask.imeOptions = EditorInfo.IME_ACTION_SEARCH
+    ask.setSingleLine(true)
+    val asked = { val s = ask.text.toString().trim(); if (s.isNotEmpty()) { ask.setText(""); voice(s) } }
+    ask.setOnEditorActionListener { _, _, _ -> asked(); true }
+    askLine.addView(ask, LinearLayout.LayoutParams(0, dp(48), 1f))
+    val go = icon("@search", T("remote.commands_open_youtube_mute"), ACCENT)
+    go.setOnClickListener { asked() }
+    askLine.addView(go, LinearLayout.LayoutParams(dp(60), dp(48)).apply { leftMargin = dp(6) })
+    kbd.addView(askLine, gap(8))
+    askBox = { kbdGo(ask) }
     setLive(prefs.getBoolean("live", false))
 
     val bye = button(T("remote_screen.disconnect"), 0)
