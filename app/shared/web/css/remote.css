@@ -115,6 +115,10 @@ body.pip main { padding-bottom:320px; }   /* room to scroll the last rows out fr
 }
 #screeninfo { margin-top:8px; min-height:19px; }
 #screeninfo.live::before { content:"● "; color:var(--bad); }
+.kbdpane { width:100%; display:flex; flex-direction:column; gap:8px; }
+.kbdpane form.line { margin-top:0; }
+.kbdpane form.line > button { flex:none; width:var(--ctl); height:var(--ctl); min-height:0; padding:0; }   /* square: the remote column is narrow, the box gets the room */
+.kbdpane form.line > input { height:var(--ctl); min-height:0; }
 fieldset#kbd { border:0; padding:0; margin:0; min-width:0; }
 fieldset#kbd:disabled { opacity:.4; pointer-events:none; }
 /* typing: ⚡ switches between live typing and type-then-send; 123 shows the number keys */
@@ -124,11 +128,6 @@ fieldset#kbd:disabled { opacity:.4; pointer-events:none; }
 #listeninfo { margin-top:6px; }
 #pipslot #listeninfo { display:none; }
 /* scenes: one button each on the Remote tab */
-.scenebtns { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:8px; margin-top:10px; }
-.scene { display:flex; align-items:center; gap:8px; padding:8px 12px; min-height:48px; text-align:left; font-size:14px; font-weight:600; }
-.scene .ico { font-size:20px; flex:none; }
-.scene span:last-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.scene.add { grid-column:1/-1; color:var(--muted); font-weight:500; }
 .listenbar { display:flex; gap:8px; margin:10px 0; }
 .listenbar button { min-height:var(--ctl-sm); padding:0 12px; }
 /* now playing (js/playing.js): the app's icon, the title, three buttons; the bar under them seeks */
@@ -151,8 +150,8 @@ fieldset#kbd:disabled { opacity:.4; pointer-events:none; }
 .plbar input:disabled { cursor:default; }
 /* One size per kind of control, in every tab but the remote (whose keys are made to be hit without looking):
    a field and the button beside it --ctl, a card's own actions .small (--ctl-sm), a choice among several a chip (--chip). */
-.panel:not([data-panel=remote]) :is(button, select, input[type=text], input:not([type]), input[type=url], input[type=search], input[type=time]):not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.scene):not(.drop):not(.st-key):not(.crumbs button) { min-height:var(--ctl); }
-.panel:not([data-panel=remote]) button:not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.scene):not(.st-key):not(.crumbs button) { font-size:14px; padding:0 16px; }
+.panel:not([data-panel=remote]) :is(button, select, input[type=text], input:not([type]), input[type=url], input[type=search], input[type=time]):not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.drop):not(.st-key):not(.crumbs button) { min-height:var(--ctl); }
+.panel:not([data-panel=remote]) button:not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.st-key):not(.crumbs button) { font-size:14px; padding:0 16px; }
 @media (max-width:640px) {
   #places { margin:-6px -14px; padding:6px 14px; }   /* one row to swipe, to the screen's edges */
 }

@@ -131,7 +131,7 @@ $('#textf').addEventListener('submit', (e) => {
   txt.value = typed = '';
 });
 $('#del').addEventListener('click', () => { if (txt.value) { txt.value = [...txt.value].slice(0, -1).join(''); if (live) syncText(); } else queue('/api/type', { del: 1 }); });
-function setMore(on, now) { if (now) put('#more', 'hidden', !on); else slide($('#more'), on); $('#morebtn').classList.toggle('on', on); try { localStorage.setItem('more', on ? '1' : ''); } catch {} }
+function setMore(on, now) { if (on && $('#kbdbtn').classList.contains('on')) setKbd(false, now); if (now) put('#more', 'hidden', !on); else slide($('#more'), on); $('#morebtn').classList.toggle('on', on); try { localStorage.setItem('more', on ? '1' : ''); } catch {} }
 try { setMore(!!localStorage.getItem('more'), true); } catch {}
 $('#morebtn').addEventListener('click', () => setMore(!$('#morebtn').classList.contains('on')));
 $('#digits').addEventListener('click', () => { const p = $('#numpad'), on = p.hidden || p.classList.contains('shutting'); slide(p, on); try { localStorage.setItem('numpad', on ? '1' : ''); } catch {} });
@@ -182,7 +182,7 @@ function touch(a, p, extra) {
   }, { passive: false });
   scr.addEventListener('contextmenu', (e) => { e.preventDefault(); api('/api/key', { key: 'BACK' }); });   // right click = Back
 });
-$('#kbdbtn').addEventListener('click', () => kbdGo());
+$('#kbdbtn').addEventListener('click', () => { if ($('#kbdbtn').classList.contains('on')) setKbd(false); else kbdGo(); });
 // The computer keyboard is the TV's keyboard on the Remote tab, no need to click into the box first:
 // letters go to the TV's text field, Backspace/Delete erase, arrows move, Enter confirms, Esc = Back.
 const keymap = { ArrowUp:'UP', ArrowDown:'DOWN', ArrowLeft:'LEFT', ArrowRight:'RIGHT', Escape:'BACK', Home:'HOME' };
@@ -225,14 +225,24 @@ function hear() {                                                     // this de
   if (rec) { rec.stop(); return; }
   rec = new Speech(); rec.lang = LANG === 'vi' ? 'vi-VN' : 'en-US'; rec.interimResults = true;
   rec.onresult = (e) => { const r = e.results[e.results.length - 1]; $('#ask').value = r[0].transcript; if (r.isFinal) { askTv(r[0].transcript); $('#ask').value = ''; } };
-  rec.onerror = (e) => toast(T('remote.error_why', { why: e.error === 'not-allowed' ? T('remote.mic_not_allowed') : e.error }));
+  rec.onerror = (e) => {
+    if (e.error === 'service-not-allowed' && speechRefused()) { rec = null; talk(); return; }   // the TV's Assistant hears it instead
+    toast(T('remote.error_why', { why: e.error === 'not-allowed' ? T('remote.mic_not_allowed') : e.error }));
+  };
   rec.onend = () => { rec = null; $('#voice').classList.remove('on'); };
-  $('#voice').classList.add('on'); rec.start();
+  setKbd(true); $('#voice').classList.add('on'); rec.start();          // the words heard show in the "Hỏi TV" box
 }
-// The typing box, or the "Hỏi TV" box when typing needs an ADB not there: scrolled to, the keyboard up (⌨️ in More keys)
+// ⌨️ opens the typing box and the "Hỏi TV" box right under the top row, as More opens its keys: the picture stays in sight.
+// Opened by Speak (nothing to hear with) or More's entry: open, the keyboard up in the box that works (typing needs ADB)
+function setKbd(on, now) {                                           // one fold at a time: the D-pad stays close
+  if (on && $('#morebtn').classList.contains('on')) setMore(false, now);
+  if (now) put('#kbdpane', 'hidden', !on); else slide($('#kbdpane'), on);
+  $('#kbdbtn').classList.toggle('on', on); try { localStorage.setItem('kbd', on ? '1' : ''); } catch {}
+}
+try { setKbd(!!localStorage.getItem('kbd'), true); } catch {}
 function kbdGo(at) {
-  const f = $(at || ($('#kbd').disabled ? '#ask' : '#text'));
-  f.scrollIntoView({ block: 'center', behavior: 'smooth' }); f.focus({ preventScroll: true });
+  if (!$('#kbdbtn').classList.contains('on')) setKbd(true);
+  $(at || ($('#kbd').disabled ? '#ask' : '#text')).focus({ preventScroll: true });
 }
 // Speak, as on the phone app: this device turns speech into text (the browser), or its microphone goes to the TV's Assistant
 // (talk.js, where the window cannot), else the "Hỏi TV" box takes it typed (on a phone its keyboard's 🎤); held, the TV's
@@ -245,8 +255,8 @@ function kbdGo(at) {
   v.addEventListener('contextmenu', (e) => e.preventDefault());
   v.addEventListener('click', () => {
     if (held === -1) { held = 0; return; }
-    if (Speech && window.isSecureContext) hear();
-    else if (talkable()) talk();
+    if (talkable()) talk();
+    else if (Speech && window.isSecureContext) hear();
     else kbdGo('#ask');
   });
 }

@@ -70,7 +70,7 @@ const TAB_HUE = { remote: 220, apps: 265, files: 38, health: 350, auto: 20, tv: 
 // where: titles (coloured) and buttons; not inside these
 const ICON_TITLES = 'h2, h3, details > summary, .setrow > b, .step b, .qr > b, .tabs .ico';
 const ICON_BTNS = 'button, label.filebtn, a.linkbtn';
-const ICON_SKIP = '.rc, .tiles, .scenebtns, #scenetpl, #sceneicon, #steps .acts code, .item .ic0';
+const ICON_SKIP = '.rc, .tiles, #scenetpl, #sceneicon, #steps .acts code, .item .ic0';
 const ICON_KEYS = Object.keys(ICON).sort((a, b) => b.length - a.length);
 UI.icon = (name, hue) => {
   const s = el('span', { className: 'ui-ic' + (hue != null ? ' hue' : '') });
@@ -79,7 +79,7 @@ UI.icon = (name, hue) => {
   return s;
 };
 function iconize(e) {
-  if (e.closest(ICON_SKIP) || e.querySelector(':scope > .ui-ic')) return;
+  if (e.closest(ICON_SKIP) && !e.closest('#kbdpane') || e.querySelector(':scope > .ui-ic')) return;
   const title = e.matches(ICON_TITLES);
   const w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT);
   for (let t; (t = w.nextNode());) {
@@ -156,7 +156,7 @@ function slide(n, show) {
 // when motion is reduced. Its words are put in a span.rin, the part that moves.
 // never a span.rin itself: ".scene span:last-child" took the one it had just made, wrapped it again, and again, 20 times a
 // second (the whole page jerked in WebKit, and its slides stood still until the mouse moved)
-const RUN = ['#pltitle', '#plsub', '.nowapp b', '.scene span:last-child', '.item .name small.pkg', '.setval'].map((r) => r + ':not(.rin)').join(', '), runSeen = new WeakSet(), runT0 = new Map();
+const RUN = ['#pltitle', '#plsub', '.nowapp b', '.item .name small.pkg', '.setval'].map((r) => r + ':not(.rin)').join(', '), runSeen = new WeakSet(), runT0 = new Map();
 const runObs = new ResizeObserver((list) => list.forEach((e) => runFit(e.target)));
 function runFit(t) {
   if (t.classList.contains('rin')) return;

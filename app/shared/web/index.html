@@ -168,6 +168,15 @@
             <button class="rb lab" id="morebtn" aria-label="Thêm phím" title="Thêm phím" data-i18n-title="remote.more_keys" data-i18n-aria-label="remote.more_keys"><svg class="ic" aria-hidden="true"><use href="#i-more"/></svg><small data-i18n="remote.more">Thêm</small></button>
           </div>
           <div class="rrow four" id="more" data-rows="more" hidden></div>   <!-- the keys of these three blocks: remote.json -->
+          <div class="kbdpane" id="kbdpane" hidden>   <!-- ⌨️ on the top row: typing and the "Hỏi TV" box, right under the keys -->
+            <p class="note" id="kbdoff" hidden data-i18n="remote.typing_needs_adb">🔒 Gõ chữ cần ADB.</p>
+            <fieldset id="kbd">
+            <form class="line" id="textf"><button type="button" id="live" title="Gõ trực tiếp / gõ xong rồi gửi" data-i18n-title="remote.live_typing_type_then">⚡</button><input id="text" placeholder="Gõ lên TV" autocomplete="off" autocapitalize="off" spellcheck="false" data-i18n-placeholder="remote.type_on_the_tv"><button class="primary" title="Gửi phím Enter" data-i18n-title="remote.send_enter">↵</button><button type="button" id="del" aria-label="Xóa ký tự" data-i18n-aria-label="remote.delete_a_character">⌫</button><button type="button" id="digits" title="Bàn phím số" data-i18n-title="remote.number_keys">123</button></form>
+            <div class="numpad" id="numpad" hidden><button class="rb" data-k="1">1</button><button class="rb" data-k="2">2</button><button class="rb" data-k="3">3</button><button class="rb" data-k="4">4</button><button class="rb" data-k="5">5</button><button class="rb" data-k="6">6</button><button class="rb" data-k="7">7</button><button class="rb" data-k="8">8</button><button class="rb" data-k="9">9</button><span></span><button class="rb" data-k="0">0</button><span></span></div>
+            </fieldset>
+            <form class="line" id="askf"><input id="ask" placeholder="Hỏi TV: mở YouTube" autocomplete="off" data-i18n-placeholder="remote.ask_the_tv_open"><button class="primary" title="Lệnh (mở YouTube, tắt tiếng...) thì làm ngay, câu khác thì tìm trên YouTube" data-i18n-title="remote.commands_open_youtube_mute">🔍</button></form>
+          </div>
+          <input type="file" id="castfile" hidden>
           <div class="dpad">
             <button class="up" data-k="UP" aria-label="Lên" data-i18n-aria-label="remote.up"><svg class="ic" aria-hidden="true"><use href="#i-up"/></svg></button>
             <button class="left" data-k="LEFT" aria-label="Trái" data-i18n-aria-label="remote.left"><svg class="ic" aria-hidden="true"><use href="#i-left"/></svg></button>
@@ -183,21 +192,6 @@
           </div>
         </section>
 
-        <section class="card" id="scenecard" data-adb-gated data-native data-needs="control">
-          <div class="card-head"><h2 data-i18n="common.scenes">🎬 Cảnh</h2><button class="small" id="sceneedit" data-needs="full" data-i18n="remote.edit">✏️ Sửa</button></div>
-          <div class="scenebtns" id="scenebtns"></div>
-        </section>
-
-        <section class="card" data-needs="control">
-          <h2 data-i18n="remote.keyboard">⌨️ Bàn phím <span class="muted adbnote lower" data-for="pc" data-i18n="remote.needs_adb">· cần ADB</span></h2>
-          <p class="note" id="kbdoff" hidden data-i18n="remote.typing_needs_adb">🔒 Gõ chữ cần ADB.</p>
-          <fieldset id="kbd">
-          <form class="line" id="textf"><button type="button" id="live" title="Gõ trực tiếp / gõ xong rồi gửi" data-i18n-title="remote.live_typing_type_then">⚡</button><input id="text" placeholder="Gõ chữ lên TV" autocomplete="off" autocapitalize="off" spellcheck="false" data-i18n-placeholder="remote.type_on_the_tv"><button class="primary" title="Gửi phím Enter" data-i18n-title="remote.send_enter">↵</button><button type="button" id="del" aria-label="Xóa ký tự" data-i18n-aria-label="remote.delete_a_character">⌫</button><button type="button" id="digits" title="Bàn phím số" data-i18n-title="remote.number_keys">123</button></form>
-          <div class="numpad" id="numpad" hidden><button class="rb" data-k="1">1</button><button class="rb" data-k="2">2</button><button class="rb" data-k="3">3</button><button class="rb" data-k="4">4</button><button class="rb" data-k="5">5</button><button class="rb" data-k="6">6</button><button class="rb" data-k="7">7</button><button class="rb" data-k="8">8</button><button class="rb" data-k="9">9</button><span></span><button class="rb" data-k="0">0</button><span></span></div>
-          </fieldset>
-          <form class="line" id="askf"><input id="ask" placeholder="Hỏi TV: mở YouTube" autocomplete="off" data-i18n-placeholder="remote.ask_the_tv_open"><button class="primary" title="Lệnh (mở YouTube, tắt tiếng...) thì làm ngay, câu khác thì tìm trên YouTube" data-i18n-title="remote.commands_open_youtube_mute">🔍</button></form>
-          <input type="file" id="castfile" hidden>
-        </section>
       </div>
     </div>
   </div>

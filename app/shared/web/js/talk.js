@@ -2,8 +2,13 @@
 // service; the Mac's and Chrome's have, remote.js): the microphone goes to the TV's Assistant as a voice remote's would
 // (/api/voice, Atv.voiceBegin), and the TV hears it. The computer app only: the phone app has its own screen, and the TV's
 // page has no remote link to the TV.
+// The Mac's web view has a speech service that can still refuse ("service-not-allowed": Dictation off, or the window not let in):
+// then this way, from then on
+let noSpeech = false;
+try { noSpeech = !!localStorage.getItem('nospeech'); } catch {}
 const talkable = () => CORE === 'pc' && window.isSecureContext && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
-  && !(window.SpeechRecognition || window.webkitSpeechRecognition);
+  && (noSpeech || !(window.SpeechRecognition || window.webkitSpeechRecognition));
+function speechRefused() { noSpeech = true; try { localStorage.setItem('nospeech', '1'); } catch {} return talkable(); }
 let talking = null;
 
 async function talk() {

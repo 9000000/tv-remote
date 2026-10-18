@@ -291,10 +291,6 @@ function renderScenes() {
     el('div', { className: 'acts' }, setLabel(el('button', { className: 'small primary', onclick: () => runScene(sc) }), '▶', T('auto.run')),
       setLabel(el('button', { className: 'small', onclick: () => editScene(sc) }), '✏️', T('auto.edit')))))
     : [UI.empty(T('auto.no_scenes'))]));
-  $('#scenebtns').replaceChildren(...(SCENES.length ? SCENES.map((sc) => el('button', { className: 'scene', title: sc.steps.map(stepText).join(' → '), onclick: () => runScene(sc) },
-    el('span', { className: 'ico', textContent: sc.icon || '🎬' }), el('span', { textContent: sc.name })))
-    : can('full') ? [el('button', { className: 'scene add', onclick: () => { showTab('auto'); editScene(null); } }, el('span', { className: 'ico', textContent: '＋' }), el('span', { textContent: T('auto.scene_add') }))] : []));
-  put('#scenecard', 'hidden', !SCENES.length && !can('full'));            // a guest runs the owner's scenes, and makes none
 }
 
 // the editor: a name, an emoji, and steps added one by one
@@ -403,7 +399,6 @@ $('#scenefile').addEventListener('change', async (e) => {
   const kept = list.filter((sc) => sc && SCENES.some((s) => s.id === sc.id || (!sc.id && s.name === String(sc.name || '').trim()))).length;
   toast(kept < list.length ? T('auto.imported_skipped', { n: kept, skip: list.length - kept }) : T('auto.imported', { n: kept }));
 });
-$('#sceneedit').addEventListener('click', () => showTab('auto'));
 
 // voice and the "Ask the TV" box: what the remote can do by itself (voice.js), before the TV's Assistant is asked
 async function doCommand(c) {
