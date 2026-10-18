@@ -72,7 +72,17 @@ val packageApp by tasks.registering(Exec::class) {
     doLast {                                                          // without its languages listed, WebKit tells the page "en" on a Vietnamese Mac
         if (os != "mac") return@doLast
         val app = packageOut.resolve("TV Remote.app")
-        exec { commandLine("plutil", "-replace", "CFBundleLocalizations", "-json", "[\"vi\",\"en\"]", app.resolve("Contents/Info.plist").path) }
+        val plist = app.resolve("Contents/Info.plist").path
+        exec { commandLine("plutil", "-replace", "CFBundleLocalizations", "-json", "[\"vi\",\"en\"]", plist) }
+        // the 🎤 key hears in the window (native/mac.m): without these macOS ends the app the moment WebKit asks for the microphone
+        val ask = mapOf("en" to listOf("Speak to the TV: what you say becomes the words sent to it.", "Turns what you say to the TV into words."),
+            "vi" to listOf("Nói với TV: lời bạn nói thành chữ gửi tới TV.", "Đổi lời bạn nói với TV thành chữ."))
+        exec { commandLine("plutil", "-replace", "NSMicrophoneUsageDescription", "-string", ask.getValue("en")[0], plist) }
+        exec { commandLine("plutil", "-replace", "NSSpeechRecognitionUsageDescription", "-string", ask.getValue("en")[1], plist) }
+        for ((l, w) in ask) app.resolve("Contents/Resources/$l.lproj").let { d ->
+            d.mkdirs()
+            d.resolve("InfoPlist.strings").writeText("NSMicrophoneUsageDescription = \"${w[0]}\";\nNSSpeechRecognitionUsageDescription = \"${w[1]}\";\n")
+        }
         exec { commandLine("codesign", "--force", "--deep", "--sign", "-", app.path) }   // signed again over the changed Info.plist
     }
 }
