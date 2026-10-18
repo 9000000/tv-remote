@@ -319,7 +319,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val c = e.keyCode
         // a game controller (Bluetooth / USB) drives the TV, as on the page (PadMap); a text field in focus keeps its keys
         if (live() && e.source and (InputDevice.SOURCE_GAMEPAD or InputDevice.SOURCE_JOYSTICK) != 0 && currentFocus !is EditText) {
-            val k = PadMap.key(c, tv != null)
+            val k = PadMap.key(c, video && tv != null)                     // picture off keeps the session (keys), not the picture
             if (k != null) {
                 val moves = c in KeyEvent.KEYCODE_DPAD_UP..KeyEvent.KEYCODE_DPAD_RIGHT || c == KeyEvent.KEYCODE_BUTTON_L1 || c == KeyEvent.KEYCODE_BUTTON_R1 || c == KeyEvent.KEYCODE_BUTTON_L2 || c == KeyEvent.KEYCODE_BUTTON_R2
                 if (e.action == KeyEvent.ACTION_DOWN && (e.repeatCount == 0 || moves)) press(k)   // the system repeats a held key
