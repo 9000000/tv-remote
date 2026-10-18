@@ -246,7 +246,7 @@ if (Speech && window.isSecureContext) {
   v.addEventListener('contextmenu', (e) => e.preventDefault());
   v.addEventListener('click', () => {
     if (held === -1) { held = 0; return; }
-    if (!$('#speak').hidden && !$('#kbd').disabled) $('#speak').click();
+    if (!$('#speak').hidden && (!$('#kbd').disabled || talkable())) $('#speak').click();   // talk.js needs no ADB
     else if (!$('#kbd').disabled) { $('#ask').scrollIntoView({ block: 'center', behavior: 'smooth' }); $('#ask').focus(); }
     else assist();
   });

@@ -8,6 +8,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 
+- App máy tính: nút **Nói** dùng được micro của máy. Trên Mac, máy đổi lời nói thành chữ (Mac hỏi quyền micro một lần). Trên Windows, Linux, giọng bạn đi thẳng tới Trợ lý của TV như micro của remote thật (TV Android, qua giao thức remote, không cần ADB). Tự dừng khi bạn nói xong.
 - Giới thiệu (web và app điện thoại) có link tới trang hướng dẫn tvremote.pages.dev.
 - Chia sẻ TV: đổi "Người quét được làm gì" giờ nhanh hơn (một lệnh tới TV thay vì ba), mã QR cũ mờ đi trong lúc chờ mã mới.
 - Nút **Chụp màn hình** (trong Thêm) quay vòng tới khi ảnh đã lưu, không còn trông như bấm không ăn.
@@ -36,6 +37,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **English**
 
+- Computer app: the **Speak** key uses the computer's microphone. On a Mac the computer turns speech into words (the Mac asks for the microphone once). On Windows and Linux your voice goes straight to the TV's Assistant, like a real remote's microphone (Android TVs, over the remote protocol, no ADB needed). It stops when you finish speaking.
 - About (the page and the phone app) links to the guide at tvremote.pages.dev.
 - Share the TV: changing "What the scanner may do" is faster (one call to the TV instead of three), and the old QR fades while the new one comes.
 - The **Screenshot** key (under More) spins until the picture is saved, so the tap no longer looks lost.

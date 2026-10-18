@@ -224,6 +224,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             return Response.ok()
         }
         if (r.path == "/api/fleet/cancel") { fleets.stop(r.json().optString("id")); return Response.json(org.json.JSONObject().put("ok", true)) }
+        if (r.path == "/api/voice") return voice(s, r)
         if (r.path !in OURS) return null                              // Manage's: uploads among them, whose body is not JSON
         val d = r.json()
         return when (r.path) {
@@ -346,6 +347,19 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         } catch (e: IOException) { "" }
         val tvWeb = if (!native(s) && s.host.isNotEmpty() && s.host != "127.0.0.1" && s.host != "localhost" && Discover.portOpen(s.host, 8765)) "http://${s.host}:8765" else ""   // the TV Setup app's page
         return Response.json(JSONObject().put("version", version).put("released", released).put("tv_web", tvWeb).put("stale", false))
+    }
+
+    // ---------------------------------------------------------------- voice: this computer's microphone into the TV's Assistant
+    // (js/talk.js records it where the window cannot turn speech into words itself; Atv.voiceBegin): start, data..., end.
+    // The samples come as the body, 16-bit PCM at 8 kHz, a piece at a time
+    private fun voice(s: Session, r: HttpServer.Request): Response {
+        val a = s.need() as? Atv ?: throw IllegalArgumentException("unsupported: voice")
+        if (r.q("do") == "start") return a.voiceBegin()?.let { Response.json(JSONObject().put("id", it)) }
+            ?: Response.error(409, Words.get(r.lang, "server.voice_not_listening"))
+        val id = r.q("id").toLongOrNull() ?: throw IllegalArgumentException("id required")
+        if (r.length in 1..(256L shl 10)) a.voiceSend(id, r.body.readNBytes(r.length.toInt()))
+        if (r.q("do") == "end") a.voiceEnd(id)
+        return Response.ok()
     }
 
     // ---------------------------------------------------------------- keys, volume, text
@@ -575,7 +589,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             "SLEEP", "WAKE")                                          // Sony ignores SLEEP sent over the remote protocol
         val OPENERS = setOf("MENU", "SETTINGS", "INPUT", "GUIDE", "LIVE")   // keys that should bring up a screen of their own
         val OURS = setOf("/api/key", "/api/app", "/api/volume", "/api/text", "/api/clip", "/api/touch", "/api/type", "/api/wake", "/api/tv/select", "/api/tv/save",
-            "/api/tv/remove", "/api/scenes", "/api/scene/run", "/api/fleet/do", "/api/assist", "/api/pair/start", "/api/pair/finish", "/api/vidaa/cert", "/api/shutdown",
+            "/api/tv/remove", "/api/voice", "/api/scenes", "/api/scene/run", "/api/fleet/do", "/api/assist", "/api/pair/start", "/api/pair/finish", "/api/vidaa/cert", "/api/shutdown",
             "/api/update")
         /** What the page reads from an LG or Samsung TV besides [OURS]. */
         val NATIVE_TOO = setOf("/api/state", "/api/about", "/api/wirelog", "/api/update", "/api/tvs", "/api/discover", "/api/setup/status", "/api/scenes", "/api/apps", "/api/inputs", "/api/app/icon", "/api/app/meta", "/api/setup/need",

@@ -192,6 +192,9 @@ class Atv(dir: File, private val host: String) : Remote, CodePairing {
             field = e[2]?.firstOrNull() as? Long ?: 0L
             hasField = true
         }
+        m[30]?.let {                                                  // remote_voice_begin: the Assistant listens, under this session
+            voiceWait?.complete(Pb.read(it[0] as? ByteArray ?: ByteArray(0))[1]?.firstOrNull() as? Long ?: 0L)
+        }
         m[20]?.let {                                                  // remote_ime_key_inject: sent whenever another app comes to the front
             val info = Pb.read(it[0] as? ByteArray ?: ByteArray(0))[1]?.firstOrNull() as? ByteArray
             val pkg = info?.let { i -> Pb.read(i)[12]?.firstOrNull() as? ByteArray }?.toString(Charsets.UTF_8)
@@ -240,6 +243,39 @@ class Atv(dir: File, private val host: String) : Remote, CodePairing {
     fun keys(t: String) {
         for (c in t) (code(c).takeIf { it != 0 } ?: code(c.lowercaseChar())).let { if (it != 0) key(it, SHORT) }
     }
+
+    // ---------------------------------------------------------------- voice (the 622 we send includes VOICE, 8)
+    // What is said into this device goes to the TV's Assistant, as into a voice remote's microphone: the search key, the TV
+    // answers with a session (remote_voice_begin), we echo it, then 16-bit PCM, 8 kHz, mono, then remote_voice_end
+    // (tronikos/androidtvremote2 found the flow). Its samples go big-endian: a TCL (Google TV 12) heard nothing in
+    // little-endian ("no speech detected") and every word in big-endian, measured. The TV closes the connection on a piece
+    // over 20 KB; pieces under 8 KB are padded with silence, so the caller sends at least that much at a time but the last.
+    @Volatile private var voiceWait: java.util.concurrent.CompletableFuture<Long>? = null
+
+    /** The Assistant listening to this device: its session, or null when the TV named none within 3 s (no Assistant there). */
+    fun voiceBegin(): Long? {
+        if (!ready()) return null
+        val f = java.util.concurrent.CompletableFuture<Long>()
+        voiceWait = f
+        key(KEYCODE_SEARCH, SHORT)
+        val id = try { f.get(3, java.util.concurrent.TimeUnit.SECONDS) } catch (e: Exception) { null } finally { voiceWait = null }
+        if (id != null) post(Pb().msg(30, Pb().int(1, id).bytes()).bytes())
+        return id
+    }
+
+    /** [pcm]: 16-bit little-endian samples (as recorded), 8 kHz, mono. */
+    fun voiceSend(id: Long, pcm: ByteArray) {
+        for (i in 0 until pcm.size - 1 step 2) { val t = pcm[i]; pcm[i] = pcm[i + 1]; pcm[i + 1] = t }
+        var at = 0
+        while (at < pcm.size) {
+            val n = minOf(VOICE_MAX, pcm.size - at)
+            val piece = ByteArray(maxOf(n, VOICE_MIN)).also { System.arraycopy(pcm, at, it, 0, n) }
+            post(Pb().msg(31, Pb().int(1, id).raw(2, piece).bytes()).bytes())
+            at += n
+        }
+    }
+
+    fun voiceEnd(id: Long) = post(Pb().msg(32, Pb().int(1, id).bytes()).bytes())
 
     /** Opens a link on the TV, or an app by its package name: the app when it is installed, its Play Store page when it is not. */
     override fun launch(link: String) {
@@ -357,6 +393,9 @@ class Atv(dir: File, private val host: String) : Remote, CodePairing {
         const val DOWN = 1
         const val UP = 2
         const val SHORT = 3
+        const val KEYCODE_SEARCH = 84
+        const val VOICE_MAX = 20 * 1024
+        const val VOICE_MIN = 8 * 1024
 
         /** The key that types [c] without Shift, or 0. */
         private fun code(c: Char): Int = when (c) {
