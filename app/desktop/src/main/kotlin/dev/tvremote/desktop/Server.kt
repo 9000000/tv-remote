@@ -248,7 +248,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             "/api/touch" -> if (native(s)) Response.error(400, "unsupported: " + Remote.Kind.name(s.kind)) else touch(s, d)
             "/api/type" -> if (native(s)) { s.need().type(minOf(d.optInt("del"), 500), d.optString("text").take(500), d.optBoolean("enter")); Response.ok() } else type(s, d)
             "/api/clip" -> if (native(s)) Response.error(400, "unsupported: " + Remote.Kind.name(s.kind)) else { s.control().setClipboard(d.optString("text").take(100000), d.optBoolean("paste")); Response.ok() }
-            "/api/wake" -> wake(s)
+            "/api/wake" -> wake(s, d.optString("host").ifEmpty { s.host })
             "/api/tv/select" -> {
                 val host = d.optString("host").trim()
                 if (!IP.matches(host)) throw IllegalArgumentException("not an IP address")
@@ -269,7 +269,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
                 saved.scenes = Scenes.clean(list); saved.save(); Response.json(JSONObject().put("scenes", saved.scenes))
             }
             "/api/scene/run" -> Scenes.runRequest(d, { id -> (0 until saved.scenes.length()).map { saved.scenes.getJSONObject(it) }.firstOrNull { it.optString("id") == id } }, "TV not connected") {
-                if (native(s)) RemoteSteps(s.need()) { wake(s) } else Scenes.Shell({ sh(s, it) })
+                if (native(s)) RemoteSteps(s.need()) { wake(s, s.host) } else Scenes.Shell({ sh(s, it) })
             }
             "/api/fleet/do" -> {
                 val work = fleets.action(d.optString("action"), d.optString("pkg"))
@@ -454,9 +454,10 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         return Response.ok()
     }
 
-    private fun wake(s: Session): Response {
-        val r = Wake.wake(s.host, (saved.find(s.host) ?: JSONObject()).put("kind", s.kind), 60, s.atv?.mac ?: "")
-        if (r.ok && !native(s) && s.atv?.isOn != true) {
+    private fun wake(s: Session, host: String): Response {             // host: a saved TV from the list, not only the one in use
+        val mine = host == s.host
+        val r = Wake.wake(host, (saved.find(host) ?: JSONObject()).let { if (mine) it.put("kind", s.kind) else it }, 60, if (mine) s.atv?.mac ?: "" else "")
+        if (mine && r.ok && !native(s) && s.atv?.isOn != true) {
             Thread.sleep(2000)
             if (s.available) s.atv?.key(26, Atv.SHORT)                 // screen off but the network alive
         }

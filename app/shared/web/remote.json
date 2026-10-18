@@ -3,28 +3,29 @@
   "rows": {
     "more": [
       [
+        { "id": "open", "icon": "send", "t": "rkey.open", "do": "open" },
+        { "id": "keyboard", "icon": "keyboard", "t": "rkey.keyboard", "do": "keyboard", "cores": ["phone"],
+          "why": "the web remote has it on its top row, where the computer app's Wake key was" },
         { "id": "input", "icon": "input", "t": "rkey.input", "do": "inputs" },
-        { "id": "settings", "icon": "settings", "t": "rkey.settings", "key": "SETTINGS" },
-        { "id": "info", "icon": "info", "t": "rkey.info", "key": "INFO" },
-        { "id": "guide", "icon": "guide", "t": "rkey.guide", "key": "GUIDE" }
+        { "id": "subtitles", "icon": "subtitle", "t": "rkey.subtitles", "key": "SUBTITLE" }
       ],
       [
-        { "id": "tv", "icon": "tv", "t": "rkey.tv", "key": "LIVE",
-          "web": { "t": "rkey.tv_web" }, "why": "the web button is narrower: the bare word TV" },
-        { "id": "subtitles", "icon": "subtitle", "t": "rkey.subtitles", "key": "SUBTITLE" },
-        { "id": "stop", "icon": "stop", "t": "rkey.stop", "key": "STOP" },
+        { "id": "timer", "icon": "timer", "t": "rkey.timer", "do": "timer", "needs": ["screen_off"] },
+        { "id": "settings", "icon": "settings", "t": "rkey.settings", "key": "SETTINGS" },
+        { "id": "scenes", "icon": "scene", "t": "rkey.scenes", "do": "scenes" },
         { "id": "screenshot", "icon": "camera", "t": "rkey.screenshot", "do": "shot", "needs": ["adb"] }
       ],
       [
-        { "id": "open", "icon": "send", "t": "rkey.open", "do": "open" },
-        { "id": "timer", "icon": "timer", "t": "rkey.timer", "do": "timer", "needs": ["screen_off"] },
-        { "id": "scenes", "icon": "scene", "t": "rkey.scenes", "do": "scenes" },
+        { "id": "share", "icon": "share", "t": "rkey.share", "do": "share", "needs": ["adb"] },
+        { "id": "info", "icon": "info", "t": "rkey.info", "key": "INFO" },
+        { "id": "stop", "icon": "stop", "t": "rkey.stop", "key": "STOP" },
         { "id": "draw", "icon": "pen", "t": "rkey.draw", "do": "draw", "needs": ["adb"] }
       ],
       [
         { "id": "notify", "icon": "bell", "t": "rkey.notify", "do": "notify", "needs": ["adb"] },
-        { "id": "share", "icon": "share", "t": "rkey.share", "do": "share", "needs": ["adb"] },
-        { "id": "keyboard", "icon": "keyboard", "t": "rkey.keyboard", "do": "keyboard" }
+        { "id": "guide", "icon": "guide", "t": "rkey.guide", "key": "GUIDE" },
+        { "id": "tv", "icon": "tv", "t": "rkey.tv", "key": "LIVE",
+          "web": { "t": "rkey.tv_web" }, "why": "the web button is narrower: the bare word TV" }
       ]
     ],
     "nav": [

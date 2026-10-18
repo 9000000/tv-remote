@@ -228,6 +228,13 @@ async function selectTv(host, name, kind) {
 $('#switchtv').addEventListener('click', () => { pickOpen(); refresh(); });
 $('#pickback').addEventListener('click', () => { pickLeave(); refresh(); });
 const openTv = (host, current, name) => { if (host === current) { pickGo(host); refresh(); } else selectTv(host, name); };
+// A TV asleep in deep standby answers nothing, so its remote cannot open: woken from the list (Wake-on-LAN, Wake.kt), then opened
+async function wakeTv(b, t) {
+  b.disabled = true; toast(T('remote.waking'));
+  const r = await api('/api/wake', { host: t.host }); b.disabled = false; if (!r) return;
+  toast(r.ok ? T('remote.tv_ready') : T('remote.tv_not_up'));
+  if (r.ok) openTv(t.host, null, t.name);
+}
 let savedTvs = [];                                                     // the saved list, for the scan to know a TV's other address
 async function loadTvs() {
   const r = await api('/api/tvs', null, true); if (!r) return;
@@ -237,6 +244,7 @@ async function loadTvs() {
       el('small', { textContent: t.host + (t.lan && t.lan !== t.host ? ' · ' + T('setup.at_home', { lan: t.lan }) : '') })),
     el('div', { className: 'acts' },
       setLabel(el('button', { className: 'small primary', onclick: () => openTv(t.host, r.current) }), '▶', OPEN_TV),
+      CORE === 'pc' ? setLabel(el('button', { className: 'small', title: T('remote.wake_the_tv_wake'), onclick: (e) => wakeTv(e.currentTarget, t) }), '☀️', T('remote.wake')) : null,
       setLabel(el('button', { className: 'small danger', onclick: async () => { if (await ask(T('setup.forget_ask', { name: t.name || t.host }), { ok: T('setup.delete'), danger: true })) { await api('/api/tv/remove', { host: t.host }); await refresh(); loadTvs(); loadSteps(); } } }), '🗑', T('setup.delete'), true))));
   $('#tvlist').replaceChildren(...rows);
   put('#savedcard', 'hidden', !rows.length); $('#pickcols').classList.toggle('solo', !rows.length);   // nothing saved: no empty box, just the search
@@ -549,7 +557,6 @@ function nativeSteps(s) {
 setInterval(() => { if (currentTab === 'tv' && !document.hidden && !stopped) loadSteps(); }, 6000);
 
 const startTab = (window.LANG_KEEP && window.LANG_KEEP.tab) || location.hash.slice(1) || new URLSearchParams(location.search).get('tab') || (CORE === 'phone' ? 'apps' : '');
-if (CORE !== 'pc') $('#wake').parentElement.className = 'rrow three';   // no wake button there: three keys fill the row
 if (['remote', 'apps', 'files', 'health', 'auto', 'tv'].includes(startTab)) showTab(startTab); else if (startTab === 'install') showTab('files');
 else if (startTab === 'term') { showTab('files'); $('#termcard').open = true; }   // the terminal used to be a tab of its own
 document.documentElement.classList.add('tabbed');                     // the right tab is open: show it (theme.js)

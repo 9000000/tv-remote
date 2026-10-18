@@ -9,7 +9,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 
 - App máy tính: nút **Nói** dùng được micro của máy. Trên Mac, máy đổi lời nói thành chữ (Mac hỏi quyền micro một lần). Trên Windows, Linux, giọng bạn đi thẳng tới Trợ lý của TV như micro của remote thật (TV Android, qua giao thức remote, không cần ADB). Tự dừng khi bạn nói xong.
-- Phím ⌨️ Bàn phím trong "Thêm" (web và app điện thoại): đưa tới ô gõ chữ và mở bàn phím. Ô "Hỏi TV" dùng được cả khi chưa có ADB (app máy tính tìm YouTube qua giao thức remote); bỏ nút 🎤 trùng với nút Nói.
+- Phím ⌨️ Bàn phím: hàng trên cùng của remote web (chỗ nút Đánh thức cũ), trong "Thêm" trên app điện thoại; đưa tới ô gõ chữ và mở bàn phím. "Thêm" xếp lại theo mức dùng: Mở trên TV, Ngõ vào, Phụ đề, Hẹn giờ tắt lên đầu. Đánh thức (app máy tính) chuyển ra danh sách TV đã lưu: TV ngủ sâu thì không mở được remote, nên đánh thức ở đó rồi mở luôn. Ô "Hỏi TV" dùng được cả khi chưa có ADB (app máy tính tìm YouTube qua giao thức remote); bỏ nút 🎤 trùng với nút Nói.
 - Tên app trong "Đang mở" (và tên bài, tên cảnh) không còn chạy chữ khi đã đủ chỗ: chỉ chạy khi chữ bị cắt thật.
 - Giới thiệu (web và app điện thoại) có link tới trang hướng dẫn tvremote.pages.dev.
 - Chia sẻ TV: đổi "Người quét được làm gì" giờ nhanh hơn (một lệnh tới TV thay vì ba), mã QR cũ mờ đi trong lúc chờ mã mới.
@@ -40,7 +40,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **English**
 
 - Computer app: the **Speak** key uses the computer's microphone. On a Mac the computer turns speech into words (the Mac asks for the microphone once). On Windows and Linux your voice goes straight to the TV's Assistant, like a real remote's microphone (Android TVs, over the remote protocol, no ADB needed). It stops when you finish speaking.
-- A ⌨️ Keyboard key in More keys (the page and the phone app): goes to the typing box with the keyboard up. The "Ask the TV" box works without ADB too (the computer app searches YouTube through the remote protocol); the 🎤 that repeated Speak is gone.
+- A ⌨️ Keyboard key: on the web remote's top row (where Wake was), in More keys on the phone app; goes to the typing box with the keyboard up. More keys sorted by use: Open on the TV, Input, Subtitles, Sleep timer first. Wake (computer app) moved to the saved TVs list: a TV in deep standby cannot open its remote, so it is woken there and then opened. The "Ask the TV" box works without ADB too (the computer app searches YouTube through the remote protocol); the 🎤 that repeated Speak is gone.
 - The app's name in "Now open" (and song and scene names) no longer slides when it fits: only when the words are really cut.
 - About (the page and the phone app) links to the guide at tvremote.pages.dev.
 - Share the TV: changing "What the scanner may do" is faster (one call to the TV instead of three), and the old QR fades while the new one comes.

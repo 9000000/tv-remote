@@ -182,12 +182,7 @@ function touch(a, p, extra) {
   }, { passive: false });
   scr.addEventListener('contextmenu', (e) => { e.preventDefault(); api('/api/key', { key: 'BACK' }); });   // right click = Back
 });
-$('#wake').addEventListener('click', async () => {
-  const b = $('#wake'); b.disabled = true; toast(T('remote.waking'));
-  const r = await api('/api/wake', {});
-  if (r) { toast(r.ok ? T('remote.tv_ready') : T('remote.tv_not_up')); refresh(); }
-  b.disabled = false;
-});
+$('#kbdbtn').addEventListener('click', () => kbdGo());
 // The computer keyboard is the TV's keyboard on the Remote tab, no need to click into the box first:
 // letters go to the TV's text field, Backspace/Delete erase, arrows move, Enter confirms, Esc = Back.
 const keymap = { ArrowUp:'UP', ArrowDown:'DOWN', ArrowLeft:'LEFT', ArrowRight:'RIGHT', Escape:'BACK', Home:'HOME' };
