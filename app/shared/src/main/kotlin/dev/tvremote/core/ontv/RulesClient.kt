@@ -12,6 +12,14 @@ object RulesClient {
     const val SETUP = "dev.tvremote.setup"
 
     /**
+     * Starts TV Setup's service from the shell. On Doze's allow list a plain start is let through with no deadline; a foreground
+     * start must become a foreground service within 10 s, and a TCL (Android 11) refuses that: the whole app was killed each
+     * time a page read the rules. The allow list also keeps such a TV from killing the service later. Foreground only as a last try.
+     */
+    const val START = "cmd deviceidle whitelist +$SETUP >/dev/null 2>&1; " +
+        "am startservice -n $SETUP/.RemoteService 2>&1 | grep -q Error && am start-foreground-service -n $SETUP/.RemoteService >/dev/null 2>&1"
+
+    /**
      * [change] is one action ({"do": "sleep", "minutes": 30}, see Rules.change), or null to read. The answer is the state the
      * pages show, or {"setup": "missing" | "old" | "busy", "have", "min"} when the TV has no TV Setup, one
      * too old to know about rules, or one that did not answer though new enough (being updated or starting).
@@ -23,7 +31,7 @@ object RulesClient {
         if (m != null) {
             val state = JSONObject(String(B64.decode(m.groupValues[1]), Charsets.UTF_8))
             // Android may not let a receiver start the app's service from the background; the shell may, so it does it here
-            if (state.optBoolean("wanted") && !state.optBoolean("running")) sh("am start-foreground-service -n $SETUP/.RemoteService 2>&1")
+            if (state.optBoolean("wanted") && !state.optBoolean("running")) sh(START)
             return state
         }
         val have = SetupNeed.have(sh)

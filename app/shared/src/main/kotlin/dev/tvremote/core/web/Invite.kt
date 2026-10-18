@@ -27,7 +27,7 @@ object Invite {
         val out = sh("am broadcast --include-stopped-packages -n ${RulesClient.SETUP}/.TrustReceiver --es want invite --es scope $sc 2>&1")
         val m = Regex("data=\"([0-9a-f]{32}) ?([0-9.]*)\"").find(out) ?: throw IOException("TV Setup did not answer")
         // the page is served by TV Setup's service; a receiver may not start it from the background, the shell may
-        sh("am start-foreground-service -n ${RulesClient.SETUP}/.RemoteService 2>&1")
+        sh(RulesClient.START)
         return link(m.groupValues[2], m.groupValues[1], host)
     }
 

@@ -92,7 +92,7 @@ object SetupUpdate {
     private val SCRIPT = """
         D=$DIR; P=$PKG; A=${'$'}1; V=${'$'}2; O=${'$'}3; echo ${'$'}${'$'} > ${'$'}D/pid   # on its own now: see start()
         trap 'rmdir ${'$'}D/lock 2>/dev/null' EXIT                    # the next update may start
-        svc() { am start-foreground-service -n ${'$'}P/.RemoteService >/dev/null 2>&1 || am startservice -n ${'$'}P/.RemoteService >/dev/null 2>&1; }   # Android 7 and older: startservice
+        svc() { ${RulesClient.START}; }                             # no 10 s deadline: RulesClient.START
         say() { echo "${'$'}1 ${'$'}(date +%s) ${'$'}V ${'$'}{old:--} ${'$'}2" > ${'$'}D/state; }
         ver() { dumpsys package ${'$'}P 2>/dev/null | grep -m1 versionName= | sed 's/.*versionName=//'; }
         # Not the TV's own refusal to let a background start become a foreground service ("did not then call Service.startForeground()", seen on TCL):
