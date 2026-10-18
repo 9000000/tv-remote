@@ -142,7 +142,7 @@ Lần đầu mỗi máy kết nối, TV hỏi "Cho phép gỡ lỗi USB?": tích
 - Máy chưa từng kết nối và chưa ghép mã với TV Setup thì vẫn phải có người ở TV. Đó là chủ ý, để người lạ không vào được.
 </details>
 
-TV chưa bật được ADB (box nhà mạng giấu Cài đặt, đòi mật khẩu...)? Cài TV Setup bằng [mã Downloader](#cài-tv-setup-bằng-mã-downloader): app đó mở thẳng chỗ bật. App máy tính có nút **🧭 Bật ADB giúp tôi**, app điện thoại có trợ lý tương tự: chỉ dùng nút remote để tự cài TV Setup, hoặc mở Cài đặt TV bằng nhiều cách.
+Bước này **không bắt buộc**: chưa có ADB thì app điện thoại và app máy tính vẫn bấm phím được. TV chưa bật được ADB (box nhà mạng như FPT Play giấu Cài đặt, bấm Bản dựng thì đòi mật khẩu...)? Cài TV Setup bằng [mã Downloader](#cài-tv-setup-bằng-mã-downloader): app đó mở thẳng chỗ bật. App máy tính có nút **🧭 Bật ADB giúp tôi**, app điện thoại có trợ lý tương tự: chỉ dùng nút remote để tự cài TV Setup, hoặc mở Cài đặt TV bằng nhiều cách.
 
 <details>
 <summary>Xem IP của TV ở đâu</summary>

@@ -142,7 +142,7 @@ The first time each device connects, the TV asks "Allow USB debugging?": tick **
 - A device that never connected and never paired with TV Setup still needs someone at the TV. That is on purpose, so strangers cannot get in.
 </details>
 
-ADB cannot be turned on (an operator box hides Settings, asks for a password...)? Install TV Setup with the [Downloader code](#install-tv-setup-with-a-downloader-code): it opens the right place directly. The app on the computer has **🧭 Turn ADB on for me**, and the phone app a similar assistant: using only the remote buttons, it installs TV Setup on the TV, or opens the TV's Settings in every way it knows.
+This step is **optional**: without ADB the phone and computer apps still send keys. ADB cannot be turned on (an operator box such as FPT Play hides Settings, or asks for a password on Build...)? Install TV Setup with the [Downloader code](#install-tv-setup-with-a-downloader-code): it opens the right place directly. The app on the computer has **🧭 Turn ADB on for me**, and the phone app a similar assistant: using only the remote buttons, it installs TV Setup on the TV, or opens the TV's Settings in every way it knows.
 
 <details>
 <summary>Where to find the TV's IP</summary>

@@ -61,6 +61,10 @@ mark{background:rgba(255,163,26,.3);color:var(--text);border-radius:3px;padding:
 .topic a{color:var(--blue)}
 .topic code{background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:.86em;color:var(--text);overflow-wrap:anywhere}
 .topic .steps li div{color:var(--muted);font-size:15.5px}
+.topic h4{font-size:15px;font-weight:700;color:var(--text);margin-bottom:-6px}
+.gli{display:grid;gap:8px;padding-left:22px;color:var(--muted);font-size:15.5px}
+.gli li::marker{color:var(--blue)}
+.gli b{color:var(--text)}
 .gnote,.gwarn{border-radius:12px;padding:11px 14px;font-size:14.5px !important;border:1px solid var(--line2);background:var(--bg2)}
 .gwarn{border-color:rgba(255,163,26,.4);background:rgba(255,163,26,.07)}
 .gtab .cmp{min-width:0;font-size:14.5px}
