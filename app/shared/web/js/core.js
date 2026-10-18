@@ -220,7 +220,7 @@ let curHost = null;
 let picking = false, wantPick = CORE === 'pc' && !(window.LANG_KEEP && !window.LANG_KEEP.picking), cameFromTv = false, justPicked = null, pickedAt = 0, scannedOnce = false;
 function setPicking(on, tvName) {
   const b = $('#pickback'), back = cameFromTv && !!tvName;
-  b.hidden = !back; if (back) b.textContent = '← ' + tr('Về lại') + ' ' + tvName;
+  put(b, 'hidden', !back); if (back) put(b, 'textContent', '← ' + tr('Về lại') + ' ' + tvName);
   if (on === picking) return;
   picking = on; document.querySelector('main').classList.toggle('picking', on);
   if (on) {
@@ -240,7 +240,10 @@ const ADB_TEXT = {
   error: ['bad', 'ADB lỗi', 'ADB: lỗi'],
   unknown: ['', 'ADB ...', 'ADB: ...'],
 };
-function setChip(id, cls, text, long) { const c = $(id); c.className = 'chip ' + cls; c.lastElementChild.textContent = tr(text); c.title = tr(long || text); }
+// Only when it changes: the same value written again is still a change to the page, for its observers (icons, running lines,
+// i18n) and WebKit's styles; the now playing bar did it 5 times a second
+function put(e, k, v) { if (e && e[k] !== v) e[k] = v; }
+function setChip(id, cls, text, long) { const c = $(id); put(c, 'className', 'chip ' + cls); put(c.lastElementChild, 'textContent', tr(text)); put(c, 'title', tr(long || text)); }
 
 let STATE = {};
 let tvOn = false;                                                    // the power button asks before turning a TV that is on off
@@ -273,15 +276,15 @@ async function refresh() {
     s.connected ? (s.is_on ? 'TV: đang bật' : 'TV: màn hình tắt') : adbUp ? 'Nút bấm: đi qua ADB' : 'TV: mất kết nối');
   ADB = s.adb || { state: 'unknown' };
   const [cls, txt, long] = ADB_TEXT[ADB.state] || ADB_TEXT.unknown; setChip('#chipAdb', cls, txt, long);
-  $('#chipAdb').hidden = NATIVE();                                    // no ADB on this kind of TV: nothing to report
+  put($('#chipAdb'), 'hidden', NATIVE());                                    // no ADB on this kind of TV: nothing to report
   if (NATIVE() && !s.connected) setChip('#chipTv', s.asking ? 'warn' : 'bad', s.asking ? 'Chờ TV cho phép' : s.paired === false ? 'Chưa ghép' : 'Mất kết nối');
   const tvName = s.name || (s.device && s.device.model) || (s.host ? 'TV ' + s.host : '');
   if (CORE === 'pc') setPicking(!s.host || wantPick, tvName);
-  if (s.version) $('#ver').textContent = (s.app_name || 'TV Remote') + ' ' + s.version + (s.released ? ' · ' + s.released : '');
-  document.title = tvName && !picking ? tvName + ' · Remote' : 'TV Remote';
-  $('#name').textContent = picking ? 'TV Remote' : tvName;
-  $('#info').textContent = picking ? tr('Chọn TV để điều khiển') : [CORE === 'pc' ? s.host : '', s.asking ? 'nhìn lên TV: chọn Cho phép' : s.paired === false ? 'chưa ghép remote (tab Thiết lập)' : s.error ? 'nút remote chưa kết nối được (tab Thiết lập)' : '',
-    s.scope === 'view' ? tr('Chỉ xem') : s.scope === 'remote' ? tr('Chỉ remote') : ''].filter(Boolean).join(' · ') || 'đã kết nối';   // a guest knows what it was given
+  if (s.version) put($('#ver'), 'textContent', (s.app_name || 'TV Remote') + ' ' + s.version + (s.released ? ' · ' + s.released : ''));
+  put(document, 'title', tvName && !picking ? tvName + ' · Remote' : 'TV Remote');
+  put($('#name'), 'textContent', picking ? 'TV Remote' : tvName);
+  put($('#info'), 'textContent', picking ? tr('Chọn TV để điều khiển') : [CORE === 'pc' ? s.host : '', s.asking ? 'nhìn lên TV: chọn Cho phép' : s.paired === false ? 'chưa ghép remote (tab Thiết lập)' : s.error ? 'nút remote chưa kết nối được (tab Thiết lập)' : '',
+    s.scope === 'view' ? tr('Chỉ xem') : s.scope === 'remote' ? tr('Chỉ remote') : ''].filter(Boolean).join(' · ') || 'đã kết nối');   // a guest knows what it was given
   showNowApp(picking ? '' : s.app || '', s.app_label);
   if (justPicked && s.host === justPicked) {                          // straight to the remote when the TV is ready, to the first-time steps when it is not
     const ready = s.connected || (s.adb && s.adb.state === 'ready') || s.asking;   // LG / Samsung asking: the remote tab says what to do
@@ -418,7 +421,7 @@ function applyAdb() {
   const key = curHost || '-';
   document.querySelectorAll('.panel').forEach((p) => {
     if (p.dataset.panel === 'remote' || p.dataset.panel === 'tv' || p.dataset.panel === 'kind') return;
-    if (ready && !p.hidden) p.dataset.seen = key;
+    if (ready && !p.hidden && p.dataset.seen !== key) p.dataset.seen = key;
     const held = !ready && ADB.state !== 'none' && !NATIVE() && p.dataset.seen === key;
     p.classList.toggle('held', held);
     p.querySelectorAll('[data-adb-banner]').forEach((b) => { b.hidden = held; });
@@ -434,7 +437,7 @@ function applyAdb() {
   $('.tabs').classList.toggle('noadb', noadb);
   document.querySelectorAll('.tabs [data-needs-adb]').forEach((b) => { if (noadb) b.title = tr('Cần ADB: bấm vào để xem cách bật'); else b.removeAttribute('title'); });
   const typing = ready || NATIVE() && can('text');                    // typing goes through ADB, or LG's / Samsung's own keyboard link
-  $('#kbd').disabled = !typing; $('#kbdoff').hidden = typing;         // no half-working box without it
+  $('#kbd').disabled = !typing; put($('#kbdoff'), 'hidden', typing);         // no half-working box without it
   $('#screenbtn').disabled = !ready && !screenOn;
   if (!ready && screenOn) stopScreen('ADB chưa sẵn sàng, đã dừng xem màn hình.');
   if (ready && autoView) { autoView = false; startScreen(); }           // bookmark ?view=1 to start watching right away

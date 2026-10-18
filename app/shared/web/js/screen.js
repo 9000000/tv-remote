@@ -300,7 +300,7 @@ function blackPicture() {
 setInterval(() => {
   const black = screenOn && typeof PL !== 'undefined' && (PL.o.state || 'none') !== 'none' && blackPicture();
   blackFor = black ? blackFor + 1 : 0;
-  $('#screenblack').hidden = blackFor < 4;
+  put($('#screenblack'), 'hidden', blackFor < 4);
 }, 1000);
 $('#screenbtn').addEventListener('click', () => { if (screenOn) stopScreen(); else startScreen(); });
 try { const q = localStorage.getItem('quality'); if (q && [...$('#screenmode').options].some((o) => o.value === q)) $('#screenmode').value = q; } catch {}   // the level picked last time

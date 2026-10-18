@@ -78,9 +78,8 @@
   /* icon + words; in tight places on a narrow screen only the icon shows (the words stay for screen readers) */
   @media (max-width:640px) { .item .acts .lbl, .top .lbl, .card-head .tools .lbl { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
     /* phone: each tab is its picture with its name in small letters underneath */
-    .tabs { --gap:2px; padding:4px; } .tabs button { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:50px; padding:4px 0; min-width:0; } .tabs .ico { font-size:18px; line-height:1.1; }
-    .tabs .lbl { font-size:10px; line-height:1.1; white-space:nowrap; }
-    .tabs button { flex:1 0 auto; padding:4px 3px; } }                 /* no room (large text): the bar slides, ui.js chipRows */
+    .tabs { --gap:2px; padding:4px; } .tabs button { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:50px; padding:4px 3px; min-width:0; flex:1 0 auto; }   /* no room (large text): the bar slides, ui.js chipRows */ .tabs .ico { font-size:18px; line-height:1.1; }
+    .tabs .lbl { font-size:10px; line-height:1.1; white-space:nowrap; } }
   /* Without ADB the tabs that need it are only dimmed: they still open, and show how to turn ADB on. A line under each tab
      made the bar heavy, a lock read as "pay to unlock", and emoji badges look different on every device. The words stay for
      screen readers. Elsewhere everything goes through ADB anyway. */
@@ -239,7 +238,7 @@
   .appicon { width:44px; height:44px; border-radius:11px; background:var(--btn); flex:none; display:flex; align-items:center; justify-content:center; overflow:hidden; font-weight:700; color:var(--muted); font-size:18px; }
   .appicon img { width:100%; height:100%; object-fit:contain; display:block; } .appicon.adaptive img { transform:scale(1.45); } .appicon.adaptive:not([style]) { background:#30343b; }
   .tiles { display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:6px; }
-  .tile { display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 4px 8px; background:transparent; min-height:0; border-radius:12px; font-size:12px; line-height:1.2; }
+  .tile { display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 4px 8px; background:var(--bg); border:1px solid var(--line); min-height:0; border-radius:12px; font-size:12px; line-height:1.2; }
   .tile .appicon { width:52px; height:52px; border-radius:13px; }
   .appicon.wide { width:78px; border-radius:8px; } .tile .appicon.wide { width:92px; border-radius:9px; } .appicon.wide img { object-fit:cover; }   /* the TV's own wide tile for the app: .tiles columns fit it */
   .tile span { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center; overflow-wrap:anywhere; }
@@ -318,7 +317,6 @@
   .sl-bg { fill:var(--btn); } rect.sl-on { fill:var(--accent); } rect.sl-ts { fill:var(--bad); } i.sl-on { background:var(--accent); color:var(--accent-ink); } i.sl-ts { background:var(--bad); }
   .sl-leg { display:flex; gap:6px 14px; flex-wrap:wrap; font-size:12px; color:var(--muted); } .sl-leg i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px; }
   .sl-axis { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:4px; }
-  .tile { background:var(--bg); border:1px solid var(--line); }
   .crash { border-top:1px solid var(--line); } .crash:first-of-type { border-top:0; }
   .crash > summary { display:flex; gap:12px; align-items:center; padding:10px 0; cursor:pointer; list-style:none; } .crash > summary::-webkit-details-marker { display:none; }
   .crash > summary .t { flex:1; min-width:0; } .crash > summary b { display:block; font-size:15px; overflow-wrap:anywhere; } .crash > summary small { color:var(--muted); font-size:13px; }

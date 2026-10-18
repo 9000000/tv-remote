@@ -6,15 +6,15 @@ const mmss = (ms) => { const s = Math.floor(ms / 1000), h = Math.floor(s / 3600)
 const plPos = () => { const o = PL.o; let p = o.pos || 0; if (o.state === 'playing') p += (performance.now() - PL.at) * (o.speed || 1); return o.dur ? Math.min(p, o.dur) : p; };
 function plDraw() {
   const o = PL.o, name = o.title || o.app, on = o.state && o.state !== 'none' && !!name;   // no title (FPT Play): the app's name
-  $('#playing').hidden = !on; if (!on) return;
+  put($('#playing'), 'hidden', !on); if (!on) return;
   const t = $('#pltitle'); if (t.title !== name) { t.title = name; t.textContent = ''; t.append(Object.assign(document.createElement('span'), { className: 'rin', textContent: name })); }
   runFit(t);
   const sub = o.title ? o.sub || '' : ''; if ($('#plsub').textContent !== sub) $('#plsub').textContent = sub;   // the same words again would start its slide over            // the app is the picture beside it and "Đang mở" below, as on the phone app
   const icon = '/api/app/icon?pkg=' + encodeURIComponent(o.pkg); if ($('#plicon').dataset.src !== icon) { $('#plicon').dataset.src = icon; $('#plicon').src = icon; }
-  $('#plbar').hidden = !o.dur;
-  if (o.dur && !PL.dragging) { $('#plseek').value = Math.round(plPos() / o.dur * 1000); $('#plpos').textContent = mmss(plPos()); $('#pldur').textContent = mmss(o.dur); }
-  $('#plseek').disabled = !o.seek || !can('control');               // a guest who may only watch sees where it is, and no more
-  $('#plplay use').setAttribute('href', o.state === 'paused' ? '#i-play' : '#i-pause');
+  put($('#plbar'), 'hidden', !o.dur);
+  if (o.dur && !PL.dragging) { put($('#plseek'), 'value', String(Math.round(plPos() / o.dur * 1000))); put($('#plpos'), 'textContent', mmss(plPos())); put($('#pldur'), 'textContent', mmss(o.dur)); }
+  put($('#plseek'), 'disabled', !o.seek || !can('control'));        // a guest who may only watch sees where it is, and no more
+  const u = $('#plplay use'), href = o.state === 'paused' ? '#i-play' : '#i-pause'; if (u.getAttribute('href') !== href) u.setAttribute('href', href);
 }
 async function plPoll() {
   clearTimeout(PL.timer);
