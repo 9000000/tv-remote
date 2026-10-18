@@ -1,6 +1,7 @@
 // file explorer, uploads and jobs
 // ---------- files ----------
 let cwd = '/sdcard/Download', filesLoaded = false, fileItems = [], volumes = [];
+onTvChange(() => { cwd = '/sdcard/Download'; filesLoaded = false; $('#fileslist').replaceChildren(); });
 const KINDS = [
   ['🎬', 'video', /\.(mp4|mkv|avi|mov|webm|ts|m4v|wmv|flv)$/i], ['🎵', 'audio', /\.(mp3|flac|wav|m4a|ogg|aac|opus)$/i],
   ['🖼️', 'image', /\.(jpe?g|png|gif|webp)$/i], ['📦', 'apk', /\.apk$/i], ['🗜️', 'zip', /\.(zip|rar|7z|tar|gz|xz)$/i],
@@ -109,7 +110,7 @@ async function trackJob(j, label, after, src) {
   toast(j.status === 'done' ? 'Xong: ' + j.msg : j.status === 'cancelled' ? 'Đã dừng' : 'Lỗi: ' + j.msg);
   if (j.status === 'done' && after) after(j);
   if (j.status === 'done' && filesLoaded) loadFiles(cwd);
-  if (j.status === 'done') { appsLoaded = false; if (/install/.test(j.title)) loadQuick(); }
+  if (j.status === 'done') { appsStale(); if (/install/.test(j.title)) loadQuick(); }
 }
 // What the TV must have free for this file, asked of it before a byte is sent (Manage.space); '' when there is room or the TV did not say.
 async function roomError(size, kind, dest) {

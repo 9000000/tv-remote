@@ -78,6 +78,12 @@ async function loadQuick() {
 
 // ---------- apps tab ----------
 let appsLoaded = false, appsAll = [], appsInfo = new Map(), appsOffOpen = false;          // pkg -> { off, keep }
+const appsStale = () => { quickLoaded = appsLoaded = false; };      // installed or removed elsewhere (files.js, Optimize TV): read again
+onTvChange(() => {
+  appsStale(); META.clear(); metaFailed.clear();
+  $('#quick').replaceChildren(el('div', { className: 'muted', textContent: 'Danh sách app hiện khi ADB sẵn sàng.' }));
+  $('#appslist').replaceChildren();
+});
 let appsBoot = new Set();                                             // the apps that start by themselves when the TV turns on
 let appsFilter = 'all';
 // the chips above the list: each narrows it to one kind of app, with how many there are. The same words and colour mark

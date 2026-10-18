@@ -157,7 +157,7 @@ async function watchReboot(t0) {
     // ADB answers early in the boot: done once the TV's settings answer too (or it never went down: nothing to wait for)
     const booted = up && (down || secs > 60) && /^sleep -?\d/m.test((await fetch('/api/tvset').then((r) => r.ok ? r.json() : {}).catch(() => ({}))).text || '');
     if (booted) {
-      rebootT0 = 0; $('#rebootdlg').close(); toast('TV đã khởi động lại xong'); bannerKey = ''; refresh(); loadTvset(); return;
+      rebootT0 = 0; $('#rebootdlg').close(); toast('TV đã khởi động lại xong'); bannerAgain(); refresh(); loadTvset(); return;
     }
     const clock = Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
     put('#rebootstep', 'textContent', secs < 180 ? (down ? 'TV đang khởi động' : 'TV đang tắt') + ' · ' + clock

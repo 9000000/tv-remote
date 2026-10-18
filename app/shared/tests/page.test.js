@@ -37,3 +37,24 @@ test('a field of the page is written through put()', () => {
   });
   assert.deepEqual(bad, [], "put('#x', 'textContent', …) instead");
 });
+
+test("a file sets only its own globals", () => {
+  // `x = …` from another file is state changed behind its owner's back: the next person reads the owner and misses it.
+  // The owner offers a function instead (pickGo, adbNow, appsStale), and what is kept per TV is forgotten in its own
+  // file's onTvChange(). A name the writing file declares itself (a local, a parameter) is its own.
+  const dir = path.join(__dirname, '../web/js');
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.js'));
+  const src = Object.fromEntries(files.map((f) => [f, fs.readFileSync(path.join(dir, f), 'utf8').replace(/\/\/[^\n]*|'(?:\\.|[^'\\\n])*'/g, (c) => c.replace(/[^\n]/g, ' '))]));
+  const owner = {};
+  for (const f of files) for (const m of src[f].matchAll(/^let ([^;\n]*)/gm))
+    for (const n of m[1].split(/,(?![^([{]*[)\]}])/).map((p) => (p.match(/^\s*([A-Za-z_$][\w$]*)/) || [])[1]).filter(Boolean)) owner[n] = f;
+  const bad = [];
+  for (const [n, f] of Object.entries(owner)) for (const g of files) {
+    if (g === f) continue;
+    const own = new RegExp(`\\b(let|const|var)\\s(?:[^;\\n]*[\\s,{[])?${n}\\s*[=,;)}\\]]|\\(([^()]*[\\s,{[])?${n}\\b[^()]*\\)\\s*(=>|\\{)|\\b${n}\\s*=>`);
+    if (own.test(src[g])) continue;
+    for (const m of src[g].matchAll(new RegExp(`(^|[^.\\w$])${n}\\s*(=(?!=)|\\+\\+|--|[-+|&]=)`, 'gm')))
+      bad.push(`${g}:${src[g].slice(0, m.index).split('\n').length} sets ${n} (${f})`);
+  }
+  assert.deepEqual(bad, [], 'give the owner a function that does it, called from here');
+});

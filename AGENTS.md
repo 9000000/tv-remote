@@ -86,6 +86,9 @@ dev/                     release.sh, emu.sh, gen_icons.py, shots.py, ... : dev/R
   icon from the sprite (a title's in its own hue, a tab's in a coloured tile, a button's in the button's colour). A new emoji
   in a title: add it to `ICON` (its path to `dev/gen_icons.py`). Content (scene icons, app tiles, sentences, the remote) keeps emoji.
 - The server stamps `<html data-core="pc|tv|phone">`; core-only markup uses `data-for="pc tv phone"`, JS checks `CORE`.
+- **The page's state:** a `js/` file sets only the globals it declares; another file calls a function the owner offers
+  (`pickGo`, `adbNow`, `appsStale`), and what a file keeps about one TV it forgets in its own `onTvChange()`. Fields of the
+  page are written through `put()`. Both checked by `tests/page.test.js`.
 - **Vietnamese is the source language.** The web UI writes Vietnamese; `js/i18n.js` maps strings (and regexes) to English at render time, so every new user-visible string needs an entry there. Kotlin uses `t("vi", "en")`. README, CHANGELOG entries and release notes are written in both languages.
 - **Users first:** make things automatic; show an error only after every fallback has failed, in words a person can act on (`Errors.kt`, `friendly()` in `js/core.js`). Choices look like buttons. Long waits show what is going on and can be cancelled.
 - **Never commit** `cert.pem`, `key.pem`, `tvs.json`, `*.jks` (they pair with or sign for real devices). Never expose port 8765 to the Internet; away from home everything goes over Tailscale.

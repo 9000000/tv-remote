@@ -94,7 +94,8 @@ const slClock = (t) => new Date(t * 1000).toLocaleTimeString(window.LANG === 'vi
 const slWhen = (t) => { const d = new Date(t * 1000), today = new Date().toDateString() === d.toDateString();
   return slClock(t) + (today ? '' : ' ' + d.getDate() + '/' + (d.getMonth() + 1)); };
 let sleepAt = 0, sleepBusy = false, sleepGen = 0, sleepSeen = '', sleepShown = 7;
-function sleepReset() { sleepGen++; sleepAt = 0; sleepSeen = ''; sleepShown = 7; $('#hsleep').replaceChildren(); }   // another TV (tvChanged)
+function sleepReset() { sleepGen++; sleepAt = 0; sleepSeen = ''; sleepShown = 7; $('#hsleep').replaceChildren(); }
+onTvChange(sleepReset);
 async function loadSleep(now) {
   if (hmode !== 'sleep' || sleepBusy || (!now && Date.now() - sleepAt < 60000)) return;
   const box = $('#hsleep'), gen = sleepGen;
@@ -248,6 +249,7 @@ function capsSummary(c) {
 
 // 🗂️ all settings, under the Setup tab: read the first time it is opened (again after a failed read), searched as typed
 let setRows = [], setBusy = false;
+onTvChange(() => { setRows = []; $('#setlistbody').replaceChildren(); });
 let setFilter = 'all';                                               // all · edit (has a control) · view (locked or nothing to set)
 const setOpen = new Set();                                            // groups opened by hand: kept open as the list redraws
 async function loadSettings() {

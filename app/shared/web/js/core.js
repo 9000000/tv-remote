@@ -215,9 +215,17 @@ const friendly = (m) => { m = String(m || ''); const f = FRIENDLY.find(([re]) =>
 
 // ---------- status ----------
 let curHost = null;
+// Another TV: tvChanged() (setup.js) runs these, each file forgetting what it kept about the old TV in its own
+const TV_RESETS = [];
+const onTvChange = (fn) => TV_RESETS.push(fn);
 // The list of TVs comes first, as in the phone app: shown whenever no TV is chosen, or when "Change TV" asks for it.
 // It always opens on the list; "Change TV" comes back to it, and only then is there a TV to go back to.
 let picking = false, wantPick = CORE === 'pc' && !(window.LANG_KEEP && !window.LANG_KEEP.picking), cameFromTv = false, justPicked = null, pickedAt = 0, scannedOnce = false;
+// The list of TVs is opened and left only through these (setup.js, diagnose.js), so the four above stay in step
+function pickOpen() { wantPick = true; cameFromTv = true; }          // from a TV: the list offers the way back to it
+function pickLeave() { wantPick = false; cameFromTv = false; }
+function pickGo(host) { pickLeave(); justPicked = host; pickedAt = Date.now(); }   // refresh() then opens its remote (or its steps)
+function pickCancel() { justPicked = null; wantPick = true; }
 function setPicking(on, tvName) {
   const b = $('#pickback'), back = cameFromTv && !!tvName;
   put(b, 'hidden', !back); if (back) put(b, 'textContent', '← ' + tr('Về lại') + ' ' + tvName);
@@ -371,7 +379,7 @@ function applyKind(s) {
   kindSig = sig; TV_KIND = kind; CAPS = s.caps ? new Set(s.caps) : null; SCOPE = scope;
   document.documentElement.dataset.kind = kind; document.documentElement.dataset.scope = scope;
   document.querySelectorAll('nav.tabs [data-tab]').forEach((t) => { t.hidden = scope !== 'full' && t.dataset.tab !== 'remote'; });
-  if (scope !== 'full' && currentTab && currentTab !== 'remote') currentTab = 'remote';
+  if (scope !== 'full' && currentTab && currentTab !== 'remote') showTab('remote');   // a guest now: the other tabs are the owner's
   const keys = kind !== 'android' && s.keys ? new Set(s.keys) : null;
   document.querySelectorAll('[data-needs]').forEach((e) => unsupported(e, !e.dataset.needs.split(' ').every(can)));
   document.querySelectorAll('[data-k]').forEach((b) => unsupported(b, !!keys && !keys.has(b.dataset.k)));
@@ -394,7 +402,10 @@ const BANNERS = {
   error: ['bad', 'Không kết nối được ADB', 'Thử kết nối lại. Nếu vẫn lỗi, kiểm tra TV còn mạng và đã bật “Gỡ lỗi ADB”.'],
   unknown: ['warn', 'Đang kết nối ADB…', ''],
 };
-let bannerKey = '', scenesLoaded = false, setupChecked = '';         // setupChecked: the TV whose TV Setup version was looked at (auto.js)
+let bannerKey = '', scenesLoaded = false;
+const bannerAgain = () => { bannerKey = ''; };                      // drawn again on the next tick, whatever it was
+function adbNow(r) { ADB = r; bannerAgain(); }                        // ADB changed here (a button), not in a tick
+onTvChange(() => { scenesLoaded = false; bannerAgain(); });
 function buildBanner() {
   if (ADB.state === 'none') return el('span');                        // LG / Samsung: no ADB to turn on
   const set = CORE === 'pc' ? BANNERS : BANNERS_TV, [cls, title, text] = set[ADB.state] || set.unknown;
@@ -447,7 +458,7 @@ function applyAdb() {
   put('#screenbtn', 'disabled', !ready && !screenOn);
   if (!ready && screenOn) stopScreen('ADB chưa sẵn sàng, đã dừng xem màn hình.');
   if (ready && autoView) { autoView = false; startScreen(); }           // bookmark ?view=1 to start watching right away
-  if (ready && !picking && setupChecked !== (curHost || '-')) checkSetup();   // a newer TV Setup: offered once per TV (auto.js)
+  if (ready && !picking && setupChecked !== (curHost || '-')) checkSetup();   // a newer TV Setup: offered once per TV (auto.js, its setupChecked)
   if (NATIVE() && STATE.connected) { if (!quickLoaded && can('app_list')) loadQuick(); if (!scenesLoaded) { scenesLoaded = true; loadScenes(); } }   // the TV's apps from its remote link
   if (ready) { if (!quickLoaded) loadQuick(); if (currentTab === 'apps' && !appsLoaded) loadApps(); if (currentTab === 'files' && !filesLoaded) loadFiles(cwd); if (!scenesLoaded) { scenesLoaded = true; loadScenes(); } if (currentTab === 'auto' && !autoLoaded) autoTab(); if ($('#setlist').open) loadSettings(); }
   if (!ready && listenOn) stopListen('ADB chưa sẵn sàng, đã dừng nghe tiếng TV.');

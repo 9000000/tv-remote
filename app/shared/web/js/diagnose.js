@@ -48,7 +48,7 @@ function diagShow(r, s) {
     retry: () => el('button', { className: 'small primary', textContent: '🔄 Thử lại', onclick: async () => {
       await again();
       if (pc) selectTv(s.host, s.name, s.kind); else { await api('/api/adb/connect', {}, true); refresh(); } } }),
-    scan: () => pc ? el('button', { className: 'small', textContent: '🔍 Quét mạng', onclick: () => { again(); wantPick = true; cameFromTv = true; refresh(); $('#scan').click(); } }) : null,
+    scan: () => pc ? el('button', { className: 'small', textContent: '🔍 Quét mạng', onclick: () => { again(); pickOpen(); refresh(); $('#scan').click(); } }) : null,
     adbhelp: () => pc ? el('button', { className: 'small', textContent: '🧭 Bật ADB giúp tôi', onclick: () => adbHelp() }) : null,
     use: () => pc && r.found ? el('button', { className: 'small primary', textContent: '📍 Dùng địa chỉ ' + r.found.ip, onclick: () => { again(); selectTv(r.found.ip, r.found.name || s.name, r.kind); } }) : null,
   };

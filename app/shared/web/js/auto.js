@@ -176,7 +176,8 @@ async function installSetupApk() {
 }
 
 // ---------- TV Setup's own updates (SetupUpdate.kt): offered on every remote; the TV puts the old version back if a new one does not work ----------
-let setupLater = '', setupBusy = false;                               // setupChecked: core.js
+let setupLater = '', setupBusy = false, setupChecked = '';           // setupChecked: the TV whose TV Setup version was looked at
+onTvChange(() => { setupChecked = ''; put('#setupupd', 'hidden', true); });
 const SETUP_STEP = { download: 'Đang tải bản mới về TV', installing: 'Đang cài bản mới', checking: 'Đã cài, đang xem bản mới có chạy tốt không' };
 const seenUndo = () => { try { return localStorage.getItem('setupUndo') || ''; } catch (e) { return ''; } };
 async function checkSetup() {
@@ -421,6 +422,7 @@ const voiceApps = () => [...META.entries()].filter(([, m]) => m && m.label).map(
 
 setInterval(() => { if (currentTab === 'auto' && !document.hidden && !stopped && ADB.state === 'ready') loadRules(null, true); }, 20000);
 let autoLoaded = false;
+onTvChange(() => { autoLoaded = sceneNamesAsked = false; RULES = null; SCENES = []; renderScenes(); });
 function autoTab() {
   if (NATIVE()) { loadScenes(); return; }                             // LG / Samsung: scenes only, by their remote link
   if (ADB.state !== 'ready') return; autoLoaded = true; loadRules(null, true); loadScenes(); loadPickApps(); }

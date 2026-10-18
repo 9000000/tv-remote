@@ -11,7 +11,7 @@ async function runSetup(mode, choice) {
     misses = 0; j = r; log.textContent = j.log || 'Đang chạy...'; log.scrollTop = log.scrollHeight;
   }
   if (j && j.status === 'running') j = null;
-  if (j) { log.textContent = (j.log || '') + (j.status === 'done' ? '\n✅ Xong.' : '\n❌ Lỗi: ' + friendly(j.msg)); toast(j.status === 'done' ? 'Đã xong' : 'Lỗi: ' + friendly(j.msg)); quickLoaded = appsLoaded = false; applyAdb(); }
+  if (j) { log.textContent = (j.log || '') + (j.status === 'done' ? '\n✅ Xong.' : '\n❌ Lỗi: ' + friendly(j.msg)); toast(j.status === 'done' ? 'Đã xong' : 'Lỗi: ' + friendly(j.msg)); appsStale(); applyAdb(); }
   else log.textContent += '\n❌ ' + tr('mất kết nối, không rõ đã xong chưa');
   btns.forEach((b) => { b.disabled = false; });
 }
@@ -207,26 +207,23 @@ $('#quit').addEventListener('click', async () => {
 function tvChanged() {                                                // another TV: forget everything cached about the old one
   if (screenOn) stopScreen();
   if (listenOn) stopListen();
-  quickLoaded = appsLoaded = filesLoaded = scenesLoaded = autoLoaded = sceneNamesAsked = false; META.clear(); metaFailed.clear(); cwd = '/sdcard/Download'; bannerKey = ''; RULES = null; SCENES = []; setRows = []; $('#setlistbody').replaceChildren(); renderScenes(); setupChecked = ''; put('#setupupd', 'hidden', true);
-  $('#quick').replaceChildren(el('div', { className: 'muted', textContent: 'Danh sách app hiện khi ADB sẵn sàng.' }));
-  $('#appslist').replaceChildren(); $('#fileslist').replaceChildren();
+  TV_RESETS.forEach((f) => f());
   if (currentTab === 'tv') loadSteps();
   if (picking) loadTvs();
-  sleepReset();
 }
 function connecting(name, host) {                                   // covers the remote until the TV answers (see refresh)
   put('#conname', 'textContent', name); put('#constep', 'textContent', 'Đang tìm TV ở ' + host + '...');
   if (!$('#connecting').open) $('#connecting').showModal();
 }
-$('#concancel').addEventListener('click', () => { justPicked = null; $('#connecting').close(); wantPick = true; refresh(); });
+$('#concancel').addEventListener('click', () => { pickCancel(); $('#connecting').close(); refresh(); });
 $('#connecting').addEventListener('cancel', (e) => { e.preventDefault(); $('#concancel').click(); });   // Esc: the same as Cancel
 async function selectTv(host, name, kind) {
   const r = await api('/api/tv/select', kind ? { host, kind } : { host }); if (!r) return;
-  connecting(name || host, host); wantPick = false; cameFromTv = false; justPicked = host; pickedAt = Date.now(); showTab('remote'); await sleep(1200); await refresh(); loadSteps();
+  connecting(name || host, host); pickGo(host); showTab('remote'); await sleep(1200); await refresh(); loadSteps();
 }
-$('#switchtv').addEventListener('click', () => { wantPick = true; cameFromTv = true; refresh(); });
-$('#pickback').addEventListener('click', () => { wantPick = false; cameFromTv = false; refresh(); });
-const openTv = (host, current, name) => { if (host === current) { wantPick = false; cameFromTv = false; justPicked = host; pickedAt = Date.now(); refresh(); } else selectTv(host, name); };
+$('#switchtv').addEventListener('click', () => { pickOpen(); refresh(); });
+$('#pickback').addEventListener('click', () => { pickLeave(); refresh(); });
+const openTv = (host, current, name) => { if (host === current) { pickGo(host); refresh(); } else selectTv(host, name); };
 let savedTvs = [];                                                     // the saved list, for the scan to know a TV's other address
 async function loadTvs() {
   const r = await api('/api/tvs', null, true); if (!r) return;
@@ -323,7 +320,7 @@ async function wirelessPair() {
     const r = await api('/api/adb/pair', { host: m[1] || '', port: +m[2], code: code.hidden ? '' : code.value, connectPort: +port.value || 0 });
     if (!r) { status.textContent = ''; return; }
     if (r.needPort) { status.textContent = 'Đã ghép. Nhập cổng kết nối (ở màn hình Gỡ lỗi không dây, dưới “Địa chỉ IP và cổng”) rồi bấm Ghép lại.'; code.value = ''; code.hidden = true; port.hidden = false; port.focus(); return; }
-    ADB = { state: r.state }; bannerKey = ''; $('#assist').close(); toast('Đã ghép và kết nối'); await refresh();
+    adbNow({ state: r.state }); $('#assist').close(); toast('Đã ghép và kết nối'); await refresh();
   };
   port.hidden = true;
   assistShow('Ghép bằng Gỡ lỗi không dây', say(WIRELESS_STEPS), UI.line(addr), UI.line(code), UI.line(port), status,
@@ -336,7 +333,7 @@ const DL_TIP = 'Cài TV Setup bằng tay: trên TV cài app Downloader từ CH P
 const ADB_STEPS = '1. Trong Cài đặt: Tùy chọn thiết bị (hoặc Hệ thống) → Giới thiệu → bấm OK 7 lần vào “Bản dựng”.\n2. Quay lại, vào Tùy chọn nhà phát triển → bật “Gỡ lỗi USB” (hoặc “Gỡ lỗi ADB”).\n3. Trên TV tích “Luôn cho phép” rồi chọn OK.\n\nNếu TV đòi “mật khẩu ADB” khi bấm 7 lần: dùng cách “Tự động: cài TV Setup lên TV”.';
 function adbSteps() {
   assistShow('Bật Gỡ lỗi ADB trên TV', say('Dùng các nút mũi tên và OK ở tab Remote, hoặc remote của TV:'), say(ADB_STEPS),
-    row(act('🔌 Đã bật, kết nối', async () => { const r = await api('/api/adb/connect', {}); if (r) { ADB = r; bannerKey = ''; await refresh(); } }, 'primary'), act('← Các cách khác', async () => adbHelp())));
+    row(act('🔌 Đã bật, kết nối', async () => { const r = await api('/api/adb/connect', {}); if (r) { adbNow(r); await refresh(); } }, 'primary'), act('← Các cách khác', async () => adbHelp())));
 }
 function lookOnHome() {
   assistShow('TV không mở Cài đặt theo lệnh', say('Tìm trên màn hình chính của TV, dùng các nút mũi tên ở tab Remote: biểu tượng hồ sơ/tài khoản hoặc bánh răng (thường ở góc trên) → Cài đặt → “Cài đặt thiết bị”.\n\nBox FPT Play: mở bảng Quản lý (hồ sơ) → Cài đặt → Cài đặt thiết bị.'),
