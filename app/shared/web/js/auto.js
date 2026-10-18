@@ -22,9 +22,11 @@ function renderRules() {
   if (r.setup === 'busy') {                                            // being updated or starting: no button, asked again soon
     $('#rulecards').hidden = true;
     box.replaceChildren(UI.say('TV Setup đang khởi động lại (vd vừa cập nhật), đợi chút…'));
-    clearTimeout(renderRules.again); renderRules.again = setTimeout(() => loadRules(null, true), 4000);
+    clearTimeout(renderRules.again); renderRules.busy = (renderRules.busy || 0) + 1;   // an am broadcast each time: 4 s, slower as it goes on, and only while this tab is looked at
+    renderRules.again = setTimeout(() => { if (currentTab === 'auto' && !document.hidden) loadRules(null, true); }, Math.min(30000, 4000 * renderRules.busy));
     return;
   }
+  renderRules.busy = 0;
   if (r.setup || r.error) {                                            // no TV Setup on the TV (or one too old): say what it brings and offer it
     $('#rulecards').hidden = true;
     box.replaceChildren(UI.card('😴 Hẹn giờ tắt · 🌙 Giờ đi ngủ · ⏳ Giới hạn app', {},

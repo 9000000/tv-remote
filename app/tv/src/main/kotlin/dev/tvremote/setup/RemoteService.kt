@@ -302,7 +302,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     private fun inUse(wait: Boolean = true) {
         lastUse = System.currentTimeMillis()
         lastSeen = lastUse
-        if (tv == null && resting) connect()
+        if (tv == null) { ui.removeCallbacks(retry); connect() }         // resting, or waiting out a failure: someone wants it now
         if (wait && adbState == "connecting") for (i in 0 until 40) { // up to 4 s, usually about a second
             if (adbState != "connecting") break
             try { Thread.sleep(100) } catch (e: InterruptedException) { break }
@@ -325,6 +325,9 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     private val stats by lazy { Stats(this) }
     private var usageAllowed = false
 
+    private var retryMs = 5000L
+    private val retry = Runnable { connect() }
+
     private val rest = object : Runnable {
         override fun run() {
             if (stopping) return
@@ -345,6 +348,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             "allow" -> adbState = "allow"                             // the TV is asking "Allow USB debugging?"
             "live" -> {
                 adbState = "ready"
+                retryMs = 5000
                 if (!saidAlive && serving) { saidAlive = true; afterUpdate() }
                 if (!KeepAdb.can(this)) Thread({ try { link?.get()?.let { KeepAdb.grant(this, it) } } catch (e: Exception) { } }, "grant").apply { isDaemon = true }.start()
             }
@@ -352,7 +356,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 if (resting) return                                   // we closed it ourselves
                 adbState = if (key == "error") "error" else "connecting"
                 tv = null
-                ui.postDelayed({ connect() }, 5000)
+                ui.removeCallbacks(retry); ui.postDelayed(retry, retryMs)
+                retryMs = minOf(retryMs * 2, 5 * 60_000L)              // ADB off for good: every 5 min at most, not a session every 5 s forever; a use tries at once
             }
         }
     }

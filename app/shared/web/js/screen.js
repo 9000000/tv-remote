@@ -26,10 +26,10 @@ async function snapOnce() {
   } catch { return 'Không gọi được server'; }
 }
 async function snapLoop(gen) {
-  setScreenInfo('Ảnh chụp, làm mới khoảng 1,5 giây/ảnh. Video có bản quyền (Netflix...) hiện màu đen.');
+  setScreenInfo('Ảnh chụp, làm mới khoảng 2 giây/ảnh. Video có bản quyền (Netflix...) hiện màu đen.');
   while (screenOn && gen === screenGen) {
     const b = await snapOnce(); if (gen !== screenGen) return;
-    if (b instanceof Blob) { showFrame(b); await sleep(150); } else { setScreenPlaceholder(b); await sleep(3000); }
+    if (b instanceof Blob) { showFrame(b); await sleep(1000); }   // screencap is a full PNG on the TV: back to back it kept the TV busy else { setScreenPlaceholder(b); await sleep(3000); }
   }
 }
 // Every core sends H.264 as scrcpy makes it. Packets: 1 byte kind (0 size, 1 codec config, 2 key frame, 3 frame, 4 nothing

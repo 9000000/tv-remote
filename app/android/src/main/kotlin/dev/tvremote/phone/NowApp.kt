@@ -67,7 +67,7 @@ internal class NowApp(private val a: MainActivity) {
             val tv = a.tv
             val basic = a.basic
             if (!a.foreground) fine = System.currentTimeMillis()      // away counts as fine: the 5 s start on return
-            if (!a.foreground || a.remote.visibility != View.VISIBLE || host == null || asking) { if (host == null) show("", "", null); return }
+            if (!a.foreground || a.remote.visibility != View.VISIBLE || a.covered() || host == null || asking) { if (host == null) show("", "", null); return }
             asking = true
             val canAsk = basic != null || tv?.ready() == true
             work.execute {

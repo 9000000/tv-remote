@@ -32,7 +32,7 @@ $('#freeram').addEventListener('click', async () => {
   if (r) { toast(tr('Đã lấy lại') + ' ' + r.freed + ' MB · ' + tr('còn trống') + ' ' + r.after + ' MB'); loadHealth(); loadProcs(true); }
 });
 // The task manager: the apps holding memory, what each is doing, and Stop where stopping cannot hurt the TV (the server
-// decides which: Manage.keepWhy). dumpsys meminfo is slow on a TV, so at most every 15 s while the tab is open.
+// decides which: Manage.keepWhy). dumpsys meminfo is slow on a TV, so at most every 45 s while the tab is open.
 const PROC_STATE = { front: 'Đang hiện', bg: 'Chạy ngầm', home: 'Màn hình chính', cached: 'Đang nghỉ', system: 'Hệ thống' };
 const PROC_KEEP = { us: 'TV Remote cần app này', home: 'Màn hình chính của TV', keyboard: 'Bàn phím của TV', system: 'Một phần của Android' };
 let procsAt = 0, procsBusy = false;
@@ -465,4 +465,4 @@ async function loadHealth() {
     ['Màn hình', h.screen + (h.fps ? ' · ' + h.fps + ' Hz' : '')], ['Mật độ điểm ảnh', h.density ? h.density + ' dpi' : ''],
   ]);
 }
-setInterval(() => { if (currentTab === 'health' && !document.hidden && !stopped) { loadHealth(); loadSleep(); } }, 5000);
+setInterval(() => { if (currentTab === 'health' && !document.hidden && !stopped) { loadHealth(); loadSleep(); } }, 10000);   // each is top + 3 dumpsys on the TV

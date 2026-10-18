@@ -105,7 +105,7 @@ internal class PlayingBar(private val a: MainActivity) {
     private val tick = object : Runnable {
         override fun run() {
             val tv = a.tv
-            val looking = a.foreground && a.remote.visibility == View.VISIBLE && a.basic == null && tv != null && tv.ready()
+            val looking = a.foreground && a.remote.visibility == View.VISIBLE && !a.covered() && a.basic == null && tv != null && tv.ready()
             val listening = a.listen && a.basic == null && tv != null && tv.ready()   // the phone's media controls show it too
             if (looking || !a.foreground) fine = System.currentTimeMillis()  // away counts as fine: the 5 s start on return
             if (!looking && !listening) {

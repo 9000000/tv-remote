@@ -23,7 +23,7 @@ async function plPoll() {
   if (looking) { const o = await call('/api/playing', null, true); if (o) { PL.o = o; PL.at = performance.now(); } else PL.o = { state: 'none' }; }
   else if (performance.now() - PL.fine > 5000) PL.o = { state: 'none' };   // kept while the page is hidden, so it is there at once on return
   plDraw();
-  PL.timer = setTimeout(plPoll, looking ? 1000 : 3000);
+  PL.timer = setTimeout(plPoll, looking && PL.o.state !== 'none' ? 1000 : 3000);   // nothing playing: every 3 s is soon enough
 }
 // A press is busy until the TV's own answer shows it done (state or track changed, 2.5 s at most): a second press meanwhile
 // is ignored, so presses cannot pile up faster than the TV's media session follows. No icon is flipped before the TV says so.

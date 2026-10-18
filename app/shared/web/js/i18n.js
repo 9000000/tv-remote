@@ -79,7 +79,7 @@
     'chế độ nét làm TV chậm hơn rõ rệt': 'sharp mode slows the TV noticeably', 'chế độ nhẹ cho TV': 'light on the TV',
     'Bấm “Xem” để xem màn hình TV.': 'Press “Watch” to see the TV’s screen.',
     'TV không cho chiếu hình lên đây': 'The TV does not let its picture show here', '(do chip của TV hoặc phim có bản quyền)': '(the TV\'s chip, or a copy-protected film)',
-    'Ảnh chụp, làm mới khoảng 1,5 giây/ảnh. Video có bản quyền (Netflix...) hiện màu đen.': 'Screenshots, refreshed about every 1.5 seconds. Copy-protected video (Netflix...) shows as black.',
+    'Ảnh chụp, làm mới khoảng 2 giây/ảnh. Video có bản quyền (Netflix...) hiện màu đen.': 'Screenshots, refreshed about every 2 seconds. Copy-protected video (Netflix...) shows as black.',
     'Đang mở luồng trực tiếp...': 'Opening the live stream...', 'Đang lấy hình...': 'Getting the picture...',
     'ADB chưa sẵn sàng, đã dừng xem màn hình.': 'ADB is not ready, stopped viewing.',
     // remote

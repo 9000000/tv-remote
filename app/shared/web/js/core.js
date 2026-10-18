@@ -448,7 +448,7 @@ function applyAdb() {
 // ---------- the TV asks "Allow USB debugging?" for another device: answer it from here (for its key only) ----------
 let askSeen = '', askAt = 0;
 async function checkAsk() {
-  if (ADB.state !== 'ready' || document.hidden || Date.now() - askAt < 7000) return;
+  if (ADB.state !== 'ready' || document.hidden || Date.now() - askAt < 20000) return;   // dumpsys window on the TV each time; another device asking is rare
   askAt = Date.now();
   const r = await fetch('/api/adb/prompt').then((x) => x.ok ? x.json() : null).catch(() => null);
   const fp = (r && r.fingerprint) || '';

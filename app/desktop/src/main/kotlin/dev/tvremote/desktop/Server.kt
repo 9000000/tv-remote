@@ -299,8 +299,10 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         if (adb == "ready" || adb == "unauthorized") keepTrusted(s, adb)
         val o = s.state()
         val l = s.link
-        val front = s.front.get(if (adb == "ready" && l != null) { c -> l.get().shell(c) } else null)
-        if (o.isNull("app") && front.isNotEmpty()) o.put("app", front)
+        if (o.isNull("app")) {                                         // the remote link said it: no dumpsys on the TV
+            val front = s.front.get(if (adb == "ready" && l != null) { c -> l.get().shell(c) } else null)
+            if (front.isNotEmpty()) o.put("app", front)
+        }
         return Response.json(o.put("adb", JSONObject().put("state", adb)).put("name", entry?.optString("name") ?: "").put("saved", entry != null)
             .put("video", "h264"))                                    // the picture comes as H.264 (js/screen.js h264Loop), as from TV Setup
     }

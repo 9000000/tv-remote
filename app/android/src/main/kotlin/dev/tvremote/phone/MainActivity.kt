@@ -109,7 +109,11 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal lateinit var listenChip: android.widget.TextView
     internal lateinit var hqBtn: android.widget.TextView
     internal lateinit var boostBtn: android.widget.TextView
-    private var picShown = false                                      // the picture's first frame came
+    private var picShown = false
+    private var wasCovered = false
+    /** Something laid over the remote hides the picture and the now playing / now open lines: nothing to ask the TV for. */
+    internal fun covered() = (::managing.isInitialized && managing.shown) || (::settings.isInitialized && settings.visibility == View.VISIBLE) ||
+        (::about.isInitialized && about.visibility == View.VISIBLE)                                      // the picture's first frame came
     internal lateinit var topBar: LinearLayout                         // the TV's name and state, with the buttons beside or under it
     internal lateinit var basicBar: Button
 
@@ -193,6 +197,12 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         root.addView(remote, FrameLayout.LayoutParams(-1, -1))
         waiting = buildWaiting()
         root.addView(waiting, FrameLayout.LayoutParams(-1, -1))
+        root.viewTreeObserver.addOnGlobalLayoutListener {              // Manage, Settings or About laid over the remote: the TV need not encode a picture nobody sees
+            val c = covered()
+            if (c == wasCovered) return@addOnGlobalLayoutListener
+            wasCovered = c
+            if (c) stopPicture() else { picTries = 0; startPicture() }
+        }
         settings = buildSettings()
         root.addView(settings, FrameLayout.LayoutParams(-1, -1))
         about = buildAbout()
@@ -232,8 +242,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     }
 
     /**
-     * Not watching: stop the encoder on the TV. The keys' session costs the TV nothing, so it stays, and coming back from
-     * another app needs no new connection; only after a long while away is it closed.
+     * Not watching: stop the encoder on the TV. The keys' session stays (an idle scrcpy process on the TV, light), so coming
+     * back from another app needs no new connection; only after a long while away is it closed.
      */
     override fun onStop() {
         super.onStop()
@@ -383,6 +393,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
      *  scrcpy places a finger by the size of the picture it sends. */
     internal fun startPicture() {
         val h = host ?: return
+        if (covered()) return
         if (pic != null || tv == null || !video || bgListen || !surfaceReady) return
         val dm = resources.displayMetrics
         pic = Tv(this, h, surface.holder.surface, prefs.getInt("quality", 1), maxOf(dm.widthPixels, dm.heightPixels), false, picListener,

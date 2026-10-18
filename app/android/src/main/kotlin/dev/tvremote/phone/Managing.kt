@@ -40,6 +40,7 @@ import org.json.JSONObject
  */
 internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpServer.Handler {
     private val view: LinearLayout = a.col()
+    val shown get() = view.visibility == View.VISIBLE
     private val web: WebView
     private val token = UUID.randomUUID().toString().replace("-", "")
     private var http: HttpServer? = null
@@ -128,6 +129,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
                 if (then != null) web.evaluateJavascript(then, null)
             }
             view.visibility = View.VISIBLE
+            web.onResume()
         } catch (e: Exception) {
             a.message(t("Không mở được trang quản lý: ", "Could not open the manage page: ") + e.message, true)
         }
@@ -147,6 +149,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
     /** Back to the remote, which then shows what came of a TV Setup update started here (SetupBanner.kt). */
     private fun hide() {
         view.visibility = View.GONE
+        web.onPause()                                                 // a GONE WebView still says document.hidden = false: its polls (Health every 5 s) would go on asking the TV
         web.evaluateJavascript("(function(){ try { return localStorage.getItem('setupUndo') || '' } catch (e) { return '' } })()") { v ->
             val seen = v?.trim('"') ?: ""                             // "Got it" on the page counts on the remote too
             if (seen.isNotEmpty()) a.prefs.edit().putString("setupUndo", seen).apply()
@@ -163,6 +166,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
         manage?.onWork = null
         a.working("")
         view.visibility = View.GONE
+        web.onPause()
         link?.close()
         link = null
         labels = null

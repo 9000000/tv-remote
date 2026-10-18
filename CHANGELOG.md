@@ -12,6 +12,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TCL (Android 11): TV Setup bị tắt rồi sập mỗi lần app điện thoại / máy tính mở lại nó (TCL chặn chạy nền dạng foreground, Android giết app sau 10 giây). Giờ app mở TV Setup bằng đường thường và đưa nó vào danh sách không bị tiết kiệm pin, nên không sập và ít bị TV tắt hơn.
 - Màn remote: “Thêm phím” và bàn số mở / đóng trượt mượt, phần bên dưới trượt theo thay vì nhảy (web và app điện thoại). TV Setup: mỗi dòng trong ô Hoạt động có giờ.
 - 🎧 Nút 🔊 cạnh HQ: thanh kéo ×0.5 … ×10 cho tiếng TV to hơn trên điện thoại / máy tính, có bộ giới hạn để không rè.
+- Nhẹ cho TV hơn:
+  - App điện thoại: Quản lý, Cài đặt hay Giới thiệu che remote thì TV ngừng mã hóa hình, ngừng hỏi app đang mở / đang phát. Đóng Quản lý thì trang của nó cũng ngừng hỏi TV (Sức khỏe hỏi mỗi 5 giây kể cả khi đã đóng).
+  - Trang web: Sức khỏe 10 giây/lần, chế độ Ảnh chụp 1 ảnh mỗi ~2 giây, "Cho phép gỡ lỗi USB?" 20 giây/lần, đang phát 3 giây/lần khi không phát gì; app máy tính không đọc app đang mở qua ADB khi TV đã tự báo.
+  - TV Setup: ADB lỗi thì thử lại giãn dần tới 5 phút một lần, thay vì mở phiên mới mỗi 5 giây mãi; có người bấm thì thử ngay.
 - Chữ chạy (đang phát, tên app…) hết khựng, nhất là trên app máy tính cho Mac.
 - Nút Nói trên app máy tính và trang web của TV làm như app điện thoại: nói (trình duyệt tự nhận giọng) hoặc gõ vào ô Hỏi TV; giữ nút để mở Trợ lý của TV.
 - Chọn bộ mã hóa Phần cứng / Phần mềm mà 10 giây chưa thấy hình: app hỏi có chuyển về Tự chọn không.
@@ -25,6 +29,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TCL (Android 11): TV Setup was stopped, then crashed each time the phone or computer app started it again (TCL refuses a foreground service, Android kills the app 10 s later). The apps now start it the plain way and put it on the battery allow list: no crash, and the TV stops it less.
 - Remote: “More keys” and the number pad slide open and shut, what is below follows instead of jumping (web and phone app). TV Setup: each line in Activity has its time.
 - 🎧 A 🔊 button next to HQ: a ×0.5 … ×10 slider for the TV's sound on the phone / computer, with a limiter so it does not crack.
+- Lighter on the TV:
+  - Phone app: with Manage, Settings or About over the remote, the TV stops encoding the picture and is no longer asked what is open / playing. Closing Manage also stops its page asking the TV (Health asked every 5 s even when closed).
+  - Web page: Health every 10 s, Screenshots one about every 2 s, "Allow USB debugging?" every 20 s, now playing every 3 s when nothing plays; the computer app no longer reads the open app over ADB when the TV already says it.
+  - TV Setup: with ADB failing it retries less and less often, up to every 5 min, instead of a new session every 5 s forever; a key press tries at once.
 - Running lines of text (now playing, app names…) no longer hitch, above all in the Mac computer app.
 - The Speak button on the computer app and the TV's web page works as on the phone app: speak (the browser hears it) or type in the Ask the TV box; hold it to open the TV's Assistant.
 - With the Hardware / Software encoder picked by hand and no picture after 10 seconds, the app offers to go back to Auto.
