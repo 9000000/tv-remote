@@ -23,6 +23,7 @@
 .rrow.three { grid-template-columns:repeat(3,1fr); }
 .rrow.four { grid-template-columns:repeat(4,1fr); }
 #more[hidden] { display:none; }
+#more { margin-top:-8px; }   /* more rows of the row above it: its 8px, not the card's 16px between parts */
 .sliding { overflow:hidden; }
 .rb { min-height:52px; border-radius:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:0; }
 .rb.lab { min-height:60px; }

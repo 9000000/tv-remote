@@ -285,6 +285,7 @@ internal fun MainActivity.buildRemote() {
     val moreBtn = icon("@more", t("Thêm phím", "More keys"), BTN)
     first.addView(moreBtn, cell(58, true))
     controls.addView(captioned(first))
+    moreBtn.caption = t("Thêm", "More")                               // short under the icon; read out in full
     val more = col()
     for (i in remoteSpec().rows["more"]!!.indices) more.addView(remoteRow("more", i, 58), gap(8))    // remote.json (PhoneRemote.kt)
     val showMore = { on: Boolean ->

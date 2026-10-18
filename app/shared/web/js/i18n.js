@@ -834,6 +834,7 @@
   function visit(node) {
     if (node.nodeType === 3) { const v = node.nodeValue, t = tr(v); if (t !== v) node.nodeValue = t; return; }
     if (node.nodeType !== 1 || node.tagName === 'SCRIPT' || node.tagName === 'STYLE') return;
+    if (node.dataset.en) { node.textContent = node.dataset.en; return; }   // words that read one way here, another elsewhere: "Thêm" is More on the remote, Add on a card
     for (const a of ATTRS) { const v = node.getAttribute(a); if (v) { const t = tr(v); if (t !== v) node.setAttribute(a, t); } }
     for (const c of node.childNodes) visit(c);
   }
