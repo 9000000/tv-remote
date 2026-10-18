@@ -4,6 +4,18 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+
+- Tất cả cài đặt: Gỡ lỗi ADB và Gỡ lỗi không dây bật lên được (không tắt được, để không mất kết nối); TV tự tắt lại (Gỡ lỗi không dây cần Wi‑Fi) thì app nói rõ. Độ sáng là thanh kéo. Âm lượng phim, nhạc và âm lượng hệ thống chỉnh bằng − / + qua lệnh âm lượng thật (TV không nhận lệnh thì bấm phím âm lượng). Thêm tên và nhóm mới “HDMI & loa ngoài” (HDMI‑CEC, eARC), bấm giữ, tốc độ con trỏ, thông báo nổi, VPN luôn bật; cờ nhà máy và công tắc riêng của TCL chỉ xem.
+- Hàng tab và hàng tab con (Sức khỏe: Hiện tại … Khả năng) không còn đẩy chữ ra ngoài khi màn hình hẹp hoặc chữ to: hàng cuộn ngang, cạnh còn nội dung có lớp mờ, tab đang chọn tự cuộn vào giữa. Tab “Tệp · Cài” đổi tên thành “Tệp”.
+
+**English**
+
+- All settings: ADB and Wireless debugging can be turned on (never off, so the remotes are not cut off); when the TV turns it straight back off (Wireless debugging needs Wi‑Fi) the app says so. Brightness is a slider. Media and system volume change with − / + through the real volume command (the volume keys where the TV ignores it). New names and a new group “HDMI & audio out” (HDMI‑CEC, eARC), long‑press delay, pointer speed, pop‑up notifications, always‑on VPN; factory flags and TCL's own switches are view only.
+- The tab bar and the sub‑tabs (Health: Now … Capabilities) no longer push words out on a narrow screen or with large text: the row scrolls sideways, a fade shows the side with more, the selected tab scrolls into the middle. The “Files · Install” tab is now “Files”.
+
 ## 0.9.0 - 2026-10-18
 
 Web 0.9.0 · app điện thoại 0.9.0 · app TV 0.9.0

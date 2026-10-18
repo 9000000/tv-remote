@@ -109,10 +109,10 @@ new MutationObserver((list) => { for (const m of list) m.type === 'characterData
 
 // a row of chips wider than its card scrolls sideways: the chosen one brought into view, the side with more faded, and the
 // mouse wheel turned sideways over it (a computer has no swipe)
-const CHIP_ROWS = '.places, .fchips', chipSeen = new WeakSet();
+const CHIP_ROWS = '.places, .fchips, .seg, nav.tabs', chipSeen = new WeakSet();
 const chipEdges = (r) => { const more = r.scrollWidth - r.clientWidth > 2;
   r.classList.toggle('more-l', more && r.scrollLeft > 2); r.classList.toggle('more-r', more && r.scrollLeft < r.scrollWidth - r.clientWidth - 2); };
-const chipFit = (r) => { const on = r.querySelector(':scope > .on');
+const chipFit = (r) => { const on = r.querySelector(':scope > .on, :scope > [aria-selected=true]');
   if (on && r.scrollWidth > r.clientWidth) r.scrollLeft = Math.max(0, on.offsetLeft - r.offsetLeft - (r.clientWidth - on.offsetWidth) / 2);
   chipEdges(r); };
 const chipObs = new ResizeObserver((list) => list.forEach((e) => chipFit(e.target)));
@@ -133,4 +133,4 @@ function chipRows(n) {
 }
 chipRows(document.body);
 new MutationObserver((list) => { for (const m of list) { m.addedNodes.forEach(chipRows); if (m.type === 'attributes' && !m.target.matches(CHIP_ROWS)) chipRows(m.target); } })   // not the row's own fade classes
-  .observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
+  .observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'aria-selected'] });

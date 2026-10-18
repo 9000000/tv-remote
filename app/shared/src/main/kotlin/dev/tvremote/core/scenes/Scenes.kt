@@ -146,15 +146,17 @@ object Scenes {
         throw IllegalArgumentException("this app cannot be opened (no launcher screen)")
     }
 
-    /** Sets the media volume. `cmd media_session` is there from Android 10; older TVs have `media`. */
-    fun volume(sh: (String) -> String, level: Int) {
+    /** Sets the media volume ([stream] 3; the settings list sets the others too). `cmd media_session` is there from Android 10;
+     *  older TVs have `media`. */
+    fun volume(sh: (String) -> String, level: Int, stream: Int = 3) {
         val bad = { out: String -> out.contains("Exception") || out.contains("Error") || out.contains("Unknown") || out.contains("not found") }
-        val now = { Regex("volume is (\\d+)").find(sh("cmd media_session volume --stream 3 --get 2>&1"))?.groupValues?.get(1)?.toIntOrNull() }
-        if (bad(sh("cmd media_session volume --stream 3 --set $level 2>&1")) && bad(sh("media volume --stream 3 --set $level 2>&1")))
+        val now = { Regex("volume is (\\d+)").find(sh("cmd media_session volume --stream $stream --get 2>&1"))?.groupValues?.get(1)?.toIntOrNull() }
+        if (bad(sh("cmd media_session volume --stream $stream --set $level 2>&1")) && bad(sh("media volume --stream $stream --set $level 2>&1")))
             throw IllegalArgumentException("volume command failed")
         // Some TVs take the command and keep their volume (HDMI-CEC, the Google TV emulator): then the keys, one step each
         val got = now() ?: return
         if (got == level) return
+        if (stream != 3) throw IllegalArgumentException("this TV keeps that volume itself")   // the keys move the media volume only
         val code = if (level > got) 24 else 25
         sh((1..minOf(Math.abs(level - got), 30)).joinToString("; ") { "input keyevent $code" })
     }

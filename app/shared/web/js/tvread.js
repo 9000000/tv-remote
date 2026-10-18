@@ -153,7 +153,7 @@
   // 🗂️ The settings people look for, in words, by topic, their values read out (1 → On, 600000 → 10 min); the rest of Android's
   // hundreds of internal keys go under "Other", their names made readable. [group, vi, en, kind]: kind says how to read the value.
   const SET_GROUPS = { screen: ['Màn hình & chờ', 'Screen & sleep'], net: ['Mạng', 'Network'], dev: ['Nhà phát triển & ADB', 'Developer & ADB'],
-    apps: ['App, bàn phím & giọng nói', 'Apps, keyboard & voice'], sound: ['Âm thanh', 'Sound'], time: ['Ngôn ngữ & giờ', 'Language & time'],
+    apps: ['App, bàn phím & giọng nói', 'Apps, keyboard & voice'], sound: ['Âm thanh', 'Sound'], hdmi: ['HDMI & loa ngoài', 'HDMI & audio out'], time: ['Ngôn ngữ & giờ', 'Language & time'],
     a11y: ['Trợ năng', 'Accessibility'], device: ['Thiết bị', 'Device'], other: ['Khác (kỹ thuật)', 'Other (technical)'] };
   const SET_INFO = {
     screen_off_timeout: ['screen', 'Tắt màn hình sau', 'Screen off after', 'ms'], sleep_timeout: ['screen', 'Ngủ sau', 'Sleep after', 'ms'],
@@ -189,6 +189,19 @@
     accessibility_captioning_enabled: ['a11y', 'Phụ đề', 'Captions', 'bool'],
     device_name: ['device', 'Tên thiết bị', 'Device name', 'text'], bluetooth_name: ['device', 'Tên Bluetooth', 'Bluetooth name', 'text'],
     bluetooth_address: ['device', 'Địa chỉ Bluetooth', 'Bluetooth address', 'text'], android_id: ['device', 'Mã Android', 'Android ID', 'text'],
+    hdmi_control_enabled: ['hdmi', 'HDMI‑CEC (điều khiển qua HDMI)', 'HDMI‑CEC (control over HDMI)', 'bool'],
+    hdmi_control_volume_control_enabled: ['hdmi', 'Chỉnh âm lượng loa ngoài qua CEC', 'Audio system volume over CEC', 'bool'],
+    hdmi_control_auto_wakeup_enabled: ['hdmi', 'Thiết bị HDMI bật TV', 'HDMI devices turn the TV on', 'bool'],
+    hdmi_control_auto_device_off_enabled: ['hdmi', 'Tắt TV thì tắt thiết bị HDMI', 'TV off turns HDMI devices off', 'bool'],
+    earc_control_enabled: ['hdmi', 'eARC', 'eARC', 'bool'], earc_status: ['hdmi', 'Trạng thái eARC', 'eARC status', 'num'],
+    nrdp_external_surround_sound_enabled: ['sound', 'Netflix: âm thanh vòm ra loa ngoài', 'Netflix: surround to audio system', 'bool'],
+    long_press_timeout: ['a11y', 'Thời gian bấm giữ', 'Long‑press delay', 'press'], pointer_speed: ['a11y', 'Tốc độ con trỏ', 'Pointer speed', 'speed'],
+    show_ime_with_hard_keyboard: ['apps', 'Bàn phím ảo khi có bàn phím thật', 'On‑screen keyboard with a real keyboard', 'bool'],
+    heads_up_notifications_enabled: ['apps', 'Thông báo nổi', 'Pop‑up notifications', 'bool'], notification_badging: ['apps', 'Chấm thông báo trên icon', 'Notification dots', 'bool'],
+    tts_default_synth: ['apps', 'Đọc chữ thành giọng nói', 'Text‑to‑speech engine', 'comp'], enabled_input_methods: ['apps', 'Bàn phím đã bật', 'Keyboards turned on', 'comp'],
+    always_on_vpn_app: ['net', 'VPN luôn bật', 'Always‑on VPN', 'comp'], always_on_vpn_lockdown: ['net', 'Chặn mạng khi VPN rớt', 'Block the network without VPN', 'bool'],
+    screensaver_default_component: ['screen', 'Trình bảo vệ mặc định', 'Default screen saver', 'comp'],
+    maintenance_window: ['device', 'Giờ bảo trì', 'Maintenance hours', 'text'], tv_user_setup_complete: ['device', 'Đã cài đặt TV lần đầu', 'TV first setup done', 'bool'],
     boot_count: ['device', 'Số lần khởi động', 'Times started', 'num'], user_setup_complete: ['device', 'Đã cài đặt lần đầu', 'First setup done', 'bool'],
   };
   const SET_KEYS = Object.keys(SET_INFO);
@@ -209,6 +222,8 @@
       case 'scale': return n === 0 ? off : Number.isFinite(n) ? n + '×' : v;
       case 'pct255': return Number.isFinite(n) ? Math.round(n / 2.55) + '%' : v;
       case 'dpi': return v + ' dpi';
+      case 'press': return Number.isFinite(n) ? (n / 1000).toLocaleString(vi ? 'vi' : 'en') + (vi ? ' giây' : ' s') : v;
+      case 'speed': return Number.isFinite(n) ? (n > 0 ? '+' + n : String(n)) : v;
       case 'dns': return { off: off, opportunistic: vi ? 'Tự động' : 'Automatic', hostname: vi ? 'Máy chủ riêng' : 'Own server' }[v] || v;
       case 'loc': return [off, vi ? 'Chỉ thiết bị' : 'Device only', vi ? 'Tiết kiệm pin' : 'Battery saving', vi ? 'Chính xác cao' : 'High accuracy'][n] || v;
       case 'surround': return [vi ? 'Tự động' : 'Automatic', vi ? 'Không bao giờ' : 'Never', vi ? 'Luôn luôn' : 'Always', vi ? 'Tự chọn' : 'Manual'][n] || v;
@@ -231,10 +246,15 @@
 
   // ✎ What the list lets a person change: simple settings, by a choice or a toggle. SET_LOCKED is TvShell.SET_LOCKED (the
   // server checks it too): settings that could cut the TV off from the remotes or break it stay read-only, with a 🔒.
-  const SET_LOCKED = /^.*(adb|develop|debug|provision|setup|verif|install|package|vpn|dns|proxy|wifi|airplane|bluetooth|mobile|tether|captive|ntp|lock|password|policy|service|input_method|accessibility_enabled|touch_exploration|location|android_id|_uri|component|hidden_api|database|locale|density|volume|boot|hdr|formats|user).*$/i;
+  const SET_LOCKED = /^.*(adb|develop|debug|provision|setup|verif|install|package|vpn|dns|proxy|wifi|airplane|bluetooth|mobile|tether|captive|ntp|lock|password|policy|service|input_method|accessibility_enabled|touch_exploration|location|android_id|_uri|component|hidden_api|database|locale|density|volume|boot|hdr|formats|user|fac|zram|usb_mass|netstats|standby|safe_volume|shop|tuner|tcl|miracast|always_on_vpn|maintenance|earc_status).*$/i;
+  // ADB and Wireless debugging: on, never off (TvShell.ON_ONLY): turning them on only adds a way in for the remotes
+  const ON_ONLY = { adb_enabled: '1', adb_wifi_enabled: '1' };
+  const VOLUME = /^volume_(system|music)$/;                    // the others follow the media volume on a TV
   const NUMBER = /^-?\d+(\.\d+)?$/;
   // { locked } · { kind: 'bool', on, off } · { kind: 'pick', values } · { kind: 'text', tech } (tech: Android's own internal key) · {} nothing simple to set
   function settingEdit(s) {
+    if (ON_ONLY[s.name]) return s.value === ON_ONLY[s.name] || s.table !== 'global' ? { locked: true } : { kind: 'turnon', on: ON_ONLY[s.name] };
+    if (VOLUME.test(s.name) && s.table === 'system') return { kind: 'step', min: 0, max: 100 };   // through the volume command (TvShell.VOLUME)
     if (SET_LOCKED.test(s.name)) return { locked: true };
     const i = SET_INFO[s.name], kind = i ? i[3] : NUMBER.test(s.value) ? 'raw' : '';
     const words = s.value === 'true' || s.value === 'false';
@@ -242,8 +262,10 @@
       case 'bool': return { kind: 'bool', on: words ? 'true' : s.name === 'stay_on_while_plugged_in' ? '7' : '1', off: words ? 'false' : '0' };   // 7: on every kind of power
       case 'ms': return { kind: 'pick', values: [5, 10, 15, 30, 60, 120, 240].map((m) => String(m * 60000)).concat(s.name === 'screen_off_timeout' ? '2147483647' : '-1') };
       case 'scale': return { kind: 'pick', values: s.name === 'font_scale' ? ['0.85', '1.0', '1.15', '1.3'] : ['0', '0.5', '1.0', '1.5', '2.0'] };
-      case 'pct255': return { kind: 'pick', values: [10, 25, 50, 75, 100].map((p) => String(Math.round(p * 2.55))) };
+      case 'pct255': return { kind: 'range', min: 0, max: 255 };
       case 'h': return { kind: 'pick', values: ['12', '24'] };
+      case 'press': return { kind: 'pick', values: ['300', '400', '600', '1000', '1500'] };
+      case 'speed': return { kind: 'pick', values: ['-5', '-3', '0', '3', '5'] };
       case 'surround': return { kind: 'pick', values: ['0', '1', '2', '3'] };
       case 'text': return s.name === 'device_name' ? { kind: 'text' } : {};
       case 'raw': return { kind: 'text', tech: true };

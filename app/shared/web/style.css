@@ -69,7 +69,7 @@
   @media (max-width:640px) { details.help .cols { grid-template-columns:1fr; } }
 
   /* tabs */
-  .tabs { display:flex; gap:6px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:5px; position:sticky; top:8px; z-index:5;
+  .tabs { display:flex; --gap:6px; gap:var(--gap); background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:5px; position:sticky; top:8px; z-index:5;
     box-shadow:0 -9px 0 8px var(--bg); }                                 /* the page's colour over the gap above and the round corners: nothing scrolls through */
   html[data-scope=remote] .tabs, html[data-scope=view] .tabs { display:none; }   /* a guest has the Remote tab only (applyKind) */
   .tabs button { flex:1; min-height:42px; font-size:14px; background:transparent; border-radius:10px; }
@@ -78,8 +78,9 @@
   /* icon + words; in tight places on a narrow screen only the icon shows (the words stay for screen readers) */
   @media (max-width:640px) { .item .acts .lbl, .top .lbl, .card-head .tools .lbl { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
     /* phone: each tab is its picture with its name in small letters underneath */
-    .tabs { gap:2px; padding:4px; } .tabs button { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:50px; padding:4px 0; min-width:0; } .tabs .ico { font-size:18px; line-height:1.1; }
-    .tabs .lbl { font-size:10px; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; } }
+    .tabs { --gap:2px; padding:4px; } .tabs button { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:50px; padding:4px 0; min-width:0; } .tabs .ico { font-size:18px; line-height:1.1; }
+    .tabs .lbl { font-size:10px; line-height:1.1; white-space:nowrap; }
+    .tabs button { flex:1 0 auto; padding:4px 3px; } }                 /* no room (large text): the bar slides, ui.js chipRows */
   /* Without ADB the tabs that need it are only dimmed: they still open, and show how to turn ADB on. A line under each tab
      made the bar heavy, a lock read as "pay to unlock", and emoji badges look different on every device. The words stay for
      screen readers. Elsewhere everything goes through ADB anyway. */
@@ -146,8 +147,16 @@
   .pill output, .pill span { text-align:center; font-weight:700; font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; } #r-mute.on { background:var(--bad-bg); color:var(--bad); }
   .rb.play small { color:inherit; opacity:.7; }
   /* a segmented switch: three short words that fit one line on a phone */
-  .seg { display:flex; gap:2px; padding:3px; margin:0 0 12px; background:var(--card); border:1px solid var(--line); border-radius:12px; }
-  .seg button { flex:1; min-height:34px; padding:0 8px; font-size:13px; font-weight:600; white-space:nowrap; background:transparent; border-radius:9px; }
+  .seg { display:flex; --gap:2px; gap:var(--gap); padding:3px; margin:0 0 12px; background:var(--card); border:1px solid var(--line); border-radius:12px; }
+  .seg button { flex:1 0 auto; min-height:34px; padding:0 8px; font-size:13px; font-weight:600; white-space:nowrap; background:transparent; border-radius:9px; }
+  /* too many words for a narrow screen or large text: the row slides sideways instead of pushing a word out of its box */
+  .seg, .tabs { overflow-x:auto; scrollbar-width:none; overscroll-behavior-x:contain; } .seg::-webkit-scrollbar, .tabs::-webkit-scrollbar { display:none; }
+  /* the side that has more: a fade in the bar's own colour, held at the edge (sticky) above the buttons; a mask would fade the border too */
+  :is(.seg, .tabs)::before, :is(.seg, .tabs)::after { content:''; position:sticky; z-index:2; flex:0 0 32px; align-self:stretch; pointer-events:none; opacity:0; transition:opacity .15s; }
+  :is(.seg, .tabs)::before { left:0; margin-right:calc(-32px - var(--gap)); background:linear-gradient(to right, var(--card), transparent); }
+  :is(.seg, .tabs)::after { right:0; margin-left:calc(-32px - var(--gap)); background:linear-gradient(to left, var(--card), transparent); }
+  :is(.seg, .tabs).more-l::before, :is(.seg, .tabs).more-r::after { opacity:1; }
+  @media (max-width:420px) { .seg button { padding:0 6px; } }
   .seg button.on { background:var(--accent); color:var(--accent-ink, #fff); }
   .seg.mini { margin:0; flex:none; } .seg.mini button { flex:none; min-height:28px; font-size:12px; }
   .capsplain { list-style:none; margin:0; padding:0; display:grid; gap:6px; font-size:14px; } .capsplain .no { color:var(--muted); }
@@ -155,6 +164,7 @@
   .setname { display:flex; flex-direction:column; gap:2px; min-width:0; font-size:14px; } .setname small { font-size:11px; color:var(--muted); overflow-wrap:anywhere; }
   .setval { max-width:46vw; font-size:14px; font-weight:600; text-align:right; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; word-break:break-all; }
   .setval.mono { font-size:12px; font-weight:400; color:var(--muted); } .setval.long { font-size:12px; font-weight:500; }
+  .setstep { display:flex; align-items:center; gap:6px; } .setstep .setval { min-width:3ch; text-align:center; } .setrange { width:min(150px, 34vw); accent-color:var(--accent); }
   .setctl { display:flex; align-items:center; justify-content:flex-end; gap:6px; } .setctl .small { min-height:var(--chip); padding:0 12px; }
   .setpick { min-height:34px; max-width:46vw; border-radius:10px; background:var(--btn); color:var(--ink); border:0; padding:0 8px; font:inherit; font-size:14px; }
   .setlist .setrow.full { grid-template-columns:1fr; } .setlist .setrow.full .setval { display:block; max-width:none; text-align:left; }

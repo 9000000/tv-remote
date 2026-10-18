@@ -169,6 +169,8 @@ const FRIENDLY = [
   [/^unsupported: (LG|Samsung|Roku|Hisense VIDAA)$/, (m) => 'TV ' + m[1] + ' không hỗ trợ'],
   [/vidaa: the certificate from Hisense/, 'TV Hisense này cần chứng chỉ từ app “VIDAA Smart TV” của Hisense. Vào tab Thiết lập để chọn file .apk của app đó.'],
   [/vidaa: no certificate in this file/, 'Không tìm thấy chứng chỉ trong file này. Chọn file .apk của app “VIDAA Smart TV”, hoặc file .p12.'],
+  [/this TV keeps that volume itself/, 'TV này tự giữ mức âm lượng này, không cho đổi từ xa. Âm lượng phim, nhạc thì đổi được.'],   // Scenes.volume, a stream other than media
+  [/turned itself back off/, 'TV tự tắt lại ngay. Gỡ lỗi không dây chỉ chạy khi TV nối Wi‑Fi (không phải dây mạng).'],   // TvShell.setting, ON_ONLY
   [/roku: control by mobile apps is off/, 'Roku đang chặn điều khiển từ điện thoại, máy tính. Trên Roku: Settings → System → Advanced system settings → Control by mobile apps → chọn Enabled (hoặc Permissive).'],   // Roku.LIMITED: newer Roku OS keeps phones out
   [/^refused$/, 'TV đã từ chối. Bấm Hỏi lại TV ở tab Thiết lập rồi chọn Cho phép.'],
   [/^not accepted$/, 'Chưa ai chọn Cho phép trên TV. Bấm Hỏi lại TV ở tab Thiết lập.'],
@@ -328,7 +330,7 @@ for (const ev of ['pointerdown', 'click']) document.addEventListener(ev, (e) => 
 const KIND_INTRO = {
   screen: ['🖥️ Màn hình TV', ['Xem và chạm màn hình TV trên máy này', '🎧 Nghe tiếng TV', '✏️ Vẽ, 🖼️ ảnh, 💬 lời nhắn lên TV', '▶️ Đang phát, 📋 clipboard của TV']],
   apps: ['📱 Ứng dụng', ['Mọi app đã cài trên TV', 'Mở, buộc dừng, tắt hoặc gỡ app', 'Xóa dữ liệu app']],
-  files: ['📁 Tệp · Cài', ['Duyệt tệp trên TV, gửi lên, tải về', 'Tải file từ link thẳng về TV', '📦 Cài APK từ máy này']],
+  files: ['📁 Tệp', ['Duyệt tệp trên TV, gửi lên, tải về', 'Tải file từ link thẳng về TV', '📦 Cài APK từ máy này']],
   health: ['🩺 Sức khỏe', ['Bộ nhớ, RAM, tải hệ thống', 'Mạng và phần cứng của TV', 'Giải phóng RAM bằng một nút']],
   rules: ['⏰ Tự động trên TV', ['😴 Hẹn giờ tắt TV', '🌙 Giờ đi ngủ', '⏳ Giới hạn app mỗi ngày', '🔊 Giới hạn âm lượng theo giờ']],
 };

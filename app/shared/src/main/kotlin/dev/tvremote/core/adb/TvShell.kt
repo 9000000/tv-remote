@@ -103,15 +103,24 @@ object TvShell {
      */
     val SET_LOCKED = Regex("(?i).*(adb|develop|debug|provision|setup|verif|install|package|vpn|dns|proxy|wifi|airplane|bluetooth|mobile|tether|captive|ntp|" +
         "lock|password|policy|service|input_method|accessibility_enabled|touch_exploration|location|android_id|_uri|component|hidden_api|database|locale|" +
-        "density|volume|boot|hdr|formats|user).*")
+        "density|volume|boot|hdr|formats|user|" +
+        "fac|zram|usb_mass|netstats|standby|safe_volume|shop|tuner|tcl|miracast|always_on_vpn|maintenance|earc_status).*")   // the TCL's list: factory flags, vendor switches, the Tailscale VPN
+    /** ADB and Wireless debugging may be turned on (nothing is lost, the remotes only gain a way in), never off: js/tvread.js ON_ONLY */
+    val ON_ONLY = mapOf("adb_enabled" to "1", "adb_wifi_enabled" to "1")
+    /** Volumes in the settings list: Android's saved copy, so they go through the volume command ([Scenes.volume]), not `settings put` */
+    val VOLUME = mapOf("volume_system" to 1, "volume_music" to 3)            // the others follow the media volume on a TV
     private val SET_NAME = Regex("[A-Za-z][A-Za-z0-9_.]{0,80}")
     private val SET_VALUE = Regex("[A-Za-z0-9 ._:+-]{0,100}")
 
     fun setting(table: String, name: String, value: String): String {
         if (table !in setOf("global", "secure", "system")) throw IllegalArgumentException("bad table")
         if (!name.matches(SET_NAME)) throw IllegalArgumentException("bad name")
-        if (SET_LOCKED.matches(name)) throw IllegalArgumentException("locked")
+        val only = ON_ONLY[name]
+        if (only != null) { if (table != "global" || value != only) throw IllegalArgumentException("locked") }
+        else if (SET_LOCKED.matches(name)) throw IllegalArgumentException("locked")
         if (!value.matches(SET_VALUE)) throw IllegalArgumentException("bad value")
+        if (only != null)                                               // Android turns Wireless debugging back off without Wi-Fi: say so
+            return "settings put global $name '$value'; sleep 1; [ \"\$(settings get global $name)\" = '$value' ] && echo ok || echo 'turned itself back off'"
         return "settings put $table $name '$value'; echo ok"
     }
 

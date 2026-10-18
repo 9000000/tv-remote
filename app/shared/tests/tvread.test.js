@@ -142,3 +142,11 @@ test('settings in words', () => {
   assert.equal(i('display_density_forced', '').value, 'Mặc định'); assert.equal(i('stay_on_while_plugged_in', '3').value, 'Bật');
   assert.deepEqual(i('ble_scan_balanced_interval_ms', '730'), { group: 'other', groupName: 'Khác (kỹ thuật)', title: 'Ble scan balanced interval ms', value: '730', known: false, order: 0 });
 });
+
+test('ADB and Wireless debugging: on, never off (TvShell.ON_ONLY)', () => {
+  const { settingEdit } = require('../web/js/tvread.js');
+  assert.deepEqual(settingEdit({ table: 'global', name: 'adb_wifi_enabled', value: '0' }), { kind: 'turnon', on: '1' });
+  assert.deepEqual(settingEdit({ table: 'global', name: 'adb_wifi_enabled', value: '1' }), { locked: true });
+  assert.deepEqual(settingEdit({ table: 'global', name: 'adb_enabled', value: '0' }), { kind: 'turnon', on: '1' });
+  assert.deepEqual(settingEdit({ table: 'global', name: 'adb_allowed_connection_time', value: '0' }), { locked: true });
+});

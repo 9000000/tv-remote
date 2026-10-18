@@ -573,6 +573,42 @@
     "1"
    ],
    "out": null
+  },
+  {
+   "call": [
+    "setting",
+    "global",
+    "adb_wifi_enabled",
+    "1"
+   ],
+   "out": "settings put global adb_wifi_enabled '1'; sleep 1; [ \"$(settings get global adb_wifi_enabled)\" = '1' ] && echo ok || echo 'turned itself back off'"
+  },
+  {
+   "call": [
+    "setting",
+    "global",
+    "adb_enabled",
+    "1"
+   ],
+   "out": "settings put global adb_enabled '1'; sleep 1; [ \"$(settings get global adb_enabled)\" = '1' ] && echo ok || echo 'turned itself back off'"
+  },
+  {
+   "call": [
+    "setting",
+    "global",
+    "adb_wifi_enabled",
+    "0"
+   ],
+   "out": null
+  },
+  {
+   "call": [
+    "setting",
+    "secure",
+    "adb_wifi_enabled",
+    "1"
+   ],
+   "out": null
   }
  ]
 }

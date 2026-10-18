@@ -148,7 +148,11 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     text(TvShell.perm(pkg, d.optString("perm"), d.optBoolean("on")), 20000)
                 }
                 "tvset" -> { val d = r.json(); text(TvShell.tvset(d.optString("key"), d.optString("value")), 60000) }
-                "settings" -> { val d = r.json(); text(TvShell.setting(d.optString("table"), d.optString("name"), d.optString("value")), 20000) }
+                "settings" -> { val d = r.json(); val vol = TvShell.VOLUME[d.optString("name")]
+                    if (vol != null && d.optString("table") == "system") {
+                        val v = d.optString("value").toIntOrNull()?.takeIf { it in 0..100 } ?: throw IllegalArgumentException("bad value")
+                        Scenes.volume({ sh(it) }, v, vol); HttpServer.Response.json(JSONObject().put("text", "ok"))
+                    } else text(TvShell.setting(d.optString("table"), d.optString("name"), d.optString("value")), 20000) }
                 "reboot" -> {
                     sh(TvShell.REBOOT_PREP)
                     try { link.get().open("reboot:").use { it.readAll(3000) } } catch (ignored: Exception) { }   // the link drops as the TV goes down

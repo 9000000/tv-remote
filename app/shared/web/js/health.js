@@ -289,11 +289,23 @@ function drawSettings() {
 function setControl(s, i, vi) {
   const e = settingEdit(s), shown = el('div', { className: 'setval' + (i.known ? '' : ' mono') + (i.value.length > 24 ? ' long' : ''), textContent: i.value });
   const stop = (n) => { n.addEventListener('click', (ev) => ev.stopPropagation()); return n; };
-  const back = s.was !== undefined && s.was !== s.value && s.was !== 'null'
+  const back = !e.locked && e.kind !== 'turnon' && s.was !== undefined && s.was !== s.value && s.was !== 'null'
     ? stop(el('button', { type: 'button', className: 'small', title: tr('Trả lại') + ': ' + s.was, textContent: '↺', onclick: () => setSetting(s, s.was) })) : null;
   let ctl = null;
   if (e.locked) { shown.textContent = '🔒 ' + i.value; shown.title = tr('Chỉ xem: đổi sai có thể mất kết nối tới TV'); }
-  else if (e.kind === 'bool') {
+  else if (e.kind === 'turnon') {                                    // on only: off could cut the remotes off
+    shown.textContent = '🔒 ' + i.value; shown.title = tr('Chỉ bật được: tắt có thể mất kết nối tới TV');
+    ctl = el('button', { type: 'button', className: 'small primary', textContent: tr('Bật lên'), onclick: () => setSetting(s, e.on) });
+  } else if (e.kind === 'step') {                                    // a volume: one step each way, the TV says how far it goes
+    const n = Number(s.value) || 0, go = (d) => setSetting(s, String(Math.min(e.max, Math.max(e.min, n + d))));
+    ctl = el('div', { className: 'setstep' }, el('button', { type: 'button', className: 'small', title: tr('Nhỏ hơn'), textContent: '−', disabled: n <= e.min, onclick: () => go(-1) }),
+      el('span', { className: 'setval', textContent: String(n) }), el('button', { type: 'button', className: 'small', title: tr('To hơn'), textContent: '+', onclick: () => go(1) }));
+  } else if (e.kind === 'range') {                                   // brightness: a slider, set once it is let go
+    const out = el('span', { className: 'setval', textContent: settingWord(s, s.value, vi) });
+    const r = el('input', { type: 'range', className: 'setrange', min: e.min, max: e.max, value: Number(s.value) || 0, ariaLabel: i.title,
+      oninput: (ev) => { out.textContent = settingWord(s, ev.target.value, vi); }, onchange: (ev) => setSetting(s, ev.target.value) });
+    ctl = el('div', { className: 'setstep' }, r, out);
+  } else if (e.kind === 'bool') {
     const on = s.value !== e.off && s.value !== 'null';
     ctl = el('button', { type: 'button', className: 'small' + (on ? ' primary' : ''), textContent: settingWord(s, on ? e.on : e.off, vi), onclick: () => setSetting(s, on ? e.off : e.on) });
   } else if (e.kind === 'pick') {
@@ -307,12 +319,13 @@ function setControl(s, i, vi) {
     } });
   }
   if (!ctl) return back ? el('div', { className: 'setctl' }, back, shown) : shown;
+  if (e.kind === 'turnon') return el('div', { className: 'setctl' }, shown, stop(ctl));
   return el('div', { className: 'setctl' }, ...(back ? [back] : []), stop(ctl));
 }
 async function setSetting(s, value) {
   if (!/^[A-Za-z0-9 ._:+-]{0,100}$/.test(value)) { toast(tr('Chỉ dùng chữ không dấu, số và . _ : + -')); return drawSettings(); }
   const r = await api('/api/settings', { table: s.table, name: s.name, value });
-  if (!r || !/\bok\b/.test(r.text || '')) { if (r) toast('Lỗi: ' + (r.text || '').trim()); return drawSettings(); }
+  if (!r || !/\bok\b/.test(r.text || '')) { if (r) toast('Lỗi: ' + friendly((r.text || '').trim())); return drawSettings(); }
   if (s.was === undefined) s.was = s.value;
   s.value = value; drawSettings(); toast(tr('✓ Đã đổi'));
 }
