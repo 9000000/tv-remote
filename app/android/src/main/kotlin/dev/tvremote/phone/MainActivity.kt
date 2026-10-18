@@ -123,6 +123,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     // ---- Drawing.kt: the finger on the picture draws on the TV's screen instead of touching it.
     internal var drawing = false
+    internal var shotBtn: IconButton? = null                          // 📷 among the keys: turns while the picture comes
     internal var drawBtn: IconButton? = null                          // ✏️ among the keys: lit while drawing
     internal lateinit var drawBar: LinearLayout
     internal lateinit var drawView: DrawView

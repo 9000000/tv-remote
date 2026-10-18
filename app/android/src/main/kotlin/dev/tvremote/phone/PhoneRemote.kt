@@ -53,6 +53,7 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
 /** Things an action's button needs to know about itself once drawn (the ✏️ is lit while drawing). */
 internal val phoneButtonHooks: Map<String, MainActivity.(IconButton) -> Unit> = mapOf(
     "draw" to hook { drawBtn = it; drawLit() },
+    "shot" to hook { shotBtn = it },
 )
 
 internal fun MainActivity.storePage(id: String) = openLink("https://play.google.com/store/apps/details?id=$id")

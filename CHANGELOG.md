@@ -8,6 +8,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 
+- Nút **Chụp màn hình** (trong Thêm) quay vòng tới khi ảnh đã lưu, không còn trông như bấm không ăn.
 - Chữ của trang giờ nằm theo mã trong `i18n/vi.json`, `i18n/en.json` (mỗi ngôn ngữ một file), để sau này thêm được ngôn ngữ mới. Gần như mọi chữ đã chuyển, cả chữ do script viết, và các app (điện thoại, TV Setup, máy tính) đọc cùng các file đó; báo lỗi từ server theo ngôn ngữ trang đang dùng. Các phím của remote cũng theo mã; bảng dịch cũ (dịch câu tiếng Việt trên trang đã hiện) đã bỏ hẳn, sửa luôn “· 1 TVs”.
 - Thanh chờ (cài app, gửi file) chạy mượt hơn trên TV yếu: không bắt trang tính lại bố cục mỗi khung hình.
 - App máy tính trên Mac: chữ chạy (tên bài, app đang mở, tên cảnh) lại chạy khi quay về tab Remote, không cần rê chuột.
@@ -33,6 +34,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **English**
 
+- The **Screenshot** key (under More) spins until the picture is saved, so the tap no longer looks lost.
 - The page's words now live by id in `i18n/vi.json`, `i18n/en.json` (one file per language), so new languages can be added later. Nearly every word has moved, the scripts' too, and the apps (phone, TV Setup, computer) read the same files; the server's messages follow the page's language. The remote's keys go by id too; the old table (translating Vietnamese sentences on the drawn page) is gone, which also fixes “· 1 TVs”.
 - The waiting bar (installing, sending files) runs smoother on slow TVs: it no longer makes the page lay itself out each frame.
 - Computer app on Mac: running lines (song, open app, scene names) move again after coming back to the Remote tab, without moving the mouse.

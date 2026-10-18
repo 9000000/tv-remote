@@ -433,7 +433,10 @@ internal fun MainActivity.captioned(row: LinearLayout): LinearLayout {
 internal fun MainActivity.shot() {
     if (needsAdb()) return
     val tv = tv
-    if (tv == null || !tv.ready()) return
+    if (tv == null || !tv.ready()) { Toast.makeText(this, T("errors.still_connecting_tv_over"), Toast.LENGTH_SHORT).show(); return }
+    val b = shotBtn
+    if (b?.busy == true) return                                       // one at a time: a second tap is not a second picture
+    b?.busy = true
     Toast.makeText(this, T("remote_screen.taking_a_screenshot_of"), Toast.LENGTH_SHORT).show()
     Thread {
         var result: String
@@ -458,7 +461,7 @@ internal fun MainActivity.shot() {
             result = T("remote_screen.screenshot_failed", "why" to e.message)
         }
         val msg = result
-        ui.post { if (!isFinishing) Toast.makeText(this, msg, Toast.LENGTH_LONG).show() }
+        ui.post { b?.busy = false; if (!isFinishing) Toast.makeText(this, msg, Toast.LENGTH_LONG).show() }
     }.start()
 }
 

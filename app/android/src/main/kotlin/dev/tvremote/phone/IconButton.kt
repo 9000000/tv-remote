@@ -23,6 +23,10 @@ internal class IconButton(c: Context) : Button(c) {
     /** On or chosen (Ui.kt setOn): icon and caption in the accent's blue, on the tint. */
     var chosen = false
         set(v) { field = v; paint() }
+    /** Waiting on the TV (a screenshot takes a few seconds): a turning arc where the icon was, so the tap does not look lost. */
+    var busy = false
+        set(v) { field = v; invalidate() }
+    private val arc = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { style = android.graphics.Paint.Style.STROKE; strokeCap = android.graphics.Paint.Cap.ROUND }
     private fun paint() {
         ink.color = if (lit) android.graphics.Color.WHITE else if (chosen) ACCENT_TEXT else DIM
         art?.setTint(if (lit) android.graphics.Color.WHITE else if (chosen) ACCENT_TEXT else tint)
@@ -53,6 +57,14 @@ internal class IconButton(c: Context) : Button(c) {
             cy -= (7 * d).roundToInt()
             ink.textSize = 10.5f * resources.displayMetrics.scaledDensity
             c.drawText(it, cx.toFloat(), cy + h + 15 * d, ink)
+        }
+        if (busy) {
+            val r = h * 0.75f
+            arc.strokeWidth = 2.2f * resources.displayMetrics.density
+            arc.color = ink.color
+            c.drawArc(cx - r, cy - r, cx + r, cy + r, (android.os.SystemClock.uptimeMillis() % 1000) * 0.36f, 270f, false, arc)
+            postInvalidateOnAnimation()
+            return
         }
         art.setBounds(cx - h, cy - h, cx + h, cy + h)
         art.draw(c)

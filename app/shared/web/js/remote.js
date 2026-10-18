@@ -58,7 +58,22 @@ const castPick = (accept) => { if (needAdb()) return; const f = $('#castfile'); 
 async function askStoreSearch() { const v = await ask(T('remote.search_play_store'), { value: '', ok: T('remote.search') }); if (v && v.trim()) storeSearch(v.trim()); }
 async function askStorePage() { const v = await ask(T('remote.package_id'), { value: 'org.videolan.vlc', ok: T('remote.open') }); if (v && v.trim()) storePage(v.trim()); }
 async function askLink() { const v = await ask(T('remote.link'), { value: 'https://youtu.be/', ok: T('remote.open') }); const l = v && normalizeLink(v); if (l) openOnTv(l, 'link'); }
-function screenshot() { const a = document.createElement('a'); a.href = '/api/screen'; a.download = 'tv-' + Math.floor(Date.now() / 1000) + '.png'; a.click(); }
+// The picture takes a few seconds on the TV: its key turns until the file is saved, or the tap looks lost. A browser gets it
+// here; the computer app's window saves downloads itself (Window.kt tvrSave) and calls shotDone() once the file is written.
+async function screenshot() {
+  const b = $('#r-screenshot'), name = 'tv-' + Math.floor(Date.now() / 1000) + '.png';
+  if (b.classList.contains('busy')) return;                         // one at a time
+  b.classList.add('busy'); toast(T('remote_screen.taking_a_screenshot_of'));
+  clearTimeout(shotDone.t); shotDone.t = setTimeout(shotDone, 60000);  // the window's word may never come
+  if (window.tvrSave) { window.tvrSave('/api/screen', name); return; }
+  try {
+    const r = await fetch('/api/screen');
+    if (!r.ok) { let e = r.statusText; try { e = (await r.json()).error || e; } catch {} toast(T('common.error_msg', { msg: friendly(adbWords(r.status, e)) })); return; }
+    const url = URL.createObjectURL(await r.blob()), a = el('a', { href: url, download: name });
+    a.click(); setTimeout(() => URL.revokeObjectURL(url), 10000);
+  } catch { toast(T('core.server_unreachable')); } finally { shotDone(); }
+}
+function shotDone() { clearTimeout(shotDone.t); $('#r-screenshot').classList.remove('busy'); }
 async function timerPlus() { const x = await loadRules({ do: 'sleep_add', minutes: 15 }); if (x) toast(T('remote.tv_off_at_toast', { at: clock(x.sleep_at) })); }
 async function timerCustom() {
   const v = await ask(T('remote.turn_off_when'), { value: '', ok: T('remote.set_timer') }); if (v === null) return;

@@ -133,6 +133,8 @@ object Window {
         } catch (e: Exception) {
             println("save $path: $e")
             eval("toast(" + JSONArray().put(T("pc.save_failed", "why" to e.message)).toString().trim('[', ']') + ")")
+        } finally {
+            if (path.startsWith("/api/screen")) eval("typeof shotDone === 'function' && shotDone()")   // its key stops turning (remote.js)
         }
     }
 
