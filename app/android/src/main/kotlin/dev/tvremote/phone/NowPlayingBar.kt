@@ -49,13 +49,8 @@ internal class PlayingBar(private val a: MainActivity) {
         val head = LinearLayout(a)
         head.gravity = Gravity.CENTER_VERTICAL
         val words = a.col()
-        for (w in listOf(title, sub)) { w.maxLines = 1; w.ellipsize = android.text.TextUtils.TruncateAt.END; words.addView(w) }
+        for (w in listOf(title, sub)) { w.runs(); words.addView(w) }  // a long title or channel runs (the page's .run)
         title.typeface = android.graphics.Typeface.DEFAULT_BOLD
-        val still = android.provider.Settings.Global.getFloat(a.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
-        if (!still) {                                                 // a long title runs (the page's .run); "Remove animations" keeps the …
-            title.isSingleLine = true; title.ellipsize = android.text.TextUtils.TruncateAt.MARQUEE
-            title.marqueeRepeatLimit = -1; title.isSelected = true    // a marquee runs only on a selected view
-        }
         head.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
         val prev = a.icon("@prev", t("Bài trước", "Previous"), BTN)
         val next = a.icon("@next", t("Bài sau", "Next"), BTN)

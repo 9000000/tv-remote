@@ -47,7 +47,7 @@ internal class NowApp(private val a: MainActivity) {
         icon.maxWidth = a.dp(96)
         icon.scaleType = ImageView.ScaleType.FIT_CENTER
         name.typeface = android.graphics.Typeface.DEFAULT_BOLD
-        name.maxLines = 1; name.ellipsize = android.text.TextUtils.TruncateAt.END
+        name.runs()
         view.addView(name, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = a.dp(8) })   // its own gap: the picture may be missing
         a.ui.post { tick.run() }
     }

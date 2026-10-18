@@ -191,12 +191,20 @@ internal fun Context.button(s: String, color: Int): Button {
 }
 
 /** A button that shows only an icon; the words go to screen readers. "@name" = res/drawable/ic_name (dev/gen_icons.py), anything else is text. */
+/** One line that slides to its end and back when it has no room, instead of ending in "…" (the page's runFit); with
+ *  "Remove animations" on, the plain "…". A marquee runs only on a selected view. */
+internal fun TextView.runs() {
+    isSingleLine = true
+    val still = android.provider.Settings.Global.getFloat(context.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+    if (still) { ellipsize = android.text.TextUtils.TruncateAt.END; return }
+    ellipsize = android.text.TextUtils.TruncateAt.MARQUEE; marqueeRepeatLimit = -1; isSelected = true
+}
+
 /** The remote's top line, "TV name · what is going on": the name above, the rest under it, smaller; one line each, so a long
  *  name never pushes the rest away. Without " · " the words take both lines. [name] is the line above, added by the screen. */
 internal class StatusText(c: Context) : TextView(c) {
     val name = TextView(c).apply {
-        setTextColor(TEXT); textSize = 15f; typeface = Typeface.DEFAULT_BOLD; isSingleLine = true
-        ellipsize = android.text.TextUtils.TruncateAt.END; visibility = GONE
+        setTextColor(TEXT); textSize = 15f; typeface = Typeface.DEFAULT_BOLD; runs(); visibility = GONE
     }
     init { setTextColor(MUTED); textSize = 12f; ellipsize = android.text.TextUtils.TruncateAt.END; maxLines = 2 }
     override fun setText(text: CharSequence?, type: BufferType?) {
@@ -206,7 +214,7 @@ internal class StatusText(c: Context) : TextView(c) {
         if (n == null) { super.setText(text, type); return }
         n.text = if (i < 0) "" else s.substring(0, i)
         n.visibility = if (i < 0) GONE else VISIBLE
-        maxLines = if (i < 0) 2 else 1
+        if (i < 0) { isSingleLine = false; maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END } else runs()   // two lines of words, or one that runs
         super.setText(if (i < 0) s else s.substring(i + 3), type)
     }
 }
