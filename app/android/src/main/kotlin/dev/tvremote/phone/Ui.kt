@@ -209,12 +209,18 @@ internal class StatusText(c: Context) : TextView(c) {
     val name = TextView(c).apply {
         setTextColor(TEXT); textSize = 15f; typeface = Typeface.DEFAULT_BOLD; runs(); visibility = GONE
     }
+    private var inner = false
     init { setTextColor(MUTED); textSize = 12f; ellipsize = android.text.TextUtils.TruncateAt.END; maxLines = 2 }
     override fun setText(text: CharSequence?, type: BufferType?) {
         val s = text?.toString() ?: ""
         val i = s.indexOf(" · ")
         @Suppress("SENSELESS_COMPARISON") val n = name as TextView?          // null while TextView's own constructor sets its first text
-        if (n == null) { super.setText(text, type); return }
+        // isSingleLine sets the words it already has again (its transformation): without the name, which hid the name
+        if (n == null || inner) { super.setText(text, type); return }
+        inner = true
+        try { split(n, s, i, type) } finally { inner = false }
+    }
+    private fun split(n: TextView, s: String, i: Int, type: BufferType?) {
         n.say(if (i < 0) "" else s.substring(0, i))
         n.visibility = if (i < 0) GONE else VISIBLE
         if (i < 0) { isSingleLine = false; maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END } else runs()   // two lines of words, or one that runs
