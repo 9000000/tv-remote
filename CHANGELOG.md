@@ -9,6 +9,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 
 - Thanh chờ (cài app, gửi file) chạy mượt hơn trên TV yếu: không bắt trang tính lại bố cục mỗi khung hình.
+- App máy tính trên Mac: chữ chạy (tên bài, app đang mở, tên cảnh) lại chạy khi quay về tab Remote, không cần rê chuột.
 - Nút đang bật / đang chọn (tab, Nghe, HQ, lựa chọn trong Thiết lập) giờ là nền nhạt viền xanh; màu xanh đặc chỉ còn cho nút bấm để làm (OK, Đặt, Cài, Thêm), nên một màn hình không còn đầy nút xanh khó phân biệt. Trên web và app điện thoại.
 - App điện thoại: dòng trên cùng của remote hiện lại tên TV (chỉ còn "đang tắt hình", "chạm hình để bấm"...).
 - Tất cả cài đặt: Gỡ lỗi ADB và Gỡ lỗi không dây bật lên được, có hỏi lại trước (không tắt được, để không mất kết nối); TV tự tắt lại (Gỡ lỗi không dây cần Wi‑Fi) thì app nói rõ. Độ sáng là thanh kéo. Âm lượng phim, nhạc và âm lượng hệ thống hiện mức thật của TV và mức tối đa (ví dụ 9 / 15), gõ số hoặc bấm − / +, đổi qua lệnh âm lượng thật (TV không nhận lệnh thì bấm phím âm lượng). Thêm tên và nhóm mới “HDMI & loa ngoài” (HDMI‑CEC, eARC), bấm giữ, tốc độ con trỏ, thông báo nổi, VPN luôn bật; cờ nhà máy và công tắc riêng của TCL chỉ xem.
@@ -32,6 +33,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **English**
 
 - The waiting bar (installing, sending files) runs smoother on slow TVs: it no longer makes the page lay itself out each frame.
+- Computer app on Mac: running lines (song, open app, scene names) move again after coming back to the Remote tab, without moving the mouse.
 - A button that is on or chosen (a tab, Listen, HQ, a choice in Setup) is now a light tint with a blue edge; the solid blue is kept for buttons that do something (OK, Set, Install, Add), so a screen is no longer full of look-alike blue buttons. On the web and in the phone app.
 - Phone app: the remote's top line shows the TV's name again (it showed only "picture off", "touch the picture to tap"...).
 - All settings: ADB and Wireless debugging can be turned on after a question (never off, so the remotes are not cut off); when the TV turns it straight back off (Wireless debugging needs Wi‑Fi) the app says so. Brightness is a slider. Media and system volume show the TV's live level and its top (such as 9 / 15), typed or with − / +, set through the real volume command (the volume keys where the TV ignores it). New names and a new group “HDMI & audio out” (HDMI‑CEC, eARC), long‑press delay, pointer speed, pop‑up notifications, always‑on VPN; factory flags and TCL's own switches are view only.

@@ -161,8 +161,11 @@ const runObs = new ResizeObserver((list) => list.forEach((e) => runFit(e.target)
 function runFit(t) {
   if (t.classList.contains('rin')) return;
   if (!runSeen.has(t)) { runSeen.add(t); runObs.observe(t); }
-  if (!t.clientWidth) return;
   let s = t.firstChild, fresh = false;
+  if (!t.clientWidth) {                                               // its tab hidden: WebKit drops the moving layer and, the same animation
+    if (s?.run) { s.run.cancel(); s.run = null; delete t.dataset.over; }   // kept, drew it again only when something else moved (the Mac app)
+    return;                                                           // shown again: a new one, from where it was (runT0)
+  }
   if (!(t.childNodes.length === 1 && s.nodeType === 1 && s.classList.contains('rin'))) {
     if (!t.textContent.trim() || t.querySelector('input, button, select')) return;
     s = el('span', { className: 'rin' }); s.append(...t.childNodes); t.append(s); fresh = true;
