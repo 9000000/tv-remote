@@ -70,6 +70,7 @@ Trong README, code và trang giới thiệu, các phần luôn được gọi b�
 | Bật TV khi TV đã tắt hẳn (Wake-on-LAN) | ✓ | TV tắt thì trang cũng tắt | ✓ |
 | Bấm phím khi TV chưa cho ADB | ✓ | | ✓ |
 | Widget, ô Cài đặt nhanh, phím âm lượng của máy | ✓ | | |
+| 🎮 Tay cầm chơi game | ✓ | ✓ | ✓ |
 | Link cho Home Assistant, Phím tắt (Siri) | | ✓ | ✓, mở cổng riêng khi bật |
 | Cần cài gì trên máy điều khiển | app | không, hợp với iPhone | app |
 | TV LG, Samsung, Roku, VIDAA | ✓ | | ✓ |
@@ -267,6 +268,21 @@ Vì sao không gửi thẳng tài khoản từ điện thoại sang TV? Tailscal
 Người ở cạnh TV: bật Gỡ lỗi ADB, cài TV Setup (hoặc nhờ người hỗ trợ cài từ xa qua nút "Bật ADB giúp tôi"), mở TV Setup, bấm nút **Tailscale**. TV hiện mã QR: chụp ảnh gửi cho người hỗ trợ. Người hỗ trợ quét mã bằng điện thoại đã đăng nhập Tailscale của mình, bấm Connect, rồi kết nối tới IP `100.x` của TV.
 </details>
 
+## Tay cầm chơi game
+
+Nối tay cầm (Xbox, PlayStation, Bluetooth hay USB) vào **máy đang chạy app**, không phải vào TV, mở màn remote rồi bấm một nút bất kỳ: hiện "Đã nối tay cầm". Giữ mũi tên, âm lượng, kênh thì lặp lại.
+
+| Nút | Đang ở remote | Đang xem hình TV |
+|---|---|---|
+| D-pad, cần trái | Mũi tên | Mũi tên |
+| A / B | OK / Back | Nút A / B của tay cầm |
+| X / Y | Phát-dừng / Tắt tiếng | Nút X / Y |
+| LB / RB | Giảm / tăng âm lượng | Nút L1 / R1 |
+| LT / RT | Lùi / tới kênh | Lùi / tới kênh |
+| Start / Select | Home / Menu | Nút Start / Select |
+
+Khi xem hình, game trên TV thấy như có tay cầm cắm vào TV (trễ bằng trễ của hình). Đang gõ chữ hay mở hộp thoại thì tay cầm không gửi gì.
+
 ## Home Assistant và Phím tắt (Siri)
 
 Bấm phím, mở app, chạy cảnh trên TV từ Home Assistant hay Phím tắt của iPhone, trong mạng nhà. Vào 🛠️ Cài đặt → **Home Assistant · Phím tắt**, chọn **Cho dùng**, sao chép đường dẫn. Mã của nó riêng, không phải mã ghép; **Đổi mã mới** thì đường dẫn cũ hết dùng. Chỉ dùng trong nhà, đừng mở ra Internet (ở xa: Tailscale).
@@ -317,7 +333,7 @@ Nếu sau này TV không hiện màn hình chính: Cài đặt → Ứng dụng 
 
 | Hiện tượng | Cách xử lý |
 |---|---|
-| Không kết nối được | Cùng mạng với TV chưa? Đã bật Gỡ lỗi ADB chưa? IP đúng chưa? Nhìn TV xem có hộp hỏi cho phép không |
+| Không kết nối được | App tự kiểm mạng và cổng của TV rồi nói một lý do kèm cách sửa (TV tắt hay đổi địa chỉ, ADB tắt, chưa cho phép, khác mạng, VPN chặn, đồng hồ sai). Tự xem: cùng mạng với TV chưa? Đã bật Gỡ lỗi ADB chưa? IP đúng chưa? Nhìn TV xem có hộp hỏi cho phép không |
 | **ADB: chờ TV cho phép** | Trên TV chọn "Luôn cho phép". Lỡ đóng hộp hỏi (Back, Home, Hủy)? App tự hỏi lại vài lần; web thì bấm "Thử kết nối lại". Không ở nhà: xem "Khi không ở nhà mà TV lại hỏi" ở trên |
 | **ADB: cổng đóng** | TV đang tắt, hoặc vừa khởi động lại: tắt rồi bật lại "Gỡ lỗi ADB" |
 | Bấm nút không ăn (app máy tính) | Chưa ghép nút remote (tab **Thiết lập**), hoặc đang mở hai cửa sổ cho cùng một TV |

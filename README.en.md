@@ -70,6 +70,7 @@ The README, the code and the site always call the parts by these names:
 | Turning on a TV that is fully off (Wake-on-LAN) | ✓ | off with the TV | ✓ |
 | Keys while the TV has not allowed ADB | ✓ | | ✓ |
 | Widget, Quick Settings tiles, the phone's volume keys | ✓ | | |
+| 🎮 Game controller | ✓ | ✓ | ✓ |
 | Link for Home Assistant, Shortcuts (Siri) | | ✓ | ✓, its own port while on |
 | Install on the controlling device | the app | nothing, fine on an iPhone | the app |
 | LG, Samsung, Roku, VIDAA TVs | ✓ | | ✓ |
@@ -266,6 +267,21 @@ Why not send the account from the phone to the TV? Tailscale only takes a sign-i
 The person at the TV: turn on ADB debugging, install TV Setup (or let the helper install it remotely with "Turn ADB on for me"), open TV Setup and press **Tailscale**. The TV shows a QR code: take a photo and send it to the helper. The helper scans it with a phone signed in to their Tailscale, presses Connect, then connects to the TV's `100.x` IP.
 </details>
 
+## Game controller
+
+Connect a controller (Xbox, PlayStation, Bluetooth or USB) to **the device running the app**, not to the TV, open the remote and press any button: "Controller connected" shows. Held arrows, volume and channel repeat.
+
+| Button | On the remote | Watching the TV's picture |
+|---|---|---|
+| D-pad, left stick | Arrows | Arrows |
+| A / B | OK / Back | The pad's A / B |
+| X / Y | Play-pause / Mute | X / Y |
+| LB / RB | Volume down / up | L1 / R1 |
+| LT / RT | Channel down / up | Channel down / up |
+| Start / Select | Home / Menu | Start / Select |
+
+While the picture is open, a game on the TV sees a controller as if plugged into the TV (with the picture's delay). Nothing is sent while you type or a dialog is open.
+
 ## Home Assistant and Shortcuts (Siri)
 
 Press keys, open apps and run scenes on the TV from Home Assistant or an iPhone Shortcut, on the home network. Open 🛠️ Settings → **Home Assistant · Shortcuts**, choose **On**, copy the link. Its token is its own, not the pairing code; **New token** ends the old link. Home only, never open it to the Internet (away from home: Tailscale).
@@ -316,7 +332,7 @@ If the TV later shows no home screen: Settings → Apps → System apps → **An
 
 | Symptom | What to do |
 |---|---|
-| Cannot connect | Same network as the TV? ADB debugging on? Right IP? Look at the TV for a permission dialog |
+| Cannot connect | The app checks the network and the TV's ports and gives one reason with its fix (TV off or at a new address, ADB off, not allowed yet, another network, a VPN in the way, wrong clock). By hand: same network as the TV? ADB debugging on? Right IP? Look at the TV for a permission dialog |
 | **ADB: waiting for the TV** | Choose "Always allow" on the TV. Closed the question by mistake (Back, Home, Cancel)? The apps ask again a few times; on the web press "Retry connection". Away from home: see "When you are away and the TV asks again" above |
 | **ADB: port closed** | The TV is off, or just restarted: turn "ADB debugging" off and on |
 | Buttons do nothing (app on the computer) | The remote is not paired (the **Setup** tab), or two windows are open for the same TV |

@@ -39,7 +39,8 @@ app/shared/src/.../core/ Kotlin shared by the apps, one package per kind of work
                          Android 11+ Wireless debugging: SPAKE2 with BoringSSL's own M/N, TLS 1.3 through `app/shared/conscrypt`
                          ConscryptBackend, found by mDNS; Phone and Computer apps only, `Manage.canPair`), TvShell, Pkg
   picture/               Tv (scrcpy session, video/audio/control), Feeds, AudioOut (Opus playback), Downmix, SoundQueue
-  web/                   Manage (the /api core for the web UI), HttpServer, WebPage, Invite, Qr, Transfer (Stop, no room)
+  web/                   Manage (the /api core for the web UI), HttpServer, WebPage, Invite, Qr, Transfer (Stop, no room), Hook
+                         (Home Assistant / Shortcuts: `/api/hook`, its own token; TV Setup on 8765, the computer app on port+1 only while on)
   ontv/                  things done on the TV over ADB: Setup (Optimize TV), SetupNeed / SetupUpdate, RulesClient (TV Setup's
                          rules), Draw (strokes to TV Setup's layer), Notify, NowPlaying (through Playing), RemoteLabels (app
                          names, pictures and Caps, through Meta and Caps: Java in src/main/java, dexed into
@@ -50,7 +51,7 @@ app/shared/src/.../core/ Kotlin shared by the apps, one package per kind of work
 app/android/.../phone/   phone app, one file per part, as extension functions on MainActivity: MainActivity (state, lifecycle),
                          Ui, Net, PickerScreen, RemoteScreen, Typing, InfoScreens, KeysOnly, AdbHelp, Media, Managing (the
                          web UI in a WebView), Updater, Listen + ListenService (🎧), Automation (timer, scenes, voice),
-                         SceneStore, Headless + SceneActivity/SceneService (widget, tiles, shortcuts), Tiles, RemoteWidget, ManyTvs (the list of TVs:
+                         SceneStore, Headless + SceneActivity/SceneService (widget, tiles, shortcuts), PadMap (a game controller → keys; the page's is `js/gamepad.js`), Diagnosing (the self-check's screen), Tiles, RemoteWidget, ManyTvs (the list of TVs:
                          install / remove / restart on several at once), SetupBanner (a new TV Setup), Drawing (✏️ on the picture), NowPlayingBar
                          (the now playing strip, the TV's clipboard)
 app/tv/                  TV Setup: MainActivity (the TV screen), RemoteService (web server), ManageActivity (the web UI on the
