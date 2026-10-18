@@ -23,7 +23,8 @@
       ],
       [
         { "id": "notify", "icon": "bell", "t": "rkey.notify", "do": "notify", "needs": ["adb"] },
-        { "id": "share", "icon": "share", "t": "rkey.share", "do": "share", "needs": ["adb"] }
+        { "id": "share", "icon": "share", "t": "rkey.share", "do": "share", "needs": ["adb"] },
+        { "id": "keyboard", "icon": "keyboard", "t": "rkey.keyboard", "do": "keyboard" }
       ]
     ],
     "nav": [

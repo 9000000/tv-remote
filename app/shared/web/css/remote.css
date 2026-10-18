@@ -28,7 +28,6 @@
 .rb { min-height:52px; border-radius:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:0; }
 .rb.lab { min-height:60px; }
 .rb small { font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
-#speak.on { background:var(--bad); color:#fff; }
 .rb.power { color:var(--bad); }
 .rb.play { background:var(--ink); color:var(--card); }
 .rb.play:hover { background:var(--ink); filter:brightness(.9); }

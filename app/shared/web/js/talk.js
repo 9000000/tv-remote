@@ -8,7 +8,7 @@ let talking = null;
 
 async function talk() {
   if (talking) { talking.stop(); return; }
-  const lit = (on) => ['#speak', '#voice'].forEach((x) => $(x).classList.toggle('on', on));   // both: the 🎤 by the box and Speak
+  const lit = (on) => $('#voice').classList.toggle('on', on);
   let mic;
   try { mic = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }); }
   catch { toast(T('remote.error_why', { why: T('remote.mic_not_allowed') })); return; }
@@ -44,4 +44,3 @@ async function talk() {
   id = r.id; held.forEach((p) => send(p)); held = [];
   if (done) { send(new Uint8Array(0), true); toast(T('remote.talk_sent')); } else toast(T('remote.talk_listening'));
 }
-if (talkable()) { put('#speak', 'hidden', false); $('#speak').addEventListener('click', talk); }

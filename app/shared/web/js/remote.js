@@ -225,19 +225,23 @@ $('#askf').addEventListener('submit', (e) => { e.preventDefault(); askTv($('#ask
 // the TV's own page is plain HTTP, so there the phone keyboard's own microphone key does it.
 const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
 if (!(Speech && window.isSecureContext) && matchMedia('(pointer:coarse)').matches) $('#ask').placeholder = T('remote.ask_keyboard_mic');
-if (Speech && window.isSecureContext) {
-  const b = $('#speak'); let rec = null; b.hidden = false;
-  b.addEventListener('click', () => {
-    if (rec) { rec.stop(); return; }
-    rec = new Speech(); rec.lang = LANG === 'vi' ? 'vi-VN' : 'en-US'; rec.interimResults = true;
-    rec.onresult = (e) => { const r = e.results[e.results.length - 1]; $('#ask').value = r[0].transcript; if (r.isFinal) { askTv(r[0].transcript); $('#ask').value = ''; } };
-    rec.onerror = (e) => toast(T('remote.error_why', { why: e.error === 'not-allowed' ? T('remote.mic_not_allowed') : e.error }));
-    rec.onend = () => { rec = null; b.classList.remove('on'); };
-    b.classList.add('on'); rec.start();
-  });
+let rec = null;
+function hear() {                                                     // this device's speech as words: into the box, then to the TV
+  if (rec) { rec.stop(); return; }
+  rec = new Speech(); rec.lang = LANG === 'vi' ? 'vi-VN' : 'en-US'; rec.interimResults = true;
+  rec.onresult = (e) => { const r = e.results[e.results.length - 1]; $('#ask').value = r[0].transcript; if (r.isFinal) { askTv(r[0].transcript); $('#ask').value = ''; } };
+  rec.onerror = (e) => toast(T('remote.error_why', { why: e.error === 'not-allowed' ? T('remote.mic_not_allowed') : e.error }));
+  rec.onend = () => { rec = null; $('#voice').classList.remove('on'); };
+  $('#voice').classList.add('on'); rec.start();
 }
-// Speak, as on the phone app: this device turns speech into text (the browser), else the "Hỏi TV" box takes it typed (on a
-// phone its keyboard's 🎤); held, or with no box (no ADB), the TV's own Assistant.
+// The typing box, or the "Hỏi TV" box when typing needs an ADB not there: scrolled to, the keyboard up (⌨️ in More keys)
+function kbdGo(at) {
+  const f = $(at || ($('#kbd').disabled ? '#ask' : '#text'));
+  f.scrollIntoView({ block: 'center', behavior: 'smooth' }); f.focus({ preventScroll: true });
+}
+// Speak, as on the phone app: this device turns speech into text (the browser), or its microphone goes to the TV's Assistant
+// (talk.js, where the window cannot), else the "Hỏi TV" box takes it typed (on a phone its keyboard's 🎤); held, the TV's
+// own Assistant.
 {
   const v = $('#voice'); let held = 0;
   const assist = () => { api('/api/key', { key: 'ASSIST' }); toast(T('remote.assistant_opened')); };
@@ -246,8 +250,8 @@ if (Speech && window.isSecureContext) {
   v.addEventListener('contextmenu', (e) => e.preventDefault());
   v.addEventListener('click', () => {
     if (held === -1) { held = 0; return; }
-    if (!$('#speak').hidden && (!$('#kbd').disabled || talkable())) $('#speak').click();   // talk.js needs no ADB
-    else if (!$('#kbd').disabled) { $('#ask').scrollIntoView({ block: 'center', behavior: 'smooth' }); $('#ask').focus(); }
-    else assist();
+    if (Speech && window.isSecureContext) hear();
+    else if (talkable()) talk();
+    else kbdGo('#ask');
   });
 }

@@ -1,6 +1,7 @@
 package dev.tvremote.desktop
 
 import dev.tvremote.core.Words
+import dev.tvremote.core.adb.TvShell
 import dev.tvremote.core.ontv.Draw
 import dev.tvremote.core.adb.AdbPrompt
 import dev.tvremote.core.remote.Atv
@@ -203,6 +204,12 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         }
         if (native(s) && post && r.path == "/api/search") {                // LG: YouTube's own search; Samsung cannot
             if (!s.need().search(r.json().optString("query").take(200))) throw IllegalArgumentException("this TV has no YouTube and no Google search")
+            return Response.json(JSONObject().put("to", "youtube"))
+        }
+        if (!native(s) && post && r.path == "/api/search" && !adbReady(s)) {   // no ADB yet: YouTube's results through the remote link
+            val q = r.json().optString("query").trim().take(200)
+            if (q.isEmpty()) throw IllegalArgumentException("empty query")
+            s.need().launch(TvShell.youtube(q))
             return Response.json(JSONObject().put("to", "youtube"))
         }
         if (native(s) && post && r.path == "/api/input") {                 // LG's switchInput; Manage's goes through ADB
