@@ -98,6 +98,8 @@
 .drawbar .swatch { width:30px; height:30px; min-height:0; padding:0; border-radius:50%; background:var(--c); border:2px solid var(--line, #444); }
 .drawbar .swatch.on { outline:3px solid var(--accent); outline-offset:2px; }
 #picbar { justify-content:flex-end; }
+/* how many devices watch / listen (the count includes this one): only once there are others */
+.screenbox .watchers { position:absolute; top:8px; left:8px; z-index:2; pointer-events:none; padding:2px 8px; border-radius:999px; background:rgba(30,33,40,.75); color:#e5e7eb; font-size:12px; font-weight:600; font-variant-numeric:tabular-nums; }
 .screenbox .ph { color:#9aa3af; font-size:14px; padding:16px; text-align:center; }
 .screenbox .blackhint { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); max-width:80%; z-index:3; pointer-events:none; padding:8px 12px; border-radius:10px; background:rgba(30,33,40,.85); color:#e5e7eb; font-size:13px; line-height:1.4; text-align:center; }
 .screenbox .blackhint small { display:block; color:#9aa3af; font-size:12px; }

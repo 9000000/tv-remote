@@ -18,7 +18,7 @@ object Scope {
 
     fun of(s: String?): String = if (s in ALL) s!! else FULL          // a pass from before scopes: its owner paired it with the code
 
-    private val VIEW_GET = setOf("/api/state", "/api/about", "/api/setup/need", "/api/screen", "/api/video", "/api/audio",
+    private val VIEW_GET = setOf("/api/state", "/api/about", "/api/setup/need", "/api/screen", "/api/video", "/api/audio", "/api/watchers",
         "/api/app/icon", "/api/app/meta", "/api/playing", "/api/caps", "/api/rules", "/api/scenes", "/api/paired")
     private val VIEW_POST = setOf("/api/adb/connect", "/api/paired/forget")   // forget: only itself (RemoteService.route)
     private val REMOTE_GET = VIEW_GET + setOf("/api/apps", "/api/clip", "/api/inputs")

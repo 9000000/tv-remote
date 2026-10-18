@@ -1044,6 +1044,15 @@
  "screen.player_not_loaded": "Could not load the video player.",
  "screen.tv_stopped_sending": "The TV stopped sending the picture.",
  "screen.no_picture_from_tv": "Could not get the picture from the TV.",
+ "screen.others_watching": "The TV is sending its picture to another device. Press ▶ Watch to try again.",
+ "screen.watchers": {
+  "one": "{n} device watching this TV",
+  "other": "{n} devices watching this TV"
+ },
+ "screen.listeners": {
+  "one": "{n} listening",
+  "other": "{n} listening"
+ },
  "screen.stop": "Stop",
  "screen.getting_picture": "Getting the picture...",
  "screen.no_picture_hw": "No picture after 10 seconds. This TV may not run the hardware encoder. Back to Auto?",
@@ -1714,6 +1723,7 @@
  "phone.listening_on_the_phone": "🎧 listening on the phone",
  "phone.touch_the_picture_to": "touch the picture to tap",
  "phone.the_tv_did_not": "the TV did not open its picture",
+ "phone.others_watching": "the TV is sending its picture to another device",
  "phone.tv_setup_on_the": "TV Setup on the TV is allowing this phone...",
  "phone.tv_setup_allowed_it": "✓ TV Setup allowed it. Connecting...",
  "phone.tv_setup_has_unpaired": "TV Setup has unpaired this phone: answer on the TV.",

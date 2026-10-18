@@ -15,6 +15,7 @@ import dev.tvremote.core.remote.Vidaa
 import dev.tvremote.core.remote.RemoteSteps
 import dev.tvremote.core.scenes.Scenes
 import dev.tvremote.core.picture.Tv
+import dev.tvremote.core.picture.Watchers
 import dev.tvremote.core.web.WebPage
 import org.json.JSONArray
 import org.json.JSONObject
@@ -184,6 +185,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             "/api/screen" -> return screenshot(s)
             "/api/video" -> return video(s, r)
             "/api/audio" -> return audio(s, r)
+            "/api/watchers" -> return Response.json(s.feeds.count(if (native(s)) "" else try { sh(s, Watchers.CMD) } catch (e: Exception) { "" }))   // how many watch this TV (Watchers.kt)
             "/api/scenes" -> return if (r.query.containsKey("download")) Scenes.backup(saved.scenes) else Response.json(JSONObject().put("scenes", saved.scenes))
             "/api/clip" -> return clip(s.control().clipboard())
             "/api/fleet" -> return fleetInfo(s)
@@ -484,14 +486,14 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         val level = if (q == "hd") HD else q.toIntOrNull() ?: 1
         val fps = r.q("fps").toIntOrNull() ?: 0; val rate = r.q("rate").toIntOrNull() ?: 0   // Advanced picture
         val enc = r.q("enc").takeIf { it == "hw" || it == "sw" } ?: "auto"
-        return s.feeds.video { l, sink -> Tv(keys, jar, s.host, null, level, 4096, false, l, sink, fps = fps, bitRate = rate, encoder = enc) }
+        return s.feeds.video("$level/$fps/$rate/$enc") { l, sink -> Tv(keys, jar, s.host, null, level, 4096, false, l, sink, fps = fps, bitRate = rate, encoder = enc) }
     }
 
     private fun audio(s: Session, r: HttpServer.Request): Response {
         if (!adbReady(s)) return Response.stream("application/octet-stream", -1) { it.write(packet(5, "adb: not ready".toByteArray())) }
         val opus = r.q("codec") == "opus"
         val hq = r.q("hq") == "1"                                     // high quality: Opus 160 kbit/s, or PCM as captured (48 kHz stereo)
-        return s.feeds.sound(hq, opus) { l, sink ->
+        return s.feeds.sound("$opus/${r.q("share")}/${opus && hq}", hq, opus) { l, sink ->
             Tv(keys, jar, s.host, null, 0, 0, false, l, null, if (opus) "opus" else "raw", sink, false, r.q("share") == "1", if (hq) 160000 else 64000)
         }.also { it.headers["Cache-Control"] = "no-store" }
     }

@@ -53,6 +53,9 @@ class CatchUp(private val lagMs: Long, private val fresh: () -> Unit) {
 Packet(5, packet(5, ByteArray(0)), now))                // the page: "it had to catch up", counted there
     }
 
+    /** A browser joining a picture already running: its frames are of no use before the next codec config or key frame. */
+    fun fromKey() { skipping = true }
+
     /** Anything that is not a picture packet (the end, nothing new): never dropped. */
     fun put(p: Packet) = q.add(p)
 

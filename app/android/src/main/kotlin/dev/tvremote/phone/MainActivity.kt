@@ -32,6 +32,7 @@ import dev.tvremote.core.adb.Adb
 import dev.tvremote.core.remote.Atv
 import dev.tvremote.core.remote.Remote
 import dev.tvremote.core.picture.Tv
+import dev.tvremote.core.picture.Watchers
 import dev.tvremote.core.adb.TvShell
 import dev.tvremote.update.Release
 import java.util.Locale
@@ -51,6 +52,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     @Volatile internal var pic: Tv? = null                             // the picture: a session of its own, as on the computer, so that
                                                                       // switching it on or off leaves the keys' one (and what rides on it) alone
     private var picTries = 0
+    private var picWatchers = 0                                       // devices watching this TV, ours too (Watchers.kt)
     @Volatile internal var sound: Tv? = null                           // the TV's sound, a session of its own (Listen.kt)
     internal var soundTries = 0
     internal var basic: Remote? = null                                 // keys only: an Android TV whose ADB is still off (Atv), or an LG / Samsung TV (KeysOnly.kt)
@@ -416,7 +418,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     }
 
     internal fun stopPicture() {
-        ui.removeCallbacks(picRetry)
+        ui.removeCallbacks(picRetry); ui.removeCallbacks(countWatchers); picWatchers = 0
         pic?.stop()
         pic = null
     }
@@ -429,6 +431,22 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     private val picRetry = Runnable { startPicture() }
 
+    /** " · 👁 3" once others watch too: nobody wonders then why the TV is slow, or why the picture went. */
+    private fun others(): String = if (picWatchers > 1) " · 👁 $picWatchers" else ""
+
+    /** Every 10 s while the picture shows: how many devices watch this TV (each runs its own scrcpy-server there). */
+    private val countWatchers: Runnable = object : Runnable {
+        override fun run() {
+            val t = tv
+            if (pic == null || t == null || !t.ready()) return
+            Thread {
+                val n = try { Watchers.parse(t.shell(Watchers.CMD))?.watch ?: 0 } catch (e: Exception) { 0 }
+                ui.post { picWatchers = n }
+            }.start()
+            ui.postDelayed(this, 10000)
+        }
+    }
+
     /** The picture's session says only how it shows; whether the TV is there at all is the keys' session's to tell. */
     private val picListener = object : Tv.Listener {
         override fun onStatus(key: String, detail: String) {
@@ -437,9 +455,10 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 val h = host
                 if (pic !== from || from == null || h == null) return@post
                 when (key) {
-                    "rate" -> status.text = title(entry ?: h) + " · " + (if (listen) "🎧 " else "") + detail + " KB/s"
+                    "rate" -> status.text = title(entry ?: h) + " · " + (if (listen) "🎧 " else "") + detail + " KB/s" + others()
                     "live" -> {
                         picTries = 0; picShown = true
+                        ui.removeCallbacks(countWatchers); ui.postDelayed(countWatchers, 3000)
                         waiting.visibility = View.GONE
                         status.text = title(entry ?: h) + " · " + if (listen) T("phone.listening_on_the_phone") else T("phone.touch_the_picture_to")
                     }
@@ -447,7 +466,13 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                         pic = null
                         if (tv?.ready() != true) return@post          // the TV is gone: the keys' session reconnects both
                         if (++picTries <= 3) ui.postDelayed(picRetry, 1000L * picTries)
-                        else status.text = title(entry ?: h) + " · " + T("phone.the_tv_did_not")
+                        else {                                        // never a picture: a TV with one encoder may be busy with another device
+                            val t = tv ?: return@post
+                            Thread {
+                                val n = try { Watchers.parse(t.shell(Watchers.CMD))?.watch ?: 0 } catch (e: Exception) { 0 }
+                                ui.post { if (pic == null && host == h) status.text = title(entry ?: h) + " · " + T(if (n > 0) "phone.others_watching" else "phone.the_tv_did_not") }
+                            }.start()
+                        }
                     }
                 }
             }

@@ -423,6 +423,7 @@ class Tv(
     }
 
     fun ready(): Boolean = control != null && !stopped
+    fun stopped(): Boolean = stopped
 
     // ---- input: scrcpy control messages (big-endian), see ControlMessageReader.java in scrcpy ----
     private fun send(msg: ByteArray) {

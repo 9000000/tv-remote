@@ -996,6 +996,15 @@
  "screen.player_not_loaded": "Không tải được phần phát hình.",
  "screen.tv_stopped_sending": "TV đã dừng gửi hình.",
  "screen.no_picture_from_tv": "Không lấy được hình từ TV.",
+ "screen.others_watching": "TV đang gửi hình cho máy khác. Bấm ▶ Xem để thử lại.",
+ "screen.watchers": {
+  "one": "{n} máy đang xem TV này",
+  "other": "{n} máy đang xem TV này"
+ },
+ "screen.listeners": {
+  "one": "{n} máy đang nghe",
+  "other": "{n} máy đang nghe"
+ },
  "screen.stop": "Dừng",
  "screen.getting_picture": "Đang lấy hình...",
  "screen.no_picture_hw": "Chưa thấy hình sau 10 giây. TV này có thể không chạy được bộ mã hóa Phần cứng. Chuyển về Tự chọn?",
@@ -1657,6 +1666,7 @@
  "phone.listening_on_the_phone": "🎧 đang nghe trên điện thoại",
  "phone.touch_the_picture_to": "chạm hình để bấm",
  "phone.the_tv_did_not": "TV không mở được hình",
+ "phone.others_watching": "TV đang gửi hình cho máy khác",
  "phone.tv_setup_on_the": "TV Setup trên TV đang tự cho phép máy này...",
  "phone.tv_setup_allowed_it": "✓ TV Setup đã cho phép. Đang kết nối...",
  "phone.tv_setup_has_unpaired": "TV Setup đã hủy ghép máy này: hãy bấm trên TV.",

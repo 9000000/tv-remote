@@ -15,7 +15,7 @@ function stopScreen(msg) {
   if (typeof drawing !== 'undefined' && drawing) drawStop();         // no picture to draw on
   screenOn = false; screenGen++; if (streamCtl) streamCtl.abort(); if (player) { player.destroy(); player = null; }
   $('#screencard').classList.remove('on'); if (msg && matchMedia('(max-width:899px)').matches) toast(msg);   // on a phone the box is folded away: say it where it is seen
-  setLabel($('#screenbtn'), '▶', T('remote.watch')); setScreenPlaceholder(msg); setScreenInfo(''); dockScreen();
+  setLabel($('#screenbtn'), '▶', T('remote.watch')); setScreenPlaceholder(msg); setScreenInfo(''); dockScreen(); put('#watchers', 'hidden', true);
 }
 async function snapOnce() {
   try {
@@ -246,6 +246,10 @@ async function h264Loop(gen) {
     }
   } catch (e) { why = T('screen.no_picture_from_tv'); }
   if (screenOn && gen === screenGen && afterWake('screen')) { startScreen(); return; }   // this device slept, not the TV
+  if (screenOn && gen === screenGen && !frames && !screenEl()) {     // never a frame: a TV with one encoder may be busy with another device
+    await sleep(1000);                                                // our own scrcpy-server gone from the TV's list first
+    const w = await watchersNow(); if (w.watch > 0 && gen === screenGen) why = T('screen.others_watching');
+  }
   if (screenOn && gen === screenGen) stopScreen(why);                 // back to the plain remote: no dead picture left on the page
 }
 // Keep watching on the other tabs: move the picture card into a floating corner slot, and back on the Remote tab.
@@ -264,6 +268,7 @@ function startScreen() {
   $('#screencard').classList.add('on'); $('#screenbox').style.aspectRatio = '';
   setLabel($('#screenbtn'), '⏹', T('screen.stop')); setScreenPlaceholder(T('screen.getting_picture'));
   ($('#screenmode').value === 'snap' ? snapLoop : h264Loop)(gen);   // every core sends H.264
+  setTimeout(() => { if (gen === screenGen) showWatchers(); }, 3000);   // once our own session is on the TV's list
   const enc = picTune().enc;                                          // an encoder picked by hand that this TV does not have sends nothing: Auto would have moved on
   if (enc && $('#screenmode').value !== 'snap') setTimeout(async () => {
     if (gen !== screenGen || !screenOn || screenEl()) return;
@@ -272,6 +277,22 @@ function startScreen() {
     if (screenOn) startScreen();
   }, 10000);
 }
+// How many devices watch and listen to this TV (/api/watchers: the TV's scrcpy-servers, every phone, computer and TV page),
+// shown on the picture once there are others: nobody wonders then why the TV is slow or the picture went.
+async function watchersNow() {
+  try { const r = await fetch('/api/watchers'); return r.ok ? await r.json() : {}; } catch { return {}; }
+}
+async function showWatchers() {
+  if (!screenOn) { put('#watchers', 'hidden', true); return; }
+  const w = await watchersNow(), mine = typeof listenOn !== 'undefined' && listenOn ? 1 : 0;
+  const watch = w.watch || 0, listen = w.listen || 0, more = watch > 1 || listen > mine;
+  if (!screenOn) return;
+  put('#watchers', 'hidden', !more);
+  if (!more) return;
+  put('#watchers', 'textContent', '👁 ' + watch + (listen ? ' · 🎧 ' + listen : ''));
+  put('#watchers', 'title', T('screen.watchers', { n: watch }) + (listen ? ' · ' + T('screen.listeners', { n: listen }) : ''));
+}
+setInterval(() => { if (screenOn && !document.hidden) showWatchers(); }, 10000);
 setInterval(() => {
   if (screenOn && $('#screenmode').value !== 'snap' && streamCtl && !streamCtl.signal.aborted) {
     streamFps = frames;

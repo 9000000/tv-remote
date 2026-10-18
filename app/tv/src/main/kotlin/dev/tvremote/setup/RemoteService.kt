@@ -28,6 +28,7 @@ import dev.tvremote.core.scenes.Scenes
 import dev.tvremote.core.ontv.Setup
 import dev.tvremote.core.ontv.SetupUpdate
 import dev.tvremote.core.picture.Tv
+import dev.tvremote.core.picture.Watchers
 import dev.tvremote.core.web.WebPage
 import org.json.JSONArray
 import org.json.JSONObject
@@ -141,7 +142,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         /** Needs the input session (`tv`) or is a hand on the remote: wakes it when resting and keeps it from resting. */
         private val SESSION = setOf("/api/key", "/api/type", "/api/touch", "/api/clip", "/api/screen", "/api/video", "/api/adb/connect", "/api/warm")
         /** What a page asks by itself every few seconds: says nothing about anyone using the remote. */
-        private val PASSIVE = setOf("/api/state", "/api/about", "/api/playing", "/api/health", "/api/stats", "/api/paired", "/api/app/icon", "/api/app/meta", "/api/setup/need", "/api/wirelog")
+        private val PASSIVE = setOf("/api/state", "/api/watchers", "/api/about", "/api/playing", "/api/health", "/api/stats", "/api/paired", "/api/app/icon", "/api/app/meta", "/api/setup/need", "/api/wirelog")
         private fun ok(): HttpServer.Response = HttpServer.Response.ok()
     }
 
@@ -168,7 +169,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     private var manage: Manage? = null
     private lateinit var prefs: SharedPreferences
     @Volatile private var tv: Tv? = null
-    private val feeds = Feeds()                                       // the picture and the sound for one browser each
+    private val feeds = Feeds()                                       // the picture and the sound, one session each for every browser
     @Volatile private var stopping = false
     @Volatile private var lastUse = 0L                                // when a paired browser last used the input session (keys, touch, picture...)
     @Volatile private var lastSeen = 0L                               // when a paired browser last asked for anything but a poll: updates wait for it
@@ -388,17 +389,17 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         return null
     }
 
-    // ---------------------------------------------------------------- the picture, for one browser at a time
+    // ---------------------------------------------------------------- the picture, one session for every browser
     /** The picture for the page, from a second session made only while a browser watches: see Feeds. */
     private fun video(quality: Int, fps: Int, rate: Int, enc: String): HttpServer.Response =
-        feeds.video { l, sink -> Tv(this, "127.0.0.1", null, quality, 1280, false, l, sink, fps = fps, bitRate = rate, encoder = enc) }
+        feeds.video("$quality/$fps/$rate/$enc") { l, sink -> Tv(this, "127.0.0.1", null, quality, 1280, false, l, sink, fps = fps, bitRate = rate, encoder = enc) }
 
     private fun scenes(): JSONArray = try { JSONArray(prefs.getString("scenes", "[]")) } catch (e: Exception) { JSONArray() }
 
-    // ---------------------------------------------------------------- the sound, for one browser at a time
+    // ---------------------------------------------------------------- the sound, one session for every browser
     /** While someone listens the TV's own speakers are silent (unless [share] works there); they come back when the browser stops. */
     private fun sound(share: Boolean, hq: Boolean): HttpServer.Response =
-        feeds.sound(hq, false) { l, sink -> Tv(this, "127.0.0.1", null, 0, 0, false, l, null, "raw", sink, false, share) }
+        feeds.sound("raw/$share", hq, false) { l, sink -> Tv(this, "127.0.0.1", null, 0, 0, false, l, null, "raw", sink, false, share) }
 
     // ---------------------------------------------------------------- HTTP
     @Throws(Exception::class)
@@ -462,6 +463,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             }
             "/api/video" -> return video(r.q("q").toIntOrNull() ?: 1, r.q("fps").toIntOrNull() ?: 0, r.q("rate").toIntOrNull() ?: 0, r.q("enc").takeIf { it == "hw" || it == "sw" } ?: "auto")
             "/api/audio" -> return sound(r.query["share"] == "1", r.query["hq"] == "1")
+            "/api/watchers" -> return HttpServer.Response.json(feeds.count(try { link?.takeIf { adbState == "ready" }?.get()?.shell(Watchers.CMD) ?: "" } catch (e: Exception) { "" }))
             "/api/rules" -> return try {
                 val st = Rules.change(this, if (r.method == "POST") r.json() else JSONObject())
                 HttpServer.Response.json(st)
