@@ -111,6 +111,7 @@
     var el = document.getElementById(id); if (!el) return;
     hide(); closeDrawer();
     history.replaceState(null, "", "#" + id);
+    hold(id);
     el.scrollIntoView({ behavior: "smooth", block: "start" });
     flash(el);
   }
@@ -150,24 +151,31 @@
   matchMedia("(min-width:981px)").addEventListener("change", function(m){ if (m.matches) closeDrawer(); });
 
   // the topic being read lights in the menu
-  var links = {}, cur = null, busy = false;
+  var links = {}, cur = null, busy = false, held = null, heldT = 0;
   [].forEach.call(side.querySelectorAll("a[data-t]"), function(a){ links[a.dataset.t] = a; });
   function spy(){
     busy = false;
     var y = 190, now = topics[0];
     topics.forEach(function(t){ if (t.getBoundingClientRect().top <= y) now = t; });
     if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) now = topics[topics.length - 1];
-    if (now.id === cur) return;
-    if (cur) links[cur].classList.remove("on");
-    cur = now.id; var a = links[cur]; a.classList.add("on"); a.setAttribute("aria-current", "true");
+    if (!held) light(now.id);
+  }
+  function light(id){
+    if (id === cur || !links[id]) return;
+    if (cur){ links[cur].classList.remove("on"); links[cur].removeAttribute("aria-current"); }
+    cur = id; var a = links[cur]; a.classList.add("on"); a.setAttribute("aria-current", "true");
     if (side.scrollHeight > side.clientHeight){                  // keep it in view inside the menu without moving the page
       if (a.offsetTop < side.scrollTop + 30) side.scrollTop = a.offsetTop - 60;
       else if (a.offsetTop + a.offsetHeight > side.scrollTop + side.clientHeight - 30) side.scrollTop = a.offsetTop - side.clientHeight + a.offsetHeight + 60;
     }
   }
+  // a jump lights its topic at once and keeps it until the smooth scroll stops: not every topic it passes on the way
+  function hold(id){ held = id; light(id); clearTimeout(heldT); heldT = setTimeout(release, 1500); }
+  function release(){ held = null; }                               // no spy here: a topic at the very end never reaches the top
+  side.addEventListener("click", function(e){ var a = e.target.closest("a[data-t]"); if (a) hold(a.dataset.t); });
   var prog = document.querySelector(".navprog");
   function bar(){ var max = root.scrollHeight - innerHeight; prog.style.setProperty("--p", max > 0 ? Math.min(1, Math.max(0, scrollY / max)).toFixed(4) : 0); }
-  addEventListener("scroll", function(){ if (!busy){ busy = true; requestAnimationFrame(function(){ spy(); bar(); }); } }, { passive: true });
+  addEventListener("scroll", function(){ if (held){ clearTimeout(heldT); heldT = setTimeout(release, 150); } if (!busy){ busy = true; requestAnimationFrame(function(){ spy(); bar(); }); } }, { passive: true });
   addEventListener("resize", bar);
   addEventListener("hashchange", function(){ var el = document.getElementById(location.hash.slice(1)); if (el && el.classList.contains("topic")) flash(el); });
 
