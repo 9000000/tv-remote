@@ -162,13 +162,13 @@
   .capsplain { list-style:none; margin:0; padding:0; display:grid; gap:6px; font-size:14px; } .capsplain .no { color:var(--muted); }
   .setlist .setrow { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,auto); gap:4px 14px; align-items:center; padding:9px 0; border-top:1px solid var(--line); cursor:pointer; }
   .setname { display:flex; flex-direction:column; gap:2px; min-width:0; font-size:14px; } .setname small { font-size:11px; color:var(--muted); overflow-wrap:anywhere; }
-  .setval { max-width:46vw; font-size:14px; font-weight:600; text-align:right; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; word-break:break-all; }
+  .setval { max-width:46vw; font-size:14px; font-weight:600; text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .setval.mono { font-size:12px; font-weight:400; color:var(--muted); } .setval.long { font-size:12px; font-weight:500; }
   .setstep { display:flex; align-items:center; gap:6px; } .setstep .setval { min-width:3ch; text-align:center; }
   .setstep .setnum { width:7ch; height:var(--ctl-sm); padding:0 6px; text-align:center; } .setstep .setmax { color:var(--muted); font-size:13px; white-space:nowrap; } .setrange { width:min(150px, 34vw); accent-color:var(--accent); }
   .setctl { display:flex; align-items:center; justify-content:flex-end; gap:6px; } .setctl .small { min-height:var(--chip); padding:0 12px; }
   .setpick { min-height:34px; max-width:46vw; border-radius:10px; background:var(--btn); color:var(--ink); border:0; padding:0 8px; font:inherit; font-size:14px; }
-  .setlist .setrow.full { grid-template-columns:1fr; } .setlist .setrow.full .setval { display:block; max-width:none; text-align:left; }
+  .setlist .setrow.full { grid-template-columns:1fr; } .setlist .setrow.full .setval { display:block; max-width:none; text-align:left; white-space:normal; overflow-wrap:anywhere; } .setrow.full .run > .rin { animation:none; display:inline; }
   .setfilter { margin:10px 0 4px; } .setfilter button[data-n]::after { content:' · ' attr(data-n); opacity:.7; font-weight:500; }
   .setgroupbox { border-top:1px solid var(--line); } .setgroupbox > summary { cursor:pointer; font-size:14px; font-weight:700; padding:11px 0; }
   .setgroupbox[open] > summary { color:var(--muted); font-size:13px; } .setgroupbox .setrow:first-of-type { border-top:0; }
@@ -438,10 +438,10 @@
   .nowapp .appicon:not(.placeholder):not(.adaptive) { width:auto; max-width:96px; } .nowapp .appicon:not(.adaptive) img { width:auto; max-width:96px; height:24px; object-fit:contain; }   /* the picture's own shape: a wide banner is not cut to a square */
   .plhead { display:flex; align-items:center; gap:8px; min-width:0; } .plhead img { width:36px; height:36px; border-radius:8px; flex:none; object-fit:contain; }
   .pltext { flex:1; min-width:0; display:flex; flex-direction:column; } .pltext b, .pltext small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .pltext small { color:var(--muted); font-size:12px; }
-  .pltext b.run { text-overflow:clip; } .pltext b span { display:inline-block; }
-  .pltext b.run span { animation:plrun var(--run) ease-in-out infinite alternate; }
+  /* a line wider than its place slides to its end and back (ui.js runFit) */
+  .run { text-overflow:clip !important; } .run > .rin { display:inline-block; animation:plrun var(--run) ease-in-out infinite alternate; }
   @keyframes plrun { 0%, 20% { transform:none; } 80%, 100% { transform:translateX(var(--over)); } }
-  @media (prefers-reduced-motion:reduce) { .pltext b.run { text-overflow:ellipsis; } .pltext b.run span { animation:none; display:inline; } }
+  @media (prefers-reduced-motion:reduce) { .run { text-overflow:ellipsis !important; } .run > .rin { animation:none; display:inline; } }
   .plbar { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; } .plbar[hidden] { display:none; }
   .plbar input { flex:1; min-width:0; accent-color:var(--accent); cursor:pointer; } .plbar input:disabled { cursor:default; }
   dialog.ask textarea { width:100%; min-height:120px; resize:vertical; font:inherit; padding:8px 10px; border-radius:10px; border:1px solid var(--line); background:var(--bg); color:var(--ink); }

@@ -7,22 +7,14 @@ const plPos = () => { const o = PL.o; let p = o.pos || 0; if (o.state === 'playi
 function plDraw() {
   const o = PL.o, name = o.title || o.app, on = o.state && o.state !== 'none' && !!name;   // no title (FPT Play): the app's name
   $('#playing').hidden = !on; if (!on) return;
-  const t = $('#pltitle'); if (t.title !== name) { t.title = name; t.textContent = ''; t.append(Object.assign(document.createElement('span'), { textContent: name })); }
-  plRun(t);
+  const t = $('#pltitle'); if (t.title !== name) { t.title = name; t.textContent = ''; t.append(Object.assign(document.createElement('span'), { className: 'rin', textContent: name })); }
+  runFit(t);
   $('#plsub').textContent = o.title ? o.sub || '' : '';            // the app is the picture beside it and "Đang mở" below, as on the phone app
   const icon = '/api/app/icon?pkg=' + encodeURIComponent(o.pkg); if ($('#plicon').dataset.src !== icon) { $('#plicon').dataset.src = icon; $('#plicon').src = icon; }
   $('#plbar').hidden = !o.dur;
   if (o.dur && !PL.dragging) { $('#plseek').value = Math.round(plPos() / o.dur * 1000); $('#plpos').textContent = mmss(plPos()); $('#pldur').textContent = mmss(o.dur); }
   $('#plseek').disabled = !o.seek || !can('control');               // a guest who may only watch sees where it is, and no more
   $('#plplay use').setAttribute('href', o.state === 'paused' ? '#i-play' : '#i-pause');
-}
-// A title wider than its place slides to its end and back (the phone app's marquee), checked on every draw so a resized
-// window is followed; a plain cut with … when motion is reduced.
-function plRun(t) {
-  const over = Math.max(0, t.firstChild.scrollWidth - t.clientWidth);
-  if (String(over) === t.dataset.over) return; t.dataset.over = over;
-  t.classList.toggle('run', over > 0);
-  t.style.setProperty('--over', -over + 'px'); t.style.setProperty('--run', (3 + over / 30).toFixed(1) + 's');   // 30 px/s, plus the pauses at each end
 }
 async function plPoll() {
   clearTimeout(PL.timer);

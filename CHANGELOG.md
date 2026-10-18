@@ -11,6 +11,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Tất cả cài đặt: Gỡ lỗi ADB và Gỡ lỗi không dây bật lên được, có hỏi lại trước (không tắt được, để không mất kết nối); TV tự tắt lại (Gỡ lỗi không dây cần Wi‑Fi) thì app nói rõ. Độ sáng là thanh kéo. Âm lượng phim, nhạc và âm lượng hệ thống hiện mức thật của TV và mức tối đa (ví dụ 9 / 15), gõ số hoặc bấm − / +, đổi qua lệnh âm lượng thật (TV không nhận lệnh thì bấm phím âm lượng). Thêm tên và nhóm mới “HDMI & loa ngoài” (HDMI‑CEC, eARC), bấm giữ, tốc độ con trỏ, thông báo nổi, VPN luôn bật; cờ nhà máy và công tắc riêng của TCL chỉ xem.
 - TCL (Android 11): TV Setup bị tắt rồi sập mỗi lần app điện thoại / máy tính mở lại nó (TCL chặn chạy nền dạng foreground, Android giết app sau 10 giây). Giờ app mở TV Setup bằng đường thường và đưa nó vào danh sách không bị tiết kiệm pin, nên không sập và ít bị TV tắt hơn.
 - Màn remote: “Thêm phím” và bàn số mở / đóng trượt mượt, phần bên dưới trượt theo thay vì nhảy (web và app điện thoại). TV Setup: mỗi dòng trong ô Hoạt động có giờ.
+- Chữ một dòng không đủ chỗ (tên bài và kênh đang phát, giá trị cài đặt, tên gói app, tên cảnh) tự chạy qua lại thay vì bị “…”. Máy bật giảm chuyển động thì vẫn là “…”.
 - Hàng tab và hàng tab con (Sức khỏe: Hiện tại … Khả năng) không còn đẩy chữ ra ngoài khi màn hình hẹp hoặc chữ to: hàng cuộn ngang, cạnh còn nội dung có lớp mờ, tab đang chọn tự cuộn vào giữa. Tab “Tệp · Cài” đổi tên thành “Tệp”.
 
 **English**
@@ -18,6 +19,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - All settings: ADB and Wireless debugging can be turned on after a question (never off, so the remotes are not cut off); when the TV turns it straight back off (Wireless debugging needs Wi‑Fi) the app says so. Brightness is a slider. Media and system volume show the TV's live level and its top (such as 9 / 15), typed or with − / +, set through the real volume command (the volume keys where the TV ignores it). New names and a new group “HDMI & audio out” (HDMI‑CEC, eARC), long‑press delay, pointer speed, pop‑up notifications, always‑on VPN; factory flags and TCL's own switches are view only.
 - TCL (Android 11): TV Setup was stopped, then crashed each time the phone or computer app started it again (TCL refuses a foreground service, Android kills the app 10 s later). The apps now start it the plain way and put it on the battery allow list: no crash, and the TV stops it less.
 - Remote: “More keys” and the number pad slide open and shut, what is below follows instead of jumping (web and phone app). TV Setup: each line in Activity has its time.
+- A line of text with no room (now playing title and channel, setting values, package names, scene names) slides to its end and back instead of ending in “…”; with reduced motion it stays “…”.
 - The tab bar and the sub‑tabs (Health: Now … Capabilities) no longer push words out on a narrow screen or with large text: the row scrolls sideways, a fade shows the side with more, the selected tab scrolls into the middle. The “Files · Install” tab is now “Files”.
 
 ## 0.9.0 - 2026-10-18
