@@ -7,7 +7,7 @@ import dev.tvremote.core.web.HttpServer
 
 /**
  * The TV's picture and sound for the page (js/screen.js h264Loop, js/listen.js): one session each on the TV, however many
- * browsers watch or listen (each a scrcpy-server of ~140 MB on the TV, and a hardware encoder it may have only one of). A
+ * browsers watch or listen (each a scrcpy-server of ~50 MB of its own on the TV, and a hardware encoder it may have only one of). A
  * second browser used to take the picture from the first, which then said the TV sent nothing. Both are packets of 1 byte
  * kind, 4 bytes length, then the data, sent as long as the browser reads them. The session itself is made by the caller
  * ([Tv] on the TV for TV Setup, on the computer for the desktop server).

@@ -8,12 +8,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 
-- Nhiều máy cùng xem / nghe một TV: góc hình hiện **👁 2** (và 🎧) khi có máy khác cũng đang xem, trên web và app điện thoại. Các trình duyệt mở cùng app máy tính hoặc cùng trang web của TV giờ dùng chung một luồng hình và một luồng tiếng (một scrcpy-server trên TV thay vì mỗi máy một cái, đỡ ~140 MB RAM TV mỗi máy). Trước đây trình duyệt thứ hai giành mất hình của trình duyệt đầu, trình duyệt đầu báo "Không lấy được hình từ TV".
+- Nhiều máy cùng xem / nghe một TV: góc hình hiện **👁 2** (và 🎧) khi có máy khác cũng đang xem, trên web và app điện thoại. Các trình duyệt mở cùng app máy tính hoặc cùng trang web của TV giờ dùng chung một luồng hình và một luồng tiếng (một scrcpy-server trên TV thay vì mỗi máy một cái, đỡ ~50 MB RAM TV mỗi máy). Trước đây trình duyệt thứ hai giành mất hình của trình duyệt đầu, trình duyệt đầu báo "Không lấy được hình từ TV".
 - TV chỉ gửi được một luồng hình mà máy khác đang xem: báo "TV đang gửi hình cho máy khác" thay vì "TV không gửi hình".
 
 **English**
 
-- Several devices on one TV: the picture shows **👁 2** (and 🎧) when another device watches too, on the web and in the phone app. Browsers on the same computer app or the same TV web page now share one picture stream and one sound stream (one scrcpy-server on the TV instead of one each, ~140 MB of the TV's memory saved per device). Before, a second browser took the picture from the first, which then said it could not get the picture.
+- Several devices on one TV: the picture shows **👁 2** (and 🎧) when another device watches too, on the web and in the phone app. Browsers on the same computer app or the same TV web page now share one picture stream and one sound stream (one scrcpy-server on the TV instead of one each, ~50 MB of the TV's memory saved per device). Before, a second browser took the picture from the first, which then said it could not get the picture.
 - A TV that can send only one picture, already watched by another device, now says "The TV is sending its picture to another device" instead of "no picture".
 
 ## 0.10.0 - 2026-10-19
