@@ -25,6 +25,11 @@ KEY=${RELEASE_KEY:-$HOME/.tv-remote-release/ed25519.pem}
 grep -q "$(java dev/Sign.java pub "$KEY")" app/shared/src/main/kotlin/dev/tvremote/update/Release.kt || { echo "$KEY is not one of Release.KEYS"; exit 1; }
 [ -f app/android/signing.jks ] && [ -f app/tv/signing.jks ] || { echo "signing.jks missing: an APK signed with a new key cannot update the installed apps"; exit 1; }
 [ -z "$(git status --porcelain)" ] || { echo "commit your changes first"; exit 1; }
+# the user guide: a topic whose app files changed since the release it was checked against may now be wrong
+if [ -z "$GUIDE_OK" ] && [ -n "$(dev/guide_stale.py -q)" ]; then
+  dev/guide_stale.py
+  echo "update those topics in docs/guide.html (or check they are still right) and set their data-v=\"next\"; GUIDE_OK=1 releases anyway"; exit 1
+fi
 LAST=$(git describe --tags --abbrev=0 2>/dev/null || true)
 next() { python3 -c 'import sys; a = [int(x) for x in sys.argv[1].split(".")]; i = {"major": 0, "minor": 1}.get(sys.argv[2], 2); a[i] += 1; a[i + 1:] = [0] * (2 - i); print(".".join(map(str, a)))' "$1" "${BUMP:-patch}"; }
 if [ -n "$LAST" ]; then
@@ -54,6 +59,12 @@ s = open("CHANGELOG.md").read().replace("## Unreleased\n", f"## {v} - {day}\n\nW
 open("CHANGELOG.md", "w").write(s)
 PY
 fi
+# the guide's topics checked against main ("next") now describe this release
+python3 - "$VER" <<'PY'
+import sys
+s = open("docs/guide.html", encoding="utf-8").read()
+open("docs/guide.html", "w", encoding="utf-8").write(s.replace('data-v="next"', f'data-v="{sys.argv[1]}"'))
+PY
 NOTES=$(awk -v v="## $VER " 'index($0, v) == 1 {on = 1; next} on && /^## / {exit} on' CHANGELOG.md)
 [ -n "$NOTES" ] || { echo "CHANGELOG.md has no section for $VER"; exit 1; }
 if [ -n "$(git status --porcelain)" ]; then

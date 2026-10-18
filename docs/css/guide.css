@@ -80,6 +80,7 @@ mark{background:rgba(255,163,26,.3);color:var(--text);border-radius:3px;padding:
   .gtab .cmp td:last-child{padding-bottom:12px}
   .gtab code{white-space:nowrap}
 }
+.gver{color:var(--dim);font-size:13px;text-align:center;margin-top:10px}
 .gpager{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .gpager a{display:grid;gap:2px;padding:12px 16px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);font-weight:600;font-size:15px;min-width:0}
 .gpager a:hover{border-color:var(--blue)}

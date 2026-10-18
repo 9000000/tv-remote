@@ -13,7 +13,8 @@ path is `docs/*` (Cloudflare's `*` spans folders; `docs/**` matches nothing and 
 | `index.html` | the page, with its JSON-LD for search engines |
 | `css/site.css`, `js/site.js` | its look and behaviour |
 | `guide.html`, `css/guide.css`, `js/guide.js` | the user guide (served at `/guide`): written once as Vietnamese + English spans, a menu, offline accent-insensitive search built from the page |
-| `js/guide-anim.js` | the guide's four animations (pairing, Allow USB debugging, game controller, Home Assistant), `.ga-*` markup in `guide.html` |
+| `dev/guide_stale.py` | which guide topics may be out of date: each topic's `data-v` (the release it was checked against, `next` = main, stamped by `release.sh`) and `data-src` (the app files it depends on); `release.sh` stops while any is listed |
+| `js/guide-anim.js` | the guide's four animations (pairing, Allow USB debugging, game controller, Home Assistant), `.ga-*` markup in `guide.html`; the install topics' `.gst` figures take the home page's install stories (`data-from` = the panel's id in `index.html`) and play them over the topic's own steps, a step per part |
 | `js/qr.js` | a copy of `app/shared/web/js/qr.js`, kept the same by `app/shared/tests/page.test.js` |
 | `js/anim.js`, `lib/gsap.min.js` | the animation runtime and helpers; GSAP 3.13.0 as published |
 | `js/demo.js`, `css/demo.css` | the hero demo |

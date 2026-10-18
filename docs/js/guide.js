@@ -3,6 +3,7 @@
   var root = document.documentElement;
   var TITLES = { vi: "Hướng dẫn dùng TV Remote", en: "TV Remote guide: step by step" };
   var PREV = { vi: "Trước", en: "Previous" }, NEXT = { vi: "Tiếp", en: "Next" };
+  var FOR = { vi: "Mục này viết cho bản ", en: "Written for version " };
   var HOLD = { vi: "Tìm trong hướng dẫn…", en: "Search the guide…" };
   var NONE = { vi: "Không thấy mục nào khớp. Thử từ khác, ví dụ “adb” hay “hẹn giờ”.", en: "Nothing matches. Try another word, such as “adb” or “sleep timer”." };
   var q = document.getElementById("gq"), res = document.getElementById("gres"), dlg = document.getElementById("gdlg");
@@ -185,6 +186,8 @@
     var p = topics[k - 1], n = topics[k + 1];
     pager.innerHTML = (p ? '<a class="pv" href="#' + p.id + '" data-t="' + p.id + '"><small>← ' + PREV[lang] + '</small>' + name(p) + '</a>' : '')
       + (n ? '<a class="nx" href="#' + n.id + '" data-t="' + n.id + '"><small>' + NEXT[lang] + ' →</small>' + name(n) + '</a>' : '');
+    var v = t.dataset.v, ver = document.querySelector(".gver");    // "next": checked against main, stamped by release.sh
+    ver.hidden = !v || v === "next"; ver.textContent = ver.hidden ? "" : FOR[lang] + v;
     document.title = textOf(t.querySelector("h3"), lang).replace(/^\S+\s/, "") + " · " + TITLES[lang];
   }
   pager.addEventListener("click", function(e){
