@@ -12,6 +12,8 @@ path is `docs/*` (Cloudflare's `*` spans folders; `docs/**` matches nothing and 
 |---|---|
 | `index.html` | the page, with its JSON-LD for search engines |
 | `css/site.css`, `js/site.js` | its look and behaviour |
+| `guide.html`, `css/guide.css`, `js/guide.js` | the user guide (served at `/guide`): written once as Vietnamese + English spans, a menu, offline accent-insensitive search built from the page |
+| `js/guide-anim.js` | the guide's four animations (pairing, Allow USB debugging, game controller, Home Assistant), `.ga-*` markup in `guide.html` |
 | `js/qr.js` | a copy of `app/shared/web/js/qr.js`, kept the same by `app/shared/tests/page.test.js` |
 | `js/anim.js`, `lib/gsap.min.js` | the animation runtime and helpers; GSAP 3.13.0 as published |
 | `js/demo.js`, `css/demo.css` | the hero demo |
