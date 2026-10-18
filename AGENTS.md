@@ -91,7 +91,13 @@ dev/                     release.sh, emu.sh, gen_icons.py, shots.py, ... : dev/R
 - **The page's state:** a `js/` file sets only the globals it declares; another file calls a function the owner offers
   (`pickGo`, `adbNow`, `appsStale`), and what a file keeps about one TV it forgets in its own `onTvChange()`. Fields of the
   page are written through `put()`. Both checked by `tests/page.test.js`.
-- **Vietnamese is the source language.** The web UI writes Vietnamese; `js/i18n.js` maps strings (and regexes) to English at render time, so every new user-visible string needs an entry there. Kotlin uses `t("vi", "en")`. README, CHANGELOG entries and release notes are written in both languages.
+- **Vietnamese is the source language; words go by id.** `app/shared/web/i18n/<lang>.json` holds every word of the page under an
+  id (`area.words`): `vi.json` first, then the same ids in each language (`en.json` complete: it is every other one's fallback).
+  A language is a file plus its line in `LANGS` (`js/i18n.js`). In `index.html` an element keeps its Vietnamese and names the id
+  (`data-i18n`, `data-i18n-html`, `data-i18n-title|aria-label|placeholder|alt`); scripts write `T('id', { n })` (`{n}` in the
+  words, `{ one, other }` for plurals). The old table of whole sentences (`EN`, `RULES` in `js/i18n.js`) still translates what
+  the scripts write in Vietnamese: add nothing to it, move lines to ids as they are touched. `tests/i18n.test.js` keeps it so.
+  Kotlin uses `t("vi", "en")` (to move onto the same files). README, CHANGELOG entries and release notes are written in both languages.
 - **Users first:** make things automatic; show an error only after every fallback has failed, in words a person can act on (`Errors.kt`, `friendly()` in `js/core.js`). Choices look like buttons. Long waits show what is going on and can be cancelled.
 - **Never commit** `cert.pem`, `key.pem`, `tvs.json`, `*.jks` (they pair with or sign for real devices). Never expose port 8765 to the Internet; away from home everything goes over Tailscale.
 - **"Allow USB debugging?"** is only ever answered for the key whose fingerprint matches the asking device (`AdbPrompt.kt`); never press Allow on an unknown key.

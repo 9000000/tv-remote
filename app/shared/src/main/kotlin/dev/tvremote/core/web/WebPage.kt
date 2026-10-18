@@ -19,7 +19,7 @@ class WebPage(private val open: (String) -> java.io.InputStream, private val cor
         } ?: return null
         val type = when (name.substringAfterLast('.')) {
             "html" -> "text/html; charset=utf-8"; "css" -> "text/css; charset=utf-8"; "png" -> "image/png"
-            "json" -> "application/manifest+json"; else -> "text/javascript; charset=utf-8"
+            "json" -> if (name.startsWith("i18n/")) "application/json; charset=utf-8" else "application/manifest+json"; else -> "text/javascript; charset=utf-8"
         }
         val out = HttpServer.Response.of(type, bytes)
         // the page names its files with a stamp that changes with every update of the app, so they can be kept; the page itself never is
@@ -31,7 +31,7 @@ class WebPage(private val open: (String) -> java.io.InputStream, private val cor
         LINK.replace(html.replaceFirst("<html ", "<html data-core=\"$core\" ")) { it.groupValues[1] + "?v=" + stamp + "\"" }
 
     private companion object {
-        val FILE = Regex("index\\.html|css/[a-z0-9_-]+\\.css|stats\\.js|jmuxer\\.min\\.js|js/[a-z0-9_-]+\\.js|manifest\\.json|remote\\.json|icon-[a-z0-9]+\\.png")   // manifest and icons: "Add to Home screen"; remote.json: the remote's keys, which the Phone app reads too
+        val FILE = Regex("index\\.html|css/[a-z0-9_-]+\\.css|stats\\.js|jmuxer\\.min\\.js|js/[a-z0-9_-]+\\.js|manifest\\.json|remote\\.json|i18n/[a-z]{2,3}\\.json|icon-[a-z0-9]+\\.png")   // manifest and icons: "Add to Home screen"; remote.json: the remote's keys, which the Phone app reads too
         val LINK = Regex("((?:src|href)=\"(?:css/[^\"?]+|stats\\.js|js/[^\"?]+))\"")
     }
 }

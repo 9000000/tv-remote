@@ -1,12 +1,17 @@
-// Vietnamese is the source language of the page; this file turns it into English when the viewer picks EN.
-// It works on the rendered page (text nodes, a few attributes; ask() in core.js calls tr), so index.html needs no changes when
-// a string is added: untranslated text simply stays Vietnamese until it is listed here.
+// The page's words, in the language the viewer picked. Each is an id in i18n/<lang>.json: vi.json is the source and lists every
+// one, en.json and any other language the same ids (missing ones fall back to English, then Vietnamese). In index.html an
+// element names its id (data-i18n, data-i18n-html for words with <b> or <a> in them, data-i18n-title / -aria-label /
+// -placeholder / -alt) and keeps its Vietnamese words, so nothing flashes; the scripts ask T('id', { n: 3 }).
+// A new language: i18n/<code>.json and its line in LANGS. tests/i18n.test.js keeps the files and the page in step.
+// Words not moved to an id yet still go through EN and RULES below (tr()), on the rendered page; that list only shrinks.
+const LANGS = { vi: 'Tiếng Việt', en: 'English' };
 (() => {
   let stored = null;
   try { stored = localStorage.getItem('lang'); } catch {}
   let asked = null;                                                  // the phone app says which language its own screens use
   try { asked = new URLSearchParams(location.search).get('lang'); } catch {}
-  const LANG = (asked === 'vi' || asked === 'en') ? asked : stored || ((navigator.language || 'vi').toLowerCase().startsWith('vi') ? 'vi' : 'en');
+  const own = ((navigator.language || 'vi').toLowerCase().split('-')[0]);
+  const LANG = LANGS[asked] ? asked : LANGS[stored] ? stored : LANGS[own] ? own : 'en';
   window.LANG = LANG;
   // The page reloads to switch language, so where the viewer is (tab, whether the TV list was open, scroll) is handed over once
   // through sessionStorage: without it the computer app opened on the TV list again, kicking the viewer off the TV.
@@ -14,21 +19,57 @@
   try { window.LANG_KEEP = JSON.parse(sessionStorage.getItem('langKeep')); sessionStorage.removeItem('langKeep'); } catch {}
   window.setLang = (l) => {
     try { localStorage.setItem('lang', l); } catch {}
-    try { sessionStorage.setItem('langKeep', JSON.stringify({ tab: typeof currentTab === 'string' ? currentTab : '', picking: typeof picking !== 'undefined' && picking, settings: !!document.querySelector('#about[open]'), y: Math.round(window.scrollY) })); } catch {}
+    try { sessionStorage.setItem('langKeep', JSON.stringify({ tab: typeof currentTab === 'string' ? currentTab : '', picking: typeof picking !== 'undefined' && picking, settings: !!document.querySelector('#about[open]') })); } catch {}
     location.reload();
   };
   document.documentElement.lang = LANG;
+
+  // read at once, as remote.json is: the page is drawn in its words from the first frame. ?v= of this script: an update brings new words
+  const v = (() => { try { return new URL(document.currentScript.src).search; } catch { return ''; } })();
+  const load = (l) => {
+    try { const x = new XMLHttpRequest(); x.open('GET', 'i18n/' + l + '.json' + v, false); x.send(); return x.status === 200 ? JSON.parse(x.responseText) : {}; } catch { return {}; }
+  };
+  const books = [...new Set([LANG, 'en', 'vi'])].map(load);
+  let rule = null;
+  try { rule = new Intl.PluralRules(LANG); } catch {}
+  /** The words of [id] in the viewer's language; {name} in them is args.name; a { one, other } entry is picked by args.n. */
+  window.T = (id, args) => {
+    let s;
+    for (const b of books) if (Object.prototype.hasOwnProperty.call(b, id)) { s = b[id]; break; }
+    if (s == null) return id;
+    if (typeof s === 'object') s = s[rule && args && args.n != null ? rule.select(Number(args.n)) : 'other'] ?? s.other;
+    return args ? s.replace(/\{(\w+)\}/g, (m, k) => (k in args ? String(args[k]) : m)) : s;
+  };
+  const SLOTS = ['title', 'aria-label', 'placeholder', 'alt'];
+  /** Its own words: the last of its own lines of text (an icon or a field beside it stays). */
+  const words = (e, s) => {
+    let slot = null;
+    for (const n of e.childNodes) if (n.nodeType === 3 && n.nodeValue.trim()) slot = n;
+    if (!slot) { e.append(s); return; }
+    const m = /^(\s*)[\s\S]*?(\s*)$/.exec(slot.nodeValue);
+    slot.nodeValue = m[1] + s + m[2];
+  };
+  const done = new WeakSet();                                         // once each: a script may write new words and add it again
+  const put = (e) => {
+    if (done.has(e)) return;
+    done.add(e);
+    const id = e.getAttribute('data-i18n'); if (id) words(e, T(id));
+    const h = e.getAttribute('data-i18n-html'); if (h) e.innerHTML = T(h);
+    for (const a of SLOTS) { const k = e.getAttribute('data-i18n-' + a); if (k) e.setAttribute(a, T(k)); }
+  };
+  const SEL = '[data-i18n], [data-i18n-html], ' + SLOTS.map((a) => '[data-i18n-' + a + ']').join(', ');
+  /** Puts the words of every element with an id under [root] (and root itself): the page at once, a template's copy as it is added. */
+  window.i18nPut = (root) => { if (LANG === 'vi' || !root || root.nodeType !== 1) return; if (root.matches(SEL)) put(root); root.querySelectorAll(SEL).forEach(put); };
+  if (typeof document !== 'undefined' && document.documentElement && document.documentElement.querySelectorAll) i18nPut(document.documentElement);
+
   if (LANG === 'vi') { window.tr = (s) => s; return; }
 
   const EN = {
     'Home Assistant · Phím tắt': 'Home Assistant · Shortcuts',
-    'Cho Home Assistant và Phím tắt (Siri) bấm phím trên TV trong nhà. Chỉ dùng trong mạng nhà, đừng mở ra Internet.': 'Lets Home Assistant and Shortcuts (Siri) press the TV’s keys at home. Home network only: never open it to the Internet.',
-    'Đường dẫn cho Phím tắt': 'Link for Shortcuts',
-    'Dán vào “Lấy nội dung của URL” trong Phím tắt. Sau “key=” có thể dùng scene=, app=, volume=, power=, text=.': 'Paste it into “Get contents of URL” in Shortcuts. Instead of “key=” you can use scene=, app=, volume=, power=, text=.',
-    'Không bật': 'Off', 'Cho dùng': 'On', '📋 YAML cho Home Assistant': '📋 YAML for Home Assistant', '🔄 Đổi mã mới': '🔄 New token',
+
+
     'YAML cho Home Assistant': 'YAML for Home Assistant',
     'Đổi mã mới': 'New token',
-    'Ai có đường dẫn này bấm được phím trên TV. Đổi mã mới thì đường dẫn cũ hết dùng.': 'Anyone with this link can press the TV’s keys. A new token ends the old link.',
     'Đổi mã mới? Các Phím tắt và Home Assistant đang dùng mã cũ sẽ ngừng chạy cho đến khi bạn dán đường dẫn mới.': 'Make a new token? Shortcuts and Home Assistant using the old one stop working until you paste the new link.',
     'Đổi mã': 'Change',
     'Đã đổi mã mới': 'New token made',
@@ -51,10 +92,8 @@
     'Sai mã, thử lại.': 'Wrong code, try again.',
     'Mã đã hết hạn: bấm “Hiện mã trên TV” để lấy mã mới.': 'The code has expired: press “Show the code on the TV” for a new one.',
     'Ghép với TV': 'Pair with the TV',
-    'Bấm “Hiện mã trên TV” rồi gõ mã 6 số vào đây.': 'Press “Show a code on the TV”, then type the 6 digits here.',
     'Hiện mã trên TV': 'Show the code on the TV',
     'TV đang hỏi “Cho phép gỡ lỗi USB?”': 'The TV is asking “Allow USB debugging?”',
-    'Tích “Luôn cho phép từ máy tính này”': 'Tick “Always allow from this computer”',
     'Chọn OK (Cho phép)': 'Choose OK (Allow)',
     'Để sau': 'Later', 'Cài TV Setup bằng tay: trên TV cài app Downloader từ CH Play, mở nó, nhập mã 2397346 rồi Go. TV Setup tự mở chỗ bật Gỡ lỗi ADB.': 'Install TV Setup by hand: on the TV install the Downloader app from the Play Store, open it, enter the code 2397346 and press Go. TV Setup then opens the place to turn ADB debugging on.', 'Đang kết nối': 'Connecting',
     'Tối ưu': 'Optimize',
@@ -63,19 +102,19 @@
     'Không lấy được hình từ TV.': 'Could not get the picture from the TV.',
     'Không tải được phần phát hình.': 'Could not load the video player.',
     // header, tabs
-    'đang kết nối...': 'connecting...', 'Tắt': 'Quit', 'Dừng chương trình trên máy tính này (TV không bị ảnh hưởng)': 'Stop the program on this computer (the TV is not affected)',
-    'Ứng dụng': 'Apps', 'Tệp': 'Files', 'cần ADB': 'needs ADB', 'Cần ADB: bấm vào để xem cách bật': 'Needs ADB: open it to see how to turn it on', '· cần ADB': '· needs ADB', 'thêm': 'add', 'cài đặt': 'setup',
+    'đang kết nối...': 'connecting...', 'Tắt': 'Quit',
+    'Ứng dụng': 'Apps', 'Tệp': 'Files', 'cần ADB': 'needs ADB', 'Cần ADB: bấm vào để xem cách bật': 'Needs ADB: open it to see how to turn it on', 'thêm': 'add', 'cài đặt': 'setup',
     'ADB: sẵn sàng': 'ADB: ready', 'ADB: chờ TV cho phép': 'ADB: waiting for the TV', 'ADB: cổng đóng': 'ADB: port closed', 'ADB: lỗi': 'ADB: error',
     'Server tắt': 'Server stopped', 'Không gọi được server. Mở lại TV Remote trên máy này.': 'Cannot reach the server. Open TV Remote on this computer again.', 'Không gọi được server': 'Cannot reach the server',
     'ADB: chờ': 'ADB: waiting', 'ADB đóng': 'ADB closed', 'ADB lỗi': 'ADB error', 'TV bật': 'TV on', 'Màn hình tắt': 'Screen off',
     'Phím qua ADB': 'Keys over ADB', 'Mất kết nối': 'Disconnected',
-    'TV: mất kết nối': 'TV: disconnected', 'TV: đang bật': 'TV: on', 'TV: màn hình tắt': 'TV: screen off', 
+    'TV: mất kết nối': 'TV: disconnected', 'TV: đang bật': 'TV: on', 'TV: màn hình tắt': 'TV: screen off',
     'chưa ghép remote (tab TV)': 'remote not paired (TV tab)', 'đã kết nối': 'connected',
     // screen
     '🖥️ Chất lượng hình': '🖥️ Picture quality', 'Cỡ hình': 'Size', 'Hoặc': 'Or', '⚙️ Hình nâng cao': '⚙️ Advanced picture', 'Khung/giây': 'Frames per second', 'Mặc định': 'Default',
     'Cao hơn thì mượt, nét hơn nhưng nặng TV và mạng hơn. Hình đứng mãi ở “Đang lấy hình”: thử Phần mềm.': 'Higher is smoother and sharper, but heavier on the TV and the network. Stuck at “Getting the picture”: try Software.',
     'Màn hình TV': 'TV screen', 'Trực tiếp · nhẹ': 'Live · light', 'Trực tiếp · nét': 'Live · sharp', 'Ảnh chụp': 'Screenshots',
-    'Toàn màn hình': 'Full screen', 'Xem': 'Watch', 'Về Remote': 'Back to Remote', 'Trực tiếp': 'Live', 'đang chờ hình': 'waiting for a picture',
+    'Toàn màn hình': 'Full screen', 'Xem': 'Watch', 'Trực tiếp': 'Live', 'đang chờ hình': 'waiting for a picture',
     'chế độ nét làm TV chậm hơn rõ rệt': 'sharp mode slows the TV noticeably', 'chế độ nhẹ cho TV': 'light on the TV',
     'Bấm “Xem” để xem màn hình TV.': 'Press “Watch” to see the TV’s screen.',
     'TV không cho chiếu hình lên đây': 'The TV does not let its picture show here', '(do chip của TV hoặc phim có bản quyền)': '(the TV\'s chip, or a copy-protected film)',
@@ -83,13 +122,13 @@
     'Đang mở luồng trực tiếp...': 'Opening the live stream...', 'Đang lấy hình...': 'Getting the picture...',
     'ADB chưa sẵn sàng, đã dừng xem màn hình.': 'ADB is not ready, stopped viewing.',
     // remote
-    'Mở ứng dụng': 'Open an app', 'Danh sách app hiện khi ADB sẵn sàng.': 'Apps appear when ADB is ready.', 'Điều hướng': 'Navigation', 'Lên': 'Up', 'Xuống': 'Down', 'Trái': 'Left', 'Phải': 'Right',
+    'Mở ứng dụng': 'Open an app', 'Danh sách app hiện khi ADB sẵn sàng.': 'Apps appear when ADB is ready.', 'Lên': 'Up', 'Xuống': 'Down', 'Trái': 'Left', 'Phải': 'Right',
     'Cài đặt của TV': 'TV settings', 'Quay lại': 'Back', 'Âm lượng': 'Volume', 'Tắt tiếng': 'Mute', 'Đang tắt tiếng, bấm để bật': 'Muted, press to unmute',
     'Giảm âm lượng': 'Volume down', 'Tăng âm lượng': 'Volume up', '☀ Đánh thức': '☀ Wake', 'Wake-on-LAN khi TV standby sâu': 'Wake-on-LAN when the TV is in deep standby',
     'Đưa TV về chế độ chờ?\nNếu TV tắt cả mạng thì chỉ mở lại được bằng nút Đánh thức (cần một máy ở nhà đang bật) hoặc remote của TV.': 'Put the TV in standby?\nIf its network goes off too, only Wake (needs a computer at home that is on) or the TV’s own remote can turn it back on.',
-    'Thêm phím': 'More keys', 'Trợ lý': 'Assistant', 'Nói': 'Speak', 'Nói hoặc gõ điều muốn TV làm, vd: mở YouTube · giữ để mở Trợ lý của TV': 'Speak or type what the TV should do, e.g. open YouTube · hold to open the TV\'s Assistant', 'Đã mở Trợ lý trên TV': 'Opened the Assistant on the TV', 'Tiếng to hơn trên máy này': 'Louder on this device', 'Độ to': 'Loudness', '🔊 Độ to trên máy này': '🔊 Loudness on this device', 'Nhân tiếng TV gửi sang, có bộ giới hạn để không rè. Vẫn nhỏ: tăng âm lượng trên TV.': 'Multiplies the sound the TV sends, with a limiter so it does not crack. Still quiet: turn the TV up.', 'Về ×1': 'Back to ×1', 'Về Tự chọn': 'Back to Auto', 'Là cỡ lớn nhất: mạng chậm thì tự hạ xuống, mạng ổn lại thì tự tăng lên.': 'The largest size: on a slow network it steps down by itself, and back up once it is steady.', 'Ngõ vào': 'Input', 'Phụ đề': 'Subtitles', 'Kênh +': 'CH +', 'Kênh −': 'CH −', 'Kênh': 'CH', 
-    '🧹 Giải phóng RAM': '🧹 Free up RAM', 'Đã lấy lại': 'Got back', 'còn trống': 'free',
-    'Hiện tại': 'Now', 'Lịch sử': 'History', 'Lỗi app': 'App errors', '↻ Đọc lại': '↻ Reload', '🐞 App bị dừng, bị treo': '🐞 Apps that stopped or froze',
+    'Thêm phím': 'More keys', 'Trợ lý': 'Assistant', 'Nói': 'Speak', 'Đã mở Trợ lý trên TV': 'Opened the Assistant on the TV', 'Độ to': 'Loudness', '🔊 Độ to trên máy này': '🔊 Loudness on this device', 'Nhân tiếng TV gửi sang, có bộ giới hạn để không rè. Vẫn nhỏ: tăng âm lượng trên TV.': 'Multiplies the sound the TV sends, with a limiter so it does not crack. Still quiet: turn the TV up.', 'Về ×1': 'Back to ×1', 'Về Tự chọn': 'Back to Auto', 'Là cỡ lớn nhất: mạng chậm thì tự hạ xuống, mạng ổn lại thì tự tăng lên.': 'The largest size: on a slow network it steps down by itself, and back up once it is steady.', 'Ngõ vào': 'Input', 'Phụ đề': 'Subtitles', 'Kênh +': 'CH +', 'Kênh −': 'CH −', 'Kênh': 'CH',
+    'Đã lấy lại': 'Got back', 'còn trống': 'free',
+    'Lịch sử': 'History', '↻ Đọc lại': '↻ Reload', '🐞 App bị dừng, bị treo': '🐞 Apps that stopped or froze',
     'Không có app nào bị dừng hay bị treo gần đây. 👍': 'No app has stopped or frozen lately. 👍', 'Hệ thống Android': 'Android system', 'bị dừng:': 'stopped:', 'bị treo:': 'froze:',
     '📋 Chép để gửi hỏi': '📋 Copy to ask someone', 'Đã chép': 'Copied', 'Không chép được': 'Could not copy', 'TV đang làm việc vừa yêu cầu, chờ vài giây rồi bấm lại': 'The TV is still doing what was just asked; wait a few seconds, then press again', '⏳ Đang kiểm tra...': '⏳ Checking...', '✓ Đã cài xong': '✓ Installed', 'Đang mở Downloader trên TV để kiểm tra...': 'Opening Downloader on the TV to check...', '📤 Phát ảnh, video, nhạc từ máy này lên TV': '📤 Play a photo, video or song from this computer on the TV',
     'Bật ADB giúp tôi': 'Turn ADB on for me', 'Bật ADB cho TV này': 'Turn on ADB for this TV', 'Tự động: cài TV Setup lên TV': 'Automatic: install TV Setup on the TV',
@@ -98,7 +137,7 @@
     'Cài màn hình chính khác': 'Install another home screen', 'Khi TV giấu Cài đặt: mở qua một launcher từ CH Play.': 'When the TV hides Settings: go through a launcher from the Play Store.',
     'Mở CH Play trên TV': 'Open the Play Store on the TV', 'Mở app theo tên gói': 'Open an app by package name', 'Đã cài thì mở app, chưa cài thì mở trang CH Play của nó.': 'Opens the app, or its Play Store page when not installed.',
     'Khi TV bật ADB xong, trang này tự nhận ra và kết nối. Các nút mũi tên, OK ở tab Remote vẫn dùng được trong lúc làm.': 'Once the TV has ADB on, this page notices and connects. The arrows and OK on the Remote tab keep working meanwhile.',
-    'Bật Gỡ lỗi ADB trên TV': 'Turn on ADB debugging on the TV', 'Các cách khác': 'Other ways', 'Cách khác': 'Other ways', 'Khi bấm nút': 'When pressing a key', 'Rung': 'Vibrate', 'Không rung': 'No vibration', 'Cài qua Downloader': 'Install through Downloader', 'Thấy rồi': 'Found it', 'TV không mở Cài đặt theo lệnh': 'The TV did not open Settings when asked',
+    'Bật Gỡ lỗi ADB trên TV': 'Turn on ADB debugging on the TV', 'Các cách khác': 'Other ways', 'Cách khác': 'Other ways', 'Rung': 'Vibrate', 'Cài qua Downloader': 'Install through Downloader', 'Thấy rồi': 'Found it', 'TV không mở Cài đặt theo lệnh': 'The TV did not open Settings when asked',
     'Mở Cài đặt TV': 'Open TV Settings', 'Đang thử mở Cài đặt trên TV...': 'Trying to open Settings on the TV...', 'TV có mở màn hình Cài đặt không?': 'Did the TV open its Settings?', 'Có': 'Yes', 'Không': 'No',
     'Không có · Cài màn hình chính khác': 'Not there · Install another home screen', 'Mở Cài đặt qua màn hình chính khác': 'Reach Settings through another home screen', 'Đang mở trên TV': 'Open on the TV now', 'Đang mở': 'Now open',
     'Đã cài thì mở, chưa cài thì mở trang CH Play.': 'Opens it, or its Play Store page.', 'Các bước bật ADB': 'ADB steps', 'Mở lại': 'Open again', 'Chọn cái khác': 'Pick another',
@@ -107,17 +146,16 @@
     'TV chưa có app Downloader: đang cài từ CH Play. Nếu TV không tự cài, chọn “Cài đặt” trên màn hình TV. Khi TV báo cài xong, bấm “Đã cài xong”.': 'The TV has no Downloader app yet: installing it from the Play Store. If it does not start by itself, choose “Install” on the TV. When the TV says it is installed, press “Installed”.',
     'TV này không cho biết đang mở gì nên không tự làm được. Làm theo cách “Tự làm” bên dưới.': 'This TV does not say what is on its screen, so this cannot run by itself. Use “By hand”.',
     'Tới bước ghép remote': 'Go to remote pairing', 'ADB đã bật: nhìn lên TV, chọn “Luôn cho phép”': 'ADB is on: look at the TV and choose “Always allow”',
-    '🔒 Gõ chữ cần ADB.': '🔒 Typing needs ADB.',
     'App Android': 'Android app', 'Quét bằng điện thoại để tải app.': 'Scan with a phone to download the app.', 'Remote trên điện thoại': 'Remote on a phone',
     'Quét khi điện thoại chung mạng với TV.': 'Scan with a phone on the same network as the TV.', 'Chất lượng hình': 'Picture quality', 'Nét nhất': 'Sharpest', 'CH Play': 'Play Store',
-    'Tìm app trên CH Play, hoặc app id (vd org.videolan.vlc)': 'Search the Play Store, or an app id (e.g. org.videolan.vlc)', 'Chất lượng hình: số nhỏ thì nhẹ cho TV và mạng': 'Picture quality: a smaller number is lighter on the TV and the network',
-    'Chọn TV để điều khiển': 'Choose a TV to control', 'Chọn TV khác': 'Choose another TV', 'Về lại': 'Back to', 'Đổi TV': 'Change TV', 'Điều khiển': 'Control', 'Thiết lập': 'Setup', 'lần đầu': 'first time',
+    'Tìm app trên CH Play, hoặc app id (vd org.videolan.vlc)': 'Search the Play Store, or an app id (e.g. org.videolan.vlc)',
+    'Chọn TV để điều khiển': 'Choose a TV to control', 'Chọn TV khác': 'Choose another TV', 'Về lại': 'Back to', 'Điều khiển': 'Control', 'Thiết lập': 'Setup', 'lần đầu': 'first time',
     'Bấm vào một TV bên dưới. Lần đầu: bấm “Quét mạng” để tìm TV trong cùng Wi-Fi, hoặc nhập IP của TV.': 'Click a TV below. First time: press “Scan” to find TVs on this Wi-Fi, or type the TV’s IP.',
-    'chưa ghép remote (tab Thiết lập)': 'remote not paired (Setup tab)', 'Chọn TV khác, tìm TV mới': 'Choose another TV, find a new one',
+    'chưa ghép remote (tab Thiết lập)': 'remote not paired (Setup tab)',
     'Lệnh đã chạy...': 'Earlier commands...',
-    'Bàn phím': 'Keyboard', 'Xóa ký tự': 'Delete a character', 'Gửi phím Enter': 'Send Enter',
+    'Bàn phím': 'Keyboard',
     'Gõ chữ lên TV': 'Type on the TV',
-    'Gõ xong bấm ↵ để gửi': 'Type, then press ↵ to send', 'Gõ trực tiếp / gõ xong rồi gửi': 'Live typing / type then send', 'Bàn phím số': 'Number keys',
+    'Gõ xong bấm ↵ để gửi': 'Type, then press ↵ to send', 'Bàn phím số': 'Number keys',
     'Mở': 'Open', 'Cài đặt TV': 'TV settings', 'Cài đặt': 'Settings',
     'TV đã nhận nút này, nhưng màn hình hiện tại không phản hồi': 'The TV got the key, but the current screen did not react',
     'Đã gửi lệnh, nhưng ADB đang đóng nên TV có thể bỏ qua': 'Sent, but ADB is closed so the TV may ignore it',
@@ -131,20 +169,19 @@
     'Thử kết nối lại': 'Retry connection', 'Đang kết nối...': 'Connecting...', 'Mất chức năng:': 'Lost:',
     'xem màn hình, mở app/link, danh sách app, tệp, tải link về TV, cài APK.': 'live screen, opening apps/links, app list, files, download to TV, installing APKs.', 'Cách bật ADB': 'How to enable ADB',
     // apps
-    'Ứng dụng đã cài': 'Installed apps', 'Tải lại': 'Reload', 'Tìm theo tên app': 'Search by app name', 'Hiện cả app hệ thống': 'Show system apps too', 'Đang tải...': 'Loading...',
+    'Ứng dụng đã cài': 'Installed apps', 'Hiện cả app hệ thống': 'Show system apps too', 'Đang tải...': 'Loading...',
     'Gỡ': 'Uninstall', 'Không có app nào.': 'No apps.',
     // the ⋯ menu on each app, the cache clean, backups, an app's log
     'Thêm thao tác': 'More actions', 'Xem log': 'View log', 'Sao lưu (tải về)': 'Back up (download)', 'Xóa dữ liệu': 'Clear data',
-    'Dọn bộ nhớ đệm': 'Clean caches', 'Dọn bộ nhớ đệm của mọi app': 'Clean every app’s cache', 'Khôi phục': 'Restore', 'Khôi phục app từ tệp sao lưu .tar': 'Restore an app from a .tar backup',
+    'Khôi phục': 'Restore',
     'Đã dọn bộ nhớ đệm': 'Caches cleaned', 'Bộ nhớ đệm đã sạch, không còn gì để dọn': 'The caches are already clean',
     'Chọn tệp .tar đã sao lưu bằng nút 💾': 'Pick a .tar file made with the 💾 button',
     'Đang phát': 'Now playing', 'Bài trước': 'Previous', 'Bài sau': 'Next', 'Tua': 'Seek', 'Clipboard của TV': 'The TV’s clipboard', '📋 Clipboard của TV': '📋 The TV’s clipboard', 'Clipboard của TV đang trống. Gõ hoặc dán chữ vào đây để gửi lên TV.': 'The TV’s clipboard is empty. Type or paste text here to send it to the TV.', 'Chưa có chữ': 'No text yet', 'Đã dán trên TV': 'Pasted on the TV', 'Đã chép lên TV': 'Copied to the TV', 'Đã sao chép vào máy này': 'Copied to this device', 'Chép về máy': 'Copy here', 'Chép lên TV': 'Copy to TV', 'Dán trên TV': 'Paste on TV',
-    'Tạm dừng': 'Pause', 'Chạy tiếp': 'Resume', 'Sao chép': 'Copy', 'Đã sao chép log': 'Log copied', 'Không sao chép được: chọn chữ rồi sao chép tay': 'Could not copy: select the text and copy it by hand',
-    'App chưa chạy: mở app, log hiện ở đây ngay khi app chạy.': 'The app is not running: open it, and its log shows here as soon as it runs.', 
+    'Tạm dừng': 'Pause', 'Chạy tiếp': 'Resume', 'Đã sao chép log': 'Log copied', 'Không sao chép được: chọn chữ rồi sao chép tay': 'Could not copy: select the text and copy it by hand',
     'Tệp này không phải bản sao lưu của TV Remote.': 'This file is not a TV Remote backup.',
     'App này cần cho TV chạy, không tắt hay xóa dữ liệu được.': 'The TV needs this app: it cannot be disabled or cleared.',
     // the TV card on the Setup tab
-    'Khởi động lại TV': 'Restart the TV', 'Đang đọc cài đặt TV...': 'Reading the TV’s settings...',
+    'Khởi động lại TV': 'Restart the TV',
     'Lọc DNS': 'DNS filter', 'Chặn mã độc': 'Blocks malware', '✏️ Tự nhập': '✏️ Type one', 'Không dùng': 'Off', 'Chặn quảng cáo': 'Block ads', 'Gia đình': 'Family', 'Tự nhập...': 'Custom...',
     'TV Android 8 trở xuống chưa có DNS riêng.': 'TVs on Android 8 or older have no private DNS.',
     'Áp dụng cho mọi app trên TV. Không chặn được quảng cáo trong YouTube.': 'Applies to every app on the TV. It cannot block the ads inside YouTube.',
@@ -165,15 +202,14 @@
     'TV vẫn chưa trả lời. Nếu TV đã lên màn hình chính: mở app TV Setup trên TV.': 'The TV is not answering yet. If it shows its home screen: open the TV Setup app on it.',
     'TV vẫn chưa mở lại ADB. Nếu TV đã lên màn hình chính: vào Cài đặt → Tùy chọn nhà phát triển, bật lại “Gỡ lỗi ADB”.': 'The TV has not opened ADB again. If it shows its home screen: Settings → Developer options, turn “ADB debugging” on again.',
     // files
-    'Lọc trong thư mục này': 'Filter this folder', 'Sắp xếp': 'Sort', 'Theo tên': 'By name', 'Mới nhất': 'Newest', 'Lớn nhất': 'Largest', '＋ Thư mục': '＋ Folder',
-    '＋ Chọn file gửi lên thư mục này': '＋ Choose files to send to this folder', '(hoặc kéo thả vào đây)': '(or drop them here)',
+
     'Bộ nhớ TV': 'TV storage', 'Phim': 'Movies', 'Ảnh': 'Pictures', 'Nhạc': 'Music', 'Thư mục': 'Folder', 'Cài APK này lên TV': 'Install this APK on the TV', 'Mở trên TV': 'Open on the TV',
     'Tải về máy này': 'Download to this computer', 'Đổi tên': 'Rename', 'Tên mới:': 'New name:', 'Đã đổi tên': 'Renamed', 'Xóa': 'Delete', 'Đã xóa': 'Deleted',
-    'Không có mục nào khớp.': 'Nothing matches.', 'Thư mục trống.': 'Empty folder.', 'Tên thư mục mới:': 'New folder name:', 'Đã tạo thư mục': 'Folder created', 'Xem trước': 'Preview',
+    'Không có mục nào khớp.': 'Nothing matches.', 'Thư mục trống.': 'Empty folder.', 'Tên thư mục mới:': 'New folder name:', 'Đã tạo thư mục': 'Folder created',
     // install tab
-    'Tải file về TV': 'Download to the TV', 'Tải': 'Download', 
-    'Cài APK': 'Install an APK', 'Link tới file .apk': 'Link to an .apk file', 'Cài': 'Install', 'Hoặc chọn file .apk từ máy này': 'Or choose an .apk file from this computer',
-    // the ADB assistant on the computer, and a few lines that had no English yet
+    'Tải file về TV': 'Download to the TV', 'Tải': 'Download',
+    'Cài APK': 'Install an APK', 'Cài': 'Install',
+    // the ADB assistant on the computer, and a few lines that had no English ye
     'Hoặc tự làm bằng remote của TV:': 'Or do it yourself with the TV remote:', 'Dùng các nút mũi tên và OK ở tab Remote, hoặc remote của TV:': 'Use the arrows and OK on the Remote tab, or the TV remote:',
     '1. Trong Cài đặt: Tùy chọn thiết bị (hoặc Hệ thống) → Giới thiệu → bấm OK 7 lần vào “Bản dựng”.\n2. Quay lại, vào Tùy chọn nhà phát triển → bật “Gỡ lỗi USB” (hoặc “Gỡ lỗi ADB”).\n3. Trên TV tích “Luôn cho phép” rồi chọn OK.\n\nNếu TV đòi “mật khẩu ADB” khi bấm 7 lần: dùng cách “Tự động: cài TV Setup lên TV”.': '1. In Settings: Device Preferences (or System) → About → press OK 7 times on “Build”.\n2. Go back, open Developer options → turn on “USB debugging” (or “ADB debugging”).\n3. On the TV tick “Always allow”, then choose OK.\n\nIf the TV asks for an “ADB password” after the 7 presses: use “Automatic: install TV Setup on the TV”.',
     'Bấm “Bật ADB giúp tôi” để trang này tự làm phần lớn việc. Hoặc tự làm trên TV: Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng”, rồi Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB” (hoặc “Gỡ lỗi USB”).': 'Press “Turn ADB on for me” and this page does most of it. Or on the TV: Settings → Device Preferences → About → press OK 7 times on “Build”, then Developer options → turn on “ADB debugging” (or “USB debugging”).',
@@ -186,12 +222,11 @@
     'Tên gói hoặc đường dẫn': 'Package name or link', 'Đã gửi cho TV (không qua ADB: vài TV bỏ qua lệnh này)': 'Sent to the TV (not through ADB: some TVs ignore this)',
     'chế độ nét nhất làm TV chậm hơn rõ rệt': 'sharpest mode slows the TV noticeably', 'nét nhất': 'sharpest',
     // answering the TV's question for another device
-    'TV đang hỏi “Cho phép gỡ lỗi USB?” cho một thiết bị': 'The TV is asking “Allow USB debugging?” for a device', 'Mã của thiết bị:': 'The device’s code:',
-    'Chỉ cho phép nếu đó là máy của bạn.': 'Allow it only if it is your device.',
-    '✓ Cho phép': '✓ Allow', 'Từ chối': 'Decline', 'Cho phép thiết bị có mã này điều khiển toàn bộ TV qua ADB?': 'Let the device with this code control the whole TV over ADB?',
+
+    'Cho phép thiết bị có mã này điều khiển toàn bộ TV qua ADB?': 'Let the device with this code control the whole TV over ADB?',
     'Đã cho phép thiết bị đó': 'That device is allowed', 'Không cho phép được: hộp hỏi trên TV đã đổi': 'Could not allow it: the question on the TV has changed', 'Đã từ chối': 'Declined',
     // choosing what Optimize TV does
-    'Chạy tối ưu': 'Optimize', '⚡ Chạy tối ưu': '⚡ Optimize', 'Hủy': 'Cancel', 'Đang xem TV có gì để tối ưu...': 'Looking at what this TV has...', 'Không đọc được TV. Thử lại.': 'Could not read the TV. Try again.',
+    'Chạy tối ưu': 'Optimize', 'Hủy': 'Cancel', 'Đang xem TV có gì để tối ưu...': 'Looking at what this TV has...', 'Không đọc được TV. Thử lại.': 'Could not read the TV. Try again.',
     'Chung': 'General', 'Tắt hiệu ứng chuyển cảnh': 'Turn off transition animations', 'Mở app, chuyển màn hình nhanh hơn': 'Apps open and screens change faster', 'Đang tắt sẵn': 'Already off',
     'Màn hình chính FLauncher (đang dùng)': 'FLauncher home screen (in use)', 'Dùng FLauncher làm màn hình chính': 'Use FLauncher as the home screen',
     'Chỉ lưới app, nhẹ, không quảng cáo; màn hình chính Google được tắt': 'Just a grid of apps, light, no ads; Google’s home screen is turned off',
@@ -210,18 +245,18 @@
     'APK này cần Android mới hơn bản trên TV. Tìm bản cũ hơn của app.': 'This APK needs a newer Android than the TV has. Look for an older version of the app.',
     'APK này dành cho loại chip khác với TV. Tải bản cho đúng loại chip (thường là armeabi-v7a).': 'This APK is for a different kind of chip than the TV’s. Get the build for the right chip (usually armeabi-v7a).',
     'TV báo cài xong nhưng tự gỡ app này ngay sau đó. Box của nhà mạng (FPT Play...) chặn một số app; app này không dùng được trên TV này.': 'The TV said it installed the app, then removed it right away. Operator boxes (FPT Play...) block some apps; this one cannot be used on this TV.',
-    'Trang mới hơn phần đang chạy: vào 🛠️ Cài đặt, bấm ⏻ Tắt rồi mở lại TV Remote.': 'This page is newer than the running server: in 🛠️ Settings press ⏻ Quit, then open TV Remote again.', 'Ẩn': 'Hide', 'App này không có màn hình để mở: nó chỉ chạy nền, hoặc là một phần của app khác.': 'This app has no screen to open: it only runs in the background, or is part of another app.', 'Số phút hoặc giờ tắt, vd 40, 23:30': 'Minutes or an end time, e.g. 40, 23:30', '😴 Hẹn': '😴 Set', 'Nhập số phút (vd 40) hoặc giờ tắt (vd 23:30)': 'Type minutes (e.g. 40) or a time to turn off (e.g. 23:30)',
-    '🔄 Phần chạy trên máy này vừa được cập nhật': '🔄 The part running on this computer was just updated', 'Vào 🛠️ Cài đặt, bấm ⏻ Tắt rồi mở lại TV Remote để dùng bản mới. Chưa làm thì vài nút sẽ báo lỗi.': 'In 🛠️ Settings press ⏻ Quit, then open TV Remote again to use the new version. Until then some buttons will fail.', 'TV không có app mở loại tệp này (cài VLC rồi thử lại).': 'The TV has no app for this kind of file (install VLC, then retry).',
+    'Trang mới hơn phần đang chạy: vào 🛠️ Cài đặt, bấm ⏻ Tắt rồi mở lại TV Remote.': 'This page is newer than the running server: in 🛠️ Settings press ⏻ Quit, then open TV Remote again.', 'Ẩn': 'Hide', 'App này không có màn hình để mở: nó chỉ chạy nền, hoặc là một phần của app khác.': 'This app has no screen to open: it only runs in the background, or is part of another app.', '😴 Hẹn': '😴 Set', 'Nhập số phút (vd 40) hoặc giờ tắt (vd 23:30)': 'Type minutes (e.g. 40) or a time to turn off (e.g. 23:30)',
+    'TV không có app mở loại tệp này (cài VLC rồi thử lại).': 'The TV has no app for this kind of file (install VLC, then retry).',
     'Không đọc được link đăng nhập trên màn hình TV. Mở Tailscale trên TV và quét mã QR nó hiện.': 'Could not read the sign-in link off the TV\'s screen. Open Tailscale on the TV and scan the QR code it shows.',
     'mất kết nối, không rõ đã xong chưa': 'connection lost, unknown whether it finished',
     'Trực tiếp · hình đứng yên': 'Live · picture unchanged', 'hình đứng yên': 'picture unchanged',
     'Nút bấm: đi qua ADB': 'Buttons: over ADB', 'nút remote chưa kết nối được (tab Thiết lập)': 'remote buttons not connected (Setup tab)',
-    'Tailscale · điều khiển khi không ở nhà': 'Tailscale · control away from home', 'Đang xem TV đã có Tailscale chưa...': 'Checking whether the TV has Tailscale...',
-    'Cài và đăng nhập Tailscale': 'Install and sign in to Tailscale', 'Bật và đăng nhập Tailscale': 'Switch on and sign in to Tailscale', 'Tailscale cho TV': 'Tailscale for the TV', 
+    'Tailscale · điều khiển khi không ở nhà': 'Tailscale · control away from home',
+    'Cài và đăng nhập Tailscale': 'Install and sign in to Tailscale', 'Bật và đăng nhập Tailscale': 'Switch on and sign in to Tailscale', 'Tailscale cho TV': 'Tailscale for the TV',
     'Trang này cài Tailscale lên TV, bạn chỉ cần bấm “Connect”.': 'This installs Tailscale on the TV; you only press “Connect”.',
     'Đang tải Tailscale bản chính thức (khoảng 100 MB)...': 'Downloading the official Tailscale (about 100 MB)...', 'Đang cài Tailscale lên TV...': 'Installing Tailscale on the TV...', 'Đang bật Tailscale trên TV...': 'Turning on Tailscale on the TV...',
-    'Đang làm...': 'Working...', 
-    'mất kết nối tới TV': 'lost the connection to the TV', 
+    'Đang làm...': 'Working...',
+    'mất kết nối tới TV': 'lost the connection to the TV',
     'Đóng được: TV vẫn làm tiếp.': 'You can close this: the TV carries on.',
     'Quét bằng điện thoại đã đăng nhập Tailscale. TV cũng đang hiện đúng mã này.': 'Scan with a phone signed in to Tailscale. The TV shows the same code.', 'Quét bằng điện thoại': 'Scan with a phone',
     'Đăng nhập Tailscale': 'Sign in to Tailscale', 'Chưa có tài khoản thì tạo miễn phí bằng Google, Microsoft hoặc GitHub.': 'No account yet? Create one for free with Google, Microsoft or GitHub.',
@@ -231,16 +266,16 @@
     'Ở ngoài nhà: bật Tailscale trên máy này (cùng tài khoản) rồi mở TV bằng IP này.': 'Away from home: turn on Tailscale on this device (same account), then open the TV by this IP.',
     '💡 Tắt “key expiry” cho TV để không bị đăng xuất sau 180 ngày.': '💡 Turn off “key expiry” for the TV so it is not signed out after 180 days.', '↗ Trang quản trị': '↗ Admin console', 'TV đã vào Tailscale': 'The TV is in Tailscale', 'Xong': 'Done',
     'Tailscale đã cài nhưng chưa đăng nhập hoặc đang tắt. Bấm nút dưới để bật và đăng nhập.': 'Tailscale is installed but signed out or switched off. Press the button below to switch it on and sign in.',
-    'Tối ưu TV': 'Optimize TV', 
+    'Tối ưu TV': 'Optimize TV',
     'Tắt hiệu ứng chuyển cảnh cho TV nhanh hơn': 'Turn off transition animations so the TV feels faster',
     'Thay màn hình chính Google bằng FLauncher (chỉ lưới app, nhẹ CPU)': 'Replace the Google home screen with FLauncher (just a grid of apps, light on CPU)',
     'Tắt app hệ thống không dùng (chế độ khách sạn/trưng bày của Sony, Samba, Sony Select, Play Games, Play Movies, YouTube Music)': 'Turn off unused system apps (Sony hotel/demo modes, Samba, Sony Select, Play Games, Play Movies, YouTube Music)',
     // ✏️ drawing on the TV's screen (draw.js)
     'Vẽ lên màn hình TV: chỉ chỗ cho người đang xem': 'Draw on the TV screen: show the person watching where to look', 'Vẽ lên màn hình TV': 'Draw on the TV screen',
-    'Đỏ': 'Red', 'Vàng': 'Yellow', 'Xanh lá': 'Green', 'Xanh dương': 'Blue', 'Trắng': 'White', 'Cam': 'Orange', 'Xanh đậm': 'Dark blue', 'Tím': 'Purple', 'Hồng': 'Pink', 'Đen': 'Black', 'Màu': 'Colour', '⬆️ Cập nhật': '⬆️ Update', 'Hẹn giờ, giờ đi ngủ, giới hạn app': 'The sleep timer, bedtime and app limits', 'Chức năng vẽ lên TV': 'Drawing on the TV', 'Đưa ảnh lên TV': 'A picture on the TV', '⚡ Cài TV Setup': '⚡ Install TV Setup', 'Nét': 'Line size',
-    'Bỏ nét vừa vẽ': 'Take back the last line', '🗑 Xóa hết': '🗑 Clear all', '✓ Xong': '✓ Done',
+    'Màu': 'Colour', '⬆️ Cập nhật': '⬆️ Update', 'Hẹn giờ, giờ đi ngủ, giới hạn app': 'The sleep timer, bedtime and app limits', 'Chức năng vẽ lên TV': 'Drawing on the TV', 'Đưa ảnh lên TV': 'A picture on the TV', '⚡ Cài TV Setup': '⚡ Install TV Setup', 'Nét': 'Line size',
+    'Bỏ nét vừa vẽ': 'Take back the last line', '✓ Xong': '✓ Done',
     'TV này không cho app vẽ đè lên màn hình.': 'This TV does not let apps draw over its screen.',
-    '⚡ Tối ưu TV': '⚡ Optimize TV', 'Hoàn tác': 'Undo', '⏳ Tiến trình': '⏳ Progress', '⬆️ Đang cập nhật TV Setup trên TV': '⬆️ Updating TV Setup on the TV', 'đang tải về điện thoại...': 'downloading to the phone...', 'đang gửi lên server...': 'sending to the server...',
+    'Hoàn tác': 'Undo', '⬆️ Đang cập nhật TV Setup trên TV': '⬆️ Updating TV Setup on the TV', 'đang tải về điện thoại...': 'downloading to the phone...', 'đang gửi lên server...': 'sending to the server...',
     'Chạy tối ưu TV? Màn hình chính của TV sẽ là FLauncher.': 'Optimize TV? Its home screen will become FLauncher.',
     'Hoàn tác? Bật lại màn hình chính Google, các app đã tắt và hiệu ứng như cũ.': 'Undo? This turns the Google home screen, the disabled apps and normal animations back on.',
     'Đang chạy...': 'Running...', 'Đã xong': 'Done',
@@ -249,32 +284,29 @@
     'cập nhật mỗi 5 giây': 'refreshes every 5 seconds', 'Nguồn': 'Power', 'không rõ (remote chưa kết nối)': 'unknown (remote not connected)', 'màn hình tắt': 'screen off',
     'Ứng dụng đang mở': 'Current app', 'Độ trễ tới TV (ADB)': 'Latency to the TV (ADB)', 'Luồng hình': 'Picture stream', 'đang không xem': 'not viewing', 'ảnh chụp': 'screenshots',
     'TV chạy liên tục': 'Uptime', 'Bộ nhớ trong': 'Internal storage', 'không kết nối': 'not connected', 'Tín hiệu': 'Signal', 'Tốc độ kết nối': 'Link speed', 'Băng tần': 'Band',
-    'Lời khuyên': 'Advice', 
-    '🌡️ Nhiệt độ': '🌡️ Temperature', 'Mức nhiệt': 'Heat level', 'bình thường': 'normal', 'hơi ấm': 'slightly warm', 'ấm': 'warm', 'nóng · TV có thể chạy chậm lại': 'hot · the TV may slow down', 'rất nóng · TV đang chạy chậm lại': 'very hot · the TV is slowing down', 'quá nóng': 'too hot', 'sắp tự tắt vì quá nóng': 'about to shut down from heat', 'Đang tải xuống': 'Downloading now', 'Đang tải lên': 'Uploading now', 'chưa ghép thiết bị nào': 'nothing paired', 'đang tắt': 'off', 'đã ghép': 'paired', 'Thiết bị': 'Devices',
+    'Lời khuyên': 'Advice',
+    'Mức nhiệt': 'Heat level', 'bình thường': 'normal', 'hơi ấm': 'slightly warm', 'ấm': 'warm', 'nóng · TV có thể chạy chậm lại': 'hot · the TV may slow down', 'rất nóng · TV đang chạy chậm lại': 'very hot · the TV is slowing down', 'quá nóng': 'too hot', 'sắp tự tắt vì quá nóng': 'about to shut down from heat', 'Đang tải xuống': 'Downloading now', 'Đang tải lên': 'Uploading now', 'chưa ghép thiết bị nào': 'nothing paired', 'đang tắt': 'off', 'đã ghép': 'paired', 'Thiết bị': 'Devices',
     'Sóng yếu: video dễ giật. Đặt router gần TV hơn, bỏ vật cản kim loại, hoặc cắm dây mạng.': 'Weak signal: video may stutter. Move the router closer, clear metal out of the way, or use a network cable.',
     'Sóng tạm được. Video 4K có thể giật; dây mạng hoặc router gần hơn sẽ ổn định hơn.': 'Fair signal. 4K video may stutter; a cable or a closer router is steadier.',
     'Sóng tốt nhưng đang ở 2.4 GHz (chậm, dễ nhiễu). Nếu router có mạng 5 GHz, cho TV dùng mạng đó.': 'Good signal, but on 2.4 GHz (slower, crowded). If the router has a 5 GHz network, put the TV on it.',
     'Sóng tốt, không cần làm gì.': 'Good signal, nothing to do.',
     'IP Tailscale': 'Tailscale IP', 'IP dây mạng': 'Ethernet IP', 'IP trong nhà': 'Home IP', 'Máy': 'Device', 'Bản vá bảo mật': 'Security patch', 'Kiến trúc': 'Architecture',
     'Số nhân CPU': 'CPU cores', 'Mật độ điểm ảnh': 'Pixel density',
-    'Màn hình': 'Screen', 'Đánh thức': 'Wake', 'Đánh thức TV (Wake-on-LAN khi TV standby sâu)': 'Wake the TV (Wake-on-LAN when it is in deep standby)',
-    'Chạy lệnh': 'Run', 'Như adb shell, mỗi lệnh tối đa 30 giây. ↑ ↓ gọi lại lệnh cũ.': 'Like adb shell, up to 30 seconds a command. ↑ ↓ bring back earlier ones.',
-    'Mở Google Assistant trên TV': 'Open Google Assistant on the TV', 'Hỏi TV: mở YouTube': 'Ask the TV: open YouTube', 'Nói bằng micro của máy này': 'Speak into this computer’s microphone',
-    'Lệnh (mở YouTube, tắt tiếng...) thì làm ngay, câu khác thì tìm trên YouTube': 'Commands (open YouTube, mute...) run at once; anything else is searched on YouTube',
+    'Màn hình': 'Screen', 'Đánh thức': 'Wake',
+    'Mở Google Assistant trên TV': 'Open Google Assistant on the TV', 'Hỏi TV: mở YouTube': 'Ask the TV: open YouTube',
     'TV này không có YouTube hay tìm kiếm của Google để tìm câu này.': 'This TV has neither YouTube nor Google search to look this up.', 'trình duyệt chưa được phép dùng micro': 'the browser is not allowed to use the microphone', 'TV này không có tìm kiếm / Assistant của Google': 'This TV has no Google search / Assistant',
     'Đang đọc từ TV...': 'Reading from the TV...',
-    // settings, about
-    'Cài đặt, giới thiệu': 'Settings, about', 'Giao diện': 'Theme', 'Theo máy': 'System', 'Sáng': 'Light', 'Tối': 'Dark', 'Ngôn ngữ': 'Language', 'Tải app': 'Get the app', 'App trên máy tính': 'App on this computer',
-    'Giới thiệu': 'About', 'Điều khiển Android TV / Google TV từ máy tính và điện thoại: nút remote, xem màn hình, ứng dụng, tệp, cài APK.': 'Control an Android TV / Google TV from a computer and a phone: remote buttons, live screen, apps, files, APK install.',
-    'Tác giả:': 'Author:', 'Mã nguồn:': 'Source code:', 'Các bản phát hành': 'Releases', 'Nhật ký thay đổi': 'Change log', 'Báo lỗi': 'Report a problem', 'Đóng': 'Close',
+    // settings, abou
+    'Theo máy': 'System', 'Sáng': 'Light', 'Tối': 'Dark', 'Ngôn ngữ': 'Language',
+    'Giới thiệu': 'About',
+    'Báo lỗi': 'Report a problem', 'Đóng': 'Close',
     'Hình trực tiếp và chuột dùng': 'The live picture and mouse use', '(Genymobile, Apache-2.0). Nút remote dùng giao thức Android TV Remote.': '(Genymobile, Apache-2.0). The remote buttons use the Android TV Remote protocol.',
-    // quit
+    // qui
     'Tắt TV Remote trên máy tính này?\nTV không bị ảnh hưởng. Muốn dùng lại thì mở lại app TV Remote.': 'Quit TV Remote on this computer?\nThe TV is not affected. To use it again, open the TV Remote app again.',
     'Đã tắt': 'Stopped', 'TV Remote trên máy tính này đã dừng. Mở lại app TV Remote để dùng tiếp. Có thể đóng trang này.': 'TV Remote on this computer has stopped. Open the TV Remote app again to carry on. You can close this page.',
     'Bỏ giới hạn': 'Remove the limit', 'Khởi động lại': 'Restart',
     // TV tab
     'TV đã lưu': 'Saved TVs', 'Tìm TV': 'Find a TV', 'Quét mạng': 'Scan', 'Đang quét...': 'Scanning...', 'Chọn': 'Choose', 'Kết nối': 'Connect', 'Dùng': 'Use', 'đang dùng': 'in use', 'cùng mạng': 'same network', 'qua Tailscale': 'via Tailscale',
-    'Hoặc nhập IP của TV, vd 192.168.1.88': 'Or type the TV’s IP, e.g. 192.168.1.88', 'Xem IP trên TV: Cài đặt → Mạng và Internet → bấm vào tên Wi-Fi đang kết nối.': 'To see the IP on the TV: Settings → Network & Internet → select the connected Wi-Fi.',
     'Chưa có TV nào. Bấm “Quét mạng” hoặc nhập IP ở bên cạnh.': 'No TVs yet. Press “Scan” or type an IP.', 'Không thấy TV nào. TV có bật và chung Wi-Fi không?': 'No TV found. Is it on, and on the same Wi-Fi?',
     'chỉ có ADB': 'ADB only', 'ADB đã bật': 'ADB on', 'ADB chưa bật': 'ADB off', 'Cài đặt lần đầu ·': 'First-time setup ·', 'Kiểm tra lại': 'Check again', 'chưa chọn TV': 'no TV chosen',
     'Chọn một TV ở trên (Quét mạng hoặc nhập IP) để bắt đầu.': 'Choose a TV above (Scan, or type an IP) to begin.',
@@ -297,10 +329,8 @@
     'Để lần sau mở lên là dùng ngay, không phải tìm lại.': 'So it is ready the next time you start, without searching again.', 'Tối ưu TV (tùy chọn)': 'Optimize TV (optional)',
     'Giữ Tailscale sống, giảm hiệu ứng, thay màn hình chính bằng FLauncher, tắt app hệ thống không dùng. Hoàn tác được.': 'Keep Tailscale alive, reduce animations, replace the home screen with FLauncher, turn off unused system apps. Can be undone.',
     // help
-    '✓ Đã cài đặt xong': '✓ All set up', 'Chức năng nào cần ADB?': 'Which features need ADB?', '✅ Không cần ADB': '✅ No ADB needed', '🔌 Cần ADB': '🔌 Needs ADB',
-    'Nút remote, âm lượng': 'Remote keys, volume', 'Bật TV khi đang chờ': 'Turning the TV on from standby', 'Xem và bấm trên màn hình TV': 'Seeing and tapping the TV screen',
-    'Mở app, tệp, cài APK': 'Opening apps, files, installing APKs', 'Sức khỏe, Tự động': 'Health, Automation',
-    'ADB mất khi TV tắt hẳn, vừa khởi động lại, hoặc ai đó tắt “Gỡ lỗi ADB”. Lúc đó app sẽ chỉ cách bật lại.': 'ADB is lost when the TV is fully off, has just restarted, or someone turned “ADB debugging” off. The app then shows how to turn it back on.',
+    '✓ Đã cài đặt xong': '✓ All set up', 'Chức năng nào cần ADB?': 'Which features need ADB?',
+
     // server messages that are in Vietnamese
     'sai mã, thử lại': 'wrong code, try again',
     'Nhập sai mã nhiều lần: đợi 15 phút rồi thử lại.': 'Too many wrong codes: wait 15 minutes and try again.',
@@ -308,14 +338,12 @@
     '✨ Chất lượng cao: tắt': '✨ High quality: off', '✨ Chất lượng cao: bật': '✨ High quality: on',
     '🎧 Chỉ máy này': '🎧 Only this device', 'Loa TV tạm im. Hợp khi đeo tai nghe, cả nhà ngủ.': 'The TV’s speakers go quiet. For headphones while the house sleeps.',
     '🔈 Cả TV và máy này': '🔈 TV and this device', 'TV vẫn có tiếng (TV Android 13+). Máy này trễ hơn TV một chút; vài app như Netflix chặn thu tiếng kiểu này.': 'The TV keeps its sound (Android 13+ TVs). This device lags the TV a little; some apps such as Netflix block this kind of capture.',
-    'Nghe tiếng TV trên máy này': 'Hear the TV on this device', 'Đang nghe tiếng TV trên cả TV và máy này.': 'Playing the TV’s sound on both the TV and this device.',
+    'Đang nghe tiếng TV trên cả TV và máy này.': 'Playing the TV’s sound on both the TV and this device.',
     'TV này dưới Android 13 nên chỉ nghe riêng được: loa TV tạm im.': 'This TV is older than Android 13, so only private listening works: the TV’s speakers are quiet.', 'TV vẫn có tiếng': 'TV still playing',
-    '🤖 Hỏi AI nên tắt / gỡ app nào': '🤖 Ask an AI which apps to disable / remove', '🤖 Hỏi AI': '🤖 Ask AI', '🗑 Gỡ app nào?': '🗑 Remove which apps?', 'Gỡ app...': 'Remove apps...', 'Chép tên gói': 'Copy package name', '📝 Hàng loạt': '📝 In bulk',
-    'Hỏi AI nên tắt / gỡ app nào': 'Ask an AI which apps to disable / remove', 'Bật / tắt / gỡ hàng loạt': 'Turn on / off / remove in bulk',
-    'Sửa dòng “Người nhà vẫn dùng”, bấm Sao chép rồi dán vào ChatGPT, Claude hay Gemini.': 'Fix the “Family still uses” line, press Copy, then paste into ChatGPT, Claude or Gemini.',
+    '🗑 Gỡ app nào?': '🗑 Remove which apps?', 'Gỡ app...': 'Remove apps...', 'Chép tên gói': 'Copy package name',
+    'Bật / tắt / gỡ hàng loạt': 'Turn on / off / remove in bulk',
     'Đã tắt bằng Tối ưu TV hoặc nút Tắt app. Bấm ↩ để bật lại.': 'Turned off by Optimize TV or the Disable button. Press ↩ to turn one back on.',
     'Bật lại': 'Turn on', 'Tắt app': 'Disable', 'đã tắt': 'disabled',
-    '📝 Bật / tắt / gỡ hàng loạt': '📝 Turn on / off / remove in bulk',
     '🚀 Tự chạy khi bật TV': '🚀 Starts with the TV', '🚀 Tự chạy': '🚀 Autostart', 'Tự chạy mỗi khi bật TV': 'Starts by itself whenever the TV turns on',
     'TV cần app này: đừng tắt hay gỡ': 'The TV needs this app: do not turn it off or remove it', 'Đã tắt: bật lại trong nút ⋯ của app': 'Turned off: turn it back on from the app\'s ⋯ button',
     '⚙️ App hệ thống': '⚙️ System apps', 'Không có app nào. Bấm “⚙️ App hệ thống” để thấy cả app hệ thống.': 'No apps. Tap “⚙️ System apps” to see system apps as well.',
@@ -337,16 +365,14 @@
     '🛡️ Kết nối khi tắt TV': '🛡️ Reachable when off', 'chưa cài': 'not installed', 'chưa kết nối': 'not connected', 'đang chạy': 'running', 'không chạy': 'not running',
     'Tự bật cùng TV': 'Starts with the TV', 'Bị TV tắt gần đây': 'Recently stopped by the TV', 'Cập nhật TV Setup để xem lịch bật / tắt từng ngày.': 'Update TV Setup to see when the TV was on each day.',
     'Hôm nay': 'Today', 'Hôm qua': 'Yesterday', '📊 Lịch sử bật / tắt': '📊 On / off history', 'Xem ngày cũ hơn': 'Show older days', 'Màn hình bật': 'Screen on', 'Tailscale mất kết nối': 'Tailscale disconnected',
-    'Báo khi RAM đầy': 'Full memory notice', 'Hiện trên TV khi RAM đầy, để dọn': 'Show on the TV when the memory is full, to free it', 'Mức RAM': 'Memory level',
+    'Báo khi RAM đầy': 'Full memory notice',
     '⏸ Đã tắt': '⏸ Turned off',
     'Không có app nào. Bật “Hiện cả app hệ thống” để thấy cả app hệ thống.': 'No apps. Turn on “Show system apps too” to see system apps as well.',
-    'Dán app id (mỗi dòng một app) hoặc cả câu trả lời của AI.': 'Paste app ids (one per line) or the whole AI answer.',
-    '⏸ Tắt các app này': '⏸ Disable these apps', '↩ Bật lại các app này': '↩ Turn these back on', '🗑 Gỡ các app này': '🗑 Remove these apps',
+
     'không có trên TV': 'not on this TV', 'TV cần app này: bỏ qua': 'the TV needs it: skipped', 'đang bật': 'on',
     'Không thấy app id nào trong đoạn chữ này.': 'No app ids in this text.',
-    '📋 Sao chép': '📋 Copy', 'Đang lấy danh sách app...': 'Getting the app list...', 'Đã chép. Dán vào ChatGPT, Claude hay Gemini.': 'Copied. Paste it into ChatGPT, Claude or Gemini.',
+    'Đang lấy danh sách app...': 'Getting the app list...', 'Đã chép. Dán vào ChatGPT, Claude hay Gemini.': 'Copied. Paste it into ChatGPT, Claude or Gemini.',
     'Không chép tự động được: chữ đã được bôi đen, bấm giữ để chép.': 'Could not copy by itself: the text is selected, long-press to copy.',
-    '⬇️ Xuất file sao lưu': '⬇️ Export a backup file', '⬆️ Nhập từ file': '⬆️ Import from a file',
     'File này không có cảnh nào (cần file .json xuất từ TV Remote)': 'This file has no scenes (a .json file exported from TV Remote is needed)',
     'Thêm remote này vào màn hình chính': 'Add this remote to your home screen',
     'Đã hiểu': 'Got it',
@@ -379,7 +405,7 @@
     'Tắt TV sau bao lâu?': 'Turn the TV off when?', 'Hẹn': 'Set',
     'Cách nghe tiếng TV': 'How to hear the TV', 'Chỉ máy này': 'Only this device', 'Cả TV và máy này': 'TV and this device',
     'Máy này ▾': 'This device ▾', 'Cả hai ▾': 'Both ▾', 'Tiếng chất lượng cao (160 kbit/s)': 'High quality sound (160 kbit/s)', 'Đều': 'Even', 'Tiếng đều hơn: trễ nửa giây nhưng không giật': 'Steadier sound: half a second late, no stutter',
-    'TV Setup đang khởi động lại (vd vừa cập nhật), đợi chút…': 'TV Setup is starting again (just updated?), one moment…', 
+    'TV Setup đang khởi động lại (vd vừa cập nhật), đợi chút…': 'TV Setup is starting again (just updated?), one moment…',
     'Mã QR đã dùng hoặc hết hạn: quét mã mới, hoặc bấm “Hiện mã trên TV”.': "This QR code was used or has expired: scan a new one, or press “Show the code on the TV”.",
     'Máy này đang nối TV qua Tailscale: điện thoại quét phải ở cùng Wi-Fi với TV.': "This device reaches the TV through Tailscale: the phone that scans must be on the TV's Wi-Fi.",
     'TV không có địa chỉ Wi-Fi: điện thoại quét cần bật Tailscale.': "The TV has no Wi-Fi address: the phone that scans needs Tailscale on.",
@@ -407,17 +433,13 @@
     '📲 Chia sẻ': "📲 Share",
     'Chia sẻ remote bằng QR': "Sharing the remote by QR",
     'Chưa hẹn giờ.': 'No timer set.',
-    'Bật TV trong giờ này thì 1 phút sau TV tự tắt.': 'Switched on in these hours, the TV goes off a minute later.',
-    'Bật giờ đi ngủ': 'Bedtime on',
+
     'Từ': 'From',
     'đến': 'to',
     'App': 'App',
-    'Số phút mỗi ngày': 'Minutes per day',
     'Tạo cảnh': 'New scene',
-    'Biểu tượng': 'Icon',
-    'Tên cảnh, vd Xem phim': 'Scene name, e.g. Movie night',
+
     'Các bước': 'Steps',
-    'Loại bước': 'Kind of step',
     'Bật TV': 'Turn the TV on',
     'Mở app': 'Open an app',
     'Đặt âm lượng': 'Set the volume',
@@ -544,22 +566,18 @@
     'Nhỏ hơn': 'Lower',
     'To hơn': 'Higher',
     'Chỉ bật được: tắt có thể mất kết nối tới TV': 'Can only be turned on: off could cut you off from the TV',
-    '🔒 Chỉ xem: đổi sai có thể mất kết nối tới TV': '🔒 View only: a wrong value could cut you off from the TV', '✎ Chỉnh được': '✎ Editable', '🔒 Chỉ xem': '🔒 View only',
+    '🔒 Chỉ xem: đổi sai có thể mất kết nối tới TV': '🔒 View only: a wrong value could cut you off from the TV', '🔒 Chỉ xem': '🔒 View only',
     'Giá trị mới (mục kỹ thuật: đổi sai có thể làm TV chạy lạ)': 'New value (technical: a wrong one can make the TV act up)',
     'Giá trị mới': 'New value',
     'Chỉ dùng chữ không dấu, số và . _ : + -': 'Use only plain letters, digits and . _ : + -',
     '✓ Đã đổi': '✓ Changed',
-    'Đưa một ảnh trong máy lên TV': 'Put a picture from this device on the TV',
-    '🖼️ Ảnh': '🖼️ Picture',
-    '💬 Chữ': '💬 Text',
+
     'Đã tắt màn hình TV. Bấm phím bất kỳ để bật lại.': 'The TV’s screen is off. Any key turns it back on.',
-    'Gõ một lời nhắn, hiện to trên TV': 'Type a message, shown big on the TV',
     'Lời nhắn hiện trên TV': 'A message for the TV',
     'Tiếp': 'Next',
-    '✓ Đưa lên TV': '✓ Put on TV', 'Nhỏ lại (giữ để thu nhỏ dần)': 'Smaller (hold to keep shrinking)', 'Nhỏ lại': 'Smaller',
-    'To lên (giữ để phóng to dần)': 'Bigger (hold to keep growing)', 'To lên': 'Bigger',
+    'Nhỏ lại': 'Smaller',
+    'To lên': 'Bigger',
     'Không mở được ảnh này.': 'Could not open this picture.',
-    '🗂️ Tất cả cài đặt': '🗂️ All settings',
     'Đổi': 'Change',
     'Nghe tiếng TV trên điện thoại (🎧, cần Android 11)': 'TV sound on the phone (🎧, needs Android 11)',
     'phần cứng': 'hardware',
@@ -589,8 +607,7 @@
     'Quên thiết bị này': 'Forget this device', 'Quên': 'Forget', 'Gỡ tất cả': 'Remove all', 'Quên mọi thiết bị: ai muốn điều khiển phải nhập mã mới': 'Forget every device: anyone who wants control must enter a new code',
     'Gỡ mọi thiết bị đã ghép, cả máy này?': 'Remove every paired device, this one too?', 'App điện thoại': 'Phone app', 'App máy tính': 'Computer app',
     'Cảm biến và hoạt động': 'Sensors and activity',
-    'Tìm tên hoặc giá trị, vd adb, dns, timeout': 'Search a name or value, e.g. adb, dns, timeout',
-    'Chép tất cả': 'Copy all',
+
     'Quang (optical)': 'Optical',
     'Loa TV': 'TV speakers',
     'Chép': 'Copy',
@@ -632,7 +649,7 @@
     'Roku đang chặn điều khiển từ điện thoại, máy tính. Trên Roku: Settings → System → Advanced system settings → Control by mobile apps → chọn Enabled (hoặc Permissive).': 'The Roku blocks control from phones and computers. On the Roku: Settings → System → Advanced system settings → Control by mobile apps → choose Enabled (or Permissive).',
     'Chỉ có trên Android TV / Google TV': 'Only on Android TV / Google TV', 'Gửi nhật ký': 'Send the log', 'Bộ mã hóa': 'Encoder', 'Tự chọn': 'Auto', 'Phần cứng': 'Hardware', 'Phần mềm': 'Software', 'mã hóa phần cứng': 'hardware encoder', 'mã hóa phần mềm': 'software encoder', 'nhịp đều': 'even pace', 'Nhịp hình': 'Frame pace', 'Đều hơn': 'Even', 'Nhanh nhất': 'Fastest', 'Đều hơn: hình chậm thêm 33 ms nhưng ít giật hơn khi Wi-Fi chập chờn.': 'Even: the picture is 33 ms later but stutters less on a patchy Wi-Fi.', 'Bitrate (Mbit/s)': 'Bit rate (Mbit/s)', 'Nhật ký dài nên chỉ có đoạn cuối. Bản đầy đủ đã được chép: dán (Ctrl/⌘+V) đè lên đoạn dưới.': 'The log is long, so only its end is here. The whole log was copied: paste it (Ctrl/⌘+V) over the part below.', 'Đã chép nhật ký': 'Log copied', 'Đã nối tay cầm': 'Controller connected', 'Không chép được nhật ký': 'Could not copy the log',
     'Không đọc được nhật ký': 'Could not read the log', 'Mô tả: bấm gì, TV làm gì': 'Describe it: what you pressed, what the TV did', 'thử nghiệm': 'beta',
-    'App làm sai? Gửi các lệnh đã gửi tới TV, câu TV trả lời và các lỗi (không có mã ghép đôi, địa chỉ MAC, chữ đã gõ). Trang báo lỗi mở sẵn.': 'Something wrong? Send what was sent to the TV, what it answered and the errors (no pairing keys, MAC addresses or typed text). A bug report opens for you.', 'Tự động trên TV': 'Automation on the TV',
+    'Tự động trên TV': 'Automation on the TV',
     'Xem và chạm màn hình TV trên máy này': 'See and touch the TV’s screen here', 'Nghe tiếng TV': 'Listen to the TV',
     'Vẽ, 🖼️ ảnh, 💬 lời nhắn lên TV': 'Draw, 🖼️ a picture, 💬 a message on the TV', 'Đang phát, 📋 clipboard của TV': 'Now playing, 📋 the TV’s clipboard',
     'Mọi app đã cài trên TV': 'Every app installed on the TV', 'Mở, buộc dừng, tắt hoặc gỡ app': 'Open, force stop, turn off or uninstall apps',
@@ -831,11 +848,14 @@
   window.tr = tr;
 
   const ATTRS = ['placeholder', 'title', 'aria-label', 'alt'];
+  // words an id already gave are left alone (a rule like "＋X" would take its English for Vietnamese); new words a script
+  // writes there later are still Vietnamese and translated here
+  const given = (e, attr, v) => { const id = e && e.getAttribute(attr); return !!id && T(id).trim() === v.trim(); };
+  const old = (v, e, attr) => !given(e, attr, v) && !(e && e.closest('[data-i18n-html]'));
   function visit(node) {
-    if (node.nodeType === 3) { const v = node.nodeValue, t = tr(v); if (t !== v) node.nodeValue = t; return; }
+    if (node.nodeType === 3) { const v = node.nodeValue; if (!old(v, node.parentElement, 'data-i18n')) return; const t = tr(v); if (t !== v) node.nodeValue = t; return; }
     if (node.nodeType !== 1 || node.tagName === 'SCRIPT' || node.tagName === 'STYLE') return;
-    if (node.dataset.en) { node.textContent = node.dataset.en; return; }   // words that read one way here, another elsewhere: "Thêm" is More on the remote, Add on a card
-    for (const a of ATTRS) { const v = node.getAttribute(a); if (v) { const t = tr(v); if (t !== v) node.setAttribute(a, t); } }
+    for (const a of ATTRS) { const v = node.getAttribute(a); if (v && !given(node, 'data-i18n-' + a, v)) { const t = tr(v); if (t !== v) node.setAttribute(a, t); } }
     for (const c of node.childNodes) visit(c);
   }
   const start = () => {
@@ -843,8 +863,8 @@
     new MutationObserver((list) => {
       for (const m of list) {
         if (m.type === 'characterData') visit(m.target);
-        else if (m.type === 'attributes') { const v = m.target.getAttribute(m.attributeName); if (v) { const t = tr(v); if (t !== v) m.target.setAttribute(m.attributeName, t); } }
-        else m.addedNodes.forEach(visit);
+        else if (m.type === 'attributes') { const v = m.target.getAttribute(m.attributeName); if (v && !given(m.target, 'data-i18n-' + m.attributeName, v)) { const t = tr(v); if (t !== v) m.target.setAttribute(m.attributeName, t); } }
+        else m.addedNodes.forEach((n) => { i18nPut(n); visit(n); });
       }
     }).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
   };

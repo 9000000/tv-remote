@@ -69,7 +69,7 @@ test('it is in More keys, a scene step, and a feature that needs a newer TV Setu
   const e = Object.values(spec.rows.more).flat().find((x) => x.do === 'notify');
   assert.ok(e && e.icon === 'bell' && e.needs.includes('adb'));
   const html = read('shared/web/index.html'), auto = read('shared/web/js/auto.js'), core = read('shared/web/js/core.js');
-  assert.ok(html.includes('<option value="notify">'));
+  assert.match(html, /<option value="notify"[ >]/);
   assert.ok(auto.includes("case 'notify'") && auto.includes("k === 'notify'"));
   assert.ok(/SETUP_NEEDS = \{[^}]*notify:/.test(core));
   assert.ok(read('shared/src/main/kotlin/dev/tvremote/core/ontv/SetupNeed.kt').includes('"notify" to "0.4.2"'));

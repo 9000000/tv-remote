@@ -49,7 +49,8 @@ $('#optcancel').addEventListener('click', () => $('#optdlg').close());
 $('#setupapply').addEventListener('click', () => chooseOptimize());
 $('#setupundo').addEventListener('click', () => runSetup('undo'));
 
-// ---------- settings: theme (js/theme.js) and language (Vietnamese is the source, i18n.js renders English) ----------
+// ---------- settings: theme (js/theme.js) and language (i18n.js: one button per file in LANGS, each in its own words) ----------
+$('#langpick').append(...Object.entries(LANGS).map(([k, name]) => { const b = el('button', { textContent: name, lang: k }); b.dataset.v = k; return b; }));
 function showPicks() {
   $('#themepick').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.v === THEME));
   $('#langpick').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.v === LANG));
