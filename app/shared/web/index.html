@@ -164,11 +164,11 @@
           <div class="rrow four">
             <button class="rb lab power" data-k="POWER" aria-label="Nguồn" title="Nguồn" data-i18n-title="remote.power" data-i18n-aria-label="remote.power"><svg class="ic" aria-hidden="true"><use href="#i-power"/></svg><small data-i18n="remote.power">Nguồn</small></button>
             <button class="rb lab" id="voice" aria-label="Nói" title="Nói hoặc gõ điều muốn TV làm, vd: mở YouTube · giữ để mở Trợ lý của TV" data-i18n-title="remote.speak_or_type_what" data-i18n-aria-label="remote.speak"><svg class="ic" aria-hidden="true"><use href="#i-mic"/></svg><small data-i18n="remote.speak">Nói</small></button>
-            <button class="rb lab" id="kbdbtn" aria-label="Bàn phím" title="Bàn phím" data-i18n-title="rkey.keyboard" data-i18n-aria-label="rkey.keyboard"><svg class="ic" aria-hidden="true"><use href="#i-keyboard"/></svg><small data-i18n="rkey.keyboard">Bàn phím</small></button>
+            <button class="rb lab" id="kbdbtn" data-needs="control" aria-label="Bàn phím" title="Bàn phím" data-i18n-title="rkey.keyboard" data-i18n-aria-label="rkey.keyboard"><svg class="ic" aria-hidden="true"><use href="#i-keyboard"/></svg><small data-i18n="rkey.keyboard">Bàn phím</small></button>
             <button class="rb lab" id="morebtn" aria-label="Thêm phím" title="Thêm phím" data-i18n-title="remote.more_keys" data-i18n-aria-label="remote.more_keys"><svg class="ic" aria-hidden="true"><use href="#i-more"/></svg><small data-i18n="remote.more">Thêm</small></button>
           </div>
           <div class="rrow four" id="more" data-rows="more" hidden></div>   <!-- the keys of these three blocks: remote.json -->
-          <div class="kbdpane" id="kbdpane" hidden>   <!-- ⌨️ on the top row: typing and the "Hỏi TV" box, right under the keys -->
+          <div class="kbdpane" id="kbdpane" data-needs="control" hidden>   <!-- ⌨️ on the top row: typing and the "Hỏi TV" box, right under the keys -->
             <p class="note" id="kbdoff" hidden data-i18n="remote.typing_needs_adb">🔒 Gõ chữ cần ADB.</p>
             <fieldset id="kbd">
             <form class="line" id="textf"><button type="button" id="live" title="Gõ trực tiếp / gõ xong rồi gửi" data-i18n-title="remote.live_typing_type_then">⚡</button><input id="text" placeholder="Gõ lên TV" autocomplete="off" autocapitalize="off" spellcheck="false" data-i18n-placeholder="remote.type_on_the_tv"><button class="primary" title="Gửi phím Enter" data-i18n-title="remote.send_enter">↵</button><button type="button" id="del" aria-label="Xóa ký tự" data-i18n-aria-label="remote.delete_a_character">⌫</button><button type="button" id="digits" title="Bàn phím số" data-i18n-title="remote.number_keys">123</button></form>

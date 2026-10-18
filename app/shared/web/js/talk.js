@@ -48,12 +48,14 @@ function hearMeter(stream) {                                         // null: st
 
 async function talk() {
   if (talking) { talking.stop(); return; }
+  talking = { stop() {} };                                         // a second click while the microphone is asked for: nothing
   const lit = (on) => $('#voice').classList.toggle('on', on);
-  let mic;
+  let mic, ac, src, node;
   try { mic = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }); }
-  catch { toast(T('remote.error_why', { why: T('remote.mic_not_allowed') })); return; }
+  catch { talking = null; toast(T('remote.error_why', { why: T('remote.mic_not_allowed') })); return; }
   // 8 kHz, what the TV takes; 4096 samples a piece (8 KB, half a second): the TV pads smaller ones with silence
-  const ac = new AudioContext({ sampleRate: 8000 }), src = ac.createMediaStreamSource(mic), node = ac.createScriptProcessor(4096, 1, 1);
+  try { ac = new AudioContext({ sampleRate: 8000 }); src = ac.createMediaStreamSource(mic); node = ac.createScriptProcessor(4096, 1, 1); }
+  catch (e) { talking = null; mic.getTracks().forEach((t) => t.stop()); if (ac) ac.close(); toast(T('remote.error_why', { why: e.message || e })); return; }
   const t0 = performance.now();
   let id = null, sent = Promise.resolve(), held = [], heard = 0, quiet = 0, done = false, dropped = false;
   const send = (pcm, end) => {                                     // one after another: the TV plays them in the order sent

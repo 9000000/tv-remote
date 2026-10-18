@@ -39,6 +39,7 @@ internal fun MainActivity.layoutRemote() {
     greyRows()
     val full = video && host != null && (fullscreen || resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)   // landscape: the picture fills the screen
     (controls.parent as View).visibility = if (full) View.GONE else View.VISIBLE
+    if (full) controls.findFocus()?.let { it.clearFocus(); (getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).hideSoftInputFromWindow(it.windowToken, 0) }   // its box gone, so its keyboard
     topBar.visibility = if (full) View.GONE else View.VISIBLE
     stage.layoutParams = if (full) LinearLayout.LayoutParams(-1, 0, 1f) else LinearLayout.LayoutParams(-1, -2)   // weight: room for the drawing tools under it
     if (!video && drawing) stopDrawing()                              // nothing to draw on
@@ -295,7 +296,9 @@ internal fun MainActivity.buildRemote() {
     val more = col()
     for (i in remoteSpec().rows["more"]!!.indices) more.addView(remoteRow("more", i, 58), gap(8))    // remote.json (PhoneRemote.kt)
     val kbd = col()
+    val ime = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
     val fold = { which: View, btn: IconButton, key: String, on: Boolean ->
+        if (!on && which.visibility == View.VISIBLE) which.findFocus()?.let { it.clearFocus(); ime.hideSoftInputFromWindow(it.windowToken, 0) }
         which.visibility = if (on) View.VISIBLE else View.GONE
         btn.setOn(on, 16)
         prefs.edit().putBoolean(key, on).apply()
@@ -304,11 +307,10 @@ internal fun MainActivity.buildRemote() {
     val showKbd = { on: Boolean -> if (on) fold(more, moreBtn, "more", false); fold(kbd, kbdBtn, "kbd", on) }   // one at a time
     if (prefs.getBoolean("kbd", false)) showKbd(true) else showMore(prefs.getBoolean("more", false))
     moreBtn.setOnClickListener { slide(controls); showMore(more.visibility != View.VISIBLE) }
-    val ime = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
     val kbdGo = { at: android.widget.EditText -> if (kbd.visibility != View.VISIBLE) { slide(controls); showKbd(true) }; at.requestFocus(); ime.showSoftInput(at, 0) }
     kbdBtn.setOnClickListener {
         if (kbd.visibility != View.VISIBLE) kbdGo(textBox)
-        else { slide(controls); showKbd(false); ime.hideSoftInputFromWindow(textBox.windowToken, 0) }
+        else { slide(controls); showKbd(false) }
     }
     controls.addView(more)
     controls.addView(kbd)

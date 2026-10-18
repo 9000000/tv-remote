@@ -105,7 +105,10 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         val m = AudioManager::class.java.getMethod("getDevicesForStream", Int::class.javaPrimitiveType)   // hidden, kept for apps
         (m.invoke(audio, AudioManager.STREAM_MUSIC) as Int) and 0x8000 != 0                          // AudioSystem.DEVICE_OUT_REMOTE_SUBMIX
     } catch (e: Throwable) {
-        audio.activeRecordingConfigurations.any { it.clientAudioSource == android.media.MediaRecorder.AudioSource.REMOTE_SUBMIX }
+        try {
+            android.os.Build.VERSION.SDK_INT >= 24
+                && audio.activeRecordingConfigurations.any { it.clientAudioSource == android.media.MediaRecorder.AudioSource.REMOTE_SUBMIX }
+        } catch (e2: Throwable) { false }
     }
 
     /** One look at the rules; returns how long until the next one is worth doing. */

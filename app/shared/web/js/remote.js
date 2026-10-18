@@ -236,7 +236,8 @@ function hear() {                                                     // this de
     if (hearing && hearing.r === r0) hearClose();
     if (handOver) talk();
   };
-  $('#voice').classList.add('on'); rec.start();
+  try { rec.start(); } catch (e) { rec = null; toast(T('remote.error_why', { why: e.message || e })); return; }
+  $('#voice').classList.add('on');
   hearOpen({ r: r0, done: () => r0.stop(), cancel: () => { dropped = true; r0.abort(); } }, null);
   // the bars want the microphone too: a second listener on it, given back when this ends
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) navigator.mediaDevices.getUserMedia({ audio: true })

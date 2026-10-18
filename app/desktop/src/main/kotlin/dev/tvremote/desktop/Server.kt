@@ -456,6 +456,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
 
     private fun wake(s: Session, host: String): Response {             // host: a saved TV from the list, not only the one in use
         val mine = host == s.host
+        if (!mine && saved.find(host) == null) return Response.error(400, "not a saved TV")   // and not 60 s of waking a stranger
         val r = Wake.wake(host, (saved.find(host) ?: JSONObject()).let { if (mine) it.put("kind", s.kind) else it }, 60, if (mine) s.atv?.mac ?: "" else "")
         if (mine && r.ok && !native(s) && s.atv?.isOn != true) {
             Thread.sleep(2000)
