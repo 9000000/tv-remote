@@ -193,11 +193,6 @@
   });
   addEventListener("popstate", function(){ show(location.hash.slice(1)); });
   addEventListener("hashchange", function(){ show(location.hash.slice(1)); scrollTo(0, 0); });   // a link written by hand
-  var prog = document.querySelector(".navprog");
-  function bar(){ var max = root.scrollHeight - innerHeight; prog.style.setProperty("--p", max > 0 ? Math.min(1, Math.max(0, scrollY / max)).toFixed(4) : 0); }
-  var busy = false;
-  addEventListener("scroll", function(){ if (!busy){ busy = true; requestAnimationFrame(function(){ busy = false; bar(); }); } }, { passive: true });
-  addEventListener("resize", bar);
 
   /* ---------- the header's narrow-screen menu (same as the home page) ---------- */
   (function(){
@@ -213,5 +208,4 @@
   document.getElementById("yr").textContent = new Date().getFullYear();
   show(location.hash.slice(1));
   setLang(root.dataset.lang);
-  bar();
 })();
