@@ -861,8 +861,9 @@ class MainActivity : Activity() {
     }
 
     private fun log(line: String) {
+        val at = java.text.SimpleDateFormat("HH:mm:ss", Locale.US).format(java.util.Date())   // when it happened, not when it is drawn
         ui {
-            logView.append(line + "\n")
+            logView.append("$at  $line\n")
             if (logView.lineCount > 300) logView.text = logView.text.toString().lines().takeLast(200).joinToString("\n")
             scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
         }

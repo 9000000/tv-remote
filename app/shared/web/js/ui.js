@@ -134,3 +134,19 @@ function chipRows(n) {
 chipRows(document.body);
 new MutationObserver((list) => { for (const m of list) { m.addedNodes.forEach(chipRows); if (m.type === 'attributes' && !m.target.matches(CHIP_ROWS)) chipRows(m.target); } })   // not the row's own fade classes
   .observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'aria-selected'] });
+
+// A block shown or hidden slides open / shut, its parent's gap with it, instead of pushing everything below in one jump;
+// at once when motion is reduced. A second press halfway turns it back from where it is.
+function slide(n, show) {
+  const from = n.hidden ? 0 : n.getBoundingClientRect().height;
+  if (n._slide) n._slide.cancel();
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { n.hidden = !show; return; }
+  n.hidden = false;
+  const full = n.getBoundingClientRect().height, gap = parseFloat(getComputedStyle(n.parentElement).rowGap) || 0;
+  const at = (h) => ({ height: h + 'px', marginTop: (full ? (h / full - 1) * gap : 0) + 'px', opacity: full ? h / full : 1 });
+  n.classList.add('sliding'); n.classList.toggle('shutting', !show);
+  const a = n._slide = n.animate([at(from), at(show ? full : 0)], { duration: 220, easing: 'cubic-bezier(.2,.8,.2,1)' });
+  const done = () => { if (n._slide !== a) return; n._slide = null; n.classList.remove('sliding', 'shutting'); };
+  a.onfinish = () => { if (!show) n.hidden = true; done(); };
+  a.oncancel = done;
+}

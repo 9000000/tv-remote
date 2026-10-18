@@ -275,6 +275,7 @@ internal fun MainActivity.buildRemote() {
     moreBtn.setOnClickListener {
         val on = more.visibility != View.VISIBLE
         prefs.edit().putBoolean("more", on).apply()
+        slide(controls)
         showMore(on)
     }
     controls.addView(more)
@@ -362,6 +363,7 @@ internal fun MainActivity.buildRemote() {
     pad.visibility = if (prefs.getBoolean("numpad", false)) View.VISIBLE else View.GONE
     digits.setOnClickListener {
         val show = pad.visibility != View.VISIBLE
+        slide(controls)
         pad.visibility = if (show) View.VISIBLE else View.GONE
         prefs.edit().putBoolean("numpad", show).apply()
     }
@@ -644,4 +646,9 @@ internal class TapMark(c: Context) : View(c) {
         c.drawCircle(x, y, r, fill)
         c.drawCircle(x, y, r, ring)
     }
+}
+
+/** The keys shown or hidden below [v] slide open / shut and what is under them follows, instead of jumping (as on the page). */
+internal fun slide(v: View) {
+    android.transition.TransitionManager.beginDelayedTransition(v.rootView as android.view.ViewGroup, android.transition.AutoTransition().setDuration(220))
 }
