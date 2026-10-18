@@ -159,14 +159,14 @@ const runObs = new ResizeObserver((list) => list.forEach((e) => runFit(e.target)
 function runFit(t) {
   if (!runSeen.has(t)) { runSeen.add(t); runObs.observe(t); }
   if (!t.clientWidth) return;
-  let s = t.firstChild;
+  let s = t.firstChild, fresh = false;
   if (!(t.childNodes.length === 1 && s.nodeType === 1 && s.classList.contains('rin'))) {
     if (!t.textContent.trim() || t.querySelector('input, button, select')) return;
-    s = el('span', { className: 'rin' }); s.append(...t.childNodes); t.append(s);
+    s = el('span', { className: 'rin' }); s.append(...t.childNodes); t.append(s); fresh = true;
   }
   const over = Math.max(0, t.scrollWidth - t.clientWidth), same = t.dataset.at === s.textContent, w = s.textContent;
   if (!runT0.has(w)) { if (runT0.size > 300) runT0.clear(); runT0.set(w, performance.now()); }
-  s.style.animationDelay = (runT0.get(w) - performance.now()) / 1000 + 's';   // drawn again (a list redrawn, the same title) it carries on where it was, not from its start
+  if (fresh || !same) s.style.animationDelay = (runT0.get(w) - performance.now()) / 1000 + 's';   // drawn again (a list redrawn, the same title) it carries on where it was; set on every call (each second's change on the page) it restarted the animation, a hitch a second in WebKit
   if (String(over) === t.dataset.over && same) return;
   t.dataset.over = over; t.dataset.at = s.textContent;
   t.classList.toggle('run', over > 0);

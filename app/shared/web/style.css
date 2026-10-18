@@ -439,7 +439,7 @@
   .plhead { display:flex; align-items:center; gap:8px; min-width:0; } .plhead img { width:36px; height:36px; border-radius:8px; flex:none; object-fit:contain; }
   .pltext { flex:1; min-width:0; display:flex; flex-direction:column; } .pltext b, .pltext small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .pltext small { color:var(--muted); font-size:12px; }
   /* a line wider than its place slides to its end and back (ui.js runFit) */
-  .run { text-overflow:clip !important; } .run > .rin { display:inline-block; animation:plrun var(--run) ease-in-out infinite alternate; }
+  .run { text-overflow:clip !important; } .run > .rin { display:inline-block; animation:plrun var(--run) ease-in-out infinite alternate; will-change:transform; }   /* its own layer: slow text otherwise steps a whole pixel at a time */
   @keyframes plrun { 0%, 20% { transform:none; } 80%, 100% { transform:translateX(var(--over)); } }
   @media (prefers-reduced-motion:reduce) { .run { text-overflow:ellipsis !important; } .run > .rin { animation:none; display:inline; } }
   .plbar { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; } .plbar[hidden] { display:none; }
