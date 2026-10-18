@@ -170,7 +170,7 @@ class VidaaTest {
         Vidaa.RAW = "http://127.0.0.1:1/"                             // the downloads fail too
         try { Vidaa(dir, "127.0.0.1", s.localPort).connect {}; fail("connected") } catch (e: IOException) { assertEquals(Vidaa.NO_CERT, e.message) }
         finally { Vidaa.RAW = RAW }
-        assertTrue(Errors.say(IOException(Vidaa.NO_CERT), false).contains("VIDAA Smart TV"))
+        assertTrue(Errors.say(IOException(Vidaa.NO_CERT), "en").contains("VIDAA Smart TV"))
     }
 
     @Test fun aDownloadedCertificateThatIsNotTheOnePinnedIsNotKept() {

@@ -75,7 +75,7 @@ class LanTest {
         assertEquals(listOf(true, false), tried)
         if (e == null) fail("connected")
         assertTrue(e!!.message!!.contains(Lan.BLOCKED))
-        assertTrue(Errors.say(e, false).contains("VPN"))
-        assertTrue(Errors.say(e, true).contains("VPN"))
+        assertTrue(Errors.say(e, "en").contains("VPN"))
+        assertTrue(Errors.say(e, "vi").contains("VPN"))
     }
 }

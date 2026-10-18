@@ -1,5 +1,6 @@
 package dev.tvremote.setup
 
+import dev.tvremote.core.T
 import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -32,10 +33,9 @@ class TrustReceiver : BroadcastReceiver() {
             resultData = RemoteService.newInvite(i.getStringExtra("scope") ?: Scope.REMOTE) + " " + RemoteService.lanIp()
             return
         }
-        val vi = java.util.Locale.getDefault().language == "vi"
         val name = when (i.getStringExtra("app")) {
-            "phone" -> if (vi) "App điện thoại" else "Phone app"
-            "computer" -> if (vi) "App máy tính" else "Computer app"
+            "phone" -> T("trust.phone_app")
+            "computer" -> T("trust.computer_app")
             else -> "App"
         }
         resultData = RemoteService.newToken(c, "app", name, "", i.getStringExtra("tls") == "1")   // an app that pins the HTTPS port says so: its pass is no good over HTTP

@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.content.Intent
 import android.graphics.Typeface
 import android.net.Uri
@@ -17,19 +18,19 @@ import dev.tvremote.update.Release
 internal fun MainActivity.buildSettings(): View {
     val box = col()
     box.setPadding(dp(16), dp(20), dp(16), dp(24))
-    val title = label(t("Cài đặt", "Settings"), 24, TEXT)
+    val title = label(T("page.settings"), 24, TEXT)
     title.typeface = Typeface.DEFAULT_BOLD
     val top = LinearLayout(this)
     top.gravity = Gravity.CENTER_VERTICAL
     top.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
-    val done = icon("@check", t("Xong", "Done"), ACCENT)
+    val done = icon("@check", T("drawing.done"), ACCENT)
     done.setOnClickListener { settings.visibility = View.GONE }
     top.addView(done, LinearLayout.LayoutParams(dp(52), dp(44)))
     box.addView(top)
 
-    box.addView(head(t("NGÔN NGỮ", "LANGUAGE")), gap(18))
+    box.addView(head(T("info_screens.language")), gap(18))
     val now = pref("lang")
-    val langs = listOf("" to "@phone|" + t("Theo điện thoại", "Same as the phone"), "vi" to "@globe|Tiếng Việt", "en" to "@globe|English")
+    val langs = listOf("" to "@phone|" + T("info_screens.same_as_the_phone"), "vi" to "@globe|Tiếng Việt", "en" to "@globe|English")
     for ((code, words) in langs) {
         val b = row(words + (if (code == now) "   ✓" else "")) {
             if (code == now) return@row
@@ -40,10 +41,10 @@ internal fun MainActivity.buildSettings(): View {
         box.addView(b)
     }
 
-    box.addView(head(t("GIAO DIỆN", "APPEARANCE")), gap(18))
+    box.addView(head(T("info_screens.appearance")), gap(18))
     val theme = pref("theme").ifEmpty { "auto" }
     val modes = LinearLayout(this)
-    for ((i, m) in listOf("auto" to t("Tự động", "Auto"), "light" to t("Sáng", "Light"), "dark" to t("Tối", "Dark")).withIndex()) {
+    for ((i, m) in listOf("auto" to T("info_screens.auto"), "light" to T("info_screens.light"), "dark" to T("info_screens.dark")).withIndex()) {
         val on = m.first == theme
         val art = mapOf("auto" to "contrast", "light" to "wake", "dark" to "moon")[m.first]
         val b = button("@$art|" + m.second, BTN).apply { setOn(on) }
@@ -58,9 +59,9 @@ internal fun MainActivity.buildSettings(): View {
     }
     box.addView(modes, gap(6))
 
-    box.addView(head(t("NÚT ÂM LƯỢNG CỦA ĐIỆN THOẠI", "THE PHONE'S VOLUME KEYS")), gap(18))
+    box.addView(head(T("info_screens.the_phone_s_volume")), gap(18))
     lateinit var vol: Button
-    val volLabel = { vol.setLabel((if (prefs.getBoolean("volKeysTv", true)) "@check|" else "@close|") + t("Chỉnh âm lượng TV", "Set the TV's volume")) }
+    val volLabel = { vol.setLabel((if (prefs.getBoolean("volKeysTv", true)) "@check|" else "@close|") + T("info_screens.set_the_tv_s")) }
     vol = row("") {
         prefs.edit().putBoolean("volKeysTv", !prefs.getBoolean("volKeysTv", true)).apply()
         volLabel()
@@ -68,9 +69,9 @@ internal fun MainActivity.buildSettings(): View {
     volLabel()
     box.addView(vol)
 
-    box.addView(head(t("KHI BẤM NÚT", "WHEN PRESSING A KEY")), gap(18))
+    box.addView(head(T("info_screens.when_pressing_a_key")), gap(18))
     lateinit var buzzRow: Button
-    val buzzLabel = { buzzRow.setLabel((if (prefs.getBoolean("buzz", true)) "@check|" else "@close|") + t("Rung", "Vibrate")) }
+    val buzzLabel = { buzzRow.setLabel((if (prefs.getBoolean("buzz", true)) "@check|" else "@close|") + T("about.vibrate")) }
     buzzRow = row("") {
         prefs.edit().putBoolean("buzz", !prefs.getBoolean("buzz", true)).apply()
         buzzLabel()
@@ -79,21 +80,21 @@ internal fun MainActivity.buildSettings(): View {
     buzzLabel()
     box.addView(buzzRow)
 
-    box.addView(head(t("CẬP NHẬT", "UPDATES")), gap(18))
+    box.addView(head(T("info_screens.updates")), gap(18))
     lateinit var auto: Button
-    val autoLabel = { auto.setLabel((if (prefs.getBoolean("autoUpdate", true)) "@check|" else "@close|") + t("Tự kiểm tra bản mới", "Check for updates automatically")) }
+    val autoLabel = { auto.setLabel((if (prefs.getBoolean("autoUpdate", true)) "@check|" else "@close|") + T("info_screens.check_for_updates_automatically")) }
     auto = row("") {
         prefs.edit().putBoolean("autoUpdate", !prefs.getBoolean("autoUpdate", true)).apply()
         autoLabel()
     }
     autoLabel()
     box.addView(auto)
-    box.addView(row("@refresh|" + t("Kiểm tra ngay", "Check now")) { checkUpdate(true) })
+    box.addView(row("@refresh|" + T("info_screens.check_now")) { checkUpdate(true) })
     updateNote = note("")
     box.addView(updateNote)
 
-    box.addView(head(t("GIỚI THIỆU", "ABOUT")), gap(18))
-    box.addView(row("@info|" + t("Giới thiệu", "About")) { about.visibility = View.VISIBLE })
+    box.addView(head(T("info_screens.about")), gap(18))
+    box.addView(row("@info|" + T("about.about")) { about.visibility = View.VISIBLE })
 
     val sv = ScrollView(this)
     sv.setBackgroundColor(BG)
@@ -115,12 +116,12 @@ internal fun MainActivity.web(url: String) {
 internal fun MainActivity.buildAbout(): View {
     val box = col()
     box.setPadding(dp(16), dp(20), dp(16), dp(24))
-    val title = label(t("Giới thiệu", "About"), 24, TEXT)
+    val title = label(T("about.about"), 24, TEXT)
     title.typeface = Typeface.DEFAULT_BOLD
     val top = LinearLayout(this)
     top.gravity = Gravity.CENTER_VERTICAL
     top.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
-    val done = icon("@check", t("Xong", "Done"), ACCENT)
+    val done = icon("@check", T("drawing.done"), ACCENT)
     done.setOnClickListener { about.visibility = View.GONE }
     top.addView(done, LinearLayout.LayoutParams(dp(52), dp(44)))
     box.addView(top)
@@ -140,31 +141,31 @@ internal fun MainActivity.buildAbout(): View {
     dev.tvremote.core.web.Qr.bitmap(appLink, 6)?.let { bmp ->
         val qr = ImageView(this)
         qr.setImageBitmap(bmp)
-        qr.contentDescription = t("Mã QR tải app", "QR code to download the app")
+        qr.contentDescription = T("info_screens.qr_code_to_download")
         val qp = LinearLayout.LayoutParams(dp(170), dp(170))
         qp.gravity = Gravity.CENTER_HORIZONTAL
         qp.topMargin = dp(14)
         box.addView(qr, qp)
-        val share = button(t("Chia sẻ link tải app", "Share the download link"), BTN)
+        val share = button(T("info_screens.share_the_download_link"), BTN)
         share.setOnClickListener { startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, appLink), null)) }
         box.addView(share, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(12) })
     }
 
-    box.addView(head(t("TÁC GIẢ", "AUTHOR")), gap(22))
+    box.addView(head(T("info_screens.author")), gap(22))
     box.addView(row("@user|Hoang Tran\n@HoangTran0410") { web("https://github.com/HoangTran0410") })
 
-    box.addView(head(t("MÃ NGUỒN", "SOURCE CODE")), gap(18))
+    box.addView(head(T("info_screens.source_code")), gap(18))
     box.addView(row("@link|github.com/HoangTran0410/tv-remote") { web("https://github.com/" + Release.REPO) })
-    box.addView(row("@package|" + t("Bản phát hành", "Releases")) { web("https://github.com/" + Release.REPO + "/releases") })
-    box.addView(row("@bug|" + t("Báo lỗi", "Report a problem")) { web("https://github.com/" + Release.REPO + "/issues") })
+    box.addView(row("@package|" + T("info_screens.releases")) { web("https://github.com/" + Release.REPO + "/releases") })
+    box.addView(row("@bug|" + T("about.report_a_problem")) { web("https://github.com/" + Release.REPO + "/issues") })
     // what the TVs said and the errors shown (WireLog): what a real TV did is what tells a bug apart
-    box.addView(row("@clipboard|" + t("Gửi nhật ký", "Send the log")) {
+    box.addView(row("@clipboard|" + T("info_screens.send_the_log")) {
         val log = dev.tvremote.core.WireLog.all.report(basic?.takeIf { it.kind != dev.tvremote.core.remote.Remote.Kind.ANDROID })
         startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain")
-            .putExtra(Intent.EXTRA_SUBJECT, "TV Remote: " + t("nhật ký", "log")).putExtra(Intent.EXTRA_TEXT, log), null))
+            .putExtra(Intent.EXTRA_SUBJECT, T("info_screens.tv_remote_log")).putExtra(Intent.EXTRA_TEXT, log), null))
     })
 
-    box.addView(head(t("GHI CÔNG", "CREDITS")), gap(18))
+    box.addView(head(T("info_screens.credits")), gap(18))
     box.addView(row("scrcpy · Apache-2.0") { web("https://github.com/Genymobile/scrcpy") })
 
     val sv = ScrollView(this)

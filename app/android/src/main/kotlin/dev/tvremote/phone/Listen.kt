@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.content.Intent
 import android.os.Build
 import android.widget.Toast
@@ -20,16 +21,16 @@ internal fun MainActivity.toggleListen() {
     soundTries = 0
     restartForSound()
     listenService(true)
-    Toast.makeText(this, if (listenShare) t("Đang mở tiếng TV trên cả TV và điện thoại.", "Opening the TV’s sound on both the TV and the phone.")
-        else t("Đang mở tiếng TV trên điện thoại. Loa TV tạm im.", "Opening the TV’s sound on the phone. The TV’s speakers go quiet."), Toast.LENGTH_SHORT).show()
+    Toast.makeText(this, if (listenShare) T("listen.opening_the_tvs_sound")
+        else T("listen.opening_the_tvs_sound_2"), Toast.LENGTH_SHORT).show()
 }
 
 /** The way to hear the TV, from the chip under the picture; while listening, the change applies at once. */
 internal fun MainActivity.listenMenu() {
     val share = prefs.getBoolean("listenShare", false)
     val menu = android.widget.PopupMenu(this, listenChip)
-    menu.menu.add(0, 0, 0, t("Chỉ điện thoại", "Only the phone") + (if (!share) "  ✓" else "")).icon = listenArt(false)
-    menu.menu.add(0, 1, 1, t("Cả TV và điện thoại", "TV and phone") + (if (share) "  ✓" else "")).icon = listenArt(true)
+    menu.menu.add(0, 0, 0, T("listen.only_the_phone") + (if (!share) "  ✓" else "")).icon = listenArt(false)
+    menu.menu.add(0, 1, 1, T("listen.tv_and_phone") + (if (share) "  ✓" else "")).icon = listenArt(true)
     if (android.os.Build.VERSION.SDK_INT >= 29) menu.setForceShowIcon(true)
     menu.setOnMenuItemClickListener { item ->
         if ((item.itemId == 1) != share) { prefs.edit().putBoolean("listenShare", item.itemId == 1).apply(); soundChanged() }
@@ -105,12 +106,12 @@ private fun MainActivity.soundStatus(key: String, detail: String) {
     when (key) {
         "live" -> soundTries = 0
         "arate" -> if (!video || bgListen) status.text = title(entry ?: h) + " · 🎧 " + detail + " KB/s"
-        "audio" -> if (detail == "noshare") { listenShare = false; Toast.makeText(this, t("TV này dưới Android 13 nên chỉ nghe riêng được: loa TV tạm im.", "This TV is older than Android 13, so only private listening works: the TV’s speakers are quiet."), Toast.LENGTH_LONG).show() }
-            else stopListen(t("TV này chưa gửi được tiếng sang điện thoại (cần Android 11 trở lên).", "This TV cannot send its sound to the phone (Android 11 or newer is needed)."))
+        "audio" -> if (detail == "noshare") { listenShare = false; Toast.makeText(this, T("listen.private_only"), Toast.LENGTH_LONG).show() }
+            else stopListen(T("listen.this_tv_cannot_send"))
         "closed", "error" -> {                                        // the network dropped (4G, a tunnel): dialled again, a few times
             sound = null
             if (!listen) return
-            if (detail.contains("cannot send its sound")) { stopListen(t("TV này chưa gửi được tiếng sang điện thoại (cần Android 11 trở lên).", "This TV cannot send its sound to the phone (Android 11 or newer is needed).")); return }
+            if (detail.contains("cannot send its sound")) { stopListen(T("listen.this_tv_cannot_send")); return }
             if (soundTries++ < 6) ui.postDelayed({ startSound() }, 1000L * soundTries)   // and once more each time the app is opened
         }
     }

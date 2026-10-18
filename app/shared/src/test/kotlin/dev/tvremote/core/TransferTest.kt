@@ -34,9 +34,9 @@ class TransferTest {
     @Test fun refusalIsSaidWithSizesAndWhatToDo() {
         val e = NoRoom(3_400_000_000L, 1_200_000_000L, 3_416_000_000L, false)
         assertEquals("storage full: file=3400000000 free=1200000000 need=3416000000 apk=0", e.message)
-        assertEquals("TV chỉ còn trống 1.2 GB, không đủ chép tệp 3.4 GB (cần trống ít nhất 3.4 GB). Xóa bớt app hoặc tệp (tab Sức khỏe / Tệp) rồi thử lại.", Errors.say(e, true))
-        assertTrue(Errors.say(e, false).startsWith("The TV has only 1.2 GB free"))
-        assertTrue(Errors.say(NoRoom(1, 1, 1, true), false).contains("APK"))
+        assertEquals("TV chỉ còn trống 1.2 GB, không đủ chép tệp 3.4 GB (cần trống ít nhất 3.4 GB). Xóa bớt app hoặc tệp (tab Sức khỏe / Tệp) rồi thử lại.", Errors.say(e, "vi"))
+        assertTrue(Errors.say(e, "en").startsWith("The TV has only 1.2 GB free"))
+        assertTrue(Errors.say(NoRoom(1, 1, 1, true), "en").contains("APK"))
         assertNotNull(NoRoom.parse("x " + e.message))
         assertNull(NoRoom.parse("No space left"))
     }
@@ -51,6 +51,6 @@ class TransferTest {
         c.onStop { hooked++ }                                            // late: runs at once
         assertEquals(2, hooked)
         assertTrue(runCatching { c.check() }.exceptionOrNull() is Cancelled)
-        assertEquals("Đã dừng.", Errors.say(Cancelled(), true))
+        assertEquals("Đã dừng.", Errors.say(Cancelled(), "vi"))
     }
 }

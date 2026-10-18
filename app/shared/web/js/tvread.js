@@ -1,6 +1,7 @@
 // Reading what the TV printed for the Apps tab and the TV card (the recipes are in TvShell.kt). Kept apart
 // from the page so node can test it: node --test app/shared/tests/
 ((root) => {
+  const T = (...a) => root.T(...a);                                  // i18n.js on the page; a test gives one
   const STAMP = /^\d\d-\d\d \d\d:\d\d:\d\d\.\d{3}$/;
 
   // 🧹 "free blocks, block size" before and after: the bytes that came back (never below zero: apps keep writing meanwhile)
@@ -56,7 +57,7 @@
   // 🔠 the sizes offered, from the screen's own density: bigger density = bigger everything
   function densityChoices(physical) {
     if (!physical) return [];
-    return [['Nhỏ', Math.round(physical * 0.9)], ['Vừa', 'reset'], ['Lớn', Math.round(physical * 1.1)], ['Rất lớn', Math.round(physical * 1.2)]];
+    return [[T('tvread.size_small'), Math.round(physical * 0.9)], [T('tvread.size_normal'), 'reset'], [T('tvread.size_large'), Math.round(physical * 1.1)], [T('tvread.size_larger'), Math.round(physical * 1.2)]];
   }
 
   // 🎞️ the Capabilities card (Caps.kt): for each format the best decoder (hardware first, then the biggest picture)
@@ -132,10 +133,10 @@
     return o;
   }
   // a permission in words, by the group a person knows it as (Settings → Apps → Permissions says the same)
-  const PERM_NAMES = [[/RECORD_AUDIO/, 'Micro'], [/CAMERA/, 'Máy ảnh'], [/LOCATION/, 'Vị trí'], [/STORAGE|READ_MEDIA_/, 'Tệp, ảnh và video'],
-    [/POST_NOTIFICATIONS/, 'Thông báo'], [/CONTACTS|GET_ACCOUNTS/, 'Danh bạ và tài khoản'], [/PHONE|CALL/, 'Điện thoại'], [/SMS/, 'Tin nhắn'],
-    [/CALENDAR/, 'Lịch'], [/BLUETOOTH_|NEARBY_WIFI/, 'Thiết bị ở gần'], [/BODY_SENSORS|ACTIVITY_RECOGNITION/, 'Cảm biến và hoạt động']];
-  const permName = (n) => (PERM_NAMES.find(([re]) => re.test(n)) || [0, n.replace(/^.*\./, '')])[1];
+  const PERM_NAMES = [[/RECORD_AUDIO/, 'tvread.perm_mic'], [/CAMERA/, 'tvread.perm_camera'], [/LOCATION/, 'tvread.perm_location'], [/STORAGE|READ_MEDIA_/, 'tvread.perm_files'],
+    [/POST_NOTIFICATIONS/, 'tvread.perm_notif'], [/CONTACTS|GET_ACCOUNTS/, 'tvread.perm_contacts'], [/PHONE|CALL/, 'tvread.perm_phone'], [/SMS/, 'tvread.perm_sms'],
+    [/CALENDAR/, 'tvread.perm_calendar'], [/BLUETOOTH_|NEARBY_WIFI/, 'tvread.perm_nearby'], [/BODY_SENSORS|ACTIVITY_RECOGNITION/, 'tvread.perm_sensors']];
+  const permName = (n) => { const p = PERM_NAMES.find(([re]) => re.test(n)); return p ? T(p[1]) : n.replace(/^.*\./, ''); };
 
   // 🔁 "package/receiver" lines: the packages that start when the TV boots
   const bootRead = (text) => new Set(String(text || '').split('\n').map((l) => l.trim().split('/')[0]).filter((p) => /^[\w.]+$/.test(p) && p.includes('.')));
@@ -157,97 +158,97 @@
   }
 
   // 🗂️ The settings people look for, in words, by topic, their values read out (1 → On, 600000 → 10 min); the rest of Android's
-  // hundreds of internal keys go under "Other", their names made readable. [group, vi, en, kind]: kind says how to read the value.
-  const SET_GROUPS = { screen: ['Màn hình & chờ', 'Screen & sleep'], net: ['Mạng', 'Network'], dev: ['Nhà phát triển & ADB', 'Developer & ADB'],
-    apps: ['App, bàn phím & giọng nói', 'Apps, keyboard & voice'], sound: ['Âm thanh', 'Sound'], hdmi: ['HDMI & loa ngoài', 'HDMI & audio out'], time: ['Ngôn ngữ & giờ', 'Language & time'],
-    a11y: ['Trợ năng', 'Accessibility'], device: ['Thiết bị', 'Device'], other: ['Khác (kỹ thuật)', 'Other (technical)'] };
+  // hundreds of internal keys go under "Other", their names made readable. [group, id of its words, kind]: kind says how to read the value.
+  const SET_GROUPS = { screen: 'tvread.grp_screen', net: 'tvread.grp_net', dev: 'tvread.grp_dev',
+    apps: 'tvread.grp_apps', sound: 'tvread.grp_sound', hdmi: 'tvread.grp_hdmi', time: 'tvread.grp_time',
+    a11y: 'tvread.grp_a11y', device: 'tvread.grp_device', other: 'tvread.grp_other' };
   const SET_INFO = {
-    screen_off_timeout: ['screen', 'Tắt màn hình sau', 'Screen off after', 'ms'], sleep_timeout: ['screen', 'Ngủ sau', 'Sleep after', 'ms'],
-    attentive_timeout: ['screen', 'Tắt khi không dùng sau', 'Off when idle after', 'ms'],
-    screensaver_enabled: ['screen', 'Trình bảo vệ màn hình', 'Screen saver', 'bool'], screensaver_components: ['screen', 'Trình bảo vệ đang dùng', 'Screen saver in use', 'comp'],
-    screensaver_activate_on_sleep: ['screen', 'Bảo vệ màn hình khi ngủ', 'Screen saver when asleep', 'bool'],
-    stay_on_while_plugged_in: ['screen', 'Giữ màn hình sáng khi cắm điện', 'Stay awake while plugged in', 'bool'],
-    screen_brightness: ['screen', 'Độ sáng', 'Brightness', 'pct255'], screen_brightness_mode: ['screen', 'Độ sáng tự động', 'Auto brightness', 'bool'],
-    display_density_forced: ['screen', 'Cỡ hiển thị (mật độ điểm ảnh)', 'Display size (density)', 'dpi'],
-    user_disabled_hdr_formats: ['screen', 'Định dạng HDR đã tắt', 'HDR formats turned off', 'text'],
-    window_animation_scale: ['screen', 'Hiệu ứng cửa sổ', 'Window animations', 'scale'], transition_animation_scale: ['screen', 'Hiệu ứng chuyển cảnh', 'Transition animations', 'scale'],
-    animator_duration_scale: ['screen', 'Thời lượng hiệu ứng', 'Animation duration', 'scale'],
-    wifi_on: ['net', 'Wi‑Fi', 'Wi‑Fi', 'bool'], bluetooth_on: ['net', 'Bluetooth', 'Bluetooth', 'bool'], airplane_mode_on: ['net', 'Chế độ máy bay', 'Airplane mode', 'bool'],
-    private_dns_mode: ['net', 'DNS riêng tư', 'Private DNS', 'dns'], private_dns_specifier: ['net', 'Máy chủ DNS riêng tư', 'Private DNS server', 'text'],
-    http_proxy: ['net', 'Proxy', 'Proxy', 'text'], wifi_scan_always_enabled: ['net', 'Luôn quét Wi‑Fi', 'Always scan for Wi‑Fi', 'bool'],
-    adb_enabled: ['dev', 'Gỡ lỗi ADB', 'ADB debugging', 'bool'], adb_wifi_enabled: ['dev', 'Gỡ lỗi không dây', 'Wireless debugging', 'bool'],
-    development_settings_enabled: ['dev', 'Tùy chọn nhà phát triển', 'Developer options', 'bool'],
-    install_non_market_apps: ['dev', 'Cho cài app ngoài CH Play', 'Apps from unknown sources', 'bool'],
-    package_verifier_enable: ['dev', 'Quét app cài ngoài (Play Protect)', 'Scan sideloaded apps (Play Protect)', 'bool'],
-    verifier_verify_adb_installs: ['dev', 'Quét app cài qua ADB', 'Scan apps installed over ADB', 'bool'],
-    mock_location: ['dev', 'Vị trí giả', 'Mock location', 'bool'], always_finish_activities: ['dev', 'Không giữ hoạt động', 'Don’t keep activities', 'bool'],
-    default_input_method: ['apps', 'Bàn phím đang dùng', 'Keyboard in use', 'comp'], voice_interaction_service: ['apps', 'Trợ lý', 'Assistant', 'comp'],
-    voice_recognition_service: ['apps', 'Nhận dạng giọng nói', 'Speech recognition', 'comp'], autofill_service: ['apps', 'Tự động điền', 'Autofill', 'comp'],
-    backup_enabled: ['apps', 'Sao lưu', 'Backup', 'bool'], location_mode: ['apps', 'Vị trí', 'Location', 'loc'],
-    sound_effects_enabled: ['sound', 'Âm thanh khi bấm', 'Click sounds', 'bool'], volume_music: ['sound', 'Âm lượng phim, nhạc', 'Media volume', 'num'],
-    volume_system: ['sound', 'Âm lượng hệ thống', 'System volume', 'num'], encoded_surround_output: ['sound', 'Âm thanh vòm', 'Surround sound', 'surround'],
-    encoded_surround_output_enabled_formats: ['sound', 'Định dạng vòm đã chọn', 'Chosen surround formats', 'text'],
-    auto_time: ['time', 'Giờ tự động', 'Automatic time', 'bool'], auto_time_zone: ['time', 'Múi giờ tự động', 'Automatic time zone', 'bool'],
-    time_12_24: ['time', 'Kiểu giờ', 'Time format', 'h'], system_locales: ['time', 'Ngôn ngữ', 'Languages', 'text'],
-    accessibility_enabled: ['a11y', 'Trợ năng', 'Accessibility', 'bool'], touch_exploration_enabled: ['a11y', 'TalkBack (đọc màn hình)', 'TalkBack (screen reader)', 'bool'],
-    enabled_accessibility_services: ['a11y', 'Dịch vụ trợ năng đang bật', 'Accessibility services on', 'comp'], font_scale: ['a11y', 'Cỡ chữ', 'Font size', 'scale'],
-    accessibility_display_magnification_enabled: ['a11y', 'Phóng to', 'Magnification', 'bool'], high_text_contrast_enabled: ['a11y', 'Chữ tương phản cao', 'High contrast text', 'bool'],
-    accessibility_captioning_enabled: ['a11y', 'Phụ đề', 'Captions', 'bool'],
-    device_name: ['device', 'Tên thiết bị', 'Device name', 'text'], bluetooth_name: ['device', 'Tên Bluetooth', 'Bluetooth name', 'text'],
-    bluetooth_address: ['device', 'Địa chỉ Bluetooth', 'Bluetooth address', 'text'], android_id: ['device', 'Mã Android', 'Android ID', 'text'],
-    hdmi_control_enabled: ['hdmi', 'HDMI‑CEC (điều khiển qua HDMI)', 'HDMI‑CEC (control over HDMI)', 'bool'],
-    hdmi_control_volume_control_enabled: ['hdmi', 'Chỉnh âm lượng loa ngoài qua CEC', 'Audio system volume over CEC', 'bool'],
-    hdmi_control_auto_wakeup_enabled: ['hdmi', 'Thiết bị HDMI bật TV', 'HDMI devices turn the TV on', 'bool'],
-    hdmi_control_auto_device_off_enabled: ['hdmi', 'Tắt TV thì tắt thiết bị HDMI', 'TV off turns HDMI devices off', 'bool'],
-    earc_control_enabled: ['hdmi', 'eARC', 'eARC', 'bool'], earc_status: ['hdmi', 'Trạng thái eARC', 'eARC status', 'num'],
-    nrdp_external_surround_sound_enabled: ['sound', 'Netflix: âm thanh vòm ra loa ngoài', 'Netflix: surround to audio system', 'bool'],
-    long_press_timeout: ['a11y', 'Thời gian bấm giữ', 'Long‑press delay', 'press'], pointer_speed: ['a11y', 'Tốc độ con trỏ', 'Pointer speed', 'speed'],
-    show_ime_with_hard_keyboard: ['apps', 'Bàn phím ảo khi có bàn phím thật', 'On‑screen keyboard with a real keyboard', 'bool'],
-    heads_up_notifications_enabled: ['apps', 'Thông báo nổi', 'Pop‑up notifications', 'bool'], notification_badging: ['apps', 'Chấm thông báo trên icon', 'Notification dots', 'bool'],
-    tts_default_synth: ['apps', 'Đọc chữ thành giọng nói', 'Text‑to‑speech engine', 'comp'], enabled_input_methods: ['apps', 'Bàn phím đã bật', 'Keyboards turned on', 'comp'],
-    always_on_vpn_app: ['net', 'VPN luôn bật', 'Always‑on VPN', 'comp'], always_on_vpn_lockdown: ['net', 'Chặn mạng khi VPN rớt', 'Block the network without VPN', 'bool'],
-    screensaver_default_component: ['screen', 'Trình bảo vệ mặc định', 'Default screen saver', 'comp'],
-    maintenance_window: ['device', 'Giờ bảo trì', 'Maintenance hours', 'text'], tv_user_setup_complete: ['device', 'Đã cài đặt TV lần đầu', 'TV first setup done', 'bool'],
-    boot_count: ['device', 'Số lần khởi động', 'Times started', 'num'], user_setup_complete: ['device', 'Đã cài đặt lần đầu', 'First setup done', 'bool'],
+    screen_off_timeout: ['screen', 'tvread.set_screen_off_timeout', 'ms'], sleep_timeout: ['screen', 'tvread.set_sleep_timeout', 'ms'],
+    attentive_timeout: ['screen', 'tvread.set_attentive_timeout', 'ms'],
+    screensaver_enabled: ['screen', 'tvread.set_screensaver_enabled', 'bool'], screensaver_components: ['screen', 'tvread.set_screensaver_components', 'comp'],
+    screensaver_activate_on_sleep: ['screen', 'tvread.set_screensaver_activate_on_sleep', 'bool'],
+    stay_on_while_plugged_in: ['screen', 'tvread.set_stay_on_while_plugged_in', 'bool'],
+    screen_brightness: ['screen', 'tvread.set_screen_brightness', 'pct255'], screen_brightness_mode: ['screen', 'tvread.set_screen_brightness_mode', 'bool'],
+    display_density_forced: ['screen', 'tvread.set_display_density_forced', 'dpi'],
+    user_disabled_hdr_formats: ['screen', 'tvread.set_user_disabled_hdr_formats', 'text'],
+    window_animation_scale: ['screen', 'tvread.set_window_animation_scale', 'scale'], transition_animation_scale: ['screen', 'tvread.set_transition_animation_scale', 'scale'],
+    animator_duration_scale: ['screen', 'tvread.set_animator_duration_scale', 'scale'],
+    wifi_on: ['net', 'tvread.set_wifi_on', 'bool'], bluetooth_on: ['net', 'tvread.set_bluetooth_on', 'bool'], airplane_mode_on: ['net', 'tvread.set_airplane_mode_on', 'bool'],
+    private_dns_mode: ['net', 'tvread.set_private_dns_mode', 'dns'], private_dns_specifier: ['net', 'tvread.set_private_dns_specifier', 'text'],
+    http_proxy: ['net', 'tvread.set_http_proxy', 'text'], wifi_scan_always_enabled: ['net', 'tvread.set_wifi_scan_always_enabled', 'bool'],
+    adb_enabled: ['dev', 'tvread.set_adb_enabled', 'bool'], adb_wifi_enabled: ['dev', 'tvread.set_adb_wifi_enabled', 'bool'],
+    development_settings_enabled: ['dev', 'tvread.set_development_settings_enabled', 'bool'],
+    install_non_market_apps: ['dev', 'tvread.set_install_non_market_apps', 'bool'],
+    package_verifier_enable: ['dev', 'tvread.set_package_verifier_enable', 'bool'],
+    verifier_verify_adb_installs: ['dev', 'tvread.set_verifier_verify_adb_installs', 'bool'],
+    mock_location: ['dev', 'tvread.set_mock_location', 'bool'], always_finish_activities: ['dev', 'tvread.set_always_finish_activities', 'bool'],
+    default_input_method: ['apps', 'tvread.set_default_input_method', 'comp'], voice_interaction_service: ['apps', 'tvread.set_voice_interaction_service', 'comp'],
+    voice_recognition_service: ['apps', 'tvread.set_voice_recognition_service', 'comp'], autofill_service: ['apps', 'tvread.set_autofill_service', 'comp'],
+    backup_enabled: ['apps', 'tvread.set_backup_enabled', 'bool'], location_mode: ['apps', 'tvread.set_location_mode', 'loc'],
+    sound_effects_enabled: ['sound', 'tvread.set_sound_effects_enabled', 'bool'], volume_music: ['sound', 'tvread.set_volume_music', 'num'],
+    volume_system: ['sound', 'tvread.set_volume_system', 'num'], encoded_surround_output: ['sound', 'tvread.set_encoded_surround_output', 'surround'],
+    encoded_surround_output_enabled_formats: ['sound', 'tvread.set_encoded_surround_output_enabled_formats', 'text'],
+    auto_time: ['time', 'tvread.set_auto_time', 'bool'], auto_time_zone: ['time', 'tvread.set_auto_time_zone', 'bool'],
+    time_12_24: ['time', 'tvread.set_time_12_24', 'h'], system_locales: ['time', 'tvread.set_system_locales', 'text'],
+    accessibility_enabled: ['a11y', 'tvread.set_accessibility_enabled', 'bool'], touch_exploration_enabled: ['a11y', 'tvread.set_touch_exploration_enabled', 'bool'],
+    enabled_accessibility_services: ['a11y', 'tvread.set_enabled_accessibility_services', 'comp'], font_scale: ['a11y', 'tvread.set_font_scale', 'scale'],
+    accessibility_display_magnification_enabled: ['a11y', 'tvread.set_accessibility_display_magnification_enabled', 'bool'], high_text_contrast_enabled: ['a11y', 'tvread.set_high_text_contrast_enabled', 'bool'],
+    accessibility_captioning_enabled: ['a11y', 'tvread.set_accessibility_captioning_enabled', 'bool'],
+    device_name: ['device', 'tvread.set_device_name', 'text'], bluetooth_name: ['device', 'tvread.set_bluetooth_name', 'text'],
+    bluetooth_address: ['device', 'tvread.set_bluetooth_address', 'text'], android_id: ['device', 'tvread.set_android_id', 'text'],
+    hdmi_control_enabled: ['hdmi', 'tvread.set_hdmi_control_enabled', 'bool'],
+    hdmi_control_volume_control_enabled: ['hdmi', 'tvread.set_hdmi_control_volume_control_enabled', 'bool'],
+    hdmi_control_auto_wakeup_enabled: ['hdmi', 'tvread.set_hdmi_control_auto_wakeup_enabled', 'bool'],
+    hdmi_control_auto_device_off_enabled: ['hdmi', 'tvread.set_hdmi_control_auto_device_off_enabled', 'bool'],
+    earc_control_enabled: ['hdmi', 'tvread.set_earc_control_enabled', 'bool'], earc_status: ['hdmi', 'tvread.set_earc_status', 'num'],
+    nrdp_external_surround_sound_enabled: ['sound', 'tvread.set_nrdp_external_surround_sound_enabled', 'bool'],
+    long_press_timeout: ['a11y', 'tvread.set_long_press_timeout', 'press'], pointer_speed: ['a11y', 'tvread.set_pointer_speed', 'speed'],
+    show_ime_with_hard_keyboard: ['apps', 'tvread.set_show_ime_with_hard_keyboard', 'bool'],
+    heads_up_notifications_enabled: ['apps', 'tvread.set_heads_up_notifications_enabled', 'bool'], notification_badging: ['apps', 'tvread.set_notification_badging', 'bool'],
+    tts_default_synth: ['apps', 'tvread.set_tts_default_synth', 'comp'], enabled_input_methods: ['apps', 'tvread.set_enabled_input_methods', 'comp'],
+    always_on_vpn_app: ['net', 'tvread.set_always_on_vpn_app', 'comp'], always_on_vpn_lockdown: ['net', 'tvread.set_always_on_vpn_lockdown', 'bool'],
+    screensaver_default_component: ['screen', 'tvread.set_screensaver_default_component', 'comp'],
+    maintenance_window: ['device', 'tvread.set_maintenance_window', 'text'], tv_user_setup_complete: ['device', 'tvread.set_tv_user_setup_complete', 'bool'],
+    boot_count: ['device', 'tvread.set_boot_count', 'num'], user_setup_complete: ['device', 'tvread.set_user_setup_complete', 'bool'],
   };
   const SET_KEYS = Object.keys(SET_INFO);
-  function msText(ms, vi) {
-    if (ms < 0 || ms >= 2147483647) return vi ? 'Không bao giờ' : 'Never';
+  function msText(ms) {
+    if (ms < 0 || ms >= 2147483647) return T('tvread.never');
     const m = ms / 60000;
-    if (m >= 60 && m % 60 === 0) return (m / 60) + (vi ? ' giờ' : ' h');
-    if (m >= 1 && Number.isInteger(m)) return m + (vi ? ' phút' : ' min');
-    return Math.round(ms / 1000) + (vi ? ' giây' : ' s');
+    if (m >= 60 && m % 60 === 0) return T('tvread.hours_n', { n: m / 60 });
+    if (m >= 1 && Number.isInteger(m)) return T('tvread.minutes_n', { n: m });
+    return T('tvread.seconds_n', { n: Math.round(ms / 1000) });
   }
-  function settingValue(kind, v, vi) {
-    const on = vi ? 'Bật' : 'On', off = vi ? 'Tắt' : 'Off', unset = vi ? 'Mặc định' : 'Default';
-    if (v === 'null' || v === '') return kind === 'text' || kind === 'comp' ? (vi ? 'Không có' : 'None') : unset;
+  function settingValue(kind, v) {
+    const on = T('tvread.on'), off = T('tvread.off'), auto = T('tvread.automatic');
+    if (v === 'null' || v === '') return kind === 'text' || kind === 'comp' ? T('tvread.none') : T('tvread.default');
     const n = Number(v);
     switch (kind) {
       case 'bool': return /^-?\d+$/.test(v) ? (n !== 0 ? on : off) : v === 'true' ? on : v === 'false' ? off : v;
-      case 'ms': return Number.isFinite(n) ? msText(n, vi) : v;
+      case 'ms': return Number.isFinite(n) ? msText(n) : v;
       case 'scale': return n === 0 ? off : Number.isFinite(n) ? n + '×' : v;
       case 'pct255': return Number.isFinite(n) ? Math.round(n / 2.55) + '%' : v;
       case 'dpi': return v + ' dpi';
-      case 'press': return Number.isFinite(n) ? (n / 1000).toLocaleString(vi ? 'vi' : 'en') + (vi ? ' giây' : ' s') : v;
+      case 'press': return Number.isFinite(n) ? T('tvread.seconds_n', { n: (n / 1000).toLocaleString(root.LANG || 'vi') }) : v;
       case 'speed': return Number.isFinite(n) ? (n > 0 ? '+' + n : String(n)) : v;
-      case 'dns': return { off: off, opportunistic: vi ? 'Tự động' : 'Automatic', hostname: vi ? 'Máy chủ riêng' : 'Own server' }[v] || v;
-      case 'loc': return [off, vi ? 'Chỉ thiết bị' : 'Device only', vi ? 'Tiết kiệm pin' : 'Battery saving', vi ? 'Chính xác cao' : 'High accuracy'][n] || v;
-      case 'surround': return [vi ? 'Tự động' : 'Automatic', vi ? 'Không bao giờ' : 'Never', vi ? 'Luôn luôn' : 'Always', vi ? 'Tự chọn' : 'Manual'][n] || v;
-      case 'h': return v === '24' ? (vi ? '24 giờ' : '24 h') : v === '12' ? (vi ? '12 giờ (SA/CH)' : '12 h (AM/PM)') : v;
+      case 'dns': return { off: off, opportunistic: auto, hostname: T('tvread.own_server') }[v] || v;
+      case 'loc': return [off, T('tvread.device_only'), T('tvread.battery_saving'), T('tvread.high_accuracy')][n] || v;
+      case 'surround': return [auto, T('tvread.never'), T('tvread.always'), T('tvread.manual')][n] || v;
+      case 'h': return v === '24' ? T('tvread.h24') : v === '12' ? T('tvread.h12') : v;
       case 'comp': return v.split(':').map((c) => c.split('/')[0]).join(', ');   // "pkg/.Service": the app is what matters
       default: return v;
     }
   }
   // one row of settingsRead in words: { group, title, value } (value as read out; s.value stays the raw one)
-  function settingInfo(s, vi) {
-    const i = SET_INFO[s.name], L = vi ? 0 : 1;
+  function settingInfo(s) {
+    const i = SET_INFO[s.name];
     if (i) {
-      const out = { group: i[0], groupName: SET_GROUPS[i[0]][L], title: i[1 + L], value: settingValue(i[3], s.value, vi), known: true, order: SET_KEYS.indexOf(s.name) };
-      if (i[3] === 'comp' && s.value && s.value !== 'null') out.pkgs = out.value.split(', ');   // the page puts the apps' names in
+      const out = { group: i[0], groupName: T(SET_GROUPS[i[0]]), title: T(i[1]), value: settingValue(i[2], s.value), known: true, order: SET_KEYS.indexOf(s.name) };
+      if (i[2] === 'comp' && s.value && s.value !== 'null') out.pkgs = out.value.split(', ');   // the page puts the apps' names in
       return out;
     }
     const words = s.name.replace(/[_.:]+/g, ' ').trim();
-    return { group: 'other', groupName: SET_GROUPS.other[L], title: words.charAt(0).toUpperCase() + words.slice(1), value: s.value === 'null' ? '—' : s.value, known: false, order: 0 };
+    return { group: 'other', groupName: T(SET_GROUPS.other), title: words.charAt(0).toUpperCase() + words.slice(1), value: s.value === 'null' ? '—' : s.value, known: false, order: 0 };
   }
 
   // ✎ What the list lets a person change: simple settings, by a choice or a toggle. SET_LOCKED is TvShell.SET_LOCKED (the
@@ -262,7 +263,7 @@
     if (ON_ONLY[s.name]) return s.value === ON_ONLY[s.name] || s.table !== 'global' ? { locked: true } : { kind: 'turnon', on: ON_ONLY[s.name] };
     if (VOLUME.test(s.name) && s.table === 'system') return { kind: 'step', min: s.min ?? 0, max: s.max ?? 100 };   // through the volume command (TvShell.VOLUME)
     if (SET_LOCKED.test(s.name)) return { locked: true };
-    const i = SET_INFO[s.name], kind = i ? i[3] : NUMBER.test(s.value) ? 'raw' : '';
+    const i = SET_INFO[s.name], kind = i ? i[2] : NUMBER.test(s.value) ? 'raw' : '';
     const words = s.value === 'true' || s.value === 'false';
     switch (kind) {
       case 'bool': return { kind: 'bool', on: words ? 'true' : s.name === 'stay_on_while_plugged_in' ? '7' : '1', off: words ? 'false' : '0' };   // 7: on every kind of power
@@ -278,7 +279,7 @@
     }
     return {};
   }
-  const settingWord = (s, v, vi) => settingValue((SET_INFO[s.name] || [])[3], v, vi);
+  const settingWord = (s, v) => settingValue((SET_INFO[s.name] || [])[2], v);
   root.SET_GROUPS = SET_GROUPS; root.settingInfo = settingInfo; root.settingEdit = settingEdit; root.settingWord = settingWord;
 
   root.capsRead = capsRead; root.sizeName = sizeName; root.appInfoRead = appInfoRead; root.permName = permName; root.bootRead = bootRead; root.settingsRead = settingsRead;

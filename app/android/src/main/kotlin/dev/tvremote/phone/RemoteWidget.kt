@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -49,7 +50,7 @@ class RemoteWidget : AppWidgetProvider() {
                 }
             }
             v.setViewVisibility(R.id.w_hint, if (scenes.isEmpty()) View.VISIBLE else View.GONE)
-            v.setTextViewText(R.id.w_hint, t("Tạo cảnh trong app: Quản lý → Tự động", "Make scenes in the app: Manage → Automation"))
+            v.setTextViewText(R.id.w_hint, T("remote_widget.make_scenes_in_the"))
             m.updateAppWidget(ids, v)
         }
     }

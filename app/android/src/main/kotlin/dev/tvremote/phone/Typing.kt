@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import dev.tvremote.core.remote.Atv
 
 // The text box: type then send, or live (the TV follows every letter); with or without ADB.
@@ -27,9 +28,9 @@ internal fun MainActivity.setLive(on: Boolean) {
     live = on
     prefs.edit().putBoolean("live", on).apply()
     liveBtn.setOn(on)
-    liveBtn.contentDescription = if (on) t("Đang gõ trực tiếp. Bấm để chuyển sang gõ xong rồi gửi", "Live typing is on. Tap to type first, then send")
-        else t("Đang gõ xong rồi gửi. Bấm để chuyển sang gõ trực tiếp", "Type-then-send is on. Tap for live typing")
-    textBox.hint = if (on) t("Gõ trực tiếp: TV nhận từng chữ", "Live: the TV gets every letter") else t("Gõ chữ rồi bấm gửi", "Type, then send")
+    liveBtn.contentDescription = if (on) T("typing.live_typing_is_on")
+        else T("typing.type_then_send_is")
+    textBox.hint = if (on) T("typing.live_the_tv_gets") else T("typing.type_then_send")
     clearBox()
 }
 

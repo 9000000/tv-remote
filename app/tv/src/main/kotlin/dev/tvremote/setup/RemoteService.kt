@@ -1,5 +1,7 @@
 package dev.tvremote.setup
 
+import dev.tvremote.core.Words
+import dev.tvremote.core.T
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -215,7 +217,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             override fun caps(): String = caps
         }, getExternalFilesDir(null)) { assets.open("tvr-helper.jar").use { it.readBytes() } }
         manage?.allowed = { fp ->                                      // whoever is at the TV sees that a device was let in
-            ui.post { android.widget.Toast.makeText(this, (if (java.util.Locale.getDefault().language == "vi") "Đã cho phép gỡ lỗi USB cho một thiết bị đã ghép\n" else "USB debugging allowed for a paired device\n") + fp, android.widget.Toast.LENGTH_LONG).show() }
+            ui.post { android.widget.Toast.makeText(this, T("tv_server.usb_allowed") + "\n" + fp, android.widget.Toast.LENGTH_LONG).show() }
         }
         if (!enabled(this)) try { server.start(PORT, true) } catch (e: Exception) { }   // the web remote is off: only the Manage screen on the TV
         if (enabled(this)) {
@@ -407,7 +409,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
 
         page.serve(r.path)?.let { return it }                        // the page and its scripts need no pairing: they hold no secrets
         hook.handle(r)?.let { return it }                            // its own token instead of a pairing (Hook.kt); off until switched on
-        if (r.path == "/api/pair/start" && r.method == "POST") return pairStart(r.peer)
+        if (r.path == "/api/pair/start" && r.method == "POST") return pairStart(r.peer, r.lang)
         if (r.path == "/api/pair/finish" && r.method == "POST") return pairFinish(r)
         if (r.path == "/api/pair/invite" && r.method == "POST") return pairInvite(r)
         // a pass made over TLS is only taken over TLS; the Secure cookie never comes over HTTP anyway
@@ -581,16 +583,16 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
 
     // ---------------------------------------------------------------- pairing
     @Synchronized @Throws(Exception::class)
-    private fun pairStart(peer: String): HttpServer.Response {
+    private fun pairStart(peer: String, lang: String): HttpServer.Response {
         val now = System.currentTimeMillis()
         if (now - lastPairStart < 3000) return HttpServer.Response.error(429, "wait a moment")
         // asking for code after code would give five guesses each: wrong guesses count across codes, and too many lock it
-        if (now < lockedUntil) return HttpServer.Response.error(429, "Nhập sai mã nhiều lần: đợi 15 phút rồi thử lại.")
+        if (now < lockedUntil) return HttpServer.Response.error(429, Words.get(lang, "tv_server.locked_15"))
         // /api/pair/start needs no pass (it is how a pass is got), so anyone on the network can call it: never pile a second
         // code screen on the first, and after a few that nobody finished, wait longer and longer (30 s, 1, 2, 4, 5 min)
         if (pairingCode() != null && PairActivity.showing) return HttpServer.Response.json(JSONObject().put("ok", true).put("seconds", ((codeUntil - now) / 1000).toInt()))
         val wait = backoff.wait(peer, now)
-        if (wait > 0) return HttpServer.Response.error(429, "Đợi " + (wait / 1000 + 1) + " giây rồi thử lại.")
+        if (wait > 0) return HttpServer.Response.error(429, Words.get(lang, "tv_server.wait_s", "n" to wait / 1000 + 1))
         lastPairStart = now
         if (pairingCode() == null || codeUntil - now < 30000) {          // the code on the TV stays the same when asked again
             code = String.format("%06d", random.nextInt(1000000))

@@ -2,6 +2,7 @@ package dev.tvremote.core.ontv
 import org.json.JSONObject
 import java.io.IOException
 import dev.tvremote.core.B64
+import dev.tvremote.core.Words
 
 /**
  * A short message on the TV's screen, over whatever is playing: a small card (icon, title, text) in a corner that takes no focus
@@ -42,11 +43,12 @@ object Notify {
      * the job does), or, with null, the one that says it is over (it takes the first one's place). Best effort: a TV without
      * TV Setup, or one that will not let it draw, just goes without.
      */
-    fun busy(sh: (String) -> String, vi: Boolean, what: String?) {
-        fun t(v: String, e: String) = if (vi) v else e
-        val msg = if (what != null) JSONObject().put("title", t("TV Remote đang làm việc trên TV", "TV Remote is working on the TV"))
-            .put("text", what + t(". Đừng bấm remote của TV cho tới khi xong.", ". Leave the TV's remote alone until this is done.")).put("seconds", MAX_SECONDS)
-        else JSONObject().put("title", t("TV Remote đã xong", "TV Remote is done")).put("seconds", 3)
+
+    fun busy(sh: (String) -> String, lang: String, what: String?) {
+        fun t(id: String, vararg a: Pair<String, Any?>) = Words.get(lang, id, *a)
+        val msg = if (what != null) JSONObject().put("title", t("notify_kt.tv_remote_working_tv"))
+            .put("text", t("notify_kt.leave_tv_s_remote", "what" to what)).put("seconds", MAX_SECONDS)
+        else JSONObject().put("title", t("notify_kt.tv_remote_done")).put("seconds", 3)
         try { send(sh, msg) } catch (e: Exception) { }                // top right: sign-in screens keep their buttons low
     }
 

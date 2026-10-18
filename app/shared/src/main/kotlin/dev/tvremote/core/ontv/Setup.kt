@@ -5,14 +5,15 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
+import dev.tvremote.core.Words
 import dev.tvremote.core.adb.Adb
 
 /**
  * "Optimize TV": the steps, run over an ADB connection. The TV app runs them on itself,
  * the phone app on the TV it is connected to. [dir] is where this device may keep a download for a moment.
  */
-class Setup(private val adb: Adb, private val dir: File?, private val vi: Boolean, private val log: Log) {
-    private fun t(v: String, e: String) = if (vi) v else e
+class Setup(private val adb: Adb, private val dir: File?, private val lang: String, private val log: Log) {
+    private fun t(id: String, vararg a: Pair<String, Any?>) = Words.get(lang, id, *a)
 
     companion object {
         const val FL_PKG = "me.efesser.flauncher"
@@ -85,8 +86,7 @@ class Setup(private val adb: Adb, private val dir: File?, private val vi: Boolea
      */
     private fun tvOnly() {
         if (adb.shell("pm has-feature android.software.leanback").trim() == "false")
-            throw IOException(t("Máy này không phải TV. Tối ưu TV đổi màn hình chính và tắt app hệ thống, nên chỉ dùng cho TV.",
-                "This device is not a TV. Optimize TV swaps the home screen and turns system apps off, so it is for TVs only."))
+            throw IOException(t("optimize.device_not_tv_optimize"))
     }
 
     /** What "Optimize TV" would do, for the person to choose: [label] gives an app's name where known. */
@@ -117,11 +117,11 @@ class Setup(private val adb: Adb, private val dir: File?, private val vi: Boolea
         tvOnly()
         if (has(TS_PKG)) {                                            // the Tailscale button does this too; here for a Tailscale installed by hand
             Tailscale(adb, dir).keepAlive()
-            log.line(t("✓ Tailscale: tự chạy lại sau khi TV ngủ hoặc khởi động lại", "✓ Tailscale: starts again by itself after standby or a restart"))
+            log.line(t("optimize.tailscale_starts_again_by"))
         }
         if (c.anim) {
             adb.shell("settings put global window_animation_scale 0; settings put global transition_animation_scale 0; settings put global animator_duration_scale 0.5")   // not 0 for the last one: loading spinners would freeze
-            log.line(t("✓ Hiệu ứng chuyển cảnh: tắt", "✓ Transition animations: off"))
+            log.line(t("optimize.transition_animations_off"))
         }
 
         val pick = c.disable ?: (GOOGLE + SONY).toList()
@@ -132,28 +132,29 @@ class Setup(private val adb: Adb, private val dir: File?, private val vi: Boolea
             if (p !in GOOGLE && p !in SONY) adb.shell("grep -qx '$p' $OFF_LIST 2>/dev/null || echo '$p' >> $OFF_LIST")   // for Undo
             off++
         }
-        if (off > 0) log.line(t("✓ Đã tắt $off app", "✓ Turned off $off apps"))
+        if (off > 0) log.line(t("optimize.turned_off_apps", "n" to off))
 
-        if (!c.home) { log.line(t("Xong.", "Done.")); return }
+        if (!c.home) { log.line(t("optimize.done")); return }
         if (!has(FL_PKG)) {
-            log.line(t("… Đang tải FLauncher (10 MB)", "… Downloading FLauncher (10 MB)"))
+            log.line(t("optimize.downloading_flauncher_10_mb"))
             val abis = adb.shell("getprop ro.product.cpu.abilist")
             val only64 = "arm64-v8a" in abis && "armeabi-v7a" !in abis
             val apk = if (only64) download(FL_URL64, "flauncher.apk", FL_SHA64) else download(FL_URL, "flauncher.apk", FL_SHA)
-            log.line(t("… Đang cài FLauncher", "… Installing FLauncher"))
+            log.line(t("optimize.installing_flauncher"))
             val out = install(apk)
             apk.delete()
             if (!out.contains("Success")) {
-                val why = if (out.contains("NO_MATCHING_ABIS")) t("FLauncher không có bản cho chip của TV này", "FLauncher has no build for this TV's chip") else last(out)
-                log.line(t("– Không cài được FLauncher (", "– FLauncher could not be installed (") + why + t(") — giữ nguyên màn hình chính", "), the home screen is left as it is"))
-                log.line(t("Xong.", "Done."))
+                val why = if (out.contains("NO_MATCHING_ABIS")) t("optimize.flauncher_has_no_build") else last(out)
+                log.line(t("optimize.flauncher_could_not_be", "why" to why))
+                log.line(t("optimize.done"))
                 return
             }
         }
         for (p in LAUNCHER)
             if (has(p)) adb.shell("pm disable-user --user 0 $p; am force-stop $p")
-        log.line(t("✓ Màn hình chính: ", "✓ Home screen: ") + last(adb.shell("cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN")))
-        log.line(t("Xong. Bấm nút Home để thấy màn hình chính mới.", "Done. Press Home to see the new home screen."))
+        val home = last(adb.shell("cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN"))
+        log.line(t("optimize.home_screen", "home" to home))
+        log.line(t("optimize.done_press_home_see"))
     }
 
     @Throws(Exception::class)
@@ -164,8 +165,8 @@ class Setup(private val adb: Adb, private val dir: File?, private val vi: Boolea
             if (has(p)) { adb.shell("pm enable --user 0 $p"); on++ }
         adb.shell("rm -f $OFF_LIST")
         adb.shell("for k in $ANIM; do settings put global \$k 1.0; done")
-        log.line(t("✓ Đã bật lại $on app (gồm màn hình chính Google), hiệu ứng về 1.0x", "✓ Re-enabled $on apps (Google's home screen among them), animations back to 1.0x"))
-        log.line(t("FLauncher và cài đặt Tailscale được giữ nguyên.", "FLauncher and the Tailscale settings are left as they are."))
+        log.line(t("optimize.re_enabled_apps_google", "n" to on))
+        log.line(t("optimize.flauncher_tailscale_settings_left"))
     }
 
     /** Copies the APK to the TV through ADB and has the shell user install it there (an app may not install on its own). */
@@ -237,7 +238,7 @@ class Setup(private val adb: Adb, private val dir: File?, private val vi: Boolea
             c.disconnect()
         }
         val hex = md.digest().joinToString("") { String.format("%02x", it) }
-        if (sha256 != null && hex != sha256) { f.delete(); throw IOException(t("checksum không khớp, không cài", "checksum mismatch, not installing")) }
+        if (sha256 != null && hex != sha256) { f.delete(); throw IOException(t("optimize.checksum_mismatch_not_installing")) }
         return f
     }
 }

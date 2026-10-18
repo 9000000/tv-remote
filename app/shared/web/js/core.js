@@ -35,10 +35,10 @@ function ask(text, o = {}) {
     const pick = o.choices && el('select', { onchange: () => { input.value = pick.value; if (!pick.value) input.focus(); } },
       el('option', { value: '', textContent: T('core.type_own') }), ...o.choices.map((c) => el('option', { value: c.value, textContent: c.label, selected: c.value === o.value })));
     if (pick) input.addEventListener('input', () => { pick.value = o.choices.some((c) => c.value === input.value.trim()) ? input.value.trim() : ''; });
-    const yes = el('button', { type: 'submit', className: o.danger ? 'danger' : 'primary', textContent: tr(o.ok || 'OK') });
+    const yes = el('button', { type: 'submit', className: o.danger ? 'danger' : 'primary', textContent: o.ok || 'OK' });
     const no = el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => d.close() });
     const d = el('dialog', { className: 'ask' }, el('form', { className: 'card', onsubmit: (e) => { e.preventDefault(); d.returnValue = 'yes'; d.close(); } },
-      el('p', { textContent: tr(text) }), pick || null, input, el('div', { className: 'acts' }, no, yes)));
+      el('p', { textContent: text }), pick || null, input, el('div', { className: 'acts' }, no, yes)));
     d.addEventListener('close', () => {
       d.remove();
       const ok = d.returnValue === 'yes';
@@ -120,7 +120,7 @@ async function call(path, data, quiet) {
       if (r.status === 403 && e === 'scope') { refresh(); if (!quiet) toast(scopeWhy()); return null; }   // the owner may have just changed it
       if (r.status === 404 && CORE === 'pc') e = STALE;
       if (adbWords(r.status, e) !== e) { e = adbWords(r.status, e); setTimeout(refresh, 300); }
-      if (!quiet) toast('Lỗi: ' + friendly(e)); return null;
+      if (!quiet) toast(T('common.error_msg', { msg: friendly(e) })); return null;
     }
     return await r.json();
   } catch { if (!quiet) toast(T('core.server_unreachable')); return null; }
@@ -164,51 +164,49 @@ const setupFor = async (feature) => !!await api('/api/setup/need?f=' + feature);
 // The errors people actually meet, from any core , in words they can act on; anything else as it came.
 const FRIENDLY = [
   [SETUP_RE, setupSay],
-  [/the home network is out of reach under the VPN/, 'Đang bật VPN nên không tới được TV trong nhà. TV có đang bật và cùng Wi-Fi không? Nếu có, trong app VPN bật cho phép mạng LAN (Local network / Bypass LAN), hoặc tắt VPN.'],   // Lan.BLOCKED: the phone's Manage screen
-  [/notify:nooverlay/, 'TV này không cho app hiện thông báo đè lên màn hình.'],
-  [/no YouTube and no Google search/, 'TV này không có YouTube hay tìm kiếm của Google để tìm câu này.'],
-  [/^unsupported: (LG|Samsung|Roku|Hisense VIDAA)$/, (m) => 'TV ' + m[1] + ' không hỗ trợ'],
-  [/vidaa: the certificate from Hisense/, 'TV Hisense này cần chứng chỉ từ app “VIDAA Smart TV” của Hisense. Vào tab Thiết lập để chọn file .apk của app đó.'],
-  [/vidaa: no certificate in this file/, 'Không tìm thấy chứng chỉ trong file này. Chọn file .apk của app “VIDAA Smart TV”, hoặc file .p12.'],
-  [/this TV keeps that volume itself/, 'TV này tự giữ mức âm lượng này, không cho đổi từ xa. Âm lượng phim, nhạc thì đổi được.'],   // Scenes.volume, a stream other than media
-  [/turned itself back off/, 'TV tự tắt lại ngay. Gỡ lỗi không dây chỉ chạy khi TV nối Wi‑Fi (không phải dây mạng).'],   // TvShell.setting, ON_ONLY
-  [/roku: control by mobile apps is off/, 'Roku đang chặn điều khiển từ điện thoại, máy tính. Trên Roku: Settings → System → Advanced system settings → Control by mobile apps → chọn Enabled (hoặc Permissive).'],   // Roku.LIMITED: newer Roku OS keeps phones out
-  [/^refused$/, 'TV đã từ chối. Bấm Hỏi lại TV ở tab Thiết lập rồi chọn Cho phép.'],
-  [/^not accepted$/, 'Chưa ai chọn Cho phép trên TV. Bấm Hỏi lại TV ở tab Thiết lập.'],
-  [/SSLHandshake|CertPathValidator|Chain validation|CERTIFICATE_VERIFY|not yet valid/i, 'Không mở được kết nối bảo mật. Ngày giờ trên TV có đúng không? (Cài đặt → Hệ thống → Ngày và giờ)'],
-  [/UnknownHost|Name or service not known|nodename nor servname|getaddrinfo/i, 'TV (hoặc máy này) chưa vào được Internet.'],
-  [/SocketTimeout|timed out|ConnectException|Connection reset/i, 'Mạng chậm hoặc vừa mất kết nối. Thử lại sau ít phút.'],
-  [/stopped answering|stopped taking data/i, 'TV ngừng trả lời giữa chừng. Thử lại; vẫn vậy thì khởi động lại TV.'],
-  [/copy to the TV incomplete/i, 'Chép tệp lên TV không trọn vẹn. Thử lại.'],
-  [/stream closed|socket closed|broken pipe/i, 'Mất kết nối với TV giữa chừng. Thử lại.'],   // ADB cut: another TV chosen, or the network dropped
-  [/no sign-in link/i, 'Không đọc được link đăng nhập trên màn hình TV. Mở Tailscale trên TV và quét mã QR nó hiện.'],
-  [/storage full: file=(\d+) free=(\d+) need=(\d+) apk=([01])/, (m) => m[4] === '1'
-    ? 'TV chỉ còn trống ' + fmtSize(+m[2]) + ', không đủ cài APK ' + fmtSize(+m[1]) + ' (cần trống ít nhất ' + fmtSize(+m[3]) + ': bản chép và app sau khi cài). Xóa bớt app hoặc tệp (tab Sức khỏe / Tệp) rồi thử lại.'
-    : 'TV chỉ còn trống ' + fmtSize(+m[2]) + ', không đủ chép tệp ' + fmtSize(+m[1]) + ' (cần trống ít nhất ' + fmtSize(+m[3]) + '). Xóa bớt app hoặc tệp (tab Sức khỏe / Tệp) rồi thử lại.'],
-  [/INSUFFICIENT_STORAGE|No space left/i, 'TV hết bộ nhớ trống.'],
-  [/no app that can open/i, 'TV không có app mở loại tệp này (cài VLC rồi thử lại).'],
-  [/cannot be opened \(no launcher screen\)|no launcher activity/i, 'App này không có màn hình để mở: nó chỉ chạy nền, hoặc là một phần của app khác.'],
-  [/adb pair: wrong code/i, 'Mã ghép nối không đúng hoặc đã hết hạn. Xem mã mới trên TV rồi nhập lại.'],
-  [/adb pair: not a pairing port/i, 'Cổng này không phải cổng ghép nối. Dùng đúng địa chỉ IP và cổng trong hộp “Ghép nối thiết bị” trên TV.'],
-  [/adb tls: this device is not paired/i, 'TV chưa ghép với app này. Ghép nối bằng Gỡ lỗi không dây trước.'],
-  [/adb tls: this app cannot pair/i, 'App này không ghép nối được bằng Gỡ lỗi không dây trên thiết bị này.'],
-  [/not a backup/i, 'Tệp này không phải bản sao lưu của TV Remote.'],
-  [/^protected: the TV needs this app/i, 'App này cần cho TV chạy, không tắt hay xóa dữ liệu được.'],
-  [/removed by the TV right after install/i, 'TV báo cài xong nhưng tự gỡ app này ngay sau đó. Box của nhà mạng (FPT Play...) chặn một số app; app này không dùng được trên TV này.'],
+  [/the home network is out of reach under the VPN/, T('core.fr_vpn_blocked')],   // Lan.BLOCKED: the phone's Manage screen
+  [/notify:nooverlay/, T('core.fr_notify_no_overlay')],
+  [/no YouTube and no Google search/, T('core.fr_no_search')],
+  [/^unsupported: (LG|Samsung|Roku|Hisense VIDAA)$/, (m) => T('core.fr_unsupported', { brand: m[1] })],
+  [/vidaa: the certificate from Hisense/, T('core.fr_vidaa_cert_needed')],
+  [/vidaa: no certificate in this file/, T('core.fr_vidaa_no_cert')],
+  [/this TV keeps that volume itself/, T('core.fr_volume_locked')],   // Scenes.volume, a stream other than media
+  [/turned itself back off/, T('core.fr_turned_back_off')],   // TvShell.setting, ON_ONLY
+  [/roku: control by mobile apps is off/, T('core.fr_roku_blocked')],   // Roku.LIMITED: newer Roku OS keeps phones out
+  [/^refused$/, T('core.fr_tv_refused')],
+  [/^not accepted$/, T('core.fr_not_accepted')],
+  [/SSLHandshake|CertPathValidator|Chain validation|CERTIFICATE_VERIFY|not yet valid/i, T('core.fr_secure_failed')],
+  [/UnknownHost|Name or service not known|nodename nor servname|getaddrinfo/i, T('core.fr_no_internet')],
+  [/SocketTimeout|timed out|ConnectException|Connection reset/i, T('core.fr_net_slow')],
+  [/stopped answering|stopped taking data/i, T('core.fr_tv_stopped')],
+  [/copy to the TV incomplete/i, T('core.fr_copy_incomplete')],
+  [/stream closed|socket closed|broken pipe/i, T('core.fr_connection_lost')],   // ADB cut: another TV chosen, or the network dropped
+  [/no sign-in link/i, T('core.fr_no_signin_link')],
+  [/storage full: file=(\d+) free=(\d+) need=(\d+) apk=([01])/, (m) => T(m[4] === '1' ? 'core.fr_storage_apk' : 'core.fr_storage_file', { free: fmtSize(+m[2]), size: fmtSize(+m[1]), need: fmtSize(+m[3]) })],
+  [/INSUFFICIENT_STORAGE|No space left/i, T('core.fr_no_space')],
+  [/no app that can open/i, T('core.fr_no_viewer_app')],
+  [/cannot be opened \(no launcher screen\)|no launcher activity/i, T('core.fr_no_launcher')],
+  [/adb pair: wrong code/i, T('core.fr_pair_wrong_code')],
+  [/adb pair: not a pairing port/i, T('core.fr_pair_wrong_port')],
+  [/adb tls: this device is not paired/i, T('core.fr_not_paired')],
+  [/adb tls: this app cannot pair/i, T('core.fr_cannot_pair')],
+  [/not a backup/i, T('core.fr_not_backup')],
+  [/^protected: the TV needs this app/i, T('core.fr_protected_app')],
+  [/removed by the TV right after install/i, T('core.fr_removed_after_install')],
   // the check before installing (apk_fits / Manage.apkFits), then what pm says when it was not caught there
-  [/apk needs sdk (\d+), the tv has sdk (\d+)/i, (m) => 'APK này cần Android ' + androidName(m[1]) + ' trở lên; TV đang chạy Android ' + androidName(m[2]) + '. Tìm bản cũ hơn của app (trang APKMirror ghi “Min: Android ...”).'],
-  [/apk is built for (\S+), the tv runs (\S+)/i, (m) => 'APK này dành cho chip ' + m[1].replace(/,/g, ', ') + ', còn TV dùng ' + m[2].replace(/,/g, ', ') + '. Tải bản cho đúng loại chip (thường là armeabi-v7a cho TV).'],
-  [/not a changeable permission|SYSTEM_FIXED|POLICY_FIXED|cannot (grant|revoke) system/i, 'TV không cho đổi quyền này: hệ thống giữ nó.'],
-  [/has not requested permission|Unknown permission/i, 'App này không xin quyền đó.'],
-  [/INSTALL_FAILED_UPDATE_INCOMPATIBLE|signatures do not match/i, 'TV đã có app này nhưng từ nguồn khác (khác chữ ký). Gỡ bản đang có rồi cài lại; dữ liệu của app sẽ mất.'],
-  [/INSTALL_FAILED_VERSION_DOWNGRADE/i, 'TV đang có bản mới hơn của app này. Gỡ bản đang có nếu muốn cài bản cũ.'],
-  [/INSTALL_FAILED_OLDER_SDK/i, 'APK này cần Android mới hơn bản trên TV. Tìm bản cũ hơn của app.'],
-  [/TV Setup is up to date/i, 'TV Setup trên TV đã là bản mới nhất.'],
-  [/an update of TV Setup is already running/i, 'TV Setup đang tự cập nhật. Chờ khoảng một phút.'],
-  [/TV Setup is not installed/i, 'TV chưa có app TV Setup.'],
-  [/the update did not start on the TV/i, 'TV chưa bắt đầu cập nhật được. Thử lại; vẫn vậy thì khởi động lại TV.'],
-  [/could not write the update script/i, 'Không ghi được tệp cập nhật lên TV. TV còn bộ nhớ trống không?'],
-  [/INSTALL_FAILED_NO_MATCHING_ABIS/i, 'APK này dành cho loại chip khác với TV. Tải bản cho đúng loại chip (thường là armeabi-v7a).'],
+  [/apk needs sdk (\d+), the tv has sdk (\d+)/i, (m) => T('core.fr_sdk_low', { need: androidName(m[1]), have: androidName(m[2]) })],
+  [/apk is built for (\S+), the tv runs (\S+)/i, (m) => T('core.fr_abi_other', { apk: m[1].replace(/,/g, ', '), tv: m[2].replace(/,/g, ', ') })],
+  [/not a changeable permission|SYSTEM_FIXED|POLICY_FIXED|cannot (grant|revoke) system/i, T('core.fr_perm_fixed')],
+  [/has not requested permission|Unknown permission/i, T('core.fr_perm_not_asked')],
+  [/INSTALL_FAILED_UPDATE_INCOMPATIBLE|signatures do not match/i, T('core.fr_signature_differs')],
+  [/INSTALL_FAILED_VERSION_DOWNGRADE/i, T('core.fr_newer_installed')],
+  [/INSTALL_FAILED_OLDER_SDK/i, T('core.fr_older_sdk')],
+  [/TV Setup is up to date/i, T('core.fr_setup_latest')],
+  [/an update of TV Setup is already running/i, T('core.fr_setup_updating')],
+  [/TV Setup is not installed/i, T('core.fr_setup_missing')],
+  [/the update did not start on the TV/i, T('core.fr_update_not_started')],
+  [/could not write the update script/i, T('core.fr_update_script_failed')],
+  [/INSTALL_FAILED_NO_MATCHING_ABIS/i, T('core.fr_abi_mismatch')],
 ];
 const ANDROID = { 21: '5.0', 22: '5.1', 23: '6', 24: '7', 25: '7.1', 26: '8', 27: '8.1', 28: '9', 29: '10', 30: '11', 31: '12', 32: '12L', 33: '13', 34: '14', 35: '15', 36: '16' };
 const androidName = (sdk) => ANDROID[sdk] || 'SDK ' + sdk;

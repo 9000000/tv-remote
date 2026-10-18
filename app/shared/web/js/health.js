@@ -262,8 +262,8 @@ async function loadSettings() {
 }
 $('#setlist').addEventListener('toggle', (e) => { if (e.target.open) loadSettings(); });
 function drawSettings() {
-  const q = $('#setlistq').value.trim().toLowerCase(), vi = window.LANG !== 'en';
-  const all = setRows.map((s) => { const e = settingEdit(s); return { s, i: settingInfo(s, vi), edit: !e.locked && !!e.kind, locked: !!e.locked }; })
+  const q = $('#setlistq').value.trim().toLowerCase();
+  const all = setRows.map((s) => { const e = settingEdit(s); return { s, i: settingInfo(s), edit: !e.locked && !!e.kind, locked: !!e.locked }; })
     .filter(({ s, i }) => !q || (i.title + ' ' + s.name + '=' + s.value + ' ' + i.value).toLowerCase().includes(q));
   const counts = { all: all.length, edit: all.filter((r) => r.edit).length }; counts.view = counts.all - counts.edit;
   document.querySelectorAll('#setfilter button').forEach((b) => { const f = b.dataset.f; b.classList.toggle('on', f === setFilter); b.dataset.n = counts[f]; });
@@ -271,7 +271,7 @@ function drawSettings() {
   const row = ({ s, i, locked }) => el('div', { className: 'setrow', title: s.table + ' ' + s.name + '=' + s.value,
     onclick: (e) => { e.currentTarget.classList.toggle('full'); if (locked) toast(T('health.locked_toast')); } },   // a long value opens in full on a tap
     el('div', { className: 'setname' }, el('span', { textContent: i.title }), el('small', { className: 'mono', textContent: s.name })),
-    setControl(s, i, vi));
+    setControl(s, i));
   const named = (div, pkgs) => pkgs.forEach((p) => onMeta(p, (m) => {   // "com.google.android.apps.tv.dreamx" -> the app's own name
     if (m && m.label && m.label !== p.slice(p.lastIndexOf('.') + 1)) { div.textContent = div.textContent.split(', ').map((x) => x === p ? m.label : x).join(', '); div.classList.toggle('long', div.textContent.length > 24); }
   }));
@@ -288,7 +288,7 @@ function drawSettings() {
   $('#setlistbody').replaceChildren(...parts);
 }
 // The value, or what changes it: a toggle, a choice, ✎ for a name or a number; 🔒 where a change could cut the TV off
-function setControl(s, i, vi) {
+function setControl(s, i) {
   const e = settingEdit(s), shown = el('div', { className: 'setval' + (i.known ? '' : ' mono') + (i.value.length > 24 ? ' long' : ''), textContent: i.value });
   const stop = (n) => { n.addEventListener('click', (ev) => ev.stopPropagation()); return n; };
   const back = !e.locked && e.kind !== 'turnon' && s.was !== undefined && s.was !== s.value && s.was !== 'null'
@@ -308,17 +308,17 @@ function setControl(s, i, vi) {
       box, el('span', { className: 'setmax', title: e.min + '–' + e.max, textContent: '/ ' + e.max }),
       el('button', { type: 'button', className: 'small', title: T('health.higher'), textContent: '+', disabled: n >= e.max, onclick: () => go(n + 1) }));
   } else if (e.kind === 'range') {                                   // brightness: a slider, set once it is let go
-    const out = el('span', { className: 'setval', textContent: settingWord(s, s.value, vi) });
+    const out = el('span', { className: 'setval', textContent: settingWord(s, s.value) });
     const r = el('input', { type: 'range', className: 'setrange', min: e.min, max: e.max, value: Number(s.value) || 0, ariaLabel: i.title,
-      oninput: (ev) => { out.textContent = settingWord(s, ev.target.value, vi); }, onchange: (ev) => setSetting(s, ev.target.value) });
+      oninput: (ev) => { out.textContent = settingWord(s, ev.target.value); }, onchange: (ev) => setSetting(s, ev.target.value) });
     ctl = el('div', { className: 'setstep' }, r, out);
   } else if (e.kind === 'bool') {
     const on = s.value !== e.off && s.value !== 'null';
-    ctl = el('button', { type: 'button', className: 'small' + (on ? ' on' : ''), textContent: settingWord(s, on ? e.on : e.off, vi), onclick: () => setSetting(s, on ? e.off : e.on) });
+    ctl = el('button', { type: 'button', className: 'small' + (on ? ' on' : ''), textContent: settingWord(s, on ? e.on : e.off), onclick: () => setSetting(s, on ? e.off : e.on) });
   } else if (e.kind === 'pick') {
     const vals = e.values.some((v) => Number(v) === Number(s.value)) ? e.values : [s.value, ...e.values];
     ctl = el('select', { className: 'setpick', onchange: (ev) => setSetting(s, ev.target.value) },
-      ...vals.map((v) => el('option', { value: v, textContent: settingWord(s, v, vi), selected: Number(v) === Number(s.value) })));
+      ...vals.map((v) => el('option', { value: v, textContent: settingWord(s, v), selected: Number(v) === Number(s.value) })));
   } else if (e.kind === 'text') {
     ctl = el('button', { type: 'button', className: 'small', title: T('health.change'), textContent: (s.value === 'null' ? '—' : i.value) + ' ✎', onclick: async () => {
       const v = await ask(e.tech ? T('health.new_value_tech') : T('health.new_value'), { value: s.value === 'null' ? '' : s.value, ok: T('health.change') });
@@ -332,7 +332,7 @@ function setControl(s, i, vi) {
 async function setSetting(s, value) {
   if (!/^[A-Za-z0-9 ._:+-]{0,100}$/.test(value)) { toast(T('health.plain_chars')); return drawSettings(); }
   const r = await api('/api/settings', { table: s.table, name: s.name, value });
-  if (!r || !/\bok\b/.test(r.text || '')) { if (r) toast('Lỗi: ' + friendly((r.text || '').trim())); return drawSettings(); }
+  if (!r || !/\bok\b/.test(r.text || '')) { if (r) toast(T('common.error_msg', { msg: friendly((r.text || '').trim()) })); return drawSettings(); }
   if (s.was === undefined) s.was = s.value;
   s.value = value; drawSettings(); toast(T('health.changed'));
 }

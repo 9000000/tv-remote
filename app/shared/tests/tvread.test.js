@@ -1,6 +1,14 @@
 // node --test app/shared/tests/   Reading what the TV printed for the Apps tab and the TV card (js/tvread.js).
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+// the page's T(): the words of i18n/<LANG>.json (vi unless a test says otherwise), {name} filled in
+const book = (l) => JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n/' + l + '.json'), 'utf8'));
+const books = { vi: book('vi'), en: book('en') };
+globalThis.LANG = 'vi';
+globalThis.T = (id, a) => { const s = books[globalThis.LANG][id] ?? books.vi[id]; return s == null ? id : a ? s.replace(/\{(\w+)\}/g, (m, k) => (k in a ? a[k] : m)) : s; };
+const inEn = (f) => { globalThis.LANG = 'en'; try { return f(); } finally { globalThis.LANG = 'vi'; } };
 const { cleanFreed, logNext, logLevel, readTvset, densityChoices, capsRead, sizeName, appInfoRead, permName, bootRead, settingsRead, settingInfo } = require('../web/js/tvread.js');
 
 test('bytes freed by the cache clean', () => {
@@ -129,12 +137,12 @@ test('apps that start with the TV, and the settings list', () => {
 });
 
 test('settings in words', () => {
-  const i = (name, value, vi = true) => settingInfo({ table: 'x', name, value }, vi);
+  const i = (name, value, en = false) => en ? inEn(() => settingInfo({ table: 'x', name, value })) : settingInfo({ table: 'x', name, value });
   assert.deepEqual(i('adb_enabled', '1'), { group: 'dev', groupName: 'Nhà phát triển & ADB', title: 'Gỡ lỗi ADB', value: 'Bật', known: true, order: i('adb_enabled', '1').order });
   assert.ok(i('screen_off_timeout', '1').order < i('sleep_timeout', '1').order);
-  assert.equal(i('adb_enabled', '0', false).value, 'Off');
+  assert.equal(i('adb_enabled', '0', true).value, 'Off');
   assert.equal(i('sleep_timeout', '1200000').value, '20 phút'); assert.equal(i('sleep_timeout', '-1').value, 'Không bao giờ');
-  assert.equal(i('screen_off_timeout', '2147483647', false).value, 'Never'); assert.equal(i('screen_off_timeout', '3600000').value, '1 giờ');
+  assert.equal(i('screen_off_timeout', '2147483647', true).value, 'Never'); assert.equal(i('screen_off_timeout', '3600000').value, '1 giờ');
   assert.equal(i('screen_off_timeout', '15000').value, '15 giây');
   assert.equal(i('window_animation_scale', '0').value, 'Tắt'); assert.equal(i('window_animation_scale', '0.5').value, '0.5×');
   assert.equal(i('screen_brightness', '102').value, '40%'); assert.equal(i('private_dns_mode', 'opportunistic').value, 'Tự động');

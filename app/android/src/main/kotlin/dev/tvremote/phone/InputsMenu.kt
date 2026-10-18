@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.widget.Toast
 import dev.tvremote.core.remote.Inputs
 import dev.tvremote.core.remote.Remote
@@ -22,14 +23,14 @@ internal fun MainActivity.inputsMenu() {
         ui.post {
             if (isFinishing) return@post
             if (list.isNullOrEmpty()) {
-                Toast.makeText(this, if (list == null) t("Chưa đọc được ngõ vào của TV", "Could not read the TV’s inputs") else t("TV này không có ngõ vào để chọn", "This TV has no inputs to choose"), Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, if (list == null) T("auto.inputs_failed") else T("auto.no_inputs"), Toast.LENGTH_SHORT).show()
                 opens(INPUT_KEY)
                 return@post
             }
             val items = ArrayList<Triple<String, String, () -> Unit>>()
-            for (i in list) items.add(Triple("@input|" + i.label, if (i.connected == false) t("Chưa cắm", "Nothing plugged in") else "") { switchInput(i, lg, cache) })
-            items.add(Triple("@menu|" + t("Bảng chọn của TV", "The TV’s own picker"), "") { opens(INPUT_KEY) })
-            menu(t("Ngõ vào", "Input"), -1, items)
+            for (i in list) items.add(Triple("@input|" + i.label, if (i.connected == false) T("remote.not_plugged") else "") { switchInput(i, lg, cache) })
+            items.add(Triple("@menu|" + T("remote.tv_picker"), "") { opens(INPUT_KEY) })
+            menu(T("auto.key_input"), -1, items)
         }
     }.start()
 }
@@ -45,7 +46,7 @@ private fun MainActivity.switchInput(i: Inputs.Input, lg: Boolean, cache: Inputs
         } catch (e: Exception) { e }
         ui.post {
             if (isFinishing) return@post
-            Toast.makeText(this, if (err == null) t("Đã chuyển sang ", "Switched to ") + i.label else t("TV không chuyển được ngõ vào", "The TV did not switch input"), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, if (err == null) T("remote.switched_to", "name" to i.label) else T("inputs_menu.the_tv_did_not"), Toast.LENGTH_SHORT).show()
         }
     }.start()
 }

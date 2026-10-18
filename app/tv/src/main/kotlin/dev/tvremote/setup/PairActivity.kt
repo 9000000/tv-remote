@@ -1,6 +1,7 @@
 package dev.tvremote.setup
 
 import android.app.Activity
+import dev.tvremote.core.T
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -12,13 +13,10 @@ import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import java.util.Locale
 import kotlin.math.roundToInt
 
 /** Shows the pairing code on the TV while a new phone or computer asks to control it. Closes by itself. */
 class PairActivity : Activity() {
-    private val vi = Locale.getDefault().language == "vi"
-    private fun t(v: String, e: String) = if (vi) v else e
     private val ui = Handler(Looper.getMainLooper())
     private val watch = object : Runnable {
         override fun run() {
@@ -51,14 +49,14 @@ class PairActivity : Activity() {
         icon.setImageResource(R.drawable.ic_phone)
         icon.setColorFilter(Color.rgb(91, 140, 255))
         card.addView(icon, LinearLayout.LayoutParams(dp(40), dp(40)))
-        card.addView(line(t("Một thiết bị muốn điều khiển TV này", "A device wants to control this TV"), 24, Color.WHITE, true), gap(14))
-        card.addView(line(t("Nhập mã này trên thiết bị đó", "Type this code on that device"), 16, Color.rgb(140, 150, 163), false), gap(6))
+        card.addView(line(T("pair.a_device_wants_to"), 24, Color.WHITE, true), gap(14))
+        card.addView(line(T("pair.type_this_code_on"), 16, Color.rgb(140, 150, 163), false), gap(6))
         val big = line(code.substring(0, 3) + " " + code.substring(3), 72, Color.WHITE, true)
         big.letterSpacing = 0.12f
         big.background = box(Color.rgb(34, 39, 47), 18)
         big.setPadding(dp(36), dp(10), dp(36), dp(10))
         card.addView(big, gap(22))
-        card.addView(line(t("Mã dùng được 2 phút. Không phải bạn thì bấm Back.", "The code is good for 2 minutes. If this is not you, press Back."), 15, Color.rgb(140, 150, 163), false), gap(22))
+        card.addView(line(T("pair.the_code_is_good"), 15, Color.rgb(140, 150, 163), false), gap(22))
         root.addView(card)
         setContentView(root)
         showing = true

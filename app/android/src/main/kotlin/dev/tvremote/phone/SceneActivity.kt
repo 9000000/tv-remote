@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.app.Activity
 import android.app.Notification
 import android.app.NotificationChannel
@@ -42,7 +43,7 @@ class SceneService : Service() {
 
     override fun onStartCommand(i: Intent?, flags: Int, id: Int): Int {
         loadLang(this)
-        val n = notification(t("Đang gửi lệnh tới TV...", "Sending to the TV..."))
+        val n = notification(T("scene_activity.sending_to_the_tv"))
         if (Build.VERSION.SDK_INT >= 34) startForeground(3, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SHORT_SERVICE) else startForeground(3, n)
         if (busy) return START_NOT_STICKY                              // one job at a time: a second tap while one runs is dropped
         busy = true
@@ -74,7 +75,7 @@ class SceneService : Service() {
     @Suppress("DEPRECATION")
     private fun notification(text: String): Notification {
         val b = if (Build.VERSION.SDK_INT >= 26) {
-            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(NotificationChannel("jobs", t("Lệnh tới TV", "Commands to the TV"), NotificationManager.IMPORTANCE_MIN))
+            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(NotificationChannel("jobs", T("scene_activity.commands_to_the_tv"), NotificationManager.IMPORTANCE_MIN))
             Notification.Builder(this, "jobs")
         } else Notification.Builder(this)
         return b.setSmallIcon(R.drawable.ic_tv).setContentTitle("TV Remote").setContentText(text).build()

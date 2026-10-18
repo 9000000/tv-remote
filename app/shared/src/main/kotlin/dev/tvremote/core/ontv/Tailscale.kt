@@ -45,7 +45,7 @@ class Tailscale(private val adb: Adb, private val dir: File?) {
         val name = org.json.JSONObject(get("$BASE?mode=json")).getJSONObject("APKs").getString("universal")
         val sha = get(BASE + name + ".sha256").trim().split(Regex("\\s+"))[0]
         step.at("download", 5)
-        val setup = Setup(adb, dir, true, Setup.Log { })
+        val setup = Setup(adb, dir, dev.tvremote.core.Words.lang, Setup.Log { })
         var shown = -1
         val apk = setup.download(BASE + name, "tailscale.apk", sha) { pct -> if (pct / 5 != shown) { shown = pct / 5; step.at("download", 5 + pct * 55 / 100) } }
         try {

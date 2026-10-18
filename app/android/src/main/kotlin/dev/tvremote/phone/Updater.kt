@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.PackageInstaller
@@ -23,7 +24,7 @@ internal fun MainActivity.version(): String =
     try { packageManager.getPackageInfo(packageName, 0).versionName ?: "0" } catch (e: Exception) { "0" }
 
 internal fun MainActivity.checkUpdate(manual: Boolean) {
-    if (manual) updateNote.text = t("Đang kiểm tra...", "Checking...")
+    if (manual) updateNote.text = T("setup.checking")
     Thread {
         var found: Release? = null
         var error: String? = null
@@ -37,9 +38,9 @@ internal fun MainActivity.checkUpdate(manual: Boolean) {
                 showUpdate()
             }
             if (manual) updateNote.text = when {
-                err != null -> t("Không kiểm tra được: ", "Could not check: ") + err
-                r == null -> t("Đang dùng bản mới nhất (", "You have the latest version (") + version() + ")."
-                else -> t("Có bản mới ", "New version ") + r.version
+                err != null -> T("updater.could_not_check", "error" to err)
+                r == null -> T("updater.you_have_the_latest", "version" to version())
+                else -> T("updater.new_version", "version" to r.version)
             }
             if (manual && r != null) askUpdate()                  // asked for it: offer the update right here
         }
@@ -49,7 +50,7 @@ internal fun MainActivity.checkUpdate(manual: Boolean) {
 internal fun MainActivity.showUpdate() {
     val u = update
     updateBtn.visibility = if (u == null) View.GONE else View.VISIBLE
-    if (u != null && !updating) updateBtn.setLabel("@download|" + t("Có bản mới ", "New version ") + u.version + t(" · bấm để cập nhật", " · tap to update"))
+    if (u != null && !updating) updateBtn.setLabel("@download|" + T("updater.new_version_tap_to", "version" to u.version))
 }
 
 /** The download shows both on the TV list and in Settings, wherever the update was started from. */
@@ -64,20 +65,20 @@ internal fun MainActivity.askUpdate() {
     val all = r.notes.replace("**", "").replace("\r", "")         // release notes are Markdown
     val notes = if (all.length > 900) all.substring(0, 900) + "..." else all
 
-    Popup.Builder(this).setTitle(t("Bản mới ", "Version ") + r.version + t(" (đang dùng ", " (you have ") + version() + ")")
-        .setMessage(notes.ifEmpty { t("Tải và cài bản mới?", "Download and install the new version?") })
-        .setPositiveButton(t("Cập nhật", "Update")) { _, _ -> startUpdate(r) }.setNegativeButton(t("Để sau", "Later"), null).show()
+    Popup.Builder(this).setTitle(T("updater.version_you_have", "version" to r.version, "current" to version()))
+        .setMessage(notes.ifEmpty { T("updater.download_and_install_the") })
+        .setPositiveButton(T("setup.update_ok")) { _, _ -> startUpdate(r) }.setNegativeButton(T("common.later"), null).show()
 }
 
 /** Downloads the APK from the release, then hands it to Android, which asks the person to confirm the install. */
 internal fun MainActivity.startUpdate(r: Release) {
     updating = true
-    progress(t("Đang tải bản ", "Downloading ") + r.version + "...")
+    progress(T("updater.downloading_2", "version" to r.version))
     Thread {
         var error: String? = null
         try {
             val apk = File(cacheDir, "update.apk")
-            r.download(apk) { pct -> ui.post { progress(t("Đang tải bản ", "Downloading ") + r.version + "... " + pct + "%") } }
+            r.download(apk) { pct -> ui.post { progress(T("updater.downloading", "version" to r.version, "pct" to pct)) } }
             val pi = packageManager.packageInstaller
             val id = pi.createSession(PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL))
             pi.openSession(id).use { session ->
@@ -103,12 +104,12 @@ internal fun MainActivity.startUpdate(r: Release) {
         val err = error
         ui.post {
             if (err == null) {
-                progress(t("Đang chờ Android xác nhận cài đặt...", "Waiting for Android to confirm the install..."))
+                progress(T("updater.waiting_for_android_to"))
                 return@post
             }
             updating = false
             showUpdate()
-            message(t("Không cập nhật được: ", "Could not update: ") + err, true)
+            message(T("updater.could_not_update", "error" to err), true)
         }
     }.start()
 }
@@ -126,7 +127,7 @@ internal fun MainActivity.installResult(i: Intent): Boolean {
     if (status == PackageInstaller.STATUS_SUCCESS) return true    // the app is restarted by the install anyway
     updating = false
     showUpdate()
-    message(if (status == PackageInstaller.STATUS_FAILURE_ABORTED) t("Đã hủy cập nhật.", "Update cancelled.")
-    else t("Không cài được bản mới: ", "Could not install the new version: ") + i.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE), true)
+    message(if (status == PackageInstaller.STATUS_FAILURE_ABORTED) T("updater.update_cancelled")
+    else T("updater.could_not_install_the", "error" to i.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)), true)
     return true
 }

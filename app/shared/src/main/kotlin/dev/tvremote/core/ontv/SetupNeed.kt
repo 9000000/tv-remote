@@ -1,6 +1,7 @@
 package dev.tvremote.core.ontv
 import dev.tvremote.update.Release
 import java.io.IOException
+import dev.tvremote.core.Words
 import dev.tvremote.core.adb.Adb
 
 /**
@@ -30,27 +31,33 @@ object SetupNeed {
         IOException("setup:" + (if (have.isEmpty()) "missing" else "old") + ":" + feature + ":" + (MIN[feature] ?: "") + ":" + have)
 
     /** The feature's name in a sentence; the same words as SETUP_NEEDS in js/core.js. */
-    fun name(feature: String, vi: Boolean): String = when (feature) {
-        "rules" -> if (vi) "Hẹn giờ, giờ đi ngủ, giới hạn app" else "The sleep timer, bedtime and app limits"
-        "draw" -> if (vi) "Vẽ lên TV" else "Drawing on the TV"
-        "pic" -> if (vi) "Đưa ảnh lên TV" else "A picture on the TV"
-        "volume" -> if (vi) "Giới hạn âm lượng" else "Volume limits"
-        "bedtimes" -> if (vi) "Nhiều khoảng giờ đi ngủ" else "Several bedtimes"
-        "notify" -> if (vi) "Gửi thông báo lên TV" else "Sending a notification to the TV"
-        "invite" -> if (vi) "Chia sẻ remote bằng QR" else "Sharing the remote by QR"
-        "ram" -> if (vi) "Báo khi RAM đầy" else "The full memory notice"
-        "awake" -> if (vi) "Giữ kết nối khi tắt TV" else "Staying reachable while the TV is off"
-        "files" -> if (vi) "Đọc lịch sử, giấc ngủ trên TV này" else "Reading the history and sleep on this TV"
-        else -> feature
+
+    fun name(feature: String, lang: String): String {
+        fun t(id: String) = Words.get(lang, id)
+        return when (feature) {
+            "rules" -> t("core.need_rules")
+            "draw" -> t("setup_need.drawing_tv")
+            "pic" -> t("core.need_pic")
+            "volume" -> t("core.need_volume")
+            "bedtimes" -> t("core.need_bedtimes")
+            "notify" -> t("core.need_notify")
+            "invite" -> t("core.need_invite")
+            "ram" -> t("core.need_ram")
+            "awake" -> t("core.need_awake")
+            "files" -> t("core.need_files")
+            else -> feature
+        }
     }
 
     /** What to say about [e] when it is a [Missing] (or its words came back from a server), else null. */
-    fun say(e: Throwable, vi: Boolean): String? {
+
+    fun say(e: Throwable, lang: String): String? {
         val m = Regex("setup:(old|missing):(\\w+):([0-9.]*):(\\S*)").find(generateSequence(e) { it.cause }.joinToString(" ") { it.message ?: "" }) ?: return null
         val (kind, f, min, have) = m.destructured
-        return if (kind == "missing") (if (vi) "${name(f, true)} cần app TV Setup trên TV. Cài TV Setup?" else "${name(f, false)} needs the TV Setup app on the TV. Install TV Setup?")
-        else if (vi) "${name(f, true)} cần TV Setup $min trở lên (TV đang có $have). Cập nhật TV Setup?"
-        else "${name(f, false)} needs TV Setup $min or newer (the TV has $have). Update TV Setup?"
+        val feature = name(f, lang)
+        fun t(id: String, vararg a: Pair<String, Any?>) = Words.get(lang, id, *a)
+        return if (kind == "missing") t("setup_need.needs_tv_setup_app", "feature" to feature)
+        else t("setup_need.needs_tv_setup_newer", "feature" to feature, "min" to min, "have" to have)
     }
 
     fun ok(have: String, feature: String): Boolean {

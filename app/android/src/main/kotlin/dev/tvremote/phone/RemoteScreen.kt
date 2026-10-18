@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.content.ContentValues
 import android.content.res.Configuration
 import android.view.Menu
@@ -45,7 +46,7 @@ internal fun MainActivity.layoutRemote() {
     stage.visibility = if (video) View.VISIBLE else View.GONE
     listenBtn.visibility = if (basic == null) View.VISIBLE else View.GONE   // hearing the TV needs ADB too
     listenBtn.setOn(listen, 16)
-    listenBtn.contentDescription = if (listen) t("Dừng nghe trên điện thoại", "Stop listening on the phone") else t("Nghe tiếng TV trên điện thoại", "Hear the TV on the phone")
+    listenBtn.contentDescription = if (listen) T("remote_screen.stop_listening_on_the") else T("remote_screen.hear_the_tv_on")
     exitBtn.visibility = if (full) View.VISIBLE else View.GONE
     picBar.visibility = if (video && !full) View.VISIBLE else View.GONE   // the picture's and the sound's rows: not hidden in a menu
     soundBar.visibility = if (listen && basic == null && !full) View.VISIBLE else View.GONE
@@ -53,7 +54,7 @@ internal fun MainActivity.layoutRemote() {
     fullBtn.visibility = qualBtn.visibility
     listenChip.visibility = if (listen) View.VISIBLE else View.GONE  // the sound's own settings, only while it plays
     val share = prefs.getBoolean("listenShare", false)
-    listenChip.text = (if (share) t("Cả hai", "Both") else t("Điện thoại", "Phone")) + " ▾"
+    listenChip.text = (if (share) T("listen.both") else T("remote_screen.phone")) + " ▾"
     listenChip.setCompoundDrawables(listenArt(share), null, null, null)
     val hq = prefs.getBoolean("listenHq", false)
     hqBtn.visibility = listenChip.visibility
@@ -71,7 +72,7 @@ internal fun MainActivity.layoutRemote() {
     window.decorView.systemUiVisibility = if (full) View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY else barFlags()
     videoBtn.setIcon(if (video) "@eye_off" else "@eye", TEXT)
     videoBtn.setOn(video, 16)                                         // on while the picture shows, like every on/off button
-    videoBtn.contentDescription = if (video) t("Ẩn hình TV", "Hide the TV picture") else t("Xem hình TV", "Show the TV picture")
+    videoBtn.contentDescription = if (video) T("remote_screen.hide_the_tv_picture") else T("remote_screen.show_the_tv_picture")
 }
 
 /** Where the sound plays, drawn: the phone alone, or the TV and the phone. */
@@ -96,26 +97,26 @@ internal fun MainActivity.qualityMenu() {
     val body = col()
     val level = LinearLayout(this); val fps = LinearLayout(this); val rate = LinearLayout(this); val enc = LinearLayout(this)
     fun draw() {
-        val words = { v: Int -> if (v == 0) t("Tự chọn", "Auto") else v.toString() }   // as the encoder row; "Mặc định" is cut in a fifth of a 360dp box
+        val words = { v: Int -> if (v == 0) T("screen.auto") else v.toString() }   // as the encoder row; "Mặc định" is cut in a fifth of a 360dp box
         val now = prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)
         level.removeAllViews(); fps.removeAllViews(); rate.removeAllViews(); enc.removeAllViews()
         level.addView(chips(Tv.LEVELS.map { it.toString() to Tv.QUALITY[it][0].toString() + "p" }, now.toString()) { setQuality(it.toInt()); draw() }, LinearLayout.LayoutParams(-1, -2))
         fps.addView(chips(PIC_FPS.map { it.toString() to words(it) }, prefs.getInt("picFps", 0).toString()) { tune("picFps", it.toInt()); draw() }, LinearLayout.LayoutParams(-1, -2))
         rate.addView(chips(PIC_RATE.map { it.toString() to words(it) }, prefs.getInt("picRate", 0).toString()) { tune("picRate", it.toInt()); draw() }, LinearLayout.LayoutParams(-1, -2))
-        enc.addView(chips(listOf("auto" to t("Tự chọn", "Auto"), "hw" to t("Phần cứng", "Hardware"), "sw" to t("Phần mềm", "Software")),
+        enc.addView(chips(listOf("auto" to T("screen.auto"), "hw" to T("screen.hardware"), "sw" to T("screen.software")),
             prefs.getString("picEnc", "auto")!!) { if (prefs.getString("picEnc", "auto") != it) { prefs.edit().putString("picEnc", it).apply(); if (pic != null) { stopPicture(); startPicture() } }; draw() }, LinearLayout.LayoutParams(-1, -2))
     }
     draw()
-    body.addView(head(t("CỠ HÌNH", "SIZE")))                       // a smaller number is lighter on the TV and the network
+    body.addView(head(T("remote_screen.size")))                       // a smaller number is lighter on the TV and the network
     body.addView(level, gap(6))
-    body.addView(head(t("KHUNG/GIÂY", "FRAMES PER SECOND")), gap(14))
+    body.addView(head(T("remote_screen.frames_per_second")), gap(14))
     body.addView(fps, gap(6))
-    body.addView(head(t("BITRATE (MBIT/S)", "BIT RATE (MBIT/S)")), gap(14))
+    body.addView(head(T("remote_screen.bit_rate_mbit_s")), gap(14))
     body.addView(rate, gap(6))
-    body.addView(head(t("BỘ MÃ HÓA", "ENCODER")), gap(14))           // auto: the TV's hardware one, its software one when that sends nothing
+    body.addView(head(T("remote_screen.encoder")), gap(14))           // auto: the TV's hardware one, its software one when that sends nothing
     body.addView(enc, gap(6))
-    Popup.Builder(this).setTitle(t("Chất lượng hình", "Picture quality")).setView(inDialog(body))
-        .setPositiveButton(t("Xong", "Done"), null).show()
+    Popup.Builder(this).setTitle(T("remote_screen.picture_quality")).setView(inDialog(body))
+        .setPositiveButton(T("drawing.done"), null).show()
 }
 
 private fun MainActivity.tune(key: String, v: Int) {
@@ -138,7 +139,7 @@ internal fun MainActivity.buildRemote() {
     status = StatusText(this)
     videoBtn = icon("@eye_off", "", BTN)
     videoBtn.setOnClickListener { toggleVideo() }
-    basicBar = button(t("Chỉ bấm phím · Bật ADB để dùng đủ chức năng  ›", "Keys only · Turn on ADB for everything  ›"), ACCENT)
+    basicBar = button(T("remote_screen.keys_only_turn_on"), ACCENT)
     basicBar.textSize = 13f
     basicBar.setOnClickListener { adbHelp() }
     topBar = LinearLayout(this)
@@ -146,7 +147,7 @@ internal fun MainActivity.buildRemote() {
     bar.gravity = Gravity.CENTER_VERTICAL
     val head = LinearLayout(this)
     head.gravity = Gravity.CENTER_VERTICAL
-    val leave = icon("@left", t("Về danh sách TV", "Back to the TVs"), BTN)   // where the logo was: the way out, without the phone's own Back
+    val leave = icon("@left", T("remote_screen.back_to_the_tvs"), BTN)   // where the logo was: the way out, without the phone's own Back
     leave.background = box(BTN, 16)
     @Suppress("DEPRECATION") leave.setOnClickListener { onBackPressed() }
     head.addView(leave, LinearLayout.LayoutParams(dp(40), dp(40)).apply { leftMargin = dp(10) })
@@ -158,7 +159,7 @@ internal fun MainActivity.buildRemote() {
     bar.addView(head, LinearLayout.LayoutParams(0, -2, 1f))
     val tools = LinearLayout(this)
     tools.gravity = Gravity.CENTER_VERTICAL or Gravity.END
-    listenBtn = icon("@headphones", t("Nghe tiếng TV trên điện thoại", "Hear the TV on the phone"), BTN)
+    listenBtn = icon("@headphones", T("remote_screen.hear_the_tv_on"), BTN)
     listenBtn.setOnClickListener { toggleListen() }
     for (b in listOf(listenBtn, videoBtn)) tools.addView(b, LinearLayout.LayoutParams(dp(46), dp(40)).apply { rightMargin = dp(if (b === videoBtn) 10 else 6) })
     bar.addView(tools, LinearLayout.LayoutParams(-2, -2))
@@ -191,7 +192,7 @@ internal fun MainActivity.buildRemote() {
     stage = FrameLayout(this)
     stage.setBackgroundColor(Color.BLACK)
     stage.addView(frame, FrameLayout.LayoutParams(-1, -2))
-    exitBtn = icon("@close", t("Thoát toàn màn hình", "Leave full screen"), 0x66000000)   // the only thing on the picture, and only in full screen
+    exitBtn = icon("@close", T("remote_screen.leave_full_screen"), 0x66000000)   // the only thing on the picture, and only in full screen
     exitBtn.alpha = 0.5f
     exitBtn.setOnClickListener { setFullscreen(false) }
     val fp = FrameLayout.LayoutParams(dp(42), dp(42), Gravity.TOP or Gravity.END)
@@ -210,32 +211,32 @@ internal fun MainActivity.buildRemote() {
     soundBar.gravity = Gravity.CENTER_VERTICAL
     qualBtn = android.widget.TextView(this).apply {
         setTextColor(TEXT); textSize = 13f; gravity = Gravity.CENTER; setPadding(dp(12), 0, dp(12), 0)
-        background = box(BTN, 10); contentDescription = t("Chất lượng hình", "Picture quality"); setOnClickListener { qualityMenu() }
+        background = box(BTN, 10); contentDescription = T("remote_screen.picture_quality"); setOnClickListener { qualityMenu() }
     }
     listenChip = android.widget.TextView(this).apply {                // how 🎧 plays: picked here, used by 🎧 on the top bar
         setTextColor(TEXT); textSize = 13f; gravity = Gravity.CENTER; setPadding(dp(10), 0, dp(12), 0); maxLines = 1; compoundDrawablePadding = dp(6)
-        background = box(BTN, 10); contentDescription = t("Cách nghe tiếng TV", "How to hear the TV"); setOnClickListener { listenMenu() }
+        background = box(BTN, 10); contentDescription = T("remote.how_to_hear_the"); setOnClickListener { listenMenu() }
     }
     soundBar.addView(listenChip, LinearLayout.LayoutParams(-2, dp(34)))
     hqBtn = android.widget.TextView(this).apply {
         text = "HQ"; textSize = 13f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER
-        contentDescription = t("Tiếng chất lượng cao (160 kbit/s)", "High quality sound (160 kbit/s)"); setOnClickListener { toggleHq() }
+        contentDescription = T("remote.high_quality_sound_160"); setOnClickListener { toggleHq() }
     }
     soundBar.addView(hqBtn, LinearLayout.LayoutParams(dp(44), dp(34)).apply { leftMargin = dp(8) })
     evenBtn = android.widget.TextView(this).apply {                   // half a second later, never a stall (SoundPace)
-        text = t("Đều", "Even"); textSize = 13f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER; setPadding(dp(10), 0, dp(10), 0)
-        contentDescription = t("Tiếng đều hơn: trễ nửa giây nhưng không giật", "Steadier sound: half a second late, no stutter"); setOnClickListener { toggleEven() }
+        text = T("remote.even"); textSize = 13f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER; setPadding(dp(10), 0, dp(10), 0)
+        contentDescription = T("remote.steadier_sound_half_a"); setOnClickListener { toggleEven() }
     }
     soundBar.addView(evenBtn, LinearLayout.LayoutParams(-2, dp(34)).apply { leftMargin = dp(8) })
     boostBtn = android.widget.TextView(this).apply {                 // louder here, ×0.5 … ×10 on a slider (the page's 🔊)
         textSize = 13f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER; setPadding(dp(10), 0, dp(10), 0)
-        contentDescription = t("Độ to trên điện thoại", "Loudness on the phone")
+        contentDescription = T("remote_screen.loudness_on_the_phone")
         setOnClickListener { gainDialog() }
     }
     soundBar.addView(boostBtn, LinearLayout.LayoutParams(-2, dp(34)).apply { leftMargin = dp(8) })
     picBar.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
     picBar.addView(qualBtn, LinearLayout.LayoutParams(-2, dp(34)).apply { leftMargin = dp(8) })
-    fullBtn = icon("@expand", t("Toàn màn hình", "Full screen"), BTN)
+    fullBtn = icon("@expand", T("remote.full_screen"), BTN)
     fullBtn.setOnClickListener { setFullscreen(true) }
     picBar.addView(fullBtn, LinearLayout.LayoutParams(dp(44), dp(34)).apply { leftMargin = dp(8) })
     controls.addView(soundBar, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
@@ -252,7 +253,7 @@ internal fun MainActivity.buildRemote() {
     nowApp = NowApp(this)                                             // NowApp.kt
     controls.addView(nowApp.view, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
     val first = LinearLayout(this)
-    val power = icon("@power", t("Nguồn", "Power"), BTN)
+    val power = icon("@power", T("remote.power"), BTN)
     power.setOnClickListener {
         if (basic != null) { press(26); return@setOnClickListener }
         val tv = tv
@@ -263,17 +264,17 @@ internal fun MainActivity.buildRemote() {
                 if (isFinishing || this.tv !== tv) return@post
                 if (!awake) {
                     tv.press(224)
-                    Toast.makeText(this, t("Đang bật TV...", "Waking the TV..."), Toast.LENGTH_SHORT).show()
-                } else Popup.Builder(this).setMessage(t("Đưa TV về chế độ chờ?", "Put the TV in standby?"))
-                    .setPositiveButton(t("Chế độ chờ", "Standby")) { _, _ -> if (tv.ready()) tv.press(223) }
-                    .setNegativeButton(t("Hủy", "Cancel"), null).show()
+                    Toast.makeText(this, T("remote_screen.waking_the_tv"), Toast.LENGTH_SHORT).show()
+                } else Popup.Builder(this).setMessage(T("remote_screen.put_the_tv_in"))
+                    .setPositiveButton(T("remote_screen.standby")) { _, _ -> if (tv.ready()) tv.press(223) }
+                    .setNegativeButton(T("common.cancel"), null).show()
             }
         }.start()
     }
     first.addView(power, cell(58, false))
-    val apps = icon("@apps", t("Quản lý", "Manage"), BTN)          // apps, files, health, automation, setup
+    val apps = icon("@apps", T("remote_screen.manage"), BTN)          // apps, files, health, automation, setup
     apps.setOnClickListener { if (!needsAdb()) managing.open(host) }
-    val mic = icon("@mic", t("Nói", "Speak"), BTN)
+    val mic = icon("@mic", T("remote.speak"), BTN)
     mic.setOnClickListener { talk() }                          // keys-only too: keys, apps and scenes still work (Automation.kt)
     mic.setOnLongClickListener {                                  // the TV's own Assistant screen
         tv?.let { if (it.ready()) it.press(219) }
@@ -282,10 +283,10 @@ internal fun MainActivity.buildRemote() {
     first.addView(mic, cell(58, true))
     first.addView(apps, cell(58, true))
     // Everything used less often sits behind this button: one tap shows the extra keys, another hides them.
-    val moreBtn = icon("@more", t("Thêm phím", "More keys"), BTN)
+    val moreBtn = icon("@more", T("remote.more_keys"), BTN)
     first.addView(moreBtn, cell(58, true))
     controls.addView(captioned(first))
-    moreBtn.caption = t("Thêm", "More")                               // short under the icon; read out in full
+    moreBtn.caption = T("remote.more")                               // short under the icon; read out in full
     val more = col()
     for (i in remoteSpec().rows["more"]!!.indices) more.addView(remoteRow("more", i, 58), gap(8))    // remote.json (PhoneRemote.kt)
     val showMore = { on: Boolean ->
@@ -312,7 +313,7 @@ internal fun MainActivity.buildRemote() {
     val usePad = { on: Boolean ->
         arrows.visibility = if (on) View.GONE else View.VISIBLE
         tpad.visibility = if (on) View.VISIBLE else View.GONE
-        swap.text = if (on) t("Dùng phím mũi tên", "Use the arrows") else t("Dùng touchpad", "Use the touchpad")
+        swap.text = if (on) T("remote_screen.use_the_arrows") else T("remote_screen.use_the_touchpad")
         swap.setOn(on)                                                // on while the touchpad is
     }
     usePad(prefs.getBoolean("pad", false))
@@ -334,16 +335,16 @@ internal fun MainActivity.buildRemote() {
     val mid = col()
     for (i in remoteSpec().rows["media"]!!.indices) { val row = remoteRow("media", i, 58, 0); if (i == 0) mid.addView(row) else mid.addView(row, gap(8)) }   // two keys across the middle, not half of it
     val cluster = LinearLayout(this)
-    cluster.addView(pill("Vol", "@plus", 24, t("Tăng âm lượng", "Volume up"), "@minus", 25, t("Giảm âm lượng", "Volume down")), LinearLayout.LayoutParams(0, -1, 1f))
+    cluster.addView(pill("Vol", "@plus", 24, T("remote.volume_up"), "@minus", 25, T("remote.volume_down")), LinearLayout.LayoutParams(0, -1, 1f))
     val mp = LinearLayout.LayoutParams(0, -2, 2.4f)
     mp.leftMargin = dp(10)
     mp.rightMargin = dp(10)
     cluster.addView(mid, mp)
-    cluster.addView(pill(t("Kênh", "CH"), "@up", 166, t("Kênh +", "Channel up"), "@down", 167, t("Kênh −", "Channel down")), LinearLayout.LayoutParams(0, -1, 1f))
+    cluster.addView(pill(T("remote.ch_2"), "@up", 166, T("remote_screen.channel_up"), "@down", 167, T("remote_screen.channel_down")), LinearLayout.LayoutParams(0, -1, 1f))
     controls.addView(cluster, gap(16))
 
     val line = LinearLayout(this)
-    liveBtn = icon("@zap", t("Gõ trực tiếp", "Live typing"), BTN)    // lit while on (Typing.kt)
+    liveBtn = icon("@zap", T("remote_screen.live_typing"), BTN)    // lit while on (Typing.kt)
     liveBtn.setPadding(0, 0, 0, 0)
     liveBtn.setOnClickListener { setLive(!live) }
     val lb = LinearLayout.LayoutParams(dp(48), dp(48))
@@ -362,16 +363,16 @@ internal fun MainActivity.buildRemote() {
         override fun afterTextChanged(s: android.text.Editable?) = typedLive(s.toString())
     })
     line.addView(textBox, LinearLayout.LayoutParams(0, dp(48), 1f))
-    val send = icon("@send", t("Gửi", "Send"), ACCENT)
+    val send = icon("@send", T("notify.send"), ACCENT)
     send.setOnClickListener { sendText() }
     val lp = LinearLayout.LayoutParams(-2, dp(48))
     lp.leftMargin = dp(6)
     lp.width = dp(60)
     line.addView(send, lp)
     controls.addView(line, gap(12))
-    val edit = keys(48, "@backspace|" + t("Xóa", "Delete"), 67, "@enter|Enter", 66)
+    val edit = keys(48, "@backspace|" + T("auto.delete"), 67, "@enter|Enter", 66)
     val digits = button("123", BTN)                               // shows / hides the number keys (channels, PIN codes)
-    digits.contentDescription = t("Bàn phím số", "Number keys")
+    digits.contentDescription = T("remote.number_keys")
     val dl = LinearLayout.LayoutParams(dp(64), dp(48))
     dl.rightMargin = dp(8)
     edit.addView(digits, 0, dl)
@@ -391,7 +392,7 @@ internal fun MainActivity.buildRemote() {
     controls.addView(pad)
     setLive(prefs.getBoolean("live", false))
 
-    val bye = button(t("Ngắt kết nối", "Disconnect"), 0)
+    val bye = button(T("remote_screen.disconnect"), 0)
     bye.setTextColor(RED)
     bye.setOnClickListener { leave() }
     val bp = LinearLayout.LayoutParams(-1, dp(48))
@@ -433,11 +434,11 @@ internal fun MainActivity.shot() {
     if (needsAdb()) return
     val tv = tv
     if (tv == null || !tv.ready()) return
-    Toast.makeText(this, t("Đang chụp màn hình TV...", "Taking a screenshot of the TV..."), Toast.LENGTH_SHORT).show()
+    Toast.makeText(this, T("remote_screen.taking_a_screenshot_of"), Toast.LENGTH_SHORT).show()
     Thread {
         var result: String
         try {
-            val png = tv.screenshot() ?: throw java.io.IOException(t("TV không trả ảnh", "the TV sent no picture"))
+            val png = tv.screenshot() ?: throw java.io.IOException(T("remote_screen.the_tv_sent_no"))
             val fileName = "tv-" + System.currentTimeMillis() / 1000 + ".png"
             val out: OutputStream
             if (Build.VERSION.SDK_INT >= 29) {
@@ -446,15 +447,15 @@ internal fun MainActivity.shot() {
                 v.put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
                 v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
                 out = contentResolver.openOutputStream(contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v)!!)!!
-                result = t("Đã lưu vào thư mục Download: ", "Saved to Download: ") + fileName
+                result = T("remote_screen.saved_to_download", "file" to fileName)
             } else {
                 val f = File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), fileName)
                 out = FileOutputStream(f)
-                result = t("Đã lưu: ", "Saved: ") + f.absolutePath
+                result = T("remote_screen.saved", "file" to f.absolutePath)
             }
             out.use { it.write(png) }
         } catch (e: Exception) {
-            result = t("Không chụp được: ", "Screenshot failed: ") + e.message
+            result = T("remote_screen.screenshot_failed", "why" to e.message)
         }
         val msg = result
         ui.post { if (!isFinishing) Toast.makeText(this, msg, Toast.LENGTH_LONG).show() }
@@ -468,7 +469,7 @@ internal fun MainActivity.opens(code: Int) {
     if (tv == null || !tv.ready()) return
     Thread {
         if (!tv.pressSeen(code)) ui.post {
-            if (!isFinishing && this.tv === tv) Toast.makeText(this, t("TV đã nhận nút này, nhưng màn hình hiện tại không phản hồi", "The TV got the key, but the current screen did not react"), Toast.LENGTH_SHORT).show()
+            if (!isFinishing && this.tv === tv) Toast.makeText(this, T("remote.key_no_reaction"), Toast.LENGTH_SHORT).show()
         }
     }.start()
 }
@@ -575,7 +576,7 @@ internal fun MainActivity.flash(b: Button, held: Drawable) {
 internal fun MainActivity.touchpad(): View {
     val pad = FrameLayout(this)
     pad.background = box(CARD, 28)
-    val hint = label(t("Vuốt: di chuyển  ·  Chạm: OK  ·  Chạm 2 ngón: Quay lại", "Swipe: move  ·  Tap: OK  ·  Two-finger tap: Back"), 13, MUTED)
+    val hint = label(T("remote_screen.swipe_move_tap_ok"), 13, MUTED)
     hint.gravity = Gravity.CENTER
     pad.addView(hint, FrameLayout.LayoutParams(-1, -2, Gravity.CENTER))
     val step = dp(20).toFloat()
@@ -613,7 +614,7 @@ internal fun MainActivity.dpad(): View {
     val arrows = arrayOf(intArrayOf(19, Gravity.TOP or Gravity.CENTER_HORIZONTAL), intArrayOf(20, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL),
         intArrayOf(21, Gravity.START or Gravity.CENTER_VERTICAL), intArrayOf(22, Gravity.END or Gravity.CENTER_VERTICAL))
     val names = arrayOf("@up", "@down", "@left", "@right")
-    val says = arrayOf(t("Lên", "Up"), t("Xuống", "Down"), t("Trái", "Left"), t("Phải", "Right"))
+    val says = arrayOf(T("remote.up"), T("remote.down"), T("remote.left"), T("remote.right"))
     for (i in 0 until 4) {
         val b = icon(names[i], says[i], 0)
         b.setIcon(names[i], MUTED)
@@ -682,7 +683,7 @@ internal fun MainActivity.gainDialog() {
     val out = label(gainWords(listenGain()), 17, Color.WHITE).apply { typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.END or Gravity.CENTER_VERTICAL }
     val bar = android.widget.SeekBar(this)
     bar.max = 19
-    bar.contentDescription = t("Độ to", "Loudness")
+    bar.contentDescription = T("listen.loudness")
     val set = { g: Float -> prefs.edit().putFloat("listenGain", g).apply(); out.text = gainWords(g); layoutRemote() }
     bar.progress = ((listenGain() - 0.5f) * 2).toInt()
     bar.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
@@ -697,9 +698,8 @@ internal fun MainActivity.gainDialog() {
     val wrap = LinearLayout(this)
     wrap.orientation = LinearLayout.VERTICAL
     wrap.addView(row)
-    wrap.addView(label(t("Nhân tiếng TV gửi sang, có bộ giới hạn để không rè. Vẫn nhỏ: tăng âm lượng trên TV.",
-        "Multiplies the sound the TV sends, with a limiter so it does not crack. Still quiet: turn the TV up."), 14, DIM), LinearLayout.LayoutParams(-1, -2).also { it.topMargin = dp(8) })
-    val p = Popup.Builder(this).setTitle(t("🔊 Độ to trên điện thoại", "🔊 Loudness on the phone")).setView(inDialog(wrap))
-        .setNeutralButton(t("Về ×1", "Back to ×1"), null).setPositiveButton(t("Xong", "Done"), null).show()
+    wrap.addView(label(T("listen.boost_note"), 14, DIM), LinearLayout.LayoutParams(-1, -2).also { it.topMargin = dp(8) })
+    val p = Popup.Builder(this).setTitle(T("remote_screen.loudness_on_the_phone_2")).setView(inDialog(wrap))
+        .setNeutralButton(T("listen.back_to_x1"), null).setPositiveButton(T("drawing.done"), null).show()
     p.getButton(android.content.DialogInterface.BUTTON_NEUTRAL).setOnClickListener { bar.progress = 1; set(1f) }
 }

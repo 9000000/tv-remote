@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.content.Context
 import android.graphics.Typeface
 import android.os.Build
@@ -38,7 +39,7 @@ internal fun MainActivity.wake(ip: String) {
     waking = true
     val mac = pref("mac:$ip")
     val lan = pref("lan:$ip")
-    message(t("Đang đánh thức ", "Waking ") + title(ip) + "...", false)
+    message(T("picker.waking", "name" to title(ip)), false)
     val port = upPort(ip)
     Thread {
         var up = open(ip, port, 1500)
@@ -62,13 +63,10 @@ internal fun MainActivity.wake(ip: String) {
                 connect(ip)
                 return@post
             }
-            val why = if (mac.isEmpty()) t("App chưa biết địa chỉ MAC của TV này (nó tự lưu sau lần kết nối đầu tiên bằng bản app này), nên chưa gửi được gói đánh thức.",
-                "The app does not know this TV’s MAC address yet (it is saved after the first connection with this version), so no wake packet was sent.")
-            else if (!packets || !home) t("TV đã tắt cả mạng nên không nghe qua Tailscale. Gói đánh thức chỉ tới được TV từ đúng Wi-Fi nhà TV, mà điện thoại đang ở mạng khác. Cách mở: nối điện thoại vào Wi-Fi đó rồi bấm lại, hoặc dùng nút Đánh thức trên web ở máy tính (nó nhờ một máy ở nhà gửi giúp).",
-                "The TV’s network is off too, so it cannot hear anything over Tailscale. A wake packet only reaches the TV from its own Wi-Fi, and the phone is on another network. Join that Wi-Fi and try again, or use Wake in the web UI on a computer (it relays through a machine at home).")
-            else t("Đã gửi gói đánh thức trong Wi-Fi nhưng TV không lên. Kiểm tra trên TV: Cài đặt → Mạng và Internet → “Khởi động từ xa” phải bật.",
-                "Wake packets were sent on the Wi-Fi but the TV did not come up. On the TV check: Settings → Network & Internet → “Remote start” must be on.")
-            message(t("Chưa đánh thức được TV.\n\n", "Could not wake the TV.\n\n") + why, true)
+            val why = if (mac.isEmpty()) T("picker.the_app_does_not")
+            else if (!packets || !home) T("picker.the_tv_s_network")
+            else T("picker.wake_packets_were_sent")
+            message(T("picker.could_not_wake_the", "why" to why), true)
         }
     }.start()
 }
@@ -133,11 +131,11 @@ internal fun MainActivity.probeSaved() {
 internal fun MainActivity.showReach(ip: String, up: Boolean?) {
     val (b, wk) = savedRows[ip] ?: return
     val status = when (up) {
-        null -> t("đang kiểm tra...", "checking...")
-        true -> route[ip].let { r -> if (r == null || r == ip) t("● kết nối được", "● reachable")
-            else if (r.startsWith("100.")) t("● kết nối được qua Tailscale", "● reachable through Tailscale") else t("● kết nối được trong nhà", "● reachable at home") }
-        false -> if (awayFrom[ip] == true) t("○ không thấy · bạn ở ngoài Wi-Fi của TV", "○ no answer · you are off the TV’s Wi-Fi")
-            else t("○ không thấy · TV tắt?", "○ no answer · TV off?")
+        null -> T("picker.checking")
+        true -> route[ip].let { r -> if (r == null || r == ip) T("picker.reachable")
+            else if (r.startsWith("100.")) T("picker.reachable_through_tailscale") else T("picker.reachable_at_home") }
+        false -> if (awayFrom[ip] == true) T("picker.no_answer_you_are")
+            else T("picker.no_answer_tv_off")
     }
     val text = android.text.SpannableString((if (name(ip).isEmpty()) ip else name(ip) + "\n" + ip) + "\n" + status)
     val from = text.length - status.length
@@ -153,7 +151,7 @@ internal fun MainActivity.refreshSaved() {
     savedRows.clear()
     for (ip in savedIps()) {
         val b = row("") { connectSaved(ip) }
-        val wk = icon("@power", t("Đánh thức", "Wake"), BTN)        // only offered while the TV does not answer
+        val wk = icon("@power", T("remote.wake"), BTN)        // only offered while the TV does not answer
         wk.setOnClickListener { wake(ip) }
         wk.visibility = View.GONE
         savedRows[ip] = Pair(b, wk)
@@ -165,16 +163,16 @@ internal fun MainActivity.refreshSaved() {
         line.addView(wk, wp)
         line.layoutParams = gap(6)
         val ask = {
-            Popup.Builder(this).setMessage(t("Xóa TV này khỏi danh sách?", "Remove this TV from the list?") + "\n" + title(ip) + (if (name(ip).isEmpty()) "" else " · $ip") + "\n\n" +
-                    t("Không đổi gì trên TV. Muốn dùng lại thì quét hoặc nhập IP như lần đầu.", "Nothing changes on the TV. To use it again, scan or type its IP as the first time."))
-                .setPositiveButton(t("Xóa", "Remove")) { _, _ ->
+            Popup.Builder(this).setMessage(T("picker.remove_this_tv_from") + "\n" + title(ip) + (if (name(ip).isEmpty()) "" else " · $ip") + "\n\n" +
+                    T("picker.nothing_changes_on_the"))
+                .setPositiveButton(T("picker.remove")) { _, _ ->
                     val ips = savedIps()
                     ips.remove(ip)
                     prefs.edit().putString("ips", TextUtils.join(",", ips)).also { e -> PER_TV.forEach { e.remove("$it:$ip") } }.remove("atv:$ip").apply()
                     refreshSaved()
-                }.setNegativeButton(t("Hủy", "Cancel"), null).show()
+                }.setNegativeButton(T("common.cancel"), null).show()
         }
-        val del = icon("@close", t("Xóa TV này khỏi danh sách", "Remove this TV from the list"), BTN)
+        val del = icon("@close", T("picker.remove_this_tv_from_the"), BTN)
         del.setOnClickListener { ask() }
         val dp2 = LinearLayout.LayoutParams(dp(48), -1)
         dp2.leftMargin = dp(6)
@@ -183,15 +181,15 @@ internal fun MainActivity.refreshSaved() {
         savedList.addView(line)
     }
     fleetBtn.visibility = if (savedList.childCount >= 2) View.VISIBLE else View.GONE
-    if (savedList.childCount == 0) savedList.addView(note(t("Chưa có TV nào. Quét Wi-Fi hoặc nhập IP bên dưới.", "No TVs yet. Scan the Wi-Fi or type an IP below.")))
+    if (savedList.childCount == 0) savedList.addView(note(T("picker.no_tvs_yet_scan")))
 }
 
 // ---------------------------------------------------------------- finding TVs on the Wi-Fi
 private fun MainActivity.foundRow(ip: String, name: String, adb: Boolean) = row((if (name.isNotEmpty()) name + "\n" else "") + ip + " · " +
-    (if (adb) t("ADB đã bật", "ADB on") else t("ADB chưa bật: chỉ bấm phím, app sẽ giúp bật", "ADB off: keys only, the app helps turn it on"))) { prefs.edit().remove("kind:$ip").apply(); connect(ip) }
+    (if (adb) T("setup.adb_on") else T("picker.adb_off_keys_only"))) { prefs.edit().remove("kind:$ip").apply(); connect(ip) }
 
 /** An LG or Samsung TV the SSDP search found: its own remote link, no ADB. */
-private fun MainActivity.foundRow(f: Ssdp.Found) = row((if (f.name.isNotEmpty()) f.name + "\n" else "") + f.ip + " · TV " + Remote.Kind.name(f.kind) + t(" (thử nghiệm)", " (beta)")) {
+private fun MainActivity.foundRow(f: Ssdp.Found) = row((if (f.name.isNotEmpty()) f.name + "\n" else "") + f.ip + " · TV " + Remote.Kind.name(f.kind) + T("picker.beta")) {
     prefs.edit().putString("kind:${f.ip}", f.kind).apply(); connect(f.ip)
 }
 
@@ -199,7 +197,7 @@ private val MOBILE = Regex("^(rmnet|ccmni|pdp|v4-|clat|seth|wwan|tun|ppp|ipsec)"
 
 internal fun MainActivity.scan() {
     scanBtn.isEnabled = false
-    scanBtn.text = t("Đang quét...", "Scanning...")
+    scanBtn.text = T("picker.scanning")
     foundList.removeAllViews()
     Thread {
         val nets = ArrayList<String>()
@@ -246,11 +244,10 @@ internal fun MainActivity.scan() {
         }
         ui.post {
             scanBtn.isEnabled = true
-            scanBtn.setLabel("@search|" + t("Quét Wi-Fi", "Scan the Wi-Fi"))
+            scanBtn.setLabel("@search|" + T("picker.scan_the_wi_fi"))
             if (foundList.childCount == 0) foundList.addView(note(
-                if (nets.isEmpty()) t("Điện thoại chưa nối Wi-Fi. Khác mạng thì nhập IP Tailscale của TV bên dưới.", "The phone is not on Wi-Fi. On another network, type the TV’s Tailscale IP below.")
-                else t("Đã quét ", "Scanned ") + nets.joinToString(", ") { it + "x" } + t(": không thấy TV nào. TV có đang bật và cùng Wi-Fi này không?\n\nTV ở mạng khác (qua Tailscale) thì không quét được: nhập IP Tailscale của TV (100.x.x.x) bên dưới.",
-                    ": no TV found. Is it on, and on this Wi-Fi?\n\nA TV on another network (through Tailscale) cannot be scanned for: type its Tailscale IP (100.x.x.x) below.")))
+                if (nets.isEmpty()) T("picker.the_phone_is_not")
+                else T("picker.scanned", "nets" to nets.joinToString(", ") { it + "x" })))
         }
     }.start()
 }
@@ -265,10 +262,10 @@ internal fun MainActivity.buildPicker() {
     top.gravity = Gravity.CENTER_VERTICAL
     val names = col()
     names.addView(title)
-    names.addView(label(t("Bản ", "Version ") + versionLine(), 12, MUTED))
+    names.addView(label(T("picker.version", "v" to versionLine()), 12, MUTED))
     top.addView(logo(40), LinearLayout.LayoutParams(dp(40), dp(40)).apply { rightMargin = dp(12) })
     top.addView(names, LinearLayout.LayoutParams(0, -2, 1f))
-    val set = icon("@settings", t("Cài đặt", "Settings"), BTN)
+    val set = icon("@settings", T("page.settings"), BTN)
     set.setOnClickListener {
         hideKeyboard()
         settings.visibility = View.VISIBLE
@@ -289,15 +286,15 @@ internal fun MainActivity.buildPicker() {
 
     val savedHead = LinearLayout(this)                                // the heading, with "Several TVs" at its end once there are two
     savedHead.gravity = android.view.Gravity.CENTER_VERTICAL
-    savedHead.addView(head(t("TV ĐÃ DÙNG", "YOUR TVS")), LinearLayout.LayoutParams(0, -2, 1f))
+    savedHead.addView(head(T("picker.your_tvs")), LinearLayout.LayoutParams(0, -2, 1f))
     fleetBtn = fleetButton()
     savedHead.addView(fleetBtn, LinearLayout.LayoutParams(-2, dp(34)))
     picker.addView(savedHead, gap(14))
     savedList = col()
     picker.addView(savedList)
 
-    picker.addView(head(t("TÌM TRONG WI-FI", "FIND ON THE WI-FI")), gap(18))
-    scanBtn = button("@search|" + t("Quét Wi-Fi", "Scan the Wi-Fi"), ACCENT)
+    picker.addView(head(T("picker.find_on_the_wi")), gap(18))
+    scanBtn = button("@search|" + T("picker.scan_the_wi_fi"), ACCENT)
     scanBtn.setOnClickListener { scan() }
     val sp = LinearLayout.LayoutParams(-1, dp(48))
     sp.topMargin = dp(6)
@@ -305,16 +302,16 @@ internal fun MainActivity.buildPicker() {
     foundList = col()
     picker.addView(foundList)
 
-    picker.addView(head(t("NHẬP IP CỦA TV", "TYPE THE TV’S IP")), gap(18))
+    picker.addView(head(T("picker.type_the_tv_s")), gap(18))
     val line = LinearLayout(this)
-    ipBox = input(t("vd 192.168.1.88 hoặc 100.x.x.x", "e.g. 192.168.1.88 or 100.x.x.x"))
+    ipBox = input(T("picker.e_g_192_168"))
     ipBox.inputType = InputType.TYPE_CLASS_PHONE
     ipBox.imeOptions = EditorInfo.IME_ACTION_GO
     ipBox.setOnEditorActionListener { _, _, _ ->
         connect(ipBox.text.toString())
         true
     }
-    val go = icon("@right", t("Kết nối", "Connect"), ACCENT)
+    val go = icon("@right", T("page.connect"), ACCENT)
     go.setOnClickListener { connect(ipBox.text.toString()) }
     line.addView(ipBox, LinearLayout.LayoutParams(0, dp(48), 1f))
     val lp = LinearLayout.LayoutParams(-2, dp(48))
@@ -322,23 +319,11 @@ internal fun MainActivity.buildPicker() {
     lp.width = dp(60)
     line.addView(go, lp)
     picker.addView(line, gap(6))
-    val help = button(t("Cách kết nối", "How to connect"), 0)
+    val help = button(T("picker.how_to_connect"), 0)
     help.setTextColor(ACCENT_TEXT)
     help.setOnClickListener {
-        Popup.Builder(this).setTitle(t("Cách kết nối", "How to connect")).setMessage(t(
-            "1. BẬT ADB TRÊN TV (một lần)\nCài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng”. Rồi Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB”.\n\n" +
-                "2A. CÙNG WI-FI VỚI TV\nBấm “Quét Wi-Fi” rồi chọn TV. Hoặc xem IP trên TV: Cài đặt → Mạng và Internet → tên Wi-Fi.\n\n" +
-                "2B. KHÁC MẠNG\nBật Tailscale trên cả điện thoại và TV. TV đã kết nối ở nhà một lần thì app nhớ IP Tailscale của nó, ra ngoài chỉ cần bấm TV trong danh sách. Chưa thì nhập IP 100.x của TV (xem trong app Tailscale).\n\n" +
-                "TV chưa có Tailscale? Lúc đang ở nhà, kết nối TV rồi bấm nút ô lưới → Thiết lập → “Cài và đăng nhập Tailscale”: app tự cài lên TV và mở trang đăng nhập trên điện thoại, bạn chỉ bấm Connect.\n\n" +
-                "3. LẦN ĐẦU KẾT NỐI\nTV hỏi cho phép: tích “Luôn cho phép” rồi OK.\n\n" +
-                "MẸO\nNút nguồn cạnh tên TV: đánh thức TV đang tắt. Nút ✕ cạnh tên TV: xóa khỏi danh sách.",
-            "1. TURN ON ADB ON THE TV (once)\nSettings → Device Preferences → About → press OK 7 times on “Build”. Then Developer options → turn on “ADB debugging”.\n\n" +
-                "2A. SAME WI-FI AS THE TV\nTap “Scan the Wi-Fi” and pick the TV. Or read the IP on the TV: Settings → Network & Internet → the Wi-Fi name.\n\n" +
-                "2B. ANOTHER NETWORK\nTurn on Tailscale on both the phone and the TV. Once the TV has been connected at home, the app remembers its Tailscale IP: away, just tap the TV in the list. Otherwise type the TV’s 100.x IP (see the Tailscale app).\n\n" +
-                "No Tailscale on the TV yet? While at home, connect to the TV, then tap the grid button → Setup → “Install and sign in to Tailscale”: the app installs it on the TV and opens the sign-in page on the phone; you only press Connect.\n\n" +
-                "3. THE FIRST CONNECTION\nThe TV asks for permission: tick “Always allow”, then OK.\n\n" +
-                "TIPS\nThe power button next to a TV wakes it when it is off. The ✕ next to a TV removes it from the list."))
-            .setPositiveButton(t("Đã hiểu", "Got it"), null).show()
+        Popup.Builder(this).setTitle(T("picker.how_to_connect")).setMessage(T("picker.1_turn_on_adb"))
+            .setPositiveButton(T("setup_banner.got_it"), null).show()
     }
     picker.addView(help, LinearLayout.LayoutParams(-1, dp(44)))
 }

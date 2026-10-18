@@ -188,7 +188,7 @@ async function appDetails(pkg) {
           if (p.granted === on) return;
           const x = await api('/api/app/perm', { pkg, perm: p.name, on });
           if (!x) return;
-          if (/^ok$/m.test(x.text)) toast(T(on ? 'apps.perm_allowed' : 'apps.perm_off', { name: tr(permName(p.name)) })); else toast(T('apps.perm_failed', { why: friendly(x.text.trim()) }));
+          if (/^ok$/m.test(x.text)) toast(T(on ? 'apps.perm_allowed' : 'apps.perm_off', { name: permName(p.name) })); else toast(T('apps.perm_failed', { why: friendly(x.text.trim()) }));
           appDetails(pkg);
         } })));
       parts.push(el('div', { className: 'permrow' }, el('span', { textContent: permName(p.name), title: p.name }),

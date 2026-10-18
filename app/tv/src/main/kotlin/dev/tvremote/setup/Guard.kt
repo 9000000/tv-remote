@@ -1,5 +1,6 @@
 package dev.tvremote.setup
 
+import dev.tvremote.core.T
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -11,7 +12,6 @@ import android.os.PowerManager
 import android.widget.Toast
 import dev.tvremote.core.adb.Adb
 import dev.tvremote.core.adb.Adb.Companion.q
-import java.util.Locale
 
 /**
  * Enforces [Rules] on the TV, from RemoteService. A check runs every few seconds to a minute (sooner when a deadline is close):
@@ -42,7 +42,6 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
     }
 
     private val ui = Handler(Looper.getMainLooper())
-    private val vi = Locale.getDefault().language == "vi"
     private val stats by lazy { Stats(c) }
     @Volatile private var stopped = false
     private var warnedSleep = 0L                                      // the sleep_at already warned about
@@ -94,7 +93,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         val now = System.currentTimeMillis()
         if (now - volSaidAt < 3_000) return
         volSaidAt = now
-        say(t("🔊 Âm lượng tối đa ", "🔊 Volume at most ") + cap.optInt("max") + "% (" + cap.optString("from") + "–" + cap.optString("to") + t(", giới hạn đặt trong TV Remote)", ", a limit set in TV Remote)"))
+        say(T("guard.volume_cap", "max" to cap.optInt("max"), "from" to cap.optString("from"), "to" to cap.optString("to")))
     }
 
     /** One look at the rules; returns how long until the next one is worth doing. */
@@ -152,7 +151,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
                 if (left <= 0) {
                     if (now - (lastStop[front] ?: 0L) > 15_000) { lastStop[front] = now; close(front) }
                 } else {
-                    if (left <= 300 && nearlyWarned.add(key)) say(t("Còn ${(left + 59) / 60} phút dùng ", "${(left + 59) / 60} min left today for ") + label(front) + t(" hôm nay", ""))
+                    if (left <= 300 && nearlyWarned.add(key)) say(T("guard.min_left", "n" to (left + 59) / 60, "app" to label(front)))
                     next = minOf(next, maxOf(5_000L, left * 1000))
                 }
             }
@@ -161,7 +160,6 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         return next
     }
 
-    private fun t(v: String, e: String) = if (vi) v else e
 
     private fun label(pkg: String): String = try {
         c.packageManager.getApplicationLabel(c.packageManager.getApplicationInfo(pkg, 0)).toString()
@@ -189,10 +187,10 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
     private fun warn(kind: String, until: Long, pkg: String) {
         val out = sh("am start -n ${c.packageName}/.WarnActivity --es kind $kind --el until $until --es pkg " + q(pkg) + " 2>&1")
         if (out == null || out.contains("Error")) say(when (kind) {
-            "sleep" -> t("TV sẽ tắt sau 1 phút (hẹn giờ)", "The TV turns off in 1 minute (sleep timer)")
-            "bed" -> t("Đã tới giờ đi ngủ: TV sẽ tắt sau 1 phút", "Bedtime: the TV turns off in 1 minute")
-            "ram" -> t("RAM của TV gần đầy: mở TV Setup → Quản lý trên TV → Sức khỏe để dọn", "The TV's memory is nearly full: TV Setup → Manage on this TV → Health frees it")
-            else -> t("Hết giờ dùng ", "Time is up for ") + label(pkg) + t(" hôm nay", " today")
+            "sleep" -> T("guard.the_tv_turns_off")
+            "bed" -> T("guard.bedtime_the_tv_turns")
+            "ram" -> T("guard.the_tv_s_memory")
+            else -> T("guard.time_up", "name" to label(pkg))
         })
     }
 

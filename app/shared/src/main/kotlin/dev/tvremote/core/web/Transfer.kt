@@ -1,4 +1,6 @@
 package dev.tvremote.core.web
+
+import dev.tvremote.core.Words
 import java.io.IOException
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -47,9 +49,11 @@ class NoRoom(val size: Long, val free: Long, val need: Long, val apk: Boolean) :
             else if (n > 1000L) "${Math.round(n / 1e3)} KB" else "$n B"
     }
 
-    fun say(vi: Boolean): String =
-        if (apk) (if (vi) "TV chỉ còn trống ${size(free)}, không đủ cài APK ${size(size)} (cần trống ít nhất ${size(need)}: bản chép và app sau khi cài). Xóa bớt app hoặc tệp (tab Sức khỏe / Tệp) rồi thử lại."
-                  else "The TV has only ${size(free)} free, not enough to install this ${size(size)} APK (it needs at least ${size(need)}: the copy and the installed app). Remove some apps or files (Health / Files tab), then try again.")
-        else (if (vi) "TV chỉ còn trống ${size(free)}, không đủ chép tệp ${size(size)} (cần trống ít nhất ${size(need)}). Xóa bớt app hoặc tệp (tab Sức khỏe / Tệp) rồi thử lại."
-              else "The TV has only ${size(free)} free, not enough for this ${size(size)} file (it needs at least ${size(need)}). Remove some apps or files (Health / Files tab), then try again.")
+
+    fun say(lang: String): String {
+        fun t(id: String, vararg a: Pair<String, Any?>) = Words.get(lang, id, *a)
+        val left = size(free); val big = size(size); val least = size(need)
+        return if (apk) t("transfer.no_room_apk", "left" to left, "big" to big, "least" to least)
+        else t("transfer.no_room_file", "left" to left, "big" to big, "least" to least)
+    }
 }

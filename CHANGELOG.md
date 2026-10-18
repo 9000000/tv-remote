@@ -8,7 +8,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 
-- Chữ của trang giờ nằm theo mã trong `i18n/vi.json`, `i18n/en.json` (mỗi ngôn ngữ một file), để sau này thêm được ngôn ngữ mới. Gần như mọi chữ đã chuyển, cả chữ do script viết; phần còn lại chuyển dần.
+- Chữ của trang giờ nằm theo mã trong `i18n/vi.json`, `i18n/en.json` (mỗi ngôn ngữ một file), để sau này thêm được ngôn ngữ mới. Gần như mọi chữ đã chuyển, cả chữ do script viết, và các app (điện thoại, TV Setup, máy tính) đọc cùng các file đó; báo lỗi từ server theo ngôn ngữ trang đang dùng.
 - Thanh chờ (cài app, gửi file) chạy mượt hơn trên TV yếu: không bắt trang tính lại bố cục mỗi khung hình.
 - App máy tính trên Mac: chữ chạy (tên bài, app đang mở, tên cảnh) lại chạy khi quay về tab Remote, không cần rê chuột.
 - Nút đang bật / đang chọn (tab, Nghe, HQ, lựa chọn trong Thiết lập) giờ là nền nhạt viền xanh; màu xanh đặc chỉ còn cho nút bấm để làm (OK, Đặt, Cài, Thêm), nên một màn hình không còn đầy nút xanh khó phân biệt. Trên web và app điện thoại.
@@ -33,7 +33,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **English**
 
-- The page's words now live by id in `i18n/vi.json`, `i18n/en.json` (one file per language), so new languages can be added later. Nearly every word has moved, the scripts' too; the rest follows step by step.
+- The page's words now live by id in `i18n/vi.json`, `i18n/en.json` (one file per language), so new languages can be added later. Nearly every word has moved, the scripts' too, and the apps (phone, TV Setup, computer) read the same files; the server's messages follow the page's language.
 - The waiting bar (installing, sending files) runs smoother on slow TVs: it no longer makes the page lay itself out each frame.
 - Computer app on Mac: running lines (song, open app, scene names) move again after coming back to the Remote tab, without moving the mouse.
 - A button that is on or chosen (a tab, Listen, HQ, a choice in Setup) is now a light tint with a blue edge; the solid blue is kept for buttons that do something (OK, Set, Install, Add), so a screen is no longer full of look-alike blue buttons. On the web and in the phone app.

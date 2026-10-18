@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Typeface
@@ -56,13 +57,13 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
     init {
         view.setBackgroundColor(BG)
         view.isClickable = true
-        val title = a.label(t("Quản lý TV", "Manage the TV"), 20, TEXT)
+        val title = a.label(T("managing.manage_the_tv"), 20, TEXT)
         title.typeface = Typeface.DEFAULT_BOLD
         val top = LinearLayout(a)
         top.gravity = Gravity.CENTER_VERTICAL
         top.setPadding(a.dp(16), a.dp(10), a.dp(12), a.dp(6))
         top.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
-        val done = a.icon("@close", t("Đóng", "Close"), BTN)
+        val done = a.icon("@close", T("common.close"), BTN)
         done.setOnClickListener { hide() }
         top.addView(done, LinearLayout.LayoutParams(a.dp(48), a.dp(40)))
         view.addView(top)
@@ -131,7 +132,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
             view.visibility = View.VISIBLE
             web.onResume()
         } catch (e: Exception) {
-            a.message(t("Không mở được trang quản lý: ", "Could not open the manage page: ") + e.message, true)
+            a.message(T("managing.could_not_open_the", "error" to e.message), true)
         }
     }
 
@@ -224,7 +225,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
             val j = org.json.JSONObject().put("id", id).put("label", fileName).put("status", status).put("pct", pct).put("msg", msg)
             a.ui.post { web.evaluateJavascript("window.nativeJob && nativeJob($j)", null) }
         }
-        report("running", -1, t("đang tải về điện thoại...", "downloading to the phone..."))
+        report("running", -1, T("managing.downloading_to_the_phone"))
         Thread {
             var result: String
             var ok = false
@@ -237,11 +238,11 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
                     v.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
                     v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
                     out = a.contentResolver.openOutputStream(a.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v)!!)!!
-                    result = t("Đã lưu vào thư mục Download: ", "Saved to Download: ") + fileName
+                    result = T("managing.saved_to_download", "name" to fileName)
                 } else {
                     val f = File(a.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), fileName)
                     out = FileOutputStream(f)
-                    result = t("Đã lưu: ", "Saved: ") + f.absolutePath
+                    result = T("pc.saved_file", "path" to f.absolutePath)
                 }
                 val total = c.contentLengthLong
                 out.use { o -> c.inputStream.use { input ->
@@ -263,7 +264,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
                 } }
                 ok = true
             } catch (e: Exception) {
-                result = t("Không tải được: ", "Download failed: ") + e.message
+                result = T("managing.download_failed", "error" to e.message)
             }
             report(if (ok) "done" else "error", 100, result)
         }.start()

@@ -10,12 +10,14 @@ const web = path.join(__dirname, '../web');
 const read = (f) => fs.readFileSync(path.join(web, f), 'utf8');
 
 // friendly() and its table, cut out of core.js (the rest of it needs the page)
-function friendlyOf() {
+function friendlyOf(lang = 'vi') {
   const src = read('js/core.js');
   const start = src.indexOf('const fmtSize'), end = src.indexOf('\n', start);
   const f0 = src.indexOf('const FRIENDLY = ['), f1 = src.indexOf('const friendly = ');
   const code = src.slice(start, end) + '\n' + src.slice(src.indexOf('const SETUP_NEEDS'), src.indexOf('function needSetup')) + '\n' + src.slice(f0, src.indexOf('\n', f1)) + '\nthis.friendly = friendly;';
-  const box = {};
+  const book = JSON.parse(read('i18n/' + lang + '.json'));
+  const T = (id, a) => { const s = book[id]; return s == null ? id : a ? s.replace(/\{(\w+)\}/g, (m, k) => (k in a ? a[k] : m)) : s; };
+  const box = { T };
   vm.createContext(box);
   vm.runInContext(code, box);
   return box.friendly;
@@ -43,7 +45,7 @@ test('a file the TV has no room for is refused in words that say the sizes and w
 });
 
 test('the refusal and the Stop have English words', () => {
-  const friendly = friendlyOf(), tr = englishOf();
+  const friendly = friendlyOf('en'), tr = englishOf();
   assert.equal(tr(friendly(`storage full: file=${3.4 * GB} free=${1.2 * GB} need=${3.4 * GB + 16 * MB} apk=0`)),
     'The TV has only 1.2 GB free, not enough for this 3.4 GB file (it needs at least 3.4 GB). Remove some apps or files (Health / Files tab), then try again.');
   assert.match(tr(friendly(`storage full: file=${500 * MB} free=${300 * MB} need=${1016 * MB} apk=1`)), /^The TV has only 300\.0 MB free, not enough to install this 500\.0 MB APK/);

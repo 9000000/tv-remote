@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.app.Activity
 import android.content.Intent
 import android.os.Build
@@ -214,7 +215,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         setContentView(root)
         show(false)
         if (b != null) { host = b.getString("host"); entry = b.getString("entry"); keysAway = b.getBoolean("keys"); wasLive = host != null }   // Android ended the app while away
-        if (keysAway && host != null) waitFor(title(entry ?: host!!), t("Đang kết nối lại...", "Reconnecting..."))
+        if (keysAway && host != null) waitFor(title(entry ?: host!!), T("keys_only.reconnecting"))
         if (host != null) show(true)
         takeShare(intent)
         if (b != null && b.getBoolean("settings")) settings.visibility = View.VISIBLE
@@ -313,9 +314,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         picTries = 0
         layoutRemote()                                                // showing the picture creates the surface, which starts it
         status.text = title(entry ?: host ?: "") + " · " + when {
-            tv?.ready() != true -> t("đang kết nối...", "connecting...")
-            video -> t("đang mở hình...", "opening the picture...")
-            else -> t("đang tắt hình", "picture off")
+            tv?.ready() != true -> T("page.connecting")
+            video -> T("phone.opening_the_picture")
+            else -> T("phone.picture_off")
         }
         startSession()
     }
@@ -377,10 +378,10 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         if (h.isEmpty()) return
         hideKeyboard()
         if (kindOf(h) != Remote.Kind.ANDROID) { host = null; startBasic(h, false); return }   // LG / Samsung: their own remote link, no ADB
-        status.text = title(h) + " · " + t("đang kết nối...", "connecting...")
+        status.text = title(h) + " · " + T("page.connecting")
         surface.visibility = View.VISIBLE                              // a fresh, black surface (see disconnect)
         show(true)
-        waitFor(title(from ?: h), t("Đang tìm TV ở ", "Looking for the TV at ") + h + "...")
+        waitFor(title(from ?: h), T("phone.looking_for_the_tv", "ip" to h))
         startSession()
     }
 
@@ -405,11 +406,10 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val mine = pic; val enc = prefs.getString("picEnc", "auto")!!
         if (enc != "auto") ui.postDelayed({                          // an encoder picked by hand that this TV does not have sends nothing: Auto would have moved on
             if (pic !== mine || picShown || isFinishing) return@postDelayed
-            val name = if (enc == "hw") t("Phần cứng", "Hardware") else t("Phần mềm", "Software")
-            Popup.Builder(this).setMessage(t("Chưa thấy hình sau 10 giây. TV này có thể không chạy được bộ mã hóa $name. Chuyển về Tự chọn?",
-                "No picture after 10 seconds. This TV may not run the ${name.lowercase()} encoder. Back to Auto?"))
-                .setPositiveButton(t("Về Tự chọn", "Back to Auto")) { _, _ -> prefs.edit().putString("picEnc", "auto").apply(); if (pic != null) { stopPicture(); startPicture() } }
-                .setNegativeButton(t("Chờ thêm", "Keep waiting"), null).show()
+            val name = if (enc == "hw") T("screen.hardware") else T("screen.software")
+            Popup.Builder(this).setMessage(T("phone.no_picture_after_10", "name" to name.lowercase()))
+                .setPositiveButton(T("screen.back_to_auto")) { _, _ -> prefs.edit().putString("picEnc", "auto").apply(); if (pic != null) { stopPicture(); startPicture() } }
+                .setNegativeButton(T("phone.keep_waiting"), null).show()
         }, 10000)
     }
 
@@ -439,13 +439,13 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                     "live" -> {
                         picTries = 0; picShown = true
                         waiting.visibility = View.GONE
-                        status.text = title(entry ?: h) + " · " + if (listen) t("🎧 đang nghe trên điện thoại", "🎧 listening on the phone") else t("chạm hình để bấm", "touch the picture to tap")
+                        status.text = title(entry ?: h) + " · " + if (listen) T("phone.listening_on_the_phone") else T("phone.touch_the_picture_to")
                     }
                     "closed", "error" -> {
                         pic = null
                         if (tv?.ready() != true) return@post          // the TV is gone: the keys' session reconnects both
                         if (++picTries <= 3) ui.postDelayed(picRetry, 1000L * picTries)
-                        else status.text = title(entry ?: h) + " · " + t("TV không mở được hình", "the TV did not open its picture")
+                        else status.text = title(entry ?: h) + " · " + T("phone.the_tv_did_not")
                     }
                 }
             }
@@ -471,18 +471,18 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val token = pref("tvs:$key")
         if (fp.isEmpty() || token.isEmpty()) return
         helper.visibility = View.VISIBLE
-        helper.text = t("TV Setup trên TV đang tự cho phép máy này...", "TV Setup on the TV is allowing this phone...")
+        helper.text = T("phone.tv_setup_on_the")
         Thread {
             val r = dev.tvremote.core.adb.AdbPrompt.ask(ip, token, fp, 30)
             if (r == "forgotten") prefs.edit().remove("tvs:$key").apply()   // "Unpair all" was pressed on the TV
             ui.post {
                 if (allowBox == null) return@post
                 helper.text = when {
-                    r == "allowed" -> t("✓ TV Setup đã cho phép. Đang kết nối...", "✓ TV Setup allowed it. Connecting...")
-                    r == "forgotten" -> t("TV Setup đã hủy ghép máy này: hãy bấm trên TV.", "TV Setup has unpaired this phone: answer on the TV.")
-                    r == "unreachable" -> t("Không gọi được TV Setup (remote qua web đang tắt?): hãy bấm trên TV.", "Could not reach TV Setup (web remote off?): answer on the TV.")
-                    r.startsWith("other:") -> t("TV đang hỏi cho một máy khác. Hãy bấm trên TV.", "The TV is asking about another device. Answer on the TV.")
-                    else -> t("TV Setup không cho phép được: hãy bấm trên TV.", "TV Setup could not allow it: answer on the TV.")
+                    r == "allowed" -> T("phone.tv_setup_allowed_it")
+                    r == "forgotten" -> T("phone.tv_setup_has_unpaired")
+                    r == "unreachable" -> T("phone.could_not_reach_tv")
+                    r.startsWith("other:") -> T("phone.the_tv_is_asking")
+                    else -> T("phone.tv_setup_could_not")
                 }
             }
         }.start()
@@ -498,16 +498,16 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(top) })
         }
         line("📺", 64f, TEXT, false, 0)
-        line(t("Nhìn lên TV", "Look at the TV"), 30f, TEXT, true, 8)
-        line(t("TV đang hỏi “Cho phép gỡ lỗi USB?”", "The TV is asking “Allow USB debugging?”"), 18f, MUTED, false, 10)
-        line(t("1. Tích “Luôn cho phép”\n2. Chọn OK (Cho phép)", "1. Tick “Always allow”\n2. Choose OK (Allow)"), 20f, TEXT, true, 26)
+        line(T("allow.look_at_the_tv"), 30f, TEXT, true, 8)
+        line(T("allow.the_tv_is_asking"), 18f, MUTED, false, 10)
+        line(T("phone.1_tick_always_allow"), 20f, TEXT, true, 26)
         val fp = try { dev.tvremote.core.adb.Adb(filesDir).fingerprint() } catch (e: Exception) { "" }
-        if (fp.isNotEmpty()) line(t("Mã trên TV phải trùng mã của máy này:\n", "The code on the TV must match this phone’s:\n") + fp, 13f, MUTED, false, 18)
+        if (fp.isNotEmpty()) line(T("phone.the_code_on_the", "fp" to fp), 13f, MUTED, false, 18)
         val helper = TextView(this).apply { textSize = 15f; setTextColor(ACCENT_TEXT); gravity = Gravity.CENTER; visibility = View.GONE }
         col.addView(helper, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
-        line(t("Màn hình này tự đóng khi TV đã cho phép.", "This screen closes by itself once the TV has allowed it."), 15f, MUTED, false, 26)
+        line(T("phone.this_screen_closes_by"), 15f, MUTED, false, 26)
         askSetup(fp, helper)
-        col.addView(button(t("Để sau", "Later"), CARD).apply { setOnClickListener { d.dismiss() } }, LinearLayout.LayoutParams(-1, dp(54)).apply { topMargin = dp(30) })
+        col.addView(button(T("common.later"), CARD).apply { setOnClickListener { d.dismiss() } }, LinearLayout.LayoutParams(-1, dp(54)).apply { topMargin = dp(30) })
         d.setContentView(col)
         allowBox = d
         try { d.show() } catch (e: Exception) { allowBox = null }
@@ -551,9 +551,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val w = managing.working()
         if (w.isEmpty()) { disconnect(null); return }
         Popup.Builder(this).setTitle(WorkService.say(w) + "...")
-            .setMessage(t("Rời TV này sẽ hủy việc đang làm.", "Leaving this TV cancels it."))
-            .setPositiveButton(t("Ở lại", "Stay"), null)
-            .setNegativeButton(t("Vẫn rời", "Leave anyway")) { _, _ -> disconnect(null) }.show()
+            .setMessage(T("phone.leaving_this_tv_cancels"))
+            .setPositiveButton(T("phone.stay"), null)
+            .setNegativeButton(T("phone.leave_anyway")) { _, _ -> disconnect(null) }.show()
     }
 
     internal fun disconnect(message: String?) {
@@ -599,18 +599,18 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             allowAlert(key == "allow")
             when (key) {
                 "connecting" -> {
-                    status.text = title(entry ?: h) + " · " + t("đang kết nối...", "connecting...")
-                    waitStep.text = t("Đang tìm TV ở ", "Looking for the TV at ") + detail + "..."
+                    status.text = title(entry ?: h) + " · " + T("page.connecting")
+                    waitStep.text = T("phone.looking_for_the_tv", "ip" to detail)
                 }
                 "allow" -> {
-                    status.text = title(entry ?: h) + " · " + t("nhìn lên TV, chọn Cho phép", "look at the TV, choose Allow")
-                    waitStep.text = t("Chờ cho phép trên TV: tích “Luôn cho phép” rồi chọn OK.", "Waiting for the TV: tick “Always allow”, then OK.")
+                    status.text = title(entry ?: h) + " · " + T("phone.look_at_the_tv")
+                    waitStep.text = T("phone.waiting_for_the_tv")
                 }
                 "starting" -> {
                     save(entry ?: h, detail)
-                    status.text = title(entry ?: h) + " · " + t("đang mở điều khiển...", "opening the controls...")
+                    status.text = title(entry ?: h) + " · " + T("phone.opening_the_controls")
                     waitName.text = title(entry ?: h)
-                    waitStep.text = t("Đã kết nối, đang mở điều khiển...", "Connected, opening the controls...")
+                    waitStep.text = T("phone.connected_opening_the_controls")
                     val s = from
                     ui.postDelayed({ if (tv === s && s != null && s.ready()) waiting.visibility = View.GONE }, 10000)   // no picture yet, but the buttons work
                 }
@@ -620,19 +620,19 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                     waiting.visibility = View.GONE
                     pendingAsk?.let { q -> pendingAsk = null; Thread { val to = from?.search(q); ui.post { searched(q, to) } }.start() }
                     if (pic?.ready() != true) status.text = title(entry ?: h) + " · " + when {   // the picture's session says the rest
-                        listen -> t("🎧 đang nghe trên điện thoại", "🎧 listening on the phone")
-                        video -> t("đang mở hình...", "opening the picture...")
-                        else -> t("đang tắt hình", "picture off")
+                        listen -> T("phone.listening_on_the_phone")
+                        video -> T("phone.opening_the_picture")
+                        else -> T("phone.picture_off")
                     }
                 }
                 "closed" -> {
                     tv = null; stopPicture()
-                    reconnect(t("TV đã ngắt kết nối.", "The TV closed the connection."))
+                    reconnect(T("phone.the_tv_closed_the"))
                 }
                 else -> {
                     tv = null; stopPicture()
                     if (wasLive) { reconnect(explain(detail)); return@post }   // it worked a moment ago: the same way again, not keys only
-                    waitStep.text = t("Không vào được bằng ADB, đang thử chế độ chỉ bấm phím...", "ADB did not work, trying keys only...")
+                    waitStep.text = T("phone.adb_did_not_work")
                     offerBasic(h, explain(detail))                    // no ADB (refused, or filtered and timed out), but the TV may still take keys
                 }
             }
@@ -642,10 +642,10 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     /** The session ended or failed after it had worked: opened again on return when away, else tried again a few times. */
     internal fun reconnect(error: String) {
         val h = host ?: return
-        if (!foreground) { status.text = title(entry ?: h) + " · " + t("kết nối lại khi mở app", "reconnects when the app is open"); return }
+        if (!foreground) { status.text = title(entry ?: h) + " · " + T("phone.reconnects_when_the_app"); return }
         if (retries >= 4) { disconnect(error); return }               // about 15 s in all: the TV is off or gone
         retries++
-        waitFor(title(entry ?: h), t("Mất kết nối, đang kết nối lại", "Connection lost, reconnecting") + if (retries > 1) " ($retries)..." else "...")
+        waitFor(title(entry ?: h), T("phone.connection_lost_reconnecting", "tries" to if (retries > 1) " ($retries)" else ""))
         ui.postDelayed(retry, 1000L * retries)
     }
 
@@ -696,7 +696,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal fun needsAdb(): Boolean {
         val b = basic ?: return false
         if (b.kind != Remote.Kind.ANDROID) kindOff()
-        else Toast.makeText(this, t("Cần bật Gỡ lỗi ADB trên TV cho chức năng này", "This needs ADB debugging on for the TV"), Toast.LENGTH_SHORT).show()
+        else Toast.makeText(this, T("phone.this_needs_adb_debugging"), Toast.LENGTH_SHORT).show()
         return true
     }
 
@@ -747,8 +747,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal fun speak() {
         val i = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
             .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            .putExtra(RecognizerIntent.EXTRA_LANGUAGE, if (VI) "vi-VN" else "en-US")
-            .putExtra(RecognizerIntent.EXTRA_PROMPT, t("Nói điều muốn TV làm, vd: mở YouTube", "Say what the TV should do, e.g. open YouTube"))
+            .putExtra(RecognizerIntent.EXTRA_LANGUAGE, if (VI) "vi-VN" else dev.tvremote.core.Words.lang)
+            .putExtra(RecognizerIntent.EXTRA_PROMPT, T("phone.say_what_the_tv"))
         try {
             @Suppress("DEPRECATION")
             startActivityForResult(i, SPEAK)
@@ -762,15 +762,15 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val tv = tv
         basic?.let { if (!it.search(sentence)) it.launch(TvShell.youtube(sentence)); searched(sentence, "yt"); return }
         if (tv != null && tv.ready()) Thread { val to = tv.search(sentence); ui.post { searched(sentence, to) } }.start()
-        else { pendingAsk = sentence; Toast.makeText(this, t("Đang chờ TV: ", "Waiting for the TV: ") + sentence, Toast.LENGTH_SHORT).show() }
+        else { pendingAsk = sentence; Toast.makeText(this, T("phone.waiting_for_the_tv_2", "sentence" to sentence), Toast.LENGTH_SHORT).show() }
     }
 
     internal fun searched(sentence: String, to: String?) {
         if (isFinishing) return
         Toast.makeText(this, when (to) {
-            "yt" -> t("Đang tìm trên YouTube: ", "Searching YouTube for: ") + sentence
-            "gs" -> t("Đã gửi cho TV: ", "Sent to the TV: ") + sentence
-            else -> t("TV này không có YouTube hay tìm kiếm của Google để tìm câu này.", "This TV has neither YouTube nor Google search to look this up.")
+            "yt" -> T("phone.searching_youtube_for", "sentence" to sentence)
+            "gs" -> T("phone.sent_to_the_tv", "sentence" to sentence)
+            else -> T("core.fr_no_search")
         }, Toast.LENGTH_SHORT).show()
     }
 
@@ -779,19 +779,19 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val box = LinearLayout(this)
         box.gravity = Gravity.CENTER_VERTICAL
         box.setPadding(dp(20), dp(12), dp(20), 0)
-        val field = input(t("vd: mở YouTube, Sơn Tùng", "e.g. open YouTube, lo-fi music"))
+        val field = input(T("phone.e_g_open_youtube"))
         field.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_SEND
         field.background = box(BTN, 12)                                // the dialog is CARD: the box must stand out from it
         box.addView(field, LinearLayout.LayoutParams(0, dp(48), 1f))
-        val mic = icon("@mic", t("Nói", "Speak"), ACCENT)
+        val mic = icon("@mic", T("remote.speak"), ACCENT)
         mic.lit = true
         box.addView(mic, LinearLayout.LayoutParams(dp(48), dp(48)).apply { leftMargin = dp(8) })
         var dlg: Popup? = null
         val send = { val s = field.text.toString().trim(); if (s.isNotEmpty()) { dlg?.dismiss(); voice(s) } }
         mic.setOnClickListener { dlg?.dismiss(); speak() }
         field.setOnEditorActionListener { _, _, _ -> send(); true }
-        dlg = Popup.Builder(this).setTitle(t("Nói hoặc gõ cho TV", "Speak or type to the TV")).setView(box)
-            .setPositiveButton(t("Gửi", "Send"), null).setNegativeButton(t("Đóng", "Close"), null).create()
+        dlg = Popup.Builder(this).setTitle(T("phone.speak_or_type_to")).setView(box)
+            .setPositiveButton(T("notify.send"), null).setNegativeButton(T("common.close"), null).create()
         dlg.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
         dlg.setOnShowListener { dlg.getButton(Popup.BUTTON_POSITIVE).setOnClickListener { send() } }
         dlg.show()
@@ -818,13 +818,13 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         spin.isIndeterminate = true
         spin.indeterminateTintList = android.content.res.ColorStateList.valueOf(ACCENT)
         c.addView(spin, LinearLayout.LayoutParams(dp(64), dp(64)))
-        c.addView(TextView(this).apply { text = t("Đang kết nối", "Connecting"); textSize = 15f; setTextColor(MUTED); gravity = Gravity.CENTER },
+        c.addView(TextView(this).apply { text = T("connecting.connecting"); textSize = 15f; setTextColor(MUTED); gravity = Gravity.CENTER },
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(28) })
         waitName = TextView(this).apply { textSize = 28f; setTextColor(TEXT); typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER }
         c.addView(waitName, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6) })
         waitStep = TextView(this).apply { textSize = 16f; setTextColor(MUTED); gravity = Gravity.CENTER; setLineSpacing(dp(3).toFloat(), 1f) }
         c.addView(waitStep, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
-        c.addView(button(t("Hủy", "Cancel"), CARD).apply { setOnClickListener { disconnect(null) } },
+        c.addView(button(T("common.cancel"), CARD).apply { setOnClickListener { disconnect(null) } },
             LinearLayout.LayoutParams(dp(200), dp(54)).apply { topMargin = dp(40) })
         f.addView(c, FrameLayout.LayoutParams(-1, -2, Gravity.CENTER))
         return f

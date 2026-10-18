@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -33,7 +34,7 @@ internal val DRAW_COLORS = intArrayOf(0xffff3b30.toInt(), 0xffff9f0a.toInt(), 0x
 
 internal fun MainActivity.startDrawing() {
     if (basic != null || tv == null) {
-        Toast.makeText(this, t("Vẽ lên TV cần ADB, như xem hình TV.", "Drawing on the TV needs ADB, like the TV picture."), Toast.LENGTH_LONG).show()
+        Toast.makeText(this, T("drawing.drawing_on_the_tv"), Toast.LENGTH_LONG).show()
         return
     }
     if (!video) toggleVideo()                                         // the strokes go where the picture shows
@@ -49,8 +50,8 @@ internal fun MainActivity.startDrawing() {
 internal fun MainActivity.drawFail(e: Exception) {
     if (isFinishing || offerSetup(e)) return
     val m = e.message ?: ""
-    Toast.makeText(this, if ("draw:nooverlay" in m) t("TV này không cho app vẽ đè lên màn hình.", "This TV does not let apps draw over its screen.")
-        else t("Không vẽ được lên TV: ", "Could not draw on the TV: ") + Errors.say(e, VI), Toast.LENGTH_LONG).show()
+    Toast.makeText(this, if ("draw:nooverlay" in m) T("draw.no_overlay")
+        else T("drawing.could_not_draw_on", "error" to Errors.say(e, dev.tvremote.core.Words.lang)), Toast.LENGTH_LONG).show()
 }
 
 internal fun MainActivity.stopDrawing() {
@@ -83,19 +84,19 @@ internal fun MainActivity.drawTools(): LinearLayout {
     val pen = View(this)
     val paint = { pen.background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(drawColor); setStroke(dp(1) + drawWidth / 30, TEXT) } }
     paint()
-    pen.contentDescription = t("Màu", "Colour")
+    pen.contentDescription = T("remote.colour")
     pen.setOnClickListener { drawPen { paint() } }
     bar.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))       // all on the right, the swatch with the rest
     bar.addView(pen, LinearLayout.LayoutParams(dp(30), dp(30)).also { it.rightMargin = dp(6) })
-    val pic = icon("@image", t("Đưa một ảnh lên TV", "Put a picture on the TV"), BTN)
+    val pic = icon("@image", T("drawing.put_a_picture_on"), BTN)
     pic.setOnClickListener { withSetup("pic") { pickDrawPic() } }    // an older TV Setup draws lines but no pictures
-    val say = icon("@type", t("Gõ lời nhắn lên TV", "Type a message on the TV"), BTN)
-    say.setOnClickListener { withSetup("pic") { askText(t("Lời nhắn hiện trên TV", "A message for the TV"), t("vd Xuống ăn cơm!", "e.g. Dinner's ready!"), t("Tiếp", "Next")) { placeMessage(it) } } }
-    val undo = icon("@undo", t("Bỏ nét vừa vẽ", "Take back the last line"), BTN)
+    val say = icon("@type", T("drawing.type_a_message_on"), BTN)
+    say.setOnClickListener { withSetup("pic") { askText(T("draw.message_for_tv"), T("drawing.e_g_dinner_s"), T("draw.next")) { placeMessage(it) } } }
+    val undo = icon("@undo", T("remote.take_back_the_last"), BTN)
     undo.setOnClickListener { drawSend(JSONObject().put("o", "u")) }
-    val clear = icon("@trash", t("Xóa hết", "Clear all"), BTN)
+    val clear = icon("@trash", T("drawing.clear_all"), BTN)
     clear.setOnClickListener { drawView.clear(); drawSend(JSONObject().put("o", "x")) }
-    val done = icon("@check", t("Xong", "Done"), ACCENT)
+    val done = icon("@check", T("drawing.done"), ACCENT)
     done.setOnClickListener { stopDrawing() }
     for (b in listOf(pic, say, undo, clear, done)) bar.addView(b, LinearLayout.LayoutParams(dp(40), dp(40)).also { it.leftMargin = dp(4) })
     tools.addView(bar, LinearLayout.LayoutParams(-1, -2))
@@ -111,7 +112,7 @@ internal fun MainActivity.drawTools(): LinearLayout {
     for ((sign, k) in listOf("−" to 1 / 1.06f, "+" to 1.06f)) {
         val b = button(sign, BTN)
         b.textSize = 20f
-        b.contentDescription = if (k > 1) t("To lên", "Bigger") else t("Nhỏ lại", "Smaller")
+        b.contentDescription = if (k > 1) T("remote.bigger") else T("remote.smaller")
         var n = 0
         val step = object : Runnable { override fun run() {
             drawView.resize(k)
@@ -129,9 +130,9 @@ internal fun MainActivity.drawTools(): LinearLayout {
         place.addView(b, LinearLayout.LayoutParams(dp(44), dp(40)))
     }
     place.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
-    val cancel = button(t("Hủy", "Cancel"), BTN)
+    val cancel = button(T("common.cancel"), BTN)
     cancel.setOnClickListener { picEnd() }
-    val ok = button("@check|" + t("Đưa lên TV", "Put on TV"), ACCENT)
+    val ok = button("@check|" + T("drawing.put_on_tv"), ACCENT)
     ok.setOnClickListener { picSend() }
     for (b in listOf(cancel, ok)) { b.setPadding(dp(12), 0, dp(12), 0); place.addView(b, LinearLayout.LayoutParams(-2, dp(40)).also { it.leftMargin = dp(6) }) }
     tools.addView(place, LinearLayout.LayoutParams(-1, -2))
@@ -150,7 +151,7 @@ private fun MainActivity.drawPen(changed: () -> Unit) {
         for (c in row) {
             val s = View(this)
             s.background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(c); setStroke(dp(if (c == drawColor) 4 else 1), if (c == drawColor) ACCENT else 0x66ffffff) }
-            s.contentDescription = t("Màu", "Colour")
+            s.contentDescription = T("remote.colour")
             s.setOnClickListener { drawColor = c; changed(); dlg?.dismiss() }
             line.addView(s, LinearLayout.LayoutParams(dp(40), dp(40)).also { it.setMargins(dp(5), dp(5), dp(5), dp(5)) })
         }
@@ -166,7 +167,7 @@ private fun MainActivity.drawPen(changed: () -> Unit) {
     val size = android.widget.SeekBar(this)                         // 20..250, as on the web page
     size.max = 23
     size.progress = (drawWidth - 20) / 10
-    size.contentDescription = t("Nét", "Line size")
+    size.contentDescription = T("remote.line_size")
     size.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
         override fun onProgressChanged(b: android.widget.SeekBar, p: Int, user: Boolean) { drawWidth = 20 + p * 10; changed(); dotSize() }
         override fun onStartTrackingTouch(b: android.widget.SeekBar) {}
@@ -194,7 +195,7 @@ internal fun MainActivity.pickDrawPic() {
         try { startActivityForResult(gms, PICK_DRAW); return } catch (ignored: Exception) { }
     }
     try { startActivityForResult(Intent(Intent.ACTION_GET_CONTENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE), PICK_DRAW) }
-    catch (e: Exception) { Toast.makeText(this, t("Điện thoại không có app chọn ảnh.", "This phone has no picture picker."), Toast.LENGTH_LONG).show() }
+    catch (e: Exception) { Toast.makeText(this, T("drawing.this_phone_has_no"), Toast.LENGTH_LONG).show() }
 }
 
 internal fun MainActivity.drawPicked(uri: Uri) {
@@ -215,7 +216,7 @@ internal fun MainActivity.drawPicked(uri: Uri) {
             DrawView.Pic(bmp, android.util.Base64.encodeToString(out.toByteArray(), android.util.Base64.NO_WRAP))
         } catch (e: Exception) { null }
         ui.post {
-            if (p == null) { Toast.makeText(this, t("Không mở được ảnh này.", "Could not open this picture."), Toast.LENGTH_LONG).show(); return@post }
+            if (p == null) { Toast.makeText(this, T("draw.cannot_open_picture"), Toast.LENGTH_LONG).show(); return@post }
             if (!drawing) startDrawing()
             drawView.placing = p
             drawView.onSize()

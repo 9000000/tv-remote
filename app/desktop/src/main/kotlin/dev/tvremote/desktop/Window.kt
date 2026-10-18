@@ -6,6 +6,7 @@ import com.sun.jna.Native
 import com.sun.jna.NativeLibrary
 import com.sun.jna.Pointer
 import com.sun.jna.WString
+import dev.tvremote.core.T
 import org.json.JSONArray
 import java.io.File
 import java.net.HttpURLConnection
@@ -128,10 +129,10 @@ object Window {
             while (f.exists()) f = File(dir, name.substringBeforeLast('.') + " (${n++})" + (if ('.' in name) "." + name.substringAfterLast('.') else ""))
             if (c.responseCode != 200) throw java.io.IOException("HTTP ${c.responseCode}")
             c.inputStream.use { i -> f.outputStream().use { i.copyTo(it) } }
-            eval("toast(" + JSONArray().put("Đã lưu: " + f.path.replace(System.getProperty("user.home"), "~")).toString().trim('[', ']') + ")")
+            eval("toast(" + JSONArray().put(T("pc.saved_file", "path" to f.path.replace(System.getProperty("user.home"), "~"))).toString().trim('[', ']') + ")")
         } catch (e: Exception) {
             println("save $path: $e")
-            eval("toast(" + JSONArray().put("Không lưu được tệp: ${e.message}").toString().trim('[', ']') + ")")
+            eval("toast(" + JSONArray().put(T("pc.save_failed", "why" to e.message)).toString().trim('[', ']') + ")")
         }
     }
 

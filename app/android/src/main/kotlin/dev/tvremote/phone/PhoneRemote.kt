@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.content.Intent
 import android.widget.LinearLayout
 import dev.tvremote.core.remote.Remote
@@ -29,14 +30,14 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "scenes" to act { scenesMenu() },
     "notify" to act { notifyDialog() },
     "draw" to act { if (drawing) stopDrawing() else startDrawing() },
-    "search" to act { askText(t("Tìm app trên CH Play", "Search the Play Store"), t("vd: vlc", "e.g. vlc"), t("Tìm", "Search")) { openLink("market://search?c=apps&q=" + java.net.URLEncoder.encode(it, "UTF-8")) } },   // the TV's Play Store takes searches only this way
-    "package" to act { askText(t("App id (tên gói)", "App id (package name)"), "org.videolan.vlc", t("Mở", "Open")) { storePage(it) } },
-    "link" to act { askText(t("Đường dẫn", "Link"), "https://youtu.be/...", t("Mở", "Open")) { openLink(if (Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:").containsMatchIn(it)) it else "https://$it") } },
+    "search" to act { askText(T("remote.search_play_store"), T("phone_remote.e_g_vlc"), T("remote.search")) { openLink("market://search?c=apps&q=" + java.net.URLEncoder.encode(it, "UTF-8")) } },   // the TV's Play Store takes searches only this way
+    "package" to act { askText(T("remote.package_id"), "org.videolan.vlc", T("apps.open")) { storePage(it) } },
+    "link" to act { askText(T("remote.link"), "https://youtu.be/...", T("apps.open")) { openLink(if (Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:").containsMatchIn(it)) it else "https://$it") } },
     "media" to act { pickMedia() },
     "file" to act { pickFile(arrayOf("audio/*", "video/*", "image/*")) },
     "cast" to act {
         try { startActivity(Intent("android.settings.CAST_SETTINGS")) }
-        catch (e: Exception) { say(t("Điện thoại này không có phần Truyền (Cast) trong Cài đặt. Thử nút Truyền / Smart View ở thanh thông báo.", "This phone has no Cast screen in Settings. Try the Cast / Smart View tile in the notification shade."), true) }
+        catch (e: Exception) { say(T("phone_remote.this_phone_has_no"), true) }
     },
     "store" to act { storePage(it ?: "") },
     "timerPlus" to act { timerPlus() },
@@ -67,7 +68,7 @@ private val drawn = ArrayList<Pair<IconButton, RemoteSpec.Entry>>()
 internal const val KIND_OFF = "kind-off"
 
 internal fun MainActivity.kindOff() =
-    android.widget.Toast.makeText(this, t("Chỉ có trên Android TV / Google TV", "Only on Android TV / Google TV"), android.widget.Toast.LENGTH_SHORT).show()
+    android.widget.Toast.makeText(this, T("core.only_android"), android.widget.Toast.LENGTH_SHORT).show()
 
 internal fun MainActivity.greyRows() {
     val caps = caps()

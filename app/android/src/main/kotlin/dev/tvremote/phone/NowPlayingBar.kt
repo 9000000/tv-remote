@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -26,7 +27,7 @@ internal class PlayingBar(private val a: MainActivity) {
     val view = a.col()
     private val title = a.label("", 15, TEXT)
     private val sub = a.label("", 12, MUTED)
-    private val play = a.icon("@pause", t("Phát / Dừng", "Play / Pause"), ACCENT)
+    private val play = a.icon("@pause", T("remote.play_pause"), ACCENT)
     private val seek = SeekBar(a)
     private val pos = a.label("0:00", 12, MUTED)
     private val dur = a.label("", 12, MUTED)
@@ -52,8 +53,8 @@ internal class PlayingBar(private val a: MainActivity) {
         for (w in listOf(title, sub)) { w.runs(); words.addView(w) }  // a long title or channel runs (the page's .run)
         title.typeface = android.graphics.Typeface.DEFAULT_BOLD
         head.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
-        val prev = a.icon("@prev", t("Bài trước", "Previous"), BTN)
-        val next = a.icon("@next", t("Bài sau", "Next"), BTN)
+        val prev = a.icon("@prev", T("remote.previous"), BTN)
+        val next = a.icon("@next", T("remote.next"), BTN)
         prev.setOnClickListener { send("prev", 0, prev) }
         next.setOnClickListener { send("next", 0, next) }
         play.setOnClickListener { send(if (o.optString("state") == "playing") "pause" else "play", 0, play) }   // the icon turns when the TV says so
@@ -133,8 +134,7 @@ internal class PlayingBar(private val a: MainActivity) {
     private var blackFor = 0
     private val blackBmp by lazy { android.graphics.Bitmap.createBitmap(32, 18, android.graphics.Bitmap.Config.ARGB_8888) }
     private val blackHint by lazy {
-        a.label(t("TV không cho chiếu hình lên đây\n(do chip của TV hoặc phim có bản quyền)",
-            "The TV does not let its picture show here\n(the TV's chip, or a copy-protected film)"), 13, TEXT).apply {
+        a.label(T("now_playing.the_tv_does_not"), 13, TEXT).apply {
             gravity = Gravity.CENTER; background = a.box(PILL, 10); setPadding(a.dp(12), a.dp(8), a.dp(12), a.dp(8)); visibility = View.GONE
             a.frame.addView(this, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER).apply { leftMargin = a.dp(24); rightMargin = a.dp(24) })
         }
@@ -192,7 +192,7 @@ internal class PlayingBar(private val a: MainActivity) {
             } catch (e: Exception) { failed = true }
             a.ui.post {
                 busy = false; mark(btn, false)
-                if (failed) a.say(t("TV không nhận lệnh. Thử lại.", "The TV did not take that. Try again."), true)
+                if (failed) a.say(T("now_playing.the_tv_did_not"), true)
                 else ListenService.show(o, a.title(a.host ?: ""))
             }
         }
@@ -224,7 +224,7 @@ internal fun MainActivity.screenOff() {
     basic?.takeIf { it.kind != Remote.Kind.ANDROID }?.let { b ->       // LG: by its remote link, no ADB
         Thread {
             val ok = b.screenOff()
-            ui.post { say(if (ok) t("Đã tắt màn hình TV. Bấm phím bất kỳ để bật lại.", "The TV’s screen is off. Any key turns it back on.") else t("TV này không tắt được màn hình riêng.", "This TV cannot turn its screen off alone."), !ok) }
+            ui.post { say(if (ok) T("playing.screen_off") else T("now_playing.this_tv_cannot_turn"), !ok) }
         }.start()
         return
     }
@@ -233,7 +233,7 @@ internal fun MainActivity.screenOff() {
     if (tv == null || !tv.ready()) return
     Thread {
         val err = try { ScreenOff.off(tv.adb(), assets.open("tvr-helper.jar").use { it.readBytes() }); null } catch (e: Exception) { e }
-        ui.post { say(if (err == null) t("Đã tắt màn hình TV. Bấm phím bất kỳ để bật lại.", "The TV’s screen is off. Any key turns it back on.") else t("TV này không tắt được màn hình riêng.", "This TV cannot turn its screen off alone."), err != null) }
+        ui.post { say(if (err == null) T("playing.screen_off") else T("now_playing.this_tv_cannot_turn"), err != null) }
     }.start()
 }
 
@@ -246,8 +246,8 @@ internal fun MainActivity.clipDialog() {
         val text = try { tv.clipboard() } catch (e: Exception) { null }
         ui.post {
             if (isFinishing) return@post
-            if (text == null) { say(t("TV không trả lời. Thử lại.", "The TV did not answer. Try again."), true); return@post }
-            val box = input(t("Clipboard của TV đang trống. Gõ hoặc dán chữ vào đây để gửi lên TV.", "The TV’s clipboard is empty. Type or paste text here to send it to the TV."))
+            if (text == null) { say(T("now_playing.the_tv_did_not_2"), true); return@post }
+            val box = input(T("playing.clip_empty"))
             box.setText(text)
             box.setSingleLine(false)                                  // a box to read and edit, not input()'s one line
             box.minLines = 4
@@ -259,27 +259,27 @@ internal fun MainActivity.clipDialog() {
             body.addView(box, LinearLayout.LayoutParams(-1, -2))
             val acts = LinearLayout(this)
             body.addView(acts, LinearLayout.LayoutParams(-1, dp(44)).apply { topMargin = dp(12) })
-            val d = Popup.Builder(this).setTitle(t("Clipboard của TV", "The TV’s clipboard")).setView(body).create()
+            val d = Popup.Builder(this).setTitle(T("now_playing.the_tvs_clipboard")).setView(body).create()
             val toTv = { paste: Boolean ->
                 val s = box.text.toString()
-                if (s.isEmpty()) say(t("Chưa có chữ", "No text yet"), false)
+                if (s.isEmpty()) say(T("playing.no_text"), false)
                 else {
                     d.dismiss()
                     Thread {
                         val ok = try { tv.setClipboard(s.take(100000), paste); true } catch (e: Exception) { false }
-                        ui.post { say(if (!ok) t("TV không nhận. Thử lại.", "The TV did not take it. Try again.") else if (paste) t("Đã dán trên TV", "Pasted on the TV") else t("Đã chép lên TV", "Copied to the TV"), !ok) }
+                        ui.post { say(if (!ok) T("now_playing.the_tv_did_not_3") else if (paste) T("playing.pasted") else T("playing.copied_to_tv"), !ok) }
                     }.start()
                 }
             }
             // one row of short words: the title says whose clipboard it is; what each does in full goes to screen readers
             for ((i, b) in listOf(
-                Triple(t("Chép về", "Copy"), t("Chép về điện thoại", "Copy to the phone"), {
+                Triple(T("now_playing.copy"), T("now_playing.copy_to_the_phone"), {
                     (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("TV", box.text.toString()))
-                    if (android.os.Build.VERSION.SDK_INT < 33) Toast.makeText(this, t("Đã sao chép vào máy này", "Copied to this device"), Toast.LENGTH_SHORT).show()   // Android 13+ says it itself
+                    if (android.os.Build.VERSION.SDK_INT < 33) Toast.makeText(this, T("playing.copied_here"), Toast.LENGTH_SHORT).show()   // Android 13+ says it itself
                     d.dismiss()
                 }),
-                Triple(t("Gửi lên", "Send"), t("Chép lên clipboard của TV", "Put on the TV’s clipboard"), { toTv(false) }),
-                Triple(t("Dán", "Paste"), t("Dán vào ô đang gõ trên TV", "Paste where the TV is typing"), { toTv(true) }),
+                Triple(T("now_playing.send"), T("now_playing.put_on_the_tvs"), { toTv(false) }),
+                Triple(T("now_playing.paste"), T("now_playing.paste_where_the_tv"), { toTv(true) }),
             ).withIndex()) {
                 val btn = button(b.first, if (i == 2) ACCENT else BTN)
                 btn.contentDescription = b.second

@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.widget.Toast
 import dev.tvremote.core.adb.AdbLink
 import dev.tvremote.core.remote.Remote
@@ -37,22 +38,20 @@ private fun MainActivity.rules(change: JSONObject?, then: (JSONObject) -> Unit) 
 private fun MainActivity.needsSetup(r: JSONObject): Boolean {
     if (!r.has("setup") && !r.has("error")) return false
     if (r.optString("setup") == "busy") {                             // new enough, starting again after an update: not a question
-        toast(t("TV Setup đang khởi động lại (vd vừa cập nhật), thử lại sau chút nữa.", "TV Setup is starting again (just updated?), try again in a moment."))
+        toast(T("automation.tv_setup_is_starting"))
         return true
     }
     if (r.has("setup") && offerSetup(SetupNeed.Missing("rules", r.optString("have")))) return true
-    Popup.Builder(this).setTitle(t("Cần TV Setup trên TV", "TV Setup is needed on the TV"))
-        .setMessage(if (r.has("error")) r.optString("error") else t(
-            "Hẹn giờ tắt, giờ đi ngủ và giới hạn app chạy ngay trên TV bằng app TV Setup, để TV tự tắt được cả khi điện thoại đã tắt. Trang Tự động có nút cài giúp.",
-            "The sleep timer, bedtime and app limits run on the TV itself, in the TV Setup app, so the TV turns off even with the phone off. The Automation page has a button to install it."))
-        .setPositiveButton(t("Mở trang Tự động", "Open Automation")) { _, _ -> managing.open(host, "auto") }
-        .setNegativeButton(t("Đóng", "Close"), null).show()
+    Popup.Builder(this).setTitle(T("automation.tv_setup_is_needed"))
+        .setMessage(if (r.has("error")) r.optString("error") else T("automation.the_sleep_timer_bedtime"))
+        .setPositiveButton(T("automation.open_automation")) { _, _ -> managing.open(host, "auto") }
+        .setNegativeButton(T("common.close"), null).show()
     return true
 }
 
 internal fun MainActivity.setTimer(minutes: Int) {
     rules(JSONObject().put("do", "sleep").put("minutes", minutes)) { r ->
-        if (!needsSetup(r)) toast(if (minutes > 0) t("TV sẽ tự tắt lúc ", "The TV turns off at ") + hm(r.optLong("sleep_at"), r.optLong("now")) else t("Đã hủy hẹn giờ tắt", "Sleep timer cancelled"))
+        if (!needsSetup(r)) toast(if (minutes > 0) T("automation.the_tv_turns_off", "time" to hm(r.optLong("sleep_at"), r.optLong("now"))) else T("auto.sleep_cancelled"))
     }
 }
 
@@ -69,37 +68,37 @@ internal fun sleepMinutes(v: String, now: java.util.Calendar = java.util.Calenda
 }
 
 internal fun MainActivity.timerPlus() {
-    rules(JSONObject().put("do", "sleep_add").put("minutes", 15)) { x -> toast(t("TV sẽ tự tắt lúc ", "The TV turns off at ") + hm(x.optLong("sleep_at"), x.optLong("now"))) }
+    rules(JSONObject().put("do", "sleep_add").put("minutes", 15)) { x -> toast(T("automation.the_tv_turns_off", "time" to hm(x.optLong("sleep_at"), x.optLong("now")))) }
 }
 
 internal fun MainActivity.timerCustom() {
-    askText(t("Tắt TV sau bao lâu?", "Turn the TV off when?"), t("vd 40 (phút) hoặc 23:30", "e.g. 40 (minutes) or 23:30"), t("Hẹn", "Set")) {
+    askText(T("remote.turn_off_when"), T("automation.e_g_40_minutes"), T("remote.set_timer")) {
         val m = sleepMinutes(it)
-        if (m > 0) setTimer(m) else toast(t("Nhập số phút (vd 40) hoặc giờ tắt (vd 23:30)", "Type minutes (e.g. 40) or a time to turn off (e.g. 23:30)"))
+        if (m > 0) setTimer(m) else toast(T("auto.sleep_bad"))
     }
 }
 
 /** 😴: a few lengths to pick from, and where the timer stands (the other entries: remote.json). */
 internal fun MainActivity.timerMenu() {
-    if (kind() != Remote.Kind.ANDROID) { menu(t("Màn hình TV", "TV screen"), -1, remoteMenu("timer")); return }   // LG: the screen off only
+    if (kind() != Remote.Kind.ANDROID) { menu(T("remote.tv_screen"), -1, remoteMenu("timer")); return }   // LG: the screen off only
     if (needsAdb()) return
     rules(null) { r ->
         if (needsSetup(r)) return@rules
         val at = r.optLong("sleep_at")
         val lengths = {
             intArrayOf(15, 30, 45, 60, 90, 120).map { m ->
-                Triple(t("Tắt sau ", "Off in ") + (if (m < 60) "$m " + t("phút", "min") else "${m / 60} " + t("giờ", "h") + (if (m % 60 > 0) " 30" else "")), "") { setTimer(m) }
+                Triple(if (m < 60) T("automation.off_in_min", "n" to m) else if (m % 60 > 0) T("automation.off_in_h_30", "n" to m / 60) else T("automation.off_in_h", "n" to m / 60), "") { setTimer(m) }
             }
         }
         val items = remoteMenu("timer", if (at > 0) setOf("timerOn") else emptySet(), mapOf("lengths" to lengths))
-        menu(if (at > 0) t("TV tự tắt lúc ", "The TV turns off at ") + hm(at, r.optLong("now")) else t("Hẹn giờ tắt TV", "Sleep timer"), if (at > 0) 0 else -1, items)
+        menu(if (at > 0) T("automation.the_tv_turns_off_2", "time" to hm(at, r.optLong("now"))) else T("remote.sleep_timer"), if (at > 0) 0 else -1, items)
     }
 }
 
 /** 🎬: this phone's scenes, and the way to make more (remote.json). */
 internal fun MainActivity.scenesMenu() {
     val scenes = { SceneStore.list(this).map { sc -> Triple((sc.optString("icon") + "  " + sc.optString("name")).trim(), "") { runScene(sc) } } }
-    menu(t("Cảnh", "Scenes"), -1, remoteMenu("scenes", emptySet(), mapOf("scenes" to scenes)))
+    menu(T("remote.scenes"), -1, remoteMenu("scenes", emptySet(), mapOf("scenes" to scenes)))
 }
 
 internal fun MainActivity.runScene(sc: JSONObject) {
@@ -107,12 +106,12 @@ internal fun MainActivity.runScene(sc: JSONObject) {
     val tv = tv
     val b = basic
     val target = if (tv != null && tv.ready()) Scenes.Shell({ tv.shell(it) }) else if (b is dev.tvremote.core.remote.Atv) Headless.keysOnly(b) else if (b != null) dev.tvremote.core.remote.RemoteSteps(b) { } else return
-    toast(t("Đang chạy: ", "Running: ") + sc.optString("name"))
+    toast(T("auto.running", "name" to sc.optString("name")))
     Thread {
         val failed = Scenes.run(steps, target)
         ui.post {
             if (isFinishing || (failed != null && offerSetup(java.io.IOException(failed)))) return@post   // e.g. its timer needs a newer TV Setup
-            toast(if (failed == null) "✓ " + sc.optString("name") else t("Có bước không làm được: ", "Some steps did not work: ") + failed)
+            toast(if (failed == null) "✓ " + sc.optString("name") else T("automation.some_steps_did_not", "steps" to failed))
         }
     }.start()
 }
@@ -146,7 +145,7 @@ private fun MainActivity.doVoice(c: Voice.Command) {
         is Voice.Command.Scene -> SceneStore.find(this, c.id)?.let { runScene(it) }
         is Voice.Command.Timer -> if (!needsAdb()) setTimer(c.minutes)
         is Voice.Command.App -> {
-            toast(t("Đang mở ", "Opening ") + c.name)
+            toast(T("automation.opening", "name" to c.name))
             val tv = tv
             if (tv != null && tv.ready()) Thread { try { Scenes.launch({ tv.shell(it) }, c.pkg) } catch (e: Exception) { ui.post { toast(e.message ?: "") } } }.start()
             else basic?.launch(c.pkg)
@@ -154,7 +153,7 @@ private fun MainActivity.doVoice(c: Voice.Command) {
         is Voice.Command.Key -> {
             val code = Scenes.KEYS[c.key] ?: return
             for (i in 0 until c.times) ui.postDelayed({ press(code, false) }, i * 150L)
-            toast(t("Đã bấm: ", "Pressed: ") + c.key.lowercase().replace('_', ' ') + if (c.times > 1) " × ${c.times}" else "")
+            toast(T("auto.pressed", "key" to c.key.lowercase().replace('_', ' ')) + if (c.times > 1) " × ${c.times}" else "")
         }
     }
 }

@@ -112,62 +112,57 @@ object Diagnose {
     }
 
     /** [title] and [fix]: a short line saying what is wrong, and the one thing to do. */
-    fun say(code: String, f: Facts, vi: Boolean): Pair<String, String> {
-        fun t(v: String, en: String) = if (vi) v else en
+
+    fun say(code: String, f: Facts, lang: String): Pair<String, String> {
+        fun t(id: String, vararg a: Pair<String, Any?>) = Words.get(lang, id, *a)
         return when (code) {
-            CLOCK -> t("Ngày giờ trên TV đang sai", "The TV's date and time are wrong") to
-                t("TV trả lời nhưng kết nối bảo mật bị từ chối. Trên TV: Cài đặt → Hệ thống → Ngày và giờ → bật tự động, rồi thử lại.",
-                    "The TV answers but the secure connection is refused. On the TV: Settings → System → Date & time → set it to automatic, then try again.")
-            NO_WIFI -> t("Máy này chưa vào Wi-Fi", "This device is not on Wi-Fi") to
-                t("Bật Wi-Fi và nối vào cùng mạng với TV, rồi thử lại.", "Turn Wi-Fi on and join the TV's network, then try again.")
-            OTHER_NET -> t("Máy này đang ở mạng khác với TV", "This device is on another network than the TV") to
-                t("TV ở ${f.ip}. Nối máy này vào đúng Wi-Fi của TV (không phải mạng khách hay 4G), rồi thử lại.",
-                    "The TV is at ${f.ip}. Join the TV's own Wi-Fi (not a guest network or mobile data), then try again.")
-            TAILSCALE -> t("Tailscale đang tắt trên máy này", "Tailscale is off on this device") to
-                t("TV ở địa chỉ Tailscale ${f.ip}. Bật Tailscale trên máy này rồi thử lại.", "The TV is at the Tailscale address ${f.ip}. Turn Tailscale on here, then try again.")
-            ALLOW -> t("TV đang chờ bạn cho phép", "The TV is waiting for you to allow this device") to
-                t("Nhìn lên TV: tích “Luôn cho phép” ở hộp “Cho phép gỡ lỗi USB?” rồi chọn OK.", "Look at the TV: tick “Always allow” in the “Allow USB debugging?” box, then choose OK.")
-            ADB_OFF -> t("Gỡ lỗi ADB đang tắt trên TV", "ADB debugging is off on the TV") to
-                t("Các phím vẫn bấm được. Muốn xem hình, mở app, quản lý tệp thì bật “Gỡ lỗi ADB” trong Tùy chọn nhà phát triển của TV.",
-                    "The keys still work. For the picture, apps and files turn on “ADB debugging” in the TV's Developer options.")
-            REMOTE_OFF -> t("Dịch vụ remote của TV không trả lời", "The TV's remote service does not answer") to
-                t("ADB trả lời nên phím đi qua ADB. Nếu muốn dùng remote không qua ADB, khởi động lại TV.", "ADB answers, so keys go through ADB. To use the remote without ADB, restart the TV.")
-            UP -> t("TV đang trả lời", "The TV is answering") to
-                t("Lỗi lúc nãy chỉ thoáng qua. Bấm Thử lại; nếu TV hiện hộp hỏi, chọn Cho phép.", "The error was momentary. Try again; if the TV shows a question, choose Allow.")
-            CLOSED -> t("TV đang bật mạng nhưng chưa nhận lệnh", "The TV is on the network but not listening") to
-                t("Thường là TV đang ngủ nhẹ. Bấm nút nguồn trên điều khiển của TV để đánh thức, chờ vài giây rồi thử lại.",
-                    "Usually the TV is dozing. Press the power button on the TV's own remote, wait a few seconds, then try again.")
-            MOVED -> t("TV đã đổi địa chỉ", "The TV has a new address") to
-                t("Tìm thấy “${f.moved?.name}” ở ${f.moved?.ip} (trước là ${f.ip}). Dùng địa chỉ mới?", "Found “${f.moved?.name}” at ${f.moved?.ip} (it was ${f.ip}). Use the new address?")
-            VPN -> t("VPN đang chặn đường tới TV", "A VPN is in the way") to
-                t("Không tới được TV trong nhà khi VPN bật. Trong app VPN bật cho phép mạng LAN (Local network / Bypass LAN), hoặc tắt VPN rồi thử lại.",
-                    "The TV at home is out of reach while the VPN is on. Allow the local network in the VPN app (Local network / Bypass LAN), or turn the VPN off, then try again.")
-            else -> t("TV không trả lời", "The TV is not answering") to
-                t("TV có thể đang tắt hẳn hoặc ngủ sâu, hoặc đã đổi địa chỉ. Bật TV rồi thử lại, hoặc quét mạng để tìm lại.",
-                    "The TV may be off or asleep, or have a new address. Turn it on and try again, or scan the network to find it.")
+            CLOCK -> t("diagnose_kt.tv_s_date_time") to
+                t("diagnose_kt.tv_answers_but_secure")
+            NO_WIFI -> t("diagnose_kt.device_not_wi_fi") to
+                t("diagnose_kt.turn_wi_fi_join")
+            OTHER_NET -> t("diagnose_kt.device_another_network_than") to
+                t("diagnose_kt.tv_at_join_tv", "ip" to f.ip)
+            TAILSCALE -> t("diagnose_kt.tailscale_off_device") to
+                t("diagnose_kt.tv_at_tailscale_address", "ip" to f.ip)
+            ALLOW -> t("setup.tv_waiting_allow") to
+                t("diagnose_kt.look_at_tv_tick")
+            ADB_OFF -> t("diagnose_kt.adb_debugging_off_tv") to
+                t("diagnose_kt.keys_still_work_picture")
+            REMOTE_OFF -> t("diagnose_kt.tv_s_remote_service") to
+                t("diagnose_kt.adb_answers_so_keys")
+            UP -> t("diagnose_kt.tv_answering") to
+                t("diagnose_kt.error_was_momentary_try")
+            CLOSED -> t("diagnose_kt.tv_network_but_not") to
+                t("diagnose_kt.usually_tv_dozing_press")
+            MOVED -> t("diagnosing.the_tv_has_a") to
+                t("diagnose_kt.found_at_was_use", "name" to f.moved?.name, "ip" to f.moved?.ip, "was" to f.ip)
+            VPN -> t("diagnose_kt.vpn_way") to
+                t("diagnose_kt.tv_at_home_out")
+            else -> t("diagnose_kt.tv_not_answering") to
+                t("diagnose_kt.tv_may_be_off")
         }
     }
 
-    private fun checks(f: Facts, code: String, vi: Boolean): List<Check> {
-        fun t(v: String, en: String) = if (vi) v else en
+    private fun checks(f: Facts, code: String, lang: String): List<Check> {
+        fun t(id: String, vararg a: Pair<String, Any?>) = Words.get(lang, id, *a)
         val out = ArrayList<Check>()
         out.add(Check("net", when (f.net) { Net.NA -> null; Net.OK -> true; else -> false },
             when (f.net) {
-                Net.NA -> t("Mạng của máy này: không cần kiểm tra", "This device's network: nothing to check")
-                Net.OK -> t("Máy này cùng mạng với TV", "This device is on the TV's network")
-                Net.NONE -> t("Máy này không có Wi-Fi", "This device has no Wi-Fi")
-                Net.OTHER -> t("Máy này ở mạng khác TV", "This device is on another network than the TV")
-                Net.TAILSCALE_OFF -> t("Tailscale đang tắt", "Tailscale is off")
+                Net.NA -> t("diagnose_kt.device_s_network_nothing")
+                Net.OK -> t("diagnose_kt.device_tv_s_network")
+                Net.NONE -> t("diagnose_kt.device_has_no_wi")
+                Net.OTHER -> t("diagnose_kt.device_another_network_than_2")
+                Net.TAILSCALE_OFF -> t("diagnose_kt.tailscale_off")
             }))
         val open = f.open.sorted()
         out.add(Check("tv", f.alive, when {
-            open.isNotEmpty() -> t("TV trả lời ở cổng ", "The TV answers on port ") + open.joinToString(", ")
-            f.alive -> t("TV có mạng nhưng các cổng đều đóng", "The TV is on the network but its ports are closed")
-            else -> t("Không có gì trả lời ở ${f.ip}", "Nothing answers at ${f.ip}")
+            open.isNotEmpty() -> t("diagnose_kt.tv_answers_port", "open" to open.joinToString(", "))
+            f.alive -> t("diagnose_kt.tv_network_but_its")
+            else -> t("diagnose_kt.nothing_answers_at", "ip" to f.ip)
         }))
-        if (f.vpn) out.add(Check("vpn", !(f.home && open.isEmpty()), t("VPN đang bật", "A VPN is on")))
-        if (f.adb in listOf("ready", "unauthorized", "waiting", "offline")) out.add(Check("adb", f.adb == "ready", t("ADB của app: ", "The app's ADB: ") + f.adb))
-        if (f.tls) out.add(Check("clock", if (code == CLOCK) false else null, t("Lỗi bảo mật (ngày giờ?)", "Secure connection error (date and time?)")))
+        if (f.vpn) out.add(Check("vpn", !(f.home && open.isEmpty()), t("diagnose_kt.vpn")))
+        if (f.adb in listOf("ready", "unauthorized", "waiting", "offline")) out.add(Check("adb", f.adb == "ready", t("diagnose_kt.app_s_adb", "adb" to f.adb)))
+        if (f.tls) out.add(Check("clock", if (code == CLOCK) false else null, t("diagnose_kt.secure_connection_error_date")))
         return out
     }
 
@@ -175,7 +170,8 @@ object Diagnose {
      * Looks, then decides. [err] is the error the person met (its words tell a wrong clock); [name] the TV's saved name, used
      * to look for it under another address when nothing answers. Takes about [Real.PORT_MS] plus the search, never more than ~3.5 s.
      */
-    fun run(probe: Probe, ip: String, kind: String, name: String, err: String, vi: Boolean): Result {
+
+    fun run(probe: Probe, ip: String, kind: String, name: String, err: String, lang: String): Result {
         val start = System.currentTimeMillis()
         val ports = ports(kind)
         val pool = Executors.newFixedThreadPool(ports.size + 2) { Thread(it, "diagnose").apply { isDaemon = true } }
@@ -192,16 +188,17 @@ object Diagnose {
                 moved = try { probe.find(kind, name, ip) } catch (e: Exception) { null }
                 if (moved != null) { f = Facts(kind, ip, f.ports, f.net, f.vpn, f.adb, f.tls, moved); code = decide(f) }
             }
-            val cs = checks(f, code, vi)
+            val cs = checks(f, code, lang)
             return Result(code, ip, kind, moved, cs, System.currentTimeMillis() - start).also { WireLog.all.add("·", "diagnose $ip $kind -> $code (${it.ms} ms)") }
         } finally {
             pool.shutdownNow()
         }
     }
 
-    fun json(r: Result, vi: Boolean): JSONObject {
+
+    fun json(r: Result, lang: String): JSONObject {
         val f = Facts(r.kind, r.ip, emptyMap(), Net.NA, false, null, false, r.found)
-        val (title, fix) = say(r.code, f, vi)
+        val (title, fix) = say(r.code, f, lang)
         return JSONObject().put("code", r.code).put("title", title).put("fix", fix).put("ip", r.ip).put("kind", r.kind).put("ms", r.ms)
             .put("actions", JSONArray(actions(r.code)))
             .put("found", r.found?.let { JSONObject().put("ip", it.ip).put("name", it.name) } ?: JSONObject.NULL)
@@ -209,8 +206,9 @@ object Diagnose {
     }
 
     /** The conclusion as one block of words (the phone's native screens, which have a text box and no cards). */
-    fun text(r: Result, vi: Boolean): String {
-        val (title, fix) = say(r.code, Facts(r.kind, r.ip, emptyMap(), Net.NA, false, null, false, r.found), vi)
+
+    fun text(r: Result, lang: String): String {
+        val (title, fix) = say(r.code, Facts(r.kind, r.ip, emptyMap(), Net.NA, false, null, false, r.found), lang)
         return "$title\n$fix"
     }
 

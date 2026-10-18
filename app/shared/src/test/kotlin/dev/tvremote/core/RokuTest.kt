@@ -105,7 +105,7 @@ class RokuTest {
         val r = Roku(File("."), "127.0.0.1", start())
         try { r.connect {}; fail("connected") } catch (e: IOException) { assertTrue(e.message!!.startsWith(Roku.LIMITED)) }
         assertFalse(r.ready())
-        assertTrue(Errors.say(IOException(Roku.LIMITED), false).contains("Control by mobile apps"))
+        assertTrue(Errors.say(IOException(Roku.LIMITED), "en").contains("Control by mobile apps"))
     }
 
     @Test fun findsItByItsSsdpAnswerAndPorts() {

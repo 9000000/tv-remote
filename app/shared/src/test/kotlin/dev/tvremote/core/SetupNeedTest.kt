@@ -23,9 +23,9 @@ class SetupNeedTest {
         assertEquals("setup:old:pic:0.1.0:2.20.0", SetupNeed.Missing("pic", "2.20.0").message)
         assertEquals("setup:missing:draw:0.1.0:", SetupNeed.Missing("draw", "").message)
         assertEquals("Đưa ảnh lên TV cần TV Setup 0.1.0 trở lên (TV đang có 2.20.0). Cập nhật TV Setup?",
-            SetupNeed.say(java.io.IOException("2: " + SetupNeed.Missing("pic", "2.20.0").message), true))
-        assertEquals("Drawing on the TV needs the TV Setup app on the TV. Install TV Setup?", SetupNeed.say(SetupNeed.Missing("draw", ""), false))
-        assertNull(SetupNeed.say(java.io.IOException("timed out"), true))
+            SetupNeed.say(java.io.IOException("2: " + SetupNeed.Missing("pic", "2.20.0").message), "vi"))
+        assertEquals("Drawing on the TV needs the TV Setup app on the TV. Install TV Setup?", SetupNeed.say(SetupNeed.Missing("draw", ""), "en"))
+        assertNull(SetupNeed.say(java.io.IOException("timed out"), "vi"))
     }
 
     @Test fun rulesWithNoAnswer() {

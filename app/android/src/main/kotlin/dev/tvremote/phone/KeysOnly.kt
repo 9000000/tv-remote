@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.os.Build
 import android.view.View
 import android.text.InputType
@@ -18,7 +19,7 @@ import java.util.Locale
 /** What the TV at [ip] is: saved with it ("kind:<ip>"), found by the scan, or Android TV. */
 internal fun MainActivity.kindOf(ip: String): String = Remote.Kind.of(pref("kind:$ip"))
 
-private fun MainActivity.keysLine(a: Remote) = if (a.kind == Remote.Kind.ANDROID) t("chỉ bấm phím", "keys only") else "TV " + Remote.Kind.name(a.kind) + t(" (thử nghiệm)", " (beta)")
+private fun MainActivity.keysLine(a: Remote) = if (a.kind == Remote.Kind.ANDROID) T("keys_only.keys_only") else T("keys_only.tv_beta", "kind" to Remote.Kind.name(a.kind))
 
 internal fun MainActivity.refused(err: String?): Boolean {
     val e = err?.lowercase(Locale.ROOT) ?: ""
@@ -40,23 +41,22 @@ internal fun MainActivity.offerBasic(ip: String, error: String) {
             if (!keys) { disconnect(error); return@post }
             disconnect(null)
             if (prefs.getBoolean("atv:$ip", false)) startBasic(ip, false)
-            else Popup.Builder(this).setTitle(t("TV chưa bật Gỡ lỗi ADB", "ADB debugging is off on this TV"))
-                .setMessage(t("Vẫn bấm phím điều khiển được, sau khi ghép bằng mã hiện trên TV. Từ đó bạn mở Cài đặt của TV để bật ADB, rồi dùng đủ chức năng (xem hình, ứng dụng, tệp...).",
-                    "You can still press keys, after pairing with a code the TV shows. From there open the TV’s Settings to turn ADB on, then everything works (picture, apps, files...)."))
-                .setPositiveButton(t("Ghép bằng mã", "Pair with a code")) { _, _ -> startBasic(ip, false) }
-                .setNegativeButton(t("Đóng", "Close")) { _, _ -> message(error, true) }
+            else Popup.Builder(this).setTitle(T("keys_only.adb_debugging_is_off"))
+                .setMessage(T("keys_only.you_can_still_press"))
+                .setPositiveButton(T("keys_only.pair_with_a_code")) { _, _ -> startBasic(ip, false) }
+                .setNegativeButton(T("common.close")) { _, _ -> message(error, true) }
                 .setOnCancelListener { message(error, true) }.show()
         }
     }.start()
 }
 
 internal fun MainActivity.startBasic(ip: String, justPaired: Boolean) {
-    message(t("Đang kết nối ", "Connecting to ") + ip + "...", false)
+    message(T("keys_only.connecting_to", "ip" to ip), false)
     val a = Remote.of(kindOf(entry ?: ip), filesDir, ip)
     Thread {
         var asked = false
         while (!a.ready() && !isFinishing) {                          // LG / Samsung: the TV asks; say so while it does
-            if (a.asking && !asked) { asked = true; ui.post { message(t("Nhìn lên TV: chọn Cho phép để điện thoại này điều khiển TV.", "Look at the TV: choose Allow to let this phone control it."), false) } }
+            if (a.asking && !asked) { asked = true; ui.post { message(T("keys_only.look_at_the_tv"), false) } }
             try { Thread.sleep(300) } catch (e: InterruptedException) { break }
             if (a.kind == Remote.Kind.ANDROID) break
         }
@@ -85,10 +85,10 @@ internal fun MainActivity.startBasic(ip: String, justPaired: Boolean) {
             }
         } catch (e: Remote.Refused) {
             a.close()
-            ui.post { message(t("TV đã từ chối. Bấm vào TV trong danh sách để thử lại, rồi chọn Cho phép trên TV.", "The TV said no. Tap the TV in the list to try again, then choose Allow on the TV."), true) }
+            ui.post { message(T("keys_only.the_tv_said_no"), true) }
         } catch (e: Atv.NotPaired) {
             a.close()
-            if (justPaired) ui.post { message(t("TV không nhận kết nối sau khi ghép. Thử lại.", "The TV did not accept the connection after pairing. Try again."), true) }
+            if (justPaired) ui.post { message(T("keys_only.the_tv_did_not"), true) }
             else pair(ip)
         } catch (e: Exception) {
             a.close()
@@ -102,12 +102,12 @@ internal fun MainActivity.keysLost(a: Remote, ip: String) {
     basic = null
     a.close()
     if (foreground) resumeBasic(ip)
-    else { keysAway = true; status.text = title(entry ?: ip) + " · " + t("kết nối lại khi mở app", "reconnects when the app is open") }
+    else { keysAway = true; status.text = title(entry ?: ip) + " · " + T("phone.reconnects_when_the_app") }
 }
 
 /** The keys-only connection again, to a TV this phone is paired with, staying on the remote; the list of TVs only if it fails. */
 internal fun MainActivity.resumeBasic(ip: String) {
-    waitFor(title(entry ?: ip), t("Đang kết nối lại...", "Reconnecting..."))
+    waitFor(title(entry ?: ip), T("keys_only.reconnecting"))
     Thread {
         val a = Remote.of(kindOf(entry ?: ip), filesDir, ip)
         try {
@@ -136,7 +136,7 @@ internal fun MainActivity.watchAdb(a: Atv, ip: String) {
             if (basic === a && open(ip, 5555, 1200)) {
                 ui.post {
                     if (basic !== a || isFinishing) return@post
-                    Toast.makeText(this, t("TV đã bật ADB: đang chuyển sang kết nối đầy đủ. Nhìn lên TV và chọn “Luôn cho phép”.", "ADB is on: switching to the full connection. Look at the TV and choose “Always allow”."), Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, T("keys_only.adb_is_on_switching"), Toast.LENGTH_LONG).show()
                     val e = entry
                     disconnect(null)
                     connect(ip, e)
@@ -163,17 +163,17 @@ internal fun MainActivity.pair(ip: String) {
     val p = Remote.of(kindOf(entry ?: ip), filesDir, ip) as CodePairing
     try { p.startPairing() } catch (e: Exception) {
         p.close()
-        ui.post { message(t("Không ghép được với TV: ", "Could not pair with the TV: ") + e.message, true) }
+        ui.post { message(T("keys_only.could_not_pair_with", "error" to e.message), true) }
         return
     }
     ui.post {
         message(null, false)
-        val code = input(if (vidaa) t("Mã 4 số trên TV", "The 4 digits on the TV") else t("Mã 6 ký tự trên TV", "The 6 characters on the TV"))
+        val code = input(if (vidaa) T("keys_only.the_4_digits_on") else T("keys_only.the_6_characters_on"))
         code.inputType = if (vidaa) android.text.InputType.TYPE_CLASS_NUMBER
             else android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         val wrap = inDialog(code)
-        Popup.Builder(this).setTitle(t("Nhập mã đang hiện trên TV", "Type the code shown on the TV")).setView(wrap)
-            .setPositiveButton(t("Ghép", "Pair")) { _, _ ->
+        Popup.Builder(this).setTitle(T("keys_only.type_the_code_shown")).setView(wrap)
+            .setPositiveButton(T("keys_only.pair")) { _, _ ->
                 val typed = code.text.toString()
                 Thread {
                     try {
@@ -181,24 +181,22 @@ internal fun MainActivity.pair(ip: String) {
                         ui.post { startBasic(ip, true) }
                     } catch (e: Exception) {
                         p.close()
-                        ui.post { message(t("Mã không đúng. Bấm vào TV trong danh sách để thử lại, TV sẽ hiện mã mới.", "Wrong code. Tap the TV in the list to try again: it will show a new code."), true) }
+                        ui.post { message(T("keys_only.wrong_code_tap_the"), true) }
                     }
                 }.start()
             }
-            .setNegativeButton(t("Hủy", "Cancel")) { _, _ -> p.close() }
+            .setNegativeButton(T("common.cancel")) { _, _ -> p.close() }
             .setOnCancelListener { p.close() }.show()
     }
 }
 
 internal fun MainActivity.explain(err: String?): String {
     val e = err?.lowercase(Locale.ROOT) ?: ""
-    if (e.contains(dev.tvremote.core.remote.Roku.LIMITED) || err?.contains(Vidaa.NO_CERT) == true || err?.contains(dev.tvremote.core.Lan.BLOCKED) == true) return dev.tvremote.core.Errors.say(java.io.IOException(err), VI)
+    if (e.contains(dev.tvremote.core.remote.Roku.LIMITED) || err?.contains(Vidaa.NO_CERT) == true || err?.contains(dev.tvremote.core.Lan.BLOCKED) == true) return dev.tvremote.core.Errors.say(java.io.IOException(err), dev.tvremote.core.Words.lang)
     if (refused(err))
-        return t("TV từ chối kết nối: chưa bật “Gỡ lỗi ADB”.\n\nTrên TV: Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng”. Rồi Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB” (hoặc “Gỡ lỗi USB”).",
-            "The TV refused the connection: “ADB debugging” is off.\n\nOn the TV: Settings → Device Preferences → About → press OK 7 times on “Build”. Then Developer options → turn on “ADB debugging” (or “USB debugging”).")
+        return T("keys_only.the_tv_refused_the")
     if (e.contains("timed out") || e.contains("timeout") || e.contains("unreachable") || e.contains("no route") || e.contains("failed to connect"))
-        return t("Không tới được TV ở địa chỉ này. TV có đang bật không? Điện thoại phải cùng Wi-Fi với TV, hoặc cả hai cùng bật Tailscale (khi đó dùng IP 100.x của TV).",
-            "Cannot reach the TV at this address. Is it on? The phone must be on the TV’s Wi-Fi, or both must have Tailscale on (then use the TV’s 100.x IP).") + "\n\n" +
-            t("Nếu TV đang tắt, bấm nút nguồn cạnh tên TV để đánh thức.", "If the TV is off, tap the power button next to it to wake it.") + "\n\n(" + err + ")"
-    return t("Lỗi: ", "Error: ") + err
+        return T("keys_only.cannot_reach_the_tv") + "\n\n" +
+            T("keys_only.if_the_tv_is") + "\n\n(" + err + ")"
+    return T("keys_only.error", "error" to err)
 }

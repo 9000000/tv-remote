@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.view.Gravity
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -17,7 +18,7 @@ private const val APP_APK = "https://github.com/HoangTran0410/tv-remote/releases
 internal fun MainActivity.shareDialog() {
     if (needsAdb()) return
     val tv = tv
-    if (tv == null || !tv.ready()) { say(t("Đang kết nối TV, thử lại sau giây lát.", "Still connecting to the TV, try again in a moment."), false); return }
+    if (tv == null || !tv.ready()) { say(T("share.still_connecting_to_the"), false); return }
     val at = host ?: return
     val ask = { scope: String, then: (JSONObject) -> Unit ->
         Thread {
@@ -35,8 +36,8 @@ private fun MainActivity.showShare(r: JSONObject, ask: (String, (JSONObject) -> 
     val tvPane = col()
     val appPane = col()
     val tabs = LinearLayout(this)
-    val tabTv = button("@tv|" + t("Chia sẻ TV", "Share the TV"), BTN)
-    val tabApp = button("@phone|" + t("Chia sẻ app", "Share the app"), BTN)
+    val tabTv = button("@tv|" + T("share.share_the_tv"), BTN)
+    val tabApp = button("@phone|" + T("share.share_the_app"), BTN)
     val pick = { onTv: Boolean ->
         tvPane.visibility = if (onTv) android.view.View.VISIBLE else android.view.View.GONE
         appPane.visibility = if (onTv) android.view.View.GONE else android.view.View.VISIBLE
@@ -50,8 +51,8 @@ private fun MainActivity.showShare(r: JSONObject, ask: (String, (JSONObject) -> 
     body.addView(tvPane)
     body.addView(appPane)
     val warn = when (r.optString("warn")) {
-        "tailscale" -> t("Máy này đang nối TV qua Tailscale: điện thoại quét phải ở cùng Wi-Fi với TV.", "This device reaches the TV through Tailscale: the phone that scans must be on the TV's Wi-Fi.")
-        "tailscale_only" -> t("TV không có địa chỉ Wi-Fi: điện thoại quét cần bật Tailscale.", "The TV has no Wi-Fi address: the phone that scans needs Tailscale on.")
+        "tailscale" -> T("share.this_device_reaches_the")
+        "tailscale_only" -> T("setup.warn_tailscale_only")
         else -> null
     }
     if (warn != null) tvPane.addView(label(warn, 14, ERR_TEXT), gap(12))
@@ -59,15 +60,15 @@ private fun MainActivity.showShare(r: JSONObject, ask: (String, (JSONObject) -> 
     val url = r.optString("url")
     if (url.isNotEmpty()) {
         val qrBox = col()
-        val scopes = listOf(Triple("full", "shield", t("Toàn quyền", "Full access")), Triple("remote", "gamepad", t("Chỉ remote", "Remote only")),
-            Triple("view", "eye", t("Chỉ xem", "View only")))
+        val scopes = listOf(Triple("full", "shield", T("share.full_access")), Triple("remote", "gamepad", T("core.remote_only")),
+            Triple("view", "eye", T("core.view_only")))
         val row = LinearLayout(this)
         var scope = "remote"
         val draw = { link: String ->
             qrBox.removeAllViews()
-            if (link.isNotEmpty()) qr(qrBox, link, if (scope == "view") t("Xem TV", "Watch the TV") else t("Mở remote", "Open the remote"),
-                (if (wifi) t("Điện thoại phải cùng Wi-Fi với TV", "The phone must be on the TV's Wi-Fi") + "\n" else "") +
-                t("Dùng 1 lần, trong 10 phút", "Once, within 10 minutes"))
+            if (link.isNotEmpty()) qr(qrBox, link, if (scope == "view") T("share.watch_the_tv") else T("share.open_the_remote"),
+                (if (wifi) T("share.the_phone_must_be") + "\n" else "") +
+                T("share.once_within_10_minutes"))
         }
         val buttons = scopes.map { (k, icon, words) -> chip(icon, words, k == scope) }
         buttons.forEachIndexed { i, b ->
@@ -80,25 +81,25 @@ private fun MainActivity.showShare(r: JSONObject, ask: (String, (JSONObject) -> 
             }
             row.addView(b, cell(64, i > 0))
         }
-        tvPane.addView(label(t("Người quét được làm gì", "What the one who scans may do"), 13, MUTED), gap(14))
+        tvPane.addView(label(T("share.what_the_one_who"), 13, MUTED), gap(14))
         tvPane.addView(row, gap(6))
         tvPane.addView(qrBox)
         draw(url)
     }
     else when (r.optString("setup")) {
-        "missing" -> tvPane.addView(label(t("TV chưa có TV Setup: chỉ chia sẻ được app.", "The TV has no TV Setup: only the app can be shared."), 14, MUTED), gap(12))
+        "missing" -> tvPane.addView(label(T("share.the_tv_has_no"), 14, MUTED), gap(12))
         "old" -> {
-            val up = button("@upload|" + t("Cập nhật TV Setup để chia sẻ remote", "Update TV Setup to share the remote"), BTN)
+            val up = button("@upload|" + T("share.update_tv_setup_to"), BTN)
             up.setOnClickListener { offerSetup(SetupNeed.Missing("invite", r.optString("have"))) }
             tvPane.addView(up, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(12) })
         }
-        else -> tvPane.addView(label(t("Không lấy được mã từ TV Setup: ", "TV Setup gave no code: ") + r.optString("error"), 14, ERR_TEXT), gap(12))
+        else -> tvPane.addView(label(T("share.tv_setup_gave_no", "error" to r.optString("error")), 14, ERR_TEXT), gap(12))
     }
-    qr(appPane, APP_APK, t("App Android", "Android app"), t("Quét để tải app.", "Scan to get the app."))
+    qr(appPane, APP_APK, T("share.android_app"), T("setup.qr_app_short"))
     pick(true)
     val scroll = android.widget.ScrollView(this)
     scroll.addView(body)
-    Popup.Builder(this).setTitle(t("Chia sẻ", "Share")).setView(scroll).setPositiveButton(t("Xong", "Done"), null).show()
+    Popup.Builder(this).setTitle(T("share.share")).setView(scroll).setPositiveButton(T("drawing.done"), null).show()
 }
 
 /** A choice among the three scopes: its icon above the words, so three fit across a phone. */

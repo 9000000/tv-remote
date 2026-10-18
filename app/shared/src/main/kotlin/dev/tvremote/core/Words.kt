@@ -1,0 +1,56 @@
+package dev.tvremote.core
+
+import org.json.JSONObject
+import java.io.File
+import java.io.InputStream
+import java.util.concurrent.ConcurrentHashMap
+
+/**
+ * The apps' words by id, from the files the page reads too (app/shared/web/i18n/<lang>.json, js/i18n.js): vi.json lists every
+ * id, each other language the same ids; a missing one falls back to English, then Vietnamese, as on the page. `{name}` in the
+ * words is filled from the args; an entry `{ "one": ..., "other": ... }` is picked by the arg `n`.
+ * A new language is a file there, nothing in the code.
+ */
+object Words {
+    private val books = ConcurrentHashMap<String, Map<String, Any>>()   // first: lang below reads it while the object starts
+
+    /** Opens i18n/<lang>.json: the APKs' assets (the web folder is packed as assets), the computer app's page folder. */
+    @Volatile var open: (String) -> InputStream? = { name ->                         // unit tests: run in app/shared or app/<app>
+        listOf(File("web", name), File("../shared/web", name)).firstOrNull { it.isFile }?.inputStream() }
+        set(v) { field = v; books.clear() }
+
+    /** The language the app's own screens speak (the phone's Settings choice, the TV's language). */
+    @Volatile var lang: String = pick(java.util.Locale.getDefault().language)
+
+    private fun book(l: String): Map<String, Any> = books.getOrPut(l) {
+        try {
+            val j = open("i18n/$l.json")?.use { JSONObject(it.readBytes().toString(Charsets.UTF_8)) } ?: return@getOrPut emptyMap()
+            j.keys().asSequence().toList().associateWith { k ->                    // keys(): Android's org.json has no keySet()
+                j.get(k).let { v -> if (v is JSONObject) v.keys().asSequence().toList().associateWith { v.getString(it) } else v.toString() } }
+        } catch (e: Exception) { emptyMap() }
+    }
+
+    /** A language the files have, else English: what a page or a phone asking for [l] ("vi", "en", "pt-BR"...) gets. */
+    fun pick(l: String?): String {
+        val c = (l ?: "").lowercase().substringBefore('-').substringBefore('_')
+        return if (c == "vi" || c == "en" || (c.matches(Regex("[a-z]{2,3}")) && book(c).isNotEmpty())) c else "en"
+    }
+
+    /** The words of [id] in [lang]. */
+    fun get(lang: String, id: String, vararg args: Pair<String, Any?>): String {
+        var s: Any? = null
+        for (l in linkedSetOf(lang, "en", "vi")) { s = book(l)[id]; if (s != null) break }
+        if (s == null) return id
+        val n = args.firstOrNull { it.first == "n" }?.second?.toString()?.toDoubleOrNull()
+        val text = if (s is Map<*, *>) (s[if (n == 1.0) "one" else "other"] ?: s["other"]).toString() else s.toString()
+        if (args.isEmpty()) return text
+        val m = args.toMap()
+        return Regex("\\{(\\w+)\\}").replace(text) { r -> if (r.groupValues[1] in m) m[r.groupValues[1]].toString() else r.value }
+    }
+
+    /** In the language of the app's own screens. */
+    fun t(id: String, vararg args: Pair<String, Any?>): String = get(lang, id, *args)
+}
+
+/** [Words.t]: the words of [id] in the app's language. */
+fun T(id: String, vararg args: Pair<String, Any?>): String = Words.t(id, *args)

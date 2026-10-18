@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
@@ -13,10 +14,10 @@ import org.json.JSONObject
 private val SECONDS = intArrayOf(3, 5, 10, 30)                        // the same chips as the page's
 
 private fun cornerWords(c: String) = when (c) {
-    "top-left" -> t("↖ Trên trái", "↖ Top left")
-    "top-right" -> t("↗ Trên phải", "↗ Top right")
-    "bottom-left" -> t("↙ Dưới trái", "↙ Bottom left")
-    else -> t("↘ Dưới phải", "↘ Bottom right")
+    "top-left" -> T("notify.top_left")
+    "top-right" -> T("notify.top_right")
+    "bottom-left" -> T("notify.bottom_left")
+    else -> T("notify.bottom_right")
 }
 
 /** A row of choices that look like buttons, the picked one on (setOn); [pick] is told the new choice. */
@@ -42,15 +43,15 @@ internal fun MainActivity.notifyDialog() {
 private fun MainActivity.showNotifyDialog() {
     var corner = Notify.corner(prefs.getString("notify.corner", null))
     var seconds = Notify.seconds(prefs.getInt("notify.seconds", Notify.SECONDS)).let { if (it in SECONDS) it else Notify.SECONDS }
-    val title: EditText = input(t("Tiêu đề (không bắt buộc)", "Title (optional)")).also { it.filters = arrayOf(android.text.InputFilter.LengthFilter(Notify.MAX_TITLE)) }
-    val text: EditText = input(t("Nội dung ngắn, vd Xuống ăn cơm!", "A short message, e.g. Dinner is ready!")).also {
+    val title: EditText = input(T("notify.title_optional")).also { it.filters = arrayOf(android.text.InputFilter.LengthFilter(Notify.MAX_TITLE)) }
+    val text: EditText = input(T("notify.short_message")).also {
         it.setSingleLine(false); it.minLines = 2; it.maxLines = 4
         it.filters = arrayOf(android.text.InputFilter.LengthFilter(Notify.MAX_TEXT))
     }
     val body = col()
     body.addView(title)
     body.addView(text, gap(8))
-    body.addView(head(t("GÓC MÀN HÌNH", "CORNER")), gap(14))
+    body.addView(head(T("notify_dialog.corner")), gap(14))
     val corners = col()
     val seconds2 = LinearLayout(this)
     fun draw() {
@@ -58,23 +59,23 @@ private fun MainActivity.showNotifyDialog() {
         for ((n, pair) in Notify.CORNERS.chunked(2).withIndex())
             corners.addView(chips(pair.map { it to cornerWords(it) }, corner) { corner = it; draw() }, gap(if (n == 0) 6 else 6))
         seconds2.removeAllViews()
-        seconds2.addView(chips(SECONDS.map { it.toString() to "$it " + t("giây", "s") }, seconds.toString()) { seconds = it.toInt(); draw() }, LinearLayout.LayoutParams(-1, -2))
+        seconds2.addView(chips(SECONDS.map { it.toString() to T("notify.seconds_n", "n" to it) }, seconds.toString()) { seconds = it.toInt(); draw() }, LinearLayout.LayoutParams(-1, -2))
     }
     draw()
     body.addView(corners)
-    body.addView(head(t("HIỆN TRONG", "STAYS FOR")), gap(14))
+    body.addView(head(T("notify_dialog.stays_for")), gap(14))
     body.addView(seconds2, gap(6))
-    Popup.Builder(this).setTitle(t("Gửi thông báo lên TV", "Notify the TV")).setView(inDialog(body))
-        .setPositiveButton(t("Gửi", "Send")) { _, _ ->
+    Popup.Builder(this).setTitle(T("notify_dialog.notify_the_tv")).setView(inDialog(body))
+        .setPositiveButton(T("notify.send")) { _, _ ->
             val msg = JSONObject().put("title", title.text.toString().trim()).put("text", text.text.toString().trim()).put("corner", corner).put("seconds", seconds)
             if (msg.getString("title").isEmpty() && msg.getString("text").isEmpty()) {
-                Toast.makeText(this, t("Gõ nội dung cần gửi", "Type what to send"), Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, T("notify.type_something"), Toast.LENGTH_SHORT).show()
                 return@setPositiveButton
             }
             prefs.edit().putString("notify.corner", corner).putInt("notify.seconds", seconds).apply()
             sendNotify(msg)
         }
-        .setNegativeButton(t("Hủy", "Cancel"), null).show()
+        .setNegativeButton(T("common.cancel"), null).show()
 }
 
 private fun MainActivity.sendNotify(msg: JSONObject) {
@@ -83,10 +84,10 @@ private fun MainActivity.sendNotify(msg: JSONObject) {
         val err = try { Notify.send({ tv.shell(it) }, msg); null } catch (e: Exception) { e }
         ui.post {
             if (isFinishing) return@post
-            if (err == null) Toast.makeText(this, t("Đã gửi lên TV", "Sent to the TV"), Toast.LENGTH_SHORT).show()
+            if (err == null) Toast.makeText(this, T("notify.sent"), Toast.LENGTH_SHORT).show()
             else if (!offerSetup(err)) Toast.makeText(this, if ("notify:nooverlay" in (err.message ?: ""))
-                t("TV này không cho app hiện thông báo đè lên màn hình.", "This TV does not let apps show a notification over its screen.")
-                else Errors.say(err, VI), Toast.LENGTH_LONG).show()
+                T("notify_dialog.this_tv_does_not")
+                else Errors.say(err, dev.tvremote.core.Words.lang), Toast.LENGTH_LONG).show()
         }
     }.start()
 }

@@ -8,60 +8,52 @@ import dev.tvremote.core.ontv.SetupNeed
 import dev.tvremote.core.ontv.Tailscale
 /** Turns the errors people actually meet (a TV with the wrong date, no Internet, a TV that stops answering) into words they can act on. */
 object Errors {
-    fun say(e: Throwable, vi: Boolean): String {
-        fun t(v: String, en: String) = if (vi) v else en
+
+    fun say(e: Throwable, lang: String): String {
+        fun t(id: String, vararg a: Pair<String, Any?>) = Words.get(lang, id, *a)
         val all = generateSequence(e) { it.cause }.joinToString(" ") { it.javaClass.simpleName + ": " + (it.message ?: "") }
         WireLog.all.add("·", "error " + all)
-        SetupNeed.say(e, vi)?.let { return it }
-        if (all.contains("stopped") && generateSequence(e) { it.cause }.any { it is Cancelled }) return t("Đã dừng.", "Stopped.")
-        NoRoom.parse(all)?.let { return it.say(vi) }                  // the TV has no room: sizes, and what to do
+        SetupNeed.say(e, lang)?.let { return it }
+        if (all.contains("stopped") && generateSequence(e) { it.cause }.any { it is Cancelled }) return t("errors.stopped")
+        NoRoom.parse(all)?.let { return it.say(lang) }                  // the TV has no room: sizes, and what to do
         return when {
             all.contains(dev.tvremote.update.Release.MISMATCH) || all.contains(dev.tvremote.update.Release.UNSIGNED) ->
-                t("Bản cập nhật tải về không khớp chữ ký của dự án nên đã bị xóa, không cài. Thử lại sau.",
-                    "The downloaded update does not match the project's signature, so it was deleted, not installed. Try again later.")
-            all.contains("adb pair: wrong code") -> t("Mã ghép nối không đúng hoặc đã hết hạn. Xem mã mới trên TV rồi nhập lại.", "The pairing code is wrong or has expired. Read the new code on the TV and type it again.")
-            all.contains("adb pair: not a pairing port") -> t("Cổng này không phải cổng ghép nối. Dùng đúng địa chỉ IP và cổng trong hộp \"Ghép nối thiết bị\" trên TV.", "That is not the pairing port. Use the IP address and port from the TV's \"Pair device\" box.")
-            all.contains("adb tls: this device is not paired") -> t("TV chưa ghép với app này. Ghép nối bằng Gỡ lỗi không dây trước.", "The TV is not paired with this app yet. Pair through Wireless debugging first.")
-            all.contains("adb tls: this app cannot pair") -> t("App này không ghép nối được bằng Gỡ lỗi không dây trên thiết bị này.", "This app cannot pair through Wireless debugging on this device.")
+                t("errors.downloaded_update_does_not")
+            all.contains("adb pair: wrong code") -> t("errors.pairing_code_wrong_has")
+            all.contains("adb pair: not a pairing port") -> t("errors.not_pairing_port_use")
+            all.contains("adb tls: this device is not paired") -> t("errors.tv_not_paired_with")
+            all.contains("adb tls: this app cannot pair") -> t("errors.app_cannot_pair_through")
             Regex("SSLHandshake|CertPathValidator|Chain validation|CERTIFICATE_VERIFY|not yet valid|expired", RegexOption.IGNORE_CASE).containsMatchIn(all) ->
-                t("Không mở được kết nối bảo mật. Ngày giờ trên TV có đúng không? (Cài đặt → Hệ thống → Ngày và giờ)",
-                    "Could not open a secure connection. Is the TV's date and time right? (Settings → System → Date & time)")
-            all.contains(Lan.BLOCKED) -> t("Đang bật VPN nên không tới được TV trong nhà. TV có đang bật và cùng Wi-Fi không? Nếu có, trong app VPN bật cho phép mạng LAN (Local network / Bypass LAN), hoặc tắt VPN.",
-                "A VPN is on, so the TV at home is out of reach. Is the TV on and on the same Wi-Fi? If so, allow the local network in the VPN app (Local network / Bypass LAN), or turn the VPN off.")
-            all.contains(dev.tvremote.core.adb.AdbLink.ASKING) -> t("TV đang hỏi “Cho phép gỡ lỗi USB?”: nhìn lên TV, chọn “Luôn cho phép”.", "The TV asks “Allow USB debugging?”: look at the TV, choose “Always allow”.")
-            all.contains(dev.tvremote.core.adb.AdbLink.STILL) -> t("Vẫn đang kết nối ADB tới TV. Thử lại sau giây lát.", "Still connecting to the TV over ADB. Try again in a moment.")
-            all.contains("UnknownHost") -> t("TV chưa vào được Internet.", "The TV cannot reach the Internet.")
+                t("errors.could_not_open_secure")
+            all.contains(Lan.BLOCKED) -> t("errors.vpn_so_tv_at")
+            all.contains(dev.tvremote.core.adb.AdbLink.ASKING) -> t("errors.tv_asks_allow_usb")
+            all.contains(dev.tvremote.core.adb.AdbLink.STILL) -> t("errors.still_connecting_tv_over")
+            all.contains("UnknownHost") -> t("errors.tv_cannot_reach_internet")
             Regex("SocketTimeout|timed out|ConnectException|Connection reset", RegexOption.IGNORE_CASE).containsMatchIn(all) ->
-                t("Mạng chậm hoặc vừa mất kết nối. Thử lại sau ít phút.", "The network is slow or dropped. Try again in a few minutes.")
+                t("errors.network_slow_dropped_try")
             all.contains("stopped answering") || all.contains("stopped taking data") ->
-                t("TV ngừng trả lời giữa chừng. Thử lại; vẫn vậy thì khởi động lại TV.", "The TV stopped answering midway. Try again; if it keeps happening, restart the TV.")
-            all.contains("copy to the TV incomplete") -> t("Chép tệp lên TV không trọn vẹn. Thử lại.", "The file did not reach the TV whole. Try again.")
-            all.contains("no sign-in link") -> t("Không đọc được link đăng nhập trên màn hình TV. Mở Tailscale trên TV và quét mã QR nó hiện.",
-                "Could not read the sign-in link off the TV's screen. Open Tailscale on the TV and scan the QR code it shows.")
-            all.contains("no app that can open") -> t("TV không có app mở loại tệp này (cài VLC rồi thử lại).", "The TV has no app for this kind of file (install VLC, then retry).")
-            Regex("INSUFFICIENT_STORAGE|No space", RegexOption.IGNORE_CASE).containsMatchIn(all) -> t("TV hết bộ nhớ trống.", "The TV is out of storage.")
+                t("errors.tv_stopped_answering_midway")
+            all.contains("copy to the TV incomplete") -> t("errors.file_did_not_reach")
+            all.contains("no sign-in link") -> t("errors.could_not_read_sign")
+            all.contains("no app that can open") -> t("errors.tv_has_no_app")
+            Regex("INSUFFICIENT_STORAGE|No space", RegexOption.IGNORE_CASE).containsMatchIn(all) -> t("errors.tv_out_storage")
             // installing an APK: the same words as friendly() in js/core.js
             Regex("apk needs sdk (\\d+), the tv has sdk (\\d+)").containsMatchIn(all) -> {
                 val m = Regex("apk needs sdk (\\d+), the tv has sdk (\\d+)").find(all)!!.groupValues
-                t("APK này cần Android ${android(m[1])} trở lên; TV đang chạy Android ${android(m[2])}. Tìm bản cũ hơn của app.",
-                    "This APK needs Android ${android(m[1])} or newer; the TV runs Android ${android(m[2])}. Look for an older version of the app.")
+                t("errors.apk_needs_android_newer", "need" to android(m[1]), "have" to android(m[2]))
             }
             Regex("apk is built for (\\S+), the tv runs (\\S+)").containsMatchIn(all) -> {
                 val m = Regex("apk is built for (\\S+), the tv runs (\\S+)").find(all)!!.groupValues
-                t("APK này dành cho chip ${m[1]}, còn TV dùng ${m[2]}. Tải bản cho đúng loại chip (thường là armeabi-v7a cho TV).",
-                    "This APK is built for ${m[1]} chips; the TV uses ${m[2]}. Get the build for the right chip (usually armeabi-v7a for TVs).")
+                t("errors.apk_built_chips_tv", "apk" to m[1], "tv" to m[2])
             }
-            all.contains("removed by the TV right after install") -> t("TV báo cài xong nhưng tự gỡ app này ngay sau đó (box của nhà mạng chặn một số app).",
-                "The TV said it installed the app, then removed it at once (operator boxes block some apps).")
+            all.contains("removed by the TV right after install") -> t("errors.tv_said_installed_app")
             Regex("INSTALL_FAILED_UPDATE_INCOMPATIBLE|signatures do not match", RegexOption.IGNORE_CASE).containsMatchIn(all) ->
-                t("TV đã có app này nhưng từ nguồn khác (khác chữ ký). Gỡ bản đang có rồi cài lại.", "The TV has this app from another source (another signature). Remove it, then install again.")
-            all.contains("INSTALL_FAILED_VERSION_DOWNGRADE") -> t("TV đang có bản mới hơn của app này.", "The TV has a newer version of this app.")
-            all.contains("not an APK file") -> t("Tệp này không phải APK.", "This file is not an APK.")
-            all.contains(Roku.LIMITED) -> t("Roku đang chặn điều khiển từ điện thoại, máy tính. Trên Roku: Settings → System → Advanced system settings → Control by mobile apps → chọn Enabled (hoặc Permissive).",
-                "The Roku blocks control from phones and computers. On the Roku: Settings → System → Advanced system settings → Control by mobile apps → choose Enabled (or Permissive).")
-            all.contains(Vidaa.NO_CERT) -> t("TV Hisense này cần chứng chỉ từ app “VIDAA Smart TV” của Hisense. Cài app đó một lần (không cần mở), rồi thử lại.",
-                "This Hisense TV needs the certificate from Hisense’s “VIDAA Smart TV” app. Install that app once (no need to open it), then try again.")
-            all.contains("protected: the TV needs this app") -> t("TV cần app này, không gỡ được.", "The TV needs this app; it cannot be removed.")
+                t("errors.tv_has_app_from")
+            all.contains("INSTALL_FAILED_VERSION_DOWNGRADE") -> t("errors.tv_has_newer_version")
+            all.contains("not an APK file") -> t("errors.file_not_apk")
+            all.contains(Roku.LIMITED) -> t("errors.roku_blocks_control_from")
+            all.contains(Vidaa.NO_CERT) -> t("errors.hisense_tv_needs_certificate")
+            all.contains("protected: the TV needs this app") -> t("errors.tv_needs_app_cannot")
             else -> e.message ?: e.javaClass.simpleName
         }
     }

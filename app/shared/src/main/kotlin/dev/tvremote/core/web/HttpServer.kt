@@ -37,6 +37,11 @@ class HttpServer(private val handler: Handler) {
 
         fun q(name: String): String = query[name] ?: ""
 
+        /** The page's language (the cookie js/i18n.js sets, ?lang=, else the browser's): what words the answer is in (Words). */
+        val lang: String by lazy {
+            dev.tvremote.core.Words.pick(cookie("tvr-lang").ifEmpty { q("lang") }.ifEmpty { headers["accept-language"].orEmpty().substringBefore(',') })
+        }
+
         fun json(max: Int = 65536): JSONObject = jsonOrNull(max) ?: JSONObject()
 
         /** null for a body that is not one JSON object (or too big): a caller that saves what it got must not save "nothing". */

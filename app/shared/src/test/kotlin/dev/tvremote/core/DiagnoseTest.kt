@@ -80,13 +80,13 @@ class DiagnoseTest {
     @Test fun everyConclusionHasWordsInBothLanguagesAndAnAction() {
         for (code in Diagnose.CODES) {
             val f = facts(moved = Diagnose.Found("192.168.1.31", "Living room"))
-            val (vt, vf) = Diagnose.say(code, f, true)
-            val (et, ef) = Diagnose.say(code, f, false)
+            val (vt, vf) = Diagnose.say(code, f, "vi")
+            val (et, ef) = Diagnose.say(code, f, "en")
             assertTrue(code, vt.isNotBlank() && vf.isNotBlank() && et.isNotBlank() && ef.isNotBlank())
             assertTrue(code, vt != et && vf != ef)
             assertTrue(code, Diagnose.actions(code).isNotEmpty() && "retry" in Diagnose.actions(code))
         }
-        assertTrue(Diagnose.say(Diagnose.MOVED, facts(moved = Diagnose.Found("192.168.1.31", "Living room")), false).second.contains("192.168.1.31"))
+        assertTrue(Diagnose.say(Diagnose.MOVED, facts(moved = Diagnose.Found("192.168.1.31", "Living room")), "en").second.contains("192.168.1.31"))
     }
 
     @Test fun subnets() {
@@ -115,35 +115,35 @@ class DiagnoseTest {
 
     @Test fun runLooksAroundOnlyWhenNothingAnswers() {
         val up = Fake(open = setOf(6466, 6467))
-        val r1 = Diagnose.run(up, "192.168.1.20", A, "Living room", "", true)
+        val r1 = Diagnose.run(up, "192.168.1.20", A, "Living room", "", "vi")
         assertEquals(Diagnose.ADB_OFF, r1.code)
         assertEquals(0, up.searched)
 
         val gone = Fake(found = Diagnose.Found("192.168.1.31", "Living room"))
-        val r2 = Diagnose.run(gone, "192.168.1.20", A, "Living room", "timed out", false)
+        val r2 = Diagnose.run(gone, "192.168.1.20", A, "Living room", "timed out", "en")
         assertEquals(Diagnose.MOVED, r2.code)
         assertEquals(1, gone.searched)
         assertEquals("192.168.1.31", r2.found?.ip)
 
         val nameless = Fake(found = Diagnose.Found("192.168.1.31", "x"))
-        assertEquals(Diagnose.OFF, Diagnose.run(nameless, "192.168.1.20", A, "", "", true).code)   // no name saved: nothing to look for
+        assertEquals(Diagnose.OFF, Diagnose.run(nameless, "192.168.1.20", A, "", "", "vi").code)   // no name saved: nothing to look for
         assertEquals(0, nameless.searched)
 
         val dead = Fake()
-        assertEquals(Diagnose.OFF, Diagnose.run(dead, "10.255.255.1", A, "TV", "", true).code)
-        assertEquals(Diagnose.CLOCK, Diagnose.run(Fake(open = setOf(6467)), "192.168.1.20", A, "TV", "SSLHandshakeException: not yet valid", true).code)
-        assertEquals(Diagnose.ALLOW, Diagnose.run(Fake(open = setOf(5555), adb = "unauthorized"), "192.168.1.20", A, "TV", "", true).code)
+        assertEquals(Diagnose.OFF, Diagnose.run(dead, "10.255.255.1", A, "TV", "", "vi").code)
+        assertEquals(Diagnose.CLOCK, Diagnose.run(Fake(open = setOf(6467)), "192.168.1.20", A, "TV", "SSLHandshakeException: not yet valid", "vi").code)
+        assertEquals(Diagnose.ALLOW, Diagnose.run(Fake(open = setOf(5555), adb = "unauthorized"), "192.168.1.20", A, "TV", "", "vi").code)
     }
 
     @Test fun jsonCarriesTheConclusion() {
-        val r = Diagnose.run(Fake(open = setOf(6466)), "192.168.1.20", A, "TV", "", false)
-        val j = Diagnose.json(r, false)
+        val r = Diagnose.run(Fake(open = setOf(6466)), "192.168.1.20", A, "TV", "", "en")
+        val j = Diagnose.json(r, "en")
         assertEquals("adb_off", j.getString("code"))
         assertTrue(j.getString("title").contains("ADB"))
         assertEquals("adbhelp", j.getJSONArray("actions").getString(0))
         assertNotNull(j.getJSONArray("checks"))
         assertTrue(j.getJSONArray("checks").length() >= 2)
-        val vi = Diagnose.json(r, true)
+        val vi = Diagnose.json(r, "vi")
         assertTrue(vi.getString("fix").contains("Gỡ lỗi ADB"))
     }
 }

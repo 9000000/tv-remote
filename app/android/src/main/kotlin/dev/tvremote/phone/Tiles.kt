@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.annotation.TargetApi
 import android.app.PendingIntent
 import android.content.ComponentName
@@ -36,7 +37,7 @@ abstract class TvTile : TileService() {
 
 class PowerTile : TvTile() {
     override fun job(i: Intent): Intent = i.putExtra("do", "power")
-    override fun paint(tile: Tile) { super.paint(tile); tile.label = t("Nguồn TV", "TV power") }
+    override fun paint(tile: Tile) { super.paint(tile); tile.label = T("tiles.tv_power") }
 }
 
 /** Runs the first scene in the list; its name is the tile's label. */
@@ -45,8 +46,8 @@ class SceneTile : TvTile() {
     override fun paint(tile: Tile) {
         super.paint(tile)
         val sc = SceneStore.list(this).firstOrNull()
-        tile.label = sc?.let { (it.optString("icon") + " " + it.optString("name")).trim() } ?: t("Cảnh TV", "TV scene")
-        if (Build.VERSION.SDK_INT >= 29) tile.subtitle = if (sc == null) t("Tạo cảnh trong app", "Make one in the app") else "TV Remote"
+        tile.label = sc?.let { (it.optString("icon") + " " + it.optString("name")).trim() } ?: T("tiles.tv_scene")
+        if (Build.VERSION.SDK_INT >= 29) tile.subtitle = if (sc == null) T("tiles.make_one_in_the") else "TV Remote"
     }
 }
 

@@ -18,12 +18,12 @@ class NotifyTest {
             sent.add(JSONObject(String(B64.decode(Regex("--es n (\\S+)").find(cmd)!!.groupValues[1]), Charsets.UTF_8)))
             "Broadcast completed: result=-1, data=\"" + B64.encode("{\"ok\":true}".toByteArray()) + "\""
         }
-        Notify.busy(tv, true, "Đang bật Tailscale")
-        Notify.busy(tv, false, null)
+        Notify.busy(tv, "vi", "Đang bật Tailscale")
+        Notify.busy(tv, "en", null)
         assertTrue(sent[0].getString("text").startsWith("Đang bật Tailscale. Đừng bấm remote"))
         assertEquals(Notify.MAX_SECONDS, sent[0].getInt("seconds"))   // outlasts the job; the next card takes its place
         assertEquals("TV Remote is done", sent[1].getString("title"))
-        Notify.busy({ "Broadcast completed: result=0" }, true, "x")   // no TV Setup: goes without, no error
+        Notify.busy({ "Broadcast completed: result=0" }, "vi", "x")   // no TV Setup: goes without, no error
     }
 
     @Test fun cornerIsOneOfFourOrTheDefault() {
@@ -89,6 +89,6 @@ class NotifyTest {
     @Test fun theFeatureNeedsTheNextTvSetup() {
         assertFalse(SetupNeed.ok("0.4.1", "notify"))
         assertTrue(SetupNeed.ok("0.4.2", "notify"))
-        assertEquals("Gửi thông báo lên TV", SetupNeed.name("notify", true))
+        assertEquals("Gửi thông báo lên TV", SetupNeed.name("notify", "vi"))
     }
 }

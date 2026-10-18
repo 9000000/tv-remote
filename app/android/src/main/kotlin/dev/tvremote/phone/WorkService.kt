@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -48,11 +49,11 @@ class WorkService : Service() {
 
         /** In words, what Manage.working() names. */
         fun say(what: String): String = when (what) {
-            "upload" -> t("Đang chép tệp lên TV", "Copying a file to the TV")
-            "install" -> t("Đang cài app lên TV", "Installing an app on the TV")
-            "update" -> t("Đang cập nhật TV Setup", "Updating TV Setup")
-            "tailscale" -> t("Đang cài Tailscale trên TV", "Setting up Tailscale on the TV")
-            else -> t("Đang làm việc trên TV", "Working on the TV")
+            "upload" -> T("work_service.copying_a_file_to")
+            "install" -> T("work_service.installing_an_app_on")
+            "update" -> T("work_service.updating_tv_setup")
+            "tailscale" -> T("work_service.setting_up_tailscale_on")
+            else -> T("work_service.working_on_the_tv")
         }
 
         /** [pct] 0..100, or below 0 when the work does not tell (a bar that only moves). */
@@ -63,12 +64,12 @@ class WorkService : Service() {
         @Suppress("DEPRECATION")
         private fun note(c: Context, what: String, pct: Int = -1): Notification {
             val b = if (Build.VERSION.SDK_INT >= 26) {
-                (c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(NotificationChannel("work", t("Việc đang làm trên TV", "Work on the TV"), NotificationManager.IMPORTANCE_LOW))
+                (c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(NotificationChannel("work", T("work_service.work_on_the_tv"), NotificationManager.IMPORTANCE_LOW))
                 Notification.Builder(c, "work")
             } else Notification.Builder(c)
             val open = PendingIntent.getActivity(c, 3, Intent(c, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
             return b.setSmallIcon(R.drawable.ic_tv).setContentTitle(say(what) + (if (pct >= 0) " · $pct%" else "..."))
-                .setContentText(t("Vẫn chạy khi chuyển sang app khác.", "Goes on while you use other apps."))
+                .setContentText(T("work_service.goes_on_while_you"))
                 .setContentIntent(open).setOngoing(true).setOnlyAlertOnce(true).setProgress(100, pct.coerceAtLeast(0), pct < 0).build()
         }
     }

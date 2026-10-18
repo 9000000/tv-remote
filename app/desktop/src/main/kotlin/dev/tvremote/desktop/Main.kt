@@ -1,5 +1,6 @@
 package dev.tvremote.desktop
 
+import dev.tvremote.core.Words
 import dev.tvremote.core.web.HttpServer
 import java.io.File
 import java.io.PrintStream
@@ -46,8 +47,7 @@ fun main(args: Array<String>) {
     val http = HttpServer(server)
     val bound = try { http.start(port, true) } catch (e: java.io.IOException) {
         System.err.println("port $port is taken: is TV Remote already running? ($e)")
-        if (packaged) App.alert("Cổng $port đang bị một chương trình khác dùng nên TV Remote chưa chạy được. Tắt chương trình đó rồi mở lại.\n\n" +
-            "Port $port is used by another program, so TV Remote cannot start. Quit that program and open TV Remote again.")
+        if (packaged) App.alert(listOf("vi", "en").joinToString("\n\n") { Words.get(it, "pc.port_taken", "port" to port) })   // no page to ask: both languages
         return
     }
     pass.save()

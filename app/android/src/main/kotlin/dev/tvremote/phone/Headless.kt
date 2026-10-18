@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.content.Context
 import dev.tvremote.core.adb.AdbLink
 import dev.tvremote.core.remote.Atv
@@ -24,13 +25,13 @@ internal class Headless(private val c: Context) {
 
     /** Runs [what] on the TV; the answer is what to tell the person. Blocks for up to about 15 s, longer for a scene that waits. */
     fun run(what: (Scenes.Target, Boolean) -> String?): String {
-        val ip = pref("ips").split(",").firstOrNull { it.isNotEmpty() } ?: return t("Chưa có TV nào: mở app và chọn TV trước.", "No TV yet: open the app and pick a TV first.")
+        val ip = pref("ips").split(",").firstOrNull { it.isNotEmpty() } ?: return T("headless.no_tv_yet_open")
         val name = pref("name:$ip").ifEmpty { ip }
         val via = listOf(ip, pref("ts:$ip"), pref("lan:$ip")).filter { it.isNotEmpty() }.distinct()
         val kind = Remote.Kind.of(pref("kind:$ip"))
         if (kind != Remote.Kind.ANDROID) {                            // LG / Samsung: their own remote link, already allowed on the TV
             val host = via.firstOrNull { h -> Remote.Kind.ports(kind).any { open(h, it, 1500) } }
-                ?: return name + ": " + t("không tới được TV. TV có đang bật và cùng mạng (hoặc Tailscale) không?", "cannot reach the TV. Is it on, and on the same network (or Tailscale)?")
+                ?: return T("headless.cannot_reach_the_tv", "name" to name)
             val a = Remote.of(kind, c.filesDir, host)
             return try {
                 a.connect { }
@@ -38,7 +39,7 @@ internal class Headless(private val c: Context) {
                 val e = what(RemoteSteps(a) { }, false)
                 Thread.sleep(400)                                     // the last key leaves before the connection closes
                 if (e == null) "✓ $name" else "$name: $e"
-            } catch (e: Remote.Refused) { name + ": " + t("TV không cho phép: mở app và kết nối lại.", "the TV said no: open the app and connect again.")
+            } catch (e: Remote.Refused) { T("headless.the_tv_said_no", "name" to name)
             } catch (e: Exception) { name + ": " + (e.message ?: e.javaClass.simpleName) } finally { a.close() }
         }
         via.firstOrNull { open(it, 5555, 2000) }?.let { host ->
@@ -53,9 +54,9 @@ internal class Headless(private val c: Context) {
             worker.start()
             worker.join(15000)                                        // connecting: longer means the TV is asking
             if (linked && !done) worker.join(120000)                  // connected: a scene's waits take as long as they take
-            if (!done && link.waitingForUser()) { link.close(); return name + ": " + t("TV đang hỏi “Cho phép gỡ lỗi USB?”: mở app để cho phép.", "the TV is asking “Allow USB debugging?”: open the app to allow it.") }
+            if (!done && link.waitingForUser()) { link.close(); return T("headless.the_tv_is_asking", "name" to name) }
             link.close()
-            if (!done) return name + ": " + t("TV không trả lời.", "the TV did not answer.")
+            if (!done) return T("headless.the_tv_did_not", "name" to name)
             val e = err
             if (e == null) return "✓ $name"
             if (!e.startsWith("adb:")) return name + ": " + e
@@ -70,12 +71,12 @@ internal class Headless(private val c: Context) {
                 if (e == null) "✓ $name" else "$name: $e"
             } catch (e: Exception) { name + ": " + (e.message ?: e.javaClass.simpleName) } finally { a.close() }
         }
-        return name + ": " + t("không tới được TV. TV có đang bật và cùng mạng (hoặc Tailscale) không?", "cannot reach the TV. Is it on, and on the same network (or Tailscale)?")
+        return T("headless.cannot_reach_the_tv", "name" to name)
     }
 
     /** A scene by id. */
     fun scene(id: String): String {
-        val sc = SceneStore.find(c, id) ?: return t("Cảnh này không còn nữa.", "This scene is gone.")
+        val sc = SceneStore.find(c, id) ?: return T("headless.this_scene_is_gone")
         return run { tv, _ -> Scenes.run(sc.optJSONArray("steps") ?: JSONArray(), tv) }.let { if (it.startsWith("✓")) "✓ " + sc.optString("name") else it }
     }
 
@@ -95,8 +96,8 @@ internal class Headless(private val c: Context) {
         override fun key(code: Int) { if (code in 19..23) a.pulse(code, 110) else a.key(code, Atv.SHORT) }
         override fun app(pkg: String) { a.launch(pkg) }
         override fun link(url: String) { a.launch(url) }
-        override fun volume(level: Int) { throw IllegalArgumentException(t("đặt âm lượng cần ADB", "setting the volume needs ADB")) }
-        override fun timer(minutes: Int) { throw IllegalArgumentException(t("hẹn giờ cần ADB", "the timer needs ADB")) }
+        override fun volume(level: Int) { throw IllegalArgumentException(T("headless.setting_the_volume_needs")) }
+        override fun timer(minutes: Int) { throw IllegalArgumentException(T("headless.the_timer_needs_adb")) }
     }
 
     companion object {

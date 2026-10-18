@@ -170,7 +170,7 @@ async function installSetupApk() {
   toast(T('auto.downloading_setup'));
   let j = await api('/api/install', { url: SETUP_APK }); if (!j) return;
   for (let misses = 0; j && j.status === 'running' && misses < 10;) { await sleep(1500); const r = await api('/api/job?id=' + j.id, null, true); if (r) { j = r; misses = 0; } else misses++; }
-  if (!j || j.status !== 'done') { toast(T('auto.install_failed', { why: friendly(j ? j.msg : 'mất kết nối') })); return; }
+  if (!j || j.status !== 'done') { toast(T('auto.install_failed', { why: friendly(j ? j.msg : T('core.lost_connection')) })); return; }
   await api('/api/app/launch', { pkg: 'dev.tvremote.setup' }, true);    // opened once, it starts its service and keeps it across restarts
   toast(T('auto.setup_installed')); await sleep(2500); loadRules(null, true);
 }

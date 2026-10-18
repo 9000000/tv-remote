@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.graphics.BitmapFactory
 import android.view.Gravity
 import android.view.View
@@ -37,7 +38,7 @@ internal class NowApp(private val a: MainActivity) {
     init {
         view.gravity = Gravity.CENTER
         view.visibility = View.GONE
-        view.addView(a.label(t("Đang mở", "Now open"), 13, MUTED))
+        view.addView(a.label(T("apps.now_open"), 13, MUTED))
         view.addView(icon, LinearLayout.LayoutParams(-2, a.dp(24)).apply { leftMargin = a.dp(8) })   // its own shape: a wide banner is not cut to a square
         icon.outlineProvider = object : android.view.ViewOutlineProvider() {   // rounded like the page's app pictures
             override fun getOutline(v: View, o: android.graphics.Outline) = o.setRoundRect(0, 0, v.width, v.height, a.dp(6).toFloat())

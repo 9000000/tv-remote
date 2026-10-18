@@ -1,4 +1,5 @@
 package dev.tvremote.core.web
+import dev.tvremote.core.Words
 import dev.tvremote.update.Release
 import org.json.JSONArray
 import org.json.JSONObject
@@ -128,7 +129,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "tailscale" -> { val t = Tailscale(link.get(), dir); return HttpServer.Response.json(JSONObject().put("installed", t.installed()).put("ip", t.ip())) }
                 "setup/version" -> return HttpServer.Response.json(setupVersion())
                 "setup/need" -> { SetupNeed.check(link.get(), r.q("f")); return HttpServer.Response.json(JSONObject().put("ok", true)) }
-                "setup/plan" -> return HttpServer.Response.json(Setup(link.get(), dir, true) { }.plan { labels?.label(it) })
+                "setup/plan" -> return HttpServer.Response.json(Setup(link.get(), dir, r.lang) { }.plan { labels?.label(it) })
                 "adb/prompt" -> {                                     // the TV's "Allow USB debugging?" question, if it is up
                     val p = if (link.state() == "ready") AdbPrompt.read(link.get()) else null
                     return HttpServer.Response.json(JSONObject().put("fingerprint", p?.fingerprint ?: ""))
@@ -184,7 +185,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "file/install" -> HttpServer.Response.json(installPath(safePath(r.json().optString("path"))))
                 "free" -> HttpServer.Response.json(free())
                 "procs/kill" -> { val pkg = r.json().optString("pkg"); keepCheck(pkg); sh("am force-stop " + Adb.q(pkg)); HttpServer.Response.ok() }
-                "setup" -> { val d = r.json(); HttpServer.Response.json(setup(d.optString("mode") == "undo", d.optString("lang") != "en", choice(d))) }
+                "setup" -> { val d = r.json(); HttpServer.Response.json(setup(d.optString("mode") == "undo", d.optString("lang").takeIf { it.isNotEmpty() }?.let(Words::pick) ?: r.lang, choice(d))) }
                 "fetch" -> HttpServer.Response.json(fetch(r.json().optString("url"), false))
                 "install" -> HttpServer.Response.json(fetch(r.json().optString("url"), true))
                 "setup/update" -> HttpServer.Response.json(setupUpdate())
@@ -200,9 +201,9 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     HttpServer.Response.json(JSONObject().put("result", result))
                 }
                 "adb/deny" -> HttpServer.Response.json(JSONObject().put("ok", synchronized(promptLock) { AdbPrompt.deny(link.get(), r.json().optString("fingerprint")) }))
-                "tailscale/start" -> { val vi = r.json().optString("lang") != "en"; HttpServer.Response.json(job("tailscale") { j ->
+                "tailscale/start" -> { val lang = r.json().optString("lang").takeIf { it.isNotEmpty() }?.let(Words::pick) ?: r.lang; HttpServer.Response.json(job("tailscale") { j ->
                     val t = Tailscale(link.get(), dir)
-                    val url = t.start({ on -> Notify.busy(::sh, vi, if (on) (if (vi) "Đang bật Tailscale" else "Turning Tailscale on") else null) }) { what, pct ->
+                    val url = t.start({ on -> Notify.busy(::sh, lang, if (on) Words.get(lang, "server.turning_tailscale_on") else null) }) { what, pct ->
                         j.put("msg", what).put("pct", pct)
                     }
                     if (url.isEmpty()) { j.put("ip", t.ip()); "in" } else { j.put("url", url); "sign in" }
@@ -699,10 +700,10 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     }
 
     /** "Optimize TV" or its undo; the job's message grows a line per step. */
-    private fun setup(undo: Boolean, vi: Boolean, c: Setup.Choice): JSONObject =
+    private fun setup(undo: Boolean, lang: String, c: Setup.Choice): JSONObject =
         job(if (undo) "undo" else "optimize") { j ->
             val lines = StringBuilder()
-            val s = Setup(link.get(), dir, vi) { line -> lines.append(line).append('\n'); try { j.put("log", lines.toString().trim()) } catch (ignored: Exception) { } }
+            val s = Setup(link.get(), dir, lang) { line -> lines.append(line).append('\n'); try { j.put("log", lines.toString().trim()) } catch (ignored: Exception) { } }
             if (undo) s.undo() else s.apply(c)
             "ok"
         }
@@ -975,9 +976,9 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         fun diagnose(r: HttpServer.Request, link: AdbLink?): HttpServer.Response {
             val ip = r.q("ip").trim().ifEmpty { link?.host ?: "" }
             if (ip.isEmpty() || ip.length > 80 || !Regex("[0-9A-Za-z.:\\[\\]-]+").matches(ip)) return HttpServer.Response.error(400, "ip")
-            val vi = r.q("lang") != "en"
-            val res = dev.tvremote.core.Diagnose.run(dev.tvremote.core.Diagnose.Real(link), ip, dev.tvremote.core.remote.Remote.Kind.of(r.q("kind")), r.q("name").take(80), r.q("err").take(2000), vi)
-            return HttpServer.Response.json(dev.tvremote.core.Diagnose.json(res, vi))
+            val lang = r.q("lang").takeIf { it.isNotEmpty() }?.let(Words::pick) ?: r.lang
+            val res = dev.tvremote.core.Diagnose.run(dev.tvremote.core.Diagnose.Real(link), ip, dev.tvremote.core.remote.Remote.Kind.of(r.q("kind")), r.q("name").take(80), r.q("err").take(2000), lang)
+            return HttpServer.Response.json(dev.tvremote.core.Diagnose.json(res, lang))
         }
 
         const val CAST_DIR = "/sdcard/Download"

@@ -78,7 +78,7 @@ $('#fleetapk input').addEventListener('change', async (e) => {
     delete lbl.dataset.busy;
     if (xhr.status === 0) { fleetStopShow(null); return; }               // aborted by ■ Dừng (the computer drops the copy it had)
     let r = {}; try { r = JSON.parse(xhr.responseText); } catch {}
-    if (xhr.status !== 200) { toast(T('fleet.error_msg', { msg: friendly(r.error || xhr.statusText || 'không gọi được server') })); return; }
+    if (xhr.status !== 200) { toast(T('fleet.error_msg', { msg: friendly(r.error || xhr.statusText || T('core.no_server_reply')) })); return; }
     fleetFollow(r);
   };
   lbl.dataset.busy = '⏳'; fleetStopShow(() => { xhr.abort(); toast(T('fleet.stopped')); }); xhr.send(f);

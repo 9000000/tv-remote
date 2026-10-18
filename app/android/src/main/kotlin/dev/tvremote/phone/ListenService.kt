@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -36,7 +37,7 @@ class ListenService : Service() {
         loadLang(this)
         reachAroundVpn()
         if (Build.VERSION.SDK_INT >= 26)
-            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(NotificationChannel("listen", t("Nghe tiếng TV", "TV sound"), NotificationManager.IMPORTANCE_LOW))
+            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(NotificationChannel("listen", T("listen_service.tv_sound"), NotificationManager.IMPORTANCE_LOW))
         session = MediaSession(this, "tvremote-listen").apply {
             setCallback(object : MediaSession.Callback() {
                 override fun onPlay() = act("play")
@@ -72,7 +73,7 @@ class ListenService : Service() {
         val text = { k: String -> if (o == null || o.isNull(k)) "" else o.optString(k) }
         val state = o?.optString("state", "none") ?: "none"
         val film = state != "none"
-        val name = text("title").ifEmpty { text("app") }.ifEmpty { t("Tiếng TV", "TV sound") }
+        val name = text("title").ifEmpty { text("app") }.ifEmpty { T("listen_service.tv_sound_2") }
         val line = listOf(text("sub").takeIf { text("title").isNotEmpty() } ?: "", tv).filter { it.isNotEmpty() }.joinToString(" · ")
         val dur = o?.optLong("dur") ?: 0
         s.setMetadata(MediaMetadata.Builder().putString(MediaMetadata.METADATA_KEY_TITLE, name).putString(MediaMetadata.METADATA_KEY_ARTIST, line)
@@ -82,7 +83,7 @@ class ListenService : Service() {
         s.setPlaybackState(PlaybackState.Builder()
             .setActions(PlaybackState.ACTION_STOP or (if (film) PlaybackState.ACTION_PLAY_PAUSE or PlaybackState.ACTION_PLAY or PlaybackState.ACTION_PAUSE or
                 PlaybackState.ACTION_SKIP_TO_NEXT or PlaybackState.ACTION_SKIP_TO_PREVIOUS else 0L))
-            .addCustomAction(PlaybackState.CustomAction.Builder(STOP, t("Thôi nghe", "Stop listening"), R.drawable.ic_close).build())   // Android 13+ draws only these, not the notification's own buttons
+            .addCustomAction(PlaybackState.CustomAction.Builder(STOP, T("listen_service.stop_listening"), R.drawable.ic_close).build())   // Android 13+ draws only these, not the notification's own buttons
             .setState(if (paused) PlaybackState.STATE_PAUSED else PlaybackState.STATE_PLAYING, o?.optLong("pos") ?: 0, if (paused || !film) 0f else o!!.optDouble("speed", 1.0).toFloat())
             .build())
 
@@ -92,16 +93,16 @@ class ListenService : Service() {
             Notification.Action.Builder(android.graphics.drawable.Icon.createWithResource(this, icon), words,
                 PendingIntent.getService(this, code, Intent(this, ListenService::class.java).setAction(what), flags)).build()
         val b = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(this, "listen") else Notification.Builder(this)
-        b.setSmallIcon(R.drawable.ic_headphones).setContentTitle(name).setContentText(line.ifEmpty { t("Đang nghe tiếng TV", "Listening to the TV") })
+        b.setSmallIcon(R.drawable.ic_headphones).setContentTitle(name).setContentText(line.ifEmpty { T("listen_service.listening_to_the_tv") })
             .setContentIntent(open).setOngoing(true).setVisibility(Notification.VISIBILITY_PUBLIC)
         val compact = if (film) {
-            b.addAction(button(R.drawable.ic_prev, t("Bài trước", "Previous"), "prev", 3))
-            b.addAction(if (paused) button(R.drawable.ic_play, t("Phát", "Play"), "play", 4) else button(R.drawable.ic_pause, t("Dừng phim", "Pause"), "pause", 4))
-            b.addAction(button(R.drawable.ic_next, t("Bài sau", "Next"), "next", 5))
-            b.addAction(button(R.drawable.ic_close, t("Thôi nghe", "Stop listening"), STOP, 2))
+            b.addAction(button(R.drawable.ic_prev, T("remote.previous"), "prev", 3))
+            b.addAction(if (paused) button(R.drawable.ic_play, T("listen_service.play"), "play", 4) else button(R.drawable.ic_pause, T("listen_service.pause"), "pause", 4))
+            b.addAction(button(R.drawable.ic_next, T("remote.next"), "next", 5))
+            b.addAction(button(R.drawable.ic_close, T("listen_service.stop_listening"), STOP, 2))
             intArrayOf(1, 3)
         } else {
-            b.addAction(button(R.drawable.ic_close, t("Thôi nghe", "Stop listening"), STOP, 2))
+            b.addAction(button(R.drawable.ic_close, T("listen_service.stop_listening"), STOP, 2))
             intArrayOf(0)
         }
         b.setStyle(Notification.MediaStyle().setMediaSession(s.sessionToken).setShowActionsInCompactView(*compact))

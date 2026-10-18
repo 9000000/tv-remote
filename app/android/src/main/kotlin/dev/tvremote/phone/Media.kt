@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -39,7 +40,7 @@ internal fun MainActivity.takeShare(i: Intent?): Boolean {
 internal fun MainActivity.sendShared(tries: Int) {
     val i = shared ?: return
     if (!live()) {
-        if (host == null) message(t("Chọn TV để phát nội dung vừa chia sẻ.", "Choose a TV to play what you shared."), false)
+        if (host == null) message(T("media.choose_a_tv_to"), false)
         if (tries < 90) ui.postDelayed({ if (!isFinishing) sendShared(tries + 1) }, 1000) else shared = null
         return
     }
@@ -50,27 +51,27 @@ internal fun MainActivity.sendShared(tries: Int) {
     // and only web links (market://, intent: … would be run on the TV unseen).
     if (file != null) {
         if (file.scheme == "content" && file.authority?.startsWith(packageName) != true) confirmShare(sharedName(file)) { castFile(file) }
-        else say(t("Không gửi được tệp này lên TV.", "This file cannot be sent to the TV."), true)
+        else say(T("media.this_file_cannot_be"), true)
         return
     }
     val link = Regex("(?i)https?://\\S+").find(i.getStringExtra(Intent.EXTRA_TEXT) ?: "")?.value
-    if (link == null) say(t("Nội dung chia sẻ không có đường dẫn nào để mở trên TV.", "What was shared has no link to open on the TV."), true)
-    else confirmShare(link) { openLink(link); Toast.makeText(this, t("Đã gửi lên TV", "Sent to the TV"), Toast.LENGTH_SHORT).show() }
+    if (link == null) say(T("media.what_was_shared_has"), true)
+    else confirmShare(link) { openLink(link); Toast.makeText(this, T("notify.sent"), Toast.LENGTH_SHORT).show() }
 }
 
 /** Any app can hand us a file or a link: it reaches the TV only once the person has seen what and where. */
 private fun MainActivity.confirmShare(what: String, send: () -> Unit) {
-    Popup.Builder(this).setTitle(t("Gửi lên TV?", "Send to the TV?"))
+    Popup.Builder(this).setTitle(T("media.send_to_the_tv"))
         .setMessage(what + "\n\u2192 " + title(host ?: ""))
-        .setPositiveButton(t("Gửi", "Send")) { _, _ -> send() }
-        .setNegativeButton(t("Hủy", "Cancel"), null).show()
+        .setPositiveButton(T("notify.send")) { _, _ -> send() }
+        .setNegativeButton(T("common.cancel"), null).show()
 }
 
 private fun MainActivity.sharedName(uri: Uri): String = try {
     contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
         if (c.moveToFirst()) c.getString(0) else null
     }
-} catch (ignored: Exception) { null } ?: t("Một tệp", "A file")
+} catch (ignored: Exception) { null } ?: T("media.a_file")
 
 /** A photo, video or song from this phone: copied to the TV's Download folder, then opened by the TV's own viewer or player. */
 internal fun MainActivity.castFile(uri: Uri) {
@@ -78,7 +79,7 @@ internal fun MainActivity.castFile(uri: Uri) {
     // The copy makes its own ADB connection; only the keys-only mode means there is no ADB at all.
     val ip = host
     if (ip == null || basic != null) {
-        say(t("Phát tệp lên TV cần ADB. TV này mới chỉ nối bằng nút remote: vào “Bật ADB cho TV này” trước.", "Playing a file on the TV needs ADB. This TV is connected with the remote buttons only: use “Turn on ADB for this TV” first."), true)
+        say(T("media.playing_a_file_on"), true)
         return
     }
     var name = "shared"
@@ -96,9 +97,9 @@ internal fun MainActivity.castFile(uri: Uri) {
     // a box with the progress and a Stop: a big video sent by mistake can be called back (the part already on the TV is deleted)
     val cancel = dev.tvremote.core.web.Cancel()
     val job = org.json.JSONObject()
-    val sending = t("Đang gửi lên TV: ", "Sending to the TV: ") + name
+    val sending = T("media.sending_to_the_tv", "name" to name)
     val box = Popup.Builder(this).setMessage("$sending...").setCancelable(false)
-        .setNegativeButton(t("■ Dừng", "■ Stop")) { _, _ -> cancel.stop() }.show()
+        .setNegativeButton(T("page.stop")) { _, _ -> cancel.stop() }.show()
     val tick = object : Runnable {
         override fun run() {
             if (!box.isShowing || isFinishing) return
@@ -116,13 +117,13 @@ internal fun MainActivity.castFile(uri: Uri) {
                 Manage(link, null, cacheDir).cast(input, size, name, job, cancel)
             }
             null
-        } catch (e: Exception) { dev.tvremote.core.Errors.say(e, VI) } finally { link.close() }
+        } catch (e: Exception) { dev.tvremote.core.Errors.say(e, dev.tvremote.core.Words.lang) } finally { link.close() }
         ui.post {
             try { box.dismiss() } catch (ignored: Exception) { }
             if (isFinishing) return@post
-            if (cancel.stopped) say(t("Đã dừng, tệp gửi dở đã xóa khỏi TV.", "Stopped; the half-sent file was removed from the TV."), false)
-            else if (err == null) say(t("Đang phát trên TV: ", "Playing on the TV: ") + name, false)
-            else say(t("Không phát được: ", "Could not play it: ") + err, true)
+            if (cancel.stopped) say(T("media.stopped_the_half_sent"), false)
+            else if (err == null) say(T("media.playing_on_the_tv", "name" to name), false)
+            else say(T("media.could_not_play_it", "error" to err), true)
         }
     }.start()
 }
@@ -146,7 +147,7 @@ internal fun MainActivity.pickMedia() {
 
 internal fun MainActivity.pickFile(types: Array<String>) {
     try { startActivityForResult(Intent(Intent.ACTION_GET_CONTENT).setType("*/*").putExtra(Intent.EXTRA_MIME_TYPES, types).addCategory(Intent.CATEGORY_OPENABLE), PICK_CAST) }
-    catch (e: Exception) { say(t("Điện thoại không có app chọn tệp.", "This phone has no file picker."), true) }
+    catch (e: Exception) { say(T("media.this_phone_has_no"), true) }
 }
 
 internal fun MainActivity.askText(title: String, hint: String, ok: String, then: (String) -> Unit) {
@@ -154,19 +155,19 @@ internal fun MainActivity.askText(title: String, hint: String, ok: String, then:
     val wrap = inDialog(box)
     Popup.Builder(this).setTitle(title).setView(wrap)
         .setPositiveButton(ok) { _, _ -> box.text.toString().trim().let { if (it.isNotEmpty()) then(it) } }
-        .setNegativeButton(t("Hủy", "Cancel"), null).show()
+        .setNegativeButton(T("common.cancel"), null).show()
 }
 
 /** Things the TV can be told to open straight from the phone, saving the hunt with the TV's own keyboard (the entries: remote.json). */
 internal fun MainActivity.quickOpen() {
     if (!live()) return
     val b = basic
-    if (b == null || kind() == dev.tvremote.core.remote.Remote.Kind.ANDROID) { menu(t("Mở trên TV", "Open on the TV"), -1, remoteMenu("open")); return }
+    if (b == null || kind() == dev.tvremote.core.remote.Remote.Kind.ANDROID) { menu(T("files.open_on_tv"), -1, remoteMenu("open")); return }
     Thread {                                                          // LG / Samsung: their apps, from their remote link, first
         val apps = try { b.apps().sortedBy { it.label.lowercase() } } catch (e: Exception) { emptyList() }
         ui.post {
             if (isFinishing || basic !== b) return@post
-            menu(t("Mở trên TV", "Open on the TV"), -1, remoteMenu("open", lists = mapOf("tvapps" to { apps.map { a -> Triple("@play|" + a.label, "") { b.launch(a.id) } } })))
+            menu(T("files.open_on_tv"), -1, remoteMenu("open", lists = mapOf("tvapps" to { apps.map { a -> Triple("@play|" + a.label, "") { b.launch(a.id) } } })))
         }
     }.start()
 }

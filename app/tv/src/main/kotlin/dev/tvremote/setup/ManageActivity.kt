@@ -1,5 +1,6 @@
 package dev.tvremote.setup
 
+import dev.tvremote.core.T
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
@@ -41,7 +42,7 @@ class ManageActivity : Activity() {
         val box = android.widget.FrameLayout(this)
         box.setBackgroundColor(Color.rgb(13, 16, 20))
         val wait = android.widget.TextView(this)
-        wait.text = if (java.util.Locale.getDefault().language == "vi") "Đang mở…" else "Opening…"
+        wait.text = T("manage.opening")
         wait.setTextColor(Color.rgb(160, 170, 185))
         wait.textSize = 18f
         box.addView(wait, android.widget.FrameLayout.LayoutParams(-2, -2, android.view.Gravity.CENTER))

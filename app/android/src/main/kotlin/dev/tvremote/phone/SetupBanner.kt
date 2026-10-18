@@ -1,5 +1,6 @@
 package dev.tvremote.phone
 
+import dev.tvremote.core.T
 import android.graphics.Color
 import android.view.View
 import dev.tvremote.core.Errors
@@ -56,38 +57,36 @@ internal fun MainActivity.showSetup(h: String? = host) {
     if (n == null || !(undone || offer)) return
     setupBar.background = box(if (undone) ERR_BG else GREEN, 14)
     setupBar.setTextColor(if (undone) ERR_TEXT else Color.WHITE)       // white on the green fill, in both themes
-    setupBar.setLabel(if (undone) t("@alert|TV Setup ${n.version} chạy lỗi, TV đã tự quay về ${n.from}  ›", "@alert|TV Setup ${n.version} failed, the TV went back to ${n.from}  ›")
-        else t("@download|TV Setup trên TV có bản mới ${n.latest}  ›", "@download|New TV Setup for the TV: ${n.latest}  ›"))
+    setupBar.setLabel(if (undone) "@alert|" + T("setup_banner.tv_setup_failed_the", "version" to n.version, "from" to n.from)
+        else "@download|" + T("setup_banner.new_tv_setup_for", "latest" to n.latest))
     setupBar.setOnClickListener {
-        if (undone) Popup.Builder(this).setTitle(t("TV Setup ${n.version} chạy lỗi trên TV này", "TV Setup ${n.version} failed on this TV"))
-            .setMessage(t("TV đã tự quay về bản ${n.from}. Hẹn giờ, ghép nối và cài đặt vẫn còn nguyên. Có bản sau thì nó hiện ở đây.",
-                "The TV went back to ${n.from} by itself. Timers, pairings and settings are all still there. A later version will show up here."))
-            .setPositiveButton(t("Đã hiểu", "Got it")) { _, _ -> prefs.edit().putString("setupUndo", n.at.toString()).apply(); showSetup(h) }.show()
-        else Popup.Builder(this).setTitle(t("TV Setup ${n.latest} (đang dùng ${n.installed})", "TV Setup ${n.latest} (the TV has ${n.installed})"))
-            .setMessage(t("TV tự cài bản mới trong khoảng nửa phút, remote vẫn dùng bình thường. Bản mới chạy lỗi thì TV tự quay về bản đang dùng, hẹn giờ và ghép nối vẫn còn.",
-                "The TV installs it by itself in about half a minute; the remote keeps working. If the new version does not work, the TV goes back to the one it has, timers and pairings included."))
-            .setPositiveButton(t("Cập nhật", "Update")) { _, _ ->
+        if (undone) Popup.Builder(this).setTitle(T("setup_banner.tv_setup_failed_on", "version" to n.version))
+            .setMessage(T("setup_banner.the_tv_went_back", "from" to n.from))
+            .setPositiveButton(T("setup_banner.got_it")) { _, _ -> prefs.edit().putString("setupUndo", n.at.toString()).apply(); showSetup(h) }.show()
+        else Popup.Builder(this).setTitle(T("setup_banner.tv_setup_the_tv", "latest" to n.latest, "installed" to n.installed))
+            .setMessage(T("setup_banner.the_tv_installs_it"))
+            .setPositiveButton(T("setup.update_ok")) { _, _ ->
                 setupNews.remove(h); setupChecked.remove(h)                // asked again next time: done, or put back
                 showSetup(h)
                 managing.open(h, then = "updateSetup()")                  // its banner shows how far it is
             }
-            .setNegativeButton(t("Để sau", "Later")) { _, _ -> prefs.edit().putString("setupLater", n.latest).apply(); showSetup(h) }.show()
+            .setNegativeButton(T("common.later")) { _, _ -> prefs.edit().putString("setupLater", n.latest).apply(); showSetup(h) }.show()
     }
 }
 
 /** When [e] says TV Setup on the TV is missing or too old for a feature (SetupNeed), asks to install or update it, with the
  *  button that does it on the Manage page; true when it did. Every feature's errors go through here first. */
 internal fun MainActivity.offerSetup(e: Throwable): Boolean {
-    val say = SetupNeed.say(e, VI) ?: return false
+    val say = SetupNeed.say(e, dev.tvremote.core.Words.lang) ?: return false
     if (isFinishing) return true
     val old = generateSequence(e) { it.cause }.any { "setup:old:" in (it.message ?: "") }
     val h = host
     Popup.Builder(this).setMessage(say)
-        .setPositiveButton(if (old) t("Cập nhật", "Update") else t("Cài TV Setup", "Install TV Setup")) { _, _ ->
+        .setPositiveButton(if (old) T("setup.update_ok") else T("setup_banner.install_tv_setup")) { _, _ ->
             if (h != null) { setupNews.remove(h); setupChecked.remove(h) }      // asked again after: done, or put back
             managing.open(h, then = if (old) "updateSetup()" else "installSetupApk()")
         }
-        .setNegativeButton(t("Để sau", "Later"), null).show()
+        .setNegativeButton(T("common.later"), null).show()
     return true
 }
 
@@ -96,6 +95,6 @@ internal fun MainActivity.withSetup(feature: String, then: () -> Unit) {
     val tv = tv ?: return
     Thread({
         val e = try { SetupNeed.check(tv.link() ?: throw java.io.IOException("no TV"), feature); null } catch (e: Exception) { e }
-        ui.post { if (isFinishing) return@post; if (e == null) then() else if (!offerSetup(e)) android.widget.Toast.makeText(this, Errors.say(e, VI), android.widget.Toast.LENGTH_LONG).show() }
+        ui.post { if (isFinishing) return@post; if (e == null) then() else if (!offerSetup(e)) android.widget.Toast.makeText(this, Errors.say(e, dev.tvremote.core.Words.lang), android.widget.Toast.LENGTH_LONG).show() }
     }, "setup-need").start()
 }

@@ -79,6 +79,7 @@ internal fun t(vi: String, en: String): String = if (VI) vi else en
 internal fun loadLang(c: Context) {
     val lang = c.getSharedPreferences("tvs", Context.MODE_PRIVATE).getString("lang", "") ?: ""
     VI = "vi" == (if (lang.isEmpty()) Locale.getDefault().language else lang)
+    dev.tvremote.core.Words.lang = dev.tvremote.core.Words.pick(if (lang.isEmpty()) Locale.getDefault().language else lang)
     applyPalette(c)
 }
 
@@ -358,5 +359,5 @@ internal fun Activity.menu(title: String, primary: Int, items: List<Triple<Strin
     }
     val sv = ScrollView(this)
     sv.addView(list)
-    dialog = Popup.Builder(this).setTitle(title).setView(sv).setNegativeButton(t("Đóng", "Close"), null).show()
+    dialog = Popup.Builder(this).setTitle(title).setView(sv).setNegativeButton(dev.tvremote.core.T("common.close"), null).show()
 }

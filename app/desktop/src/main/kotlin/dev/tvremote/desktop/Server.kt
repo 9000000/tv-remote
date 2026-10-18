@@ -1,5 +1,6 @@
 package dev.tvremote.desktop
 
+import dev.tvremote.core.Words
 import dev.tvremote.core.ontv.Draw
 import dev.tvremote.core.adb.AdbPrompt
 import dev.tvremote.core.remote.Atv
@@ -27,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong
  * sound for this browser) are here; everything managed over ADB is Manage.kt's, as for TV Setup and the phone.
  */
 class Server(private val repo: File, private val keys: File, private val pass: Pass, private val cache: File, private val saved: Saved, first: String?, private val hookPort: Int, private val stop: () -> Unit) : HttpServer.Handler {
-    private val web = File(repo, "app/shared/web")
+    private val web = File(repo, "app/shared/web").also { w -> Words.open = { File(w, it).takeIf { f -> f.isFile }?.inputStream() } }
     private val helperFile = File(repo, "app/shared/assets/tvr-helper.jar")   // Meta and Caps, started on the TV
     private val helper: () -> ByteArray = { helperFile.readBytes() }
     private val jarFile = File(repo, "app/shared/assets/scrcpy-server.jar")
@@ -178,7 +179,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             "/api/discover" -> return Response.json(Discover.poll(r.query.containsKey("new")))
             "/api/diagnose" -> return dev.tvremote.core.web.Manage.diagnose(r, s.link)   // no session needed: a TV that never connected has none (Diagnose.kt)
             "/api/setup/status" -> return setupStatus(s)
-            "/api/assist" -> return Response.json(assist.state())
+            "/api/assist" -> return Response.json(assist.state(r.lang))
             "/api/screen" -> return screenshot(s)
             "/api/video" -> return video(s, r)
             "/api/audio" -> return audio(s, r)
@@ -267,20 +268,20 @@ class Server(private val repo: File, private val keys: File, private val pass: P
                 val hosts = d.optJSONArray("hosts")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()
                 Response.json(fleets.run(d.optString("action") + " " + d.optString("pkg"), targets(hosts, s), work = work))
             }
-            "/api/assist" -> assist.handle(d)
+            "/api/assist" -> assist.handle(d, r.lang)
             "/api/pair/start" -> try {
                 s.pairStart(); Response.ok()
             } catch (e: Exception) {
-                Response.error(400, "không tới được dịch vụ remote của TV (cổng ${if (native(s)) Remote.Kind.ports(s.kind).joinToString("/") else "6467"}): ${e.message}")
+                Response.error(400, Words.get(r.lang, "server.pair_no_service", "ports" to (if (native(s)) Remote.Kind.ports(s.kind).joinToString("/") else "6467"), "why" to e.message))
             }
             "/api/pair/finish" -> try {
                 s.pairFinish(d.optString("code").trim())
                 for (i in 0 until 30) { if (s.available) break; Thread.sleep(200) }
                 Response.json(JSONObject().put("ok", true).put("connected", s.available))
             } catch (e: IllegalArgumentException) {
-                Response.error(400, "sai mã, thử lại")
+                Response.error(400, Words.get(r.lang, "server.pair_wrong_code"))
             } catch (e: Exception) {
-                Response.error(400, "ghép thất bại, bấm Ghép lại: ${e.message}")
+                Response.error(400, Words.get(r.lang, "server.pair_failed", "why" to e.message))
             }
             "/api/update" -> when (d.optString("do")) {
                 "check" -> { updater.check(); Response.json(updater.json()) }

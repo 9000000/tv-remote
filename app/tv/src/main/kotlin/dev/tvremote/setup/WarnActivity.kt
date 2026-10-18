@@ -1,5 +1,6 @@
 package dev.tvremote.setup
 
+import dev.tvremote.core.T
 import android.app.Activity
 import android.graphics.Color
 import android.graphics.Typeface
@@ -13,7 +14,6 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import org.json.JSONObject
-import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
@@ -23,8 +23,6 @@ import kotlin.math.roundToInt
  * (the apps waiting in the background closed), see what holds it (the Health tab, on the TV), or skip.
  */
 class WarnActivity : Activity() {
-    private val vi = Locale.getDefault().language == "vi"
-    private fun t(v: String, e: String) = if (vi) v else e
     private val ui = Handler(Looper.getMainLooper())
     private lateinit var count: TextView
     private var kind = ""
@@ -49,18 +47,17 @@ class WarnActivity : Activity() {
         val (total, avail) = Guard.memory()
         card.addView(text(icon, 48, false))
         card.addView(text(when (kind) {
-            "sleep" -> t("Sắp tắt TV", "The TV is turning off")
-            "bed" -> t("Đã tới giờ đi ngủ", "It is bedtime")
-            "ram" -> t("RAM của TV gần đầy", "The TV's memory is nearly full")
-            else -> t("Hết giờ dùng $name hôm nay", "Time is up for $name today")
+            "sleep" -> T("warn.the_tv_is_turning")
+            "bed" -> T("warn.it_is_bedtime")
+            "ram" -> T("warn.the_tv_s_memory")
+            else -> T("warn.time_is_up_for", "name" to name)
         }, 28, true), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(8) })
         val bed = Rules.bedNow(Rules.load(this), System.currentTimeMillis())
         card.addView(text(when (kind) {
-            "sleep" -> t("Hẹn giờ tắt TV sắp hết.", "The sleep timer is about to end.")
-            "ram" -> t("Đang dùng ", "In use: ") + "${(total - avail) * 100 / maxOf(1L, total)}% (${total - avail} / $total MB)" +
-                t(". TV có thể chậm, giật. Dọn RAM đóng các app chạy ngầm; app đang xem vẫn giữ.", ". The TV may slow down or stutter. Free RAM closes the apps in the background; what is on screen stays.")
-            "bed" -> t("Giờ đi ngủ: ", "Bedtime: ") + (bed?.optString("from") ?: "") + " – " + (bed?.optString("to") ?: "") + t(". Muốn xem thêm, nhờ người lớn cho thêm giờ từ điện thoại.", ". For more time, ask a grown-up to allow it from their phone.")
-            else -> t("App đã được đóng. Muốn thêm thời gian, nhờ người lớn cho thêm từ điện thoại.", "The app was closed. For more time, ask a grown-up to allow it from their phone.")
+            "sleep" -> T("warn.the_sleep_timer_is")
+            "ram" -> T("warn.in_use", "pct" to (total - avail) * 100 / maxOf(1L, total), "used" to total - avail, "total" to total)
+            "bed" -> T("warn.bed_range", "from" to (bed?.optString("from") ?: ""), "to" to (bed?.optString("to") ?: ""))
+            else -> T("warn.the_app_was_closed")
         }, 16, false).apply { setTextColor(Color.rgb(170, 178, 189)); maxWidth = dp(560) }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
         count = text("", 22, true)
         if (kind != "limit") card.addView(count, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(16) })
@@ -69,16 +66,16 @@ class WarnActivity : Activity() {
         row.gravity = Gravity.CENTER
         val buttons = ArrayList<Button>()
         if (kind == "sleep") {
-            buttons.add(button(t("＋15 phút", "+15 min")) { Rules.change(this, JSONObject().put("do", "sleep_add").put("minutes", 15)); finish() })
-            buttons.add(button(t("Tắt ngay", "Turn off now")) { Rules.change(this, JSONObject().put("do", "sleep").put("minutes", 0)); standby(); finish() })
-            buttons.add(button(t("Hủy hẹn giờ", "Cancel the timer")) { Rules.change(this, JSONObject().put("do", "sleep").put("minutes", 0)); finish() })
+            buttons.add(button(T("auto.plus_15")) { Rules.change(this, JSONObject().put("do", "sleep_add").put("minutes", 15)); finish() })
+            buttons.add(button(T("warn.turn_off_now")) { Rules.change(this, JSONObject().put("do", "sleep").put("minutes", 0)); standby(); finish() })
+            buttons.add(button(T("warn.cancel_the_timer")) { Rules.change(this, JSONObject().put("do", "sleep").put("minutes", 0)); finish() })
         } else if (kind == "ram") {
-            buttons.add(button(t("🧹 Dọn RAM", "🧹 Free RAM")) { freeRam(buttons) })
-            buttons.add(button(t("Xem app", "See the apps")) {
+            buttons.add(button(T("warn.free_ram")) { freeRam(buttons) })
+            buttons.add(button(T("warn.see_the_apps")) {
                 startActivity(android.content.Intent(this, ManageActivity::class.java).putExtra(ManageActivity.PASS, RemoteService.selfPass).putExtra(ManageActivity.TAB, "health"))
                 finish()
             })
-            buttons.add(button(t("Bỏ qua", "Skip")) { finish() })
+            buttons.add(button(T("warn.skip")) { finish() })
         } else buttons.add(button("OK") { finish() })
         buttons.forEachIndexed { i, b -> row.addView(b, LinearLayout.LayoutParams(-2, dp(52)).apply { if (i > 0) leftMargin = dp(12) }) }
         card.addView(row, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(22) })
@@ -99,7 +96,7 @@ class WarnActivity : Activity() {
                 || kind == "bed" && !(Rules.inBedtime(o, System.currentTimeMillis()) && System.currentTimeMillis() >= o.optLong("snooze_until"))   // more time granted, bedtime off or moved: the Guard's own test
             if (left <= 0 || off) { finish(); return }
             val s = ((left + 999) / 1000).toInt()
-            count.text = t("TV tắt sau ", "Off in ") + "%d:%02d".format(s / 60, s % 60)
+            count.text = T("warn.off_in", "time" to "%d:%02d".format(s / 60, s % 60))
             ui.postDelayed(this, 500)
         }
     }
@@ -107,13 +104,13 @@ class WarnActivity : Activity() {
     /** Free RAM: the Guard closes what waits in the background, then the screen says how much came back and goes. */
     private fun freeRam(buttons: List<Button>) {
         buttons.forEach { it.isEnabled = false }
-        count.text = t("Đang dọn…", "Freeing…")
+        count.text = T("warn.freeing")
         Thread {
             val got = try { Guard.freeNow() } catch (e: Exception) { null }
             ui.post {
                 if (isFinishing || isDestroyed) return@post
-                count.text = if (got == null) t("Chưa dọn được: TV Setup chưa nối được ADB của TV.", "Could not: TV Setup has no ADB on this TV yet.")
-                    else t("Đã lấy lại $got MB", "Got back $got MB")
+                count.text = if (got == null) T("warn.could_not_tv_setup")
+                    else T("warn.got_back_got_mb", "got" to got)
                 ui.postDelayed({ finish() }, if (got == null) 4000 else 2500)
             }
         }.start()

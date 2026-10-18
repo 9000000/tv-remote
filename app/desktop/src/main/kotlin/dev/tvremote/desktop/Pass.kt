@@ -1,5 +1,6 @@
 package dev.tvremote.desktop
 
+import dev.tvremote.core.Words
 import dev.tvremote.core.web.HttpServer
 import java.io.File
 import java.net.URLEncoder
@@ -44,7 +45,7 @@ class Pass(private val file: File) {
         }
         if (same(r.cookie(COOKIE)) || same(r.headers[HEADER])) return null
         if (r.path.startsWith("/api/")) return HttpServer.Response.error(403, "locked")
-        return HttpServer.Response.of("text/html; charset=utf-8", LOCKED.toByteArray()).apply { status = 403 }
+        return HttpServer.Response.of("text/html; charset=utf-8", locked().toByteArray()).apply { status = 403 }
     }
 
     private fun enc(s: String) = URLEncoder.encode(s, "UTF-8")
@@ -56,8 +57,9 @@ class Pass(private val file: File) {
         /** The running app's key, for a second start. */
         fun read(file: File): String = try { file.readText().trim() } catch (e: Exception) { "" }
 
-        private const val LOCKED = "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'><title>TV Remote</title>" +
+        /** No page to ask which language: both. */
+        private fun locked() = "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'><title>TV Remote</title>" +
             "<body style='font:16px system-ui;background:#0d1014;color:#e6e9ee;padding:40px 16px;text-align:center'>" +
-            "<p>Mở TV Remote từ biểu tượng của nó trên máy tính này.</p><p style='color:#9aa4b2'>Open TV Remote from its icon on this computer.</p>"
+            "<p>${Words.get("vi", "pc.locked")}</p><p style='color:#9aa4b2'>${Words.get("en", "pc.locked")}</p>"
     }
 }

@@ -97,7 +97,10 @@ dev/                     release.sh, emu.sh, gen_icons.py, shots.py, ... : dev/R
   (`data-i18n`, `data-i18n-html`, `data-i18n-title|aria-label|placeholder|alt`); scripts write `T('id', { n })` (`{n}` in the
   words, `{ one, other }` for plurals). The old table of whole sentences (`EN`, `RULES` in `js/i18n.js`) still translates what
   the scripts write in Vietnamese: add nothing to it, move lines to ids as they are touched. `tests/i18n.test.js` keeps it so.
-  Kotlin uses `t("vi", "en")` (to move onto the same files). README, CHANGELOG entries and release notes are written in both languages.
+  Kotlin reads the same files (`core/Words.kt`): `T("id", "n" to 3)` in the app's language (`Words.lang`: the phone's choice,
+  the TV's locale), `Words.get(r.lang, "id")` for words a page asked for (`r.lang`: the page's `tvr-lang` cookie). No new
+  `t("vi", "en")` pairs; remote.json keeps its own `vi` / `en`.
+  README, CHANGELOG entries and release notes are written in both languages.
 - **Users first:** make things automatic; show an error only after every fallback has failed, in words a person can act on (`Errors.kt`, `friendly()` in `js/core.js`). Choices look like buttons. Long waits show what is going on and can be cancelled.
 - **Never commit** `cert.pem`, `key.pem`, `tvs.json`, `*.jks` (they pair with or sign for real devices). Never expose port 8765 to the Internet; away from home everything goes over Tailscale.
 - **"Allow USB debugging?"** is only ever answered for the key whose fingerprint matches the asking device (`AdbPrompt.kt`); never press Allow on an unknown key.

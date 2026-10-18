@@ -1,5 +1,6 @@
 package dev.tvremote.setup
 
+import dev.tvremote.core.T
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
@@ -70,9 +71,8 @@ internal class DnsWatch(private val c: Context, private val adb: () -> Adb?) {
         Log.i("DnsWatch", "names fail with $host while the Internet answers: turning the DNS filter off")
         a.shell("settings put global private_dns_mode opportunistic; settings delete global private_dns_specifier >/dev/null 2>&1; " +
             "settings put global ${TvShell.DNS_OFF} \"$host \$(date +%s)\"")
-        val vi = java.util.Locale.getDefault().language == "vi"
         ui.post {
-            Toast.makeText(c, if (vi) "Lọc DNS ($host) làm TV không vào được mạng nên đã được tắt." else "The DNS filter ($host) cut the TV off the Internet, so it was turned off.", Toast.LENGTH_LONG).show()
+            Toast.makeText(c, T("dns_watch.cut_off", "host" to host), Toast.LENGTH_LONG).show()
         }
     }
 }

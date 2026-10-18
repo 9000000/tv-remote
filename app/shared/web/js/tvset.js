@@ -114,7 +114,7 @@ async function setTv(key, value, done) {
   const out = r.text.trim();
   if (key === 'home' && !out.endsWith(value)) toast(T('tvset.home_unchanged', { why: out.replace(/^home\s*/, '') || T('tvset.no_reason') }));
   else if (/^ok$/m.test(out) || key === 'home') toast(done);
-  else toast(T('tvset.error_msg', { msg: friendly(out || 'không đổi được') }));
+  else toast(T('tvset.error_msg', { msg: friendly(out || T('core.cannot_change')) }));
   loadTvset();
 }
 

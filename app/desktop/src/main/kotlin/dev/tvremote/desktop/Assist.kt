@@ -1,5 +1,6 @@
 package dev.tvremote.desktop
 
+import dev.tvremote.core.Words
 import dev.tvremote.core.remote.Atv
 import dev.tvremote.core.web.HttpServer
 import org.json.JSONObject
@@ -11,7 +12,7 @@ import org.json.JSONObject
  */
 class Assist(private val cur: () -> Session) {
     @Volatile private var status = "idle"
-    @Volatile private var msg = ""
+    @Volatile private var msg: Pair<String, Array<out Pair<String, Any?>>>? = null   // an id and its args, said in the language of whoever asks (state)
     @Volatile private var stop = false
     @Volatile private var installed = false
     @Volatile private var checking = false
@@ -53,6 +54,8 @@ class Assist(private val cur: () -> Session) {
         return untilFront(15.0, stoppable) { it == pkg }
     }
 
+    private fun say(id: String?, vararg a: Pair<String, Any?>) { msg = id?.let { it to a } }
+
     private fun answerChooser() {
         for (i in 0 until 3) {                                        // "Open with": OK takes what is offered
             Thread.sleep(1500)
@@ -64,48 +67,48 @@ class Assist(private val cur: () -> Session) {
     private fun installSetup() {
         try {
             if (front().isEmpty()) {
-                status = "blind"; msg = "TV này không cho biết đang mở gì nên không tự làm được. Làm theo cách “Tự làm” bên dưới."
+                status = "blind"; say("pc.assist_blind")
                 return
             }
             // Downloader first, always: a TV's own browser takes the APK link too and downloads it, then stays on a white page,
             // unable to hand the file to the installer. Downloader's own link (SETUP_CODE) opens nothing else.
-            step = 1; msg = "Đang mở Downloader trên TV..."
+            step = 1; say("adb_help.opening_downloader_on_the")
             var there = openOnTv(DOWNLOADER)
             while (!there && !stop) {                                 // its Play Store page was told to install it
-                msg = "TV chưa có app Downloader: đang cài từ CH Play. Nếu TV không tự cài, chọn “Cài đặt” trên màn hình TV. Khi TV báo cài xong, bấm “Đã cài xong”."
+                say("pc.assist_no_downloader")
                 for (i in 0 until 600) { if (stop || installed || front() == DOWNLOADER) break; Thread.sleep(200) }
                 if (stop) break
                 checking = true                                       // one check at a time: more presses of "Installed" change nothing
-                msg = "Đang mở Downloader trên TV để kiểm tra..."
+                say("adb_help.opening_downloader_on_the_tv")
                 there = front() == DOWNLOADER || openOnTv(DOWNLOADER)
                 installed = false; checking = false
             }
-            if (stop) { status = "idle"; msg = ""; return }
-            step = 2; msg = "Đang đưa đường dẫn tải cho Downloader..."
+            if (stop) { status = "idle"; say(null); return }
+            step = 2; say("adb_help.handing_the_download_link")
             Thread.sleep(3000)
             sendLink(SETUP_CODE)
             answerChooser(); Thread.sleep(2500)
             val was = front()
-            step = 3; msg = "TV đang tải TV Setup..."
+            step = 3; say("pc.assist_downloading")
             untilFront(120.0) { it != was }                           // until the TV's installer (or its permission screen) comes up
             if (HOME.containsMatchIn(front())) throw Moved()          // back home instead: Back or Home pressed on the TV
-            status = if (stop) "idle" else "look"; msg = ""
+            status = if (stop) "idle" else "look"; say(null)
         } catch (e: Moved) {
-            status = "moved"; msg = ""
+            status = "moved"; say(null)
         } catch (e: InterruptedException) {
-            status = "idle"; msg = ""
+            status = "idle"; say(null)
         } catch (e: Exception) {
-            status = "failed"; msg = "Mất kết nối với TV giữa chừng, thử lại: ${e.message ?: e.javaClass.simpleName}"
+            status = "failed"; say("pc.assist_lost", "why" to (e.message ?: e.javaClass.simpleName))
         } finally {
             checking = false; step = 0
         }
     }
 
-    fun state(): JSONObject = JSONObject().put("status", status).put("msg", msg).put("front", front()).put("connected", cur().available)
+    fun state(lang: String): JSONObject = JSONObject().put("status", status).put("msg", msg?.let { Words.get(lang, it.first, *it.second) } ?: "").put("front", front()).put("connected", cur().available)
         .put("step", step).put("steps", STEPS)
         .put("checking", checking || installed)
 
-    fun handle(d: JSONObject): HttpServer.Response {
+    fun handle(d: JSONObject, lang: String): HttpServer.Response {
         val ok = { HttpServer.Response.ok() }
         when (val what = d.optString("do")) {
             "stop" -> { stop = true; return ok() }
@@ -113,13 +116,13 @@ class Assist(private val cur: () -> Session) {
             else -> {
                 cur().need()
                 if ((what == "open" || what == "settings" || what == "direct") && (status == "running" || opening))   // one job on the TV at a time
-                    return HttpServer.Response.error(409, "TV đang làm việc vừa yêu cầu, chờ vài giây rồi bấm lại")
+                    return HttpServer.Response.error(409, Words.get(lang, "pc.assist_busy"))
                 when (what) {
                     "setup" -> {
                         val old = task
                         if (status == "running" && stop && old != null && old.isAlive) { old.interrupt(); old.join(5000) }   // stopped a moment ago, still winding down
                         if (status != "running") {
-                            status = "running"; msg = ""; stop = false; installed = false; checking = false
+                            status = "running"; say(null); stop = false; installed = false; checking = false
                             task = Thread({ installSetup() }, "assist").apply { isDaemon = true; start() }
                         }
                         return ok()

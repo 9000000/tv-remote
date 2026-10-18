@@ -1,6 +1,8 @@
 package dev.tvremote.setup
 
 import android.app.Activity
+import dev.tvremote.core.T
+import dev.tvremote.core.Words
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -32,9 +34,6 @@ class MainActivity : Activity() {
     companion object {
         @Volatile var shown = false                                   // on screen: no update in the background meanwhile (AutoUpdate)
     }
-
-    private val vi = Locale.getDefault().language == "vi"
-    private fun t(v: String, e: String) = if (vi) v else e
 
     private lateinit var dot: View
     private lateinit var statusTitle: TextView
@@ -114,7 +113,7 @@ class MainActivity : Activity() {
         fun progress(s: String) { if (working) subView.text = s }
         fun work(on: Boolean) {
             working = on
-            subView.text = if (on) t("Đang làm...", "Working...") else idle
+            subView.text = if (on) T("setup.ts_working") else idle
             wheel.visibility = if (on) View.VISIBLE else View.GONE
             badge.imageAlpha = if (on) 0 else 255
         }
@@ -158,7 +157,7 @@ class MainActivity : Activity() {
         names.orientation = LinearLayout.VERTICAL
         names.setPadding(dp(14), 0, 0, 0)
         names.addView(text("TV Setup", 20, INK, true))
-        names.addView(text(t("Phiên bản ", "Version ") + version() + released().let { if (it.isEmpty()) "" else " · $it" } +
+        names.addView(text(T("tv_main.version_n", "v" to version()) + released().let { if (it.isEmpty()) "" else " · $it" } +
             "   ·   Hoang Tran   ·   github.com/HoangTran0410/tv-remote", 12, MUTED, false))
         head.addView(names)
         left.addView(head)
@@ -183,18 +182,18 @@ class MainActivity : Activity() {
         status.addView(rulesCard, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(16) })
         left.addView(status, margins(top = 12))
 
-        left.addView(section(t("THAO TÁC", "ACTIONS")), margins(top = 14))
-        tsTile = Tile(R.drawable.ic_globe, "Tailscale", t("Dùng khi xa nhà", "Away from home")) { tailscale() }
-        updateTile = Tile(R.drawable.ic_download, t("Cập nhật", "Update"), t("Bản ", "Version ") + version()) { updateMenu() }
+        left.addView(section(T("tv_main.actions")), margins(top = 14))
+        tsTile = Tile(R.drawable.ic_globe, "Tailscale", T("tv_main.away_from_home")) { tailscale() }
+        updateTile = Tile(R.drawable.ic_download, T("setup.update_ok"), T("tv_main.ver_short", "v" to version())) { updateMenu() }
         tiles = listOf(
-            Tile(R.drawable.ic_zap, t("Tối ưu TV", "Optimize TV"), t("Bớt app thừa", "Fewer extra apps")) { chooseOptimize() },
+            Tile(R.drawable.ic_zap, T("tv_main.optimize_tv"), T("tv_main.fewer_extra_apps")) { chooseOptimize() },
             tsTile,
-            Tile(R.drawable.ic_undo, t("Hoàn tác", "Undo"), t("Như trước khi tối ưu", "As before Optimize")) { job { it.undo() } },
+            Tile(R.drawable.ic_undo, T("setup.undo_ok"), T("tv_main.as_before_optimize")) { job { it.undo() } },
             updateTile,
-            Tile(R.drawable.ic_code, t("Gỡ lỗi ADB", "Debugging"), t("Tùy chọn nhà phát triển", "Developer options")) { debugMenu() },
-            Tile(R.drawable.ic_refresh, t("Kết nối lại", "Reconnect"), t("ADB của TV", "The TV's ADB")) { connect() })
+            Tile(R.drawable.ic_code, T("tv_main.debugging"), T("tv_main.developer_options")) { debugMenu() },
+            Tile(R.drawable.ic_refresh, T("tv_main.reconnect"), T("tv_main.the_tv_s_adb")) { connect() })
         // the web UI right here, for when no phone or computer is at hand (ManageActivity): first, as it does most
-        val manage = Tile(R.drawable.ic_apps, t("Quản lý trên TV", "Manage on this TV"), t("Ứng dụng, tệp, sức khỏe, tự động: không cần điện thoại", "Apps, files, health, automation: no phone needed")) {
+        val manage = Tile(R.drawable.ic_apps, T("tv_main.manage_on_this_tv"), T("tv_main.apps_files_health_automation")) {
             RemoteService.start(this)                                 // serves 127.0.0.1 even with the web remote off
             startActivity(android.content.Intent(this, ManageActivity::class.java).putExtra(ManageActivity.PASS, RemoteService.selfPass))
         }
@@ -208,7 +207,7 @@ class MainActivity : Activity() {
 
         val actHead = LinearLayout(this)
         actHead.gravity = Gravity.CENTER_VERTICAL
-        actHead.addView(section(t("HOẠT ĐỘNG", "ACTIVITY")))
+        actHead.addView(section(T("tv_main.activity")))
         spinner = ProgressBar(this)
         spinner.isIndeterminate = true
         spinner.visibility = View.INVISIBLE
@@ -250,7 +249,7 @@ class MainActivity : Activity() {
         Thread {                                                      // asks GitHub for the latest release, nothing else is sent
             try {
                 val r = Release.newer(version(), "tv", "tv-setup.apk")
-                if (r != null) ui { updateTile.say(t("Có bản mới ", "New version ") + r.version + t(" · chọn để cài", " · select to install")) }
+                if (r != null) ui { updateTile.say(T("tv_main.new_version_select", "v" to r.version)) }
             } catch (ignored: Exception) { }                          // offline: stay quiet, the tile still checks on demand
         }.start()
     }
@@ -274,7 +273,7 @@ class MainActivity : Activity() {
     private fun version(): String =
         try { packageManager.getPackageInfo(packageName, 0).versionName ?: "0" } catch (e: Exception) { "0" }
 
-    private fun autoText() = if (AutoUpdate.on(this)) t("Tự cập nhật: Bật", "Automatic updates: On") else t("Tự cập nhật: Tắt", "Automatic updates: Off")
+    private fun autoText() = if (AutoUpdate.on(this)) T("tv_main.automatic_updates_on") else T("tv_main.automatic_updates_off")
 
     /**
      * Downloads this app's APK from the latest GitHub release and installs it through the TV's own ADB (no "unknown sources"
@@ -283,12 +282,12 @@ class MainActivity : Activity() {
     /** The Update tile: update now, automatic updates on or off, and removing this app, kept out of the way here. */
     private fun updateMenu() {
         if (busy) return
-        val items = arrayOf(t("Cập nhật ngay", "Update now"), autoText(), t("Gỡ TV Setup", "Remove TV Setup"))
+        val items = arrayOf(T("tv_main.update_now"), autoText(), T("tv_main.remove_tv_setup"))
         android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
             .setTitle("TV Setup " + version())
             .setItems(items) { _, i ->
                 when (i) {
-                    0 -> if (adb == null) log(t("✗ Cần ADB: bật Gỡ lỗi ADB trước.", "✗ Needs ADB: turn on Debugging first.")) else update()
+                    0 -> if (adb == null) log(T("tv_main.needs_adb_turn_on")) else update()
                     1 -> { AutoUpdate.set(this, !AutoUpdate.on(this)); log(autoText()) }
                     2 -> askRemove()
                 }
@@ -297,20 +296,19 @@ class MainActivity : Activity() {
 
     private fun update() {
         job { _ ->
-            log(t("Đang kiểm tra bản mới...", "Checking for a new version..."))
+            log(T("tv_main.checking_for_a_new"))
             val r = Release.newer(version(), "tv", "tv-setup.apk")
-            if (r == null) { log(t("✓ Đang dùng bản mới nhất (", "✓ This is the newest version (") + version() + ")."); return@job }
+            if (r == null) { log(T("tv_main.newest_version", "v" to version())); return@job }
             val a = adb ?: throw java.io.IOException("ADB")
             if (SetupUpdate.bad(SetupUpdate.state(a), r.version)) {
-                log(t("Bản ", "Version ") + r.version + t(" đã chạy lỗi trên TV này nên TV Setup đã quay về bản đang dùng. Chờ bản sau nhé.",
-                    " did not work on this TV, so TV Setup went back to this one. Wait for the next version."))
+                log(T("tv_main.version_bad_back", "v" to r.version))
                 return@job
             }
-            log(t("Đang tải bản ", "Downloading version ") + r.version + "...")
+            log(T("tv_main.downloading_version", "v" to r.version))
             val apk = File(getExternalFilesDir("update"), "tv-setup-" + r.version + ".apk")
             var last = 0
             r.download(apk, Release.Progress { pct -> if (pct >= last + 25) { last = pct; log("  $pct%") } })
-            log(t("Đang cài. TV Setup tự mở lại sau khoảng nửa phút.", "Installing. TV Setup opens again in about half a minute."))
+            log(T("tv_main.installing_tv_setup_opens"))
             SetupUpdate.start(a, apk.absolutePath, r.version, true)
         }
     }
@@ -323,11 +321,10 @@ class MainActivity : Activity() {
         val key = s.optString("state") + s.optLong("at")
         if (seen.getString("update_seen", "") == key) return
         val line = when (s.optString("state")) {
-            "ok" -> if (s.optString("version") == version()) t("✓ Đã cập nhật lên bản ", "✓ Updated to version ") + version() + "." else null
-            "rolledback" -> "⚠️ " + t("Bản ", "Version ") + s.optString("version") + t(" chạy lỗi trên TV này nên TV Setup đã tự quay về bản ", " did not work on this TV, so TV Setup went back to version ") +
-                s.optString("from") + t(". Hẹn giờ, ghép nối và cài đặt vẫn còn nguyên.", ". Timers, pairings and settings are all still here.")
-            "broken" -> "⚠️ " + t("Bản ", "Version ") + s.optString("version") + t(" chạy chưa ổn trên TV này. Nếu có lỗi, cài lại TV Setup từ app TV Remote.", " may not work well on this TV. If something is wrong, reinstall TV Setup from the TV Remote app.")
-            "failed" -> t("Chưa cài được bản ", "Could not install version ") + s.optString("version") + ": " + s.optString("detail")
+            "ok" -> if (s.optString("version") == version()) T("tv_main.updated_to", "v" to version()) else null
+            "rolledback" -> T("tv_main.rolled_back", "v" to s.optString("version"), "old" to s.optString("from"))
+            "broken" -> T("tv_main.version_shaky", "v" to s.optString("version"))
+            "failed" -> T("tv_main.install_failed", "v" to s.optString("version"), "detail" to s.optString("detail"))
             else -> null
         } ?: return
         seen.edit().putString("update_seen", key).apply()
@@ -363,7 +360,7 @@ class MainActivity : Activity() {
         val ip = lanIp.ifEmpty { wifiIp() }
         val focused = currentFocus
         webCol.removeAllViews()
-        webCol.addView(text(t("Điều khiển từ điện thoại", "Control from a phone"), 16, INK, true))
+        webCol.addView(text(T("tv_main.control_from_a_phone"), 16, INK, true))
         if (on && ip.isNotEmpty()) {
             val secure = RemoteService.secure()                       // HTTPS once its certificate exists; plain HTTP before and on an older browser's bookmark
             val scheme = if (secure) "https://" else "http://"
@@ -374,21 +371,21 @@ class MainActivity : Activity() {
             addr.gravity = Gravity.CENTER
             webCol.addView(addr, margins(top = 8))
             if (secure) Tls.shortFingerprintIfReady(this)?.let {      // to compare with what the browser shows for the certificate
-                webCol.addView(text(t("Dấu vân tay: ", "Fingerprint: ") + it, 12, MUTED, false).apply { gravity = Gravity.CENTER })
+                webCol.addView(text(T("tv_main.fingerprint", "fp" to it), 12, MUTED, false).apply { gravity = Gravity.CENTER })
             }
             if (tsIp.isNotEmpty()) {
-                val ts = text(t("Ngoài nhà: ", "Away from home: ") + tsIp + ":" + port, 13, MUTED, false)
+                val ts = text(T("tv_main.away_addr", "addr" to "$tsIp:$port"), 13, MUTED, false)
                 ts.gravity = Gravity.CENTER
                 webCol.addView(ts)
             }
         } else {
-            webCol.addView(text(if (on) t("TV chưa có mạng: nối TV vào Wi-Fi.", "The TV has no network: connect it to Wi-Fi.")
-                else t("Đang tắt.", "Off."), 14, MUTED, false), margins(top = 8))
+            webCol.addView(text(if (on) T("tv_main.the_tv_has_no")
+                else T("tv_main.off"), 14, MUTED, false), margins(top = 8))
         }
-        webBtn.text = if (on) t("Remote qua web: Bật", "Web remote: On") else t("Remote qua web: Tắt", "Web remote: Off")
+        webBtn.text = if (on) T("tv_main.web_remote_on") else T("tv_main.web_remote_off")
         (webBtn.parent as? LinearLayout)?.removeView(webBtn)
         webCol.addView(webBtn, margins(top = 10))
-        if (on) webCol.addView(smallButton(t("Thiết bị đã ghép (", "Paired devices (") + RemoteService.pairedCount(this) + ")") { pairedMenu() }, margins(top = 6))
+        if (on) webCol.addView(smallButton(T("tv_main.paired_devices_n", "n" to RemoteService.pairedCount(this))) { pairedMenu() }, margins(top = 6))
         showRules()
 
         webCol.addView(View(this), if (phone) LinearLayout.LayoutParams(1, dp(16)) else LinearLayout.LayoutParams(1, 0, 1f))
@@ -398,8 +395,8 @@ class MainActivity : Activity() {
         val words = LinearLayout(this)
         words.orientation = LinearLayout.VERTICAL
         words.setPadding(dp(12), 0, 0, 0)
-        words.addView(text(t("App Android TV Remote", "TV Remote Android app"), 14, INK, true))
-        words.addView(text(t("Quét để tải", "Scan to download"), 12, MUTED, false))
+        words.addView(text(T("tv_main.tv_remote_android_app"), 14, INK, true))
+        words.addView(text(T("tv_main.scan_to_download"), 12, MUTED, false))
         app.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
         webCol.addView(app)
         if (focused != null && focused.parent == null) webBtn.requestFocus()   // the focused button was rebuilt: keep the focus on this card
@@ -411,7 +408,7 @@ class MainActivity : Activity() {
         val (line, sleeping) = rulesLine() ?: run { rulesCard.visibility = View.GONE; return }
         rulesCard.visibility = View.VISIBLE
         rulesCard.addView(text(line, 14, INK, false).apply { setLineSpacing(dp(3).toFloat(), 1f); gravity = Gravity.END })
-        if (sleeping) rulesCard.addView(smallButton(t("Hủy hẹn giờ tắt", "Cancel the sleep timer")) {
+        if (sleeping) rulesCard.addView(smallButton(T("tv_main.cancel_the_sleep_timer")) {
             Rules.change(this, org.json.JSONObject().put("do", "sleep").put("minutes", 0)); showWeb()
         }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(6); gravity = Gravity.END })
     }
@@ -427,37 +424,37 @@ class MainActivity : Activity() {
         val list = Paired.list(this)
         for (d in list) {
             val days = ((now - d.seen) / (24 * 3600_000L)).toInt()
-            val seen = if (days <= 0) t("hôm nay", "today") else if (days == 1) t("hôm qua", "yesterday") else t("$days ngày trước", "$days days ago")
-            val name = d.name.ifEmpty { t("Thiết bị cũ", "Older device") }
+            val seen = if (days <= 0) T("tv_main.today") else if (days == 1) T("tv_main.yesterday") else T("tv_main.days_ago", "n" to days)
+            val name = d.name.ifEmpty { T("tv_main.older_device") }
             val row = LinearLayout(this)
             row.gravity = Gravity.CENTER_VERTICAL
             row.setPadding(0, dp(8), 0, dp(8))
             val words = LinearLayout(this)
             words.orientation = LinearLayout.VERTICAL
             words.addView(text(name, 15, INK, true))
-            words.addView(text(listOf(if (d.created > 0) t("Ghép lúc ", "Paired ") + fmt.format(java.util.Date(d.created)) else "", t("dùng ", "used ") + seen, d.ip)
+            words.addView(text(listOf(if (d.created > 0) T("tv_main.paired_at", "at" to fmt.format(java.util.Date(d.created))) else "", T("tv_main.used_when", "when" to seen), d.ip)
                 .filter { it.isNotEmpty() }.joinToString("   ·   "), 12, MUTED, false))
             row.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
-            row.addView(smallButton(t("Hủy ghép", "Unpair")) { confirmForget(name) { Paired.forget(this, d.id); dlg?.dismiss(); pairedMenu() } },
+            row.addView(smallButton(T("setup.unpair")) { confirmForget(name) { Paired.forget(this, d.id); dlg?.dismiss(); pairedMenu() } },
                 LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
             rows.addView(row)
         }
-        if (list.isEmpty()) rows.addView(text(t("Chưa có thiết bị nào.", "No device yet."), 14, MUTED, false))
+        if (list.isEmpty()) rows.addView(text(T("tv_main.no_device_yet"), 14, MUTED, false))
         val scroll = ScrollView(this)
         scroll.addView(rows)
         val b = android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setTitle(t("Thiết bị đã ghép", "Paired devices"))
+            .setTitle(T("tv_main.paired_devices_2"))
             .setView(scroll)
-            .setNegativeButton(t("Đóng", "Close"), null)
-        if (list.size > 1) b.setNeutralButton(t("Hủy ghép tất cả", "Unpair all")) { _, _ -> confirmForget(t("tất cả thiết bị", "every device")) { RemoteService.forgetAll(this) } }
+            .setNegativeButton(T("common.close"), null)
+        if (list.size > 1) b.setNeutralButton(T("tv_main.unpair_all")) { _, _ -> confirmForget(T("tv_main.every_device")) { RemoteService.forgetAll(this) } }
         dlg = b.show()
     }
 
     private fun confirmForget(what: String, forget: () -> Unit) {
         android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setMessage(t("Hủy ghép $what? Muốn điều khiển lại phải nhập mã mới.", "Unpair $what? It will need a new code to control the TV."))
-            .setPositiveButton(t("Hủy ghép", "Unpair")) { _, _ -> forget(); log(t("✓ Đã hủy ghép ", "✓ Unpaired ") + what); showWeb() }
-            .setNegativeButton(t("Hủy", "Cancel"), null).show()
+            .setMessage(T("tv_main.unpair_what_it_will", "what" to what))
+            .setPositiveButton(T("setup.unpair")) { _, _ -> forget(); log(T("tv_main.unpaired_what", "what" to what)); showWeb() }
+            .setNegativeButton(T("common.cancel"), null).show()
     }
 
     /** One line per timer or limit that is set, and whether the sleep timer is running; null when nothing is set. */
@@ -466,10 +463,10 @@ class MainActivity : Activity() {
         val lines = ArrayList<String>()
         val at = o.optLong("sleep_at")
         val sleeping = at > System.currentTimeMillis()
-        if (sleeping) lines.add("😴 " + t("TV tự tắt lúc ", "The TV turns off at ") + java.text.SimpleDateFormat("HH:mm", Locale.US).format(java.util.Date(at)))
-        Rules.bedtime(o).let { b -> if (b.optBoolean("on")) lines.add("🌙 " + t("Giờ đi ngủ ", "Bedtime ") + b.getJSONArray("ranges").let { l -> (0 until l.length()).joinToString(", ") { l.getJSONObject(it).let { r -> r.optString("from") + " – " + r.optString("to") } } }) }
+        if (sleeping) lines.add("😴 " + T("tv_main.sleep_at", "at" to java.text.SimpleDateFormat("HH:mm", Locale.US).format(java.util.Date(at))))
+        Rules.bedtime(o).let { b -> if (b.optBoolean("on")) lines.add("🌙 " + T("tv_main.bedtime_ranges", "ranges" to b.getJSONArray("ranges").let { l -> (0 until l.length()).joinToString(", ") { l.getJSONObject(it).let { r -> r.optString("from") + " – " + r.optString("to") } } })) }
         val n = o.optJSONObject("limits")?.length() ?: 0
-        if (n > 0) lines.add("⏳ " + t("Giới hạn giờ dùng: $n app", "Daily limits: $n " + (if (n == 1) "app" else "apps")))
+        if (n > 0) lines.add("⏳ " + T("tv_main.daily_limits", "n" to n))
         return if (lines.isEmpty()) null else Pair(lines.joinToString("\n"), sleeping)
     }
 
@@ -521,8 +518,8 @@ class MainActivity : Activity() {
                 // still no answer: the TV's ADB can stay sure a question is up when none is on screen; off and on clears that
                 if (askingFor >= 20 && !hinted) {
                     hinted = true
-                    setStatus(WARN, t("TV không hiện câu hỏi?", "No question on the TV?"),
-                        t("Tắt rồi bật lại “Gỡ lỗi USB” (Gỡ lỗi ADB → Tùy chọn nhà phát triển).", "Turn “USB debugging” off and on again (Debugging → Developer options)."))
+                    setStatus(WARN, T("tv_main.no_question_on_the"),
+                        T("tv_main.turn_usb_debugging_off"))
                     tiles[4].view.requestFocus()
                 }
                 v.postDelayed(this, 2000)
@@ -534,14 +531,14 @@ class MainActivity : Activity() {
     private fun connect() {
         setEnabled(false)
         connecting = true
-        setStatus(WARN, t("Đang kết nối ADB...", "Connecting ADB..."), "")
+        setStatus(WARN, T("tv_main.connecting_adb"), "")
         Thread {
             try {
                 adb?.close()
                 val a = Adb(filesDir)
                 a.connect("127.0.0.1", 5555, Adb.Prompt {
-                    ui { setStatus(WARN, t("TV đang hỏi “Cho phép gỡ lỗi USB?”", "The TV is asking “Allow USB debugging?”"),
-                        t("Tích “Luôn cho phép”, rồi chọn OK.", "Tick “Always allow”, then choose OK."))
+                    ui { setStatus(WARN, T("allow.the_tv_is_asking"),
+                        T("tv_main.tick_always_allow_then"))
                         uncover() }
                 })
                 adb = a
@@ -549,7 +546,7 @@ class MainActivity : Activity() {
                 // never over a question still up (another key's, queued): that one would then block every later one
                 if (backed) { backed = false; try { if (!questionUp(a)) a.shell("am start -n $packageName/.MainActivity", 10000) } catch (ignored: Exception) { } }
                 unblock(a)
-                val s = Setup(a, getExternalFilesDir(null), vi, Setup.Log { log(it) })
+                val s = Setup(a, getExternalFilesDir(null), Words.lang, Setup.Log { log(it) })
                 setup = s
                 try { lastUpdate(a) } catch (ignored: Exception) { }
                 showStatus(s)
@@ -559,17 +556,16 @@ class MainActivity : Activity() {
                 adb = null; setup = null
                 connecting = false
                 ui {
-                    setStatus(BAD, t("Chưa kết nối được ADB", "No ADB connection"), t("Bật “Gỡ lỗi ADB” rồi chọn Kết nối lại.", "Turn on “ADB debugging”, then choose Reconnect."))
+                    setStatus(BAD, T("tv_main.no_adb_connection"), T("tv_main.turn_on_adb_debugging"))
                     log("✗ " + reason(e))
-                    log(t("Cần bật “Gỡ lỗi ADB”: Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng”, rồi Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB” (hoặc “Gỡ lỗi USB”).",
-                        "Turn on “ADB debugging”: Settings → Device Preferences → About → press OK 7 times on “Build”, then Developer options → “ADB debugging” (or “USB debugging”)."))
-                    log(t("Bật xong quay lại đây, chọn Kết nối lại. TV hỏi thì chọn “Luôn cho phép”.", "Then come back here and choose Reconnect. If the TV asks, choose “Always allow”."))
+                    log(T("tv_main.enable_adb_howto"))
+                    log(T("tv_main.then_come_back_here"))
                     tiles[5].enable(true)
                     tiles[5].view.requestFocus()
                     val off = (e.message ?: "").lowercase().let { it.contains("refused") }   // ADB is off; not: the person said no to the prompt
                     if (!openedDev && off) {                          // once: straight to where ADB is turned on, no hunting through menus
                         openedDev = true
-                        log(t("Đang mở Tùy chọn nhà phát triển để bật Gỡ lỗi USB...", "Opening Developer options to turn on USB debugging..."))
+                        log(T("tv_main.opening_developer_options_to"))
                         devOptions()
                     }
                 }
@@ -586,10 +582,9 @@ class MainActivity : Activity() {
         lanIp = lan; tsIp = ts
         ui {
             showWeb()
-            setStatus(OK, t("Đã kết nối ADB", "ADB connected"), name + "\n" + t("Trong nhà ", "Home network ") + lan.ifEmpty { "?" } + "   ·   Tailscale " +
-                (if (ts.isNotEmpty()) ts else if (tsInstalled) t("chưa đăng nhập", "signed out") else t("chưa cài", "not installed")))
-            tsTile.say(if (ts.isNotEmpty()) t("Đã vào · ", "Connected · ") + ts else if (tsInstalled) t("Chưa đăng nhập · chọn để vào", "Signed out · select to sign in")
-                else t("Chưa cài · chọn để cài", "Not installed · select to install"))
+            setStatus(OK, T("tv_main.adb_connected"), name + "\n" + T("tv_main.adb_networks", "lan" to lan.ifEmpty { "?" }, "ts" to (if (ts.isNotEmpty()) ts else if (tsInstalled) T("tv_main.signed_out") else T("tv_main.not_installed"))))
+            tsTile.say(if (ts.isNotEmpty()) T("tv_main.connected_ip", "ip" to ts) else if (tsInstalled) T("tv_main.signed_out_select_to")
+                else T("tv_main.not_installed_select_to"))
         }
     }
 
@@ -608,14 +603,14 @@ class MainActivity : Activity() {
     private var openedDev = false
     private var retryOnResume = false                                // one more try when the person comes back from the screen we sent them to
 
-    private fun keepText() = if (KeepAdb.on(this)) t("✓ Tự bật lại khi bị tắt", "✓ Turn back on when switched off")
-        else t("Tự bật lại khi bị tắt: đang tắt", "Turn back on when switched off: off")
+    private fun keepText() = if (KeepAdb.on(this)) T("tv_main.turn_back_on_when")
+        else T("tv_main.turn_back_on_when_2")
 
     /** Developer options, and whether TV Setup turns ADB debugging back on (KeepAdb) when someone switches it off. */
     private fun debugMenu() {
-        val items = arrayOf(t("Mở Tùy chọn nhà phát triển", "Open Developer options"), keepText())
+        val items = arrayOf(T("tv_main.open_developer_options"), keepText())
         android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setTitle(t("Gỡ lỗi ADB", "Debugging"))
+            .setTitle(T("tv_main.debugging"))
             .setItems(items) { _, i ->
                 when (i) {
                     0 -> devOptions()
@@ -626,15 +621,15 @@ class MainActivity : Activity() {
 
     private fun devOptions() {
         retryOnResume = true
-        val dev = t("Tùy chọn nhà phát triển", "Developer options")
+        val dev = T("tv_main.developer_options")
         val tries = listOf(
             dev to android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS),
             dev to android.content.Intent().setClassName("com.android.tv.settings", "com.android.tv.settings.system.development.DevelopmentActivity"),
             dev to android.content.Intent().setClassName("com.android.settings", "com.android.settings.DevelopmentSettings"),
-            t("Giới thiệu (bấm OK 7 lần vào “Bản dựng”)", "About (press OK 7 times on “Build”)") to android.content.Intent(android.provider.Settings.ACTION_DEVICE_INFO_SETTINGS),
-            t("Cài đặt", "Settings") to android.content.Intent(android.provider.Settings.ACTION_SETTINGS))
+            T("tv_main.about_press_ok_7") to android.content.Intent(android.provider.Settings.ACTION_DEVICE_INFO_SETTINGS),
+            T("page.settings") to android.content.Intent(android.provider.Settings.ACTION_SETTINGS))
         fun attempt(i: Int) {
-            if (i >= tries.size) { log(t("✗ TV này không cho mở Cài đặt từ app.", "✗ This TV does not let apps open its Settings.")); return }
+            if (i >= tries.size) { log(T("tv_main.this_tv_does_not")); return }
             val (name, intent) = tries[i]
             try {
                 startActivity(intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -645,7 +640,7 @@ class MainActivity : Activity() {
             // a screen that is not allowed to open closes itself at once and leaves us in front: then try the next one
             window.decorView.postDelayed({
                 if (hasWindowFocus()) attempt(i + 1)
-                else log(t("Đã mở: ", "Opened: ") + name + t(". Bật “Gỡ lỗi USB” (hoặc “Gỡ lỗi ADB”), quay lại đây rồi chọn Kết nối lại.", ". Turn on “USB debugging” (or “ADB debugging”), come back here and choose Reconnect."))
+                else log(T("tv_main.opened_turn_on", "name" to name))
             }, 1200)
         }
         attempt(0)
@@ -658,7 +653,7 @@ class MainActivity : Activity() {
     private fun chooseOptimize() {
         val s = setup ?: return
         if (busy) return
-        log(t("Đang xem TV có gì để tối ưu...", "Looking at what this TV has..."))
+        log(T("tv_main.looking_at_what_this"))
         Thread {
             val plan = try {
                 s.plan { pkg -> try { packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString() } catch (e: Exception) { null } }
@@ -688,8 +683,8 @@ class MainActivity : Activity() {
         val words = LinearLayout(this)
         words.orientation = LinearLayout.VERTICAL
         words.setPadding(dp(14), 0, 0, 0)
-        words.addView(text(t("Tối ưu TV", "Optimize TV"), 22, INK, true))
-        words.addView(text(t("Tắt app chỉ là tạm ngưng; Hoàn tác bật lại hết.", "Turning an app off only pauses it; Undo turns all back on."), 13, MUTED, false))
+        words.addView(text(T("tv_main.optimize_tv"), 22, INK, true))
+        words.addView(text(T("tv_main.turning_an_app_off"), 13, MUTED, false))
         head.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
         card.addView(head)
 
@@ -699,7 +694,7 @@ class MainActivity : Activity() {
         val count = text("", 13, MUTED, false)
         fun recount() {
             val n = rows.count { it.first != null && it.second[0] }
-            count.text = if (n == 0) t("Không tắt app nào", "No apps turned off") else t("Sẽ tắt $n app", "$n apps will be turned off")
+            count.text = if (n == 0) T("tv_main.no_apps_turned_off") else T("tv_main.apps_off_n", "n" to n)
         }
         fun row(title: String, sub: String, on: Boolean, pkg: String?): View {
             val ticked = booleanArrayOf(on)
@@ -743,16 +738,16 @@ class MainActivity : Activity() {
         fun header(s: String) = list.addView(section(s), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
 
         val usingFl = plan.optString("home") == Setup.FL_PKG
-        header(t("CHUNG", "GENERAL"))
-        add(row(t("Tắt hiệu ứng chuyển cảnh", "Turn off transition animations"),
-            if (plan.optBoolean("anim", true)) t("Nhanh hơn", "Faster") else t("Đang tắt sẵn", "Already off"), true, null))
-        add(row(if (usingFl) t("Màn hình chính FLauncher (đang dùng)", "FLauncher home screen (in use)") else t("Dùng FLauncher làm màn hình chính", "Use FLauncher as the home screen"),
-            t("Nhẹ, không quảng cáo", "Light, no ads") + (if (plan.optBoolean("flauncher")) "" else t(" · tải 10 MB", " · 10 MB download")), true, null))
+        header(T("tv_main.general"))
+        add(row(T("setup.anim_off"),
+            if (plan.optBoolean("anim", true)) T("tv_main.faster") else T("setup.anim_already"), true, null))
+        add(row(if (usingFl) T("setup.flauncher_in_use") else T("setup.flauncher_use"),
+            (if (plan.optBoolean("flauncher")) T("tv_main.light_no_ads") else T("tv_main.light_no_ads_download")), true, null))
         val sug = plan.optJSONArray("suggest") ?: org.json.JSONArray()
-        if (sug.length() > 0) header(t("TẮT APP ĐỀ XUẤT", "SUGGESTED APPS TO TURN OFF"))
+        if (sug.length() > 0) header(T("tv_main.suggested_apps_to_turn"))
         for (i in 0 until sug.length()) { val a = sug.getJSONObject(i); add(row(a.optString("label"), a.optString("pkg"), true, a.optString("pkg"))) }
         val more = plan.optJSONArray("apps") ?: org.json.JSONArray()
-        if (more.length() > 0) header(t("TẮT THÊM APP KHÁC", "TURN OFF OTHER APPS"))
+        if (more.length() > 0) header(T("tv_main.turn_off_other_apps"))
         for (i in 0 until more.length()) { val a = more.getJSONObject(i); add(row(a.optString("label"), a.optString("pkg"), false, a.optString("pkg"))) }
         recount()
 
@@ -766,7 +761,7 @@ class MainActivity : Activity() {
         val foot = LinearLayout(this)
         foot.gravity = Gravity.CENTER_VERTICAL
         foot.setPadding(0, dp(18), 0, 0)
-        val go = smallButton(t("⚡  Chạy tối ưu", "⚡  Optimize")) {
+        val go = smallButton(T("tv_main.optimize")) {
             val ticks = rows.map { it.second[0] }
             d.dismiss()
             job { it.apply(Setup.Choice(ticks[0], ticks[1], rows.filter { r -> r.first != null && r.second[0] }.map { r -> r.first!! })) }
@@ -777,7 +772,7 @@ class MainActivity : Activity() {
         go.background = box(Color.rgb(36, 58, 108), 10, 0)                   // dim until focused: only one button ever looks "on"
         go.setOnFocusChangeListener { v, f -> v.background = if (f) box(ACCENT, 10, 2) else box(Color.rgb(36, 58, 108), 10, 0) }
         list.getChildAt(list.childCount - 1)?.nextFocusDownId = go.id
-        val cancel = smallButton(t("Hủy", "Cancel")) { d.dismiss() }
+        val cancel = smallButton(T("common.cancel")) { d.dismiss() }
         cancel.textSize = 16f
         cancel.setPadding(dp(22), dp(12), dp(22), dp(12))
         foot.addView(go)
@@ -795,9 +790,9 @@ class MainActivity : Activity() {
     private fun askRemove() {
         if (busy) return
         android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setTitle(t("Gỡ TV Setup?", "Remove TV Setup?"))
-            .setMessage(t("App đã tắt bằng Tối ưu TV sẽ được bật lại.", "Apps turned off by Optimize TV come back on."))
-            .setPositiveButton(t("Gỡ", "Remove")) { _, _ ->
+            .setTitle(T("tv_main.remove_tv_setup_2"))
+            .setMessage(T("tv_main.apps_turned_off_by"))
+            .setPositiveButton(T("fleet.remove")) { _, _ ->
                 val s = setup
                 val a = adb
                 if (s == null || a == null) {                         // no ADB here: Android's own way
@@ -806,7 +801,7 @@ class MainActivity : Activity() {
                 }
                 busy = true
                 spinner.visibility = View.VISIBLE
-                log(t("Đang gỡ TV Setup...", "Removing TV Setup..."))
+                log(T("tv_main.removing_tv_setup"))
                 Thread {
                     try {
                         if (s.optimized()) s.undo()
@@ -816,7 +811,7 @@ class MainActivity : Activity() {
                     ui { spinner.visibility = View.INVISIBLE }
                 }.start()
             }
-            .setNegativeButton(t("Hủy", "Cancel"), null).show()
+            .setNegativeButton(T("common.cancel"), null).show()
     }
 
     private fun job(job: Job) {
@@ -846,17 +841,16 @@ class MainActivity : Activity() {
     private fun tailscale() {
         job { _ ->
             val ts = Tailscale(adb ?: return@job, getExternalFilesDir(null))
-            if (!ts.installed()) log(t("Đang tải và cài Tailscale bản chính thức (khoảng 100 MB)...", "Downloading and installing the official Tailscale (about 100 MB)..."))
+            if (!ts.installed()) log(T("tv_main.downloading_and_installing_the"))
             val url = ts.start { what, pct ->
                 ui { tsTile.progress(when (what) {
-                    "download" -> t("Đang tải ", "Downloading ") + ((pct - 5) * 100 / 55).coerceIn(0, 100) + "%"
-                    "install" -> t("Đang cài...", "Installing...")
-                    else -> t("Đang bật...", "Switching on...") }) }
-                if (what == "start") log(t("Đang bật Tailscale...", "Switching Tailscale on..."))
+                    "download" -> T("tv_main.downloading_pct", "pct" to ((pct - 5) * 100 / 55).coerceIn(0, 100))
+                    "install" -> T("tv_main.installing")
+                    else -> T("tv_main.switching_on") }) }
+                if (what == "start") log(T("tv_main.switching_tailscale_on"))
             }
-            if (url.isEmpty()) log(t("✓ TV đã vào Tailscale: ", "✓ The TV is in Tailscale: ") + ts.ip() + t(". Ở ngoài nhà dùng IP này (máy điều khiển cũng bật Tailscale, cùng tài khoản).", ". Away from home use this IP (the controlling device needs Tailscale too, same account)."))
-            else log(t("Tailscale đang hiện mã QR: quét bằng điện thoại đã đăng nhập Tailscale rồi bấm Connect (hoặc mở ", "Tailscale shows a QR code: scan it with a phone signed in to Tailscale and press Connect (or open ") + url +
-                t(" trên máy tính). Xong thì nên vào login.tailscale.com/admin/machines, menu ⋯ của TV → Disable key expiry.", " on a computer). Afterwards, at login.tailscale.com/admin/machines, open the TV's ⋯ menu → Disable key expiry."))
+            if (url.isEmpty()) log(T("tv_main.in_tailscale", "ip" to ts.ip()))
+            else log(T("tv_main.tailscale_qr", "url" to url))
         }
     }
 
@@ -869,7 +863,7 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun reason(e: Exception): String = dev.tvremote.core.Errors.say(e, vi)
+    private fun reason(e: Exception): String = dev.tvremote.core.Errors.say(e, Words.lang)
 
     private fun ui(r: Runnable) { runOnUiThread(r) }
 
