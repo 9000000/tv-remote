@@ -540,6 +540,7 @@
     'Trả lại': 'Put back',
     'Chỉ xem: đổi sai có thể mất kết nối tới TV': 'View only: a wrong value could cut you off from the TV',
     'Bật lên': 'Turn on',
+    'Bật được, nhưng app sẽ không tắt lại được: tắt đi thì app điện thoại, app máy tính và trang web của TV có thể mất kết nối tới TV. Muốn tắt thì vào Cài đặt trên TV.': 'It can be turned on, but the app will not turn it off again: off, the phone app, the computer app and the TV\'s web page could lose the TV. To turn it off, use the TV\'s own Settings.',
     'Nhỏ hơn': 'Lower',
     'To hơn': 'Higher',
     'Chỉ bật được: tắt có thể mất kết nối tới TV': 'Can only be turned on: off could cut you off from the TV',

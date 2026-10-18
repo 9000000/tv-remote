@@ -146,6 +146,12 @@
     for (const l of String(text || '').replace(/\r/g, '').split('\n')) {
       const m = /^(global|secure|system) ([^=\s]+)=(.*)$/.exec(l);
       if (m) out.push({ table: m[1], name: m[2], value: m[3] });
+      const v = /^vol (\d) .*volume is (\d+) in range \[(\d+)\.\.(\d+)\]/.exec(l);   // the live volume, over the saved key
+      if (v) {
+        const name = v[1] === '1' ? 'volume_system' : 'volume_music', live = { value: v[2], min: Number(v[3]), max: Number(v[4]) };
+        const s = out.find((x) => x.table === 'system' && x.name === name);
+        if (s) Object.assign(s, live); else out.push({ table: 'system', name, ...live });
+      }
     }
     return out;
   }
@@ -254,7 +260,7 @@
   // { locked } · { kind: 'bool', on, off } · { kind: 'pick', values } · { kind: 'text', tech } (tech: Android's own internal key) · {} nothing simple to set
   function settingEdit(s) {
     if (ON_ONLY[s.name]) return s.value === ON_ONLY[s.name] || s.table !== 'global' ? { locked: true } : { kind: 'turnon', on: ON_ONLY[s.name] };
-    if (VOLUME.test(s.name) && s.table === 'system') return { kind: 'step', min: 0, max: 100 };   // through the volume command (TvShell.VOLUME)
+    if (VOLUME.test(s.name) && s.table === 'system') return { kind: 'step', min: s.min ?? 0, max: s.max ?? 100 };   // through the volume command (TvShell.VOLUME)
     if (SET_LOCKED.test(s.name)) return { locked: true };
     const i = SET_INFO[s.name], kind = i ? i[3] : NUMBER.test(s.value) ? 'raw' : '';
     const words = s.value === 'true' || s.value === 'false';

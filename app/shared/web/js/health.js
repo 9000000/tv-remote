@@ -295,11 +295,16 @@ function setControl(s, i, vi) {
   if (e.locked) { shown.textContent = '🔒 ' + i.value; shown.title = tr('Chỉ xem: đổi sai có thể mất kết nối tới TV'); }
   else if (e.kind === 'turnon') {                                    // on only: off could cut the remotes off
     shown.textContent = '🔒 ' + i.value; shown.title = tr('Chỉ bật được: tắt có thể mất kết nối tới TV');
-    ctl = el('button', { type: 'button', className: 'small primary', textContent: tr('Bật lên'), onclick: () => setSetting(s, e.on) });
-  } else if (e.kind === 'step') {                                    // a volume: one step each way, the TV says how far it goes
-    const n = Number(s.value) || 0, go = (d) => setSetting(s, String(Math.min(e.max, Math.max(e.min, n + d))));
-    ctl = el('div', { className: 'setstep' }, el('button', { type: 'button', className: 'small', title: tr('Nhỏ hơn'), textContent: '−', disabled: n <= e.min, onclick: () => go(-1) }),
-      el('span', { className: 'setval', textContent: String(n) }), el('button', { type: 'button', className: 'small', title: tr('To hơn'), textContent: '+', onclick: () => go(1) }));
+    ctl = el('button', { type: 'button', className: 'small primary', textContent: tr('Bật lên'), onclick: async () => {
+      if (await ask('Bật được, nhưng app sẽ không tắt lại được: tắt đi thì app điện thoại, app máy tính và trang web của TV có thể mất kết nối tới TV. Muốn tắt thì vào Cài đặt trên TV.', { ok: 'Bật lên' })) setSetting(s, e.on);
+    } });
+  } else if (e.kind === 'step') {                                    // a volume: type the level, or a step each way; the TV says its range
+    const n = Number(s.value) || 0, go = (v) => { v = Math.min(e.max, Math.max(e.min, Math.round(v))); if (v !== n) setSetting(s, String(v)); else box.value = n; };
+    const box = el('input', { type: 'number', className: 'setnum', inputMode: 'numeric', min: e.min, max: e.max, value: n, ariaLabel: i.title + ' ' + e.min + '–' + e.max,
+      onchange: (ev) => go(Number(ev.target.value)), onkeydown: (ev) => { if (ev.key === 'Enter') ev.target.blur(); } });
+    ctl = el('div', { className: 'setstep' }, el('button', { type: 'button', className: 'small', title: tr('Nhỏ hơn'), textContent: '−', disabled: n <= e.min, onclick: () => go(n - 1) }),
+      box, el('span', { className: 'setmax', title: e.min + '–' + e.max, textContent: '/ ' + e.max }),
+      el('button', { type: 'button', className: 'small', title: tr('To hơn'), textContent: '+', disabled: n >= e.max, onclick: () => go(n + 1) }));
   } else if (e.kind === 'range') {                                   // brightness: a slider, set once it is let go
     const out = el('span', { className: 'setval', textContent: settingWord(s, s.value, vi) });
     const r = el('input', { type: 'range', className: 'setrange', min: e.min, max: e.max, value: Number(s.value) || 0, ariaLabel: i.title,

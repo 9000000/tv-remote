@@ -54,7 +54,9 @@ object TvShell {
 
     const val BOOT = "cmd package query-receivers --brief -a android.intent.action.BOOT_COMPLETED 2>/dev/null | grep / | sed 's/^ *//'"
 
-    const val SETTINGS_READ = "for n in global secure system; do settings list \$n 2>/dev/null | sed \"s/^/\$n /\"; done"
+    // then the live system and media volumes with their range: the volume_* keys are what Android last saved, often stale
+    const val SETTINGS_READ = "for n in global secure system; do settings list \$n 2>/dev/null | sed \"s/^/\$n /\"; done; " +
+        "for s in 1 3; do echo \"vol \$s \$(cmd media_session volume --stream \$s --get 2>/dev/null | grep 'volume is')\"; done"
 
     fun appInfo(pkg: String): String {
         pkg(pkg)

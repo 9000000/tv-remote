@@ -164,7 +164,8 @@
   .setname { display:flex; flex-direction:column; gap:2px; min-width:0; font-size:14px; } .setname small { font-size:11px; color:var(--muted); overflow-wrap:anywhere; }
   .setval { max-width:46vw; font-size:14px; font-weight:600; text-align:right; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; word-break:break-all; }
   .setval.mono { font-size:12px; font-weight:400; color:var(--muted); } .setval.long { font-size:12px; font-weight:500; }
-  .setstep { display:flex; align-items:center; gap:6px; } .setstep .setval { min-width:3ch; text-align:center; } .setrange { width:min(150px, 34vw); accent-color:var(--accent); }
+  .setstep { display:flex; align-items:center; gap:6px; } .setstep .setval { min-width:3ch; text-align:center; }
+  .setstep .setnum { width:7ch; height:var(--ctl-sm); padding:0 6px; text-align:center; } .setstep .setmax { color:var(--muted); font-size:13px; white-space:nowrap; } .setrange { width:min(150px, 34vw); accent-color:var(--accent); }
   .setctl { display:flex; align-items:center; justify-content:flex-end; gap:6px; } .setctl .small { min-height:var(--chip); padding:0 12px; }
   .setpick { min-height:34px; max-width:46vw; border-radius:10px; background:var(--btn); color:var(--ink); border:0; padding:0 8px; font:inherit; font-size:14px; }
   .setlist .setrow.full { grid-template-columns:1fr; } .setlist .setrow.full .setval { display:block; max-width:none; text-align:left; }
