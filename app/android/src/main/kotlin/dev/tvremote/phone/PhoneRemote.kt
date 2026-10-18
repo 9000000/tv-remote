@@ -85,7 +85,7 @@ internal fun MainActivity.remoteRow(name: String, index: Int, height: Int, minKe
     val row = LinearLayout(this)
     row.weightSum = maxOf(minKeys.toFloat(), remoteSpec().rows[name]!![index].size.toFloat())   // a short row keeps the others' key width
     remoteSpec().rows[name]!![index].forEachIndexed { i, e ->
-        val b = icon("@" + e.icon, t(e.vi, e.en), BTN)
+        val b = icon("@" + e.icon, e.words(), BTN)
         val action = e.action
         if (action != null) {
             val run = phoneActions[action] ?: error("remote.json: no phone handler for \"$action\"")
@@ -113,7 +113,7 @@ internal fun MainActivity.remoteMenu(name: String, conditions: Set<String> = emp
         if (e.whenCond != null && e.whenCond !in conditions || !e.can(caps)) continue   // what this TV cannot do is left out
         if (e.expand != null) { lists[e.expand]?.let { items.addAll(it()) }; continue }
         val run = phoneActions[e.action!!] ?: error("remote.json: no phone handler for \"${e.action}\"")
-        items.add(Triple("@" + e.icon + "|" + t(e.vi, e.en), t(e.subVi, e.subEn)) { run(this, e.arg) })
+        items.add(Triple("@" + e.icon + "|" + e.words(), e.subWords()) { run(this, e.arg) })
     }
     return items
 }

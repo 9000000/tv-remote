@@ -15,8 +15,10 @@ const spec = JSON.parse(read('shared/web/remote.json'));
 const entries = [...Object.values(spec.rows).flat(2), ...Object.values(spec.menus).flat()];
 
 // remote_spec.js on its own, as the page would run it (no other script of the page is needed until a handler runs)
+const book = (l) => JSON.parse(read('shared/web/i18n/' + l + '.json'));
 function pageSpec(core, lang) {
-  const sandbox = { CORE: core, LANG: lang, document: {}, console };
+  const words = book(lang);
+  const sandbox = { CORE: core, LANG: lang, document: {}, console, T: (id) => words[id] ?? id };   // i18n.js's T(), enough here
   vm.createContext(sandbox);
   vm.runInContext(read('shared/web/js/remote_spec.js').replace('const REMOTE = ', 'var REMOTE = ').replace(/^const (\w+) =/gm, 'var $1 =') + '\nthis.REMOTE_DO = REMOTE_DO; this.remoteMenu = remoteMenu;', sandbox);
   sandbox.REMOTE = spec;                                              // the page loads the file itself (XHR); here it is read from disk
@@ -34,12 +36,12 @@ test('remote.json: unique ids, a key or an action or a list on each entry, both 
     assert.equal([e.key, e.do, e.expand].filter(Boolean).length, 1, e.id + ': one of key / do / expand');
     for (const n of e.needs || []) assert.ok(caps.has(n), e.id + ': needs ' + n + ', which no kind of TV has (Remote.Kind.caps)');
     if (e.expand) continue;
-    assert.ok(e.icon && e.vi && e.en, e.id + ': icon, vi and en');
-    if (e.sub) assert.ok(e.sub.vi && e.sub.en, e.id + ': sub in both languages');
+    assert.ok(e.icon && e.t, e.id + ': icon and words (t)');
+    for (const id of [e.t, e.sub, e.web && e.web.t, e.web && e.web.sub, e.phone && e.phone.t, e.phone && e.phone.sub].filter(Boolean))
+      for (const l of ['vi', 'en']) assert.ok(typeof book(l)[id] === 'string' && book(l)[id].trim() === book(l)[id], e.id + ': ' + id + ' has no ' + l + ' words in i18n/' + l + '.json');
     for (const side of ['web', 'phone']) if (e[side]) assert.ok(e.why, e.id + ': says why it differs on the ' + side);
     for (const c of e.cores || []) assert.ok(c === 'web' || c === 'phone', e.id + ': cores are web or phone');
     if (e.cores) assert.ok(e.why, e.id + ': says why only some cores show it');
-    assert.equal(e.vi.trim(), e.vi); assert.equal(e.en.trim(), e.en);
   }
 });
 

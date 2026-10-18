@@ -1,6 +1,6 @@
 // node --test app/shared/tests/   The page's words by id (js/i18n.js): i18n/vi.json lists every one, each other language the
 // same ids with the same {placeholders}; index.html names an id for each of its words and keeps the Vietnamese of vi.json
-// (so it never drifts); every id is used; the old table of whole sentences (EN, RULES in i18n.js) only shrinks.
+// (so it never drifts); every id is used; scripts write no words of their own.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -88,7 +88,7 @@ const kotlin = () => {                                          // the apps' Kot
 };
 
 test('every id is used', () => {
-  const src = [html, read('stats.js'), ...fs.readdirSync(path.join(web, 'js')).filter((f) => f !== 'i18n.js').map((f) => read('js/' + f))].join('\n');
+  const src = [html, read('stats.js'), read('remote.json').replace(/"/g, "'"), ...fs.readdirSync(path.join(web, 'js')).filter((f) => f !== 'i18n.js').map((f) => read('js/' + f))].join('\n');
   const kt = kotlin();
   // an id is named on an element, or as a string in a script: T('a.b'), T(x ? 'a.b' : 'a.c'), a table of ids; in Kotlin T("a.b"),
   // Words.get(lang, "a.b"), t("a.b"), or any quoted "a.b" that is an id
@@ -101,11 +101,21 @@ test('every id is used', () => {
   assert.deepEqual([...new Set(ktAsked)].filter((id) => !(id in vi)), [], 'Kotlin asks for an id missing from i18n/vi.json');
 });
 
-test('the old sentence table only shrinks', () => {
-  // EN and RULES translate words the scripts still write in Vietnamese; moved to an id, a line leaves them. Lower these as they go.
-  const en = i18n.slice(i18n.indexOf('const EN = {'), i18n.indexOf('const RULES = ['));
-  const rules = i18n.slice(i18n.indexOf('const RULES = ['), i18n.indexOf('function core('));
-  const n = { en: [...en.matchAll(/'(?:[^'\\]|\\.)*':\s*['"`]/g)].length, rules: [...rules.matchAll(/^\s*\[\//gm)].length };
-  assert.ok(n.en <= 45, `EN has ${n.en} entries (the most it may have: 45): a new word goes in i18n/*.json with an id`);
-  assert.ok(n.rules <= 125, `RULES has ${n.rules} (most: 125)`);
+test('scripts write no words of their own: every word is an id', () => {
+  // the old way (a table turning Vietnamese sentences into English on the rendered page) is gone: a sentence in a script would
+  // show in Vietnamese to every other language. Left alone: old.js (runs on browsers too old for the rest, carries both
+  // languages), voice.js (what people say, matched, not shown), the request apps.js writes for an AI (both languages, editable).
+  const SKIP = new Set(['i18n.js', 'old.js', 'voice.js']), bad = [];
+  for (const f of fs.readdirSync(path.join(web, 'js')).filter((x) => x.endsWith('.js') && !SKIP.has(x))) {
+    let inAi = false;
+    read('js/' + f).split('\n').forEach((line, i) => {
+      if (/^function aiPrompt\b/.test(line)) inAi = true; else if (inAi && /^}/.test(line)) inAi = false;
+      if (inAi) return;
+      const code = line.replace(/\/\/.*$/, '');
+      for (const m of code.matchAll(/'((?:[^'\\]|\\.)*)'|`((?:[^`\\]|\\.)*)`|"((?:[^"\\]|\\.)*)"/g))
+        if (VI.test(m[1] ?? m[2] ?? m[3])) bad.push(`js/${f}:${i + 1}: ${(m[1] ?? m[2] ?? m[3]).slice(0, 60)}`);
+    });
+  }
+  assert.deepEqual(bad, [], 'give these words an id in i18n/*.json and write T(\'id\')');
+  assert.ok(!/\bconst (EN|RULES) =|window\.tr\b/.test(i18n), 'no table of sentences in i18n.js');
 });

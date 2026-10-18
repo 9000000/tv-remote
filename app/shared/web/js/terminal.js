@@ -15,7 +15,7 @@ $('#termf').addEventListener('submit', async (e) => {
   termHist.push(cmd); termPos = termHist.length; $('#termin').value = ''; termRemember(cmd);
   termPrint('$ ' + cmd + '\n', 'cmd');
   const r = await fetch('/api/shell', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cmd }) }).then((x) => x.json()).catch(() => ({ error: T('terminal.server_unreachable') }));
-  if (r.error) termPrint(tr(r.error) + '\n', 'err'); else termPrint((r.out || '') + (r.out && !r.out.endsWith('\n') ? '\n' : ''));
+  if (r.error) termPrint(r.error + '\n', 'err'); else termPrint((r.out || '') + (r.out && !r.out.endsWith('\n') ? '\n' : ''));
 });
 termRemember();
 $('#termin').addEventListener('keydown', (e) => {

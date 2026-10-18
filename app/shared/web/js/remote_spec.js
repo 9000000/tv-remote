@@ -10,7 +10,7 @@ const REMOTE = (() => {
 })();
 // An entry as this page shows it: the "web" fields lay over the common ones.
 const remoteEntry = (e) => ({ ...e, ...e.web, sub: (e.web && e.web.sub) || e.sub });
-const remoteWords = (e) => (LANG === 'en' ? e.en : e.vi);
+const remoteWords = (id) => T(id);                                 // "t" and "sub" are ids in i18n/<lang>.json
 const remoteHere = (e) => !e.cores || e.cores.includes('web');   // "cores" says "phone" (the native remote) or "web" (the pages)
 // What a guest let in by a shared QR needs for an entry (SCOPE in core.js): pressing anything is "control"; sending files and
 // what the owner set up is "full"; a screenshot only looks. On the TV web page only: the apps are the owner's.
@@ -26,7 +26,7 @@ function remoteMenu(name, ctx = {}) {
     if (!remoteHere(raw) || !remoteCan(raw) || (raw.when && !(ctx.when || {})[raw.when])) continue;
     if (raw.expand) { const f = (ctx.expand || {})[raw.expand]; if (f) out.push(...f()); continue; }
     const e = remoteEntry(raw);
-    out.push(['@' + e.icon + '|' + remoteWords(e), e.sub ? remoteWords(e.sub) : '', () => REMOTE_DO[e.do](e.arg)]);
+    out.push(['@' + e.icon + '|' + remoteWords(e.t), e.sub ? remoteWords(e.sub) : '', () => REMOTE_DO[e.do](e.arg)]);
   }
   return out;
 }

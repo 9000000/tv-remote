@@ -25,10 +25,11 @@ class RemoteSpecTest {
         for (e in all(phone) + all(web)) assertEquals(e.id, 1, listOfNotNull(e.key, e.action, e.expand).size)
     }
 
-    @Test fun everyEntryHasBothLanguages() {
+    @Test fun everyEntryHasWordsInBothLanguages() {                   // "t" / "sub": ids in i18n/<lang>.json
         for (e in all(phone) + all(web)) if (e.expand == null) {
-            assertTrue(e.id, e.vi.isNotBlank() && e.en.isNotBlank() && e.icon.isNotBlank())
-            assertEquals(e.id, e.subVi.isBlank(), e.subEn.isBlank())
+            assertTrue(e.id, e.icon.isNotBlank() && e.t.isNotBlank())
+            for (id in listOf(e.t, e.sub).filter { it.isNotEmpty() }) for (l in listOf("vi", "en"))
+                assertTrue("${e.id}: $id has no $l words", Words.get(l, id) != id)
         }
     }
 
@@ -54,8 +55,8 @@ class RemoteSpecTest {
 
     @Test fun eachSideShowsItsOwnWordsAndItsOwnEntries() {
         fun find(s: RemoteSpec.Spec, id: String) = all(s).single { it.id == id }
-        assertEquals("Live TV", find(phone, "tv").en)
-        assertEquals("TV", find(web, "tv").en)
+        assertEquals("Live TV", Words.get("en", find(phone, "tv").t))
+        assertEquals("TV", Words.get("en", find(web, "tv").t))
         assertTrue(all(phone).any { it.id == "open-cast" })
         assertFalse(all(web).any { it.id == "open-cast" })
     }

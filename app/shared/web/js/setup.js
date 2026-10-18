@@ -386,18 +386,18 @@ async function installSetup() {
     const r = await api('/api/assist', null, true); if (gen !== assistGen) return;
     misses = r ? 0 : misses + 1;                                      // ten in a row: say so, instead of waiting for ever
     if (misses >= 10) return assistShow(T('setup.install_setup_title'), say(T('setup.server_unreachable')), row(act(T('setup.retry'), async () => installSetup(), 'primary'), act(T('setup.other_ways'), async () => adbHelp())));
-    if (!r || r.status === 'running') { if (r) { if (r.msg) msg.textContent = (r.step ? T('setup.step_of', { step: r.step, steps: r.steps }) + ' · ' : '') + tr(r.msg); setDone(!!r.checking); } continue; }
+    if (!r || r.status === 'running') { if (r) { if (r.msg) msg.textContent = (r.step ? T('setup.step_of', { step: r.step, steps: r.steps }) + ' · ' : '') + r.msg; setDone(!!r.checking); } continue; }
     if (r.status === 'moved') return assistShow(T('setup.install_setup_title'), say(T('setup.moved')),
       row(act(T('setup.retry'), async () => installSetup(), 'primary'), act(T('setup.other_ways'), async () => adbHelp())));
     if (r.status === 'look') return assistShow(T('allow.look_at_the_tv'), say(T('setup.look_body_tv')),
       row(act(T('setup.open_setup'), async () => { await assist('open', { what: 'dev.tvremote.setup' }); }, 'primary'), act(T('setup.redo'), async () => installSetup()), act(T('setup.other_ways'), async () => adbHelp())));
-    return assistShow(T('setup.install_setup_title'), say(tr(r.msg) || T('setup.cant_do')), row(act(T('setup.retry'), async () => installSetup(), 'primary'), act(T('setup.other_ways'), async () => adbHelp())));
+    return assistShow(T('setup.install_setup_title'), say(r.msg || T('setup.cant_do')), row(act(T('setup.retry'), async () => installSetup(), 'primary'), act(T('setup.other_ways'), async () => adbHelp())));
   }
 }
 
 // ---------- Tailscale: one button installs it on the TV, switches it on and fetches its sign-in link (Tailscale.kt) ----------
 // Nobody types on the TV: the link opens in a browser that is signed in to Tailscale, where one click adds the TV.
-const OPEN_TV = LANG === 'vi' ? 'Mở' : 'Connect';                // the list's buttons: short, one word (not through i18n: “Mở” is “Open” elsewhere)
+const OPEN_TV = T('setup.ts_connect');                            // the list's buttons: short, one word
 const TS_PITCH = T('setup.ts_pitch');
 const TS_STEP = { download: T('setup.ts_download'), install: T('setup.ts_install'), start: T('setup.ts_start') };
 let tsGen = 0;

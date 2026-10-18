@@ -22,15 +22,6 @@ function friendlyOf(lang = 'vi') {
   vm.runInContext(code, box);
   return box.friendly;
 }
-function englishOf() {
-  const win = {};
-  const box = { window: win, localStorage: { getItem: () => 'en' }, sessionStorage: { getItem: () => null, removeItem() {} }, location: { search: '' },
-    navigator: { language: 'en' }, document: { documentElement: {}, body: null, addEventListener() {} }, MutationObserver: class { observe() {} } };
-  vm.createContext(box);
-  vm.runInContext(read('js/i18n.js'), box);
-  return win.tr;
-}
-
 const MB = 1e6, GB = 1e9;
 
 test('a file the TV has no room for is refused in words that say the sizes and what to do', () => {
@@ -45,13 +36,13 @@ test('a file the TV has no room for is refused in words that say the sizes and w
 });
 
 test('the refusal and the Stop have English words', () => {
-  const friendly = friendlyOf('en'), tr = englishOf();
-  assert.equal(tr(friendly(`storage full: file=${3.4 * GB} free=${1.2 * GB} need=${3.4 * GB + 16 * MB} apk=0`)),
+  const friendly = friendlyOf('en');
+  assert.equal((friendly(`storage full: file=${3.4 * GB} free=${1.2 * GB} need=${3.4 * GB + 16 * MB} apk=0`)),
     'The TV has only 1.2 GB free, not enough for this 3.4 GB file (it needs at least 3.4 GB). Remove some apps or files (Health / Files tab), then try again.');
-  assert.match(tr(friendly(`storage full: file=${500 * MB} free=${300 * MB} need=${1016 * MB} apk=1`)), /^The TV has only 300\.0 MB free, not enough to install this 500\.0 MB APK/);
-  const VI = JSON.parse(read('i18n/vi.json')), EN = JSON.parse(read('i18n/en.json'));   // by id now, or still by the old table
+  assert.match((friendly(`storage full: file=${500 * MB} free=${300 * MB} need=${1016 * MB} apk=1`)), /^The TV has only 300\.0 MB free, not enough to install this 500\.0 MB APK/);
+  const VI = JSON.parse(read('i18n/vi.json')), EN = JSON.parse(read('i18n/en.json'));
   for (const [vi, en] of [['■ Dừng', '■ Stop'], ['Đã dừng', 'Stopped'], ['đang dừng...', 'stopping...']])
-    assert.ok(tr(vi) === en || Object.keys(VI).some((id) => VI[id] === vi && EN[id] === en), vi);
+    assert.ok(Object.keys(VI).some((id) => VI[id] === vi && EN[id] === en), vi);
 });
 
 test('every way of sending a file has a Stop, and the server has the routes', () => {

@@ -1,5 +1,6 @@
 package dev.tvremote.core.scenes
 import org.json.JSONArray
+import dev.tvremote.core.T
 import org.json.JSONObject
 
 /**
@@ -14,13 +15,14 @@ object RemoteSpec {
      * in for a list the handler supplies; [needs]: what the TV must be able to do ([Remote.Kind.caps]), else greyed or left out.
      */
     class Entry(
-        val id: String, val icon: String, val vi: String, val en: String, val subVi: String, val subEn: String,
+        val id: String, val icon: String, val t: String, val sub: String,
         val key: String?, val action: String?, val arg: String?, val whenCond: String?, val expand: String?, val style: String?,
         val needs: List<String> = emptyList(),
     ) {
         fun can(caps: Set<String>) = needs.all { it in caps }
-        fun words(vietnamese: Boolean) = if (vietnamese) vi else en
-        fun sub(vietnamese: Boolean) = if (vietnamese) subVi else subEn
+        /** The words in the app's language ([t] and [sub] are ids in i18n/<lang>.json). */
+        fun words(): String = if (t.isEmpty()) "" else T(t)
+        fun subWords(): String = if (sub.isEmpty()) "" else T(sub)
     }
 
     class Spec(val rows: Map<String, List<List<Entry>>>, val menus: Map<String, List<Entry>>)
@@ -41,10 +43,9 @@ object RemoteSpec {
     private fun entry(e: JSONObject, core: String): Entry? {
         e.optJSONArray("cores")?.let { c -> if ((0 until c.length()).none { c.getString(it) == core }) return null }
         val over = e.optJSONObject(core) ?: JSONObject()
-        val sub = over.optJSONObject("sub") ?: e.optJSONObject("sub")
         fun text(name: String) = over.optString(name, e.optString(name))
         return Entry(
-            e.getString("id"), e.optString("icon"), text("vi"), text("en"), sub?.optString("vi") ?: "", sub?.optString("en") ?: "",
+            e.getString("id"), e.optString("icon"), text("t"), text("sub"),
             e.optString("key").ifEmpty { null }, e.optString("do").ifEmpty { null }, e.optString("arg").ifEmpty { null },
             e.optString("when").ifEmpty { null }, e.optString("expand").ifEmpty { null }, e.optString("style").ifEmpty { null },
             e.optJSONArray("needs")?.let { n -> (0 until n.length()).map { n.getString(it) } } ?: emptyList(),

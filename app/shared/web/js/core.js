@@ -173,6 +173,9 @@ const FRIENDLY = [
   [/this TV keeps that volume itself/, T('core.fr_volume_locked')],   // Scenes.volume, a stream other than media
   [/turned itself back off/, T('core.fr_turned_back_off')],   // TvShell.setting, ON_ONLY
   [/roku: control by mobile apps is off/, T('core.fr_roku_blocked')],   // Roku.LIMITED: newer Roku OS keeps phones out
+  [/this TV did not take the switch/, T('core.fr_input_not_taken')],   // Inputs.switch
+  [/this TV cannot switch inputs from here/, T('core.fr_input_cannot')],
+  [/^bad input$/, T('core.fr_input_bad')],
   [/^refused$/, T('core.fr_tv_refused')],
   [/^not accepted$/, T('core.fr_not_accepted')],
   [/SSLHandshake|CertPathValidator|Chain validation|CERTIFICATE_VERIFY|not yet valid/i, T('core.fr_secure_failed')],
@@ -249,14 +252,12 @@ const ADB_TEXT = {
 };
 // Every write to the page that may repeat goes through here (tests/page.test.js): only when it changes. The same value
 // written again is still a change, for the page's observers (icons, running lines, i18n) and WebKit's styles: the now
-// playing bar did it 5 times a second, a running line wrapped itself 20 times a second. Words are compared as i18n.js
-// will leave them, or every write in English would differ from the last.
+// playing bar did it 5 times a second, a running line wrapped itself 20 times a second.
 function put(e, k, v) {
   if (typeof e === 'string') e = $(e);
-  if (typeof v === 'string' && (k === 'textContent' || k === 'title')) v = tr(v);
   if (e && e[k] !== v) e[k] = v;
 }
-function setChip(id, cls, text, long) { const c = $(id); put(c, 'className', 'chip ' + cls); put(c.lastElementChild, 'textContent', tr(text)); put(c, 'title', tr(long || text)); }
+function setChip(id, cls, text, long) { const c = $(id); put(c, 'className', 'chip ' + cls); put(c.lastElementChild, 'textContent', text); put(c, 'title', long || text); }
 
 let STATE = {};
 let tvOn = false;                                                    // the power button asks before turning a TV that is on off

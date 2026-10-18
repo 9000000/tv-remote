@@ -5,7 +5,7 @@ document.querySelectorAll('[data-rows]').forEach((box) => {
   for (const row of REMOTE.rows[box.dataset.rows] || []) for (const raw of row.filter(remoteHere)) {
     const e = remoteEntry(raw);
     const b = el('button', { className: 'rb lab' + (e.style ? ' ' + e.style : ''), id: 'r-' + e.id, innerHTML: '<svg class="ic" aria-hidden="true"><use href="#i-' + e.icon + '"/></svg><small></small>' });
-    b.querySelector('small').textContent = remoteWords(e);
+    b.querySelector('small').textContent = remoteWords(e.t);
     if (e.key) b.dataset.k = e.key; else b.addEventListener('click', () => REMOTE_DO[e.do](e.arg));
     const needs = [...e.needs || [], ...remoteRole(e)];
     if (needs.length) b.dataset.needs = needs.join(' ');              // greyed on a TV that cannot, or for a guest (applyKind in core.js)
