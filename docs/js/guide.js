@@ -31,11 +31,13 @@
   }
   function esc(s){ return s.replace(/[&<>"]/g, function(c){ return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function textOf(node, lang){                                      // visible text in this language only
-    var w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT), out = [], n;
+    var w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT), out = [], n, last = null;
     while ((n = w.nextNode())){
       var e = n.parentElement, other = e && e.closest(lang === "vi" ? ".en" : ".vi");
-      if (other || (e && e.closest(".ga-box"))) continue;
-      out.push(n.nodeValue);
+      if (other || (e && e.closest(".ga-box")) || !n.nodeValue.trim()) continue;
+      var block = e && e.closest("td,th,li,p,h4,dt,dd,figcaption");   // table cells and steps would run into each other
+      if (out.length && block !== last && !/[.:;!?…]\s*$/.test(out[out.length - 1])) out.push("·");
+      out.push(n.nodeValue); last = block;
     }
     return out.join(" ").replace(/\s+/g, " ").replace(/\s+([.,;:!?)”])/g, "$1").trim();
   }
