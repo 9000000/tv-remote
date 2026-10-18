@@ -20,9 +20,11 @@ internal fun MainActivity.shareDialog() {
     val tv = tv
     if (tv == null || !tv.ready()) { say(T("share.still_connecting_to_the"), false); return }
     val at = host ?: return
+    var asked = false                                                 // after the first: only the scope changes (Invite.share again)
     val ask = { scope: String, then: (JSONObject) -> Unit ->
+        val again = asked.also { asked = true }
         Thread {
-            val r = try { Invite.share({ tv.shell(it) }, at, scope) } catch (e: Exception) { JSONObject().put("error", e.message ?: "") }
+            val r = try { Invite.share({ tv.shell(it) }, at, scope, again) } catch (e: Exception) { JSONObject().put("error", e.message ?: "") }
             ui.post { if (!isFinishing) then(r) }
         }.start()
     }
@@ -77,7 +79,8 @@ private fun MainActivity.showShare(r: JSONObject, ask: (String, (JSONObject) -> 
                 if (k == scope) return@setOnClickListener
                 scope = k
                 buttons.forEachIndexed { j, o -> o.setOn(j == i) }
-                ask(k) { n -> if (scope == k) draw(n.optString("url")) }   // on a failure no QR rather than the last one under the wrong choice
+                qrBox.alpha = 0.25f                                   // the old QR fades while the TV makes the new invite
+                ask(k) { n -> if (scope == k) { qrBox.alpha = 1f; draw(n.optString("url")) } }   // on a failure no QR rather than the last one under the wrong choice
             }
             row.addView(b, cell(64, i > 0))
         }

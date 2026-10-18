@@ -20,16 +20,21 @@ object Invite {
      * {"setup": "missing" | "old", "have", "min"} (the page then shows only the QR that downloads the phone app).
      */
     @Throws(IOException::class)
-    fun share(sh: (String) -> String, host: String, scope: String): JSONObject {
+    fun share(sh: (String) -> String, host: String, scope: String, again: Boolean = false): JSONObject {
         val sc = if (scope in SCOPES) scope else "remote"
+        // again: the dialog is open and asked once, only the scope changed. Each `am` / dumpsys starts a program on the TV
+        // (half a second on a slow one), so a choice skips the check and the start it already did: one call, not three
+        if (again) Regex("data=\"([0-9a-f]{32}) ?([0-9.]*)\"").find(sh(ask(sc)))?.let { return link(it.groupValues[2], it.groupValues[1], host) }
         val have = SetupNeed.have(sh)
         if (!SetupNeed.ok(have, "invite")) return JSONObject().put("setup", if (have.isEmpty()) "missing" else "old").put("have", have).put("min", SetupNeed.MIN["invite"])
-        val out = sh("am broadcast --include-stopped-packages -n ${RulesClient.SETUP}/.TrustReceiver --es want invite --es scope $sc 2>&1")
+        val out = sh(ask(sc))
         val m = Regex("data=\"([0-9a-f]{32}) ?([0-9.]*)\"").find(out) ?: throw IOException("TV Setup did not answer")
         // the page is served by TV Setup's service; a receiver may not start it from the background, the shell may
         sh(RulesClient.START)
         return link(m.groupValues[2], m.groupValues[1], host)
     }
+
+    private fun ask(scope: String) = "am broadcast --include-stopped-packages -n ${RulesClient.SETUP}/.TrustReceiver --es want invite --es scope $scope 2>&1"
 
     /**
      * The link in the QR: the TV's home network address when it has one (a phone beside it is on that Wi-Fi), else the

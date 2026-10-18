@@ -173,7 +173,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "shell" -> shell(r.json().optString("cmd"))
                 "rules" -> HttpServer.Response.json(rules(r.json()))
                 "notify" -> { Notify.send({ sh(it) }, r.json()); HttpServer.Response.json(JSONObject().put("ok", true)) }
-                "share" -> HttpServer.Response.json(Invite.share({ sh(it) }, link.host, r.json().optString("scope")))   // a QR another phone scans (Invite.kt)
+                "share" -> HttpServer.Response.json(Invite.share({ sh(it) }, link.host, r.json().optString("scope"), r.json().optBoolean("again")))   // a QR another phone scans (Invite.kt)
                 "search" -> {
                     val to = sh(TvShell.search(r.json().optString("query"))).trim()
                     if (to != "yt" && to != "gs") throw IllegalArgumentException("this TV has no YouTube and no Google search")

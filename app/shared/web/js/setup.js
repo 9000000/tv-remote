@@ -115,7 +115,10 @@ async function shareDialog() {
     [wifi ? T('setup.same_wifi') : null, T('setup.one_time')].filter(Boolean), url, true) : null].filter(Boolean));
   const choose = async (k) => {
     if (k === scope) return; scope = k; pick.replaceChildren(scopeChips(scope, choose));
-    const n = await api('/api/share', { scope }); draw(n && n.url);   // on a failure no QR rather than the last one under the wrong choice
+    qr.classList.add('stale');                                        // the old QR fades while the TV makes the new invite: never scanned under the wrong choice
+    const n = await api('/api/share', { scope, again: true });
+    if (k !== scope) return;                                          // another chip was tapped meanwhile: its answer draws
+    qr.classList.remove('stale'); draw(n && n.url);                   // on a failure no QR rather than the last one under the wrong choice
   };
   pick.replaceChildren(scopeChips(scope, choose)); draw(r.url); show('tv');
   d.addEventListener('close', () => d.remove());
