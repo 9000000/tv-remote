@@ -44,8 +44,7 @@ internal fun MainActivity.layoutRemote() {
     frame.layoutParams = FrameLayout.LayoutParams(-1, if (full) -1 else -2)
     stage.visibility = if (video) View.VISIBLE else View.GONE
     listenBtn.visibility = if (basic == null) View.VISIBLE else View.GONE   // hearing the TV needs ADB too
-    listenBtn.lit = listen
-    listenBtn.background = box(if (listen) ACCENT else BTN, 16)
+    listenBtn.setOn(listen, 16)
     listenBtn.contentDescription = if (listen) t("Dừng nghe trên điện thoại", "Stop listening on the phone") else t("Nghe tiếng TV trên điện thoại", "Hear the TV on the phone")
     exitBtn.visibility = if (full) View.VISIBLE else View.GONE
     picBar.visibility = if (video && !full) View.VISIBLE else View.GONE   // the picture's and the sound's rows: not hidden in a menu
@@ -58,24 +57,20 @@ internal fun MainActivity.layoutRemote() {
     listenChip.setCompoundDrawables(listenArt(share), null, null, null)
     val hq = prefs.getBoolean("listenHq", false)
     hqBtn.visibility = listenChip.visibility
-    hqBtn.background = box(if (hq) ACCENT else BTN, 10)               // lit while on, like every on/off button
-    hqBtn.setTextColor(if (hq) Color.WHITE else DIM)
+    hqBtn.setOn(hq, 10, DIM)                                          // on: the tint, like every on/off button (setOn)
     val even = prefs.getBoolean("listenEven", false)
     dev.tvremote.core.picture.SoundPace.even = even                   // read as the next sound session starts
     evenBtn.visibility = listenChip.visibility
-    evenBtn.background = box(if (even) ACCENT else BTN, 10)
-    evenBtn.setTextColor(if (even) Color.WHITE else DIM)
+    evenBtn.setOn(even, 10, DIM)
     val boost = listenGain()
     dev.tvremote.core.picture.SoundBoost.times = boost
     boostBtn.visibility = listenChip.visibility
     boostBtn.text = "🔊 " + gainWords(boost)
-    boostBtn.background = box(if (boost != 1f) ACCENT else BTN, 10)
-    boostBtn.setTextColor(if (boost != 1f) Color.WHITE else DIM)
+    boostBtn.setOn(boost != 1f, 10, DIM)
     qualBtn.text = Tv.QUALITY[prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)][0].toString() + "p ▾"
     window.decorView.systemUiVisibility = if (full) View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY else barFlags()
-    videoBtn.lit = video                                              // lit while the picture shows, like every on/off button
-    videoBtn.background = box(if (video) ACCENT else BTN, 16)
-    videoBtn.setIcon(if (video) "@eye_off" else "@eye", if (video) Color.WHITE else TEXT)
+    videoBtn.setIcon(if (video) "@eye_off" else "@eye", TEXT)
+    videoBtn.setOn(video, 16)                                         // on while the picture shows, like every on/off button
     videoBtn.contentDescription = if (video) t("Ẩn hình TV", "Hide the TV picture") else t("Xem hình TV", "Show the TV picture")
 }
 
@@ -294,8 +289,7 @@ internal fun MainActivity.buildRemote() {
     for (i in remoteSpec().rows["more"]!!.indices) more.addView(remoteRow("more", i, 58), gap(8))    // remote.json (PhoneRemote.kt)
     val showMore = { on: Boolean ->
         more.visibility = if (on) View.VISIBLE else View.GONE
-        moreBtn.background = box(if (on) ACCENT else BTN, 16)
-        moreBtn.lit = on
+        moreBtn.setOn(on, 16)
     }
     showMore(prefs.getBoolean("more", false))
     moreBtn.setOnClickListener {
@@ -318,7 +312,7 @@ internal fun MainActivity.buildRemote() {
         arrows.visibility = if (on) View.GONE else View.VISIBLE
         tpad.visibility = if (on) View.VISIBLE else View.GONE
         swap.text = if (on) t("Dùng phím mũi tên", "Use the arrows") else t("Dùng touchpad", "Use the touchpad")
-        swap.background = box(if (on) ACCENT else BTN, 14)            // lit while the touchpad is on
+        swap.setOn(on)                                                // on while the touchpad is
     }
     usePad(prefs.getBoolean("pad", false))
     swap.setOnClickListener {

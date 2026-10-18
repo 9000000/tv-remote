@@ -79,7 +79,9 @@ dev/                     release.sh, emu.sh, gen_icons.py, shots.py, ... : dev/R
   `.card-head` with tools on the right; folded: `details.card` > `summary`) and spaces its own children, so nothing in it needs a
   margin; `h3` a group's title, `p.note` a line of explanation, `p.state` what is on now, `p.empty` an empty list, `.warnline`
   something to fix, `.list` > `.item`, `.line` a field and its button, `.actions` a card's buttons. Cards built in JS use
-  `UI.card` / `UI.say`. **One size per kind of control**: a field and the button beside it `--ctl`, `.small` (`--ctl-sm`) for
+  `UI.card` / `UI.say`. **Two blues:** the full accent fill (`.primary`) is a button that does something (OK, Send, Install,
+  Add); on or chosen (a tab, a choice in use, a switch that is on) is `.on` / `aria-selected`, a tint with a blue edge
+  (`--sel`, one rule in `css/kit.css`; the phone's `setOn()` in Ui.kt), never the fill (`css.test.js`). **One size per kind of control**: a field and the button beside it `--ctl`, `.small` (`--ctl-sm`) for
   tools in a head and acts in a list, a choice among several a chip (`.places` / `.fchips`, `--chip`). No `style="…"` / `style:`
   in markup and no new `min-height` in px: a look needed twice is a class. Checked by `tests/ui.test.js`.
   **Icons:** write a title or button with its emoji as before (i18n keys keep it); `ICON` in `js/ui.js` draws it as a line

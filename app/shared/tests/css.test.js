@@ -69,3 +69,12 @@ test('a running line never takes its own span', () => {
   assert.match(ui, /const RUN = \[[^\]]*\]\.map\(\(r\) => r \+ ':not\(\.rin\)'\)/, "each RUN selector ends in :not(.rin): '.x span' took the span runFit had just made");
   assert.match(ui, /function runFit\(t\) \{\s*if \(t\.classList\.contains\('rin'\)\) return;/, 'runFit refuses a .rin');
 });
+
+test('on / chosen is a tint, never the full accent fill', () => {
+  // the full blue is a button that does something (.primary); a tab, a choice or a switch that is on draws var(--sel) through
+  // the one rule in css/kit.css. Both filled, a screen had a dozen blue buttons and nobody could tell which ones act.
+  const bad = [];
+  for (const r of all) for (const s of r.sels) if (/\.on\b|aria-selected=true|:checked/.test(s) && !/\.primary/.test(s))
+    for (const [p, v] of r.decl) if (/^background/.test(p) && /var\(--accent\)/.test(v)) bad.push(`${r.line} ${s} { ${p}: ${v} }`);
+  assert.deepEqual(bad, [], 'draw it with the selected rule in css/kit.css (var(--sel)), not var(--accent)');
+});

@@ -26,8 +26,7 @@ internal fun MainActivity.sendText() {
 internal fun MainActivity.setLive(on: Boolean) {
     live = on
     prefs.edit().putBoolean("live", on).apply()
-    liveBtn.background = box(if (on) ACCENT else BTN, 14)
-    liveBtn.lit = on
+    liveBtn.setOn(on)
     liveBtn.contentDescription = if (on) t("Đang gõ trực tiếp. Bấm để chuyển sang gõ xong rồi gửi", "Live typing is on. Tap to type first, then send")
         else t("Đang gõ xong rồi gửi. Bấm để chuyển sang gõ trực tiếp", "Type-then-send is on. Tap for live typing")
     textBox.hint = if (on) t("Gõ trực tiếp: TV nhận từng chữ", "Live: the TV gets every letter") else t("Gõ chữ rồi bấm gửi", "Type, then send")

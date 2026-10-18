@@ -140,9 +140,9 @@ $('#listen').addEventListener('click', () => {
 });
 const relisten = (share) => { if (listenOn) { stopListen(); startListen(share); } else showWay(); };
 $('#listenway').addEventListener('click', () => {
-  menuDlg('Cách nghe tiếng TV', listenShared ? 1 : 0, [
+  menuDlg('Cách nghe tiếng TV', -1, [
     ['@phone|Chỉ máy này', 'Loa TV tạm im. Hợp khi đeo tai nghe, cả nhà ngủ.', () => { if (listenShared) relisten(false); }],
-    ['@tv|Cả TV và máy này', 'TV vẫn có tiếng (TV Android 13+). Máy này trễ hơn TV một chút; vài app như Netflix chặn thu tiếng kiểu này.', () => { if (!listenShared) relisten(true); }]]);
+    ['@tv|Cả TV và máy này', 'TV vẫn có tiếng (TV Android 13+). Máy này trễ hơn TV một chút; vài app như Netflix chặn thu tiếng kiểu này.', () => { if (!listenShared) relisten(true); }]], listenShared ? 1 : 0);
 });
 $('#listenboost').addEventListener('click', () => {                   // a slider that applies as it moves, nothing restarts
   const set = (b) => { try { localStorage.setItem('listenBoost', String(b)); } catch {} if (actx) soundOut(); showWay(); out.textContent = '×' + listenBoost(); r.value = listenBoost(); };

@@ -39,6 +39,7 @@ internal var OK_TEXT = Palette.dark.okText                     // "up", "done" a
 internal var RIPPLE = Palette.dark.ripple
 internal var PILL = Palette.dark.pill                          // the now playing strip
 internal var SOFT = Palette.dark.soft                          // a quiet blue button
+internal var SEL = Palette.dark.sel                            // on / chosen (setOn)
 
 /** Dark, light, or the phone's own mode ("theme" in the app's prefs: "" / auto, light, dark), and the colours to match. */
 internal fun applyPalette(c: Context) {
@@ -51,7 +52,7 @@ internal fun applyPalette(c: Context) {
     val p = if (LIGHT) Palette.light else Palette.dark
     BG = p.bg; CARD = p.card; BTN = p.btn; ACCENT = p.accent; ACCENT_TEXT = p.accentText; HELD = p.held; TEXT = p.text; MUTED = p.muted
     RED = p.red; GREEN = p.green; ERR_TEXT = p.errText; ERR_BG = p.errBg; DIM = p.dim; OK_TEXT = p.okText
-    RIPPLE = p.ripple; PILL = p.pill; SOFT = p.soft
+    RIPPLE = p.ripple; PILL = p.pill; SOFT = p.soft; SEL = p.sel
 }
 
 /** Dark icons on the status and navigation bars when the screen is light (they are painted in BG). */
@@ -107,6 +108,18 @@ internal fun Context.box(color: Int, radius: Int): GradientDrawable {
     g.setColor(color)
     g.cornerRadius = dp(radius).toFloat()
     return g
+}
+
+/** Two blues that never look alike, as on the page (css/kit.css): the full ACCENT fill is a button that does something (OK,
+ *  Send); on or chosen (a switch that is on, the choice in use) is this tint with a blue edge, its words and icon blue. */
+internal fun Context.onBox(on: Boolean, radius: Int): GradientDrawable =
+    if (on) box(SEL, radius).apply { setStroke(dp(1.5f), ACCENT) } else box(BTN, radius)
+
+/** A button that is on or off: [onBox] behind it, its words blue while on, [off] otherwise. An [IconButton] takes [IconButton.chosen] too. */
+internal fun TextView.setOn(on: Boolean, radius: Int = 14, off: Int = TEXT) {
+    background = context.onBox(on, radius)
+    setInk(if (on) ACCENT_TEXT else off)
+    (this as? IconButton)?.chosen = on
 }
 
 internal fun Context.label(s: String, sp: Int, color: Int): TextView {

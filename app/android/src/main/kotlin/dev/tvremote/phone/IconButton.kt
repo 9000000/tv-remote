@@ -19,7 +19,15 @@ internal class IconButton(c: Context) : Button(c) {
     private var tint = DIM
     /** White icon and caption on a lit (accent) button, whatever tint was asked for: dark ink on the blue is unreadable. */
     var lit = false
-        set(v) { field = v; ink.color = if (v) android.graphics.Color.WHITE else DIM; art?.setTint(if (v) android.graphics.Color.WHITE else tint); invalidate() }
+        set(v) { field = v; paint() }
+    /** On or chosen (Ui.kt setOn): icon and caption in the accent's blue, on the tint. */
+    var chosen = false
+        set(v) { field = v; paint() }
+    private fun paint() {
+        ink.color = if (lit) android.graphics.Color.WHITE else if (chosen) ACCENT_TEXT else DIM
+        art?.setTint(if (lit) android.graphics.Color.WHITE else if (chosen) ACCENT_TEXT else tint)
+        invalidate()
+    }
 
     fun setIcon(symbol: String, tint: Int) {
         if (!symbol.startsWith("@")) {
@@ -30,9 +38,8 @@ internal class IconButton(c: Context) : Button(c) {
         val id = resources.getIdentifier("ic_" + symbol.substring(1), "drawable", context.packageName)
         art = if (id == 0) null else resources.getDrawable(id, null).mutate()
         this.tint = tint
-        art?.setTint(if (lit) android.graphics.Color.WHITE else tint)
         text = ""
-        invalidate()
+        paint()
     }
 
     override fun onDraw(c: Canvas) {

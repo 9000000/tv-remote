@@ -46,7 +46,7 @@ internal fun MainActivity.buildSettings(): View {
     for ((i, m) in listOf("auto" to t("Tự động", "Auto"), "light" to t("Sáng", "Light"), "dark" to t("Tối", "Dark")).withIndex()) {
         val on = m.first == theme
         val art = mapOf("auto" to "contrast", "light" to "wake", "dark" to "moon")[m.first]
-        val b = button("@$art|" + m.second, if (on) ACCENT else BTN)
+        val b = button("@$art|" + m.second, BTN).apply { setOn(on) }
         b.setPadding(dp(6), 0, dp(6), 0)
         b.contentDescription = m.second
         b.setOnClickListener {

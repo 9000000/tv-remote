@@ -66,8 +66,7 @@ internal fun MainActivity.stopDrawing() {
 /** ✏️ among the keys shows whether drawing is on. */
 internal fun MainActivity.drawLit() {
     val b = drawBtn ?: return
-    b.background = box(if (drawing) ACCENT else BTN, 16)
-    b.lit = drawing
+    b.setOn(drawing, 16)
 }
 
 /** The colour (and size), picture, undo, clear and done: a row under the picture, hidden until drawing starts; while a

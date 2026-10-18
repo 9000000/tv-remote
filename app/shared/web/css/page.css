@@ -73,7 +73,6 @@ details.help p { font-size:13px; color:var(--muted); margin:10px 0 0; }
 html[data-scope=remote] .tabs, html[data-scope=view] .tabs { display:none; }   /* a guest has the Remote tab only (applyKind) */
 .tabs button { flex:1; min-height:42px; font-size:14px; background:transparent; border-radius:10px; }
 .tabs button:hover { background:var(--btn); }
-.tabs button[aria-selected=true] { background:var(--accent); color:var(--accent-ink); font-weight:700; }
 /* icon + words; in tight places on a narrow screen only the icon shows (the words stay for screen readers) */
 @media (max-width:640px) {
   .item .acts .lbl, .top .lbl, .card-head .tools .lbl { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
@@ -133,7 +132,7 @@ html:not(.tabbed) .panel { visibility:hidden; }   /* theme.js, setup.js */
 .optbox { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
 .optbox h3 { margin:10px 0 2px; font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
 .optrow { display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; cursor:pointer; background:var(--card); }
-.optrow:has(input:checked) { border-color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, var(--card)); }
+.optrow:has(input:checked) { border-color:var(--accent); background:var(--sel); }
 .optrow input { width:20px; height:20px; flex:none; accent-color:var(--accent); }
 .optrow b { display:block; font-size:14px; }
 .optrow small { display:block; color:var(--muted); font-size:12px; overflow-wrap:anywhere; }
@@ -207,4 +206,3 @@ dialog.ask textarea { width:100%; min-height:120px; resize:vertical; font:inheri
 dialog.ask .acts.wrap { flex-wrap:wrap; }
 #pickback { align-self:flex-start; }
 #ver { text-align:center; font-size:12px; padding:6px 0 14px; }
-.tabs [aria-selected=true] .ico > .ui-ic { background:rgba(255,255,255,.22); }

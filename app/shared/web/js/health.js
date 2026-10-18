@@ -314,7 +314,7 @@ function setControl(s, i, vi) {
     ctl = el('div', { className: 'setstep' }, r, out);
   } else if (e.kind === 'bool') {
     const on = s.value !== e.off && s.value !== 'null';
-    ctl = el('button', { type: 'button', className: 'small' + (on ? ' primary' : ''), textContent: settingWord(s, on ? e.on : e.off, vi), onclick: () => setSetting(s, on ? e.off : e.on) });
+    ctl = el('button', { type: 'button', className: 'small' + (on ? ' on' : ''), textContent: settingWord(s, on ? e.on : e.off, vi), onclick: () => setSetting(s, on ? e.off : e.on) });
   } else if (e.kind === 'pick') {
     const vals = e.values.some((v) => Number(v) === Number(s.value)) ? e.values : [s.value, ...e.values];
     ctl = el('select', { className: 'setpick', onchange: (ev) => setSetting(s, ev.target.value) },

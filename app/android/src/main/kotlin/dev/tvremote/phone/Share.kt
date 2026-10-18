@@ -35,12 +35,12 @@ private fun MainActivity.showShare(r: JSONObject, ask: (String, (JSONObject) -> 
     val tvPane = col()
     val appPane = col()
     val tabs = LinearLayout(this)
-    val tabTv = button("@tv|" + t("Chia sẻ TV", "Share the TV"), ACCENT)
+    val tabTv = button("@tv|" + t("Chia sẻ TV", "Share the TV"), BTN)
     val tabApp = button("@phone|" + t("Chia sẻ app", "Share the app"), BTN)
     val pick = { onTv: Boolean ->
         tvPane.visibility = if (onTv) android.view.View.VISIBLE else android.view.View.GONE
         appPane.visibility = if (onTv) android.view.View.GONE else android.view.View.VISIBLE
-        for ((b, on) in listOf(tabTv to onTv, tabApp to !onTv)) { b.background = box(if (on) ACCENT else BTN, 14); b.setInk(if (on) android.graphics.Color.WHITE else TEXT) }
+        for ((b, on) in listOf(tabTv to onTv, tabApp to !onTv)) b.setOn(on)
     }
     tabTv.setOnClickListener { pick(true) }
     tabApp.setOnClickListener { pick(false) }
@@ -75,7 +75,7 @@ private fun MainActivity.showShare(r: JSONObject, ask: (String, (JSONObject) -> 
                 val k = scopes[i].first
                 if (k == scope) return@setOnClickListener
                 scope = k
-                buttons.forEachIndexed { j, o -> o.background = box(if (j == i) ACCENT else BTN, 14); o.setInk(if (j == i) android.graphics.Color.WHITE else TEXT) }
+                buttons.forEachIndexed { j, o -> o.setOn(j == i) }
                 ask(k) { n -> if (scope == k) draw(n.optString("url")) }   // on a failure no QR rather than the last one under the wrong choice
             }
             row.addView(b, cell(64, i > 0))
@@ -103,7 +103,7 @@ private fun MainActivity.showShare(r: JSONObject, ask: (String, (JSONObject) -> 
 
 /** A choice among the three scopes: its icon above the words, so three fit across a phone. */
 private fun MainActivity.chip(icon: String, words: String, on: Boolean): android.widget.Button {
-    val b = button("@$icon|$words", if (on) ACCENT else BTN)
+    val b = button("@$icon|$words", BTN).apply { setOn(on) }
     b.textSize = 13f
     b.setPadding(dp(4), dp(6), dp(4), dp(6))
     val d = b.compoundDrawablesRelative[0]

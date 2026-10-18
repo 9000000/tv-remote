@@ -30,7 +30,6 @@ form.line button { padding:0 16px; }
 :is(.places, .fchips).more-l.more-r { mask-image:linear-gradient(to right, transparent, #000 36px, #000 calc(100% - 36px), transparent); }
 .places button { min-height:var(--chip); padding:0 12px; font-size:13px; border-radius:999px; white-space:nowrap; }
 .places.two { display:grid; grid-template-columns:1fr 1fr; }
-.places button.on { background:var(--accent); color:var(--accent-ink); font-weight:600; }
 .linkbtn { display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:var(--ink); background:var(--btn); border-radius:12px; }
 .linkbtn:hover { background:var(--btn-hi); }
 .bar { height:6px; background:var(--btn); border-radius:3px; overflow:hidden; margin-top:6px; }
@@ -89,3 +88,8 @@ h2 .ui-ic { vertical-align:-3px; }
   .tabs .ico > .ui-ic { padding:5px; }
   .tabs .ico > .ui-ic .ic { width:17px; height:17px; }
 }
+/* Two blues that never look alike. The full fill (.primary: OK, Send, Install, Add) is a button that does something; on or
+   chosen (the open tab, the choice in use, a switch that is on: Listening, HQ) is a tint with a blue edge and blue words.
+   One rule for all of them: a red or own-hue .on (mute, recording, the kind chips) is more precise and wins. tests/css.test.js */
+button.on, .tabs button[aria-selected=true], .mitem.on { background:var(--sel); color:var(--accent-text); box-shadow:inset 0 0 0 1.5px var(--accent); }
+.tabs button[aria-selected=true], .places button.on { font-weight:700; }

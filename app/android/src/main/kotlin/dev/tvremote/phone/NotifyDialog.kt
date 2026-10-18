@@ -19,11 +19,11 @@ private fun cornerWords(c: String) = when (c) {
     else -> t("↘ Dưới phải", "↘ Bottom right")
 }
 
-/** A row of choices that look like buttons, the picked one lit; [pick] is told the new choice. */
+/** A row of choices that look like buttons, the picked one on (setOn); [pick] is told the new choice. */
 internal fun MainActivity.chips(options: List<Pair<String, String>>, now: String, pick: (String) -> Unit): LinearLayout {
     val row = LinearLayout(this)
     options.forEachIndexed { i, (value, words) ->
-        val b = button(words, if (value == now) ACCENT else BTN)
+        val b = button(words, BTN).apply { setOn(value == now) }
         b.textSize = 13f
         b.isSingleLine = true                                         // "10 giây" on one line: a wrapped chip was cut at the bottom
         b.setPadding(0, b.paddingTop, 0, b.paddingBottom)

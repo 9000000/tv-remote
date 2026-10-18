@@ -60,15 +60,15 @@ async function askTime(text, minutes, max = 1440) {
 }
 
 // A menu whose choices look like what they are: buttons (the phone app's menu() in Ui.kt, which the remote's menus mirror).
-// items: ['@icon|Words', 'a line saying what it does', fn]; primary = the index drawn lit, or -1. The menu closes first, then fn
-// runs, so fn can ask the next question.
-function menuDlg(title, primary, items) {
+// items: ['@icon|Words', 'a line saying what it does', fn]; primary = the index of the main action (filled), or -1; current =
+// the one in use now (drawn on, css/kit.css), or -1. The menu closes first, then fn runs, so fn can ask the next question.
+function menuDlg(title, primary, items, current = -1) {
   const icon = (name) => el('span', { className: 'mi', innerHTML: '<svg class="ic" aria-hidden="true"><use href="#i-' + name + '"/></svg>' });
   const d = el('dialog', { className: 'ask menu' }, el('div', { className: 'card' },
     el('div', { className: 'card-head' }, el('h2', { textContent: title }), el('button', { className: 'small iconbtn', textContent: '✕', title: 'Đóng', 'aria-label': 'Đóng', onclick: () => d.close() })),
     ...items.map(([token, sub, fn], i) => {
       const bar = token.indexOf('|'), ic = token[0] === '@' && bar > 0;
-      return el('button', { className: 'mitem' + (i === primary ? ' primary' : ''), onclick: () => { d.close(); fn(); } },
+      return el('button', { className: 'mitem' + (i === primary ? ' primary' : i === current ? ' on' : ''), onclick: () => { d.close(); fn(); } },
         ic ? icon(token.slice(1, bar)) : null,
         el('span', { className: 'mt' }, el('b', { textContent: ic ? token.slice(bar + 1) : token }), sub ? el('small', { textContent: sub }) : null),
         el('span', { className: 'mgo', textContent: '›' }));

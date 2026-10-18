@@ -1,14 +1,14 @@
 /* The colour tokens of both themes, the page itself, and the plain controls: buttons, fields, selects. */
 :root {
   --bg:#f3f4f7; --card:#fff; --ink:#1a1d23; --muted:#586272; --line:#e1e4ea;
-  --btn:#eceff3; --btn-hi:#dde2e9; --accent:#2f6df6; --accent-ink:#fff; --accent-text:#1f50c4;   /* accent: fills with white text; accent-text: blue used as words */
+  --btn:#eceff3; --btn-hi:#dde2e9; --accent:#2f6df6; --accent-ink:#fff; --accent-text:#1f50c4; --sel:#e6edfe;   /* accent: fills with white text; accent-text: blue used as words; sel: on / chosen (css/kit.css) */
   --ok:#106537; --warn:#8f5300; --bad:#c02f2f; --ok-bg:#e3f5ea; --warn-bg:#fdf0d8; --bad-bg:#fbe5e5;
   --radius:14px; --ctl:40px; --ctl-sm:36px; --chip:32px; --boot:#5b38c8;
 }
 :root[data-theme=dark] {
   /* js/theme.js: the system's choice, or the one picked in Settings */
   --bg:#111418; --card:#1b1f25; --ink:#e9ecf1; --muted:#99a3b0; --line:#2b3139;
-  --btn:#272d35; --btn-hi:#363e49; --accent:#3366e8; --accent-ink:#fff; --accent-text:#7ba2ff;
+  --btn:#272d35; --btn-hi:#363e49; --accent:#3366e8; --accent-ink:#fff; --accent-text:#7ba2ff; --sel:#202d4c;
   --ok:#46d283; --warn:#f0b34a; --bad:#ff7070; --ok-bg:#16301f; --warn-bg:#3a2e12; --bad-bg:#3b1c1c; --boot:#a48bff;
 }
 * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }

@@ -30,6 +30,8 @@ class PaletteContrastTest {
             need("white on green", white, p.green, 4.5)
             for ((bn, bg) in listOf("bg" to p.bg, "card" to p.card)) need("accentText on $bn", p.accentText, bg, 4.5)
             need("accentText on btn", p.accentText, p.btn, 4.5)
+            need("accentText on sel", p.accentText, p.sel, 4.5)            // an on / chosen button's words (setOn)
+            need("accent edge on card", p.accent, p.card, 3.0)              // what marks it on, beside an off one
             need("okText on card", p.okText, p.card, 4.5)
             need("errText on card", p.errText, p.card, 4.5)
             need("red on card", p.red, p.card, 4.5)

@@ -24,7 +24,6 @@
 .rrow.four { grid-template-columns:repeat(4,1fr); }
 #more[hidden] { display:none; }
 .sliding { overflow:hidden; }
-#morebtn.on, #r-draw.on { background:var(--accent); color:var(--accent-ink); }
 .rb { min-height:52px; border-radius:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:0; }
 .rb.lab { min-height:60px; }
 .rb small { font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
@@ -65,7 +64,6 @@
 @media (max-width:420px) {
   .seg button { padding:0 6px; }
 }
-.seg button.on { background:var(--accent); color:var(--accent-ink, #fff); }
 .seg.mini { margin:0; flex:none; }
 .seg.mini button { flex:none; min-height:28px; font-size:12px; }
 .vol { display:flex; align-items:center; gap:8px; margin-top:12px; }
@@ -121,10 +119,8 @@ fieldset#kbd { border:0; padding:0; margin:0; min-width:0; }
 fieldset#kbd:disabled { opacity:.4; pointer-events:none; }
 /* typing: ⚡ switches between live typing and type-then-send; 123 shows the number keys */
 #live { padding:0 12px; }
-#live.on { background:var(--accent); color:var(--accent-ink); }
 .numpad { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:300px; margin-top:8px; }
 .numpad[hidden] { display:none; }
-#listen.on { background:var(--accent); color:var(--accent-ink); }
 #listeninfo { margin-top:6px; }
 #pipslot #listeninfo { display:none; }
 /* scenes: one button each on the Remote tab */
@@ -135,7 +131,6 @@ fieldset#kbd:disabled { opacity:.4; pointer-events:none; }
 .scene.add { grid-column:1/-1; color:var(--muted); font-weight:500; }
 .listenbar { display:flex; gap:8px; margin:10px 0; }
 .listenbar button { min-height:var(--ctl-sm); padding:0 12px; }
-:is(#listenhq, #listeneven, #listenboost).on { background:var(--accent); color:var(--accent-ink); }
 /* now playing (js/playing.js): the app's icon, the title, three buttons; the bar under them seeks */
 .playing { display:flex; flex-direction:column; gap:8px; padding:10px 12px; }
 .playing[hidden] { display:none; }

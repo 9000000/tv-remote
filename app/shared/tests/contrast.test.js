@@ -10,7 +10,7 @@ const lin = (c) => (c /= 255) <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 
 const lum = (h) => { h = h.slice(1); if (h.length === 3) h = [...h].map((c) => c + c).join(''); const [r, g, b] = [0, 2, 4].map((i) => lin(parseInt(h.substr(i, 2), 16))); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
 const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 
-const PAIRS = [['ink', 'bg'], ['ink', 'card'], ['ink', 'btn'], ['muted', 'bg'], ['muted', 'card'], ['accent-ink', 'accent'],
+const PAIRS = [['ink', 'bg'], ['ink', 'card'], ['ink', 'btn'], ['muted', 'bg'], ['muted', 'card'], ['accent-ink', 'accent'], ['accent-text', 'sel'],
   ['accent-text', 'bg'], ['accent-text', 'card'], ['boot', 'card'],
   ...['ok', 'warn', 'bad'].flatMap((k) => [[k, 'card'], [k, k + '-bg']])];
 for (const [name, t] of [['light', light], ['dark', dark]])
