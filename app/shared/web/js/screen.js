@@ -39,7 +39,7 @@ async function snapLoop(gen) {
 const H264_Q = { 480: 0, 720: 1, 960: 2, 360: 3, 240: 4, hd: 'hd' }, H264_FPS = { 480: 8, 720: 10, 960: 10, 360: 8, 240: 8, hd: 30 };
 const H264_END = new Uint8Array([0, 0, 0, 1, 9, 0xf0]);                // access unit delimiter
 let player = null, wcBroken = false;                                   // wcBroken: WebCodecs failed once here, JMuxer until reload
-const wcUsable = () => !wcBroken && window.isSecureContext && typeof VideoDecoder === 'function';
+const wcUsable = () => !wcBroken && !/[?&]jm=1/.test(location.search) && window.isSecureContext && typeof VideoDecoder === 'function';   // ?jm=1: JMuxer where WebCodecs works too (to measure it)
 // "avc1.PPCCLL" from the SPS in scrcpy's codec config (Annex B)
 function avcCodec(b) {
   for (let i = 0; i + 7 < b.length; i++) {
@@ -105,9 +105,11 @@ function jmuxPlayer(fps) {
     const end = b.end(b.length - 1); if (end - video.currentTime > 0.3) video.currentTime = end - 0.05;
     if (video.paused && end - video.currentTime > 0.1) video.play().catch(() => {});   // at the last frame: WebKit's play() would rewind to 0 (a flicker)
   }, 250);
+  const vt = vtHook(video, step);
   return {
     feed(kind, data) {
       if (kind === 1) { config = data.slice(); return; }              // goes in front of the next frame
+      if (vt) vt.arrived();
       // JMuxer shows a frame only once it sees the start of the next one, and a still picture has no next one:
       // an empty delimiter after each frame makes it show the frame now.
       const frame = new Uint8Array((config ? config.length : 0) + data.length + H264_END.length);
@@ -116,6 +118,23 @@ function jmuxPlayer(fps) {
     },
     destroy() { clearInterval(edge); try { mux.destroy(); } catch {} },
   };
+}
+// ?stats=1: window.VT to measure the JMuxer path: for each frame shown, ms from its arrival (`lat`), ms since the one before
+// (`gaps`; a freeze is 4+ frame intervals while frames kept arriving), and the <video>'s `waiting` events.
+function vtHook(video, step) {
+  if (!/[?&]stats=1/.test(location.search) || !video.requestVideoFrameCallback) return null;
+  const VT = window.VT = { lat: [], gaps: [], waiting: 0, arrivals: [] }; let t0 = null, last = 0, lastMt = -1;
+  video.addEventListener('waiting', () => VT.waiting++);
+  const on = (now, md) => {
+    video.requestVideoFrameCallback(on);
+    if (md.mediaTime === lastMt) return; lastMt = md.mediaTime;       // WebKit calls back for a frame it already showed
+    if (t0 === null) t0 = md.mediaTime;
+    const a = VT.arrivals[Math.round((md.mediaTime - t0) * 1000 / step)];   // JMuxer stamps frame i at i * step
+    if (a !== undefined) VT.lat.push(+(now - a).toFixed(1));
+    if (last) VT.gaps.push(+(now - last).toFixed(1)); last = now;
+  };
+  video.requestVideoFrameCallback(on);
+  return { arrived() { VT.arrivals.push(performance.now()); } };
 }
 // A browser that keeps falling behind (CatchUp on the server jumped to now 3 times in half a minute): one level down, for this
 // time only, unless the person set their own frames per second or bit rate.
