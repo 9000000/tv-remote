@@ -11,7 +11,13 @@
 //   - the page scrolling sideways;
 //   - a control or title whose words are cut (ellipsis, or more text than room), or a button whose label wraps;
 //   - something sticking out of its card; two cards on top of each other (the masonry columns);
-//   - a row of chips that wrapped.
+//   - a row of chips that wrapped;
+// and, left alone a few seconds on each tab (at 1100 px), what the page keeps doing by itself:
+//   - a write that changed nothing (the same text or attribute again: still a change for every observer and WebKit's styles);
+//   - one element changed more than 3 times a second, or an animation started over and over (a running line that wrapped
+//     its own span did both, 20 times a second: the page jerked in WebKit);
+//   - a running line inside another.
+// A long title plays (/api/playing is answered here), so the now playing strip and its running line are on the page.
 // Screenshots of each go to /tmp/tvr-layout/<engine>-<lang>-<width>-<tab>.png to look at. Exit 1 if anything was found.
 const path = require('path');
 let pw;
@@ -24,6 +30,38 @@ const TABS = ['remote', 'apps', 'files', 'health', 'auto', 'tv'];
 const OUT = '/tmp/tvr-layout';
 
 // runs in the page: what is wrong under root
+// before the page's own scripts: what changes, and how
+function watch() {
+  window.__tvr = { m: new Map(), same: new Map(), anim: 0 };
+  const name = (n) => { if (n.nodeType !== 1) n = n.parentElement; if (!n) return '?';
+    const p = n.parentElement, me = n.tagName.toLowerCase() + (n.id ? '#' + n.id : n.classList.length ? '.' + [...n.classList].join('.') : '');
+    return n.id || !p ? me : (p.id ? '#' + p.id : p.tagName.toLowerCase() + (p.classList.length ? '.' + p.classList[0] : '')) + ' > ' + me; };
+  const inc = (map, k) => map.set(k, (map.get(k) || 0) + 1);
+  addEventListener('DOMContentLoaded', () => new MutationObserver((list) => {
+    for (const r of list) {
+      if (r.target.closest?.('#screenbox, canvas, video') || r.target.parentElement?.closest('#screenbox')) continue;   // the picture changes by itself
+      const k = name(r.target) + (r.attributeName ? ' @' + r.attributeName : '');
+      inc(window.__tvr.m, k);
+      const same = r.type === 'attributes' ? r.target.getAttribute(r.attributeName) === r.oldValue
+        : r.type === 'characterData' ? r.target.data === r.oldValue
+        : r.addedNodes.length && r.removedNodes.length && [...r.addedNodes].map((x) => x.textContent).join() === [...r.removedNodes].map((x) => x.textContent).join() && [...r.addedNodes].every((x) => x.nodeType === 3);
+      if (same) inc(window.__tvr.same, k);
+    }
+  }).observe(document, { subtree: true, childList: true, characterData: true, characterDataOldValue: true, attributes: true, attributeOldValue: true }));
+  const animate = Element.prototype.animate;
+  Element.prototype.animate = function () { window.__tvr.anim++; return animate.apply(this, arguments); };
+}
+const IDLE = 4000;
+// after idle ms of nobody touching the page
+function busy(idle) {
+  const t = window.__tvr, out = [];
+  for (const [k, n] of t.same) out.push(`wrote the same again ${n}x: ${k}`);
+  for (const [k, n] of t.m) if (n > 3 * idle / 1000) out.push(`changed ${n}x in ${idle / 1000} s: ${k}`);
+  if (t.anim > 2) out.push(`${t.anim} animations started`);
+  for (const e of document.querySelectorAll('.rin .rin')) out.push('running line in a running line: ' + (e.parentElement.closest('[id]')?.id || '?'));
+  return out;
+}
+
 function scan(root) {
   const out = [], seen = new Set();
   const shown = (e) => { const r = e.getBoundingClientRect(); if (!r.width || !r.height) return false;
@@ -73,6 +111,8 @@ function scan(root) {
     const browser = await (engine === 'chromium' ? pw.chromium.launch({ channel: 'chrome' }).catch(() => pw.chromium.launch()) : pw.webkit.launch());   // the installed Chrome
     for (const lang of ['en', 'vi']) for (const width of [1100, 400]) {
       const page = await browser.newPage({ viewport: { width, height: 900 } });
+      await page.addInitScript(watch);
+      await page.route('**/api/playing*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ state: 'playing', title: 'A long title that never fits in the strip, so its line runs', sub: 'A long channel name that does not fit either', app: 'YouTube', pkg: 'com.google.android.youtube.tv', pos: 60000, dur: 3600000, speed: 1, seek: true }) }));
       const errors = [];
       page.on('pageerror', (e) => errors.push(String(e.message || e).slice(0, 160)));
       await page.goto(URL_ + '?lang=' + lang + (KEY ? '&k=' + KEY : ''));
@@ -85,6 +125,11 @@ function scan(root) {
         else await page.evaluate((t) => { showTab(t); scrollTo(0, 0); }, tab);
         await page.waitForTimeout(tab === 'health' ? 6000 : 1500);
         const list = await page.evaluate(`(${scan})(document.querySelector('dialog[open]') || document.body)`);
+        if (width === 1100) {
+          await page.evaluate(() => { window.__tvr.m.clear(); window.__tvr.same.clear(); window.__tvr.anim = 0; });
+          await page.waitForTimeout(IDLE);
+          list.push(...await page.evaluate(`(${busy})(${IDLE})`));
+        }
         for (const f of list) { bad++; console.log(`${engine.padEnd(8)} ${lang} ${String(width).padStart(4)} ${tab.padEnd(8)} ${f}`); }
         await page.screenshot({ path: `${OUT}/${engine}-${lang}-${width}-${tab}.png`, fullPage: true });
         if (tab === 'settings') await page.evaluate(() => document.querySelector('dialog[open]')?.close());

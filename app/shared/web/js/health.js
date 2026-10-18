@@ -416,9 +416,9 @@ async function loadHealth() {
   const t0 = performance.now(), h = await api('/api/health', null, true);
   healthBusy = false;
   if (!h || currentTab !== 'health') return;
-  $('.health').classList.add('ready');
+  if (!$('.health').classList.contains('ready')) $('.health').classList.add('ready');   // add() writes the attribute even when it is there
   const r = h.remote || {}, vol = r.volume || {};
-  $('#hwhen').textContent = 'cập nhật mỗi 5 giây';
+  put($('#hwhen'), 'textContent', tr('cập nhật mỗi 5 giây'));
   $('#hsum').replaceChildren(...kv([
     ['Nguồn', !r.connected ? 'không rõ (remote chưa kết nối)' : r.is_on ? 'đang bật' : 'màn hình tắt'],
     ['Ứng dụng đang mở', r.app ? ((typeof appName === 'function' && appName(r.app)) || r.app) : ''],

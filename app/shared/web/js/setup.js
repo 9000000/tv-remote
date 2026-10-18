@@ -460,7 +460,7 @@ async function loadSteps() {
   if (stepsBusy || CORE !== 'pc') return; stepsBusy = true;
   const s = await api('/api/setup/status', null, true); stepsBusy = false;
   if (!s) return;
-  $('#setuphost').textContent = s.host ? (s.model ? s.model + ' · ' : '') + s.host : 'chưa chọn TV';
+  put($('#setuphost'), 'textContent', s.host ? (s.model ? s.model + ' · ' : '') + s.host : tr('chưa chọn TV'));
   if (!s.host) { $('#steps').replaceChildren(el('p', { className: 'muted', textContent: 'Chọn một TV ở trên (Quét mạng hoặc nhập IP) để bắt đầu.' })); return; }
   if (s.kind && s.kind !== 'android') { showSteps(nativeSteps(s)); return; }
   const adb = s.adb.state, ready = adb === 'ready', out = [];

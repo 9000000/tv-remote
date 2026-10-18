@@ -283,8 +283,8 @@ async function refresh() {
   if (s.version) put($('#ver'), 'textContent', (s.app_name || 'TV Remote') + ' ' + s.version + (s.released ? ' · ' + s.released : ''));
   put(document, 'title', tvName && !picking ? tvName + ' · Remote' : 'TV Remote');
   put($('#name'), 'textContent', picking ? 'TV Remote' : tvName);
-  put($('#info'), 'textContent', picking ? tr('Chọn TV để điều khiển') : [CORE === 'pc' ? s.host : '', s.asking ? 'nhìn lên TV: chọn Cho phép' : s.paired === false ? 'chưa ghép remote (tab Thiết lập)' : s.error ? 'nút remote chưa kết nối được (tab Thiết lập)' : '',
-    s.scope === 'view' ? tr('Chỉ xem') : s.scope === 'remote' ? tr('Chỉ remote') : ''].filter(Boolean).join(' · ') || 'đã kết nối');   // a guest knows what it was given
+  put($('#info'), 'textContent', tr(picking ? 'Chọn TV để điều khiển' : [CORE === 'pc' ? s.host : '', s.asking ? 'nhìn lên TV: chọn Cho phép' : s.paired === false ? 'chưa ghép remote (tab Thiết lập)' : s.error ? 'nút remote chưa kết nối được (tab Thiết lập)' : '',
+    s.scope === 'view' ? tr('Chỉ xem') : s.scope === 'remote' ? tr('Chỉ remote') : ''].filter(Boolean).join(' · ') || 'đã kết nối'));   // a guest knows what it was given; tr() as i18n.js would, or it is written again each time
   showNowApp(picking ? '' : s.app || '', s.app_label);
   if (justPicked && s.host === justPicked) {                          // straight to the remote when the TV is ready, to the first-time steps when it is not
     const ready = s.connected || (s.adb && s.adb.state === 'ready') || s.asking;   // LG / Samsung asking: the remote tab says what to do
@@ -455,7 +455,7 @@ async function checkAsk() {
   askAt = Date.now();
   const r = await fetch('/api/adb/prompt').then((x) => x.ok ? x.json() : null).catch(() => null);
   const fp = (r && r.fingerprint) || '';
-  $('#askother').hidden = !fp || picking; if (fp !== askSeen) { askSeen = fp; $('#askfp').textContent = fp; }
+  put($('#askother'), 'hidden', !fp || picking); if (fp !== askSeen) { askSeen = fp; $('#askfp').textContent = fp; }
 }
 async function answerAsk(yes) {
   const fp = askSeen; if (!fp) return;
