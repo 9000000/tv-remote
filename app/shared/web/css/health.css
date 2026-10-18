@@ -1,0 +1,60 @@
+/* The Health tab: meters, the sleep strips, crashes; and the cards in columns on a wide screen (.two-up, every tab). */
+.capsplain { list-style:none; margin:0; padding:0; display:grid; gap:6px; font-size:14px; }
+.capsplain .no { color:var(--muted); }
+.two-up { display:grid; gap:14px; grid-template-columns:minmax(0,1fr); }   /* minmax: a card never grows past the screen for a long word or select */
+#hnow, #hcaps, #hsleep { display:grid; gap:14px; grid-template-columns:1fr; }
+#hcaps > section, #hsleep > * { min-width:0; }
+/* wide screens: cards stack in columns like a gallery, each under the one above it, instead of rows as tall as their
+   tallest card leaving holes; up to 3 where there are many (Health, Automation), 2 elsewhere */
+@media (min-width:900px) {
+  .two-up, #hnow, #hcaps, #hsleep { display:block; columns:2; column-gap:14px; orphans:1; widows:1; }   /* the cards are lines (inline, below): two of them may part */
+  #hnow, #hcaps, #hsleep, #rulecards { columns:3 380px; }
+  /* inline boxes, each with the gap below it: a block's margin is moved across a column break by WebKit (Safari, the Mac
+     window: a column's first card sat 14px low), an inline box's stays its own; at a column's foot it is out of sight */
+  .two-up > *, #hnow > *, #hcaps > *, #hsleep > * { break-inside:avoid; display:inline-block; width:100%; vertical-align:top; margin:0 0 14px; }
+  :is(.two-up, #hnow, #hcaps, #hsleep) > section.card:not(.rc):not(.playing) { display:inline-flex; }
+  .health:not(.ready) #hnow > #hwait { display:block; }
+  .two-up > .stack { display:inline-flex; }
+}
+.ptable { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:6px 16px; font-size:14px; }
+.ptable .h { color:var(--muted); font-size:12px; font-weight:600; }
+.ptable .k { color:var(--muted); overflow-wrap:anywhere; min-width:0; }
+.ptable .v { font-weight:600; }
+.ptable .n { text-align:right; font-variant-numeric:tabular-nums; }
+#hnow > section { min-width:0; }
+.meter { margin:10px 0 0; font-size:14px; }
+.meter .top { display:flex; justify-content:space-between; gap:8px; }
+.meter b { font-variant-numeric:tabular-nums; }
+.meter .bar { height:10px; border-radius:5px; }
+.meter .bar i { border-radius:5px; }
+.meter.warn .bar i { background:var(--warn); }
+.meter.bad .bar i { background:var(--bad); }
+/* Health › Sleep: a strip per day, 24 h wide, the screen's on stretches and Tailscale's drops */
+.sl-day + .sl-day { margin-top:10px; }
+.sl-top { display:flex; justify-content:space-between; gap:8px; font-size:14px; }
+.sl-top small { color:var(--muted); font-size:12px; text-align:right; }
+.sl-strip { display:block; width:100%; height:12px; margin-top:4px; border-radius:4px; overflow:hidden; }
+.sl-bg { fill:var(--btn); }
+rect.sl-on { fill:var(--accent); }
+rect.sl-ts { fill:var(--bad); }
+i.sl-on { background:var(--accent); color:var(--accent-ink); }
+i.sl-ts { background:var(--bad); }
+.sl-leg { display:flex; gap:6px 14px; flex-wrap:wrap; font-size:12px; color:var(--muted); }
+.sl-leg i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px; }
+.sl-axis { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:4px; }
+.crash { border-top:1px solid var(--line); }
+.crash:first-of-type { border-top:0; }
+.crash > summary { display:flex; gap:12px; align-items:center; padding:10px 0; cursor:pointer; list-style:none; }
+.crash > summary::-webkit-details-marker { display:none; }
+.crash > summary .t { flex:1; min-width:0; }
+.crash > summary b { display:block; font-size:15px; overflow-wrap:anywhere; }
+.crash > summary small { color:var(--muted); font-size:13px; }
+.crash .n { flex:none; font-weight:700; font-variant-numeric:tabular-nums; padding:3px 10px; border-radius:999px; background:var(--warn-bg); color:var(--warn); font-size:13px; }
+.crash .why { margin:4px 0 6px; font-size:14px; overflow-wrap:anywhere; }
+.crash .why small { color:var(--muted); }
+.crash .term { height:auto; max-height:260px; font-size:12px; }
+/* health: one line of text until the first snapshot arrives, so the tab never looks empty or broken */
+#hwait, .waiting { text-align:center; padding:18px 0; grid-column:1/-1; column-span:all; }
+:is(#hsleep, #hcaps) > .waiting { display:block; }
+.health.ready #hwait, .health:not(.ready) #hnow > section { display:none !important; }   /* over the columns' inline-flex */
+.crash .crashcopy { margin:0 0 12px; }

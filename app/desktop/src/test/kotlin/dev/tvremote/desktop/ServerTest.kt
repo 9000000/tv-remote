@@ -29,7 +29,7 @@ class ServerTest {
     @Before fun start() {
         pass = Pass(dir.newFile("pass"))
         saved = Saved(File(dir.root, "tvs.json"))
-        server = Server(repo(), dir.newFolder("keys"), pass, dir.newFolder("cache"), saved, null) { }
+        server = Server(repo(), dir.newFolder("keys"), pass, dir.newFolder("cache"), saved, null, 0) { }                     // no hook server in a test
     }
 
     @After fun end() { server.close() }
@@ -116,7 +116,7 @@ class ServerTest {
         assertEquals(200, index.status)
         assertTrue(index.type.startsWith("text/html"))
         assertTrue(text(index).contains("data-core=\"pc\""))
-        val css = req("GET", "/style.css", keyed = true)
+        val css = req("GET", "/css/base.css", keyed = true)
         assertEquals(200, css.status)
         assertTrue(css.type.startsWith("text/css"))
         val js = req("GET", "/js/core.js", keyed = true)

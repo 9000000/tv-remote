@@ -7,19 +7,19 @@ const path = require('node:path');
 
 const web = path.join(__dirname, '../web');
 const html = fs.readFileSync(path.join(web, 'index.html'), 'utf8');
-const css = fs.readFileSync(path.join(web, 'style.css'), 'utf8');
+const { css } = require('./styles.js');
 const scripts = fs.readdirSync(path.join(web, 'js')).filter((f) => f.endsWith('.js')).map((f) => [f, fs.readFileSync(path.join(web, 'js', f), 'utf8')]);
 
 test('no inline style in the page', () => {
   const bad = [...html.matchAll(/<(\w+)[^>]*\sstyle="([^"]*)"/g)]
     .filter(([, tag, s]) => !/^--c:#[0-9a-f]{6}$/i.test(s) && !(tag === 'svg' && s === 'display:none'))   // a swatch's colour is data
     .map((m) => m[0].slice(0, 90));
-  assert.deepEqual(bad, [], 'give it a class in style.css (UI kit) instead');
+  assert.deepEqual(bad, [], 'give it a class in css/kit.css (UI kit) instead');
 });
 
 test('no style: in scripts building markup', () => {
   const bad = scripts.flatMap(([f, s]) => [...s.matchAll(/\bstyle:\s*['"`]/g)].map((m) => f + ':' + s.slice(0, m.index).split('\n').length));
-  assert.deepEqual(bad, [], 'give it a class in style.css (UI kit), or use UI.note / UI.empty / UI.warn');
+  assert.deepEqual(bad, [], 'give it a class in css/kit.css (UI kit), or use UI.note / UI.empty / UI.warn');
 });
 
 test('every card starts with its title', () => {

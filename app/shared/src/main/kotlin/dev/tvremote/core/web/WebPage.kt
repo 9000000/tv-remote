@@ -14,7 +14,7 @@ class WebPage(private val open: (String) -> java.io.InputStream, private val cor
             cache[name] ?: try {
                 var b = open(name).use { it.readBytes() }
                 if (name == "index.html") b = page(String(b, Charsets.UTF_8)).toByteArray(Charsets.UTF_8)
-                b.also { if (cache.size < 30) cache[name] = it }
+                b.also { if (cache.size < 60) cache[name] = it }
             } catch (e: Exception) { null }
         } ?: return null
         val type = when (name.substringAfterLast('.')) {
@@ -31,7 +31,7 @@ class WebPage(private val open: (String) -> java.io.InputStream, private val cor
         LINK.replace(html.replaceFirst("<html ", "<html data-core=\"$core\" ")) { it.groupValues[1] + "?v=" + stamp + "\"" }
 
     private companion object {
-        val FILE = Regex("index\\.html|style\\.css|stats\\.js|jmuxer\\.min\\.js|js/[a-z0-9_-]+\\.js|manifest\\.json|remote\\.json|icon-[a-z0-9]+\\.png")   // manifest and icons: "Add to Home screen"; remote.json: the remote's keys, which the Phone app reads too
-        val LINK = Regex("((?:src|href)=\"(?:style\\.css|stats\\.js|js/[^\"?]+))\"")
+        val FILE = Regex("index\\.html|css/[a-z0-9_-]+\\.css|stats\\.js|jmuxer\\.min\\.js|js/[a-z0-9_-]+\\.js|manifest\\.json|remote\\.json|icon-[a-z0-9]+\\.png")   // manifest and icons: "Add to Home screen"; remote.json: the remote's keys, which the Phone app reads too
+        val LINK = Regex("((?:src|href)=\"(?:css/[^\"?]+|stats\\.js|js/[^\"?]+))\"")
     }
 }

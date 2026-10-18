@@ -1,0 +1,52 @@
+/* The colour tokens of both themes, the page itself, and the plain controls: buttons, fields, selects. */
+:root {
+  --bg:#f3f4f7; --card:#fff; --ink:#1a1d23; --muted:#586272; --line:#e1e4ea;
+  --btn:#eceff3; --btn-hi:#dde2e9; --accent:#2f6df6; --accent-ink:#fff; --accent-text:#1f50c4;   /* accent: fills with white text; accent-text: blue used as words */
+  --ok:#106537; --warn:#8f5300; --bad:#c02f2f; --ok-bg:#e3f5ea; --warn-bg:#fdf0d8; --bad-bg:#fbe5e5;
+  --radius:14px; --ctl:40px; --ctl-sm:36px; --chip:32px; --boot:#5b38c8;
+}
+:root[data-theme=dark] {
+  /* js/theme.js: the system's choice, or the one picked in Settings */
+  --bg:#111418; --card:#1b1f25; --ink:#e9ecf1; --muted:#99a3b0; --line:#2b3139;
+  --btn:#272d35; --btn-hi:#363e49; --accent:#3366e8; --accent-ink:#fff; --accent-text:#7ba2ff;
+  --ok:#46d283; --warn:#f0b34a; --bad:#ff7070; --ok-bg:#16301f; --warn-bg:#3a2e12; --bad-bg:#3b1c1c; --boot:#a48bff;
+}
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { color-scheme:light; }
+html[data-theme=dark] { color-scheme:dark; }
+body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; }
+main { max-width:1360px; transition:max-width .15s; margin:0 auto; padding:16px; display:flex; flex-direction:column; gap:14px; }
+h1 { font-size:18px; margin:0; }
+h2 { font-size:12px; margin:0 0 8px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; }
+.muted { color:var(--muted); font-size:13px; }
+button.busy { position:relative; pointer-events:none; }   /* core.js api(): the clicked button, while its call runs */
+button.busy::before, button.busy::after { content:''; position:absolute; opacity:0; animation:busyin 0s .15s forwards; }
+button.busy::before { inset:0; background:inherit; border-radius:inherit; }   /* covers the label */
+button.busy::after { inset:0; margin:auto; width:14px; height:14px; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; animation:busyin 0s .15s forwards, spin .7s linear infinite; }
+button[data-busy] > * { display:none; }
+button[data-busy]::after, .drop[data-busy]::after { content:attr(data-busy); font-weight:600; }   /* a job's progress on the control that started it (files.js mark) */
+button { font:inherit; color:var(--ink); background:var(--btn); border:0; border-radius:12px; min-height:48px; cursor:pointer; touch-action:manipulation; transition:background .1s, transform .05s; }
+button:hover { background:var(--btn-hi); }
+button:active { transform:scale(.97); }
+[data-k] { user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
+[data-k].held, .dpad .ok.held { background:#f59e0b; color:#1a1200; transform:scale(.95); box-shadow:0 0 0 3px rgba(245,158,11,.35); }
+button:disabled { opacity:.45; cursor:not-allowed; transform:none; }
+.kind-off, html[data-kind=lg] .adbnote, html[data-kind=samsung] .adbnote { display:none !important; }   /* LG / Samsung: what needs ADB (applyKind) */
+button[data-kind-off] { opacity:.3; cursor:help; }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, a:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.primary { background:var(--accent); color:var(--accent-ink); font-weight:700; }
+.primary:hover { background:var(--accent); filter:brightness(1.08); }
+.danger { color:var(--bad); }
+.power { color:var(--bad); font-weight:700; }
+.small { min-height:var(--ctl-sm); padding:0 12px; font-size:13px; }
+.iconbtn { min-height:var(--ctl-sm); width:38px; padding:0; font-size:15px; flex:none; }
+select { font:inherit; font-size:13px; color:var(--ink); background:var(--btn); border:0; border-radius:12px; min-height:var(--ctl-sm); padding:0 8px; cursor:pointer; }
+input[type=text], input:not([type]), input[type=url], input[type=search] { flex:1; min-width:0; font:inherit; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:0 12px; min-height:48px; }
+input[type=checkbox] { width:18px; height:18px; accent-color:var(--accent); }
+input[type=time], input[type=number] { font:inherit; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:0 10px; min-height:var(--ctl); }
+input[type=number] { width:84px; }
+/* ---- UI kit (js/ui.js): the shapes every tab but the remote is made of. A card spaces its own children (--gap), so
+   nothing inside needs a margin; titles: h2 the card's (small capitals), h3 a group's; p.note a line of explanation. ---- */
+:root { --gap:12px; }
+h3 { font-size:14px; font-weight:600; margin:0; }

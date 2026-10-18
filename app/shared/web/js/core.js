@@ -3,11 +3,11 @@
 //   mac    the program on the computer (app/desktop): many TVs, remote buttons without ADB, first-time setup
 //   tv     the TV Setup app on the TV itself: one TV, opened from any browser after typing a code shown on the TV
 //   phone  the phone app's Manage screen: apps, files, health and terminal only (the app has its own remote)
-// What one core cannot do is marked data-for="..." in index.html and hidden by style.css; the few differences in behaviour are asked here.
+// What one core cannot do is marked data-for="..." in index.html and hidden by css/page.css; the few differences in behaviour are asked here.
 const CORE = document.documentElement.dataset.core || 'pc';
 document.documentElement.dataset.core = CORE;
 const $ = (s) => document.querySelector(s);
-// icon + words as separate spans, so narrow screens can show the icon alone (see .lbl in style.css)
+// icon + words as separate spans, so narrow screens can show the icon alone (see .lbl in css/page.css)
 // asks: its handler asks before doing anything, so the icon-only question below is not asked as well
 const setLabel = (b, icon, text, asks) => { if (asks) b.dataset.asks = ''; b.replaceChildren(el('span', { className: 'ico', textContent: icon }), el('span', { className: 'lbl', textContent: ' ' + text })); if (!b.title) b.title = text; return b; };
 const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); kids.forEach((k) => k != null && e.append(k)); return e; };
@@ -78,7 +78,7 @@ function menuDlg(title, primary, items) {
   return d;
 }
 
-// On a narrow screen some buttons show their icon alone (.lbl folded away, style.css). A tap there first says what it does, so
+// On a narrow screen some buttons show their icon alone (.lbl folded away, css/page.css). A tap there first says what it does, so
 // nobody acts on a guess at an icon; yes then does it. Not for ✕ and ⋯ (they say it by themselves), nor for buttons whose
 // own handler asks already (data-asks): one question is enough.
 let iconSure = false;
@@ -98,7 +98,7 @@ document.addEventListener('click', async (e) => {
 
 // The computer's page is read fresh from disk, its server's code only at start: a newer page's calls then answer 404.
 const STALE = 'Trang mới hơn phần đang chạy: vào 🛠️ Cài đặt, bấm ⏻ Tắt rồi mở lại TV Remote.';
-// Every button that waits on the server shows it: the one just clicked spins until its call returns (style.css .busy, shown
+// Every button that waits on the server shows it: the one just clicked spins until its call returns (css/kit.css .busy, shown
 // only past 150 ms so quick calls do not flicker). Counted from the end of the click handler, or from the yes to an ask() in it.
 let clicked = null, clickedAt = Infinity;
 document.addEventListener('click', (e) => { clicked = e.target.closest && e.target.closest('button'); clickedAt = Infinity; setTimeout(() => { clickedAt = performance.now(); }, 0); }, true);

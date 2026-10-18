@@ -1,0 +1,170 @@
+/* The Remote tab: the picture (and its mini player), the keys and D-pad, volume, typing, listening, scenes, now playing. */
+.remote-grid { display:grid; gap:14px; grid-template-columns:minmax(0,1fr); align-items:start; }
+.remote-grid > .col > * { min-width:0; }
+@media (min-width:900px) {
+  .remote-grid { grid-template-columns:minmax(0,1fr) 340px; }
+  .remote-grid > .col:last-child { position:sticky; top:70px; }   /* controls stay next to the picture while scrolling */
+  /* only the picture needs all that room: without it (not watching, or an LG / Samsung TV) the left column keeps to a
+     readable width beside the remote, which stays on the right */
+  .remote-grid:not(:has(#screencard.on)) { grid-template-columns:minmax(0,720px) 340px; justify-content:center; }
+  .screenbox { max-height:calc(100vh - 215px); min-height:240px; }
+}
+#screencard:not(.on) #screenfull { display:none; }   /* nothing to show full screen yet */
+/* phone: the two columns become one list, so the app tiles can go below the buttons and the picture stays right above them;
+   the picture's box takes no room until somebody is watching */
+@media (max-width:899px) {
+  .remote-grid > .col { display:contents; }
+  .wide-only { order:5; }
+  #screencard:not(.on) .screenbox, #screencard:not(.on) #screeninfo { display:none; }
+  #screencard:not(.on) h2 { margin:0; }
+}
+.rc { display:flex; flex-direction:column; align-items:center; gap:16px; padding:18px 16px; }
+.rrow { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; width:100%; max-width:300px; }
+.rrow.three { grid-template-columns:repeat(3,1fr); }
+.rrow.four { grid-template-columns:repeat(4,1fr); }
+#more[hidden] { display:none; }
+.sliding { overflow:hidden; }
+#morebtn.on, #r-draw.on { background:var(--accent); color:var(--accent-ink); }
+.rb { min-height:52px; border-radius:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:0; }
+.rb.lab { min-height:60px; }
+.rb small { font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+#speak.on { background:var(--bad); color:#fff; }
+.rb.power { color:var(--bad); }
+.rb.play { background:var(--ink); color:var(--card); }
+.rb.play:hover { background:var(--ink); filter:brightness(.9); }
+.dpad { position:relative; width:min(250px, 72vw); aspect-ratio:1; border-radius:50%; background:var(--btn); border:1px solid var(--line); box-shadow:inset 0 2px 12px rgba(0,0,0,.18); flex:none; }
+.dpad button { position:absolute; width:34%; height:34%; min-height:0; background:transparent; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--muted); }
+.dpad button:hover { background:var(--btn-hi); color:var(--ink); }
+.dpad .ic { width:28px; height:28px; }
+.dpad .up { top:2%; left:33%; }
+.dpad .down { bottom:2%; left:33%; }
+.dpad .left { left:2%; top:33%; }
+.dpad .right { right:2%; top:33%; }
+.dpad .ok { top:31%; left:31%; width:38%; height:38%; background:var(--accent); color:var(--accent-ink); font-size:17px; font-weight:700; box-shadow:0 4px 14px rgba(0,0,0,.25); }
+.dpad .ok:hover { background:var(--accent); color:var(--accent-ink); filter:brightness(1.08); }
+.rc .vol { width:100%; margin-top:0; }
+.cluster { display:grid; grid-template-columns:1fr 2.4fr 1fr; gap:10px; width:100%; max-width:300px; align-items:stretch; }
+.cluster .mid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.pill { display:flex; flex-direction:column; align-items:stretch; justify-content:space-between; background:var(--btn); border-radius:26px; overflow:hidden; }
+.pill button { flex:1; background:transparent; border-radius:0; min-height:60px; display:flex; align-items:center; justify-content:center; padding:0; }
+.pill button:hover { background:var(--btn-hi); }
+.pill output, .pill span { text-align:center; font-weight:700; font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; }
+#r-mute.on { background:var(--bad-bg); color:var(--bad); }
+.rb.play small { color:inherit; opacity:.7; }
+/* a segmented switch: three short words that fit one line on a phone */
+.seg { display:flex; --gap:2px; gap:var(--gap); padding:3px; margin:0 0 12px; background:var(--card); border:1px solid var(--line); border-radius:12px; }
+.seg button { flex:1 0 auto; min-height:34px; padding:0 8px; font-size:13px; font-weight:600; white-space:nowrap; background:transparent; border-radius:9px; }
+/* too many words for a narrow screen or large text: the row slides sideways instead of pushing a word out of its box */
+.seg, .tabs { overflow-x:auto; scrollbar-width:none; overscroll-behavior-x:contain; }
+.seg::-webkit-scrollbar, .tabs::-webkit-scrollbar { display:none; }
+/* the side that has more: a fade in the bar's own colour, held at the edge (sticky) above the buttons; a mask would fade the border too */
+:is(.seg, .tabs)::before, :is(.seg, .tabs)::after { content:''; position:sticky; z-index:2; flex:0 0 32px; align-self:stretch; pointer-events:none; opacity:0; transition:opacity .15s; }
+:is(.seg, .tabs)::before { left:0; margin-right:calc(-32px - var(--gap)); background:linear-gradient(to right, var(--card), transparent); }
+:is(.seg, .tabs)::after { right:0; margin-left:calc(-32px - var(--gap)); background:linear-gradient(to left, var(--card), transparent); }
+:is(.seg, .tabs).more-l::before, :is(.seg, .tabs).more-r::after { opacity:1; }
+@media (max-width:420px) {
+  .seg button { padding:0 6px; }
+}
+.seg button.on { background:var(--accent); color:var(--accent-ink, #fff); }
+.seg.mini { margin:0; flex:none; }
+.seg.mini button { flex:none; min-height:28px; font-size:12px; }
+.vol { display:flex; align-items:center; gap:8px; margin-top:12px; }
+.vol button { min-height:44px; width:44px; padding:0; flex:none; font-size:17px; display:flex; align-items:center; justify-content:center; border-radius:50%; }
+.vol .ic { width:20px; height:20px; }
+.vol input[type=range] { flex:1; min-width:0; height:32px; accent-color:var(--accent); cursor:pointer; }
+.vol.boost output { width:auto; min-width:4ch; }
+.vol output { width:34px; text-align:right; font-variant-numeric:tabular-nums; font-weight:700; font-size:15px; }
+.vol button.on { background:var(--bad-bg); color:var(--bad); }
+.screenbox { position:relative; background:#000; border-radius:10px; overflow:hidden; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; margin-top:10px; }
+.screenbox img, .screenbox video, .screenbox #screenc { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; display:block; cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none; }
+.screenbox .tap {
+  position:absolute; width:34px; height:34px; margin:-17px 0 0 -17px; border-radius:50%; pointer-events:none; z-index:2;
+  background:rgba(255,255,255,.3); border:2px solid rgba(255,255,255,.9); box-shadow:0 0 0 1px rgba(0,0,0,.35), 0 0 12px rgba(0,0,0,.35);
+}
+.screenbox .tap.gone { animation:tapgone .45s ease-out forwards; }   /* let go: the dot spreads into a ring and fades */
+@keyframes tapgone { to { transform:scale(1.9); opacity:0; background:transparent; } }
+@media (prefers-reduced-motion:reduce) {
+  .screenbox .tap.gone { animation-duration:.2s; }
+}
+#drawcv { position:absolute; inset:0; width:100%; height:100%; z-index:3; cursor:crosshair; touch-action:none; }
+.drawbar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px; }
+.drawbar { position:relative; }
+.drawbar .pickc { margin-left:auto; }   /* with the other tools on the right; its colours open under the bar's right end */
+.drawbar .picscale { min-width:3.2em; text-align:center; font-variant-numeric:tabular-nums; }
+#piccancel { margin-left:auto; }
+.drawbar .swatches { position:absolute; top:calc(100% + 8px); right:0; z-index:30; display:grid; grid-template-columns:repeat(5,30px); gap:10px; padding:12px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:0 10px 30px rgba(0,0,0,.35); }
+.drawbar .sizes { grid-column:1 / -1; display:flex; align-items:center; gap:10px; }
+.drawbar .sizes input { flex:1; min-width:0; accent-color:var(--accent); }
+.drawbar .dotbox { width:52px; height:52px; display:flex; align-items:center; justify-content:center; flex:none; }
+#drawdot { width:12px; height:12px; border-radius:50%; background:#ff3b30; box-shadow:0 0 0 1px rgba(255,255,255,.35); }
+.drawbar .swatch { width:30px; height:30px; min-height:0; padding:0; border-radius:50%; background:var(--c); border:2px solid var(--line, #444); }
+.drawbar .swatch.on { outline:3px solid var(--accent); outline-offset:2px; }
+#picbar { justify-content:flex-end; }
+.screenbox .ph { color:#9aa3af; font-size:14px; padding:16px; text-align:center; }
+.screenbox .blackhint { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); max-width:80%; z-index:3; pointer-events:none; padding:8px 12px; border-radius:10px; background:rgba(30,33,40,.85); color:#e5e7eb; font-size:13px; line-height:1.4; text-align:center; }
+.screenbox .blackhint small { display:block; color:#9aa3af; font-size:12px; }
+.screenbox .blackhint[hidden] { display:none; }
+.screenbox:fullscreen { border-radius:0; aspect-ratio:auto; }
+/* mini player: the TV picture floats in the corner while another tab is open */
+#pipslot { position:fixed; right:16px; bottom:16px; width:min(440px, calc(100vw - 32px)); z-index:15; }
+body.pip main { padding-bottom:320px; }   /* room to scroll the last rows out from under it */
+#pipslot .card { padding:10px; box-shadow:0 10px 34px rgba(0,0,0,.4); }
+#pipslot h2 span, #pipslot #screenmodebtn, #pipslot #screeninfo { display:none; }
+#pipslot .screenbox { margin-top:8px; max-height:none; min-height:0; }
+@media (max-width:640px) {
+  #pipslot { width:230px; right:8px; bottom:8px; }
+  #pipslot #screenfull { display:none; }
+}
+#screeninfo { margin-top:8px; min-height:19px; }
+#screeninfo.live::before { content:"● "; color:var(--bad); }
+fieldset#kbd { border:0; padding:0; margin:0; min-width:0; }
+fieldset#kbd:disabled { opacity:.4; pointer-events:none; }
+/* typing: ⚡ switches between live typing and type-then-send; 123 shows the number keys */
+#live { padding:0 12px; }
+#live.on { background:var(--accent); color:var(--accent-ink); }
+.numpad { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:300px; margin-top:8px; }
+.numpad[hidden] { display:none; }
+#listen.on { background:var(--accent); color:var(--accent-ink); }
+#listeninfo { margin-top:6px; }
+#pipslot #listeninfo { display:none; }
+/* scenes: one button each on the Remote tab */
+.scenebtns { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:8px; margin-top:10px; }
+.scene { display:flex; align-items:center; gap:8px; padding:8px 12px; min-height:48px; text-align:left; font-size:14px; font-weight:600; }
+.scene .ico { font-size:20px; flex:none; }
+.scene span:last-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.scene.add { grid-column:1/-1; color:var(--muted); font-weight:500; }
+.listenbar { display:flex; gap:8px; margin:10px 0; }
+.listenbar button { min-height:var(--ctl-sm); padding:0 12px; }
+:is(#listenhq, #listeneven, #listenboost).on { background:var(--accent); color:var(--accent-ink); }
+/* now playing (js/playing.js): the app's icon, the title, three buttons; the bar under them seeks */
+.playing { display:flex; flex-direction:column; gap:8px; padding:10px 12px; }
+.playing[hidden] { display:none; }
+.nowapp { display:flex; align-items:center; gap:8px; min-width:0; }
+.nowapp small { color:var(--muted); flex:none; }
+.nowapp .appicon { width:24px; height:24px; border-radius:6px; flex:none; font-size:12px; }
+.nowapp b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.nowapp .appicon:not(.placeholder):not(.adaptive) { width:auto; max-width:96px; }
+.nowapp .appicon:not(.adaptive) img { width:auto; max-width:96px; height:24px; object-fit:contain; }   /* the picture's own shape: a wide banner is not cut to a square */
+.plhead { display:flex; align-items:center; gap:8px; min-width:0; }
+.plhead img { width:36px; height:36px; border-radius:8px; flex:none; object-fit:contain; }
+.pltext { flex:1; min-width:0; display:flex; flex-direction:column; }
+.pltext b, .pltext small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pltext small { color:var(--muted); font-size:12px; }
+.plbar { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; }
+.plbar[hidden] { display:none; }
+.plbar input { flex:1; min-width:0; accent-color:var(--accent); cursor:pointer; }
+.plbar input:disabled { cursor:default; }
+/* One size per kind of control, in every tab but the remote (whose keys are made to be hit without looking):
+   a field and the button beside it --ctl, a card's own actions .small (--ctl-sm), a choice among several a chip (--chip). */
+.panel:not([data-panel=remote]) :is(button, select, input[type=text], input:not([type]), input[type=url], input[type=search], input[type=time]):not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.scene):not(.drop):not(.st-key):not(.crumbs button) { min-height:var(--ctl); }
+.panel:not([data-panel=remote]) button:not(.small):not(.iconbtn):not(.places button):not(.fchips button):not(.seg button):not(.scene):not(.st-key):not(.crumbs button) { font-size:14px; padding:0 16px; }
+@media (max-width:640px) {
+  #places { margin:-6px -14px; padding:6px 14px; }   /* one row to swipe, to the screen's edges */
+}
+section.card:not(.rc):not(.playing), dialog .card { display:flex; flex-direction:column; gap:var(--gap); }
+section.card:not(.rc):not(.playing) > *, dialog .card > * { margin:0; }
+:is(section.card:not(.rc):not(.playing), dialog .card) > div:empty { display:none !important; }   /* a slot with nothing in it yet leaves no gap */
+section.card:not(.rc):not(.playing) > :is(button, label.filebtn) { align-self:flex-start; }
+section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* js/old.js: browsers before flex gap (Chrome 84) */
+#quickq { width:100%; }
+.empty.pad { padding:14px 0; }

@@ -1,0 +1,75 @@
+/* The Setup tab: the checklist, Tailscale, the TV's own settings card. */
+.kintro .badge { text-transform:none; letter-spacing:0; }
+.kintro h2 .badge { margin-left:8px; vertical-align:1px; }
+.setlist .setrow { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,auto); gap:4px 14px; align-items:center; padding:9px 0; border-top:1px solid var(--line); cursor:pointer; }
+.setname { display:flex; flex-direction:column; gap:2px; min-width:0; font-size:14px; }
+.setname small { font-size:11px; color:var(--muted); overflow-wrap:anywhere; }
+.setval { max-width:46vw; font-size:14px; font-weight:600; text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.setval.mono { font-size:12px; font-weight:400; color:var(--muted); }
+.setval.long { font-size:12px; font-weight:500; }
+.setstep { display:flex; align-items:center; gap:6px; }
+.setstep .setval { min-width:3ch; text-align:center; }
+.setstep .setnum { width:7ch; height:var(--ctl-sm); padding:0 6px; text-align:center; }
+.setstep .setmax { color:var(--muted); font-size:13px; white-space:nowrap; }
+.setrange { width:min(150px, 34vw); accent-color:var(--accent); }
+.setctl { display:flex; align-items:center; justify-content:flex-end; gap:6px; }
+.setctl .small { min-height:var(--chip); padding:0 12px; }
+.setpick { min-height:34px; max-width:46vw; border-radius:10px; background:var(--btn); color:var(--ink); border:0; padding:0 8px; font:inherit; font-size:14px; }
+.setlist .setrow.full { grid-template-columns:1fr; }
+.setlist .setrow.full .setval { display:block; max-width:none; text-align:left; white-space:normal; overflow-wrap:anywhere; }
+.setrow.full .run > .rin { display:inline; }
+.setrow.full .run > .rin::after { content:none; }
+.setfilter { margin:10px 0 4px; }
+.setfilter button[data-n]::after { content:' · ' attr(data-n); opacity:.7; font-weight:500; }
+.setgroupbox { border-top:1px solid var(--line); }
+.setgroupbox > summary { cursor:pointer; font-size:14px; font-weight:700; padding:11px 0; }
+.setgroupbox[open] > summary { color:var(--muted); font-size:13px; }
+.setgroupbox .setrow:first-of-type { border-top:0; }
+.item .name .badges { display:flex; flex-wrap:wrap; gap:4px; margin:3px 0 2px; }
+.item .name .badges .badge { margin-left:0; }
+.setupmsg { min-height:5em; }
+.stepsdone > summary { cursor:pointer; font-weight:600; color:var(--ok); padding:4px 0; }
+.stepsdone[open] > summary { margin-bottom:4px; }
+.step { display:flex; gap:12px; padding:14px 0; border-top:1px solid var(--line); align-items:flex-start; }
+.step:first-child { border-top:0; }
+.step .mark { width:30px; height:30px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; background:var(--btn); color:var(--muted); }
+.step.ok .mark { background:var(--ok-bg); color:var(--ok); }
+.step.wait .mark { background:var(--warn-bg); color:var(--warn); }
+.step .body { flex:1; min-width:0; }
+.step b { font-size:15px; }
+.step p { margin:3px 0 0; font-size:13px; color:var(--muted); }
+.step .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; align-items:center; }
+.step .actions input { min-height:var(--ctl-sm); flex:0 1 220px; font-size:14px; }
+.badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; background:var(--btn); color:var(--muted); margin-left:6px; vertical-align:middle; }
+.badge.ok { background:var(--ok-bg); color:var(--ok); }
+/* Tailscale: one button, then a sign-in link (and its QR code) for a browser that is signed in to Tailscale */
+.tsbox p { margin:0; font-size:14px; line-height:1.55; }
+.tsbox .go { display:flex; align-items:center; justify-content:center; gap:8px; min-height:50px; padding:0 18px; border-radius:12px; text-decoration:none; font-size:16px; font-weight:700; }
+.tslogin { display:flex; gap:20px; align-items:center; }
+.tsqr { flex:none; display:flex; flex-direction:column; align-items:center; gap:8px; font-size:12.5px; color:var(--muted); }
+.tsqr svg { display:block; padding:8px; background:#fff; border-radius:16px; }
+.tsside { flex:1; min-width:0; display:flex; flex-direction:column; gap:16px; }
+.tssteps { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:12px; }
+.tssteps li { display:flex; align-items:center; gap:12px; font-size:15.5px; font-weight:600; }
+.tssteps b { flex:none; width:30px; height:30px; border-radius:50%; display:grid; place-items:center; background:color-mix(in srgb, var(--accent) 18%, transparent); color:var(--accent-text); font-size:14px; }
+.tsbox .tswait { display:flex; align-items:center; padding:11px 14px; border-radius:12px; background:var(--btn); color:var(--muted); font-size:13.5px; }
+.tsbox .tsnote { font-size:13px; }
+.tsbox .bar { margin-top:0; }
+.tsdone { display:flex; flex-direction:column; align-items:center; gap:6px; padding:6px 0 2px; text-align:center; }
+.tsok { width:56px; height:56px; border-radius:50%; display:grid; place-items:center; background:var(--ok-bg); color:var(--ok); font-size:28px; font-weight:800; margin-bottom:4px; }
+.tsdone b { font-size:17px; }
+.tsdone code { font-size:15px; padding:3px 10px; border-radius:8px; background:var(--btn); }
+.tsbox .tstip { padding:10px 14px; border-radius:12px; background:var(--warn-bg); font-size:13.5px; }
+@media (max-width:480px) {
+  .tslogin { flex-direction:column; align-items:stretch; }
+  .tsqr { align-self:center; }
+}
+#tscard .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+/* the TV card (tvset.js): each setting a row of choices, the current one lit */
+.tvset { display:flex; flex-direction:column; gap:14px; }
+.tvset .setrow b { display:block; font-size:14px; margin-bottom:6px; }
+.tvset .setrow .muted { margin:6px 0 0; font-size:12px; }
+.tvset .setrow .places button:disabled { opacity:.5; }
+.tsbox { display:flex; flex-direction:column; gap:12px; }
+#termhist { width:100%; min-height:var(--ctl); border-radius:10px; background:var(--btn); color:var(--ink); border:0; padding:0 10px; font:inherit; }
+pre.log { margin:0; padding:10px; background:var(--bg); border:1px solid var(--line); border-radius:10px; font-size:12px; max-height:260px; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; }

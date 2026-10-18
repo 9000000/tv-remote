@@ -1,0 +1,39 @@
+/* The Automation tab: sleep timer, bedtime, app limits, the scene editor. */
+.presets { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.presets button { padding:0 14px; }
+#rulecards .actions, #autosetup .actions { display:flex; gap:8px; flex-wrap:wrap; }
+#sleepstate.on { color:var(--accent-text); }
+.check { display:flex; gap:8px; align-items:center; font-size:14px; cursor:pointer; }
+.timerow { display:flex; gap:10px; flex-wrap:wrap; align-items:center; font-size:14px; }
+form > .timerow + .line { margin-top:10px; }
+.smallbox { width:min(400px, 94vw); }
+.dlgform { display:flex; flex-direction:column; gap:12px; }   /* ＋ Thêm of a rule card: its few fields, one per line */
+.dlgform :is(select, input[type=time], button) { min-height:var(--ctl); }
+.dlgform .timerow { flex-wrap:nowrap; }
+.dlgform .timerow label { flex:1; display:flex; align-items:center; gap:8px; min-width:0; }
+.dlgform .timerow input { flex:1; min-width:0; }
+#limitf select { flex:1; min-width:0; }
+#limitf select#limitmin { flex:none; }
+#volf .line { display:flex; gap:8px; margin-top:8px; }
+#volf select { flex:1; min-width:0; }
+#volf button { padding:0 16px; }
+#limits .name .bar { max-width:260px; }
+.scenebox { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+.scenebox h3 { margin:4px 0 0; font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+.line2 { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.line2 > input:first-child { flex:0 0 64px; text-align:center; font-size:20px; }
+.line2 select { min-height:var(--ctl); }
+#stepargs { display:contents; }
+#stepargs select, #stepargs input:not([type=number]) { flex:1 1 160px; min-height:var(--ctl); }
+.steprow { display:flex; gap:6px; align-items:center; padding:6px 0; border-top:1px solid var(--line); font-size:14px; }
+.steprow:first-child { border-top:0; }
+.steprow span { flex:1; min-width:0; overflow-wrap:anywhere; }
+.homehint { background:var(--ok-bg); border-color:transparent; }
+.sceneio { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.sceneio button { padding:0 14px; }
+@media (max-width:380px) {
+  #limitf { flex-wrap:wrap; }
+  #limitf select#limitpkg { flex:1 1 100%; }
+}
+.minispin { display:inline-block; width:14px; height:14px; margin-right:8px; vertical-align:-2px; border-radius:50%; border:2px solid var(--muted); border-top-color:var(--accent); animation:spin .9s linear infinite; }
+.panel .timerow button.small { min-height:var(--ctl); }   /* beside the time fields: as tall as they are */

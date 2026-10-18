@@ -1,0 +1,91 @@
+/* The UI kit (js/ui.js), last so it wins: lists, chips that slide, running lines, one size per kind of control, line icons. */
+@keyframes busyin { to { opacity:1; } }
+[data-busy] { pointer-events:none; }
+.bar.busy i { width:35% !important; animation:barslide 1.2s ease-in-out infinite; }
+@keyframes barslide { from { margin-left:-35%; } to { margin-left:100%; } }
+.col { display:flex; flex-direction:column; gap:14px; min-width:0; }
+/* remote card: line icons, a round D-pad with OK in the middle */
+.ic { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+form.line { display:flex; gap:8px; margin-top:8px; }
+form.line button { padding:0 16px; }
+.linkbtn.primary { background:var(--accent); color:var(--accent-ink); font-weight:700; }
+.card-head { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+.card-head h2 { margin:0; }
+.card-head .tools { display:flex; gap:6px; align-items:center; }
+.list { display:flex; flex-direction:column; }
+.item { display:flex; align-items:center; gap:10px; padding:9px 0; border-top:1px solid var(--line); min-width:0; flex-wrap:wrap; }
+.item:first-child { border-top:0; }
+.item .name { flex:1 1 170px; min-width:0; overflow-wrap:anywhere; font-size:14px; }
+.item .name small { display:block; color:var(--muted); font-size:12px; }
+.item .acts { display:flex; gap:6px; margin-left:auto; }
+.item.click { cursor:pointer; border-radius:8px; }
+.item.click:hover .name > span { color:var(--accent-text); }
+.places { display:flex; gap:6px; }
+/* chips stay on one line: more than fits scrolls sideways (the wheel too, js/ui.js), faded at the side that has more */
+:is(.places, .fchips) { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; padding:6px; margin:-6px; }   /* room for the focus ring (5px on the TV) */
+:is(.places, .fchips)::-webkit-scrollbar { display:none; }
+:is(.places, .fchips) > * { flex-shrink:0; }
+:is(.places, .fchips).more-r { mask-image:linear-gradient(to right, #000 calc(100% - 36px), transparent); }
+:is(.places, .fchips).more-l { mask-image:linear-gradient(to left, #000 calc(100% - 36px), transparent); }
+:is(.places, .fchips).more-l.more-r { mask-image:linear-gradient(to right, transparent, #000 36px, #000 calc(100% - 36px), transparent); }
+.places button { min-height:var(--chip); padding:0 12px; font-size:13px; border-radius:999px; white-space:nowrap; }
+.places.two { display:grid; grid-template-columns:1fr 1fr; }
+.places button.on { background:var(--accent); color:var(--accent-ink); font-weight:600; }
+.linkbtn { display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:var(--ink); background:var(--btn); border-radius:12px; }
+.linkbtn:hover { background:var(--btn-hi); }
+.bar { height:6px; background:var(--btn); border-radius:3px; overflow:hidden; margin-top:6px; }
+.bar i { display:block; height:100%; width:0; background:var(--accent); transition:width .3s; }
+.stack { display:flex; flex-direction:column; gap:14px; min-width:0; }
+.kv { display:grid; grid-template-columns:fit-content(55%) minmax(0,1fr); gap:6px 14px; font-size:14px; }
+.kv dt, .kv .k { color:var(--muted); overflow-wrap:anywhere; min-width:0; }
+.kv .v { font-weight:600; overflow-wrap:anywhere; text-align:right; }
+.term { background:#0b0d10; color:#d7e0ea; border-radius:12px; padding:12px; font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; white-space:pre-wrap; overflow-wrap:anywhere; height:min(52vh, 460px); overflow:auto; margin:0 0 10px; }
+.term .cmd { color:#7fb0ff; }
+.term .err { color:#ff8a80; }
+.mono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:14px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.state { font-size:16px; font-weight:600; margin:0 0 10px; }
+.state:empty { display:none; }
+.bar.full i { background:var(--bad); }
+.fchips { display:flex; gap:6px; margin-top:4px; }
+/* a line wider than its place slides to its end and back (ui.js runFit) */
+.run { text-overflow:clip !important; contain:paint; }
+.run > .rin { display:inline-block; position:relative; }   /* it slides: runSlide() in js/ui.js */
+.run > .rin[data-t]::after { content:attr(data-t); content:attr(data-t) / ""; position:absolute; left:100%; padding-left:var(--gap); }   /* the copy that follows it round, not read out */
+@media (prefers-reduced-motion:reduce) {
+  .run { text-overflow:ellipsis !important; }
+  .run > .rin { display:inline; }
+  .run > .rin::after { content:none; }
+}
+.panel:not([data-panel=remote]) select { font-size:14px; padding:0 10px; }
+.panel > div:empty { display:none; }   /* an empty slot (no ADB banner, nothing to set up) leaves no gap */
+details.card > summary { font-size:14px; font-weight:600; cursor:pointer; }   /* every fold-out card reads the same */
+details.card[open] > summary { margin-bottom:var(--gap); }
+details.card > :not(summary) + :not(summary) { margin-top:var(--gap); }
+h2 .lower { text-transform:none; letter-spacing:0; font-weight:500; }   /* "· cần ADB", a TV's name: words beside a title */
+.group { display:flex; flex-direction:column; gap:6px; }
+.group > * { margin:0; }
+.note, .empty { color:var(--muted); font-size:13px; margin:0; line-height:1.45; }
+.line { display:flex; gap:8px; align-items:center; }
+.line > input, .line > select { flex:1; min-width:0; }
+.actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.warnline { display:block; color:var(--warn); font-size:13px; margin:0; }
+.actions.end { justify-content:flex-end; }
+.actions > button:not(.small):not(.iconbtn), .actions > label.filebtn:not(.small) { padding:0 18px; min-height:var(--ctl); font-size:14px; }
+.card.stopped { text-align:center; padding:40px 16px; }
+.optbox .optbox { margin-top:0; }
+/* icons in titles, tabs and buttons (js/ui.js ICON): a title's in its own colour, a button's in the button's */
+.ui-ic { display:inline-flex; vertical-align:-.2em; margin-right:.4em; flex:none; }
+.ui-ic .ic { width:1.15em; height:1.15em; }
+.ui-ic.hue { color:hsl(var(--h) 70% 36%); }
+[data-theme=dark] .ui-ic.hue { color:hsl(var(--h) 80% 68%); }
+h2 .ui-ic .ic { width:15px; height:15px; }
+h2 .ui-ic { vertical-align:-3px; }
+.ico > .ui-ic, .ui-ic.solo { margin:0; }
+.lbl:empty { display:none; }
+.tabs .ico > .ui-ic { background:hsl(var(--h) 65% 38%); color:#fff; border-radius:7px; padding:4px; }
+.tabs .ico > .ui-ic .ic { width:15px; height:15px; }
+@media (max-width:640px) {
+  .tabs .ico > .ui-ic { padding:5px; }
+  .tabs .ico > .ui-ic .ic { width:17px; height:17px; }
+}

@@ -1,7 +1,7 @@
-// WCAG contrast of the colour tokens in style.css, both themes (the runtime check on real rendering is dev/contrast.py).
+// WCAG contrast of the colour tokens in css/base.css, both themes (the runtime check on real rendering is dev/contrast.py).
 const test = require('node:test'), assert = require('node:assert');
 const fs = require('fs'), path = require('path');
-const css = fs.readFileSync(path.join(__dirname, '../web/style.css'), 'utf8');
+const { css } = require('./styles.js');
 
 const block = (sel) => { const i = css.indexOf(sel + ' {'); assert.ok(i >= 0, sel); return css.slice(i, css.indexOf('}', i)); };
 const tokens = (b) => Object.fromEntries([...b.matchAll(/--([\w-]+):\s*(#[0-9a-fA-F]{3,6})\b/g)].map((m) => [m[1], m[2]]));

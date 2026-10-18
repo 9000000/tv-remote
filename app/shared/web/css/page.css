@@ -1,0 +1,210 @@
+/* Around every tab: the top bar and its chips, the tabs, the list of TVs, pairing, help, uploads, dialogs, menus, banners. */
+.top { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.top .brand { display:flex; align-items:center; gap:10px; min-width:0; }
+.top .logo { width:36px; height:36px; border-radius:9px; flex:none; }
+.top .sub { color:var(--muted); font-size:13px; overflow-wrap:anywhere; }   /* breaks a long address, not a word mid-way */
+.chips { display:flex; gap:8px; flex-wrap:wrap; }
+@media (max-width:640px) {
+  .chips { gap:5px; }
+  header .chips { flex-wrap:nowrap; }
+  header .chips > * { flex:none; }
+  header .chip { flex:0 1 auto; min-width:0; }
+  header .chip span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  header .chips { gap:4px; }
+  header .chip { padding:4px 8px; }
+  header .chips button.small { min-width:30px; padding:0 6px; }
+  #lang .globe { display:none; }   /* one line: a long state shortens, its whole text on hover */
+  .chip { padding:4px 9px; font-size:12px; gap:5px; }
+  .chip i { display:none; }
+  .chips button.small { min-height:30px; padding:0 8px; font-size:12px; }
+}
+/* One page, three cores (see core.js): the computer app ("pc"), the TV Setup app on the TV ("tv") and the phone app's
+   Manage screen ("phone"). An element marked data-for is only there on the cores it names. */
+html[data-core=pc] [data-for]:not([data-for~=pc]), html[data-core=tv] [data-for]:not([data-for~=tv]), html[data-core=phone] [data-for]:not([data-for~=phone]) { display:none !important; }
+/* the page on the TV itself (TV Setup's Manage screen, js/ontv.js): it has no remote of its own, and the focus is all there
+   is to see what OK will press, so it is drawn plainly on everything */
+html[data-ontv] :is([data-tab=remote], [data-panel=remote]) { display:none !important; }   /* from the first paint: the TV itself has no Remote tab */
+html[data-ontv] :focus { outline:3px solid var(--accent); outline-offset:2px; }
+html[data-ontv] { scroll-padding-top:90px; }   /* moving up, the focus lands below the sticky tabs, not under them */
+html[data-core=phone] header.top, html[data-core=phone] #ver { display:none; }   /* the app has its own title bar */
+main.locked > :not(header):not(#pair) { display:none !important; }
+main.locked .chips > :not(#lang) { display:none; }   /* not paired yet: only the code box */
+section.card.pair { text-align:center; padding:28px 16px; align-items:center; }
+#pair > * { max-width:420px; align-self:center; }   /* over the card's left-aligned children */
+#pair > form { width:100%; max-width:320px; }
+.pair #paircode { text-align:center; font-size:22px; letter-spacing:.12em; }
+.pair #pairstart { padding:0 22px; }
+#pairerr { min-height:20px; margin-top:10px; }
+/* Until a TV is chosen there is only the list of TVs: no tabs, no remote, nothing that needs a TV. */
+main:not(.picking) #picker { display:none; }
+main.picking > .tabs, main.picking > .panel, main.picking > #help, main.picking #chipTv, main.picking #chipAdb, main.picking #switchtv { display:none; }
+#picker { display:flex; flex-direction:column; gap:14px; }
+#pickcols.solo { grid-template-columns:1fr; max-width:640px; width:100%; margin:0 auto; }
+#picker .item { cursor:pointer; }
+#picker .item:hover { background:var(--hover, rgba(127,127,127,.12)); }
+.chip { display:inline-flex; align-items:center; gap:7px; padding:6px 12px; border-radius:999px; font-size:13px; font-weight:600; background:var(--btn); color:var(--muted); }
+.chip i { width:8px; height:8px; border-radius:50%; background:currentColor; }
+.chip.ok { background:var(--ok-bg); color:var(--ok); }
+.chip.warn { background:var(--warn-bg); color:var(--warn); }
+.chip.bad { background:var(--bad-bg); color:var(--bad); }
+/* uploads and installs float above every tab: started from a button halfway down the page, they are seen without scrolling */
+#jobscard { position:fixed; right:16px; bottom:16px; width:min(380px, calc(100vw - 32px)); max-height:min(46vh, 420px); overflow:auto; z-index:15; box-shadow:0 12px 36px rgba(0,0,0,.28); }
+@media (max-width:640px) { /* a sheet along the bottom, thumbs' reach */
+  #jobscard { left:8px; right:8px; width:auto; bottom:calc(8px + env(safe-area-inset-bottom, 0px)); max-height:40vh; border-radius:16px; }
+}
+#jobsum { font-weight:600; color:var(--muted); }
+#jobscard summary { cursor:pointer; display:flex; align-items:center; gap:8px; list-style:none; }
+#jobscard summary::-webkit-details-marker { display:none; }
+#jobscard summary h2 { display:inline; margin:0; flex:1; font-size:14px; }
+#jobscard[open] summary { margin-bottom:10px; }
+details.help summary { cursor:pointer; font-weight:600; font-size:14px; }
+details.help .cols { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:12px; }
+details.help h3 { font-size:13px; margin:0 0 6px; }
+details.help ul { margin:0; padding-left:18px; font-size:13px; color:var(--muted); }
+details.help li { margin:2px 0; }
+details.help p { font-size:13px; color:var(--muted); margin:10px 0 0; }
+@media (max-width:640px) {
+  details.help .cols { grid-template-columns:1fr; }
+}
+.tabs {
+  display:flex; --gap:6px; gap:var(--gap); background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:5px; position:sticky; top:8px; z-index:5;
+  box-shadow:0 -9px 0 8px var(--bg);
+}   /* the page's colour over the gap above and the round corners: nothing scrolls through */
+html[data-scope=remote] .tabs, html[data-scope=view] .tabs { display:none; }   /* a guest has the Remote tab only (applyKind) */
+.tabs button { flex:1; min-height:42px; font-size:14px; background:transparent; border-radius:10px; }
+.tabs button:hover { background:var(--btn); }
+.tabs button[aria-selected=true] { background:var(--accent); color:var(--accent-ink); font-weight:700; }
+/* icon + words; in tight places on a narrow screen only the icon shows (the words stay for screen readers) */
+@media (max-width:640px) {
+  .item .acts .lbl, .top .lbl, .card-head .tools .lbl { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+  /* phone: each tab is its picture with its name in small letters underneath */
+  .tabs { --gap:2px; padding:4px; }
+  .tabs button { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:50px; padding:4px 3px; min-width:0; flex:1 0 auto; }   /* no room (large text): the bar slides, ui.js chipRows */
+  .tabs .ico { font-size:18px; line-height:1.1; }
+  .tabs .lbl { font-size:10px; line-height:1.1; white-space:nowrap; }
+}
+/* Without ADB the tabs that need it are only dimmed: they still open, and show how to turn ADB on. A line under each tab
+   made the bar heavy, a lock read as "pay to unlock", and emoji badges look different on every device. The words stay for
+   screen readers. Elsewhere everything goes through ADB anyway. */
+.tabs .needs { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+html[data-core=pc] .tabs.noadb [data-needs-adb]:not([aria-selected=true]) :is(.ico, .lbl) { opacity:.45; }
+.tabs [data-kind-tab] { opacity:.5; }
+.tabs [data-kind-tab][aria-selected=true] { opacity:1; }
+.kintro ul { margin:0; padding-left:20px; color:var(--muted); line-height:1.9; font-size:14px; }
+.panel { display:flex; flex-direction:column; gap:14px; position:relative; }
+html:not(.tabbed) .panel { visibility:hidden; }   /* theme.js, setup.js */
+.panel > .veil { position:absolute; inset:-6px; z-index:20; border-radius:var(--radius); background:color-mix(in srgb, var(--bg) 62%, transparent); }   /* ADB dropped: the data stays, dimmed */
+.panel > .veil .veilcard { position:sticky; top:12px; max-width:480px; margin:10px auto 0; border-radius:var(--radius); background:var(--card); box-shadow:0 10px 32px rgba(0,0,0,.3); }
+.panel[hidden], [hidden] { display:none !important; }
+@media (min-width:900px) {
+  main.wide { max-width:1800px; }   /* Remote tab: give the TV picture all the room there is */
+}
+#fleet { margin-top:12px; border-top:1px solid var(--line); padding-top:12px; }
+#fleet > summary { cursor:pointer; font-weight:600; }
+.fleetrow { display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-top:1px solid var(--line); cursor:pointer; }
+.fleetrow input { margin-top:4px; }
+.fleetrow .name { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.fleetrow small { color:var(--muted); overflow-wrap:anywhere; }
+.fleetrow.off b { color:var(--muted); }
+.fleetstep:empty { display:none; }
+.fleetstep.done { color:var(--ok) !important; }
+.fleetstep.error { color:var(--bad) !important; }
+.fleetstep.running { color:var(--ink) !important; }
+.fleetapps { display:grid; gap:4px; max-height:min(60vh, 520px); overflow-y:auto; }
+.fleetapps small { overflow-wrap:anywhere; }
+.fleetgo { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
+.fleetgo button { padding:0 18px; }
+.permrow { display:flex; align-items:center; gap:8px; padding:6px 0; border-top:1px solid var(--line); }
+.permrow > span { flex:1; min-width:0; }
+.banner { border-radius:var(--radius); padding:14px; border:1px solid; display:flex; flex-direction:column; gap:8px; }
+.banner.warn { background:var(--warn-bg); border-color:transparent; }
+.banner.bad { background:var(--bad-bg); border-color:transparent; }
+.banner.ok { background:var(--ok-bg); border-color:transparent; }
+.banner.wait { flex-direction:row; align-items:center; gap:0; padding:8px 8px 8px 14px; min-height:var(--ctl); background:var(--card); border-color:var(--line); color:var(--muted); font-size:13px; }
+.banner.wait > span:nth-child(2) { flex:1; }
+.banner.wait button { padding:4px 10px; }
+.banner > b { font-size:15px; }
+.banner p { margin:0; font-size:13px; }
+.banner .actions { display:flex; gap:8px; flex-wrap:wrap; }
+.banner details.checks { font-size:13px; color:var(--muted); }
+.banner details.checks summary { cursor:pointer; }
+.banner details.checks ul { list-style:none; margin:6px 0 0; padding:0; display:flex; flex-direction:column; gap:4px; }
+.askother { margin-bottom:12px; }
+.optbox { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+.optbox h3 { margin:10px 0 2px; font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+.optrow { display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; cursor:pointer; background:var(--card); }
+.optrow:has(input:checked) { border-color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, var(--card)); }
+.optrow input { width:20px; height:20px; flex:none; accent-color:var(--accent); }
+.optrow b { display:block; font-size:14px; }
+.optrow small { display:block; color:var(--muted); font-size:12px; overflow-wrap:anywhere; }
+.optbox .filter { width:100%; }
+.askother code { font-size:13px; word-break:break-all; }
+.job { padding:9px 0; border-top:1px solid var(--line); font-size:13px; }
+.job:first-child { border-top:0; }
+.jobhead { display:flex; align-items:center; gap:8px; }
+.jobhead > :first-child { flex:1; min-width:0; overflow-wrap:anywhere; }
+.job.error .msg { color:var(--bad); }
+.job.done .msg { color:var(--ok); }
+dialog { border:0; padding:0; background:transparent; max-width:96vw; max-height:96vh; }
+dialog::backdrop { background:rgba(0,0,0,.8); }
+dialog.ask .card { width:min(440px, 92vw); display:flex; flex-direction:column; gap:14px; }
+dialog.ask p { margin:0; white-space:pre-line; line-height:1.45; overflow-wrap:anywhere; }
+dialog.ask .fields { display:flex; gap:12px; }
+dialog.ask .fields label { flex:1; display:flex; align-items:center; gap:8px; }
+dialog.ask .fields input { flex:1; min-width:0; text-align:center; font-size:18px; }
+dialog.ask .acts { display:flex; justify-content:flex-end; gap:8px; }
+dialog.ask .acts button { min-width:88px; padding:0 18px; }
+dialog.ask button.danger { background:var(--bad); color:#fff; font-weight:700; }
+.aboutbox { max-width:480px; margin:0; }
+.aboutbox p { font-size:14px; line-height:1.5; }   /* every part a .group: one left edge */
+.aboutbox .qrs { margin:0; }
+.aboutbox a { color:var(--accent-text); }
+.qrs { display:flex; gap:14px; flex-wrap:wrap; margin:12px 0; }
+.qr { flex:1; min-width:150px; text-align:center; font-size:12.5px; line-height:1.4; }
+.qr svg { border-radius:8px; display:block; margin:0 auto 6px; max-width:100%; height:auto; }
+.qr b { display:block; font-size:13.5px; }
+.qr a { overflow-wrap:anywhere; }   /* breaks only where the line ends, not every few letters */
+.assistbox { width:min(560px, 94vw); margin:0; max-height:90vh; overflow:auto; }
+.assistbox h2 { text-transform:none; letter-spacing:0; font-size:17px; }
+#assistbody { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+#assistbody p { margin:0; font-size:14px; line-height:1.55; white-space:pre-line; }
+.choice { display:flex; flex-direction:column; align-items:flex-start; gap:3px; text-align:left; width:100%; padding:12px 14px; border-radius:12px; min-height:0; }
+.choice b { font-size:15px; }
+.choice small { font-weight:400; opacity:.75; font-size:12.5px; line-height:1.4; }
+.assistrow { display:flex; gap:8px; flex-wrap:wrap; }
+dialog img { max-width:96vw; max-height:92vh; display:block; border-radius:8px; cursor:zoom-out; }
+@media (min-width:900px) {
+  #pickcols.solo { columns:1; }
+}
+#toast { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:9px 16px; border-radius:10px; font-size:14px; opacity:0; transition:opacity .2s; pointer-events:none; max-width:90vw; z-index:20; }
+#toast.show { opacity:.94; }
+/* "Look at the TV": the whole screen, because nothing else can be done until the TV has been answered */
+#allow, #connecting, #rebootdlg { width:100vw; height:100vh; max-width:none; max-height:none; margin:0; padding:0; border:0; background:var(--bg); color:var(--ink); }
+#allow[open], #connecting[open], #rebootdlg[open] { display:flex; align-items:center; justify-content:center; }
+.allowbox { text-align:center; padding:24px; max-width:520px; }
+.allowbox .big { font-size:72px; line-height:1; }
+.allowbox h1 { font-size:34px; margin:10px 0 6px; }
+.spin { width:56px; height:56px; margin:0 auto 22px; border-radius:50%; border:5px solid var(--btn); border-top-color:var(--accent); animation:spin .9s linear infinite; }
+.allowbox p { font-size:17px; margin:8px 0; }
+.allowbox ol { display:inline-block; text-align:left; font-size:21px; font-weight:700; line-height:1.6; margin:18px 0; padding-left:28px; }
+.allowbox button { display:block; width:100%; max-width:280px; margin:22px auto 0; }
+dialog.menu .card { gap:8px; }
+dialog.menu .card-head { margin:0 0 4px; }
+.mitem { display:flex; align-items:center; gap:12px; padding:10px 14px; min-height:52px; text-align:left; width:100%; }
+.mitem .mt { flex:1; display:flex; flex-direction:column; gap:2px; min-width:0; }
+.mitem small { font-size:12px; opacity:.7; line-height:1.3; }
+.mitem .mgo { opacity:.5; font-size:20px; }
+.mitem .mi { display:flex; flex:none; }
+/* ⋯ menus (core.js popover) */
+.pop { position:absolute; z-index:50; display:flex; flex-direction:column; min-width:190px; padding:6px; background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.25); }
+.pop button { min-height:var(--ctl); background:transparent; text-align:left; padding:0 12px; font-size:14px; border-radius:8px; white-space:nowrap; }
+.pop button:hover, .pop button:focus-visible { background:var(--btn); }
+.filebtn { cursor:pointer; gap:2px; }
+.filebtn input { display:none; }
+.filebtn[data-busy] > * { display:none; }
+.filebtn[data-busy]::after { content:attr(data-busy); font-weight:600; }
+dialog.ask textarea { width:100%; min-height:120px; resize:vertical; font:inherit; padding:8px 10px; border-radius:10px; border:1px solid var(--line); background:var(--bg); color:var(--ink); }
+dialog.ask .acts.wrap { flex-wrap:wrap; }
+#pickback { align-self:flex-start; }
+#ver { text-align:center; font-size:12px; padding:6px 0 14px; }
+.tabs [aria-selected=true] .ico > .ui-ic { background:rgba(255,255,255,.22); }

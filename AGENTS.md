@@ -30,7 +30,7 @@ Only the Phone app and the Computer app have them (the TV web page needs TV Setu
 ## Layout
 
 ```
-app/shared/web/          THE web UI (index.html, style.css, js/*.js): the Computer app, the TV web page, the Phone app's Manage screen
+app/shared/web/          THE web UI (index.html, css/*.css, js/*.js): the Computer app, the TV web page, the Phone app's Manage screen
 app/shared/src/.../core/ Kotlin shared by the apps, one package per kind of work (Java helpers Meta / Caps / Playing / Screen stay
                          in `core`: TV Setup and app_process call them by name):
   remote/                one TV's own remote link, by brand, behind `Remote`: Atv (Android TV, keys without ADB), Lg, Samsung,
@@ -75,7 +75,7 @@ dev/                     release.sh, emu.sh, gen_icons.py, shots.py, ... : dev/R
 
 - **Every change reaches the Phone app, the TV web page and the Computer app.** UI changes go in `app/shared/web` once. A new `/api` endpoint used by the page goes in `Manage.kt` (all three cores), or where only some cores have it: `app/desktop` `Server.kt`, `RemoteService`, the Phone app's Manage screen. The Phone app's native remote screen is separate code: mirror the change there by hand, or say clearly why it cannot be.
 - **The remote screen is drawn from one file.** The keys and menu entries (More keys, the arrows row, the media rows, the Open on the TV / sleep timer / Scenes menus) live ONCE in `app/shared/web/remote.json`: id, icon, `vi` / `en` words, a `key` (name in `Scenes.KEYS`) or a `do` action, optional `sub`, `cores` (`phone` / `web` only) and per-side `web` / `phone` overrides, each with a `why`. It is served at `/remote.json` on every core and packed into the Phone app. The web reads it in `js/remote_spec.js` + `js/remote.js` (handlers: `REMOTE_DO`); the Phone app in `RemoteSpec.kt` (shared) + `PhoneRemote.kt` (handlers: `phoneActions`). Add, move or reword an entry in the JSON only (icons: `dev/gen_icons.py`, words in both languages; a new Vietnamese string also needs `js/i18n.js`); a new `do` action needs a handler in both maps. Hand-laid on each side, outside the file: the top row, the D-pad, the number keys, the volume / channel pills and the 🎧 menu (`listen.js`). Checks: `node --test app/shared/tests/` (`remote.test.js`: schema, icons, key names, handlers on the page and in `PhoneRemote.kt`) and `RemoteSpecTest` in `:shared` and `:android` (`./gradlew :shared:testDebugUnitTest :android:testDebugUnitTest`).
-- **The tabs are made of a few shapes** (`js/ui.js` lists them, `style.css` "UI kit"): a card opens with its title (`h2`, or a
+- **The tabs are made of a few shapes** (`js/ui.js` lists them, `css/kit.css`): a card opens with its title (`h2`, or a
   `.card-head` with tools on the right; folded: `details.card` > `summary`) and spaces its own children, so nothing in it needs a
   margin; `h3` a group's title, `p.note` a line of explanation, `p.state` what is on now, `p.empty` an empty list, `.warnline`
   something to fix, `.list` > `.item`, `.line` a field and its button, `.actions` a card's buttons. Cards built in JS use
@@ -181,7 +181,7 @@ What it takes care of, for doing it by hand:
   own port redirect (adb forward hid a reply lost to a reset); `TVR_PASS=… dev/smoke.py URL` does the same for the computer app.
   `TVR_PASS=… node dev/layout.js` checks the layout in Chrome and WebKit (the Mac app's window and iPhones are WebKit). Run both
   after a change to HttpServer / the routes, or to the page's CSS.
-- Contrast: `node --test app/shared/tests/` includes `contrast.test.js` (WCAG ratios of the style.css tokens in both themes); `dev/contrast.py [URL]` (Chrome, default the test server on 8772) scans the rendered page, both themes x 1100/400 px x every tab + Settings, exit 1 under 4.5:1 (3:1 icons, large text). Run it after colour changes.
+- Contrast: `node --test app/shared/tests/` includes `contrast.test.js` (WCAG ratios of the `css/base.css` tokens in both themes); `dev/contrast.py [URL]` (Chrome, default the test server on 8772) scans the rendered page, both themes x 1100/400 px x every tab + Settings, exit 1 under 4.5:1 (3:1 icons, large text). Run it after colour changes.
 - The TV's sound: the Google TV emulator cannot run YouTube; press D-pad keys on the TV during a capture to get click sounds.
 - The intro site's screenshots: `dev/shots.py` (`docs/README.md`).
 

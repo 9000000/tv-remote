@@ -14,7 +14,7 @@
 //   chips       div.places: a choice among several, the current one .on (--chip)
 //   actions     div.actions: a card's main buttons (--ctl); tools in a head and acts in a list are .small (--ctl-sm)
 //
-// No style="" or style: in markup: a look that is needed twice is a class here and in style.css ("UI kit").
+// No style="" or style: in markup: a look that is needed twice is a class here and in css/kit.css ("UI kit").
 const UI = {
   card(title, o = {}, ...body) {
     const c = el(o.fold ? 'details' : 'section', { className: 'card' + (o.cls ? ' ' + o.cls : '') });
