@@ -16,6 +16,20 @@ const listenHq = () => { try { return localStorage.getItem('listenHq') === '1'; 
 function showWay() {
   $('#listenway').textContent = (listenShared ? 'Cả hai' : 'Máy này') + ' ▾';
   $('#listenhq').classList.toggle('on', listenHq());
+  $('#listenboost').textContent = '🔊 ×' + listenBoost(); $('#listenboost').classList.toggle('on', listenBoost() > 1);
+}
+// 🔊 ×2 ×4: louder here than the TV sends it (a TV turned down sends it quiet), a limiter after it so loud parts do not crack
+const BOOSTS = [1, 2, 4];
+const listenBoost = () => { let b = 1; try { b = +localStorage.getItem('listenBoost') || 1; } catch {} return BOOSTS.includes(b) ? b : 1; };
+let aout = null;
+function soundOut() {
+  if (!aout || aout.context !== actx) {
+    const gain = actx.createGain(), lim = actx.createDynamicsCompressor();
+    lim.threshold.value = -3; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.003; lim.release.value = 0.1;
+    gain.connect(lim); lim.connect(actx.destination); aout = gain;
+  }
+  aout.gain.value = listenBoost();
+  return aout;
 }
 let listenOn = false, listenCtl = null, actx = null, adec = null, anext = 0, abytes = 0, listenGen = 0, catchUp = false, alead = 0.08, acalm = 0;
 
@@ -42,7 +56,7 @@ function playPcm(channels, rate) {
   if (VT) VT.audio.push([vtNow(), ahead * 1000, now, anext, actx.baseLatency, actx.outputLatency]);   // ?stats=1
   if (ahead > alead + 0.2) catchUp = true; else if (ahead < alead + 0.02) catchUp = false;
   if (catchUp) return;
-  const src = actx.createBufferSource(); src.buffer = buf; src.connect(actx.destination); src.start(anext);
+  const src = actx.createBufferSource(); src.buffer = buf; src.connect(soundOut()); src.start(anext);
   anext += buf.duration;
 }
 
@@ -122,6 +136,11 @@ $('#listenway').addEventListener('click', () => {
   menuDlg('Cách nghe tiếng TV', listenShared ? 1 : 0, [
     ['@phone|Chỉ máy này', 'Loa TV tạm im. Hợp khi đeo tai nghe, cả nhà ngủ.', () => { if (listenShared) relisten(false); }],
     ['@tv|Cả TV và máy này', 'TV vẫn có tiếng (TV Android 13+). Máy này trễ hơn TV một chút; vài app như Netflix chặn thu tiếng kiểu này.', () => { if (!listenShared) relisten(true); }]]);
+});
+$('#listenboost').addEventListener('click', () => {                   // applies at once, nothing restarts
+  const b = BOOSTS[(BOOSTS.indexOf(listenBoost()) + 1) % BOOSTS.length];
+  try { localStorage.setItem('listenBoost', String(b)); } catch {}
+  if (actx) soundOut(); showWay();
 });
 $('#listenhq').addEventListener('click', () => {                      // 160 kbit/s instead of 64; applies at once
   try { localStorage.setItem('listenHq', listenHq() ? '0' : '1'); } catch {}

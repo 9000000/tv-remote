@@ -12,6 +12,9 @@ import dev.tvremote.core.WireLog
  * Plays the TV's sound on this device: Opus packets from scrcpy, decoded by Android's own decoder, out through an AudioTrack.
  * How much is kept queued, and what waits or is dropped, is [SoundQueue]'s.
  */
+/** 🔊 ×2 ×4: the TV's sound louder here than it is sent (a TV turned down sends it quiet). Read by every [AudioOut] as it plays. */
+object SoundBoost { @Volatile var times = 1 }
+
 class AudioOut(far: Boolean = false) {
     /** Kept queued at first: 0.15 s on the home network; through Tailscale ([far]: 4G, a relay) 0.4 s from the start, as
      *  even at home a busy TV (the FPT Play box) sends its sound up to 0.25 s late at times. */
@@ -24,6 +27,17 @@ class AudioOut(far: Boolean = false) {
     private val held = ArrayList<ByteArray>()                         // decoded while refilling after running dry
     private var drops = 0; private var dry = 0; private var told = 0L
     private val stamp = android.media.AudioTimestamp()
+    private var loud: android.media.audiofx.LoudnessEnhancer? = null  // gain with its own limiter, so loud parts do not crack
+    private var loudAt = 1
+
+    private fun boost(t: AudioTrack) {
+        loudAt = SoundBoost.times
+        try {
+            val l = loud ?: android.media.audiofx.LoudnessEnhancer(t.audioSessionId).also { loud = it }
+            l.setTargetGain((600 * Integer.numberOfTrailingZeros(loudAt)))   // ×2 = +6 dB, ×4 = +12 dB, in millibels
+            l.enabled = loudAt > 1
+        } catch (ignored: Exception) { }                               // a phone without the effect: as sent
+    }
 
     /** Frames the track has played. Its playback head moves in steps of 100 ms and more on some phones (Xiaomi): read
      *  alone it made the queue look full, and packets were dropped one after another. The timestamp, carried on by the
@@ -56,6 +70,7 @@ class AudioOut(far: Boolean = false) {
             val t = track
             val buf = c.getOutputBuffer(out)
             if (t != null && buf != null && info.size > 0) {
+                if (loudAt != SoundBoost.times) boost(t)
                 val behind = written - played(t)
                 val pcm = ByteArray(info.size)
                 buf.position(info.offset)
@@ -104,12 +119,15 @@ class AudioOut(far: Boolean = false) {
         if (android.os.Build.VERSION.SDK_INT >= 24) t.setBufferSizeInFrames(room)
         t.play()
         track = t
+        if (SoundBoost.times > 1) boost(t)
         written = 0
     }
 
     fun release() {
         codec?.let { try { it.stop() } catch (ignored: Exception) { }; try { it.release() } catch (ignored: Exception) { } }
         codec = null
+        loud?.let { try { it.release() } catch (ignored: Exception) { } }
+        loud = null; loudAt = 1
         track?.let { try { it.stop() } catch (ignored: Exception) { }; try { it.release() } catch (ignored: Exception) { } }
         track = null
     }

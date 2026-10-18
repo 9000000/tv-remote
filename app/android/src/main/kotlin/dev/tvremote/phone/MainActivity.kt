@@ -108,6 +108,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal lateinit var fullBtn: IconButton
     internal lateinit var listenChip: android.widget.TextView
     internal lateinit var hqBtn: android.widget.TextView
+    internal lateinit var boostBtn: android.widget.TextView
+    private var picShown = false                                      // the picture's first frame came
     internal lateinit var topBar: LinearLayout                         // the TV's name and state, with the buttons beside or under it
     internal lateinit var basicBar: Button
 
@@ -385,6 +387,16 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         val dm = resources.displayMetrics
         pic = Tv(this, h, surface.holder.surface, prefs.getInt("quality", 1), maxOf(dm.widthPixels, dm.heightPixels), false, picListener,
             fps = prefs.getInt("picFps", 0), bitRate = prefs.getInt("picRate", 0) * 1_000_000, encoder = prefs.getString("picEnc", "auto")!!)
+        picShown = false
+        val mine = pic; val enc = prefs.getString("picEnc", "auto")!!
+        if (enc != "auto") ui.postDelayed({                          // an encoder picked by hand that this TV does not have sends nothing: Auto would have moved on
+            if (pic !== mine || picShown || isFinishing) return@postDelayed
+            val name = if (enc == "hw") t("Phần cứng", "Hardware") else t("Phần mềm", "Software")
+            Popup.Builder(this).setMessage(t("Chưa thấy hình sau 10 giây. TV này có thể không chạy được bộ mã hóa $name. Chuyển về Tự chọn?",
+                "No picture after 10 seconds. This TV may not run the ${name.lowercase()} encoder. Back to Auto?"))
+                .setPositiveButton(t("Về Tự chọn", "Back to Auto")) { _, _ -> prefs.edit().putString("picEnc", "auto").apply(); if (pic != null) { stopPicture(); startPicture() } }
+                .setNegativeButton(t("Chờ thêm", "Keep waiting"), null).show()
+        }, 10000)
     }
 
     internal fun stopPicture() {
@@ -411,7 +423,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 when (key) {
                     "rate" -> status.text = title(entry ?: h) + " · " + (if (listen) "🎧 " else "") + detail + " KB/s"
                     "live" -> {
-                        picTries = 0
+                        picTries = 0; picShown = true
                         waiting.visibility = View.GONE
                         status.text = title(entry ?: h) + " · " + if (listen) t("🎧 đang nghe trên điện thoại", "🎧 listening on the phone") else t("chạm hình để bấm", "touch the picture to tap")
                     }

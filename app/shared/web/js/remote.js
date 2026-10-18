@@ -221,3 +221,18 @@ if (Speech && window.isSecureContext) {
     b.classList.add('on'); rec.start();
   });
 }
+// Speak, as on the phone app: this device turns speech into text (the browser), else the "Hỏi TV" box takes it typed (on a
+// phone its keyboard's 🎤); held, or with no box (no ADB), the TV's own Assistant.
+{
+  const v = $('#voice'); let held = 0;
+  const assist = () => { api('/api/key', { key: 'ASSIST' }); toast('Đã mở Trợ lý trên TV'); };
+  v.addEventListener('pointerdown', () => { held = setTimeout(() => { held = -1; assist(); }, 600); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((e) => v.addEventListener(e, () => { if (held > 0) clearTimeout(held); }));
+  v.addEventListener('contextmenu', (e) => e.preventDefault());
+  v.addEventListener('click', () => {
+    if (held === -1) { held = 0; return; }
+    if (!$('#speak').hidden && !$('#kbd').disabled) $('#speak').click();
+    else if (!$('#kbd').disabled) { $('#ask').scrollIntoView({ block: 'center', behavior: 'smooth' }); $('#ask').focus(); }
+    else assist();
+  });
+}

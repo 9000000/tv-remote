@@ -59,6 +59,12 @@ internal fun MainActivity.layoutRemote() {
     hqBtn.visibility = listenChip.visibility
     hqBtn.background = box(if (hq) ACCENT else BTN, 10)               // lit while on, like every on/off button
     hqBtn.setTextColor(if (hq) Color.WHITE else DIM)
+    val boost = prefs.getInt("listenBoost", 1).takeIf { it == 2 || it == 4 } ?: 1
+    dev.tvremote.core.picture.SoundBoost.times = boost
+    boostBtn.visibility = listenChip.visibility
+    boostBtn.text = "🔊 ×$boost"
+    boostBtn.background = box(if (boost > 1) ACCENT else BTN, 10)
+    boostBtn.setTextColor(if (boost > 1) Color.WHITE else DIM)
     qualBtn.text = Tv.QUALITY[prefs.getInt("quality", 1).coerceIn(0, Tv.QUALITY.size - 1)][0].toString() + "p ▾"
     window.decorView.systemUiVisibility = if (full) View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY else barFlags()
     videoBtn.lit = video                                              // lit while the picture shows, like every on/off button
@@ -213,6 +219,12 @@ internal fun MainActivity.buildRemote() {
         contentDescription = t("Tiếng chất lượng cao (160 kbit/s)", "High quality sound (160 kbit/s)"); setOnClickListener { toggleHq() }
     }
     picBar.addView(hqBtn, LinearLayout.LayoutParams(dp(44), dp(34)).apply { leftMargin = dp(8) })
+    boostBtn = android.widget.TextView(this).apply {                 // louder here: ×1 ×2 ×4, at once (the page's 🔊)
+        textSize = 13f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER; setPadding(dp(10), 0, dp(10), 0)
+        contentDescription = t("Tiếng to hơn trên điện thoại", "Louder on the phone")
+        setOnClickListener { prefs.edit().putInt("listenBoost", when (prefs.getInt("listenBoost", 1)) { 1 -> 2; 2 -> 4; else -> 1 }).apply(); layoutRemote() }
+    }
+    picBar.addView(boostBtn, LinearLayout.LayoutParams(-2, dp(34)).apply { leftMargin = dp(8) })
     picBar.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
     picBar.addView(qualBtn, LinearLayout.LayoutParams(-2, dp(34)).apply { leftMargin = dp(8) })
     fullBtn = icon("@expand", t("Toàn màn hình", "Full screen"), BTN)

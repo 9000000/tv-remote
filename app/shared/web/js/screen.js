@@ -201,6 +201,7 @@ function picDialog() {
   const d = el('dialog', { className: 'ask menu' }, el('div', { className: 'card' },
     el('div', { className: 'card-head' }, el('h2', { textContent: '🖥️ Chất lượng hình' }), el('button', { className: 'small iconbtn', textContent: '✕', title: 'Đóng', 'aria-label': 'Đóng', onclick: () => d.close() })),
     el('h3', { textContent: 'Cỡ hình' }), level(levels.filter(([v]) => sized(v))),
+    el('p', { className: 'note', textContent: 'Là cỡ lớn nhất: mạng chậm thì tự hạ xuống, mạng ổn lại thì tự tăng lên.' }),
     el('h3', { textContent: 'Hoặc' }), level(levels.filter(([v]) => !sized(v))),
     el('h3', { textContent: 'Khung/giây' }), tune('fps', PIC_FPS),
     el('h3', { textContent: 'Bitrate (Mbit/s)' }), tune('rate', PIC_RATE),
@@ -262,6 +263,13 @@ function startScreen() {
   $('#screencard').classList.add('on'); $('#screenbox').style.aspectRatio = '';
   setLabel($('#screenbtn'), '⏹', 'Dừng'); setScreenPlaceholder('Đang lấy hình...');
   ($('#screenmode').value === 'snap' ? snapLoop : h264Loop)(gen);   // every core sends H.264
+  const enc = picTune().enc;                                          // an encoder picked by hand that this TV does not have sends nothing: Auto would have moved on
+  if (enc && $('#screenmode').value !== 'snap') setTimeout(async () => {
+    if (gen !== screenGen || !screenOn || screenEl()) return;
+    if (!await ask('Chưa thấy hình sau 10 giây. TV này có thể không chạy được bộ mã hóa ' + PIC_ENC[enc] + '. Chuyển về Tự chọn?', { ok: 'Về Tự chọn' })) return;
+    const t = picTune(); t.enc = 0; try { localStorage.setItem('picTune', JSON.stringify(t)); } catch {}
+    if (screenOn) startScreen();
+  }, 10000);
 }
 setInterval(() => {
   if (screenOn && $('#screenmode').value !== 'snap' && streamCtl && !streamCtl.signal.aborted) {

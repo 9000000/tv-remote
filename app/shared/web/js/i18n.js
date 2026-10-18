@@ -87,7 +87,7 @@
     'Cài đặt của TV': 'TV settings', 'Quay lại': 'Back', 'Âm lượng': 'Volume', 'Tắt tiếng': 'Mute', 'Đang tắt tiếng, bấm để bật': 'Muted, press to unmute',
     'Giảm âm lượng': 'Volume down', 'Tăng âm lượng': 'Volume up', '☀ Đánh thức': '☀ Wake', 'Wake-on-LAN khi TV standby sâu': 'Wake-on-LAN when the TV is in deep standby',
     'Đưa TV về chế độ chờ?\nNếu TV tắt cả mạng thì chỉ mở lại được bằng nút Đánh thức (cần một máy ở nhà đang bật) hoặc remote của TV.': 'Put the TV in standby?\nIf its network goes off too, only Wake (needs a computer at home that is on) or the TV’s own remote can turn it back on.',
-    'Thêm phím': 'More keys', 'Trợ lý': 'Assistant', 'Ngõ vào': 'Input', 'Phụ đề': 'Subtitles', 'Kênh +': 'CH +', 'Kênh −': 'CH −', 'Kênh': 'CH', 
+    'Thêm phím': 'More keys', 'Trợ lý': 'Assistant', 'Nói': 'Speak', 'Nói hoặc gõ điều muốn TV làm, vd: mở YouTube · giữ để mở Trợ lý của TV': 'Speak or type what the TV should do, e.g. open YouTube · hold to open the TV\'s Assistant', 'Đã mở Trợ lý trên TV': 'Opened the Assistant on the TV', 'Tiếng to hơn trên máy này': 'Louder on this device', 'Về Tự chọn': 'Back to Auto', 'Là cỡ lớn nhất: mạng chậm thì tự hạ xuống, mạng ổn lại thì tự tăng lên.': 'The largest size: on a slow network it steps down by itself, and back up once it is steady.', 'Ngõ vào': 'Input', 'Phụ đề': 'Subtitles', 'Kênh +': 'CH +', 'Kênh −': 'CH −', 'Kênh': 'CH', 
     '🧹 Giải phóng RAM': '🧹 Free up RAM', 'Đã lấy lại': 'Got back', 'còn trống': 'free',
     'Hiện tại': 'Now', 'Lịch sử': 'History', 'Lỗi app': 'App errors', '↻ Đọc lại': '↻ Reload', '🐞 App bị dừng, bị treo': '🐞 Apps that stopped or froze',
     'Không có app nào bị dừng hay bị treo gần đây. 👍': 'No app has stopped or frozen lately. 👍', 'Hệ thống Android': 'Android system', 'bị dừng:': 'stopped:', 'bị treo:': 'froze:',
@@ -651,6 +651,7 @@
 
   // Strings with a variable part. Captured pieces are passed through tr() again where they can be text of ours.
   const RULES = [
+    [/^Chưa thấy hình sau 10 giây\. TV này có thể không chạy được bộ mã hóa (.+)\. Chuyển về Tự chọn\?$/, (m) => 'No picture after 10 seconds. This TV may not run the ' + tr(m[1]).toLowerCase() + ' encoder. Back to Auto?'],
     [/^📍 Dùng địa chỉ (.+)$/, (m) => '📍 Use the address ' + m[1]],
     [/^Bước (\d+)\/(\d+)$/, (m) => 'Step ' + m[1] + '/' + m[2]],
     [/^Mạng chậm: hạ hình xuống (.+) cho kịp\.$/, (m) => 'Slow network: the picture went down to ' + tr(m[1]) + ' to keep up.'],
