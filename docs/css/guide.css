@@ -58,7 +58,7 @@ mark{background:rgba(255,163,26,.3);color:var(--text);border-radius:3px;padding:
 .topic h3 .gi{width:40px;height:40px;border-radius:12px;background:var(--card2);display:grid;place-items:center;font-size:20px;flex:none}
 .topic p{color:var(--muted);font-size:15.5px}
 .topic p b,.topic td b{color:var(--text)}
-.topic a{color:var(--blue)}
+.topic a{color:var(--blue)} .topic a code{color:var(--blue);border-color:rgba(91,140,255,.35)} .topic a:hover code{text-decoration:underline}
 .topic code{background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:.86em;color:var(--text);overflow-wrap:anywhere}
 .topic .steps li div{color:var(--muted);font-size:15.5px}
 .topic h4{font-size:15px;font-weight:700;color:var(--text);margin-bottom:-6px}
@@ -98,7 +98,6 @@ mark{background:rgba(255,163,26,.3);color:var(--text);border-radius:3px;padding:
 .ga .steps li{padding:6px 8px;border-radius:10px;cursor:pointer}
 .ga .steps li div{padding-top:4px;font-size:14.5px}
 .ga-replay{justify-self:start}
-.gst:empty{display:none}
 .gst-box{border-radius:12px;background:#0b0f18;border:1px solid var(--line);padding:12px 12px 6px}
 .gst .sst{margin:0}
 .gst .steps li{margin:0}
