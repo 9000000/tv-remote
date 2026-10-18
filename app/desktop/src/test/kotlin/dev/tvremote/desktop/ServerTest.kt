@@ -168,4 +168,10 @@ class ServerTest {
         assertEquals(200, noTv.status)                                                                   // a failed step is named, not an HTTP error
         assertTrue(JSONObject(text(noTv)).getString("failed").startsWith("1:"))
     }
+
+    @Test fun wakeOnlyWakesASavedTv() {                                  // not 60 s of magic packets and knocks on any address asked
+        val r = req("POST", "/api/wake", keyed = true, json = JSONObject().put("host", "192.0.2.7"))
+        assertEquals(400, r.status)
+        assertEquals("not a saved TV", JSONObject(text(r)).getString("error"))
+    }
 }

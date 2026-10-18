@@ -33,6 +33,13 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         /** "Free RAM" on the notice: the apps waiting in the background closed; the MB that came back, null without ADB. */
         fun freeNow(): Long? = running?.free()
 
+        /** [devices]: the output's device bits; where Android hides them, [recording] asks who records the submix. Never throws. */
+        internal fun toListener(devices: () -> Int, recording: () -> Boolean): Boolean = try {
+            devices() and 0x8000 != 0                                 // AudioSystem.DEVICE_OUT_REMOTE_SUBMIX
+        } catch (e: Throwable) {
+            try { recording() } catch (e2: Throwable) { false }       // no such method on Android 5-6 either
+        }
+
         /** (total, available) memory in MB, from /proc/meminfo, which any app may read. */
         fun memory(): Pair<Long, Long> {
             val m = try { java.io.File("/proc/meminfo").readText() } catch (e: Exception) { "" }
@@ -101,15 +108,10 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
      * speakers fall silent. The volume keys then move the submix's volume, not the speakers': capped, the TV stayed silent with
      * every key press saying "limited" (a TCL at 0 on its speakers, 30 % on the submix). The limit is for the room.
      */
-    private fun toListener(): Boolean = try {
-        val m = AudioManager::class.java.getMethod("getDevicesForStream", Int::class.javaPrimitiveType)   // hidden, kept for apps
-        (m.invoke(audio, AudioManager.STREAM_MUSIC) as Int) and 0x8000 != 0                          // AudioSystem.DEVICE_OUT_REMOTE_SUBMIX
-    } catch (e: Throwable) {
-        try {
-            android.os.Build.VERSION.SDK_INT >= 24
-                && audio.activeRecordingConfigurations.any { it.clientAudioSource == android.media.MediaRecorder.AudioSource.REMOTE_SUBMIX }
-        } catch (e2: Throwable) { false }
-    }
+    private fun toListener(): Boolean = toListener(
+        { AudioManager::class.java.getMethod("getDevicesForStream", Int::class.javaPrimitiveType).invoke(audio, AudioManager.STREAM_MUSIC) as Int },   // hidden, kept for apps
+        { android.os.Build.VERSION.SDK_INT >= 24
+            && audio.activeRecordingConfigurations.any { it.clientAudioSource == android.media.MediaRecorder.AudioSource.REMOTE_SUBMIX } })
 
     /** One look at the rules; returns how long until the next one is worth doing. */
     private fun check(): Long {
