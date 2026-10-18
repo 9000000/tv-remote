@@ -15,14 +15,23 @@ import dev.tvremote.core.WireLog
 /** 🔊 ×0.5 … ×10: the TV's sound louder (or softer) here than it is sent (a TV turned down sends it quiet). Read by every [AudioOut] as it plays. */
 object SoundBoost { @Volatile var times = 1f }
 
-class AudioOut(far: Boolean = false) {
+/** How much sound is kept queued, per TV: what [SoundQueue] learnt last time ([learned], in ms, kept by the phone app across
+ *  starts, [changed] after each change) and "Even" ([even]: half a second from the start, later behind the TV but no stall). */
+object SoundPace {
+    @Volatile var even = false
+    val learned = java.util.concurrent.ConcurrentHashMap<String, Int>()
+    @Volatile var changed: (() -> Unit)? = null
+}
+
+class AudioOut(far: Boolean = false, private val host: String = "") {
     /** Kept queued at first: 0.15 s on the home network; through Tailscale ([far]: 4G, a relay) 0.4 s from the start, as
      *  even at home a busy TV (the FPT Play box) sends its sound up to 0.25 s late at times. */
-    private val base = if (far) RATE * 4 / 10 else BASE
+    private val base = if (SoundPace.even) RATE / 2 else if (far) RATE * 4 / 10 else BASE
+    private val first get() = maxOf(base, minOf(RATE * 6 / 10, (SoundPace.learned[host] ?: 0) * RATE / 1000))   // as the page: a whole second learnt once is not kept as lag
     private var codec: MediaCodec? = null
     private var track: AudioTrack? = null
     private var written = 0L                                          // frames given to the track, to tell how far behind it plays
-    private var q = SoundQueue(base, MAX)
+    private var q = SoundQueue(base, MAX, first)
     private var room = 0                                              // the track's buffer asked for, in frames
     private val held = ArrayList<ByteArray>()                         // decoded while refilling after running dry
     private var drops = 0; private var dry = 0; private var told = 0L
@@ -94,6 +103,7 @@ class AudioOut(far: Boolean = false) {
                 }
                 if (q.target != was) {
                     if (q.target > was) dry++
+                    if (host.isNotEmpty() && !SoundPace.even) { SoundPace.learned[host] = q.target * 1000 / RATE; SoundPace.changed?.invoke() }
                     if (android.os.Build.VERSION.SDK_INT >= 24 && q.room != room) room = q.room.also { t.setBufferSizeInFrames(it) }
                 }
             }
@@ -116,7 +126,7 @@ class AudioOut(far: Boolean = false) {
         val min = AudioTrack.getMinBufferSize(RATE, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT)
         val size = maxOf(min * 2, if (android.os.Build.VERSION.SDK_INT >= 24) (MAX * 2 + RATE / 10) * 4 else RATE / 5 * 4)   // room to grow into
         val t = AudioTrack(AudioManager.STREAM_MUSIC, RATE, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, size, AudioTrack.MODE_STREAM)
-        q = SoundQueue(base, MAX); held.clear()
+        q = SoundQueue(base, MAX, first); held.clear()
         room = q.room
         if (android.os.Build.VERSION.SDK_INT >= 24) t.setBufferSizeInFrames(room)
         t.play()

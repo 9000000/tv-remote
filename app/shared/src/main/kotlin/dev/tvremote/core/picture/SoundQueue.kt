@@ -2,15 +2,16 @@ package dev.tvremote.core.picture
 /**
  * When to play each piece of the TV's sound (AudioOut.kt), apart from Android so it can be tried against made-up networks
  * (SoundQueueTest). Frames are at 48 kHz. [target] frames are kept queued: [base] at first, half as many again each time the
- * sound ran dry (4G, Tailscale through a relay: packets come in bursts), up to [max], back down after a calm half minute.
+ * sound ran dry (4G, Tailscale through a relay: packets come in bursts), up to [max], back down after two calm minutes; it
+ * starts at [start], what the last session with this TV ended on, so a TV that sends in bursts is not learnt again each time.
  * Once it ran dry nothing plays until [target] frames are here again: a stall is one clean gap, not the crackle of every
  * packet played the moment it arrives. Kept close to live: well past [target], the excess is skipped in one go, seldom, so
  * a skip is never heard as a faster song.
  */
-class SoundQueue(private val base: Int, private val max: Int) {
+class SoundQueue(private val base: Int, private val max: Int, start: Int = base) {
     enum class Do { PLAY, HOLD, DROP }
 
-    var target = base; private set
+    var target = start.coerceIn(base, max); private set
     private var heldFrames = 0
     private var calm = 0L                                             // since when it has not run dry
     private var played = false
@@ -34,7 +35,7 @@ class SoundQueue(private val base: Int, private val max: Int) {
             if (played && now - started > 3000) target = minOf(max, maxOf(target * 2, base + (wait * RATE / 1000).toInt()))
             calm = now
         } else if (heldFrames == 0) {
-            if (target > base && now - calm > 30000) { target = maxOf(base, target * 4 / 5); calm = now }
+            if (target > base && now - calm > 120000) { target = maxOf(base, target * 4 / 5); calm = now }
             // Too far behind: what is over [target] is cut in one go, the packets that come next dropped back to back: one
             // skip. A packet now and then over seconds (as it was) sounded like a song played fast and stuttering, on a
             // TCL whose sound comes in bursts after a stall. Seldom: only well past [target], and not again within 10 s.

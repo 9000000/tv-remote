@@ -24,7 +24,7 @@ fun Tv(
 ): Tv {
     val app = ctx.applicationContext
     val hear = audioSink ?: if (audio == "opus") object : Tv.AudioSink {
-        private val out = AudioOut(far = Tailscale.isAddress(host))
+        private val out = AudioOut(far = Tailscale.isAddress(host), host = host)
         override fun audio(config: Boolean, data: ByteArray) = out.feed(config, data)
         override fun end() = out.release()
     } else null

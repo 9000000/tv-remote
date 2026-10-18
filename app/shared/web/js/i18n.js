@@ -378,7 +378,7 @@
     'Tìm': 'Search', 'App id (tên gói)': 'App id (package name)', 'Đường dẫn': 'Link',
     'Tắt TV sau bao lâu?': 'Turn the TV off when?', 'Hẹn': 'Set',
     'Cách nghe tiếng TV': 'How to hear the TV', 'Chỉ máy này': 'Only this device', 'Cả TV và máy này': 'TV and this device',
-    'Máy này ▾': 'This device ▾', 'Cả hai ▾': 'Both ▾', 'Tiếng chất lượng cao (160 kbit/s)': 'High quality sound (160 kbit/s)',
+    'Máy này ▾': 'This device ▾', 'Cả hai ▾': 'Both ▾', 'Tiếng chất lượng cao (160 kbit/s)': 'High quality sound (160 kbit/s)', 'Đều': 'Even', 'Tiếng đều hơn: trễ nửa giây nhưng không giật': 'Steadier sound: half a second late, no stutter',
     'TV Setup đang khởi động lại (vd vừa cập nhật), đợi chút…': 'TV Setup is starting again (just updated?), one moment…', 
     'Mã QR đã dùng hoặc hết hạn: quét mã mới, hoặc bấm “Hiện mã trên TV”.': "This QR code was used or has expired: scan a new one, or press “Show the code on the TV”.",
     'Máy này đang nối TV qua Tailscale: điện thoại quét phải ở cùng Wi-Fi với TV.': "This device reaches the TV through Tailscale: the phone that scans must be on the TV's Wi-Fi.",

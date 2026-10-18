@@ -12,10 +12,16 @@
 // 4 bytes length, data.
 let listenShared = false;
 const listenHq = () => { try { return localStorage.getItem('listenHq') === '1'; } catch { return false; } };
+const listenEven = () => { try { return localStorage.getItem('listenEven') === '1'; } catch { return false; } };
+// What playPcm learnt about each TV (seconds kept ahead), so a TV that sends in bursts starts with enough, not after 3 stalls
+const leadOf = () => { try { return (JSON.parse(localStorage.getItem('listenLead') || '{}'))[curHost] || 0; } catch { return 0; } };
+const leadKeep = (s) => { try { const m = JSON.parse(localStorage.getItem('listenLead') || '{}'); m[curHost] = Math.round(s * 1000) / 1000; localStorage.setItem('listenLead', JSON.stringify(m)); } catch {} };
+const leadBase = () => listenEven() ? 0.5 : 0.08;                       // Đều: half a second from the start, never back down
 // While listening, a bar under the header: how it plays (menu) and HQ, as the phone app's chip and HQ under the picture (Listen.kt).
 function showWay() {
   $('#listenway').textContent = (listenShared ? 'Cả hai' : 'Máy này') + ' ▾';
   $('#listenhq').classList.toggle('on', listenHq());
+  $('#listeneven').classList.toggle('on', listenEven());
   $('#listenboost').textContent = '🔊 ×' + listenBoost(); $('#listenboost').classList.toggle('on', listenBoost() !== 1);
 }
 // 🔊 ×0.5 … ×10: louder (or softer) here than the TV sends it (a TV turned down sends it quiet), a limiter after it so loud parts do not crack
@@ -39,17 +45,18 @@ async function opusHere() {
 }
 
 // Plays one piece of sound right after the previous one. After a gap playback starts again a little ahead ([alead]: 80 ms,
-// twice as much after each stall up to 0.6 s, as SoundQueue.kt does on the phone, back down after a calm half minute: a TCL
-// sends its sound in bursts, a fixed 80 ms broke every few seconds). Too far ahead, it skips back to live in one go.
+// twice as much after each stall up to 0.6 s, as SoundQueue.kt does on the phone, back down after two calm minutes: a TCL
+// sends its sound in bursts, a fixed 80 ms broke every few seconds; kept per TV for next time). Too far ahead, it skips back
+// to live in one go.
 function playPcm(channels, rate) {
   if (!actx || !channels.length || !channels[0].length) return;
   const buf = actx.createBuffer(channels.length, channels[0].length, rate);
   channels.forEach((c, i) => buf.copyToChannel(c, i));
   const now = actx.currentTime;
   if (anext < now + 0.02) {                                          // ran dry (a stall): start again a little ahead
-    if (anext) alead = Math.min(0.6, alead * 2);
+    if (anext) { alead = Math.min(0.6, alead * 2); if (!listenEven()) leadKeep(alead); }
     anext = now + alead; acalm = now;
-  } else if (alead > 0.08 && now - acalm > 30) { alead = Math.max(0.08, alead * 0.8); acalm = now; }
+  } else if (alead > leadBase() && now - acalm > 120) { alead = Math.max(leadBase(), alead * 0.8); acalm = now; if (!listenEven()) leadKeep(alead); }
   // After a stall the network hands over the late sound in one burst; played in turn, it would keep the whole stall as delay
   // for good. Too far ahead: drop pieces until close to live again (one short skip instead of a lasting lag).
   const ahead = anext - now;
@@ -76,7 +83,7 @@ async function startListen(share) {
     await actx.resume();                                              // inside the tap: browsers start sound only then
   } catch { stopListen('Trình duyệt này không phát được âm thanh.'); return; }
   const opus = await opusHere(); if (gen !== listenGen) return;
-  listenCtl = new AbortController(); anext = 0; abytes = 0; alead = 0.08;
+  listenCtl = new AbortController(); anext = 0; abytes = 0; alead = Math.min(0.6, Math.max(leadBase(), leadOf()));
   let fmt = { codec: 2, rate: 24000, ch: 1 }, ts = 0, why = 'TV đã dừng gửi tiếng.';
   try {
     const r = await fetch('/api/audio?codec=' + (opus ? 'opus' : 'pcm') + (listenShared ? '&share=1' : '') + (listenHq() ? '&hq=1' : ''), { signal: listenCtl.signal });
@@ -148,6 +155,10 @@ $('#listenboost').addEventListener('click', () => {                   // a slide
     el('div', { className: 'actions' }, el('button', { textContent: 'Về ×1', onclick: () => set(1) }))));
   d.addEventListener('close', () => d.remove());
   document.body.append(d); d.showModal();
+});
+$('#listeneven').addEventListener('click', () => {                    // later behind the TV, never a stall; the session restarts
+  try { localStorage.setItem('listenEven', listenEven() ? '0' : '1'); } catch {}
+  relisten(listenShared);
 });
 $('#listenhq').addEventListener('click', () => {                      // 160 kbit/s instead of 64; applies at once
   try { localStorage.setItem('listenHq', listenHq() ? '0' : '1'); } catch {}

@@ -44,6 +44,20 @@ internal fun MainActivity.toggleHq() {
     soundChanged()
 }
 
+/** "Đều" under the picture: half a second queued from the start, no stall (SoundPace). */
+internal fun MainActivity.toggleEven() {
+    prefs.edit().putBoolean("listenEven", !prefs.getBoolean("listenEven", false)).apply()
+    soundChanged()
+}
+
+/** What the sound learnt about each TV, kept across starts: a TV that sends in bursts starts with enough queued. */
+internal fun MainActivity.soundPace() {
+    val p = dev.tvremote.core.picture.SoundPace
+    p.even = prefs.getBoolean("listenEven", false)
+    try { val o = org.json.JSONObject(prefs.getString("soundLead", "{}") ?: "{}"); o.keys().forEach { p.learned[it] = o.getInt(it) } } catch (ignored: Exception) { }
+    p.changed = { prefs.edit().putString("soundLead", org.json.JSONObject(p.learned as Map<*, *>).toString()).apply() }
+}
+
 private fun MainActivity.soundChanged() {
     if (listen) { listenShare = prefs.getBoolean("listenShare", false); restartForSound() } else layoutRemote()
 }

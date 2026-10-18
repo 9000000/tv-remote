@@ -15,9 +15,10 @@ import dev.tvremote.core.picture.SoundQueue
 class SoundQueueTest {
     private class Heard(val gaps: Int, val silentPct: Double, val lateMs: Int, val droppedPct: Double)
 
-    private fun listen(base: Int, jitter: Double, spikePct: Double, spikeMs: Int, minutes: Int = 5, far: Boolean = false, headStepMs: Int = 0, real: List<Int>? = null): Heard {
+    private fun listen(base: Int, jitter: Double, spikePct: Double, spikeMs: Int, minutes: Int = 5, far: Boolean = false, headStepMs: Int = 0, real: List<Int>? = null, start: Int = 0, even: Boolean = false): Heard {
         val rnd = Random(7)
-        val q = SoundQueue(if (far) 48000 * 4 / 10 else 48000 * 15 / 100, 48000)
+        val first = if (even) 48000 / 2 else if (far) 48000 * 4 / 10 else 48000 * 15 / 100
+        val q = SoundQueue(first, 48000, maxOf(first, start))
         val n = 960
         var arrived = 0.0
         var queued = 0.0                                              // frames in the track
@@ -94,5 +95,15 @@ class SoundQueueTest {
         val h = listen(base = 0, jitter = 0.0, spikePct = 0.0, spikeMs = 0, real = late).also { show("TCL", it) }
         assertTrue(h.gaps <= 3)                                       // while it learns how late this TV can be
         assertTrue(h.droppedPct < 0.2)                                // was 12 packets a minute, a few seconds apart: a song played fast
+    }
+
+    @Test fun tclTheNextTime() {                                      // what the last session learnt, from the start: not again
+        val late = javaClass.getResource("/sound_tcl.txt")!!.readText().trim().split(" ").map { it.toInt() }
+        val learnt = SoundQueue(48000 * 15 / 100, 48000).also { q -> late.forEachIndexed { i, d -> q.next(960, 0, i * 20L + d) } }.target
+        val first = listen(base = 0, jitter = 0.0, spikePct = 0.0, spikeMs = 0, real = late).also { show("TCL, first time", it) }
+        val next = listen(base = 0, jitter = 0.0, spikePct = 0.0, spikeMs = 0, real = late, start = 48000 * 6 / 10).also { show("TCL, learnt", it) }
+        val even = listen(base = 0, jitter = 0.0, spikePct = 0.0, spikeMs = 0, real = late, even = true).also { show("TCL, Even", it) }
+        assertTrue(learnt >= 48000 * 15 / 100)
+        assertTrue(next.gaps < maxOf(1, first.gaps)); assertTrue(even.gaps < maxOf(1, first.gaps))
     }
 }

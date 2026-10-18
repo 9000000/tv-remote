@@ -104,10 +104,12 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal lateinit var listenBtn: IconButton
     internal lateinit var exitBtn: IconButton
     internal lateinit var picBar: LinearLayout
+    internal lateinit var soundBar: LinearLayout
     internal lateinit var qualBtn: android.widget.TextView
     internal lateinit var fullBtn: IconButton
     internal lateinit var listenChip: android.widget.TextView
     internal lateinit var hqBtn: android.widget.TextView
+    internal lateinit var evenBtn: android.widget.TextView
     internal lateinit var boostBtn: android.widget.TextView
     private var picShown = false
     private var wasCovered = false
@@ -178,6 +180,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         setTheme(if (LIGHT) R.style.AppLight else R.style.AppDark)   // dialogs and the keyboard's look follow
         super.onCreate(b)
         prefs = getSharedPreferences("tvs", MODE_PRIVATE)
+        soundPace()                                               // Listen.kt
         reachAroundVpn()                                          // a TV at home stays reachable with a VPN on
         dev.tvremote.core.WireLog.app = "TV Remote " + version() + " (phone, Android " + android.os.Build.VERSION.RELEASE + ")"
         video = prefs.getBoolean("video", true)

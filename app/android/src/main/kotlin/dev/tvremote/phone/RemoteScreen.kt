@@ -48,7 +48,8 @@ internal fun MainActivity.layoutRemote() {
     listenBtn.background = box(if (listen) ACCENT else BTN, 16)
     listenBtn.contentDescription = if (listen) t("Dừng nghe trên điện thoại", "Stop listening on the phone") else t("Nghe tiếng TV trên điện thoại", "Hear the TV on the phone")
     exitBtn.visibility = if (full) View.VISIBLE else View.GONE
-    picBar.visibility = if ((video || listen && basic == null) && !full) View.VISIBLE else View.GONE   // with the picture or the sound: not hidden in a menu
+    picBar.visibility = if (video && !full) View.VISIBLE else View.GONE   // the picture's and the sound's rows: not hidden in a menu
+    soundBar.visibility = if (listen && basic == null && !full) View.VISIBLE else View.GONE
     qualBtn.visibility = if (video) View.VISIBLE else View.GONE
     fullBtn.visibility = qualBtn.visibility
     listenChip.visibility = if (listen) View.VISIBLE else View.GONE  // the sound's own settings, only while it plays
@@ -59,6 +60,11 @@ internal fun MainActivity.layoutRemote() {
     hqBtn.visibility = listenChip.visibility
     hqBtn.background = box(if (hq) ACCENT else BTN, 10)               // lit while on, like every on/off button
     hqBtn.setTextColor(if (hq) Color.WHITE else DIM)
+    val even = prefs.getBoolean("listenEven", false)
+    dev.tvremote.core.picture.SoundPace.even = even                   // read as the next sound session starts
+    evenBtn.visibility = listenChip.visibility
+    evenBtn.background = box(if (even) ACCENT else BTN, 10)
+    evenBtn.setTextColor(if (even) Color.WHITE else DIM)
     val boost = listenGain()
     dev.tvremote.core.picture.SoundBoost.times = boost
     boostBtn.visibility = listenChip.visibility
@@ -205,6 +211,8 @@ internal fun MainActivity.buildRemote() {
     // the picture's quality and full screen, first in the scrolling part: not on the picture (it covers nothing) nor fixed under it
     picBar = LinearLayout(this)
     picBar.gravity = Gravity.CENTER_VERTICAL
+    soundBar = LinearLayout(this)                                     // 🎧's own row: beside the picture's it ran off a phone's edge
+    soundBar.gravity = Gravity.CENTER_VERTICAL
     qualBtn = android.widget.TextView(this).apply {
         setTextColor(TEXT); textSize = 13f; gravity = Gravity.CENTER; setPadding(dp(12), 0, dp(12), 0)
         background = box(BTN, 10); contentDescription = t("Chất lượng hình", "Picture quality"); setOnClickListener { qualityMenu() }
@@ -213,23 +221,29 @@ internal fun MainActivity.buildRemote() {
         setTextColor(TEXT); textSize = 13f; gravity = Gravity.CENTER; setPadding(dp(10), 0, dp(12), 0); maxLines = 1; compoundDrawablePadding = dp(6)
         background = box(BTN, 10); contentDescription = t("Cách nghe tiếng TV", "How to hear the TV"); setOnClickListener { listenMenu() }
     }
-    picBar.addView(listenChip, LinearLayout.LayoutParams(-2, dp(34)))
+    soundBar.addView(listenChip, LinearLayout.LayoutParams(-2, dp(34)))
     hqBtn = android.widget.TextView(this).apply {
         text = "HQ"; textSize = 13f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER
         contentDescription = t("Tiếng chất lượng cao (160 kbit/s)", "High quality sound (160 kbit/s)"); setOnClickListener { toggleHq() }
     }
-    picBar.addView(hqBtn, LinearLayout.LayoutParams(dp(44), dp(34)).apply { leftMargin = dp(8) })
+    soundBar.addView(hqBtn, LinearLayout.LayoutParams(dp(44), dp(34)).apply { leftMargin = dp(8) })
+    evenBtn = android.widget.TextView(this).apply {                   // half a second later, never a stall (SoundPace)
+        text = t("Đều", "Even"); textSize = 13f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER; setPadding(dp(10), 0, dp(10), 0)
+        contentDescription = t("Tiếng đều hơn: trễ nửa giây nhưng không giật", "Steadier sound: half a second late, no stutter"); setOnClickListener { toggleEven() }
+    }
+    soundBar.addView(evenBtn, LinearLayout.LayoutParams(-2, dp(34)).apply { leftMargin = dp(8) })
     boostBtn = android.widget.TextView(this).apply {                 // louder here, ×0.5 … ×10 on a slider (the page's 🔊)
         textSize = 13f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER; setPadding(dp(10), 0, dp(10), 0)
         contentDescription = t("Độ to trên điện thoại", "Loudness on the phone")
         setOnClickListener { gainDialog() }
     }
-    picBar.addView(boostBtn, LinearLayout.LayoutParams(-2, dp(34)).apply { leftMargin = dp(8) })
+    soundBar.addView(boostBtn, LinearLayout.LayoutParams(-2, dp(34)).apply { leftMargin = dp(8) })
     picBar.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
     picBar.addView(qualBtn, LinearLayout.LayoutParams(-2, dp(34)).apply { leftMargin = dp(8) })
     fullBtn = icon("@expand", t("Toàn màn hình", "Full screen"), BTN)
     fullBtn.setOnClickListener { setFullscreen(true) }
     picBar.addView(fullBtn, LinearLayout.LayoutParams(dp(44), dp(34)).apply { leftMargin = dp(8) })
+    controls.addView(soundBar, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
     controls.addView(picBar, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
     val bb = LinearLayout.LayoutParams(-1, dp(44))
     bb.bottomMargin = dp(12)
