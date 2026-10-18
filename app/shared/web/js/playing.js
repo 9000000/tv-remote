@@ -9,7 +9,7 @@ function plDraw() {
   put($('#playing'), 'hidden', !on); if (!on) return;
   const t = $('#pltitle'); if (t.title !== name) { t.title = name; t.textContent = ''; t.append(Object.assign(document.createElement('span'), { className: 'rin', textContent: name })); }
   runFit(t);
-  const sub = o.title ? o.sub || '' : ''; if ($('#plsub').textContent !== sub) $('#plsub').textContent = sub;   // the same words again would start its slide over            // the app is the picture beside it and "Đang mở" below, as on the phone app
+  const sub = o.title ? o.sub || '' : ''; if ($('#plsub').textContent !== sub) put('#plsub', 'textContent', sub);   // the same words again would start its slide over            // the app is the picture beside it and "Đang mở" below, as on the phone app
   const icon = '/api/app/icon?pkg=' + encodeURIComponent(o.pkg); if ($('#plicon').dataset.src !== icon) { $('#plicon').dataset.src = icon; $('#plicon').src = icon; }
   put($('#plbar'), 'hidden', !o.dur);
   if (o.dur && !PL.dragging) { put($('#plseek'), 'value', String(Math.round(plPos() / o.dur * 1000))); put($('#plpos'), 'textContent', mmss(plPos())); put($('#pldur'), 'textContent', mmss(o.dur)); }
@@ -44,7 +44,7 @@ async function plDo(what, ms, btn) {
 $('#plplay').addEventListener('click', (e) => plDo(PL.o.state === 'playing' ? 'pause' : 'play', 0, e.currentTarget));
 $('#plprev').addEventListener('click', (e) => plDo('prev', 0, e.currentTarget));
 $('#plnext').addEventListener('click', (e) => plDo('next', 0, e.currentTarget));
-$('#plseek').addEventListener('input', (e) => { PL.dragging = true; $('#plpos').textContent = mmss(e.target.value / 1000 * PL.o.dur); });
+$('#plseek').addEventListener('input', (e) => { PL.dragging = true; put('#plpos', 'textContent', mmss(e.target.value / 1000 * PL.o.dur)); });
 $('#plseek').addEventListener('change', (e) => {
   const ms = Math.round(e.target.value / 1000 * PL.o.dur); PL.dragging = false;
   if (PL.busy) return;

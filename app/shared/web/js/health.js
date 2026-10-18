@@ -69,8 +69,8 @@ async function loadHist(days) {
 }
 document.querySelectorAll('#hmode button').forEach((b) => b.addEventListener('click', () => {
   hmode = b.dataset.m; document.querySelectorAll('#hmode button').forEach((x) => x.classList.toggle('on', x === b));
-  $('#hhist').hidden = hmode !== 'hist'; $('#hnow').hidden = hmode !== 'now'; $('#herr').hidden = hmode !== 'err'; $('#hcaps').hidden = hmode !== 'caps';
-  $('#hsleep').hidden = hmode !== 'sleep';
+  put('#hhist', 'hidden', hmode !== 'hist'); put('#hnow', 'hidden', hmode !== 'now'); put('#herr', 'hidden', hmode !== 'err'); put('#hcaps', 'hidden', hmode !== 'caps');
+  put('#hsleep', 'hidden', hmode !== 'sleep');
   if (hmode === 'hist') loadHist(); else if (hmode === 'sleep') loadSleep(true); else if (hmode === 'err') loadErrors(); else if (hmode === 'caps') loadCaps(); else loadHealth();
 }));
 
@@ -438,14 +438,14 @@ async function loadHealth() {
   $('#htop').replaceChildren(...(h.top.length ? [cell('h', 'Tiến trình'), cell('h n', 'CPU'), cell('h n', 'RAM')] : []),
     ...h.top.flatMap((p) => [cell('k', (typeof appName === 'function' && META.has(p.name) && appName(p.name)) || p.name), cell('v n', p.cpu + '%'), cell('v n', p.mem + '%')]));
   const t = h.thermal;
-  $('#htempc').hidden = !t;
+  put('#htempc', 'hidden', !t);
   if (t) redrawIfChanged('#htemp', [
     t.status != null ? ['Mức nhiệt', HEAT[t.status] || String(t.status)] : null,
     ...t.temps.map((s) => [s.name, Math.round(s.c) + ' °C']),
   ]);
   $('#hrate').replaceChildren(...kv(h.net && h.net.rx != null ? [['Đang tải xuống', fmtSize(h.net.rx) + '/s'], ['Đang tải lên', fmtSize(h.net.tx) + '/s']] : []));
   const bt = h.bt;
-  $('#hbtc').hidden = !bt;
+  put('#hbtc', 'hidden', !bt);
   if (bt) redrawIfChanged('#hbt', [
     ['Bluetooth', bt.on ? 'đang bật' : 'đang tắt'],
     ...(bt.devices.length ? bt.devices.map((d) => [d.name, d.connected ? 'đã kết nối' : 'đã ghép']) : [['Thiết bị', 'chưa ghép thiết bị nào']]),

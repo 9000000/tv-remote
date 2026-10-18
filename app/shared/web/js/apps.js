@@ -154,7 +154,7 @@ $('#appsreload').addEventListener('click', loadApps);
 // ℹ️ one app in detail: version, dates, memory, start at boot, and the permissions a person can give or take back
 async function appDetails(pkg) {
   const body = $('#infobody');
-  $('#infotitle').textContent = 'ℹ️ ' + appName(pkg); body.replaceChildren(el('p', { className: 'muted', textContent: 'Đang đọc từ TV...' }));
+  put('#infotitle', 'textContent', 'ℹ️ ' + appName(pkg)); body.replaceChildren(el('p', { className: 'muted', textContent: 'Đang đọc từ TV...' }));
   if (!$('#infodlg').open) $('#infodlg').showModal();
   const r = await api('/api/app/info?pkg=' + encodeURIComponent(pkg));
   if (!r || !$('#infodlg').open) return;
@@ -217,7 +217,7 @@ $('#appsclean').addEventListener('click', async () => {
 let logPkg = '', logTimer = 0, logSt = null, logPaused = false;
 function appLog(pkg) {
   logPkg = pkg; logSt = { last: '', seen: new Set() }; logPaused = false;
-  $('#logtitle').textContent = '📜 ' + appName(pkg); $('#logpre').replaceChildren(); $('#lognote').hidden = true;
+  put('#logtitle', 'textContent', '📜 ' + appName(pkg)); $('#logpre').replaceChildren(); put('#lognote', 'hidden', true);
   setLabel($('#logpause'), '⏸', 'Tạm dừng'); $('#logdlg').showModal(); pollLog();
 }
 async function pollLog() {
@@ -229,7 +229,7 @@ async function pollLog() {
     if (pkg !== logPkg || !$('#logdlg').open) return;
     if (r) {
       const { pid, lines } = logNext(logSt, r.text), pre = $('#logpre');
-      $('#lognote').hidden = !!pid;
+      put('#lognote', 'hidden', !!pid);
       const end = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 30;   // follow the end unless the reader scrolled up
       pre.append(...lines.map((l) => el('div', { className: 'l' + logLevel(l), textContent: l })));
       while (pre.childElementCount > 3000) pre.firstElementChild.remove();
@@ -327,7 +327,7 @@ function renderBulk() {
     return el('div', { className: 'item bulkrow' }, el('div', { className: 'name' }, el('span', { textContent: appName(p) }), el('small', { textContent: p })), el('span', { className: 'chip ' + cls, textContent: word }));
   }));
   ['#bulkoff', '#bulkon', '#bulkdel'].forEach((id) => { $(id).disabled = !pkgs.length; });
-  if (!pkgs.length) $('#bulklog').textContent = $('#bulktext').value.trim() ? 'Không thấy app id nào trong đoạn chữ này.' : '';
+  if (!pkgs.length) put('#bulklog', 'textContent', $('#bulktext').value.trim() ? 'Không thấy app id nào trong đoạn chữ này.' : '');
 }
 let bulkT = 0;
 $('#bulktext').addEventListener('input', () => { clearTimeout(bulkT); bulkT = setTimeout(async () => { renderBulk(); await bulkStatus(); renderBulk(); }, 300); });
@@ -336,17 +336,17 @@ $('#bulkclose').addEventListener('click', () => $('#bulkdlg').close());
 async function bulkRun(action, label) {
   await bulkStatus();
   const pkgs = bulkPkgs().filter((p) => { const k = bulkKnown.get(p); return k && !(action === 'disable' && (k.keep || k.off)) && !(action === 'enable' && !k.off); });
-  if (!pkgs.length) { $('#bulklog').textContent = 'Không có app nào cần ' + label.toLowerCase() + '.'; return; }
+  if (!pkgs.length) { put('#bulklog', 'textContent', 'Không có app nào cần ' + label.toLowerCase() + '.'); return; }
   if (action === 'uninstall' && !await ask('Gỡ ' + pkgs.length + ' app khỏi TV? Gỡ rồi phải cài lại mới có (app hệ thống thì không gỡ được, hãy tắt).', { ok: 'Gỡ', danger: true })) return;
   if (action === 'disable' && !await ask('Tắt ' + pkgs.length + ' app? Bật lại được bất cứ lúc nào ở đây hoặc ở mục “App đã tắt”.', { ok: 'Tắt app' })) return;
   const btns = ['#bulkoff', '#bulkon', '#bulkdel'].map((id) => $(id)); btns.forEach((b) => { b.disabled = true; });
   let ok = 0; const bad = [];
   for (let i = 0; i < pkgs.length; i++) {
-    $('#bulklog').textContent = label + ' ' + (i + 1) + '/' + pkgs.length + ': ' + appName(pkgs[i]) + '...';
+    put('#bulklog', 'textContent', label + ' ' + (i + 1) + '/' + pkgs.length + ': ' + appName(pkgs[i]) + '...');
     const r = await api('/api/app/' + action, { pkg: pkgs[i] }, true);
     if (r) ok++; else bad.push(pkgs[i]);
   }
-  $('#bulklog').textContent = label + ': xong ' + ok + '/' + pkgs.length + (bad.length ? ' · không được: ' + bad.join(', ') : '');
+  put('#bulklog', 'textContent', label + ': xong ' + ok + '/' + pkgs.length + (bad.length ? ' · không được: ' + bad.join(', ') : ''));
   btns.forEach((b) => { b.disabled = false; });
   await bulkStatus(true); renderBulk(); quickLoaded = false; loadQuick(); if (appsLoaded) loadApps();
 }

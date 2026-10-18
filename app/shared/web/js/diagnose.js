@@ -13,7 +13,7 @@ function diagNeeded(s) {
 
 function diagHide() {
   if (diagCtl) { diagCtl.abort(); diagCtl = null; }
-  $('#diag').hidden = true; $('#diag').replaceChildren();
+  put('#diag', 'hidden', true); $('#diag').replaceChildren();
 }
 
 function diagWatch(s) {

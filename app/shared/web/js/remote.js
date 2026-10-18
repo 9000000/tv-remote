@@ -116,11 +116,11 @@ $('#textf').addEventListener('submit', (e) => {
   txt.value = typed = '';
 });
 $('#del').addEventListener('click', () => { if (txt.value) { txt.value = [...txt.value].slice(0, -1).join(''); if (live) syncText(); } else queue('/api/type', { del: 1 }); });
-function setMore(on, now) { if (now) $('#more').hidden = !on; else slide($('#more'), on); $('#morebtn').classList.toggle('on', on); try { localStorage.setItem('more', on ? '1' : ''); } catch {} }
+function setMore(on, now) { if (now) put('#more', 'hidden', !on); else slide($('#more'), on); $('#morebtn').classList.toggle('on', on); try { localStorage.setItem('more', on ? '1' : ''); } catch {} }
 try { setMore(!!localStorage.getItem('more'), true); } catch {}
 $('#morebtn').addEventListener('click', () => setMore(!$('#morebtn').classList.contains('on')));
 $('#digits').addEventListener('click', () => { const p = $('#numpad'), on = p.hidden || p.classList.contains('shutting'); slide(p, on); try { localStorage.setItem('numpad', on ? '1' : ''); } catch {} });
-try { setLive(localStorage.getItem('live') !== '0'); $('#numpad').hidden = !localStorage.getItem('numpad'); } catch { setLive(true); }
+try { setLive(localStorage.getItem('live') !== '0'); put('#numpad', 'hidden', !localStorage.getItem('numpad')); } catch { setLive(true); }
 
 // ---------- mouse: click, drag and scroll on the picture act as a finger on the TV screen ----------
 // The picture is an <img> (frames from the computer) or a <video> (H.264 straight from the TV): both take the same gestures.

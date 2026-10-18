@@ -14,7 +14,7 @@ async function loadFiles(path) {
   if (!r) { if (!filesLoaded && path !== '/sdcard') loadFiles('/sdcard'); return; }
   filesLoaded = true; cwd = r.path; fileItems = r.items; volumes = r.volumes || [];
   if (path !== cwd || $('#filesq').dataset.dir !== cwd) { $('#filesq').value = ''; $('#filesq').dataset.dir = cwd; }
-  $('#space').textContent = r.space ? `Còn trống ${fmtSize(r.space.free)} / ${fmtSize(r.space.total)} · ${r.items.length} mục` : `${r.items.length} mục`;
+  put('#space', 'textContent', r.space ? `Còn trống ${fmtSize(r.space.free)} / ${fmtSize(r.space.total)} · ${r.items.length} mục` : `${r.items.length} mục`);
   renderPlaces(); renderFiles();
 }
 function renderPlaces() {
@@ -75,7 +75,7 @@ function mark(src, j) {
 function showJob(j, label, stop) {
   let row = jobEls[j.id];
   if (!row) {
-    $('#jobscard').hidden = false; $('#jobscard').open = true;
+    put('#jobscard', 'hidden', false); $('#jobscard').open = true;
     row = jobEls[j.id] = { root: el('div', { className: 'job' }), msg: el('div', { className: 'msg' }), bar: el('i'), stop: null };
     if (stop) row.stop = el('button', { className: 'small', type: 'button', textContent: '■ Dừng', title: 'Dừng việc này và xóa phần đã gửi dở trên TV', onclick: (e) => { e.currentTarget.disabled = true; row.msg.textContent = 'đang dừng...'; stop(); } });
     row.root.append(el('div', { className: 'jobhead' }, el('div', { textContent: label || j.title }), row.stop), row.msg, el('div', { className: 'bar' }, row.bar)); $('#jobs').prepend(row.root);
@@ -86,7 +86,7 @@ function showJob(j, label, stop) {
   row.status = j.status; row.pct = j.pct;
   // folded away, the title still tells how far things are
   const run = Object.values(jobEls).filter((r) => r.status === 'running');
-  $('#jobsum').textContent = run.length ? '· ' + Math.round(run.reduce((s, r) => s + (r.pct > 0 ? r.pct : 0), 0) / run.length) + '%' : '';
+  put('#jobsum', 'textContent', run.length ? '· ' + Math.round(run.reduce((s, r) => s + (r.pct > 0 ? r.pct : 0), 0) / run.length) + '%' : '');
 }
 // The phone app saves a TV file into its own Download folder itself (Managing.kt) and tells its progress here, in the same list.
 window.nativeJob = (j) => {
@@ -157,4 +157,4 @@ $('#instf').addEventListener('submit', async (e) => { e.preventDefault(); const 
 $('#apkfile').addEventListener('change', async (e) => { const f = e.target.files[0]; e.target.value = ''; if (f && await ask('Cài ' + f.name + ' lên TV?', { ok: 'Cài' })) upload(f, 'install', '', undefined, e.target.closest('label')); });
 
 
-$('#jobsclose').addEventListener('click', (e) => { e.preventDefault(); $('#jobscard').hidden = true; });   // the next upload or install brings it back
+$('#jobsclose').addEventListener('click', (e) => { e.preventDefault(); put('#jobscard', 'hidden', true); });   // the next upload or install brings it back

@@ -18,7 +18,7 @@ function page(core = 'pc') {
   const el = (tag, props = {}, ...kids) => Object.assign(node(), { tag, kids }, props, { hidden: false });
   const sandbox = {
     CORE: core, picking: false, LANG: 'vi', wantPick: false, cameFromTv: false,
-    $: () => box, el, refresh() {}, selectTv: (...a) => calls.push(['select', ...a]), adbHelp() {}, api: async () => ({}),
+    $: () => box, el, refresh() {}, put: (e, k, v) => { (typeof e === 'string' ? box : e)[k] = v; }, selectTv: (...a) => calls.push(['select', ...a]), adbHelp() {}, api: async () => ({}),
     AbortController, URLSearchParams,
     fetch: async (url, o) => { calls.push(['fetch', url]); return { ok: true, json: async () => sandbox.answer }; },
     answer: { code: 'adb_off', title: 't', fix: 'f', ip: '1.2.3.4', kind: 'android', actions: ['adbhelp', 'retry'], found: null, checks: [{ ok: true, note: 'a' }, { ok: false, note: 'b' }, { ok: null, note: 'c' }] },

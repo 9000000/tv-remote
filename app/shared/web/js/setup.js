@@ -22,7 +22,7 @@ function optRow(name, sub, checked, data) {
 }
 async function chooseOptimize() {
   const body = $('#optbody'); body.replaceChildren(el('p', { className: 'muted', textContent: 'Đang xem TV có gì để tối ưu...' }));
-  $('#optgo').disabled = true; $('#optdlg').showModal();
+  put('#optgo', 'disabled', true); $('#optdlg').showModal();
   const p = await api('/api/setup/plan');
   if (!p) { body.replaceChildren(el('p', { textContent: 'Không đọc được TV. Thử lại.' })); return; }
   const usingFl = p.home === 'me.efesser.flauncher';
@@ -37,7 +37,7 @@ async function chooseOptimize() {
     } });
     parts.push(el('h3', { textContent: 'Tắt thêm app khác' }), el('p', { className: 'note', textContent: 'Tắt là tạm ngưng, không gỡ; app biến khỏi TV cho tới khi Hoàn tác.' }), p.apps.length > 7 ? filter : null, list);
   }
-  body.replaceChildren(...parts.filter(Boolean)); $('#optgo').disabled = false;
+  body.replaceChildren(...parts.filter(Boolean)); put('#optgo', 'disabled', false);
 }
 $('#optgo').addEventListener('click', () => {
   const boxes = [...$('#optbody').querySelectorAll('input[type=checkbox]')], on = (w) => boxes.some((b) => b.dataset.what === w && b.checked);
@@ -56,7 +56,7 @@ function showPicks() {
 }
 $('#themepick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { setTheme(b.dataset.v); showPicks(); } });
 // a tap under the finger on phones (Chrome on Android; Safari on iPhone has no vibration for pages)
-$('#buzzgroup').hidden = !CAN_BUZZ;
+put('#buzzgroup', 'hidden', !CAN_BUZZ);
 const showBuzz = () => $('#buzzpick').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.v === (buzzOn() ? '1' : '0')));
 showBuzz();
 $('#buzzpick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; try { localStorage.setItem('buzz', b.dataset.v); } catch {} showBuzz(); buzz(); });
@@ -68,7 +68,7 @@ if (window.LANG_KEEP && window.LANG_KEEP.settings) setTimeout(() => $('#aboutbtn
 $('#aboutbtn').addEventListener('click', async () => {
   showPicks(); $('#about').showModal();
   const r = await fetch('/api/about').then((x) => x.json()).catch(() => null);
-  if (r && r.version) $('#aboutver').textContent = r.version + (r.released ? ' · ' + r.released : '');
+  if (r && r.version) put('#aboutver', 'textContent', r.version + (r.released ? ' · ' + r.released : ''));
   // scan with a phone: the Android app, and (when the TV Setup app is serving it) this TV's own remote page
   $('#qrs').replaceChildren(...[qrBlock('📱 App Android', 'Quét bằng điện thoại để tải app.', APP_APK),
     r && r.tv_web ? qrBlock('🌐 Remote trên điện thoại', 'Quét khi điện thoại chung mạng với TV.', r.tv_web) : null].filter(Boolean));
@@ -121,8 +121,8 @@ async function shareDialog() {
   document.body.append(d); d.showModal();
 }
 if (CORE === 'pc') fetch('/api/about').then((x) => x.json()).then((r) => {
-  if (r.version) $('#ver').textContent = 'TV Remote ' + r.version + (r.released ? ' · ' + r.released : '');
-  if (r.stale) $('#stale').hidden = false;                            // its code was updated after it started: new buttons would answer "not found"
+  if (r.version) put('#ver', 'textContent', 'TV Remote ' + r.version + (r.released ? ' · ' + r.released : ''));
+  if (r.stale) put('#stale', 'hidden', false);                            // its code was updated after it started: new buttons would answer "not found"
 }).catch(() => {});
 
 // ---------- updates of the computer app (Updater.kt): it checks and downloads by itself; this shows it and starts the swap ----------
@@ -131,20 +131,20 @@ function showUpdate(u) {
   const b = $('#update');
   b.hidden = !u || !u.version || (updLater && u.state !== 'installing');
   if (b.hidden) return;
-  $('#updtitle').textContent = '🆕 Có bản mới ' + u.version + ' (đang dùng ' + u.current + ')';
-  $('#updnote').textContent = u.state === 'downloading' ? 'Đang tải bản mới ' + u.pct + '%'
+  put('#updtitle', 'textContent', '🆕 Có bản mới ' + u.version + ' (đang dùng ' + u.current + ')');
+  put('#updnote', 'textContent', u.state === 'downloading' ? 'Đang tải bản mới ' + u.pct + '%'
     : u.state === 'installing' ? 'Đang cập nhật: TV Remote đóng lại rồi tự mở bản mới.'
     : u.state === 'error' ? 'Chưa tải được bản mới (' + friendly(u.error) + '). Bấm Cập nhật để thử lại.'
     : !u.auto ? 'App nằm ở thư mục không tự thay được: tải bản mới, giải nén, rồi thay cho bản đang dùng.'
-    : 'Bấm Cập nhật: TV Remote đóng lại rồi tự mở bản mới, mất vài giây. Để sau thì bản mới tự cài khi đóng app.';
-  $('#updgo').textContent = u.auto ? '⬆️ Cập nhật' : '⬇️ Tải bản mới';
-  $('#updacts').hidden = u.state === 'installing' || u.state === 'downloading' && !updPoll;
+    : 'Bấm Cập nhật: TV Remote đóng lại rồi tự mở bản mới, mất vài giây. Để sau thì bản mới tự cài khi đóng app.');
+  put('#updgo', 'textContent', u.auto ? '⬆️ Cập nhật' : '⬇️ Tải bản mới');
+  put('#updacts', 'hidden', u.state === 'installing' || u.state === 'downloading' && !updPoll);
   clearTimeout(updPoll); updPoll = null;
   if (u.state === 'downloading' || u.state === 'installing') updPoll = setTimeout(pollUpdate, 1000);
 }
 const pollUpdate = () => fetch('/api/update').then((x) => x.json()).then(showUpdate).catch(() => { updPoll = setTimeout(pollUpdate, 2000); });   // gone while it swaps
 if (CORE === 'pc') { pollUpdate(); setInterval(() => { if (!updPoll) pollUpdate(); }, 30 * 60000); }
-$('#updlater').addEventListener('click', () => { updLater = true; $('#update').hidden = true; });
+$('#updlater').addEventListener('click', () => { updLater = true; put('#update', 'hidden', true); });
 $('#updgo').addEventListener('click', async () => {
   const u = await api('/api/update'); if (!u) return;
   if (!u.auto) { window.open(u.url, '_blank'); return; }
@@ -153,23 +153,23 @@ $('#updgo').addEventListener('click', async () => {
   const r = await api('/api/update', { do: 'install' }); if (r) showUpdate(r);
 });
 $('#updcheck').addEventListener('click', async () => {
-  $('#updcheckmsg').textContent = 'Đang kiểm tra...';
+  put('#updcheckmsg', 'textContent', 'Đang kiểm tra...');
   const u = await api('/api/update', { do: 'check' });
-  if (!u) { $('#updcheckmsg').textContent = ''; return; }
+  if (!u) { put('#updcheckmsg', 'textContent', ''); return; }
   updLater = false; showUpdate(u);
-  $('#updcheckmsg').textContent = !u.packaged ? 'Bản chạy từ mã nguồn: cập nhật bằng git pull.' : u.error ? 'Không kiểm tra được: ' + friendly(u.error)
-    : u.version ? 'Có bản mới ' + u.version + ': xem thanh trên cùng trang.' : 'Đang dùng bản mới nhất (' + u.current + ').';
+  put('#updcheckmsg', 'textContent', !u.packaged ? 'Bản chạy từ mã nguồn: cập nhật bằng git pull.' : u.error ? 'Không kiểm tra được: ' + friendly(u.error)
+    : u.version ? 'Có bản mới ' + u.version + ': xem thanh trên cùng trang.' : 'Đang dùng bản mới nhất (' + u.current + ').');
 });
 // ---------- Home Assistant · Phím tắt (Hook.kt): its own switch and token, shown only to the owner ----------
 let hookNow = null;
 function hookShow(h) {
   hookNow = h;
   $('#hookpick').querySelectorAll('button').forEach((b) => b.classList.toggle('on', (b.dataset.v === 'on') === !!(h && h.on)));
-  $('#hookbody').hidden = !(h && h.on);
+  put('#hookbody', 'hidden', !(h && h.on));
   if (h && h.on) $('#hookurl').value = h.shortcut;
 }
 async function hookLoad() {
-  $('#hookgroup').hidden = SCOPE !== 'full';
+  put('#hookgroup', 'hidden', SCOPE !== 'full');
   if (SCOPE !== 'full') return;
   hookShow(await api('/api/hook/config', null, true));
 }
@@ -207,7 +207,7 @@ $('#quit').addEventListener('click', async () => {
 function tvChanged() {                                                // another TV: forget everything cached about the old one
   if (screenOn) stopScreen();
   if (listenOn) stopListen();
-  quickLoaded = appsLoaded = filesLoaded = scenesLoaded = autoLoaded = sceneNamesAsked = false; META.clear(); metaFailed.clear(); cwd = '/sdcard/Download'; bannerKey = ''; RULES = null; SCENES = []; setRows = []; $('#setlistbody').replaceChildren(); renderScenes(); setupChecked = ''; $('#setupupd').hidden = true;
+  quickLoaded = appsLoaded = filesLoaded = scenesLoaded = autoLoaded = sceneNamesAsked = false; META.clear(); metaFailed.clear(); cwd = '/sdcard/Download'; bannerKey = ''; RULES = null; SCENES = []; setRows = []; $('#setlistbody').replaceChildren(); renderScenes(); setupChecked = ''; put('#setupupd', 'hidden', true);
   $('#quick').replaceChildren(el('div', { className: 'muted', textContent: 'Danh sách app hiện khi ADB sẵn sàng.' }));
   $('#appslist').replaceChildren(); $('#fileslist').replaceChildren();
   if (currentTab === 'tv') loadSteps();
@@ -215,7 +215,7 @@ function tvChanged() {                                                // another
   sleepReset();
 }
 function connecting(name, host) {                                   // covers the remote until the TV answers (see refresh)
-  $('#conname').textContent = name; $('#constep').textContent = 'Đang tìm TV ở ' + host + '...';
+  put('#conname', 'textContent', name); put('#constep', 'textContent', 'Đang tìm TV ở ' + host + '...');
   if (!$('#connecting').open) $('#connecting').showModal();
 }
 $('#concancel').addEventListener('click', () => { justPicked = null; $('#connecting').close(); wantPick = true; refresh(); });
@@ -238,7 +238,7 @@ async function loadTvs() {
       setLabel(el('button', { className: 'small primary', onclick: () => openTv(t.host, r.current) }), '▶', OPEN_TV),
       setLabel(el('button', { className: 'small danger', onclick: async () => { if (await ask('Xóa "' + (t.name || t.host) + '" khỏi danh sách? (Không đổi gì trên TV)', { ok: 'Xóa', danger: true })) { await api('/api/tv/remove', { host: t.host }); await refresh(); loadTvs(); loadSteps(); } } }), '🗑', 'Xóa', true))));
   $('#tvlist').replaceChildren(...rows);
-  $('#savedcard').hidden = !rows.length; $('#pickcols').classList.toggle('solo', !rows.length);   // nothing saved: no empty box, just the search
+  put('#savedcard', 'hidden', !rows.length); $('#pickcols').classList.toggle('solo', !rows.length);   // nothing saved: no empty box, just the search
   fleetCheck(rows.length);
 }
 function scanRow(f) {
@@ -256,7 +256,7 @@ function scanRow(f) {
 // The scan runs on the computer; asked again every 400 ms, each TV shows up as soon as it answers instead of after the
 // whole network (and a second pass when the first finds nothing)
 $('#scan').addEventListener('click', async () => {
-  const b = $('#scan'), list = $('#scanlist'); b.disabled = true; b.textContent = '⏳ Đang quét...'; list.replaceChildren(); $('#scaninfo').textContent = '';
+  const b = $('#scan'), list = $('#scanlist'); b.disabled = true; b.textContent = '⏳ Đang quét...'; list.replaceChildren(); put('#scaninfo', 'textContent', '');
   let r = await api('/api/discover?new=1');
   while (r) {
     for (const f of r.found) {                                        // one row per TV: a saved one is known by both its addresses
@@ -269,7 +269,7 @@ $('#scan').addEventListener('click', async () => {
     r = await api('/api/discover', null, true);
   }
   b.disabled = false; b.textContent = '🔍 Quét mạng'; if (!r) return;
-  $('#scaninfo').textContent = r.found.length ? '' : 'Không thấy TV nào. TV có bật và chung Wi-Fi không?';
+  put('#scaninfo', 'textContent', r.found.length ? '' : 'Không thấy TV nào. TV có bật và chung Wi-Fi không?');
 });
 $('#ipf').addEventListener('submit', (e) => { e.preventDefault(); const ip = $('#ipin').value.trim(); if (ip) selectTv(ip); });
 $('#setuprefresh').addEventListener('click', () => loadSteps());
@@ -278,7 +278,7 @@ $('#setuprefresh').addEventListener('click', () => loadSteps());
 const HOMES = [['Projectivy Launcher', 'com.spocky.projengmenu'], ['ATV Launcher', 'ca.dstudio.atvlauncher.free'], ['FLauncher', 'me.efesser.flauncher']];
 let assistGen = 0;
 function assistShow(title, ...kids) {
-  assistGen++; $('#assisttitle').textContent = title; $('#assistbody').replaceChildren(...kids.filter(Boolean));
+  assistGen++; put('#assisttitle', 'textContent', title); $('#assistbody').replaceChildren(...kids.filter(Boolean));
   if (!$('#assist').open) $('#assist').showModal();
 }
 const choice = (title, sub, fn, cls = '') => el('button', { className: 'choice ' + cls, onclick: fn }, el('b', { textContent: title }), sub ? el('small', { textContent: sub }) : null);
@@ -442,9 +442,9 @@ function tsDone(ip) {
 async function tsState() {                                             // the card on the tv / phone cores (the computer has its step 2)
   if (CORE === 'pc' || ADB.state !== 'ready') return;
   const s = await api('/api/tailscale', null, true); if (!s) return;
-  $('#tsstate').textContent = s.ip ? 'Đã vào Tailscale · IP ' + s.ip + '. Ở ngoài nhà, máy điều khiển bật Tailscale (cùng tài khoản) rồi dùng IP này.'
-    : s.installed ? 'Tailscale đã cài nhưng chưa đăng nhập hoặc đang tắt. Bấm nút dưới để bật và đăng nhập.' : TS_PITCH;
-  $('#tsgo').hidden = !!s.ip; $('#tsgo').textContent = s.installed ? '⚡ Bật và đăng nhập Tailscale' : '⚡ Cài và đăng nhập Tailscale';
+  put('#tsstate', 'textContent', s.ip ? 'Đã vào Tailscale · IP ' + s.ip + '. Ở ngoài nhà, máy điều khiển bật Tailscale (cùng tài khoản) rồi dùng IP này.'
+    : s.installed ? 'Tailscale đã cài nhưng chưa đăng nhập hoặc đang tắt. Bấm nút dưới để bật và đăng nhập.' : TS_PITCH);
+  put('#tsgo', 'hidden', !!s.ip); put('#tsgo', 'textContent', s.installed ? '⚡ Bật và đăng nhập Tailscale' : '⚡ Cài và đăng nhập Tailscale');
 }
 $('#tsgo').addEventListener('click', tailscaleGo);
 $('#tsclose').addEventListener('click', () => $('#ts').close());

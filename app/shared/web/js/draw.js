@@ -80,7 +80,7 @@ let drawPics = true;                                                   // this T
 async function drawStart() {
   if (!screenOn) startScreen();                                        // the strokes go where the picture shows
   drawing = true; drawQ = [];
-  $('#drawcv').hidden = false; $('#drawbar').hidden = false; $('#r-draw').classList.add('on');
+  put('#drawcv', 'hidden', false); put('#drawbar', 'hidden', false); $('#r-draw').classList.add('on');
   drawSize();
   const r = await fetch('/api/draw', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"ops":[]}' }).catch(() => null);
   if (!drawing) return;
@@ -89,16 +89,16 @@ async function drawStart() {
 }
 function drawStop() {
   drawing = false; drawPen = null; drawLocal.length = 0; picEnd();
-  $('#drawcv').hidden = true; $('#drawbar').hidden = true; $('#r-draw').classList.remove('on');
+  put('#drawcv', 'hidden', true); put('#drawbar', 'hidden', true); $('#r-draw').classList.remove('on');
 }
 $('#drawdone').addEventListener('click', drawStop);
 $('#drawundo').addEventListener('click', () => drawSend({ o: 'u' }));
 $('#drawclear').addEventListener('click', () => { drawLocal.length = 0; drawPaint(); drawSend({ o: 'x' }); });
 // one swatch for the colour in use; the colours and the line's size open under it, and close once one is picked (or on a tap elsewhere)
-$('#drawcolor').addEventListener('click', (e) => { e.stopPropagation(); $('#drawcolors').hidden = !$('#drawcolors').hidden; });
-document.addEventListener('click', (e) => { if (!e.target.closest('#drawcolors')) $('#drawcolors').hidden = true; });
+$('#drawcolor').addEventListener('click', (e) => { e.stopPropagation(); put('#drawcolors', 'hidden', !$('#drawcolors').hidden); });
+document.addEventListener('click', (e) => { if (!e.target.closest('#drawcolors')) put('#drawcolors', 'hidden', true); });
 document.querySelectorAll('#drawbar [data-color]').forEach((b) => b.addEventListener('click', () => {
-  drawColor = b.dataset.color; $('#drawcolor').style.setProperty('--c', drawColor); drawDot(); $('#drawcolors').hidden = true;
+  drawColor = b.dataset.color; $('#drawcolor').style.setProperty('--c', drawColor); drawDot(); put('#drawcolors', 'hidden', true);
   document.querySelectorAll('#drawbar [data-color]').forEach((x) => x.classList.toggle('on', x === b));
 }));
 // the dot beside the slider: the line's size and colour (a fifth of the TV-width units, as on a phone's picture)
@@ -122,7 +122,7 @@ $('#drawfile').addEventListener('change', async (e) => {
 async function picPlace(data, w) {
   const shown = new Image(); shown.src = data; await shown.decode().catch(() => {});
   drawPic = { img: shown, b: data.slice(data.indexOf(',') + 1), x: 5000, y: 5000, w, base: w };   // base: 1x
-  $('#drawbar').hidden = true; $('#picbar').hidden = false; picWidth(drawPic.w);
+  put('#drawbar', 'hidden', true); put('#picbar', 'hidden', false); picWidth(drawPic.w);
 }
 
 // 💬 A message, as big words on the TV ("Xuống ăn cơm!"): drawn here into a picture, then placed and sent like one, so it
@@ -153,9 +153,9 @@ $('#drawtext').addEventListener('click', async () => {
   if (!drawing) await drawStart();
   picPlace(c.toDataURL('image/png'), Math.min(9000, Math.round(w / 1920 * 10000)));   // 72px words as on a 1080p TV
 });
-function picEnd() { drawPic = null; picTouch.clear(); $('#picbar').hidden = true; if (drawing) $('#drawbar').hidden = false; drawPaint(); }
+function picEnd() { drawPic = null; picTouch.clear(); put('#picbar', 'hidden', true); if (drawing) put('#drawbar', 'hidden', false); drawPaint(); }
 // 1x is the size it starts at (a picture: 4000 = 40% of the screen's width); down to 0.1x, up to the screen's width
-function picWidth(w) { drawPic.w = Math.round(Math.min(10000, Math.max(400, w))); $('#picscale').textContent = (drawPic.w / drawPic.base).toFixed(1) + 'x'; drawPaint(); }
+function picWidth(w) { drawPic.w = Math.round(Math.min(10000, Math.max(400, w))); put('#picscale', 'textContent', (drawPic.w / drawPic.base).toFixed(1) + 'x'); drawPaint(); }
 // − and +: a tap is one step, holding keeps going (faster the longer), like dragging a slider that springs back
 [['#picsmaller', 1 / 1.06], ['#picbigger', 1.06]].forEach(([id, k]) => {
   let timer = null;

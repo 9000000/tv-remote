@@ -26,3 +26,14 @@ test('docs/ has the same qr.js as the page', () => {
   assert.equal(body, fs.readFileSync(path.join(__dirname, '../web/js/qr.js'), 'utf8'),
     'docs/js/qr.js differs from app/shared/web/js/qr.js: copy it again (keeping its first line)');
 });
+
+test('a field of the page is written through put()', () => {
+  // $('#x').textContent = … in a draw that runs every tick writes the same words again and again: each is a change for the
+  // page's observers and WebKit's styles (the now playing bar 5 times a second). put() writes only what changed.
+  const dir = path.join(__dirname, '../web/js');
+  const bad = fs.readdirSync(dir).filter((f) => f.endsWith('.js')).flatMap((f) => {
+    const s = fs.readFileSync(path.join(dir, f), 'utf8');
+    return [...s.matchAll(/\$\('[^']+'\)\.(textContent|hidden|className|disabled|title) = /g)].map((m) => f + ':' + s.slice(0, m.index).split('\n').length);
+  });
+  assert.deepEqual(bad, [], "put('#x', 'textContent', …) instead");
+});

@@ -143,7 +143,7 @@ $('#tvreboot').addEventListener('click', async () => {
   if (!await ask('Khởi động lại TV? Mất khoảng 1–2 phút; trang tự kết nối lại khi TV lên.', { ok: 'Khởi động lại' })) return;
   if (!await api('/api/reboot', {})) return;
   rebootT0 = Date.now();
-  $('#reboottitle').textContent = 'TV đang khởi động lại'; $('#rebootspin').hidden = false; $('#rebootdlg').showModal();
+  put('#reboottitle', 'textContent', 'TV đang khởi động lại'); put('#rebootspin', 'hidden', false); $('#rebootdlg').showModal();
   watchReboot(rebootT0);
 });
 $('#rebootclose').addEventListener('click', () => $('#rebootdlg').close());
@@ -160,8 +160,8 @@ async function watchReboot(t0) {
       rebootT0 = 0; $('#rebootdlg').close(); toast('TV đã khởi động lại xong'); bannerKey = ''; refresh(); loadTvset(); return;
     }
     const clock = Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
-    $('#rebootstep').textContent = secs < 180 ? (down ? 'TV đang khởi động' : 'TV đang tắt') + ' · ' + clock
+    put('#rebootstep', 'textContent', secs < 180 ? (down ? 'TV đang khởi động' : 'TV đang tắt') + ' · ' + clock
       : clock + ' · ' + (CORE === 'tv' ? 'TV vẫn chưa trả lời. Nếu TV đã lên màn hình chính: mở app TV Setup trên TV.'
-        : 'TV vẫn chưa mở lại ADB. Nếu TV đã lên màn hình chính: vào Cài đặt → Tùy chọn nhà phát triển, bật lại “Gỡ lỗi ADB”.');
+        : 'TV vẫn chưa mở lại ADB. Nếu TV đã lên màn hình chính: vào Cài đặt → Tùy chọn nhà phát triển, bật lại “Gỡ lỗi ADB”.'));
   }
 }

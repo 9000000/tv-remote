@@ -3,13 +3,13 @@
 let screenOn = false, screenUrl = null, screenGen = 0, streamCtl = null, frames = 0;
 const SCREEN_HINT = 'Bấm “Xem” để xem màn hình TV.';
 if (CORE !== 'pc') document.querySelectorAll('#screenmode [data-for=pc]').forEach((o) => o.remove());   // an <option> cannot be hidden by CSS everywhere
-function setScreenPlaceholder(msg) { $('#screenph').textContent = msg || SCREEN_HINT; $('#screenph').hidden = false; $('#screen').hidden = $('#screenv').hidden = $('#screenc').hidden = true; }
+function setScreenPlaceholder(msg) { put('#screenph', 'textContent', msg || SCREEN_HINT); put('#screenph', 'hidden', false); put('#screen', 'hidden', true); put('#screenv', 'hidden', true); put('#screenc', 'hidden', true); }
 // The element showing the picture now (a screenshot, the <video> of JMuxer, the canvas of WebCodecs), and its own size.
 function screenEl() { return ['#screenc', '#screenv', '#screen'].map((s) => $(s)).find((m) => !m.hidden) || null; }
 function picSize(m) { return m && m.tagName === 'CANVAS' ? [m.width, m.height] : m ? [m.naturalWidth || m.videoWidth || 0, m.naturalHeight || m.videoHeight || 0] : [0, 0]; }
-function setScreenInfo(text, live) { $('#screeninfo').textContent = text; $('#screeninfo').classList.toggle('live', !!live); }
+function setScreenInfo(text, live) { put('#screeninfo', 'textContent', text); $('#screeninfo').classList.toggle('live', !!live); }
 function showFrame(blob) {
-  const u = URL.createObjectURL(blob); $('#screen').src = u; $('#screen').hidden = false; $('#screenph').hidden = $('#screenv').hidden = $('#screenc').hidden = true;
+  const u = URL.createObjectURL(blob); $('#screen').src = u; put('#screen', 'hidden', false); put('#screenph', 'hidden', true); put('#screenv', 'hidden', true); put('#screenc', 'hidden', true);
   if (screenUrl) URL.revokeObjectURL(screenUrl); screenUrl = u; frames++;
 }
 function stopScreen(msg) {
@@ -256,7 +256,7 @@ function dockScreen() {
   const float = currentTab !== 'remote' && screenOn, card = $('#screencard');
   if (float && card.parentElement !== $('#pipslot')) $('#pipslot').append(card);
   if (!float && card.parentElement !== screenHome) screenHome.prepend(card);
-  $('#pipback').hidden = !float; document.body.classList.toggle('pip', float);
+  put('#pipback', 'hidden', !float); document.body.classList.toggle('pip', float);
 }
 $('#pipback').addEventListener('click', () => showTab('remote'));
 function startScreen() {

@@ -20,7 +20,7 @@ function renderRules() {
   const r = RULES || {};
   const box = $('#autosetup');
   if (r.setup === 'busy') {                                            // being updated or starting: no button, asked again soon
-    $('#rulecards').hidden = true;
+    put('#rulecards', 'hidden', true);
     box.replaceChildren(UI.say('TV Setup đang khởi động lại (vd vừa cập nhật), đợi chút…'));
     clearTimeout(renderRules.again); renderRules.busy = (renderRules.busy || 0) + 1;   // an am broadcast each time: 4 s, slower as it goes on, and only while this tab is looked at
     renderRules.again = setTimeout(() => { if (currentTab === 'auto' && !document.hidden) loadRules(null, true); }, Math.min(30000, 4000 * renderRules.busy));
@@ -28,7 +28,7 @@ function renderRules() {
   }
   renderRules.busy = 0;
   if (r.setup || r.error) {                                            // no TV Setup on the TV (or one too old): say what it brings and offer it
-    $('#rulecards').hidden = true;
+    put('#rulecards', 'hidden', true);
     box.replaceChildren(UI.card('😴 Hẹn giờ tắt · 🌙 Giờ đi ngủ · ⏳ Giới hạn app', {},
       el('p', { textContent: r.error ? 'TV Setup trả lời lỗi: ' + friendly(r.error)
         : r.setup === 'old' ? 'TV Setup trên TV là bản cũ. Cần bản ' + (r.min || '0.1.0') + ' trở lên: mở TV Setup trên TV → Cập nhật, hoặc bấm nút dưới.'
@@ -36,10 +36,10 @@ function renderRules() {
       el('div', { className: 'actions' }, act(r.setup === 'old' ? '⬆️ Cập nhật TV Setup' : '⚡ Cài TV Setup lên TV', r.setup === 'old' ? updateSetup : installSetupApk, 'primary'))));
     return;
   }
-  box.replaceChildren(); $('#rulecards').hidden = false;
+  box.replaceChildren(); put('#rulecards', 'hidden', false);
   // sleep timer
   const left = r.sleep_at ? Math.max(0, Math.round((r.sleep_at - r.now) / 60000)) : 0;
-  $('#sleepstate').textContent = r.sleep_at ? 'TV tự tắt lúc ' + clock(r.sleep_at) + ' · còn ' + mins(left) : 'Chưa hẹn giờ.';
+  put('#sleepstate', 'textContent', r.sleep_at ? 'TV tự tắt lúc ' + clock(r.sleep_at) + ' · còn ' + mins(left) : 'Chưa hẹn giờ.');
   $('#sleepstate').classList.toggle('on', !!r.sleep_at);
   $('#sleepbtns').replaceChildren(...[15, 30, 45, 60, 90, 120].map((m) => el('button', { className: 'small', textContent: mins(m), onclick: () => setSleep(m) })));
   $('#sleepacts').replaceChildren(...(r.sleep_at ? [act('＋15 phút', async () => { await loadRules({ do: 'sleep_add', minutes: 15 }); }), act('✕ Hủy hẹn giờ', async () => setSleep(0), 'danger')] : []));
@@ -51,8 +51,8 @@ function renderRules() {
     el('div', { className: 'acts' },
       act('🗑', async () => { if (await ask('Bỏ giờ đi ngủ ' + v.from + ' – ' + v.to + '?', { ok: 'Bỏ' })) await saveBeds(beds.filter((x, j) => j !== i)); }, 'danger')))));
   const snoozed = r.snooze_until > r.now;
-  $('#bedstate').textContent = !b.on ? '' : snoozed ? 'Đang cho xem thêm tới ' + clock(r.snooze_until) + '.' : r.in_bedtime ? 'Đang trong giờ đi ngủ: TV bật lên sẽ tự tắt sau 1 phút.'
-    : 'Đang bật: ' + beds.map((v) => v.from + ' – ' + v.to).join(', ') + ' mỗi ngày.';
+  put('#bedstate', 'textContent', !b.on ? '' : snoozed ? 'Đang cho xem thêm tới ' + clock(r.snooze_until) + '.' : r.in_bedtime ? 'Đang trong giờ đi ngủ: TV bật lên sẽ tự tắt sau 1 phút.'
+    : 'Đang bật: ' + beds.map((v) => v.from + ' – ' + v.to).join(', ') + ' mỗi ngày.');
   $('#bedacts').replaceChildren(...(!b.on ? [] : snoozed ? [act('Thôi, áp dụng lại ngay', async () => { await loadRules({ do: 'snooze', minutes: 0 }); })]
     : r.in_bedtime ? [act('Cho xem thêm 30 phút', async () => { await loadRules({ do: 'snooze', minutes: 30 }); })] : []));
   // app limits
@@ -77,14 +77,14 @@ function renderRules() {
       act('🗑', async () => { if (await ask('Bỏ giới hạn ' + v.from + ' – ' + v.to + '?', { ok: 'Bỏ giới hạn' })) await saveVols(vols.filter((x, j) => j !== i)); }, 'danger'))))
     : [UI.empty('Chưa giới hạn âm lượng.')]));
   const now = r.volume_now;
-  $('#volstate').textContent = r.volume === undefined ? '' : r.volume_fixed ? '⚠️ Âm lượng của TV này do loa ngoài / TV giữ (qua HDMI), không giới hạn được.'
-    : now ? 'Đang giới hạn tối đa ' + now.max + '% tới ' + now.to + '.' : '';
+  put('#volstate', 'textContent', r.volume === undefined ? '' : r.volume_fixed ? '⚠️ Âm lượng của TV này do loa ngoài / TV giữ (qua HDMI), không giới hạn được.'
+    : now ? 'Đang giới hạn tối đa ' + now.max + '% tới ' + now.to + '.' : '');
   // the memory notice; a TV Setup older than it has no "ram" in its answer
   const ram = r.ram || { on: false, pct: 90 };
   if (document.activeElement !== $('#ramon')) $('#ramon').checked = !!ram.on;
   $('#rampct').replaceChildren(...[80, 85, 90, 95].map((p) => el('button', { type: 'button', className: p === ram.pct ? 'on' : '', textContent: p + '%',
     onclick: () => saveRam(true, p) })));
-  $('#ramstate').textContent = ram.on ? 'Đang bật: báo khi RAM dùng từ ' + ram.pct + '%.' : '';
+  put('#ramstate', 'textContent', ram.on ? 'Đang bật: báo khi RAM dùng từ ' + ram.pct + '%.' : '');
   if (CORE === 'tv' && r.adb && r.adb !== 'ready') $('#bedstate').append(el('span', { className: 'warnline', textContent: '⚠️ TV Setup chưa nối được ADB của TV nên chưa tự tắt TV / đóng app được.' }));
 }
 
@@ -193,25 +193,25 @@ function showSetupUpd(r) {
   if (b.hidden) return;
   b.className = 'banner ' + (undone ? 'warn' : 'ok');
   if (undone) {
-    $('#suptitle').textContent = '⚠️ TV Setup ' + r.version + ' chạy lỗi trên TV này';
-    $('#supnote').textContent = 'TV đã tự quay về bản ' + r.from + '. Hẹn giờ, ghép nối và cài đặt vẫn còn nguyên. Có bản sau thì nó hiện ở đây.';
-    $('#supgo').hidden = true; $('#suplater').textContent = '✓ Đã hiểu';
+    put('#suptitle', 'textContent', '⚠️ TV Setup ' + r.version + ' chạy lỗi trên TV này');
+    put('#supnote', 'textContent', 'TV đã tự quay về bản ' + r.from + '. Hẹn giờ, ghép nối và cài đặt vẫn còn nguyên. Có bản sau thì nó hiện ở đây.');
+    put('#supgo', 'hidden', true); put('#suplater', 'textContent', '✓ Đã hiểu');
     $('#suplater').onclick = () => { try { localStorage.setItem('setupUndo', String(r.at)); } catch (e) { } r.state = ''; showSetupUpd(r); };   // then the update, if there is one
     return;
   }
-  $('#suptitle').textContent = '🆕 TV Setup trên TV có bản mới ' + r.latest + ' (đang dùng ' + r.installed + ')';
-  $('#supnote').textContent = 'Mất khoảng nửa phút.'
-    + (CORE === 'tv' ? ' Trang này tự nối lại sau đó.' : '');
-  $('#supgo').hidden = false; $('#suplater').textContent = 'Để sau';
+  put('#suptitle', 'textContent', '🆕 TV Setup trên TV có bản mới ' + r.latest + ' (đang dùng ' + r.installed + ')');
+  put('#supnote', 'textContent', 'Mất khoảng nửa phút.'
+    + (CORE === 'tv' ? ' Trang này tự nối lại sau đó.' : ''));
+  put('#supgo', 'hidden', false); put('#suplater', 'textContent', 'Để sau');
   $('#suplater').onclick = () => { setupLater = r.latest; b.hidden = true; };
 }
 $('#supgo').addEventListener('click', () => updateSetup());
 async function updateSetup() {
   if (setupBusy) return;
-  setupBusy = true; $('#supacts').hidden = true;
+  setupBusy = true; put('#supacts', 'hidden', true);
   const b = $('#setupupd'); b.hidden = false; b.className = 'banner ok';   // also from the Automation tab, with the banner put away
-  if (!$('#suptitle').textContent) $('#suptitle').textContent = '⬆️ Đang cập nhật TV Setup trên TV';   // or from the phone's remote screen, never shown
-  const note = (t) => { $('#supnote').textContent = t; };
+  if (!$('#suptitle').textContent) put('#suptitle', 'textContent', '⬆️ Đang cập nhật TV Setup trên TV');   // or from the phone's remote screen, never shown
+  const note = (t) => { put('#supnote', 'textContent', t); };
   try {
     note('Đang bắt đầu...');
     let j = await api('/api/setup/update', {}); if (!j) return;
@@ -221,7 +221,7 @@ async function updateSetup() {
       const r = await fetch('/api/job?id=' + j.id).then((x) => x.ok ? x.json() : null).catch(() => null);
       if (r) { j = r; misses = 0; } else misses++;
     }
-    if (j && j.status === 'done') { toast('Đã cập nhật TV Setup lên ' + j.version); $('#setupupd').hidden = true; loadRules(null, true); return; }
+    if (j && j.status === 'done') { toast('Đã cập nhật TV Setup lên ' + j.version); put('#setupupd', 'hidden', true); loadRules(null, true); return; }
     if (j && j.status === 'error') {
       if (!/^setup:(rolledback|broken)/.test(j.msg)) { note(j.msg === 'setup:slow' ? 'TV Setup cập nhật lâu hơn thường lệ. Xem lại sau ít phút.' : 'Chưa cập nhật được: ' + friendly(j.msg)); return; }
     } else {                                                           // lost: on the TV's own page the update closes the server serving it
@@ -234,9 +234,9 @@ async function updateSetup() {
     }
     setupBusy = false;
     const r = await checkSetup();                                       // ok, or put back: the banner says which
-    if (r && r.state === 'ok' && !r.latest) { toast('Đã cập nhật TV Setup lên ' + r.installed); $('#setupupd').hidden = true; }
+    if (r && r.state === 'ok' && !r.latest) { toast('Đã cập nhật TV Setup lên ' + r.installed); put('#setupupd', 'hidden', true); }
   } finally {
-    setupBusy = false; $('#supacts').hidden = false;
+    setupBusy = false; put('#supacts', 'hidden', false);
   }
 }
 
@@ -285,7 +285,7 @@ function renderScenes() {
       unnamed.forEach((pkg) => onMeta(pkg, () => { if (--waiting === 0) renderScenes(); }));
     });
   }
-  $('#sceneexport').hidden = !SCENES.length;
+  put('#sceneexport', 'hidden', !SCENES.length);
   $('#scenelist').replaceChildren(...(SCENES.length ? SCENES.map((sc) => el('div', { className: 'item' },
     el('div', { className: 'ficon', textContent: sc.icon || '🎬' }),
     el('div', { className: 'name' }, el('span', { textContent: sc.name }), el('small', { textContent: sc.steps.map(stepText).join(' → ') })),
@@ -295,16 +295,16 @@ function renderScenes() {
   $('#scenebtns').replaceChildren(...(SCENES.length ? SCENES.map((sc) => el('button', { className: 'scene', title: sc.steps.map(stepText).join(' → '), onclick: () => runScene(sc) },
     el('span', { className: 'ico', textContent: sc.icon || '🎬' }), el('span', { textContent: sc.name })))
     : can('full') ? [el('button', { className: 'scene add', onclick: () => { showTab('auto'); editScene(null); } }, el('span', { className: 'ico', textContent: '＋' }), el('span', { textContent: 'Tạo cảnh: một nút làm nhiều việc' }))] : []));
-  $('#scenecard').hidden = !SCENES.length && !can('full');            // a guest runs the owner's scenes, and makes none
+  put('#scenecard', 'hidden', !SCENES.length && !can('full'));            // a guest runs the owner's scenes, and makes none
 }
 
 // the editor: a name, an emoji, and steps added one by one
 let editing = null, draft = [];
 function editScene(sc) {
   editing = sc; draft = sc ? JSON.parse(JSON.stringify(sc.steps)) : [];
-  $('#scenetitle').textContent = sc ? '🎬 Sửa cảnh' : '🎬 Cảnh mới';
+  put('#scenetitle', 'textContent', sc ? '🎬 Sửa cảnh' : '🎬 Cảnh mới');
   $('#scenename').value = sc ? sc.name : ''; $('#sceneicon').value = sc ? sc.icon || '' : '';
-  $('#scenedel').hidden = !sc;
+  put('#scenedel', 'hidden', !sc);
   $('#scenetpl').replaceChildren(...(sc ? [] : [el('span', { className: 'muted', textContent: 'Mẫu:' }), ...TEMPLATES.map((t) => el('button', { className: 'small', textContent: t.icon + ' ' + t.name, onclick: () => {
     $('#scenename').value = tr(t.name); $('#sceneicon').value = t.icon; draft = JSON.parse(JSON.stringify(t.steps)); drawSteps();
   } }))]));

@@ -19,10 +19,10 @@ const leadKeep = (s) => { try { const m = JSON.parse(localStorage.getItem('liste
 const leadBase = () => listenEven() ? 0.5 : 0.08;                       // Đều: half a second from the start, never back down
 // While listening, a bar under the header: how it plays (menu) and HQ, as the phone app's chip and HQ under the picture (Listen.kt).
 function showWay() {
-  $('#listenway').textContent = (listenShared ? 'Cả hai' : 'Máy này') + ' ▾';
+  put('#listenway', 'textContent', (listenShared ? 'Cả hai' : 'Máy này') + ' ▾');
   $('#listenhq').classList.toggle('on', listenHq());
   $('#listeneven').classList.toggle('on', listenEven());
-  $('#listenboost').textContent = '🔊 ×' + listenBoost(); $('#listenboost').classList.toggle('on', listenBoost() !== 1);
+  put('#listenboost', 'textContent', '🔊 ×' + listenBoost()); $('#listenboost').classList.toggle('on', listenBoost() !== 1);
 }
 // 🔊 ×0.5 … ×10: louder (or softer) here than the TV sends it (a TV turned down sends it quiet), a limiter after it so loud parts do not crack
 const BOOST_MIN = 0.5, BOOST_MAX = 10;
@@ -69,8 +69,8 @@ function playPcm(channels, rate) {
 
 function setListenUi(on, text) {
   const b = $('#listen'); setLabel(b, '🎧', on ? 'Đang nghe' : 'Nghe'); b.classList.toggle('on', on);
-  $('#listenbar').hidden = !on; if (on) showWay();
-  $('#listeninfo').hidden = !text; $('#listeninfo').textContent = text || '';
+  put('#listenbar', 'hidden', !on); if (on) showWay();
+  put('#listeninfo', 'hidden', !text); put('#listeninfo', 'textContent', text || '');
 }
 
 async function startListen(share) {

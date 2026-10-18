@@ -7,7 +7,7 @@ const FLEET_ADB = { closed: 'TV tắt, khác mạng hoặc chưa bật ADB', una
   offline: 'ADB của TV đang offline: tắt bật lại TV', error: 'không kết nối được ADB' };
 
 function fleetCheck(n) {                                              // called by loadTvs with the number of saved TVs
-  $('#fleet').hidden = n < 2; $('#fleetcount').textContent = n ? '· ' + n + ' TV' : '';
+  put('#fleet', 'hidden', n < 2); put('#fleetcount', 'textContent', n ? '· ' + n + ' TV' : '');
   if (n >= 2 && $('#fleet').open) fleetLoad();
 }
 async function fleetLoad() {
@@ -41,8 +41,8 @@ async function fleetAsk(what) {
 }
 // one line per TV under its name, until every TV is done
 let fleetStop = null;                                                  // what ■ Dừng does now: abort the upload, or tell the computer to stop the install on every TV
-$('#fleetstop').addEventListener('click', () => { if (fleetStop) fleetStop(); $('#fleetstop').disabled = true; });
-const fleetStopShow = (fn) => { fleetStop = fn; $('#fleetstop').hidden = !fn; $('#fleetstop').disabled = false; };
+$('#fleetstop').addEventListener('click', () => { if (fleetStop) fleetStop(); put('#fleetstop', 'disabled', true); });
+const fleetStopShow = (fn) => { fleetStop = fn; put('#fleetstop', 'hidden', !fn); put('#fleetstop', 'disabled', false); };
 async function fleetFollow(j) {
   const id = j.id;
   if (/^install/.test(j.title)) fleetStopShow(() => api('/api/fleet/cancel', { id }, true));   // only an install has a half way to stop at
@@ -101,7 +101,7 @@ function fleetUninstall() {
   const count = new Map();
   tvs.forEach((t) => t.apps.forEach((p) => count.set(p, (count.get(p) || 0) + 1)));
   const apps = [...count].filter(([p]) => !/^(dev\.tvremote\.setup|com\.tailscale\.ipn)$/.test(p)).sort((a, b) => b[1] - a[1] || appName(a[0]).localeCompare(appName(b[0])));
-  $('#infotitle').textContent = tr('🗑 Gỡ app nào?');
+  put('#infotitle', 'textContent', tr('🗑 Gỡ app nào?'));
   if (!apps.length) { $('#infobody').replaceChildren(el('p', { className: 'muted', textContent: tr('Các TV đã chọn không có app tự cài nào.') })); $('#infodlg').showModal(); return; }
   const picked = new Set();
   const go = el('button', { className: 'danger', type: 'button', disabled: true });

@@ -240,9 +240,15 @@ const ADB_TEXT = {
   error: ['bad', 'ADB lỗi', 'ADB: lỗi'],
   unknown: ['', 'ADB ...', 'ADB: ...'],
 };
-// Only when it changes: the same value written again is still a change to the page, for its observers (icons, running lines,
-// i18n) and WebKit's styles; the now playing bar did it 5 times a second
-function put(e, k, v) { if (e && e[k] !== v) e[k] = v; }
+// Every write to the page that may repeat goes through here (tests/page.test.js): only when it changes. The same value
+// written again is still a change, for the page's observers (icons, running lines, i18n) and WebKit's styles: the now
+// playing bar did it 5 times a second, a running line wrapped itself 20 times a second. Words are compared as i18n.js
+// will leave them, or every write in English would differ from the last.
+function put(e, k, v) {
+  if (typeof e === 'string') e = $(e);
+  if (typeof v === 'string' && (k === 'textContent' || k === 'title')) v = tr(v);
+  if (e && e[k] !== v) e[k] = v;
+}
 function setChip(id, cls, text, long) { const c = $(id); put(c, 'className', 'chip ' + cls); put(c.lastElementChild, 'textContent', tr(text)); put(c, 'title', tr(long || text)); }
 
 let STATE = {};
@@ -261,7 +267,7 @@ async function refresh() {
   if (invited) { inviteBad = !await invited; invited = null; }     // the invite first: then this very read is let in
   const s = await fetch('/api/state').then((r) => { locked = r.status === 401; return r.json(); }).catch(() => null);
   if (CORE === 'tv') setLocked(locked, s);
-  if (locked && inviteBad) { inviteBad = false; $('#pairerr').textContent = tr('Mã QR đã dùng hoặc hết hạn: quét mã mới, hoặc bấm “Hiện mã trên TV”.'); }
+  if (locked && inviteBad) { inviteBad = false; put('#pairerr', 'textContent', tr('Mã QR đã dùng hoặc hết hạn: quét mã mới, hoặc bấm “Hiện mã trên TV”.')); }
   if (locked) return;
   tvOn = !!(s && s.connected && s.is_on); STATE = s || {};
   if (s) applyKind(s);
@@ -269,7 +275,7 @@ async function refresh() {
   if (s) stateMiss = 0;
   if (!s) {
     setChip('#chipTv', 'bad', CORE === 'pc' ? 'Server tắt' : 'Mất kết nối', CORE === 'pc' ? 'Server tắt' : 'TV: mất kết nối'); setChip('#chipAdb', '', 'ADB ?');
-    $('#info').textContent = CORE === 'pc' ? 'Không gọi được server. Mở lại TV Remote trên máy này.' : 'Không gọi được TV: TV đang bật và cùng mạng với máy này chứ?'; return;
+    put('#info', 'textContent', CORE === 'pc' ? 'Không gọi được server. Mở lại TV Remote trên máy này.' : 'Không gọi được TV: TV đang bật và cùng mạng với máy này chứ?'); return;
   }
   const adbUp = s.adb && s.adb.state === 'ready';                   // over ADB the TV answers even when the remote-button service does not
   setChip('#chipTv', s.connected && s.is_on ? 'ok' : s.connected || adbUp ? 'warn' : 'bad', s.connected ? (s.is_on ? 'TV bật' : 'Màn hình tắt') : adbUp ? 'Phím qua ADB' : 'Mất kết nối',
@@ -289,13 +295,13 @@ async function refresh() {
   if (justPicked && s.host === justPicked) {                          // straight to the remote when the TV is ready, to the first-time steps when it is not
     const ready = s.connected || (s.adb && s.adb.state === 'ready') || s.asking;   // LG / Samsung asking: the remote tab says what to do
     if (ready || Date.now() - pickedAt > 6000) { justPicked = null; showTab(ready ? 'remote' : 'tv'); }   // a TV takes a few seconds to answer
-    else { setTimeout(refresh, 1000); if (s.name) $('#conname').textContent = s.name; }
+    else { setTimeout(refresh, 1000); if (s.name) put('#conname', 'textContent', s.name); }
   }
   if (!justPicked && $('#connecting').open) $('#connecting').close();
   if (s.host !== curHost) { const first = curHost === null; curHost = s.host; if (!first) tvChanged(); }
   if (s.volume && Date.now() > volHold) {
-    $('#volv').textContent = s.volume.level;
-    $('#r-mute').classList.toggle('on', !!s.volume.muted); $('#r-mute').title = s.volume.muted ? 'Đang tắt tiếng, bấm để bật' : 'Tắt tiếng';
+    put('#volv', 'textContent', s.volume.level);
+    $('#r-mute').classList.toggle('on', !!s.volume.muted); put('#r-mute', 'title', s.volume.muted ? 'Đang tắt tiếng, bấm để bật' : 'Tắt tiếng');
   }
   applyAdb(); allowAlert(); checkAsk(); diagWatch(s);
   if ($('#assist').open && (ADB.state === 'ready' || ADB.state === 'unauthorized')) {   // the TV has opened its ADB port: nothing left to help with
@@ -437,8 +443,8 @@ function applyAdb() {
   $('.tabs').classList.toggle('noadb', noadb);
   document.querySelectorAll('.tabs [data-needs-adb]').forEach((b) => { if (noadb) b.title = tr('Cần ADB: bấm vào để xem cách bật'); else b.removeAttribute('title'); });
   const typing = ready || NATIVE() && can('text');                    // typing goes through ADB, or LG's / Samsung's own keyboard link
-  $('#kbd').disabled = !typing; put($('#kbdoff'), 'hidden', typing);         // no half-working box without it
-  $('#screenbtn').disabled = !ready && !screenOn;
+  put('#kbd', 'disabled', !typing); put($('#kbdoff'), 'hidden', typing);         // no half-working box without it
+  put('#screenbtn', 'disabled', !ready && !screenOn);
   if (!ready && screenOn) stopScreen('ADB chưa sẵn sàng, đã dừng xem màn hình.');
   if (ready && autoView) { autoView = false; startScreen(); }           // bookmark ?view=1 to start watching right away
   if (ready && !picking && setupChecked !== (curHost || '-')) checkSetup();   // a newer TV Setup: offered once per TV (auto.js)
@@ -455,14 +461,14 @@ async function checkAsk() {
   askAt = Date.now();
   const r = await fetch('/api/adb/prompt').then((x) => x.ok ? x.json() : null).catch(() => null);
   const fp = (r && r.fingerprint) || '';
-  put($('#askother'), 'hidden', !fp || picking); if (fp !== askSeen) { askSeen = fp; $('#askfp').textContent = fp; }
+  put($('#askother'), 'hidden', !fp || picking); if (fp !== askSeen) { askSeen = fp; put('#askfp', 'textContent', fp); }
 }
 async function answerAsk(yes) {
   const fp = askSeen; if (!fp) return;
   if (yes && !await ask(tr('Cho phép thiết bị có mã này điều khiển toàn bộ TV qua ADB?') + '\n\n' + fp, { ok: 'Cho phép' })) return;
-  $('#askyes').disabled = $('#askno').disabled = true;
+  put('#askyes', 'disabled', true); put('#askno', 'disabled', true);
   const r = await api(yes ? '/api/adb/allow' : '/api/adb/deny', { fingerprint: fp });
-  $('#askyes').disabled = $('#askno').disabled = false;
+  put('#askyes', 'disabled', false); put('#askno', 'disabled', false);
   if (r) toast(yes ? (r.result === 'allowed' ? 'Đã cho phép thiết bị đó' : 'Không cho phép được: hộp hỏi trên TV đã đổi') : 'Đã từ chối');
   askAt = 0; checkAsk();
 }
@@ -484,19 +490,19 @@ $('#allow').addEventListener('cancel', () => { allowLater = true; });   // Esc
 // ---------- the page from the TV: one code, shown on the TV, lets this browser in for good ----------
 function setLocked(on, s) {
   const m = document.querySelector('main'); if (on === m.classList.contains('locked')) return;
-  m.classList.toggle('locked', on); $('#pair').hidden = !on;
-  if (on) { if (screenOn) stopScreen(); m.classList.remove('wide'); $('#name').textContent = (s && s.name) || 'TV Remote'; $('#info').textContent = tr('Chưa ghép với TV này'); $('#pairf').hidden = true; $('#pairerr').textContent = ''; }
+  m.classList.toggle('locked', on); put('#pair', 'hidden', !on);
+  if (on) { if (screenOn) stopScreen(); m.classList.remove('wide'); put('#name', 'textContent', (s && s.name) || 'TV Remote'); put('#info', 'textContent', tr('Chưa ghép với TV này')); put('#pairf', 'hidden', true); put('#pairerr', 'textContent', ''); }
   else showTab(currentTab);
 }
 $('#pairstart').addEventListener('click', async () => {
   if (!await api('/api/pair/start', {})) return;
-  $('#pairf').hidden = false; $('#pairerr').textContent = tr('Nhìn lên TV: mã có hiệu lực trong 2 phút.'); $('#paircode').value = ''; $('#paircode').focus();
+  put('#pairf', 'hidden', false); put('#pairerr', 'textContent', tr('Nhìn lên TV: mã có hiệu lực trong 2 phút.')); $('#paircode').value = ''; $('#paircode').focus();
 });
 $('#pairf').addEventListener('submit', async (e) => {
   e.preventDefault();
   const r = await fetch('/api/pair/finish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: $('#paircode').value }) }).then(async (x) => ({ ok: x.ok, ...(await x.json().catch(() => ({}))) })).catch(() => ({}));
-  if (r.ok) { $('#pairerr').textContent = ''; refresh(); return; }
-  $('#pairerr').textContent = tr(r.error === 'wrong' ? 'Sai mã, thử lại.' : 'Mã đã hết hạn: bấm “Hiện mã trên TV” để lấy mã mới.'); if (r.error !== 'wrong') $('#pairf').hidden = true; $('#paircode').select();
+  if (r.ok) { put('#pairerr', 'textContent', ''); refresh(); return; }
+  put('#pairerr', 'textContent', tr(r.error === 'wrong' ? 'Sai mã, thử lại.' : 'Mã đã hết hạn: bấm “Hiện mã trên TV” để lấy mã mới.')); if (r.error !== 'wrong') put('#pairf', 'hidden', true); $('#paircode').select();
 });
 
 // ---------- the TV's page on a phone: it can live on the home screen like an app (manifest.json) ----------
@@ -506,11 +512,11 @@ function homeHint() {
   let seen = false; try { seen = !!localStorage.getItem('homehint'); } catch {}
   if (CORE !== 'tv' || window.ONTV || standalone || seen || !matchMedia('(pointer:coarse)').matches) return;
   const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  $('#homehow').textContent = ios ? 'Trong Safari: bấm nút Chia sẻ (ô vuông có mũi tên lên) → “Thêm vào MH chính”. Mở từ biểu tượng đó, trang hỏi mã ghép một lần nữa (iPhone giữ dữ liệu riêng cho nó).'
-    : 'Trong Chrome: bấm menu ⋮ → “Thêm vào màn hình chính”. Lần sau mở thẳng từ biểu tượng, như một app.';
-  $('#homehint').hidden = false;
+  put('#homehow', 'textContent', ios ? 'Trong Safari: bấm nút Chia sẻ (ô vuông có mũi tên lên) → “Thêm vào MH chính”. Mở từ biểu tượng đó, trang hỏi mã ghép một lần nữa (iPhone giữ dữ liệu riêng cho nó).'
+    : 'Trong Chrome: bấm menu ⋮ → “Thêm vào màn hình chính”. Lần sau mở thẳng từ biểu tượng, như một app.');
+  put('#homehint', 'hidden', false);
 }
-$('#homeok').addEventListener('click', () => { $('#homehint').hidden = true; try { localStorage.setItem('homehint', '1'); } catch {} });
+$('#homeok').addEventListener('click', () => { put('#homehint', 'hidden', true); try { localStorage.setItem('homehint', '1'); } catch {} });
 
 // ---------- the TV web page: a hand on the remote wakes the TV's input session ----------
 // TV Setup stops its scrcpy process after 3 minutes nobody uses it (polls do not count); this wakes it before the first key.
