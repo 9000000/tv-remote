@@ -154,9 +154,12 @@ function slide(n, show) {
 // A line of text wider than its place slides to its end and back instead of ending in "…" (the phone app's marquee): song
 // titles, package names, setting values, scene names. Checked whenever one is added, changes or is resized; a plain "…"
 // when motion is reduced. Its words are put in a span.rin, the part that moves.
-const RUN = '#pltitle, #plsub, .nowapp b, .scene span:last-child, .item .name small.pkg, .setval', runSeen = new WeakSet(), runT0 = new Map();
+// never a span.rin itself: ".scene span:last-child" took the one it had just made, wrapped it again, and again, 20 times a
+// second (the whole page jerked in WebKit, and its slides stood still until the mouse moved)
+const RUN = ['#pltitle', '#plsub', '.nowapp b', '.scene span:last-child', '.item .name small.pkg', '.setval'].map((r) => r + ':not(.rin)').join(', '), runSeen = new WeakSet(), runT0 = new Map();
 const runObs = new ResizeObserver((list) => list.forEach((e) => runFit(e.target)));
 function runFit(t) {
+  if (t.classList.contains('rin')) return;
   if (!runSeen.has(t)) { runSeen.add(t); runObs.observe(t); }
   if (!t.clientWidth) return;
   let s = t.firstChild, fresh = false;
