@@ -154,6 +154,9 @@ internal fun MainActivity.buildAbout(): View {
     box.addView(head(T("info_screens.author")), gap(22))
     box.addView(row("@user|Hoang Tran\n@HoangTran0410") { web("https://github.com/HoangTran0410") })
 
+    box.addView(head(T("info_screens.guide")), gap(18))
+    box.addView(row("@globe|tvremote.pages.dev") { web("https://tvremote.pages.dev/guide") })
+
     box.addView(head(T("info_screens.source_code")), gap(18))
     box.addView(row("@link|github.com/HoangTran0410/tv-remote") { web("https://github.com/" + Release.REPO) })
     box.addView(row("@package|" + T("info_screens.releases")) { web("https://github.com/" + Release.REPO + "/releases") })
