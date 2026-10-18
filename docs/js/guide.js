@@ -11,6 +11,21 @@
   var topics = [].slice.call(document.querySelectorAll(".topic")), groups = [].slice.call(document.querySelectorAll(".ggroup"));
   var index = [], sel = -1, shown = [];
 
+  /* A table of three or more columns stacked on a phone loses its head row: each cell carries its column's name to show in
+     its place (CSS ::before, so search does not read it twice). A grid of ticks (empty corner) shows the ticked names as chips. */
+  document.querySelectorAll(".gtab .cmp").forEach(function(t){
+    var th = t.querySelectorAll("thead th");
+    if (th.length < 3) return;
+    t.classList.add("wide");
+    if (!th[0].textContent.trim()) t.classList.add("ticks");
+    t.querySelectorAll("tbody tr").forEach(function(tr){
+      [].forEach.call(tr.children, function(td, i){
+        var h = th[i]; if (!i || !h) return;
+        ["vi", "en"].forEach(function(l){ var s = h.querySelector("." + l); td.setAttribute("data-" + l, (s || h).textContent.trim()); });
+      });
+    });
+  });
+
   /* ---------- language ---------- */
   function setLang(l){
     root.dataset.lang = l; root.lang = l; document.title = TITLES[l];

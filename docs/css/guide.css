@@ -79,6 +79,16 @@ mark{background:rgba(255,163,26,.3);color:var(--text);border-radius:3px;padding:
   .gtab .cmp td:first-child{padding-top:12px}
   .gtab .cmp td:last-child{padding-bottom:12px}
   .gtab code{white-space:nowrap}
+  .gtab .wide td+td::before{content:attr(data-vi);display:block;color:var(--dim);font-size:12.5px;font-weight:400}
+  :root[data-lang=en] .gtab .wide td+td::before{content:attr(data-en)}
+  .gtab .wide td+td{padding-top:6px}
+  .gtab .ticks tr{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 12px}         /* the brands that have it, as chips */
+  .gtab .ticks td:first-child{flex:0 0 100%;padding:12px 0 2px}
+  .gtab .ticks td+td{padding:0}
+  .gtab .ticks td+td:empty{display:none}
+  .gtab .ticks td+td>span{display:none}
+  .gtab .ticks td+td::before{display:inline-block;color:var(--text);font-size:13px;font-weight:600;padding:3px 10px;border:1px solid var(--line2);border-radius:999px;background:var(--bg2)}
+  .gtab .ticks td:last-child{padding-bottom:0}
 }
 .gver{color:var(--dim);font-size:13px;text-align:center;margin-top:10px}
 .gpager{display:grid;grid-template-columns:1fr 1fr;gap:12px}
