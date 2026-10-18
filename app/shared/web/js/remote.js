@@ -221,16 +221,26 @@ $('#askf').addEventListener('submit', (e) => { e.preventDefault(); askTv($('#ask
 const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
 if (!(Speech && window.isSecureContext) && matchMedia('(pointer:coarse)').matches) $('#ask').placeholder = T('remote.ask_keyboard_mic');
 let rec = null;
-function hear() {                                                     // this device's speech as words: into the box, then to the TV
+function hear() {                                                     // this device's speech as words, then to the TV
   if (rec) { rec.stop(); return; }
-  rec = new Speech(); rec.lang = LANG === 'vi' ? 'vi-VN' : 'en-US'; rec.interimResults = true;
-  rec.onresult = (e) => { const r = e.results[e.results.length - 1]; $('#ask').value = r[0].transcript; if (r.isFinal) { askTv(r[0].transcript); $('#ask').value = ''; } };
+  const r0 = rec = new Speech(); let dropped = false, handOver = false, mic = null;
+  rec.lang = LANG === 'vi' ? 'vi-VN' : 'en-US'; rec.interimResults = true;
+  rec.onresult = (e) => { const r = e.results[e.results.length - 1]; hearWords(r[0].transcript); if (r.isFinal && !dropped) askTv(r[0].transcript); };
   rec.onerror = (e) => {
-    if (e.error === 'service-not-allowed' && speechRefused()) { rec = null; talk(); return; }   // the TV's Assistant hears it instead
+    if (e.error === 'aborted' || e.error === 'no-speech') return;
+    if (e.error === 'service-not-allowed' && speechRefused()) { dropped = handOver = true; return; }   // onend hands over to the TV's Assistant
     toast(T('remote.error_why', { why: e.error === 'not-allowed' ? T('remote.mic_not_allowed') : e.error }));
   };
-  rec.onend = () => { rec = null; $('#voice').classList.remove('on'); };
-  setKbd(true); $('#voice').classList.add('on'); rec.start();          // the words heard show in the "Hỏi TV" box
+  rec.onend = () => {
+    rec = null; $('#voice').classList.remove('on'); if (mic) mic.getTracks().forEach((t) => t.stop());
+    if (hearing && hearing.r === r0) hearClose();
+    if (handOver) talk();
+  };
+  $('#voice').classList.add('on'); rec.start();
+  hearOpen({ r: r0, done: () => r0.stop(), cancel: () => { dropped = true; r0.abort(); } }, null);
+  // the bars want the microphone too: a second listener on it, given back when this ends
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) navigator.mediaDevices.getUserMedia({ audio: true })
+    .then((s) => { if (rec === r0) { mic = s; hearMeter(s); } else s.getTracks().forEach((t) => t.stop()); }).catch(() => {});
 }
 // ⌨️ opens the typing box and the "Hỏi TV" box right under the top row, as More opens its keys: the picture stays in sight.
 // Opened by Speak (nothing to hear with) or More's entry: open, the keyboard up in the box that works (typing needs ADB)

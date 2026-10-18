@@ -463,6 +463,10 @@
   <div id="infobody"></div>
 </div></dialog>
 <dialog id="rebootdlg"><div class="allowbox"><div class="spin" id="rebootspin"></div><h1 id="reboottitle" data-i18n="rebootdlg.the_tv_is_restarting">TV đang khởi động lại</h1><p class="muted" id="rebootstep"></p><button id="rebootclose" data-i18n="common.hide">Ẩn</button></div></dialog>
+<dialog id="heardlg"><div class="card heard"><h2 data-i18n="heardlg.listening">🎤 Đang nghe</h2>   <!-- Speak: talk.js -->
+  <p id="heartext" data-i18n="heardlg.say">Nói điều muốn TV làm, vd: mở YouTube</p>
+  <canvas id="hearwave" aria-hidden="true"></canvas>
+  <div class="actions end"><button id="hearcancel" data-i18n="common.cancel">Hủy</button><button class="primary" id="hearok" data-i18n="heardlg.done">Xong</button></div></div></dialog>
 <dialog id="preview"><img alt="Xem trước" data-i18n-alt="preview.preview"></dialog>
 <div id="toast" role="status"></div>
 
