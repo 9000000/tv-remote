@@ -29,7 +29,7 @@ nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
 .brand{white-space:nowrap;display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
 .brand img{width:32px;height:32px;border-radius:9px}
 .navlinks{display:flex;gap:4px;margin-left:auto}
-.navlinks a{padding:8px 12px;border-radius:10px;color:var(--muted);font-size:15px;font-weight:500}
+.navlinks a{padding:8px 12px;border-radius:10px;color:var(--muted);font-size:15px;font-weight:500;white-space:nowrap}
 .navlinks a:hover{color:var(--text);background:rgba(255,255,255,.05)}
 .navlinks a.on{color:var(--text);background:rgba(91,140,255,.14);box-shadow:inset 0 -2px 0 var(--blue)}
 .navtools{display:flex;gap:8px;align-items:center}
@@ -259,6 +259,11 @@ footer a{color:var(--muted);white-space:nowrap}footer a:hover{color:var(--text)}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);background:var(--card2);border:1px solid var(--line2);padding:10px 18px;border-radius:12px;font-weight:600;font-size:14px;transition:transform .25s;z-index:99}
 .toast.show{transform:translateX(-50%) translateY(0)}
 
+@media (max-width:1180px){                                       /* seven links just fit: tighter, GitHub as its icon */
+  .navlinks{gap:0}
+  .navlinks a{padding:8px 9px;font-size:14.5px}
+  nav .gh-label{display:none}
+}
 @media (max-width:980px){
   .navlinks{display:none}
   .menubtn{display:inline-flex}
