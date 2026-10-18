@@ -47,7 +47,9 @@ test('the refusal and the Stop have English words', () => {
   assert.equal(tr(friendly(`storage full: file=${3.4 * GB} free=${1.2 * GB} need=${3.4 * GB + 16 * MB} apk=0`)),
     'The TV has only 1.2 GB free, not enough for this 3.4 GB file (it needs at least 3.4 GB). Remove some apps or files (Health / Files tab), then try again.');
   assert.match(tr(friendly(`storage full: file=${500 * MB} free=${300 * MB} need=${1016 * MB} apk=1`)), /^The TV has only 300\.0 MB free, not enough to install this 500\.0 MB APK/);
-  for (const [vi, en] of [['■ Dừng', '■ Stop'], ['Đã dừng', 'Stopped'], ['đang dừng...', 'stopping...']]) assert.equal(tr(vi), en);
+  const VI = JSON.parse(read('i18n/vi.json')), EN = JSON.parse(read('i18n/en.json'));   // by id now, or still by the old table
+  for (const [vi, en] of [['■ Dừng', '■ Stop'], ['Đã dừng', 'Stopped'], ['đang dừng...', 'stopping...']])
+    assert.ok(tr(vi) === en || Object.keys(VI).some((id) => VI[id] === vi && EN[id] === en), vi);
 });
 
 test('every way of sending a file has a Stop, and the server has the routes', () => {

@@ -14,27 +14,27 @@ function meter(label, pct, detail) {
   return m;
 }
 // the thermal service's status: from 3 on, Android slows the TV down to cool it
-const HEAT = ['bình thường', 'hơi ấm', 'ấm', 'nóng · TV có thể chạy chậm lại', 'rất nóng · TV đang chạy chậm lại', 'quá nóng', 'sắp tự tắt vì quá nóng'];
+const heat = () => [T('health.heat_normal'), T('health.heat_warmish'), T('health.heat_warm'), T('health.heat_hot'), T('health.heat_very_hot'), T('health.heat_too_hot'), T('health.heat_shutdown')];
 function fmtUptime(s) {
   const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
-  return (d ? d + ' ngày ' : '') + (d || h ? h + ' giờ ' : '') + m + ' phút';
+  return [d ? T('health.days_n', { n: d }) : '', d || h ? T('health.hours_n', { n: h }) : '', T('health.minutes_n', { n: m })].filter(Boolean).join(' ');
 }
 // One line on what to do about the Wi-Fi, the usual cause of stutter and a slow remote.
 function wifiTip(w) {
-  if (w.rssi < -75) return 'Sóng yếu: video dễ giật. Đặt router gần TV hơn, bỏ vật cản kim loại, hoặc cắm dây mạng.';
-  if (w.rssi < -67) return 'Sóng tạm được. Video 4K có thể giật; dây mạng hoặc router gần hơn sẽ ổn định hơn.';
-  if (w.freq && w.freq < 4000) return 'Sóng tốt nhưng đang ở 2.4 GHz (chậm, dễ nhiễu). Nếu router có mạng 5 GHz, cho TV dùng mạng đó.';
-  return 'Sóng tốt, không cần làm gì.';
+  if (w.rssi < -75) return T('health.wifi_weak');
+  if (w.rssi < -67) return T('health.wifi_fair');
+  if (w.freq && w.freq < 4000) return T('health.wifi_24ghz');
+  return T('health.wifi_good');
 }
-function signal(rssi) { return rssi >= -55 ? 'rất tốt' : rssi >= -67 ? 'tốt' : rssi >= -75 ? 'trung bình' : 'yếu'; }
+function signal(rssi) { return rssi >= -55 ? T('health.signal_excellent') : rssi >= -67 ? T('health.signal_good') : rssi >= -75 ? T('health.signal_fair') : T('health.signal_weak'); }
 $('#freeram').addEventListener('click', async () => {
   const b = $('#freeram'); b.disabled = true; const r = await api('/api/free', {}); b.disabled = false;
-  if (r) { toast(tr('Đã lấy lại') + ' ' + r.freed + ' MB · ' + tr('còn trống') + ' ' + r.after + ' MB'); loadHealth(); loadProcs(true); }
+  if (r) { toast(T('health.ram_freed', { freed: r.freed, after: r.after })); loadHealth(); loadProcs(true); }
 });
 // The task manager: the apps holding memory, what each is doing, and Stop where stopping cannot hurt the TV (the server
 // decides which: Manage.keepWhy). dumpsys meminfo is slow on a TV, so at most every 45 s while the tab is open.
-const PROC_STATE = { front: 'Đang hiện', bg: 'Chạy ngầm', home: 'Màn hình chính', cached: 'Đang nghỉ', system: 'Hệ thống' };
-const PROC_KEEP = { us: 'TV Remote cần app này', home: 'Màn hình chính của TV', keyboard: 'Bàn phím của TV', system: 'Một phần của Android' };
+const procState = () => ({ front: T('health.proc_front'), bg: T('health.proc_bg'), home: T('health.proc_home'), cached: T('health.proc_idle'), system: T('health.proc_system') });
+const procKeep = () => ({ us: T('health.keep_us'), home: T('health.keep_home'), keyboard: T('health.keep_keyboard'), system: T('health.keep_android') });
 let procsAt = 0, procsBusy = false;
 async function loadProcs(now) {
   if (procsBusy || (!now && Date.now() - procsAt < 45000)) return;   // dumpsys meminfo costs the TV a second or more: ↻ asks at once
@@ -48,23 +48,23 @@ async function loadProcs(now) {
     if (a.keep === 'system') icon.fill({ label: name });                 // Android's own: no picture worth asking for
     else onMeta(a.pkg, (m) => { icon.fill(m.label ? m : { ...m, label: name }); if (m.label) title.textContent = m.label; });
     const stop = async () => {
-      if (a.state === 'front' && !await ask('Dừng ' + name + '? App đang hiện trên TV.', { ok: 'Dừng' })) return;
-      if (await api('/api/procs/kill', { pkg: a.pkg })) { toast('Đã dừng app: ' + name); setTimeout(() => loadProcs(true), 800); }
+      if (a.state === 'front' && !await ask(T('health.stop_ask', { name }), { ok: T('health.stop') })) return;
+      if (await api('/api/procs/kill', { pkg: a.pkg })) { toast(T('health.stopped_app', { name })); setTimeout(() => loadProcs(true), 800); }
     };
     return el('div', { className: 'item' }, icon, el('div', { className: 'name' }, title,
-      el('small', { textContent: a.mb + ' MB · ' + tr(PROC_STATE[a.state] || a.state) })),
-      el('div', { className: 'acts' }, a.keep ? el('span', { className: 'tag keep', textContent: tr('🔒 Cần giữ'), title: tr(PROC_KEEP[a.keep] || '') }) : act('⏹ Dừng', stop)));
+      el('small', { textContent: a.mb + ' MB · ' + (procState()[a.state] || a.state) })),
+      el('div', { className: 'acts' }, a.keep ? el('span', { className: 'tag keep', textContent: T('health.must_keep'), title: procKeep()[a.keep] || '' }) : act(T('health.stop_btn'), stop)));
   };
   const apps = r.apps.filter((a) => a.keep !== 'system'), sys = r.apps.filter((a) => a.keep === 'system');   // Android's own, folded away
   $('#procs').replaceChildren(...apps.map(row), ...(sys.length ? [el('details', { className: 'appsoff' },
-    el('summary', { textContent: tr('Hệ thống Android') + ' (' + sys.length + ')' }), ...sys.map(row))] : []));
+    el('summary', { textContent: T('health.android_system_n', { n: sys.length }) }), ...sys.map(row))] : []));
 }
 $('#procsre').addEventListener('click', () => loadProcs(true));
 
 // Now: the live figures. History: what the TV Setup app on the TV has written down (drawn by stats.js).
 let hmode = 'now';
 async function loadHist(days) {
-  $('#hhist').replaceChildren(el('div', { className: 'muted waiting', textContent: tr('Đang đọc từ TV...') }));
+  $('#hhist').replaceChildren(el('div', { className: 'muted waiting', textContent: T('health.reading_from_the_tv') }));
   const d = await api('/api/stats?days=' + (days || 7)); if (d && hmode === 'hist') renderStats($('#hhist'), d, window.LANG === 'vi', loadHist);
 }
 document.querySelectorAll('#hmode button').forEach((b) => b.addEventListener('click', () => {
@@ -76,20 +76,20 @@ document.querySelectorAll('#hmode button').forEach((b) => b.addEventListener('cl
 
 // Sleep: how the TV sleeps and wakes (Power.kt), whether Tailscale and TV Setup outlive it, and the screen's last 7 days from
 // TV Setup's power.jsonl. The reasons are Android's own words, said in plain ones.
-const SLEEP_WHY = { power_button: 'bấm nút nguồn', timeout: 'hết giờ chờ', inattentive: 'lâu không ai dùng', hdmi: 'theo thiết bị HDMI',
-  application: 'do một app', sleep_button: 'nút ngủ', device_admin: 'do quản trị máy', force_suspend: 'bị ép ngủ', quiescent: 'khởi động im lặng' };
-const WAKE_WHY = { power_button: 'bấm nút nguồn', wake_key: 'bấm phím remote', application: 'do một app', hdmi: 'theo thiết bị HDMI', plugged_in: 'cắm điện' };
+const sleepWhy = () => ({ power_button: T('health.why_power_key'), timeout: T('health.why_timeout'), inattentive: T('health.why_unused'), hdmi: T('health.why_hdmi'),
+  application: T('health.why_app'), sleep_button: T('health.why_sleep_key'), device_admin: T('health.why_admin'), force_suspend: T('health.why_forced'), quiescent: T('health.why_quiet') });
+const wakeWhy = () => ({ power_button: T('health.why_power_key'), wake_key: T('health.why_remote_key'), application: T('health.why_app'), hdmi: T('health.why_hdmi'), plugged_in: T('health.why_plugged') });
 const WATCHED = { 'com.tailscale.ipn': 'Tailscale', 'dev.tvremote.setup': 'TV Setup' };
 function deathWhy(w) {
-  if (/^tguard:lowSwap|^tguard:lowMem/i.test(w)) return 'TV thiếu bộ nhớ (TCL TGuard)';
-  if (/^tguard/.test(w)) return 'TCL TGuard dọn app';
-  if (w === 'lmk' || /lmk|low ?mem/i.test(w)) return 'TV thiếu bộ nhớ';
-  if (/install|update|replace/i.test(w)) return 'đang cập nhật';
-  if (/^(empty|cached)/.test(w)) return 'Android dọn app chạy nền';
-  if (w === 'died') return 'bị dừng';
+  if (/^tguard:lowSwap|^tguard:lowMem/i.test(w)) return T('health.death_memory_tguard');
+  if (/^tguard/.test(w)) return T('health.death_tguard');
+  if (w === 'lmk' || /lmk|low ?mem/i.test(w)) return T('health.death_memory');
+  if (/install|update|replace/i.test(w)) return T('health.death_updating');
+  if (/^(empty|cached)/.test(w)) return T('health.death_cleared');
+  if (w === 'died') return T('health.death_stopped');
   return w;
 }
-const ms2say = (ms) => ms == null ? '' : ms <= 0 || ms >= 2147483647 ? 'không bao giờ' : fmtUptime(ms / 1000);
+const ms2say = (ms) => ms == null ? '' : ms <= 0 || ms >= 2147483647 ? T('health.never') : fmtUptime(ms / 1000);
 const slClock = (t) => new Date(t * 1000).toLocaleTimeString(window.LANG === 'vi' ? 'vi-VN' : 'en-GB', { hour: '2-digit', minute: '2-digit' });
 const slWhen = (t) => { const d = new Date(t * 1000), today = new Date().toDateString() === d.toDateString();
   return slClock(t) + (today ? '' : ' ' + d.getDate() + '/' + (d.getMonth() + 1)); };
@@ -100,13 +100,13 @@ async function loadSleep(now) {
   if (hmode !== 'sleep' || sleepBusy || (!now && Date.now() - sleepAt < 60000)) return;
   const box = $('#hsleep'), gen = sleepGen;
   if (!now && box.contains(document.activeElement) && document.activeElement !== document.body) return;   // not under a D-pad's focus
-  if (!box.childElementCount) box.replaceChildren(el('div', { className: 'muted waiting', textContent: tr('Đang đọc từ TV...') }));
+  if (!box.childElementCount) box.replaceChildren(el('div', { className: 'muted waiting', textContent: T('health.reading_from_the_tv') }));
   sleepBusy = true; sleepAt = Date.now();
   const [p, rules] = await Promise.all([api('/api/power', null, true), api('/api/rules', null, true)]);
   sleepBusy = false;
   if (gen !== sleepGen || hmode !== 'sleep') return;
   if (!p) {
-    if (!sleepSeen) box.replaceChildren(UI.say(tr('Không đọc được từ TV.')), el('div', { className: 'actions' }, el('button', { textContent: tr('↻ Thử lại'), onclick: () => loadSleep(true) })));
+    if (!sleepSeen) box.replaceChildren(UI.say(T('health.could_not_read')), el('div', { className: 'actions' }, el('button', { textContent: T('health.try_again'), onclick: () => loadSleep(true) })));
     return;
   }
   const seen = JSON.stringify([p, rules && rules.awake]).replace(/"now":\d+/, '');
@@ -119,42 +119,42 @@ async function loadSleep(now) {
   const tNow = Date.now() / 1000;
   const offAt = lastEv('off') ?? (p.last_sleep?.ago != null ? tNow - p.last_sleep.ago : null), onAt = lastEv('on') ?? (p.last_wake?.ago != null ? tNow - p.last_wake.ago : null);
   const deepPct = b.up && b.deep != null ? Math.round(b.deep * 100 / b.up) : null;
-  const sum = UI.card(tr('😴 Giấc ngủ'), {}, UI.state(tr(p.state === 'Awake' ? 'TV đang bật' : p.state ? 'Màn hình đang tắt' : 'Không rõ TV đang bật hay tắt')),
+  const sum = UI.card(T('health.sleep_title'), {}, UI.state(p.state === 'Awake' ? T('health.tv_on') : p.state ? T('health.tv_screen_off') : T('health.tv_unknown')),
     el('div', { className: 'kv' }, ...kv([
-      offAt != null ? [tr('Tắt gần nhất'), slWhen(offAt) + (SLEEP_WHY[p.last_sleep?.why] ? ' · ' + tr(SLEEP_WHY[p.last_sleep.why]) : '')] : null,
-      onAt != null ? [tr('Bật gần nhất'), slWhen(onAt) + (WAKE_WHY[p.last_wake?.why] ? ' · ' + tr(WAKE_WHY[p.last_wake.why]) : '')] : null,
-      [tr('Tự tắt khi không dùng'), tr(ms2say(t.attentive > 0 ? t.attentive : t.sleep))],
+      offAt != null ? [T('health.last_off'), slWhen(offAt) + (sleepWhy()[p.last_sleep?.why] ? ' · ' + sleepWhy()[p.last_sleep.why] : '')] : null,
+      onAt != null ? [T('health.last_on'), slWhen(onAt) + (wakeWhy()[p.last_wake?.why] ? ' · ' + wakeWhy()[p.last_wake.why] : '')] : null,
+      [T('health.auto_off'), ms2say(t.attentive > 0 ? t.attentive : t.sleep)],
     ])));
-  const more = UI.card(tr('🔧 Chi tiết'), {}, el('div', { className: 'kv' }, ...kv([
-      [tr('Bật máy từ'), b.up != null ? fmtUptime(b.up) + ' trước' : ''],
-      [tr('Chip ngủ sâu'), b.deep != null ? fmtUptime(b.deep) + ' (' + deepPct + '%)' : ''],
-      p.deep ? ['Số lần ngủ sâu (' + p.deep.by + ')', p.deep.count] : null,
-      [tr('Số lần khởi động'), b.count],
-      p.hdmi_off != null ? [tr('Tắt theo thiết bị HDMI'), tr(p.hdmi_off ? 'có' : 'không')] : null,
-      p.wifi_sleep != null ? [tr('Wi-Fi khi tắt màn hình'), tr(p.wifi_sleep === 2 ? 'vẫn giữ' : 'có thể tắt')] : null,
-      p.low_power_standby != null ? [tr('Chờ tiết kiệm điện'), tr(p.low_power_standby ? 'bật (cắt mạng khi tắt)' : 'tắt')] : null,
-      [tr('Đang giữ TV thức'), p.locks.length ? p.locks.map((l) => l.tag).join(', ') : tr('không có')],
+  const more = UI.card(T('health.details_title'), {}, el('div', { className: 'kv' }, ...kv([
+      [T('health.up_since'), b.up != null ? T('health.ago', { t: fmtUptime(b.up) }) : ''],
+      [T('health.deep_chip'), b.deep != null ? fmtUptime(b.deep) + ' (' + deepPct + '%)' : ''],
+      p.deep ? [T('health.deep_count', { by: p.deep.by }), p.deep.count] : null,
+      [T('health.boots'), b.count],
+      p.hdmi_off != null ? [T('health.hdmi_off'), p.hdmi_off ? T('health.yes') : T('health.no')] : null,
+      p.wifi_sleep != null ? [T('health.wifi_sleep'), p.wifi_sleep === 2 ? T('health.kept_on') : T('health.may_turn_off')] : null,
+      p.low_power_standby != null ? [T('health.low_power_standby'), p.low_power_standby ? T('health.lps_on') : T('health.off')] : null,
+      [T('health.holding_awake'), p.locks.length ? p.locks.map((l) => l.tag).join(', ') : T('health.nothing')],
     ])));
   // TCL powers its chip down whatever an app holds (measured): the switch would only cost power there, so it is not offered
   const keepable = !(p.deep && p.deep.by === 'TCL') || (rules && rules.awake);
-  const keep = keepable ? el('label', { className: 'check', title: tr('Giữ chip thức khi tắt màn hình. Có TV vẫn tự ngủ sâu; tốn điện hơn một chút.') },
+  const keep = keepable ? el('label', { className: 'check', title: T('health.keep_awake_tip') },
     el('input', { type: 'checkbox', checked: !!(rules && rules.awake), onchange: async (e) => {
       const box = e.currentTarget, on = box.checked; box.disabled = true;
       const ok = await setupFor('awake') && await api('/api/rules', { do: 'awake', on });
-      box.disabled = false; if (!ok) box.checked = !on; else { sleepSeen = ''; toast(tr(on ? 'TV sẽ giữ kết nối khi tắt' : 'TV sẽ ngủ sâu như cũ')); }
-    } }), ' ' + tr('Giữ kết nối khi tắt TV')) : null;
-  const deaths = (p.deaths || []).slice(-6).reverse().map((d) => UI.item({ name: (WATCHED[d.pkg] || d.pkg) + ' · ' + slWhen(at(d.t)), sub: tr(deathWhy(d.why)) }));
-  const net = UI.card(tr('🛡️ Kết nối khi tắt TV'), {}, el('div', { className: 'kv' }, ...kv([
-      ['Tailscale', !ts.installed ? tr('chưa cài') : ts.running ? tr('đang chạy') + (ts.ip ? ' · ' + ts.ip : '') : tr('không chạy')],
-      ts.installed ? [tr('Tự bật cùng TV'), tr(ts.always_on ? 'có' : 'không')] : null,
-      ['TV Setup', tr(p.setup_running ? 'đang chạy' : 'không chạy')],
-    ])), keep, deaths.length ? UI.group(tr('Bị TV tắt gần đây'), el('div', { className: 'list' }, ...deaths)) : null);
+      box.disabled = false; if (!ok) box.checked = !on; else { sleepSeen = ''; toast(on ? T('health.stays_reachable') : T('health.sleeps_deep')); }
+    } }), ' ' + T('health.keep_reachable')) : null;
+  const deaths = (p.deaths || []).slice(-6).reverse().map((d) => UI.item({ name: (WATCHED[d.pkg] || d.pkg) + ' · ' + slWhen(at(d.t)), sub: deathWhy(d.why) }));
+  const net = UI.card(T('health.reachable_title'), {}, el('div', { className: 'kv' }, ...kv([
+      ['Tailscale', !ts.installed ? T('health.not_installed') : ts.running ? T('health.running') + (ts.ip ? ' · ' + ts.ip : '') : T('health.not_running')],
+      ts.installed ? [T('health.starts_with_tv'), ts.always_on ? T('health.yes') : T('health.no')] : null,
+      ['TV Setup', p.setup_running ? T('health.running') : T('health.not_running')],
+    ])), keep, deaths.length ? UI.group(T('health.recently_stopped'), el('div', { className: 'list' }, ...deaths)) : null);
   box.replaceChildren(sum, net, sleepDays(p), more);
 }
 // One strip a day, newest first (7, then 7 more while TV Setup's log goes back further): when the screen was on, and when
 // Tailscale's VPN went away.
 function sleepDays(p) {
-  if (!p.logged) return UI.say(tr('Cập nhật TV Setup để xem lịch bật / tắt từng ngày.'));
+  if (!p.logged) return UI.say(T('health.update_setup_log'));
   const ev = p.events, day0 = new Date(); day0.setHours(0, 0, 0, 0);
   const nowS = Date.now() / 1000;
   const rows = [];
@@ -180,15 +180,15 @@ function sleepDays(p) {
     for (const [a, z] of bars) rect((a - from) / 60, (z - a) / 60, 'sl-on');
     for (const t of ticks) rect((t - from) / 60, 6, 'sl-ts');
     const d = new Date(from * 1000);
-    const name = i === 0 ? tr('Hôm nay') : i === 1 ? tr('Hôm qua') : d.toLocaleDateString(window.LANG === 'vi' ? 'vi-VN' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'numeric' });
+    const name = i === 0 ? T('health.today') : i === 1 ? T('health.yesterday') : d.toLocaleDateString(window.LANG === 'vi' ? 'vi-VN' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'numeric' });
     rows.push(el('div', { className: 'sl-day' }, el('div', { className: 'sl-top' }, el('b', { textContent: name }),
-      el('small', { textContent: 'bật ' + wakes + ' lần · ' + fmtUptime(secs) + (ticks.length ? ' · Tailscale mất ' + ticks.length + ' lần' : '') })), svg));
+      el('small', { textContent: [T('health.day_on', { n: wakes, t: fmtUptime(secs) }), ticks.length ? T('health.day_ts_lost', { n: ticks.length }) : ''].filter(Boolean).join(' · ') })), svg));
   }
   const first = ev.find(([, w]) => w === 'on' || w === 'off'), oldest = day0.getTime() / 1000 - (sleepShown - 1) * 86400;
-  const more = first && first[0] < oldest ? el('div', { className: 'actions' }, el('button', { textContent: tr('Xem ngày cũ hơn'),
+  const more = first && first[0] < oldest ? el('div', { className: 'actions' }, el('button', { textContent: T('health.show_older'),
     onclick: (e) => { sleepShown += 7; e.target.closest('.card').replaceWith(sleepDays(p)); } })) : null;
-  return UI.card(tr('📊 Lịch sử bật / tắt'), {}, ...rows, el('div', { className: 'sl-axis' }, ...['0h', '6h', '12h', '18h', '24h'].map((x) => el('span', { textContent: x }))),
-    el('div', { className: 'sl-leg' }, el('span', {}, el('i', { className: 'sl-on' }), tr('Màn hình bật')), el('span', {}, el('i', { className: 'sl-ts' }), tr('Tailscale mất kết nối'))), more);
+  return UI.card(T('health.onoff_title'), {}, ...rows, el('div', { className: 'sl-axis' }, ...['0h', '6h', '12h', '18h', '24h'].map((x) => el('span', { textContent: x }))),
+    el('div', { className: 'sl-leg' }, el('span', {}, el('i', { className: 'sl-on' }), T('health.legend_screen_on')), el('span', {}, el('i', { className: 'sl-ts' }), T('health.legend_ts_lost'))), more);
 }
 
 // What the TV can play and do (Caps.kt asks the TV's own Android): first in plain words, then the details, and a copy as text
@@ -197,12 +197,12 @@ let capsFor = '', capsText = '';
 async function loadCaps() {
   const box = $('#hcaps');
   if (capsFor === (STATE.host || '') && capsText) return;
-  box.replaceChildren(el('div', { className: 'muted waiting', textContent: tr('Đang hỏi TV, lần đầu mất vài giây...') }));
+  box.replaceChildren(el('div', { className: 'muted waiting', textContent: T('health.asking_tv') }));
   const r = await api('/api/caps'); if (hmode !== 'caps') return;
   if (!r) { box.replaceChildren(); return; }
   if (!r.text.trim()) {
     box.replaceChildren(UI.say(CORE === 'pc'
-      ? 'Bản TV Remote trên máy tính này chưa đọc được khả năng TV. Cập nhật lên bản mới nhất rồi mở lại.' : 'TV không trả lời câu hỏi này. Thử lại sau.'));
+      ? T('health.caps_old_app') : T('health.caps_no_answer')));
     return;
   }
   capsFor = (STATE.host || ''); capsText = r.text; drawCaps(capsRead(r.text));
@@ -213,35 +213,35 @@ function drawCaps(c) {
   const fourK = (v) => v && v.hw && Math.max(v.w, v.h) >= 3840;
   const hdrs = { dv: 'Dolby Vision', hdr10: 'HDR10', 'hdr10+': 'HDR10+', hlg: 'HLG' };
   const pass = [...new Set(c.outputs.filter((o) => /hdmi|arc|earc|optical/.test(o.dev)).flatMap((o) => o.enc).filter((e) => e !== 'PCM' && e !== 'bitstream'))];
-  const yes = (ok, text) => el('li', { className: ok ? 'yes' : 'no', textContent: (ok ? '✓ ' : '✗ ') + tr(text) });
+  const yes = (ok, text) => el('li', { className: ok ? 'yes' : 'no', textContent: (ok ? '✓ ' : '✗ ') + text });
   const plain = el('ul', { className: 'capsplain' },
-    biggest[0] ? yes(true, 'Màn hình xuất tới ' + (sizeName(biggest[0], biggest[1]) || biggest.join('x'))) : null,
-    yes(fourK(vid('video/x-vnd.on2.vp9')) || fourK(vid('video/av01')), 'YouTube 4K (cần VP9 hoặc AV1 bằng phần cứng)'),
-    yes(fourK(vid('video/hevc')), 'Phim 4K H.265 (HEVC): Netflix, phim tải về'),
-    yes(!!(vid('video/av01') || {}).hw, 'AV1 bằng phần cứng (YouTube đỡ tốn mạng)'),
+    biggest[0] ? yes(true, T('health.caps_screen_up_to', { size: sizeName(biggest[0], biggest[1]) || biggest.join('x') })) : null,
+    yes(fourK(vid('video/x-vnd.on2.vp9')) || fourK(vid('video/av01')), T('health.caps_youtube_4k')),
+    yes(fourK(vid('video/hevc')), T('health.caps_film_4k')),
+    yes(!!(vid('video/av01') || {}).hw, T('health.caps_av1')),
     yes(c.hdr.length > 0, c.hdr.length ? 'HDR: ' + c.hdr.map((h) => hdrs[h] || h).join(', ') : 'HDR'),
-    yes(c.video.some((v) => v.hw && v.secure), 'Giải mã bảo mật (Netflix, Disney+ chất lượng cao)'),
-    yes(pass.length > 0, pass.length ? 'Đưa âm thanh ' + pass.join(', ') + ' ra loa/amply qua HDMI' : 'Đưa âm thanh Dolby/DTS ra loa/amply qua HDMI'),
-    c.sdk ? yes(c.sdk >= 30, 'Nghe tiếng TV trên điện thoại (🎧, cần Android 11)') : null,
-    c.sdk ? yes(c.sdk >= 28, 'Lọc DNS riêng (cần Android 9)') : null,
-    yes(feat('android.software.picture_in_picture'), 'Hình trong hình'),
-    yes(feat('android.hardware.hdmi.cec'), 'HDMI-CEC (một remote cho cả TV và đầu thu, loa)'),
-    yes(feat('android.hardware.usb.host'), 'Cắm USB (ổ cứng, chuột, bàn phím)'),
-    yes(feat('android.hardware.bluetooth'), 'Bluetooth (tai nghe, tay cầm)'));
-  const vrow = (v) => [v.name, [tr(v.hw ? 'phần cứng' : 'phần mềm'), sizeName(v.w, v.h), ...v.flags.filter((f) => f !== 'soft' && f !== 'tunnel').map((f) => ({ '10bit': '10-bit', hdr10: 'HDR10', 'hdr10+': 'HDR10+', secure: tr('bảo mật') }[f] || f))].filter(Boolean).join(' · ')];
+    yes(c.video.some((v) => v.hw && v.secure), T('health.caps_secure')),
+    yes(pass.length > 0, pass.length ? T('health.caps_passthrough', { list: pass.join(', ') }) : T('health.caps_passthrough_any')),
+    c.sdk ? yes(c.sdk >= 30, T('health.caps_listen')) : null,
+    c.sdk ? yes(c.sdk >= 28, T('health.caps_dns')) : null,
+    yes(feat('android.software.picture_in_picture'), T('health.caps_pip')),
+    yes(feat('android.hardware.hdmi.cec'), T('health.caps_cec')),
+    yes(feat('android.hardware.usb.host'), T('health.caps_usb')),
+    yes(feat('android.hardware.bluetooth'), T('health.caps_bluetooth')));
+  const vrow = (v) => [v.name, [v.hw ? T('health.decode_hw') : T('health.decode_sw'), sizeName(v.w, v.h), ...v.flags.filter((f) => f !== 'soft' && f !== 'tunnel').map((f) => ({ '10bit': '10-bit', hdr10: 'HDR10', 'hdr10+': 'HDR10+', secure: T('health.decode_secure') }[f] || f))].filter(Boolean).join(' · ')];
   const card = (title, ...kids) => UI.card(title, {}, ...kids);
   $('#hcaps').replaceChildren(
-    UI.card('🎬 TV này làm được', { tools: [el('button', { className: 'small', onclick: () => copyText(capsSummary(c)) }, el('span', { className: 'ico', textContent: '📋' }), el('span', { className: 'lbl', textContent: ' Chép' }))] }, plain),
-    card('🎞️ Giải mã video', el('div', { className: 'kv' }, ...kv(c.video.map(vrow)))),
-    card('🔊 Âm thanh', el('div', { className: 'kv' }, ...kv([
-      ['Giải mã', c.audio.map((a) => a.name).join(', ')],
-      ...c.outputs.filter((o) => o.enc.length).map((o) => [{ hdmi: 'HDMI', arc: 'HDMI ARC', earc: 'HDMI eARC', optical: 'Quang (optical)', speaker: 'Loa TV', bluetooth: 'Bluetooth' }[o.dev] || o.dev, o.enc.join(', ') || '—'])]))),
-    c.modes.length ? card('🖥️ Chế độ màn hình', el('p', { className: 'note', textContent: c.modes.map((m) => m.replace(/\.0$/, '') + ' Hz').join(' · ') })) : null);
+    UI.card(T('health.caps_title'), { tools: [el('button', { className: 'small', onclick: () => copyText(capsSummary(c)) }, el('span', { className: 'ico', textContent: '📋' }), el('span', { className: 'lbl', textContent: ' ' + T('tv.copy') }))] }, plain),
+    card(T('health.caps_video_title'), el('div', { className: 'kv' }, ...kv(c.video.map(vrow)))),
+    card(T('health.caps_audio_title'), el('div', { className: 'kv' }, ...kv([
+      [T('health.caps_decodes'), c.audio.map((a) => a.name).join(', ')],
+      ...c.outputs.filter((o) => o.enc.length).map((o) => [{ hdmi: 'HDMI', arc: 'HDMI ARC', earc: 'HDMI eARC', optical: T('health.out_optical'), speaker: T('health.out_speaker'), bluetooth: 'Bluetooth' }[o.dev] || o.dev, o.enc.join(', ') || '—'])]))),
+    c.modes.length ? card(T('health.caps_modes_title'), el('p', { className: 'note', textContent: c.modes.map((m) => m.replace(/\.0$/, '') + ' Hz').join(' · ') })) : null);
 }
 // the copy: the same plain lines, then the details, so it reads well pasted anywhere
 function capsSummary(c) {
   const lines = [...$('#hcaps .capsplain').children].map((li) => li.textContent);
-  return [tr('Khả năng TV') + (c.release ? ' · Android ' + c.release : ''), ...lines, '',
+  return [T('health.caps_summary_title') + (c.release ? ' · Android ' + c.release : ''), ...lines, '',
     ...c.video.map((v) => v.name + ': ' + (v.hw ? 'hw' : 'sw') + ' ' + v.w + 'x' + v.h + (v.flags.length ? ' ' + v.flags.join(',') : '')),
     'Audio: ' + c.audio.map((a) => a.name).join(', '), ...c.outputs.map((o) => 'Out ' + o.dev + ': ' + o.enc.join(', ')),
     'HDR: ' + (c.hdr.join(', ') || '-'), 'Modes: ' + c.modes.join(', ')].join('\n');
@@ -255,7 +255,7 @@ const setOpen = new Set();                                            // groups 
 async function loadSettings() {
   if (setRows.length || setBusy || ADB.state !== 'ready') return;
   setBusy = true;
-  $('#setlistbody').replaceChildren(el('div', { className: 'muted', textContent: tr('Đang đọc từ TV...') }));
+  $('#setlistbody').replaceChildren(el('div', { className: 'muted', textContent: T('health.reading_from_the_tv') }));
   const r = await api('/api/settings'); setBusy = false;
   if (!r) { $('#setlistbody').replaceChildren(); return; }
   setRows = settingsRead(r.text); drawSettings();
@@ -269,7 +269,7 @@ function drawSettings() {
   document.querySelectorAll('#setfilter button').forEach((b) => { const f = b.dataset.f; b.classList.toggle('on', f === setFilter); b.dataset.n = counts[f]; });
   const rows = all.filter((r) => setFilter === 'all' || (setFilter === 'edit') === r.edit);
   const row = ({ s, i, locked }) => el('div', { className: 'setrow', title: s.table + ' ' + s.name + '=' + s.value,
-    onclick: (e) => { e.currentTarget.classList.toggle('full'); if (locked) toast(tr('🔒 Chỉ xem: đổi sai có thể mất kết nối tới TV')); } },   // a long value opens in full on a tap
+    onclick: (e) => { e.currentTarget.classList.toggle('full'); if (locked) toast(T('health.locked_toast')); } },   // a long value opens in full on a tap
     el('div', { className: 'setname' }, el('span', { textContent: i.title }), el('small', { className: 'mono', textContent: s.name })),
     setControl(s, i, vi));
   const named = (div, pkgs) => pkgs.forEach((p) => onMeta(p, (m) => {   // "com.google.android.apps.tv.dreamx" -> the app's own name
@@ -292,21 +292,21 @@ function setControl(s, i, vi) {
   const e = settingEdit(s), shown = el('div', { className: 'setval' + (i.known ? '' : ' mono') + (i.value.length > 24 ? ' long' : ''), textContent: i.value });
   const stop = (n) => { n.addEventListener('click', (ev) => ev.stopPropagation()); return n; };
   const back = !e.locked && e.kind !== 'turnon' && s.was !== undefined && s.was !== s.value && s.was !== 'null'
-    ? stop(el('button', { type: 'button', className: 'small', title: tr('Trả lại') + ': ' + s.was, textContent: '↺', onclick: () => setSetting(s, s.was) })) : null;
+    ? stop(el('button', { type: 'button', className: 'small', title: T('health.put_back') + ': ' + s.was, textContent: '↺', onclick: () => setSetting(s, s.was) })) : null;
   let ctl = null;
-  if (e.locked) { shown.textContent = '🔒 ' + i.value; shown.title = tr('Chỉ xem: đổi sai có thể mất kết nối tới TV'); }
+  if (e.locked) { shown.textContent = '🔒 ' + i.value; shown.title = T('health.locked_tip'); }
   else if (e.kind === 'turnon') {                                    // on only: off could cut the remotes off
-    shown.textContent = '🔒 ' + i.value; shown.title = tr('Chỉ bật được: tắt có thể mất kết nối tới TV');
-    ctl = el('button', { type: 'button', className: 'small primary', textContent: tr('Bật lên'), onclick: async () => {
-      if (await ask('Bật được, nhưng app sẽ không tắt lại được: tắt đi thì app điện thoại, app máy tính và trang web của TV có thể mất kết nối tới TV. Muốn tắt thì vào Cài đặt trên TV.', { ok: 'Bật lên' })) setSetting(s, e.on);
+    shown.textContent = '🔒 ' + i.value; shown.title = T('health.turnon_tip');
+    ctl = el('button', { type: 'button', className: 'small primary', textContent: T('health.turn_on'), onclick: async () => {
+      if (await ask(T('health.turnon_ask'), { ok: T('health.turn_on') })) setSetting(s, e.on);
     } });
   } else if (e.kind === 'step') {                                    // a volume: type the level, or a step each way; the TV says its range
     const n = Number(s.value) || 0, go = (v) => { v = Math.min(e.max, Math.max(e.min, Math.round(v))); if (v !== n) setSetting(s, String(v)); else box.value = n; };
     const box = el('input', { type: 'number', className: 'setnum', inputMode: 'numeric', min: e.min, max: e.max, value: n, ariaLabel: i.title + ' ' + e.min + '–' + e.max,
       onchange: (ev) => go(Number(ev.target.value)), onkeydown: (ev) => { if (ev.key === 'Enter') ev.target.blur(); } });
-    ctl = el('div', { className: 'setstep' }, el('button', { type: 'button', className: 'small', title: tr('Nhỏ hơn'), textContent: '−', disabled: n <= e.min, onclick: () => go(n - 1) }),
+    ctl = el('div', { className: 'setstep' }, el('button', { type: 'button', className: 'small', title: T('health.lower'), textContent: '−', disabled: n <= e.min, onclick: () => go(n - 1) }),
       box, el('span', { className: 'setmax', title: e.min + '–' + e.max, textContent: '/ ' + e.max }),
-      el('button', { type: 'button', className: 'small', title: tr('To hơn'), textContent: '+', disabled: n >= e.max, onclick: () => go(n + 1) }));
+      el('button', { type: 'button', className: 'small', title: T('health.higher'), textContent: '+', disabled: n >= e.max, onclick: () => go(n + 1) }));
   } else if (e.kind === 'range') {                                   // brightness: a slider, set once it is let go
     const out = el('span', { className: 'setval', textContent: settingWord(s, s.value, vi) });
     const r = el('input', { type: 'range', className: 'setrange', min: e.min, max: e.max, value: Number(s.value) || 0, ariaLabel: i.title,
@@ -320,8 +320,8 @@ function setControl(s, i, vi) {
     ctl = el('select', { className: 'setpick', onchange: (ev) => setSetting(s, ev.target.value) },
       ...vals.map((v) => el('option', { value: v, textContent: settingWord(s, v, vi), selected: Number(v) === Number(s.value) })));
   } else if (e.kind === 'text') {
-    ctl = el('button', { type: 'button', className: 'small', title: tr('Đổi'), textContent: (s.value === 'null' ? '—' : i.value) + ' ✎', onclick: async () => {
-      const v = await ask(e.tech ? tr('Giá trị mới (mục kỹ thuật: đổi sai có thể làm TV chạy lạ)') : tr('Giá trị mới'), { value: s.value === 'null' ? '' : s.value, ok: 'Đổi' });
+    ctl = el('button', { type: 'button', className: 'small', title: T('health.change'), textContent: (s.value === 'null' ? '—' : i.value) + ' ✎', onclick: async () => {
+      const v = await ask(e.tech ? T('health.new_value_tech') : T('health.new_value'), { value: s.value === 'null' ? '' : s.value, ok: T('health.change') });
       if (v !== null && v.trim() !== s.value) setSetting(s, v.trim());
     } });
   }
@@ -330,11 +330,11 @@ function setControl(s, i, vi) {
   return el('div', { className: 'setctl' }, ...(back ? [back] : []), stop(ctl));
 }
 async function setSetting(s, value) {
-  if (!/^[A-Za-z0-9 ._:+-]{0,100}$/.test(value)) { toast(tr('Chỉ dùng chữ không dấu, số và . _ : + -')); return drawSettings(); }
+  if (!/^[A-Za-z0-9 ._:+-]{0,100}$/.test(value)) { toast(T('health.plain_chars')); return drawSettings(); }
   const r = await api('/api/settings', { table: s.table, name: s.name, value });
   if (!r || !/\bok\b/.test(r.text || '')) { if (r) toast('Lỗi: ' + friendly((r.text || '').trim())); return drawSettings(); }
   if (s.was === undefined) s.was = s.value;
-  s.value = value; drawSettings(); toast(tr('✓ Đã đổi'));
+  s.value = value; drawSettings(); toast(T('health.changed'));
 }
 $('#setlistq').addEventListener('input', drawSettings);
 $('#setfilter').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { setFilter = b.dataset.f; drawSettings(); } });
@@ -360,22 +360,22 @@ function parseCrashes(text) {
   return out;
 }
 const crashAt = (at) => at.slice(8, 10) + '/' + at.slice(5, 7) + ' ' + at.slice(11);
-const KIND = { crash: 'bị dừng:', anr: 'bị treo:', native: 'bị dừng:' };
-const PLAIN = [                                                       // the usual reasons in words; the exact note stays below
-  [/^Input dispatching timed out/, 'không phản hồi khi bấm phím'], [/executing service/, 'một dịch vụ chạy quá lâu'],
-  [/^Broadcast of Intent/, 'xử lý tin báo hệ thống quá lâu'], [/ContentProvider not responding/, 'không trả lời app khác'],
-  [/^signal 11 /, 'lỗi đọc ghi bộ nhớ (SIGSEGV)'], [/^signal 6 /, 'tự dừng vì lỗi (SIGABRT)'], [/^(java\.lang\.)?OutOfMemoryError/, 'hết bộ nhớ'],
+const kindWord = () => ({ crash: T('health.kind_stopped'), anr: T('health.kind_froze'), native: T('health.kind_stopped') });
+const PLAIN = () => [                                                 // the usual reasons in words; the exact note stays below
+  [/^Input dispatching timed out/, T('health.why_input')], [/executing service/, T('health.why_service')],
+  [/^Broadcast of Intent/, T('health.why_broadcast')], [/ContentProvider not responding/, T('health.why_provider')],
+  [/^signal 11 /, T('health.why_sigsegv')], [/^signal 6 /, T('health.why_sigabrt')], [/^(java\.lang\.)?OutOfMemoryError/, T('health.why_oom')],
 ];
-const plain = (why) => (PLAIN.find(([re]) => re.test(why)) || [])[1] || why;
+const plain = (why) => (PLAIN().find(([re]) => re.test(why)) || [])[1] || why;
 async function copyText(t) {
   let ok = false;
   try { await navigator.clipboard.writeText(t); ok = true; } catch {}
   if (!ok) { const a = el('textarea', { value: t }); document.body.append(a); a.select(); try { ok = document.execCommand('copy'); } catch {} a.remove(); }  // plain-HTTP pages (the TV's) have no clipboard API
-  toast(ok ? 'Đã chép' : 'Không chép được');
+  toast(ok ? T('health.copied') : T('health.copy_failed'));
 }
 async function loadErrors() {
   const box = $('#herr');
-  box.replaceChildren(el('div', { className: 'muted waiting', textContent: tr('Đang đọc từ TV...') }));
+  box.replaceChildren(el('div', { className: 'muted waiting', textContent: T('health.reading_from_the_tv') }));
   const r = await api('/api/crashes'); if (!r || hmode !== 'err') return;
   const groups = new Map();
   for (const e of parseCrashes(r.text)) {
@@ -384,28 +384,28 @@ async function loadErrors() {
     groups.get(key).push(e);
   }
   const list = [...groups].map(([pkg, es]) => ({ pkg, es: es.sort((a, b) => b.at.localeCompare(a.at)) })).sort((a, b) => b.es[0].at.localeCompare(a.es[0].at));
-  const reload = el('button', { type: 'button', className: 'small', textContent: '↻ Đọc lại', onclick: loadErrors });
-  const card = UI.card('🐞 App bị dừng, bị treo', { tools: [reload] });
-  if (!list.length) card.append(el('p', { className: 'note', textContent: 'Không có app nào bị dừng hay bị treo gần đây. 👍' }));
+  const reload = el('button', { type: 'button', className: 'small', textContent: T('health.reload_btn'), onclick: loadErrors });
+  const card = UI.card(T('health.errors_title'), { tools: [reload] });
+  if (!list.length) card.append(el('p', { className: 'note', textContent: T('health.errors_none') }));
   for (const { pkg, es } of list) {
     const n = { crash: 0, anr: 0 }; es.forEach((e) => { n[e.kind === 'anr' ? 'anr' : 'crash']++; });
-    const name = el('b', { textContent: pkg === 'android' ? 'Hệ thống Android' : appName(pkg) });
+    const name = el('b', { textContent: pkg === 'android' ? T('health.android_system') : appName(pkg) });
     if (pkg !== 'android') onMeta(pkg, (m) => { if (m.label) name.textContent = m.label; });
     const icon = pkg === 'android' ? el('div', { className: 'appicon placeholder', textContent: '⚙️' }) : appIcon(pkg);
     if (pkg !== 'android') onMeta(pkg, (m) => icon.fill(m));
-    const counts = [n.crash ? n.crash + ' lần bị dừng' : '', n.anr ? n.anr + ' lần bị treo' : ''].filter(Boolean).join(' · ');
+    const counts = [n.crash ? T('health.stops_n', { n: n.crash }) : '', n.anr ? T('health.freezes_n', { n: n.anr }) : ''].filter(Boolean).join(' · ');
     const d = el('details', { className: 'crash' }, el('summary', {}, icon,
-      el('div', { className: 't' }, name, el('small', { textContent: counts + ' · lần cuối ' + crashAt(es[0].at) })),
+      el('div', { className: 't' }, name, el('small', { textContent: T('health.counts_last', { counts, at: crashAt(es[0].at) }) })),
       el('span', { className: 'n', textContent: String(es.length) })));
     const whys = new Map();                                            // the same failure again and again: shown once, with how often
     for (const e of es) { const k = e.kind + e.why; if (!whys.has(k)) whys.set(k, { e, n: 0 }); whys.get(k).n++; }
     for (const { e, n: times } of [...whys.values()].slice(0, 5)) {
-      d.append(el('div', { className: 'why' }, el('span', { textContent: KIND[e.kind] }), ' ', el('b', { textContent: plain(e.why) || '?' }),
-        el('small', {}, ' · ', el('span', { textContent: times + ' lần · lần cuối ' + crashAt(e.at) }))));
+      d.append(el('div', { className: 'why' }, el('span', { textContent: kindWord()[e.kind] }), ' ', el('b', { textContent: plain(e.why) || '?' }),
+        el('small', {}, ' · ', el('span', { textContent: T('health.times_last', { n: times, at: crashAt(e.at) }) }))));
       const text = (e.proc ? 'Process: ' + e.proc + '\n' : '') + e.lines.join('\n');
       d.append(el('pre', { className: 'term', textContent: text }));
     }
-    d.append(el('button', { type: 'button', className: 'small crashcopy', textContent: '📋 Chép để gửi hỏi',
+    d.append(el('button', { type: 'button', className: 'small crashcopy', textContent: T('health.copy_to_ask'),
       onclick: () => copyText([...whys.values()].map(({ e, n: t }) => `[${e.at}] ${pkg} ${e.kind} ×${t}\n${e.lines.join('\n')}`).join('\n\n')) }));
     card.append(d);
   }
@@ -420,51 +420,51 @@ async function loadHealth() {
   if (!h || currentTab !== 'health') return;
   if (!$('.health').classList.contains('ready')) $('.health').classList.add('ready');   // add() writes the attribute even when it is there
   const r = h.remote || {}, vol = r.volume || {};
-  put($('#hwhen'), 'textContent', tr('cập nhật mỗi 5 giây'));
+  put($('#hwhen'), 'textContent', T('health.refresh_5s'));
   $('#hsum').replaceChildren(...kv([
-    ['Nguồn', !r.connected ? 'không rõ (remote chưa kết nối)' : r.is_on ? 'đang bật' : 'màn hình tắt'],
-    ['Ứng dụng đang mở', r.app ? ((typeof appName === 'function' && appName(r.app)) || r.app) : ''],
-    ['Âm lượng', vol.max ? vol.level + ' / ' + vol.max + (vol.muted ? ' · đang tắt tiếng' : '') : ''],
-    ['Độ trễ tới TV (ADB)', h.ping_ms + ' ms'],
-    ['Luồng hình', screenOn ? ($('#screenmode').value === 'snap' ? 'ảnh chụp' : 'trực tiếp · ' + streamFps + ' khung/giây' + ($('#screenmode').value === 'hd' ? ' · nét nhất' : ' · ' + $('#screenmode').value + 'p')) : 'đang không xem'],
-    ['TV chạy liên tục', h.uptime != null ? fmtUptime(h.uptime) : ''],
+    [T('health.k_power'), !r.connected ? T('health.power_unknown') : r.is_on ? T('health.state_on') : T('health.screen_off')],
+    [T('health.k_app'), r.app ? ((typeof appName === 'function' && appName(r.app)) || r.app) : ''],
+    [T('health.k_volume'), vol.max ? vol.level + ' / ' + vol.max + (vol.muted ? ' · ' + T('health.muted') : '') : ''],
+    [T('health.k_latency'), h.ping_ms + ' ms'],
+    [T('health.k_stream'), screenOn ? ($('#screenmode').value === 'snap' ? T('health.stream_snap') : T('health.stream_live', { fps: streamFps }) + ($('#screenmode').value === 'hd' ? ' · ' + T('health.stream_sharpest') : ' · ' + $('#screenmode').value + 'p')) : T('health.stream_none')],
+    [T('health.k_uptime'), h.uptime != null ? fmtUptime(h.uptime) : ''],
   ]));
   const load = [];
-  if (h.cpu != null) load.push(meter('CPU' + (h.cores ? ' · ' + h.cores + ' nhân' : ''), h.cpu, h.cpu + '%'));
+  if (h.cpu != null) load.push(meter(h.cores ? T('health.cpu_cores', { n: h.cores }) : 'CPU', h.cpu, h.cpu + '%'));
   if (h.gpu != null) load.push(meter('GPU', h.gpu, h.gpu + '%'));
-  if (h.mem_total) { const used = h.mem_total - h.mem_free; load.push(meter('RAM', used * 100 / h.mem_total, 'đã dùng ' + fmtSize(used) + ' / ' + fmtSize(h.mem_total))); }
-  if (h.disk_total) { const used = h.disk_total - h.disk_free; load.push(meter('Bộ nhớ trong', used * 100 / h.disk_total, 'đã dùng ' + fmtSize(used) + ' / ' + fmtSize(h.disk_total))); }
+  if (h.mem_total) { const used = h.mem_total - h.mem_free; load.push(meter('RAM', used * 100 / h.mem_total, T('health.used_of', { used: fmtSize(used), total: fmtSize(h.mem_total) }))); }
+  if (h.disk_total) { const used = h.disk_total - h.disk_free; load.push(meter(T('health.internal_storage'), used * 100 / h.disk_total, T('health.used_of', { used: fmtSize(used), total: fmtSize(h.disk_total) }))); }
   $('#hload').replaceChildren(...load);
   loadProcs();
   const cell = (cls, text) => el('div', { className: cls, textContent: text });   // CPU and RAM said once, as column heads
-  $('#htop').replaceChildren(...(h.top.length ? [cell('h', 'Tiến trình'), cell('h n', 'CPU'), cell('h n', 'RAM')] : []),
+  $('#htop').replaceChildren(...(h.top.length ? [cell('h', T('health.k_process')), cell('h n', 'CPU'), cell('h n', 'RAM')] : []),
     ...h.top.flatMap((p) => [cell('k', (typeof appName === 'function' && META.has(p.name) && appName(p.name)) || p.name), cell('v n', p.cpu + '%'), cell('v n', p.mem + '%')]));
   const t = h.thermal;
   put('#htempc', 'hidden', !t);
   if (t) redrawIfChanged('#htemp', [
-    t.status != null ? ['Mức nhiệt', HEAT[t.status] || String(t.status)] : null,
+    t.status != null ? [T('health.k_heat'), heat()[t.status] || String(t.status)] : null,
     ...t.temps.map((s) => [s.name, Math.round(s.c) + ' °C']),
   ]);
-  $('#hrate').replaceChildren(...kv(h.net && h.net.rx != null ? [['Đang tải xuống', fmtSize(h.net.rx) + '/s'], ['Đang tải lên', fmtSize(h.net.tx) + '/s']] : []));
+  $('#hrate').replaceChildren(...kv(h.net && h.net.rx != null ? [[T('health.k_down'), fmtSize(h.net.rx) + '/s'], [T('health.k_up'), fmtSize(h.net.tx) + '/s']] : []));
   const bt = h.bt;
   put('#hbtc', 'hidden', !bt);
   if (bt) redrawIfChanged('#hbt', [
-    ['Bluetooth', bt.on ? 'đang bật' : 'đang tắt'],
-    ...(bt.devices.length ? bt.devices.map((d) => [d.name, d.connected ? 'đã kết nối' : 'đã ghép']) : [['Thiết bị', 'chưa ghép thiết bị nào']]),
+    ['Bluetooth', bt.on ? T('health.state_on') : T('health.state_off')],
+    ...(bt.devices.length ? bt.devices.map((d) => [d.name, d.connected ? T('health.bt_connected') : T('health.bt_paired')]) : [[T('health.k_devices'), T('health.bt_none')]]),
   ]);
   const w = h.wifi;
   redrawIfChanged('#hnet', [
-    w ? ['Wi-Fi', w.ssid] : ['Wi-Fi', 'không kết nối'],
-    w && w.rssi != null ? ['Tín hiệu', w.rssi + ' dBm · ' + signal(w.rssi)] : null,
-    w && w.speed ? ['Tốc độ kết nối', w.speed + ' Mbps'] : null,
-    w && w.freq ? ['Băng tần', (w.freq > 4000 ? '5 GHz' : '2.4 GHz') + ' · ' + w.freq + ' MHz'] : null,
-    ...h.ips.map((i) => [i.if.startsWith('tun') ? 'IP Tailscale' : i.if.startsWith('eth') ? 'IP dây mạng' : 'IP trong nhà', i.ip]),
-    w && w.rssi != null ? ['Lời khuyên', wifiTip(w)] : null,
+    w ? ['Wi-Fi', w.ssid] : ['Wi-Fi', T('health.wifi_off')],
+    w && w.rssi != null ? [T('health.k_signal'), w.rssi + ' dBm · ' + signal(w.rssi)] : null,
+    w && w.speed ? [T('health.k_link'), w.speed + ' Mbps'] : null,
+    w && w.freq ? [T('health.k_band'), (w.freq > 4000 ? '5 GHz' : '2.4 GHz') + ' · ' + w.freq + ' MHz'] : null,
+    ...h.ips.map((i) => [i.if.startsWith('tun') ? T('health.ip_tailscale') : i.if.startsWith('eth') ? T('health.ip_ethernet') : T('health.ip_home'), i.ip]),
+    w && w.rssi != null ? [T('health.k_advice'), wifiTip(w)] : null,
   ]);
   redrawIfChanged('#hhw', [
-    ['Máy', (h.maker + ' ' + h.model).trim()], ['Android', h.android + (h.sdk ? ' (SDK ' + h.sdk + ')' : '')], ['Bản vá bảo mật', h.patch],
-    ['Chip', h.chip], ['Kiến trúc', h.abi], ['Số nhân CPU', h.cores], ['RAM', h.mem_total ? fmtSize(h.mem_total) : ''],
-    ['Màn hình', h.screen + (h.fps ? ' · ' + h.fps + ' Hz' : '')], ['Mật độ điểm ảnh', h.density ? h.density + ' dpi' : ''],
+    [T('health.k_device'), (h.maker + ' ' + h.model).trim()], ['Android', h.android + (h.sdk ? ' (SDK ' + h.sdk + ')' : '')], [T('health.k_patch'), h.patch],
+    ['Chip', h.chip], [T('health.k_arch'), h.abi], [T('health.k_cores'), h.cores], ['RAM', h.mem_total ? fmtSize(h.mem_total) : ''],
+    [T('health.k_screen'), h.screen + (h.fps ? ' · ' + h.fps + ' Hz' : '')], [T('health.k_density'), h.density ? h.density + ' dpi' : ''],
   ]);
 }
 setInterval(() => { if (currentTab === 'health' && !document.hidden && !stopped) { loadHealth(); loadSleep(); } }, 10000);   // each is top + 3 dumpsys on the TV

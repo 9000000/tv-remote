@@ -29,14 +29,14 @@ function ask(text, o = {}) {
   const run = () => new Promise((done) => {
     const typed = o.value !== undefined || !!o.fields;
     const boxes = o.fields ? o.fields.map((f) => el('input', { type: 'number', inputMode: 'numeric', min: 0, max: f.max, value: f.value, placeholder: '0' })) : null;
-    const input = o.fields ? el('div', { className: 'fields' }, ...o.fields.flatMap((f, i) => [el('label', {}, boxes[i], el('span', { textContent: tr(f.label) }))]))
+    const input = o.fields ? el('div', { className: 'fields' }, ...o.fields.flatMap((f, i) => [el('label', {}, boxes[i], el('span', { textContent: f.label }))]))
       : typed ? el('input', { value: o.value, spellcheck: false }) : null;
-    // choices: a list to pick from that fills the box, "Tự nhập" leaving it to be typed
+    // choices: a list to pick from that fills the box, "Type one" leaving it to be typed
     const pick = o.choices && el('select', { onchange: () => { input.value = pick.value; if (!pick.value) input.focus(); } },
-      el('option', { value: '', textContent: tr('✏️ Tự nhập') }), ...o.choices.map((c) => el('option', { value: c.value, textContent: c.label, selected: c.value === o.value })));
+      el('option', { value: '', textContent: T('core.type_own') }), ...o.choices.map((c) => el('option', { value: c.value, textContent: c.label, selected: c.value === o.value })));
     if (pick) input.addEventListener('input', () => { pick.value = o.choices.some((c) => c.value === input.value.trim()) ? input.value.trim() : ''; });
     const yes = el('button', { type: 'submit', className: o.danger ? 'danger' : 'primary', textContent: tr(o.ok || 'OK') });
-    const no = el('button', { type: 'button', textContent: tr('Hủy'), onclick: () => d.close() });
+    const no = el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => d.close() });
     const d = el('dialog', { className: 'ask' }, el('form', { className: 'card', onsubmit: (e) => { e.preventDefault(); d.returnValue = 'yes'; d.close(); } },
       el('p', { textContent: tr(text) }), pick || null, input, el('div', { className: 'acts' }, no, yes)));
     d.addEventListener('close', () => {
@@ -52,10 +52,10 @@ function ask(text, o = {}) {
 }
 async function askTime(text, minutes, max = 1440) {
   const m = Math.round(minutes || 0);
-  const v = await ask(text, { fields: [{ label: 'giờ', value: m ? String(Math.floor(m / 60)) : '', max: Math.floor(max / 60) }, { label: 'phút', value: m ? String(m % 60) : '', max: 59 }] });
+  const v = await ask(text, { fields: [{ label: T('core.unit_h'), value: m ? String(Math.floor(m / 60)) : '', max: Math.floor(max / 60) }, { label: T('core.unit_min'), value: m ? String(m % 60) : '', max: 59 }] });
   if (!v) return null;
   const total = Math.round((+v[0] || 0) * 60 + (+v[1] || 0));
-  if (total < 1 || total > max) { toast('Chọn từ 1 phút tới ' + max / 60 + ' giờ.'); return null; }
+  if (total < 1 || total > max) { toast(T('core.pick_range', { n: max / 60 })); return null; }
   return total;
 }
 
@@ -65,7 +65,7 @@ async function askTime(text, minutes, max = 1440) {
 function menuDlg(title, primary, items, current = -1) {
   const icon = (name) => el('span', { className: 'mi', innerHTML: '<svg class="ic" aria-hidden="true"><use href="#i-' + name + '"/></svg>' });
   const d = el('dialog', { className: 'ask menu' }, el('div', { className: 'card' },
-    el('div', { className: 'card-head' }, el('h2', { textContent: title }), el('button', { className: 'small iconbtn', textContent: '✕', title: 'Đóng', 'aria-label': 'Đóng', onclick: () => d.close() })),
+    el('div', { className: 'card-head' }, el('h2', { textContent: title }), el('button', { className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
     ...items.map(([token, sub, fn], i) => {
       const bar = token.indexOf('|'), ic = token[0] === '@' && bar > 0;
       return el('button', { className: 'mitem' + (i === primary ? ' primary' : i === current ? ' on' : ''), onclick: () => { d.close(); fn(); } },
@@ -97,7 +97,7 @@ document.addEventListener('click', async (e) => {
 }, true);
 
 // The computer's page is read fresh from disk, its server's code only at start: a newer page's calls then answer 404.
-const STALE = 'Trang mới hơn phần đang chạy: vào 🛠️ Cài đặt, bấm ⏻ Tắt rồi mở lại TV Remote.';
+const STALE = T('core.stale');
 // Every button that waits on the server shows it: the one just clicked spins until its call returns (css/kit.css .busy, shown
 // only past 150 ms so quick calls do not flicker). Counted from the end of the click handler, or from the yes to an ask() in it.
 let clicked = null, clickedAt = Infinity;
@@ -109,7 +109,7 @@ async function api(path, data, quiet) {
 }
 // "adb:allow", "adb: <Java's words>": what a person can do about it
 const adbWords = (status, e) => status === 503 && /^adb/.test(e) && !/adb (pair|tls)/.test(e)
-  ? (/allow/.test(e) ? 'TV đang hỏi cho phép gỡ lỗi: nhìn lên TV, chọn “Luôn cho phép”' : 'chưa nối được ADB tới TV') : e;
+  ? (/allow/.test(e) ? T('core.adb_allow') : T('core.adb_not_yet')) : e;
 async function call(path, data, quiet) {
   try {
     const r = await fetch(path, data ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) } : undefined);
@@ -123,7 +123,7 @@ async function call(path, data, quiet) {
       if (!quiet) toast('Lỗi: ' + friendly(e)); return null;
     }
     return await r.json();
-  } catch { if (!quiet) toast('Không gọi được server'); return null; }
+  } catch { if (!quiet) toast(T('core.server_unreachable')); return null; }
 }
 
 // A small menu under a button (⋯ on each app): items are [icon, words, fn, class]; null items are left out. A click elsewhere,
@@ -148,14 +148,15 @@ addEventListener('resize', closePop);
 // A phone or computer can be newer than TV Setup on the TV. What needs which TV Setup is SetupNeed.kt's table; any call that
 // meets one (its error says "setup:old|missing:<feature>:<min>:<have>") asks to update or install TV Setup, with the button.
 // A page that knows before starting asks setupFor(feature). The same names as SetupNeed.name.
-const SETUP_NEEDS = { rules: 'Hẹn giờ, giờ đi ngủ, giới hạn app', draw: 'Chức năng vẽ lên TV', invite: 'Chia sẻ remote bằng QR', ram: 'Báo khi RAM đầy', pic: 'Đưa ảnh lên TV', volume: 'Giới hạn âm lượng', bedtimes: 'Nhiều khoảng giờ đi ngủ', notify: 'Gửi thông báo lên TV', awake: 'Giữ kết nối khi tắt TV', files: 'Đọc lịch sử, giấc ngủ trên TV này' };
+// ids of i18n/*.json: the words of each feature, said in the question below
+const SETUP_NEEDS = { rules: 'core.need_rules', draw: 'core.need_draw', invite: 'core.need_invite', ram: 'core.need_ram', pic: 'core.need_pic', volume: 'core.need_volume', bedtimes: 'core.need_bedtimes', notify: 'core.need_notify', awake: 'core.need_awake', files: 'core.need_files' };
 const SETUP_RE = /setup:(old|missing):(\w+):([0-9.]*):([0-9.]*)/;
-const setupSay = (m) => m[1] === 'missing' ? (SETUP_NEEDS[m[2]] || m[2]) + ' cần app TV Setup trên TV. Cài TV Setup?'
-  : (SETUP_NEEDS[m[2]] || m[2]) + ' cần TV Setup ' + m[3] + ' trở lên (TV đang có ' + m[4] + '). Cập nhật TV Setup?';
+const setupSay = (m) => { const what = SETUP_NEEDS[m[2]] ? T(SETUP_NEEDS[m[2]]) : m[2];
+  return m[1] === 'missing' ? T('core.setup_missing', { what }) : T('core.setup_old', { what, min: m[3], have: m[4] }); };
 function needSetup(why) {
   const m = String(why || '').match(SETUP_RE); if (!m) return false;
   const old = m[1] === 'old';
-  ask(setupSay(m), { ok: old ? '⬆️ Cập nhật' : '⚡ Cài TV Setup' }).then((yes) => { if (yes) (old ? updateSetup : installSetupApk)(); });
+  ask(setupSay(m), { ok: old ? T('page.update') : T('core.install_setup') }).then((yes) => { if (yes) (old ? updateSetup : installSetupApk)(); });
   return true;
 }
 const setupFor = async (feature) => !!await api('/api/setup/need?f=' + feature);
@@ -228,7 +229,7 @@ function pickGo(host) { pickLeave(); justPicked = host; pickedAt = Date.now(); }
 function pickCancel() { justPicked = null; wantPick = true; }
 function setPicking(on, tvName) {
   const b = $('#pickback'), back = cameFromTv && !!tvName;
-  put(b, 'hidden', !back); if (back) put(b, 'textContent', '← ' + tr('Về lại') + ' ' + tvName);
+  put(b, 'hidden', !back); if (back) put(b, 'textContent', T('core.back_to', { name: tvName }));
   if (on === picking) return;
   picking = on; document.querySelector('main').classList.toggle('picking', on);
   if (on) {
@@ -241,11 +242,11 @@ function setPicking(on, tvName) {
 let ADB = { state: 'unknown' }, autoView = new URLSearchParams(location.search).has('view');
 // a few words on the chip, so the header stays on one line on a phone; the whole sentence on hover
 const ADB_TEXT = {
-  ready: ['ok', 'ADB ✓', 'ADB: sẵn sàng'],
-  unauthorized: ['warn', 'ADB: chờ', 'ADB: chờ TV cho phép'],
-  closed: ['bad', 'ADB đóng', 'ADB: cổng đóng'],
+  ready: ['ok', 'ADB ✓', T('core.adb_ready')],
+  unauthorized: ['warn', T('core.adb_wait_short'), T('core.adb_wait_long')],
+  closed: ['bad', T('core.adb_closed_short'), T('core.adb_closed_long')],
   offline: ['warn', 'ADB offline', 'ADB: offline'],
-  error: ['bad', 'ADB lỗi', 'ADB: lỗi'],
+  error: ['bad', T('core.adb_error_short'), T('core.adb_error_long')],
   unknown: ['', 'ADB ...', 'ADB: ...'],
 };
 // Every write to the page that may repeat goes through here (tests/page.test.js): only when it changes. The same value
@@ -275,30 +276,30 @@ async function refresh() {
   if (invited) { inviteBad = !await invited; invited = null; }     // the invite first: then this very read is let in
   const s = await fetch('/api/state').then((r) => { locked = r.status === 401; return r.json(); }).catch(() => null);
   if (CORE === 'tv') setLocked(locked, s);
-  if (locked && inviteBad) { inviteBad = false; put('#pairerr', 'textContent', tr('Mã QR đã dùng hoặc hết hạn: quét mã mới, hoặc bấm “Hiện mã trên TV”.')); }
+  if (locked && inviteBad) { inviteBad = false; put('#pairerr', 'textContent', T('core.qr_expired')); }
   if (locked) return;
   tvOn = !!(s && s.connected && s.is_on); STATE = s || {};
   if (s) applyKind(s);
   if (!s && ++stateMiss < 2) { setTimeout(refresh, 1500); return; }    // one miss is often this device waking (its Wi-Fi back a moment later)
   if (s) stateMiss = 0;
   if (!s) {
-    setChip('#chipTv', 'bad', CORE === 'pc' ? 'Server tắt' : 'Mất kết nối', CORE === 'pc' ? 'Server tắt' : 'TV: mất kết nối'); setChip('#chipAdb', '', 'ADB ?');
-    put('#info', 'textContent', CORE === 'pc' ? 'Không gọi được server. Mở lại TV Remote trên máy này.' : 'Không gọi được TV: TV đang bật và cùng mạng với máy này chứ?'); return;
+    setChip('#chipTv', 'bad', CORE === 'pc' ? T('core.server_stopped') : T('core.disconnected'), CORE === 'pc' ? T('core.server_stopped') : T('core.tv_disconnected')); setChip('#chipAdb', '', 'ADB ?');
+    put('#info', 'textContent', CORE === 'pc' ? T('core.no_server') : T('core.no_tv')); return;
   }
   const adbUp = s.adb && s.adb.state === 'ready';                   // over ADB the TV answers even when the remote-button service does not
-  setChip('#chipTv', s.connected && s.is_on ? 'ok' : s.connected || adbUp ? 'warn' : 'bad', s.connected ? (s.is_on ? 'TV bật' : 'Màn hình tắt') : adbUp ? 'Phím qua ADB' : 'Mất kết nối',
-    s.connected ? (s.is_on ? 'TV: đang bật' : 'TV: màn hình tắt') : adbUp ? 'Nút bấm: đi qua ADB' : 'TV: mất kết nối');
+  setChip('#chipTv', s.connected && s.is_on ? 'ok' : s.connected || adbUp ? 'warn' : 'bad', s.connected ? (s.is_on ? T('core.tv_on') : T('core.screen_off')) : adbUp ? T('core.keys_over_adb') : T('core.disconnected'),
+    s.connected ? (s.is_on ? T('core.tv_is_on') : T('core.tv_screen_off')) : adbUp ? T('core.buttons_over_adb') : T('core.tv_disconnected'));
   ADB = s.adb || { state: 'unknown' };
   const [cls, txt, long] = ADB_TEXT[ADB.state] || ADB_TEXT.unknown; setChip('#chipAdb', cls, txt, long);
   put($('#chipAdb'), 'hidden', NATIVE());                                    // no ADB on this kind of TV: nothing to report
-  if (NATIVE() && !s.connected) setChip('#chipTv', s.asking ? 'warn' : 'bad', s.asking ? 'Chờ TV cho phép' : s.paired === false ? 'Chưa ghép' : 'Mất kết nối');
+  if (NATIVE() && !s.connected) setChip('#chipTv', s.asking ? 'warn' : 'bad', s.asking ? T('core.waiting_tv') : s.paired === false ? T('core.not_paired') : T('core.disconnected'));
   const tvName = s.name || (s.device && s.device.model) || (s.host ? 'TV ' + s.host : '');
   if (CORE === 'pc') setPicking(!s.host || wantPick, tvName);
   if (s.version) put($('#ver'), 'textContent', (s.app_name || 'TV Remote') + ' ' + s.version + (s.released ? ' · ' + s.released : ''));
   put(document, 'title', tvName && !picking ? tvName + ' · Remote' : 'TV Remote');
   put($('#name'), 'textContent', picking ? 'TV Remote' : tvName);
-  put($('#info'), 'textContent', tr(picking ? 'Chọn TV để điều khiển' : [CORE === 'pc' ? s.host : '', s.asking ? 'nhìn lên TV: chọn Cho phép' : s.paired === false ? 'chưa ghép remote (tab Thiết lập)' : s.error ? 'nút remote chưa kết nối được (tab Thiết lập)' : '',
-    s.scope === 'view' ? tr('Chỉ xem') : s.scope === 'remote' ? tr('Chỉ remote') : ''].filter(Boolean).join(' · ') || 'đã kết nối'));   // a guest knows what it was given; tr() as i18n.js would, or it is written again each time
+  put($('#info'), 'textContent', picking ? T('core.choose_tv') : [CORE === 'pc' ? s.host : '', s.asking ? T('core.look_choose_allow') : s.paired === false ? T('core.remote_not_paired') : s.error ? T('core.remote_not_connected') : '',
+    s.scope === 'view' ? T('core.view_only') : s.scope === 'remote' ? T('core.remote_only') : ''].filter(Boolean).join(' · ') || T('core.connected'));   // a guest knows what it was given
   showNowApp(picking ? '' : s.app || '', s.app_label);
   if (justPicked && s.host === justPicked) {                          // straight to the remote when the TV is ready, to the first-time steps when it is not
     const ready = s.connected || (s.adb && s.adb.state === 'ready') || s.asking;   // LG / Samsung asking: the remote tab says what to do
@@ -309,11 +310,11 @@ async function refresh() {
   if (s.host !== curHost) { const first = curHost === null; curHost = s.host; if (!first) tvChanged(); }
   if (s.volume && Date.now() > volHold) {
     put('#volv', 'textContent', s.volume.level);
-    $('#r-mute').classList.toggle('on', !!s.volume.muted); put('#r-mute', 'title', s.volume.muted ? 'Đang tắt tiếng, bấm để bật' : 'Tắt tiếng');
+    $('#r-mute').classList.toggle('on', !!s.volume.muted); put('#r-mute', 'title', s.volume.muted ? T('core.muted_tip') : T('core.mute'));
   }
   applyAdb(); allowAlert(); checkAsk(); diagWatch(s);
   if ($('#assist').open && (ADB.state === 'ready' || ADB.state === 'unauthorized')) {   // the TV has opened its ADB port: nothing left to help with
-    $('#assist').close(); toast(ADB.state === 'ready' ? 'ADB đã kết nối' : 'ADB đã bật: nhìn lên TV, chọn “Luôn cho phép”');
+    $('#assist').close(); toast(ADB.state === 'ready' ? T('core.adb_connected') : T('core.adb_on_look'));
   }
 }
 
@@ -329,8 +330,8 @@ let SCOPE = 'full';
 const NATIVE = () => TV_KIND !== 'android';
 const can = (cap) => cap === 'full' ? SCOPE === 'full' : cap === 'control' ? SCOPE !== 'view' : !CAPS || CAPS.has(cap);
 const KIND_NAME = { android: 'Android TV', lg: 'LG', samsung: 'Samsung', roku: 'Roku', vidaa: 'Hisense VIDAA' };
-const scopeWhy = () => SCOPE === 'view' ? 'Bạn chỉ được xem TV này' : 'Chỉ chủ TV dùng được phần này';
-const kindWhy = () => SCOPE !== 'full' ? scopeWhy() : 'Chỉ có trên Android TV / Google TV';
+const scopeWhy = () => SCOPE === 'view' ? T('core.scope_view') : T('core.scope_owner');
+const kindWhy = () => SCOPE !== 'full' ? scopeWhy() : T('core.only_android');
 function unsupported(e, off) {
   if (e.matches('[data-tab]')) { e.toggleAttribute('data-kind-tab', off); return; }
   if (e.matches('input, select, fieldset')) { e.disabled = off; return; }
@@ -345,16 +346,16 @@ for (const ev of ['pointerdown', 'click']) document.addEventListener(ev, (e) => 
   if (ev === 'click') toast(kindWhy());
 }, true);
 const KIND_INTRO = {
-  screen: ['🖥️ Màn hình TV', ['Xem và chạm màn hình TV trên máy này', '🎧 Nghe tiếng TV', '✏️ Vẽ, 🖼️ ảnh, 💬 lời nhắn lên TV', '▶️ Đang phát, 📋 clipboard của TV']],
-  apps: ['📱 Ứng dụng', ['Mọi app đã cài trên TV', 'Mở, buộc dừng, tắt hoặc gỡ app', 'Xóa dữ liệu app']],
-  files: ['📁 Tệp', ['Duyệt tệp trên TV, gửi lên, tải về', 'Tải file từ link thẳng về TV', '📦 Cài APK từ máy này']],
-  health: ['🩺 Sức khỏe', ['Bộ nhớ, RAM, tải hệ thống', 'Mạng và phần cứng của TV', 'Giải phóng RAM bằng một nút']],
-  rules: ['⏰ Tự động trên TV', ['😴 Hẹn giờ tắt TV', '🌙 Giờ đi ngủ', '⏳ Giới hạn app mỗi ngày', '🔊 Giới hạn âm lượng theo giờ']],
+  screen: [T('core.intro_screen'), [T('core.intro_screen_1'), T('core.intro_screen_2'), T('core.intro_screen_3'), T('core.intro_screen_4')]],
+  apps: [T('core.intro_apps'), [T('core.intro_apps_1'), T('core.intro_apps_2'), T('core.intro_apps_3')]],
+  files: [T('core.intro_files'), [T('core.intro_files_1'), T('core.intro_files_2'), T('core.intro_files_3')]],
+  health: [T('core.intro_health'), [T('core.intro_health_1'), T('core.intro_health_2'), T('core.intro_health_3')]],
+  rules: [T('core.intro_rules'), [T('core.intro_rules_1'), T('core.intro_rules_2'), T('core.intro_rules_3'), T('core.intro_rules_4')]],
 };
 function kindIntro(key) {
   const [title, items] = KIND_INTRO[key];
   return el('section', { className: 'card kintro' },
-    el('div', { className: 'card-head' }, el('h2', {}, title, key === 'screen' ? el('span', { className: 'badge', textContent: 'thử nghiệm' }) : ''),
+    el('div', { className: 'card-head' }, el('h2', {}, title, key === 'screen' ? el('span', { className: 'badge', textContent: T('core.beta') }) : ''),
       el('span', { className: 'badge', textContent: kindWhy() })),
     el('ul', {}, ...items.map((t) => el('li', { textContent: t }))));
 }
@@ -362,16 +363,16 @@ function kindIntro(key) {
 // link holds only its end) and a new issue opened with it.
 async function sendWireLog() {
   let text;
-  try { const r = await fetch('/api/wirelog'); if (!r.ok) throw 0; text = await r.text(); } catch { toast('Không đọc được nhật ký'); return; }
+  try { const r = await fetch('/api/wirelog'); if (!r.ok) throw 0; text = await r.text(); } catch { toast(T('core.log_unreadable')); return; }
   let ok = false;
   try { await navigator.clipboard.writeText(text); ok = true; } catch {}
   if (!ok) { const a = el('textarea', { value: text }); document.body.append(a); a.select(); try { ok = document.execCommand('copy'); } catch {} a.remove(); }
   const head = text.split('\n\n')[0], tail = text.slice(-5000);
   const cut = tail.length < text.length;
-  const body = '<!-- ' + tr('Mô tả: bấm gì, TV làm gì') + ' -->\n\n' + (cut && ok ? '<!-- ' + tr('Nhật ký dài nên chỉ có đoạn cuối. Bản đầy đủ đã được chép: dán (Ctrl/⌘+V) đè lên đoạn dưới.') + ' -->\n' : '')
+  const body = '<!-- ' + T('core.issue_describe') + ' -->\n\n' + (cut && ok ? '<!-- ' + T('core.issue_long') + ' -->\n' : '')
     + '```\n' + (cut ? head + '\n…\n' + tail.slice(tail.indexOf('\n') + 1) : text) + '\n```';
   window.open('https://github.com/HoangTran0410/tv-remote/issues/new?title=' + encodeURIComponent(head.split('\n')[0]) + '&body=' + encodeURIComponent(body), '_blank');
-  toast(ok ? 'Đã chép nhật ký' : 'Không chép được nhật ký');
+  toast(ok ? T('core.log_copied') : T('core.log_copy_failed'));
 }
 function applyKind(s) {
   const scope = s.scope || 'full', kind = s.kind || 'android', sig = kind + '|' + scope + '|' + (s.caps || []).join() + '|' + (s.keys || []).join();
@@ -390,17 +391,17 @@ function applyKind(s) {
 // ---------- ADB gating + banners ----------
 // The page from the TV works through the TV Setup app's own ADB session: without it nothing works, and there is no other machine to blame.
 const BANNERS_TV = {
-  closed: ['bad', 'App trên TV chưa nối được ADB', 'Các nút chưa hoạt động. Trên TV: bật “Gỡ lỗi ADB” (hoặc “Gỡ lỗi USB”) trong Tùy chọn nhà phát triển, rồi mở app TV Setup.'],
-  unauthorized: ['warn', 'TV đang hỏi cho phép gỡ lỗi', 'Nhìn lên TV: tích “Luôn cho phép” rồi chọn OK. Trang này tự chạy tiếp.'],
-  unknown: ['warn', 'Đang kết nối ADB…', ''],
+  closed: ['bad', T('core.tvb_closed_title'), T('core.tvb_closed_text')],
+  unauthorized: ['warn', T('core.tvb_asking_title'), T('core.tvb_asking_text')],
+  unknown: ['warn', T('core.adb_connecting'), ''],
 };
 BANNERS_TV.error = BANNERS_TV.offline = BANNERS_TV.closed;
 const BANNERS = {
-  closed: ['bad', 'Cổng ADB đang đóng', 'TV đang tắt/standby sâu, vừa khởi động lại, hoặc chưa bật “Gỡ lỗi ADB”. Remote vẫn dùng được nếu TV còn mạng.'],
-  unauthorized: ['warn', 'TV chưa cho phép máy này', 'Nhìn lên TV, chọn “Luôn cho phép” ở hộp thoại gỡ lỗi USB rồi bấm “Thử kết nối lại”.'],
-  offline: ['warn', 'ADB đang offline', 'Thiết bị có trong danh sách nhưng không trả lời. Thử kết nối lại, hoặc tắt/bật “Gỡ lỗi ADB” trên TV.'],
-  error: ['bad', 'Không kết nối được ADB', 'Thử kết nối lại. Nếu vẫn lỗi, kiểm tra TV còn mạng và đã bật “Gỡ lỗi ADB”.'],
-  unknown: ['warn', 'Đang kết nối ADB…', ''],
+  closed: ['bad', T('core.pcb_closed_title'), T('core.pcb_closed_text')],
+  unauthorized: ['warn', T('core.pcb_asking_title'), T('core.pcb_asking_text')],
+  offline: ['warn', T('core.pcb_offline_title'), T('core.pcb_offline_text')],
+  error: ['bad', T('core.pcb_error_title'), T('core.pcb_error_text')],
+  unknown: ['warn', T('core.adb_connecting'), ''],
 };
 let bannerKey = '', scenesLoaded = false;
 const bannerAgain = () => { bannerKey = ''; };                      // drawn again on the next tick, whatever it was
@@ -409,22 +410,22 @@ onTvChange(() => { scenesLoaded = false; bannerAgain(); });
 function buildBanner() {
   if (ADB.state === 'none') return el('span');                        // LG / Samsung: no ADB to turn on
   const set = CORE === 'pc' ? BANNERS : BANNERS_TV, [cls, title, text] = set[ADB.state] || set.unknown;
-  const retry = el('button', { className: 'small primary', textContent: '🔄 Thử kết nối lại', onclick: async (e) => {
-    const b = e.currentTarget, label = b.textContent; b.disabled = true; b.textContent = 'Đang kết nối...';
+  const retry = el('button', { className: 'small primary', textContent: T('core.retry_connection'), onclick: async (e) => {
+    const b = e.currentTarget, label = b.textContent; b.disabled = true; b.textContent = T('core.connecting');
     const r = await api('/api/adb/connect', {}); if (r) { ADB = r; bannerKey = ''; applyAdb(); refresh(); }
     b.disabled = false; b.textContent = label;
   } });
   if (ADB.state === 'unknown' || !ADB.state) {                       // still connecting: a quiet line, Retry only once it drags on
-    retry.className = 'small'; retry.textContent = 'Thử lại'; retry.hidden = true;
+    retry.className = 'small'; retry.textContent = T('core.try_again'); retry.hidden = true;
     setTimeout(() => { retry.hidden = false; }, 8000);
     return el('div', { className: 'banner wait' }, el('span', { className: 'minispin' }), el('span', { textContent: title }), retry);
   }
   if (CORE !== 'pc') return el('div', { className: 'banner ' + cls }, el('b', { textContent: title }), el('p', { textContent: text }), el('div', { className: 'actions' }, retry));
-  const helpMe = ADB.state === 'closed' || ADB.state === 'error' ? el('button', { className: 'small primary', textContent: '🧭 Bật ADB giúp tôi', onclick: () => adbHelp() }) : null;
+  const helpMe = ADB.state === 'closed' || ADB.state === 'error' ? el('button', { className: 'small primary', textContent: T('core.adb_help_me'), onclick: () => adbHelp() }) : null;
   if (helpMe) retry.className = 'small';
-  const loss = el('p'); loss.append(el('b', { textContent: 'Mất chức năng: ' }), 'xem màn hình, mở app/link, danh sách app, tệp, tải link về TV, cài APK.');
+  const loss = el('p'); loss.append(el('b', { textContent: T('core.lost_features') + ' ' }), T('core.lost_features_list'));
   return el('div', { className: 'banner ' + cls }, el('b', { textContent: title }), el('p', { textContent: text }), loss,
-    el('div', { className: 'actions' }, helpMe, retry, el('button', { className: 'small', textContent: '❓ Cách bật ADB', onclick: () => { const h = $('#help'); h.open = true; h.scrollIntoView({ behavior: 'smooth', block: 'center' }); } })));
+    el('div', { className: 'actions' }, helpMe, retry, el('button', { className: 'small', textContent: T('core.how_adb'), onclick: () => { const h = $('#help'); h.open = true; h.scrollIntoView({ behavior: 'smooth', block: 'center' }); } })));
 }
 function applyAdb() {
   const ready = ADB.state === 'ready';
@@ -452,16 +453,16 @@ function applyAdb() {
   });
   const noadb = !ready && ADB.state !== 'unknown' && !NATIVE();         // not while still connecting; LG / Samsung hide those tabs instead
   $('.tabs').classList.toggle('noadb', noadb);
-  document.querySelectorAll('.tabs [data-needs-adb]').forEach((b) => { if (noadb) b.title = tr('Cần ADB: bấm vào để xem cách bật'); else b.removeAttribute('title'); });
+  document.querySelectorAll('.tabs [data-needs-adb]').forEach((b) => { if (noadb) b.title = T('core.needs_adb_tip'); else b.removeAttribute('title'); });
   const typing = ready || NATIVE() && can('text');                    // typing goes through ADB, or LG's / Samsung's own keyboard link
   put('#kbd', 'disabled', !typing); put($('#kbdoff'), 'hidden', typing);         // no half-working box without it
   put('#screenbtn', 'disabled', !ready && !screenOn);
-  if (!ready && screenOn) stopScreen('ADB chưa sẵn sàng, đã dừng xem màn hình.');
+  if (!ready && screenOn) stopScreen(T('core.adb_stopped_view'));
   if (ready && autoView) { autoView = false; startScreen(); }           // bookmark ?view=1 to start watching right away
   if (ready && !picking && setupChecked !== (curHost || '-')) checkSetup();   // a newer TV Setup: offered once per TV (auto.js, its setupChecked)
   if (NATIVE() && STATE.connected) { if (!quickLoaded && can('app_list')) loadQuick(); if (!scenesLoaded) { scenesLoaded = true; loadScenes(); } }   // the TV's apps from its remote link
   if (ready) { if (!quickLoaded) loadQuick(); if (currentTab === 'apps' && !appsLoaded) loadApps(); if (currentTab === 'files' && !filesLoaded) loadFiles(cwd); if (!scenesLoaded) { scenesLoaded = true; loadScenes(); } if (currentTab === 'auto' && !autoLoaded) autoTab(); if ($('#setlist').open) loadSettings(); }
-  if (!ready && listenOn) stopListen('ADB chưa sẵn sàng, đã dừng nghe tiếng TV.');
+  if (!ready && listenOn) stopListen(T('core.adb_stopped_listen'));
 }
 
 
@@ -476,11 +477,11 @@ async function checkAsk() {
 }
 async function answerAsk(yes) {
   const fp = askSeen; if (!fp) return;
-  if (yes && !await ask(tr('Cho phép thiết bị có mã này điều khiển toàn bộ TV qua ADB?') + '\n\n' + fp, { ok: 'Cho phép' })) return;
+  if (yes && !await ask(T('core.allow_ask') + '\n\n' + fp, { ok: T('core.allow') })) return;
   put('#askyes', 'disabled', true); put('#askno', 'disabled', true);
   const r = await api(yes ? '/api/adb/allow' : '/api/adb/deny', { fingerprint: fp });
   put('#askyes', 'disabled', false); put('#askno', 'disabled', false);
-  if (r) toast(yes ? (r.result === 'allowed' ? 'Đã cho phép thiết bị đó' : 'Không cho phép được: hộp hỏi trên TV đã đổi') : 'Đã từ chối');
+  if (r) toast(yes ? (r.result === 'allowed' ? T('core.device_allowed') : T('core.allow_failed')) : T('core.declined'));
   askAt = 0; checkAsk();
 }
 $('#askyes').addEventListener('click', () => answerAsk(true));
@@ -502,18 +503,18 @@ $('#allow').addEventListener('cancel', () => { allowLater = true; });   // Esc
 function setLocked(on, s) {
   const m = document.querySelector('main'); if (on === m.classList.contains('locked')) return;
   m.classList.toggle('locked', on); put('#pair', 'hidden', !on);
-  if (on) { if (screenOn) stopScreen(); m.classList.remove('wide'); put('#name', 'textContent', (s && s.name) || 'TV Remote'); put('#info', 'textContent', tr('Chưa ghép với TV này')); put('#pairf', 'hidden', true); put('#pairerr', 'textContent', ''); }
+  if (on) { if (screenOn) stopScreen(); m.classList.remove('wide'); put('#name', 'textContent', (s && s.name) || 'TV Remote'); put('#info', 'textContent', T('core.not_paired_yet')); put('#pairf', 'hidden', true); put('#pairerr', 'textContent', ''); }
   else showTab(currentTab);
 }
 $('#pairstart').addEventListener('click', async () => {
   if (!await api('/api/pair/start', {})) return;
-  put('#pairf', 'hidden', false); put('#pairerr', 'textContent', tr('Nhìn lên TV: mã có hiệu lực trong 2 phút.')); $('#paircode').value = ''; $('#paircode').focus();
+  put('#pairf', 'hidden', false); put('#pairerr', 'textContent', T('core.code_2min')); $('#paircode').value = ''; $('#paircode').focus();
 });
 $('#pairf').addEventListener('submit', async (e) => {
   e.preventDefault();
   const r = await fetch('/api/pair/finish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: $('#paircode').value }) }).then(async (x) => ({ ok: x.ok, ...(await x.json().catch(() => ({}))) })).catch(() => ({}));
   if (r.ok) { put('#pairerr', 'textContent', ''); refresh(); return; }
-  put('#pairerr', 'textContent', tr(r.error === 'wrong' ? 'Sai mã, thử lại.' : 'Mã đã hết hạn: bấm “Hiện mã trên TV” để lấy mã mới.')); if (r.error !== 'wrong') put('#pairf', 'hidden', true); $('#paircode').select();
+  put('#pairerr', 'textContent', r.error === 'wrong' ? T('core.wrong_code') : T('core.code_expired')); if (r.error !== 'wrong') put('#pairf', 'hidden', true); $('#paircode').select();
 });
 
 // ---------- the TV's page on a phone: it can live on the home screen like an app (manifest.json) ----------
@@ -523,8 +524,7 @@ function homeHint() {
   let seen = false; try { seen = !!localStorage.getItem('homehint'); } catch {}
   if (CORE !== 'tv' || window.ONTV || standalone || seen || !matchMedia('(pointer:coarse)').matches) return;
   const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  put('#homehow', 'textContent', ios ? 'Trong Safari: bấm nút Chia sẻ (ô vuông có mũi tên lên) → “Thêm vào MH chính”. Mở từ biểu tượng đó, trang hỏi mã ghép một lần nữa (iPhone giữ dữ liệu riêng cho nó).'
-    : 'Trong Chrome: bấm menu ⋮ → “Thêm vào màn hình chính”. Lần sau mở thẳng từ biểu tượng, như một app.');
+  put('#homehow', 'textContent', ios ? T('core.home_ios') : T('core.home_chrome'));
   put('#homehint', 'hidden', false);
 }
 $('#homeok').addEventListener('click', () => { put('#homehint', 'hidden', true); try { localStorage.setItem('homehint', '1'); } catch {} });

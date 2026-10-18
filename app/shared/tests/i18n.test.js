@@ -81,10 +81,12 @@ test('index.html: each word has an id, and keeps the words vi.json gives it', ()
 });
 
 test('every id is used', () => {
-  const src = [html, ...fs.readdirSync(path.join(web, 'js')).filter((f) => f !== 'i18n.js').map((f) => read('js/' + f))].join('\n');
-  const named = new Set([...src.matchAll(/data-i18n(?:-[\w-]+)?="([^"]+)"/g)].map((m) => m[1]).concat([...src.matchAll(/\bT\('([^']+)'/g)].map((m) => m[1])));
+  const src = [html, read('stats.js'), ...fs.readdirSync(path.join(web, 'js')).filter((f) => f !== 'i18n.js').map((f) => read('js/' + f))].join('\n');
+  // an id is named on an element, or as a string in a script: T('a.b'), T(x ? 'a.b' : 'a.c'), a table of ids
+  const named = new Set([...src.matchAll(/data-i18n(?:-[\w-]+)?="([^"]+)"/g)].map((m) => m[1]).concat([...src.matchAll(/'([a-z0-9_]+\.[a-z0-9_]+)'/g)].map((m) => m[1]).filter((id) => id in vi)));
   assert.deepEqual(Object.keys(vi).filter((id) => !named.has(id)), [], 'no element and no T() names it: remove it from every i18n/*.json');
-  assert.deepEqual([...named].filter((id) => !(id in vi)), [], 'named but missing from i18n/vi.json');
+  const asked = [...src.matchAll(/\bT\('([^']+)'/g)].map((m) => m[1]);
+  assert.deepEqual([...new Set(asked)].filter((id) => !(id in vi)), [], 'T() asks for an id missing from i18n/vi.json');
 });
 
 test('the old sentence table only shrinks', () => {
@@ -92,6 +94,6 @@ test('the old sentence table only shrinks', () => {
   const en = i18n.slice(i18n.indexOf('const EN = {'), i18n.indexOf('const RULES = ['));
   const rules = i18n.slice(i18n.indexOf('const RULES = ['), i18n.indexOf('function core('));
   const n = { en: [...en.matchAll(/'(?:[^'\\]|\\.)*':\s*['"`]/g)].length, rules: [...rules.matchAll(/^\s*\[\//gm)].length };
-  assert.ok(n.en <= 1089, `EN has ${n.en} entries (the most it may have: 1089): a new word goes in i18n/*.json with an id`);
+  assert.ok(n.en <= 478, `EN has ${n.en} entries (the most it may have: 478): a new word goes in i18n/*.json with an id`);
   assert.ok(n.rules <= 155, `RULES has ${n.rules} (most: 155)`);
 });

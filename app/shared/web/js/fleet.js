@@ -1,17 +1,17 @@
 // 📺 Several TVs (computer only, app/desktop Fleet.kt): every saved TV in one list to compare, the ones ticked get the same APK,
 // lose the same app, or restart, each with its own progress line. The card sits under the saved TVs on the picker, once there are two.
 let fleetTvs = [], fleetPick = new Set(), fleetRow = {};
-const FLEET_STEP = { waiting: 'đang chờ lượt', connecting: 'đang kết nối', 'installing on TV': 'đang cài', 'checking the TV kept it': 'đang kiểm tra TV giữ app',
-  installed: '✓ đã cài', uninstalled: '✓ đã gỡ', restarting: '✓ đang khởi động lại', done: '✓ xong' };
-const FLEET_ADB = { closed: 'TV tắt, khác mạng hoặc chưa bật ADB', unauthorized: 'TV đang hỏi “Cho phép gỡ lỗi USB?”: bấm Cho phép trên TV',
-  offline: 'ADB của TV đang offline: tắt bật lại TV', error: 'không kết nối được ADB' };
+const FLEET_STEP = { waiting: T('fleet.step_waiting'), connecting: T('fleet.step_connecting'), 'installing on TV': T('fleet.step_installing'), 'checking the TV kept it': T('fleet.step_checking'),
+  installed: T('fleet.step_installed'), uninstalled: T('fleet.step_removed'), restarting: T('fleet.step_restarting'), done: T('fleet.step_done') };
+const FLEET_ADB = { closed: T('fleet.adb_closed'), unauthorized: T('fleet.adb_unauthorized'),
+  offline: T('fleet.adb_offline'), error: T('fleet.adb_error') };
 
 function fleetCheck(n) {                                              // called by loadTvs with the number of saved TVs
-  put('#fleet', 'hidden', n < 2); put('#fleetcount', 'textContent', n ? '· ' + n + ' TV' : '');
+  put('#fleet', 'hidden', n < 2); put('#fleetcount', 'textContent', n ? T('fleet.count', { n }) : '');
   if (n >= 2 && $('#fleet').open) fleetLoad();
 }
 async function fleetLoad() {
-  $('#fleetlist').replaceChildren(el('div', { className: 'muted', textContent: 'Đang hỏi từng TV...' }));
+  $('#fleetlist').replaceChildren(el('div', { className: 'muted', textContent: T('fleet.asking_each') }));
   const r = await api('/api/fleet'); if (!r) return;
   fleetTvs = r.tvs;
   if (!fleetPick.size) fleetTvs.forEach((t) => { if (t.state === 'ready') fleetPick.add(t.host); });   // the ones that can do it, to start with
@@ -22,12 +22,12 @@ function fleetDraw() {
   $('#fleetlist').replaceChildren(...fleetTvs.map((t) => {
     const box = el('input', { type: 'checkbox', checked: fleetPick.has(t.host), onchange: (e) => { if (e.target.checked) fleetPick.add(t.host); else fleetPick.delete(t.host); } });
     const facts = t.state !== 'ready' ? FLEET_ADB[t.state] || t.state
-      : [t.model, t.android ? 'Android ' + t.android : '', t.disk_total ? 'trống ' + fmtSize(t.disk_free) + ' / ' + fmtSize(t.disk_total) : '',
+      : [t.model, t.android ? 'Android ' + t.android : '', t.disk_total ? T('fleet.disk_free', { free: fmtSize(t.disk_free), total: fmtSize(t.disk_total) }) : '',
         t.ram ? 'RAM ' + fmtSize(t.ram) : '', t.setup ? 'TV Setup ' + t.setup : ''].filter(Boolean).join(' · ');
     const step = el('small', { className: 'fleetstep' });
     fleetRow[t.host] = step;
     return el('label', { className: 'fleetrow' + (t.state === 'ready' ? '' : ' off') }, box,
-      el('div', { className: 'name' }, el('b', { textContent: (t.name || 'TV') + (t.host === STATE.host ? ' · đang dùng' : '') }),
+      el('div', { className: 'name' }, el('b', { textContent: t.host === STATE.host ? T('fleet.name_in_use', { name: t.name || 'TV' }) : (t.name || 'TV') }),
         el('small', { textContent: t.host + ' · ' + facts }), step));
   }));
 }
@@ -36,8 +36,8 @@ $('#fleet').addEventListener('toggle', (e) => { if (e.target.open) fleetLoad(); 
 const fleetChosen = () => fleetTvs.filter((t) => fleetPick.has(t.host));
 async function fleetAsk(what) {
   const tvs = fleetChosen();
-  if (!tvs.length) { toast('Chọn ít nhất một TV'); return null; }
-  return await ask(tr(what) + '\n\n' + tvs.map((t) => '• ' + (t.name || t.host)).join('\n')) ? tvs : null;
+  if (!tvs.length) { toast(T('fleet.pick_one')); return null; }
+  return await ask(what + '\n\n' + tvs.map((t) => '• ' + (t.name || t.host)).join('\n')) ? tvs : null;
 }
 // one line per TV under its name, until every TV is done
 let fleetStop = null;                                                  // what ■ Dừng does now: abort the upload, or tell the computer to stop the install on every TV
@@ -53,13 +53,13 @@ async function fleetFollowing(j) {
     for (const [host, p] of Object.entries(j.tvs)) {
       const s = fleetRow[host]; if (!s) continue;
       s.className = 'fleetstep ' + p.status;
-      s.textContent = p.status === 'cancelled' ? '■ Đã dừng' : p.status === 'error' ? '✗ ' + (/^adb:/.test(p.msg) ? FLEET_ADB[p.msg.slice(4)] || p.msg : friendly(p.msg))
+      s.textContent = p.status === 'cancelled' ? T('fleet.stopped_line') : p.status === 'error' ? '✗ ' + (/^adb:/.test(p.msg) ? FLEET_ADB[p.msg.slice(4)] || p.msg : friendly(p.msg))
         : (FLEET_STEP[p.msg] || p.msg) + (p.status === 'running' && p.pct ? ' ' + p.pct + '%' : '');
     }
-    if (j.status === 'cancelled') { toast('Đã dừng'); return; }   // every part says "Đã dừng" above
+    if (j.status === 'cancelled') { toast(T('fleet.stopped')); return; }   // every part says "Đã dừng" above
     if (j.status === 'done') {
       const parts = Object.values(j.tvs), bad = parts.filter((p) => p.status === 'error').length;
-      toast(bad ? 'Xong: ' + (parts.length - bad) + ' TV ✓, ' + bad + ' TV ✗' : 'Xong trên cả ' + parts.length + ' TV');
+      toast(bad ? T('fleet.done_some', { ok: parts.length - bad, bad }) : T('fleet.done_all', { n: parts.length }));
       return;
     }
     await sleep(1000);
@@ -69,7 +69,7 @@ async function fleetFollowing(j) {
 
 $('#fleetapk input').addEventListener('change', async (e) => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-  const tvs = await fleetAsk('Cài ' + f.name + ' lên các TV này?'); if (!tvs) return;
+  const tvs = await fleetAsk(T('fleet.install_ask', { name: f.name })); if (!tvs) return;
   const lbl = $('#fleetapk'), xhr = new XMLHttpRequest();
   xhr.open('POST', '/api/fleet/install?name=' + encodeURIComponent(f.name) + '&hosts=' + encodeURIComponent(tvs.map((t) => t.host).join(',')));
   xhr.setRequestHeader('Content-Type', 'application/octet-stream');
@@ -78,10 +78,10 @@ $('#fleetapk input').addEventListener('change', async (e) => {
     delete lbl.dataset.busy;
     if (xhr.status === 0) { fleetStopShow(null); return; }               // aborted by ■ Dừng (the computer drops the copy it had)
     let r = {}; try { r = JSON.parse(xhr.responseText); } catch {}
-    if (xhr.status !== 200) { toast('Lỗi: ' + friendly(r.error || xhr.statusText || 'không gọi được server')); return; }
+    if (xhr.status !== 200) { toast(T('fleet.error_msg', { msg: friendly(r.error || xhr.statusText || 'không gọi được server') })); return; }
     fleetFollow(r);
   };
-  lbl.dataset.busy = '⏳'; fleetStopShow(() => { xhr.abort(); toast('Đã dừng'); }); xhr.send(f);
+  lbl.dataset.busy = '⏳'; fleetStopShow(() => { xhr.abort(); toast(T('fleet.stopped')); }); xhr.send(f);
 });
 async function fleetDo(action, pkg, what) {
   const tvs = await fleetAsk(what); if (!tvs) return;
@@ -89,31 +89,31 @@ async function fleetDo(action, pkg, what) {
   if (r) fleetFollow(r);
 }
 $('#fleetmore').addEventListener('click', (e) => popover(e.currentTarget, [
-  ['🗑', 'Gỡ app...', () => fleetUninstall()],
-  ['🔁', 'Khởi động lại', () => fleetDo('reboot', '', 'Khởi động lại các TV này?')],
-  ['☑️', 'Chọn tất cả', () => { fleetTvs.forEach((t) => fleetPick.add(t.host)); fleetDraw(); }],
-  ['↻', 'Đọc lại', () => fleetLoad()],
+  ['🗑', T('fleet.menu_remove'), () => fleetUninstall()],
+  ['🔁', T('fleet.menu_restart'), () => fleetDo('reboot', '', T('fleet.ask_restart'))],
+  ['☑️', T('fleet.menu_select_all'), () => { fleetTvs.forEach((t) => fleetPick.add(t.host)); fleetDraw(); }],
+  ['↻', T('fleet.menu_reread'), () => fleetLoad()],
 ]));
 // the apps the user installed on the TVs ticked, most common first: tick the ones to remove everywhere, then one question
 function fleetUninstall() {
   const tvs = fleetChosen().filter((t) => t.apps);
-  if (!tvs.length) { toast('Chọn ít nhất một TV'); return; }
+  if (!tvs.length) { toast(T('fleet.pick_one')); return; }
   const count = new Map();
   tvs.forEach((t) => t.apps.forEach((p) => count.set(p, (count.get(p) || 0) + 1)));
   const apps = [...count].filter(([p]) => !/^(dev\.tvremote\.setup|com\.tailscale\.ipn)$/.test(p)).sort((a, b) => b[1] - a[1] || appName(a[0]).localeCompare(appName(b[0])));
-  put('#infotitle', 'textContent', tr('🗑 Gỡ app nào?'));
-  if (!apps.length) { $('#infobody').replaceChildren(el('p', { className: 'muted', textContent: tr('Các TV đã chọn không có app tự cài nào.') })); $('#infodlg').showModal(); return; }
+  put('#infotitle', 'textContent', T('fleet.which_apps'));
+  if (!apps.length) { $('#infobody').replaceChildren(el('p', { className: 'muted', textContent: T('fleet.no_apps') })); $('#infodlg').showModal(); return; }
   const picked = new Set();
   const go = el('button', { className: 'danger', type: 'button', disabled: true });
-  const sync = () => { go.disabled = !picked.size; go.textContent = tr('Gỡ') + (picked.size ? ' (' + picked.size + ')' : ''); };
+  const sync = () => { go.disabled = !picked.size; go.textContent = T('fleet.remove') + (picked.size ? ' (' + picked.size + ')' : ''); };
   go.onclick = () => {
     const ps = [...picked]; $('#infodlg').close();
-    fleetDo('uninstall', ps.join(','), (ps.length === 1 ? 'Gỡ ' + appName(ps[0]) : 'Gỡ ' + ps.length + ' app') + ' khỏi các TV này?' + (ps.length > 1 ? '\n' + ps.map((p) => '• ' + appName(p)).join('\n') : ''));
+    fleetDo('uninstall', ps.join(','), (ps.length === 1 ? T('fleet.remove_one_ask', { name: appName(ps[0]) }) : T('fleet.remove_many_ask', { n: ps.length })) + (ps.length > 1 ? '\n' + ps.map((p) => '• ' + appName(p)).join('\n') : ''));
   };
   $('#infobody').replaceChildren(
     el('div', { className: 'fleetapps' }, ...apps.map(([p, n]) => el('label', { className: 'fleetrow' },
       el('input', { type: 'checkbox', onchange: (e) => { if (e.target.checked) picked.add(p); else picked.delete(p); sync(); } }),
       el('div', { className: 'name' }, el('b', { textContent: appName(p) }), el('small', { className: 'muted', textContent: p + ' · ' + n + '/' + tvs.length + ' TV' }))))),
-    el('div', { className: 'acts fleetgo' }, el('button', { type: 'button', textContent: tr('Hủy'), onclick: () => $('#infodlg').close() }), go));
+    el('div', { className: 'acts fleetgo' }, el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => $('#infodlg').close() }), go));
   sync(); $('#infodlg').showModal();
 }

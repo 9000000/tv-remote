@@ -1,7 +1,9 @@
 // A message on the TV: a small card in a corner over whatever is playing (TV Setup draws it: Notify.kt, NotifyLayer.kt). The
 // corner and how long it stays are remembered on this page. The numbers are clamped the way Notify.kt clamps them, so the
 // chips and a scene's step say the same thing as the TV does (tests/notify.test.js keeps the two in step).
-const NOTIFY_CORNERS = [['top-left', '↖ Trên trái'], ['top-right', '↗ Trên phải'], ['bottom-left', '↙ Dưới trái'], ['bottom-right', '↘ Dưới phải']];
+const NOTIFY_CORNERS = [['top-left'], ['top-right'], ['bottom-left'], ['bottom-right']];
+// the words of a corner, looked up when they are shown (the language is known by then; tests/notify.test.js runs this file without T)
+const notifyCornerName = (v) => ({ 'top-left': T('notify.top_left'), 'top-right': T('notify.top_right'), 'bottom-left': T('notify.bottom_left'), 'bottom-right': T('notify.bottom_right') })[v];
 const NOTIFY_SECONDS = [3, 5, 10, 30];
 const NOTIFY_CORNER = 'top-right', NOTIFY_SECOND = 5;                // the defaults
 
@@ -22,27 +24,27 @@ async function notifyDialog() {
   if (needAdb()) return;
   if (!await setupFor('notify')) return;                              // TV Setup draws the card (SetupNeed "notify"): asked to update first
   const p = notifyPrefs();
-  const title = el('input', { placeholder: 'Tiêu đề (không bắt buộc)', maxLength: 60, spellcheck: false, 'aria-label': tr('Tiêu đề') });
-  const text = el('textarea', { placeholder: 'Nội dung ngắn, vd Xuống ăn cơm!', rows: 3, maxLength: 300, 'aria-label': tr('Nội dung') });
+  const title = el('input', { placeholder: T('notify.title_optional'), maxLength: 60, spellcheck: false, 'aria-label': T('notify.title') });
+  const text = el('textarea', { placeholder: T('notify.short_message'), rows: 3, maxLength: 300, 'aria-label': T('notify.text') });
   const corners = el('div'), secs = el('div');
   const draw = () => {
-    corners.replaceChildren(UI.chips(NOTIFY_CORNERS.map(([v, label]) => ({ label, on: p.corner === v, fn: () => { p.corner = v; draw(); } }))));
+    corners.replaceChildren(UI.chips(NOTIFY_CORNERS.map(([v]) => ({ label: notifyCornerName(v), on: p.corner === v, fn: () => { p.corner = v; draw(); } }))));
     corners.firstChild.classList.add('two');                        // 2 x 2 like the screen's corners: four in a row wrap one alone on a phone
-    secs.replaceChildren(UI.chips(NOTIFY_SECONDS.map((n) => ({ label: n + ' giây', on: p.seconds === n, fn: () => { p.seconds = n; draw(); } }))));
+    secs.replaceChildren(UI.chips(NOTIFY_SECONDS.map((n) => ({ label: T('notify.seconds_n', { n }), on: p.seconds === n, fn: () => { p.seconds = n; draw(); } }))));
   };
   draw();
   const send = async () => {
-    if (!title.value.trim() && !text.value.trim()) { toast('Gõ nội dung cần gửi'); text.focus(); return; }
+    if (!title.value.trim() && !text.value.trim()) { toast(T('notify.type_something')); text.focus(); return; }
     notifySave(p);
-    if (await api('/api/notify', { title: title.value.trim(), text: text.value.trim(), corner: p.corner, seconds: p.seconds })) { toast('Đã gửi lên TV'); d.close(); }
+    if (await api('/api/notify', { title: title.value.trim(), text: text.value.trim(), corner: p.corner, seconds: p.seconds })) { toast(T('notify.sent')); d.close(); }
   };
   title.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); text.focus(); } });
   text.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); send(); } });
   const d = el('dialog', { className: 'ask' }, el('div', { className: 'card' },
-    UI.head('🔔 Gửi thông báo lên TV', el('button', { className: 'small iconbtn', textContent: '✕', title: tr('Đóng'), 'aria-label': tr('Đóng'), onclick: () => d.close() })),
+    UI.head(T('notify.dialog_title'), el('button', { className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
     title, text,
-    UI.group('Góc màn hình', corners), UI.group('Hiện trong', secs),
-    UI.actions(el('button', { textContent: tr('Hủy'), onclick: () => d.close() }), UI.btn('Gửi', send, 'primary'))));
+    UI.group(T('notify.screen_corner'), corners), UI.group(T('notify.stays_for'), secs),
+    UI.actions(el('button', { textContent: T('common.cancel'), onclick: () => d.close() }), UI.btn(T('notify.send'), send, 'primary'))));
   d.addEventListener('close', () => d.remove());
   document.body.append(d); d.showModal(); text.focus();
 }

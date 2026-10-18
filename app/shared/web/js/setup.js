@@ -1,18 +1,18 @@
 // optimise, language, quit, and the TV tab (saved TVs, scan, first-time setup)
 // ---------- one-click TV setup (Setup.kt) ----------
 async function runSetup(mode, choice) {
-  if (mode === 'undo' && !await ask('Hoàn tác? Bật lại màn hình chính Google, các app đã tắt và hiệu ứng như cũ.', { ok: 'Hoàn tác' })) return;
+  if (mode === 'undo' && !await ask(T('setup.undo_ask'), { ok: T('setup.undo_ok') })) return;
   const btns = [$('#setupapply'), $('#setupundo')], log = $('#setuplog');
-  btns.forEach((b) => { b.disabled = true; }); log.hidden = false; log.textContent = 'Đang chạy...';
+  btns.forEach((b) => { b.disabled = true; }); log.hidden = false; log.textContent = T('setup.running');
   let j = await api('/api/setup', { mode, lang: LANG, ...(choice || {}) });
   for (let misses = 0; j && j.status === 'running' && misses < 10;) {          // ten failed polls in a row: give up waiting, not the TV
     await sleep(1000); const r = await api('/api/job?id=' + j.id, null, true);
     if (!r) { misses++; continue; }
-    misses = 0; j = r; log.textContent = j.log || 'Đang chạy...'; log.scrollTop = log.scrollHeight;
+    misses = 0; j = r; log.textContent = j.log || T('setup.running'); log.scrollTop = log.scrollHeight;
   }
   if (j && j.status === 'running') j = null;
-  if (j) { log.textContent = (j.log || '') + (j.status === 'done' ? '\n✅ Xong.' : '\n❌ Lỗi: ' + friendly(j.msg)); toast(j.status === 'done' ? 'Đã xong' : 'Lỗi: ' + friendly(j.msg)); appsStale(); applyAdb(); }
-  else log.textContent += '\n❌ ' + tr('mất kết nối, không rõ đã xong chưa');
+  if (j) { log.textContent = (j.log || '') + (j.status === 'done' ? '\n' + T('setup.done_line') : '\n❌ ' + T('setup.error_msg', { msg: friendly(j.msg) })); toast(j.status === 'done' ? T('setup.finished') : T('setup.error_msg', { msg: friendly(j.msg) })); appsStale(); applyAdb(); }
+  else log.textContent += '\n❌ ' + T('setup.lost_connection');
   btns.forEach((b) => { b.disabled = false; });
 }
 // "Optimize TV" asks first what to do: what this TV has, suggested apps ticked, any other app the person wants off
@@ -21,21 +21,21 @@ function optRow(name, sub, checked, data) {
   return el('label', { className: 'optrow' }, box, el('span', {}, el('b', { textContent: name }), sub ? el('small', { textContent: sub }) : null));
 }
 async function chooseOptimize() {
-  const body = $('#optbody'); body.replaceChildren(el('p', { className: 'muted', textContent: 'Đang xem TV có gì để tối ưu...' }));
+  const body = $('#optbody'); body.replaceChildren(el('p', { className: 'muted', textContent: T('setup.optimize_looking') }));
   put('#optgo', 'disabled', true); $('#optdlg').showModal();
   const p = await api('/api/setup/plan');
-  if (!p) { body.replaceChildren(el('p', { textContent: 'Không đọc được TV. Thử lại.' })); return; }
+  if (!p) { body.replaceChildren(el('p', { textContent: T('setup.optimize_unreadable') })); return; }
   const usingFl = p.home === 'me.efesser.flauncher';
-  const parts = [el('h3', { textContent: 'Chung' }),
-    optRow('Tắt hiệu ứng chuyển cảnh', p.anim ? 'Mở app, chuyển màn hình nhanh hơn' : 'Đang tắt sẵn', true, { what: 'anim' }),
-    optRow(usingFl ? 'Màn hình chính FLauncher (đang dùng)' : 'Dùng FLauncher làm màn hình chính', 'Chỉ lưới app, nhẹ, không quảng cáo; màn hình chính Google được tắt' + (p.flauncher ? '' : ' · tải 10 MB'), true, { what: 'home' })];
-  if (p.suggest.length) parts.push(el('h3', { textContent: 'Tắt app đề xuất' }), ...p.suggest.map((a) => optRow(a.label, a.pkg, true, { pkg: a.pkg })));
+  const parts = [el('h3', { textContent: T('setup.general') }),
+    optRow(T('setup.anim_off'), p.anim ? T('setup.anim_faster') : T('setup.anim_already'), true, { what: 'anim' }),
+    optRow(usingFl ? T('setup.flauncher_in_use') : T('setup.flauncher_use'), (p.flauncher ? T('setup.flauncher_note') : T('setup.flauncher_note_dl')), true, { what: 'home' })];
+  if (p.suggest.length) parts.push(el('h3', { textContent: T('setup.turn_off_suggested') }), ...p.suggest.map((a) => optRow(a.label, a.pkg, true, { pkg: a.pkg })));
   if (p.apps.length) {
     const list = el('div', { className: 'optbox' }, ...p.apps.map((a) => optRow(a.label, a.pkg, false, { pkg: a.pkg })));
-    const filter = el('input', { className: 'filter', type: 'search', placeholder: 'Lọc theo tên...', oninput: () => {
+    const filter = el('input', { className: 'filter', type: 'search', placeholder: T('setup.filter_by_name'), oninput: () => {
       const q = filter.value.trim().toLowerCase(); list.querySelectorAll('.optrow').forEach((r) => { r.hidden = q && !r.textContent.toLowerCase().includes(q); });
     } });
-    parts.push(el('h3', { textContent: 'Tắt thêm app khác' }), el('p', { className: 'note', textContent: 'Tắt là tạm ngưng, không gỡ; app biến khỏi TV cho tới khi Hoàn tác.' }), p.apps.length > 7 ? filter : null, list);
+    parts.push(el('h3', { textContent: T('setup.turn_off_more') }), el('p', { className: 'note', textContent: T('setup.turn_off_note') }), p.apps.length > 7 ? filter : null, list);
   }
   body.replaceChildren(...parts.filter(Boolean)); put('#optgo', 'disabled', false);
 }
@@ -71,8 +71,8 @@ $('#aboutbtn').addEventListener('click', async () => {
   const r = await fetch('/api/about').then((x) => x.json()).catch(() => null);
   if (r && r.version) put('#aboutver', 'textContent', r.version + (r.released ? ' · ' + r.released : ''));
   // scan with a phone: the Android app, and (when the TV Setup app is serving it) this TV's own remote page
-  $('#qrs').replaceChildren(...[qrBlock('📱 App Android', 'Quét bằng điện thoại để tải app.', APP_APK),
-    r && r.tv_web ? qrBlock('🌐 Remote trên điện thoại', 'Quét khi điện thoại chung mạng với TV.', r.tv_web) : null].filter(Boolean));
+  $('#qrs').replaceChildren(...[qrBlock(T('setup.qr_app'), T('setup.qr_app_long'), APP_APK),
+    r && r.tv_web ? qrBlock(T('setup.qr_remote'), T('setup.qr_remote_note'), r.tv_web) : null].filter(Boolean));
 });
 const APP_APK = 'https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk';
 // a QR with its title and line; the link under it unless [hide] (an invite is for scanning, not for reading out)
@@ -83,9 +83,9 @@ const qrBlock = (title, note, link, hide) => { const s = qrSvg(link, 170); retur
 // The invite is one-time and lasts ten minutes (Invite.kt); without TV Setup (or an older one) only the app's QR is shown.
 // It carries what the one who scans may do (Scope.kt in TV Setup); picking another makes a new QR, as one invite is out at a time.
 const SCOPE_WORDS = {
-  full: ['🛡️ Toàn quyền', 'Như chủ TV: cả Quản lý, cài app, tệp, chia sẻ'],
-  remote: ['🎮 Chỉ remote', 'Bấm phím, gõ chữ, xem hình, mở app; không vào được Quản lý'],
-  view: ['👁️ Chỉ xem', 'Xem hình và bài đang phát, không bấm được gì'],
+  full: [T('setup.scope_full'), T('setup.scope_full_tip')],
+  remote: [T('setup.scope_remote'), T('setup.scope_remote_tip')],
+  view: [T('setup.scope_view'), T('setup.scope_view_tip')],
 };
 const scopeChips = (now, fn) => UI.chips(Object.keys(SCOPE_WORDS).map((k) => ({ label: SCOPE_WORDS[k][0], title: SCOPE_WORDS[k][1], on: k === now, fn: () => fn(k) })));
 // two tabs: the TV (a one-time QR, with what the scanner may do) and the app (the APK's QR), as on the phone (Share.kt)
@@ -93,26 +93,26 @@ async function shareDialog() {
   let scope = 'remote';                                               // what a guest on the sofa needs; the owner can pick more
   const r = await api('/api/share', { scope }) || {};
   const qr = el('div', { className: 'qrs' }), pick = el('div');
-  const warn = { tailscale: 'Máy này đang nối TV qua Tailscale: điện thoại quét phải ở cùng Wi-Fi với TV.', tailscale_only: 'TV không có địa chỉ Wi-Fi: điện thoại quét cần bật Tailscale.' }[r.warn];
+  const warn = { tailscale: T('setup.warn_tailscale'), tailscale_only: T('setup.warn_tailscale_only') }[r.warn];
   const tv = el('div', { className: 'sharetab' },
     warn ? UI.warn(warn) : null,
-    r.setup === 'missing' ? UI.note('TV chưa có TV Setup: chỉ chia sẻ được app.') : null,
-    r.setup === 'old' ? UI.note('Cập nhật TV Setup để chia sẻ remote.') : null,
-    r.setup === 'old' ? UI.actions(UI.btn('⬆️ Cập nhật TV Setup', () => { d.close(); return updateSetup(); }, 'small')) : null,
-    r.url ? UI.note('Người quét được làm gì') : null, r.url ? pick : null, qr);
-  const app = el('div', { className: 'sharetab', hidden: true }, el('div', { className: 'qrs' }, qrBlock('📱 App Android', 'Quét để tải app.', APP_APK)));
+    r.setup === 'missing' ? UI.note(T('setup.share_no_setup')) : null,
+    r.setup === 'old' ? UI.note(T('setup.share_old_setup')) : null,
+    r.setup === 'old' ? UI.actions(UI.btn(T('setup.update_setup'), () => { d.close(); return updateSetup(); }, 'small')) : null,
+    r.url ? UI.note(T('setup.scanner_may')) : null, r.url ? pick : null, qr);
+  const app = el('div', { className: 'sharetab', hidden: true }, el('div', { className: 'qrs' }, qrBlock(T('setup.qr_app'), T('setup.qr_app_short'), APP_APK)));
   const tabs = el('div', { className: 'seg' });
   const show = (k) => {
-    tabs.replaceChildren(...[['tv', '📺 Chia sẻ TV'], ['app', '📱 Chia sẻ app']].map(([id, label]) =>
+    tabs.replaceChildren(...[['tv', T('setup.share_tv')], ['app', T('setup.share_app')]].map(([id, label]) =>
       el('button', { className: id === k ? 'on' : '', textContent: label, onclick: () => show(id) })));
     tv.hidden = k !== 'tv'; app.hidden = k !== 'app';
   };
   const d = el('dialog', { className: 'ask share' }, el('div', { className: 'card' },
-    UI.head('📲 Chia sẻ', el('button', { className: 'small iconbtn', textContent: '✕', title: 'Đóng', 'aria-label': 'Đóng', onclick: () => d.close() })),
+    UI.head(T('setup.share_title'), el('button', { className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
     tabs, tv, app));
   const wifi = r.warn !== 'tailscale_only';                           // the link is the TV's Wi-Fi address: say so, unless only Tailscale reaches it (warned above)
-  const draw = (url) => qr.replaceChildren(...[url ? qrBlock(scope === 'view' ? '🌐 Xem TV' : '🌐 Mở remote',
-    [wifi ? 'Điện thoại phải cùng Wi-Fi với TV' : null, 'Dùng 1 lần, trong 10 phút'].filter(Boolean), url, true) : null].filter(Boolean));
+  const draw = (url) => qr.replaceChildren(...[url ? qrBlock(scope === 'view' ? T('setup.qr_view') : T('setup.qr_open'),
+    [wifi ? T('setup.same_wifi') : null, T('setup.one_time')].filter(Boolean), url, true) : null].filter(Boolean));
   const choose = async (k) => {
     if (k === scope) return; scope = k; pick.replaceChildren(scopeChips(scope, choose));
     const n = await api('/api/share', { scope }); draw(n && n.url);   // on a failure no QR rather than the last one under the wrong choice
@@ -132,13 +132,13 @@ function showUpdate(u) {
   const b = $('#update');
   b.hidden = !u || !u.version || (updLater && u.state !== 'installing');
   if (b.hidden) return;
-  put('#updtitle', 'textContent', '🆕 Có bản mới ' + u.version + ' (đang dùng ' + u.current + ')');
-  put('#updnote', 'textContent', u.state === 'downloading' ? 'Đang tải bản mới ' + u.pct + '%'
-    : u.state === 'installing' ? 'Đang cập nhật: TV Remote đóng lại rồi tự mở bản mới.'
-    : u.state === 'error' ? 'Chưa tải được bản mới (' + friendly(u.error) + '). Bấm Cập nhật để thử lại.'
-    : !u.auto ? 'App nằm ở thư mục không tự thay được: tải bản mới, giải nén, rồi thay cho bản đang dùng.'
-    : 'Bấm Cập nhật: TV Remote đóng lại rồi tự mở bản mới, mất vài giây. Để sau thì bản mới tự cài khi đóng app.');
-  put('#updgo', 'textContent', u.auto ? '⬆️ Cập nhật' : '⬇️ Tải bản mới');
+  put('#updtitle', 'textContent', T('setup.update_title', { version: u.version, current: u.current }));
+  put('#updnote', 'textContent', u.state === 'downloading' ? T('setup.update_downloading', { pct: u.pct })
+    : u.state === 'installing' ? T('setup.update_installing')
+    : u.state === 'error' ? T('setup.update_failed', { err: friendly(u.error) })
+    : !u.auto ? T('setup.update_manual')
+    : T('setup.update_ready'));
+  put('#updgo', 'textContent', u.auto ? T('page.update') : T('setup.download_update'));
   put('#updacts', 'hidden', u.state === 'installing' || u.state === 'downloading' && !updPoll);
   clearTimeout(updPoll); updPoll = null;
   if (u.state === 'downloading' || u.state === 'installing') updPoll = setTimeout(pollUpdate, 1000);
@@ -150,16 +150,16 @@ $('#updgo').addEventListener('click', async () => {
   const u = await api('/api/update'); if (!u) return;
   if (!u.auto) { window.open(u.url, '_blank'); return; }
   const notes = (u.notes || '').replace(/\*\*/g, '').replace(/\r/g, '');
-  if (!await ask('Cập nhật lên ' + u.version + '? TV Remote sẽ đóng lại rồi tự mở bản mới.' + (notes ? '\n\n' + (notes.length > 900 ? notes.slice(0, 900) + '...' : notes) : ''), { ok: 'Cập nhật' })) return;
+  if (!await ask(T('setup.update_ask', { version: u.version }) + (notes ? '\n\n' + (notes.length > 900 ? notes.slice(0, 900) + '...' : notes) : ''), { ok: T('setup.update_ok') })) return;
   const r = await api('/api/update', { do: 'install' }); if (r) showUpdate(r);
 });
 $('#updcheck').addEventListener('click', async () => {
-  put('#updcheckmsg', 'textContent', 'Đang kiểm tra...');
+  put('#updcheckmsg', 'textContent', T('setup.checking'));
   const u = await api('/api/update', { do: 'check' });
   if (!u) { put('#updcheckmsg', 'textContent', ''); return; }
   updLater = false; showUpdate(u);
-  put('#updcheckmsg', 'textContent', !u.packaged ? 'Bản chạy từ mã nguồn: cập nhật bằng git pull.' : u.error ? 'Không kiểm tra được: ' + friendly(u.error)
-    : u.version ? 'Có bản mới ' + u.version + ': xem thanh trên cùng trang.' : 'Đang dùng bản mới nhất (' + u.current + ').');
+  put('#updcheckmsg', 'textContent', !u.packaged ? T('setup.update_source') : u.error ? T('setup.update_check_failed', { err: friendly(u.error) })
+    : u.version ? T('setup.update_found', { version: u.version }) : T('setup.update_latest', { current: u.current }));
 });
 // ---------- Home Assistant · Phím tắt (Hook.kt): its own switch and token, shown only to the owner ----------
 let hookNow = null;
@@ -174,19 +174,19 @@ async function hookLoad() {
   if (SCOPE !== 'full') return;
   hookShow(await api('/api/hook/config', null, true));
 }
-const hookCopy = async (text, done) => { try { await navigator.clipboard.writeText(text); toast(done); } catch { $('#hookurl').select(); toast('Không sao chép được: chọn chữ rồi sao chép tay'); } };
+const hookCopy = async (text, done) => { try { await navigator.clipboard.writeText(text); toast(done); } catch { $('#hookurl').select(); toast(T('setup.copy_failed')); } };
 $('#aboutbtn').addEventListener('click', hookLoad);
 $('#hookpick').addEventListener('click', async (e) => {
   const b = e.target.closest('button'); if (!b || (b.dataset.v === 'on') === !!(hookNow && hookNow.on)) return;
   const h = await api('/api/hook/config', { do: b.dataset.v });
   if (h) hookShow(h);
 });
-$('#hookcopyurl').addEventListener('click', () => hookNow && hookCopy(hookNow.shortcut, 'Đã sao chép đường dẫn'));
-$('#hookcopyyaml').addEventListener('click', () => hookNow && hookCopy(hookNow.yaml, 'Đã sao chép YAML'));
+$('#hookcopyurl').addEventListener('click', () => hookNow && hookCopy(hookNow.shortcut, T('setup.copied_link')));
+$('#hookcopyyaml').addEventListener('click', () => hookNow && hookCopy(hookNow.yaml, T('setup.copied_yaml')));
 $('#hooknew').addEventListener('click', async () => {
-  if (!await ask('Đổi mã mới? Các Phím tắt và Home Assistant đang dùng mã cũ sẽ ngừng chạy cho đến khi bạn dán đường dẫn mới.', { ok: 'Đổi mã' })) return;
+  if (!await ask(T('setup.newtoken_ask'), { ok: T('setup.newtoken_ok') })) return;
   const h = await api('/api/hook/config', { do: 'new' });
-  if (h) { hookShow(h); toast('Đã đổi mã mới'); }
+  if (h) { hookShow(h); toast(T('setup.newtoken_done')); }
 });
 $('#aboutclose').addEventListener('click', () => $('#about').close());
 $('#sendlog').addEventListener('click', sendWireLog);
@@ -195,13 +195,13 @@ $('#about').addEventListener('click', (e) => { if (e.target === $('#about')) $('
 // ---------- stop the local server from the page ----------
 let stopped = false;
 $('#quit').addEventListener('click', async () => {
-  if (!await ask('Tắt TV Remote trên máy tính này?\nTV không bị ảnh hưởng. Muốn dùng lại thì mở lại app TV Remote.', { ok: 'Tắt' })) return;
+  if (!await ask(T('setup.quit_ask'), { ok: T('setup.quit_ok') })) return;
   $('#about').close();
   if (screenOn) stopScreen();
   if (!await api('/api/shutdown', {})) return;
   stopped = true;
   document.querySelector('main').replaceChildren(el('section', { className: 'card stopped' },
-    el('h1', { textContent: 'Đã tắt' }), el('p', { className: 'muted', textContent: 'TV Remote trên máy tính này đã dừng. Mở lại app TV Remote để dùng tiếp. Có thể đóng trang này.' })));
+    el('h1', { textContent: T('setup.stopped_title') }), el('p', { className: 'muted', textContent: T('setup.stopped_note') })));
 });
 
 // ---------- TVs: saved list, discovery, first-time setup ----------
@@ -213,7 +213,7 @@ function tvChanged() {                                                // another
   if (picking) loadTvs();
 }
 function connecting(name, host) {                                   // covers the remote until the TV answers (see refresh)
-  put('#conname', 'textContent', name); put('#constep', 'textContent', 'Đang tìm TV ở ' + host + '...');
+  put('#conname', 'textContent', name); put('#constep', 'textContent', T('setup.finding_tv', { host }));
   if (!$('#connecting').open) $('#connecting').showModal();
 }
 $('#concancel').addEventListener('click', () => { pickCancel(); $('#connecting').close(); refresh(); });
@@ -230,11 +230,11 @@ async function loadTvs() {
   const r = await api('/api/tvs', null, true); if (!r) return;
   savedTvs = r.tvs;
   const rows = r.tvs.map((t) => el('div', { className: 'item', onclick: (e) => { if (!e.target.closest('button')) openTv(t.host, r.current, t.name); } },
-    el('div', { className: 'name' }, el('span', { textContent: t.name || t.host }), t.host === r.current && cameFromTv ? el('span', { className: 'badge ok', textContent: 'đang dùng' }) : null,
-      el('small', { textContent: t.host + (t.lan && t.lan !== t.host ? ' · trong nhà ' + t.lan : '') })),
+    el('div', { className: 'name' }, el('span', { textContent: t.name || t.host }), t.host === r.current && cameFromTv ? el('span', { className: 'badge ok', textContent: T('setup.in_use') }) : null,
+      el('small', { textContent: t.host + (t.lan && t.lan !== t.host ? ' · ' + T('setup.at_home', { lan: t.lan }) : '') })),
     el('div', { className: 'acts' },
       setLabel(el('button', { className: 'small primary', onclick: () => openTv(t.host, r.current) }), '▶', OPEN_TV),
-      setLabel(el('button', { className: 'small danger', onclick: async () => { if (await ask('Xóa "' + (t.name || t.host) + '" khỏi danh sách? (Không đổi gì trên TV)', { ok: 'Xóa', danger: true })) { await api('/api/tv/remove', { host: t.host }); await refresh(); loadTvs(); loadSteps(); } } }), '🗑', 'Xóa', true))));
+      setLabel(el('button', { className: 'small danger', onclick: async () => { if (await ask(T('setup.forget_ask', { name: t.name || t.host }), { ok: T('setup.delete'), danger: true })) { await api('/api/tv/remove', { host: t.host }); await refresh(); loadTvs(); loadSteps(); } } }), '🗑', T('setup.delete'), true))));
   $('#tvlist').replaceChildren(...rows);
   put('#savedcard', 'hidden', !rows.length); $('#pickcols').classList.toggle('solo', !rows.length);   // nothing saved: no empty box, just the search
   fleetCheck(rows.length);
@@ -244,17 +244,17 @@ function scanRow(f) {
   const row = el('div', { className: 'item', onclick: (e) => { if (!e.target.closest('button')) selectTv(f.ip, f.name, f.kind); } },
     el('div', { className: 'name' }, el('span', { textContent: f.name || f.ip }),
       el('div', { className: 'badges' },                              // a line of their own: wrapped beside a long name they looked lopsided
-      el('span', { className: 'badge' + (f.remote ? ' ok' : ''), textContent: native ? 'TV ' + KIND_NAME[f.kind] : f.remote ? 'Android TV' : 'chỉ có ADB' }),
-      native ? el('span', { className: 'badge', textContent: 'thử nghiệm' }) : null,
-      native ? null : f.adb ? el('span', { className: 'badge ok', textContent: 'ADB đã bật' }) : el('span', { className: 'badge', textContent: 'ADB chưa bật' })),
-      el('small', { textContent: f.ip + (f.via === 'tailscale' ? ' · qua Tailscale' : ' · cùng mạng') + (f.tailscale ? ' · Tailscale ' + f.tailscale : '') })),
+      el('span', { className: 'badge' + (f.remote ? ' ok' : ''), textContent: native ? 'TV ' + KIND_NAME[f.kind] : f.remote ? 'Android TV' : T('setup.adb_only') }),
+      native ? el('span', { className: 'badge', textContent: T('setup.experimental') }) : null,
+      native ? null : f.adb ? el('span', { className: 'badge ok', textContent: T('setup.adb_on') }) : el('span', { className: 'badge', textContent: T('setup.adb_off') })),
+      el('small', { textContent: f.ip + (f.via === 'tailscale' ? ' · ' + T('setup.via_tailscale') : ' · ' + T('setup.same_network')) + (f.tailscale ? ' · Tailscale ' + f.tailscale : '') })),
     el('div', { className: 'acts' }, setLabel(el('button', { className: 'small primary', onclick: () => selectTv(f.ip, f.name, f.kind) }), '▶', OPEN_TV)));
   row.dataset.ip = f.ip; return row;
 }
 // The scan runs on the computer; asked again every 400 ms, each TV shows up as soon as it answers instead of after the
 // whole network (and a second pass when the first finds nothing)
 $('#scan').addEventListener('click', async () => {
-  const b = $('#scan'), list = $('#scanlist'); b.disabled = true; b.textContent = '⏳ Đang quét...'; list.replaceChildren(); put('#scaninfo', 'textContent', '');
+  const b = $('#scan'), list = $('#scanlist'); b.disabled = true; b.textContent = T('setup.scanning'); list.replaceChildren(); put('#scaninfo', 'textContent', '');
   let r = await api('/api/discover?new=1');
   while (r) {
     for (const f of r.found) {                                        // one row per TV: a saved one is known by both its addresses
@@ -266,8 +266,8 @@ $('#scan').addEventListener('click', async () => {
     await sleep(400);
     r = await api('/api/discover', null, true);
   }
-  b.disabled = false; b.textContent = '🔍 Quét mạng'; if (!r) return;
-  put('#scaninfo', 'textContent', r.found.length ? '' : 'Không thấy TV nào. TV có bật và chung Wi-Fi không?');
+  b.disabled = false; b.textContent = T('page.scan'); if (!r) return;
+  put('#scaninfo', 'textContent', r.found.length ? '' : T('setup.no_tv_found'));
 });
 $('#ipf').addEventListener('submit', (e) => { e.preventDefault(); const ip = $('#ipin').value.trim(); if (ip) selectTv(ip); });
 $('#setuprefresh').addEventListener('click', () => loadSteps());
@@ -288,161 +288,161 @@ $('#assist').addEventListener('close', () => { assistGen++; api('/api/assist', {
 
 function adbHelp() {
   if (!STATE.connected) {                                             // everything here goes through the remote buttons
-    assistShow('Bật ADB cho TV này', say(STATE.paired === false ? 'Trước hết cần ghép nút remote với TV (TV hiện mã 6 ký tự, gõ vào đây). Sau đó trang này tự làm giúp phần còn lại.'
-      : 'Chưa kết nối được nút remote tới TV (cổng 6466): TV đang bật và cùng mạng với máy này chứ?'),
-      row(act('🔗 Tới bước ghép remote', async () => { $('#assist').close(); showTab('tv'); }, 'primary')), say('Hoặc tự làm bằng remote của TV:'), say(ADB_STEPS), say(DL_TIP),
-      CORE !== 'tv' ? choice('📡 Ghép bằng Gỡ lỗi không dây', '', wirelessPair) : null);
+    assistShow(T('setup.turn_on_adb'), say(STATE.paired === false ? T('setup.pair_first')
+      : T('setup.remote_unreachable')),
+      row(act(T('setup.go_pair'), async () => { $('#assist').close(); showTab('tv'); }, 'primary')), say(T('setup.or_by_hand')), say(ADB_STEPS), say(DL_TIP),
+      CORE !== 'tv' ? choice(T('setup.wireless_choice'), '', wirelessPair) : null);
     return;
   }
-  assistShow('Bật ADB cho TV này',
-    choice('⚡ Tự động: cài TV Setup lên TV', 'Trang này cho TV tự tải và mở app TV Setup; app đó mở thẳng Tùy chọn nhà phát triển. Bạn chỉ xác nhận trên TV.', installSetup, 'primary'),
-    choice('🔧 Tự làm: mở Cài đặt TV', 'Thử mọi cách mở Cài đặt, rồi chỉ các bước bật Gỡ lỗi ADB.', findSettings),
-    choice('🏠 Cài màn hình chính khác', 'Khi TV giấu Cài đặt: mở qua một launcher từ CH Play.', otherHome),
-    CORE !== 'tv' ? choice('📡 Ghép bằng Gỡ lỗi không dây', 'Android 11 trở lên: dùng mã 6 số TV hiện ra, không cần bật Gỡ lỗi USB.', wirelessPair) : null,
-    choice('🛒 Mở CH Play trên TV', '', () => assist('open', { what: 'https://play.google.com/store/apps' })),
-    choice('📦 Mở app theo tên gói', 'Đã cài thì mở app, chưa cài thì mở trang CH Play của nó.', async () => { const p = await ask('Tên gói hoặc đường dẫn', { value: 'com.example.app' }); if (p && p.trim()) assist('open', { what: p.trim() }); }),
-    choice('🔗 Gửi link cài thẳng cho TV', 'Dự phòng, chưa ổn định: TV có thể tải về mà không tự cài.', installDirect),
+  assistShow(T('setup.turn_on_adb'),
+    choice(T('setup.auto_install'), T('setup.auto_install_note'), installSetup, 'primary'),
+    choice(T('setup.by_hand'), T('setup.by_hand_note'), findSettings),
+    choice(T('setup.other_home'), T('setup.other_home_note'), otherHome),
+    CORE !== 'tv' ? choice(T('setup.wireless_choice'), T('setup.wireless_note'), wirelessPair) : null,
+    choice(T('setup.open_play'), '', () => assist('open', { what: 'https://play.google.com/store/apps' })),
+    choice(T('setup.open_pkg'), T('setup.open_pkg_note'), async () => { const p = await ask(T('setup.pkg_ask'), { value: 'com.example.app' }); if (p && p.trim()) assist('open', { what: p.trim() }); }),
+    choice(T('setup.direct_link'), T('setup.direct_link_note'), installDirect),
     say(DL_TIP),
-    say('Khi TV bật ADB xong, trang này tự nhận ra và kết nối. Các nút mũi tên, OK ở tab Remote vẫn dùng được trong lúc làm.'));
+    say(T('setup.adb_done_note')));
 }
-const WIRELESS_STEPS = 'Trên TV: Cài đặt → Tùy chọn nhà phát triển → Gỡ lỗi không dây → Ghép nối thiết bị bằng mã ghép nối.';
+const WIRELESS_STEPS = T('setup.wireless_steps');
 // Wireless debugging (Android 11+): the TV shows a 6-digit code and an IP:port to pair with; the port to connect to is found by itself
 async function wirelessPair() {
-  const addr = el('input', { type: 'text', placeholder: 'IP:cổng ghép nối', inputMode: 'decimal', autocomplete: 'off' });
-  const code = el('input', { type: 'text', placeholder: 'Mã 6 số', inputMode: 'numeric', maxLength: 7, autocomplete: 'off' });
-  const port = el('input', { type: 'text', placeholder: 'Cổng kết nối (nếu hỏi)', inputMode: 'numeric', autocomplete: 'off' });
+  const addr = el('input', { type: 'text', placeholder: T('setup.ph_addr'), inputMode: 'decimal', autocomplete: 'off' });
+  const code = el('input', { type: 'text', placeholder: T('setup.ph_code6'), inputMode: 'numeric', maxLength: 7, autocomplete: 'off' });
+  const port = el('input', { type: 'text', placeholder: T('setup.ph_port'), inputMode: 'numeric', autocomplete: 'off' });
   const status = el('p', { className: 'note' });
   const pair = async () => {
     const m = addr.value.trim().match(/^(?:(.+):)?(\d{2,5})$/);
     if (!m || (code.hidden ? !/^\d{2,5}$/.test(port.value.trim()) : !/^\s*\d{3}\s?\d{3}\s*$/.test(code.value))) {   // paired already: only the connect port is left
-      status.textContent = code.hidden ? 'Nhập cổng kết nối (số sau dấu : ).' : 'Nhập IP:cổng và mã 6 số hiện trên TV.'; return;
+      status.textContent = code.hidden ? T('setup.enter_port') : T('setup.enter_addr_code'); return;
     }
-    status.textContent = 'Đang ghép nối...';
+    status.textContent = T('setup.pairing');
     const r = await api('/api/adb/pair', { host: m[1] || '', port: +m[2], code: code.hidden ? '' : code.value, connectPort: +port.value || 0 });
     if (!r) { status.textContent = ''; return; }
-    if (r.needPort) { status.textContent = 'Đã ghép. Nhập cổng kết nối (ở màn hình Gỡ lỗi không dây, dưới “Địa chỉ IP và cổng”) rồi bấm Ghép lại.'; code.value = ''; code.hidden = true; port.hidden = false; port.focus(); return; }
-    adbNow({ state: r.state }); $('#assist').close(); toast('Đã ghép và kết nối'); await refresh();
+    if (r.needPort) { status.textContent = T('setup.need_port'); code.value = ''; code.hidden = true; port.hidden = false; port.focus(); return; }
+    adbNow({ state: r.state }); $('#assist').close(); toast(T('setup.paired_connected')); await refresh();
   };
   port.hidden = true;
-  assistShow('Ghép bằng Gỡ lỗi không dây', say(WIRELESS_STEPS), UI.line(addr), UI.line(code), UI.line(port), status,
-    row(act('🔗 Ghép', pair, 'primary'), act('← Các cách khác', async () => adbHelp())));
+  assistShow(T('setup.wireless_title'), say(WIRELESS_STEPS), UI.line(addr), UI.line(code), UI.line(port), status,
+    row(act(T('setup.pair'), pair, 'primary'), act(T('setup.other_ways'), async () => adbHelp())));
   const f = await api('/api/adb/discover', null, true);              // prefilled when the TV announces itself on the network
   const p = f && (f.pairing || []).find((s) => s.ip === f.host) || f && (f.pairing || [])[0];
   if (p && !addr.value) addr.value = p.ip + ':' + p.port;
 }
-const DL_TIP = 'Cài TV Setup bằng tay: trên TV cài app Downloader từ CH Play, mở nó, nhập mã 2397346 rồi Go. TV Setup tự mở chỗ bật Gỡ lỗi ADB.';
-const ADB_STEPS = '1. Trong Cài đặt: Tùy chọn thiết bị (hoặc Hệ thống) → Giới thiệu → bấm OK 7 lần vào “Bản dựng”.\n2. Quay lại, vào Tùy chọn nhà phát triển → bật “Gỡ lỗi USB” (hoặc “Gỡ lỗi ADB”).\n3. Trên TV tích “Luôn cho phép” rồi chọn OK.\n\nNếu TV đòi “mật khẩu ADB” khi bấm 7 lần: dùng cách “Tự động: cài TV Setup lên TV”.';
+const DL_TIP = T('setup.dl_tip');
+const ADB_STEPS = T('setup.adb_steps');
 function adbSteps() {
-  assistShow('Bật Gỡ lỗi ADB trên TV', say('Dùng các nút mũi tên và OK ở tab Remote, hoặc remote của TV:'), say(ADB_STEPS),
-    row(act('🔌 Đã bật, kết nối', async () => { const r = await api('/api/adb/connect', {}); if (r) { adbNow(r); await refresh(); } }, 'primary'), act('← Các cách khác', async () => adbHelp())));
+  assistShow(T('setup.steps_title'), say(T('setup.steps_use_keys')), say(ADB_STEPS),
+    row(act(T('setup.connect_now'), async () => { const r = await api('/api/adb/connect', {}); if (r) { adbNow(r); await refresh(); } }, 'primary'), act(T('setup.other_ways'), async () => adbHelp())));
 }
 function lookOnHome() {
-  assistShow('TV không mở Cài đặt theo lệnh', say('Tìm trên màn hình chính của TV, dùng các nút mũi tên ở tab Remote: biểu tượng hồ sơ/tài khoản hoặc bánh răng (thường ở góc trên) → Cài đặt → “Cài đặt thiết bị”.\n\nBox FPT Play: mở bảng Quản lý (hồ sơ) → Cài đặt → Cài đặt thiết bị.'),
-    row(act('✓ Thấy rồi', async () => adbSteps(), 'primary'), act('Không có · Cài màn hình chính khác', async () => otherHome()), act('← Các cách khác', async () => adbHelp())));
+  assistShow(T('setup.look_title'), say(T('setup.look_body')),
+    row(act(T('setup.found_it'), async () => adbSteps(), 'primary'), act(T('setup.none_other_home'), async () => otherHome()), act(T('setup.other_ways'), async () => adbHelp())));
 }
 async function findSettings() {
-  assistShow('Mở Cài đặt TV', say('Đang thử mở Cài đặt trên TV...')); const gen = assistGen;
+  assistShow(T('setup.open_settings'), say(T('setup.trying_settings'))); const gen = assistGen;
   const r = await assist('settings'); if (gen !== assistGen) return;
   if (!r) return adbHelp();
   if (r.ok) return adbSteps();
-  if (r.blind) return assistShow('Mở Cài đặt TV', say('TV có mở màn hình Cài đặt không?'), row(act('Có', async () => adbSteps(), 'primary'), act('Không', async () => lookOnHome())));
+  if (r.blind) return assistShow(T('setup.open_settings'), say(T('setup.settings_opened_q')), row(act(T('setup.yes'), async () => adbSteps(), 'primary'), act(T('setup.no'), async () => lookOnHome())));
   lookOnHome();
 }
 function otherHome() {
-  assistShow('Mở Cài đặt qua màn hình chính khác', ...HOMES.map(([name, pkg]) => choice(name, STATE.app === pkg ? 'Đang mở trên TV' : 'Đã cài thì mở, chưa cài thì mở trang CH Play.', () => {
+  assistShow(T('setup.via_other_home'), ...HOMES.map(([name, pkg]) => choice(name, STATE.app === pkg ? T('setup.opening_on_tv') : T('setup.installed_open_else_play'), () => {
     assist('open', { what: pkg });
-    assistShow(name, say('Nhìn lên TV.\n\n• Thấy trang CH Play: chọn Cài đặt, xong bấm “Mở lại” bên dưới.\n• CH Play báo không tương thích hoặc không tìm thấy: bấm “Chọn cái khác”.\n• Thấy màn hình chính mới: tìm biểu tượng bánh răng → Cài đặt Android, rồi bấm “Các bước bật ADB”.\n\nCH Play cần TV đã đăng nhập tài khoản Google.'),
-      row(act('Các bước bật ADB', async () => adbSteps(), 'primary'), act('↻ Mở lại', async () => { await assist('open', { what: pkg }); }), act('Chọn cái khác', async () => otherHome())));
-  })), row(act('← Các cách khác', async () => adbHelp())));
+    assistShow(name, say(T('setup.home_look_body')),
+      row(act(T('setup.adb_steps_btn'), async () => adbSteps(), 'primary'), act(T('setup.reopen'), async () => { await assist('open', { what: pkg }); }), act(T('setup.choose_another'), async () => otherHome())));
+  })), row(act(T('setup.other_ways'), async () => adbHelp())));
 }
 // The old short way, kept as a fallback: some TVs install what their browser downloaded, others (TCL) sit on a white page.
 // A minute with no answer (and no installer in front): offer the Downloader ways.
 async function installDirect() {
-  assistShow('Gửi link cài thẳng cho TV', say('Đang gửi đường dẫn tải cho TV...')); const gen = assistGen;
+  assistShow(T('setup.direct_title'), say(T('setup.sending_link'))); const gen = assistGen;
   const r = await assist('direct'); if (gen !== assistGen) return;
   if (!r) return adbHelp();
-  assistShow('Gửi link cài thẳng cho TV', say('Nhìn lên TV: nếu TV hỏi tải tv-setup.apk, chọn OK, rồi chọn Cài đặt (Install). Cài xong bấm “Đã cài xong”.\n\nCách này chưa ổn định: có TV chỉ tải về mà không tự cài, hoặc đứng ở trang trắng. Khi đó bấm “Cách khác”.'),
-    row(act('✓ Đã cài xong', async () => { await assist('open', { what: 'dev.tvremote.setup' }); }, 'primary'), act('← Cách khác', async () => adbHelp())));
+  assistShow(T('setup.direct_title'), say(T('setup.direct_body')),
+    row(act(T('setup.installed_done'), async () => { await assist('open', { what: 'dev.tvremote.setup' }); }, 'primary'), act(T('setup.other_way'), async () => adbHelp())));
   const shown = assistGen;
   for (let waited = 0; ; waited += 5) {
     await sleep(5000); if (shown !== assistGen) return;               // any button, or closing, moves on
     if (waited < 60) continue;
     const s = await api('/api/assist', null, true); if (shown !== assistGen) return;
     if (s && /installer/.test(s.front || '')) continue;               // the TV's installer is up: the person is busy there
-    return assistShow('TV chưa cài được?', say('Nhiều TV không tự cài file tải bằng trình duyệt. Cài qua app Downloader thì chắc hơn: trang này mở Downloader (chưa có thì cài từ CH Play) rồi cho nó tải TV Setup.'),
-      row(act('⚡ Cài qua Downloader', async () => installSetup(), 'primary'), act('← Các cách khác', async () => adbHelp())), say(DL_TIP));
+    return assistShow(T('setup.tv_failed_title'), say(T('setup.tv_failed_body')),
+      row(act(T('setup.via_downloader'), async () => installSetup(), 'primary'), act(T('setup.other_ways'), async () => adbHelp())), say(DL_TIP));
   }
 }
 async function installSetup() {
   if (!await assist('setup')) return;
-  const msg = say('Đang bắt đầu...'); msg.classList.add('setupmsg');   // the words change as it goes; the buttons below must not jump
-  const done = el('button', { className: 'small', textContent: '✓ Đã cài xong', onclick: async () => { setDone(true); await assist('installed'); } });
-  const setDone = (busy) => { done.disabled = busy; done.textContent = tr(busy ? '⏳ Đang kiểm tra...' : '✓ Đã cài xong'); };
-  const hands = el('p', { className: 'note', textContent: 'Đừng bấm remote của TV cho tới khi xong.' });   // a key pressed in the middle sends the job elsewhere
-  assistShow('Cài TV Setup lên TV', msg, hands, row(done, act('■ Dừng', async () => { await assist('stop'); await sleep(400); adbHelp(); })));
+  const msg = say(T('setup.starting')); msg.classList.add('setupmsg');   // the words change as it goes; the buttons below must not jump
+  const done = el('button', { className: 'small', textContent: T('setup.installed_done'), onclick: async () => { setDone(true); await assist('installed'); } });
+  const setDone = (busy) => { done.disabled = busy; done.textContent = (busy ? T('setup.checking_busy') : T('setup.installed_done')); };
+  const hands = el('p', { className: 'note', textContent: T('setup.dont_press') });   // a key pressed in the middle sends the job elsewhere
+  assistShow(T('setup.install_setup_title'), msg, hands, row(done, act(T('page.stop'), async () => { await assist('stop'); await sleep(400); adbHelp(); })));
   const gen = assistGen; let misses = 0;
   for (;;) {
     await sleep(1000); if (gen !== assistGen) return;
     const r = await api('/api/assist', null, true); if (gen !== assistGen) return;
     misses = r ? 0 : misses + 1;                                      // ten in a row: say so, instead of waiting for ever
-    if (misses >= 10) return assistShow('Cài TV Setup lên TV', say('Không gọi được server'), row(act('↻ Thử lại', async () => installSetup(), 'primary'), act('← Các cách khác', async () => adbHelp())));
-    if (!r || r.status === 'running') { if (r) { if (r.msg) msg.textContent = (r.step ? tr(`Bước ${r.step}/${r.steps}`) + ' · ' : '') + tr(r.msg); setDone(!!r.checking); } continue; }
-    if (r.status === 'moved') return assistShow('Cài TV Setup lên TV', say('Màn hình TV đã đổi giữa chừng, có ai vừa bấm remote của TV? Để yên remote rồi thử lại.'),
-      row(act('↻ Thử lại', async () => installSetup(), 'primary'), act('← Các cách khác', async () => adbHelp())));
-    if (r.status === 'look') return assistShow('Nhìn lên TV', say('TV đã nhận đường dẫn và tải TV Setup.\n\n1. TV hỏi cài đặt: chọn Cài đặt (Install). Nếu TV hỏi quyền cài từ nguồn này: bật cho app đang tải, bấm Quay lại, rồi chọn Install.\n2. Cài xong chọn Mở (hoặc bấm “Mở TV Setup” bên dưới).\n3. TV Setup tự mở Tùy chọn nhà phát triển: bật “Gỡ lỗi USB”.\n4. TV hỏi cho phép gỡ lỗi: tích “Luôn cho phép”, chọn OK. Trang này tự kết nối.'),
-      row(act('📺 Mở TV Setup', async () => { await assist('open', { what: 'dev.tvremote.setup' }); }, 'primary'), act('↻ Làm lại', async () => installSetup()), act('← Các cách khác', async () => adbHelp())));
-    return assistShow('Cài TV Setup lên TV', say(tr(r.msg) || 'Không làm được.'), row(act('↻ Thử lại', async () => installSetup(), 'primary'), act('← Các cách khác', async () => adbHelp())));
+    if (misses >= 10) return assistShow(T('setup.install_setup_title'), say(T('setup.server_unreachable')), row(act(T('setup.retry'), async () => installSetup(), 'primary'), act(T('setup.other_ways'), async () => adbHelp())));
+    if (!r || r.status === 'running') { if (r) { if (r.msg) msg.textContent = (r.step ? T('setup.step_of', { step: r.step, steps: r.steps }) + ' · ' : '') + tr(r.msg); setDone(!!r.checking); } continue; }
+    if (r.status === 'moved') return assistShow(T('setup.install_setup_title'), say(T('setup.moved')),
+      row(act(T('setup.retry'), async () => installSetup(), 'primary'), act(T('setup.other_ways'), async () => adbHelp())));
+    if (r.status === 'look') return assistShow(T('allow.look_at_the_tv'), say(T('setup.look_body_tv')),
+      row(act(T('setup.open_setup'), async () => { await assist('open', { what: 'dev.tvremote.setup' }); }, 'primary'), act(T('setup.redo'), async () => installSetup()), act(T('setup.other_ways'), async () => adbHelp())));
+    return assistShow(T('setup.install_setup_title'), say(tr(r.msg) || T('setup.cant_do')), row(act(T('setup.retry'), async () => installSetup(), 'primary'), act(T('setup.other_ways'), async () => adbHelp())));
   }
 }
 
 // ---------- Tailscale: one button installs it on the TV, switches it on and fetches its sign-in link (Tailscale.kt) ----------
 // Nobody types on the TV: the link opens in a browser that is signed in to Tailscale, where one click adds the TV.
 const OPEN_TV = LANG === 'vi' ? 'Mở' : 'Connect';                // the list's buttons: short, one word (not through i18n: “Mở” is “Open” elsewhere)
-const TS_PITCH = 'Trang này cài Tailscale lên TV, bạn chỉ cần bấm “Connect”.';
-const TS_STEP = { download: 'Đang tải Tailscale bản chính thức (khoảng 100 MB)...', install: 'Đang cài Tailscale lên TV...', start: 'Đang bật Tailscale trên TV...' };
+const TS_PITCH = T('setup.ts_pitch');
+const TS_STEP = { download: T('setup.ts_download'), install: T('setup.ts_install'), start: T('setup.ts_start') };
 let tsGen = 0;
 function tsShow(...kids) { $('#tsbody').replaceChildren(...kids.filter(Boolean)); if (!$('#ts').open) $('#ts').showModal(); }
 async function tailscaleGo() {
-  const gen = ++tsGen, msg = el('span', { textContent: 'Đang bắt đầu...' }), bar = el('div', { className: 'bar' }, el('i'));
-  tsShow(el('p', { className: 'tswait' }, el('span', { className: 'minispin' }), msg), bar, el('p', { className: 'muted tsnote', textContent: 'Đóng được: TV vẫn làm tiếp.' }));
+  const gen = ++tsGen, msg = el('span', { textContent: T('setup.starting') }), bar = el('div', { className: 'bar' }, el('i'));
+  tsShow(el('p', { className: 'tswait' }, el('span', { className: 'minispin' }), msg), bar, el('p', { className: 'muted tsnote', textContent: T('setup.ts_closable') }));
   let j = await api('/api/tailscale/start', { lang: LANG }), misses = 0;
   while (j && j.status === 'running' && misses < 10) {
-    const k = Object.keys(TS_STEP).find((w) => (j.msg || '').startsWith(w)); msg.textContent = k ? TS_STEP[k] : 'Đang làm...'; bar.firstChild.style.width = (j.pct || 0) + '%';
+    const k = Object.keys(TS_STEP).find((w) => (j.msg || '').startsWith(w)); msg.textContent = k ? TS_STEP[k] : T('setup.ts_working'); bar.firstChild.style.width = (j.pct || 0) + '%';
     await sleep(1000); if (gen !== tsGen) return;
     const r = await api('/api/job?id=' + j.id, null, true); if (r) { j = r; misses = 0; } else misses++;
   }
   if (gen !== tsGen) return;
-  if (!j || j.status !== 'done') return tsShow(el('p', { textContent: 'Không làm được: ' + (j && j.status === 'error' ? friendly(j.msg) : 'mất kết nối tới TV') }), row(act('↻ Thử lại', async () => tailscaleGo(), 'primary')));
+  if (!j || j.status !== 'done') return tsShow(el('p', { textContent: T('setup.ts_failed', { why: j && j.status === 'error' ? friendly(j.msg) : T('setup.tv_lost') }) }), row(act(T('setup.retry'), async () => tailscaleGo(), 'primary')));
   if (j.ip) return tsDone(j.ip);
   // the QR code and two short steps; what each step means in full sits in its tooltip
   const qr = qrSvg(j.url, 168), step = (n, text, tip) => el('li', { title: tip }, el('b', { textContent: n }), el('span', { textContent: text }));
   tsShow(el('div', { className: 'tslogin' },
-    qr ? el('div', { className: 'tsqr', title: 'Quét bằng điện thoại đã đăng nhập Tailscale. TV cũng đang hiện đúng mã này.' }, qr, el('span', { textContent: 'Quét bằng điện thoại' })) : null,
+    qr ? el('div', { className: 'tsqr', title: T('setup.ts_qr_tip') }, qr, el('span', { textContent: T('setup.ts_scan') })) : null,
     el('div', { className: 'tsside' },
       el('ol', { className: 'tssteps' },
-        step('1', 'Đăng nhập Tailscale', 'Chưa có tài khoản thì tạo miễn phí bằng Google, Microsoft hoặc GitHub.'),
-        step('2', 'Bấm “Connect”', 'Tailscale hỏi có thêm TV này vào tài khoản không.')),
-      el('a', { className: 'go primary', href: j.url, target: '_blank', rel: 'noopener', textContent: 'Mở trang đăng nhập' }))),
-    el('p', { className: 'tswait' }, el('span', { className: 'minispin' }), el('span', { textContent: 'Đang chờ TV vào Tailscale...' })));
+        step('1', T('setup.ts_step1'), T('setup.ts_step1_tip')),
+        step('2', T('setup.ts_step2'), T('setup.ts_step2_tip'))),
+      el('a', { className: 'go primary', href: j.url, target: '_blank', rel: 'noopener', textContent: T('setup.ts_open_login') }))),
+    el('p', { className: 'tswait' }, el('span', { className: 'minispin' }), el('span', { textContent: T('setup.ts_waiting') })));
   for (;;) {
     await sleep(2500); if (gen !== tsGen || !$('#ts').open) return;
     const s = await api('/api/tailscale', null, true); if (s && s.ip) return tsDone(s.ip);
   }
 }
 function tsDone(ip) {
-  tsShow(el('div', { className: 'tsdone' }, el('div', { className: 'tsok', textContent: '✓' }), el('b', { textContent: 'TV đã vào Tailscale' }), el('code', { textContent: ip })),
-    el('p', { className: 'muted tsnote', textContent: CORE === 'pc' ? 'Bấm “Lưu” ở bước cuối để dùng IP này cả khi không ở nhà.' : 'Ở ngoài nhà: bật Tailscale trên máy này (cùng tài khoản) rồi mở TV bằng IP này.' }),
-    el('p', { className: 'tstip', title: 'Nên làm thêm: trong trang quản trị Tailscale, mở menu ⋯ của TV → Disable key expiry, để TV không bị đăng xuất sau khoảng 180 ngày.' },
-      el('span', { textContent: '💡 Tắt “key expiry” cho TV để không bị đăng xuất sau 180 ngày.' })),
-    row(el('a', { className: 'linkbtn small', href: 'https://login.tailscale.com/admin/machines', target: '_blank', rel: 'noopener', textContent: '↗ Trang quản trị' }), act('✓ Xong', async () => $('#ts').close(), 'primary')));
+  tsShow(el('div', { className: 'tsdone' }, el('div', { className: 'tsok', textContent: '✓' }), el('b', { textContent: T('setup.ts_joined') }), el('code', { textContent: ip })),
+    el('p', { className: 'muted tsnote', textContent: CORE === 'pc' ? T('setup.ts_save_note') : T('setup.ts_away_note') }),
+    el('p', { className: 'tstip', title: T('setup.ts_expiry_tip') },
+      el('span', { textContent: T('setup.ts_expiry') })),
+    row(el('a', { className: 'linkbtn small', href: 'https://login.tailscale.com/admin/machines', target: '_blank', rel: 'noopener', textContent: T('setup.ts_admin') }), act(T('remote.done'), async () => $('#ts').close(), 'primary')));
   tsState(); if (CORE === 'pc') loadSteps();
 }
 async function tsState() {                                             // the card on the tv / phone cores (the computer has its step 2)
   if (CORE === 'pc' || ADB.state !== 'ready') return;
   const s = await api('/api/tailscale', null, true); if (!s) return;
-  put('#tsstate', 'textContent', s.ip ? 'Đã vào Tailscale · IP ' + s.ip + '. Ở ngoài nhà, máy điều khiển bật Tailscale (cùng tài khoản) rồi dùng IP này.'
-    : s.installed ? 'Tailscale đã cài nhưng chưa đăng nhập hoặc đang tắt. Bấm nút dưới để bật và đăng nhập.' : TS_PITCH);
-  put('#tsgo', 'hidden', !!s.ip); put('#tsgo', 'textContent', s.installed ? '⚡ Bật và đăng nhập Tailscale' : '⚡ Cài và đăng nhập Tailscale');
+  put('#tsstate', 'textContent', s.ip ? T('setup.ts_state_joined', { ip: s.ip })
+    : s.installed ? T('setup.ts_state_installed') : TS_PITCH);
+  put('#tsgo', 'hidden', !!s.ip); put('#tsgo', 'textContent', s.installed ? T('setup.ts_btn_on') : T('tv.install_and_sign_in'));
 }
 $('#tsgo').addEventListener('click', tailscaleGo);
 $('#tsclose').addEventListener('click', () => $('#ts').close());
@@ -458,39 +458,39 @@ async function loadSteps() {
   if (stepsBusy || CORE !== 'pc') return; stepsBusy = true;
   const s = await api('/api/setup/status', null, true); stepsBusy = false;
   if (!s) return;
-  put($('#setuphost'), 'textContent', s.host ? (s.model ? s.model + ' · ' : '') + s.host : tr('chưa chọn TV'));
-  if (!s.host) { $('#steps').replaceChildren(el('p', { className: 'muted', textContent: 'Chọn một TV ở trên (Quét mạng hoặc nhập IP) để bắt đầu.' })); return; }
+  put($('#setuphost'), 'textContent', s.host ? (s.model ? s.model + ' · ' : '') + s.host : T('setup.no_tv_chosen'));
+  if (!s.host) { $('#steps').replaceChildren(el('p', { className: 'muted', textContent: T('setup.pick_a_tv') })); return; }
   if (s.kind && s.kind !== 'android') { showSteps(nativeSteps(s)); return; }
   const adb = s.adb.state, ready = adb === 'ready', out = [];
   // 1. ADB
-  out.push(ready ? step(1, 'ok', 'ADB đã kết nối', 'Máy này đã được TV cho phép.')
-    : adb === 'unauthorized' ? step(1, 'wait', 'TV đang chờ bạn cho phép', 'Nhìn lên TV: tích “Luôn cho phép từ máy tính này” rồi chọn OK.', act('🔄 Đã bấm, thử lại', async () => { await api('/api/adb/connect', {}); await loadSteps(); }, 'primary'))
-    : step(1, 'todo', 'Bật “Gỡ lỗi ADB” trên TV', 'Bấm “Bật ADB giúp tôi” để trang này tự làm phần lớn việc. Hoặc tự làm trên TV: Cài đặt → Tùy chọn thiết bị → Giới thiệu → bấm OK 7 lần vào “Bản dựng”, rồi Tùy chọn nhà phát triển → bật “Gỡ lỗi ADB” (hoặc “Gỡ lỗi USB”).',
-        act('🧭 Bật ADB giúp tôi', async () => adbHelp(), 'primary'), act('🔌 Đã bật, kết nối', async () => { await api('/api/adb/connect', {}); await loadSteps(); })));
+  out.push(ready ? step(1, 'ok', T('setup.adb_connected'), T('setup.allowed_by_tv'))
+    : adb === 'unauthorized' ? step(1, 'wait', T('setup.tv_waiting_allow'), T('setup.tv_waiting_allow_note'), act(T('setup.pressed_retry'), async () => { await api('/api/adb/connect', {}); await loadSteps(); }, 'primary'))
+    : step(1, 'todo', T('setup.turn_on_adb_title'), T('setup.turn_on_adb_note'),
+        act(T('setup.turn_on_adb_help'), async () => adbHelp(), 'primary'), act(T('setup.connect_now'), async () => { await api('/api/adb/connect', {}); await loadSteps(); })));
   // 2. Tailscale
-  if (!ready) out.push(step(2, 'todo', 'Tailscale (để điều khiển khi không ở nhà)', 'Làm sau khi ADB đã kết nối. Chỉ dùng trong cùng Wi-Fi thì bỏ qua bước này được.'));
-  else if (s.tailscale_ip) out.push(step(2, 'ok', 'Tailscale đã vào mạng', 'IP Tailscale của TV: ' + s.tailscale_ip + '. ' + 'Nên làm thêm: trong trang quản trị Tailscale, mở menu ⋯ của TV → Disable key expiry, để TV không bị đăng xuất sau khoảng 180 ngày.'));
-  else out.push(step(2, 'todo', 'Tailscale (để điều khiển khi không ở nhà)', TS_PITCH, act('⚡ Cài và đăng nhập Tailscale', async () => tailscaleGo(), 'primary')));
+  if (!ready) out.push(step(2, 'todo', T('setup.ts_step_title'), T('setup.ts_step_later')));
+  else if (s.tailscale_ip) out.push(step(2, 'ok', T('setup.ts_in_network'), T('setup.ts_ip_note', { ip: s.tailscale_ip })));
+  else out.push(step(2, 'todo', T('setup.ts_step_title'), TS_PITCH, act(T('tv.install_and_sign_in'), async () => tailscaleGo(), 'primary')));
   out[out.length - 1].classList.add('optional');                     // only for away from home: the steps count as done without it
   // 3. remote pairing
   const r = s.remote;
-  if (r.connected) out.push(step(3, 'ok', 'Nút remote đã ghép', 'Các nút điều khiển dùng được.'));
-  else if (ready && !pairing) out.push(step(3, 'ok', 'Nút remote chạy qua ADB', 'Ghép thêm để bấm được cả khi ADB tắt.',   // keys already work: pairing is only a spare way in
-    act('🔗 Ghép', async () => { if (await api('/api/pair/start', {})) { pairing = true; await loadSteps(); } })));
+  if (r.connected) out.push(step(3, 'ok', T('setup.remote_paired'), T('setup.keys_work')));
+  else if (ready && !pairing) out.push(step(3, 'ok', T('setup.remote_via_adb'), T('setup.pair_spare'),   // keys already work: pairing is only a spare way in
+    act(T('setup.pair'), async () => { if (await api('/api/pair/start', {})) { pairing = true; await loadSteps(); } })));
   else if (r.paired === false || pairing) {
-    const code = el('input', { placeholder: 'Mã 6 ký tự trên TV', maxLength: 6, autocomplete: 'off' });
-    out.push(step(3, 'wait', 'Ghép nút remote', pairing ? 'TV đang hiện mã 6 ký tự. Gõ mã vào đây.' : 'Bấm “Ghép”, TV sẽ hiện mã 6 ký tự.',
+    const code = el('input', { placeholder: T('setup.ph_code6c'), maxLength: 6, autocomplete: 'off' });
+    out.push(step(3, 'wait', T('setup.pair_remote'), pairing ? T('setup.tv_showing_code6') : T('setup.press_pair_code6'),
       pairing ? code : null,
-      pairing ? act('✓ Xác nhận', async () => { const x = await api('/api/pair/finish', { code: code.value.trim() }); if (x) { pairing = false; toast('Đã ghép'); await refresh(); await loadSteps(); } }, 'primary') : null,
-      act(pairing ? '🔄 Lấy mã mới' : '🔗 Ghép', async () => { if (await api('/api/pair/start', {})) { pairing = true; await loadSteps(); } }, pairing ? '' : 'primary')));
-  } else out.push(step(3, 'todo', 'Nút remote', r.error ? 'Chưa kết nối được (cổng 6466). TV có bật và chung mạng không?' : 'Đang kết nối...', act('🔗 Thử ghép', async () => { if (await api('/api/pair/start', {})) { pairing = true; await loadSteps(); } })));
+      pairing ? act(T('setup.confirm'), async () => { const x = await api('/api/pair/finish', { code: code.value.trim() }); if (x) { pairing = false; toast(T('setup.paired')); await refresh(); await loadSteps(); } }, 'primary') : null,
+      act(pairing ? T('setup.new_code') : T('setup.pair'), async () => { if (await api('/api/pair/start', {})) { pairing = true; await loadSteps(); } }, pairing ? '' : 'primary')));
+  } else out.push(step(3, 'todo', T('setup.remote_buttons'), r.error ? T('setup.cant_reach_6466') : T('setup.connecting'), act(T('setup.try_pair'), async () => { if (await api('/api/pair/start', {})) { pairing = true; await loadSteps(); } })));
   // 4. save
   const move = s.tailscale_ip && s.tailscale_ip !== s.host;
-  if (s.saved && !move) out.push(step(4, 'ok', 'Đã lưu: ' + s.saved.name, 'Lần sau mở lên là dùng TV này. ' + (s.saved.mac ? 'Đã ghi địa chỉ MAC để đánh thức TV.' : '')));
+  if (s.saved && !move) out.push(step(4, 'ok', T('setup.saved_name', { name: s.saved.name }), T('setup.saved_next') + (s.saved.mac ? ' ' + T('setup.mac_saved') : '')));
   else {
-    const name = el('input', { placeholder: 'Tên gọi, vd TV phòng khách', value: (s.saved && s.saved.name) || s.model || '' });
-    out.push(step(4, 'todo', move ? 'Lưu và chuyển sang IP Tailscale' : 'Lưu TV này', move ? 'TV đã có IP Tailscale ' + s.tailscale_ip + '. Lưu để từ nay kết nối qua IP đó, dùng được cả khi không ở nhà.' : 'Để lần sau mở lên là dùng ngay, không phải tìm lại.',
-      name, act('💾 Lưu', async () => { const x = await api('/api/tv/save', { name: name.value }); if (x) { toast(x.moved ? 'Đã lưu, chuyển sang ' + x.tv.host : 'Đã lưu'); await refresh(); await loadSteps(); } }, 'primary')));
+    const name = el('input', { placeholder: T('setup.ph_name'), value: (s.saved && s.saved.name) || s.model || '' });
+    out.push(step(4, 'todo', move ? T('setup.save_move') : T('setup.save_tv'), move ? T('setup.save_move_note', { ip: s.tailscale_ip }) : T('setup.save_note'),
+      name, act(T('scenedlg.save'), async () => { const x = await api('/api/tv/save', { name: name.value }); if (x) { toast(x.moved ? T('setup.saved_moved', { host: x.tv.host }) : T('setup.saved')); await refresh(); await loadSteps(); } }, 'primary')));
   }
   showSteps(out);
 }
@@ -505,41 +505,41 @@ function showSteps(out) {
   const host = $('#setuphost').textContent, fold = $('#steps > details.stepsdone');
   const open = fold && host === stepsHost ? fold.open : false;
   stepsHost = host;
-  $('#steps').replaceChildren(...(done ? [el('details', { className: 'stepsdone', open }, el('summary', { textContent: tr('✓ Đã cài đặt xong') }), ...out)] : out));
+  $('#steps').replaceChildren(...(done ? [el('details', { className: 'stepsdone', open }, el('summary', { textContent: T('setup.setup_done') }), ...out)] : out));
 }
 // Hisense VIDAA: newer TVs want the certificate of Hisense's own app (never shipped with ours), then a 4-digit code.
 function vidaaStep(r) {
-  const ask = act(pairing ? '🔄 Lấy mã mới' : '🔗 Ghép', async () => { if (await api('/api/pair/start', {})) { pairing = true; await loadSteps(); } }, pairing ? '' : 'primary');
+  const ask = act(pairing ? T('setup.new_code') : T('setup.pair'), async () => { if (await api('/api/pair/start', {})) { pairing = true; await loadSteps(); } }, pairing ? '' : 'primary');
   if (/certificate from Hisense/.test(r.error || '')) {
     const f = el('input', { type: 'file', accept: '.apk,.p12,.pfx', hidden: true, onchange: async () => {
       const file = f.files[0]; if (!file) return;
       const x = await fetch('/api/vidaa/cert', { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: file }).then((y) => y.json().catch(() => ({}))).catch(() => ({}));
-      if (x.ok) { toast('Đã nhận chứng chỉ'); await sleep(1500); await loadSteps(); } else toast(friendly(x.error || 'vidaa: no certificate in this file'));
+      if (x.ok) { toast(T('setup.cert_received')); await sleep(1500); await loadSteps(); } else toast(friendly(x.error || 'vidaa: no certificate in this file'));
     } });
-    return step(1, 'todo', 'Cần chứng chỉ của Hisense', 'Chọn file .apk của app “VIDAA Smart TV” (hoặc file .p12). Chỉ giữ trên máy này.', f, act('📂 Chọn file', async () => f.click(), 'primary'));
+    return step(1, 'todo', T('setup.cert_needed'), T('setup.cert_note'), f, act(T('setup.choose_file'), async () => f.click(), 'primary'));
   }
   if (r.paired === false || pairing) {
-    const code = el('input', { placeholder: 'Mã 4 số trên TV', maxLength: 4, inputMode: 'numeric', autocomplete: 'off' });
-    return step(1, 'wait', 'Ghép với TV', pairing ? 'TV đang hiện mã 4 số. Gõ mã vào đây.' : 'Bấm “Ghép”, TV sẽ hiện mã 4 số.', pairing ? code : null,
-      pairing ? act('✓ Xác nhận', async () => { const x = await api('/api/pair/finish', { code: code.value.trim() }); if (x) { pairing = false; toast('Đã ghép'); await refresh(); await loadSteps(); } }, 'primary') : null, ask);
+    const code = el('input', { placeholder: T('setup.ph_code4'), maxLength: 4, inputMode: 'numeric', autocomplete: 'off' });
+    return step(1, 'wait', T('setup.pair_with_tv'), pairing ? T('setup.tv_showing_code4') : T('setup.press_pair_code4'), pairing ? code : null,
+      pairing ? act(T('setup.confirm'), async () => { const x = await api('/api/pair/finish', { code: code.value.trim() }); if (x) { pairing = false; toast(T('setup.paired')); await refresh(); await loadSteps(); } }, 'primary') : null, ask);
   }
-  return step(1, 'todo', 'Kết nối TV', r.error ? 'Chưa kết nối được. TV có bật và chung mạng không?' : 'Đang kết nối...', r.error ? ask : null);
+  return step(1, 'todo', T('setup.connect_tv'), r.error ? T('setup.cant_connect') : T('setup.connecting'), r.error ? ask : null);
 }
 // An LG, Samsung or Roku TV: no ADB, no code to type. LG and Samsung ask themselves (a Roku asks nothing) whether to let this computer in; then save it.
 function nativeSteps(s) {
-  const r = s.remote, out = [], again = act('🔄 Hỏi lại TV', async () => { if (await api('/api/pair/start', {})) { toast('Nhìn lên TV'); await sleep(800); await loadSteps(); } }, 'primary');
-  out.push(r.connected ? step(1, 'ok', 'TV đã cho phép', 'Các nút điều khiển dùng được.')
+  const r = s.remote, out = [], again = act(T('setup.ask_again'), async () => { if (await api('/api/pair/start', {})) { toast(T('allow.look_at_the_tv')); await sleep(800); await loadSteps(); } }, 'primary');
+  out.push(r.connected ? step(1, 'ok', T('setup.tv_allowed'), T('setup.keys_work'))
     : s.kind === 'vidaa' ? vidaaStep(r)
-    : r.asking ? step(1, 'wait', 'Nhìn lên TV: chọn Cho phép', 'TV đang hỏi có cho máy này điều khiển không.')
-    : r.error === 'refused' ? step(1, 'todo', 'TV đã từ chối', 'Bấm “Hỏi lại TV” rồi chọn Cho phép trên TV.', again)
-    : r.error === 'not accepted' ? step(1, 'todo', 'Chưa ai chọn Cho phép trên TV', 'Bấm “Hỏi lại TV”, rồi chọn Cho phép trong lúc TV hỏi.', again)
-    : /control by mobile apps/.test(r.error || '') ? step(1, 'todo', 'Roku đang chặn điều khiển', friendly(r.error))
-    : step(1, 'todo', 'Kết nối TV', r.error ? 'Chưa kết nối được. TV có bật và chung mạng không?' : 'Đang kết nối...', r.error ? again : null));
-  if (s.saved) out.push(step(2, 'ok', 'Đã lưu: ' + s.saved.name, 'Lần sau mở lên là dùng TV này. ' + (s.saved.mac ? 'Đã ghi địa chỉ MAC để đánh thức TV.' : '')));
+    : r.asking ? step(1, 'wait', T('setup.look_choose_allow'), T('setup.tv_asking_allow'))
+    : r.error === 'refused' ? step(1, 'todo', T('setup.tv_refused'), T('setup.refused_note'), again)
+    : r.error === 'not accepted' ? step(1, 'todo', T('setup.nobody_allowed'), T('setup.nobody_note'), again)
+    : /control by mobile apps/.test(r.error || '') ? step(1, 'todo', T('setup.roku_blocking'), friendly(r.error))
+    : step(1, 'todo', T('setup.connect_tv'), r.error ? T('setup.cant_connect') : T('setup.connecting'), r.error ? again : null));
+  if (s.saved) out.push(step(2, 'ok', T('setup.saved_name', { name: s.saved.name }), T('setup.saved_next') + (s.saved.mac ? ' ' + T('setup.mac_saved') : '')));
   else {
-    const name = el('input', { placeholder: 'Tên gọi, vd TV phòng khách', value: s.model || '' });
-    out.push(step(2, 'todo', 'Lưu TV này', 'Để lần sau mở lên là dùng ngay, không phải tìm lại.',
-      name, act('💾 Lưu', async () => { const x = await api('/api/tv/save', { name: name.value }); if (x) { toast('Đã lưu'); await refresh(); await loadSteps(); } }, 'primary')));
+    const name = el('input', { placeholder: T('setup.ph_name'), value: s.model || '' });
+    out.push(step(2, 'todo', T('setup.save_tv'), T('setup.save_note'),
+      name, act(T('scenedlg.save'), async () => { const x = await api('/api/tv/save', { name: name.value }); if (x) { toast(T('setup.saved')); await refresh(); await loadSteps(); } }, 'primary')));
   }
   return out;
 }
@@ -560,10 +560,10 @@ if (window.LANG_KEEP && window.LANG_KEEP.y) setTimeout(() => window.scrollTo(0, 
 // ---------- devices paired with this TV (the TV web page only: TV Setup keeps the list, RemoteService /api/paired) ----------
 const agoText = (t) => {
   const m = Math.max(0, (Date.now() - t) / 60000);
-  if (m < 2) return 'vừa xong';
-  if (m < 60) return Math.round(m) + ' phút trước';
-  if (m < 2880) return Math.round(m / 60) + ' giờ trước';
-  return Math.round(m / 1440) + ' ngày trước';
+  if (m < 2) return T('setup.ago_now');
+  if (m < 60) return T('setup.ago_min', { n: Math.round(m) });
+  if (m < 2880) return T('setup.ago_hour', { n: Math.round(m / 60) });
+  return T('setup.ago_day', { n: Math.round(m / 1440) });
 };
 async function loadPaired() {
   const box = $('#paired'); if (!box || CORE !== 'tv') return;
@@ -572,14 +572,14 @@ async function loadPaired() {
   const owner = SCOPE === 'full';
   const setScope = async (d, k) => { if (k !== d.scope && await api('/api/paired/scope', { id: d.id, scope: k })) loadPaired(); };
   const rows = r.devices.map((d) => UI.item({
-    name: d.name || 'Thiết bị cũ',
-    sub: [d.created ? tr('Ghép lúc') + ' ' + new Date(d.created).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' }) : '',
-      d.me ? tr('thiết bị này') : tr('dùng') + ' ' + tr(agoText(d.seen)), d.ip].filter(Boolean).join(' · '),
+    name: d.name || T('setup.old_device'),
+    sub: [d.created ? T('setup.paired_at', { when: new Date(d.created).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' }) }) : '',
+      d.me ? T('setup.this_device') : T('setup.used_ago', { ago: agoText(d.seen) }), d.ip].filter(Boolean).join(' · '),
     extra: owner && d.kind === 'web' && !d.me ? [scopeChips(d.scope || 'full', (k) => setScope(d, k))] : [],   // what it may do: Scope.kt
-    acts: [el('button', { className: 'small danger', textContent: 'Hủy ghép', title: 'Quên thiết bị này',
-      onclick: async () => { if (await ask('Quên ' + (d.name || 'thiết bị này') + (d.me ? ' (chính là máy này, sẽ phải nhập mã lại)' : '') + '?', { ok: 'Quên', danger: true })) out({ id: d.id }, d.me); } })],
+    acts: [el('button', { className: 'small danger', textContent: T('setup.unpair'), title: T('setup.forget_title'),
+      onclick: async () => { if (await ask((d.me ? T('setup.forget_me_ask', { name: d.name || T('setup.this_device') }) : T('setup.forget_dev_ask', { name: d.name || T('setup.this_device') })), { ok: T('setup.forget_ok'), danger: true })) out({ id: d.id }, d.me); } })],
   }));
-  box.replaceChildren(UI.card('📱 Thiết bị đã ghép', { tools: owner && r.devices.length > 1 ? [el('button', { className: 'small danger', textContent: 'Gỡ tất cả', title: 'Quên mọi thiết bị: ai muốn điều khiển phải nhập mã mới',
-    onclick: async () => { if (await ask('Gỡ mọi thiết bị đã ghép, cả máy này?', { ok: 'Gỡ tất cả', danger: true })) out({ all: true }, true); } })] : [] },
-    UI.list(rows, 'Chưa ghép thiết bị nào')));
+  box.replaceChildren(UI.card(T('setup.paired_devices'), { tools: owner && r.devices.length > 1 ? [el('button', { className: 'small danger', textContent: T('setup.remove_all'), title: T('setup.remove_all_title'),
+    onclick: async () => { if (await ask(T('setup.remove_all_ask'), { ok: T('setup.remove_all'), danger: true })) out({ all: true }, true); } })] : [] },
+    UI.list(rows, T('setup.none_paired'))));
 }

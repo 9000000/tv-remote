@@ -58,28 +58,28 @@ plPoll();
 // The screen off while the sound plays on (ScreenOff.kt): any key, on any remote, turns it back on.
 async function screenOff() {
   if (!NATIVE() && needAdb()) return;                                // LG turns it off by its remote link
-  if (await api('/api/screen/off', {})) toast('Đã tắt màn hình TV. Bấm phím bất kỳ để bật lại.');
+  if (await api('/api/screen/off', {})) toast(T('playing.screen_off'));
 }
 
 async function clipDialog() {
   if (needAdb()) return;
   const got = await api('/api/clip'); if (!got) return;
-  const box = el('textarea', { value: got.text || '', placeholder: tr('Clipboard của TV đang trống. Gõ hoặc dán chữ vào đây để gửi lên TV.'), spellcheck: false });
+  const box = el('textarea', { value: got.text || '', placeholder: T('playing.clip_empty'), spellcheck: false });
   const send = async (paste) => {
-    if (!box.value) { toast('Chưa có chữ'); return; }
-    if (await api('/api/clip', { text: box.value, paste })) { toast(paste ? 'Đã dán trên TV' : 'Đã chép lên TV'); d.close(); }
+    if (!box.value) { toast(T('playing.no_text')); return; }
+    if (await api('/api/clip', { text: box.value, paste })) { toast(T(paste ? 'playing.pasted' : 'playing.copied_to_tv')); d.close(); }
   };
   const copy = async () => {
-    try { await navigator.clipboard.writeText(box.value); toast('Đã sao chép vào máy này'); d.close(); }
-    catch { box.select(); toast('Không sao chép được: chọn chữ rồi sao chép tay'); }
+    try { await navigator.clipboard.writeText(box.value); toast(T('playing.copied_here')); d.close(); }
+    catch { box.select(); toast(T('playing.copy_failed')); }
   };
   const d = el('dialog', { className: 'ask' }, el('div', { className: 'card' },
-    el('div', { className: 'card-head' }, el('h2', { textContent: tr('📋 Clipboard của TV') }), el('button', { className: 'small iconbtn', textContent: '✕', title: tr('Đóng'), 'aria-label': tr('Đóng'), onclick: () => d.close() })),
+    el('div', { className: 'card-head' }, el('h2', { textContent: T('playing.clip_title') }), el('button', { className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
     box,
     el('div', { className: 'acts wrap' },
-      el('button', { textContent: tr('Chép về máy'), onclick: copy }),
-      el('button', { textContent: tr('Chép lên TV'), onclick: () => send(false) }),
-      el('button', { className: 'primary', textContent: tr('Dán trên TV'), onclick: () => send(true) }))));
+      el('button', { textContent: T('playing.copy_here'), onclick: copy }),
+      el('button', { textContent: T('playing.copy_to_tv'), onclick: () => send(false) }),
+      el('button', { className: 'primary', textContent: T('playing.paste_on_tv'), onclick: () => send(true) }))));
   d.addEventListener('close', () => d.remove());
   document.body.append(d); d.showModal(); box.focus(); box.select();
 }

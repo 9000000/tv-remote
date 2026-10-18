@@ -18,8 +18,8 @@ document.querySelectorAll('[data-k]').forEach((b) => {
   const k = b.dataset.k; let t = null, long = false, down = false;
   const power = k === 'POWER';                                     // never a long press, and turning the TV off needs a yes
   const send = async (dir) => {
-    if (power && tvOn && !await ask('Đưa TV về chế độ chờ?\nNếu TV tắt cả mạng thì chỉ mở lại được bằng nút Đánh thức (cần một máy ở nhà đang bật) hoặc remote của TV.', { ok: 'Tắt TV' })) return;
-    return api('/api/key', dir ? { key: k, dir } : { key: k }).then((r) => { if (r && r.noop) toast('TV đã nhận nút này, nhưng màn hình hiện tại không phản hồi'); return r; });
+    if (power && tvOn && !await ask(T('remote.standby_ask'), { ok: T('remote.turn_off') })) return;
+    return api('/api/key', dir ? { key: k, dir } : { key: k }).then((r) => { if (r && r.noop) toast(T('remote.key_no_reaction')); return r; });
   };
   const release = (tap) => {
     if (!down) return; down = false; clearTimeout(t);
@@ -46,32 +46,32 @@ function normalizeLink(v) {
 }
 async function openOnTv(link, label) {
   const r = await api('/api/app', { link });
-  if (r) { toast(r.via === 'adb' || NATIVE() ? 'Đã mở ' + label : 'Đã gửi cho TV (không qua ADB: vài TV bỏ qua lệnh này)'); setTimeout(refresh, 1500); }
+  if (r) { toast(r.via === 'adb' || NATIVE() ? T('remote.opened_name', { name: label }) : T('remote.sent_no_adb')); setTimeout(refresh, 1500); }
 }
 // ---------- "Thêm phím", third row: Mở trên TV, Hẹn giờ tắt, Cảnh, Vẽ lên TV; their menus' entries are in remote.json ----------
 // The same menus as the phone app's remote (RemoteScreen.kt, PhoneRemote.kt); the entries live in remote.json, what they do here in REMOTE_DO.
-const needAdb = () => { if (ADB.state === 'ready') return false; toast(NATIVE() ? kindWhy() : 'Việc này cần ADB. Bật ADB cho TV này rồi thử lại.'); return true; };
+const needAdb = () => { if (ADB.state === 'ready') return false; toast(NATIVE() ? kindWhy() : T('remote.this_needs_adb')); return true; };
 const storePage = (id) => openOnTv('https://play.google.com/store/apps/details?id=' + id, 'CH Play');
 // the TV's Play Store takes a search only as market://search (a play.google.com search link ends in a browser error)
 const storeSearch = (q) => openOnTv('market://search?c=apps&q=' + encodeURIComponent(q), 'CH Play');
 const castPick = (accept) => { if (needAdb()) return; const f = $('#castfile'); f.accept = accept; f.click(); };   // the picker must open within the tap
-async function askStoreSearch() { const v = await ask('Tìm app trên CH Play', { value: '', ok: 'Tìm' }); if (v && v.trim()) storeSearch(v.trim()); }
-async function askStorePage() { const v = await ask('App id (tên gói)', { value: 'org.videolan.vlc', ok: 'Mở' }); if (v && v.trim()) storePage(v.trim()); }
-async function askLink() { const v = await ask('Đường dẫn', { value: 'https://youtu.be/', ok: 'Mở' }); const l = v && normalizeLink(v); if (l) openOnTv(l, 'link'); }
+async function askStoreSearch() { const v = await ask(T('remote.search_play_store'), { value: '', ok: T('remote.search') }); if (v && v.trim()) storeSearch(v.trim()); }
+async function askStorePage() { const v = await ask(T('remote.package_id'), { value: 'org.videolan.vlc', ok: T('remote.open') }); if (v && v.trim()) storePage(v.trim()); }
+async function askLink() { const v = await ask(T('remote.link'), { value: 'https://youtu.be/', ok: T('remote.open') }); const l = v && normalizeLink(v); if (l) openOnTv(l, 'link'); }
 function screenshot() { const a = document.createElement('a'); a.href = '/api/screen'; a.download = 'tv-' + Math.floor(Date.now() / 1000) + '.png'; a.click(); }
-async function timerPlus() { const x = await loadRules({ do: 'sleep_add', minutes: 15 }); if (x) toast('TV sẽ tự tắt lúc ' + clock(x.sleep_at)); }
+async function timerPlus() { const x = await loadRules({ do: 'sleep_add', minutes: 15 }); if (x) toast(T('remote.tv_off_at_toast', { at: clock(x.sleep_at) })); }
 async function timerCustom() {
-  const v = await ask('Tắt TV sau bao lâu?', { value: '', ok: 'Hẹn' }); if (v === null) return;
-  const m = sleepMinutes(v); if (m) setSleep(m); else toast('Nhập số phút (vd 40) hoặc giờ tắt (vd 23:30)');
+  const v = await ask(T('remote.turn_off_when'), { value: '', ok: T('remote.set_timer') }); if (v === null) return;
+  const m = sleepMinutes(v); if (m) setSleep(m); else toast(T('remote.type_minutes_or_time'));
 }
-const quickOpen = () => menuDlg('Mở trên TV', -1, remoteMenu('open', { expand: { tvapps: () => quickApps.slice().sort((a, b) => appName(a).localeCompare(appName(b))).map((p) => ['@play|' + appName(p), '', () => openOnTv(p, appName(p))]) } }));   // LG / Samsung: their apps first
+const quickOpen = () => menuDlg(T('remote.open_on_tv'), -1, remoteMenu('open', { expand: { tvapps: () => quickApps.slice().sort((a, b) => appName(a).localeCompare(appName(b))).map((p) => ['@play|' + appName(p), '', () => openOnTv(p, appName(p))]) } }));   // LG / Samsung: their apps first
 async function timerMenu() {
-  if (NATIVE()) { menuDlg('Màn hình TV', -1, remoteMenu('timer')); return; }   // LG: the screen off only; the timer lives in TV Setup
+  if (NATIVE()) { menuDlg(T('remote.tv_screen'), -1, remoteMenu('timer')); return; }   // LG: the screen off only; the timer lives in TV Setup
   if (needAdb() || !await setupFor('rules')) return;                  // TV Setup runs the timer on the TV (SetupNeed "rules")
   const r = await loadRules(null, true); if (!r) return;
-  const at = r.sleep_at || 0, hm = (m) => m < 60 ? m + ' phút' : Math.floor(m / 60) + ' giờ' + (m % 60 ? ' 30' : '');
-  const items = remoteMenu('timer', { when: { timerOn: !!at }, expand: { lengths: () => [15, 30, 45, 60, 90, 120].map((m) => ['Tắt sau ' + hm(m), '', () => setSleep(m)]) } });
-  menuDlg(at ? 'TV tự tắt lúc ' + clock(at) : 'Hẹn giờ tắt TV', at ? 0 : -1, items);
+  const at = r.sleep_at || 0, hm = (m) => m < 60 ? T('remote.min_n', { n: m }) : m % 60 ? T('remote.h_min', { h: Math.floor(m / 60), m: m % 60 }) : T('remote.h_n', { n: m / 60 });
+  const items = remoteMenu('timer', { when: { timerOn: !!at }, expand: { lengths: () => [15, 30, 45, 60, 90, 120].map((m) => [T('remote.off_in', { when: hm(m) }), '', () => setSleep(m)]) } });
+  menuDlg(at ? T('remote.tv_off_at_menu', { at: clock(at) }) : T('remote.sleep_timer'), at ? 0 : -1, items);
 }
 // "Ngõ vào": the TV's real inputs by name ("HDMI 1 · PlayStation") and a tap to switch. A TV with none to list (a box, the emulator,
 // Samsung) or no ADB: one short line, and the TV's own picker opens, as the key always did.
@@ -79,16 +79,16 @@ const pressInput = () => api('/api/key', { key: 'INPUT' });
 async function inputsMenu() {
   if (!can('inputs')) return pressInput();
   const r = await api('/api/inputs', null, true), list = (r && r.inputs) || [];
-  if (!list.length) { toast(r ? 'TV này không có ngõ vào để chọn' : 'Chưa đọc được ngõ vào của TV'); return pressInput(); }
-  menuDlg('Ngõ vào', -1, [...list.map((i) => ['@input|' + i.label, i.connected === false ? 'Chưa cắm' : '', () => switchTo(i)]), ['@menu|Bảng chọn của TV', '', pressInput]]);
+  if (!list.length) { toast(r ? T('remote.no_inputs') : T('remote.inputs_unreadable')); return pressInput(); }
+  menuDlg(T('remote.input'), -1, [...list.map((i) => ['@input|' + i.label, i.connected === false ? T('remote.not_plugged') : '', () => switchTo(i)]), ['@menu|' + T('remote.tv_picker'), '', pressInput]]);
 }
 async function switchTo(i) {
   const r = await api('/api/input', { id: i.id });
-  if (r) { toast('Đã chuyển sang ' + i.label); setTimeout(refresh, 1500); }
+  if (r) { toast(T('remote.switched_to', { name: i.label })); setTimeout(refresh, 1500); }
 }
 function scenesMenu() {
   if (!NATIVE() && needAdb()) return;                                 // LG / Samsung run scenes by their remote link
-  menuDlg('Cảnh', -1, remoteMenu('scenes', { expand: { scenes: () => SCENES.map((sc) => [((sc.icon || '') + '  ' + sc.name).trim(), '', () => runScene(sc)]) } }));
+  menuDlg(T('remote.scenes'), -1, remoteMenu('scenes', { expand: { scenes: () => SCENES.map((sc) => [((sc.icon || '') + '  ' + sc.name).trim(), '', () => runScene(sc)]) } }));
 }
 // ---------- keyboard: whatever is typed in the box is mirrored on the TV, keystroke by keystroke ----------
 const txt = $('#text');
@@ -105,7 +105,7 @@ let live = true;
 function setLive(on) {
   live = on; try { localStorage.setItem('live', on ? '1' : '0'); } catch {}
   $('#live').classList.toggle('on', on);
-  txt.placeholder = tr(on ? 'Gõ chữ lên TV' : 'Gõ xong bấm ↵ để gửi'); txt.value = typed = '';
+  txt.placeholder = on ? T('remote.type_on_the_tv') : T('remote.type_then_send'); txt.value = typed = '';
 }
 $('#live').addEventListener('click', () => setLive(!live));
 txt.addEventListener('input', (e) => { if (live && !e.isComposing) syncText(); });
@@ -168,9 +168,9 @@ function touch(a, p, extra) {
   scr.addEventListener('contextmenu', (e) => { e.preventDefault(); api('/api/key', { key: 'BACK' }); });   // right click = Back
 });
 $('#wake').addEventListener('click', async () => {
-  const b = $('#wake'); b.disabled = true; toast('Đang đánh thức TV...');
+  const b = $('#wake'); b.disabled = true; toast(T('remote.waking'));
   const r = await api('/api/wake', {});
-  if (r) { toast(r.ok ? 'TV đã sẵn sàng' : 'TV chưa lên. Kiểm tra “Khởi động từ xa” trên TV và máy ở nhà còn bật'); refresh(); }
+  if (r) { toast(r.ok ? T('remote.tv_ready') : T('remote.tv_not_up')); refresh(); }
   b.disabled = false;
 });
 // The computer keyboard is the TV's keyboard on the Remote tab, no need to click into the box first:
@@ -203,20 +203,20 @@ async function askTv(q) {
   const c = voiceCommand(q, voiceApps(), SCENES);                     // "mở YouTube", "tắt tiếng", a scene's name...: done here, at once (voice.js)
   if (c) { doCommand(c); return; }
   const r = await api('/api/search', { query: q });
-  if (r) { toast((r.to === 'youtube' ? 'Đang tìm trên YouTube: ' : 'Đã gửi cho TV: ') + q); setTimeout(refresh, 2500); }
+  if (r) { toast(T(r.to === 'youtube' ? 'remote.searching_youtube' : 'remote.sent_to_tv', { q })); setTimeout(refresh, 2500); }
 }
 $('#askf').addEventListener('submit', (e) => { e.preventDefault(); askTv($('#ask').value); $('#ask').value = ''; });
 // speech is turned into text by the browser (Chrome, Safari), not by the TV. Browsers allow the microphone only on secure pages:
 // the TV's own page is plain HTTP, so there the phone keyboard's own microphone key does it.
 const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-if (!(Speech && window.isSecureContext) && matchMedia('(pointer:coarse)').matches) $('#ask').placeholder = tr('Hỏi TV: mở YouTube · nói bằng nút 🎤 của bàn phím');
+if (!(Speech && window.isSecureContext) && matchMedia('(pointer:coarse)').matches) $('#ask').placeholder = T('remote.ask_keyboard_mic');
 if (Speech && window.isSecureContext) {
   const b = $('#speak'); let rec = null; b.hidden = false;
   b.addEventListener('click', () => {
     if (rec) { rec.stop(); return; }
     rec = new Speech(); rec.lang = LANG === 'vi' ? 'vi-VN' : 'en-US'; rec.interimResults = true;
     rec.onresult = (e) => { const r = e.results[e.results.length - 1]; $('#ask').value = r[0].transcript; if (r.isFinal) { askTv(r[0].transcript); $('#ask').value = ''; } };
-    rec.onerror = (e) => toast('Lỗi: ' + (e.error === 'not-allowed' ? 'trình duyệt chưa được phép dùng micro' : e.error));
+    rec.onerror = (e) => toast(T('remote.error_why', { why: e.error === 'not-allowed' ? T('remote.mic_not_allowed') : e.error }));
     rec.onend = () => { rec = null; b.classList.remove('on'); };
     b.classList.add('on'); rec.start();
   });
@@ -225,7 +225,7 @@ if (Speech && window.isSecureContext) {
 // phone its keyboard's 🎤); held, or with no box (no ADB), the TV's own Assistant.
 {
   const v = $('#voice'); let held = 0;
-  const assist = () => { api('/api/key', { key: 'ASSIST' }); toast('Đã mở Trợ lý trên TV'); };
+  const assist = () => { api('/api/key', { key: 'ASSIST' }); toast(T('remote.assistant_opened')); };
   v.addEventListener('pointerdown', () => { held = setTimeout(() => { held = -1; assist(); }, 600); });
   ['pointerup', 'pointerleave', 'pointercancel'].forEach((e) => v.addEventListener(e, () => { if (held > 0) clearTimeout(held); }));
   v.addEventListener('contextmenu', (e) => e.preventDefault());

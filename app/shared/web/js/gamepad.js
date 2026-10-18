@@ -41,7 +41,7 @@ function padPoll() {
   for (const p of pads) for (const k of padStep(padSt, p, now, picture)) if (free) api('/api/key', { key: k });
 }
 function padStart() {
-  if (!padSeen) { padSeen = true; toast('Đã nối tay cầm'); }
+  if (!padSeen) { padSeen = true; toast(T('gamepad.connected')); }
   if (!padTimer) padTimer = setInterval(padPoll, 40);
 }
 function padStop() { if (padTimer) clearInterval(padTimer); padTimer = null; padSeen = false; padSt.down = {}; padSt.last = {}; }

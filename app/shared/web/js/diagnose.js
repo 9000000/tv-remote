@@ -27,8 +27,8 @@ async function diagRun(s) {
   if (diagCtl) diagCtl.abort();
   const ctl = diagCtl = new AbortController(), box = $('#diag');
   box.hidden = false; box.className = 'banner wait';
-  box.replaceChildren(el('span', { className: 'minispin' }), el('span', { textContent: 'Đang kiểm tra mạng và TV…' }),
-    el('button', { className: 'small', textContent: 'Hủy', onclick: () => { diagCtl = null; ctl.abort(); box.hidden = true; box.replaceChildren(); } }));
+  box.replaceChildren(el('span', { className: 'minispin' }), el('span', { textContent: T('diagnose.checking') }),
+    el('button', { className: 'small', textContent: T('common.cancel'), onclick: () => { diagCtl = null; ctl.abort(); box.hidden = true; box.replaceChildren(); } }));
   let r = null;
   try {
     const q = new URLSearchParams({ ip: s.host, kind: s.kind || 'android', name: s.name || '', lang: LANG, err: s.error || '' });
@@ -45,17 +45,17 @@ function diagShow(r, s) {
   const box = $('#diag'), pc = CORE === 'pc';
   const again = async () => { diagKey = ''; diagBad = 0; box.hidden = true; box.replaceChildren(); };
   const ACT = {
-    retry: () => el('button', { className: 'small primary', textContent: '🔄 Thử lại', onclick: async () => {
+    retry: () => el('button', { className: 'small primary', textContent: T('diagnose.retry'), onclick: async () => {
       await again();
       if (pc) selectTv(s.host, s.name, s.kind); else { await api('/api/adb/connect', {}, true); refresh(); } } }),
-    scan: () => pc ? el('button', { className: 'small', textContent: '🔍 Quét mạng', onclick: () => { again(); pickOpen(); refresh(); $('#scan').click(); } }) : null,
-    adbhelp: () => pc ? el('button', { className: 'small', textContent: '🧭 Bật ADB giúp tôi', onclick: () => adbHelp() }) : null,
-    use: () => pc && r.found ? el('button', { className: 'small primary', textContent: '📍 Dùng địa chỉ ' + r.found.ip, onclick: () => { again(); selectTv(r.found.ip, r.found.name || s.name, r.kind); } }) : null,
+    scan: () => pc ? el('button', { className: 'small', textContent: T('page.scan'), onclick: () => { again(); pickOpen(); refresh(); $('#scan').click(); } }) : null,
+    adbhelp: () => pc ? el('button', { className: 'small', textContent: T('setup.turn_on_adb_help'), onclick: () => adbHelp() }) : null,
+    use: () => pc && r.found ? el('button', { className: 'small primary', textContent: T('diagnose.use_address', { ip: r.found.ip }), onclick: () => { again(); selectTv(r.found.ip, r.found.name || s.name, r.kind); } }) : null,
   };
   const acts = r.actions.map((a) => ACT[a] && ACT[a]()).filter(Boolean);
   box.className = 'banner ' + (DIAG_TONE[r.code] || 'bad');
   box.replaceChildren(el('b', { textContent: r.title }), el('p', { textContent: r.fix }),
-    el('details', { className: 'checks' }, el('summary', { textContent: 'Đã kiểm tra' }),
+    el('details', { className: 'checks' }, el('summary', { textContent: T('diagnose.checked') }),
       el('ul', {}, ...r.checks.map((c) => el('li', { className: c.ok === true ? 'ok' : c.ok === false ? 'bad' : '', textContent: (c.ok === true ? '✓ ' : c.ok === false ? '✗ ' : '· ') + c.note })))),
     el('div', { className: 'actions' }, ...acts));
   box.hidden = false;

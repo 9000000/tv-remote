@@ -15,11 +15,11 @@ async function loadFiles(path) {
   if (!r) { if (!filesLoaded && path !== '/sdcard') loadFiles('/sdcard'); return; }
   filesLoaded = true; cwd = r.path; fileItems = r.items; volumes = r.volumes || [];
   if (path !== cwd || $('#filesq').dataset.dir !== cwd) { $('#filesq').value = ''; $('#filesq').dataset.dir = cwd; }
-  put('#space', 'textContent', r.space ? `Còn trống ${fmtSize(r.space.free)} / ${fmtSize(r.space.total)} · ${r.items.length} mục` : `${r.items.length} mục`);
+  put('#space', 'textContent', r.space ? T('files.free_of_items', { free: fmtSize(r.space.free), total: fmtSize(r.space.total), n: r.items.length }) : T('files.items_n', { n: r.items.length }));
   renderPlaces(); renderFiles();
 }
 function renderPlaces() {
-  const places = [['Bộ nhớ TV', '/sdcard'], ['Download', '/sdcard/Download'], ['Phim', '/sdcard/Movies'], ['Ảnh', '/sdcard/Pictures'], ['Nhạc', '/sdcard/Music'],
+  const places = [[T('files.tv_storage'), '/sdcard'], ['Download', '/sdcard/Download'], [T('files.movies'), '/sdcard/Movies'], [T('files.pictures'), '/sdcard/Pictures'], [T('files.music'), '/sdcard/Music'],
     ...volumes.map((v) => ['USB ' + v, '/storage/' + v])];
   const best = places.filter((p) => cwd === p[1] || cwd.startsWith(p[1] + '/')).sort((a, b) => b[1].length - a[1].length)[0];
   $('#places').replaceChildren(...places.map(([label, p]) => el('button', { textContent: label, className: best && best[1] === p ? 'on' : '', onclick: () => loadFiles(p) })));
@@ -27,7 +27,7 @@ function renderPlaces() {
   parts.forEach((part, i) => {
     if (i) kids.push(el('i', { textContent: '›' }));
     const p = '/' + parts.slice(0, i + 1).join('/');
-    kids.push(el('button', { textContent: i === 0 && part === 'sdcard' ? 'Bộ nhớ TV' : part, onclick: () => loadFiles(p) }));
+    kids.push(el('button', { textContent: i === 0 && part === 'sdcard' ? T('files.tv_storage') : part, onclick: () => loadFiles(p) }));
   });
   $('#crumbs').replaceChildren(...kids);
 }
@@ -38,26 +38,26 @@ function renderFiles() {
     const full = join(i.name), [icon, kind] = kindOf(i);
     const btn = (text, title, fn, cls = '') => el('button', { textContent: text, title, ariaLabel: title, className: 'small ' + cls, onclick: (e) => { e.stopPropagation(); fn(e); } });
     const acts = el('div', { className: 'acts' });
-    if (kind === 'apk') acts.append(setLabel(btn('', 'Cài APK này lên TV', async (e) => { const b = e.currentTarget; if (await ask('Cài ' + i.name + ' lên TV?', { ok: 'Cài' })) startJob('/api/file/install', { path: full }, 'Cài ' + i.name, b); }, 'primary'), '📦', 'Cài', true));
-    if (['video', 'audio', 'image'].includes(kind)) acts.append(btn('▶ TV', 'Mở trên TV', () => api('/api/file/open', { path: full }).then((r) => r && toast('Đã mở trên TV: ' + i.name))));
-    acts.append(btn('⋯', 'Thêm thao tác', (e) => popover(e.currentTarget, [   // one row on a phone too: the rest behind ⋯, as on the Apps tab
-      i.dir ? null : ['⬇', 'Tải về máy này', () => el('a', { href: '/api/file?path=' + encodeURIComponent(full), download: i.name }).click()],
-      ['✎', 'Đổi tên', async () => { const n = await ask('Tên mới:', { value: i.name }); if (n && n !== i.name) fileAct('/api/file/rename', { path: full, name: n }, 'Đã đổi tên'); }],
-      ['🗑', 'Xóa', async () => { if (await ask('Xóa ' + (i.dir ? 'thư mục (và mọi thứ bên trong) ' : '') + full + '?', { ok: 'Xóa', danger: true })) fileAct('/api/file/delete', { path: full }, 'Đã xóa'); }, 'danger'],
+    if (kind === 'apk') acts.append(setLabel(btn('', T('files.install_this_apk'), async (e) => { const b = e.currentTarget; if (await ask(T('files.install_name_ask', { name: i.name }), { ok: T('files.install_button') })) startJob('/api/file/install', { path: full }, T('files.install_name', { name: i.name }), b); }, 'primary'), '📦', T('files.install_button'), true));
+    if (['video', 'audio', 'image'].includes(kind)) acts.append(btn('▶ TV', T('files.open_on_tv'), () => api('/api/file/open', { path: full }).then((r) => r && toast(T('files.opened_on_tv', { name: i.name })))));
+    acts.append(btn('⋯', T('page.more_actions'), (e) => popover(e.currentTarget, [   // one row on a phone too: the rest behind ⋯, as on the Apps tab
+      i.dir ? null : ['⬇', T('files.download_here'), () => el('a', { href: '/api/file?path=' + encodeURIComponent(full), download: i.name }).click()],
+      ['✎', T('files.rename'), async () => { const n = await ask(T('files.new_name'), { value: i.name }); if (n && n !== i.name) fileAct('/api/file/rename', { path: full, name: n }, T('files.renamed')); }],
+      ['🗑', T('files.delete'), async () => { if (await ask(T(i.dir ? 'files.delete_folder_ask' : 'files.delete_ask', { path: full }), { ok: T('files.delete'), danger: true })) fileAct('/api/file/delete', { path: full }, T('files.deleted')); }, 'danger'],
     ]), 'iconbtn'));
     const open = i.dir ? () => loadFiles(full) : kind === 'image' ? () => { $('#preview img').src = '/api/file?inline=1&path=' + encodeURIComponent(full); $('#preview').showModal(); } : null;
     const row = el('div', { className: 'item' + (open ? ' click' : ''), onclick: open },
       el('div', { className: 'ficon' + (i.dir ? ' dir' : ''), textContent: icon }),
-      el('div', { className: 'name' }, el('span', { textContent: i.name }), el('small', { textContent: (i.dir ? 'Thư mục' : fmtSize(i.size)) + ' · ' + i.mtime })), acts);
+      el('div', { className: 'name' }, el('span', { textContent: i.name }), el('small', { textContent: (i.dir ? T('files.folder_kind') : fmtSize(i.size)) + ' · ' + i.mtime })), acts);
     if (open) { row.tabIndex = 0; row.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target === row) open(); }); }
     return row;
   });
-  $('#fileslist').replaceChildren(...(rows.length ? rows : [el('p', { className: 'empty pad', textContent: q ? 'Không có mục nào khớp.' : 'Thư mục trống.' })]));
+  $('#fileslist').replaceChildren(...(rows.length ? rows : [el('p', { className: 'empty pad', textContent: q ? T('files.nothing_matches') : T('files.empty_folder') })]));
 }
 $('#filesq').addEventListener('input', renderFiles);
 $('#filessort').addEventListener('change', renderFiles);
 $('#filesreload').addEventListener('click', () => loadFiles(cwd));
-$('#mkdir').addEventListener('click', async () => { const n = await ask('Tên thư mục mới:', { value: '' }); if (n) fileAct('/api/file/mkdir', { path: join(n.trim()) }, 'Đã tạo thư mục'); });
+$('#mkdir').addEventListener('click', async () => { const n = await ask(T('files.new_folder_name'), { value: '' }); if (n) fileAct('/api/file/mkdir', { path: join(n.trim()) }, T('files.folder_created')); });
 $('#upfile').addEventListener('change', (e) => { [...e.target.files].forEach((f) => upload(f, 'file', cwd)); e.target.value = ''; });
 $('#preview').addEventListener('click', () => { $('#preview').close(); $('#preview img').removeAttribute('src'); });
 const fc = $('#filescard');
@@ -78,11 +78,11 @@ function showJob(j, label, stop) {
   if (!row) {
     put('#jobscard', 'hidden', false); $('#jobscard').open = true;
     row = jobEls[j.id] = { root: el('div', { className: 'job' }), msg: el('div', { className: 'msg' }), bar: el('i'), stop: null };
-    if (stop) row.stop = el('button', { className: 'small', type: 'button', textContent: '■ Dừng', title: 'Dừng việc này và xóa phần đã gửi dở trên TV', onclick: (e) => { e.currentTarget.disabled = true; row.msg.textContent = 'đang dừng...'; stop(); } });
+    if (stop) row.stop = el('button', { className: 'small', type: 'button', textContent: T('page.stop'), title: T('files.stop_this'), onclick: (e) => { e.currentTarget.disabled = true; row.msg.textContent = T('files.stopping'); stop(); } });
     row.root.append(el('div', { className: 'jobhead' }, el('div', { textContent: label || j.title }), row.stop), row.msg, el('div', { className: 'bar' }, row.bar)); $('#jobs').prepend(row.root);
   }
   if (row.stop) row.stop.hidden = j.status !== 'running';
-  row.root.className = 'job ' + j.status; row.msg.textContent = j.status === 'cancelled' ? 'Đã dừng' : j.msg; row.bar.style.width = j.pct + '%';
+  row.root.className = 'job ' + j.status; row.msg.textContent = j.status === 'cancelled' ? T('files.stopped') : j.msg; row.bar.style.width = j.pct + '%';
   row.bar.parentElement.classList.toggle('busy', j.status === 'running' && !(j.pct >= 0));   // size unknown: moving, not stuck at 0
   row.status = j.status; row.pct = j.pct;
   // folded away, the title still tells how far things are
@@ -100,14 +100,14 @@ async function trackJob(j, label, after, src) {
   let misses = 0;                                                     // a blip in the network is not the end of the job; ten in a row are
   while (j.status === 'running') {
     await sleep(1000);
-    if (stopped) { j = { ...j, status: 'error', msg: 'đã dừng theo dõi, TV có thể vẫn làm tiếp' }; showJob(j, label); break; }
+    if (stopped) { j = { ...j, status: 'error', msg: T('files.stopped_watching') }; showJob(j, label); break; }
     const r = await api('/api/job?id=' + j.id, null, true);
     if (r) { misses = 0; j = r; showJob(j, label); mark(src, j); continue; }
-    if (++misses >= 10) { j = { ...j, status: 'error', msg: 'mất kết nối, không rõ đã xong chưa' }; showJob(j, label); break; }
+    if (++misses >= 10) { j = { ...j, status: 'error', msg: T('files.connection_lost') }; showJob(j, label); break; }
   }
   mark(src, j);
   if (j.status === 'error') { j.msg = friendly(j.msg); showJob(j, label); }
-  toast(j.status === 'done' ? 'Xong: ' + j.msg : j.status === 'cancelled' ? 'Đã dừng' : 'Lỗi: ' + j.msg);
+  toast(j.status === 'done' ? T('files.done_msg', { msg: j.msg }) : j.status === 'cancelled' ? T('files.stopped') : T('files.error_msg', { msg: j.msg }));
   if (j.status === 'done' && after) after(j);
   if (j.status === 'done' && filesLoaded) loadFiles(cwd);
   if (j.status === 'done') { appsStale(); if (/install/.test(j.title)) loadQuick(); }
@@ -119,22 +119,22 @@ async function roomError(size, kind, dest) {
 }
 async function upload(file, kind, dest, after, src) {
   const uid = 'up' + Math.random().toString(36).slice(2);
-  const row = { id: uid, title: 'Gửi ' + file.name, status: 'running', msg: 'đang kiểm tra chỗ trống trên TV...', pct: 0 };
+  const row = { id: uid, title: T('files.send_name', { name: file.name }), status: 'running', msg: T('files.checking_room'), pct: 0 };
   const xhr = new XMLHttpRequest();
   let stopped = false;
   const stop = () => {                                                // abort the upload; the server drops what arrived, and ends an install under way
     stopped = true; xhr.abort(); api('/api/cancel', { id: uid }, true);
-    row.status = 'cancelled'; showJob(row); mark(src, row); toast('Đã dừng');
+    row.status = 'cancelled'; showJob(row); mark(src, row); toast(T('files.stopped'));
   };
   showJob(row, undefined, stop); mark(src, row);
   const full = await roomError(file.size, kind === 'file' ? 'file' : 'apk', dest);
   if (stopped) return;
   if (full) { row.status = 'error'; row.msg = full; showJob(row); mark(src, row); return; }   // refused before a byte leaves
-  row.msg = 'đang gửi lên server...'; showJob(row);
+  row.msg = T('files.sending_to_server'); showJob(row);
   xhr.open('POST', '/api/upload?kind=' + kind + '&uid=' + uid + '&name=' + encodeURIComponent(file.name) + '&dest=' + encodeURIComponent(dest || ''));
   xhr.setRequestHeader('Content-Type', 'application/octet-stream');
-  xhr.upload.onprogress = (e) => { if (e.lengthComputable && !stopped) { row.pct = Math.round(e.loaded * (CORE === 'pc' ? 45 : 95) / e.total); row.msg = 'đang gửi ' + fmtSize(e.loaded) + ' / ' + fmtSize(e.total); showJob(row); mark(src, row); } };
-  xhr.onerror = () => { if (stopped) return; row.status = 'error'; row.msg = 'Không gọi được server'; showJob(row); mark(src, row); };
+  xhr.upload.onprogress = (e) => { if (e.lengthComputable && !stopped) { row.pct = Math.round(e.loaded * (CORE === 'pc' ? 45 : 95) / e.total); row.msg = T('files.sending_of', { done: fmtSize(e.loaded), total: fmtSize(e.total) }); showJob(row); mark(src, row); } };
+  xhr.onerror = () => { if (stopped) return; row.status = 'error'; row.msg = T('files.cannot_reach_server'); showJob(row); mark(src, row); };
   xhr.onload = () => {
     if (stopped) return;
     let r = {}; try { r = JSON.parse(xhr.responseText); } catch {}
@@ -150,12 +150,12 @@ async function upload(file, kind, dest, after, src) {
 // "Cast" a file: copy it to the TV's Download folder, then have the TV open it with its own viewer or player.
 $('#castfile').addEventListener('change', (e) => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-  upload(f, 'file', '/sdcard/Download', async (j) => { const p = /^saved (.+)$/.exec(j.msg || ''); if (await api('/api/file/open', { path: p ? p[1] : '/sdcard/Download/' + f.name })) toast('Đã mở trên TV: ' + f.name); });
+  upload(f, 'file', '/sdcard/Download', async (j) => { const p = /^saved (.+)$/.exec(j.msg || ''); if (await api('/api/file/open', { path: p ? p[1] : '/sdcard/Download/' + f.name })) toast(T('files.opened_on_tv', { name: f.name })); });
 });
 async function startJob(path, data, label, src) { if (src) src.dataset.busy = '⏳'; const r = await api(path, data); if (r) trackJob(r, label, undefined, src); else mark(src, {}); }
 $('#fetchf').addEventListener('submit', (e) => { e.preventDefault(); const u = $('#fetchurl').value.trim(); if (u) { startJob('/api/fetch', { url: u, dest: '/sdcard/Download' }); $('#fetchurl').value = ''; } });
-$('#instf').addEventListener('submit', async (e) => { e.preventDefault(); const u = $('#insturl').value.trim(); if (u && await ask('Cài APK từ link này lên TV?\n' + u, { ok: 'Cài' })) { startJob('/api/install', { url: u }, undefined, $('#instf button')); $('#insturl').value = ''; } });
-$('#apkfile').addEventListener('change', async (e) => { const f = e.target.files[0]; e.target.value = ''; if (f && await ask('Cài ' + f.name + ' lên TV?', { ok: 'Cài' })) upload(f, 'install', '', undefined, e.target.closest('label')); });
+$('#instf').addEventListener('submit', async (e) => { e.preventDefault(); const u = $('#insturl').value.trim(); if (u && await ask(T('files.install_link_ask', { url: u }), { ok: T('files.install_button') })) { startJob('/api/install', { url: u }, undefined, $('#instf button')); $('#insturl').value = ''; } });
+$('#apkfile').addEventListener('change', async (e) => { const f = e.target.files[0]; e.target.value = ''; if (f && await ask(T('files.install_name_ask', { name: f.name }), { ok: T('files.install_button') })) upload(f, 'install', '', undefined, e.target.closest('label')); });
 
 
 $('#jobsclose').addEventListener('click', (e) => { e.preventDefault(); put('#jobscard', 'hidden', true); });   // the next upload or install brings it back

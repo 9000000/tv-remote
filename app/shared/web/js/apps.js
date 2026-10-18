@@ -23,7 +23,7 @@ function showNowApp(id, label) {
   if (id + '|' + (label || '') === nowApp) return; nowApp = id + '|' + (label || '');
   const box = $('#nowapp'); box.hidden = !id; if (!id) return;
   const pkg = /^[\w]+(\.[\w]+)+$/.test(id) && !label, icon = appIcon(id), name = el('b', { textContent: label || appName(id) });
-  box.replaceChildren(el('small', { textContent: 'Đang mở' }), icon, name);
+  box.replaceChildren(el('small', { textContent: T('apps.now_open') }), icon, name);
   if (!pkg) icon.fill({ label: label || id });                         // an LG / Roku id: its name's first letter
   if (pkg) onMeta(id, (m) => { if (nowApp.startsWith(id + '|')) { icon.fill(m); name.textContent = appName(id); } });
 }
@@ -64,7 +64,7 @@ async function loadQuick() {
   if (missing.length) {                                               // first run: wait for every name/icon, then draw once so tiles never jump
     let done = 0;
     const note = el('div', { className: 'muted' }); $('#quick').replaceChildren(note);
-    const tick = () => { note.textContent = `Đang đọc tên và logo app từ TV (${done}/${missing.length}), chỉ lần đầu...`; };
+    const tick = () => { note.textContent = T('apps.reading_names', { done, total: missing.length }); };
     tick(); await Promise.all(missing.map((a) => new Promise((ok) => onMeta(a.pkg, () => { done++; tick(); ok(); }))));
   }
   const tiles = r.apps.slice().sort((a, b) => appName(a.pkg).localeCompare(appName(b.pkg))).map((a) => {
@@ -72,7 +72,7 @@ async function loadQuick() {
     return el('button', { className: 'tile', title: a.pkg, onclick: () => openOnTv(a.pkg, appName(a.pkg)) }, icon, el('span', { textContent: appName(a.pkg) }));
   });
   const gear = el('div', { className: 'appicon', textContent: '⚙' });
-  tiles.push(el('button', { className: 'tile', onclick: () => openOnTv('settings', 'Cài đặt') }, gear, el('span', { textContent: 'Cài đặt TV' })));
+  tiles.push(el('button', { className: 'tile', onclick: () => openOnTv('settings', T('page.settings')) }, gear, el('span', { textContent: T('apps.tv_settings') })));
   $('#quick').replaceChildren(...tiles); filterQuick();
 }
 
@@ -81,7 +81,7 @@ let appsLoaded = false, appsAll = [], appsInfo = new Map(), appsOffOpen = false;
 const appsStale = () => { quickLoaded = appsLoaded = false; };      // installed or removed elsewhere (files.js, Optimize TV): read again
 onTvChange(() => {
   appsStale(); META.clear(); metaFailed.clear();
-  $('#quick').replaceChildren(el('div', { className: 'muted', textContent: 'Danh sách app hiện khi ADB sẵn sàng.' }));
+  $('#quick').replaceChildren(el('div', { className: 'muted', textContent: T('remote.apps_appear_when_adb') }));
   $('#appslist').replaceChildren();
 });
 let appsBoot = new Set();                                             // the apps that start by themselves when the TV turns on
@@ -89,15 +89,15 @@ let appsFilter = 'all';
 // the chips above the list: each narrows it to one kind of app, with how many there are. The same words and colour mark
 // those apps in the list (APP_TAGS), so a colour on a row says what the chip says.
 const APPS_FILTERS = [
-  ['all', 'Tất cả', () => true],
-  ['boot', '🚀 Tự chạy', (p, i) => !i.off && appsBoot.has(p), 'Tự chạy mỗi khi bật TV'],
-  ['keep', '🔒 Cần giữ', (p, i) => i.keep, 'TV cần app này: đừng tắt hay gỡ'],
-  ['off', '⏸ Đã tắt', (p, i) => i.off, 'Đã tắt: bật lại trong nút ⋯ của app'],
+  ['all', T('apps.all'), () => true],
+  ['boot', T('apps.autostart'), (p, i) => !i.off && appsBoot.has(p), T('apps.autostart_why')],
+  ['keep', T('apps.must_keep'), (p, i) => i.keep, T('apps.must_keep_why')],
+  ['off', T('apps.turned_off'), (p, i) => i.off, T('apps.turned_off_why')],
 ];
 const appTags = (p, i) => APPS_FILTERS.filter((f) => f[0] !== 'all' && f[2](p, i))
-  .map(([key, label, , why]) => el('span', { className: 'tag ' + key, textContent: tr(label), title: tr(why) }));
+  .map(([key, label, , why]) => el('span', { className: 'tag ' + key, textContent: label, title: why }));
 async function loadApps() {
-  $('#appslist').replaceChildren(el('div', { className: 'muted', textContent: 'Đang tải...' }));
+  $('#appslist').replaceChildren(el('div', { className: 'muted', textContent: T('apps.loading') }));
   const r = await api('/api/apps' + ($('#appssys').checked ? '?system=1' : ''));
   if (!r) { $('#appslist').replaceChildren(); return; }
   appsLoaded = true; appsAll = r.apps.map((a) => a.pkg); appsInfo = new Map(r.apps.map((a) => [a.pkg, { off: !!a.off, keep: !!a.keep }])); seedMeta(r.apps); renderApps();
@@ -110,31 +110,31 @@ function renderApps() {
   const fit = APPS_FILTERS.find((f) => f[0] === appsFilter) || APPS_FILTERS[0];
   const found = appsAll.filter((p) => !q || p.toLowerCase().includes(q) || appName(p).toLowerCase().includes(q));
   const sys = $('#appssys').checked;
-  $('#appsfilter').replaceChildren(...APPS_FILTERS.map(([key, label, ok, why]) => el('button', { className: key + (key === fit[0] ? ' on' : ''), type: 'button', title: why ? tr(why) : '',
-    onclick: () => { appsFilter = key; renderApps(); } }, tr(label), el('b', { textContent: found.filter((p) => ok(p, appsInfo.get(p) || {})).length }))),
-    el('button', { className: 'sys' + (sys ? ' on' : ''), type: 'button', ariaPressed: String(sys), title: tr('Hiện cả app hệ thống'),   // which apps are listed at all: a switch, not a kind
-      onclick: () => { $('#appssys').checked = !sys; loadApps(); } }, (sys ? '✓ ' : '') + tr('⚙️ App hệ thống')));
+  $('#appsfilter').replaceChildren(...APPS_FILTERS.map(([key, label, ok, why]) => el('button', { className: key + (key === fit[0] ? ' on' : ''), type: 'button', title: why || '',
+    onclick: () => { appsFilter = key; renderApps(); } }, label, el('b', { textContent: found.filter((p) => ok(p, appsInfo.get(p) || {})).length }))),
+    el('button', { className: 'sys' + (sys ? ' on' : ''), type: 'button', ariaPressed: String(sys), title: T('apps.show_system'),   // which apps are listed at all: a switch, not a kind
+      onclick: () => { $('#appssys').checked = !sys; loadApps(); } }, (sys ? '✓ ' : '') + T('apps.system_apps')));
   const rows = found.filter((p) => fit[2](p, appsInfo.get(p) || {}))
     .sort((a, b) => (appsInfo.get(a)?.off ? 1 : 0) - (appsInfo.get(b)?.off ? 1 : 0) || appName(a).localeCompare(appName(b))).map((pkg) => {   // turned off: last
     const run = async (name, label) => {
-      if (name === 'uninstall' && !await ask('Gỡ cài đặt ' + appName(pkg) + ' khỏi TV?', { ok: 'Gỡ', danger: true })) return;
-      if (name === 'disable' && !await ask('Tắt ' + appName(pkg) + '? App biến khỏi TV cho tới khi bật lại ở mục “App đã tắt” cuối danh sách này.', { ok: 'Tắt app' })) return;
-      if (name === 'clear' && !await ask('Xóa toàn bộ dữ liệu của ' + appName(pkg) + '? App trở lại như mới cài: mất đăng nhập, cài đặt và nội dung đã tải trong app. Không hoàn tác được.', { ok: 'Xóa dữ liệu', danger: true })) return;
-      const r = await api('/api/app/' + name, { pkg }); if (r) { toast(label + ': ' + appName(pkg)); if (!['launch', 'stop', 'clear'].includes(name)) { quickLoaded = false; loadApps(); loadQuick(); } }
+      if (name === 'uninstall' && !await ask(T('apps.uninstall_ask', { name: appName(pkg) }), { ok: T('apps.remove'), danger: true })) return;
+      if (name === 'disable' && !await ask(T('apps.disable_ask', { name: appName(pkg) }), { ok: T('apps.disable_app') })) return;
+      if (name === 'clear' && !await ask(T('apps.clear_ask', { name: appName(pkg) }), { ok: T('apps.clear_data'), danger: true })) return;
+      const r = await api('/api/app/' + name, { pkg }); if (r) { toast(T('apps.what_name', { what: label, name: appName(pkg) })); if (!['launch', 'stop', 'clear'].includes(name)) { quickLoaded = false; loadApps(); loadQuick(); } }
     };
     const icon = appIcon(pkg), title = el('span', { textContent: pkg.split('.').pop() });
     const info = appsInfo.get(pkg) || {};
     // one button for what is wanted most, everything else behind ⋯
-    const more = el('button', { className: 'small iconbtn', title: 'Thêm thao tác', ariaLabel: 'Thêm thao tác', textContent: '⋯', onclick: (e) => popover(e.currentTarget, [
-      info.off ? ['↩', 'Bật lại', () => run('enable', 'Bật lại')] : ['▶', 'Mở', () => run('launch', 'Mở')],
-      ['ℹ️', 'Chi tiết & quyền', () => appDetails(pkg)],
-      ['📋', 'Chép tên gói', () => copyText(pkg)],
-      info.off ? null : ['⏹', 'Dừng', () => run('stop', 'Dừng')],
-      info.off ? null : ['📜', 'Xem log', () => appLog(pkg)],
-      ['💾', 'Sao lưu (tải về)', () => appBackup(pkg)],
-      info.keep || info.off ? null : ['🧽', 'Xóa dữ liệu', () => run('clear', 'Xóa dữ liệu')],
-      info.keep || info.off ? null : ['⏸', 'Tắt app', () => run('disable', 'Tắt app')],
-      ['🗑', 'Gỡ', () => run('uninstall', 'Gỡ'), 'danger'],
+    const more = el('button', { className: 'small iconbtn', title: T('page.more_actions'), ariaLabel: T('page.more_actions'), textContent: '⋯', onclick: (e) => popover(e.currentTarget, [
+      info.off ? ['↩', T('apps.turn_on'), () => run('enable', T('apps.turn_on'))] : ['▶', T('apps.open'), () => run('launch', T('apps.open'))],
+      ['ℹ️', T('apps.details'), () => appDetails(pkg)],
+      ['📋', T('apps.copy_package'), () => copyText(pkg)],
+      info.off ? null : ['⏹', T('apps.stop'), () => run('stop', T('apps.stop'))],
+      info.off ? null : ['📜', T('apps.view_log'), () => appLog(pkg)],
+      ['💾', T('apps.backup'), () => appBackup(pkg)],
+      info.keep || info.off ? null : ['🧽', T('apps.clear_data'), () => run('clear', T('apps.clear_data'))],
+      info.keep || info.off ? null : ['⏸', T('apps.disable_app'), () => run('disable', T('apps.disable_app'))],
+      ['🗑', T('apps.remove'), () => run('uninstall', T('apps.remove')), 'danger'],
     ]) });
     const row = el('div', { className: 'item' + (info.off ? ' off' : '') }, icon, el('div', { className: 'name' },
       el('div', { className: 'nameline' }, title, ...appTags(pkg, info)), el('small', { className: 'pkg', textContent: pkg, title: pkg })),
@@ -147,9 +147,9 @@ function renderApps() {
   // the disabled apps (Optimize TV's, or "Disable" here) fold away at the end, so "Turn on" is at hand but out of the way
   const fold0 = fit[0] === 'all';                                    // a chip picked: its apps, all in plain sight
   const on = fold0 ? rows.filter((r) => !r.off) : rows, off = fold0 ? rows.filter((r) => r.off) : [];
-  const none = !$('#appssys').checked && (fit[0] === 'keep' || fit[0] === 'boot') ? 'Không có app nào. Bấm “⚙️ App hệ thống” để thấy cả app hệ thống.' : 'Không có app nào.';
+  const none = !$('#appssys').checked && (fit[0] === 'keep' || fit[0] === 'boot') ? T('apps.none_system_hint') : T('apps.none');
   const fold = off.length ? [el('details', { className: 'appsoff', open: !!q || appsOffOpen, ontoggle: (e) => { if (!q) appsOffOpen = e.target.open; } },
-    el('summary', { textContent: '⏸ App đã tắt (' + off.length + ')' }), el('p', { className: 'muted', textContent: 'Đã tắt bằng Tối ưu TV hoặc nút Tắt app. Bấm ↩ để bật lại.' }), ...off)] : [];
+    el('summary', { textContent: T('apps.off_title', { n: off.length }) }), el('p', { className: 'muted', textContent: T('apps.off_note') }), ...off)] : [];
   $('#appslist').replaceChildren(...(on.length || off.length ? on : [el('div', { className: 'muted', textContent: none })]), ...fold);
 }
 $('#appsq').addEventListener('input', renderApps);
@@ -160,41 +160,41 @@ $('#appsreload').addEventListener('click', loadApps);
 // ℹ️ one app in detail: version, dates, memory, start at boot, and the permissions a person can give or take back
 async function appDetails(pkg) {
   const body = $('#infobody');
-  put('#infotitle', 'textContent', 'ℹ️ ' + appName(pkg)); body.replaceChildren(el('p', { className: 'muted', textContent: 'Đang đọc từ TV...' }));
+  put('#infotitle', 'textContent', 'ℹ️ ' + appName(pkg)); body.replaceChildren(el('p', { className: 'muted', textContent: T('health.reading_from_the_tv') }));
   if (!$('#infodlg').open) $('#infodlg').showModal();
   const r = await api('/api/app/info?pkg=' + encodeURIComponent(pkg));
   if (!r || !$('#infodlg').open) return;
   const a = appInfoRead(r.text), keep = (appsInfo.get(pkg) || {}).keep;
-  if (!a.found) { body.replaceChildren(el('p', { className: 'muted', textContent: 'TV không còn app này.' })); return; }
+  if (!a.found) { body.replaceChildren(el('p', { className: 'muted', textContent: T('apps.gone') })); return; }
   const kv = el('dl', { className: 'kv' });
   const add = (k, v) => { if (v) kv.append(el('dt', { textContent: k }), el('dd', { className: 'v', textContent: v })); };
-  add('Phiên bản', a.version + (a.code ? ' (' + a.code + ')' : ''));
-  add('Cần Android', a.minSdk ? androidName(a.minSdk) + ' trở lên' : '');
-  add('Viết cho Android', a.targetSdk ? androidName(a.targetSdk) : '');
-  add('Cài lúc', a.installed.slice(0, 16));
-  add('Cập nhật lúc', a.updated !== a.installed ? a.updated.slice(0, 16) : '');
-  add('Loại', a.system ? (a.updatedSystem ? 'App hệ thống, đã cập nhật' : 'App hệ thống') : 'Tự cài');
-  add('Cài từ', a.installer === 'com.android.vending' ? 'Google Play' : a.installer ? appName(a.installer) : '');
-  add('Đang chạy', a.pids.length ? 'Có' + (a.ramKb ? ', dùng ' + fmtSize(a.ramKb * 1024) + ' RAM' : '') : 'Không');
-  add('Tự chạy khi bật TV', a.boot ? 'Có' : 'Không');
+  add(T('apps.version'), a.version + (a.code ? ' (' + a.code + ')' : ''));
+  add(T('apps.needs_android'), a.minSdk ? T('apps.or_newer', { v: androidName(a.minSdk) }) : '');
+  add(T('apps.built_for'), a.targetSdk ? androidName(a.targetSdk) : '');
+  add(T('apps.installed_at'), a.installed.slice(0, 16));
+  add(T('apps.updated_at'), a.updated !== a.installed ? a.updated.slice(0, 16) : '');
+  add(T('apps.kind'), a.system ? T(a.updatedSystem ? 'apps.system_updated' : 'apps.system_app') : T('apps.user_installed'));
+  add(T('apps.installed_from'), a.installer === 'com.android.vending' ? 'Google Play' : a.installer ? appName(a.installer) : '');
+  add(T('apps.running'), a.pids.length ? (a.ramKb ? T('apps.yes_ram', { size: fmtSize(a.ramKb * 1024) }) : T('apps.yes')) : T('apps.no'));
+  add(T('apps.starts_with_tv'), a.boot ? T('apps.yes') : T('apps.no'));
   const parts = [kv];
   if (a.perms.length) {
-    parts.push(el('h3', { textContent: 'Quyền' }));
-    if (keep) parts.push(el('p', { className: 'muted', textContent: 'TV cần app này để chạy: quyền của nó chỉ xem, không đổi ở đây.' }));
+    parts.push(el('h3', { textContent: T('apps.permissions') }));
+    if (keep) parts.push(el('p', { className: 'muted', textContent: T('apps.keep_perms') }));
     for (const p of a.perms) {
-      const seg = el('div', { className: 'seg mini' }, ...[[true, 'Cho phép'], [false, 'Không']].map(([on, label]) => el('button', {
+      const seg = el('div', { className: 'seg mini' }, ...[[true, T('apps.allow')], [false, T('apps.no')]].map(([on, label]) => el('button', {
         className: p.granted === on ? 'on' : '', textContent: label, disabled: keep || p.locked,
         onclick: async () => {
           if (p.granted === on) return;
           const x = await api('/api/app/perm', { pkg, perm: p.name, on });
           if (!x) return;
-          if (/^ok$/m.test(x.text)) toast((on ? 'Đã cho phép: ' : 'Đã tắt quyền: ') + tr(permName(p.name))); else toast('TV không đổi quyền này: ' + friendly(x.text.trim()));
+          if (/^ok$/m.test(x.text)) toast(T(on ? 'apps.perm_allowed' : 'apps.perm_off', { name: tr(permName(p.name)) })); else toast(T('apps.perm_failed', { why: friendly(x.text.trim()) }));
           appDetails(pkg);
         } })));
       parts.push(el('div', { className: 'permrow' }, el('span', { textContent: permName(p.name), title: p.name }),
-        p.locked ? el('small', { className: 'muted', textContent: 'hệ thống giữ' }) : null, seg));
+        p.locked ? el('small', { className: 'muted', textContent: T('apps.system_holds') }) : null, seg));
     }
-  } else parts.push(el('p', { className: 'muted', textContent: 'App này không xin quyền nào cần người dùng cho phép (micro, vị trí, tệp...).' }));
+  } else parts.push(el('p', { className: 'muted', textContent: T('apps.no_perms') }));
   body.replaceChildren(...parts);
 }
 $('#infoclose').addEventListener('click', () => $('#infodlg').close());
@@ -202,13 +202,13 @@ $('#infoclose').addEventListener('click', () => $('#infodlg').close());
 // 💾 the app as a .tar: its APKs and its folders in shared storage. What it keeps in its private folder needs root to read.
 function appBackup(pkg) {
   const a = el('a', { href: '/api/app/backup?pkg=' + encodeURIComponent(pkg) }); document.body.append(a); a.click(); a.remove();
-  toast('Đang sao lưu ' + appName(pkg) + ': tệp .tar sẽ tải về máy này');
+  toast(T('apps.backing_up', { name: appName(pkg) }));
 }
 // 📥 a backup back onto this TV (or onto another one: that is how an app moves between TVs)
 $('#restorefile').addEventListener('change', async (e) => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-  if (!/\.tar$/i.test(f.name)) { toast('Chọn tệp .tar đã sao lưu bằng nút 💾'); return; }
-  if (await ask('Khôi phục ' + f.name + ' lên TV? App được cài lại (giữ dữ liệu nếu đang có trên TV), kèm thư mục dữ liệu trong bộ nhớ chung.', { ok: 'Khôi phục' }))
+  if (!/\.tar$/i.test(f.name)) { toast(T('apps.pick_tar')); return; }
+  if (await ask(T('apps.restore_ask', { name: f.name }), { ok: T('apps.restore') }))
     upload(f, 'restore', '', () => { quickLoaded = false; loadApps(); loadQuick(); }, e.target.closest('label'));
 });
 // 🧹 the system's own cache cleaner for every app: nothing anyone would miss, apps just rebuild what they need
@@ -216,7 +216,7 @@ $('#appsclean').addEventListener('click', async () => {
   const r = await api('/api/clean', {});
   if (!r) return;
   const freed = cleanFreed(r.text);
-  toast(freed === null ? 'Đã dọn bộ nhớ đệm' : freed > 1e6 ? 'Đã dọn bộ nhớ đệm, lấy lại ' + fmtSize(freed) : 'Bộ nhớ đệm đã sạch, không còn gì để dọn');
+  toast(freed === null ? T('apps.cleaned') : freed > 1e6 ? T('apps.cleaned_freed', { size: fmtSize(freed) }) : T('apps.already_clean'));
 });
 
 // 📜 an app's own log, live: every 1.5 s the lines since the last one shown
@@ -224,7 +224,7 @@ let logPkg = '', logTimer = 0, logSt = null, logPaused = false;
 function appLog(pkg) {
   logPkg = pkg; logSt = { last: '', seen: new Set() }; logPaused = false;
   put('#logtitle', 'textContent', '📜 ' + appName(pkg)); $('#logpre').replaceChildren(); put('#lognote', 'hidden', true);
-  setLabel($('#logpause'), '⏸', 'Tạm dừng'); $('#logdlg').showModal(); pollLog();
+  setLabel($('#logpause'), '⏸', T('apps.pause')); $('#logdlg').showModal(); pollLog();
 }
 async function pollLog() {
   clearTimeout(logTimer);
@@ -244,12 +244,12 @@ async function pollLog() {
   }
   logTimer = setTimeout(pollLog, 1500);
 }
-$('#logpause').addEventListener('click', () => { logPaused = !logPaused; setLabel($('#logpause'), logPaused ? '▶' : '⏸', logPaused ? 'Chạy tiếp' : 'Tạm dừng'); });
+$('#logpause').addEventListener('click', () => { logPaused = !logPaused; setLabel($('#logpause'), logPaused ? '▶' : '⏸', T(logPaused ? 'apps.resume' : 'apps.pause')); });
 $('#logcopy').addEventListener('click', async () => {
   const text = [...$('#logpre').children].map((d) => d.textContent).join('\n');
-  try { await navigator.clipboard.writeText(text); toast('Đã sao chép log'); } catch { toast('Không sao chép được: chọn chữ rồi sao chép tay'); }
+  try { await navigator.clipboard.writeText(text); toast(T('apps.log_copied')); } catch { toast(T('playing.copy_failed')); }
 });
-$('#logopen').addEventListener('click', async () => { if (await api('/api/app/launch', { pkg: logPkg })) toast('Mở: ' + appName(logPkg)); });
+$('#logopen').addEventListener('click', async () => { if (await api('/api/app/launch', { pkg: logPkg })) toast(T('apps.what_name', { what: T('apps.open'), name: appName(logPkg) })); });
 $('#logclose').addEventListener('click', () => $('#logdlg').close());
 $('#logdlg').addEventListener('close', () => clearTimeout(logTimer));
 
@@ -297,7 +297,7 @@ function aiPrompt(r) {
 }
 $('#aiapps').addEventListener('click', async (e) => {                // the TV's memory survey takes a few seconds: the button says so until the text is ready
   const b = e.currentTarget, was = [...b.childNodes];
-  b.disabled = true; b.replaceChildren(el('span', { className: 'minispin' }), el('span', { textContent: 'Đang lấy danh sách app...' }));
+  b.disabled = true; b.replaceChildren(el('span', { className: 'minispin' }), el('span', { textContent: T('apps.getting_list') }));
   try {
     const r = await api('/api/apps/report'); if (!r) return;
     $('#aitext').value = aiPrompt(r); $('#aidlg').showModal();
@@ -308,7 +308,7 @@ $('#aicopy').addEventListener('click', async () => {
   const t = $('#aitext'); let ok = false;
   try { await navigator.clipboard.writeText(t.value); ok = true; } catch {}
   if (!ok) { t.focus(); t.select(); try { ok = document.execCommand('copy'); } catch {} }   // plain-HTTP pages (the TV's) have no clipboard API
-  toast(ok ? 'Đã chép. Dán vào ChatGPT, Claude hay Gemini.' : 'Không chép tự động được: chữ đã được bôi đen, bấm giữ để chép.');
+  toast(T(ok ? 'apps.ai_copied' : 'apps.ai_copy_failed'));
 });
 
 // 📝 in bulk: paste package names (or a whole AI answer: anything shaped like com.abc.xyz counts), see where each one stands,
@@ -324,7 +324,7 @@ async function bulkStatus(force) {
 }
 function bulkWhere(pkg) {
   const k = bulkKnown && bulkKnown.get(pkg);
-  return !bulkKnown ? ['', '…'] : !k ? ['bad', 'không có trên TV'] : k.keep ? ['warn', 'TV cần app này: bỏ qua'] : k.off ? ['', '⏸ đã tắt'] : ['ok', 'đang bật'];
+  return !bulkKnown ? ['', '…'] : !k ? ['bad', T('apps.not_on_tv')] : k.keep ? ['warn', T('apps.tv_needs_skip')] : k.off ? ['', T('apps.is_off')] : ['ok', T('apps.is_on')];
 }
 function renderBulk() {
   const pkgs = bulkPkgs();
@@ -333,7 +333,7 @@ function renderBulk() {
     return el('div', { className: 'item bulkrow' }, el('div', { className: 'name' }, el('span', { textContent: appName(p) }), el('small', { textContent: p })), el('span', { className: 'chip ' + cls, textContent: word }));
   }));
   ['#bulkoff', '#bulkon', '#bulkdel'].forEach((id) => { $(id).disabled = !pkgs.length; });
-  if (!pkgs.length) put('#bulklog', 'textContent', $('#bulktext').value.trim() ? 'Không thấy app id nào trong đoạn chữ này.' : '');
+  if (!pkgs.length) put('#bulklog', 'textContent', $('#bulktext').value.trim() ? T('apps.no_ids') : '');
 }
 let bulkT = 0;
 $('#bulktext').addEventListener('input', () => { clearTimeout(bulkT); bulkT = setTimeout(async () => { renderBulk(); await bulkStatus(); renderBulk(); }, 300); });
@@ -342,21 +342,21 @@ $('#bulkclose').addEventListener('click', () => $('#bulkdlg').close());
 async function bulkRun(action, label) {
   await bulkStatus();
   const pkgs = bulkPkgs().filter((p) => { const k = bulkKnown.get(p); return k && !(action === 'disable' && (k.keep || k.off)) && !(action === 'enable' && !k.off); });
-  if (!pkgs.length) { put('#bulklog', 'textContent', 'Không có app nào cần ' + label.toLowerCase() + '.'); return; }
-  if (action === 'uninstall' && !await ask('Gỡ ' + pkgs.length + ' app khỏi TV? Gỡ rồi phải cài lại mới có (app hệ thống thì không gỡ được, hãy tắt).', { ok: 'Gỡ', danger: true })) return;
-  if (action === 'disable' && !await ask('Tắt ' + pkgs.length + ' app? Bật lại được bất cứ lúc nào ở đây hoặc ở mục “App đã tắt”.', { ok: 'Tắt app' })) return;
+  if (!pkgs.length) { put('#bulklog', 'textContent', T('apps.bulk_none', { what: label.toLowerCase() })); return; }
+  if (action === 'uninstall' && !await ask(T('apps.bulk_remove_ask', { n: pkgs.length }), { ok: T('apps.remove'), danger: true })) return;
+  if (action === 'disable' && !await ask(T('apps.bulk_disable_ask', { n: pkgs.length }), { ok: T('apps.disable_app') })) return;
   const btns = ['#bulkoff', '#bulkon', '#bulkdel'].map((id) => $(id)); btns.forEach((b) => { b.disabled = true; });
   let ok = 0; const bad = [];
   for (let i = 0; i < pkgs.length; i++) {
-    put('#bulklog', 'textContent', label + ' ' + (i + 1) + '/' + pkgs.length + ': ' + appName(pkgs[i]) + '...');
+    put('#bulklog', 'textContent', T('apps.bulk_progress', { what: label, i: i + 1, n: pkgs.length, name: appName(pkgs[i]) }));
     const r = await api('/api/app/' + action, { pkg: pkgs[i] }, true);
     if (r) ok++; else bad.push(pkgs[i]);
   }
-  put('#bulklog', 'textContent', label + ': xong ' + ok + '/' + pkgs.length + (bad.length ? ' · không được: ' + bad.join(', ') : ''));
+  put('#bulklog', 'textContent', bad.length ? T('apps.bulk_done_bad', { what: label, ok, n: pkgs.length, bad: bad.join(', ') }) : T('apps.bulk_done', { what: label, ok, n: pkgs.length }));
   btns.forEach((b) => { b.disabled = false; });
   await bulkStatus(true); renderBulk(); quickLoaded = false; loadQuick(); if (appsLoaded) loadApps();
 }
-$('#bulkoff').addEventListener('click', () => bulkRun('disable', 'Tắt'));
-$('#bulkon').addEventListener('click', () => bulkRun('enable', 'Bật lại'));
-$('#bulkdel').addEventListener('click', () => bulkRun('uninstall', 'Gỡ'));
+$('#bulkoff').addEventListener('click', () => bulkRun('disable', T('apps.turn_off')));
+$('#bulkon').addEventListener('click', () => bulkRun('enable', T('apps.turn_on')));
+$('#bulkdel').addEventListener('click', () => bulkRun('uninstall', T('apps.remove')));
 

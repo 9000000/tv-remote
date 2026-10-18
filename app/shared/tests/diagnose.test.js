@@ -17,6 +17,7 @@ function page(core = 'pc') {
   const box = node(), calls = [];
   const el = (tag, props = {}, ...kids) => Object.assign(node(), { tag, kids }, props, { hidden: false });
   const sandbox = {
+    T: (id, a) => { let s = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n/vi.json'), 'utf8'))[id]; if (s == null) return id; return a ? s.replace(/\{(\w+)\}/g, (m, k) => (k in a ? a[k] : m)) : s; },
     CORE: core, picking: false, LANG: 'vi', wantPick: false, cameFromTv: false,
     $: () => box, el, refresh() {}, put: (e, k, v) => { (typeof e === 'string' ? box : e)[k] = v; }, selectTv: (...a) => calls.push(['select', ...a]), adbHelp() {}, api: async () => ({}),
     AbortController, URLSearchParams,

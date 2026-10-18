@@ -73,7 +73,7 @@ async function drawWhy(r) {
 }
 // An old or missing TV Setup comes as needSetup's question (update or install it), before anything is drawn when it can.
 function drawFail(why) {
-  if (!needSetup(why)) toast(/draw:nooverlay/.test(why) ? 'TV này không cho app vẽ đè lên màn hình.' : 'Không vẽ được lên TV: ' + friendly(why || 'mất kết nối'));
+  if (!needSetup(why)) toast(/draw:nooverlay/.test(why) ? T('draw.no_overlay') : T('draw.cannot_draw', { why: friendly(why || T('draw.connection_lost')) }));
 }
 
 let drawPics = true;                                                   // this TV Setup takes pictures: known once drawing starts
@@ -111,7 +111,7 @@ $('#drawpic').addEventListener('click', () => { if (drawPics) $('#drawfile').cli
 $('#drawfile').addEventListener('change', async (e) => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
   const img = new Image(), url = URL.createObjectURL(f);
-  try { img.src = url; await img.decode(); } catch { toast('Không mở được ảnh này.'); return; } finally { URL.revokeObjectURL(url); }
+  try { img.src = url; await img.decode(); } catch { toast(T('draw.cannot_open_picture')); return; } finally { URL.revokeObjectURL(url); }
   const k = Math.min(1, 1280 / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas');
   c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
@@ -130,7 +130,7 @@ async function picPlace(data, w) {
 // app's (messagePic in Drawing.kt): the pen's colour on a dark box (a light one for black), lines kept under 1100 pixels.
 $('#drawtext').addEventListener('click', async () => {
   if (!drawPics) { setupFor('pic'); return; }
-  const text = (await ask('Lời nhắn hiện trên TV', { value: '', ok: 'Tiếp' }) || '').trim();
+  const text = (await ask(T('draw.message_for_tv'), { value: '', ok: T('draw.next') }) || '').trim();
   if (!text) return;
   const c = document.createElement('canvas'), g = c.getContext('2d'), font = '700 72px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
   g.font = font;

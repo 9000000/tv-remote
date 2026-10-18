@@ -1,9 +1,8 @@
 // TV screen (live / screenshots) and tabs
 // ---------- screen: live MJPEG stream, or one screenshot at a time ----------
 let screenOn = false, screenUrl = null, screenGen = 0, streamCtl = null, frames = 0;
-const SCREEN_HINT = 'Bấm “Xem” để xem màn hình TV.';
 if (CORE !== 'pc') document.querySelectorAll('#screenmode [data-for=pc]').forEach((o) => o.remove());   // an <option> cannot be hidden by CSS everywhere
-function setScreenPlaceholder(msg) { put('#screenph', 'textContent', msg || SCREEN_HINT); put('#screenph', 'hidden', false); put('#screen', 'hidden', true); put('#screenv', 'hidden', true); put('#screenc', 'hidden', true); }
+function setScreenPlaceholder(msg) { put('#screenph', 'textContent', msg || T('screen.hint')); put('#screenph', 'hidden', false); put('#screen', 'hidden', true); put('#screenv', 'hidden', true); put('#screenc', 'hidden', true); }
 // The element showing the picture now (a screenshot, the <video> of JMuxer, the canvas of WebCodecs), and its own size.
 function screenEl() { return ['#screenc', '#screenv', '#screen'].map((s) => $(s)).find((m) => !m.hidden) || null; }
 function picSize(m) { return m && m.tagName === 'CANVAS' ? [m.width, m.height] : m ? [m.naturalWidth || m.videoWidth || 0, m.naturalHeight || m.videoHeight || 0] : [0, 0]; }
@@ -16,17 +15,17 @@ function stopScreen(msg) {
   if (typeof drawing !== 'undefined' && drawing) drawStop();         // no picture to draw on
   screenOn = false; screenGen++; if (streamCtl) streamCtl.abort(); if (player) { player.destroy(); player = null; }
   $('#screencard').classList.remove('on'); if (msg && matchMedia('(max-width:899px)').matches) toast(msg);   // on a phone the box is folded away: say it where it is seen
-  setLabel($('#screenbtn'), '▶', 'Xem'); setScreenPlaceholder(msg); setScreenInfo(''); dockScreen();
+  setLabel($('#screenbtn'), '▶', T('remote.watch')); setScreenPlaceholder(msg); setScreenInfo(''); dockScreen();
 }
 async function snapOnce() {
   try {
     const r = await fetch('/api/screen');
     if (r.ok) { const b = await r.blob(); return b; }
     let e = r.statusText; try { e = (await r.json()).error || e; } catch {} return friendly(adbWords(r.status, e));
-  } catch { return 'Không gọi được server'; }
+  } catch { return T('screen.cannot_reach_server'); }
 }
 async function snapLoop(gen) {
-  setScreenInfo('Ảnh chụp, làm mới khoảng 2 giây/ảnh. Video có bản quyền (Netflix...) hiện màu đen.');
+  setScreenInfo(T('screen.snap_info'));
   while (screenOn && gen === screenGen) {
     const b = await snapOnce(); if (gen !== screenGen) return;
     if (b instanceof Blob) { showFrame(b); await sleep(1000); }   // screencap is a full PNG on the TV: back to back it kept the TV busy else { setScreenPlaceholder(b); await sleep(3000); }
@@ -166,9 +165,9 @@ function fellBehind() {
   if (behindAt.length < 3) return;
   behindAt = [];
   const t = picTune(), i = PIC_STEPS.indexOf($('#screenmode').value);
-  if (i <= 0 || t.fps || t.rate) { toast('Mạng chậm, hình bị giật. Thử hạ chất lượng hình.'); return; }
+  if (i <= 0 || t.fps || t.rate) { toast(T('screen.slow_try_lower')); return; }
   $('#screenmode').value = PIC_STEPS[i - 1]; picLevelSay();
-  toast('Mạng chậm: hạ hình xuống ' + $('#screenmode').selectedOptions[0].textContent + ' cho kịp.');
+  toast(T('screen.slow_stepped_down', { size: $('#screenmode').selectedOptions[0].textContent }));
   startScreen();
 }
 setInterval(() => {                                                  // quiet for long enough: one level back up
@@ -178,15 +177,14 @@ setInterval(() => {                                                  // quiet fo
   const up = picNext({ mode, chosen: picChosen, calmFrom: picCalm, wait: picWait }, now);
   if (!up) return;
   $('#screenmode').value = up; picLevelSay(); picUpAt = picCalm = now;
-  toast('Mạng ổn lại: tăng hình lên ' + $('#screenmode').selectedOptions[0].textContent + '.');
+  toast(T('screen.steady_stepped_up', { size: $('#screenmode').selectedOptions[0].textContent }));
   startScreen();
 }, 5000);
 // ⚙ Advanced: frames per second and bit rate of the person's own, over the level's (0: the level's). Kept in this browser.
 const PIC_FPS = [0, 15, 30, 60], PIC_RATE = [0, 1, 2, 4, 8];          // Mbit/s
 function picTune() { let t = {}; try { t = JSON.parse(localStorage.getItem('picTune') || '{}'); } catch {} return { fps: +t.fps || 0, rate: +t.rate || 0, enc: ['hw', 'sw'].includes(t.enc) ? t.enc : 0, smooth: t.smooth ? 1 : 0 }; }
-function picTuneSay() { const t = picTune(); return (t.fps ? ' · ≤' + t.fps + ' fps' : '') + (t.rate ? ' · ' + t.rate + ' Mbit/s' : '') + (t.enc ? ' · ' + PIC_ENC_SAY[t.enc] : '') + (t.smooth && wcUsable() ? ' · nhịp đều' : ''); }
-const PIC_ENC = { 0: 'Tự chọn', hw: 'Phần cứng', sw: 'Phần mềm' };   // the TV's video encoder; auto: hardware, software if it sends nothing
-const PIC_ENC_SAY = { hw: 'mã hóa phần cứng', sw: 'mã hóa phần mềm' };
+function picTuneSay() { const t = picTune(); return (t.fps ? ' · ≤' + t.fps + ' fps' : '') + (t.rate ? ' · ' + t.rate + ' Mbit/s' : '') + (t.enc ? ' · ' + (t.enc === 'hw' ? T('screen.encoding_hw') : T('screen.encoding_sw')) : '') + (t.smooth && wcUsable() ? ' · ' + T('screen.even_pace') : ''); }
+const picEnc = (v) => v === 'hw' ? T('screen.hardware') : v === 'sw' ? T('screen.software') : T('screen.auto');   // the TV's video encoder; auto: hardware, software if it sends nothing
 // The quality button under the picture: one dialog with the levels, then frames per second, bit rate and encoder.
 function picDialog() {
   const chips = (list, on, pick) => {
@@ -194,7 +192,7 @@ function picDialog() {
     const draw = () => box.replaceChildren(...list.map(([v, words]) => el('button', { className: on() === v ? 'on' : '', textContent: words, onclick: () => { pick(v); draw(); } })));
     draw(); box.redraw = draw; return box;
   };
-  const tune = (key, list, words = (v) => v ? String(v) : 'Mặc định') => chips(list.map((v) => [v, words(v)]), () => picTune()[key], (v) => {
+  const tune = (key, list, words = (v) => v ? String(v) : T('screen.default')) => chips(list.map((v) => [v, words(v)]), () => picTune()[key], (v) => {
     const t = picTune(); t[key] = v; try { localStorage.setItem('picTune', JSON.stringify(t)); } catch {}
     if (screenOn && $('#screenmode').value !== 'snap') startScreen();
   });
@@ -202,34 +200,34 @@ function picDialog() {
   const pickLevel = (v) => { $('#screenmode').value = v; $('#screenmode').dispatchEvent(new Event('change')); d.querySelectorAll('.fchips.level').forEach((c) => c.redraw()); };
   const level = (list) => { const c = chips(list, () => $('#screenmode').value, pickLevel); c.classList.add('level'); return c; };   // two rows, one choice: each on one line
   const d = el('dialog', { className: 'ask menu' }, el('div', { className: 'card' },
-    el('div', { className: 'card-head' }, el('h2', { textContent: '🖥️ Chất lượng hình' }), el('button', { className: 'small iconbtn', textContent: '✕', title: 'Đóng', 'aria-label': 'Đóng', onclick: () => d.close() })),
-    el('h3', { textContent: 'Cỡ hình' }), level(levels.filter(([v]) => sized(v))),
-    el('p', { className: 'note', textContent: 'Là cỡ lớn nhất: mạng chậm thì tự hạ xuống, mạng ổn lại thì tự tăng lên.' }),
-    el('h3', { textContent: 'Hoặc' }), level(levels.filter(([v]) => !sized(v))),
-    el('h3', { textContent: 'Khung/giây' }), tune('fps', PIC_FPS),
-    el('h3', { textContent: 'Bitrate (Mbit/s)' }), tune('rate', PIC_RATE),
-    el('h3', { textContent: 'Bộ mã hóa' }), tune('enc', [0, 'hw', 'sw'], (v) => PIC_ENC[v]),
-    ...(wcUsable() ? [el('h3', { textContent: 'Nhịp hình' }), tune('smooth', [0, 1], (v) => v ? 'Đều hơn' : 'Nhanh nhất'),   // JMuxer keeps its own buffer: nothing to choose there
-      el('p', { className: 'note', textContent: 'Đều hơn: hình chậm thêm 33 ms nhưng ít giật hơn khi Wi-Fi chập chờn.' })] : []),
-    el('p', { className: 'note', textContent: 'Cao hơn thì mượt, nét hơn nhưng nặng TV và mạng hơn. Hình đứng mãi ở “Đang lấy hình”: thử Phần mềm.' })));
+    el('div', { className: 'card-head' }, el('h2', { textContent: T('screen.picture_quality') }), el('button', { className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
+    el('h3', { textContent: T('screen.size') }), level(levels.filter(([v]) => sized(v))),
+    el('p', { className: 'note', textContent: T('screen.largest_size_note') }),
+    el('h3', { textContent: T('screen.or') }), level(levels.filter(([v]) => !sized(v))),
+    el('h3', { textContent: T('screen.frames_per_second') }), tune('fps', PIC_FPS),
+    el('h3', { textContent: T('screen.bit_rate') }), tune('rate', PIC_RATE),
+    el('h3', { textContent: T('screen.encoder') }), tune('enc', [0, 'hw', 'sw'], picEnc),
+    ...(wcUsable() ? [el('h3', { textContent: T('screen.frame_pace') }), tune('smooth', [0, 1], (v) => v ? T('screen.even_more') : T('screen.fastest')),   // JMuxer keeps its own buffer: nothing to choose there
+      el('p', { className: 'note', textContent: T('screen.even_note') })] : []),
+    el('p', { className: 'note', textContent: T('screen.higher_note') })));
   d.addEventListener('close', () => d.remove());
   document.body.append(d); d.showModal();
 }
 function picLevelSay() { const o = $('#screenmode').selectedOptions[0]; $('#screenmodebtn').replaceChildren(el('span', { textContent: o ? o.textContent : '' }), ' ▾'); }
 function loadScript(src) { return new Promise((ok, no) => document.head.append(el('script', { src, onload: ok, onerror: no }))); }
 async function h264Loop(gen) {
-  setScreenInfo('Đang mở luồng trực tiếp...', true);
+  setScreenInfo(T('screen.opening_live'), true);
   const size = $('#screenmode').value, tune = picTune(), fps = tune.fps || H264_FPS[size] || 10;
   if (wcUsable()) player = wcPlayer(() => { wcBroken = true; if (gen === screenGen) startScreen(); }, tune.smooth);   // this browser cannot after all: again with JMuxer
   else {
-    try { if (!window.JMuxer) await loadScript('jmuxer.min.js'); } catch { if (gen === screenGen) stopScreen('Không tải được phần phát hình.'); return; }
+    try { if (!window.JMuxer) await loadScript('jmuxer.min.js'); } catch { if (gen === screenGen) stopScreen(T('screen.player_not_loaded')); return; }
     if (gen !== screenGen) return;
     try { player = jmuxPlayer(fps); }
     catch { $('#screenmode').value = 'snap'; snapLoop(gen); return; }   // no MediaSource (an iPhone before iOS 17.1): pictures instead
   }
   const mine = player;
   streamCtl = new AbortController();
-  let why = 'TV đã dừng gửi hình.';
+  let why = T('screen.tv_stopped_sending');
   try {
     const r = await fetch('/api/video?q=' + (H264_Q[size] ?? 1) + (tune.fps ? '&fps=' + tune.fps : '') + (tune.rate ? '&rate=' + tune.rate * 1000000 : '') + (tune.enc ? '&enc=' + tune.enc : ''), { signal: streamCtl.signal }); if (!r.ok) throw new Error('http');
     const rd = r.body.getReader(); let buf = new Uint8Array(0), off = 0;   // off: where the next packet starts in buf (no copy per packet)
@@ -246,7 +244,7 @@ async function h264Loop(gen) {
         else if (kind === 5) fellBehind();
       }
     }
-  } catch (e) { why = 'Không lấy được hình từ TV.'; }
+  } catch (e) { why = T('screen.no_picture_from_tv'); }
   if (screenOn && gen === screenGen && afterWake('screen')) { startScreen(); return; }   // this device slept, not the TV
   if (screenOn && gen === screenGen) stopScreen(why);                 // back to the plain remote: no dead picture left on the page
 }
@@ -264,12 +262,12 @@ function startScreen() {
   dockScreen();
   if (player) { player.destroy(); player = null; }
   $('#screencard').classList.add('on'); $('#screenbox').style.aspectRatio = '';
-  setLabel($('#screenbtn'), '⏹', 'Dừng'); setScreenPlaceholder('Đang lấy hình...');
+  setLabel($('#screenbtn'), '⏹', T('screen.stop')); setScreenPlaceholder(T('screen.getting_picture'));
   ($('#screenmode').value === 'snap' ? snapLoop : h264Loop)(gen);   // every core sends H.264
   const enc = picTune().enc;                                          // an encoder picked by hand that this TV does not have sends nothing: Auto would have moved on
   if (enc && $('#screenmode').value !== 'snap') setTimeout(async () => {
     if (gen !== screenGen || !screenOn || screenEl()) return;
-    if (!await ask('Chưa thấy hình sau 10 giây. TV này có thể không chạy được bộ mã hóa ' + PIC_ENC[enc] + '. Chuyển về Tự chọn?', { ok: 'Về Tự chọn' })) return;
+    if (!await ask(T(enc === 'hw' ? 'screen.no_picture_hw' : 'screen.no_picture_sw'), { ok: T('screen.back_to_auto') })) return;
     const t = picTune(); t.enc = 0; try { localStorage.setItem('picTune', JSON.stringify(t)); } catch {}
     if (screenOn) startScreen();
   }, 10000);
@@ -278,7 +276,7 @@ setInterval(() => {
   if (screenOn && $('#screenmode').value !== 'snap' && streamCtl && !streamCtl.signal.aborted) {
     streamFps = frames;
     const shown = !!screenEl();           // the TV sends a frame only when the picture changes
-    setScreenInfo((frames ? `Trực tiếp · ${frames} khung/giây` : shown ? 'Trực tiếp · hình đứng yên' : 'Trực tiếp · đang chờ hình') + ($('#screenmode').value === 'hd' ? ' · chế độ nét nhất làm TV chậm hơn rõ rệt' : ' · ' + $('#screenmode').value + 'p') + picTuneSay(), true);
+    setScreenInfo((frames ? T('screen.live_fps', { n: frames }) : shown ? T('screen.live_still') : T('screen.live_waiting')) + ($('#screenmode').value === 'hd' ? ' · ' + T('screen.sharpest_slows') : ' · ' + $('#screenmode').value + 'p') + picTuneSay(), true);
   }
   frames = 0;
 }, 1000);

@@ -19,7 +19,7 @@ const leadKeep = (s) => { try { const m = JSON.parse(localStorage.getItem('liste
 const leadBase = () => listenEven() ? 0.5 : 0.08;                       // Đều: half a second from the start, never back down
 // While listening, a bar under the header: how it plays (menu) and HQ, as the phone app's chip and HQ under the picture (Listen.kt).
 function showWay() {
-  put('#listenway', 'textContent', (listenShared ? 'Cả hai' : 'Máy này') + ' ▾');
+  put('#listenway', 'textContent', (listenShared ? T('listen.both') : T('listen.this_device')) + ' ▾');
   $('#listenhq').classList.toggle('on', listenHq());
   $('#listeneven').classList.toggle('on', listenEven());
   put('#listenboost', 'textContent', '🔊 ×' + listenBoost()); $('#listenboost').classList.toggle('on', listenBoost() !== 1);
@@ -68,7 +68,7 @@ function playPcm(channels, rate) {
 }
 
 function setListenUi(on, text) {
-  const b = $('#listen'); setLabel(b, '🎧', on ? 'Đang nghe' : 'Nghe'); b.classList.toggle('on', on);
+  const b = $('#listen'); setLabel(b, '🎧', on ? T('listen.listening') : T('remote.listen')); b.classList.toggle('on', on);
   put('#listenbar', 'hidden', !on); if (on) showWay();
   put('#listeninfo', 'hidden', !text); put('#listeninfo', 'textContent', text || '');
 }
@@ -76,19 +76,19 @@ function setListenUi(on, text) {
 async function startListen(share) {
   const gen = ++listenGen;
   listenShared = !!share; try { localStorage.setItem('listenShare', listenShared ? '1' : '0'); } catch {}
-  listenOn = true; setListenUi(true, 'Đang mở tiếng TV...');
+  listenOn = true; setListenUi(true, T('listen.opening'));
   try {
     actx = actx || new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
     if (navigator.audioSession) navigator.audioSession.type = 'playback';   // iPhone: play even with the silent switch on
     await actx.resume();                                              // inside the tap: browsers start sound only then
-  } catch { stopListen('Trình duyệt này không phát được âm thanh.'); return; }
+  } catch { stopListen(T('listen.no_browser_sound')); return; }
   const opus = await opusHere(); if (gen !== listenGen) return;
   listenCtl = new AbortController(); anext = 0; abytes = 0; alead = Math.min(0.6, Math.max(leadBase(), leadOf()));
-  let fmt = { codec: 2, rate: 24000, ch: 1 }, ts = 0, why = 'TV đã dừng gửi tiếng.';
+  let fmt = { codec: 2, rate: 24000, ch: 1 }, ts = 0, why = T('listen.tv_stopped_sending');
   try {
     const r = await fetch('/api/audio?codec=' + (opus ? 'opus' : 'pcm') + (listenShared ? '&share=1' : '') + (listenHq() ? '&hq=1' : ''), { signal: listenCtl.signal });
     if (!r.ok) { let e = r.statusText; try { e = (await r.json()).error || e; } catch {} throw new Error(r.status === 404 && CORE === 'pc' ? STALE : e); }
-    toast(listenShared ? 'Đang nghe tiếng TV trên cả TV và máy này.' : 'Đang nghe tiếng TV trên máy này. Loa TV tạm im.');
+    toast(listenShared ? T('listen.playing_both') : T('listen.playing_here'));
     const rd = r.body.getReader(); let buf = new Uint8Array(0);
     for (;;) {
       const { done, value } = await rd.read(); if (done || gen !== listenGen) break;
@@ -97,7 +97,7 @@ async function startListen(share) {
       while (buf.length >= 5) {
         const len = new DataView(buf.buffer, buf.byteOffset + 1, 4).getUint32(0); if (buf.length < 5 + len) break;
         const kind = buf[0], data = buf.slice(5, 5 + len); buf = buf.slice(5 + len);
-        if (kind === 3 && new TextDecoder().decode(data) === 'noshare') { listenShared = false; toast('TV này dưới Android 13 nên chỉ nghe riêng được: loa TV tạm im.'); }
+        if (kind === 3 && new TextDecoder().decode(data) === 'noshare') { listenShared = false; toast(T('listen.private_only')); }
         else if (kind === 0) { const d = new DataView(data.buffer); fmt = { codec: data[0], rate: d.getUint32(1), ch: data[5] }; }
         else if (kind === 1 && fmt.codec === 1) {
           adec = new AudioDecoder({ output: (a) => {
@@ -113,10 +113,10 @@ async function startListen(share) {
             for (let i = 0; i < n; i++) for (let c = 0; c < fmt.ch; c++) chs[c][i] = v.getInt16((i * fmt.ch + c) * 2, true) / 32768;
             playPcm(chs, fmt.rate);
           }
-        } else if (kind === 5) { why = new TextDecoder().decode(data) === 'unsupported' ? 'TV này không gửi được tiếng (cần Android 11 trở lên).' : friendly(new TextDecoder().decode(data)); }
+        } else if (kind === 5) { why = new TextDecoder().decode(data) === 'unsupported' ? T('listen.needs_android_11') : friendly(new TextDecoder().decode(data)); }
       }
     }
-  } catch (e) { if (gen !== listenGen) return; why = e.name === 'AbortError' ? '' : 'Không lấy được tiếng TV: ' + friendly(e.message); }
+  } catch (e) { if (gen !== listenGen) return; why = e.name === 'AbortError' ? '' : T('listen.no_sound', { why: friendly(e.message) }); }
   if (gen === listenGen && why && afterWake('listen')) { stopListen(); startListen(listenShared); return; }   // this device slept, not the TV
   if (gen === listenGen) stopListen(why);
 }
@@ -129,7 +129,7 @@ function stopListen(msg) {
 }
 
 setInterval(() => {                                                    // what it costs, next to the button
-  if (listenOn && abytes) setListenUi(true, '🎧 Đang nghe trên máy này · ' + (listenShared ? 'TV vẫn có tiếng' : 'loa TV tạm im') + (listenHq() ? ' · ✨ chất lượng cao' : '') + ' · ' + Math.max(1, Math.round(abytes / 1024)) + ' KB/s');
+  if (listenOn && abytes) setListenUi(true, T('listen.listening_here') + ' · ' + (listenShared ? T('listen.tv_has_sound') : T('listen.tv_quiet')) + (listenHq() ? ' · ✨ ' + T('listen.high_quality') : '') + ' · ' + Math.max(1, Math.round(abytes / 1024)) + ' KB/s');
   abytes = 0;
 }, 1000);
 // 🎧: on or off at once, the way used last (picked with the chip under the header, once it plays); the session restarts either way
@@ -140,19 +140,19 @@ $('#listen').addEventListener('click', () => {
 });
 const relisten = (share) => { if (listenOn) { stopListen(); startListen(share); } else showWay(); };
 $('#listenway').addEventListener('click', () => {
-  menuDlg('Cách nghe tiếng TV', -1, [
-    ['@phone|Chỉ máy này', 'Loa TV tạm im. Hợp khi đeo tai nghe, cả nhà ngủ.', () => { if (listenShared) relisten(false); }],
-    ['@tv|Cả TV và máy này', 'TV vẫn có tiếng (TV Android 13+). Máy này trễ hơn TV một chút; vài app như Netflix chặn thu tiếng kiểu này.', () => { if (!listenShared) relisten(true); }]], listenShared ? 1 : 0);
+  menuDlg(T('remote.how_to_hear_the'), -1, [
+    ['@phone|' + T('listen.only_this_device'), T('listen.only_this_note'), () => { if (listenShared) relisten(false); }],
+    ['@tv|' + T('listen.tv_and_this_device'), T('listen.tv_and_this_note'), () => { if (!listenShared) relisten(true); }]], listenShared ? 1 : 0);
 });
 $('#listenboost').addEventListener('click', () => {                   // a slider that applies as it moves, nothing restarts
   const set = (b) => { try { localStorage.setItem('listenBoost', String(b)); } catch {} if (actx) soundOut(); showWay(); out.textContent = '×' + listenBoost(); r.value = listenBoost(); };
   const out = el('output', { textContent: '×' + listenBoost() });
-  const r = el('input', { type: 'range', min: BOOST_MIN, max: BOOST_MAX, step: 0.5, value: listenBoost(), ariaLabel: 'Độ to', oninput: (e) => set(+e.target.value) });
+  const r = el('input', { type: 'range', min: BOOST_MIN, max: BOOST_MAX, step: 0.5, value: listenBoost(), ariaLabel: T('listen.loudness'), oninput: (e) => set(+e.target.value) });
   const d = el('dialog', { className: 'ask menu' }, el('div', { className: 'card' },
-    el('div', { className: 'card-head' }, el('h2', { textContent: '🔊 Độ to trên máy này' }), el('button', { className: 'small iconbtn', textContent: '✕', title: 'Đóng', 'aria-label': 'Đóng', onclick: () => d.close() })),
+    el('div', { className: 'card-head' }, el('h2', { textContent: T('listen.loudness_here') }), el('button', { className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
     el('div', { className: 'vol boost' }, r, out),
-    el('p', { className: 'note', textContent: 'Nhân tiếng TV gửi sang, có bộ giới hạn để không rè. Vẫn nhỏ: tăng âm lượng trên TV.' }),
-    el('div', { className: 'actions' }, el('button', { textContent: 'Về ×1', onclick: () => set(1) }))));
+    el('p', { className: 'note', textContent: T('listen.boost_note') }),
+    el('div', { className: 'actions' }, el('button', { textContent: T('listen.back_to_x1'), onclick: () => set(1) }))));
   d.addEventListener('close', () => d.remove());
   document.body.append(d); d.showModal();
 });
