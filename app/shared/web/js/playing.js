@@ -1,25 +1,35 @@
 // Now playing: what the TV plays, from its media session (/api/playing: tvr-helper's Playing on the TV, NowPlaying.kt), above the
 // remote while the Remote tab is open. The same bar is on the phone app's remote (RemoteScreen.kt). And the TV's clipboard
 // (/api/clip), the "clip" entry of the Open on the TV menu.
-const PL = { o: { state: 'none' }, at: 0, timer: 0, dragging: false };
+const PL = { o: { state: 'none' }, at: 0, fine: 0, timer: 0, dragging: false };
 const mmss = (ms) => { const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = String(s % 60).padStart(2, '0'); return h ? h + ':' + String(m).padStart(2, '0') + ':' + x : m + ':' + x; };
 const plPos = () => { const o = PL.o; let p = o.pos || 0; if (o.state === 'playing') p += (performance.now() - PL.at) * (o.speed || 1); return o.dur ? Math.min(p, o.dur) : p; };
 function plDraw() {
   const o = PL.o, name = o.title || o.app, on = o.state && o.state !== 'none' && !!name;   // no title (FPT Play): the app's name
   $('#playing').hidden = !on; if (!on) return;
-  $('#pltitle').textContent = name; $('#pltitle').title = name;
-  $('#plsub').textContent = o.title ? [o.sub, appName(o.pkg)].filter(Boolean).join(' · ') : '';
+  const t = $('#pltitle'); if (t.title !== name) { t.title = name; t.textContent = ''; t.append(Object.assign(document.createElement('span'), { textContent: name })); }
+  plRun(t);
+  $('#plsub').textContent = o.title ? o.sub || '' : '';            // the app is the picture beside it and "Đang mở" below, as on the phone app
   const icon = '/api/app/icon?pkg=' + encodeURIComponent(o.pkg); if ($('#plicon').dataset.src !== icon) { $('#plicon').dataset.src = icon; $('#plicon').src = icon; }
   $('#plbar').hidden = !o.dur;
   if (o.dur && !PL.dragging) { $('#plseek').value = Math.round(plPos() / o.dur * 1000); $('#plpos').textContent = mmss(plPos()); $('#pldur').textContent = mmss(o.dur); }
   $('#plseek').disabled = !o.seek || !can('control');               // a guest who may only watch sees where it is, and no more
   $('#plplay use').setAttribute('href', o.state === 'paused' ? '#i-play' : '#i-pause');
 }
+// A title wider than its place slides to its end and back (the phone app's marquee), checked on every draw so a resized
+// window is followed; a plain cut with … when motion is reduced.
+function plRun(t) {
+  const over = Math.max(0, t.firstChild.scrollWidth - t.clientWidth);
+  if (String(over) === t.dataset.over) return; t.dataset.over = over;
+  t.classList.toggle('run', over > 0);
+  t.style.setProperty('--over', -over + 'px'); t.style.setProperty('--run', (3 + over / 30).toFixed(1) + 's');   // 30 px/s, plus the pauses at each end
+}
 async function plPoll() {
   clearTimeout(PL.timer);
   const looking = currentTab === 'remote' && !picking && !document.hidden && !stopped && ADB.state === 'ready';
+  if (looking || document.hidden) PL.fine = performance.now();       // hidden counts as fine: the 5 s start on return
   if (looking) { const o = await call('/api/playing', null, true); if (o) { PL.o = o; PL.at = performance.now(); } else PL.o = { state: 'none' }; }
-  else PL.o = { state: 'none' };
+  else if (performance.now() - PL.fine > 5000) PL.o = { state: 'none' };   // kept while the page is hidden, so it is there at once on return
   plDraw();
   PL.timer = setTimeout(plPoll, looking ? 1000 : 3000);
 }

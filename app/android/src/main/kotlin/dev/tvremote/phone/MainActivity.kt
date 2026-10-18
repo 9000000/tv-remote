@@ -226,6 +226,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         startSound()                                                  // given up on while away: once more
         managing.resume()
         if (keysAway) { keysAway = false; host?.let { resumeBasic(it) } } else startSession()
+        if (::playing.isInitialized) { playing.wake(); nowApp.wake() }   // asked at once, not at their next tick
     }
 
     /**

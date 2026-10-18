@@ -36,6 +36,8 @@ internal class PlayingBar(private val a: MainActivity) {
     private var npFor: Tv? = null
     private var o = JSONObject().put("state", "none")
     private var at = 0L                                               // when [o] came
+    private var oHost: String? = null                                // the TV [o] is about
+    private var fine = 0L                                             // last tick that could ask, or was away
     private var dragging = false
     private var asking = false
     private val spins = HashMap<android.view.View, android.widget.ProgressBar>()
@@ -49,6 +51,11 @@ internal class PlayingBar(private val a: MainActivity) {
         val words = a.col()
         for (w in listOf(title, sub)) { w.maxLines = 1; w.ellipsize = android.text.TextUtils.TruncateAt.END; words.addView(w) }
         title.typeface = android.graphics.Typeface.DEFAULT_BOLD
+        val still = android.provider.Settings.Global.getFloat(a.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+        if (!still) {                                                 // a long title runs (the page's .run); "Remove animations" keeps the …
+            title.isSingleLine = true; title.ellipsize = android.text.TextUtils.TruncateAt.MARQUEE
+            title.marqueeRepeatLimit = -1; title.isSelected = true    // a marquee runs only on a selected view
+        }
         head.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
         val prev = a.icon("@prev", t("Bài trước", "Previous"), BTN)
         val next = a.icon("@next", t("Bài sau", "Next"), BTN)
@@ -97,17 +104,26 @@ internal class PlayingBar(private val a: MainActivity) {
         return if (d > 0) minOf(p, d) else p
     }
 
+    /** Back on screen: ask the TV now rather than at the next 2 s tick. */
+    fun wake() { a.ui.removeCallbacks(tick); a.ui.post(tick) }
+
     private val tick = object : Runnable {
         override fun run() {
             val tv = a.tv
             val looking = a.foreground && a.remote.visibility == View.VISIBLE && a.basic == null && tv != null && tv.ready()
             val listening = a.listen && a.basic == null && tv != null && tv.ready()   // the phone's media controls show it too
-            if (!looking && !listening) { o = JSONObject().put("state", "none"); draw(); a.ui.postDelayed(this, 2000); return }
+            if (looking || !a.foreground) fine = System.currentTimeMillis()  // away counts as fine: the 5 s start on return
+            if (!looking && !listening) {
+                // kept while away from the same TV, so it is there at once on return; dropped for another TV, or once the
+                // remote is on screen and the TV has not answered for 5 s
+                if (a.host != oHost || (a.foreground && System.currentTimeMillis() - fine > 5000)) o = JSONObject().put("state", "none")
+                draw(); a.ui.postDelayed(this, 2000); return
+            }
             if (!asking) {
                 asking = true
                 work.execute {
                     val got = try { player(tv!!).state() } catch (e: Exception) { JSONObject().put("state", "none") }
-                    a.ui.post { asking = false; o = got; at = System.currentTimeMillis(); draw(); ListenService.show(o, a.title(a.host ?: "")) }
+                    a.ui.post { asking = false; o = got; oHost = a.host; at = System.currentTimeMillis(); draw(); ListenService.show(o, a.title(a.host ?: "")) }
                 }
             }
             draw()
@@ -193,7 +209,7 @@ internal class PlayingBar(private val a: MainActivity) {
         val on = o.optString("state", "none") != "none" && name.isNotEmpty()
         view.visibility = if (on) View.VISIBLE else View.GONE
         if (!on) return
-        title.text = name
+        if (title.text.toString() != name) title.text = name         // setText restarts the marquee: draw() runs every second
         sub.text = text("sub").takeIf { text("title").isNotEmpty() } ?: ""
         sub.visibility = if (sub.text.isEmpty()) View.GONE else View.VISIBLE
         play.setIcon(if (o.optString("state") == "paused") "@play" else "@pause", TEXT)

@@ -31,6 +31,8 @@ internal class NowApp(private val a: MainActivity) {
     private var namesFrom: Remote? = null
     private var shown = ""
     private var asking = false
+    private var shownFor: String? = null                             // the TV [shown] is about
+    private var fine = 0L                                             // last answer from a TV that could be asked
 
     init {
         view.gravity = Gravity.CENTER
@@ -50,6 +52,9 @@ internal class NowApp(private val a: MainActivity) {
         a.ui.post { tick.run() }
     }
 
+    /** Back on screen: ask now rather than at the next 2 s tick. */
+    fun wake() { a.ui.removeCallbacks(tick); a.ui.post(tick) }
+
     fun close() { work.shutdownNow(); link?.close(); link = null }
 
     private fun cacheDir(host: String) = File(a.cacheDir, "meta/" + host.replace(Regex("[^\\w.-]"), "_"))   // the Manage screen's (Managing.kt)
@@ -61,8 +66,10 @@ internal class NowApp(private val a: MainActivity) {
             val host = a.host
             val tv = a.tv
             val basic = a.basic
+            if (!a.foreground) fine = System.currentTimeMillis()      // away counts as fine: the 5 s start on return
             if (!a.foreground || a.remote.visibility != View.VISIBLE || host == null || asking) { if (host == null) show("", "", null); return }
             asking = true
+            val canAsk = basic != null || tv?.ready() == true
             work.execute {
                 var id = basic?.app ?: ""
                 var label = ""
@@ -88,7 +95,12 @@ internal class NowApp(private val a: MainActivity) {
                         }
                     }
                 } catch (ignored: Exception) { }
-                a.ui.post { asking = false; show(id, label, png) }
+                a.ui.post {
+                    asking = false
+                    // back from away, the picture's session starts again and cannot be asked yet: keep what was open, 5 s at most
+                    if (canAsk) fine = System.currentTimeMillis()
+                    if (id.isNotEmpty() || canAsk || host != shownFor || System.currentTimeMillis() - fine > 5000) { show(id, label, png); shownFor = host }
+                }
             }
         }
     }
