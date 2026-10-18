@@ -2,11 +2,12 @@
   "use strict";
   var root = document.documentElement;
   var TITLES = { vi: "Hướng dẫn dùng TV Remote", en: "TV Remote guide: step by step" };
+  var PREV = { vi: "Trước", en: "Previous" }, NEXT = { vi: "Tiếp", en: "Next" };
   var HOLD = { vi: "Tìm trong hướng dẫn…", en: "Search the guide…" };
   var NONE = { vi: "Không thấy mục nào khớp. Thử từ khác, ví dụ “adb” hay “hẹn giờ”.", en: "Nothing matches. Try another word, such as “adb” or “sleep timer”." };
-  var q = document.getElementById("gq"), res = document.getElementById("gres");
+  var q = document.getElementById("gq"), res = document.getElementById("gres"), dlg = document.getElementById("gdlg");
   var side = document.getElementById("gside"), back = document.querySelector(".gback"), menuBtn = document.querySelector(".gmenu");
-  var topics = [].slice.call(document.querySelectorAll(".topic"));
+  var topics = [].slice.call(document.querySelectorAll(".topic")), groups = [].slice.call(document.querySelectorAll(".ggroup"));
   var index = [], sel = -1, shown = [];
 
   /* ---------- language ---------- */
@@ -15,7 +16,7 @@
     q.placeholder = HOLD[l];
     document.querySelectorAll(".lang button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.set === l); });
     try { localStorage.setItem("lang", l); } catch(e){}
-    build(); if (q.value.trim()) find(); else hide();
+    build(); if (q.value.trim()) find(); else hide(); if (cur) show(cur);
   }
   document.querySelectorAll(".lang button").forEach(function(b){ b.onclick = function(){ setLang(b.dataset.set); }; });
 
@@ -98,41 +99,45 @@
     res.innerHTML = shown.length ? shown.map(function(h, i){
       return '<li role="option" id="r' + i + '" data-id="' + h.it.id + '"><a href="#' + h.it.id + '"><small>' + esc(h.it.group) + '</small><b>' + marks(h.it.title, h.it.ft, toks) + '</b>' + snippet(h.it, toks) + '</a></li>';
     }).join("") : '<li class="none">' + NONE[lang] + '</li>';
-    res.hidden = false; pick(shown.length ? 0 : -1);
+    pick(shown.length ? 0 : -1);
   }
-  function hide(){ res.hidden = true; res.innerHTML = ""; shown = []; sel = -1; q.removeAttribute("aria-activedescendant"); }
+  function hide(){ res.innerHTML = ""; shown = []; sel = -1; q.removeAttribute("aria-activedescendant"); }
   function pick(i){
     sel = i;
     [].forEach.call(res.querySelectorAll("li[role=option]"), function(li, k){ li.setAttribute("aria-selected", k === i); });
     if (i >= 0){ q.setAttribute("aria-activedescendant", "r" + i); var li = document.getElementById("r" + i); if (li) li.scrollIntoView({ block: "nearest" }); }
     else q.removeAttribute("aria-activedescendant");
   }
-  function jump(id){
-    var el = document.getElementById(id); if (!el) return;
-    hide(); closeDrawer();
-    history.replaceState(null, "", "#" + id);
-    hold(id);
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
-    flash(el);
-  }
-  function flash(el){ el.classList.remove("hit"); void el.offsetWidth; el.classList.add("hit"); }
+  function jump(id){ closeFind(); closeDrawer(); go(id); }
   q.addEventListener("input", find);
   q.addEventListener("focus", function(){ if (q.value.trim()) find(); });
   q.addEventListener("keydown", function(e){
     if (e.key === "ArrowDown" && shown.length){ e.preventDefault(); pick((sel + 1) % shown.length); }
     else if (e.key === "ArrowUp" && shown.length){ e.preventDefault(); pick((sel - 1 + shown.length) % shown.length); }
     else if (e.key === "Enter" && shown.length){ e.preventDefault(); jump(shown[Math.max(sel, 0)].it.id); }
-    else if (e.key === "Escape"){ if (!res.hidden) hide(); else { q.value = ""; q.blur(); } }
+    else if (e.key === "Escape"){ e.stopPropagation(); closeFind(true); }
   });
   res.addEventListener("click", function(e){
     var li = e.target.closest("li[data-id]"); if (!li) return;
     e.preventDefault(); jump(li.dataset.id);
   });
-  document.addEventListener("click", function(e){ if (!e.target.closest(".gsearch")) hide(); });
+  // the search is a dialog: opened from the menu's button, "/" or Ctrl/⌘ K; Esc or a click outside closes it
+  var opener = null;
+  function openFind(){
+    opener = document.activeElement; closeDrawer();
+    dlg.hidden = false; root.style.overflow = "hidden"; q.focus(); q.select(); if (q.value.trim()) find();
+  }
+  function closeFind(refocus){
+    if (dlg.hidden) return;
+    dlg.hidden = true; root.style.overflow = "";
+    if (refocus && opener && opener.focus) opener.focus();
+  }
+  [].forEach.call(document.querySelectorAll(".gfind"), function(b){ b.addEventListener("click", openFind); });
+  dlg.querySelector(".gdlg-back").addEventListener("click", function(){ closeFind(true); });
   document.addEventListener("keydown", function(e){
     var typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || "")) || e.target.isContentEditable;
     if ((e.key === "/" && !typing && !e.ctrlKey && !e.metaKey) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k")){
-      e.preventDefault(); closeDrawer(); q.focus(); q.select();
+      e.preventDefault(); openFind();
     }
   });
 
@@ -146,38 +151,53 @@
   menuBtn.addEventListener("click", function(){ side.classList.contains("open") ? closeDrawer(true) : openDrawer(); });
   back.addEventListener("click", function(){ closeDrawer(true); });
   side.querySelector(".gclose").addEventListener("click", function(){ closeDrawer(true); });
-  side.addEventListener("click", function(e){ if (e.target.closest("a")) closeDrawer(); });
-  document.addEventListener("keydown", function(e){ if (e.key === "Escape") closeDrawer(true); });
+  side.addEventListener("click", function(e){
+    var a = e.target.closest("a[data-t]"); if (!a || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    e.preventDefault(); closeDrawer(); go(a.dataset.t);
+  });
+  document.addEventListener("keydown", function(e){ if (e.key === "Escape"){ if (!dlg.hidden) closeFind(true); else closeDrawer(true); } });
   matchMedia("(min-width:981px)").addEventListener("change", function(m){ if (m.matches) closeDrawer(); });
 
-  // the topic being read lights in the menu
-  var links = {}, cur = null, busy = false, held = null, heldT = 0;
+  /* ---------- one topic at a time, chosen by the address (#id): the page stays short and its animation plays at once ---------- */
+  var links = {}, cur = null, pager = document.querySelector(".gpager");
   [].forEach.call(side.querySelectorAll("a[data-t]"), function(a){ links[a.dataset.t] = a; });
-  function spy(){
-    busy = false;
-    var y = 190, now = topics[0];
-    topics.forEach(function(t){ if (t.getBoundingClientRect().top <= y) now = t; });
-    if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) now = topics[topics.length - 1];
-    if (!held) light(now.id);
+  function find1(id){                                               // a topic, or the first topic of a group (#g-start), or the first
+    var el = id && document.getElementById(id);
+    if (el && el.classList.contains("ggroup")) el = el.querySelector(".topic");
+    return el && el.classList.contains("topic") ? el : topics[0];
   }
-  function light(id){
-    if (id === cur || !links[id]) return;
-    if (cur){ links[cur].classList.remove("on"); links[cur].removeAttribute("aria-current"); }
-    cur = id; var a = links[cur]; a.classList.add("on"); a.setAttribute("aria-current", "true");
+  function go(id){
+    var t = find1(id);
+    if (location.hash !== "#" + t.id) history.pushState(null, "", "#" + t.id);
+    show(t.id); scrollTo(0, 0);
+  }
+  function show(id){
+    var t = find1(id), lang = root.dataset.lang, k = topics.indexOf(t);
+    topics.forEach(function(x){ x.classList.toggle("cur", x === t); });
+    groups.forEach(function(g){ g.classList.toggle("cur", g.contains(t)); });
+    if (cur && links[cur]){ links[cur].classList.remove("on"); links[cur].removeAttribute("aria-current"); }
+    cur = t.id; var a = links[cur]; a.classList.add("on"); a.setAttribute("aria-current", "page");
     if (side.scrollHeight > side.clientHeight){                  // keep it in view inside the menu without moving the page
       if (a.offsetTop < side.scrollTop + 30) side.scrollTop = a.offsetTop - 60;
       else if (a.offsetTop + a.offsetHeight > side.scrollTop + side.clientHeight - 30) side.scrollTop = a.offsetTop - side.clientHeight + a.offsetHeight + 60;
     }
+    var name = function(x){ return esc(textOf(x.querySelector("h3"), lang).replace(/^\S+\s/, "")); };
+    var p = topics[k - 1], n = topics[k + 1];
+    pager.innerHTML = (p ? '<a class="pv" href="#' + p.id + '" data-t="' + p.id + '"><small>← ' + PREV[lang] + '</small>' + name(p) + '</a>' : '')
+      + (n ? '<a class="nx" href="#' + n.id + '" data-t="' + n.id + '"><small>' + NEXT[lang] + ' →</small>' + name(n) + '</a>' : '');
+    document.title = textOf(t.querySelector("h3"), lang).replace(/^\S+\s/, "") + " · " + TITLES[lang];
   }
-  // a jump lights its topic at once and keeps it until the smooth scroll stops: not every topic it passes on the way
-  function hold(id){ held = id; light(id); clearTimeout(heldT); heldT = setTimeout(release, 1500); }
-  function release(){ held = null; }                               // no spy here: a topic at the very end never reaches the top
-  side.addEventListener("click", function(e){ var a = e.target.closest("a[data-t]"); if (a) hold(a.dataset.t); });
+  pager.addEventListener("click", function(e){
+    var a = e.target.closest("a[data-t]"); if (!a || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    e.preventDefault(); go(a.dataset.t);
+  });
+  addEventListener("popstate", function(){ show(location.hash.slice(1)); });
+  addEventListener("hashchange", function(){ show(location.hash.slice(1)); scrollTo(0, 0); });   // a link written by hand
   var prog = document.querySelector(".navprog");
   function bar(){ var max = root.scrollHeight - innerHeight; prog.style.setProperty("--p", max > 0 ? Math.min(1, Math.max(0, scrollY / max)).toFixed(4) : 0); }
-  addEventListener("scroll", function(){ if (held){ clearTimeout(heldT); heldT = setTimeout(release, 150); } if (!busy){ busy = true; requestAnimationFrame(function(){ spy(); bar(); }); } }, { passive: true });
+  var busy = false;
+  addEventListener("scroll", function(){ if (!busy){ busy = true; requestAnimationFrame(function(){ busy = false; bar(); }); } }, { passive: true });
   addEventListener("resize", bar);
-  addEventListener("hashchange", function(){ var el = document.getElementById(location.hash.slice(1)); if (el && el.classList.contains("topic")) flash(el); });
 
   /* ---------- the header's narrow-screen menu (same as the home page) ---------- */
   (function(){
@@ -191,7 +211,7 @@
   })();
 
   document.getElementById("yr").textContent = new Date().getFullYear();
+  show(location.hash.slice(1));
   setLang(root.dataset.lang);
-  spy(); bar();
-  if (location.hash){ var t = document.getElementById(location.hash.slice(1)); if (t && t.classList.contains("topic")) setTimeout(function(){ t.scrollIntoView({ block: "start" }); flash(t); }, 60); }
+  bar();
 })();
