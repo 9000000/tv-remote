@@ -204,8 +204,7 @@ internal class PlayingBar(private val a: MainActivity) {
         val on = o.optString("state", "none") != "none" && name.isNotEmpty()
         view.visibility = if (on) View.VISIBLE else View.GONE
         if (!on) return
-        if (title.text.toString() != name) title.text = name         // setText restarts the marquee: draw() runs every second
-        sub.text = text("sub").takeIf { text("title").isNotEmpty() } ?: ""
+        title.say(name); sub.say(text("sub").takeIf { text("title").isNotEmpty() } ?: "")   // draw() runs every second
         sub.visibility = if (sub.text.isEmpty()) View.GONE else View.VISIBLE
         play.setIcon(if (o.optString("state") == "paused") "@play" else "@pause", TEXT)
         val d = o.optLong("dur")

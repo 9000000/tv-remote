@@ -154,7 +154,7 @@ function slide(n, show) {
 // A line of text wider than its place slides to its end and back instead of ending in "…" (the phone app's marquee): song
 // titles, package names, setting values, scene names. Checked whenever one is added, changes or is resized; a plain "…"
 // when motion is reduced. Its words are put in a span.rin, the part that moves.
-const RUN = '#pltitle, #plsub, .nowapp b, .scene span:last-child, .item .name small.pkg, .setval', runSeen = new WeakSet();
+const RUN = '#pltitle, #plsub, .nowapp b, .scene span:last-child, .item .name small.pkg, .setval', runSeen = new WeakSet(), runT0 = new Map();
 const runObs = new ResizeObserver((list) => list.forEach((e) => runFit(e.target)));
 function runFit(t) {
   if (!runSeen.has(t)) { runSeen.add(t); runObs.observe(t); }
@@ -164,9 +164,11 @@ function runFit(t) {
     if (!t.textContent.trim() || t.querySelector('input, button, select')) return;
     s = el('span', { className: 'rin' }); s.append(...t.childNodes); t.append(s);
   }
-  const over = Math.max(0, t.scrollWidth - t.clientWidth);
-  if (String(over) === t.dataset.over && s.dataset.at === s.textContent) return;
-  t.dataset.over = over; s.dataset.at = s.textContent;
+  const over = Math.max(0, t.scrollWidth - t.clientWidth), same = t.dataset.at === s.textContent, w = s.textContent;
+  if (!runT0.has(w)) { if (runT0.size > 300) runT0.clear(); runT0.set(w, performance.now()); }
+  s.style.animationDelay = (runT0.get(w) - performance.now()) / 1000 + 's';   // drawn again (a list redrawn, the same title) it carries on where it was, not from its start
+  if (String(over) === t.dataset.over && same) return;
+  t.dataset.over = over; t.dataset.at = s.textContent;
   t.classList.toggle('run', over > 0);
   t.style.setProperty('--over', -over + 'px'); t.style.setProperty('--run', (3 + over / 30).toFixed(1) + 's');   // 30 px/s, plus the pauses at each end
 }

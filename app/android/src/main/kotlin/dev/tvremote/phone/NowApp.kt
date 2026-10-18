@@ -110,7 +110,7 @@ internal class NowApp(private val a: MainActivity) {
         view.visibility = if (hide) View.GONE else View.VISIBLE
         if (hide || "$id|$label|${png?.size}" == shown) return
         shown = "$id|$label|${png?.size}"
-        name.text = label.ifEmpty { id }
+        name.say(label.ifEmpty { id })
         val bmp = png?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
         icon.setImageBitmap(bmp)
         icon.visibility = if (bmp == null) View.GONE else View.VISIBLE

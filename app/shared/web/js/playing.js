@@ -9,7 +9,7 @@ function plDraw() {
   $('#playing').hidden = !on; if (!on) return;
   const t = $('#pltitle'); if (t.title !== name) { t.title = name; t.textContent = ''; t.append(Object.assign(document.createElement('span'), { className: 'rin', textContent: name })); }
   runFit(t);
-  $('#plsub').textContent = o.title ? o.sub || '' : '';            // the app is the picture beside it and "Đang mở" below, as on the phone app
+  const sub = o.title ? o.sub || '' : ''; if ($('#plsub').textContent !== sub) $('#plsub').textContent = sub;   // the same words again would start its slide over            // the app is the picture beside it and "Đang mở" below, as on the phone app
   const icon = '/api/app/icon?pkg=' + encodeURIComponent(o.pkg); if ($('#plicon').dataset.src !== icon) { $('#plicon').dataset.src = icon; $('#plicon').src = icon; }
   $('#plbar').hidden = !o.dur;
   if (o.dur && !PL.dragging) { $('#plseek').value = Math.round(plPos() / o.dur * 1000); $('#plpos').textContent = mmss(plPos()); $('#pldur').textContent = mmss(o.dur); }

@@ -200,6 +200,9 @@ internal fun TextView.runs() {
     ellipsize = android.text.TextUtils.TruncateAt.MARQUEE; marqueeRepeatLimit = -1; isSelected = true
 }
 
+/** Sets the words only when they change: setText, even to the same words, starts a running line over from its start. */
+internal fun TextView.say(s: CharSequence) { if (text?.toString() != s.toString()) text = s }
+
 /** The remote's top line, "TV name · what is going on": the name above, the rest under it, smaller; one line each, so a long
  *  name never pushes the rest away. Without " · " the words take both lines. [name] is the line above, added by the screen. */
 internal class StatusText(c: Context) : TextView(c) {
@@ -212,10 +215,11 @@ internal class StatusText(c: Context) : TextView(c) {
         val i = s.indexOf(" · ")
         @Suppress("SENSELESS_COMPARISON") val n = name as TextView?          // null while TextView's own constructor sets its first text
         if (n == null) { super.setText(text, type); return }
-        n.text = if (i < 0) "" else s.substring(0, i)
+        n.say(if (i < 0) "" else s.substring(0, i))
         n.visibility = if (i < 0) GONE else VISIBLE
         if (i < 0) { isSingleLine = false; maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END } else runs()   // two lines of words, or one that runs
-        super.setText(if (i < 0) s else s.substring(i + 3), type)
+        val rest = if (i < 0) s else s.substring(i + 3)
+        if (rest != this.text?.toString()) super.setText(rest, type)        // the same words again would restart the marquee
     }
 }
 
