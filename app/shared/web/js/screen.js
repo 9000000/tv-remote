@@ -129,11 +129,11 @@ function jmuxPlayer(fps) {
     destroy() { clearInterval(edge); try { mux.destroy(); } catch {} },
   };
 }
-// ?stats=1: window.VT to measure the JMuxer path: for each frame shown, ms from its arrival (`lat`), ms since the one before
+// ?stats=1: window.JT (beside VT's per-stage stamps) to measure the JMuxer path: for each frame shown, ms from its arrival (`lat`), ms since the one before
 // (`gaps`; a freeze is 4+ frame intervals while frames kept arriving), and the <video>'s `waiting` events.
 function vtHook(video, step) {
   if (!/[?&]stats=1/.test(location.search) || !video.requestVideoFrameCallback) return null;
-  const VT = window.VT = { lat: [], gaps: [], waiting: 0, arrivals: [] }; let t0 = null, last = 0, lastMt = -1;
+  const VT = window.JT = { lat: [], gaps: [], waiting: 0, arrivals: [] }; let t0 = null, last = 0, lastMt = -1;
   video.addEventListener('waiting', () => VT.waiting++);
   const on = (now, md) => {
     video.requestVideoFrameCallback(on);
