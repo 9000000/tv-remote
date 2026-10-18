@@ -60,7 +60,7 @@
     go();
     if (window.ResizeObserver) new ResizeObserver(go).observe(box); else addEventListener("resize", go);
   }
-  document.querySelectorAll(".ga").forEach(function(el){
+  document.querySelectorAll(".ga:not(.gst)").forEach(function(el){
     fit(el.querySelector(".ga-box"));
     var b = el.querySelector(".ga-replay");
     if (Anim.calm.matches) { b.hidden = true; return; }
@@ -69,4 +69,25 @@
       s.held = false; s.tl.restart();
     });
   });
+
+  /* The install topics show the home page's own install stories (its .sst stage and short steps, by the id in
+     data-from), so each is drawn and timed in one place: index.html and stories.js. */
+  var gst = [].slice.call(document.querySelectorAll(".gst[data-from]"));
+  if (!gst.length || !window.fetch) return;
+  fetch("index.html").then(function(r){ if (!r.ok) throw r.status; return r.text(); }).then(function(html){
+    var doc = new DOMParser().parseFromString(html, "text/html");
+    gst.forEach(function(f){
+      var src = doc.getElementById(f.dataset.from), st = src && src.querySelector(".sst"), ol = src && src.querySelector(".steps");
+      if (!st || !ol) return f.remove();
+      f.classList.add("story");
+      src.classList.forEach(function(c){ if (/^st-/.test(c)) f.classList.add(c); });
+      var box = document.createElement("div"); box.className = "gst-box"; box.appendChild(document.importNode(st, true));
+      var b = document.createElement("button"); b.type = "button"; b.className = "btn btn-ghost btn-sm ga-replay";
+      b.innerHTML = '↻ <span class="vi">Xem lại</span><span class="en">Replay</span>';
+      f.append(box, document.importNode(ol, true), b);
+      if (Anim.calm.matches) b.hidden = true;
+      b.addEventListener("click", function(){ var s = Anim.of(f); if (s) { s.held = false; s.tl.restart(); } });
+    });
+    var js = document.createElement("script"); js.src = "js/stories.js"; document.body.appendChild(js);
+  }).catch(function(){ gst.forEach(function(f){ f.remove(); }); });
 })();

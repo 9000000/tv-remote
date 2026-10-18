@@ -35,7 +35,7 @@
     var w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT), out = [], n, last = null;
     while ((n = w.nextNode())){
       var e = n.parentElement, other = e && e.closest(lang === "vi" ? ".en" : ".vi");
-      if (other || (e && e.closest(".ga-box")) || !n.nodeValue.trim()) continue;
+      if (other || (e && e.closest(".ga-box,.gst-box")) || !n.nodeValue.trim()) continue;
       var block = e && e.closest("td,th,li,p,h4,dt,dd,figcaption");   // table cells and steps would run into each other
       if (out.length && block !== last && !/[.:;!?…]\s*$/.test(out[out.length - 1])) out.push("·");
       out.push(n.nodeValue); last = block;
@@ -207,5 +207,6 @@
 
   document.getElementById("yr").textContent = new Date().getFullYear();
   show(location.hash.slice(1));
+  if (location.hash) addEventListener("load", function(){ setTimeout(function(){ if (scrollY < 200) scrollTo(0, 0); }, 50); });   // the browser jumps to #topic, under the bar
   setLang(root.dataset.lang);
 })();
