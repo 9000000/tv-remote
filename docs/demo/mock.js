@@ -167,7 +167,7 @@
       case 'bedtime': S.bedtime = { on: !!b.on, ranges: b.ranges || S.bedtime.ranges }; break;
       case 'snooze': S.snoozeUntil = b.minutes ? t + b.minutes * MIN : 0; break;
       case 'limit': S.limits = S.limits.filter((l) => l.pkg !== b.pkg); if (b.minutes) S.limits.push({ pkg: b.pkg, minutes: b.minutes, used: 0, extra: 0 }); break;
-      case 'extra': S.limits.forEach((l) => { if (l.pkg === b.pkg) l.extra = (l.extra || 0) + b.minutes; }); break;
+      case 'extra': S.limits.forEach((l) => { if (l.pkg === b.pkg) l.extra = b.set ? b.minutes : (l.extra || 0) + b.minutes; }); break;
       case 'volume': S.volume = b.ranges || []; break;
       case 'ram': S.ram = { on: !!b.on, pct: b.pct || 90 }; break;
       case 'awake': S.awake = !!b.on; break;

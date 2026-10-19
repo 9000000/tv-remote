@@ -106,7 +106,7 @@ internal object Rules {
                 } else {
                     val extra = o.optJSONObject("extra") ?: JSONObject()
                     val today = extra.optJSONObject(day(now)) ?: JSONObject()
-                    today.put(pkg, today.optInt(pkg) + minutes)
+                    today.put(pkg, if (d.optBoolean("set")) minutes else today.optInt(pkg) + minutes)   // set: 0 takes today's grant back
                     o.put("extra", JSONObject().put(day(now), today))      // only today's grants are worth keeping
                 }
             }

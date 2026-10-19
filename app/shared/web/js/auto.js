@@ -4,6 +4,8 @@ const SETUP_APK = 'https://github.com/HoangTran0410/tv-remote/releases/latest/do
 let RULES = null, rulesSkew = 0, rulesBusy = false;
 const pad2 = (n) => String(n).padStart(2, '0');
 const clock = (t) => { const d = new Date(t - rulesSkew); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); };   // a moment on the TV's clock, in this device's
+// short, for a line in a list: 25p, 3g30, 2g
+const minsShort = (m) => m < 60 ? T('auto.min_s', { n: m }) : m % 60 ? T('auto.hours_min_s', { h: Math.floor(m / 60), m: String(m % 60).padStart(2, '0') }) : T('auto.hours_s', { h: Math.floor(m / 60) });
 const mins = (m) => m < 60 ? T('auto.min_n', { n: m }) : m % 60 ? T('auto.hours_min_n', { h: Math.floor(m / 60), m: m % 60 }) : T('auto.hours_n', { h: Math.floor(m / 60) });
 
 async function loadRules(change, quiet) {
@@ -62,9 +64,10 @@ function renderRules() {
     const meter = el('div', { className: 'bar' + (pct >= 100 ? ' full' : '') }, el('i')); meter.firstChild.style.width = pct + '%';
     const name = l.label || appName(l.pkg);
     return el('div', { className: 'item' }, icon, el('div', { className: 'name' }, el('span', { textContent: name }),
-      el('small', { textContent: l.extra ? T('auto.limit_used_extra', { used: mins(l.used), total: mins(total), extra: mins(l.extra) }) : T('auto.limit_used', { used: mins(l.used), total: mins(total) }) }), meter),
+      el('small', { textContent: T(l.extra ? 'auto.limit_used_extra' : 'auto.limit_used', { used: minsShort(l.used), total: minsShort(total), extra: minsShort(l.extra || 0) }) }), meter),
       el('div', { className: 'acts' },
         act(T('auto.plus_30_today'), async () => { await loadRules({ do: 'extra', pkg: l.pkg, minutes: 30 }); toast(T('auto.plus_30_done', { name })); }),
+        l.extra ? act(T('auto.extra_reset'), async () => { if (await setupFor('unextra')) await loadRules({ do: 'extra', pkg: l.pkg, minutes: 0, set: true }); }) : null,
         act('✏️', async () => { const v = await askTime(T('auto.limit_how_long', { name }), l.minutes); if (v) await loadRules({ do: 'limit', pkg: l.pkg, minutes: v }); }),
         act('🗑', async () => { if (await ask(T('auto.limit_drop_ask', { name }), { ok: T('auto.drop_limit') })) await loadRules({ do: 'limit', pkg: l.pkg, minutes: 0 }); }, 'danger')));
   });

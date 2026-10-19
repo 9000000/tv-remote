@@ -81,6 +81,8 @@ class RulesTest {
         val extra = o.getJSONObject("extra")
         assertEquals(listOf(Rules.day(now)), extra.keys().asSequence().toList())
         assertEquals(15, Rules.extra(o, "com.a.b", now))
+        Rules.apply(o, d("""{"do":"extra","pkg":"com.a.b","minutes":0,"set":true}"""), now)
+        assertEquals(0, Rules.extra(o, "com.a.b", now))
     }
 
     @Test fun packageNamesAreChecked() {

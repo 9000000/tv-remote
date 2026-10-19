@@ -27,7 +27,8 @@ object SetupNeed {
         "files" to "0.8.1",                                            // 📈 its files handed over where the shell may not read them (SetupFiles)
         "welcome" to "0.12.0",                                         // 👋 a video or picture when the TV is turned on (Welcome)
         "lock" to "0.12.1",                                            // 🔒 an app opened only with a PIN (the release after 0.12.0)
-        "dim" to "0.12.1",                                             // 🔅 a tint over the whole screen (DimLayer)
+        "dim" to "0.12.1",
+        "unextra" to "0.12.1",                                         // ↺ taking back the minutes granted to an app today                                             // 🔅 a tint over the whole screen (DimLayer)
     )
 
     /** "setup:old:pic:2.21.0:2.20.0" or "setup:missing:draw:2.18.0:": the words every client looks for in an error. */
@@ -53,6 +54,7 @@ object SetupNeed {
             "launcher" -> t("core.need_launcher")
             "lock" -> t("core.need_lock")
             "dim" -> t("core.need_dim")
+            "unextra" -> t("core.need_unextra")
             else -> feature
         }
     }

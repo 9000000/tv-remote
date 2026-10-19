@@ -20,6 +20,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - 🏠 TV Home: launcher riêng của dự án, đứng đầu Thư viện launcher (cài và dùng một chạm, lỗi thì TV tự quay về bản cũ). Đồng hồ, lời chào, nút Nguồn vào / Mạng / Cài đặt, hàng app yêu thích và lưới app; giữ OK trên app để ghim, dời, ẩn. Không quảng cáo. Chỉnh từ điện thoại hoặc máy tính (tab TV → 🏠 → Tùy chỉnh TV Home): app yêu thích, app ẩn, hình nền (có sẵn hoặc ảnh của bạn), đồng hồ 12/24 giờ; TV đổi ngay. Có nút Cập nhật TV Home khi có bản mới
 - Launcher cài từ thư viện được biên dịch sẵn ngay khi cài: mở lần đầu nhanh hơn trên TV yếu
 - APK app điện thoại nhỏ hơn khoảng 1 MB (bỏ bản cho chip x86 32-bit)
+- Giới hạn app mỗi ngày: nút ngắn gọn (+30p), dòng đã dùng ngắn hơn (25p / 3g30 (+2g30)), nút Đặt lại để bỏ thời gian đã cho thêm hôm nay (cần TV Setup mới)
 
 **English**
 
@@ -35,6 +36,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - 🏠 TV Home: this project's own launcher, first in the Launcher gallery (one tap to install and use; if it fails the TV goes back on its own). A clock, a greeting, Inputs / Network / Settings buttons, a row of favourite apps and the app grid; hold OK on an app to pin, move or hide it. No ads. Set up from the phone or computer (TV tab → 🏠 → Customize TV Home): favourites, hidden apps, the background (built-in or your own photo), a 12/24-hour clock; the TV changes at once. An Update TV Home button shows when there is a new one
 - A launcher installed from the gallery is compiled at install: it opens faster the first time on a slow TV
 - The phone app's APK is about 1 MB smaller (no build for 32-bit x86 chips)
+- Daily app limits: a short button (+30 min), a shorter used line (25m / 3h30 (+2h30)), and Reset to take back today's extra time (needs the new TV Setup)
 
 ## 0.12.0 - 2026-10-19
 
