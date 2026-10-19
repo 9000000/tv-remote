@@ -3,6 +3,7 @@ package dev.tvremote.phone
 import dev.tvremote.core.T
 import android.content.Intent
 import android.net.Uri
+import android.view.Gravity
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -184,68 +185,165 @@ private fun MainActivity.fleetWelcomeRun(name: String, file: File, ips: List<Str
     }
 }
 
-/** Asks each TV picked for its apps, then which one to remove from the TVs that have it. */
+/** One app of the removal list: its package, the name the TV gave, and the TVs that have it. */
+private class AppRow(val pkg: String, val name: String, val on: List<String>, val named: Boolean) {
+    var picked = false
+    lateinit var view: View
+    lateinit var tick: android.widget.CheckBox
+    lateinit var title: TextView
+    lateinit var letter: TextView
+    lateinit var image: android.widget.ImageView
+    val key = (name + " " + pkg).lowercase()
+}
+
+/**
+ * Asks each TV picked for its apps, then which to remove from the TVs that have them: one row per app (its picture, its name, "on
+ * 3/5 TVs"), a tap anywhere on a row ticks it (the .on tint, as the page), a search once the list is long, Select all, and the main
+ * button "Remove (n)". The pictures come from the first TV that has the app, one at a time after the box is open.
+ */
 private fun MainActivity.fleetUninstall(ips: List<String>) {
     val wait = Popup.Builder(this).setMessage(T("fleet.asking_each")).setCancelable(false).show()
     val apps = HashMap<String, MutableList<String>>()                 // package -> the TVs that have it
     val names = HashMap<String, String>()
+    val labels = HashMap<String, RemoteLabels>()                      // per TV, kept until the box closes: the pictures are read through its link
+    val links = ArrayList<AdbLink>()
+    val answered = HashSet<String>()
     val pool = Executors.newFixedThreadPool(PARALLEL)
     for (ip in ips) pool.execute {
         val link = AdbLink(filesDir, route[ip] ?: ip)
         try {
             val info = Fleet.info(link.get())
-            val label = try { RemoteLabels(link, { assets.open("tvr-helper.jar").use { it.readBytes() } }).names() } catch (e: Exception) { emptyMap() }
-            synchronized(apps) { info.apps.forEach { apps.getOrPut(it) { ArrayList() }.add(ip) }; names.putAll(label) }
+            val rl = RemoteLabels(link, { assets.open("tvr-helper.jar").use { it.readBytes() } }, File(cacheDir, "meta/" + ip.replace(Regex("[^\\w.-]"), "_")))
+            val label = try { rl.names() } catch (e: Exception) { emptyMap() }
+            synchronized(apps) { info.apps.forEach { apps.getOrPut(it) { ArrayList() }.add(ip) }; names.putAll(label); labels[ip] = rl; links.add(link); answered.add(ip) }
         } catch (ignored: Exception) {                                // a TV that does not answer has nothing to remove
-        } finally { link.close() }
+            link.close()
+        }
     }
     pool.shutdown()
     Thread {
         pool.awaitTermination(3, java.util.concurrent.TimeUnit.MINUTES)
         ui.post {
-            if (isFinishing) return@post
+            val closeLinks = { links.forEach { it.close() } }
+            if (isFinishing) { closeLinks(); return@post }
             wait.dismiss()
-            val list = apps.filterKeys { Fleet.canUninstall(it) == null && it != "com.tailscale.ipn" }.toList()
-                .sortedWith(compareBy({ -it.second.size }, { names[it.first] ?: it.first }))
-            if (list.isEmpty()) { toast(T("fleet.no_apps")); return@post }
-            // one row per app, ticked by a tap anywhere on it: its name, and under it, small, the package and how many TVs have it
-            val picked = BooleanArray(list.size)
-            val rows = col()
-            rows.setPadding(dp(12), dp(4), dp(20), dp(4))
+            val list = apps.filterKeys { Fleet.canUninstall(it) == null && it != "com.tailscale.ipn" }
+                .map { (pkg, on) -> AppRow(pkg, names[pkg] ?: pkg.substringAfterLast('.'), on, names[pkg] != null) }
+                .sortedWith(compareBy({ -it.on.size }, { it.name.lowercase() }))
+            if (list.isEmpty()) { closeLinks(); toast(T("fleet.no_apps")); return@post }
             lateinit var box: Popup
+            val rows = col()
+            val none = label(T("fleet.no_match"), 14, MUTED)
+            none.visibility = View.GONE
+            none.setPadding(dp(4), dp(8), 0, 0)
+            val toggle = button(T("fleet.pick_all"), BTN)
+            toggle.textSize = 13f
+            val shown = { list.filter { it.view.visibility == View.VISIBLE } }
             val sync = {
-                val n = picked.count { it }
-                box.getButton(Popup.BUTTON_POSITIVE)?.let { it.isEnabled = n > 0; it.text = T("fleet.remove") + if (n > 0) " ($n)" else "" }
+                val n = list.count { it.picked }
+                box.getButton(Popup.BUTTON_POSITIVE).let { it.isEnabled = n > 0; it.text = T("fleet.remove") + if (n > 0) " ($n)" else "" }
+                val vis = shown()
+                toggle.isEnabled = vis.isNotEmpty()
+                toggle.text = if (vis.isNotEmpty() && vis.all { it.picked }) T("fleet.pick_none") else T("fleet.pick_all")
+                none.visibility = if (vis.isEmpty()) View.VISIBLE else View.GONE
             }
-            list.forEachIndexed { i, (pkg, on) ->
-                val check = android.widget.CheckBox(this)
+            val setPicked = { r: AppRow, on: Boolean ->
+                r.picked = on
+                r.tick.isChecked = on
+                r.view.background = onBox(on, 12)
+                r.title.setTextColor(if (on) ACCENT_TEXT else TEXT)
+            }
+            list.forEach { r ->
+                val hue = r.pkg.fold(7) { h, c -> (h * 31 + c.code) % 360 }.toFloat()   // the page's placeholder: a colour from the package
+                val tile = android.widget.FrameLayout(this)
+                r.letter = label((r.name.firstOrNull { it.isLetterOrDigit() } ?: '?').uppercaseChar().toString(), 18, android.graphics.Color.WHITE)
+                r.letter.typeface = android.graphics.Typeface.DEFAULT_BOLD
+                r.letter.gravity = Gravity.CENTER
+                r.letter.background = box(android.graphics.Color.HSVToColor(floatArrayOf(hue, 0.62f, 0.46f)), 10)
+                r.image = android.widget.ImageView(this)
+                r.image.visibility = View.GONE
+                r.image.background = box(BTN, 10)
+                r.image.clipToOutline = true
+                r.image.outlineProvider = android.view.ViewOutlineProvider.BACKGROUND
+                r.image.scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+                tile.addView(r.letter, android.widget.FrameLayout.LayoutParams(-1, -1))
+                tile.addView(r.image, android.widget.FrameLayout.LayoutParams(-1, -1))
                 val text = col()
-                text.addView(label(names[pkg] ?: pkg, 16, TEXT))
-                text.addView(label(pkg + " · " + on.size + "/" + ips.size + " TV", 12, MUTED))
+                r.title = label(r.name, 16, TEXT)
+                r.title.typeface = android.graphics.Typeface.DEFAULT_BOLD
+                r.title.maxLines = 1
+                r.title.ellipsize = android.text.TextUtils.TruncateAt.END
+                text.addView(r.title)
+                text.addView(label(T("fleet.on_tvs", "n" to r.on.size, "total" to answered.size), 12, MUTED))
+                if (!r.named) text.addView(label(r.pkg, 11, MUTED).also { it.maxLines = 1; it.ellipsize = android.text.TextUtils.TruncateAt.MIDDLE })   // no name from the TV: the package, so two are not alike
+                r.tick = android.widget.CheckBox(this)
+                r.tick.buttonTintList = android.content.res.ColorStateList.valueOf(ACCENT)
+                r.tick.isClickable = false                            // the row takes the tap
                 val row = LinearLayout(this)
-                row.gravity = android.view.Gravity.CENTER_VERTICAL
-                row.setPadding(0, dp(6), 0, dp(6))
-                row.addView(check)
-                row.addView(text, LinearLayout.LayoutParams(0, -2, 1f))
-                row.setOnClickListener { check.isChecked = !check.isChecked }
-                check.setOnCheckedChangeListener { _, c -> picked[i] = c; sync() }
-                rows.addView(row)
+                row.gravity = Gravity.CENTER_VERTICAL
+                row.setPadding(dp(10), dp(8), dp(6), dp(8))
+                row.addView(tile, LinearLayout.LayoutParams(dp(40), dp(40)))
+                row.addView(text, LinearLayout.LayoutParams(0, -2, 1f).also { it.leftMargin = dp(12) })
+                row.addView(r.tick)
+                row.background = onBox(false, 12)
+                row.setOnClickListener { setPicked(r, !r.picked); sync() }
+                r.view = row
+                rows.addView(row, gap(4))
             }
-            val sv = ScrollView(this)
-            sv.addView(rows)
-            box = Popup.Builder(this).setTitle(T("many_tvs.remove_which_apps")).setView(sv)
+            rows.addView(none)
+            rows.setPadding(dp(16), dp(8), dp(16), 0)
+            val head = col()
+            head.setPadding(dp(20), dp(4), dp(20), dp(4))
+            val skipped = ips.size - answered.size
+            head.addView(label(T("fleet.remove_from", "tvs" to ips.joinToString(" · ") { title(it) }) + if (skipped > 0) " " + T("fleet.remove_skipped", "n" to skipped) else "", 13, MUTED))
+            val tools = LinearLayout(this)
+            tools.gravity = Gravity.CENTER_VERTICAL
+            if (list.size > 6) {
+                val q = input(T("common.search_by_app_name"))
+                q.addTextChangedListener(object : android.text.TextWatcher {
+                    override fun afterTextChanged(e: android.text.Editable?) {
+                        val k = e.toString().trim().lowercase()
+                        list.forEach { it.view.visibility = if (k.isEmpty() || it.key.contains(k)) View.VISIBLE else View.GONE }
+                        sync()
+                    }
+                    override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                    override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                })
+                tools.addView(q, LinearLayout.LayoutParams(0, dp(44), 1f))
+            } else tools.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+            tools.addView(toggle, LinearLayout.LayoutParams(-2, dp(44)).also { it.leftMargin = dp(8) })
+            head.addView(tools, gap(8))
+            toggle.setOnClickListener {
+                val vis = shown()
+                val every = vis.all { it.picked }
+                vis.forEach { setPicked(it, !every) }
+                sync()
+            }
+            val body = col()
+            body.addView(head)
+            body.addView(rows)
+            box = Popup.Builder(this).setTitle(T("many_tvs.remove_which_apps")).setView(body)
                 .setPositiveButton(T("fleet.remove")) { _, _ ->
-                    val chosen = list.filterIndexed { i, _ -> picked[i] }
-                    val pkgs = chosen.map { it.first }
-                    val on = chosen.flatMap { it.second }.distinct()
-                    val what = if (pkgs.size == 1) names[pkgs[0]] ?: pkgs[0] else T("many_tvs.apps", "n" to pkgs.size)
+                    val chosen = list.filter { it.picked }
+                    val pkgs = chosen.map { it.pkg }
+                    val on = chosen.flatMap { it.on }.distinct()
+                    val what = if (pkgs.size == 1) chosen[0].name else T("many_tvs.apps", "n" to pkgs.size)
                     Popup.Builder(this).setMessage(T("many_tvs.remove_from_these_tvs", "what" to what) +
-                        (if (pkgs.size > 1) "\n" + pkgs.joinToString("\n") { "• " + (names[it] ?: it) } else "") + "\n\n" + T("many_tvs.tvs") + "\n" + on.joinToString("\n") { "• " + title(it) })
+                        (if (pkgs.size > 1) "\n" + chosen.joinToString("\n") { "• " + it.name } else "") + "\n\n" + T("many_tvs.tvs") + "\n" + on.joinToString("\n") { "• " + title(it) })
                         .setPositiveButton(T("fleet.remove")) { _, _ ->
                             fleetRun(T("many_tvs.remove", "what" to what), on) { link, _ -> val n = Fleet.uninstall(link.get(), pkgs); T("many_tvs.removed_apps", "n" to n) }
                         }.setNegativeButton(T("common.cancel"), null).show()
-                }.setNegativeButton(T("common.cancel"), null).show()
+                }.setNegativeButton(T("common.cancel"), null).setOnDismissListener { closeLinks() }.show()
             sync()
+            // the pictures, one after the other, each from the first TV that has the app (a TV that gives none leaves the letter)
+            Thread {
+                for (r in list) {
+                    if (!box.isShowing) break
+                    val png = r.on.firstNotNullOfOrNull { ip -> try { labels[ip]?.icon(r.pkg) } catch (e: Exception) { null } } ?: continue
+                    val bmp = android.graphics.BitmapFactory.decodeByteArray(png, 0, png.size) ?: continue
+                    ui.post { if (box.isShowing) { r.image.setImageBitmap(bmp); r.image.visibility = View.VISIBLE; r.letter.visibility = View.GONE } }
+                }
+            }.start()
         }
     }.start()
 }

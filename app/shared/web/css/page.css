@@ -122,8 +122,15 @@ html:not(.tabbed) .panel { visibility:hidden; }   /* theme.js, setup.js */
 .fleetstep.done { color:var(--ok) !important; }
 .fleetstep.error { color:var(--bad) !important; }
 .fleetstep.running { color:var(--ink) !important; }
-.fleetapps { display:grid; gap:4px; max-height:min(60vh, 520px); overflow-y:auto; }
-.fleetapps small { overflow-wrap:anywhere; }
+.fleetapps { gap:2px; max-height:min(52vh, 460px); overflow-y:auto; margin:0 -4px; padding:0 4px; }
+.fleetapps .item.pick { flex-wrap:nowrap; padding:8px 10px; border-top:0; border-radius:10px; cursor:pointer; }
+.fleetapps .item.pick:hover:not(.on) { background:var(--btn); }
+.fleetapps .item.pick .name { flex:1 1 0; }
+.fleetapps .item.pick .name > span { font-weight:600; }
+.fleetapps .appicon { width:40px; height:40px; border-radius:10px; font-size:17px; }
+.fleetapps input[type=checkbox] { width:18px; height:18px; flex:none; accent-color:var(--accent); }
+.fleetpick { margin-bottom:8px; }
+.fleetpick input[type=search] { flex:1 1 0; min-width:0; }
 .fleetgo { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
 .fleetgo button { padding:0 18px; }
 .permrow { display:flex; align-items:center; gap:8px; padding:6px 0; border-top:1px solid var(--line); }

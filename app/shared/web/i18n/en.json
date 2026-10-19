@@ -670,6 +670,10 @@
  "fleet.step_checking": "checking the TV kept the app",
  "fleet.step_installed": "✓ installed",
  "fleet.step_removed": "✓ removed",
+ "fleet.step_removed_n": {
+  "one": "✓ removed {n} app",
+  "other": "✓ removed {n} apps"
+ },
  "fleet.step_restarting": "✓ restarting",
  "fleet.step_done": "✓ done",
  "fleet.adb_closed": "the TV is off, on another network or ADB is not on",
@@ -729,6 +733,12 @@
   "one": "Remove {n} app from these TVs?",
   "other": "Remove {n} apps from these TVs?"
  },
+ "fleet.on_tvs": "on {n}/{total} TVs",
+ "fleet.remove_from": "Remove from: {tvs}.",
+ "fleet.remove_skipped": "{n} TV not answering.",
+ "fleet.pick_all": "Select all",
+ "fleet.pick_none": "Clear",
+ "fleet.no_match": "No app matches.",
  "gamepad.connected": "Controller connected",
  "health.heat_normal": "normal",
  "health.heat_warmish": "slightly warm",

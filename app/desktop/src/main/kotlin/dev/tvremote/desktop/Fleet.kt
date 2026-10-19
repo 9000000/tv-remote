@@ -146,7 +146,7 @@ class Fleets(private val keys: File, private val cache: File) {
             val pkgs = pkg.split(',').map { it.trim() }.filter { it.isNotEmpty() }
             if (pkgs.isEmpty()) throw IllegalArgumentException("no app")
             pkgs.forEach { p -> Fleet.canUninstall(p)?.let { throw IllegalArgumentException(it) } }
-            val go: (AdbLink, JSONObject) -> String = { link, _ -> Fleet.uninstall(link.get(), pkgs); "uninstalled" }
+            val go: (AdbLink, JSONObject) -> String = { link, _ -> "uninstalled " + Fleet.uninstall(link.get(), pkgs) }
             go
         }
         "welcome_off" -> { link, _ ->                                 // the file stays on the TV: switching it on again needs no upload

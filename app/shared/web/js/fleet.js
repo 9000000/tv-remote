@@ -55,7 +55,7 @@ async function fleetFollowing(j) {
       const s = fleetRow[host]; if (!s) continue;
       s.className = 'fleetstep ' + p.status;
       s.textContent = p.status === 'cancelled' ? T('fleet.stopped_line') : p.status === 'error' ? '✗ ' + (/^adb:/.test(p.msg) ? FLEET_ADB[p.msg.slice(4)] || p.msg : friendly(p.msg))
-        : (FLEET_STEP[p.msg] || p.msg) + (p.status === 'running' && p.pct ? ' ' + p.pct + '%' : '');
+        : (/^uninstalled \d+$/.test(p.msg) ? T('fleet.step_removed_n', { n: +p.msg.slice(12) }) : FLEET_STEP[p.msg] || p.msg) + (p.status === 'running' && p.pct ? ' ' + p.pct + '%' : '');
     }
     if (j.status === 'cancelled') { toast(T('fleet.stopped')); return; }   // every part says "Đã dừng" above
     if (j.status === 'done') {
@@ -98,26 +98,56 @@ $('#fleetmore').addEventListener('click', (e) => popover(e.currentTarget, [
   ['☑️', T('fleet.menu_select_all'), () => { fleetTvs.forEach((t) => fleetPick.add(t.host)); fleetDraw(); }],
   ['↻', T('fleet.menu_reread'), () => fleetLoad()],
 ]));
-// the apps the user installed on the TVs ticked, most common first: tick the ones to remove everywhere, then one question
+// the apps the user installed on the TVs ticked, most common first: one row each (its picture, its name, on how many TVs), tick the
+// ones to remove everywhere, then one question. TV Setup and Tailscale are not offered.
 function fleetUninstall() {
-  const tvs = fleetChosen().filter((t) => t.apps);
+  const all = fleetChosen(), tvs = all.filter((t) => t.apps);
   if (!tvs.length) { toast(T('fleet.pick_one')); return; }
   const count = new Map();
   tvs.forEach((t) => t.apps.forEach((p) => count.set(p, (count.get(p) || 0) + 1)));
   const apps = [...count].filter(([p]) => !/^(dev\.tvremote\.setup|com\.tailscale\.ipn)$/.test(p)).sort((a, b) => b[1] - a[1] || appName(a[0]).localeCompare(appName(b[0])));
   put('#infotitle', 'textContent', T('fleet.which_apps'));
-  if (!apps.length) { $('#infobody').replaceChildren(el('p', { className: 'muted', textContent: T('fleet.no_apps') })); $('#infodlg').showModal(); return; }
-  const picked = new Set();
+  if (!apps.length) { $('#infobody').replaceChildren(UI.empty(T('fleet.no_apps'))); $('#infodlg').showModal(); return; }
+  const picked = new Set(), rows = new Map();
   const go = el('button', { className: 'danger', type: 'button', disabled: true });
-  const sync = () => { go.disabled = !picked.size; go.textContent = T('fleet.remove') + (picked.size ? ' (' + picked.size + ')' : ''); };
+  const toggle = el('button', { className: 'small', type: 'button' });
+  const none = UI.empty(T('fleet.no_match'));
+  none.hidden = true;
+  const shown = () => [...rows].filter(([, r]) => !r.hidden).map(([p]) => p);
+  const sync = () => {
+    go.disabled = !picked.size; go.textContent = T('fleet.remove') + (picked.size ? ' (' + picked.size + ')' : '');
+    const vis = shown(); toggle.disabled = !vis.length;
+    toggle.textContent = vis.length && vis.every((p) => picked.has(p)) ? T('fleet.pick_none') : T('fleet.pick_all');
+    none.hidden = !!vis.length;
+  };
+  const row = ([p, n]) => {
+    const icon = appIcon(p), name = el('span', { textContent: appName(p) }), sub = el('small');
+    const info = (m) => {                                               // a name the TV did not give is the package: shown, so two unnamed apps are not alike
+      const named = m && m.label && m.label !== p && m.label !== p.split('.').pop();
+      put(name, 'textContent', appName(p)); sub.textContent = T('fleet.on_tvs', { n, total: tvs.length }) + (named ? '' : ' · ' + p);
+    };
+    info(META.get(p)); onMeta(p, (m) => { icon.fill(m); info(m); });
+    const box = el('input', { type: 'checkbox', onchange: (e) => { e.target.checked ? picked.add(p) : picked.delete(p); r.classList.toggle('on', e.target.checked); sync(); } });
+    const r = el('label', { className: 'item pick', title: p }, icon, el('div', { className: 'name' }, name, sub), box);
+    r.box = box; r.key = (appName(p) + ' ' + p).toLowerCase();
+    rows.set(p, r); return r;
+  };
+  const list = el('div', { className: 'list fleetapps' }, ...apps.map(row), none);
+  const q = el('input', { type: 'search', placeholder: T('common.search_by_app_name'), autocomplete: 'off', oninput: () => {
+    const k = q.value.trim().toLowerCase(); rows.forEach((r) => { r.hidden = !!k && !r.key.includes(k); }); sync(); } });
+  toggle.onclick = () => {
+    const vis = shown(), every = vis.every((p) => picked.has(p));
+    vis.forEach((p) => { const r = rows.get(p); r.box.checked = !every; every ? picked.delete(p) : picked.add(p); r.classList.toggle('on', !every); }); sync();
+  };
   go.onclick = () => {
     const ps = [...picked]; $('#infodlg').close();
     fleetDo('uninstall', ps.join(','), (ps.length === 1 ? T('fleet.remove_one_ask', { name: appName(ps[0]) }) : T('fleet.remove_many_ask', { n: ps.length })) + (ps.length > 1 ? '\n' + ps.map((p) => '• ' + appName(p)).join('\n') : ''));
   };
+  const skipped = all.length - tvs.length;
   $('#infobody').replaceChildren(
-    el('div', { className: 'fleetapps' }, ...apps.map(([p, n]) => el('label', { className: 'fleetrow' },
-      el('input', { type: 'checkbox', onchange: (e) => { if (e.target.checked) picked.add(p); else picked.delete(p); sync(); } }),
-      el('div', { className: 'name' }, el('b', { textContent: appName(p) }), el('small', { className: 'muted', textContent: p + ' · ' + n + '/' + tvs.length + ' TV' }))))),
+    UI.note(T('fleet.remove_from', { tvs: all.map((t) => t.name || t.host).join(' · ') }) + (skipped ? ' ' + T('fleet.remove_skipped', { n: skipped }) : '')),
+    el('div', { className: 'line fleetpick' }, apps.length > 6 ? q : null, toggle),
+    list,
     el('div', { className: 'acts fleetgo' }, el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => $('#infodlg').close() }), go));
   sync(); $('#infodlg').showModal();
 }

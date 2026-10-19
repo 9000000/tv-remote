@@ -93,5 +93,5 @@ h2 .ui-ic { vertical-align:-3px; }
 /* Two blues that never look alike. The full fill (.primary: OK, Send, Install, Add) is a button that does something; on or
    chosen (the open tab, the choice in use, a switch that is on: Listening, HQ) is a tint with a blue edge and blue words.
    One rule for all of them: a red or own-hue .on (mute, recording, the kind chips) is more precise and wins. tests/css.test.js */
-button.on, .tabs button[aria-selected=true], .mitem.on { background:var(--sel); color:var(--accent-text); box-shadow:inset 0 0 0 1.5px var(--accent); }
+button.on, .tabs button[aria-selected=true], .mitem.on, .item.pick.on { background:var(--sel); color:var(--accent-text); box-shadow:inset 0 0 0 1.5px var(--accent); }
 .tabs button[aria-selected=true], .places button.on { font-weight:700; }
