@@ -4,6 +4,7 @@ import dev.tvremote.core.adb.AdbLink
 import dev.tvremote.core.ontv.LauncherInstall
 import dev.tvremote.core.ontv.LauncherSwap
 import dev.tvremote.core.ontv.Launchers
+import dev.tvremote.core.ontv.RulesClient
 import dev.tvremote.core.ontv.Setup
 import org.json.JSONArray
 import org.json.JSONObject
@@ -69,6 +70,7 @@ internal class LauncherApi(private val link: AdbLink, private val dir: File?, pr
     fun answer(keep: Boolean): JSONObject {
         val swap = LauncherSwap({ sh(it) })
         if (keep) swap.keep() else swap.rollback("user")
+        try { sh("am broadcast -a dev.tvremote.setup.LAUNCHER_ANSWERED -p ${RulesClient.SETUP} >/dev/null 2>&1") } catch (e: IOException) { }   // the question on the TV goes away too
         return JSONObject().put("ok", true)
     }
 

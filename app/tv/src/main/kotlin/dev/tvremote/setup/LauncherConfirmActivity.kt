@@ -1,9 +1,14 @@
 package dev.tvremote.setup
 
 import android.app.Activity
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -51,6 +56,13 @@ class LauncherConfirmActivity : Activity() {
         keep.isFocusableInTouchMode = true                          // opened by ADB, the TV is still in touch mode: OK must land somewhere
         keep.requestFocus()
         if (notice.isEmpty()) tick.run() else ui.postDelayed({ finish() }, 20_000L)
+        // answered on the phone or the computer: the question goes away here too (DUMP: only the shell may say so)
+        if (Build.VERSION.SDK_INT >= 33) registerReceiver(answered, IntentFilter(ANSWERED), "android.permission.DUMP", null, Context.RECEIVER_EXPORTED)
+        else registerReceiver(answered, IntentFilter(ANSWERED), "android.permission.DUMP", null)
+    }
+
+    private val answered = object : BroadcastReceiver() {
+        override fun onReceive(c: Context, i: Intent) { finish() }
     }
 
     private val tick = object : Runnable {
@@ -66,7 +78,13 @@ class LauncherConfirmActivity : Activity() {
         Thread { LauncherGuard.answer(keep); runOnUiThread { finish() } }.start()
     }
 
-    override fun onDestroy() { ui.removeCallbacksAndMessages(null); super.onDestroy() }
+    override fun onDestroy() {
+        ui.removeCallbacksAndMessages(null)
+        try { unregisterReceiver(answered) } catch (e: Exception) { }
+        super.onDestroy()
+    }
+
+    companion object { const val ANSWERED = "dev.tvremote.setup.LAUNCHER_ANSWERED" }   // LauncherApi.answer sends it
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).roundToInt()
 

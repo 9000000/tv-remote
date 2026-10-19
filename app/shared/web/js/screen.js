@@ -261,6 +261,8 @@ function dockScreen() {
   put('#pipback', 'hidden', !float); document.body.classList.toggle('pip', float);
 }
 $('#pipback').addEventListener('click', () => showTab('remote'));
+// the Progress card sits above the mini picture (page.css): it needs the picture's height, which changes with the TV's shape
+new ResizeObserver(([e]) => document.documentElement.style.setProperty('--pip-h', e.target.offsetHeight + 'px')).observe($('#pipslot'));
 function startScreen() {
   screenOn = true; const gen = ++screenGen; if (streamCtl) streamCtl.abort();
   dockScreen();

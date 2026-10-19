@@ -64,7 +64,8 @@ async function homeOpen() {
   const greet = el('input', { type: 'checkbox', onchange: () => send({ greet: greet.checked }) });
   const anim = el('input', { type: 'checkbox', onchange: () => send({ anim: anim.checked }) });
   const gal = el('div', { className: 'homegal' }), credit = el('p', { className: 'note', textContent: T('home.gal_note') });
-  homeGallery(gal, credit, (n) => { r = n; homeNow = n; draw(); });
+  const galHead = el('h3', { textContent: T('home.gallery') });
+  homeGallery(gal, credit, galHead, (n) => { r = n; homeNow = n; draw(); });
 
   function draw() {
     const c = r.config, d = c.dock;
@@ -81,8 +82,8 @@ async function homeOpen() {
     walls.replaceChildren(...Object.keys(HOME_WALLS).map((w) => {
       const dot = el('i'); dot.style.setProperty('--c', 'linear-gradient(135deg,' + HOME_WALLS[w] + ')');
       return el('button', { type: 'button', className: c.wall === w ? 'on' : '', onclick: () => send({ wall: w }) }, dot, el('span', { textContent: T(HOME_WALL_WORDS[w]) }));
-    }), ...(r.photo ? [el('button', { type: 'button', className: c.wall === 'photo' ? 'on' : '', onclick: () => send({ wall: 'photo' }) }, el('span', { textContent: T('home.wall_photo') }))] : []),
-    el('button', { type: 'button', onclick: () => file.click() }, el('span', { textContent: T('home.upload') })));
+    }), ...(r.photo ? [el('button', { type: 'button', className: c.wall === 'photo' ? 'on' : '', onclick: () => send({ wall: 'photo' }) }, el('i', { className: 'add', textContent: '🖼️' }), el('span', { textContent: T('home.wall_photo') }))] : []),
+    el('button', { type: 'button', onclick: () => file.click() }, el('i', { className: 'add', textContent: '＋' }), el('span', { textContent: T('home.upload') })));
     clock.checked = c.clock24; greet.checked = c.greet; anim.checked = c.anim !== false;
   }
 
@@ -90,7 +91,7 @@ async function homeOpen() {
     el('div', { className: 'card-head' }, el('h2', { textContent: T('home.title') }), el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
     el('div', { className: 'card-head' }, el('h3', { textContent: T('home.dock') }), addDock), dock,
     el('h3', { textContent: T('home.wall') }), walls, file,
-    el('h3', { textContent: T('home.gallery') }), gal, credit,
+    galHead, gal, credit,
     el('label', { className: 'check' }, clock, el('span', { textContent: T('home.clock24') })),
     el('label', { className: 'check' }, greet, el('span', { textContent: T('home.greet') })),
     el('label', { className: 'check' }, anim, el('span', { textContent: T('home.anim') })),
@@ -102,9 +103,9 @@ async function homeOpen() {
 
 // The wallpaper gallery (docs/home/wallpapers.json, signed): small pictures to choose from; the one chosen is downloaded here,
 // checked against the list and sent to the TV like a photo of the person's own. The credit shows under the pictures.
-async function homeGallery(box, credit, done) {
+async function homeGallery(box, credit, head, done) {
   const g = await api('/api/home/walls', null, true);
-  if (!g || !g.walls || !g.walls.length) { box.hidden = true; credit.hidden = true; return; }
+  if (!g || !g.walls || !g.walls.length) { box.hidden = credit.hidden = head.hidden = true; return; }   // no list (offline): no empty heading either
   const lang = (document.documentElement.lang || 'en').slice(0, 2);
   const note = (w) => T('home.credit', { name: w.name[lang] || w.name.en, credit: w.credit, license: w.license, kb: w.kb });
   box.replaceChildren(...g.walls.map((w) => {
