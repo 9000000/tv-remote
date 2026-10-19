@@ -340,8 +340,42 @@ internal fun MainActivity.buildPicker() {
     val help = button(T("picker.how_to_connect"), 0)
     help.setTextColor(ACCENT_TEXT)
     help.setOnClickListener {
-        Popup.Builder(this).setTitle(T("picker.how_to_connect")).setMessage(T("picker.1_turn_on_adb").replaceFirst("\n\n", "\n" + T("setup.tcl_hidden_adb_short") + "\n\n"))   // TCL China hides the switch: its way, under step 1
+        Popup.Builder(this).setTitle(T("picker.how_to_connect")).setView(howSteps(T("picker.1_turn_on_adb"), T("setup.tcl_hidden_adb_short")))
             .setPositiveButton(T("setup_banner.got_it"), null).show()
     }
     picker.addView(help, LinearLayout.LayoutParams(-1, dp(44)))
+}
+
+/**
+ * How to connect, as numbered steps: the words are blocks split by a blank line, a block of several lines opens a step (its
+ * first line the title, "1. ..." giving the badge), a one-line block goes on in the step before. [firstNote] sits in step 1,
+ * set apart (TCL China's hidden switch).
+ */
+private fun MainActivity.howSteps(words: String, firstNote: String): View {
+    val list = col()
+    list.setPadding(dp(16), dp(6), dp(16), dp(2))
+    var body: LinearLayout? = null
+    for (block in words.split("\n\n")) {
+        val lines = block.trim().split("\n")
+        val b = body
+        if (lines.size == 1 && b != null) { b.addView(label(lines[0], 14, MUTED).apply { setLineSpacing(dp(2).toFloat(), 1f) }, gap(6)); continue }
+        val m = Regex("^(\\w{1,2})\\.\\s+(.*)").find(lines[0])
+        val step = LinearLayout(this)
+        step.background = box(BTN, 14)
+        step.setPadding(dp(12), dp(12), dp(14), dp(12))
+        val badge = label(m?.groupValues?.get(1) ?: "💡", 14, ACCENT_TEXT).apply {
+            typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER; background = box(SOFT, 15)
+        }
+        step.addView(badge, LinearLayout.LayoutParams(dp(30), dp(30)))
+        val c = col()
+        c.addView(label(m?.groupValues?.get(2) ?: lines[0], 15, TEXT).apply { typeface = Typeface.DEFAULT_BOLD })
+        if (lines.size > 1) c.addView(label(lines.drop(1).joinToString("\n"), 14, MUTED).apply { setLineSpacing(dp(2).toFloat(), 1f) }, gap(4))
+        if (list.childCount == 0) c.addView(label(firstNote, 13, TEXT).apply {
+            background = box(SEL, 10); setPadding(dp(10), dp(8), dp(10), dp(8))
+        }, gap(8))
+        step.addView(c, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
+        list.addView(step, if (list.childCount == 0) LinearLayout.LayoutParams(-1, -2) else gap(8))
+        body = c
+    }
+    return list
 }
