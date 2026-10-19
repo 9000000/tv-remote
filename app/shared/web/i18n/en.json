@@ -154,7 +154,7 @@
  "recents.d_ago": "{n} days ago",
  "recents.none": "No app open",
  "recents.background": "In the background",
- "recents.close_all_ask": "Close every open app but the one on screen?",
+ "recents.close_all_ask": "Close every open app but the one on screen and those the TV needs?",
  "recents.closed_n": "Closed {n} apps",
  "health.overview": "📊 Overview",
  "health.system_load": "⚙️ System load",

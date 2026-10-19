@@ -100,7 +100,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             when (what) {
                 "apps" -> return HttpServer.Response.json(apps(r.q("system") == "1"))
                 "apps/report" -> return HttpServer.Response.json(appsReport())
-                "recents" -> if (!post) return HttpServer.Response.json(dev.tvremote.core.ontv.Recents.json(sh(dev.tvremote.core.ontv.Recents.CMD)))
+                "recents" -> if (!post) return HttpServer.Response.json(recents())
                 "app/meta" -> {                                       // a name and whether /api/app/icon has a picture (the computer app answers it first)
                     val pkg = r.q("pkg")
                     if (!PKG.matcher(pkg).matches()) return HttpServer.Response.error(404, "not found")
@@ -163,12 +163,14 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "clean" -> text(TvShell.CLEAN, 90000)
                 "recents" -> {                                        // close one open app, or all but the one on screen
                     val d = r.json()
-                    val pkgs = if (d.optBoolean("all")) dev.tvremote.core.ontv.Recents.json(sh(dev.tvremote.core.ontv.Recents.CMD)).getJSONArray("apps").let { a -> (0 until a.length()).map { a.getJSONObject(it) }.filter { !it.optBoolean("top") }.map { it.getString("pkg") } }
+                    val pkgs = if (d.optBoolean("all")) recents().getJSONArray("apps").let { a -> (0 until a.length()).map { a.getJSONObject(it) }   // what the TV needs stays, as on its own row
+                        .filter { !it.optBoolean("top") && it.isNull("keep") }.map { it.getString("pkg") } }
                         else listOf(d.optString("pkg"))
                     val keep = keepNow(sh(KEEP_NOW))
                     for (p in pkgs) {
                         if (!PKG.matcher(p).matches()) throw IllegalArgumentException("bad package name")
-                        dev.tvremote.core.ontv.Recents.close({ sh(it) }, p, keepWhy(p, keep) != null)   // TV Setup and what the TV needs leave the list, but keep running
+                        if (keepWhy(p, keep) != null) throw IllegalArgumentException("protected: the TV needs this app")   // home, keyboard, Android's own, this remote
+                        dev.tvremote.core.ontv.Recents.close({ sh(it) }, p, false)
                     }
                     HttpServer.Response.json(JSONObject().put("ok", true).put("closed", pkgs.size))
                 }
@@ -743,6 +745,15 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         for (a in procsOf(p.getOrElse(1) { "" }, keepNow(p.getOrElse(2) { "" }))) list.put(JSONObject().put("pkg", a.pkg)
             .put("label", labels?.label(a.pkg) ?: a.pkg).put("mb", a.mb).put("state", a.state).put("keep", a.keep ?: JSONObject.NULL))
         return JSONObject().put("apps", list).put("mem_total", kb("MemTotal")).put("mem_free", kb("MemAvailable"))
+    }
+
+    /** The open apps ([Recents.json]), each with why it must stay running (null: may be closed), as [procs] says it. */
+    private fun recents(): JSONObject {
+        val p = sh(dev.tvremote.core.ontv.Recents.CMD + "; printf '\\043~\\043\\n'; " + KEEP_NOW).split("#~#\n")
+        val o = dev.tvremote.core.ontv.Recents.json(p[0]); val keep = keepNow(p.getOrElse(1) { "" })
+        val a = o.getJSONArray("apps")
+        for (i in 0 until a.length()) a.getJSONObject(i).let { it.put("keep", keepWhy(it.getString("pkg"), keep) ?: JSONObject.NULL) }
+        return o
     }
 
     /** Stopping [pkg] would hurt the TV (its home screen, keyboard, a part of Android) or cut this remote off: refused. */

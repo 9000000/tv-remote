@@ -154,7 +154,7 @@
  "recents.d_ago": "{n} ngày trước",
  "recents.none": "Chưa mở app nào",
  "recents.background": "Chạy nền",
- "recents.close_all_ask": "Đóng mọi app đang mở, trừ app đang xem?",
+ "recents.close_all_ask": "Đóng mọi app đang mở, trừ app đang xem và app TV cần giữ?",
  "recents.closed_n": "Đã đóng {n} app",
  "health.overview": "📊 Tổng quan",
  "health.system_load": "⚙️ Tải hệ thống",

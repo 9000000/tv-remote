@@ -32,16 +32,18 @@ function recentsSub(pkg) {
 /** A row's buttons: Switch, and ✕. */
 function recentsActs(pkg) {
   const a = recentsOpen.get(pkg), name = appName(pkg);
-  return [a.top ? null : setLabel(act('', async () => { if (await api('/api/app/launch', { pkg })) { toast(T('recents.switched', { name })); setTimeout(() => recentsNow(true), 1200); } }), '▶', T('recents.switch')),   // its icon alone on a phone: the row stays one line
-    el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('recents.close'), ariaLabel: T('recents.close'), onclick: async () => {
+  const close = a.keep ? el('span', { className: 'tag keep', textContent: T('health.must_keep'), title: procKeep()[a.keep] || '' })   // as in the old Running apps: what the TV needs is not offered
+    : el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('recents.close'), ariaLabel: T('recents.close'), onclick: async () => {
       if (a.top && !await ask(T('health.stop_ask', { name }), { ok: T('health.stop') })) return;
       if (await api('/api/recents', { pkg })) { recentsOpen.delete(pkg); recentsBg = recentsBg.filter((b) => b.pkg !== pkg); renderApps(); setTimeout(() => recentsNow(true), 800); }
-    } })].filter(Boolean);
+    } });
+  return [a.top ? null : setLabel(act('', async () => { if (await api('/api/app/launch', { pkg })) { toast(T('recents.switched', { name })); setTimeout(() => recentsNow(true), 1200); } }), '▶', T('recents.switch')),   // its icon alone on a phone: the row stays one line
+    close].filter(Boolean);
 }
 /** Under the open apps: Close all, then what runs in the background. */
 function recentsTail() {
   const sys = recentsBg.filter((a) => a.keep === 'system'), bg = recentsBg.filter((a) => a.keep !== 'system');
-  const all = el('button', { type: 'button', className: 'small', textContent: T('recents.close_all'), disabled: ![...recentsOpen.values()].some((a) => !a.top), onclick: async () => {
+  const all = el('button', { type: 'button', className: 'small', textContent: T('recents.close_all'), disabled: ![...recentsOpen.values()].some((a) => !a.top && !a.keep), onclick: async () => {
     if (!await ask(T('recents.close_all_ask'), { ok: T('recents.close_all') })) return;
     const r = await api('/api/recents', { all: true });
     if (r) { toast(T('recents.closed_n', { n: r.closed })); recentsNow(true); }
