@@ -10,4 +10,7 @@
     <xhtml:link rel="alternate" hreflang="vi" href="https://tvremote.pages.dev/guide?lang=vi"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://tvremote.pages.dev/guide?lang=en"/>
   </url>
+  <url>
+    <loc>https://tvremote.pages.dev/demo/</loc>
+  </url>
 </urlset>

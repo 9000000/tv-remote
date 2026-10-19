@@ -20,6 +20,7 @@ path is `docs/*` (Cloudflare's `*` spans folders; `docs/**` matches nothing and 
 | `js/anim.js`, `lib/gsap.min.js` | the animation runtime and helpers; GSAP 3.13.0 as published |
 | `js/demo.js`, `css/demo.css` | the hero demo |
 | `js/stories.js`, `css/stories.css` | How it works and the install tabs |
+| `demo/` (`index.html`, `sw.js`, `mock.js`) | the live demo at `/demo/`, see below |
 | `llms.txt` | the app in plain words for AI agents: keep it true when features or download links change |
 | `robots.txt`, `sitemap.xml` | for search engines |
 | `img/` | screenshots (`dev/shots.py`) and the link previews `og-<lang>.jpg` (1200×630, from `tvapp-<lang>.webp`) |
@@ -39,4 +40,17 @@ It needs the computer app built and, for `tv`, `phone` and `tvapp`, both emulato
 is the made-up home screen `dev/shots/home-<lang>.html`; the TV is named "TV phòng khách" / "Living room TV". Then check each
 `<img>`'s width and height in `index.html`.
 
-**Trying it locally:** `python3 -m http.server -d docs 8000`, then http://127.0.0.1:8000.
+**Live demo** (`/demo/`): the app's real web page (`app/shared/web`, nothing copied here) against a made-up TV. `demo/index.html`
+registers `sw.js` (scope `/demo/`) and shows the page in a frame at `/demo/app/`. The worker serves its files from jsDelivr
+at the git tag in `REF` (top of `sw.js`) and asks `mock.js`, in the demo page, to answer every `/api/...` call; the made-up TV
+lives in that page's memory, so Reset (or a reload) starts again. Install, remove, reboot and the like answer "this is a
+demo". The picture is a drawn screen as screenshots (video is not faked). The page's synchronous reads (words, `remote.json`)
+are put into `index.html` by the worker, since Chrome does not send those to a worker.
+
+To show a newer UI: pick a release tag (a pushed commit also works), check
+`https://cdn.jsdelivr.net/gh/HoangTran0410/tv-remote@<ref>/app/shared/web/index.html` answers, change `REF` in `demo/sw.js`,
+and add to `mock.js` what the new UI asks for (run the page and watch the console: "demo: no mock for ..."). Old caches go
+when the new worker starts. A newer `REF` than the tag the UI was checked against can ask for routes `mock.js` lacks.
+
+**Trying it locally:** `python3 -m http.server -d docs 8000`, then http://localhost:8000 (the demo needs `localhost` or https
+for its service worker; `127.0.0.1` also works outside restricted sandboxes).
