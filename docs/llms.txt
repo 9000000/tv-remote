@@ -45,7 +45,7 @@ Keys work without ADB on the phone and computer apps (Google's Android TV Remote
 ## Docs
 
 - [User guide](https://tvremote.pages.dev/guide): step by step for every feature (install, remote, typing, voice, picture, game controller, apps, files, timers, scenes, Home Assistant, Tailscale, troubleshooting), Vietnamese and English, with search
-- [README (English)](https://github.com/HoangTran0410/tv-remote/blob/main/README.en.md): setup for each app, Tailscale, troubleshooting, security, technical details
-- [README (Tiếng Việt)](https://github.com/HoangTran0410/tv-remote/blob/main/README.md)
+- [README (English)](https://github.com/HoangTran0410/tv-remote/blob/main/README.md): setup for each app, Tailscale, troubleshooting, security, technical details
+- [README (Tiếng Việt)](https://github.com/HoangTran0410/tv-remote/blob/main/README.vi.md)
 - [Changelog](https://github.com/HoangTran0410/tv-remote/blob/main/CHANGELOG.md)
 - [Releases](https://github.com/HoangTran0410/tv-remote/releases)

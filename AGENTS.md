@@ -1,6 +1,6 @@
 # AGENTS.md
 
-A guide for agents (and people) changing this repo. User-facing docs: [README.md](README.md) (Vietnamese) and [README.en.md](README.en.md).
+A guide for agents (and people) changing this repo. User-facing docs: [README.md](README.md) (English) and [README.vi.md](README.vi.md) (Vietnamese).
 Why some code looks odd (measured bugs, VPNs, the TV's ADB questions): [dev/DECISIONS.md](dev/DECISIONS.md).
 
 ## What this is
@@ -15,7 +15,7 @@ names (README, code comments, the site; Vietnamese in brackets):
 | **TV app** (App TV) | `app/tv` | | the app on the TV, shown as "TV Setup" (keep that label: it is on installed TVs, Downloader codes and file names) |
 | **TV web page** (Web của TV) | `app/tv` `RemoteService` | `tv` | the web UI the TV app serves on port 8765, for any browser (iPhone included), after a 6-digit pairing code |
 
-What each can do, and diagrams of how they connect: README "Ba app và một trang web" / README.en "Three apps and a web page".
+What each can do, and diagrams of how they connect: README "Three apps and a web page" / README.vi "Ba app và một trang web".
 Keep that table true when a feature lands on only some of them.
 
 The Phone app and the TV app speak ADB themselves (`app/shared/.../Adb.kt`) and push `scrcpy-server` (`app/shared/assets`) for video, touch and keys. So does the Computer app, on the same core. The Phone app and the Computer app also send keys without ADB through the Android TV Remote protocol (`Atv.kt`, ports 6466/6467).
@@ -100,7 +100,7 @@ dev/                     release.sh, emu.sh, gen_icons.py, shots.py, ... : dev/R
   the TV's locale), `Words.get(r.lang, "id")` for words a page asked for (`r.lang`: the page's `tvr-lang` cookie). No new
   `t("vi", "en")` pairs. What the server sends comes in the page's language already; an English error from a TV or a library
   gets its words in `friendly()` (`js/core.js`).
-  README, CHANGELOG entries and release notes are written in both languages.
+  README.md (English) and README.vi.md (Vietnamese) are kept in step; CHANGELOG entries and release notes are written in both languages.
 - **Users first:** make things automatic; show an error only after every fallback has failed, in words a person can act on (`Errors.kt`, `friendly()` in `js/core.js`). Choices look like buttons. Long waits show what is going on and can be cancelled.
 - **Never commit** `cert.pem`, `key.pem`, `tvs.json`, `*.jks` (they pair with or sign for real devices). Never expose port 8765 to the Internet; away from home everything goes over Tailscale.
 - **"Allow USB debugging?"** is only ever answered for the key whose fingerprint matches the asking device (`AdbPrompt.kt`); never press Allow on an unknown key.
