@@ -338,7 +338,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val icons = labels != null && labels.icons()
         for (p in pkgs) {
             val label = labels?.label(p)
-            out.put(JSONObject().put("pkg", p).put("off", p in off).put("keep", Setup.PROTECTED.matches(p)).put("version", versions[p] ?: "")
+            out.put(JSONObject().put("pkg", p).put("off", p in off).put("keep", Setup.mustKeep(p)).put("version", versions[p] ?: "")
                 .put("meta", JSONObject().put("label", label ?: p.substring(p.lastIndexOf('.') + 1)).put("icon", icons).put("banner", icons)))
         }
         return JSONObject().put("apps", out)
@@ -356,21 +356,22 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         if (!PKG.matcher(pkg).matches()) throw IllegalArgumentException("bad package name")
         when (action) {
             "launch" -> { Scenes.launch({ sh(it) }, pkg); return HttpServer.Response.ok() }
-            "stop" -> { keepCheck(pkg); sh("am force-stop $pkg"); return HttpServer.Response.ok() }
+            "stop" -> { if (Setup.mustKeep(pkg)) throw IllegalArgumentException("protected: the TV needs this app"); keepCheck(pkg); sh("am force-stop $pkg"); return HttpServer.Response.ok() }
             "uninstall" -> {
+                if (Setup.mustKeep(pkg)) throw IllegalArgumentException("protected: the TV needs this app")
                 val out = sh("pm uninstall $pkg 2>&1").trim()
                 if (!out.contains("Success")) throw IllegalArgumentException(if (out.isEmpty()) "uninstall failed" else out)
                 return HttpServer.Response.ok()
             }
             // off and on again, for the system apps nobody uses (Undo-able, unlike uninstalling); never what the TV or this project needs
             "disable" -> {
-                if (Setup.PROTECTED.matches(pkg)) throw IllegalArgumentException("protected: the TV needs this app")
+                if (Setup.mustKeep(pkg)) throw IllegalArgumentException("protected: the TV needs this app")
                 val out = sh("pm disable-user --user 0 $pkg 2>&1")
                 if (!out.contains("disabled")) throw IllegalArgumentException(out.trim().ifEmpty { "disable failed" })
                 return HttpServer.Response.ok()
             }
             "clear" -> {                                              // back to as just installed: logins, settings, downloads all go
-                if (Setup.PROTECTED.matches(pkg)) throw IllegalArgumentException("protected: the TV needs this app")
+                if (Setup.mustKeep(pkg)) throw IllegalArgumentException("protected: the TV needs this app")
                 val out = sh("pm clear $pkg 2>&1")
                 if (!out.contains("Success")) throw IllegalArgumentException(out.trim().ifEmpty { "clear failed" })
                 return HttpServer.Response.ok()

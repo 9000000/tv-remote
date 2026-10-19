@@ -38,7 +38,7 @@ object Fleet {
     /** Refused here, before any TV is touched: a name that is not a package, or an app the TV or this project needs. */
     fun canUninstall(pkg: String): String? =
         if (!Pkg.valid(pkg)) "bad package name"
-        else if (Setup.PROTECTED.matches(pkg)) "protected: the TV needs this app" else null
+        else if (Setup.mustKeep(pkg)) "protected: the TV needs this app" else null
 
     @Throws(IOException::class)
     fun uninstall(adb: Adb, pkg: String) {

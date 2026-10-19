@@ -172,12 +172,12 @@ function renderApps() {
       info.off ? ['↩', T('apps.turn_on'), () => run('enable', T('apps.turn_on'))] : ['▶', T('apps.open'), () => run('launch', T('apps.open'))],
       ['ℹ️', T('apps.details'), () => appDetails(pkg)],
       ['📋', T('apps.copy_package'), () => copyText(pkg)],
-      info.off ? null : ['⏹', T('apps.stop'), () => run('stop', T('apps.stop'))],
+      info.keep || info.off ? null : ['⏹', T('apps.stop'), () => run('stop', T('apps.stop'))],   // 🔒 must keep: the TV needs it, so no stop / clear / off / remove
       info.off ? null : ['📜', T('apps.view_log'), () => appLog(pkg)],
       ['💾', T('apps.backup'), () => appBackup(pkg)],
       info.keep || info.off ? null : ['🧽', T('apps.clear_data'), () => run('clear', T('apps.clear_data'))],
       info.keep || info.off ? null : ['⏸', T('apps.disable_app'), () => run('disable', T('apps.disable_app'))],
-      ['🗑', T('apps.remove'), () => run('uninstall', T('apps.remove')), 'danger'],
+      info.keep ? null : ['🗑', T('apps.remove'), () => run('uninstall', T('apps.remove')), 'danger'],
     ]) });
     const row = el('div', { className: 'item' + (info.off ? ' off' : '') + (open ? ' proc' : '') }, icon, el('div', { className: 'name' },
       el('div', { className: 'nameline' }, title, ...(open ? recentsTag(pkg) : appTags(pkg, info))), open ? el('small', { textContent: recentsSub(pkg), title: pkg }) : el('small', { className: 'pkg', title: pkg }, el('span', { textContent: pkg }), ...(info.version ? [el('span', { className: 'ver', textContent: info.version })] : []))),
@@ -234,7 +234,8 @@ async function appDetails(pkg) {
           if (/^ok$/m.test(x.text)) toast(T(on ? 'apps.perm_allowed' : 'apps.perm_off', { name: permName(p.name) })); else toast(T('apps.perm_failed', { why: friendly(x.text.trim()) }));
           appDetails(pkg);
         } })));
-      parts.push(el('div', { className: 'permrow' }, el('span', { textContent: permName(p.name), title: p.name }),
+      const twin = a.perms.filter((q) => permName(q.name) === permName(p.name)).length > 1;   // fine and coarse location, Bluetooth's three: told apart by their own names
+      parts.push(el('div', { className: 'permrow' }, el('span', { title: p.name }, permName(p.name), twin ? el('small', { className: 'muted', textContent: p.name.replace(/^.*\./, '') }) : null),
         p.locked ? el('small', { className: 'muted', textContent: T('apps.system_holds') }) : null, seg));
     }
   } else parts.push(el('p', { className: 'muted', textContent: T('apps.no_perms') }));
@@ -383,7 +384,7 @@ $('#bulkopen').addEventListener('click', async () => { $('#bulkdlg').showModal()
 $('#bulkclose').addEventListener('click', () => $('#bulkdlg').close());
 async function bulkRun(action, label) {
   await bulkStatus();
-  const pkgs = bulkPkgs().filter((p) => { const k = bulkKnown.get(p); return k && !(action === 'disable' && (k.keep || k.off)) && !(action === 'enable' && !k.off); });
+  const pkgs = bulkPkgs().filter((p) => { const k = bulkKnown.get(p); return k && !(action !== 'enable' && k.keep) && !(action === 'disable' && k.off) && !(action === 'enable' && !k.off); });
   if (!pkgs.length) { put('#bulklog', 'textContent', T('apps.bulk_none', { what: label.toLowerCase() })); return; }
   if (action === 'uninstall' && !await ask(T('apps.bulk_remove_ask', { n: pkgs.length }), { ok: T('apps.remove'), danger: true })) return;
   if (action === 'disable' && !await ask(T('apps.bulk_disable_ask', { n: pkgs.length }), { ok: T('apps.disable_app') })) return;

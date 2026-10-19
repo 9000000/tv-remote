@@ -16,6 +16,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Tab Ứng dụng ghi phiên bản của từng app (cả TV Setup) cạnh tên gói.
 - Thư viện launcher: thẻ có ảnh màn hình chính thật cỡ lớn, nút ⋯ (Chi tiết, Mã nguồn / CH Play, Tải APK); sửa lỗi các launcher từ thứ hai trở đi không có nút Cài.
 - Sức khỏe: Lỗi app nằm trong Lịch sử; nút Giải phóng RAM lên góc thẻ Tải hệ thống. Tất cả cài đặt: mỗi nhóm là một khối riêng, dễ nhìn.
+- App có nhãn 🔒 Cần giữ không còn nút Dừng / Xóa dữ liệu / Tắt / Gỡ (cả khi làm hàng loạt); nhãn này giờ gồm cả app riêng của hãng TV mà TV cần (remote, nguồn vào…). Chi tiết app: nút Cho phép / Không của quyền không còn bị cắt trên Mac; quyền trùng tên (Vị trí, Thiết bị ở gần) ghi thêm tên gốc.
 
 **English**
 
@@ -27,6 +28,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - The Apps tab shows each app's version (TV Setup's too) beside its package name.
 - Launcher gallery: cards with a large picture of the real home screen, and ⋯ (Details, Source / Play page, Download the APK); fixed the launchers after the first having no Install button.
 - Health: App errors are under History; Free up RAM sits at the top of System load. All settings: each group is a box of its own.
+- Apps marked 🔒 Must keep no longer offer Stop / Clear data / Turn off / Remove (in bulk too), and the mark now covers the brands' own apps the TV needs (remote, inputs…). App details: a permission's Allow / No is no longer cut off on a Mac; permissions sharing a name (Location, Nearby devices) show their own name under it.
 
 ## 0.12.0 - 2026-10-19
 

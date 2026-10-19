@@ -57,6 +57,8 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
         val PROTECTED = Regex("android|com\\.android\\.(systemui|settings|tv\\.settings|shell|phone|bluetooth|providers\\..*|packageinstaller|permissioncontroller|inputmethod.*|networkstack.*|vending)" +
             "|com\\.google\\.android\\.(gms|gsf|packageinstaller|permissioncontroller|tvlauncher|tvrecommendations|leanbacklauncher.*|inputmethod.*|tv\\.remote\\.service|katniss|apps\\.tv\\.launcherx|tungsten\\.setupwraith)" +
             "|dev\\.tvremote\\..*|me\\.efesser\\.flauncher|com\\.tailscale\\.ipn")
+        /** What the Apps tab marks "must keep" and refuses to stop, clear, turn off or remove: [PROTECTED] and the brands' own [Bloat.KEEP]. */
+        fun mustKeep(p: String) = PROTECTED.matches(p) || Bloat.KEEP.matches(p)
         /** What this project turned off beyond its own lists, so Undo can turn exactly that back on. Kept on the TV. */
         const val OFF_LIST = "/data/local/tmp/tvr-disabled.txt"
         private const val TMP = "/data/local/tmp/tvr-setup.apk"
@@ -189,7 +191,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
 
     private fun suggested(): List<String> = (GOOGLE + SONY).toList() + Bloat.SUGGEST.keys
 
-    private fun kept(p: String) = PROTECTED.matches(p) || Bloat.KEEP.matches(p)
+    private fun kept(p: String) = mustKeep(p)
 
     /** The app the Home button opens now ("android" when Android asks which one). */
     private fun homeNow(): String = last(sh(RESOLVE_HOME)).substringBefore('/')

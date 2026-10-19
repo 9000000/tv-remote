@@ -64,7 +64,8 @@
 @media (max-width:420px) {
   .seg button { padding:0 6px; }
 }
-.seg.mini { margin:0; flex:none; }
+.seg.mini { margin:0; flex:none; overflow:visible; }   /* two choices never need to scroll; WebKit shrank a scroller with flex:none to 25 px */
+.seg.mini::before, .seg.mini::after { display:none; }
 .seg.mini button { flex:none; min-height:28px; font-size:12px; }
 .vol { display:flex; align-items:center; gap:8px; margin-top:12px; }
 .vol button { min-height:44px; width:44px; padding:0; flex:none; font-size:17px; display:flex; align-items:center; justify-content:center; border-radius:50%; }
