@@ -469,13 +469,8 @@ class Server(private val repo: File, private val keys: File, private val pass: P
 
     // ---------------------------------------------------------------- picture and sound
     private fun screenshot(s: Session): Response = try {
-        val out = java.io.ByteArrayOutputStream()
-        val buf = ByteArray(65536)
-        (s.link ?: throw IOException("no TV selected")).get().open("exec:screencap -p").use {
-            while (true) { val n = it.read(buf, 0, buf.size, 15000); if (n <= 0) break; out.write(buf, 0, n) }
-        }
-        if (out.size() < 8) throw IOException("empty picture")
-        Response.of("image/png", out.toByteArray()).also { it.headers["Cache-Control"] = "no-store" }
+        val png = Tv.screencap((s.link ?: throw IOException("no TV selected")).get()) ?: throw IOException("empty picture")
+        Response.of("image/png", png).also { it.headers["Cache-Control"] = "no-store" }
     } catch (e: IOException) {
         Response.error(503, "screen: ${e.message}")
     }

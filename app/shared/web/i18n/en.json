@@ -1981,6 +1981,8 @@
  "optimize.flauncher_could_not_be": "– FLauncher could not be installed ({why}), the home screen is left as it is",
  "optimize.home_screen": "✓ Home screen: {home}",
  "optimize.done_press_home_see": "Done. Press Home to see the new home screen.",
+ "optimize.home_kept": "The TV keeps its own home screen ({home}): it would not let another take Home. FLauncher is installed; open it from the apps.",
+ "optimize.keyboard_set": "✓ The chosen keyboard was not on the TV: switched to {ime}",
  "optimize.re_enabled_apps_google": {
   "one": "✓ Re-enabled {n} app (Google's home screen among them), animations back to 1.0x",
   "other": "✓ Re-enabled {n} apps (Google's home screen among them), animations back to 1.0x"

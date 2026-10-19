@@ -12,6 +12,9 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - App điện thoại: sang app khác rồi quay lại trong 15 giây thì hình hiện lại ngay, không đen 1–2 giây (như trang web); dòng "Đang mở …" không còn tạm mất lúc vừa quay lại.
 - Hình mượt hơn ở chế độ Tự động: 20 hình/giây ở 720p và 960p (trước là 10), 15 ở 480p trở xuống (trước là 8). TV dùng bộ mã hóa phần mềm thì vẫn 10 để TV không bị nặng.
 - App điện thoại: lúc xem hình, phím đi chung phiên của hình; sau 1 phút phiên riêng của phím nghỉ, TV đỡ khoảng 47 MB RAM. Tắt hình là phiên phím chạy lại ngay (dưới nửa giây).
+- Tối ưu TV đổi được màn hình chính trên Google TV (trước chỉ Android TV): tắt trình cài đặt ban đầu trước (để nút Home không rơi vào nó, làm TV khởi động lại liên tục), rồi kiểm tra nút Home; TV không cho đổi thì bật lại màn hình chính cũ. Hoàn tác không còn bật lại app vốn tắt sẵn từ nhà máy. Không bao giờ tắt màn hình chính hay bàn phím đang dùng; bàn phím đang chọn không có trên TV thì chuyển sang Gboard.
+- Tối ưu TV gợi ý thêm app thu thập dữ liệu, quảng cáo, demo và tự cài app của Xiaomi, TCL, Hisense, Sony, Fire TV (theo báo cáo của người dùng cleanyourtv), và không bao giờ tắt những app mà các TV đó cần (remote, nguồn vào HDMI, Wi-Fi, kho app).
+- Ảnh chụp màn hình không còn hỏng trên một số TV Xiaomi (chip MediaTek in thêm một dòng chữ trước ảnh).
 
 **English**
 
@@ -19,6 +22,9 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Phone app: back from another app within 15 s, the picture is there at once instead of black for 1–2 s (as on the web page); the "Now open …" line no longer goes missing for a moment on return.
 - Smoother picture on Auto: 20 frames a second at 720p and 960p (was 10), 15 at 480p and below (was 8). A TV on its software encoder stays at 10, so it is not slowed down.
 - Phone app: while the picture shows, keys ride on the picture's session, and after a minute the keys' own one rests, sparing the TV about 47 MB of memory. Hide the picture and the keys' session is back at once (under half a second).
+- Optimize TV swaps the home screen on Google TV too (Android TV only before): the setup wizard goes off first (Home landing on it made the TV restart over and over), then Home is checked, and the old home screen comes back on if the TV will not allow it. Undo no longer turns on apps that were off from the factory. The home screen and keyboard in use are never turned off; a chosen keyboard missing from the TV is replaced by Gboard.
+- Optimize TV suggests more apps to turn off: data collection, ads, demos and auto-installers of Xiaomi, TCL, Hisense, Sony and Fire TV (from what cleanyourtv's users reported), and never turns off what those TVs need (the remote, HDMI inputs, Wi-Fi, the app store).
+- Screenshots no longer come out broken on some Xiaomi TVs (MediaTek sets print a line before the picture).
 
 ## 0.11.0 - 2026-10-19
 

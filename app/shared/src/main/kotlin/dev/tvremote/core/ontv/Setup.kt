@@ -32,8 +32,17 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
             "com.sony.dtv.b2b.importexport", "com.sony.dtv.b2b.noderuntime.normal", "com.sony.dtv.b2b.noderuntime.privilege",
             "com.sony.dtv.b2b.webappruntimedrm", "com.sony.dtv.demomode", "com.sony.dtv.demosupport", "com.sony.dtv.multiscreendemo",
             "com.sony.dtv.sonyselect", "tv.samba.ssm")
-        /** Disabled last, and only once FLauncher is installed, or Home would have nowhere to go. */
-        val LAUNCHER = arrayOf("com.google.android.tvrecommendations", "com.google.android.tvlauncher")
+        /** Disabled last, and only once FLauncher is installed, or Home would have nowhere to go. launcherx: Google TV's. */
+        val LAUNCHER = arrayOf("com.google.android.tvrecommendations", "com.google.android.tvlauncher", "com.google.android.apps.tv.launcherx")
+        const val LAUNCHERX = "com.google.android.apps.tv.launcherx"
+        /**
+         * Google TV's setup wizard answers HOME too, above any installed app (RecoveryActivity, priority 1): with launcherx off
+         * it took Home and the TV restarted about every minute (cleanyourtv, a Xiaomi on Google TV 14). Off before launcherx,
+         * back on with Undo: a factory reset needs it.
+         */
+        val WIZARD = arrayOf("com.google.android.tungsten.setupwraith")
+        private const val HOMES = "cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME 2>/dev/null"
+        private const val RESOLVE_HOME = "cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN"
         /** Readable names for the suggested apps, where the TV gives none. */
         val NAMES = mapOf(
             "com.google.android.play.games" to "Google Play Games", "com.google.android.videos" to "Google Play Movies & TV",
@@ -46,7 +55,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
             "com.sony.dtv.sonyselect" to "Sony Select", "tv.samba.ssm" to "Samba TV")
         /** Never offered or turned off: the TV would stop working, or this project would. The home screen goes through FLauncher only. */
         val PROTECTED = Regex("android|com\\.android\\.(systemui|settings|tv\\.settings|shell|phone|bluetooth|providers\\..*|packageinstaller|permissioncontroller|inputmethod.*|networkstack.*|vending)" +
-            "|com\\.google\\.android\\.(gms|gsf|packageinstaller|permissioncontroller|tvlauncher|tvrecommendations|leanbacklauncher.*|inputmethod.*|tv\\.remote\\.service|katniss)" +
+            "|com\\.google\\.android\\.(gms|gsf|packageinstaller|permissioncontroller|tvlauncher|tvrecommendations|leanbacklauncher.*|inputmethod.*|tv\\.remote\\.service|katniss|apps\\.tv\\.launcherx|tungsten\\.setupwraith)" +
             "|dev\\.tvremote\\..*|me\\.efesser\\.flauncher|com\\.tailscale\\.ipn")
         /** What this project turned off beyond its own lists, so Undo can turn exactly that back on. Kept on the TV. */
         const val OFF_LIST = "/data/local/tmp/tvr-disabled.txt"
@@ -61,9 +70,25 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
     /** Whether Optimize TV left something to undo: an app of its lists, or of its own record, turned off. */
     @Throws(IOException::class)
     fun optimized(): Boolean {
-        val off = sh("pm list packages -d 2>/dev/null").split("\n").map { it.removePrefix("package:").trim() }.filter { it.isNotEmpty() }.toSet()
-        val mine = sh("cat $OFF_LIST 2>/dev/null").split("\n").map { it.trim() }.filter { it.isNotEmpty() }   // "" is in no list
-        return (LAUNCHER + GOOGLE + SONY + mine).any { it in off }
+        val off = off()
+        return undoable().any { it in off }
+    }
+
+    private fun off(): Set<String> =
+        sh("pm list packages -d 2>/dev/null").split("\n").map { it.removePrefix("package:").trim() }.filter { it.isNotEmpty() }.toSet()
+
+    private fun record(): List<String> = sh("cat $OFF_LIST 2>/dev/null").split("\n").map { it.trim() }.filter { it.isNotEmpty() }   // "" is in no list
+
+    /**
+     * What Undo turns back on: what the record names, and the suggested lists (older versions kept no record of them). Older
+     * versions also turned the old home screen off without a record: that one comes back too, except on Google TV, where it
+     * was off from the factory and turning it on would give Home a second owner. Home screens first, so the wizard ([WIZARD])
+     * never finds Home empty.
+     */
+    private fun undoable(): List<String> {
+        val mine = record()
+        val legacy = if (mine.none { it in LAUNCHER } && !has(LAUNCHERX)) LAUNCHER.toList() - LAUNCHERX else emptyList()
+        return (LAUNCHER.filter { it in mine } + legacy + GOOGLE + SONY + mine).distinct()
     }
 
     @Throws(IOException::class)
@@ -96,14 +121,14 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
     fun plan(label: (String) -> String?): org.json.JSONObject {
         tvOnly()
         val enabled = sh("pm list packages -e").split("\n").filter { it.startsWith("package:") }.map { it.substring(8).trim() }.toSet()
-        val suggest = (GOOGLE + SONY).filter { it in enabled }
-        val home = last(sh("cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN")).substringBefore('/')
+        val suggest = suggested().filter { it in enabled }
+        val home = homeNow()
         val shown = HashSet<String>()
         for (cat in arrayOf("LEANBACK_LAUNCHER", "LAUNCHER"))              // the apps a person sees on the TV
             for (line in sh("cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.$cat 2>/dev/null").split("\n"))
                 if (line.contains('/')) shown.add(line.trim().substringBefore('/'))
-        val others = shown.filter { it in enabled && it !in suggest && it != home && !PROTECTED.matches(it) }.sortedBy { (label(it) ?: it).lowercase() }
-        fun item(p: String) = org.json.JSONObject().put("pkg", p).put("label", label(p) ?: NAMES[p] ?: p.split('.').let { s -> if (s.last().length <= 3 && s.size > 1) s.takeLast(2).joinToString(".") else s.last() })
+        val others = shown.filter { it in enabled && it !in suggest && it != home && !kept(it) }.sortedBy { (label(it) ?: it).lowercase() }
+        fun item(p: String) = org.json.JSONObject().put("pkg", p).put("label", Bloat.SUGGEST[p] ?: label(p) ?: NAMES[p] ?: p.split('.').let { s -> if (s.last().length <= 3 && s.size > 1) s.takeLast(2).joinToString(".") else s.last() })
         return org.json.JSONObject()
             .put("anim", sh("settings get global window_animation_scale").trim() != "0.0")
             .put("flauncher", has(FL_PKG)).put("home", home)
@@ -126,15 +151,16 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
             log.line(t("optimize.transition_animations_off"))
         }
 
-        val pick = c.disable ?: (GOOGLE + SONY).toList()
+        val pick = c.disable ?: suggested()
+        val keep = setOf(homeNow(), keyboardNow().substringBefore('/'))   // whatever the list says, the TV keeps a home and a keyboard
         var off = 0
         for (p in pick.distinct()) {
-            if (!p.matches(Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")) || PROTECTED.matches(p) || !has(p)) continue
-            sh("pm disable-user --user 0 $p; am force-stop $p")
-            if (p !in GOOGLE && p !in SONY) sh("grep -qx '$p' $OFF_LIST 2>/dev/null || echo '$p' >> $OFF_LIST")   // for Undo
+            if (!p.matches(Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")) || kept(p) || p in keep || !has(p)) continue
+            turnOff(p)
             off++
         }
         if (off > 0) log.line(t("optimize.turned_off_apps", "n" to off))
+        keyboard()
 
         if (!c.home) { log.line(t("optimize.done")); return }
         if (!has(FL_PKG)) {
@@ -152,18 +178,68 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
                 return
             }
         }
-        for (p in LAUNCHER)
-            if (has(p)) sh("pm disable-user --user 0 $p; am force-stop $p")
-        val home = last(sh("cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN"))
-        log.line(t("optimize.home_screen", "home" to home))
-        log.line(t("optimize.done_press_home_see"))
+        if (takeHome()) {
+            log.line(t("optimize.home_screen", "home" to last(sh(RESOLVE_HOME))))
+            log.line(t("optimize.done_press_home_see"))
+        } else {
+            log.line(t("optimize.home_kept", "home" to homeNow()))
+            log.line(t("optimize.done"))
+        }
+    }
+
+    private fun suggested(): List<String> = (GOOGLE + SONY).toList() + Bloat.SUGGEST.keys
+
+    private fun kept(p: String) = PROTECTED.matches(p) || Bloat.KEEP.matches(p)
+
+    /** The app the Home button opens now ("android" when Android asks which one). */
+    private fun homeNow(): String = last(sh(RESOLVE_HOME)).substringBefore('/')
+
+    /** Turned off one command per shell call: chained, some TVs' pm stopped after the first (cleanyourtv). Kept for Undo. */
+    private fun turnOff(p: String) {
+        sh("pm disable-user --user 0 $p")
+        sh("am force-stop $p")
+        sh("grep -qx '$p' $OFF_LIST 2>/dev/null || echo '$p' >> $OFF_LIST")
+    }
+
+    /**
+     * FLauncher takes Home: the TV's own home screens go off (the wizard first, see [WIZARD]), FLauncher is made the home last
+     * (Android forgets that choice whenever the set of home screens changes), then Home is asked where it goes. Anywhere else (a
+     * brand's own home screen we do not know, Fire OS, a TV that ignores the choice) and the home screens come back on: a Home
+     * button that lands on a setup wizard or a picker is worse than the old home screen.
+     */
+    private fun takeHome(): Boolean {
+        val ours = sh(HOMES).split("\n").map { it.trim() }.firstOrNull { it.startsWith("$FL_PKG/") }
+        if (ours != null) sh("am start -n $ours")                    // opened once before the old one goes, so Home is never empty
+        val on = sh("pm list packages -e").split("\n").map { it.removePrefix("package:").trim() }.toSet()
+        val gone = (WIZARD + LAUNCHER).filter { it in on }           // only what is on: Google TV's tvlauncher is off from the factory
+        for (p in gone) turnOff(p)
+        if (ours != null) sh("cmd package set-home-activity $ours 2>/dev/null")
+        if (homeNow() == FL_PKG) return true
+        for (p in gone.reversed()) sh("pm enable --user 0 $p")       // home screens before the wizard
+        sh("am start -a android.intent.action.MAIN -c android.intent.category.HOME")
+        return false
+    }
+
+    private fun keyboardNow(): String = sh("settings get secure default_input_method").trim()
+
+    /**
+     * A TV whose keyboard is gone has none at all (a Xiaomi set to a Baidu keyboard not installed, cleanyourtv): the chosen one
+     * is checked against those that work, and Gboard (else the first) is chosen in its place.
+     */
+    private fun keyboard() {
+        fun whole(c: String) = c.substringBefore('/') + "/" + c.substringAfter('/').let { if (it.startsWith(".")) c.substringBefore('/') + it else it }
+        val now = whole(keyboardNow())
+        val ok = sh("ime list -s").split("\n").map { it.trim() }.filter { '/' in it }.map { whole(it) }
+        if (ok.isEmpty() || now in ok) return
+        val pick = ok.firstOrNull { it.startsWith("com.google.android.inputmethod.latin/") } ?: ok[0]
+        sh("ime set $pick")
+        log.line(t("optimize.keyboard_set", "ime" to pick.substringBefore('/')))
     }
 
     @Throws(Exception::class)
     fun undo() {
         var on = 0
-        val mine = sh("cat $OFF_LIST 2>/dev/null").split("\n").map { it.trim() }.filter { it.isNotEmpty() }
-        for (p in (LAUNCHER + GOOGLE + SONY + mine).distinct())
+        for (p in undoable())
             if (has(p)) { sh("pm enable --user 0 $p"); on++ }
         sh("rm -f $OFF_LIST")
         sh("for k in $ANIM; do settings put global \$k 1.0; done")

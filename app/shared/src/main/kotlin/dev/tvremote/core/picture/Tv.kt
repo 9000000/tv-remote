@@ -97,6 +97,30 @@ class Tv(
         private const val FIRST_FRAME_MS = 8000L
         /** How long a keys' session goes unused while another carries its keys before its own scrcpy-server rests: see [carry] */
         const val REST_MS = 60_000L
+
+        /** The TV's screen as a PNG; null when it sent none. */
+        @Throws(IOException::class)
+        fun screencap(a: Adb): ByteArray? {
+            val out = java.io.ByteArrayOutputStream()
+            val buf = ByteArray(65536)
+            a.open("exec:screencap -p").use {
+                while (true) {
+                    val n = it.read(buf, 0, buf.size, 15000)
+                    if (n <= 0) break
+                    out.write(buf, 0, n)
+                }
+            }
+            return png(out.toByteArray())
+        }
+
+        private val PNG = byteArrayOf(0x89.toByte(), 'P'.code.toByte(), 'N'.code.toByte(), 'G'.code.toByte(), 13, 10, 26, 10)
+
+        /** From the PNG's own start: some MediaTek TVs (Xiaomi) print a line of their own before it (cleanyourtv). */
+        fun png(b: ByteArray): ByteArray? {
+            for (i in 0..b.size - PNG.size - 1)
+                if ((PNG.indices).all { b[i + it] == PNG[it] }) return if (i == 0) b else b.copyOfRange(i, b.size)
+            return null
+        }
         private const val POLL_MS = 25L
         private const val SEP = "#tvr-sep#"
         /** Waits for the capture's virtual output to go, then starts Google's remote service: see endCapture */
@@ -672,18 +696,7 @@ class Tv(
     /** What is on the TV's screen right now, as a PNG; null when it could not be taken. */
     fun screenshot(): ByteArray? {
         val a = adb ?: return null
-        return try {
-            val out = java.io.ByteArrayOutputStream()
-            val buf = ByteArray(65536)
-            a.open("exec:screencap -p").use {
-                while (true) {
-                    val n = it.read(buf, 0, buf.size, 15000)
-                    if (n <= 0) break
-                    out.write(buf, 0, n)
-                }
-            }
-            if (out.size() > 8) out.toByteArray() else null
-        } catch (e: IOException) { null }
+        return try { screencap(a) } catch (e: IOException) { null }
     }
 
     fun settings() {

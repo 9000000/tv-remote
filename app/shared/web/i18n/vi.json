@@ -1903,6 +1903,8 @@
  "optimize.flauncher_could_not_be": "– Không cài được FLauncher ({why}) — giữ nguyên màn hình chính",
  "optimize.home_screen": "✓ Màn hình chính: {home}",
  "optimize.done_press_home_see": "Xong. Bấm nút Home để thấy màn hình chính mới.",
+ "optimize.home_kept": "Màn hình chính vẫn là của TV ({home}): TV này không cho đổi. FLauncher đã cài, mở được trong danh sách app.",
+ "optimize.keyboard_set": "✓ Bàn phím đang chọn không có trên TV: đã chuyển sang {ime}",
  "optimize.re_enabled_apps_google": "✓ Đã bật lại {n} app (gồm màn hình chính Google), hiệu ứng về 1.0x",
  "optimize.flauncher_tailscale_settings_left": "FLauncher và cài đặt Tailscale được giữ nguyên.",
  "optimize.checksum_mismatch_not_installing": "checksum không khớp, không cài",
