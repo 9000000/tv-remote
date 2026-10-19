@@ -340,7 +340,7 @@ internal fun MainActivity.buildPicker() {
     val help = button(T("picker.how_to_connect"), 0)
     help.setTextColor(ACCENT_TEXT)
     help.setOnClickListener {
-        Popup.Builder(this).setTitle(T("picker.how_to_connect")).setMessage(T("picker.1_turn_on_adb"))
+        Popup.Builder(this).setTitle(T("picker.how_to_connect")).setMessage(T("picker.1_turn_on_adb").replaceFirst("\n\n", "\n" + T("setup.tcl_hidden_adb_short") + "\n\n"))   // TCL China hides the switch: its way, under step 1
             .setPositiveButton(T("setup_banner.got_it"), null).show()
     }
     picker.addView(help, LinearLayout.LayoutParams(-1, dp(44)))
