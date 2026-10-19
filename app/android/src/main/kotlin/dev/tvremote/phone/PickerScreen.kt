@@ -310,6 +310,11 @@ internal fun MainActivity.buildPicker() {
     picker.addView(savedHead, gap(14))
     savedList = col()
     picker.addView(savedList)
+    if (irAvailable()) {                                              // no network, no TV picked: the phone's IR window (IrRemote.kt)
+        val ir = button("@pulse|" + T("ir.title"), BTN)
+        ir.setOnClickListener { irOpen() }
+        picker.addView(ir, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(10) })
+    }
 
     picker.addView(head(T("picker.find_on_the_wi")), gap(18))
     scanBtn = button("@search|" + T("picker.scan_the_wi_fi"), ACCENT)

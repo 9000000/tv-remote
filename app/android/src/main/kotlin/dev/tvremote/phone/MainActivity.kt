@@ -48,6 +48,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal lateinit var prefs: SharedPreferences
     internal lateinit var settings: View
     internal lateinit var about: View
+    internal lateinit var irHost: FrameLayout                          // IrRemote.kt: the infrared remote, over the list of TVs
     internal lateinit var managing: Managing                           // apps, files, installs, health and terminal, shown in a web view
 
     // ---- the session (this file)
@@ -220,6 +221,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         root.addView(settings, FrameLayout.LayoutParams(-1, -1))
         about = buildAbout()
         root.addView(about, FrameLayout.LayoutParams(-1, -1))
+        irHost = buildIr()
+        root.addView(irHost, FrameLayout.LayoutParams(-1, -1))
         managing = Managing(this, root)
         setContentView(root)
         show(false)
@@ -337,7 +340,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        if (managing.back()) return
+        if (managing.back() || irBack()) return
         if (fullscreen) { setFullscreen(false); return }
         if (about.visibility == View.VISIBLE) about.visibility = View.GONE
         else if (settings.visibility == View.VISIBLE) settings.visibility = View.GONE
