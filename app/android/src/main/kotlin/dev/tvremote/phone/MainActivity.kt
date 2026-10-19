@@ -652,6 +652,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                 "live" -> {
                     wasLive = true; retries = 0
                     from?.let { checkSetup(it, h) }
+                    ui.postDelayed({ if (tv === from && host == h && foreground) managing.prepare(h) }, 3000)   // after the picture has started
                     waiting.visibility = View.GONE
                     pendingAsk?.let { q -> pendingAsk = null; Thread { val to = from?.search(q); ui.post { searched(q, to) } }.start() }
                     if (pic?.ready() != true) status.text = title(entry ?: h) + " · " + when {   // the picture's session says the rest

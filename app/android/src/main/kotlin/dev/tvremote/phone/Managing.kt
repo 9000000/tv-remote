@@ -50,6 +50,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
     private var manage: Manage? = null
     private var labels: RemoteLabels? = null
     private var forHost: String? = null
+    private var loaded = false                                        // the page is loaded for [forHost]
     private var picking: ValueCallback<Array<Uri>>? = null
     private var pending: String? = null                               // what to do on the page once it has loaded (open's "then")
     private val webPage by lazy { dev.tvremote.core.web.WebPage({ a.assets.open(it) }, "phone", a.version() + "-" + (try { a.packageManager.getPackageInfo(a.packageName, 0).lastUpdateTime / 1000 } catch (e: Exception) { 0L })) }
@@ -101,6 +102,26 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
         root.addView(view, FrameLayout.LayoutParams(-1, -1))
     }
 
+    /**
+     * The TV's ADB connection dialled ahead, once the remote's own session is up (its key let in already): opening Manage
+     * then waits only for the page, not for a connection (a second or more on a slow network).
+     */
+    fun prepare(tvHost: String) {
+        try { if (tvHost != forHost) bind(tvHost); link?.state() } catch (e: Exception) { }
+    }
+
+    private fun bind(tvHost: String) {
+        link?.close()
+        val l = AdbLink(a.filesDir, tvHost)
+        link = l
+        val names = RemoteLabels(l, { a.assets.open("tvr-helper.jar").use { it.readBytes() } }, File(a.cacheDir, "meta/" + tvHost.replace(Regex("[^\\w.-]"), "_")))   // app names and pictures, asked from the TV itself, kept per TV
+        labels = names
+        manage = Manage(l, names, a.cacheDir) { a.assets.open("tvr-helper.jar").use { it.readBytes() } }
+            .apply { canPair = true; onWork = { w -> a.ui.post { a.working(w) } } }
+        forHost = tvHost
+        loaded = false
+    }
+
     /** Shows the page for [tvHost], on [tab] when one is named ("auto", "apps"...). */
     fun open(tvHost: String?, tab: String? = null, then: String? = null) {
         if (tvHost == null) return
@@ -110,15 +131,9 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
                 http = server
                 port = server.start(0, true)
             }
-            if (tvHost != forHost) {
-                link?.close()
-                val l = AdbLink(a.filesDir, tvHost)
-                link = l
-                val names = RemoteLabels(l, { a.assets.open("tvr-helper.jar").use { it.readBytes() } }, File(a.cacheDir, "meta/" + tvHost.replace(Regex("[^\\w.-]"), "_")))   // app names and pictures, asked from the TV itself, kept per TV
-                labels = names
-                manage = Manage(l, names, a.cacheDir) { a.assets.open("tvr-helper.jar").use { it.readBytes() } }
-                    .apply { canPair = true; onWork = { w -> a.ui.post { a.working(w) } } }
-                forHost = tvHost
+            if (tvHost != forHost) bind(tvHost)
+            if (!loaded) {
+                loaded = true
                 val origin = "http://127.0.0.1:$port"
                 CookieManager.getInstance().setCookie(origin, "tvr=$token")
                 pending = then
@@ -173,6 +188,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
         labels = null
         manage = null
         forHost = null
+        loaded = false
     }
 
     fun destroy() {

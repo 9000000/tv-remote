@@ -268,7 +268,7 @@ const INVITE = (location.hash.match(/invite=([0-9a-f]{32})/) || [])[1];
 if (INVITE) history.replaceState(null, '', location.pathname + location.search);
 let inviteBad = false, invited = INVITE ? fetch('/api/pair/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invite: INVITE }) })
   .then((x) => x.ok).catch(() => false) : null;
-let stateMiss = 0;
+let stateMiss = 0, adbSoon = 0, adbSoonMs = 125;
 async function refresh() {
   if (stopped) return;
   let locked = false;
@@ -289,6 +289,8 @@ async function refresh() {
   setChip('#chipTv', s.connected && s.is_on ? 'ok' : s.connected || adbUp ? 'warn' : 'bad', s.connected ? (s.is_on ? T('core.tv_on') : T('core.screen_off')) : adbUp ? T('core.keys_over_adb') : T('core.disconnected'),
     s.connected ? (s.is_on ? T('core.tv_is_on') : T('core.tv_screen_off')) : adbUp ? T('core.buttons_over_adb') : T('core.tv_disconnected'));
   ADB = s.adb || { state: 'unknown' };
+  if (ADB.state === 'unknown' && !adbSoon) adbSoon = setTimeout(() => { adbSoon = 0; refresh(); }, adbSoonMs = Math.min(adbSoonMs * 2, 2000));   // connecting: told the moment it is up, not at the next 4 s tick
+  if (ADB.state !== 'unknown') adbSoonMs = 125;
   const [cls, txt, long] = ADB_TEXT[ADB.state] || ADB_TEXT.unknown; setChip('#chipAdb', cls, txt, long);
   put($('#chipAdb'), 'hidden', NATIVE());                                    // no ADB on this kind of TV: nothing to report
   if (NATIVE() && !s.connected) setChip('#chipTv', s.asking ? 'warn' : 'bad', s.asking ? T('core.waiting_tv') : s.paired === false ? T('core.not_paired') : T('core.disconnected'));
@@ -450,6 +452,7 @@ function applyAdb() {
   document.querySelectorAll('[data-adb-gated]').forEach((g) => {   // data-native: works without ADB on LG / Samsung
     g.hidden = !ready && !(NATIVE() && 'native' in g.dataset) && !(g.tagName !== 'BUTTON' && g.closest('.panel.held'));
   });
+  document.querySelectorAll('.adbnote').forEach((n) => put(n, 'hidden', ready));   // "· needs ADB": said only while it is missing
   const noadb = !ready && ADB.state !== 'unknown' && !NATIVE();         // not while still connecting; LG / Samsung hide those tabs instead
   $('.tabs').classList.toggle('noadb', noadb);
   document.querySelectorAll('.tabs [data-needs-adb]').forEach((b) => { if (noadb) b.title = T('core.needs_adb_tip'); else b.removeAttribute('title'); });
