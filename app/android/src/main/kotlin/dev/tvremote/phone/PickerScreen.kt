@@ -126,6 +126,7 @@ internal fun MainActivity.probeSaved() {
         ui.post { if (via != null) route[ip] = via else route.remove(ip); reach[ip] = up; awayFrom[ip] = away; showReach(ip, up) }
     }.start()
     ui.postDelayed(probe, 8000)
+    if (host == null && !waking) statusStart()                // TvStatus.kt: on / standby / app under each name, its own 10 s round
 }
 
 internal fun MainActivity.showReach(ip: String, up: Boolean?) {
@@ -137,10 +138,14 @@ internal fun MainActivity.showReach(ip: String, up: Boolean?) {
         false -> if (awayFrom[ip] == true) T("picker.no_answer_you_are")
             else T("picker.no_answer_tv_off")
     }
-    val text = android.text.SpannableString((if (name(ip).isEmpty()) ip else name(ip) + "\n" + ip) + "\n" + status)
-    val from = text.length - status.length
-    text.setSpan(android.text.style.ForegroundColorSpan(if (up == true) OK_TEXT else MUTED), from, text.length, 0)
+    val more = if (up == false) null else statusLines(ip)       // a TV that is on or in standby says so, with its model and the app (TvStatus.kt)
+    val shown = more?.first ?: status
+    val facts = more?.second.orEmpty()
+    val text = android.text.SpannableString((if (name(ip).isEmpty()) ip else name(ip) + "\n" + ip) + "\n" + shown + (if (facts.isNotEmpty()) "\n" + facts else ""))
+    val from = text.length - shown.length - (if (facts.isNotEmpty()) facts.length + 1 else 0)
+    text.setSpan(android.text.style.ForegroundColorSpan(if (up == true) OK_TEXT else MUTED), from, from + shown.length, 0)
     text.setSpan(android.text.style.RelativeSizeSpan(0.82f), from, text.length, 0)
+    if (facts.isNotEmpty()) text.setSpan(android.text.style.ForegroundColorSpan(MUTED), from + shown.length, text.length, 0)
     b.text = text
     wk.visibility = if (up == false) View.VISIBLE else View.GONE
 }
@@ -149,6 +154,7 @@ internal fun MainActivity.refreshSaved() {
     foldSaved()
     savedList.removeAllViews()
     savedRows.clear()
+    TvStatus.thumbs.clear()
     for (ip in savedIps()) {
         val b = row("") { connectSaved(ip) }
         val wk = icon("@power", T("remote.wake"), BTN)        // only offered while the TV does not answer
@@ -158,6 +164,7 @@ internal fun MainActivity.refreshSaved() {
         showReach(ip, reach[ip])
         val line = LinearLayout(this)
         line.addView(b, LinearLayout.LayoutParams(0, -2, 1f))
+        addThumb(ip, line, b)                                 // TvStatus.kt: a small picture of the TV, when "Show screens" is on
         val wp = LinearLayout.LayoutParams(dp(60), -1)
         wp.leftMargin = dp(6)
         line.addView(wk, wp)
@@ -181,6 +188,8 @@ internal fun MainActivity.refreshSaved() {
         savedList.addView(line)
     }
     fleetBtn.visibility = if (savedList.childCount >= 2) View.VISIBLE else View.GONE
+    screensBtn.visibility = if (savedIps().isNotEmpty()) View.VISIBLE else View.GONE
+    showThumbs()
     if (savedList.childCount == 0) savedList.addView(note(T("picker.no_tvs_yet_scan")))
 }
 
@@ -288,6 +297,8 @@ internal fun MainActivity.buildPicker() {
     savedHead.gravity = android.view.Gravity.CENTER_VERTICAL
     savedHead.addView(head(T("picker.your_tvs")), LinearLayout.LayoutParams(0, -2, 1f))
     fleetBtn = fleetButton()
+    screensBtn = screensButton()
+    savedHead.addView(screensBtn, LinearLayout.LayoutParams(-2, dp(34)).apply { rightMargin = dp(6) })
     savedHead.addView(fleetBtn, LinearLayout.LayoutParams(-2, dp(34)))
     picker.addView(savedHead, gap(14))
     savedList = col()

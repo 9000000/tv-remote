@@ -80,7 +80,8 @@
     <button class="small" id="pickback" hidden></button>
     <div class="two-up" id="pickcols">
       <section class="card" id="savedcard">
-        <h2 data-i18n="page.saved_tvs">💾 TV đã lưu</h2>
+        <div class="card-head"><h2 data-i18n="page.saved_tvs">💾 TV đã lưu</h2>
+          <div class="tools"><button class="small" id="tvshots" aria-pressed="false" title="Ảnh nhỏ màn hình của mỗi TV đang bật, 5 giây một lần. Tốn CPU của TV và mạng nên mặc định tắt." data-i18n="tvstat.show_screens" data-i18n-title="tvstat.show_screens_tip">👁️ Xem màn hình</button></div></div>
         <div class="list" id="tvlist"></div>
         <!-- the saved TVs at once (homestay, hotel, a house of TVs), Fleet.kt; the phone app has the same on its own list of TVs (Fleet.kt) -->
         <details id="fleet" hidden>
@@ -500,6 +501,7 @@
 <script src="js/setup.js"></script>
 <script src="js/tvset.js"></script>
 <script src="js/fleet.js"></script>
+<script src="js/tvstatus.js"></script>
 <script src="js/playing.js"></script>
 <script src="js/ontv.js"></script>
 </body>

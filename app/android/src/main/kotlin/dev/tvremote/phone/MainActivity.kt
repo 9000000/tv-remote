@@ -86,6 +86,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal lateinit var picker: LinearLayout
     internal lateinit var savedList: LinearLayout
     internal lateinit var fleetBtn: android.widget.Button
+    internal lateinit var screensBtn: android.widget.Button             // TvStatus.kt
     internal lateinit var foundList: LinearLayout
     internal lateinit var pickerMsg: TextView
     internal lateinit var ipBox: EditText
@@ -766,7 +767,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     override fun onResume() { super.onResume(); probe.run() }
 
-    override fun onPause() { ui.removeCallbacks(probe); super.onPause() }
+    override fun onPause() { ui.removeCallbacks(probe); statusPause(); super.onPause() }
 
     // ---------------------------------------------------------------- managing the TV: apps, files, installs, health, terminal
     @Deprecated("Deprecated in Java")

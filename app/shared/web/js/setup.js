@@ -249,6 +249,7 @@ async function loadTvs() {
   $('#tvlist').replaceChildren(...rows);
   put('#savedcard', 'hidden', !rows.length); $('#pickcols').classList.toggle('solo', !rows.length);   // nothing saved: no empty box, just the search
   fleetCheck(rows.length);
+  tvstatMount(r.tvs, rows);                                           // tvstatus.js: on / standby / off under each name
 }
 function scanRow(f) {
   const native = f.kind && f.kind !== 'android';                      // LG / Samsung: found by SSDP, no ADB to report

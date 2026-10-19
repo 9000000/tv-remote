@@ -43,6 +43,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
     @Volatile var cur = session(first ?: saved.current)               // --tv: this run only, the saved choice stays
         private set
     private val fleets = Fleets(keys, cache)
+    private val fleetView = FleetView(fleets, saved)                  // the list of TVs at a glance: FleetView.kt
     private val assist = Assist { cur }
     val updater = Updater(version, System.getProperty("tvr.res")?.let { File(it) }, stop).also { it.start() }
 
@@ -59,7 +60,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         Thread { old.close() }.start()
     }
 
-    fun close() { cur.close(); fleets.close(); timer.shutdownNow(); updater.close(); hookHttp?.stop() }
+    fun close() { cur.close(); fleetView.close(); fleets.close(); timer.shutdownNow(); updater.close(); hookHttp?.stop() }
 
     // ---------------------------------------------------------------- Home Assistant and Shortcuts (Hook.kt)
     // The page's own port listens on 127.0.0.1 only, and must stay so: the TVs' keys are behind it. A hook has to be reached
@@ -189,6 +190,8 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             "/api/scenes" -> return if (r.query.containsKey("download")) Scenes.backup(saved.scenes) else Response.json(JSONObject().put("scenes", saved.scenes))
             "/api/clip" -> return clip(s.control().clipboard())
             "/api/fleet" -> return fleetInfo(s)
+            "/api/fleet/status" -> return fleetView.status()
+            "/api/fleet/shot" -> return fleetView.shot(r.q("host"))
             "/api/fleet/job" -> return fleets.jobs[r.q("id")]?.let { Response.json(fleets.snapshot(it)) } ?: Response.error(404, "unknown job")
             "/api/apps" -> if (native(s)) return nativeApps(s)
             "/api/inputs" -> if (native(s)) return Response.json(Inputs.json(s.need().inputs()))   // LG's own list; Samsung has none (empty)
@@ -263,7 +266,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             "/api/tv/save" -> tvSave(s, d)
             "/api/tv/remove" -> {
                 val host = d.optString("host")
-                saved.remove(host); saved.save(); fleets.drop(host)
+                saved.remove(host); saved.save(); fleets.drop(host); fleetView.forget(host)
                 if (host == s.host) switch(saved.current)
                 Response.ok()
             }
@@ -617,7 +620,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             "/api/update")
         /** What the page reads from an LG or Samsung TV besides [OURS]. */
         val NATIVE_TOO = setOf("/api/state", "/api/about", "/api/wirelog", "/api/update", "/api/tvs", "/api/discover", "/api/setup/status", "/api/scenes", "/api/apps", "/api/inputs", "/api/app/icon", "/api/app/meta", "/api/setup/need",
-            "/api/fleet", "/api/fleet/job", "/api/fleet/install", "/api/fleet/welcome", "/api/fleet/cancel")
+            "/api/fleet", "/api/fleet/job", "/api/fleet/install", "/api/fleet/welcome", "/api/fleet/cancel", "/api/fleet/status", "/api/fleet/shot")
         const val HD = 5                                              // Tv.QUALITY's sharpest level, the page's "Nét nhất"
         val IP = Regex("((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)")   // IPv4: what ADB and the TV's page links are written for
         val PRIVATE = Regex("(10\\.|192\\.168\\.|172\\.(1[6-9]|2\\d|3[01])\\.)[0-9.]+")
