@@ -96,7 +96,7 @@ private fun MainActivity.fleetLauncher() {
             if (isFinishing) return@post
             val list = g?.entries.orEmpty()   // a Play one too: used on the TVs that already have it, the others are told to install it there
             if (g == null || list.isEmpty()) { toast(if (why.isNotEmpty()) why else T("launcher.none")); return@post }
-            menu(T("fleet.which_launcher"), 0, list.map { e ->
+            menu(T("fleet.which_launcher"), -1, list.map { e ->   // equal choices: none is the main one
                 Triple("@tv|" + e.name + "  " + (if (e.kind == "play") "▶ " + T("launcher.badge_play") else e.version), "") {
                     fleetPick(T(if (e.kind == "play") "fleet.launcher_ask_play" else "fleet.launcher_ask", "name" to e.name)) { ips ->
                         fleetRun(e.name, ips, stoppable = true) { link, p ->
