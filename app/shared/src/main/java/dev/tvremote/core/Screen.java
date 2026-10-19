@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
  * at a black TV would think it broke. Keys the remotes inject (input, scrcpy) never show there, so they leave it off; when one
  * makes Android light the panel again it is turned off at once. It quits when the TV goes to standby (waking turns the screen on
  * anyway). `on` turns it on at once (the remotes stop the waiting one first: ScreenOff.kt). Both say "ok" or "error ..." on one line.
+ * Meanwhile TV Setup's KeyCatch is on (where TV Setup has it), so the key that wakes the screen does nothing else.
  */
 public final class Screen {
     private Screen() { }
@@ -25,6 +26,7 @@ public final class Screen {
 
     public static void main(String[] args) throws Exception {
         try { run(args); } finally {
+            try { catchKeys(false); } catch (Throwable ignored) { }
             Process g = getevent;
             if (g != null) g.destroy();                               // or it would outlive this process
             System.out.flush();
@@ -43,13 +45,14 @@ public final class Screen {
         System.out.println("ok");
         System.out.flush();
         if (!off) return;
+        try { catchKeys(true); } catch (Throwable ignored) { }         // an older TV Setup, or none: the key goes on to the app too
         Thread keys = new Thread(Screen::watchKeys);
         keys.setDaemon(true);
         keys.start();
         long was = -1;
         for (int i = 1; ; i++) {
             Thread.sleep(700);
-            if (pressed) { power(NORMAL); return; }
+            if (pressed) { power(NORMAL); Thread.sleep(1500); return; }   // KeyCatch kept a moment: the key's up (and repeats) eaten too
             String p = run("dumpsys power | grep -F -e mWakefulness= -e astUserActivityTime");
             if (p.contains("mWakefulness=") && !p.contains("mWakefulness=Awake")) return;   // standby: waking turns it on
             long now = activity(p);
@@ -71,6 +74,22 @@ public final class Screen {
                 }
             }
         } catch (Exception ignored) { }
+    }
+
+    private static final String CATCH = "dev.tvremote.setup/dev.tvremote.setup.KeyCatch";
+
+    /** TV Setup's KeyCatch on (it eats the key that wakes the screen) or off again, the TV's other accessibility services kept. */
+    private static void catchKeys(boolean on) throws Exception {
+        if (on && !run("dumpsys package dev.tvremote.setup | grep -F KeyCatch").contains("KeyCatch")) return;
+        String was = run("settings get secure enabled_accessibility_services").trim();
+        StringBuilder now = new StringBuilder();
+        if (!was.isEmpty() && !was.equals("null"))
+            for (String c : was.split(":")) if (!c.isEmpty() && !c.equals(CATCH)) now.append(now.length() > 0 ? ":" : "").append(c);
+        boolean others = now.length() > 0;
+        if (on) now.append(others ? ":" : "").append(CATCH);
+        else if (!was.contains(CATCH)) return;                        // not ours to touch
+        run(now.length() > 0 ? "settings put secure enabled_accessibility_services " + now + "; settings put secure accessibility_enabled 1"
+            : "settings delete secure enabled_accessibility_services; settings put secure accessibility_enabled 0");
     }
 
     private static long activity(String dump) {

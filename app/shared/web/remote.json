@@ -82,16 +82,25 @@
       { "id": "timer-plus", "icon": "plus", "t": "rkey.timer_plus", "do": "timerPlus", "needs": ["adb"], "when": "timerOn" },
       { "id": "timer-cancel", "icon": "close", "t": "rkey.timer_cancel", "do": "timerCancel", "needs": ["adb"], "when": "timerOn" },
       { "id": "timer-lengths", "expand": "lengths", "needs": ["adb"] },
+      { "id": "timer-more", "icon": "timer", "t": "rkey.timer_more", "do": "menu", "arg": "timerMore", "needs": ["adb"],
+        "sub": "rkey.timer_more_sub" },
+      { "id": "timer-screen", "icon": "eye_off", "t": "rkey.timer_screen", "do": "menu", "arg": "screen",
+        "sub": "rkey.timer_screen_sub" },
+      { "id": "timer-bedtime", "icon": "moon", "t": "rkey.timer_bedtime", "do": "automation", "arg": "bedcard", "needs": ["adb"] }
+    ],
+    "timerMore": [
+      { "id": "timer-lengths-more", "expand": "lengthsMore", "needs": ["adb"] },
       { "id": "timer-custom", "icon": "timer", "t": "rkey.timer_custom", "do": "timerCustom", "needs": ["adb"],
-        "sub": "rkey.timer_custom_sub" },
+        "sub": "rkey.timer_custom_sub" }
+    ],
+    "screen": [
       { "id": "screen-off", "icon": "eye_off", "t": "rkey.screen_off", "do": "screenOff", "needs": ["screen_off"],
         "sub": "rkey.screen_off_sub" },
-      { "id": "dim", "icon": "contrast", "t": "rkey.dim", "do": "dim", "needs": ["adb"], "sub": "rkey.dim_sub" },
-      { "id": "timer-bedtime", "icon": "moon", "t": "rkey.timer_bedtime", "do": "automation", "needs": ["adb"] }
+      { "id": "dim", "icon": "contrast", "t": "rkey.dim", "do": "dim", "needs": ["adb"], "sub": "rkey.dim_sub" }
     ],
     "scenes": [
       { "id": "scenes-list", "expand": "scenes" },
-      { "id": "scenes-edit", "icon": "scene", "t": "rkey.scenes_edit", "do": "automation",
+      { "id": "scenes-edit", "icon": "scene", "t": "rkey.scenes_edit", "do": "automation", "arg": "scenecard",
         "sub": "rkey.scenes_edit_sub" }
     ]
   }

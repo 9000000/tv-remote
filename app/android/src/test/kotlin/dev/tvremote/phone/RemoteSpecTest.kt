@@ -21,7 +21,7 @@ class RemoteSpecTest {
 
     @Test fun everyConditionAndListIsOneTheMenusSupply() {          // timerMenu / scenesMenu in Automation.kt, quickOpen in Media.kt
         assertTrue(entries.mapNotNull { it.whenCond }.all { it == "timerOn" })
-        assertTrue(entries.mapNotNull { it.expand }.all { it == "lengths" || it == "scenes" || it == "tvapps" })
+        assertTrue(entries.mapNotNull { it.expand }.all { it in setOf("lengths", "lengthsMore", "scenes", "tvapps") })
     }
 
     @Test fun theRowsAndMenusTheScreenAsksFor() {                    // RemoteScreen.kt, Media.kt, Automation.kt

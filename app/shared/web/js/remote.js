@@ -85,7 +85,8 @@ async function timerMenu() {
   if (needAdb() || !await setupFor('rules')) return;                  // TV Setup runs the timer on the TV (SetupNeed "rules")
   const r = await loadRules(null, true); if (!r) return;
   const at = r.sleep_at || 0, hm = (m) => m < 60 ? T('remote.min_n', { n: m }) : m % 60 ? T('remote.h_min', { h: Math.floor(m / 60), m: m % 60 }) : T('remote.h_n', { n: m / 60 });
-  const items = remoteMenu('timer', { when: { timerOn: !!at }, expand: { lengths: () => [15, 30, 45, 60, 90, 120].map((m) => [T('remote.off_in', { when: hm(m) }), '', () => setSleep(m)]) } });
+  const lengths = (ms) => ms.map((m) => [T('remote.off_in', { when: hm(m) }), '', () => setSleep(m)]);
+  const items = remoteMenu('timer', { when: { timerOn: !!at }, expand: { lengths: () => lengths([30, 60, 120]), lengthsMore: () => lengths([15, 45, 90]) } });
   menuDlg(at ? T('remote.tv_off_at_menu', { at: clock(at) }) : T('remote.sleep_timer'), at ? 0 : -1, items);
 }
 // "Ngõ vào": the TV's real inputs by name ("HDMI 1 · PlayStation") and a tap to switch. A TV with none to list (a box, the emulator,

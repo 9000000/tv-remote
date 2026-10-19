@@ -358,6 +358,19 @@ function showTab(t) {
   if (t === 'auto') autoTab();
   if (t === 'tv') { tsState(); loadTvset(); loadPaired(); homeCard(); }
 }
+// A jump from somewhere else (a menu of the remote, the phone app, a link): the tab, then the card [id] it is about, brought
+// into view and lit for a moment, so nobody has to look for it. The tab's own loading may move it: placed a little later.
+function goTo(t, id) {
+  showTab(t);
+  const c = id && document.getElementById(id);
+  if (!c) return;
+  setTimeout(() => {
+    if (c.offsetParent === null) return;                             // not on this core / for this TV
+    c.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash');   // again from the start when asked twice
+    c.addEventListener('animationend', () => c.classList.remove('flash'), { once: true });
+  }, 250);
+}
 document.querySelectorAll('[data-tab]').forEach((b) => { b.id = 'tab-' + b.dataset.tab; b.addEventListener('click', () => showTab(b.dataset.tab)); });
 document.querySelectorAll('[data-panel]').forEach((p) => { p.setAttribute('role', 'tabpanel'); p.setAttribute('aria-labelledby', 'tab-' + p.dataset.panel); });
 document.querySelector('nav.tabs').addEventListener('keydown', (e) => {   // ← → Home End between the tabs that are shown

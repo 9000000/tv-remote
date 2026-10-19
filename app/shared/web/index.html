@@ -287,14 +287,14 @@
     <div data-adb-banner></div>
     <div id="autosetup" data-adb-gated></div>
     <div class="two-up" id="rulecards" data-adb-gated hidden>
-      <section class="card">
+      <section class="card" id="sleepcard">
         <h2 data-i18n="auto.sleep_timer">😴 Hẹn giờ tắt TV</h2>
         <p class="state" id="sleepstate" data-i18n="auto.no_timer_set">Chưa hẹn giờ.</p>
         <div class="presets" id="sleepbtns"></div>
         <form class="line" id="sleepf"><input id="sleepin" placeholder="Số phút hoặc giờ tắt, vd 40, 23:30" autocomplete="off" data-i18n-placeholder="auto.minutes_or_an_end"><button class="primary" data-i18n="auto.set">😴 Hẹn</button></form>
         <div class="actions" id="sleepacts"></div>
       </section>
-      <section class="card">
+      <section class="card" id="bedcard">
         <div class="card-head"><h2 data-i18n="auto.bedtime">🌙 Giờ đi ngủ</h2><button class="small primary" data-open="beddlg" data-i18n="common.add">＋ Thêm</button></div>
         <p class="note" data-i18n="auto.switched_on_in_these">Bật TV trong giờ này thì 1 phút sau TV tự tắt.</p>
         <label class="check" data-i18n="auto.bedtime_on"><input type="checkbox" id="bedon"> Bật giờ đi ngủ</label>
@@ -302,22 +302,22 @@
         <p class="state" id="bedstate"></p>
         <div class="actions" id="bedacts"></div>
       </section>
-      <section class="card">
+      <section class="card" id="limitcard">
         <div class="card-head"><h2 data-i18n="auto.daily_app_limits">⏳ Giới hạn app mỗi ngày</h2><button class="small primary" data-open="limitdlg" data-i18n="common.add">＋ Thêm</button></div>
         <div class="list" id="limits"></div>
       </section>
-      <section class="card">
+      <section class="card" id="lockcard">
         <div class="card-head"><h2 data-i18n="auto.locks_title">🔒 Khóa app bằng mã PIN</h2><button class="small primary" id="lockadd" data-i18n="common.add">＋ Thêm</button></div>
         <p class="note" data-i18n="auto.locks_note">Mở app đã khóa phải nhập mã PIN trên TV. Thoát app là khóa lại.</p>
         <div class="list" id="locks"></div>
         <div class="actions" id="lockacts"></div>
       </section>
-      <section class="card">
+      <section class="card" id="volcard">
         <div class="card-head"><h2 data-i18n="auto.volume_limits">🔊 Giới hạn âm lượng</h2><button class="small primary" data-open="voldlg" data-i18n="common.add">＋ Thêm</button></div>
         <div class="list" id="vols"></div>
         <p class="state" id="volstate"></p>
       </section>
-      <section class="card">
+      <section class="card" id="ramcard">
         <h2 data-i18n="auto.full_memory_notice">🧹 Báo khi RAM đầy</h2>
         <label class="check" data-i18n="auto.show_on_the_tv"><input type="checkbox" id="ramon"> Hiện trên TV khi RAM đầy, để dọn</label>
         <div class="fchips" id="rampct" role="group" aria-label="Mức RAM" data-i18n-aria-label="auto.memory_level"></div>
@@ -330,7 +330,7 @@
       </section>
     </div>
     <div data-kindintro="rules" hidden></div>
-    <section class="card" data-adb-gated data-native>
+    <section class="card" id="scenecard" data-adb-gated data-native>
       <div class="card-head"><h2 data-i18n="common.scenes">🎬 Cảnh</h2><button class="small primary" id="scenenew" data-i18n="auto.new_scene">＋ Tạo cảnh</button></div>
       <div class="list" id="scenelist"></div>
       <div class="sceneio">

@@ -24,7 +24,7 @@ private fun hook(f: MainActivity.(IconButton) -> Unit) = f
 
 /** What each "do" in remote.json does here; `it` is the entry's "arg". */
 /** The groups an entry opens ("do": "menu", "arg": its name): their titles (REMOTE_GROUPS on the page). */
-private val remoteGroups = mapOf("get" to "rkey.open_get", "send" to "rkey.open_send")
+private val remoteGroups = mapOf("get" to "rkey.open_get", "send" to "rkey.open_send", "timerMore" to "rkey.timer_more", "screen" to "rkey.timer_screen")
 
 internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "shot" to act { shot() },
@@ -48,7 +48,7 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "timerPlus" to act { timerPlus() },
     "timerCancel" to act { setTimer(0) },
     "timerCustom" to act { timerCustom() },
-    "automation" to act { if (!needsAdb()) managing.open(host, "auto") },
+    "automation" to act { c -> if (!needsAdb()) managing.open(host, "auto", c?.filter { it.isLetter() }?.let { "goTo('auto','$it')" }) },
     "clip" to act { clipDialog() },
     "screenOff" to act { screenOff() },
     "dim" to act { dimDialog() },
@@ -119,7 +119,12 @@ internal fun MainActivity.remoteMenu(name: String, conditions: Set<String> = emp
     for (e in remoteSpec().menus[name]!!) {
         if (e.whenCond != null && e.whenCond !in conditions || !e.can(caps)) continue   // what this TV cannot do is left out
         if (e.expand != null) { lists[e.expand]?.let { items.addAll(it()) }; continue }
-        if (e.action == "menu" && remoteMenu(e.arg ?: "").isEmpty()) continue   // a group with nothing in it on this TV
+        if (e.action == "menu") {                                     // a group: opened with the same conditions and lists
+            val sub = remoteMenu(e.arg ?: "", conditions, lists)
+            if (sub.size == 1) items.add(sub[0])                      // a group of one is that one (an LG: the screen off only)
+            else if (sub.isNotEmpty()) items.add(Triple("@" + e.icon + "|" + e.words(), e.subWords()) { menu(T(remoteGroups[e.arg] ?: ""), -1, sub) })
+            continue                                                  // none: nothing in it on this TV
+        }
         val run = phoneActions[e.action!!] ?: error("remote.json: no phone handler for \"${e.action}\"")
         items.add(Triple("@" + e.icon + "|" + e.words(), e.subWords()) { run(this, e.arg) })
     }

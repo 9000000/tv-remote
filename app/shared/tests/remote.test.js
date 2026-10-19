@@ -79,9 +79,11 @@ test('the menus are built the same way the page does, in both languages', () => 
     assert.equal(open.length, spec.menus.open.filter((e) => !e.cores && !e.expand).length);   // the phone-only Cast entry is not on the page; no TV apps given
     assert.ok(words.every((w) => /^@\w+\|.+/.test(w)));
     assert.ok(!words.some((w) => /^@cast\|/.test(w)));
-    const timer = p.remoteMenu('timer', { when: { timerOn: true }, expand: { lengths: () => [['Tắt sau 15 phút', '', () => {}]] } });
-    assert.deepEqual(Array.from(timer, (i) => i[0].split('|')[0]), ['@plus', '@close', 'Tắt sau 15 phút', '@timer', '@eye_off', '@contrast', '@moon']);
-    assert.deepEqual(Array.from(p.remoteMenu('timer', { expand: { lengths: () => [] } }), (i) => i[0].split('|')[0]), ['@timer', '@eye_off', '@contrast', '@moon']);
+    const lengths = () => [['Tắt sau 30 phút', '', () => {}]], more = () => [['Tắt sau 15 phút', '', () => {}]];
+    const timer = p.remoteMenu('timer', { when: { timerOn: true }, expand: { lengths, lengthsMore: more } });
+    assert.deepEqual(Array.from(timer, (i) => i[0].split('|')[0]), ['@plus', '@close', 'Tắt sau 30 phút', '@timer', '@eye_off', '@moon']);   // other times and the screen: groups
+    assert.deepEqual(Array.from(p.remoteMenu('timer', { expand: { lengths: () => [] } }), (i) => i[0].split('|')[0]), ['@timer', '@eye_off', '@moon']);   // other times: the custom one alone, shown as itself
+    assert.match(timer[3][0], lang === 'en' ? /Other times/ : /Thời gian khác/);
     const media = p.remoteMenu('send').find((i) => i[0].startsWith('@image|'));
     assert.match(media[0], lang === 'en' ? /from this device/ : /từ máy này/);   // the page's own words, not the phone's
   }
@@ -95,6 +97,8 @@ test('on an LG or Samsung TV the menus leave out what it cannot do, and list its
   assert.ok(open[0].startsWith('@apps|'), 'its apps first: ' + open);
   assert.ok(open.some((w) => w.startsWith('@link|')));
   assert.ok(!open.some((w) => /^@(store|send)\|/.test(w)), 'no Play Store or ADB groups: ' + open);
+  const timer = Array.from(p.remoteMenu('timer'), (i) => i[0]);   // the page's own array (another realm): copied to compare
+  assert.deepEqual(timer, ['@eye_off|Screen off / on'], 'the screen group holds the screen off only: shown as itself: ' + timer);
 });
 
 test('a guest from a shared QR: "remote" opens apps but sends no files and shares nothing, "view" presses nothing', () => {

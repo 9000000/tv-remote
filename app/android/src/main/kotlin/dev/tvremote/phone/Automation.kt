@@ -85,12 +85,12 @@ internal fun MainActivity.timerMenu() {
     rules(null) { r ->
         if (needsSetup(r)) return@rules
         val at = r.optLong("sleep_at")
-        val lengths = {
-            intArrayOf(15, 30, 45, 60, 90, 120).map { m ->
+        val lengths = { ms: IntArray ->
+            ms.map { m ->
                 Triple(if (m < 60) T("automation.off_in_min", "n" to m) else if (m % 60 > 0) T("automation.off_in_h_30", "n" to m / 60) else T("automation.off_in_h", "n" to m / 60), "") { setTimer(m) }
             }
         }
-        val items = remoteMenu("timer", if (at > 0) setOf("timerOn") else emptySet(), mapOf("lengths" to lengths))
+        val items = remoteMenu("timer", if (at > 0) setOf("timerOn") else emptySet(), mapOf("lengths" to { lengths(intArrayOf(30, 60, 120)) }, "lengthsMore" to { lengths(intArrayOf(15, 45, 90)) }))
         menu(if (at > 0) T("automation.the_tv_turns_off_2", "time" to hm(at, r.optLong("now"))) else T("remote.sleep_timer"), if (at > 0) 0 else -1, items)
     }
 }

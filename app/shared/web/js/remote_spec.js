@@ -24,16 +24,21 @@ function remoteMenu(name, ctx = {}) {
   const out = [];
   for (const raw of REMOTE.menus[name]) {
     if (!remoteHere(raw) || !remoteCan(raw) || (raw.when && !(ctx.when || {})[raw.when])) continue;
-    if (raw.do === 'menu' && !remoteMenu(raw.arg, ctx).length) continue;   // a group with nothing in it here (a guest, an LG)
     if (raw.expand) { const f = (ctx.expand || {})[raw.expand]; if (f) out.push(...f()); continue; }
     const e = remoteEntry(raw);
+    if (e.do === 'menu') {                                            // a group: opened with the same ctx (its lengths, its "when")
+      const sub = remoteMenu(e.arg, ctx);
+      if (sub.length === 1) out.push(sub[0]);                         // a group of one is that one (an LG: the screen off only)
+      else if (sub.length) out.push(['@' + e.icon + '|' + remoteWords(e.t), e.sub ? remoteWords(e.sub) : '', () => menuDlg(T(REMOTE_GROUPS[e.arg]), -1, sub)]);
+      continue;                                                       // none: nothing here (a guest, an LG)
+    }
     out.push(['@' + e.icon + '|' + remoteWords(e.t), e.sub ? remoteWords(e.sub) : '', () => REMOTE_DO[e.do](e.arg)]);
   }
   return out;
 }
 
 // the groups an entry opens ("do": "menu", "arg": its name): their titles
-const REMOTE_GROUPS = { get: 'rkey.open_get', send: 'rkey.open_send' };
+const REMOTE_GROUPS = { get: 'rkey.open_get', send: 'rkey.open_send', timerMore: 'rkey.timer_more', screen: 'rkey.timer_screen' };
 const REMOTE_DO = {
   shot: () => screenshot(),
   open: () => quickOpen(),
@@ -52,7 +57,7 @@ const REMOTE_DO = {
   timerPlus: () => timerPlus(),
   timerCancel: () => setSleep(0),
   timerCustom: () => timerCustom(),
-  automation: () => showTab('auto'),
+  automation: (c) => goTo('auto', c),
   clip: () => clipDialog(),
   screenOff: () => screenOff(),
   dim: () => dimOpen(),

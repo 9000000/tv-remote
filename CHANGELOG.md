@@ -22,6 +22,9 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - APK app điện thoại nhỏ hơn khoảng 1 MB (bỏ bản cho chip x86 32-bit)
 - Menu Mở trên TV gọn hơn: Mở app đã cài (ô chọn app có tìm kiếm, thay cho danh sách mọi app), Tải app (CH Play và các app gợi ý), Mở link, Gửi lên TV (ảnh, video, nhạc, clipboard)
 - Giới hạn app mỗi ngày: nút ngắn gọn (+30p), dòng đã dùng ngắn hơn (25p / 3g30 (+2g30)), nút Đặt lại để bỏ thời gian đã cho thêm hôm nay (cần TV Setup mới)
+- Menu Hẹn giờ tắt gọn hơn: 30 phút, 1 giờ, 2 giờ; Thời gian khác (15p, 45p, 1g30, tự chọn); Màn hình TV (tắt màn hình vẫn nghe, giảm độ sáng); Giờ đi ngủ
+- Tắt màn hình, vẫn nghe: phím đầu tiên trên remote của TV chỉ bật lại màn hình, không mở app đang chọn (cần TV Setup mới)
+- Đi từ menu sang tab khác (Giờ đi ngủ, Sửa cảnh) thì cuộn tới đúng thẻ và làm nó sáng lên
 
 **English**
 
@@ -39,6 +42,9 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - The phone app's APK is about 1 MB smaller (no build for 32-bit x86 chips)
 - A shorter Open on the TV menu: Open an installed app (an app picker with a search, instead of every app listed), Get apps (Play Store and suggested apps), Open a link, Send to the TV (photos, videos, music, clipboard)
 - Daily app limits: a short button (+30 min), a shorter used line (25m / 3h30 (+2h30)), and Reset to take back today's extra time (needs the new TV Setup)
+- A shorter Sleep timer menu: 30 minutes, 1 hour, 2 hours; Other times (15 min, 45 min, 1h30, custom); TV screen (screen off with sound, dim); Bedtime
+- Screen off, keep listening: the first key on the TV's remote only turns the screen back on; it no longer also opens the app in focus (needs the new TV Setup)
+- A menu entry that leads to another tab (Bedtime, Edit scenes) scrolls to its card and lights it up
 
 ## 0.12.0 - 2026-10-19
 
