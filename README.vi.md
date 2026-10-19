@@ -62,8 +62,8 @@ Trong README, code và trang giới thiệu, các phần luôn được gọi b�
 | | App điện thoại | Web của TV | App máy tính |
 |---|---|---|---|
 | Remote, xem và chạm hình TV, ✏️ vẽ, 🖼️ đưa ảnh, 💬 lời nhắn lên TV | ✓ | ✓ | ✓ |
-| ▶️ Đang phát (tên bài, tua, tạm dừng), 📋 clipboard của TV, tắt màn hình vẫn nghe | ✓ | ✓ | ✓ |
-| 🔊 Giới hạn âm lượng theo giờ (cùng hẹn giờ tắt, giờ đi ngủ, giới hạn app) | ✓ | ✓ | ✓ |
+| ▶️ Đang phát (tên bài, tua, tạm dừng), 📋 clipboard của TV, tắt màn hình vẫn nghe, 🔅 giảm độ sáng | ✓ | ✓ | ✓ |
+| 🔊 Giới hạn âm lượng theo giờ (cùng hẹn giờ tắt, giờ đi ngủ, giới hạn app, 🔒 khóa app bằng PIN) | ✓ | ✓ | ✓ |
 | 🎧 Nghe tiếng TV | ✓, cả khi tắt màn hình | ✓, khi trang đang mở | ✓, chất lượng cao |
 | Ứng dụng, Tệp, Sức khỏe, Tự động, Thiết lập | ✓ | ✓ | ✓ |
 | Chất lượng hình *Nét nhất* | | | ✓ |
@@ -237,7 +237,10 @@ Nút **📺 Đổi TV** ở thanh trên quay về danh sách TV.
 - **✏️ Vẽ lên màn hình TV** (nút ✏️ cạnh hình; trên app điện thoại là *Vẽ lên TV* trong Thêm phím): vẽ lên hình thì TV hiện ngay nét vẽ, đè lên mọi app, để chỉ chỗ cho người đang xem. Cần TV Setup trên TV. Bấm 🗑 để xóa, hoặc nét vẽ tự mất sau 10 phút.
 - **📲 Chia sẻ** (Thêm phím → *Chia sẻ*): mã QR cho điện thoại khác quét là mở ngay remote của TV trên trình duyệt, không cần gõ mã (dùng 1 lần, trong 10 phút; cần TV Setup; chọn Toàn quyền, Chỉ remote hoặc Chỉ xem), và mã QR tải app điện thoại. Máy này nối TV qua Tailscale thì app nhắc: điện thoại quét phải cùng Wi-Fi với TV.
 - **💬 Lời nhắn lên TV** (nút 💬 Chữ khi đang vẽ): gõ một câu, chữ to hiện trên TV, kéo và chỉnh cỡ như ảnh.
-- **Tắt màn hình, vẫn nghe** (*Hẹn giờ tắt* → *Tắt màn hình, vẫn nghe*): màn hình TV tắt, nhạc vẫn phát. Bấm phím bất kỳ, kể cả remote của TV, là màn hình bật lại.
+- **Tắt / bật màn hình** (*Hẹn giờ tắt* → *Tắt / bật màn hình*): màn hình TV đen, nhạc vẫn phát, app vẫn xem hình và bấm phím được. Bấm lại mục đó, hoặc remote của TV, là màn hình bật lại.
+- **🔅 Giảm độ sáng** (*Hẹn giờ tắt* → *Giảm độ sáng*): phủ màu Tối, Lọc xanh, Vàng, Nâu cổ, Đỏ đêm hoặc Xanh lên mọi app, độ mạnh 5–90%. Màn OLED tối thật; màn LCD vẫn sáng đèn nền nhưng màu ấm bớt ánh sáng xanh. Cần TV Setup.
+- **🔒 Khóa app bằng mã PIN** (tab Tự động): mở app đã khóa thì TV hỏi PIN; sang app khác hoặc TV tắt là khóa lại. Cần TV Setup.
+- **⚡ Đo tốc độ mạng** (Sức khỏe → 📶 Mạng): TV tự đo độ trễ, tải xuống, tải lên của chính nó.
 - **📱 App đang chạy** (tab Sức khỏe): app nào đang chạy, chạy ngầm, tốn bao nhiêu RAM; bấm ⏹ Dừng để tắt một app. Chỉ dừng được app người dùng cài hoặc có trên màn hình chính; màn hình chính, bàn phím, phần của Android, TV Remote và Tailscale có 🔒 Cần giữ.
 - **🧹 Báo khi RAM đầy** (tab Tự động, mặc định tắt): RAM dùng quá mức chọn (80–95%) thì TV hiện bảng đè lên app đang xem: Dọn RAM, Xem app hoặc Bỏ qua. Cần TV Setup.
 - **🔊 Giới hạn âm lượng** (tab Tự động): chọn các khoảng giờ và mức tối đa mỗi khoảng, vd 22:00 – 06:00 tối đa 30%. Ai tăng quá mức thì TV hạ lại và báo trên màn hình vì sao. Cần TV Setup; TV mà âm lượng do loa ngoài giữ (qua HDMI) thì không giới hạn được.

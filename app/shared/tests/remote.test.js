@@ -80,8 +80,8 @@ test('the menus are built the same way the page does, in both languages', () => 
     assert.ok(words.every((w) => /^@\w+\|.+/.test(w)));
     assert.ok(!words.some((w) => /^@cast\|/.test(w)));
     const timer = p.remoteMenu('timer', { when: { timerOn: true }, expand: { lengths: () => [['Tắt sau 15 phút', '', () => {}]] } });
-    assert.deepEqual(Array.from(timer, (i) => i[0].split('|')[0]), ['@plus', '@close', 'Tắt sau 15 phút', '@timer', '@eye_off', '@moon']);
-    assert.deepEqual(Array.from(p.remoteMenu('timer', { expand: { lengths: () => [] } }), (i) => i[0].split('|')[0]), ['@timer', '@eye_off', '@moon']);
+    assert.deepEqual(Array.from(timer, (i) => i[0].split('|')[0]), ['@plus', '@close', 'Tắt sau 15 phút', '@timer', '@eye_off', '@contrast', '@moon']);
+    assert.deepEqual(Array.from(p.remoteMenu('timer', { expand: { lengths: () => [] } }), (i) => i[0].split('|')[0]), ['@timer', '@eye_off', '@contrast', '@moon']);
     const media = p.remoteMenu('open').find((i) => i[0].startsWith('@image|'));
     assert.match(media[0], lang === 'en' ? /from this device/ : /từ máy này/);   // the page's own words, not the phone's
   }

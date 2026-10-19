@@ -391,7 +391,8 @@ async function loadHealth() {
   const t0 = performance.now(), h = await api('/api/health', null, true);
   healthBusy = false;
   if (!h || currentTab !== 'health') return;
-  if (!$('.health').classList.contains('ready')) $('.health').classList.add('ready');   // add() writes the attribute even when it is there
+  if (!$('.health').classList.contains('ready')) $('.health').classList.add('ready');
+  speedLoad();   // add() writes the attribute even when it is there
   const r = h.remote || {}, vol = r.volume || {};
   put($('#hwhen'), 'textContent', T('health.refresh_5s'));
   $('#hsum').replaceChildren(...kv([

@@ -27,7 +27,7 @@ tasks.withType<Test>().configureEach { inputs.dir("tests"); inputs.file("web/rem
 // names, pictures, the hardware report and what is playing (a few KB, where the whole phone APK was copied before). Java, so no Kotlin library
 // has to go along. Made again with every Android build and kept in git, so the computer app builds without the Android SDK.
 val helperClasses by tasks.registering(JavaCompile::class) {
-    source = fileTree("src/main/java") { include("dev/tvremote/core/Meta.java", "dev/tvremote/core/Caps.java", "dev/tvremote/core/Playing.java", "dev/tvremote/core/Screen.java") }
+    source = fileTree("src/main/java") { include("dev/tvremote/core/Meta.java", "dev/tvremote/core/Caps.java", "dev/tvremote/core/Playing.java", "dev/tvremote/core/Screen.java", "dev/tvremote/core/Speed.java") }
     classpath = files()
     options.bootstrapClasspath = files(android.bootClasspath)
     sourceCompatibility = "1.8"

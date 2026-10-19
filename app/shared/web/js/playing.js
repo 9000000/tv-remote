@@ -55,9 +55,12 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) plPo
 plPoll();
 
 // the TV's clipboard: shown in a box anyone can edit, then copied here, set on the TV, or set and pasted where the TV's cursor is
-// The screen off while the sound plays on (ScreenOff.kt): any key, on any remote, turns it back on.
+// The screen off while the sound, the picture and the keys go on (ScreenOff.kt); pressed again, or the TV's own remote, turns it on.
 async function screenOff() {
-  if (!NATIVE() && needAdb()) return;                                // LG turns it off by its remote link
+  if (NATIVE()) { if (await api('/api/screen/off', {})) toast(T('playing.screen_off_any')); return; }   // LG: by its remote link, any key turns it on
+  if (needAdb()) return;
+  const s = await api('/api/screen/state', null, true);
+  if (s && s.off) { if (await api('/api/screen/on', {})) toast(T('playing.screen_on')); return; }
   if (await api('/api/screen/off', {})) toast(T('playing.screen_off'));
 }
 

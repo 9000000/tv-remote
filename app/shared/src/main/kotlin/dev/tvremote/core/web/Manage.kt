@@ -101,6 +101,9 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "apps" -> return HttpServer.Response.json(apps(r.q("system") == "1"))
                 "apps/report" -> return HttpServer.Response.json(appsReport())
                 "recents" -> if (!post) return HttpServer.Response.json(recents())
+                "screen/state" -> if (!post) return HttpServer.Response.json(JSONObject().put("off", ScreenOff.isOff { sh(it) }))
+                "dim" -> return HttpServer.Response.json(dev.tvremote.core.ontv.Dim.call({ sh(it) }, if (post) r.json() else null))
+                "speed" -> if (!post) return HttpServer.Response.json(dev.tvremote.core.ontv.SpeedTest.read { sh(it) })
                 "app/meta" -> {                                       // a name and whether /api/app/icon has a picture (the computer app answers it first)
                     val pkg = r.q("pkg")
                     if (!PKG.matcher(pkg).matches()) return HttpServer.Response.error(404, "not found")
@@ -220,6 +223,12 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "setup/update" -> HttpServer.Response.json(setupUpdate())
                 "playing" -> { val d = r.json(); (playing ?: throw IllegalStateException("not here")).command(d.optString("do"), d.optLong("ms")); HttpServer.Response.json(JSONObject().put("ok", true)) }
                 "screen/off" -> { ScreenOff.off(link.get(), (helper ?: throw IllegalStateException("not here"))()); HttpServer.Response.json(JSONObject().put("ok", true)) }
+                "speed" -> {                                          // {stop: true} ends one; anything else starts one
+                    if (r.json().optBoolean("stop")) dev.tvremote.core.ontv.SpeedTest.stop { sh(it) }
+                    else dev.tvremote.core.ontv.SpeedTest.start(link.get(), (helper ?: throw IllegalStateException("not here"))())
+                    HttpServer.Response.json(JSONObject().put("ok", true))
+                }
+                "screen/on" -> { ScreenOff.on(link.get(), (helper ?: throw IllegalStateException("not here"))()); HttpServer.Response.json(JSONObject().put("ok", true)) }
                 "draw" -> { draw.send(r.json(Draw.MAX_BODY).getJSONArray("ops")); HttpServer.Response.json(JSONObject().put("ok", true).put("pic", draw.pics)) }
                 "adb/allow" -> {                                      // only for the key named: see AdbPrompt
                     val d = r.json()

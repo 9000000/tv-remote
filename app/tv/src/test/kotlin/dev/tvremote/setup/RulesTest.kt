@@ -22,6 +22,27 @@ class RulesTest {
         assertEquals(0, o.length())
     }
 
+    @Test fun appLocksNeedAPin() {
+        val o = JSONObject()
+        bad(o, """{"do":"lock","pkg":"com.netflix.ninja","on":true}""")          // no PIN yet
+        bad(o, """{"do":"pin","pin":"12"}""")
+        bad(o, """{"do":"pin","pin":"12ab"}""")
+        Rules.apply(o, d("""{"do":"pin","pin":"2580"}"""), now)
+        assertFalse(o.toString().contains("2580"))                                // kept as a hash only
+        assertTrue(Rules.pinOk(o, "2580"))
+        assertFalse(Rules.pinOk(o, "0000"))
+        Rules.apply(o, d("""{"do":"lock","pkg":"com.netflix.ninja","on":true}"""), now)
+        Rules.apply(o, d("""{"do":"lock","pkg":"com.netflix.ninja","on":true}"""), now)
+        assertEquals(listOf("com.netflix.ninja"), Rules.locked(o))
+        bad(o, """{"do":"lock","pkg":"dev.tvremote.setup","on":true}""")        // its own PIN screen
+        Rules.apply(o, d("""{"do":"pin","pin":"13579"}"""), now)                 // a new PIN keeps the apps
+        assertTrue(Rules.pinOk(o, "13579"))
+        assertFalse(Rules.pinOk(o, "2580"))
+        assertEquals(listOf("com.netflix.ninja"), Rules.locked(o))
+        Rules.apply(o, d("""{"do":"lock","pkg":"com.netflix.ninja","on":false}"""), now)
+        assertEquals(emptyList<String>(), Rules.locked(o))
+    }
+
     @Test fun sleepSetsAndCancels() {
         val o = JSONObject()
         Rules.apply(o, d("""{"do":"sleep","minutes":30}"""), now)

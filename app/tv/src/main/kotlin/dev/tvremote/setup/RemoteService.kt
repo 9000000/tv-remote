@@ -198,6 +198,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         dev.tvremote.core.adb.Adb.holdFirstAsk(10000)                       // a phone turning ADB on asks first, then allows us too (AdbPrompt.helpSetup)
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         running = this
+        DimLayer.restore(this)
         dev.tvremote.core.WireLog.app = "TV Setup " + (try { packageManager.getPackageInfo(packageName, 0).versionName } catch (e: Exception) { "" }) +
             " (TV web page, Android " + Build.VERSION.RELEASE + ")"
         if (Build.VERSION.SDK_INT >= 26) {

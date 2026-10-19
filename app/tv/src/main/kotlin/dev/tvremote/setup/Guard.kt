@@ -19,7 +19,9 @@ import dev.tvremote.core.adb.Adb.Companion.q
  * closed once its minutes for the day are used up, and the volume turned down to the highest the hour allows, the moment it
  * goes higher (with a word on screen saying why, so nobody thinks the volume keys broke), and a notice offering to free the memory
  * when it stays fuller than the share set (once per half hour at most, so "Skip" means it). Standby, closing apps and putting the warning over another app all need
- * the TV's own ADB, which this app holds (as for everything else it does).
+ * the TV's own ADB, which this app holds (as for everything else it does). A locked app ([Rules.locked]) is watched apart, a few
+ * times a second, since its PIN must come up before anyone watches it: [PinActivity] goes over it until the PIN is given, and the
+ * app stays open until another one comes to the front or the TV goes to standby.
  */
 internal class Guard(private val c: Context, private val adb: () -> Adb?) {
     companion object {
@@ -30,6 +32,8 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         fun standbyNow() { running?.standby() }
         /** The TV's volume is not its own to set (sent on to a sound bar or the TV set over HDMI): no limit can hold it. */
         fun volumeFixed(c: Context): Boolean = (c.getSystemService(Context.AUDIO_SERVICE) as AudioManager).isVolumeFixed
+        /** The right PIN was given for [pkg] on [PinActivity]: open until another app comes to the front. */
+        fun unlock(pkg: String) { running?.unlocked = pkg }
         /** "Free RAM" on the notice: the apps waiting in the background closed; the MB that came back, null without ADB. */
         fun freeNow(): Long? = running?.free()
 
@@ -78,6 +82,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
     fun start() {
         running = this
         ui.postDelayed(tick, 5_000)
+        Thread({ while (!stopped) Thread.sleep(try { lockCheck() } catch (e: Exception) { 5_000L }) }, "guard-lock").apply { isDaemon = true }.start()
         val f = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
         if (android.os.Build.VERSION.SDK_INT >= 33) c.registerReceiver(volume, f, Context.RECEIVER_NOT_EXPORTED) else c.registerReceiver(volume, f)
     }
@@ -177,6 +182,53 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         return next
     }
 
+
+    // ---- app locks
+    @Volatile private var unlocked = ""                               // the app the PIN was given for, until another comes to the front
+    private var front = ""
+    private var eventsTo = 0L
+    private var pinAt = 0L
+    private val usage by lazy { c.getSystemService(Context.USAGE_STATS_SERVICE) as android.app.usage.UsageStatsManager }
+
+    /** One look for a locked app on screen; returns how long until the next. */
+    private fun lockCheck(): Long {
+        val apps = Rules.locked(Rules.load(c))
+        if (apps.isEmpty()) { eventsTo = 0; return 3_000 }
+        if (!(c.getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive) { unlocked = ""; return 2_000 }
+        val now = System.currentTimeMillis()
+        val app = frontApp(now)
+        if (app.isNotEmpty() && app != unlocked && app != c.packageName) unlocked = ""
+        if (app in apps && app != unlocked && PinActivity.showing == null && now - pinAt > 2_000) {
+            askPin(app, now - pinAt < 5_000)                          // asked a moment ago and not shown: Android kept it back
+            pinAt = now
+        }
+        return 700
+    }
+
+    /** The app on screen, from the usage events since the last look (the day's, the first time). */
+    private fun frontApp(now: Long): String {
+        val events = usage.queryEvents(if (eventsTo == 0L) now - 86_400_000L else eventsTo, now)
+        val e = android.app.usage.UsageEvents.Event()
+        while (events.hasNextEvent()) {
+            events.getNextEvent(e)
+            when (e.eventType) {
+                android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND -> front = e.packageName ?: ""
+                android.app.usage.UsageEvents.Event.MOVE_TO_BACKGROUND -> if (front == e.packageName) front = ""
+            }
+            eventsTo = maxOf(eventsTo, e.timeStamp)                   // asked again from that moment: the same events come twice, to the same end
+        }
+        if (eventsTo == 0L) eventsTo = now
+        return front
+    }
+
+    /** The PIN screen over [pkg]: started by this app where it may draw over others (allowed through ADB), else by the shell. */
+    private fun askPin(pkg: String, byShell: Boolean) {
+        if (!byShell && (android.os.Build.VERSION.SDK_INT < 23 || android.provider.Settings.canDrawOverlays(c))) try {
+            c.startActivity(android.content.Intent(c, PinActivity::class.java).putExtra("pkg", pkg).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+            return
+        } catch (e: Exception) { }
+        sh("am start -n ${c.packageName}/.PinActivity --es pkg " + q(pkg))
+    }
 
     private fun label(pkg: String): String = try {
         c.packageManager.getApplicationLabel(c.packageManager.getApplicationInfo(pkg, 0)).toString()

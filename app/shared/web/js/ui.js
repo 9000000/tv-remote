@@ -62,7 +62,7 @@ const UI = {
 const ICON = {
   '🎮': ['gamepad', 220], '📱': ['apps', 265], '📁': ['folder', 38], '🩺': ['pulse', 350], '⏰': ['alarm', 20], '📺': ['tv', 195],
   '🧭': ['compass', 175], '🖥️': ['monitor', 210], '🚀': ['rocket', 265], '⌨️': ['keyboard', 230], '🎬': ['scene', 300], '🎞️': ['scene', 300],
-  '🌙': ['moon', 250], '😴': ['timer', 280], '⏳': ['hourglass', 38], '🔊': ['vol_up', 160], '🔇': ['mute', 160], '⚡': ['zap', 45],
+  '🌙': ['moon', 250], '😴': ['timer', 280], '⏳': ['hourglass', 38], '🔊': ['vol_up', 160], '🔇': ['mute', 160], '⚡': ['zap', 45], '🔅': ['contrast', 45],
   '🌐': ['globe', 200], '🛡️': ['shield', 150], '👁️': ['eye', 210], '🔁': ['refresh', 200], '🔄': ['refresh', 200], '↻': ['refresh', 200],
   '⚙️': ['gauge', 30], '📊': ['chart', 210], '📶': ['wifi', 190], '🧩': ['cpu', 275], '⬇️': ['download', 205], '⬇': ['download', 205],
   '⬆️': ['upload', 205], '📥': ['upload', 205], '📦': ['package', 30], '🖼️': ['image', 330], '🔠': ['type', 230], '🏠': ['home', 140],

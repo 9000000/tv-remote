@@ -219,12 +219,12 @@ internal class PlayingBar(private val a: MainActivity) {
     }
 }
 
-/** The screen off while the sound plays on (ScreenOff in the shared core): any key, on any remote, turns it back on. */
+/** The screen off while the sound, the picture and the keys go on (ScreenOff in the shared core); pressed again, or the TV's own remote, turns it on. */
 internal fun MainActivity.screenOff() {
-    basic?.takeIf { it.kind != Remote.Kind.ANDROID }?.let { b ->       // LG: by its remote link, no ADB
+    basic?.takeIf { it.kind != Remote.Kind.ANDROID }?.let { b ->       // LG: by its remote link, no ADB; any key turns it on
         Thread {
             val ok = b.screenOff()
-            ui.post { say(if (ok) T("playing.screen_off") else T("now_playing.this_tv_cannot_turn"), !ok) }
+            ui.post { say(if (ok) T("playing.screen_off_any") else T("now_playing.this_tv_cannot_turn"), !ok) }
         }.start()
         return
     }
@@ -232,8 +232,15 @@ internal fun MainActivity.screenOff() {
     val tv = tv
     if (tv == null || !tv.ready()) return
     Thread {
-        val err = try { ScreenOff.off(tv.adb(), assets.open("tvr-helper.jar").use { it.readBytes() }); null } catch (e: Exception) { e }
-        ui.post { say(if (err == null) T("playing.screen_off") else T("now_playing.this_tv_cannot_turn"), err != null) }
+        var on = false
+        val err = try {
+            val a = tv.adb()
+            val jar = assets.open("tvr-helper.jar").use { it.readBytes() }
+            on = ScreenOff.isOff { a.shell(it) }
+            if (on) ScreenOff.on(a, jar) else ScreenOff.off(a, jar)
+            null
+        } catch (e: Exception) { e }
+        ui.post { say(if (err != null) T("now_playing.this_tv_cannot_turn") else if (on) T("playing.screen_on") else T("playing.screen_off"), err != null) }
     }.start()
 }
 

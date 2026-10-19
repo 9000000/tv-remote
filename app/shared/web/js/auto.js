@@ -69,6 +69,16 @@ function renderRules() {
         act('🗑', async () => { if (await ask(T('auto.limit_drop_ask', { name }), { ok: T('auto.drop_limit') })) await loadRules({ do: 'limit', pkg: l.pkg, minutes: 0 }); }, 'danger')));
   });
   $('#limits').replaceChildren(...(rows.length ? rows : [UI.empty(T('auto.no_limits'))]));
+  // app locks; a TV Setup older than them has no "lock" in its answer
+  const lock = r.lock || { pin: false, apps: [] };
+  $('#locks').replaceChildren(...(lock.apps.length ? lock.apps.map((l) => {
+    const icon = appIcon(l.pkg); onMeta(l.pkg, (m) => icon.fill(m));
+    const name = l.label || appName(l.pkg);
+    return el('div', { className: 'item' }, icon, el('div', { className: 'name' }, el('span', { textContent: name })),
+      el('div', { className: 'acts' },
+        act('🗑', async () => { if (await ask(T('auto.unlock_ask', { name }), { ok: T('auto.unlock') })) await loadRules({ do: 'lock', pkg: l.pkg, on: false }); }, 'danger')));
+  }) : [UI.empty(T('auto.no_locks'))]));
+  $('#lockacts').replaceChildren(...(lock.pin ? [act(T('auto.pin_change'), () => askPin())] : []));
   // volume limits; a TV Setup older than them has no "volume" in its answer
   const vols = r.volume || [];
   $('#vols').replaceChildren(...(vols.length ? vols.map((v, i) => el('div', { className: 'item' },
@@ -148,6 +158,23 @@ $('#volf').addEventListener('submit', async (e) => {
   if (v.from === v.to) return toast(T('auto.times_differ'));
   if (await saveVols([...((RULES && RULES.volume) || []), v])) $('#voldlg').close(), toast(T('auto.vol_added', { max: v.max, from: v.from, to: v.to }));
 });
+// a PIN of 4 to 8 digits, asked twice; true once the TV keeps it
+async function askPin() {
+  if (RULES && RULES.lock === undefined && !await setupFor('lock')) return false;
+  const pin = await ask(T('auto.pin_new'), { value: '', pin: true, ok: T('auto.pin_next') });
+  if (pin === null) return false;
+  if (!/^\d{4,8}$/.test(pin.trim())) { toast(T('auto.pin_bad')); return false; }
+  const again = await ask(T('auto.pin_again'), { value: '', pin: true });
+  if (again === null) return false;
+  if (again.trim() !== pin.trim()) { toast(T('auto.pin_differ')); return false; }
+  if (!await loadRules({ do: 'pin', pin: pin.trim() })) return false;
+  toast(T('auto.pin_set')); return true;
+}
+$('#lockf').addEventListener('submit', async (e) => {
+  e.preventDefault(); const pkg = $('#lockpkg').value; if (!pkg) return;
+  if (!(RULES && RULES.lock && RULES.lock.pin)) { $('#lockdlg').close(); if (!await askPin()) return; }
+  if (await loadRules({ do: 'lock', pkg, on: true })) { if ($('#lockdlg').open) $('#lockdlg').close(); toast(T('auto.locked_done', { name: appName(pkg) })); }
+});
 $('#limitf').addEventListener('submit', async (e) => {
   e.preventDefault(); const pkg = $('#limitpkg').value; if (!pkg) return;
   if (await loadRules({ do: 'limit', pkg, minutes: +$('#limitmin').value })) $('#limitdlg').close(), toast(T('auto.limit_added', { name: appName(pkg), time: mins(+$('#limitmin').value) }));
@@ -158,11 +185,11 @@ let pickApps = [];
 async function loadPickApps() {
   const r = await api('/api/apps', null, true); if (!r) return;
   seedMeta(r.apps); pickApps = r.apps.map((a) => a.pkg);
-  const fill = () => {
-    const keep = $('#limitpkg').value;
-    $('#limitpkg').replaceChildren(el('option', { value: '', textContent: T('auto.pick_app') }), ...pickApps.slice().sort((a, b) => appName(a).localeCompare(appName(b))).map((p) => el('option', { value: p, textContent: appName(p) })));
-    $('#limitpkg').value = keep;
-  };
+  const fill = () => ['#limitpkg', '#lockpkg'].forEach((id) => {
+    const keep = $(id).value;
+    $(id).replaceChildren(el('option', { value: '', textContent: T('auto.pick_app') }), ...pickApps.filter((p) => p !== 'dev.tvremote.setup').sort((a, b) => appName(a).localeCompare(appName(b))).map((p) => el('option', { value: p, textContent: appName(p) })));
+    $(id).value = keep;
+  });
   fill(); pickApps.filter((p) => !(META.get(p) || {}).label).forEach((p) => onMeta(p, () => fill()));
 }
 

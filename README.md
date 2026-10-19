@@ -37,9 +37,9 @@ Tested for real on a Sony BRAVIA (Android 9). Other brands are untested; LG, Sam
 
 - **A remote** with arrows, volume, channels, apps, typing and voice.
 - **The TV's picture on your device**, with touch and sound. Draw on the TV's screen or send it a message.
-- **Now playing**, the TV's clipboard, and a screen that goes off while the music plays on.
-- **Apps, files and health** (what runs, how much memory) on the TV, managed from your phone.
-- **Sleep timer, bedtime, app limits and volume limits** that run on the TV, so they work with every other device off.
+- **Now playing**, the TV's clipboard, a screen that goes off while the music plays on (and back on from the app), and a dimmer or blue light filter over every app.
+- **Apps, files and health** (what runs, how much memory, the TV's own internet speed) on the TV, managed from your phone.
+- **Sleep timer, bedtime, app limits, volume limits and apps locked with a PIN** that run on the TV, so they work with every other device off.
 - **Scenes** (several steps in one tap), widget and Quick Settings tiles, game controller, Home Assistant and Siri Shortcuts.
 - **Optional extras on the TV** ("Optimize TV"): faster, lighter, and fully undoable.
 
@@ -63,8 +63,8 @@ The **TV app** is shown on the TV as *TV Setup*. It also runs the timers and lim
 | | Phone app | TV web page | Computer app |
 |---|---|---|---|
 | Remote, the TV's picture and touch, draw, picture or message on the TV | ✓ | ✓ | ✓ |
-| Now playing, the TV's clipboard, screen off while it keeps playing | ✓ | ✓ | ✓ |
-| Volume limits by time of day, sleep timer, bedtime, app limits | ✓ | ✓ | ✓ |
+| Now playing, the TV's clipboard, screen off while it keeps playing, dim the screen | ✓ | ✓ | ✓ |
+| Volume limits by time of day, sleep timer, bedtime, app limits, PIN lock | ✓ | ✓ | ✓ |
 | Listen to the TV | ✓, screen off too | ✓, while the page is open | ✓, high quality |
 | Apps, Files, Health, Automation, Setup | ✓ | ✓ | ✓ |
 | *Sharpest* picture quality | | | ✓ |

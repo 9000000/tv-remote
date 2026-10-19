@@ -80,6 +80,7 @@
         "sub": "rkey.timer_custom_sub" },
       { "id": "screen-off", "icon": "eye_off", "t": "rkey.screen_off", "do": "screenOff", "needs": ["screen_off"],
         "sub": "rkey.screen_off_sub" },
+      { "id": "dim", "icon": "contrast", "t": "rkey.dim", "do": "dim", "needs": ["adb"], "sub": "rkey.dim_sub" },
       { "id": "timer-bedtime", "icon": "moon", "t": "rkey.timer_bedtime", "do": "automation", "needs": ["adb"] }
     ],
     "scenes": [

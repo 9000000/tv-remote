@@ -39,6 +39,7 @@ function ask(text, o = {}) {
       el('div', { className: 'name' }, el('span', {}, el('b', { textContent: c.name }), c.tag ? el('span', { className: 'ltag', textContent: c.tag }) : null),
         c.sub ? el('small', { textContent: c.sub }) : null))));
     if (pick) { input.addEventListener('input', mark); input.placeholder = T('core.type_own'); }
+    if (o.pin && input) { input.type = 'password'; input.inputMode = 'numeric'; input.autocomplete = 'new-password'; }   // the phone's number pad, dots
     const yes = el('button', { type: 'submit', className: o.danger ? 'danger' : 'primary', textContent: o.ok || 'OK' });
     const no = el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => d.close() });
     const d = el('dialog', { className: 'ask' }, el('form', { className: 'card', onsubmit: (e) => { e.preventDefault(); d.returnValue = 'yes'; d.close(); } },
@@ -153,7 +154,7 @@ addEventListener('resize', closePop);
 // meets one (its error says "setup:old|missing:<feature>:<min>:<have>") asks to update or install TV Setup, with the button.
 // A page that knows before starting asks setupFor(feature). The same names as SetupNeed.name.
 // ids of i18n/*.json: the words of each feature, said in the question below
-const SETUP_NEEDS = { rules: 'core.need_rules', draw: 'core.need_draw', invite: 'core.need_invite', ram: 'core.need_ram', pic: 'core.need_pic', volume: 'core.need_volume', bedtimes: 'core.need_bedtimes', notify: 'core.need_notify', awake: 'core.need_awake', files: 'core.need_files', welcome: 'core.need_welcome', launcher: 'core.need_launcher' };
+const SETUP_NEEDS = { rules: 'core.need_rules', draw: 'core.need_draw', invite: 'core.need_invite', ram: 'core.need_ram', pic: 'core.need_pic', volume: 'core.need_volume', bedtimes: 'core.need_bedtimes', notify: 'core.need_notify', awake: 'core.need_awake', files: 'core.need_files', welcome: 'core.need_welcome', launcher: 'core.need_launcher', lock: 'core.need_lock', dim: 'core.need_dim' };
 const SETUP_RE = /setup:(old|missing):(\w+):([0-9.]*):([0-9.]*)/;
 const setupSay = (m) => { const what = SETUP_NEEDS[m[2]] ? T(SETUP_NEEDS[m[2]]) : m[2];
   return m[1] === 'missing' ? T('core.setup_missing', { what }) : T('core.setup_old', { what, min: m[3], have: m[4] }); };

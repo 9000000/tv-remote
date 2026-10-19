@@ -46,6 +46,7 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "automation" to act { if (!needsAdb()) managing.open(host, "auto") },
     "clip" to act { clipDialog() },
     "screenOff" to act { screenOff() },
+    "dim" to act { dimDialog() },
     "share" to act { shareDialog() },
     "inputs" to act { inputsMenu() },
 )

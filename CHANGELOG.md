@@ -4,6 +4,22 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+
+- 🔒 Khóa app bằng mã PIN (tab Tự động): mở app đã khóa thì TV hỏi PIN (phím số của remote hoặc bàn phím trên màn hình); dùng tới khi sang app khác hoặc TV tắt. Sai 5 lần chờ 1 phút. PIN chỉ lưu trên TV, dạng băm. Cần TV Setup mới
+- Tắt / bật màn hình: bấm lại để bật màn hình từ app. Remote thật của TV cũng bật lại, còn phím gửi từ app thì không (trước đây phím nào cũng bật)
+- 🔅 Giảm độ sáng (Thêm phím → Hẹn giờ tắt): phủ màu lên mọi app (Tối, Lọc xanh, Vàng, Nâu cổ, Đỏ đêm, Xanh), độ mạnh 5 đến 90%, đổi ngay khi kéo. Giữ cả khi TV Setup khởi động lại. Cần TV Setup mới
+- ⚡ Đo tốc độ mạng của chính TV (Sức khỏe → 📶 Mạng): độ trễ, tải xuống, tải lên, đủ cho 4K / Full HD / HD; có nút Dừng, mở lại trang vẫn thấy lần đo trước
+
+**English**
+
+- 🔒 Lock apps with a PIN (Automation tab): opening a locked app asks for the PIN on the TV (the remote's number keys or the keypad on screen); it stays open until another app comes up or the TV turns off. 5 wrong PINs: a minute's wait. The PIN is kept only on the TV, hashed. Needs the new TV Setup
+- Screen off / on: tap it again to turn the screen back on from the app. The TV's own remote turns it on too; keys sent from the app no longer do
+- 🔅 Dim the screen (More keys → Sleep timer): a tint over every app (Dark, Blue filter, Yellow, Sepia, Night red, Blue) at 5 to 90%, applied as you drag. Kept when TV Setup restarts. Needs the new TV Setup
+- ⚡ The TV's own internet speed (Health → 📶 Network): ping, download, upload, and whether that is enough for 4K / Full HD / HD; Stop button, and the last result shows when the page is opened again
+
 ## 0.12.0 - 2026-10-19
 
 Web 0.12.0 · app điện thoại 0.12.0 · app TV 0.12.0

@@ -17,10 +17,11 @@ import java.util.Locale
  *   app limits    minutes per day for an app; when they are used up the app is closed (more can be granted for today)
  *   volume        times of day with a highest volume each (22:00–06:00 at most 30%): louder is turned down, with a word on screen
  *   memory        a notice over whatever is on when the TV's memory stays fuller than a set share, to free it or not
+ *   app locks     a PIN asked over an app before it can be used, again each time another app was opened ([PinActivity])
  *
  * Stored as one JSON object: { sleep_at, bedtime: {on, ranges: [{from, to}], from, to (the first range, for
  * remotes older than ranges)}, snooze_until, limits: {pkg: minutes}, extra: {day: {pkg: minutes}},
- * volume: [{from, to, max (percent)}], ram: {on, pct (used, percent)} }.
+ * volume: [{from, to, max (percent)}], ram: {on, pct (used, percent)}, lock: {apps: [pkg], salt, hash (of the PIN), len (its digits)} }.
  * The remotes reach it through [RulesReceiver] (phone, computer: over ADB) or RemoteService (the TV's own page).
  */
 internal object Rules {
@@ -41,6 +42,7 @@ internal object Rules {
         val o = load(c)
         return o.optLong("sleep_at") > System.currentTimeMillis() || o.optJSONObject("bedtime")?.optBoolean("on") == true || (o.optJSONObject("limits")?.length() ?: 0) > 0
             || (o.optJSONArray("volume")?.length() ?: 0) > 0 || ram(o).optBoolean("on")
+            || locked(o).isNotEmpty()
             || o.optBoolean("awake")                                   // KeepAwake lives in the service
             || WelcomeState.active(c)                                  // so does hearing the TV turned on (WelcomeWatch)
     }
@@ -51,7 +53,8 @@ internal object Rules {
      * One action from a remote, then the state they show. Actions ("do"): sleep {minutes} (0 cancels), sleep_add {minutes},
      * bedtime {on, ranges: [{from, to}] ("22:00"), or from, to for one}, snooze {minutes} (bedtime paused, 0 resumes), limit {pkg, minutes} (0 removes),
      * extra {pkg, minutes} (more for today only), volume {ranges: [{from, to, max}]} (the whole list),
-     * ram {on, pct} (the memory notice, at pct% used). An empty "do" only reads.
+     * ram {on, pct} (the memory notice, at pct% used), pin {pin} (4 to 8 digits), lock {pkg, on} (a PIN must be set first).
+     * An empty "do" only reads.
      */
     @Synchronized
     fun change(c: Context, d: JSONObject): JSONObject {
@@ -78,6 +81,20 @@ internal object Rules {
             "volume" -> o.put("volume", ranges(d.optJSONArray("ranges") ?: JSONArray(), true))
             "ram" -> o.put("ram", JSONObject().put("on", d.optBoolean("on")).put("pct", d.optInt("pct", ram(o).optInt("pct")).coerceIn(RAM_MIN, RAM_MAX)))
             "awake" -> o.put("awake", d.optBoolean("on"))                   // KeepAwake: the chip kept up while the TV is "off"
+            "pin" -> {
+                val pin = d.optString("pin")
+                if (!PIN.matches(pin)) throw IllegalArgumentException("bad PIN")
+                val salt = java.util.UUID.randomUUID().toString()
+                o.put("lock", (o.optJSONObject("lock") ?: JSONObject().put("apps", JSONArray())).put("salt", salt).put("hash", hash(salt, pin)).put("len", pin.length))
+            }
+            "lock" -> {
+                val pkg = d.optString("pkg")
+                if (!PKG.matches(pkg) || pkg == SELF) throw IllegalArgumentException("bad package name")
+                val lock = o.optJSONObject("lock")
+                if (lock?.has("hash") != true) throw IllegalArgumentException("set a PIN first")
+                val apps = locked(o).toMutableList().apply { remove(pkg); if (d.optBoolean("on")) add(pkg) }
+                lock.put("apps", JSONArray(apps))
+            }
             "snooze" -> o.put("snooze_until", if (minutes > 0) now + minutes * 60_000L else 0L)
             "limit", "extra" -> {
                 val pkg = d.optString("pkg")
@@ -118,6 +135,21 @@ internal object Rules {
         val o = load(c)
         if (o.optLong("sleep_at") == at) save(c, o.put("sleep_at", 0L))
     }
+
+    private val PIN = Regex("\\d{4,8}")
+    private const val SELF = "dev.tvremote.setup"
+
+    /** The apps a PIN is asked for. */
+    fun locked(o: JSONObject): List<String> = o.optJSONObject("lock")?.optJSONArray("apps")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()
+
+    /** Whether [pin] is the one set. */
+    fun pinOk(o: JSONObject, pin: String): Boolean {
+        val lock = o.optJSONObject("lock") ?: return false
+        return lock.has("hash") && hash(lock.optString("salt"), pin) == lock.optString("hash")
+    }
+
+    private fun hash(salt: String, pin: String): String =
+        java.security.MessageDigest.getInstance("SHA-256").digest((salt + pin).toByteArray()).joinToString("") { "%02x".format(it) }
 
     const val RAM_MIN = 75
     const val RAM_MAX = 97
@@ -192,6 +224,8 @@ internal object Rules {
             .put("limits", limits).put("volume", o.optJSONArray("volume") ?: JSONArray()).put("volume_now", volumeCap(o, now) ?: JSONObject.NULL)
             .put("ram", ram(o)).put("volume_fixed", Guard.volumeFixed(c)).put("running", RemoteService.isRunning()).put("wanted", active(c))
             .put("adb", RemoteService.adbState()).put("awake", o.optBoolean("awake"))
+            .put("lock", JSONObject().put("pin", o.optJSONObject("lock")?.has("hash") == true)
+                .put("apps", JSONArray(locked(o).map { JSONObject().put("pkg", it).put("label", label(c, it)) })))
     }
 
     private fun label(c: Context, pkg: String): String = try {

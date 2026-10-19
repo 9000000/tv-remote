@@ -9,11 +9,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * The TV's screen off while it keeps playing (music, a podcast), and on again by itself: run as the shell with app_process,
- * started in the background so it outlives the remote that asked. `off` turns the panel off the way scrcpy does (the TV stays
- * awake, so the sound goes on), then waits: any key on any remote (the TV's own, the phone's) turns it back on, since a person
- * pressing keys at a black TV would think it broke. It quits when the TV goes to standby (waking it turns the screen on anyway).
- * `on` turns it on at once. Both say "ok" or "error ..." on one line.
+ * The TV's screen off while it goes on playing and stays in the remotes' hands, and on again by itself: run as the shell with
+ * app_process, started in the background so it outlives the remote that asked. `off` turns the panel off the way scrcpy does (the
+ * TV stays awake: the sound goes on, the picture still reaches the remotes, their keys still work), then waits: a key of a real
+ * input device (the TV's own remote, a keyboard: anything in /dev/input, which getevent reads) turns it back on, since a person
+ * at a black TV would think it broke. Keys the remotes inject (input, scrcpy) never show there, so they leave it off; when one
+ * makes Android light the panel again it is turned off at once. It quits when the TV goes to standby (waking turns the screen on
+ * anyway). `on` turns it on at once (the remotes stop the waiting one first: ScreenOff.kt). Both say "ok" or "error ..." on one line.
  */
 public final class Screen {
     private Screen() { }
@@ -23,6 +25,8 @@ public final class Screen {
 
     public static void main(String[] args) throws Exception {
         try { run(args); } finally {
+            Process g = getevent;
+            if (g != null) g.destroy();                               // or it would outlive this process
             System.out.flush();
             Runtime.getRuntime().halt(0);                             // android_servers crashes in the normal exit's teardown
         }
@@ -39,16 +43,34 @@ public final class Screen {
         System.out.println("ok");
         System.out.flush();
         if (!off) return;
+        Thread keys = new Thread(Screen::watchKeys);
+        keys.setDaemon(true);
+        keys.start();
         long was = -1;
-        for (int i = 0; ; i++) {
+        for (int i = 1; ; i++) {
             Thread.sleep(700);
-            String p = run("dumpsys power");
+            if (pressed) { power(NORMAL); return; }
+            String p = run("dumpsys power | grep -F -e mWakefulness= -e astUserActivityTime");
             if (p.contains("mWakefulness=") && !p.contains("mWakefulness=Awake")) return;   // standby: waking turns it on
             long now = activity(p);
-            if (was < 0) { was = now; continue; }
-            if (now > was) { power(NORMAL); return; }
-            if (i % 40 == 0) power(OFF);                              // some TVs turn the panel back on by themselves (a source change)
+            if (now != was || i % 40 == 0) power(OFF);               // a remote's key may light it again; some TVs do so by themselves (a source change)
+            was = now;
         }
+    }
+
+    private static volatile boolean pressed;
+    private static volatile Process getevent;
+
+    /** Waits for a key pressed on a real input device. Without getevent (or not allowed to read them) nothing turns it on but `on`. */
+    private static void watchKeys() {
+        try {
+            Process p = getevent = Runtime.getRuntime().exec(new String[] { "getevent", "-l" });
+            try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+                for (String line; (line = r.readLine()) != null; ) {
+                    if (line.contains("EV_KEY") && line.trim().endsWith("DOWN")) { pressed = true; return; }
+                }
+            }
+        } catch (Exception ignored) { }
     }
 
     private static long activity(String dump) {
