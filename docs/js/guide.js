@@ -72,11 +72,11 @@
     return o;
   }
   function esc(s){ return s.replace(/[&<>"]/g, function(c){ return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
-  function textOf(node, lang){                                      // visible text in this language only
+  function textOf(node, lang, noTitle){                                     // visible text in this language only
     var w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT), out = [], n, last = null;
     while ((n = w.nextNode())){
       var e = n.parentElement, other = e && e.closest(lang === "vi" ? ".en" : ".vi");
-      if (other || (e && e.closest(".ga-box,.gst-box,.gsince")) || !n.nodeValue.trim()) continue;
+      if (other || (e && e.closest(".ga-box,.gst-box,.gsince")) || (noTitle && e && e.closest("h3")) || !n.nodeValue.trim()) continue;
       var block = e && e.closest("td,th,li,p,h4,dt,dd,figcaption");   // table cells and steps would run into each other
       if (out.length && block !== last && !/[.:;!?…]\s*$/.test(out[out.length - 1])) out.push("·");
       out.push(n.nodeValue); last = block;
@@ -86,9 +86,8 @@
   function build(){
     var lang = root.dataset.lang;
     index = topics.map(function(a){
-      var h = a.querySelector("h3"), title = textOf(h, lang).replace(/^\S+\s/, ""), clone = a.cloneNode(true);
-      clone.querySelector("h3").remove();
-      var text = textOf(clone, lang), kw = a.dataset.kw || "";
+      var h = a.querySelector("h3"), title = textOf(h, lang).replace(/^\S+\s/, "");   // no cloneNode: a cloned lazy <img> is fetched at once
+      var text = textOf(a, lang, true), kw = a.dataset.kw || "";
       var g = a.closest(".ggroup").querySelector(".gh");
       return { id: a.id, title: title, text: text, group: textOf(g, lang), ft: fold(title), fx: fold(text), fk: fold(kw) };
     });
@@ -247,6 +246,20 @@
     document.addEventListener("click", function(e){ if (!sheet.hidden && !e.target.closest("nav")) set(false); });
     document.addEventListener("keydown", function(e){ if (e.key === "Escape" && !sheet.hidden) set(false, true); });
     matchMedia("(min-width:981px)").addEventListener("change", function(m){ if (m.matches) set(false); });
+  })();
+
+  /* ---------- a screenshot opens full size on a click; a click or Esc closes it ---------- */
+  (function(){
+    var box = null;
+    function close(){ if (box) { box.remove(); box = null; } }
+    document.addEventListener("click", function(e){
+      var im = e.target.closest(".gshot img");
+      if (!im) { close(); return; }
+      close(); box = document.createElement("div"); box.className = "gzoom";
+      var big = document.createElement("img"); big.src = im.currentSrc || im.src; big.alt = im.alt;
+      box.appendChild(big); document.body.appendChild(box);
+    });
+    document.addEventListener("keydown", function(e){ if (e.key === "Escape") close(); });
   })();
 
   document.getElementById("yr").textContent = new Date().getFullYear();
