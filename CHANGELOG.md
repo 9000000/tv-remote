@@ -11,12 +11,14 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Mở màn Quản lý nhanh hơn: không còn chờ 3–4 giây ở "Đang kết nối ADB…" (trang hỏi lại ngay khi ADB vừa kết nối, thay vì đợi lượt 4 giây); app điện thoại còn kết nối ADB sẵn cho Quản lý ngay khi remote đã chạy. App máy tính: "· cần ADB" ẩn khi đã có ADB.
 - App điện thoại: sang app khác rồi quay lại trong 15 giây thì hình hiện lại ngay, không đen 1–2 giây (như trang web); dòng "Đang mở …" không còn tạm mất lúc vừa quay lại.
 - Hình mượt hơn ở chế độ Tự động: 20 hình/giây ở 720p và 960p (trước là 10), 15 ở 480p trở xuống (trước là 8). TV dùng bộ mã hóa phần mềm thì vẫn 10 để TV không bị nặng.
+- App điện thoại: lúc xem hình, phím đi chung phiên của hình; sau 1 phút phiên riêng của phím nghỉ, TV đỡ khoảng 47 MB RAM. Tắt hình là phiên phím chạy lại ngay (dưới nửa giây).
 
 **English**
 
 - Manage opens faster: no more 3–4 s on "Connecting ADB…" (the page asks again as soon as ADB is up instead of at the next 4 s tick), and the phone app dials Manage's ADB ahead once the remote runs. Computer app: "· needs ADB" is hidden once ADB is there.
 - Phone app: back from another app within 15 s, the picture is there at once instead of black for 1–2 s (as on the web page); the "Now open …" line no longer goes missing for a moment on return.
 - Smoother picture on Auto: 20 frames a second at 720p and 960p (was 10), 15 at 480p and below (was 8). A TV on its software encoder stays at 10, so it is not slowed down.
+- Phone app: while the picture shows, keys ride on the picture's session, and after a minute the keys' own one rests, sparing the TV about 47 MB of memory. Hide the picture and the keys' session is back at once (under half a second).
 
 ## 0.11.0 - 2026-10-19
 

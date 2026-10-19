@@ -427,6 +427,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     internal fun stopPicture() {
         ui.removeCallbacks(picRetry); ui.removeCallbacks(countWatchers); picWatchers = 0
+        if (pic != null) tv?.carry(null)                              // the keys' own session back before the next key
         pic?.stop()
         pic = null
     }
@@ -466,12 +467,14 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                     "rate" -> status.text = title(entry ?: h) + " · " + (if (listen) "🎧 " else "") + detail + " KB/s" + others()
                     "live" -> {
                         picTries = 0; picShown = true
+                        tv?.carry(from)                               // keys go by the picture's session: the keys' own can rest
                         ui.removeCallbacks(countWatchers); ui.postDelayed(countWatchers, 3000)
                         waiting.visibility = View.GONE
                         status.text = title(entry ?: h) + " · " + if (listen) T("phone.listening_on_the_phone") else T("phone.touch_the_picture_to")
                     }
                     "closed", "error" -> {
                         pic = null
+                        tv?.carry(null)
                         if (tv?.ready() != true) return@post          // the TV is gone: the keys' session reconnects both
                         if (++picTries <= 3) ui.postDelayed(picRetry, 1000L * picTries)
                         else {                                        // never a picture: a TV with one encoder may be busy with another device

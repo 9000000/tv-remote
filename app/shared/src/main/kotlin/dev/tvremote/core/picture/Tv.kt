@@ -95,6 +95,8 @@ class Tv(
         /** Each TV's software encoder by name, from list_encoders: asked once, whether chosen by hand or after a stall */
         private val softName = java.util.concurrent.ConcurrentHashMap<String, String>()
         private const val FIRST_FRAME_MS = 8000L
+        /** How long a keys' session goes unused while another carries its keys before its own scrcpy-server rests: see [carry] */
+        const val REST_MS = 60_000L
         private const val POLL_MS = 25L
         private const val SEP = "#tvr-sep#"
         /** Waits for the capture's virtual output to go, then starts Google's remote service: see endCapture */
@@ -136,6 +138,13 @@ class Tv(
     @Volatile private var capture: List<Adb.Stream>? = null           // the sockets while the TV's sound is captured
     @Volatile private var adb: Adb? = null
     @Volatile private var control: Adb.Stream? = null
+    @Volatile private var server: Adb.Stream? = null                  // the shell running scrcpy-server: closed, the TV ends it
+    @Volatile private var carrier: Tv? = null                         // another session of this TV taking our keys: see carry()
+    @Volatile private var resting = false                             // our scrcpy-server stopped meanwhile, the ADB link kept
+    @Volatile private var wanted = false                              // asked back while resting
+    @Volatile private var ownUse = 0L
+    private val restLock = Object()
+    private val restable: Boolean get() = wantControl && !wantVideo && audio == null
     @Volatile private var width = 960
     @Volatile private var height = 540
     private val wantVideo = screen != null || sink != null
@@ -190,39 +199,46 @@ class Tv(
                 if (!wantVideo && !wantControl) throw IOException("this TV cannot send its sound (Android 11 or newer is needed)")
             }
             val soft = if (!wantVideo) null else when (encoder) { "hw" -> null; "sw" -> softFor(a); else -> softEncoder[host] }
-            val scid = String.format("%08x", Random().nextInt(0x7fffffff))
-            val log = a.open("shell:CLASSPATH=" + REMOTE + " app_process / com.genymobile.scrcpy.Server " + VER + " scid=" + scid
-                    + " tunnel_forward=true cleanup=false control=$wantControl send_dummy_byte=true send_device_meta=false clipboard_autosync=false "   // autosync on, GET_CLIPBOARD answers nothing
-                    + (if (wantVideo) "video=true $video max_fps=" + fpsFor(quality, fps, soft != null) + (soft?.let { " video_encoder=$it" } ?: "") else "video=false")
-                    + (if (hearing == null) " audio=false" else " audio=true audio_codec=$hearing" + (if (hearing == "opus") " audio_bit_rate=$audioBitRate" else "") + (if (sdk >= 33) " audio_source=playback" else "") + (if (share) " audio_dup=true" else ""))
-                    // scrcpy-server does not always notice that we left (a still picture sends nothing), and a leftover one keeps
-                    // loading the TV. So a shell loop on the TV waits for our heartbeat and kills the server when it stops; 60 s,
-                    // not less: a phone frozen in the background or a laptop that slept a moment is not a viewer gone.
-                    + " & P=\$!; while read -t 60 x; do :; done; kill \$P")
-            if (Trace.on) Trace.log("s.launch")
-            Thread({
-                try { while (!stopped) { log.write("\n".toByteArray()); Thread.sleep(8000) } } catch (gone: Exception) { }
-            }, "scrcpy-heartbeat").apply { isDaemon = true }.start()
-            Thread({ try { log.readAll() } catch (ignored: IOException) { } }, "scrcpy-log").apply { isDaemon = true }.start()
-            var first: Adb.Stream? = null                             // the first of the sockets: video, then sound, then control, whichever are asked for
-            val one = ByteArray(1)
-            var i = 0
-            val giveUp = System.nanoTime() + 20_000_000_000L
-            while (System.nanoTime() < giveUp && first == null && !stopped) {   // until the server listens, the TV refuses the socket
-                try {
-                    val s = a.open("localabstract:scrcpy_$scid")
-                    if (s.read(one, 0, 1, 4000) == 1 && one[0].toInt() == 0) first = s else s.close()
-                } catch (notYet: IOException) {
-                    if (a.isDead()) throw notYet
+            /** Starts scrcpy-server and opens its sockets in the order it takes them; again after [rest]. */
+            fun startServer(): List<Adb.Stream> {
+                val got = arrayListOf<Adb.Stream>()
+                val scid = String.format("%08x", Random().nextInt(0x7fffffff))
+                val log = a.open("shell:CLASSPATH=" + REMOTE + " app_process / com.genymobile.scrcpy.Server " + VER + " scid=" + scid
+                        + " tunnel_forward=true cleanup=false control=$wantControl send_dummy_byte=true send_device_meta=false clipboard_autosync=false "   // autosync on, GET_CLIPBOARD answers nothing
+                        + (if (wantVideo) "video=true $video max_fps=" + fpsFor(quality, fps, soft != null) + (soft?.let { " video_encoder=$it" } ?: "") else "video=false")
+                        + (if (hearing == null) " audio=false" else " audio=true audio_codec=$hearing" + (if (hearing == "opus") " audio_bit_rate=$audioBitRate" else "") + (if (sdk >= 33) " audio_source=playback" else "") + (if (share) " audio_dup=true" else ""))
+                        // scrcpy-server does not always notice that we left (a still picture sends nothing), and a leftover one keeps
+                        // loading the TV. So a shell loop on the TV waits for our heartbeat and kills the server when it stops; 60 s,
+                        // not less: a phone frozen in the background or a laptop that slept a moment is not a viewer gone.
+                        + " & P=\$!; while read -t 60 x; do :; done; kill \$P")
+                server = log
+                if (Trace.on) Trace.log("s.launch")
+                Thread({
+                    try { while (!stopped) { log.write("\n".toByteArray()); Thread.sleep(8000) } } catch (gone: Exception) { }
+                }, "scrcpy-heartbeat").apply { isDaemon = true }.start()
+                Thread({ try { log.readAll() } catch (ignored: IOException) { } }, "scrcpy-log").apply { isDaemon = true }.start()
+                var first: Adb.Stream? = null                             // the first of the sockets: video, then sound, then control, whichever are asked for
+                val one = ByteArray(1)
+                var i = 0
+                val giveUp = System.nanoTime() + 20_000_000_000L
+                while (System.nanoTime() < giveUp && first == null && !stopped) {   // until the server listens, the TV refuses the socket
+                    try {
+                        val s = a.open("localabstract:scrcpy_$scid")
+                        if (s.read(one, 0, 1, 4000) == 1 && one[0].toInt() == 0) first = s else s.close()
+                    } catch (notYet: IOException) {
+                        if (a.isDead()) throw notYet
+                    }
+                    if (first == null) Thread.sleep(if (i < 60) POLL_MS else 100)   // a refused socket costs the TV nothing: tight for ~2 s, then easier
+                    i++
                 }
-                if (first == null) Thread.sleep(if (i < 60) POLL_MS else 100)   // a refused socket costs the TV nothing: tight for ~2 s, then easier
-                i++
+                if (first == null) throw IOException("scrcpy-server did not start on the TV")
+                if (Trace.on) Trace.log("s.listening", "tries=$i")
+                got.add(first)                                            // the server takes the connections in this order
+                val count = (if (wantVideo) 1 else 0) + (if (hearing != null) 1 else 0) + (if (wantControl) 1 else 0)
+                while (got.size < count) got.add(a.open("localabstract:scrcpy_$scid"))
+                return got
             }
-            if (first == null) throw IOException("scrcpy-server did not start on the TV")
-            if (Trace.on) Trace.log("s.listening", "tries=$i")
-            socks.add(first)                                          // the server takes the connections in this order
-            val count = (if (wantVideo) 1 else 0) + (if (hearing != null) 1 else 0) + (if (wantControl) 1 else 0)
-            while (socks.size < count) socks.add(a.open("localabstract:scrcpy_$scid"))
+            socks.addAll(startServer())
             var next = 0
             val pictureIn = if (wantVideo) socks[next++] else null
             val soundIn = if (hearing != null) socks[next++] else null
@@ -238,7 +254,13 @@ class Tv(
                 play(pictureIn)
             } else if (ctl != null) {
                 status("live", "")
-                try { deviceMessages(ctl) } catch (ignored: IOException) { }   // returns when the TV closes the session
+                var c: Adb.Stream = ctl
+                while (true) {
+                    try { deviceMessages(c) } catch (ignored: IOException) { }   // returns when the TV closes the session, or rest() did
+                    if (!backWanted(a)) break
+                    c = startServer()[0]
+                    synchronized(restLock) { control = c; resting = false; restLock.notifyAll() }
+                }
             } else if (soundIn != null) {
                 status("live", "")
                 hear(soundIn, hearing!!)
@@ -248,6 +270,7 @@ class Tv(
             if (!stopped && !stalled) status("error", e.message ?: e.javaClass.simpleName)
         } finally {
             control = null
+            resting = false
             screen?.release()
             if (capture != null) endCapture(socks)
             capture = null
@@ -427,6 +450,7 @@ class Tv(
 
     fun stop() {
         stopped = true
+        synchronized(restLock) { restLock.notifyAll() }
         val c = capture
         if (c == null) { adb?.close(); return }
         Thread({                                                      // the session's thread ends the capture, then closes ADB
@@ -436,15 +460,82 @@ class Tv(
         }, "scrcpy-stop").apply { isDaemon = true }.start()
     }
 
-    fun ready(): Boolean = control != null && !stopped
+    fun ready(): Boolean = (control != null || resting) && !stopped
+
+    /**
+     * [by] (the picture's session, once it is live) takes this session's keys, typing and clipboard from now on: one
+     * scrcpy-server on the TV instead of two. After [REST_MS] in which nothing needed our own, it rests ([rest]). null: the
+     * picture is going, so our own server comes back now ([back]), before the next key needs it.
+     */
+    fun carry(by: Tv?) {
+        carrier = by
+        if (by == null) { back(); return }
+        if (!restable) return
+        ownUse = System.currentTimeMillis()
+        Thread({
+            try {
+                while (carrier === by && !stopped) {
+                    val idle = System.currentTimeMillis() - ownUse
+                    if (idle >= REST_MS) { if (by.ready()) rest(); return@Thread }
+                    Thread.sleep(REST_MS - idle)
+                }
+            } catch (e: InterruptedException) { }
+        }, "keys-rest").apply { isDaemon = true }.start()
+    }
+
+    /**
+     * Stops our scrcpy-server (~47 MB of the TV's memory, measured on the Google TV emulator) while another session carries
+     * the keys. The ADB link stays for everything else, and [ready] stays true: a key that needs our own server starts it
+     * again (~150 ms, the jar is on the TV already) and goes once it is up.
+     */
+    fun rest() {
+        if (!restable || stopped) return
+        val c: Adb.Stream
+        synchronized(restLock) {
+            if (resting) return
+            c = control ?: return
+            resting = true; wanted = false; control = null
+        }
+        try { c.close() } catch (ignored: Exception) { }              // scrcpy-server ends with its control socket
+        try { server?.close() } catch (ignored: Exception) { }        // and the loop on the TV with its shell
+    }
+
+    /** Our own scrcpy-server again after [rest]. */
+    fun back() = synchronized(restLock) { if (resting) { wanted = true; restLock.notifyAll() } }
+
+    fun resting(): Boolean = resting
+
+    /** The session's thread after [deviceMessages] returned: true once [back] asks for our server again, false when it ends. */
+    private fun backWanted(a: Adb): Boolean = synchronized(restLock) {
+        if (!resting) return false                                    // the TV closed it, not rest()
+        while (!wanted && !stopped) {
+            if (a.isDead()) return false                              // nobody would notice otherwise: "closed" makes the app reconnect
+            restLock.wait(5000)
+        }
+        !stopped
+    }
+
+    /** A sender's wait for the server [back] asked for: up to 3 s, then the message is dropped as when the TV is gone. */
+    private fun ownControl(): Adb.Stream? = synchronized(restLock) {
+        val end = System.currentTimeMillis() + 3000
+        while (resting && !stopped) {
+            val left = end - System.currentTimeMillis()
+            if (left <= 0) break
+            restLock.wait(left)
+        }
+        control
+    }
     fun stopped(): Boolean = stopped
 
     // ---- input: scrcpy control messages (big-endian), see ControlMessageReader.java in scrcpy ----
     private fun send(msg: ByteArray) {
-        val c = control
-        if (c == null || io.isShutdown) return
+        val by = carrier
+        if (by != null && by.control != null && !by.stopped) { by.send(msg); return }   // its scrcpy-server takes it: ours may rest
+        if (resting) back() else if (control == null) return
+        if (io.isShutdown) return
+        ownUse = System.currentTimeMillis()
         try {
-            io.execute { try { c.write(msg) } catch (ignored: IOException) { } }
+            io.execute { val c = control ?: ownControl() ?: return@execute; try { c.write(msg) } catch (ignored: IOException) { } }
         } catch (shuttingDown: RuntimeException) {
             // session ended between the check and the call
         }
@@ -508,6 +599,7 @@ class Tv(
 
     /** The text on the TV's clipboard ("" when empty), or null when the TV did not say within [timeoutMs]. Blocks. */
     fun clipboard(timeoutMs: Long = 2500): String? {
+        carrier?.takeIf { it.control != null && !it.stopped }?.let { return it.clipboard(timeoutMs) }   // the answer comes on its socket
         val before = synchronized(clipLock) { clipGot }
         send(byteArrayOf(8, 0))                                       // GET_CLIPBOARD, no copy key pressed first
         val end = System.currentTimeMillis() + timeoutMs
