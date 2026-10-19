@@ -48,6 +48,15 @@ main.picking > .tabs, main.picking > .panel, main.picking > #help, main.picking 
 .tvstat.off .badge { background:transparent; box-shadow:inset 0 0 0 1px var(--line); }
 .tvstat.old { opacity:.55; }   /* the TV has not answered for a while: what is shown is old */
 .tvshot { display:none; }
+#tvlist .item .name > span:first-child { font-weight:600; font-size:15px; }
+/* narrow: the words get the whole width (a model name no longer breaks every word) and the buttons a row under them, Open
+   the widest with its word; beside the words they floated half way down a tall row */
+@media (max-width:640px) {
+  #tvlist:not(.shots) .item .name { flex-basis:100%; }
+  #tvlist:not(.shots) .item .acts { margin-left:0; width:100%; }
+  #tvlist:not(.shots) .item .acts .primary { flex:1; }
+  #tvlist:not(.shots) .item .acts .primary .lbl { position:static; width:auto; height:auto; clip-path:none; }
+}
 #tvlist.shots { display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:10px; }
 #tvlist.shots .item { flex-direction:column; align-items:stretch; flex-wrap:nowrap; gap:8px; padding:8px; border:1px solid var(--line); border-radius:var(--radius); }
 #tvlist.shots .item:first-child { border-top:1px solid var(--line); }
@@ -227,6 +236,12 @@ dialog.menu .card-head { margin:0 0 4px; }
 .filebtn[data-busy]::after { content:attr(data-busy); font-weight:600; }
 dialog.ask textarea { width:100%; min-height:120px; resize:vertical; font:inherit; padding:8px 10px; border-radius:10px; border:1px solid var(--line); background:var(--bg); color:var(--ink); }
 dialog.ask .acts.wrap { flex-wrap:wrap; }
+.askpick { gap:4px; max-height:min(46vh, 420px); overflow-y:auto; margin:0 -4px; padding:0 4px; }   /* ask()'s choices */
+.askpick .item.pick { width:100%; height:auto; min-height:0; flex:none; justify-content:flex-start; line-height:1.35; padding:8px 12px; border:0; border-radius:10px; text-align:left; font:inherit; color:var(--ink); background:none; cursor:pointer; }
+.askpick .item.pick:hover:not(.on) { background:var(--btn); }
+.askpick .item.pick .name { flex:1 1 0; min-width:0; }
+.askpick .item.pick .name > span { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.askpick .item.pick small { overflow-wrap:anywhere; }
 #pickback { align-self:flex-start; }
 #ver { text-align:center; font-size:12px; padding:6px 0 14px; }
 

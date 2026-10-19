@@ -24,7 +24,6 @@ const DNS_LIST = [
 ];
 const DNS_BY_IP = Object.fromEntries(DNS_LIST.flatMap((d) => d.ips.map((ip) => [ip, d.host])));
 const dnsBrand = (host) => (DNS_LIST.find((d) => d.host === host) || {}).brand;
-const dnsLabel = (d) => d.brand + (d.kind ? ' · ' + d.kind : '') + ' — ' + d.host + (d.ips.length ? ' (' + d.ips[0] + ')' : '');
 const dnsWho = (hosts) => hosts.map(dnsBrand).join(', ');
 /** What was typed as the host name to set, or null after saying why it cannot be one. */
 function dnsHost(typed) {
@@ -62,7 +61,7 @@ function drawTvset(t) {
     Object.assign(choice(T('tvset.family'), kind === 'family', () => setDns(DNS_SETS.family)), { title: dnsWho(DNS_SETS.family) }),
     choice(kind === 'own' ? t.dnsHost : T('tvset.type_own'), kind === 'own', async () => {
       const typed = await ask(T('tvset.dns_own_ask'), { value: kind === 'own' ? t.dnsHost : '',
-        choices: DNS_LIST.map((d) => ({ value: d.host, label: dnsLabel(d) })) });
+        choices: DNS_LIST.map((d) => ({ value: d.host, name: d.brand, tag: d.kind, sub: d.host + (d.ips.length ? ' · ' + d.ips[0] : '') })) });
       const h = typed && typed.trim() && dnsHost(typed);
       if (h) setDns([h]);
     }),

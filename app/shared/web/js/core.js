@@ -31,10 +31,14 @@ function ask(text, o = {}) {
     const boxes = o.fields ? o.fields.map((f) => el('input', { type: 'number', inputMode: 'numeric', min: 0, max: f.max, value: f.value, placeholder: '0' })) : null;
     const input = o.fields ? el('div', { className: 'fields' }, ...o.fields.flatMap((f, i) => [el('label', {}, boxes[i], el('span', { textContent: f.label }))]))
       : typed ? el('input', { value: o.value, spellcheck: false }) : null;
-    // choices: a list to pick from that fills the box, "Type one" leaving it to be typed
-    const pick = o.choices && el('select', { onchange: () => { input.value = pick.value; if (!pick.value) input.focus(); } },
-      el('option', { value: '', textContent: T('core.type_own') }), ...o.choices.map((c) => el('option', { value: c.value, textContent: c.label, selected: c.value === o.value })));
-    if (pick) input.addEventListener('input', () => { pick.value = o.choices.some((c) => c.value === input.value.trim()) ? input.value.trim() : ''; });
+    // choices: rows to pick from that fill the box ({ value, name, tag, sub }: its name, a tag beside it, a line under it), drawn by
+    // the page and not a <select>: the phone's WebView shows one as a system list, every part of a row run into one line
+    const mark = () => pick && pick.querySelectorAll('.item').forEach((r) => r.classList.toggle('on', r.value === input.value.trim()));
+    const pick = o.choices && el('div', { className: 'list askpick' }, ...o.choices.map((c) => el('button', { type: 'button', className: 'item pick', value: c.value,
+      onclick: () => { input.value = c.value; mark(); } },
+      el('div', { className: 'name' }, el('span', {}, el('b', { textContent: c.name }), c.tag ? el('span', { className: 'ltag', textContent: c.tag }) : null),
+        c.sub ? el('small', { textContent: c.sub }) : null))));
+    if (pick) { input.addEventListener('input', mark); input.placeholder = T('core.type_own'); }
     const yes = el('button', { type: 'submit', className: o.danger ? 'danger' : 'primary', textContent: o.ok || 'OK' });
     const no = el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => d.close() });
     const d = el('dialog', { className: 'ask' }, el('form', { className: 'card', onsubmit: (e) => { e.preventDefault(); d.returnValue = 'yes'; d.close(); } },
@@ -45,7 +49,7 @@ function ask(text, o = {}) {
       if (ok) { clicked = from; clickedAt = performance.now(); }       // its call starts now: the spinner goes on the button that asked
       done(typed ? (ok ? (boxes ? boxes.map((b) => b.value) : input.value) : null) : ok);
     });
-    document.body.append(d); d.showModal();
+    document.body.append(d); d.showModal(); mark();
     if (boxes) boxes[0].select(); else if (input) input.select(); else yes.focus();
   });
   const p = askQ.then(run); askQ = p.catch(() => {}); return p;

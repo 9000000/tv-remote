@@ -475,7 +475,7 @@
  "auto.tv_on_done": "Đã bật TV",
  "auto.pressed": "Đã bấm: {key}",
  "auto.pressed_times": "Đã bấm: {key} × {times}",
- "core.type_own": "✏️ Tự nhập",
+ "core.type_own": "Hoặc tự nhập",
  "core.unit_h": "giờ",
  "core.unit_min": "phút",
  "core.pick_range": "Chọn từ 1 phút tới {n} giờ.",
