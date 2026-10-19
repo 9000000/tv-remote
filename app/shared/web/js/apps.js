@@ -94,6 +94,14 @@ function appChoice(btn, pkg) {
 }
 const lazyMeta = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { lazyMeta.unobserve(e.target); e.target.loadMeta(); } }), { rootMargin: '300px' });
 
+// Open on the TV → Open an installed app: the TV's apps as tiles, with a search
+async function openInstalled() {
+  if (!NATIVE() && needAdb()) return;                                 // an Android TV lists its apps over ADB; an LG / Samsung by its link
+  if (!quickApps.length) { const r = await api('/api/apps'); if (!r) return; seedMeta(r.apps); quickApps = r.apps.map((a) => a.pkg); }
+  const p = await chooseApp(T('rkey.open_apps'), quickApps);
+  if (p) openOnTv(p, appName(p));
+}
+
 // quick launch tiles on the Remote tab
 let quickLoaded = false, quickApps = [];                              // quickApps: the TV's apps, for the Open on the TV menu too
 async function loadQuick() {

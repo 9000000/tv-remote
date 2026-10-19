@@ -160,14 +160,17 @@ internal fun MainActivity.askText(title: String, hint: String, ok: String, then:
 
 /** Things the TV can be told to open straight from the phone, saving the hunt with the TV's own keyboard (the entries: remote.json). */
 internal fun MainActivity.quickOpen() {
-    if (!live()) return
-    val b = basic
-    if (b == null || kind() == dev.tvremote.core.remote.Remote.Kind.ANDROID) { menu(T("files.open_on_tv"), -1, remoteMenu("open")); return }
-    Thread {                                                          // LG / Samsung: their apps, from their remote link, first
+    if (live()) menu(T("files.open_on_tv"), -1, remoteMenu("open"))
+}
+
+/** Open an installed app on an LG, Samsung, Roku...: their apps, from their remote link. */
+internal fun MainActivity.openInstalled() {
+    val b = basic ?: return
+    Thread {
         val apps = try { b.apps().sortedBy { it.label.lowercase() } } catch (e: Exception) { emptyList() }
         ui.post {
             if (isFinishing || basic !== b) return@post
-            menu(T("files.open_on_tv"), -1, remoteMenu("open", lists = mapOf("tvapps" to { apps.map { a -> Triple("@play|" + a.label, "") { b.launch(a.id) } } })))
+            menu(T("rkey.open_apps"), -1, apps.map { a -> Triple("@play|" + a.label, "") { b.launch(a.id) } })
         }
     }.start()
 }

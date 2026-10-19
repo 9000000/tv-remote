@@ -79,7 +79,7 @@ async function timerCustom() {
   const v = await ask(T('remote.turn_off_when'), { value: '', ok: T('remote.set_timer') }); if (v === null) return;
   const m = sleepMinutes(v); if (m) setSleep(m); else toast(T('remote.type_minutes_or_time'));
 }
-const quickOpen = () => menuDlg(T('remote.open_on_tv'), -1, remoteMenu('open', { expand: { tvapps: () => quickApps.slice().sort((a, b) => appName(a).localeCompare(appName(b))).map((p) => ['@play|' + appName(p), '', () => openOnTv(p, appName(p))]) } }));   // LG / Samsung: their apps first
+const quickOpen = () => menuDlg(T('remote.open_on_tv'), -1, remoteMenu('open'));
 async function timerMenu() {
   if (NATIVE()) { menuDlg(T('remote.tv_screen'), -1, remoteMenu('timer')); return; }   // LG: the screen off only; the timer lives in TV Setup
   if (needAdb() || !await setupFor('rules')) return;                  // TV Setup runs the timer on the TV (SetupNeed "rules")

@@ -48,9 +48,9 @@ class RemoteSpecTest {
         for (e in all(phone) + all(web)) for (n in e.needs) assertTrue("${e.id} needs $n, which no kind of TV has", n in all)
         val lg = Remote.Kind.caps(Remote.Kind.LG)
         val open = phone.menus["open"]!!.filter { it.can(lg) }.map { it.id }
-        assertTrue("open-tvapps" in open && "open-link" in open)
-        assertFalse(open.any { it.startsWith("open-search") || it == "open-youtube" || it == "open-media" })
-        assertFalse(phone.menus["open"]!!.single { it.id == "open-tvapps" }.can(Remote.Kind.caps(Remote.Kind.ANDROID)))   // Android TVs list their apps on the Apps tab
+        assertTrue("open-apps" in open && "open-link" in open)
+        assertFalse(open.any { it == "open-get" || it == "open-send" })   // the Play Store and files need ADB
+        assertTrue(phone.menus["open"]!!.single { it.id == "open-apps" }.can(Remote.Kind.caps(Remote.Kind.ANDROID)))   // over ADB there   // Android TVs list their apps on the Apps tab
     }
 
     @Test fun eachSideShowsItsOwnWordsAndItsOwnEntries() {

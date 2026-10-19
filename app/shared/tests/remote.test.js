@@ -82,7 +82,7 @@ test('the menus are built the same way the page does, in both languages', () => 
     const timer = p.remoteMenu('timer', { when: { timerOn: true }, expand: { lengths: () => [['Tắt sau 15 phút', '', () => {}]] } });
     assert.deepEqual(Array.from(timer, (i) => i[0].split('|')[0]), ['@plus', '@close', 'Tắt sau 15 phút', '@timer', '@eye_off', '@contrast', '@moon']);
     assert.deepEqual(Array.from(p.remoteMenu('timer', { expand: { lengths: () => [] } }), (i) => i[0].split('|')[0]), ['@timer', '@eye_off', '@contrast', '@moon']);
-    const media = p.remoteMenu('open').find((i) => i[0].startsWith('@image|'));
+    const media = p.remoteMenu('send').find((i) => i[0].startsWith('@image|'));
     assert.match(media[0], lang === 'en' ? /from this device/ : /từ máy này/);   // the page's own words, not the phone's
   }
 });
@@ -91,10 +91,10 @@ test('on an LG or Samsung TV the menus leave out what it cannot do, and list its
   const p = pageSpec('pc', 'en');
   const lg = new Set(['keys', 'text', 'apps', 'app_list', 'volume_set', 'link', 'screen_off', 'wol', 'scenes']);
   p.can = (c) => c === 'control' || c === 'full' || lg.has(c);       // core.js's can(): an owner, and the caps from /api/state
-  const open = p.remoteMenu('open', { expand: { tvapps: () => [['@play|Netflix', '', () => {}]] } }).map((i) => i[0]);
-  assert.equal(open[0], '@play|Netflix');
+  const open = p.remoteMenu('open').map((i) => i[0]);
+  assert.ok(open[0].startsWith('@apps|'), 'its apps first: ' + open);
   assert.ok(open.some((w) => w.startsWith('@link|')));
-  assert.ok(!open.some((w) => /^@(search|package|image|music)\|/.test(w) || /YouTube$/.test(w)), 'no Play Store or ADB entries: ' + open);
+  assert.ok(!open.some((w) => /^@(store|send)\|/.test(w)), 'no Play Store or ADB groups: ' + open);
 });
 
 test('a guest from a shared QR: "remote" opens apps but sends no files and shares nothing, "view" presses nothing', () => {

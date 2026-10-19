@@ -24,6 +24,7 @@ function remoteMenu(name, ctx = {}) {
   const out = [];
   for (const raw of REMOTE.menus[name]) {
     if (!remoteHere(raw) || !remoteCan(raw) || (raw.when && !(ctx.when || {})[raw.when])) continue;
+    if (raw.do === 'menu' && !remoteMenu(raw.arg, ctx).length) continue;   // a group with nothing in it here (a guest, an LG)
     if (raw.expand) { const f = (ctx.expand || {})[raw.expand]; if (f) out.push(...f()); continue; }
     const e = remoteEntry(raw);
     out.push(['@' + e.icon + '|' + remoteWords(e.t), e.sub ? remoteWords(e.sub) : '', () => REMOTE_DO[e.do](e.arg)]);
@@ -31,9 +32,13 @@ function remoteMenu(name, ctx = {}) {
   return out;
 }
 
+// the groups an entry opens ("do": "menu", "arg": its name): their titles
+const REMOTE_GROUPS = { get: 'rkey.open_get', send: 'rkey.open_send' };
 const REMOTE_DO = {
   shot: () => screenshot(),
   open: () => quickOpen(),
+  apps: () => openInstalled(),
+  menu: (m) => menuDlg(T(REMOTE_GROUPS[m]), -1, remoteMenu(m)),
   timer: () => timerMenu(),
   scenes: () => scenesMenu(),
   notify: () => notifyDialog(),

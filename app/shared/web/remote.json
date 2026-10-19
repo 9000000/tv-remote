@@ -51,19 +51,18 @@
   },
   "menus": {
     "open": [
-      { "id": "open-tvapps", "expand": "tvapps", "needs": ["app_list"] },
+      { "id": "open-apps", "icon": "apps", "t": "rkey.open_apps", "do": "apps", "sub": "rkey.open_apps_sub" },
+      { "id": "open-get", "icon": "store", "t": "rkey.open_get", "do": "menu", "arg": "get", "needs": ["store"], "sub": "rkey.open_get_sub" },
+      { "id": "open-link", "icon": "link", "t": "rkey.open_link", "do": "link", "needs": ["link"],
+        "sub": "rkey.open_link_sub" },
+      { "id": "open-send", "icon": "send", "t": "rkey.open_send", "do": "menu", "arg": "send", "needs": ["adb"], "sub": "rkey.open_send_sub" },
+      { "id": "open-cast", "icon": "cast", "t": "rkey.open_cast", "do": "cast",
+        "sub": "rkey.open_cast_sub", "cores": ["phone"], "why": "Android's Cast settings can only be opened from the phone itself; a browser cannot" }
+    ],
+    "get": [
       { "id": "open-search", "icon": "search", "t": "rkey.open_search", "do": "search", "needs": ["store"] },
       { "id": "open-package", "icon": "package", "t": "rkey.open_package", "do": "package", "needs": ["store"],
         "sub": "rkey.open_package_sub" },
-      { "id": "open-link", "icon": "link", "t": "rkey.open_link", "do": "link", "needs": ["link"],
-        "sub": "rkey.open_link_sub" },
-      { "id": "open-media", "icon": "image", "t": "rkey.open_media", "do": "media", "needs": ["adb"],
-        "sub": "rkey.open_media_sub",
-        "web": { "t": "rkey.open_media_web" }, "why": "the web page may be a computer, not a phone" },
-      { "id": "open-file", "icon": "music", "t": "rkey.open_file", "do": "file", "needs": ["adb"] },
-      { "id": "open-clip", "icon": "clipboard", "t": "rkey.open_clip", "do": "clip", "sub": "rkey.open_clip_sub", "needs": ["adb"] },
-      { "id": "open-cast", "icon": "cast", "t": "rkey.open_cast", "do": "cast",
-        "sub": "rkey.open_cast_sub", "cores": ["phone"], "why": "Android's Cast settings can only be opened from the phone itself; a browser cannot" },
       { "id": "open-youtube", "icon": "play", "t": "rkey.open_youtube", "do": "store", "needs": ["store"], "arg": "com.google.android.youtube.tv", "sub": "rkey.open_youtube_sub" },
       { "id": "open-netflix", "icon": "play", "t": "rkey.open_netflix", "do": "store", "needs": ["store"], "arg": "com.netflix.ninja", "sub": "rkey.open_youtube_sub" },
       { "id": "open-vlc", "icon": "play", "t": "rkey.open_vlc", "do": "store", "needs": ["store"], "arg": "org.videolan.vlc", "sub": "rkey.open_youtube_sub" },
@@ -71,6 +70,13 @@
       { "id": "open-downloader", "icon": "download", "t": "rkey.open_downloader", "do": "store", "needs": ["store"], "arg": "com.esaba.downloader", "sub": "rkey.open_youtube_sub" },
       { "id": "open-projectivy", "icon": "home", "t": "rkey.open_projectivy", "do": "store", "needs": ["store"], "arg": "com.spocky.projengmenu", "sub": "rkey.open_youtube_sub" },
       { "id": "open-tailscale", "icon": "globe", "t": "rkey.open_tailscale", "do": "store", "needs": ["store"], "arg": "com.tailscale.ipn", "sub": "rkey.open_youtube_sub" }
+    ],
+    "send": [
+      { "id": "open-media", "icon": "image", "t": "rkey.open_media", "do": "media", "needs": ["adb"],
+        "sub": "rkey.open_media_sub",
+        "web": { "t": "rkey.open_media_web" }, "why": "the web page may be a computer, not a phone" },
+      { "id": "open-file", "icon": "music", "t": "rkey.open_file", "do": "file", "needs": ["adb"] },
+      { "id": "open-clip", "icon": "clipboard", "t": "rkey.open_clip", "do": "clip", "sub": "rkey.open_clip_sub", "needs": ["adb"] }
     ],
     "timer": [
       { "id": "timer-plus", "icon": "plus", "t": "rkey.timer_plus", "do": "timerPlus", "needs": ["adb"], "when": "timerOn" },

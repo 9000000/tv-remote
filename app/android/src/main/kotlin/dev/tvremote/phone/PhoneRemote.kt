@@ -23,9 +23,14 @@ private fun act(f: MainActivity.(String?) -> Unit) = f
 private fun hook(f: MainActivity.(IconButton) -> Unit) = f
 
 /** What each "do" in remote.json does here; `it` is the entry's "arg". */
+/** The groups an entry opens ("do": "menu", "arg": its name): their titles (REMOTE_GROUPS on the page). */
+private val remoteGroups = mapOf("get" to "rkey.open_get", "send" to "rkey.open_send")
+
 internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "shot" to act { shot() },
     "open" to act { quickOpen() },
+    "apps" to act { if (kind() != dev.tvremote.core.remote.Remote.Kind.ANDROID) openInstalled() else if (!needsAdb()) managing.open(host, "apps") },   // an Android TV's apps: the Apps tab, tiles with a search
+    "menu" to act { m -> menu(T(remoteGroups[m] ?: return@act), -1, remoteMenu(m!!)) },
     "timer" to act { timerMenu() },
     "scenes" to act { scenesMenu() },
     "notify" to act { notifyDialog() },
@@ -114,6 +119,7 @@ internal fun MainActivity.remoteMenu(name: String, conditions: Set<String> = emp
     for (e in remoteSpec().menus[name]!!) {
         if (e.whenCond != null && e.whenCond !in conditions || !e.can(caps)) continue   // what this TV cannot do is left out
         if (e.expand != null) { lists[e.expand]?.let { items.addAll(it()) }; continue }
+        if (e.action == "menu" && remoteMenu(e.arg ?: "").isEmpty()) continue   // a group with nothing in it on this TV
         val run = phoneActions[e.action!!] ?: error("remote.json: no phone handler for \"${e.action}\"")
         items.add(Triple("@" + e.icon + "|" + e.words(), e.subWords()) { run(this, e.arg) })
     }
