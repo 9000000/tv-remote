@@ -25,7 +25,7 @@ function showNowApp(id, label) {
   const pkg = /^[\w]+(\.[\w]+)+$/.test(id) && !label, icon = appIcon(id), name = el('b', { textContent: label || appName(id) });
   box.replaceChildren(el('small', { textContent: T('apps.now_open') }), icon, name);
   if (!pkg) icon.fill({ label: label || id });                         // an LG / Roku id: its name's first letter
-  if (pkg) onMeta(id, (m) => { if (nowApp.startsWith(id + '|')) { icon.fill(m); name.textContent = appName(id); } });
+  if (pkg) onMeta(id, (m) => { if (nowApp.startsWith(id + '|')) { icon.fill(m); put(name, 'textContent', appName(id)); } });
 }
 function seedMeta(apps) { apps.forEach((a) => { if (a.meta && !META.has(a.pkg)) META.set(a.pkg, a.meta); }); }
 // An app's picture, or a placeholder until there is one (and for good when there is none, or it fails to load): the first
@@ -34,8 +34,10 @@ function appIcon(pkg) {
   const box = el('div', { className: 'appicon placeholder' });
   const hue = [...pkg].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
   const letter = (name) => {
+    const ch = ((name || pkg.split('.').pop()).match(/\p{L}|\p{N}/u) || ['?'])[0].toUpperCase();
+    if (box.className === 'appicon placeholder' && box.textContent === ch && !box.children.length) return;   // already so: a rewrite flashes and wakes observers
     box.replaceChildren(); box.className = 'appicon placeholder'; box.style.background = `hsl(${hue} 45% 32%)`;
-    box.textContent = ((name || pkg.split('.').pop()).match(/\p{L}|\p{N}/u) || ['?'])[0].toUpperCase();
+    box.textContent = ch;
   };
   letter('');
   box.fill = (m) => {
