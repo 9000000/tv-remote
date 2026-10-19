@@ -92,6 +92,7 @@ let appsFilter = 'all';
 // those apps in the list (APP_TAGS), so a colour on a row says what the chip says.
 const APPS_FILTERS = [
   ['all', T('apps.all'), () => true],
+  ['open', T('apps.open_now'), (p) => recentsOpen.has(p), T('apps.open_now_why')],   // recents.js
   ['boot', T('apps.autostart'), (p, i) => !i.off && appsBoot.has(p), T('apps.autostart_why')],
   ['keep', T('apps.must_keep'), (p, i) => i.keep, T('apps.must_keep_why')],
   ['off', T('apps.turned_off'), (p, i) => i.off, T('apps.turned_off_why')],
@@ -111,13 +112,14 @@ function renderApps() {
   lazyMeta.disconnect();
   const fit = APPS_FILTERS.find((f) => f[0] === appsFilter) || APPS_FILTERS[0];
   const found = appsAll.filter((p) => !q || p.toLowerCase().includes(q) || appName(p).toLowerCase().includes(q));
-  const sys = $('#appssys').checked;
+  const sys = $('#appssys').checked, open = fit[0] === 'open';
   $('#appsfilter').replaceChildren(...APPS_FILTERS.map(([key, label, ok, why]) => el('button', { className: key + (key === fit[0] ? ' on' : ''), type: 'button', title: why || '',
-    onclick: () => { appsFilter = key; renderApps(); } }, label, el('b', { textContent: found.filter((p) => ok(p, appsInfo.get(p) || {})).length }))),
+    onclick: () => { appsFilter = key; renderApps(); if (key === 'open') recentsNow(true); } }, label,
+    el('b', { textContent: key === 'open' ? recentsList(q).length : found.filter((p) => ok(p, appsInfo.get(p) || {})).length }))),   // a system app open (Settings) counts too
     el('button', { className: 'sys' + (sys ? ' on' : ''), type: 'button', ariaPressed: String(sys), title: T('apps.show_system'),   // which apps are listed at all: a switch, not a kind
       onclick: () => { $('#appssys').checked = !sys; loadApps(); } }, (sys ? '✓ ' : '') + T('apps.system_apps')));
-  const rows = found.filter((p) => fit[2](p, appsInfo.get(p) || {}))
-    .sort((a, b) => (appsInfo.get(a)?.off ? 1 : 0) - (appsInfo.get(b)?.off ? 1 : 0) || appName(a).localeCompare(appName(b))).map((pkg) => {   // turned off: last
+  const rows = (open ? recentsList(q) : found.filter((p) => fit[2](p, appsInfo.get(p) || {}))   // open: newest first, as the TV keeps them
+    .sort((a, b) => (appsInfo.get(a)?.off ? 1 : 0) - (appsInfo.get(b)?.off ? 1 : 0) || appName(a).localeCompare(appName(b)))).map((pkg) => {   // turned off: last
     const run = async (name, label) => {
       if (name === 'uninstall' && !await ask(T('apps.uninstall_ask', { name: appName(pkg) }), { ok: T('apps.remove'), danger: true })) return;
       if (name === 'disable' && !await ask(T('apps.disable_ask', { name: appName(pkg) }), { ok: T('apps.disable_app') })) return;
@@ -138,9 +140,9 @@ function renderApps() {
       info.keep || info.off ? null : ['⏸', T('apps.disable_app'), () => run('disable', T('apps.disable_app'))],
       ['🗑', T('apps.remove'), () => run('uninstall', T('apps.remove')), 'danger'],
     ]) });
-    const row = el('div', { className: 'item' + (info.off ? ' off' : '') }, icon, el('div', { className: 'name' },
-      el('div', { className: 'nameline' }, title, ...appTags(pkg, info)), el('small', { className: 'pkg', textContent: pkg, title: pkg })),
-      el('div', { className: 'acts' }, more));
+    const row = el('div', { className: 'item' + (info.off ? ' off' : '') + (open ? ' proc' : '') }, icon, el('div', { className: 'name' },
+      el('div', { className: 'nameline' }, title, ...(open ? [] : appTags(pkg, info))), el('small', { className: open ? '' : 'pkg', textContent: open ? recentsSub(pkg) : pkg, title: pkg })),
+      el('div', { className: 'acts' }, ...(open ? recentsActs(pkg) : []), more));
     row.loadMeta = () => onMeta(pkg, (m) => { icon.fill(info.off ? { label: m.label } : m); if (m.label) title.textContent = m.label; });   // a disabled app has no picture to give
     if (META.has(pkg)) row.loadMeta(); else lazyMeta.observe(row);
     row.off = !!info.off;
@@ -152,12 +154,12 @@ function renderApps() {
   const none = !$('#appssys').checked && (fit[0] === 'keep' || fit[0] === 'boot') ? T('apps.none_system_hint') : T('apps.none');
   const fold = off.length ? [el('details', { className: 'appsoff', open: !!q || appsOffOpen, ontoggle: (e) => { if (!q) appsOffOpen = e.target.open; } },
     el('summary', { textContent: T('apps.off_title', { n: off.length }) }), el('p', { className: 'muted', textContent: T('apps.off_note') }), ...off)] : [];
-  $('#appslist').replaceChildren(...(on.length || off.length ? on : [el('div', { className: 'muted', textContent: none })]), ...fold);
+  $('#appslist').replaceChildren(...(on.length || off.length ? on : [el('div', { className: 'muted', textContent: open ? T('recents.none') : none })]), ...fold, ...(open ? recentsTail() : []));
 }
 $('#appsq').addEventListener('input', renderApps);
 $('#appsf').addEventListener('submit', (e) => e.preventDefault());
 $('#appssys').addEventListener('change', loadApps);
-$('#appsreload').addEventListener('click', loadApps);
+$('#appsreload').addEventListener('click', () => { loadApps(); recentsNow(true); });
 
 // ℹ️ one app in detail: version, dates, memory, start at boot, and the permissions a person can give or take back
 async function appDetails(pkg) {

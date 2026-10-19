@@ -29,37 +29,10 @@ function wifiTip(w) {
 function signal(rssi) { return rssi >= -55 ? T('health.signal_excellent') : rssi >= -67 ? T('health.signal_good') : rssi >= -75 ? T('health.signal_fair') : T('health.signal_weak'); }
 $('#freeram').addEventListener('click', async () => {
   const b = $('#freeram'); b.disabled = true; const r = await api('/api/free', {}); b.disabled = false;
-  if (r) { toast(T('health.ram_freed', { freed: r.freed, after: r.after })); loadHealth(); loadProcs(true); }
+  if (r) { toast(T('health.ram_freed', { freed: r.freed, after: r.after })); loadHealth(); recentsNow(true); }
 });
 // The task manager: the apps holding memory, what each is doing, and Stop where stopping cannot hurt the TV (the server
 // decides which: Manage.keepWhy). dumpsys meminfo is slow on a TV, so at most every 45 s while the tab is open.
-const procState = () => ({ front: T('health.proc_front'), bg: T('health.proc_bg'), home: T('health.proc_home'), cached: T('health.proc_idle'), system: T('health.proc_system') });
-const procKeep = () => ({ us: T('health.keep_us'), home: T('health.keep_home'), keyboard: T('health.keep_keyboard'), system: T('health.keep_android') });
-let procsAt = 0, procsBusy = false;
-async function loadProcs(now) {
-  if (procsBusy || (!now && Date.now() - procsAt < 45000)) return;   // dumpsys meminfo costs the TV a second or more: ↻ asks at once
-  procsBusy = true; procsAt = Date.now();
-  const r = await api('/api/procs', null, true);
-  procsBusy = false;
-  if (!r || !r.apps) return;
-  const row = (a) => {
-    const icon = appIcon(a.pkg), name = META.get(a.pkg)?.label || a.label;
-    const title = el('span', { textContent: name });
-    if (a.keep === 'system') icon.fill({ label: name });                 // Android's own: no picture worth asking for
-    else onMeta(a.pkg, (m) => { icon.fill(m.label ? m : { ...m, label: name }); if (m.label) title.textContent = m.label; });
-    const stop = async () => {
-      if (a.state === 'front' && !await ask(T('health.stop_ask', { name }), { ok: T('health.stop') })) return;
-      if (await api('/api/procs/kill', { pkg: a.pkg })) { toast(T('health.stopped_app', { name })); setTimeout(() => loadProcs(true), 800); }
-    };
-    return el('div', { className: 'item' }, icon, el('div', { className: 'name' }, title,
-      el('small', { textContent: a.mb + ' MB · ' + (procState()[a.state] || a.state) })),
-      el('div', { className: 'acts' }, a.keep ? el('span', { className: 'tag keep', textContent: T('health.must_keep'), title: procKeep()[a.keep] || '' }) : act(T('health.stop_btn'), stop)));
-  };
-  const apps = r.apps.filter((a) => a.keep !== 'system'), sys = r.apps.filter((a) => a.keep === 'system');   // Android's own, folded away
-  $('#procs').replaceChildren(...apps.map(row), ...(sys.length ? [el('details', { className: 'appsoff' },
-    el('summary', { textContent: T('health.android_system_n', { n: sys.length }) }), ...sys.map(row))] : []));
-}
-$('#procsre').addEventListener('click', () => loadProcs(true));
 
 // Now: the live figures. History: what the TV Setup app on the TV has written down (drawn by stats.js).
 let hmode = 'now';
@@ -435,7 +408,6 @@ async function loadHealth() {
   if (h.mem_total) { const used = h.mem_total - h.mem_free; load.push(meter('RAM', used * 100 / h.mem_total, T('health.used_of', { used: fmtSize(used), total: fmtSize(h.mem_total) }))); }
   if (h.disk_total) { const used = h.disk_total - h.disk_free; load.push(meter(T('health.internal_storage'), used * 100 / h.disk_total, T('health.used_of', { used: fmtSize(used), total: fmtSize(h.disk_total) }))); }
   $('#hload').replaceChildren(...load);
-  loadProcs();
   const cell = (cls, text) => el('div', { className: cls, textContent: text });   // CPU and RAM said once, as column heads
   $('#htop').replaceChildren(...(h.top.length ? [cell('h', T('health.k_process')), cell('h n', 'CPU'), cell('h n', 'RAM')] : []),
     ...h.top.flatMap((p) => [cell('k', (typeof appName === 'function' && META.has(p.name) && appName(p.name)) || p.name), cell('v n', p.cpu + '%'), cell('v n', p.mem + '%')]));

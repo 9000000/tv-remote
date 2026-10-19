@@ -482,7 +482,7 @@ function applyAdb() {
   if (ready && autoView) { autoView = false; startScreen(); }           // bookmark ?view=1 to start watching right away
   if (ready && !picking && setupChecked !== (curHost || '-')) checkSetup();   // a newer TV Setup: offered once per TV (auto.js, its setupChecked)
   if (NATIVE() && STATE.connected) { if (!quickLoaded && can('app_list')) loadQuick(); if (!scenesLoaded) { scenesLoaded = true; loadScenes(); } }   // the TV's apps from its remote link
-  if (ready) { if (!quickLoaded) loadQuick(); if (currentTab === 'apps' && !appsLoaded) loadApps(); if (currentTab === 'files' && !filesLoaded) loadFiles(cwd); if (!scenesLoaded) { scenesLoaded = true; loadScenes(); } if (currentTab === 'auto' && !autoLoaded) autoTab(); if ($('#setlist').open) loadSettings(); }
+  if (ready) { if (!quickLoaded) loadQuick(); if (currentTab === 'apps') { if (!appsLoaded) loadApps(); recentsNow(); } if (currentTab === 'files' && !filesLoaded) loadFiles(cwd); if (!scenesLoaded) { scenesLoaded = true; loadScenes(); } if (currentTab === 'auto' && !autoLoaded) autoTab(); if ($('#setlist').open) loadSettings(); }
   if (!ready && listenOn) stopListen(T('core.adb_stopped_listen'));
 }
 

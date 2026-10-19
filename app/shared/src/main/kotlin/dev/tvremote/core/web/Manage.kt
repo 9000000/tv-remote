@@ -100,6 +100,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             when (what) {
                 "apps" -> return HttpServer.Response.json(apps(r.q("system") == "1"))
                 "apps/report" -> return HttpServer.Response.json(appsReport())
+                "recents" -> if (!post) return HttpServer.Response.json(dev.tvremote.core.ontv.Recents.json(sh(dev.tvremote.core.ontv.Recents.CMD)))
                 "app/meta" -> {                                       // a name and whether /api/app/icon has a picture (the computer app answers it first)
                     val pkg = r.q("pkg")
                     if (!PKG.matcher(pkg).matches()) return HttpServer.Response.error(404, "not found")
@@ -160,6 +161,17 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "app" -> { open(r.json().optString("link")); HttpServer.Response.json(JSONObject().put("ok", true).put("via", "adb")) }
                 "app/launch", "app/stop", "app/uninstall", "app/disable", "app/enable", "app/clear" -> app(r.json().optString("pkg"), what.substring(4))
                 "clean" -> text(TvShell.CLEAN, 90000)
+                "recents" -> {                                        // close one open app, or all but the one on screen
+                    val d = r.json()
+                    val pkgs = if (d.optBoolean("all")) dev.tvremote.core.ontv.Recents.json(sh(dev.tvremote.core.ontv.Recents.CMD)).getJSONArray("apps").let { a -> (0 until a.length()).map { a.getJSONObject(it) }.filter { !it.optBoolean("top") }.map { it.getString("pkg") } }
+                        else listOf(d.optString("pkg"))
+                    val keep = keepNow(sh(KEEP_NOW))
+                    for (p in pkgs) {
+                        if (!PKG.matcher(p).matches()) throw IllegalArgumentException("bad package name")
+                        dev.tvremote.core.ontv.Recents.close({ sh(it) }, p, keepWhy(p, keep) != null)   // TV Setup and what the TV needs leave the list, but keep running
+                    }
+                    HttpServer.Response.json(JSONObject().put("ok", true).put("closed", pkgs.size))
+                }
                 "app/perm" -> {
                     val d = r.json(); val pkg = d.optString("pkg")
                     if (Setup.PROTECTED.matches(pkg)) throw IllegalArgumentException("protected: the TV needs this app")
@@ -725,7 +737,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
      * stopped. One shell round trip; meminfo takes a second or more on a slow TV, so the page asks only while it is open.
      */
     private fun procs(): JSONObject {
-        val p = sh("grep -E '^(MemTotal|MemAvailable):' /proc/meminfo; printf '\\043~\\043\\n'; dumpsys meminfo; printf '\\043~\\043\\n'; " + KEEP_NOW).split("#~#\n")
+        val p = sh("grep -E '^(MemTotal|MemAvailable):' /proc/meminfo; printf '\\043~\\043\\n'; dumpsys meminfo --oom; printf '\\043~\\043\\n'; " + KEEP_NOW).split("#~#\n")
         val kb = { k: String -> (Meminfo.kb(p[0], k) ?: 0L) * 1024 }
         val list = JSONArray()
         for (a in procsOf(p.getOrElse(1) { "" }, keepNow(p.getOrElse(2) { "" }))) list.put(JSONObject().put("pkg", a.pkg)
