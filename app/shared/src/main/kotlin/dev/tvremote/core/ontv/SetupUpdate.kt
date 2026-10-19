@@ -98,10 +98,15 @@ object SetupUpdate {
         # Not the TV's own refusal to let a background start become a foreground service ("did not then call Service.startForeground()", seen on TCL):
         # that says nothing about this version, and the old one dies the same way. awk drops those crashes from the count.
         crashes() { logcat -b crash -d 2>/dev/null | awk -v p="Process: ${'$'}P," 'index(${'$'}0, p) { n++; c = 1; next } /FATAL EXCEPTION/ { c = 0 } c && /did not then call Service.startForeground/ { n--; c = 0 } END { print n + 0 }'; }
+        # the same three pm calls as PmInstall.kt, one per call
+        sess() { s=${'$'}(pm install-create -r -S ${'$'}size 2>&1 | sed -n 's/.*\[\([0-9]*\)\].*/\1/p'); [ -n "${'$'}s" ] || { echo "install-create failed"; return; }
+          w=${'$'}(cat "${'$'}A" | pm install-write -S ${'$'}size ${'$'}s base.apk - 2>&1)
+          case "${'$'}w" in *Success*) pm install-commit ${'$'}s 2>&1 ;; *) pm install-abandon ${'$'}s >/dev/null 2>&1; echo "${'$'}w" ;; esac; }
         old=${'$'}(ver); rm -f ${'$'}D/ok; say installing
         size=${'$'}(stat -c %s "${'$'}A"); c0=${'$'}(crashes); rb=1
         out=${'$'}(cat "${'$'}A" | pm install -r --enable-rollback -S ${'$'}size 2>&1)
         case "${'$'}out" in *Success*) ;; *) rb=0; out=${'$'}(cat "${'$'}A" | pm install -r -S ${'$'}size 2>&1) ;; esac   # Android 9: no rollback
+        case "${'$'}out" in *Success*) ;; *"disabled from pm"*) rb=0; out=${'$'}(sess) ;; esac   # firmware that refuses pm install: a session
         [ "${'$'}A" = ${'$'}D/new.apk ] && rm -f "${'$'}A"
         case "${'$'}out" in *Success*) ;; *) say failed "${'$'}(echo ${'$'}out | tr -s ' \n' ' ' | cut -c1-200)"; exit 0 ;; esac
         echo "installed ${'$'}V (rollback ${'$'}rb)"; say checking

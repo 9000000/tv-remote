@@ -9,6 +9,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 
 - Danh sách TV thấy tình trạng từng TV ngay, không cần kết nối: bật / chờ / không thấy, kiểu máy và Android, app đang mở (TV cần ADB còn có thời gian chạy và RAM trống); TV chỉ có điều khiển hoặc LG / Samsung / Roku thì chỉ hiện điều giao thức cho biết, không báo lỗi. Làm mới nền mỗi 10 giây, dừng khi không xem. Nút "Xem màn hình" (mặc định tắt) hiện ảnh nhỏ của từng TV đang bật mỗi 5 giây; bấm vào TV để mở như cũ. App máy tính và app điện thoại.
+- TV Android 11+ chỉ có Gỡ lỗi không dây (không có cổng 5555): app điện thoại và máy tính tìm thấy TV qua mDNS thay vì báo "không thấy TV", chẩn đoán nói rõ "TV này chỉ có Gỡ lỗi không dây" và mở thẳng màn ghép nối bằng mã 6 số; cổng đổi mỗi lần bật thì tìm lại.
+- TCL (bản Trung Quốc) không có Tùy chọn nhà phát triển: hướng dẫn bật ADB và chẩn đoán thêm cách mở công tắc ẩn (Cài đặt → Giới thiệu, bấm Lên, Xuống, Trái, Phải, phải làm lại mỗi lần).
+- Firmware chặn `pm install` ("install apk has be disabled from pm"): cài TV Setup và cập nhật thử lại bằng phiên PackageInstaller (install-create, install-write, install-commit); chỉ báo lỗi khi cả hai cách đều hỏng.
+- README: bảng TV đã thử (theo chủ TV báo qua cleanyourtv, và TV ta tự thử).
 - Mở màn Quản lý nhanh hơn: không còn chờ 3–4 giây ở "Đang kết nối ADB…" (trang hỏi lại ngay khi ADB vừa kết nối, thay vì đợi lượt 4 giây); app điện thoại còn kết nối ADB sẵn cho Quản lý ngay khi remote đã chạy. App máy tính: "· cần ADB" ẩn khi đã có ADB.
 - App điện thoại: sang app khác rồi quay lại trong 15 giây thì hình hiện lại ngay, không đen 1–2 giây (như trang web); dòng "Đang mở …" không còn tạm mất lúc vừa quay lại.
 - Hình mượt hơn ở chế độ Tự động: 20 hình/giây ở 720p và 960p (trước là 10), 15 ở 480p trở xuống (trước là 8). TV dùng bộ mã hóa phần mềm thì vẫn 10 để TV không bị nặng.
@@ -21,6 +25,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **English**
 
 - The TV list shows each TV's state without connecting: on / standby / no answer, model and Android, the app open (a TV with ADB also its uptime and free memory); keys-only, LG, Samsung and Roku TVs show only what their protocol tells, never an error. Refreshed in the background every 10 s, paused when not looked at. A "Show screens" button (off by default) shows a small picture of each TV that is on every 5 s; tap a TV to open it as before. Computer app and phone app.
+- Android 11+ TVs with only Wireless debugging (no port 5555): the phone and computer apps find the TV by mDNS instead of saying "no TV found", the self-check says "This TV only has Wireless debugging" and opens the 6-digit pairing screen; the port changes on every switch-on, so it is looked up again.
+- TCL (China) with no Developer options: the ADB steps and the self-check now say how to open the hidden switch (Settings → About, press Up, Down, Left, Right, needed again each time).
+- Firmware that blocks `pm install` ("install apk has be disabled from pm"): installing and updating TV Setup retries through a PackageInstaller session (install-create, install-write, install-commit); an error only when both ways fail.
+- README: a Tested TVs table (reported by owners through cleanyourtv, and the TVs we tried ourselves).
 - Manage opens faster: no more 3–4 s on "Connecting ADB…" (the page asks again as soon as ADB is up instead of at the next 4 s tick), and the phone app dials Manage's ADB ahead once the remote runs. Computer app: "· needs ADB" is hidden once ADB is there.
 - Phone app: back from another app within 15 s, the picture is there at once instead of black for 1–2 s (as on the web page); the "Now open …" line no longer goes missing for a moment on return.
 - Smoother picture on Auto: 20 frames a second at 720p and 960p (was 10), 15 at 480p and below (was 8). A TV on its software encoder stays at 10, so it is not slowed down.

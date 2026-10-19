@@ -220,7 +220,31 @@ class Adb(private val dir: File) : Closeable {
             }
             if (!AdbTls.plainOpen(host)) throw failure ?: IOException("adb tls: no port")   // nothing on 5555 to fall back to: say what the TLS port said
         }
-        connect(host, 5555, prompt)
+        try {
+            connect(host, 5555, prompt)
+        } catch (e: IOException) {
+            wirelessOnly(host)?.let { throw it }                      // no 5555, but Wireless debugging: pairing is what is missing
+            throw e
+        }
+    }
+
+    /**
+     * A TV with no port 5555 that announces Wireless debugging (Android 11+, the TCL China sets): connects through it when this
+     * key is already trusted there and returns null; otherwise the error that sends the person to pairing ("not paired").
+     * Null as well where it does not apply (5555 answers, or this app cannot do TLS), so the caller's own error stands.
+     */
+    private fun wirelessOnly(host: String): IOException? {
+        if (!AdbTls.available() || AdbTls.plainOpen(host)) return null
+        val w = AdbTls.wireless(host)
+        if (!w.any) return null
+        WireLog.all.add("·", "adb $host: wireless debugging only (connect ${w.connect}, pairing ${w.pairing})")
+        if (w.connect > 0) {
+            try { connectTls(host, w.connect); AdbTls.save(dir, host, w.connect); return null } catch (e: Exception) {
+                WireLog.all.add("·", "adb $host tls port ${w.connect}: $e")
+                close0()
+            }
+        }
+        return IOException("adb tls: this device is not paired")
     }
 
     /**

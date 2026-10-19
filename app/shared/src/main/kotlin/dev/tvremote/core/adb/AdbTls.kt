@@ -82,6 +82,25 @@ object AdbTls {
     fun discoverConnect(host: String, ms: Int = 3000, bind: (java.net.DatagramSocket) -> Unit = {}): Int =
         Mdns.find(Mdns.CONNECT, ms, bind).firstOrNull { it.ip == host }?.port ?: 0
 
+    /** What a TV announces for Wireless debugging: the connect port and the pairing port (0: not heard). */
+    class Wireless(val connect: Int, val pairing: Int) {
+        val any get() = connect > 0 || pairing > 0
+    }
+
+    /**
+     * Whether [host] has Wireless debugging on, by mDNS: Android 11+ TVs that have no port 5555 (cleanyourtv #101, the Sony in #24)
+     * are only reachable this way. The ports change every time the switch is flipped, so this is asked again on each connect.
+     * [find] is the mDNS browser (a test gives its own).
+     */
+    fun wireless(host: String, ms: Int = 1800, bind: (java.net.DatagramSocket) -> Unit = dev.tvremote.core.Diagnose.bindUdp,
+                 find: (String) -> List<Mdns.Service> = { Mdns.find(it, ms, bind) }): Wireless {
+        var pairing = 0
+        val t = Thread { pairing = find(Mdns.PAIRING).firstOrNull { it.ip == host }?.port ?: 0 }.apply { isDaemon = true; start() }
+        val connect = find(Mdns.CONNECT).firstOrNull { it.ip == host }?.port ?: 0
+        t.join(ms + 1000L)
+        return Wireless(connect, pairing)
+    }
+
     /** Pairing and connect ports heard on the network, for the page to prefill. */
     fun discover(ms: Int = 2500, bind: (java.net.DatagramSocket) -> Unit = {}): Pair<List<Mdns.Service>, List<Mdns.Service>> {
         var pairing = emptyList<Mdns.Service>()

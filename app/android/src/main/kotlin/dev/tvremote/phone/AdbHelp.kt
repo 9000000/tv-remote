@@ -7,6 +7,7 @@ import android.os.Build
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
+import dev.tvremote.core.Diagnose
 import dev.tvremote.core.remote.Atv
 
 // Helping somebody turn ADB on with the keys alone: installing TV Setup through Downloader, finding Settings, other home screens.
@@ -107,8 +108,8 @@ internal fun MainActivity.installSetupDirect() {
  * Wireless debugging (Android 11+): the TV shows a 6-digit code and an IP:port to pair with. Pairing, then the TLS connect
  * port (found by mDNS, typed when nothing answered), then the usual connection; no "Allow USB debugging?" question.
  */
-internal fun MainActivity.wirelessPair() {
-    val ip = host
+internal fun MainActivity.wirelessPair(target: String? = host) {
+    val ip = target
     val addr = input(T("setup.ph_addr"))
     val code = input(T("setup.ph_code6"))
     addr.setSingleLine(true); code.inputType = android.text.InputType.TYPE_CLASS_NUMBER
@@ -127,20 +128,32 @@ internal fun MainActivity.wirelessPair() {
             val m = Regex("^(?:(.+):)?(\\d{2,5})$").find(addr.text.toString().trim())
             val c = dev.tvremote.core.adb.AdbTls.cleanCode(code.text.toString())
             if (m == null || c == null) { Toast.makeText(this, T("setup.enter_addr_code"), Toast.LENGTH_LONG).show(); return@setPositiveButton }
-            val target = m.groupValues[1].ifEmpty { ip ?: "" }
+            val dest = m.groupValues[1].ifEmpty { ip ?: "" }
             Toast.makeText(this, T("setup.pairing"), Toast.LENGTH_SHORT).show()
             Thread {
                 try {
-                    dev.tvremote.core.adb.AdbTls.pair(dev.tvremote.core.adb.Adb(filesDir), target, m.groupValues[2].toInt(), c)
+                    dev.tvremote.core.adb.AdbTls.pair(dev.tvremote.core.adb.Adb(filesDir), dest, m.groupValues[2].toInt(), c)
                     var port = 0
-                    for (i in 0..2) if (port <= 0) port = dev.tvremote.core.adb.AdbTls.discoverConnect(target)
-                    if (port > 0) ui.post { pairedAt(target, port) } else ui.post { askConnectPort(target) }
+                    for (i in 0..2) if (port <= 0) port = dev.tvremote.core.adb.AdbTls.discoverConnect(dest)
+                    if (port > 0) ui.post { pairedAt(dest, port) } else ui.post { askConnectPort(dest) }
                 } catch (e: Exception) {
                     ui.post { Toast.makeText(this, dev.tvremote.core.Errors.say(e, dev.tvremote.core.Words.lang), Toast.LENGTH_LONG).show() }
                 }
             }.start()
         }
         .setNegativeButton(T("common.cancel"), null).show()
+}
+
+/**
+ * The TV has no ADB on 5555 but announces Wireless debugging (Android 11+; the TCL China sets): one question that goes straight
+ * to pairing, in place of an error. [entry] is how the TV is saved (its name tells a TCL).
+ */
+internal fun MainActivity.offerWireless(ip: String, entry: String?) {
+    val lang = dev.tvremote.core.Words.lang
+    val (title, fix) = Diagnose.say(Diagnose.WIRELESS, Diagnose.Facts(kindOf(entry ?: ip), ip, emptyMap(), Diagnose.Net.NA, false, null, brand = name(entry ?: ip)), lang)
+    Popup.Builder(this).setTitle(title).setMessage(fix)
+        .setPositiveButton(T("keys_only.pair")) { _, _ -> wirelessPair(ip) }
+        .setNegativeButton(T("common.close"), null).show()
 }
 
 private fun MainActivity.askConnectPort(target: String) {
@@ -384,7 +397,7 @@ internal fun MainActivity.otherHome() {
 
 internal fun MainActivity.adbSteps() {
     Popup.Builder(this).setTitle(T("setup.steps_title"))
-        .setMessage(T("adb_help.use_this_remote_s"))
+        .setMessage(T("adb_help.use_this_remote_s") + "\n\n" + T("setup.tcl_hidden_adb"))
         .setPositiveButton(T("adb_help.full_connection")) { _, _ ->
             val ip = host
             val e = entry

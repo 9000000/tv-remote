@@ -38,24 +38,29 @@ object Diagnose {
         fun adb(host: String): String?
         /** The TV called [name] of this [kind] under an address other than [not], null when none or more than one. */
         fun find(kind: String, name: String, not: String): Found?
+        /** The TV announces Wireless debugging (`_adb-tls-connect._tcp` / `_adb-tls-pairing._tcp`) while 5555 is closed; false where this app cannot pair. */
+        fun wireless(host: String): Boolean = false
+        /** What the TV calls itself on the network (its Chromecast name), to tell a TCL; "" when it does not say. */
+        fun maker(host: String): String = ""
     }
 
     /** What was seen; [moved] only once the search for a new address was made. */
     class Facts(val kind: String, val ip: String, val ports: Map<Int, Port>, val net: Net, val vpn: Boolean, val adb: String?,
-                val tls: Boolean = false, val moved: Found? = null) {
+                val tls: Boolean = false, val moved: Found? = null, val wireless: Boolean = false, val brand: String = "") {
         val open get() = ports.filterValues { it == Port.OPEN }.keys
         val alive get() = ports.values.any { it != Port.SILENT }
         val home get() = Lan.home(ip) != null
     }
 
     class Check(val id: String, val ok: Boolean?, val note: String)
-    class Result(val code: String, val ip: String, val kind: String, val found: Found?, val checks: List<Check>, val ms: Long)
+    class Result(val code: String, val ip: String, val kind: String, val found: Found?, val checks: List<Check>, val ms: Long, val brand: String = "")
 
     const val CLOCK = "clock"                  // the TV answers but its date is wrong: TLS refuses
     const val NO_WIFI = "no_wifi"              // this device is on no local network
     const val OTHER_NET = "other_net"          // ... or on another one than the TV's
     const val TAILSCALE = "tailscale"          // a 100.x address and this device's Tailscale is off
     const val ALLOW = "allow"                  // ADB answers and the TV is asking "Allow USB debugging?"
+    const val WIRELESS = "wireless"            // no ADB on 5555, but the TV announces Wireless debugging: pair with its code
     const val ADB_OFF = "adb_off"              // the remote service answers, ADB's port is closed: keys still work
     const val REMOTE_OFF = "remote_off"        // ADB answers, the remote service does not
     const val UP = "up"                        // answers: the failure was momentary
@@ -63,7 +68,7 @@ object Diagnose {
     const val MOVED = "moved"                  // nothing at this address; the same TV, by name, answers at another
     const val VPN = "vpn"                      // nothing answers and a VPN is carrying the traffic
     const val OFF = "off"                      // nothing answers: off, asleep, or another address
-    val CODES = listOf(CLOCK, NO_WIFI, OTHER_NET, TAILSCALE, ALLOW, ADB_OFF, REMOTE_OFF, UP, CLOSED, MOVED, VPN, OFF)
+    val CODES = listOf(CLOCK, NO_WIFI, OTHER_NET, TAILSCALE, ALLOW, WIRELESS, ADB_OFF, REMOTE_OFF, UP, CLOSED, MOVED, VPN, OFF)
 
     const val ADB = 5555
     private const val SETUP = 8765
@@ -88,6 +93,7 @@ object Diagnose {
         if (f.tls && open.isNotEmpty()) return CLOCK
         if (open.isEmpty()) {
             when (f.net) { Net.NONE -> return NO_WIFI; Net.OTHER -> return OTHER_NET; Net.TAILSCALE_OFF -> return TAILSCALE; else -> {} }
+            if (f.wireless && android) return WIRELESS            // 5555 is closed, so "alive" would call it a dozing TV
             if (f.alive) return CLOSED
             if (f.moved != null) return MOVED
             if (f.vpn && f.home) return VPN
@@ -97,6 +103,7 @@ object Diagnose {
         val adb = ADB in open
         val remote = 6466 in open || 6467 in open
         if (adb && (f.adb == "unauthorized" || f.adb == "waiting")) return ALLOW
+        if (!adb && f.wireless) return WIRELESS
         if (!adb && (remote || SETUP in open)) return ADB_OFF
         if (adb && !remote) return REMOTE_OFF
         return UP
@@ -104,6 +111,7 @@ object Diagnose {
 
     /** What each conclusion needs the person (or the page) to do next. */
     fun actions(code: String): List<String> = when (code) {
+        WIRELESS -> listOf("wireless", "retry")
         ADB_OFF -> listOf("adbhelp", "retry")
         MOVED -> listOf("use", "retry")
         OFF, CLOSED, VPN -> listOf("retry", "scan")
@@ -126,8 +134,10 @@ object Diagnose {
                 t("diagnose_kt.tv_at_tailscale_address", "ip" to f.ip)
             ALLOW -> t("setup.tv_waiting_allow") to
                 t("diagnose_kt.look_at_tv_tick")
+            WIRELESS -> t("diagnose_kt.wireless_only") to
+                (t("diagnose_kt.wireless_pair") + tclHint(f, lang))
             ADB_OFF -> t("diagnose_kt.adb_debugging_off_tv") to
-                t("diagnose_kt.keys_still_work_picture")
+                (t("diagnose_kt.keys_still_work_picture") + tclHint(f, lang))
             REMOTE_OFF -> t("diagnose_kt.tv_s_remote_service") to
                 t("diagnose_kt.adb_answers_so_keys")
             UP -> t("diagnose_kt.tv_answering") to
@@ -141,6 +151,15 @@ object Diagnose {
             else -> t("diagnose_kt.tv_not_answering") to
                 t("diagnose_kt.tv_may_be_off")
         }
+    }
+
+    private val OTHER_BRANDS = Regex("sony|bravia|xiaomi|\\bmi\\b|hisense|philips|nvidia|shield|chromecast|fire ?tv|xgimi|epson|oneplus|benq|chiq|\\brca\\b|sanyo|toshiba|insignia|thomson|skyworth", RegexOption.IGNORE_CASE)
+
+    /** TCL (China) hides its ADB switch behind a key sequence; shown for a TCL and for a TV whose maker is not known, not for a known other one. */
+    private fun tclHint(f: Facts, lang: String): String {
+        val b = f.brand
+        val other = b.isNotBlank() && !b.contains("tcl", true) && OTHER_BRANDS.containsMatchIn(b)
+        return if (other) "" else "\n" + Words.get(lang, "setup.tcl_hidden_adb")
     }
 
     private fun checks(f: Facts, code: String, lang: String): List<Check> {
@@ -160,6 +179,7 @@ object Diagnose {
             f.alive -> t("diagnose_kt.tv_network_but_its")
             else -> t("diagnose_kt.nothing_answers_at", "ip" to f.ip)
         }))
+        if (f.wireless) out.add(Check("wireless", true, t("diagnose_kt.wireless_found")))
         if (f.vpn) out.add(Check("vpn", !(f.home && open.isEmpty()), t("diagnose_kt.vpn")))
         if (f.adb in listOf("ready", "unauthorized", "waiting", "offline")) out.add(Check("adb", f.adb == "ready", t("diagnose_kt.app_s_adb", "adb" to f.adb)))
         if (f.tls) out.add(Check("clock", if (code == CLOCK) false else null, t("diagnose_kt.secure_connection_error_date")))
@@ -174,22 +194,26 @@ object Diagnose {
     fun run(probe: Probe, ip: String, kind: String, name: String, err: String, lang: String): Result {
         val start = System.currentTimeMillis()
         val ports = ports(kind)
-        val pool = Executors.newFixedThreadPool(ports.size + 2) { Thread(it, "diagnose").apply { isDaemon = true } }
+        val pool = Executors.newFixedThreadPool(ports.size + 4) { Thread(it, "diagnose").apply { isDaemon = true } }
         try {
             val open = ports.associateWith { p -> pool.submit(Callable { probe.port(ip, p, Real.PORT_MS) }) }
             val net = pool.submit(Callable { probe.net(ip) })
             val vpn = pool.submit(Callable { probe.vpn() })
             val adb = pool.submit(Callable { probe.adb(ip) })
+            val android = kind == Remote.Kind.ANDROID
+            val wl = pool.submit(Callable { android && probe.wireless(ip) })
+            val mk = pool.submit(Callable { if (android) probe.maker(ip) else "" })
             fun <T> get(f: java.util.concurrent.Future<T>, or: T): T = try { f.get(Real.PORT_MS + 700L, TimeUnit.MILLISECONDS) } catch (e: Exception) { or }
-            var f = Facts(kind, ip, open.mapValues { get(it.value, Port.SILENT) }, get(net, Net.NA), get(vpn, false), get(adb, null), clockError(err))
+            var f = Facts(kind, ip, open.mapValues { get(it.value, Port.SILENT) }, get(net, Net.NA), get(vpn, false), get(adb, null), clockError(err),
+                wireless = get(wl, false), brand = (name + " " + get(mk, "")).trim())
             var code = decide(f)
             var moved: Found? = null
             if ((code == OFF || code == VPN) && name.isNotBlank()) {
                 moved = try { probe.find(kind, name, ip) } catch (e: Exception) { null }
-                if (moved != null) { f = Facts(kind, ip, f.ports, f.net, f.vpn, f.adb, f.tls, moved); code = decide(f) }
+                if (moved != null) { f = Facts(kind, ip, f.ports, f.net, f.vpn, f.adb, f.tls, moved, f.wireless, f.brand); code = decide(f) }
             }
             val cs = checks(f, code, lang)
-            return Result(code, ip, kind, moved, cs, System.currentTimeMillis() - start).also { WireLog.all.add("·", "diagnose $ip $kind -> $code (${it.ms} ms)") }
+            return Result(code, ip, kind, moved, cs, System.currentTimeMillis() - start, f.brand).also { WireLog.all.add("·", "diagnose $ip $kind -> $code (${it.ms} ms)") }
         } finally {
             pool.shutdownNow()
         }
@@ -197,7 +221,7 @@ object Diagnose {
 
 
     fun json(r: Result, lang: String): JSONObject {
-        val f = Facts(r.kind, r.ip, emptyMap(), Net.NA, false, null, false, r.found)
+        val f = Facts(r.kind, r.ip, emptyMap(), Net.NA, false, null, false, r.found, brand = r.brand)
         val (title, fix) = say(r.code, f, lang)
         return JSONObject().put("code", r.code).put("title", title).put("fix", fix).put("ip", r.ip).put("kind", r.kind).put("ms", r.ms)
             .put("actions", JSONArray(actions(r.code)))
@@ -208,7 +232,7 @@ object Diagnose {
     /** The conclusion as one block of words (the phone's native screens, which have a text box and no cards). */
 
     fun text(r: Result, lang: String): String {
-        val (title, fix) = say(r.code, Facts(r.kind, r.ip, emptyMap(), Net.NA, false, null, false, r.found), lang)
+        val (title, fix) = say(r.code, Facts(r.kind, r.ip, emptyMap(), Net.NA, false, null, false, r.found, brand = r.brand), lang)
         return "$title\n$fix"
     }
 
@@ -228,6 +252,9 @@ object Diagnose {
             val l = link?.takeIf { it.host == host } ?: return null
             return if (l.waitingForUser()) "waiting" else l.state()
         }
+
+        override fun wireless(host: String): Boolean = dev.tvremote.core.adb.AdbTls.available() && dev.tvremote.core.adb.AdbTls.wireless(host, 1500, bindUdp).any
+        override fun maker(host: String): String = Ssdp.castName(host)
 
         override fun find(kind: String, name: String, not: String): Found? {
             val want = name.trim().lowercase()

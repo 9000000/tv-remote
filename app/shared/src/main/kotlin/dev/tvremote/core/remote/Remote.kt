@@ -113,12 +113,16 @@ interface Remote : Closeable {
          * What a TV at [host] is, from the ports it answers on: Android TV's remote (6466) or ADB (5555), LG's (3000 / 3001),
          * Samsung's (8001 / 8002), Roku's (8060), Hisense VIDAA's (36669). Null: none answer (off, or not a TV). Asked when an address is typed in with no kind.
          */
-        fun detect(host: String, timeoutMs: Int = 800): String? {
+        fun detect(host: String, timeoutMs: Int = 800, wireless: (String) -> Boolean = ::wirelessOn): String? {
             val ports = listOf(6466 to ANDROID, 5555 to ANDROID, 3000 to LG, 3001 to LG, 8002 to SAMSUNG, 8001 to SAMSUNG, 8060 to ROKU, 36669 to VIDAA)
             val open = java.util.concurrent.ConcurrentHashMap<Int, Boolean>()
             ports.map { (p, _) -> Thread { if (open(host, p, timeoutMs)) open[p] = true }.apply { isDaemon = true; start() } }.forEach { it.join(timeoutMs + 300L) }
-            return ports.firstOrNull { open[it.first] == true }?.second
+            ports.firstOrNull { open[it.first] == true }?.second?.let { return it }
+            return if (wireless(host)) ANDROID else null          // no port answers, yet Wireless debugging is announced: an Android TV with only that
         }
+
+        /** The TV announces Wireless debugging (mDNS); only where this app can pair. */
+        private fun wirelessOn(host: String): Boolean = dev.tvremote.core.adb.AdbTls.available() && dev.tvremote.core.adb.AdbTls.wireless(host, 1500).any
 
         private fun open(host: String, port: Int, ms: Int): Boolean = try {
             dev.tvremote.core.Lan.connect(host, port, ms).close(); true

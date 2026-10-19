@@ -32,11 +32,14 @@ internal fun MainActivity.refused(err: String?): Boolean {
  */
 internal fun MainActivity.offerBasic(ip: String, error: String) {
     Thread {
-        if (open(ip, 5555, 1500)) adbFailed.add(ip)                // the port answers, yet ADB did not work (not allowed on the TV, say): do not keep retrying by ourselves
+        val plain = open(ip, 5555, 1500)
+        if (plain) adbFailed.add(ip)                               // the port answers, yet ADB did not work (not allowed on the TV, say): do not keep retrying by ourselves
+        val wireless = !plain && dev.tvremote.core.adb.AdbTls.available() && dev.tvremote.core.adb.AdbTls.wireless(ip).any   // Android 11+ with only Wireless debugging: pairing, not an error
         val keys = open(ip, 6466, 2500)                            // an Android TV: it takes keys
-        val other = if (keys) null else Remote.Kind.detect(ip)?.takeIf { it != Remote.Kind.ANDROID }   // an address typed in: maybe an LG, Samsung or Roku TV
+        val other = if (keys || wireless) null else Remote.Kind.detect(ip, wireless = { false })?.takeIf { it != Remote.Kind.ANDROID }   // an address typed in: maybe an LG, Samsung or Roku TV
         ui.post {
             if (isFinishing || host != ip || tv != null) return@post   // the person has moved on
+            if (wireless) { val e = entry; disconnect(null); offerWireless(ip, e); return@post }
             if (other != null) { prefs.edit().putString("kind:$ip", other).apply(); disconnect(null); startBasic(ip, false); return@post }
             if (!keys) { disconnect(error); return@post }
             disconnect(null)

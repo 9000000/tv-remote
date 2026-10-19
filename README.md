@@ -25,6 +25,7 @@ Tested for real on a Sony BRAVIA (Android 9). Other brands are untested; LG, Sam
 - [Quick start](#quick-start)
 - [Away from home](#away-from-home)
 - [Undo](#undo)
+- [Tested TVs](#tested-tvs)
 - [Troubleshooting](#troubleshooting)
 - [Questions people ask](#questions-people-ask)
 - [Security](#security)
@@ -216,6 +217,20 @@ The TV must be on to be reached. A TV in **standby** wakes with one press, over 
 | The apps | Uninstall them like any app. The Computer app keeps its data in your user folder |
 
 Optimize TV is optional. It is on the Setup tab of all three, and in TV Setup on the TV.
+
+## Tested TVs
+
+Only the Sony BRAVIA (Android 9) was tried by us, on a real TV. The rest are **reported working by owners** (through [cleanyourtv](https://github.com/Gathin23/cleanyourtv) issues), not re-tested by us.
+
+| Kind | Brands | Source |
+|---|---|---|
+| TVs | Sony BRAVIA | ours |
+| TVs | TCL, Xiaomi / Mi TV, Hisense (Google TV), Philips (Google TV), OnePlus, BenQ, CHiQ, RCA, SANYO, Toshiba, Insignia, Thomson | owners |
+| Boxes | Chromecast with Google TV, NVIDIA Shield, Mi Box S, Mi TV Stick | owners |
+| Boxes | Fire TV Stick / Fire TV Edition: remote and ADB work, Optimize TV cannot change Home | owners |
+| Projectors | XGIMI, Epson | owners |
+
+TCL China has no Developer options: Settings → About, press Up, Down, Left, Right (again each time). A TV with only Wireless debugging (no port 5555) is found and paired with its 6-digit code.
 
 ## Troubleshooting
 

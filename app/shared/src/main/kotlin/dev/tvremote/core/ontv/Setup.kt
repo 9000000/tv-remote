@@ -7,6 +7,7 @@ import java.net.URL
 import java.security.MessageDigest
 import dev.tvremote.core.Words
 import dev.tvremote.core.adb.Adb
+import dev.tvremote.core.adb.PmInstall
 
 /**
  * "Optimize TV": the steps, run over an ADB connection. The TV app runs them on itself,
@@ -253,7 +254,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
         // On the TV itself the file sits in this app's folder on shared storage, which the shell user can read: no copy at all
         val q = "'" + apk.absolutePath.replace("'", "'\\''") + "'"
         if (sh("stat -c %s $q 2>/dev/null").trim() == apk.length().toString())
-            return adb!!.shell("cat $q | pm install -r -S " + apk.length() + " 2>&1", 600000)
+            return pmInstall(q, apk.length())
         return try { copyAndInstall(apk) } catch (e: IOException) { copyAndInstall(apk) }   // a copy that stalled: once more
     }
 
@@ -286,7 +287,14 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
             Thread.sleep(500)
         }
         if (size != apk.length().toString()) { sh("rm -f $TMP"); throw IOException("copy to the TV incomplete ($size of ${apk.length()} bytes)") }
-        return try { adb!!.shell("cat $TMP | pm install -r -S " + apk.length() + " 2>&1", 600000) } finally { sh("rm -f $TMP") }
+        return try { pmInstall(TMP, apk.length()) } finally { sh("rm -f $TMP") }
+    }
+
+    /** `pm install`; on firmware that refuses it, a PackageInstaller session instead ([PmInstall]). */
+    @Throws(IOException::class)
+    private fun pmInstall(quoted: String, size: Long): String {
+        val out = adb!!.shell("cat $quoted | pm install -r -S $size 2>&1", 600000)
+        return PmInstall.fallback(out, { adb!!.shell(it, 600000) }, quoted, size)
     }
 
     @Throws(Exception::class)

@@ -31,6 +31,7 @@
 - [Dùng khi khác mạng](#dùng-khi-khác-mạng-tailscale)
 - [Khi TV tắt](#khi-tv-tắt)
 - [Tối ưu TV](#tối-ưu-tv)
+- [TV đã thử](#tv-đã-thử)
 - [Gặp lỗi](#gặp-lỗi)
 - [Bảo mật](#bảo-mật)
 - [Chi tiết kỹ thuật](#chi-tiết-kỹ-thuật)
@@ -328,6 +329,20 @@ Tắt là tạm ngưng, không gỡ. **Hoàn tác** bật lại cả những app
 
 Nếu sau này TV không hiện màn hình chính: Cài đặt → Ứng dụng → Ứng dụng hệ thống → **Android TV Home** → Bật.
 </details>
+
+## TV đã thử
+
+Chỉ Sony BRAVIA (Android 9) do ta tự thử trên TV thật. Còn lại là **chủ TV báo chạy được** (qua issue của [cleanyourtv](https://github.com/Gathin23/cleanyourtv)), ta chưa thử lại.
+
+| Loại | Hãng | Nguồn |
+|---|---|---|
+| TV | Sony BRAVIA | ta thử |
+| TV | TCL, Xiaomi / Mi TV, Hisense (Google TV), Philips (Google TV), OnePlus, BenQ, CHiQ, RCA, SANYO, Toshiba, Insignia, Thomson | chủ TV báo |
+| Box | Chromecast with Google TV, NVIDIA Shield, Mi Box S, Mi TV Stick | chủ TV báo |
+| Box | Fire TV Stick / Fire TV Edition: remote và ADB chạy, Tối ưu TV không đổi được Home | chủ TV báo |
+| Máy chiếu | XGIMI, Epson | chủ TV báo |
+
+TCL Trung Quốc không có Tùy chọn nhà phát triển: Cài đặt → Giới thiệu, bấm Lên, Xuống, Trái, Phải (mỗi lần cần lại). TV chỉ có Gỡ lỗi không dây (không có cổng 5555) được app tìm thấy và ghép bằng mã 6 số.
 
 ## Gặp lỗi
 

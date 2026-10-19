@@ -343,7 +343,7 @@ async function wirelessPair() {
   if (p && !addr.value) addr.value = p.ip + ':' + p.port;
 }
 const DL_TIP = T('setup.dl_tip');
-const ADB_STEPS = T('setup.adb_steps');
+const ADB_STEPS = T('setup.adb_steps') + '\n\n' + T('setup.tcl_hidden_adb');
 function adbSteps() {
   assistShow(T('setup.steps_title'), say(T('setup.steps_use_keys')), say(ADB_STEPS),
     row(act(T('setup.connect_now'), async () => { const r = await api('/api/adb/connect', {}); if (r) { adbNow(r); await refresh(); } }, 'primary'), act(T('setup.other_ways'), async () => adbHelp())));

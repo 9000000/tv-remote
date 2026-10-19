@@ -29,6 +29,7 @@ import dev.tvremote.core.ontv.Welcome
 import dev.tvremote.core.ontv.NowPlaying
 import dev.tvremote.core.ontv.Power
 import dev.tvremote.core.adb.Pkg
+import dev.tvremote.core.adb.PmInstall
 import dev.tvremote.core.ontv.RulesClient
 import dev.tvremote.core.scenes.Scenes
 import dev.tvremote.core.ontv.ScreenOff
@@ -652,7 +653,9 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         cancel?.check()
         val s = adb.exec("cat $q | pm install -r -S $size 2>&1")
         cancel?.onStop { s.close() }                                  // closing the stream ends pm, which drops its install session
-        val out = try { s.readAll(600000) } finally { s.close() }
+        var out = try { s.readAll(600000) } finally { s.close() }
+        cancel?.check()
+        out = PmInstall.fallback(out, { adb.shell(it, 600000) }, q, size.toLongOrNull() ?: 0) { cancel?.check() }   // firmware that refuses pm install: a session instead
         cancel?.check()
         if (!out.contains("Success")) throw IOException(if (out.trim().isEmpty()) "install failed" else out.trim())
         // some boxes (FPT Play...) uninstall the apps they do not allow the moment they land, so "Success" alone proves nothing

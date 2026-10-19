@@ -46,6 +46,7 @@ object Errors {
                 val m = Regex("apk is built for (\\S+), the tv runs (\\S+)").find(all)!!.groupValues
                 t("errors.apk_built_chips_tv", "apk" to m[1], "tv" to m[2])
             }
+            all.contains(dev.tvremote.core.adb.PmInstall.BLOCKED) || all.contains("disabled from pm") -> t("errors.install_blocked")
             all.contains("removed by the TV right after install") -> t("errors.tv_said_installed_app")
             Regex("INSTALL_FAILED_UPDATE_INCOMPATIBLE|signatures do not match", RegexOption.IGNORE_CASE).containsMatchIn(all) ->
                 t("errors.tv_has_app_from")

@@ -2,8 +2,9 @@
 // this device's network, the TV's ports, a VPN, the app's ADB link, the TV under a new address) answers with ONE conclusion and
 // what to do, in the banner at the top, instead of leaving the person with a red chip and a raw error. The same check backs
 // the phone's native screens. Cancel stops waiting; Retry connects again, and a TV that is still out of reach is checked again.
-const DIAG_TONE = { up: 'ok', adb_off: 'warn', remote_off: 'warn', allow: 'warn', closed: 'warn', moved: 'warn' };   // the others are 'bad'
+const DIAG_TONE = { up: 'ok', wireless: 'warn', adb_off: 'warn', remote_off: 'warn', allow: 'warn', closed: 'warn', moved: 'warn' };   // the others are 'bad'
 let diagKey = '', diagBad = 0, diagCtl = null;
+const diagAsked = new Set();                                         // TVs whose pairing window was opened for the person already: once, not at every check
 
 // The TV is not answering as a remote and ADB is not up either (a TV that is asking, or not paired yet, has its own words).
 function diagNeeded(s) {
@@ -49,6 +50,7 @@ function diagShow(r, s) {
       await again();
       if (pc) selectTv(s.host, s.name, s.kind); else { await api('/api/adb/connect', {}, true); refresh(); } } }),
     scan: () => pc ? el('button', { className: 'small', textContent: T('page.scan'), onclick: () => { again(); pickOpen(); refresh(); $('#scan').click(); } }) : null,
+    wireless: () => CORE !== 'tv' ? el('button', { className: 'small primary', textContent: T('setup.wireless_title'), onclick: () => { again(); wirelessPair(); } }) : null,
     adbhelp: () => pc ? el('button', { className: 'small', textContent: T('setup.turn_on_adb_help'), onclick: () => adbHelp() }) : null,
     use: () => pc && r.found ? el('button', { className: 'small primary', textContent: T('diagnose.use_address', { ip: r.found.ip }), onclick: () => { again(); selectTv(r.found.ip, r.found.name || s.name, r.kind); } }) : null,
   };
@@ -59,4 +61,5 @@ function diagShow(r, s) {
       el('ul', {}, ...r.checks.map((c) => el('li', { className: c.ok === true ? 'ok' : c.ok === false ? 'bad' : '', textContent: (c.ok === true ? '✓ ' : c.ok === false ? '✗ ' : '· ') + c.note })))),
     el('div', { className: 'actions' }, ...acts));
   box.hidden = false;
+  if (r.code === 'wireless' && CORE !== 'tv' && !diagAsked.has(s.host)) { diagAsked.add(s.host); wirelessPair(); }   // straight to pairing, not left to find the button
 }

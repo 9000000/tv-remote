@@ -24,6 +24,7 @@ internal fun MainActivity.diagnose(ip: String, entry: String?, error: String) {
                 text += "\n" + T("diagnosing.or_tap_the_power")
             if (r.code == Diagnose.UP) text += "\n\n(" + error + ")"                // it answers now: the error may still say more
             message(text, r.code != Diagnose.UP)
+            if (r.code == Diagnose.WIRELESS) offerWireless(ip, entry)
             val found = r.found
             if (r.code == Diagnose.MOVED && found != null) Popup.Builder(this).setTitle(T("diagnosing.the_tv_has_a"))
                 .setMessage(T("diagnosing.is_at_it_was", "name" to found.name, "ip" to found.ip, "ip2" to ip))
