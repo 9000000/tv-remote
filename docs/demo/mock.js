@@ -30,7 +30,7 @@
   const S = {
     tvs: [{ host: '192.168.1.20', name: 'Living room TV', lan: '192.168.1.20', mac: 'a4:77:33:12:9c:01' },
       { host: '192.168.1.34', name: 'Bedroom TV', lan: '192.168.1.34', mac: 'a4:77:33:5e:20:4b' }],
-    host: '192.168.1.20', on: true, app: '', vol: 12, muted: false, focus: [1, 1], playing: null,
+    host: '192.168.1.20', on: true, app: '', vol: 12, muted: false, focus: [1, 1], playing: null, ink: [],   // ink: ✏️ strokes and pictures on the screen
     sleepAt: 0, snoozeUntil: 0, awake: false,
     bedtime: { on: true, ranges: [{ from: '23:00', to: '06:30' }] },
     limits: [{ pkg: 'com.demo.kids', minutes: 60, used: 25, extra: 0 }, { pkg: 'com.demo.games', minutes: 90, used: 70, extra: 0 }],
@@ -65,7 +65,26 @@
 
   // ---------- the picture: a drawn TV home screen, never a real one ----------
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  function screenSvg() {
+  // ✏️ what TV Setup's DrawLayer would show over every app (Draw.kt's ops), so the screenshot carries it as a real TV's does
+  function drawOps(ops) {
+    for (const o of ops || []) {
+      if (o.o === 's' || o.o === 'i') S.ink.push({ ...o, p: (o.p || []).slice() });
+      else if (o.o === 'a') { const s = S.ink.find((x) => x.id === o.id); if (s) s.p.push(...o.p); }
+      else if (o.o === 'u') S.ink.pop();
+      else if (o.o === 'x' || o.o === 'h') S.ink = [];
+    }
+  }
+  function inkSvg(W, H) {
+    return S.ink.map((s) => {
+      if (s.o === 'i') { const w = s.w / 10000 * W, x = s.x / 10000 * W, y = s.y / 10000 * H;
+        return `<image href="data:image/png;base64,${s.b}" x="${x - w / 2}" y="${y - w}" width="${w}" height="${2 * w}" preserveAspectRatio="xMidYMid meet"/>`; }
+      const pts = []; for (let i = 0; i + 1 < s.p.length; i += 2) pts.push((s.p[i] / 10000 * W).toFixed(1) + ',' + (s.p[i + 1] / 10000 * H).toFixed(1));
+      if (pts.length === 1) pts.push(pts[0]);
+      return `<polyline points="${pts.join(' ')}" fill="none" stroke="${esc(s.c)}" stroke-width="${Math.max(2, s.w / 10000 * W)}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    }).join('');
+  }
+  const screenSvg = () => screenBase().replace(/<\/svg>$/, inkSvg(960, 540) + '</svg>');
+  function screenBase() {
     const W = 960, H = 540;
     let g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="Arial,Helvetica,sans-serif">` +
       `<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1b2a4a"/><stop offset="1" stop-color="#0b1020"/></linearGradient>` +
@@ -261,7 +280,13 @@
       case '/api/hook/config': if (post && b) { if (b.do === 'on' || b.do === 'off') S.hook.on = b.do === 'on'; } return ok({ on: S.hook.on, shortcut: 'http://192.168.1.20:8766/api/hook?token=demo-token', yaml: 'rest_command:\n  tv_key:\n    url: http://192.168.1.20:8766/api/hook' });
       case '/api/tailscale': return ok({ installed: false, ip: '' });
       case '/api/welcome': return ok({ has: false });
-      case '/api/launchers': return ok({ launchers: [], updated: '2026-10-01', record: '' });
+      case '/api/draw': drawOps(b.ops); return ok({ ok: true, pic: true });
+      case '/api/launchers': {                                        // the site's own signed list, as the apps read it
+        const g = await (await fetch(new URL('../launchers/launchers.json', location.href))).json();
+        return ok({ updated: g.updated, record: '', tv_setup: true, back: false, home: 'com.demo.launcher', launchers: g.launchers.map((l) => ({
+          id: l.id, name: l.name, desc: l.desc, kind: l.kind, pkg: l.package, source: l.source, license: l.license, version: l.apk ? l.apk.version : '',
+          thumb: new URL('../launchers/' + l.thumb, location.href).href, notes: l.supports.notes, min_sdk: l.supports.min_sdk, fit: true, why: '', installed: false, in_use: false })) });
+      }
       case '/api/fleet': return ok({ tvs: S.tvs.map((t) => ({ host: t.host, name: t.name, state: 'ready', model: dev.model, android: '14', disk_free: 17.4 * 1073741824, disk_total: 28 * 1073741824, ram: 3.6 * 1073741824, setup: '0.12.0' })) });
       case '/api/fleet/status': return ok({ tvs: S.tvs.map((t, i) => ({ host: t.host, state: i ? 'standby' : S.on ? 'on' : 'standby', app: i ? '' : S.app })) });
       case '/api/fleet/shot': return { status: 200, type: 'image/svg+xml', body: screenSvg() };

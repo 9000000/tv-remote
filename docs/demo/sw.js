@@ -56,7 +56,7 @@ async function syncShim() {
 
 // The page takes a screenshot each second (on a real TV a screencap is slow and heavy); the made-up TV draws at once, so
 // after a key or an app the demo takes the next one right away instead of up to a second later
-const NOW = '<script>(function(f){var R=/^\\/api\\/(key|app|app\\/launch|volume|scene\\/run|recents)$/;window.fetch=function(u,o){var p=f.apply(this,arguments);' +
+const NOW = '<script>(function(f){var R=/^\\/api\\/(key|app|app\\/launch|volume|scene\\/run|recents|draw)$/;window.fetch=function(u,o){var p=f.apply(this,arguments);' +
   'try{var path=new URL(typeof u==="string"?u:u.url,location.href).pathname;if(o&&o.method==="POST"&&R.test(path))p.then(function(){' +
   'if(typeof screenOn!=="undefined"&&screenOn&&typeof snapOnce==="function")snapOnce().then(function(b){if(b instanceof Blob)showFrame(b)})})}catch(e){}return p}})(window.fetch)</script>';
 
