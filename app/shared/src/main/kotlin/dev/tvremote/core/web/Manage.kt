@@ -111,6 +111,12 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     while (off < b.size) { val n = r.body.read(b, off, b.size - off); if (n < 0) break; off += n }
                     return HttpServer.Response.json(dev.tvremote.core.ontv.Home.photo(link.get(), b.copyOf(off)))
                 }
+                "home/walls" -> if (!post) return HttpServer.Response.json(dev.tvremote.core.ontv.Wallpapers.json(dev.tvremote.core.ontv.Wallpapers.fetch()))   // the wallpaper gallery (signed list)
+                "home/walls/thumb" -> {
+                    val b = dev.tvremote.core.ontv.Wallpapers.thumb(r.q("id"))
+                    return if (b == null) HttpServer.Response.error(404, "not found") else HttpServer.Response.of("image/jpeg", b)
+                }
+                "home/wall" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Wallpapers.apply(link.get(), r.json().optString("id")))
                 "speed" -> if (!post) return HttpServer.Response.json(dev.tvremote.core.ontv.SpeedTest.read { sh(it) })
                 "app/meta" -> {                                       // a name and whether /api/app/icon has a picture (the computer app answers it first)
                     val pkg = r.q("pkg")

@@ -11,13 +11,15 @@ import org.json.JSONObject
  *   wall    a built-in background ([WALLS]) or "photo" (wall.jpg in TV Home's external files folder, sent by the client)
  *   photo   when that photo last changed, so the launcher reads it again
  *   clock24 24-hour clock; greet: the greeting under the clock
+ *   anim    motion effects (a focused app lifts, rows glide, the screen fades in); off = instant, with a ring. TV Home also
+ *           treats the system's "animator duration scale 0" as off
  */
 object HomeConfig {
     const val PKG = "dev.tvremote.home"
     const val RECEIVER = "$PKG/.HomeReceiver"
     const val DOCK_MAX = 6
     private const val HIDDEN_MAX = 300
-    val WALLS = listOf("night", "ocean", "dusk", "forest", "aurora", "black", "photo")
+    val WALLS = listOf("night", "ocean", "dusk", "forest", "aurora", "black", "sunset", "ember", "plum", "midnight", "teal", "slate", "graphite", "navy", "wine", "moss", "photo")
     /** Where a client puts the photo (the shell may write there; the app reads it with no permission). */
     const val PHOTO = "/sdcard/Android/data/$PKG/files/wall.jpg"
     private val PKG_NAME = Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")
@@ -32,6 +34,7 @@ object HomeConfig {
             .put("photo", o.optLong("photo", 0).coerceAtLeast(0))
             .put("clock24", o.optBoolean("clock24", true))
             .put("greet", o.optBoolean("greet", true))
+            .put("anim", o.optBoolean("anim", true))
     }
 
     /** [old] with the fields [change] has (any of them), cleaned. */

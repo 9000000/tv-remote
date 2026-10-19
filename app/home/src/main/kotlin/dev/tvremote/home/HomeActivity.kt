@@ -7,6 +7,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.ColorStateList
+import android.animation.ObjectAnimator
+import android.graphics.Bitmap
+import android.graphics.PorterDuff
+import android.view.animation.PathInterpolator
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Rect
@@ -60,6 +64,13 @@ class HomeActivity : Activity() {
     private var apps: List<App> = emptyList()
     private var conf = JSONObject()
     private var wallShown = ""
+    private lateinit var head: LinearLayout
+    private lateinit var bandWrap: FrameLayout
+    private lateinit var blurClip: FrameLayout
+    private lateinit var blurView: ImageView
+    private var scrollAnim: ObjectAnimator? = null
+    private var gridOn = true                                         // focus is in the grid: it is lit and in place; else it waits a little lower, dimmer
+    private var resumed = false
 
     private fun dp(v: Number) = (v.toFloat() * resources.displayMetrics.density).toInt()
 
@@ -75,7 +86,8 @@ class HomeActivity : Activity() {
         root.addView(wallView, FrameLayout.LayoutParams(-1, -1))
         root.addView(scrim, FrameLayout.LayoutParams(-1, -1))
 
-        scroll = Scroller(this).apply { isVerticalScrollBarEnabled = false; isFillViewport = true; clipChildren = false }
+        Motion.read(this, conf)
+        scroll = Scroller(this) { blurAlign() }.apply { isVerticalScrollBarEnabled = false; isFillViewport = true; clipChildren = false }
         val col = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false
             setPadding(dp(48), dp(34), dp(48), dp(48))
@@ -84,7 +96,7 @@ class HomeActivity : Activity() {
         root.addView(scroll, FrameLayout.LayoutParams(-1, -1))
 
         // the clock and the day on the left, the three buttons on the right
-        val head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.TOP }
+        head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.TOP }
         val left = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         clock = TextClock(this).apply {
             textSize = 60f; setTextColor(Color.WHITE); typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
@@ -99,24 +111,43 @@ class HomeActivity : Activity() {
         pills.addView(netPill, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
         pills.addView(Pill(this, R.drawable.ic_settings, getString(R.string.settings)) { open(Settings.ACTION_SETTINGS) },
             LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
-        for (i in 0 until pills.childCount) pills.getChildAt(i).onFocusChangeListener = View.OnFocusChangeListener { _, f -> if (f) scroll.smoothScrollTo(0, 0) }
+        for (i in 0 until pills.childCount) pills.getChildAt(i).onFocusChangeListener = View.OnFocusChangeListener { v, f ->
+            Motion.pop(v, f); if (f) { scrollToY(0); gridFocus(false) }
+        }
         head.addView(pills)
         col.addView(head)
 
         // the favourites, in a band of their own
+        // frosted: a light fill with a hairline edge; over a photo the same photo, blurred, sits behind it (see [blurAlign])
         val band = FrameLayout(this).apply {
-            background = GradientDrawable().apply { cornerRadius = dp(26).toFloat(); setColor(0x1FFFFFFF) }
+            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x2EFFFFFF, 0x14FFFFFF)).apply {
+                cornerRadius = dp(26).toFloat(); setStroke(dp(1), 0x33FFFFFF)
+            }
             setPadding(dp(22), dp(20), dp(22), dp(6)); clipChildren = false; clipToPadding = false
+        }
+        blurView = ImageView(this).apply { scaleType = ImageView.ScaleType.CENTER_CROP; setColorFilter(0x70000000, PorterDuff.Mode.SRC_ATOP) }
+        blurClip = FrameLayout(this).apply {
+            val r = dp(26).toFloat()
+            outlineProvider = object : android.view.ViewOutlineProvider() {            // a fully transparent GradientDrawable gives no outline to clip by
+                override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, r) }
+            }
+            clipToOutline = true; visibility = View.GONE
+            addView(blurView, FrameLayout.LayoutParams(resources.displayMetrics.widthPixels, resources.displayMetrics.heightPixels))
+        }
+        bandWrap = Wrap(this).apply {
+            clipChildren = false; clipToPadding = false
+            addView(blurClip, FrameLayout.LayoutParams(-1, -1)); addView(band, FrameLayout.LayoutParams(-1, -2))
+            addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> blurAlign() }
         }
         dock = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_HORIZONTAL; clipChildren = false; clipToPadding = false }
         dockEmpty = text(17f, 0xB3FFFFFF.toInt()).apply { text = getString(R.string.dock_empty); gravity = Gravity.CENTER; setPadding(0, dp(24), 0, dp(36)) }
         band.addView(dock, FrameLayout.LayoutParams(-1, -2))
         band.addView(dockEmpty, FrameLayout.LayoutParams(-1, -2))
-        col.addView(band, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(40) })
+        col.addView(bandWrap, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(40) })
 
         appsTitle = text(18f, 0xCCFFFFFF.toInt()).apply { text = getString(R.string.apps); setPadding(dp(4), 0, 0, 0) }
         col.addView(appsTitle, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(34); bottomMargin = dp(14) })
-        grid = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
+        grid = Flat(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
         col.addView(grid)
 
         setContentView(root)
@@ -131,6 +162,7 @@ class HomeActivity : Activity() {
             @Suppress("DEPRECATION") addAction(ConnectivityManager.CONNECTIVITY_ACTION)
         })
         loadApps()
+        if (Motion.on) enter(true)
     }
 
     override fun onDestroy() {
@@ -140,7 +172,50 @@ class HomeActivity : Activity() {
         super.onDestroy()
     }
 
-    override fun onResume() { super.onResume(); clockAndDay() }
+    override fun onResume() {
+        super.onResume()
+        Motion.read(this, conf)                                       // the system's "remove animations" may have changed while away
+        clockAndDay()
+        if (resumed && Motion.on) enter(false)
+        resumed = true
+    }
+
+    /** The screen comes in: the clock and the buttons ease down, the dock band rises (only a fade when coming back from an app). */
+    private fun enter(slide: Boolean) {
+        val d = if (slide) dp(14).toFloat() else 0f
+        head.alpha = 0f; head.translationY = -d
+        bandWrap.alpha = 0f; bandWrap.translationY = d
+        head.animate().alpha(1f).translationY(0f).setDuration(if (slide) 420 else 240).setInterpolator(Motion.glide).withLayer().start()
+        bandWrap.animate().alpha(1f).translationY(0f).setStartDelay(if (slide) 70 else 0).setDuration(if (slide) 420 else 240).setInterpolator(Motion.glide).withLayer().start()
+    }
+
+    /** Scrolls to [y] gliding (one animation at a time, the last target wins); at once when motion is off. */
+    private fun scrollToY(y: Int) {
+        scrollAnim?.cancel()
+        if (!Motion.on) { scroll.scrollTo(0, y); return }
+        if (scroll.scrollY == y) return
+        scrollAnim = ObjectAnimator.ofInt(scroll, "scrollY", scroll.scrollY, y).apply { duration = 300; interpolator = Motion.glide; start() }
+    }
+
+    /** The grid is lit and in place while focus is in it; from the dock or the buttons it waits a little lower and dimmer, then rises as focus comes down. */
+    private fun gridFocus(on: Boolean) {
+        if (on == gridOn) return
+        gridOn = on
+        val a = if (on) 1f else 0.6f
+        val ty = if (on) 0f else dp(12).toFloat()
+        for (v in arrayOf(appsTitle, grid)) {
+            v.animate().cancel()
+            if (!Motion.on) { v.alpha = a; v.translationY = ty }
+            else v.animate().alpha(a).translationY(ty).setDuration(if (on) 280 else 200).setInterpolator(Motion.glide).start()
+        }
+    }
+
+    /** The blurred photo behind the dock band is the wallpaper itself: it keeps the screen's place while the band scrolls. */
+    private fun blurAlign() {
+        if (blurClip.visibility != View.VISIBLE) return
+        blurView.translationX = -bandWrap.left.toFloat()
+        blurView.translationY = (scroll.scrollY - bandWrap.top).toFloat()
+    }
 
     /** Home pressed while already home, or Back: to the top, on the first favourite. */
     override fun onNewIntent(i: Intent) { super.onNewIntent(i); toTop() }
@@ -149,7 +224,7 @@ class HomeActivity : Activity() {
     override fun onBackPressed() { toTop() }
 
     private fun toTop() {
-        scroll.smoothScrollTo(0, 0)
+        scrollToY(0)
         (if (dock.childCount > 0) dock.getChildAt(0) else grid.findFocus() ?: firstGridTile())?.requestFocus()
     }
 
@@ -170,6 +245,7 @@ class HomeActivity : Activity() {
 
     private fun show() {
         val keep = (currentFocus as? Tile)?.app?.pkg
+        Motion.read(this, conf)
         wall()
         clockAndDay()
         val byPkg = apps.associateBy { it.pkg }
@@ -200,7 +276,7 @@ class HomeActivity : Activity() {
         var row: LinearLayout? = null
         cells.forEachIndexed { i, v ->
             if (i % cols == 0) {
-                row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false; clipToPadding = false }
+                row = Flat(this).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false; clipToPadding = false }
                 grid.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(8) })
             }
             row!!.addView(v, LinearLayout.LayoutParams(-2, -2).apply { if (i % cols > 0) leftMargin = gap })
@@ -225,13 +301,14 @@ class HomeActivity : Activity() {
         onFocusChangeListener = View.OnFocusChangeListener { v, f ->
             (v as Tile).focus(f)
             if (f) {
-                if (inDock) scroll.smoothScrollTo(0, 0)
+                gridFocus(!inDock)
+                if (inDock) scrollToY(0)
                 else {                                                // a row that is cut off comes to the upper third; one in full view stays put
                     var y = 0; var p: View? = v
                     while (p != null && p !== scroll) { y += p.top; p = p.parent as? View }
                     val margin = dp(40)
                     if (y - margin < scroll.scrollY || y + v.height + margin > scroll.scrollY + scroll.height)
-                        scroll.smoothScrollTo(0, maxOf(0, y - scroll.height / 3))
+                        scrollToY(maxOf(0, y - scroll.height / 3))
                 }
             }
         }
@@ -248,10 +325,21 @@ class HomeActivity : Activity() {
             "forest" -> intArrayOf(0xFF06140F.toInt(), 0xFF133B2D.toInt(), 0xFF0A1F18.toInt())
             "aurora" -> intArrayOf(0xFF071A1F.toInt(), 0xFF0F4C4A.toInt(), 0xFF2B2A6B.toInt())
             "black" -> intArrayOf(Color.BLACK, Color.BLACK)
+            "sunset" -> intArrayOf(0xFF1F0D1C.toInt(), 0xFF6B2D4A.toInt(), 0xFFA14A4A.toInt())
+            "ember" -> intArrayOf(0xFF190B08.toInt(), 0xFF4A1E10.toInt(), 0xFF7A2E12.toInt())
+            "plum" -> intArrayOf(0xFF150B22.toInt(), 0xFF3A1F56.toInt(), 0xFF5A2F7A.toInt())
+            "midnight" -> intArrayOf(0xFF050A1A.toInt(), 0xFF0B1B45.toInt(), 0xFF14307A.toInt())
+            "teal" -> intArrayOf(0xFF041A1A.toInt(), 0xFF08413F.toInt(), 0xFF0E5F5F.toInt())
+            "slate" -> intArrayOf(0xFF0F1218.toInt(), 0xFF252C3A.toInt(), 0xFF3A4558.toInt())
+            "graphite" -> intArrayOf(0xFF1C1C1E.toInt(), 0xFF1C1C1E.toInt())
+            "navy" -> intArrayOf(0xFF0B1D3A.toInt(), 0xFF0B1D3A.toInt())
+            "wine" -> intArrayOf(0xFF3A0F1F.toInt(), 0xFF3A0F1F.toInt())
+            "moss" -> intArrayOf(0xFF14261B.toInt(), 0xFF14261B.toInt())
             else -> intArrayOf(0xFF0B0F1A.toInt(), 0xFF18223F.toInt(), 0xFF0B0F1A.toInt())
         }
-        window.decorView.background = GradientDrawable(GradientDrawable.Orientation.TL_BR, colors)
-        wallView.visibility = View.GONE; scrim.visibility = View.GONE
+        // set once per wall, never per frame: a solid is a ColorDrawable (free), a gradient one GradientDrawable (no bitmap); only a photo costs a bitmap
+        window.decorView.background = if (colors.all { it == colors[0] }) ColorDrawable(colors[0]) else GradientDrawable(GradientDrawable.Orientation.TL_BR, colors)
+        wallView.visibility = View.GONE; scrim.visibility = View.GONE; blurClip.visibility = View.GONE
         if (wall != "photo") return
         val f = java.io.File(getExternalFilesDir(null), "wall.jpg")
         val dm = resources.displayMetrics
@@ -263,10 +351,22 @@ class HomeActivity : Activity() {
                 while (o.outWidth / (s * 2) >= dm.widthPixels && o.outHeight / (s * 2) >= dm.heightPixels) s *= 2
                 BitmapFactory.decodeFile(f.path, BitmapFactory.Options().apply { inSampleSize = s })
             } catch (e: Throwable) { null }
+            val soft = bmp?.let { softer(it) }
             runOnUiThread {
-                if (bmp != null && !isDestroyed) { wallView.setImageBitmap(bmp); wallView.visibility = View.VISIBLE; scrim.visibility = View.VISIBLE }
+                if (bmp != null && !isDestroyed) {
+                    wallView.setImageBitmap(bmp); wallView.visibility = View.VISIBLE; scrim.visibility = View.VISIBLE
+                    blurView.setImageBitmap(soft); blurClip.visibility = View.VISIBLE; blurAlign()
+                }
             }
         }
+    }
+
+    /** [b] blurred for the dock band: shrunk twice (smoothly) to ~1/16, which the view scales back up soft. Once per photo, off the main thread; no RenderEffect to run every frame. */
+    private fun softer(b: Bitmap): Bitmap {
+        val a = Bitmap.createScaledBitmap(b, maxOf(1, b.width / 4), maxOf(1, b.height / 4), true)
+        val c = Bitmap.createScaledBitmap(a, maxOf(1, b.width / 16), maxOf(1, b.height / 16), true)
+        if (a !== c && a !== b) a.recycle()
+        return c
     }
 
     private fun clockAndDay() {
@@ -305,6 +405,7 @@ class HomeActivity : Activity() {
             })
             acts.add(R.string.hide to { Store.putList(this, "hidden", Store.list(this, "hidden") + a.pkg) })
         }
+        acts.add((if (Motion.on) R.string.anim_off else R.string.anim_on) to { Store.change(this, JSONObject().put("anim", !conf.optBoolean("anim", true))) })
         acts.add(R.string.info to {
             try { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + a.pkg))) } catch (e: Exception) { toast(R.string.no_open) }
         })
@@ -344,9 +445,24 @@ class HomeActivity : Activity() {
     private fun shadow(t: TextView) = t.setShadowLayer(dp(6).toFloat(), 0f, dp(1).toFloat(), 0x80000000.toInt())
 
     /** Never scrolls by itself to the focused view: [tile] and the buttons say where to, so a row is not pressed to the edge. */
-    private class Scroller(c: Context) : ScrollView(c) {
+    private class Scroller(c: Context, private val moved: () -> Unit) : ScrollView(c) {
         override fun computeScrollDeltaToGetChildRectOnScreen(rect: Rect?) = 0
+        override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) { super.onScrollChanged(l, t, oldl, oldt); moved() }
     }
+
+    /** The band's size alone: the screen-sized blurred photo inside its clip must not stretch it. */
+    private class Wrap(c: Context) : FrameLayout(c) {
+        override fun onMeasure(ws: Int, hs: Int) {
+            val w = MeasureSpec.getSize(ws)
+            val band = getChildAt(1)
+            band.measure(MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED))
+            getChildAt(0).measure(MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(band.measuredHeight, MeasureSpec.EXACTLY))
+            setMeasuredDimension(w, band.measuredHeight)
+        }
+    }
+
+    /** A column whose alpha is applied to each child, not through a layer the size of the whole grid. */
+    private class Flat(c: Context) : LinearLayout(c) { override fun hasOverlappingRendering() = false }
 
     /** A round-ended button with an icon and a word; white when focused. */
     private class Pill(c: Activity, icon: Int, label: String, onClick: () -> Unit) : LinearLayout(c) {
@@ -379,17 +495,24 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
     private val card = FrameLayout(c)
     private val ring = View(c)
     private val name = TextView(c)
+    private val shine = View(c)
+    private val content: View
+    private val lift: Float
+    private val across: Float
+    private val hideShine = Runnable { shine.alpha = 0f }
 
     init {
         orientation = VERTICAL; isFocusable = true; isClickable = true; isLongClickable = true
         clipChildren = false; clipToPadding = false
         val h = w * 9 / 16
         val r = dp(10).toFloat()
+        lift = dp(14).toFloat(); across = w.toFloat()
         val banner = app?.banner
         card.background = GradientDrawable().apply { cornerRadius = r; setColor(if (banner != null) 0xFF1E2230.toInt() else shade(app?.pkg ?: "")) }
         card.clipToOutline = true
         if (banner != null) {
-            card.addView(ImageView(c).apply { setImageDrawable(banner); scaleType = ImageView.ScaleType.CENTER_CROP }, FrameLayout.LayoutParams(-1, -1))
+            content = ImageView(c).apply { setImageDrawable(banner); scaleType = ImageView.ScaleType.CENTER_CROP }
+            card.addView(content, FrameLayout.LayoutParams(-1, -1))
         } else {
             val inner = LinearLayout(c).apply { orientation = VERTICAL; gravity = Gravity.CENTER; setPadding(dp(6), dp(4), dp(6), dp(4)) }
             inner.addView(ImageView(c).apply {
@@ -400,7 +523,11 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
                 setPadding(0, dp(4), 0, 0)
             }, LayoutParams(-1, -2))
             card.addView(inner, FrameLayout.LayoutParams(-1, -1))
+            content = inner
         }
+        shine.background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(0x00FFFFFF, 0x38FFFFFF, 0x00FFFFFF))
+        shine.alpha = 0f
+        card.addView(shine, FrameLayout.LayoutParams(w / 2, -1))
         ring.background = GradientDrawable().apply { cornerRadius = r; setStroke(dp(3), Color.WHITE); setColor(Color.TRANSPARENT) }
         ring.alpha = 0f
         card.addView(ring, FrameLayout.LayoutParams(-1, -1))
@@ -413,16 +540,54 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
         background = ColorDrawable(Color.TRANSPARENT)
     }
 
+    /**
+     * Focus lifts the card (a springy rise, a soft shadow, the picture a touch larger inside it, a shine passing over) and rings it;
+     * with motion off only the ring and the name change, at once. Hardware layers only while it moves.
+     */
     fun focus(on: Boolean) {
+        card.animate().cancel(); ring.animate().cancel(); name.animate().cancel(); content.animate().cancel(); shine.animate().cancel()
+        removeCallbacks(hideShine)
+        if (!Motion.on) {
+            card.scaleX = 1f; card.scaleY = 1f; card.translationZ = 0f; content.scaleX = 1f; content.scaleY = 1f
+            ring.alpha = if (on) 1f else 0f; name.alpha = if (on) 1f else 0f; name.translationY = 0f; shine.alpha = 0f
+            return
+        }
         val s = if (on) 1.1f else 1f
-        card.animate().scaleX(s).scaleY(s).translationZ(if (on) 12f else 0f).setDuration(140).start()
-        ring.animate().alpha(if (on) 1f else 0f).setDuration(140).start()
-        name.animate().alpha(if (on) 1f else 0f).translationY(if (on) 2f else 0f).setDuration(140).start()
+        val t = if (on) 240L else 190L
+        val ip = if (on) Motion.lift else Motion.glide
+        card.animate().scaleX(s).scaleY(s).translationZ(if (on) lift else 0f).setDuration(t).setInterpolator(ip).withLayer().start()
+        content.animate().scaleX(if (on) 1.06f else 1f).scaleY(if (on) 1.06f else 1f).setDuration(t + 60).setInterpolator(Motion.glide).start()
+        ring.animate().alpha(if (on) 1f else 0f).setDuration(if (on) 180L else 140L).setInterpolator(Motion.glide).start()
+        name.animate().alpha(if (on) 1f else 0f).translationY(if (on) 2f else 0f).setDuration(t).setInterpolator(Motion.glide).start()
+        if (on) {
+            shine.translationX = -across / 2; shine.alpha = 1f
+            shine.animate().translationX(across).setDuration(520).setInterpolator(Motion.glide).start()
+            postDelayed(hideShine, 540)
+        } else shine.alpha = 0f
     }
 
     /** A dark colour of its own per app, for those without a TV banner. */
     private fun shade(pkg: String): Int {
         val hues = intArrayOf(0xFF27324A.toInt(), 0xFF2E3B2F.toInt(), 0xFF43293A.toInt(), 0xFF2B3A45.toInt(), 0xFF3D3424.toInt(), 0xFF2F2D4A.toInt())
         return hues[(pkg.hashCode() and 0x7fffffff) % hues.size]
+    }
+}
+
+/** The motion TV Home uses: on from its setting, off when the system's animator duration scale is 0 (Settings, "remove animations"). */
+object Motion {
+    @JvmField var on = true
+    val lift = PathInterpolator(0.34f, 1.35f, 0.64f, 1f)              // overshoots a little then settles: a spring
+    val glide = PathInterpolator(0.2f, 0.8f, 0.2f, 1f)                // fast out, long soft end
+
+    fun read(c: Context, conf: JSONObject) {
+        val scale = try { Settings.Global.getFloat(c.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) } catch (e: Exception) { 1f }
+        on = conf.optBoolean("anim", true) && scale > 0f
+    }
+
+    /** A button a little larger while focused. */
+    fun pop(v: View, focused: Boolean) {
+        v.animate().cancel()
+        val s = if (focused) 1.06f else 1f
+        if (!on) { v.scaleX = 1f; v.scaleY = 1f } else v.animate().scaleX(s).scaleY(s).setDuration(200).setInterpolator(if (focused) lift else glide).start()
     }
 }

@@ -17,6 +17,7 @@ class HomeConfigTest {
         assertEquals("night", c.getString("wall"))
         assertEquals(true, c.getBoolean("clock24"))
         assertEquals(true, c.getBoolean("greet"))
+        assertEquals(true, c.getBoolean("anim"))
     }
 
     @Test fun theDockKeepsRealPackagesOnceAndAtMostSix() {
@@ -42,5 +43,17 @@ class HomeConfigTest {
         assertEquals(listOf("a.b"), dock(n))
         assertEquals("ocean", n.getString("wall"))
         assertFalse(n.getBoolean("clock24"))
+    }
+
+    @Test fun animIsABooleanAndMerges() {
+        assertFalse(HomeConfig.clean(JSONObject().put("anim", false)).getBoolean("anim"))
+        assertEquals(true, HomeConfig.clean(JSONObject().put("anim", "no")).getBoolean("anim"))   // not a boolean: the default
+        val n = HomeConfig.merge(HomeConfig.clean(JSONObject()), JSONObject().put("anim", false))
+        assertFalse(n.getBoolean("anim"))
+    }
+
+    @Test fun everyBuiltInWallIsAccepted() {
+        for (w in HomeConfig.WALLS) assertEquals(w, HomeConfig.clean(JSONObject().put("wall", w)).getString("wall"))
+        assertEquals(true, HomeConfig.WALLS.size >= 16)
     }
 }

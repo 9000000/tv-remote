@@ -20,4 +20,6 @@
     <string name="morning">Chào buổi sáng</string>
     <string name="afternoon">Chào buổi chiều</string>
     <string name="evening">Chào buổi tối</string>
+    <string name="anim_off">Tắt hiệu ứng chuyển động</string>
+    <string name="anim_on">Bật hiệu ứng chuyển động</string>
 </resources>

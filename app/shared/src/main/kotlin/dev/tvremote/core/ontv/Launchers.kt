@@ -165,7 +165,7 @@ object Launchers {
         } finally { c.disconnect() }
     }
 
-    private fun hex(b: ByteArray) = b.joinToString("") { String.format("%02x", it) }
+    internal fun hex(b: ByteArray) = b.joinToString("") { String.format("%02x", it) }
 
     private fun open(url: String): HttpURLConnection {
         val c = URL(url).openConnection() as HttpURLConnection
@@ -176,7 +176,7 @@ object Launchers {
         return c
     }
 
-    private fun get(url: String): ByteArray {
+    internal fun get(url: String): ByteArray {
         val c = open(url)
         try {
             if (c.responseCode != 200) throw IOException("HTTP " + c.responseCode)

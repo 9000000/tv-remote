@@ -22,4 +22,6 @@
     <string name="morning">Good morning</string>
     <string name="afternoon">Good afternoon</string>
     <string name="evening">Good evening</string>
+    <string name="anim_off">Turn motion effects off</string>
+    <string name="anim_on">Turn motion effects on</string>
 </resources>
