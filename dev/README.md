@@ -21,6 +21,7 @@ Tools for people working on the code. Each script says more in its first lines.
 | Script | Does |
 |---|---|
 | `release.sh` | the whole release: version numbers, CHANGELOG, tag, APKs, GitHub release, the computer apps through GitHub Actions, then `sums.sh` (AGENTS.md "Versions and releases") |
+| `sign_launchers.py` | signs `docs/launchers/launchers.json` (Ed25519, key `~/.tv-remote-release/launchers.key`, apart from the release key; its public half is `Launchers.KEYS`) and checks each APK's SHA-256 and each thumbnail. Run it after every edit of the list; `keys.sh backup` includes the key. |
 | `sums.sh <tag>` | `SHA256SUMS` of a release, signed, attached. Run again after replacing any file of a release by hand: the apps refuse a file the list does not match |
 | `churn.sh` | how often the `/api` still changes, week by week; `release.sh` prints it and says when 1.0 is near |
 

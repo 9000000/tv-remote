@@ -2,7 +2,8 @@
 // lose the same app, or restart, each with its own progress line. The card sits under the saved TVs on the picker, once there are two.
 let fleetTvs = [], fleetPick = new Set(), fleetRow = {};
 const FLEET_STEP = { waiting: T('fleet.step_waiting'), connecting: T('fleet.step_connecting'), 'installing on TV': T('fleet.step_installing'), 'checking the TV kept it': T('fleet.step_checking'),
-  installed: T('fleet.step_installed'), uninstalled: T('fleet.step_removed'), restarting: T('fleet.step_restarting'), set: T('fleet.step_welcome_set'), off: T('fleet.step_welcome_off'), done: T('fleet.step_done') };
+  installed: T('fleet.step_installed'), 'launcher download': T('fleet.step_ldownload'), 'launcher install': T('fleet.step_linstall'),
+  'launcher swap': T('fleet.step_lswap'), 'launcher kept': T('fleet.step_lkept'), uninstalled: T('fleet.step_removed'), restarting: T('fleet.step_restarting'), set: T('fleet.step_welcome_set'), off: T('fleet.step_welcome_off'), done: T('fleet.step_done') };
 const FLEET_ADB = { closed: T('fleet.adb_closed'), unauthorized: T('fleet.adb_unauthorized'),
   offline: T('fleet.adb_offline'), error: T('fleet.adb_error') };
 
@@ -45,7 +46,7 @@ $('#fleetstop').addEventListener('click', () => { if (fleetStop) fleetStop(); pu
 const fleetStopShow = (fn) => { fleetStop = fn; put('#fleetstop', 'hidden', !fn); put('#fleetstop', 'disabled', false); };
 async function fleetFollow(j) {
   const id = j.id;
-  if (/^(install|welcome )/.test(j.title)) fleetStopShow(() => api('/api/fleet/cancel', { id }, true));   // only an install or a file copy has a half way to stop at
+  if (/^(install|welcome |launcher)/.test(j.title)) fleetStopShow(() => api('/api/fleet/cancel', { id }, true));   // only an install or a file copy has a half way to stop at
   try { await fleetFollowing(j); } finally { fleetStopShow(null); }
 }
 async function fleetFollowing(j) {
@@ -92,6 +93,7 @@ $('#fleetmore').addEventListener('click', (e) => popover(e.currentTarget, [
   ['🏠', T('fleet.menu_welcome'), () => fleetWelcomeFile.click()],
   ['💤', T('fleet.menu_welcome_off'), () => fleetDo('welcome_off', '', T('fleet.ask_welcome_off'))],
   ['🗑', T('fleet.menu_remove'), () => fleetUninstall()],
+  ['🖼️', T('fleet.menu_launcher'), () => fleetLauncher()],
   ['🔁', T('fleet.menu_restart'), () => fleetDo('reboot', '', T('fleet.ask_restart'))],
   ['☑️', T('fleet.menu_select_all'), () => { fleetTvs.forEach((t) => fleetPick.add(t.host)); fleetDraw(); }],
   ['↻', T('fleet.menu_reread'), () => fleetLoad()],
@@ -154,4 +156,19 @@ function fleetWelcomeSend(f, tvs, cfg) {
     fleetFollow(r);
   };
   lbl.dataset.busy = '⏳'; fleetStopShow(() => { xhr.abort(); toast(T('fleet.stopped')); }); xhr.send(f);
+}
+
+// a home screen from the gallery on every TV ticked: one download, each TV checked and put back on its own if its home does not hold
+async function fleetLauncher() {
+  if (!fleetChosen().length) { toast(T('fleet.pick_one')); return; }
+  const g = await api('/api/launchers', null, true); if (!g) return;
+  const list = (g.launchers || []).filter((l) => l.kind === 'apk');
+  put('#infotitle', 'textContent', T('fleet.which_launcher'));
+  $('#infobody').replaceChildren(
+    el('p', { className: 'note', textContent: T('fleet.launcher_note') }),
+    el('div', { className: 'list' }, ...list.map((l) => el('div', { className: 'item' },
+      el('div', { className: 'name' }, el('b', { textContent: l.name }), el('small', { className: 'muted', textContent: l.version })),
+      el('button', { type: 'button', className: 'small primary', textContent: T('fleet.launcher_use'), onclick: () => { $('#infodlg').close(); fleetDo('launcher', l.id, T('fleet.launcher_ask', { name: l.name })); } })))),
+    el('div', { className: 'acts fleetgo' }, el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => $('#infodlg').close() })));
+  $('#infodlg').showModal();
 }

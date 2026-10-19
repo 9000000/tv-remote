@@ -1,0 +1,140 @@
+{
+  "v": 1,
+  "updated": "2026-10-19",
+  "launchers": [
+    {
+      "id": "flauncher",
+      "package": "me.efesser.flauncher",
+      "name": "FLauncher",
+      "desc": {
+        "vi": "Màn hình chính gọn, không quảng cáo: lưới ứng dụng, hình nền, giờ. Nhẹ hơn nhiều so với màn hình chính của Google TV.",
+        "en": "A light home screen with no ads: an app grid, wallpaper and a clock. Much lighter than Google TV's own home."
+      },
+      "thumb": "flauncher.jpg",
+      "source": "https://github.com/osrosal/flauncher",
+      "license": "GPL-3.0",
+      "kind": "apk",
+      "apk": {
+        "version": "2025.07.001",
+        "files": {
+          "arm64-v8a": {
+            "url": "https://github.com/osrosal/flauncher/releases/download/v2025.07.001/flauncher-arm64-v8a-release.apk",
+            "sha256": "6e366d960d1c42ff923bddf86a034a231800924c0d395aefa7c448b1c4e8896f"
+          },
+          "armeabi-v7a": {
+            "url": "https://github.com/osrosal/flauncher/releases/download/v2025.07.001/flauncher-armeabi-v7a-release.apk",
+            "sha256": "467fd0befe6daa3993a8a34a3981a631858ace28b38d9836d691478af8b71e40"
+          }
+        }
+      },
+      "supports": {
+        "android_tv": true,
+        "google_tv": true,
+        "min_sdk": 21,
+        "fire_os": false,
+        "notes": {
+          "vi": "Không đổi được màn hình chính trên Fire TV và một số TCL bán ở Trung Quốc.",
+          "en": "Cannot take Home on Fire TV and on some TCL sets sold in China."
+        }
+      },
+      "thumb_sha256": "fd5aae74bb02a897d17f9a809dd99178f4d7e70a7389e83c404a41894c1b92a3"
+    },
+    {
+      "id": "ltvlauncher",
+      "package": "com.leanbitlab.ltvL",
+      "name": "LTvLauncher",
+      "desc": {
+        "vi": "Bản FLauncher cải tiến: widget dùng dữ liệu Wi-Fi, màn hình chờ chống cháy OLED, điều khiển dễ hơn.",
+        "en": "An improved FLauncher: a Wi-Fi data widget, an OLED-friendly screensaver, easier controls."
+      },
+      "thumb": "ltvlauncher.jpg",
+      "source": "https://github.com/leanbitlab-org/LtvLauncher",
+      "license": "GPL-3.0",
+      "kind": "apk",
+      "apk": {
+        "version": "2026.10.03",
+        "files": {
+          "arm64-v8a": {
+            "url": "https://github.com/leanbitlab-org/LtvLauncher/releases/download/v2026.10.03/LTvLauncher-arm64-v8a-release.apk",
+            "sha256": "e80da4e6d939274af395e4c7a97b1c6a109d843f9a3b1183bb23047e70b31bd0"
+          },
+          "armeabi-v7a": {
+            "url": "https://github.com/leanbitlab-org/LtvLauncher/releases/download/v2026.10.03/LTvLauncher-armeabi-v7a-release.apk",
+            "sha256": "ec77396eb05acbf22c59b27e121f59073e1da397404d0cd6a26f4f1c5eaa8221"
+          }
+        }
+      },
+      "supports": {
+        "android_tv": true,
+        "google_tv": true,
+        "min_sdk": 21,
+        "fire_os": false,
+        "notes": {
+          "vi": "Không đổi được màn hình chính trên Fire TV.",
+          "en": "Cannot take Home on Fire TV."
+        }
+      },
+      "thumb_sha256": "9b735f952af262f13e4b3d916ae161107e04181f07c2a55d7a6d3616b64d6e67"
+    },
+    {
+      "id": "just-a-launcher",
+      "package": "tw.hungmi.justalauncher",
+      "name": "Just a Launcher",
+      "desc": {
+        "vi": "Chỉ một lưới ứng dụng: không hoạt ảnh, không quảng cáo, chưa tới 40 MB RAM. Hợp TV và máy chiếu yếu.",
+        "en": "Just a grid of apps: no animations, no ads, under 40 MB of RAM. Fits weak TVs and projectors."
+      },
+      "thumb": "just-a-launcher.jpg",
+      "source": "https://github.com/hungmi/just-a-launcher",
+      "license": "MIT",
+      "kind": "apk",
+      "apk": {
+        "version": "0.9",
+        "files": {
+          "any": {
+            "url": "https://github.com/hungmi/just-a-launcher/releases/download/v0.9/just-a-launcher-v0.9.apk",
+            "sha256": "18824809f34539c9b0b430b9547ef0e92a53e386478f43721ed13b6c09394d43"
+          }
+        }
+      },
+      "supports": {
+        "android_tv": true,
+        "google_tv": true,
+        "min_sdk": 21,
+        "fire_os": false,
+        "notes": {
+          "vi": "Giao diện tối giản, ít tùy chỉnh.",
+          "en": "Very plain: few settings."
+        }
+      },
+      "thumb_sha256": "68cfed577787d1ce22622eccf01d2001e18a93e5aa2e8b5aecf8e1ef82ec5fc8"
+    },
+    {
+      "id": "projectivy",
+      "package": "com.spocky.projengmenu",
+      "name": "Projectivy Launcher",
+      "desc": {
+        "vi": "Màn hình chính tùy biến nhiều nhất: hình nền, bố cục, phím tắt. Cài từ Google Play (miễn phí, có bản Premium).",
+        "en": "The most customisable home screen: wallpapers, layouts, shortcuts. Installed from Google Play (free, with an optional Premium)."
+      },
+      "thumb": "projectivy.jpg",
+      "source": "https://github.com/spocky/miproja1",
+      "license": "Proprietary (free)",
+      "kind": "play",
+      "play": {
+        "url": "market://details?id=com.spocky.projengmenu"
+      },
+      "supports": {
+        "android_tv": true,
+        "google_tv": true,
+        "min_sdk": 23,
+        "fire_os": false,
+        "notes": {
+          "vi": "Cần Google Play trên TV. Chọn nó làm màn hình chính sau khi cài.",
+          "en": "Needs Google Play on the TV. Pick it as Home once installed."
+        }
+      },
+      "thumb_sha256": "24b2eec4c55444ff489cb3e1f209057f3632eccd62b6f025f2ce74029e33d94c"
+    }
+  ]
+}

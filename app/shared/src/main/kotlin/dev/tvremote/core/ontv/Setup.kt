@@ -42,7 +42,6 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
          * back on with Undo: a factory reset needs it.
          */
         val WIZARD = arrayOf("com.google.android.tungsten.setupwraith")
-        private const val HOMES = "cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME 2>/dev/null"
         private const val RESOLVE_HOME = "cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN"
         /** Readable names for the suggested apps, where the TV gives none. */
         val NAMES = mapOf(
@@ -203,23 +202,12 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
     }
 
     /**
-     * FLauncher takes Home: the TV's own home screens go off (the wizard first, see [WIZARD]), FLauncher is made the home last
-     * (Android forgets that choice whenever the set of home screens changes), then Home is asked where it goes. Anywhere else (a
-     * brand's own home screen we do not know, Fire OS, a TV that ignores the choice) and the home screens come back on: a Home
-     * button that lands on a setup wizard or a picker is worse than the old home screen.
+     * FLauncher takes Home, by the same steps as any launcher of the gallery ([LauncherSwap]: the TV's own home screens off with the
+     * wizard first, the new one made the home last, then Home is asked where it goes). Anywhere else (a brand's own home screen we do
+     * not know, Fire OS, a TV that ignores the choice) and the home screens come back on: a Home button that lands on a setup wizard
+     * or a picker is worse than the old home screen. Recorded on the TV, so the watchdog of TV Setup guards it too.
      */
-    private fun takeHome(): Boolean {
-        val ours = sh(HOMES).split("\n").map { it.trim() }.firstOrNull { it.startsWith("$FL_PKG/") }
-        if (ours != null) sh("am start -n $ours")                    // opened once before the old one goes, so Home is never empty
-        val on = sh("pm list packages -e").split("\n").map { it.removePrefix("package:").trim() }.toSet()
-        val gone = (WIZARD + LAUNCHER).filter { it in on }           // only what is on: Google TV's tvlauncher is off from the factory
-        for (p in gone) turnOff(p)
-        if (ours != null) sh("cmd package set-home-activity $ours 2>/dev/null")
-        if (homeNow() == FL_PKG) return true
-        for (p in gone.reversed()) sh("pm enable --user 0 $p")       // home screens before the wizard
-        sh("am start -a android.intent.action.MAIN -c android.intent.category.HOME")
-        return false
-    }
+    private fun takeHome(): Boolean = LauncherSwap(sh).take(FL_PKG)
 
     private fun keyboardNow(): String = sh("settings get secure default_input_method").trim()
 
@@ -243,6 +231,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
         for (p in undoable())
             if (has(p)) { sh("pm enable --user 0 $p"); on++ }
         sh("rm -f $OFF_LIST")
+        LauncherSwap(sh).forget()
         sh("for k in $ANIM; do settings put global \$k 1.0; done")
         log.line(t("optimize.re_enabled_apps_google", "n" to on))
         log.line(t("optimize.flauncher_tailscale_settings_left"))

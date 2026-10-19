@@ -179,6 +179,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     @Volatile private var wrong = 0                                  // wrong codes since the last pairing or lockout
     @Volatile private var lockedUntil = 0L
     private var guard: Guard? = null
+    private var launcherGuard: LauncherGuard? = null
     private var tsWatch: TailscaleWatch? = null
     private var dnsWatch: DnsWatch? = null
     private var keepAdb: KeepAdb? = null
@@ -236,6 +237,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         lastSeen = lastUse
         connect()
         guard = Guard(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
+        dev.tvremote.core.ontv.Launchers.useTestFile(getExternalFilesDir(null))
+        launcherGuard = LauncherGuard(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         tsWatch = TailscaleWatch(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         dnsWatch = DnsWatch(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         keepAdb = KeepAdb(this).also { it.start() }
@@ -260,6 +263,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         http?.stop()
         https?.stop()
         guard?.stop()
+        launcherGuard?.stop()
         tsWatch?.stop()
         dnsWatch?.stop()
         keepAdb?.stop()

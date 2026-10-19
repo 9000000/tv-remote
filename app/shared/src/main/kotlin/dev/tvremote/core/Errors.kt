@@ -19,6 +19,8 @@ object Errors {
         return when {
             all.contains(dev.tvremote.update.Release.MISMATCH) || all.contains(dev.tvremote.update.Release.UNSIGNED) ->
                 t("errors.downloaded_update_does_not")
+            all.contains(dev.tvremote.core.ontv.Launchers.UNSIGNED) -> t("errors.launcher_list_bad")
+            all.contains(dev.tvremote.core.ontv.Launchers.MISMATCH) -> t("errors.launcher_file_bad")
             all.contains("adb pair: wrong code") -> t("errors.pairing_code_wrong_has")
             all.contains("adb pair: not a pairing port") -> t("errors.not_pairing_port_use")
             all.contains("adb tls: this device is not paired") -> t("errors.tv_not_paired_with")

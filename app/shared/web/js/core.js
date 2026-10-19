@@ -149,7 +149,7 @@ addEventListener('resize', closePop);
 // meets one (its error says "setup:old|missing:<feature>:<min>:<have>") asks to update or install TV Setup, with the button.
 // A page that knows before starting asks setupFor(feature). The same names as SetupNeed.name.
 // ids of i18n/*.json: the words of each feature, said in the question below
-const SETUP_NEEDS = { rules: 'core.need_rules', draw: 'core.need_draw', invite: 'core.need_invite', ram: 'core.need_ram', pic: 'core.need_pic', volume: 'core.need_volume', bedtimes: 'core.need_bedtimes', notify: 'core.need_notify', awake: 'core.need_awake', files: 'core.need_files', welcome: 'core.need_welcome' };
+const SETUP_NEEDS = { rules: 'core.need_rules', draw: 'core.need_draw', invite: 'core.need_invite', ram: 'core.need_ram', pic: 'core.need_pic', volume: 'core.need_volume', bedtimes: 'core.need_bedtimes', notify: 'core.need_notify', awake: 'core.need_awake', files: 'core.need_files', welcome: 'core.need_welcome', launcher: 'core.need_launcher' };
 const SETUP_RE = /setup:(old|missing):(\w+):([0-9.]*):([0-9.]*)/;
 const setupSay = (m) => { const what = SETUP_NEEDS[m[2]] ? T(SETUP_NEEDS[m[2]]) : m[2];
   return m[1] === 'missing' ? T('core.setup_missing', { what }) : T('core.setup_old', { what, min: m[3], have: m[4] }); };
@@ -216,7 +216,16 @@ const FRIENDLY = [
   [/the update did not start on the TV/i, T('core.fr_update_not_started')],
   [/could not write the update script/i, T('core.fr_update_script_failed')],
   [/INSTALL_FAILED_NO_MATCHING_ABIS/i, T('core.fr_abi_mismatch')],
+  // the launcher gallery (LauncherInstall.kt): the way it ended, in the order they can match
+  [/launcher:rolledback:(\w+)/, (m) => T('core.fr_launcher_back', { why: T(LAUNCH_WENT[m[1]] || 'launcher.why_user') })],
+  [/launcher:home/, T('core.fr_launcher_home')],
+  [/launcher:play/, T('core.fr_launcher_play')],
+  [/launcher:fit/, T('core.fr_launcher_fit')],
+  [/launcher:install:(.*)/, (m) => T('core.fr_launcher_install', { msg: friendly(m[1]) })],
+  [/launcher list not signed/i, T('core.fr_launcher_list')],
+  [/launcher file does not match/i, T('core.fr_launcher_file')],
 ];
+const LAUNCH_WENT = { crash: 'launcher.why_crash', home: 'launcher.why_home', timeout: 'launcher.why_timeout', interrupted: 'launcher.why_interrupted', user: 'launcher.why_user' };
 const ANDROID = { 21: '5.0', 22: '5.1', 23: '6', 24: '7', 25: '7.1', 26: '8', 27: '8.1', 28: '9', 29: '10', 30: '11', 31: '12', 32: '12L', 33: '13', 34: '14', 35: '15', 36: '16' };
 const androidName = (sdk) => ANDROID[sdk] || 'SDK ' + sdk;
 const friendly = (m) => { m = String(m || ''); const f = FRIENDLY.find(([re]) => re.test(m)); return !f ? m : typeof f[1] === 'function' ? f[1](m.match(f[0])) : f[1]; };

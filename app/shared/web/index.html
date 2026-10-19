@@ -355,6 +355,14 @@
         </div>
         <pre class="log" id="setuplog" hidden></pre>
       </section>
+      <section class="card" data-adb-gated id="launchcard">
+        <h2 data-i18n="launcher.title">🏠 Màn hình chính</h2>
+        <p class="note" data-i18n="launcher.note">Đổi giao diện màn hình chính của TV. Launcher mới lỗi thì TV tự quay về bản cũ.</p>
+        <div class="actions">
+          <button class="primary" id="launchopen" data-i18n="launcher.open">🖼️ Thư viện launcher</button>
+          <button id="launchback" data-i18n="launcher.back">↩ Về launcher của TV</button>
+        </div>
+      </section>
     </div>
     <!-- every setting the TV keeps: the simple ones can be changed, the risky ones are shown locked (health.js) -->
     <details class="card" id="setlist" data-adb-gated>
@@ -428,6 +436,12 @@
   <div id="optbody" class="optbox"></div>
   <div class="actions"><button class="primary" id="optgo" data-i18n="optdlg.optimize">⚡ Chạy tối ưu</button><button id="optcancel" data-i18n="common.cancel">Hủy</button></div>
 </div></dialog>
+<dialog id="launchdlg"><div class="card assistbox">
+  <div class="card-head"><h2 data-i18n="launcher.dlg_title">🖼️ Thư viện launcher</h2><button class="small iconbtn" id="launchclose" title="Đóng" aria-label="Đóng" data-i18n-title="common.close" data-i18n-aria-label="common.close">✕</button></div>
+  <div id="launchbody"></div>
+  <p class="state" id="launchstate"></p>
+  <div class="actions" id="launchact"></div>
+</div></dialog>
 <dialog id="beddlg"><div class="card assistbox smallbox"><div class="card-head"><h2 data-i18n="beddlg.add_a_bedtime">🌙 Thêm giờ đi ngủ</h2><button class="small iconbtn" data-close title="Đóng" aria-label="Đóng" data-i18n-title="common.close" data-i18n-aria-label="common.close">✕</button></div>
   <form class="dlgform" id="bedf"><div class="timerow"><label data-i18n="common.from">Từ <input type="time" id="bedfrom" value="22:00"></label><label data-i18n="common.to">đến <input type="time" id="bedto" value="06:30"></label></div><div class="actions"><button class="primary" data-i18n="common.add">＋ Thêm</button></div></form>
 </div></dialog>
@@ -499,6 +513,7 @@
 <script src="js/welcome.js"></script>
 <script src="js/diagnose.js"></script>
 <script src="js/setup.js"></script>
+<script src="js/launchers.js"></script>
 <script src="js/tvset.js"></script>
 <script src="js/fleet.js"></script>
 <script src="js/tvstatus.js"></script>

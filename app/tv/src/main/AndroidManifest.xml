@@ -35,6 +35,9 @@
         <!-- the sleep timer, bedtime and app limits warn over whatever is on screen; started through the TV's ADB (Guard.kt) -->
         <activity android:name=".WarnActivity" android:exported="true" android:permission="android.permission.DUMP" android:excludeFromRecents="true" android:launchMode="singleTop"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" android:noHistory="true" />
+        <!-- the launcher gallery: "Keep this launcher?" and the notice that the TV went back to its own; started through the TV's ADB (LauncherGuard.kt, LauncherInstall) -->
+        <activity android:name=".LauncherConfirmActivity" android:exported="true" android:permission="android.permission.DUMP" android:excludeFromRecents="true" android:launchMode="singleTop"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" android:noHistory="true" />
         <!-- started by the shell too (DUMP: no app can), when a receiver may not start it from the background: RulesClient, SetupUpdate -->
         <service android:name=".RemoteService" android:exported="true" android:permission="android.permission.DUMP" android:foregroundServiceType="specialUse">
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="web remote control served on the local network" />

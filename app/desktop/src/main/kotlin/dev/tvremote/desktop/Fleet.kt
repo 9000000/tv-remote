@@ -153,6 +153,16 @@ class Fleets(private val keys: File, private val cache: File) {
             Manage(link, null, cache).welcomeBulk(null, 0, "", JSONObject().put("on", false), null, current.get()); "off"
         }
         "reboot" -> { link, _ -> Fleet.reboot(link.get()); link.close(); "restarting" }
+        "launcher" -> {                                               // pkg: the gallery's id; one download for all the TVs, each one checked and rolled back on its own
+            val g = dev.tvremote.core.ontv.Launchers.fetch()
+            val e = g[pkg] ?: throw IllegalArgumentException("no such launcher")
+            val go: (AdbLink, JSONObject) -> String = { link, part ->
+                dev.tvremote.core.ontv.LauncherInstall(link.get(), cache, g).run(e, 0, { step, pct -> part.put("msg", "launcher $step").put("pct", pct) },
+                    { current.get()?.stopped == true })
+                "launcher kept"
+            }
+            go
+        }
         else -> throw IllegalArgumentException("unknown action")
     }
 

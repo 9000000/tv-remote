@@ -21,6 +21,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Tối ưu TV gợi ý thêm app thu thập dữ liệu, quảng cáo, demo và tự cài app của Xiaomi, TCL, Hisense, Sony, Fire TV (theo báo cáo của người dùng cleanyourtv), và không bao giờ tắt những app mà các TV đó cần (remote, nguồn vào HDMI, Wi-Fi, kho app).
 - Ảnh chụp màn hình không còn hỏng trên một số TV Xiaomi (chip MediaTek in thêm một dòng chữ trước ảnh).
 - Màn hình chào: TV hiện video hoặc ảnh chào khách mỗi lần bật (hoặc chỉ sau khi khởi động lại), bấm phím bất kỳ để tắt, hết thì về màn hình chính; không hiện lại trong 2 phút. Đặt ở tab Tự động (tải lên có tiến độ, xem thử, giây hiện ảnh, Xóa), và cho nhiều TV cùng lúc ở "Nhiều TV cùng lúc → ⋯ → Đặt màn hình chào" (web và app điện thoại: tải tệp một lần, đẩy sang từng TV, mỗi TV một dòng kết quả; TV lỗi không chặn TV khác). Cần TV Setup 0.12.0 trở lên
+- Thư viện màn hình chính (launcher): danh sách ký số nằm trên GitHub, mỗi mục có tên, mô tả, ảnh, mã nguồn, TV hợp. Chọn một cái, app tải về (kiểm SHA-256), cài, đặt làm màn hình chính, rồi hỏi "Giữ không?" 30 giây: không trả lời thì TV tự về launcher cũ. TV Setup trông chừng sau đó: launcher lỗi hai lần trong 5 phút hoặc nút Home không mở được thì tự trả về. Có ở app điện thoại, app máy tính, trang web của TV và màn hình TV Setup; cài một lúc nhiều TV ở "Nhiều TV cùng lúc" (mỗi TV tự kiểm tra và tự trả về).
 
 **English**
 
@@ -37,6 +38,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Optimize TV suggests more apps to turn off: data collection, ads, demos and auto-installers of Xiaomi, TCL, Hisense, Sony and Fire TV (from what cleanyourtv's users reported), and never turns off what those TVs need (the remote, HDMI inputs, Wi-Fi, the app store).
 - Screenshots no longer come out broken on some Xiaomi TVs (MediaTek sets print a line before the picture).
 - Welcome screen: the TV shows a greeting video or picture each time it is turned on (or only after a restart); any key closes it, and when it ends the TV goes to its home screen; not shown again within 2 minutes. Set it in the Automation tab (upload with progress, preview, picture seconds, Remove), and for several TVs at once under "Several TVs at once → ⋯ → Set welcome screen" (web page and phone app: the file is uploaded once and pushed to each TV, one result line per TV; a TV that fails does not stop the others). Needs TV Setup 0.12.0 or later
+- Launcher gallery: a signed list on GitHub, each entry with name, description, picture, source and the TVs it fits. Pick one: the app downloads it (SHA-256 checked), installs it, makes it the home and asks "Keep it?" for 30 seconds: no answer and the TV goes back to its old launcher. TV Setup then watches it: two crashes in 5 minutes, or a Home button that cannot open it, and it is put back. In the Phone app, the Computer app, the TV web page and TV Setup's own screen; on several TVs at once under "Several TVs" (each TV checks and rolls back on its own).
 
 ## 0.11.0 - 2026-10-19
 

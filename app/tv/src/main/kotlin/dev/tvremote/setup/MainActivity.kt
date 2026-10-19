@@ -191,7 +191,8 @@ class MainActivity : Activity() {
             Tile(R.drawable.ic_undo, T("setup.undo_ok"), T("tv_main.as_before_optimize")) { job { it.undo() } },
             updateTile,
             Tile(R.drawable.ic_code, T("tv_main.debugging"), T("tv_main.developer_options")) { debugMenu() },
-            Tile(R.drawable.ic_refresh, T("tv_main.reconnect"), T("tv_main.the_tv_s_adb")) { connect() })
+            Tile(R.drawable.ic_refresh, T("tv_main.reconnect"), T("tv_main.the_tv_s_adb")) { connect() },
+            Tile(R.drawable.ic_apps, T("launcher.tile"), T("launcher.tile_sub")) { chooseLauncher() })
         // the web UI right here, for when no phone or computer is at hand (ManageActivity): first, as it does most
         val manage = Tile(R.drawable.ic_apps, T("tv_main.manage_on_this_tv"), T("tv_main.apps_files_health_automation")) {
             RemoteService.start(this)                                 // serves 127.0.0.1 even with the web remote off
@@ -784,6 +785,136 @@ class MainActivity : Activity() {
         d.setContentView(root)
         d.show()
         list.getChildAt(1)?.requestFocus()                                // the first choice, under its heading
+    }
+
+    /** The launcher gallery on the TV itself: signed list, each card focusable with the remote, install checked and put back by [LauncherInstall]. */
+    private fun chooseLauncher() {
+        val a = adb ?: return
+        if (busy) return
+        log(T("launcher.loading"))
+        Thread {
+            val g: dev.tvremote.core.ontv.Launchers.Gallery
+            val facts: dev.tvremote.core.ontv.Launchers.Facts
+            val have: Set<String>
+            val home: String
+            try {
+                g = dev.tvremote.core.ontv.Launchers.fetch()
+                facts = dev.tvremote.core.ontv.Launchers.facts { a.shell(it) }
+                have = a.shell("pm list packages").split("\n").map { it.removePrefix("package:").trim() }.toSet()
+                home = dev.tvremote.core.ontv.LauncherSwap({ a.shell(it) }).homeNow().substringBefore('/')
+            } catch (e: Exception) { ui { log("✗ " + reason(e)) }; return@Thread }
+            val pics = g.entries.associate { e -> e.id to try { dev.tvremote.core.ontv.Launchers.thumb(g, e).let { android.graphics.BitmapFactory.decodeByteArray(it, 0, it.size) } } catch (x: Exception) { null } }
+            ui { showLaunchers(a, g, facts, have, home, pics) }
+        }.start()
+    }
+
+    private fun showLaunchers(a: Adb, g: dev.tvremote.core.ontv.Launchers.Gallery, facts: dev.tvremote.core.ontv.Launchers.Facts, have: Set<String>, home: String,
+                              pics: Map<String, android.graphics.Bitmap?>) {
+        val d = android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen)
+        val root = android.widget.FrameLayout(this)
+        root.setBackgroundColor(Color.argb(215, 5, 7, 10))
+        val card = LinearLayout(this)
+        card.orientation = LinearLayout.VERTICAL
+        card.background = box(CARD, 22, 0)
+        card.setPadding(dp(32), dp(26), dp(32), dp(22))
+        card.addView(text(T("launcher.title"), 22, INK, true))
+        val status = text("", 13, MUTED, false)
+        card.addView(status, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) })
+        val list = LinearLayout(this)
+        list.orientation = LinearLayout.VERTICAL
+        var stopped = false
+        var running = false
+        fun why(e: Exception): String {
+            val m = e.message ?: ""
+            val w = m.substringAfter("launcher:rolledback:", "")
+            return if (w.isNotEmpty()) T("core.fr_launcher_back", "why" to when (w) {
+                "crash" -> T("launcher.why_crash"); "home" -> T("launcher.why_home"); "timeout" -> T("launcher.why_timeout")
+                "interrupted" -> T("launcher.why_interrupted"); else -> T("launcher.why_user") })
+            else reason(e)
+        }
+        fun install(e: dev.tvremote.core.ontv.Launchers.Entry) {
+            running = true; stopped = false
+            status.text = T("launcher.step_download", "pct" to 0)
+            Thread {
+                try {
+                    val inst = dev.tvremote.core.ontv.LauncherInstall(a, cacheDir, g, Words.lang)
+                    val state = inst.run(e, dev.tvremote.core.ontv.LauncherSwap.CONFIRM_SEC, { step, pct ->
+                        ui { status.text = when (step) { "download" -> T("launcher.step_download", "pct" to pct); "install" -> T("launcher.step_install"); else -> T("launcher.step_swap") } }
+                    }, { stopped })
+                    if (state == "pending") {
+                        inst.askOnTv(e)                                   // the TV's own question (Keep / Go back), over this screen
+                        val end = inst.await({ left -> ui { status.text = T("launcher.step_confirm", "s" to left) } }, { stopped })
+                        if (end != "kept") throw java.io.IOException("launcher:rolledback:" + (dev.tvremote.core.ontv.LauncherSwap({ a.shell(it) }).state()?.why ?: "timeout"))
+                    }
+                    ui { log("✓ " + e.name); d.dismiss() }
+                } catch (x: Exception) { ui { running = false; status.text = "✗ " + why(x); log("✗ " + why(x)) } }
+            }.start()
+        }
+        fun card(e: dev.tvremote.core.ontv.Launchers.Entry): View {
+            val fit = dev.tvremote.core.ontv.Launchers.fits(e, facts)
+            val using = e.pkg == home
+            val r = LinearLayout(this)
+            r.gravity = Gravity.CENTER_VERTICAL
+            r.setPadding(dp(14), dp(10), dp(14), dp(10))
+            r.isFocusable = true
+            r.isClickable = true
+            val pic = ImageView(this)
+            pic.scaleType = ImageView.ScaleType.CENTER_CROP
+            pics[e.id]?.let { pic.setImageBitmap(it) }
+            r.addView(pic, LinearLayout.LayoutParams(dp(128), dp(72)))
+            val w = LinearLayout(this)
+            w.orientation = LinearLayout.VERTICAL
+            w.setPadding(dp(16), 0, 0, 0)
+            w.addView(text(e.name, 17, INK, true))
+            val ds = text(e.desc(Words.lang), 12, MUTED, false)
+            ds.maxLines = 2
+            ds.ellipsize = TextUtils.TruncateAt.END
+            w.addView(ds)
+            val tag = if (using) T("launcher.in_use") else if (!fit.ok) when (fit.why) {
+                "sdk" -> T("launcher.why_sdk", "android" to e.minSdk); "abi" -> T("launcher.why_abi"); "fire" -> T("launcher.why_fire")
+                "atv" -> T("launcher.why_atv"); "gtv" -> T("launcher.why_gtv"); else -> T("launcher.why_not_tv") }
+                else if (e.kind == "play") T("launcher.play") else if (e.pkg in have) T("launcher.use") else T("launcher.install")
+            val st = text(tag, 13, if (!fit.ok) WARN else if (using) OK else ACCENT, true)
+            w.addView(st, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(3) })
+            r.addView(w, LinearLayout.LayoutParams(0, -2, 1f))
+            val tagColor = if (!fit.ok) WARN else if (using) OK else ACCENT
+            fun paint() {                                                 // on the blue focus the words turn white: blue on blue is lost
+                val f = r.isFocused
+                r.background = if (f) box(ACCENT, 12, 2) else box(TILE, 12, 0)
+                st.setTextColor(if (f) Color.WHITE else tagColor); ds.setTextColor(if (f) Color.WHITE else MUTED)
+            }
+            r.setOnFocusChangeListener { _, _ -> paint() }
+            paint()
+            r.setOnClickListener {
+                if (running || using || !fit.ok) return@setOnClickListener
+                if (e.kind == "play") {
+                    a.shell("am start -a android.intent.action.VIEW -d '" + e.playUrl + "'")
+                    status.text = T("launcher.play_opened")
+                } else install(e)
+            }
+            return r
+        }
+        for (e in g.entries) list.addView(card(e), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        val most = (resources.displayMetrics.heightPixels * 0.62).toInt()
+        val scroll = object : ScrollView(this) {
+            override fun onMeasure(w: Int, h: Int) = super.onMeasure(w, View.MeasureSpec.makeMeasureSpec(most, View.MeasureSpec.AT_MOST))
+        }
+        scroll.addView(list)
+        card.addView(scroll, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
+        val foot = LinearLayout(this)
+        foot.setPadding(0, dp(16), 0, 0)
+        val back = smallButton(T("launcher.back")) {
+            if (running) return@smallButton
+            Thread { try { dev.tvremote.core.ontv.LauncherSwap({ a.shell(it) }).rollback("user"); ui { log("✓ " + T("launcher.back")); d.dismiss() } } catch (x: Exception) { ui { status.text = "✗ " + reason(x) } } }.start()
+        }
+        val close = smallButton(T("common.close")) { if (running) stopped = true else d.dismiss() }
+        foot.addView(back)
+        foot.addView(close, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
+        card.addView(foot)
+        root.addView(card, android.widget.FrameLayout.LayoutParams(dp(820), -2, Gravity.CENTER))
+        d.setContentView(root)
+        d.show()
+        list.getChildAt(0)?.requestFocus()
     }
 
     /** Removing this app leaves the TV as it was before it: apps Optimize TV turned off come back on first (Undo). */

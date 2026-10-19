@@ -220,3 +220,11 @@ dialog.ask textarea { width:100%; min-height:120px; resize:vertical; font:inheri
 dialog.ask .acts.wrap { flex-wrap:wrap; }
 #pickback { align-self:flex-start; }
 #ver { text-align:center; font-size:12px; padding:6px 0 14px; }
+
+/* launcher gallery (js/launchers.js): a picture, the name and words, tags, one button */
+.lthumb { width:96px; height:54px; object-fit:cover; border-radius:8px; background:var(--line); flex:none; }
+.lthumb.none { visibility:hidden; }
+.ltags { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 2px; }
+.ltag { font-size:11px; padding:2px 8px; border-radius:999px; box-shadow:inset 0 0 0 1px var(--line); color:var(--muted); }
+.ltag.use { background:var(--sel); color:var(--accent-text); box-shadow:inset 0 0 0 1px var(--accent); }
+.ltag.warn, .item .name small.warn { color:var(--warn, #b45309); }

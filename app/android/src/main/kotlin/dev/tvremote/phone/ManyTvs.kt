@@ -76,11 +76,40 @@ private fun MainActivity.fleetMenu() = menu(T("many_tvs.several_tvs_at_once_2"),
     Triple("@close|" + T("many_tvs.remove_apps"), "") {
         fleetPick(T("many_tvs.remove_apps_on_which")) { fleetUninstall(it) }
     },
+    Triple("@tv|" + T("fleet.menu_launcher"), "") { fleetLauncher() },
     Triple("@power|" + T("fleet.menu_restart"), "") {
         fleetPick(T("many_tvs.restart_which_tvs")) { ips ->
             fleetRun(T("fleet.menu_restart"), ips) { link, _ -> Fleet.reboot(link.get()); T("many_tvs.restarting") }
         }
     }))
+
+/** A home screen from the gallery on several TVs: one download (kept in the cache), each TV checked and put back on its own if its home does not hold. */
+private fun MainActivity.fleetLauncher() {
+    dev.tvremote.core.ontv.Launchers.useTestFile(getExternalFilesDir(null))   // a test list, when one was put there
+    val wait = Popup.Builder(this).setMessage(T("launcher.loading")).setCancelable(false).show()
+    Thread {
+        var why = ""
+        val g = try { dev.tvremote.core.ontv.Launchers.fetch() } catch (e: Exception) { why = dev.tvremote.core.Errors.say(e, dev.tvremote.core.Words.lang); null }
+        ui.post {
+            wait.dismiss()
+            if (isFinishing) return@post
+            val list = g?.entries?.filter { it.kind == "apk" }.orEmpty()
+            if (g == null || list.isEmpty()) { toast(if (why.isNotEmpty()) why else T("launcher.none")); return@post }
+            menu(T("fleet.which_launcher"), 0, list.map { e ->
+                Triple("@tv|" + e.name + "  " + e.version, "") {
+                    fleetPick(T("fleet.launcher_ask", "name" to e.name)) { ips ->
+                        fleetRun(e.name, ips, stoppable = true) { link, p ->
+                            dev.tvremote.core.ontv.LauncherInstall(link.get(), cacheDir, g).run(e, 0, { step, pct ->
+                                p.step = when (step) { "download" -> T("fleet.step_ldownload") + " $pct%"; "install" -> T("fleet.step_linstall"); else -> T("fleet.step_lswap") }
+                            }, { p.cancel.stopped })
+                            T("fleet.step_lkept").removePrefix("✓ ")
+                        }
+                    }
+                }
+            })
+        }
+    }.start()
+}
 
 /** The saved TVs to tick; the ones that answered (or not checked yet) come ticked. */
 private fun MainActivity.fleetPick(title: String, then: (List<String>) -> Unit) {

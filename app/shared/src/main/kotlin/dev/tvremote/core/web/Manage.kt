@@ -71,6 +71,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     private val stops = java.util.concurrent.ConcurrentHashMap<String, Cancel>()
     /** The Stop of the work the current thread is doing (set by [job], by an upload request, by [install] / [cast]). */
     private val current = ThreadLocal<Cancel?>()
+    private val launcherApi by lazy { LauncherApi(link, dir, { t, w -> job(t, Work { w(it) }) }, { current.get() }) }
 
     private val working = java.util.concurrent.ConcurrentHashMap<Any, String>()
     /** Told when work starts or ends (the phone keeps itself running meanwhile, and asks before leaving the TV). */
@@ -136,6 +137,12 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "tailscale" -> { val t = Tailscale(link.get(), dir); return HttpServer.Response.json(JSONObject().put("installed", t.installed()).put("ip", t.ip())) }
                 "setup/version" -> return HttpServer.Response.json(setupVersion())
                 "setup/need" -> { SetupNeed.check(link.get(), r.q("f")); return HttpServer.Response.json(JSONObject().put("ok", true)) }
+                "launchers" -> return HttpServer.Response.json(launcherApi.list())
+                "launcher/thumb" -> return launcherApi.thumb(r.q("id"))
+                "launcher/install" -> return HttpServer.Response.json(launcherApi.install(r.json().optString("id"), r.lang))
+                "launcher/play" -> return HttpServer.Response.json(launcherApi.play(r.json().optString("id")))
+                "launcher/answer" -> return HttpServer.Response.json(launcherApi.answer(r.json().optBoolean("keep")))
+                "launcher/restore" -> return HttpServer.Response.json(launcherApi.restore())
                 "setup/plan" -> return HttpServer.Response.json(Setup(link.get(), dir, r.lang) { }.plan { labels?.label(it) })
                 "adb/prompt" -> {                                     // the TV's "Allow USB debugging?" question, if it is up
                     val p = if (link.state() == "ready") AdbPrompt.read(link.get()) else null
