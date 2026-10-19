@@ -88,7 +88,7 @@
   topics.forEach(function(t){
     if (!window.DEMO_GO || !window.DEMO_GO[t.id]) return;
     var a = document.createElement("a");
-    a.className = "gtry"; a.href = "demo/?go=" + t.id;
+    a.className = "gtry"; a.href = "demo/?go=" + t.id; a.target = "tvr-demo";
     a.innerHTML = PLAY + '<span class="vi">Thử ngay</span><span class="en">Try it</span>';
     t.querySelector("h3").append(a);
   });
