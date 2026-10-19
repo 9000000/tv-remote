@@ -65,6 +65,7 @@ import sys
 s = open("docs/guide.html", encoding="utf-8").read()
 open("docs/guide.html", "w", encoding="utf-8").write(s.replace('data-v="next"', f'data-v="{sys.argv[1]}"'))
 PY
+python3 dev/stamp_since.py "$VER" "$(date +%F)"          # docs/data/since.json: "next" -> $VER, with its date
 NOTES=$(awk -v v="## $VER " 'index($0, v) == 1 {on = 1; next} on && /^## / {exit} on' CHANGELOG.md)
 [ -n "$NOTES" ] || { echo "CHANGELOG.md has no section for $VER"; exit 1; }
 if [ -n "$(git status --porcelain)" ]; then

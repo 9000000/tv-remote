@@ -6,7 +6,7 @@ version by release.sh), and data-src, the files whose changes can make it wrong 
 short for the app folders). A topic is listed when one of its files changed since its release's tag.
   dev/guide_stale.py          the list, with the commits
   dev/guide_stale.py -q       only the topic ids (release.sh)"""
-import os, re, subprocess, sys
+import json, os, re, subprocess, sys
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 P = {"web/": "app/shared/web/", "core/": "app/shared/src/main/kotlin/dev/tvremote/core/",
@@ -24,7 +24,12 @@ def git(*a):
 quiet = "-q" in sys.argv
 html = open(os.path.join(ROOT, "docs/guide.html"), encoding="utf-8").read()
 stale = 0
+try:
+    SINCE = json.load(open(os.path.join(ROOT, "docs/data/since.json"), encoding="utf-8"))["topics"]
+except (OSError, ValueError):
+    SINCE = {}
 for tid, v, src in re.findall(r'<article class="topic" id="([^"]+)" data-v="([^"]+)" data-src="([^"]*)"', html):
+    if tid not in SINCE: print(f"{tid}: no entry in docs/data/since.json (add it: \"since\": \"next\")", file=sys.stderr)
     paths = [full(x) for x in src.split()]
     gone = [p for p in paths if not os.path.exists(os.path.join(ROOT, p))]
     if v == "next":

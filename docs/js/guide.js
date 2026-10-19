@@ -11,6 +11,31 @@
   var topics = [].slice.call(document.querySelectorAll(".topic")), groups = [].slice.call(document.querySelectorAll(".ggroup"));
   var index = [], sel = -1, shown = [];
 
+  /* ---------- "since which version": data/since.json (topic id -> since, and setup / phone / pc minimums), dates by version ---------- */
+  var SINCE = null;
+  var S_WORDS = { vi: { since: "Có từ ", next: "Bản tới", setup: "TV Setup ≥ ", phone: "App điện thoại ≥ ", pc: "App máy tính ≥ " },
+                  en: { since: "Since ", next: "Next release", setup: "TV Setup ≥ ", phone: "Phone app ≥ ", pc: "Computer app ≥ " } };
+  var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  function fmtDate(iso, lang){
+    var m = /^(\d{4})-(\d\d)-(\d\d)$/.exec(iso || ""); if (!m) return "";
+    return lang === "vi" ? m[3] + "/" + m[2] + "/" + m[1] : MONTHS[+m[2] - 1] + " " + +m[3] + ", " + m[1];
+  }
+  function sinceHtml(id, lang){
+    var e = SINCE && SINCE.topics[id]; if (!e) return "";
+    var w = S_WORDS[lang], v = e.since, d = fmtDate(SINCE.dates[v], lang);
+    var first = v === "next" ? '<span>' + w.next + '</span>'
+      : w.since + '<a href="https://github.com/HoangTran0410/tv-remote/releases/tag/v' + esc(v) + '">' + esc(v) + '</a>' + (d ? ' <span class="gsd">(' + d + ')</span>' : "");
+    var parts = [first];
+    ["setup", "phone", "pc"].forEach(function(k){ if (e[k]) parts.push(w[k] + esc(e[k])); });
+    return parts.map(function(x){ return "<span>" + x + "</span>"; }).join("");
+  }
+  function paintSince(t, lang){
+    var el = t.querySelector(".gsince");
+    if (!el){ el = document.createElement("div"); el.className = "gsince"; t.querySelector("h3").after(el); }
+    el.innerHTML = sinceHtml(t.id, lang); el.hidden = !el.innerHTML;
+  }
+  fetch("data/since.json").then(function(r){ return r.json(); }).then(function(j){ SINCE = j; if (cur) show(cur); }).catch(function(){});
+
   /* A table of three or more columns stacked on a phone loses its head row: each cell carries its column's name to show in
      its place (CSS ::before, so search does not read it twice). A grid of ticks (empty corner) shows the ticked names as chips. */
   document.querySelectorAll(".gtab .cmp").forEach(function(t){
@@ -51,7 +76,7 @@
     var w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT), out = [], n, last = null;
     while ((n = w.nextNode())){
       var e = n.parentElement, other = e && e.closest(lang === "vi" ? ".en" : ".vi");
-      if (other || (e && e.closest(".ga-box,.gst-box")) || !n.nodeValue.trim()) continue;
+      if (other || (e && e.closest(".ga-box,.gst-box,.gsince")) || !n.nodeValue.trim()) continue;
       var block = e && e.closest("td,th,li,p,h4,dt,dd,figcaption");   // table cells and steps would run into each other
       if (out.length && block !== last && !/[.:;!?…]\s*$/.test(out[out.length - 1])) out.push("·");
       out.push(n.nodeValue); last = block;
@@ -201,6 +226,7 @@
     var p = topics[k - 1], n = topics[k + 1];
     pager.innerHTML = (p ? '<a class="pv" href="#' + p.id + '" data-t="' + p.id + '"><small>← ' + PREV[lang] + '</small>' + name(p) + '</a>' : '')
       + (n ? '<a class="nx" href="#' + n.id + '" data-t="' + n.id + '"><small>' + NEXT[lang] + ' →</small>' + name(n) + '</a>' : '');
+    paintSince(t, lang);
     var v = t.dataset.v, ver = document.querySelector(".gver");    // "next": checked against main, stamped by release.sh
     ver.hidden = !v || v === "next"; ver.textContent = ver.hidden ? "" : FOR[lang] + v;
     document.title = textOf(t.querySelector("h3"), lang).replace(/^\S+\s/, "") + " · " + TITLES[lang];

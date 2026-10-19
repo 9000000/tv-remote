@@ -144,7 +144,7 @@ so Android installs over the old APKs, and `release.sh` stops before 1.3.0 until
   against (`data-v`) and which app files can make it wrong (`data-src`, short paths: `web/`, `core/`, `phone/`, `tv/`, `pc/`).
   A change to what a topic describes: update the topic and set its `data-v="next"` (release.sh stamps the version).
   `dev/guide_stale.py` lists the topics whose files changed since; `release.sh` stops on them (`GUIDE_OK=1` goes on).
-  A new topic needs both attributes. Point to another topic with a link (`<a href="#id" data-t="id">`), never “see … below”.
+  A new topic needs both attributes and an entry in `docs/data/since.json` (`"since": "next"`, plus `setup` / `phone` / `pc` minimum versions where the feature needs a newer app; `release.sh` stamps "next" with the version and its date; `guide_stale.py` warns when missing). Point to another topic with a link (`<a href="#id" data-t="id">`), never “see … below”.
 - Keep the next release's notes under `## Unreleased` at the top of `CHANGELOG.md` (**Tiếng Việt** and **English** lists), added to as features land.
 - `dev/release.sh` does the rest: bumps `VERSION` and the number of each app whose code (or `app/shared`) changed since the last tag (patch; `BUMP=minor`), turns `## Unreleased` into `## <VERSION> - <date>` with the line `Web x · app điện thoại y · app TV z`, commits, pushes, builds and creates the GitHub release with both APKs and `versions.json` (APKs are never committed). It needs `gh` logged in and both `signing.jks` files. Run again after a failure: nothing is bumped twice.
 - The computer apps are not built by `release.sh`: when `app/desktop` or `app/shared` changed since the last tag it starts

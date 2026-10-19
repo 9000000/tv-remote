@@ -90,6 +90,11 @@ mark{background:rgba(255,163,26,.3);color:var(--text);border-radius:3px;padding:
   .gtab .ticks td+td::before{display:inline-block;color:var(--text);font-size:13px;font-weight:600;padding:3px 10px;border:1px solid var(--line2);border-radius:999px;background:var(--bg2)}
   .gtab .ticks td:last-child{padding-bottom:0}
 }
+.gsince{display:flex;flex-wrap:wrap;gap:2px 0;margin-top:-8px;color:var(--muted);font-size:13px;line-height:1.5}
+.gsince[hidden]{display:none}
+.gsince>span+span::before{content:"·";margin:0 7px}
+.gsince a{color:inherit;text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:2px}
+.gsince a:hover{color:var(--blue)}
 .gver{color:var(--dim);font-size:13px;text-align:center;margin-top:10px}
 .gpager{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .gpager a{display:grid;gap:2px;padding:12px 16px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);font-weight:600;font-size:15px;min-width:0}
