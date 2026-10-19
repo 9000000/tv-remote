@@ -149,7 +149,7 @@ addEventListener('resize', closePop);
 // meets one (its error says "setup:old|missing:<feature>:<min>:<have>") asks to update or install TV Setup, with the button.
 // A page that knows before starting asks setupFor(feature). The same names as SetupNeed.name.
 // ids of i18n/*.json: the words of each feature, said in the question below
-const SETUP_NEEDS = { rules: 'core.need_rules', draw: 'core.need_draw', invite: 'core.need_invite', ram: 'core.need_ram', pic: 'core.need_pic', volume: 'core.need_volume', bedtimes: 'core.need_bedtimes', notify: 'core.need_notify', awake: 'core.need_awake', files: 'core.need_files' };
+const SETUP_NEEDS = { rules: 'core.need_rules', draw: 'core.need_draw', invite: 'core.need_invite', ram: 'core.need_ram', pic: 'core.need_pic', volume: 'core.need_volume', bedtimes: 'core.need_bedtimes', notify: 'core.need_notify', awake: 'core.need_awake', files: 'core.need_files', welcome: 'core.need_welcome' };
 const SETUP_RE = /setup:(old|missing):(\w+):([0-9.]*):([0-9.]*)/;
 const setupSay = (m) => { const what = SETUP_NEEDS[m[2]] ? T(SETUP_NEEDS[m[2]]) : m[2];
   return m[1] === 'missing' ? T('core.setup_missing', { what }) : T('core.setup_old', { what, min: m[3], have: m[4] }); };
@@ -166,6 +166,11 @@ const FRIENDLY = [
   [SETUP_RE, setupSay],
   [/the home network is out of reach under the VPN/, T('core.fr_vpn_blocked')],   // Lan.BLOCKED: the phone's Manage screen
   [/notify:nooverlay/, T('core.fr_notify_no_overlay')],
+  [/welcome:toobig/, () => T('core.fr_welcome_toobig', { max: fmtSize(200 * 1048576) })],   // Welcome.MAX_BYTES
+  [/welcome:kind/, T('core.fr_welcome_kind')],
+  [/welcome:unreadable/, T('core.fr_welcome_unreadable')],
+  [/welcome:nothing/, T('core.fr_welcome_nothing')],
+  [/welcome:nofolder/, T('core.fr_welcome_nofolder')],
   [/no YouTube and no Google search/, T('core.fr_no_search')],
   [/^unsupported: (LG|Samsung|Roku|Hisense VIDAA)$/, (m) => T('core.fr_unsupported', { brand: m[1] })],
   [/vidaa: the certificate from Hisense/, T('core.fr_vidaa_cert_needed')],

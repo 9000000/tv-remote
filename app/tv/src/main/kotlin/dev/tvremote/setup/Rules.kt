@@ -42,6 +42,7 @@ internal object Rules {
         return o.optLong("sleep_at") > System.currentTimeMillis() || o.optJSONObject("bedtime")?.optBoolean("on") == true || (o.optJSONObject("limits")?.length() ?: 0) > 0
             || (o.optJSONArray("volume")?.length() ?: 0) > 0 || ram(o).optBoolean("on")
             || o.optBoolean("awake")                                   // KeepAwake lives in the service
+            || WelcomeState.active(c)                                  // so does hearing the TV turned on (WelcomeWatch)
     }
 
     fun day(t: Long): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(t))

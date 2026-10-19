@@ -133,6 +133,13 @@ class Fleets(private val keys: File, private val cache: File) {
         return apk.inputStream().use { Manage(link, null, cache).install(it, apk.length(), part, current.get()) }
     }
 
+    /** The welcome screen's file (from this computer, copied once) pushed to one TV, then its choices set. */
+    fun welcome(link: AdbLink, part: JSONObject, file: File, name: String, cfg: JSONObject): String {
+        part.put("pct", 10)
+        file.inputStream().use { Manage(link, null, cache).welcomeBulk(it, file.length(), name, cfg, part, current.get()) }
+        return "set"
+    }
+
     /** The work for one of the bulk actions that are not an install, refused here before any TV is touched. */
     fun action(name: String, pkg: String): (AdbLink, JSONObject) -> String = when (name) {
         "uninstall" -> {                                              // pkg: one, or several with commas
@@ -141,6 +148,9 @@ class Fleets(private val keys: File, private val cache: File) {
             pkgs.forEach { p -> Fleet.canUninstall(p)?.let { throw IllegalArgumentException(it) } }
             val go: (AdbLink, JSONObject) -> String = { link, _ -> Fleet.uninstall(link.get(), pkgs); "uninstalled" }
             go
+        }
+        "welcome_off" -> { link, _ ->                                 // the file stays on the TV: switching it on again needs no upload
+            Manage(link, null, cache).welcomeBulk(null, 0, "", JSONObject().put("on", false), null, current.get()); "off"
         }
         "reboot" -> { link, _ -> Fleet.reboot(link.get()); link.close(); "restarting" }
         else -> throw IllegalArgumentException("unknown action")

@@ -183,6 +183,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     private var dnsWatch: DnsWatch? = null
     private var keepAdb: KeepAdb? = null
     internal var keepAwake: KeepAwake? = null
+    private var welcome: WelcomeWatch? = null
     private var updates: AutoUpdate? = null
     private var serving = true                                        // the web server started, when it is wanted
     @Volatile private var saidAlive = false
@@ -239,6 +240,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         dnsWatch = DnsWatch(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         keepAdb = KeepAdb(this).also { it.start() }
         keepAwake = KeepAwake(this).also { it.start(); it.check() }
+        welcome = WelcomeWatch(this).also { it.start() }
         updates = AutoUpdate(this, version, { try { link?.get() } catch (e: Exception) { null } }) { busyWhy() }.also { it.start() }
         ui.postDelayed(rest, 30000)
         ui.postDelayed(diary, 20000)
@@ -262,6 +264,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         dnsWatch?.stop()
         keepAdb?.stop()
         keepAwake?.stop()
+        welcome?.stop()
         updates?.stop()
         stats.stopNet()
         stats.stopPower()

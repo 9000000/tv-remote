@@ -24,6 +24,7 @@ object SetupNeed {
         "ram" to "0.4.2",                                              // 🧠 the notice when the memory is nearly full
         "awake" to "0.7.1",                                            // 😴 the chip kept up while the TV is off (KeepAwake)
         "files" to "0.8.1",                                            // 📈 its files handed over where the shell may not read them (SetupFiles)
+        "welcome" to "0.12.0",                                         // 👋 a video or picture when the TV is turned on (Welcome)
     )
 
     /** "setup:old:pic:2.21.0:2.20.0" or "setup:missing:draw:2.18.0:": the words every client looks for in an error. */
@@ -45,6 +46,7 @@ object SetupNeed {
             "ram" -> t("core.need_ram")
             "awake" -> t("core.need_awake")
             "files" -> t("core.need_files")
+            "welcome" -> t("core.need_welcome")
             else -> feature
         }
     }

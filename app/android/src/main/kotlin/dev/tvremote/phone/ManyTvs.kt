@@ -59,6 +59,20 @@ private fun MainActivity.fleetMenu() = menu(T("many_tvs.several_tvs_at_once_2"),
                 .putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/vnd.android.package-archive", "application/octet-stream")), PICK_FLEET)
         } catch (e: Exception) { toast(T("media.this_phone_has_no")) }
     },
+    Triple("@home|" + T("fleet.menu_welcome"), "") {
+        try {
+            @Suppress("DEPRECATION")
+            startActivityForResult(Intent(Intent.ACTION_GET_CONTENT).setType("*/*").addCategory(Intent.CATEGORY_OPENABLE)
+                .putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("video/*", "image/*")), PICK_FLEET_WELCOME)
+        } catch (e: Exception) { toast(T("media.this_phone_has_no")) }
+    },
+    Triple("@close|" + T("fleet.menu_welcome_off"), "") {
+        fleetPick(T("fleet.ask_welcome_off")) { ips ->
+            fleetRun(T("fleet.menu_welcome_off"), ips) { link, _ ->
+                Manage(link, null, cacheDir).welcomeBulk(null, 0, "", JSONObject().put("on", false), null, null); T("fleet.step_welcome_off")
+            }
+        }
+    },
     Triple("@close|" + T("many_tvs.remove_apps"), "") {
         fleetPick(T("many_tvs.remove_apps_on_which")) { fleetUninstall(it) }
     },
@@ -103,6 +117,42 @@ internal fun MainActivity.fleetApk(uri: Uri) {
             }
         }
     }.start()
+}
+
+/**
+ * The welcome screen's video or picture chosen in the file picker: copied here once, since it goes to several TVs, then the TVs and
+ * when it shows. A TV Setup without the welcome screen fails on its own line; the others go on.
+ */
+internal fun MainActivity.fleetWelcome(uri: Uri) {
+    var name = "welcome.mp4"
+    try {
+        contentResolver.query(uri, null, null, null, null)?.use { c ->
+            if (c.moveToFirst()) c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME).let { if (it >= 0) c.getString(it)?.let { n -> name = n } }
+        }
+    } catch (ignored: Exception) { }
+    if (dev.tvremote.core.ontv.Welcome.kind(name) == null) { toast(T("core.fr_welcome_kind")); return }
+    val file = File(cacheDir, "fleet-welcome." + dev.tvremote.core.ontv.Welcome.ext(name))
+    Thread {
+        val ok = try { contentResolver.openInputStream(uri)!!.use { i -> file.outputStream().use { i.copyTo(it) } }; true } catch (e: Exception) { false }
+        ui.post {
+            if (isFinishing) return@post
+            if (!ok) { toast(T("many_tvs.could_not_read_this")); return@post }
+            if (file.length() > dev.tvremote.core.ontv.Welcome.MAX_BYTES) { file.delete(); toast(T("core.fr_welcome_toobig", "max" to "200 MB")); return@post }
+            fleetPick(T("welcome.title")) { ips ->
+                menu(T("welcome.when"), 0, listOf(
+                    Triple("@power|" + T("welcome.every"), "") { fleetWelcomeRun(name, file, ips, "every") },
+                    Triple("@refresh|" + T("welcome.boot"), "") { fleetWelcomeRun(name, file, ips, "boot") }))
+            }
+        }
+    }.start()
+}
+
+private fun MainActivity.fleetWelcomeRun(name: String, file: File, ips: List<String>, whenOf: String) {
+    val cfg = JSONObject().put("on", true).put("when", whenOf).put("seconds", dev.tvremote.core.ontv.Welcome.SECONDS)
+    fleetRun(T("welcome.title"), ips, stoppable = true) { link, p ->
+        FileInputStream(file).use { Manage(link, null, cacheDir).welcomeBulk(it, file.length(), name, cfg, p.job, p.cancel) }
+        T("fleet.step_welcome_set")
+    }
 }
 
 /** Asks each TV picked for its apps, then which one to remove from the TVs that have it. */

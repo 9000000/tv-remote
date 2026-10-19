@@ -165,6 +165,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal var shared: Intent? = null                                // shared from another app, kept until a TV is connected
     internal val PICK_CAST = 71
     internal val PICK_DRAW = 73                                       // 🖼️ a picture to put on the TV's screen (Drawing.kt)
+    internal val PICK_FLEET_WELCOME = 74                              // ManyTvs.kt: the welcome screen's file for several TVs
     internal val PICK_FLEET = 72                                       // ManyTvs.kt: the APK for several TVs
 
     // ---- SetupBanner.kt
@@ -775,6 +776,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         if (request == PICK_CAST && result == RESULT_OK) data?.data?.let { castFile(it) }
         if (request == PICK_DRAW && result == RESULT_OK) data?.data?.let { drawPicked(it) }
         if (request == PICK_FLEET && result == RESULT_OK) data?.data?.let { fleetApk(it) }
+        if (request == PICK_FLEET_WELCOME && result == RESULT_OK) data?.data?.let { fleetWelcome(it) }
         if (request == SPEAK && result == RESULT_OK && data != null) {
             val heard = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             if (heard != null && heard.isNotEmpty()) voice(heard[0])

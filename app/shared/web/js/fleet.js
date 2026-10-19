@@ -2,7 +2,7 @@
 // lose the same app, or restart, each with its own progress line. The card sits under the saved TVs on the picker, once there are two.
 let fleetTvs = [], fleetPick = new Set(), fleetRow = {};
 const FLEET_STEP = { waiting: T('fleet.step_waiting'), connecting: T('fleet.step_connecting'), 'installing on TV': T('fleet.step_installing'), 'checking the TV kept it': T('fleet.step_checking'),
-  installed: T('fleet.step_installed'), uninstalled: T('fleet.step_removed'), restarting: T('fleet.step_restarting'), done: T('fleet.step_done') };
+  installed: T('fleet.step_installed'), uninstalled: T('fleet.step_removed'), restarting: T('fleet.step_restarting'), set: T('fleet.step_welcome_set'), off: T('fleet.step_welcome_off'), done: T('fleet.step_done') };
 const FLEET_ADB = { closed: T('fleet.adb_closed'), unauthorized: T('fleet.adb_unauthorized'),
   offline: T('fleet.adb_offline'), error: T('fleet.adb_error') };
 
@@ -45,7 +45,7 @@ $('#fleetstop').addEventListener('click', () => { if (fleetStop) fleetStop(); pu
 const fleetStopShow = (fn) => { fleetStop = fn; put('#fleetstop', 'hidden', !fn); put('#fleetstop', 'disabled', false); };
 async function fleetFollow(j) {
   const id = j.id;
-  if (/^install/.test(j.title)) fleetStopShow(() => api('/api/fleet/cancel', { id }, true));   // only an install has a half way to stop at
+  if (/^(install|welcome )/.test(j.title)) fleetStopShow(() => api('/api/fleet/cancel', { id }, true));   // only an install or a file copy has a half way to stop at
   try { await fleetFollowing(j); } finally { fleetStopShow(null); }
 }
 async function fleetFollowing(j) {
@@ -89,6 +89,8 @@ async function fleetDo(action, pkg, what) {
   if (r) fleetFollow(r);
 }
 $('#fleetmore').addEventListener('click', (e) => popover(e.currentTarget, [
+  ['🏠', T('fleet.menu_welcome'), () => fleetWelcomeFile.click()],
+  ['💤', T('fleet.menu_welcome_off'), () => fleetDo('welcome_off', '', T('fleet.ask_welcome_off'))],
   ['🗑', T('fleet.menu_remove'), () => fleetUninstall()],
   ['🔁', T('fleet.menu_restart'), () => fleetDo('reboot', '', T('fleet.ask_restart'))],
   ['☑️', T('fleet.menu_select_all'), () => { fleetTvs.forEach((t) => fleetPick.add(t.host)); fleetDraw(); }],
@@ -116,4 +118,40 @@ function fleetUninstall() {
       el('div', { className: 'name' }, el('b', { textContent: appName(p) }), el('small', { className: 'muted', textContent: p + ' · ' + n + '/' + tvs.length + ' TV' }))))),
     el('div', { className: 'acts fleetgo' }, el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => $('#infodlg').close() }), go));
   sync(); $('#infodlg').showModal();
+}
+
+// The welcome screen on every TV ticked (welcome.js, Welcome.kt): the file goes up from here once, the computer copies it to each TV,
+// and the choices are set on each. A TV Setup from before the welcome screen says so on its own line; the others go on.
+const fleetWelcomeFile = el('input', { type: 'file', hidden: true, accept: 'video/mp4,video/webm,video/x-matroska,image/jpeg,image/png,image/webp,.mp4,.m4v,.webm,.mkv,.jpg,.jpeg,.png,.webp' });
+document.body.append(fleetWelcomeFile);
+fleetWelcomeFile.addEventListener('change', () => {
+  const f = fleetWelcomeFile.files[0]; fleetWelcomeFile.value = ''; if (!f) return;
+  if (!WELCOME_FILE.test(f.name)) { toast(T('core.fr_welcome_kind')); return; }
+  if (f.size > WELCOME_MAX) { toast(T('core.fr_welcome_toobig', { max: fmtSize(WELCOME_MAX) })); return; }
+  const tvs = fleetChosen(); if (!tvs.length) { toast(T('fleet.pick_one')); return; }
+  const cfg = { on: true, when: 'every', seconds: 10 }, video = !/\.(jpe?g|png|webp)$/i.test(f.name);
+  const go = el('button', { className: 'primary', type: 'button', textContent: T('fleet.welcome_set', { n: tvs.length }), onclick: () => { $('#infodlg').close(); fleetWelcomeSend(f, tvs, cfg); } });
+  const chips = (list, key) => UI.chips(list.map(([v, label, title]) => ({ label, title, on: cfg[key] === v, fn: (ev) => { cfg[key] = v; const c = ev.currentTarget; c.parentNode.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === c)); } })));
+  put('#infotitle', 'textContent', T('welcome.title'));
+  $('#infobody').replaceChildren(...[
+    UI.item({ name: f.name, sub: fmtSize(f.size) }),
+    UI.group(T('welcome.when'), chips([['every', T('welcome.every'), T('welcome.every_tip')], ['boot', T('welcome.boot'), T('welcome.boot_tip')]], 'when')),
+    video ? null : UI.group(T('welcome.seconds'), chips(WELCOME_SECONDS.map((n) => [n, T('welcome.seconds_n', { n })]), 'seconds')),
+    UI.note(tvs.map((t) => '• ' + (t.name || t.host)).join('\n')),
+    el('div', { className: 'acts fleetgo' }, el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => $('#infodlg').close() }), go)].filter(Boolean));
+  $('#infodlg').showModal();
+});
+function fleetWelcomeSend(f, tvs, cfg) {
+  const xhr = new XMLHttpRequest(), lbl = $('#fleetmore');
+  xhr.open('POST', '/api/fleet/welcome?name=' + encodeURIComponent(f.name) + '&hosts=' + encodeURIComponent(tvs.map((t) => t.host).join(',')) + '&cfg=' + encodeURIComponent(JSON.stringify(cfg)));
+  xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+  xhr.upload.onprogress = (ev) => { if (ev.lengthComputable) lbl.dataset.busy = '⏳ ' + Math.round(ev.loaded * 100 / ev.total) + '%'; };
+  xhr.onloadend = () => {
+    delete lbl.dataset.busy;
+    if (xhr.status === 0) { fleetStopShow(null); return; }
+    let r = {}; try { r = JSON.parse(xhr.responseText); } catch {}
+    if (xhr.status !== 200) { toast(T('fleet.error_msg', { msg: friendly(r.error || xhr.statusText || T('core.no_server_reply')) })); return; }
+    fleetFollow(r);
+  };
+  lbl.dataset.busy = '⏳'; fleetStopShow(() => { xhr.abort(); toast(T('fleet.stopped')); }); xhr.send(f);
 }

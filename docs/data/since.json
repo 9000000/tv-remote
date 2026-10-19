@@ -25,6 +25,7 @@
   "tvguard": {"since": "0.1.0"},
   "awake": {"since": "0.7.1", "setup": "0.7.1"},
   "notify": {"since": "0.5.0", "setup": "0.5.0"},
+  "welcome": {"since": "next", "setup": "0.12.0"},
   "draw": {"since": "0.1.0"},
   "photo": {"since": "0.1.0"},
   "screenshot": {"since": "0.1.0"},

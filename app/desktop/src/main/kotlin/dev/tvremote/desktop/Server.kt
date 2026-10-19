@@ -226,6 +226,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             return Response.error(400, "unsupported: " + Remote.Kind.name(s.kind))
         if (!post) return null
         if (r.path == "/api/fleet/install") return fleetInstall(r, s)
+        if (r.path == "/api/fleet/welcome") return fleetWelcome(r, s)
         if (r.path == "/api/vidaa/cert") {                              // Hisense's certificate: the official app's .apk or its .p12, kept only here
             if (r.length <= 0 || r.length > 400L shl 20) throw IllegalArgumentException("empty upload")
             if (!Vidaa.importCert(keys, r.body, r.length)) return Response.error(400, "vidaa: no certificate in this file")
@@ -566,10 +567,9 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         }
     }
 
-    private fun fleetInstall(r: HttpServer.Request, s: Session): Response {
-        val targets = targets(r.q("hosts").split(","), s)
+    /** The body of an upload into a temp file, once for every TV that will get it. */
+    private fun fleetFile(r: HttpServer.Request, name: String): File {
         if (r.length <= 0) throw IllegalArgumentException("empty upload")
-        val name = r.q("name").ifEmpty { "upload.apk" }.replace(Regex("[^\\w.-]"), "_")
         val tmp = File.createTempFile("tvup-", "-$name")
         try {
             tmp.outputStream().use { out ->
@@ -584,7 +584,25 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         } catch (e: Exception) {
             tmp.delete(); throw e
         }
+        return tmp
+    }
+
+    private fun fleetInstall(r: HttpServer.Request, s: Session): Response {
+        val targets = targets(r.q("hosts").split(","), s)
+        val name = r.q("name").ifEmpty { "upload.apk" }.replace(Regex("[^\\w.-]"), "_")
+        val tmp = fleetFile(r, name)
         return Response.json(fleets.run("install $name", targets, { tmp.delete() }) { link, part -> fleets.install(link, part, tmp) })   // the copy goes once every TV has had it
+    }
+
+    /** The welcome screen's file and choices (query `cfg`, JSON) on each TV picked; a TV Setup without it fails on its own line. */
+    private fun fleetWelcome(r: HttpServer.Request, s: Session): Response {
+        val targets = targets(r.q("hosts").split(","), s)
+        val name = r.q("name").ifEmpty { "welcome.mp4" }.replace(Regex("[^\\w.-]"), "_")
+        if (dev.tvremote.core.ontv.Welcome.kind(name) == null) throw IllegalArgumentException("welcome:kind")
+        if (r.length > dev.tvremote.core.ontv.Welcome.MAX_BYTES) throw IllegalArgumentException("welcome:toobig")
+        val cfg = try { JSONObject(r.q("cfg").ifEmpty { "{}" }) } catch (e: Exception) { JSONObject() }
+        val tmp = fleetFile(r, name)
+        return Response.json(fleets.run("welcome $name", targets, { tmp.delete() }) { link, part -> fleets.welcome(link, part, tmp, name, cfg) })
     }
 
     companion object {
@@ -599,7 +617,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             "/api/update")
         /** What the page reads from an LG or Samsung TV besides [OURS]. */
         val NATIVE_TOO = setOf("/api/state", "/api/about", "/api/wirelog", "/api/update", "/api/tvs", "/api/discover", "/api/setup/status", "/api/scenes", "/api/apps", "/api/inputs", "/api/app/icon", "/api/app/meta", "/api/setup/need",
-            "/api/fleet", "/api/fleet/job", "/api/fleet/install", "/api/fleet/cancel")
+            "/api/fleet", "/api/fleet/job", "/api/fleet/install", "/api/fleet/welcome", "/api/fleet/cancel")
         const val HD = 5                                              // Tv.QUALITY's sharpest level, the page's "Nét nhất"
         val IP = Regex("((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)")   // IPv4: what ADB and the TV's page links are written for
         val PRIVATE = Regex("(10\\.|192\\.168\\.|172\\.(1[6-9]|2\\d|3[01])\\.)[0-9.]+")

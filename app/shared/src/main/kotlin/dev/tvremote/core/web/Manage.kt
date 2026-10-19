@@ -25,6 +25,7 @@ import dev.tvremote.core.remote.Inputs
 import dev.tvremote.core.adb.Mdns
 import dev.tvremote.core.ontv.Meminfo
 import dev.tvremote.core.ontv.Notify
+import dev.tvremote.core.ontv.Welcome
 import dev.tvremote.core.ontv.NowPlaying
 import dev.tvremote.core.ontv.Power
 import dev.tvremote.core.adb.Pkg
@@ -112,6 +113,11 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "crashes" -> return HttpServer.Response.json(JSONObject().put("text", sh(CRASHES).replace("\r\n", "\n").takeLast(500000)))
                 "stats" -> return HttpServer.Response.json(stats(r.q("days").toIntOrNull() ?: 7))
                 "rules" -> if (!post) return HttpServer.Response.json(rules(null))
+                "welcome" -> if (!post) return HttpServer.Response.json(Welcome.call({ sh(it) }, null))
+                "welcome/thumb" -> {                                  // a small picture of the welcome, for the card's preview
+                    val b64 = Welcome.call({ sh(it) }, JSONObject().put("do", "thumb")).optString("thumb")
+                    return if (b64.isEmpty()) HttpServer.Response.error(404, "no picture") else HttpServer.Response.of("image/jpeg", B64.decode(b64))
+                }
                 "tvset" -> if (!post) return text(TvShell.TVSET_READ, 60000)
                 "log" -> return text(TvShell.log(r.q("pkg"), r.q("since")), 20000)
                 "diagnose" -> return diagnose(r, link)                // why the TV does not answer: one conclusion (Diagnose.kt)
@@ -172,6 +178,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "adb/connect" -> HttpServer.Response.json(JSONObject().put("state", link.reconnect()))
                 "shell" -> shell(r.json().optString("cmd"))
                 "rules" -> HttpServer.Response.json(rules(r.json()))
+                "welcome" -> HttpServer.Response.json(Welcome.call({ sh(it) }, r.json()))
                 "notify" -> { Notify.send({ sh(it) }, r.json()); HttpServer.Response.json(JSONObject().put("ok", true)) }
                 "share" -> HttpServer.Response.json(Invite.share({ sh(it) }, link.host, r.json().optString("scope"), r.json().optBoolean("again")))   // a QR another phone scans (Invite.kt)
                 "search" -> {
@@ -553,6 +560,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         try {
             if (r.q("kind") == "install") { installUpload(r); return done("install $name", "installed") }
             if (r.q("kind") == "restore") { restore(r); return done("restore $name", "restored") }
+            if (r.q("kind") == "welcome") { welcomeUpload(r, name); return done("welcome $name", Words.get(r.lang, "welcome.saved")) }
             val dest = safePath(r.q("dest")) + "/" + name
             push(r.body, r.length, dest, null)
             return done("upload $name", "saved $dest")
@@ -560,6 +568,45 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             current.remove()
             if (uid.isNotEmpty()) stops.remove(uid)
         }
+    }
+
+    /**
+     * The welcome screen's video or picture (Welcome.kt) from the browser into TV Setup's own folder, which TV Setup then adopts
+     * (checks, makes the preview, switches the welcome on). Refused before a byte goes when it is too big or TV Setup cannot take it.
+     */
+    private fun welcomeUpload(r: HttpServer.Request, name: String) {
+        if (r.length <= 0) throw IllegalArgumentException("empty upload")
+        welcomeStore(r.body, r.length, name, null)
+    }
+
+    private fun welcomeStore(input: InputStream, length: Long, name: String, job: JSONObject?) {
+        val ext = Welcome.ext(name)
+        if (Welcome.kind(name) == null) throw IllegalArgumentException("welcome:kind")
+        if (length > Welcome.MAX_BYTES) throw IllegalArgumentException("welcome:toobig")
+        SetupNeed.check(link.get(), "welcome")
+        sh("mkdir -p " + Adb.q(Welcome.DIR))
+        val dest = Welcome.DIR + "/incoming." + ext
+        push(input, length, dest, job)
+        try {
+            Welcome.call({ sh(it) }, JSONObject().put("do", "adopt").put("ext", ext).put("original", name))
+        } catch (e: Exception) {
+            try { sh("rm -f " + Adb.q(dest)) } catch (ignored: Exception) { }
+            throw e
+        }
+    }
+
+    /**
+     * The welcome screen on one of several TVs (Fleet): [input] is the file from this device (null: only the choices), [cfg] the
+     * choices ({"on": true, "when": "boot"}). A TV Setup without the welcome screen throws [SetupNeed.Missing], which the caller
+     * shows on that TV's line; the other TVs go on.
+     */
+    @Throws(IOException::class)
+    fun welcomeBulk(input: InputStream?, length: Long, name: String, cfg: JSONObject, job: JSONObject?, cancel: Cancel?) {
+        current.set(cancel)
+        try {
+            if (input != null) welcomeStore(input, length, name, job) else SetupNeed.check(link.get(), "welcome")
+            if (cfg.length() > 0) Welcome.call({ sh(it) }, JSONObject(cfg.toString()).put("do", "config"))
+        } finally { current.remove() }
     }
 
     // ---------------------------------------------------------------- installs and downloads (jobs the page polls)

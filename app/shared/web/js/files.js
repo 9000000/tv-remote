@@ -114,7 +114,7 @@ async function trackJob(j, label, after, src) {
 }
 // What the TV must have free for this file, asked of it before a byte is sent (Manage.space); '' when there is room or the TV did not say.
 async function roomError(size, kind, dest) {
-  const r = await api('/api/space?size=' + size + (kind === 'file' ? '&path=' + encodeURIComponent(dest || '') : '&apk=1'), null, true);
+  const r = await api('/api/space?size=' + size + (kind === 'file' || kind === 'welcome' ? '&path=' + encodeURIComponent(dest || '') : '&apk=1'), null, true);
   return r && r.ok === false ? friendly(r.error) : '';
 }
 async function upload(file, kind, dest, after, src) {
@@ -127,7 +127,7 @@ async function upload(file, kind, dest, after, src) {
     row.status = 'cancelled'; showJob(row); mark(src, row); toast(T('files.stopped'));
   };
   showJob(row, undefined, stop); mark(src, row);
-  const full = await roomError(file.size, kind === 'file' ? 'file' : 'apk', dest);
+  const full = await roomError(file.size, kind === 'file' || kind === 'welcome' ? kind : 'apk', dest);
   if (stopped) return;
   if (full) { row.status = 'error'; row.msg = full; showJob(row); mark(src, row); return; }   // refused before a byte leaves
   row.msg = T('files.sending_to_server'); showJob(row);

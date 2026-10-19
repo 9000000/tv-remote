@@ -15,6 +15,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Tối ưu TV đổi được màn hình chính trên Google TV (trước chỉ Android TV): tắt trình cài đặt ban đầu trước (để nút Home không rơi vào nó, làm TV khởi động lại liên tục), rồi kiểm tra nút Home; TV không cho đổi thì bật lại màn hình chính cũ. Hoàn tác không còn bật lại app vốn tắt sẵn từ nhà máy. Không bao giờ tắt màn hình chính hay bàn phím đang dùng; bàn phím đang chọn không có trên TV thì chuyển sang Gboard.
 - Tối ưu TV gợi ý thêm app thu thập dữ liệu, quảng cáo, demo và tự cài app của Xiaomi, TCL, Hisense, Sony, Fire TV (theo báo cáo của người dùng cleanyourtv), và không bao giờ tắt những app mà các TV đó cần (remote, nguồn vào HDMI, Wi-Fi, kho app).
 - Ảnh chụp màn hình không còn hỏng trên một số TV Xiaomi (chip MediaTek in thêm một dòng chữ trước ảnh).
+- Màn hình chào: TV hiện video hoặc ảnh chào khách mỗi lần bật (hoặc chỉ sau khi khởi động lại), bấm phím bất kỳ để tắt, hết thì về màn hình chính; không hiện lại trong 2 phút. Đặt ở tab Tự động (tải lên có tiến độ, xem thử, giây hiện ảnh, Xóa), và cho nhiều TV cùng lúc ở "Nhiều TV cùng lúc → ⋯ → Đặt màn hình chào" (web và app điện thoại: tải tệp một lần, đẩy sang từng TV, mỗi TV một dòng kết quả; TV lỗi không chặn TV khác). Cần TV Setup 0.12.0 trở lên
 
 **English**
 
@@ -25,6 +26,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Optimize TV swaps the home screen on Google TV too (Android TV only before): the setup wizard goes off first (Home landing on it made the TV restart over and over), then Home is checked, and the old home screen comes back on if the TV will not allow it. Undo no longer turns on apps that were off from the factory. The home screen and keyboard in use are never turned off; a chosen keyboard missing from the TV is replaced by Gboard.
 - Optimize TV suggests more apps to turn off: data collection, ads, demos and auto-installers of Xiaomi, TCL, Hisense, Sony and Fire TV (from what cleanyourtv's users reported), and never turns off what those TVs need (the remote, HDMI inputs, Wi-Fi, the app store).
 - Screenshots no longer come out broken on some Xiaomi TVs (MediaTek sets print a line before the picture).
+- Welcome screen: the TV shows a greeting video or picture each time it is turned on (or only after a restart); any key closes it, and when it ends the TV goes to its home screen; not shown again within 2 minutes. Set it in the Automation tab (upload with progress, preview, picture seconds, Remove), and for several TVs at once under "Several TVs at once → ⋯ → Set welcome screen" (web page and phone app: the file is uploaded once and pushed to each TV, one result line per TV; a TV that fails does not stop the others). Needs TV Setup 0.12.0 or later
 
 ## 0.11.0 - 2026-10-19
 

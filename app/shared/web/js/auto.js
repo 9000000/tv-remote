@@ -418,4 +418,4 @@ let autoLoaded = false;
 onTvChange(() => { autoLoaded = sceneNamesAsked = false; RULES = null; SCENES = []; renderScenes(); });
 function autoTab() {
   if (NATIVE()) { loadScenes(); return; }                             // LG / Samsung: scenes only, by their remote link
-  if (ADB.state !== 'ready') return; autoLoaded = true; loadRules(null, true); loadScenes(); loadPickApps(); }
+  if (ADB.state !== 'ready') return; autoLoaded = true; loadRules(null, true); loadScenes(); loadPickApps(); welcomeLoad(); }
