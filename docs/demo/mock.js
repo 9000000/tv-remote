@@ -116,10 +116,21 @@
       const r = 0.5 + ((d * 37) % 11) / 10;
       usage[key] = { 'com.demo.stream': Math.round(5400 * r), 'com.demo.tube': Math.round(3000 * r), 'com.demo.music': Math.round(1500 * r), 'com.demo.kids': Math.round(1800 * (r / 2)) };
     }
-    for (let i = 0; i < days * 24; i++) {
-      const at = Math.round((t - (days * 24 - i) * 3600000) / 1000), on = i % 24 > 6 ? 1 : 0, gb = 1073741824;
-      samples.push([at, on, 8 + ((i * 7) % 25), Math.round((2.2 + ((i * 3) % 7) / 10) * gb), Math.round(3.6 * gb), Math.round(10.6 * gb), 28 * gb, on ? 'com.demo.stream' : '', -52 - (i % 6), 'wifi', 433]);
+    // as TV Setup's Stats.kt writes them: one every 5 minutes, memory and storage in MB; on in the evenings
+    const STEP = 300, N = Math.round(days * 86400 / STEP), shows = ['com.demo.stream', 'com.demo.tube', 'com.demo.music'];
+    const wave = (i, a, b) => Math.sin(i / a) * 0.6 + Math.sin(i / b + 1.7) * 0.4;   // smooth, the same on every load
+    for (let i = 0; i < N; i++) {
+      const at = Math.round(t / 1000) - (N - i) * STEP, d = new Date(at * 1000), h = d.getHours() + d.getMinutes() / 60;
+      const weekend = d.getDay() === 0 || d.getDay() === 6;
+      const on = (h >= 18 && h < 23.5) || (weekend && h >= 9 && h < 11.5) || (i > N - 36 && S.on) ? 1 : 0;   // the last 3 hours on: whenever the demo is opened, the newest part shows the TV in use
+      const busy = on ? 22 + 10 * wave(i, 5, 13) : 4 + 2 * wave(i, 7, 3);
+      const mem = Math.round(on ? 2550 + 260 * wave(i, 9, 4) : 1850 + 90 * wave(i, 11, 5));
+      const sig = Math.round(-55 + 4 * wave(i, 23, 7));
+      samples.push([at, on, Math.max(1, Math.round(busy)), mem, 3686, Math.round(10850 + i * 0.05), 28672,
+        on ? shows[Math.floor(i / 18) % shows.length] : '', sig, 'wifi', sig > -58 ? 433 : 390]);
     }
+    const y = Math.round(t / 1000) - 86400 + 3600;                     // the router restarted once, yesterday evening
+    net.push([y, 0, 'wifi', 1], [y + 95, 1, 'wifi', 1]);
     return { usage, samples, net, labels: Object.fromEntries(Object.entries(META).map(([p, m]) => [p, m.label])), collector: true, days };
   }
   const CAPS = 'sdk 34 14\ncodec dec hw c2.demo.avc.decoder video/avc 4096x2176 -\ncodec dec hw c2.demo.hevc.decoder video/hevc 4096x2176 secure\n' +
