@@ -2,7 +2,8 @@
 """dev/sign_launchers.py: checks docs/launchers/launchers.json and signs it (launchers.json.sig, Ed25519, base64).
 
   1. the list's shape (and writes each thumbnail's SHA-256 into it) (what core/ontv/Launchers.kt reads) and that every thumbnail file exists;
-  2. every APK url is downloaded and its SHA-256 compared with the one in the list (SKIP_DOWNLOAD=1: only shape);
+  2. every APK url is downloaded and its SHA-256 compared with the one in the list (SKIP_DOWNLOAD=1: only shape), and the languages
+     its screens are written in are read from it into "langs" (see apk_langs; a "play" entry's are written by hand);
   3. launchers.json is signed with LAUNCHERS_KEY (default ~/.tv-remote-release/launchers.key), a key SEPARATE from the
      release key: the list names APKs that go onto people's TVs, and a leak of one key must not carry the other.
      The key is made here when absent (never committed, never overwritten; backup: dev/README.md) and its public half is
@@ -11,7 +12,7 @@
 Run it after every edit of the list, then commit launchers.json and launchers.json.sig together: the apps refuse a list whose
 signature does not match its bytes. Nothing here uploads: the docs/ site is deployed by Cloudflare Pages on push.
 """
-import hashlib, json, os, subprocess, sys, urllib.request
+import glob, hashlib, json, os, re, subprocess, sys, tempfile, urllib.request, zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DIR = os.path.join(ROOT, "docs", "launchers")
@@ -25,16 +26,62 @@ def fail(m):
     sys.exit(1)
 
 
-def sha(url):
+def sha(url, keep=None):
     h = hashlib.sha256()
     req = urllib.request.Request(url, headers={"User-Agent": "tv-remote"})
+    out = open(keep, "wb") if keep else None
     with urllib.request.urlopen(req, timeout=120) as r:
         while True:
             b = r.read(1 << 16)
             if not b:
                 break
             h.update(b)
+            if out:
+                out.write(b)
+    if out:
+        out.close()
     return h.hexdigest()
+
+
+# Strings of the libraries every app carries (AndroidX, Material): translated into ~80 languages whatever the app's own screens are
+LIB = ("abc_", "m3_", "m3c_", "mtrl", "material_", "exo_", "common_", "androidx", "call_notification", "fallback_menu", "search_menu",
+       "status_bar", "bottomsheet", "bottom_sheet", "character_counter", "clear_text", "error_", "exposed_", "hide_", "icon_content",
+       "item_view", "password_", "path_password", "searchbar", "searchview", "side_sheet", "appbar", "fab_", "chip_", "not_set",
+       "leanback", "lb_", "preference", "v7_", "summary_collapsed", "expand_button", "dropdown_menu", "navigation_menu", "range_",
+       "close_drawer", "close_sheet", "default_error", "default_popup", "dialog", "in_progress", "indeterminate", "state_", "switch_role",
+       "tab", "template_percent", "tooltip", "selected", "collapsed", "expanded", "autofill", "spoken_", "wear_", "offline_", "gcm_", "fcm_")
+
+
+def apk_langs(path):
+    """The languages an APK's own screens are written in, so a TV in another language can show the launcher in English instead
+    (core/ontv/Launchers.kt english()): Android's own pick then falls back to the app's default words, which may be Chinese
+    (UnitedU), and a Flutter app falls back to the first language it has, Arabic for LTV, right to left. None when unknown."""
+    b = zipfile.ZipFile(path)
+    lib = [n for n in b.namelist() if n.endswith("/libapp.so")]
+    if lib:                                                            # Flutter: its words are in Dart, one AppLocalizations<Lang> class each
+        found = set(re.findall(rb"AppLocalizations([A-Z][a-z])\b", b.read(lib[0])))
+        return sorted({x.decode().lower() for x in found}) or None
+    tools = sorted(glob.glob(os.path.expanduser(os.environ.get("ANDROID_HOME", "~/Library/Android/sdk")) + "/build-tools/*/aapt2"))
+    if not tools:
+        print("!  no aapt2 (Android SDK build-tools): langs not read")
+        return None
+    out = subprocess.run([tools[-1], "dump", "resources", path], capture_output=True, text=True, errors="replace").stdout
+    own, cur = {}, None
+    for line in out.splitlines():
+        m = re.match(r"\s+resource 0x\w+ string/(\S+)", line)
+        if m:
+            cur = None if m.group(1).startswith(LIB) else m.group(1)
+            continue
+        m = re.match(r'\s+\((\S*)\) "(.*)"', line)
+        if m and cur:
+            own.setdefault(cur, {})[m.group(1).split("-")[0]] = m.group(2)
+    if not own:
+        return None
+    n = len(own)
+    langs = {l for l in {l for v in own.values() for l in v} if l and sum(l in v for v in own.values()) * 2 >= n}
+    default = " ".join(v.get("", "") for v in own.values())            # the words without a language: English, unless they are not
+    langs.add("zh" if re.search("[\u4e00-\u9fff]", default) else "en")
+    return sorted({"id" if l == "in" else "he" if l == "iw" else l for l in langs})
 
 
 def check():
@@ -66,10 +113,18 @@ def check():
                 if not f["url"].startswith("https://") or len(f["sha256"]) != 64:
                     fail("%s/%s: https url and a 64-hex sha256 needed" % (i, abi))
                 if os.environ.get("SKIP_DOWNLOAD") != "1":
-                    got = sha(f["url"])
-                    print(("ok " if got == f["sha256"] else "x  ") + "%s %s %s" % (i, abi, got))
-                    if got != f["sha256"]:
-                        fail("%s/%s: the file at the url has another SHA-256 than the list" % (i, abi))
+                    with tempfile.TemporaryDirectory() as t:
+                        got = sha(f["url"], os.path.join(t, "a.apk"))
+                        print(("ok " if got == f["sha256"] else "x  ") + "%s %s %s" % (i, abi, got))
+                        if got != f["sha256"]:
+                            fail("%s/%s: the file at the url has another SHA-256 than the list" % (i, abi))
+                        langs = apk_langs(os.path.join(t, "a.apk"))
+                    if langs:
+                        e["langs"] = langs
+        if "langs" in e and not (isinstance(e["langs"], list) and all(isinstance(l, str) and re.fullmatch("[a-z]{2,3}", l) for l in e["langs"])):
+            fail("%s: langs must be a list of language codes (en, vi, zh)" % i)
+        if e["kind"] == "apk":
+            pass
         elif e["kind"] == "play":
             if not e["play"]["url"].startswith("market://details?id=" + e["package"]):
                 fail("%s: play.url must open this package" % i)

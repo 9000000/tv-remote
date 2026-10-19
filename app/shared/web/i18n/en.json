@@ -2501,6 +2501,8 @@
  "core.fr_home_missing": "TV Home is not installed on this TV.",
  "core.fr_home_photo": "Couldn't send the photo to the TV. Try again.",
  "launcher.ours": "Recommended",
+ "launcher.english": "English",
+ "launcher.english_why": "It doesn't have the TV's language, so it shows in English",
  "home.update": "⬆️ Update TV Home to {v}",
  "home.updated": "TV Home updated to {v}.",
  "core.fr_launcher_self": "No release carries TV Home yet. Try again later.",

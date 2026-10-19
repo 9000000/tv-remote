@@ -61,10 +61,21 @@ class LauncherInstall(private val adb: Adb, private val dir: File, private val g
             // compiled ahead now, not on first use: a home screen started cold on a slow TV chip took ~1.6 s, 0.4 s compiled (cleanyourtv #40)
             try { adb.shell("cmd package compile -m speed -f ${e.pkg} >/dev/null 2>&1", 120000) } catch (x: IOException) { }
         }
+        english(e, f.sdk)
         progress?.at("swap", 85)
         if (cancelled()) throw IOException("stopped")
         if (!swap.take(e.pkg, confirmSec)) throw IOException("launcher:home")   // not the home screen: already put back
         return swap.state()?.state ?: "kept"
+    }
+
+    /**
+     * A launcher without the TV's language is told to show English ([Launchers.english]), through Android 13's language per app, which
+     * changes nothing else on the TV. A language the person chose for it stays. True when it was set.
+     */
+    fun english(e: Launchers.Entry, sdk: Int): Boolean {
+        if (sdk < 33 || !Launchers.english(e, Launchers.tvLang(sh))) return false
+        if (!sh("cmd locale get-app-locales ${e.pkg} 2>&1").trimEnd().endsWith("[]")) return false   // one already set, by the person or by us
+        return !sh("cmd locale set-app-locales ${e.pkg} --locales en-US 2>&1").contains("rror")
     }
 
     /** The question on the TV's own screen, when TV Setup there can show it ([tvSetupHelps]). True when it was asked. */

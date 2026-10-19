@@ -38,7 +38,8 @@ object Launchers {
     class Apk(val abi: String, val url: String, val sha256: String)
     class Entry(val id: String, val pkg: String, val name: String, val desc: Map<String, String>, val thumb: String, val thumbSha: String,
                 val source: String, val license: String, val kind: String, val version: String, val files: List<Apk>, val playUrl: String,
-                val atv: Boolean, val gtv: Boolean, val minSdk: Int, val fire: Boolean, val notes: Map<String, String>) {
+                val atv: Boolean, val gtv: Boolean, val minSdk: Int, val fire: Boolean, val notes: Map<String, String>,
+                val langs: List<String> = emptyList()) {                // the languages of its screens (dev/sign_launchers.py reads them); empty: not known
         fun desc(lang: String) = desc[lang] ?: desc["en"] ?: ""
         fun notes(lang: String) = notes[lang] ?: notes["en"] ?: ""
     }
@@ -68,6 +69,21 @@ object Launchers {
         e.kind == "apk" && apk(e, f.abis) == null -> Fit(false, "abi")
         else -> Fit(true, "")
     }
+
+    /** The TV's language ("vi"): its first locale, as Android picks an app's words. "" when it cannot be told. */
+    @Throws(IOException::class)
+    fun tvLang(sh: (String) -> String): String =
+        sh("settings get system system_locales; getprop persist.sys.locale; getprop ro.product.locale").lines().map { it.trim() }
+            .firstOrNull { it.isNotEmpty() && it != "null" }?.let { lang(it.substringBefore(',')) } ?: ""
+
+    /** "vi-VN", "in", "iw_IL" -> "vi", "id", "he": what the list writes. */
+    fun lang(tag: String): String = tag.substringBefore('-').substringBefore('_').lowercase().let { when (it) { "in" -> "id"; "iw" -> "he"; else -> it } }
+
+    /**
+     * True when [e] has no words in the TV's language but has English: shown in English then ([LauncherInstall.english]). On its own
+     * Android shows the app's default words, Chinese for UnitedU, and a Flutter app the first language it has: Arabic for LTV, right to left.
+     */
+    fun english(e: Entry, tvLang: String): Boolean = e.langs.isNotEmpty() && tvLang.isNotEmpty() && tvLang !in e.langs && "en" in e.langs
 
     /**
      * The file for this TV. 64-bit only: the arm64 one. Otherwise the 32-bit one first, which installs on both (as FLauncher always
@@ -112,7 +128,8 @@ object Launchers {
             Entry(e.getString("id"), e.getString("package"), e.getString("name"), words(e.optJSONObject("desc")), e.getString("thumb"), e.optString("thumb_sha256"),
                 e.getString("source"), e.optString("license"), kind, e.optJSONObject("apk")?.optString("version") ?: "", files,
                 e.optJSONObject("play")?.optString("url") ?: "", s.optBoolean("android_tv", true), s.optBoolean("google_tv", true), s.optInt("min_sdk", 21),
-                s.optBoolean("fire_os", false), words(s.optJSONObject("notes")))
+                s.optBoolean("fire_os", false), words(s.optJSONObject("notes")),
+                e.optJSONArray("langs")?.let { l -> (0 until l.length()).map { lang(l.optString(it)) } } ?: emptyList())
         }.filter { it.kind == "apk" || it.kind == "play" || it.kind == "self" }, base)
     } catch (e: org.json.JSONException) { throw IOException("launcher list: " + e.message) }
 

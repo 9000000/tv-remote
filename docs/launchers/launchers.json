@@ -24,7 +24,11 @@
           "en": "Cannot take Home on Fire TV and on some TCL sets sold in China."
         }
       },
-      "thumb_sha256": "90a37792e50fa99736e600124167c9bdd0b5731301510566d2aaadf10d81b541"
+      "thumb_sha256": "90a37792e50fa99736e600124167c9bdd0b5731301510566d2aaadf10d81b541",
+      "langs": [
+        "en",
+        "vi"
+      ]
     },
     {
       "id": "flauncher",
@@ -61,7 +65,11 @@
           "en": "Cannot take Home on Fire TV and on some TCL sets sold in China."
         }
       },
-      "thumb_sha256": "88f0061eacb38db0d2094a90055955f51d4cf8ac0c5b8fd6940c8b8765e24222"
+      "thumb_sha256": "88f0061eacb38db0d2094a90055955f51d4cf8ac0c5b8fd6940c8b8765e24222",
+      "langs": [
+        "en",
+        "es"
+      ]
     },
     {
       "id": "ltvlauncher",
@@ -98,7 +106,23 @@
           "en": "Cannot take Home on Fire TV."
         }
       },
-      "thumb_sha256": "853241cff4833c22ec5c6b8452cc821fe7e6dac405eeb042ffca0bf92957b265"
+      "thumb_sha256": "853241cff4833c22ec5c6b8452cc821fe7e6dac405eeb042ffca0bf92957b265",
+      "langs": [
+        "ar",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "hi",
+        "it",
+        "ja",
+        "ko",
+        "pt",
+        "ru",
+        "tr",
+        "uk",
+        "zh"
+      ]
     },
     {
       "id": "just-a-launcher",
@@ -131,7 +155,11 @@
           "en": "Very plain: few settings."
         }
       },
-      "thumb_sha256": "2ed7bf2cf429eda66d2f3e43286713edb12a8743be076f28b8db30baf53a15df"
+      "thumb_sha256": "2ed7bf2cf429eda66d2f3e43286713edb12a8743be076f28b8db30baf53a15df",
+      "langs": [
+        "en",
+        "zh"
+      ]
     },
     {
       "id": "unitedu",
@@ -164,7 +192,11 @@
           "en": "On Google TV, turn on Home Button Takeover in the app so Home opens it. Needs Android 9 or newer. Cannot take Home on Fire TV."
         }
       },
-      "thumb_sha256": "2251e2798dedd858177503c530f2a774e7201bf14315e98838c583b5d0ed50cd"
+      "thumb_sha256": "2251e2798dedd858177503c530f2a774e7201bf14315e98838c583b5d0ed50cd",
+      "langs": [
+        "en",
+        "zh"
+      ]
     },
     {
       "id": "dizzify",
@@ -201,7 +233,26 @@
           "en": "Cannot take Home on Fire TV and on some TCL sets sold in China."
         }
       },
-      "thumb_sha256": "858a7189f4add54a215d9c31cc30dd699df78c12c0691f7214dbd0e436e97d27"
+      "thumb_sha256": "858a7189f4add54a215d9c31cc30dd699df78c12c0691f7214dbd0e436e97d27",
+      "langs": [
+        "ar",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "hr",
+        "hu",
+        "id",
+        "it",
+        "ja",
+        "pl",
+        "pt",
+        "ru",
+        "sv",
+        "tr",
+        "uk",
+        "zh"
+      ]
     },
     {
       "id": "andsmarttv",
@@ -234,7 +285,10 @@
           "en": "A young app (2026). Cannot take Home on Fire TV."
         }
       },
-      "thumb_sha256": "4be19d7e6e364518f6566ed2cbefd3c44fcbbc6ff5c5d97d3d4cfccf0b66c9bb"
+      "thumb_sha256": "4be19d7e6e364518f6566ed2cbefd3c44fcbbc6ff5c5d97d3d4cfccf0b66c9bb",
+      "langs": [
+        "en"
+      ]
     },
     {
       "id": "projectivy",
@@ -261,7 +315,39 @@
           "en": "Needs Google Play on the TV. Pick it as Home once installed."
         }
       },
-      "thumb_sha256": "07065404a8840f36134c1b498acbdf3cf70ceb6195705e4feb69b22151293698"
+      "thumb_sha256": "07065404a8840f36134c1b498acbdf3cf70ceb6195705e4feb69b22151293698",
+      "langs": [
+        "ar",
+        "bg",
+        "cs",
+        "da",
+        "de",
+        "el",
+        "en",
+        "es",
+        "et",
+        "fa",
+        "fi",
+        "fr",
+        "hr",
+        "hu",
+        "it",
+        "ko",
+        "lt",
+        "nb",
+        "nl",
+        "nn",
+        "pl",
+        "pt",
+        "ro",
+        "ru",
+        "sk",
+        "sv",
+        "tr",
+        "uk",
+        "vi",
+        "zh"
+      ]
     },
     {
       "id": "at4k",

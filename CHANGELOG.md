@@ -8,6 +8,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 
+- Thư viện launcher: launcher không có ngôn ngữ của TV (nhãn Tiếng Anh) được đặt hiện tiếng Anh, chỉ riêng nó, trên Android 13 trở lên: LTV trên TV tiếng Việt từng hiện tiếng Ả Rập từ phải sang trái, UnitedU hiện tiếng Trung; ngôn ngữ của mỗi launcher đọc từ chính APK khi ký danh sách
 - Sửa: đổi launcher không còn tắt cả app cài đặt ban đầu của Google (setupwraith), chỉ tắt màn hình Home của nó và chỉ khi nó nhận nút Home. Tắt cả app làm Android xoá Wi-Fi đã lưu: một FPT Play Box mất mạng và mất ADB. Lần đổi bị treo lâu cũng không còn để lại app bị tắt
 - Thư viện launcher: thêm UnitedU, Dizzify, AndSmartTV, TIVI; câu hỏi trước khi cài rõ hơn (Giữ / Quay lại, tự về sau 30 giây); tiến trình tải / cài hiện ở thẻ ⏳ Tiến trình chung của trang, có Dừng, Giữ, Quay lại; trả lời Giữ / Quay lại trên điện thoại hay máy tính thì câu hỏi trên TV cũng đóng; thẻ Tiến trình nằm trên màn hình TV thu nhỏ, không bị che
 - 📡 Remote hồng ngoại (chỉ app điện thoại, máy có đèn IR): không cần mạng, không cần chọn TV. Mã Samsung, LG, Sony, TCL, Philips, Sharp, Toshiba, Hisense, Android TV box, Mi Box... (Flipper-IRDB, CC0), **Dò mã** cho thiết bị không có trong danh sách (vd FPT Play Box).
@@ -33,6 +34,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **English**
 
+- Launcher gallery: a launcher without the TV's language (tagged English) is set to show English, that launcher only, on Android 13 and later: LTV on a Vietnamese TV showed Arabic right to left, UnitedU Chinese; each launcher's languages are read from its APK when the list is signed
 - Fix: changing the launcher no longer turns off Google's setup app (setupwraith) as a whole, only its Home screen and only where it answers Home. Turning the whole app off made Android delete the Wi-Fi it had saved: an FPT Play Box lost its network and its ADB. A swap that hung for long no longer leaves an app turned off either
 - Launcher gallery: UnitedU, Dizzify, AndSmartTV, TIVI added; a clearer question before installing (Keep / Go back, back on its own after 30 seconds); the download / install shows in the page's ⏳ Progress card, with Stop, Keep, Go back; answering Keep / Go back on the phone or computer closes the question on the TV too; the Progress card sits above the small TV picture instead of under it
 - 📡 Infrared remote (Phone app only, phones with an IR blaster): no network, no TV picked. Codes for Samsung, LG, Sony, TCL, Philips, Sharp, Toshiba, Hisense, Android TV boxes, Mi Box... (Flipper-IRDB, CC0), and **Find code** for a device in no list (e.g. FPT Play Box).

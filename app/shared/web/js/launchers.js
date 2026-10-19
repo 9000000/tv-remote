@@ -32,6 +32,7 @@ function launchRow(l, fleet) {
     l.kind === 'self' ? launchTag(T('launcher.ours'), 'ours') : null,      // TV Home: made here, set up from here
     !fleet && l.in_use ? launchTag(T('launcher.in_use'), 'use') : null,
     fleet || l.in_use ? null : l.fit ? launchTag(T('launcher.fits')) : Object.assign(launchTag(T('launcher.nofit'), 'warn'), { title: launchWhy(l) }),
+    l.english ? Object.assign(launchTag(T('launcher.english')), { title: T('launcher.english_why') }) : null,   // no words in the TV's language
     l.kind === 'play' ? launchTag('▶ ' + T('launcher.badge_play'), 'play') : null, l.version ? launchTag(l.version) : null);
   return el('div', { className: 'lcard' + (l.in_use && !fleet ? ' on' : '') },
     el('button', { type: 'button', className: 'lshot', title: T('launcher.details'), 'aria-label': l.name, onclick: () => launchDetails(l) }, thumb),

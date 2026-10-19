@@ -63,6 +63,19 @@ class LaunchersTest {
         assertEquals("abi", Launchers.fits(e("flauncher"), tv(abis = "x86_64")).why)
     }
 
+    @Test fun aLauncherWithoutTheTvsLanguageShowsEnglish() {
+        assertTrue(Launchers.english(e("ltvlauncher"), "vi"))           // Flutter: Arabic, its first language, otherwise
+        assertTrue(Launchers.english(e("unitedu"), "vi"))               // its default words are Chinese
+        assertFalse(Launchers.english(e("ltvlauncher"), "de"))
+        assertFalse(Launchers.english(e("projectivy"), "vi"))
+        assertFalse(Launchers.english(e("tv-home"), "vi"))
+        assertFalse(Launchers.english(e("ltvlauncher"), ""))            // the TV's language unknown: left alone
+        assertFalse(Launchers.english(e("monet"), "vi"))                // its languages unknown: left alone
+        assertEquals(listOf("vi", "id", "he", "zh"), listOf("vi-VN", "in", "iw_IL", "zh-Hans-CN").map(Launchers::lang))
+        assertEquals("vi", Launchers.tvLang { if (it.startsWith("settings")) "vi-VN,en-US\n" else "" })
+        assertEquals("en", Launchers.tvLang { "null\n\nen-US\n" })
+    }
+
     @Test fun tvHomeComesFirstAndFitsEveryChip() {
         assertEquals("tv-home", Launchers.parse(list).entries.first().id)
         assertTrue(Launchers.fits(e("tv-home"), tv(abis = "x86_64")).ok)       // no native code, and no file listed to pick from

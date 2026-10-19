@@ -2414,6 +2414,8 @@
  "core.fr_home_missing": "TV Home chưa được cài trên TV này.",
  "core.fr_home_photo": "Không gửi được ảnh lên TV. Thử lại.",
  "launcher.ours": "Đề xuất",
+ "launcher.english": "Tiếng Anh",
+ "launcher.english_why": "Không có ngôn ngữ của TV nên sẽ hiện tiếng Anh",
  "home.update": "⬆️ Cập nhật TV Home {v}",
  "home.updated": "Đã cập nhật TV Home {v}.",
  "core.fr_launcher_self": "Chưa có bản phát hành nào có TV Home. Thử lại sau.",
