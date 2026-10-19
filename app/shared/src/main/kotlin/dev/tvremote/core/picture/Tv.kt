@@ -72,6 +72,10 @@ class Tv(
         /** false: the decoder took nothing for a long while, and the session ends */
         fun feed(config: Boolean, pts: Long, data: ByteArray): Boolean
         fun release()
+        /** The surface went (the app left the screen): frames are dropped, the session goes on. */
+        fun pause() {}
+        /** The same surface is back: a decoder again, from the next key frame. */
+        fun resume() {}
     }
 
     interface Listener {
@@ -445,6 +449,10 @@ class Tv(
 
     /** scrcpy starts its capture again: a new codec config and a key frame now, instead of at the next i-frame interval. */
     fun resetVideo() = send(byteArrayOf(17))
+
+    /** The phone app away for a moment: the picture is kept coming but not drawn, so it is back at once ([Screen.pause]). */
+    fun pauseScreen() = screen?.pause()
+    fun resumeScreen() = screen?.resume()
 
     /** A finger on the TV screen. action: 0 down, 1 up, 2 move; x, y in 0..1 of the picture. */
     fun touch(action: Int, x: Float, y: Float) {

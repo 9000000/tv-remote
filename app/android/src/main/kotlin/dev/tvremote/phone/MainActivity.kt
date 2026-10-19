@@ -37,6 +37,9 @@ import dev.tvremote.core.adb.TvShell
 import dev.tvremote.update.Release
 import java.util.Locale
 
+/** How long the picture's session outlives the app leaving the screen: as the page's (screen.js picAwayT) */
+private const val PIC_AWAY_MS = 15_000L
+
 /** Phone remote: pick a TV (saved, found on the Wi-Fi, or typed IP), then live picture with touch, and remote buttons. */
 class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     // The screens and helpers are in the other files of this folder, as extension functions on this class; the state they
@@ -240,7 +243,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     override fun onStart() {
         super.onStart()
         foreground = true
-        ui.removeCallbacks(idleStop)
+        ui.removeCallbacks(idleStop); ui.removeCallbacks(picAway)
         refreshSaved()
         bgListen = false                                              // back on screen: the picture again (the sound plays on: its own session)
         startSound()                                                  // given up on while away: once more
@@ -250,7 +253,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     }
 
     /**
-     * Not watching: stop the encoder on the TV. The keys' session stays (an idle scrcpy process on the TV, light), so coming
+     * Not watching: stop the encoder on the TV, 15 s on ([picAway]: a glance at another app keeps the picture, back at once,
+     * as on the page). The keys' session stays (an idle scrcpy process on the TV, light), so coming
      * back from another app needs no new connection; only after a long while away is it closed.
      */
     override fun onStop() {
@@ -260,14 +264,15 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         ui.removeCallbacks(picRetry)
         if (listen) {                                                 // listening goes on with the phone's screen off, without the picture
             if (video && host != null) bgListen = true
-            stopPicture()
+            ui.postDelayed(picAway, PIC_AWAY_MS)
             return
         }
-        stopPicture()
+        ui.postDelayed(picAway, PIC_AWAY_MS)
         ui.postDelayed(idleStop, 10 * 60 * 1000L)
     }
 
     internal val idleStop = Runnable { stopSession() }
+    private val picAway = Runnable { stopPicture() }
 
     override fun onDestroy() {
         managing.destroy()
@@ -285,6 +290,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     override fun surfaceCreated(h: SurfaceHolder) {
         surfaceReady = true
+        ui.removeCallbacks(picAway)
+        pic?.resumeScreen()                                           // kept while away: the next key frame shows at once
         startSession()
     }
 
@@ -292,7 +299,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     override fun surfaceDestroyed(h: SurfaceHolder) {
         surfaceReady = false
-        stopPicture()
+        pic?.pauseScreen()                                            // its decoder goes with the surface, the session stays a while
+        ui.removeCallbacks(picAway); ui.postDelayed(picAway, PIC_AWAY_MS)
     }
 
     override fun onConfigurationChanged(c: Configuration) {

@@ -12,7 +12,7 @@ class Foreground {
 
     /** The package on screen, "" unknown; [shell] null: no ADB now, so nothing is known. */
     fun get(shell: ((String) -> String)?): String {
-        if (shell == null) { pkg = ""; at = 0; return "" }
+        if (shell == null) { at = 0; return "" }                       // kept: back on ADB, the last reading shows until the new one
         val now = System.currentTimeMillis()
         if (now - at > EVERY_MS && busy.compareAndSet(false, true)) Thread({
             try { pkg = parse(shell(CMD)) } catch (e: Exception) { pkg = "" }

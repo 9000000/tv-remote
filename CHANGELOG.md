@@ -4,6 +4,16 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+
+- App điện thoại: sang app khác rồi quay lại trong 15 giây thì hình hiện lại ngay, không đen 1–2 giây (như trang web); dòng "Đang mở …" không còn tạm mất lúc vừa quay lại.
+
+**English**
+
+- Phone app: back from another app within 15 s, the picture is there at once instead of black for 1–2 s (as on the web page); the "Now open …" line no longer goes missing for a moment on return.
+
 ## 0.11.0 - 2026-10-19
 
 Web 0.11.0 · app điện thoại 0.11.0 · app TV 0.11.0

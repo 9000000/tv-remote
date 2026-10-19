@@ -23,7 +23,8 @@ internal class NowApp(private val a: MainActivity) {
     val view = LinearLayout(a)
     private val icon = ImageView(a)
     private val name = a.label("", 14, TEXT)
-    private val front = Foreground()
+    private var front = Foreground()
+    private var frontFor: String? = null                              // its last reading is about this TV only
     private val work = Executors.newSingleThreadExecutor()
     private var labels: RemoteLabels? = null
     private var labelsFor = ""
@@ -70,6 +71,7 @@ internal class NowApp(private val a: MainActivity) {
             if (!a.foreground) fine = System.currentTimeMillis()      // away counts as fine: the 5 s start on return
             if (!a.foreground || a.remote.visibility != View.VISIBLE || a.covered() || host == null || asking) { if (host == null) show("", "", null); return }
             asking = true
+            if (host != frontFor) { front = Foreground(); frontFor = host }
             val canAsk = basic != null || tv?.ready() == true
             work.execute {
                 var id = basic?.app ?: ""

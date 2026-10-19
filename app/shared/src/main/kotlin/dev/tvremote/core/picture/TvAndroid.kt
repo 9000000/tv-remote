@@ -59,12 +59,13 @@ private class SurfaceScreen(private val surface: Surface) : Tv.Screen {
     private var w = 0
     private var h = 0
     private var config: ByteArray? = null                             // the last codec config, fed again to a decoder made again
+    @Volatile private var away = false                                // no surface to draw on: see pause()
 
     override fun start(w: Int, h: Int) {
         release()
         this.w = w; this.h = h
         gate.clear()
-        open()
+        if (!away) open()                                             // away: made on resume(), at this size
     }
 
     @Synchronized private fun open() {
@@ -115,6 +116,7 @@ private class SurfaceScreen(private val surface: Surface) : Tv.Screen {
 
     override fun feed(config: Boolean, pts: Long, data: ByteArray): Boolean {
         if (config) this.config = data
+        if (away) return true
         var now = SystemClock.elapsedRealtime()
         if (broken || (!config && gate.lagged(now))) catchUp(now)
         if (!gate.admit(config, !config && LiveDecode.isKey(data))) {
@@ -167,6 +169,22 @@ private class SurfaceScreen(private val surface: Surface) : Tv.Screen {
         try { d.codec.stop() } catch (ignored: Exception) { }
         try { d.codec.release() } catch (ignored: Exception) { }
         d.thread.quitSafely()
+    }
+
+    override fun pause() { away = true; closeDec() }
+
+    /** SurfaceView keeps its Surface object and fills it again, so a new decoder on it draws on the new one. */
+    override fun resume() {
+        if (!away) return
+        if (w > 0) {
+            try { open() } catch (e: Exception) { Log.w(TAG, "decoder not made again: $e"); broken = true }
+            val d = dec
+            val cfg = config
+            if (d != null && cfg != null) d.inputs.poll(1000, TimeUnit.MILLISECONDS)?.let { queue(d, it, cfg, 0, true) }
+            gate.fromKey()
+        }
+        away = false
+        askKey?.invoke()
     }
 
     override fun release() = closeDec()

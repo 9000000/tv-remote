@@ -84,6 +84,9 @@ class LiveGate(private val lagMs: Long = 600, private val staleMs: Long = 70, pr
 
     @Synchronized fun clear() { inside.clear(); run = 0; skipping = false }
 
+    /** A decoder made again for a surface that came back: nothing before the next key frame, asked for now. */
+    @Synchronized fun fromKey() { inside.clear(); run = 0; skipping = true; askedAt = -RESET_MS }
+
     private fun ask(now: Long): Boolean { if (now - askedAt < RESET_MS) return false; askedAt = now; return true }
 
     companion object { const val RESET_MS = 2000L }
