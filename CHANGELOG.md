@@ -12,6 +12,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Tắt / bật màn hình: bấm lại để bật màn hình từ app. Remote thật của TV cũng bật lại, còn phím gửi từ app thì không (trước đây phím nào cũng bật)
 - 🔅 Giảm độ sáng (Thêm phím → Hẹn giờ tắt): phủ màu lên mọi app (Tối, Lọc xanh, Vàng, Nâu cổ, Đỏ đêm, Xanh), độ mạnh 5 đến 90%, đổi ngay khi kéo. Giữ cả khi TV Setup khởi động lại. Cần TV Setup mới
 - ⚡ Đo tốc độ mạng của chính TV (Sức khỏe → 📶 Mạng): độ trễ, tải xuống, tải lên, đủ cho 4K / Full HD / HD; có nút Dừng, mở lại trang vẫn thấy lần đo trước
+- Chọn app bằng ô có biểu tượng và ô tìm (không cần gõ dấu) thay cho danh sách thả xuống: khóa app, giới hạn app, bước "Mở app" của Cảnh.
 
 **English**
 
@@ -19,6 +20,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Screen off / on: tap it again to turn the screen back on from the app. The TV's own remote turns it on too; keys sent from the app no longer do
 - 🔅 Dim the screen (More keys → Sleep timer): a tint over every app (Dark, Blue filter, Yellow, Sepia, Night red, Blue) at 5 to 90%, applied as you drag. Kept when TV Setup restarts. Needs the new TV Setup
 - ⚡ The TV's own internet speed (Health → 📶 Network): ping, download, upload, and whether that is enough for 4K / Full HD / HD; Stop button, and the last result shows when the page is opened again
+- Apps are picked from their icons, with a search (accents not needed), instead of a drop-down list: app locks, app limits, a scene's "Open an app" step.
 
 ## 0.12.0 - 2026-10-19
 

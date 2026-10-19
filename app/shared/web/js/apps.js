@@ -53,6 +53,45 @@ function appIcon(pkg) {
   };
   return box;
 }
+// A modal to pick one of [pkgs] (the TV's apps) by its tile, with a search over the names (no accents needed): the package,
+// or null when closed. [now]: the one picked before, marked.
+function chooseApp(title, pkgs, now) {
+  return new Promise((done) => {
+    let picked = null;
+    const fold = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').toLowerCase();
+    const q = el('input', { type: 'search', placeholder: T('common.search_by_app_name'), spellcheck: false, autocomplete: 'off' });
+    const none = el('p', { className: 'empty', textContent: T('apps.choose_none'), hidden: true });
+    const named = (p) => appName(p) !== p;                             // a bare package name goes last
+    const tiles = pkgs.slice().sort((a, b) => named(b) - named(a) || appName(a).localeCompare(appName(b))).map((p) => {
+      const icon = appIcon(p), name = el('span', { textContent: appName(p) });
+      onMeta(p, (m) => { icon.fill(m); put(name, 'textContent', appName(p)); });
+      const b = el('button', { type: 'button', className: 'tile' + (p === now ? ' on' : ''), title: p, onclick: () => { picked = p; d.close(); } }, icon, name);
+      b.pkg = p; return b;
+    });
+    const filter = () => {
+      const s = fold(q.value.trim()); let n = 0;
+      tiles.forEach((t) => { t.hidden = !!s && !fold(appName(t.pkg)).includes(s) && !t.pkg.includes(s); if (!t.hidden) n++; });
+      none.hidden = n > 0;
+    };
+    q.addEventListener('input', filter);
+    q.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); const t = tiles.find((x) => !x.hidden); if (t) t.click(); } });   // the first one left
+    const d = el('dialog', { className: 'ask appchoose' }, el('div', { className: 'card' },
+      el('div', { className: 'card-head' }, el('h2', { textContent: title }), el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
+      q, el('div', { className: 'tiles choosegrid' }, ...tiles), none));
+    d.addEventListener('close', () => { d.remove(); done(picked); });
+    filter();
+    document.body.append(d); d.showModal();
+    if (matchMedia('(pointer: fine)').matches) q.focus(); else (tiles.find((t) => t.classList.contains('on')) || q).focus();   // a phone: no keyboard over half the list
+  });
+}
+// The button that stands for a chosen app in a form (its value the package): its icon and name, or "Pick an app…" when none.
+function appChoice(btn, pkg) {
+  btn.value = pkg || '';
+  if (!pkg) { btn.replaceChildren(el('span', { textContent: T('auto.pick_app') })); return; }
+  const icon = appIcon(pkg), name = el('span', { textContent: appName(pkg) });
+  onMeta(pkg, (m) => { icon.fill(m); put(name, 'textContent', appName(pkg)); });
+  btn.replaceChildren(icon, name);
+}
 const lazyMeta = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { lazyMeta.unobserve(e.target); e.target.loadMeta(); } }), { rootMargin: '300px' });
 
 // quick launch tiles on the Remote tab

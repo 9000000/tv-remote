@@ -59,13 +59,13 @@
 
   // the header's link for the section being read: the last one whose top has passed a third of the way down the screen
   (function(){
-    var links = [].slice.call(document.querySelectorAll(".navlinks a, .navsheet a")), secs = links.map(function(a){ return document.querySelector(a.getAttribute("href")); }), busy = false;
+    var links = [].slice.call(document.querySelectorAll(".navlinks a, .navsheet a")), secs = links.map(function(a){ var h = a.getAttribute("href"); return h.charAt(0) === "#" ? document.querySelector(h) : null; }), busy = false;
     function mark(){
       busy = false;
       var y = innerHeight / 3, cur = null;
       secs.forEach(function(s){ if (s && s.getBoundingClientRect().top <= y) cur = s; });   // links in page order (the bar's, then the sheet's)
       if (cur && cur.getBoundingClientRect().bottom < 0) cur = null;                     // past the last one (the closing part)
-      links.forEach(function(a, i){ a.classList.toggle("on", secs[i] === cur); });     // the bar's link and the sheet's both
+      links.forEach(function(a, i){ a.classList.toggle("on", !!cur && secs[i] === cur); });   // the bar's link and the sheet's both; none at the top (guide.html has no section here)
     }
     var prog = document.querySelector(".navprog");
     function bar(){                                                    // reading progress along the header's bottom edge

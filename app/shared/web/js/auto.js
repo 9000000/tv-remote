@@ -78,7 +78,7 @@ function renderRules() {
       el('div', { className: 'acts' },
         act('🗑', async () => { if (await ask(T('auto.unlock_ask', { name }), { ok: T('auto.unlock') })) await loadRules({ do: 'lock', pkg: l.pkg, on: false }); }, 'danger')));
   }) : [UI.empty(T('auto.no_locks'))]));
-  $('#lockacts').replaceChildren(...(lock.pin ? [act(T('auto.pin_change'), () => askPin())] : []));
+  $('#lockacts').replaceChildren(act(T(lock.pin ? 'auto.pin_change' : 'auto.pin_first'), () => askPin()));
   // volume limits; a TV Setup older than them has no "volume" in its answer
   const vols = r.volume || [];
   $('#vols').replaceChildren(...(vols.length ? vols.map((v, i) => el('div', { className: 'item' },
@@ -170,13 +170,22 @@ async function askPin() {
   if (!await loadRules({ do: 'pin', pin: pin.trim() })) return false;
   toast(T('auto.pin_set')); return true;
 }
-$('#lockf').addEventListener('submit', async (e) => {
-  e.preventDefault(); const pkg = $('#lockpkg').value; if (!pkg) return;
-  if (!(RULES && RULES.lock && RULES.lock.pin)) { $('#lockdlg').close(); if (!await askPin()) return; }
-  if (await loadRules({ do: 'lock', pkg, on: true })) { if ($('#lockdlg').open) $('#lockdlg').close(); toast(T('auto.locked_done', { name: appName(pkg) })); }
+// ＋: the app first (its tiles), then a PIN if none is set yet
+$('#lockadd').addEventListener('click', async () => {
+  if (RULES && RULES.lock === undefined && !await setupFor('lock')) return;
+  if (!pickApps.length) await loadPickApps();
+  const locked = new Set(((RULES && RULES.lock) || { apps: [] }).apps.map((a) => a.pkg));
+  const pkg = await chooseApp(T('lockdlg.title'), choosable().filter((p) => !locked.has(p))); if (!pkg) return;
+  if (!(RULES && RULES.lock && RULES.lock.pin) && !await askPin()) return;
+  if (await loadRules({ do: 'lock', pkg, on: true })) toast(T('auto.locked_done', { name: appName(pkg) }));
+});
+$('#limitpkg').addEventListener('click', async () => {
+  if (!pickApps.length) await loadPickApps();
+  const pkg = await chooseApp(T('limitdlg.add_an_app_limit'), choosable(), $('#limitpkg').value);
+  if (pkg) appChoice($('#limitpkg'), pkg);
 });
 $('#limitf').addEventListener('submit', async (e) => {
-  e.preventDefault(); const pkg = $('#limitpkg').value; if (!pkg) return;
+  e.preventDefault(); const pkg = $('#limitpkg').value; if (!pkg) { $('#limitpkg').click(); return; }
   if (await loadRules({ do: 'limit', pkg, minutes: +$('#limitmin').value })) $('#limitdlg').close(), toast(T('auto.limit_added', { name: appName(pkg), time: mins(+$('#limitmin').value) }));
 });
 
@@ -185,13 +194,8 @@ let pickApps = [];
 async function loadPickApps() {
   const r = await api('/api/apps', null, true); if (!r) return;
   seedMeta(r.apps); pickApps = r.apps.map((a) => a.pkg);
-  const fill = () => ['#limitpkg', '#lockpkg'].forEach((id) => {
-    const keep = $(id).value;
-    $(id).replaceChildren(el('option', { value: '', textContent: T('auto.pick_app') }), ...pickApps.filter((p) => p !== 'dev.tvremote.setup').sort((a, b) => appName(a).localeCompare(appName(b))).map((p) => el('option', { value: p, textContent: appName(p) })));
-    $(id).value = keep;
-  });
-  fill(); pickApps.filter((p) => !(META.get(p) || {}).label).forEach((p) => onMeta(p, () => fill()));
 }
+const choosable = () => pickApps.filter((p) => p !== 'dev.tvremote.setup');   // TV Setup asks the PIN and keeps the limits: never its own
 
 async function installSetupApk() {
   toast(T('auto.downloading_setup'));
@@ -346,7 +350,10 @@ function drawSteps() {
 function stepArgs() {
   const k = $('#stepkind').value, box = $('#stepargs');
   const num = (v, min, max, unit) => el('label', { className: 'num' }, el('input', { type: 'number', value: v, min, max, id: 'steparg' }), unit ? ' ' + unit : '');
-  if (k === 'app') box.replaceChildren(el('select', { id: 'steparg' }, ...pickApps.slice().sort((a, b) => appName(a).localeCompare(appName(b))).map((p) => el('option', { value: p, textContent: appName(p) }))));
+  if (k === 'app') {
+    const b = el('button', { type: 'button', className: 'appchoice', id: 'steparg', onclick: async () => { const p = await chooseApp(T('scenedlg.open_an_app'), pickApps, b.value); if (p) appChoice(b, p); } });
+    appChoice(b, ''); box.replaceChildren(b);
+  }
   else if (k === 'key') box.replaceChildren(el('select', { id: 'steparg' }, ...STEP_KEYS.map(([v, t]) => el('option', { value: v, textContent: t }))));
   else if (k === 'volume') box.replaceChildren(num(10, 0, 100, ''));
   else if (k === 'wait') box.replaceChildren(num(2, 0, 30, T('auto.unit_sec')));

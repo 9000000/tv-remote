@@ -43,3 +43,12 @@
 .logpre .lE, .logpre .lF { color:var(--bad); }
 .logpre .lW { color:#c98a00; }
 .logpre .lV, .logpre .lD { color:var(--muted); }
+/* chooseApp(): the TV's apps as tiles in a modal; appChoice(): the one picked, as a button in a form */
+dialog.ask.appchoose .card { width:min(640px, 94vw); }
+.choosegrid { max-height:min(56vh, 520px); overflow-y:auto; align-content:start; margin:0 -4px; padding:2px 4px; }
+.choosegrid .tile { cursor:pointer; color:var(--ink); }
+.choosegrid .tile[hidden] { display:none; }
+button.appchoice { display:flex; align-items:center; justify-content:flex-start; gap:10px; width:100%; text-align:left; font-weight:600; }
+button.appchoice .appicon { width:28px; height:28px; border-radius:7px; font-size:13px; flex:none; }
+button.appchoice .appicon.wide { width:50px; border-radius:6px; }
+button.appchoice span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
