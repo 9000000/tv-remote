@@ -103,7 +103,9 @@ internal fun MainActivity.statusLines(ip: String): Pair<String, String>? {
     if (s.state != FleetStatus.ON && s.state != FleetStatus.STANDBY) return null
     val state = if (s.state == FleetStatus.STANDBY) T("tvstat.standby")
         else listOf(T("tvstat.on"), if (s.app.isEmpty()) "" else if (s.home) T("tvstat.home") else T("tvstat.showing", "app" to s.appName)).filter { it.isNotEmpty() }.joinToString(" · ")
-    return "● $state" to listOf(s.model, if (s.android.isEmpty()) "" else "Android ${s.android}").filter { it.isNotEmpty() }.joinToString(" · ")
+    val room = if (TvStatus.shots) 14 else 24                         // one line, also beside the picture: a long model name wrapped to three
+    val model = if (s.model.length > room) s.model.take(room - 1).trimEnd() + "…" else s.model
+    return "● $state" to listOf(model, if (s.android.isEmpty()) "" else "Android ${s.android}").filter { it.isNotEmpty() }.joinToString(" · ")
 }
 
 /** The picture slot at the end of a TV's row (hidden until "Show screens" is on and the TV is on). */
