@@ -234,14 +234,17 @@ private fun MainActivity.shotRound() {
     ui.removeCallbacks(shotTick); ui.postDelayed(shotTick, SHOT_MS)
 }
 
-/** The "Show screens" button beside the heading of the saved TVs: on (blue edge) while the pictures are asked for. */
+/** The "Show screens" button beside the heading of the saved TVs, only its eye (words beside it crowded "Several TVs" out):
+ *  on (blue edge) while the pictures are asked for; a long press says what it does. */
 internal fun MainActivity.screensButton(): android.widget.Button {
     TvStatus.shots = prefs.getBoolean("tvshots", false)
-    val b = button("@eye|" + T("tvstat.show_screens").removePrefix("👁️").trim(), BTN)
+    val b = button("@eye|", BTN)
     b.textSize = 14f
-    b.typeface = android.graphics.Typeface.DEFAULT_BOLD
-    b.setPadding(dp(12), 0, dp(12), 0)
-    b.contentDescription = T("tvstat.show_screens_tip")
+    b.minWidth = 0; b.minimumWidth = 0
+    b.setPadding(0, 0, 0, 0)
+    b.compoundDrawablePadding = 0
+    b.contentDescription = T("tvstat.show_screens").removePrefix("👁️").trim() + ". " + T("tvstat.show_screens_tip")
+    b.tooltipText = T("tvstat.show_screens_tip")
     b.setOn(TvStatus.shots)
     b.setOnClickListener {
         TvStatus.shots = !TvStatus.shots

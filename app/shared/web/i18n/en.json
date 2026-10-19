@@ -726,6 +726,7 @@
  "tvstat.no_picture": "No picture",
  "tvstat.show_screens": "👁️ Show screens",
  "tvstat.show_screens_tip": "A small picture of each TV that is on, every 5 s. It costs the TVs' CPU and the network, so it is off by default.",
+ "tvstat.show_screens_label": "Show screens",
  "fleet.remove_many_ask": {
   "one": "Remove {n} app from these TVs?",
   "other": "Remove {n} apps from these TVs?"

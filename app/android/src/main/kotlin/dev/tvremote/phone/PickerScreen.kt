@@ -305,7 +305,7 @@ internal fun MainActivity.buildPicker() {
     savedHead.addView(head(T("picker.your_tvs")), LinearLayout.LayoutParams(0, -2, 1f))
     fleetBtn = fleetButton()
     screensBtn = screensButton()
-    savedHead.addView(screensBtn, LinearLayout.LayoutParams(-2, dp(34)).apply { rightMargin = dp(6) })
+    savedHead.addView(screensBtn, LinearLayout.LayoutParams(dp(42), dp(34)).apply { rightMargin = dp(6) })
     savedHead.addView(fleetBtn, LinearLayout.LayoutParams(-2, dp(34)))
     picker.addView(savedHead, gap(14))
     savedList = col()

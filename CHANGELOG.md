@@ -8,6 +8,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 
+- Nút "Xem màn hình" ở danh sách TV chỉ còn icon 👁 (bật thì nền xanh), lời giải thích nằm trong tooltip; trên app điện thoại lẫn trang web
 - App máy tính: "Nhiều TV cùng lúc" thành thẻ riêng; các thao tác (Cài APK, Gỡ app, Màn hình chính, Màn hình chào, Khởi động lại) là nút hiện sẵn, không giấu sau ⋯; TV chọn có nền xanh nhạt, "Đã chọn 2/3 TV", Chọn tất cả / Bỏ chọn
 - Nhiều TV → Màn hình chính: chọn launcher bằng thẻ như Thư viện launcher (ảnh, mô tả, ghi chú, link Mã nguồn / Trang CH Play mở được), trên trang web lẫn app điện thoại
 - Nút đang làm việc (Quét Wi-Fi, Kết nối lại, lấy danh sách app...) hiện vòng xoay thay cho icon, trên cả app điện thoại lẫn trang web
@@ -31,6 +32,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **English**
 
+- The "Show screens" button on the TV list is only its 👁 (blue tint while on), the explanation in its tooltip; in the Phone app and on the page
 - Computer app: "Several TVs at once" is a card of its own; its acts (Install APK, Remove apps, Home screen, Welcome screen, Restart) are buttons in sight, not behind ⋯; picked TVs get the light blue tint, "2/3 TVs picked", Select all / Clear
 - Several TVs → Home screen: the launcher is chosen from cards as in the launcher gallery (picture, words, notes, a Source / Play page link that opens), on the page and in the Phone app
 - A button at work (Scan the Wi-Fi, Retry the connection, getting the app list...) shows a turning ring in its icon's place, in the Phone app and on the page
