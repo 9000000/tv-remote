@@ -300,6 +300,7 @@ private fun MainActivity.fleetUninstall(ips: List<String>) {
             tools.gravity = Gravity.CENTER_VERTICAL
             if (list.size > 6) {
                 val q = input(T("common.search_by_app_name"))
+                q.background = box(BTN, 12)                               // input()'s CARD is the dialog's own: no edge would show
                 q.addTextChangedListener(object : android.text.TextWatcher {
                     override fun afterTextChanged(e: android.text.Editable?) {
                         val k = e.toString().trim().lowercase()
