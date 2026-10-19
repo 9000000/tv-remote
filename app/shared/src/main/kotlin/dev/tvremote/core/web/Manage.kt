@@ -966,13 +966,18 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         return slowParts
     }
 
+    /** The last CPU count read ([health]): which TV, when, {total, idle}. The Health tab asks every 10 s, so the next reading
+     *  measures against it and needs no 0.6 s wait of its own. */
+    @Volatile private var cpuWas: Triple<Any, Long, LongArray>? = null
+
     private fun health(): JSONObject {
         val adb = link.get()
+        val was = cpuWas?.takeIf { it.first === adb && System.currentTimeMillis() - it.second < 30000 }
         val t0 = System.currentTimeMillis()
         adb.shell(":")
         val ping = System.currentTimeMillis() - t0
         val slow = slowFacts(adb)
-        val live = (adb.shell(HEALTH_LIVE) + "#~#".repeat(10)).jsplit("#~#", -1)
+        val live = (adb.shell(if (was != null) HEALTH_LIVE_NOW else HEALTH_LIVE) + "#~#".repeat(10)).jsplit("#~#", -1)
         // same numbering as before: the facts that hardly change come from the cache, the rest was just read
         val part = listOf(slow[0], live[0], live[1], live[2], live[3], slow[1], slow[2], slow[3], live[4], live[5])
         val props = (part[0].trim() + "\n\n\n\n\n\n\n\n").jsplit("\n", -1)
@@ -980,7 +985,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 .put("patch", props[4].trim()).put("chip", props[5].trim()).put("abi", props[6].trim())
         val cores = find("(\\d+)\\s*\$", props[7].trim())
         o.put("cores", if (cores == null) JSONObject.NULL else cores.toInt() + 1)
-        val stat = ArrayList<LongArray>()
+        val stat = ArrayList<LongArray>().apply { if (was != null) add(was.third) }
         for (line in part[1].trim().jsplit("\n")) {
             val f = line.trim().jsplit("\\s+")
             if (f[0] != "cpu" || f.size < 6) continue
@@ -988,6 +993,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             for (i in 1 until f.size) total += f[i].toLong()
             stat.add(longArrayOf(total, f[4].toLong() + f[5].toLong()))
         }
+        stat.lastOrNull()?.let { cpuWas = Triple(adb, System.currentTimeMillis(), it) }
         if (stat.size == 2 && stat[1][0] > stat[0][0]) {
             val total = stat[1][0] - stat[0][0]
             val idle = stat[1][1] - stat[0][1]
@@ -1090,6 +1096,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "printf '\\043~\\043\\n'; cat /proc/uptime; printf '\\043~\\043\\n'; top -n 1 -b -m 7 -o %CPU,%MEM,ARGS -s 1 | tail -7; " +
                 "printf '\\043~\\043\\n'; dumpsys power | grep -m1 -o 'mWakefulness=[A-Za-z]*'; dumpsys activity activities | grep -m1 -E 'mResumedActivity|topResumedActivity'; " +
                 "printf '\\043~\\043\\n'; " + Sensors.LIVE
+        private val HEALTH_LIVE_NOW = HEALTH_LIVE.replaceFirst("head -1 /proc/stat; sleep 0.6; ", "")   // a reading 10 s ago to count from: [cpuWas]
 
         /** Health → Errors: the dropbox's notes on apps that stopped, froze or crashed natively, cut on the TV to the lines the page
          *  shows (ANR thread dumps are hundreds of KB). */

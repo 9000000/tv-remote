@@ -8,6 +8,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 
+- Tab Sức khỏe nhanh hơn: mỗi lần làm mới ~0.4 giây thay vì hơn 1 giây (CPU đo từ lần đọc trước, không ngồi chờ); mục Ngủ và thức đọc nhanh gấp ~3 lần
 - Nút Hỏi AI: chỉ một vòng xoay (trước bị hai), và lấy danh sách nhanh hơn nhiều (RAM đọc bằng `meminfo --oom`)
 - Tab Ứng dụng có chip **Đang mở**: các app đã mở trên TV (như màn đa nhiệm của Android), mới nhất trước, kèm RAM; ▶ quay lại app, ✕ đóng hẳn (khỏi danh sách và dừng), Đóng tất cả; app TV cần giữ (launcher, bàn phím, TV Setup, Tailscale, app hệ thống) có nhãn Cần giữ cạnh tên, không có ✕. App chạy nền nằm bên dưới; mục "App đang chạy" ở tab Sức khỏe chuyển về đây. Đọc RAM nhanh hơn ~3 lần
 - Chọn DNS riêng: danh sách dễ đọc (tên đậm, nhãn Chặn quảng cáo / Gia đình, tên máy chủ và IP dòng dưới) thay cho danh sách hệ thống dồn mọi thứ một dòng; chạm là điền
@@ -36,6 +37,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **English**
 
+- The Health tab is faster: each refresh ~0.4 s instead of over 1 s (CPU counted from the reading before, no wait); Sleep and wake reads ~3 times faster
 - Ask AI: one spinner (there were two), and the list comes much faster (memory read with `meminfo --oom`)
 - The Apps tab has an **Open now** chip: the apps opened on the TV (like Android's recents screen), newest first, with their memory; ▶ goes back to one, ✕ closes it for good (off the list and stopped), Close all; what the TV needs (home screen, keyboard, TV Setup, Tailscale, system apps) has Must keep beside its name, no ✕. Background apps are under them; Health's "Running apps" moved here. Memory is read ~3 times faster
 - Choosing your own DNS: a readable list (name in bold, an Ad blocking / Family tag, the server name and IP under it) instead of the system list with everything on one line; tap to fill

@@ -23,13 +23,13 @@ object Power {
     private val DEEP = listOf("persist.tcl.totalstrtimes" to "TCL")
 
     val CMD = "cat /proc/uptime; echo \"now=\$(date +%s)\"; dumpsys alarm 2>/dev/null | grep -m2 'Runtime uptime'; $SEP; " +
-        "p=\$(dumpsys power 2>/dev/null); echo \"\$p\" | grep -E 'mWakefulness=|mLast(Global)?(Wake|Sleep)(Time|Reason)|mIsEnabled=|Low Power Standby|mLowPowerStandby'; " +
+        "p=\$(dumpsys power 2>/dev/null); echo \"\$p\" | grep -F -e mWakefulness= -e mLastWake -e mLastSleep -e mLastGlobalWake -e mLastGlobalSleep -e mIsEnabled= -e 'Low Power Standby' -e mLowPowerStandby; " +   // -F: toybox's grep -E with | is ~7x slower
         "echo \"\$p\" | sed -n '/^Wake Locks: size/,/^\$/p'; $SEP; " +
         "for k in ${SETTINGS.joinToString(" ") { "'$it'" }}; do echo \"\$k=\$(settings get \$k)\"; done; " +
         "for p in sys.boot.reason ${DEEP.joinToString(" ") { it.first }}; do echo \"\$p=\$(getprop \$p)\"; done; $SEP; " +
         "pm path ${Tailscale.PKG} 2>/dev/null | head -1; echo \"ts=\$(pidof ${Tailscale.PKG})\"; echo \"setup=\$(pidof dev.tvremote.setup)\"; " +
         "ip -o -4 addr show 2>/dev/null | grep -E '(tailscale|tun)[0-9]*[[:space:]]+inet 100\\.'; $SEP; " +
-        "logcat -d -v epoch 2>/dev/null | grep -E 'has died|tguard-kill|lowmemorykiller|lmkd' | grep -E '$WATCHED' | tail -n 40; " +
+        "logcat -d -v epoch 2>/dev/null | grep -F -e 'has died' -e tguard-kill -e lowmemorykiller -e lmkd | grep -E '$WATCHED' | tail -n 40; " +
         "logcat -d -b events -v epoch 2>/dev/null | grep -E 'am_kill' | grep -E '$WATCHED' | tail -n 40; $SEP; " +
         "tail -n 3000 ${SetupFiles.DIR}/stats/power.jsonl 2>/dev/null"
 
