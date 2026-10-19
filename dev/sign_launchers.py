@@ -3,7 +3,8 @@
 
   1. the list's shape (and writes each thumbnail's SHA-256 into it) (what core/ontv/Launchers.kt reads) and that every thumbnail file exists;
   2. every APK url is downloaded and its SHA-256 compared with the one in the list (SKIP_DOWNLOAD=1: only shape), and the languages
-     its screens are written in are read from it into "langs" (see apk_langs; a "play" entry's are written by hand);
+     its screens are written in are read from it into "langs", and the one it falls back to into "fallback" (see apk_langs; a "play"
+     entry's are written by hand);
   3. launchers.json is signed with LAUNCHERS_KEY (default ~/.tv-remote-release/launchers.key), a key SEPARATE from the
      release key: the list names APKs that go onto people's TVs, and a leak of one key must not carry the other.
      The key is made here when absent (never committed, never overwritten; backup: dev/README.md) and its public half is
@@ -55,16 +56,17 @@ LIB = ("abc_", "m3_", "m3c_", "mtrl", "material_", "exo_", "common_", "androidx"
 def apk_langs(path):
     """The languages an APK's own screens are written in, so a TV in another language can show the launcher in English instead
     (core/ontv/Launchers.kt english()): Android's own pick then falls back to the app's default words, which may be Chinese
-    (UnitedU), and a Flutter app falls back to the first language it has, Arabic for LTV, right to left. None when unknown."""
+    (UnitedU), and a Flutter app falls back to the first language it has, Arabic for LTV, right to left.
+    Returns (langs, fallback: what it shows in a language it lacks), or (None, None) when unknown."""
     b = zipfile.ZipFile(path)
     lib = [n for n in b.namelist() if n.endswith("/libapp.so")]
     if lib:                                                            # Flutter: its words are in Dart, one AppLocalizations<Lang> class each
-        found = set(re.findall(rb"AppLocalizations([A-Z][a-z])\b", b.read(lib[0])))
-        return sorted({x.decode().lower() for x in found}) or None
+        found = sorted({x.decode().lower() for x in re.findall(rb"AppLocalizations([A-Z][a-z])\b", b.read(lib[0]))})
+        return (found, found[0]) if found else (None, None)           # gen_l10n lists them A-Z; Flutter takes the first (LTV: Arabic, seen)
     tools = sorted(glob.glob(os.path.expanduser(os.environ.get("ANDROID_HOME", "~/Library/Android/sdk")) + "/build-tools/*/aapt2"))
     if not tools:
         print("!  no aapt2 (Android SDK build-tools): langs not read")
-        return None
+        return None, None
     out = subprocess.run([tools[-1], "dump", "resources", path], capture_output=True, text=True, errors="replace").stdout
     own, cur = {}, None
     for line in out.splitlines():
@@ -76,12 +78,13 @@ def apk_langs(path):
         if m and cur:
             own.setdefault(cur, {})[m.group(1).split("-")[0]] = m.group(2)
     if not own:
-        return None
+        return None, None
     n = len(own)
     langs = {l for l in {l for v in own.values() for l in v} if l and sum(l in v for v in own.values()) * 2 >= n}
     default = " ".join(v.get("", "") for v in own.values())            # the words without a language: English, unless they are not
-    langs.add("zh" if re.search("[\u4e00-\u9fff]", default) else "en")
-    return sorted({"id" if l == "in" else "he" if l == "iw" else l for l in langs})
+    fallback = "zh" if re.search("[\u4e00-\u9fff]", default) else "en"
+    langs.add(fallback)
+    return sorted({"id" if l == "in" else "he" if l == "iw" else l for l in langs}), fallback
 
 
 def check():
@@ -118,11 +121,13 @@ def check():
                         print(("ok " if got == f["sha256"] else "x  ") + "%s %s %s" % (i, abi, got))
                         if got != f["sha256"]:
                             fail("%s/%s: the file at the url has another SHA-256 than the list" % (i, abi))
-                        langs = apk_langs(os.path.join(t, "a.apk"))
+                        langs, fallback = apk_langs(os.path.join(t, "a.apk"))
                     if langs:
-                        e["langs"] = langs
+                        e["langs"], e["fallback"] = langs, fallback
         if "langs" in e and not (isinstance(e["langs"], list) and all(isinstance(l, str) and re.fullmatch("[a-z]{2,3}", l) for l in e["langs"])):
             fail("%s: langs must be a list of language codes (en, vi, zh)" % i)
+        if ("langs" in e) != ("fallback" in e) or e.get("fallback", "en") not in e.get("langs", ["en"]):
+            fail("%s: langs and fallback (one of langs) go together" % i)
         if e["kind"] == "apk":
             pass
         elif e["kind"] == "play":

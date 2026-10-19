@@ -42,7 +42,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
          * back on with Undo: a factory reset needs it.
          */
         val WIZARD = arrayOf("com.google.android.tungsten.setupwraith")
-        private const val RESOLVE_HOME = "cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN"
+        private const val RESOLVE_HOME = LauncherSwap.RESOLVE_HOME
         /** Readable names for the suggested apps, where the TV gives none. */
         val NAMES = mapOf(
             "com.google.android.play.games" to "Google Play Games", "com.google.android.videos" to "Google Play Movies & TV",

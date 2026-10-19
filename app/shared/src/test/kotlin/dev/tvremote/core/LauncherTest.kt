@@ -42,7 +42,7 @@ class LauncherTest {
                 cmd.startsWith("pm list packages -d") -> disabled.joinToString("\n") { "package:$it" }
                 cmd.startsWith("cmd package query-activities") ->
                     homes.keys.filter { it in installed && it !in disabled && "$it/.Home" !in disabled }.joinToString("\n") { "priority=${homes[it]}\n$it/.Home" }
-                cmd.startsWith("cmd package resolve-activity") -> "priority=0\n" + home()
+                cmd.contains("android.app.role.HOME") -> "priority=0\n" + home()
                 else -> ""
             }
         }

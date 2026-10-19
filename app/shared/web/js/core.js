@@ -43,7 +43,7 @@ function ask(text, o = {}) {
     const yes = el('button', { type: 'submit', className: o.danger ? 'danger' : 'primary', textContent: o.ok || 'OK' });
     const no = el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => d.close() });
     const d = el('dialog', { className: 'ask' }, el('form', { className: 'card', onsubmit: (e) => { e.preventDefault(); d.returnValue = 'yes'; d.close(); } },
-      el('p', { textContent: text }), pick || null, input, el('div', { className: 'acts' }, no, yes)));
+      el('p', { textContent: text }), o.warn ? el('p', { className: 'warnline', textContent: o.warn }) : null, pick || null, input, el('div', { className: 'acts' }, no, yes)));
     d.addEventListener('close', () => {
       d.remove();
       const ok = d.returnValue === 'yes';

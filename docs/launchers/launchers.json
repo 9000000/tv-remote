@@ -28,7 +28,8 @@
       "langs": [
         "en",
         "vi"
-      ]
+      ],
+      "fallback": "en"
     },
     {
       "id": "flauncher",
@@ -69,7 +70,8 @@
       "langs": [
         "en",
         "es"
-      ]
+      ],
+      "fallback": "en"
     },
     {
       "id": "ltvlauncher",
@@ -122,7 +124,8 @@
         "tr",
         "uk",
         "zh"
-      ]
+      ],
+      "fallback": "ar"
     },
     {
       "id": "just-a-launcher",
@@ -159,7 +162,8 @@
       "langs": [
         "en",
         "zh"
-      ]
+      ],
+      "fallback": "en"
     },
     {
       "id": "unitedu",
@@ -196,7 +200,8 @@
       "langs": [
         "en",
         "zh"
-      ]
+      ],
+      "fallback": "zh"
     },
     {
       "id": "dizzify",
@@ -252,7 +257,8 @@
         "tr",
         "uk",
         "zh"
-      ]
+      ],
+      "fallback": "en"
     },
     {
       "id": "andsmarttv",
@@ -288,7 +294,8 @@
       "thumb_sha256": "4be19d7e6e364518f6566ed2cbefd3c44fcbbc6ff5c5d97d3d4cfccf0b66c9bb",
       "langs": [
         "en"
-      ]
+      ],
+      "fallback": "en"
     },
     {
       "id": "projectivy",
@@ -347,7 +354,8 @@
         "uk",
         "vi",
         "zh"
-      ]
+      ],
+      "fallback": "en"
     },
     {
       "id": "at4k",

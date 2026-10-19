@@ -71,6 +71,12 @@ class LaunchersTest {
         assertFalse(Launchers.english(e("tv-home"), "vi"))
         assertFalse(Launchers.english(e("ltvlauncher"), ""))            // the TV's language unknown: left alone
         assertFalse(Launchers.english(e("monet"), "vi"))                // its languages unknown: left alone
+        assertEquals("en", Launchers.shows(e("ltvlauncher"), "vi", 34))    // set to English
+        assertEquals("ar", Launchers.shows(e("ltvlauncher"), "vi", 30))    // cannot be set before Android 13: its own pick
+        assertEquals("zh", Launchers.shows(e("unitedu"), "vi", 30))
+        assertEquals("en", Launchers.shows(e("dizzify"), "vi", 30))
+        assertEquals("", Launchers.shows(e("projectivy"), "vi", 30))
+        assertEquals("", Launchers.shows(e("monet"), "vi", 34))
         assertEquals(listOf("vi", "id", "he", "zh"), listOf("vi-VN", "in", "iw_IL", "zh-Hans-CN").map(Launchers::lang))
         assertEquals("vi", Launchers.tvLang { if (it.startsWith("settings")) "vi-VN,en-US\n" else "" })
         assertEquals("en", Launchers.tvLang { "null\n\nen-US\n" })

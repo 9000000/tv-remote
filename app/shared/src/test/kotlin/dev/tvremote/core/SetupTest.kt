@@ -48,7 +48,7 @@ class SetupTest {
                 cmd == "rm -f ${Setup.OFF_LIST}" -> { offList.clear(); "" }
                 cmd.startsWith("settings put global window_animation_scale 0") -> { anim = "0"; "" }
                 cmd.startsWith("for k in ${Setup.ANIM}; do settings put global \$k 1.0") -> { anim = "1.0"; "" }
-                cmd.startsWith("cmd package resolve-activity") -> "priority=0\n${home()}/.Home"
+                cmd.contains("android.app.role.HOME") -> "priority=0\n${home()}/.Home"
                 else -> ""
             }
         }

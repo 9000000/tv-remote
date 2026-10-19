@@ -1225,7 +1225,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         }
 
         /** The home screen and the keyboard in use, the apps the user installed and the ones with a tile, as [keepNow] reads them. */
-        private const val KEEP_NOW = "cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN | tail -1; " +
+        private const val KEEP_NOW = "{ " + dev.tvremote.core.ontv.LauncherSwap.RESOLVE_HOME + "; } | tail -1; " +
             "settings get secure default_input_method; pm list packages -3; for c in LEANBACK_LAUNCHER LAUNCHER; do " +
             "cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.\$c 2>/dev/null; done"
 

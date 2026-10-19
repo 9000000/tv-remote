@@ -35,7 +35,7 @@ internal class LauncherApi(private val link: AdbLink, private val dir: File?, pr
             a.put(JSONObject().put("id", e.id).put("pkg", e.pkg).put("name", e.name).put("desc", JSONObject(e.desc)).put("notes", JSONObject(e.notes))
                 .put("thumb", "/api/launcher/thumb?id=" + e.id).put("source", e.source).put("license", e.license).put("kind", e.kind).put("version", e.version)
                 .put("fit", fit.ok).put("why", fit.why).put("min_sdk", e.minSdk).put("installed", e.pkg in have).put("in_use", e.pkg == home)
-                .put("english", Launchers.english(e, lang)))
+                .put("shows", Launchers.shows(e, lang, f.sdk)))
         }
         return JSONObject().put("updated", g.updated).put("launchers", a).put("home", home)
             .put("back", rec?.active == true || (home !in Setup.LAUNCHER && home != "android" && Setup.LAUNCHERX in have + Setup.LAUNCHER))   // something of ours is home, or a stock one exists to go back to

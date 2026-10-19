@@ -9,6 +9,10 @@ const launchWords = (m) => (m && (m[LANG] || m.en)) || '';
 // a table of ids, so each one is named where the page can see it
 const LAUNCH_WHY = { sdk: 'launcher.why_sdk', abi: 'launcher.why_abi', fire: 'launcher.why_fire', not_tv: 'launcher.why_not_tv', atv: 'launcher.why_atv', gtv: 'launcher.why_gtv' };
 const LAUNCH_STEP = { download: 'launcher.step_download', install: 'launcher.step_install', swap: 'launcher.step_swap', confirm: 'launcher.step_confirm' };
+// a language's own name in the page's language (Intl knows them all; a WebView without it shows the code)
+const langName = (c) => { try { return new Intl.DisplayNames([document.documentElement.lang || 'en'], { type: 'language' }).of(c); } catch (e) { return c; } };
+// what it shows when it lacks the TV's language: English (set so, or its own fallback), or another one
+const launchLang = (l) => T(l.shows === 'en' ? 'launcher.lang_en' : 'launcher.lang_other', { lang: langName(l.shows) });
 const launchWhy = (l) => T(LAUNCH_WHY[l.why] || 'launcher.why_atv', { android: androidName(l.min_sdk) });
 
 // One launcher as a card: its home screen big (what one picks a launcher by), the name, a few tags, the button for what comes next,
@@ -32,7 +36,7 @@ function launchRow(l, fleet) {
     l.kind === 'self' ? launchTag(T('launcher.ours'), 'ours') : null,      // TV Home: made here, set up from here
     !fleet && l.in_use ? launchTag(T('launcher.in_use'), 'use') : null,
     fleet || l.in_use ? null : l.fit ? launchTag(T('launcher.fits')) : Object.assign(launchTag(T('launcher.nofit'), 'warn'), { title: launchWhy(l) }),
-    l.english ? Object.assign(launchTag(T('launcher.english')), { title: T('launcher.english_why') }) : null,   // no words in the TV's language
+    l.shows ? Object.assign(launchTag(langName(l.shows), l.shows === 'en' ? '' : 'warn'), { title: launchLang(l) }) : null,   // no words in the TV's language
     l.kind === 'play' ? launchTag('▶ ' + T('launcher.badge_play'), 'play') : null, l.version ? launchTag(l.version) : null);
   return el('div', { className: 'lcard' + (l.in_use && !fleet ? ' on' : '') },
     el('button', { type: 'button', className: 'lshot', title: T('launcher.details'), 'aria-label': l.name, onclick: () => launchDetails(l) }, thumb),
@@ -51,6 +55,7 @@ function launchDetails(l) {
     el('p', { textContent: launchWords(l.desc) }),
     notes ? el('p', { className: 'note', textContent: notes }) : null,
     l.fit ? null : el('p', { className: 'warnline', textContent: launchWhy(l) }),
+    l.shows ? el('p', { className: l.shows === 'en' ? 'note' : 'warnline', textContent: launchLang(l) }) : null,
     el('p', { className: 'note' }, el('a', { href: l.kind === 'play' ? 'https://play.google.com/store/apps/details?id=' + encodeURIComponent(l.pkg) : l.source, target: '_blank', rel: 'noopener noreferrer', textContent: T(l.kind === 'play' ? 'launcher.source_play' : 'launcher.source') }),
       (l.license ? ' · ' + T('launcher.license', { l: l.license }) : '') + (l.version ? ' · ' + l.version : ''))));
   d.addEventListener('close', () => d.remove());
@@ -74,7 +79,7 @@ $('#launchclose').addEventListener('click', () => $('#launchdlg').close());
 // go (the gallery closes: a modal would cover it), and the question "Keep it?" is answered there or on the TV
 async function launchInstall(l) {
   if (launchRunning) return;
-  if (!l.in_use && !await ask(T(l.installed ? 'launcher.use_ask' : 'launcher.ask', { name: l.name }), { ok: T(l.installed ? 'launcher.use' : 'launcher.install') })) return;
+  if (!l.in_use && !await ask(T(l.installed ? 'launcher.use_ask' : 'launcher.ask', { name: l.name }), { ok: T(l.installed ? 'launcher.use' : 'launcher.install'), warn: l.shows ? launchLang(l) : '' })) return;
   let j = await api('/api/launcher/install', { id: l.id });
   if (!j) return;
   launchRunning = true; $('#launchdlg').close();

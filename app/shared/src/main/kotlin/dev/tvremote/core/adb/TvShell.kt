@@ -34,7 +34,7 @@ object TvShell {
             "&& { settings put secure always_on_vpn_app com.tailscale.ipn; settings put secure always_on_vpn_lockdown 0; };; esac; echo ok"
 
     private const val HOME_LIST = "cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME"
-    private const val HOME_NOW = "cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME | tail -n 1"
+    private const val HOME_NOW = "{ " + dev.tvremote.core.ontv.LauncherSwap.RESOLVE_HOME + "; } | tail -n 1"
 
     /**
      * Shell test: does the TV resolve names right now? A name made up on the spot, that the wildcard services sslip.io and

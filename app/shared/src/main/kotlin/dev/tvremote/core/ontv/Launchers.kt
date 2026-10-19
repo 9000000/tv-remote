@@ -39,7 +39,8 @@ object Launchers {
     class Entry(val id: String, val pkg: String, val name: String, val desc: Map<String, String>, val thumb: String, val thumbSha: String,
                 val source: String, val license: String, val kind: String, val version: String, val files: List<Apk>, val playUrl: String,
                 val atv: Boolean, val gtv: Boolean, val minSdk: Int, val fire: Boolean, val notes: Map<String, String>,
-                val langs: List<String> = emptyList()) {                // the languages of its screens (dev/sign_launchers.py reads them); empty: not known
+                val langs: List<String> = emptyList(),                  // the languages of its screens (dev/sign_launchers.py reads them); empty: not known
+                val fallback: String = "") {                            // what it shows in a language it lacks
         fun desc(lang: String) = desc[lang] ?: desc["en"] ?: ""
         fun notes(lang: String) = notes[lang] ?: notes["en"] ?: ""
     }
@@ -85,6 +86,13 @@ object Launchers {
      */
     fun english(e: Entry, tvLang: String): Boolean = e.langs.isNotEmpty() && tvLang.isNotEmpty() && tvLang !in e.langs && "en" in e.langs
 
+    /** The language [e] will show on this TV when it lacks the TV's own, for the person to know before installing: "" when it has it, or nobody knows. */
+    fun shows(e: Entry, tvLang: String, sdk: Int): String = when {
+        e.langs.isEmpty() || tvLang.isEmpty() || tvLang in e.langs -> ""
+        sdk >= 33 && english(e, tvLang) -> "en"                      // LauncherInstall.english sets it
+        else -> e.fallback                                            // an older Android has no language per app: its own fallback
+    }
+
     /**
      * The file for this TV. 64-bit only: the arm64 one. Otherwise the 32-bit one first, which installs on both (as FLauncher always
      * did here), then what the TV's list of ABIs names, last a file that has no native code ("any").
@@ -129,7 +137,7 @@ object Launchers {
                 e.getString("source"), e.optString("license"), kind, e.optJSONObject("apk")?.optString("version") ?: "", files,
                 e.optJSONObject("play")?.optString("url") ?: "", s.optBoolean("android_tv", true), s.optBoolean("google_tv", true), s.optInt("min_sdk", 21),
                 s.optBoolean("fire_os", false), words(s.optJSONObject("notes")),
-                e.optJSONArray("langs")?.let { l -> (0 until l.length()).map { lang(l.optString(it)) } } ?: emptyList())
+                e.optJSONArray("langs")?.let { l -> (0 until l.length()).map { lang(l.optString(it)) } } ?: emptyList(), lang(e.optString("fallback")))
         }.filter { it.kind == "apk" || it.kind == "play" || it.kind == "self" }, base)
     } catch (e: org.json.JSONException) { throw IOException("launcher list: " + e.message) }
 
