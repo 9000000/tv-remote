@@ -92,6 +92,9 @@ mark{background:rgba(255,163,26,.3);color:var(--text);border-radius:3px;padding:
 }
 .gsince{display:flex;flex-wrap:wrap;gap:2px 0;margin-top:-8px;color:var(--muted);font-size:13px;line-height:1.5}
 .gsince[hidden]{display:none}
+.gtry{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;border:1px solid var(--line2);font-size:14px;font-weight:600;color:var(--blue);white-space:nowrap;flex:none}
+.gtry:hover{background:var(--card2)}
+.gtry svg{width:14px;height:14px}
 .gsince>span+span::before{content:"·";margin:0 7px}
 .gsince a{color:inherit;text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:2px}
 .gsince a:hover{color:var(--blue)}

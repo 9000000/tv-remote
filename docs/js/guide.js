@@ -76,13 +76,22 @@
     var w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT), out = [], n, last = null;
     while ((n = w.nextNode())){
       var e = n.parentElement, other = e && e.closest(lang === "vi" ? ".en" : ".vi");
-      if (other || (e && e.closest(".ga-box,.gst-box,.gsince")) || (noTitle && e && e.closest("h3")) || !n.nodeValue.trim()) continue;
+      if (other || (e && e.closest(".ga-box,.gst-box,.gsince,.gtry")) || (noTitle && e && e.closest("h3")) || !n.nodeValue.trim()) continue;
       var block = e && e.closest("td,th,li,p,h4,dt,dd,figcaption");   // table cells and steps would run into each other
       if (out.length && block !== last && !/[.:;!?…]\s*$/.test(out[out.length - 1])) out.push("·");
       out.push(n.nodeValue); last = block;
     }
     return out.join(" ").replace(/\s+/g, " ").replace(/\s+([.,;:!?)”])/g, "$1").trim();
   }
+  /* "Try it": the topics the live demo can open on (demo/go.js), a button beside the title */
+  var PLAY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg>';
+  topics.forEach(function(t){
+    if (!window.DEMO_GO || !window.DEMO_GO[t.id]) return;
+    var a = document.createElement("a");
+    a.className = "gtry"; a.href = "demo/?go=" + t.id;
+    a.innerHTML = PLAY + '<span class="vi">Thử ngay</span><span class="en">Try it</span>';
+    t.querySelector("h3").append(a);
+  });
   function build(){
     var lang = root.dataset.lang;
     index = topics.map(function(a){
