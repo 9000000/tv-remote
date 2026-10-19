@@ -1,7 +1,7 @@
 :root{
   --bg:#0a0d14; --bg2:#0e121b; --card:#141924; --card2:#1a2030; --line:#232a3a; --line2:#2f3850;
-  --text:#e9edf5; --muted:#9aa4b8; --dim:#6b7489;
-  --blue:#5b8cff; --blue2:#3d6fe8; --orange:#ffa31a; --green:#3ddc84; --red:#ff6b6b;
+  --text:#e9edf5; --muted:#9aa4b8; --dim:#8a94a9;
+  --blue:#5b8cff; --blue2:#3d6fe8; --fill:#2f5fd6; --orange:#ffa31a; --green:#3ddc84; --red:#ff6b6b;
   --prog-a:var(--blue); --prog-b:var(--orange); --sheet-bg:rgba(14,18,27,.96);
   --r:18px; --max:1160px;
 }
@@ -30,6 +30,8 @@ nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
 .brand img{width:32px;height:32px;border-radius:9px}
 .navlinks{display:flex;gap:4px;margin-left:auto}
 .navlinks a{padding:8px 12px;border-radius:10px;color:var(--muted);font-size:15px;font-weight:500;white-space:nowrap}
+.navlinks a,.navsheet a,.navcta{display:inline-flex;align-items:center;gap:7px}
+.ni{width:17px;height:17px;flex:none;opacity:.85}
 .navlinks a:hover{color:var(--text);background:rgba(255,255,255,.05)}
 .navlinks a.on{color:var(--text);background:rgba(91,140,255,.14);box-shadow:inset 0 -2px 0 var(--blue)}
 .navtools{display:flex;gap:8px;align-items:center}
@@ -51,8 +53,8 @@ nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
 .lang button[aria-pressed="true"]{background:var(--card2);color:var(--text)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 22px;border-radius:14px;font-weight:700;font-size:16px;border:1px solid transparent;cursor:pointer;transition:transform .15s,background .15s,border-color .15s;white-space:nowrap}
 .btn:active{transform:scale(.98)}
-.btn-primary{background:var(--blue);color:#06112b;box-shadow:0 8px 30px -8px rgba(91,140,255,.7)}
-.btn-primary:hover{background:#6f9aff}
+.btn-primary{background:var(--fill);color:#fff;box-shadow:0 8px 30px -8px rgba(91,140,255,.7)}   /* white on --fill 5.6:1; dark on --blue read muddy */
+.btn-primary:hover{background:#3366e0}
 .btn-ghost{background:rgba(255,255,255,.04);border-color:var(--line2);color:var(--text)}
 .btn-ghost:hover{background:rgba(255,255,255,.08)}
 .btn-sm{padding:8px 14px;font-size:14px;border-radius:10px}
@@ -66,7 +68,7 @@ nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
 .pill span{overflow:hidden;text-overflow:ellipsis}
 @media(max-width:420px){.pill{font-size:12px;gap:6px;padding:5px 11px 5px 6px}.pill b{font-size:11px;padding:2px 7px}}
 @media(max-width:380px){.pill{font-size:11px;gap:5px;padding:4px 9px 4px 5px}.pill b{font-size:10px;padding:2px 6px}}
-.pill b{background:var(--blue);color:#06112b;border-radius:999px;padding:2px 9px;font-size:12px}
+.pill b{background:var(--fill);color:#fff;border-radius:999px;padding:2px 9px;font-size:12px}
 .hero h1{font-size:clamp(38px,5.6vw,66px);font-weight:800;margin:22px 0 20px}
 .hero .lead{font-size:clamp(17px,1.7vw,20px)}
 .cta{display:flex;flex-wrap:wrap;gap:12px;margin:32px 0 26px}
@@ -314,4 +316,5 @@ footer a{color:var(--muted);white-space:nowrap}footer a:hover{color:var(--text)}
 
 @media (max-width:420px){.navsheet .wrap{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.navsheet{animation:none}.menubtn path{transition:none}.navprog{transition:none}}
+@media (max-width:560px){nav .navcta{display:none}}                  /* the hero and the menu have Install; the bar would overflow
 @media (max-width:380px){nav .wrap{gap:10px}nav .navtools .btn{display:none}}

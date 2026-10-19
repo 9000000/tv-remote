@@ -51,8 +51,14 @@ async function syncShim() {
     'XMLHttpRequest.prototype.open=function(m,u,a){var p=new URL(u,location.href).pathname.slice(' + APP.length + ');this._d=a===false&&p in F?F[p]:null;return o.apply(this,arguments)};' +
     'XMLHttpRequest.prototype.send=function(){if(this._d===null)return s.apply(this,arguments);' +
     'for(var k of["status","responseText","response"])Object.defineProperty(this,k,{value:k==="status"?200:this._d})};' +
-    '})(' + JSON.stringify(text).replace(/</g, '\\u003c') + ')</script>';
+    '})(' + JSON.stringify(text).replace(/</g, '\\u003c') + ')</script>' + NOW;
 }
+
+// The page takes a screenshot each second (on a real TV a screencap is slow and heavy); the made-up TV draws at once, so
+// after a key or an app the demo takes the next one right away instead of up to a second later
+const NOW = '<script>(function(f){var R=/^\\/api\\/(key|app|app\\/launch|volume|scene\\/run|recents)$/;window.fetch=function(u,o){var p=f.apply(this,arguments);' +
+  'try{var path=new URL(typeof u==="string"?u:u.url,location.href).pathname;if(o&&o.method==="POST"&&R.test(path))p.then(function(){' +
+  'if(typeof screenOn!=="undefined"&&screenOn&&typeof snapOnce==="function")snapOnce().then(function(b){if(b instanceof Blob)showFrame(b)})})}catch(e){}return p}})(window.fetch)</script>';
 
 // the demo page answers: {method, path, search, body} in, {status, type, body} out
 async function mock(e, u) {

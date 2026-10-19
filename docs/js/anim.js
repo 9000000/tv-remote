@@ -124,7 +124,7 @@
     },
     // the chapter buttons under How it works: the part playing lit (cut over in .04 s), its bar filling
     chapters: function(){
-      var on = { color: "#e9edf5" }, off = { color: "#6b7489" };
+      var on = { color: "#e9edf5" }, off = { color: "#8a94a9" };
       for (var k = 1; k <= this.parts; k++){
         var a = (k - 1) * this.L, b = k * this.L, li = ".dchap li:nth-child(" + k + ") ", pts = [];
         if (k > 1) pts.push([a - .04, on, .04]);
