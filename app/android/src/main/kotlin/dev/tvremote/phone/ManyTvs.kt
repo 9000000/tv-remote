@@ -96,20 +96,64 @@ private fun MainActivity.fleetLauncher() {
             if (isFinishing) return@post
             val list = g?.entries.orEmpty()   // a Play one too: used on the TVs that already have it, the others are told to install it there
             if (g == null || list.isEmpty()) { toast(if (why.isNotEmpty()) why else T("launcher.none")); return@post }
-            menu(T("fleet.which_launcher"), -1, list.map { e ->   // equal choices: none is the main one
-                Triple("@tv|" + e.name + "  " + (if (e.kind == "play") "▶ " + T("launcher.badge_play") else e.version), "") {
-                    fleetPick(T(if (e.kind == "play") "fleet.launcher_ask_play" else "fleet.launcher_ask", "name" to e.name)) { ips ->
-                        fleetRun(e.name, ips, stoppable = true) { link, p ->
-                            dev.tvremote.core.ontv.LauncherInstall(link.get(), cacheDir, g).run(e, 0, { step, pct ->
-                                p.step = when (step) { "download" -> T("fleet.step_ldownload") + " $pct%"; "install" -> T("fleet.step_linstall"); else -> T("fleet.step_lswap") }
-                            }, { p.cancel.stopped })
-                            T("fleet.step_lkept").removePrefix("✓ ")
-                        }
+            launcherCards(g) { e ->                                   // the gallery as on the page: picture, words, Source
+                fleetPick(T(if (e.kind == "play") "fleet.launcher_ask_play" else "fleet.launcher_ask", "name" to e.name)) { ips ->
+                    fleetRun(e.name, ips, stoppable = true) { link, p ->
+                        dev.tvremote.core.ontv.LauncherInstall(link.get(), cacheDir, g).run(e, 0, { step, pct ->
+                            p.step = when (step) { "download" -> T("fleet.step_ldownload") + " $pct%"; "install" -> T("fleet.step_linstall"); else -> T("fleet.step_lswap") }
+                        }, { p.cancel.stopped })
+                        T("fleet.step_lkept").removePrefix("✓ ")
                     }
                 }
-            })
+            }
         }
     }.start()
+}
+
+/** The gallery's launchers as cards for several TVs at once, as the page's (launchers.js launchRow): picture, name, words, a CH Play
+ *  tag or the version, the notes, a link to the source or the Play page, and one button; no fit, which is about one TV. */
+private fun MainActivity.launcherCards(g: dev.tvremote.core.ontv.Launchers.Gallery, pick: (dev.tvremote.core.ontv.Launchers.Entry) -> Unit) {
+    val lang = dev.tvremote.core.Words.lang
+    val list = col()
+    list.setPadding(dp(16), dp(2), dp(16), dp(2))
+    lateinit var box: Popup
+    for (e in g.entries) {
+        val card = col()
+        card.background = box(BTN, 14)
+        card.setPadding(dp(12), dp(12), dp(12), dp(12))
+        val top = LinearLayout(this)
+        val pic = android.widget.ImageView(this).apply {
+            scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+            background = box(BG, 8); clipToOutline = true
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+        top.addView(pic, LinearLayout.LayoutParams(dp(112), dp(63)))
+        val words = col()
+        words.addView(label(e.name, 16, TEXT).apply { typeface = android.graphics.Typeface.DEFAULT_BOLD })
+        words.addView(label(if (e.kind == "play") "▶ " + T("launcher.badge_play") else e.version, 12, ACCENT_TEXT), gap(2))
+        top.addView(words, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
+        card.addView(top)
+        card.addView(label(e.desc(lang), 14, MUTED).apply { setLineSpacing(dp(2).toFloat(), 1f) }, gap(8))
+        e.notes(lang).takeIf { it.isNotEmpty() }?.let { card.addView(label(it, 13, MUTED), gap(4)) }
+        val foot = LinearLayout(this)
+        foot.gravity = Gravity.CENTER_VERTICAL
+        val link = label(T(if (e.kind == "play") "launcher.source_play" else "launcher.source") + " ↗", 14, ACCENT_TEXT)
+        link.setPadding(0, dp(12), dp(12), dp(12))                   // a finger's height, not the words'
+        link.setOnClickListener { web(e.source) }
+        foot.addView(link, LinearLayout.LayoutParams(0, -2, 1f))
+        val use = button(T(if (e.kind == "play") "launcher.use" else "fleet.launcher_use"), ACCENT)
+        use.setPadding(dp(18), 0, dp(18), 0)
+        use.setOnClickListener { box.dismiss(); pick(e) }
+        foot.addView(use, LinearLayout.LayoutParams(-2, dp(44)))
+        card.addView(foot, gap(4))
+        list.addView(card, if (list.childCount == 0) LinearLayout.LayoutParams(-1, -2) else gap(10))
+        Thread {                                                      // checked against the signed list's hash, as on the page
+            val bm = try { dev.tvremote.core.ontv.Launchers.thumb(g, e).let { android.graphics.BitmapFactory.decodeByteArray(it, 0, it.size) } } catch (x: Exception) { null }
+            if (bm != null) ui.post { pic.setImageBitmap(bm) }
+        }.start()
+    }
+    box = Popup.Builder(this).setTitle(T("fleet.which_launcher")).setMessage(T("fleet.launcher_note")).setView(list)
+        .setNegativeButton(T("common.cancel"), null).show()
 }
 
 /** The saved TVs to tick; the ones that answered (or not checked yet) come ticked. */

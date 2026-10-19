@@ -11,19 +11,21 @@ const LAUNCH_WHY = { sdk: 'launcher.why_sdk', abi: 'launcher.why_abi', fire: 'la
 const LAUNCH_STEP = { download: 'launcher.step_download', install: 'launcher.step_install', swap: 'launcher.step_swap', confirm: 'launcher.step_confirm' };
 const launchWhy = (l) => T(LAUNCH_WHY[l.why] || 'launcher.why_atv', { android: androidName(l.min_sdk) });
 
-function launchRow(l) {
+// [fleet]: the row for several TVs at once (fleet.js): its own button, and no fit / in use, which are about this TV only
+function launchRow(l, fleet) {
   const thumb = el('img', { className: 'lthumb', src: l.thumb, alt: '' });
   thumb.onerror = () => thumb.classList.add('none');                   // a picture that does not come is no reason to hide the launcher
   const btns = [];
-  if (l.in_use) btns.push(el('button', { className: 'small', disabled: true, textContent: T('launcher.in_use') }));
+  if (fleet) btns.push(fleet);
+  else if (l.in_use) btns.push(el('button', { className: 'small', disabled: true, textContent: T('launcher.in_use') }));
   else if (l.kind === 'play' && !l.installed) btns.push(el('button', { className: 'small primary', disabled: !l.fit, textContent: T('launcher.play'), onclick: () => launchPlay(l) }));
   else btns.push(el('button', { className: 'small primary', disabled: !l.fit || launchRunning, textContent: l.installed ? T('launcher.use') : T('launcher.install'), onclick: () => launchInstall(l) }));
   const notes = launchWords(l.notes);
   return UI.item({
     icon: thumb, name: l.name, sub: launchWords(l.desc),
-    extra: [el('div', { className: 'ltags' }, l.in_use ? launchTag(T('launcher.in_use'), 'use') : null, launchTag(l.fit ? T('launcher.fits') : T('launcher.nofit'), l.fit ? '' : 'warn'),
+    extra: [el('div', { className: 'ltags' }, !fleet && l.in_use ? launchTag(T('launcher.in_use'), 'use') : null, fleet ? null : launchTag(l.fit ? T('launcher.fits') : T('launcher.nofit'), l.fit ? '' : 'warn'),
         l.kind === 'play' ? launchTag('▶ ' + T('launcher.badge_play'), 'play') : null, l.version ? launchTag(l.version) : null),
-      l.fit ? (notes ? el('small', { textContent: notes }) : null) : el('small', { className: 'warn', textContent: launchWhy(l) }),
+      fleet || l.fit ? (notes ? el('small', { textContent: notes }) : null) : el('small', { className: 'warn', textContent: launchWhy(l) }),
       el('small', {}, el('a', { href: l.source, target: '_blank', rel: 'noopener noreferrer', textContent: l.kind === 'play' ? T('launcher.source_play') : T('launcher.source') }), ' · ' + T('launcher.license', { l: l.license }))],
     acts: btns });
 }

@@ -196,9 +196,8 @@ async function fleetLauncher() {
   put('#infotitle', 'textContent', T('fleet.which_launcher'));
   $('#infobody').replaceChildren(
     el('p', { className: 'note', textContent: T('fleet.launcher_note') }),
-    el('div', { className: 'list' }, ...list.map((l) => el('div', { className: 'item' },
-      el('div', { className: 'name' }, el('b', { textContent: l.name }), el('small', { className: 'muted', textContent: l.kind === 'play' ? '▶ ' + T('launcher.badge_play') : l.version })),
-      el('button', { type: 'button', className: 'small primary', textContent: l.kind === 'play' ? T('launcher.use') : T('fleet.launcher_use'), onclick: () => { $('#infodlg').close(); fleetDo('launcher', l.id, T(l.kind === 'play' ? 'fleet.launcher_ask_play' : 'fleet.launcher_ask', { name: l.name })); } })))),
+    UI.list(list.map((l) => launchRow(l,   // the gallery's own row (launchers.js): picture, words, Source
+      el('button', { type: 'button', className: 'small primary', textContent: l.kind === 'play' ? T('launcher.use') : T('fleet.launcher_use'), onclick: () => { $('#infodlg').close(); fleetDo('launcher', l.id, T(l.kind === 'play' ? 'fleet.launcher_ask_play' : 'fleet.launcher_ask', { name: l.name })); } }))), T('launcher.none')),
     el('div', { className: 'acts fleetgo' }, el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => $('#infodlg').close() })));
   $('#infodlg').showModal();
 }

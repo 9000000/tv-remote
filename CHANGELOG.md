@@ -8,6 +8,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 
+- Nhiều TV → Màn hình chính: chọn launcher bằng thẻ như Thư viện launcher (ảnh, mô tả, ghi chú, link Mã nguồn / Trang CH Play mở được), trên trang web lẫn app điện thoại
 - Nút đang làm việc (Quét Wi-Fi, Kết nối lại, lấy danh sách app...) hiện vòng xoay thay cho icon, trên cả app điện thoại lẫn trang web
 - Màn điều khiển: phần bàn phím không còn tự hiện khi vừa vào (app điện thoại) và không tự mở lại lần sau; chỉ mở khi bấm ⌨️
 - Gỡ app trên nhiều TV: mỗi app một dòng có hình, tên và "trên 3/5 TV", chạm là chọn (nền xanh nhạt), ô tìm khi danh sách dài, Chọn tất cả / Bỏ chọn, nút "Gỡ (n)"; mỗi TV báo "đã gỡ n app". Trang web, app máy tính và app điện thoại giống nhau.
@@ -29,6 +30,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **English**
 
+- Several TVs → Home screen: the launcher is chosen from cards as in the launcher gallery (picture, words, notes, a Source / Play page link that opens), on the page and in the Phone app
 - A button at work (Scan the Wi-Fi, Retry the connection, getting the app list...) shows a turning ring in its icon's place, in the Phone app and on the page
 - Remote screen: the keyboard part no longer shows on its own when the screen opens (Phone app) or reopens next time; only ⌨️ opens it
 - Removing apps on several TVs: one row per app with its picture, name and "on 3/5 TVs", tap to pick (light blue tint), a search when the list is long, Select all / Clear, a "Remove (n)" button; each TV reports "removed n apps". The same on the web page, the Computer app and the Phone app.
