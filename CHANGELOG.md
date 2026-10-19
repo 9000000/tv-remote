@@ -8,6 +8,9 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 
+- Sửa: đổi launcher không còn tắt cả app cài đặt ban đầu của Google (setupwraith), chỉ tắt màn hình Home của nó và chỉ khi nó nhận nút Home. Tắt cả app làm Android xoá Wi-Fi đã lưu: một FPT Play Box mất mạng và mất ADB. Lần đổi bị treo lâu cũng không còn để lại app bị tắt
+- Thư viện launcher: thêm UnitedU, Dizzify, AndSmartTV, TIVI; câu hỏi trước khi cài rõ hơn (Giữ / Quay lại, tự về sau 30 giây); tiến trình tải / cài hiện ở thẻ ⏳ Tiến trình chung của trang, có Dừng, Giữ, Quay lại
+- 📡 Remote hồng ngoại (chỉ app điện thoại, máy có đèn IR): không cần mạng, không cần chọn TV. Mã Samsung, LG, Sony, TCL, Philips, Sharp, Toshiba, Hisense, Android TV box, Mi Box... (Flipper-IRDB, CC0), **Dò mã** cho thiết bị không có trong danh sách (vd FPT Play Box).
 - 🔒 Khóa app bằng mã PIN (tab Tự động): mở app đã khóa thì TV hỏi PIN (phím số của remote hoặc bàn phím trên màn hình); dùng tới khi sang app khác hoặc TV tắt. Sai 5 lần chờ 1 phút. PIN chỉ lưu trên TV, dạng băm. Cần TV Setup mới
 - Tắt / bật màn hình: bấm lại để bật màn hình từ app. Remote thật của TV cũng bật lại, còn phím gửi từ app thì không (trước đây phím nào cũng bật)
 - 🔅 Giảm độ sáng (Thêm phím → Hẹn giờ tắt): phủ màu lên mọi app (Tối, Lọc xanh, Vàng, Nâu cổ, Đỏ đêm, Xanh), độ mạnh 5 đến 90%, đổi ngay khi kéo. Giữ cả khi TV Setup khởi động lại. Cần TV Setup mới
@@ -28,6 +31,9 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **English**
 
+- Fix: changing the launcher no longer turns off Google's setup app (setupwraith) as a whole, only its Home screen and only where it answers Home. Turning the whole app off made Android delete the Wi-Fi it had saved: an FPT Play Box lost its network and its ADB. A swap that hung for long no longer leaves an app turned off either
+- Launcher gallery: UnitedU, Dizzify, AndSmartTV, TIVI added; a clearer question before installing (Keep / Go back, back on its own after 30 seconds); the download / install shows in the page's ⏳ Progress card, with Stop, Keep, Go back
+- 📡 Infrared remote (Phone app only, phones with an IR blaster): no network, no TV picked. Codes for Samsung, LG, Sony, TCL, Philips, Sharp, Toshiba, Hisense, Android TV boxes, Mi Box... (Flipper-IRDB, CC0), and **Find code** for a device in no list (e.g. FPT Play Box).
 - 🔒 Lock apps with a PIN (Automation tab): opening a locked app asks for the PIN on the TV (the remote's number keys or the keypad on screen); it stays open until another app comes up or the TV turns off. 5 wrong PINs: a minute's wait. The PIN is kept only on the TV, hashed. Needs the new TV Setup
 - Screen off / on: tap it again to turn the screen back on from the app. The TV's own remote turns it on too; keys sent from the app no longer do
 - 🔅 Dim the screen (More keys → Sleep timer): a tint over every app (Dark, Blue filter, Yellow, Sepia, Night red, Blue) at 5 to 90%, applied as you drag. Kept when TV Setup restarts. Needs the new TV Setup

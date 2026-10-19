@@ -12,16 +12,18 @@ import org.junit.Test
 
 /** The launcher gallery's safety: the swap and its way back (a fake TV that keeps the record), the watchdog's decisions, the list's fit. */
 class LauncherTest {
+    companion object { const val WIZ = "com.google.android.tungsten.setupwraith" }
     private class Tv(val pick: Boolean = true) {
         val installed = mutableSetOf("com.google.android.tungsten.setupwraith", Setup.LAUNCHERX, "com.new.home", "com.google.android.tvlauncher")
         val disabled = mutableSetOf("com.google.android.tvlauncher")
-        val homes = linkedMapOf("com.new.home" to 0, Setup.LAUNCHERX to 2, "com.google.android.tungsten.setupwraith" to 1, "com.google.android.tvlauncher" to 2)
+        val homes = linkedMapOf("com.new.home" to 0, Setup.LAUNCHERX to 2, WIZ to 1, "com.google.android.tvlauncher" to 2)
+        var wizardLocked = false                                       // a TV that refuses to turn one screen of a system app off
         var chosen: String? = null
         var rec = ""
         var clock = 1000L
         val said = mutableListOf<String>()
         fun home(): String {
-            val on = homes.filterKeys { it in installed && it !in disabled }
+            val on = homes.filterKeys { it in installed && it !in disabled && "$it/.Home" !in disabled }
             if (!pick && Setup.LAUNCHERX in disabled) return "android/.Resolver"   // a TV that ignores the choice
             chosen?.let { c -> if (c.substringBefore('/') in on && pick) return c }
             return on.maxByOrNull { it.value }?.key?.let { "$it/.Home" } ?: "android/.Resolver"
@@ -29,6 +31,7 @@ class LauncherTest {
         fun sh(cmd: String): String {
             said += cmd
             Regex("^pm disable-user --user 0 (\\S+)$").find(cmd)?.let { disabled += it.groupValues[1]; chosen = null; return "" }
+            Regex("^pm disable --user 0 (\\S+) 2>&1$").find(cmd)?.let { if (!wizardLocked) disabled += it.groupValues[1]; chosen = null; return "" }
             Regex("^pm enable --user 0 (\\S+)$").find(cmd)?.let { disabled -= it.groupValues[1]; chosen = null; return "" }
             Regex("^cmd package set-home-activity (\\S+)").find(cmd)?.let { chosen = it.groupValues[1]; return "" }
             Regex("^echo '(.*)' > ${LauncherSwap.REC}$").find(cmd)?.let { rec = it.groupValues[1]; return "" }
@@ -38,7 +41,7 @@ class LauncherTest {
                 cmd == "pm list packages -e" -> (installed - disabled).joinToString("\n") { "package:$it" }
                 cmd.startsWith("pm list packages -d") -> disabled.joinToString("\n") { "package:$it" }
                 cmd.startsWith("cmd package query-activities") ->
-                    homes.keys.filter { it in installed && it !in disabled }.joinToString("\n") { "priority=${homes[it]}\n$it/.Home" }
+                    homes.keys.filter { it in installed && it !in disabled && "$it/.Home" !in disabled }.joinToString("\n") { "priority=${homes[it]}\n$it/.Home" }
                 cmd.startsWith("cmd package resolve-activity") -> "priority=0\n" + home()
                 else -> ""
             }
@@ -51,7 +54,8 @@ class LauncherTest {
         assertEquals("com.new.home", tv.home().substringBefore('/'))
         val r = s.state()!!
         assertEquals("pending", r.state)
-        assertEquals(setOf(Setup.LAUNCHERX, "com.google.android.tungsten.setupwraith"), r.off.toSet())
+        assertEquals(setOf(Setup.LAUNCHERX, "$WIZ/.Home"), r.off.toSet())
+        assertFalse(WIZ in tv.disabled)                                // its Home only: the whole app off cost an FPT box its saved Wi-Fi
         assertFalse("com.google.android.tvlauncher" in r.off)       // off from the factory: not ours to turn on
         s.keep(); assertEquals("kept", s.state()!!.state)
     }
@@ -71,6 +75,26 @@ class LauncherTest {
         assertFalse(s.take("com.new.home", 30))
         assertEquals(setOf("com.google.android.tvlauncher"), tv.disabled)
         assertEquals("rolledback", s.state()!!.state)
+    }
+
+    @Test fun aWizardHomeThatCannotGoOffStopsTheSwap() {
+        val tv = Tv().apply { wizardLocked = true }; val s = LauncherSwap({ tv.sh(it) })
+        assertFalse(s.take("com.new.home", 30))
+        assertEquals(setOf("com.google.android.tvlauncher"), tv.disabled)
+        assertFalse(tv.said.any { it == "pm disable-user --user 0 $WIZ" })
+    }
+
+    @Test fun aSwapThatOutlivedTheWatchdogIsUndoneAgain() {
+        val tv = Tv(); val s = LauncherSwap({ c -> tv.sh(c).also { if (c.startsWith("cmd package set-home-activity")) LauncherSwap({ tv.sh(it) }).rollback("interrupted") } })
+        assertFalse(s.take("com.new.home", 30))
+        assertEquals(setOf("com.google.android.tvlauncher"), tv.disabled)
+        assertEquals(Setup.LAUNCHERX, tv.home().substringBefore('/'))
+    }
+
+    @Test fun aTvWhoseWizardIsNoHomeKeepsItOn() {                    // the FPT Play box: the wizard is installed, not a home screen
+        val tv = Tv().apply { homes.remove(WIZ) }; val s = LauncherSwap({ tv.sh(it) })
+        assertTrue(s.take("com.new.home", 30))
+        assertFalse(tv.said.any { WIZ in it && "disable" in it })
     }
 
     @Test fun aPackageWithNoHomeActivityIsRefusedUntouched() {

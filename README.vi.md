@@ -70,6 +70,7 @@ Trong README, code và trang giới thiệu, các phần luôn được gọi b�
 | Nhiều TV, đổi TV | ✓ | chỉ TV đó | ✓ |
 | Bật TV khi TV đã tắt hẳn (Wake-on-LAN) | ✓ | TV tắt thì trang cũng tắt | ✓ |
 | Bấm phím khi TV chưa cho ADB | ✓ | | ✓ |
+| Remote hồng ngoại (đèn IR của điện thoại, không cần mạng, không cần chọn TV) | ✓ | | |
 | Widget, ô Cài đặt nhanh, phím âm lượng của máy | ✓ | | |
 | 🎮 Tay cầm chơi game | ✓ | ✓ | ✓ |
 | Link cho Home Assistant, Phím tắt (Siri) | | ✓ | ✓, mở cổng riêng khi bật |

@@ -6,6 +6,7 @@
   "install-pc": {"since": "0.1.0"},
   "web-iphone": {"since": "0.1.0"},
   "nokeys": {"since": "0.1.0"},
+  "ir": {"since": "next", "phone": "next"},
   "prep-tv": {"since": "0.1.0"},
   "wireless": {"since": "0.5.0"},
   "allow-usb": {"since": "0.1.0"},

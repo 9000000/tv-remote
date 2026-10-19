@@ -231,7 +231,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
     fun undo() {
         var on = 0
         for (p in undoable())
-            if (has(p)) { sh("pm enable --user 0 $p"); on++ }
+            if (has(p.substringBefore('/'))) { sh("pm enable --user 0 $p"); on++ }   // p may be one screen of an app (the wizard's Home)
         sh("rm -f $OFF_LIST")
         LauncherSwap(sh).forget()
         sh("for k in $ANIM; do settings put global \$k 1.0; done")

@@ -72,6 +72,7 @@ The **TV app** is shown on the TV as *TV Setup*. It also runs the timers and lim
 | Several TVs | ✓ | only that TV | ✓ |
 | Turn on a TV that is fully off (Wake-on-LAN) | ✓ | | ✓ |
 | Keys before the TV has allowed ADB | ✓ | | ✓ |
+| Infrared remote (phone's IR blaster, no network, no TV picked) | ✓ | | |
 | Widget, Quick Settings tiles, the phone's volume keys | ✓ | | |
 | Game controller | ✓ | ✓ | ✓ |
 | Link for Home Assistant, Shortcuts (Siri) | | ✓ | ✓ |

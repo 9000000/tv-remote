@@ -176,6 +176,7 @@ html:not(.tabbed) .panel { visibility:hidden; }   /* theme.js, setup.js */
 .jobhead > :first-child { flex:1; min-width:0; overflow-wrap:anywhere; }
 .job.error .msg { color:var(--bad); }
 .job.done .msg { color:var(--ok); }
+.job .actions { margin-top:12px; }                                     /* a question asked in a job (a launcher's Keep / Go back), clear of its bar */
 dialog { border:0; padding:0; background:transparent; max-width:96vw; max-height:96vh; }
 dialog::backdrop { background:rgba(0,0,0,.8); }
 dialog.ask .card { width:min(440px, 92vw); display:flex; flex-direction:column; gap:14px; }

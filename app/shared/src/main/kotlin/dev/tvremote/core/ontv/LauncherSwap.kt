@@ -7,8 +7,9 @@ import java.io.IOException
  * Giving a TV another home screen, and taking it back. Any launcher, not FLauncher only (Optimize TV and the launcher gallery
  * use this one code). What it does, in the order that kept TVs working (dev/bloat-sources.md):
  *  1. the new launcher is opened once, so Home is never empty;
- *  2. the TV's own home screens that are on go off, the setup wizard first (with launcherx off alone Home lands on the wizard's
- *     RecoveryActivity and Google TV restarts about every minute);
+ *  2. the TV's own home screens that are on go off, the setup wizard's Home first (with launcherx off alone Home lands on the wizard's
+ *     RecoveryActivity and Google TV restarts about every minute). Only that one screen, and only where the wizard answers Home: turning
+ *     the wizard's whole app off made Android delete the Wi-Fi network it had saved (an FPT Play box, Android 14: no network, no ADB);
  *  3. it is made the home LAST (Android forgets that choice whenever the set of home screens changes);
  *  4. Home is asked where it goes: anywhere else and everything is put back at once.
  * What was turned off, and the home before, are kept ON THE TV in [REC] before anything is touched, so a way back exists even if the
@@ -80,17 +81,26 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
         val prev = homeNow()
         sh("am start -n $ours")                                      // opened once before the old one goes, so Home is never empty
         val on = enabled()
-        val gone = (Setup.WIZARD + Setup.LAUNCHER).filter { it in on && it != pkg }   // only what is on: Google TV's tvlauncher is off from the factory
+        val wizard = homes().filter { it.substringBefore('/') in Setup.WIZARD }   // components: pm enable / disable take them like packages
+        val gone = wizard + Setup.LAUNCHER.filter { it in on && it != pkg }   // only what is on: Google TV's tvlauncher is off from the factory
         val now = tvNow()
         save(Rec(pkg, ours, prev, gone, now, "swapping", 0, ""))      // before the first thing goes off
-        for (p in gone) turnOff(p)
+        for (c in wizard) {
+            sh("pm disable --user 0 $c 2>&1")
+            if (homes().contains(c)) { log("wizard home stays"); rollback("home", gone); return false }   // never the wizard's whole app (see 2.)
+            sh("grep -qx '$c' ${Setup.OFF_LIST} 2>/dev/null || echo '$c' >> ${Setup.OFF_LIST}")   // for Optimize TV's Undo
+        }
+        for (p in gone - wizard) turnOff(p)
         sh("cmd package set-home-activity $ours 2>/dev/null")
+        // a step that hung for minutes (a box's pm while it dropped its Wi-Fi) outlives the watchdog's patience: it has put everything back
+        // meanwhile, and what came after its rollback is undone the same way
+        state()?.takeIf { it.state == "rolledback" }?.let { rollback(it.why); return false }
         if (homeNow().substringBefore('/') == pkg) {
             val r = state()?.with(if (confirmSec > 0) "pending" else "kept", if (confirmSec > 0) tvNow() + confirmSec else 0) ?: return true
             save(r)
             return true
         }
-        rollback("home")
+        rollback("home", gone)
         return false
     }
 
@@ -103,9 +113,9 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
      * version or by hand): the TV's own launchers that are installed but off come back, as Undo does.
      */
     @Throws(IOException::class)
-    fun rollback(why: String) {
+    fun rollback(why: String, known: List<String>? = null) {         // known: what the swap under way turned off, if the TV kept no record
         val r = state()
-        val off = if (r != null) r.off else (Setup.LAUNCHER.toList() + Setup.WIZARD).filter { it in installedOff() }
+        val off = r?.off ?: known ?: (Setup.LAUNCHER.toList() + Setup.WIZARD).filter { it in installedOff() }
         for (p in off.reversed()) sh("pm enable --user 0 $p")        // home screens before the wizard
         val back = backTo(r, off)
         if (back != null) sh("cmd package set-home-activity $back 2>/dev/null")
@@ -139,7 +149,7 @@ class LauncherWatch(private val sh: (String) -> String) {
         const val WINDOW_SEC = 300L
         const val CRASHES = 2
         private const val GRACE = 8L                                  // the confirmation screen's own timeout comes first
-        private const val STALE = 90L                                 // a swap that was never finished
+        private const val STALE = 300L                                // a swap that was never finished (one pm call took 84 s on a box)
 
         /** The seconds at which [pkg] crashed, from `logcat -b crash -v epoch`: a Java crash names its process, a native one is ">>> pkg <<<". */
         fun crashes(logcat: String, pkg: String): List<Long> = logcat.lineSequence().mapNotNull { l ->

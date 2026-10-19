@@ -1,6 +1,6 @@
 {
   "v": 1,
-  "updated": "2026-10-19",
+  "updated": "2026-10-20",
   "launchers": [
     {
       "id": "tv-home",
@@ -132,6 +132,109 @@
         }
       },
       "thumb_sha256": "2ed7bf2cf429eda66d2f3e43286713edb12a8743be076f28b8db30baf53a15df"
+    },
+    {
+      "id": "unitedu",
+      "package": "com.uniteduone.launcher",
+      "name": "UnitedU",
+      "desc": {
+        "vi": "Màn hình chính giống Google TV nhưng chỉ có app bạn chọn: không quảng cáo, không gợi ý. Chạy cả trên TV không có Google.",
+        "en": "A Google TV-style home screen with only the apps you pick: no ads, no recommendations. Also works on TVs without Google services."
+      },
+      "thumb": "unitedu.jpg",
+      "source": "https://github.com/GordonWang1878/UnitedU-launcher",
+      "license": "Apache-2.0",
+      "kind": "apk",
+      "apk": {
+        "version": "1.2.0",
+        "files": {
+          "any": {
+            "url": "https://github.com/GordonWang1878/UnitedU-launcher/releases/download/v1.2.0/unitedu-1.2.0.apk",
+            "sha256": "29d5cf100490065c033b274ce736511398063ac8cdc38d165799f3d0b127f4d7"
+          }
+        }
+      },
+      "supports": {
+        "android_tv": true,
+        "google_tv": true,
+        "min_sdk": 28,
+        "fire_os": false,
+        "notes": {
+          "vi": "Trên Google TV, bật 'Chiếm nút Home' trong app để nút Home mở nó. Cần Android 9 trở lên. Không đổi được màn hình chính trên Fire TV.",
+          "en": "On Google TV, turn on Home Button Takeover in the app so Home opens it. Needs Android 9 or newer. Cannot take Home on Fire TV."
+        }
+      },
+      "thumb_sha256": "2251e2798dedd858177503c530f2a774e7201bf14315e98838c583b5d0ed50cd"
+    },
+    {
+      "id": "dizzify",
+      "package": "app.dizzify",
+      "name": "Dizzify",
+      "desc": {
+        "vi": "Màn hình chính gọn, nhanh: yêu thích, ẩn app, thanh bên có đồng hồ, app dùng gần đây. Không quảng cáo, không cần mạng.",
+        "en": "A clean, fast home screen: favourites, hidden apps, a sidebar with a clock, recent apps. No ads, no internet permission."
+      },
+      "thumb": "dizzify.jpg",
+      "source": "https://github.com/mlm-games/dizzify",
+      "license": "GPL-3.0",
+      "kind": "apk",
+      "apk": {
+        "version": "1.0.4",
+        "files": {
+          "arm64-v8a": {
+            "url": "https://github.com/mlm-games/dizzify/releases/download/v1.0.4/dizzify-v1.0.4-arm64-v8a.apk",
+            "sha256": "7116afe22008ca1a598dd2a975828f10bfab3aa60ced775a7e7c7375c4887fae"
+          },
+          "armeabi-v7a": {
+            "url": "https://github.com/mlm-games/dizzify/releases/download/v1.0.4/dizzify-v1.0.4-armeabi-v7a.apk",
+            "sha256": "f403468e1611d0b1e691dd51025276aadb35190d82c66ca094ad78fdd8481e32"
+          }
+        }
+      },
+      "supports": {
+        "android_tv": true,
+        "google_tv": true,
+        "min_sdk": 24,
+        "fire_os": false,
+        "notes": {
+          "vi": "Không đổi được màn hình chính trên Fire TV và một số TCL bán ở Trung Quốc.",
+          "en": "Cannot take Home on Fire TV and on some TCL sets sold in China."
+        }
+      },
+      "thumb_sha256": "858a7189f4add54a215d9c31cc30dd699df78c12c0691f7214dbd0e436e97d27"
+    },
+    {
+      "id": "andsmarttv",
+      "package": "com.andsmarttv.launcher",
+      "name": "AndSmartTV Launcher",
+      "desc": {
+        "vi": "Kiểu kính mờ, hỗ trợ banner 16:9, sắp xếp app bằng điều khiển, chạy được cả Android 7.1 cũ. Miễn phí, không quảng cáo.",
+        "en": "A glassy look with 16:9 banners and app reordering by remote; runs even on old Android 7.1 boxes. Free, no ads."
+      },
+      "thumb": "andsmarttv.jpg",
+      "source": "https://github.com/dnsalcedo01/AndSmartTV-launcher",
+      "license": "MIT",
+      "kind": "apk",
+      "apk": {
+        "version": "1.5.2",
+        "files": {
+          "any": {
+            "url": "https://github.com/dnsalcedo01/AndSmartTV-launcher/releases/download/v1.5.2/AndSmartTV-launcher-v1.5.2.apk",
+            "sha256": "b5b7be0a6e0000b06cbd113fc3bba0f8ee21e04b1be05abbca65b089f2d1c56a"
+          }
+        }
+      },
+      "supports": {
+        "android_tv": true,
+        "google_tv": true,
+        "min_sdk": 25,
+        "fire_os": false,
+        "notes": {
+          "vi": "App còn mới (2026). Không đổi được màn hình chính trên Fire TV.",
+          "en": "A young app (2026). Cannot take Home on Fire TV."
+        }
+      },
+      "thumb_sha256": "4be19d7e6e364518f6566ed2cbefd3c44fcbbc6ff5c5d97d3d4cfccf0b66c9bb"
     },
     {
       "id": "projectivy",
@@ -271,6 +374,33 @@
       },
       "thumb_source": "https://play.google.com/store/apps/details?id=ca.dstudio.atvlauncher.pro (the developer's own store listing, first screenshot)",
       "thumb_sha256": "cf81691f21c68d2e9270714639cd355fe381d87ead8b45dd66b686ae5c2b842f"
+    },
+    {
+      "id": "tivi-launcher",
+      "package": "ca.compugeek.tivi",
+      "name": "TIVI Launcher",
+      "desc": {
+        "vi": "Thay màn hình chính Android TV bằng bản gọn, tùy biến: hàng, thư mục, kênh Xem tiếp. Miễn phí, nâng cấp trả phí một lần.",
+        "en": "Replaces the Android TV home with a clean, customisable one: rows, folders, Watch Next channels. Free, with a one-time paid upgrade."
+      },
+      "thumb": "tivi-launcher.jpg",
+      "source": "https://play.google.com/store/apps/details?id=ca.compugeek.tivi",
+      "license": "Proprietary (free, paid upgrade)",
+      "kind": "play",
+      "play": {
+        "url": "market://details?id=ca.compugeek.tivi"
+      },
+      "supports": {
+        "android_tv": true,
+        "google_tv": true,
+        "min_sdk": 24,
+        "fire_os": false,
+        "notes": {
+          "vi": "Cần Google Play trên TV. Cài xong, bấm Dùng để chọn nó làm màn hình chính.",
+          "en": "Needs Google Play on the TV. Once installed, press Use to make it the home screen."
+        }
+      },
+      "thumb_sha256": "9c3babfc2d677df7a60f6784fa50de40a8d77bb9d34993c50cd53776281eead4"
     }
   ]
 }

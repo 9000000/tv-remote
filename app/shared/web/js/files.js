@@ -73,6 +73,7 @@ function mark(src, j) {
   if (j.status === 'running') src.dataset.busy = '⏳ ' + (j.pct || 0) + '%'; else delete src.dataset.busy;
 }
 // `stop`: what ■ Dừng does for this job (abort the upload, tell the server to end the install or download); without it no button.
+// Gives back its row, so a job can put its own buttons there (a launcher's Keep / Go back).
 function showJob(j, label, stop) {
   let row = jobEls[j.id];
   if (!row) {
@@ -82,12 +83,13 @@ function showJob(j, label, stop) {
     row.root.append(el('div', { className: 'jobhead' }, el('div', { textContent: label || j.title }), row.stop), row.msg, el('div', { className: 'bar' }, row.bar)); $('#jobs').prepend(row.root);
   }
   if (row.stop) row.stop.hidden = j.status !== 'running';
-  row.root.className = 'job ' + j.status; row.msg.textContent = j.status === 'cancelled' ? T('files.stopped') : j.msg; row.bar.style.width = j.pct + '%';
+  row.root.className = 'job ' + j.status; row.msg.textContent = j.status === 'cancelled' && !j.said ? T('files.stopped') : j.msg; row.bar.style.width = j.pct + '%';   // said: the job's own words for how it ended
   row.bar.parentElement.classList.toggle('busy', j.status === 'running' && !(j.pct >= 0));   // size unknown: moving, not stuck at 0
   row.status = j.status; row.pct = j.pct;
   // folded away, the title still tells how far things are
-  const run = Object.values(jobEls).filter((r) => r.status === 'running');
+  const run = Object.values(jobEls).filter((r) => r.status === 'running' && r.pct >= 0);   // a step without a size (installing) has no %
   put('#jobsum', 'textContent', run.length ? '· ' + Math.round(run.reduce((s, r) => s + (r.pct > 0 ? r.pct : 0), 0) / run.length) + '%' : '');
+  return row;
 }
 // The phone app saves a TV file into its own Download folder itself (Managing.kt) and tells its progress here, in the same list.
 window.nativeJob = (j) => {

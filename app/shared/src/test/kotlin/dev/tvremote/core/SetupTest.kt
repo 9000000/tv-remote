@@ -23,7 +23,8 @@ class SetupTest {
             "com.google.android.tungsten.setupwraith" to 1, "com.android.tv.settings" to -1000)
         var keyboard = "com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME"
         val keyboards = mutableListOf("com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME")
-        fun home(): String = homes.filterKeys { it in installed && it !in disabled }.maxByOrNull { it.value }?.key ?: "android"
+        fun on(p: String) = p in installed && p !in disabled && "$p/.Home" !in disabled
+        fun home(): String = homes.filterKeys { on(it) }.maxByOrNull { it.value }?.key ?: "android"
         val offList = mutableListOf<String>()
         val said = mutableListOf<String>()
         var anim = "1.0"
@@ -31,6 +32,7 @@ class SetupTest {
             said += cmd
             Regex("^pm path (\\S+)$").find(cmd)?.let { return if (it.groupValues[1] in installed) "package:/data/app/x.apk" else "" }
             Regex("^pm disable-user --user 0 (\\S+)$").find(cmd)?.let { disabled += it.groupValues[1]; return "" }
+            Regex("^pm disable --user 0 (\\S+) 2>&1$").find(cmd)?.let { disabled += it.groupValues[1]; return "" }
             Regex("^ime set (\\S+)$").find(cmd)?.let { keyboard = it.groupValues[1]; return "" }
             Regex("^pm enable --user 0 (\\S+)$").find(cmd)?.let { disabled -= it.groupValues[1]; return "" }
             Regex("^grep -qx '([^']+)' ${Setup.OFF_LIST} 2>/dev/null \\|\\| echo '\\1' >> ${Setup.OFF_LIST}$").find(cmd)?.let { if (it.groupValues[1] !in offList) offList += it.groupValues[1]; return "" }
@@ -39,7 +41,7 @@ class SetupTest {
                 cmd.startsWith("pm list packages -d") -> disabled.joinToString("\n") { "package:$it" }
                 cmd == "pm list packages -e" -> (installed - disabled).joinToString("\n") { "package:$it" }
                 cmd.startsWith("cmd package query-activities") && "HOME" in cmd ->
-                    homes.keys.filter { it in installed && it !in disabled }.joinToString("\n") { "priority=${homes[it]}\n$it/.Home" }
+                    homes.keys.filter { on(it) }.joinToString("\n") { "priority=${homes[it]}\n$it/.Home" }
                 cmd == "settings get secure default_input_method" -> keyboard
                 cmd == "ime list -s" -> keyboards.joinToString("\n")
                 cmd == "cat ${Setup.OFF_LIST} 2>/dev/null" -> offList.joinToString("\n")
@@ -92,8 +94,9 @@ class SetupTest {
         tv.disabled += "com.google.android.tvlauncher"                // off from the factory on Google TV
         tv.setup().apply(Setup.Choice(anim = false, home = true, disable = emptyList()))
         assertEquals(Setup.FL_PKG, tv.home())
-        assertTrue(Setup.WIZARD[0] in tv.disabled)
-        val off = tv.said.filter { it.startsWith("pm disable-user") }
+        assertTrue("${Setup.WIZARD[0]}/.Home" in tv.disabled)
+        assertFalse(Setup.WIZARD[0] in tv.disabled)                    // its Home only: the whole app off cost an FPT box its saved Wi-Fi
+        val off = tv.said.filter { it.startsWith("pm disable") }
         assertTrue(off.indexOfFirst { Setup.WIZARD[0] in it } < off.indexOfFirst { Setup.LAUNCHERX in it })
         tv.setup().undo()
         assertEquals(setOf("com.google.android.tvlauncher"), tv.disabled)   // what the factory turned off stays off

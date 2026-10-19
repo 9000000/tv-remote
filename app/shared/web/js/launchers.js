@@ -69,33 +69,36 @@ async function launchLoad() {
 $('#launchopen').addEventListener('click', async () => { $('#launchdlg').showModal(); await launchLoad(); });
 $('#launchclose').addEventListener('click', () => $('#launchdlg').close());
 
-// the install runs on this device (it downloads once, pushes to the TV); the page follows its steps, and the question "Keep it?" is answered here or on the TV
+// the install runs on this device (it downloads once, pushes to the TV); its steps show in the page's Progress card, where the eyes
+// go (the gallery closes: a modal would cover it), and the question "Keep it?" is answered there or on the TV
 async function launchInstall(l) {
   if (launchRunning) return;
-  if (!l.in_use && !await ask(T('launcher.ask', { name: l.name }), { ok: T('launcher.install') })) return;
-  launchRunning = true;
-  const line = $('#launchstate'), actions = $('#launchact');
-  const stop = el('button', { className: 'small danger', textContent: T('page.stop') });
-  actions.replaceChildren(stop);
+  if (!l.in_use && !await ask(T(l.installed ? 'launcher.use_ask' : 'launcher.ask', { name: l.name }), { ok: T(l.installed ? 'launcher.use' : 'launcher.install') })) return;
   let j = await api('/api/launcher/install', { id: l.id });
-  if (j) {
-    stop.onclick = () => { api('/api/cancel', { id: j.id }, true); stop.disabled = true; };
-    for (let misses = 0; j && j.status === 'running' && misses < 10;) {
-      line.textContent = T(LAUNCH_STEP[j.step] || LAUNCH_STEP.download, { pct: j.pct || 0, s: j.confirm == null ? 30 : j.confirm });
-      if (j.step === 'confirm' && !actions.querySelector('.keep')) actions.replaceChildren(
-        el('button', { className: 'small primary keep', textContent: T('launcher.keep'), onclick: () => api('/api/launcher/answer', { keep: true }) }),
-        el('button', { className: 'small', textContent: T('launcher.go_back'), onclick: () => api('/api/launcher/answer', { keep: false }) }));
-      await sleep(1000); const r = await api('/api/job?id=' + j.id, null, true);
-      if (!r) { misses++; continue; }
-      misses = 0; j = r;
-    }
+  if (!j) return;
+  launchRunning = true; $('#launchdlg').close();
+  const label = T('launcher.job', { name: l.name }), id = j.id, stop = () => api('/api/cancel', { id }, true);
+  const show = (x) => showJob({ ...x, id }, label, stop);
+  const step = (x) => ({ status: 'running', msg: T(LAUNCH_STEP[x.step] || LAUNCH_STEP.download, { pct: x.pct || 0, s: x.confirm == null ? 30 : x.confirm }),
+    pct: (x.step || 'download') === 'download' ? x.pct || 0 : undefined });
+  const row = show(step(j)), acts = el('div', { className: 'actions' });
+  row.root.append(acts);
+  for (let misses = 0; j && j.status === 'running' && misses < 10;) {
+    show(step(j));
+    if (j.step === 'confirm' && !acts.firstChild) acts.append(
+      el('button', { className: 'small primary', textContent: T('launcher.keep'), onclick: () => api('/api/launcher/answer', { keep: true }) }),
+      el('button', { className: 'small', textContent: T('launcher.go_back'), onclick: () => api('/api/launcher/answer', { keep: false }) }));
+    if (j.step !== 'confirm') acts.replaceChildren();
+    await sleep(1000); const r = await api('/api/job?id=' + id, null, true);
+    if (!r) { misses++; continue; }
+    misses = 0; j = r;
   }
-  launchRunning = false; actions.replaceChildren();
-  if (!j || j.status === 'running') line.textContent = T('launcher.lost');
-  else if (j.status === 'done') { line.textContent = ''; toast(T('launcher.done', { name: l.name })); }
-  else if (j.status === 'cancelled') line.textContent = T('launcher.stopped');
-  else line.textContent = '❌ ' + friendly(j.msg);
-  await launchLoad();
+  launchRunning = false; acts.remove();
+  if (!j || j.status === 'running') show({ status: 'error', msg: T('launcher.lost'), pct: 0 });
+  else if (j.status === 'done') { show({ status: 'done', msg: T('launcher.done', { name: l.name }), pct: 100 }); toast(T('launcher.done', { name: l.name })); }
+  else if (j.status === 'cancelled' || /launcher:rolledback:user/.test(j.msg)) show({ status: 'cancelled', said: j.status !== 'cancelled', msg: friendly(j.msg), pct: 0 });   // Go back is an answer, not an error
+  else show({ status: 'error', msg: friendly(j.msg), pct: 0 });
+  launchLoad();
 }
 
 async function launchPlay(l) {
