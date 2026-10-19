@@ -301,11 +301,13 @@ internal fun MainActivity.buildRemote() {
         if (!on && which.visibility == View.VISIBLE) which.findFocus()?.let { it.clearFocus(); ime.hideSoftInputFromWindow(it.windowToken, 0) }
         which.visibility = if (on) View.VISIBLE else View.GONE
         btn.setOn(on, 16)
-        prefs.edit().putBoolean(key, on).apply()
+        if (key == "more") prefs.edit().putBoolean(key, on).apply()
     }
     val showMore = { on: Boolean -> if (on) fold(kbd, kbdBtn, "kbd", false); fold(more, moreBtn, "more", on) }
     val showKbd = { on: Boolean -> if (on) fold(more, moreBtn, "more", false); fold(kbd, kbdBtn, "kbd", on) }   // one at a time
-    if (prefs.getBoolean("kbd", false)) showKbd(true) else showMore(prefs.getBoolean("more", false))
+    prefs.edit().remove("kbd").apply()                                // it starts shut: open again by itself it looked like a keyboard nobody asked for
+    fold(kbd, kbdBtn, "kbd", false)                                   // a new col() is shown: shut it before anyone sees it
+    showMore(prefs.getBoolean("more", false))
     moreBtn.setOnClickListener { slide(controls); showMore(more.visibility != View.VISIBLE) }
     val kbdGo = { at: android.widget.EditText -> if (kbd.visibility != View.VISIBLE) { slide(controls); showKbd(true) }; at.requestFocus(); ime.showSoftInput(at, 0) }
     kbdBtn.setOnClickListener {

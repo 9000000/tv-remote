@@ -248,9 +248,9 @@ function hear() {                                                     // this de
 function setKbd(on, now) {                                           // one fold at a time: the D-pad stays close
   if (on && $('#morebtn').classList.contains('on')) setMore(false, now);
   if (now) put('#kbdpane', 'hidden', !on); else slide($('#kbdpane'), on);
-  $('#kbdbtn').classList.toggle('on', on); try { localStorage.setItem('kbd', on ? '1' : ''); } catch {}
+  $('#kbdbtn').classList.toggle('on', on);
 }
-try { setKbd(!!localStorage.getItem('kbd'), true); } catch {}
+try { localStorage.removeItem('kbd'); } catch {}                     // it starts shut: open again by itself it looked like a keyboard nobody asked for
 function kbdGo(at) {
   if (!$('#kbdbtn').classList.contains('on')) setKbd(true);
   $(at || ($('#kbd').disabled ? '#ask' : '#text')).focus({ preventScroll: true });
