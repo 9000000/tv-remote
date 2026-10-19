@@ -82,17 +82,26 @@
       if (!ready) { if (++tries < 60) setTimeout(wait, 250); return; }
       if (w.pickLeave) w.pickLeave();
       w.showTab(to[0]);
-      var what = to[1];
-      if (!what) return;
-      setTimeout(function () {
-        if (/\(\)$/.test(what)) { var f = w[what.slice(0, -2)]; if (typeof f === 'function') f(); return; }
-        var el = w.document.querySelector(what);
-        if (!el) return;
-        el = el.closest('.card') || el;
-        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        var ring = '0 0 0 3px var(--accent), 0 0 24px var(--accent)';    // the page's .flash (goTo), drawn here: older pages lack it
-        el.animate([{ boxShadow: '0 0 0 0 var(--accent)' }, { boxShadow: ring, offset: .1 }, { boxShadow: ring, offset: .6 }, { boxShadow: '0 0 0 3px transparent' }], { duration: 3000, easing: 'ease-out', delay: 400 });
-      }, 300);
+      var steps = to.slice(1), i = 0;
+      (function next() {
+        var what = steps[i++];
+        if (!what) return;
+        setTimeout(function () {
+          var last = i >= steps.length;
+          if (/\(\)$/.test(what)) { var f = w[what.slice(0, -2)]; if (typeof f === 'function') f(); }
+          else if (/^click:/.test(what)) { var b = w.document.querySelector(what.slice(6)); if (b) b.click(); }
+          else {
+            var el = w.document.querySelector(what);
+            if (el) {
+              el = el.closest('.card') || el;
+              el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+              var ring = '0 0 0 3px var(--accent), 0 0 24px var(--accent)';    // the page's .flash (goTo), drawn here: older pages lack it
+              el.animate([{ boxShadow: '0 0 0 0 var(--accent)' }, { boxShadow: ring, offset: .1 }, { boxShadow: ring, offset: .6 }, { boxShadow: '0 0 0 3px transparent' }], { duration: 3000, easing: 'ease-out', delay: 400 });
+            }
+          }
+          if (!last) next();
+        }, i === 1 ? 300 : 700);
+      })();
     })();
   }
   function start() {

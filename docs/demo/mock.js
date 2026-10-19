@@ -277,7 +277,7 @@
       case '/api/scene/run': { const sc = S.scenes.find((s) => s.id === b.id) || { steps: b.steps || [] };
         for (const st of sc.steps) { if (st.do === 'app') openApp(st.pkg); else if (st.do === 'volume') S.vol = st.level; else if (st.do === 'wake') S.on = true; else if (st.do === 'sleep') S.on = false; else if (st.do === 'timer') S.sleepAt = now() + st.min * MIN; }
         return ok({ ok: true }); }
-      case '/api/hook/config': if (post && b) { if (b.do === 'on' || b.do === 'off') S.hook.on = b.do === 'on'; } return ok({ on: S.hook.on, shortcut: 'http://192.168.1.20:8766/api/hook?token=demo-token', yaml: 'rest_command:\n  tv_key:\n    url: http://192.168.1.20:8766/api/hook' });
+      case '/api/hook/config': if (post && b) { if (b.do === 'on' || b.do === 'off') S.hook.on = b.do === 'on'; } return ok({ on: S.hook.on, shortcut: 'http://192.168.1.20:8766/api/hook?k=3f9a1c7e5b2d4a60b8c1d9e7f2a4b6c8&key=HOME', yaml: 'rest_command:\n  tv_key:\n    url: "http://192.168.1.20:8766/api/hook"\n    method: post\n    headers:\n      x-tvr-hook: "3f9a1c7e5b2d4a60b8c1d9e7f2a4b6c8"\n    content_type: "application/json"\n    payload: \'{"key": "{{ key }}"}\'' });
       case '/api/tailscale': return ok({ installed: false, ip: '' });
       case '/api/welcome': return ok({ has: false });
       case '/api/draw': drawOps(b.ops); return ok({ ok: true, pic: true });
