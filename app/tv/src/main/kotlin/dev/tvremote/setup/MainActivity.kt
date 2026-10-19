@@ -865,7 +865,7 @@ class MainActivity : Activity() {
             val w = LinearLayout(this)
             w.orientation = LinearLayout.VERTICAL
             w.setPadding(dp(16), 0, 0, 0)
-            w.addView(text(e.name, 17, INK, true))
+            w.addView(text(if (e.kind == "play") e.name + "  ▶ " + T("launcher.badge_play") else e.name, 17, INK, true))
             val ds = text(e.desc(Words.lang), 12, MUTED, false)
             ds.maxLines = 2
             ds.ellipsize = TextUtils.TruncateAt.END
@@ -873,7 +873,7 @@ class MainActivity : Activity() {
             val tag = if (using) T("launcher.in_use") else if (!fit.ok) when (fit.why) {
                 "sdk" -> T("launcher.why_sdk", "android" to e.minSdk); "abi" -> T("launcher.why_abi"); "fire" -> T("launcher.why_fire")
                 "atv" -> T("launcher.why_atv"); "gtv" -> T("launcher.why_gtv"); else -> T("launcher.why_not_tv") }
-                else if (e.kind == "play") T("launcher.play") else if (e.pkg in have) T("launcher.use") else T("launcher.install")
+                else if (e.kind == "play" && e.pkg !in have) T("launcher.play") else if (e.pkg in have) T("launcher.use") else T("launcher.install")
             val st = text(tag, 13, if (!fit.ok) WARN else if (using) OK else ACCENT, true)
             w.addView(st, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(3) })
             r.addView(w, LinearLayout.LayoutParams(0, -2, 1f))
@@ -887,7 +887,7 @@ class MainActivity : Activity() {
             paint()
             r.setOnClickListener {
                 if (running || using || !fit.ok) return@setOnClickListener
-                if (e.kind == "play") {
+                if (e.kind == "play" && e.pkg !in have) {             // once it is on the TV it goes through the same safe swap as the others
                     a.shell("am start -a android.intent.action.VIEW -d '" + e.playUrl + "'")
                     status.text = T("launcher.play_opened")
                 } else install(e)

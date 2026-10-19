@@ -162,13 +162,13 @@ function fleetWelcomeSend(f, tvs, cfg) {
 async function fleetLauncher() {
   if (!fleetChosen().length) { toast(T('fleet.pick_one')); return; }
   const g = await api('/api/launchers', null, true); if (!g) return;
-  const list = (g.launchers || []).filter((l) => l.kind === 'apk');
+  const list = g.launchers || [];   // a Play one too: it is used on the TVs that already have it, the others are told to install it there
   put('#infotitle', 'textContent', T('fleet.which_launcher'));
   $('#infobody').replaceChildren(
     el('p', { className: 'note', textContent: T('fleet.launcher_note') }),
     el('div', { className: 'list' }, ...list.map((l) => el('div', { className: 'item' },
-      el('div', { className: 'name' }, el('b', { textContent: l.name }), el('small', { className: 'muted', textContent: l.version })),
-      el('button', { type: 'button', className: 'small primary', textContent: T('fleet.launcher_use'), onclick: () => { $('#infodlg').close(); fleetDo('launcher', l.id, T('fleet.launcher_ask', { name: l.name })); } })))),
+      el('div', { className: 'name' }, el('b', { textContent: l.name }), el('small', { className: 'muted', textContent: l.kind === 'play' ? '▶ ' + T('launcher.badge_play') : l.version })),
+      el('button', { type: 'button', className: 'small primary', textContent: l.kind === 'play' ? T('launcher.use') : T('fleet.launcher_use'), onclick: () => { $('#infodlg').close(); fleetDo('launcher', l.id, T(l.kind === 'play' ? 'fleet.launcher_ask_play' : 'fleet.launcher_ask', { name: l.name })); } })))),
     el('div', { className: 'acts fleetgo' }, el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => $('#infodlg').close() })));
   $('#infodlg').showModal();
 }

@@ -135,6 +135,118 @@
         }
       },
       "thumb_sha256": "24b2eec4c55444ff489cb3e1f209057f3632eccd62b6f025f2ce74029e33d94c"
+    },
+    {
+      "id": "at4k",
+      "package": "com.overdevs.at4k",
+      "name": "AT4K Launcher",
+      "desc": {
+        "vi": "Gọn và nhanh: thư mục, biểu tượng tự chọn, widget thời tiết / đồng hồ, hàng Xem tiếp. Miễn phí, có bản Premium trả phí.",
+        "en": "Clean and fast: folders, custom icons, weather / clock widgets, a Watch next row. Free, with a paid Premium."
+      },
+      "thumb": "at4k.jpg",
+      "source": "https://play.google.com/store/apps/details?id=com.overdevs.at4k",
+      "license": "Proprietary (free, paid Premium)",
+      "kind": "play",
+      "play": {
+        "url": "market://details?id=com.overdevs.at4k"
+      },
+      "supports": {
+        "android_tv": true,
+        "google_tv": true,
+        "min_sdk": 23,
+        "fire_os": false,
+        "notes": {
+          "vi": "Cần Google Play trên TV. Cài xong, bấm Dùng để chọn nó làm màn hình chính.",
+          "en": "Needs Google Play on the TV. Once installed, press Use to make it the home screen."
+        }
+      },
+      "thumb_source": "https://play.google.com/store/apps/details?id=com.overdevs.at4k (the developer's own store listing, first screenshot)",
+      "thumb_sha256": "ffa1227f7418495d17b87490709c1f14260fe65c362030b9ea3b92216f69f6b5"
+    },
+    {
+      "id": "monet",
+      "package": "com.klevico.monet",
+      "name": "Monet Launcher",
+      "desc": {
+        "vi": "Kiểu Material You: màu theo hình nền, hình nền thời tiết động, widget. Không quảng cáo, không theo dõi, không cần tài khoản. Có mua trong app.",
+        "en": "Material You style: colours that follow the wallpaper, live weather wallpapers, widgets. No ads, no tracking, no account. In-app purchases."
+      },
+      "thumb": "monet.jpg",
+      "source": "https://play.google.com/store/apps/details?id=com.klevico.monet",
+      "license": "Proprietary (free, in-app purchases)",
+      "kind": "play",
+      "play": {
+        "url": "market://details?id=com.klevico.monet"
+      },
+      "supports": {
+        "android_tv": true,
+        "google_tv": true,
+        "min_sdk": 23,
+        "fire_os": false,
+        "notes": {
+          "vi": "Cần Google Play trên TV. Cài xong, bấm Dùng để chọn nó làm màn hình chính.",
+          "en": "Needs Google Play on the TV. Once installed, press Use to make it the home screen."
+        }
+      },
+      "thumb_source": "https://play.google.com/store/apps/details?id=com.klevico.monet (the developer's own store listing, first screenshot)",
+      "thumb_sha256": "bb71a57506855e4b1ceb6e8554c12bcaa9a08a3c52893a5fac6b412330f3da4d"
+    },
+    {
+      "id": "dream-launcher",
+      "package": "de.cyberdream.tv.launcher",
+      "name": "dream Launcher",
+      "desc": {
+        "vi": "Bảng chính tùy biến, tin RSS thay chỗ quảng cáo, gợi ý phim, gán phím remote cho app. Miễn phí, có mua trong app.",
+        "en": "A customisable dashboard, RSS news in place of ads, movie tips, remote buttons mapped to apps. Free, with in-app purchases."
+      },
+      "thumb": "dream-launcher.jpg",
+      "source": "https://play.google.com/store/apps/details?id=de.cyberdream.tv.launcher",
+      "license": "Proprietary (free, in-app purchases)",
+      "kind": "play",
+      "play": {
+        "url": "market://details?id=de.cyberdream.tv.launcher"
+      },
+      "supports": {
+        "android_tv": true,
+        "google_tv": true,
+        "min_sdk": 23,
+        "fire_os": false,
+        "notes": {
+          "vi": "Cần Google Play trên TV. Cài xong, bấm Dùng để chọn nó làm màn hình chính.",
+          "en": "Needs Google Play on the TV. Once installed, press Use to make it the home screen."
+        }
+      },
+      "thumb_source": "https://play.google.com/store/apps/details?id=de.cyberdream.tv.launcher (the developer's own store listing, first screenshot)",
+      "thumb_sha256": "15bd3f889b180d6552e8d413594be105324ec0bb0f4d6ed5c4a5a7386a46f6bf"
+    },
+    {
+      "id": "atv-launcher-pro",
+      "package": "ca.dstudio.atvlauncher.pro",
+      "name": "ATV Launcher Pro",
+      "desc": {
+        "vi": "Sửa màn hình chính ngay tại chỗ: hàng, widget, thư mục, hình nền video. Không quảng cáo, không thu thập dữ liệu. App trả phí.",
+        "en": "Edit the home screen right where it is: rows, widgets, folders, video wallpapers. No ads, no data collection. A paid app."
+      },
+      "thumb": "atv-launcher-pro.jpg",
+      "source": "https://play.google.com/store/apps/details?id=ca.dstudio.atvlauncher.pro",
+      "license": "Proprietary (paid)",
+      "kind": "play",
+      "play": {
+        "url": "market://details?id=ca.dstudio.atvlauncher.pro"
+      },
+      "supports": {
+        "android_tv": true,
+        "google_tv": true,
+        "min_sdk": 23,
+        "fire_os": false,
+        "notes": {
+          "vi": "Cần Google Play trên TV. Cài xong, bấm Dùng để chọn nó làm màn hình chính.",
+          "en": "Needs Google Play on the TV. Once installed, press Use to make it the home screen."
+        }
+      },
+      "thumb_source": "https://play.google.com/store/apps/details?id=ca.dstudio.atvlauncher.pro (the developer's own store listing, first screenshot)",
+      "thumb_sha256": "53ead5679b2c8306f71fabed8145bcd67f36e412c077f0f892a15e1d85107286"
     }
   ]
 }

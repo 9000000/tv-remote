@@ -22,9 +22,9 @@ function launchRow(l) {
   return UI.item({
     icon: thumb, name: l.name, sub: launchWords(l.desc),
     extra: [el('div', { className: 'ltags' }, l.in_use ? launchTag(T('launcher.in_use'), 'use') : null, launchTag(l.fit ? T('launcher.fits') : T('launcher.nofit'), l.fit ? '' : 'warn'),
-        l.version ? launchTag(l.version) : null),
+        l.kind === 'play' ? launchTag('▶ ' + T('launcher.badge_play'), 'play') : null, l.version ? launchTag(l.version) : null),
       l.fit ? (notes ? el('small', { textContent: notes }) : null) : el('small', { className: 'warn', textContent: launchWhy(l) }),
-      el('small', {}, el('a', { href: l.source, target: '_blank', rel: 'noopener noreferrer', textContent: T('launcher.source') }), ' · ' + T('launcher.license', { l: l.license }))],
+      el('small', {}, el('a', { href: l.source, target: '_blank', rel: 'noopener noreferrer', textContent: l.kind === 'play' ? T('launcher.source_play') : T('launcher.source') }), ' · ' + T('launcher.license', { l: l.license }))],
     acts: btns });
 }
 
