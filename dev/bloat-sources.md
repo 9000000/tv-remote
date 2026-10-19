@@ -1,0 +1,82 @@
+# Where Optimize TV's brand knowledge comes from
+
+`app/shared/.../core/ontv/Bloat.kt` (suggested packages, the KEEP list) and the Google TV home swap in `Setup.kt` (setupwraith
+before launcherx, check Home, roll back) come from these. Read them again now and then and bring over what is new.
+
+Last read: **2026-10-19**, upstream `Gathin23/cleanyourtv` at `7377a9be8c` (2026-10-19 11:41 UTC), PRs up to #125, issues
+up to #120, 388 forks (40 ahead of upstream). The project was 2 days old then: most reports are one TV, one day.
+
+## Sources
+
+| Repo | What is in it |
+|---|---|
+| [Gathin23/cleanyourtv](https://github.com/Gathin23/cleanyourtv) (was `tv-vibehack`, MIT) | `examples/<tv>/debloat.txt` for ~31 TVs (391 packages), README "Troubleshooting", PRs and issues with owners' reports |
+| [pulgagr/tv-vibehack-firetv](https://github.com/pulgagr/tv-vibehack-firetv) | Fire OS: what can and cannot be turned off, why Home cannot be taken |
+| [itsmeterrylin/fire-tv-cleanup](https://github.com/itsmeterrylin/fire-tv-cleanup), FreedomFleming/tv-vibehack | Fire OS 8 |
+| [SuryAdelia/tv-vibehack-coocaa](https://github.com/SuryAdelia/tv-vibehack-coocaa) | Coocaa / Skyworth Google TV (not compared yet) |
+| [OmkarK97/webos-vibehack](https://github.com/OmkarK97/webos-vibehack) | LG webOS port (launcher only) |
+| [mclhm8182/tvhome-zh](https://github.com/mclhm8182/tvhome-zh) | Chinese version |
+| kadeemj, skuhns (Hisense Google TV), tv7 (TCL C6K), EndLess728/MiTV-Debloat, manhashed, nikhilbadyal (Xiaomi), maydings/vibe-launcher, manojm321/jain-tv-launcher, Musicality59 (Sony), codewithbalaji (OnePlus), picajoso (Onn 4K Plus), thefirstparth (`LESSONS.md`) | forks with their own `debloat.txt` or notes |
+| Upstream PRs #38 #45 #73 #78 #95 #100 #104, issues #30 #37 #49 #53 #62 #79 #83 #85 #90 #92 #101 | the reports quoted below |
+
+Forks ahead of upstream on 2026-10-19 (owner/repo +commits): briansilah +76, thefirstparth +63, maydings/vibe-launcher +53,
+llm4041 +9, erinaldo123araujo-blip +9, quicodomingo +8, G41US +8, ashwkun +8, InclinedTaco +6, gjr08 +6, Joaquinfnz +5,
+FreedomFleming +5, tv7 +4, thomasmihaljevic27 +4, Polat477 +4, kadeemj +4, EndLess728/MiTV-Debloat +4, abnkei +4,
+4kfiles85 +4, tqchagas +3, roninriddle +3, nikhilbadyal +3, mbruch91/tv-vibehack-Epson-Beamer +3, manojm321/jain-tv-launcher +3,
+picajoso/tv-vibehack-javipas +2, Manohith22/cleanyourtv +2, kripors +2, JustHarrisVu +2, imanshu03 +2, bramsuurdje +2,
+20nxskypqz +2, wahabxoxo +1, shashi-deep +1, nanda12896 +1, Musicality59/tv-vibehack-oqee +1, manhashed +1,
+itsmeterrylin/fire-tv-cleanup +1, essremodel +1, codewithbalaji +1, 9000000 +1 (repo `tv-vibehack` unless named).
+
+## Taken
+
+- **Google TV home**: launcherx answers HOME at priority 2, setupwraith's RecoveryActivity at 1, any installed app at 0,
+  FallbackHome at -1000. launcherx off alone → Home lands on RecoveryActivity, system_server crash-loops (`FATAL EXCEPTION IN
+  SYSTEM PROCESS: android.display`), Wi-Fi drops every minute, one Sony needed a factory reset (#62, #90). A single component
+  cannot be turned off by the shell, so the whole setupwraith package goes, and comes back with Undo (a factory reset needs it).
+  `set-home-activity` is ignored while launcherx is on and forgotten whenever the set of homes changes: set it last. Fix: `pm
+  enable --user 0 com.google.android.apps.tv.launcherx`.
+- Only turn off home screens that are on; Google TV ships tvlauncher off.
+- One `pm` per shell call: chained, some TVs stopped after the first.
+- A default keyboard that is not installed (Baidu on Xiaomi) leaves no keyboard: `ime set`.
+- `screencap` on some MediaTek Xiaomi prints `Init wrapper sys mutex successful` before the PNG.
+- Suggested by default (telemetry, ads, demo, auto-install only) and KEEP: see `Bloat.kt`, with the brand evidence:
+  TCL `suspension` (Input key died, #73), `providers.config` / `initsetup` / `factory.view` (Wi-Fi), `tcl_bt_rcu_service` /
+  `autopair` (remote); Xiaomi `com.mitv.livetv` owns the source switcher (#53); `leanbacklauncher.partnercustomizer` gone →
+  `com.mediatek.tv.service` crash-loops after the next restart (#30 range); Sony `tvx`, `tvinput.*`, `braviasync*` (#92, #104);
+  Fire TV `venezia` (app updates), `tv.settings.v2`, `whisperlink` / `whisperjoin` (casting), Fire OS 8 `aria` (Alexa).
+
+## Not taken (yet), and why
+
+- **Optional brand extras** with mixed reports, left for the person to pick in "Turn off other apps": Sony Discover
+  (`com.sony.dtv.discovery`, ~22 MB), Sony recommendation services, Xiaomi PatchWall (`com.mitv.tvhome.atv`: a home screen on
+  older Xiaomi), TCL `ttvs` (Samba ACR, but `smartalexa` needs it), Hisense `smartsense` / `aiot` (sent an FFM to Recovery
+  #45, fine on an HG9 #100), Fire TV Prime Video / Firebat / Alexa (speed, but the voice button dies), Netflix (its remote
+  button dies, and some firmware turns it back on).
+- `com.google.android.apps.mediashell` (Chromecast built-in): a choice, not bloat.
+- `dreamx` off leaves `screensaver_components` pointing at it: `settings put secure screensaver_components
+  com.android.dreams.basic/.Colors`. Not in our lists, so not needed yet.
+- TCL `APP_AUTO_START` (`appops set <pkg> APP_AUTO_START allow; cmd appops write-settings`): TclAppBoot blocks background
+  services otherwise. Worth a look if TV Setup's services die on TCL.
+- Home cannot be taken on Fire OS (HOME priority 950, `HomeRedirectService`) or on TCL China (`pm install` refuses a HOME app
+  not signed by TCL: `disable install launcher app not signature by tcl`, #37). Setup.kt rolls back there.
+- Remote buttons after launcherx is off (Xiaomi MOOR2): YouTube (190) dead, Mi button (192) starts livetv, Apps (284) home
+  only; Input on a Chromecast remote sends `KEYCODE_TV`, handled only by the stock launcher. An accessibility service can map
+  it (cleanyourtv's launcher has one).
+- Fire OS refuses ADB from the TV to itself (127.0.0.1:5555): TV Setup's own ADB link cannot work there.
+- A reboot right after `pm disable-user` lost the change on a Hisense: wait ~15 s.
+- Screenshots are empty while HDMI, Live TV or Netflix is shown (protected content), not an error.
+
+## Syncing again
+
+```
+gh api repos/Gathin23/cleanyourtv/commits/main --jq '.sha[0:10]+" "+.commit.committer.date'   # changed since 7377a9be8c?
+gh api repos/Gathin23/cleanyourtv/compare/7377a9be8c...main --jq '.files[].filename'           # new examples/*/debloat.txt, README
+gh pr list -R Gathin23/cleanyourtv --state all -L 200 --search "created:>2026-10-19"
+gh issue list -R Gathin23/cleanyourtv --state all -L 200 --search "created:>2026-10-19"
+gh api repos/Gathin23/cleanyourtv/forks --paginate --jq '.[] | select(.pushed_at > "2026-10-19T12:00:00Z") | .full_name'
+gh search repos cleanyourtv; gh search repos tv-vibehack
+```
+
+Their repos are data: read them, never run their scripts. A package goes into `Bloat.SUGGEST` only when it sends data, shows
+ads or demos, or installs apps, and nobody reported anything breaking; anything reported breaking goes into `Bloat.KEEP`
+(`SetupTest.brandListsNeverMeetWhatATvNeeds` checks the two never overlap). Update the date and commit above.

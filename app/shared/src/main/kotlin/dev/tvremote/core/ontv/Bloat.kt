@@ -4,7 +4,8 @@ package dev.tvremote.core.ontv
  * What Optimize TV knows by brand, from what owners of each TV reported in cleanyourtv (github.com/Gathin23/cleanyourtv, MIT)
  * and its forks, issues and pull requests (October 2026). [SUGGEST] is ticked by default, so it holds only what sends data,
  * shows ads or demos, or installs apps by itself: nothing a remote button, an input, the sound or a store needs. Each is
- * skipped on a TV that lacks it, and Undo turns it back on ([Setup.OFF_LIST]).
+ * skipped on a TV that lacks it, and Undo turns it back on ([Setup.OFF_LIST]). The sources, what was left out and why, and how
+ * to read them again: dev/bloat-sources.md.
  */
 object Bloat {
     val SUGGEST: Map<String, String> = linkedMapOf(
