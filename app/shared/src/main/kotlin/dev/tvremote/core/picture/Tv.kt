@@ -25,7 +25,7 @@ class Tv(
     private val host: String,
     private val screen: Screen?,
     /** index into QUALITY */
-    quality: Int,
+    private val quality: Int,
     /** longest side of the phone screen, there is no point sending more pixels than it shows */
     maxSide: Int,
     /** turn the screen on first (the TV answered but is in standby) */
@@ -51,7 +51,7 @@ class Tv(
     /** Opus bit rate: 64 kbit/s is plenty for speech and TV, 160 sounds like the source for music */
     private val audioBitRate: Int = 64000,
     /** the person's own frames per second and bit rate (Advanced picture), 0: the level's */
-    fps: Int = 0,
+    private val fps: Int = 0,
     bitRate: Int = 0,
     /** "auto": the hardware encoder, the software one if it sends nothing ([watchFirstFrame]); "hw" or "sw": that one only */
     private val encoder: String = "auto",
@@ -109,9 +109,20 @@ class Tv(
         /** Keys that should bring up a screen of their own: Menu, TV settings, Input, Guide, Live TV. See [pressSeen]. */
         val OPENERS = setOf(82, 176, 178, 172, 170)
 
-        val QUALITY = arrayOf(intArrayOf(480, 300_000, 8), intArrayOf(720, 800_000, 10), intArrayOf(960, 2_000_000, 10),
-            intArrayOf(360, 200_000, 8), intArrayOf(240, 120_000, 8),   // added later, at the end: the index is what people have saved
+        val QUALITY = arrayOf(intArrayOf(480, 300_000, 15), intArrayOf(720, 800_000, 20), intArrayOf(960, 2_000_000, 20),
+            intArrayOf(360, 200_000, 15), intArrayOf(240, 120_000, 15),   // added later, at the end: the index is what people have saved
             intArrayOf(1280, 4_000_000, 30))                          // the computer's "sharpest, heavy on the TV" (not in LEVELS: the phone never offers it)
+
+        /**
+         * The frames a second a level's own rate gives way to on the TV's software encoder: twice the frames would be twice its
+         * ~0.7 core. A hardware one costs about the same at 20 as at 10, and the data grows less than the frames (720 px
+         * scrolling on the emulator: 22 KB/s at 10, 40 at 20).
+         */
+        const val SOFT_FPS = 10
+
+        /** The frames a second asked of scrcpy: the person's own, else the level's, held to [SOFT_FPS] on a software encoder. */
+        fun fpsFor(level: Int, asked: Int, soft: Boolean): Int =
+            if (asked > 0) asked.coerceIn(1, 60) else QUALITY[level.coerceIn(0, QUALITY.size - 1)][2].let { if (soft) minOf(it, SOFT_FPS) else it }
 
         /** The levels from lightest to sharpest, as indexes into QUALITY. */
         val LEVELS = intArrayOf(4, 3, 0, 1, 2)
@@ -131,8 +142,7 @@ class Tv(
 
     init {
         val q = QUALITY[quality.coerceIn(0, QUALITY.size - 1)]
-        video = "video_bit_rate=" + (if (bitRate > 0) bitRate.coerceIn(100_000, 20_000_000) else q[1]) +
-            " max_fps=" + (if (fps > 0) fps.coerceIn(1, 60) else q[2]) + " max_size=" + maxOf(160, minOf(q[0], maxSide) / 32 * 32)
+        video = "video_bit_rate=" + (if (bitRate > 0) bitRate.coerceIn(100_000, 20_000_000) else q[1]) + " max_size=" + maxOf(160, minOf(q[0], maxSide) / 32 * 32)
         // a multiple of 32, not of 8: some hardware encoders (TCL's Realtek) shear the picture into streaks at 720 or 240 wide
         Thread({ run() }, "tv-session").apply { isDaemon = true }.start()
     }
@@ -183,7 +193,7 @@ class Tv(
             val scid = String.format("%08x", Random().nextInt(0x7fffffff))
             val log = a.open("shell:CLASSPATH=" + REMOTE + " app_process / com.genymobile.scrcpy.Server " + VER + " scid=" + scid
                     + " tunnel_forward=true cleanup=false control=$wantControl send_dummy_byte=true send_device_meta=false clipboard_autosync=false "   // autosync on, GET_CLIPBOARD answers nothing
-                    + (if (wantVideo) "video=true $video" + (soft?.let { " video_encoder=$it" } ?: "") else "video=false")
+                    + (if (wantVideo) "video=true $video max_fps=" + fpsFor(quality, fps, soft != null) + (soft?.let { " video_encoder=$it" } ?: "") else "video=false")
                     + (if (hearing == null) " audio=false" else " audio=true audio_codec=$hearing" + (if (hearing == "opus") " audio_bit_rate=$audioBitRate" else "") + (if (sdk >= 33) " audio_source=playback" else "") + (if (share) " audio_dup=true" else ""))
                     // scrcpy-server does not always notice that we left (a still picture sends nothing), and a leftover one keeps
                     // loading the TV. So a shell loop on the TV waits for our heartbeat and kills the server when it stops; 60 s,

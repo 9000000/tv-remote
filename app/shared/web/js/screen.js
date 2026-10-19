@@ -35,7 +35,7 @@ async function snapLoop(gen) {
 // new, 5 it fell behind and jumped to now: CatchUp.kt), 4 bytes length, then the data. Shown by WebCodecs where the page
 // may use it (a secure page: the computer's 127.0.0.1), each frame drawn the moment it is decoded; elsewhere (the TV web page
 // over http) JMuxer makes it playable by a <video>, which buffers a little.
-const H264_Q = { 480: 0, 720: 1, 960: 2, 360: 3, 240: 4, hd: 'hd' }, H264_FPS = { 480: 8, 720: 10, 960: 10, 360: 8, 240: 8, hd: 30 };
+const H264_Q = { 480: 0, 720: 1, 960: 2, 360: 3, 240: 4, hd: 'hd' }, H264_FPS = { 480: 15, 720: 20, 960: 20, 360: 15, 240: 15, hd: 30 };
 // ?stats=1: per-stage timestamps (wall ms) of every frame in window.VT, for measuring latency by hand; nothing is recorded otherwise.
 const VT = /[?&]stats=1/.test(location.search) ? (window.VT = { rx: [], dec: [], paint: [], jm: [], audio: [], arx: [], seq: 0 }) : null;
 const vtOff = VT ? Date.now() - performance.timeOrigin - performance.now() : 0;   // timeOrigin can sit tens of ms off the wall clock the server logs
