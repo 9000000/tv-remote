@@ -83,17 +83,24 @@
         <div class="card-head"><h2 data-i18n="page.saved_tvs">💾 TV đã lưu</h2>
           <div class="tools"><button class="small" id="tvshots" aria-pressed="false" title="Ảnh nhỏ màn hình của mỗi TV đang bật, 5 giây một lần. Tốn CPU của TV và mạng nên mặc định tắt." data-i18n="tvstat.show_screens" data-i18n-title="tvstat.show_screens_tip">👁️ Xem màn hình</button></div></div>
         <div class="list" id="tvlist"></div>
-        <!-- the saved TVs at once (homestay, hotel, a house of TVs), Fleet.kt; the phone app has the same on its own list of TVs (Fleet.kt) -->
-        <details id="fleet" hidden>
-          <summary data-i18n="page.several_tvs_at_once">📦 Nhiều TV cùng lúc <span class="muted" id="fleetcount"></span></summary>
-          <div id="fleetlist"></div>
-          <div class="actions">
-            <label class="linkbtn filebtn primary" id="fleetapk"><input type="file" accept=".apk,application/vnd.android.package-archive"><span data-i18n="page.install_apk_on_the">📦 Cài APK lên TV đã chọn</span></label>
-            <button class="small danger" id="fleetstop" hidden data-i18n="page.stop">■ Dừng</button>
-            <button class="small iconbtn" id="fleetmore" title="Thêm thao tác" aria-label="Thêm thao tác" data-i18n-title="page.more_actions" data-i18n-aria-label="page.more_actions">⋯</button>
-          </div>
-        </details>
       </section>
+      <!-- the saved TVs at once (homestay, hotel, a house of TVs), Fleet.kt; the phone app has the same on its own list of TVs (ManyTvs.kt) -->
+      <details class="card" id="fleet" hidden>
+        <summary><span data-i18n="page.several_tvs_at_once">📦 Nhiều TV cùng lúc</span> <span class="muted" id="fleetcount"></span></summary>
+        <div class="card-head"><p class="note" id="fleetpicked"></p>
+          <div class="tools"><button class="small" id="fleetall" data-i18n="fleet.pick_all">Chọn tất cả</button><button class="small iconbtn" id="fleetreread" title="Đọc lại" aria-label="Đọc lại" data-i18n-title="fleet.menu_reread" data-i18n-aria-label="fleet.menu_reread">↻</button></div></div>
+        <div class="list" id="fleetlist"></div>
+        <h3 data-i18n="fleet.do_title">Làm trên các TV đã chọn</h3>
+        <div class="fleetdo">
+          <label class="linkbtn filebtn" id="fleetapk"><input type="file" accept=".apk,application/vnd.android.package-archive"><span data-i18n="fleet.do_install">📦 Cài APK</span></label>
+          <button type="button" id="fleetremove" data-i18n="fleet.do_remove">🗑 Gỡ app</button>
+          <button type="button" id="fleetlaunch" data-i18n="fleet.do_launcher">🖼️ Màn hình chính</button>
+          <button type="button" id="fleetwelcome" data-i18n="fleet.do_welcome">🏠 Màn hình chào</button>
+          <button type="button" id="fleetwelcomeoff" data-i18n="fleet.do_welcome_off">💤 Tắt màn hình chào</button>
+          <button type="button" id="fleetreboot" data-i18n="fleet.do_restart">🔁 Khởi động lại</button>
+        </div>
+        <button class="small danger" id="fleetstop" hidden data-i18n="page.stop">■ Dừng</button>
+      </details>
       <section class="card">
         <div class="card-head"><h2 data-i18n="page.find_a_tv">🔍 Tìm TV</h2><button class="small primary" id="scan" data-i18n="page.scan">🔍 Quét mạng</button></div>
         <p class="note" id="scaninfo"></p>

@@ -21,16 +21,23 @@ async function fleetLoad() {
 function fleetDraw() {
   fleetRow = {};
   $('#fleetlist').replaceChildren(...fleetTvs.map((t) => {
-    const box = el('input', { type: 'checkbox', checked: fleetPick.has(t.host), onchange: (e) => { if (e.target.checked) fleetPick.add(t.host); else fleetPick.delete(t.host); } });
+    const box = el('input', { type: 'checkbox', checked: fleetPick.has(t.host), onchange: (e) => { if (e.target.checked) fleetPick.add(t.host); else fleetPick.delete(t.host); row.classList.toggle('on', e.target.checked); fleetSum(); } });
     const facts = t.state !== 'ready' ? FLEET_ADB[t.state] || t.state
       : [t.model, t.android ? 'Android ' + t.android : '', t.disk_total ? T('fleet.disk_free', { free: fmtSize(t.disk_free), total: fmtSize(t.disk_total) }) : '',
         t.ram ? 'RAM ' + fmtSize(t.ram) : '', t.setup ? 'TV Setup ' + t.setup : ''].filter(Boolean).join(' · ');
     const step = el('small', { className: 'fleetstep' });
     fleetRow[t.host] = step;
-    return el('label', { className: 'fleetrow' + (t.state === 'ready' ? '' : ' off') }, box,
+    const row = el('label', { className: 'item pick fleetrow' + (fleetPick.has(t.host) ? ' on' : '') + (t.state === 'ready' ? '' : ' off') },
       el('div', { className: 'name' }, el('b', { textContent: t.host === STATE.host ? T('fleet.name_in_use', { name: t.name || 'TV' }) : (t.name || 'TV') }),
-        el('small', { textContent: t.host + ' · ' + facts }), step));
+        el('small', { textContent: t.host + ' · ' + facts }), step), box);
+    return row;
   }));
+  fleetSum();
+}
+function fleetSum() {                                                  // "2/3 TV picked", and the toggle says what it will do
+  const n = fleetChosen().length, every = fleetTvs.length && n === fleetTvs.length;
+  put('#fleetpicked', 'textContent', T('fleet.picked', { n, total: fleetTvs.length }));
+  put('#fleetall', 'textContent', T(every ? 'fleet.pick_none' : 'fleet.pick_all'));
 }
 $('#fleet').addEventListener('toggle', (e) => { if (e.target.open) fleetLoad(); });
 
@@ -89,15 +96,17 @@ async function fleetDo(action, pkg, what) {
   const r = await api('/api/fleet/do', { action, pkg, hosts: tvs.map((t) => t.host) });
   if (r) fleetFollow(r);
 }
-$('#fleetmore').addEventListener('click', (e) => popover(e.currentTarget, [
-  ['🏠', T('fleet.menu_welcome'), () => fleetWelcomeFile.click()],
-  ['💤', T('fleet.menu_welcome_off'), () => fleetDo('welcome_off', '', T('fleet.ask_welcome_off'))],
-  ['🗑', T('fleet.menu_remove'), () => fleetUninstall()],
-  ['🖼️', T('fleet.menu_launcher'), () => fleetLauncher()],
-  ['🔁', T('fleet.menu_restart'), () => fleetDo('reboot', '', T('fleet.ask_restart'))],
-  ['☑️', T('fleet.menu_select_all'), () => { fleetTvs.forEach((t) => fleetPick.add(t.host)); fleetDraw(); }],
-  ['↻', T('fleet.menu_reread'), () => fleetLoad()],
-]));
+// what can be done shows as buttons, not behind a ⋯: one look tells what this card is for
+$('#fleetwelcome').addEventListener('click', () => fleetWelcomeFile.click());
+$('#fleetwelcomeoff').addEventListener('click', () => fleetDo('welcome_off', '', T('fleet.ask_welcome_off')));
+$('#fleetremove').addEventListener('click', () => fleetUninstall());
+$('#fleetlaunch').addEventListener('click', () => fleetLauncher());
+$('#fleetreboot').addEventListener('click', () => fleetDo('reboot', '', T('fleet.ask_restart')));
+$('#fleetreread').addEventListener('click', () => fleetLoad());
+$('#fleetall').addEventListener('click', () => {
+  const every = fleetTvs.length && fleetTvs.every((t) => fleetPick.has(t.host));
+  fleetTvs.forEach((t) => (every ? fleetPick.delete(t.host) : fleetPick.add(t.host))); fleetDraw();
+});
 // the apps the user installed on the TVs ticked, most common first: one row each (its picture, its name, on how many TVs), tick the
 // ones to remove everywhere, then one question. TV Setup and Tailscale are not offered.
 function fleetUninstall() {
@@ -174,7 +183,7 @@ fleetWelcomeFile.addEventListener('change', () => {
   $('#infodlg').showModal();
 });
 function fleetWelcomeSend(f, tvs, cfg) {
-  const xhr = new XMLHttpRequest(), lbl = $('#fleetmore');
+  const xhr = new XMLHttpRequest(), lbl = $('#fleetwelcome');
   xhr.open('POST', '/api/fleet/welcome?name=' + encodeURIComponent(f.name) + '&hosts=' + encodeURIComponent(tvs.map((t) => t.host).join(',')) + '&cfg=' + encodeURIComponent(JSON.stringify(cfg)));
   xhr.setRequestHeader('Content-Type', 'application/octet-stream');
   xhr.upload.onprogress = (ev) => { if (ev.lengthComputable) lbl.dataset.busy = '⏳ ' + Math.round(ev.loaded * 100 / ev.total) + '%'; };

@@ -111,11 +111,13 @@ html:not(.tabbed) .panel { visibility:hidden; }   /* theme.js, setup.js */
 @media (min-width:900px) {
   main.wide { max-width:1800px; }   /* Remote tab: give the TV picture all the room there is */
 }
-#fleet { margin-top:12px; border-top:1px solid var(--line); padding-top:12px; }
-#fleet > summary { cursor:pointer; font-weight:600; }
-.fleetrow { display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-top:1px solid var(--line); cursor:pointer; }
-.fleetrow input { margin-top:4px; }
-.fleetrow .name { display:flex; flex-direction:column; gap:2px; min-width:0; }
+#fleetlist { gap:4px; }
+#fleetlist .item.pick { flex-wrap:nowrap; align-items:flex-start; padding:8px 10px; border-top:0; border-radius:10px; cursor:pointer; }
+#fleetlist .item.pick:hover:not(.on) { background:var(--btn); }
+#fleetlist .item.pick input { margin-top:4px; }
+.fleetrow .name { display:flex; flex:1 1 0; flex-direction:column; gap:2px; min-width:0; }
+.fleetdo { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:8px; }   /* every act in sight, none behind a ⋯ */
+.fleetdo > :is(button, label.filebtn) { justify-content:center; min-height:var(--ctl); padding:0 10px; font-size:14px; }
 .fleetrow small { color:var(--muted); overflow-wrap:anywhere; }
 .fleetrow.off b { color:var(--muted); }
 .fleetstep:empty { display:none; }
