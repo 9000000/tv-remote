@@ -2,6 +2,9 @@ package dev.tvremote.phone
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.widget.TextView
+import android.graphics.Typeface
+import android.graphics.Color
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -27,6 +30,7 @@ internal object TvStatus {
     @Volatile var shots = false
     val last = ConcurrentHashMap<String, FleetStatus.Status>()
     val thumbs = HashMap<String, ImageView>()                         // UI thread only
+    val cards = HashMap<String, Card>()                               // "Show screens": each saved TV's card (UI thread only)
     private val links = ConcurrentHashMap<String, Pair<String, AdbLink>>()   // saved TV -> (the address dialled, its link)
     private val used = ConcurrentHashMap<String, Long>()
     @Volatile var board: FleetStatus.Board? = null
@@ -103,32 +107,107 @@ internal fun MainActivity.statusLines(ip: String): Pair<String, String>? {
     if (s.state != FleetStatus.ON && s.state != FleetStatus.STANDBY) return null
     val state = if (s.state == FleetStatus.STANDBY) T("tvstat.standby")
         else listOf(T("tvstat.on"), if (s.app.isEmpty()) "" else if (s.home) T("tvstat.home") else T("tvstat.showing", "app" to s.appName)).filter { it.isNotEmpty() }.joinToString(" · ")
-    val room = if (TvStatus.shots) 14 else 24                         // one line, also beside the picture: a long model name wrapped to three
-    val model = if (s.model.length > room) s.model.take(room - 1).trimEnd() + "…" else s.model
+    val model = if (s.model.length > 24) s.model.take(23).trimEnd() + "…" else s.model   // one line: a long model name wrapped to three
     return "● $state" to listOf(model, if (s.android.isEmpty()) "" else "Android ${s.android}").filter { it.isNotEmpty() }.joinToString(" · ")
 }
 
-/** The picture slot at the end of a TV's row (hidden until "Show screens" is on and the TV is on). */
-internal fun MainActivity.addThumb(ip: String, line: LinearLayout, after: View) {
-    val v = ImageView(this)
-    v.scaleType = ImageView.ScaleType.CENTER_CROP
-    v.background = box(BTN, 8)
-    v.clipToOutline = true
-    v.outlineProvider = object : android.view.ViewOutlineProvider() {
-        override fun getOutline(v: View, o: android.graphics.Outline) = o.setRoundRect(0, 0, v.width, v.height, dp(8).toFloat())
+/** One TV's card while "Show screens" is on: its picture (or why there is none) with its name and state under it. */
+internal class Card(val pic: ImageView, val blank: TextView, val wake: View, val name: TextView, val state: TextView, val more: TextView)
+
+/** 16:9 whatever the card's width: the TV's own shape, so a picture is never cut. */
+private class Screen(c: android.content.Context) : android.widget.FrameLayout(c) {
+    override fun onMeasure(w: Int, h: Int) {
+        val wide = View.MeasureSpec.getSize(w)
+        super.onMeasure(w, View.MeasureSpec.makeMeasureSpec(wide * 9 / 16, View.MeasureSpec.EXACTLY))
     }
-    v.visibility = View.GONE
-    TvStatus.thumbs[ip] = v
-    line.addView(v, line.indexOfChild(after) + 1, LinearLayout.LayoutParams(dp(96), dp(54)).apply { leftMargin = dp(6); gravity = android.view.Gravity.CENTER_VERTICAL })
 }
 
-/** Shown for the TVs that are on while "Show screens" is on; the others hide theirs. */
-internal fun MainActivity.showThumbs() {
-    for ((ip, v) in TvStatus.thumbs) {
-        val on = TvStatus.shots && TvStatus.last[ip]?.state == FleetStatus.ON
-        v.visibility = if (on) View.VISIBLE else View.GONE
-        if (!on) v.setImageDrawable(null)
+/** The saved TVs as a grid of cards, two a row (a camera app's wall, smaller): tap one to open it, hold it or ✕ to remove it. */
+internal fun MainActivity.screenCards(ips: List<String>) {
+    for (pair in ips.chunked(2)) {
+        val line = LinearLayout(this)
+        line.layoutParams = gap(8)
+        for ((k, ip) in pair.withIndex()) line.addView(screenCard(ip), LinearLayout.LayoutParams(0, -2, 1f).apply { if (k == 1) leftMargin = dp(8) })
+        if (pair.size == 1) line.addView(View(this), LinearLayout.LayoutParams(0, 0, 1f).apply { leftMargin = dp(8) })
+        savedList.addView(line)
     }
+}
+
+private fun MainActivity.screenCard(ip: String): View {
+    val card = LinearLayout(this)
+    card.orientation = LinearLayout.VERTICAL
+    card.background = box(CARD, 14)
+    card.clipToOutline = true
+    card.isClickable = true
+    card.foreground = android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x33FFFFFF), null, box(Color.WHITE, 14))
+    card.setOnClickListener { connectSaved(ip) }
+    card.setOnLongClickListener { askRemove(ip); true }
+
+    val screen = Screen(this)
+    screen.setBackgroundColor(0xFF0B0C0F.toInt())
+    val pic = ImageView(this)
+    pic.scaleType = ImageView.ScaleType.CENTER_CROP
+    screen.addView(pic, android.widget.FrameLayout.LayoutParams(-1, -1))
+    val blank = label("", 12, MUTED)
+    blank.gravity = android.view.Gravity.CENTER
+    screen.addView(blank, android.widget.FrameLayout.LayoutParams(-1, -1))
+    val wake = icon("@power", T("remote.wake"), BTN)
+    wake.setOnClickListener { wake(ip) }
+    screen.addView(wake, android.widget.FrameLayout.LayoutParams(dp(44), dp(44), android.view.Gravity.CENTER))
+    val del = icon("@close", T("picker.remove_this_tv_from_the"), 0x99000000.toInt())
+    del.size = 16f
+    del.setOnClickListener { askRemove(ip) }
+    screen.addView(del, android.widget.FrameLayout.LayoutParams(dp(30), dp(30), android.view.Gravity.END or android.view.Gravity.TOP).apply { setMargins(0, dp(6), dp(6), 0) })
+    card.addView(screen, LinearLayout.LayoutParams(-1, -2))
+
+    val words = LinearLayout(this)
+    words.orientation = LinearLayout.VERTICAL
+    words.setPadding(dp(10), dp(8), dp(10), dp(10))
+    val one = { v: TextView -> v.setSingleLine(true); v.ellipsize = android.text.TextUtils.TruncateAt.END; v }
+    val name = one(label(name(ip).ifEmpty { ip }, 15, TEXT)).apply { typeface = Typeface.DEFAULT_BOLD }
+    val state = one(label("", 12, MUTED))
+    val more = one(label("", 12, MUTED))
+    words.addView(name); words.addView(state); words.addView(more)
+    card.addView(words)
+
+    val c = Card(pic, blank, wake, name, state, more)
+    TvStatus.cards[ip] = c
+    TvStatus.thumbs[ip] = pic
+    showCard(ip, c, reach[ip], reachWords(ip, reach[ip]))
+    return card
+}
+
+/** A card's words and what fills its picture: the TV's screen when it is on, else what it is doing, with Wake when it does not answer. */
+internal fun MainActivity.showCard(ip: String, c: Card, up: Boolean?, plain: String) {
+    val s = TvStatus.last[ip]?.takeIf { up != false && (it.state == FleetStatus.ON || it.state == FleetStatus.STANDBY) }
+    val on = s?.state == FleetStatus.ON
+    c.state.text = when {
+        s == null -> plain
+        on -> "● " + T("tvstat.on")
+        else -> "● " + T("tvstat.standby")
+    }
+    c.state.setTextColor(if (on) OK_TEXT else MUTED)
+    c.more.text = when {
+        s == null -> if (name(ip).isEmpty()) "" else ip
+        on && s.app.isNotEmpty() -> if (s.home) T("tvstat.home") else T("tvstat.showing", "app" to s.appName)
+        else -> listOf(s.model, if (s.android.isEmpty()) "" else "Android ${s.android}").filter { it.isNotEmpty() }.joinToString(" · ")
+    }
+    c.more.visibility = if (c.more.text.isEmpty()) View.GONE else View.VISIBLE
+    c.wake.visibility = if (up == false) View.VISIBLE else View.GONE
+    c.pic.visibility = if (on) View.VISIBLE else View.GONE
+    if (!on) c.pic.setImageDrawable(null)
+    c.blank.text = when {
+        up == false -> ""
+        on -> if (c.pic.drawable == null) "…" else ""
+        s != null -> T("tvstat.standby")
+        up == true -> T("tvstat.no_picture")
+        else -> "…"
+    }
+}
+
+/** The pictures follow the TVs' states (each round). */
+internal fun MainActivity.showThumbs() {
+    for (ip in TvStatus.cards.keys) showReach(ip, reach[ip])
 }
 
 private fun MainActivity.shotRound() {
@@ -148,7 +227,7 @@ private fun MainActivity.shotRound() {
                 } finally { TvStatus.gate.release() }
             } catch (ignored: Exception) {
             } finally {
-                ui.post { view.tag = null; bmp?.let { if (TvStatus.shots && view.visibility == View.VISIBLE) view.setImageBitmap(it) } }
+                ui.post { view.tag = null; bmp?.let { if (TvStatus.shots && view.visibility == View.VISIBLE) { view.setImageBitmap(it); TvStatus.cards[ip]?.blank?.text = "" } } }
             }
         }
     }
@@ -168,7 +247,7 @@ internal fun MainActivity.screensButton(): android.widget.Button {
         TvStatus.shots = !TvStatus.shots
         prefs.edit().putBoolean("tvshots", TvStatus.shots).apply()
         b.setOn(TvStatus.shots)
-        showThumbs()
+        refreshSaved()                                                // the list becomes a grid of pictures, or back
         ui.removeCallbacks(shotTick)
         if (TvStatus.shots) ui.post(shotTick)
     }

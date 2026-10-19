@@ -129,15 +129,19 @@ internal fun MainActivity.probeSaved() {
     if (host == null && !waking) statusStart()                // TvStatus.kt: on / standby / app under each name, its own 10 s round
 }
 
+/** The plain line under a saved TV: still asking, answering (and through which address), or not. */
+internal fun MainActivity.reachWords(ip: String, up: Boolean?): String = when (up) {
+    null -> T("picker.checking")
+    true -> route[ip].let { r -> if (r == null || r == ip) T("picker.reachable")
+        else if (r.startsWith("100.")) T("picker.reachable_through_tailscale") else T("picker.reachable_at_home") }
+    false -> if (awayFrom[ip] == true) T("picker.no_answer_you_are")
+        else T("picker.no_answer_tv_off")
+}
+
 internal fun MainActivity.showReach(ip: String, up: Boolean?) {
+    val status = reachWords(ip, up)
+    TvStatus.cards[ip]?.let { showCard(ip, it, up, status); return }   // "Show screens": a picture card (TvStatus.kt)
     val (b, wk) = savedRows[ip] ?: return
-    val status = when (up) {
-        null -> T("picker.checking")
-        true -> route[ip].let { r -> if (r == null || r == ip) T("picker.reachable")
-            else if (r.startsWith("100.")) T("picker.reachable_through_tailscale") else T("picker.reachable_at_home") }
-        false -> if (awayFrom[ip] == true) T("picker.no_answer_you_are")
-            else T("picker.no_answer_tv_off")
-    }
     val more = if (up == false) null else statusLines(ip)       // a TV that is on or in standby says so, with its model and the app (TvStatus.kt)
     val shown = more?.first ?: status
     val facts = more?.second.orEmpty()
@@ -150,12 +154,25 @@ internal fun MainActivity.showReach(ip: String, up: Boolean?) {
     wk.visibility = if (up == false) View.VISIBLE else View.GONE
 }
 
+internal fun MainActivity.askRemove(ip: String) {
+    Popup.Builder(this).setMessage(T("picker.remove_this_tv_from") + "\n" + title(ip) + (if (name(ip).isEmpty()) "" else " · $ip") + "\n\n" +
+            T("picker.nothing_changes_on_the"))
+        .setPositiveButton(T("picker.remove")) { _, _ ->
+            val ips = savedIps()
+            ips.remove(ip)
+            prefs.edit().putString("ips", TextUtils.join(",", ips)).also { e -> PER_TV.forEach { e.remove("$it:$ip") } }.remove("atv:$ip").apply()
+            refreshSaved()
+        }.setNegativeButton(T("common.cancel"), null).show()
+}
+
 internal fun MainActivity.refreshSaved() {
     foldSaved()
     savedList.removeAllViews()
     savedRows.clear()
     TvStatus.thumbs.clear()
-    for (ip in savedIps()) {
+    TvStatus.cards.clear()
+    if (TvStatus.shots && savedIps().isNotEmpty()) screenCards(savedIps())   // TvStatus.kt: a grid of pictures, two a row
+    else for (ip in savedIps()) {
         val b = row("") { connectSaved(ip) }
         val wk = icon("@power", T("remote.wake"), BTN)        // only offered while the TV does not answer
         wk.setOnClickListener { wake(ip) }
@@ -164,21 +181,11 @@ internal fun MainActivity.refreshSaved() {
         showReach(ip, reach[ip])
         val line = LinearLayout(this)
         line.addView(b, LinearLayout.LayoutParams(0, -2, 1f))
-        addThumb(ip, line, b)                                 // TvStatus.kt: a small picture of the TV, when "Show screens" is on
         val wp = LinearLayout.LayoutParams(dp(60), -1)
         wp.leftMargin = dp(6)
         line.addView(wk, wp)
         line.layoutParams = gap(6)
-        val ask = {
-            Popup.Builder(this).setMessage(T("picker.remove_this_tv_from") + "\n" + title(ip) + (if (name(ip).isEmpty()) "" else " · $ip") + "\n\n" +
-                    T("picker.nothing_changes_on_the"))
-                .setPositiveButton(T("picker.remove")) { _, _ ->
-                    val ips = savedIps()
-                    ips.remove(ip)
-                    prefs.edit().putString("ips", TextUtils.join(",", ips)).also { e -> PER_TV.forEach { e.remove("$it:$ip") } }.remove("atv:$ip").apply()
-                    refreshSaved()
-                }.setNegativeButton(T("common.cancel"), null).show()
-        }
+        val ask = { askRemove(ip) }
         val del = icon("@close", T("picker.remove_this_tv_from_the"), BTN)
         del.setOnClickListener { ask() }
         val dp2 = LinearLayout.LayoutParams(dp(48), -1)
@@ -187,7 +194,7 @@ internal fun MainActivity.refreshSaved() {
         b.setOnLongClickListener { ask(); true }
         savedList.addView(line)
     }
-    fleetBtn.visibility = if (savedList.childCount >= 2) View.VISIBLE else View.GONE
+    fleetBtn.visibility = if (savedIps().size >= 2) View.VISIBLE else View.GONE
     screensBtn.visibility = if (savedIps().isNotEmpty()) View.VISIBLE else View.GONE
     showThumbs()
     if (savedList.childCount == 0) savedList.addView(note(T("picker.no_tvs_yet_scan")))
