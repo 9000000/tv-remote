@@ -118,7 +118,7 @@ for page in (ROOT / "app/shared/web/index.html",):
         assert s2 != s or sprite in s, f"{page} has no <!-- icons:start --><!-- icons:end --> marker"
         page.write_text(s2)
 
-for app in ("android", "tv"):
+for app in ("android", "tv", "home"):
     out = ROOT / "app" / app / "src/main/res/drawable"
     for n, paths in ICONS.items():
         body = "".join(f'\n    <path android:pathData="{d}" android:strokeColor="#FFFFFFFF" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" />' for d in paths)

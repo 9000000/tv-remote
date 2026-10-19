@@ -1,4 +1,5 @@
 package dev.tvremote.core.ontv
+import dev.tvremote.update.Release
 import dev.tvremote.update.Ed25519
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
@@ -72,6 +73,17 @@ object Launchers {
      * The file for this TV. 64-bit only: the arm64 one. Otherwise the 32-bit one first, which installs on both (as FLauncher always
      * did here), then what the TV's list of ABIs names, last a file that has no native code ("any").
      */
+    /**
+     * TV Home, this project's own launcher (kind "self"): the file of the latest release, pinned by that release's signed SHA256SUMS
+     * (the release key, [Release.KEYS]) rather than by this list, so the list need not be signed again each release.
+     */
+    @Throws(IOException::class)
+    fun self(): Apk {
+        val r = try { Release.newer("0", "home", SELF_APK) } catch (e: IOException) { throw e } catch (e: Exception) { throw IOException(e.message, e) }
+        return r?.let { Apk("any", it.url, it.sha256) } ?: throw IOException("launcher:self")   // no release carries it yet
+    }
+    const val SELF_APK = "tv-home.apk"
+
     fun apk(e: Entry, abis: List<String>): Apk? {
         val order = if ("armeabi-v7a" in abis) listOf("armeabi-v7a") + abis.filter { it != "armeabi-v7a" && it != "armeabi" }
                     else abis.filter { it != "armeabi" }                  // 64-bit only, or another chip: what the TV names, never a file it cannot run
@@ -101,7 +113,7 @@ object Launchers {
                 e.getString("source"), e.optString("license"), kind, e.optJSONObject("apk")?.optString("version") ?: "", files,
                 e.optJSONObject("play")?.optString("url") ?: "", s.optBoolean("android_tv", true), s.optBoolean("google_tv", true), s.optInt("min_sdk", 21),
                 s.optBoolean("fire_os", false), words(s.optJSONObject("notes")))
-        }.filter { it.kind == "apk" || it.kind == "play" }, base)
+        }.filter { it.kind == "apk" || it.kind == "play" || it.kind == "self" }, base)
     } catch (e: org.json.JSONException) { throw IOException("launcher list: " + e.message) }
 
     @Volatile private var cache: Pair<Long, Gallery>? = null

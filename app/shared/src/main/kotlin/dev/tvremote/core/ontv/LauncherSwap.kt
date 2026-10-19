@@ -21,7 +21,7 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
         const val REC = "/data/local/tmp/tvr-launcher.json"
         const val CONFIRM_SEC = 30
         private const val HOMES = "cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME 2>/dev/null"
-        private const val RESOLVE_HOME = "cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN"
+        const val RESOLVE_HOME = "cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN"
         private val PKG = Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")
 
         fun last(out: String): String = out.split("\n").dropLastWhile { it.isBlank() }.lastOrNull()?.trim() ?: ""

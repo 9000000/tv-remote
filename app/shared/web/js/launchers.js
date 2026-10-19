@@ -29,6 +29,7 @@ function launchRow(l, fleet) {
     l.kind === 'play' ? null : ['⬇️', T('launcher.download'), () => open(l.source.replace(/\/$/, '') + '/releases/latest', '_blank', 'noopener')],
   ]) });
   const tags = el('div', { className: 'ltags' },
+    l.kind === 'self' ? launchTag(T('launcher.ours'), 'ours') : null,      // TV Home: made here, set up from here
     !fleet && l.in_use ? launchTag(T('launcher.in_use'), 'use') : null,
     fleet || l.in_use ? null : l.fit ? launchTag(T('launcher.fits')) : Object.assign(launchTag(T('launcher.nofit'), 'warn'), { title: launchWhy(l) }),
     l.kind === 'play' ? launchTag('▶ ' + T('launcher.badge_play'), 'play') : null, l.version ? launchTag(l.version) : null);
@@ -50,7 +51,7 @@ function launchDetails(l) {
     notes ? el('p', { className: 'note', textContent: notes }) : null,
     l.fit ? null : el('p', { className: 'warnline', textContent: launchWhy(l) }),
     el('p', { className: 'note' }, el('a', { href: l.kind === 'play' ? 'https://play.google.com/store/apps/details?id=' + encodeURIComponent(l.pkg) : l.source, target: '_blank', rel: 'noopener noreferrer', textContent: T(l.kind === 'play' ? 'launcher.source_play' : 'launcher.source') }),
-      ' · ' + T('launcher.license', { l: l.license }) + (l.version ? ' · ' + l.version : ''))));
+      (l.license ? ' · ' + T('launcher.license', { l: l.license }) : '') + (l.version ? ' · ' + l.version : ''))));
   d.addEventListener('close', () => d.remove());
   document.body.append(d); d.showModal();
 }

@@ -3,6 +3,30 @@
   "updated": "2026-10-19",
   "launchers": [
     {
+      "id": "tv-home",
+      "package": "dev.tvremote.home",
+      "name": "TV Home",
+      "desc": {
+        "vi": "Launcher của dự án này: đồng hồ, app yêu thích, hình nền. Chỉnh từ điện thoại hoặc máy tính, không quảng cáo.",
+        "en": "This project's own launcher: a clock, favourite apps, a background. Set up from the phone or computer, no ads."
+      },
+      "thumb": "tv-home.jpg",
+      "source": "https://github.com/HoangTran0410/tv-remote",
+      "license": "",
+      "kind": "self",
+      "supports": {
+        "android_tv": true,
+        "google_tv": true,
+        "min_sdk": 21,
+        "fire_os": false,
+        "notes": {
+          "vi": "Không đổi được màn hình chính trên Fire TV và một số TCL bán ở Trung Quốc.",
+          "en": "Cannot take Home on Fire TV and on some TCL sets sold in China."
+        }
+      },
+      "thumb_sha256": "90a37792e50fa99736e600124167c9bdd0b5731301510566d2aaadf10d81b541"
+    },
+    {
       "id": "flauncher",
       "package": "me.efesser.flauncher",
       "name": "FLauncher",
@@ -86,7 +110,7 @@
       },
       "thumb": "just-a-launcher.jpg",
       "source": "https://github.com/hungmi/just-a-launcher",
-      "license": "MIT",
+      "license": "",
       "kind": "apk",
       "apk": {
         "version": "0.9",

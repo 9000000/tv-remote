@@ -8,7 +8,7 @@ set -e
 cd "$(dirname "$0")/.."
 R="$HOME/.tv-remote-release"
 cmd=${1:-}; [ $# -gt 0 ] && shift
-places="ed25519.pem=$R/ed25519.pem ed25519-spare.pem=$R/ed25519-spare.pem launchers.key=$R/launchers.key android-signing.jks=app/android/signing.jks tv-signing.jks=app/tv/signing.jks"
+places="ed25519.pem=$R/ed25519.pem ed25519-spare.pem=$R/ed25519-spare.pem launchers.key=$R/launchers.key android-signing.jks=app/android/signing.jks tv-signing.jks=app/tv/signing.jks home-signing.jks=app/home/signing.jks"
 case "$cmd" in
   backup)  exec java dev/Keys.java pack "${1:-tv-remote-keys-$(date +%Y-%m-%d).tvrkeys}" $places ;;
   list)    exec java dev/Keys.java list "${1:?which file?}" ;;

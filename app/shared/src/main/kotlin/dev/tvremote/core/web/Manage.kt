@@ -103,6 +103,14 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "recents" -> if (!post) return HttpServer.Response.json(recents())
                 "screen/state" -> if (!post) return HttpServer.Response.json(JSONObject().put("off", ScreenOff.isOff { sh(it) }))
                 "dim" -> return HttpServer.Response.json(dev.tvremote.core.ontv.Dim.call({ sh(it) }, if (post) r.json() else null))
+                "home" -> return HttpServer.Response.json(dev.tvremote.core.ontv.Home.call({ sh(it) }, if (post) r.json() else null))   // TV Home's settings
+                "home/update" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Home.update(link.get(), dir, r.lang))
+                "home/photo" -> if (post) {                           // its background: a JPEG the page already made the screen's size
+                    if (r.length !in 1..6_000_000) throw IllegalArgumentException("photo too large")
+                    val b = ByteArray(r.length.toInt()); var off = 0
+                    while (off < b.size) { val n = r.body.read(b, off, b.size - off); if (n < 0) break; off += n }
+                    return HttpServer.Response.json(dev.tvremote.core.ontv.Home.photo(link.get(), b.copyOf(off)))
+                }
                 "speed" -> if (!post) return HttpServer.Response.json(dev.tvremote.core.ontv.SpeedTest.read { sh(it) })
                 "app/meta" -> {                                       // a name and whether /api/app/icon has a picture (the computer app answers it first)
                     val pkg = r.q("pkg")

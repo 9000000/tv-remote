@@ -41,6 +41,7 @@ Tested for real on a Sony BRAVIA (Android 9). Other brands are untested; LG, Sam
 - **Apps, files and health** (what runs, how much memory, the TV's own internet speed) on the TV, managed from your phone.
 - **Sleep timer, bedtime, app limits, volume limits and apps locked with a PIN** that run on the TV, so they work with every other device off.
 - **Scenes** (several steps in one tap), widget and Quick Settings tiles, game controller, Home Assistant and Siri Shortcuts.
+- **TV Home**, a home screen without ads, set up from your phone or computer: favourite apps, hidden apps, your own background. Or pick another launcher from the gallery.
 - **Optional extras on the TV** ("Optimize TV"): faster, lighter, and fully undoable.
 
 Every feature, with screenshots: [tvremote.pages.dev](https://tvremote.pages.dev/?lang=en).

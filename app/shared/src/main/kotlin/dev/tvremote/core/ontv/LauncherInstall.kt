@@ -46,8 +46,8 @@ class LauncherInstall(private val adb: Adb, private val dir: File, private val g
         val fit = Launchers.fits(e, f)
         if (!fit.ok) throw IOException("launcher:fit:" + fit.why)
         if (!installed(e.pkg)) {
-            if (e.kind != "apk") throw IOException("launcher:play")
-            val a = Launchers.apk(e, f.abis) ?: throw IOException("launcher:fit:abi")
+            if (e.kind == "play") throw IOException("launcher:play")
+            val a = if (e.kind == "self") Launchers.self() else Launchers.apk(e, f.abis) ?: throw IOException("launcher:fit:abi")
             val file = cached(dir, e, a)
             synchronized(DOWNLOAD) {                                  // several TVs at once: the first downloads, the others find the file
                 if (!(file.isFile && sha(file) == a.sha256)) Launchers.download(a, file, { progress?.at("download", it * 6 / 10) }, cancelled)
@@ -57,6 +57,9 @@ class LauncherInstall(private val adb: Adb, private val dir: File, private val g
             val out = try { Setup(adb, dir, lang) { }.install(file) } finally { if (cancelled()) file.delete() }
             if (!out.contains("Success")) throw IOException("launcher:install:" + out.trim().lines().lastOrNull().orEmpty().take(200))
             if (!installed(e.pkg)) throw IOException("launcher:install:removed by the TV right after install")   // some boxes drop apps they do not allow
+            progress?.at("install", 75)
+            // compiled ahead now, not on first use: a home screen started cold on a slow TV chip took ~1.6 s, 0.4 s compiled (cleanyourtv #40)
+            try { adb.shell("cmd package compile -m speed -f ${e.pkg} >/dev/null 2>&1", 120000) } catch (x: IOException) { }
         }
         progress?.at("swap", 85)
         if (cancelled()) throw IOException("stopped")

@@ -172,3 +172,11 @@ section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* 
 .fchips.dimc { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; overflow:visible; }
 .fchips.dimc button { display:inline-flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap; min-width:0; }
 .dimc i { width:14px; height:14px; border-radius:50%; background:var(--c); border:1px solid var(--line); flex:none; }
+.homewalls i { width:14px; height:14px; border-radius:50%; background:var(--c); border:1px solid var(--line); flex:none; }
+.fchips.homewalls { display:grid; grid-template-columns:repeat(auto-fill, minmax(104px, 1fr)); overflow:visible; }
+.homewalls button { display:inline-flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap; min-width:0; }
+.homeask .item { flex-wrap:nowrap; }
+.homeask .item .name { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.homeask .item .acts { flex:none; gap:6px; }
+.homeask .item .acts button { min-width:0; padding:0 12px; }
+.homeask .item .acts .iconbtn { padding:0; }

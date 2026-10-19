@@ -17,6 +17,9 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Thư viện launcher: thẻ có ảnh màn hình chính thật cỡ lớn, nút ⋯ (Chi tiết, Mã nguồn / CH Play, Tải APK); sửa lỗi các launcher từ thứ hai trở đi không có nút Cài.
 - Sức khỏe: Lỗi app nằm trong Lịch sử; nút Giải phóng RAM lên góc thẻ Tải hệ thống. Tất cả cài đặt: mỗi nhóm là một khối riêng, dễ nhìn.
 - App có nhãn 🔒 Cần giữ không còn nút Dừng / Xóa dữ liệu / Tắt / Gỡ (cả khi làm hàng loạt); nhãn này giờ gồm cả app riêng của hãng TV mà TV cần (remote, nguồn vào…). Chi tiết app: nút Cho phép / Không của quyền không còn bị cắt trên Mac; quyền trùng tên (Vị trí, Thiết bị ở gần) ghi thêm tên gốc.
+- 🏠 TV Home: launcher riêng của dự án, đứng đầu Thư viện launcher (cài và dùng một chạm, lỗi thì TV tự quay về bản cũ). Đồng hồ, lời chào, nút Nguồn vào / Mạng / Cài đặt, hàng app yêu thích và lưới app; giữ OK trên app để ghim, dời, ẩn. Không quảng cáo. Chỉnh từ điện thoại hoặc máy tính (tab TV → 🏠 → Tùy chỉnh TV Home): app yêu thích, app ẩn, hình nền (có sẵn hoặc ảnh của bạn), đồng hồ 12/24 giờ; TV đổi ngay. Có nút Cập nhật TV Home khi có bản mới
+- Launcher cài từ thư viện được biên dịch sẵn ngay khi cài: mở lần đầu nhanh hơn trên TV yếu
+- APK app điện thoại nhỏ hơn khoảng 1 MB (bỏ bản cho chip x86 32-bit)
 
 **English**
 
@@ -29,6 +32,9 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Launcher gallery: cards with a large picture of the real home screen, and ⋯ (Details, Source / Play page, Download the APK); fixed the launchers after the first having no Install button.
 - Health: App errors are under History; Free up RAM sits at the top of System load. All settings: each group is a box of its own.
 - Apps marked 🔒 Must keep no longer offer Stop / Clear data / Turn off / Remove (in bulk too), and the mark now covers the brands' own apps the TV needs (remote, inputs…). App details: a permission's Allow / No is no longer cut off on a Mac; permissions sharing a name (Location, Nearby devices) show their own name under it.
+- 🏠 TV Home: this project's own launcher, first in the Launcher gallery (one tap to install and use; if it fails the TV goes back on its own). A clock, a greeting, Inputs / Network / Settings buttons, a row of favourite apps and the app grid; hold OK on an app to pin, move or hide it. No ads. Set up from the phone or computer (TV tab → 🏠 → Customize TV Home): favourites, hidden apps, the background (built-in or your own photo), a 12/24-hour clock; the TV changes at once. An Update TV Home button shows when there is a new one
+- A launcher installed from the gallery is compiled at install: it opens faster the first time on a slow TV
+- The phone app's APK is about 1 MB smaller (no build for 32-bit x86 chips)
 
 ## 0.12.0 - 2026-10-19
 

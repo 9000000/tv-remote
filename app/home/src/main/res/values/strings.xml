@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TV Home</string>
+    <string name="inputs">Inputs</string>
+    <string name="settings">Settings</string>
+    <string name="wifi">Wi-Fi</string>
+    <string name="cable">Ethernet</string>
+    <string name="offline">Offline</string>
+    <string name="apps">Apps</string>
+    <string name="dock_empty">Hold OK on an app to pin it here</string>
+    <string name="pin">Pin to favourites</string>
+    <string name="unpin">Remove from favourites</string>
+    <string name="left">Move left</string>
+    <string name="right">Move right</string>
+    <string name="hide">Hide</string>
+    <string name="info">App info</string>
+    <string name="hidden">Hidden apps (%d)</string>
+    <string name="show">Show again</string>
+    <string name="dock_full">Favourites are full (%d apps)</string>
+    <string name="no_inputs">No inputs found</string>
+    <string name="no_open">This app could not be opened</string>
+    <string name="morning">Good morning</string>
+    <string name="afternoon">Good afternoon</string>
+    <string name="evening">Good evening</string>
+</resources>

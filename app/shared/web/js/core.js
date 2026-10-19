@@ -226,8 +226,11 @@ const FRIENDLY = [
   [/launcher:rolledback:(\w+)/, (m) => T('core.fr_launcher_back', { why: T(LAUNCH_WENT[m[1]] || 'launcher.why_user') })],
   [/launcher:home/, T('core.fr_launcher_home')],
   [/launcher:play/, T('core.fr_launcher_play')],
+  [/launcher:self/, T('core.fr_launcher_self')],
   [/launcher:fit/, T('core.fr_launcher_fit')],
   [/launcher:install:(.*)/, (m) => T('core.fr_launcher_install', { msg: friendly(m[1]) })],
+  [/home:missing/, T('core.fr_home_missing')],
+  [/home:photo/, T('core.fr_home_photo')],
   [/launcher list not signed/i, T('core.fr_launcher_list')],
   [/launcher file does not match/i, T('core.fr_launcher_file')],
 ];

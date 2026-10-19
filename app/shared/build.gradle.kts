@@ -10,6 +10,7 @@ android {
     defaultConfig { minSdk = 21 }
     // assets/scrcpy-server.jar is started on the TV for the picture and the input; web/index.html is the page the apps serve
     sourceSets["main"].assets.srcDirs("assets", "web")
+    sourceSets["main"].java.srcDirs("src/home/kotlin")                 // HomeConfig: TV Home's settings, compiled into app/home too
     compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11 }
     kotlinOptions { jvmTarget = "11" }
 }

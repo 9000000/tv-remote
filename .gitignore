@@ -2,7 +2,7 @@
 cert.pem
 key.pem
 *.pem
-# signing keys of the two Android apps: whoever has them can publish updates under the apps' names
+# signing keys of the Android apps: whoever has them can publish updates under the apps' names
 *.jks
 # this machine's own data and downloads
 tvs.json
@@ -23,6 +23,7 @@ app/gradle/local.properties
 # APKs are attached to releases, never committed
 app/android/*.apk
 app/tv/*.apk
+app/home/*.apk
 *.tvrkeys
 
 # dev/layout.js: Playwright, installed with npm install --prefix dev playwright

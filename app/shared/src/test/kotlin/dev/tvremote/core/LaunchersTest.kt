@@ -36,8 +36,11 @@ class LaunchersTest {
         for (e in g.entries) {
             assertTrue(e.id, e.desc("vi").isNotEmpty() && e.desc("en").isNotEmpty())
             assertTrue(e.id, e.thumbSha.length == 64)
-            if (e.kind == "apk") assertTrue(e.id, e.files.isNotEmpty() && e.files.all { it.url.startsWith("https://") && it.sha256.length == 64 })
-            else assertTrue(e.playUrl.startsWith("market://details?id=" + e.pkg))
+            when (e.kind) {
+                "apk" -> assertTrue(e.id, e.files.isNotEmpty() && e.files.all { it.url.startsWith("https://") && it.sha256.length == 64 })
+                "self" -> assertEquals(e.id, "dev.tvremote.home", e.pkg)       // its file is pinned by the release's signed SHA256SUMS
+                else -> assertTrue(e.playUrl.startsWith("market://details?id=" + e.pkg))
+            }
         }
     }
 
@@ -58,6 +61,12 @@ class LaunchersTest {
         assertEquals("sdk", Launchers.fits(e("projectivy"), tv(sdk = 22)).why)
         assertTrue(Launchers.fits(e("just-a-launcher"), tv(abis = "x86_64")).ok)    // no native code: any chip
         assertEquals("abi", Launchers.fits(e("flauncher"), tv(abis = "x86_64")).why)
+    }
+
+    @Test fun tvHomeComesFirstAndFitsEveryChip() {
+        assertEquals("tv-home", Launchers.parse(list).entries.first().id)
+        assertTrue(Launchers.fits(e("tv-home"), tv(abis = "x86_64")).ok)       // no native code, and no file listed to pick from
+        assertEquals("fire", Launchers.fits(e("tv-home"), tv(fire = true)).why)
     }
 
     @Test fun the32BitFileIsPreferredWhereBothRun() {

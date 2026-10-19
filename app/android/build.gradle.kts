@@ -20,6 +20,8 @@ android {
         resValue("string", "released", LocalDate.now().toString())   // shown next to the version
         // 100000 +: above every code of the numbers before the restart at 0.1.0 (2.24.x was 22400), so Android installs over them
         versionCode = appVersion.split(".").map { it.toInt() }.let { 100000 + it[0] * 10000 + it[1] * 100 + it[2] }
+        // Conscrypt's native code is 2/3 of the APK: no 32-bit x86 (no phone has one); x86_64 stays for emulators on Intel and Chromebooks
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
     }
     signingConfigs {
         create("release") {

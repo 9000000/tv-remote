@@ -12,6 +12,7 @@ plugins {
 kotlin {
     jvmToolchain(17)
     sourceSets["main"].kotlin.srcDir("../shared/src/main/kotlin")
+    sourceSets["main"].kotlin.srcDir("../shared/src/home/kotlin")     // HomeConfig: TV Home's settings
     sourceSets["main"].kotlin.srcDir("../shared/conscrypt")           // ConscryptBackend: TLS 1.3 for Wireless debugging (core/AdbTls.kt)
 }
 // Android only: decoding the picture and sound (TvAndroid, AudioOut), the QR bitmap. Meta and Caps, started on the TV, are Java

@@ -241,6 +241,7 @@ Nút **📺 Đổi TV** ở thanh trên quay về danh sách TV.
 - **🔅 Giảm độ sáng** (*Hẹn giờ tắt* → *Giảm độ sáng*): phủ màu Tối, Lọc xanh, Vàng, Nâu cổ, Đỏ đêm hoặc Xanh lên mọi app, độ mạnh 5–90%. Màn OLED tối thật; màn LCD vẫn sáng đèn nền nhưng màu ấm bớt ánh sáng xanh. Cần TV Setup.
 - **🔒 Khóa app bằng mã PIN** (tab Tự động): mở app đã khóa thì TV hỏi PIN; sang app khác hoặc TV tắt là khóa lại. Cần TV Setup.
 - **⚡ Đo tốc độ mạng** (Sức khỏe → 📶 Mạng): TV tự đo độ trễ, tải xuống, tải lên của chính nó.
+- **🏠 TV Home** (tab TV → 🏠 → Thư viện launcher): màn hình chính riêng của dự án, không quảng cáo: đồng hồ, app yêu thích, lưới app, nút Nguồn vào / Mạng / Cài đặt. Chỉnh từ điện thoại / máy tính bằng *Tùy chỉnh TV Home*: app yêu thích, app ẩn, hình nền (cả ảnh của bạn), đồng hồ 12/24 giờ. Lỗi thì TV tự quay về màn hình chính cũ.
 - **📱 App đang chạy** (tab Sức khỏe): app nào đang chạy, chạy ngầm, tốn bao nhiêu RAM; bấm ⏹ Dừng để tắt một app. Chỉ dừng được app người dùng cài hoặc có trên màn hình chính; màn hình chính, bàn phím, phần của Android, TV Remote và Tailscale có 🔒 Cần giữ.
 - **🧹 Báo khi RAM đầy** (tab Tự động, mặc định tắt): RAM dùng quá mức chọn (80–95%) thì TV hiện bảng đè lên app đang xem: Dọn RAM, Xem app hoặc Bỏ qua. Cần TV Setup.
 - **🔊 Giới hạn âm lượng** (tab Tự động): chọn các khoảng giờ và mức tối đa mỗi khoảng, vd 22:00 – 06:00 tối đa 30%. Ai tăng quá mức thì TV hạ lại và báo trên màn hình vì sao. Cần TV Setup; TV mà âm lượng do loa ngoài giữ (qua HDMI) thì không giới hạn được.

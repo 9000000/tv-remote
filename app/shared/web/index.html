@@ -370,8 +370,11 @@
       <section class="card" data-adb-gated id="launchcard">
         <h2 data-i18n="launcher.title">🏠 Màn hình chính</h2>
         <p class="note" data-i18n="launcher.note">Đổi giao diện màn hình chính của TV. Launcher mới lỗi thì TV tự quay về bản cũ.</p>
+        <p class="state" id="homestate" hidden></p>
         <div class="actions">
           <button class="primary" id="launchopen" data-i18n="launcher.open">🖼️ Thư viện launcher</button>
+          <button id="homeopen" hidden data-i18n="home.customize">Tùy chỉnh TV Home</button>
+          <button id="homeupd" hidden></button>
           <button id="launchback" data-i18n="launcher.back">↩ Về launcher của TV</button>
         </div>
       </section>
@@ -529,6 +532,7 @@
 <script src="js/diagnose.js"></script>
 <script src="js/setup.js"></script>
 <script src="js/launchers.js"></script>
+<script src="js/home.js"></script>
 <script src="js/tvset.js"></script>
 <script src="js/fleet.js"></script>
 <script src="js/tvstatus.js"></script>

@@ -73,8 +73,11 @@ def check():
         elif e["kind"] == "play":
             if not e["play"]["url"].startswith("market://details?id=" + e["package"]):
                 fail("%s: play.url must open this package" % i)
+        elif e["kind"] == "self":                                      # TV Home: its file comes from the latest release, pinned by the signed SHA256SUMS
+            if e["package"] != "dev.tvremote.home":
+                fail("%s: kind self is only TV Home" % i)
         else:
-            fail("%s: kind must be apk or play" % i)
+            fail("%s: kind must be apk, play or self" % i)
     return d
 
 

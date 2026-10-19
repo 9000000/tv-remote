@@ -356,7 +356,7 @@ function showTab(t) {
   if (t === 'tv' && CORE === 'pc') loadSteps();
   if (t === 'health') loadHealth();
   if (t === 'auto') autoTab();
-  if (t === 'tv') { tsState(); loadTvset(); loadPaired(); }
+  if (t === 'tv') { tsState(); loadTvset(); loadPaired(); homeCard(); }
 }
 document.querySelectorAll('[data-tab]').forEach((b) => { b.id = 'tab-' + b.dataset.tab; b.addEventListener('click', () => showTab(b.dataset.tab)); });
 document.querySelectorAll('[data-panel]').forEach((p) => { p.setAttribute('role', 'tabpanel'); p.setAttribute('aria-labelledby', 'tab-' + p.dataset.panel); });

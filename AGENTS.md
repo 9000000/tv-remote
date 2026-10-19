@@ -14,6 +14,7 @@ names (README, code comments, the site; Vietnamese in brackets):
 | **Computer app** (App máy tính) | `app/desktop` (Kotlin, JVM) | `pc` | "TV Remote" for Mac, Windows, Linux: `Server.kt` on `127.0.0.1:8765`, shown in its own window (the system's web view, `Window.kt`) |
 | **TV app** (App TV) | `app/tv` | | the app on the TV, shown as "TV Setup" (keep that label: it is on installed TVs, Downloader codes and file names) |
 | **TV web page** (Web của TV) | `app/tv` `RemoteService` | `tv` | the web UI the TV app serves on port 8765, for any browser (iPhone included), after a 6-digit pairing code |
+| **TV Home** | `app/home` | | the project's own launcher (`dev.tvremote.home`), first in the launcher gallery; set up from every client over ADB |
 
 What each can do, and diagrams of how they connect: README "Three apps and a web page" / README.vi "Ba app và một trang web".
 Keep that table true when a feature lands on only some of them.
@@ -60,7 +61,12 @@ app/tv/                  TV Setup: MainActivity (the TV screen), RemoteService (
                          Rules + Guard + RulesReceiver + WarnActivity (sleep timer, bedtime, app limits, the full memory notice), DnsWatch (turns off a
                          DNS filter that cut the TV off), DrawLayer + DrawReceiver (the drawing over every app), NotifyLayer + NotifyReceiver (the message card in a corner; `Notify.kt` in the shared code is the one place its corner / seconds are clamped), KeepAdb (ADB debugging
                          back on when switched off, with WRITE_SECURE_SETTINGS granted through ADB)
-app/gradle/              the Gradle build of everything Kotlin (settings point at ../shared, ../android, ../tv, ../desktop); open it in Android Studio
+app/home/                TV Home, the launcher: plain Views, no :shared (it would pack the web UI); HomeActivity (clock, dock,
+                         grid, long-press menu), Apps, Store (prefs), HomeReceiver (`--es set <b64 json>`, DUMP-protected, like
+                         RulesReceiver). Its settings' shape is ONE file, `app/shared/src/home/kotlin/.../HomeConfig.kt`, compiled
+                         into :shared, :desktop and :home; the clients' side is `core/ontv/Home.kt` + `/api/home` + `js/home.js`.
+                         In the gallery it is kind "self": its APK is the latest release's `tv-home.apk`, pinned by SHA256SUMS
+app/gradle/              the Gradle build of everything Kotlin (settings point at ../shared, ../android, ../tv, ../home, ../desktop); open it in Android Studio
 app/desktop/             the computer app on the shared Kotlin core (JVM, no adb/Python/ffmpeg), the "pc" core: Server.kt
                          (the routes only the computer has) + Manage.kt; Pass.kt (a key per start, in the link the window and browser open: tests pass `TVR_PASS` and `?k=`); Updater.kt (updates itself from releases, swapped in by a script once it quits); Window.kt shows the page in the system's web view
                          (native/: webview, kept in git, native/README.md). `./gradlew :desktop:installDist`, then
@@ -132,7 +138,8 @@ that into one question with an Update / Install TV Setup button (`needSetup()` i
 
 ## Versions and releases
 
-Three numbers, each bumped only when its part changes: `VERSION` (every release; the tag and the computer app), `app/android/VERSION`, `app/tv/VERSION`.
+Four numbers, each bumped only when its part changes: `VERSION` (every release; the tag and the computer app), `app/android/VERSION`, `app/tv/VERSION`,
+`app/home/VERSION` (TV Home: `app/home` or `app/shared/src/home` changed; its key `app/home/signing.jks`, backed up by `dev/keys.sh`).
 
 The apps are an alpha: the numbers stay 0.x until the user calls a release 1.0.0. Patch (the default) for fixes and small changes,
 `BUMP=minor` for a release with new features, `BUMP=major` only when the user says so. The numbers restarted at 0.1.0 in October 2026
