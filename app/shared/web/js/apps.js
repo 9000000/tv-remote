@@ -298,12 +298,11 @@ function aiPrompt(r) {
   ]).filter((l, i, a) => l !== '' || a[i - 1] !== '').join('\n');
 }
 $('#aiapps').addEventListener('click', async (e) => {                // the TV's memory survey takes a few seconds: the button says so until the text is ready
-  const b = e.currentTarget, was = [...b.childNodes];
-  b.disabled = true; b.replaceChildren(el('span', { className: 'minispin' }), el('span', { textContent: T('apps.getting_list') }));
+  const done = UI.busy(e.currentTarget, T('apps.getting_list'));
   try {
     const r = await api('/api/apps/report'); if (!r) return;
     $('#aitext').value = aiPrompt(r); $('#aidlg').showModal();
-  } finally { b.disabled = false; b.replaceChildren(...was); }
+  } finally { done(); }
 });
 $('#aiclose').addEventListener('click', () => $('#aidlg').close());
 $('#aicopy').addEventListener('click', async () => {

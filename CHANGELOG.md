@@ -8,6 +8,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 
+- Nút đang làm việc (Quét Wi-Fi, Kết nối lại, lấy danh sách app...) hiện vòng xoay thay cho icon, trên cả app điện thoại lẫn trang web
 - Màn điều khiển: phần bàn phím không còn tự hiện khi vừa vào (app điện thoại) và không tự mở lại lần sau; chỉ mở khi bấm ⌨️
 - Danh sách TV thấy tình trạng từng TV ngay, không cần kết nối: bật / chờ / không thấy, kiểu máy và Android, app đang mở (TV cần ADB còn có thời gian chạy và RAM trống); TV chỉ có điều khiển hoặc LG / Samsung / Roku thì chỉ hiện điều giao thức cho biết, không báo lỗi. Làm mới nền mỗi 10 giây, dừng khi không xem. Nút "Xem màn hình" (mặc định tắt) hiện ảnh nhỏ của từng TV đang bật mỗi 5 giây; bấm vào TV để mở như cũ. App máy tính và app điện thoại.
 - TV Android 11+ chỉ có Gỡ lỗi không dây (không có cổng 5555): app điện thoại và máy tính tìm thấy TV qua mDNS thay vì báo "không thấy TV", chẩn đoán nói rõ "TV này chỉ có Gỡ lỗi không dây" và mở thẳng màn ghép nối bằng mã 6 số; cổng đổi mỗi lần bật thì tìm lại.
@@ -27,6 +28,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **English**
 
+- A button at work (Scan the Wi-Fi, Retry the connection, getting the app list...) shows a turning ring in its icon's place, in the Phone app and on the page
 - Remote screen: the keyboard part no longer shows on its own when the screen opens (Phone app) or reopens next time; only ⌨️ opens it
 - The TV list shows each TV's state without connecting: on / standby / no answer, model and Android, the app open (a TV with ADB also its uptime and free memory); keys-only, LG, Samsung and Roku TVs show only what their protocol tells, never an error. Refreshed in the background every 10 s, paused when not looked at. A "Show screens" button (off by default) shows a small picture of each TV that is on every 5 s; tap a TV to open it as before. Computer app and phone app.
 - Android 11+ TVs with only Wireless debugging (no port 5555): the phone and computer apps find the TV by mDNS instead of saying "no TV found", the self-check says "This TV only has Wireless debugging" and opens the 6-digit pairing screen; the port changes on every switch-on, so it is looked up again.

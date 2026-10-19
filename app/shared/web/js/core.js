@@ -427,9 +427,9 @@ function buildBanner() {
   if (ADB.state === 'none') return el('span');                        // LG / Samsung: no ADB to turn on
   const set = CORE === 'pc' ? BANNERS : BANNERS_TV, [cls, title, text] = set[ADB.state] || set.unknown;
   const retry = el('button', { className: 'small primary', textContent: T('core.retry_connection'), onclick: async (e) => {
-    const b = e.currentTarget, label = b.textContent; b.disabled = true; b.textContent = T('core.connecting');
+    const done = UI.busy(e.currentTarget, T('core.connecting'));
     const r = await api('/api/adb/connect', {}); if (r) { ADB = r; bannerKey = ''; applyAdb(); refresh(); }
-    b.disabled = false; b.textContent = label;
+    done();
   } });
   if (ADB.state === 'unknown' || !ADB.state) {                       // still connecting: a quiet line, Retry only once it drags on
     retry.className = 'small'; retry.textContent = T('core.try_again'); retry.hidden = true;

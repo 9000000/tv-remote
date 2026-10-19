@@ -266,7 +266,7 @@ function scanRow(f) {
 // The scan runs on the computer; asked again every 400 ms, each TV shows up as soon as it answers instead of after the
 // whole network (and a second pass when the first finds nothing)
 $('#scan').addEventListener('click', async () => {
-  const b = $('#scan'), list = $('#scanlist'); b.disabled = true; b.textContent = T('setup.scanning'); list.replaceChildren(); put('#scaninfo', 'textContent', '');
+  const list = $('#scanlist'), done = UI.busy($('#scan'), T('setup.scanning')); list.replaceChildren(); put('#scaninfo', 'textContent', '');
   let r = await api('/api/discover?new=1');
   while (r) {
     for (const f of r.found) {                                        // one row per TV: a saved one is known by both its addresses
@@ -278,7 +278,7 @@ $('#scan').addEventListener('click', async () => {
     await sleep(400);
     r = await api('/api/discover', null, true);
   }
-  b.disabled = false; b.textContent = T('page.scan'); if (!r) return;
+  done(); if (!r) return;
   put('#scaninfo', 'textContent', r.found.length ? '' : T('setup.no_tv_found'));
 });
 $('#ipf').addEventListener('submit', (e) => { e.preventDefault(); const ip = $('#ipin').value.trim(); if (ip) selectTv(ip); });

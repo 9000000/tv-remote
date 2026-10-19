@@ -213,7 +213,7 @@ private val MOBILE = Regex("^(rmnet|ccmni|pdp|v4-|clat|seth|wwan|tun|ppp|ipsec)"
 
 internal fun MainActivity.scan() {
     scanBtn.isEnabled = false
-    scanBtn.text = T("picker.scanning")
+    scanBtn.setBusy(T("picker.scanning"))
     foundList.removeAllViews()
     Thread {
         val nets = ArrayList<String>()

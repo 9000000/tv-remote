@@ -42,6 +42,8 @@ form.line button { padding:0 16px; }
 .term .cmd { color:#7fb0ff; }
 .term .err { color:#ff8a80; }
 .mono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:14px; }
+.minispin { display:inline-block; width:14px; height:14px; margin-right:8px; vertical-align:-2px; border-radius:50%; border:2px solid var(--muted); border-top-color:var(--accent); animation:spin .9s linear infinite; }
+button .minispin { border-color:currentColor; border-right-color:transparent; }   /* UI.busy: in the button's own colour, seen on the blue fill too */
 @keyframes spin { to { transform:rotate(360deg); } }
 .state { font-size:16px; font-weight:600; margin:0 0 10px; }
 .state:empty { display:none; }

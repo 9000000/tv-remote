@@ -165,6 +165,40 @@ internal fun TextView.setLabel(s: String) {
     post { IconBesideText.place(this) }                               // new words on a button of the same size: no layout follows
 }
 
+/** [setLabel] with a turning ring in the icon's place: a button that is busy (Scan the Wi-Fi) shows it is, not only says so. */
+internal fun TextView.setBusy(s: String) {
+    text = s.replace(Regex("^[^\\p{L}\\p{N}]+"), "")                     // its ⏳ would be a second icon
+    val z = (textSize * 1.25f).roundToInt()
+    val d = Spin(currentTextColor, z / 7f)
+    d.setBounds(0, 0, z, z)
+    setCompoundDrawablesRelative(d, null, null, null)
+    compoundDrawablePadding = (10 * resources.displayMetrics.density).roundToInt()
+    removeOnLayoutChangeListener(IconBesideText); addOnLayoutChangeListener(IconBesideText)
+    post { IconBesideText.place(this) }
+    d.start()
+}
+
+/** A three-quarter ring that turns once a second, until the button's next [setLabel] drops it. */
+private class Spin(color: Int, width: Float) : android.graphics.drawable.Drawable(), android.graphics.drawable.Animatable {
+    private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        style = android.graphics.Paint.Style.STROKE; strokeWidth = width; strokeCap = android.graphics.Paint.Cap.ROUND; this.color = color
+    }
+    private val turn = android.animation.ValueAnimator.ofFloat(0f, 360f).apply {
+        duration = 1000; repeatCount = android.animation.ValueAnimator.INFINITE; interpolator = android.view.animation.LinearInterpolator()
+        addUpdateListener { if (callback == null) cancel() else invalidateSelf() }   // gone from the button: stop turning
+    }
+    override fun draw(c: android.graphics.Canvas) {
+        val r = android.graphics.RectF(bounds); val w = paint.strokeWidth / 2; r.inset(w, w)
+        c.drawArc(r, turn.animatedValue as Float, 270f, false, paint)
+    }
+    override fun setAlpha(a: Int) { paint.alpha = a }
+    override fun setColorFilter(f: android.graphics.ColorFilter?) { paint.colorFilter = f }
+    @Deprecated("Deprecated in Java") override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
+    override fun start() = turn.start()
+    override fun stop() = turn.cancel()
+    override fun isRunning() = turn.isRunning
+}
+
 /** A compound icon is drawn at the padding's edge while centred words sit in the middle: on a wide button the two drift
  *  apart. Moved (its bounds, not its room) to just before the words, so icon and words are centred together, as on the page. */
 private object IconBesideText : View.OnLayoutChangeListener {

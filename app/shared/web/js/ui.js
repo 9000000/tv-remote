@@ -12,6 +12,7 @@
 //   list        div.list of div.item: icon, name (+ small line), acts
 //   line        div.line: a field and the button beside it (--ctl)
 //   chips       div.places: a choice among several, the current one .on (--chip)
+//   busy        UI.busy(button, words): a turning ring and what it does, until the returned function puts it back
 //   actions     div.actions: a card's main buttons (--ctl); tools in a head and acts in a list are .small (--ctl-sm)
 //
 // No style="" or style: in markup: a look that is needed twice is a class here and in css/kit.css ("UI kit").
@@ -27,6 +28,12 @@ const UI = {
   head: (title, ...tools) => el('div', { className: 'card-head' }, typeof title === 'string' ? el('h2', { textContent: title }) : title,
     tools.length ? el('div', { className: 'tools' }, ...tools) : null),
   /** A card with only a line in it: still reading, or nothing to show */
+  /** A button at work: a turning ring in its icon's place and words of what it does; the returned function puts it back */
+  busy(b, words) {
+    const was = [...b.childNodes];
+    b.disabled = true; b.replaceChildren(el('span', { className: 'minispin' }), el('span', { textContent: words.replace(/^[^\p{L}\p{N}]+/u, '') }));   // its ⏳ would be a second icon
+    return () => { b.disabled = false; b.replaceChildren(...was); };
+  },
   say: (text, cls = 'note') => el('section', { className: 'card' }, el('p', { className: cls, textContent: text })),
   group: (title, ...body) => el('div', { className: 'group' }, title ? el('h3', { textContent: title }) : null, ...body),
   note: (text) => el('p', { className: 'note', textContent: text }),
