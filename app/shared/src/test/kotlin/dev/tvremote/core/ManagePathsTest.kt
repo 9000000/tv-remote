@@ -37,6 +37,18 @@ Total PSS by OOM adjustment:
 """
         assertEquals(listOf("com.google.android.youtube.tv" to 116, "com.google.android.katniss" to 110), Manage.memoryByApp(sample))
         assertEquals(emptyList<Pair<String, Int>>(), Manage.memoryByApp("nothing"))
+        val oom = """Total RSS by OOM adjustment:
+    200,000K: com.google.android.youtube.tv (pid 4709 / activities)
+
+Total PSS by OOM adjustment:
+    150,000K: Native
+         60,000K: zygote64 (pid 341)
+    119,516K: Foreground
+        119,516K: com.google.android.youtube.tv (pid 4709 / activities)
+     73,623K: Cached
+         73,623K: com.google.android.katniss:search (pid 4380)
+"""                                                                   // meminfo --oom: no "by process", PSS under group heads
+        assertEquals(listOf("com.google.android.youtube.tv" to 116, "com.google.android.katniss" to 71), Manage.memoryByApp(oom))
     }
 
     @Test fun taskManager() {

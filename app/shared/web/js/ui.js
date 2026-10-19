@@ -31,8 +31,8 @@ const UI = {
   /** A button at work: a turning ring in its icon's place and words of what it does; the returned function puts it back */
   busy(b, words) {
     const was = [...b.childNodes];
-    b.disabled = true; b.replaceChildren(el('span', { className: 'minispin' }), el('span', { textContent: words.replace(/^[^\p{L}\p{N}]+/u, '') }));   // its ⏳ would be a second icon
-    return () => { b.disabled = false; b.replaceChildren(...was); };
+    b.disabled = true; b.ownRing = true; b.replaceChildren(el('span', { className: 'minispin' }), el('span', { textContent: words.replace(/^[^\p{L}\p{N}]+/u, '') }));   // its ⏳ would be a second icon
+    return () => { b.disabled = false; b.ownRing = false; b.replaceChildren(...was); };   // ownRing: api() adds no second ring
   },
   say: (text, cls = 'note') => el('section', { className: 'card' }, el('p', { className: cls, textContent: text })),
   group: (title, ...body) => el('div', { className: 'group' }, title ? el('h3', { textContent: title }) : null, ...body),

@@ -291,10 +291,10 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
      * apps still on, the ones already off, and what is using memory right now. The page turns it into a prompt to copy.
      */
     private fun appsReport(): JSONObject {
-        // one shell round trip: the parts come back separated by "#~#" lines (meminfo alone takes seconds on a slow TV)
+        // one shell round trip: the parts come back separated by "#~#" lines (meminfo --oom: the full one asks every app, seconds on a slow TV)
         val p = sh("getprop ro.product.manufacturer; getprop ro.product.model; getprop ro.build.version.release; grep MemTotal /proc/meminfo; " +
             "printf '\\043~\\043\\n'; pm list packages -3 -e; printf '\\043~\\043\\n'; pm list packages -s -e; printf '\\043~\\043\\n'; pm list packages -d; " +
-            "printf '\\043~\\043\\n'; dumpsys meminfo").split("#~#\n")
+            "printf '\\043~\\043\\n'; dumpsys meminfo --oom").split("#~#\n")
         val part = { i: Int -> p.getOrElse(i) { "" } }
         val list = { i: Int -> part(i).split("\n").filter { it.startsWith("package:") }.map { it.substring(8).trim() }.sorted() }
         val head = part(0).split("\n")
@@ -1172,7 +1172,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
 
         /** "Total PSS by process" of dumpsys meminfo, summed per package (":service" processes count for their app), MB, largest first. */
         internal fun memoryByApp(meminfo: String): List<Pair<String, Int>> {
-            val start = meminfo.indexOf("Total PSS by process:")
+            val start = meminfo.indexOf("Total PSS by process:").takeIf { it >= 0 } ?: meminfo.indexOf("Total PSS by OOM adjustment:")   // --oom: the same lines under group heads (no dot: skipped)
             if (start < 0) return emptyList()
             val by = HashMap<String, Int>()
             for (line in meminfo.substring(start).split("\n").drop(1)) {

@@ -107,7 +107,7 @@ const STALE = T('core.stale');
 let clicked = null, clickedAt = Infinity;
 document.addEventListener('click', (e) => { clicked = e.target.closest && e.target.closest('button'); clickedAt = Infinity; setTimeout(() => { clickedAt = performance.now(); }, 0); }, true);
 async function api(path, data, quiet) {
-  const b = clicked && !clicked.dataset.busy && performance.now() - clickedAt < 1000 ? clicked : null;
+  const b = clicked && !clicked.dataset.busy && !clicked.ownRing && performance.now() - clickedAt < 1000 ? clicked : null;
   if (b) { b.classList.add('busy'); b.busyN = (b.busyN || 0) + 1; }
   try { return await call(path, data, quiet); } finally { if (b && !--b.busyN) b.classList.remove('busy'); }
 }

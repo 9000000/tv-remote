@@ -8,7 +8,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 
-- Tab Ứng dụng có chip **Đang mở**: các app đã mở trên TV (như màn đa nhiệm của Android), mới nhất trước, kèm RAM; ▶ quay lại app, ✕ đóng hẳn (khỏi danh sách và dừng), Đóng tất cả; app TV cần giữ (launcher, bàn phím, TV Setup, Tailscale, app hệ thống) chỉ hiện nhãn Cần giữ, không đóng được. App chạy nền nằm bên dưới; mục "App đang chạy" ở tab Sức khỏe chuyển về đây. Đọc RAM nhanh hơn ~3 lần
+- Nút Hỏi AI: chỉ một vòng xoay (trước bị hai), và lấy danh sách nhanh hơn nhiều (RAM đọc bằng `meminfo --oom`)
+- Tab Ứng dụng có chip **Đang mở**: các app đã mở trên TV (như màn đa nhiệm của Android), mới nhất trước, kèm RAM; ▶ quay lại app, ✕ đóng hẳn (khỏi danh sách và dừng), Đóng tất cả; app TV cần giữ (launcher, bàn phím, TV Setup, Tailscale, app hệ thống) có nhãn Cần giữ cạnh tên, không có ✕. App chạy nền nằm bên dưới; mục "App đang chạy" ở tab Sức khỏe chuyển về đây. Đọc RAM nhanh hơn ~3 lần
 - Chọn DNS riêng: danh sách dễ đọc (tên đậm, nhãn Chặn quảng cáo / Gia đình, tên máy chủ và IP dòng dưới) thay cho danh sách hệ thống dồn mọi thứ một dòng; chạm là điền
 - TV đã lưu trên màn hẹp: chữ chiếm hết bề ngang, các nút xuống một hàng bên dưới (Mở rộng ra, có chữ)
 - Nút "Xem màn hình" ở danh sách TV chỉ còn icon 👁 (bật thì nền xanh), lời giải thích nằm trong tooltip; trên app điện thoại lẫn trang web
@@ -35,7 +36,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **English**
 
-- The Apps tab has an **Open now** chip: the apps opened on the TV (like Android's recents screen), newest first, with their memory; ▶ goes back to one, ✕ closes it for good (off the list and stopped), Close all; what the TV needs (home screen, keyboard, TV Setup, Tailscale, system apps) shows Must keep and cannot be closed. Background apps are under them; Health's "Running apps" moved here. Memory is read ~3 times faster
+- Ask AI: one spinner (there were two), and the list comes much faster (memory read with `meminfo --oom`)
+- The Apps tab has an **Open now** chip: the apps opened on the TV (like Android's recents screen), newest first, with their memory; ▶ goes back to one, ✕ closes it for good (off the list and stopped), Close all; what the TV needs (home screen, keyboard, TV Setup, Tailscale, system apps) has Must keep beside its name, no ✕. Background apps are under them; Health's "Running apps" moved here. Memory is read ~3 times faster
 - Choosing your own DNS: a readable list (name in bold, an Ad blocking / Family tag, the server name and IP under it) instead of the system list with everything on one line; tap to fill
 - Saved TVs on a narrow screen: the words take the whole width, the buttons go to a row under them (Open wider, with its word)
 - The "Show screens" button on the TV list is only its 👁 (blue tint while on), the explanation in its tooltip; in the Phone app and on the page

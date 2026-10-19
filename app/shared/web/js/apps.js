@@ -141,7 +141,7 @@ function renderApps() {
       ['🗑', T('apps.remove'), () => run('uninstall', T('apps.remove')), 'danger'],
     ]) });
     const row = el('div', { className: 'item' + (info.off ? ' off' : '') + (open ? ' proc' : '') }, icon, el('div', { className: 'name' },
-      el('div', { className: 'nameline' }, title, ...(open ? [] : appTags(pkg, info))), el('small', { className: open ? '' : 'pkg', textContent: open ? recentsSub(pkg) : pkg, title: pkg })),
+      el('div', { className: 'nameline' }, title, ...(open ? recentsTag(pkg) : appTags(pkg, info))), el('small', { className: open ? '' : 'pkg', textContent: open ? recentsSub(pkg) : pkg, title: pkg })),
       el('div', { className: 'acts' }, ...(open ? recentsActs(pkg) : []), more));
     row.loadMeta = () => onMeta(pkg, (m) => { icon.fill(info.off ? { label: m.label } : m); if (m.label) title.textContent = m.label; });   // a disabled app has no picture to give
     if (META.has(pkg)) row.loadMeta(); else lazyMeta.observe(row);

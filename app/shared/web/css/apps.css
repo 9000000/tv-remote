@@ -11,8 +11,7 @@
 .appicon.wide img { object-fit:cover; }   /* the TV's own wide tile for the app: .tiles columns fit it */
 .tile span { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center; overflow-wrap:anywhere; }
 #appslist .item.proc { flex-wrap:nowrap; }
-#appslist .item.proc .name { flex-basis:0; }
-#appslist .item.proc .acts { align-items:center; }   /* a Must keep tag beside buttons: its own height, not theirs */   /* Open now (recents.js): short acts, they fit beside even a wide tile */
+#appslist .item.proc .name { flex-basis:0; }   /* Open now (recents.js): short acts, they fit beside even a wide tile */
 .aihint { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-top:10px; }
 .aihint button { padding:0 14px; }
 .aihint .muted { font-size:12px; }

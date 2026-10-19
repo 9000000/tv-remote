@@ -29,11 +29,15 @@ function recentsSub(pkg) {
   const a = recentsOpen.get(pkg), mb = recentsMb.get(pkg);
   return (a.top ? T('recents.on_screen') : recentsAgo(a.ago)) + (mb ? ' · ' + mb + ' MB' : recentsMb.size ? ' · ' + T('recents.not_running') : '');   // in the list, its process long gone
 }
+/** Beside an open app's name: Must keep (no ✕), as the old Running apps had it; the same tag as the All list's. */
+function recentsTag(pkg) {
+  const a = recentsOpen.get(pkg);
+  return a.keep ? [el('span', { className: 'tag keep', textContent: T('health.must_keep'), title: procKeep()[a.keep] || '' })] : [];
+}
 /** A row's buttons: Switch, and ✕. */
 function recentsActs(pkg) {
   const a = recentsOpen.get(pkg), name = appName(pkg);
-  const close = a.keep ? el('span', { className: 'tag keep', textContent: T('health.must_keep'), title: procKeep()[a.keep] || '' })   // as in the old Running apps: what the TV needs is not offered
-    : el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('recents.close'), ariaLabel: T('recents.close'), onclick: async () => {
+  const close = a.keep ? null : el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('recents.close'), ariaLabel: T('recents.close'), onclick: async () => {
       if (a.top && !await ask(T('health.stop_ask', { name }), { ok: T('health.stop') })) return;
       if (await api('/api/recents', { pkg })) { recentsOpen.delete(pkg); recentsBg = recentsBg.filter((b) => b.pkg !== pkg); renderApps(); setTimeout(() => recentsNow(true), 800); }
     } });
