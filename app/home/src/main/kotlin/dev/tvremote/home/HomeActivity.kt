@@ -16,6 +16,7 @@ import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
 import android.media.tv.TvContract
@@ -96,8 +97,8 @@ class HomeActivity : Activity() {
         root.addView(scroll, FrameLayout.LayoutParams(-1, -1))
 
         // the clock and the day on the left, the three buttons on the right
-        head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.TOP }
-        val left = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.TOP; clipChildren = false; clipToPadding = false }  // a focused button grows past its row
+        val left = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false }
         clock = TextClock(this).apply {
             textSize = 60f; setTextColor(Color.WHITE); typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
             includeFontPadding = false; shadow(this)
@@ -105,15 +106,19 @@ class HomeActivity : Activity() {
         dateLine = text(18f, 0xD9FFFFFF.toInt()).apply { setPadding(dp(2), dp(4), 0, 0) }
         left.addView(clock); left.addView(dateLine)
         head.addView(left, LinearLayout.LayoutParams(0, -2, 1f))
-        val pills = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(10), 0, 0) }
+        val pills = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(10), 0, 0); clipChildren = false; clipToPadding = false }
         pills.addView(Pill(this, R.drawable.ic_input, getString(R.string.inputs)) { inputs() })
         netPill = Pill(this, R.drawable.ic_wifi, getString(R.string.wifi)) { open(Settings.ACTION_WIFI_SETTINGS) }
         pills.addView(netPill, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
         pills.addView(Pill(this, R.drawable.ic_settings, getString(R.string.settings)) { open(Settings.ACTION_SETTINGS) },
             LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
+        pills.addView(Pill(this, R.drawable.ic_sliders, getString(R.string.customize), iconOnly = true) { customize() },
+            LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
         for (i in 0 until pills.childCount) pills.getChildAt(i).onFocusChangeListener = View.OnFocusChangeListener { v, f ->
             Motion.pop(v, f); if (f) { scrollToY(0); gridFocus(false) }
         }
+        // a narrow screen (dp): the words go and only the icons stay, so the clock keeps its line
+        if (resources.displayMetrics.widthPixels < dp(820)) for (i in 0 until pills.childCount) (pills.getChildAt(i) as Pill).compact()
         head.addView(pills)
         col.addView(head)
 
@@ -294,10 +299,34 @@ class HomeActivity : Activity() {
         return out
     }
 
+    /**
+     * The D-pad on a tile, decided here, not by the nearest view: Right on a row's last tile goes to the next row's first, Left the
+     * other way, Down on a short last row to its last tile; at the ends of the grid and of the dock focus stays (the nearest view
+     * out there would be a header button). True = handled. Up from the first grid row and Down from the dock stay with Android.
+     */
+    private fun step(v: Tile, code: Int, inDock: Boolean): Boolean {
+        val list = if (inDock) List(dock.childCount) { dock.getChildAt(it) } else List(grid.childCount) { r -> (grid.getChildAt(r) as ViewGroup).let { row -> List(row.childCount) { row.getChildAt(it) } } }.flatten()
+        val at = list.indexOf(v)
+        if (at < 0) return false
+        val cols = if (inDock) list.size else (grid.getChildAt(0) as ViewGroup).childCount
+        val to: Int = when (code) {
+            KeyEvent.KEYCODE_DPAD_RIGHT -> at + 1
+            KeyEvent.KEYCODE_DPAD_LEFT -> at - 1
+            KeyEvent.KEYCODE_DPAD_DOWN -> if (inDock) return false else if (at + cols < list.size) at + cols else if (at / cols < (list.size - 1) / cols) list.size - 1 else -1
+            KeyEvent.KEYCODE_DPAD_UP -> if (inDock || at < cols) return false else at - cols
+            else -> return false
+        }
+        if (to in list.indices) list[to].requestFocus()                // out of range: the edge, focus stays
+        return true
+    }
+
     private fun tile(a: App, w: Int, inDock: Boolean) = Tile(this, a, w, a.label, ::dp).apply {
         setOnClickListener { if (!Apps.launch(this@HomeActivity, a.pkg)) toast(R.string.no_open) }
         setOnLongClickListener { menu(a); true }
-        setOnKeyListener { _, code, e -> if (code == KeyEvent.KEYCODE_MENU && e.action == KeyEvent.ACTION_UP) { menu(a); true } else false }
+        setOnKeyListener { v, code, e ->
+            if (code == KeyEvent.KEYCODE_MENU) { if (e.action == KeyEvent.ACTION_UP) menu(a); e.action == KeyEvent.ACTION_UP }
+            else if (e.action == KeyEvent.ACTION_DOWN) step(v as Tile, code, inDock) else false
+        }
         onFocusChangeListener = View.OnFocusChangeListener { v, f ->
             (v as Tile).focus(f)
             if (f) {
@@ -319,26 +348,9 @@ class HomeActivity : Activity() {
         val key = wall + conf.optLong("photo")
         if (key == wallShown) return
         wallShown = key
-        val colors = when (wall) {
-            "ocean" -> intArrayOf(0xFF03192B.toInt(), 0xFF0A4A66.toInt(), 0xFF05233A.toInt())
-            "dusk" -> intArrayOf(0xFF1A0F2E.toInt(), 0xFF4A2150.toInt(), 0xFF7A3B3B.toInt())
-            "forest" -> intArrayOf(0xFF06140F.toInt(), 0xFF133B2D.toInt(), 0xFF0A1F18.toInt())
-            "aurora" -> intArrayOf(0xFF071A1F.toInt(), 0xFF0F4C4A.toInt(), 0xFF2B2A6B.toInt())
-            "black" -> intArrayOf(Color.BLACK, Color.BLACK)
-            "sunset" -> intArrayOf(0xFF1F0D1C.toInt(), 0xFF6B2D4A.toInt(), 0xFFA14A4A.toInt())
-            "ember" -> intArrayOf(0xFF190B08.toInt(), 0xFF4A1E10.toInt(), 0xFF7A2E12.toInt())
-            "plum" -> intArrayOf(0xFF150B22.toInt(), 0xFF3A1F56.toInt(), 0xFF5A2F7A.toInt())
-            "midnight" -> intArrayOf(0xFF050A1A.toInt(), 0xFF0B1B45.toInt(), 0xFF14307A.toInt())
-            "teal" -> intArrayOf(0xFF041A1A.toInt(), 0xFF08413F.toInt(), 0xFF0E5F5F.toInt())
-            "slate" -> intArrayOf(0xFF0F1218.toInt(), 0xFF252C3A.toInt(), 0xFF3A4558.toInt())
-            "graphite" -> intArrayOf(0xFF1C1C1E.toInt(), 0xFF1C1C1E.toInt())
-            "navy" -> intArrayOf(0xFF0B1D3A.toInt(), 0xFF0B1D3A.toInt())
-            "wine" -> intArrayOf(0xFF3A0F1F.toInt(), 0xFF3A0F1F.toInt())
-            "moss" -> intArrayOf(0xFF14261B.toInt(), 0xFF14261B.toInt())
-            else -> intArrayOf(0xFF0B0F1A.toInt(), 0xFF18223F.toInt(), 0xFF0B0F1A.toInt())
-        }
+        val colors = wallColors(wall)
         // set once per wall, never per frame: a solid is a ColorDrawable (free), a gradient one GradientDrawable (no bitmap); only a photo costs a bitmap
-        window.decorView.background = if (colors.all { it == colors[0] }) ColorDrawable(colors[0]) else GradientDrawable(GradientDrawable.Orientation.TL_BR, colors)
+        window.decorView.background = wallDrawable(colors)
         wallView.visibility = View.GONE; scrim.visibility = View.GONE; blurClip.visibility = View.GONE
         if (wall != "photo") return
         val f = java.io.File(getExternalFilesDir(null), "wall.jpg")
@@ -405,12 +417,21 @@ class HomeActivity : Activity() {
             })
             acts.add(R.string.hide to { Store.putList(this, "hidden", Store.list(this, "hidden") + a.pkg) })
         }
+        acts.add(0, R.string.customize to { customize() })
         acts.add((if (Motion.on) R.string.anim_off else R.string.anim_on) to { Store.change(this, JSONObject().put("anim", !conf.optBoolean("anim", true))) })
         acts.add(R.string.info to {
             try { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + a.pkg))) } catch (e: Exception) { toast(R.string.no_open) }
         })
         AlertDialog.Builder(this, R.style.Menu).setTitle(a.label)
             .setItems(acts.map { getString(it.first) }.toTypedArray()) { _, i -> acts[i].second() }.show()
+    }
+
+    private fun customize() = Customize.show(this)
+
+    /** The remote's Menu key anywhere but on an app (an app's own Menu opens its menu) opens the settings. */
+    override fun onKeyUp(code: Int, e: KeyEvent): Boolean {
+        if (code == KeyEvent.KEYCODE_MENU) { customize(); return true }
+        return super.onKeyUp(code, e)
     }
 
     private fun unhide() {
@@ -465,13 +486,13 @@ class HomeActivity : Activity() {
     private class Flat(c: Context) : LinearLayout(c) { override fun hasOverlappingRendering() = false }
 
     /** A round-ended button with an icon and a word; white when focused. */
-    private class Pill(c: Activity, icon: Int, label: String, onClick: () -> Unit) : LinearLayout(c) {
+    private class Pill(c: Activity, icon: Int, label: String, iconOnly: Boolean = false, onClick: () -> Unit) : LinearLayout(c) {
         private val word: TextView
         init {
             val d = c.resources.displayMetrics.density
             orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
             isFocusable = true; isClickable = true
-            setPadding((16 * d).toInt(), 0, (20 * d).toInt(), 0)
+            setPadding(((if (iconOnly) 12 else 16) * d).toInt(), 0, ((if (iconOnly) 12 else 20) * d).toInt(), 0)
             minimumHeight = (44 * d).toInt()
             background = StateListDrawable().apply {
                 addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply { cornerRadius = 22 * d; setColor(Color.WHITE) })
@@ -480,10 +501,14 @@ class HomeActivity : Activity() {
             val tint = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()), intArrayOf(0xFF111318.toInt(), Color.WHITE))
             addView(ImageView(c).apply { setImageResource(icon); imageTintList = tint; isDuplicateParentStateEnabled = true }, LayoutParams((20 * d).toInt(), (20 * d).toInt()))
             word = TextView(c).apply { text = label; textSize = 15f; setTextColor(tint); isDuplicateParentStateEnabled = true; setPadding((8 * d).toInt(), 0, 0, 0) }
-            addView(word)
+            if (iconOnly) { word.visibility = View.GONE; contentDescription = label } else addView(word)
             setOnClickListener { onClick() }
         }
-        fun set(label: String, a: Float, icon: Int) { word.text = label; (getChildAt(0) as ImageView).apply { setImageResource(icon); alpha = a } }
+        fun compact() {
+            word.visibility = View.GONE; contentDescription = word.text
+            setPadding(paddingRight, 0, paddingRight, 0)
+        }
+        fun set(label: String, a: Float, icon: Int) { word.text = label; if (word.visibility == View.GONE) contentDescription = label; (getChildAt(0) as ImageView).apply { setImageResource(icon); alpha = a } }
     }
 }
 
@@ -591,3 +616,27 @@ object Motion {
         if (!on) { v.scaleX = 1f; v.scaleY = 1f } else v.animate().scaleX(s).scaleY(s).setDuration(200).setInterpolator(if (focused) lift else glide).start()
     }
 }
+
+/** The colours of a built-in background (the page's small tiles copy them: js/home.js HOME_WALLS). */
+fun wallColors(wall: String): IntArray = when (wall) {
+    "ocean" -> intArrayOf(0xFF03192B.toInt(), 0xFF0A4A66.toInt(), 0xFF05233A.toInt())
+    "dusk" -> intArrayOf(0xFF1A0F2E.toInt(), 0xFF4A2150.toInt(), 0xFF7A3B3B.toInt())
+    "forest" -> intArrayOf(0xFF06140F.toInt(), 0xFF133B2D.toInt(), 0xFF0A1F18.toInt())
+    "aurora" -> intArrayOf(0xFF071A1F.toInt(), 0xFF0F4C4A.toInt(), 0xFF2B2A6B.toInt())
+    "black" -> intArrayOf(Color.BLACK, Color.BLACK)
+    "sunset" -> intArrayOf(0xFF1F0D1C.toInt(), 0xFF6B2D4A.toInt(), 0xFFA14A4A.toInt())
+    "ember" -> intArrayOf(0xFF190B08.toInt(), 0xFF4A1E10.toInt(), 0xFF7A2E12.toInt())
+    "plum" -> intArrayOf(0xFF150B22.toInt(), 0xFF3A1F56.toInt(), 0xFF5A2F7A.toInt())
+    "midnight" -> intArrayOf(0xFF050A1A.toInt(), 0xFF0B1B45.toInt(), 0xFF14307A.toInt())
+    "teal" -> intArrayOf(0xFF041A1A.toInt(), 0xFF08413F.toInt(), 0xFF0E5F5F.toInt())
+    "slate" -> intArrayOf(0xFF0F1218.toInt(), 0xFF252C3A.toInt(), 0xFF3A4558.toInt())
+    "graphite" -> intArrayOf(0xFF1C1C1E.toInt(), 0xFF1C1C1E.toInt())
+    "navy" -> intArrayOf(0xFF0B1D3A.toInt(), 0xFF0B1D3A.toInt())
+    "wine" -> intArrayOf(0xFF3A0F1F.toInt(), 0xFF3A0F1F.toInt())
+    "moss" -> intArrayOf(0xFF14261B.toInt(), 0xFF14261B.toInt())
+    else -> intArrayOf(0xFF0B0F1A.toInt(), 0xFF18223F.toInt(), 0xFF0B0F1A.toInt())
+}
+
+/** A solid is a ColorDrawable (free), a gradient a GradientDrawable (no bitmap). */
+fun wallDrawable(colors: IntArray): Drawable =
+    if (colors.all { it == colors[0] }) ColorDrawable(colors[0]) else GradientDrawable(GradientDrawable.Orientation.TL_BR, colors)
