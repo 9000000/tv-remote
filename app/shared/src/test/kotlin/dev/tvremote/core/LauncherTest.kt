@@ -17,6 +17,7 @@ class LauncherTest {
         val installed = mutableSetOf("com.google.android.tungsten.setupwraith", Setup.LAUNCHERX, "com.new.home", "com.google.android.tvlauncher")
         val disabled = mutableSetOf("com.google.android.tvlauncher")
         val homes = linkedMapOf("com.new.home" to 0, Setup.LAUNCHERX to 2, WIZ to 1, "com.google.android.tvlauncher" to 2)
+        var forgot = false                                             // Android 9 after a new launcher went in: no choice, its picker
         var wizardLocked = false                                       // a TV that refuses to turn one screen of a system app off
         var chosen: String? = null
         var rec = ""
@@ -26,6 +27,7 @@ class LauncherTest {
             val on = homes.filterKeys { it in installed && it !in disabled && "$it/.Home" !in disabled }
             if (!pick && Setup.LAUNCHERX in disabled) return "android/.Resolver"   // a TV that ignores the choice
             chosen?.let { c -> if (c.substringBefore('/') in on && pick) return c }
+            if (forgot) return "android/com.android.internal.app.ResolverActivity"
             return on.maxByOrNull { it.value }?.key?.let { "$it/.Home" } ?: "android/.Resolver"
         }
         fun sh(cmd: String): String {
@@ -58,6 +60,27 @@ class LauncherTest {
         assertFalse(WIZ in tv.disabled)                                // its Home only: the whole app off cost an FPT box its saved Wi-Fi
         assertFalse("com.google.android.tvlauncher" in r.off)       // off from the factory: not ours to turn on
         s.keep(); assertEquals("kept", s.state()!!.state)
+    }
+
+    @Test fun theHomeBeforeIsTheOneReadBeforeTheApkWentIn() {       // a BRAVIA (Android 9) forgot FLauncher when TV Home was installed
+        val tv = Tv(); val s = LauncherSwap({ tv.sh(it) })
+        tv.installed += "com.old.home"; tv.homes["com.old.home"] = 0; tv.chosen = "com.old.home/.Home"
+        val before = s.homeNow()
+        tv.chosen = null; tv.forgot = true
+        assertTrue(s.take("com.new.home", 30, before))
+        assertEquals("com.old.home/.Home", s.state()!!.prev)
+        s.rollback("user")
+        assertEquals("com.old.home/.Home", tv.home())
+    }
+
+    @Test fun goingBackWithTheOneBeforeUnknownNeverStaysOnTheOneTried() {
+        val tv = Tv(); val s = LauncherSwap({ tv.sh(it) })
+        tv.installed -= setOf(Setup.LAUNCHERX, WIZ); tv.installed += "com.old.home"; tv.homes["com.old.home"] = 0
+        tv.forgot = true
+        assertTrue(s.take("com.new.home", 30))
+        assertTrue(LauncherSwap.badHome(s.state()!!.prev))
+        s.rollback("timeout")
+        assertEquals("com.old.home/.Home", tv.home())
     }
 
     @Test fun rollbackPutsBackExactlyWhatWasOff() {

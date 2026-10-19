@@ -82,10 +82,12 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
      * (0: "kept" at once). False when it did not: everything is back as it was, the record says rolledback.
      */
     @Throws(IOException::class)
-    fun take(pkg: String, confirmSec: Int = 0): Boolean {
+    fun take(pkg: String, confirmSec: Int = 0, before: String = ""): Boolean {
         if (!PKG.matches(pkg)) throw IOException("bad package name")
         val ours = homes().firstOrNull { it.startsWith("$pkg/") } ?: run { log("no home activity"); return false }   // not a launcher
-        val prev = homeNow()
+        // [before]: read before its APK went in. Android 9 forgets the home chosen when a new launcher is installed (a BRAVIA then
+        // answered its picker), and only Android 10+ keeps it as a role
+        val prev = before.takeIf { it.contains('/') && !badHome(it) } ?: homeNow()
         sh("am start -n $ours")                                      // opened once before the old one goes, so Home is never empty
         val on = enabled()
         val wizard = homes().filter { it.substringBefore('/') in Setup.WIZARD }   // components: pm enable / disable take them like packages
@@ -140,6 +142,7 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
         val prev = r?.prev ?: ""
         if (prev.contains('/') && !badHome(prev) && prev.substringBefore('/') != r?.pkg) all.firstOrNull { it == prev }?.let { return it }
         return all.firstOrNull { it.substringBefore('/') in off && it.substringBefore('/') !in Setup.WIZARD }
+            ?: all.firstOrNull { !badHome(it) && it.substringBefore('/') != r?.pkg && it.substringBefore('/') !in Setup.WIZARD }   // the one before unknown: never stay on the one tried
     }
 
     /** What Undo of Optimize TV leaves behind: nothing kept about a home swap. */

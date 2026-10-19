@@ -8,7 +8,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 
-- Sửa: Quay lại sau khi cài một launcher mới có thể về nhầm launcher khác (box FPT, Android 14): Android trả lời sai launcher đang dùng ngay sau khi có launcher mới; giờ đọc lựa chọn Home thật (role HOME)
+- Sửa: Quay lại sau khi cài một launcher mới có thể về nhầm launcher khác (box FPT, Android 14): Android trả lời sai launcher đang dùng ngay sau khi có launcher mới; giờ đọc lựa chọn Home thật (role HOME); Android 9 (BRAVIA) quên hẳn launcher đang dùng khi cài launcher mới, nên giờ ghi lại nó trước khi cài, và không bao giờ ở lại launcher vừa thử
 - TV Home: sửa viền app / nút to lên khi chọn bị cắt ở mép (nút Nguồn vào / Mạng / Cài đặt trên cùng); Phải ở app cuối hàng sang app đầu hàng sau (không còn nhảy lên nút Cài đặt), Trái ngược lại, hai đầu lưới và hàng yêu thích thì đứng yên
 - TV Home có màn hình **Tùy chỉnh TV Home** ngay trên TV, dùng phím mũi tên: hình nền (16 màu + ảnh nếu có), đồng hồ 24 giờ, lời chào, hiệu ứng chuyển động. Mở bằng nút thanh trượt cạnh Cài đặt, phím Menu, hoặc mục đầu menu giữ OK; đổi xong áp dụng ngay và trang web đọc cùng một cấu hình
 - Thư viện launcher: launcher không có ngôn ngữ của TV có nhãn ngôn ngữ nó sẽ hiện, và câu hỏi trước khi cài nói rõ; trên Android 13 trở lên nó được đặt hiện tiếng Anh, chỉ riêng nó: LTV trên TV tiếng Việt từng hiện tiếng Ả Rập từ phải sang trái, UnitedU hiện tiếng Trung; ngôn ngữ của mỗi launcher đọc từ chính APK khi ký danh sách
@@ -37,7 +37,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **English**
 
-- Fix: Go back after installing a new launcher could land on a different one (FPT box, Android 14): Android misreported the home in use right after a new launcher appeared; the real Home choice (the HOME role) is read now
+- Fix: Go back after installing a new launcher could land on a different one (FPT box, Android 14): Android misreported the home in use right after a new launcher appeared; the real Home choice (the HOME role) is read now; Android 9 (BRAVIA) forgets the home in use when a new launcher is installed, so it is noted before installing, and Go back never stays on the launcher tried
 - TV Home: fixed the focus ring / enlarged buttons being cut off at the edge (the Inputs / Wi-Fi / Settings buttons on top); Right on a row's last app goes to the next row's first (no more jump up to Settings), Left the other way, and at the ends of the grid and the favourites row focus stays
 - TV Home has a **Customize TV Home** screen on the TV itself, with the D-pad: background (16 colours + the photo when there is one), 24-hour clock, greeting, motion effects. Open it with the sliders button beside Settings, the Menu key, or the first entry of the hold-OK menu; changes apply at once and the web page reads the same config
 - Launcher gallery: a launcher without the TV's language is tagged with the one it will show, and the question before installing says so; on Android 13 and later it is set to show English, that launcher only: LTV on a Vietnamese TV showed Arabic right to left, UnitedU Chinese; each launcher's languages are read from its APK when the list is signed

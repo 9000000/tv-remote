@@ -45,6 +45,7 @@ class LauncherInstall(private val adb: Adb, private val dir: File, private val g
         val f = facts()
         val fit = Launchers.fits(e, f)
         if (!fit.ok) throw IOException("launcher:fit:" + fit.why)
+        val before = swap.homeNow()                                   // before the APK goes in: Android 9 forgets it then (LauncherSwap.take)
         if (!installed(e.pkg)) {
             if (e.kind == "play") throw IOException("launcher:play")
             val a = if (e.kind == "self") Launchers.self() else Launchers.apk(e, f.abis) ?: throw IOException("launcher:fit:abi")
@@ -64,7 +65,7 @@ class LauncherInstall(private val adb: Adb, private val dir: File, private val g
         english(e, f.sdk)
         progress?.at("swap", 85)
         if (cancelled()) throw IOException("stopped")
-        if (!swap.take(e.pkg, confirmSec)) throw IOException("launcher:home")   // not the home screen: already put back
+        if (!swap.take(e.pkg, confirmSec, before)) throw IOException("launcher:home")   // not the home screen: already put back
         return swap.state()?.state ?: "kept"
     }
 

@@ -2415,7 +2415,7 @@
  "core.fr_home_photo": "Không gửi được ảnh lên TV. Thử lại.",
  "launcher.ours": "Đề xuất",
  "launcher.lang_en": "Không có tiếng của TV nên sẽ hiện tiếng Anh.",
- "launcher.lang_other": "Không có tiếng của TV nên sẽ hiện {lang}.",
+ "launcher.lang_other": "Không có tiếng của TV nên sẽ hiện ngôn ngữ khác: {lang}.",
  "home.update": "⬆️ Cập nhật TV Home {v}",
  "home.updated": "Đã cập nhật TV Home {v}.",
  "core.fr_launcher_self": "Chưa có bản phát hành nào có TV Home. Thử lại sau.",
