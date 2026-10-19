@@ -11,23 +11,48 @@ const LAUNCH_WHY = { sdk: 'launcher.why_sdk', abi: 'launcher.why_abi', fire: 'la
 const LAUNCH_STEP = { download: 'launcher.step_download', install: 'launcher.step_install', swap: 'launcher.step_swap', confirm: 'launcher.step_confirm' };
 const launchWhy = (l) => T(LAUNCH_WHY[l.why] || 'launcher.why_atv', { android: androidName(l.min_sdk) });
 
-// [fleet]: the row for several TVs at once (fleet.js): its own button, and no fit / in use, which are about this TV only
+// One launcher as a card: its home screen big (what one picks a launcher by), the name, a few tags, the button for what comes next,
+// and ⋯ for the rest (details, source or Play page, the APK). [fleet]: the button for several TVs at once (fleet.js), and no fit /
+// in use, which are about this TV only.
 function launchRow(l, fleet) {
-  const thumb = el('img', { className: 'lthumb', src: l.thumb, alt: '' });
+  const thumb = el('img', { src: l.thumb, alt: '', loading: 'lazy' });
   thumb.onerror = () => thumb.classList.add('none');                   // a picture that does not come is no reason to hide the launcher
-  const btns = [];
-  if (fleet) btns.push(fleet);
-  else if (l.in_use) btns.push(el('button', { className: 'small', disabled: true, textContent: T('launcher.in_use') }));
-  else if (l.kind === 'play' && !l.installed) btns.push(el('button', { className: 'small primary', disabled: !l.fit, textContent: T('launcher.play'), onclick: () => launchPlay(l) }));
-  else btns.push(el('button', { className: 'small primary', disabled: !l.fit || launchRunning, textContent: l.installed ? T('launcher.use') : T('launcher.install'), onclick: () => launchInstall(l) }));
+  let act;
+  if (fleet) act = fleet;
+  else if (l.in_use) act = el('button', { className: 'small', disabled: true, textContent: T('launcher.in_use') });
+  else if (l.kind === 'play' && !l.installed) act = el('button', { className: 'small primary', disabled: !l.fit, textContent: T('launcher.play'), onclick: () => launchPlay(l) });
+  else act = el('button', { className: 'small primary', disabled: !l.fit || launchRunning, textContent: l.installed ? T('launcher.use') : T('launcher.install'), onclick: () => launchInstall(l) });
+  const page = l.kind === 'play' ? 'https://play.google.com/store/apps/details?id=' + encodeURIComponent(l.pkg) : l.source;
+  const more = el('button', { type: 'button', className: 'small iconbtn', textContent: '⋯', title: T('page.more_actions'), 'aria-label': T('page.more_actions'), onclick: (e) => popover(e.currentTarget, [
+    ['ℹ️', T('launcher.details'), () => launchDetails(l)],
+    ['🔗', T(l.kind === 'play' ? 'launcher.source_play' : 'launcher.source'), () => open(page, '_blank', 'noopener')],
+    l.kind === 'play' ? null : ['⬇️', T('launcher.download'), () => open(l.source.replace(/\/$/, '') + '/releases/latest', '_blank', 'noopener')],
+  ]) });
+  const tags = el('div', { className: 'ltags' },
+    !fleet && l.in_use ? launchTag(T('launcher.in_use'), 'use') : null,
+    fleet || l.in_use ? null : l.fit ? launchTag(T('launcher.fits')) : Object.assign(launchTag(T('launcher.nofit'), 'warn'), { title: launchWhy(l) }),
+    l.kind === 'play' ? launchTag('▶ ' + T('launcher.badge_play'), 'play') : null, l.version ? launchTag(l.version) : null);
+  return el('div', { className: 'lcard' + (l.in_use && !fleet ? ' on' : '') },
+    el('button', { type: 'button', className: 'lshot', title: T('launcher.details'), 'aria-label': l.name, onclick: () => launchDetails(l) }, thumb),
+    el('div', { className: 'lbody' }, el('b', { textContent: l.name }), tags,
+      fleet || l.fit ? null : el('small', { className: 'warn', textContent: launchWhy(l) }),
+      el('div', { className: 'lacts' }, act, more)));
+}
+const launchGrid = (list, row) => list.length ? el('div', { className: 'lgrid' }, ...list.map(row)) : UI.empty(T('launcher.none'));
+
+// ℹ️: the picture big, what it is, what to know, its licence
+function launchDetails(l) {
   const notes = launchWords(l.notes);
-  return UI.item({
-    icon: thumb, name: l.name, sub: launchWords(l.desc),
-    extra: [el('div', { className: 'ltags' }, !fleet && l.in_use ? launchTag(T('launcher.in_use'), 'use') : null, fleet ? null : launchTag(l.fit ? T('launcher.fits') : T('launcher.nofit'), l.fit ? '' : 'warn'),
-        l.kind === 'play' ? launchTag('▶ ' + T('launcher.badge_play'), 'play') : null, l.version ? launchTag(l.version) : null),
-      fleet || l.fit ? (notes ? el('small', { textContent: notes }) : null) : el('small', { className: 'warn', textContent: launchWhy(l) }),
-      el('small', {}, el('a', { href: l.source, target: '_blank', rel: 'noopener noreferrer', textContent: l.kind === 'play' ? T('launcher.source_play') : T('launcher.source') }), ' · ' + T('launcher.license', { l: l.license }))],
-    acts: btns });
+  const d = el('dialog', { className: 'ask ldetail' }, el('div', { className: 'card' },
+    el('div', { className: 'card-head' }, el('h2', { textContent: l.name }), el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
+    el('img', { className: 'lbig', src: l.thumb, alt: '' }),
+    el('p', { textContent: launchWords(l.desc) }),
+    notes ? el('p', { className: 'note', textContent: notes }) : null,
+    l.fit ? null : el('p', { className: 'warnline', textContent: launchWhy(l) }),
+    el('p', { className: 'note' }, el('a', { href: l.kind === 'play' ? 'https://play.google.com/store/apps/details?id=' + encodeURIComponent(l.pkg) : l.source, target: '_blank', rel: 'noopener noreferrer', textContent: T(l.kind === 'play' ? 'launcher.source_play' : 'launcher.source') }),
+      ' · ' + T('launcher.license', { l: l.license }) + (l.version ? ' · ' + l.version : ''))));
+  d.addEventListener('close', () => d.remove());
+  document.body.append(d); d.showModal();
 }
 
 async function launchLoad() {
@@ -35,7 +60,7 @@ async function launchLoad() {
   body.replaceChildren(UI.empty(T('launcher.loading')));
   const r = await api('/api/launchers');
   if (!r) { body.replaceChildren(UI.warn(T('launcher.unreadable'))); return null; }
-  body.replaceChildren(UI.list(r.launchers.map(launchRow), T('launcher.none')), UI.note(T('launcher.updated', { date: r.updated })));
+  body.replaceChildren(launchGrid(r.launchers, (l) => launchRow(l)), UI.note(T('launcher.updated', { date: r.updated })));
   put('#launchstate', 'textContent', r.record === 'pending' ? T('launcher.waiting') : '');
   return r;
 }

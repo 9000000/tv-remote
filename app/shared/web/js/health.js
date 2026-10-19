@@ -42,9 +42,9 @@ async function loadHist(days) {
 }
 document.querySelectorAll('#hmode button').forEach((b) => b.addEventListener('click', () => {
   hmode = b.dataset.m; document.querySelectorAll('#hmode button').forEach((x) => x.classList.toggle('on', x === b));
-  put('#hhist', 'hidden', hmode !== 'hist'); put('#hnow', 'hidden', hmode !== 'now'); put('#herr', 'hidden', hmode !== 'err'); put('#hcaps', 'hidden', hmode !== 'caps');
+  put('#hhist', 'hidden', hmode !== 'hist'); put('#hnow', 'hidden', hmode !== 'now'); put('#herr', 'hidden', hmode !== 'hist'); put('#hcaps', 'hidden', hmode !== 'caps');
   put('#hsleep', 'hidden', hmode !== 'sleep');
-  if (hmode === 'hist') loadHist(); else if (hmode === 'sleep') loadSleep(true); else if (hmode === 'err') loadErrors(); else if (hmode === 'caps') loadCaps(); else loadHealth();
+  if (hmode === 'hist') { loadHist(); loadErrors(); } else if (hmode === 'sleep') loadSleep(true); else if (hmode === 'caps') loadCaps(); else loadHealth();
 }));
 
 // Sleep: how the TV sleeps and wakes (Power.kt), whether Tailscale and TV Setup outlive it, and the screen's last 7 days from
@@ -254,7 +254,7 @@ function drawSettings() {
     // every group folded, so the list fits and the search box stays in reach; a search opens the groups it finds something in
     const made = g !== 'other' ? mine.sort((a, b) => a.i.order - b.i.order).map((r) => { const d = row(r); if (r.i.pkgs) named(d.lastChild, r.i.pkgs); return d; })
       : mine.slice(0, 400).map(row);                                 // Android's hundreds of internal keys
-    const box = el('details', { className: 'setgroupbox', open: !!q || setOpen.has(g) }, el('summary', { textContent: mine[0].i.groupName + ' · ' + mine.length }), ...made);
+    const box = el('details', { className: 'setgroupbox', open: !!q || setOpen.has(g) }, el('summary', {}, el('span', { textContent: mine[0].i.groupName }), el('span', { className: 'n', textContent: String(mine.length) })), ...made);
     box.addEventListener('toggle', () => { if (!q) { if (box.open) setOpen.add(g); else setOpen.delete(g); } });
     parts.push(box);
   }
@@ -349,7 +349,7 @@ async function copyText(t) {
 async function loadErrors() {
   const box = $('#herr');
   box.replaceChildren(el('div', { className: 'muted waiting', textContent: T('health.reading_from_the_tv') }));
-  const r = await api('/api/crashes'); if (!r || hmode !== 'err') return;
+  const r = await api('/api/crashes'); if (!r || hmode !== 'hist') return;   // under History's charts: what went wrong is history too
   const groups = new Map();
   for (const e of parseCrashes(r.text)) {
     const key = e.sys ? 'android' : (e.proc || '?').split(':')[0];

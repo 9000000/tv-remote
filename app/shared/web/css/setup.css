@@ -19,11 +19,20 @@
 .setlist .setrow.full .setval { display:block; max-width:none; text-align:left; white-space:normal; overflow-wrap:anywhere; }
 .setrow.full .run > .rin { display:inline; }
 .setrow.full .run > .rin::after { content:none; }
-.setfilter { margin:10px 0 4px; }
+.setfilter { margin:10px 0 4px; overflow-x:auto; scrollbar-width:none; }   /* a narrow screen slides the chips rather than cut one */
+.setfilter button { flex:none; }
+@media (max-width:440px) { .places.setfilter { gap:4px; } .places.setfilter button { padding:0 8px; font-size:12px; } }   /* the three fit a phone's width */
 .setfilter button[data-n]::after { content:' · ' attr(data-n); opacity:.7; font-weight:500; }
-.setgroupbox { border-top:1px solid var(--line); }
-.setgroupbox > summary { cursor:pointer; font-size:14px; font-weight:700; padding:11px 0; }
-.setgroupbox[open] > summary { color:var(--muted); font-size:13px; }
+/* each group a box of its own: a heading with a count and a chevron, its rows inside once open (a heading read as one more row) */
+.setgroupbox { border:1px solid var(--line); border-radius:12px; background:var(--bg); margin-top:8px; overflow:hidden; }
+.setgroupbox > summary { display:flex; align-items:center; gap:10px; cursor:pointer; list-style:none; font-size:14px; font-weight:700; padding:12px 14px; }
+.setgroupbox > summary::-webkit-details-marker { display:none; }
+.setgroupbox > summary::before { content:''; width:7px; height:7px; flex:none; border:solid var(--muted); border-width:0 2px 2px 0; transform:rotate(-45deg); transition:transform .15s; margin-right:2px; }
+.setgroupbox[open] > summary::before { transform:rotate(45deg); }
+.setgroupbox > summary .n { margin-left:auto; font-size:12px; font-weight:600; color:var(--muted); background:var(--btn); border-radius:999px; padding:2px 9px; }
+.setgroupbox[open] > summary { border-bottom:1px solid var(--line); background:var(--btn); }
+.setgroupbox > .setrow { margin:0 14px; }
+.setgroupbox > summary + .setrow { border-top:0; }
 .setgroupbox .setrow:first-of-type { border-top:0; }
 .item .name .badges { display:flex; flex-wrap:wrap; gap:4px; margin:3px 0 2px; }
 .item .name .badges .badge { margin-left:0; }

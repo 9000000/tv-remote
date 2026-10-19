@@ -37,7 +37,7 @@
           "en": "Cannot take Home on Fire TV and on some TCL sets sold in China."
         }
       },
-      "thumb_sha256": "fd5aae74bb02a897d17f9a809dd99178f4d7e70a7389e83c404a41894c1b92a3"
+      "thumb_sha256": "88f0061eacb38db0d2094a90055955f51d4cf8ac0c5b8fd6940c8b8765e24222"
     },
     {
       "id": "ltvlauncher",
@@ -74,7 +74,7 @@
           "en": "Cannot take Home on Fire TV."
         }
       },
-      "thumb_sha256": "9b735f952af262f13e4b3d916ae161107e04181f07c2a55d7a6d3616b64d6e67"
+      "thumb_sha256": "853241cff4833c22ec5c6b8452cc821fe7e6dac405eeb042ffca0bf92957b265"
     },
     {
       "id": "just-a-launcher",
@@ -107,7 +107,7 @@
           "en": "Very plain: few settings."
         }
       },
-      "thumb_sha256": "68cfed577787d1ce22622eccf01d2001e18a93e5aa2e8b5aecf8e1ef82ec5fc8"
+      "thumb_sha256": "2ed7bf2cf429eda66d2f3e43286713edb12a8743be076f28b8db30baf53a15df"
     },
     {
       "id": "projectivy",
@@ -134,7 +134,7 @@
           "en": "Needs Google Play on the TV. Pick it as Home once installed."
         }
       },
-      "thumb_sha256": "24b2eec4c55444ff489cb3e1f209057f3632eccd62b6f025f2ce74029e33d94c"
+      "thumb_sha256": "07065404a8840f36134c1b498acbdf3cf70ceb6195705e4feb69b22151293698"
     },
     {
       "id": "at4k",
@@ -162,7 +162,7 @@
         }
       },
       "thumb_source": "https://play.google.com/store/apps/details?id=com.overdevs.at4k (the developer's own store listing, first screenshot)",
-      "thumb_sha256": "ffa1227f7418495d17b87490709c1f14260fe65c362030b9ea3b92216f69f6b5"
+      "thumb_sha256": "f4a8a3ae0dc9d08e408d5911f08acdfbf07c0380cf0a0693161a189020b7ff23"
     },
     {
       "id": "monet",
@@ -190,7 +190,7 @@
         }
       },
       "thumb_source": "https://play.google.com/store/apps/details?id=com.klevico.monet (the developer's own store listing, first screenshot)",
-      "thumb_sha256": "bb71a57506855e4b1ceb6e8554c12bcaa9a08a3c52893a5fac6b412330f3da4d"
+      "thumb_sha256": "0ae273df91e5910242b4f03c8aa19a1c542b7bcc003f6f97503da215da2d0925"
     },
     {
       "id": "dream-launcher",
@@ -218,7 +218,7 @@
         }
       },
       "thumb_source": "https://play.google.com/store/apps/details?id=de.cyberdream.tv.launcher (the developer's own store listing, first screenshot)",
-      "thumb_sha256": "15bd3f889b180d6552e8d413594be105324ec0bb0f4d6ed5c4a5a7386a46f6bf"
+      "thumb_sha256": "fcd63c3005031b08df3606360f6e1abf8c86881fe960f031ce18374f0891a21d"
     },
     {
       "id": "atv-launcher-pro",
@@ -246,7 +246,7 @@
         }
       },
       "thumb_source": "https://play.google.com/store/apps/details?id=ca.dstudio.atvlauncher.pro (the developer's own store listing, first screenshot)",
-      "thumb_sha256": "53ead5679b2c8306f71fabed8145bcd67f36e412c077f0f892a15e1d85107286"
+      "thumb_sha256": "cf81691f21c68d2e9270714639cd355fe381d87ead8b45dd66b686ae5c2b842f"
     }
   ]
 }

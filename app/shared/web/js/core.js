@@ -139,10 +139,11 @@ function popover(anchor, items) {
   const again = popEl && popEl.anchor === anchor; closePop(); if (again) return;
   const m = el('div', { className: 'pop', role: 'menu' }, ...items.filter(Boolean).map(([icon, text, fn, cls]) =>
     setLabel(el('button', { className: cls || '', role: 'menuitem', onclick: () => { closePop(); fn(); } }), icon, text)));
-  m.anchor = anchor; document.body.append(m); popEl = m;
-  const r = anchor.getBoundingClientRect(), w = m.offsetWidth, h = m.offsetHeight;
-  m.style.left = scrollX + Math.max(8, Math.min(innerWidth - w - 8, r.right - w)) + 'px';
-  m.style.top = scrollY + (r.bottom + h + 8 > innerHeight && r.top > h + 8 ? r.top - h - 4 : r.bottom + 4) + 'px';
+  const layer = !!m.showPopover; if (layer) m.popover = 'manual';      // the top layer: over a modal dialog too (⋯ in the launcher gallery)
+  m.anchor = anchor; (layer && anchor.closest('dialog') || document.body).append(m); popEl = m; if (layer) m.showPopover();   // in the dialog: outside a modal one it would be inert
+  const r = anchor.getBoundingClientRect(), w = m.offsetWidth, h = m.offsetHeight, sx = layer ? 0 : scrollX, sy = layer ? 0 : scrollY;
+  m.style.left = sx + Math.max(8, Math.min(innerWidth - w - 8, r.right - w)) + 'px';
+  m.style.top = sy + (r.bottom + h + 8 > innerHeight && r.top > h + 8 ? r.top - h - 4 : r.bottom + 4) + 'px';
   m.querySelector('button').focus({ preventScroll: true });
 }
 document.addEventListener('click', (e) => { if (popEl && !popEl.contains(e.target) && !popEl.anchor.contains(e.target)) closePop(); }, true);

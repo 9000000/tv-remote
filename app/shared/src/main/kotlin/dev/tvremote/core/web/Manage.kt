@@ -321,7 +321,15 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     private fun apps(system: Boolean): JSONObject {
         val pkgs = ArrayList<String>()
         // the apps turned off are always listed, so "Turn on" is at hand without showing every system app
-        val listing = sh("pm list packages" + (if (system) "" else " -3") + "; echo '#~#'; pm list packages -d").split("#~#")
+        val listing = sh("pm list packages" + (if (system) "" else " -3") + "; echo '#~#'; pm list packages -d; echo '#~#'; " +
+            "dumpsys package packages | grep -E '^  Package \\[|^    versionName='").split("#~#")   // every version in one go: ~0.2 s
+        val versions = HashMap<String, String>()
+        var at: String? = null
+        for (line in listing.getOrElse(2) { "" }.jsplit("\n")) {
+            val t = line.trim()
+            if (t.startsWith("Package [")) at = t.substring(9, t.indexOf(']').coerceAtLeast(9))
+            else if (t.startsWith("versionName=") && at != null) { if (t != "versionName=null") versions.putIfAbsent(at, t.substring(12)); at = null }   // the first: an updated system app's own, not the factory one listed later
+        }
         val off = (listing.getOrElse(1) { "" }).jsplit("\n").filter { it.startsWith("package:") }.map { it.substring(8).trim() }.toSet()
         for (line in listing[0].jsplit("\n") + (if (system) emptyList() else off.map { "package:$it" }))
             if (line.startsWith("package:") && line.substring(8).trim() !in pkgs) pkgs.add(line.substring(8).trim())
@@ -330,7 +338,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val icons = labels != null && labels.icons()
         for (p in pkgs) {
             val label = labels?.label(p)
-            out.put(JSONObject().put("pkg", p).put("off", p in off).put("keep", Setup.PROTECTED.matches(p))
+            out.put(JSONObject().put("pkg", p).put("off", p in off).put("keep", Setup.PROTECTED.matches(p)).put("version", versions[p] ?: "")
                 .put("meta", JSONObject().put("label", label ?: p.substring(p.lastIndexOf('.') + 1)).put("icon", icons).put("banner", icons)))
         }
         return JSONObject().put("apps", out)

@@ -13,6 +13,9 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - 🔅 Giảm độ sáng (Thêm phím → Hẹn giờ tắt): phủ màu lên mọi app (Tối, Lọc xanh, Vàng, Nâu cổ, Đỏ đêm, Xanh), độ mạnh 5 đến 90%, đổi ngay khi kéo. Giữ cả khi TV Setup khởi động lại. Cần TV Setup mới
 - ⚡ Đo tốc độ mạng của chính TV (Sức khỏe → 📶 Mạng): độ trễ, tải xuống, tải lên, đủ cho 4K / Full HD / HD; có nút Dừng, mở lại trang vẫn thấy lần đo trước
 - Chọn app bằng ô có biểu tượng và ô tìm (không cần gõ dấu) thay cho danh sách thả xuống: khóa app, giới hạn app, bước "Mở app" của Cảnh.
+- Tab Ứng dụng ghi phiên bản của từng app (cả TV Setup) cạnh tên gói.
+- Thư viện launcher: thẻ có ảnh màn hình chính thật cỡ lớn, nút ⋯ (Chi tiết, Mã nguồn / CH Play, Tải APK); sửa lỗi các launcher từ thứ hai trở đi không có nút Cài.
+- Sức khỏe: Lỗi app nằm trong Lịch sử; nút Giải phóng RAM lên góc thẻ Tải hệ thống. Tất cả cài đặt: mỗi nhóm là một khối riêng, dễ nhìn.
 
 **English**
 
@@ -21,6 +24,9 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - 🔅 Dim the screen (More keys → Sleep timer): a tint over every app (Dark, Blue filter, Yellow, Sepia, Night red, Blue) at 5 to 90%, applied as you drag. Kept when TV Setup restarts. Needs the new TV Setup
 - ⚡ The TV's own internet speed (Health → 📶 Network): ping, download, upload, and whether that is enough for 4K / Full HD / HD; Stop button, and the last result shows when the page is opened again
 - Apps are picked from their icons, with a search (accents not needed), instead of a drop-down list: app locks, app limits, a scene's "Open an app" step.
+- The Apps tab shows each app's version (TV Setup's too) beside its package name.
+- Launcher gallery: cards with a large picture of the real home screen, and ⋯ (Details, Source / Play page, Download the APK); fixed the launchers after the first having no Install button.
+- Health: App errors are under History; Free up RAM sits at the top of System load. All settings: each group is a box of its own.
 
 ## 0.12.0 - 2026-10-19
 

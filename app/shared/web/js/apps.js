@@ -118,7 +118,7 @@ async function loadQuick() {
 }
 
 // ---------- apps tab ----------
-let appsLoaded = false, appsAll = [], appsInfo = new Map(), appsOffOpen = false;          // pkg -> { off, keep }
+let appsLoaded = false, appsAll = [], appsInfo = new Map(), appsOffOpen = false;          // pkg -> { off, keep, version }
 const appsStale = () => { quickLoaded = appsLoaded = false; };      // installed or removed elsewhere (files.js, Optimize TV): read again
 onTvChange(() => {
   appsStale(); META.clear(); metaFailed.clear();
@@ -142,7 +142,7 @@ async function loadApps() {
   $('#appslist').replaceChildren(el('div', { className: 'muted', textContent: T('apps.loading') }));
   const r = await api('/api/apps' + ($('#appssys').checked ? '?system=1' : ''));
   if (!r) { $('#appslist').replaceChildren(); return; }
-  appsLoaded = true; appsAll = r.apps.map((a) => a.pkg); appsInfo = new Map(r.apps.map((a) => [a.pkg, { off: !!a.off, keep: !!a.keep }])); seedMeta(r.apps); renderApps();
+  appsLoaded = true; appsAll = r.apps.map((a) => a.pkg); appsInfo = new Map(r.apps.map((a) => [a.pkg, { off: !!a.off, keep: !!a.keep, version: a.version || '' }])); seedMeta(r.apps); renderApps();
   const b = await api('/api/apps/boot', null, true);                 // after the list: a tag is worth no wait
   if (b) { appsBoot = bootRead(b.text); renderApps(); }
 }
@@ -180,7 +180,7 @@ function renderApps() {
       ['🗑', T('apps.remove'), () => run('uninstall', T('apps.remove')), 'danger'],
     ]) });
     const row = el('div', { className: 'item' + (info.off ? ' off' : '') + (open ? ' proc' : '') }, icon, el('div', { className: 'name' },
-      el('div', { className: 'nameline' }, title, ...(open ? recentsTag(pkg) : appTags(pkg, info))), el('small', { className: open ? '' : 'pkg', textContent: open ? recentsSub(pkg) : pkg, title: pkg })),
+      el('div', { className: 'nameline' }, title, ...(open ? recentsTag(pkg) : appTags(pkg, info))), open ? el('small', { textContent: recentsSub(pkg), title: pkg }) : el('small', { className: 'pkg', title: pkg }, el('span', { textContent: pkg }), ...(info.version ? [el('span', { className: 'ver', textContent: info.version })] : []))),
       el('div', { className: 'acts' }, ...(open ? recentsActs(pkg) : []), more));
     row.loadMeta = () => onMeta(pkg, (m) => { icon.fill(info.off ? { label: m.label } : m); if (m.label) title.textContent = m.label; });   // a disabled app has no picture to give
     if (META.has(pkg)) row.loadMeta(); else lazyMeta.observe(row);
@@ -355,13 +355,13 @@ $('#aicopy').addEventListener('click', async () => {
 
 // 📝 in bulk: paste package names (or a whole AI answer: anything shaped like com.abc.xyz counts), see where each one stands,
 // then turn them all off, back on, or remove them. One app after another through the same calls as the buttons on each row.
-let bulkKnown = null;                                                // pkg -> { off, keep } for every package on the TV
+let bulkKnown = null;                                                // pkg -> { off, keep, version } for every package on the TV
 const bulkPkgs = () => [...new Set(($('#bulktext').value.match(/\b[a-zA-Z][\w]*(?:\.[a-zA-Z_][\w]*)+\b/g) || [])
   .filter((p) => p.split('.').every((part) => part.length >= 2)))];   // "e.g" is not a package; anything not on the TV shows as such
 async function bulkStatus(force) {
   if (bulkKnown && !force) return bulkKnown;
   const r = await api('/api/apps?system=1', null, true); if (!r) return null;
-  seedMeta(r.apps); bulkKnown = new Map(r.apps.map((a) => [a.pkg, { off: !!a.off, keep: !!a.keep }]));
+  seedMeta(r.apps); bulkKnown = new Map(r.apps.map((a) => [a.pkg, { off: !!a.off, keep: !!a.keep, version: a.version || '' }]));
   return bulkKnown;
 }
 function bulkWhere(pkg) {

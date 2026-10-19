@@ -228,6 +228,7 @@ dialog.menu .card-head { margin:0 0 4px; }
 .mitem .mi { display:flex; flex:none; }
 /* ⋯ menus (core.js popover) */
 .pop { position:absolute; z-index:50; display:flex; flex-direction:column; min-width:190px; padding:6px; background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.25); }
+.pop[popover] { position:fixed; inset:auto; margin:0; overflow:visible; color:var(--ink); }   /* shown in the top layer: placed by popover() */
 .pop button { min-height:var(--ctl); background:transparent; text-align:left; padding:0 12px; font-size:14px; border-radius:8px; white-space:nowrap; }
 .pop button:hover, .pop button:focus-visible { background:var(--btn); }
 .filebtn { cursor:pointer; gap:2px; }
@@ -245,10 +246,21 @@ dialog.ask .acts.wrap { flex-wrap:wrap; }
 #pickback { align-self:flex-start; }
 #ver { text-align:center; font-size:12px; padding:6px 0 14px; }
 
-/* launcher gallery (js/launchers.js): a picture, the name and words, tags, one button */
-.lthumb { width:96px; height:54px; object-fit:cover; border-radius:8px; background:var(--line); flex:none; }
-.lthumb.none { visibility:hidden; }
-.ltags { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 2px; }
+/* launcher gallery (js/launchers.js): cards, each its home screen big, the name, tags, the next step and ⋯ */
+#launchdlg .card, #infodlg .card:has(.lgrid) { width:min(900px, 94vw); }
+.lgrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:12px; }
+.lcard { display:flex; flex-direction:column; border-radius:12px; overflow:hidden; background:var(--bg); box-shadow:inset 0 0 0 1px var(--line); }
+.lcard.on { box-shadow:inset 0 0 0 2px var(--accent); }
+.lshot { display:block; padding:0; border:0; border-radius:0; height:auto; aspect-ratio:16/9; background:#111; cursor:zoom-in; overflow:hidden; }
+.lshot img { display:block; width:100%; height:100%; object-fit:cover; }
+.lshot img.none { visibility:hidden; }
+.lbody { display:flex; flex-direction:column; gap:6px; padding:10px 12px 12px; flex:1; }
+.lbody small.warn { color:var(--warn, #b45309); }
+.lacts { display:flex; gap:8px; margin-top:auto; padding-top:4px; }
+.lacts > button:first-child { flex:1; }
+dialog.ldetail .card { width:min(640px, 94vw); }
+.lbig { width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:10px; background:#111; }
+.ltags { display:flex; flex-wrap:wrap; gap:6px; }
 .ltag { font-size:11px; padding:2px 8px; border-radius:999px; box-shadow:inset 0 0 0 1px var(--line); color:var(--muted); }
 .ltag.use { background:var(--sel); color:var(--accent-text); box-shadow:inset 0 0 0 1px var(--accent); }
 .ltag.warn, .item .name small.warn { color:var(--warn, #b45309); }
