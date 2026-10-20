@@ -196,14 +196,23 @@ class HomeActivity : Activity() {
 
     override fun onPause() { ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); super.onPause() }
 
+    private var cpuAgain = false
+
     /** The cards' numbers, read off the main thread; none at all while they are off. */
     private fun widgetsRead() {
         val want = Store.list(this, "widgets")
-        (bandWrap.layoutParams as LinearLayout.LayoutParams).topMargin = dp(if (want.isEmpty()) 40 else 24)
-        if (want.isEmpty()) { widgets.visibility = View.GONE; return }
+        val note = Store.get(this).optString("note")
+        val none = want.isEmpty() && note.isEmpty()
+        (bandWrap.layoutParams as LinearLayout.LayoutParams).topMargin = dp(if (none) 40 else 24)
+        if (none) { widgets.visibility = View.GONE; return }
         bg.execute {
             val f = widgets.read(want)
-            runOnUiThread { if (!isDestroyed) widgets.show(want, f) { p -> apps.firstOrNull { it.pkg == p }?.label ?: p.substringAfterLast('.') } }
+            runOnUiThread {
+                if (isDestroyed) return@runOnUiThread
+                widgets.show(want, f, note) { p -> apps.firstOrNull { it.pkg == p }?.label ?: p.substringAfterLast('.') }
+                // TV Setup answers the CPU with its last measure and starts the next: the first time there is none, so ask again soon, once
+                if ("system" in want && f.cpu == null && !cpuAgain) { cpuAgain = true; ui.postDelayed({ if (!isDestroyed) widgetsRead() }, 2500) }
+            }
         }
     }
 

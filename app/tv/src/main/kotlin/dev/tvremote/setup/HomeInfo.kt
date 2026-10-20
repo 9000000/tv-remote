@@ -21,14 +21,26 @@ import java.util.Locale
 /**
  * What TV Home's "usage" card shows (HomeConfig.USAGE), counted here so it is the same number the app limits hold to:
  *   {week: [{pkg, sec}] the most used apps of the last 7 days with today, days: [sec] each day's total (today first), limits: [{pkg, min (today's, extra included), used (sec)}]}
+ * its "timer" card: {sleep_at, bedtime: {on, ranges}, in_bedtime, snooze_until} (Rules.state's),
+ * and the system card's CPU ring, "cpu": {busy (0..1 over one second), cores}; Android 8+ keeps /proc/stat from apps, the shell reads it.
  * Which apps a family watches is nobody else's business: only TV Home, signed by this project's key (or by this app's own,
  * a build signed with one key for both), gets an answer.
  */
 class HomeInfo : ContentProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         val c = context ?: return null
-        if (method != "usage" || !trusted(c, Binder.getCallingUid())) return null
+        if (method !in setOf("usage", "timer", "cpu") || !trusted(c, Binder.getCallingUid())) return null
         val now = System.currentTimeMillis()
+        if (method == "cpu") {                                         // the last measure at once, the next one started: a binder call never waits on ADB
+            measure()
+            return cpu?.let { Bundle().apply { putString("json", it) } }
+        }
+        if (method == "timer") {
+            val o = Rules.load(c)
+            return Bundle().apply { putString("json", JSONObject().put("sleep_at", o.optLong("sleep_at").let { if (it > now) it else 0L })
+                .put("bedtime", Rules.bedtime(o)).put("in_bedtime", Rules.inBedtime(o, now))
+                .put("snooze_until", o.optLong("snooze_until").let { if (it > now) it else 0L }).toString()) }
+        }
         val token = Binder.clearCallingIdentity()                      // our own permissions from here (usage access)
         try {
             val on = (c.getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive
@@ -59,6 +71,20 @@ class HomeInfo : ContentProvider() {
         } finally { Binder.restoreCallingIdentity(token) }
     }
 
+    /** One second of /proc/stat through the shell, on its own thread, never two at once (a dial may wait minutes for the TV's question). */
+    private fun measure() {
+        if (!measuring.compareAndSet(false, true)) return
+        Thread({
+            try {
+                val a = RemoteService.shell("head -1 /proc/stat") ?: return@Thread
+                Thread.sleep(1000)
+                val b = RemoteService.shell("head -1 /proc/stat") ?: return@Thread
+                val busy = busy(a, b) ?: return@Thread
+                cpu = JSONObject().put("busy", busy.toDouble()).put("cores", Runtime.getRuntime().availableProcessors()).toString()
+            } finally { measuring.set(false) }
+        }, "home-cpu").apply { isDaemon = true }.start()
+    }
+
     private fun trusted(c: Context, uid: Int): Boolean {
         val pm = c.packageManager
         if (pm.getPackagesForUid(uid)?.contains(HOME) != true) return false
@@ -80,7 +106,20 @@ class HomeInfo : ContentProvider() {
     override fun delete(u: Uri, s: String?, a: Array<out String>?) = 0
     override fun update(u: Uri, v: ContentValues?, s: String?, a: Array<out String>?) = 0
 
-    private companion object {
+    internal companion object {
+        @Volatile var cpu: String? = null                              // {busy, cores}, the latest measure
+        val measuring = java.util.concurrent.atomic.AtomicBoolean()
+
+        /** The busy share between two "cpu " lines of /proc/stat (user nice system idle iowait ...): idle and waiting for the disk are not busy. */
+        fun busy(a: String, b: String): Float? {
+            fun nums(s: String) = s.lines().firstOrNull { it.startsWith("cpu ") }?.trim()?.split(Regex("\\s+"))?.drop(1)?.mapNotNull { it.toLongOrNull() }
+            val x = nums(a) ?: return null; val y = nums(b) ?: return null
+            if (x.size < 4 || y.size < 4) return null
+            val idle = { v: List<Long> -> v[3] + v.getOrElse(4) { 0 } }
+            val all = y.sum() - x.sum()
+            if (all <= 0) return null
+            return ((all - (idle(y) - idle(x))).toFloat() / all).coerceIn(0f, 1f)
+        }
         const val HOME = "dev.tvremote.home"
         const val HOME_CERT = "657aabacfdccbc22ff1f61138df7efd79fae765df742f7d15d80dac84c7d81b3"   // app/home/signing.jks, alias tvhome
     }

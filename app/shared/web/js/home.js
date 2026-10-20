@@ -10,7 +10,8 @@ const HOME_WALLS = { night: '#0b0f1a,#18223f', ocean: '#03192b,#0a4a66', dusk: '
 const HOME_WALL_WORDS = { night: 'home.wall_night', ocean: 'home.wall_ocean', dusk: 'home.wall_dusk', forest: 'home.wall_forest', aurora: 'home.wall_aurora', black: 'home.wall_black',
   sunset: 'home.wall_sunset', ember: 'home.wall_ember', plum: 'home.wall_plum', midnight: 'home.wall_midnight', teal: 'home.wall_teal', slate: 'home.wall_slate', graphite: 'home.wall_graphite', navy: 'home.wall_navy', wine: 'home.wall_wine', moss: 'home.wall_moss' };
 const HOME_DOCK_MAX = 6;                                              // HomeConfig.DOCK_MAX
-const HOME_WIDGETS = ['system', 'usage'];                             // HomeConfig.WIDGETS, in the order drawn
+const HOME_WIDGETS = ['system', 'usage', 'lunar', 'timer'];          // HomeConfig.WIDGETS, in the order drawn
+const HOME_WIDGET_WORDS = { system: 'home.w_system', usage: 'home.w_usage', lunar: 'home.w_lunar', timer: 'home.w_timer' };
 
 // The 🏠 card's line and its Customize button: only where TV Home is on the TV
 async function homeCard() {
@@ -64,18 +65,23 @@ async function homeOpen() {
   const clock = el('input', { type: 'checkbox', onchange: () => send({ clock24: clock.checked }) });
   const greet = el('input', { type: 'checkbox', onchange: () => send({ greet: greet.checked }) });
   const anim = el('input', { type: 'checkbox', onchange: () => send({ anim: anim.checked }) });
-  // the cards over the favourites; the usage one reads TV Setup, so a TV Setup too old for it is offered first
+  // the cards over the favourites; usage and timer read TV Setup, so a TV Setup too old for them is offered first
   const widget = (w) => {
     const box = el('input', { type: 'checkbox', onchange: async () => {
-      if (box.checked && w === 'usage' && !await setupFor('home_usage')) { box.checked = false; return; }
+      if (box.checked && (w === 'usage' || w === 'timer') && !await setupFor('home_usage')) { box.checked = false; return; }
       const on = r.config.widgets.filter((x) => x !== w);
       send({ widgets: box.checked ? HOME_WIDGETS.filter((x) => x === w || on.includes(x)) : on });
     } });
     return box;
   };
-  const wSystem = widget('system'), wUsage = widget('usage');
-  const wLines = [el('label', { className: 'check' }, wSystem, el('span', { textContent: T('home.w_system') })),
-    el('label', { className: 'check' }, wUsage, el('span', { textContent: T('home.w_usage') }))];
+  const boxes = Object.fromEntries(HOME_WIDGETS.map((w) => [w, widget(w)]));
+  const wLines = HOME_WIDGETS.map((w) => el('label', { className: 'check' }, boxes[w], el('span', { textContent: T(HOME_WIDGET_WORDS[w]) })));
+  // the family's note, pinned on the TV's home screen until it is taken down (HomeConfig.NOTE_MAX)
+  const note = el('input', { type: 'text', maxLength: 140, placeholder: T('home.note_ph'), 'aria-label': T('home.note') });
+  const pin = el('button', { type: 'button', className: 'primary', textContent: T('home.note_pin'), onclick: () => send({ note: note.value.trim() }) });
+  const unpin = el('button', { type: 'button', textContent: T('home.note_clear'), onclick: () => { note.value = ''; send({ note: '' }); } });
+  note.addEventListener('keydown', (e) => { if (e.key === 'Enter') pin.click(); });
+  const noteHead = el('h3', { textContent: T('home.note') }), noteLine = UI.line(note, pin, unpin);
   const gal = el('div', { className: 'homegal' }), credit = el('p', { className: 'note', textContent: T('home.gal_note') });
   const galHead = el('h3', { textContent: T('home.gallery') });
   homeGallery(gal, credit, galHead, (n) => { r = n; homeNow = n; draw(); });
@@ -100,7 +106,10 @@ async function homeOpen() {
     clock.checked = c.clock24; greet.checked = c.greet; anim.checked = c.anim !== false;
     const w = c.widgets;                                              // absent: a TV Home older than the cards
     wLines.forEach((l) => { l.hidden = !w; });
-    wSystem.checked = !!w && w.includes('system'); wUsage.checked = !!w && w.includes('usage');
+    for (const k of HOME_WIDGETS) boxes[k].checked = !!w && w.includes(k);
+    noteHead.hidden = noteLine.hidden = c.note === undefined;     // a TV Home older than the note
+    if (document.activeElement !== note) note.value = c.note || '';
+    unpin.disabled = !c.note;
   }
 
   const d = el('dialog', { className: 'ask homeask' }, el('div', { className: 'card' },
@@ -112,6 +121,7 @@ async function homeOpen() {
     el('label', { className: 'check' }, greet, el('span', { textContent: T('home.greet') })),
     el('label', { className: 'check' }, anim, el('span', { textContent: T('home.anim') })),
     ...wLines,
+    noteHead, noteLine,
     el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden));
   d.addEventListener('close', () => { d.remove(); homeCard(); });
   draw();

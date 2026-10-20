@@ -63,8 +63,8 @@ app/tv/                  TV Setup: MainActivity (the TV screen), RemoteService (
                          DNS filter that cut the TV off), DrawLayer + DrawReceiver (the drawing over every app), NotifyLayer + NotifyReceiver (the message card in a corner; `Notify.kt` in the shared code is the one place its corner / seconds are clamped), KeepAdb (ADB debugging
                          back on when switched off, with WRITE_SECURE_SETTINGS granted through ADB)
 app/home/                TV Home, the launcher: plain Views, no :shared (it would pack the web UI); HomeActivity (clock, dock,
-                         grid, long-press menu), Widgets (the system / usage cards; usage from TV Setup's HomeInfo provider, which answers
-                         only TV Home by its signing key), Apps, Store (prefs), HomeReceiver (`--es set <b64 json>`, DUMP-protected, like
+                         grid, long-press menu), Widgets (system / usage / lunar / timer / note cards; usage, timer and CPU from TV
+                         Setup's HomeInfo provider, which answers only TV Home by its signing key), Lunar (the lunar calendar, offline), Apps, Store (prefs), HomeReceiver (`--es set <b64 json>`, DUMP-protected, like
                          RulesReceiver). Its settings' shape is ONE file, `app/shared/src/home/kotlin/.../HomeConfig.kt`, compiled
                          into :shared, :desktop and :home; the clients' side is `core/ontv/Home.kt` + `/api/home` + `js/home.js`.
                          In the gallery it is kind "self": its APK is the latest release's `tv-home.apk`, pinned by SHA256SUMS

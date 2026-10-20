@@ -101,6 +101,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         fun secure(): Boolean = running?.https != null
         /** connecting | allow | ready | error: the state of the input session, for the app's own screen. */
         fun adbState(): String = adbState
+        /** A command in the TV's shell over our own ADB link (null without one): what apps may not read, like /proc/stat. */
+        fun shell(cmd: String): String? = try { running?.link?.get()?.shell(cmd) } catch (e: Exception) { null }
 
         fun enabled(c: Context): Boolean = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean("on", true)
 

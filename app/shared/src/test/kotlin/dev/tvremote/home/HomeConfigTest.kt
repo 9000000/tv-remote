@@ -63,4 +63,10 @@ class HomeConfigTest {
         for (w in HomeConfig.WALLS) assertEquals(w, HomeConfig.clean(JSONObject().put("wall", w)).getString("wall"))
         assertEquals(true, HomeConfig.WALLS.size >= 16)
     }
+
+    @Test fun noteIsOneShortLine() {
+        assertEquals("Tắt TV lúc 9h nhé", HomeConfig.clean(JSONObject().put("note", "  Tắt TV\n lúc   9h nhé ")).getString("note"))
+        assertEquals(HomeConfig.NOTE_MAX, HomeConfig.clean(JSONObject().put("note", "x".repeat(500))).getString("note").length)
+        assertEquals("", HomeConfig.clean(JSONObject()).getString("note"))
+    }
 }
