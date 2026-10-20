@@ -19,6 +19,9 @@ import org.json.JSONObject
  *           "lunar" (the lunar date, the next full moon and Tết), "timer" (the sleep timer or bedtime, from TV Setup too;
  *           shown only while one is set), "weather" (the sky now and the next days, Open-Meteo: [place] or, by itself, the device's
  *           location or the internet address's)
+ *           Their order in the list is the order on the screen (the page and the TV's panel move them).
+ *   wlayout how they sit: "row" (side by side, small ones in a column at the end) or "big" (the first big on the left, the next
+ *           two small and stacked on the right: at most [BIG_SLOTS] show, the rest wait). A TV Home older than this ignores it
  *   place   a city for the weather card, as typed ([PLACE_MAX] characters); empty = automatic
  *   dream   TV Home is the TV's screensaver (the big clock and the wallpaper, [DREAM]). Read from the system, not kept: the
  *           launcher sets `screensaver_components` itself (it holds WRITE_SECURE_SETTINGS once a client has granted it over
@@ -38,6 +41,8 @@ object HomeConfig {
     /** Where a client puts the photo (the shell may write there; the app reads it with no permission). */
     const val PHOTO = "/sdcard/Android/data/$PKG/files/wall.jpg"
     val WIDGETS = listOf("system", "usage", "calendar", "lunar", "timer", "weather")
+    val LAYOUTS = listOf("row", "big")
+    const val BIG_SLOTS = 3
     const val NOTE_MAX = 140
     const val PLACE_MAX = 60
     /** TV Setup's answer to TV Home about app use (its HomeInfo provider): `call(USAGE, "usage")` → Bundle "json". */
@@ -58,6 +63,7 @@ object HomeConfig {
             .put("dream", o.optBoolean("dream", false))
             .put("note", o.optString("note").replace(Regex("\\s+"), " ").trim().take(NOTE_MAX))
             .put("place", o.optString("place").replace(Regex("\\s+"), " ").trim().take(PLACE_MAX))
+            .put("wlayout", o.optString("wlayout").takeIf { it in LAYOUTS } ?: "row")
             .put("widgets", JSONArray(o.optJSONArray("widgets")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty().filter { it in WIDGETS }.distinct()))
     }
 

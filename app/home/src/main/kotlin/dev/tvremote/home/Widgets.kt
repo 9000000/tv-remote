@@ -71,7 +71,8 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         private val ROSE = intArrayOf(0xFFFF7A7A.toInt(), 0xFFE0457B.toInt())
         private const val DIM = 0xA6FFFFFF.toInt()
         private val BIG = setOf("system", "usage", "calendar", "weather")
-        private const val PILLS = 300                                  // the small cards' column, dp
+        const val BIG_H = 180                                          // dp: the "big" layout's height, as high as a row of cards: the favourites stay on screen
+        private const val PILLS = 300                                 // the small cards' column, dp
         private const val WX_WEIGHT = 0.9f; private const val CAL_WEIGHT = 1.35f                           // the month needs seven columns: a little more of the row than the others
 
         private var calKey = 0; private var calMemo: Cal? = null
@@ -162,15 +163,23 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             cpu?.optDouble("busy", -1.0)?.takeIf { it >= 0 }?.toFloat(), cpu?.optInt("cores") ?: 0, cal, wx)
     }
 
-    fun show(want: List<String>, f: Facts, note: String, label: (String) -> String) {
+    /** [layout] is HomeConfig "wlayout"; the cards come in the order of [want]. */
+    fun show(want: List<String>, f: Facts, note: String, label: (String) -> String, layout: String = "row") {
         removeAllViews(); spark = null; speed = null
+        val timerView = if ("timer" in want) timer(f.timer) else null
+        val noteView = if (note.isNotEmpty()) pill(tile(AMBER, R.drawable.ic_message), note, "", 1).apply {   // the words are the card: large, no "Note" over them
+            ((getChildAt(1) as LinearLayout).getChildAt(0) as TextView).apply { textSize = 16f; maxLines = 3; ellipsize = android.text.TextUtils.TruncateAt.END }
+        } else null
+        val tall = layoutParams
+        if (layout == "big") {                                         // a fixed height, so the favourites below stay in view
+            if (tall != null && tall.height != dp(BIG_H)) { tall.height = dp(BIG_H); layoutParams = tall }
+            showBig(want, f, label, timerView, noteView); return
+        }
+        if (tall != null && tall.height != -2) { tall.height = -2; layoutParams = tall }
         val bigs = want.filter { it in BIG }
         val small = ArrayList<View>()
-        if ("lunar" in want) f.moon?.let { small += lunar(it) }
-        if ("timer" in want) timer(f.timer)?.let { small += it }
-        if (note.isNotEmpty()) small += pill(tile(AMBER, R.drawable.ic_message), note, "", 1).apply {   // the words are the card: large, no "Note" over them
-            ((getChildAt(1) as LinearLayout).getChildAt(0) as TextView).apply { textSize = 16f; maxLines = 3; ellipsize = android.text.TextUtils.TruncateAt.END }
-        }
+        for (w in want) when (w) { "lunar" -> f.moon?.let { small += lunar(it) }; "timer" -> timerView?.let { small += it } }
+        noteView?.let { small += it }
         // each big card's width, known before they are built: a narrow one leaves out its widest part rather than cutting words
         val pills = if (bigs.size >= 3) PILLS - 60 else PILLS           // three cards and the column: the column gives way a little
         val row = (if (width > 0) width else a.resources.displayMetrics.widthPixels - dp(96)) - (if (small.isNotEmpty() && bigs.isNotEmpty()) dp(pills + 20) else 0)
@@ -196,6 +205,133 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             addView(small.getOrNull(i) ?: View(a), LayoutParams(0, if (i < small.size) -2 else 0, 1f).apply { if (i > 0) leftMargin = dp(16) })
         }
         visibility = if (childCount == 0) View.GONE else View.VISIBLE
+    }
+
+    /**
+     * One large card on the left, two small ones stacked on the right: the first [HomeConfig.BIG_SLOTS] in order, the rest wait
+     * (the height is fixed so the favourites stay in view). The note keeps a place when there are many: it is pinned on purpose,
+     * so it takes the third slot rather than the widgets after the second.
+     */
+    private fun showBig(want: List<String>, f: Facts, label: (String) -> String, timerView: View?, noteView: View?) {
+        val keys = want.filter { (it != "timer" || timerView != null) && (it != "lunar" || f.moon != null) }.toMutableList()
+        if (noteView != null) { while (keys.size >= HomeConfig.BIG_SLOTS) keys.removeAt(keys.size - 1); keys += "note" }
+        val shown = keys.take(HomeConfig.BIG_SLOTS)
+        if (shown.isEmpty()) { visibility = View.GONE; return }
+        fun plain(k: String): View? = when (k) { "lunar" -> f.moon?.let { lunar(it) }; "timer" -> timerView; else -> noteView }
+        val total = (if (width > 0) width else a.resources.displayMetrics.widthPixels - dp(96)) - dp(20)
+        val rightW = if (shown.size > 1) (total * 0.42f).toInt() else 0
+        val leftW = if (shown.size > 1) total - rightW else total + dp(20)
+        val k0 = shown[0]
+        val left: View = if (k0 in BIG) card().also { c ->
+            when (k0) {
+                "system" -> system(c, f, leftW)
+                "calendar" -> calendar(c, f, leftW, dp(BIG_H) - dp(26) - dp(22))   // minus the card's padding, the title and its gap
+                "weather" -> weather(c, f, leftW)
+                else -> usage(c, f, label, leftW < dp(340))
+            }
+        } else plain(k0)!!.also { stand(it) }
+        addView(left, LayoutParams(leftW, -1))
+        if (shown.size > 1) {
+            val col = LinearLayout(a).apply { orientation = VERTICAL }
+            shown.drop(1).forEachIndexed { i, k ->
+                val v = if (k in BIG) card().also { c ->
+                    c.setPadding(dp(16), dp(8), dp(16), dp(8))
+                    when (k) {
+                        "system" -> systemHalf(c, f, rightW - dp(32))
+                        "calendar" -> calendarHalf(c, f)
+                        "weather" -> weatherHalf(c, f)
+                        else -> usageHalf(c, f, label)
+                    }
+                } else plain(k)!!
+                col.addView(v, LayoutParams(-1, 0, 1f).apply { if (i > 0) topMargin = dp(12) })
+            }
+            addView(col, LayoutParams(rightW, -1).apply { leftMargin = dp(20) })
+        }
+        visibility = View.VISIBLE
+    }
+
+    /** Rings only: as many as fit, no title, no graph. */
+    private fun systemHalf(card: LinearLayout, f: Facts, room: Int) {
+        fun part(p: Pair<Long, Long>) = if (p.second > 0) p.first.toFloat() / p.second else 0f
+        val all = ArrayList<View>()
+        all += ring(part(f.ram), a.getString(R.string.w_ram), CYAN)
+        f.cpu?.let { all += ring(it, a.getString(R.string.w_cpu), AMBER) }
+        all += ring(part(f.disk), a.getString(R.string.w_disk), VIOLET)
+        f.rssi?.let { r -> all += ring(((r + 100) * 2).coerceIn(0, 100) / 100f, a.getString(R.string.w_signal), GREEN) }
+        val row = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        all.take((room / dp(78)).coerceAtLeast(1)).forEach { row.addView(it, LayoutParams(0, -2, 1f)) }
+        card.gravity = Gravity.CENTER_VERTICAL
+        card.addView(row, LayoutParams(-1, -2))
+    }
+
+    /** A small ring with its percent inside and its name under it. */
+    private fun ring(part: Float, name: String, colors: IntArray) = LinearLayout(a).apply {
+        orientation = VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
+        addView(FrameLayout(a).apply {
+            addView(Ring(a, part, colors))
+            addView(text("${(part * 100).toInt()}%", 13f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL); gravity = Gravity.CENTER },
+                FrameLayout.LayoutParams(-1, -1))
+        }, LayoutParams(dp(50), dp(50)))
+        addView(text(name, 11f, Color.WHITE).apply { gravity = Gravity.CENTER }, LayoutParams(-1, -2).apply { topMargin = dp(2) })
+    }
+
+    /** Today as a date: the day in a square, the weekday and date, the lunar date under it (the month grid needs the large slot). */
+    private fun calendarHalf(card: LinearLayout, f: Facts) {
+        val c = f.cal ?: return
+        val r = a.resources
+        val loc = resources.configuration.locales[0]
+        val now = Date()
+        val d = c.moon
+        val month = r.getStringArray(R.array.lunar_month)[d.month - 1] + if (d.leap) a.getString(R.string.lunar_leap) else ""
+        val dayWord = if (d.day <= 10) a.getString(R.string.lunar_day_early, d.day) else d.day.toString()
+        val (can, chi) = Lunar.canChi(d.year)
+        val lunar = a.getString(R.string.lunar_title, dayWord, month) + " · " + a.getString(R.string.lunar_year, r.getStringArray(R.array.lunar_can)[can], r.getStringArray(R.array.lunar_chi)[chi])
+        val num = text(SimpleDateFormat("d", loc).format(now), 24f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL); gravity = Gravity.CENTER }
+        val row = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        row.addView(tile(CYAN, null, num), LayoutParams(dp(52), dp(52)))
+        val words = LinearLayout(a).apply { orientation = VERTICAL }
+        words.addView(text(SimpleDateFormat("EEEE", loc).format(now), 16f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) })
+        words.addView(text(SimpleDateFormat("d MMMM yyyy", loc).format(now), 12f, DIM))
+        words.addView(text(lunar, 12f, DIM))
+        row.addView(words, LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
+        card.gravity = Gravity.CENTER_VERTICAL
+        card.addView(row, LayoutParams(-1, -2))
+    }
+
+    /** The sky now: the picture, the temperature, the place, the words and today's low and high; no days to come. */
+    private fun weatherHalf(card: LinearLayout, f: Facts) {
+        val w = f.wx
+        card.gravity = Gravity.CENTER_VERTICAL
+        if (w == null) { card.addView(head(a.getString(R.string.w_weather), "")); card.addView(note(a.getString(R.string.wx_none))); return }
+        val row = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        row.addView(Sky(a, w.kind, w.night), LayoutParams(dp(52), dp(52)))
+        row.addView(text("${w.temp}°", 30f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) }, LayoutParams(-2, -2).apply { leftMargin = dp(10) })
+        val words = LinearLayout(a).apply { orientation = VERTICAL }
+        words.addView(text(w.place.ifEmpty { a.getString(R.string.wx_near) }, 14f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) })
+        words.addView(text(a.getString(kindWords(w.kind)), 12f, Color.WHITE))
+        words.addView(text(a.getString(R.string.wx_hi_lo, w.days[0].max, w.days[0].min), 12f, DIM))
+        row.addView(words, LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
+        card.addView(row, LayoutParams(-1, -2))
+    }
+
+    /** The two most used apps side by side, with their limits; no columns of the days. */
+    private fun usageHalf(card: LinearLayout, f: Facts, label: (String) -> String) {
+        val u = f.usage
+        val week = u?.optJSONArray("week")
+        val days = u?.optJSONArray("days")
+        var total = 0L
+        if (days != null) for (i in 0 until days.length()) total += days.optLong(i)
+        card.addView(head(a.getString(R.string.w_week).substringBefore(" · "), if (total > 0) span(total * 1000) else ""))
+        if (u == null) { card.addView(note(a.getString(R.string.w_need_setup))); return }
+        val limits = HashMap<String, JSONObject>()
+        u.optJSONArray("limits")?.let { l -> for (i in 0 until l.length()) l.optJSONObject(i)?.let { limits[it.optString("pkg")] = it } }
+        val rows = ArrayList<Pair<String, Long>>()
+        if (week != null) for (i in 0 until minOf(2, week.length())) week.getJSONObject(i).let { rows += it.optString("pkg") to it.optLong("sec") }
+        if (rows.isEmpty()) { card.addView(note(a.getString(R.string.w_none))); return }
+        val max = rows.maxOf { it.second }.coerceAtLeast(1)
+        val line = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        rows.forEachIndexed { i, (p, sec) -> line.addView(appRow(p, label(p), f.icons[p], sec, sec.toFloat() / max, limits[p]), LayoutParams(0, -2, 1f).apply { if (i > 0) leftMargin = dp(18) }) }
+        card.addView(line, LayoutParams(-1, 0, 1f))
     }
 
     private fun lunar(m: Moon): View {
@@ -340,7 +476,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
     }
 
     /** The month: the title and the lunar month and year of today, then one View drawing the weekdays and every day ([narrow]: no lunar line). */
-    private fun calendar(card: LinearLayout, f: Facts, width: Int) {
+    private fun calendar(card: LinearLayout, f: Facts, width: Int, maxH: Int = Int.MAX_VALUE) {
         val c = f.cal ?: return
         val r = a.resources
         val (can, chi) = Lunar.canChi(c.moon.year)
@@ -348,7 +484,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val year = a.getString(R.string.lunar_year, r.getStringArray(R.array.lunar_can)[can], r.getStringArray(R.array.lunar_chi)[chi])
         val lunar = a.getString(R.string.cal_lunar, month, year)
         val title = r.getStringArray(R.array.cal_month)[c.grid.month - 1] + ", " + c.grid.year
-        val view = Month(a, c, Calendar.getInstance(resources.configuration.locales[0]).firstDayOfWeek, (width - dp(40)) / 7f)
+        val view = Month(a, c, Calendar.getInstance(resources.configuration.locales[0]).firstDayOfWeek, (width - dp(40)) / 7f, maxH)
         card.addView(head(title, if (width - dp(40) >= dp(320)) lunar else ""))
         card.addView(view, LayoutParams(-1, view.wanted).apply { topMargin = dp(6) })
     }
@@ -654,9 +790,10 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
      * beside it on one line; middle, the lunar day under the solar one; thin, the solar numbers only. Today filled, Sundays rose;
      * a lunar 1st shows its month ("1/10", the Tết rose), the 15th amber. Paints made once: drawing allocates nothing.
      */
-    private inner class Month(c: Context, val cal: Cal, first: Int, slot: Float) : View(c) {
+    private inner class Month(c: Context, val cal: Cal, first: Int, slot: Float, maxH: Int) : View(c) {
         private val wide = slot >= dp(64); private val two = !wide && slot >= dp(24)
-        private val rowH = dp(if (wide) 23 else if (two) 26 else 21); private val headH = dp(17)
+        private val headH = dp(17)
+        private val rowH = minOf(dp(if (wide) 23 else if (two) 26 else 21), ((maxH - headH) / cal.grid.rows).coerceAtLeast(dp(16)))   // a six-week month in the fixed-height slot: thinner rows
         val wanted = headH + rowH * cal.grid.rows
         private val tiny = slot < dp(30)
         private val big = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = (if (tiny) 12.5f else 14f) * sp; typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) }

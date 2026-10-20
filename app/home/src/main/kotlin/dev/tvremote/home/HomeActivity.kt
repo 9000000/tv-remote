@@ -245,7 +245,7 @@ class HomeActivity : Activity() {
     /** The cards' numbers, read off the main thread; none at all while they are off. */
     private fun widgetsRead() {
         val want = Store.list(this, "widgets")
-        val note = Store.get(this).optString("note")
+        val conf = Store.get(this); val note = conf.optString("note"); val layout = conf.optString("wlayout", "row")
         val none = want.isEmpty() && note.isEmpty()
         (bandWrap.layoutParams as LinearLayout.LayoutParams).topMargin = dp(if (none) 40 else 24)
         if (none) { widgets.visibility = View.GONE; return }
@@ -253,7 +253,7 @@ class HomeActivity : Activity() {
             val f = widgets.read(want)
             runOnUiThread {
                 if (isDestroyed) return@runOnUiThread
-                widgets.show(want, f, note) { p -> apps.firstOrNull { it.pkg == p }?.label ?: p.substringAfterLast('.') }
+                widgets.show(want, f, note, { p -> apps.firstOrNull { it.pkg == p }?.label ?: p.substringAfterLast('.') }, layout)
                 // TV Setup answers the CPU with its last measure and starts the next: the first time there is none, so ask again soon, once
                 if ("system" in want && f.cpu == null && !cpuAgain) { cpuAgain = true; ui.postDelayed({ if (!isDestroyed) widgetsRead() }, 2500) }
             }

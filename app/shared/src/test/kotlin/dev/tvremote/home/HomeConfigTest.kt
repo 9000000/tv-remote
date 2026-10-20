@@ -25,6 +25,14 @@ class HomeConfigTest {
         assertEquals(listOf("a.b", "c.d", "e.f", "g.h", "i.j", "k.l"), dock(c))
     }
 
+    @Test fun layoutIsAKnownOneElseRowAndKeepsTheOrder() {
+        assertEquals("row", HomeConfig.clean(JSONObject()).getString("wlayout"))
+        assertEquals("row", HomeConfig.clean(JSONObject().put("wlayout", "grid")).getString("wlayout"))
+        val c = HomeConfig.merge(JSONObject().put("widgets", JSONArray(listOf("weather", "calendar"))), JSONObject().put("wlayout", "big"))
+        assertEquals("big", c.getString("wlayout"))
+        assertEquals("weather", c.getJSONArray("widgets").getString(0))                 // moving never sorts them back
+    }
+
     @Test fun widgetsAreKnownOnesOnceInTheirOrderAsSent() {
         val c = HomeConfig.clean(JSONObject().put("widgets", JSONArray(listOf("usage", "bogus", "usage", "system"))))
         val w = c.getJSONArray("widgets").let { a -> (0 until a.length()).map { a.getString(it) } }

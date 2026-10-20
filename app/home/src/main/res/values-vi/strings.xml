@@ -119,4 +119,12 @@
     <string name="wx_rain">Mưa</string>
     <string name="wx_snow">Tuyết</string>
     <string name="wx_storm">Dông</string>
+    <string name="w_order_hint">Nút bên phải mỗi thẻ để đổi chỗ: bấm nút đó, rồi Lên / Xuống, rồi OK.</string>
+    <string name="c_move">Đổi chỗ</string>
+    <string name="c_moving">Lên / Xuống, rồi OK</string>
+    <string name="w_layout">Cách xếp</string>
+    <string name="c_layout_row">Hàng ngang</string>
+    <string name="c_layout_row_sub">cạnh nhau</string>
+    <string name="c_layout_big">1 to, 2 nhỏ</string>
+    <string name="c_layout_big_sub">chỉ 3 thẻ đầu</string>
 </resources>
