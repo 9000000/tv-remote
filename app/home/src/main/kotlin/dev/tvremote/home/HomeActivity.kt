@@ -274,7 +274,7 @@ class HomeActivity : Activity() {
         scrollAnim?.cancel()
         if (!Motion.on) { scroll.scrollTo(0, y); return }
         if (scroll.scrollY == y) return
-        scrollAnim = ObjectAnimator.ofInt(scroll, "scrollY", scroll.scrollY, y).apply { duration = 300; interpolator = Motion.glide; start() }
+        scrollAnim = ObjectAnimator.ofInt(scroll, "scrollY", scroll.scrollY, y).apply { duration = 420; interpolator = Motion.glide; start() }
     }
 
     /** The grid is lit and in place while focus is in it; from the dock or the buttons it waits a little lower and dimmer, then rises as focus comes down. */
@@ -440,8 +440,8 @@ class HomeActivity : Activity() {
             val at = dock.indexOfChild(v)
             if (at < 0) return false
             when (dir) {
-                Nav.Dir.RIGHT -> dock.getChildAt(at + 1)?.let { go(it) }
-                Nav.Dir.LEFT -> dock.getChildAt(at - 1)?.let { go(it) }
+                Nav.Dir.RIGHT -> dock.getChildAt(at + 1)?.let { go(it) } ?: v.nudge(1, 0)
+                Nav.Dir.LEFT -> dock.getChildAt(at - 1)?.let { go(it) } ?: v.nudge(-1, 0)
                 Nav.Dir.UP -> return false
                 Nav.Dir.DOWN -> { val row = grid.getChildAt(0) as? ViewGroup ?: return false; wantCol = -1; go(row.getChildAt(Nav.nearest(centres(row), centre(v)))) }
             }
@@ -454,6 +454,7 @@ class HomeActivity : Activity() {
         if (to == null) {
             if (dir == Nav.Dir.UP && dock.childCount > 0) go(dock.getChildAt(Nav.nearest(centres(dock), centre(v))))
             else if (dir == Nav.Dir.UP) return false
+            else v.nudge(if (dir == Nav.Dir.RIGHT) 1 else if (dir == Nav.Dir.LEFT) -1 else 0, if (dir == Nav.Dir.DOWN) 1 else 0)
             return true
         }
         val want = Nav.wantAfter(dir, col, wantCol)
@@ -687,7 +688,6 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
     private var shownMark: Badges.Mark? = null
     private val lift: Float
     private val across: Float
-    private val hideShine = Runnable { shine.alpha = 0f }
 
     init {
         orientation = VERTICAL; isFocusable = true; isClickable = true; isLongClickable = true
@@ -714,9 +714,9 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
             card.addView(inner, FrameLayout.LayoutParams(-1, -1))
             content = inner
         }
-        shine.background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(0x00FFFFFF, 0x38FFFFFF, 0x00FFFFFF))
-        shine.alpha = 0f
-        card.addView(shine, FrameLayout.LayoutParams(w / 2, -1))
+        shine.background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x30FFFFFF, 0x0AFFFFFF, 0x00FFFFFF))
+        shine.alpha = 0f; shine.translationY = -lift
+        card.addView(shine, FrameLayout.LayoutParams(-1, h * 2 / 3))
         ring.background = ringDrawable(r, dp)
         ring.alpha = 0f
         card.addView(ring, FrameLayout.LayoutParams(-1, -1))
@@ -737,24 +737,32 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
      */
     fun focus(on: Boolean) {
         card.animate().cancel(); ring.animate().cancel(); name.animate().cancel(); content.animate().cancel(); shine.animate().cancel()
-        removeCallbacks(hideShine)
         if (!Motion.on) {
             card.scaleX = 1f; card.scaleY = 1f; card.translationZ = 0f; content.scaleX = 1f; content.scaleY = 1f
             ring.alpha = if (on) 1f else 0f; name.alpha = if (on) 1f else 0f; name.translationY = 0f; shine.alpha = 0f
             return
         }
-        val s = if (on) 1.1f else 1f
-        val t = if (on) 240L else 190L
-        val ip = if (on) Motion.lift else Motion.glide
+        // in on a spring, out on a plain glide a little slower: the next tile's rise leads, the last one sinks behind it
+        val s = if (on) 1.12f else 1f
+        val t = if (on) 520L else 300L
+        val ip = if (on) Motion.spring else Motion.glide
+        card.translationX = 0f; card.translationY = 0f
         card.animate().scaleX(s).scaleY(s).translationZ(if (on) lift else 0f).setDuration(t).setInterpolator(ip).withLayer().start()
-        content.animate().scaleX(if (on) 1.06f else 1f).scaleY(if (on) 1.06f else 1f).setDuration(t + 60).setInterpolator(Motion.glide).start()
-        ring.animate().alpha(if (on) 1f else 0f).setDuration(if (on) 180L else 140L).setInterpolator(Motion.glide).start()
-        name.animate().alpha(if (on) 1f else 0f).translationY(if (on) 2f else 0f).setDuration(t).setInterpolator(Motion.glide).start()
-        if (on) {
-            shine.translationX = -across / 2; shine.alpha = 1f
-            shine.animate().translationX(across).setDuration(520).setInterpolator(Motion.glide).start()
-            postDelayed(hideShine, 540)
-        } else shine.alpha = 0f
+        content.animate().scaleX(if (on) 1.05f else 1f).scaleY(if (on) 1.05f else 1f).setDuration(t).setInterpolator(ip).start()
+        ring.animate().alpha(if (on) 1f else 0f).setDuration(if (on) 200L else 160L).setInterpolator(Motion.glide).start()
+        name.animate().alpha(if (on) 1f else 0f).translationY(if (on) 0f else -lift / 3).setDuration(if (on) 360L else 200L).setInterpolator(Motion.glide).start()
+        // the gloss: light from above that settles on the card as it rises, rather than a sweep on every move (busy when stepping fast)
+        shine.animate().alpha(if (on) 1f else 0f).translationY(if (on) 0f else -lift).setDuration(if (on) 420L else 200L).setInterpolator(Motion.glide).start()
+    }
+
+    /** Nothing that way: the card leans toward it and wobbles back, so the press was felt (Apple TV does the same). */
+    fun nudge(dx: Int, dy: Int) {
+        if (!Motion.on) return
+        val px = across / 40f
+        card.animate().cancel()
+        card.animate().translationX(dx * px).translationY(dy * px).setDuration(80).setInterpolator(Motion.glide).withEndAction {
+            card.animate().translationX(0f).translationY(0f).setDuration(460).setInterpolator(Motion.bounce).start()
+        }.start()
     }
 
     /** The picture let go (memory is short while the screen is hidden) and put back; the tile keeps its place and its colour meanwhile. */
@@ -829,10 +837,26 @@ class BadgeView(c: Context, private val dp: (Number) -> Int) : View(c) {
     }
 }
 
+/**
+ * A damped spring as an interpolator, [damping] < 1: x(t) = 1 - e^(-ζωt)(cos ωd·t + ζω/ωd · sin ωd·t), with ω chosen so it has
+ * settled (within 0.2 %) at t = 1. A PathInterpolator can overshoot once; a spring eases into its rest, which is what reads as smooth.
+ */
+class Spring(private val damping: Float) : android.animation.TimeInterpolator {
+    private val w = 6.2f / damping
+    private val wd = w * Math.sqrt(1.0 - damping * damping).toFloat()
+    override fun getInterpolation(t: Float): Float {
+        if (t >= 1f) return 1f
+        val e = Math.exp((-damping * w * t).toDouble()).toFloat()
+        return 1f - e * (Math.cos((wd * t).toDouble()).toFloat() + damping * w / wd * Math.sin((wd * t).toDouble()).toFloat())
+    }
+}
+
 /** The motion TV Home uses: on from its setting, off when the system's animator duration scale is 0 (Settings, "remove animations"). */
 object Motion {
     @JvmField var on = true
     val lift = PathInterpolator(0.34f, 1.35f, 0.64f, 1f)              // overshoots a little then settles: a spring
+    val spring = Spring(0.62f)                                        // a real damped spring: rises fast, passes ~6 %, settles (Apple TV's focus)
+    val bounce = Spring(0.35f)                                        // looser: the nudge at an edge wobbles back
     val glide = PathInterpolator(0.2f, 0.8f, 0.2f, 1f)                // fast out, long soft end
 
     fun read(c: Context, conf: JSONObject) {
@@ -844,7 +868,7 @@ object Motion {
     fun pop(v: View, focused: Boolean) {
         v.animate().cancel()
         val s = if (focused) 1.06f else 1f
-        if (!on) { v.scaleX = 1f; v.scaleY = 1f } else v.animate().scaleX(s).scaleY(s).setDuration(200).setInterpolator(if (focused) lift else glide).start()
+        if (!on) { v.scaleX = 1f; v.scaleY = 1f } else v.animate().scaleX(s).scaleY(s).setDuration(if (focused) 420 else 220).setInterpolator(if (focused) spring else glide).start()
     }
 }
 
