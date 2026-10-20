@@ -100,12 +100,12 @@ object Customize {
         // switches as tiles, two to a row: an icon, a name, a line under it; on = a blue tint with a blue edge, as everywhere in the app
         var pair: LinearLayout? = null
         var inRow = 0
-        fun tile(res: Int, text: String, sub: String?, key: String, widget: Boolean = false) {
+        fun tile(res: Int, text: String, sub: String?, key: String) {
             if (pair == null || inRow == 2) {
                 pair = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }
                 col.addView(pair, LinearLayout.LayoutParams(-1, -2).apply { if (inRow == 2) topMargin = gap }); inRow = 0
             }
-            var on = if (widget) Store.list(a, "widgets").contains(key) else conf.optBoolean(key, true)
+            var on = conf.optBoolean(key, true)
             val ic = ImageView(a).apply { setImageResource(res) }
             val state = label("", 12f, DIM)
             val t = LinearLayout(a).apply {
@@ -132,8 +132,7 @@ object Customize {
             t.onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
             t.setOnClickListener {
                 on = !on
-                if (!widget) try { Store.change(a, JSONObject().put(key, on)) } catch (e: SecurityException) { on = !on; systemDream(a) }
-                else Store.putList(a, "widgets", HomeConfig.WIDGETS.filter { w -> if (w == key) on else Store.list(a, "widgets").contains(w) })
+                try { Store.change(a, JSONObject().put(key, on)) } catch (e: SecurityException) { on = !on; systemDream(a) }
                 paint()
             }
             pair!!.addView(t, LinearLayout.LayoutParams(0, -2, 1f).apply { if (inRow == 1) leftMargin = gap })
@@ -147,12 +146,9 @@ object Customize {
         if (inRow == 1) pair!!.addView(View(a), LinearLayout.LayoutParams(0, 0, 1f).apply { leftMargin = gap })   // a lone tile keeps half the width
         pair = null
         section(a.getString(R.string.w_widgets))
-        tile(R.drawable.ic_gauge, a.getString(R.string.w_system), a.getString(R.string.c_system_sub), "system", true)
-        tile(R.drawable.ic_chart, a.getString(R.string.w_usage), a.getString(R.string.c_usage_sub), "usage", true)
-        tile(R.drawable.ic_calendar, a.getString(R.string.w_calendar), a.getString(R.string.c_calendar_sub), "calendar", true)
-        tile(R.drawable.ic_moon, a.getString(R.string.w_lunar), a.getString(R.string.c_lunar_sub), "lunar", true)
-        tile(R.drawable.ic_timer, a.getString(R.string.w_timer), a.getString(R.string.c_timer_sub), "timer", true)
-        tile(R.drawable.ic_weather, a.getString(R.string.w_weather), a.getString(R.string.c_weather_sub), "weather", true)
+        widgetRows(a, col, gap, ::glass, ::label)
+        section(a.getString(R.string.w_layout))
+        layoutTiles(a, col, gap, ::glass, ::label)
         val note = conf.optString("note")
         if (note.isNotEmpty()) {                                       // written on the phone; here it can only be taken down
             val sub = label(a.getString(R.string.c_note_clear), 12f, DIM).apply { maxLines = 1 }
@@ -220,6 +216,140 @@ object Customize {
         android.widget.Toast.makeText(a, R.string.dream_system, android.widget.Toast.LENGTH_LONG).show()
         try { a.startActivity(android.content.Intent(android.provider.Settings.ACTION_DREAM_SETTINGS)) }
         catch (e: Exception) { try { a.startActivity(android.content.Intent(android.provider.Settings.ACTION_SETTINGS)) } catch (e2: Exception) { } }
+    }
+
+    private val WIDGET_ROWS = listOf(                                  // key, icon, name, line under it
+        arrayOf<Any>("system", R.drawable.ic_gauge, R.string.w_system, R.string.c_system_sub),
+        arrayOf<Any>("usage", R.drawable.ic_chart, R.string.w_usage, R.string.c_usage_sub),
+        arrayOf<Any>("calendar", R.drawable.ic_calendar, R.string.w_calendar, R.string.c_calendar_sub),
+        arrayOf<Any>("lunar", R.drawable.ic_moon, R.string.w_lunar, R.string.c_lunar_sub),
+        arrayOf<Any>("timer", R.drawable.ic_timer, R.string.w_timer, R.string.c_timer_sub),
+        arrayOf<Any>("weather", R.drawable.ic_weather, R.string.w_weather, R.string.c_weather_sub),
+    )
+
+    /**
+     * The widgets in the order they have on the screen, the chosen ones first. OK on a card switches it; the button at its right
+     * is the move mode: OK turns it on, Up / Down move the card, OK or Back (or leaving it) turn it off. One column, so Up / Down
+     * mean the same as on the screen's list, and a card switched on goes to the end.
+     */
+    private fun widgetRows(a: Activity, col: LinearLayout, gap: Int, glass: (Int, Int, Int) -> GradientDrawable, label: (String, Float, Int) -> TextView) {
+        val d = a.resources.displayMetrics.density
+        fun dp(v: Number) = (v.toFloat() * d).toInt()
+        val box = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
+        col.addView(box, LinearLayout.LayoutParams(-1, -2))
+        col.addView(label(a.getString(R.string.w_order_hint), 12f, 0x8CFFFFFF.toInt()).apply { maxLines = 2 }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        var moving: String? = null; var building = false
+        fun fill(focus: String? = null, focusMove: Boolean = false) {
+            building = true                                            // taking the rows down loses their focus: not a wander
+            box.removeAllViews()
+            val on = Store.list(a, "widgets")
+            val order = on + HomeConfig.WIDGETS.filter { it !in on }
+            var want: View? = null
+            order.forEachIndexed { i, k ->
+                val r = WIDGET_ROWS.first { it[0] == k }
+                val isOn = k in on
+                val line = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }
+                val ic = ImageView(a).apply { setImageResource(r[1] as Int); imageTintList = ColorStateList.valueOf(if (isOn) ACCENT else DIM) }
+                val state = label("", 12f, if (isOn) ACCENT else DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
+                val sub = a.getString(r[3] as Int)
+                val word = a.getString(if (isOn) R.string.w_on else R.string.w_off).replaceFirstChar { it.uppercase() }
+                state.text = if (moving == k) a.getString(R.string.c_moving) else "$word · $sub"
+                val t = LinearLayout(a).apply {
+                    orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
+                    setPadding(dp(14), dp(12), dp(14), dp(12))
+                    background = StateListDrawable().apply {
+                        addState(intArrayOf(android.R.attr.state_focused), glass(16, if (isOn) 0x408AB4F8 else 0x2EFFFFFF, Color.WHITE))
+                        addState(intArrayOf(), glass(16, if (isOn) 0x268AB4F8 else 0x12FFFFFF, if (isOn) ACCENT else 0x1FFFFFFF))
+                    }
+                    addView(ic, LinearLayout.LayoutParams(dp(26), dp(26)))
+                    addView(LinearLayout(a).apply {
+                        orientation = LinearLayout.VERTICAL
+                        addView(label(a.getString(r[2] as Int), 15f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+                        addView(state)
+                    }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
+                    onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                    setOnClickListener {
+                        moving = null
+                        Store.putList(a, "widgets", if (isOn) on - k else on + k)
+                        fill(k)
+                    }
+                }
+                line.addView(t, LinearLayout.LayoutParams(0, -2, 1f))
+                if (isOn && on.size > 1) {
+                    val m = LinearLayout(a).apply {
+                        orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; isFocusable = true; isClickable = true
+                        contentDescription = a.getString(R.string.c_move)
+                        val live = moving == k
+                        background = StateListDrawable().apply {
+                            addState(intArrayOf(android.R.attr.state_focused), glass(16, if (live) 0x668AB4F8 else 0x2EFFFFFF, Color.WHITE))
+                            addState(intArrayOf(), glass(16, if (live) 0x408AB4F8 else 0x12FFFFFF, if (live) ACCENT else 0x1FFFFFFF))
+                        }
+                        for (res in intArrayOf(R.drawable.ic_up, R.drawable.ic_down)) addView(ImageView(a).apply { setImageResource(res); imageTintList = ColorStateList.valueOf(if (live) ACCENT else DIM) }, LinearLayout.LayoutParams(dp(18), dp(18)))
+                        onFocusChangeListener = View.OnFocusChangeListener { v, f ->
+                            Motion.pop(v, f)
+                            if (!f && !building && moving == k) { moving = null; v.postDelayed({ if (v.isAttachedToWindow) fill() }, 0) }   // wandered off: back to plain
+                        }
+                        setOnClickListener { moving = if (moving == k) null else k; fill(k, true) }
+                        setOnKeyListener { _, code, ev ->
+                            if (moving != k) return@setOnKeyListener false
+                            val j = when (code) { android.view.KeyEvent.KEYCODE_DPAD_UP -> on.indexOf(k) - 1; android.view.KeyEvent.KEYCODE_DPAD_DOWN -> on.indexOf(k) + 1; else -> -2 }
+                            if (code == android.view.KeyEvent.KEYCODE_BACK) { if (ev.action == android.view.KeyEvent.ACTION_UP) { moving = null; fill(k, true) }; return@setOnKeyListener true }
+                            if (j == -2) return@setOnKeyListener false
+                            if (ev.action == android.view.KeyEvent.ACTION_DOWN && j in on.indices) {
+                                val n = on.toMutableList(); n[on.indexOf(k)] = n[j]; n[j] = k
+                                Store.putList(a, "widgets", n); fill(k, true)
+                            }
+                            true
+                        }
+                    }
+                    line.addView(m, LinearLayout.LayoutParams(dp(56), -1).apply { leftMargin = dp(8) })
+                    if (focus == k && focusMove) want = m
+                }
+                if (focus == k && !focusMove) want = t
+                box.addView(line, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = gap })
+            }
+            want?.requestFocus()
+            building = false
+        }
+        fill()
+    }
+
+    /** Two tiles, one chosen: the widgets in a row, or one big with two small. */
+    private fun layoutTiles(a: Activity, col: LinearLayout, gap: Int, glass: (Int, Int, Int) -> GradientDrawable, label: (String, Float, Int) -> TextView) {
+        val d = a.resources.displayMetrics.density
+        fun dp(v: Number) = (v.toFloat() * d).toInt()
+        val pair = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }
+        col.addView(pair, LinearLayout.LayoutParams(-1, -2))
+        val tiles = ArrayList<Triple<String, LinearLayout, ImageView>>()
+        fun paint() {
+            val now = Store.get(a).optString("wlayout", "row")
+            for ((k, t, ic) in tiles) {
+                val on = k == now
+                t.background = StateListDrawable().apply {
+                    addState(intArrayOf(android.R.attr.state_focused), glass(16, if (on) 0x408AB4F8 else 0x2EFFFFFF, Color.WHITE))
+                    addState(intArrayOf(), glass(16, if (on) 0x268AB4F8 else 0x12FFFFFF, if (on) ACCENT else 0x1FFFFFFF))
+                }
+                ic.imageTintList = ColorStateList.valueOf(if (on) ACCENT else DIM)
+            }
+        }
+        listOf(Triple("row", R.string.c_layout_row, R.string.c_layout_row_sub), Triple("big", R.string.c_layout_big, R.string.c_layout_big_sub)).forEachIndexed { i, (k, name, sub) ->
+            val ic = ImageView(a).apply { setImageResource(if (k == "row") R.drawable.ic_menu else R.drawable.ic_apps) }
+            val t = LinearLayout(a).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
+                setPadding(dp(14), dp(12), dp(14), dp(12))
+                addView(ic, LinearLayout.LayoutParams(dp(26), dp(26)))
+                addView(LinearLayout(a).apply {
+                    orientation = LinearLayout.VERTICAL
+                    addView(label(a.getString(name), 15f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+                    addView(label(a.getString(sub), 12f, DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+                }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
+                onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                setOnClickListener { Store.change(a, JSONObject().put("wlayout", k)); paint() }
+            }
+            tiles += Triple(k, t, ic)
+            pair.addView(t, LinearLayout.LayoutParams(0, -2, 1f).apply { if (i > 0) leftMargin = gap })
+        }
+        paint()
     }
 
     private fun ring(d: Float, w: Int, color: Int) = GradientDrawable().apply { cornerRadius = 12 * d; setStroke((w * d).toInt(), color); setColor(Color.TRANSPARENT) }

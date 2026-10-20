@@ -184,6 +184,7 @@ section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* 
 .homegal.busy { opacity:.6; pointer-events:none; }
 .homeask .item { flex-wrap:nowrap; }
 .homeask .item .name { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.homeask .homew .item .name { white-space:normal; }   /* the cards' names are sentences: they wrap, not cut */
 .homeask .item .acts { flex:none; gap:6px; }
 .homeask .item .acts button { min-width:0; padding:0 12px; }
 .homeask .item .acts .iconbtn { padding:0; }

@@ -121,4 +121,12 @@
     <string name="wx_rain">Rain</string>
     <string name="wx_snow">Snow</string>
     <string name="wx_storm">Thunderstorm</string>
+    <string name="w_order_hint">The button on the right of a card moves it: press it, then Up / Down, then OK.</string>
+    <string name="c_move">Move</string>
+    <string name="c_moving">Up / Down, then OK</string>
+    <string name="w_layout">Layout</string>
+    <string name="c_layout_row">In a row</string>
+    <string name="c_layout_row_sub">side by side</string>
+    <string name="c_layout_big">One big, two small</string>
+    <string name="c_layout_big_sub">the first 3 only</string>
 </resources>
