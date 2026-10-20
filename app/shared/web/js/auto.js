@@ -51,7 +51,7 @@ function renderRules() {
   $('#beds').replaceChildren(...beds.map((v, i) => el('div', { className: 'item' },
     el('div', { className: 'name' }, el('span', { textContent: v.from + ' – ' + v.to })),
     el('div', { className: 'acts' },
-      act('🗑', async () => { if (await ask(T('auto.bed_remove_ask', { from: v.from, to: v.to }), { ok: T('auto.drop') })) await saveBeds(beds.filter((x, j) => j !== i)); }, 'danger')))));
+      act('🗑', async () => { if (await ask(T('auto.bed_remove_ask', { from: v.from, to: v.to }), { ok: T('auto.drop') })) await saveBeds(beds.filter((x, j) => j !== i)); }, 'danger', T('auto.drop'))))));
   const snoozed = r.snooze_until > r.now;
   put('#bedstate', 'textContent', !b.on ? '' : snoozed ? T('auto.bed_snoozed', { at: clock(r.snooze_until) }) : r.in_bedtime ? T('auto.bed_now')
     : T('auto.bed_on', { ranges: beds.map((v) => v.from + ' – ' + v.to).join(', ') }));
@@ -68,8 +68,8 @@ function renderRules() {
       el('div', { className: 'acts' },
         act(T('auto.plus_30_today'), async () => { await loadRules({ do: 'extra', pkg: l.pkg, minutes: 30 }); toast(T('auto.plus_30_done', { name })); }),
         l.extra ? act(T('auto.extra_reset'), async () => { if (await setupFor('unextra')) await loadRules({ do: 'extra', pkg: l.pkg, minutes: 0, set: true }); }) : null,
-        act('✏️', async () => { const v = await askTime(T('auto.limit_how_long', { name }), l.minutes); if (v) await loadRules({ do: 'limit', pkg: l.pkg, minutes: v }); }),
-        act('🗑', async () => { if (await ask(T('auto.limit_drop_ask', { name }), { ok: T('auto.drop_limit') })) await loadRules({ do: 'limit', pkg: l.pkg, minutes: 0 }); }, 'danger')));
+        act('✏️', async () => { const v = await askTime(T('auto.limit_how_long', { name }), l.minutes); if (v) await loadRules({ do: 'limit', pkg: l.pkg, minutes: v }); }, '', T('auto.edit')),
+        act('🗑', async () => { if (await ask(T('auto.limit_drop_ask', { name }), { ok: T('auto.drop_limit') })) await loadRules({ do: 'limit', pkg: l.pkg, minutes: 0 }); }, 'danger', T('auto.drop_limit'))));
   });
   $('#limits').replaceChildren(...(rows.length ? rows : [UI.empty(T('auto.no_limits'))]));
   // app locks; a TV Setup older than them has no "lock" in its answer
@@ -79,7 +79,7 @@ function renderRules() {
     const name = l.label || appName(l.pkg);
     return el('div', { className: 'item' }, icon, el('div', { className: 'name' }, el('span', { textContent: name })),
       el('div', { className: 'acts' },
-        act('🗑', async () => { if (await ask(T('auto.unlock_ask', { name }), { ok: T('auto.unlock') })) await loadRules({ do: 'lock', pkg: l.pkg, on: false }); }, 'danger')));
+        act('🗑', async () => { if (await ask(T('auto.unlock_ask', { name }), { ok: T('auto.unlock') })) await loadRules({ do: 'lock', pkg: l.pkg, on: false }); }, 'danger', T('auto.unlock'))));
   }) : [UI.empty(T('auto.no_locks'))]));
   $('#lockacts').replaceChildren(act(T(lock.pin ? 'auto.pin_change' : 'auto.pin_first'), () => askPin()));
   // volume limits; a TV Setup older than them has no "volume" in its answer
@@ -87,7 +87,7 @@ function renderRules() {
   $('#vols').replaceChildren(...(vols.length ? vols.map((v, i) => el('div', { className: 'item' },
     el('div', { className: 'name' }, el('span', { textContent: v.from + ' – ' + v.to }), el('small', { textContent: T('auto.vol_max', { max: v.max }) })),
     el('div', { className: 'acts' },
-      act('🗑', async () => { if (await ask(T('auto.vol_drop_ask', { from: v.from, to: v.to }), { ok: T('auto.drop_limit') })) await saveVols(vols.filter((x, j) => j !== i)); }, 'danger'))))
+      act('🗑', async () => { if (await ask(T('auto.vol_drop_ask', { from: v.from, to: v.to }), { ok: T('auto.drop_limit') })) await saveVols(vols.filter((x, j) => j !== i)); }, 'danger', T('auto.drop_limit')))))
     : [UI.empty(T('auto.no_vol_limits'))]));
   const now = r.volume_now;
   put('#volstate', 'textContent', r.volume === undefined ? '' : r.volume_fixed ? T('auto.vol_fixed')

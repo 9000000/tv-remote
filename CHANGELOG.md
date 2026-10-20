@@ -12,6 +12,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Ứng dụng → Đang mở: “Đóng tất cả” thành nút **Đóng hàng loạt** nổi bật, có biểu tượng; bấm vào hiện danh sách app sẽ đóng để tích / bỏ tích, app TV cần giữ hiện mờ, không chọn được
 - Menu mở từ menu khác (chọn hãng → chọn mã ở remote hồng ngoại, Mở trên TV → Tải app...) có nút **Quay lại**; nút back của điện thoại và Esc cũng về menu trước, không phải đóng rồi mở lại. App điện thoại: nút Đóng của hộp thoại thành ✕ ở góc trên, như trên web
 - Sửa: Dò mã (remote hồng ngoại): nút “Tắt tiếng” xuống hai dòng và bị lệch khỏi hàng
+- Sửa: vài màu quá nhạt (nút Xóa đỏ khi rê chuột, chữ xám ở giao diện tối, chip khởi động), vài chỗ bấm quá nhỏ trên điện thoại (chip trên cùng, tiêu đề thẻ gập, ô tích, màu vẽ), nút chỉ có biểu tượng (xóa, sửa) không có tên cho trình đọc màn hình
 - Remote hồng ngoại: **Dò mã tự động** trên Android TV đã kết nối. Hướng đèn vào TV, điện thoại thử từng mã, TV (qua ADB) báo khi nhận được: không phải ngồi xem và bấm. TV khác, hoặc box cắm vào TV thường, vẫn dò tay. Mở từ remote của TV (Thêm → Hồng ngoại): mỗi TV nhớ mã riêng
 
 **English**
@@ -20,6 +21,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Apps → Open now: “Close all” is now a clear **Close in bulk** button with an icon; it lists the apps it will close to tick or untick, apps the TV needs shown greyed and not selectable
 - A menu opened from another (brand → remote in the infrared remote, Open on TV → Get apps...) has a **Back** button; the phone's back key and Esc go back too, no closing and opening again. Phone app: a dialog's Close is now ✕ at the top corner, as on the page
 - Fix: Find code (infrared remote): the “Mute” chip went to two lines and dropped out of its row
+- Fix: a few colours too faint (red Delete when hovered, grey text in dark mode, the boot chip), small things to press on a phone (top chips, folded cards' titles, ticks, the drawing colour), icon-only delete / edit buttons with no name for screen readers
 - Infrared remote: **automatic Find code** on a connected Android TV. Point the LED at the TV; the phone tries each code and the TV (over ADB) says when one arrives: no watching and tapping. Other TVs, or a box plugged into a plain TV, still find it by hand. Open it from a TV's remote (More → Infrared): each TV keeps its own code
 
 ## 0.13.0 - 2026-10-20

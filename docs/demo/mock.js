@@ -243,7 +243,9 @@
       case '/api/app/launch': if (META[b.pkg]) openApp(b.pkg); return ok({ ok: true });
       case '/api/apps': { const sys = q.get('system') === '1'; return ok({ apps: [...APPS, ...(sys ? SYS : [])].map((a) => appRow(a[0])) }); }
       case '/api/apps/boot': return ok({ text: S.boot.map((p) => p + '/.BootReceiver').join('\n') });
-      case '/api/apps/report': return ok({ text: '' });
+      case '/api/apps/report': return ok({ device: dev.maker + ' ' + dev.model, android: '14', ram_mb: 2048,   // Manage.kt appsReport
+        user: APPS.map((a) => a[0]), system: SYS.map((a) => a[0]), disabled: [], labels: Object.fromEntries(APPS.map((a) => [a[0], a[1]])),
+        memory: APPS.slice(0, 5).map((a, i) => ({ pkg: a[0], mb: [184, 122, 96, 71, 48][i] })) });
       case '/api/app/meta': { const m = META[q.get('pkg')]; return m ? ok({ label: m.label, icon: true }) : fail('not found', 404); }
       case '/api/app/icon': return { status: 200, type: 'image/svg+xml', body: iconSvg(q.get('pkg')) };
       case '/api/app/info': return ok({ text: '' });

@@ -465,7 +465,7 @@ function step(n, state, title, text, ...actions) {
   return el('div', { className: 'step ' + state }, el('div', { className: 'mark', textContent: state === 'ok' ? '✓' : n }),
     el('div', { className: 'body' }, el('b', { textContent: title }), el('p', { textContent: text }), actions.filter(Boolean).length ? el('div', { className: 'actions' }, ...actions.filter(Boolean)) : null));
 }
-const act = (label, fn, cls = '') => el('button', { className: 'small ' + cls, textContent: label, onclick: async (e) => { const b = e.currentTarget; b.disabled = true; try { await fn(); } finally { b.disabled = false; } } });
+const act = (label, fn, cls = '', name = '') => el('button', { className: 'small ' + cls, textContent: label, title: name, onclick: async (e) => { const b = e.currentTarget; b.disabled = true; try { await fn(); } finally { b.disabled = false; } } });
 async function loadSteps() {
   if (stepsBusy || CORE !== 'pc') return; stepsBusy = true;
   const s = await api('/api/setup/status', null, true); stepsBusy = false;

@@ -11,12 +11,12 @@
   header .chip { flex:0 1 auto; min-width:0; }
   header .chip span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   header .chips { gap:4px; }
-  header .chip { padding:4px 8px; }
-  header .chips button.small { min-width:30px; padding:0 6px; }
+  header .chip { padding:4px 8px; min-height:var(--chip); }
+  header .chips button.small { min-width:var(--chip); padding:0 6px; }
   #lang .globe { display:none; }   /* one line: a long state shortens, its whole text on hover */
   .chip { padding:4px 9px; font-size:12px; gap:5px; }
   .chip i { display:none; }
-  .chips button.small { min-height:30px; padding:0 8px; font-size:12px; }
+  .chips button.small { min-height:var(--chip); padding:0 8px; font-size:12px; }   /* still a finger's size */
 }
 /* One page, three cores (see core.js): the computer app ("pc"), the TV Setup app on the TV ("tv") and the phone app's
    Manage screen ("phone"). An element marked data-for is only there on the cores it names. */

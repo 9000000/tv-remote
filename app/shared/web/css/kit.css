@@ -62,7 +62,7 @@ button .minispin { border-color:currentColor; border-right-color:transparent; } 
 }
 .panel:not([data-panel=remote]) select { font-size:14px; padding:0 10px; }
 .panel > div:empty { display:none; }   /* an empty slot (no ADB banner, nothing to set up) leaves no gap */
-details.card > summary { font-size:14px; font-weight:600; cursor:pointer; }   /* every fold-out card reads the same */
+details.card > summary { font-size:14px; font-weight:600; cursor:pointer; padding:6px 0; margin:-6px 0; }   /* every fold-out card reads the same */
 details.card[open] > summary { margin-bottom:var(--gap); }
 details.card > :not(summary) + :not(summary) { margin-top:var(--gap); }
 h2 .lower { text-transform:none; letter-spacing:0; font-weight:500; }   /* "· cần ADB", a TV's name: words beside a title */

@@ -37,7 +37,7 @@
 .item .name .badges { display:flex; flex-wrap:wrap; gap:4px; margin:3px 0 2px; }
 .item .name .badges .badge { margin-left:0; }
 .setupmsg { min-height:5em; }
-.stepsdone > summary { cursor:pointer; font-weight:600; color:var(--ok); padding:4px 0; }
+.stepsdone > summary { cursor:pointer; font-weight:600; color:var(--ok); padding:6px 0; }
 .stepsdone[open] > summary { margin-bottom:4px; }
 .step { display:flex; gap:12px; padding:14px 0; border-top:1px solid var(--line); align-items:flex-start; }
 .step:first-child { border-top:0; }

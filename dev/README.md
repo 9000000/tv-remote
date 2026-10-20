@@ -10,6 +10,7 @@ Tools for people working on the code. Each script says more in its first lines.
 | `contrast.py [URL]` | colour contrast on the rendered page, both themes × 1100 / 400 px × every tab; exit 1 under 4.5:1 (needs Chrome) |
 | `smoke.py [tv\|URL]` | every `/api` route over a real network path (the TV emulator through `emu redir`, not adb forward): each must answer in full, without 500; exit 1 if not |
 | `layout.js [URL]` | the page in Chrome **and** WebKit × 1100 / 400 px × every tab + Settings, English and Vietnamese: sideways scroll, cut words, wrapped labels, things out of their card, overlapping cards, wrapped chips; screenshots in `/tmp/tvr-layout` (needs `npm install --prefix dev playwright`) |
+| `audit.js` | the whole page pressed through by a script (every tab, dialog, menu and chip, down to `--depth`), no TV: `/api` is the live demo's made-up TV. Each screen checked for layout, contrast, the UI rules, words, touch size, script errors; report with boxed screenshots in `/tmp/tvr-audit/index.html` (needs Playwright, ~20 min; `--only=apps`, `--budget=` s per tab) |
 | `gen_icons.py` | the line icons: the web sprite and `res/drawable/ic_*.xml` of both apps. Add an icon here, never edit its output |
 | `bloat-sources.md` | where Optimize TV's brand lists (`Bloat.kt`) and the Google TV home swap come from (cleanyourtv, its forks, PRs, issues), what was left out and why, and the commands to read them again |
 | `round_icons.py` | the logo's rounded corners everywhere it is a picture, and `app/desktop/icon.icns` / `.ico` |

@@ -203,6 +203,8 @@ What it takes care of, for doing it by hand:
   own port redirect (adb forward hid a reply lost to a reset); `TVR_PASS=… dev/smoke.py URL` does the same for the computer app.
   `TVR_PASS=… node dev/layout.js` checks the layout in Chrome and WebKit (the Mac app's window and iPhones are WebKit). Run both
   after a change to HttpServer / the routes, or to the page's CSS.
+- Before a release with UI changes: `node dev/audit.js` presses every button of the page (no TV, the demo's made-up one) and checks each
+  screen it opens; read `/tmp/tvr-audit/index.html` and fix what it boxes ("same" is advice). `--only=auto` for one tab.
 - Contrast: `node --test app/shared/tests/` includes `contrast.test.js` (WCAG ratios of the `css/base.css` tokens in both themes); `dev/contrast.py [URL]` (Chrome, default the test server on 8772) scans the rendered page, both themes x 1100/400 px x every tab + Settings, exit 1 under 4.5:1 (3:1 icons, large text). Run it after colour changes.
 - The TV's sound: the Google TV emulator cannot run YouTube; press D-pad keys on the TV during a capture to get click sounds.
 - The intro site's screenshots: `dev/shots.py` (`docs/README.md`).
