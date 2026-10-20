@@ -348,7 +348,7 @@ class HomeActivity : Activity() {
             packageChanged(pkg, i.action == Intent.ACTION_PACKAGE_REMOVED)
         }
     }
-    private val tick = object : BroadcastReceiver() { override fun onReceive(c: Context, i: Intent) { clockAndDay() } }
+    private val tick = object : BroadcastReceiver() { override fun onReceive(c: Context, i: Intent) { clockAndDay(); bingCheck() } }   // Bing: a new day's picture seen while Home stays on
 
     private fun loadApps() {
         bg.execute {
@@ -518,7 +518,7 @@ class HomeActivity : Activity() {
     /** The background of [conf], when it is not the one on screen: a new choice, the rotation, a new photo, a new Bing picture. */
     private fun wall() {
         val id = conf.optString("wall")
-        val key = id + (Walls.file(this, id)?.lastModified() ?: 0L) + conf.optLong("photo")   // a photo or Bing picture put over the old file is a new one
+        val key = id + (Walls.file(this, id)?.let { it.name + it.lastModified() } ?: "") + conf.optLong("photo")   // a photo put over the old file, another day's Bing picture: a new one
         if (key == wallShown) return
         wallShown = key
         window.decorView.background = null                            // the wallpaper is [backdrop]'s, painted once behind the window
@@ -565,13 +565,14 @@ class HomeActivity : Activity() {
     private fun wallTimer() {
         ui.removeCallbacks(wallTick)
         val every = conf.optString("wevery")
-        if (every == "off" || every == "show" || conf.optJSONArray("walls")?.let { it.length() < 2 } != false) return
+        val walls = conf.optJSONArray("walls")?.let { a -> List(a.length()) { a.optString(it) } } ?: return
+        if (every == "off" || every == "show" || !Store.turns(this, walls)) return
         val now = System.currentTimeMillis()
         val wait = HomeConfig.wait(every, Store.last(this), now, java.util.TimeZone.getDefault().getOffset(now).toLong()) ?: return
         ui.postDelayed(wallTick, if (wait <= 0L) 600_000L else wait)  // due but nothing else to show (a photo gone, Bing not here yet): look again in 10 minutes
     }
 
-    /** Today's Bing picture when it is shown or turned to (not asked more than about once a day, and never for anything else). */
+    /** Bing's pictures when they are shown or turned to ([Online.wanted] keeps it to every few hours, never for anything else). */
     private fun bingCheck() {
         val a = conf.optJSONArray("walls") ?: return
         if ((0 until a.length()).none { a.optString(it) == HomeConfig.BING } || !Online.wanted(this)) return

@@ -62,13 +62,17 @@ object Store {
         val every = conf.optString("wevery")
         val a = conf.getJSONArray("walls")
         val walls = List(a.length()) { a.getString(it) }
-        if (every == "off" || walls.size < 2) return false
+        if (every == "off" || !turns(c, walls)) return false
         val now = System.currentTimeMillis()
         if (!(show && every == "show") && !HomeConfig.due(every, last(c), now, java.util.TimeZone.getDefault().getOffset(now).toLong())) return false
+        if (conf.optString("wall") == HomeConfig.BING && Online.step(c)) { change(c, JSONObject().put("walls", a)); return true }   // Bing's older days first, then the next of the set
         val next = HomeConfig.next(walls, conf.optString("wall")) { Walls.usable(c, it) } ?: return false
         change(c, JSONObject().put("wall", next).put("walls", a))
         return true
     }
+
+    /** Whether [walls] has anything to turn to: two or more, or Bing alone with several days kept. */
+    fun turns(c: Context, walls: List<String>) = walls.size >= 2 || (walls.singleOrNull() == HomeConfig.BING && Online.count(c) > 1)
 
     fun list(c: Context, key: String): MutableList<String> {
         val a = get(c).getJSONArray(key)

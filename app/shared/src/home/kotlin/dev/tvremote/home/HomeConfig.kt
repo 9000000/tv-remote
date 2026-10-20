@@ -52,7 +52,7 @@ object HomeConfig {
     val PLAIN = listOf("night", "ocean", "dusk", "forest", "aurora", "black", "sunset", "ember", "plum", "midnight", "teal", "slate", "graphite", "navy", "wine", "moss")
     /** Scenes TV Home draws itself, no picture file (WallSpec; app/home WallArt.kt). */
     val ART = listOf("dawn", "peaks", "dunes", "waves", "candy", "peach", "meadow", "mist", "bokeh", "canyon")
-    /** The day's picture from Bing, downloaded by TV Home (at most once a day; the last one is kept for when the TV is offline). */
+    /** Bing's pictures, downloaded by TV Home: the last 8 days kept, newest first, turned through by the rotation before the next of the set. */
     const val BING = "bing"
     const val PHOTO_MAX = 10
     /** The person's photos, one file each: "photo" is the first and the only one older TV Homes know. */

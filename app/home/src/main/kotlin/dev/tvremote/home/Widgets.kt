@@ -441,24 +441,29 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             else -> listOf(listOf(Stat(ram.icon, ram.value, a.getString(R.string.w_ram), ram.bar), Stat(disk.icon, disk.value, a.getString(R.string.w_disk), disk.bar)),
                 listOf(ip, adb(false)))                              // narrow: the names without the sizes
         }
-        // a column as wide as its widest figure needs (an address is longer than "51%"), the same in both rows so they line up;
-        // as many columns as fit whole, else two that shrink their figures ([Shrink])
+        // each row shares its width on its own: alike when every figure fits its equal part (CPU, RAM, disk), else by what each
+        // needs (an address is longer than "ON"); as many columns as fit once [Shrink] has taken the figures down to 15 sp
         val big = Paint().apply { textSize = 19f * sp; typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) }
         val small = Paint().apply { textSize = 10f * sp; letterSpacing = 0.08f }
-        fun needs(rows: List<List<Stat>>, cols: Int, k0: Float = 1f) = FloatArray(cols) { k -> rows.maxOf { r -> r.getOrNull(k)?.let { maxOf(big.measureText(it.value) * k0, small.measureText(it.label.uppercase()) * k0) } ?: 0f } + dp(29) }
-        var cols = 2; var rows = layout(2); var need = needs(rows, 2, 15f / 19)
-        for (c in 4 downTo 3) {
-            val r = layout(c)                                        // fits once [Shrink] has taken its figures down to 15 sp
-            if (needs(r, c, 15f / 19).sum() + dp(10) * (c - 1) <= room) { cols = c; rows = r; need = needs(r, c, 15f / 19); break }
-        }
+        val k0 = 15f / 19
+        fun needs(row: List<Stat>, cols: Int) = FloatArray(cols) { k -> (row.getOrNull(k)?.let { maxOf(big.measureText(if (it.live) "↓ 999 KB/s" else it.value), small.measureText(it.label.uppercase())) * k0 } ?: 0f) + dp(29) }
+        fun fits(rows: List<List<Stat>>, c: Int) = rows.all { needs(it, c).sum() + dp(10) * (c - 1) <= room }
+        val cols = (4 downTo 3).firstOrNull { fits(layout(it), it) } ?: 2
+        val rows = layout(cols)
         val about = listOfNotNull(android.os.Build.MODEL.takeIf { cols >= 3 }, "Android " + android.os.Build.VERSION.RELEASE,
             if (cols >= 4 && ghz != null) "$cores×%.1fGHz".format(ghz) else null).joinToString(" · ")
         card.addView(head(a.getString(R.string.w_system), about))
         val grid = LinearLayout(a).apply { orientation = VERTICAL; gravity = Gravity.CENTER_VERTICAL }   // the rows in the middle of the card, not stuck under the title
-        val whole = need.sum() + dp(10) * (cols - 1) <= room              // each column its least, the rest shared alike; else by need
         rows.forEachIndexed { r, row ->
             val line = LinearLayout(a).apply { orientation = HORIZONTAL }
-            for (k in 0 until cols) line.addView(row.getOrNull(k)?.let(::stat) ?: View(a), (if (whole) LayoutParams(need[k].toInt(), -2, 1f) else LayoutParams(0, -2, need[k])).apply { if (k > 0) leftMargin = dp(10) })
+            val need = needs(row, cols); val gaps = dp(10) * (cols - 1)
+            val alike = need.max() * cols + gaps <= room
+            val whole = need.sum() + gaps <= room                    // each its least, the rest shared alike; else all by need
+            for (k in 0 until cols) line.addView(row.getOrNull(k)?.let(::stat) ?: View(a), when {
+                alike -> LayoutParams(0, -2, 1f)
+                whole -> LayoutParams(need[k].toInt(), -2, 1f)
+                else -> LayoutParams(0, -2, need[k])
+            }.apply { if (k > 0) leftMargin = dp(10) })
             grid.addView(line, LayoutParams(-1, -2).apply { if (r > 0) topMargin = dp(14) })
         }
         card.addView(grid, LayoutParams(-1, 0, 1f).apply { topMargin = dp(4) })
