@@ -236,7 +236,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
                     if (tall && w >= dp(FULL_MIN)) when (k) {
                         "system" -> system(c, f, w)
                         "calendar" -> calendar(c, f, w, dp(BIG_H) - dp(26) - dp(22))   // minus the card's padding, the title and its gap
-                        "weather" -> weather(c, f, w)
+                        "weather" -> weather(c, f, w, fixed = true)
                         else -> usage(c, f, label, w < dp(340))
                     } else {                                       // the half form: a narrow column or half the height
                         c.setPadding(dp(16), dp(8), dp(16), dp(8))
@@ -497,7 +497,8 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
     }
 
     /** The sky now with today's low and high, and the next days when the card is wide enough; without an answer yet, a short line. */
-    private fun weather(card: LinearLayout, f: Facts, width: Int) {
+    /** [fixed]: in a card of the layouts' fixed height, where the days under "now" are drawn tighter or their temperatures fell off the bottom. */
+    private fun weather(card: LinearLayout, f: Facts, width: Int, fixed: Boolean = false) {
         val w = f.wx
         if (w == null) {
             card.addView(head(a.getString(R.string.w_weather), ""))
@@ -510,7 +511,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val now = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         now.addView(Sky(a, w.kind, w.night), LayoutParams(dp(56), dp(56)))
         val words = LinearLayout(a).apply { orientation = VERTICAL }
-        words.addView(text("${w.temp}°", 30f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) })
+        words.addView(text("${w.temp}°", if (fixed) 26f else 30f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) })
         words.addView(text(a.getString(kindWords(w.kind)), 13f, Color.WHITE))
         val today = w.days[0]
         words.addView(text(a.getString(R.string.wx_hi_lo, today.max, today.min), 12f, DIM))
@@ -525,12 +526,12 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
                 val col = LinearLayout(a).apply { orientation = VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
                 val dow = try { Calendar.getInstance().apply { time = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(d.date)!! }.get(Calendar.DAY_OF_WEEK) - 1 } catch (e: Exception) { -1 }
                 col.addView(text(names.getOrElse(dow) { "" }, 12f, DIM).apply { gravity = Gravity.CENTER })
-                col.addView(Sky(a, d.kind, false), LayoutParams(dp(28), dp(28)).apply { topMargin = dp(2) })
+                col.addView(Sky(a, d.kind, false), LayoutParams(dp(if (fixed) 22 else 28), dp(if (fixed) 22 else 28)).apply { topMargin = dp(if (fixed) 0 else 2) })
                 col.addView(text("${d.max}° ${d.min}°", 12f, Color.WHITE).apply { gravity = Gravity.CENTER })
                 days.addView(col, if (side) LayoutParams(dp(62), -2).apply { if (i > 0) leftMargin = dp(2) } else LayoutParams(0, -2, 1f))
             }
             if (side) body.addView(days, LayoutParams(-2, -2).apply { leftMargin = dp(8) })
-            else { card.addView(body, LayoutParams(-1, -2).apply { topMargin = dp(6) }); card.addView(days, LayoutParams(-1, -2).apply { topMargin = dp(8) }); return }
+            else { card.addView(body, LayoutParams(-1, -2).apply { topMargin = dp(if (fixed) 2 else 6) }); card.addView(days, LayoutParams(-1, -2).apply { topMargin = dp(if (fixed) 2 else 8) }); return }
         }
         card.addView(body, LayoutParams(-1, 0, 1f).apply { topMargin = dp(6) })
     }
