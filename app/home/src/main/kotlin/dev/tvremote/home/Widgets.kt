@@ -469,16 +469,28 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         card.addView(head(w.place.ifEmpty { a.getString(R.string.wx_near) }, if (stale) hm(w.at) else ""))
         val body = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val now = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        now.addView(Sky(a, w.kind, w.night), LayoutParams(dp(56), dp(56)))
-        val words = LinearLayout(a).apply { orientation = VERTICAL }
-        words.addView(text("${w.temp}°", if (fixed) 26f else 30f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) })
-        words.addView(text(a.getString(kindWords(w.kind)), 13f, Color.WHITE))
+        val temp = text("${w.temp}°", if (fixed) 28f else 30f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) }
+        val sky = text(a.getString(kindWords(w.kind)), 13f, Color.WHITE)
         val today = w.days[0]
-        words.addView(text(a.getString(R.string.wx_hi_lo, today.max, today.min), 12f, DIM))
-        now.addView(words, LayoutParams(-2, -2).apply { leftMargin = dp(12) })
+        val hiLo = text(a.getString(R.string.wx_hi_lo, today.max, today.min), 12f, DIM)
+        // the sky and today's high / low beside the temperature, two short lines as tall as its digits, when they fit across:
+        // one row instead of three leaves the next days room under it
+        val lines = maxOf(sky.paint.measureText(sky.text.toString()), hiLo.paint.measureText(hiLo.text.toString()))
+        val tempW = temp.paint.measureText(temp.text.toString())
+        val beside = dp(44) + dp(10) + tempW + dp(10) + lines <= width - dp(40)   // with a smaller picture of the sky
+        val icon = if (beside) 44 else 56
+        val nowW = (dp(icon) + dp(if (beside) 10 else 12) + (if (beside) tempW + dp(10) + lines else maxOf(tempW, lines))).toInt()
+        now.addView(Sky(a, w.kind, w.night), LayoutParams(dp(icon), dp(icon)))
+        val words = LinearLayout(a).apply { orientation = if (beside) HORIZONTAL else VERTICAL; gravity = Gravity.CENTER_VERTICAL }
+        words.addView(temp)
+        if (beside) words.addView(LinearLayout(a).apply { orientation = VERTICAL; addView(sky); addView(hiLo) }, LayoutParams(-2, -2).apply { leftMargin = dp(10) })
+        else { words.addView(sky); words.addView(hiLo) }
+        now.addView(words, LayoutParams(-2, -2).apply { leftMargin = dp(if (beside) 10 else 12) })
         body.addView(now, LayoutParams(0, -2, 1f))
         val next = w.days.drop(1)
-        val side = width - dp(40) - dp(200) >= dp(62) * next.size              // beside "now" when wide, else a row under it
+        val room = width - dp(40) - nowW - dp(24)                             // beside "now" when wide (a day at least 52 dp), else a row under it
+        val side = room >= dp(52) * next.size
+        val dayW = if (side) minOf(dp(62), room / maxOf(1, next.size)) else 0
         if (next.isNotEmpty() && (side || width - dp(40) >= dp(62) * next.size)) {
             val days = LinearLayout(a).apply { orientation = HORIZONTAL }
             val names = a.resources.getStringArray(R.array.cal_dow)
@@ -486,12 +498,19 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
                 val col = LinearLayout(a).apply { orientation = VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
                 val dow = try { Calendar.getInstance().apply { time = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(d.date)!! }.get(Calendar.DAY_OF_WEEK) - 1 } catch (e: Exception) { -1 }
                 col.addView(text(names.getOrElse(dow) { "" }, 12f, DIM).apply { gravity = Gravity.CENTER })
-                col.addView(Sky(a, d.kind, false), LayoutParams(dp(if (fixed) 22 else 28), dp(if (fixed) 22 else 28)).apply { topMargin = dp(if (fixed) 0 else 2) })
+                col.addView(Sky(a, d.kind, false), LayoutParams(dp(if (fixed && !beside) 22 else 28), dp(if (fixed && !beside) 22 else 28)).apply { topMargin = dp(if (fixed && !beside) 0 else 2) })
                 col.addView(text("${d.max}° ${d.min}°", 12f, Color.WHITE).apply { gravity = Gravity.CENTER })
-                days.addView(col, if (side) LayoutParams(dp(62), -2).apply { if (i > 0) leftMargin = dp(2) } else LayoutParams(0, -2, 1f))
+                days.addView(col, if (side) LayoutParams(dayW, -2).apply { if (i > 0) leftMargin = dp(2) } else LayoutParams(0, -2, 1f))
             }
             if (side) body.addView(days, LayoutParams(-2, -2).apply { leftMargin = dp(8) })
-            else { card.addView(body, LayoutParams(-1, -2).apply { topMargin = dp(if (fixed) 2 else 6) }); card.addView(days, LayoutParams(-1, -2).apply { topMargin = dp(if (fixed) 2 else 8) }); return }
+            else {
+                // "now" over the next days, the two together in the middle of what is left under the title (not stuck to it)
+                val both = LinearLayout(a).apply { orientation = VERTICAL; gravity = Gravity.CENTER_VERTICAL }
+                both.addView(body, LayoutParams(-1, -2))
+                both.addView(days, LayoutParams(-1, -2).apply { topMargin = dp(if (fixed && !beside) 2 else 8) })
+                card.addView(both, if (fixed) LayoutParams(-1, 0, 1f) else LayoutParams(-1, -2).apply { topMargin = dp(6) })
+                return
+            }
         }
         card.addView(body, LayoutParams(-1, 0, 1f).apply { topMargin = dp(6) })
     }
