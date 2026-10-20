@@ -15,6 +15,15 @@ import android.view.accessibility.AccessibilityEvent
 class KeyCatch : AccessibilityService() {
     private var eating = -1
 
+    companion object {
+        /** Bound now: KeyFixService leaves keys alone then, the one that wakes the screen is this service's. */
+        @Volatile var live = false
+    }
+
+    override fun onServiceConnected() { live = true }
+    override fun onUnbind(i: android.content.Intent?): Boolean { live = false; return super.onUnbind(i) }
+    override fun onDestroy() { live = false; super.onDestroy() }
+
     override fun onKeyEvent(e: KeyEvent): Boolean {
         val dev = InputDevice.getDevice(e.deviceId)
         if (dev == null || dev.isVirtual) return false

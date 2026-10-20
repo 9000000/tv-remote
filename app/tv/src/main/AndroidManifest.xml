@@ -11,6 +11,7 @@
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />   <!-- "Remove TV Setup" without ADB: Android's own uninstall prompt -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />   <!-- drawing over the screen (DrawLayer); allowed through ADB -->
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" tools:ignore="ProtectedPermissions" />   <!-- ADB debugging back on when switched off (KeepAdb); granted through ADB -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />   <!-- is the app a remote button was sent to still there? (KeyFix) -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />   <!-- which app is on screen, for the History view; granted through ADB -->
     <queries>                                                          <!-- to list the apps on the TV's home screen -->
         <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LEANBACK_LAUNCHER" /></intent>
@@ -64,6 +65,14 @@
             <intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter>
             <meta-data android:name="android.accessibilityservice" android:resource="@xml/keycatch" />
         </service>
+        <!-- the remote's buttons that only the stock launcher answered (Input, YouTube...), when it is gone (KeyFix.kt); on only while one is dead -->
+        <service android:name=".KeyFixService" android:exported="false" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/keyfix" />
+        </service>
+        <!-- the Input button's picker where the TV has none (KeyFixService) -->
+        <activity android:name=".InputsActivity" android:exported="false" android:excludeFromRecents="true" android:taskAffinity=""
+            android:theme="@android:style/Theme.DeviceDefault.Dialog.NoActionBar" />
         <!-- the welcome screen (Welcome.kt): set up by a device that has ADB here; held by the shell only, like the ones above -->
         <receiver android:name=".WelcomeReceiver" android:exported="true" android:permission="android.permission.DUMP" />
         <!-- full screen over everything when the TV is turned on; started by this app, and by the shell (am start) -->

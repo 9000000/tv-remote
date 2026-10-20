@@ -18,6 +18,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Launcher không đang làm màn hình chính (FLauncher...) không còn bị coi là "Cần giữ": gỡ, tắt được; launcher đang dùng vẫn được giữ
 - TV Home không hiện các app hệ thống chỉ dành cho điện thoại mà hãng để lại (thông báo hệ thống, phóng to màn hình, app mẫu SystemUpdaterSample...)
 - Tối ưu TV biết thêm 48 gói rác của nhiều hãng (Hisense, Philips, Sony, Fire TV, NVIDIA, Panasonic, Xiaomi...) và giữ nguyên thêm khoảng 150 gói mà chủ TV báo là tắt thì hỏng (nguồn vào, bộ dò kênh, phím Input, ghép remote)
+- App TV: **tự bật lại nút remote bị chết** khi launcher gốc (Google TV) bị tắt hoặc đổi: Nguồn vào, YouTube, Netflix, Prime Video, PatchWall (Xiaomi), Cài đặt, Tất cả app. Chỉ nhận nút mà hệ thống gửi cho một app không còn nữa; nút còn chạy thì không đụng tới. Tự bật khi cần, tắt / bật ở **Tối ưu TV → Nút điều khiển** trên màn hình TV Setup
+- Màn hình TV Setup gọn lại còn 4 ô: **Quản lý trên TV**, **Tối ưu TV**, **Kết nối**, **Cập nhật**; ô gom việc mở một menu ngắn. Một hàng trên TV, 2x2 trên điện thoại
 - Sửa: tab Ứng dụng: gỡ / tắt một app không còn tải lại cả danh sách
 - Sửa: app điện thoại: bấm Quay lại từ menu con thì tiêu đề menu trước bị sai
 - Sửa: TV Home: app có "banner" vuông (Media Center của Rockchip) hiện icon và tên thay vì một ô mờ; nút Input của remote mở danh sách nguồn vào khi TV đưa phím đó cho màn hình chính
@@ -35,6 +37,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - A launcher that is not the home screen now (FLauncher...) is no longer "Must keep": it can be removed or turned off; the one in use is still kept
 - TV Home leaves out the phone-only system apps a maker left behind (system notification, screen zoom, the SystemUpdaterSample demo...)
 - Optimize TV knows 48 more packages from many brands (Hisense, Philips, Sony, Fire TV, NVIDIA, Panasonic, Xiaomi...) and leaves about 150 more that owners found break the TV when off (inputs, tuner, the Input key, remote pairing)
+- TV app: **dead remote buttons come back** when the stock (Google TV) launcher is turned off or swapped: Input, YouTube, Netflix, Prime Video, PatchWall (Xiaomi), Settings, All apps. It only takes a key the system sends to an app that is gone; a button that still works is left alone. On only when needed; switch it in **Optimize TV → Remote buttons** on the TV Setup screen
+- The TV Setup screen down to 4 tiles: **Manage on this TV**, **Optimize TV**, **Connection**, **Update**; a grouped tile opens a short menu. One row on a TV, 2x2 on a phone
 - Fix: Apps tab: removing or turning off an app no longer reads the whole list again
 - Fix: phone app: Back from a sub-menu showed the wrong title on the menu before
 - Fix: TV Home: an app with a square "banner" (Rockchip's Media Center) shows its icon and name instead of a blur; the remote's Input key opens the inputs where the TV hands that key to the home screen

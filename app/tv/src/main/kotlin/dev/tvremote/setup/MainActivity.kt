@@ -42,7 +42,12 @@ class MainActivity : Activity() {
     private lateinit var scroll: ScrollView
     private lateinit var spinner: ProgressBar
     private lateinit var tiles: List<Tile>
-    private lateinit var tsTile: Tile
+    private lateinit var connTile: Tile
+    private var tsStatus = ""                                         // Tailscale's line in the Connection menu
+
+    /** The remote's buttons the stock launcher answered (KeyFix): on, and brought back now, only while one is dead. */
+    private fun keysSub() = if (!KeyFix.wanted(this)) T("keyfix.off") else if (!KeyFix.can(this)) T("keyfix.need_adb")
+        else if (KeyFix.current(this).isNotEmpty()) T("keyfix.working") else T("keyfix.ok")
     private lateinit var updateTile: Tile
     private lateinit var webCol: LinearLayout
     private lateinit var webBtn: Button
@@ -91,11 +96,11 @@ class MainActivity : Activity() {
             words.orientation = LinearLayout.VERTICAL
             words.setPadding(dp(10), 0, 0, 0)
             val head = text(title, 13, INK, true)
-            head.isSingleLine = true
+            head.maxLines = 2                                         // four tiles across: a long name wraps, not "Manage on th…"
             head.ellipsize = TextUtils.TruncateAt.END
             words.addView(head)
             subView = text(sub, 11, MUTED, false)
-            subView.maxLines = 1
+            subView.maxLines = 2
             subView.ellipsize = TextUtils.TruncateAt.END
             words.addView(subView)
             view.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
@@ -183,26 +188,25 @@ class MainActivity : Activity() {
         left.addView(status, margins(top = 12))
 
         left.addView(section(T("tv_main.actions")), margins(top = 14))
-        tsTile = Tile(R.drawable.ic_globe, "Tailscale", T("tv_main.away_from_home")) { tailscale() }
+        tsStatus = T("tv_main.away_from_home")
         updateTile = Tile(R.drawable.ic_download, T("setup.update_ok"), T("tv_main.ver_short", "v" to version())) { updateMenu() }
+        connTile = Tile(R.drawable.ic_refresh, T("tv_main.connection"), T("tv_main.connection_sub")) { connectionMenu() }
+        // four tiles, not nine: the rest sit in short menus. The code below counts these by place: 0 needs ADB, 1 and 2 work without
         tiles = listOf(
-            Tile(R.drawable.ic_zap, T("tv_main.optimize_tv"), T("tv_main.fewer_extra_apps")) { chooseOptimize() },
-            tsTile,
-            Tile(R.drawable.ic_undo, T("setup.undo_ok"), T("tv_main.as_before_optimize")) { job { it.undo() } },
-            updateTile,
-            Tile(R.drawable.ic_code, T("tv_main.debugging"), T("tv_main.developer_options")) { debugMenu() },
-            Tile(R.drawable.ic_refresh, T("tv_main.reconnect"), T("tv_main.the_tv_s_adb")) { connect() },
-            Tile(R.drawable.ic_apps, T("launcher.tile"), T("launcher.tile_sub")) { chooseLauncher() })
+            Tile(R.drawable.ic_zap, T("tv_main.optimize_tv"), T("tv_main.group_optimize_sub")) { optimizeMenu() },
+            connTile,
+            updateTile)
         // the web UI right here, for when no phone or computer is at hand (ManageActivity): first, as it does most
         val manage = Tile(R.drawable.ic_apps, T("tv_main.manage_on_this_tv"), T("tv_main.apps_files_health_automation")) {
             RemoteService.start(this)                                 // serves 127.0.0.1 even with the web remote off
             startActivity(android.content.Intent(this, ManageActivity::class.java).putExtra(ManageActivity.PASS, RemoteService.selfPass))
         }
-        left.addView(manage.view, LinearLayout.LayoutParams(-1, dp(42)).apply { topMargin = dp(8) })
-        for (row in tiles.chunked(if (phone) 2 else 3)) {
+        val grid = listOf(manage) + tiles                              // Manage first, in the grid: no ragged last row
+        val cols = if (phone) 2 else 4                                 // TV: one row of four; phone: 2 x 2
+        for (row in grid.chunked(cols)) {
             val r = LinearLayout(this)
             r.clipChildren = false
-            row.forEachIndexed { i, tile -> r.addView(tile.view, LinearLayout.LayoutParams(0, dp(42), 1f).apply { if (i > 0) leftMargin = dp(10) }) }
+            row.forEachIndexed { i, tile -> r.addView(tile.view, LinearLayout.LayoutParams(0, dp(76), 1f).apply { if (i > 0) leftMargin = dp(10) }) }
             left.addView(r, margins(top = 8))
         }
 
@@ -260,7 +264,7 @@ class MainActivity : Activity() {
         val arrow = e.keyCode in intArrayOf(android.view.KeyEvent.KEYCODE_DPAD_UP, android.view.KeyEvent.KEYCODE_DPAD_DOWN,
             android.view.KeyEvent.KEYCODE_DPAD_LEFT, android.view.KeyEvent.KEYCODE_DPAD_RIGHT, android.view.KeyEvent.KEYCODE_DPAD_CENTER)
         if (arrow && e.action == android.view.KeyEvent.ACTION_DOWN && (currentFocus == null || window.decorView.isInTouchMode)) {
-            (tiles.firstOrNull { it.view.isEnabled } ?: tiles[4]).view.let { it.isFocusableInTouchMode = true; it.requestFocus(); it.isFocusableInTouchMode = false }
+            (tiles.firstOrNull { it.view.isEnabled } ?: tiles[1]).view.let { it.isFocusableInTouchMode = true; it.requestFocus(); it.isFocusableInTouchMode = false }
             return true
         }
         return super.dispatchKeyEvent(e)
@@ -521,7 +525,7 @@ class MainActivity : Activity() {
                     hinted = true
                     setStatus(WARN, T("tv_main.no_question_on_the"),
                         T("tv_main.turn_usb_debugging_off"))
-                    tiles[4].view.requestFocus()
+                    tiles[1].view.requestFocus()
                 }
                 v.postDelayed(this, 2000)
             }
@@ -561,8 +565,8 @@ class MainActivity : Activity() {
                     log("✗ " + reason(e))
                     log(T("tv_main.enable_adb_howto"))
                     log(T("tv_main.then_come_back_here"))
-                    tiles[5].enable(true)
-                    tiles[5].view.requestFocus()
+                    tiles[1].enable(true)
+                    tiles[1].view.requestFocus()
                     val off = (e.message ?: "").lowercase().let { it.contains("refused") }   // ADB is off; not: the person said no to the prompt
                     if (!openedDev && off) {                          // once: straight to where ADB is turned on, no hunting through menus
                         openedDev = true
@@ -584,8 +588,8 @@ class MainActivity : Activity() {
         ui {
             showWeb()
             setStatus(OK, T("tv_main.adb_connected"), name + "\n" + T("tv_main.adb_networks", "lan" to lan.ifEmpty { "?" }, "ts" to (if (ts.isNotEmpty()) ts else if (tsInstalled) T("tv_main.signed_out") else T("tv_main.not_installed"))))
-            tsTile.say(if (ts.isNotEmpty()) T("tv_main.connected_ip", "ip" to ts) else if (tsInstalled) T("tv_main.signed_out_select_to")
-                else T("tv_main.not_installed_select_to"))
+            tsStatus = if (ts.isNotEmpty()) T("tv_main.connected_ip", "ip" to ts) else if (tsInstalled) T("tv_main.signed_out_select_to")
+                else T("tv_main.not_installed_select_to")
         }
     }
 
@@ -607,15 +611,39 @@ class MainActivity : Activity() {
     private fun keepText() = if (KeepAdb.on(this)) T("tv_main.turn_back_on_when")
         else T("tv_main.turn_back_on_when_2")
 
-    /** Developer options, and whether TV Setup turns ADB debugging back on (KeepAdb) when someone switches it off. */
-    private fun debugMenu() {
-        val items = arrayOf(T("tv_main.open_developer_options"), keepText())
+    /** Connection: the TV's ADB again, Developer options and whether TV Setup turns ADB debugging back on (KeepAdb), Tailscale. */
+    private fun connectionMenu() {
+        if (busy) return
+        val items = arrayOf(T("tv_main.reconnect") + " · " + T("tv_main.the_tv_s_adb"), T("tv_main.open_developer_options"), keepText(),
+            "Tailscale · " + tsStatus)
         android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setTitle(T("tv_main.debugging"))
+            .setTitle(T("tv_main.connection"))
             .setItems(items) { _, i ->
                 when (i) {
-                    0 -> devOptions()
-                    1 -> { KeepAdb.set(this, !KeepAdb.on(this)); log(keepText()) }
+                    0 -> connect()
+                    1 -> devOptions()
+                    2 -> { KeepAdb.set(this, !KeepAdb.on(this)); log(keepText()) }
+                    3 -> if (adb == null) log(T("tv_main.needs_adb_turn_on")) else tailscale()
+                }
+            }.show()
+    }
+
+    /** Optimize TV: the clean-up and its undo, the home screen to use, the remote buttons the stock launcher answered (KeyFix). */
+    private fun optimizeMenu() {
+        if (busy) return
+        val items = arrayOf(T("tv_main.optimize_tv") + " · " + T("tv_main.fewer_extra_apps"),
+            T("setup.undo_ok") + " · " + T("tv_main.as_before_optimize"),
+            T("launcher.tile") + " · " + T("launcher.tile_sub"),
+            T("keyfix.tile") + " · " + keysSub())
+        android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(T("tv_main.optimize_tv"))
+            .setItems(items) { _, i ->
+                if (i < 3 && adb == null) { log(T("tv_main.needs_adb_turn_on")); return@setItems }
+                when (i) {
+                    0 -> chooseOptimize()
+                    1 -> job { it.undo() }
+                    2 -> chooseLauncher()
+                    3 -> { KeyFix.want(this, !KeyFix.wanted(this)); log(T("keyfix.tile") + " · " + keysSub()) }
                 }
             }.show()
     }
@@ -974,7 +1002,7 @@ class MainActivity : Activity() {
             val ts = Tailscale(adb ?: return@job, getExternalFilesDir(null))
             if (!ts.installed()) log(T("tv_main.downloading_and_installing_the"))
             val url = ts.start { what, pct ->
-                ui { tsTile.progress(when (what) {
+                ui { connTile.progress(when (what) {
                     "download" -> T("tv_main.downloading_pct", "pct" to ((pct - 5) * 100 / 55).coerceIn(0, 100))
                     "install" -> T("tv_main.installing")
                     else -> T("tv_main.switching_on") }) }
@@ -1001,9 +1029,9 @@ class MainActivity : Activity() {
     /** Tiles that need ADB follow it; "Developer options" always works. Focus stays where it was, or goes to a tile that works. */
     private fun setEnabled(on: Boolean) {
         val had = currentFocus
-        tiles.forEachIndexed { i, tile -> tile.enable(on || i == 3 || i == 4) }   // without ADB: Debugging to turn it on; Update for its menu (removing works without ADB)
+        tiles.forEachIndexed { i, tile -> tile.enable(on || i >= 1) }   // without ADB: Connection (Debugging turns it on) and Update (removing works without ADB)
         if (on && !focusedOnce) { focusedOnce = true; tiles[0].view.requestFocus() }   // ready for the first time: start on the first action
-        else if (had == null || !had.isEnabled) (if (on) tiles[0] else tiles[4]).view.requestFocus()
+        else if (had == null || !had.isEnabled) (if (on) tiles[0] else tiles[1]).view.requestFocus()
     }
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).roundToInt()
