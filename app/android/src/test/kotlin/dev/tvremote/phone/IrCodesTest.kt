@@ -39,6 +39,17 @@ class IrCodesTest {
         for (n in listOf("NEC", "NECext", "Samsung32", "SIRC", "RC5", "RC6", "RAW")) assertTrue(n, n in used)
     }
 
+    @Test fun mergeKeepsOneProfilePerDifferentRemote() {
+        val m = IrCodes.merge(all)
+        assertEquals(all.size, m.sumOf { it.models.size })
+        assertEquals(all.map { it.id }.toSet(), m.flatMap { it.ids }.toSet())
+        assertEquals(1, m.count { it.brand == "Samsung" })               // six model names, one power code
+        val tcl = m.filter { it.brand == "TCL" }
+        assertEquals(listOf(1, 2), tcl.map { it.kind })
+        assertEquals(0, m.first { it.brand == "Samsung" }.kind)
+        for (p in m) assertEquals(p.id, p.keys["POWER"], all.first { it.id == p.id }.keys["POWER"])
+    }
+
     @Test fun distinctGroupsProfilesThatShareACode() {
         val d = IrCodes.distinct(all, "POWER")
         assertTrue(d.size < all.size)

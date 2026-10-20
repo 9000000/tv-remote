@@ -5,9 +5,10 @@ import org.json.JSONObject
 // The infrared code sets (assets/ir/codes.json, made by dev/ir_codes.py from Flipper-IRDB): one profile per remote, its keys named
 // as in Scenes.KEYS. Plain Kotlin + org.json, so IrCodesTest reads the real file.
 
-internal class IrProfile(val id: String, val brand: String, val name: String, val keys: Map<String, String>) {
-    val title: String get() = "$brand $name"
-}
+/** [kind]: its number among the brand's different remotes (IrCodes.merge), 0 when the brand has one. [models]: the models it stands for,
+ *  [ids]: theirs, so a choice saved before they were merged still finds it. */
+internal class IrProfile(val id: String, val brand: String, val name: String, val keys: Map<String, String>,
+                         val kind: Int = 0, val models: List<String> = listOf(name), val ids: Set<String> = setOf(id))
 
 internal object IrCodes {
     /** Every key a profile may hold, in the order the screen and the file list them. */
@@ -27,6 +28,23 @@ internal object IrCodes {
             IrProfile(o.getString("id"), o.getString("brand"), o.getString("name"), keys)
         }
     }
+
+    /**
+     * One profile per remote that is really different: the file's profiles of a brand whose power key has the same protocol and address are one remote under
+     * several model names (a hundred Samsung TVs), and a list of model numbers told nobody which to pick. The most common first; each
+     * key gets the code most of them agree on.
+     */
+    fun merge(all: List<IrProfile>): List<IrProfile> = all.map { it.brand }.distinct().flatMap { brand ->
+        val groups = all.filter { it.brand == brand }.groupBy { family(it.keys["POWER"] ?: "") }.values.sortedByDescending { it.size }
+        groups.mapIndexed { i, g ->
+            val keys = LinkedHashMap<String, String>()
+            for (k in KEYS) g.mapNotNull { it.keys[k] }.groupingBy { it }.eachCount().maxByOrNull { it.value }?.let { keys[k] = it.key }
+            IrProfile(g[0].id, brand, g[0].name, keys, if (groups.size > 1) i + 1 else 0, g.map { it.name }, g.map { it.id }.toSet())
+        }
+    }
+
+    /** "NEC 4" of "NEC 4 8": a remote's codes share it (one TV's power-on and its toggle differ only in the command). A raw recording is its own. */
+    private fun family(code: String): String = if (code.startsWith("RAW")) code else code.split(' ').take(2).joinToString(" ")
 
     /** The profiles that answer to [key] differently: the first of each distinct code, with how many share it. Dò mã steps through these, not every model. */
     fun distinct(all: List<IrProfile>, key: String): List<Pair<IrProfile, Int>> {

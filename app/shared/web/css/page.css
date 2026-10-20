@@ -52,10 +52,14 @@ main.picking > .tabs, main.picking > .panel, main.picking > #help, main.picking 
 /* narrow: the words get the whole width (a model name no longer breaks every word) and the buttons a row under them, Open
    the widest with its word; beside the words they floated half way down a tall row */
 @media (max-width:640px) {
+  #tvlist:not(.shots) .item .acts .primary .lbl { position:static; width:auto; height:auto; clip-path:none; }
+}
+/* the card, not the screen: half of a wide page is as narrow, and three buttons beside the words squeezed them */
+#savedcard { container-type:inline-size; }
+@container (max-width:600px) {
   #tvlist:not(.shots) .item .name { flex-basis:100%; }
   #tvlist:not(.shots) .item .acts { margin-left:0; width:100%; }
   #tvlist:not(.shots) .item .acts .primary { flex:1; }
-  #tvlist:not(.shots) .item .acts .primary .lbl { position:static; width:auto; height:auto; clip-path:none; }
 }
 #tvlist.shots { display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:10px; }
 #tvlist.shots .item { flex-direction:column; align-items:stretch; flex-wrap:nowrap; gap:8px; padding:8px; border:1px solid var(--line); border-radius:var(--radius); }

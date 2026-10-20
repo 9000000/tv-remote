@@ -9,10 +9,18 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 
 - TV Home có bản mới cũng được nhắc như TV Setup, chung một thanh gọn (một nút Cập nhật cho cả hai). **Để sau** hỏi khi nào nhắc lại: sau 1, 7, 30 ngày, hoặc bỏ qua bản này
+- Thẻ 📺 TV (tab Thiết lập) có hàng **Màn hình**: Tắt / bật màn hình và Giảm độ sáng, không cần mở remote
+- Remote hồng ngoại: chọn hãng không còn là danh sách số model. Model dùng chung một mã gộp làm một; hãng có nhiều kiểu thì hiện **Kiểu 1 (phổ biến nhất)**, **Kiểu 2**... kèm vài model và số phím. Nút hãng không còn xuống dòng
+- Sửa: app điện thoại: bấm Quay lại từ menu con thì tiêu đề menu trước bị sai
+- Sửa: TV đã lưu: trong thẻ hẹp (nửa trang trên máy tính) các nút xuống dòng dưới tên TV, không ép chữ
 
 **English**
 
 - New TV Home versions are offered like TV Setup's, in the same one-line bar (one Update for both). **Later** asks when: in 1, 7 or 30 days, or skip this version
+- The 📺 TV card (Setup tab) has a **Screen** row: Screen off / on and Dim the screen, without opening the remote
+- Infrared remote: picking a brand is no longer a list of model numbers. Models that share one code are one; a brand with several shows **Type 1 (most common)**, **Type 2**... with a few models and the number of keys. The brand button stays on one line
+- Fix: phone app: Back from a sub-menu showed the wrong title on the menu before
+- Fix: saved TVs: in a narrow card (half the page on a computer) the buttons go under the TV's name instead of squeezing it
 
 ## 0.14.0 - 2026-10-20
 

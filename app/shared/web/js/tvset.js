@@ -1,4 +1,4 @@
-// 📺 the TV card on the Setup tab: restart, DNS filter, sleep, screensaver, size and home screen. Read back from the TV after
+// 📺 the TV card on the Setup tab: restart, DNS filter, sleep, screensaver, size, home screen, and the screen off or dimmed. Read back from the TV after
 // every change, so the choice that is lit is what the TV really has. The commands are in TvShell.kt.
 
 // Each filter is tried in turn until one answers on this network: a DNS that does not leaves the TV with no Internet, so the
@@ -99,6 +99,9 @@ function drawTvset(t) {
     });
     rows.push(row(T('tvset.home_title'), homes, t.launchers.length < 2 ? T('tvset.home_one') : T('tvset.home_many')));
   }
+  // the remote's Màn hình TV menu (remote.json "screen") again here, where Manage is used without the remote
+  rows.push(row(T('tvset.screen_title'), [el('button', { textContent: T('rkey.screen_off'), onclick: () => screenOff() }),
+    el('button', { textContent: T('rkey.dim'), onclick: () => dimOpen() })]));
   $('#tvset').replaceChildren(...rows);
 }
 

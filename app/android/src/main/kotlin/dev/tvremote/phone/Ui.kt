@@ -361,9 +361,9 @@ internal fun Activity.menu(title: String, primary: Int, items: List<Triple<Strin
     val list = col()
     list.setPadding(dp(16), dp(8), dp(16), dp(4))
     var dialog: Popup? = null
-    items.forEachIndexed { i, (title, what, run) ->
-        val art = if (title.startsWith("@")) title.substringBefore("|").substring(1) else null
-        val name = if (art != null) title.substringAfter("|") else title
+    items.forEachIndexed { i, (label0, what, run) ->                  // not "title": that one is the menu's, for Back to reopen it by
+        val art = if (label0.startsWith("@")) label0.substringBefore("|").substring(1) else null
+        val name = if (art != null) label0.substringAfter("|") else label0
         val row = LinearLayout(this)
         row.gravity = Gravity.CENTER_VERTICAL
         row.setPadding(dp(14), dp(12), dp(10), dp(12))

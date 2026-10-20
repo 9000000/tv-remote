@@ -37,7 +37,7 @@ private object IrState {
 }
 
 internal fun MainActivity.irCatalog(): List<IrProfile> = IrState.catalog ?: try {
-    IrCodes.parse(assets.open("ir/codes.json").bufferedReader().use { it.readText() })
+    IrCodes.merge(IrCodes.parse(assets.open("ir/codes.json").bufferedReader().use { it.readText() }))
 } catch (e: Exception) { emptyList() }.also { IrState.catalog = it }
 
 private fun MainActivity.irManager(): ConsumerIrManager? = try { getSystemService(Context.CONSUMER_IR_SERVICE) as? ConsumerIrManager } catch (e: Exception) { null }
@@ -69,8 +69,14 @@ private fun MainActivity.irSend(code: String, repeat: Boolean) {
 /** The saved TV the codes are for: each keeps its own remote, and one ADB reaches can find its code by itself (IrAuto.kt). */
 private fun MainActivity.irTarget(): String = pref(TARGET).takeIf { it in savedIps() } ?: ""
 private fun MainActivity.irProfileKey(): String = irTarget().let { if (it.isEmpty()) PROFILE else "$PROFILE:$it" }
-private fun MainActivity.irProfile(): IrProfile? = pref(irProfileKey()).ifEmpty { pref(PROFILE) }.let { id -> irCatalog().firstOrNull { it.id == id } }
+private fun MainActivity.irProfile(): IrProfile? = pref(irProfileKey()).ifEmpty { pref(PROFILE) }.let { id -> irCatalog().firstOrNull { id in it.ids } }
 private fun MainActivity.irSave(p: IrProfile) = prefs.edit().putString(irProfileKey(), p.id).apply()
+/** "Samsung", or "TCL · Kiểu 2" when the brand has more than one remote. */
+internal val IrProfile.title: String get() = if (kind == 0) brand else brand + " · " + T("ir.kind", "n" to kind)
+/** The models it stands for, and how many keys it knows. */
+private fun IrProfile.about(): String =
+    T("ir.models", "list" to (models.take(2).joinToString(", ") + (if (models.size > 2) " +" + (models.size - 2) else ""))) + " · " + T("ir.n_keys", "n" to keys.size)
+
 private fun MainActivity.irTvName(ip: String) = pref("name:$ip").ifEmpty { ip }
 
 // ---------------------------------------------------------------- the screen
@@ -121,6 +127,7 @@ internal fun MainActivity.irRemote() {
     irPage(T("ir.title"), { irHost.visibility = View.GONE }) {
         val line = LinearLayout(this@irRemote)
         val pick = button("@tv|" + (p?.title ?: T("ir.choose_brand")), BTN)
+        pick.maxLines = 1; pick.ellipsize = android.text.TextUtils.TruncateAt.END
         pick.setOnClickListener { irBrands() }
         line.addView(pick, LinearLayout.LayoutParams(0, dp(48), 1f))
         val find = button("@search|" + T("ir.find"), SOFT)
@@ -149,14 +156,17 @@ private fun MainActivity.irBrands() {
     val now = irProfile()?.id
     val items = all.map { it.brand }.distinct().map { b ->
         val of = all.filter { it.brand == b }
-        Triple("@tv|" + b, T("ir.n_remotes", "n" to of.size) + (if (of.any { it.id == now }) "  ✓" else "")) { irProfiles(b, of) }
+        val sub = if (of.size == 1) T("ir.one_kind", "n" to of[0].keys.size) else T("ir.n_kinds", "n" to of.size)
+        Triple("@tv|" + b + (if (of.any { it.id == now }) "  ✓" else ""), sub) { if (of.size == 1) { irSave(of[0]); irRemote() } else irProfiles(b, of) }
     }
     menu(T("ir.choose_brand"), -1, items)
 }
 
 private fun MainActivity.irProfiles(brand: String, of: List<IrProfile>) {
     val now = irProfile()?.id
-    menu(brand, -1, of.map { p -> Triple("@tv|" + p.name + (if (p.id == now) "  ✓" else ""), "") { irSave(p); irRemote() } })
+    menu(brand, -1, of.map { p ->
+        Triple("@tv|" + T("ir.kind", "n" to p.kind) + (if (p.kind == 1) " · " + T("ir.common") else "") + (if (p.id == now) "  ✓" else ""), p.about()) { irSave(p); irRemote() }
+    })
 }
 
 /** [bind]: a key of [p] that is there answers the finger (held: it repeats); one that is not is greyed, as the page greys a key the TV lacks. */
