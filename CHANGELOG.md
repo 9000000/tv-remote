@@ -8,6 +8,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 
+- TV Home: **hình nền xoay vòng**. 10 hình nền vẽ sẵn (bình minh, núi xa, đồi cát, sóng, kẹo, đào, đồng cỏ, sương mù, lấp lánh, hẻm đá: vẽ bằng code, không sọc màu, xem trước trên điện thoại / máy tính giống hệt trên TV), ảnh Bing mỗi ngày (không cần khóa, lưu trong máy, mất mạng thì dùng ảnh cũ) và tới 10 ảnh của bạn. Chọn nhiều hình nền rồi đặt đổi sau 30 phút / 1 giờ / 6 giờ / mỗi ngày / mỗi lần mở Home; chỉ đổi khi Home đang hiện, không chạy ngầm. Hộp thoại và bảng Tùy chỉnh trên TV có cùng lựa chọn. TV Home cũ vẫn dùng một hình nền
 - TV Home: chọn ngôn ngữ riêng (Theo TV / Tiếng Việt / English) trên TV và trên app; thẻ thời tiết gọn hơn (trời, cao/thấp nằm cạnh nhiệt độ)
 - Sửa: viền focus của TV Home không còn mép đen, banner nền trắng không lòi ra ngoài góc viền
 - TV Home: chuyển động mượt kiểu Apple TV: focus nảy lên như lò xo, ánh sáng phủ lên thẻ, thẻ rung nhẹ khi bấm vào cạnh. Hình nền vẽ một lần trên lớp riêng: box yếu chạy 60 khung/giây thay vì ~40, gradient và ảnh nền hết bị sọc màu
@@ -40,6 +41,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **English**
 
+- TV Home: **rotating backgrounds**. 10 drawn backgrounds (dawn, peaks, dunes, waves, candy, peach, meadow, mist, bokeh, canyon: painted by code, no banding, the preview on the phone / computer matches the TV), Bing's picture of the day (no key, cached on the TV, the last one when offline) and up to 10 of your own photos. Pick several and set the change to 30 min / 1 hour / 6 hours / daily / each time Home opens; it changes only while Home is on screen, nothing runs in between. The dialog and the TV's Customize panel have the same choices. An older TV Home keeps its one background
 - TV Home: a language of its own (Same as the TV / Tiếng Việt / English), on the TV and in the app; a tighter weather card (sky and high / low beside the temperature)
 - Fix: TV Home's focus ring has no dark edge any more, and a white banner no longer shows past its corners
 - TV Home: smoother, Apple TV-like motion: focus rises on a spring, light settles on the card, a card nudges at an edge. The wallpaper is painted once on its own layer: on a weak box focus moves at 60 frames a second instead of ~40, and gradients and photos no longer show bands

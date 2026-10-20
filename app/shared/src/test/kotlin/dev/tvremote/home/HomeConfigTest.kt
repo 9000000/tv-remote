@@ -118,6 +118,80 @@ class HomeConfigTest {
         assertEquals(true, HomeConfig.WALLS.size >= 16)
     }
 
+    private fun walls(c: JSONObject) = c.getJSONArray("walls").let { a -> List(a.length()) { a.getString(it) } }
+
+    @Test fun theSetIsNeverEmptyAndAlwaysHoldsTheWallOnShow() {
+        val none = HomeConfig.clean(JSONObject())
+        assertEquals(listOf("night"), walls(none))
+        assertEquals("off", none.getString("wevery"))
+        val c = HomeConfig.clean(JSONObject().put("wall", "dawn").put("walls", JSONArray(listOf("peaks", "bogus", "peaks", "bing", "photo3", "; rm", "dunes"))))
+        assertEquals(listOf("peaks", "bing", "photo3", "dunes"), walls(c))     // unknown ids and repeats go
+        assertEquals("peaks", c.getString("wall"))                              // what shows is one of the set
+        assertEquals(HomeConfig.WALLS.size, walls(HomeConfig.clean(JSONObject().put("walls", JSONArray(HomeConfig.WALLS + HomeConfig.WALLS)))).size)   // twice the list: each once
+        assertEquals("off", HomeConfig.clean(JSONObject().put("wevery", "every second")).getString("wevery"))
+        for (e in HomeConfig.EVERY) assertEquals(e, HomeConfig.clean(JSONObject().put("wevery", e)).getString("wevery"))
+    }
+
+    @Test fun aClientThatPicksOneWallMakesTheSetThatOne() {
+        val old = HomeConfig.clean(JSONObject().put("walls", JSONArray(listOf("dawn", "peaks"))).put("wevery", "1h"))
+        val one = HomeConfig.merge(old, JSONObject().put("wall", "waves"))
+        assertEquals(listOf("waves"), walls(one))
+        assertEquals("1h", one.getString("wevery"))
+        val set = HomeConfig.merge(old, JSONObject().put("walls", JSONArray(listOf("peaks", "waves"))))
+        assertEquals("peaks", set.getString("wall"))                           // the one showing left the set: the first of it shows
+        val keep = HomeConfig.merge(old, JSONObject().put("wevery", "off"))
+        assertEquals(listOf("dawn", "peaks"), walls(keep))                     // turning it off keeps the set for later
+    }
+
+    @Test fun photosAreFilesNamedByTheirNumber() {
+        assertEquals("wall.jpg", HomeConfig.photoName("photo"))
+        assertEquals("wall2.jpg", HomeConfig.photoName("photo2"))
+        assertEquals("wall10.jpg", HomeConfig.photoName("photo10"))
+        assertEquals(HomeConfig.PHOTO, HomeConfig.photoPath("photo"))
+        assertEquals(HomeConfig.PHOTO_MAX, HomeConfig.PHOTOS.size)
+        assertFalse(HomeConfig.isPhoto("photo11"))
+    }
+
+    @Test fun nextSkipsWhatCannotBeShown() {
+        val w = listOf("a", "b", "c")
+        assertEquals("b", HomeConfig.next(w, "a") { true })
+        assertEquals("a", HomeConfig.next(w, "c") { true })                    // round the end
+        assertEquals("c", HomeConfig.next(w, "a") { it != "b" })               // a photo gone: skipped
+        assertEquals(null, HomeConfig.next(w, "a") { it == "a" })              // nothing else to show
+        assertEquals("a", HomeConfig.next(w, "zzz") { true })                  // the current one is not in the set: start at the front
+        assertEquals(null, HomeConfig.next(emptyList(), "a") { true })
+    }
+
+    @Test fun dueAndWait() {
+        val h = 3_600_000L
+        assertFalse(HomeConfig.due("off", 0, 99 * h, 0))
+        assertFalse(HomeConfig.due("show", 0, 99 * h, 0))                      // "show" moves on when Home is shown, not by time
+        assertFalse(HomeConfig.due("1h", 10 * h, 10 * h + 59 * 60_000, 0))
+        assertEquals(true, HomeConfig.due("1h", 10 * h, 11 * h, 0))
+        assertEquals(true, HomeConfig.due("30m", 10 * h, 10 * h + 30 * 60_000, 0))
+        assertEquals(true, HomeConfig.due("6h", 10 * h, 9 * h, 0))             // the clock went back: not frozen
+        val day = 24 * h
+        assertFalse(HomeConfig.due("day", 5 * day + 1 * h, 5 * day + 23 * h, 0))
+        assertEquals(true, HomeConfig.due("day", 5 * day + 23 * h, 6 * day + 1 * h, 0))   // the next calendar day, though only 2 hours later
+        assertFalse(HomeConfig.due("day", 5 * day + 23 * h, 6 * day + 1 * h, -3 * h))     // in a zone 3 hours behind it is still the same evening
+        assertEquals(20 * 60_000L, HomeConfig.wait("1h", 10 * h, 10 * h + 40 * 60_000, 0))
+        assertEquals(0L, HomeConfig.wait("1h", 10 * h, 13 * h, 0))
+        assertEquals(h, HomeConfig.wait("day", 5 * day, 6 * day - h, 0))      // until midnight
+        assertEquals(null, HomeConfig.wait("show", 0, 0, 0))
+        assertEquals(null, HomeConfig.wait("off", 0, 0, 0))
+    }
+
+    @Test fun everySceneHasItsRecipe() {
+        val spec = JSONObject(WallSpec.JSON)
+        assertEquals(HomeConfig.ART.toSet(), spec.keys().asSequence().toSet())
+        for (id in HomeConfig.ART) {
+            val o = spec.getJSONObject(id)
+            assertEquals(true, o.getJSONArray("bg").length() >= 2)
+            assertEquals(true, o.getDouble("shade") in 0.3..1.0)
+            assertEquals(true, o.getJSONArray("layers").length() >= 1)
+        }
+    }
+
     @Test fun noteIsOneShortLine() {
         assertEquals("Tắt TV lúc 9h nhé", HomeConfig.clean(JSONObject().put("note", "  Tắt TV\n lúc   9h nhé ")).getString("note"))
         assertEquals(HomeConfig.NOTE_MAX, HomeConfig.clean(JSONObject().put("note", "x".repeat(500))).getString("note").length)

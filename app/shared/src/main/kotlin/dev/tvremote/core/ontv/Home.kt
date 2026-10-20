@@ -17,8 +17,8 @@ import java.io.IOException
 object Home {
     /** The settings and TV Home's view of the TV's apps; [change] (any fields of [HomeConfig]) is saved first. */
     @Throws(IOException::class)
-    fun call(sh: (String) -> String, change: JSONObject?): JSONObject {
-        val arg = if (change == null) "" else " --es set " + B64.encode(HomeConfig.clean(change).let { c ->
+    fun call(sh: (String) -> String, change: JSONObject?, extra: String = ""): JSONObject {   // [extra]: more receiver arguments (drop, thumbs)
+        val arg = " $extra" + if (change == null) "" else " --es set " + B64.encode(HomeConfig.clean(change).let { c ->
             JSONObject().also { o -> for (k in change.keys()) if (c.has(k)) o.put(k, c.get(k)) } }.toString().toByteArray(Charsets.UTF_8))
         // the screensaver is a system setting: TV Home may write it once the shell has granted it that (only ADB can)
         val grant = if (change?.optBoolean("dream") == true) "pm grant ${HomeConfig.PKG} ${HomeConfig.WRITE_SECURE} 2>&1; " else ""
@@ -60,12 +60,30 @@ object Home {
         return call(sh, null)
     }
 
-    /** A photo as the background: put where TV Home reads it, then chosen. [jpeg] is already the screen's size (the page makes it so). */
+    /** A photo as a background: put where TV Home reads it, then chosen (and added to the rotation's set when that is on).
+     *  [jpeg] is already the screen's size (the page makes it so). A TV Home without rotation keeps its one photo, wall.jpg. */
     @Throws(IOException::class)
     fun photo(adb: Adb, jpeg: ByteArray): JSONObject {
         val sh: (String) -> String = { adb.shell(it) }
-        if (!call(sh, null).optBoolean("installed")) throw IOException("home:missing")   // also makes TV Home's folder, where the shell may write
-        if (!adb.put(HomeConfig.PHOTO, jpeg)) throw IOException("home:photo")
-        return call(sh, JSONObject().put("wall", "photo").put("photo", System.currentTimeMillis()))
+        val now = call(sh, null)
+        if (!now.optBoolean("installed")) throw IOException("home:missing")   // also makes TV Home's folder, where the shell may write
+        val conf = now.optJSONObject("config") ?: JSONObject()
+        if (!conf.optBoolean("wrotate")) {
+            if (!adb.put(HomeConfig.PHOTO, jpeg)) throw IOException("home:photo")
+            return call(sh, JSONObject().put("wall", "photo").put("photo", System.currentTimeMillis()))
+        }
+        val used = now.optJSONArray("photos")?.let { a -> (0 until a.length()).map { a.getJSONObject(it).optString("id") } } ?: emptyList()
+        val id = HomeConfig.PHOTOS.firstOrNull { it !in used } ?: throw IOException("home:photos_full")
+        if (!adb.put(HomeConfig.photoPath(id), jpeg)) throw IOException("home:photo")
+        val set = conf.optJSONArray("walls")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList()
+        val walls = if (conf.optString("wevery", "off") == "off") listOf(id) else set + id
+        return call(sh, JSONObject().put("walls", org.json.JSONArray(walls)).put("wall", id).put("photo", System.currentTimeMillis()))
+    }
+
+    /** A photo taken out: TV Home deletes the file and its place in the set (it owns them). */
+    @Throws(IOException::class)
+    fun drop(adb: Adb, id: String): JSONObject {
+        if (!HomeConfig.isPhoto(id)) throw IllegalArgumentException("photo id")
+        return call({ adb.shell(it) }, null, "--es drop $id")
     }
 }
