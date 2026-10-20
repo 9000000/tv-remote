@@ -52,8 +52,7 @@ import java.util.concurrent.Executors
  */
 class HomeActivity : Activity() {
     private val bg = Executors.newSingleThreadExecutor()
-    private lateinit var wallView: ImageView
-    private lateinit var scrim: View
+    private lateinit var backdrop: Backdrop
     private lateinit var scroll: ScrollView
     private lateinit var clock: TextClock
     private lateinit var dateLine: TextView
@@ -92,13 +91,8 @@ class HomeActivity : Activity() {
         super.onCreate(b)
         conf = Store.get(this)
         val root = FrameLayout(this)
-        wallView = ImageView(this).apply { scaleType = ImageView.ScaleType.CENTER_CROP; visibility = View.GONE }
-        scrim = View(this).apply {                                    // words stay readable over any photo
-            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xB0000000.toInt(), 0x40000000, 0x90000000.toInt()))
-            visibility = View.GONE
-        }
-        root.addView(wallView, FrameLayout.LayoutParams(-1, -1))
-        root.addView(scrim, FrameLayout.LayoutParams(-1, -1))
+        backdrop = Backdrop(this)
+        root.addView(backdrop, FrameLayout.LayoutParams(-1, -1))
 
         Motion.read(this, conf)
         scroll = Scroller(this) { blurAlign() }.apply { isVerticalScrollBarEnabled = false; isFillViewport = true; clipChildren = false }
@@ -221,8 +215,7 @@ class HomeActivity : Activity() {
         if (trimmed) return
         trimmed = true
         picture = null
-        if (soft != null && wallView.drawable != null) wallView.setImageBitmap(soft)    // the blurred copy stands in, so the return is not a blank
-        else wallView.setImageDrawable(null)
+        backdrop.show(wallColors(conf.optString("wall")), soft)          // the blurred copy stands in, so the return is not a blank
         for (t in tileCache.values) t.release()
         for (a in apps) a.release()
     }
@@ -510,9 +503,9 @@ class HomeActivity : Activity() {
         if (key == wallShown) return
         wallShown = key
         val colors = wallColors(wall)
-        // set once per wall, never per frame: a solid is a ColorDrawable (free), a gradient one GradientDrawable (no bitmap); only a photo costs a bitmap
-        window.decorView.background = wallDrawable(colors)
-        wallView.visibility = View.GONE; scrim.visibility = View.GONE; blurClip.visibility = View.GONE
+        window.decorView.background = null                            // the wallpaper is [backdrop]'s, painted once behind the window
+        backdrop.show(colors, null)
+        blurClip.visibility = View.GONE
         picture = null; soft = null
         if (wall == "photo") loadPhoto()
     }
@@ -521,12 +514,13 @@ class HomeActivity : Activity() {
     private fun loadPhoto() {
         val dm = resources.displayMetrics
         bg.execute {
-            val bmp = Wall.load(Wall.file(this), dm.widthPixels, dm.heightPixels)
-            val small = bmp?.let { Wall.soft(it) }
+            val read = Wall.load(Wall.file(this), dm.widthPixels, dm.heightPixels)
+            val small = read?.let { Wall.soft(it) }
+            val bmp = read
             runOnUiThread {
                 if (bmp != null && !isDestroyed && !trimmed) {
                     picture = bmp; soft = small
-                    wallView.setImageBitmap(bmp); wallView.visibility = View.VISIBLE; scrim.visibility = View.VISIBLE
+                    backdrop.show(wallColors("photo"), bmp)
                     blurView.setImageBitmap(small); blurClip.visibility = View.VISIBLE; blurAlign()
                 }
             }
@@ -892,6 +886,6 @@ fun wallColors(wall: String): IntArray = when (wall) {
     else -> intArrayOf(0xFF0B0F1A.toInt(), 0xFF18223F.toInt(), 0xFF0B0F1A.toInt())
 }
 
-/** A solid is a ColorDrawable (free), a gradient a GradientDrawable (no bitmap). */
+/** For the screensaver, whose screen rarely changes; the home screen paints its wallpaper once on a [Backdrop] instead. */
 fun wallDrawable(colors: IntArray): Drawable =
-    if (colors.all { it == colors[0] }) ColorDrawable(colors[0]) else GradientDrawable(GradientDrawable.Orientation.TL_BR, colors)
+    if (colors.all { it == colors[0] }) ColorDrawable(colors[0]) else GradientDrawable(GradientDrawable.Orientation.TL_BR, colors).apply { setDither(true) }

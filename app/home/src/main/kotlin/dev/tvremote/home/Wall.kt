@@ -7,7 +7,7 @@ import java.io.File
 /**
  * The photo wallpaper, read at the size it is drawn and no bigger: a phone photo is 4000 px wide, and on a 2 GB box a bitmap
  * of the TV's 1080p x 4 bytes is 8 MB the launcher keeps for as long as it lives. Never over 1920x1080 (a 4K panel draws the
- * same photo scaled), 2 bytes a pixel (a JPEG has no alpha): 4 MB.
+ * same photo scaled): 8 MB, let go while the screen is hidden and memory is short. Not 2 bytes a pixel: that banded skies.
  */
 object Wall {
     const val MAX_W = 1920
@@ -38,7 +38,7 @@ object Wall {
         val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(f.path, o)
         val read = BitmapFactory.decodeFile(f.path, BitmapFactory.Options().apply {
-            inSampleSize = sample(o.outWidth, o.outHeight, dw, dh); inPreferredConfig = Bitmap.Config.RGB_565
+            inSampleSize = sample(o.outWidth, o.outHeight, dw, dh); inPreferredConfig = Bitmap.Config.ARGB_8888   // 565 banded every sky and dusk (Backdrop paints it on an 8-bit surface)
         })
         if (read == null) null else {
             val (w, h) = cover(read.width, read.height, dw, dh)
