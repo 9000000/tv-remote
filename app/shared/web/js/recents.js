@@ -44,16 +44,46 @@ function recentsActs(pkg) {
   return [a.top ? null : setLabel(act('', async () => { if (await api('/api/app/launch', { pkg })) { toast(T('recents.switched', { name })); setTimeout(() => recentsNow(true), 1200); } }), '▶', T('recents.switch')),   // its icon alone on a phone: the row stays one line
     close].filter(Boolean);
 }
-/** Under the open apps: Close all, then what runs in the background. */
+/** Under the open apps: Close in bulk, then what runs in the background. */
 function recentsTail() {
   const sys = recentsBg.filter((a) => a.keep === 'system'), bg = recentsBg.filter((a) => a.keep !== 'system');
-  const all = el('button', { type: 'button', className: 'small', textContent: T('recents.close_all'), disabled: ![...recentsOpen.values()].some((a) => !a.top && !a.keep), onclick: async () => {
-    if (!await ask(T('recents.close_all_ask'), { ok: T('recents.close_all') })) return;
-    const r = await api('/api/recents', { all: true });
-    if (r) { toast(T('recents.closed_n', { n: r.closed })); recentsNow(true); }
-  } });
+  const n = [...recentsOpen.values()].filter((a) => !a.keep).length;
+  const all = el('button', { type: 'button', className: 'primary', textContent: T('recents.close_bulk') + (n ? ' (' + n + ')' : ''), disabled: !n, onclick: recentsPick });
   return [el('div', { className: 'actions' }, all), ...(bg.length || sys.length ? [el('h3', { textContent: T('recents.background') }), ...bg.map(procRow),
     ...(sys.length ? [el('details', { className: 'appsoff', open: recentsSysOpen, ontoggle: (e) => { recentsSysOpen = e.target.open; } }, el('summary', { textContent: T('health.android_system_n', { n: sys.length }) }), ...sys.map(procRow))] : [])] : [])];
+}
+// ⏹ Close in bulk: the open apps ticked, each unticked at will; those in the background are ticked, the one on screen is not
+// (closing it is a choice, as its own ✕ asks), and what the TV needs is listed greyed with no box
+function recentsPick() {
+  const apps = [...recentsOpen.values()], picked = new Set(apps.filter((a) => !a.keep && !a.top).map((a) => a.pkg));
+  const go = el('button', { className: 'primary', type: 'button' }), toggle = el('button', { className: 'small', type: 'button' });
+  const free = apps.filter((a) => !a.keep).map((a) => a.pkg), rows = new Map();
+  const sync = () => {
+    go.disabled = !picked.size; go.textContent = T('recents.close_n_btn', { n: picked.size });
+    toggle.textContent = free.every((p) => picked.has(p)) ? T('fleet.pick_none') : T('fleet.pick_all');
+    rows.forEach((r, p) => { r.box.checked = picked.has(p); r.classList.toggle('on', picked.has(p)); });
+  };
+  const row = (a) => {
+    const icon = appIcon(a.pkg), name = el('span', { textContent: appName(a.pkg) });
+    onMeta(a.pkg, (m) => { icon.fill(m); put(name, 'textContent', appName(a.pkg)); });
+    const sub = el('small', { textContent: a.top ? T('recents.on_screen') : recentsAgo(a.ago) });
+    if (a.keep) return el('div', { className: 'item pick off', title: procKeep()[a.keep] || '' }, icon, el('div', { className: 'name' }, el('div', { className: 'nameline' }, name, ...recentsTag(a.pkg)), sub));
+    const box = el('input', { type: 'checkbox', onchange: (e) => { e.target.checked ? picked.add(a.pkg) : picked.delete(a.pkg); sync(); } });
+    const r = el('label', { className: 'item pick', title: a.pkg }, icon, el('div', { className: 'name' }, name, sub), box);
+    r.box = box; rows.set(a.pkg, r); return r;
+  };
+  toggle.onclick = () => { const every = free.every((p) => picked.has(p)); free.forEach((p) => every ? picked.delete(p) : picked.add(p)); sync(); };
+  go.onclick = async () => {
+    const pkgs = [...picked]; $('#infodlg').close();
+    const r = await api('/api/recents', { pkgs });
+    if (r) { toast(T('recents.closed_n', { n: r.closed })); pkgs.forEach((p) => recentsOpen.delete(p)); renderApps(); setTimeout(() => recentsNow(true), 800); }
+  };
+  put('#infotitle', 'textContent', T('recents.close_bulk'));
+  $('#infobody').replaceChildren(
+    el('div', { className: 'line fleetpick' }, UI.note(T('recents.close_pick_note')), toggle),
+    el('div', { className: 'list fleetapps' }, ...[...apps.filter((a) => !a.keep), ...apps.filter((a) => a.keep)].map(row)),
+    el('div', { className: 'acts fleetgo' }, el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => $('#infodlg').close() }), go));
+  sync(); $('#infodlg').showModal();
 }
 function procRow(a) {
   const icon = appsIcon(a.pkg, a.keep === 'system'), name = META.get(a.pkg)?.label || a.label;   // kept between refreshes, as the rows above

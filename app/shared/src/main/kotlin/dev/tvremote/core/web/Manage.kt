@@ -178,9 +178,11 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "app" -> { open(r.json().optString("link")); HttpServer.Response.json(JSONObject().put("ok", true).put("via", "adb")) }
                 "app/launch", "app/stop", "app/uninstall", "app/disable", "app/enable", "app/clear" -> app(r.json().optString("pkg"), what.substring(4))
                 "clean" -> text(TvShell.CLEAN, 90000)
-                "recents" -> {                                        // close one open app, or all but the one on screen
+                "recents" -> {                                        // close one open app, those picked, or all but the one on screen
                     val d = r.json()
-                    val pkgs = if (d.optBoolean("all")) recents().getJSONArray("apps").let { a -> (0 until a.length()).map { a.getJSONObject(it) }   // what the TV needs stays, as on its own row
+                    val list = d.optJSONArray("pkgs")
+                    val pkgs = if (list != null) (0 until list.length()).map { list.getString(it) }.distinct()
+                        else if (d.optBoolean("all")) recents().getJSONArray("apps").let { a -> (0 until a.length()).map { a.getJSONObject(it) }   // what the TV needs stays, as on its own row
                         .filter { !it.optBoolean("top") && it.isNull("keep") }.map { it.getString("pkg") } }
                         else listOf(d.optString("pkg"))
                     val keep = keepNow(sh(KEEP_NOW))

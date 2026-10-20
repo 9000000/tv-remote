@@ -142,6 +142,7 @@ html:not(.tabbed) .panel { visibility:hidden; }   /* theme.js, setup.js */
 .fleetapps .item.pick .name > span { font-weight:600; }
 .fleetapps .appicon { width:40px; height:40px; border-radius:10px; font-size:17px; }
 .fleetapps input[type=checkbox] { width:18px; height:18px; flex:none; accent-color:var(--accent); }
+.fleetapps .item.pick.off { opacity:.6; cursor:default; }   /* listed so it is clear why it stays: no box (recents.js) */
 .fleetpick { margin-bottom:8px; }
 .fleetpick input[type=search] { flex:1 1 0; min-width:0; }
 .fleetgo { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }

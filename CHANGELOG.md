@@ -9,10 +9,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 
 - Sửa: Ứng dụng → Đang mở: app đã đóng vẫn hiện lại sau vài giây trên Android 9 (BRAVIA); danh sách không còn nháy mỗi lần làm mới (biểu tượng giữ nguyên, mục Hệ thống Android không tự gập)
+- Ứng dụng → Đang mở: “Đóng tất cả” thành nút **Đóng hàng loạt** nổi bật, có biểu tượng; bấm vào hiện danh sách app sẽ đóng để tích / bỏ tích, app TV cần giữ hiện mờ, không chọn được
 
 **English**
 
 - Fix: Apps → Open: a closed app came back after a few seconds on Android 9 (BRAVIA); the list no longer flickers on each refresh (icons kept, Android system stays open)
+- Apps → Open now: “Close all” is now a clear **Close in bulk** button with an icon; it lists the apps it will close to tick or untick, apps the TV needs shown greyed and not selectable
 
 ## 0.13.0 - 2026-10-20
 
