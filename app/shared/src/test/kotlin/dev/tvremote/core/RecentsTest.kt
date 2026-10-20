@@ -40,6 +40,10 @@ ACTIVITY MANAGER RECENT TASKS (dumpsys activity recents)
   * Recent #1: TaskRecord{d1 #47 A=com.netflix.ninja U=0 StackId=3 sz=1}
     realActivity=com.netflix.ninja/.MainActivity
     lastActiveTime=1000 (inactive for 400s)
+  * Recent #2: TaskRecord{da61ea0 #371 A=com.linor.vn.getout U=0 StackId=-1 sz=0}
+    realActivity=com.linor.vn.getout/.MainActivity
+    stackId=-1
+    lastActiveTime=900 (inactive for 41s)
 """
 
     @Test fun android14() {
@@ -52,7 +56,7 @@ ACTIVITY MANAGER RECENT TASKS (dumpsys activity recents)
 
     @Test fun android9() {
         val apps = Recents.json(a9).getJSONArray("apps")
-        assertEquals(1, apps.length())
+        assertEquals(1, apps.length())                                    // the closed app's empty task is not open
         assertEquals("com.netflix.ninja", apps.getJSONObject(0).getString("pkg"))
         assertFalse(apps.getJSONObject(0).getBoolean("top"))                  // home is on screen
         assertFalse(apps.getJSONObject(0).has("running"))

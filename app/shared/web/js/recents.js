@@ -2,7 +2,7 @@
 // says when it was last used and its memory (once /api/procs has answered), Switch goes back to it, ✕ closes it (it leaves the
 // list and stops; what the TV needs only leaves the list). Under the rows, what runs without being opened (Tailscale, the
 // keyboard...) with its memory, and Android's own folded away: what the Health tab used to show.
-let recentsAgain = false, recentsOpen = new Map(), recentsMb = new Map(), recentsBg = [], recentsAt = 0, recentsBusy = false;
+let recentsAgain = false, recentsSysOpen = false, recentsOpen = new Map(), recentsMb = new Map(), recentsBg = [], recentsAt = 0, recentsBusy = false;
 const procState = () => ({ front: T('health.proc_front'), bg: T('health.proc_bg'), home: T('health.proc_home'), cached: T('health.proc_idle'), system: T('health.proc_system') });
 const procKeep = () => ({ us: T('health.keep_us'), home: T('health.keep_home'), keyboard: T('health.keep_keyboard'), system: T('health.keep_android') });
 const recentsAgo = (s) => s < 60 ? T('recents.just_now') : s < 3600 ? T('recents.min_ago', { n: Math.round(s / 60) }) : s < 86400 ? T('recents.h_ago', { n: Math.round(s / 3600) }) : T('recents.d_ago', { n: Math.round(s / 86400) });
@@ -53,10 +53,10 @@ function recentsTail() {
     if (r) { toast(T('recents.closed_n', { n: r.closed })); recentsNow(true); }
   } });
   return [el('div', { className: 'actions' }, all), ...(bg.length || sys.length ? [el('h3', { textContent: T('recents.background') }), ...bg.map(procRow),
-    ...(sys.length ? [el('details', { className: 'appsoff' }, el('summary', { textContent: T('health.android_system_n', { n: sys.length }) }), ...sys.map(procRow))] : [])] : [])];
+    ...(sys.length ? [el('details', { className: 'appsoff', open: recentsSysOpen, ontoggle: (e) => { recentsSysOpen = e.target.open; } }, el('summary', { textContent: T('health.android_system_n', { n: sys.length }) }), ...sys.map(procRow))] : [])] : [])];
 }
 function procRow(a) {
-  const icon = appIcon(a.pkg), name = META.get(a.pkg)?.label || a.label;
+  const icon = appsIcon(a.pkg, a.keep === 'system'), name = META.get(a.pkg)?.label || a.label;   // kept between refreshes, as the rows above
   const title = el('span', { textContent: name });
   if (a.keep === 'system') icon.fill({ label: name });                   // Android's own: no picture worth asking for
   else onMeta(a.pkg, (m) => { icon.fill(m.label ? m : { ...m, label: name }); if (m.label) title.textContent = m.label; });

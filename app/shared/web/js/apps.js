@@ -41,6 +41,8 @@ function appIcon(pkg) {
   };
   letter('');
   box.fill = (m) => {
+    const was = box.filled; box.filled = [m.icon, m.label, m.bg, m.adaptive, m.banner].join('|');
+    if (was === box.filled) return;                                   // drawn so already: a new picture would flash its letter first
     if (!m.icon) { letter(m.label); return; }
     const img = el('img', { src: '/api/app/icon?pkg=' + encodeURIComponent(pkg), alt: '' });   // not lazy: hidden until it loads, a lazy image never would (Chrome)
     img.onerror = () => letter(m.label);
@@ -129,7 +131,7 @@ async function loadQuick() {
 let appsLoaded = false, appsAll = [], appsInfo = new Map(), appsOffOpen = false;          // pkg -> { off, keep, version }
 const appsStale = () => { quickLoaded = appsLoaded = false; };      // installed or removed elsewhere (files.js, Optimize TV): read again
 onTvChange(() => {
-  appsStale(); META.clear(); metaFailed.clear();
+  appsStale(); META.clear(); metaFailed.clear(); appsIcons.clear();
   $('#quick').replaceChildren(el('div', { className: 'muted', textContent: T('remote.apps_appear_when_adb') }));
   $('#appslist').replaceChildren();
 });
@@ -154,6 +156,14 @@ async function loadApps() {
   const b = await api('/api/apps/boot', null, true);                 // after the list: a tag is worth no wait
   if (b) { appsBoot = bootRead(b.text); renderApps(); }
 }
+// The list is drawn again on every refresh (the open apps every few seconds): each app keeps its icon, so it does not go
+// back to a letter while its picture loads again
+const appsIcons = new Map();
+function appsIcon(pkg, off) {
+  const k = pkg + (off ? ' off' : '');
+  if (!appsIcons.has(k)) appsIcons.set(k, appIcon(pkg));
+  return appsIcons.get(k);
+}
 function renderApps() {
   const q = $('#appsq').value.trim().toLowerCase();
   lazyMeta.disconnect();
@@ -173,8 +183,8 @@ function renderApps() {
       if (name === 'clear' && !await ask(T('apps.clear_ask', { name: appName(pkg) }), { ok: T('apps.clear_data'), danger: true })) return;
       const r = await api('/api/app/' + name, { pkg }); if (r) { toast(T('apps.what_name', { what: label, name: appName(pkg) })); if (!['launch', 'stop', 'clear'].includes(name)) { quickLoaded = false; loadApps(); loadQuick(); } }
     };
-    const icon = appIcon(pkg), title = el('span', { textContent: pkg.split('.').pop() });
     const info = appsInfo.get(pkg) || {};
+    const icon = appsIcon(pkg, info.off), title = el('span', { textContent: META.get(pkg)?.label || pkg.split('.').pop() });
     // one button for what is wanted most, everything else behind ⋯
     const more = el('button', { className: 'small iconbtn', title: T('page.more_actions'), ariaLabel: T('page.more_actions'), textContent: '⋯', onclick: (e) => popover(e.currentTarget, [
       info.off ? ['↩', T('apps.turn_on'), () => run('enable', T('apps.turn_on'))] : ['▶', T('apps.open'), () => run('launch', T('apps.open'))],

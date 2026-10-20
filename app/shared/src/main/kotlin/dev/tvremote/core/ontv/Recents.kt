@@ -7,7 +7,7 @@ import org.json.JSONObject
  * The TV's open apps, as a phone's recents screen shows them: most TVs have no such screen (Google TV, Android TV 10+), but the
  * system keeps the list. Read from `dumpsys activity recents`: Android 10+ prints `Task{… #186 type=standard A=10130:pkg}`,
  * 9 and older `TaskRecord{… #45 A=pkg U=0 StackId=0 sz=1}`. Home screens and the system's own (recents, dream, assistant) are
- * left out; a package with several tasks shows once, its newest. No pictures: a task's snapshot is readable only as root.
+ * left out, and so is Android 9's task of a closed app (no screen left in it); a package with several tasks shows once, its newest. No pictures: a task's snapshot is readable only as root.
  */
 object Recents {
     const val CMD = "dumpsys activity recents"
@@ -17,6 +17,7 @@ object Recents {
     private val COMP = Regex("""^\s*(?:mActivityComponent|realActivity)=([A-Za-z][\w.]*)/""")
     private val AGO = Regex("""lastActiveTime=\d+ \(inactive for (\d+)s\)""")
     private val ROOT = Regex("""\brootTaskId=(\d+)""")
+    private val EMPTY = Regex("""\bStackId=-1 sz=0\b""")
 
     class Task(val id: Int, val pkg: String, val ago: Long, val running: Boolean?, val root: Boolean, val home: Boolean)
 
@@ -32,7 +33,7 @@ object Recents {
                 ?: AFF.find(rest)?.groupValues?.get(1) ?: continue
             val home = type == "home" || b.contains("android.intent.category.HOME")
             val system = type != null && type != "standard" && type != "undefined" && type != "home"   // recents, dream, assistant
-            if (system) continue
+            if (system || EMPTY.containsMatchIn(rest)) continue        // Android 9 keeps a closed app's task with no screen in it (a BRAVIA): not open
             val running = when {
                 b.contains("mRootProcess=null") -> false
                 b.contains("mRootProcess=ProcessRecord") -> true

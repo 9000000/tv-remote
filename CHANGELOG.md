@@ -4,6 +4,16 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+
+- Sửa: Ứng dụng → Đang mở: app đã đóng vẫn hiện lại sau vài giây trên Android 9 (BRAVIA); danh sách không còn nháy mỗi lần làm mới (biểu tượng giữ nguyên, mục Hệ thống Android không tự gập)
+
+**English**
+
+- Fix: Apps → Open: a closed app came back after a few seconds on Android 9 (BRAVIA); the list no longer flickers on each refresh (icons kept, Android system stays open)
+
 ## 0.13.0 - 2026-10-20
 
 Web 0.13.0 · app điện thoại 0.13.0 · app TV 0.13.0 · TV Home 0.1.0
