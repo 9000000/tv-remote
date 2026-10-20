@@ -10,8 +10,8 @@ const HOME_WALLS = { night: '#0b0f1a,#18223f', ocean: '#03192b,#0a4a66', dusk: '
 const HOME_WALL_WORDS = { night: 'home.wall_night', ocean: 'home.wall_ocean', dusk: 'home.wall_dusk', forest: 'home.wall_forest', aurora: 'home.wall_aurora', black: 'home.wall_black',
   sunset: 'home.wall_sunset', ember: 'home.wall_ember', plum: 'home.wall_plum', midnight: 'home.wall_midnight', teal: 'home.wall_teal', slate: 'home.wall_slate', graphite: 'home.wall_graphite', navy: 'home.wall_navy', wine: 'home.wall_wine', moss: 'home.wall_moss' };
 const HOME_DOCK_MAX = 6;                                              // HomeConfig.DOCK_MAX
-const HOME_WIDGETS = ['system', 'usage', 'lunar', 'timer'];          // HomeConfig.WIDGETS, in the order drawn
-const HOME_WIDGET_WORDS = { system: 'home.w_system', usage: 'home.w_usage', lunar: 'home.w_lunar', timer: 'home.w_timer' };
+const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer'];          // HomeConfig.WIDGETS, in the order drawn
+const HOME_WIDGET_WORDS = { system: 'home.w_system', usage: 'home.w_usage', calendar: 'home.w_calendar', lunar: 'home.w_lunar', timer: 'home.w_timer' };
 
 // The 🏠 card's line and its Customize button: only where TV Home is on the TV
 async function homeCard() {

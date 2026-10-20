@@ -71,6 +71,12 @@
     <string name="w_usage">Most used apps</string>
     <string name="w_lunar">Lunar calendar</string>
     <string name="w_timer">Sleep timer</string>
+    <string name="w_calendar">Month calendar</string>
+    <string name="c_calendar_sub">solar and lunar days</string>
+    <string name="cal_lunar">Lunar %1$s · %2$s</string>
+    <string-array name="cal_month"><item>January</item><item>February</item><item>March</item><item>April</item><item>May</item><item>June</item><item>July</item><item>August</item><item>September</item><item>October</item><item>November</item><item>December</item></string-array>
+    <string-array name="cal_dow_short"><item>S</item><item>M</item><item>T</item><item>W</item><item>T</item><item>F</item><item>S</item></string-array>
+    <string-array name="cal_dow"><item>Sun</item><item>Mon</item><item>Tue</item><item>Wed</item><item>Thu</item><item>Fri</item><item>Sat</item></string-array>
     <string name="w_note">Note</string>
     <string-array name="lunar_month"><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item><item>10</item><item>11</item><item>12</item></string-array>
     <string-array name="lunar_can"><item></item><item></item><item></item><item></item><item></item><item></item><item></item><item></item><item></item><item></item></string-array>

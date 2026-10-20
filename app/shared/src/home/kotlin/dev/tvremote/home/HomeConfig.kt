@@ -15,6 +15,7 @@ import org.json.JSONObject
  *           treats the system's "animator duration scale 0" as off
  *   widgets the cards between the clock and the favourites, in their order ([WIDGETS]): "system" (memory, storage, network,
  *           ADB), "usage" (the most used apps of the week and the day's app limits, asked of TV Setup: [USAGE]),
+ *           "calendar" (the month, the lunar day under every solar day),
  *           "lunar" (the lunar date, the next full moon and Tết), "timer" (the sleep timer or bedtime, from TV Setup too;
  *           shown only while one is set)
  *   note    a line from the family, pinned on the home screen until it is emptied ([NOTE_MAX] characters, one line)
@@ -27,7 +28,7 @@ object HomeConfig {
     val WALLS = listOf("night", "ocean", "dusk", "forest", "aurora", "black", "sunset", "ember", "plum", "midnight", "teal", "slate", "graphite", "navy", "wine", "moss", "photo")
     /** Where a client puts the photo (the shell may write there; the app reads it with no permission). */
     const val PHOTO = "/sdcard/Android/data/$PKG/files/wall.jpg"
-    val WIDGETS = listOf("system", "usage", "lunar", "timer")
+    val WIDGETS = listOf("system", "usage", "calendar", "lunar", "timer")
     const val NOTE_MAX = 140
     /** TV Setup's answer to TV Home about app use (its HomeInfo provider): `call(USAGE, "usage")` → Bundle "json". */
     const val USAGE = "content://dev.tvremote.setup.home"

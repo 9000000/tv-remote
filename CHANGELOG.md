@@ -8,7 +8,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 
-- TV Home có widget (bật trong Tùy chỉnh TV Home, trên TV hoặc điện thoại / máy tính): **Hệ thống** (vòng RAM, CPU, bộ nhớ, sóng Wi-Fi, biểu đồ mạng trực tiếp, IP, ADB) và **App dùng nhiều** (cột 7 ngày, top app có icon, thời gian còn lại của giới hạn app, lấy từ TV Setup), **Lịch âm** (ngày âm, can chi, còn mấy ngày tới rằm / mùng 1 / Tết, không cần mạng), **Hẹn giờ** (giờ TV tắt, giờ ngủ) và **Ghi chú** gõ từ điện thoại, ghim lên màn hình chính tới khi gỡ. Nhẹ cho TV yếu: chỉ cập nhật khi đang ở màn hình chính
+- TV Home có widget (bật trong Tùy chỉnh TV Home, trên TV hoặc điện thoại / máy tính): **Hệ thống** (vòng RAM, CPU, bộ nhớ, sóng Wi-Fi, biểu đồ mạng trực tiếp, IP, ADB) và **App dùng nhiều** (cột 7 ngày, top app có icon, thời gian còn lại của giới hạn app, lấy từ TV Setup), **Lịch tháng** (dương lịch và âm lịch trong từng ô ngày, hôm nay tô màu, Chủ nhật màu hồng, mùng 1 ghi cả tháng âm), **Lịch âm** (ngày âm, can chi, còn mấy ngày tới rằm / mùng 1 / Tết, không cần mạng), **Hẹn giờ** (giờ TV tắt, giờ ngủ) và **Ghi chú** gõ từ điện thoại, ghim lên màn hình chính tới khi gỡ. Nhẹ cho TV yếu: chỉ cập nhật khi đang ở màn hình chính
 - Bảng Tùy chỉnh TV Home trên TV làm lại: ô bật / tắt có icon, hình nền dạng lưới, trượt vào từ bên phải
 - TV Home có bản mới cũng được nhắc như TV Setup, chung một thanh gọn (một nút Cập nhật cho cả hai). **Để sau** hỏi khi nào nhắc lại: sau 1, 7, 30 ngày, hoặc bỏ qua bản này
 - Thẻ 📺 TV (tab Thiết lập) có hàng **Màn hình**: Tắt / bật màn hình và Giảm độ sáng, không cần mở remote
@@ -23,7 +23,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **English**
 
-- TV Home has widgets (turned on in Customize TV Home, on the TV or from the phone / computer): **System** (rings for memory, CPU, storage and Wi-Fi signal, a live network graph, IP, ADB) and **Most used apps** (7 days as columns, top apps with icons, time left on app limits, from TV Setup), **Lunar calendar** (the lunar date, the year's name, days to the full moon / new moon / Tết, offline), **Timer** (when the TV turns off, bedtime) and a **Note** typed on the phone, pinned on the home screen until cleared. Light on weak TVs: they update only while the home screen is shown
+- TV Home has widgets (turned on in Customize TV Home, on the TV or from the phone / computer): **System** (rings for memory, CPU, storage and Wi-Fi signal, a live network graph, IP, ADB) and **Most used apps** (7 days as columns, top apps with icons, time left on app limits, from TV Setup), **Month calendar** (the solar and the lunar day in every cell, today filled, Sundays rose, a lunar 1st shows its month), **Lunar calendar** (the lunar date, the year's name, days to the full moon / new moon / Tết, offline), **Timer** (when the TV turns off, bedtime) and a **Note** typed on the phone, pinned on the home screen until cleared. Light on weak TVs: they update only while the home screen is shown
 - The Customize TV Home panel on the TV redone: toggle tiles with icons, backgrounds in a grid, slides in from the right
 - New TV Home versions are offered like TV Setup's, in the same one-line bar (one Update for both). **Later** asks when: in 1, 7 or 30 days, or skip this version
 - The 📺 TV card (Setup tab) has a **Screen** row: Screen off / on and Dim the screen, without opening the remote

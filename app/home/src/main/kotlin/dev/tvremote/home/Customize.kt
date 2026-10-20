@@ -147,6 +147,7 @@ object Customize {
         section(a.getString(R.string.w_widgets))
         tile(R.drawable.ic_gauge, a.getString(R.string.w_system), a.getString(R.string.c_system_sub), "system", true)
         tile(R.drawable.ic_chart, a.getString(R.string.w_usage), a.getString(R.string.c_usage_sub), "usage", true)
+        tile(R.drawable.ic_calendar, a.getString(R.string.w_calendar), a.getString(R.string.c_calendar_sub), "calendar", true)
         tile(R.drawable.ic_moon, a.getString(R.string.w_lunar), a.getString(R.string.c_lunar_sub), "lunar", true)
         tile(R.drawable.ic_timer, a.getString(R.string.w_timer), a.getString(R.string.c_timer_sub), "timer", true)
         val note = conf.optString("note")

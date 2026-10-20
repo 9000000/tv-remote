@@ -42,6 +42,7 @@ import java.util.Date
  *   system  memory, storage and the Wi-Fi signal as rings, the network's speed as a moving graph, the address, ADB, time on
  *   usage   a column per day of the last week, the most used apps with their share, today's app limits: from TV Setup (its
  *           HomeInfo provider), the count the limits themselves hold to
+ *   calendar the month, a solar and a lunar day in every cell, today filled ([Month], one View; the lunar days from [Lunar], once a day)
  * and, smaller, stacked in a column beside them:
  *   lunar   the lunar date, the next full moon or new month, the days to Tết ([Lunar], worked out here)
  *   timer   the sleep timer or bedtime and the time left (TV Setup's rules, through the same provider); none while neither is set
@@ -50,10 +51,13 @@ import java.util.Date
 class Widgets(private val a: Activity, private val dp: (Number) -> Int) : LinearLayout(a) {
     /** What a card needs, gathered on a background thread. */
     class Facts(val ram: Pair<Long, Long>, val disk: Pair<Long, Long>, val ip: String, val eth: Boolean, val rssi: Int?, val up: Long,
-                val adb: Boolean, val usage: JSONObject?, val icons: Map<String, Drawable>, val timer: JSONObject?, val moon: Moon?, val cpu: Float?, val cores: Int)
+                val adb: Boolean, val usage: JSONObject?, val icons: Map<String, Drawable>, val timer: JSONObject?, val moon: Moon?, val cpu: Float?, val cores: Int, val cal: Cal? = null)
 
     /** Today in the lunar calendar and the days until the next full moon (15th), new month (1st) and Tết. */
     class Moon(val day: Lunar.Day, val full: Int, val new: Int, val tet: Int)
+
+    /** The month shown: its grid, today's cell, and the lunar day and month of every cell (a lunar day 1 shows its month too). */
+    class Cal(val grid: MonthGrid.Grid, val today: Int, val lunDay: IntArray, val lunMonth: IntArray, val moon: Lunar.Day)
 
     companion object {
         const val SAMPLE_MS = 2000L
@@ -64,8 +68,27 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         private val AMBER = intArrayOf(0xFFFFD27A.toInt(), 0xFFFF8A4C.toInt())
         private val ROSE = intArrayOf(0xFFFF7A7A.toInt(), 0xFFE0457B.toInt())
         private const val DIM = 0xA6FFFFFF.toInt()
-        private val BIG = setOf("system", "usage")
+        private val BIG = setOf("system", "usage", "calendar")
         private const val PILLS = 300                                  // the small cards' column, dp
+        private const val CAL_WEIGHT = 1.35f                           // the month needs seven columns: a little more of the row than the others
+
+        private var calKey = 0; private var calMemo: Cal? = null
+
+        /** The month of [now] with its lunar days: worked out once a day (42 conversions), the minute's refresh takes the memo. */
+        fun month(now: Calendar, first: Int): Cal {
+            val key = (now.get(Calendar.YEAR) * 12 + now.get(Calendar.MONTH)) * 40 + now.get(Calendar.DAY_OF_MONTH) + first * 100000000
+            calMemo?.let { if (key == calKey) return it }
+            val y = now.get(Calendar.YEAR); val m = now.get(Calendar.MONTH) + 1; val d = now.get(Calendar.DAY_OF_MONTH)
+            val g = MonthGrid.of(y, m, first)
+            val ld = IntArray(42); val lm = IntArray(42)
+            val c = Calendar.getInstance().apply { clear(); set(g.sy, g.sm - 1, g.sd) }
+            for (i in 0 until g.rows * 7) {
+                val l = Lunar.of(c.get(Calendar.DAY_OF_MONTH), c.get(Calendar.MONTH) + 1, c.get(Calendar.YEAR))
+                ld[i] = l.day; lm[i] = if (l.leap) -l.month else l.month
+                c.add(Calendar.DAY_OF_MONTH, 1)
+            }
+            return Cal(g, g.offset + d - 1, ld, lm, Lunar.of(d, m, y)).also { calKey = key; calMemo = it }
+        }
 
         /** The lunar facts of [today], counted forward day by day (a year at most: cheap, and asked once a minute). */
         fun moon(today: Calendar): Moon {
@@ -122,10 +145,11 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         } } }
         val timer = if ("timer" in want) ask("timer") else null
         val moon = if ("lunar" in want) moon(Calendar.getInstance()) else null
+        val cal = if ("calendar" in want) month(Calendar.getInstance(), Calendar.getInstance(resources.configuration.locales[0]).firstDayOfWeek) else null
         // the CPU: apps may read neither /proc/stat nor loadavg, so TV Setup's shell measures it (null without TV Setup 0.14.1 or its ADB)
         val cpu = if ("system" in want) ask("cpu") else null
         return Facts((mem.totalMem - mem.availMem) to mem.totalMem, disk, ip, eth, rssi, SystemClock.elapsedRealtime(), adb, usage, icons, timer, moon,
-            cpu?.optDouble("busy", -1.0)?.takeIf { it >= 0 }?.toFloat(), cpu?.optInt("cores") ?: 0)
+            cpu?.optDouble("busy", -1.0)?.takeIf { it >= 0 }?.toFloat(), cpu?.optInt("cores") ?: 0, cal)
     }
 
     fun show(want: List<String>, f: Facts, note: String, label: (String) -> String) {
@@ -138,18 +162,25 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             ((getChildAt(1) as LinearLayout).getChildAt(0) as TextView).apply { textSize = 16f; maxLines = 3; ellipsize = android.text.TextUtils.TruncateAt.END }
         }
         // each big card's width, known before they are built: a narrow one leaves out its widest part rather than cutting words
-        val row = (if (width > 0) width else a.resources.displayMetrics.widthPixels - dp(96)) - (if (small.isNotEmpty() && bigs.isNotEmpty()) dp(PILLS + 20) else 0)
-        val each = if (bigs.isEmpty()) 0 else (row - dp(20) * (bigs.size - 1)) / bigs.size
+        val pills = if (bigs.size >= 3) PILLS - 60 else PILLS           // three cards and the column: the column gives way a little
+        val row = (if (width > 0) width else a.resources.displayMetrics.widthPixels - dp(96)) - (if (small.isNotEmpty() && bigs.isNotEmpty()) dp(pills + 20) else 0)
+        val weights = bigs.map { if (it == "calendar") CAL_WEIGHT else 1f }
+        val unit = (row - dp(20) * (bigs.size - 1)) / weights.sum()
         bigs.forEachIndexed { i, w ->
+            val each = (unit * weights[i]).toInt()
             val card = card()
-            if (w == "system") system(card, f, each) else usage(card, f, label, each < dp(340))
-            addView(card, LayoutParams(0, -1, 1f).apply { if (i > 0) leftMargin = dp(20) })
+            when (w) {
+                "system" -> system(card, f, each)
+                "calendar" -> calendar(card, f, each)
+                else -> usage(card, f, label, each < dp(340))
+            }
+            addView(card, LayoutParams(0, -1, weights[i]).apply { if (i > 0) leftMargin = dp(20) })
         }
         if (small.isNotEmpty() && bigs.isNotEmpty()) {                 // a column beside the cards, sharing their height
             val col = LinearLayout(a).apply { orientation = VERTICAL }
             if (small.size == 1) stand(small[0])                         // alone, as tall as the cards: stood up, not a line in an empty box
             small.forEachIndexed { i, v -> col.addView(v, LayoutParams(-1, 0, 1f).apply { if (i > 0) topMargin = dp(12) }) }
-            addView(col, LayoutParams(dp(PILLS), -1).apply { leftMargin = dp(20) })
+            addView(col, LayoutParams(dp(pills), -1).apply { leftMargin = dp(20) })
         } else if (small.isNotEmpty()) for (i in 0 until 3) {            // alone: a third of the row each, so one does not stretch across it
             addView(small.getOrNull(i) ?: View(a), LayoutParams(0, if (i < small.size) -2 else 0, 1f).apply { if (i > 0) leftMargin = dp(16) })
         }
@@ -272,7 +303,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         f.rssi?.let { r -> all += gauge(((r + 100) * 2).coerceIn(0, 100) / 100f, a.getString(R.string.w_signal), "$r dBm", GREEN) }
         val room = width - dp(40) - if (narrow) 0 else dp(180)          // the card's padding; the network column's least width
         val rings = LinearLayout(a).apply { orientation = HORIZONTAL }
-        all.take(((room + dp(10)) / dp(94)).coerceAtLeast(2)).forEachIndexed { i, g -> rings.addView(g, LayoutParams(-2, -2).apply { if (i > 0) leftMargin = dp(10) }) }
+        all.take(((room + dp(10)) / dp(94)).coerceAtLeast(1)).forEachIndexed { i, g -> rings.addView(g, LayoutParams(-2, -2).apply { if (i > 0) leftMargin = dp(10) }) }
         body.addView(rings)
         val adbChip = a.getString(R.string.w_adb) + " " + a.getString(if (f.adb) R.string.w_on else R.string.w_off) to if (f.adb) AMBER[0] else Color.WHITE
         if (narrow) {
@@ -294,6 +325,20 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         body.addView(net, LayoutParams(0, -2, 1f).apply { leftMargin = dp(20) })
         card.addView(body, LayoutParams(-1, -2).apply { topMargin = dp(10) })
         lastRx = -1; sample()
+    }
+
+    /** The month: the title and the lunar month and year of today, then one View drawing the weekdays and every day ([narrow]: no lunar line). */
+    private fun calendar(card: LinearLayout, f: Facts, width: Int) {
+        val c = f.cal ?: return
+        val r = a.resources
+        val (can, chi) = Lunar.canChi(c.moon.year)
+        val month = r.getStringArray(R.array.lunar_month)[c.moon.month - 1] + if (c.moon.leap) a.getString(R.string.lunar_leap) else ""
+        val year = a.getString(R.string.lunar_year, r.getStringArray(R.array.lunar_can)[can], r.getStringArray(R.array.lunar_chi)[chi])
+        val lunar = a.getString(R.string.cal_lunar, month, year)
+        val title = r.getStringArray(R.array.cal_month)[c.grid.month - 1] + ", " + c.grid.year
+        val view = Month(a, c, Calendar.getInstance(resources.configuration.locales[0]).firstDayOfWeek, (width - dp(40)) / 7f)
+        card.addView(head(title, if (width - dp(40) >= dp(320)) lunar else ""))
+        card.addView(view, LayoutParams(-1, view.wanted).apply { topMargin = dp(6) })
     }
 
     /** [narrow]: the apps only, no columns of the days. */
@@ -486,6 +531,67 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
                 if (secs[i] > 0) cv.drawRoundRect(fills[i], rad, rad, if (i == 6) p else past)
                 t.color = if (i == 6) Color.WHITE else DIM
                 cv.drawText(names[i], slot * i + slot / 2, height - 3 * sp, t)
+            }
+        }
+    }
+
+    /**
+     * The weekdays and the days in ONE view. Three shapes by the room a day has ([slot], px): wide, the solar number with the lunar day
+     * beside it on one line; middle, the lunar day under the solar one; thin, the solar numbers only. Today filled, Sundays rose;
+     * a lunar 1st shows its month ("1/10", the Tết rose), the 15th amber. Paints made once: drawing allocates nothing.
+     */
+    private inner class Month(c: Context, val cal: Cal, first: Int, slot: Float) : View(c) {
+        private val wide = slot >= dp(64); private val two = !wide && slot >= dp(24)
+        private val rowH = dp(if (wide) 23 else if (two) 26 else 21); private val headH = dp(17)
+        val wanted = headH + rowH * cal.grid.rows
+        private val tiny = slot < dp(30)
+        private val big = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = (if (tiny) 12.5f else 14f) * sp; typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) }
+        private val small = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = (if (tiny) 8.5f else 9.5f) * sp }
+        private val head = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; textSize = (if (tiny) 10f else 11f) * sp; color = DIM }
+        private val back = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = CYAN[1] }
+        private val box = RectF()
+        private val dows = IntArray(7) { (first - 1 + it) % 7 }            // 0 = Sunday
+        private val names = a.resources.getStringArray(if (slot < dp(38)) R.array.cal_dow_short else R.array.cal_dow)
+        private val n = cal.grid.rows * 7
+        private val inMonth = BooleanArray(n) { it >= cal.grid.offset && it < cal.grid.offset + cal.grid.days }
+        private val solar = Array(n) { "" }; private val lunarText = Array(n) { "" }
+        private val gap = dp(4).toFloat()
+        init {
+            val k = Calendar.getInstance().apply { clear(); set(cal.grid.sy, cal.grid.sm - 1, cal.grid.sd) }
+            for (i in 0 until n) {
+                solar[i] = k.get(Calendar.DAY_OF_MONTH).toString()
+                lunarText[i] = if (cal.lunDay[i] == 1) "1/" + Math.abs(cal.lunMonth[i]) else cal.lunDay[i].toString()
+                k.add(Calendar.DAY_OF_MONTH, 1)
+            }
+            big.textAlign = if (wide) Paint.Align.LEFT else Paint.Align.CENTER
+            small.textAlign = big.textAlign
+        }
+        override fun onMeasure(w: Int, h: Int) = setMeasuredDimension(MeasureSpec.getSize(w), wanted)
+        override fun onDraw(cv: Canvas) {
+            val slot = width / 7f
+            for (col in 0 until 7) {
+                head.color = if (dows[col] == 0) ROSE[0] else DIM
+                cv.drawText(names[dows[col]], slot * col + slot / 2, headH - dp(5).toFloat(), head)
+            }
+            for (i in 0 until n) {
+                val col = i % 7; val row = i / 7
+                val cx = slot * col + slot / 2; val top = headH + rowH * row.toFloat()
+                val today = i == cal.today
+                if (today) { box.set(slot * col + dp(2), top + dp(1), slot * (col + 1) - dp(2), top + rowH - dp(1)); cv.drawRoundRect(box, dp(8).toFloat(), dp(8).toFloat(), back) }
+                val alpha = if (inMonth[i]) 0xFF else 0x4D
+                big.color = if (!today && dows[col] == 0) ROSE[0] else Color.WHITE
+                big.alpha = alpha
+                val l = cal.lunDay[i]
+                small.color = when { today -> 0xCCFFFFFF.toInt(); !inMonth[i] -> DIM; l == 1 && Math.abs(cal.lunMonth[i]) == 1 -> ROSE[0]; l == 1 || l == 15 -> AMBER[0]; else -> DIM }
+                if (!inMonth[i]) small.alpha = 0x4D
+                if (wide) {
+                    val bw = big.measureText(solar[i]); val sw = small.measureText(lunarText[i])
+                    val x = cx - (bw + gap + sw) / 2; val base = top + rowH / 2f + big.textSize * 0.35f
+                    cv.drawText(solar[i], x, base, big); cv.drawText(lunarText[i], x + bw + gap, base, small)
+                } else if (two) {
+                    cv.drawText(solar[i], cx, top + rowH * 0.5f, big)
+                    cv.drawText(lunarText[i], cx, top + rowH - dp(4).toFloat(), small)
+                } else cv.drawText(solar[i], cx, top + rowH / 2f + big.textSize * 0.35f, big)
             }
         }
     }

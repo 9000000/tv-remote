@@ -69,6 +69,12 @@
     <string name="w_usage">App dùng nhiều</string>
     <string name="w_lunar">Lịch âm</string>
     <string name="w_timer">Hẹn giờ</string>
+    <string name="w_calendar">Lịch tháng</string>
+    <string name="c_calendar_sub">dương lịch và âm lịch</string>
+    <string name="cal_lunar">Tháng %1$s · %2$s</string>
+    <string-array name="cal_month"><item>Tháng 1</item><item>Tháng 2</item><item>Tháng 3</item><item>Tháng 4</item><item>Tháng 5</item><item>Tháng 6</item><item>Tháng 7</item><item>Tháng 8</item><item>Tháng 9</item><item>Tháng 10</item><item>Tháng 11</item><item>Tháng 12</item></string-array>
+    <string-array name="cal_dow_short"><item>CN</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item></string-array>
+    <string-array name="cal_dow"><item>CN</item><item>T2</item><item>T3</item><item>T4</item><item>T5</item><item>T6</item><item>T7</item></string-array>
     <string name="w_note">Ghi chú</string>
     <string-array name="lunar_month"><item>Giêng</item><item>Hai</item><item>Ba</item><item>Tư</item><item>Năm</item><item>Sáu</item><item>Bảy</item><item>Tám</item><item>Chín</item><item>Mười</item><item>Mười Một</item><item>Chạp</item></string-array>
     <string-array name="lunar_can"><item>Giáp</item><item>Ất</item><item>Bính</item><item>Đinh</item><item>Mậu</item><item>Kỷ</item><item>Canh</item><item>Tân</item><item>Nhâm</item><item>Quý</item></string-array>
