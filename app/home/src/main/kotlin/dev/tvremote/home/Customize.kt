@@ -69,7 +69,7 @@ object Customize {
         val have = Walls.photos(a)
         val keys = HomeConfig.WALLS.filter { !HomeConfig.isPhoto(it) || it in have }
         val tiles = ArrayList<Pair<String, View>>()
-        val cols = 5; val gap = dp(10); val w = (inner - (cols - 1) * gap) / cols
+        val cols = 5; val gap = dp(10); val w = tileW(a)
         val shots = java.util.concurrent.Executors.newSingleThreadExecutor()    // the scenes drawn and the photos read small, off the main thread
         dialog.setOnDismissListener { shots.shutdownNow() }
         // the pictures are put in together once the panel has slid in: one by one during the slide each drew the whole panel again
@@ -122,14 +122,9 @@ object Customize {
                 if (WallArt.has(k) || Walls.isPicture(k)) {                   // the picture itself, in the tile's rounded corners: the same painter as the screen
                     val pv = ImageView(a).apply { scaleType = ImageView.ScaleType.FIT_XY }   // the picture is made at the tile's size with its corners: nothing scaled or clipped per frame
                     addView(pv, FrameLayout.LayoutParams(-1, -1))
-                    val drawn = if (WallArt.has(k)) thumbs["$k:$w"] else null            // a scene drawn on an earlier opening: at once
+                    val drawn = thumbs[thumbKey(a, k, w)]                    // made beforehand ([warm]) or on an earlier opening: there as it slides in
                     if (drawn != null) pv.setImageBitmap(drawn)
-                    else shots.execute {
-                        val f = Walls.file(a, k)
-                        val key = "$k:$w" + (f?.let { ":" + it.name + it.lastModified() } ?: "")   // a new photo or another day's Bing picture: drawn again
-                        val b = thumbs[key] ?: Walls.small(a, k, w, w * 9 / 16)?.let { round(it, w, w * 9 / 16, dp(12).toFloat()) }?.also { synchronized(thumbs) { thumbs.keys.removeAll { o -> o.startsWith("$k:") }; thumbs[key] = it } }   // twice the tile: sharp on the TV's panel
-                        a.runOnUiThread { if (b != null) put(pv, b) }
-                    }
+                    else shots.execute { val b = thumb(a, k, w); a.runOnUiThread { if (b != null) put(pv, b) } }
                 }
                 foreground = StateListDrawable().apply {
                     addState(intArrayOf(android.R.attr.state_focused), ring(d, 3, Color.WHITE))
@@ -284,12 +279,12 @@ object Customize {
                 it.animate().cancel(); if (Motion.on) { it.scaleX = 1.06f; it.scaleY = 1.06f }   // already large as it slides in: its spring re-drew the whole panel for 400 ms
             }
             if (Motion.on) {                                           // on a layer: drawn once, then only moved and faded (drawn each frame it took 40-57 ms on the FPT box)
-                panel.translationX = panelW / 3f; panel.alpha = 0f
                 panel.animate().translationX(0f).alpha(1f).setDuration(260).setInterpolator(Motion.glide).withLayer().withEndAction {
                     slid = true; for ((v, b) in waiting) v.setImageBitmap(b); waiting.clear()
                 }.start()
             }
         }
+        if (Motion.on) { panel.translationX = panelW / 3f; panel.alpha = 0f }   // before show: set in the show listener, the first frame had shown it in place
         dialog.show()
         return dialog
     }
@@ -452,6 +447,33 @@ object Customize {
     /** The backgrounds' small pictures, kept between openings of the panel (about 400 KB each); let go when memory is short ([forget]). */
     private val thumbs: MutableMap<String, Bitmap> = java.util.Collections.synchronizedMap(HashMap())
     fun forget() = thumbs.clear()
+
+    /** A background tile's width in px, the same as [show] lays them out: five to a row in the panel. */
+    private fun tileW(a: Activity): Int {
+        val dm = a.resources.displayMetrics
+        val dp = { v: Int -> (v * dm.density).toInt() }
+        val inner = minOf(dm.widthPixels - dp(64), dp(600)) - dp(56)
+        return (inner - 4 * dp(10)) / 5
+    }
+
+    /** A new photo or another day's Bing picture is another key: made again. */
+    private fun thumbKey(a: Context, k: String, w: Int) = "$k:$w" + (Walls.file(a, k)?.let { ":" + it.name + it.lastModified() } ?: "")
+
+    /** [k]'s tile picture, made once at the tile's size with its corners (off the main thread). */
+    private fun thumb(a: Context, k: String, w: Int): Bitmap? {
+        val key = thumbKey(a, k, w)
+        thumbs[key]?.let { return it }
+        val b = Walls.small(a, k, w, w * 9 / 16)?.let { round(it, w, w * 9 / 16, 12 * a.resources.displayMetrics.density) } ?: return null
+        synchronized(thumbs) { thumbs.keys.removeAll { it.startsWith("$k:") }; thumbs[key] = b }
+        return b
+    }
+
+    /** Makes the tiles' pictures beforehand (Home calls it on its own thread once it is shown), so the panel opens with them: ~100 KB each. */
+    fun warm(a: Activity) {
+        val w = tileW(a)
+        val have = Walls.photos(a)
+        for (k in HomeConfig.WALLS) if (WallArt.has(k) || k == HomeConfig.BING || k in have) thumb(a, k, w)
+    }
 
     /** [b] cropped to [w] x [h] from its middle, with rounded corners, so its tile needs no clip or scaling of its own. */
     private fun round(b: Bitmap, w: Int, h: Int, r: Float): Bitmap {
