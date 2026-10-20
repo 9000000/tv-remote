@@ -140,7 +140,13 @@ object Customize {
                 onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
                 setOnClickListener {
                     val c = Store.get(a)
-                    if (c.optString("wevery") == "off") Store.change(a, JSONObject().put("wall", k))            // one choice
+                    if (k == HomeConfig.BING && c.optString("wall") == k && c.optString("wevery") == "off" && Online.count(a) > 1) {   // Bing on already: its next (older) day, round to the newest
+                        Online.step(a)
+                        Store.change(a, JSONObject().put("wall", k))
+                        val pv = getChildAt(0) as? ImageView
+                        shots.execute { val b = thumb(a, k, w); a.runOnUiThread { if (b != null) pv?.setImageBitmap(b) } }
+                    }
+                    else if (c.optString("wevery") == "off") Store.change(a, JSONObject().put("wall", k))       // one choice
                     else {                                                                                      // a set: a tile in or out, never the last one out
                         val s = c.getJSONArray("walls"); val now = List(s.length()) { s.getString(it) }
                         val next = if (k in now) now - k else now + k
