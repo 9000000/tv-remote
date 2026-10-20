@@ -9,7 +9,12 @@ const HOME_WALLS = { night: '#0b0f1a,#18223f', ocean: '#03192b,#0a4a66', dusk: '
   sunset: '#1f0d1c,#a14a4a', ember: '#190b08,#7a2e12', plum: '#150b22,#5a2f7a', midnight: '#050a1a,#14307a', teal: '#041a1a,#0e5f5f', slate: '#0f1218,#3a4558', graphite: '#1c1c1e,#1c1c1e', navy: '#0b1d3a,#0b1d3a', wine: '#3a0f1f,#3a0f1f', moss: '#14261b,#14261b' };
 const HOME_WALL_WORDS = { night: 'home.wall_night', ocean: 'home.wall_ocean', dusk: 'home.wall_dusk', forest: 'home.wall_forest', aurora: 'home.wall_aurora', black: 'home.wall_black',
   sunset: 'home.wall_sunset', ember: 'home.wall_ember', plum: 'home.wall_plum', midnight: 'home.wall_midnight', teal: 'home.wall_teal', slate: 'home.wall_slate', graphite: 'home.wall_graphite', navy: 'home.wall_navy', wine: 'home.wall_wine', moss: 'home.wall_moss' };
-const HOME_DOCK_MAX = 6;                                              // HomeConfig.DOCK_MAX
+// The scenes TV Home paints itself (HomeConfig.ART; recipes in home_walls.js), the day's Bing picture, the person's photos (photo, photo2..)
+Object.assign(HOME_WALL_WORDS, { dawn: 'home.wall_dawn', peaks: 'home.wall_peaks', dunes: 'home.wall_dunes', waves: 'home.wall_waves', candy: 'home.wall_candy', peach: 'home.wall_peach', meadow: 'home.wall_meadow', mist: 'home.wall_mist', bokeh: 'home.wall_bokeh', canyon: 'home.wall_canyon', bing: 'home.wall_bing' });
+const HOME_EVERY = { 'off': 'home.every_off', '30m': 'home.every_30m', '1h': 'home.every_1h', '6h': 'home.every_6h', 'day': 'home.every_day', 'show': 'home.every_show' };   // HomeConfig.EVERY, with its words
+const HOME_PHOTO_MAX = 10;                                            // HomeConfig.PHOTO_MAX
+const homeThumbs = {};                                                // a photo's small picture by id + its stamp: asked of the TV once
+const HOME_DOCK_MAX = 6;                                             // HomeConfig.DOCK_MAX
 const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer', 'weather'];          // HomeConfig.WIDGETS, in the order drawn
 // A TV Home with "wsizes" sizes each card (big / small) and packs them (homePack); one older than that has only the preset layouts below
 const HOME_BIG_KINDS = ['system', 'usage', 'calendar', 'weather'];     // HomeConfig.defaultSize: these are big until chosen otherwise
@@ -90,13 +95,17 @@ async function homeUpdate() {
 
 async function homeOpen() {
   if (needAdb()) return;
-  let r = await api('/api/home'); if (!r) return;
+  let r = await api('/api/home?thumbs=1'); if (!r) return;
+  const keepThumbs = (n) => { for (const [id, b] of Object.entries(n.thumbs || {})) { const p = (n.photos || []).find((x) => x.id === id); if (p) homeThumbs[id + ':' + p.v] = b; } };
+  keepThumbs(r);
   if (!r.installed) { homeCard(); toast(T('home.missing')); goTo('tv', 'launchcard'); return; }   // from the remote's More: where to get it
   const apps = () => r.apps.map((a) => a.pkg);
   const send = async (change) => {
     const n = await api('/api/home', change);
     if (n && n.installed) { r = n; homeNow = n; draw(); }
   };
+  const after = async (n) => { r = n; homeNow = n; draw(); const t = await api('/api/home?thumbs=1'); if (t && t.installed) { keepThumbs(t); r = t; homeNow = t; draw(); } };   // a photo came or went: its small picture
+  const dropPhoto = async (id) => { const n = await api('/api/home/photo/drop', { id }); if (n && n.installed) after(n); };
 
   const row = (pkg, acts) => {
     const icon = appIcon(pkg), name = el('span', { textContent: appLabel(pkg) });
@@ -116,7 +125,15 @@ async function homeOpen() {
     if (p) send({ hidden: [...r.config.hidden, p] });
   } });
   const walls = el('div', { className: 'fchips homewalls' });
-  const file = el('input', { type: 'file', accept: 'image/*', hidden: true, onchange: () => { if (file.files[0]) homePhoto(file.files[0], (n) => { r = n; homeNow = n; draw(); }); file.value = ''; } });
+  const everyHead = el('h3', { textContent: T('home.rotate') }), every = el('div', { className: 'fchips homeevery' }), everyNote = el('p', { className: 'note' });
+  const file = el('input', { type: 'file', accept: 'image/*', multiple: true, hidden: true, onchange: async () => {
+    // one at a time (the TV takes a photo per ADB push); a TV Home without rotation has room for one only
+    const room = r.config.wrotate ? HOME_PHOTO_MAX - (r.photos || []).length : 1;
+    const picked = [...file.files]; file.value = '';
+    if (picked.length > room) toast(T('home.photos_full', { n: HOME_PHOTO_MAX }));
+    for (const f of picked.slice(0, Math.max(room, 0))) await homePhoto(f, (n) => { r = n; homeNow = n; });
+    if (picked.length) after(r);
+  } });
   const clock = el('input', { type: 'checkbox', onchange: () => send({ clock24: clock.checked }) });
   const greet = el('input', { type: 'checkbox', onchange: () => send({ greet: greet.checked }) });
   const anim = el('input', { type: 'checkbox', onchange: () => send({ anim: anim.checked }) });
@@ -163,11 +180,12 @@ async function homeOpen() {
     addDock.disabled = d.length >= HOME_DOCK_MAX;
     hidden.replaceChildren(...c.hidden.map((p) => row(p, [el('button', { type: 'button', className: 'small', textContent: T('home.show'), onclick: () => send({ hidden: c.hidden.filter((x) => x !== p) }) })])));
     if (!c.hidden.length) hidden.append(el('p', { className: 'empty', textContent: T('home.none_hidden') }));
-    walls.replaceChildren(...Object.keys(HOME_WALLS).map((w) => {
+    if (c.wrotate) drawRotation(c); else walls.replaceChildren(...Object.keys(HOME_WALLS).map((w) => {
       const dot = el('i'); dot.style.setProperty('--c', 'linear-gradient(135deg,' + HOME_WALLS[w] + ')');
       return el('button', { type: 'button', className: c.wall === w ? 'on' : '', onclick: () => send({ wall: w }) }, dot, el('span', { textContent: T(HOME_WALL_WORDS[w]) }));
     }), ...(r.photo ? [el('button', { type: 'button', className: c.wall === 'photo' ? 'on' : '', onclick: () => send({ wall: 'photo' }) }, el('i', { className: 'add', textContent: '🖼️' }), el('span', { textContent: T('home.wall_photo') }))] : []),
     el('button', { type: 'button', onclick: () => file.click() }, el('i', { className: 'add', textContent: '＋' }), el('span', { textContent: T('home.upload') })));
+    everyHead.hidden = every.hidden = !c.wrotate; if (!c.wrotate) everyNote.hidden = true;
     clock.checked = c.clock24; greet.checked = c.greet; anim.checked = c.anim !== false;
     dream.checked = !!c.dream;
     dream.closest('label').hidden = c.dream === undefined;           // a TV Home older than the screensaver
@@ -209,10 +227,45 @@ async function homeOpen() {
     unpin.disabled = !c.note;
   }
 
+  // A TV Home that rotates (config.wrotate): the scenes drawn here by the same recipe the TV uses, the colours, Bing's picture
+  // and the person's photos, each a tile. Rotation off: one is chosen. On: every tile is in or out of the set (at least one stays).
+  function drawRotation(c) {
+    const multi = c.wevery !== 'off', set = c.walls || [c.wall];
+    const isOn = (k) => multi ? set.includes(k) : c.wall === k;
+    const pick = (k) => {
+      if (!multi) return send({ wall: k });
+      const n = set.includes(k) ? set.filter((x) => x !== k) : [...set, k];
+      if (n.length) send({ walls: n });
+    };
+    const tile = (k, face, name, extra) => {
+      const b = el('button', { type: 'button', className: isOn(k) ? 'on' : '', 'aria-pressed': String(isOn(k)), onclick: () => pick(k) }, face, el('span', { textContent: name }));
+      return extra ? el('span', { className: 'wallcell' }, b, extra) : b;
+    };
+    const art = HOME_ART_IDS.map((k) => {
+      const cv = el('canvas', { width: 128, height: 72 }); homeArtPaint(cv.getContext('2d'), 128, 72, k);
+      return tile(k, el('i', {}, cv), T(HOME_WALL_WORDS[k]));
+    });
+    const plain = Object.keys(HOME_WALLS).map((k) => {
+      const dot = el('i'); dot.style.setProperty('--c', 'linear-gradient(135deg,' + HOME_WALLS[k] + ')');
+      return tile(k, dot, T(HOME_WALL_WORDS[k]));
+    });
+    const bing = tile('bing', el('i', { className: 'add', textContent: '🌐' }), T('home.wall_bing'));
+    const photos = (r.photos || []).map((p, i) => {
+      const t = homeThumbs[p.id + ':' + p.v], face = el('i', {}, t ? el('img', { src: 'data:image/jpeg;base64,' + t, alt: '' }) : '🖼️');
+      const del = el('button', { type: 'button', className: 'small iconbtn wallx', textContent: '✕', title: T('home.photo_remove'), 'aria-label': T('home.photo_remove'), onclick: () => dropPhoto(p.id) });
+      return tile(p.id, face, T('home.wall_photo_n', { n: i + 1 }), del);
+    });
+    const add = el('button', { type: 'button', disabled: photos.length >= HOME_PHOTO_MAX, onclick: () => file.click() }, el('i', { className: 'add', textContent: '＋' }), el('span', { textContent: T('home.upload') }));
+    walls.replaceChildren(...art, bing, ...photos, add, ...plain);
+    every.replaceChildren(...Object.keys(HOME_EVERY).map((e) => el('button', { type: 'button', className: c.wevery === e ? 'on' : '', 'aria-pressed': String(c.wevery === e), textContent: T(HOME_EVERY[e]), onclick: () => send({ wevery: e }) })));
+    put(everyNote, 'textContent', multi ? T(set.length < 2 ? 'home.rotate_pick' : 'home.rotate_set') : '');
+    everyNote.hidden = !multi;
+  }
+
   const d = el('dialog', { className: 'ask homeask' }, el('div', { className: 'card' },
     el('div', { className: 'card-head' }, el('h2', { textContent: T('home.title') }), el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
     el('div', { className: 'card-head' }, el('h3', { textContent: T('home.dock') }), addDock), dock,
-    el('h3', { textContent: T('home.wall') }), walls, file,
+    el('h3', { textContent: T('home.wall') }), everyHead, every, everyNote, walls, file,
     galHead, gal, credit,
     el('label', { className: 'check' }, clock, el('span', { textContent: T('home.clock24') })),
     el('label', { className: 'check' }, greet, el('span', { textContent: T('home.greet') })),
@@ -262,7 +315,8 @@ async function homePhoto(f, done) {
     const n = await x.json().catch(() => ({}));
     if (!x.ok) throw new Error(n.error || x.statusText);
     done(n); toast(T('home.photo_done'));
-  } catch (e) { toast(T('common.error_msg', { msg: friendly(e.message) })); }
+    return true;
+  } catch (e) { toast(T('common.error_msg', { msg: friendly(e.message) })); return false; }
 }
 
 $('#homeopen').addEventListener('click', homeOpen);

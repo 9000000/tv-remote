@@ -239,6 +239,7 @@ const FRIENDLY = [
   [/launcher:fit/, T('core.fr_launcher_fit')],
   [/launcher:install:(.*)/, (m) => T('core.fr_launcher_install', { msg: friendly(m[1]) })],
   [/home:missing/, T('core.fr_home_missing')],
+  [/home:photos_full/, T('home.photos_full', { n: 10 })],   // before home:photo, which it starts with
   [/home:photo/, T('core.fr_home_photo')],
   [/launcher list not signed/i, T('core.fr_launcher_list')],
   [/launcher file does not match/i, T('core.fr_launcher_file')],

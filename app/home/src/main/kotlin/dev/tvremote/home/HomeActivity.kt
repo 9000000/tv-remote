@@ -89,6 +89,7 @@ class HomeActivity : Activity() {
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
+        Store.advance(this, true)                                     // a rotation on "each time Home is shown" (or one that fell due while away): before the first paint, so nothing is drawn twice
         conf = Store.get(this)
         val root = FrameLayout(this)
         backdrop = Backdrop(this)
@@ -165,7 +166,7 @@ class HomeActivity : Activity() {
         col.addView(grid)
 
         setContentView(root)
-        Store.onChange = { conf = Store.get(this); show() }
+        Store.onChange = { conf = Store.get(this); show(); wallTimer(); bingCheck() }
         val pkgs = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED); addAction(Intent.ACTION_PACKAGE_REMOVED); addAction(Intent.ACTION_PACKAGE_CHANGED)
             addDataScheme("package")
@@ -181,7 +182,7 @@ class HomeActivity : Activity() {
 
     override fun onDestroy() {
         Store.onChange = null
-        ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick)
+        ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick)
         try { unregisterReceiver(changed); unregisterReceiver(tick) } catch (e: Exception) { }
         bg.shutdownNow()
         super.onDestroy()
@@ -196,10 +197,13 @@ class HomeActivity : Activity() {
         badgesRead()
         ui.removeCallbacks(widgetTick); ui.post(widgetTick)
         ui.removeCallbacks(netTick); ui.postDelayed(netTick, Widgets.SAMPLE_MS)
+        if (!Store.advance(this, false)) wallTimer()                  // on a change the new look sets the timer itself ([Store.onChange])
+        bingCheck()
     }
 
     override fun onStart() {
         super.onStart()
+        if (away) Store.advance(this, true)                           // Home is shown again: "each time" moves on here, and a timed one that fell due while away
         if (trimmed) untrim()
     }
 
@@ -215,7 +219,9 @@ class HomeActivity : Activity() {
         if (trimmed) return
         trimmed = true
         picture = null
-        backdrop.show(wallColors(conf.optString("wall")), soft)          // the blurred copy stands in, so the return is not a blank
+        val id = conf.optString("wall")
+        if (WallArt.has(id)) backdrop.show(wallColors(id), null, id)      // a drawn scene costs nothing to keep: only the surface is repainted
+        else backdrop.show(wallColors(id), soft)                          // the blurred copy stands in, so the return is not a blank
         for (t in tileCache.values) t.release()
         for (a in apps) a.release()
     }
@@ -223,7 +229,7 @@ class HomeActivity : Activity() {
     private fun untrim() {
         trimmed = false
         val dm = resources.displayMetrics
-        if (conf.optString("wall") == "photo") loadPhoto()
+        if (Walls.isPicture(conf.optString("wall"))) loadWall(conf.optString("wall"))
         for (t in tiles().filter { dock.indexOfChild(it) >= 0 }) { t.app?.load(this); t.restore() }   // the favourites at once, the rest from the side
         bg.execute {
             for (a in apps) if (a.banner == null && a.icon == null) a.load(this)
@@ -231,7 +237,7 @@ class HomeActivity : Activity() {
         }
     }
 
-    override fun onPause() { ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); super.onPause() }
+    override fun onPause() { ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick); super.onPause() }
 
     private var cpuAgain = false
 
@@ -497,34 +503,67 @@ class HomeActivity : Activity() {
         }
     }
 
+    /** The background of [conf], when it is not the one on screen: a new choice, the rotation, a new photo, a new Bing picture. */
     private fun wall() {
-        val wall = conf.optString("wall")
-        val key = wall + conf.optLong("photo")
+        val id = conf.optString("wall")
+        val key = id + (Walls.file(this, id)?.lastModified() ?: 0L) + conf.optLong("photo")   // a photo or Bing picture put over the old file is a new one
         if (key == wallShown) return
         wallShown = key
-        val colors = wallColors(wall)
         window.decorView.background = null                            // the wallpaper is [backdrop]'s, painted once behind the window
-        backdrop.show(colors, null)
-        blurClip.visibility = View.GONE
-        picture = null; soft = null
-        if (wall == "photo") loadPhoto()
+        if (trimmed) { picture = null; soft = null; return }          // away and short of memory: [untrim] brings it back
+        loadWall(id)
     }
 
-    /** The photo, at the screen's size and no more ([Wall]), off the main thread; shown over whatever stands in for it. */
-    private fun loadPhoto() {
+    /**
+     * Puts background [id] on the [backdrop]: a gradient at once; a scene or a picture read / drawn off the main thread (only the
+     * next one, the one before is let go) and then painted, faded in over the old one when [fade]. A photo that cannot be read
+     * (deleted, Bing not fetched yet) leaves what stood in for it.
+     */
+    private fun loadWall(id: String) {
         val dm = resources.displayMetrics
+        val colors = wallColors(id)
+        val key = wallShown
+        if (!Walls.isPicture(id) && !WallArt.has(id)) {
+            picture = null; soft = null
+            blurClip.visibility = View.GONE
+            val look = Backdrop.Look(colors)
+            backdrop.show(look)
+            return
+        }
+        backdrop.show(Backdrop.Look(colors))                          // its colours stand in while it is made
         bg.execute {
-            val read = Wall.load(Wall.file(this), dm.widthPixels, dm.heightPixels)
-            val small = read?.let { Wall.soft(it) }
-            val bmp = read
+            val big = Walls.bitmap(this, id, dm.widthPixels, dm.heightPixels)
+            val small = Walls.soft(this, id, big, dm.widthPixels, dm.heightPixels)
             runOnUiThread {
-                if (bmp != null && !isDestroyed && !trimmed) {
-                    picture = bmp; soft = small
-                    backdrop.show(wallColors("photo"), bmp)
-                    blurView.setImageBitmap(small); blurClip.visibility = View.VISIBLE; blurAlign()
-                }
+                if (isDestroyed || trimmed || key != wallShown) return@runOnUiThread   // another choice came meanwhile: its own load shows
+                if (Walls.isPicture(id) && big == null) return@runOnUiThread
+                picture = big; soft = small
+                val look = if (big != null) Backdrop.Look(colors, big) else Backdrop.Look(colors, null, id)
+                backdrop.show(look)
+                blurView.setImageBitmap(small); blurClip.visibility = if (small != null) View.VISIBLE else View.GONE; blurAlign()
             }
         }
+    }
+
+    // ---- turning through the set ----
+
+    private val wallTick = Runnable { Store.advance(this, false); wallTimer() }
+
+    /** The one timer of the rotation, set while Home is on screen only (nothing runs when it is not); a change sets it again. */
+    private fun wallTimer() {
+        ui.removeCallbacks(wallTick)
+        val every = conf.optString("wevery")
+        if (every == "off" || every == "show" || conf.optJSONArray("walls")?.let { it.length() < 2 } != false) return
+        val now = System.currentTimeMillis()
+        val wait = HomeConfig.wait(every, Store.last(this), now, java.util.TimeZone.getDefault().getOffset(now).toLong()) ?: return
+        ui.postDelayed(wallTick, if (wait <= 0L) 600_000L else wait)  // due but nothing else to show (a photo gone, Bing not here yet): look again in 10 minutes
+    }
+
+    /** Today's Bing picture when it is shown or turned to (not asked more than about once a day, and never for anything else). */
+    private fun bingCheck() {
+        val a = conf.optJSONArray("walls") ?: return
+        if ((0 until a.length()).none { a.optString(it) == HomeConfig.BING } || !Online.wanted(this)) return
+        Thread { if (Online.refresh(this)) runOnUiThread { if (!isDestroyed) wall() } }.start()
     }
 
     /** The Wi-Fi's name; null without the location grant (a client gives it over ADB) or with location off: then just "Wi-Fi". */
@@ -883,7 +922,7 @@ fun wallColors(wall: String): IntArray = when (wall) {
     "navy" -> intArrayOf(0xFF0B1D3A.toInt(), 0xFF0B1D3A.toInt())
     "wine" -> intArrayOf(0xFF3A0F1F.toInt(), 0xFF3A0F1F.toInt())
     "moss" -> intArrayOf(0xFF14261B.toInt(), 0xFF14261B.toInt())
-    else -> intArrayOf(0xFF0B0F1A.toInt(), 0xFF18223F.toInt(), 0xFF0B0F1A.toInt())
+    else -> if (WallArt.has(wall)) WallArt.colors(wall) else intArrayOf(0xFF0B0F1A.toInt(), 0xFF18223F.toInt(), 0xFF0B0F1A.toInt())
 }
 
 /** For the screensaver, whose screen rarely changes; the home screen paints its wallpaper once on a [Backdrop] instead. */

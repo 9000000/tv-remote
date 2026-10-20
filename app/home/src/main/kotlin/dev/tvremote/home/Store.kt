@@ -22,6 +22,7 @@ object Store {
         // on until someone turns it off: older builds saved "off" for 2 GB boxes nobody had asked (it costs no memory, only frames)
         if (!prefs(c).getBoolean("anim_chosen", false)) conf.put("anim", true)
         return conf.put("dream", Dream.isOn(c)).put("wsizes", true)   // an older TV Home has none: the page offers it the old layout chips
+            .put("wrotate", true)                                 // the background can turn through a set (an older one has one choice)
     }
 
     /** The first start: a dock of the well-known apps this TV has, so the screen is not empty before anyone sets it up. */
@@ -41,10 +42,32 @@ object Store {
         val n = HomeConfig.merge(get(c), change)
         val e = prefs(c).edit().putString("conf", n.toString())
         if (change.has("anim")) e.putBoolean("anim_chosen", true)  // from now on the choice is theirs
+        if (change.has("wall") || change.has("walls") || change.has("wevery")) e.putLong("wlast", System.currentTimeMillis())   // a new choice gets its whole turn
         e.apply()
         val out = effective(c, JSONObject(n.toString()))
         onChange?.invoke()
         return out
+    }
+
+    /** When the background last changed (ms), from a choice or from the rotation. */
+    fun last(c: Context) = prefs(c).getLong("wlast", 0L)
+
+    /**
+     * Moves the background on to the next of its set when it is time (or, [show], when Home has just come back on screen and the
+     * rotation is "show"); true when it changed. No timer anywhere keeps this running: Home asks when it is shown and sets one
+     * timer while it is on screen, so a weak box does no work between changes.
+     */
+    fun advance(c: Context, show: Boolean): Boolean {
+        val conf = get(c)
+        val every = conf.optString("wevery")
+        val a = conf.getJSONArray("walls")
+        val walls = List(a.length()) { a.getString(it) }
+        if (every == "off" || walls.size < 2) return false
+        val now = System.currentTimeMillis()
+        if (!(show && every == "show") && !HomeConfig.due(every, last(c), now, java.util.TimeZone.getDefault().getOffset(now).toLong())) return false
+        val next = HomeConfig.next(walls, conf.optString("wall")) { Walls.usable(c, it) } ?: return false
+        change(c, JSONObject().put("wall", next).put("walls", a))
+        return true
     }
 
     fun list(c: Context, key: String): MutableList<String> {

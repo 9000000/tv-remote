@@ -62,43 +62,97 @@ object Customize {
             }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(14) })
         })
 
-        // backgrounds, four to a row, a ✓ on the one in use
+        // backgrounds, five to a row, a ✓ on the one in use (rotation off) or on each of the set it turns through (rotation on)
         section(a.getString(R.string.bg))
         val conf = Store.get(a)
-        val photo = java.io.File(a.getExternalFilesDir(null), "wall.jpg").isFile
-        val keys = HomeConfig.WALLS.filter { it != "photo" || photo }
+        val have = Walls.photos(a)
+        val keys = HomeConfig.WALLS.filter { !HomeConfig.isPhoto(it) || it in have }
         val tiles = ArrayList<Pair<String, View>>()
         val cols = 5; val gap = dp(10); val w = (inner - (cols - 1) * gap) / cols
+        val shots = java.util.concurrent.Executors.newSingleThreadExecutor()    // the scenes drawn and the photos read small, off the main thread
+        dialog.setOnDismissListener { shots.shutdownNow() }
+        val rotNote = label("", 12f, DIM)
+        fun wallOn(k: String) = Store.get(a).let { c ->
+            if (c.optString("wevery") == "off") c.optString("wall") == k
+            else c.getJSONArray("walls").let { s -> (0 until s.length()).any { s.getString(it) == k } }
+        }
+        fun markAll() {
+            for ((k, v) in tiles) { val on = wallOn(k); v.isSelected = on; v.findViewWithTag<View>("check")?.visibility = if (on) View.VISIBLE else View.GONE }
+            val c = Store.get(a)
+            rotNote.visibility = if (c.optString("wevery") != "off") View.VISIBLE else View.GONE
+            rotNote.text = a.getString(if (c.getJSONArray("walls").length() < 2) R.string.rot_pick else R.string.rot_set)
+        }
+        // how often it moves on: two rows of three chips, the one in use tinted like the switches below
+        val everyWords = mapOf("off" to R.string.rot_off, "30m" to R.string.rot_30m, "1h" to R.string.rot_1h, "6h" to R.string.rot_6h, "day" to R.string.rot_day, "show" to R.string.rot_show)
+        val chips = ArrayList<Pair<String, TextView>>()
+        fun markEvery() { val e = Store.get(a).optString("wevery"); for ((k, v) in chips) v.isSelected = k == e }
+        col.addView(label(a.getString(R.string.rot), 13f, Color.WHITE), LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = dp(8) })
+        var chipRow: LinearLayout? = null
+        HomeConfig.EVERY.forEachIndexed { i, k ->
+            if (i % 3 == 0) { chipRow = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }; col.addView(chipRow, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(8) }) }
+            val chip = TextView(a).apply {
+                text = a.getString(everyWords.getValue(k)); textSize = 14f; gravity = Gravity.CENTER; maxLines = 1
+                setTextColor(Color.WHITE); isFocusable = true; isClickable = true; setPadding(dp(8), dp(11), dp(8), dp(11))
+                background = StateListDrawable().apply {
+                    addState(intArrayOf(android.R.attr.state_focused), glass(14, 0x2EFFFFFF, Color.WHITE))
+                    addState(intArrayOf(android.R.attr.state_selected), glass(14, 0x268AB4F8, ACCENT))
+                    addState(intArrayOf(), glass(14, 0x12FFFFFF, 0x1FFFFFFF))
+                }
+                onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                setOnClickListener { Store.change(a, JSONObject().put("wevery", k)); markEvery(); markAll() }
+            }
+            chips.add(k to chip)
+            chipRow!!.addView(chip, LinearLayout.LayoutParams(0, -2, 1f).apply { if (i % 3 > 0) leftMargin = dp(8) })
+        }
+        col.addView(rotNote, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(8) })
+        col.addView(View(a), LinearLayout.LayoutParams(1, dp(14)))
         var row: LinearLayout? = null
         keys.forEachIndexed { i, k ->
             if (i % cols == 0) { row = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }; col.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = gap }) }
             val cell = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
             val t = FrameLayout(a).apply {
                 isFocusable = true; isClickable = true
-                val c = if (k == "photo") intArrayOf(0xFF2A2F3A.toInt()) else wallColors(k)
+                val c = if (HomeConfig.isPhoto(k) || k == HomeConfig.BING) intArrayOf(0xFF2A2F3A.toInt()) else wallColors(k)
                 background = (if (c.all { it == c[0] }) GradientDrawable().apply { setColor(c[0]) } else GradientDrawable(GradientDrawable.Orientation.TL_BR, c))
                     .apply { cornerRadius = dp(12).toFloat() }                // rounded, so not [wallDrawable]'s ColorDrawable
+                if (WallArt.has(k) || Walls.isPicture(k)) {                   // the picture itself, in the tile's rounded corners: the same painter as the screen
+                    val pv = ImageView(a).apply {
+                        scaleType = ImageView.ScaleType.CENTER_CROP; clipToOutline = true
+                        outlineProvider = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, dp(12).toFloat()) } }
+                    }
+                    addView(pv, FrameLayout.LayoutParams(-1, -1))
+                    shots.execute { val b = Walls.small(a, k, w * 2, w * 9 / 8); a.runOnUiThread { if (b != null) pv.setImageBitmap(b) } }   // twice the tile: sharp on the TV's panel
+                }
                 foreground = StateListDrawable().apply {
                     addState(intArrayOf(android.R.attr.state_focused), ring(d, 3, Color.WHITE))
                     addState(intArrayOf(android.R.attr.state_selected), ring(d, 2, ACCENT))
                     addState(intArrayOf(), ring(d, 1, 0x33FFFFFF))
                 }
-                if (k == "photo") { val (iv, s) = icon(R.drawable.ic_image, DIM, dp(22)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER)) }
+                if (k == HomeConfig.BING && !Online.file(a).isFile) { val (iv, s) = icon(R.drawable.ic_globe, DIM, dp(22)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER)) }   // not fetched yet
                 addView(FrameLayout(a).apply {                            // the ✓, shown on the chosen one (mark)
                     tag = "check"
                     background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(ACCENT) }
                     val (iv, s) = icon(R.drawable.ic_check, 0xFF0B1020.toInt(), dp(14)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER))
                 }, FrameLayout.LayoutParams(dp(22), dp(22), Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(6), 0) })
                 onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
-                setOnClickListener { Store.change(a, JSONObject().put("wall", k)); mark(tiles, k) }
+                setOnClickListener {
+                    val c = Store.get(a)
+                    if (c.optString("wevery") == "off") Store.change(a, JSONObject().put("wall", k))            // one choice
+                    else {                                                                                      // a set: a tile in or out, never the last one out
+                        val s = c.getJSONArray("walls"); val now = List(s.length()) { s.getString(it) }
+                        val next = if (k in now) now - k else now + k
+                        if (next.isNotEmpty()) Store.change(a, JSONObject().put("walls", org.json.JSONArray(next)))
+                    }
+                    markAll()
+                }
             }
             tiles.add(k to t)
             cell.addView(t, LinearLayout.LayoutParams(w, w * 9 / 16))
-            cell.addView(label(a.getString(a.resources.getIdentifier("wall_$k", "string", a.packageName)), 12f, DIM).apply { gravity = Gravity.CENTER; maxLines = 1 },
+            cell.addView(label(wallName(a, k), 12f, DIM).apply { gravity = Gravity.CENTER; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END },
                 LinearLayout.LayoutParams(w, -2).apply { topMargin = dp(5) })
             row!!.addView(cell, LinearLayout.LayoutParams(w, -2).apply { if (i % cols > 0) leftMargin = gap })
         }
-        mark(tiles, conf.optString("wall"))
+        markAll(); markEvery()
 
         // switches as tiles, two to a row: an icon, a name, a line under it; on = a blue tint with a blue edge, as everywhere in the app
         var pair: LinearLayout? = null
@@ -372,7 +426,10 @@ object Customize {
 
     private fun ring(d: Float, w: Int, color: Int) = GradientDrawable().apply { cornerRadius = 12 * d; setStroke((w * d).toInt(), color); setColor(Color.TRANSPARENT) }
 
-    private fun mark(tiles: List<Pair<String, View>>, wall: String) {
-        for ((k, v) in tiles) { v.isSelected = k == wall; v.findViewWithTag<View>("check")?.visibility = if (k == wall) View.VISIBLE else View.GONE }
+    /** The name under a background's tile: from the strings, "Photo 3" for the person's third photo. */
+    private fun wallName(a: Context, k: String): String = when {
+        k == "photo" -> a.getString(R.string.wall_photo)
+        HomeConfig.isPhoto(k) -> a.getString(R.string.wall_photo_n, k.removePrefix("photo").toInt())
+        else -> a.getString(a.resources.getIdentifier("wall_$k", "string", a.packageName))
     }
 }

@@ -41,19 +41,21 @@ class HomeDream : DreamService() {
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         isInteractive = false; isFullscreen = true; isScreenBright = false
+        Store.advance(this, false)                                   // a timed rotation that fell due while Home was not on screen
         val conf = Store.get(this)
         Motion.read(this, conf)
         motion = Motion.on
         val dm = resources.displayMetrics
         val root = FrameLayout(this)
         root.background = wallDrawable(wallColors(conf.optString("wall")))
-        if (conf.optString("wall") == "photo") {
+        val id = conf.optString("wall")
+        if (Walls.isPicture(id) || WallArt.has(id)) {                 // a photo, Bing's picture or a drawn scene: all become one bitmap here
             val v = ImageView(this).apply { scaleType = ImageView.ScaleType.CENTER_CROP; alpha = 0f }
             wall = v
             root.addView(v, FrameLayout.LayoutParams(-1, -1))
-            val f = Wall.file(this)
             bg.execute {
-                val b = Wall.load(f, dm.widthPixels, dm.heightPixels)
+                val (bw, bh) = Wall.want(dm.widthPixels, dm.heightPixels)
+                val b = if (WallArt.has(id)) Walls.small(this, id, bw, bh, false) else Walls.bitmap(this, id, dm.widthPixels, dm.heightPixels)   // the dim below is its veil
                 ui.post { if (b != null && shown == null && wall != null) { shown = b; v.setImageBitmap(b); v.animate().alpha(1f).setDuration(if (motion) 900 else 0).start(); startDrift(v) } }
             }
         }

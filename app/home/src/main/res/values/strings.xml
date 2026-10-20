@@ -48,6 +48,27 @@
     <string name="wall_wine">Wine</string>
     <string name="wall_moss">Moss</string>
     <string name="wall_photo">Photo</string>
+    <string name="wall_photo_n">Photo %d</string>
+    <string name="wall_dawn">Dawn</string>
+    <string name="wall_peaks">Peaks</string>
+    <string name="wall_dunes">Dunes</string>
+    <string name="wall_waves">Waves</string>
+    <string name="wall_candy">Candy</string>
+    <string name="wall_peach">Peach</string>
+    <string name="wall_meadow">Meadow</string>
+    <string name="wall_mist">Mist</string>
+    <string name="wall_bokeh">Bokeh</string>
+    <string name="wall_canyon">Canyon</string>
+    <string name="wall_bing">Bing daily</string>
+    <string name="rot">Change background</string>
+    <string name="rot_off">Off</string>
+    <string name="rot_30m">30 min</string>
+    <string name="rot_1h">1 hour</string>
+    <string name="rot_6h">6 hours</string>
+    <string name="rot_day">Daily</string>
+    <string name="rot_show">Each open</string>
+    <string name="rot_pick">Pick 2 or more below</string>
+    <string name="rot_set">✓ = in the rotation</string>
     <string name="w_system">System</string>
     <string name="w_ram">Memory</string>
     <string name="w_disk">Storage</string>

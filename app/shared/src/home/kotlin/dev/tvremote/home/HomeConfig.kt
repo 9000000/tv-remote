@@ -8,8 +8,15 @@ import org.json.JSONObject
  * the computer change them over ADB (core/ontv/Home.kt → HomeReceiver). Compiled into both sides, so they never disagree.
  *   dock    favourite apps in their order, at most [DOCK_MAX]
  *   hidden  apps left off the grid
- *   wall    a built-in background ([WALLS]) or "photo" (wall.jpg in TV Home's external files folder, sent by the client)
- *   photo   when that photo last changed, so the launcher reads it again
+ *   wall    the background on now: a gradient ([PLAIN]), a drawn scene ([ART]), "bing" (the day's Bing picture, kept by TV Home), or one
+ *           of the person's photos ([PHOTOS]: "photo" is wall.jpg, "photo2" wall2.jpg ... in TV Home's external files folder, sent by
+ *           the client; at most [PHOTO_MAX])
+ *   photo   when a photo last changed, so the launcher reads it again
+ *   walls   the set the background turns through (any of the above, [WALLS_MAX]); never empty, [wall] is what shows now
+ *   wevery  how often it moves on to the next of [walls] ([EVERY]): "off", "30m", "1h", "6h", "day" (the first time Home is seen on a
+ *           new day), "show" (each time Home comes back on screen). Only while Home is on screen or when it comes back: nothing
+ *           runs in between. A TV Home that does this reports "wrotate": true (the page keeps its one-choice list for one that
+ *           does not)
  *   clock24 24-hour clock; greet: the greeting under the clock
  *   anim    motion effects (a focused app lifts, rows glide, the screen fades in); off = instant, with a ring. TV Home also
  *           treats the system's "animator duration scale 0" as off
@@ -40,9 +47,51 @@ object HomeConfig {
     const val GRANT_WIFI = "pm grant $PKG android.permission.ACCESS_FINE_LOCATION >/dev/null 2>&1; "
     const val DOCK_MAX = 6
     private const val HIDDEN_MAX = 300
-    val WALLS = listOf("night", "ocean", "dusk", "forest", "aurora", "black", "sunset", "ember", "plum", "midnight", "teal", "slate", "graphite", "navy", "wine", "moss", "photo")
-    /** Where a client puts the photo (the shell may write there; the app reads it with no permission). */
+    /** Plain gradients (HomeActivity.wallColors). */
+    val PLAIN = listOf("night", "ocean", "dusk", "forest", "aurora", "black", "sunset", "ember", "plum", "midnight", "teal", "slate", "graphite", "navy", "wine", "moss")
+    /** Scenes TV Home draws itself, no picture file (WallSpec; app/home WallArt.kt). */
+    val ART = listOf("dawn", "peaks", "dunes", "waves", "candy", "peach", "meadow", "mist", "bokeh", "canyon")
+    /** The day's picture from Bing, downloaded by TV Home (at most once a day; the last one is kept for when the TV is offline). */
+    const val BING = "bing"
+    const val PHOTO_MAX = 10
+    /** The person's photos, one file each: "photo" is the first and the only one older TV Homes know. */
+    val PHOTOS = listOf("photo") + (2..PHOTO_MAX).map { "photo$it" }
+    /** In the order the pickers list them: scenes first, then the pictures, the plain colours last. */
+    val WALLS = ART + BING + PHOTOS + PLAIN
+    const val WALLS_MAX = 40
+    val EVERY = listOf("off", "30m", "1h", "6h", "day", "show")
+    /** Where a client puts the first photo (the shell may write there; the app reads it with no permission). */
     const val PHOTO = "/sdcard/Android/data/$PKG/files/wall.jpg"
+    /** The file of photo [id] ("photo" → wall.jpg, "photo3" → wall3.jpg), in TV Home's external files folder. */
+    fun photoName(id: String) = "wall" + id.removePrefix("photo") + ".jpg"
+    fun photoPath(id: String) = PHOTO.substringBeforeLast('/') + "/" + photoName(id)
+    fun isPhoto(id: String) = id in PHOTOS
+    /** The length of an interval in ms ("day" and "show" are not lengths: 0). */
+    fun everyMs(e: String) = when (e) { "30m" -> 30 * 60_000L; "1h" -> 3_600_000L; "6h" -> 6 * 3_600_000L; else -> 0L }
+    private const val DAY = 86_400_000L
+
+    /** Whether it is time for the next background: [last] is when it last changed, [off] the time zone's offset (ms) for "day". */
+    fun due(every: String, last: Long, now: Long, off: Long): Boolean = when (every) {
+        "30m", "1h", "6h" -> now - last >= everyMs(every) || now < last          // a clock set back must not freeze it
+        "day" -> Math.floorDiv(now + off, DAY) != Math.floorDiv(last + off, DAY)
+        else -> false
+    }
+    /** How long until [due] turns true (for the one timer set while Home is on screen); null when time does not decide it. */
+    fun wait(every: String, last: Long, now: Long, off: Long): Long? = when (every) {
+        "30m", "1h", "6h" -> (last + everyMs(every) - now).coerceIn(0L, everyMs(every))
+        "day" -> (Math.floorDiv(now + off, DAY) + 1) * DAY - off - now
+        else -> null
+    }
+    /** The one after [cur] in [walls] that [usable] allows (a photo gone, Bing not yet fetched: skipped); null when there is none. */
+    fun next(walls: List<String>, cur: String, usable: (String) -> Boolean): String? {
+        if (walls.isEmpty()) return null
+        val at = walls.indexOf(cur)
+        for (i in 1..walls.size) {
+            val w = walls[Math.floorMod(at + i, walls.size)]
+            if (w != cur && usable(w)) return w
+        }
+        return null
+    }
     val WIDGETS = listOf("system", "usage", "calendar", "lunar", "timer", "weather")
     /** A card's size when nobody chose: the four large cards are big, the small pills (lunar, timer, and the note) small. */
     fun defaultSize(k: String) = if (k in BIG_KINDS) "big" else "small"
@@ -99,10 +148,15 @@ object HomeConfig {
     fun clean(o: JSONObject): JSONObject {
         val widgets = o.optJSONArray("widgets")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty().filter { it in WIDGETS }.distinct()
         val dock = pkgs(o.optJSONArray("dock"), DOCK_MAX)
+        val wall = o.optString("wall").takeIf { it in WALLS } ?: "night"
+        var walls = o.optJSONArray("walls")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty().filter { it in WALLS }.distinct().take(WALLS_MAX)
+        if (walls.isEmpty()) walls = listOf(wall)
         return JSONObject()
             .put("dock", JSONArray(dock))
             .put("hidden", JSONArray(pkgs(o.optJSONArray("hidden"), HIDDEN_MAX).filter { it !in dock }))
-            .put("wall", o.optString("wall").takeIf { it in WALLS } ?: "night")
+            .put("wall", if (wall in walls) wall else walls[0])           // what shows is always one of the set
+            .put("walls", JSONArray(walls))
+            .put("wevery", o.optString("wevery").takeIf { it in EVERY } ?: "off")
             .put("photo", o.optLong("photo", 0).coerceAtLeast(0))
             .put("clock24", o.optBoolean("clock24", true))
             .put("greet", o.optBoolean("greet", true))
@@ -133,6 +187,7 @@ object HomeConfig {
     fun merge(old: JSONObject, change: JSONObject): JSONObject {
         val n = JSONObject(clean(old).toString())
         for (k in change.keys()) n.put(k, change.get(k))
+        if (change.has("wall") && !change.has("walls")) n.put("walls", JSONArray().put(change.get("wall")))   // a client that picks one: the set is that one
         return clean(n)
     }
 
