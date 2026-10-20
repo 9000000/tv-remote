@@ -292,7 +292,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
     /** As many rings as [width] holds, the liveliest first (memory, CPU, storage, signal). Narrow: no graph, the address and ADB under the rings. */
     private fun system(card: LinearLayout, f: Facts, width: Int) {
         val narrow = width < dp(420)
-        card.addView(head(a.getString(R.string.w_system), a.getString(R.string.w_up) + " " + span(f.up)))
+        card.addView(head(a.getString(R.string.w_system), (if (narrow) "" else a.getString(R.string.w_up) + " ") + span(f.up)))   // narrow: the title whole, not "HỆ T…"
         val body = LinearLayout(a).apply { orientation = HORIZONTAL }
         val gb = 1024.0 * 1024 * 1024
         fun part(p: Pair<Long, Long>) = if (p.second > 0) p.first.toFloat() / p.second else 0f
@@ -308,7 +308,8 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val adbChip = a.getString(R.string.w_adb) + " " + a.getString(if (f.adb) R.string.w_on else R.string.w_off) to if (f.adb) AMBER[0] else Color.WHITE
         if (narrow) {
             card.addView(body, LayoutParams(-1, -2).apply { topMargin = dp(10) })
-            card.addView(chips(listOf("IP " + f.ip.ifEmpty { "—" } to Color.WHITE, adbChip)), LayoutParams(-1, -2).apply { topMargin = dp(10) })
+            val adbShort = a.getString(R.string.w_adb) to if (f.adb) AMBER[0] else DIM   // no room for "ADB on": its colour says it
+            card.addView(chips(listOf("IP " + f.ip.ifEmpty { "—" } to Color.WHITE, adbShort)), LayoutParams(-1, -2).apply { topMargin = dp(10) })
             return
         }
         val net = LinearLayout(a).apply { orientation = VERTICAL }
@@ -348,7 +349,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val days = u?.optJSONArray("days")
         var total = 0L
         if (days != null) for (i in 0 until days.length()) total += days.optLong(i)
-        card.addView(head(a.getString(R.string.w_week), if (total > 0) span(total * 1000) else ""))
+        card.addView(head(a.getString(R.string.w_week).let { if (narrow) it.substringBefore(" · ") else it }, if (total > 0) span(total * 1000) else ""))
         if (u == null) { card.addView(note(a.getString(R.string.w_need_setup))); return }
         val body = LinearLayout(a).apply { orientation = HORIZONTAL }
         if (!narrow && days != null && days.length() == 7) body.addView(Columns(a, (6 downTo 0).map { days.optLong(it) }), LayoutParams(dp(150), dp(96)))
@@ -372,19 +373,14 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val col = LinearLayout(a).apply { orientation = VERTICAL }
         val line = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         line.addView(text(name, 13f, Color.WHITE), LayoutParams(0, -2, 1f))
-        var colors = CYAN
-        if (limit != null) {
-            val allowed = limit.optLong("min") * 60
-            val left = (allowed - limit.optLong("used")).coerceAtLeast(0)
-            colors = AMBER
-            line.addView(text(if (left <= 0) a.getString(R.string.w_used_up) else a.getString(R.string.w_left, span(left * 1000)), 11f, AMBER[0]).apply {
-                background = GradientDrawable().apply { cornerRadius = dp(8).toFloat(); setColor(0x33FFB86B) }
-                setPadding(dp(6), 0, dp(6), 0)
-            }, LayoutParams(-2, -2).apply { rightMargin = dp(8) })
-        }
         line.addView(text(span(sec * 1000), 13f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) })
         col.addView(line)
-        col.addView(Bar(a, part, colors), LayoutParams(-1, dp(4)).apply { topMargin = dp(3) })
+        col.addView(Bar(a, part, if (limit != null) AMBER else CYAN), LayoutParams(-1, dp(4)).apply { topMargin = dp(3) })
+        if (limit != null) {                                          // under the bar, not beside the name: a narrow card cut the name to "…"
+            val left = (limit.optLong("min") * 60 - limit.optLong("used")).coerceAtLeast(0)
+            col.addView(text(if (left <= 0) a.getString(R.string.w_used_up) else a.getString(R.string.w_left, span(left * 1000)), 11f, AMBER[0]),
+                LayoutParams(-2, -2).apply { topMargin = dp(2) })
+        }
         addView(col, LayoutParams(0, -2, 1f).apply { leftMargin = dp(10) })
     }
 
