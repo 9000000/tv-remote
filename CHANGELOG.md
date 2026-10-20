@@ -10,14 +10,14 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 - Sửa: Ứng dụng → Đang mở: app đã đóng vẫn hiện lại sau vài giây trên Android 9 (BRAVIA); danh sách không còn nháy mỗi lần làm mới (biểu tượng giữ nguyên, mục Hệ thống Android không tự gập)
 - Ứng dụng → Đang mở: “Đóng tất cả” thành nút **Đóng hàng loạt** nổi bật, có biểu tượng; bấm vào hiện danh sách app sẽ đóng để tích / bỏ tích, app TV cần giữ hiện mờ, không chọn được
-- Menu mở từ menu khác (chọn hãng → chọn mã ở remote hồng ngoại, Mở trên TV → Tải app...) có nút **Quay lại**; nút back của điện thoại và Esc cũng về menu trước, không phải đóng rồi mở lại
+- Menu mở từ menu khác (chọn hãng → chọn mã ở remote hồng ngoại, Mở trên TV → Tải app...) có nút **Quay lại**; nút back của điện thoại và Esc cũng về menu trước, không phải đóng rồi mở lại. App điện thoại: nút Đóng của hộp thoại thành ✕ ở góc trên, như trên web
 - Sửa: Dò mã (remote hồng ngoại): nút “Tắt tiếng” xuống hai dòng và bị lệch khỏi hàng
 
 **English**
 
 - Fix: Apps → Open: a closed app came back after a few seconds on Android 9 (BRAVIA); the list no longer flickers on each refresh (icons kept, Android system stays open)
 - Apps → Open now: “Close all” is now a clear **Close in bulk** button with an icon; it lists the apps it will close to tick or untick, apps the TV needs shown greyed and not selectable
-- A menu opened from another (brand → remote in the infrared remote, Open on TV → Get apps...) has a **Back** button; the phone's back key and Esc go back too, no closing and opening again
+- A menu opened from another (brand → remote in the infrared remote, Open on TV → Get apps...) has a **Back** button; the phone's back key and Esc go back too, no closing and opening again. Phone app: a dialog's Close is now ✕ at the top corner, as on the page
 - Fix: Find code (infrared remote): the “Mute” chip went to two lines and dropped out of its row
 
 ## 0.13.0 - 2026-10-20

@@ -81,7 +81,23 @@ internal class Popup private constructor(c: Context) : Dialog(c) {
                 setPadding(c.dp(24), 0, c.dp(24), c.dp(4))
             }
             d.setTitle(title)
-            root.addView(d.title)
+            // Close and Back sit in the head, as ✕ / ‹ Back on the page's dialogs: at the top, the same place in every box
+            val closeWords = dev.tvremote.core.T("common.close"); val backWords = dev.tvremote.core.T("common.back")
+            val inHead = buttons.filter { (_, b) -> b.first == closeWords || b.first == backWords }
+            val head = LinearLayout(c)
+            head.gravity = Gravity.CENTER_VERTICAL or Gravity.END
+            head.setPadding(0, 0, c.dp(14), 0)
+            head.addView(d.title, LinearLayout.LayoutParams(0, -2, 1f))
+            for ((which, b) in inHead.entries.sortedBy { it.value.first != backWords }) {   // Back first, ✕ at the edge
+                val (s, l) = b
+                val btn: Button = if (s == closeWords) c.icon("@close", s.toString(), BTN) else PopupButton(c, s.toString(), BTN).apply { minHeight = c.dp(40); minimumHeight = c.dp(40) }
+                btn.setOnClickListener { l?.onClick(d, which); d.dismiss() }
+                d.buttons[which] = btn
+                head.addView(btn, LinearLayout.LayoutParams(if (s == closeWords) c.dp(40) else -2, c.dp(40)).apply { leftMargin = c.dp(8) })
+            }
+            inHead.keys.forEach { buttons.remove(it) }
+            if (inHead.isNotEmpty()) root.setPadding(0, c.dp(16), 0, c.dp(16))
+            root.addView(head)
 
             // the words, the screen's own view and the ticks scroll together; the buttons stay in sight below them
             val body = c.col()
