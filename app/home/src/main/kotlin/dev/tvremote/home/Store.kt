@@ -1,6 +1,5 @@
 package dev.tvremote.home
 
-import android.app.ActivityManager
 import android.content.Context
 import org.json.JSONObject
 
@@ -20,17 +19,10 @@ object Store {
     }
 
     private fun effective(c: Context, conf: JSONObject): JSONObject {
-        if (!prefs(c).getBoolean("anim_chosen", false)) conf.put("anim", Motion.defaultOn(weak(c)))
+        // on until someone turns it off: older builds saved "off" for 2 GB boxes nobody had asked (it costs no memory, only frames)
+        if (!prefs(c).getBoolean("anim_chosen", false)) conf.put("anim", true)
         return conf.put("dream", Dream.isOn(c))
     }
-
-    /** A box that ActivityManager calls low-RAM, or with about 2 GB or less (the FPT Play box reports 1.8 GB). */
-    fun weak(c: Context): Boolean {
-        val am = c.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager ?: return false
-        val mem = ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }
-        return am.isLowRamDevice || mem.totalMem in 1..WEAK_BYTES
-    }
-    const val WEAK_BYTES = 2_300_000_000L                          // "2 GB" boxes report 1.8 to 2.1 GB of it as theirs
 
     /** The first start: a dock of the well-known apps this TV has, so the screen is not empty before anyone sets it up. */
     private fun first(c: Context): JSONObject {
@@ -48,7 +40,7 @@ object Store {
         if (change.has("dream")) Dream.set(c, change.optBoolean("dream"))
         val n = HomeConfig.merge(get(c), change)
         val e = prefs(c).edit().putString("conf", n.toString())
-        if (change.has("anim")) e.putBoolean("anim_chosen", true)  // from now on the choice is theirs, whatever the RAM
+        if (change.has("anim")) e.putBoolean("anim_chosen", true)  // from now on the choice is theirs
         e.apply()
         val out = effective(c, JSONObject(n.toString()))
         onChange?.invoke()

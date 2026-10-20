@@ -835,9 +835,6 @@ object Motion {
     val lift = PathInterpolator(0.34f, 1.35f, 0.64f, 1f)              // overshoots a little then settles: a spring
     val glide = PathInterpolator(0.2f, 0.8f, 0.2f, 1f)                // fast out, long soft end
 
-    /** The first answer before anyone has chosen: a weak box ([Store.weak]) starts without motion, a good one with it. */
-    fun defaultOn(weak: Boolean) = !weak
-
     fun read(c: Context, conf: JSONObject) {
         val scale = try { Settings.Global.getFloat(c.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) } catch (e: Exception) { 1f }
         on = conf.optBoolean("anim", true) && scale > 0f
