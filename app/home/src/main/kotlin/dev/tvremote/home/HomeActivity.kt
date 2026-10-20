@@ -236,6 +236,7 @@ class HomeActivity : Activity() {
         else backdrop.show(wallColors(id), soft)                          // the blurred copy stands in, so the return is not a blank
         for (t in tileCache.values) t.release()
         for (a in apps) a.release()
+        Customize.forget()
     }
 
     private fun untrim() {
@@ -927,7 +928,8 @@ object Motion {
     fun pop(v: View, focused: Boolean) {
         v.animate().cancel()
         val s = if (focused) 1.06f else 1f
-        if (!on) { v.scaleX = 1f; v.scaleY = 1f } else v.animate().scaleX(s).scaleY(s).setDuration(if (focused) 420 else 220).setInterpolator(if (focused) spring else glide).start()
+        if (!on) { v.scaleX = 1f; v.scaleY = 1f }
+        else v.animate().scaleX(s).scaleY(s).setDuration(if (focused) 420 else 220).setInterpolator(if (focused) spring else glide).withLayer().start()   // on a layer: without it each frame drew the whole panel again (16 ms + 36 ms GPU on the FPT box)
     }
 }
 

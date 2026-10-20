@@ -16,6 +16,7 @@ import android.view.ViewGroup
 import android.view.Window
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.graphics.Bitmap
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -71,14 +72,17 @@ object Customize {
         val cols = 5; val gap = dp(10); val w = (inner - (cols - 1) * gap) / cols
         val shots = java.util.concurrent.Executors.newSingleThreadExecutor()    // the scenes drawn and the photos read small, off the main thread
         dialog.setOnDismissListener { shots.shutdownNow() }
+        // the pictures are put in together once the panel has slid in: one by one during the slide each drew the whole panel again
+        val waiting = ArrayList<Pair<ImageView, Bitmap>>()
+        var slid = !Motion.on
+        fun put(v: ImageView, b: Bitmap) { if (slid) v.setImageBitmap(b) else waiting.add(v to b) }
         val rotNote = label("", 12f, DIM)
-        fun wallOn(k: String) = Store.get(a).let { c ->
+        fun wallOn(c: JSONObject, k: String) =
             if (c.optString("wevery") == "off") c.optString("wall") == k
             else c.getJSONArray("walls").let { s -> (0 until s.length()).any { s.getString(it) == k } }
-        }
         fun markAll() {
-            for ((k, v) in tiles) { val on = wallOn(k); v.isSelected = on; v.findViewWithTag<View>("check")?.visibility = if (on) View.VISIBLE else View.GONE }
-            val c = Store.get(a)
+            val c = Store.get(a)                                         // once: reading it per tile cost 18 ms on the FPT box
+            for ((k, v) in tiles) { val on = wallOn(c, k); v.isSelected = on; v.findViewWithTag<View>("check")?.visibility = if (on) View.VISIBLE else View.GONE }
             rotNote.visibility = if (c.optString("wevery") != "off") View.VISIBLE else View.GONE
             rotNote.text = a.getString(if (c.getJSONArray("walls").length() < 2) R.string.rot_pick else R.string.rot_set)
         }
@@ -116,12 +120,16 @@ object Customize {
                 background = (if (c.all { it == c[0] }) GradientDrawable().apply { setColor(c[0]) } else GradientDrawable(GradientDrawable.Orientation.TL_BR, c))
                     .apply { cornerRadius = dp(12).toFloat() }                // rounded, so not [wallDrawable]'s ColorDrawable
                 if (WallArt.has(k) || Walls.isPicture(k)) {                   // the picture itself, in the tile's rounded corners: the same painter as the screen
-                    val pv = ImageView(a).apply {
-                        scaleType = ImageView.ScaleType.CENTER_CROP; clipToOutline = true
-                        outlineProvider = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, dp(12).toFloat()) } }
-                    }
+                    val pv = ImageView(a).apply { scaleType = ImageView.ScaleType.FIT_XY }   // the picture is made at the tile's size with its corners: nothing scaled or clipped per frame
                     addView(pv, FrameLayout.LayoutParams(-1, -1))
-                    shots.execute { val b = Walls.small(a, k, w * 2, w * 9 / 8); a.runOnUiThread { if (b != null) pv.setImageBitmap(b) } }   // twice the tile: sharp on the TV's panel
+                    val drawn = if (WallArt.has(k)) thumbs["$k:$w"] else null            // a scene drawn on an earlier opening: at once
+                    if (drawn != null) pv.setImageBitmap(drawn)
+                    else shots.execute {
+                        val f = Walls.file(a, k)
+                        val key = "$k:$w" + (f?.let { ":" + it.name + it.lastModified() } ?: "")   // a new photo or another day's Bing picture: drawn again
+                        val b = thumbs[key] ?: Walls.small(a, k, w, w * 9 / 16)?.let { round(it, w, w * 9 / 16, dp(12).toFloat()) }?.also { synchronized(thumbs) { thumbs.keys.removeAll { o -> o.startsWith("$k:") }; thumbs[key] = it } }   // twice the tile: sharp on the TV's panel
+                        a.runOnUiThread { if (b != null) put(pv, b) }
+                    }
                 }
                 foreground = StateListDrawable().apply {
                     addState(intArrayOf(android.R.attr.state_focused), ring(d, 3, Color.WHITE))
@@ -250,14 +258,20 @@ object Customize {
         }
         col.addView(done, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16) })
 
-        val scroll = ScrollView(a).apply { isVerticalScrollBarEnabled = false; isVerticalFadingEdgeEnabled = true; setFadingEdgeLength(dp(24)); clipChildren = false; addView(col) }
+        val scroll = ScrollView(a).apply { isVerticalScrollBarEnabled = false; clipChildren = false; addView(col) }
         val panel = FrameLayout(a).apply {
             // solid: the home screen's text must not show through
             background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xFF161B2B.toInt(), 0xFF0C1020.toInt())).apply {
                 cornerRadius = dp(28).toFloat(); setStroke(dp(1), 0x33FFFFFF)
             }
-            clipToOutline = true
+            // no clip: the content keeps 28 dp from the sides, clear of the corners; clipped it cost the FPT box ~10 ms a frame
             addView(scroll)
+            // the soft top and bottom edges painted once over the list: the ScrollView's own fading edge drew the whole list
+            // into a layer on every frame (55 ms a frame on the FPT box while a tile grew, 18-28 ms without)
+            addView(View(a).apply { background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xFF161B2B.toInt(), 0x00161B2B)) },
+                FrameLayout.LayoutParams(-1, dp(24), Gravity.TOP).apply { setMargins(dp(28), 0, dp(28), 0) })
+            addView(View(a).apply { background = GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, intArrayOf(0xFF0C1020.toInt(), 0x000C1020)) },
+                FrameLayout.LayoutParams(-1, dp(24), Gravity.BOTTOM).apply { setMargins(dp(28), 0, dp(28), 0) })
         }
         val height = dm.heightPixels - 2 * edge
         dialog.setContentView(panel, ViewGroup.LayoutParams(panelW, height))
@@ -270,8 +284,16 @@ object Customize {
             setWindowAnimations(0)                                     // its own slide below, or none when motion is off
         }
         dialog.setOnShowListener {
-            (tiles.firstOrNull { it.second.isSelected } ?: tiles.firstOrNull())?.second?.requestFocus()
-            if (Motion.on) { panel.translationX = panelW / 3f; panel.alpha = 0f; panel.animate().translationX(0f).alpha(1f).setDuration(260).setInterpolator(Motion.glide).start() }
+            (tiles.firstOrNull { it.second.isSelected } ?: tiles.firstOrNull())?.second?.let {
+                it.requestFocus()
+                it.animate().cancel(); if (Motion.on) { it.scaleX = 1.06f; it.scaleY = 1.06f }   // already large as it slides in: its spring re-drew the whole panel for 400 ms
+            }
+            if (Motion.on) {                                           // on a layer: drawn once, then only moved and faded (drawn each frame it took 40-57 ms on the FPT box)
+                panel.translationX = panelW / 3f; panel.alpha = 0f
+                panel.animate().translationX(0f).alpha(1f).setDuration(260).setInterpolator(Motion.glide).withLayer().withEndAction {
+                    slid = true; for ((v, b) in waiting) v.setImageBitmap(b); waiting.clear()
+                }.start()
+            }
         }
         dialog.show()
         return dialog
@@ -430,6 +452,24 @@ object Customize {
                 x += w + g
             }
         }
+    }
+
+    /** The backgrounds' small pictures, kept between openings of the panel (about 400 KB each); let go when memory is short ([forget]). */
+    private val thumbs: MutableMap<String, Bitmap> = java.util.Collections.synchronizedMap(HashMap())
+    fun forget() = thumbs.clear()
+
+    /** [b] cropped to [w] x [h] from its middle, with rounded corners, so its tile needs no clip or scaling of its own. */
+    private fun round(b: Bitmap, w: Int, h: Int, r: Float): Bitmap {
+        val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val k = maxOf(w.toFloat() / b.width, h.toFloat() / b.height)
+        val p = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
+            shader = android.graphics.BitmapShader(b, android.graphics.Shader.TileMode.CLAMP, android.graphics.Shader.TileMode.CLAMP).apply {
+                setLocalMatrix(android.graphics.Matrix().apply { setScale(k, k); postTranslate((w - b.width * k) / 2, (h - b.height * k) / 2) })
+            }
+        }
+        Canvas(out).drawRoundRect(0f, 0f, w.toFloat(), h.toFloat(), r, r, p)
+        b.recycle()
+        return out
     }
 
     private fun ring(d: Float, w: Int, color: Int) = GradientDrawable().apply { cornerRadius = 12 * d; setStroke((w * d).toInt(), color); setColor(Color.TRANSPARENT) }
