@@ -306,6 +306,10 @@ Needs JDK 17, the Android SDK, Node.js and Python 3. Why some code looks odd: [d
 
 Credits: [scrcpy](https://github.com/Genymobile/scrcpy) (Apache-2.0), [JMuxer](https://github.com/samirkumardas/jmuxer) (MIT), [webview](https://github.com/webview/webview) (MIT), [JNA](https://github.com/java-native-access/jna) (Apache-2.0).
 
+## License
+
+[MIT](LICENSE)
+
 <!-- aio-desktop:start -->
 ### 🖥️ AIO Desktop
 

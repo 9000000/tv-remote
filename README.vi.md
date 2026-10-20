@@ -478,6 +478,10 @@ Sửa `app/shared/web` thì chỉ cần tải lại trang (app đọc thẳng t�
 
 Thay đổi từng bản: [CHANGELOG.md](CHANGELOG.md).
 
+## Giấy phép
+
+[MIT](LICENSE)
+
 <!-- aio-desktop:start -->
 ### 🖥️ AIO Desktop
 
