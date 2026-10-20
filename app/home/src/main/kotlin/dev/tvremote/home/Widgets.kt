@@ -34,6 +34,7 @@ import java.net.Inet4Address
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
+import java.util.Locale
 
 /**
  * The cards between the clock and the favourites (HomeConfig "widgets"), only to look at: no focus stops on them. Read off the
@@ -42,6 +43,7 @@ import java.util.Date
  *   system  memory, storage and the Wi-Fi signal as rings, the network's speed as a moving graph, the address, ADB, time on
  *   usage   a column per day of the last week, the most used apps with their share, today's app limits: from TV Setup (its
  *           HomeInfo provider), the count the limits themselves hold to
+ *   weather  the sky now, today's low and high and the next days ([Weather]: Open-Meteo, asked on a thread of its own, the last answer kept)
  *   calendar the month, a solar and a lunar day in every cell, today filled ([Month], one View; the lunar days from [Lunar], once a day)
  * and, smaller, stacked in a column beside them:
  *   lunar   the lunar date, the next full moon or new month, the days to Tết ([Lunar], worked out here)
@@ -51,7 +53,7 @@ import java.util.Date
 class Widgets(private val a: Activity, private val dp: (Number) -> Int) : LinearLayout(a) {
     /** What a card needs, gathered on a background thread. */
     class Facts(val ram: Pair<Long, Long>, val disk: Pair<Long, Long>, val ip: String, val eth: Boolean, val rssi: Int?, val up: Long,
-                val adb: Boolean, val usage: JSONObject?, val icons: Map<String, Drawable>, val timer: JSONObject?, val moon: Moon?, val cpu: Float?, val cores: Int, val cal: Cal? = null)
+                val adb: Boolean, val usage: JSONObject?, val icons: Map<String, Drawable>, val timer: JSONObject?, val moon: Moon?, val cpu: Float?, val cores: Int, val cal: Cal? = null, val wx: Weather.Forecast? = null)
 
     /** Today in the lunar calendar and the days until the next full moon (15th), new month (1st) and Tết. */
     class Moon(val day: Lunar.Day, val full: Int, val new: Int, val tet: Int)
@@ -68,9 +70,9 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         private val AMBER = intArrayOf(0xFFFFD27A.toInt(), 0xFFFF8A4C.toInt())
         private val ROSE = intArrayOf(0xFFFF7A7A.toInt(), 0xFFE0457B.toInt())
         private const val DIM = 0xA6FFFFFF.toInt()
-        private val BIG = setOf("system", "usage", "calendar")
+        private val BIG = setOf("system", "usage", "calendar", "weather")
         private const val PILLS = 300                                  // the small cards' column, dp
-        private const val CAL_WEIGHT = 1.35f                           // the month needs seven columns: a little more of the row than the others
+        private const val WX_WEIGHT = 0.9f; private const val CAL_WEIGHT = 1.35f                           // the month needs seven columns: a little more of the row than the others
 
         private var calKey = 0; private var calMemo: Cal? = null
 
@@ -107,6 +109,9 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             return Moon(day, full, new, tet)
         }
     }
+
+    /** Set by the screen: the weather arrived (or failed) on its own thread, the cards are read again. */
+    var onWeather: (() -> Unit)? = null
 
     private val sp = a.resources.displayMetrics.scaledDensity
     private val down = FloatArray(POINTS); private val up = FloatArray(POINTS)
@@ -148,8 +153,13 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val cal = if ("calendar" in want) month(Calendar.getInstance(), Calendar.getInstance(resources.configuration.locales[0]).firstDayOfWeek) else null
         // the CPU: apps may read neither /proc/stat nor loadavg, so TV Setup's shell measures it (null without TV Setup 0.14.1 or its ADB)
         val cpu = if ("system" in want) ask("cpu") else null
+        val typed = Store.get(a).optString("place")
+        val wx = if ("weather" in want) {
+            if (Weather.due(a, typed)) Weather.refresh(a, typed, resources.configuration.locales[0].language) { onWeather?.invoke() }
+            Weather.cached(a)
+        } else null
         return Facts((mem.totalMem - mem.availMem) to mem.totalMem, disk, ip, eth, rssi, SystemClock.elapsedRealtime(), adb, usage, icons, timer, moon,
-            cpu?.optDouble("busy", -1.0)?.takeIf { it >= 0 }?.toFloat(), cpu?.optInt("cores") ?: 0, cal)
+            cpu?.optDouble("busy", -1.0)?.takeIf { it >= 0 }?.toFloat(), cpu?.optInt("cores") ?: 0, cal, wx)
     }
 
     fun show(want: List<String>, f: Facts, note: String, label: (String) -> String) {
@@ -164,7 +174,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         // each big card's width, known before they are built: a narrow one leaves out its widest part rather than cutting words
         val pills = if (bigs.size >= 3) PILLS - 60 else PILLS           // three cards and the column: the column gives way a little
         val row = (if (width > 0) width else a.resources.displayMetrics.widthPixels - dp(96)) - (if (small.isNotEmpty() && bigs.isNotEmpty()) dp(pills + 20) else 0)
-        val weights = bigs.map { if (it == "calendar") CAL_WEIGHT else 1f }
+        val weights = bigs.map { when (it) { "calendar" -> CAL_WEIGHT; "weather" -> WX_WEIGHT; else -> 1f } }
         val unit = (row - dp(20) * (bigs.size - 1)) / weights.sum()
         bigs.forEachIndexed { i, w ->
             val each = (unit * weights[i]).toInt()
@@ -172,6 +182,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             when (w) {
                 "system" -> system(card, f, each)
                 "calendar" -> calendar(card, f, each)
+                "weather" -> weather(card, f, each)
                 else -> usage(card, f, label, each < dp(340))
             }
             addView(card, LayoutParams(0, -1, weights[i]).apply { if (i > 0) leftMargin = dp(20) })
@@ -340,6 +351,51 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val view = Month(a, c, Calendar.getInstance(resources.configuration.locales[0]).firstDayOfWeek, (width - dp(40)) / 7f)
         card.addView(head(title, if (width - dp(40) >= dp(320)) lunar else ""))
         card.addView(view, LayoutParams(-1, view.wanted).apply { topMargin = dp(6) })
+    }
+
+    /** The sky now with today's low and high, and the next days when the card is wide enough; without an answer yet, a short line. */
+    private fun weather(card: LinearLayout, f: Facts, width: Int) {
+        val w = f.wx
+        if (w == null) {
+            card.addView(head(a.getString(R.string.w_weather), ""))
+            card.addView(note(a.getString(R.string.wx_none)))
+            return
+        }
+        val stale = System.currentTimeMillis() - w.at > 3 * 3_600_000L        // offline for hours: say when this was
+        card.addView(head(w.place.ifEmpty { a.getString(R.string.wx_near) }, if (stale) hm(w.at) else ""))
+        val body = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val now = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        now.addView(Sky(a, w.kind, w.night), LayoutParams(dp(56), dp(56)))
+        val words = LinearLayout(a).apply { orientation = VERTICAL }
+        words.addView(text("${w.temp}°", 30f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) })
+        words.addView(text(a.getString(kindWords(w.kind)), 13f, Color.WHITE))
+        val today = w.days[0]
+        words.addView(text(a.getString(R.string.wx_hi_lo, today.max, today.min), 12f, DIM))
+        now.addView(words, LayoutParams(-2, -2).apply { leftMargin = dp(12) })
+        body.addView(now, LayoutParams(0, -2, 1f))
+        val next = w.days.drop(1)
+        val side = width - dp(40) - dp(200) >= dp(62) * next.size              // beside "now" when wide, else a row under it
+        if (next.isNotEmpty() && (side || width - dp(40) >= dp(62) * next.size)) {
+            val days = LinearLayout(a).apply { orientation = HORIZONTAL }
+            val names = a.resources.getStringArray(R.array.cal_dow)
+            next.forEachIndexed { i, d ->
+                val col = LinearLayout(a).apply { orientation = VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
+                val dow = try { Calendar.getInstance().apply { time = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(d.date)!! }.get(Calendar.DAY_OF_WEEK) - 1 } catch (e: Exception) { -1 }
+                col.addView(text(names.getOrElse(dow) { "" }, 12f, DIM).apply { gravity = Gravity.CENTER })
+                col.addView(Sky(a, d.kind, false), LayoutParams(dp(28), dp(28)).apply { topMargin = dp(2) })
+                col.addView(text("${d.max}° ${d.min}°", 12f, Color.WHITE).apply { gravity = Gravity.CENTER })
+                days.addView(col, if (side) LayoutParams(dp(62), -2).apply { if (i > 0) leftMargin = dp(2) } else LayoutParams(0, -2, 1f))
+            }
+            if (side) body.addView(days, LayoutParams(-2, -2).apply { leftMargin = dp(8) })
+            else { card.addView(body, LayoutParams(-1, -2).apply { topMargin = dp(6) }); card.addView(days, LayoutParams(-1, -2).apply { topMargin = dp(8) }); return }
+        }
+        card.addView(body, LayoutParams(-1, 0, 1f).apply { topMargin = dp(6) })
+    }
+
+    private fun kindWords(k: Weather.Kind) = when (k) {
+        Weather.Kind.CLEAR -> R.string.wx_clear; Weather.Kind.PARTLY -> R.string.wx_partly; Weather.Kind.CLOUD -> R.string.wx_cloud
+        Weather.Kind.FOG -> R.string.wx_fog; Weather.Kind.DRIZZLE -> R.string.wx_drizzle; Weather.Kind.RAIN -> R.string.wx_rain
+        Weather.Kind.SNOW -> R.string.wx_snow; Weather.Kind.STORM -> R.string.wx_storm
     }
 
     /** [narrow]: the apps only, no columns of the days. */
@@ -527,6 +583,68 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
                 if (secs[i] > 0) cv.drawRoundRect(fills[i], rad, rad, if (i == 6) p else past)
                 t.color = if (i == 6) Color.WHITE else DIM
                 cv.drawText(names[i], slot * i + slot / 2, height - 3 * sp, t)
+            }
+        }
+    }
+
+    /** A sky in one drawn square (sun or moon, cloud, rain, snow, bolt, fog) in the cards' colours; paints made once, drawing allocates nothing. */
+    private inner class Sky(c: Context, val kind: Weather.Kind, val night: Boolean) : View(c) {
+        private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
+        private val line = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND }
+        private val path = Path(); private val cut = Path(); private val box = RectF()
+        private val cloudColor = 0xFFE4ECFA.toInt()
+
+        private fun cloud(cv: Canvas, s: Float, dx: Float, dy: Float, color: Int = cloudColor) {
+            fill.color = color
+            box.set((0.12f + dx) * s, (0.46f + dy) * s, (0.88f + dx) * s, (0.72f + dy) * s); cv.drawRoundRect(box, 0.13f * s, 0.13f * s, fill)
+            cv.drawCircle((0.38f + dx) * s, (0.50f + dy) * s, 0.17f * s, fill)
+            cv.drawCircle((0.61f + dx) * s, (0.44f + dy) * s, 0.21f * s, fill)
+        }
+
+        private fun body(cv: Canvas, s: Float, cx: Float, cy: Float, r: Float) {         // the sun, or the moon at night
+            if (!night) {
+                fill.color = AMBER[0]; cv.drawCircle(cx * s, cy * s, r * s, fill)
+                line.color = AMBER[0]; line.strokeWidth = 0.055f * s
+                for (i in 0 until 8) {
+                    val t = Math.toRadians(i * 45.0); val c = Math.cos(t).toFloat(); val n = Math.sin(t).toFloat()
+                    cv.drawLine((cx + c * r * 1.4f) * s, (cy + n * r * 1.4f) * s, (cx + c * r * 1.75f) * s, (cy + n * r * 1.75f) * s, line)
+                }
+            } else {
+                path.rewind(); path.addCircle(cx * s, cy * s, r * 1.15f * s, Path.Direction.CW)
+                cut.rewind(); cut.addCircle((cx + r * 0.7f) * s, (cy - r * 0.45f) * s, r * 0.95f * s, Path.Direction.CW)
+                path.op(cut, Path.Op.DIFFERENCE); fill.color = 0xFFFFE9A8.toInt(); cv.drawPath(path, fill)
+            }
+        }
+
+        override fun onDraw(cv: Canvas) {
+            val s = minOf(width, height).toFloat()
+            line.strokeWidth = 0.055f * s
+            when (kind) {
+                Weather.Kind.CLEAR -> body(cv, s, 0.5f, 0.5f, 0.2f)
+                Weather.Kind.PARTLY -> { body(cv, s, 0.36f, 0.36f, 0.15f); cloud(cv, s, 0.06f, 0.1f) }
+                Weather.Kind.CLOUD -> cloud(cv, s, 0f, 0f)
+                Weather.Kind.FOG -> {
+                    cloud(cv, s, 0f, -0.14f, 0xFFB9C4D8.toInt())
+                    line.color = DIM; line.strokeWidth = 0.06f * s
+                    cv.drawLine(0.2f * s, 0.74f * s, 0.8f * s, 0.74f * s, line); cv.drawLine(0.3f * s, 0.88f * s, 0.7f * s, 0.88f * s, line)
+                }
+                Weather.Kind.DRIZZLE, Weather.Kind.RAIN -> {
+                    cloud(cv, s, 0f, -0.14f, 0xFFB9C4D8.toInt())
+                    line.color = CYAN[0]; line.strokeWidth = 0.06f * s
+                    val n = if (kind == Weather.Kind.RAIN) 3 else 2
+                    for (i in 0 until n) { val x = (if (n == 3) 0.3f + 0.2f * i else 0.4f + 0.2f * i) * s; cv.drawLine(x, 0.74f * s, x - 0.06f * s, 0.9f * s, line) }
+                }
+                Weather.Kind.SNOW -> {
+                    cloud(cv, s, 0f, -0.14f, 0xFFB9C4D8.toInt())
+                    fill.color = Color.WHITE
+                    for (i in 0 until 3) cv.drawCircle((0.3f + 0.2f * i) * s, (if (i == 1) 0.88f else 0.8f) * s, 0.04f * s, fill)
+                }
+                Weather.Kind.STORM -> {
+                    cloud(cv, s, 0f, -0.14f, 0xFF9AA6BE.toInt())
+                    path.rewind(); path.moveTo(0.54f * s, 0.62f * s); path.lineTo(0.4f * s, 0.8f * s); path.lineTo(0.5f * s, 0.8f * s)
+                    path.lineTo(0.44f * s, 0.96f * s); path.lineTo(0.62f * s, 0.74f * s); path.lineTo(0.52f * s, 0.74f * s); path.close()
+                    fill.color = AMBER[0]; cv.drawPath(path, fill)
+                }
             }
         }
     }

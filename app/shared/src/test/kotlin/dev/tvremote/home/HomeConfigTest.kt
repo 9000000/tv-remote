@@ -26,10 +26,18 @@ class HomeConfigTest {
     }
 
     @Test fun widgetsAreKnownOnesOnceInTheirOrderAsSent() {
-        val c = HomeConfig.clean(JSONObject().put("widgets", JSONArray(listOf("usage", "weather", "usage", "system"))))
+        val c = HomeConfig.clean(JSONObject().put("widgets", JSONArray(listOf("usage", "bogus", "usage", "system"))))
         val w = c.getJSONArray("widgets").let { a -> (0 until a.length()).map { a.getString(it) } }
         assertEquals(listOf("usage", "system"), w)
         assertEquals(0, HomeConfig.clean(JSONObject()).getJSONArray("widgets").length())   // none until asked for
+    }
+
+    @Test fun theWeatherCardAndItsPlace() {
+        val c = HomeConfig.clean(JSONObject().put("widgets", JSONArray(listOf("weather"))).put("place", "  Đà   Nẵng " + "x".repeat(100)))
+        assertEquals("weather", c.getJSONArray("widgets").getString(0))
+        assertEquals(HomeConfig.PLACE_MAX, c.getString("place").length)
+        assertEquals("Đà Nẵng x", c.getString("place").take(9))
+        assertEquals("", HomeConfig.clean(JSONObject()).getString("place"))      // automatic until a city is typed
     }
 
     @Test fun anAppInTheDockIsNeverHidden() {

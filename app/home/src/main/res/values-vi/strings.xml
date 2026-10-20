@@ -106,4 +106,17 @@
     <string name="b_m">p</string>
     <string name="b_h">g</string>
     <string name="b_locked">Đã khóa</string>
+    <string name="w_weather">Thời tiết</string>
+    <string name="c_weather_sub">tự tìm nơi ở, 3 ngày tới</string>
+    <string name="wx_none">Chưa có thời tiết: đang chờ mạng</string>
+    <string name="wx_near">Gần bạn</string>
+    <string name="wx_hi_lo">Cao %1$d° · Thấp %2$d°</string>
+    <string name="wx_clear">Trời quang</string>
+    <string name="wx_partly">Có mây</string>
+    <string name="wx_cloud">Nhiều mây</string>
+    <string name="wx_fog">Sương mù</string>
+    <string name="wx_drizzle">Mưa phùn</string>
+    <string name="wx_rain">Mưa</string>
+    <string name="wx_snow">Tuyết</string>
+    <string name="wx_storm">Dông</string>
 </resources>

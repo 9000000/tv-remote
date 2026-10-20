@@ -134,7 +134,7 @@ class HomeActivity : Activity() {
         if (resources.displayMetrics.widthPixels < dp(820)) for (i in 0 until pills.childCount) (pills.getChildAt(i) as Pill).compact()
         head.addView(pills)
         col.addView(head)
-        widgets = Widgets(this, ::dp).apply { visibility = View.GONE }
+        widgets = Widgets(this, ::dp).apply { visibility = View.GONE; onWeather = { runOnUiThread { if (!isDestroyed) widgetsRead() } } }
         col.addView(widgets, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(28) })
 
         // the favourites, in a band of their own

@@ -108,4 +108,17 @@
     <string name="b_m">m</string>
     <string name="b_h">h</string>
     <string name="b_locked">Locked</string>
+    <string name="w_weather">Weather</string>
+    <string name="c_weather_sub">place by itself, next 3 days</string>
+    <string name="wx_none">No weather yet: waiting for the internet</string>
+    <string name="wx_near">Near you</string>
+    <string name="wx_hi_lo">High %1$d° · Low %2$d°</string>
+    <string name="wx_clear">Clear</string>
+    <string name="wx_partly">Partly cloudy</string>
+    <string name="wx_cloud">Cloudy</string>
+    <string name="wx_fog">Fog</string>
+    <string name="wx_drizzle">Drizzle</string>
+    <string name="wx_rain">Rain</string>
+    <string name="wx_snow">Snow</string>
+    <string name="wx_storm">Thunderstorm</string>
 </resources>

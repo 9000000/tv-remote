@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />               <!-- the weather card (Weather: Open-Meteo, the place from the internet address) -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />   <!-- Wi-Fi, cable or offline on the network button -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />      <!-- the Wi-Fi signal on the system card (Widgets) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />   <!-- the Wi-Fi's name on the network button: granted over ADB only (HomeConfig.GRANT_WIFI) -->

@@ -10,8 +10,8 @@ const HOME_WALLS = { night: '#0b0f1a,#18223f', ocean: '#03192b,#0a4a66', dusk: '
 const HOME_WALL_WORDS = { night: 'home.wall_night', ocean: 'home.wall_ocean', dusk: 'home.wall_dusk', forest: 'home.wall_forest', aurora: 'home.wall_aurora', black: 'home.wall_black',
   sunset: 'home.wall_sunset', ember: 'home.wall_ember', plum: 'home.wall_plum', midnight: 'home.wall_midnight', teal: 'home.wall_teal', slate: 'home.wall_slate', graphite: 'home.wall_graphite', navy: 'home.wall_navy', wine: 'home.wall_wine', moss: 'home.wall_moss' };
 const HOME_DOCK_MAX = 6;                                              // HomeConfig.DOCK_MAX
-const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer'];          // HomeConfig.WIDGETS, in the order drawn
-const HOME_WIDGET_WORDS = { system: 'home.w_system', usage: 'home.w_usage', calendar: 'home.w_calendar', lunar: 'home.w_lunar', timer: 'home.w_timer' };
+const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer', 'weather'];          // HomeConfig.WIDGETS, in the order drawn
+const HOME_WIDGET_WORDS = { system: 'home.w_system', usage: 'home.w_usage', calendar: 'home.w_calendar', lunar: 'home.w_lunar', timer: 'home.w_timer', weather: 'home.w_weather' };
 
 // The 🏠 card's line and its Customize button: only where TV Home is on the TV
 async function homeCard() {
@@ -82,6 +82,12 @@ async function homeOpen() {
   const pin = el('button', { type: 'button', className: 'primary', textContent: T('home.note_pin'), onclick: () => send({ note: note.value.trim() }) });
   const unpin = el('button', { type: 'button', textContent: T('home.note_clear'), onclick: () => { note.value = ''; send({ note: '' }); } });
   note.addEventListener('keydown', (e) => { if (e.key === 'Enter') pin.click(); });
+  // the weather card's city (HomeConfig.PLACE_MAX); empty = the TV finds its own place
+  const place = el('input', { type: 'text', maxLength: 60, placeholder: T('home.place_ph'), 'aria-label': T('home.place') });
+  const placeSet = el('button', { type: 'button', className: 'primary', textContent: T('home.place_set'), onclick: () => send({ place: place.value.trim() }) });
+  const placeAuto = el('button', { type: 'button', textContent: T('home.place_auto'), onclick: () => { place.value = ''; send({ place: '' }); } });
+  place.addEventListener('keydown', (e) => { if (e.key === 'Enter') placeSet.click(); });
+  const placeHead = el('h3', { textContent: T('home.place') }), placeLine = UI.line(place, placeSet, placeAuto);
   const noteHead = el('h3', { textContent: T('home.note') }), noteLine = UI.line(note, pin, unpin);
   const gal = el('div', { className: 'homegal' }), credit = el('p', { className: 'note', textContent: T('home.gal_note') });
   const galHead = el('h3', { textContent: T('home.gallery') });
@@ -108,8 +114,11 @@ async function homeOpen() {
     dream.checked = !!c.dream;
     dream.closest('label').hidden = c.dream === undefined;           // a TV Home older than the screensaver
     const w = c.widgets;                                              // absent: a TV Home older than the cards
-    wLines.forEach((l) => { l.hidden = !w; });
+    wLines.forEach((l, i) => { l.hidden = !w || (HOME_WIDGETS[i] === 'weather' && c.place === undefined); });   // weather: a TV Home older than it has no card
     for (const k of HOME_WIDGETS) boxes[k].checked = !!w && w.includes(k);
+    placeHead.hidden = placeLine.hidden = c.place === undefined || !boxes.weather.checked;   // a TV Home older than the weather; and only while the card is on
+    if (document.activeElement !== place) place.value = c.place || '';
+    placeAuto.disabled = !c.place;
     noteHead.hidden = noteLine.hidden = c.note === undefined;     // a TV Home older than the note
     if (document.activeElement !== note) note.value = c.note || '';
     unpin.disabled = !c.note;
@@ -124,7 +133,7 @@ async function homeOpen() {
     el('label', { className: 'check' }, greet, el('span', { textContent: T('home.greet') })),
     el('label', { className: 'check' }, anim, el('span', { textContent: T('home.anim') })),
     el('label', { className: 'check' }, dream, el('span', { textContent: T('home.dream') })),
-    ...wLines,
+    ...wLines, placeHead, placeLine,
     noteHead, noteLine,
     el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden));
   d.addEventListener('close', () => { d.remove(); homeCard(); });

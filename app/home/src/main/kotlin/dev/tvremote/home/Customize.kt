@@ -152,6 +152,7 @@ object Customize {
         tile(R.drawable.ic_calendar, a.getString(R.string.w_calendar), a.getString(R.string.c_calendar_sub), "calendar", true)
         tile(R.drawable.ic_moon, a.getString(R.string.w_lunar), a.getString(R.string.c_lunar_sub), "lunar", true)
         tile(R.drawable.ic_timer, a.getString(R.string.w_timer), a.getString(R.string.c_timer_sub), "timer", true)
+        tile(R.drawable.ic_weather, a.getString(R.string.w_weather), a.getString(R.string.c_weather_sub), "weather", true)
         val note = conf.optString("note")
         if (note.isNotEmpty()) {                                       // written on the phone; here it can only be taken down
             val sub = label(a.getString(R.string.c_note_clear), 12f, DIM).apply { maxLines = 1 }
