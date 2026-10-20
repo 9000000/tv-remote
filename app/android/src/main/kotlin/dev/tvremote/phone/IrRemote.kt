@@ -247,10 +247,13 @@ private fun MainActivity.irFind(key0: String = "POWER", at0: Int = -1) {
     val steps = IrCodes.distinct(irCatalog(), key)
     irPage(T("ir.find"), { irRemote() }) {
         val chips = LinearLayout(this@irFind)
+        chips.isBaselineAligned = false                               // a two-line chip pulled itself down
         val names = listOf("POWER" to T("remote.power"), "HOME" to T("rkey.home"), "VOL_UP" to T("ir.vol"), "MUTE" to T("rkey.mute"))
         names.forEachIndexed { i, (k, words) ->
             val c = button(words, BTN)
             c.textSize = 13f
+            c.maxLines = 1; c.ellipsize = android.text.TextUtils.TruncateAt.END   // four in a row: "Tắt tiếng" went to two lines
+            c.setPadding(dp(4), 0, dp(4), 0)
             c.setOn(k == key)
             c.setOnClickListener { if (k != key) irFind(k, -1) }
             chips.addView(c, cell(40, i > 0))

@@ -355,6 +355,9 @@ internal fun Context.oval(color: Int): GradientDrawable {
  * front, so the list can be scanned without reading every line (drawn icons, not emoji: those look different on every phone).
  */
 internal fun Activity.menu(title: String, primary: Int, items: List<Triple<String, String, () -> Unit>>) {
+    // opened from a choice of another menu (now, or once its list came in): Back returns there, no close and open again
+    val from = menuFrom?.takeIf { it.first != title && android.os.SystemClock.uptimeMillis() - it.second < 8000 }?.third
+    menuFrom = null
     val list = col()
     list.setPadding(dp(16), dp(8), dp(16), dp(4))
     var dialog: Popup? = null
@@ -386,12 +389,23 @@ internal fun Activity.menu(title: String, primary: Int, items: List<Triple<Strin
         row.isClickable = true
         row.isFocusable = true
         row.contentDescription = name
-        row.setOnClickListener { dialog?.dismiss(); run() }
+        row.setOnClickListener { dialog?.dismiss(); menuFrom = Triple(title, android.os.SystemClock.uptimeMillis()) { menu(title, primary, items) }; run() }
         val lp = LinearLayout.LayoutParams(-1, -2)
         lp.topMargin = dp(8)
         list.addView(row, lp)
     }
     val sv = ScrollView(this)
     sv.addView(list)
-    dialog = Popup.Builder(this).setTitle(title).setView(sv).setNegativeButton(dev.tvremote.core.T("common.close"), null).show()
+    val b = Popup.Builder(this).setTitle(title).setView(sv).setNegativeButton(dev.tvremote.core.T("common.close"), null)
+    if (from != null) b.setNeutralButton(dev.tvremote.core.T("common.back")) { _, _ -> from() }
+    val shown = b.show()
+    dialog = shown
+    if (from != null) shown.setOnKeyListener { d, key, e ->               // the phone's own back: one step up too
+        if (key != android.view.KeyEvent.KEYCODE_BACK) return@setOnKeyListener false
+        if (e.action == android.view.KeyEvent.ACTION_UP) { d.dismiss(); from() }
+        true
+    }
 }
+
+/** The menu a choice was just picked in (its title, when, how to open it again), for the next menu's Back. */
+private var menuFrom: Triple<String, Long, () -> Unit>? = null
