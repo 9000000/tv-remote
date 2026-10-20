@@ -16,7 +16,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Remote hồng ngoại lưu được nhiều remote có tên (TV phòng khách, box nhà mạng...): mở Remote hồng ngoại là thấy danh sách, bấm là dùng, không phải dò lại. **Thêm remote** để chọn hãng hoặc dò mã rồi đặt tên; đổi tên, xóa ngay trong danh sách; **Xuất file** / **Nhập file** để chuyển sang điện thoại khác (nhập chỉ thêm remote chưa có)
 - Nút **TV Home** trong menu Thêm của remote: mở Tùy chỉnh TV Home (chưa cài thì dẫn tới thẻ Màn hình chính)
 - Launcher không đang làm màn hình chính (FLauncher...) không còn bị coi là "Cần giữ": gỡ, tắt được; launcher đang dùng vẫn được giữ
-- TV Home không hiện các app hệ thống chỉ dành cho điện thoại mà hãng để lại (thông báo hệ thống, phóng to màn hình, cập nhật thử...)
+- TV Home không hiện các app hệ thống chỉ dành cho điện thoại mà hãng để lại (thông báo hệ thống, phóng to màn hình, app mẫu SystemUpdaterSample...)
 - Sửa: tab Ứng dụng: gỡ / tắt một app không còn tải lại cả danh sách
 - Sửa: app điện thoại: bấm Quay lại từ menu con thì tiêu đề menu trước bị sai
 - Sửa: TV đã lưu: trong thẻ hẹp (nửa trang trên máy tính) các nút xuống dòng dưới tên TV, không ép chữ
@@ -31,7 +31,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Infrared remote keeps several remotes by name (living room TV, the operator's box...): Infrared remote opens on that list, one tap to use one, no finding again. **Add a remote** picks a brand or finds the code, then names it; rename and delete in the list; **Export** / **Import** to move them to another phone (import adds only the ones not there)
 - A **TV Home** button in the remote's More menu: opens Customize TV Home (or, when it is not installed, the Home screen card)
 - A launcher that is not the home screen now (FLauncher...) is no longer "Must keep": it can be removed or turned off; the one in use is still kept
-- TV Home leaves out the phone-only system apps a maker left behind (system notification, screen zoom, an updater test...)
+- TV Home leaves out the phone-only system apps a maker left behind (system notification, screen zoom, the SystemUpdaterSample demo...)
 - Fix: Apps tab: removing or turning off an app no longer reads the whole list again
 - Fix: phone app: Back from a sub-menu showed the wrong title on the menu before
 - Fix: saved TVs: in a narrow card (half the page on a computer) the buttons go under the TV's name instead of squeezing it

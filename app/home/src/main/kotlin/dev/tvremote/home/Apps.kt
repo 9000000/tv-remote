@@ -31,7 +31,7 @@ object Apps {
             for (ri in found) {
                 val p = ri.activityInfo.packageName
                 if (p == c.packageName || p in out) continue
-                if (cat == Intent.CATEGORY_LAUNCHER && firmware(ri.activityInfo.applicationInfo)) continue
+                if ((cat == Intent.CATEGORY_LAUNCHER || p.startsWith("com.example.")) && firmware(ri.activityInfo.applicationInfo)) continue   // Android's samples a maker shipped (SystemUpdaterSample has a TV entry)
                 out[p] = App(p, ri.loadLabel(pm).toString().trim(), ri.activityInfo)
             }
         }
