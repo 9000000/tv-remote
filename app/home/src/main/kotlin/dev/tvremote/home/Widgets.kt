@@ -176,7 +176,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             showBig(want, f, label, timerView, noteView); return
         }
         if (tall != null && tall.height != -2) { tall.height = -2; layoutParams = tall }
-        val bigs = want.filter { it in BIG }
+        val bigs = want.filter { it in BIG }.take(HomeConfig.ROW_CARDS)
         val small = ArrayList<View>()
         for (w in want) when (w) { "lunar" -> f.moon?.let { small += lunar(it) }; "timer" -> timerView?.let { small += it } }
         noteView?.let { small += it }
@@ -588,13 +588,31 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         addView(text(detail, 11f, DIM).apply { gravity = Gravity.CENTER }, LayoutParams(dp(84), -2))
     }
 
-    private fun chips(items: List<Pair<String, Int>>) = LinearLayout(a).apply {
+    private fun chips(items: List<Pair<String, Int>>) = Fit(a).apply {
         orientation = HORIZONTAL
         items.forEachIndexed { i, (t, c) ->
             addView(text(t, 12f, c).apply {
                 background = GradientDrawable().apply { cornerRadius = dp(10).toFloat(); setColor(0x1FFFFFFF) }
                 setPadding(dp(9), dp(2), dp(9), dp(2))
             }, LayoutParams(-2, -2).apply { if (i > 0) leftMargin = dp(6) })
+        }
+    }
+
+    /** A row that leaves out the chips after the first that do not fit whole: a narrow card showed a sliver of "ADB". */
+    private class Fit(c: Context) : LinearLayout(c) {
+        override fun onMeasure(w: Int, h: Int) {
+            val room = MeasureSpec.getSize(w) - paddingLeft - paddingRight
+            var used = 0
+            for (i in 0 until childCount) {
+                val v = getChildAt(i)
+                v.measure(MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED), h)
+                val need = v.measuredWidth + ((v.layoutParams as? MarginLayoutParams)?.leftMargin ?: 0)
+                val fits = i == 0 || MeasureSpec.getMode(w) == MeasureSpec.UNSPECIFIED || used + need <= room
+                if (fits) used += need
+                val vis = if (fits) View.VISIBLE else View.GONE
+                if (v.visibility != vis) v.visibility = vis               // the same answer next time: no layout loop
+            }
+            super.onMeasure(w, h)
         }
     }
 

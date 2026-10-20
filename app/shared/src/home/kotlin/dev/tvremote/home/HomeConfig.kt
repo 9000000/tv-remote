@@ -43,6 +43,8 @@ object HomeConfig {
     val WIDGETS = listOf("system", "usage", "calendar", "lunar", "timer", "weather")
     val LAYOUTS = listOf("row", "big")
     const val BIG_SLOTS = 3
+    /** Large cards (system, usage, calendar, weather) a row holds at 1920x1080; four cut every word to "…". The rest wait. */
+    const val ROW_CARDS = 3
     const val NOTE_MAX = 140
     const val PLACE_MAX = 60
     /** TV Setup's answer to TV Home about app use (its HomeInfo provider): `call(USAGE, "usage")` → Bundle "json". */

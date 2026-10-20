@@ -12,6 +12,7 @@ const HOME_WALL_WORDS = { night: 'home.wall_night', ocean: 'home.wall_ocean', du
 const HOME_DOCK_MAX = 6;                                              // HomeConfig.DOCK_MAX
 const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer', 'weather'];          // HomeConfig.WIDGETS, in the order drawn
 const HOME_LAYOUTS = { row: 'home.layout_row', big: 'home.layout_big' };   // HomeConfig.LAYOUTS
+const HOME_ROW_CARDS = 3, HOME_LARGE = ['system', 'usage', 'calendar', 'weather'];   // HomeConfig.ROW_CARDS, Widgets.BIG: what "row" shows
 const HOME_BIG_SLOTS = 3;                                             // HomeConfig.BIG_SLOTS: what "big" shows (a pinned note takes one)
 const HOME_WIDGET_WORDS = { system: 'home.w_system', usage: 'home.w_usage', calendar: 'home.w_calendar', lunar: 'home.w_lunar', timer: 'home.w_timer', weather: 'home.w_weather' };
 
@@ -122,9 +123,11 @@ async function homeOpen() {
     wLines.forEach((l, i) => { l.hidden = !w || has(HOME_WIDGETS[i]) || (HOME_WIDGETS[i] === 'weather' && c.place === undefined); });   // weather: a TV Home older than it has no card
     wHead.hidden = !w;
     const slots = c.note ? HOME_BIG_SLOTS - 1 : HOME_BIG_SLOTS;
+    const waits = (k, i) => c.wlayout === 'big' ? (i >= slots ? T('home.w_waits', { n: slots }) : '')
+      : HOME_LARGE.includes(k) && w.slice(0, i).filter((x) => HOME_LARGE.includes(x)).length >= HOME_ROW_CARDS ? T('home.w_waits_row', { n: HOME_ROW_CARDS }) : '';
     const wmove = (i, j) => { const n = w.slice(); [n[i], n[j]] = [n[j], n[i]]; send({ widgets: n }); };
     wList.replaceChildren(...(w || []).map((k, i) => el('div', { className: 'item' },
-      el('div', { className: 'name' }, el('span', { textContent: T(HOME_WIDGET_WORDS[k]) }), ...(c.wlayout === 'big' && i >= slots ? [el('small', { textContent: T('home.w_waits', { n: slots }) })] : [])),
+      el('div', { className: 'name' }, el('span', { textContent: T(HOME_WIDGET_WORDS[k]) }), ...(waits(k, i) ? [el('small', { textContent: waits(k, i) })] : [])),
       el('div', { className: 'acts' },
         tool('↑', T('home.up'), () => wmove(i, i - 1), i === 0),
         tool('↓', T('home.down'), () => wmove(i, i + 1), i === w.length - 1),

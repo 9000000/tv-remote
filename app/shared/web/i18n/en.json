@@ -2512,6 +2512,7 @@
  "home.widgets": "Widgets on the screen",
  "home.w_off": "Turn this card off",
  "home.w_waits": "Not shown: only the first {n}",
+ "home.w_waits_row": "Not shown: a row holds {n} large cards",
  "home.layout": "Widget layout",
  "home.layout_row": "In a row",
  "home.layout_big": "One big, two small",
