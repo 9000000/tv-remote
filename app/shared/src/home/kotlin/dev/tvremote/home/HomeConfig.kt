@@ -28,6 +28,8 @@ object HomeConfig {
     const val RECEIVER = "$PKG/.HomeReceiver"
     const val DREAM = "$PKG/.HomeDream"                               // the screensaver's component, as `screensaver_components` writes it
     const val WRITE_SECURE = "android.permission.WRITE_SECURE_SETTINGS"
+    /** The Wi-Fi's name is location to Android (8.1+): granted over ADB when TV Home is installed or set up, never asked on the TV. */
+    const val GRANT_WIFI = "pm grant $PKG android.permission.ACCESS_FINE_LOCATION >/dev/null 2>&1; "
     const val DOCK_MAX = 6
     private const val HIDDEN_MAX = 300
     val WALLS = listOf("night", "ocean", "dusk", "forest", "aurora", "black", "sunset", "ember", "plum", "midnight", "teal", "slate", "graphite", "navy", "wine", "moss", "photo")

@@ -22,6 +22,7 @@ import android.media.tv.TvContract
 import android.media.tv.TvInputInfo
 import android.media.tv.TvInputManager
 import android.net.ConnectivityManager
+import android.net.wifi.WifiManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
@@ -531,6 +532,12 @@ class HomeActivity : Activity() {
         }
     }
 
+    /** The Wi-Fi's name; null without the location grant (a client gives it over ADB) or with location off: then just "Wi-Fi". */
+    private fun ssid(): String? = try {
+        @Suppress("DEPRECATION") (applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager).connectionInfo?.ssid
+            ?.removeSurrounding("\"")?.takeIf { it.isNotBlank() && it != "<unknown ssid>" }
+    } catch (e: Exception) { null }
+
     private fun clockAndDay() {
         val h24 = conf.optBoolean("clock24", true)
         clock.format24Hour = if (h24) "HH:mm" else "h:mm"
@@ -545,7 +552,7 @@ class HomeActivity : Activity() {
         val (label, off) = @Suppress("DEPRECATION") when {
             net == null || !net.isConnected -> getString(R.string.offline) to true
             net.type == ConnectivityManager.TYPE_ETHERNET -> getString(R.string.cable) to false
-            else -> getString(R.string.wifi) to false
+            else -> (ssid() ?: getString(R.string.wifi)) to false
         }
         netPill.set(label, if (off) 0.5f else 1f, if (net?.type == ConnectivityManager.TYPE_ETHERNET) R.drawable.ic_globe else R.drawable.ic_wifi)
     }
@@ -653,7 +660,7 @@ class HomeActivity : Activity() {
             }
             val tint = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()), intArrayOf(0xFF111318.toInt(), Color.WHITE))
             addView(ImageView(c).apply { setImageResource(icon); imageTintList = tint; isDuplicateParentStateEnabled = true }, LayoutParams((20 * d).toInt(), (20 * d).toInt()))
-            word = TextView(c).apply { text = label; textSize = 15f; setTextColor(tint); isDuplicateParentStateEnabled = true; setPadding((8 * d).toInt(), 0, 0, 0) }
+            word = TextView(c).apply { text = label; textSize = 15f; maxLines = 1; maxWidth = (200 * d).toInt(); ellipsize = TextUtils.TruncateAt.END; setTextColor(tint); isDuplicateParentStateEnabled = true; setPadding((8 * d).toInt(), 0, 0, 0) }
             if (iconOnly) { word.visibility = View.GONE; contentDescription = label } else addView(word)
             setOnClickListener { onClick() }
         }

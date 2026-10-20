@@ -22,7 +22,7 @@ object Home {
             JSONObject().also { o -> for (k in change.keys()) if (c.has(k)) o.put(k, c.get(k)) } }.toString().toByteArray(Charsets.UTF_8))
         // the screensaver is a system setting: TV Home may write it once the shell has granted it that (only ADB can)
         val grant = if (change?.optBoolean("dream") == true) "pm grant ${HomeConfig.PKG} ${HomeConfig.WRITE_SECURE} 2>&1; " else ""
-        val out = sh(grant + "am broadcast --include-stopped-packages -n ${HomeConfig.RECEIVER}$arg 2>&1; echo '#~#'; " + LauncherSwap.RESOLVE_HOME)
+        val out = sh(grant + (if (change != null) HomeConfig.GRANT_WIFI else "") + "am broadcast --include-stopped-packages -n ${HomeConfig.RECEIVER}$arg 2>&1; echo '#~#'; " + LauncherSwap.RESOLVE_HOME)
         val m = Regex("data=\"([A-Za-z0-9+/=]+)\"").find(out)
             ?: return JSONObject().put("installed", false)            // no receiver: TV Home is not on this TV
         val r = JSONObject(String(B64.decode(m.groupValues[1]), Charsets.UTF_8))
@@ -55,7 +55,7 @@ object Home {
             val out = Setup(adb, dir, lang) { }.install(file)
             if (!out.contains("Success")) throw IOException("launcher:install:" + out.trim().lines().lastOrNull().orEmpty().take(200))
         } finally { file.delete() }
-        try { adb.shell("cmd package compile -m speed -f ${HomeConfig.PKG} >/dev/null 2>&1", 120000) } catch (x: IOException) { }   // as LauncherInstall
+        try { adb.shell(HomeConfig.GRANT_WIFI + "cmd package compile -m speed -f ${HomeConfig.PKG} >/dev/null 2>&1", 120000) } catch (x: IOException) { }   // as LauncherInstall
         checked = null
         return call(sh, null)
     }

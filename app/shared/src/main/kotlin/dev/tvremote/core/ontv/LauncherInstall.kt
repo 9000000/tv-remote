@@ -1,5 +1,6 @@
 package dev.tvremote.core.ontv
 import dev.tvremote.core.adb.Adb
+import dev.tvremote.home.HomeConfig
 import java.io.File
 import java.io.IOException
 
@@ -60,7 +61,7 @@ class LauncherInstall(private val adb: Adb, private val dir: File, private val g
             if (!installed(e.pkg)) throw IOException("launcher:install:removed by the TV right after install")   // some boxes drop apps they do not allow
             progress?.at("install", 75)
             // compiled ahead now, not on first use: a home screen started cold on a slow TV chip took ~1.6 s, 0.4 s compiled (cleanyourtv #40)
-            try { adb.shell("cmd package compile -m speed -f ${e.pkg} >/dev/null 2>&1", 120000) } catch (x: IOException) { }
+            try { adb.shell((if (e.kind == "self") HomeConfig.GRANT_WIFI else "") + "cmd package compile -m speed -f ${e.pkg} >/dev/null 2>&1", 120000) } catch (x: IOException) { }
         }
         english(e, f.sdk)
         progress?.at("swap", 85)
