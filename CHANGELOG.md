@@ -4,6 +4,18 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+
+- App TV: **tự bật lại nút remote bị chết** khi launcher gốc (Google TV) bị tắt hoặc đổi: Nguồn vào (Input/TV), YouTube, Netflix, Prime Video, PatchWall (Xiaomi), Cài đặt, Tất cả app. Chỉ chạm vào nút mà hệ thống gửi cho một app không còn nữa; nút còn chạy bình thường thì không đụng tới. Tự bật chỉ khi cần, tắt/bật ở ô **Nút điều khiển** trên màn hình TV Setup. Nút từ ADB `input` không qua được bộ lọc này
+- Màn hình TV Setup: **Quản lý trên TV** nằm trong lưới (3 hàng đều, không còn hàng lẻ)
+
+**English**
+
+- TV app: **dead remote buttons come back by themselves** when the stock (Google TV) launcher is turned off or swapped: Input (Input/TV), YouTube, Netflix, Prime Video, PatchWall (Xiaomi), Settings, All apps. It only takes a key the system sends to an app that is gone; a button that still works is left alone. On only when needed; switch it in the **Remote buttons** tile on the TV Setup screen. Keys sent by ADB `input` never pass through this filter
+- TV Setup screen: **Manage on this TV** is inside the grid (3 even rows, no ragged last row)
+
 ## 0.14.0 - 2026-10-20
 
 Web 0.14.0 · app điện thoại 0.14.0 · app TV 0.14.0 · TV Home 0.1.0

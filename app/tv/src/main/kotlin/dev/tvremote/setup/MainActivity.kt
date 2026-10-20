@@ -43,6 +43,11 @@ class MainActivity : Activity() {
     private lateinit var spinner: ProgressBar
     private lateinit var tiles: List<Tile>
     private lateinit var tsTile: Tile
+    private lateinit var keysTile: Tile
+
+    /** The remote's buttons the stock launcher answered (KeyFix): on, and brought back now, only while one is dead. */
+    private fun keysSub() = if (!KeyFix.wanted(this)) T("keyfix.off") else if (!KeyFix.can(this)) T("keyfix.need_adb")
+        else if (KeyFix.current(this).isNotEmpty()) T("keyfix.working") else T("keyfix.ok")
     private lateinit var updateTile: Tile
     private lateinit var webCol: LinearLayout
     private lateinit var webBtn: Button
@@ -185,6 +190,9 @@ class MainActivity : Activity() {
         left.addView(section(T("tv_main.actions")), margins(top = 14))
         tsTile = Tile(R.drawable.ic_globe, "Tailscale", T("tv_main.away_from_home")) { tailscale() }
         updateTile = Tile(R.drawable.ic_download, T("setup.update_ok"), T("tv_main.ver_short", "v" to version())) { updateMenu() }
+        keysTile = Tile(R.drawable.ic_tv, T("keyfix.tile"), keysSub()) {
+            KeyFix.want(this, !KeyFix.wanted(this)); keysTile.say(keysSub())
+        }
         tiles = listOf(
             Tile(R.drawable.ic_zap, T("tv_main.optimize_tv"), T("tv_main.fewer_extra_apps")) { chooseOptimize() },
             tsTile,
@@ -192,14 +200,16 @@ class MainActivity : Activity() {
             updateTile,
             Tile(R.drawable.ic_code, T("tv_main.debugging"), T("tv_main.developer_options")) { debugMenu() },
             Tile(R.drawable.ic_refresh, T("tv_main.reconnect"), T("tv_main.the_tv_s_adb")) { connect() },
-            Tile(R.drawable.ic_apps, T("launcher.tile"), T("launcher.tile_sub")) { chooseLauncher() })
+            Tile(R.drawable.ic_apps, T("launcher.tile"), T("launcher.tile_sub")) { chooseLauncher() },
+            keysTile)                                                 // after the others: the code above counts tiles by place
         // the web UI right here, for when no phone or computer is at hand (ManageActivity): first, as it does most
         val manage = Tile(R.drawable.ic_apps, T("tv_main.manage_on_this_tv"), T("tv_main.apps_files_health_automation")) {
             RemoteService.start(this)                                 // serves 127.0.0.1 even with the web remote off
             startActivity(android.content.Intent(this, ManageActivity::class.java).putExtra(ManageActivity.PASS, RemoteService.selfPass))
         }
-        left.addView(manage.view, LinearLayout.LayoutParams(-1, dp(42)).apply { topMargin = dp(8) })
-        for (row in tiles.chunked(if (phone) 2 else 3)) {
+        val grid = listOf(manage) + tiles                              // Manage first, in the grid: no ragged last row
+        val cols = if (phone) 2 else listOf(3, 4).firstOrNull { grid.size % it == 0 } ?: 3   // TV: 3 across, or 4 when that fills the rows (8 = 4 + 4)
+        for (row in grid.chunked(cols)) {
             val r = LinearLayout(this)
             r.clipChildren = false
             row.forEachIndexed { i, tile -> r.addView(tile.view, LinearLayout.LayoutParams(0, dp(42), 1f).apply { if (i > 0) leftMargin = dp(10) }) }
