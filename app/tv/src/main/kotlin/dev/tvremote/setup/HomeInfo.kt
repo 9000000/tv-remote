@@ -21,6 +21,7 @@ import java.util.Locale
 /**
  * What TV Home's "usage" card shows (HomeConfig.USAGE), counted here so it is the same number the app limits hold to:
  *   {week: [{pkg, sec}] the most used apps of the last 7 days with today, days: [sec] each day's total (today first), limits: [{pkg, min (today's, extra included), used (sec)}]}
+ * the marks on the tiles ("badges"): {limits: [{pkg, min, used}] as above, locked: [pkg] behind a PIN, bed: bedtime is on now}, TV Home needs none of it,
  * its "timer" card: {sleep_at, bedtime: {on, ranges}, in_bedtime, snooze_until} (Rules.state's),
  * and the system card's CPU ring, "cpu": {busy (0..1 over one second), cores}; Android 8+ keeps /proc/stat from apps, the shell reads it.
  * Which apps a family watches is nobody else's business: only TV Home, signed by this project's key (or by this app's own,
@@ -29,7 +30,7 @@ import java.util.Locale
 class HomeInfo : ContentProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         val c = context ?: return null
-        if (method !in setOf("usage", "timer", "cpu") || !trusted(c, Binder.getCallingUid())) return null
+        if (method !in setOf("usage", "timer", "cpu", "badges") || !trusted(c, Binder.getCallingUid())) return null
         val now = System.currentTimeMillis()
         if (method == "cpu") {                                         // the last measure at once, the next one started: a binder call never waits on ADB
             measure()
@@ -40,6 +41,20 @@ class HomeInfo : ContentProvider() {
             return Bundle().apply { putString("json", JSONObject().put("sleep_at", o.optLong("sleep_at").let { if (it > now) it else 0L })
                 .put("bedtime", Rules.bedtime(o)).put("in_bedtime", Rules.inBedtime(o, now))
                 .put("snooze_until", o.optLong("snooze_until").let { if (it > now) it else 0L }).toString()) }
+        }
+        if (method == "badges") {                                      // the tiles' marks: little to ask, answered each minute
+            val rules = Rules.load(c)
+            val token = Binder.clearCallingIdentity()
+            try {
+                val on = (c.getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive
+                val today = try { Stats(c).today(now, on).first } catch (e: Exception) { JSONObject() }
+                val limits = JSONArray()
+                rules.optJSONObject("limits")?.let { l ->
+                    for (pkg in l.keys()) limits.put(JSONObject().put("pkg", pkg).put("min", l.optInt(pkg) + Rules.extra(rules, pkg, now)).put("used", today.optLong(pkg)))
+                }
+                return Bundle().apply { putString("json", JSONObject().put("limits", limits).put("locked", JSONArray(Rules.locked(rules)))
+                    .put("bed", Rules.inBedtime(rules, now)).toString()) }
+            } finally { Binder.restoreCallingIdentity(token) }
         }
         val token = Binder.clearCallingIdentity()                      // our own permissions from here (usage access)
         try {

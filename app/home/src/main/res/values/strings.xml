@@ -102,4 +102,10 @@
     <string name="c_note_gone">Cleared</string>
     <string name="w_cpu">CPU</string>
     <string name="w_cpu_cores">%d cores</string>
+    <string name="dream">Screensaver</string>
+    <string name="dream_sub">clock, date, wallpaper</string>
+    <string name="dream_system">Needs the phone or computer once (Setup tab, TV Home). Opening the TV\'s screensaver settings: choose TV Home there.</string>
+    <string name="b_m">m</string>
+    <string name="b_h">h</string>
+    <string name="b_locked">Locked</string>
 </resources>

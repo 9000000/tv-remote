@@ -65,6 +65,7 @@ async function homeOpen() {
   const clock = el('input', { type: 'checkbox', onchange: () => send({ clock24: clock.checked }) });
   const greet = el('input', { type: 'checkbox', onchange: () => send({ greet: greet.checked }) });
   const anim = el('input', { type: 'checkbox', onchange: () => send({ anim: anim.checked }) });
+  const dream = el('input', { type: 'checkbox', onchange: () => send({ dream: dream.checked }) });
   // the cards over the favourites; usage and timer read TV Setup, so a TV Setup too old for them is offered first
   const widget = (w) => {
     const box = el('input', { type: 'checkbox', onchange: async () => {
@@ -104,6 +105,8 @@ async function homeOpen() {
     }), ...(r.photo ? [el('button', { type: 'button', className: c.wall === 'photo' ? 'on' : '', onclick: () => send({ wall: 'photo' }) }, el('i', { className: 'add', textContent: '🖼️' }), el('span', { textContent: T('home.wall_photo') }))] : []),
     el('button', { type: 'button', onclick: () => file.click() }, el('i', { className: 'add', textContent: '＋' }), el('span', { textContent: T('home.upload') })));
     clock.checked = c.clock24; greet.checked = c.greet; anim.checked = c.anim !== false;
+    dream.checked = !!c.dream;
+    dream.closest('label').hidden = c.dream === undefined;           // a TV Home older than the screensaver
     const w = c.widgets;                                              // absent: a TV Home older than the cards
     wLines.forEach((l) => { l.hidden = !w; });
     for (const k of HOME_WIDGETS) boxes[k].checked = !!w && w.includes(k);
@@ -120,6 +123,7 @@ async function homeOpen() {
     el('label', { className: 'check' }, clock, el('span', { textContent: T('home.clock24') })),
     el('label', { className: 'check' }, greet, el('span', { textContent: T('home.greet') })),
     el('label', { className: 'check' }, anim, el('span', { textContent: T('home.anim') })),
+    el('label', { className: 'check' }, dream, el('span', { textContent: T('home.dream') })),
     ...wLines,
     noteHead, noteLine,
     el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden));

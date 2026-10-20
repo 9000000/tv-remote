@@ -11,7 +11,6 @@ import android.animation.ObjectAnimator
 import android.graphics.Bitmap
 import android.graphics.PorterDuff
 import android.view.animation.PathInterpolator
-import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.Typeface
@@ -71,7 +70,16 @@ class HomeActivity : Activity() {
     private lateinit var blurView: ImageView
     private var scrollAnim: ObjectAnimator? = null
     private var gridOn = true                                         // focus is in the grid: it is lit and in place; else it waits a little lower, dimmer
-    private var resumed = false
+    private var away = false                                        // really left (stopped), not just paused: only then does the screen come in again
+    private var trimmed = false                                     // the pictures were let go for memory while away ([trim])
+    private var shownKey = ""                                       // what the tiles were built from: the same again builds nothing
+    private var tileCache = HashMap<String, Tile>()                 // a tile is made once per app and size, then moved
+    private var picture: Bitmap? = null                             // the photo wallpaper and its blurred copy; let go in [trim], the small one stays as a stand-in
+    private var soft: Bitmap? = null
+    private var badges = Badges.NONE
+    private var wantCol = -1                                        // the grid column Up and Down try to keep ([Nav])
+    private var stepping = false
+    private var open: android.app.Dialog? = null                    // the panel or menu on top, closed by a Home press
     private lateinit var widgets: Widgets
     private val ui = android.os.Handler(android.os.Looper.getMainLooper())
     private val widgetTick = object : Runnable { override fun run() { widgetsRead(); ui.postDelayed(this, 60_000) } }
@@ -188,10 +196,45 @@ class HomeActivity : Activity() {
         super.onResume()
         Motion.read(this, conf)                                       // the system's "remove animations" may have changed while away
         clockAndDay()
-        if (resumed && Motion.on) enter(false)
-        resumed = true
+        if (away && Motion.on) enter(false)                           // Home pressed on the home screen pauses and resumes it without stopping: nothing may flicker then
+        away = false
+        badgesRead()
         ui.removeCallbacks(widgetTick); ui.post(widgetTick)
         ui.removeCallbacks(netTick); ui.postDelayed(netTick, Widgets.SAMPLE_MS)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (trimmed) untrim()
+    }
+
+    override fun onStop() { away = true; super.onStop() }
+
+    /** Memory is short and the screen is hidden: the wallpaper's big bitmap and every banner go, the next [onStart] brings them back. */
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN && away) trim()
+    }
+
+    private fun trim() {
+        if (trimmed) return
+        trimmed = true
+        picture = null
+        if (soft != null && wallView.drawable != null) wallView.setImageBitmap(soft)    // the blurred copy stands in, so the return is not a blank
+        else wallView.setImageDrawable(null)
+        for (t in tileCache.values) t.release()
+        for (a in apps) a.release()
+    }
+
+    private fun untrim() {
+        trimmed = false
+        val dm = resources.displayMetrics
+        if (conf.optString("wall") == "photo") loadPhoto()
+        for (t in tiles().filter { dock.indexOfChild(it) >= 0 }) { t.app?.load(this); t.restore() }   // the favourites at once, the rest from the side
+        bg.execute {
+            for (a in apps) if (a.banner == null && a.icon == null) a.load(this)
+            runOnUiThread { if (!isDestroyed && !trimmed) for (t in tileCache.values) t.restore() }
+        }
     }
 
     override fun onPause() { ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); super.onPause() }
@@ -254,26 +297,67 @@ class HomeActivity : Activity() {
     }
 
     /** Home pressed while already home, or Back: to the top, on the first favourite. */
-    override fun onNewIntent(i: Intent) { super.onNewIntent(i); toTop() }
+    override fun onNewIntent(i: Intent) {
+        super.onNewIntent(i)
+        if (open?.isShowing == true) { open?.dismiss(); open = null; return }                          // a panel or menu is open: this press closes it
+        toTop()
+    }
 
     @Deprecated("Back on a home screen goes nowhere")
     override fun onBackPressed() { toTop() }
 
     private fun toTop() {
+        val first = if (dock.childCount > 0) dock.getChildAt(0) else grid.findFocus() ?: firstGridTile()
+        if (first != null && first.isFocused && scroll.scrollY == 0) return    // already there: nothing to move, nothing to redraw
         scrollToY(0)
-        (if (dock.childCount > 0) dock.getChildAt(0) else grid.findFocus() ?: firstGridTile())?.requestFocus()
+        first?.requestFocus()
+    }
+
+    /** The marks on the tiles: asked of TV Setup off the main thread, on coming back and then every minute; the answer is applied only where it differs. */
+    private fun badgesRead() {
+        bg.execute {
+            val info = Badges.read(this) ?: Badges.NONE
+            runOnUiThread { if (!isDestroyed && !(info.bed == badges.bed && info.by == badges.by)) { badges = info; badgeTiles() } }
+        }
+    }
+
+    private fun badgeTiles() {
+        val m = getString(R.string.b_m); val h = getString(R.string.b_h)
+        for (t in tileCache.values) t.app?.let { a -> t.mark(badges.of(a.pkg)) { Badges.label(it, m, h) } }
     }
 
     private fun firstGridTile(): View? = (grid.getChildAt(0) as? ViewGroup)?.getChildAt(0)
 
-    private val changed = object : BroadcastReceiver() { override fun onReceive(c: Context, i: Intent) { loadApps() } }
+    private val changed = object : BroadcastReceiver() {
+        override fun onReceive(c: Context, i: Intent) {
+            val pkg = i.data?.schemeSpecificPart
+            if (pkg == null) { loadApps(); return }
+            if (i.action == Intent.ACTION_PACKAGE_REMOVED && i.getBooleanExtra(Intent.EXTRA_REPLACING, false)) return   // the new version's ADDED follows
+            packageChanged(pkg, i.action == Intent.ACTION_PACKAGE_REMOVED)
+        }
+    }
     private val tick = object : BroadcastReceiver() { override fun onReceive(c: Context, i: Intent) { clockAndDay() } }
 
     private fun loadApps() {
         bg.execute {
             val list = Apps.list(this)
             list.forEach { it.load(this) }                            // the pictures off the main thread: dozens of apps on a slow chip
-            runOnUiThread { if (!isDestroyed) { apps = list; show() } }
+            runOnUiThread { if (!isDestroyed) { apps = list; shownKey = ""; show() } }
+        }
+    }
+
+    /** One app came, went or changed: only its picture is read again, the other tiles are kept and moved. */
+    private fun packageChanged(pkg: String, removed: Boolean) {
+        if (pkg == packageName) return
+        bg.execute {
+            val one = if (removed) null else Apps.one(this, pkg)?.also { it.load(this) }
+            runOnUiThread {
+                if (isDestroyed) return@runOnUiThread
+                val was = apps.firstOrNull { it.pkg == pkg }
+                if (one == null && was == null) return@runOnUiThread    // not an app this screen lists (a service, a library)
+                apps = (apps.filter { it.pkg != pkg } + listOfNotNull(one)).sortedBy { it.label.lowercase() }
+                shownKey = ""; show()
+            }
         }
     }
 
@@ -288,26 +372,30 @@ class HomeActivity : Activity() {
         val byPkg = apps.associateBy { it.pkg }
         val dockPkgs = Store.list(this, "dock").filter { it in byPkg }
         val hidden = Store.list(this, "hidden").toSet()
-
+        val key = dockPkgs.joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.joinToString(",") { it.pkg } + "|" + apps.count { it.pkg in hidden }
+        if (key == shownKey) return                                   // nothing that decides the tiles changed: not one view is rebuilt
+        shownKey = key
+        val made = HashMap<String, Tile>()                            // the tiles kept for the next build: those of apps still here
         val width = resources.displayMetrics.widthPixels - dp(96)
         dock.removeAllViews()
         val n = dockPkgs.size
         if (n > 0) {
             val w = minOf(dp(176), (width - dp(44) - (n - 1) * dp(22)) / n)
             dockPkgs.forEachIndexed { i, p ->
-                val t = tile(byPkg.getValue(p), w, true)
+                val t = tile(byPkg.getValue(p), w, true, made)
                 dock.addView(t, LinearLayout.LayoutParams(-2, -2).apply { if (i > 0) leftMargin = dp(22) })
             }
         }
         dock.visibility = if (n > 0) View.VISIBLE else View.GONE
         dockEmpty.visibility = if (n > 0) View.GONE else View.VISIBLE
 
+        for (r in 0 until grid.childCount) (grid.getChildAt(r) as ViewGroup).removeAllViews()   // the tiles leave their rows alive, to be put in new ones
         grid.removeAllViews()
         val rest = apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }
         val cols = 6
         val gap = dp(16)
         val w = (width - (cols - 1) * gap) / cols
-        val cells: MutableList<View> = rest.map { tile(it, w, false) }.toMutableList()
+        val cells: MutableList<View> = rest.map { tile(it, w, false, made) }.toMutableList()
         val hiddenHere = apps.count { it.pkg in hidden }
         if (hiddenHere > 0) cells.add(Tile(this, null, w, getString(R.string.hidden, hiddenHere), ::dp).apply { setOnClickListener { unhide() } })
         var row: LinearLayout? = null
@@ -319,6 +407,8 @@ class HomeActivity : Activity() {
             row!!.addView(v, LinearLayout.LayoutParams(-2, -2).apply { if (i % cols > 0) leftMargin = gap })
         }
         appsTitle.visibility = if (cells.isEmpty()) View.GONE else View.VISIBLE
+        tileCache = made
+        badgeTiles()
 
         val again = keep?.let { p -> tiles().firstOrNull { it.app?.pkg == p } }
         if (again != null) again.requestFocus() else if (currentFocus == null || currentFocus !is Tile && currentFocus !is Pill) toTop()
@@ -332,27 +422,58 @@ class HomeActivity : Activity() {
     }
 
     /**
-     * The D-pad on a tile, decided here, not by the nearest view: Right on a row's last tile goes to the next row's first, Left the
-     * other way, Down on a short last row to its last tile; at the ends of the grid and of the dock focus stays (the nearest view
-     * out there would be a header button). True = handled. Up from the first grid row and Down from the dock stay with Android.
+     * The D-pad on a tile, decided here, not by the nearest view ([Nav]): Right on a row's last tile goes to the next row's first,
+     * Left the other way, Up and Down keep the column they started in as far as the next row has it (else its last tile), the dock
+     * and the grid hand over to the tile nearest across; at the ends focus stays (the nearest view out there would be a header
+     * button). True = handled. Up from the dock goes to the buttons, Android's choice.
      */
     private fun step(v: Tile, code: Int, inDock: Boolean): Boolean {
-        val list = if (inDock) List(dock.childCount) { dock.getChildAt(it) } else List(grid.childCount) { r -> (grid.getChildAt(r) as ViewGroup).let { row -> List(row.childCount) { row.getChildAt(it) } } }.flatten()
-        val at = list.indexOf(v)
-        if (at < 0) return false
-        val cols = if (inDock) list.size else (grid.getChildAt(0) as ViewGroup).childCount
-        val to: Int = when (code) {
-            KeyEvent.KEYCODE_DPAD_RIGHT -> at + 1
-            KeyEvent.KEYCODE_DPAD_LEFT -> at - 1
-            KeyEvent.KEYCODE_DPAD_DOWN -> if (inDock) return false else if (at + cols < list.size) at + cols else if (at / cols < (list.size - 1) / cols) list.size - 1 else -1
-            KeyEvent.KEYCODE_DPAD_UP -> if (inDock || at < cols) return false else at - cols
+        val dir = when (code) {
+            KeyEvent.KEYCODE_DPAD_RIGHT -> Nav.Dir.RIGHT
+            KeyEvent.KEYCODE_DPAD_LEFT -> Nav.Dir.LEFT
+            KeyEvent.KEYCODE_DPAD_DOWN -> Nav.Dir.DOWN
+            KeyEvent.KEYCODE_DPAD_UP -> Nav.Dir.UP
             else -> return false
         }
-        if (to in list.indices) list[to].requestFocus()                // out of range: the edge, focus stays
+        if (inDock) {
+            val at = dock.indexOfChild(v)
+            if (at < 0) return false
+            when (dir) {
+                Nav.Dir.RIGHT -> dock.getChildAt(at + 1)?.let { go(it) }
+                Nav.Dir.LEFT -> dock.getChildAt(at - 1)?.let { go(it) }
+                Nav.Dir.UP -> return false
+                Nav.Dir.DOWN -> { val row = grid.getChildAt(0) as? ViewGroup ?: return false; wantCol = -1; go(row.getChildAt(Nav.nearest(centres(row), centre(v)))) }
+            }
+            return true
+        }
+        val rows = IntArray(grid.childCount) { (grid.getChildAt(it) as ViewGroup).childCount }
+        val row = (0 until grid.childCount).firstOrNull { (grid.getChildAt(it) as ViewGroup).indexOfChild(v) >= 0 } ?: return false
+        val col = (grid.getChildAt(row) as ViewGroup).indexOfChild(v)
+        val to = Nav.grid(rows, row, col, wantCol, dir)
+        if (to == null) {
+            if (dir == Nav.Dir.UP && dock.childCount > 0) go(dock.getChildAt(Nav.nearest(centres(dock), centre(v))))
+            else if (dir == Nav.Dir.UP) return false
+            return true
+        }
+        val want = Nav.wantAfter(dir, col, wantCol)
+        go((grid.getChildAt(to.row) as ViewGroup).getChildAt(to.col))
+        wantCol = want                                                // only a move made here sets the column to keep
         return true
     }
 
-    private fun tile(a: App, w: Int, inDock: Boolean) = Tile(this, a, w, a.label, ::dp).apply {
+    private fun go(t: View) { stepping = true; try { t.requestFocus() } finally { stepping = false } }
+
+    private fun centre(v: View): Int { val xy = IntArray(2); v.getLocationInWindow(xy); return xy[0] + v.width / 2 }
+    private fun centres(p: ViewGroup) = IntArray(p.childCount) { centre(p.getChildAt(it)) }
+
+    private fun tile(a: App, w: Int, inDock: Boolean, made: HashMap<String, Tile>): Tile {
+        val k = "${a.pkg}|$w|$inDock"
+        val t = tileCache[k]?.takeIf { it.app === a } ?: makeTile(a, w, inDock)
+        made[k] = t
+        return t
+    }
+
+    private fun makeTile(a: App, w: Int, inDock: Boolean) = Tile(this, a, w, a.label, ::dp).apply {
         setOnClickListener { if (!Apps.launch(this@HomeActivity, a.pkg)) toast(R.string.no_open) }
         setOnLongClickListener { menu(a); true }
         setOnKeyListener { v, code, e ->
@@ -362,6 +483,7 @@ class HomeActivity : Activity() {
         onFocusChangeListener = View.OnFocusChangeListener { v, f ->
             (v as Tile).focus(f)
             if (f) {
+                if (!stepping) wantCol = -1                           // focus came another way: the column to keep starts over here
                 gridFocus(!inDock)
                 if (inDock) scrollToY(0)
                 else {                                                // a row that is cut off comes to the upper third; one in full view stays put
@@ -384,33 +506,24 @@ class HomeActivity : Activity() {
         // set once per wall, never per frame: a solid is a ColorDrawable (free), a gradient one GradientDrawable (no bitmap); only a photo costs a bitmap
         window.decorView.background = wallDrawable(colors)
         wallView.visibility = View.GONE; scrim.visibility = View.GONE; blurClip.visibility = View.GONE
-        if (wall != "photo") return
-        val f = java.io.File(getExternalFilesDir(null), "wall.jpg")
+        picture = null; soft = null
+        if (wall == "photo") loadPhoto()
+    }
+
+    /** The photo, at the screen's size and no more ([Wall]), off the main thread; shown over whatever stands in for it. */
+    private fun loadPhoto() {
         val dm = resources.displayMetrics
         bg.execute {
-            val bmp = try {                                           // read at about the screen's size: a phone photo is 4000 px wide
-                val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                BitmapFactory.decodeFile(f.path, o)
-                var s = 1
-                while (o.outWidth / (s * 2) >= dm.widthPixels && o.outHeight / (s * 2) >= dm.heightPixels) s *= 2
-                BitmapFactory.decodeFile(f.path, BitmapFactory.Options().apply { inSampleSize = s })
-            } catch (e: Throwable) { null }
-            val soft = bmp?.let { softer(it) }
+            val bmp = Wall.load(Wall.file(this), dm.widthPixels, dm.heightPixels)
+            val small = bmp?.let { Wall.soft(it) }
             runOnUiThread {
-                if (bmp != null && !isDestroyed) {
+                if (bmp != null && !isDestroyed && !trimmed) {
+                    picture = bmp; soft = small
                     wallView.setImageBitmap(bmp); wallView.visibility = View.VISIBLE; scrim.visibility = View.VISIBLE
-                    blurView.setImageBitmap(soft); blurClip.visibility = View.VISIBLE; blurAlign()
+                    blurView.setImageBitmap(small); blurClip.visibility = View.VISIBLE; blurAlign()
                 }
             }
         }
-    }
-
-    /** [b] blurred for the dock band: shrunk twice (smoothly) to ~1/16, which the view scales back up soft. Once per photo, off the main thread; no RenderEffect to run every frame. */
-    private fun softer(b: Bitmap): Bitmap {
-        val a = Bitmap.createScaledBitmap(b, maxOf(1, b.width / 4), maxOf(1, b.height / 4), true)
-        val c = Bitmap.createScaledBitmap(a, maxOf(1, b.width / 16), maxOf(1, b.height / 16), true)
-        if (a !== c && a !== b) a.recycle()
-        return c
     }
 
     private fun clockAndDay() {
@@ -455,10 +568,10 @@ class HomeActivity : Activity() {
             try { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + a.pkg))) } catch (e: Exception) { toast(R.string.no_open) }
         })
         AlertDialog.Builder(this, R.style.Menu).setTitle(a.label)
-            .setItems(acts.map { getString(it.first) }.toTypedArray()) { _, i -> acts[i].second() }.show()
+            .setItems(acts.map { getString(it.first) }.toTypedArray()) { _, i -> acts[i].second() }.show().also { open = it }
     }
 
-    private fun customize() = Customize.show(this)
+    private fun customize() { open = Customize.show(this) }
 
     /** The remote's Menu key anywhere but on an app (an app's own Menu opens its menu) opens the settings. */
     override fun onKeyUp(code: Int, e: KeyEvent): Boolean {
@@ -473,7 +586,7 @@ class HomeActivity : Activity() {
         val hidden = Store.list(this, "hidden")
         val here = apps.filter { it.pkg in hidden }
         AlertDialog.Builder(this, R.style.Menu).setTitle(getString(R.string.show))
-            .setItems(here.map { it.label }.toTypedArray()) { _, i -> Store.putList(this, "hidden", hidden - here[i].pkg) }.show()
+            .setItems(here.map { it.label }.toTypedArray()) { _, i -> Store.putList(this, "hidden", hidden - here[i].pkg) }.show().also { open = it }
     }
 
     /** The TV's inputs (HDMI and the tuner) as the TV knows them; its own input settings when it lists none. */
@@ -486,7 +599,7 @@ class HomeActivity : Activity() {
                 val info = list[i]
                 val uri = if (info.isPassthroughInput) TvContract.buildChannelUriForPassthroughInput(info.id) else TvContract.buildChannelsUriForInput(info.id)
                 try { startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e: Exception) { toast(R.string.no_open) }
-            }.show()
+            }.show().also { open = it }
     }
 
     private fun open(action: String) {
@@ -557,6 +670,9 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
     private val name = TextView(c)
     private val shine = View(c)
     private val content: View
+    private var pic: ImageView? = null                              // the picture, so it can be let go and put back ([release])
+    private val badge = BadgeView(c, dp)
+    private var shownMark: Badges.Mark? = null
     private val lift: Float
     private val across: Float
     private val hideShine = Runnable { shine.alpha = 0f }
@@ -572,11 +688,12 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
         card.clipToOutline = true
         if (banner != null) {
             content = ImageView(c).apply { setImageDrawable(banner); scaleType = ImageView.ScaleType.CENTER_CROP }
+            pic = content as ImageView
             card.addView(content, FrameLayout.LayoutParams(-1, -1))
         } else {
             val inner = LinearLayout(c).apply { orientation = VERTICAL; gravity = Gravity.CENTER; setPadding(dp(6), dp(4), dp(6), dp(4)) }
             inner.addView(ImageView(c).apply {
-                if (app?.icon != null) setImageDrawable(app.icon) else { setImageResource(R.drawable.ic_eye_off); imageTintList = ColorStateList.valueOf(Color.WHITE) }
+                if (app?.icon != null) { setImageDrawable(app.icon); pic = this } else { setImageResource(R.drawable.ic_eye_off); imageTintList = ColorStateList.valueOf(Color.WHITE) }
             }, LayoutParams(h * 45 / 100, h * 45 / 100))
             inner.addView(TextView(c).apply {
                 text = label; textSize = 12f; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER
@@ -588,9 +705,10 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
         shine.background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(0x00FFFFFF, 0x38FFFFFF, 0x00FFFFFF))
         shine.alpha = 0f
         card.addView(shine, FrameLayout.LayoutParams(w / 2, -1))
-        ring.background = GradientDrawable().apply { cornerRadius = r; setStroke(dp(3), Color.WHITE); setColor(Color.TRANSPARENT) }
+        ring.background = ringDrawable(r, dp)
         ring.alpha = 0f
         card.addView(ring, FrameLayout.LayoutParams(-1, -1))
+        card.addView(badge, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(6), 0) })
         addView(card, LayoutParams(w, h))
         name.apply {
             text = label; textSize = 13f; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER
@@ -626,10 +744,75 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
         } else shine.alpha = 0f
     }
 
+    /** The picture let go (memory is short while the screen is hidden) and put back; the tile keeps its place and its colour meanwhile. */
+    fun release() { pic?.setImageDrawable(null) }
+    fun restore() { pic?.setImageDrawable(app?.banner ?: app?.icon) }
+
+    /** The lock or the time left on the corner; nothing when [m] is null. Set only when it differs, so nothing is laid out for the same mark. */
+    fun mark(m: Badges.Mark?, label: (Int) -> String) {
+        if (m == shownMark) return
+        shownMark = m
+        badge.set(m, m?.let { if (it.locked) "" else label(it.minutes) } ?: "")
+    }
+
     /** A dark colour of its own per app, for those without a TV banner. */
     private fun shade(pkg: String): Int {
         val hues = intArrayOf(0xFF27324A.toInt(), 0xFF2E3B2F.toInt(), 0xFF43293A.toInt(), 0xFF2B3A45.toInt(), 0xFF3D3424.toInt(), 0xFF2F2D4A.toInt())
         return hues[(pkg.hashCode() and 0x7fffffff) % hues.size]
+    }
+}
+
+/**
+ * The ring round the focused tile, seen on a white banner and on a black one alike, with or without the grow: a dark edge, the
+ * accent in the middle (almost no banner is that blue), a thin white line inside for a banner that is blue itself.
+ */
+private fun ringDrawable(r: Float, dp: (Number) -> Int): Drawable {
+    fun band(w: Int, color: Int, inset: Int) = GradientDrawable().apply { cornerRadius = maxOf(0f, r - inset); setStroke(w, color); setColor(Color.TRANSPARENT) }
+    return android.graphics.drawable.LayerDrawable(arrayOf(band(dp(2), RING_EDGE, 0), band(dp(4), RING_ACCENT, dp(2)), band(dp(1), Color.WHITE, dp(6)))).apply {
+        setLayerInset(1, dp(2), dp(2), dp(2), dp(2)); setLayerInset(2, dp(6), dp(6), dp(6), dp(6))
+    }
+}
+const val RING_ACCENT = 0xFF2F7DF6.toInt()                          // 3.7:1 on white; with the dark edge it shows on any banner
+const val RING_EDGE = 0xE6000000.toInt()
+
+/**
+ * A pill on a tile's corner: a lock, or an hourglass and the time left. Drawn by hand with the paints and icons made once, and
+ * measured only when the mark changes: nothing is allocated while it is drawn (or while the tile grows).
+ */
+class BadgeView(c: Context, private val dp: (Number) -> Int) : View(c) {
+    private val bgPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = 0xE6101420.toInt() }
+    private val text = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE; textSize = dp(13).toFloat(); typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+    }
+    private val lock = c.getDrawable(R.drawable.ic_lock)!!.mutate().also { it.setTint(0xFFFF8A80.toInt()) }
+    private val glass = c.getDrawable(R.drawable.ic_hourglass)!!.mutate().also { it.setTint(0xFFFFD27A.toInt()) }
+    private val box = android.graphics.RectF()
+    private var icon: Drawable = lock
+    private var label = ""
+    private var textW = 0f
+
+    init { visibility = GONE }
+
+    fun set(m: Badges.Mark?, label: String) {
+        if (m == null) { visibility = GONE; return }
+        icon = if (m.locked) lock else glass
+        this.label = label
+        textW = if (label.isEmpty()) 0f else text.measureText(label)
+        visibility = VISIBLE
+        contentDescription = if (m.locked) context.getString(R.string.b_locked) else label
+        requestLayout(); invalidate()
+    }
+
+    override fun onMeasure(w: Int, h: Int) {
+        setMeasuredDimension((dp(8) + dp(15) + (if (label.isEmpty()) 0f else dp(4) + textW) + dp(8)).toInt(), dp(24))
+    }
+
+    override fun onDraw(canvas: android.graphics.Canvas) {
+        box.set(0f, 0f, width.toFloat(), height.toFloat())
+        canvas.drawRoundRect(box, height / 2f, height / 2f, bgPaint)
+        val s = dp(15); val x = dp(8); val y = (height - s) / 2
+        icon.setBounds(x, y, x + s, y + s); icon.draw(canvas)
+        if (label.isNotEmpty()) canvas.drawText(label, (x + s + dp(4)).toFloat(), height / 2f - (text.ascent() + text.descent()) / 2f, text)
     }
 }
 
@@ -638,6 +821,9 @@ object Motion {
     @JvmField var on = true
     val lift = PathInterpolator(0.34f, 1.35f, 0.64f, 1f)              // overshoots a little then settles: a spring
     val glide = PathInterpolator(0.2f, 0.8f, 0.2f, 1f)                // fast out, long soft end
+
+    /** The first answer before anyone has chosen: a weak box ([Store.weak]) starts without motion, a good one with it. */
+    fun defaultOn(weak: Boolean) = !weak
 
     fun read(c: Context, conf: JSONObject) {
         val scale = try { Settings.Global.getFloat(c.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) } catch (e: Exception) { 1f }

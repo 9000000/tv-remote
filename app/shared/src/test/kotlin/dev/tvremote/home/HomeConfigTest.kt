@@ -69,4 +69,9 @@ class HomeConfigTest {
         assertEquals(HomeConfig.NOTE_MAX, HomeConfig.clean(JSONObject().put("note", "x".repeat(500))).getString("note").length)
         assertEquals("", HomeConfig.clean(JSONObject()).getString("note"))
     }
+
+    @Test fun dreamIsOffUntilSet() {
+        assertFalse(HomeConfig.clean(JSONObject()).getBoolean("dream"))
+        assertEquals(true, HomeConfig.merge(HomeConfig.clean(JSONObject()), JSONObject().put("dream", true)).getBoolean("dream"))
+    }
 }
