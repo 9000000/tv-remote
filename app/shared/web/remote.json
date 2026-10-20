@@ -23,7 +23,9 @@
       [
         { "id": "guide", "icon": "guide", "t": "rkey.guide", "key": "GUIDE" },
         { "id": "tv", "icon": "tv", "t": "rkey.tv", "key": "LIVE",
-          "web": { "t": "rkey.tv_web" }, "why": "the web button is narrower: the bare word TV" }
+          "web": { "t": "rkey.tv_web" }, "why": "the web button is narrower: the bare word TV" },
+        { "id": "ir", "icon": "pulse", "t": "rkey.ir", "do": "ir", "cores": ["phone"],
+          "why": "the phone's own IR LED (IrRemote.kt), for this TV: a browser has none" }
       ]
     ],
     "nav": [

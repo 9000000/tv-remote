@@ -21,13 +21,18 @@ import java.util.concurrent.Executors
 // Phone app only (the Computer app and the TV web page have no IR LED). A debug build without an LED logs the pattern ("TvrIr") instead.
 
 private const val TAG = "TvrIr"
-private const val PROFILE = "ir:profile"                           // the chosen profile's id
+private const val PROFILE = "ir:profile"                           // the chosen profile's id; "ir:profile:<ip>" for a saved TV
+private const val TARGET = "ir:tv"                                  // the saved TV the codes are for, "" for none
 private val REPEAT = setOf("UP", "DOWN", "LEFT", "RIGHT", "VOL_UP", "VOL_DOWN", "CH_UP", "CH_DOWN")   // held: the code goes on being sent
 
 private object IrState {
     var catalog: List<IrProfile>? = null
     var toggle = false                                              // RC5 / RC6: the bit that flips on every new press
     var onFind = false                                              // which of the two screens the back button leaves
+    var page = ""                                                   // "auto" while Dò tự động is on screen: its steps redraw it
+    @Volatile var stop = false
+    @Volatile var link: dev.tvremote.core.adb.AdbLink? = null
+    var auto = ""                                                   // the TV Dò tự động listens on
     val io = Executors.newSingleThreadExecutor { r -> Thread(r, "ir").apply { isDaemon = true } }
 }
 
@@ -61,7 +66,12 @@ private fun MainActivity.irSend(code: String, repeat: Boolean) {
     }
 }
 
-private fun MainActivity.irProfile(): IrProfile? = pref(PROFILE).let { id -> irCatalog().firstOrNull { it.id == id } }
+/** The saved TV the codes are for: each keeps its own remote, and one ADB reaches can find its code by itself (IrAuto.kt). */
+private fun MainActivity.irTarget(): String = pref(TARGET).takeIf { it in savedIps() } ?: ""
+private fun MainActivity.irProfileKey(): String = irTarget().let { if (it.isEmpty()) PROFILE else "$PROFILE:$it" }
+private fun MainActivity.irProfile(): IrProfile? = pref(irProfileKey()).ifEmpty { pref(PROFILE) }.let { id -> irCatalog().firstOrNull { it.id == id } }
+private fun MainActivity.irSave(p: IrProfile) = prefs.edit().putString(irProfileKey(), p.id).apply()
+private fun MainActivity.irTvName(ip: String) = pref("name:$ip").ifEmpty { ip }
 
 // ---------------------------------------------------------------- the screen
 internal fun MainActivity.buildIr(): FrameLayout {
@@ -70,12 +80,16 @@ internal fun MainActivity.buildIr(): FrameLayout {
     return host
 }
 
-internal fun MainActivity.irOpen() { irRemote(); irHost.visibility = View.VISIBLE }
+/** [tv]: the saved TV it is opened for (from that TV's remote: its own code), null from the list of TVs (the phone's one code). */
+internal fun MainActivity.irOpen(tv: String? = null) {
+    prefs.edit().putString(TARGET, tv ?: "").apply()
+    irRemote(); irHost.visibility = View.VISIBLE
+}
 
 /** The back button: from the code finder to the remote, from the remote to the list of TVs. True when it was ours. */
 internal fun MainActivity.irBack(): Boolean {
     if (irHost.visibility != View.VISIBLE) return false
-    if (IrState.onFind) irRemote() else irHost.visibility = View.GONE
+    if (IrState.onFind) { irStop(); irRemote() } else irHost.visibility = View.GONE
     return true
 }
 
@@ -102,6 +116,7 @@ private fun MainActivity.irPage(title: String, back: () -> Unit, body: LinearLay
 
 internal fun MainActivity.irRemote() {
     IrState.onFind = false
+    IrState.page = ""
     val p = irProfile()
     irPage(T("ir.title"), { irHost.visibility = View.GONE }) {
         val line = LinearLayout(this@irRemote)
@@ -110,7 +125,7 @@ internal fun MainActivity.irRemote() {
         line.addView(pick, LinearLayout.LayoutParams(0, dp(48), 1f))
         val find = button("@search|" + T("ir.find"), SOFT)
         find.setInk(ACCENT_TEXT)
-        find.setOnClickListener { irFind() }
+        find.setOnClickListener { irFindStart() }
         line.addView(find, LinearLayout.LayoutParams(-2, dp(48)).apply { leftMargin = dp(8) })
         addView(line, gap(14))
         addView(note(if (p == null) T("ir.pick_first") else T("ir.aim")))
@@ -118,9 +133,20 @@ internal fun MainActivity.irRemote() {
     }
 }
 
+/** Dò mã: by itself on a TV ADB reaches (the one this remote is for, else the one picked), by hand on any other. */
+private fun MainActivity.irFindStart() {
+    val android = { ip: String -> kindOf(ip) == dev.tvremote.core.remote.Remote.Kind.ANDROID }
+    val t = irTarget()
+    if (t.isNotEmpty()) { if (android(t)) { IrState.auto = t; irAuto() } else irFind(); return }
+    val tvs = savedIps().filter(android)
+    if (tvs.isEmpty()) { irFind(); return }
+    menu(T("ir.find_on"), -1, tvs.map { ip -> Triple("@tv|" + irTvName(ip), T("ir.tv_sub")) { IrState.auto = ip; irAuto() } } +
+        Triple("@search|" + T("ir.other_tv"), T("ir.other_tv_sub")) { irFind() })
+}
+
 private fun MainActivity.irBrands() {
     val all = irCatalog()
-    val now = pref(PROFILE)
+    val now = irProfile()?.id
     val items = all.map { it.brand }.distinct().map { b ->
         val of = all.filter { it.brand == b }
         Triple("@tv|" + b, T("ir.n_remotes", "n" to of.size) + (if (of.any { it.id == now }) "  ✓" else "")) { irProfiles(b, of) }
@@ -129,8 +155,8 @@ private fun MainActivity.irBrands() {
 }
 
 private fun MainActivity.irProfiles(brand: String, of: List<IrProfile>) {
-    val now = pref(PROFILE)
-    menu(brand, -1, of.map { p -> Triple("@tv|" + p.name + (if (p.id == now) "  ✓" else ""), "") { prefs.edit().putString(PROFILE, p.id).apply(); irRemote() } })
+    val now = irProfile()?.id
+    menu(brand, -1, of.map { p -> Triple("@tv|" + p.name + (if (p.id == now) "  ✓" else ""), "") { irSave(p); irRemote() } })
 }
 
 /** [bind]: a key of [p] that is there answers the finger (held: it repeats); one that is not is greyed, as the page greys a key the TV lacks. */
@@ -242,6 +268,7 @@ private fun MainActivity.irDpad(p: IrProfile): View {
  */
 private fun MainActivity.irFind(key0: String = "POWER", at0: Int = -1) {
     IrState.onFind = true
+    IrState.page = ""
     var key = key0
     var idx = at0
     val steps = IrCodes.distinct(irCatalog(), key)
@@ -290,10 +317,88 @@ private fun MainActivity.irFind(key0: String = "POWER", at0: Int = -1) {
         ok.isEnabled = idx in steps.indices; ok.alpha = if (ok.isEnabled) 1f else 0.4f
         ok.setOnClickListener {
             val s = steps[idx].first
-            prefs.edit().putString(PROFILE, s.id).apply()
+            irSave(s)
             Toast.makeText(this@irFind, T("ir.found", "name" to s.title), Toast.LENGTH_LONG).show()
             irRemote()
         }
         addView(ok, LinearLayout.LayoutParams(-1, dp(56)).apply { topMargin = dp(10) })
     }
+}
+
+// ---------------------------------------------------------------- Dò tự động: the TV says over ADB when a code arrives (IrAuto.kt)
+private const val AUTO_KEY = "VOL_UP"                                // heard by every TV, harmless, undone with VOL_DOWN; never POWER (ADB would go)
+
+private fun MainActivity.irStop() {
+    IrState.stop = true
+    IrState.link?.let { l -> Thread { l.close() }.start() }       // a TV still asking "Allow USB debugging?" lets go too
+}
+
+/** The page: [say] what is going on, [sub] the line under it, [found] the match, [running] while the codes go out. */
+private fun MainActivity.irAuto(say: String = "", sub: String = "", found: IrProfile? = null, running: Boolean = false) {
+    IrState.onFind = true
+    IrState.page = "auto"
+    val name = irTvName(IrState.auto)
+    irPage(T("ir.find"), { irStop(); irRemote() }) {
+        addView(note(T("ir.auto_hint", "name" to name)), gap(10))
+        val card = col()
+        card.background = box(CARD, 14)
+        card.setPadding(dp(16), dp(14), dp(16), dp(14))
+        val big = label(if (found != null) T("ir.auto_found", "name" to found.title) else say.ifEmpty { T("ir.ready") }, 20, TEXT)
+        big.typeface = Typeface.DEFAULT_BOLD
+        card.addView(big)
+        if (sub.isNotEmpty()) card.addView(label(sub, 14, MUTED), gap(4))
+        if (running) card.addView(android.widget.ProgressBar(this@irAuto, null, android.R.attr.progressBarStyleHorizontal).apply {
+            isIndeterminate = true; progressTintList = android.content.res.ColorStateList.valueOf(ACCENT) }, gap(8))
+        addView(card, gap(14))
+        val main = when {
+            found != null -> button(T("ir.use"), ACCENT).apply { setOnClickListener {
+                irSave(found); prefs.edit().putString("$PROFILE:${IrState.auto}", found.id).apply(); Toast.makeText(this@irAuto, T("ir.found", "name" to found.title), Toast.LENGTH_LONG).show(); irRemote() } }
+            running -> button(T("ir.stop"), BTN).apply { setOnClickListener { irStop(); irAuto() } }
+            else -> button(if (say.isEmpty()) T("ir.auto_start") else T("ir.retry"), ACCENT).apply { setOnClickListener { irAutoRun() } }
+        }
+        addView(main, LinearLayout.LayoutParams(-1, dp(56)).apply { topMargin = dp(4) })
+        val hand = button("@search|" + T("ir.by_hand"), SOFT)
+        hand.setInk(ACCENT_TEXT)
+        hand.setOnClickListener { irStop(); irFind() }
+        addView(hand, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(10) })
+    }
+}
+
+private fun MainActivity.irAutoRun() {
+    val ip = IrState.auto
+    val name = irTvName(ip)
+    val steps = IrCodes.distinct(irCatalog(), AUTO_KEY)
+    IrState.stop = false
+    irAuto(T("ir.auto_connecting", "name" to name), running = true)
+    // each step redraws the page, only while it is still the one shown
+    val show: (() -> Unit) -> Unit = { f -> ui.post { if (!isFinishing && IrState.page == "auto" && irHost.visibility == View.VISIBLE) f() } }
+    Thread({
+        var hear: IrHear? = null
+        try {
+            var adb: dev.tvremote.core.adb.Adb? = null
+            for (h in listOf(ip, pref("ts:$ip"), pref("lan:$ip")).filter { it.isNotEmpty() }.distinct()) {
+                if (IrState.stop) return@Thread
+                val l = dev.tvremote.core.adb.AdbLink(filesDir, h)
+                IrState.link = l
+                adb = try { l.get() } catch (e: Exception) { l.close(); null }
+                if (adb != null) break
+            }
+            if (IrState.stop) return@Thread
+            if (adb == null) { show { irAuto(T("ir.auto_noadb", "name" to name), T("ir.auto_noadb_sub")) }; return@Thread }
+            val ear = IrHear(adb).also { hear = it }
+            Thread.sleep(600)                                        // getevent lists the devices first
+            val hit = irScan(steps, { it.first.keys.getValue(AUTO_KEY) }, { irSend(it, false) }, { ear.last }, { IrState.stop },
+                { i -> show { irAuto(T("ir.auto_trying", "n" to i + 1, "total" to steps.size), steps[i].first.title, running = true) } })
+            if (IrState.stop) return@Thread
+            if (hit == null) { show { irAuto(T("ir.auto_none"), T("ir.auto_none_sub")) }; return@Thread }
+            hit.first.keys["VOL_DOWN"]?.let { down -> repeat(2) { Thread.sleep(250); irSend(down, false) } }   // the two VOL_UP it heard
+            show { irAuto(found = hit.first) }
+        } catch (e: Exception) {
+            Log.w(TAG, "auto find", e)
+            if (!IrState.stop) show { irAuto(T("ir.auto_noadb", "name" to name), T("ir.auto_noadb_sub")) }
+        } finally {
+            hear?.close()
+            IrState.link?.close(); IrState.link = null
+        }
+    }, "ir-auto").start()
 }
