@@ -63,4 +63,5 @@ const REMOTE_DO = {
   dim: () => dimOpen(),
   share: () => shareDialog(),
   inputs: () => inputsMenu(),
+  homeCustom: () => homeOpen(),
 };

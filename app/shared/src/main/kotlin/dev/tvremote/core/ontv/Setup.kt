@@ -53,10 +53,13 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
             "com.sony.dtv.b2b.webappruntimedrm" to "Sony B2B web app DRM", "com.sony.dtv.demomode" to "Sony Demo mode",
             "com.sony.dtv.demosupport" to "Sony Demo support", "com.sony.dtv.multiscreendemo" to "Sony Multi-screen demo",
             "com.sony.dtv.sonyselect" to "Sony Select", "tv.samba.ssm" to "Samba TV")
-        /** Never offered or turned off: the TV would stop working, or this project would. The home screen goes through FLauncher only. */
+        /**
+         * Never offered or turned off: the TV would stop working, or this project would. A launcher (FLauncher, TV Home) is not here:
+         * the one Home opens now is kept wherever an app is removed ([homeNow], Manage's home check), the others may go.
+         */
         val PROTECTED = Regex("android|com\\.android\\.(systemui|settings|tv\\.settings|shell|phone|bluetooth|providers\\..*|packageinstaller|permissioncontroller|inputmethod.*|networkstack.*|vending)" +
             "|com\\.google\\.android\\.(gms|gsf|packageinstaller|permissioncontroller|tvlauncher|tvrecommendations|leanbacklauncher.*|inputmethod.*|tv\\.remote\\.service|katniss|apps\\.tv\\.launcherx|tungsten\\.setupwraith)" +
-            "|dev\\.tvremote\\..*|me\\.efesser\\.flauncher|com\\.tailscale\\.ipn")
+            "|dev\\.tvremote\\..*|com\\.tailscale\\.ipn")
         /** What the Apps tab marks "must keep" and refuses to stop, clear, turn off or remove: [PROTECTED] and the brands' own [Bloat.KEEP]. */
         fun mustKeep(p: String) = PROTECTED.matches(p) || Bloat.KEEP.matches(p)
         /** What this project turned off beyond its own lists, so Undo can turn exactly that back on. Kept on the TV. */
@@ -154,7 +157,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
         }
 
         val pick = c.disable ?: suggested()
-        val keep = setOf(homeNow(), keyboardNow().substringBefore('/'))   // whatever the list says, the TV keeps a home and a keyboard
+        val keep = setOf(homeNow(), keyboardNow().substringBefore('/'), if (c.home) FL_PKG else "")   // whatever the list says, the TV keeps a home and a keyboard
         var off = 0
         for (p in pick.distinct()) {
             if (!p.matches(Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")) || kept(p) || p in keep || !has(p)) continue

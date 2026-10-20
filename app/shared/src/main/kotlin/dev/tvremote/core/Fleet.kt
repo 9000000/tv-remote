@@ -43,6 +43,8 @@ object Fleet {
     @Throws(IOException::class)
     fun uninstall(adb: Adb, pkg: String) {
         canUninstall(pkg)?.let { throw IOException(it) }
+        if (dev.tvremote.core.ontv.LauncherSwap.last(adb.shell(dev.tvremote.core.ontv.LauncherSwap.RESOLVE_HOME)).startsWith("$pkg/"))
+            throw IOException("protected: the TV needs this app")                   // its home screen
         val out = adb.shell("pm uninstall $pkg 2>&1").trim()
         if (!out.contains("Success")) throw IOException(out.ifEmpty { "uninstall failed" })
     }

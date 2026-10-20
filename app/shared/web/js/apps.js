@@ -148,10 +148,10 @@ const APPS_FILTERS = [
 ];
 const appTags = (p, i) => APPS_FILTERS.filter((f) => f[0] !== 'all' && f[2](p, i))
   .map(([key, label, , why]) => el('span', { className: 'tag ' + key, textContent: label, title: why }));
-async function loadApps() {
-  $('#appslist').replaceChildren(el('div', { className: 'muted', textContent: T('apps.loading') }));
+async function loadApps(quiet) {                                       // quiet: the list stays on screen while it is read again
+  if (!quiet) $('#appslist').replaceChildren(el('div', { className: 'muted', textContent: T('apps.loading') }));
   const r = await api('/api/apps' + ($('#appssys').checked ? '?system=1' : ''));
-  if (!r) { $('#appslist').replaceChildren(); return; }
+  if (!r) { if (!quiet) $('#appslist').replaceChildren(); return; }
   appsLoaded = true; appsAll = r.apps.map((a) => a.pkg); appsInfo = new Map(r.apps.map((a) => [a.pkg, { off: !!a.off, keep: !!a.keep, version: a.version || '' }])); seedMeta(r.apps); renderApps();
   const b = await api('/api/apps/boot', null, true);                 // after the list: a tag is worth no wait
   if (b) { appsBoot = bootRead(b.text); renderApps(); }
@@ -181,7 +181,12 @@ function renderApps() {
       if (name === 'uninstall' && !await ask(T('apps.uninstall_ask', { name: appName(pkg) }), { ok: T('apps.remove'), danger: true })) return;
       if (name === 'disable' && !await ask(T('apps.disable_ask', { name: appName(pkg) }), { ok: T('apps.disable_app') })) return;
       if (name === 'clear' && !await ask(T('apps.clear_ask', { name: appName(pkg) }), { ok: T('apps.clear_data'), danger: true })) return;
-      const r = await api('/api/app/' + name, { pkg }); if (r) { toast(T('apps.what_name', { what: label, name: appName(pkg) })); if (!['launch', 'stop', 'clear'].includes(name)) { quickLoaded = false; loadApps(); loadQuick(); } }
+      const r = await api('/api/app/' + name, { pkg }); if (!r) return;
+      toast(T('apps.what_name', { what: label, name: appName(pkg) }));
+      if (['launch', 'stop', 'clear'].includes(name)) return;
+      if (name === 'uninstall') { appsAll = appsAll.filter((p) => p !== pkg); appsInfo.delete(pkg); }   // the list as it is, less one row: no reading every app again
+      else appsInfo.set(pkg, { ...info, off: name === 'disable' });
+      renderApps(); quickLoaded = false; loadQuick();
     };
     const info = appsInfo.get(pkg) || {};
     const icon = appsIcon(pkg, info.off), title = el('span', { textContent: META.get(pkg)?.label || pkg.split('.').pop() });
@@ -415,7 +420,7 @@ async function bulkRun(action, label) {
   }
   put('#bulklog', 'textContent', bad.length ? T('apps.bulk_done_bad', { what: label, ok, n: pkgs.length, bad: bad.join(', ') }) : T('apps.bulk_done', { what: label, ok, n: pkgs.length }));
   btns.forEach((b) => { b.disabled = false; });
-  await bulkStatus(true); renderBulk(); quickLoaded = false; loadQuick(); if (appsLoaded) loadApps();
+  await bulkStatus(true); renderBulk(); quickLoaded = false; loadQuick(); if (appsLoaded) loadApps(true);
 }
 $('#bulkoff').addEventListener('click', () => bulkRun('disable', T('apps.turn_off')));
 $('#bulkon').addEventListener('click', () => bulkRun('enable', T('apps.turn_on')));

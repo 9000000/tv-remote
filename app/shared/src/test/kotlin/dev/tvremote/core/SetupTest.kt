@@ -56,7 +56,7 @@ class SetupTest {
     }
 
     private val musts = arrayOf("android", "com.android.systemui", "com.android.tv.settings", "com.google.android.gms", "com.google.android.tvlauncher",
-        "com.google.android.katniss", "dev.tvremote.setup", "com.tailscale.ipn", "me.efesser.flauncher")
+        "com.google.android.katniss", "dev.tvremote.setup", "com.tailscale.ipn")
 
     @Test fun whatKeepsTheTvWorkingIsNeverTurnedOff() {
         val tv = FakeTv(true, *(musts.toList() - Setup.TS_PKG).toTypedArray(), "com.foo.game")   // installed, Tailscale would be kept alive over ADB

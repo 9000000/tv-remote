@@ -14,6 +14,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Thẻ 📺 TV (tab Thiết lập) có hàng **Màn hình**: Tắt / bật màn hình và Giảm độ sáng, không cần mở remote
 - Remote hồng ngoại: chọn hãng không còn là danh sách số model. Model dùng chung một mã gộp làm một; hãng có nhiều kiểu thì hiện **Kiểu 1 (phổ biến nhất)**, **Kiểu 2**... kèm vài model và số phím. Nút hãng không còn xuống dòng
 - Remote hồng ngoại lưu được nhiều remote có tên (TV phòng khách, box nhà mạng...): mở Remote hồng ngoại là thấy danh sách, bấm là dùng, không phải dò lại. **Thêm remote** để chọn hãng hoặc dò mã rồi đặt tên; đổi tên, xóa ngay trong danh sách; **Xuất file** / **Nhập file** để chuyển sang điện thoại khác (nhập chỉ thêm remote chưa có)
+- Nút **TV Home** trong menu Thêm của remote: mở Tùy chỉnh TV Home (chưa cài thì dẫn tới thẻ Màn hình chính)
+- Launcher không đang làm màn hình chính (FLauncher...) không còn bị coi là "Cần giữ": gỡ, tắt được; launcher đang dùng vẫn được giữ
+- TV Home không hiện các app hệ thống chỉ dành cho điện thoại mà hãng để lại (thông báo hệ thống, phóng to màn hình, cập nhật thử...)
+- Sửa: tab Ứng dụng: gỡ / tắt một app không còn tải lại cả danh sách
 - Sửa: app điện thoại: bấm Quay lại từ menu con thì tiêu đề menu trước bị sai
 - Sửa: TV đã lưu: trong thẻ hẹp (nửa trang trên máy tính) các nút xuống dòng dưới tên TV, không ép chữ
 
@@ -25,6 +29,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - The 📺 TV card (Setup tab) has a **Screen** row: Screen off / on and Dim the screen, without opening the remote
 - Infrared remote: picking a brand is no longer a list of model numbers. Models that share one code are one; a brand with several shows **Type 1 (most common)**, **Type 2**... with a few models and the number of keys. The brand button stays on one line
 - Infrared remote keeps several remotes by name (living room TV, the operator's box...): Infrared remote opens on that list, one tap to use one, no finding again. **Add a remote** picks a brand or finds the code, then names it; rename and delete in the list; **Export** / **Import** to move them to another phone (import adds only the ones not there)
+- A **TV Home** button in the remote's More menu: opens Customize TV Home (or, when it is not installed, the Home screen card)
+- A launcher that is not the home screen now (FLauncher...) is no longer "Must keep": it can be removed or turned off; the one in use is still kept
+- TV Home leaves out the phone-only system apps a maker left behind (system notification, screen zoom, an updater test...)
+- Fix: Apps tab: removing or turning off an app no longer reads the whole list again
 - Fix: phone app: Back from a sub-menu showed the wrong title on the menu before
 - Fix: saved TVs: in a narrow card (half the page on a computer) the buttons go under the TV's name instead of squeezing it
 

@@ -36,7 +36,7 @@ async function homeUpdate() {
 async function homeOpen() {
   if (needAdb()) return;
   let r = await api('/api/home'); if (!r) return;
-  if (!r.installed) { homeCard(); return; }
+  if (!r.installed) { homeCard(); toast(T('home.missing')); goTo('tv', 'launchcard'); return; }   // from the remote's More: where to get it
   const apps = () => r.apps.map((a) => a.pkg);
   const send = async (change) => {
     const n = await api('/api/home', change);

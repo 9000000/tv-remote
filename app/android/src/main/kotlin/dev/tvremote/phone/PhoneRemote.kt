@@ -55,6 +55,7 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "share" to act { shareDialog() },
     "inputs" to act { inputsMenu() },
     "ir" to act { irOpen(entry ?: host) },
+    "homeCustom" to act { if (!needsAdb()) managing.open(host, "tv", "homeOpen()") },   // the page's TV Home dialog: one place for it
 )
 
 /** Things an action's button needs to know about itself once drawn (the ✏️ is lit while drawing). */

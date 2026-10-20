@@ -18,7 +18,11 @@ class App(val pkg: String, val label: String, val info: ActivityInfo) {
 }
 
 object Apps {
-    /** TV apps first (LEANBACK_LAUNCHER), then phone apps that have a launcher entry, as the TV's own home lists them; not this one. */
+    /**
+     * TV apps first (LEANBACK_LAUNCHER), then phone apps that have a launcher entry; not this one. A phone-only entry of the
+     * firmware's own (never updated) is left out: makers leave such tools behind (a Hisense FPT Play box: SystemNotification,
+     * screen zoom, an updater test, Contacts, Camera), the TV's own home does not show them either. Chrome put on by hand stays.
+     */
     fun list(c: Context): List<App> {
         val pm = c.packageManager
         val out = LinkedHashMap<String, App>()
@@ -27,11 +31,15 @@ object Apps {
             for (ri in found) {
                 val p = ri.activityInfo.packageName
                 if (p == c.packageName || p in out) continue
+                if (cat == Intent.CATEGORY_LAUNCHER && firmware(ri.activityInfo.applicationInfo)) continue
                 out[p] = App(p, ri.loadLabel(pm).toString().trim(), ri.activityInfo)
             }
         }
         return out.values.sortedBy { it.label.lowercase() }
     }
+
+    private fun firmware(a: android.content.pm.ApplicationInfo) =
+        a.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM != 0 && a.flags and android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP == 0
 
     fun launch(c: Context, pkg: String): Boolean {
         val pm = c.packageManager
