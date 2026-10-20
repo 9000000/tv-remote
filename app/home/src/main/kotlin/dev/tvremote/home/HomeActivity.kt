@@ -79,6 +79,7 @@ class HomeActivity : Activity() {
     private var badges = Badges.NONE
     private var wantCol = -1                                        // the grid column Up and Down try to keep ([Nav])
     private var stepping = false
+    private companion object { var reopen = false }                 // across recreate(): the panel was open when the language changed
     private var open: android.app.Dialog? = null                    // the panel or menu on top, closed by a Home press
     private lateinit var widgets: Widgets
     private val ui = android.os.Handler(android.os.Looper.getMainLooper())
@@ -86,6 +87,8 @@ class HomeActivity : Activity() {
     private val netTick = object : Runnable { override fun run() { widgets.sample(); ui.postDelayed(this, Widgets.SAMPLE_MS) } }
 
     private fun dp(v: Number) = (v.toFloat() * resources.displayMetrics.density).toInt()
+
+    override fun attachBaseContext(base: Context) = super.attachBaseContext(Lang.wrap(base))
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
@@ -165,7 +168,7 @@ class HomeActivity : Activity() {
         col.addView(grid)
 
         setContentView(root)
-        Store.onChange = { conf = Store.get(this); show() }
+        Store.onChange = { conf = Store.get(this); if (conf.optString("lang") != Lang.shown) relang() else show() }
         val pkgs = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED); addAction(Intent.ACTION_PACKAGE_REMOVED); addAction(Intent.ACTION_PACKAGE_CHANGED)
             addDataScheme("package")
@@ -177,10 +180,19 @@ class HomeActivity : Activity() {
         })
         loadApps()
         if (Motion.on) enter(true)
+        if (reopen) { reopen = false; ui.post { customize() } }
+    }
+
+    /** A new language: the screen built again in it, the panel reopened if the change came from it (else it is closed). */
+    private fun relang() {
+        reopen = open?.isShowing == true && open === panel
+        open?.dismiss(); open = null
+        recreate()
     }
 
     override fun onDestroy() {
         Store.onChange = null
+        open?.dismiss()
         ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick)
         try { unregisterReceiver(changed); unregisterReceiver(tick) } catch (e: Exception) { }
         bg.shutdownNow()
@@ -578,7 +590,8 @@ class HomeActivity : Activity() {
             .setItems(acts.map { getString(it.first) }.toTypedArray()) { _, i -> acts[i].second() }.show().also { open = it }
     }
 
-    private fun customize() { open = Customize.show(this) }
+    private var panel: android.app.Dialog? = null
+    private fun customize() { open = Customize.show(this).also { panel = it } }
 
     /** The remote's Menu key anywhere but on an app (an app's own Menu opens its menu) opens the settings. */
     override fun onKeyUp(code: Int, e: KeyEvent): Boolean {
@@ -672,7 +685,8 @@ class HomeActivity : Activity() {
  * [app] null: the "hidden apps" tile.
  */
 class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int) : LinearLayout(c) {
-    private val card = FrameLayout(c)
+    private val card = FrameLayout(c)                               // what grows: the face and, round it, the ring
+    private val face = FrameLayout(c)                               // the picture, clipped to its rounded corners
     private val ring = View(c)
     private val name = TextView(c)
     private val shine = View(c)
@@ -690,12 +704,12 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
         val r = dp(10).toFloat()
         lift = dp(14).toFloat(); across = w.toFloat()
         val banner = app?.banner
-        card.background = GradientDrawable().apply { cornerRadius = r; setColor(if (banner != null) 0xFF1E2230.toInt() else shade(app?.pkg ?: "")) }
-        card.clipToOutline = true
+        face.background = GradientDrawable().apply { cornerRadius = r; setColor(if (banner != null) 0xFF1E2230.toInt() else shade(app?.pkg ?: "")) }
+        face.clipToOutline = true
         if (banner != null) {
             content = ImageView(c).apply { setImageDrawable(banner); scaleType = ImageView.ScaleType.CENTER_CROP }
             pic = content as ImageView
-            card.addView(content, FrameLayout.LayoutParams(-1, -1))
+            face.addView(content, FrameLayout.LayoutParams(-1, -1))
         } else {
             val inner = LinearLayout(c).apply { orientation = VERTICAL; gravity = Gravity.CENTER; setPadding(dp(6), dp(4), dp(6), dp(4)) }
             inner.addView(ImageView(c).apply {
@@ -705,17 +719,26 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
                 text = label; textSize = 12f; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER
                 setPadding(0, dp(4), 0, 0)
             }, LayoutParams(-1, -2))
-            card.addView(inner, FrameLayout.LayoutParams(-1, -1))
+            face.addView(inner, FrameLayout.LayoutParams(-1, -1))
             content = inner
         }
         shine.background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x30FFFFFF, 0x0AFFFFFF, 0x00FFFFFF))
         shine.alpha = 0f; shine.translationY = -lift
-        card.addView(shine, FrameLayout.LayoutParams(-1, h * 2 / 3))
+        face.addView(shine, FrameLayout.LayoutParams(-1, h * 2 / 3))
+        face.addView(badge, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(6), 0) })
+        // the ring lies OUTSIDE the face, its solid blue over the face's edge: drawn on the edge, a white banner's soft-cornered
+        // pixels showed past it at the corners. The card is that much larger (and the tile that much smaller round it) so the
+        // ring is inside the card's own layer while it grows; the tiles stay where they were.
+        val o = dp(RING_OUT)
+        card.addView(face, FrameLayout.LayoutParams(w, h).apply { setMargins(o, o, o, o) })
         ring.background = ringDrawable(r, dp)
         ring.alpha = 0f
         card.addView(ring, FrameLayout.LayoutParams(-1, -1))
-        card.addView(badge, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(6), 0) })
-        addView(card, LayoutParams(w, h))
+        card.clipChildren = false
+        card.outlineProvider = object : android.view.ViewOutlineProvider() {   // the shadow under the face only
+            override fun getOutline(v: View, out: android.graphics.Outline) { out.setRoundRect(o, o, o + w, o + h, r) }
+        }
+        addView(card, LayoutParams(w + 2 * o, h + 2 * o).apply { setMargins(-o, -o, -o, -o) })
         name.apply {
             text = if (banner != null) label else ""                  // a tile without a banner already shows its name inside
             textSize = 13f; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER
@@ -778,17 +801,19 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
 }
 
 /**
- * The ring round the focused tile, seen on a white banner and on a black one alike, with or without the grow: a dark edge, the
- * accent in the middle (almost no banner is that blue), a thin white line inside for a banner that is blue itself.
+ * The ring round the focused tile: the accent (almost no banner is that blue) from [RING_OUT] dp outside the face to 1 dp over it,
+ * covering the face's soft edge, then a thin white line for a banner that is blue itself. No dark edge: on a TV it read as a black
+ * border round the blue.
  */
 private fun ringDrawable(r: Float, dp: (Number) -> Int): Drawable {
-    fun band(w: Int, color: Int, inset: Int) = GradientDrawable().apply { cornerRadius = maxOf(0f, r - inset); setStroke(w, color); setColor(Color.TRANSPARENT) }
-    return android.graphics.drawable.LayerDrawable(arrayOf(band(dp(2), RING_EDGE, 0), band(dp(4), RING_ACCENT, dp(2)), band(dp(1), Color.WHITE, dp(6)))).apply {
-        setLayerInset(1, dp(2), dp(2), dp(2), dp(2)); setLayerInset(2, dp(6), dp(6), dp(6), dp(6))
+    val o = dp(RING_OUT)
+    fun band(w: Int, color: Int, radius: Float) = GradientDrawable().apply { cornerRadius = maxOf(0f, radius); setStroke(w, color); setColor(Color.TRANSPARENT) }
+    return android.graphics.drawable.LayerDrawable(arrayOf(band(o + dp(1), RING_ACCENT, r + o), band(dp(1), Color.WHITE, r - dp(1)))).apply {
+        setLayerInset(1, o + dp(1), o + dp(1), o + dp(1), o + dp(1))
     }
 }
+const val RING_OUT = 3                                                // dp the ring reaches past the face
 const val RING_ACCENT = 0xFF2F7DF6.toInt()                          // 3.7:1 on white; with the dark edge it shows on any banner
-const val RING_EDGE = 0xE6000000.toInt()
 
 /**
  * A pill on a tile's corner: a lock, or an hourglass and the time left. Drawn by hand with the paints and icons made once, and

@@ -11,6 +11,7 @@ import org.json.JSONObject
  *   wall    a built-in background ([WALLS]) or "photo" (wall.jpg in TV Home's external files folder, sent by the client)
  *   photo   when that photo last changed, so the launcher reads it again
  *   clock24 24-hour clock; greet: the greeting under the clock
+ *   lang    TV Home's words: "" the TV's own language, or one of [LANGS] whatever the TV is set to
  *   anim    motion effects (a focused app lifts, rows glide, the screen fades in); off = instant, with a ring. TV Home also
  *           treats the system's "animator duration scale 0" as off
  *   widgets the cards between the clock and the favourites, in their order ([WIDGETS]): "system" (memory, storage, network,
@@ -93,6 +94,8 @@ object HomeConfig {
     const val PLACE_MAX = 60
     /** TV Setup's answer to TV Home about app use (its HomeInfo provider): `call(USAGE, "usage")` → Bundle "json". */
     const val USAGE = "content://dev.tvremote.setup.home"
+    /** The languages TV Home has words in (res/values-<lang>; English is res/values), "" = the TV's. */
+    val LANGS = listOf("", "vi", "en")
     private val PKG_NAME = Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")
 
     /** [o] made safe: unknown fields dropped, lists of real package names without repeats, every value in range. */
@@ -105,6 +108,7 @@ object HomeConfig {
             .put("wall", o.optString("wall").takeIf { it in WALLS } ?: "night")
             .put("photo", o.optLong("photo", 0).coerceAtLeast(0))
             .put("clock24", o.optBoolean("clock24", true))
+            .put("lang", o.optString("lang").takeIf { it in LANGS } ?: "")
             .put("greet", o.optBoolean("greet", true))
             .put("anim", o.optBoolean("anim", true))
             .put("dream", o.optBoolean("dream", false))

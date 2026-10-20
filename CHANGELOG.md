@@ -8,6 +8,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 
+- TV Home: chọn ngôn ngữ riêng (Theo TV / Tiếng Việt / English) trên TV và trên app; thẻ thời tiết gọn hơn (trời, cao/thấp nằm cạnh nhiệt độ)
+- Sửa: viền focus của TV Home không còn mép đen, banner nền trắng không lòi ra ngoài góc viền
 - TV Home: chuyển động mượt kiểu Apple TV: focus nảy lên như lò xo, ánh sáng phủ lên thẻ, thẻ rung nhẹ khi bấm vào cạnh. Hình nền vẽ một lần trên lớp riêng: box yếu chạy 60 khung/giây thay vì ~40, gradient và ảnh nền hết bị sọc màu
 - Sửa: Tối ưu TV không còn làm hiệu ứng trong app nhanh gấp đôi (animator 0.5), vốn làm cuộn và focus của TV Home bị giật. Giờ chỉ tắt hiệu ứng chuyển cảnh giữa các màn hình; TV đã tối ưu trước đây chạy lại Tối ưu TV là về bình thường
 - Widget của TV Home: **mỗi thẻ chọn To hoặc Nhỏ** thay cho các cách xếp có sẵn. Thẻ to có một cột riêng, hai thẻ nhỏ liền nhau chung một cột, thẻ nhỏ đứng một mình là cột hẹp; thẻ nào hết chỗ thì chờ (hộp thoại ghi "Chưa hiện"), hàng app yêu thích luôn còn trên màn hình. Mỗi thẻ có dạng nhỏ riêng (thời tiết: nhiệt độ và cao / thấp, hệ thống: các vòng, lịch: ngày hôm nay và ngày âm, app dùng nhiều: 2 app đầu). Hộp thoại trên điện thoại / máy tính có nút To / Nhỏ bên cạnh ↑ ↓ ✕ và hình thu nhỏ kết quả; trên TV bấm nút To / Nhỏ ở mỗi thẻ. Thứ tự đổi được bằng ↑ ↓. Cách xếp cũ tự đổi thành các cỡ cho ra cùng hình. TV Home cũ vẫn thấy các nút cách xếp cũ
@@ -38,6 +40,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **English**
 
+- TV Home: a language of its own (Same as the TV / Tiếng Việt / English), on the TV and in the app; a tighter weather card (sky and high / low beside the temperature)
+- Fix: TV Home's focus ring has no dark edge any more, and a white banner no longer shows past its corners
 - TV Home: smoother, Apple TV-like motion: focus rises on a spring, light settles on the card, a card nudges at an edge. The wallpaper is painted once on its own layer: on a weak box focus moves at 60 frames a second instead of ~40, and gradients and photos no longer show bands
 - Fix: Optimize TV no longer halves the apps' own animations (animator scale 0.5): TV Home's scroll and focus ran twice as fast and looked jerky. It now turns off only the screen-to-screen transitions; running Optimize TV again puts a TV optimized before back to normal
 - TV Home's widgets: **each card is Big or Small** instead of preset layouts. A big card gets a column, two small cards in a row share one, a small card on its own is a narrow column; a card with no room waits (the dialog says "Not shown yet"), and the favourite apps always stay on screen. Each card has its own small form (weather: temperature and high / low, system: the rings, calendar: today's date and lunar date, most used apps: the top 2). The dialog on the phone / computer has Big / Small buttons beside ↑ ↓ ✕ and a tiny picture of the result; on the TV press the Big / Small button on a card. The order changes with ↑ ↓. An old layout turns into the sizes that gave the same picture. An older TV Home still sees the old layout buttons

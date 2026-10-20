@@ -103,12 +103,14 @@ object Customize {
         // switches as tiles, two to a row: an icon, a name, a line under it; on = a blue tint with a blue edge, as everywhere in the app
         var pair: LinearLayout? = null
         var inRow = 0
-        fun tile(res: Int, text: String, sub: String?, key: String) {
+        // with [choices] (value to its words) the tile steps through them on each press instead of switching on / off; on = not the first
+        fun tile(res: Int, text: String, sub: String?, key: String, choices: List<Pair<String, String>>? = null) {
             if (pair == null || inRow == 2) {
                 pair = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }
                 col.addView(pair, LinearLayout.LayoutParams(-1, -2).apply { if (inRow == 2) topMargin = gap }); inRow = 0
             }
-            var on = conf.optBoolean(key, true)
+            var pick = choices?.indexOfFirst { it.first == conf.optString(key) }?.coerceAtLeast(0) ?: 0
+            var on = if (choices != null) pick > 0 else conf.optBoolean(key, true)
             val ic = ImageView(a).apply { setImageResource(res) }
             val state = label("", 12f, DIM)
             val t = LinearLayout(a).apply {
@@ -128,12 +130,16 @@ object Customize {
                 }
                 ic.imageTintList = ColorStateList.valueOf(if (on) ACCENT else DIM)
                 val word = a.getString(if (on) R.string.w_on else R.string.w_off).replaceFirstChar { it.uppercase() }
-                state.text = if (sub != null) "$word · $sub" else word
+                state.text = choices?.get(pick)?.second ?: if (sub != null) "$word · $sub" else word
                 state.setTextColor(if (on) ACCENT else DIM)
             }
             paint()
             t.onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
             t.setOnClickListener {
+                if (choices != null) {                                 // a new language builds the screen again (HomeActivity), this panel with it
+                    pick = (pick + 1) % choices.size; on = pick > 0; paint()
+                    Store.change(a, JSONObject().put(key, choices[pick].first)); return@setOnClickListener
+                }
                 on = !on
                 try { Store.change(a, JSONObject().put(key, on)) } catch (e: SecurityException) { on = !on; systemDream(a) }
                 paint()
@@ -146,6 +152,8 @@ object Customize {
         tile(R.drawable.ic_message, a.getString(R.string.greet), null, "greet")
         tile(R.drawable.ic_sparkle, a.getString(R.string.motion), null, "anim")
         tile(R.drawable.ic_moon, a.getString(R.string.dream), a.getString(R.string.dream_sub), "dream")
+        tile(R.drawable.ic_globe, a.getString(R.string.c_lang), null, "lang",
+            listOf("" to a.getString(R.string.c_lang_tv), "vi" to "Tiếng Việt", "en" to "English"))
         if (inRow == 1) pair!!.addView(View(a), LinearLayout.LayoutParams(0, 0, 1f).apply { leftMargin = gap })   // a lone tile keeps half the width
         pair = null
         section(a.getString(R.string.w_widgets))

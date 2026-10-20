@@ -128,4 +128,6 @@
     <string name="c_size">Cỡ</string>
     <string name="c_waits">chưa hiện</string>
     <string name="c_size_hint">Nút To / Nhỏ chọn cỡ thẻ. Thẻ to có một cột, hai thẻ nhỏ chung một cột.</string>
+    <string name="c_lang">Ngôn ngữ</string>
+    <string name="c_lang_tv">Theo TV</string>
 </resources>

@@ -134,6 +134,8 @@ async function homeOpen() {
   });
   const wHead = el('h3', { textContent: T('home.widgets') }), wList = el('div', { className: 'list homew' });
   const layHead = el('h3', { textContent: T('home.layout') }), lay = el('div', { className: 'fchips laychips' }), layNote = el('p', { className: 'note' });
+  // TV Home's words: the TV's language, or one chosen for it (HomeConfig.LANGS); absent from a TV Home older than the choice
+  const langHead = el('h3', { textContent: T('home.lang') }), langs = el('div', { className: 'fchips' });
   const packHead = el('h3', { textContent: T('home.pack') }), packBox = el('div', { className: 'packwrap' }), packNote = el('p', { className: 'note', textContent: T('home.pack_note') });
   // the family's note, pinned on the TV's home screen until it is taken down (HomeConfig.NOTE_MAX)
   const note = el('input', { type: 'text', maxLength: 140, placeholder: T('home.note_ph'), 'aria-label': T('home.note') });
@@ -168,6 +170,9 @@ async function homeOpen() {
       return el('button', { type: 'button', className: c.wall === w ? 'on' : '', onclick: () => send({ wall: w }) }, dot, el('span', { textContent: T(HOME_WALL_WORDS[w]) }));
     }), ...(r.photo ? [el('button', { type: 'button', className: c.wall === 'photo' ? 'on' : '', onclick: () => send({ wall: 'photo' }) }, el('i', { className: 'add', textContent: '🖼️' }), el('span', { textContent: T('home.wall_photo') }))] : []),
     el('button', { type: 'button', onclick: () => file.click() }, el('i', { className: 'add', textContent: '＋' }), el('span', { textContent: T('home.upload') })));
+    langHead.hidden = langs.hidden = c.lang === undefined;
+    langs.replaceChildren(...[['', 'home.lang_tv'], ['vi', 'home.lang_vi'], ['en', 'home.lang_en']].map(([k, id]) =>
+      el('button', { type: 'button', className: (c.lang || '') === k ? 'on' : '', onclick: () => send({ lang: k }) }, T(id))));
     clock.checked = c.clock24; greet.checked = c.greet; anim.checked = c.anim !== false;
     dream.checked = !!c.dream;
     dream.closest('label').hidden = c.dream === undefined;           // a TV Home older than the screensaver
@@ -214,6 +219,7 @@ async function homeOpen() {
     el('div', { className: 'card-head' }, el('h3', { textContent: T('home.dock') }), addDock), dock,
     el('h3', { textContent: T('home.wall') }), walls, file,
     galHead, gal, credit,
+    langHead, langs,
     el('label', { className: 'check' }, clock, el('span', { textContent: T('home.clock24') })),
     el('label', { className: 'check' }, greet, el('span', { textContent: T('home.greet') })),
     el('label', { className: 'check' }, anim, el('span', { textContent: T('home.anim') })),

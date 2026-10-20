@@ -130,4 +130,6 @@
     <string name="c_size">Size</string>
     <string name="c_waits">not shown yet</string>
     <string name="c_size_hint">The Big / Small button sets how large a card is. Big cards get a column, two small ones share one.</string>
+    <string name="c_lang">Language</string>
+    <string name="c_lang_tv">Same as the TV</string>
 </resources>

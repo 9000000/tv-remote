@@ -1,5 +1,6 @@
 package dev.tvremote.home
 
+import android.content.Context
 import android.animation.ObjectAnimator
 import android.animation.TimeInterpolator
 import android.graphics.Bitmap
@@ -27,6 +28,7 @@ import java.util.concurrent.Executors
  * another place every minute, fading while it goes, and everything is a little dim.
  */
 class HomeDream : DreamService() {
+    override fun attachBaseContext(base: Context) = super.attachBaseContext(Lang.wrap(base))
     private val ui = android.os.Handler(android.os.Looper.getMainLooper())
     private val bg = Executors.newSingleThreadExecutor()
     private lateinit var block: LinearLayout
