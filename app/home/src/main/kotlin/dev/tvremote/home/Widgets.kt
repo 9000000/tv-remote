@@ -449,7 +449,11 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val title = r.getStringArray(R.array.cal_month)[c.grid.month - 1] + ", " + c.grid.year
         val view = Month(a, c, Calendar.getInstance(resources.configuration.locales[0]).firstDayOfWeek, (width - dp(40)) / 7f, maxH)
         card.addView(head(title, if (width - dp(40) >= dp(320)) lunar else ""))
-        card.addView(view, LayoutParams(-1, view.wanted).apply { topMargin = dp(6) })
+        // in a fixed-height card the month takes all that is left under the title, and the card gives it some of its padding:
+        // five rows of a day over its lunar day need every dp there is
+        val fixed = maxH < Int.MAX_VALUE
+        if (fixed) card.setPadding(card.paddingLeft, dp(10), card.paddingRight, dp(8))
+        card.addView(view, (if (fixed) LayoutParams(-1, 0, 1f) else LayoutParams(-1, view.wanted)).apply { topMargin = dp(if (fixed) 3 else 6) })
     }
 
     /** The sky now with today's low and high, and the next days when the card is wide enough; without an answer yet, a short line. */
@@ -775,7 +779,8 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
     private inner class Month(c: Context, val cal: Cal, first: Int, slot: Float, maxH: Int) : View(c) {
         private val wide = slot >= dp(64); private val two = !wide && slot >= dp(24)
         private val headH = dp(17)
-        private val rowH = minOf(dp(if (wide) 23 else if (two) 26 else 21), ((maxH - headH) / cal.grid.rows).coerceAtLeast(dp(16)))   // a six-week month in the fixed-height slot: thinner rows
+        private val rowMax = dp(if (wide) 23 else if (two) 30 else 21)
+        private var rowH = minOf(rowMax, ((maxH - headH) / cal.grid.rows).coerceAtLeast(dp(16)))   // a six-week month in the fixed-height slot: thinner rows
         val wanted = headH + rowH * cal.grid.rows
         private val tiny = slot < dp(30)
         private val big = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = (if (tiny) 12.5f else 14f) * sp; typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) }
@@ -789,7 +794,14 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         private val inMonth = BooleanArray(n) { it >= cal.grid.offset && it < cal.grid.offset + cal.grid.days }
         private val solar = Array(n) { "" }; private val lunarText = Array(n) { "" }
         private val gap = dp(4).toFloat()
+        private var bigCap = 0f; private var smallCap = 0f              // the digits' real heights: the two lines are stacked by them, not by the row
+        private fun caps() {
+            val r = android.graphics.Rect()
+            big.getTextBounds("8", 0, 1, r); bigCap = r.height().toFloat()
+            small.getTextBounds("8", 0, 1, r); smallCap = r.height().toFloat()
+        }
         init {
+            caps()
             val k = Calendar.getInstance().apply { clear(); set(cal.grid.sy, cal.grid.sm - 1, cal.grid.sd) }
             for (i in 0 until n) {
                 solar[i] = k.get(Calendar.DAY_OF_MONTH).toString()
@@ -799,7 +811,12 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             big.textAlign = if (wide) Paint.Align.LEFT else Paint.Align.CENTER
             small.textAlign = big.textAlign
         }
-        override fun onMeasure(w: Int, h: Int) = setMeasuredDimension(MeasureSpec.getSize(w), wanted)
+        override fun onMeasure(w: Int, h: Int) =
+            setMeasuredDimension(MeasureSpec.getSize(w), if (MeasureSpec.getMode(h) == MeasureSpec.EXACTLY) MeasureSpec.getSize(h) else wanted)
+        override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
+            rowH = minOf(rowMax, ((h - headH) / cal.grid.rows).coerceAtLeast(dp(16)))
+            if (two && rowH < dp(27)) { big.textSize = 13f * sp; small.textSize = 9f * sp; caps() }   // short rows: the digits a touch smaller, the gaps kept
+        }
         override fun onDraw(cv: Canvas) {
             val slot = width / 7f
             for (col in 0 until 7) {
@@ -822,8 +839,13 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
                     val x = cx - (bw + gap + sw) / 2; val base = top + rowH / 2f + big.textSize * 0.35f
                     cv.drawText(solar[i], x, base, big); cv.drawText(lunarText[i], x + bw + gap, base, small)
                 } else if (two) {
-                    cv.drawText(solar[i], cx, top + rowH * 0.5f, big)
-                    cv.drawText(lunarText[i], cx, top + rowH - dp(4).toFloat(), small)
+                    // the day over its lunar day, centred in the row; the gap between the two is a quarter of the room left, so the
+                    // rows stand three times further apart than a day from its lunar day and each pair reads as one
+                    val room = rowH - bigCap - smallCap
+                    val mid = maxOf(dp(2).toFloat(), room / 4f)
+                    val y = top + (room - mid) / 2f + bigCap
+                    cv.drawText(solar[i], cx, y, big)
+                    cv.drawText(lunarText[i], cx, y + mid + smallCap, small)
                 } else cv.drawText(solar[i], cx, top + rowH / 2f + big.textSize * 0.35f, big)
             }
         }
