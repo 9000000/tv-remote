@@ -122,12 +122,10 @@
     <string name="w_order_hint">Nút bên phải mỗi thẻ để đổi chỗ: bấm nút đó, rồi Lên / Xuống, rồi OK.</string>
     <string name="c_move">Đổi chỗ</string>
     <string name="c_moving">Lên / Xuống, rồi OK</string>
-    <string name="w_layout">Cách xếp</string>
-    <string name="c_layout_row">Hàng ngang</string>
-    <string name="c_layout_row_sub">cạnh nhau</string>
-    <string name="c_layout_big">1 to, 2 nhỏ</string>
-    <string name="c_layout_big2">2 to, 1 nhỏ</string>
-    <string name="c_layout_flip">2 nhỏ, 1 to</string>
-    <string name="c_layout_quad">4 nhỏ</string>
-    <string name="c_layout_first">chỉ %d thẻ đầu</string>
+    <string name="w_layout">Kết quả</string>
+    <string name="c_size_big">To</string>
+    <string name="c_size_small">Nhỏ</string>
+    <string name="c_size">Cỡ</string>
+    <string name="c_waits">chưa hiện</string>
+    <string name="c_size_hint">Nút To / Nhỏ chọn cỡ thẻ. Thẻ to có một cột, hai thẻ nhỏ chung một cột.</string>
 </resources>

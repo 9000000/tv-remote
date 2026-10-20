@@ -11,6 +11,32 @@ const HOME_WALL_WORDS = { night: 'home.wall_night', ocean: 'home.wall_ocean', du
   sunset: 'home.wall_sunset', ember: 'home.wall_ember', plum: 'home.wall_plum', midnight: 'home.wall_midnight', teal: 'home.wall_teal', slate: 'home.wall_slate', graphite: 'home.wall_graphite', navy: 'home.wall_navy', wine: 'home.wall_wine', moss: 'home.wall_moss' };
 const HOME_DOCK_MAX = 6;                                              // HomeConfig.DOCK_MAX
 const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer', 'weather'];          // HomeConfig.WIDGETS, in the order drawn
+// A TV Home with "wsizes" sizes each card (big / small) and packs them (homePack); one older than that has only the preset layouts below
+const HOME_BIG_KINDS = ['system', 'usage', 'calendar', 'weather'];     // HomeConfig.defaultSize: these are big until chosen otherwise
+const HOME_W = { big: 100, cal: 120, small: 90, budget: 415, floor: 190 };   // HomeConfig.W_BIG / W_CAL / W_SMALL / BUDGET / FLOOR
+const homeSize = (c, k) => (c.wsize && (c.wsize[k] === 'big' || c.wsize[k] === 'small')) ? c.wsize[k] : (HOME_BIG_KINDS.includes(k) ? 'big' : 'small');
+// HomeConfig.pack, the same rule (tests/home_pack_cases.json holds the cases both are tested with): walk the cards in order, a big
+// card is a column, two small ones in a row stack in one, a small one alone is a narrow column; the first column past the budget and
+// all after it wait. A pinned note is the last small card and keeps its place: the cards before it give way, from the end.
+function homePack(keys, big, note) {
+  const run = (ks) => {
+    const cols = []; let sum = 0, i = 0;
+    while (i < ks.length) {
+      const k = ks[i], isBig = big.includes(k);
+      const group = !isBig && i + 1 < ks.length && !big.includes(ks[i + 1]) ? [k, ks[i + 1]] : [k];
+      const w = !isBig ? HOME_W.small : k === 'calendar' ? HOME_W.cal : HOME_W.big;
+      if (sum + w > HOME_W.budget) break;
+      cols.push({ keys: group, weight: w }); sum += w; i += group.length;
+    }
+    return { cols, waiting: ks.slice(i) };
+  };
+  if (!note) return run(keys);
+  for (let n = keys.length; n >= 0; n--) {
+    const p = run([...keys.slice(0, n), 'note']);
+    if (!p.waiting.length) return { cols: p.cols, waiting: keys.slice(n) };
+  }
+  return { cols: [], waiting: keys };
+}
 const HOME_LAYOUTS = { row: 'home.layout_row', big: 'home.layout_big', big2: 'home.layout_big2', flip: 'home.layout_flip', quad: 'home.layout_quad' };   // HomeConfig.LAYOUTS
 // HomeConfig.COLS: [share of the width %, cards stacked] per column; "row" is drawn as it looks (it has no fixed places)
 const HOME_COLS = { row: [[33, 1], [33, 1], [34, 2]], big: [[58, 1], [42, 2]], big2: [[36, 1], [36, 1], [28, 1]], flip: [[42, 2], [58, 1]], quad: [[50, 2], [50, 2]] };
@@ -19,7 +45,19 @@ const HOME_ROW_CARDS = 3, HOME_LARGE = ['system', 'usage', 'calendar', 'weather'
 const homeSlots = (k) => k === 'row' || !HOME_COLS[k] ? 0 : HOME_COLS[k].reduce((n, c) => n + c[1], 0);   // HomeConfig.slots: what a fixed layout shows (a pinned note takes one)
 const HOME_WIDGET_WORDS = { system: 'home.w_system', usage: 'home.w_usage', calendar: 'home.w_calendar', lunar: 'home.w_lunar', timer: 'home.w_timer', weather: 'home.w_weather' };
 
-// A layout drawn small: its columns, the cards stacked in each (sizes in css/remote.css)
+// The packed layout drawn small: a column per weight, its cards stacked, big ones filled (sizes in css/remote.css)
+function packGlyph(p, big) {
+  const g = el('div', { className: 'packview', role: 'img', 'aria-label': T('home.pack_alt') });
+  const sum = Math.max(HOME_W.floor, p.cols.reduce((n, c) => n + c.weight, 0));
+  for (const c of p.cols) {
+    const col = el('b'); col.style.setProperty('--w', c.weight / sum * 100);
+    for (const k of c.keys) col.append(el('s', { className: big.includes(k) ? 'big' : '' }));
+    g.append(col);
+  }
+  return g;
+}
+
+// An older TV Home's layout drawn small: its columns, the cards stacked in each (sizes in css/remote.css)
 function layGlyph(k) {
   const g = el('i', { className: 'layglyph', 'aria-hidden': 'true' });
   for (const [pct, n] of HOME_COLS[k]) {
@@ -96,6 +134,7 @@ async function homeOpen() {
   });
   const wHead = el('h3', { textContent: T('home.widgets') }), wList = el('div', { className: 'list homew' });
   const layHead = el('h3', { textContent: T('home.layout') }), lay = el('div', { className: 'fchips laychips' }), layNote = el('p', { className: 'note' });
+  const packHead = el('h3', { textContent: T('home.pack') }), packBox = el('div', { className: 'packwrap' }), packNote = el('p', { className: 'note', textContent: T('home.pack_note') });
   // the family's note, pinned on the TV's home screen until it is taken down (HomeConfig.NOTE_MAX)
   const note = el('input', { type: 'text', maxLength: 140, placeholder: T('home.note_ph'), 'aria-label': T('home.note') });
   const pin = el('button', { type: 'button', className: 'primary', textContent: T('home.note_pin'), onclick: () => send({ note: note.value.trim() }) });
@@ -136,18 +175,28 @@ async function homeOpen() {
     const has = (k) => !!w && w.includes(k);
     wLines.forEach((l, i) => { l.hidden = !w || has(HOME_WIDGETS[i]) || (HOME_WIDGETS[i] === 'weather' && c.place === undefined); });   // weather: a TV Home older than it has no card
     wHead.hidden = !w;
-    const places = homeSlots(c.wlayout), slots = c.note ? places - 1 : places;
-    const waits = (k, i) => places ? (i >= slots ? T('home.w_waits', { n: slots }) : '')
+    const sized = !!c.wsizes;                                         // this TV Home sizes the cards; an older one has the preset layouts
+    const bigs = sized && w ? w.filter((k) => homeSize(c, k) === 'big') : [];
+    const packed = sized && w ? homePack(w, bigs, !!c.note) : null;
+    const places = sized ? 0 : homeSlots(c.wlayout), slots = c.note ? places - 1 : places;
+    const waits = (k, i) => sized ? (packed.waiting.includes(k) ? T('home.w_waits_pack') : '')
+      : places ? (i >= slots ? T('home.w_waits', { n: slots }) : '')
       : HOME_LARGE.includes(k) && w.slice(0, i).filter((x) => HOME_LARGE.includes(x)).length >= HOME_ROW_CARDS ? T('home.w_waits_row', { n: HOME_ROW_CARDS }) : '';
     const wmove = (i, j) => { const n = w.slice(); [n[i], n[j]] = [n[j], n[i]]; send({ widgets: n }); };
+    const wsize = (k, v) => send({ wsize: Object.fromEntries(HOME_WIDGETS.map((x) => [x, x === k ? v : homeSize(c, x)])) });
+    const sizeChips = (k) => el('span', { className: 'sizechips', role: 'group', 'aria-label': T('home.size') },
+      ...['big', 'small'].map((v) => el('button', { type: 'button', className: 'small' + (homeSize(c, k) === v ? ' on' : ''), textContent: T(v === 'big' ? 'home.size_big' : 'home.size_small'), 'aria-pressed': String(homeSize(c, k) === v), onclick: () => wsize(k, v) })));
     wList.replaceChildren(...(w || []).map((k, i) => el('div', { className: 'item' },
       el('div', { className: 'name' }, el('span', { textContent: T(HOME_WIDGET_WORDS[k]) }), ...(waits(k, i) ? [el('small', { textContent: waits(k, i) })] : [])),
       el('div', { className: 'acts' },
+        ...(sized ? [sizeChips(k)] : []),
         tool('↑', T('home.up'), () => wmove(i, i - 1), i === 0),
         tool('↓', T('home.down'), () => wmove(i, i + 1), i === w.length - 1),
         tool('✕', T('home.w_off'), () => send({ widgets: w.filter((x) => x !== k) }))))));
     wList.hidden = !w || !w.length;
-    layHead.hidden = lay.hidden = c.wlayout === undefined || !w;      // a TV Home older than the layouts
+    packHead.hidden = packBox.hidden = packNote.hidden = !sized || !w || !(w.length || c.note);
+    if (packed) packBox.replaceChildren(packGlyph(packed, bigs));
+    layHead.hidden = lay.hidden = sized || c.wlayout === undefined || !w;      // a TV Home older than the layouts; one with sizes has no presets
     layNote.hidden = layHead.hidden || !places;
     put(layNote, 'textContent', T('home.layout_note', { n: places }));
     lay.replaceChildren(...Object.keys(HOME_LAYOUTS).filter((k) => (c.wlayouts || HOME_OLD_LAYOUTS).includes(k)).map((k) => el('button', { type: 'button', className: c.wlayout === k ? 'on' : '', onclick: () => send({ wlayout: k }) },
@@ -169,7 +218,7 @@ async function homeOpen() {
     el('label', { className: 'check' }, greet, el('span', { textContent: T('home.greet') })),
     el('label', { className: 'check' }, anim, el('span', { textContent: T('home.anim') })),
     el('label', { className: 'check' }, dream, el('span', { textContent: T('home.dream') })),
-    wHead, wList, ...wLines, layHead, lay, layNote, placeHead, placeLine,
+    wHead, wList, ...wLines, packHead, packBox, packNote, layHead, lay, layNote, placeHead, placeLine,
     noteHead, noteLine,
     el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden));
   d.addEventListener('close', () => { d.remove(); homeCard(); });

@@ -25,15 +25,50 @@ class HomeConfigTest {
         assertEquals(listOf("a.b", "c.d", "e.f", "g.h", "i.j", "k.l"), dock(c))
     }
 
-    @Test fun layoutIsAKnownOneElseRowAndKeepsTheOrder() {
-        assertEquals("row", HomeConfig.clean(JSONObject()).getString("wlayout"))
-        assertEquals("row", HomeConfig.clean(JSONObject().put("wlayout", "grid")).getString("wlayout"))
-        val c = HomeConfig.merge(JSONObject().put("widgets", JSONArray(listOf("weather", "calendar"))), JSONObject().put("wlayout", "big"))
-        assertEquals("big", c.getString("wlayout"))
-        for (k in listOf("big2", "flip", "quad")) assertEquals(k, HomeConfig.clean(JSONObject().put("wlayout", k)).getString("wlayout"))
-        assertEquals(listOf("row" to 0, "big" to 3, "big2" to 3, "flip" to 3, "quad" to 4), HomeConfig.LAYOUTS.map { it to HomeConfig.slots(it) })
-        for (k in HomeConfig.COLS.keys) assertEquals(100, HomeConfig.COLS.getValue(k).sumOf { it.pct })
-        assertEquals("weather", c.getJSONArray("widgets").getString(0))                 // moving never sorts them back
+    @Test fun sizesAreKnownOnesAndDefaultToTheCardsKind() {
+        val none = HomeConfig.clean(JSONObject())
+        assertEquals(0, none.getJSONObject("wsize").length())                    // nothing chosen: the defaults apply
+        assertFalse(none.has("wlayout"))
+        assertEquals(setOf("system", "usage", "calendar", "weather"), HomeConfig.bigs(none))
+        val c = HomeConfig.clean(JSONObject().put("wsize", JSONObject().put("system", "small").put("lunar", "big").put("timer", "huge").put("bogus", "big")))
+        assertEquals("small", c.getJSONObject("wsize").getString("system"))
+        assertEquals("big", c.getJSONObject("wsize").getString("lunar"))
+        assertFalse(c.getJSONObject("wsize").has("timer"))                       // an unknown size: dropped
+        assertFalse(c.getJSONObject("wsize").has("bogus"))
+        assertEquals(setOf("usage", "calendar", "weather", "lunar"), HomeConfig.bigs(c))
+        val m = HomeConfig.merge(JSONObject().put("widgets", JSONArray(listOf("weather", "calendar"))), JSONObject().put("wsize", JSONObject().put("weather", "small")))
+        assertEquals("small", m.getJSONObject("wsize").getString("weather"))
+        assertEquals("weather", m.getJSONArray("widgets").getString(0))          // moving never sorts them back
+    }
+
+    @Test fun anOldLayoutBecomesTheSizesThatGaveTheSamePicture() {
+        val names = listOf("system", "usage", "calendar", "lunar")
+        fun sizes(layout: String): List<String> {
+            val c = HomeConfig.clean(JSONObject().put("wlayout", layout).put("widgets", JSONArray(names)))
+            return names.map { c.getJSONObject("wsize").optString(it, "?") }
+        }
+        assertEquals(listOf("?", "?", "?", "?"), sizes("row"))
+        assertEquals(listOf("big", "small", "small", "small"), sizes("big"))
+        assertEquals(listOf("big", "big", "small", "small"), sizes("big2"))
+        assertEquals(listOf("small", "small", "big", "small"), sizes("flip"))
+        assertEquals(listOf("small", "small", "small", "small"), sizes("quad"))
+        // sizes already chosen win over a layout left in an old copy
+        val both = HomeConfig.clean(JSONObject().put("wlayout", "quad").put("wsize", JSONObject()).put("widgets", JSONArray(listOf("system"))))
+        assertEquals(0, both.getJSONObject("wsize").length())
+    }
+
+    /** The packing gives what tests/home_pack_cases.json says (the page's homePack reads the same table). */
+    @Test fun packingFollowsTheSharedCases() {
+        val cases = JSONObject(java.io.File("tests/home_pack_cases.json").readText()).getJSONArray("cases")
+        fun list(a: JSONArray) = (0 until a.length()).map { a.getString(it) }
+        for (i in 0 until cases.length()) {
+            val c = cases.getJSONObject(i)
+            val p = HomeConfig.pack(list(c.getJSONArray("keys")), list(c.getJSONArray("big")).toSet(), c.optBoolean("note"))
+            val cols = c.getJSONArray("cols")
+            assertEquals(c.getString("name"), (0 until cols.length()).map { list(cols.getJSONArray(it)) }, p.cols.map { it.keys })
+            assertEquals(c.getString("name"), list(c.getJSONArray("waiting")), p.waiting)
+            assertEquals(c.getString("name"), true, p.cols.sumOf { it.weight } <= HomeConfig.BUDGET)
+        }
     }
 
     @Test fun widgetsAreKnownOnesOnceInTheirOrderAsSent() {

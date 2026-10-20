@@ -71,10 +71,8 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         private val ROSE = intArrayOf(0xFFFF7A7A.toInt(), 0xFFE0457B.toInt())
         private const val DIM = 0xA6FFFFFF.toInt()
         private val BIG = setOf("system", "usage", "calendar", "weather")
-        const val BIG_H = 180                                          // dp: the "big" layout's height, as high as a row of cards: the favourites stay on screen
-        private const val FULL_MIN = 270                              // dp: a column narrower than this shows a large card's half form, whatever its height
-        private const val PILLS = 300                                 // the small cards' column, dp
-        private const val WX_WEIGHT = 0.9f; private const val CAL_WEIGHT = 1.35f                           // the month needs seven columns: a little more of the row than the others
+        const val BIG_H = 180                                          // dp: the cards' height, fixed: the favourites stay on screen
+        private const val FULL_MIN = 180                              // dp: a big card in a column narrower than this shows its small form (the row of three big cards gives 190 to 260)
 
         private var calKey = 0; private var calMemo: Cal? = null
 
@@ -164,81 +162,39 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             cpu?.optDouble("busy", -1.0)?.takeIf { it >= 0 }?.toFloat(), cpu?.optInt("cores") ?: 0, cal, wx)
     }
 
-    /** [layout] is HomeConfig "wlayout"; the cards come in the order of [want]. */
-    fun show(want: List<String>, f: Facts, note: String, label: (String) -> String, layout: String = "row") {
+    /**
+     * The cards in the order of [want], sized by [sizes] (HomeConfig "wsize"). [HomeConfig.pack] makes the columns: a big card is a
+     * column, two small cards in a row stack in one, a small card alone stands in a narrow one; what does not fit waits. The height
+     * is fixed so the favourites below stay in view. A column's width is its weight's share of the row.
+     */
+    fun show(want: List<String>, f: Facts, note: String, label: (String) -> String, sizes: JSONObject = JSONObject()) {
         removeAllViews(); spark = null; speed = null
         val timerView = if ("timer" in want) timer(f.timer) else null
         val noteView = if (note.isNotEmpty()) pill(tile(AMBER, R.drawable.ic_message), note, "", 1).apply {   // the words are the card: large, no "Note" over them
             ((getChildAt(1) as LinearLayout).getChildAt(0) as TextView).apply { textSize = 16f; maxLines = 3; ellipsize = android.text.TextUtils.TruncateAt.END }
         } else null
         val tall = layoutParams
-        if (layout in HomeConfig.COLS) {                               // a fixed height, so the favourites below stay in view
-            if (tall != null && tall.height != dp(BIG_H)) { tall.height = dp(BIG_H); layoutParams = tall }
-            showCols(layout, want, f, label, timerView, noteView); return
-        }
-        if (tall != null && tall.height != -2) { tall.height = -2; layoutParams = tall }
-        val bigs = want.filter { it in BIG }.take(HomeConfig.ROW_CARDS)
-        val small = ArrayList<View>()
-        for (w in want) when (w) { "lunar" -> f.moon?.let { small += lunar(it) }; "timer" -> timerView?.let { small += it } }
-        noteView?.let { small += it }
-        // each big card's width, known before they are built: a narrow one leaves out its widest part rather than cutting words
-        val pills = if (bigs.size >= 3) PILLS - 60 else PILLS           // three cards and the column: the column gives way a little
-        val row = (if (width > 0) width else a.resources.displayMetrics.widthPixels - dp(96)) - (if (small.isNotEmpty() && bigs.isNotEmpty()) dp(pills + 20) else 0)
-        val weights = bigs.map { when (it) { "calendar" -> CAL_WEIGHT; "weather" -> WX_WEIGHT; else -> 1f } }
-        val unit = (row - dp(20) * (bigs.size - 1)) / weights.sum()
-        bigs.forEachIndexed { i, w ->
-            val each = (unit * weights[i]).toInt()
-            val card = card()
-            when (w) {
-                "system" -> system(card, f, each)
-                "calendar" -> calendar(card, f, each)
-                "weather" -> weather(card, f, each)
-                else -> usage(card, f, label, each < dp(340))
-            }
-            addView(card, LayoutParams(0, -1, weights[i]).apply { if (i > 0) leftMargin = dp(20) })
-        }
-        if (small.isNotEmpty() && bigs.isNotEmpty()) {                 // a column beside the cards, sharing their height
-            val col = LinearLayout(a).apply { orientation = VERTICAL }
-            if (small.size == 1) stand(small[0])                         // alone, as tall as the cards: stood up, not a line in an empty box
-            small.forEachIndexed { i, v -> col.addView(v, LayoutParams(-1, 0, 1f).apply { if (i > 0) topMargin = dp(12) }) }
-            addView(col, LayoutParams(dp(pills), -1).apply { leftMargin = dp(20) })
-        } else if (small.isNotEmpty()) for (i in 0 until 3) {            // alone: a third of the row each, so one does not stretch across it
-            addView(small.getOrNull(i) ?: View(a), LayoutParams(0, if (i < small.size) -2 else 0, 1f).apply { if (i > 0) leftMargin = dp(16) })
-        }
-        visibility = if (childCount == 0) View.GONE else View.VISIBLE
-    }
-
-    /**
-     * The fixed-height layouts ([HomeConfig.COLS]): the cards fill the places column by column, the first [HomeConfig.slots] in
-     * order, the rest wait (the height is fixed so the favourites stay in view). The note keeps a place when there are many: it is
-     * pinned on purpose, so it takes the last one rather than the widgets after the others. Columns left empty give their width
-     * to the rest, and a column with one card shows it at full height.
-     */
-    private fun showCols(layout: String, want: List<String>, f: Facts, label: (String) -> String, timerView: View?, noteView: View?) {
-        val slots = HomeConfig.slots(layout)
-        val keys = want.filter { (it != "timer" || timerView != null) && (it != "lunar" || f.moon != null) }.toMutableList()
-        if (noteView != null) { while (keys.size >= slots) keys.removeAt(keys.size - 1); keys += "note" }
-        val shown = keys.take(slots)
-        if (shown.isEmpty()) { visibility = View.GONE; return }
+        if (tall != null && tall.height != dp(BIG_H)) { tall.height = dp(BIG_H); layoutParams = tall }
+        val keys = want.filter { (it != "timer" || timerView != null) && (it != "lunar" || f.moon != null) }   // a card with nothing to show takes no place
+        val big = HomeConfig.bigs(JSONObject().put("wsize", sizes))
+        val packed = HomeConfig.pack(keys, big, noteView != null)
+        if (packed.cols.isEmpty()) { visibility = View.GONE; return }
         fun plain(k: String): View? = when (k) { "lunar" -> f.moon?.let { lunar(it) }; "timer" -> timerView; else -> noteView }
-        // the cards of each column, and the columns that got any
-        var at = 0
-        val used = HomeConfig.COLS.getValue(layout).mapNotNull { c -> shown.drop(at).take(c.cells).also { at += c.cells }.takeIf { it.isNotEmpty() }?.let { c to it } }
         val gap = dp(20)
-        val total = (if (width > 0) width else a.resources.displayMetrics.widthPixels - dp(96)) - gap * (used.size - 1)
-        val pct = used.sumOf { it.first.pct }
-        used.forEachIndexed { i, (col, ks) ->
-            val w = total * col.pct / pct
+        val room = (if (width > 0) width else a.resources.displayMetrics.widthPixels - dp(96)) - gap * (packed.cols.size - 1)
+        val sum = maxOf(HomeConfig.FLOOR, packed.cols.sumOf { it.weight })
+        packed.cols.forEachIndexed { i, col ->
+            val w = room * col.weight / sum
             val box = LinearLayout(a).apply { orientation = VERTICAL }
-            ks.forEachIndexed { j, k ->
-                val tall = ks.size == 1                                // a lone card has the column's whole height
+            col.keys.forEachIndexed { j, k ->
+                val alone = col.keys.size == 1                         // a lone card has the column's whole height
                 val v: View = if (k in BIG) card().also { c ->
-                    if (tall && w >= dp(FULL_MIN)) when (k) {
+                    if (alone && k in big && w >= dp(FULL_MIN)) when (k) {
                         "system" -> system(c, f, w)
                         "calendar" -> calendar(c, f, w, dp(BIG_H) - dp(26) - dp(22))   // minus the card's padding, the title and its gap
                         "weather" -> weather(c, f, w, fixed = true)
                         else -> usage(c, f, label, w < dp(340))
-                    } else {                                       // the half form: a narrow column or half the height
+                    } else {                                       // the small form: half the height, or a narrow column
                         c.setPadding(dp(16), dp(8), dp(16), dp(8))
                         when (k) {
                             "system" -> systemHalf(c, f, w - dp(32))
@@ -247,7 +203,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
                             else -> usageHalf(c, f, label)
                         }
                     }
-                } else plain(k)!!.also { if (tall) stand(it) }
+                } else plain(k)!!.also { if (alone) stand(it) }
                 box.addView(v, LayoutParams(-1, 0, 1f).apply { if (j > 0) topMargin = dp(12) })
             }
             addView(box, LayoutParams(w, -1).apply { if (i > 0) leftMargin = gap })
@@ -422,8 +378,8 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         addView(square, LayoutParams(dp(40), dp(40)))
         addView(LinearLayout(a).apply {
             orientation = VERTICAL
-            addView(text(title, 14f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) })
-            if (sub.isNotEmpty()) addView(text(sub, 12f, DIM).apply { maxLines = lines })
+            addView(text(title, 14f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL); maxLines = 2 })   // a narrow column wraps, never cuts
+            if (sub.isNotEmpty()) addView(text(sub, 12f, DIM).apply { maxLines = maxOf(lines, 2) })
         }, LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
     }
 

@@ -21,7 +21,7 @@ object Store {
     private fun effective(c: Context, conf: JSONObject): JSONObject {
         // on until someone turns it off: older builds saved "off" for 2 GB boxes nobody had asked (it costs no memory, only frames)
         if (!prefs(c).getBoolean("anim_chosen", false)) conf.put("anim", true)
-        return conf.put("dream", Dream.isOn(c)).put("wlayouts", org.json.JSONArray(HomeConfig.LAYOUTS))   // wlayouts: an older TV Home has none, so the page offers it the old ones
+        return conf.put("dream", Dream.isOn(c)).put("wsizes", true)   // an older TV Home has none: the page offers it the old layout chips
     }
 
     /** The first start: a dock of the well-known apps this TV has, so the screen is not empty before anyone sets it up. */

@@ -149,9 +149,10 @@ object Customize {
         if (inRow == 1) pair!!.addView(View(a), LinearLayout.LayoutParams(0, 0, 1f).apply { leftMargin = gap })   // a lone tile keeps half the width
         pair = null
         section(a.getString(R.string.w_widgets))
-        widgetRows(a, col, gap, ::glass, ::label)
+        val preview = PackGlyph(a)
+        widgetRows(a, col, gap, ::glass, ::label, preview)
         section(a.getString(R.string.w_layout))
-        layoutTiles(a, col, gap, ::glass, ::label)
+        col.addView(preview, LinearLayout.LayoutParams(-1, (64 * a.resources.displayMetrics.density).toInt()))
         val note = conf.optString("note")
         if (note.isNotEmpty()) {                                       // written on the phone; here it can only be taken down
             val sub = label(a.getString(R.string.c_note_clear), 12f, DIM).apply { maxLines = 1 }
@@ -235,18 +236,21 @@ object Customize {
      * is the move mode: OK turns it on, Up / Down move the card, OK or Back (or leaving it) turn it off. One column, so Up / Down
      * mean the same as on the screen's list, and a card switched on goes to the end.
      */
-    private fun widgetRows(a: Activity, col: LinearLayout, gap: Int, glass: (Int, Int, Int) -> GradientDrawable, label: (String, Float, Int) -> TextView) {
+    private fun widgetRows(a: Activity, col: LinearLayout, gap: Int, glass: (Int, Int, Int) -> GradientDrawable, label: (String, Float, Int) -> TextView, preview: View) {
         val d = a.resources.displayMetrics.density
         fun dp(v: Number) = (v.toFloat() * d).toInt()
         val box = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
         col.addView(box, LinearLayout.LayoutParams(-1, -2))
-        col.addView(label(a.getString(R.string.w_order_hint), 12f, 0x8CFFFFFF.toInt()).apply { maxLines = 2 }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        col.addView(label(a.getString(R.string.w_order_hint) + " " + a.getString(R.string.c_size_hint), 12f, 0x8CFFFFFF.toInt()).apply { maxLines = 4 }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         var moving: String? = null; var building = false
-        fun fill(focus: String? = null, focusMove: Boolean = false) {
+        fun fill(focus: String? = null, focusMove: Boolean = false, focusSize: Boolean = false) {
             building = true                                            // taking the rows down loses their focus: not a wander
             box.removeAllViews()
             val on = Store.list(a, "widgets")
             val order = on + HomeConfig.WIDGETS.filter { it !in on }
+            val conf = Store.get(a)
+            val big = HomeConfig.bigs(conf)
+            val waiting = HomeConfig.pack(on, big, conf.optString("note").isNotEmpty()).waiting.toSet()
             var want: View? = null
             order.forEachIndexed { i, k ->
                 val r = WIDGET_ROWS.first { it[0] == k }
@@ -256,7 +260,7 @@ object Customize {
                 val state = label("", 12f, if (isOn) ACCENT else DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
                 val sub = a.getString(r[3] as Int)
                 val word = a.getString(if (isOn) R.string.w_on else R.string.w_off).replaceFirstChar { it.uppercase() }
-                state.text = if (moving == k) a.getString(R.string.c_moving) else "$word · $sub"
+                state.text = if (moving == k) a.getString(R.string.c_moving) else if (k in waiting) "$word · ${a.getString(R.string.c_waits)}" else "$word · $sub"
                 val t = LinearLayout(a).apply {
                     orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
                     setPadding(dp(14), dp(12), dp(14), dp(12))
@@ -278,6 +282,28 @@ object Customize {
                     }
                 }
                 line.addView(t, LinearLayout.LayoutParams(0, -2, 1f))
+                if (isOn) {                                            // the size: OK flips Big / Small
+                    val isBig = k in big
+                    val sz = label(a.getString(if (isBig) R.string.c_size_big else R.string.c_size_small), 14f, Color.WHITE).apply { gravity = Gravity.CENTER; maxLines = 1 }
+                    val s = LinearLayout(a).apply {
+                        gravity = Gravity.CENTER; isFocusable = true; isClickable = true
+                        contentDescription = a.getString(R.string.c_size)
+                        background = StateListDrawable().apply {
+                            addState(intArrayOf(android.R.attr.state_focused), glass(16, if (isBig) 0x408AB4F8 else 0x2EFFFFFF, Color.WHITE))
+                            addState(intArrayOf(), glass(16, if (isBig) 0x268AB4F8 else 0x12FFFFFF, if (isBig) ACCENT else 0x1FFFFFFF))
+                        }
+                        addView(sz)
+                        onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                        setOnClickListener {
+                            moving = null
+                            val now = (conf.optJSONObject("wsize") ?: JSONObject()).let { JSONObject(it.toString()) }
+                            Store.change(a, JSONObject().put("wsize", now.put(k, if (isBig) "small" else "big")))
+                            fill(k, focusSize = true)
+                        }
+                    }
+                    line.addView(s, LinearLayout.LayoutParams(dp(72), -1).apply { leftMargin = dp(8) })
+                    if (focus == k && focusSize) want = s
+                }
                 if (isOn && on.size > 1) {
                     val m = LinearLayout(a).apply {
                         orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; isFocusable = true; isClickable = true
@@ -308,70 +334,37 @@ object Customize {
                     line.addView(m, LinearLayout.LayoutParams(dp(56), -1).apply { leftMargin = dp(8) })
                     if (focus == k && focusMove) want = m
                 }
-                if (focus == k && !focusMove) want = t
+                if (focus == k && !focusMove && !focusSize) want = t
                 box.addView(line, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = gap })
             }
             want?.requestFocus()
+            preview.invalidate()
             building = false
         }
         fill()
     }
 
-    /** The layouts, two tiles to a row, one chosen; each shows its places in miniature. */
-    private fun layoutTiles(a: Activity, col: LinearLayout, gap: Int, glass: (Int, Int, Int) -> GradientDrawable, label: (String, Float, Int) -> TextView) {
-        val d = a.resources.displayMetrics.density
-        fun dp(v: Number) = (v.toFloat() * d).toInt()
-        val tiles = ArrayList<Triple<String, LinearLayout, LayoutGlyph>>()
-        fun paint() {
-            val now = Store.get(a).optString("wlayout", "row")
-            for ((k, t, ic) in tiles) {
-                val on = k == now
-                t.background = StateListDrawable().apply {
-                    addState(intArrayOf(android.R.attr.state_focused), glass(16, if (on) 0x408AB4F8 else 0x2EFFFFFF, Color.WHITE))
-                    addState(intArrayOf(), glass(16, if (on) 0x268AB4F8 else 0x12FFFFFF, if (on) ACCENT else 0x1FFFFFFF))
-                }
-                ic.paint.color = if (on) ACCENT else DIM
-                ic.invalidate()
-            }
-        }
-        val all = listOf(Triple("row", R.string.c_layout_row, R.string.c_layout_row_sub), Triple("big", R.string.c_layout_big, 0),
-            Triple("big2", R.string.c_layout_big2, 0), Triple("flip", R.string.c_layout_flip, 0), Triple("quad", R.string.c_layout_quad, 0))
-        var pair: LinearLayout? = null
-        all.forEachIndexed { i, (k, name, sub) ->
-            if (i % 2 == 0) pair = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }.also { col.addView(it, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = gap }) }
-            val ic = LayoutGlyph(a, k)
-            val t = LinearLayout(a).apply {
-                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
-                setPadding(dp(14), dp(12), dp(14), dp(12))
-                addView(ic, LinearLayout.LayoutParams(dp(40), dp(26)))
-                addView(LinearLayout(a).apply {
-                    orientation = LinearLayout.VERTICAL
-                    addView(label(a.getString(name), 15f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
-                    val n = HomeConfig.slots(k)
-                    addView(label(if (sub != 0) a.getString(sub) else a.getString(R.string.c_layout_first, n), 12f, DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
-                }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
-                onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
-                setOnClickListener { Store.change(a, JSONObject().put("wlayout", k)); paint() }
-            }
-            tiles += Triple(k, t, ic)
-            pair!!.addView(t, LinearLayout.LayoutParams(0, -2, 1f).apply { if (i % 2 == 1) leftMargin = gap })
-        }
-        if (all.size % 2 == 1) pair!!.addView(View(a), LinearLayout.LayoutParams(0, 0, 1f).apply { leftMargin = gap })
-        paint()
-    }
-
-    /** A layout in miniature: its columns, the cards stacked in each. Drawn when painted, never animated. */
-    private class LayoutGlyph(c: Context, val layout: String) : View(c) {
+    /**
+     * The result in miniature: the columns [HomeConfig.pack] makes of the cards on, a big card in the accent, small ones pale; what
+     * waits is not drawn. Reads the settings when painted (the rows call invalidate after every change), never animated.
+     */
+    private class PackGlyph(c: Context) : View(c) {
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         override fun onDraw(cv: Canvas) {
-            val g = resources.displayMetrics.density * 2f
-            val cols = if (layout == "row") listOf(HomeConfig.Col(33, 1), HomeConfig.Col(33, 1), HomeConfig.Col(34, 2)) else HomeConfig.COLS.getValue(layout)
-            val room = width - g * (cols.size - 1)
+            val conf = Store.get(context)
+            val big = HomeConfig.bigs(conf)
+            val p = HomeConfig.pack(Store.list(context, "widgets"), big, conf.optString("note").isNotEmpty())
+            val g = resources.displayMetrics.density * 4f
+            val sum = maxOf(HomeConfig.FLOOR, p.cols.sumOf { it.weight })
+            val room = width - g * (p.cols.size - 1)
             var x = 0f
-            for (c in cols) {
-                val w = room * c.pct / 100f
-                val h = (height - g * (c.cells - 1)) / c.cells
-                for (j in 0 until c.cells) cv.drawRoundRect(x, j * (h + g), x + w, j * (h + g) + h, g, g, paint)
+            for (col in p.cols) {
+                val w = room * col.weight / sum
+                val h = (height - g * (col.keys.size - 1)) / col.keys.size
+                col.keys.forEachIndexed { j, k ->
+                    paint.color = if (k in big) 0x668AB4F8 else 0x30FFFFFF
+                    cv.drawRoundRect(x, j * (h + g), x + w, j * (h + g) + h, g * 2, g * 2, paint)
+                }
                 x += w + g
             }
         }
