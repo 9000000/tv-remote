@@ -2,6 +2,7 @@ package dev.tvremote.phone
 
 import dev.tvremote.core.T
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.graphics.Typeface
 import android.hardware.ConsumerIrManager
@@ -196,7 +197,58 @@ private fun MainActivity.irList() {
         val add = button("@plus|" + T("ir.add"), ACCENT)
         add.setOnClickListener { IrState.slot = ADDING; irRemote() }
         addView(add, LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(14) })
+        val files = LinearLayout(this@irList)                           // to another phone, or kept before a reset
+        val save = button("@download|" + T("ir.export"), SOFT)
+        save.isEnabled = all.isNotEmpty(); save.alpha = if (all.isEmpty()) 0.4f else 1f
+        save.setOnClickListener {
+            val i = Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/json").putExtra(Intent.EXTRA_TITLE, "tv-remote-ir.json")
+            try { @Suppress("DEPRECATION") startActivityForResult(i, PICK_IR_SAVE) } catch (e: Exception) { say(T("media.this_phone_has_no"), true) }
+        }
+        files.addView(save, LinearLayout.LayoutParams(0, dp(48), 1f))
+        val open = button("@upload|" + T("ir.import"), SOFT)
+        open.setOnClickListener {
+            val i = Intent(Intent.ACTION_GET_CONTENT).setType("*/*").addCategory(Intent.CATEGORY_OPENABLE)
+            try { @Suppress("DEPRECATION") startActivityForResult(i, PICK_IR_OPEN) } catch (e: Exception) { say(T("media.this_phone_has_no"), true) }
+        }
+        files.addView(open, LinearLayout.LayoutParams(0, dp(48), 1f).apply { leftMargin = dp(10) })
+        addView(files, gap(10))
     }
+}
+
+/** The saved remotes as a file: names, codes' ids and brands (for a person reading it). */
+internal fun MainActivity.irExported(uri: android.net.Uri) {
+    val a = org.json.JSONArray()
+    for ((n, id) in irSaved()) a.put(org.json.JSONObject().put("name", n).put("id", id).put("brand", irCatalog().firstOrNull { id in it.ids }?.brand ?: ""))
+    val text = org.json.JSONObject().put("app", "tv-remote").put("ir", a).toString(1)
+    val ok = try { contentResolver.openOutputStream(uri, "wt")!!.use { it.write(text.toByteArray()) }; true } catch (e: Exception) { false }
+    Toast.makeText(this, if (ok) T("ir.exported", "n" to a.length()) else T("ir.import_none"), Toast.LENGTH_LONG).show()
+}
+
+/** A file from Xuất file (or a bare list): its remotes added after the ones here; the same name and code twice, or a code this
+ *  app does not know (a newer list of codes), is left out. */
+internal fun MainActivity.irImported(uri: android.net.Uri) {
+    val got = try {
+        val text = contentResolver.openInputStream(uri)!!.use { it.readBytes().toString(Charsets.UTF_8) }.trim()
+        val a = if (text.startsWith("[")) org.json.JSONArray(text) else org.json.JSONObject(text).getJSONArray("ir")
+        (0 until a.length()).map { a.getJSONObject(it).let { o -> Pair(o.optString("name"), o.optString("id")) } }
+    } catch (e: Exception) { emptyList() }
+    val known = got.filter { (_, id) -> irCatalog().any { id in it.ids } }
+    val all = irMerge(irSaved(), known)
+    val added = all.size - irSaved().size
+    if (added > 0) irKeep(all)
+    Toast.makeText(this, if (known.isEmpty()) T("ir.import_none") else T("ir.imported", "n" to added), Toast.LENGTH_LONG).show()
+    if (irHost.visibility == View.VISIBLE && IrState.page == "list") irList()
+}
+
+/** [add] after [have], without one already there (same code and name); a nameless one is named by its code's id. */
+internal fun irMerge(have: List<Pair<String, String>>, add: List<Pair<String, String>>): List<Pair<String, String>> {
+    val out = have.toMutableList()
+    for ((n, id) in add) {
+        if (id.isEmpty()) continue
+        val p = Pair(n.trim().ifEmpty { id }, id)
+        if (p !in out) out.add(p)
+    }
+    return out
 }
 
 private fun MainActivity.irPage(title: String, back: () -> Unit, body: LinearLayout.() -> Unit) {

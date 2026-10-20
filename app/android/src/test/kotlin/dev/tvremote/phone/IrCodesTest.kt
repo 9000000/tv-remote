@@ -55,4 +55,10 @@ class IrCodesTest {
         assertTrue(d.size < all.size)
         assertEquals(all.size, d.sumOf { it.second })
     }
+
+    @Test fun importAddsOnlyWhatIsNew() {
+        val have = listOf(Pair("Bedroom", "sony-a"), Pair("Box", "fpt-b"))
+        val got = irMerge(have, listOf(Pair("Bedroom", "sony-a"), Pair("Bedroom", "lg-c"), Pair(" ", "tcl-d"), Pair("x", "")))
+        assertEquals(listOf(Pair("Bedroom", "sony-a"), Pair("Box", "fpt-b"), Pair("Bedroom", "lg-c"), Pair("tcl-d", "tcl-d")), got)
+    }
 }

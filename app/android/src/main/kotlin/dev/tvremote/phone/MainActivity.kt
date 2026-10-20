@@ -169,6 +169,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal val PICK_DRAW = 73                                       // 🖼️ a picture to put on the TV's screen (Drawing.kt)
     internal val PICK_FLEET_WELCOME = 74                              // ManyTvs.kt: the welcome screen's file for several TVs
     internal val PICK_FLEET = 72                                       // ManyTvs.kt: the APK for several TVs
+    internal val PICK_IR_SAVE = 75                                     // IrRemote.kt: where the saved IR remotes are written
+    internal val PICK_IR_OPEN = 76                                     // IrRemote.kt: a file of IR remotes to add
 
     // ---- SetupBanner.kt
     internal lateinit var setupBar: Button
@@ -781,6 +783,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         if (request == PICK_DRAW && result == RESULT_OK) data?.data?.let { drawPicked(it) }
         if (request == PICK_FLEET && result == RESULT_OK) data?.data?.let { fleetApk(it) }
         if (request == PICK_FLEET_WELCOME && result == RESULT_OK) data?.data?.let { fleetWelcome(it) }
+        if (request == PICK_IR_SAVE && result == RESULT_OK) data?.data?.let { irExported(it) }
+        if (request == PICK_IR_OPEN && result == RESULT_OK) data?.data?.let { irImported(it) }
         if (request == SPEAK && result == RESULT_OK && data != null) {
             val heard = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             if (heard != null && heard.isNotEmpty()) voice(heard[0])
