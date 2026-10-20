@@ -4,6 +4,16 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+
+- TV Home có bản mới cũng được nhắc như TV Setup, chung một thanh gọn (một nút Cập nhật cho cả hai). **Để sau** hỏi khi nào nhắc lại: sau 1, 7, 30 ngày, hoặc bỏ qua bản này
+
+**English**
+
+- New TV Home versions are offered like TV Setup's, in the same one-line bar (one Update for both). **Later** asks when: in 1, 7 or 30 days, or skip this version
+
 ## 0.14.0 - 2026-10-20
 
 Web 0.14.0 · app điện thoại 0.14.0 · app TV 0.14.0 · TV Home 0.1.0

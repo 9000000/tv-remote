@@ -209,23 +209,40 @@ async function installSetupApk() {
   toast(T('auto.setup_installed')); await sleep(2500); loadRules(null, true);
 }
 
-// ---------- TV Setup's own updates (SetupUpdate.kt): offered on every remote; the TV puts the old version back if a new one does not work ----------
-let setupLater = '', setupBusy = false, setupChecked = '';           // setupChecked: the TV whose TV Setup version was looked at
-onTvChange(() => { setupChecked = ''; put('#setupupd', 'hidden', true); });
+// ---------- TV Setup's and TV Home's updates (SetupUpdate.kt, Home.kt): one bar on every remote; the TV puts an old TV Setup back if a new one does not work ----------
+let setupBusy = false, setupChecked = '', homeLatest = '';         // setupChecked: the TV whose versions were looked at
+onTvChange(() => { setupChecked = ''; homeLatest = ''; put('#setupupd', 'hidden', true); });
 const seenUndo = () => { try { return localStorage.getItem('setupUndo') || ''; } catch (e) { return ''; } };
+// "Later" is per version ("tv:0.15.0", "home:0.2.0") until a time; a newer version is offered again at once
+const laterAll = () => { try { return JSON.parse(localStorage.getItem('updLater') || '{}') || {}; } catch (e) { return {}; } };
+const later = (k) => (laterAll()[k] || 0) > Date.now();
+function putOff(keys, days) {
+  const o = laterAll(), now = Date.now();
+  for (const k in o) if (o[k] < now) delete o[k];
+  for (const k of keys) o[k] = days ? now + days * 86400000 : 8.64e15;   // the last date a Date can hold: never
+  try { localStorage.setItem('updLater', JSON.stringify(o)); } catch (e) { }
+}
+let setupNow = null;
 async function checkSetup() {
   const host = setupChecked = curHost || '-';
-  const r = await fetch('/api/setup/version').then((x) => x.ok ? x.json() : null).catch(() => null);
+  const get = (u) => fetch(u).then((x) => x.ok ? x.json() : null).catch(() => null);
+  const [r, h] = await Promise.all([get('/api/setup/version'), get('/api/home')]);
   if (host !== (curHost || '-')) return null;                         // another TV was picked meanwhile: not its banner
+  homeLatest = h && h.installed && h.latest || '';
   if (!setupBusy) showSetupUpd(r);
   return r;
 }
+// what is on offer and not put off: [kind, name, version]
+const updOffers = (r) => [r && r.latest && !later('tv:' + r.latest) ? ['tv', 'TV Setup', r.latest] : null,
+  homeLatest && !later('home:' + homeLatest) ? ['home', 'TV Home', homeLatest] : null].filter(Boolean);
 function showSetupUpd(r) {
+  setupNow = r;
   const b = $('#setupupd');
   const undone = r && r.state === 'rolledback' && Date.now() - r.at < 3 * 86400000 && seenUndo() !== String(r.at);
-  b.hidden = picking || !r || !(undone || r.latest && r.latest !== setupLater);
+  const offers = updOffers(r);
+  b.hidden = picking || !(undone || offers.length);
   if (b.hidden) return;
-  b.className = 'banner ' + (undone ? 'warn' : 'ok');
+  b.className = 'banner ' + (undone ? 'warn' : 'ok line');
   if (undone) {
     put('#suptitle', 'textContent', T('auto.sup_broke', { v: r.version }));
     put('#supnote', 'textContent', T('auto.sup_rolled_back', { from: r.from }));
@@ -233,12 +250,27 @@ function showSetupUpd(r) {
     $('#suplater').onclick = () => { try { localStorage.setItem('setupUndo', String(r.at)); } catch (e) { } r.state = ''; showSetupUpd(r); };   // then the update, if there is one
     return;
   }
-  put('#suptitle', 'textContent', T('auto.sup_new', { latest: r.latest, installed: r.installed }));
-  put('#supnote', 'textContent', T(CORE === 'tv' ? 'auto.sup_half_minute_tv' : 'auto.sup_half_minute'));
+  put('#suptitle', 'textContent', T('upd.new', { what: offers.map((o) => o[1] + ' ' + o[2]).join(' · ') }));
+  put('#supnote', 'textContent', '');
   put('#supgo', 'hidden', false); put('#suplater', 'textContent', T('common.later'));
-  $('#suplater').onclick = () => { setupLater = r.latest; b.hidden = true; };
+  $('#suplater').onclick = () => {
+    const keys = offers.map((o) => o[0] + ':' + o[2]), off = (days) => () => { putOff(keys, days); showSetupUpd(setupNow); };
+    menuDlg(T('upd.when'), -1, [...[1, 7, 30].map((n) => [T('upd.in_days', { n }), '', off(n)]), [T('upd.skip'), T('upd.skip_sub'), off(0)]]);
+  };
 }
-$('#supgo').addEventListener('click', () => updateSetup());
+$('#supgo').addEventListener('click', () => updateAll(updOffers(setupNow).map((o) => o[0])));
+// [kinds]: 'home' and / or 'tv'. TV Home first: TV Setup's update may close the page's own server (the TV web page)
+async function updateAll(kinds = ['tv', 'home']) {
+  if (setupBusy) return;
+  if (!setupNow) await checkSetup();                                   // opened by the phone's remote screen: not looked at yet
+  if (kinds.includes('home') && homeLatest) {
+    const b = $('#setupupd'); b.hidden = false; b.className = 'banner ok';
+    put('#suptitle', 'textContent', T('upd.home_going')); put('#supnote', 'textContent', ''); put('#supacts', 'hidden', true);
+    try { await homeUpdate(); homeLatest = ''; } finally { put('#supacts', 'hidden', false); }
+  }
+  if (kinds.includes('tv') && setupNow && setupNow.latest) { put('#suptitle', 'textContent', ''); return updateSetup(); }
+  showSetupUpd(setupNow);
+}
 async function updateSetup() {
   if (setupBusy) return;
   setupBusy = true; put('#supacts', 'hidden', true);
