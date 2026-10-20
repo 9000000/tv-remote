@@ -72,6 +72,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         private const val DIM = 0xA6FFFFFF.toInt()
         private val BIG = setOf("system", "usage", "calendar", "weather")
         const val BIG_H = 180                                          // dp: the "big" layout's height, as high as a row of cards: the favourites stay on screen
+        private const val FULL_MIN = 270                              // dp: a column narrower than this shows a large card's half form, whatever its height
         private const val PILLS = 300                                 // the small cards' column, dp
         private const val WX_WEIGHT = 0.9f; private const val CAL_WEIGHT = 1.35f                           // the month needs seven columns: a little more of the row than the others
 
@@ -171,9 +172,9 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             ((getChildAt(1) as LinearLayout).getChildAt(0) as TextView).apply { textSize = 16f; maxLines = 3; ellipsize = android.text.TextUtils.TruncateAt.END }
         } else null
         val tall = layoutParams
-        if (layout == "big") {                                         // a fixed height, so the favourites below stay in view
+        if (layout in HomeConfig.COLS) {                               // a fixed height, so the favourites below stay in view
             if (tall != null && tall.height != dp(BIG_H)) { tall.height = dp(BIG_H); layoutParams = tall }
-            showBig(want, f, label, timerView, noteView); return
+            showCols(layout, want, f, label, timerView, noteView); return
         }
         if (tall != null && tall.height != -2) { tall.height = -2; layoutParams = tall }
         val bigs = want.filter { it in BIG }.take(HomeConfig.ROW_CARDS)
@@ -208,44 +209,48 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
     }
 
     /**
-     * One large card on the left, two small ones stacked on the right: the first [HomeConfig.BIG_SLOTS] in order, the rest wait
-     * (the height is fixed so the favourites stay in view). The note keeps a place when there are many: it is pinned on purpose,
-     * so it takes the third slot rather than the widgets after the second.
+     * The fixed-height layouts ([HomeConfig.COLS]): the cards fill the places column by column, the first [HomeConfig.slots] in
+     * order, the rest wait (the height is fixed so the favourites stay in view). The note keeps a place when there are many: it is
+     * pinned on purpose, so it takes the last one rather than the widgets after the others. Columns left empty give their width
+     * to the rest, and a column with one card shows it at full height.
      */
-    private fun showBig(want: List<String>, f: Facts, label: (String) -> String, timerView: View?, noteView: View?) {
+    private fun showCols(layout: String, want: List<String>, f: Facts, label: (String) -> String, timerView: View?, noteView: View?) {
+        val slots = HomeConfig.slots(layout)
         val keys = want.filter { (it != "timer" || timerView != null) && (it != "lunar" || f.moon != null) }.toMutableList()
-        if (noteView != null) { while (keys.size >= HomeConfig.BIG_SLOTS) keys.removeAt(keys.size - 1); keys += "note" }
-        val shown = keys.take(HomeConfig.BIG_SLOTS)
+        if (noteView != null) { while (keys.size >= slots) keys.removeAt(keys.size - 1); keys += "note" }
+        val shown = keys.take(slots)
         if (shown.isEmpty()) { visibility = View.GONE; return }
         fun plain(k: String): View? = when (k) { "lunar" -> f.moon?.let { lunar(it) }; "timer" -> timerView; else -> noteView }
-        val total = (if (width > 0) width else a.resources.displayMetrics.widthPixels - dp(96)) - dp(20)
-        val rightW = if (shown.size > 1) (total * 0.42f).toInt() else 0
-        val leftW = if (shown.size > 1) total - rightW else total + dp(20)
-        val k0 = shown[0]
-        val left: View = if (k0 in BIG) card().also { c ->
-            when (k0) {
-                "system" -> system(c, f, leftW)
-                "calendar" -> calendar(c, f, leftW, dp(BIG_H) - dp(26) - dp(22))   // minus the card's padding, the title and its gap
-                "weather" -> weather(c, f, leftW)
-                else -> usage(c, f, label, leftW < dp(340))
-            }
-        } else plain(k0)!!.also { stand(it) }
-        addView(left, LayoutParams(leftW, -1))
-        if (shown.size > 1) {
-            val col = LinearLayout(a).apply { orientation = VERTICAL }
-            shown.drop(1).forEachIndexed { i, k ->
-                val v = if (k in BIG) card().also { c ->
-                    c.setPadding(dp(16), dp(8), dp(16), dp(8))
-                    when (k) {
-                        "system" -> systemHalf(c, f, rightW - dp(32))
-                        "calendar" -> calendarHalf(c, f)
-                        "weather" -> weatherHalf(c, f)
-                        else -> usageHalf(c, f, label)
+        // the cards of each column, and the columns that got any
+        var at = 0
+        val used = HomeConfig.COLS.getValue(layout).mapNotNull { c -> shown.drop(at).take(c.cells).also { at += c.cells }.takeIf { it.isNotEmpty() }?.let { c to it } }
+        val gap = dp(20)
+        val total = (if (width > 0) width else a.resources.displayMetrics.widthPixels - dp(96)) - gap * (used.size - 1)
+        val pct = used.sumOf { it.first.pct }
+        used.forEachIndexed { i, (col, ks) ->
+            val w = total * col.pct / pct
+            val box = LinearLayout(a).apply { orientation = VERTICAL }
+            ks.forEachIndexed { j, k ->
+                val tall = ks.size == 1                                // a lone card has the column's whole height
+                val v: View = if (k in BIG) card().also { c ->
+                    if (tall && w >= dp(FULL_MIN)) when (k) {
+                        "system" -> system(c, f, w)
+                        "calendar" -> calendar(c, f, w, dp(BIG_H) - dp(26) - dp(22))   // minus the card's padding, the title and its gap
+                        "weather" -> weather(c, f, w)
+                        else -> usage(c, f, label, w < dp(340))
+                    } else {                                       // the half form: a narrow column or half the height
+                        c.setPadding(dp(16), dp(8), dp(16), dp(8))
+                        when (k) {
+                            "system" -> systemHalf(c, f, w - dp(32))
+                            "calendar" -> calendarHalf(c, f, w - dp(32))
+                            "weather" -> weatherHalf(c, f, w - dp(32))
+                            else -> usageHalf(c, f, label)
+                        }
                     }
-                } else plain(k)!!
-                col.addView(v, LayoutParams(-1, 0, 1f).apply { if (i > 0) topMargin = dp(12) })
+                } else plain(k)!!.also { if (tall) stand(it) }
+                box.addView(v, LayoutParams(-1, 0, 1f).apply { if (j > 0) topMargin = dp(12) })
             }
-            addView(col, LayoutParams(rightW, -1).apply { leftMargin = dp(20) })
+            addView(box, LayoutParams(w, -1).apply { if (i > 0) leftMargin = gap })
         }
         visibility = View.VISIBLE
     }
@@ -276,7 +281,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
     }
 
     /** Today as a date: the day in a square, the weekday and date, the lunar date under it (the month grid needs the large slot). */
-    private fun calendarHalf(card: LinearLayout, f: Facts) {
+    private fun calendarHalf(card: LinearLayout, f: Facts, room: Int) {
         val c = f.cal ?: return
         val r = a.resources
         val loc = resources.configuration.locales[0]
@@ -285,8 +290,9 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val month = r.getStringArray(R.array.lunar_month)[d.month - 1] + if (d.leap) a.getString(R.string.lunar_leap) else ""
         val dayWord = if (d.day <= 10) a.getString(R.string.lunar_day_early, d.day) else d.day.toString()
         val (can, chi) = Lunar.canChi(d.year)
-        val lunar = a.getString(R.string.lunar_title, dayWord, month) + " · " + a.getString(R.string.lunar_year, r.getStringArray(R.array.lunar_can)[can], r.getStringArray(R.array.lunar_chi)[chi])
-        val num = text(SimpleDateFormat("d", loc).format(now), 24f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL); gravity = Gravity.CENTER }
+        val lunar = a.getString(R.string.lunar_title, dayWord, month) +   // the year's name only where it fits whole
+            if (room < dp(240)) "" else " · " + a.getString(R.string.lunar_year, r.getStringArray(R.array.lunar_can)[can], r.getStringArray(R.array.lunar_chi)[chi])
+        val num =text(SimpleDateFormat("d", loc).format(now), 24f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL); gravity = Gravity.CENTER }
         val row = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         row.addView(tile(CYAN, null, num), LayoutParams(dp(52), dp(52)))
         val words = LinearLayout(a).apply { orientation = VERTICAL }
@@ -299,15 +305,16 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
     }
 
     /** The sky now: the picture, the temperature, the place, the words and today's low and high; no days to come. */
-    private fun weatherHalf(card: LinearLayout, f: Facts) {
+    private fun weatherHalf(card: LinearLayout, f: Facts, room: Int) {
         val w = f.wx
         card.gravity = Gravity.CENTER_VERTICAL
         if (w == null) { card.addView(head(a.getString(R.string.w_weather), "")); card.addView(note(a.getString(R.string.wx_none))); return }
         val row = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        row.addView(Sky(a, w.kind, w.night), LayoutParams(dp(52), dp(52)))
-        row.addView(text("${w.temp}°", 30f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) }, LayoutParams(-2, -2).apply { leftMargin = dp(10) })
+        val narrow = room < dp(240)                                    // no room for the picture beside the words: the words keep whole
+        if (!narrow) row.addView(Sky(a, w.kind, w.night), LayoutParams(dp(52), dp(52)))
+        row.addView(text("${w.temp}°", 30f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) }, LayoutParams(-2, -2).apply { if (!narrow) leftMargin = dp(10) })
         val words = LinearLayout(a).apply { orientation = VERTICAL }
-        words.addView(text(w.place.ifEmpty { a.getString(R.string.wx_near) }, 14f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) })
+        words.addView(text(w.place.ifEmpty { a.getString(R.string.wx_near) }, 14f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL); if (narrow) maxLines = 2 })   // a long city wraps rather than cuts
         words.addView(text(a.getString(kindWords(w.kind)), 12f, Color.WHITE))
         words.addView(text(a.getString(R.string.wx_hi_lo, w.days[0].max, w.days[0].min), 12f, DIM))
         row.addView(words, LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
@@ -401,7 +408,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         ((square as FrameLayout).getChildAt(0) as? TextView)?.textSize = 26f   // the lunar day's number
         (square.getChildAt(0) as? ImageView)?.layoutParams = FrameLayout.LayoutParams(dp(30), dp(30), Gravity.CENTER)
         words.layoutParams = LayoutParams(-1, -2).apply { topMargin = dp(14) }
-        (words.getChildAt(0) as TextView).apply { textSize = 18f; if (maxLines > 1) maxLines = 4 }
+        (words.getChildAt(0) as TextView).apply { textSize = 18f; maxLines = 4 }       // a narrow column wraps a long title, never cuts it
         (words.getChildAt(1) as? TextView)?.apply { textSize = 14f; maxLines = 2; setPadding(0, dp(3), 0, 0) }
     }
 

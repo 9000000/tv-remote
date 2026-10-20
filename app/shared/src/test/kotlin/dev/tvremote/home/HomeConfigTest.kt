@@ -30,6 +30,9 @@ class HomeConfigTest {
         assertEquals("row", HomeConfig.clean(JSONObject().put("wlayout", "grid")).getString("wlayout"))
         val c = HomeConfig.merge(JSONObject().put("widgets", JSONArray(listOf("weather", "calendar"))), JSONObject().put("wlayout", "big"))
         assertEquals("big", c.getString("wlayout"))
+        for (k in listOf("big2", "flip", "quad")) assertEquals(k, HomeConfig.clean(JSONObject().put("wlayout", k)).getString("wlayout"))
+        assertEquals(listOf("row" to 0, "big" to 3, "big2" to 3, "flip" to 3, "quad" to 4), HomeConfig.LAYOUTS.map { it to HomeConfig.slots(it) })
+        for (k in HomeConfig.COLS.keys) assertEquals(100, HomeConfig.COLS.getValue(k).sumOf { it.pct })
         assertEquals("weather", c.getJSONArray("widgets").getString(0))                 // moving never sorts them back
     }
 

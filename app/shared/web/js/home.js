@@ -11,10 +11,24 @@ const HOME_WALL_WORDS = { night: 'home.wall_night', ocean: 'home.wall_ocean', du
   sunset: 'home.wall_sunset', ember: 'home.wall_ember', plum: 'home.wall_plum', midnight: 'home.wall_midnight', teal: 'home.wall_teal', slate: 'home.wall_slate', graphite: 'home.wall_graphite', navy: 'home.wall_navy', wine: 'home.wall_wine', moss: 'home.wall_moss' };
 const HOME_DOCK_MAX = 6;                                              // HomeConfig.DOCK_MAX
 const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer', 'weather'];          // HomeConfig.WIDGETS, in the order drawn
-const HOME_LAYOUTS = { row: 'home.layout_row', big: 'home.layout_big' };   // HomeConfig.LAYOUTS
+const HOME_LAYOUTS = { row: 'home.layout_row', big: 'home.layout_big', big2: 'home.layout_big2', flip: 'home.layout_flip', quad: 'home.layout_quad' };   // HomeConfig.LAYOUTS
+// HomeConfig.COLS: [share of the width %, cards stacked] per column; "row" is drawn as it looks (it has no fixed places)
+const HOME_COLS = { row: [[33, 1], [33, 1], [34, 2]], big: [[58, 1], [42, 2]], big2: [[36, 1], [36, 1], [28, 1]], flip: [[42, 2], [58, 1]], quad: [[50, 2], [50, 2]] };
+const HOME_OLD_LAYOUTS = ['row', 'big'];                              // a TV Home without "wlayouts" has only these
 const HOME_ROW_CARDS = 3, HOME_LARGE = ['system', 'usage', 'calendar', 'weather'];   // HomeConfig.ROW_CARDS, Widgets.BIG: what "row" shows
-const HOME_BIG_SLOTS = 3;                                             // HomeConfig.BIG_SLOTS: what "big" shows (a pinned note takes one)
+const homeSlots = (k) => k === 'row' || !HOME_COLS[k] ? 0 : HOME_COLS[k].reduce((n, c) => n + c[1], 0);   // HomeConfig.slots: what a fixed layout shows (a pinned note takes one)
 const HOME_WIDGET_WORDS = { system: 'home.w_system', usage: 'home.w_usage', calendar: 'home.w_calendar', lunar: 'home.w_lunar', timer: 'home.w_timer', weather: 'home.w_weather' };
+
+// A layout drawn small: its columns, the cards stacked in each (sizes in css/remote.css)
+function layGlyph(k) {
+  const g = el('i', { className: 'layglyph', 'aria-hidden': 'true' });
+  for (const [pct, n] of HOME_COLS[k]) {
+    const col = el('b'); col.style.setProperty('--w', pct);
+    for (let i = 0; i < n; i++) col.append(el('s'));
+    g.append(col);
+  }
+  return g;
+}
 
 // The 🏠 card's line and its Customize button: only where TV Home is on the TV
 async function homeCard() {
@@ -81,7 +95,7 @@ async function homeOpen() {
     return el('label', { className: 'check' }, box, el('span', { textContent: T(HOME_WIDGET_WORDS[w]) }));
   });
   const wHead = el('h3', { textContent: T('home.widgets') }), wList = el('div', { className: 'list homew' });
-  const layHead = el('h3', { textContent: T('home.layout') }), lay = el('div', { className: 'fchips' }), layNote = el('p', { className: 'note', textContent: T('home.layout_note') });
+  const layHead = el('h3', { textContent: T('home.layout') }), lay = el('div', { className: 'fchips laychips' }), layNote = el('p', { className: 'note' });
   // the family's note, pinned on the TV's home screen until it is taken down (HomeConfig.NOTE_MAX)
   const note = el('input', { type: 'text', maxLength: 140, placeholder: T('home.note_ph'), 'aria-label': T('home.note') });
   const pin = el('button', { type: 'button', className: 'primary', textContent: T('home.note_pin'), onclick: () => send({ note: note.value.trim() }) });
@@ -122,8 +136,8 @@ async function homeOpen() {
     const has = (k) => !!w && w.includes(k);
     wLines.forEach((l, i) => { l.hidden = !w || has(HOME_WIDGETS[i]) || (HOME_WIDGETS[i] === 'weather' && c.place === undefined); });   // weather: a TV Home older than it has no card
     wHead.hidden = !w;
-    const slots = c.note ? HOME_BIG_SLOTS - 1 : HOME_BIG_SLOTS;
-    const waits = (k, i) => c.wlayout === 'big' ? (i >= slots ? T('home.w_waits', { n: slots }) : '')
+    const places = homeSlots(c.wlayout), slots = c.note ? places - 1 : places;
+    const waits = (k, i) => places ? (i >= slots ? T('home.w_waits', { n: slots }) : '')
       : HOME_LARGE.includes(k) && w.slice(0, i).filter((x) => HOME_LARGE.includes(x)).length >= HOME_ROW_CARDS ? T('home.w_waits_row', { n: HOME_ROW_CARDS }) : '';
     const wmove = (i, j) => { const n = w.slice(); [n[i], n[j]] = [n[j], n[i]]; send({ widgets: n }); };
     wList.replaceChildren(...(w || []).map((k, i) => el('div', { className: 'item' },
@@ -134,8 +148,10 @@ async function homeOpen() {
         tool('✕', T('home.w_off'), () => send({ widgets: w.filter((x) => x !== k) }))))));
     wList.hidden = !w || !w.length;
     layHead.hidden = lay.hidden = c.wlayout === undefined || !w;      // a TV Home older than the layouts
-    layNote.hidden = layHead.hidden || c.wlayout !== 'big';
-    lay.replaceChildren(...Object.keys(HOME_LAYOUTS).map((k) => el('button', { type: 'button', className: c.wlayout === k ? 'on' : '', onclick: () => send({ wlayout: k }) }, el('span', { textContent: T(HOME_LAYOUTS[k]) }))));
+    layNote.hidden = layHead.hidden || !places;
+    put(layNote, 'textContent', T('home.layout_note', { n: places }));
+    lay.replaceChildren(...Object.keys(HOME_LAYOUTS).filter((k) => (c.wlayouts || HOME_OLD_LAYOUTS).includes(k)).map((k) => el('button', { type: 'button', className: c.wlayout === k ? 'on' : '', onclick: () => send({ wlayout: k }) },
+      layGlyph(k), el('span', { textContent: T(HOME_LAYOUTS[k]) }))));
     placeHead.hidden = placeLine.hidden = c.place === undefined || !has('weather');   // a TV Home older than the weather; and only while the card is on
     if (document.activeElement !== place) place.value = c.place || '';
     placeAuto.disabled = !c.place;

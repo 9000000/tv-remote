@@ -182,6 +182,11 @@ section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* 
 .homegal img { width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:6px; display:block; }
 .homegal span { font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .homegal.busy { opacity:.6; pointer-events:none; }
+.homeask .laychips { flex-wrap:wrap; overflow:visible; }   /* five choices: they wrap rather than scroll */
+.homeask .laychips button { display:inline-flex; align-items:center; gap:7px; }
+.layglyph { display:flex; gap:2px; width:32px; height:18px; flex:none; }
+.layglyph b { display:flex; flex-direction:column; gap:2px; flex:var(--w) 1 0; }
+.layglyph s { flex:1; border-radius:2px; background:currentColor; opacity:.55; }
 .homeask .item { flex-wrap:nowrap; }
 .homeask .item .name { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .homeask .homew .item .name { white-space:normal; }   /* the cards' names are sentences: they wrap, not cut */

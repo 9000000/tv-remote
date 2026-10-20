@@ -127,6 +127,9 @@
     <string name="w_layout">Layout</string>
     <string name="c_layout_row">In a row</string>
     <string name="c_layout_row_sub">side by side</string>
-    <string name="c_layout_big">One big, two small</string>
-    <string name="c_layout_big_sub">the first 3 only</string>
+    <string name="c_layout_big">1 big, 2 small</string>
+    <string name="c_layout_big2">2 big, 1 small</string>
+    <string name="c_layout_flip">2 small, 1 big</string>
+    <string name="c_layout_quad">4 small</string>
+    <string name="c_layout_first">the first %d only</string>
 </resources>

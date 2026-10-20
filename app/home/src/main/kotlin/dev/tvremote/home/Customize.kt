@@ -2,8 +2,11 @@ package dev.tvremote.home
 
 import android.app.Activity
 import android.app.Dialog
+import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
@@ -314,13 +317,11 @@ object Customize {
         fill()
     }
 
-    /** Two tiles, one chosen: the widgets in a row, or one big with two small. */
+    /** The layouts, two tiles to a row, one chosen; each shows its places in miniature. */
     private fun layoutTiles(a: Activity, col: LinearLayout, gap: Int, glass: (Int, Int, Int) -> GradientDrawable, label: (String, Float, Int) -> TextView) {
         val d = a.resources.displayMetrics.density
         fun dp(v: Number) = (v.toFloat() * d).toInt()
-        val pair = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }
-        col.addView(pair, LinearLayout.LayoutParams(-1, -2))
-        val tiles = ArrayList<Triple<String, LinearLayout, ImageView>>()
+        val tiles = ArrayList<Triple<String, LinearLayout, LayoutGlyph>>()
         fun paint() {
             val now = Store.get(a).optString("wlayout", "row")
             for ((k, t, ic) in tiles) {
@@ -329,27 +330,51 @@ object Customize {
                     addState(intArrayOf(android.R.attr.state_focused), glass(16, if (on) 0x408AB4F8 else 0x2EFFFFFF, Color.WHITE))
                     addState(intArrayOf(), glass(16, if (on) 0x268AB4F8 else 0x12FFFFFF, if (on) ACCENT else 0x1FFFFFFF))
                 }
-                ic.imageTintList = ColorStateList.valueOf(if (on) ACCENT else DIM)
+                ic.paint.color = if (on) ACCENT else DIM
+                ic.invalidate()
             }
         }
-        listOf(Triple("row", R.string.c_layout_row, R.string.c_layout_row_sub), Triple("big", R.string.c_layout_big, R.string.c_layout_big_sub)).forEachIndexed { i, (k, name, sub) ->
-            val ic = ImageView(a).apply { setImageResource(if (k == "row") R.drawable.ic_menu else R.drawable.ic_apps) }
+        val all = listOf(Triple("row", R.string.c_layout_row, R.string.c_layout_row_sub), Triple("big", R.string.c_layout_big, 0),
+            Triple("big2", R.string.c_layout_big2, 0), Triple("flip", R.string.c_layout_flip, 0), Triple("quad", R.string.c_layout_quad, 0))
+        var pair: LinearLayout? = null
+        all.forEachIndexed { i, (k, name, sub) ->
+            if (i % 2 == 0) pair = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }.also { col.addView(it, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = gap }) }
+            val ic = LayoutGlyph(a, k)
             val t = LinearLayout(a).apply {
                 orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
                 setPadding(dp(14), dp(12), dp(14), dp(12))
-                addView(ic, LinearLayout.LayoutParams(dp(26), dp(26)))
+                addView(ic, LinearLayout.LayoutParams(dp(40), dp(26)))
                 addView(LinearLayout(a).apply {
                     orientation = LinearLayout.VERTICAL
                     addView(label(a.getString(name), 15f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
-                    addView(label(a.getString(sub), 12f, DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+                    val n = HomeConfig.slots(k)
+                    addView(label(if (sub != 0) a.getString(sub) else a.getString(R.string.c_layout_first, n), 12f, DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
                 }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
                 onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
                 setOnClickListener { Store.change(a, JSONObject().put("wlayout", k)); paint() }
             }
             tiles += Triple(k, t, ic)
-            pair.addView(t, LinearLayout.LayoutParams(0, -2, 1f).apply { if (i > 0) leftMargin = gap })
+            pair!!.addView(t, LinearLayout.LayoutParams(0, -2, 1f).apply { if (i % 2 == 1) leftMargin = gap })
         }
+        if (all.size % 2 == 1) pair!!.addView(View(a), LinearLayout.LayoutParams(0, 0, 1f).apply { leftMargin = gap })
         paint()
+    }
+
+    /** A layout in miniature: its columns, the cards stacked in each. Drawn when painted, never animated. */
+    private class LayoutGlyph(c: Context, val layout: String) : View(c) {
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        override fun onDraw(cv: Canvas) {
+            val g = resources.displayMetrics.density * 2f
+            val cols = if (layout == "row") listOf(HomeConfig.Col(33, 1), HomeConfig.Col(33, 1), HomeConfig.Col(34, 2)) else HomeConfig.COLS.getValue(layout)
+            val room = width - g * (cols.size - 1)
+            var x = 0f
+            for (c in cols) {
+                val w = room * c.pct / 100f
+                val h = (height - g * (c.cells - 1)) / c.cells
+                for (j in 0 until c.cells) cv.drawRoundRect(x, j * (h + g), x + w, j * (h + g) + h, g, g, paint)
+                x += w + g
+            }
+        }
     }
 
     private fun ring(d: Float, w: Int, color: Int) = GradientDrawable().apply { cornerRadius = 12 * d; setStroke((w * d).toInt(), color); setColor(Color.TRANSPARENT) }
