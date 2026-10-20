@@ -20,9 +20,11 @@ import org.json.JSONObject
  *           shown only while one is set), "weather" (the sky now and the next days, Open-Meteo: [place] or, by itself, the device's
  *           location or the internet address's)
  *           Their order in the list is the order on the screen (the page and the TV's panel move them).
- *   wlayout how they sit: "row" (side by side, small ones in a column at the end) or one of [COLS] (columns of full-height and
- *           half-height places, as many cards as there are places, the rest wait: see [slots]). A TV Home older than a layout
- *           reads it as "row", which is why it also reports the ones it has: "wlayouts" (the page offers only those)
+ *   wsize   how big each card is: {"system": "big", "lunar": "small", ...}, "big" or "small", the default of a card when it is
+ *           missing ([defaultSize]). [pack] turns the sizes and the order into columns: a big card is a column, two small cards
+ *           in a row stack in one, a small card alone is a narrow column; what does not fit waits. A TV Home that has this reports
+ *           "wsizes": true (the page offers the old layout chips to one that does not). Replaces "wlayout" (row / big / big2 /
+ *           flip / quad), which [clean] still reads once, as sizes giving the same picture, when there are no "wsize" yet
  *   place   a city for the weather card, as typed ([PLACE_MAX] characters); empty = automatic
  *   dream   TV Home is the TV's screensaver (the big clock and the wallpaper, [DREAM]). Read from the system, not kept: the
  *           launcher sets `screensaver_components` itself (it holds WRITE_SECURE_SETTINGS once a client has granted it over
@@ -42,20 +44,51 @@ object HomeConfig {
     /** Where a client puts the photo (the shell may write there; the app reads it with no permission). */
     const val PHOTO = "/sdcard/Android/data/$PKG/files/wall.jpg"
     val WIDGETS = listOf("system", "usage", "calendar", "lunar", "timer", "weather")
-    /** A column of a fixed-height layout: its share of the width (%) and how many cards stack in it (1 = full height, 2 = halves). */
-    class Col(val pct: Int, val cells: Int)
-    /** Fixed-height layouts (the favourites below stay in view), cards filling the places column by column, top to bottom:
-     *  big = 1 large + 2 small, big2 = 2 large + 1 narrow, flip = 2 small + 1 large, quad = 4 small in a 2x2. */
-    val COLS = mapOf(
-        "big" to listOf(Col(58, 1), Col(42, 2)),
-        "big2" to listOf(Col(36, 1), Col(36, 1), Col(28, 1)),
-        "flip" to listOf(Col(42, 2), Col(58, 1)),
-        "quad" to listOf(Col(50, 2), Col(50, 2)))
-    val LAYOUTS = listOf("row") + COLS.keys
-    /** How many cards a layout shows (a pinned note takes one); "row" has no fixed number. */
-    fun slots(layout: String) = COLS[layout]?.sumOf { it.cells } ?: 0
-    /** Large cards (system, usage, calendar, weather) a row holds at 1920x1080; four cut every word to "…". The rest wait. */
-    const val ROW_CARDS = 3
+    /** A card's size when nobody chose: the four large cards are big, the small pills (lunar, timer, and the note) small. */
+    fun defaultSize(k: String) = if (k in BIG_KINDS) "big" else "small"
+    private val BIG_KINDS = setOf("system", "usage", "calendar", "weather")
+    /**
+     * Widths as weights (a column's share of the row): a big card, the calendar (seven day columns) a little more, a small column
+     * (stacked pills, or one standing) a little less. The row holds [BUDGET] at most: three big cards and a small column fit; a
+     * fourth big card is 200 dp wide at 1920x1080 and the weather there cuts its words to "…" (measured on a TV), so it waits. [FLOOR]: a few
+     * cards do not stretch across the whole row.
+     */
+    const val W_BIG = 100; const val W_CAL = 120; const val W_SMALL = 90; const val BUDGET = 415; const val FLOOR = 190
+    fun weight(k: String, big: Boolean) = if (!big) W_SMALL else if (k == "calendar") W_CAL else W_BIG
+    /** The cards of one column, top to bottom, and its weight. */
+    class Col(val keys: List<String>, val weight: Int)
+    /** The columns that fit, left to right, and the cards that wait (the pinned note, "note", never does). */
+    class Packed(val cols: List<Col>, val waiting: List<String>)
+    /**
+     * The one rule of the layout (js/home.js `homePack` does the same, tests/home_pack_cases.json holds the cases both read): walk
+     * the cards in order, a [big] card is a column, two small cards in a row stack in one column, a small card alone is a narrow
+     * column of its own; stop at the first column that would pass [BUDGET], the rest wait. The pinned note ([note]) is the last
+     * small card and keeps its place: the cards before it give way, from the end.
+     */
+    fun pack(keys: List<String>, big: Set<String>, note: Boolean = false): Packed {
+        fun run(ks: List<String>): Packed {
+            val cols = ArrayList<Col>(); var sum = 0; var i = 0
+            while (i < ks.size) {
+                val k = ks[i]; val isBig = k in big
+                val group = if (!isBig && ks.getOrNull(i + 1)?.let { it !in big } == true) listOf(k, ks[i + 1]) else listOf(k)
+                val w = weight(k, isBig)
+                if (sum + w > BUDGET) break
+                cols += Col(group, w); sum += w; i += group.size
+            }
+            return Packed(cols, ks.drop(i))
+        }
+        if (!note) return run(keys)
+        for (n in keys.size downTo 0) {
+            val p = run(keys.take(n) + "note")
+            if (p.waiting.isEmpty()) return Packed(p.cols, keys.drop(n))
+        }
+        return Packed(emptyList(), keys)                                // not reached: the note alone always fits
+    }
+    /** The sizes in [conf] as the set of big cards. */
+    fun bigs(conf: JSONObject): Set<String> {
+        val s = conf.optJSONObject("wsize")
+        return WIDGETS.filter { (s?.optString(it)?.takeIf { v -> v == "big" || v == "small" } ?: defaultSize(it)) == "big" }.toSet()
+    }
     const val NOTE_MAX = 140
     const val PLACE_MAX = 60
     /** TV Setup's answer to TV Home about app use (its HomeInfo provider): `call(USAGE, "usage")` → Bundle "json". */
@@ -64,6 +97,7 @@ object HomeConfig {
 
     /** [o] made safe: unknown fields dropped, lists of real package names without repeats, every value in range. */
     fun clean(o: JSONObject): JSONObject {
+        val widgets = o.optJSONArray("widgets")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty().filter { it in WIDGETS }.distinct()
         val dock = pkgs(o.optJSONArray("dock"), DOCK_MAX)
         return JSONObject()
             .put("dock", JSONArray(dock))
@@ -76,8 +110,23 @@ object HomeConfig {
             .put("dream", o.optBoolean("dream", false))
             .put("note", o.optString("note").replace(Regex("\\s+"), " ").trim().take(NOTE_MAX))
             .put("place", o.optString("place").replace(Regex("\\s+"), " ").trim().take(PLACE_MAX))
-            .put("wlayout", o.optString("wlayout").takeIf { it in LAYOUTS } ?: "row")
-            .put("widgets", JSONArray(o.optJSONArray("widgets")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty().filter { it in WIDGETS }.distinct()))
+            .put("widgets", JSONArray(widgets))
+            .put("wsize", sizes(o, widgets))
+    }
+
+    /** "wsize" kept for the known cards with a known size; with none yet, the old "wlayout" as the sizes that gave the same picture. */
+    private fun sizes(o: JSONObject, widgets: List<String>): JSONObject {
+        val out = JSONObject()
+        val given = o.optJSONObject("wsize")
+        if (given != null) {
+            for (k in WIDGETS) given.optString(k).takeIf { it == "big" || it == "small" }?.let { out.put(k, it) }
+            return out
+        }
+        val bigCount = when (o.optString("wlayout")) { "big" -> 1; "big2" -> 2; "flip" -> 1; "quad" -> 0; else -> -1 }   // "row" or none: the defaults
+        if (bigCount < 0) return out
+        val flip = o.optString("wlayout") == "flip"
+        widgets.forEachIndexed { i, k -> out.put(k, if (if (flip) i == 2 else i < bigCount) "big" else "small") }
+        return out
     }
 
     /** [old] with the fields [change] has (any of them), cleaned. */

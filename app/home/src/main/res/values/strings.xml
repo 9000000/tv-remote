@@ -124,12 +124,10 @@
     <string name="w_order_hint">The button on the right of a card moves it: press it, then Up / Down, then OK.</string>
     <string name="c_move">Move</string>
     <string name="c_moving">Up / Down, then OK</string>
-    <string name="w_layout">Layout</string>
-    <string name="c_layout_row">In a row</string>
-    <string name="c_layout_row_sub">side by side</string>
-    <string name="c_layout_big">1 big, 2 small</string>
-    <string name="c_layout_big2">2 big, 1 small</string>
-    <string name="c_layout_flip">2 small, 1 big</string>
-    <string name="c_layout_quad">4 small</string>
-    <string name="c_layout_first">the first %d only</string>
+    <string name="w_layout">Result</string>
+    <string name="c_size_big">Big</string>
+    <string name="c_size_small">Small</string>
+    <string name="c_size">Size</string>
+    <string name="c_waits">not shown yet</string>
+    <string name="c_size_hint">The Big / Small button sets how large a card is. Big cards get a column, two small ones share one.</string>
 </resources>

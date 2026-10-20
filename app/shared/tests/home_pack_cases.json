@@ -1,0 +1,21 @@
+{
+  "about": "TV Home's card packing (HomeConfig.pack, js/home.js homePack): keys in order, big = the big cards, note = a pinned note; cols = the columns left to right, waiting = what did not fit. Weights: big 100, calendar 120, weather 90, small column 70, budget 395",
+  "cases": [
+    { "name": "3 big", "keys": ["system", "usage", "calendar"], "big": ["system", "usage", "calendar"], "cols": [["system"], ["usage"], ["calendar"]], "waiting": [] },
+    { "name": "4 big: the fourth waits", "keys": ["system", "usage", "calendar", "weather"], "big": ["system", "usage", "calendar", "weather"], "cols": [["system"], ["usage"], ["calendar"]], "waiting": ["weather"] },
+    { "name": "big + 2 small", "keys": ["system", "lunar", "timer"], "big": ["system"], "cols": [["system"], ["lunar", "timer"]], "waiting": [] },
+    { "name": "4 small (2 stacks)", "keys": ["system", "usage", "lunar", "timer"], "big": [], "cols": [["system", "usage"], ["lunar", "timer"]], "waiting": [] },
+    { "name": "small, small, big, big", "keys": ["lunar", "timer", "system", "usage"], "big": ["system", "usage"], "cols": [["lunar", "timer"], ["system"], ["usage"]], "waiting": [] },
+    { "name": "2 big around a lone small", "keys": ["system", "lunar", "usage"], "big": ["system", "usage"], "cols": [["system"], ["lunar"], ["usage"]], "waiting": [] },
+    { "name": "3 big + a lone small fit", "keys": ["system", "usage", "calendar", "lunar"], "big": ["system", "usage", "calendar"], "cols": [["system"], ["usage"], ["calendar"], ["lunar"]], "waiting": [] },
+    { "name": "weather, calendar, usage + small", "keys": ["weather", "calendar", "usage", "lunar"], "big": ["weather", "calendar", "usage"], "cols": [["weather"], ["calendar"], ["usage"], ["lunar"]], "waiting": [] },
+    { "name": "too many: the weather waits", "keys": ["system", "usage", "calendar", "lunar", "timer", "weather"], "big": ["system", "usage", "calendar", "weather"], "cols": [["system"], ["usage"], ["calendar"], ["lunar", "timer"]], "waiting": ["weather"] },
+    { "name": "alternating: the calendar waits", "keys": ["system", "lunar", "usage", "timer", "calendar"], "big": ["system", "usage", "calendar"], "cols": [["system"], ["lunar"], ["usage"], ["timer"]], "waiting": ["calendar"] },
+    { "name": "6 small: 3 stacks", "keys": ["system", "usage", "calendar", "lunar", "timer", "weather"], "big": [], "cols": [["system", "usage"], ["calendar", "lunar"], ["timer", "weather"]], "waiting": [] },
+    { "name": "5 small: the last stands alone", "keys": ["system", "usage", "calendar", "lunar", "timer"], "big": [], "cols": [["system", "usage"], ["calendar", "lunar"], ["timer"]], "waiting": [] },
+    { "name": "note keeps its place: the last big card waits", "keys": ["system", "usage", "calendar", "weather"], "big": ["system", "usage", "calendar", "weather"], "note": true, "cols": [["system"], ["usage"], ["calendar"], ["note"]], "waiting": ["weather"] },
+    { "name": "note stacks with a small card", "keys": ["system", "lunar"], "big": ["system"], "note": true, "cols": [["system"], ["lunar", "note"]], "waiting": [] },
+    { "name": "note alone", "keys": [], "big": [], "note": true, "cols": [["note"]], "waiting": [] },
+    { "name": "nothing", "keys": [], "big": [], "cols": [], "waiting": [] }
+  ]
+}
