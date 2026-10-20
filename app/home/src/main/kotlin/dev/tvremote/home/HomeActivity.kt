@@ -463,6 +463,9 @@ class HomeActivity : Activity() {
     /** The remote's Menu key anywhere but on an app (an app's own Menu opens its menu) opens the settings. */
     override fun onKeyUp(code: Int, e: KeyEvent): Boolean {
         if (code == KeyEvent.KEYCODE_MENU) { customize(); return true }
+        // The Input key, where it reaches the home (cleanyourtv #342: some Realtek remotes send TV_INPUT, others TV). A box whose
+        // system sends it to Google's GlobalKeyReceiver (the FPT Play box) never gives it to any app
+        if (code == KeyEvent.KEYCODE_TV_INPUT || code == KeyEvent.KEYCODE_TV) { inputs(); return true }
         return super.onKeyUp(code, e)
     }
 

@@ -13,9 +13,13 @@ class App(val pkg: String, val label: String, val info: ActivityInfo) {
     fun load(c: Context) {
         val pm = c.packageManager
         banner = try { info.loadBanner(pm) ?: info.applicationInfo.loadBanner(pm) } catch (e: Exception) { null }
+        banner?.let { if (!wide(it.intrinsicWidth, it.intrinsicHeight)) banner = null }   // a square "banner" (Rockchip's Media Center, 64x64) cropped to 16:9 is a blur: the icon and name instead
         if (banner == null) icon = try { info.loadIcon(pm) } catch (e: Exception) { null }
     }
 }
+
+/** Wide enough to fill a 16:9 tile; no size of its own (a colour, a shape) fills any tile. cleanyourtv #324. */
+fun wide(w: Int, h: Int) = w <= 0 || h <= 0 || w >= h * 1.4f
 
 object Apps {
     /**

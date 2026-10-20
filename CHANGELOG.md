@@ -19,6 +19,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home không hiện các app hệ thống chỉ dành cho điện thoại mà hãng để lại (thông báo hệ thống, phóng to màn hình, app mẫu SystemUpdaterSample...)
 - Sửa: tab Ứng dụng: gỡ / tắt một app không còn tải lại cả danh sách
 - Sửa: app điện thoại: bấm Quay lại từ menu con thì tiêu đề menu trước bị sai
+- Sửa: TV Home: app có "banner" vuông (Media Center của Rockchip) hiện icon và tên thay vì một ô mờ; nút Input của remote mở danh sách nguồn vào khi TV đưa phím đó cho màn hình chính
 - Sửa: TV đã lưu: trong thẻ hẹp (nửa trang trên máy tính) các nút xuống dòng dưới tên TV, không ép chữ
 
 **English**
@@ -34,6 +35,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home leaves out the phone-only system apps a maker left behind (system notification, screen zoom, the SystemUpdaterSample demo...)
 - Fix: Apps tab: removing or turning off an app no longer reads the whole list again
 - Fix: phone app: Back from a sub-menu showed the wrong title on the menu before
+- Fix: TV Home: an app with a square "banner" (Rockchip's Media Center) shows its icon and name instead of a blur; the remote's Input key opens the inputs where the TV hands that key to the home screen
 - Fix: saved TVs: in a narrow card (half the page on a computer) the buttons go under the TV's name instead of squeezing it
 
 ## 0.14.0 - 2026-10-20
