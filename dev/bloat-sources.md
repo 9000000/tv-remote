@@ -3,14 +3,15 @@
 `app/shared/.../core/ontv/Bloat.kt` (suggested packages, the KEEP list) and the Google TV home swap in `Setup.kt` (setupwraith
 before launcherx, check Home, roll back) come from these. Read them again now and then and bring over what is new.
 
-Last read: **2026-10-19**, upstream `Gathin23/cleanyourtv` at `7377a9be8c` (2026-10-19 11:41 UTC), PRs up to #125, issues
-up to #120, 388 forks (40 ahead of upstream). The project was 2 days old then: most reports are one TV, one day.
+Last read: **2026-10-20**, upstream `Gathin23/cleanyourtv` at `fd1ee0a94c` (2026-10-20 14:35 UTC), PRs up to ~#398, issues
+up to ~#376 (before that: 2026-10-19 at `7377a9be8c`, PRs up to #125, issues up to #120, 388 forks). The project is days old:
+most reports are one TV, one day.
 
 ## Sources
 
 | Repo | What is in it |
 |---|---|
-| [Gathin23/cleanyourtv](https://github.com/Gathin23/cleanyourtv) (was `tv-vibehack`, MIT) | `examples/<tv>/debloat.txt` for ~31 TVs (391 packages), README "Troubleshooting", PRs and issues with owners' reports |
+| [Gathin23/cleanyourtv](https://github.com/Gathin23/cleanyourtv) (was `tv-vibehack`, MIT) | `examples/<tv>/debloat.txt` for ~107 TVs (78 new or changed since 2026-10-19: Sony x15, TCL x15, Philips, Hisense / Vidda / Vu, Xiaomi, Haier, Panasonic, Skyworth, Hitachi, Freebox, JMGO / Wanbo projectors, Fire TV sticks, NVIDIA Shield, onn, CHiQ / AIWA / BenQ "AI PONT"), README "Troubleshooting", PRs and issues with owners' reports |
 | [pulgagr/tv-vibehack-firetv](https://github.com/pulgagr/tv-vibehack-firetv) | Fire OS: what can and cannot be turned off, why Home cannot be taken |
 | [itsmeterrylin/fire-tv-cleanup](https://github.com/itsmeterrylin/fire-tv-cleanup), FreedomFleming/tv-vibehack | Fire OS 8 |
 | [SuryAdelia/tv-vibehack-coocaa](https://github.com/SuryAdelia/tv-vibehack-coocaa) | Coocaa / Skyworth Google TV (not compared yet) |
@@ -18,6 +19,23 @@ up to #120, 388 forks (40 ahead of upstream). The project was 2 days old then: m
 | [mclhm8182/tvhome-zh](https://github.com/mclhm8182/tvhome-zh) | Chinese version |
 | kadeemj, skuhns (Hisense Google TV), tv7 (TCL C6K), EndLess728/MiTV-Debloat, manhashed, nikhilbadyal (Xiaomi), maydings/vibe-launcher, manojm321/jain-tv-launcher, Musicality59 (Sony), codewithbalaji (OnePlus), picajoso (Onn 4K Plus), thefirstparth (`LESSONS.md`) | forks with their own `debloat.txt` or notes |
 | Upstream PRs #38 #45 #73 #78 #95 #100 #104, issues #30 #37 #49 #53 #62 #79 #83 #85 #90 #92 #101 | the reports quoted below |
+
+Second read (2026-10-20), taken as KEEP (an owner lost something) and as SUGGEST (disabled and reported fine by the list's owner;
+inputs, tuner, system, settings, keyboard, Bluetooth remote, HDMI-CEC, Play services never):
+- Hisense / Vidda / Vu: `tiletransition` (HDMI did nothing without it), the smartsense / aiot family (a Hisense went to Android
+  Recovery, #45 and hisense-u75, vu-4k-lushan), the VIDAA tuner / input / commonui, the Sogou keyboard (the only one), kpad, favkey.
+- Philips: `org.droidtv.*` is the TV engine; `eum` hangs it, `aurora` makes xtv retry in a loop (#234), `nettvbrowser` is HbbTV.
+- TCL / Thomson / Hitachi: settings, tvpassthrough, sourcemananger, the key services, TFDS.service, tvos (the Input key, sources).
+- Sony: tvapi, smartui (Input menu), tvlin, tvplayer, rcpowerkey, systemupdate, IR blaster; Xiaomi: tvsetup.partnercustomizer
+  (BLE remote pairing), mitv.res (the tvqs quick-settings panel is NOT suggested: a Mi Box S owner uses it).
+- Realtek, Homwee, CVTE / Haier, Skyworth, Freebox, JMGO, Wanbo, onn, Fire TV sets: the tuner, factory and key services;
+  `fusion.android.tv.demo` (MtcRetailDisplay) looks like a retail demo and is the Input button.
+- Setup.kt against #350 (the launcher that owns Home stays until another takes it: LauncherSwap opens the new one first and
+  rolls back), #214 (setupwraith owns Wi-Fi: only its HOME component goes off, never the package). Not covered: #344 (remote's
+  Input / Settings / app buttons dead once launcherx is off; needs a key remap), #339 (prefer the digital tuner, check
+  `remote/Inputs.kt`), TVs whose shell refuses to disable the wizard's component (xiaomi mosr4).
+- Left out: com.tcl.messagebox (carries the ttvs receiver), exhibit, waterfall.overseas, ttvs (firmware updater + Samba),
+  tv.anoki.acr.controller was taken, but `com.tcl.guard` (the only APK installer on China TCL) and `partnercustomizer` stay.
 
 Forks ahead of upstream on 2026-10-19 (owner/repo +commits): briansilah +76, thefirstparth +63, maydings/vibe-launcher +53,
 llm4041 +9, erinaldo123araujo-blip +9, quicodomingo +8, G41US +8, ashwkun +8, InclinedTaco +6, gjr08 +6, Joaquinfnz +5,

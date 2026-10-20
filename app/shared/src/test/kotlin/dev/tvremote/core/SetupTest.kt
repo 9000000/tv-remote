@@ -176,6 +176,19 @@ class SetupTest {
         assertEquals(setOf("com.tcl.bi"), tv.disabled)
     }
 
+    @Test fun whatOwnersFoundLoadBearingStaysOnAndTheRestGoesOff() {   // cleanyourtv, read again October 2026
+        val keep = listOf("com.hisense.tv.tiletransition", "org.droidtv.eum", "org.droidtv.aurora", "com.vt.tv.smartsense",
+            "com.homwee.dmt.upgrade", "fusion.android.tv.demo", "com.sony.dtv.smartui", "com.xiaomi.android.tvsetup.partnercustomizer",
+            "com.amazon.tv.oobe", "com.tcl.sourcemananger", "com.jmgo.autofocus")
+        val off = listOf("com.hisense.logupload", "com.amazon.client.metrics.api", "org.droidtv.usagelogger", "tv.anoki.acr.controller",
+            "android.autoinstalls.config.JVC", "com.nvidia.stats")
+        for (p in keep) assertTrue(p, Bloat.KEEP.matches(p))
+        for (p in off) assertTrue(p, Bloat.SUGGEST.containsKey(p))
+        val tv = FakeTv(true, *(keep + off).toTypedArray())
+        tv.setup().apply(Setup.Choice(anim = false, home = false, disable = tv.installed.toList()))
+        assertEquals(off.toSet(), tv.disabled)
+    }
+
     @Test fun brandSuggestionsGoOffByDefaultAndComeBackWithUndo() {
         val tv = FakeTv(true, "com.miui.tv.analytics", "com.foo.game")
         tv.setup().apply(Setup.Choice(anim = false, home = false))
