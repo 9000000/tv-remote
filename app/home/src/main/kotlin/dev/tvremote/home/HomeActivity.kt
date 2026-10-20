@@ -397,7 +397,7 @@ class HomeActivity : Activity() {
         val w = (width - (cols - 1) * gap) / cols
         val cells: MutableList<View> = rest.map { tile(it, w, false, made) }.toMutableList()
         val hiddenHere = apps.count { it.pkg in hidden }
-        if (hiddenHere > 0) cells.add(Tile(this, null, w, getString(R.string.hidden, hiddenHere), ::dp).apply { setOnClickListener { unhide() } })
+        if (hiddenHere > 0) cells.add(moves(Tile(this, null, w, getString(R.string.hidden, hiddenHere), ::dp).apply { setOnClickListener { unhide() } }, false, null))
         var row: LinearLayout? = null
         cells.forEachIndexed { i, v ->
             if (i % cols == 0) {
@@ -476,8 +476,13 @@ class HomeActivity : Activity() {
     private fun makeTile(a: App, w: Int, inDock: Boolean) = Tile(this, a, w, a.label, ::dp).apply {
         setOnClickListener { if (!Apps.launch(this@HomeActivity, a.pkg)) toast(R.string.no_open) }
         setOnLongClickListener { menu(a); true }
+        moves(this, inDock) { menu(a) }
+    }
+
+    /** The D-pad, the menu key and the focus ring of a tile; the hidden apps' tile too, or focus on it showed nowhere. */
+    private fun moves(t: Tile, inDock: Boolean, menu: (() -> Unit)?) = t.apply {
         setOnKeyListener { v, code, e ->
-            if (code == KeyEvent.KEYCODE_MENU) { if (e.action == KeyEvent.ACTION_UP) menu(a); e.action == KeyEvent.ACTION_UP }
+            if (code == KeyEvent.KEYCODE_MENU && menu != null) { if (e.action == KeyEvent.ACTION_UP) menu(); e.action == KeyEvent.ACTION_UP }
             else if (e.action == KeyEvent.ACTION_DOWN) step(v as Tile, code, inDock) else false
         }
         onFocusChangeListener = View.OnFocusChangeListener { v, f ->
@@ -711,7 +716,8 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
         card.addView(badge, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(6), 0) })
         addView(card, LayoutParams(w, h))
         name.apply {
-            text = label; textSize = 13f; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER
+            text = if (banner != null) label else ""                  // a tile without a banner already shows its name inside
+            textSize = 13f; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER
             alpha = 0f; setPadding(0, dp(9), 0, dp(4)); setShadowLayer(dp(4).toFloat(), 0f, 0f, 0x99000000.toInt())
         }
         addView(name, LayoutParams(w, -2))
