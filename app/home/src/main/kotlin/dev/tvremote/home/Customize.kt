@@ -264,14 +264,9 @@ object Customize {
             background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xFF161B2B.toInt(), 0xFF0C1020.toInt())).apply {
                 cornerRadius = dp(28).toFloat(); setStroke(dp(1), 0x33FFFFFF)
             }
-            // no clip: the content keeps 28 dp from the sides, clear of the corners; clipped it cost the FPT box ~10 ms a frame
-            addView(scroll)
-            // the soft top and bottom edges painted once over the list: the ScrollView's own fading edge drew the whole list
-            // into a layer on every frame (55 ms a frame on the FPT box while a tile grew, 18-28 ms without)
-            addView(View(a).apply { background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xFF161B2B.toInt(), 0x00161B2B)) },
-                FrameLayout.LayoutParams(-1, dp(24), Gravity.TOP).apply { setMargins(dp(28), 0, dp(28), 0) })
-            addView(View(a).apply { background = GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, intArrayOf(0xFF0C1020.toInt(), 0x000C1020)) },
-                FrameLayout.LayoutParams(-1, dp(24), Gravity.BOTTOM).apply { setMargins(dp(28), 0, dp(28), 0) })
+            // no clip and no fading edge: clipped to its corners it cost the FPT box ~10 ms a frame, the ScrollView's fading edge drew
+            // the whole list into a layer every frame (55 ms a frame while a tile grew); the list stops 1 dp inside the border instead
+            addView(scroll, FrameLayout.LayoutParams(-1, -1).apply { setMargins(dp(1), dp(1), dp(1), dp(1)) })
         }
         val height = dm.heightPixels - 2 * edge
         dialog.setContentView(panel, ViewGroup.LayoutParams(panelW, height))
