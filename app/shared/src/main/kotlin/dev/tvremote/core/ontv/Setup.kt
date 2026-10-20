@@ -152,7 +152,9 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
             log.line(t("optimize.tailscale_starts_again_by"))
         }
         if (c.anim) {
-            sh("settings put global window_animation_scale 0; settings put global transition_animation_scale 0; settings put global animator_duration_scale 0.5")   // not 0 for the last one: loading spinners would freeze
+            // the screen-to-screen transitions only; the apps' own motion stays at its pace (1, also undoing the 0.5 older versions
+            // set): at 0.5 TV Home's scroll and focus ran twice as fast and looked like a jerk, at 0 spinners would freeze
+            sh("settings put global window_animation_scale 0; settings put global transition_animation_scale 0; settings put global animator_duration_scale 1")
             log.line(t("optimize.transition_animations_off"))
         }
 
