@@ -150,12 +150,17 @@ internal fun MainActivity.pickFile(types: Array<String>) {
     catch (e: Exception) { say(T("media.this_phone_has_no"), true) }
 }
 
-internal fun MainActivity.askText(title: String, hint: String, ok: String, then: (String) -> Unit) {
+internal fun MainActivity.askText(title: String, hint: String, ok: String, value: String = "", then: (String) -> Unit) {
     val box = input(hint)
+    if (value.isNotEmpty()) { box.setText(value); box.selectAll() }
     val wrap = inDialog(box)
     Popup.Builder(this).setTitle(title).setView(wrap)
         .setPositiveButton(ok) { _, _ -> box.text.toString().trim().let { if (it.isNotEmpty()) then(it) } }
         .setNegativeButton(T("common.cancel"), null).show()
+    box.postDelayed({                                                // the keyboard up: a name is typed at once, not after a tap
+        box.requestFocus()
+        (getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).showSoftInput(box, 0)
+    }, 150)
 }
 
 /** Things the TV can be told to open straight from the phone, saving the hunt with the TV's own keyboard (the entries: remote.json). */

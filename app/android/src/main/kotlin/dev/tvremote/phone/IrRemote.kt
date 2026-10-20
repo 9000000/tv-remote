@@ -23,6 +23,7 @@ import java.util.concurrent.Executors
 private const val TAG = "TvrIr"
 private const val PROFILE = "ir:profile"                           // the chosen profile's id; "ir:profile:<ip>" for a saved TV
 private const val TARGET = "ir:tv"                                  // the saved TV the codes are for, "" for none
+private const val SAVED = "ir:saved"                                // the remotes kept by name: [{"name", "id"}], for the list (irList)
 private val REPEAT = setOf("UP", "DOWN", "LEFT", "RIGHT", "VOL_UP", "VOL_DOWN", "CH_UP", "CH_DOWN")   // held: the code goes on being sent
 
 private object IrState {
@@ -30,6 +31,7 @@ private object IrState {
     var toggle = false                                              // RC5 / RC6: the bit that flips on every new press
     var onFind = false                                              // which of the two screens the back button leaves
     var page = ""                                                   // "auto" while Dò tự động is on screen: its steps redraw it
+    var slot = -1                                                   // the saved remote on screen (SAVED), -1 none, ADDING while one is being added
     @Volatile var stop = false
     @Volatile var link: dev.tvremote.core.adb.AdbLink? = null
     var auto = ""                                                   // the TV Dò tự động listens on
@@ -69,8 +71,61 @@ private fun MainActivity.irSend(code: String, repeat: Boolean) {
 /** The saved TV the codes are for: each keeps its own remote, and one ADB reaches can find its code by itself (IrAuto.kt). */
 private fun MainActivity.irTarget(): String = pref(TARGET).takeIf { it in savedIps() } ?: ""
 private fun MainActivity.irProfileKey(): String = irTarget().let { if (it.isEmpty()) PROFILE else "$PROFILE:$it" }
-private fun MainActivity.irProfile(): IrProfile? = pref(irProfileKey()).ifEmpty { pref(PROFILE) }.let { id -> irCatalog().firstOrNull { id in it.ids } }
-private fun MainActivity.irSave(p: IrProfile) = prefs.edit().putString(irProfileKey(), p.id).apply()
+private const val ADDING = -2
+private fun MainActivity.irProfile(): IrProfile? {
+    val id = when {
+        irTarget().isNotEmpty() -> pref(irProfileKey()).ifEmpty { pref(PROFILE) }
+        IrState.slot >= 0 -> irSaved().getOrNull(IrState.slot)?.second ?: ""
+        else -> ""
+    }
+    return irCatalog().firstOrNull { id in it.ids }
+}
+
+/** A TV's own code goes with that TV; otherwise into the list: the remote on screen changes, or one being added is kept under a name. */
+private fun MainActivity.irSave(p: IrProfile) {
+    if (irTarget().isNotEmpty()) { prefs.edit().putString(irProfileKey(), p.id).apply(); return }
+    val all = irSaved().toMutableList()
+    val at = IrState.slot
+    if (at in all.indices) {
+        val (name, old) = all[at]
+        val was = irCatalog().firstOrNull { old in it.ids }?.title       // a name never typed follows the code
+        all[at] = Pair(if (name == was) p.title else name, p.id)
+        irKeep(all)
+        return
+    }
+    all.add(Pair(p.title, p.id))
+    irKeep(all)
+    IrState.slot = all.size - 1
+    ui.post { if (!isFinishing) irRename(IrState.slot) }                // the screen first, then its name asked over it
+}
+
+/** The saved remotes, name and profile id. The single code of before the list becomes its first entry. */
+private fun MainActivity.irSaved(): List<Pair<String, String>> {
+    val text = pref(SAVED)
+    if (text.isEmpty()) {
+        val old = pref(PROFILE).takeIf { it.isNotEmpty() }?.let { id -> irCatalog().firstOrNull { id in it.ids } } ?: return emptyList()
+        return listOf(Pair(old.title, old.id)).also { irKeep(it) }
+    }
+    return try {
+        val a = org.json.JSONArray(text)
+        (0 until a.length()).map { a.getJSONObject(it).let { o -> Pair(o.optString("name"), o.optString("id")) } }
+    } catch (e: Exception) { emptyList() }
+}
+
+private fun MainActivity.irKeep(all: List<Pair<String, String>>) {
+    val a = org.json.JSONArray()
+    for ((n, id) in all) a.put(org.json.JSONObject().put("name", n).put("id", id))
+    prefs.edit().putString(SAVED, a.toString()).apply()
+}
+
+private fun MainActivity.irRename(at: Int) {
+    val all = irSaved().toMutableList()
+    if (at !in all.indices) return
+    askText(T("ir.name_title"), T("ir.name_hint"), T("ir.save"), all[at].first) { n ->
+        all[at] = Pair(n, all[at].second); irKeep(all)
+        if (IrState.page == "list") irList() else if (IrState.page == "" && !IrState.onFind) irRemote()
+    }
+}
 /** "Samsung", or "TCL · Kiểu 2" when the brand has more than one remote. */
 internal val IrProfile.title: String get() = if (kind == 0) brand else brand + " · " + T("ir.kind", "n" to kind)
 /** The models it stands for, and how many keys it knows. */
@@ -86,17 +141,62 @@ internal fun MainActivity.buildIr(): FrameLayout {
     return host
 }
 
-/** [tv]: the saved TV it is opened for (from that TV's remote: its own code), null from the list of TVs (the phone's one code). */
+/** [tv]: the saved TV it is opened for (from that TV's remote: its own code), null from the list of TVs (the saved remotes first). */
 internal fun MainActivity.irOpen(tv: String? = null) {
     prefs.edit().putString(TARGET, tv ?: "").apply()
-    irRemote(); irHost.visibility = View.VISIBLE
+    IrState.slot = -1
+    if (tv == null) irList() else irRemote()
+    irHost.visibility = View.VISIBLE
 }
 
-/** The back button: from the code finder to the remote, from the remote to the list of TVs. True when it was ours. */
+/** The back button: from the code finder to the remote, from a saved remote to the list, then to the list of TVs. True when it was ours. */
 internal fun MainActivity.irBack(): Boolean {
     if (irHost.visibility != View.VISIBLE) return false
-    if (IrState.onFind) { irStop(); irRemote() } else irHost.visibility = View.GONE
+    if (IrState.onFind) { irStop(); irRemote() } else irUp()
     return true
+}
+
+private fun MainActivity.irUp() { if (irTarget().isEmpty() && IrState.page != "list") irList() else irHost.visibility = View.GONE }
+
+/** The remotes kept by name (a TV in the bedroom, the operator's box): one tap opens it, no finding again. Add opens the brands / Dò mã. */
+private fun MainActivity.irList() {
+    IrState.onFind = false
+    IrState.page = "list"
+    IrState.slot = -1
+    val all = irSaved()
+    irPage(T("ir.title"), { irHost.visibility = View.GONE }) {
+        if (all.isEmpty()) addView(note(T("ir.saved_none")), gap(14))
+        all.forEachIndexed { i, (name, id) ->
+            val p = irCatalog().firstOrNull { id in it.ids }
+            val line = LinearLayout(this@irList)
+            line.gravity = Gravity.CENTER_VERTICAL
+            line.background = box(CARD, 14)
+            line.setPadding(dp(14), dp(10), dp(6), dp(10))
+            line.isClickable = true
+            line.setOnClickListener { IrState.slot = i; irRemote() }
+            val texts = col()
+            val head = label(name, 16, TEXT)
+            head.typeface = Typeface.DEFAULT_BOLD
+            head.maxLines = 1; head.ellipsize = android.text.TextUtils.TruncateAt.END
+            texts.addView(head)
+            if (p != null && p.title != name) texts.addView(label(p.title, 13, MUTED).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+            line.addView(texts, LinearLayout.LayoutParams(0, -2, 1f))
+            val edit = icon("@pen", T("ir.rename"), CARD)
+            edit.setOnClickListener { irRename(i) }
+            line.addView(edit, LinearLayout.LayoutParams(dp(44), dp(44)))
+            val drop = icon("@trash", T("setup.delete"), CARD)
+            drop.setOnClickListener {
+                Popup.Builder(this@irList).setTitle(T("ir.delete_ask", "name" to name))
+                    .setPositiveButton(T("setup.delete")) { _, _ -> irKeep(irSaved().filterIndexed { k, _ -> k != i }); irList() }
+                    .setNegativeButton(T("common.cancel"), null).show()
+            }
+            line.addView(drop, LinearLayout.LayoutParams(dp(44), dp(44)))
+            addView(line, gap(if (i == 0) 14 else 8))
+        }
+        val add = button("@plus|" + T("ir.add"), ACCENT)
+        add.setOnClickListener { IrState.slot = ADDING; irRemote() }
+        addView(add, LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(14) })
+    }
 }
 
 private fun MainActivity.irPage(title: String, back: () -> Unit, body: LinearLayout.() -> Unit) {
@@ -124,7 +224,8 @@ internal fun MainActivity.irRemote() {
     IrState.onFind = false
     IrState.page = ""
     val p = irProfile()
-    irPage(T("ir.title"), { irHost.visibility = View.GONE }) {
+    val saved = irSaved().getOrNull(IrState.slot)?.first
+    irPage(saved ?: T("ir.title"), { irUp() }) {
         val line = LinearLayout(this@irRemote)
         val pick = button("@tv|" + (p?.title ?: T("ir.choose_brand")), BTN)
         pick.maxLines = 1; pick.ellipsize = android.text.TextUtils.TruncateAt.END

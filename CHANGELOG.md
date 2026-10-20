@@ -11,6 +11,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home có bản mới cũng được nhắc như TV Setup, chung một thanh gọn (một nút Cập nhật cho cả hai). **Để sau** hỏi khi nào nhắc lại: sau 1, 7, 30 ngày, hoặc bỏ qua bản này
 - Thẻ 📺 TV (tab Thiết lập) có hàng **Màn hình**: Tắt / bật màn hình và Giảm độ sáng, không cần mở remote
 - Remote hồng ngoại: chọn hãng không còn là danh sách số model. Model dùng chung một mã gộp làm một; hãng có nhiều kiểu thì hiện **Kiểu 1 (phổ biến nhất)**, **Kiểu 2**... kèm vài model và số phím. Nút hãng không còn xuống dòng
+- Remote hồng ngoại lưu được nhiều remote có tên (TV phòng khách, box nhà mạng...): mở Remote hồng ngoại là thấy danh sách, bấm là dùng, không phải dò lại. **Thêm remote** để chọn hãng hoặc dò mã rồi đặt tên; đổi tên, xóa ngay trong danh sách
 - Sửa: app điện thoại: bấm Quay lại từ menu con thì tiêu đề menu trước bị sai
 - Sửa: TV đã lưu: trong thẻ hẹp (nửa trang trên máy tính) các nút xuống dòng dưới tên TV, không ép chữ
 
@@ -19,6 +20,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - New TV Home versions are offered like TV Setup's, in the same one-line bar (one Update for both). **Later** asks when: in 1, 7 or 30 days, or skip this version
 - The 📺 TV card (Setup tab) has a **Screen** row: Screen off / on and Dim the screen, without opening the remote
 - Infrared remote: picking a brand is no longer a list of model numbers. Models that share one code are one; a brand with several shows **Type 1 (most common)**, **Type 2**... with a few models and the number of keys. The brand button stays on one line
+- Infrared remote keeps several remotes by name (living room TV, the operator's box...): Infrared remote opens on that list, one tap to use one, no finding again. **Add a remote** picks a brand or finds the code, then names it; rename and delete in the list
 - Fix: phone app: Back from a sub-menu showed the wrong title on the menu before
 - Fix: saved TVs: in a narrow card (half the page on a computer) the buttons go under the TV's name instead of squeezing it
 
