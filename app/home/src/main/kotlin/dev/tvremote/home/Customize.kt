@@ -33,7 +33,7 @@ object Customize {
         val dialog = Dialog(a, R.style.Menu)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
 
-        val col = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(24), dp(20), dp(24), dp(20)) }
+        val col = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(24), dp(20), dp(24), dp(28)) }   // room for "Done" grown by its focus
         fun label(t: String, size: Float, color: Int) = TextView(a).apply { text = t; textSize = size; setTextColor(color) }
         col.addView(label(a.getString(R.string.customize), 22f, Color.WHITE))
         col.addView(label(a.getString(R.string.bg), 15f, 0xCCFFFFFF.toInt()), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(14); bottomMargin = dp(8) })
@@ -68,8 +68,10 @@ object Customize {
         }
         mark(tiles, conf.optString("wall"))
 
-        fun toggle(text: String, key: String) {
-            val sw = Switch(a).apply { isChecked = conf.optBoolean(key, true); isFocusable = false; isClickable = false }
+        // a widget's switch adds it to "widgets" or takes it out; the others are one field each
+        fun toggle(text: String, key: String, widget: Boolean = false) {
+            val on = if (widget) Store.list(a, "widgets").contains(key) else conf.optBoolean(key, true)
+            val sw = Switch(a).apply { isChecked = on; isFocusable = false; isClickable = false }
             val r = LinearLayout(a).apply {
                 orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
                 setPadding(dp(14), 0, dp(14), 0); minimumHeight = dp(44)
@@ -78,13 +80,19 @@ object Customize {
                     addState(intArrayOf(), GradientDrawable().apply { cornerRadius = dp(12).toFloat(); setColor(0x0DFFFFFF) })
                 }
                 addView(label(text, 16f, Color.WHITE), LinearLayout.LayoutParams(0, -2, 1f)); addView(sw)
-                setOnClickListener { sw.isChecked = !sw.isChecked; Store.change(a, JSONObject().put(key, sw.isChecked)) }
+                setOnClickListener {
+                    sw.isChecked = !sw.isChecked
+                    if (!widget) Store.change(a, JSONObject().put(key, sw.isChecked))
+                    else Store.putList(a, "widgets", HomeConfig.WIDGETS.filter { w -> if (w == key) sw.isChecked else Store.list(a, "widgets").contains(w) })
+                }
             }
-            col.addView(r, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (key == "clock24") 14 else 6) })
+            col.addView(r, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (key == "clock24" || key == "system") 14 else 6) })
         }
         toggle(a.getString(R.string.clock24), "clock24")
         toggle(a.getString(R.string.greet), "greet")
         toggle(a.getString(R.string.motion), "anim")
+        toggle(a.getString(R.string.w_widgets) + ": " + a.getString(R.string.w_system), "system", true)
+        toggle(a.getString(R.string.w_widgets) + ": " + a.getString(R.string.w_week), "usage", true)
 
         col.addView(label(a.getString(R.string.more), 13f, 0xB3FFFFFF.toInt()), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16) })
         val done = TextView(a).apply {

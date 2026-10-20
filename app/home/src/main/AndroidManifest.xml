@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />   <!-- Wi-Fi, cable or offline on the network button -->
-    <queries>                                                          <!-- the apps it lists -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />      <!-- the Wi-Fi signal on the system card (Widgets) -->
+    <queries>                                                          <!-- the apps it lists, and TV Setup for the usage card -->
+        <package android:name="dev.tvremote.setup" />
         <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LEANBACK_LAUNCHER" /></intent>
         <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent>
     </queries>

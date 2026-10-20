@@ -10,6 +10,7 @@ const HOME_WALLS = { night: '#0b0f1a,#18223f', ocean: '#03192b,#0a4a66', dusk: '
 const HOME_WALL_WORDS = { night: 'home.wall_night', ocean: 'home.wall_ocean', dusk: 'home.wall_dusk', forest: 'home.wall_forest', aurora: 'home.wall_aurora', black: 'home.wall_black',
   sunset: 'home.wall_sunset', ember: 'home.wall_ember', plum: 'home.wall_plum', midnight: 'home.wall_midnight', teal: 'home.wall_teal', slate: 'home.wall_slate', graphite: 'home.wall_graphite', navy: 'home.wall_navy', wine: 'home.wall_wine', moss: 'home.wall_moss' };
 const HOME_DOCK_MAX = 6;                                              // HomeConfig.DOCK_MAX
+const HOME_WIDGETS = ['system', 'usage'];                             // HomeConfig.WIDGETS, in the order drawn
 
 // The 🏠 card's line and its Customize button: only where TV Home is on the TV
 async function homeCard() {
@@ -63,6 +64,18 @@ async function homeOpen() {
   const clock = el('input', { type: 'checkbox', onchange: () => send({ clock24: clock.checked }) });
   const greet = el('input', { type: 'checkbox', onchange: () => send({ greet: greet.checked }) });
   const anim = el('input', { type: 'checkbox', onchange: () => send({ anim: anim.checked }) });
+  // the cards over the favourites; the usage one reads TV Setup, so a TV Setup too old for it is offered first
+  const widget = (w) => {
+    const box = el('input', { type: 'checkbox', onchange: async () => {
+      if (box.checked && w === 'usage' && !await setupFor('home_usage')) { box.checked = false; return; }
+      const on = r.config.widgets.filter((x) => x !== w);
+      send({ widgets: box.checked ? HOME_WIDGETS.filter((x) => x === w || on.includes(x)) : on });
+    } });
+    return box;
+  };
+  const wSystem = widget('system'), wUsage = widget('usage');
+  const wLines = [el('label', { className: 'check' }, wSystem, el('span', { textContent: T('home.w_system') })),
+    el('label', { className: 'check' }, wUsage, el('span', { textContent: T('home.w_usage') }))];
   const gal = el('div', { className: 'homegal' }), credit = el('p', { className: 'note', textContent: T('home.gal_note') });
   const galHead = el('h3', { textContent: T('home.gallery') });
   homeGallery(gal, credit, galHead, (n) => { r = n; homeNow = n; draw(); });
@@ -85,6 +98,9 @@ async function homeOpen() {
     }), ...(r.photo ? [el('button', { type: 'button', className: c.wall === 'photo' ? 'on' : '', onclick: () => send({ wall: 'photo' }) }, el('i', { className: 'add', textContent: '🖼️' }), el('span', { textContent: T('home.wall_photo') }))] : []),
     el('button', { type: 'button', onclick: () => file.click() }, el('i', { className: 'add', textContent: '＋' }), el('span', { textContent: T('home.upload') })));
     clock.checked = c.clock24; greet.checked = c.greet; anim.checked = c.anim !== false;
+    const w = c.widgets;                                              // absent: a TV Home older than the cards
+    wLines.forEach((l) => { l.hidden = !w; });
+    wSystem.checked = !!w && w.includes('system'); wUsage.checked = !!w && w.includes('usage');
   }
 
   const d = el('dialog', { className: 'ask homeask' }, el('div', { className: 'card' },
@@ -95,6 +111,7 @@ async function homeOpen() {
     el('label', { className: 'check' }, clock, el('span', { textContent: T('home.clock24') })),
     el('label', { className: 'check' }, greet, el('span', { textContent: T('home.greet') })),
     el('label', { className: 'check' }, anim, el('span', { textContent: T('home.anim') })),
+    ...wLines,
     el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden));
   d.addEventListener('close', () => { d.remove(); homeCard(); });
   draw();

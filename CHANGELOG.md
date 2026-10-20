@@ -8,6 +8,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 
+- TV Home có widget (bật trong Tùy chỉnh TV Home, trên TV hoặc điện thoại / máy tính): **Hệ thống** (vòng RAM, bộ nhớ, sóng Wi-Fi, biểu đồ mạng trực tiếp, IP, ADB) và **App dùng nhiều** (cột 7 ngày, top app có icon, thời gian còn lại của giới hạn app, lấy từ TV Setup). Nhẹ cho TV yếu: chỉ cập nhật khi đang ở màn hình chính
 - TV Home có bản mới cũng được nhắc như TV Setup, chung một thanh gọn (một nút Cập nhật cho cả hai). **Để sau** hỏi khi nào nhắc lại: sau 1, 7, 30 ngày, hoặc bỏ qua bản này
 - Thẻ 📺 TV (tab Thiết lập) có hàng **Màn hình**: Tắt / bật màn hình và Giảm độ sáng, không cần mở remote
 - Remote hồng ngoại: chọn hãng không còn là danh sách số model. Model dùng chung một mã gộp làm một; hãng có nhiều kiểu thì hiện **Kiểu 1 (phổ biến nhất)**, **Kiểu 2**... kèm vài model và số phím. Nút hãng không còn xuống dòng
@@ -17,6 +18,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **English**
 
+- TV Home has widgets (turned on in Customize TV Home, on the TV or from the phone / computer): **System** (rings for memory, storage and Wi-Fi signal, a live network graph, IP, ADB) and **Most used apps** (7 days as columns, top apps with icons, time left on app limits, from TV Setup). Light on weak TVs: they update only while the home screen is shown
 - New TV Home versions are offered like TV Setup's, in the same one-line bar (one Update for both). **Later** asks when: in 1, 7 or 30 days, or skip this version
 - The 📺 TV card (Setup tab) has a **Screen** row: Screen off / on and Dim the screen, without opening the remote
 - Infrared remote: picking a brand is no longer a list of model numbers. Models that share one code are one; a brand with several shows **Type 1 (most common)**, **Type 2**... with a few models and the number of keys. The brand button stays on one line

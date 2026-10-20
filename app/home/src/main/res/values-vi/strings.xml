@@ -46,4 +46,20 @@
     <string name="wall_wine">Đỏ rượu</string>
     <string name="wall_moss">Xanh rêu</string>
     <string name="wall_photo">Ảnh</string>
+    <string name="w_system">Hệ thống</string>
+    <string name="w_ram">RAM</string>
+    <string name="w_disk">Bộ nhớ</string>
+    <string name="w_up">Đã bật</string>
+    <string name="w_signal">Sóng Wi-Fi</string>
+    <string name="w_adb">ADB</string>
+    <string name="w_on">bật</string>
+    <string name="w_off">tắt</string>
+    <string name="w_week">Dùng nhiều · 7 ngày</string>
+    <string name="w_limits">Giới hạn hôm nay</string>
+    <string name="w_left">còn %s</string>
+    <string name="w_used_up">Hết giờ</string>
+    <string name="w_none">Chưa có số liệu</string>
+    <string name="w_need_setup">Cần TV Setup mới: cài hoặc cập nhật từ điện thoại hay máy tính</string>
+    <string name="w_widgets">Widget</string>
+    <string name="w_net">Mạng</string>
 </resources>

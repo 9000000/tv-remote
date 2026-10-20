@@ -72,6 +72,10 @@ class HomeActivity : Activity() {
     private var scrollAnim: ObjectAnimator? = null
     private var gridOn = true                                         // focus is in the grid: it is lit and in place; else it waits a little lower, dimmer
     private var resumed = false
+    private lateinit var widgets: Widgets
+    private val ui = android.os.Handler(android.os.Looper.getMainLooper())
+    private val widgetTick = object : Runnable { override fun run() { widgetsRead(); ui.postDelayed(this, 60_000) } }
+    private val netTick = object : Runnable { override fun run() { widgets.sample(); ui.postDelayed(this, Widgets.SAMPLE_MS) } }
 
     private fun dp(v: Number) = (v.toFloat() * resources.displayMetrics.density).toInt()
 
@@ -121,6 +125,8 @@ class HomeActivity : Activity() {
         if (resources.displayMetrics.widthPixels < dp(820)) for (i in 0 until pills.childCount) (pills.getChildAt(i) as Pill).compact()
         head.addView(pills)
         col.addView(head)
+        widgets = Widgets(this, ::dp).apply { visibility = View.GONE }
+        col.addView(widgets, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(28) })
 
         // the favourites, in a band of their own
         // frosted: a light fill with a hairline edge; over a photo the same photo, blurred, sits behind it (see [blurAlign])
@@ -172,6 +178,7 @@ class HomeActivity : Activity() {
 
     override fun onDestroy() {
         Store.onChange = null
+        ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick)
         try { unregisterReceiver(changed); unregisterReceiver(tick) } catch (e: Exception) { }
         bg.shutdownNow()
         super.onDestroy()
@@ -183,6 +190,21 @@ class HomeActivity : Activity() {
         clockAndDay()
         if (resumed && Motion.on) enter(false)
         resumed = true
+        ui.removeCallbacks(widgetTick); ui.post(widgetTick)
+        ui.removeCallbacks(netTick); ui.postDelayed(netTick, Widgets.SAMPLE_MS)
+    }
+
+    override fun onPause() { ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); super.onPause() }
+
+    /** The cards' numbers, read off the main thread; none at all while they are off. */
+    private fun widgetsRead() {
+        val want = Store.list(this, "widgets")
+        (bandWrap.layoutParams as LinearLayout.LayoutParams).topMargin = dp(if (want.isEmpty()) 40 else 24)
+        if (want.isEmpty()) { widgets.visibility = View.GONE; return }
+        bg.execute {
+            val f = widgets.read(want)
+            runOnUiThread { if (!isDestroyed) widgets.show(want, f) { p -> apps.firstOrNull { it.pkg == p }?.label ?: p.substringAfterLast('.') } }
+        }
     }
 
     /** The screen comes in: the clock and the buttons ease down, the dock band rises (only a fade when coming back from an app). */
@@ -253,6 +275,7 @@ class HomeActivity : Activity() {
         Motion.read(this, conf)
         wall()
         clockAndDay()
+        widgetsRead()
         val byPkg = apps.associateBy { it.pkg }
         val dockPkgs = Store.list(this, "dock").filter { it in byPkg }
         val hidden = Store.list(this, "hidden").toSet()

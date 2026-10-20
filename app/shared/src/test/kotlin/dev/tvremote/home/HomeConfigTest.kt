@@ -25,6 +25,13 @@ class HomeConfigTest {
         assertEquals(listOf("a.b", "c.d", "e.f", "g.h", "i.j", "k.l"), dock(c))
     }
 
+    @Test fun widgetsAreKnownOnesOnceInTheirOrderAsSent() {
+        val c = HomeConfig.clean(JSONObject().put("widgets", JSONArray(listOf("usage", "weather", "usage", "system"))))
+        val w = c.getJSONArray("widgets").let { a -> (0 until a.length()).map { a.getString(it) } }
+        assertEquals(listOf("usage", "system"), w)
+        assertEquals(0, HomeConfig.clean(JSONObject()).getJSONArray("widgets").length())   // none until asked for
+    }
+
     @Test fun anAppInTheDockIsNeverHidden() {
         val c = HomeConfig.clean(JSONObject().put("dock", JSONArray(listOf("a.b"))).put("hidden", JSONArray(listOf("a.b", "c.d"))))
         assertEquals(listOf("c.d"), hidden(c))

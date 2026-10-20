@@ -13,6 +13,8 @@ import org.json.JSONObject
  *   clock24 24-hour clock; greet: the greeting under the clock
  *   anim    motion effects (a focused app lifts, rows glide, the screen fades in); off = instant, with a ring. TV Home also
  *           treats the system's "animator duration scale 0" as off
+ *   widgets the cards between the clock and the favourites, in their order ([WIDGETS]): "system" (memory, storage, network,
+ *           ADB), "usage" (the most used apps of the week and the day's app limits, asked of TV Setup: [USAGE])
  */
 object HomeConfig {
     const val PKG = "dev.tvremote.home"
@@ -22,6 +24,9 @@ object HomeConfig {
     val WALLS = listOf("night", "ocean", "dusk", "forest", "aurora", "black", "sunset", "ember", "plum", "midnight", "teal", "slate", "graphite", "navy", "wine", "moss", "photo")
     /** Where a client puts the photo (the shell may write there; the app reads it with no permission). */
     const val PHOTO = "/sdcard/Android/data/$PKG/files/wall.jpg"
+    val WIDGETS = listOf("system", "usage")
+    /** TV Setup's answer to TV Home about app use (its HomeInfo provider): `call(USAGE, "usage")` → Bundle "json". */
+    const val USAGE = "content://dev.tvremote.setup.home"
     private val PKG_NAME = Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")
 
     /** [o] made safe: unknown fields dropped, lists of real package names without repeats, every value in range. */
@@ -35,6 +40,7 @@ object HomeConfig {
             .put("clock24", o.optBoolean("clock24", true))
             .put("greet", o.optBoolean("greet", true))
             .put("anim", o.optBoolean("anim", true))
+            .put("widgets", JSONArray(o.optJSONArray("widgets")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty().filter { it in WIDGETS }.distinct()))
     }
 
     /** [old] with the fields [change] has (any of them), cleaned. */

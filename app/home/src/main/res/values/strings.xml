@@ -48,4 +48,20 @@
     <string name="wall_wine">Wine</string>
     <string name="wall_moss">Moss</string>
     <string name="wall_photo">Photo</string>
+    <string name="w_system">System</string>
+    <string name="w_ram">Memory</string>
+    <string name="w_disk">Storage</string>
+    <string name="w_up">On for</string>
+    <string name="w_signal">Wi-Fi signal</string>
+    <string name="w_adb">ADB</string>
+    <string name="w_on">on</string>
+    <string name="w_off">off</string>
+    <string name="w_week">Most used · 7 days</string>
+    <string name="w_limits">Today\'s limits</string>
+    <string name="w_left">%s left</string>
+    <string name="w_used_up">Time\'s up</string>
+    <string name="w_none">Nothing counted yet</string>
+    <string name="w_need_setup">Needs a newer TV Setup: install or update it from the phone or computer</string>
+    <string name="w_widgets">Widgets</string>
+    <string name="w_net">Network</string>
 </resources>
