@@ -53,7 +53,8 @@ import java.util.Locale
 class Widgets(private val a: Activity, private val dp: (Number) -> Int) : LinearLayout(a) {
     /** What a card needs, gathered on a background thread. */
     class Facts(val ram: Pair<Long, Long>, val disk: Pair<Long, Long>, val ip: String, val eth: Boolean, val rssi: Int?, val up: Long,
-                val adb: Boolean, val usage: JSONObject?, val icons: Map<String, Drawable>, val timer: JSONObject?, val moon: Moon?, val cpu: Float?, val cores: Int, val cal: Cal? = null, val wx: Weather.Forecast? = null)
+                val adb: Boolean, val usage: JSONObject?, val icons: Map<String, Drawable>, val timer: JSONObject?, val moon: Moon?, val cpu: Float?, val cores: Int, val cal: Cal? = null, val wx: Weather.Forecast? = null,
+                val link: Int? = null, val dns: String? = null, val adbPort: Int = 0)
 
     /** Today in the lunar calendar and the days until the next full moon (15th), new month (1st) and Tết. */
     class Moon(val day: Lunar.Day, val full: Int, val new: Int, val tet: Int)
@@ -116,7 +117,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
     private val sp = a.resources.displayMetrics.scaledDensity
     private val down = FloatArray(POINTS); private val up = FloatArray(POINTS)
     private var lastRx = -1L; private var lastTx = -1L; private var lastAt = 0L
-    private var spark: Spark? = null; private var speed: TextView? = null
+    private var spark: Spark? = null; private var speed: TextView? = null; private var speedUp: TextView? = null
 
     init {
         orientation = HORIZONTAL; clipChildren = false; clipToPadding = false
@@ -141,6 +142,16 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             @Suppress("DEPRECATION") (a.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager).connectionInfo?.rssi?.takeIf { it in -126..-1 }
         } catch (e: Exception) { null }
         val adb = try { Settings.Global.getInt(a.contentResolver, Settings.Global.ADB_ENABLED, 0) == 1 } catch (e: Exception) { false }
+        val link = if (rssi == null) null else try {
+            @Suppress("DEPRECATION") (a.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager).connectionInfo?.linkSpeed?.takeIf { it > 0 }
+        } catch (e: Exception) { null }
+        // Private DNS (DNS over TLS), as Settings → Network shows it: only a named server counts, "automatic" is the network's own
+        val dns = try {
+            if (Settings.Global.getString(a.contentResolver, "private_dns_mode") == "hostname") Settings.Global.getString(a.contentResolver, "private_dns_specifier")?.takeIf { it.isNotBlank() } else null
+        } catch (e: Exception) { null }
+        val adbPort = if (!adb) 0 else try {                            // ADB over the network (what the clients use), 0 = USB only
+            (Class.forName("android.os.SystemProperties").getMethod("get", String::class.java).invoke(null, "service.adb.tcp.port") as String).toIntOrNull()?.takeIf { it > 0 } ?: 0
+        } catch (e: Throwable) { 0 }
         fun ask(m: String) = try { a.contentResolver.call(Uri.parse(HomeConfig.USAGE), m, null, null)?.getString("json")?.let { JSONObject(it) } }
             catch (e: Exception) { null }                                  // no TV Setup, or one older than this card
         val usage = if ("usage" in want) ask("usage") else null
@@ -159,7 +170,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             Weather.cached(a)
         } else null
         return Facts((mem.totalMem - mem.availMem) to mem.totalMem, disk, ip, eth, rssi, SystemClock.elapsedRealtime(), adb, usage, icons, timer, moon,
-            cpu?.optDouble("busy", -1.0)?.takeIf { it >= 0 }?.toFloat(), cpu?.optInt("cores") ?: 0, cal, wx)
+            cpu?.optDouble("busy", -1.0)?.takeIf { it >= 0 }?.toFloat(), cpu?.optInt("cores") ?: 0, cal, wx, link, dns, adbPort)
     }
 
     /**
@@ -168,7 +179,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
      * is fixed so the favourites below stay in view. A column's width is its weight's share of the row.
      */
     fun show(want: List<String>, f: Facts, note: String, label: (String) -> String, sizes: JSONObject = JSONObject()) {
-        removeAllViews(); spark = null; speed = null
+        removeAllViews(); spark = null; speed = null; speedUp = null
         val timerView = if ("timer" in want) timer(f.timer) else null
         val noteView = if (note.isNotEmpty()) pill(tile(AMBER, R.drawable.ic_message), note, "", 1).apply {   // the words are the card: large, no "Note" over them
             ((getChildAt(1) as LinearLayout).getChildAt(0) as TextView).apply { textSize = 16f; maxLines = 3; ellipsize = android.text.TextUtils.TruncateAt.END }
@@ -385,58 +396,124 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
 
     /** One point of the network graph: bytes since the last one, all the TV's apps together. Cheap, on the main thread. */
     fun sample() {
-        val s = spark ?: return
+        if (spark == null && speed == null) return
         val rx = TrafficStats.getTotalRxBytes(); val tx = TrafficStats.getTotalTxBytes(); val now = SystemClock.elapsedRealtime()
         if (rx < 0 || tx < 0) return                                   // the device does not count
         if (lastRx >= 0 && now > lastAt) {
             val secs = (now - lastAt) / 1000f
             System.arraycopy(down, 1, down, 0, POINTS - 1); down[POINTS - 1] = ((rx - lastRx).coerceAtLeast(0) / secs)
             System.arraycopy(up, 1, up, 0, POINTS - 1); up[POINTS - 1] = ((tx - lastTx).coerceAtLeast(0) / secs)
-            val t = "↓ ${rate(down[POINTS - 1])}   ↑ ${rate(up[POINTS - 1])}"
+            val t = if (spark != null) "↓ ${rate(down[POINTS - 1])}   ↑ ${rate(up[POINTS - 1])}" else "↓ " + rate(down[POINTS - 1])
             if (speed?.text?.toString() != t) speed?.text = t
-            s.invalidate()
+            val u = "↑ " + rate(up[POINTS - 1])
+            if (speedUp != null && speedUp?.text?.toString() != u) speedUp?.text = u
+            spark?.invalidate()
         }
         lastRx = rx; lastTx = tx; lastAt = now
     }
 
-    /** As many rings as [width] holds, the liveliest first (memory, CPU, storage, signal). Narrow: no graph, the address and ADB under the rings. */
+    /**
+     * The TV at a glance: a grid of figures, two rows of 2 to 4 (as many as [width] holds, the most telling first), each a line
+     * icon, the figure large and its name small under it, a thin bar under a share. Colour only where it says something: the
+     * Private DNS a filter is set (green), ADB on (amber). The model, Android and the CPU in the title's right.
+     */
     private fun system(card: LinearLayout, f: Facts, width: Int) {
-        val narrow = width < dp(420)
-        card.addView(head(a.getString(R.string.w_system), (if (narrow) "" else a.getString(R.string.w_up) + " ") + span(f.up)))   // narrow: the title whole, not "HỆ T…"
-        val body = LinearLayout(a).apply { orientation = HORIZONTAL }
+        val room = width - dp(40)
         val gb = 1024.0 * 1024 * 1024
         fun part(p: Pair<Long, Long>) = if (p.second > 0) p.first.toFloat() / p.second else 0f
-        val all = ArrayList<View>()
-        all += gauge(part(f.ram), a.getString(R.string.w_ram), "%.1f / %.0f GB".format(f.ram.first / gb, Math.ceil(f.ram.second / gb)), CYAN)
-        f.cpu?.let { u -> all += gauge(u, a.getString(R.string.w_cpu), a.getString(R.string.w_cpu_cores, f.cores), AMBER) }
-        all += gauge(part(f.disk), a.getString(R.string.w_disk), "%.0f / %.0f GB".format(f.disk.first / gb, f.disk.second / gb), VIOLET)
-        f.rssi?.let { r -> all += gauge(((r + 100) * 2).coerceIn(0, 100) / 100f, a.getString(R.string.w_signal), "$r dBm", GREEN) }
-        val room = width - dp(40) - if (narrow) 0 else dp(180)          // the card's padding; the network column's least width
-        val rings = LinearLayout(a).apply { orientation = HORIZONTAL }
-        all.take(((room + dp(10)) / dp(94)).coerceAtLeast(1)).forEachIndexed { i, g -> rings.addView(g, LayoutParams(-2, -2).apply { if (i > 0) leftMargin = dp(10) }) }
-        body.addView(rings)
-        val adbChip = a.getString(R.string.w_adb) + " " + a.getString(if (f.adb) R.string.w_on else R.string.w_off) to if (f.adb) AMBER[0] else Color.WHITE
-        if (narrow) {
-            card.addView(body, LayoutParams(-1, -2).apply { topMargin = dp(10) })
-            val adbShort = a.getString(R.string.w_adb) to if (f.adb) AMBER[0] else DIM   // no room for "ADB on": its colour says it
-            card.addView(chips(listOf("IP " + f.ip.ifEmpty { "—" } to Color.WHITE, adbShort)), LayoutParams(-1, -2).apply { topMargin = dp(10) })
-            return
+        fun pct(x: Float) = "${(x * 100).toInt()}%"
+        val cores = f.cores.takeIf { it > 0 } ?: Runtime.getRuntime().availableProcessors()
+        val ghz = maxGhz()
+        val cpu = Stat(R.drawable.ic_cpu, f.cpu?.let(::pct) ?: ghz?.let { "%.2f GHz".format(it) } ?: "—",
+            a.getString(R.string.w_cpu) + " · " + a.getString(R.string.w_cpu_cores, cores), f.cpu)
+        val ram = Stat(R.drawable.ic_memory, pct(part(f.ram)), "%s %.1f/%.1fG".format(a.getString(R.string.w_ram), f.ram.first / gb, f.ram.second / gb), part(f.ram))
+        val disk = Stat(R.drawable.ic_drive, pct(part(f.disk)), "%s %.0f/%.0fG".format(a.getString(R.string.w_disk), f.disk.first / gb, f.disk.second / gb), part(f.disk))
+        val up = Stat(R.drawable.ic_clock, span(f.up), a.getString(R.string.w_up))
+        val ip = Stat(R.drawable.ic_router, f.ip.ifEmpty { "—" }, "IP · " + if (f.eth) "LAN" else if (f.ip.isEmpty()) a.getString(R.string.w_offline) else "Wi-Fi")
+        val signal = f.rssi?.let { Stat(R.drawable.ic_wifi, "$it dBm", f.link?.let { l -> "$l Mbps" } ?: a.getString(R.string.w_signal)) }
+        val dns = f.dns?.let { Stat(R.drawable.ic_shield_ok, dnsName(it), "DNS · DoT", tint = GREEN[0]) }
+        val net = Stat(R.drawable.ic_updown, "↓ —", "↑ —", live = true)
+        fun adb(port: Boolean) = Stat(R.drawable.ic_usb, (if (f.adb) a.getString(R.string.w_on) else a.getString(R.string.w_off)).uppercase() +
+            if (port && f.adb && f.adbPort > 0) " :${f.adbPort}" else "", "ADB", tint = if (f.adb) AMBER[0] else null)
+        fun layout(cols: Int) = when (cols) {
+            4 -> listOf(listOf(cpu, ram, disk, up), listOf(ip) + listOfNotNull(signal, dns, net).take(2) + adb(true))
+            3 -> listOf(listOf(cpu, ram, disk), listOf(ip, dns ?: signal ?: net, adb(true)))
+            else -> listOf(listOf(Stat(ram.icon, ram.value, a.getString(R.string.w_ram), ram.bar), Stat(disk.icon, disk.value, a.getString(R.string.w_disk), disk.bar)),
+                listOf(ip, adb(false)))                              // narrow: the names without the sizes
         }
-        val net = LinearLayout(a).apply { orientation = VERTICAL }
-        val top = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        top.addView(text(a.getString(R.string.w_net), 12f, DIM))
-        speed = text("↓ —   ↑ —", 12f, Color.WHITE).apply { gravity = Gravity.END }   // not wrap_content: a new speed redraws the line, not the screen's layout
-            .also { top.addView(it, LayoutParams(0, -2, 1f)) }
-        net.addView(top)
-        spark = Spark(a).also { net.addView(it, LayoutParams(-1, dp(46)).apply { topMargin = dp(4) }) }
-        net.addView(chips(listOf(
-            "IP " + f.ip.ifEmpty { "—" } to Color.WHITE,                   // cable or Wi-Fi: the pill above already says
-            adbChip)),
-            LayoutParams(-1, -2).apply { topMargin = dp(8) })
-        body.addView(net, LayoutParams(0, -2, 1f).apply { leftMargin = dp(20) })
-        card.addView(body, LayoutParams(-1, -2).apply { topMargin = dp(10) })
-        lastRx = -1; sample()
+        // a column as wide as its widest figure needs (an address is longer than "51%"), the same in both rows so they line up;
+        // as many columns as fit whole, else two that shrink their figures ([Shrink])
+        val big = Paint().apply { textSize = 19f * sp; typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) }
+        val small = Paint().apply { textSize = 10f * sp; letterSpacing = 0.08f }
+        fun needs(rows: List<List<Stat>>, cols: Int, k0: Float = 1f) = FloatArray(cols) { k -> rows.maxOf { r -> r.getOrNull(k)?.let { maxOf(big.measureText(it.value) * k0, small.measureText(it.label.uppercase()) * k0) } ?: 0f } + dp(29) }
+        var cols = 2; var rows = layout(2); var need = needs(rows, 2, 15f / 19)
+        for (c in 4 downTo 3) {
+            val r = layout(c)                                        // fits once [Shrink] has taken its figures down to 15 sp
+            if (needs(r, c, 15f / 19).sum() + dp(10) * (c - 1) <= room) { cols = c; rows = r; need = needs(r, c, 15f / 19); break }
+        }
+        val about = listOfNotNull(android.os.Build.MODEL.takeIf { cols >= 3 }, "Android " + android.os.Build.VERSION.RELEASE,
+            if (cols >= 4 && ghz != null) "$cores×%.1fGHz".format(ghz) else null).joinToString(" · ")
+        card.addView(head(a.getString(R.string.w_system), about))
+        val grid = LinearLayout(a).apply { orientation = VERTICAL; gravity = Gravity.CENTER_VERTICAL }   // the rows in the middle of the card, not stuck under the title
+        val whole = need.sum() + dp(10) * (cols - 1) <= room              // each column its least, the rest shared alike; else by need
+        rows.forEachIndexed { r, row ->
+            val line = LinearLayout(a).apply { orientation = HORIZONTAL }
+            for (k in 0 until cols) line.addView(row.getOrNull(k)?.let(::stat) ?: View(a), (if (whole) LayoutParams(need[k].toInt(), -2, 1f) else LayoutParams(0, -2, need[k])).apply { if (k > 0) leftMargin = dp(10) })
+            grid.addView(line, LayoutParams(-1, -2).apply { if (r > 0) topMargin = dp(14) })
+        }
+        card.addView(grid, LayoutParams(-1, 0, 1f).apply { topMargin = dp(4) })
+        if (speed != null) { lastRx = -1; sample() }
     }
+
+    /** One figure of [system]: [bar] a share drawn under it; [live] the network's speed, its two lines set by [sample]. */
+    private class Stat(val icon: Int, val value: String, val label: String, val bar: Float? = null, val tint: Int? = null, val live: Boolean = false)
+
+    private fun stat(s: Stat): View = LinearLayout(a).apply {
+        orientation = HORIZONTAL
+        addView(ImageView(a).apply {
+            setImageResource(s.icon); imageTintList = android.content.res.ColorStateList.valueOf(s.tint ?: 0xD9FFFFFF.toInt())
+        }, LayoutParams(dp(20), dp(20)).apply { topMargin = dp(3) })
+        val col = LinearLayout(a).apply { orientation = VERTICAL }
+        val v = Shrink(a, 19f, 13f).apply {
+            text = s.value; setTextColor(s.tint ?: Color.WHITE); maxLines = 1; typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+            setShadowLayer(dp(4).toFloat(), 0f, dp(1).toFloat(), 0x80000000.toInt())
+        }
+        col.addView(v)
+        val l = Shrink(a, 10f, 8f).apply { text = s.label.uppercase(); setTextColor(DIM); maxLines = 1; letterSpacing = 0.08f }
+        col.addView(l)
+        if (s.live) { speed = v; speedUp = l.apply { letterSpacing = 0f } }
+        s.bar?.let { col.addView(Bar(a, it, CYAN), LayoutParams(-1, dp(3)).apply { topMargin = dp(6); rightMargin = dp(8) }) }
+        addView(col, LayoutParams(0, -2, 1f).apply { leftMargin = dp(9) })
+    }
+
+    /** A line that gets smaller (down to [least] sp) rather than cut: "192.168.100.154" whole in a narrow column. */
+    private class Shrink(c: Context, private val most: Float, private val least: Float) : TextView(c) {
+        override fun onMeasure(w: Int, h: Int) {
+            val room = MeasureSpec.getSize(w) - paddingLeft - paddingRight
+            if (MeasureSpec.getMode(w) != MeasureSpec.UNSPECIFIED && room > 0) {
+                var size = most
+                textSize = size
+                while (size > least && paint.measureText(text.toString()) > room) { size -= 1f; textSize = size }
+                ellipsize = TextUtils.TruncateAt.END                 // still too long at the least size: cut, as a last resort
+            }
+            super.onMeasure(w, h)
+        }
+    }
+
+    /** A Private DNS host by its service's name when it is a well known one ("dns.adguard-dns.com" → AdGuard), else the host. */
+    private fun dnsName(host: String): String {
+        val h = host.lowercase()
+        return listOf("adguard" to "AdGuard", "nextdns" to "NextDNS", "cloudflare" to "Cloudflare", "one.one.one.one" to "Cloudflare", "quad9" to "Quad9",
+            "google" to "Google", "controld" to "Control D", "mullvad" to "Mullvad", "opendns" to "OpenDNS", "cleanbrowsing" to "CleanBrowsing")
+            .firstOrNull { h.contains(it.first) }?.second ?: host.removePrefix("dns.")
+    }
+
+    /** The fastest core's top speed, read once (the kernel's own file; some TVs hide it: null). */
+    private fun maxGhz(): Float? = ghzMemo ?: try {
+        (0 until Runtime.getRuntime().availableProcessors()).mapNotNull { java.io.File("/sys/devices/system/cpu/cpu$it/cpufreq/cpuinfo_max_freq").takeIf { f -> f.canRead() }?.readText()?.trim()?.toLongOrNull() }
+            .maxOrNull()?.let { it / 1_000_000f }?.also { ghzMemo = it }
+    } catch (e: Exception) { null }
+    private var ghzMemo: Float? = null
 
     /** The month: the title and the lunar month and year of today, then one View drawing the weekdays and every day ([narrow]: no lunar line). */
     private fun calendar(card: LinearLayout, f: Facts, width: Int, maxH: Int = Int.MAX_VALUE) {
