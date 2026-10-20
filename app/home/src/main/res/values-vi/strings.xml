@@ -100,4 +100,10 @@
     <string name="c_note_gone">Đã xóa</string>
     <string name="w_cpu">CPU</string>
     <string name="w_cpu_cores">%d nhân</string>
+    <string name="dream">Màn chờ TV Home</string>
+    <string name="dream_sub">đồng hồ, ngày, hình nền</string>
+    <string name="dream_system">Cần làm một lần trên điện thoại hoặc máy tính (thẻ Cài đặt, TV Home). Đang mở cài đặt màn chờ của TV: chọn TV Home ở đó.</string>
+    <string name="b_m">p</string>
+    <string name="b_h">g</string>
+    <string name="b_locked">Đã khóa</string>
 </resources>

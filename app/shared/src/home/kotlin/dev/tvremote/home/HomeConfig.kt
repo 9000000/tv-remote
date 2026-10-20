@@ -18,11 +18,16 @@ import org.json.JSONObject
  *           "calendar" (the month, the lunar day under every solar day),
  *           "lunar" (the lunar date, the next full moon and Tết), "timer" (the sleep timer or bedtime, from TV Setup too;
  *           shown only while one is set)
+ *   dream   TV Home is the TV's screensaver (the big clock and the wallpaper, [DREAM]). Read from the system, not kept: the
+ *           launcher sets `screensaver_components` itself (it holds WRITE_SECURE_SETTINGS once a client has granted it over
+ *           ADB) and puts the previous screensaver back when this is switched off
  *   note    a line from the family, pinned on the home screen until it is emptied ([NOTE_MAX] characters, one line)
  */
 object HomeConfig {
     const val PKG = "dev.tvremote.home"
     const val RECEIVER = "$PKG/.HomeReceiver"
+    const val DREAM = "$PKG/.HomeDream"                               // the screensaver's component, as `screensaver_components` writes it
+    const val WRITE_SECURE = "android.permission.WRITE_SECURE_SETTINGS"
     const val DOCK_MAX = 6
     private const val HIDDEN_MAX = 300
     val WALLS = listOf("night", "ocean", "dusk", "forest", "aurora", "black", "sunset", "ember", "plum", "midnight", "teal", "slate", "graphite", "navy", "wine", "moss", "photo")
@@ -45,6 +50,7 @@ object HomeConfig {
             .put("clock24", o.optBoolean("clock24", true))
             .put("greet", o.optBoolean("greet", true))
             .put("anim", o.optBoolean("anim", true))
+            .put("dream", o.optBoolean("dream", false))
             .put("note", o.optString("note").replace(Regex("\\s+"), " ").trim().take(NOTE_MAX))
             .put("widgets", JSONArray(o.optJSONArray("widgets")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty().filter { it in WIDGETS }.distinct()))
     }

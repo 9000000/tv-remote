@@ -10,6 +10,9 @@ class App(val pkg: String, val label: String, val info: ActivityInfo) {
     var banner: Drawable? = null
     var icon: Drawable? = null
 
+    /** Both pictures let go, for memory; [load] makes them again. */
+    fun release() { banner = null; icon = null }
+
     fun load(c: Context) {
         val pm = c.packageManager
         banner = try { info.loadBanner(pm) ?: info.applicationInfo.loadBanner(pm) } catch (e: Exception) { null }
@@ -28,18 +31,29 @@ object Apps {
      * screen zoom, an updater test, Contacts, Camera), the TV's own home does not show them either. Chrome put on by hand stays.
      */
     fun list(c: Context): List<App> {
-        val pm = c.packageManager
         val out = LinkedHashMap<String, App>()
-        for (cat in listOf(Intent.CATEGORY_LEANBACK_LAUNCHER, Intent.CATEGORY_LAUNCHER)) {
-            val found = try { pm.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(cat), 0) } catch (e: Exception) { emptyList() }
-            for (ri in found) {
-                val p = ri.activityInfo.packageName
-                if (p == c.packageName || p in out) continue
-                if ((cat == Intent.CATEGORY_LAUNCHER || p.startsWith("com.example.")) && firmware(ri.activityInfo.applicationInfo)) continue   // Android's samples a maker shipped (SystemUpdaterSample has a TV entry)
-                out[p] = App(p, ri.loadLabel(pm).toString().trim(), ri.activityInfo)
-            }
-        }
+        for (cat in CATS) for (ri in found(c, cat, null)) accept(c, cat, ri, out)
         return out.values.sortedBy { it.label.lowercase() }
+    }
+
+    /** The one app [pkg], as [list] would have it; null when this screen would not list it (or it is gone). */
+    fun one(c: Context, pkg: String): App? {
+        val out = LinkedHashMap<String, App>()
+        for (cat in CATS) { for (ri in found(c, cat, pkg)) accept(c, cat, ri, out); if (out.isNotEmpty()) break }
+        return out[pkg]
+    }
+
+    private val CATS = listOf(Intent.CATEGORY_LEANBACK_LAUNCHER, Intent.CATEGORY_LAUNCHER)
+
+    private fun found(c: Context, cat: String, pkg: String?): List<android.content.pm.ResolveInfo> = try {
+        c.packageManager.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(cat).apply { if (pkg != null) setPackage(pkg) }, 0)
+    } catch (e: Exception) { emptyList() }
+
+    private fun accept(c: Context, cat: String, ri: android.content.pm.ResolveInfo, out: MutableMap<String, App>) {
+        val p = ri.activityInfo.packageName
+        if (p == c.packageName || p in out) return
+        if ((cat == Intent.CATEGORY_LAUNCHER || p.startsWith("com.example.")) && firmware(ri.activityInfo.applicationInfo)) return   // Android's samples a maker shipped (SystemUpdaterSample has a TV entry)
+        out[p] = App(p, ri.loadLabel(c.packageManager).toString().trim(), ri.activityInfo)
     }
 
     private fun firmware(a: android.content.pm.ApplicationInfo) =

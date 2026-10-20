@@ -28,7 +28,7 @@ object Customize {
     private const val ACCENT = 0xFF8AB4F8.toInt()
     private const val DIM = 0xA6FFFFFF.toInt()
 
-    fun show(a: Activity) {
+    fun show(a: Activity): Dialog {
         val d = a.resources.displayMetrics.density
         fun dp(v: Number) = (v.toFloat() * d).toInt()
         val dm = a.resources.displayMetrics
@@ -131,9 +131,10 @@ object Customize {
             paint()
             t.onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
             t.setOnClickListener {
-                on = !on; paint()
-                if (!widget) Store.change(a, JSONObject().put(key, on))
+                on = !on
+                if (!widget) try { Store.change(a, JSONObject().put(key, on)) } catch (e: SecurityException) { on = !on; systemDream(a) }
                 else Store.putList(a, "widgets", HomeConfig.WIDGETS.filter { w -> if (w == key) on else Store.list(a, "widgets").contains(w) })
+                paint()
             }
             pair!!.addView(t, LinearLayout.LayoutParams(0, -2, 1f).apply { if (inRow == 1) leftMargin = gap })
             inRow++
@@ -142,6 +143,7 @@ object Customize {
         tile(R.drawable.ic_timer, a.getString(R.string.clock24), null, "clock24")
         tile(R.drawable.ic_message, a.getString(R.string.greet), null, "greet")
         tile(R.drawable.ic_sparkle, a.getString(R.string.motion), null, "anim")
+        tile(R.drawable.ic_moon, a.getString(R.string.dream), a.getString(R.string.dream_sub), "dream")
         if (inRow == 1) pair!!.addView(View(a), LinearLayout.LayoutParams(0, 0, 1f).apply { leftMargin = gap })   // a lone tile keeps half the width
         pair = null
         section(a.getString(R.string.w_widgets))
@@ -209,6 +211,14 @@ object Customize {
             if (Motion.on) { panel.translationX = panelW / 3f; panel.alpha = 0f; panel.animate().translationX(0f).alpha(1f).setDuration(260).setInterpolator(Motion.glide).start() }
         }
         dialog.show()
+        return dialog
+    }
+
+    /** The screensaver switch cannot write the setting (no WRITE_SECURE_SETTINGS yet; a phone or computer grants it): the system's own screen for it instead. */
+    private fun systemDream(a: Activity) {
+        android.widget.Toast.makeText(a, R.string.dream_system, android.widget.Toast.LENGTH_LONG).show()
+        try { a.startActivity(android.content.Intent(android.provider.Settings.ACTION_DREAM_SETTINGS)) }
+        catch (e: Exception) { try { a.startActivity(android.content.Intent(android.provider.Settings.ACTION_SETTINGS)) } catch (e2: Exception) { } }
     }
 
     private fun ring(d: Float, w: Int, color: Int) = GradientDrawable().apply { cornerRadius = 12 * d; setStroke((w * d).toInt(), color); setColor(Color.TRANSPARENT) }

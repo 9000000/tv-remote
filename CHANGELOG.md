@@ -22,6 +22,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Sửa: app điện thoại: bấm Quay lại từ menu con thì tiêu đề menu trước bị sai
 - Sửa: TV Home: app có "banner" vuông (Media Center của Rockchip) hiện icon và tên thay vì một ô mờ; nút Input của remote mở danh sách nguồn vào khi TV đưa phím đó cho màn hình chính
 - Sửa: TV đã lưu: trong thẻ hẹp (nửa trang trên máy tính) các nút xuống dòng dưới tên TV, không ép chữ
+- TV Home: **Màn chờ TV Home**: công tắc trong Tùy chỉnh (trên TV và ở hộp thoại TV Home của app) đặt đồng hồ lớn, ngày dương / âm và hình nền làm màn hình chờ của TV, tự dời chỗ mỗi phút; tắt thì màn chờ cũ được trả lại
+- TV Home: ô app có ổ khóa khi bị khóa PIN, hết giờ giới hạn hoặc đang giờ ngủ, và ⏳ kèm số phút còn lại khi có giới hạn (cần TV Setup mới; TV Setup cũ thì không có huy hiệu, mọi thứ khác như cũ)
+- TV Home nhẹ hơn trên TV yếu (box 2 GB): ảnh nền tối đa 1920x1080 và 2 byte mỗi điểm ảnh; ảnh nền và banner được nhả khi màn hình ẩn mà máy thiếu RAM, nạp lại khi quay về; cài / gỡ / cập nhật một app chỉ đổi ô của app đó; máy ít RAM mở với hiệu ứng tắt (bật lại được)
+- Sửa: TV Home: bấm Home khi đang ở màn hình chính làm cả màn hình nháy (trừ widget); giờ không đổi gì, chỉ đóng bảng đang mở hoặc đưa focus về app đầu
+- Sửa: TV Home: bấm xuống từ hàng đầy sang hàng cuối ngắn không đi đâu; giờ nhảy tới ô gần nhất, nhớ cột khi lên xuống, giữa hàng yêu thích và lưới nhảy tới ô đối diện
+- Sửa: TV Home: viền focus giờ xanh có viền tối, thấy rõ trên banner trắng (YouTube, Play Store), kể cả khi tắt hiệu ứng
 
 **English**
 
@@ -39,6 +45,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Fix: phone app: Back from a sub-menu showed the wrong title on the menu before
 - Fix: TV Home: an app with a square "banner" (Rockchip's Media Center) shows its icon and name instead of a blur; the remote's Input key opens the inputs where the TV hands that key to the home screen
 - Fix: saved TVs: in a narrow card (half the page on a computer) the buttons go under the TV's name instead of squeezing it
+- TV Home: **TV Home screensaver**: a switch in Customize (on the TV and in the app's TV Home dialog) makes the big clock, the solar / lunar date and the wallpaper the TV's screensaver, moving every minute; switched off, the previous screensaver comes back
+- TV Home: a tile has a padlock when the app is PIN-locked, its time limit is used up or it is bedtime, and ⏳ with the minutes left when it has a limit (needs a newer TV Setup; an older one shows no badges, everything else as before)
+- TV Home is lighter on weak TVs (2 GB boxes): the wallpaper is at most 1920x1080 at 2 bytes a pixel; the wallpaper and banners are let go while the screen is hidden and memory is short, and come back on return; installing / removing / updating an app changes only that app's tile; a low-RAM box starts with motion off (turn it on any time)
+- Fix: TV Home: pressing Home on the home screen made the whole screen flicker (all but the widgets); now nothing changes, it only closes an open panel or moves focus to the first app
+- Fix: TV Home: pressing Down from a full row to a short last row went nowhere; it now goes to the nearest tile, remembers the column on Up / Down, and hands over between the favourites and the grid
+- Fix: TV Home: the focus ring is blue with a dark edge, clear on white banners (YouTube, Play Store), with motion off too
 
 ## 0.14.0 - 2026-10-20
 
