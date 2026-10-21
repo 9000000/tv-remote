@@ -25,12 +25,14 @@ object M3u {
     private val QUALITY = Regex("""\s*\((\d{3,4}[pi])\)""")
     private val LABEL = Regex("""\s*\[([^\]]+)]""")
 
-    fun parse(text: String): List<Channel> {
-        val out = ArrayList<Channel>()
+    fun parse(text: String): List<Channel> = ArrayList<Channel>().also { out -> parseLines(text.lineSequence()) { out.add(it) } }
+
+    /** [each] gets the channels one by one (the global index reads 3 MB without holding it). */
+    fun parseLines(lines: Sequence<String>, each: (Channel) -> Unit) {
         val seen = HashSet<String>()
         var info: String? = null
         var ref = ""; var agent = ""
-        for (raw in text.lineSequence()) {
+        for (raw in lines) {
             val line = raw.trim()
             when {
                 line.isEmpty() -> {}
@@ -43,11 +45,10 @@ object M3u {
                     info = null
                     val c = entry(i, line, ref, agent) ?: continue
                     if (c.group.equals("XXX", true)) continue                  // never shown, not even behind a switch
-                    if (seen.add(c.id + "\n" + c.url)) out.add(c)
+                    if (seen.add(c.id + "\n" + c.url)) each(c)
                 }
             }
         }
-        return out
     }
 
     private fun entry(info: String, url: String, ref0: String, agent0: String): Channel? {

@@ -42,4 +42,8 @@
     <string name="guide_next">Tiếp %1$s</string>
     <string name="today">Hôm nay</string>
     <string name="tomorrow">Ngày mai</string>
+    <string name="search_hint">Gõ tên kênh, ví dụ cartoon network</string>
+    <string name="searching_all">Đang tìm ở mọi nước…</string>
+    <string name="other_countries">Ở nước khác</string>
+    <string name="other_offline">Không tìm được ở nước khác: không có mạng.</string>
 </resources>

@@ -43,4 +43,8 @@
     <string name="guide_next">Next %1$s</string>
     <string name="today">Today</string>
     <string name="tomorrow">Tomorrow</string>
+    <string name="search_hint">Type a channel name, e.g. cartoon network</string>
+    <string name="searching_all">Searching every country…</string>
+    <string name="other_countries">Other countries</string>
+    <string name="other_offline">Can\'t search other countries: no network.</string>
 </resources>

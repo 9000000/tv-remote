@@ -7,7 +7,7 @@
     <application android:label="@string/app_name" android:icon="@drawable/icon" android:banner="@drawable/banner" android:allowBackup="false"
         android:theme="@style/Channels" android:supportsRtl="false" android:usesCleartextTraffic="true">
         <!-- the list; usesCleartextTraffic: many public streams are plain http -->
-        <activity android:name=".BrowseActivity" android:exported="true" android:launchMode="singleTask" android:screenOrientation="landscape"
+        <activity android:name=".BrowseActivity" android:exported="true" android:launchMode="singleTask" android:screenOrientation="landscape" android:windowSoftInputMode="stateHidden"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|locale|layoutDirection">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

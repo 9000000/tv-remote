@@ -60,6 +60,12 @@ class BrowseActivity : Activity() {
     private var watching: android.content.SharedPreferences.OnSharedPreferenceChangeListener? = null   // favourites / groups edited from a phone or computer
     private var failed = false
     private var countryName = ""
+    private var others: List<List<Channel>> = emptyList()           // search: matches in other countries (GlobalIndex)
+    private var otherState = IDLE
+    private var gseq = 0
+    private var names: Map<String, String> = emptyMap()            // country code -> "🇩🇪 Germany", for the cards of other countries
+    private val searcher = Executors.newSingleThreadExecutor()
+    private val globalRun = Runnable { searchOthers() }
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
@@ -74,26 +80,38 @@ class BrowseActivity : Activity() {
         val head = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
         title = Ui.text(this, "", 22f, bold = true)
         head.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
-        find = EditText(this).apply {
-            hint = getString(R.string.search); setHintTextColor(Ui.DIM); setTextColor(Ui.TEXT); textSize = 15f; isSingleLine = true
+        find = object : EditText(this) {
+            override fun onKeyPreIme(k: Int, e: KeyEvent): Boolean {         // Back with the keyboard up: it closes, and the focus goes on to the results
+                if (k == KeyEvent.KEYCODE_BACK && e.action == KeyEvent.ACTION_UP && text.isNotEmpty() && group == SEARCH) { post { firstCard() } }
+                return super.onKeyPreIme(k, e)
+            }
+        }.apply {
+            setHintTextColor(Ui.DIM); setTextColor(Ui.TEXT); textSize = 15f; isSingleLine = true
             imeOptions = EditorInfo.IME_ACTION_SEARCH or EditorInfo.IME_FLAG_NO_EXTRACT_UI
             background = Ui.states(this@BrowseActivity, Ui.CARD, Ui.dp(this@BrowseActivity, 22))
             setPadding(d(18), d(8), d(18), d(8))
             setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_search, 0, 0, 0); compoundDrawablePadding = d(8)
+            visibility = View.GONE                                    // only in search mode (the first row of the side list)
+            hint = getString(R.string.search_hint)
+            setOnEditorActionListener { v, _, _ -> hideKeys(v); firstCard(); true }
             addTextChangedListener(object : TextWatcher {
-                override fun afterTextChanged(s: Editable?) { filter() }
+                override fun afterTextChanged(s: Editable?) { if (group == SEARCH) scheduleOthers(); filter() }
                 override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
                 override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             })
         }
-        head.addView(find, LinearLayout.LayoutParams(d(300), d(44)))
+        head.addView(find, LinearLayout.LayoutParams(d(380), d(44)))
         right.addView(head, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = d(12) })
 
         val body = FrameLayout(this)
         grid = RecyclerView(this).apply {
             adapter = cards; clipToPadding = false; setPadding(d(6), d(10), d(6), d(40)); itemAnimator = null
             setHasFixedSize(true); setItemViewCacheSize(10); recycledViewPool.setMaxRecycledViews(0, 24)   // size does not depend on the cards; scrolling back finds them bound
-            layoutManager = GridLayoutManager(this@BrowseActivity, columns())
+            layoutManager = GridLayoutManager(this@BrowseActivity, columns()).apply {
+                spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                    override fun getSpanSize(p: Int) = if (shown.getOrNull(p)?.first()?.id == HDR) spanCount else 1
+                }
+            }
             descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
         }
         body.addView(grid, FrameLayout.LayoutParams(-1, -1))
@@ -129,10 +147,9 @@ class BrowseActivity : Activity() {
         screen.addView(wait, FrameLayout.LayoutParams(-1, -1))
         setContentView(FrameLayout(this).apply { addView(root, FrameLayout.LayoutParams(-1, -1)); addView(screen, FrameLayout.LayoutParams(-1, -1)) })
         overlay = screen
-
         cc = countryOf(intent) ?: Store.country(this)
         groupOf(intent)?.let { group = it }
-        intent.getStringExtra(QUERY)?.let { find.setText(it) }
+        intent.getStringExtra(QUERY)?.let { group = SEARCH; find.setText(it) }
         load(false)
         watching = Store.watch(this) { runOnUiThread {
             val g = mine(group)
@@ -145,7 +162,7 @@ class BrowseActivity : Activity() {
         super.onNewIntent(i)
         countryOf(i)?.takeIf { it != cc }?.let { cc = it; group = ALL; load(false) }
         groupOf(i)?.let { find.setText(""); pick(it) }
-        i.getStringExtra(QUERY)?.let { group = ALL; find.setText(it); buildRail(); filter() }
+        i.getStringExtra(QUERY)?.let { group = SEARCH; others = emptyList(); otherState = IDLE; find.setText(it); buildRail(); filter() }
     }
 
     override fun onResume() { super.onResume(); cards.notifyDataSetChanged(); if (mine(group) != null) { buildRail(); filter() } }
@@ -173,7 +190,7 @@ class BrowseActivity : Activity() {
             main.post {
                 if (isDestroyed) return@post
                 all = list.byChannel(); failed = !ok; countryName = name; loading = false
-                if (mine(group) == null && group != ALL && all.none { it.first().group == group }) group = ALL
+                if (mine(group) == null && group != ALL && group != SEARCH && all.none { it.first().group == group }) group = ALL
                 buildRail(); filter()
                 if (!find.hasFocus()) grid.post { (grid.getChildAt(0) ?: rail.getChildAt(0))?.requestFocus() }
             }
@@ -191,6 +208,7 @@ class BrowseActivity : Activity() {
             addView(ImageView(this@BrowseActivity).apply { setImageResource(R.drawable.icon) }, LinearLayout.LayoutParams(dp(30), dp(30)).apply { marginEnd = dp(10) })
             addView(Ui.text(this@BrowseActivity, getString(R.string.app_name), 20f, Ui.ACCENT, true))
         })
+        add(Ui.row(this, R.drawable.ic_search, getString(R.string.search)) { enterSearch() }, group == SEARCH)   // an action: OK only, moving onto it opens nothing
         val favs = Store.favourites(this).byChannel().size
         add(Ui.row(this, R.drawable.ic_star, getString(R.string.favourites), if (favs > 0) "$favs" else "") { pick(FAVS) }.held(Store.FAV), group == FAVS, FAVS)
         for (g in Store.groups(this)) {
@@ -242,23 +260,45 @@ class BrowseActivity : Activity() {
 
     /** Focus to the card this group had last, else the first. */
     private fun intoGrid() {
-        val n = last[group]?.takeIf { it in shown.indices } ?: 0
+        val n = (last[group]?.takeIf { it in shown.indices } ?: 0).let { if (shown.getOrNull(it)?.first()?.id == HDR) it + 1 else it }
         (grid.layoutManager as GridLayoutManager).scrollToPositionWithOffset(n, grid.height / 3)
         grid.post { (grid.findViewHolderForAdapterPosition(n)?.itemView ?: grid.getChildAt(0))?.requestFocus() }
     }
 
     private fun filter() {
         val gid = mine(group)
-        val base = if (gid != null) Store.channels(this, gid).byChannel() else if (group == ALL) all else all.filter { it.first().group == group }
-        val q = fold(find.text.toString())
-        shown = if (q.isEmpty()) base else base.filter { fold(it.first().name).contains(q) }
+        val searching = group == SEARCH
+        Ui.show(find, searching)
+        if (!searching) {
+            GlobalIndex.release(); main.removeCallbacks(globalRun); gseq++
+            if (find.text.isNotEmpty()) { find.setText(""); return }  // its watcher comes back here
+        }
+        val q = if (searching) Find.fold(find.text.toString()) else ""
+        shown = when {
+            searching -> {
+                val local = if (q.isEmpty()) emptyList() else all.mapNotNull { ch -> GlobalIndex.rank(Find.fold(ch.first().name), q)?.let { it to ch } }.sortedBy { it.first }.map { it.second }
+                local + when {
+                    q.isEmpty() -> emptyList()
+                    otherState == LOADING -> listOf(header(getString(R.string.searching_all)))
+                    otherState == OFFLINE -> listOf(header(getString(R.string.other_offline)))
+                    otherState == DONE && others.isNotEmpty() -> listOf(header(getString(R.string.other_countries))) + others
+                    else -> emptyList()
+                }
+            }
+            gid != null -> Store.channels(this, gid).byChannel()
+            group == ALL -> all
+            else -> all.filter { it.first().group == group }
+        }
         cards.notifyDataSetChanged()
         title.text = when (group) {
+            SEARCH -> getString(R.string.search)
             ALL -> countryName
             else -> if (gid != null) mineName(gid) else "$countryName · ${groupName(group)}"
         }
         chrome()
         when {
+            searching && q.isEmpty() -> say(getString(R.string.search_hint), false)
+            searching && otherState == DONE && shown.isEmpty() -> say(getString(R.string.no_match), false)
             shown.isNotEmpty() || all.isEmpty() && gid == null -> say("", false)
             q.isNotEmpty() -> say(getString(R.string.no_match), false)
             gid == Store.FAV -> say(getString(R.string.no_favs), false)
@@ -267,11 +307,58 @@ class BrowseActivity : Activity() {
         }
     }
 
+    private fun header(text: String) = listOf(Channel(HDR, text, "", "", ""))
+
+    private fun hideKeys(v: View) { getSystemService(android.view.inputmethod.InputMethodManager::class.java).hideSoftInputFromWindow(v.windowToken, 0) }
+
+    /** Focus to the first result card (not the section header); stays in the field when there is none. */
+    private fun firstCard() {
+        val at = shown.indexOfFirst { it.first().id != HDR }
+        if (at < 0) return
+        (grid.layoutManager as GridLayoutManager).scrollToPositionWithOffset(if (at > 0) 0 else at, 0)   // from the top: the section line stays in view
+        grid.post { grid.findViewHolderForAdapterPosition(at)?.itemView?.requestFocus() }
+    }
+
+    /** The first row of the side list: the field gets the focus and the keyboard, and results come from every country. */
+    private fun enterSearch() {
+        main.removeCallbacks(autoOpen)
+        group = SEARCH; others = emptyList(); otherState = IDLE
+        find.setText("")
+        buildRail(); filter()
+        find.requestFocus()
+        find.post { getSystemService(android.view.inputmethod.InputMethodManager::class.java).showSoftInput(find, 0) }
+    }
+
+    /** The text changed: ask the global index after a pause (the first time it is downloaded, and the card says so). */
+    private fun scheduleOthers() {
+        main.removeCallbacks(globalRun)
+        val q = Find.fold(find.text.toString())
+        if (q.length < 2) { gseq++; others = emptyList(); otherState = IDLE; return }
+        if (!GlobalIndex.held()) { others = emptyList(); otherState = LOADING }
+        main.postDelayed(globalRun, 250)
+    }
+
+    private fun searchOthers() {
+        val q = Find.fold(find.text.toString())
+        if (group != SEARCH || q.length < 2) return
+        val n = ++gseq
+        searcher.execute {
+            val idx = GlobalIndex.get(this)
+            val res = idx?.search(q, cc).orEmpty()
+            if (idx != null && names.isEmpty()) names = Catalog.countries(this).associate { it.code to "${it.flag} ${it.name}" }
+            main.post {
+                if (isDestroyed || n != gseq || group != SEARCH) return@post
+                others = res; otherState = if (idx == null) OFFLINE else DONE
+                filter()
+            }
+        }
+    }
+
     private fun say(s: String, again: Boolean) { note.text = s; Ui.show(note, s.isNotEmpty()) }
 
     /** One state for the whole screen while there is no list to show: loading (a spinner), offline or empty (the words, Retry, Country). */
     private fun chrome() {
-        val on = loading || all.isEmpty() && mine(group) == null
+        val on = loading || all.isEmpty() && mine(group) == null && group != SEARCH
         Ui.show(overlay, on); Ui.show(content, !on)
         if (!on) return
         Ui.show(spin, loading); Ui.show(waitButtons, !loading)
@@ -281,7 +368,7 @@ class BrowseActivity : Activity() {
 
 
     fun play(ch: List<Channel>) {
-        Lineup.set(shown, title.text.toString())
+        Lineup.set(shown.filter { it.first().id != HDR }, title.text.toString())
         startActivity(Intent(Intent.ACTION_VIEW, Pins.link(ch.first().id)).setClass(this, PlayActivity::class.java))
     }
 
@@ -513,7 +600,7 @@ class BrowseActivity : Activity() {
     override fun onKeyDown(k: Int, e: KeyEvent): Boolean {
         val v0 = currentFocus
         if (k == KeyEvent.KEYCODE_BACK && e.repeatCount == 0 && v0 != null && content.visibility == View.VISIBLE && !rail.hasFocus()) {
-            if (find.text.isNotEmpty()) { find.setText(""); if (find.hasFocus()) grid.getChildAt(0)?.requestFocus(); return true }   // leave the search first
+            if (group == SEARCH && find.hasFocus() && find.text.isNotEmpty()) { hideKeys(find); firstCard(); return true }   // the field -> its results, then the side list
             (0 until rail.childCount).map { rail.getChildAt(it) }.firstOrNull { it.isActivated }?.let { it.requestFocus(); return true }
         }
         if (k == KeyEvent.KEYCODE_DPAD_RIGHT && v0 != null && rail.hasFocus() && shown.isNotEmpty()) {   // into the grid, the open group made sure of
@@ -528,7 +615,7 @@ class BrowseActivity : Activity() {
         if (k == KeyEvent.KEYCODE_MENU || (k == KeyEvent.KEYCODE_DPAD_CENTER || k == KeyEvent.KEYCODE_ENTER) && e.isLongPress) {
             val v = currentFocus ?: return super.onKeyDown(k, e)
             val at = grid.findContainingViewHolder(v)?.bindingAdapterPosition ?: -1
-            if (at in shown.indices) { actions(shown[at]); return true }
+            if (at in shown.indices) { if (shown[at].first().id != HDR) actions(shown[at]); return true }
             (v.tag as? String)?.takeIf { k == KeyEvent.KEYCODE_MENU && it.startsWith("grp:") }?.let { groupMenu(it.removePrefix("grp:")); return true }
         }
         if (k == KeyEvent.KEYCODE_DPAD_CENTER || k == KeyEvent.KEYCODE_ENTER) e.startTracking()
@@ -555,7 +642,9 @@ class BrowseActivity : Activity() {
         }
     }
 
-    override fun onDestroy() { main.removeCallbacks(autoOpen); watching?.let { Store.unwatch(this, it) }; io.shutdownNow(); guides.shutdownNow(); super.onDestroy() }
+    override fun onStop() { GlobalIndex.release(); super.onStop() }
+
+    override fun onDestroy() { main.removeCallbacks(autoOpen); main.removeCallbacks(globalRun); searcher.shutdownNow(); GlobalIndex.release(); watching?.let { Store.unwatch(this, it) }; io.shutdownNow(); guides.shutdownNow(); super.onDestroy() }
 
     /** Stable ids: a list drawn again (a favourite or a group changed) keeps the focus on the same channel, not on whatever card took its place. */
     private inner class Cards : RecyclerView.Adapter<Cards.H>() {
@@ -563,7 +652,8 @@ class BrowseActivity : Activity() {
         private val lightTile by lazy { Ui.round(LogoFit.LIGHT_TILE, Ui.dp(this@BrowseActivity, 12)) }   // lazy: the activity has no resources yet while its fields are built
         private val darkTile by lazy { Ui.round(LogoFit.DARK_TILE, Ui.dp(this@BrowseActivity, 12)) }   // lighter than the card, so its edge shows
         init { setHasStableIds(true) }
-        override fun getItemId(i: Int) = shown[i].first().id.hashCode().toLong()   // one card per id ([byChannel])
+        override fun getItemViewType(i: Int) = if (shown[i].first().id == HDR) 1 else 0
+        override fun getItemId(i: Int) = shown[i].first().let { if (it.id == HDR) -1L else it.id.hashCode().toLong() }   // one card per id ([byChannel])
         inner class H(v: View) : RecyclerView.ViewHolder(v) {
             val logo = v.findViewWithTag<ImageView>("logo")
             val letters = v.findViewWithTag<TextView>("letters")
@@ -577,6 +667,9 @@ class BrowseActivity : Activity() {
 
         override fun onCreateViewHolder(p: ViewGroup, t: Int): H {
             val c = this@BrowseActivity
+            if (t == 1) return H(Ui.text(c, "", 15f, Ui.DIM, true).apply {
+                tag = "hdr"; layoutParams = RecyclerView.LayoutParams(-1, -2); setPadding(Ui.dp(c, 8).toInt(), Ui.dp(c, 14).toInt(), 0, Ui.dp(c, 4).toInt())
+            })
             val d = { v: Number -> Ui.dp(c, v).toInt() }
             val card = object : LinearLayout(c) {
                 override fun hasOverlappingRendering() = false           // a dimmed (dead) card is not drawn into an off-screen layer
@@ -613,6 +706,7 @@ class BrowseActivity : Activity() {
 
         override fun onBindViewHolder(h: H, i: Int) {
             val ch = shown[i]; val c = ch.first()
+            if (c.id == HDR) { (h.itemView as TextView).text = c.name; return }
             h.name.text = c.name
             h.letters.text = Ui.initials(c.name)
             Logos.into(h.logo, c.logo, 280) { got ->
@@ -633,16 +727,17 @@ class BrowseActivity : Activity() {
 
         /** Only the line under the name and the dimming: what a stream check or the guide changes (the logo is not touched). */
         override fun onBindViewHolder(h: H, i: Int, payloads: MutableList<Any>) {
-            if (payloads.isEmpty()) onBindViewHolder(h, i) else line(h, shown[i])
+            if (payloads.isEmpty()) onBindViewHolder(h, i) else if (shown[i].first().id != HDR) line(h, shown[i])
         }
 
-        override fun onViewRecycled(h: H) { Logos.cancel(h.logo) }
+        override fun onViewRecycled(h: H) { if (h.logo != null) Logos.cancel(h.logo) }
 
         private fun line(h: H, ch: List<Channel>) {
             val c = ch.first()
             val dead = ch.all { Store.alive(this@BrowseActivity, it.url) == false }
             val on = Guide.known(c.id)?.let { Guide.now(it) }
-            h.sub.text = (on?.title ?: groupName(c.group)).let { if (dead) "● $it" else it }
+            val from = if (group == SEARCH && c.country.isNotEmpty() && c.country != cc) names[c.country] ?: c.group else null   // a flag and the country, for the other countries' cards
+            h.sub.text = (on?.title ?: from ?: groupName(c.group)).let { if (dead) "● $it" else it }
             if (on == null && Guide.known(c.id) == null) guideFor(ch)
             h.sub.setTextColor(if (dead) Ui.BAD else Ui.DIM)
             h.itemView.alpha = if (dead) 0.6f else 1f
@@ -653,6 +748,9 @@ class BrowseActivity : Activity() {
         private const val TAG_GROUP = 0x7f0f0001                      // a rail row's group (any id: no layout uses it)
         const val QUERY = "query"                                    // text for the search box (a find link that matched nothing)
         const val ALL = ""
+        const val SEARCH = "\u0000search"                           // the search mode: this country first, then the others
+        private const val HDR = "\u0000hdr"                        // a section line in the grid (a Channel whose name is its words)
+        private const val IDLE = 0; private const val LOADING = 1; private const val OFFLINE = 2; private const val DONE = 3
         const val FAVS = "\u0000favs"
         const val MINE = "\u0000g:"                                  // + a group's id: one of the person's groups on show
 
