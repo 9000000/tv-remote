@@ -25,6 +25,7 @@ import android.net.ConnectivityManager
 import android.net.wifi.WifiManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
 import android.provider.Settings
 import android.text.TextUtils
 import android.text.format.DateFormat
@@ -59,6 +60,9 @@ class HomeActivity : Activity() {
     private lateinit var clock: TextClock
     private lateinit var dateLine: TextView
     private lateinit var netPill: Pill
+    private lateinit var inputsPill: Pill
+    private lateinit var settingsPill: Pill
+    private lateinit var pills: LinearLayout
     private lateinit var dock: LinearLayout
     private lateinit var dockEmpty: TextView
     private lateinit var appsTitle: TextView
@@ -142,14 +146,21 @@ class HomeActivity : Activity() {
         dateLine = text(18f, 0xD9FFFFFF.toInt()).apply { setPadding(dp(2), dp(4), 0, 0) }
         left.addView(clock); left.addView(dateLine)
         head.addView(left, LinearLayout.LayoutParams(0, -2, 1f))
-        val pills = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(10), 0, 0); clipChildren = false; clipToPadding = false }
-        pills.addView(Pill(this, R.drawable.ic_input, getString(R.string.inputs)) { inputs() })
+        pills = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(10), 0, 0); clipChildren = false; clipToPadding = false }
+        inputsPill = Pill(this, R.drawable.ic_input, getString(R.string.inputs)) { inputs() }
+        pills.addView(inputsPill)
         netPill = Pill(this, R.drawable.ic_wifi, getString(R.string.wifi)) { open(Settings.ACTION_WIFI_SETTINGS) }
         pills.addView(netPill, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
-        pills.addView(Pill(this, R.drawable.ic_settings, getString(R.string.settings)) { open(Settings.ACTION_SETTINGS) },
-            LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
-        pills.addView(Pill(this, R.drawable.ic_sliders, getString(R.string.customize), iconOnly = true) { customize() },
-            LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
+        // one button for both settings, the TV's and TV Home's: two buttons side by side read as the same thing
+        settingsPill = Pill(this, R.drawable.ic_settings, getString(R.string.settings)) {
+            open = Drop.show(this, settingsPill, listOf(
+                Drop.Row(R.drawable.ic_settings, getString(R.string.tv_settings)) { open(Settings.ACTION_SETTINGS) },
+                Drop.Row(R.drawable.ic_sliders, getString(R.string.customize)) { customize() }))
+        }
+        pills.addView(settingsPill, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
+        // the row's two ends stay put: Android's own search went from Inputs down-left onto a tile, and OK then opened its app
+        inputsPill.nextFocusLeftId = View.generateViewId().also { inputsPill.id = it }
+        settingsPill.nextFocusRightId = View.generateViewId().also { settingsPill.id = it }
         for (i in 0 until pills.childCount) pills.getChildAt(i).onFocusChangeListener = View.OnFocusChangeListener { v, f ->
             Motion.pop(v, f); if (f) { scrollToY(0); gridFocus(false) }
         }
@@ -350,7 +361,11 @@ class HomeActivity : Activity() {
     }
 
     @Deprecated("Back on a home screen goes nowhere")
-    override fun onBackPressed() { if (!locked) toTop() }
+    override fun onBackPressed() { if (!locked && SystemClock.uptimeMillis() - back > 500) toTop() }
+
+    // Android 13+ hands the Back that closed a menu or the panel to the home too: it must not also move the focus to the dock
+    private var back = 0L
+    override fun onWindowFocusChanged(has: Boolean) { super.onWindowFocusChanged(has); if (has) back = SystemClock.uptimeMillis() }
 
     private fun toTop() {
         val first = if (dock.childCount > 0) dock.getChildAt(0) else grid.findFocus() ?: firstGridTile()
@@ -474,6 +489,15 @@ class HomeActivity : Activity() {
      * and the grid hand over to the tile nearest across; at the ends focus stays (the nearest view out there would be a header
      * button). True = handled. Up from the dock goes to the buttons, Android's choice.
      */
+    /** Up from the top row of tiles: the button on the head nearest above it. */
+    private fun up(v: View) {
+        val at = IntArray(2); v.getLocationOnScreen(at)
+        val x = at[0] + v.width / 2
+        (0 until pills.childCount).map { pills.getChildAt(it) }.filter { it.isShown }.minByOrNull { p ->
+            p.getLocationOnScreen(at); Math.abs(at[0] + p.width / 2 - x)
+        }?.requestFocus()
+    }
+
     private fun step(v: Tile, code: Int, inDock: Boolean): Boolean {
         val dir = when (code) {
             KeyEvent.KEYCODE_DPAD_RIGHT -> Nav.Dir.RIGHT
@@ -488,7 +512,7 @@ class HomeActivity : Activity() {
             when (dir) {
                 Nav.Dir.RIGHT -> dock.getChildAt(at + 1)?.let { go(it) } ?: v.nudge(1, 0)
                 Nav.Dir.LEFT -> dock.getChildAt(at - 1)?.let { go(it) } ?: v.nudge(-1, 0)
-                Nav.Dir.UP -> return false
+                Nav.Dir.UP -> up(v)                           // Android 9 (a BRAVIA) found nothing above the favourites by itself
                 Nav.Dir.DOWN -> { val row = grid.getChildAt(0) as? ViewGroup ?: return false; wantCol = -1; go(row.getChildAt(Nav.nearest(centres(row), centre(v)))) }
             }
             return true
@@ -499,7 +523,7 @@ class HomeActivity : Activity() {
         val to = Nav.grid(rows, row, col, wantCol, dir)
         if (to == null) {
             if (dir == Nav.Dir.UP && dock.childCount > 0) go(dock.getChildAt(Nav.nearest(centres(dock), centre(v))))
-            else if (dir == Nav.Dir.UP) return false
+            else if (dir == Nav.Dir.UP) up(v)
             else v.nudge(if (dir == Nav.Dir.RIGHT) 1 else if (dir == Nav.Dir.LEFT) -1 else 0, if (dir == Nav.Dir.DOWN) 1 else 0)
             return true
         }
@@ -687,17 +711,51 @@ class HomeActivity : Activity() {
             .setItems(here.map { it.label }.toTypedArray()) { _, i -> Store.putList(this, "hidden", hidden - here[i].pkg) }.show().also { open = it }
     }
 
-    /** The TV's inputs (HDMI and the tuner) as the TV knows them; its own input settings when it lists none. */
+    /**
+     * The TV's inputs as the TV shows them (cleanyourtv's launcher reads them the same way): the names the owner gave them, the
+     * hidden ones left out, a device on HDMI-CEC folded into its port, "Connected" where the TV knows, HDMI first, then AV and
+     * the like, the tuner last. The TV's own settings when it lists none.
+     */
     private fun inputs() {
         val tim = try { getSystemService(Context.TV_INPUT_SERVICE) as? TvInputManager } catch (e: Exception) { null }
         val list: List<TvInputInfo> = try { tim?.tvInputList.orEmpty() } catch (e: Exception) { emptyList() }
-        if (list.isEmpty()) { toast(R.string.no_inputs); open(Settings.ACTION_SETTINGS); return }
-        AlertDialog.Builder(this, R.style.Menu).setTitle(getString(R.string.inputs))
-            .setItems(list.map { it.loadLabel(this).toString() }.toTypedArray()) { _, i ->
-                val info = list[i]
-                val uri = if (info.isPassthroughInput) TvContract.buildChannelUriForPassthroughInput(info.id) else TvContract.buildChannelsUriForInput(info.id)
+        fun hidden(i: TvInputInfo) = try { i.isHidden(this) } catch (e: Exception) { false }
+        fun custom(i: TvInputInfo) = try { i.loadCustomLabel(this)?.toString()?.trim().orEmpty() } catch (e: Exception) { "" }
+        fun state(id: String) = try { tim?.getInputState(id) ?: -1 } catch (e: Exception) { -1 }
+        val ids = list.map { it.id }.toSet()
+        val top = list.filter { (it.parentId == null || it.parentId !in ids) && !hidden(it) }
+        val devices = list.filter { it.isPassthroughInput && it.parentId in ids && !hidden(it) }.groupBy { it.parentId }
+        val ports = top.filter { it.isPassthroughInput && it.type == TvInputInfo.TYPE_HDMI }
+        // some TVs say every HDMI port is connected: then it means nothing
+        val bogus = ports.size > 1 && ports.all { state(it.id) == TvInputManager.INPUT_STATE_CONNECTED }
+        val rows = top.map { i ->
+            val hdmi = i.isPassthroughInput && i.type == TvInputInfo.TYPE_HDMI
+            val base = custom(i).ifEmpty { i.loadLabel(this).toString() }
+            val dev = devices[i.id]?.firstNotNullOfOrNull { d -> custom(d).ifEmpty { d.loadLabel(this).toString() }.takeIf { it.isNotBlank() && it != base } }
+            val connected = !(hdmi && bogus) && (state(i.id) == TvInputManager.INPUT_STATE_CONNECTED || devices[i.id].orEmpty().any { state(it.id) == TvInputManager.INPUT_STATE_CONNECTED })
+            val group = if (hdmi) 0 else if (i.isPassthroughInput) 1 else 2
+            Drop.Row(if (group == 2) R.drawable.ic_tv else if (hdmi) R.drawable.ic_input else R.drawable.ic_plug,
+                if (dev != null) "$base · $dev" else base, if (connected && group < 2) getString(R.string.connected) else null, group) {
+                val uri = if (i.isPassthroughInput) TvContract.buildChannelUriForPassthroughInput(i.id) else TvContract.buildChannelsUriForInput(i.id)
                 try { startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e: Exception) { toast(R.string.no_open) }
-            }.show().also { open = it }
+            }
+        }.sortedWith(compareBy<Drop.Row> { it.group }.thenBy(Nat) { it.label })
+        if (rows.isEmpty()) { toast(R.string.no_inputs); open(Settings.ACTION_SETTINGS); return }
+        open?.dismiss()
+        open = Drop.show(this, inputsPill, rows)
+    }
+
+    /** "HDMI 2" before "HDMI 10". */
+    private object Nat : Comparator<String> {
+        override fun compare(a: String, b: String): Int {
+            val n = Regex("\\d+|\\D+")
+            val x = n.findAll(a.lowercase()).map { it.value }.toList(); val y = n.findAll(b.lowercase()).map { it.value }.toList()
+            for (k in 0 until minOf(x.size, y.size)) {
+                val c = if (x[k][0].isDigit() && y[k][0].isDigit()) (x[k].toBigInteger()).compareTo(y[k].toBigInteger()) else x[k].compareTo(y[k])
+                if (c != 0) return c
+            }
+            return x.size - y.size
+        }
     }
 
     private fun open(action: String) {

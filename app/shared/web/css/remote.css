@@ -202,7 +202,8 @@ section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* 
 .packview s.big { background:var(--sel); box-shadow:inset 0 0 0 1.5px var(--accent); }
 .homeask .item { flex-wrap:nowrap; }
 .homeask .item .name { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.homeask .homew .item .name { white-space:normal; }   /* the cards' names are sentences: they wrap, not cut */
+.homeask .homew .item { flex-wrap:wrap; }               /* the cards' names are sentences: on a narrow screen the buttons go under */
+.homeask .homew .item .name { white-space:normal; flex:1 1 180px; }
 .homeask .item .acts { flex:none; gap:6px; }
 .homeask .item .acts button { min-width:0; padding:0 12px; }
 .homeask .item .acts .iconbtn { padding:0; }
