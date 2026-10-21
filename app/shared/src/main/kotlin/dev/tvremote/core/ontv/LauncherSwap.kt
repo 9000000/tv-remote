@@ -32,6 +32,16 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
             "if [ -n \"\$c\" ]; then echo \$c; else cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN; fi"
         private val PKG = Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")
 
+        /** What is on screen: Android 10+ names it mFocusedApp, older ones only the resumed activity. */
+        const val FOCUSED = "dumpsys activity activities 2>/dev/null | grep -m4 -E 'mFocusedApp|ResumedActivity'"
+        /** The component in [FOCUSED]'s answer ("ActivityRecord{1a2b u0 com.x/.Main t12}"), or "" when it named none. */
+        fun focused(out: String): String = Regex("\\bu\\d+ ([\\w.]+/[\\w.$]+)").find(out)?.groupValues?.get(1) ?: ""
+        /**
+         * Makers whose firmware turns the setup wizard's Home back on early in every boot: with launcherx off, the next boot loops at
+         * the Google TV logo (a Kalley 43G200 by MOKA, Android 14: no ADB, a USB reflash; cleanyourtv). Home is never taken there.
+         */
+        val NO_SWAP = setOf("moka", "kalley")
+
         fun last(out: String): String = out.split("\n").dropLastWhile { it.isBlank() }.lastOrNull()?.trim() ?: ""
 
         /** Home landing on something that is not a launcher a person can use: Android's picker, the setup wizard, the fallback. */
@@ -84,7 +94,16 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
     @Throws(IOException::class)
     fun take(pkg: String, confirmSec: Int = 0, before: String = ""): Boolean {
         if (!PKG.matches(pkg)) throw IOException("bad package name")
-        val ours = homes().firstOrNull { it.startsWith("$pkg/") } ?: run { log("no home activity"); return false }   // not a launcher
+        val all = homes()
+        val ours = all.firstOrNull { it.startsWith("$pkg/") } ?: run { log("no home activity"); return false }   // not a launcher
+        if (sh("getprop ro.product.manufacturer; getprop ro.product.brand").lowercase().split("\n").any { it.trim() in NO_SWAP }) {
+            log("this TV brings its setup wizard back at every boot"); return false
+        }
+        // Android starts Home before the first unlock: with no FallbackHome to stand in, a launcher that cannot start then left a Vision
+        // (CVTE, Android 13) on a black screen at every boot (cleanyourtv). TV Home can
+        if (all.none { "FallbackHome" in it } && sh("dumpsys package $pkg 2>/dev/null | grep -c DIRECT_BOOT_AWARE").trim().toIntOrNull() == 0) {
+            log("no FallbackHome, and the launcher cannot start before the unlock"); return false
+        }
         // [before]: read before its APK went in. Android 9 forgets the home chosen when a new launcher is installed (a BRAVIA then
         // answered its picker), and only Android 10+ keeps it as a role
         val prev = before.takeIf { it.contains('/') && !badHome(it) } ?: homeNow()
@@ -104,7 +123,9 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
         // a step that hung for minutes (a box's pm while it dropped its Wi-Fi) outlives the watchdog's patience: it has put everything back
         // meanwhile, and what came after its rollback is undone the same way
         state()?.takeIf { it.state == "rolledback" }?.let { rollback(it.why); return false }
-        if (homeNow().substringBefore('/') == pkg) {
+        // the role can name it while the Home key still lands on the wizard (a Google TV Streamer): what opens is the answer
+        val shown = if (homeNow().substringBefore('/') == pkg) focused(sh("input keyevent 3; sleep 2; $FOCUSED")) else "-"
+        if (shown != "-" && (shown.isEmpty() || !badHome(shown))) {
             val r = state()?.with(if (confirmSec > 0) "pending" else "kept", if (confirmSec > 0) tvNow() + confirmSec else 0) ?: return true
             save(r)
             return true
@@ -143,6 +164,12 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
         if (prev.contains('/') && !badHome(prev) && prev.substringBefore('/') != r?.pkg) all.firstOrNull { it == prev }?.let { return it }
         return all.firstOrNull { it.substringBefore('/') in off && it.substringBefore('/') !in Setup.WIZARD }
             ?: all.firstOrNull { !badHome(it) && it.substringBefore('/') != r?.pkg && it.substringBefore('/') !in Setup.WIZARD }   // the one before unknown: never stay on the one tried
+    }
+
+    /** A setup wizard Home turned off by [r] that is on again: some firmware turns it back on at every boot. One shell call. */
+    fun wizardBack(r: Rec): Boolean {
+        val wiz = r.off.filter { it.contains('/') && it.substringBefore('/') in Setup.WIZARD }
+        return wiz.isNotEmpty() && homes().any { it in wiz }
     }
 
     /** What Undo of Optimize TV leaves behind: nothing kept about a home swap. */
@@ -188,6 +215,7 @@ class LauncherWatch(private val sh: (String) -> String) {
             r.state == "swapping" -> if (now - r.at > STALE) "interrupted" else null
             r.state == "pending" && now > r.until + GRACE -> "timeout"
             LauncherSwap.badHome(swap.homeNow()) -> "home"
+            r.state != "swapping" && swap.wizardBack(r) -> "home"
             looping(crashes(sh("logcat -b crash -d -v epoch 2>/dev/null"), r.pkg), r.at) -> "crash"
             else -> null
         } ?: return null

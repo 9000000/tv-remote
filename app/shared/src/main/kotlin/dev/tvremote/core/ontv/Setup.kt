@@ -62,6 +62,12 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
             "|dev\\.tvremote\\..*|com\\.tailscale\\.ipn")
         /** What the Apps tab marks "must keep" and refuses to stop, clear, turn off or remove: [PROTECTED] and the brands' own [Bloat.KEEP]. */
         fun mustKeep(p: String) = PROTECTED.matches(p) || Bloat.KEEP.matches(p)
+        /**
+         * An app that asks for the TV's own input hardware (HDMI, AV, the tuner), whatever its name: turned off, a OnePlus showed "No
+         * Signal" on every input, even once it was back on (cleanyourtv #321). One shell call, made only before turning one off.
+         */
+        fun holdsTvInput(sh: (String) -> String, p: String): Boolean =
+            (sh("dumpsys package $p 2>/dev/null | grep -c 'android.permission.TV_INPUT_HARDWARE'").trim().toIntOrNull() ?: 0) > 0
         /** What this project turned off beyond its own lists, so Undo can turn exactly that back on. Kept on the TV. */
         const val OFF_LIST = "/data/local/tmp/tvr-disabled.txt"
         private const val TMP = "/data/local/tmp/tvr-setup.apk"
@@ -162,7 +168,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
         val keep = setOf(homeNow(), keyboardNow().substringBefore('/'), if (c.home) FL_PKG else "")   // whatever the list says, the TV keeps a home and a keyboard
         var off = 0
         for (p in pick.distinct()) {
-            if (!p.matches(Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")) || kept(p) || p in keep || !has(p)) continue
+            if (!p.matches(Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")) || kept(p) || p in keep || !has(p) || holdsTvInput(sh, p)) continue
             turnOff(p)
             off++
         }

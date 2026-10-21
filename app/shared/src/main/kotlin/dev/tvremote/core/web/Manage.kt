@@ -384,7 +384,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             }
             // off and on again, for the system apps nobody uses (Undo-able, unlike uninstalling); never what the TV or this project needs
             "disable" -> {
-                if (Setup.mustKeep(pkg) || pkg == homeNow()) throw IllegalArgumentException("protected: the TV needs this app")
+                if (Setup.mustKeep(pkg) || pkg == homeNow() || Setup.holdsTvInput(::sh, pkg)) throw IllegalArgumentException("protected: the TV needs this app")
                 val out = sh("pm disable-user --user 0 $pkg 2>&1")
                 if (!out.contains("disabled")) throw IllegalArgumentException(out.trim().ifEmpty { "disable failed" })
                 return HttpServer.Response.ok()

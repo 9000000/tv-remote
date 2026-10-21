@@ -20,6 +20,9 @@ class LauncherTest {
         var forgot = false                                             // Android 9 after a new launcher went in: no choice, its picker
         var wizardLocked = false                                       // a TV that refuses to turn one screen of a system app off
         var chosen: String? = null
+        var focus: String? = null                                      // what the Home key really opens, when not the home (a Google TV Streamer)
+        var maker = "Google\nGoogle"
+        var bootAware: String? = null                                  // dumpsys's count of DIRECT_BOOT_AWARE; null: the TV says nothing
         var rec = ""
         var clock = 1000L
         val said = mutableListOf<String>()
@@ -39,6 +42,9 @@ class LauncherTest {
             Regex("^echo '(.*)' > ${LauncherSwap.REC}$").find(cmd)?.let { rec = it.groupValues[1]; return "" }
             return when {
                 cmd == "cat ${LauncherSwap.REC} 2>/dev/null" -> rec
+                cmd.startsWith("getprop ro.product.manufacturer") -> maker
+                cmd.contains("DIRECT_BOOT_AWARE") -> bootAware ?: ""
+                cmd.startsWith("input keyevent 3") -> "  mFocusedApp=ActivityRecord{4f1 u0 ${focus ?: home()} t7}"
                 cmd == "date +%s" -> (clock).toString()
                 cmd == "pm list packages -e" -> (installed - disabled).joinToString("\n") { "package:$it" }
                 cmd.startsWith("pm list packages -d") -> disabled.joinToString("\n") { "package:$it" }
@@ -169,5 +175,45 @@ class LauncherTest {
         assertTrue(LauncherSwap.badHome("com.google.android.tungsten.setupwraith/.RecoveryActivity"))
         assertTrue(LauncherSwap.badHome("com.android.settings/.FallbackHome"))
         assertFalse(LauncherSwap.badHome("com.new.home/.Home"))
+    }
+
+    @Test fun homeIsWhatTheHomeKeyOpensNotOnlyTheRole() {          // the role named the launcher, Home went to RecoveryActivity
+        val tv = Tv(); tv.focus = "$WIZ/.RecoveryActivity"
+        val s = LauncherSwap({ tv.sh(it) })
+        assertFalse(s.take("com.new.home", 30))
+        assertEquals("rolledback", s.state()!!.state)
+        assertFalse(Setup.LAUNCHERX in tv.disabled)
+        assertEquals("com.x/.Main", LauncherSwap.focused("  mFocusedApp=ActivityRecord{1a2b u0 com.x/.Main t12}"))
+        assertEquals("", LauncherSwap.focused("mFocusedApp=null"))
+    }
+
+    @Test fun aTvThatBringsItsWizardBackAtBootIsNeverSwapped() {    // a Kalley by MOKA looped at the logo
+        val tv = Tv(); tv.maker = "MOKA\nKALLEY"
+        assertFalse(LauncherSwap({ tv.sh(it) }).take("com.new.home", 30))
+        assertEquals(setOf("com.google.android.tvlauncher"), tv.disabled)
+        assertTrue(tv.said.none { it.startsWith("pm disable") })
+    }
+
+    @Test fun noFallbackHomeNeedsALauncherThatStartsBeforeTheUnlock() {
+        val tv = Tv(); tv.bootAware = "0"
+        assertFalse(LauncherSwap({ tv.sh(it) }).take("com.new.home", 30))
+        assertTrue(tv.said.none { it.startsWith("pm disable") })
+        val ok = Tv(); ok.bootAware = "1"
+        assertTrue(LauncherSwap({ ok.sh(it) }).take("com.new.home", 30))
+    }
+
+    @Test fun theWizardsHomeBackOnAfterABootRollsBack() {
+        val tv = Tv(); val s = LauncherSwap({ tv.sh(it) })
+        assertTrue(s.take("com.new.home", 0))
+        assertNull(LauncherWatch { tv.sh(it) }.check())
+        tv.disabled -= "$WIZ/.Home"                                    // the firmware turned it on again
+        assertEquals("home", LauncherWatch { tv.sh(it) }.check())
+        assertFalse(Setup.LAUNCHERX in tv.disabled)
+    }
+
+    @Test fun anAppHoldingTheTvsInputsIsNeverTurnedOff() {
+        assertTrue(Setup.holdsTvInput({ "1" }, "com.oem.tvservice"))
+        assertFalse(Setup.holdsTvInput({ "0" }, "com.oem.ads"))
+        assertFalse(Setup.holdsTvInput({ "" }, "com.oem.ads"))
     }
 }

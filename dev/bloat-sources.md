@@ -78,13 +78,16 @@ Third read (2026-10-21, 47 new or changed `examples/*/debloat.txt`):
 
 - Google's mainline modules (`adservices`, `ondevicepersonalization`, `federatedcompute`, 4–6 lists): Android's own APEX parts,
   pm often refuses them and they come back with Play system updates. Left to "Turn off other apps".
-- Upstream's TV-input guard: any package asking `TV_INPUT_HARDWARE` is never disabled (a OnePlus showed "No Signal" for good,
-  #321). Our suggestions never hold one; worth adding to the Apps tab's turn-off (one `dumpsys package` per app).
-- Home swap lessons not in our code yet: (1) a Kalley 43G200 (Google TV 14) turns setupwraith back on early at every boot, and
-  with launcherx off it boot-looped (USB reflash): TV Setup starts too late to help. (2) A Vision TV (CVTE, Android 13, no
-  FallbackHome) never finished booting with a Home that is not `directBootAware`: TV Home is not. (3) On a Google TV Streamer
-  (kirkwood) the HOME role named the new launcher while the Home key still went to setupwraith's RecoveryActivity: the truth is
-  `mFocusedApp` in `dumpsys activity activities` after pressing Home.
+- Taken later the same day (2026-10-21), from upstream's guards and the home swap reports:
+  - No app asking `TV_INPUT_HARDWARE` is turned off, by Optimize TV or the Apps tab (`Setup.holdsTvInput`): a OnePlus showed
+    "No Signal" for good (#321). On a BRAVIA it catches `tvinput.tuner`, `tvinput.external`, `smarthomesettings`.
+  - `LauncherSwap.take` presses Home and reads `mFocusedApp`: on a Google TV Streamer (kirkwood) the HOME role named the new
+    launcher while Home still went to setupwraith's RecoveryActivity.
+  - Never swapped on MOKA / Kalley (`NO_SWAP`): its firmware turns setupwraith's Home back on early at every boot, and with
+    launcherx off a Kalley 43G200 looped at the logo (USB reflash). Elsewhere the watchdog rolls back when a wizard Home it turned
+    off is on again (`wizardBack`).
+  - No FallbackHome: only a launcher that can start before the first unlock takes Home (a Vision, CVTE, Android 13, never
+    finished booting). TV Home's HomeActivity is `directBootAware`: a clock on black until the unlock, then its screen.
 - TCL `usercenter`: one Android 11 BeyondTV says keep it, 9 lists turn it off, and TCL's ttvs turns it back on at boot anyway.
 - Factory apps (CVTE `hkcfac`, `com.at.factory.*`): never `am start` an unknown package to look at it: opening hkcfac set
   factory mode (Input key and CEC dead, gms / Netflix / mediashell turned off at the next boot, #470).
