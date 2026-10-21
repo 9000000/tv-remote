@@ -19,18 +19,26 @@ class GlobalIndex private constructor(private val lines: Array<String>, private 
     fun search(q: String, skip: String, cap: Int = CAP): List<List<Channel>> {
         val t = Find.fold(q)
         if (t.isEmpty()) return emptyList()
+        val first = t.substringBefore(' ')
+        val qc = t.replace(" ", "")
         val hits = ArrayList<Pair<Int, Int>>()                            // rank, line
         for (i in folds.indices) {
-            val r = rank(folds[i], t) ?: continue
+            val f = folds[i]
+            // every rank needs the first word, or the spaceless text, inside the name: a plain substring test first, the rest only for those
+            if (!f.contains(first) && !(qc.length >= 3 && f.replace(" ", "").contains(qc))) continue
+            val r = rank(f, t) ?: continue
             hits.add(r to i)
         }
         hits.sortWith(compareBy({ it.first }, { folds[it.second].length }, { it.second }))
         val out = LinkedHashMap<String, ArrayList<Channel>>()
         for ((_, i) in hits) {
-            val c = channel(lines[i])
-            if (skip.isNotEmpty() && c.country == skip) continue
-            val l = out[c.id]
-            if (l != null) l.add(c) else { if (out.size >= cap) continue; out[c.id] = arrayListOf(c) }
+            val l = lines[i]
+            val id = l.substring(0, l.indexOf('\t'))
+            val ex = out[id]
+            if (ex == null && out.size >= cap) continue                    // a full list takes no new id: no need to parse the row
+            if (skip.isNotEmpty() && Ids.country(id) == skip) continue
+            val c = channel(l)
+            if (ex != null) ex.add(c) else out[id] = arrayListOf(c)
         }
         return out.values.toList()
     }

@@ -339,7 +339,7 @@ class BrowseActivity : Activity() {
         val q = Find.fold(find.text.toString())
         if (q.length < 2) { gseq++; others = emptyList(); otherState = IDLE; return }
         if (!GlobalIndex.held()) { others = emptyList(); otherState = LOADING }
-        main.postDelayed(globalRun, 250)
+        main.postDelayed(globalRun, 120)
     }
 
     private fun searchOthers() {
