@@ -41,6 +41,20 @@ class HomeConfigTest {
         assertEquals("weather", m.getJSONArray("widgets").getString(0))          // moving never sorts them back
     }
 
+    @Test fun stylesAreKnownOnesOfKnownCards() {
+        assertEquals(0, HomeConfig.clean(JSONObject()).getJSONObject("wstyle").length())            // nothing chosen: the first style
+        val c = HomeConfig.clean(JSONObject().put("wstyle", JSONObject().put("clock", "light").put("lunar", "light").put("zzz", "x")))
+        assertEquals("light", c.getJSONObject("wstyle").getString("clock"))
+        assertEquals(1, c.getJSONObject("wstyle").length())                      // a card without looks, an unknown card: dropped
+        assertEquals(0, HomeConfig.clean(JSONObject().put("wstyle", JSONObject().put("clock", "neon"))).getJSONObject("wstyle").length())
+        val f = HomeConfig.forward(JSONObject().put("wstyle", JSONObject().put("clock", "roman").put("future", "bold").put("Bad Key", "x")))
+        assertEquals("roman", f.getJSONObject("wstyle").getString("clock"))
+        assertEquals("bold", f.getJSONObject("wstyle").getString("future"))      // a newer TV Home's card keeps its look
+        assertFalse(f.getJSONObject("wstyle").has("Bad Key"))
+        assertEquals("classic", HomeConfig.STYLES["clock"]!![0])
+        assertEquals("light", HomeConfig.merge(JSONObject(), JSONObject().put("wstyle", JSONObject().put("clock", "light"))).getJSONObject("wstyle").getString("clock"))
+    }
+
     @Test fun anOldLayoutBecomesTheSizesThatGaveTheSamePicture() {
         val names = listOf("system", "usage", "calendar", "lunar")
         fun sizes(layout: String): List<String> {

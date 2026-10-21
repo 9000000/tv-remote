@@ -91,6 +91,7 @@
     <string name="c_usage_sub">app dùng nhiều, giới hạn</string>
     <string name="w_usage">App dùng nhiều</string>
     <string name="w_lunar">Lịch âm</string>
+    <string name="w_clock">Đồng hồ</string>
     <string name="w_timer">Hẹn giờ</string>
     <string name="w_calendar">Lịch tháng</string>
     <string name="c_calendar_sub">dương lịch và âm lịch</string>
@@ -123,6 +124,7 @@
     <string name="t_snoozed">Giờ ngủ tạm dừng</string>
     <string name="t_until">đến %s</string>
     <string name="c_lunar_sub">ngày âm, rằm, Tết</string>
+    <string name="c_clock_sub">đồng hồ kim</string>
     <string name="c_timer_sub">khi có hẹn giờ</string>
     <string name="c_note_clear">Bấm để xóa</string>
     <string name="c_note_gone">Đã xóa</string>

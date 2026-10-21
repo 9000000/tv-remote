@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home: thẻ **Đồng hồ kim** (mặt tròn, kim giây chạy mượt, vẽ chỉ khi đang hiện trên màn hình) với 4 kiểu mặt: Cổ điển, Sáng, Tối giản, La Mã. Mỗi thẻ có thể có nhiều kiểu: chọn bằng các nút dưới tên thẻ trong hộp TV Home (cài đặt `wstyle`).
 - TV Home dùng font riêng (Inter, đủ dấu tiếng Việt): TV nào cũng hiện chữ giống nhau, không theo font của hãng. Thẻ âm lịch ghi gọn "12 tháng 9" kèm tên năm, hình trăng đêm nay, và hai cột "3 ngày tới Rằm · 108 ngày tới Tết" (trước bị xuống dòng, trống bên phải).
 - TV Home: sửa âm lịch lệch một ngày ở khoảng 2% số tháng (vd. tháng 2 nhuận 2023 bắt đầu 22/3, tháng 7 năm 2026 bắt đầu 13/8): một dấu cộng/trừ sai trong công thức tính trăng non.
 - App điện thoại: **Air Mouse** (More keys): cầm điện thoại như điều khiển, gyroscope di con trỏ chuột thật trên TV; chạm để click, 2 ngón kéo để cuộn, có Back / Home và Tạm dừng. TV Android dùng chuột HID ảo qua ADB (không cần hiện hình), TV LG dùng con trỏ Magic Remote.
@@ -17,6 +18,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Bảo trì ban đêm: mỗi đêm 2-5 giờ sáng, khi TV ở chế độ chờ và không phát gì, app TV dọn cache của mọi app, biên dịch lại vài app dùng nhiều nhất (mở nhanh hơn buổi sáng) và tắt các tiến trình nền; màn hình bật lên là dừng ngay. Tab Sức khỏe có một dòng kết quả, vd. "Đêm qua: dọn 1,2 GB, tối ưu 6 app".
 
 **English**
+- TV Home: an **Analog clock** card (a round face, a smooth second hand, drawn only while on screen) with four looks: Classic, Light, Minimal, Roman. Cards can have several looks: pick one with the chips under the card's name in the TV Home dialog (setting `wstyle`).
 - TV Home has its own font (Inter, full Vietnamese): the same letters on every TV, not the brand's font. The lunar card reads short ("Lunar 12/9") with the year's name, tonight's moon, and two columns "3 days to full moon · 108 days to Tết" (the line wrapped and left the right empty).
 - TV Home: lunar dates were a day off in about 2% of months (e.g. the leap 2nd month of 2023 starts 22/3, the 7th month of 2026 on 13/8): a flipped sign in the new moon formula.
 - Phone app: **Air Mouse** (More keys): hold the phone like a remote and its gyroscope moves a real mouse pointer on the TV; tap = click, two-finger drag = scroll, with Back / Home and Pause. Android TVs get a virtual HID mouse over ADB (no picture needed), LG TVs the Magic Remote pointer.

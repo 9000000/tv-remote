@@ -15,7 +15,7 @@ const HOME_EVERY = { 'off': 'home.every_off', '30m': 'home.every_30m', '1h': 'ho
 const HOME_PHOTO_MAX = 10;                                            // HomeConfig.PHOTO_MAX
 const homeThumbs = {};                                                // a photo's small picture by id + its stamp: asked of the TV once
 const HOME_DOCK_MAX = 6;                                             // HomeConfig.DOCK_MAX
-const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer', 'weather'];          // HomeConfig.WIDGETS, in the order drawn
+const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer', 'weather', 'clock'];          // HomeConfig.WIDGETS, in the order drawn
 // A TV Home with "wsizes" sizes each card (big / small) and packs them (homePack); one older than that has only the preset layouts below
 const HOME_BIG_KINDS = ['system', 'usage', 'calendar', 'weather'];     // HomeConfig.defaultSize: these are big until chosen otherwise
 const HOME_W = { big: 100, cal: 120, small: 90, budget: 415, floor: 190 };   // HomeConfig.W_BIG / W_CAL / W_SMALL / BUDGET / FLOOR
@@ -48,7 +48,8 @@ const HOME_COLS = { row: [[33, 1], [33, 1], [34, 2]], big: [[58, 1], [42, 2]], b
 const HOME_OLD_LAYOUTS = ['row', 'big'];                              // a TV Home without "wlayouts" has only these
 const HOME_ROW_CARDS = 3, HOME_LARGE = ['system', 'usage', 'calendar', 'weather'];   // HomeConfig.ROW_CARDS, Widgets.BIG: what "row" shows
 const homeSlots = (k) => k === 'row' || !HOME_COLS[k] ? 0 : HOME_COLS[k].reduce((n, c) => n + c[1], 0);   // HomeConfig.slots: what a fixed layout shows (a pinned note takes one)
-const HOME_WIDGET_WORDS = { system: 'home.w_system', usage: 'home.w_usage', calendar: 'home.w_calendar', lunar: 'home.w_lunar', timer: 'home.w_timer', weather: 'home.w_weather' };
+const HOME_WIDGET_WORDS = { system: 'home.w_system', usage: 'home.w_usage', calendar: 'home.w_calendar', lunar: 'home.w_lunar', timer: 'home.w_timer', weather: 'home.w_weather', clock: 'home.w_clock' };
+const HOME_STYLE_WORDS = { classic: 'home.style_classic', light: 'home.style_light', minimal: 'home.style_minimal', roman: 'home.style_roman' };   // HomeConfig.STYLES
 
 // The packed layout drawn small: a column per weight, its cards stacked, big ones filled (sizes in css/remote.css)
 function packGlyph(p, big) {
@@ -219,13 +220,19 @@ async function homeOpen() {
     const wsize = (k, v) => send({ wsize: Object.fromEntries([...new Set([...HOME_WIDGETS, ...(w || [])])].map((x) => [x, x === k ? v : homeSize(c, x)])) });   // a newer TV Home's cards keep theirs
     const sizeChips = (k) => el('span', { className: 'sizechips', role: 'group', 'aria-label': T('home.size') },
       ...['big', 'small'].map((v) => el('button', { type: 'button', className: 'small' + (homeSize(c, k) === v ? ' on' : ''), textContent: T(v === 'big' ? 'home.size_big' : 'home.size_small'), 'aria-pressed': String(homeSize(c, k) === v), onclick: () => wsize(k, v) })));
+    // a card with looks (the TV Home lists them in "wstyles"): a row of chips under its name; the first is the default
+    const styleOf = (k) => (c.wstyle && c.wstyle[k]) || c.wstyles[k][0];
+    const wstyle = (k, v) => send({ wstyle: { ...(c.wstyle || {}), [k]: v } });
+    const styleChips = (k) => el('div', { className: 'fchips wstyle', role: 'group', 'aria-label': T('home.style') },
+      ...c.wstyles[k].map((v) => el('button', { type: 'button', className: styleOf(k) === v ? 'on' : '', 'aria-pressed': String(styleOf(k) === v), textContent: HOME_STYLE_WORDS[v] ? T(HOME_STYLE_WORDS[v]) : v, onclick: () => wstyle(k, v) })));
     wList.replaceChildren(...(w || []).map((k, i) => el('div', { className: 'item' },
       el('div', { className: 'name' }, el('span', { textContent: HOME_WIDGET_WORDS[k] ? T(HOME_WIDGET_WORDS[k]) : T('home.w_newer', { k }) }), ...(waits(k, i) ? [el('small', { textContent: waits(k, i) })] : [])),
       el('div', { className: 'acts' },
         ...(sized ? [sizeChips(k)] : []),
         tool('↑', T('home.up'), () => wmove(i, i - 1), i === 0),
         tool('↓', T('home.down'), () => wmove(i, i + 1), i === w.length - 1),
-        tool('✕', T('home.w_off'), () => send({ widgets: w.filter((x) => x !== k) }))))));
+        tool('✕', T('home.w_off'), () => send({ widgets: w.filter((x) => x !== k) }))),
+      ...(c.wstyles && c.wstyles[k] ? [styleChips(k)] : []))));
     wList.hidden = !w || !w.length;
     packHead.hidden = packBox.hidden = packNote.hidden = !sized || !w || !(w.length || c.note);
     if (packed) packBox.replaceChildren(packGlyph(packed, bigs));

@@ -93,6 +93,7 @@
     <string name="c_usage_sub">most used apps, limits</string>
     <string name="w_usage">Most used apps</string>
     <string name="w_lunar">Lunar calendar</string>
+    <string name="w_clock">Clock</string>
     <string name="w_timer">Sleep timer</string>
     <string name="w_calendar">Month calendar</string>
     <string name="c_calendar_sub">solar and lunar days</string>
@@ -125,6 +126,7 @@
     <string name="t_snoozed">Bedtime paused</string>
     <string name="t_until">until %s</string>
     <string name="c_lunar_sub">lunar date, full moon, Tết</string>
+    <string name="c_clock_sub">analog clock</string>
     <string name="c_timer_sub">while one is set</string>
     <string name="c_note_clear">Press to clear</string>
     <string name="c_note_gone">Cleared</string>

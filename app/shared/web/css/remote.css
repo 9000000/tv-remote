@@ -194,6 +194,7 @@ section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* 
 .layglyph { display:flex; gap:2px; width:32px; height:18px; flex:none; }
 .layglyph b { display:flex; flex-direction:column; gap:2px; flex:var(--w) 1 0; }
 .layglyph s { flex:1; border-radius:2px; background:currentColor; opacity:.55; }
+.homew .item .fchips.wstyle { flex:1 1 100%; }   /* a card's looks: a row of chips under its name */
 .sizechips { display:inline-flex; gap:4px; }   /* To / Nhỏ: two chips, the chosen one .on */
 .sizechips button { min-width:0; padding:0 10px; }
 .packview { display:flex; gap:4px; height:56px; }   /* the TV's cards in miniature: a column per weight, big cards filled */

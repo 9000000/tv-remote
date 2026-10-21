@@ -27,7 +27,8 @@ import org.json.JSONObject
  *   widgets the cards between the clock and the favourites, in their order ([WIDGETS]): "system" (memory, storage, network,
  *           ADB), "usage" (the most used apps of the week and the day's app limits, asked of TV Setup: [USAGE]),
  *           "calendar" (the month, the lunar day under every solar day),
- *           "lunar" (the lunar date, the next full moon and Tết), "timer" (the sleep timer or bedtime, from TV Setup too;
+ *           "lunar" (the lunar date, the next full moon and Tết), "clock" (an analog clock face, round, sweeping second hand),
+ *           "timer" (the sleep timer or bedtime, from TV Setup too;
  *           shown only while one is set), "weather" (the sky now and the next days, Open-Meteo: [place] or, by itself, the device's
  *           location or the internet address's)
  *           Their order in the list is the order on the screen (the page and the TV's panel move them).
@@ -36,6 +37,8 @@ import org.json.JSONObject
  *           in a row stack in one, a small card alone is a narrow column; what does not fit waits. A TV Home that has this reports
  *           "wsizes": true (the page offers the old layout chips to one that does not). Replaces "wlayout" (row / big / big2 /
  *           flip / quad), which [clean] still reads once, as sizes giving the same picture, when there are no "wsize" yet
+ *   wstyle  how a card looks, for the cards that have looks ([STYLES]): {"clock": "light", ...}; missing = the card's first style.
+ *           A TV Home that has this reports "wstyles": {kind: [styles]} (the page reads the choices from it; one without it has none)
  *   place   a city for the weather card, as typed ([PLACE_MAX] characters); empty = automatic
  *   dream   TV Home is the TV's screensaver (the big clock and the wallpaper, [DREAM]). Read from the system, not kept: the
  *           launcher sets `screensaver_components` itself (it holds WRITE_SECURE_SETTINGS once a client has granted it over
@@ -96,8 +99,11 @@ object HomeConfig {
         }
         return null
     }
-    val WIDGETS = listOf("system", "usage", "calendar", "lunar", "timer", "weather")
-    /** A card's size when nobody chose: the four large cards are big, the small pills (lunar, timer, and the note) small. */
+    val WIDGETS = listOf("system", "usage", "calendar", "lunar", "timer", "weather", "clock")
+    /** The looks of the cards that have more than one, the first is the default ("wstyle"). */
+    val STYLES: Map<String, List<String>> = mapOf("clock" to listOf("classic", "light", "minimal", "roman"))
+    fun styles(): JSONObject = JSONObject().also { o -> STYLES.forEach { (k, v) -> o.put(k, JSONArray(v)) } }
+    /** A card's size when nobody chose: the four large cards are big, the small pills (lunar, timer, clock, and the note) small. */
     fun defaultSize(k: String) = if (k in BIG_KINDS) "big" else "small"
     private val BIG_KINDS = setOf("system", "usage", "calendar", "weather")
     /**
@@ -176,6 +182,10 @@ object HomeConfig {
             .put("place", o.optString("place").replace(Regex("\\s+"), " ").trim().take(PLACE_MAX))
             .put("widgets", JSONArray(widgets))
             .put("wsize", sizes(o, widgets))
+            .put("wstyle", JSONObject().also { out ->
+                val g = o.optJSONObject("wstyle")
+                if (g != null) for ((k, v) in STYLES) g.optString(k).takeIf { it in v }?.let { out.put(k, it) }
+            })
     }
 
     private val CARD = Regex("[a-z][a-z0-9_]{0,15}")
@@ -191,6 +201,11 @@ object HomeConfig {
             val out = JSONObject()
             for (k in g.keys()) if (CARD.matches(k)) g.optString(k).takeIf { it == "big" || it == "small" }?.let { out.put(k, it) }
             c.put("wsize", out)
+        }
+        o.optJSONObject("wstyle")?.let { g ->                           // the looks of cards this client does not know
+            val out = c.optJSONObject("wstyle") ?: JSONObject()
+            for (k in g.keys()) if (k !in STYLES && CARD.matches(k)) g.optString(k).takeIf { CARD.matches(it) }?.let { out.put(k, it) }
+            c.put("wstyle", out)
         }
         return c
     }

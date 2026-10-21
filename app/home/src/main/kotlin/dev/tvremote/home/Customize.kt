@@ -312,6 +312,7 @@ object Customize {
         arrayOf<Any>("lunar", R.drawable.ic_moon, R.string.w_lunar, R.string.c_lunar_sub),
         arrayOf<Any>("timer", R.drawable.ic_timer, R.string.w_timer, R.string.c_timer_sub),
         arrayOf<Any>("weather", R.drawable.ic_weather, R.string.w_weather, R.string.c_weather_sub),
+        arrayOf<Any>("clock", R.drawable.ic_clock, R.string.w_clock, R.string.c_clock_sub),
     )
 
     /**
