@@ -359,11 +359,13 @@ function fsSync() {
   $('#fs').innerHTML = on ? IC.exit : IC.enter; $('#fs').dataset.state = on ? 'on' : 'off';
   lockLandscape();
 }
-// landscape only while fullscreen and showing the game's pad (the remote reads fine upright); refusal is normal (iOS, desktop)
+// landscape while fullscreen and showing the game's pad; the navigation view keeps whatever the phone is in: unlock() fell back to the
+// phone's own default (portrait with auto-rotate off), which threw a landscape player upright when it opened the arrows. Refusal is normal (iOS, desktop)
 function lockLandscape() {
   try {
     const o = screen.orientation; if (!o) return;
-    if (fsEl() && mode === 'pad') { const p = o.lock && o.lock('landscape'); if (p && p.catch) p.catch(() => {}); }
+    const land = /^landscape/.test(o.type || '') || matchMedia('(orientation:landscape)').matches;
+    if (fsEl() && (mode === 'pad' || land)) { const p = o.lock && o.lock('landscape'); if (p && p.catch) p.catch(() => {}); }
     else if (o.unlock) o.unlock();
   } catch (e) {}
 }
