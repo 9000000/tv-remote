@@ -23,7 +23,7 @@
                 <data android:scheme="tvchannels" android:host="group" />
             </intent-filter>
         </activity>
-        <!-- tvchannels://play/<iptv-org id>: the public face of this app, for pinned shortcuts, phones, voice -->
+        <!-- tvchannels://play/<iptv-org id> or find/<name>: the public face of this app, for pinned shortcuts, phones, voice -->
         <activity android:name=".PlayActivity" android:exported="true" android:launchMode="singleTask" android:screenOrientation="landscape"
             android:theme="@style/Player"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|locale|layoutDirection">
@@ -32,6 +32,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="tvchannels" android:host="play" />
+                <data android:scheme="tvchannels" android:host="find" />
             </intent-filter>
         </activity>
     </application>

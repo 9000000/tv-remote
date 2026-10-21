@@ -110,6 +110,8 @@ install() {
     "$ADB" -s "$TV" install -r "$ROOT/app/tv/build/tv-setup.apk" | tail -1 | sed "s/^/TV Setup → $TV: /"
     "$ROOT/app/home/build.sh" >/dev/null                             # TV Home, the launcher: installed, not made the home (the gallery does that)
     "$ADB" -s "$TV" install -r "$ROOT/app/home/build/tv-home.apk" | tail -1 | sed "s/^/TV Home → $TV: /"
+    "$ROOT/app/channels/build.sh" >/dev/null                         # TV Channels, the iptv-org player
+    "$ADB" -s "$TV" install -r "$ROOT/app/channels/build/tv-channels.apk" | tail -1 | sed "s/^/TV Channels → $TV: /"
   fi
   if [ -n "$PHONE" ]; then
     "$ROOT/app/android/build.sh" >/dev/null

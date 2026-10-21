@@ -107,6 +107,12 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     if (!post && r.q("thumbs") == "1") "--ez thumbs true" else ""))   // TV Home's settings (thumbs: the photos' small pictures too)
                 "home/photo/drop" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Home.drop(link.get(), r.json().optString("id")))
                 "home/update" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Home.update(link.get(), dir, r.lang))
+                "channels" -> if (!post) return HttpServer.Response.json(dev.tvremote.core.ontv.Channels.state { sh(it) })   // TV Channels: on the TV, and a newer one
+                "channels/install" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Channels.install(link.get(), dir, r.lang))
+                "channels/open" -> if (post) {                        // a channel by its name; TV Channels finds it (or shows its search)
+                    if (!dev.tvremote.core.ontv.Channels.open({ sh(it) }, r.json().optString("q"))) throw IOException("channels:missing")
+                    return HttpServer.Response.ok()
+                }
                 "home/photo" -> if (post) {                           // its background: a JPEG the page already made the screen's size
                     if (r.length !in 1..6_000_000) throw IllegalArgumentException("photo too large")
                     val b = ByteArray(r.length.toInt()); var off = 0

@@ -379,6 +379,13 @@
           <button id="launchback" data-i18n="launcher.back">↩ Về launcher của TV</button>
         </div>
       </section>
+      <section class="card" data-adb-gated id="chancard">
+        <h2 data-i18n="channels.title">📺 Kênh TV</h2>
+        <p class="note" data-i18n="channels.note">Kênh truyền hình miễn phí trên TV (danh sách công khai của iptv-org).</p>
+        <p class="state" id="chanstate" hidden></p>
+        <form class="line" id="chanf" hidden><input id="chanq" type="search" autocomplete="off" spellcheck="false" placeholder="Tên kênh, vd VTV1" data-i18n-placeholder="channels.placeholder"><button class="primary" data-i18n="channels.open">▶ Mở</button></form>
+        <div class="actions"><button class="primary" id="chaninst" hidden></button></div>
+      </section>
     </div>
     <!-- every setting the TV keeps: the simple ones can be changed, the risky ones are shown locked (health.js) -->
     <details class="card" id="setlist" data-adb-gated>
@@ -535,6 +542,7 @@
 <script src="js/launchers.js"></script>
 <script src="js/home_walls.js"></script>
 <script src="js/home.js"></script>
+<script src="js/channels.js"></script>
 <script src="js/tvset.js"></script>
 <script src="js/fleet.js"></script>
 <script src="js/tvstatus.js"></script>

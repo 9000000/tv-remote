@@ -42,6 +42,7 @@ Tested for real on a Sony BRAVIA (Android 9). Other brands are untested; LG, Sam
 - **Sleep timer, bedtime, app limits, volume limits and apps locked with a PIN** that run on the TV, so they work with every other device off.
 - **Scenes** (several steps in one tap), widget and Quick Settings tiles, game controller, Home Assistant and Siri Shortcuts.
 - **TV Home**, a home screen without ads, set up from your phone or computer: favourite apps, hidden apps, your own background, widgets (system stats, most used apps and limits, month calendar with lunar days, lunar calendar, sleep timer, weather, a pinned note) (the background, clock and motion can also be changed on the TV itself). Or pick another launcher from the gallery.
+- **TV Channels**, free TV channels on the TV from iptv-org's public lists: by country and category, favourites and your own groups, pinned to the home screen, opened by name from the phone ("open channel VTV1").
 - **Optional extras on the TV** ("Optimize TV"): faster, lighter, and fully undoable.
 
 Every feature, with screenshots: [tvremote.pages.dev](https://tvremote.pages.dev/?lang=en).

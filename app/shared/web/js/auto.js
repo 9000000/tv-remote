@@ -473,6 +473,7 @@ $('#scenefile').addEventListener('change', async (e) => {
 async function doCommand(c) {
   if (c.kind === 'scene') return runScene(c.scene);
   if (c.kind === 'app') return openOnTv(c.pkg, c.name);
+  if (c.kind === 'channel') return chanOpen(c.name);
   if (c.kind === 'timer') return setSleep(c.min);
   if (c.kind === 'key') {
     if (c.key === 'SLEEP' || c.key === 'WAKE') { const r = await api('/api/key', { key: c.key }); if (r) toast(T(c.key === 'SLEEP' ? 'auto.tv_off_done' : 'auto.tv_on_done')); return; }   // never POWER: it would turn a TV that is off on

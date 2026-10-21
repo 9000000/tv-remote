@@ -101,6 +101,7 @@ class BrowseActivity : Activity() {
 
         cc = countryOf(intent) ?: Store.country(this)
         groupOf(intent)?.let { group = it }
+        intent.getStringExtra(QUERY)?.let { find.setText(it) }
         load(false)
     }
 
@@ -108,6 +109,7 @@ class BrowseActivity : Activity() {
         super.onNewIntent(i)
         countryOf(i)?.takeIf { it != cc }?.let { cc = it; group = ALL; load(false) }
         groupOf(i)?.let { find.setText(""); pick(it) }
+        i.getStringExtra(QUERY)?.let { group = ALL; find.setText(it); buildRail(); filter() }
     }
 
     override fun onResume() { super.onResume(); cards.notifyDataSetChanged(); if (mine(group) != null) { buildRail(); filter() } }
@@ -467,6 +469,7 @@ class BrowseActivity : Activity() {
     }
 
     companion object {
+        const val QUERY = "query"                                    // text for the search box (a find link that matched nothing)
         const val ALL = ""
         const val FAVS = "\u0000favs"
         const val MINE = "\u0000g:"                                  // + a group's id: one of the person's groups on show

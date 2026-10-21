@@ -2,6 +2,7 @@ package dev.tvremote.phone
 
 import dev.tvremote.core.T
 import android.widget.Toast
+import dev.tvremote.core.adb.Adb
 import dev.tvremote.core.adb.AdbLink
 import dev.tvremote.core.remote.Remote
 import dev.tvremote.core.ontv.RemoteLabels
@@ -149,6 +150,14 @@ private fun MainActivity.doVoice(c: Voice.Command) {
             val tv = tv
             if (tv != null && tv.ready()) Thread { try { Scenes.launch({ tv.shell(it) }, c.pkg) } catch (e: Exception) { ui.post { toast(e.message ?: "") } } }.start()
             else basic?.launch(c.pkg)
+        }
+        is Voice.Command.Channel -> {
+            toast(T("automation.channel", "name" to c.name))
+            val link = Voice.channelLink(c.name)
+            val tv = tv
+            // the TV app is named so the link cannot land in a browser; without ADB the remote protocol sends the link alone
+            if (tv != null && tv.ready()) Thread { try { tv.shell("am start -a android.intent.action.VIEW -d " + Adb.q(link) + " dev.tvremote.channels 2>&1") } catch (e: Exception) { ui.post { toast(e.message ?: "") } } }.start()
+            else basic?.launch(link)
         }
         is Voice.Command.Key -> {
             val code = Scenes.KEYS[c.key] ?: return

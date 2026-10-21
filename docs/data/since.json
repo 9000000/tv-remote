@@ -30,6 +30,7 @@
   "tv-status": {"since": "0.12.0"},
   "launchers": {"since": "0.12.0"},
   "home": {"since": "0.13.0"},
+  "channels": {"since": "next"},
   "draw": {"since": "0.1.0"},
   "photo": {"since": "0.1.0"},
   "screenshot": {"since": "0.1.0"},

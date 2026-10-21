@@ -15,6 +15,7 @@ names (README, code comments, the site; Vietnamese in brackets):
 | **TV app** (App TV) | `app/tv` | | the app on the TV, shown as "TV Setup" (keep that label: it is on installed TVs, Downloader codes and file names) |
 | **TV web page** (Web của TV) | `app/tv` `RemoteService` | `tv` | the web UI the TV app serves on port 8765, for any browser (iPhone included), after a 6-digit pairing code |
 | **TV Home** | `app/home` | | the project's own launcher (`dev.tvremote.home`), first in the launcher gallery; set up from every client over ADB |
+| **TV Channels** | `app/channels` | | iptv-org's free channels on the TV (`dev.tvremote.channels`); knows nothing of the other apps: they reach it only by its links (`tvchannels://play/<id>`, `group/<id>`, `find/<name>`); installed and opened from every client over ADB (`core/ontv/Channels.kt`, `js/channels.js`) |
 
 What each can do, and diagrams of how they connect: README "Three apps and a web page" / README.vi "Ba app và một trang web".
 Keep that table true when a feature lands on only some of them.
@@ -68,6 +69,9 @@ app/home/                TV Home, the launcher: plain Views, no :shared (it woul
                          RulesReceiver). Its settings' shape is ONE file, `app/shared/src/home/kotlin/.../HomeConfig.kt`, compiled
                          into :shared, :desktop and :home; the clients' side is `core/ontv/Home.kt` + `/api/home` + `js/home.js`.
                          In the gallery it is kind "self": its APK is the latest release's `tv-home.apk`, pinned by SHA256SUMS
+app/channels/            TV Channels: BrowseActivity (countries, categories, favourites, groups, search), PlayActivity (ExoPlayer, the
+                         lineup, a dead stream falls to the next), Catalog (iptv-org's m3u, kept a day), Store (prefs), Find (a name -> a
+                         channel), Pins (links and pinned shortcuts). AndroidX (Media3, RecyclerView) here only; no :shared
 app/gradle/              the Gradle build of everything Kotlin (settings point at ../shared, ../android, ../tv, ../home, ../desktop); open it in Android Studio
 app/desktop/             the computer app on the shared Kotlin core (JVM, no adb/Python/ffmpeg), the "pc" core: Server.kt
                          (the routes only the computer has) + Manage.kt; Pass.kt (a key per start, in the link the window and browser open: tests pass `TVR_PASS` and `?k=`); Updater.kt (updates itself from releases, swapped in by a script once it quits); Window.kt shows the page in the system's web view
@@ -140,8 +144,9 @@ that into one question with an Update / Install TV Setup button (`needSetup()` i
 
 ## Versions and releases
 
-Four numbers, each bumped only when its part changes: `VERSION` (every release; the tag and the computer app), `app/android/VERSION`, `app/tv/VERSION`,
-`app/home/VERSION` (TV Home: `app/home` or `app/shared/src/home` changed; its key `app/home/signing.jks`, backed up by `dev/keys.sh`).
+Five numbers, each bumped only when its part changes: `VERSION` (every release; the tag and the computer app), `app/android/VERSION`, `app/tv/VERSION`,
+`app/home/VERSION` (TV Home: `app/home` or `app/shared/src/home` changed; its key `app/home/signing.jks`, backed up by `dev/keys.sh`),
+`app/channels/VERSION` (TV Channels: `app/channels` changed; `app/channels/signing.jks`, also in `dev/keys.sh`).
 
 The apps are an alpha: the numbers stay 0.x until the user calls a release 1.0.0. Patch (the default) for fixes and small changes,
 `BUMP=minor` for a release with new features, `BUMP=major` only when the user says so. The numbers restarted at 0.1.0 in October 2026

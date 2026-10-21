@@ -117,6 +117,7 @@ class PlayActivity : Activity() {
 
     /** The channel a link names: in the lineup the list gave, else among the favourites, else in its country's list. */
     private fun open(i: Intent?) {
+        Pins.findText(i?.data)?.let { find(it); return }
         val id = Pins.id(i?.data) ?: Store.last(this) ?: run { finish(); return }
         Lineup.indexOf(id).takeIf { it >= 0 }?.let { tune(it); return }
         spin.visibility = View.VISIBLE
@@ -131,6 +132,26 @@ class PlayActivity : Activity() {
                     else -> { spin.visibility = View.GONE; fail(getString(R.string.not_found)); return@post }
                 }
                 tune(Lineup.indexOf(id))
+            }
+        }
+    }
+
+    /** tvchannels://find/<text>: the best match in the country on show plays as a play link would; none opens the list searching for it. */
+    private fun find(text: String) {
+        spin.visibility = View.VISIBLE
+        io.execute {
+            val cc = Store.country(this)
+            val country = Catalog.channels(this, cc).byChannel()
+            val mine = (Store.favourites(this) + Store.groups(this).flatMap { it.channels }).map { it.id }.toSet()
+            val hit = Find.best(country, text, { it in mine }, { Store.alive(this, it.url) == false })
+            main.post {
+                if (isDestroyed) return@post
+                if (hit == null) {
+                    startActivity(Intent(this, BrowseActivity::class.java).putExtra(BrowseActivity.QUERY, text))
+                    finish(); return@post
+                }
+                Lineup.set(country, cc.uppercase())
+                tune(Lineup.indexOf(hit.first().id))
             }
         }
     }

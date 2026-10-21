@@ -1,7 +1,7 @@
 // node --test app/shared/tests/   (Node 18+, nothing to install)
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { fold, voiceCommand } = require('../web/js/voice.js');
+const { fold, voiceCommand, channelLink } = require('../web/js/voice.js');
 
 const APPS = [
   { pkg: 'com.google.android.youtube.tv', name: 'YouTube' },
@@ -29,6 +29,17 @@ test('an app the TV does not have goes to the Assistant', () => {
   assert.equal(cmd('mở Spotify'), null);
   assert.equal(cmd('thời tiết hôm nay'), null);
   assert.equal(cmd(''), null);
+});
+
+test('channels', () => {
+  for (const t of ['mở kênh vtv1', 'Xem kênh VTV1', 'chuyển kênh vtv1', 'chuyển sang kênh vtv1', 'bật kênh vtv1', 'kênh vtv1', 'open channel vtv1', 'watch channel vtv1', 'channel vtv1', 'tune to vtv1'])
+    assert.deepEqual(cmd(t), { kind: 'channel', name: 'vtv1' }, t);
+  assert.equal(cmd('mở kênh Thể thao').name, 'the thao');
+  assert.equal(cmd('kênh tiếp').key, 'CH_UP');
+  assert.equal(cmd('next channel').key, 'CH_UP');
+  assert.equal(cmd('kênh trước').key, 'CH_DOWN');
+  assert.equal(cmd('previous channel').key, 'CH_DOWN');
+  assert.equal(channelLink('the thao'), 'tvchannels://find/the%20thao');
 });
 
 test('keys', () => {

@@ -31,6 +31,17 @@ class VoiceTest {
         assertNull(p(""))
     }
 
+    @Test fun channels() {
+        for (t in listOf("mở kênh vtv1", "Xem kênh VTV1", "chuyển kênh vtv1", "chuyển sang kênh vtv1", "bật kênh vtv1", "kênh vtv1", "open channel vtv1", "watch channel vtv1", "channel vtv1", "tune to vtv1"))
+            assertEquals(t, Command.Channel("vtv1"), p(t))
+        assertEquals(Command.Channel("the thao"), p("mở kênh Thể thao"))
+        assertEquals(Command.Key("CH_UP", 1), p("kênh tiếp"))
+        assertEquals(Command.Key("CH_UP", 1), p("next channel"))
+        assertEquals(Command.Key("CH_DOWN", 1), p("kênh trước"))
+        assertEquals(Command.Key("CH_DOWN", 1), p("previous channel"))
+        assertEquals("tvchannels://find/the%20thao", Voice.channelLink("the thao"))
+    }
+
     @Test fun keys() {
         assertEquals(Command.Key("MUTE", 1), p("tắt tiếng"))
         assertEquals(Command.Key("PLAY_PAUSE", 1), p("Tạm dừng"))

@@ -2131,6 +2131,7 @@
  "automation.the_tv_turns_off_2": "TV tự tắt lúc {time}",
  "automation.some_steps_did_not": "Có bước không làm được: {steps}",
  "automation.opening": "Đang mở {name}",
+ "automation.channel": "Đang mở kênh {name}",
  "diagnosing.or_tap_the_power": "Hoặc bấm nút nguồn cạnh tên TV trong danh sách để đánh thức.",
  "drawing.could_not_draw_on": "Không vẽ được lên TV: {error}",
  "headless.cannot_reach_the_tv": "{name}: không tới được TV. TV có đang bật và cùng mạng (hoặc Tailscale) không?",
@@ -2549,5 +2550,17 @@
  "upd.in_days": "Sau {n} ngày",
  "upd.skip": "Bỏ qua bản này",
  "upd.skip_sub": "Chỉ nhắc khi có bản mới hơn",
- "upd.home_going": "Đang cập nhật TV Home…"
+ "upd.home_going": "Đang cập nhật TV Home…",
+ "channels.title": "📺 Kênh TV",
+ "channels.note": "Kênh truyền hình miễn phí trên TV (danh sách công khai của iptv-org).",
+ "channels.placeholder": "Tên kênh, vd VTV1",
+ "channels.open": "▶ Mở",
+ "channels.state": "TV Channels {v} đã có trên TV.",
+ "channels.install": "⬇️ Cài TV Channels",
+ "channels.update": "⬆️ Cập nhật TV Channels {v}",
+ "channels.installing": "Đang tải và cài TV Channels...",
+ "channels.installed": "Đã cài TV Channels {v}.",
+ "channels.opening": "Đang mở kênh {name}",
+ "core.fr_channels_missing": "TV chưa có app TV Channels: cài nó ở thẻ 📺 Kênh TV (tab TV).",
+ "core.fr_channels_none": "Bản phát hành mới nhất chưa có TV Channels."
 }

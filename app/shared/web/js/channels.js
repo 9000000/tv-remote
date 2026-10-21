@@ -1,0 +1,31 @@
+// 📺 TV Channels (app/channels), the iptv-org player, from here (Channels.kt): put on the TV or updated from the latest release,
+// and a channel opened by its name: the app finds it itself (tvchannels://find/<name>), or shows its search when none fits.
+let chanNow = null;
+onTvChange(() => { chanNow = null; chanCard(); });
+
+async function chanCard() {
+  const line = $('#chanstate'), form = $('#chanf'), inst = $('#chaninst');
+  if (!line) return;
+  const r = ADB.state === 'ready' ? await api('/api/channels', null, true) : null;
+  chanNow = r;
+  line.hidden = form.hidden = !(r && r.installed);
+  if (r && r.installed) put(line, 'textContent', T('channels.state', { v: r.version }));
+  inst.hidden = !r || (r.installed && !r.latest) || (!r.installed && !r.latest);   // nothing to install: no release carries it yet
+  if (!inst.hidden) put(inst, 'textContent', r.installed ? T('channels.update', { v: r.latest }) : T('channels.install'));
+}
+
+async function chanInstall() {
+  toast(T('channels.installing'));
+  const n = await api('/api/channels/install', {});
+  if (n && n.installed) toast(T('channels.installed', { v: n.version }));
+  chanCard();
+}
+
+// also what a spoken "mở kênh VTV1" does (auto.js); without ADB the link goes through the remote protocol, as any link
+async function chanOpen(name) {
+  if (ADB.state !== 'ready') return openOnTv(channelLink(name), name);
+  if (await api('/api/channels/open', { q: name })) { toast(T('channels.opening', { name })); setTimeout(refresh, 1500); }
+}
+
+$('#chaninst').addEventListener('click', chanInstall);
+$('#chanf').addEventListener('submit', (e) => { e.preventDefault(); chanOpen($('#chanq').value.trim()); });

@@ -2215,6 +2215,7 @@
  "automation.the_tv_turns_off_2": "The TV turns off at {time}",
  "automation.some_steps_did_not": "Some steps did not work: {steps}",
  "automation.opening": "Opening {name}",
+ "automation.channel": "Opening channel {name}",
  "diagnosing.or_tap_the_power": "Or tap the power button next to the TV in the list to wake it.",
  "drawing.could_not_draw_on": "Could not draw on the TV: {error}",
  "headless.cannot_reach_the_tv": "{name}: cannot reach the TV. Is it on, and on the same network (or Tailscale)?",
@@ -2636,5 +2637,17 @@
  "upd.in_days": {"one": "In {n} day", "other": "In {n} days"},
  "upd.skip": "Skip this version",
  "upd.skip_sub": "Remind only for a newer one",
- "upd.home_going": "Updating TV Home…"
+ "upd.home_going": "Updating TV Home…",
+ "channels.title": "📺 TV channels",
+ "channels.note": "Free TV channels on the TV (iptv-org's public lists).",
+ "channels.placeholder": "Channel name, e.g. BBC News",
+ "channels.open": "▶ Open",
+ "channels.state": "TV Channels {v} is on the TV.",
+ "channels.install": "⬇️ Install TV Channels",
+ "channels.update": "⬆️ Update TV Channels to {v}",
+ "channels.installing": "Downloading and installing TV Channels...",
+ "channels.installed": "TV Channels {v} installed.",
+ "channels.opening": "Opening channel {name}",
+ "core.fr_channels_missing": "TV Channels is not on this TV: install it from the 📺 TV channels card (TV tab).",
+ "core.fr_channels_none": "The latest release has no TV Channels yet."
 }

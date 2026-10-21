@@ -10,6 +10,7 @@ object Voice {
     sealed class Command {
         data class Key(val key: String, val times: Int) : Command()
         data class App(val pkg: String, val name: String) : Command()
+        data class Channel(val name: String) : Command()                  // a TV channel by name: TV Channels finds it itself
         data class Timer(val minutes: Int) : Command()
         data class Scene(val id: String) : Command()
     }
@@ -25,13 +26,20 @@ object Voice {
         Regex("^(quay lai|tro lai|back|go back)$") to "BACK",
         Regex("^(bai tiep|bai sau|tiep theo|next)$") to "NEXT",
         Regex("^(bai truoc|truoc do|previous)$") to "PREV",
+        Regex("^(kenh tiep( theo)?|kenh sau|next channel|channel up)$") to "CH_UP",
+        Regex("^(kenh truoc|kenh truoc do|previous channel|channel down)$") to "CH_DOWN",
         Regex("^(tat tv|tat ti ?vi|tat may|turn off( the)? tv|tv off)$") to "SLEEP",
         Regex("^(bat tv|bat ti ?vi|mo tv|mo ti ?vi|turn on( the)? tv|tv on)$") to "WAKE")
     private val UP = Regex("^(tang am luong|to len|to hon|volume up|louder|turn it up)( (\\d+))?$")
     private val DOWN = Regex("^(giam am luong|nho lai|nho hon|be lai|volume down|quieter|turn it down)( (\\d+))?$")
     private val CANCEL = Regex("^(huy hen gio|bo hen gio|cancel( the)?( sleep)? timer)$")
     private val TIMER = Regex("^(hen gio tat( tv)?|hen gio|tat tv sau|tat sau|sleep in|turn off( the tv)? in|sleep timer) (\\d+) ?(phut|p|minutes?|mins?|gio|tieng|hours?|h)?$")
+    // before OPEN: "mở kênh vtv1" is a channel, not an app called "kenh vtv1"
+    private val CHANNEL = Regex("^((mo|xem|chuyen|bat|chuyen sang|chuyen qua) )?kenh (.+)$|^(open |watch )?channel (.+)$|^tune to (.+)$")
     private val OPEN = Regex("^(mo|bat|vao|chay|xem|open|launch|start|play)( ung dung| app)? (.+)$")
+
+    /** The link TV Channels (dev.tvremote.channels) takes; spaces as %20, not +. */
+    fun channelLink(name: String): String = "tvchannels://find/" + java.net.URLEncoder.encode(name, "UTF-8").replace("+", "%20")
 
     /** [apps]: package to name; [scenes]: id to name. Null means: ask the TV's Assistant. */
     fun parse(text: String, apps: Map<String, String>, scenes: Map<String, String>): Command? {
@@ -46,6 +54,7 @@ object Voice {
             val hours = m.groupValues[5].matches(Regex("gio|tieng|hours?|h"))
             return Command.Timer(minOf((m.groupValues[4].toIntOrNull() ?: 720) * (if (hours) 60 else 1), 720))   // "99999999999 phút": the most, not a crash
         }
+        CHANNEL.matchEntire(s)?.let { m -> return Command.Channel((m.groupValues[3] + m.groupValues[5] + m.groupValues[6]).trim()) }
         OPEN.matchEntire(s)?.let { m ->
             val want = m.groupValues[3]
             val named = apps.entries.map { it to fold(it.value) }.filter { it.second.isNotEmpty() }

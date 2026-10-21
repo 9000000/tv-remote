@@ -25,6 +25,9 @@ object Pins {
     /** The id in a link made by [link] (or typed by a phone: tvchannels://play/HTV7.vn@SD). */
     fun id(u: Uri?): String? = u?.takeIf { it.scheme == "tvchannels" && it.host == "play" }?.encodedPath?.trim('/')?.let { Uri.decode(it) }?.ifEmpty { null }
 
+    /** The text in tvchannels://find/<text>: a channel by the name a person says, for phones and voice. */
+    fun findText(u: Uri?): String? = u?.takeIf { it.scheme == "tvchannels" && it.host == "find" }?.encodedPath?.trim('/')?.let { Uri.decode(it) }?.trim()?.ifEmpty { null }
+
     fun groupLink(id: String): Uri = Uri.parse("tvchannels://group/" + Uri.encode(id))
     fun groupId(u: Uri?): String? = u?.takeIf { it.scheme == "tvchannels" && it.host == "group" }?.encodedPath?.trim('/')?.let { Uri.decode(it) }?.ifEmpty { null }
 

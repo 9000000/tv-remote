@@ -13,6 +13,8 @@
     [/^(quay lai|tro lai|back|go back)$/, 'BACK'],
     [/^(bai tiep|bai sau|tiep theo|next)$/, 'NEXT'],
     [/^(bai truoc|truoc do|previous)$/, 'PREV'],
+    [/^(kenh tiep( theo)?|kenh sau|next channel|channel up)$/, 'CH_UP'],
+    [/^(kenh truoc|kenh truoc do|previous channel|channel down)$/, 'CH_DOWN'],
     [/^(tat tv|tat ti ?vi|tat may|turn off( the)? tv|tv off)$/, 'SLEEP'],
     [/^(bat tv|bat ti ?vi|mo tv|mo ti ?vi|turn on( the)? tv|tv on)$/, 'WAKE'],
   ];
@@ -32,6 +34,9 @@
     if (m) return { kind: 'timer', min: 0 };
     m = /^(hen gio tat( tv)?|hen gio|tat tv sau|tat sau|sleep in|turn off( the tv)? in|sleep timer) (\d+) ?(phut|p|minutes?|mins?|gio|tieng|hours?|h)?$/.exec(s);
     if (m) return { kind: 'timer', min: Math.min(+m[4] * (/^(gio|tieng|hours?|h)$/.test(m[5] || '') ? 60 : 1), 720) };
+    // before the app rule: "mở kênh vtv1" is a channel, not an app called "kenh vtv1"
+    m = /^((mo|xem|chuyen|bat|chuyen sang|chuyen qua) )?kenh (.+)$|^(open |watch )?channel (.+)$|^tune to (.+)$/.exec(s);
+    if (m) return { kind: 'channel', name: (m[3] || m[5] || m[6]).trim() };
     m = /^(mo|bat|vao|chay|xem|open|launch|start|play)( ung dung| app)? (.+)$/.exec(s);
     if (m) {
       const want = m[3], named = (apps || []).map((a) => ({ a, n: fold(a.name) })).filter((x) => x.n);
@@ -42,7 +47,11 @@
     return null;
   }
 
+  // the link TV Channels (dev.tvremote.channels) takes; spaces as %20
+  const channelLink = (name) => 'tvchannels://find/' + encodeURIComponent(name);
+
   root.fold = fold;
+  root.channelLink = channelLink;
   root.voiceCommand = voiceCommand;
-  if (typeof module !== 'undefined') module.exports = { fold, voiceCommand };
+  if (typeof module !== 'undefined') module.exports = { fold, voiceCommand, channelLink };
 })(typeof window !== 'undefined' ? window : globalThis);
