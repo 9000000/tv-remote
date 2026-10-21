@@ -52,6 +52,25 @@ object Thumbs {
         return Src("g:$fileName", boxes = ThumbNames.candidates(fileName).map { ThumbNames.url(base, it) })
     }
 
+    /**
+     * The picture packed in the APK for a catalog game ("thumbs/h_<id>.jpg": the title screen, taken from the game itself), by its catalog id
+     * or by the file name it was downloaded under (the catalog name without odd characters, see LibraryActivity.getRom); null = none packed.
+     * Homebrew is in no libretro-thumbnails repo and its authors' images are not all free to ship, so the title screens are packed: offline, no 404s.
+     */
+    fun packed(c: Context, idOrFile: String): String? {
+        val brew = Catalog.peek(c).optJSONArray("homebrew")
+        var id = idOrFile
+        if (brew != null) {
+            val stem = idOrFile.substringBeforeLast('.').removeSuffix(" (homebrew)")
+            for (i in 0 until brew.length()) {
+                val h = brew.optJSONObject(i) ?: continue
+                if (stem.equals(h.optString("name").replace(Regex("[^A-Za-z0-9 ._-]"), ""), true)) { id = h.optString("id"); break }
+            }
+        }
+        val a = "thumbs/h_$id.jpg"
+        return try { c.assets.open(a).close(); a } catch (e: Exception) { null }
+    }
+
     /** Shows what is on disk at once (off the main thread), then asks the network once if there is no real picture yet. [show] runs on the main thread. */
     fun load(c: Context, s: Src, show: (Bitmap, String) -> Unit) {
         val app = c.applicationContext
