@@ -70,6 +70,7 @@
   #stock .c { flex: none; width: 196px; height: 112px; border-radius: 10px; position: relative; display: grid; place-items: center; font-size: 20px; font-weight: 700; }
   #stock .c .tag { top: 6px; right: 6px; font-size: 12px; padding: 1px 7px; }
   #stock .promo { margin-top: 16px; background: #2a2d38; border-radius: 12px; padding: 14px 22px; font-size: 20px; display: flex; justify-content: space-between; } #stock .promo u { color: #8ab4ff; }
+  #stock .ill { position: absolute; top: 30px; right: 54px; font-size: 18px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; background: #fff; color: #14161c; padding: 5px 14px; border-radius: 99px; }
   #stock .note { position: absolute; bottom: 16px; left: 54px; font-size: 15px; opacity: .55; }
   .tvcap { margin: 8px 2px 0; color: var(--muted); font-size: 13px; }
   @media (max-width: 760px) { .tvcap { text-align: center; } }
@@ -301,9 +302,11 @@
     if (t.dataset.z !== 'top') hold = setTimeout(function () { held = true; hold = null; TVKit.handler('menu'); }, 520);
   });
   $('#scr').addEventListener('pointerup', function (e) { if (hold) { clearTimeout(hold); hold = null; } });
+  $('#scr').addEventListener('pointercancel', function () { if (hold) { clearTimeout(hold); hold = null; } });
   $('#scr').addEventListener('pointerleave', function () { if (hold) { clearTimeout(hold); hold = null; } });
   $('#scr').addEventListener('click', function (e) {
     if (held) { held = false; return; }
+    if (hold) { clearTimeout(hold); hold = null; }
     var o = e.target.closest('[data-oi]');
     if (o && S.over) { S.over.i = +o.dataset.oi; if (S.over.kind === 'cz') { var r = czRows()[S.over.i]; r.ch(1); if (r.done) S.over = null; overlay(); } else TVKit.handler('ok'); return; }
     if (S.over && !e.target.closest('.sheet')) { S.over = null; overlay(); return; }
@@ -331,6 +334,7 @@
       '<h5>' + T('Đề xuất cho bạn', 'Recommended for you') + '</h5><div class="row">' + posters + '</div>' +
       '<h5>' + T('Ứng dụng đề xuất', 'Suggested apps') + '</h5><div class="row">' + posters2 + '</div>' +
       '<div class="promo"><span>' + T('Nâng cấp lên Premium', 'Upgrade to Premium') + '</span><u>' + T('Tìm hiểu thêm', 'Learn more') + '</u></div>' +
+      '<div class="ill">' + T('Minh hoạ', 'Illustration') + '</div>' +
       '<div class="note">' + T('Ví dụ minh họa: màn hình chủ mặc định của nhiều TV có quảng cáo và đề xuất trả phí.', 'Illustration: many TVs\' stock home screens carry ads and paid suggestions.') + '</div>';
   }
   defaults(); TVKit.mount($('#tv'), $('#scr')); draw(); setInterval(clock, 20000);
