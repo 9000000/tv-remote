@@ -9,7 +9,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 - TV Home dùng font riêng (Inter, đủ dấu tiếng Việt): TV nào cũng hiện chữ giống nhau, không theo font của hãng. Thẻ âm lịch ghi gọn "12 tháng 9" kèm tên năm, hình trăng đêm nay, và hai cột "3 ngày tới Rằm · 108 ngày tới Tết" (trước bị xuống dòng, trống bên phải).
 - TV Home: sửa âm lịch lệch một ngày ở khoảng 2% số tháng (vd. tháng 2 nhuận 2023 bắt đầu 22/3, tháng 7 năm 2026 bắt đầu 13/8): một dấu cộng/trừ sai trong công thức tính trăng non.
-- App điện thoại: **Chuột bay** (More keys): cầm điện thoại như điều khiển, con quay hồi chuyển di con trỏ chuột thật trên TV; chạm = nhấp, hai ngón kéo = cuộn, có Back / Home và Tạm dừng. TV Android dùng chuột HID ảo qua ADB (không cần hiện hình), TV LG dùng con trỏ Magic Remote.
+- App điện thoại: **Air Mouse** (More keys): cầm điện thoại như điều khiển, gyroscope di con trỏ chuột thật trên TV; chạm để click, 2 ngón kéo để cuộn, có Back / Home và Tạm dừng. TV Android dùng chuột HID ảo qua ADB (không cần hiện hình), TV LG dùng con trỏ Magic Remote.
 - Sau khi TV cập nhật firmware, app TV tự tắt lại những app Tối ưu TV đã tắt mà bản cập nhật bật lại (lúc TV khởi động và mỗi ngày một lần), đặt lại TV Home làm màn hình chính nếu bị đổi, và báo một dòng trên màn hình. Chỉ đụng app trong danh sách của Tối ưu TV; app nào bị bật lại hai lần trong một ngày thì bỏ qua. Hoàn tác thì dừng hẳn.
 - Tối ưu TV gặp TV Home cũ trên TV thì cập nhật lên bản mới nhất trước khi đổi màn hình chính (cập nhật lỗi thì dùng bản đang có).
 - App điện thoại / máy tính cũ hơn TV Home không còn làm mất widget mới của TV Home khi bật thêm hay đổi cỡ một widget.
