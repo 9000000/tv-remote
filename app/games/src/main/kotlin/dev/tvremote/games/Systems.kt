@@ -7,14 +7,15 @@ import java.io.File
 /** What the library knows: file extension -> system. A system without a core yet is hidden (add its libretro core to jniLibs and set [Sys.core]). */
 object Systems {
     class Sys(val id: String, val label: String, val color: Int, val core: String?, val exts: List<String>, val buttons: List<String>, val pad: String = id, val analog: Boolean = false,  // pad: the phone's layout
-              val need: org.json.JSONObject? = null)                // need: the catalog's entry when the core is downloaded on first use
+              val need: org.json.JSONObject? = null,
+              val repo: String = "")                                // repo: the system's libretro-thumbnails repo (box art)                // need: the catalog's entry when the core is downloaded on first use
 
     private val PAD = listOf("A", "B", "START", "SELECT")
     val ALL = listOf(
-        Sys("nes", "NES", 0xFFE11D48.toInt(), "libfceumm_libretro_android.so", listOf("nes"), PAD),
-        Sys("snes", "SNES", 0xFF7C3AED.toInt(), null, listOf("sfc", "smc"), PAD + listOf("X", "Y", "L", "R")),
-        Sys("gba", "GBA", 0xFF2563EB.toInt(), null, listOf("gba"), PAD + listOf("L", "R")),
-        Sys("psx", "PS1", 0xFF64748B.toInt(), null, listOf("cue", "chd", "pbp"), PAD + listOf("X", "Y", "L", "R", "L2", "R2"), pad = "ps", analog = true),
+        Sys("nes", "NES", 0xFFE11D48.toInt(), "libfceumm_libretro_android.so", listOf("nes"), PAD, repo = "Nintendo_-_Nintendo_Entertainment_System"),
+        Sys("snes", "SNES", 0xFF7C3AED.toInt(), null, listOf("sfc", "smc"), PAD + listOf("X", "Y", "L", "R"), repo = "Nintendo_-_Super_Nintendo_Entertainment_System"),
+        Sys("gba", "GBA", 0xFF2563EB.toInt(), null, listOf("gba"), PAD + listOf("L", "R"), repo = "Nintendo_-_Game_Boy_Advance"),
+        Sys("psx", "PS1", 0xFF64748B.toInt(), null, listOf("cue", "chd", "pbp"), PAD + listOf("X", "Y", "L", "R", "L2", "R2"), pad = "ps", analog = true, repo = "Sony_-_PlayStation"),
     )
 
     private val LAYOUT_BUTTONS = mapOf("nes" to PAD, "snes" to PAD + listOf("X", "Y", "L", "R"), "gba" to PAD + listOf("L", "R"),
@@ -29,7 +30,7 @@ object Systems {
             val lay = e.optString("layout", s.pad)
             val ex = e.optJSONArray("exts")?.let { a -> (0 until a.length()).map { a.getString(it).lowercase() } } ?: s.exts
             val over = Catalog.peek(ctx).optJSONObject("layouts")?.optJSONObject(lay)?.optJSONArray("buttons")?.let { a -> (0 until a.length()).map { a.getString(it) } }
-            Sys(s.id, s.label, s.color, e.optString("file", "${s.id}_libretro_android.so"), ex, over ?: LAYOUT_BUTTONS[lay] ?: s.buttons, lay, s.analog, e)
+            Sys(s.id, s.label, s.color, e.optString("file", "${s.id}_libretro_android.so"), ex, over ?: LAYOUT_BUTTONS[lay] ?: s.buttons, lay, s.analog, e, s.repo)
         }
     }
 

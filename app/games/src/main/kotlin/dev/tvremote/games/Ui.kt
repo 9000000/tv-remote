@@ -40,6 +40,9 @@ fun Context.qrView(url: String, sizeDp: Int) = ImageView(this).apply {
 
 fun Context.label(text: String, sp: Float, color: Int = Color.WHITE) = TextView(this).apply {
     this.text = text; textSize = sp; setTextColor(color); gravity = Gravity.CENTER
+    // wrap, never the vertical LinearLayout's default match_parent: inside a wrap_content panel that made every label as wide as the
+    // QR beside it (150 dp), so "Scan to add games" and the link wrapped and were clipped
+    layoutParams = LinearLayout.LayoutParams(-2, -2)
 }
 
 /** A big focusable menu button: dark, white edge + light fill under focus. */
@@ -57,5 +60,5 @@ fun Context.addPanel(server: GameServer): LinearLayout = LinearLayout(this).appl
     orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
     addView(label(getString(R.string.scan_add), 28f))
     addView(qrView(server.addUrl(), 150).apply { (layoutParams as LinearLayout.LayoutParams).setMargins(0, dp(14), 0, dp(10)) })
-    addView(label(server.addUrl().substringAfter("//").substringBefore('?'), 18f, 0xFFAAB0C0.toInt()))
+    addView(label(server.addUrl().substringBefore("/add"), 18f, 0xFFAAB0C0.toInt()))
 }

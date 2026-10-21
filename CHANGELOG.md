@@ -25,6 +25,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - App điện thoại / máy tính cũ hơn TV Home không còn làm mất widget mới của TV Home khi bật thêm hay đổi cỡ một widget.
 - TV Home: widget lịch tháng thiết kế lại, gọn kiểu Apple: chỉ dương lịch, hôm nay khoanh đỏ đúng giữa số, Chủ nhật không còn đỏ chói (ngày âm xem ở widget Lịch âm).
 - Bảo trì ban đêm: mỗi đêm 2-5 giờ sáng, khi TV ở chế độ chờ và không phát gì, app TV dọn cache của mọi app, biên dịch lại vài app dùng nhiều nhất (mở nhanh hơn buổi sáng) và tắt các tiến trình nền; màn hình bật lên là dừng ngay. Tab Sức khỏe có một dòng kết quả, vd. "Đêm qua: dọn 1,2 GB, tối ưu 6 app".
+- TV Games: **ô game có hình**: ảnh bìa hộp từ libretro-thumbnails (kho RetroArch dùng, theo tên file ROM), không có thì ảnh chụp màn hình lúc chơi (chụp sau vài giây và khi thoát), game web lấy og:image / icon của trang (hoặc `img` trong games.json), đố vui có ảnh riêng; chưa có gì thì ô thiết kế sẵn (màu hệ máy + chữ cái đầu). Lưu trong `files/thumbs` đã thu nhỏ đúng cỡ ô, tải nền (tối đa 3 luồng), 404 nhớ một tuần. games.json có thể thêm `thumbs` cho từng core.
+- TV Games: sửa **bảng QR "Quét để thêm game" bị cắt chữ** (tiêu đề và địa chỉ chỉ còn nửa) trên TV 720p: chữ bị ép bằng bề rộng mã QR; nay hiện đủ tiêu đề và đường dẫn `http://IP:cổng`.
 
 **English**
 - TV Channels: **manage favourites and groups from the computer / phone / the TV's web page**: TV tab → TV channels card → *Manage channels*: find channels by country, category or name (200 shown at a time, type to narrow), ☆ favourite, ＋ put in a group, new group, rename, delete, reorder with ↑↓; saved at once, a list open on the TV updates right away. TV Channels has its own receiver (`ChannelsReceiver`, only the shell / ADB can call it); an older TV Channels without it gets an Update offer (favourites and groups stay). Needs a newer TV Channels.
@@ -45,6 +47,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - A phone / computer app older than TV Home no longer drops TV Home's newer widgets when turning one on or resizing one.
 - TV Home: the month calendar widget redesigned, cleaner, Apple-like: solar days only, today circled in red right on the number, Sundays no longer bright red (the lunar date is the Lunar date widget's).
 - Night maintenance: every night between 02:00 and 05:00, with the TV in standby and nothing playing, TV Setup trims every app's cache, recompiles the few most-used apps (faster to open in the morning) and kills background processes; switching the screen on stops it at once. The Health tab shows one line with the result, e.g. "Last night: freed 1.2 GB, optimised 6 apps".
+- TV Games: **game tiles have a picture**: box art from libretro-thumbnails (the repos RetroArch uses, by the ROM's file name), else a snapshot of the screen taken while playing (a few seconds in, and on leaving), web games use the page's og:image / icon (or `img` in games.json), the quiz has its own; with nothing yet, a designed tile (the system's colour + the game's initials). Kept scaled to the tile in `files/thumbs`, fetched in the background (3 at most), a 404 is remembered a week. games.json may add `thumbs` per core.
+- TV Games: fixed the **"Scan to add games" QR panel clipping its words** (the title and the address cut in half) on a 720p TV: the text was squeezed to the QR's width; now the full title and `http://IP:port` show.
 
 ## 0.16.0 - 2026-10-21
 

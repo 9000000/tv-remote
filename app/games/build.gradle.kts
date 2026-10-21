@@ -48,6 +48,7 @@ dependencies {
     implementation("com.github.swordfish90:libretrodroid:0.13.2")
     implementation("androidx.activity:activity:1.9.3")
     implementation("androidx.webkit:webkit:1.12.1")                  // document-start script, limited to the game page's origin
+    testImplementation("junit:junit:4.13.2")                          // ./gradlew :games:testDebugUnitTest (ThumbNames)
 }
 
 // Qr.kt only needs android.graphics, so the one file is copied from :shared (a srcDir of the whole folder would pull the web server in)

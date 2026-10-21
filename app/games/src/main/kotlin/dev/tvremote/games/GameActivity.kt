@@ -31,6 +31,7 @@ class GameActivity : ComponentActivity() {
     }
 
     private var cancelled = false
+    private var startedAt = Long.MAX_VALUE
     private var downloading = false
 
     /** The core is not here yet (the catalog has it): fetch it with a progress card, Back cancels. */
@@ -79,6 +80,7 @@ class GameActivity : ComponentActivity() {
             // fceumm cannot tell a PAL-only homebrew from NTSC by itself: Region reads the ROM, never its name
             if (sys.id == "nes") variables = arrayOf(Variable("fceumm_region", Region.of(this@GameActivity, file)))
         }
+        startedAt = System.currentTimeMillis()
         retro = GLRetroView(this, data)
         lifecycle.addObserver(retro)                                  // GLRetroView is a LifecycleObserver; it also needs onCreate
         retro.onCreate(this)
@@ -99,6 +101,24 @@ class GameActivity : ComponentActivity() {
         server.onKey = { port, action, code -> retro.sendKeyEvent(action, code, port) }
         server.onPlayers = { l -> runOnUiThread { cards.setPlayers(l) } }
         server.onAdded = { }
+        snapLoop.removeCallbacksAndMessages(null); snapLoop.postDelayed(snapTick, 5000)
+    }
+
+    // a picture of the play for the library's tile (see Thumbs.snapshot): 5 s in, then every 40 s while the game runs
+    private val snapLoop = android.os.Handler(android.os.Looper.getMainLooper())
+    private val snapTick = object : Runnable {
+        override fun run() {
+            if (!::retro.isInitialized || isDestroyed) return
+            if (!cards.paused) Thumbs.snapshot(this@GameActivity, retro, "g:" + file.name)
+            snapLoop.postDelayed(this, 40_000)
+        }
+    }
+
+    /** The last picture of the game becomes its tile in the library (when there is no box art): taken while the surface is still there. */
+    override fun onPause() {
+        snapLoop.removeCallbacksAndMessages(null)
+        if (::retro.isInitialized && System.currentTimeMillis() - startedAt > 3000) Thumbs.snapshot(this, retro, "g:" + file.name, 400)
+        super.onPause()
     }
 
     override fun onDestroy() { cancelled = true; if (::server.isInitialized) GameServer.release(); super.onDestroy() }
