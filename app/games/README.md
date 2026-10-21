@@ -9,9 +9,9 @@ Games on the TV with phones as pads, no extra hardware. Package `dev.tvremote.ga
 ## Cores
 | Core | Source | Licence | Where |
 |---|---|---|---|
-| FCEUmm (NES) | libretro buildbot (`buildbot.libretro.com`, android arm64-v8a), upstream https://github.com/libretro/libretro-fceumm | GPL-2.0 | `src/main/jniLibs/arm64-v8a/libfceumm_libretro_android.so` |
+| FCEUmm (NES) | libretro buildbot (`buildbot.libretro.com`, android arm64-v8a and armeabi-v7a, fetched 2026-10-21), upstream https://github.com/libretro/libretro-fceumm | GPL-2.0 | `src/main/jniLibs/{arm64-v8a,armeabi-v7a}/libfceumm_libretro_android.so` |
 
-arm64 only for now. Record the exact buildbot build date when the core is next refreshed. Adding a system = one core `.so` + a line in `Systems.kt` (and its pad look in `assets/pad/pad.js`).
+64- and 32-bit ARM (32-bit boxes such as the FPT Play 650). Record the exact buildbot build date when the core is next refreshed. Adding a system = one core `.so` + a line in `Systems.kt` (and its pad look in `assets/pad/pad.js`).
 
 ## Bundled ROM
 `assets/homebrew/roborun.nes`: "Robo Run NES" by Haseeb (2021), GPL-3.0 (`assets/homebrew/LICENSE-roborun.txt`), source https://github.com/heaven-hm/roborun-nes.

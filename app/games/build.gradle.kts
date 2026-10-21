@@ -16,7 +16,7 @@ android {
         targetSdk = 34
         versionName = appVersion
         versionCode = appVersion.split(".").map { it.toInt() }.let { 100000 + it[0] * 10000 + it[1] * 100 + it[2] }
-        ndk { abiFilters += listOf("arm64-v8a") }                      // the spike has the arm64 core only
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }       // 32-bit boxes too (an FPT Play 650 is armeabi-v7a only)
     }
     signingConfigs {
         create("release") {
