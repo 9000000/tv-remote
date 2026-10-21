@@ -20,6 +20,7 @@
     <string name="cant_open">Không mở được game này</string>
     <string name="quiz_name">Đố vui</string>
     <string name="padtest_name">Kiểm tra tay cầm</string>
+    <string name="in_library">Đang ở danh sách game</string>
     <string name="runs">Trang game: %1$s</string>
     <string name="press_ok_web">Nhấn OK để ẩn bảng này</string>
     <string name="core_none">Không có core cho thiết bị này</string>

@@ -95,6 +95,10 @@ class GameServer private constructor(private val ctx: Context) {
         }
         val code = NAV[name] ?: return
         val a = top?.get() ?: return
+        if (name == "BACK" && a is LibraryActivity) {                      // Back here would leave TV Games and strand the pad (the TV's own remote still can)
+            a.runOnUiThread { android.widget.Toast.makeText(a, a.getString(R.string.in_library), android.widget.Toast.LENGTH_SHORT).show() }
+            return
+        }
         a.runOnUiThread {
             fun ev(act: Int) = SystemClock.uptimeMillis().let { KeyEvent(it, it, act, code, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0, 0, InputDevice.SOURCE_KEYBOARD) }
             if (!a.dispatchKeyEvent(ev(KeyEvent.ACTION_DOWN)) && code in FOCUS) {

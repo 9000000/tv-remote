@@ -3,7 +3,7 @@ html,body{margin:0;height:100%;background:#0b0d12;color:#e8ebf3;font:600 16px sy
 body{display:flex;flex-direction:column;padding:2.2vh 2.5vw}
 header{text-align:center;flex:none}
 h1{margin:0;font-size:4.2vh}
-#hint{margin:.6vh 0 1.6vh;font-size:2.4vh;color:#aab0c0}
+#hint{flex:none;margin:1.4vh 0 0;text-align:center;font-size:2.4vh;color:#aab0c0}
 #players{flex:1;min-height:0;display:flex;gap:1.6vw;align-items:center;justify-content:center}
 .pl{flex:1;max-width:60vh;min-width:0;background:#141925;border-radius:2vh;padding:1.6vh 1.2vw 1.4vh;border:.5vh solid var(--c)}
 .hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2vh;font-size:2.6vh}

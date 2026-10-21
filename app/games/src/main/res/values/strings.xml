@@ -20,6 +20,7 @@
     <string name="cant_open">Could not open this game</string>
     <string name="quiz_name">Quiz</string>
     <string name="padtest_name">Pad test</string>
+    <string name="in_library">You are in the game list</string>
     <string name="runs">Game page: %1$s</string>
     <string name="press_ok_web">Press OK to hide this</string>
     <string name="core_none">No core for this device</string>
