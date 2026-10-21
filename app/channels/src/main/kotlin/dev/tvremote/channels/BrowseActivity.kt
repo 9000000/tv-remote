@@ -81,6 +81,7 @@ class BrowseActivity : Activity() {
         val body = FrameLayout(this)
         grid = RecyclerView(this).apply {
             adapter = cards; clipToPadding = false; setPadding(d(6), d(10), d(6), d(40)); itemAnimator = null
+            setHasFixedSize(true); setItemViewCacheSize(10); recycledViewPool.setMaxRecycledViews(0, 24)   // size does not depend on the cards; scrolling back finds them bound
             layoutManager = GridLayoutManager(this@BrowseActivity, columns())
             descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
         }
@@ -419,7 +420,9 @@ class BrowseActivity : Activity() {
 
     override fun onKeyLongPress(k: Int, e: KeyEvent) = onKeyDown(k, e)
 
-    private val guides = java.util.concurrent.Executors.newFixedThreadPool(2)
+    private val guides = java.util.concurrent.Executors.newFixedThreadPool(2) { r ->
+        Thread { android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND + 4); r.run() }
+    }
     private val asking = HashSet<String>()
 
     /** The card's "on now" line: asked for the cards drawn, two at a time, then the card is drawn again. */
@@ -430,7 +433,7 @@ class BrowseActivity : Activity() {
             val shows = Guide.of(this, ch)
             main.post {
                 asking.remove(id)
-                if (!isDestroyed && Guide.now(shows) != null) shown.indexOfFirst { it.first().id == id }.takeIf { it >= 0 }?.let { cards.notifyItemChanged(it) }
+                if (!isDestroyed && Guide.now(shows) != null) shown.indexOfFirst { it.first().id == id }.takeIf { it >= 0 }?.let { cards.notifyItemChanged(it, cards.LINE) }
             }
         }
     }
@@ -439,6 +442,7 @@ class BrowseActivity : Activity() {
 
     /** Stable ids: a list drawn again (a favourite or a group changed) keeps the focus on the same channel, not on whatever card took its place. */
     private inner class Cards : RecyclerView.Adapter<Cards.H>() {
+        val LINE = "line"
         init { setHasStableIds(true) }
         override fun getItemId(i: Int) = shown[i].first().id.hashCode().toLong()   // one card per id ([byChannel])
         inner class H(v: View) : RecyclerView.ViewHolder(v) {
@@ -455,7 +459,9 @@ class BrowseActivity : Activity() {
         override fun onCreateViewHolder(p: ViewGroup, t: Int): H {
             val c = this@BrowseActivity
             val d = { v: Number -> Ui.dp(c, v).toInt() }
-            val card = LinearLayout(c).apply {
+            val card = object : LinearLayout(c) {
+                override fun hasOverlappingRendering() = false           // a dimmed (dead) card is not drawn into an off-screen layer
+            }.apply {
                 orientation = LinearLayout.VERTICAL; isFocusable = true; isClickable = true; isLongClickable = true
                 setPadding(d(6), d(6), d(6), d(8))
                 background = Ui.states(c, Color.TRANSPARENT, Ui.dp(c, 16))
@@ -485,20 +491,33 @@ class BrowseActivity : Activity() {
             val ch = shown[i]; val c = ch.first()
             h.name.text = c.name
             h.letters.text = Ui.initials(c.name)
-            h.letters.visibility = View.INVISIBLE
             Logos.into(h.logo, c.logo, 280) { got -> h.letters.visibility = if (got) View.INVISIBLE else View.VISIBLE }
+            line(h, ch)
+            h.q.text = c.quality.removeSuffix("p").let { if (it.isEmpty()) "" else if (it.toIntOrNull()?.let { n -> n >= 720 } == true) if (it == "2160") "4K" else "HD" else "SD" }
+            Ui.show(h.q, c.quality.isNotEmpty())
+            Ui.show(h.star, group != FAVS && Store.isFavourite(this@BrowseActivity, c.id))
+            h.itemView.setOnClickListener { play(ch) }
+            h.itemView.setOnLongClickListener { actions(ch); true }
+            ch.forEach { s -> Probe.check(this@BrowseActivity, s) { val at = shown.indexOf(ch); if (at >= 0) notifyItemChanged(at, LINE) } }
+            val ahead = columns()                                     // the next two rows' logos start now, behind the ones on screen
+            for (k in i + 1..minOf(i + 2 * ahead, shown.size - 1)) Logos.prefetch(this@BrowseActivity, shown[k].first().logo)
+        }
+
+        /** Only the line under the name and the dimming: what a stream check or the guide changes (the logo is not touched). */
+        override fun onBindViewHolder(h: H, i: Int, payloads: MutableList<Any>) {
+            if (payloads.isEmpty()) onBindViewHolder(h, i) else line(h, shown[i])
+        }
+
+        override fun onViewRecycled(h: H) { Logos.cancel(h.logo) }
+
+        private fun line(h: H, ch: List<Channel>) {
+            val c = ch.first()
             val dead = ch.all { Store.alive(this@BrowseActivity, it.url) == false }
             val on = Guide.known(c.id)?.let { Guide.now(it) }
             h.sub.text = (on?.title ?: groupName(c.group)).let { if (dead) "● $it" else it }
             if (on == null && Guide.known(c.id) == null) guideFor(ch)
-            h.q.text = c.quality.removeSuffix("p").let { if (it.isEmpty()) "" else if (it.toIntOrNull()?.let { n -> n >= 720 } == true) if (it == "2160") "4K" else "HD" else "SD" }
-            Ui.show(h.q, c.quality.isNotEmpty())
             h.sub.setTextColor(if (dead) Ui.BAD else Ui.DIM)
             h.itemView.alpha = if (dead) 0.6f else 1f
-            Ui.show(h.star, group != FAVS && Store.isFavourite(this@BrowseActivity, c.id))
-            h.itemView.setOnClickListener { play(ch) }
-            h.itemView.setOnLongClickListener { actions(ch); true }
-            ch.forEach { s -> Probe.check(this@BrowseActivity, s) { val at = shown.indexOf(ch); if (at >= 0) notifyItemChanged(at) } }
         }
     }
 

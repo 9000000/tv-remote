@@ -1,37 +1,133 @@
 package dev.tvremote.channels
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Handler
 import android.os.Looper
 import android.util.LruCache
 import android.widget.ImageView
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.Executors
 
-/** Channel logos: read off the main thread, scaled down to the card while decoded, kept in memory (~8 MB). */
+/**
+ * Channel logos. A logo is fetched and decoded off the main thread by 3 low-priority workers, scaled down to the card's size
+ * (not the picture's), kept in memory (a share of the app's heap) and on disk as that small picture, so a list opened again shows
+ * its logos at once. The newest request goes first (what is on screen now, not what was scrolled past), a card scrolled away
+ * cancels its request, and the same logo wanted by many cards is fetched once. [prefetch] warms the next rows at a lower priority.
+ */
 object Logos {
-    private val pool = Executors.newFixedThreadPool(3)
+    private const val SIDE = 240                                      // longest side kept: the card's logo is ~160 px on a 1080p TV
+    private const val MAX_BYTES = 3_000_000                           // a logo larger than this is not a logo
+    private const val DISK_MAX = 24L * 1024 * 1024
     private val main = Handler(Looper.getMainLooper())
-    private val cache = object : LruCache<String, Bitmap>(8 * 1024 * 1024) { override fun sizeOf(k: String, b: Bitmap) = b.byteCount }
+    private var cache: LruCache<String, Bitmap>? = null
+    private var dir: File? = null
     private val missing = HashSet<String>()
+    private val pending = HashMap<String, Job>()                      // main thread only
+    private val waiting = java.util.WeakHashMap<ImageView, Job>()     // the request each card waits for (main thread only)
+    private var seq = 0L
 
-    fun get(url: String): Bitmap? = cache.get(url)
+    private class Job(val url: String, var prio: Int) : Runnable, Comparable<Job> {
+        val views = ArrayList<ImageView>(); val ats = ArrayList<(Boolean) -> Unit>(); var seq = 0L
+        @Volatile var started = false
+        @Volatile var cancelled = false
+        override fun compareTo(o: Job) = if (prio != o.prio) o.prio - prio else java.lang.Long.compare(o.seq, seq)   // newest first
+        override fun run() { if (!cancelled) work(this) }
+    }
 
-    /** [url] into [v] (tagged, so a recycled card does not get another channel's logo); [has] says whether it got one. */
-    fun into(v: ImageView, url: String, maxW: Int, has: (Boolean) -> Unit) {
-        v.tag = url
-        cache.get(url)?.let { v.setImageBitmap(it); has(true); return }
-        v.setImageDrawable(null)
-        if (url.isEmpty() || synchronized(missing) { url in missing }) { has(false); return }
-        pool.execute {
-            val b = try { load(url, maxW) } catch (e: Throwable) { null }
-            if (b != null) cache.put(url, b) else synchronized(missing) { missing.add(url) }
-            main.post { if (v.tag == url) { if (b != null) v.setImageBitmap(b); has(b != null) } }
+    private val pool = java.util.concurrent.ThreadPoolExecutor(3, 3, 0L, java.util.concurrent.TimeUnit.SECONDS,
+        java.util.concurrent.PriorityBlockingQueue<Runnable>()) { r ->
+        Thread { android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND + 4); r.run() }   // the screen's frames come first
+    }
+
+    private fun init(c: Context) {
+        if (cache != null) return
+        synchronized(this) {
+            if (cache != null) return
+            val am = c.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+            val mb = (am.memoryClass / 6).coerceIn(6, 24)             // ~a sixth of the heap: a weak TV keeps few, a strong one many
+            dir = File(c.cacheDir, "logos").also { it.mkdirs() }
+            cache = object : LruCache<String, Bitmap>(mb * 1024 * 1024) { override fun sizeOf(k: String, b: Bitmap) = b.byteCount }
+            Thread { android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND); trim() }.start()
         }
     }
 
+    fun get(url: String): Bitmap? = cache?.get(url)
+
+    /**
+     * [url] into [v] (tagged, so a recycled card does not get another channel's logo); [has] says whether it got one (called at
+     * once for a logo kept in memory, else when it arrives; false while it is on its way is never said: the card shows its letters).
+     */
+    fun into(v: ImageView, url: String, maxW: Int, has: (Boolean) -> Unit) {
+        init(v.context.applicationContext)
+        if (v.tag == url && v.drawable != null) { has(true); return }   // rebound to the same logo: nothing to do
+        cancel(v)
+        v.tag = url
+        cache?.get(url)?.let { v.setImageBitmap(it); has(true); return }
+        v.setImageDrawable(null)
+        if (url.isEmpty() || synchronized(missing) { url in missing }) { has(false); return }
+        has(false)                                                    // the letters show while it comes
+        val j = pending[url]?.takeIf { !it.cancelled } ?: Job(url, 1).also { pending[url] = it; it.seq = ++seq; pool.execute(it) }
+        if (j.prio < 1) { pool.remove(j); j.prio = 1; j.seq = ++seq; pool.execute(j) }   // it was only a prefetch: on screen now
+        j.views.add(v); j.ats.add(has); waiting[v] = j
+    }
+
+    /** A card that is no longer showing its logo (scrolled away or recycled): its request is dropped if no one else wants it. */
+    fun cancel(v: ImageView) {
+        val j = waiting.remove(v) ?: return
+        val i = j.views.indexOf(v)
+        if (i >= 0) { j.views.removeAt(i); j.ats.removeAt(i) }
+        if (j.views.isEmpty() && !j.started) { j.cancelled = true; pool.remove(j); pending.remove(j.url) }
+    }
+
+    /** Warms the cache for logos about to come on screen (lowest priority; skipped when kept or already asked). */
+    fun prefetch(c: Context, url: String) {
+        init(c.applicationContext)
+        if (url.isEmpty() || cache?.get(url) != null || pending.containsKey(url) || synchronized(missing) { url in missing }) return
+        Job(url, 0).also { it.seq = ++seq; pending[url] = it; pool.execute(it) }
+    }
+
+    private fun work(j: Job) {
+        j.started = true
+        val b = try { fromDisk(j.url) ?: fromNet(j.url) } catch (e: Throwable) { null }
+        if (b != null) cache?.put(j.url, b) else synchronized(missing) { missing.add(j.url) }
+        main.post {
+            pending.remove(j.url)
+            for (i in j.views.indices) {
+                val v = j.views[i]
+                if (waiting[v] === j) waiting.remove(v)
+                if (v.tag == j.url) { if (b != null) v.setImageBitmap(b); j.ats[i](b != null) }
+            }
+        }
+    }
+
+    private fun file(url: String) = File(dir, Integer.toHexString(url.hashCode()) + "_" + url.length)
+
+    private fun fromDisk(url: String): Bitmap? {
+        val f = file(url).takeIf { it.exists() } ?: return null
+        return BitmapFactory.decodeFile(f.path).also { if (it != null) f.setLastModified(System.currentTimeMillis()) else f.delete() }
+    }
+
+    private fun fromNet(url: String): Bitmap? {
+        val b = load(url, SIDE) ?: return null
+        val big = maxOf(b.width, b.height)
+        val out = if (big > SIDE * 5 / 4) Bitmap.createScaledBitmap(b, b.width * SIDE / big, b.height * SIDE / big, true) else b
+        try { file(url).outputStream().use { out.compress(Bitmap.CompressFormat.PNG, 100, it) } } catch (e: Throwable) {}
+        return out
+    }
+
+    /** The oldest files go once the folder is over [DISK_MAX]. */
+    private fun trim() {
+        val fs = dir?.listFiles() ?: return
+        var sum = fs.sumOf { it.length() }
+        if (sum <= DISK_MAX) return
+        for (f in fs.sortedBy { it.lastModified() }) { if (sum <= DISK_MAX * 3 / 4) break; sum -= f.length(); f.delete() }
+    }
+
+    /** The picture at [url], decoded no larger than needed for [maxW] (a power-of-two sample), not kept: for the one-off uses. */
     fun load(url: String, maxW: Int): Bitmap? {
         val bytes = fetch(url, 6000) ?: return null
         val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -45,7 +141,7 @@ object Logos {
         val k = URL(url).openConnection() as HttpURLConnection
         k.connectTimeout = timeout; k.readTimeout = timeout; k.instanceFollowRedirects = true
         k.setRequestProperty("User-Agent", "TVChannels/1 (Android; https://tvremote.pages.dev)")   // Wikimedia (many logos) asks for a named agent
-        return try { if (k.responseCode == 200) k.inputStream.readBytes() else null } finally { k.disconnect() }
+        return try { if (k.responseCode == 200 && k.contentLength <= MAX_BYTES) k.inputStream.readBytes() else null } finally { k.disconnect() }
     }
 }
 
@@ -55,7 +151,9 @@ object Logos {
  * (a plain TS or MP4 stream). It only reads the first bytes; nothing is played.
  */
 object Probe {
-    private val pool = Executors.newFixedThreadPool(4)
+    private val pool = Executors.newFixedThreadPool(2) { r ->      // two, behind the frames: each asks over TLS, which is real work on a weak chip
+        Thread { android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND + 4); r.run() }
+    }
     private val main = Handler(Looper.getMainLooper())
     private val asked = HashMap<String, Long>()                       // url -> when: asked again once its answer (6 hours) is old
 
