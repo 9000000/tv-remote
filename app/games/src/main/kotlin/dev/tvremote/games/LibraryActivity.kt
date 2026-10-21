@@ -76,6 +76,15 @@ class LibraryActivity : ComponentActivity() {
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() { if (overlay != null) closeOverlay() else super.onBackPressed() }
 
+    /** The Add-game card answers Back / Escape / a pad's B itself (down and up both eaten), so none of them reaches the launcher. */
+    override fun dispatchKeyEvent(ev: android.view.KeyEvent): Boolean {
+        if (overlay != null && (ev.keyCode == android.view.KeyEvent.KEYCODE_BACK || ev.keyCode == android.view.KeyEvent.KEYCODE_ESCAPE || ev.keyCode == android.view.KeyEvent.KEYCODE_BUTTON_B)) {
+            if (ev.action == android.view.KeyEvent.ACTION_UP) closeOverlay()
+            return true
+        }
+        return super.dispatchKeyEvent(ev)
+    }
+
     private fun closeOverlay() { overlay?.let { root.removeView(it) }; overlay = null }
 
     private fun reload() {
@@ -312,16 +321,17 @@ class LibraryActivity : ComponentActivity() {
     }
 
     private fun showOverlay() {
-        var b: View? = null
+        var close: View? = null
         val v = FrameLayout(this).apply {
             setBackgroundColor(0xE60B0D12.toInt()); isClickable = true
             addView(LinearLayout(this@LibraryActivity).apply {
                 orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
-                addView(addPanel(server)); addView(rotateButton(server) { closeOverlay(); showOverlay() }.also { b = it })
+                addView(addPanel(server)); addView(rotateButton(server) { closeOverlay(); showOverlay() })
+                addView(menuButton(getString(R.string.close), 360, 52, 20f) { closeOverlay() }.also { close = it })
             }, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
         }
         overlay = v
         root.addView(v, ViewGroup.LayoutParams(-1, -1))
-        b?.requestFocus()                                              // the D-pad starts on the button, not on the tile behind
+        close?.requestFocus()                                          // the D-pad starts on Close, not on the tile behind
     }
 }

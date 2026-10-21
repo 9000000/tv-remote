@@ -35,6 +35,7 @@
     <string name="rom_bad">Sai mã kiểm tra, không lưu</string>
     <string name="hide_hint">Giữ OK để ẩn</string>
     <string name="retry">Thử lại</string>
+    <string name="close">Đóng</string>
     <string name="back">Quay lại</string>
     <string name="core_cancelled">Đã hủy</string>
     <string name="player_plain">Người chơi %1$d</string>

@@ -35,6 +35,7 @@
     <string name="rom_bad">Checksum mismatch, not saved</string>
     <string name="hide_hint">Hold OK to hide</string>
     <string name="retry">Retry</string>
+    <string name="close">Close</string>
     <string name="back">Back</string>
     <string name="core_cancelled">Cancelled</string>
     <string name="player_plain">Player %1$d</string>
