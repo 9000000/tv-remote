@@ -68,6 +68,7 @@ class HomeActivity : Activity() {
     private lateinit var appsTitle: TextView
     private lateinit var grid: LinearLayout
     private var apps: List<App> = emptyList()
+    @Volatile private var pins: List<App> = emptyList()                // shortcuts other apps pinned here ([Pins])
     private var conf = JSONObject()
     private var wallShown = ""
     private lateinit var head: LinearLayout
@@ -244,6 +245,7 @@ class HomeActivity : Activity() {
         if (away && Motion.on) enter(false)                           // Home pressed on the home screen pauses and resumes it without stopping: nothing may flicker then
         away = false
         badgesRead()
+        pinsRead()                                                    // a pin is confirmed in its own screen, then the home comes back here
         ui.removeCallbacks(widgetTick); ui.post(widgetTick)
         ui.removeCallbacks(netTick); ui.postDelayed(netTick, Widgets.SAMPLE_MS)
         if (!Store.advance(this, false)) wallTimer()                  // on a change the new look sets the timer itself ([Store.onChange])
@@ -406,6 +408,16 @@ class HomeActivity : Activity() {
         }
     }
 
+    /** The shortcuts other apps pinned here ([Pins]): the dock is built again only when they changed. */
+    private fun pinsRead() {
+        bg.execute {
+            val now = Pins.list(this)
+            if (now.map { it.pkg } == pins.map { it.pkg }) return@execute
+            now.forEach { it.load(this) }
+            runOnUiThread { if (!isDestroyed) { pins = now; shownKey = ""; show() } }
+        }
+    }
+
     /** One app came, went or changed: only its picture is read again, the other tiles are kept and moved. */
     private fun packageChanged(pkg: String, removed: Boolean) {
         if (pkg == packageName) return
@@ -417,6 +429,7 @@ class HomeActivity : Activity() {
                 if (one == null && was == null) return@runOnUiThread    // not an app this screen lists (a service, a library)
                 apps = (apps.filter { it.pkg != pkg } + listOfNotNull(one)).sortedBy { it.label.lowercase() }
                 shownKey = ""; show()
+                pinsRead()                                            // an app's pins leave with it
             }
         }
     }
@@ -433,17 +446,18 @@ class HomeActivity : Activity() {
         val byPkg = apps.associateBy { it.pkg }
         val dockPkgs = Store.list(this, "dock").filter { it in byPkg }
         val hidden = Store.list(this, "hidden").toSet()
-        val key = dockPkgs.joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.joinToString(",") { it.pkg } + "|" + apps.count { it.pkg in hidden }
+        val key = (dockPkgs + pins.map { it.pkg }).joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.joinToString(",") { it.pkg } + "|" + apps.count { it.pkg in hidden }
         if (key == shownKey) return                                   // nothing that decides the tiles changed: not one view is rebuilt
         shownKey = key
         val made = HashMap<String, Tile>()                            // the tiles kept for the next build: those of apps still here
         val width = resources.displayMetrics.widthPixels - dp(96)
         dock.removeAllViews()
-        val n = dockPkgs.size
+        val inDock = dockPkgs.map { byPkg.getValue(it) } + pins     // the pins after the apps, under the same limit
+        val n = inDock.size
         if (n > 0) {
             val w = minOf(dp(176), (width - dp(44) - (n - 1) * dp(22)) / n)
-            dockPkgs.forEachIndexed { i, p ->
-                val t = tile(byPkg.getValue(p), w, true, made)
+            inDock.forEachIndexed { i, a ->
+                val t = tile(a, w, true, made)
                 dock.addView(t, LinearLayout.LayoutParams(-2, -2).apply { if (i > 0) leftMargin = dp(22) })
             }
         }
@@ -545,7 +559,7 @@ class HomeActivity : Activity() {
     }
 
     private fun makeTile(a: App, w: Int, inDock: Boolean) = Tile(this, a, w, a.label, ::dp).apply {
-        setOnClickListener { if (!Apps.launch(this@HomeActivity, a.pkg)) toast(R.string.no_open) }
+        setOnClickListener { if (!(if (a.pin != null) Pins.open(this@HomeActivity, a) else Apps.launch(this@HomeActivity, a.pkg))) toast(R.string.no_open) }
         setOnLongClickListener { menu(a); true }
         moves(this, inDock) { menu(a) }
     }
@@ -666,6 +680,12 @@ class HomeActivity : Activity() {
     // ---- what the buttons and the menu do ----
 
     private fun menu(a: App) {
+        if (a.pin != null) {                                          // a pinned shortcut: only taken away here; its app decides the rest
+            val acts = listOf(R.string.unpin to { Pins.remove(this, a); pins = pins.filter { it !== a }; shownKey = ""; show() }, R.string.customize to { customize() })
+            AlertDialog.Builder(this, R.style.Menu).setTitle(a.label)
+                .setItems(acts.map { getString(it.first) }.toTypedArray()) { _, i -> acts[i].second() }.show().also { open = it }
+            return
+        }
         val dockList = Store.list(this, "dock")
         val at = dockList.indexOf(a.pkg)
         val acts = ArrayList<Pair<Int, () -> Unit>>()
@@ -675,7 +695,7 @@ class HomeActivity : Activity() {
             acts.add(R.string.unpin to { dockList.removeAt(at); Store.putList(this, "dock", dockList) })
         } else {
             acts.add(R.string.pin to {
-                if (dockList.size >= HomeConfig.DOCK_MAX) Toast.makeText(this, getString(R.string.dock_full, HomeConfig.DOCK_MAX), Toast.LENGTH_LONG).show()
+                if (dockList.size + pins.size >= HomeConfig.DOCK_MAX) Toast.makeText(this, getString(R.string.dock_full, HomeConfig.DOCK_MAX), Toast.LENGTH_LONG).show()
                 else { dockList.add(a.pkg); Store.putList(this, "dock", dockList) }
             })
             acts.add(R.string.hide to { Store.putList(this, "hidden", Store.list(this, "hidden") + a.pkg) })

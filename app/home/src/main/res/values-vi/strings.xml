@@ -16,7 +16,7 @@
     <string name="info">Thông tin app</string>
     <string name="hidden">App đã ẩn (%d)</string>
     <string name="show">Hiện lại</string>
-    <string name="dock_full">Yêu thích đã đủ %d app</string>
+    <string name="dock_full">Yêu thích đã đủ %d mục</string>
     <string name="no_inputs">Không thấy nguồn vào nào</string>
     <string name="no_open">Không mở được app này</string>
     <string name="morning">Chào buổi sáng</string>
@@ -157,4 +157,5 @@
     <string name="c_focus_ring">Viền xanh</string>
     <string name="c_lang_tv">Theo TV</string>
     <string name="w_offline">mất mạng</string>
+    <string name="pinned_here">Đã thêm vào yêu thích: %s</string>
 </resources>

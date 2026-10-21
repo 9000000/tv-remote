@@ -5,8 +5,11 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.drawable.Drawable
 
-/** An app the TV can open from a home screen, with the picture it gives for one: a TV banner (16:9), else its icon. */
-class App(val pkg: String, val label: String, val info: ActivityInfo) {
+/**
+ * An app the TV can open from a home screen, with the picture it gives for one: a TV banner (16:9), else its icon. Or a shortcut
+ * another app pinned here ([pin], a ShortcutInfo: [Pins]); its [pkg] is then "pin:<app>/<id>", the key of its tile.
+ */
+class App(val pkg: String, val label: String, val info: ActivityInfo?, val pin: Any? = null) {
     var banner: Drawable? = null
     var icon: Drawable? = null
 
@@ -14,6 +17,8 @@ class App(val pkg: String, val label: String, val info: ActivityInfo) {
     fun release() { banner = null; icon = null }
 
     fun load(c: Context) {
+        if (pin != null) { Pins.picture(c, this); return }
+        val info = info ?: return
         val pm = c.packageManager
         banner = try { info.loadBanner(pm) ?: info.applicationInfo.loadBanner(pm) } catch (e: Exception) { null }
         banner?.let { if (!wide(it.intrinsicWidth, it.intrinsicHeight)) banner = null }   // a square "banner" (Rockchip's Media Center, 64x64) cropped to 16:9 is a blur: the icon and name instead

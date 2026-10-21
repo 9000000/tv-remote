@@ -4,6 +4,16 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- TV Channels (app mới): xem kênh truyền hình miễn phí từ danh sách công khai của iptv-org, theo quốc gia và thể loại, có yêu thích, tìm kiếm, đổi kênh bằng ▲▼ / số; kênh không phản hồi được làm mờ.
+- TV Home: app khác có thể ghim lối tắt vào Yêu thích (vd. một kênh của TV Channels); nhấn giữ để bỏ ghim.
+
+**English**
+- TV Channels (new app): free TV channels from iptv-org's public lists, by country and category, with favourites, search, ▲▼ / number keys; channels that do not answer are dimmed.
+- TV Home: other apps can pin shortcuts to the favourites (e.g. a TV Channels channel); long-press to unpin.
+
 ## 0.15.1 - 2026-10-21
 
 Web 0.15.1 · app điện thoại 0.15.1 · app TV 0.15.1 · TV Home 0.2.1
