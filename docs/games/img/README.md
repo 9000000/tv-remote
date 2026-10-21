@@ -15,5 +15,6 @@ on a dark 16:9 backdrop; the "Scan to join" chip painted out). The picture is th
 | filefixers.jpg | File Fixers (Wendel Scardua) | MIT | https://github.com/wendelscardua/file-fixers |
 | tabletennis.jpg | 8-Bit Table Tennis (Mike Michel) | MIT | https://github.com/mike42/8bit-table-tennis |
 | opennes-snake.jpg, opennes-breakout.jpg, opennes-pong.jpg | openNES Snake / Breakout / Pong (Sebastian Dine) | Zlib | https://github.com/sebastiandine/openNES-Snake (-Breakout, -Pong) |
+| hockey.jpg, tanks.jpg, cycles.jpg, sumo.jpg | Air Hockey, Tank Arena, Light Cycles, Sumo Bump (our own, `docs/games/web/`) | same as the repo | in-game capture of each game running (CPU seats), no overlay |
 
 A new catalog game: run it, screencap its title screen, save it here as `<id>.jpg`, add `"img": "img/<id>.jpg"` to its entry and re-sign (`dev/sign_games.py`).

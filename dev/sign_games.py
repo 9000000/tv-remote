@@ -19,6 +19,8 @@ ABIS = {"arm64-v8a", "armeabi-v7a", "x86_64", "x86"}
 HEX = re.compile(r"^[0-9a-f]{64}$")
 
 
+GENRES = ("action", "sports", "quiz", "racing", "shooter", "puzzle", "platformer", "party", "arcade", "rpg")   # the library filters; words are the app's strings
+
 def fail(m):
     print("x " + m)
     sys.exit(1)
@@ -82,6 +84,8 @@ def check():
             mx, mn = e.get("players", 4), e.get("min", 1)
             if not (isinstance(mx, int) and isinstance(mn, int) and 1 <= mn <= mx <= 4):
                 fail("%s.%s: players / min must be integers with 1 <= min <= players <= 4" % (kind, e.get("id")))
+            if e.get("genre", "arcade") not in GENRES:
+                fail("%s.%s: genre must be one of %s" % (kind, e.get("id"), ", ".join(GENRES)))
             if "lobby" in e and not isinstance(e["lobby"], bool):
                 fail("%s.%s: lobby must be true or false" % (kind, e.get("id")))
     for l, o in d.get("layouts", {}).items():
