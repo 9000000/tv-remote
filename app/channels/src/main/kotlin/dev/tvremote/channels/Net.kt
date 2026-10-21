@@ -104,7 +104,8 @@ object Logos {
         }
     }
 
-    private fun file(url: String) = File(dir, Integer.toHexString(url.hashCode()) + "_" + url.length)
+    private const val VER = "v2_"                                     // v2: the border cut; older files (v1, no prefix) are deleted
+    private fun file(url: String) = File(dir, VER + Integer.toHexString(url.hashCode()) + "_" + url.length)
 
     private fun fromDisk(url: String): Bitmap? {
         val f = file(url).takeIf { it.exists() } ?: return null
@@ -113,15 +114,30 @@ object Logos {
 
     private fun fromNet(url: String): Bitmap? {
         val b = load(url, SIDE) ?: return null
-        val big = maxOf(b.width, b.height)
-        val out = if (big > SIDE * 5 / 4) Bitmap.createScaledBitmap(b, b.width * SIDE / big, b.height * SIDE / big, true) else b
+        val out = cut(b)
         try { file(url).outputStream().use { out.compress(Bitmap.CompressFormat.PNG, 100, it) } } catch (e: Throwable) {}
         return out
     }
 
+    /** [b] without its border (once, here, not on every draw), then scaled so its longest side is [SIDE]: the card then only fits it in a box. */
+    private fun cut(b: Bitmap): Bitmap {
+        val w = b.width; val h = b.height
+        val px = IntArray(w * h).also { b.getPixels(it, 0, w, 0, 0, w, h) }
+        val r = LogoFit.bounds(px, w, h)
+        val cw = r[2] - r[0]; val ch = r[3] - r[1]
+        val big = maxOf(cw, ch)
+        if (big == w.coerceAtLeast(h) && cw == w && ch == h && big <= SIDE * 5 / 4) return b
+        val k = SIDE.toFloat() / big
+        val nw = maxOf(1, Math.round(cw * k)); val nh = maxOf(1, Math.round(ch * k))
+        val crop = if (cw == w && ch == h) b else Bitmap.createBitmap(b, r[0], r[1], cw, ch)
+        return Bitmap.createScaledBitmap(crop, nw, nh, true)
+    }
+
     /** The oldest files go once the folder is over [DISK_MAX]. */
     private fun trim() {
-        val fs = dir?.listFiles() ?: return
+        var fs = dir?.listFiles() ?: return
+        for (f in fs) if (!f.name.startsWith(VER)) f.delete()         // the old sizes, before the border was cut
+        fs = dir?.listFiles() ?: return
         var sum = fs.sumOf { it.length() }
         if (sum <= DISK_MAX) return
         for (f in fs.sortedBy { it.lastModified() }) { if (sum <= DISK_MAX * 3 / 4) break; sum -= f.length(); f.delete() }
@@ -186,5 +202,22 @@ object Probe {
             } finally { k.disconnect() }
         }
         return false
+    }
+}
+
+/**
+ * A card's logo: drawn inside one box (82% x 68% of the card's picture, centred) by [LogoFit.scale], the same for every logo,
+ * so the cards look even whatever the logo's shape. The bitmap is already cut of its border.
+ */
+class LogoView(c: Context) : ImageView(c) {
+    init { scaleType = ScaleType.MATRIX }
+    override fun setImageBitmap(bm: Bitmap?) { super.setImageBitmap(bm); place() }
+    override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) { super.onSizeChanged(w, h, ow, oh); place() }
+    private fun place() {
+        val d = drawable ?: return
+        val bw = d.intrinsicWidth; val bh = d.intrinsicHeight
+        if (bw <= 0 || bh <= 0 || width <= 0) return
+        val s = LogoFit.scale(bw, bh, (width * 0.82f).toInt(), (height * 0.68f).toInt())
+        imageMatrix = android.graphics.Matrix().apply { setScale(s, s); postTranslate((width - bw * s) / 2f, (height - bh * s) / 2f) }
     }
 }

@@ -553,20 +553,23 @@ class BrowseActivity : Activity() {
                     if (has) grid.getChildAdapterPosition(v).let { if (it >= 0) last[group] = it }
                     v.animate().scaleX(if (has) 1.06f else 1f).scaleY(if (has) 1.06f else 1f).setDuration(120).start() }
             }
-            val w = (p.width - p.paddingLeft - p.paddingRight) / columns() - d(12)
-            val tile = FrameLayout(c).apply { background = Ui.round(Ui.TILE, Ui.dp(c, 12)) }
+            val tile = object : FrameLayout(c) {                         // 16:9 from its own width: a card made before the grid is measured must not take its logo's height
+                override fun onMeasure(wm: Int, hm: Int) {
+                    val w = MeasureSpec.getSize(wm)
+                    super.onMeasure(MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(w * 9 / 16, MeasureSpec.EXACTLY))
+                }
+            }.apply { background = Ui.round(Ui.TILE, Ui.dp(c, 12)) }
             tile.addView(TextView(c).apply {
                 tag = "letters"; gravity = Gravity.CENTER; textSize = 26f; setTextColor(0xFF5F6368.toInt())
                 typeface = android.graphics.Typeface.DEFAULT_BOLD
             }, FrameLayout.LayoutParams(-1, -1))
-            tile.addView(ImageView(c).apply { tag = "logo"; scaleType = ImageView.ScaleType.FIT_CENTER },
-                FrameLayout.LayoutParams(-1, -1).apply { val m = d(14); setMargins(m, m, m, m) })
+            tile.addView(LogoView(c).apply { tag = "logo" }, FrameLayout.LayoutParams(-1, -1))
             tile.addView(ImageView(c).apply { tag = "star"; setImageResource(R.drawable.ic_star); imageTintList = android.content.res.ColorStateList.valueOf(0xFFF9AB00.toInt()) },
                 FrameLayout.LayoutParams(d(18), d(18), Gravity.TOP or Gravity.END).apply { topMargin = d(6); rightMargin = d(6) })
             tile.addView(Ui.text(c, "", 9f, Color.WHITE, true).apply {                // a corner: logos sit in the middle
                 tag = "q"; setPadding(d(4), d(1), d(4), d(1)); background = Ui.round(0x8C000000.toInt(), Ui.dp(c, 4))
             }, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.START).apply { topMargin = d(5); leftMargin = d(5) })
-            card.addView(tile, LinearLayout.LayoutParams(-1, w * 9 / 16))
+            card.addView(tile, LinearLayout.LayoutParams(-1, -2))
             card.addView(Ui.text(c, "", 14f).apply { tag = "name"; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(d(4), d(8), d(4), 0) })
             card.addView(Ui.text(c, "", 12f, Ui.DIM).apply { tag = "sub"; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(d(4), d(4), d(4), 0) })
             card.layoutParams = RecyclerView.LayoutParams(-1, -2).apply { val m = d(6); setMargins(m, m, m, m) }
