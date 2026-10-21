@@ -59,10 +59,10 @@ class MainActivity : Activity() {
     private var busy = false
     private var focusedOnce = false
 
-    private val BG = Color.rgb(13, 16, 20)
-    private val CARD = Color.rgb(25, 29, 35)
+    private val BG = Color.rgb(14, 17, 22)    // tv_bg (dev/TV_STYLE.md)
+    private val CARD = Color.rgb(27, 32, 40)    // tv_card
     private val TILE = Color.rgb(34, 39, 47)
-    private val INK = Color.rgb(233, 236, 241)
+    private val INK = Color.rgb(232, 234, 237)   // tv_ink
     private val MUTED = Color.rgb(140, 150, 163)
     private val ACCENT = Color.rgb(59, 115, 246)
     private val OK = Color.rgb(70, 210, 131)
@@ -106,10 +106,10 @@ class MainActivity : Activity() {
             view.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
             view.setOnClickListener { if (!busy) run() }
             view.setOnFocusChangeListener { v, f ->
-                v.background = if (f) box(ACCENT, 14, 2) else box(TILE, 14, 0)
+                v.background = if (f) ring(TILE, 14) else box(TILE, 14, 0)
                 badge.background = box(if (f) Color.argb(60, 255, 255, 255) else CARD, 10, 0)
                 subView.setTextColor(if (f) Color.WHITE else MUTED)
-                v.animate().scaleX(if (f) 1.03f else 1f).scaleY(if (f) 1.03f else 1f).setDuration(120).start()
+                v.animate().scaleX(if (f) 1.06f else 1f).scaleY(if (f) 1.06f else 1f).setDuration(120).start()
             }
         }
         private var idle = sub
@@ -141,7 +141,8 @@ class MainActivity : Activity() {
         if (phone) {
             page.orientation = LinearLayout.VERTICAL
             page.setPadding(dp(16), dp(20), dp(16), dp(24))
-        } else page.setPadding(dp(32), dp(20), dp(32), dp(20))
+        } else page.setPadding(resources.getDimension(R.dimen.tv_margin_x).toInt(), resources.getDimension(R.dimen.tv_margin_y).toInt(),
+            resources.getDimension(R.dimen.tv_margin_x).toInt(), resources.getDimension(R.dimen.tv_margin_y).toInt())   // dev/TV_STYLE.md
 
         // ---- left: header, status, actions, activity
         val left = LinearLayout(this)
@@ -154,14 +155,15 @@ class MainActivity : Activity() {
         val logo = ImageView(this)
         logo.setImageResource(R.drawable.icon)
         logo.outlineProvider = object : android.view.ViewOutlineProvider() {
-            override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, dp(10).toFloat()) }
+            override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, resources.getDimension(R.dimen.tv_head_radius)) }
         }
         logo.clipToOutline = true
-        head.addView(logo, LinearLayout.LayoutParams(dp(38), dp(38)))
+        val ic = if (phone) dp(38) else resources.getDimension(R.dimen.tv_head_icon).toInt()
+        head.addView(logo, LinearLayout.LayoutParams(ic, ic))
         val names = LinearLayout(this)
         names.orientation = LinearLayout.VERTICAL
-        names.setPadding(dp(14), 0, 0, 0)
-        names.addView(text("TV Setup", 20, INK, true))
+        names.setPadding(resources.getDimension(R.dimen.tv_head_gap).toInt(), 0, 0, 0)
+        names.addView(text("TV Setup", if (phone) 20 else 24, INK, true))
         names.addView(text(T("tv_main.version_n", "v" to version()) + released().let { if (it.isEmpty()) "" else " · $it" } +
             "   ·   Hoang Tran   ·   github.com/HoangTran0410/tv-remote", 12, MUTED, false))
         head.addView(names)
@@ -1037,6 +1039,14 @@ class MainActivity : Activity() {
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).roundToInt()
 
     private fun margins(top: Int) = LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(top) }
+
+    /** TV Home's focus ring (dev/TV_STYLE.md): 3 dp of accent blue outside, 1 dp of white inside. */
+    private fun ring(fill: Int, radius: Int): android.graphics.drawable.Drawable {
+        val o = resources.getDimension(R.dimen.tv_ring).toInt(); val w = dp(1)
+        fun band(c: Int, r: Float, stroke: Int, edge: Int) = GradientDrawable().apply { cornerRadius = r; setColor(c); setStroke(stroke, edge) }
+        return android.graphics.drawable.LayerDrawable(arrayOf(band(fill, dp(radius).toFloat(), o + w, getColor(R.color.tv_ring_accent)),
+            band(Color.TRANSPARENT, maxOf(0f, dp(radius) - w.toFloat()), w, Color.WHITE))).apply { setLayerInset(1, o, o, o, o) }
+    }
 
     private fun box(color: Int, radius: Int, stroke: Int): GradientDrawable {
         val d = GradientDrawable()

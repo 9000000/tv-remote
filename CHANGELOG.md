@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 - TV Games: **phòng chờ mới** như game console: nền mờ theo ảnh game và màu nhấn lấy từ ảnh, ảnh game trong khung, thẻ QR, 1-4 ô người chơi (luôn vừa màn hình, 1080p và 720p), thanh phím, đếm 3-2-1; game web lấy ảnh từ danh mục như thẻ ở thư viện. Hộp "Thêm game": có nút Đóng, Back/B đóng hộp thay vì thoát thư viện.
 - TV Games thư viện: tải game gợi ý **hiện tiến độ ngay trên thẻ** ("Đang tải… 42%", OK/Back để hủy, lỗi thì "OK: thử lại"), tải xong tự nhảy tới game mới kèm thông báo; game đã có (theo tên, tên file hoặc SHA-256) không còn trong Gợi ý; mỗi thẻ có số người chơi tối đa (👤 1, 👥 2, 👥 1–4).
 - Air Mouse: **mượt hơn, đo được**. Lỗi gốc: mỗi báo cáo chuột là một gói ADB phải chờ TV trả lời (đo trên box FPT qua LAN: 7,5 ms/gói, tối đa 38 ms), gửi 200 gói/s thì hàng đợi dồn tới 6,7 giây trễ (qua Tailscale còn tệ hơn); giờ các di chuyển được cộng dồn và gửi tối đa mỗi 8 ms trong một gói (trễ 13 ms, p95 19 ms), cảm biến chạy 200 Hz ở luồng riêng. Thêm nút **Nhấn / Click** to (giữ = nhấn giữ để kéo thả, cả bằng gyroscope), double-tap-kéo, công tắc **Giữ để di chuyển**, đóng băng 80 ms quanh lúc click để click trúng chỗ ngắm; TV LG cũng kéo thả được.
@@ -66,6 +67,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Sửa: mở TV Home / Hẹn giờ / Ứng dụng… ngay sau khi app vừa mở lại (điện thoại vừa thức, VPN vừa bật) báo **"Việc này cần ADB" dù ADB đang bật**, lát sau mới tải được: lúc ADB đang nối lại vẫn bị coi là "đã đóng". Nay báo "Đang kết nối ADB…" và chờ (tối đa 8 s), chỉ báo cần ADB khi nối thật sự không được.
 
 **English**
+- TV apps look like one family (`dev/TV_STYLE.md`): TV Channels and TV Setup get the same header (44 dp icon with 10 dp corners, 24 sp bold name), 48 / 27 dp overscan margins, the same background and card colours, and TV Home's focus ring (blue 3 dp + white 1 dp).
 - TV Games: **new lobby** in a console style: a blurred backdrop and accent taken from the game's picture, the picture in a frame, a QR card, 1-4 player seats (always fit, 1080p and 720p), a key bar, a 3-2-1 count; web games take their picture from the catalog like the library tile. The "Add game" box now has a Close button, and Back/B closes the box instead of leaving the library.
 - TV Games library: a suggestion's download **shows its progress on the card** ("Downloading… 42%", OK/Back cancels, a failure says "OK: try again"), then jumps to the new game with a notice; games you already have (by name, file name or SHA-256) leave Suggestions; every tile shows how many can play (👤 1, 👥 2, 👥 1–4).
 - Air Mouse: **smoother, measured**. Root cause: each mouse report was its own ADB message that waits for the TV's reply (measured on the FPT box over the LAN: 7.5 ms per message, up to 38 ms); at 200 reports/s the queue grew to 6.7 s of lag (worse over Tailscale). Moves are now summed and sent at most every 8 ms in one message (13 ms latency, p95 19 ms), the sensor runs at 200 Hz on its own thread. Also a big **Click** button (hold = button down, drag by gyroscope or finger), tap-then-drag, a **Hold to move** switch, and 80 ms of stillness around a click so it lands where aimed; LG TVs drag too.
@@ -129,6 +131,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 Web 0.16.0 · app điện thoại 0.16.0 · app TV 0.16.0 · TV Home 0.3.0 · TV Channels 0.1.0
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 - Tối ưu TV dùng TV Home làm màn hình chính thay cho FLauncher: 0,2 MB thay vì 10 MB, lấy từ release của dự án (ký và kiểm SHA-256), chỉnh được từ điện thoại / máy tính.
 - Tối ưu TV đọc thêm danh sách app gợi ý tắt / phải giữ từ trang web của dự án (`docs/optimize/bloat.json`, có chữ ký): TV mới được thêm vào mà không cần ra bản app mới. Danh sách này chỉ thêm được app phải giữ, không bớt được.
 - TV Channels (app mới): xem kênh truyền hình miễn phí từ danh sách công khai của iptv-org, theo quốc gia và thể loại, có yêu thích, tìm kiếm, đổi kênh bằng ▲▼ / số; kênh không phản hồi được làm mờ.
@@ -159,6 +162,7 @@ Web 0.16.0 · app điện thoại 0.16.0 · app TV 0.16.0 · TV Home 0.3.0 · TV
 Web 0.15.1 · app điện thoại 0.15.1 · app TV 0.15.1 · TV Home 0.2.1
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 
 - Sửa: thẻ Hệ thống của TV Home không còn ghi "0.00 GHz" khi TV báo sai tốc độ CPU (máy ảo báo 2 kHz)
 - Hướng dẫn: rà lại 36 mục theo bản 0.15.0, thêm ảnh TV Home và bảng Tùy chỉnh trên TV
@@ -185,6 +189,7 @@ Web 0.15.1 · app điện thoại 0.15.1 · app TV 0.15.1 · TV Home 0.2.1
 Web 0.15.0 · app điện thoại 0.15.0 · app TV 0.15.0 · TV Home 0.2.0
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 
 - TV Home: **hình nền xoay vòng**. 10 hình nền vẽ sẵn (bình minh, núi xa, đồi cát, sóng, kẹo, đào, đồng cỏ, sương mù, lấp lánh, hẻm đá: vẽ bằng code, không sọc màu, xem trước trên điện thoại / máy tính giống hệt trên TV), ảnh Bing mỗi ngày (không cần khóa, lưu trong máy, mất mạng thì dùng ảnh cũ) và tới 10 ảnh của bạn. Chọn nhiều hình nền rồi đặt đổi sau 30 phút / 1 giờ / 6 giờ / mỗi ngày / mỗi lần mở Home; chỉ đổi khi Home đang hiện, không chạy ngầm. Hộp thoại và bảng Tùy chỉnh trên TV có cùng lựa chọn. TV Home cũ vẫn dùng một hình nền
 - TV Home: chọn ngôn ngữ riêng (Theo TV / Tiếng Việt / English) trên TV và trên app; thẻ thời tiết gọn hơn (trời, cao/thấp nằm cạnh nhiệt độ)
@@ -261,6 +266,7 @@ Web 0.15.0 · app điện thoại 0.15.0 · app TV 0.15.0 · TV Home 0.2.0
 Web 0.14.0 · app điện thoại 0.14.0 · app TV 0.14.0 · TV Home 0.1.0
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 
 - Sửa: Ứng dụng → Đang mở: app đã đóng vẫn hiện lại sau vài giây trên Android 9 (BRAVIA); danh sách không còn nháy mỗi lần làm mới (biểu tượng giữ nguyên, mục Hệ thống Android không tự gập)
 - Ứng dụng → Đang mở: “Đóng tất cả” thành nút **Đóng hàng loạt** nổi bật, có biểu tượng; bấm vào hiện danh sách app sẽ đóng để tích / bỏ tích, app TV cần giữ hiện mờ, không chọn được
@@ -283,6 +289,7 @@ Web 0.14.0 · app điện thoại 0.14.0 · app TV 0.14.0 · TV Home 0.1.0
 Web 0.13.0 · app điện thoại 0.13.0 · app TV 0.13.0 · TV Home 0.1.0
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 
 - Sửa: Quay lại sau khi cài một launcher mới có thể về nhầm launcher khác (box FPT, Android 14): Android trả lời sai launcher đang dùng ngay sau khi có launcher mới; giờ đọc lựa chọn Home thật (role HOME); Android 9 (BRAVIA) quên hẳn launcher đang dùng khi cài launcher mới, nên giờ ghi lại nó trước khi cài, và không bao giờ ở lại launcher vừa thử
 - TV Home: sửa viền app / nút to lên khi chọn bị cắt ở mép (nút Nguồn vào / Mạng / Cài đặt trên cùng); Phải ở app cuối hàng sang app đầu hàng sau (không còn nhảy lên nút Cài đặt), Trái ngược lại, hai đầu lưới và hàng yêu thích thì đứng yên
@@ -345,6 +352,7 @@ Web 0.13.0 · app điện thoại 0.13.0 · app TV 0.13.0 · TV Home 0.1.0
 Web 0.12.0 · app điện thoại 0.12.0 · app TV 0.12.0
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 
 - Tab Sức khỏe nhanh hơn: mỗi lần làm mới ~0.4 giây thay vì hơn 1 giây (CPU đo từ lần đọc trước, không ngồi chờ); mục Ngủ và thức đọc nhanh gấp ~3 lần
 - Nút Hỏi AI: chỉ một vòng xoay (trước bị hai), và lấy danh sách nhanh hơn nhiều (RAM đọc bằng `meminfo --oom`)
@@ -407,6 +415,7 @@ Web 0.12.0 · app điện thoại 0.12.0 · app TV 0.12.0
 Web 0.11.0 · app điện thoại 0.11.0 · app TV 0.11.0
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 
 - Nhiều máy cùng xem / nghe một TV: góc hình hiện **👁 2** (và 🎧) khi có máy khác cũng đang xem, trên web và app điện thoại. Các trình duyệt mở cùng app máy tính hoặc cùng trang web của TV giờ dùng chung một luồng hình và một luồng tiếng (một scrcpy-server trên TV thay vì mỗi máy một cái, đỡ ~50 MB RAM TV mỗi máy). Trước đây trình duyệt thứ hai giành mất hình của trình duyệt đầu, trình duyệt đầu báo "Không lấy được hình từ TV".
 - TV chỉ gửi được một luồng hình mà máy khác đang xem: báo "TV đang gửi hình cho máy khác" thay vì "TV không gửi hình".
@@ -425,6 +434,7 @@ Web 0.11.0 · app điện thoại 0.11.0 · app TV 0.11.0
 Web 0.10.0 · app điện thoại 0.10.0 · app TV 0.10.0
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 
 - App máy tính: nút **Nói** dùng được micro của máy. Trên Mac, máy đổi lời nói thành chữ (Mac hỏi quyền micro một lần). Trên Windows, Linux, giọng bạn đi thẳng tới Trợ lý của TV như micro của remote thật (TV Android, qua giao thức remote, không cần ADB). Tự dừng khi bạn nói xong.
 - Phím ⌨️ Bàn phím: hàng trên cùng của remote web (chỗ nút Đánh thức cũ) mở ô gõ chữ và ô "Hỏi TV" ngay bên dưới, như "Thêm" (mỗi lúc chỉ mở một trong hai); trên app điện thoại nó ở trong "Thêm". Bỏ thẻ Cảnh dưới remote: cảnh chạy từ "Thêm" → Cảnh. "Thêm" xếp lại theo mức dùng: Mở trên TV, Ngõ vào, Phụ đề, Hẹn giờ tắt lên đầu. Đánh thức (app máy tính) chuyển ra danh sách TV đã lưu: TV ngủ sâu thì không mở được remote, nên đánh thức ở đó rồi mở luôn. Ô "Hỏi TV" dùng được cả khi chưa có ADB (app máy tính tìm YouTube qua giao thức remote); bỏ nút 🎤 trùng với nút Nói.
@@ -499,6 +509,7 @@ Web 0.10.0 · app điện thoại 0.10.0 · app TV 0.10.0
 Web 0.9.0 · app điện thoại 0.9.0 · app TV 0.9.0
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 
 - Xem màn hình TV: sau khi trang tự hạ cỡ hình vì mạng chậm, mạng ổn lại khoảng 30 giây thì cỡ hình tự tăng lại từng bậc, không vượt cỡ người dùng đã chọn. Vừa tăng mà lại chậm thì lần chờ sau lâu gấp đôi (không nhấp nhô).
 - Home Assistant và Phím tắt (Siri) điều khiển TV trong mạng nhà: 🛠️ Cài đặt → “Home Assistant · Phím tắt” (web của TV và app máy tính). Đường dẫn `/api/hook?k=<mã>&key=HOME` (cũng `scene=`, `app=`, `text=`, `volume=`, `power=`) và `/api/hook/state`. Mã riêng, không phải mã ghép, tắt sẵn, đổi mã mới được, sai 5 lần bị chặn 1 phút. App máy tính chỉ mở cổng thêm (cổng app + 1) khi đang bật.
@@ -525,6 +536,7 @@ Web 0.9.0 · app điện thoại 0.9.0 · app TV 0.9.0
 Web 0.8.0 · app điện thoại 0.8.0 · app TV 0.8.0
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 
 - Xem màn hình TV qua mạng chậm (Wi-Fi yếu, Tailscale qua relay): hình không còn trễ dần cả chục giây rồi tắt. Khi trình duyệt không nhận kịp, các khung cũ bị bỏ, TV gửi ngay một khung mới, hình nhảy về lúc hiện tại. Bị chậm nhiều lần thì trang tự hạ cỡ hình một bậc (cả ba nơi).
 - App máy tính hiện hình TV bằng WebCodecs: trễ ít hơn, luôn vẽ khung mới nhất.
@@ -551,6 +563,7 @@ Web 0.8.0 · app điện thoại 0.8.0 · app TV 0.8.0
 Web 0.7.1 · app điện thoại 0.7.1 · app TV 0.7.1
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 
 - Lúc app tự làm nhiều bước trên TV: cài TV Setup bằng nút remote ghi “Bước 1/3…” và nhắc đừng bấm remote của TV; ai lỡ bấm làm TV rời khỏi bước đang làm thì app dừng lại, báo và cho thử lại, không bấm tiếp vào chỗ sai (app máy tính, app điện thoại). Bật Tailscale qua ADB hiện thẻ “TV Remote đang làm việc trên TV” ở góc màn hình TV cho tới khi xong (cả ba nơi).
 - App điện thoại: các hộp thoại là của app, cùng màu và kiểu nút với app (không còn hộp thoại của Android).
@@ -587,6 +600,7 @@ Web 0.7.1 · app điện thoại 0.7.1 · app TV 0.7.1
 Web 0.7.0 · app điện thoại 0.7.0 · app TV 0.7.0
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 
 - TV TCL: TV Setup không còn sập khi tự khởi động lại sau cập nhật hoặc bật TV (TV chặn dịch vụ nền chạy nổi, trước đây tiến trình chết sau 10 giây). Kiểm tra bản mới cũng không còn tưởng bản mới bị lỗi vì chuyện này rồi quay về bản cũ.
 - Hình nâng cao: chọn khung/giây (15, 30, 60) và bitrate (1–8 Mbit/s) cho hình TV, ở mục ⚙️ Nâng cao trong ô chất lượng hình. Có trên app máy tính, Web của TV và app điện thoại.
@@ -628,6 +642,7 @@ Web 0.7.0 · app điện thoại 0.7.0 · app TV 0.7.0
 Web 0.6.0 · app điện thoại 0.6.0 · app TV 0.6.0
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 
 - Cài TV Setup lên TV chưa bật ADB: luôn đi qua Downloader. Trước đây trình duyệt có sẵn của TV (như TCL) nhận đường dẫn APK, tải về rồi đứng ở trang trắng, không mở được trình cài. Cách gửi link thẳng vẫn còn, ở cuối danh sách “Bật ADB”, ghi rõ là dự phòng; sau một phút chưa thấy báo cài xong thì app gợi ý cài qua Downloader.
 - Bật ADB lần đầu: TV chỉ hỏi “Cho phép gỡ lỗi USB?” một lần. Trước đây mỗi phần của app (hình, quản lý, nhạc...) hỏi riêng, và TV Setup hỏi thêm cho chính nó; giờ các phần chờ chung một câu trả lời, và điện thoại / máy tính vừa được cho phép tự trả lời giúp câu hỏi của TV Setup.
@@ -654,6 +669,7 @@ Web 0.6.0 · app điện thoại 0.6.0 · app TV 0.6.0
 Web 0.5.0 · app điện thoại 0.5.0 · app TV 0.5.0
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 - 🔔 Gửi thông báo lên TV (Thêm phím → Gửi thông báo lên TV): gõ tiêu đề (không bắt buộc) và vài chữ, TV hiện thành thẻ nhỏ đè lên mọi app, không giành phím remote và tự biến mất. Chọn góc (trên trái / trên phải / dưới trái / dưới phải, mặc định trên phải) và thời gian hiện (3 / 5 / 10 / 30 giây, mặc định 5); lần sau nhớ lựa chọn. Có trong app điện thoại, app máy tính và trang web của TV (khách “Chỉ remote” cũng gửi được). Cảnh có thêm bước “🔔 Gửi thông báo”, nên hẹn giờ và cảnh gửi được. Cần TV Setup 0.4.2 trở lên.
 - Các tab xếp thẻ kiểu gallery: thẻ nào nằm ngay dưới thẻ trên cột của nó, không còn khoảng trống; màn rộng có tới 3 cột (Sức khỏe, Tự động) và trang rộng hơn. Đổi ngôn ngữ không còn nháy màn Remote trước khi về lại tab đang xem.
 - 📱 Sức khỏe → App đang chạy: xem app nào đang chạy, chạy ngầm, tốn bao nhiêu RAM, và bấm Dừng từng app. Chỉ dừng được app người dùng cài hoặc app có trên màn hình chính; màn hình chính, bàn phím, Android, TV Remote, TV Setup và Tailscale bị khóa (🔒 Cần giữ) để không dừng nhầm.
@@ -742,6 +758,7 @@ Web 0.5.0 · app điện thoại 0.5.0 · app TV 0.5.0
 Web 0.4.1 · app điện thoại 0.4.1 · app TV 0.4.1
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 - Cài đặt: các phần thẳng một lề trái; nút Theo máy / Sáng / Tối có icon. 📱 App điện thoại: icon nét thay emoji trong Cài đặt, Giới thiệu và các nút; icon trên nền xanh luôn trắng (nút ẩn hình, 🎧, Thêm phím). Chữ xám, xanh, xanh lá đậm hơn trên giao diện sáng cho dễ đọc.
 - 📱 App điện thoại: chép tệp, cài app, cập nhật TV Setup giờ hiện trên thanh thông báo kèm phần trăm (trước đó Android 13+ ẩn đi vì app chưa xin quyền thông báo; giờ xin ngay lúc việc bắt đầu).
 - Sức khỏe → Lịch sử: chú thích dưới biểu đồ gọn lại như trước. TV có đồng hồ từng nhảy sai (vd box FPT Play) giờ vẫn ghi được app đang mở; khoảng đã ghi trước đó thì không có tên app.
@@ -785,6 +802,7 @@ Web 0.4.1 · app điện thoại 0.4.1 · app TV 0.4.1
 Web 0.3.0 · app điện thoại 0.3.0 · app TV 0.3.0
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 - 📱 App điện thoại: Quét Wi-Fi đi thẳng ra Wi-Fi khi Tailscale (hay VPN khác) đang bật, để vẫn tìm được TV trong nhà. Chỉ có 4G thì báo chưa nối Wi-Fi, không quét nhầm mạng của nhà mạng.
 - Mất kết nối với TV giữa chừng (vd lúc cập nhật TV Setup) giờ báo bằng lời dễ hiểu thay vì “stream closed”.
 - 📱 App điện thoại: chép tệp, cài app, cập nhật TV Setup vẫn chạy khi chuyển sang app khác (có thông báo); rời TV giữa chừng thì hỏi trước.
@@ -811,6 +829,7 @@ Web 0.3.0 · app điện thoại 0.3.0 · app TV 0.3.0
 Web 0.2.1 · app điện thoại 0.2.0 · app TV 0.2.0
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 - 💻 App máy tính: sửa lỗi không mở được khi chưa lưu TV nào (máy mới cài).
 
 **English**
@@ -821,6 +840,7 @@ Web 0.2.1 · app điện thoại 0.2.0 · app TV 0.2.0
 Web 0.2.0 · app điện thoại 0.2.0 · app TV 0.2.0
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 - 🧪 Thử nghiệm: điều khiển được TV LG (webOS) và Samsung (Tizen, từ 2016) bằng app điện thoại và app máy tính: phím, gõ chữ, mở app, Wake-on-LAN, cảnh; LG thêm chỉnh âm lượng theo số và tắt màn hình (nút hẹn giờ). Việc chỉ Android TV làm được thì làm mờ, bấm vào để xem giới thiệu. Đã đối chiếu với thư viện Home Assistant dùng (aiowebostv, samsungtvws) nhưng chưa thử trên TV thật.
 - 📋 Gửi nhật ký (Giới thiệu, trong cả ba app và web của TV): app làm sai thì gửi các lệnh đã gửi tới TV, câu TV trả lời, kết nối ADB / remote / xem hình và các lỗi đã hiện; app máy tính và web của TV mở sẵn trang báo lỗi. Không có mã ghép đôi, địa chỉ MAC hay chữ đã gõ.
 - Tab Remote: khi không xem hình, cột bên trái gọn lại cạnh remote thay vì kéo hết màn hình.
@@ -837,6 +857,7 @@ Web 0.1.0 · app điện thoại 0.1.0 · app TV 0.1.0
 Bản thử nghiệm đầu tiên. Máy đã cài bản 2.x trước đây: cài đè app mới một lần (Downloader `2973135` cho điện thoại, `2397346` cho TV), sau đó các app tự cập nhật.
 
 **Tiếng Việt**
+- Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 - 📱 App điện thoại (Android), 💻 app máy tính (Mac, Windows, Linux) và 🌐 web của TV (mở bằng mọi trình duyệt, cả iPhone, sau mã 6 số), nói chuyện thẳng với TV, không qua máy chủ nào.
 - Remote đầy đủ: D-pad, âm lượng, kênh, phím số, phím media, Thêm phím; gửi phím được cả khi TV chưa cho phép ADB.
 - Xem và chạm màn hình TV (scrcpy), chọn chất lượng; 🎧 nghe tiếng TV trên máy mình, cả khi tắt màn hình điện thoại.

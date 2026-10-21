@@ -72,13 +72,14 @@ class BrowseActivity : Activity() {
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
         val d = { v: Number -> Ui.dp(this, v).toInt() }
-        val root = LinearLayout(this).apply { setBackgroundColor(0xFF0E1116.toInt()) }
+        val mx = resources.getDimension(R.dimen.tv_margin_x).toInt(); val my = resources.getDimension(R.dimen.tv_margin_y).toInt()   // dev/TV_STYLE.md
+        val root = LinearLayout(this).apply { setBackgroundColor(getColor(R.color.tv_bg)) }
 
-        rail = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(d(16), d(24), d(12), d(24)) }
-        root.addView(ScrollView(this).apply { addView(rail); isVerticalScrollBarEnabled = false },
-            LinearLayout.LayoutParams(d(250), -1))
+        rail = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(mx, my, d(12), my) }
+        root.addView(ScrollView(this).apply { addView(rail); isVerticalScrollBarEnabled = false; clipToPadding = false },
+            LinearLayout.LayoutParams(mx + d(234), -1))
 
-        val right = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(d(8), d(24), d(24), 0) }
+        val right = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(d(8), my, mx, 0) }
         val head = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
         title = Ui.text(this, "", 22f, bold = true)
         head.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
@@ -207,9 +208,15 @@ class BrowseActivity : Activity() {
         rail.removeAllViews()
         val dp = { n: Int -> Ui.dp(this, n).toInt() }
         rail.addView(LinearLayout(this).apply {                       // the app's own tile beside its name
-            gravity = Gravity.CENTER_VERTICAL; setPadding(dp(12), 0, 0, dp(18))
-            addView(ImageView(this@BrowseActivity).apply { setImageResource(R.drawable.icon) }, LinearLayout.LayoutParams(dp(30), dp(30)).apply { marginEnd = dp(10) })
-            addView(Ui.text(this@BrowseActivity, getString(R.string.app_name), 20f, Ui.ACCENT, true))
+            gravity = Gravity.CENTER_VERTICAL; setPadding(0, 0, 0, dp(18))
+            val ic = resources.getDimension(R.dimen.tv_head_icon).toInt(); val rad = resources.getDimension(R.dimen.tv_head_radius)
+            addView(ImageView(this@BrowseActivity).apply {
+                setImageResource(R.drawable.icon)
+                outlineProvider = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, rad) } }
+                clipToOutline = true
+            }, LinearLayout.LayoutParams(ic, ic).apply { marginEnd = resources.getDimension(R.dimen.tv_head_gap).toInt() })
+            addView(Ui.text(this@BrowseActivity, getString(R.string.app_name), 0f, Ui.TEXT, true).apply {
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.tv_head_name)); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
         })
         add(Ui.row(this, R.drawable.ic_search, getString(R.string.search)) { enterSearch() }, group == SEARCH)   // an action: OK only, moving onto it opens nothing
         val favs = Store.favourites(this).byChannel().size

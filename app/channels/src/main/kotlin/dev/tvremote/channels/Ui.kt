@@ -13,7 +13,7 @@ import android.widget.TextView
 
 /** The few looks the two screens share. Plain Views: the app must stay small and quick on a 1 GB TV box. */
 object Ui {
-    const val TEXT = 0xFFE8EAED.toInt()
+    const val TEXT = 0xFFE8EAED.toInt()                                // = tv_ink
     const val DIM = 0xFF9AA0A6.toInt()
     const val ACCENT = 0xFF5EEAD4.toInt()
     const val CARD = 0xFF1B2028.toInt()
@@ -25,9 +25,18 @@ object Ui {
     fun round(color: Int, r: Float, stroke: Int = 0, strokeColor: Int = 0) =
         GradientDrawable().apply { setColor(color); cornerRadius = r; if (stroke > 0) setStroke(stroke, strokeColor) }
 
+    /** TV Home's focus ring (dev/TV_STYLE.md): [c]'s `tv_ring` of accent blue, then 1 dp of white inside it. */
+    fun ring(c: Context, fill: Int, r: Float): android.graphics.drawable.Drawable {
+        val o = c.resources.getDimension(R.dimen.tv_ring).toInt(); val w = dp(c, 1).toInt()
+        val blue = c.getColor(R.color.tv_ring_accent)
+        return android.graphics.drawable.LayerDrawable(arrayOf(round(fill, r, o + w, blue), round(Color.TRANSPARENT, maxOf(0f, r - w), w, Color.WHITE))).apply {
+            setLayerInset(1, o, o, o, o)
+        }
+    }
+
     /** A background that is [normal] at rest and a light fill when focused or pressed (D-pad and touch). */
     fun states(c: Context, normal: Int, r: Float, on: Int = 0x33FFFFFF, edge: Boolean = true) = StateListDrawable().apply {
-        val sel = round(on, r, if (edge) dp(c, 2).toInt() else 0, ACCENT)
+        val sel = if (edge) ring(c, on, r) else round(on, r)
         addState(intArrayOf(android.R.attr.state_focused), sel)
         addState(intArrayOf(android.R.attr.state_pressed), sel)
         addState(intArrayOf(android.R.attr.state_activated), round(0x2214B8A6, r))
