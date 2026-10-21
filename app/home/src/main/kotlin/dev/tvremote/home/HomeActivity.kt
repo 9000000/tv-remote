@@ -75,6 +75,7 @@ class HomeActivity : Activity() {
     private lateinit var blurClip: FrameLayout
     private lateinit var blurView: ImageView
     private var scrollAnim: ObjectAnimator? = null
+    private val zoom by lazy { Zoom(this) }
     private var gridOn = true                                         // focus is in the grid: it is lit and in place; else it waits a little lower, dimmer
     private var away = false                                        // really left (stopped), not just paused: only then does the screen come in again
     private var trimmed = false                                     // the pictures were let go for memory while away ([trim])
@@ -158,7 +159,10 @@ class HomeActivity : Activity() {
         // one button for both settings, the TV's and TV Home's: two buttons side by side read as the same thing
         settingsPill = Pill(this, R.drawable.ic_settings, getString(R.string.settings)) {
             open = Drop.show(this, settingsPill, listOf(
-                Drop.Row(R.drawable.ic_settings, getString(R.string.tv_settings)) { open(Settings.ACTION_SETTINGS) },
+                Drop.Row(R.drawable.ic_settings, getString(R.string.tv_settings)) { open(Settings.ACTION_SETTINGS) }) +
+                listOf(Settings.ACTION_DISPLAY_SETTINGS to (R.drawable.ic_monitor to R.string.picture), Settings.ACTION_SOUND_SETTINGS to (R.drawable.ic_vol_up to R.string.sound))
+                    .filter { Intent(it.first).resolveActivity(packageManager) != null }          // a TV without that screen shows no dead row
+                    .map { (act, v) -> Drop.Row(v.first, getString(v.second)) { open(act) } } + listOf(
                 Drop.Row(R.drawable.ic_sliders, getString(R.string.customize)) { customize() }))
         }
         pills.addView(settingsPill, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
@@ -248,6 +252,7 @@ class HomeActivity : Activity() {
         super.onResume()
         if (locked) return
         Motion.read(this, conf)                                       // the system's "remove animations" may have changed while away
+        zoom.back()                                                   // the plate that grew over the opened app shrinks into its tile
         clockAndDay()
         if (away && Motion.on) enter(false)                           // Home pressed on the home screen pauses and resumes it without stopping: nothing may flicker then
         away = false
@@ -298,7 +303,7 @@ class HomeActivity : Activity() {
         }
     }
 
-    override fun onPause() { ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick); super.onPause() }
+    override fun onPause() { zoom.paused(); ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick); super.onPause() }
 
     private var cpuAgain = false
 
@@ -569,8 +574,9 @@ class HomeActivity : Activity() {
 
     private fun makeTile(a: App, w: Int, inDock: Boolean) = Tile(this, a, w, a.label, ::dp).apply {
         setOnClickListener {
-            if (!(if (a.pin != null) Pins.open(this@HomeActivity, a) else Apps.launch(this@HomeActivity, a.pkg))) toast(R.string.no_open)
-            else lastOpened = a.pkg
+            lastOpened = a.pkg
+            fun go(o: Bundle?) { if (!(if (a.pin != null) Pins.open(this@HomeActivity, a, o) else Apps.launch(this@HomeActivity, a.pkg, o))) { zoom.end(); toast(R.string.no_open) } }
+            if (!zoom.open(this, ::go)) go(null)
         }
         setOnLongClickListener { menu(a); true }
         moves(this, inDock) { menu(a) }

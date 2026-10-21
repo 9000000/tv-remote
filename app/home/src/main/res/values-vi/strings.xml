@@ -2,6 +2,8 @@
 <resources>
     <string name="inputs">Nguồn vào</string>
     <string name="settings">Cài đặt</string>
+    <string name="picture">Hình ảnh</string>
+    <string name="sound">Âm thanh</string>
     <string name="tv_settings">Cài đặt TV</string>
     <string name="connected">Đã kết nối</string>
     <string name="cable">Mạng dây</string>

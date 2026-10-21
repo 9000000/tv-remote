@@ -74,9 +74,9 @@ object Apps {
     private fun firmware(a: android.content.pm.ApplicationInfo) =
         a.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM != 0 && a.flags and android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP == 0
 
-    fun launch(c: Context, pkg: String): Boolean {
+    fun launch(c: Context, pkg: String, o: android.os.Bundle? = null): Boolean {
         val pm = c.packageManager
         val i = pm.getLeanbackLaunchIntentForPackage(pkg) ?: pm.getLaunchIntentForPackage(pkg) ?: return false
-        return try { c.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); true } catch (e: Exception) { false }
+        return try { c.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), o); true } catch (e: Exception) { false }
     }
 }

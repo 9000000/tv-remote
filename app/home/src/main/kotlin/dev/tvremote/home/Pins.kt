@@ -47,9 +47,9 @@ object Pins {
     }
 
     @TargetApi(26)
-    fun open(c: Context, a: App): Boolean {
+    fun open(c: Context, a: App, o: android.os.Bundle? = null): Boolean {
         val s = a.pin as ShortcutInfo
-        return try { la(c)!!.startShortcut(s.`package`, s.id, null, null, Process.myUserHandle()); true } catch (e: Exception) { false }
+        return try { la(c)!!.startShortcut(s.`package`, s.id, null, o, Process.myUserHandle()); true } catch (e: Exception) { false }
     }
 
     /** Unpins [a]: the system keeps a list per app, so the app's other pins are named again. */
