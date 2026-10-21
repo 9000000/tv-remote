@@ -15,7 +15,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Channels: kênh VieON trong Yêu thích / nhóm không còn mất khi mở lại app; lịch phát sóng không làm chậm lúc chuyển kênh; bấm Home lúc đang mở kênh không còn phát tiếng ngầm.
 - TV Channels: lịch phát sóng kênh VN (từ TV360 và VieON): thẻ kênh hiện chương trình đang chiếu; khi xem, ▶ hiện chương trình đang chiếu / tiếp theo, ▶ lần nữa mở lịch cả ngày; giữ OK trên kênh → Lịch phát sóng.
 - Tab TV có thẻ 📺 Kênh TV: cài / cập nhật TV Channels lên TV, gõ tên kênh để mở; nói "mở kênh VTV1" cũng được.
-- TV Home: thẻ widget có nền mờ của ảnh nền (như dải Yêu thích), chữ dễ đọc trên ảnh nhiều màu; ảnh mờ mịn hơn. Mức chuyển động (Tự động / Nhẹ / Đầy đủ; TV ít RAM tự dùng Nhẹ). Banner app nét hơn.
+- TV Home: thẻ widget có nền mờ của ảnh nền (như dải Yêu thích), chữ dễ đọc trên ảnh nhiều màu; ảnh mờ mịn hơn. Mức chuyển động (Tự động / Nhẹ / Đầy đủ; TV ít RAM tự dùng Nhẹ). Banner app nét hơn. Lên / xuống quay về đúng ô Yêu thích vừa rời; về Home thì đứng lại ở app vừa mở. Dải Yêu thích cân trên dưới (tên app chỉ hiện khi chọn).
 
 **English**
 - Safer app removal: an app that owns a saved Wi-Fi network is never turned off, cleared or removed (the TV would forget the network, and ADB with it); factory test apps are never opened (one Haier went into factory mode, Input key dead). TV Setup asks TCLs to let it auto-start, so the remote key fix runs there.
@@ -26,7 +26,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Channels: your own groups of channels (Favourites is one of them); pin a channel or a whole group to the home screen, which opens that group.
 - TV Home: other apps can pin shortcuts to the favourites (e.g. a TV Channels channel); long-press to unpin.
 - TV tab: a 📺 TV channels card to install / update TV Channels and open a channel by its name; say "open channel BBC News" too.
-- TV Home: widget cards get the wallpaper's blurred copy behind them (as the favourites band does), readable over a busy photo; a smoother blur. Motion level (Auto / Calm / Full; Calm on low-RAM TVs). Sharper app banners.
+- TV Home: widget cards get the wallpaper's blurred copy behind them (as the favourites band does), readable over a busy photo; a smoother blur. Motion level (Auto / Calm / Full; Calm on low-RAM TVs). Sharper app banners. Up / Down return to the favourite you left; back home, the app you opened keeps the focus. The favourites band has even space above and below (the name shows only on focus).
 
 ## 0.15.1 - 2026-10-21
 

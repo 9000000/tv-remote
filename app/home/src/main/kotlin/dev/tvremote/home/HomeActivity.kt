@@ -85,6 +85,10 @@ class HomeActivity : Activity() {
     private var soft: Bitmap? = null
     private var badges = Badges.NONE
     private var wantCol = -1                                        // the grid column Up and Down try to keep ([Nav])
+    private var lastOpened: String?                                 // kept in prefs: the home may be made again while the app is open
+        get() = getSharedPreferences("nav", MODE_PRIVATE).getString("last", null)
+        set(v) { getSharedPreferences("nav", MODE_PRIVATE).edit().putString("last", v).apply() }
+    private var dockAt = -1                                         // the favourite left by Up or Down: coming back to the dock lands on it
     private var stepping = false
     private companion object { var reopen = false }                 // across recreate(): the panel was open when the language changed
     private var open: android.app.Dialog? = null                    // the panel or menu on top, closed by a Home press
@@ -158,6 +162,9 @@ class HomeActivity : Activity() {
                 Drop.Row(R.drawable.ic_sliders, getString(R.string.customize)) { customize() }))
         }
         pills.addView(settingsPill, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
+        for (i in 0 until pills.childCount) pills.getChildAt(i).setOnKeyListener { _, code, e ->
+            code == KeyEvent.KEYCODE_DPAD_DOWN && e.action == KeyEvent.ACTION_DOWN && dock.getChildAt(dockAt)?.let { go(it); true } == true
+        }
         // the row's two ends stay put: Android's own search went from Inputs down-left onto a tile, and OK then opened its app
         inputsPill.nextFocusLeftId = View.generateViewId().also { inputsPill.id = it }
         settingsPill.nextFocusRightId = View.generateViewId().also { settingsPill.id = it }
@@ -177,7 +184,7 @@ class HomeActivity : Activity() {
             background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x2EFFFFFF, 0x14FFFFFF)).apply {
                 cornerRadius = dp(26).toFloat(); setStroke(dp(1), 0x33FFFFFF)
             }
-            setPadding(dp(22), dp(20), dp(22), dp(6)); clipChildren = false; clipToPadding = false
+            setPadding(dp(22), dp(32), dp(22), dp(32)); clipChildren = false; clipToPadding = false   // even: the focused tile's name hangs into the bottom one
         }
         blurView = ImageView(this).apply { scaleType = ImageView.ScaleType.CENTER_CROP; setColorFilter(0x70000000, PorterDuff.Mode.SRC_ATOP) }
         blurClip = FrameLayout(this).apply {
@@ -359,7 +366,8 @@ class HomeActivity : Activity() {
         super.onNewIntent(i)
         if (locked) return
         if (open?.isShowing == true) { open?.dismiss(); open = null; return }                          // a panel or menu is open: this press closes it
-        toTop()
+        val last = if (away) lastOpened?.let { p -> tiles().firstOrNull { it.app?.pkg == p } } else null
+        if (last != null) last.requestFocus() else toTop()            // back from an app: on its tile; Home on the home screen: to the top
     }
 
     @Deprecated("Back on a home screen goes nowhere")
@@ -459,7 +467,7 @@ class HomeActivity : Activity() {
             val w = minOf(dp(176), (width - dp(44) - (n - 1) * dp(22)) / n)
             inDock.forEachIndexed { i, a ->
                 val t = tile(a, w, true, made)
-                dock.addView(t, LinearLayout.LayoutParams(-2, -2).apply { if (i > 0) leftMargin = dp(22) })
+                dock.addView(t, LinearLayout.LayoutParams(-2, -2).apply { if (i > 0) leftMargin = dp(22); bottomMargin = -t.nameHeight() })   // shown on focus only: no room kept for it
             }
         }
         dock.visibility = if (n > 0) View.VISIBLE else View.GONE
@@ -486,7 +494,7 @@ class HomeActivity : Activity() {
         tileCache = made
         badgeTiles()
 
-        val again = keep?.let { p -> tiles().firstOrNull { it.app?.pkg == p } }
+        val again = (keep ?: lastOpened.takeIf { currentFocus == null })?.let { p -> tiles().firstOrNull { it.app?.pkg == p } }
         if (again != null) again.requestFocus() else if (currentFocus == null || currentFocus !is Tile && currentFocus !is Pill) toTop()
     }
 
@@ -526,8 +534,8 @@ class HomeActivity : Activity() {
             when (dir) {
                 Nav.Dir.RIGHT -> dock.getChildAt(at + 1)?.let { go(it) } ?: v.nudge(1, 0)
                 Nav.Dir.LEFT -> dock.getChildAt(at - 1)?.let { go(it) } ?: v.nudge(-1, 0)
-                Nav.Dir.UP -> up(v)                           // Android 9 (a BRAVIA) found nothing above the favourites by itself
-                Nav.Dir.DOWN -> { val row = grid.getChildAt(0) as? ViewGroup ?: return false; wantCol = -1; go(row.getChildAt(Nav.nearest(centres(row), centre(v)))) }
+                Nav.Dir.UP -> { dockAt = at; up(v) }          // Android 9 (a BRAVIA) found nothing above the favourites by itself
+                Nav.Dir.DOWN -> { dockAt = at; val row = grid.getChildAt(0) as? ViewGroup ?: return false; wantCol = -1; go(row.getChildAt(Nav.nearest(centres(row), centre(v)))) }
             }
             return true
         }
@@ -536,7 +544,7 @@ class HomeActivity : Activity() {
         val col = (grid.getChildAt(row) as ViewGroup).indexOfChild(v)
         val to = Nav.grid(rows, row, col, wantCol, dir)
         if (to == null) {
-            if (dir == Nav.Dir.UP && dock.childCount > 0) go(dock.getChildAt(Nav.nearest(centres(dock), centre(v))))
+            if (dir == Nav.Dir.UP && dock.childCount > 0) go(dock.getChildAt(dockAt) ?: dock.getChildAt(Nav.nearest(centres(dock), centre(v))))
             else if (dir == Nav.Dir.UP) up(v)
             else v.nudge(if (dir == Nav.Dir.RIGHT) 1 else if (dir == Nav.Dir.LEFT) -1 else 0, if (dir == Nav.Dir.DOWN) 1 else 0)
             return true
@@ -560,7 +568,10 @@ class HomeActivity : Activity() {
     }
 
     private fun makeTile(a: App, w: Int, inDock: Boolean) = Tile(this, a, w, a.label, ::dp).apply {
-        setOnClickListener { if (!(if (a.pin != null) Pins.open(this@HomeActivity, a) else Apps.launch(this@HomeActivity, a.pkg))) toast(R.string.no_open) }
+        setOnClickListener {
+            if (!(if (a.pin != null) Pins.open(this@HomeActivity, a) else Apps.launch(this@HomeActivity, a.pkg))) toast(R.string.no_open)
+            else lastOpened = a.pkg
+        }
         setOnLongClickListener { menu(a); true }
         moves(this, inDock) { menu(a) }
     }
@@ -909,6 +920,9 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
         addView(name, LayoutParams(w, -2))
         background = ColorDrawable(Color.TRANSPARENT)
     }
+
+    /** The name line's height under the card. */
+    fun nameHeight(): Int { name.measure(0, 0); return name.measuredHeight }
 
     /**
      * Focus lifts the card (a springy rise, a soft shadow, the picture a touch larger inside it, a shine passing over) and rings it;
