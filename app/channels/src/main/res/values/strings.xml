@@ -43,6 +43,9 @@
     <string name="guide_next">Next %1$s</string>
     <string name="today">Today</string>
     <string name="tomorrow">Tomorrow</string>
+    <string name="lang">Language: %s</string>
+    <string name="lang_title">Language</string>
+    <string name="lang_auto">Follow the TV</string>
     <string name="search_hint">Type a channel name, e.g. cartoon network</string>
     <string name="searching_all">Searching every country…</string>
     <string name="other_countries">Other countries</string>

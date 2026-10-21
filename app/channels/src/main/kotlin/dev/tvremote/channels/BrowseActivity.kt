@@ -2,6 +2,7 @@ package dev.tvremote.channels
 
 import android.app.Activity
 import android.app.Dialog
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
@@ -33,6 +34,7 @@ import java.util.concurrent.Executors
  * (pin, rename, delete). Everything is read from iptv-org in the background.
  */
 class BrowseActivity : Activity() {
+    override fun attachBaseContext(b: Context) = super.attachBaseContext(Lang.wrap(b))
     private val io = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
     private lateinit var rail: LinearLayout
@@ -149,6 +151,7 @@ class BrowseActivity : Activity() {
         overlay = screen
         cc = countryOf(intent) ?: Store.country(this)
         groupOf(intent)?.let { group = it }
+        keepGroup?.let { group = it; keepGroup = null }                // the language changed: the same group, not the first
         intent.getStringExtra(QUERY)?.let { group = SEARCH; find.setText(it) }
         load(false)
         watching = Store.watch(this) { runOnUiThread {
@@ -218,6 +221,7 @@ class BrowseActivity : Activity() {
         add(Ui.row(this, R.drawable.ic_plus, getString(R.string.new_group)) { ask(getString(R.string.new_group), "") { pick(MINE + Store.addGroup(this, it)) } }, false)
         add(Ui.row(this, R.drawable.ic_globe, countryName.ifEmpty { getString(R.string.country) }) { countries() }, false)
         add(Ui.row(this, R.drawable.ic_refresh, getString(R.string.refresh)) { load(true) }, false)
+        add(Ui.row(this, R.drawable.ic_subtitle, getString(R.string.lang, langName(Lang.pref(this)))) { languages() }, false)
         rail.addView(View(this).apply { setBackgroundColor(0x22FFFFFF) }, LinearLayout.LayoutParams(-1, 1).apply {
             val m = Ui.dp(this@BrowseActivity, 10).toInt(); topMargin = m; bottomMargin = m })
         if (all.isNotEmpty()) {
@@ -421,6 +425,23 @@ class BrowseActivity : Activity() {
                 cards.notifyDataSetChanged()                          // the cards' "on now" lines, now known
             }
         }
+    }
+
+    private fun langName(l: String) = when (l) { "vi" -> "Tiếng Việt"; "en" -> "English"; else -> getString(R.string.lang_auto) }
+
+    /** Three choices, the one in use marked; a new one is saved and the screen made again in it, on the same group. */
+    private fun languages() {
+        val (dlg, box) = sheet(320)
+        heading(box, getString(R.string.lang_title))
+        val now = Lang.pref(this)
+        for (l in Lang.CHOICES) box.addView(Ui.row(this, R.drawable.ic_check, langName(l)) {
+            dlg.dismiss()
+            if (l == now) return@row
+            Lang.set(this, l); keepGroup = if (group == SEARCH) ALL else group
+            recreate()
+        }.also { if (l != now) (it.getChildAt(0) as ImageView).alpha = 0f })   // the tick's room stays, so the words line up
+        dlg.show()
+        box.post { box.getChildAt(1 + Lang.CHOICES.indexOf(now))?.requestFocus() }
     }
 
     /** A dialog box, the look all of them share. */
@@ -748,6 +769,7 @@ class BrowseActivity : Activity() {
         private const val TAG_GROUP = 0x7f0f0001                      // a rail row's group (any id: no layout uses it)
         const val QUERY = "query"                                    // text for the search box (a find link that matched nothing)
         const val ALL = ""
+        private var keepGroup: String? = null                      // set just before recreate() for a language change
         const val SEARCH = "\u0000search"                           // the search mode: this country first, then the others
         private const val HDR = "\u0000hdr"                        // a section line in the grid (a Channel whose name is its words)
         private const val IDLE = 0; private const val LOADING = 1; private const val OFFLINE = 2; private const val DONE = 3
@@ -757,7 +779,7 @@ class BrowseActivity : Activity() {
         fun fold(s: String) = Normalizer.normalize(s.lowercase().replace('đ', 'd'), Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "").trim()
 
         /** iptv-org's group names in the app's language where we have them; its "Undefined" (no category given) is "Other". */
-        fun groupName(g: String) = if (java.util.Locale.getDefault().language == "vi") VI[g.lowercase()] ?: g else if (g.equals("undefined", true)) "Other" else g
+        fun groupName(g: String) = if (Lang.code() == "vi") VI[g.lowercase()] ?: g else if (g.equals("undefined", true)) "Other" else g
 
         private val VI = mapOf(
             "general" to "Tổng hợp", "news" to "Tin tức", "entertainment" to "Giải trí", "movies" to "Phim", "series" to "Phim bộ",

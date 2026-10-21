@@ -36,7 +36,7 @@ object Catalog {
     }
 
     /** The country a list opens on the first time: the TV's own. */
-    fun home(): String = Locale.getDefault().country.lowercase().ifEmpty { "us" }
+    fun home(): String = Lang.system().country.lowercase().ifEmpty { "us" }
 
     /** The copy in files/ when younger than a day (or offline), else the network's ([load], or GET [url]). Null: never fetched and offline. */
     fun cached(c: Context, name: String, url: String, fresh: Boolean, load: (() -> String?)? = null): String? {

@@ -41,6 +41,7 @@ import java.util.concurrent.Executors
  * goes back to the one before. A stream that does not play falls through to the channel's next stream, then says so.
  */
 class PlayActivity : Activity() {
+    override fun attachBaseContext(b: android.content.Context) = super.attachBaseContext(Lang.wrap(b))
     private val main = Handler(Looper.getMainLooper())
     private val io = Executors.newSingleThreadExecutor()
     private val guideIo = Executors.newSingleThreadExecutor()         // a slow guide never holds up a stream's address

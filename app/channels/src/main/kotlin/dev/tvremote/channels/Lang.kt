@@ -1,0 +1,33 @@
+package dev.tvremote.channels
+
+import android.content.Context
+import android.content.res.Configuration
+import android.content.res.Resources
+import java.util.Locale
+
+/**
+ * The app's language: "" follows the TV, or "vi" / "en". Plain Activities (no AppCompat: it would add ~1 MB to a 1 GB box), so
+ * each one wraps its base context in [wrap]; the chosen locale is also the JVM default, which the country names ([Catalog])
+ * and the category words ([BrowseActivity.groupName]) read.
+ */
+object Lang {
+    val CHOICES = listOf("", "vi", "en")
+
+    fun pref(c: Context): String = c.getSharedPreferences("channels", Context.MODE_PRIVATE).getString("lang", "") ?: ""
+    fun set(c: Context, l: String) = c.getSharedPreferences("channels", Context.MODE_PRIVATE).edit().putString("lang", l).apply()
+
+    /** The TV's own locale, whatever the app shows. */
+    fun system(): Locale = Resources.getSystem().configuration.let { if (android.os.Build.VERSION.SDK_INT >= 24) it.locales[0] else @Suppress("DEPRECATION") it.locale }
+
+    /** The language words come in now: "vi" or anything else (English is every other one's fallback here). */
+    fun code(): String = Locale.getDefault().language
+
+    /** [base] with the chosen language, for an Activity's attachBaseContext. */
+    fun wrap(base: Context): Context {
+        val l = pref(base)
+        val loc = if (l.isEmpty()) system() else Locale(l)
+        Locale.setDefault(loc)
+        if (l.isEmpty()) return base
+        return base.createConfigurationContext(Configuration(base.resources.configuration).apply { setLocale(loc) })
+    }
+}
