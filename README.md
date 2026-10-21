@@ -22,6 +22,7 @@ Tested for real on a Sony BRAVIA (Android 9). Other brands are untested; LG, Sam
 
 - [What you get](#what-you-get)
 - [Three apps and a web page](#three-apps-and-a-web-page)
+- [TV Home and TV Channels](#tv-home-and-tv-channels)
 - [Quick start](#quick-start)
 - [Away from home](#away-from-home)
 - [Undo](#undo)
@@ -123,6 +124,39 @@ flowchart LR
 ADB is Android's own debug bridge. The apps speak it themselves and push `scrcpy-server` to the TV for H.264 video, sound, touch and keys. Before ADB is on, the Phone app and the Computer app can still send keys through the Android TV Remote protocol (ports 6466/6467).
 </details>
 
+## TV Home and TV Channels
+
+Two more apps for the TV, free and without ads. Both are set up from the phone or computer app, or with Downloader.
+
+<table>
+<tr>
+<td align="center" width="50%"><img src="docs/img/tvhome-clean-en.webp" alt="TV Home, nothing but your apps"><br><sub>TV Home, clean</sub></td>
+<td align="center" width="50%"><img src="docs/img/tvhome-widgets-en.webp" alt="TV Home with system, weather and lunar calendar widgets"><br><sub>TV Home with widgets</sub></td>
+</tr>
+</table>
+
+**🏠 TV Home** is a home screen instead of Google TV's: no ads, no suggested rows, 0.2 MB.
+
+- A clock, your favourite apps in a dock, then every other app. Hide the ones the kids should not see.
+- Widgets if you want them: system (memory, storage, IP), weather, lunar calendar, month calendar, most used apps and limits, sleep timer, a note.
+- Your own wallpaper or photo, 12/24-hour clock, how much it moves.
+- Arranged from the phone or computer (TV tab → 🏠 → *Customize TV Home*) or on the TV with its remote.
+- *Optimize TV* makes it the home screen for you; *Back to the TV's own* undoes it.
+
+<p align="center"><img src="docs/img/tvchannels.webp" width="720" alt="TV Channels: Vietnam's free channels"><br><sub>TV Channels</sub></p>
+
+**📺 TV Channels** plays free TV channels on the TV.
+
+- Channels from iptv-org's public lists, by country and category, plus VieON's free channels with the programme guide (Vietnam).
+- Favourites, your own groups, channels pinned to the home screen. A dead stream falls to the next one.
+- Opened by name from the phone: type or say "open channel VTV1".
+- Installed from the phone or computer (TV tab → 📺 card → *Install TV Channels*).
+
+| App | Downloader code | File |
+|---|---|---|
+| TV Home | **`4356026`** | [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk) |
+| TV Channels | **`8135635`** | [tv-channels.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-channels.apk) |
+
 ## Quick start
 
 **You need:** an Android TV / Google TV on the same Wi-Fi as your phone or computer, and its own remote for the first few minutes.
@@ -155,7 +189,7 @@ That's it. A ready TV opens straight on the Remote tab.
 5. Open **TV Setup**. If ADB is still off, it explains how and opens Developer options for you.
 6. Scan its **QR code** with the phone's camera and type the 6-digit code. Done.
 
-The phone app is `2973135` the same way. Both codes always point at the latest release.
+The phone app is `2973135` the same way; TV Home `4356026`, TV Channels `8135635`. The codes always point at the latest release.
 
 <p align="center"><img src="docs/img/tvapp-en.webp" width="640" alt="The TV Setup app on the TV"></p>
 

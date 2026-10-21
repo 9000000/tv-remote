@@ -22,6 +22,7 @@
 
 - [Chọn cách dùng](#chọn-cách-dùng)
 - [Ba app và một trang web](#ba-app-và-một-trang-web): tên gọi, so sánh, sơ đồ
+- [TV Home và TV Channels](#tv-home-và-tv-channels)
 - [Chuẩn bị TV](#chuẩn-bị-tv)
 - [Cài TV Setup bằng mã Downloader](#cài-tv-setup-bằng-mã-downloader)
 - Cài và dùng từng cách:
@@ -126,6 +127,39 @@ flowchart TB
     UI --> PH & PC & TVA
 ```
 
+## TV Home và TV Channels
+
+Thêm 2 app cho TV, miễn phí, không quảng cáo. Cài và chỉnh từ app điện thoại / máy tính, hoặc bằng Downloader.
+
+<table>
+<tr>
+<td align="center" width="50%"><img src="docs/img/tvhome-clean-vi.webp" alt="TV Home gọn, chỉ có app của bạn"><br><sub>TV Home gọn</sub></td>
+<td align="center" width="50%"><img src="docs/img/tvhome-widgets-vi.webp" alt="TV Home có widget hệ thống, thời tiết, lịch âm"><br><sub>TV Home có widget</sub></td>
+</tr>
+</table>
+
+**🏠 TV Home** là màn hình chính thay cho Google TV: không quảng cáo, không hàng gợi ý, 0,2 MB.
+
+- Đồng hồ, dãy app yêu thích, rồi tới mọi app khác. Ẩn app không muốn trẻ con thấy.
+- Widget tùy chọn: hệ thống (RAM, bộ nhớ, IP), thời tiết, lịch âm, lịch tháng, app dùng nhiều và giới hạn, hẹn giờ tắt, ghi chú.
+- Hình nền hoặc ảnh của bạn, đồng hồ 12/24 giờ, mức hiệu ứng.
+- Chỉnh từ điện thoại / máy tính (tab TV → 🏠 → *Tùy chỉnh TV Home*) hoặc ngay trên TV bằng remote.
+- *Tối ưu TV* tự đặt nó làm màn hình chính; *Về launcher của TV* là trả lại như cũ.
+
+<p align="center"><img src="docs/img/tvchannels.webp" width="720" alt="TV Channels: các kênh miễn phí của Việt Nam"><br><sub>TV Channels</sub></p>
+
+**📺 TV Channels** xem kênh truyền hình miễn phí trên TV.
+
+- Kênh từ danh sách công khai của iptv-org theo nước, thể loại, cộng các kênh miễn phí của VieON, có lịch phát sóng (kênh VN).
+- Kênh yêu thích, nhóm tự tạo, ghim kênh ra màn hình chính. Kênh hỏng thì tự sang nguồn khác.
+- Mở kênh theo tên từ điện thoại: gõ hoặc nói "mở kênh VTV1".
+- Cài từ điện thoại / máy tính (tab TV → 📺 *Kênh TV* → Cài).
+
+| App | Mã Downloader | Tệp |
+|---|---|---|
+| TV Home | **`4356026`** | [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk) |
+| TV Channels | **`8135635`** | [tv-channels.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-channels.apk) |
+
 ## Chuẩn bị TV
 
 Làm một lần, bằng remote của TV. Tên menu dưới đây là trên Sony; hãng khác có thể hơi khác.
@@ -169,6 +203,8 @@ Cách dễ nhất cho người mới: chỉ cần remote của TV, không cần 
 |---|---|---|
 | TV Setup (cài trên TV) | **`2397346`** | [tv-setup.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-setup.apk) |
 | TV Remote (điện thoại Android) | **`2973135`** | [tv-remote.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk) |
+| TV Home (màn hình chính) | **`4356026`** | [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk) |
+| TV Channels (xem kênh) | **`8135635`** | [tv-channels.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-channels.apk) |
 
 Mã luôn trỏ tới bản mới nhất. Không có Downloader thì mở `go.aftvnews.com/<mã>` trong trình duyệt cũng tải được.
 
