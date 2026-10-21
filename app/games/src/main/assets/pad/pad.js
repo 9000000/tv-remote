@@ -2,9 +2,9 @@
 const K = new URLSearchParams(location.search).get('k') || '';
 const VI = (navigator.language || '').toLowerCase().startsWith('vi');
 const W = VI
-  ? { p: 'Người chơi', c: 'Đang kết nối…', rc: 'Đang kết nối lại…', rch: 'Không thấy TV? Nếu TV đổi mạng hoặc địa chỉ, quét lại mã QR trên TV.', rs: 'Quét lại mã QR trên TV', rsh: 'Mã kết nối đã đổi. Quét mã mới để vào lại.', nm: 'Tên của bạn', f: 'Hết chỗ chơi', h: 'Rung', a: 'Thêm game', s: 'Gửi', k: 'Cần xoay thay D-pad', b: 'Quay lại', g: 'TV Games', t: 'Thêm vào Màn hình chính để chơi toàn màn hình',
+  ? { p: 'Người chơi', c: 'Đang kết nối…', rc: 'Đang kết nối lại…', rch: 'Không thấy TV? Nếu TV đổi mạng hoặc địa chỉ, quét lại mã QR trên TV.', rs: 'Quét lại mã QR trên TV', rsh: 'Mã kết nối đã đổi. Quét mã mới để vào lại.', nm: 'Tên của bạn', sv: 'Lưu', cx: 'Huỷ', f: 'Hết chỗ chơi', h: 'Rung', a: 'Thêm game', s: 'Gửi', k: 'Cần xoay thay D-pad', b: 'Quay lại', g: 'TV Games', t: 'Thêm vào Màn hình chính để chơi toàn màn hình',
     s1: 'Bấm nút Chia sẻ của Safari (ô vuông có mũi tên lên)', s2: 'Chọn “Thêm vào Màn hình chính”', s3: 'Mở tay cầm từ biểu tượng mới: toàn màn hình', fs: 'Toàn màn hình', sp: 'Game này tối đa {n} người: bạn đang xem', rd: 'Sẵn sàng', rdOn: 'Đã sẵn sàng ✓', lb: 'Phòng chờ: thử các nút, rồi bấm Sẵn sàng', cl: 'Bắt đầu sau' }
-  : { p: 'Player', c: 'Connecting…', rc: 'Reconnecting…', rch: 'No TV in sight? If the TV changed network or address, scan its QR code again.', rs: 'Scan the QR code on the TV again', rsh: 'The connection code was changed. Scan the new one to join again.', nm: 'Your name', f: 'Room is full', h: 'Haptics', a: 'Add game', s: 'Send', k: 'Stick instead of D-pad', b: 'Back', g: 'TV Games', t: 'Add to Home Screen to play fullscreen',
+  : { p: 'Player', c: 'Connecting…', rc: 'Reconnecting…', rch: 'No TV in sight? If the TV changed network or address, scan its QR code again.', rs: 'Scan the QR code on the TV again', rsh: 'The connection code was changed. Scan the new one to join again.', nm: 'Your name', sv: 'Save', cx: 'Cancel', f: 'Room is full', h: 'Haptics', a: 'Add game', s: 'Send', k: 'Stick instead of D-pad', b: 'Back', g: 'TV Games', t: 'Add to Home Screen to play fullscreen',
     s1: 'Tap Safari’s Share button (the square with an up arrow)', s2: 'Choose “Add to Home Screen”', s3: 'Open the pad from the new icon: fullscreen', fs: 'Fullscreen', sp: 'This game takes {n} players at most: you are watching', rd: 'Ready', rdOn: 'Ready ✓', lb: 'Lobby: try the buttons, then tap Ready', cl: 'Starting in' };
 // the TV left TV Games (Home) or closed it: the pad says so instead of looking healthy
 Object.assign(W, VI
@@ -18,7 +18,7 @@ const store = {
 };
 let cid = store.get('tvg-cid') || '';
 if (!cid) { cid = Math.random().toString(36).slice(2, 10) + Date.now().toString(36); store.set('tvg-cid', cid); }
-$('#lblHaptic').textContent = W.h; $('#lblAdd').textContent = W.a; $('#tipText').textContent = W.t;
+$('#nmOk').textContent = W.sv; $('#nmNo').setAttribute('aria-label', W.cx); $('#lblHaptic').textContent = W.h; $('#lblAdd').textContent = W.a; $('#tipText').textContent = W.t;
 $('#lblBack').textContent = W.b; $('#lblHome').textContent = W.g; $('#shTitle').textContent = W.t; $('#sh1').textContent = W.s1; $('#sh2').textContent = W.s2; $('#sh3').textContent = W.s3; $('#fs').setAttribute('aria-label', W.fs); $('#send').textContent = W.s; $('#lblStick').textContent = W.k;
 $('#lobbyHint').textContent = W.lb; $('#countLbl').textContent = W.cl; $('#offTitle').textContent = W.rs; $('#offHint').textContent = W.rsh; $('#nm').placeholder = W.nm; $('#nm').maxLength = 40;
 $('#awayTitle').textContent = W.aw; $('#awayHint').textContent = W.awh; $('#reopen').textContent = W.awo;
@@ -45,7 +45,7 @@ function setName(v, tell) {
   show(mySlot);
 }
 function editName(on) {
-  $('#who').hidden = on; $('#nameform').hidden = !on;
+  $('#who').hidden = on; $('#nameform').hidden = !on; $('#top').classList.toggle('editing', on);
   if (on) { $('#nm').value = myName; try { $('#nm').focus(); $('#nm').select(); } catch (e) {} }
 }
 $('#nameform').addEventListener('submit', (e) => { e.preventDefault(); setName($('#nm').value, true); editName(false); buzz(12); });
@@ -53,6 +53,17 @@ $('#nm').addEventListener('blur', () => { if (!$('#nameform').hidden) { setName(
 
 // ---- connection
 let away = false, canOpen = false, closed = false, first_hello = true, ws = null, retry = 400, layout = null, sysName = 'nes', mode = 'nav', lastPong = 0, gaveUp = false, downSince = 0;
+// Save / Cancel buttons (a keyboard's Done is missing on some phones): they act on touchstart, like the other actions, and keep the
+// field focused (no blur first); tapping anywhere else blurs the field, which saves, so a typed name is never lost. Escape cancels.
+function nameSave() { if ($('#nameform').hidden) return; setName($('#nm').value, true); editName(false); buzz(12); }
+function nameCancel() { if ($('#nameform').hidden) return; editName(false); }
+[['#nmOk', nameSave], ['#nmNo', nameCancel]].forEach(([sel, fn]) => {
+  const b = $(sel);
+  b.addEventListener('touchstart', (e) => { e.preventDefault(); fn(); }, { passive: false });
+  b.addEventListener('mousedown', (e) => e.preventDefault());
+  b.addEventListener('click', (e) => { e.preventDefault(); fn(); });
+});
+$('#nm').addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.preventDefault(); nameCancel(); } });
 // Two modes: the pad (a game is running) and navigate (a remote for TV Games itself: library, start / pause cards). It follows
 // the TV (a game starts -> pad, back to the library -> navigate); the 🎮 / 🧭 button flips it by hand.
 function setMode(m) {
