@@ -18,10 +18,14 @@ nav .navtools{margin-left:auto}
 .pair figcaption b{color:var(--text)}
 
 .sc{padding:64px 0}
-.sc .wrap{display:grid;grid-template-columns:5fr 7fr;gap:48px;align-items:center}
-.sc.hflip .wrap{grid-template-columns:7fr 5fr}.sc.hflip .sc-t{order:2}
-.sc-t .eyebrow{margin-bottom:6px}
-.sc-t h2{font-size:clamp(28px,3.6vw,40px);margin:8px 0 12px}
+.sc .wrap{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:48px;align-items:center}
+.sc.hflip .wrap{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}.sc.hflip .sc-t{order:2}
+.sc-t{min-width:0}
+.sc-name{display:flex;align-items:center;gap:16px;margin-bottom:14px}
+.sc-name img{width:56px;height:56px;border-radius:14px;flex:none;box-shadow:0 8px 24px -8px #000}
+.sc-name b{font-size:clamp(32px,4vw,46px);font-weight:800;letter-spacing:-.025em;line-height:1.05;color:var(--pc,var(--blue))}
+#remote{--pc:#8fb0ff}#manage{--pc:#7da2ff}#home{--pc:#9db4f0}#channels{--pc:#35d6c0}#games{--pc:#e06ad6}
+.sc-t h2{font-size:clamp(20px,2.3vw,26px);font-weight:600;line-height:1.25;margin:0 0 10px;color:var(--text)}
 .sc-t p{color:var(--muted);font-size:clamp(16px,1.6vw,19px);max-width:440px}
 .sc-t .btn{margin-top:22px}
 .sc-p{position:relative;min-width:0}
@@ -31,11 +35,11 @@ nav .navtools{margin-left:auto}
 .sc-p .ins img{width:100%;height:auto}
 
 .h-setup{padding:72px 0 40px}
-.h-setup h2{text-align:center}
+.h-setup h2{text-align:center;font-size:clamp(30px,4vw,44px);font-weight:800;letter-spacing:-.025em}
 .h-setup .lead{margin:0 auto;text-align:center}
 .steps4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:36px;counter-reset:s;list-style:none}
 .steps4 li{counter-increment:s;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
-.steps4 li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--fill);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+.steps4 li::before{content:counter(s);width:48px;height:48px;font-size:26px;border-radius:50%;background:var(--fill);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
 .steps4 h3{font-size:17px}
 .steps4 p{color:var(--muted);font-size:14.5px;line-height:1.5}
 .steps4 .th{margin-top:auto;border-radius:10px;overflow:hidden;border:1px solid var(--line2);background:var(--bg2);display:flex;align-items:center;justify-content:center;height:120px}
@@ -48,6 +52,8 @@ nav .navtools{margin-left:auto}
 .h-dl .btn.mine{border-color:var(--blue);color:var(--blue)}
 .h-dl small{display:block;color:var(--dim);font-size:14px;margin-top:14px}
 .h-dl small a,.h-note a{color:var(--blue)}
+.h-guides{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:28px}
+.h-guides .btn{min-height:48px;padding:12px 20px;font-size:16px;text-align:center}
 .h-note{text-align:center;color:var(--dim);font-size:14px;margin-top:10px}
 .h-more{padding:28px 0 56px;text-align:center}
 .h-more a{color:var(--muted);font-size:15px;border-bottom:1px solid var(--line2)}
@@ -65,7 +71,7 @@ nav .navtools{margin-left:auto}
 }
 @media (max-width:560px){
   .h-hero{padding-top:36px}
-  .h-cta .btn{flex:1 1 100%}
+  .h-cta .btn,.h-guides .btn{flex:1 1 100%}
   .steps4{grid-template-columns:1fr}
   .steps4 .th{height:100px}
 }
