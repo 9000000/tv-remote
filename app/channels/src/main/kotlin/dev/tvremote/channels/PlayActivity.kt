@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.SurfaceView
@@ -327,7 +328,11 @@ class PlayActivity : Activity() {
         guideIo.execute { val got = Guide.of(this, ch); main.post { if (!isDestroyed && streams === ch && guide.visibility == View.VISIBLE) fill(got) } }
     }
 
-    private val hideInfo = Runnable { info.visibility = View.GONE }
+    private var infoHidAt = 0L                                    // when the 5 s timer hid the banner: an OK just after still counts it as shown
+    private val hideInfo = Runnable { info.visibility = View.GONE; infoHidAt = SystemClock.uptimeMillis() }
+    private fun infoShown() = info.visibility == View.VISIBLE || SystemClock.uptimeMillis() - infoHidAt < 300
+    private fun closeInfo() { main.removeCallbacks(hideInfo); info.visibility = View.GONE; infoHidAt = 0 }
+
 
     private val jump = Runnable {
         typed.toIntOrNull()?.let { n -> if (n in 1..Lineup.channels.size) tune(n - 1) }
@@ -355,8 +360,9 @@ class PlayActivity : Activity() {
         when (k) {
             KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_CHANNEL_UP, KeyEvent.KEYCODE_PAGE_UP -> tune(at + 1)
             KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_CHANNEL_DOWN, KeyEvent.KEYCODE_PAGE_DOWN -> tune(at - 1)
-            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_GUIDE,
-            KeyEvent.KEYCODE_MENU -> showSide(true)
+            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> if (infoShown()) { closeInfo(); showSide(true) } else showInfo()
+            KeyEvent.KEYCODE_BACK -> if (infoShown()) closeInfo() else return super.onKeyDown(k, e)
+            KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_GUIDE, KeyEvent.KEYCODE_MENU -> showSide(true)
             KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_INFO -> if (info.visibility == View.VISIBLE) showGuide(true) else showInfo()
             KeyEvent.KEYCODE_PROG_RED, KeyEvent.KEYCODE_TV_DATA_SERVICE -> showGuide(true)
             KeyEvent.KEYCODE_LAST_CHANNEL -> if (before >= 0) tune(before)
