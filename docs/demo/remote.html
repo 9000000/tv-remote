@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="vi" data-lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TV Remote: dùng thử | live demo</title>
+<meta name="description" content="Try the real TV Remote web page with a made-up TV. Dùng thử trang web thật của TV Remote với một chiếc TV giả.">
+<meta name="theme-color" content="#0a0d14">
+<link rel="icon" href="../img/icon.png">
+<script>
+  // the site's choice (docs/js/site.js keeps it in localStorage "lang"); the page in the frame reads the same key
+  (function () {
+    if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');   // inside the hub (index.html): its tabs replace this bar
+    var l = 'vi';
+    try { var m = /[?&]lang=(vi|en)/.exec(location.search); l = m ? m[1] : localStorage.getItem('lang') || (/^vi/i.test(navigator.language) ? 'vi' : 'en');
+      if (l !== 'vi' && l !== 'en') l = 'vi'; localStorage.setItem('lang', l); } catch (e) {}
+    document.documentElement.dataset.lang = l; document.documentElement.lang = l;
+  })();
+</script>
+<style>
+  :root { --bg:#0a0d14; --card:#141924; --line:#232a3a; --text:#e9edf5; --muted:#9aa4b8; --blue:#5b8cff; --fill:#2f5fd6; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; }
+  html[data-lang="vi"] .en, html[data-lang="en"] .vi { display: none !important; }
+  .bar { flex: none; display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; padding: 8px 16px; background: var(--card); border-bottom: 1px solid var(--line); }
+  .bar .tag { font-weight: 700; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: #fff; background: var(--fill); border-radius: 999px; padding: 3px 10px; }
+  .bar p { margin: 0; color: var(--muted); flex: 1 1 260px; min-width: 0; }
+  .bar a, .bar button { font: inherit; font-weight: 600; text-decoration: none; border-radius: 10px; padding: 7px 14px; border: 1px solid var(--line); color: var(--text); background: transparent; cursor: pointer; }
+  .bar a.go { background: var(--fill); border-color: var(--fill); color: #fff; }
+  .bar a, .bar button { display: inline-flex; align-items: center; gap: 7px; }
+  .bar svg { width: 17px; height: 17px; flex: none; }
+  .bar a:hover, .bar button:hover { filter: brightness(1.15); }
+  @media (max-width: 600px) { .bar { padding: 6px 12px; } .bar p, .bar .home { display: none; } .bar .tag { margin-right: auto; } }
+  .embed .bar { display: none; }
+  .stage { flex: 1; min-height: 0; position: relative; }
+  iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--bg); }
+  .msg { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; padding: 24px; color: var(--muted); }
+  .msg[hidden] { display: none; }
+  .msg b { color: var(--text); display: block; margin-bottom: 6px; font-size: 17px; }
+  .msg a { color: var(--blue); }
+</style>
+</head>
+<body>
+<div class="bar">
+  <span class="tag"><span class="vi">Dùng thử</span><span class="en">Live demo</span></span>
+  <p><span class="vi">Trang web thật của app, nối với một chiếc TV giả. Không có gì được lưu hay gửi đi.</span>
+     <span class="en">The app's real web page, connected to a made-up TV. Nothing is saved or sent.</span></p>
+  <a class="go" href="../#install"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg><span class="vi">Tải app</span><span class="en">Download</span></a>
+  <a class="home" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1Z"/></svg><span class="vi">Trang chủ</span><span class="en">Home</span></a>
+  <button type="button" id="again"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span class="vi">Làm lại</span><span class="en">Reset</span></button>
+</div>
+<div class="stage">
+  <div class="msg" id="msg"><div><b><span class="vi">Đang mở bản dùng thử...</span><span class="en">Opening the demo...</span></b></div></div>
+  <iframe id="app" title="TV Remote" hidden></iframe>
+</div>
+<script src="mock.js"></script>
+<script src="go.js"></script>
+<script>
+(function () {
+  var msg = document.getElementById('msg'), frame = document.getElementById('app');
+  function broken(vi, en) {
+    msg.hidden = false; frame.hidden = true;
+    msg.firstElementChild.innerHTML = '<b><span class="vi">' + vi + '</span><span class="en">' + en + '</span></b>' +
+      '<span class="vi">Thử tải lại trang, hoặc <a href="../#install">tải app</a>.</span><span class="en">Try reloading, or <a href="../#install">download the app</a>.</span>';
+  }
+  document.getElementById('again').onclick = function () { location.reload(); };
+  if (!('serviceWorker' in navigator)) return broken('Trình duyệt này không chạy được bản dùng thử.', 'This browser cannot run the demo.');
+
+  // the worker answers the page's /api calls by asking this page, which holds the made-up TV (mock.js)
+  navigator.serviceWorker.addEventListener('message', function (e) {
+    if (!e.data || e.data.demo !== 'api' || !e.ports[0]) return;
+    window.demoApi(e.data).then(function (r) { e.ports[0].postMessage(r); },
+      function (err) { e.ports[0].postMessage({ status: 500, type: 'application/json', body: JSON.stringify({ error: String(err) }) }); });
+  });
+
+  // ?go=<guide topic>: once the made-up TV is connected, open the part of the page that topic is about (go.js)
+  function goTo() {
+    var m = /[?&]go=([\w-]+)/.exec(location.search), to = m && window.DEMO_GO[m[1]], tries = 0;
+    if (!to) return;
+    (function wait() {
+      var w = frame.contentWindow, ready = false;
+      try { ready = typeof w.showTab === 'function' && w.eval('typeof ADB === "object" && ADB.state') === 'ready'; } catch (e) {}
+      if (!ready) { if (++tries < 60) setTimeout(wait, 250); return; }
+      if (w.pickLeave) w.pickLeave();
+      w.showTab(to[0]);
+      var steps = to.slice(1), i = 0;
+      (function next() {
+        var what = steps[i++];
+        if (!what) return;
+        setTimeout(function () {
+          var last = i >= steps.length;
+          if (/\(\)$/.test(what)) { var f = w[what.slice(0, -2)]; if (typeof f === 'function') f(); }
+          else if (/^click:/.test(what)) { var b = w.document.querySelector(what.slice(6)); if (b) b.click(); }
+          else {
+            var el = w.document.querySelector(what);
+            if (el) {
+              el = el.closest('.card') || el;
+              el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+              var ring = '0 0 0 3px var(--accent), 0 0 24px var(--accent)';    // the page's .flash (goTo), drawn here: older pages lack it
+              el.animate([{ boxShadow: '0 0 0 0 var(--accent)' }, { boxShadow: ring, offset: .1 }, { boxShadow: ring, offset: .6 }, { boxShadow: '0 0 0 3px transparent' }], { duration: 3000, easing: 'ease-out', delay: 400 });
+            }
+          }
+          if (!last) next();
+        }, i === 1 ? 300 : 700);
+      })();
+    })();
+  }
+  function start() {
+    try { if (!localStorage.getItem('quality')) localStorage.setItem('quality', 'snap'); } catch (e) {}   // pictures as screenshots: no video stream to fake
+    // the page's own "reloaded for a new language" note: open on the Living room TV's remote, not on the list of TVs (the Open button is still there)
+    try { sessionStorage.setItem('langKeep', JSON.stringify({ picking: false, tab: 'remote', y: 0 })); } catch (e) {}
+    frame.onload = function () { msg.hidden = true; frame.hidden = false; goTo(); };
+    frame.src = 'app/';
+  }
+  navigator.serviceWorker.register('sw.js', { scope: '/demo/' }).then(function () { return navigator.serviceWorker.ready; }).then(function () {
+    // the first visit: the worker is active but does not control this page yet (it takes the frame, which is enough: the frame loads after)
+    start();
+  }).catch(function () { broken('Không mở được bản dùng thử.', 'The demo could not start.'); });
+})();
+</script>
+</body>
+</html>

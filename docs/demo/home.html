@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="vi" data-lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TV Home: dùng thử | try it</title>
+<link rel="icon" href="../img/icon.png">
+<link rel="stylesheet" href="tvkit.css">
+<style>
+  /* the TV Home screen, 1280 x 720 as in the real screenshots (app/home: HomeActivity, Widgets, Customize) */
+  .scr { background: #0b1124; }
+  .bg { position: absolute; inset: 0; background: linear-gradient(160deg, #0e1530 0%, #1a2548 55%, #0c1022 100%) center / cover; }
+  .bg.photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,8,20,.55), rgba(5,8,20,.25) 40%, rgba(5,8,20,.6)); }
+  #clock { position: absolute; left: 66px; top: 36px; font-size: 96px; line-height: 1; font-weight: 200; letter-spacing: -1px; }
+  #greet { position: absolute; left: 68px; top: 148px; font-size: 22px; opacity: .92; }
+  #pills { position: absolute; right: 64px; top: 60px; display: flex; gap: 16px; }
+  .pill { height: 58px; padding: 0 26px 0 22px; border-radius: 29px; display: flex; align-items: center; gap: 12px; font-size: 21px; background: rgba(255,255,255,.12); border: 1.5px solid rgba(255,255,255,.2); }
+  .pill svg { width: 26px; height: 26px; }
+  .pill.f { background: #fff; color: #10131c; border-color: #fff; box-shadow: 0 0 0 4px rgba(255,255,255,.28); }
+  #view { -webkit-mask-image: linear-gradient(transparent 0, #000 22px); mask-image: linear-gradient(transparent 0, #000 22px); position: absolute; left: 0; right: 0; top: 206px; bottom: 0; overflow: hidden; }
+  #flow { position: absolute; left: 64px; right: 64px; top: 0; }
+  .glass { background: rgba(255,255,255,.1); border: 1.5px solid rgba(255,255,255,.17); border-radius: 30px; backdrop-filter: blur(10px); }
+  #widgets { display: flex; gap: 28px; margin-bottom: 32px; }
+  #widgets[hidden] { display: none; }
+  .w { height: 238px; padding: 24px 26px; flex: 1; }
+  .w.s { flex: 0 0 378px; } .w.t { flex: 0 0 376px; } .w.n { flex: 0 0 340px; }
+  .w small { font-size: 15px; letter-spacing: .12em; text-transform: uppercase; opacity: .7; display: flex; justify-content: space-between; }
+  .w .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; margin-top: 14px; }
+  .w .big { font-size: 28px; font-weight: 500; } .w .lbl { font-size: 14px; opacity: .65; }
+  .bar { height: 5px; border-radius: 3px; background: rgba(255,255,255,.2); margin: 4px 0 2px; overflow: hidden; } .bar i { display: block; height: 100%; background: #6fa3ff; }
+  .w .temp { display: flex; align-items: center; gap: 14px; margin-top: 14px; } .w .temp b { font-size: 44px; font-weight: 400; } .w .temp span { font-size: 18px; opacity: .85; }
+  .w .days { display: flex; justify-content: space-around; margin-top: 12px; text-align: center; font-size: 16px; opacity: .85; }
+  .w .note { font-size: 26px; line-height: 1.3; margin-top: 18px; } .w .note em { font-style: normal; opacity: .65; font-size: 18px; display: block; margin-top: 8px; }
+  #dock { padding: 38px 56px 46px; border-radius: 40px; display: flex; gap: 30px; min-height: 216px; align-items: center; }
+  #dock .empty { opacity: .6; font-size: 22px; margin: 0 auto; }
+  .t1 { position: relative; flex: none; }
+  .art { position: relative; border-radius: 10px; overflow: hidden; display: grid; place-items: center; font-weight: 700; text-align: center; box-shadow: 0 6px 16px rgba(0,0,0,.3); }
+  .art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  #dock .art { width: 234px; height: 132px; font-size: 30px; } #dock .pl { font-size: 26px !important; }
+  #apps .art { width: 175px; height: 98px; font-size: 22px; border-radius: 9px; }
+  .t1 .name { position: absolute; left: -20px; right: -20px; top: 100%; margin-top: 6px; text-align: center; font-size: 17px; opacity: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .t1.f { z-index: 3; } .t1.f .art { transform: scale(1.13); box-shadow: 0 0 0 4px #fff, 0 0 28px rgba(255,255,255,.45), 0 10px 24px rgba(0,0,0,.4); } .t1.f .name { opacity: 1; margin-top: 16px; }
+  #apps h2 { margin: 36px 0 18px 4px; font-size: 23px; font-weight: 400; opacity: .75; }
+  #grid { display: grid; grid-template-columns: repeat(6, 175px); gap: 26px 22px; padding: 0 4px 60px; }
+  .art .in { display: block; line-height: 1.1; } .art svg { display: block; }
+  .gl { color: #10131c; } .yt { background: #fff; color: #0f0f0f; font-size: .78em; letter-spacing: -.5px; } .yt i { background: #f00; border-radius: 8px; width: 1.5em; height: 1.05em; display: inline-grid; place-items: center; margin-right: 6px; vertical-align: -.2em; } .yt i::after { content: ""; border-left: .5em solid #fff; border-top: .28em solid transparent; border-bottom: .28em solid transparent; }
+  .nf { background: #000; color: #e50914; letter-spacing: 1px; } .dn { background: linear-gradient(135deg, #0b1b4d, #1f4fd0); } .pv { background: #0a1c33; color: #5ec1ff; font-size: .75em !important; }
+  .sp { background: #1ed760; color: #000; } .pl { background: #fff; color: #5f6368; font-size: 22px !important; } .pl b { background: conic-gradient(#ea4335 0 25%, #fbbc04 0 50%, #34a853 0 75%, #4285f4 0); width: 1.2em; height: 1.2em; border-radius: 40% 40% 40% 40%; margin-right: 6px; display: inline-block; vertical-align: -.25em; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+  .st { background: linear-gradient(#4b4f56 0 50%, #3d4046 0); } .st svg { width: 46%; height: 46%; fill: #dfe3ea; } .ch { background: #fff; color: #202124; } .fm { background: #5b3df5; } .kd { background: #12b2e7; } .vl { background: #f57c00; } .zk { background: #1f2937; color: #cbd5e1; }
+  /* overlays: the long-press menu (HomeActivity) and "Customize TV Home" */
+  .shade { position: absolute; inset: 0; background: rgba(5,8,20,.55); z-index: 10; display: grid; place-items: center; }
+  .shade[hidden] { display: none; }
+  .sheet { width: 520px; border-radius: 24px; background: #1a2030; border: 1.5px solid rgba(255,255,255,.18); padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+  .sheet h3 { margin: 4px 8px 14px; font-size: 24px; font-weight: 500; }
+  .sheet .it { height: 58px; border-radius: 14px; display: flex; align-items: center; padding: 0 20px; font-size: 22px; gap: 14px; }
+  .sheet .it span.v { margin-left: auto; opacity: .85; } .sheet .it.f { background: #fff; color: #10131c; }
+  .sheet .it.dis { opacity: .4; }
+  .sheet p.more { margin: 12px 8px 4px; font-size: 16px; opacity: .6; line-height: 1.35; }
+  #toast { position: absolute; left: 50%; bottom: 36px; transform: translateX(-50%); background: rgba(20,24,36,.94); border: 1px solid rgba(255,255,255,.2); border-radius: 999px; padding: 14px 30px; font-size: 21px; z-index: 20; max-width: 1000px; text-align: center; }
+  #toast[hidden] { display: none; }
+  /* the stock home of a TV maker: invented, only to compare (ads, sponsored rows) */
+  #stock { position: absolute; inset: 0; background: #14161c; z-index: 5; padding: 34px 54px; }
+  #stock[hidden] { display: none; }
+  #stock .nav { display: flex; gap: 34px; font-size: 22px; opacity: .8; align-items: center; } #stock .nav b { opacity: 1; border-bottom: 3px solid #fff; padding-bottom: 4px; } #stock .nav span.sp2 { margin-left: auto; }
+  #stock .hero { height: 200px; margin: 18px 0 8px; border-radius: 16px; background: linear-gradient(110deg, #b5179e, #f72585 55%, #ff9e00); padding: 34px 44px; position: relative; }
+  #stock .hero h4 { margin: 0; font-size: 46px; } #stock .hero p { margin: 8px 0 0; font-size: 22px; opacity: .92; }
+  #stock .tag { position: absolute; top: 14px; right: 16px; font-size: 14px; background: rgba(0,0,0,.45); padding: 3px 10px; border-radius: 6px; letter-spacing: .05em; }
+  #stock h5 { margin: 14px 0 10px; font-size: 20px; font-weight: 500; opacity: .85; }
+  #stock .row { display: flex; gap: 16px; overflow: hidden; }
+  #stock .c { flex: none; width: 196px; height: 112px; border-radius: 10px; position: relative; display: grid; place-items: center; font-size: 20px; font-weight: 700; }
+  #stock .c .tag { top: 6px; right: 6px; font-size: 12px; padding: 1px 7px; }
+  #stock .promo { margin-top: 16px; background: #2a2d38; border-radius: 12px; padding: 14px 22px; font-size: 20px; display: flex; justify-content: space-between; } #stock .promo u { color: #8ab4ff; }
+  #stock .note { position: absolute; bottom: 16px; left: 54px; font-size: 15px; opacity: .55; }
+  .tvcap { margin: 8px 2px 0; color: var(--muted); font-size: 13px; }
+  @media (max-width: 760px) { .tvcap { text-align: center; } }
+</style>
+</head>
+<body>
+<main class="demo">
+  <div class="tvwrap">
+    <div class="tv" id="tv"><div class="scr" id="scr">
+      <div class="bg" id="bg"></div>
+      <div id="clock"></div><div id="greet"></div>
+      <div id="pills"></div>
+      <div id="view"><div id="flow">
+        <div id="widgets"></div>
+        <div id="dock" class="glass"></div>
+        <div id="apps"><h2 class="vi">Ứng dụng</h2><h2 class="en">Apps</h2><div id="grid"></div></div>
+      </div></div>
+      <div id="stock" hidden></div>
+      <div class="shade" id="shade" hidden></div>
+      <div id="toast" hidden></div>
+    </div></div>
+    <p class="tvcap"><span class="vi">Một chiếc TV giả. Chọn app, giữ OK (hoặc nút Menu) để ghim, ẩn hay sắp xếp lại.</span><span class="en">A made-up TV. Pick an app, hold OK (or press Menu) to pin, hide or reorder.</span></p>
+  </div>
+  <aside class="side">
+    <div class="panel">
+      <h3><span class="vi">Màn hình chủ</span><span class="en">Home screen</span></h3>
+      <div class="chips">
+        <button class="chip" id="bBefore" type="button"><span class="vi">Trước (TV hãng)</span><span class="en">Before (stock)</span></button>
+        <button class="chip" id="bAfter" type="button" aria-pressed="true"><span class="vi">Sau (TV Home)</span><span class="en">After (TV Home)</span></button>
+      </div>
+      <h3><span class="vi">Hình nền</span><span class="en">Wallpaper</span></h3>
+      <div class="chips" id="walls"></div>
+      <div class="chips"><button class="chip" id="bWidgets" type="button" aria-pressed="true"><span class="vi">Widget</span><span class="en">Widgets</span></button></div>
+    </div>
+    <div class="rc"></div>
+  </aside>
+</main>
+<script src="tvkit.js"></script>
+<script>
+(function () {
+  var T = TVKit.T, VI = TVKit.VI, $ = function (s) { return document.querySelector(s); };
+  var ICON = {
+    inputs: '<path d="M14 4h5a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-5"/><path d="M3 12h11m0 0l-4-4m4 4l-4 4"/>',
+    net: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>'
+  };
+  function svg(d) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>'; }
+  // the made-up TV's apps. Third-party ones are drawn as plain name tiles; our own use the apps' real banners
+  var APPS = [
+    { id: 'youtube', n: 'YouTube', c: 'yt', h: '<i></i>YouTube' },
+    { id: 'channels', n: 'TV Channels', img: 'img/banner-channels.png', go: 'channels' },
+    { id: 'games', n: 'TV Games', img: 'img/banner-games.png', go: 'games' },
+    { id: 'play', n: 'Google Play Store', c: 'pl', h: '<b></b>Google Play<br>Store' },
+    { id: 'settings', n: T('Cài đặt', 'Settings'), c: 'st', h: '<svg viewBox="0 0 24 24"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1L15 3.4h-4l-.4 2.6a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.5 7.5 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.6 7.6 0 0 0 1.7-1l2.4 1 2-3.4zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>' },
+    { id: 'netflix', n: 'Netflix', c: 'nf', h: 'NETFLIX' },
+    { id: 'disney', n: 'Disney+', c: 'dn', h: 'Disney+' },
+    { id: 'prime', n: 'Prime Video', c: 'pv', h: 'prime video' },
+    { id: 'spotify', n: 'Spotify', c: 'sp', h: 'Spotify' },
+    { id: 'setup', n: 'TV Setup', img: 'img/banner-setup.png' },
+    { id: 'chrome', n: 'Chrome', c: 'ch', h: 'Chrome' },
+    { id: 'files', n: T('Tệp', 'Files'), c: 'fm', h: T('Tệp', 'Files') },
+    { id: 'kodi', n: 'Kodi', c: 'kd', h: 'Kodi' },
+    { id: 'vlc', n: 'VLC', c: 'vl', h: 'VLC' },
+    { id: 'zing', n: 'Zing TV', c: 'zk', h: 'Zing TV' }
+  ];
+  var BY = {}; APPS.forEach(function (a) { BY[a.id] = a; });
+  var WALLS = [
+    { id: 'night', n: T('Đêm', 'Night'), css: 'linear-gradient(160deg,#0e1530 0%,#1a2548 55%,#0c1022 100%)', t: 'linear-gradient(160deg,#0e1530,#1a2548)' },
+    { id: 'dusk', n: T('Hoàng hôn', 'Dusk'), css: 'linear-gradient(160deg,#2b1140 0%,#6d2b5e 55%,#1c0c2b 100%)', t: 'linear-gradient(160deg,#2b1140,#6d2b5e)' },
+    { id: 'cosmic-cliffs', n: T('Vách đá vũ trụ', 'Cosmic Cliffs'), photo: true },
+    { id: 'aurora-glow', n: T('Cực quang', 'Aurora'), photo: true },
+    { id: 'lagoon', n: T('Tinh vân Đầm phá', 'Lagoon Nebula'), photo: true }
+  ];
+  var S = { dock: ['youtube', 'channels', 'games', 'play'], hidden: [], wall: 0, widgets: false, h24: true, greet: true, before: false,
+            f: { z: 'dock', i: 0 }, over: null };
+  function defaults() { S.dock = ['youtube', 'channels', 'games', 'play']; S.hidden = []; S.wall = 0; S.widgets = false; S.h24 = true; S.greet = true; S.before = false; S.f = { z: 'dock', i: 0 }; S.over = null; }
+  function grid() { return APPS.filter(function (a) { return S.dock.indexOf(a.id) < 0 && S.hidden.indexOf(a.id) < 0; }).map(function (a) { return a.id; }); }
+  var TOP = ['inputs', 'net', 'settings'];
+
+  // ---- drawing
+  function art(a) { return a.img ? '<img src="' + a.img + '" alt="" draggable="false">' : a.h; }
+  function tile(a, z, i, f) { return '<div class="t1' + (f ? ' f' : '') + '" data-z="' + z + '" data-i="' + i + '"><div class="art ' + (a.c || '') + '">' + art(a) + '</div><div class="name">' + a.n + '</div></div>'; }
+  function clock() {
+    var d = new Date(), h = d.getHours(), m = ('0' + d.getMinutes()).slice(-2);
+    var hh = S.h24 ? ('0' + h).slice(-2) : ((h % 12) || 12);
+    $('#clock').textContent = hh + ':' + m + (S.h24 ? '' : (h < 12 ? ' AM' : ' PM'));
+    var D = VI ? ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    var M = VI ? ' tháng ' + (d.getMonth() + 1) : ' ' + ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getMonth()];
+    var g = h < 11 ? T('Chào buổi sáng', 'Good morning') : h < 18 ? T('Chào buổi chiều', 'Good afternoon') : T('Chào buổi tối', 'Good evening');
+    $('#greet').textContent = (S.greet ? g + '  ·  ' : '') + D[d.getDay()] + ', ' + (VI ? d.getDate() + M : d.getDate() + M);
+  }
+  function widgets() {
+    $('#widgets').hidden = !S.widgets; $('#widgets').innerHTML = !S.widgets ? '' :
+      '<div class="w s glass"><small><span>' + T('Hệ thống', 'System') + '</span><span>Android 14</span></small><div class="grid2">' +
+      '<div><div class="big">59%</div><div class="lbl">RAM</div><div class="bar"><i style="width:59%"></i></div></div><div><div class="big">11%</div><div class="lbl">' + T('Bộ nhớ', 'Storage') + '</div><div class="bar"><i style="width:11%"></i></div></div>' +
+      '<div><div class="big">10.0.2.15</div><div class="lbl">IP · LAN</div></div><div><div class="big" style="color:#ffd37a">' + T('BẬT', 'ON') + '</div><div class="lbl">ADB</div></div></div></div>' +
+      '<div class="w t glass"><small><span>Ho Chi Minh City</span></small><div class="temp"><b>26°</b><span>' + T('Dông', 'Storm') + '<br>' + T('Cao 32° · Thấp 25°', 'High 32° · Low 25°') + '</span></div>' +
+      '<div class="days"><div>T5<br>32° 25°</div><div>T6<br>32° 24°</div><div>T7<br>32° 24°</div></div></div>' +
+      '<div class="w n glass"><small><span>' + T('Ghi chú', 'Note') + '</span></small><div class="note">' + T('Mua sữa, 8 giờ tối gọi mẹ', 'Buy milk, call mum at 8') + '<em>' + T('Giả lập: sửa từ điện thoại', 'Made up: edit from the phone') + '</em></div></div>';
+  }
+  function draw() {
+    clock(); widgets();
+    $('#pills').innerHTML = TOP.map(function (k, i) {
+      var lab = k === 'inputs' ? T('Nguồn vào', 'Inputs') : k === 'net' ? T('Mạng dây', 'Wired') : T('Cài đặt', 'Settings');
+      return '<div class="pill' + (S.f.z === 'top' && S.f.i === i ? ' f' : '') + '" data-z="top" data-i="' + i + '">' + svg(ICON[k === 'settings' ? 'gear' : k]) + lab + '</div>';
+    }).join('');
+    $('#dock').innerHTML = S.dock.length ? S.dock.map(function (id, i) { return tile(BY[id], 'dock', i, S.f.z === 'dock' && S.f.i === i); }).join('')
+      : '<div class="empty">' + T('Giữ OK trên một app để ghim vào đây', 'Hold OK on an app to pin it here') + '</div>';
+    $('#grid').innerHTML = grid().map(function (id, i) { return tile(BY[id], 'grid', i, S.f.z === 'grid' && S.f.i === i); }).join('');
+    var w = WALLS[S.wall], bg = $('#bg');
+    bg.className = 'bg' + (w.photo ? ' photo' : '');
+    bg.style.backgroundImage = w.photo ? 'linear-gradient(rgba(0,0,0,0),rgba(0,0,0,0)), url(../home/' + w.id + '.jpg)' : w.css;
+    $('#stock').hidden = !S.before; $('#bBefore').setAttribute('aria-pressed', S.before); $('#bAfter').setAttribute('aria-pressed', !S.before);
+    $('#bWidgets').setAttribute('aria-pressed', S.widgets);
+    document.querySelectorAll('#walls .swatch').forEach(function (b, i) { b.setAttribute('aria-pressed', i === S.wall); });
+    scroll();
+  }
+  function scroll() {
+    var flow = $('#flow'), f = flow.querySelector('.t1.f'), vh = $('#view').clientHeight, y = 0;
+    if (f && S.f.z !== 'top') {
+      var top = f.offsetTop, par = f.offsetParent; while (par && par !== flow) { top += par.offsetTop; par = par.offsetParent; }
+      var bottom = top + f.offsetHeight + 40;
+      if (S.f.z === 'grid') y = Math.max(0, bottom - vh);          // down in the apps: the focused row ends at the bottom edge
+      else if (S.widgets) y = 0;
+    }
+    flow.style.transform = 'translateY(' + (-y) + 'px)';
+  }
+  function toast(t) { var e = $('#toast'); e.textContent = t; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { e.hidden = true; }, 3200); }
+
+  // ---- the keys
+  function inTop(k) {
+    var i = S.f.i;
+    if (k === 'left') S.f.i = Math.max(0, i - 1);
+    else if (k === 'right') S.f.i = Math.min(2, i + 1);
+    else if (k === 'down') S.f = S.dock.length ? { z: 'dock', i: Math.min(S.dock.length - 1, 2 + i) } : { z: 'grid', i: 0 };
+    else if (k === 'ok') {
+      if (i === 2) openCustomize();
+      else toast(i === 0 ? T('Nguồn vào: HDMI 1, HDMI 2, AV (trên TV thật sẽ đổi nguồn)', 'Inputs: HDMI 1, HDMI 2, AV (a real TV switches input)') : T('Mạng dây · 192.168.1.20 · đã kết nối', 'Wired · 192.168.1.20 · connected'));
+    }
+  }
+  function inDock(k) {
+    var i = S.f.i, n = S.dock.length;
+    if (k === 'left') S.f.i = Math.max(0, i - 1);
+    else if (k === 'right') S.f.i = Math.min(n - 1, i + 1);
+    else if (k === 'up') S.f = S.widgets ? { z: 'top', i: Math.min(2, i) } : { z: 'top', i: Math.min(2, i) };
+    else if (k === 'down') { if (grid().length) S.f = { z: 'grid', i: Math.min(grid().length - 1, Math.round(i * 1.5)) }; }
+    else if (k === 'ok') launch(S.dock[i]);
+    else if (k === 'menu') openMenu('dock', i);
+  }
+  function inGrid(k) {
+    var i = S.f.i, n = grid().length;
+    if (k === 'left') S.f.i = Math.max(0, i - 1);
+    else if (k === 'right') S.f.i = Math.min(n - 1, i + 1);
+    else if (k === 'up') { if (i >= 6) S.f.i = i - 6; else S.f = S.dock.length ? { z: 'dock', i: Math.min(S.dock.length - 1, Math.round(i / 1.5)) } : { z: 'top', i: 2 }; }
+    else if (k === 'down') { if (i + 6 < n) S.f.i = i + 6; else if (Math.floor(i / 6) < Math.floor((n - 1) / 6)) S.f.i = n - 1; }
+    else if (k === 'ok') launch(grid()[i]);
+    else if (k === 'menu') openMenu('grid', i);
+  }
+  function launch(id) {
+    var a = BY[id];
+    if (a.go) { toast(T('Mở ' + a.n + '…', 'Opening ' + a.n + '…')); setTimeout(function () { TVKit.go(a.go); }, 250); return; }
+    toast(T('Mở ' + a.n + ': app này không có trong bản dùng thử', a.n + ' would open here (not in this demo)'));
+  }
+  // long-press menu: the real one offers pin / unpin, move left / right, hide (HomeActivity)
+  function openMenu(z, i) {
+    var id = z === 'dock' ? S.dock[i] : grid()[i], a = BY[id], items = [];
+    if (z === 'dock') {
+      items.push({ t: T('Bỏ khỏi yêu thích', 'Remove from favourites'), f: function () { S.dock.splice(i, 1); fixF(); } });
+      items.push({ t: T('Sang trái', 'Move left'), dis: i === 0, f: function () { swap(i, i - 1); S.f.i = i - 1; } });
+      items.push({ t: T('Sang phải', 'Move right'), dis: i === S.dock.length - 1, f: function () { swap(i, i + 1); S.f.i = i + 1; } });
+    } else items.push({ t: T('Ghim vào yêu thích', 'Pin to favourites'), f: function () {
+      if (S.dock.length >= 4) { toast(T('Yêu thích đã đủ 4 mục', 'Favourites are full (4)')); return; }
+      S.dock.push(id); S.f = { z: 'dock', i: S.dock.length - 1 }; } });
+    items.push({ t: T('Ẩn', 'Hide'), f: function () { var d = S.dock.indexOf(id); if (d >= 0) S.dock.splice(d, 1); S.hidden.push(id); toast(T('Đã ẩn ' + a.n + ' · Cài đặt → App đã ẩn', a.n + ' hidden · Settings → Hidden apps')); fixF(); } });
+    items.push({ t: T('Thông tin app', 'App info'), f: function () { toast(T('Trên TV thật mở màn thông tin của Android', 'On a real TV this opens Android\'s app info')); } });
+    S.over = { kind: 'menu', title: a.n, items: items, i: 0 }; overlay();
+  }
+  function swap(a, b) { if (b < 0 || b >= S.dock.length) return; var t = S.dock[a]; S.dock[a] = S.dock[b]; S.dock[b] = t; }
+  function fixF() {
+    if (S.f.z === 'dock') { if (!S.dock.length) S.f = { z: 'grid', i: 0 }; else S.f.i = Math.min(S.f.i, S.dock.length - 1); }
+    if (S.f.z === 'grid') { var n = grid().length; if (!n) S.f = { z: 'dock', i: 0 }; else S.f.i = Math.min(S.f.i, n - 1); }
+  }
+  function openCustomize() {
+    S.over = { kind: 'cz', i: 0 }; overlay();
+  }
+  function czRows() {
+    return [
+      { t: T('Hình nền', 'Wallpaper'), v: '◀ ' + WALLS[S.wall].n + ' ▶', ch: function (d) { S.wall = (S.wall + d + WALLS.length) % WALLS.length; } },
+      { t: 'Widget', v: S.widgets ? T('Bật', 'On') : T('Tắt', 'Off'), ch: function () { S.widgets = !S.widgets; } },
+      { t: T('Đồng hồ 24 giờ', '24-hour clock'), v: S.h24 ? T('Bật', 'On') : T('Tắt', 'Off'), ch: function () { S.h24 = !S.h24; } },
+      { t: T('Lời chào', 'Greeting'), v: S.greet ? T('Bật', 'On') : T('Tắt', 'Off'), ch: function () { S.greet = !S.greet; } },
+      { t: T('App đã ẩn (' + S.hidden.length + ')', 'Hidden apps (' + S.hidden.length + ')'), v: S.hidden.length ? T('Hiện lại', 'Show again') : '', ch: function () { if (S.hidden.length) { S.hidden = []; } }, dis: !S.hidden.length },
+      { t: T('Xong', 'Done'), v: '', ch: function () { S.over = null; }, done: true }
+    ];
+  }
+  function overlay() {
+    var o = S.over, sh = $('#shade');
+    if (!o) { sh.hidden = true; sh.innerHTML = ''; draw(); return; }
+    sh.hidden = false;
+    if (o.kind === 'menu') sh.innerHTML = '<div class="sheet"><h3>' + o.title + '</h3>' + o.items.map(function (it, i) { return '<div class="it' + (i === o.i ? ' f' : '') + (it.dis ? ' dis' : '') + '" data-oi="' + i + '">' + it.t + '</div>'; }).join('') + '</div>';
+    else { var rows = czRows(); sh.innerHTML = '<div class="sheet" style="width:620px"><h3>' + T('Tùy chỉnh TV Home', 'Customize TV Home') + '</h3>' + rows.map(function (r, i) { return '<div class="it' + (i === o.i ? ' f' : '') + (r.dis ? ' dis' : '') + '" data-oi="' + i + '">' + r.t + '<span class="v">' + r.v + '</span></div>'; }).join('') +
+      '<p class="more">' + T('Ứng dụng yêu thích, ứng dụng ẩn và thêm hình nền: trên điện thoại hoặc máy tính, tab Thiết lập → TV Home.', 'Favourite apps, hidden apps and more wallpapers: on the phone or computer, Setup tab → TV Home.') + '</p></div>'; }
+    draw();
+  }
+  function inOver(k) {
+    var o = S.over, n = o.kind === 'menu' ? o.items.length : czRows().length;
+    if (k === 'up') o.i = Math.max(0, o.i - 1);
+    else if (k === 'down') o.i = Math.min(n - 1, o.i + 1);
+    else if (k === 'back' || k === 'home' || k === 'menu') S.over = null;
+    else if (o.kind === 'menu' && k === 'ok') { var it = o.items[o.i]; if (!it.dis) { S.over = null; it.f(); } }
+    else if (o.kind === 'cz' && (k === 'left' || k === 'right' || k === 'ok')) { var r = czRows()[o.i]; if (!r.dis) { r.ch(k === 'left' ? -1 : 1); if (r.done) S.over = null; } }
+    overlay();
+  }
+  TVKit.handler = function (k) {
+    if (S.before) { if (k === 'ok' || k === 'home' || k === 'back') toast(T('Đây là màn hình mẫu của TV hãng. Bấm "Sau (TV Home)" để so sánh.', 'This is a stock home screen. Press "After (TV Home)" to compare.')); return; }
+    if (S.over) { inOver(k); return; }
+    if (k === 'home' || k === 'back') { S.f = { z: 'dock', i: 0 }; draw(); return; }
+    ({ top: inTop, dock: inDock, grid: inGrid }[S.f.z])(k); draw();
+  };
+  TVKit.reset = function () { defaults(); overlay(); };
+
+  // ---- pointer: click a tile = focus + OK, press and hold = the menu
+  var hold = null, held = false;
+  $('#scr').addEventListener('pointerdown', function (e) {
+    var t = e.target.closest('[data-z],[data-oi]'); held = false; if (!t) return;
+    if (t.dataset.oi != null) return;
+    S.f = { z: t.dataset.z, i: +t.dataset.i }; draw();
+    if (S.over || S.before) return;
+    if (t.dataset.z !== 'top') hold = setTimeout(function () { held = true; hold = null; TVKit.handler('menu'); }, 520);
+  });
+  $('#scr').addEventListener('pointerup', function (e) { if (hold) { clearTimeout(hold); hold = null; } });
+  $('#scr').addEventListener('pointerleave', function () { if (hold) { clearTimeout(hold); hold = null; } });
+  $('#scr').addEventListener('click', function (e) {
+    if (held) { held = false; return; }
+    var o = e.target.closest('[data-oi]');
+    if (o && S.over) { S.over.i = +o.dataset.oi; if (S.over.kind === 'cz') { var r = czRows()[S.over.i]; r.ch(1); if (r.done) S.over = null; overlay(); } else TVKit.handler('ok'); return; }
+    if (S.over && !e.target.closest('.sheet')) { S.over = null; overlay(); return; }
+    var t = e.target.closest('[data-z]'); if (t && !S.before) TVKit.handler('ok'); else if (S.before) TVKit.handler('ok');
+  });
+  $('#scr').addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+  // ---- the side panel
+  $('#bBefore').onclick = function () { S.before = true; stock(); draw(); };
+  $('#bAfter').onclick = function () { S.before = false; draw(); };
+  $('#bWidgets').onclick = function () { S.widgets = !S.widgets; draw(); };
+  WALLS.forEach(function (w, i) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'swatch'; b.title = w.n; b.setAttribute('aria-label', w.n);
+    b.style.backgroundImage = w.photo ? 'url(../home/' + w.id + '-t.jpg)' : w.t;
+    b.onclick = function () { S.wall = i; if (S.before) S.before = false; draw(); };
+    $('#walls').appendChild(b);
+  });
+  function stock() {
+    if ($('#stock').firstChild) return;
+    var cols = ['#e63946', '#2a9d8f', '#e9c46a', '#457b9d', '#8338ec', '#fb5607', '#06a77d', '#d90368'];
+    var posters = cols.map(function (c, i) { return '<div class="c" style="background:' + c + '">' + (i % 2 ? '<span class="tag">' + T('QUẢNG CÁO', 'AD') + '</span>' : '') + ['Hot', 'New', 'Top 10', 'Live', 'Sale', 'Drama', '4K', 'Trending'][i] + '</div>'; }).join('');
+    var posters2 = cols.slice().reverse().map(function (c, i) { return '<div class="c" style="background:' + c + '">' + (i % 3 ? '<span class="tag">' + T('ĐƯỢC TÀI TRỢ', 'SPONSORED') + '</span>' : '') + ['Game', 'Shop', 'VPN', 'Casino', 'Deal', 'Cleaner', 'Quiz', 'Pro'][i] + '</div>'; }).join('');
+    $('#stock').innerHTML = '<div class="nav"><b>' + T('Trang chủ', 'Home') + '</b><span>' + T('Ứng dụng', 'Apps') + '</span><span>' + T('Thư viện', 'Library') + '</span><span class="sp2">&#128269;</span></div>' +
+      '<div class="hero"><span class="tag">' + T('ĐƯỢC TÀI TRỢ', 'SPONSORED') + '</span><h4>' + T('Mùa mới đã có: xem ngay', 'New season out: watch now') + '</h4><p>' + T('Dùng thử 3 tháng, giảm 50%', '3 months free, then 50% off') + '</p></div>' +
+      '<h5>' + T('Đề xuất cho bạn', 'Recommended for you') + '</h5><div class="row">' + posters + '</div>' +
+      '<h5>' + T('Ứng dụng đề xuất', 'Suggested apps') + '</h5><div class="row">' + posters2 + '</div>' +
+      '<div class="promo"><span>' + T('Nâng cấp lên Premium', 'Upgrade to Premium') + '</span><u>' + T('Tìm hiểu thêm', 'Learn more') + '</u></div>' +
+      '<div class="note">' + T('Ví dụ minh họa: màn hình chủ mặc định của nhiều TV có quảng cáo và đề xuất trả phí.', 'Illustration: many TVs\' stock home screens carry ads and paid suggestions.') + '</div>';
+  }
+  defaults(); TVKit.mount($('#tv'), $('#scr')); draw(); setInterval(clock, 20000);
+})();
+</script>
+</body>
+</html>

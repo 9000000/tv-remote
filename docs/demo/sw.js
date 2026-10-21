@@ -1,7 +1,7 @@
 // Live demo: the real web UI of the app (app/shared/web) in the browser, with a made-up TV.
 // This worker (scope /demo/) does two things for the page in /demo/app/:
 //   1. serves the UI's own files, fetched from jsDelivr at the git tag below (nothing is copied into docs/);
-//   2. answers every /api/... call by asking the demo page (/demo/, js/mock.js), which keeps the made-up TV in its memory
+//   2. answers every /api/... call by asking the demo page (/demo/remote.html, mock.js), which keeps the made-up TV in its memory
 //      (a worker may be stopped by the browser at any time, a page is not).
 // To show a newer UI: change REF to a newer release tag (docs/README.md, "Live demo"), commit, push.
 const REF = 'v0.12.0';
@@ -64,8 +64,8 @@ const NOW = '<script>(function(f){var R=/^\\/api\\/(key|app|app\\/launch|volume|
 async function mock(e, u) {
   const body = e.request.method === 'POST' ? await e.request.text() : '';
   const pages = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });   // the demo page may not be controlled yet on a first visit
-  const home = pages.find((c) => !new URL(c.url).pathname.startsWith(APP));
-  if (!home) return json(503, { error: 'open the demo from /demo/' });
+  const home = pages.find((c) => new URL(c.url).pathname === '/demo/remote.html');   // the hub (/demo/) holds the tabs; this page holds the made-up TV
+  if (!home) return json(503, { error: 'open the demo from /demo/#remote' });
   const reply = await new Promise((done) => {
     const ch = new MessageChannel();
     const t = setTimeout(() => done(null), 20000);

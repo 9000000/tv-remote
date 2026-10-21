@@ -1,0 +1,43 @@
+/* The TV frame + the on-screen remote shared by the demos of TV Home, TV Channels and TV Games (demo/tvkit.js).
+   The TV's picture is drawn in a fixed 1280 x 720 box (the size of the real screenshots) and scaled to the frame. */
+:root { --bg:#0a0d14; --card:#141924; --line:#232a3a; --text:#e9edf5; --muted:#9aa4b8; --blue:#5b8cff; --fill:#2f5fd6; --focus:#fff; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+html[data-lang="vi"] .en, html[data-lang="en"] .vi { display: none !important; }
+button { font: inherit; color: inherit; cursor: pointer; }
+.demo { display: grid; grid-template-columns: minmax(0, 1fr) 232px; gap: 20px; align-items: start; max-width: 1360px; margin: 0 auto; padding: 16px; }
+.tvwrap { min-width: 0; }
+.tv { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border: 6px solid #1d2230; border-radius: 14px; box-shadow: 0 0 0 1px #2a3146, 0 18px 50px rgba(0,0,0,.5); overflow: hidden; }
+.tv .scr { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; transform-origin: 0 0; overflow: hidden; font-family: Roboto, "Segoe UI", system-ui, sans-serif; color: #fff; user-select: none; -webkit-user-select: none; }
+.tv:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+.side { display: flex; flex-direction: column; gap: 14px; }
+.rc { background: var(--card); border: 1px solid var(--line); border-radius: 26px; padding: 16px 14px 14px; display: grid; gap: 10px; justify-items: center; }
+.rc .pad { position: relative; width: 168px; height: 168px; border-radius: 50%; background: #0e121b; border: 1px solid var(--line); }
+.rc .pad button { position: absolute; width: 56px; height: 56px; border: 0; background: transparent; color: var(--text); font-size: 20px; border-radius: 50%; display: grid; place-items: center; }
+.rc .pad button:hover { background: #1b2232; }
+.rc .pad button:active, .rc .pad button.down { background: var(--fill); }
+.rc .pad .u { left: 56px; top: 2px; } .rc .pad .d { left: 56px; bottom: 2px; } .rc .pad .l { left: 2px; top: 56px; } .rc .pad .r { right: 2px; top: 56px; }
+.rc .pad .ok { left: 46px; top: 46px; width: 76px; height: 76px; background: #1b2232; font-weight: 700; font-size: 17px; border: 1px solid var(--line); }
+.rc .row { display: flex; gap: 8px; width: 100%; }
+.rc .row button { flex: 1; height: 42px; border-radius: 999px; border: 1px solid var(--line); background: #0e121b; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.rc .row button:hover { background: #1b2232; } .rc .row button:active, .rc .row button.down { background: var(--fill); }
+.rc svg { width: 17px; height: 17px; flex: none; }
+.hint { color: var(--muted); font-size: 12.5px; margin: 0; text-align: center; }
+.hint kbd { font: inherit; background: #0e121b; border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: grid; gap: 10px; }
+.panel h3 { margin: 0; font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: #0e121b; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; min-height: 34px; display: inline-flex; align-items: center; gap: 6px; }
+.chip[aria-pressed="true"], .chip.on { background: #162447; border-color: var(--blue); }
+.chip:hover { filter: brightness(1.2); }
+.swatch { width: 44px; height: 30px; padding: 0; border-radius: 8px; border: 2px solid var(--line); background-size: cover; background-position: center; }
+.swatch[aria-pressed="true"] { border-color: var(--blue); box-shadow: 0 0 0 2px #162447; }
+.cta { color: #fff; background: var(--fill); border: 1px solid var(--fill); border-radius: 10px; padding: 8px 14px; font-weight: 600; text-decoration: none; text-align: center; }
+@media (max-width: 760px) {
+  .demo { grid-template-columns: minmax(0, 1fr); padding: 10px 12px 18px; gap: 12px; }
+  .tv { border-width: 4px; border-radius: 10px; }
+  .side { display: grid; grid-template-columns: 1fr; justify-items: center; }
+  .rc { width: 100%; max-width: 330px; } .panel { width: 100%; }
+  .hint.kb { display: none; }
+}
+@media (hover: none) { .hint.kb { display: none; } }

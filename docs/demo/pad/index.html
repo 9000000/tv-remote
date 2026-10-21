@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>TV Games</title>
+<meta name="apple-mobile-web-app-title" content="TV Games pad">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="pad.css"><style>#fs{display:none!important}</style>
+</head>
+<body>
+<div id="top"><span id="who" data-act="who">&nbsp;</span><form id="nameform" hidden autocomplete="off"><input id="nm" enterkeyhint="done" autocomplete="off" autocapitalize="words"></form><span id="ms"></span><button id="fs" data-act="fs" aria-label="Fullscreen"></button><button id="mode" data-act="mode" aria-label="Mode">🧭</button><button id="gear" data-act="gear" aria-label="Settings">⚙</button></div>
+<div id="menu" hidden>
+  <div class="row" data-act="haptic"><span id="lblHaptic">Rung</span><span class="sw" id="sw"></span></div>
+  <div class="row" data-act="stick"><span id="lblStick">Stick</span><span class="sw" id="sw2"></span></div>
+  <a class="row" id="add" data-act="add" hidden>＋ <span id="lblAdd">Thêm game</span></a>
+</div>
+<div id="sheet" hidden><div class="card"><b id="shTitle"></b><ol><li id="sh1"></li><li id="sh2"></li><li id="sh3"></li></ol><button data-act="sheetx" id="shOk">OK</button></div></div>
+<div id="tip" hidden><span id="tipText"></span><b data-act="tipx">✕</b></div>
+<label id="ios" aria-hidden="true"><input type="checkbox" switch tabindex="-1"></label>
+<div id="say" hidden></div>
+<div id="lobbybar" hidden><span id="lobbyHint"></span><button id="ready" data-act="ready"></button></div>
+<div id="count" hidden><small id="countLbl"></small><b id="countN"></b></div>
+<div id="away" hidden><b id="awayTitle"></b><span id="awayHint"></span><button id="reopen" data-act="reopen" hidden></button></div>
+<div id="off" hidden><b id="offTitle"></b><span id="offHint"></span></div>
+<div id="choices" hidden>
+  <button class="ch" data-b="A">A</button><button class="ch" data-b="B">B</button><button class="ch" data-b="C">C</button><button class="ch" data-b="D">D</button>
+</div>
+<form id="textrow" hidden autocomplete="off"><input id="txt" maxlength="60" enterkeyhint="send" autocomplete="off" autocapitalize="off"><button id="send" type="submit"></button></form>
+<main id="pad">
+  <div id="shl" class="sh"></div><div id="shr" class="sh"></div>
+  <div id="left"><div id="dpad"><i class="arm u"></i><i class="arm d"></i><i class="arm l"></i><i class="arm r"></i><i class="hub"></i></div></div>
+  <div id="mid"></div>
+  <div id="face"></div>
+</main>
+<main id="nav">
+  <div id="cross">
+    <button class="nb" data-n="UP">▲</button><button class="nb" data-n="LEFT">◀</button>
+    <button class="nb ok" data-n="OK">OK</button><button class="nb" data-n="RIGHT">▶</button>
+    <button class="nb" data-n="DOWN">▼</button>
+  </div>
+  <div id="navside"><button class="nb wide" data-n="BACK"><span id="lblBack">Back</span></button><button class="nb wide" data-n="HOME"><span id="lblHome">TV Games</span></button></div>
+</main>
+<div id="stick" hidden><i class="ring"></i><i class="knob"></i></div>
+<script src="pingmath.js"></script>
+<script src="demo-pad.js"></script>
+<script src="pad.js"></script>
+</body>
+</html>

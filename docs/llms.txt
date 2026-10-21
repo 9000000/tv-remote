@@ -47,7 +47,7 @@ Keys work without ADB on the phone and computer apps (Google's Android TV Remote
 
 ## Docs
 
-- [Live demo](https://tvremote.pages.dev/demo/): the real web page against a made-up TV, in the browser, nothing installed or sent.
+- [Live demo](https://tvremote.pages.dev/demo/): four tabs in the browser, nothing installed or sent: the real remote page against a made-up TV (#remote), TV Home (#home), TV Channels with real streams (#channels) and TV Games with a playable quiz and phone pads (#games)
 - [User guide](https://tvremote.pages.dev/guide): step by step for every feature (install, remote, typing, voice, picture, game controller, apps, files, timers, scenes, Home Assistant, Tailscale, troubleshooting), Vietnamese and English, with search
 - [README (English)](https://github.com/HoangTran0410/tv-remote/blob/main/README.md): setup for each app, Tailscale, troubleshooting, security, technical details
 - [README (Tiếng Việt)](https://github.com/HoangTran0410/tv-remote/blob/main/README.vi.md)

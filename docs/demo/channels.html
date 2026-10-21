@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="vi" data-lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TV Channels: dùng thử | try it</title>
+<link rel="icon" href="../img/icon.png">
+<link rel="stylesheet" href="tvkit.css">
+<style>
+  /* TV Channels at 1280 x 720 as in the real screenshot (app/channels: BrowseActivity, PlayActivity) */
+  .scr { background: #0b0f14; --acc: #5eead4; }
+  #side { position: absolute; left: 0; top: 0; bottom: 0; width: 330px; padding: 26px 22px; background: #0b0f14; }
+  #brand { display: flex; align-items: center; gap: 14px; font-size: 30px; font-weight: 700; color: var(--acc); margin: 4px 0 26px 14px; }
+  #brand img { width: 42px; height: 42px; border-radius: 10px; }
+  .si { height: 50px; border-radius: 14px; display: flex; align-items: center; gap: 18px; padding: 0 16px; font-size: 22px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; }
+  .si svg { width: 30px; height: 30px; flex: none; } .si .n { margin-left: auto; opacity: .55; font-size: 19px; }
+  .si.sel { background: #12332f; } .si.f { background: #e9eef2; color: #0b0f14; } .si.f .n { opacity: .7; }
+  #side hr { border: 0; border-top: 1px solid #1c2530; margin: 10px 0 12px; }
+  #cats { position: absolute; left: 22px; right: 22px; top: 318px; bottom: 6px; overflow: hidden; }
+  #cats .si { margin-bottom: 2px; padding-left: 16px; }
+  #main { position: absolute; left: 340px; right: 36px; top: 0; bottom: 0; }
+  #head { height: 122px; display: flex; align-items: center; justify-content: space-between; }
+  #head h1 { margin: 0; font-size: 38px; font-weight: 700; display: flex; align-items: center; gap: 14px; }
+  #head .s { width: 400px; height: 60px; border-radius: 30px; background: #1a2029; display: flex; align-items: center; gap: 16px; padding: 0 22px; font-size: 22px; color: #9aa6b5; }
+  #head .s svg { width: 30px; height: 30px; color: #e9eef2; }
+  #gridv { position: absolute; left: 0; right: 0; top: 122px; bottom: 0; overflow: hidden; }
+  #grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px 24px; padding: 14px 14px 40px; }
+  .c { position: relative; } .c .tile { height: 90px; border-radius: 14px; background: #f1f3f6; display: grid; place-items: center; overflow: hidden; position: relative; } .c .tile.dk { background: #3a4350; }
+  .c .tile img { max-width: 78%; max-height: 74%; object-fit: contain; }
+  .c .tile .ltr { font-size: 30px; font-weight: 700; color: #53606f; }
+  .c .tile .hd { position: absolute; left: 8px; top: 6px; font-size: 13px; font-weight: 700; background: #6b7580; color: #fff; padding: 1px 7px; border-radius: 5px; }
+  .c .tile .st { position: absolute; right: 8px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: #34d399; box-shadow: 0 0 0 3px rgba(52,211,153,.25); }
+  .c .nm { margin-top: 10px; font-size: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .c .sb { font-size: 17px; opacity: .55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .c.f .tile { box-shadow: 0 0 0 4px var(--acc), 0 0 26px rgba(94,234,212,.45); transform: scale(1.05); }
+  .c.fav::after { content: "★"; position: absolute; right: 8px; top: 4px; color: #fbbf24; font-size: 22px; }
+  .empty { grid-column: 1 / -1; padding: 60px 10px; font-size: 24px; opacity: .6; }
+  #sfield { display: none; align-items: center; gap: 18px; width: 620px; height: 60px; border-radius: 30px; background: #1a2029; padding: 0 22px; border: 3px solid transparent; }
+  #sfield.on { display: flex; } #sfield.f { border-color: var(--acc); }
+  #sfield svg { width: 30px; height: 30px; } #sfield input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: #fff; font: inherit; font-size: 24px; }
+  #sugg { display: none; gap: 14px; margin: 0 0 8px 14px; flex-wrap: wrap; } #sugg.on { display: flex; }
+  #sugg button { background: #1a2029; border: 1.5px solid #2a3440; border-radius: 22px; color: #dbe3ea; font-size: 20px; padding: 8px 20px; }
+  /* player */
+  #play { position: absolute; inset: 0; background: #000; display: none; z-index: 8; } #play.on { display: block; }
+  #play video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+  #still { position: absolute; inset: 0; background: radial-gradient(circle at 50% 38%, #1d2b3a, #080b10 70%); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; padding: 0 140px; }
+  #still.on { display: flex; } #still .lg { width: 260px; height: 150px; border-radius: 22px; background: #f1f3f6; display: grid; place-items: center; } #still .lg img { max-width: 80%; max-height: 80%; } #still .lg.dk { background: #3a4350; }
+  #still b { font-size: 44px; } #still span { font-size: 26px; opacity: .8; }
+  #state { position: absolute; left: 0; right: 0; top: 46%; text-align: center; font-size: 28px; opacity: .85; text-shadow: 0 2px 8px #000; }
+  #bar { position: absolute; left: 0; right: 0; bottom: 0; padding: 70px 56px 38px; background: linear-gradient(transparent, rgba(0,0,0,.85)); display: none; align-items: center; gap: 26px; }
+  #bar.on { display: flex; } #bar .lg { width: 150px; height: 84px; border-radius: 14px; background: #f1f3f6; display: grid; place-items: center; flex: none; } #bar .lg.dk { background: #3a4350; } #bar .lg img { max-width: 80%; max-height: 80%; }
+  #bar b { font-size: 36px; display: block; } #bar small { font-size: 22px; opacity: .75; } #bar .hint2 { margin-left: auto; font-size: 20px; opacity: .65; text-align: right; }
+  #mute { position: absolute; right: 36px; top: 30px; display: none; background: rgba(0,0,0,.72); color: #fff; border: 2px solid rgba(255,255,255,.4); border-radius: 30px; font-size: 24px; padding: 12px 28px; z-index: 9; } #mute.on { display: block; }
+  #list { position: absolute; left: 0; top: 0; bottom: 0; width: 442px; background: rgba(8,11,16,.94); padding: 20px 14px; display: none; z-index: 9; overflow: hidden; } #list.on { display: block; }
+  #list .r { height: 72px; border-radius: 14px; display: flex; align-items: center; gap: 16px; padding: 0 14px; font-size: 22px; margin-bottom: 4px; } #list .r.f { background: #e9eef2; color: #0b0f14; } #list .r.cur { outline: 2px solid var(--acc); }
+  #list .r .lg { width: 78px; height: 46px; border-radius: 8px; background: #f1f3f6; display: grid; place-items: center; flex: none; } #list .r .lg.dk { background: #3a4350; } #list .r .lg img { max-width: 80%; max-height: 80%; }
+  #list .r span.t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shade { position: absolute; inset: 0; background: rgba(0,0,0,.6); z-index: 12; display: grid; place-items: center; } .shade[hidden] { display: none; }
+  .sheet { width: 520px; border-radius: 24px; background: #151b23; border: 1.5px solid #2a3440; padding: 18px; } .sheet h3 { margin: 4px 8px 12px; font-size: 24px; font-weight: 500; }
+  .sheet .it { height: 56px; border-radius: 14px; display: flex; align-items: center; padding: 0 20px; font-size: 22px; } .sheet .it.f { background: #e9eef2; color: #0b0f14; }
+  #toast { position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%); background: rgba(24,30,40,.96); border: 1px solid #34404e; border-radius: 999px; padding: 13px 28px; font-size: 21px; z-index: 20; max-width: 1000px; text-align: center; } #toast[hidden] { display: none; }
+  .tvcap { margin: 8px 2px 0; color: var(--muted); font-size: 13px; }
+  .big { width: 100%; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: #0e121b; font-weight: 600; }
+  .big.on { background: #162447; border-color: var(--blue); }
+  @media (max-width: 760px) { .tvcap { text-align: center; } }
+</style>
+</head>
+<body>
+<main class="demo">
+  <div class="tvwrap">
+    <div class="tv" id="tv"><div class="scr" id="scr">
+      <div id="side"></div>
+      <div id="main"><div id="head"></div><div id="gridv"><div id="grid"></div></div></div>
+      <div id="play"><video id="vid" muted playsinline></video><div id="still"></div><div id="state"></div><div id="bar"></div><button id="mute" type="button"></button><div id="list"></div></div>
+      <div class="shade" id="shade" hidden></div>
+      <div id="toast" hidden></div>
+    </div></div>
+    <p class="tvcap"><span class="vi">Một TV giả với kênh thật của iptv-org. OK để xem, giữ OK để thêm vào yêu thích. Chấm xanh: phát được ngay trong trình duyệt.</span><span class="en">A made-up TV with real iptv-org channels. OK to watch, hold OK to add to favourites. Green dot: plays right in the browser.</span></p>
+  </div>
+  <aside class="side">
+    <div class="panel">
+      <h3><span class="vi">Quốc gia</span><span class="en">Country</span></h3>
+      <div class="chips" id="cchips"></div>
+      <button class="big" id="bmute" type="button" hidden></button>
+    </div>
+    <div class="rc"></div>
+  </aside>
+</main>
+<script src="tvkit.js"></script>
+<script src="channels-data.js"></script>
+<script>
+(function () {
+  var T = TVKit.T, VI = TVKit.VI, $ = function (s) { return document.querySelector(s); };
+  function svg(d) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>'; }
+  var IC = { search: svg('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>'), star: svg('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'), plus: svg('<path d="M12 5v14M5 12h14"/>'), globe: svg('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'), tv: svg('<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M8 3l4 3 4-3"/>') };
+  var COUNTRIES = [{ id: 'vn', f: '🇻🇳', n: T('Việt Nam', 'Vietnam') }, { id: 'us', f: '🇺🇸', n: T('Hoa Kỳ', 'United States') }, { id: 'int', f: '🌐', n: T('Quốc tế', 'International') }];
+  var CATN = { General: T('Tổng hợp', 'General'), News: T('Tin tức', 'News'), Music: T('Nhạc', 'Music'), Kids: T('Thiếu nhi', 'Kids'), Sports: T('Thể thao', 'Sports'), Weather: T('Thời tiết', 'Weather'), Documentary: T('Tài liệu', 'Documentary'), Culture: T('Văn hóa', 'Culture'), Lifestyle: T('Đời sống', 'Lifestyle'), Cooking: T('Ẩm thực', 'Cooking'), Outdoor: T('Ngoài trời', 'Outdoor'), Undefined: T('Khác', 'Other'), Business: T('Kinh doanh', 'Business'), Education: T('Giáo dục', 'Education'), Entertainment: T('Giải trí', 'Entertainment') };
+  var CH = (window.CH_DATA || []).map(function (a, i) { return { i: i, cc: a[0], name: a[1], grp: a[2], logo: a[3], url: a[4], play: !!a[5], dk: !!a[6] }; });
+  CH.sort(function (a, b) { return a.name.localeCompare(b.name); }); CH.forEach(function (c, i) { c.i = i; });
+  var S = { cc: VI ? 'vn' : 'int', cat: 'All', fav: [], mode: 'country', f: { z: 'grid', i: 0 }, side: 0, q: '', over: null, cur: null, list: [], lf: 0, ui: 0, muted: true };
+
+  function cname(c) { return CATN[c.grp] || c.grp; }
+  function inCountry() { return CH.filter(function (c) { return c.cc === S.cc; }); }
+  function cats() { var m = {}; inCountry().forEach(function (c) { m[c.grp] = (m[c.grp] || 0) + 1; }); return Object.keys(m).sort(function (a, b) { return m[b] - m[a] || a.localeCompare(b); }).map(function (k) { return { k: k, n: m[k] }; }); }
+  function fold(s) { return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd'); }
+  function results() {
+    if (S.mode === 'fav') return S.fav.map(function (i) { return CH[i]; });
+    if (S.mode === 'search') { var q = fold(S.q).trim(); if (!q) return []; var cc = S.cc;
+      return CH.filter(function (c) { return fold(c.name + ' ' + cname(c)).indexOf(q) >= 0; }).sort(function (a, b) { return (b.cc === cc) - (a.cc === cc); }); }
+    return inCountry().filter(function (c) { return S.cat === 'All' || c.grp === S.cat; });
+  }
+  // the left list: Search, Favourites, New group, Country, then the categories
+  function sideItems() {
+    var cs = cats(), it = [
+      { t: T('Tìm kênh', 'Search channels'), ic: IC.search, a: 'search', sel: S.mode === 'search' },
+      { t: T('Yêu thích', 'Favourites'), ic: IC.star, n: S.fav.length, a: 'fav', sel: S.mode === 'fav' },
+      { t: T('Nhóm mới', 'New group'), ic: IC.plus, a: 'group' },
+      { t: cinfo().f + ' ' + cinfo().n, ic: IC.globe, a: 'country' }];
+    it.sep = it.length;
+    it.push({ t: T('Tất cả', 'All'), a: 'cat', k: 'All', n: inCountry().length, sel: S.mode === 'country' && S.cat === 'All', ic: IC.tv });
+    cs.forEach(function (c) { it.push({ t: CATN[c.k] || c.k, a: 'cat', k: c.k, n: c.n, sel: S.mode === 'country' && S.cat === c.k }); });
+    return it;
+  }
+  function cinfo() { return COUNTRIES.filter(function (c) { return c.id === S.cc; })[0]; }
+  function logo(c, cls) { return '<div class="' + cls + (c.dk ? ' dk' : '') + '">' + (c.logo ? '<img src="' + c.logo + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement(\'span\'),{className:\'ltr\',textContent:this.dataset.l}))" data-l="' + c.name.slice(0, 2) + '">' : '<span class="ltr">' + c.name.slice(0, 2) + '</span>') + '</div>'; }
+
+  function draw() {
+    // side
+    var it = sideItems(), cats0 = it.sep;
+    $('#side').innerHTML = '<div id="brand"><img src="img/banner-channels.png" alt="">TV Channels</div>' + it.slice(0, cats0).map(row).join('') + '<hr><div id="cats">' + it.slice(cats0).map(function (x, j) { return row(x, cats0 + j); }).join('') + '</div>';
+    function row(x, i) { if (i == null) i = it.indexOf(x); return '<div class="si' + (x.sel ? ' sel' : '') + (S.f.z === 'side' && S.f.i === i ? ' f' : '') + '" data-z="side" data-i="' + i + '">' + (x.ic || '<svg viewBox="0 0 24 24"></svg>') + '<span>' + x.t + '</span>' + (x.n != null ? '<span class="n">' + x.n + '</span>' : '') + '</div>'; }
+    S.sideN = it.length; S.sideIt = it;
+    // head
+    var title = S.mode === 'fav' ? '★ ' + T('Yêu thích', 'Favourites') : S.mode === 'search' ? '' : cinfo().f + ' ' + cinfo().n;
+    var searchOn = S.mode === 'search';
+    $('#head').innerHTML = '<h1>' + title + '</h1>' + (searchOn ? '<div id="sfield" class="on' + (S.f.z === 'field' ? ' f' : '') + '">' + IC.search + '<input id="q" autocomplete="off" spellcheck="false" placeholder="' + T('Gõ tên kênh, ví dụ cnn', 'Type a channel name, e.g. cnn') + '" value="' + S.q.replace(/"/g, '&quot;') + '"></div>' : '<div class="s" data-act="search">' + IC.search + T('Tìm kênh', 'Search channels') + '</div>');
+    if (searchOn) bindField();
+    // grid
+    var r = results(), g = $('#grid');
+    var html = '';
+    if (searchOn && !S.q.trim()) html += '<div class="empty">' + T('Gõ tên kênh để tìm ở mọi nước, hoặc chọn thử:', 'Type a name to search every country, or try:') + '<div id="sugg" class="on" style="margin:18px 0 0">' + ['news', 'music', 'kids', 'weather', 'sport'].map(function (s) { return '<button type="button" data-q="' + s + '">' + s + '</button>'; }).join('') + '</div></div>';
+    else if (!r.length) html += '<div class="empty">' + (S.mode === 'fav' ? T('Chưa có kênh yêu thích. Giữ OK trên một kênh để thêm.', 'No favourites yet. Hold OK on a channel to add one.') : T('Không có kênh nào khớp.', 'No channel matches.')) + '</div>';
+    r.forEach(function (c, i) { html += card(c, i); });
+    g.innerHTML = html; S.r = r;
+    if (S.f.z === 'grid' && S.f.i >= r.length) S.f.i = Math.max(0, r.length - 1);
+    var f = g.querySelector('.f'); var gv = $('#gridv'), y = 0;
+    if (f) { var bottom = f.offsetTop + f.offsetHeight + 36; y = Math.max(0, bottom - gv.clientHeight); }
+    g.style.transform = 'translateY(' + (-y) + 'px)';
+    var sc = $('#cats'), fs = $('#side .si.f'); if (fs && sc && sc.contains(fs)) { var ty = Math.max(0, fs.offsetTop + 54 - sc.clientHeight); sc.firstElementChild && (sc.style.transform = ''); sc.scrollTop = ty; } else if (sc) sc.scrollTop = 0;
+    document.querySelectorAll('#cchips .chip').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.cc === S.cc); });
+  }
+  function card(c, i) { return '<div class="c' + (S.f.z === 'grid' && S.f.i === i ? ' f' : '') + (S.fav.indexOf(c.i) >= 0 ? ' fav' : '') + '" data-z="grid" data-i="' + i + '"><div class="tile' + (c.dk ? ' dk' : '') + '">' + (c.logo ? '<img src="' + c.logo + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-l="' + c.name.slice(0, 2) + '">' : '<span class="ltr">' + c.name.slice(0, 2) + '</span>') + (c.play ? '<i class="st" title="live"></i>' : '') + '</div><div class="nm">' + c.name + '</div><div class="sb">' + cname(c) + '</div></div>'; }
+  // a logo that does not load (a third party's address) falls to the first letters, as in the app
+  document.addEventListener('error', function (e) { var im = e.target; if (im.tagName === 'IMG' && im.dataset.l) { var s = document.createElement('span'); s.className = 'ltr'; s.textContent = im.dataset.l; im.replaceWith(s); } }, true);
+
+  function toast(t) { var e = $('#toast'); e.textContent = t; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { e.hidden = true; }, 3200); }
+  function bindField() {
+    var q = $('#q'); if (!q) return;
+    q.oninput = function () { S.q = q.value; S.f = { z: 'field', i: 0 }; var pos = q.selectionStart; draw(); var n = $('#q'); n.focus(); n.setSelectionRange(pos, pos); };
+    q.onkeydown = function (e) {
+      if (e.key === 'ArrowDown' || e.key === 'Enter') { e.preventDefault(); if (S.r && S.r.length) { S.f = { z: 'grid', i: 0 }; q.blur(); draw(); } else q.blur(); }
+      else if (e.key === 'Escape') { e.preventDefault(); q.blur(); leaveSearch(); }
+      else if (e.key === 'ArrowLeft' && q.selectionStart === 0) { e.preventDefault(); q.blur(); S.f = { z: 'side', i: 0 }; draw(); }
+    };
+    q.onfocus = function () { if (S.f.z !== 'field') { S.f = { z: 'field', i: 0 }; $('#sfield').classList.add('f'); } };
+  }
+  function leaveSearch() { S.mode = 'country'; S.q = ''; S.f = { z: 'side', i: 0 }; draw(); }
+  function openSearch() { S.mode = 'search'; S.f = { z: 'field', i: 0 }; draw(); var q = $('#q'); if (q && matchMedia('(hover: hover)').matches) q.focus(); }
+
+  // ---- keys
+  var COLS = 5;
+  function sideKey(k) {
+    var it = S.sideIt, i = S.f.i;
+    if (k === 'up') S.f.i = Math.max(0, i - 1);
+    else if (k === 'down') S.f.i = Math.min(it.length - 1, i + 1);
+    else if (k === 'right') { if (S.mode === 'search') S.f = { z: 'field', i: 0 }; else if (S.r.length) S.f = { z: 'grid', i: 0 }; }
+    else if (k === 'ok') {
+      var x = it[i];
+      if (x.a === 'search') openSearch();
+      else if (x.a === 'fav') { S.mode = 'fav'; S.f = { z: 'side', i: i }; }
+      else if (x.a === 'group') toast(T('Nhóm kênh: tạo trên TV thật', 'Channel groups: made on the real TV'));
+      else if (x.a === 'country') countryPicker();
+      else if (x.a === 'cat') { S.mode = 'country'; S.cat = x.k; S.f = { z: 'side', i: i }; }
+    }
+  }
+  function gridKey(k) {
+    var i = S.f.i, n = S.r.length;
+    if (k === 'left') { if (i % COLS === 0) S.f = { z: 'side', i: Math.min(S.sideIt.length - 1, sideFor()) }; else S.f.i = i - 1; }
+    else if (k === 'right') S.f.i = Math.min(n - 1, i + 1);
+    else if (k === 'up') { if (i >= COLS) S.f.i = i - COLS; else if (S.mode === 'search') { S.f = { z: 'field', i: 0 }; draw(); var q = $('#q'); if (q) q.focus(); return; } }
+    else if (k === 'down') { if (i + COLS < n) S.f.i = i + COLS; else if (Math.floor(i / COLS) < Math.floor((n - 1) / COLS)) S.f.i = n - 1; }
+    else if (k === 'ok') watch(S.r[i], S.r);
+    else if (k === 'menu') cardMenu(S.r[i]);
+  }
+  function sideFor() { var it = S.sideIt; for (var j = 0; j < it.length; j++) if (it[j].sel) return j; return 0; }
+  function cardMenu(c) {
+    var fav = S.fav.indexOf(c.i) >= 0;
+    S.over = { title: c.name, i: 0, items: [
+      { t: fav ? T('Bỏ khỏi yêu thích', 'Remove from favourites') : T('Thêm vào yêu thích', 'Add to favourites'), f: function () { if (fav) S.fav.splice(S.fav.indexOf(c.i), 1); else S.fav.push(c.i); toast(fav ? T('Đã bỏ khỏi yêu thích', 'Removed from favourites') : T('Đã thêm vào yêu thích: ', 'Added to favourites: ') + c.name); } },
+      { t: T('Thêm vào nhóm…', 'Add to a group…'), f: function () { toast(T('Nhóm kênh: tạo trên TV thật', 'Channel groups: made on the real TV')); } },
+      { t: T('Ghim lên màn hình chủ', 'Pin to Home screen'), f: function () { toast(T('Ghim: hiện trong TV Home trên TV thật', 'Pinned channels show in TV Home on a real TV')); } }] };
+    sheet();
+  }
+  function countryPicker() {
+    S.over = { title: T('Quốc gia', 'Country'), i: COUNTRIES.map(function (c) { return c.id; }).indexOf(S.cc), items: COUNTRIES.map(function (c) { return { t: c.f + '  ' + c.n, f: function () { setCountry(c.id); } }; }) };
+    sheet();
+  }
+  function setCountry(id) { S.cc = id; S.cat = 'All'; if (S.mode !== 'search') S.mode = 'country'; S.f = { z: 'side', i: 3 }; }
+  function sheet() {
+    var o = S.over, sh = $('#shade');
+    if (!o) { sh.hidden = true; return; }
+    sh.hidden = false; sh.innerHTML = '<div class="sheet"><h3>' + o.title + '</h3>' + o.items.map(function (x, i) { return '<div class="it' + (i === o.i ? ' f' : '') + '" data-oi="' + i + '">' + x.t + '</div>'; }).join('') + '</div>';
+  }
+  function overKey(k) {
+    var o = S.over;
+    if (k === 'up') o.i = Math.max(0, o.i - 1); else if (k === 'down') o.i = Math.min(o.items.length - 1, o.i + 1);
+    else if (k === 'back' || k === 'home' || k === 'menu') S.over = null;
+    else if (k === 'ok') { var x = o.items[o.i]; S.over = null; x.f(); }
+    sheet(); draw();
+  }
+
+  // ---- watching
+  var hls = null, vid = $('#vid'), barT = null, loadT = null, tok = 0;
+  function loadHls(cb) {
+    if (window.Hls) return cb();
+    var s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.17/hls.min.js';
+    s.integrity = 'sha512-iFmKfXPRVIW5PBZ3gzXSLz/IYtC6BMsIqmY/K42iuykOoUZTChDwR6KYhPcwj5HuE4hNJhZxNPD+ZdHLJvRv8A=='; s.crossOrigin = 'anonymous';
+    s.onload = cb; s.onerror = function () { cb(); }; document.head.appendChild(s);
+  }
+  function stopVideo() { tok++; clearTimeout(loadT); if (hls) { try { hls.destroy(); } catch (e) {} hls = null; } vid.pause(); vid.removeAttribute('src'); try { vid.load(); } catch (e) {} }
+  function watch(c, list) {
+    if (!c) return;
+    S.cur = c; S.list = list.slice(); S.over = null; S.ui = 0;
+    $('#play').classList.add('on'); showBar(true); $('#list').classList.remove('on'); S.inList = false;
+    var my = ++tok; stopVideo(); tok = my;
+    $('#still').classList.remove('on'); $('#state').textContent = '';
+    if (!c.play) { still(T('Trong trình duyệt không phát được kênh này. Trên TV sẽ phát.', 'This channel does not play in a browser. On a TV it will.')); return; }
+    $('#state').textContent = T('Đang tải kênh…', 'Loading channel…');
+    vid.muted = S.muted;
+    var fail = function () { if (tok !== my) return; stopVideo(); tok = my; still(T('Kênh chưa trả lời. Trên TV, app tự chuyển sang nguồn khác.', 'The channel did not answer. On a TV the app tries another source.')); };
+    var ok = function () { if (tok !== my) return; clearTimeout(loadT); $('#state').textContent = ''; muteUi(); };
+    vid.onplaying = ok;
+    loadT = setTimeout(fail, 12000);
+    var go = function () {
+      if (tok !== my) return;
+      if (window.Hls && Hls.isSupported()) {
+        hls = new Hls({ maxBufferLength: 8, enableWorker: true });
+        hls.on(Hls.Events.ERROR, function (e, d) { if (d.fatal) fail(); });
+        hls.loadSource(c.url); hls.attachMedia(vid);
+      } else if (vid.canPlayType('application/vnd.apple.mpegurl')) vid.src = c.url;
+      else { fail(); return; }
+      var p = vid.play(); if (p && p.catch) p.catch(function () {});
+    };
+    if (window.MediaSource || window.ManagedMediaSource) loadHls(go); else go();
+  }
+  function still(msg) { clearTimeout(loadT); var c = S.cur; $('#state').textContent = ''; $('#still').innerHTML = logo(c, 'lg') + '<b>' + c.name + '</b><span>' + msg + '</span>'; $('#still').classList.add('on'); muteUi(); }
+  function muteUi() {
+    var playing = $('#play').classList.contains('on') && S.cur && S.cur.play && !$('#still').classList.contains('on') && !$('#state').textContent;
+    var on = playing && S.muted; $('#mute').classList.toggle('on', on); $('#mute').textContent = '🔇 ' + T('Bấm để bật tiếng', 'Click to unmute');
+    var b = $('#bmute'); b.hidden = !($('#play').classList.contains('on') && S.cur && S.cur.play); b.textContent = S.muted ? '🔇 ' + T('Bật tiếng', 'Unmute') : '🔊 ' + T('Tắt tiếng', 'Mute'); b.classList.toggle('on', !S.muted);
+  }
+  function toggleMute() { S.muted = !S.muted; vid.muted = S.muted; if (!S.muted) { var p = vid.play(); if (p && p.catch) p.catch(function () {}); } muteUi(); }
+  function showBar(on) {
+    var c = S.cur; clearTimeout(barT);
+    if (on) { $('#bar').innerHTML = logo(c, 'lg') + '<div><b>' + c.name + '</b><small>' + cname(c) + ' · ' + cinfoOf(c) + '</small></div><div class="hint2">▲▼ ' + T('kênh khác', 'another channel') + '<br>OK ' + T('danh sách', 'the list') + '</div>'; barT = setTimeout(function () { $('#bar').classList.remove('on'); S.ui = 0; }, 5000); }
+    $('#bar').classList.toggle('on', on); S.ui = on ? 1 : 0;
+  }
+  function cinfoOf(c) { return COUNTRIES.filter(function (x) { return x.id === c.cc; })[0].n; }
+  function drawList() {
+    var l = $('#list'); l.classList.toggle('on', S.inList); if (!S.inList) return;
+    l.innerHTML = S.list.map(function (c, i) { return '<div class="r' + (i === S.lf ? ' f' : '') + (c === S.cur ? ' cur' : '') + '" data-li="' + i + '">' + logo(c, 'lg') + '<span class="t">' + c.name + '</span></div>'; }).join('');
+    var f = l.querySelector('.f'); if (f) l.scrollTop = Math.max(0, f.offsetTop - 260);
+  }
+  function leavePlay() { stopVideo(); $('#play').classList.remove('on'); $('#bmute').hidden = true; $('#mute').classList.remove('on'); S.cur = null; S.inList = false; draw(); }
+  function playKey(k) {
+    var cur = S.list.indexOf(S.cur);
+    if (S.inList) {
+      if (k === 'up') S.lf = Math.max(0, S.lf - 1); else if (k === 'down') S.lf = Math.min(S.list.length - 1, S.lf + 1);
+      else if (k === 'ok') { var c = S.list[S.lf]; S.inList = false; watch(c, S.list); drawList(); return; }
+      else if (k === 'back' || k === 'left') S.inList = false; else if (k === 'home') { leavePlay(); return; }
+      drawList(); return;
+    }
+    if (k === 'up' || k === 'down') { var n = S.list.length, j = (cur + (k === 'down' ? 1 : -1) + n) % n; watch(S.list[j], S.list); }
+    else if (k === 'ok') { if (S.ui) { S.inList = true; S.lf = Math.max(0, cur); showBar(false); drawList(); } else showBar(true); }
+    else if (k === 'back') { if (S.ui) showBar(false); else leavePlay(); }
+    else if (k === 'home') leavePlay();
+    else if (k === 'menu') toggleMute();
+    else showBar(true);
+  }
+  TVKit.handler = function (k) {
+    if (S.over) { overKey(k); return; }
+    if ($('#play').classList.contains('on')) { playKey(k); return; }
+    if (k === 'home') { TVKit.go('home'); return; }
+    if (k === 'back') { if (S.f.z === 'grid' || S.f.z === 'field') { S.f = { z: 'side', i: Math.min(S.sideIt.length - 1, sideFor()) }; if (S.mode === 'search' && S.f.z === 'field') leaveSearch(); } else if (S.mode === 'search') leaveSearch(); else TVKit.go('home'); draw(); return; }
+    if (S.f.z === 'side') sideKey(k); else if (S.f.z === 'grid') gridKey(k);
+    else if (S.f.z === 'field') { if (k === 'down' && S.r.length) S.f = { z: 'grid', i: 0 }; else if (k === 'left') S.f = { z: 'side', i: 0 }; else if (k === 'ok') { var q = $('#q'); if (q) q.focus(); } }
+    draw();
+  };
+  TVKit.reset = function () { stopVideo(); $('#play').classList.remove('on'); S = Object.assign(S, { cc: 'vn', cat: 'All', fav: [], mode: 'country', f: { z: 'grid', i: 0 }, q: '', over: null, cur: null, inList: false }); sheet(); draw(); muteUi(); };
+
+  // ---- pointer
+  var hold = null, held = false;
+  $('#scr').addEventListener('pointerdown', function (e) {
+    held = false; var t = e.target.closest('.c'); if (!t || S.over) return;
+    hold = setTimeout(function () { held = true; hold = null; S.f = { z: 'grid', i: +t.dataset.i }; cardMenu(S.r[+t.dataset.i]); draw(); }, 520);
+  });
+  ['pointerup', 'pointerleave', 'pointermove'].forEach(function (n) { $('#scr').addEventListener(n, function (e) { if (hold && n !== 'pointermove') { clearTimeout(hold); hold = null; } }); });
+  $('#scr').addEventListener('click', function (e) {
+    if (held) { held = false; return; }
+    var t = e.target;
+    if (t.closest('#mute')) { toggleMute(); return; }
+    var oi = t.closest('[data-oi]'); if (oi && S.over) { S.over.i = +oi.dataset.oi; overKey('ok'); return; }
+    if (S.over) { if (!t.closest('.sheet')) { S.over = null; sheet(); } return; }
+    if ($('#play').classList.contains('on')) {
+      var li = t.closest('[data-li]'); if (li) { S.lf = +li.dataset.li; playKey('ok'); return; }
+      if (S.inList) { S.inList = false; drawList(); return; }
+      if (S.ui) { S.inList = true; S.lf = Math.max(0, S.list.indexOf(S.cur)); showBar(false); drawList(); } else showBar(true); return;
+    }
+    var q = t.closest('[data-q]'); if (q) { S.q = q.dataset.q; S.f = { z: 'grid', i: 0 }; draw(); return; }
+    var s = t.closest('[data-act="search"]'); if (s) { openSearch(); return; }
+    var z = t.closest('[data-z]'); if (!z) return;
+    S.f = { z: z.dataset.z, i: +z.dataset.i }; TVKit.handler('ok');
+  });
+  $('#scr').addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  vid.addEventListener('click', function () {});
+
+  // ---- the side panel
+  COUNTRIES.forEach(function (c) { var b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.dataset.cc = c.id; b.textContent = c.f + ' ' + c.n; b.onclick = function () { if ($('#play').classList.contains('on')) leavePlay(); setCountry(c.id); S.f = { z: 'grid', i: 0 }; draw(); }; $('#cchips').appendChild(b); });
+  $('#bmute').onclick = toggleMute;
+  TVKit.mount($('#tv'), $('#scr')); draw(); muteUi();
+})();
+</script>
+</body>
+</html>

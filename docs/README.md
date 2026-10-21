@@ -43,12 +43,31 @@ It needs the computer app built and, for `tv`, `phone` and `tvapp`, both emulato
 is the made-up home screen `dev/shots/home-<lang>.html`; the TV is named "TV phòng khách" / "Living room TV". Then check each
 `<img>`'s width and height in `index.html`.
 
-**Live demo** (`/demo/`): the app's real web page (`app/shared/web`, nothing copied here) against a made-up TV. `demo/index.html`
-registers `sw.js` (scope `/demo/`) and shows the page in a frame at `/demo/app/`. The worker serves its files from jsDelivr
-at the git tag in `REF` (top of `sw.js`) and asks `mock.js`, in the demo page, to answer every `/api/...` call; the made-up TV
-lives in that page's memory, so Reset (or a reload) starts again. Install, remove, reboot and the like answer "this is a
-demo". The picture is a drawn screen as screenshots (video is not faked). The page's synchronous reads (words, `remote.json`)
-are put into `index.html` by the worker, since Chrome does not send those to a worker.
+**Live demo** (`/demo/`, a hub of four tabs; deep links `#remote` `#home` `#channels` `#games`, `?go=<guide topic>` opens Remote): `index.html` is
+only the tabs, a line per tab with its download link, VI / EN, Reset, and the key forwarding; each tab is a page of this folder in a
+lazy frame (`<tab>.html?embed=1&lang=`; the frame reports its height, and OK on a tile of TV Home can ask for another tab). Keys:
+`tvkit.js` turns the on-screen remote, the keyboard and the hub's forwarded keys into up / down / left / right / ok / back / home / menu
+(a long press of OK is menu); `tvkit.css` is the TV frame (a fixed 1280 x 720 picture scaled to the frame) and the remote.
+- **Remote** (`remote.html`): the app's real web page (`app/shared/web`, nothing copied here) against a made-up TV. It registers `sw.js` (scope
+  `/demo/`) and shows the page in a frame at `/demo/app/`. The worker serves its files from jsDelivr at the git tag in `REF` (top of `sw.js`)
+  and asks `mock.js`, in `remote.html` (the worker finds that page by its path), to answer every `/api/...` call; the made-up TV lives in
+  that page's memory, so Reset (or a reload) starts again. Install, remove, reboot and the like answer "this is a demo". The picture is a
+  drawn screen as screenshots (video is not faked). The page's synchronous reads (words, `remote.json`) are put into `index.html` of the
+  app by the worker, since Chrome does not send those to a worker.
+- **TV Home** (`home.html`): drawn by hand after `app/home` (clock, dock, grid, long-press menu, wallpapers from `home/*.jpg`) and a made-up
+  "before" screen (an illustration). OK on the TV Channels / TV Games tile opens that tab. Own apps use the real `banner.png` (`img/banner-*.png`,
+  copies: refresh with the apps' banners).
+- **TV Channels** (`channels.html` + `channels-data.js`): 38 channels of iptv-org (public streams) in three sets (International, Vietnam, USA):
+  `[country, name, category, logo, stream, plays, light]`. A stream is played with hls.js (1.5.17 from cdnjs, loaded on the first play, muted
+  until the Unmute button); `plays` is what a real Chrome measured (a stream needs CORS to play in a page: 26 of the 38 did, the VTV / HTV
+  ones do not and show a still with "on the TV this plays the channel"). `light` is the app's logo-tile rule (`LogoFit.kt`) worked out
+  offline: re-measure both when the list changes. Leaving the tab stops the video.
+- **TV Games** (`games.html` + `pad/`): the library with the catalog's real pictures (`games/img`), and the real quiz (`games/web/quiz`,
+  put in a frame with a `window.tvpad` stand-in) played with one or two phones. The phone is the app's real pad page: `pad/pad.js`, `pad.css`,
+  `pingmath.js` are unchanged copies of `app/games/src/main/assets/pad/` (and `webgames/_lib/`), `pad/index.html` is its page without the
+  manifest; `pad/demo-pad.js` swaps the WebSocket for postMessage to `games.html` (which plays the TV's side of `GameServer.kt`'s protocol),
+  turns a mouse press into touches and fixes the language. Refresh the copies after a change to the pad (`cp`, then check `demo-pad.js`
+  still matches `connect()`). No NES player here: an NES game shows a card saying so.
 
 To show a newer UI: pick a release tag (a pushed commit also works), check
 `https://cdn.jsdelivr.net/gh/HoangTran0410/tv-remote@<ref>/app/shared/web/index.html` answers, change `REF` in `demo/sw.js`,

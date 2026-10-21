@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TV Remote: dùng thử | live demo</title>
-<meta name="description" content="Try the real TV Remote web page with a made-up TV. Dùng thử trang web thật của TV Remote với một chiếc TV giả.">
+<meta name="description" content="Try TV Remote, TV Home, TV Channels and TV Games in the browser with a made-up TV. Dùng thử TV Remote, TV Home, TV Channels và TV Games ngay trên trình duyệt.">
 <meta name="theme-color" content="#0a0d14">
 <link rel="icon" href="../img/icon.png">
 <script>
-  // the site's choice (docs/js/site.js keeps it in localStorage "lang"); the page in the frame reads the same key
+  // the site's choice (docs/js/site.js keeps it in localStorage "lang"); the pages in the frames read the same key
   (function () {
     var l = 'vi';
     try { var m = /[?&]lang=(vi|en)/.exec(location.search); l = m ? m[1] : localStorage.getItem('lang') || (/^vi/i.test(navigator.language) ? 'vi' : 'en');
@@ -19,102 +19,138 @@
 <style>
   :root { --bg:#0a0d14; --card:#141924; --line:#232a3a; --text:#e9edf5; --muted:#9aa4b8; --blue:#5b8cff; --fill:#2f5fd6; }
   * { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; }
-  body { background: var(--bg); color: var(--text); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   html[data-lang="vi"] .en, html[data-lang="en"] .vi { display: none !important; }
-  .bar { flex: none; display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; padding: 8px 16px; background: var(--card); border-bottom: 1px solid var(--line); }
-  .bar .tag { font-weight: 700; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: #fff; background: var(--fill); border-radius: 999px; padding: 3px 10px; }
-  .bar p { margin: 0; color: var(--muted); flex: 1 1 260px; min-width: 0; }
-  .bar a, .bar button { font: inherit; font-weight: 600; text-decoration: none; border-radius: 10px; padding: 7px 14px; border: 1px solid var(--line); color: var(--text); background: transparent; cursor: pointer; }
-  .bar a.go { background: var(--fill); border-color: var(--fill); color: #fff; }
-  .bar a, .bar button { display: inline-flex; align-items: center; gap: 7px; }
-  .bar svg { width: 17px; height: 17px; flex: none; }
-  .bar a:hover, .bar button:hover { filter: brightness(1.15); }
-  @media (max-width: 600px) { .bar { padding: 6px 12px; } .bar p, .bar .home { display: none; } .bar .tag { margin-right: auto; } }
-  .stage { flex: 1; min-height: 0; position: relative; }
-  iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--bg); }
-  .msg { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; padding: 24px; color: var(--muted); }
-  .msg[hidden] { display: none; }
-  .msg b { color: var(--text); display: block; margin-bottom: 6px; font-size: 17px; }
-  .msg a { color: var(--blue); }
+  button, a { font: inherit; }
+  #top { position: sticky; top: 0; z-index: 5; background: var(--card); border-bottom: 1px solid var(--line); }
+  .bar { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 8px 16px; }
+  .tag { font-weight: 700; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: #fff; background: var(--fill); border-radius: 999px; padding: 3px 10px; }
+  .tabs { display: flex; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs button { border: 1px solid transparent; background: transparent; color: var(--muted); border-radius: 10px; padding: 7px 12px; font-weight: 600; white-space: nowrap; cursor: pointer; min-height: 36px; }
+  .tabs button:hover { color: var(--text); }
+  .tabs button[aria-selected="true"] { background: #162447; border-color: var(--blue); color: var(--text); }
+  .tools { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .tools button, .tools a { display: inline-flex; align-items: center; gap: 7px; text-decoration: none; border-radius: 10px; padding: 6px 12px; min-height: 36px; border: 1px solid var(--line); color: var(--text); background: transparent; font-weight: 600; cursor: pointer; }
+  .tools button:hover, .tools a:hover { filter: brightness(1.2); }
+  .tools svg { width: 17px; height: 17px; flex: none; }
+  .tools .lang button { border: 0; border-radius: 0; padding: 6px 10px; color: var(--muted); }
+  .tools .lang { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  html[data-lang="vi"] .tools .lang [data-l="vi"], html[data-lang="en"] .tools .lang [data-l="en"] { background: #162447; color: var(--text); }
+  .intro { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; padding: 0 16px 9px; }
+  .intro p { margin: 0; color: var(--muted); flex: 1 1 280px; min-width: 0; }
+  .intro a { color: #fff; background: var(--fill); border-radius: 10px; padding: 6px 14px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 7px; }
+  .intro a svg { width: 17px; height: 17px; flex: none; }
+  .intro a:hover { filter: brightness(1.15); }
+  #stage { position: relative; }
+  #stage iframe { display: block; width: 100%; border: 0; background: var(--bg); }
+  #stage iframe[hidden] { display: none; }
+  #stage.fill iframe { height: calc(100vh - var(--hh, 100px)); height: calc(100dvh - var(--hh, 100px)); min-height: 420px; }
+  @media (max-width: 760px) { .bar { padding: 6px 12px; } .intro { padding: 0 12px 8px; } .tools .home { display: none; } .tools { margin-left: 0; } .tabs { order: 3; flex: 1 1 100%; justify-content: space-between; } .tabs button { padding: 7px 5px; font-size: 13px; } .tag { margin-right: auto; } }
 </style>
 </head>
 <body>
-<div class="bar">
-  <span class="tag"><span class="vi">Dùng thử</span><span class="en">Live demo</span></span>
-  <p><span class="vi">Trang web thật của app, nối với một chiếc TV giả. Không có gì được lưu hay gửi đi.</span>
-     <span class="en">The app's real web page, connected to a made-up TV. Nothing is saved or sent.</span></p>
-  <a class="go" href="../#install"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg><span class="vi">Tải app</span><span class="en">Download</span></a>
-  <a class="home" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1Z"/></svg><span class="vi">Trang chủ</span><span class="en">Home</span></a>
-  <button type="button" id="again"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span class="vi">Làm lại</span><span class="en">Reset</span></button>
+<div id="top">
+  <div class="bar">
+    <span class="tag"><span class="vi">Dùng thử</span><span class="en">Live demo</span></span>
+    <div class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-t="remote">Remote</button>
+      <button role="tab" data-t="home">TV Home</button>
+      <button role="tab" data-t="channels">TV Channels</button>
+      <button role="tab" data-t="games">TV Games</button>
+    </div>
+    <div class="tools">
+      <span class="lang" role="group" aria-label="Language"><button type="button" data-l="vi">VI</button><button type="button" data-l="en">EN</button></span>
+      <button type="button" id="again"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span class="vi">Làm lại</span><span class="en">Reset</span></button>
+      <a class="home" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1Z"/></svg><span class="vi">Trang chủ</span><span class="en">Home</span></a>
+    </div>
+  </div>
+  <div class="intro"><p id="intro"></p><a id="dl" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg><span id="dlt"></span></a></div>
 </div>
-<div class="stage">
-  <div class="msg" id="msg"><div><b><span class="vi">Đang mở bản dùng thử...</span><span class="en">Opening the demo...</span></b></div></div>
-  <iframe id="app" title="TV Remote" hidden></iframe>
-</div>
-<script src="mock.js"></script>
-<script src="go.js"></script>
+<div id="stage"></div>
 <script>
 (function () {
-  var msg = document.getElementById('msg'), frame = document.getElementById('app');
-  function broken(vi, en) {
-    msg.hidden = false; frame.hidden = true;
-    msg.firstElementChild.innerHTML = '<b><span class="vi">' + vi + '</span><span class="en">' + en + '</span></b>' +
-      '<span class="vi">Thử tải lại trang, hoặc <a href="../#install">tải app</a>.</span><span class="en">Try reloading, or <a href="../#install">download the app</a>.</span>';
-  }
-  document.getElementById('again').onclick = function () { location.reload(); };
-  if (!('serviceWorker' in navigator)) return broken('Trình duyệt này không chạy được bản dùng thử.', 'This browser cannot run the demo.');
+  var REL = 'https://github.com/HoangTran0410/tv-remote/releases/latest/download/';
+  // one line per tab: what the real app does, and where to get it (vi, en); a tab is a page of this folder in a frame, made when first opened
+  var TABS = {
+    remote:   { vi: 'Trang web thật của app điều khiển, nối với một chiếc TV giả. Không có gì được lưu hay gửi đi.', en: "The app's real remote page, connected to a made-up TV. Nothing is saved or sent.", dl: ['Tải app', 'Get the app'], href: '../#install', fill: true },
+    home:     { vi: 'TV Home: màn hình chính riêng cho TV, có đồng hồ, dock, lưới app và hình nền. Ở đây là bản mô phỏng.', en: "TV Home: the TV's own home screen with a clock, a dock, an app grid and wallpapers. A simulation here.", dl: ['Tải TV Home', 'Get TV Home'], href: REL + 'tv-home.apk' },
+    channels: { vi: 'TV Channels: kênh truyền hình miễn phí của iptv-org trên TV. Chấm xanh: phát được ngay trong trình duyệt.', en: "TV Channels: iptv-org's free channels on the TV. Green dot: plays right in the browser.", dl: ['Tải TV Channels', 'Get TV Channels'], href: REL + 'tv-channels.apk', drop: true },
+    games:    { vi: 'TV Games: game retro và game web trên TV, điện thoại làm tay cầm. Đố vui ở đây chạy thật.', en: 'TV Games: retro and web games on the TV, phones as pads. The quiz here really runs.', dl: ['Tải TV Games', 'Get TV Games'], href: REL + 'tv-games.apk' },
+  };
+  var $ = function (s) { return document.querySelector(s); }, stage = $('#stage'), top = $('#top');
+  var lang = function () { return document.documentElement.dataset.lang; };
+  var cur = null, frames = {};
+  var q = new URLSearchParams(location.search);
 
-  // the worker answers the page's /api calls by asking this page, which holds the made-up TV (mock.js)
-  navigator.serviceWorker.addEventListener('message', function (e) {
-    if (!e.data || e.data.demo !== 'api' || !e.ports[0]) return;
-    window.demoApi(e.data).then(function (r) { e.ports[0].postMessage(r); },
-      function (err) { e.ports[0].postMessage({ status: 500, type: 'application/json', body: JSON.stringify({ error: String(err) }) }); });
+  function srcOf(t) {
+    var u = t + '.html?embed=1&lang=' + lang();
+    if (t === 'remote' && q.get('go')) u += '&go=' + encodeURIComponent(q.get('go'));
+    return u;
+  }
+  function frame(t) {
+    if (frames[t]) return frames[t];
+    var f = document.createElement('iframe'); f.title = t; f.hidden = true; f.src = srcOf(t); f.allow = 'autoplay'; f.dataset.t = t;
+    if (!TABS[t].fill) f.style.height = '720px';
+    stage.append(f); return (frames[t] = f);
+  }
+  function drop(t) { if (frames[t]) { frames[t].remove(); delete frames[t]; } }
+  function fitTop() { document.documentElement.style.setProperty('--hh', top.offsetHeight + 'px'); }
+
+  function show(t, keepHash) {
+    if (!TABS[t]) t = 'home';
+    var old = cur; cur = t;
+    if (old && old !== t) { if (TABS[old].drop) drop(old); else if (frames[old]) frames[old].hidden = true; }   // a playing channel must stop when its tab is left
+    document.querySelectorAll('#tabs [data-t]').forEach(function (b) { b.setAttribute('aria-selected', b.dataset.t === t); b.tabIndex = b.dataset.t === t ? 0 : -1; });
+    var T = TABS[t], l = lang() === 'en' ? 'en' : 'vi';
+    $('#intro').textContent = T[l]; $('#dlt').textContent = T.dl[l === 'en' ? 1 : 0]; $('#dl').href = T.href;
+    stage.classList.toggle('fill', !!T.fill); fitTop();
+    var f = frame(t); f.hidden = false;
+    if (!keepHash && location.hash !== '#' + t) { try { history.replaceState(null, '', location.pathname + (t === 'remote' && q.get('go') ? location.search : '') + '#' + t); } catch (e) {} }
+    try { f.contentWindow.focus(); } catch (e) {}
+  }
+
+  $('#tabs').addEventListener('click', function (e) { var b = e.target.closest('[data-t]'); if (b) show(b.dataset.t); });
+  $('#tabs').addEventListener('keydown', function (e) {      // arrows move between tabs (a tab list), not the TV in the frame
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    var ids = Object.keys(TABS), i = ids.indexOf(cur) + (e.key === 'ArrowRight' ? 1 : -1);
+    e.stopPropagation(); e.preventDefault(); show(ids[(i + ids.length) % ids.length]); var b = $('#tabs [data-t="' + cur + '"]'); if (b) b.focus();
+  });
+  addEventListener('hashchange', function () { var t = location.hash.slice(1); if (TABS[t] && t !== cur) show(t, true); });
+
+  $('#again').addEventListener('click', function () { var f = frames[cur]; if (f) { f.src = 'about:blank'; setTimeout(function () { f.src = srcOf(cur); }, 30); } });
+  document.querySelectorAll('.tools .lang [data-l]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var l = b.dataset.l; if (l === lang()) return;
+      try { localStorage.setItem('lang', l); } catch (e) {}
+      document.documentElement.dataset.lang = l; document.documentElement.lang = l;
+      Object.keys(frames).forEach(drop); show(cur, true);
+    });
   });
 
-  // ?go=<guide topic>: once the made-up TV is connected, open the part of the page that topic is about (go.js)
-  function goTo() {
-    var m = /[?&]go=([\w-]+)/.exec(location.search), to = m && window.DEMO_GO[m[1]], tries = 0;
-    if (!to) return;
-    (function wait() {
-      var w = frame.contentWindow, ready = false;
-      try { ready = typeof w.showTab === 'function' && w.eval('typeof ADB === "object" && ADB.state') === 'ready'; } catch (e) {}
-      if (!ready) { if (++tries < 60) setTimeout(wait, 250); return; }
-      if (w.pickLeave) w.pickLeave();
-      w.showTab(to[0]);
-      var steps = to.slice(1), i = 0;
-      (function next() {
-        var what = steps[i++];
-        if (!what) return;
-        setTimeout(function () {
-          var last = i >= steps.length;
-          if (/\(\)$/.test(what)) { var f = w[what.slice(0, -2)]; if (typeof f === 'function') f(); }
-          else if (/^click:/.test(what)) { var b = w.document.querySelector(what.slice(6)); if (b) b.click(); }
-          else {
-            var el = w.document.querySelector(what);
-            if (el) {
-              el = el.closest('.card') || el;
-              el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-              var ring = '0 0 0 3px var(--accent), 0 0 24px var(--accent)';    // the page's .flash (goTo), drawn here: older pages lack it
-              el.animate([{ boxShadow: '0 0 0 0 var(--accent)' }, { boxShadow: ring, offset: .1 }, { boxShadow: ring, offset: .6 }, { boxShadow: '0 0 0 3px transparent' }], { duration: 3000, easing: 'ease-out', delay: 400 });
-            }
-          }
-          if (!last) next();
-        }, i === 1 ? 300 : 700);
-      })();
-    })();
+  // a child asks: a taller page (its height), or another tab (OK on the TV Channels tile of TV Home)
+  addEventListener('message', function (e) {
+    var d = e.data; if (!d || typeof d !== 'object') return;
+    if (d.demoTab && TABS[d.demoTab]) show(d.demoTab);
+    else if (d.demoH && cur && !TABS[cur].fill && frames[cur] && e.source === frames[cur].contentWindow) frames[cur].style.height = Math.max(300, Math.ceil(d.demoH)) + 'px';
+  });
+
+  // the keys of the TV when the focus is on this page (a tab just clicked), not in the frame
+  var KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', Enter: 'ok', ' ': 'ok', Escape: 'back', Backspace: 'back', Home: 'home', ContextMenu: 'menu', m: 'menu', M: 'menu', h: 'home' };
+  function fwd(e, down) {
+    if (!cur || TABS[cur].fill || e.ctrlKey || e.metaKey || e.altKey) return;
+    var t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || (t.tagName === 'BUTTON' && (e.key === 'Enter' || e.key === ' ')) || t.tagName === 'A')) return;
+    var k = KEYS[e.key], f = frames[cur]; if (!k || !f) return;
+    e.preventDefault(); if (down && e.repeat) return;
+    f.contentWindow.postMessage({ demoKey: k, down: down }, '*');
   }
-  function start() {
-    try { if (!localStorage.getItem('quality')) localStorage.setItem('quality', 'snap'); } catch (e) {}   // pictures as screenshots: no video stream to fake
-    // the page's own "reloaded for a new language" note: open on the Living room TV's remote, not on the list of TVs (the Open button is still there)
-    try { sessionStorage.setItem('langKeep', JSON.stringify({ picking: false, tab: 'remote', y: 0 })); } catch (e) {}
-    frame.onload = function () { msg.hidden = true; frame.hidden = false; goTo(); };
-    frame.src = 'app/';
-  }
-  navigator.serviceWorker.register('sw.js', { scope: '/demo/' }).then(function () { return navigator.serviceWorker.ready; }).then(function () {
-    // the first visit: the worker is active but does not control this page yet (it takes the frame, which is enough: the frame loads after)
-    start();
-  }).catch(function () { broken('Không mở được bản dùng thử.', 'The demo could not start.'); });
+  addEventListener('keydown', function (e) { fwd(e, true); });
+  addEventListener('keyup', function (e) { fwd(e, false); });
+  addEventListener('resize', fitTop);
+
+  var h = location.hash.slice(1);
+  show(q.get('go') ? 'remote' : TABS[h] ? h : 'home', true);
 })();
 </script>
 </body>
