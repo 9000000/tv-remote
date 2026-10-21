@@ -47,6 +47,7 @@ class BrowseActivity : Activity() {
     private var all: List<List<Channel>> = emptyList()
     private var shown: List<List<Channel>> = emptyList()
     private var group = ALL
+    private var watching: android.content.SharedPreferences.OnSharedPreferenceChangeListener? = null   // favourites / groups edited from a phone or computer
     private var failed = false
     private var countryName = ""
 
@@ -104,6 +105,11 @@ class BrowseActivity : Activity() {
         groupOf(intent)?.let { group = it }
         intent.getStringExtra(QUERY)?.let { find.setText(it) }
         load(false)
+        watching = Store.watch(this) { runOnUiThread {
+            val g = mine(group)
+            if (g != null && g != Store.FAV && Store.group(this, g) == null) group = ALL      // the open group was deleted
+            buildRail(); filter()
+        } }
     }
 
     override fun onNewIntent(i: Intent) {
@@ -438,7 +444,7 @@ class BrowseActivity : Activity() {
         }
     }
 
-    override fun onDestroy() { io.shutdownNow(); guides.shutdownNow(); super.onDestroy() }
+    override fun onDestroy() { watching?.let { Store.unwatch(this, it) }; io.shutdownNow(); guides.shutdownNow(); super.onDestroy() }
 
     /** Stable ids: a list drawn again (a favourite or a group changed) keeps the focus on the same channel, not on whatever card took its place. */
     private inner class Cards : RecyclerView.Adapter<Cards.H>() {

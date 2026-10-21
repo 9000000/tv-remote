@@ -12,6 +12,11 @@ import org.json.JSONObject
 object Store {
     private fun p(c: Context) = c.getSharedPreferences("channels", Context.MODE_PRIVATE)
 
+    /** [f] runs when the favourites or groups change (ChannelsReceiver wrote them while the list is open); keep the returned listener until [unwatch]. */
+    fun watch(c: Context, f: () -> Unit) = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, k -> if (k == "favs" || k == "groups") f() }
+        .also { p(c).registerOnSharedPreferenceChangeListener(it) }
+    fun unwatch(c: Context, l: android.content.SharedPreferences.OnSharedPreferenceChangeListener) = p(c).unregisterOnSharedPreferenceChangeListener(l)
+
     fun country(c: Context): String = p(c).getString("country", null) ?: Catalog.home()
     fun setCountry(c: Context, cc: String) = p(c).edit().putString("country", cc).apply()
 

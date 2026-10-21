@@ -72,3 +72,4 @@ button.appchoice span { overflow:hidden; text-overflow:ellipsis; white-space:now
 .chm .item .acts { gap:6px; }
 .chm .item .acts button { min-width:0; padding:0; }
 .chm .item .acts .iconbtn { width:38px; }
+.chm > .places { flex-wrap:wrap; overflow:visible; margin:0; padding:0; }   /* groups can be many and names long: wrap, never clip the last chip */
