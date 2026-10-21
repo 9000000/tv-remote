@@ -154,6 +154,10 @@
     <string name="c_waits">not shown yet</string>
     <string name="c_size_hint">The Big / Small button sets how large a card is. Big cards get a column, two small ones share one.</string>
     <string name="c_lang">Language</string>
+    <string name="c_motion">Motion level</string>
+    <string name="c_motion_auto">Auto</string>
+    <string name="c_motion_calm">Calm</string>
+    <string name="c_motion_full">Full</string>
     <string name="c_focus">Focus</string>
     <string name="c_focus_glass">Glass</string>
     <string name="c_focus_ring">Blue ring</string>

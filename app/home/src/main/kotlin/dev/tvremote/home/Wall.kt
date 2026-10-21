@@ -52,7 +52,33 @@ object Wall {
         val a = Bitmap.createScaledBitmap(b, maxOf(1, b.width / 4), maxOf(1, b.height / 4), true)
         val c = Bitmap.createScaledBitmap(a, maxOf(1, b.width / 16), maxOf(1, b.height / 16), true)
         if (a !== c && a !== b) a.recycle()
-        return c
+        return smooth(if (c.isMutable) c else c.copy(Bitmap.Config.ARGB_8888, true).also { if (it !== c && c !== b) c.recycle() })
+    }
+
+    /** Three box blurs over the small copy (~120 x 68): shrinking alone left blocks and bright streaks behind a card's words. */
+    private fun smooth(b: Bitmap, r: Int = 2): Bitmap {
+        val w = b.width; val h = b.height
+        if (w < 2 || h < 2) return b
+        var px = IntArray(w * h).also { b.getPixels(it, 0, w, 0, 0, w, h) }
+        var tmp = IntArray(w * h)
+        repeat(3) { box(px, tmp, w, h, r, true); box(tmp, px, w, h, r, false) }
+        b.setPixels(px, 0, w, 0, 0, w, h)
+        return b
+    }
+
+    private fun box(src: IntArray, dst: IntArray, w: Int, h: Int, r: Int, across: Boolean) {
+        val n = if (across) w else h; val lines = if (across) h else w
+        val k = 2 * r + 1
+        for (l in 0 until lines) {
+            var sr = 0; var sg = 0; var sb = 0
+            fun at(i: Int) = src[if (across) l * w + i.coerceIn(0, n - 1) else i.coerceIn(0, n - 1) * w + l]
+            for (i in -r..r) { val c = at(i); sr += c shr 16 and 255; sg += c shr 8 and 255; sb += c and 255 }
+            for (i in 0 until n) {
+                dst[if (across) l * w + i else i * w + l] = (0xFF shl 24) or (sr / k shl 16) or (sg / k shl 8) or (sb / k)
+                val o = at(i - r); val e = at(i + r + 1)
+                sr += (e shr 16 and 255) - (o shr 16 and 255); sg += (e shr 8 and 255) - (o shr 8 and 255); sb += (e and 255) - (o and 255)
+            }
+        }
     }
 
     fun file(c: android.content.Context) = File(c.getExternalFilesDir(null), "wall.jpg")

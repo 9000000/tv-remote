@@ -348,6 +348,7 @@ class HomeActivity : Activity() {
 
     /** The blurred photo behind the dock band is the wallpaper itself: it keeps the screen's place while the band scrolls. */
     private fun blurAlign() {
+        Frost.moved()
         if (blurClip.visibility != View.VISIBLE) return
         blurView.translationX = -bandWrap.left.toFloat()
         blurView.translationY = (scroll.scrollY - bandWrap.top).toFloat()
@@ -610,7 +611,7 @@ class HomeActivity : Activity() {
         val key = wallShown
         if (!Walls.isPicture(id) && !WallArt.has(id)) {
             picture = null; soft = null
-            blurClip.visibility = View.GONE
+            blurClip.visibility = View.GONE; Frost.show(null, dm.widthPixels, dm.heightPixels)
             val look = Backdrop.Look(colors)
             backdrop.show(look)
             return
@@ -625,7 +626,8 @@ class HomeActivity : Activity() {
                 picture = big; soft = small
                 val look = if (big != null) Backdrop.Look(colors, big) else Backdrop.Look(colors, null, id)
                 backdrop.show(look)
-                blurView.setImageBitmap(small); blurClip.visibility = if (small != null) View.VISIBLE else View.GONE; blurAlign()
+                blurView.setImageBitmap(small); blurClip.visibility = if (small != null) View.VISIBLE else View.GONE
+                Frost.show(small, dm.widthPixels, dm.heightPixels); blurAlign()
             }
         }
     }
@@ -921,9 +923,15 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
         }
         // in on a spring, out on a plain glide a little slower: the next tile's rise leads, the last one sinks behind it
         val s = if (on) GROW else 1f
-        val t = if (on) 520L else 300L
+        val t = Motion.ms(if (on) 520L else 300L)
         val ip = if (on) Motion.spring else Motion.glide
         card.translationX = 0f; card.translationY = 0f
+        if (Motion.calm) {                                            // one animator, not five: the rest is set at once
+            card.translationZ = 0f; content.scaleX = 1f; content.scaleY = 1f; shine.alpha = 0f; name.translationY = 0f
+            ring.alpha = if (on && !Motion.glass) 1f else 0f; name.alpha = if (on) 1f else 0f
+            card.animate().scaleX(s).scaleY(s).setDuration(t).setInterpolator(ip).withLayer().start()
+            return
+        }
         card.animate().scaleX(s).scaleY(s).translationZ(if (on) lift else 0f).setDuration(t).setInterpolator(ip).withLayer().start()
         content.animate().scaleX(if (on) 1.05f else 1f).scaleY(if (on) 1.05f else 1f).setDuration(t).setInterpolator(ip).start()
         ring.animate().alpha(if (on && !Motion.glass) 1f else 0f).setDuration(if (on) 200L else 160L).setInterpolator(Motion.glide).start()
@@ -936,7 +944,7 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
 
     /** Nothing that way: the card leans toward it and wobbles back, so the press was felt (Apple TV does the same). */
     fun nudge(dx: Int, dy: Int) {
-        if (!Motion.on) return
+        if (!Motion.on || Motion.calm) return
         val px = across / 40f
         nudged?.invoke(dx * px * GROW, dy * px * GROW)
         card.animate().cancel()
@@ -1036,15 +1044,28 @@ class Spring(private val damping: Float) : android.animation.TimeInterpolator {
 /** The motion TV Home uses: on from its setting, off when the system's animator duration scale is 0 (Settings, "remove animations"). */
 object Motion {
     @JvmField var on = true
+    @JvmField var calm = false                                        // less moves: no overshoot, shorter, only the card grows (HomeConfig "motion")
     @JvmField var glass = true                                        // the focus is a pane of glass gliding between tiles ([Glass]); false: a blue ring on each
     val lift = PathInterpolator(0.34f, 1.35f, 0.64f, 1f)              // overshoots a little then settles: a spring
-    val spring = Spring(0.62f)                                        // a real damped spring: rises fast, passes ~6 %, settles (Apple TV's focus)
-    val bounce = Spring(0.35f)                                        // looser: the nudge at an edge wobbles back
+    private val springy = Spring(0.62f)                               // a real damped spring: rises fast, passes ~6 %, settles (Apple TV's focus)
+    private val bouncy = Spring(0.35f)                                // looser: the nudge at an edge wobbles back
     val glide = PathInterpolator(0.2f, 0.8f, 0.2f, 1f)                // fast out, long soft end
+    val spring: android.animation.TimeInterpolator get() = if (calm) glide else springy
+    val bounce: android.animation.TimeInterpolator get() = if (calm) glide else bouncy
+
+    /** [t] ms, shorter when calm: fewer frames to draw. */
+    fun ms(t: Long): Long = if (calm) t * 11 / 20 else t
+
+    /** Little memory (Android's own flag, or 1.5 GB or less: TCL's 1 GB MT9221 boxes): calm unless chosen otherwise. */
+    fun lowRam(c: Context): Boolean {
+        val am = c.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+        return am.isLowRamDevice || android.app.ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }.totalMem <= 1536L * 1024 * 1024
+    }
 
     fun read(c: Context, conf: JSONObject) {
         val scale = try { Settings.Global.getFloat(c.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) } catch (e: Exception) { 1f }
         on = conf.optBoolean("anim", true) && scale > 0f
+        calm = when (conf.optString("motion")) { "calm" -> true; "full" -> false; else -> lowRam(c) }
         glass = conf.optString("focus", "glass") != "ring"
     }
 
@@ -1053,7 +1074,7 @@ object Motion {
         v.animate().cancel()
         val s = if (focused) 1.06f else 1f
         if (!on) { v.scaleX = 1f; v.scaleY = 1f }
-        else v.animate().scaleX(s).scaleY(s).setDuration(if (focused) 420 else 220).setInterpolator(if (focused) spring else glide).withLayer().start()   // on a layer: without it each frame drew the whole panel again (16 ms + 36 ms GPU on the FPT box)
+        else v.animate().scaleX(s).scaleY(s).setDuration(ms(if (focused) 420L else 220L)).setInterpolator(if (focused) spring else glide).withLayer().start()   // on a layer: without it each frame drew the whole panel again (16 ms + 36 ms GPU on the FPT box)
     }
 }
 

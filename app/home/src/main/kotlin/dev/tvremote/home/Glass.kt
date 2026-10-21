@@ -81,7 +81,7 @@ class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
             return
         }
         alpha = 1f
-        animate().translationX(x).translationY(y).scaleX(k).scaleY(k).setDuration(460).setInterpolator(Motion.spring).start()
+        animate().translationX(x).translationY(y).scaleX(k).scaleY(k).setDuration(Motion.ms(460)).setInterpolator(Motion.spring).start()
     }
 
     /** With its tile, leaning [px], [py] at an edge and wobbling back ([Tile.nudge]). */

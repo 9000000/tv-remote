@@ -20,11 +20,21 @@ class App(val pkg: String, val label: String, val info: ActivityInfo?, val pin: 
         if (pin != null) { Pins.picture(c, this); return }
         val info = info ?: return
         val pm = c.packageManager
-        banner = try { info.loadBanner(pm) ?: info.applicationInfo.loadBanner(pm) } catch (e: Exception) { null }
+        banner = sharp(c, info) ?: try { info.loadBanner(pm) ?: info.applicationInfo.loadBanner(pm) } catch (e: Exception) { null }
         banner?.let { if (!wide(it.intrinsicWidth, it.intrinsicHeight)) banner = null }   // a square "banner" (Rockchip's Media Center, 64x64) cropped to 16:9 is a blur: the icon and name instead
         if (banner == null) icon = try { info.loadIcon(pm) } catch (e: Exception) { null }
     }
 }
+
+/**
+ * The banner at xhdpi or more: a 1080p TV that calls itself hdpi or tvdpi got it small, then blurred by the focused tile's 1.12x
+ * (cleanyourtv's AppAdapter). Its memory goes with the rest when Home is hidden ([App.release]).
+ */
+private fun sharp(c: Context, info: ActivityInfo): Drawable? = try {
+    val id = info.banner.takeIf { it != 0 } ?: info.applicationInfo.banner
+    if (id == 0) null else c.packageManager.getResourcesForApplication(info.applicationInfo)
+        .getDrawableForDensity(id, maxOf(android.util.DisplayMetrics.DENSITY_XHIGH, c.resources.displayMetrics.densityDpi), null)
+} catch (e: Exception) { null }
 
 /** Wide enough to fill a 16:9 tile; no size of its own (a colour, a shape) fills any tile. cleanyourtv #324. */
 fun wide(w: Int, h: Int) = w <= 0 || h <= 0 || w >= h * 1.4f

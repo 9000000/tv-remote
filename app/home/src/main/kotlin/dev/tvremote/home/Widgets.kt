@@ -382,9 +382,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
     /** One of the small cards: a coloured square, a title, a line under it ([lines] of it). */
     private fun pill(square: View, title: String, sub: String, lines: Int) = LinearLayout(a).apply {
         orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-        background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x2EFFFFFF, 0x14FFFFFF)).apply {
-            cornerRadius = dp(18).toFloat(); setStroke(dp(1), 0x33FFFFFF)
-        }
+        Frost.on(this, dp(18).toFloat(), dp(1))
         setPadding(dp(12), dp(8), dp(14), dp(8))
         addView(square, LayoutParams(dp(40), dp(40)))
         addView(LinearLayout(a).apply {
@@ -703,9 +701,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
 
     private fun card() = LinearLayout(a).apply {
         orientation = VERTICAL
-        background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x2EFFFFFF, 0x14FFFFFF)).apply {
-            cornerRadius = dp(22).toFloat(); setStroke(dp(1), 0x33FFFFFF)                // the dock band's glass
-        }
+        Frost.on(this, dp(22).toFloat(), dp(1))                         // the dock band's glass, its blurred photo too
         setPadding(dp(20), dp(12), dp(20), dp(14))
     }
 

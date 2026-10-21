@@ -155,6 +155,8 @@ async function homeOpen() {
   const langHead = el('h3', { textContent: T('home.lang') }), langs = el('div', { className: 'fchips' });
   // how the focused app shows (HomeConfig "focus"); absent from a TV Home older than the glass
   const focusHead = el('h3', { textContent: T('home.focus') }), focus = el('div', { className: 'fchips' });
+  // how much moves (HomeConfig "motion"): "" calm on a TV with little memory; absent from a TV Home older than the levels
+  const motionHead = el('h3', { textContent: T('home.motion') }), motion = el('div', { className: 'fchips' });
   const packHead = el('h3', { textContent: T('home.pack') }), packBox = el('div', { className: 'packwrap' }), packNote = el('p', { className: 'note', textContent: T('home.pack_note') });
   // the family's note, pinned on the TV's home screen until it is taken down (HomeConfig.NOTE_MAX)
   const note = el('input', { type: 'text', maxLength: 140, placeholder: T('home.note_ph'), 'aria-label': T('home.note') });
@@ -195,6 +197,9 @@ async function homeOpen() {
     focusHead.hidden = focus.hidden = c.focus === undefined;
     focus.replaceChildren(...[['glass', 'home.focus_glass'], ['ring', 'home.focus_ring']].map(([k, id]) =>
       el('button', { type: 'button', className: (c.focus || 'glass') === k ? 'on' : '', onclick: () => send({ focus: k }) }, T(id))));
+    motionHead.hidden = motion.hidden = c.motion === undefined || c.anim === false;
+    motion.replaceChildren(...[['', 'home.motion_auto'], ['calm', 'home.motion_calm'], ['full', 'home.motion_full']].map(([k, id]) =>
+      el('button', { type: 'button', className: (c.motion || '') === k ? 'on' : '', onclick: () => send({ motion: k }) }, T(id))));
     everyHead.hidden = every.hidden = !c.wrotate; if (!c.wrotate) everyNote.hidden = true;
     clock.checked = c.clock24; greet.checked = c.greet; anim.checked = c.anim !== false;
     dream.checked = !!c.dream;
@@ -277,7 +282,7 @@ async function homeOpen() {
     el('div', { className: 'card-head' }, el('h3', { textContent: T('home.dock') }), addDock), dock,
     el('h3', { textContent: T('home.wall') }), everyHead, every, everyNote, walls, file,
     galHead, gal, credit,
-    langHead, langs, focusHead, focus,
+    langHead, langs, focusHead, focus, motionHead, motion,
     el('label', { className: 'check' }, clock, el('span', { textContent: T('home.clock24') })),
     el('label', { className: 'check' }, greet, el('span', { textContent: T('home.greet') })),
     el('label', { className: 'check' }, anim, el('span', { textContent: T('home.anim') })),

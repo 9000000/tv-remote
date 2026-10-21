@@ -214,6 +214,8 @@ object Customize {
         tile(R.drawable.ic_timer, a.getString(R.string.clock24), null, "clock24")
         tile(R.drawable.ic_message, a.getString(R.string.greet), null, "greet")
         tile(R.drawable.ic_sparkle, a.getString(R.string.motion), null, "anim")
+        tile(R.drawable.ic_sparkle, a.getString(R.string.c_motion), null, "motion",
+            listOf("" to a.getString(R.string.c_motion_auto), "calm" to a.getString(R.string.c_motion_calm), "full" to a.getString(R.string.c_motion_full)))
         tile(R.drawable.ic_expand, a.getString(R.string.c_focus), null, "focus",
             listOf("ring" to a.getString(R.string.c_focus_ring), "glass" to a.getString(R.string.c_focus_glass)))
         tile(R.drawable.ic_moon, a.getString(R.string.dream), a.getString(R.string.dream_sub), "dream")

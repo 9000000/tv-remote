@@ -21,6 +21,8 @@ import org.json.JSONObject
  *   lang    TV Home's words: "" the TV's own language, or one of [LANGS] whatever the TV is set to
  *   anim    motion effects (a focused app lifts, rows glide, the screen fades in); off = instant, with a ring. TV Home also
  *           treats the system's "animator duration scale 0" as off
+ *   motion  how much moves while [anim] is on: "" this TV's choice (calm on one with little memory, 1.5 GB or less, or that Android
+ *           calls low on RAM), "calm" (no overshoot, shorter, only the card grows: fewer frames on a weak chip), "full"
  *   focus   how the focused app shows: "glass" (a pane gliding from tile to tile) or "ring" (a blue ring on the tile)
  *   widgets the cards between the clock and the favourites, in their order ([WIDGETS]): "system" (memory, storage, network,
  *           ADB), "usage" (the most used apps of the week and the day's app limits, asked of TV Setup: [USAGE]),
@@ -145,6 +147,7 @@ object HomeConfig {
     /** TV Setup's answer to TV Home about app use (its HomeInfo provider): `call(USAGE, "usage")` → Bundle "json". */
     const val USAGE = "content://dev.tvremote.setup.home"
     /** The languages TV Home has words in (res/values-<lang>; English is res/values), "" = the TV's. */
+    val MOTIONS = listOf("calm", "full")
     val LANGS = listOf("", "vi", "en")
     private val PKG_NAME = Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")
 
@@ -166,6 +169,7 @@ object HomeConfig {
             .put("lang", o.optString("lang").takeIf { it in LANGS } ?: "")
             .put("greet", o.optBoolean("greet", true))
             .put("anim", o.optBoolean("anim", true))
+            .put("motion", o.optString("motion").takeIf { it in MOTIONS } ?: "")
             .put("focus", o.optString("focus").takeIf { it == "ring" } ?: "glass")
             .put("dream", o.optBoolean("dream", false))
             .put("note", o.optString("note").replace(Regex("\\s+"), " ").trim().take(NOTE_MAX))
