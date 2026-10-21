@@ -20,6 +20,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="tvchannels" android:host="country" />
+                <data android:scheme="tvchannels" android:host="group" />
             </intent-filter>
         </activity>
         <!-- tvchannels://play/<iptv-org id>: the public face of this app, for pinned shortcuts, phones, voice -->

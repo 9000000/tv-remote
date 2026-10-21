@@ -27,4 +27,14 @@
     <string name="not_found">That channel is not in iptv-org\'s lists any more.</string>
     <string name="channels_n">%d channels</string>
     <string name="source">Channels from iptv-org (public streams); this app hosts none.</string>
+    <string name="new_group">New group</string>
+    <string name="group_name">Group name</string>
+    <string name="to_group">Add to a group…</string>
+    <string name="no_in_group">No channels in this group yet. Hold OK (or press Menu) on a channel, then Add to a group.</string>
+    <string name="open">Open</string>
+    <string name="rename">Rename</string>
+    <string name="delete_group">Delete group</string>
+    <string name="delete_ask">Delete “%s”?</string>
+    <string name="keep">Keep</string>
+    <string name="ok">OK</string>
 </resources>

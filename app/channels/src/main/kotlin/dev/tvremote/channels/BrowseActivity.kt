@@ -28,8 +28,9 @@ import java.text.Normalizer
 import java.util.concurrent.Executors
 
 /**
- * The list: a side column (favourites, the country, its categories) and a grid of channel cards. OK plays; holding OK or Menu
- * opens what can be done with a channel (favourite, pin to the Home screen). Everything is read from iptv-org in the background.
+ * The list: a side column (favourites and the person's own groups, the country, its categories) and a grid of channel cards.
+ * OK plays; holding OK or Menu opens what can be done with a channel (favourite, a group, pin to the Home screen) or a group
+ * (pin, rename, delete). Everything is read from iptv-org in the background.
  */
 class BrowseActivity : Activity() {
     private val io = Executors.newSingleThreadExecutor()
@@ -99,15 +100,24 @@ class BrowseActivity : Activity() {
         setContentView(root)
 
         cc = countryOf(intent) ?: Store.country(this)
+        groupOf(intent)?.let { group = it }
         load(false)
     }
 
     override fun onNewIntent(i: Intent) {
         super.onNewIntent(i)
         countryOf(i)?.takeIf { it != cc }?.let { cc = it; group = ALL; load(false) }
+        groupOf(i)?.let { find.setText(""); pick(it) }
     }
 
-    override fun onResume() { super.onResume(); cards.notifyDataSetChanged(); if (group == FAVS) filter() }
+    override fun onResume() { super.onResume(); cards.notifyDataSetChanged(); if (mine(group) != null) { buildRail(); filter() } }
+
+    /** A group link (a pin on the home screen): the favourites or one of the groups, when it still exists. */
+    private fun groupOf(i: Intent?) = Pins.groupId(i?.data)?.let { if (it == Store.FAV) FAVS else if (Store.group(this, it) != null) MINE + it else null }
+
+    /** The group of the person's that [g] shows ([Store.FAV] for the favourites), or null for a category of the country. */
+    private fun mine(g: String) = if (g == FAVS) Store.FAV else if (g.startsWith(MINE)) g.removePrefix(MINE) else null
+    private fun mineName(gid: String) = if (gid == Store.FAV) getString(R.string.favourites) else Store.group(this, gid)?.name ?: ""
 
     private fun countryOf(i: Intent?) = i?.data?.takeIf { it.scheme == "tvchannels" && it.host == "country" }
         ?.pathSegments?.firstOrNull()?.lowercase()?.takeIf { it.length == 2 }
@@ -125,7 +135,7 @@ class BrowseActivity : Activity() {
             main.post {
                 if (isDestroyed) return@post
                 all = list.byChannel(); failed = !ok; countryName = name
-                if (group != FAVS && group != ALL && all.none { it.first().group == group }) group = ALL
+                if (mine(group) == null && group != ALL && all.none { it.first().group == group }) group = ALL
                 buildRail(); filter()
                 if (!find.hasFocus()) grid.post { (grid.getChildAt(0) ?: rail.getChildAt(0))?.requestFocus() }
             }
@@ -134,9 +144,19 @@ class BrowseActivity : Activity() {
 
     private fun buildRail() {
         rail.removeAllViews()
-        rail.addView(Ui.text(this, getString(R.string.app_name), 20f, Ui.ACCENT, true).apply { setPadding(Ui.dp(this@BrowseActivity, 12).toInt(), 0, 0, Ui.dp(this@BrowseActivity, 18).toInt()) })
+        val dp = { n: Int -> Ui.dp(this, n).toInt() }
+        rail.addView(LinearLayout(this).apply {                       // the app's own tile beside its name
+            gravity = Gravity.CENTER_VERTICAL; setPadding(dp(12), 0, 0, dp(18))
+            addView(ImageView(this@BrowseActivity).apply { setImageResource(R.drawable.icon) }, LinearLayout.LayoutParams(dp(30), dp(30)).apply { marginEnd = dp(10) })
+            addView(Ui.text(this@BrowseActivity, getString(R.string.app_name), 20f, Ui.ACCENT, true))
+        })
         val favs = Store.favourites(this).byChannel().size
-        add(Ui.row(this, R.drawable.ic_star, getString(R.string.favourites), if (favs > 0) "$favs" else "") { pick(FAVS) }, group == FAVS)
+        add(Ui.row(this, R.drawable.ic_star, getString(R.string.favourites), if (favs > 0) "$favs" else "") { pick(FAVS) }.held(Store.FAV), group == FAVS)
+        for (g in Store.groups(this)) {
+            val n = g.channels.byChannel().size
+            add(Ui.row(this, R.drawable.ic_folder, g.name, if (n > 0) "$n" else "") { pick(MINE + g.id) }.held(g.id), group == MINE + g.id)
+        }
+        add(Ui.row(this, R.drawable.ic_plus, getString(R.string.new_group)) { ask(getString(R.string.new_group), "") { pick(MINE + Store.addGroup(this, it)) } }, false)
         add(Ui.row(this, R.drawable.ic_globe, countryName.ifEmpty { getString(R.string.country) }) { countries() }, false)
         add(Ui.row(this, R.drawable.ic_refresh, getString(R.string.refresh)) { load(true) }, false)
         rail.addView(View(this).apply { setBackgroundColor(0x22FFFFFF) }, LinearLayout.LayoutParams(-1, 1).apply {
@@ -148,6 +168,9 @@ class BrowseActivity : Activity() {
         }
     }
 
+    /** A row of one of the person's groups: Menu or a long press opens [groupMenu]. */
+    private fun View.held(gid: String) = apply { tag = "grp:$gid"; isLongClickable = true; setOnLongClickListener { groupMenu(gid); true } }
+
     private fun add(v: View, on: Boolean) { v.isActivated = on; rail.addView(v, LinearLayout.LayoutParams(-1, -2)) }
 
     private fun pick(g: String) {
@@ -156,21 +179,22 @@ class BrowseActivity : Activity() {
     }
 
     private fun filter() {
-        val base = if (group == FAVS) Store.favourites(this).byChannel() else if (group == ALL) all else all.filter { it.first().group == group }
+        val gid = mine(group)
+        val base = if (gid != null) Store.channels(this, gid).byChannel() else if (group == ALL) all else all.filter { it.first().group == group }
         val q = fold(find.text.toString())
         shown = if (q.isEmpty()) base else base.filter { fold(it.first().name).contains(q) }
         cards.notifyDataSetChanged()
         title.text = when (group) {
-            FAVS -> getString(R.string.favourites)
             ALL -> countryName
-            else -> "$countryName · ${groupName(group)}"
+            else -> if (gid != null) mineName(gid) else "$countryName · ${groupName(group)}"
         }
         when {
             shown.isNotEmpty() -> say("", false)
-            failed && group != FAVS -> say(getString(R.string.offline), true)
-            all.isEmpty() && group != FAVS && note.text == getString(R.string.loading) -> {}
+            failed && gid == null -> say(getString(R.string.offline), true)
+            all.isEmpty() && gid == null && note.text == getString(R.string.loading) -> {}
             q.isNotEmpty() -> say(getString(R.string.no_match), false)
-            group == FAVS -> say(getString(R.string.no_favs), false)
+            gid == Store.FAV -> say(getString(R.string.no_favs), false)
+            gid != null -> say(getString(R.string.no_in_group), false)
             else -> say(getString(R.string.none_here), true)
         }
     }
@@ -200,6 +224,7 @@ class BrowseActivity : Activity() {
         box.addView(Ui.row(this, R.drawable.ic_star, getString(if (fav) R.string.remove_fav else R.string.add_fav)) {
             dlg.dismiss(); Store.toggleFavourite(this, ch); buildRail(); filter()
         })
+        box.addView(Ui.row(this, R.drawable.ic_folder, getString(R.string.to_group)) { dlg.dismiss(); groupsFor(ch) })
         if (Pins.can(this)) box.addView(Ui.row(this, R.drawable.ic_home, getString(R.string.pin)) {
             dlg.dismiss()
             io.execute {
@@ -215,6 +240,98 @@ class BrowseActivity : Activity() {
             setPadding(Ui.dp(this@BrowseActivity, 12).toInt(), Ui.dp(this@BrowseActivity, 10).toInt(), 0, 0) })
         dlg.setContentView(box, ViewGroup.LayoutParams(Ui.dp(this, 380).toInt(), -2))
         dlg.show()
+    }
+
+    /** A dialog box, the look all of them share. */
+    private fun sheet(w: Int = 380): Pair<Dialog, LinearLayout> {
+        val dlg = Dialog(this, R.style.Dialog)
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val p = Ui.dp(this@BrowseActivity, 14).toInt(); setPadding(p, p, p, p)
+            background = Ui.round(0xF21B2028.toInt(), Ui.dp(this@BrowseActivity, 20), 1, 0x40FFFFFF)
+        }
+        dlg.setContentView(box, ViewGroup.LayoutParams(Ui.dp(this, w).toInt(), -2))
+        return dlg to box
+    }
+
+    private fun heading(box: LinearLayout, s: String) =
+        box.addView(Ui.text(this, s, 18f, bold = true).apply { setPadding(Ui.dp(this@BrowseActivity, 12).toInt(), 0, 0, Ui.dp(this@BrowseActivity, 10).toInt()) })
+
+    /** Which of the person's groups [ch] is in: a tick on each, OK puts it in or takes it out; and a new group with it in. */
+    private fun groupsFor(ch: List<Channel>) {
+        val (dlg, box) = sheet()
+        val id = ch.first().id
+        heading(box, ch.first().name)
+        for (g in Store.groups(this)) {
+            val row = Ui.row(this, if (Store.has(this, g.id, id)) R.drawable.ic_check else R.drawable.ic_folder, g.name) {}
+            row.setOnClickListener {
+                val on = Store.toggle(this, g.id, ch)
+                (row.getChildAt(0) as ImageView).setImageResource(if (on) R.drawable.ic_check else R.drawable.ic_folder)
+                buildRail(); if (group == MINE + g.id) filter()
+            }
+            box.addView(row)
+        }
+        box.addView(Ui.row(this, R.drawable.ic_plus, getString(R.string.new_group)) {
+            dlg.dismiss()
+            ask(getString(R.string.new_group), "") { name -> Store.toggle(this, Store.addGroup(this, name), ch); buildRail(); filter() }
+        })
+        dlg.show()
+        box.post { box.getChildAt(1)?.requestFocus() }
+    }
+
+    /** One group's menu: pin it to the Home screen; the person's own groups can also be renamed and deleted. */
+    private fun groupMenu(gid: String) {
+        val (dlg, box) = sheet()
+        val name = mineName(gid)
+        heading(box, name)
+        box.addView(Ui.row(this, R.drawable.ic_play, getString(R.string.open)) { dlg.dismiss(); pick(if (gid == Store.FAV) FAVS else MINE + gid) })
+        if (Pins.can(this)) box.addView(Ui.row(this, R.drawable.ic_home, getString(R.string.pin)) {
+            dlg.dismiss()
+            val logos = Store.channels(this, gid).byChannel().map { it.first().logo }.filter { it.isNotEmpty() }.take(4)
+            io.execute {
+                val bits = logos.mapNotNull { try { Logos.load(it, 150) } catch (e: Throwable) { null } }
+                val ok = Pins.pinGroup(this, gid, name, bits)
+                main.post { if (!ok) Toast.makeText(this, R.string.pin_refused, Toast.LENGTH_LONG).show() }
+            }
+        })
+        if (gid != Store.FAV) {
+            box.addView(Ui.row(this, R.drawable.ic_pen, getString(R.string.rename)) {
+                dlg.dismiss()
+                ask(getString(R.string.rename), name) { Store.renameGroup(this, gid, it); Pins.renamed(this, gid, it); buildRail(); filter() }
+            })
+            box.addView(Ui.row(this, R.drawable.ic_trash, getString(R.string.delete_group)) {
+                dlg.dismiss()
+                val (sure, b) = sheet()                               // asked again, Keep first: a stray OK loses nothing
+                heading(b, getString(R.string.delete_ask, name))
+                b.addView(Ui.row(this, R.drawable.ic_close, getString(R.string.keep)) { sure.dismiss() })
+                b.addView(Ui.row(this, R.drawable.ic_trash, getString(R.string.delete_group)) {
+                    sure.dismiss()
+                    Store.deleteGroup(this, gid); Pins.deleted(this, gid)
+                    if (group == MINE + gid) group = ALL
+                    buildRail(); filter()
+                })
+                sure.show()
+            })
+        }
+        dlg.show()
+    }
+
+    /** A name, typed: OK keeps it (not when empty), Back leaves it. */
+    private fun ask(title: String, now: String, done: (String) -> Unit) {
+        val (dlg, box) = sheet(420)
+        heading(box, title)
+        val f = EditText(this).apply {
+            setText(now); setSelection(now.length); hint = getString(R.string.group_name); setHintTextColor(Ui.DIM); setTextColor(Ui.TEXT)
+            isSingleLine = true; textSize = 16f; imeOptions = EditorInfo.IME_ACTION_DONE or EditorInfo.IME_FLAG_NO_EXTRACT_UI
+            background = Ui.states(this@BrowseActivity, 0x14FFFFFF, Ui.dp(this@BrowseActivity, 18))
+            val p = Ui.dp(this@BrowseActivity, 14).toInt(); setPadding(p, p / 2, p, p / 2)
+        }
+        val ok = { val t = f.text.toString().trim(); if (t.isNotEmpty()) { dlg.dismiss(); done(t.take(40)) } }
+        f.setOnEditorActionListener { _, _, _ -> ok(); true }
+        box.addView(f, LinearLayout.LayoutParams(-1, Ui.dp(this, 46).toInt()).apply { bottomMargin = Ui.dp(this@BrowseActivity, 8).toInt() })
+        box.addView(Ui.row(this, R.drawable.ic_check, getString(R.string.ok)) { ok() })
+        dlg.show()
+        f.requestFocus()
     }
 
     private fun countries() {
@@ -267,10 +384,16 @@ class BrowseActivity : Activity() {
     }
 
     override fun onKeyDown(k: Int, e: KeyEvent): Boolean {
+        if (k == KeyEvent.KEYCODE_DPAD_LEFT) {                        // from the grid's first column: back to the list on show, not the nearest row
+            val at = currentFocus?.let { grid.findContainingViewHolder(it) }?.bindingAdapterPosition ?: -1
+            if (at >= 0 && at % (grid.layoutManager as GridLayoutManager).spanCount == 0)
+                (0 until rail.childCount).map { rail.getChildAt(it) }.firstOrNull { it.isActivated }?.let { it.requestFocus(); return true }
+        }
         if (k == KeyEvent.KEYCODE_MENU || (k == KeyEvent.KEYCODE_DPAD_CENTER || k == KeyEvent.KEYCODE_ENTER) && e.isLongPress) {
             val v = currentFocus ?: return super.onKeyDown(k, e)
             val at = grid.findContainingViewHolder(v)?.bindingAdapterPosition ?: -1
             if (at in shown.indices) { actions(shown[at]); return true }
+            (v.tag as? String)?.takeIf { k == KeyEvent.KEYCODE_MENU && it.startsWith("grp:") }?.let { groupMenu(it.removePrefix("grp:")); return true }
         }
         if (k == KeyEvent.KEYCODE_DPAD_CENTER || k == KeyEvent.KEYCODE_ENTER) e.startTracking()
         return super.onKeyDown(k, e)
@@ -280,7 +403,10 @@ class BrowseActivity : Activity() {
 
     override fun onDestroy() { io.shutdownNow(); super.onDestroy() }
 
+    /** Stable ids: a list drawn again (a favourite or a group changed) keeps the focus on the same channel, not on whatever card took its place. */
     private inner class Cards : RecyclerView.Adapter<Cards.H>() {
+        init { setHasStableIds(true) }
+        override fun getItemId(i: Int) = shown[i].first().id.hashCode().toLong()   // one card per id ([byChannel])
         inner class H(v: View) : RecyclerView.ViewHolder(v) {
             val logo = v.findViewWithTag<ImageView>("logo")
             val letters = v.findViewWithTag<TextView>("letters")
@@ -343,6 +469,7 @@ class BrowseActivity : Activity() {
     companion object {
         const val ALL = ""
         const val FAVS = "\u0000favs"
+        const val MINE = "\u0000g:"                                  // + a group's id: one of the person's groups on show
 
         fun fold(s: String) = Normalizer.normalize(s.lowercase().replace('đ', 'd'), Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "").trim()
 

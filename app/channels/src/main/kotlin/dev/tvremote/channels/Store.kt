@@ -5,8 +5,9 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * What the app keeps: the country on show, the favourites (whole channels, so a favourite from another country still plays
- * with no list of it read), the last channel watched, and which streams answered lately ([Probe]).
+ * What the app keeps: the country on show, the person's groups of channels (whole channels, so one from another country still
+ * plays with no list of it read; the favourites are the group [FAV], kept where they always were), the last channel watched,
+ * and which streams answered lately ([Probe]).
  */
 object Store {
     private fun p(c: Context) = c.getSharedPreferences("channels", Context.MODE_PRIVATE)
@@ -29,6 +30,52 @@ object Store {
         p(c).edit().putString("favs", out.toString()).apply()
         return on
     }
+
+    /** A group the person made: a name and its channels, in the order they were added. */
+    class Group(val id: String, val name: String, val channels: List<Channel>)
+
+    const val FAV = "fav"
+
+    /** The person's own groups, in the order they were made (the favourites are not one of them: [FAV]). */
+    fun groups(c: Context): List<Group> {
+        val a = try { JSONArray(p(c).getString("groups", "[]")) } catch (e: Exception) { JSONArray() }
+        return (0 until a.length()).mapNotNull { a.optJSONObject(it) }.map { o ->
+            val ch = o.optJSONArray("ch") ?: JSONArray()
+            Group(o.optString("id"), o.optString("name"), (0 until ch.length()).mapNotNull { read(ch.optJSONObject(it)) })
+        }.filter { it.id.isNotEmpty() }
+    }
+    private fun saveGroups(c: Context, l: List<Group>) {
+        val a = JSONArray()
+        l.forEach { g -> a.put(JSONObject().put("id", g.id).put("name", g.name).put("ch", JSONArray().apply { g.channels.forEach { put(write(it)) } })) }
+        p(c).edit().putString("groups", a.toString()).apply()
+    }
+    fun group(c: Context, id: String): Group? = groups(c).firstOrNull { it.id == id }
+
+    /** The channels of [gid]: the favourites or one of the groups. */
+    fun channels(c: Context, gid: String): List<Channel> = if (gid == FAV) favourites(c) else group(c, gid)?.channels.orEmpty()
+    fun has(c: Context, gid: String, id: String) = channels(c, gid).any { it.id == id }
+    /** Adds [ch] (all its streams) to [gid] or takes it out; true when it is in now. */
+    fun toggle(c: Context, gid: String, ch: List<Channel>): Boolean {
+        if (gid == FAV) return toggleFavourite(c, ch)
+        val id = ch.first().id
+        var on = false
+        saveGroups(c, groups(c).map { g ->
+            if (g.id != gid) g else {
+                val rest = g.channels.filter { it.id != id }
+                on = rest.size == g.channels.size
+                Group(g.id, g.name, if (on) rest + ch else rest)
+            }
+        })
+        return on
+    }
+    /** A new empty group; its id is short and never reused, so a link pinned to a deleted group finds nothing. */
+    fun addGroup(c: Context, name: String): String {
+        val id = java.lang.Long.toString(System.currentTimeMillis(), 36)
+        saveGroups(c, groups(c) + Group(id, name.trim(), emptyList()))
+        return id
+    }
+    fun renameGroup(c: Context, id: String, name: String) = saveGroups(c, groups(c).map { if (it.id == id) Group(id, name.trim(), it.channels) else it })
+    fun deleteGroup(c: Context, id: String) = saveGroups(c, groups(c).filter { it.id != id })
 
     fun last(c: Context): String? = p(c).getString("last", null)
     fun setLast(c: Context, id: String) = p(c).edit().putString("last", id).apply()
