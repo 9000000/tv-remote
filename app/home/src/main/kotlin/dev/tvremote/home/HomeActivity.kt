@@ -119,8 +119,7 @@ class HomeActivity : Activity() {
         Store.advance(this, true)                                     // a rotation on "each time Home is shown" (or one that fell due while away): before the first paint, so nothing is drawn twice
         conf = Store.get(this)
         val root = FrameLayout(this)
-        backdrop = Backdrop(this)
-        root.addView(backdrop, FrameLayout.LayoutParams(-1, -1))
+        backdrop = Backdrop(window.decorView)
 
         Motion.read(this, conf)
         scroll = Scroller(this) { blurAlign() }.apply { isVerticalScrollBarEnabled = false; isFillViewport = true; clipChildren = false }
@@ -272,7 +271,7 @@ class HomeActivity : Activity() {
         trimmed = true
         picture = null
         val id = conf.optString("wall")
-        if (WallArt.has(id)) backdrop.show(wallColors(id), null, id)      // a drawn scene costs nothing to keep: only the surface is repainted
+        if (WallArt.has(id)) backdrop.show(wallColors(id), null, id)      // a drawn scene costs nothing to keep: only the picture is repainted
         else backdrop.show(wallColors(id), soft)                          // the blurred copy stands in, so the return is not a blank
         for (t in tileCache.values) t.release()
         for (a in apps) a.release()
@@ -582,7 +581,6 @@ class HomeActivity : Activity() {
         val key = id + (Walls.file(this, id)?.let { it.name + it.lastModified() } ?: "") + conf.optLong("photo")   // a photo put over the old file, another day's Bing picture: a new one
         if (key == wallShown) return
         wallShown = key
-        if (Backdrop.FLAT) backdrop.flat = window.decorView else window.decorView.background = null                           // the wallpaper is [backdrop]'s, painted once behind the window
         if (trimmed) { picture = null; soft = null; return }          // away and short of memory: [untrim] brings it back
         loadWall(id)
     }
