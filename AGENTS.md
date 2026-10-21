@@ -71,7 +71,10 @@ app/home/                TV Home, the launcher: plain Views, no :shared (it woul
                          In the gallery it is kind "self": its APK is the latest release's `tv-home.apk`, pinned by SHA256SUMS
 app/channels/            TV Channels: BrowseActivity (countries, categories, favourites, groups, search), PlayActivity (ExoPlayer, the
                          lineup, a dead stream falls to the next), Catalog (iptv-org's m3u, kept a day), Store (prefs), Find (a name -> a
-                         channel), Pins (links and pinned shortcuts). AndroidX (Media3, RecyclerView) here only; no :shared
+                         channel), Pins (links and pinned shortcuts), Providers (more sources than iptv-org, e.g. VieON: each kind is
+                         code here, their addresses / headers / on-off in `docs/channels/providers.json`, signed by `dev/sign_providers.py`
+                         with the launcher list's key, read from the site, else GitHub, else the APK's packed copy; Ed25519 from
+                         `app/shared/src/sign`). AndroidX (Media3, RecyclerView) here only; no :shared
 app/gradle/              the Gradle build of everything Kotlin (settings point at ../shared, ../android, ../tv, ../home, ../desktop); open it in Android Studio
 app/desktop/             the computer app on the shared Kotlin core (JVM, no adb/Python/ffmpeg), the "pc" core: Server.kt
                          (the routes only the computer has) + Manage.kt; Pass.kt (a key per start, in the link the window and browser open: tests pass `TVR_PASS` and `?k=`); Updater.kt (updates itself from releases, swapped in by a script once it quits); Window.kt shows the page in the system's web view

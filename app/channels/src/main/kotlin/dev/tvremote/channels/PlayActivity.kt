@@ -175,6 +175,22 @@ class PlayActivity : Activity() {
         val ch = streams.getOrNull(stream) ?: return
         problem.visibility = View.GONE
         spin.visibility = View.VISIBLE
+        if (Providers.isLink(ch.url)) {                               // a provider's channel: its URL carries a token, asked for now
+            val fresh = retried
+            main.removeCallbacks(slow)
+            io.execute {
+                val url = try { Providers.resolve(this, ch.url, fresh) } catch (e: Exception) { null }
+                main.post {
+                    if (isDestroyed || streams.getOrNull(stream) !== ch) return@post   // changed channel meanwhile
+                    if (url == null) next(null) else play(ch, url)
+                }
+            }
+            return
+        }
+        play(ch, ch.url)
+    }
+
+    private fun play(ch: Channel, url: String) {
         val p = player ?: ExoPlayer.Builder(this).build().also { x ->
             player = x
             x.setVideoSurfaceView(surface)
@@ -192,8 +208,8 @@ class PlayActivity : Activity() {
         val http = DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(true).setConnectTimeoutMs(8000).setReadTimeoutMs(12000)
             .setUserAgent(ch.agent.ifEmpty { Catalog.BROWSER })
         if (ch.referrer.isNotEmpty()) http.setDefaultRequestProperties(mapOf("Referer" to ch.referrer))
-        val hls = !asProgressive && !PROGRESSIVE.containsMatchIn(Uri.parse(ch.url).path.orEmpty())
-        val item = MediaItem.Builder().setUri(ch.url).apply { if (hls) setMimeType(MimeTypes.APPLICATION_M3U8) }.build()
+        val hls = !asProgressive && !PROGRESSIVE.containsMatchIn(Uri.parse(url).path.orEmpty())
+        val item = MediaItem.Builder().setUri(url).apply { if (hls) setMimeType(MimeTypes.APPLICATION_M3U8) }.build()
         val src: MediaSource = if (hls) HlsMediaSource.Factory(http).setAllowChunklessPreparation(true).createMediaSource(item)
             else ProgressiveMediaSource.Factory(http).createMediaSource(item)
         p.setMediaSource(src)

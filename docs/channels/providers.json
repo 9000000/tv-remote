@@ -1,0 +1,36 @@
+{
+  "v": 1,
+  "updated": "2026-10-21",
+  "providers": [
+    {
+      "id": "vieon",
+      "kind": "vieon",
+      "name": "VieON",
+      "on": true,
+      "country": "vn",
+      "first": true,
+      "headers": {
+        "Referer": "https://vieon.vn/",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+      },
+      "list": "https://api.vieon.vn/backend/cm/v5/livetv/list?page={page}",
+      "pages": 6,
+      "play": "https://api.vieon.vn/backend/cm/v5/slug/livetv/detail",
+      "form": "livetv_slug=/truyen-hinh-truc-tuyen/{slug}/",
+      "free": 206,
+      "skip": [],
+      "aliases": {
+        "vie-channel-htv2-hd": "HTV2",
+        "htv-the-thao": "HTV Sports",
+        "quoc-phong-hd": "QPVN HD",
+        "ha-noi-1-1992-1995": "HanoiTV1",
+        "an-giang-1": "An Giang TV 1",
+        "da-nang-2": "Da Nang TV2",
+        "dong-thap-1": "Dong Thap TV",
+        "kon-tum-1": "Kon Tum TV",
+        "binh-thuan-1": "Binh Thuan TV",
+        "tra-vinh-1": "Tra Vinh TV"
+      }
+    }
+  ]
+}

@@ -38,6 +38,8 @@ android {
     lint { checkReleaseBuilds = false }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11 }
     kotlinOptions { jvmTarget = "11" }
+    sourceSets["main"].java.srcDirs("../shared/src/sign/kotlin")      // Ed25519: providers.json is signed
+    sourceSets["main"].assets.srcDirs("../../docs/channels")          // providers.json + .sig: the copy used until the site's is read
 }
 
 dependencies {
@@ -45,4 +47,5 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer-hls:1.4.1")
     implementation("androidx.recyclerview:recyclerview:1.3.2")        // a country can have 2 000 channels
     testImplementation("junit:junit:4.13.2")                          // ./gradlew :channels:testDebugUnitTest
+    testImplementation("org.json:json:20240303")                      // the real org.json: Android's own is only a stub off a device
 }

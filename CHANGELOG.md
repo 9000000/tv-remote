@@ -10,9 +10,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Channels (app mới): xem kênh truyền hình miễn phí từ danh sách công khai của iptv-org, theo quốc gia và thể loại, có yêu thích, tìm kiếm, đổi kênh bằng ▲▼ / số; kênh không phản hồi được làm mờ.
 - TV Channels: tự gom kênh thành nhóm (Yêu thích cũng là một nhóm); ghim một kênh hay cả nhóm ra màn hình chính, bấm vào là mở đúng nhóm đó.
 - TV Home: app khác có thể ghim lối tắt vào Yêu thích (vd. một kênh của TV Channels); nhấn giữ để bỏ ghim.
+- TV Channels: thêm các kênh miễn phí của VieON (VTV, HTV, HTVC, đài tỉnh, radio VOH): VTV1 xem được cả khi nguồn iptv-org bị chặn; nguồn kênh nằm trong một danh sách ký trên web nên sửa / tắt được mà không cần bản mới.
 - Tab TV có thẻ 📺 Kênh TV: cài / cập nhật TV Channels lên TV, gõ tên kênh để mở; nói "mở kênh VTV1" cũng được.
 
 **English**
+- TV Channels: VieON's free channels added (VTV, HTV, HTVC, provinces, VOH radio): VTV1 plays even where iptv-org's source is blocked; the sources come from a signed list on the site, so they can be fixed or turned off without a new release.
 - TV Channels (new app): free TV channels from iptv-org's public lists, by country and category, with favourites, search, ▲▼ / number keys; channels that do not answer are dimmed.
 - TV Channels: your own groups of channels (Favourites is one of them); pin a channel or a whole group to the home screen, which opens that group.
 - TV Home: other apps can pin shortcuts to the favourites (e.g. a TV Channels channel); long-press to unpin.

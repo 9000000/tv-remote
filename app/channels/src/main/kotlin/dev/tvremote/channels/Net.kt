@@ -44,6 +44,7 @@ object Logos {
     private fun fetch(url: String, timeout: Int): ByteArray? {
         val k = URL(url).openConnection() as HttpURLConnection
         k.connectTimeout = timeout; k.readTimeout = timeout; k.instanceFollowRedirects = true
+        k.setRequestProperty("User-Agent", "TVChannels/1 (Android; https://tvremote.pages.dev)")   // Wikimedia (many logos) asks for a named agent
         return try { if (k.responseCode == 200) k.inputStream.readBytes() else null } finally { k.disconnect() }
     }
 }
@@ -62,14 +63,14 @@ object Probe {
         if (Store.alive(c, ch.url) != null) return
         if (!synchronized(asked) { asked.add(ch.url) }) return
         pool.execute {
-            val ok = try { answers(ch) } catch (e: Throwable) { false }
+            val ok = try { answers(ch, Providers.resolve(c, ch.url)) } catch (e: Throwable) { false }
             Store.setAlive(c, ch.url, ok)
             main.post { done(ok) }
         }
     }
 
-    fun answers(ch: Channel): Boolean {
-        var url = ch.url
+    fun answers(ch: Channel, playable: String = ch.url): Boolean {
+        var url = playable
         repeat(5) {                                                   // by hand: https -> http redirects are common, and Java stops at them
             val k = URL(url).openConnection() as HttpURLConnection
             k.connectTimeout = 6000; k.readTimeout = 6000; k.instanceFollowRedirects = false

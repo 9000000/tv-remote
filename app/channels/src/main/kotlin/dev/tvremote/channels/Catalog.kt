@@ -19,8 +19,9 @@ object Catalog {
 
     class Country(val code: String, val name: String, val flag: String)
 
+    /** A country's channels: iptv-org's playlist, with the providers' of that country merged in (Providers.kt). */
     fun channels(c: Context, cc: String, fresh: Boolean = false): List<Channel> =
-        cached(c, "m3u-$cc.m3u", "$BASE/iptv/countries/$cc.m3u", fresh)?.let { M3u.parse(it) }.orEmpty()
+        Providers.merge(c, cc, cached(c, "m3u-$cc.m3u", "$BASE/iptv/countries/$cc.m3u", fresh)?.let { M3u.parse(it) }.orEmpty(), fresh)
 
     /** Every country iptv-org knows, by name in the TV's language where Java has it ("Việt Nam"), with its flag. */
     fun countries(c: Context): List<Country> {
@@ -37,11 +38,11 @@ object Catalog {
     /** The country a list opens on the first time: the TV's own. */
     fun home(): String = Locale.getDefault().country.lowercase().ifEmpty { "us" }
 
-    /** The copy in files/ when younger than a day (or offline), else the network's. Null: never fetched and offline. */
-    private fun cached(c: Context, name: String, url: String, fresh: Boolean): String? {
+    /** The copy in files/ when younger than a day (or offline), else the network's ([load], or GET [url]). Null: never fetched and offline. */
+    fun cached(c: Context, name: String, url: String, fresh: Boolean, load: (() -> String?)? = null): String? {
         val f = File(c.filesDir, name)
         if (!fresh && f.exists() && System.currentTimeMillis() - f.lastModified() < DAY) return f.readText()
-        val got = try { get(url) } catch (e: Exception) { null }
+        val got = try { load?.invoke() ?: if (load == null) get(url) else null } catch (e: Exception) { null }
         if (got != null) { File(c.filesDir, "$name.tmp").apply { writeText(got); renameTo(f) }; return got }
         return if (f.exists()) f.readText() else null
     }
