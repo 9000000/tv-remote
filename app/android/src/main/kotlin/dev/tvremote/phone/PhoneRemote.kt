@@ -30,7 +30,7 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "shot" to act { shot() },
     "open" to act { quickOpen() },
     "apps" to act { if (kind() != dev.tvremote.core.remote.Remote.Kind.ANDROID) openInstalled() else if (!needsAdb()) managing.open(host, "apps") },   // an Android TV's apps: the Apps tab, tiles with a search
-    "menu" to act { m -> menu(T(remoteGroups[m] ?: return@act), -1, remoteMenu(m!!)) },
+    "menu" to act { m -> menu(T(remoteGroups[m] ?: return@act), -1, remoteMenu(m!!, if (irAvailable()) setOf("ir") else emptySet())) },   // "ir": this phone has an IR LED
     "key" to act { k -> val code = Scenes.KEYS[k] ?: return@act; if (code in Tv.OPENERS) opens(code) else press(code) },   // a key from a menu (Tools)
     "timer" to act { timerMenu() },
     "scenes" to act { scenesMenu() },
@@ -64,7 +64,6 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
 internal val phoneButtonHooks: Map<String, MainActivity.(IconButton) -> Unit> = mapOf(
     "draw" to hook { drawBtn = it; drawLit() },
     "shot" to hook { shotBtn = it },
-    "ir" to hook { if (!irAvailable()) it.visibility = android.view.View.INVISIBLE },   // a phone with no IR LED
 )
 
 internal fun MainActivity.storePage(id: String) = openLink("https://play.google.com/store/apps/details?id=$id")

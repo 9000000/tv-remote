@@ -20,7 +20,7 @@ class RemoteSpecTest {
     }
 
     @Test fun everyConditionAndListIsOneTheMenusSupply() {          // timerMenu / scenesMenu in Automation.kt, quickOpen in Media.kt
-        assertTrue(entries.mapNotNull { it.whenCond }.all { it == "timerOn" })
+        assertTrue(entries.mapNotNull { it.whenCond }.all { it in setOf("timerOn", "ir") })   // "ir": PhoneRemote.kt "menu"
         assertTrue(entries.mapNotNull { it.expand }.all { it in setOf("lengths", "lengthsMore", "scenes", "tvapps") })
     }
 

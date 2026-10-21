@@ -17,10 +17,8 @@
       [
         { "id": "tv", "icon": "tv", "t": "rkey.tv", "key": "LIVE",
           "web": { "t": "rkey.tv_web" }, "why": "the web button is narrower: the bare word TV" },
-        { "id": "ir", "icon": "pulse", "t": "rkey.ir", "do": "ir", "cores": ["phone"],
-          "why": "the phone's own IR LED (IrRemote.kt), for this TV: a browser has none" },
-        { "id": "air", "icon": "mouse", "t": "rkey.air", "do": "air", "cores": ["phone"], "needs": ["mouse"],
-          "why": "the phone's gyroscope (AirMouse.kt): a browser's page has no such sensor on every phone, and the TV web page has no ADB" },
+        { "id": "settings", "icon": "settings", "t": "rkey.settings", "key": "SETTINGS" },
+        { "id": "guide", "icon": "guide", "t": "rkey.guide", "key": "GUIDE" },
         { "id": "tools", "icon": "apps", "t": "rkey.tools", "do": "menu", "arg": "tools" }
       ]
     ],
@@ -52,9 +50,11 @@
       { "id": "tools-subtitles", "icon": "subtitle", "t": "rkey.subtitles", "do": "key", "arg": "SUBTITLE" },
       { "id": "tools-info", "icon": "info", "t": "rkey.info", "do": "key", "arg": "INFO" },
       { "id": "tools-stop", "icon": "stop", "t": "rkey.stop", "do": "key", "arg": "STOP" },
-      { "id": "tools-guide", "icon": "guide", "t": "rkey.guide", "do": "key", "arg": "GUIDE" },
-      { "id": "tools-settings", "icon": "settings", "t": "rkey.settings", "do": "key", "arg": "SETTINGS" },
-      { "id": "tools-home", "icon": "sliders", "t": "rkey.home_custom", "do": "homeCustom", "needs": ["adb"] }
+      { "id": "tools-home", "icon": "sliders", "t": "rkey.home_custom", "do": "homeCustom", "needs": ["adb"] },
+      { "id": "tools-air", "icon": "mouse", "t": "rkey.air", "do": "air", "cores": ["phone"], "needs": ["mouse"],
+        "why": "the phone's gyroscope (AirMouse.kt): a browser's page has no such sensor on every phone, and the TV web page has no ADB" },
+      { "id": "tools-ir", "icon": "pulse", "t": "rkey.ir", "do": "ir", "cores": ["phone"], "when": "ir",
+        "why": "the phone's own IR LED (IrRemote.kt), for this TV: a browser has none; 'when': only a phone that has one" }
     ],
     "open": [
       { "id": "open-apps", "icon": "apps", "t": "rkey.open_apps", "do": "apps", "sub": "rkey.open_apps_sub" },
