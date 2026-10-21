@@ -3,7 +3,7 @@
 Games on the TV with phones as pads, no extra hardware. Package `dev.tvremote.games`; standalone (no `:shared`, no TV Setup). Licence: GPL-3.0 (`LICENSE`), because LibretroDroid and the core are GPL.
 
 - **NES games:** ROMs you add (upload from the phone page `/add`, or `files/roms`) run on LibretroDroid 0.13.2 (GPL-3, JitPack) with the FCEUmm core.
-- **Web games:** a link (`/add` -> "Thêm link game") or the built-in quiz, shown full screen in a WebView. How a page reads the pads: [WEBGAMES.md](WEBGAMES.md).
+- **Web games:** a link (`/add` -> "Thêm link game") or the built-in Pad test or catalog games from the site (`docs/games/web/<id>/`), shown full screen in a WebView. How a page reads the pads: [WEBGAMES.md](WEBGAMES.md).
 - **Pads:** the TV shows a QR; a phone browser is the controller (WebSocket to the app, up to 4 players). Bluetooth/USB pads work as well.
 
 ## Cores

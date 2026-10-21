@@ -72,7 +72,17 @@
       "file": "pcsx_rearmed_libretro_android.so"
     }
   },
-  "web": [],
+  "web": [
+    {
+      "id": "quiz",
+      "name": {"vi": "Đố vui", "en": "Quiz"},
+      "img": "img/quiz.jpg",
+      "pad": "web",
+      "players": 4,
+      "url": "https://tvremote.pages.dev/games/web/quiz/",
+      "on": true
+    }
+  ],
   "homebrew": [
     {
       "id": "roborun",

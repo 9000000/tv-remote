@@ -170,9 +170,8 @@ class LibraryActivity : ComponentActivity() {
         first?.requestFocus()
     }
 
-    /** A web game's picture: the packed one of the built-in quiz, the catalog's "img" (https), else the page's own (og:image, icon). */
+    /** A web game's picture: the packed one of Pad test, the catalog's "img" (https), else the page's own (og:image, icon). */
     private fun webSrc(url: String, img: String?): Thumbs.Src = when {
-        url == "builtin:quiz" -> Thumbs.Src("w:$url", asset = "thumbs/quiz.jpg")
         url == "builtin:padtest" -> Thumbs.Src("w:$url", asset = "thumbs/padtest.jpg")
         url.startsWith("builtin:") -> Thumbs.Src("w:$url")
         !img.isNullOrEmpty() -> Thumbs.Src("w:$url", img = img)

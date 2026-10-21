@@ -72,7 +72,7 @@ object Systems {
 
     /** The built-in ones first, then the links people added (files/web.json: [{"name":..,"url":..}]). */
     fun webGames(ctx: Context): List<Web> {
-        val out = arrayListOf(Web(ctx.getString(R.string.quiz_name), "builtin:quiz"), Web(ctx.getString(R.string.padtest_name), "builtin:padtest"))
+        val out = arrayListOf(Web(ctx.getString(R.string.padtest_name), "builtin:padtest"))
         try {
             val a = org.json.JSONArray(webFile(ctx).takeIf { it.exists() }?.readText() ?: "[]")
             for (i in 0 until a.length()) a.getJSONObject(i).let { out.add(Web(it.optString("name"), it.optString("url"))) }

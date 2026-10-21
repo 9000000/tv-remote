@@ -24,3 +24,6 @@ h1{font-size:6.5vw;margin:0 0 1.5vh;text-align:center}
 #board{position:absolute;left:4vw;right:4vw;bottom:2.5vh;height:10vh;display:flex;gap:1.6vw;justify-content:center;align-items:center}
 #board .chip{font-size:2.6vw}
 .plus{color:#4ade80}.minus{color:#f87171}
+.cats{display:flex;align-items:center;justify-content:center;gap:2vw;margin:2.4vh 0 1vh;font-size:3.4vw}
+.cats .cat{padding:1vh 3vw;border-radius:99px;background:var(--card);border:.3vw solid var(--b)}
+.cats .arr{color:var(--dim)}

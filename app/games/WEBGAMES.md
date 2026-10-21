@@ -4,7 +4,8 @@ A web game is a page the TV's WebView loads full screen (`WebGameActivity`). Pho
 
 ## Add a link
 - Phone/computer page `/add` -> "Thêm link game" (name + URL), or `POST /weblink?k=<token>&name=..&url=..` (https, or http on the LAN). Kept in `files/web.json`; long-press a WEB tile to remove it.
-- Built-in: `assets/webgames/quiz/` and `padtest/` are served at `/webgames/<name>/` (first request with `?k=` sets cookie `tvk`, path `/webgames/`); `_lib/` holds files shared by the pad page and the games (`pingmath.js`).
+- **Web games of this project live on the site**, `docs/games/web/<id>/` (`https://tvremote.pages.dev/games/web/<id>/`), listed in `docs/games/games.json` "web" (Suggestions tile): changing one needs no app release, only a push. The quiz is one: `quiz.js` + `bank.json` (questions + topics, vi / en; `python3 dev/check_quiz.py` checks it; the page fetches `bank.json` next to it, keeps the last good copy in localStorage, `?bank=<url>` loads another file for testing). Offline the page cannot open.
+- Built-in (packed, always works): `assets/webgames/padtest/` is served at `/webgames/<name>/` (first request with `?k=` sets cookie `tvk`, path `/webgames/`); `_lib/` holds files shared by the pad page and the games (`pingmath.js`).
 
 ## Three ways a page can read the pads (use any)
 1. **Keyboard (player 1 only).** D-pad = arrows, A=Z, B=X, X=A, Y=S, L=Q, R=W, L2=E, R2=R, C=C, D=V, START=Enter, SELECT=Shift_Left. The pad's stick also sends arrows for player 1. The TV remote works natively.
