@@ -9,16 +9,16 @@
 <style>
   /* the TV Home screen, 1280 x 720 as in the real screenshots (app/home: HomeActivity, Widgets, Customize) */
   .scr { background: #0b1124; }
-  .bg { position: absolute; inset: 0; background: linear-gradient(160deg, #0e1530 0%, #1a2548 55%, #0c1022 100%) center / cover; }
-  .bg.photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,8,20,.55), rgba(5,8,20,.25) 40%, rgba(5,8,20,.6)); }
-  #clock { position: absolute; left: 66px; top: 36px; font-size: 96px; line-height: 1; font-weight: 200; letter-spacing: -1px; }
-  #greet { position: absolute; left: 68px; top: 148px; font-size: 22px; opacity: .92; }
-  #pills { position: absolute; right: 64px; top: 60px; display: flex; gap: 16px; }
-  .pill { height: 58px; padding: 0 26px 0 22px; border-radius: 29px; display: flex; align-items: center; gap: 12px; font-size: 21px; background: rgba(255,255,255,.12); border: 1.5px solid rgba(255,255,255,.2); }
+  #bg { position: absolute; inset: 0; width: 1280px; height: 720px; }
+  #clock { position: absolute; left: 66px; top: 46px; font-size: 90px; line-height: 1; font-weight: 300; letter-spacing: -.5px; }
+  #greet { position: absolute; left: 67px; top: 150px; font-size: 26px; opacity: .95; white-space: pre; }
+  #pills { position: absolute; right: 64px; top: 60px; height: 65px; padding: 0 6px; border-radius: 33px; display: flex; align-items: center; gap: 9px; background: rgba(40,44,70,.55); border: 1.5px solid rgba(255,255,255,.2); }
+  .pill { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; }
   .pill svg { width: 26px; height: 26px; }
-  .pill.f { background: #fff; color: #10131c; border-color: #fff; box-shadow: 0 0 0 4px rgba(255,255,255,.28); }
-  #view { -webkit-mask-image: linear-gradient(transparent 0, #000 22px); mask-image: linear-gradient(transparent 0, #000 22px); position: absolute; left: 0; right: 0; top: 206px; bottom: 0; overflow: hidden; }
-  #flow { position: absolute; left: 64px; right: 64px; top: 0; }
+  .pill.f { background: #fff; color: #10131c; box-shadow: 0 0 0 3px rgba(255,255,255,.28); }
+  #view { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+  #flow { position: absolute; left: 64px; right: 64px; top: 512px; pointer-events: auto; }
+  #flow.w { top: 206px; }
   .glass { background: rgba(255,255,255,.1); border: 1.5px solid rgba(255,255,255,.17); border-radius: 30px; backdrop-filter: blur(10px); }
   #widgets { display: flex; gap: 28px; margin-bottom: 32px; }
   #widgets[hidden] { display: none; }
@@ -31,22 +31,18 @@
   .w .temp { display: flex; align-items: center; gap: 14px; margin-top: 14px; } .w .temp b { font-size: 44px; font-weight: 400; } .w .temp span { font-size: 18px; opacity: .85; }
   .w .days { display: flex; justify-content: space-around; margin-top: 12px; text-align: center; font-size: 16px; opacity: .85; }
   .w .note { font-size: 26px; line-height: 1.3; margin-top: 18px; } .w .note em { font-style: normal; opacity: .65; font-size: 18px; display: block; margin-top: 8px; }
-  #dock { padding: 38px 56px 46px; border-radius: 40px; display: flex; gap: 30px; min-height: 216px; align-items: center; }
-  #dock .empty { opacity: .6; font-size: 22px; margin: 0 auto; }
-  .t1 { position: relative; flex: none; }
-  .art { position: relative; border-radius: 10px; overflow: hidden; display: grid; place-items: center; font-weight: 700; text-align: center; box-shadow: 0 6px 16px rgba(0,0,0,.3); }
+  .t1 { position: relative; }
+  .art { position: relative; border-radius: 15px; overflow: hidden; display: grid; place-items: center; font-weight: 700; text-align: center; aspect-ratio: 16 / 9; font-size: 24px; }
   .art img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  #dock .art { width: 234px; height: 132px; font-size: 30px; } #dock .pl { font-size: 26px !important; }
-  #apps .art { width: 175px; height: 98px; font-size: 22px; border-radius: 9px; }
-  .t1 .name { position: absolute; left: -20px; right: -20px; top: 100%; margin-top: 6px; text-align: center; font-size: 17px; opacity: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .t1.f { z-index: 3; } .t1.f .art { transform: scale(1.13); box-shadow: 0 0 0 4px #fff, 0 0 28px rgba(255,255,255,.45), 0 10px 24px rgba(0,0,0,.4); } .t1.f .name { opacity: 1; margin-top: 16px; }
-  #apps h2 { margin: 36px 0 18px 4px; font-size: 23px; font-weight: 400; opacity: .75; }
-  #grid { display: grid; grid-template-columns: repeat(6, 175px); gap: 26px 22px; padding: 0 4px 60px; }
+  .t1 .name { position: absolute; left: -20px; right: -20px; top: 100%; margin-top: 17px; text-align: center; font-size: 18px; opacity: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .t1.f { z-index: 3; } .t1.f .art { transform: scale(1.12); box-shadow: 0 0 0 4px #fff, 0 0 26px rgba(255,255,255,.4); } .t1.f .name { opacity: 1; }
+  #grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 43px; padding: 0 0 60px; }
   .art .in { display: block; line-height: 1.1; } .art svg { display: block; }
-  .gl { color: #10131c; } .yt { background: #fff; color: #0f0f0f; font-size: .78em; letter-spacing: -.5px; } .yt i { background: #f00; border-radius: 8px; width: 1.5em; height: 1.05em; display: inline-grid; place-items: center; margin-right: 6px; vertical-align: -.2em; } .yt i::after { content: ""; border-left: .5em solid #fff; border-top: .28em solid transparent; border-bottom: .28em solid transparent; }
+  .gl { color: #10131c; } .yt { background: #f4f4f4; color: #0f0f0f; font-size: 38px; letter-spacing: -1.5px; white-space: nowrap; } .yt i { background: #f00; border-radius: 9px; width: 1.45em; height: 1em; display: inline-grid; place-items: center; margin-right: 6px; vertical-align: -.2em; } .yt i::after { content: ""; border-left: .5em solid #fff; border-top: .28em solid transparent; border-bottom: .28em solid transparent; }
   .nf { background: #000; color: #e50914; letter-spacing: 1px; } .dn { background: linear-gradient(135deg, #0b1b4d, #1f4fd0); } .pv { background: #0a1c33; color: #5ec1ff; font-size: .75em !important; }
-  .sp { background: #1ed760; color: #000; } .pl { background: #fff; color: #5f6368; font-size: 22px !important; } .pl b { background: conic-gradient(#ea4335 0 25%, #fbbc04 0 50%, #34a853 0 75%, #4285f4 0); width: 1.2em; height: 1.2em; border-radius: 40% 40% 40% 40%; margin-right: 6px; display: inline-block; vertical-align: -.25em; clip-path: polygon(0 0, 100% 50%, 0 100%); }
-  .st { background: linear-gradient(#4b4f56 0 50%, #3d4046 0); } .st svg { width: 46%; height: 46%; fill: #dfe3ea; } .ch { background: #fff; color: #202124; } .fm { background: #5b3df5; } .kd { background: #12b2e7; } .vl { background: #f57c00; } .zk { background: #1f2937; color: #cbd5e1; }
+  .sp { background: #1ed760; color: #000; } .yt, .pl, .lt { display: flex; align-items: center; justify-content: center; } .pl span { text-align: left; line-height: 1.15; font-weight: 400; }
+  .lt { background: #0a8bdc; color: #fff; font-size: 40px !important; font-weight: 400; gap: 10px; } .lt svg { width: 56px; height: 56px; fill: none; stroke: #fff; stroke-width: 1.6; display: inline-block; vertical-align: middle; margin-right: 12px; } .pl { background: #f2f3f4; color: #5f6368; font-size: 22px !important; gap: 10px; } .pl b { background: conic-gradient(#ea4335 0 25%, #fbbc04 0 50%, #34a853 0 75%, #4285f4 0); width: 1.2em; height: 1.2em; border-radius: 40% 40% 40% 40%; margin-right: 6px; display: inline-block; vertical-align: -.25em; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+  .st { background: linear-gradient(#4b4f56 0 50%, #3d4046 0); } .st svg { width: 52%; height: 52%; fill: #dfe3ea; } .ch { background: #fff; color: #202124; } .fm { background: #5b3df5; } .kd { background: #12b2e7; } .vl { background: #f57c00; } .zk { background: #1f2937; color: #cbd5e1; }
   /* overlays: the long-press menu (HomeActivity) and "Customize TV Home" */
   .shade { position: absolute; inset: 0; background: rgba(5,8,20,.55); z-index: 10; display: grid; place-items: center; }
   .shade[hidden] { display: none; }
@@ -80,13 +76,12 @@
 <main class="demo">
   <div class="tvwrap">
     <div class="tv" id="tv"><div class="scr" id="scr">
-      <div class="bg" id="bg"></div>
+      <canvas id="bg" width="1280" height="720"></canvas>
       <div id="clock"></div><div id="greet"></div>
       <div id="pills"></div>
       <div id="view"><div id="flow">
         <div id="widgets"></div>
-        <div id="dock" class="glass"></div>
-        <div id="apps"><h2 class="vi">Ứng dụng</h2><h2 class="en">Apps</h2><div id="grid"></div></div>
+        <div id="grid"></div>
       </div></div>
       <div id="stock" hidden></div>
       <div class="shade" id="shade" hidden></div>
@@ -109,6 +104,7 @@
   </aside>
 </main>
 <script src="tvkit.js"></script>
+<script src="home-walls.js"></script>
 <script>
 (function () {
   var T = TVKit.T, VI = TVKit.VI, $ = function (s) { return document.querySelector(s); };
@@ -122,14 +118,15 @@
   var APPS = [
     { id: 'youtube', n: 'YouTube', c: 'yt', h: '<i></i>YouTube' },
     { id: 'channels', n: 'TV Channels', img: 'img/banner-channels.png', go: 'channels' },
-    { id: 'games', n: 'TV Games', img: 'img/banner-games.png', go: 'games' },
-    { id: 'play', n: 'Google Play Store', c: 'pl', h: '<b></b>Google Play<br>Store' },
+    { id: 'play', n: 'Google Play Store', c: 'pl', h: '<b></b><span>Google Play<br>Store</span>' },
     { id: 'settings', n: T('Cài đặt', 'Settings'), c: 'st', h: '<svg viewBox="0 0 24 24"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1L15 3.4h-4l-.4 2.6a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.5 7.5 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.6 7.6 0 0 0 1.7-1l2.4 1 2-3.4zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>' },
+    { id: 'livetv', n: 'TV', c: 'lt', h: '<svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="3"/><path d="M9 3l3 4 3-4"/></svg>TV' },
+    { id: 'games', n: 'TV Games', img: 'img/banner-games.png', go: 'games' },
+    { id: 'setup', n: 'TV Setup', img: 'img/banner-setup.png' },
     { id: 'netflix', n: 'Netflix', c: 'nf', h: 'NETFLIX' },
     { id: 'disney', n: 'Disney+', c: 'dn', h: 'Disney+' },
     { id: 'prime', n: 'Prime Video', c: 'pv', h: 'prime video' },
     { id: 'spotify', n: 'Spotify', c: 'sp', h: 'Spotify' },
-    { id: 'setup', n: 'TV Setup', img: 'img/banner-setup.png' },
     { id: 'chrome', n: 'Chrome', c: 'ch', h: 'Chrome' },
     { id: 'files', n: T('Tệp', 'Files'), c: 'fm', h: T('Tệp', 'Files') },
     { id: 'kodi', n: 'Kodi', c: 'kd', h: 'Kodi' },
@@ -137,18 +134,15 @@
     { id: 'zing', n: 'Zing TV', c: 'zk', h: 'Zing TV' }
   ];
   var BY = {}; APPS.forEach(function (a) { BY[a.id] = a; });
-  var WALLS = [
-    { id: 'night', n: T('Đêm', 'Night'), css: 'linear-gradient(160deg,#0e1530 0%,#1a2548 55%,#0c1022 100%)', t: 'linear-gradient(160deg,#0e1530,#1a2548)' },
-    { id: 'dusk', n: T('Hoàng hôn', 'Dusk'), css: 'linear-gradient(160deg,#2b1140 0%,#6d2b5e 55%,#1c0c2b 100%)', t: 'linear-gradient(160deg,#2b1140,#6d2b5e)' },
-    { id: 'cosmic-cliffs', n: T('Vách đá vũ trụ', 'Cosmic Cliffs'), photo: true },
-    { id: 'aurora-glow', n: T('Cực quang', 'Aurora'), photo: true },
-    { id: 'lagoon', n: T('Tinh vân Đầm phá', 'Lagoon Nebula'), photo: true }
-  ];
-  var S = { dock: ['youtube', 'channels', 'games', 'play'], hidden: [], wall: 0, widgets: false, h24: true, greet: true, before: false,
-            f: { z: 'dock', i: 0 }, over: null };
-  function defaults() { S.dock = ['youtube', 'channels', 'games', 'play']; S.hidden = []; S.wall = 0; S.widgets = false; S.h24 = true; S.greet = true; S.before = false; S.f = { z: 'dock', i: 0 }; S.over = null; }
-  function grid() { return APPS.filter(function (a) { return S.dock.indexOf(a.id) < 0 && S.hidden.indexOf(a.id) < 0; }).map(function (a) { return a.id; }); }
-  var TOP = ['inputs', 'net', 'settings'];
+  var WALLS = ['dawn', 'peaks', 'dunes', 'waves', 'candy', 'bokeh', 'canyon'].map(function (id) {
+    var n = { dawn: T('Bình minh', 'Dawn'), peaks: T('Đỉnh núi', 'Peaks'), dunes: T('Đồi cát', 'Dunes'), waves: T('Sóng', 'Waves'), candy: T('Kẹo', 'Candy'), bokeh: T('Bokeh', 'Bokeh'), canyon: T('Hẻm núi', 'Canyon') }[id];
+    return { id: id, n: n };
+  });
+  var S = { dock: [], hidden: [], wall: 0, widgets: false, h24: true, greet: true, before: false, f: { z: 'grid', i: 0 }, over: null };
+  function defaults() { S.dock = ['youtube', 'channels', 'play', 'settings']; S.hidden = []; S.wall = 0; S.widgets = false; S.h24 = true; S.greet = true; S.before = false; S.f = { z: 'grid', i: 0 }; S.over = null; }
+  // one grid: the favourites first (in their order), then the other apps
+  function grid() { return S.dock.concat(APPS.filter(function (a) { return S.dock.indexOf(a.id) < 0 && S.hidden.indexOf(a.id) < 0; }).map(function (a) { return a.id; })); }
+  var TOP = ['inputs', 'net', 'settings'], COLS = 5, DOCK_MAX = 6;
 
   // ---- drawing
   function art(a) { return a.img ? '<img src="' + a.img + '" alt="" draggable="false">' : a.h; }
@@ -157,10 +151,10 @@
     var d = new Date(), h = d.getHours(), m = ('0' + d.getMinutes()).slice(-2);
     var hh = S.h24 ? ('0' + h).slice(-2) : ((h % 12) || 12);
     $('#clock').textContent = hh + ':' + m + (S.h24 ? '' : (h < 12 ? ' AM' : ' PM'));
-    var D = VI ? ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    var M = VI ? ' tháng ' + (d.getMonth() + 1) : ' ' + ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getMonth()];
+    var D = VI ? ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'] : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    var M = VI ? ' tháng ' + (d.getMonth() + 1) : ' ' + ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][d.getMonth()];
     var g = h < 11 ? T('Chào buổi sáng', 'Good morning') : h < 18 ? T('Chào buổi chiều', 'Good afternoon') : T('Chào buổi tối', 'Good evening');
-    $('#greet').textContent = (S.greet ? g + '  ·  ' : '') + D[d.getDay()] + ', ' + (VI ? d.getDate() + M : d.getDate() + M);
+    $('#greet').textContent = (S.greet ? g + '  \u00b7  ' : '') + D[d.getDay()] + ', ' + (VI ? d.getDate() + M : M.trim() + ' ' + d.getDate());
   }
   function widgets() {
     $('#widgets').hidden = !S.widgets; $('#widgets').innerHTML = !S.widgets ? '' :
@@ -171,31 +165,27 @@
       '<div class="days"><div>T5<br>32° 25°</div><div>T6<br>32° 24°</div><div>T7<br>32° 24°</div></div></div>' +
       '<div class="w n glass"><small><span>' + T('Ghi chú', 'Note') + '</span></small><div class="note">' + T('Mua sữa, 8 giờ tối gọi mẹ', 'Buy milk, call mum at 8') + '<em>' + T('Giả lập: sửa từ điện thoại', 'Made up: edit from the phone') + '</em></div></div>';
   }
+  function wallpaper() {
+    var c = $('#bg'), id = WALLS[S.wall].id; if (c.dataset.id === id) return;
+    c.dataset.id = id; homeArtPaint(c.getContext('2d'), 1280, 720, id);
+  }
   function draw() {
-    clock(); widgets();
+    clock(); widgets(); wallpaper();
+    $('#flow').className = S.widgets ? 'w' : '';
     $('#pills').innerHTML = TOP.map(function (k, i) {
-      var lab = k === 'inputs' ? T('Nguồn vào', 'Inputs') : k === 'net' ? T('Mạng dây', 'Wired') : T('Cài đặt', 'Settings');
-      return '<div class="pill' + (S.f.z === 'top' && S.f.i === i ? ' f' : '') + '" data-z="top" data-i="' + i + '">' + svg(ICON[k === 'settings' ? 'gear' : k]) + lab + '</div>';
+      var lab = k === 'inputs' ? T('Nguồn vào', 'Inputs') : k === 'net' ? T('Mạng', 'Network') : T('Cài đặt', 'Settings');
+      return '<div class="pill' + (S.f.z === 'top' && S.f.i === i ? ' f' : '') + '" data-z="top" data-i="' + i + '" title="' + lab + '">' + svg(ICON[k === 'settings' ? 'gear' : k]) + '</div>';
     }).join('');
-    $('#dock').innerHTML = S.dock.length ? S.dock.map(function (id, i) { return tile(BY[id], 'dock', i, S.f.z === 'dock' && S.f.i === i); }).join('')
-      : '<div class="empty">' + T('Giữ OK trên một app để ghim vào đây', 'Hold OK on an app to pin it here') + '</div>';
     $('#grid').innerHTML = grid().map(function (id, i) { return tile(BY[id], 'grid', i, S.f.z === 'grid' && S.f.i === i); }).join('');
-    var w = WALLS[S.wall], bg = $('#bg');
-    bg.className = 'bg' + (w.photo ? ' photo' : '');
-    bg.style.backgroundImage = w.photo ? 'linear-gradient(rgba(0,0,0,0),rgba(0,0,0,0)), url(../home/' + w.id + '.jpg)' : w.css;
     $('#stock').hidden = !S.before; $('#bBefore').setAttribute('aria-pressed', S.before); $('#bAfter').setAttribute('aria-pressed', !S.before);
     $('#bWidgets').setAttribute('aria-pressed', S.widgets);
     document.querySelectorAll('#walls .swatch').forEach(function (b, i) { b.setAttribute('aria-pressed', i === S.wall); });
     scroll();
   }
+  // the focused row stays whole with its name: the grid moves up only as far as it must (HomeActivity)
   function scroll() {
-    var flow = $('#flow'), f = flow.querySelector('.t1.f'), vh = $('#view').clientHeight, y = 0;
-    if (f && S.f.z !== 'top') {
-      var top = f.offsetTop, par = f.offsetParent; while (par && par !== flow) { top += par.offsetTop; par = par.offsetParent; }
-      var bottom = top + f.offsetHeight + 40;
-      if (S.f.z === 'grid') y = Math.max(0, bottom - vh);          // down in the apps: the focused row ends at the bottom edge
-      else if (S.widgets) y = 0;
-    }
+    var flow = $('#flow'), f = flow.querySelector('.t1.f'), y = 0;
+    if (f && S.f.z === 'grid') y = Math.max(0, flow.offsetTop + f.offsetTop + f.offsetHeight + 62 - 720);
     flow.style.transform = 'translateY(' + (-y) + 'px)';
   }
   function toast(t) { var e = $('#toast'); e.textContent = t; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { e.hidden = true; }, 3200); }
@@ -205,29 +195,20 @@
     var i = S.f.i;
     if (k === 'left') S.f.i = Math.max(0, i - 1);
     else if (k === 'right') S.f.i = Math.min(2, i + 1);
-    else if (k === 'down') S.f = S.dock.length ? { z: 'dock', i: Math.min(S.dock.length - 1, 2 + i) } : { z: 'grid', i: 0 };
+    else if (k === 'down') S.f = { z: 'grid', i: Math.min(grid().length - 1, COLS - 3 + i) };
     else if (k === 'ok') {
       if (i === 2) openCustomize();
       else toast(i === 0 ? T('Nguồn vào: HDMI 1, HDMI 2, AV (trên TV thật sẽ đổi nguồn)', 'Inputs: HDMI 1, HDMI 2, AV (a real TV switches input)') : T('Mạng dây · 192.168.1.20 · đã kết nối', 'Wired · 192.168.1.20 · connected'));
     }
   }
-  function inDock(k) {
-    var i = S.f.i, n = S.dock.length;
-    if (k === 'left') S.f.i = Math.max(0, i - 1);
-    else if (k === 'right') S.f.i = Math.min(n - 1, i + 1);
-    else if (k === 'up') S.f = S.widgets ? { z: 'top', i: Math.min(2, i) } : { z: 'top', i: Math.min(2, i) };
-    else if (k === 'down') { if (grid().length) S.f = { z: 'grid', i: Math.min(grid().length - 1, Math.round(i * 1.5)) }; }
-    else if (k === 'ok') launch(S.dock[i]);
-    else if (k === 'menu') openMenu('dock', i);
-  }
   function inGrid(k) {
     var i = S.f.i, n = grid().length;
     if (k === 'left') S.f.i = Math.max(0, i - 1);
     else if (k === 'right') S.f.i = Math.min(n - 1, i + 1);
-    else if (k === 'up') { if (i >= 6) S.f.i = i - 6; else S.f = S.dock.length ? { z: 'dock', i: Math.min(S.dock.length - 1, Math.round(i / 1.5)) } : { z: 'top', i: 2 }; }
-    else if (k === 'down') { if (i + 6 < n) S.f.i = i + 6; else if (Math.floor(i / 6) < Math.floor((n - 1) / 6)) S.f.i = n - 1; }
+    else if (k === 'up') { if (i >= COLS) S.f.i = i - COLS; else S.f = { z: 'top', i: Math.max(0, Math.min(2, i - COLS + 3)) }; }
+    else if (k === 'down') { if (i + COLS < n) S.f.i = i + COLS; else if (Math.floor(i / COLS) < Math.floor((n - 1) / COLS)) S.f.i = n - 1; }
     else if (k === 'ok') launch(grid()[i]);
-    else if (k === 'menu') openMenu('grid', i);
+    else if (k === 'menu') openMenu(i);
   }
   function launch(id) {
     var a = BY[id];
@@ -235,24 +216,24 @@
     toast(T('Mở ' + a.n + ': app này không có trong bản dùng thử', a.n + ' would open here (not in this demo)'));
   }
   // long-press menu: the real one offers pin / unpin, move left / right, hide (HomeActivity)
-  function openMenu(z, i) {
-    var id = z === 'dock' ? S.dock[i] : grid()[i], a = BY[id], items = [];
-    if (z === 'dock') {
-      items.push({ t: T('Bỏ khỏi yêu thích', 'Remove from favourites'), f: function () { S.dock.splice(i, 1); fixF(); } });
-      items.push({ t: T('Sang trái', 'Move left'), dis: i === 0, f: function () { swap(i, i - 1); S.f.i = i - 1; } });
-      items.push({ t: T('Sang phải', 'Move right'), dis: i === S.dock.length - 1, f: function () { swap(i, i + 1); S.f.i = i + 1; } });
-    } else items.push({ t: T('Ghim vào yêu thích', 'Pin to favourites'), f: function () {
-      if (S.dock.length >= 4) { toast(T('Yêu thích đã đủ 4 mục', 'Favourites are full (4)')); return; }
-      S.dock.push(id); S.f = { z: 'dock', i: S.dock.length - 1 }; } });
-    items.push({ t: T('Ẩn', 'Hide'), f: function () { var d = S.dock.indexOf(id); if (d >= 0) S.dock.splice(d, 1); S.hidden.push(id); toast(T('Đã ẩn ' + a.n + ' · Cài đặt → App đã ẩn', a.n + ' hidden · Settings → Hidden apps')); fixF(); } });
+  function openMenu(i) {
+    var id = grid()[i], a = BY[id], items = [], d = S.dock.indexOf(id);
+    items.push({ t: T('Tùy chỉnh TV Home', 'Customize TV Home'), f: function () { openCustomize(); } });
+    if (d >= 0) {
+      if (d > 0) items.push({ t: T('Sang trái', 'Move left'), f: function () { swap(d, d - 1); S.f.i = i - 1; } });
+      if (d < S.dock.length - 1) items.push({ t: T('Sang phải', 'Move right'), f: function () { swap(d, d + 1); S.f.i = i + 1; } });
+      items.push({ t: T('Bỏ khỏi yêu thích', 'Remove from favourites'), f: function () { S.dock.splice(d, 1); S.f.i = Math.min(S.f.i, grid().length - 1); } });
+    } else {
+      items.push({ t: T('Ghim vào yêu thích', 'Pin to favourites'), f: function () {
+        if (S.dock.length >= DOCK_MAX) { toast(T('Yêu thích đã đủ ' + DOCK_MAX + ' mục', 'Favourites are full (' + DOCK_MAX + ')')); return; }
+        S.dock.push(id); S.f = { z: 'grid', i: S.dock.length - 1 }; } });
+      items.push({ t: T('Ẩn', 'Hide'), f: function () { S.hidden.push(id); toast(T('Đã ẩn ' + a.n + ' · Cài đặt → App đã ẩn', a.n + ' hidden · Settings → Hidden apps')); fixF(); } });
+    }
     items.push({ t: T('Thông tin app', 'App info'), f: function () { toast(T('Trên TV thật mở màn thông tin của Android', 'On a real TV this opens Android\'s app info')); } });
     S.over = { kind: 'menu', title: a.n, items: items, i: 0 }; overlay();
   }
   function swap(a, b) { if (b < 0 || b >= S.dock.length) return; var t = S.dock[a]; S.dock[a] = S.dock[b]; S.dock[b] = t; }
-  function fixF() {
-    if (S.f.z === 'dock') { if (!S.dock.length) S.f = { z: 'grid', i: 0 }; else S.f.i = Math.min(S.f.i, S.dock.length - 1); }
-    if (S.f.z === 'grid') { var n = grid().length; if (!n) S.f = { z: 'dock', i: 0 }; else S.f.i = Math.min(S.f.i, n - 1); }
-  }
+  function fixF() { var n = grid().length; S.f = n ? { z: 'grid', i: Math.min(S.f.i, n - 1) } : { z: 'top', i: 2 }; }
   function openCustomize() {
     S.over = { kind: 'cz', i: 0 }; overlay();
   }
@@ -287,8 +268,8 @@
   TVKit.handler = function (k) {
     if (S.before) { if (k === 'ok' || k === 'home' || k === 'back') toast(T('Đây là màn hình mẫu của TV hãng. Bấm "Sau (TV Home)" để so sánh.', 'This is a stock home screen. Press "After (TV Home)" to compare.')); return; }
     if (S.over) { inOver(k); return; }
-    if (k === 'home' || k === 'back') { S.f = { z: 'dock', i: 0 }; draw(); return; }
-    ({ top: inTop, dock: inDock, grid: inGrid }[S.f.z])(k); draw();
+    if (k === 'home' || k === 'back') { S.f = { z: 'grid', i: 0 }; draw(); return; }
+    ({ top: inTop, grid: inGrid }[S.f.z])(k); draw();
   };
   TVKit.reset = function () { defaults(); overlay(); };
 
@@ -299,7 +280,7 @@
     if (t.dataset.oi != null) return;
     S.f = { z: t.dataset.z, i: +t.dataset.i }; draw();
     if (S.over || S.before) return;
-    if (t.dataset.z !== 'top') hold = setTimeout(function () { held = true; hold = null; TVKit.handler('menu'); }, 520);
+    if (t.dataset.z === 'grid') hold = setTimeout(function () { held = true; hold = null; TVKit.handler('menu'); }, 520);
   });
   $('#scr').addEventListener('pointerup', function (e) { if (hold) { clearTimeout(hold); hold = null; } });
   $('#scr').addEventListener('pointercancel', function () { if (hold) { clearTimeout(hold); hold = null; } });
@@ -319,8 +300,8 @@
   $('#bAfter').onclick = function () { S.before = false; draw(); };
   $('#bWidgets').onclick = function () { S.widgets = !S.widgets; draw(); };
   WALLS.forEach(function (w, i) {
-    var b = document.createElement('button'); b.type = 'button'; b.className = 'swatch'; b.title = w.n; b.setAttribute('aria-label', w.n);
-    b.style.backgroundImage = w.photo ? 'url(../home/' + w.id + '-t.jpg)' : w.t;
+    var b = document.createElement('button'), cv = document.createElement('canvas'); b.type = 'button'; b.className = 'swatch'; b.title = w.n; b.setAttribute('aria-label', w.n);
+    cv.width = 88; cv.height = 50; cv.style.cssText = 'display:block;width:100%;height:100%;border-radius:6px'; homeArtPaint(cv.getContext('2d'), 88, 50, w.id); b.appendChild(cv);
     b.onclick = function () { S.wall = i; if (S.before) S.before = false; draw(); };
     $('#walls').appendChild(b);
   });

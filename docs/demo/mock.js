@@ -83,6 +83,9 @@
       return `<polyline points="${pts.join(' ')}" fill="none" stroke="${esc(s.c)}" stroke-width="${Math.max(2, s.w / 10000 * W)}" stroke-linecap="round" stroke-linejoin="round"/>`;
     }).join('');
   }
+  // loaded once as a data: address, so the svg picture (an <img>, no outside files) carries it
+  let HOME_IMG = '';
+  fetch(new URL('img/tv-home-screen.jpg', location.href)).then((r) => r.blob()).then((b) => { const f = new FileReader(); f.onload = () => { HOME_IMG = f.result; }; f.readAsDataURL(b); }).catch(() => {});
   const screenSvg = () => screenBase().replace(/<\/svg>$/, inkSvg(960, 540) + '</svg>');
   function screenBase() {
     const W = 960, H = 540;
@@ -97,6 +100,10 @@
     if (a) {                                                        // an app is "open": its name over its colour
       g += `<rect width="${W}" height="${H}" fill="${a.color}" opacity=".9"/><text x="${W / 2}" y="${H / 2 + 20}" fill="#fff" font-size="84" font-weight="700" text-anchor="middle">${esc(a.label)}</text>`;
       if (S.playing) g += `<rect x="120" y="${H - 90}" width="${W - 240}" height="8" rx="4" fill="#fff" opacity=".3"/><rect x="120" y="${H - 90}" width="${(W - 240) * ((now() / 1000 % 120) / 120)}" height="8" rx="4" fill="#fff"/>`;
+      return g + '</svg>';
+    }
+    if (HOME_IMG) {                                                 // the clean TV Home (a real capture of the current build; its clock and focus are fixed
+      g += `<image href="${HOME_IMG}" width="${W}" height="${H}" preserveAspectRatio="xMidYMid slice"/>`;
       return g + '</svg>';
     }
     g += `<text x="48" y="64" fill="#fff" font-size="30" font-weight="700">${esc(say('Chào buổi tối', 'Good evening'))}</text>`;

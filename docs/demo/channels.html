@@ -10,28 +10,28 @@
   /* TV Channels at 1280 x 720 as in the real screenshot (app/channels: BrowseActivity, PlayActivity) */
   .scr { background: #0b0f14; --acc: #5eead4; }
   #side { position: absolute; left: 0; top: 0; bottom: 0; width: 330px; padding: 26px 22px; background: #0b0f14; }
-  #brand { display: flex; align-items: center; gap: 14px; font-size: 30px; font-weight: 700; color: var(--acc); margin: 4px 0 26px 14px; }
-  #brand img { width: 42px; height: 42px; border-radius: 10px; }
-  .si { height: 50px; border-radius: 14px; display: flex; align-items: center; gap: 18px; padding: 0 16px; font-size: 22px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; }
+  #brand { display: flex; align-items: center; gap: 14px; font-size: 28px; font-weight: 700; color: var(--acc); margin: 4px 0 26px 14px; }
+  #brand img { width: 40px; height: 40px; border-radius: 10px; }
+  .si { height: 50px; border-radius: 14px; display: flex; align-items: center; gap: 18px; padding: 0 16px; font-size: 20.5px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; }
   .si svg { width: 30px; height: 30px; flex: none; } .si .n { margin-left: auto; opacity: .55; font-size: 19px; }
-  .si.sel { background: #12332f; } .si.f { background: #e9eef2; color: #0b0f14; } .si.f .n { opacity: .7; }
-  #side hr { border: 0; border-top: 1px solid #1c2530; margin: 10px 0 12px; }
-  #cats { position: absolute; left: 22px; right: 22px; top: 318px; bottom: 6px; overflow: hidden; }
+  .si.sel { background: #12332f; } .si.f { background: #3b4048; }
+  #side hr { border: 0; border-top: 1px solid #272f39; margin: 10px 0 12px; }
+  #cats { position: absolute; left: 22px; right: 22px; top: 430px; bottom: 6px; overflow: hidden; }
   #cats .si { margin-bottom: 2px; padding-left: 16px; }
   #main { position: absolute; left: 340px; right: 36px; top: 0; bottom: 0; }
-  #head { height: 122px; display: flex; align-items: center; justify-content: space-between; }
-  #head h1 { margin: 0; font-size: 38px; font-weight: 700; display: flex; align-items: center; gap: 14px; }
+  #head { height: 100px; display: flex; align-items: center; justify-content: space-between; }
+  #head h1 { margin: 0; font-size: 32px; font-weight: 700; display: flex; align-items: center; gap: 14px; }
   #head .s { width: 400px; height: 60px; border-radius: 30px; background: #1a2029; display: flex; align-items: center; gap: 16px; padding: 0 22px; font-size: 22px; color: #9aa6b5; }
   #head .s svg { width: 30px; height: 30px; color: #e9eef2; }
-  #gridv { position: absolute; left: 0; right: 0; top: 122px; bottom: 0; overflow: hidden; }
-  #grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px 24px; padding: 14px 14px 40px; }
-  .c { position: relative; } .c .tile { height: 90px; border-radius: 14px; background: #f1f3f6; display: grid; place-items: center; overflow: hidden; position: relative; } .c .tile.dk { background: #3a4350; }
+  #gridv { position: absolute; left: 0; right: 0; top: 100px; bottom: 0; overflow: hidden; }
+  #grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 26px 32px; padding: 14px 14px 40px; }
+  .c { position: relative; } .c .tile { height: 82px; border-radius: 14px; background: #f1f3f6; display: grid; place-items: center; overflow: hidden; position: relative; } .c .tile.dk { background: #3a4350; }
   .c .tile img { max-width: 78%; max-height: 74%; object-fit: contain; }
   .c .tile .ltr { font-size: 30px; font-weight: 700; color: #53606f; }
   .c .tile .hd { position: absolute; left: 8px; top: 6px; font-size: 13px; font-weight: 700; background: #6b7580; color: #fff; padding: 1px 7px; border-radius: 5px; }
   .c .tile .st { position: absolute; right: 8px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: #34d399; box-shadow: 0 0 0 3px rgba(52,211,153,.25); }
-  .c .nm { margin-top: 10px; font-size: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .c .sb { font-size: 17px; opacity: .55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .c.f .tile { box-shadow: 0 0 0 4px var(--acc), 0 0 26px rgba(94,234,212,.45); transform: scale(1.05); }
+  .c .nm { margin-top: 8px; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .c .sb { font-size: 14.5px; opacity: .55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .c.f { background: #3a4350; border-radius: 16px; box-shadow: 0 0 0 3px var(--acc); transform: scale(1.1); z-index: 2; margin: -6px; padding: 6px; }
   .c.fav::after { content: "★"; position: absolute; right: 8px; top: 4px; color: #fbbf24; font-size: 22px; }
   .empty { grid-column: 1 / -1; padding: 60px 10px; font-size: 24px; opacity: .6; }
   #sfield { display: none; align-items: center; gap: 18px; width: 620px; height: 60px; border-radius: 30px; background: #1a2029; padding: 0 22px; border: 3px solid transparent; }
@@ -91,7 +91,7 @@
 (function () {
   var T = TVKit.T, VI = TVKit.VI, $ = function (s) { return document.querySelector(s); };
   function svg(d) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>'; }
-  var IC = { search: svg('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>'), star: svg('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'), plus: svg('<path d="M12 5v14M5 12h14"/>'), globe: svg('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'), tv: svg('<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M8 3l4 3 4-3"/>') };
+  var IC = { refresh: svg('<path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 4v5h-5"/>'), lang: svg('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h4M13 10h4M7 14h2M12 14h5"/>'), search: svg('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>'), star: svg('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'), plus: svg('<path d="M12 5v14M5 12h14"/>'), globe: svg('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'), tv: svg('<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M8 3l4 3 4-3"/>') };
   var COUNTRIES = [{ id: 'vn', f: '🇻🇳', n: T('Việt Nam', 'Vietnam') }, { id: 'us', f: '🇺🇸', n: T('Hoa Kỳ', 'United States') }, { id: 'int', f: '🌐', n: T('Quốc tế', 'International') }];
   var CATN = { General: T('Tổng hợp', 'General'), News: T('Tin tức', 'News'), Music: T('Nhạc', 'Music'), Kids: T('Thiếu nhi', 'Kids'), Sports: T('Thể thao', 'Sports'), Weather: T('Thời tiết', 'Weather'), Documentary: T('Tài liệu', 'Documentary'), Culture: T('Văn hóa', 'Culture'), Lifestyle: T('Đời sống', 'Lifestyle'), Cooking: T('Ẩm thực', 'Cooking'), Outdoor: T('Ngoài trời', 'Outdoor'), Undefined: T('Khác', 'Other'), Business: T('Kinh doanh', 'Business'), Education: T('Giáo dục', 'Education'), Entertainment: T('Giải trí', 'Entertainment') };
   var CH = (window.CH_DATA || []).map(function (a, i) { return { i: i, cc: a[0], name: a[1], grp: a[2], logo: a[3], url: a[4], play: !!a[5], dk: !!a[6] }; });
@@ -114,7 +114,9 @@
       { t: T('Tìm kênh', 'Search channels'), ic: IC.search, a: 'search', sel: S.mode === 'search' },
       { t: T('Yêu thích', 'Favourites'), ic: IC.star, n: S.fav.length, a: 'fav', sel: S.mode === 'fav' },
       { t: T('Nhóm mới', 'New group'), ic: IC.plus, a: 'group' },
-      { t: cinfo().f + ' ' + cinfo().n, ic: IC.globe, a: 'country' }];
+      { t: cinfo().f + ' ' + cinfo().n, ic: IC.globe, a: 'country' },
+      { t: T('Làm mới danh sách', 'Refresh list'), ic: IC.refresh, a: 'refresh' },
+      { t: T('Ngôn ngữ: ', 'Language: ') + T('Tiếng Việt', 'English'), ic: IC.lang, a: 'lang' }];
     it.sep = it.length;
     it.push({ t: T('Tất cả', 'All'), a: 'cat', k: 'All', n: inCountry().length, sel: S.mode === 'country' && S.cat === 'All', ic: IC.tv });
     cs.forEach(function (c) { it.push({ t: CATN[c.k] || c.k, a: 'cat', k: c.k, n: c.n, sel: S.mode === 'country' && S.cat === c.k }); });
@@ -126,13 +128,13 @@
   function draw() {
     // side
     var it = sideItems(), cats0 = it.sep;
-    $('#side').innerHTML = '<div id="brand"><img src="img/banner-channels.png" alt="">TV Channels</div>' + it.slice(0, cats0).map(row).join('') + '<hr><div id="cats">' + it.slice(cats0).map(function (x, j) { return row(x, cats0 + j); }).join('') + '</div>';
+    $('#side').innerHTML = '<div id="brand"><img src="img/icon-channels.png" alt="">TV Channels</div>' + it.slice(0, cats0).map(row).join('') + '<hr><div id="cats">' + it.slice(cats0).map(function (x, j) { return row(x, cats0 + j); }).join('') + '</div>';
     function row(x, i) { if (i == null) i = it.indexOf(x); return '<div class="si' + (x.sel ? ' sel' : '') + (S.f.z === 'side' && S.f.i === i ? ' f' : '') + '" data-z="side" data-i="' + i + '">' + (x.ic || '<svg viewBox="0 0 24 24"></svg>') + '<span>' + x.t + '</span>' + (x.n != null ? '<span class="n">' + x.n + '</span>' : '') + '</div>'; }
     S.sideN = it.length; S.sideIt = it;
     // head
     var title = S.mode === 'fav' ? '★ ' + T('Yêu thích', 'Favourites') : S.mode === 'search' ? '' : cinfo().f + ' ' + cinfo().n;
     var searchOn = S.mode === 'search';
-    $('#head').innerHTML = '<h1>' + title + '</h1>' + (searchOn ? '<div id="sfield" class="on' + (S.f.z === 'field' ? ' f' : '') + '">' + IC.search + '<input id="q" autocomplete="off" spellcheck="false" placeholder="' + T('Gõ tên kênh, ví dụ cnn', 'Type a channel name, e.g. cnn') + '" value="' + S.q.replace(/"/g, '&quot;') + '"></div>' : '<div class="s" data-act="search">' + IC.search + T('Tìm kênh', 'Search channels') + '</div>');
+    $('#head').innerHTML = '<h1>' + title + '</h1>' + (searchOn ? '<div id="sfield" class="on' + (S.f.z === 'field' ? ' f' : '') + '">' + IC.search + '<input id="q" autocomplete="off" spellcheck="false" placeholder="' + T('Gõ tên kênh, ví dụ cnn', 'Type a channel name, e.g. cnn') + '" value="' + S.q.replace(/"/g, '&quot;') + '"></div>' : '');
     if (searchOn) bindField();
     // grid
     var r = results(), g = $('#grid');
@@ -179,6 +181,8 @@
       else if (x.a === 'fav') { S.mode = 'fav'; S.f = { z: 'side', i: i }; }
       else if (x.a === 'group') toast(T('Nhóm kênh: tạo trên TV thật', 'Channel groups: made on the real TV'));
       else if (x.a === 'country') countryPicker();
+      else if (x.a === 'refresh') toast(T('Danh sách kênh đã mới nhất', 'The channel list is up to date'));
+      else if (x.a === 'lang') toast(T('Đổi ngôn ngữ bằng nút VI / EN phía trên', 'Change the language with the VI / EN switch above'));
       else if (x.a === 'cat') { S.mode = 'country'; S.cat = x.k; S.f = { z: 'side', i: i }; }
     }
   }

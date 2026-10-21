@@ -43,8 +43,8 @@ It needs the computer app built and, for `tv`, `phone` and `tvapp`, both emulato
 is the made-up home screen `dev/shots/home-<lang>.html`; the TV is named "TV phòng khách" / "Living room TV". Then check each
 `<img>`'s width and height in `index.html`.
 
-**Live demo** (`/demo/`, a hub of four tabs; deep links `#remote` `#home` `#channels` `#games`, `?go=<guide topic>` opens Remote): `index.html` is
-only the tabs, a line per tab with its download link, VI / EN, Reset, and the key forwarding; each tab is a page of this folder in a
+**Live demo** (`/demo/`, a picker of four app cards, no tabs; deep links `#remote` `#home` `#channels` `#games`, `?go=<guide topic>` opens Remote): `index.html` is
+the picker (no hash: a card per app, its real icon `img/icon-*.png`, a line and a real screenshot `img/shot-*.jpg`) and, inside a demo, a slim bar ("All apps", the four icons as a switcher, VI / EN, Reset, the download); Back returns to the picker; each app is a page of this folder in a
 lazy frame (`<tab>.html?embed=1&lang=`; the frame reports its height, and OK on a tile of TV Home can ask for another tab). Keys:
 `tvkit.js` turns the on-screen remote, the keyboard and the hub's forwarded keys into up / down / left / right / ok / back / home / menu
 (a long press of OK is menu); `tvkit.css` is the TV frame (a fixed 1280 x 720 picture scaled to the frame) and the remote.
@@ -62,6 +62,7 @@ lazy frame (`<tab>.html?embed=1&lang=`; the frame reports its height, and OK on 
   until the Unmute button); `plays` is what a real Chrome measured (a stream needs CORS to play in a page: 26 of the 38 did, the VTV / HTV
   ones do not and show a still with "on the TV this plays the channel"). `light` is the app's logo-tile rule (`LogoFit.kt`) worked out
   offline: re-measure both when the list changes. Leaving the tab stops the video.
+- **Look of the TV pages:** taken from real 1920 x 1080 captures of the TV emulator (`img/shot-*.jpg`, `img/tv-home-screen.jpg` = the Remote demo's TV picture, clean TV Home). `home-walls.js` is a verbatim copy of `app/shared/web/js/home_walls.js` (the drawn walls): keep it in sync. Games: the pads sit beside the TV from 900 px, under it on a phone.
 - **TV Games** (`games.html` + `pad/`): the library with the catalog's real pictures (`games/img`), and the real quiz (`games/web/quiz`,
   put in a frame with a `window.tvpad` stand-in) played with one or two phones. The phone is the app's real pad page: `pad/pad.js`, `pad.css`,
   `pingmath.js` are unchanged copies of `app/games/src/main/assets/pad/` (and `webgames/_lib/`), `pad/index.html` is its page without the
