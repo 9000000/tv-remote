@@ -29,7 +29,7 @@ object Thumbs {
     class Src(val key: String, val boxes: List<String> = emptyList(), val img: String? = null, val page: String? = null, val asset: String? = null)
 
     private const val WEEK = 7 * 24 * 3600_000L
-    private const val HOURS6 = 6 * 3600_000L                           // a catalog picture not on the site yet (pushed after the list): asked again soon
+    private const val MIN30 = 30 * 60_000L                             // a catalog picture not on the site yet (pushed after the list): asked again soon
     private const val MAX_BYTES = 4 shl 20
     private const val BACK = 0xFF10131A.toInt()
     private val REMOTE = listOf("box", "art", "icon")
@@ -85,7 +85,7 @@ object Thumbs {
                 }
                 if (have in REMOTE || (s.boxes.isEmpty() && s.img == null && s.page == null)) return@execute
                 val ms = miss(app, s.key)
-                if (ms.exists() && System.currentTimeMillis() - ms.lastModified() < (if (s.img != null) HOURS6 else WEEK)) return@execute
+                if (ms.exists() && System.currentTimeMillis() - ms.lastModified() < (if (s.img != null) MIN30 else WEEK)) return@execute
                 if (s.key in failed) return@execute
                 net.execute {
                     try {

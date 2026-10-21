@@ -139,7 +139,7 @@ class LobbyView(
             addView(warnTv)
             addView(LinearLayout(act).apply {
                 gravity = Gravity.CENTER_VERTICAL; setPadding(act.dp(24), act.dp(8), act.dp(24), act.dp(8))
-                background = round(0x33FFFFFF, 30)
+                background = round(0xB3080A10.toInt(), 30, 1, 0x33FFFFFF)
                 addView(keyCap(act.getString(R.string.key_ok))); addView(hintText(R.string.hint_start))
                 addView(keyCap(act.getString(R.string.key_back))); addView(hintText(R.string.hint_exit))
                 addView(act.label("|", 24f, 0x55FFFFFF).apply { setPadding(act.dp(14), 0, act.dp(14), 0) })
@@ -175,8 +175,8 @@ class LobbyView(
 
     /** The accent changed (the picture arrived): everything that wears it. */
     private fun applyAccent() {
-        heroFrame.background = round(accent, 18)
-        qrCard.background = round(Color.WHITE, 20, 4, accent)
+        heroFrame.background = round((accent and 0x00FFFFFF) or 0x59000000, 18, 1, (accent and 0x00FFFFFF) or 0x80000000.toInt())   // a soft halo, not an outline
+        qrCard.background = round(Color.WHITE, 20, 2, (accent and 0x00FFFFFF) or 0x66000000)
         countN.setTextColor(accent); countCaption.setTextColor(0xFFD5DAE6.toInt())
         countRing.background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(0x14FFFFFF); setStroke(act.dp(8), accent) }
         if (rows.isNotEmpty()) render()
@@ -207,7 +207,7 @@ class LobbyView(
             r.avatar.text = (server.nameOf(i + 1)?.trim()?.take(1)?.uppercase()?.ifEmpty { null } ?: (i + 1).toString())
             if (p == null) {
                 r.box.tag = EMPTY
-                r.box.background = GradientDrawable().apply { setColor(0x4D10141D); cornerRadius = shapeR; setStroke(act.dp(2), 0x40FFFFFF, act.dp(8).toFloat(), act.dp(6).toFloat()) }
+                r.box.background = GradientDrawable().apply { setColor(0x4D10141D); cornerRadius = shapeR; setStroke(act.dp(1), 0x33FFFFFF) }
                 (r.avatar.background as GradientDrawable).setColor(c and 0x00FFFFFF or 0x55000000); r.avatar.setTextColor(0x99FFFFFF.toInt()); r.avatar.text = (i + 1).toString()
                 r.name.text = act.getString(R.string.player_plain, i + 1); r.name.setTextColor(0xFF8892A6.toInt())
                 r.state.text = act.getString(R.string.lobby_waiting); r.state.setTextColor(0xFF8892A6.toInt()); r.state.background = null
@@ -216,7 +216,7 @@ class LobbyView(
                 return@forEachIndexed
             }
             r.box.tag = null; r.avatar.alpha = 1f; r.name.alpha = 1f; r.state.alpha = 1f
-            r.box.background = GradientDrawable().apply { setColor(if (p.ready) (accent and 0x00FFFFFF) or 0x40000000 else 0xCC151A25.toInt()); cornerRadius = shapeR; setStroke(act.dp(3), if (p.ready) accent else (c and 0x00FFFFFF) or 0x99000000.toInt()) }
+            r.box.background = GradientDrawable().apply { setColor(if (p.ready) (accent and 0x00FFFFFF) or 0x40000000 else 0xCC151A25.toInt()); cornerRadius = shapeR; setStroke(act.dp(2), if (p.ready) accent else (c and 0x00FFFFFF) or 0x66000000) }
             (r.avatar.background as GradientDrawable).setColor(c); r.avatar.setTextColor(Color.WHITE)
             r.name.text = server.nameOf(p.slot) ?: act.getString(R.string.player_plain, p.slot); r.name.setTextColor(Color.WHITE)
             val ms = server.pingOf(p.slot)
