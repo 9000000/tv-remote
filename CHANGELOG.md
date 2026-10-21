@@ -12,13 +12,13 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Hướng dẫn: rà lại 36 mục theo bản 0.15.0, thêm ảnh TV Home và bảng Tùy chỉnh trên TV
 - Tối ưu TV: thêm 29 gói quảng cáo / theo dõi / tự cài app (Hisense, Sharp, Vestel, CVTE, XGIMI, Fire TV…); giữ lại hơn 40 gói đã có người báo hỏng khi tắt (nút Nguồn vào, phím remote, cập nhật); Xiaomi TV Manager không còn bị đề xuất tắt (XiaoAI cần nó)
 - An toàn hơn: không tắt app nào giữ cổng HDMI / AV / tuner của TV (tắt rồi có TV báo "Không có tín hiệu" luôn); đổi launcher thì bấm thử Home xem thật sự mở gì; không đổi launcher trên TV Kalley / MOKA (kẹt logo khi khởi động lại); TV Home mở được ngay từ lúc TV khởi động
-- TV Home: nút Nguồn vào xổ danh sách cổng (tên đặt trên TV, thiết bị đang cắm qua HDMI-CEC, chấm xanh "Đã kết nối"); Cài đặt và Tùy chỉnh gộp thành một nút có menu; phím Lên từ hàng app tới được các nút trên đầu (TV Android 9)
+- TV Home: nút Nguồn vào xổ danh sách cổng (tên đặt trên TV, thiết bị đang cắm qua HDMI-CEC, chấm xanh "Đã kết nối"); Cài đặt và Tùy chỉnh gộp thành một nút có menu; các nút trên đầu và menu kiểu kính như các thẻ; phím Lên từ hàng app tới được các nút trên đầu (TV Android 9)
 - Trang TV Home: tên widget không còn bị các nút ép hẹp ở màn hình nhỏ
 - TV Home: ô đang chọn thành một tấm kính lướt giữa các app (như Apple TV), không phủ lên ảnh app; muốn viền xanh như cũ thì chọn ở Tùy chỉnh → Ô đang chọn
 
 **English**
 
-- TV Home: Inputs drops a list of ports (the names set on the TV, the HDMI-CEC device plugged in, a green "Connected" dot); Settings and Customize are one button with a menu; Up from the apps reaches the buttons on top (Android 9 TVs)
+- TV Home: Inputs drops a list of ports (the names set on the TV, the HDMI-CEC device plugged in, a green "Connected" dot); Settings and Customize are one button with a menu; the buttons on top and their menus are glass like the cards; Up from the apps reaches the buttons on top (Android 9 TVs)
 - TV Home page: widget names no longer squeezed by their buttons on a narrow screen
 - TV Home: the focus is a pane of glass gliding from app to app (as on Apple TV), over the edge only, so banners keep their colours; the old blue ring is in Customize → Focus
 - Fix: TV Home's System card no longer says "0.00 GHz" when the TV reports a bogus CPU speed (the emulator says 2 kHz)

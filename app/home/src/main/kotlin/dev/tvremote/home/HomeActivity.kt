@@ -800,7 +800,9 @@ class HomeActivity : Activity() {
             minimumHeight = (44 * d).toInt()
             background = StateListDrawable().apply {
                 addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply { cornerRadius = 22 * d; setColor(Color.WHITE) })
-                addState(intArrayOf(), GradientDrawable().apply { cornerRadius = 22 * d; setColor(0x29FFFFFF) })
+                addState(intArrayOf(), GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x2EFFFFFF, 0x14FFFFFF)).apply {
+                    cornerRadius = 22 * d; setStroke(d.toInt().coerceAtLeast(1), 0x33FFFFFF)                 // the cards' glass, so the head matches them
+                })
             }
             val tint = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()), intArrayOf(0xFF111318.toInt(), Color.WHITE))
             addView(ImageView(c).apply { setImageResource(icon); imageTintList = tint; isDuplicateParentStateEnabled = true }, LayoutParams((20 * d).toInt(), (20 * d).toInt()))

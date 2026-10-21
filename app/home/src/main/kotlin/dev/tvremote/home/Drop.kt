@@ -33,7 +33,10 @@ object Drop {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         val col = LinearLayout(a).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(8), dp(8), dp(8), dp(8))
-            background = GradientDrawable().apply { cornerRadius = dp(18).toFloat(); setColor(0xF2191B21.toInt()); setStroke(dp(1), 0x26FFFFFF) }
+            // dark glass: lighter at the top like the cards, and dark enough below to read over a busy wallpaper (no blur before Android 12)
+            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xEB343842.toInt(), 0xF2181A20.toInt())).apply {
+                cornerRadius = dp(20).toFloat(); setStroke(dp(1), 0x40FFFFFF)
+            }
         }
         val tint = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()), intArrayOf(0xFF111318.toInt(), Color.WHITE))
         var last = rows.firstOrNull()?.group
@@ -74,7 +77,7 @@ object Drop {
         dialog.window?.apply {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             setGravity(Gravity.TOP or Gravity.START)
-            setDimAmount(0.25f)
+            setDimAmount(0.15f)
             attributes = attributes.apply {
                 x = minOf(at[0], sw - w - dp(32)).coerceAtLeast(dp(16)); y = at[1] + anchor.height + dp(8)
                 width = w; height = WindowManager.LayoutParams.WRAP_CONTENT
