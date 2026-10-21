@@ -127,7 +127,7 @@ class PlayActivity : Activity() {
         side.addView(Ui.text(this, "", 16f, Ui.ACCENT, true).apply { tag = "title"; setPadding(d(12), 0, 0, d(12)); maxLines = 1 })
         sideList = RecyclerView(this).apply { layoutManager = LinearLayoutManager(this@PlayActivity); adapter = SideList(); itemAnimator = null }
         side.addView(sideList, LinearLayout.LayoutParams(-1, 0, 1f))
-        frame.addView(side, FrameLayout.LayoutParams(d(360), -1, Gravity.START))
+        frame.addView(side, FrameLayout.LayoutParams(d(442), -1, Gravity.START))
 
         guide = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; setPadding(d(12), d(20), d(12), d(20)); visibility = View.GONE
@@ -333,7 +333,6 @@ class PlayActivity : Activity() {
     private fun infoShown() = info.visibility == View.VISIBLE || SystemClock.uptimeMillis() - infoHidAt < 300
     private fun closeInfo() { main.removeCallbacks(hideInfo); info.visibility = View.GONE; infoHidAt = 0 }
 
-
     private val jump = Runnable {
         typed.toIntOrNull()?.let { n -> if (n in 1..Lineup.channels.size) tune(n - 1) }
         typed = ""; digits.visibility = View.GONE
@@ -391,13 +390,32 @@ class PlayActivity : Activity() {
 
     private inner class SideList : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         override fun getItemCount() = Lineup.channels.size
-        override fun onCreateViewHolder(p: ViewGroup, t: Int) = object : RecyclerView.ViewHolder(
-            Ui.row(this@PlayActivity, 0, "", " ") {}.apply { layoutParams = RecyclerView.LayoutParams(-1, -2) }) {}
+        private val lightTile by lazy { Ui.round(LogoFit.LIGHT_TILE, Ui.dp(this@PlayActivity, 6)) }   // lazy: no resources while the activity's fields are built
+        private val darkTile by lazy { Ui.round(LogoFit.DARK_TILE, Ui.dp(this@PlayActivity, 6)) }
+        /** A row's children: 0 the logo tile (letters under a [LogoView]), 1 the name, 2 the quality. */
+        override fun onCreateViewHolder(p: ViewGroup, t: Int): RecyclerView.ViewHolder {
+            val c = this@PlayActivity
+            val row = Ui.row(c, 0, "", " ") {}.apply { layoutParams = RecyclerView.LayoutParams(-1, -2) }
+            val tile = FrameLayout(c)
+            tile.addView(TextView(c).apply {
+                tag = "letters"; gravity = Gravity.CENTER; textSize = 14f; setTextColor(0xFF5F6368.toInt()); typeface = android.graphics.Typeface.DEFAULT_BOLD
+            }, FrameLayout.LayoutParams(-1, -1))
+            tile.addView(LogoView(c), FrameLayout.LayoutParams(-1, -1))
+            row.addView(tile, 0, LinearLayout.LayoutParams(Ui.dp(c, 72).toInt(), Ui.dp(c, 40).toInt()).apply { rightMargin = Ui.dp(c, 12).toInt() })
+            return object : RecyclerView.ViewHolder(row) {}
+        }
         override fun onBindViewHolder(h: RecyclerView.ViewHolder, i: Int) {
             val row = h.itemView as LinearLayout
             val c = Lineup.channels[i].first()
-            (row.getChildAt(0) as TextView).text = "${(i + 1).toString().padStart(3, '\u2007')}   ${c.name}"   // figure spaces: the names line up
-            (row.getChildAt(1) as TextView).text = c.quality
+            val tile = row.getChildAt(0) as FrameLayout
+            val letters = tile.getChildAt(0) as TextView
+            letters.text = Ui.initials(c.name)
+            Logos.into(tile.getChildAt(1) as ImageView, c.logo, 160) { got ->        // the same disk-cached logos and tile choice as the grid
+                letters.visibility = if (got) View.INVISIBLE else View.VISIBLE
+                tile.background = if (got && Logos.isLight(c.logo)) darkTile else lightTile
+            }
+            (row.getChildAt(1) as TextView).text = "${(i + 1).toString().padStart(3, '\u2007')}   ${c.name}"   // figure spaces: the names line up
+            (row.getChildAt(2) as TextView).text = c.quality
             row.isActivated = i == at
             row.alpha = if (Lineup.channels[i].all { Store.alive(this@PlayActivity, it.url) == false }) 0.5f else 1f
             row.setOnClickListener { showSide(false); if (i != at) tune(i) }
