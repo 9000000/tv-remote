@@ -101,6 +101,7 @@ class GameActivity : ComponentActivity() {
         server.onKey = { port, action, code -> retro.sendKeyEvent(action, code, port) }
         server.onPlayers = { l -> runOnUiThread { cards.setPlayers(l) } }
         server.onAdded = { }
+        server.onPing = { p, ms -> runOnUiThread { cards.setPing(p, ms) } }
         snapLoop.removeCallbacksAndMessages(null); snapLoop.postDelayed(snapTick, 5000)
     }
 

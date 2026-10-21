@@ -2,8 +2,8 @@
 const K = new URLSearchParams(location.search).get('k') || '';
 const VI = (navigator.language || '').toLowerCase().startsWith('vi');
 const W = VI
-  ? { p: 'Người chơi', c: 'Đang kết nối…', f: 'Hết chỗ chơi', h: 'Rung', a: 'Thêm game', s: 'Gửi', k: 'Cần xoay thay D-pad', t: 'Thêm vào Màn hình chính để chơi toàn màn hình' }
-  : { p: 'Player', c: 'Connecting…', f: 'Room is full', h: 'Haptics', a: 'Add game', s: 'Send', k: 'Stick instead of D-pad', t: 'Add to Home Screen to play fullscreen' };
+  ? { p: 'Người chơi', c: 'Đang kết nối…', f: 'Hết chỗ chơi', h: 'Rung', a: 'Thêm game', s: 'Gửi', k: 'Cần xoay thay D-pad', b: 'Quay lại', g: 'TV Games', t: 'Thêm vào Màn hình chính để chơi toàn màn hình' }
+  : { p: 'Player', c: 'Connecting…', f: 'Room is full', h: 'Haptics', a: 'Add game', s: 'Send', k: 'Stick instead of D-pad', b: 'Back', g: 'TV Games', t: 'Add to Home Screen to play fullscreen' };
 const COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#eab308'];
 const $ = (s) => document.querySelector(s);
 const store = {
@@ -13,7 +13,7 @@ const store = {
 let cid = store.get('tvg-cid') || '';
 if (!cid) { cid = Math.random().toString(36).slice(2, 10) + Date.now().toString(36); store.set('tvg-cid', cid); }
 $('#lblHaptic').textContent = W.h; $('#lblAdd').textContent = W.a; $('#tipText').textContent = W.t;
-$('#send').textContent = W.s; $('#lblStick').textContent = W.k;
+$('#lblBack').textContent = W.b; $('#lblHome').textContent = W.g; $('#send').textContent = W.s; $('#lblStick').textContent = W.k;
 $('#add').href = 'add?k=' + encodeURIComponent(K);
 
 // ---- haptics: vibrate() where there is one, the iOS 17.4+ checkbox-switch tick elsewhere
@@ -28,7 +28,14 @@ function setHaptic(on) { haptics = on; store.set('tvg-haptic', on ? '1' : '0'); 
 setHaptic(haptics);
 
 // ---- connection
-let ws = null, retry = 400, layout = null, sysName = 'nes';
+let first_hello = true, ws = null, retry = 400, layout = null, sysName = 'nes', mode = 'nav';
+// Two modes: the pad (a game is running) and navigate (a remote for TV Games itself: library, start / pause cards). It follows
+// the TV (a game starts -> pad, back to the library -> navigate); the 🎮 / 🧭 button flips it by hand.
+function setMode(m) {
+  mode = m; document.body.classList.toggle('nav', m === 'nav');
+  $('#mode').textContent = m === 'nav' ? '🎮' : '🧭';
+  releaseAll(); relayout();
+}
 
 // What the TV is running decides the pad: nes / snes / gba / ps (a system's `pad` in Systems.kt) or web (the look of ps).
 // A web game may then change it (tvpad.layout): {choices:[..]} four big answer buttons, {text:true} a field + Send,
@@ -66,7 +73,7 @@ function relayout() {
   const fill = (sel, cls, names) => { const el = $(sel); el.replaceChildren(...names.filter(ok).map((b) => mkBtn(cls, b))); };
   fill('#face', 'btn fb', FACE[base.face]); $('#face').className = base.face;
   fill('#shl', 'btn sb', base.sh[0]); fill('#shr', 'btn sb', base.sh[1]); fill('#mid', 'btn pill', base.mid);
-  stickOn = wantStick() && l.dpad !== false;
+  stickOn = wantStick() && l.dpad !== false && mode === 'pad';
   $('#dpad').classList.toggle('off', stickOn || l.dpad === false);
   $('#sw2').classList.toggle('on', wantStick());
   placeStick(); releaseAll();
@@ -115,22 +122,36 @@ function connect() {
   ws.onopen = () => { retry = 400; send('hello ' + cid); held.forEach((b) => send('d ' + b)); };
   ws.onmessage = (e) => {
     const t = String(e.data);
-    if (t[0] === 'p') { const ms = Date.now() - Number(t.slice(2)); window.__rtt = ms; $('#ms').textContent = ms + ' ms'; return; }
+    if (t[0] === 'p') { pong(t); return; }
     try {
       const m = JSON.parse(t);
       if (m.full) { show(-1); return; }
       if ('sys' in m && !('slot' in m)) { sysName = m.sys; layout = null; relayout(); return; }
+      if ('game' in m && !('slot' in m)) { setMode(m.game ? 'pad' : 'nav'); $('#add').hidden = !!m.game; return; }
       if ('layout' in m) { layout = m.layout; relayout(); return; }
       if ('say' in m) { say(m.say); return; }
       if ('vibrate' in m) { if ('vibrate' in navigator) navigator.vibrate(m.vibrate); else buzz(0); return; }
       show(m.slot);
       if (haptics && 'vibrate' in navigator) navigator.vibrate([30, 40, 30]); else buzz(0);   // a stronger one: the TV says the slot is yours
       $('#add').hidden = !!m.game;
-      if (m.sys) sysName = m.sys; layout = null; relayout(); say('');
+      if (m.sys) sysName = m.sys; layout = null; say('');
+      if (first_hello || (mode === 'nav') === !!m.game) setMode(m.game ? 'pad' : 'nav'); else relayout();
+      first_hello = false;
     } catch (x) {}
   };
   ws.onclose = () => { show(0); setTimeout(connect, retry); retry = Math.min(retry * 1.6, 3000); };
   ws.onerror = () => { try { ws.close(); } catch (x) {} };
+}
+// ---- ping: a stamp out, the TV's reply carries it back with the TV's clock; median of the last 5 (pingmath.js), shown small at the top
+const trk = new PingMath.Tracker(5);
+function pong(t) {
+  const [, t0, tv] = t.split(' '), now = Date.now();
+  if (!(Number(t0) > 0)) return;
+  trk.add(Number(t0), now, tv == null ? null : Number(tv));
+  const p = trk.ping(), el = $('#ms'); window.__rtt = p;
+  el.textContent = p + ' ms'; el.className = PingMath.level(p);
+  send('r ' + p + ' ' + (trk.offset() == null ? 0 : trk.offset()));
+  window.__off = trk.offset();
 }
 setInterval(() => send('p ' + Date.now()), 2000);
 
@@ -138,12 +159,12 @@ setInterval(() => send('p ' + Date.now()), 2000);
 function press(b, on) {
   if (on === held.has(b)) return;
   if (on) { held.add(b); buzz(12); } else held.delete(b);
-  send((on ? 'd ' : 'u ') + b);
+  send((on ? 'd ' : 'u ') + b + ' ' + Date.now());               // the stamp lets the TV measure the delay of this press
   document.querySelectorAll('[data-b="' + b + '"]').forEach((el) => el.classList.toggle('on', on));
   const arm = { UP: 'u', DOWN: 'd', LEFT: 'l', RIGHT: 'r' }[b];
   if (arm && !dp.classList.contains('off')) $('.arm.' + arm).classList.toggle('on', on);
 }
-function releaseAll() { touches.clear(); stickEnd(); [...held].forEach((b) => press(b, false)); }
+function releaseAll() { [...navT.keys()].forEach(navUp); touches.clear(); stickEnd(); [...held].forEach((b) => press(b, false)); }
 
 // Every finger is followed by its identifier; on each move what it is over is looked up again, so a thumb can slide A -> B or
 // across the d-pad's arms without lifting. A d-pad finger near a corner holds two arms.
@@ -169,8 +190,22 @@ function apply() {
   ['UP', 'DOWN', 'LEFT', 'RIGHT', 'A', 'B', 'C', 'D', 'X', 'Y', 'L', 'R', 'L2', 'R2', 'START', 'SELECT'].forEach((b) => press(b, all.has(b)));
 }
 
+// ---- navigate mode: a tap sends "n NAME" (the TV presses that key in TV Games); an arrow held repeats like a remote's
+const navT = new Map();      // touch id -> { el, timer }
+function navSend(el) { send('n ' + el.dataset.n); }
+function navDown(id, el) {
+  el.classList.add('on'); buzz(12); navSend(el);
+  const rec = { el, timer: null };
+  if (['UP', 'DOWN', 'LEFT', 'RIGHT'].includes(el.dataset.n)) {
+    rec.timer = setTimeout(() => { rec.timer = setInterval(() => navSend(el), 120); }, 380);
+  }
+  navT.set(id, rec);
+}
+function navUp(id) { const r = navT.get(id); if (!r) return; clearTimeout(r.timer); clearInterval(r.timer); r.el.classList.remove('on'); navT.delete(id); }
+
 // ---- actions (gear, haptics, add, tip) run on touchstart, not on click
 const ACT = {
+  mode() { setMode(mode === 'nav' ? 'pad' : 'nav'); buzz(12); },
   gear() { const m = $('#menu'); m.hidden = !m.hidden; },
   haptic() { setHaptic(!haptics); buzz(12); },
   add(el) { location.href = el.href; },
@@ -207,6 +242,8 @@ function handle(e) {
     if (!$('#menu').hidden && !e.target.closest('#menu,#gear')) $('#menu').hidden = true;
   }
   for (const t of e.changedTouches) {
+    if (e.type === 'touchstart') { const el = document.elementFromPoint(t.clientX, t.clientY), nb = el && el.closest && el.closest('[data-n]'); if (nb && mode === 'nav') { navDown(t.identifier, nb); continue; } }
+    if (navT.has(t.identifier)) { if (e.type === 'touchend' || e.type === 'touchcancel') navUp(t.identifier); continue; }
     if (t.identifier === sId) { if (e.type === 'touchend' || e.type === 'touchcancel') stickEnd(); else stickMove(t); continue; }
     if (e.type === 'touchend' || e.type === 'touchcancel') touches.delete(t.identifier);
     else touches.set(t.identifier, under(t.clientX, t.clientY));
@@ -217,7 +254,7 @@ function handle(e) {
 ['gesturestart', 'gesturechange', 'gestureend', 'contextmenu', 'dblclick', 'selectstart', 'dragstart'].forEach((n) => document.addEventListener(n, (e) => e.preventDefault(), { passive: false }));
 window.addEventListener('blur', releaseAll);
 $('#textrow').addEventListener('submit', (e) => { e.preventDefault(); const v = $('#txt').value.trim(); if (v) { send('t ' + v); $('#txt').value = ''; buzz(12); } });
-relayout();
+setMode('nav');
 // the site's overrides of a look (buttons, face, sh, mid per system: docs/games/games.json "layouts"): a pad fix without an app release
 fetch('/layouts.json?k=' + encodeURIComponent(K)).then((r) => r.json()).then((o) => {
   for (const k of Object.keys(o || {})) if (SYS[k] && o[k] && typeof o[k] === 'object') { const {face, sh, mid} = o[k]; Object.assign(SYS[k], JSON.parse(JSON.stringify({face, sh, mid}))); }

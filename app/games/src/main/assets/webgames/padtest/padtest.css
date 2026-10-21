@@ -1,0 +1,27 @@
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0b0d12;color:#e8ebf3;font:600 16px system-ui,sans-serif;overflow:hidden}
+body{display:flex;flex-direction:column;padding:2.2vh 2.5vw}
+header{text-align:center;flex:none}
+h1{margin:0;font-size:4.2vh}
+#hint{margin:.6vh 0 1.6vh;font-size:2.4vh;color:#aab0c0}
+#players{flex:1;min-height:0;display:flex;gap:1.6vw;align-items:center;justify-content:center}
+.pl{flex:1;max-width:60vh;min-width:0;background:#141925;border-radius:2vh;padding:1.6vh 1.2vw 1.4vh;border:.5vh solid var(--c)}
+.hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2vh;font-size:2.6vh}
+.hd b{color:var(--c)}
+.ping{font-size:2.4vh;font-weight:800;color:#8b93a7}
+.ping.good{color:#34d399}.ping.mid{color:#fbbf24}.ping.bad{color:#f87171}
+.box{position:relative;width:100%;aspect-ratio:100/56}
+.box>*{position:absolute}
+.k{background:#222a3a;border-radius:calc(var(--u,6px)*1.4);color:#c9cfdd;display:flex;align-items:center;justify-content:center;font-size:calc(var(--u,6px)*2.6);font-weight:700}
+.k.on{background:var(--c);color:#fff;box-shadow:0 0 0 calc(var(--u,6px)*.5) #fff6,0 0 calc(var(--u,6px)*3) calc(var(--u,6px)*.6) var(--c)}
+.arm{border-radius:calc(var(--u,6px)*1)}
+.fb{border-radius:50%;font-size:calc(var(--u,6px)*5.2);background:var(--bc);color:#fff}
+.fb.on{background:var(--bc);filter:brightness(1.5);box-shadow:0 0 0 calc(var(--u,6px)*.5) #fff9,0 0 calc(var(--u,6px)*3) calc(var(--u,6px)*.8) var(--bc)}
+.pill{border-radius:99px;font-size:calc(var(--u,6px)*2.4);text-transform:uppercase;letter-spacing:.05em}
+.ring{aspect-ratio:1;border-radius:50%;border:calc(var(--u,6px)*.5) solid #39404f;background:#1a1f2b44}
+.knob{position:absolute;left:36%;top:36%;width:28%;height:28%;border-radius:50%;background:#4a5268}
+.ring.act{border-color:var(--c)}.ring.act .knob{background:var(--c)}
+.stats{margin-top:1.2vh;font-size:2.3vh;line-height:1.35;color:#aab0c0;text-align:center}
+.stats b{color:#fff;font-size:1.25em}
+.stats .big{font-size:3.6vh;color:#fff}
+.empty{font-size:3vh;color:#aab0c0;text-align:center}

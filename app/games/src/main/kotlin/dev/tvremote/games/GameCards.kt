@@ -25,6 +25,7 @@ class GameCards(
     private val startPlayers = LinearLayout(act).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; minimumHeight = act.dp(26) }
     private val chipDots = LinearLayout(act).apply { gravity = Gravity.CENTER_VERTICAL }
     private val pauseNote = act.label("", 18f, 0xFFAAB0C0.toInt()).apply { setPadding(0, act.dp(10), 0, 0) }
+    private val pingViews = HashMap<Int, MutableList<TextView>>()
     private lateinit var start: LinearLayout
     private lateinit var chip: LinearLayout
     private lateinit var pauseCard: LinearLayout
@@ -74,6 +75,14 @@ class GameCards(
         refresh()
     }
 
+    // each player's ping (the phone measures it, GameServer hears it) next to the slot dot: green under 30 ms, amber under 80, red above
+    private fun paint(v: TextView, ms: Int) {
+        v.text = if (ms < 0) "" else "$ms ms"
+        v.setTextColor(if (ms < 30) 0xFF34D399.toInt() else if (ms < 80) 0xFFFBBF24.toInt() else 0xFFF87171.toInt())
+    }
+    private fun pingLabel(p: Int, sp: Float) = act.label("", sp).apply { setPadding(act.dp(8), 0, act.dp(6), 0); pingViews.getOrPut(p) { ArrayList() }.add(this); paint(this, server.pingOf(p)) }
+    fun setPing(p: Int, ms: Int) { pingViews[p]?.forEach { paint(it, ms) } }
+
     fun setPlayers(l: List<Int>) { val flash = l.size != players.size; players = l; refresh(flash) }
 
     // The start card goes when a player joins or OK is pressed; then the chip with the dots stays 5 s.
@@ -81,10 +90,10 @@ class GameCards(
         if (startShown && players.isNotEmpty()) startShown = false
         start.visibility = if (startShown && !paused) View.VISIBLE else View.GONE
         pauseCard.visibility = if (paused) View.VISIBLE else View.GONE
-        startPlayers.removeAllViews(); chipDots.removeAllViews()
+        startPlayers.removeAllViews(); chipDots.removeAllViews(); pingViews.clear()
         players.forEach { p ->
-            startPlayers.addView(LinearLayout(act).apply { gravity = Gravity.CENTER; addView(act.dot(p, 14)); addView(act.label(act.getString(R.string.player_n, p), 18f)) })
-            chipDots.addView(act.dot(p, 12))
+            startPlayers.addView(LinearLayout(act).apply { gravity = Gravity.CENTER; addView(act.dot(p, 14)); addView(act.label(act.getString(R.string.player_n, p), 18f)); addView(pingLabel(p, 14f)) })
+            chipDots.addView(act.dot(p, 12)); chipDots.addView(pingLabel(p, 12f))
         }
         if (!startShown && !paused) { if (flash || chip.visibility != View.VISIBLE) flashChip() } else chip.visibility = View.GONE
     }

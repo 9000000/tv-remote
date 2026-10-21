@@ -43,7 +43,8 @@ class WebGameActivity : ComponentActivity() {
         "L2" to KeyEvent.KEYCODE_E, "R2" to KeyEvent.KEYCODE_R, "START" to KeyEvent.KEYCODE_ENTER, "SELECT" to KeyEvent.KEYCODE_SHIFT_LEFT,
     )
 
-    private fun originOf(u: String): String = try { val x = java.net.URI(u); "${x.scheme}://${x.host}:${x.port}" } catch (e: Exception) { "" }
+    // no ":-1" for a link without a port: that crashed the origin rule
+    private fun originOf(u: String): String = try { val x = java.net.URI(u); "${x.scheme}://${x.host}${if (x.port > 0) ":${x.port}" else ""}" } catch (e: Exception) { "" }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -93,10 +94,15 @@ class WebGameActivity : ComponentActivity() {
         server.clearLayouts(); server.setSystem(intent.getStringExtra("pad")?.takeIf { it.isNotEmpty() } ?: "web"); server.analog = true
         server.onAxis = { port, x, y -> runOnUiThread { axis(port, x, y) } }
         server.onKey = { port, action, code -> runOnUiThread { input(port, action == KeyEvent.ACTION_DOWN, nameOf[code] ?: return@runOnUiThread) } }
+        server.onKeyLat = { port, action, code, lat -> runOnUiThread { input(port, action == KeyEvent.ACTION_DOWN, nameOf[code] ?: return@runOnUiThread, lat) } }
+        server.onPing = { p, ms -> runOnUiThread { cards.setPing(p, ms); js("__tvpadIn('ping',$p,$ms)") } }   // the cards' labels and the page
+        for (p in 1..4) server.pingOf(p).let { if (it >= 0) js("__tvpadIn('ping',$p,$it)") }
         server.onText = { p, t -> runOnUiThread { js("__tvpadIn('text',$p,${JSONObject.quote(t)})") } }
         server.onPlayers = { l -> runOnUiThread { cards.setPlayers(l); diff(l) } }
         server.onAdded = { }
     }
+
+    override fun onPause() { if (::server.isInitialized) server.onKeyLat = null; super.onPause() }
 
     override fun onDestroy() {
         if (::web.isInitialized) { web.removeJavascriptInterface("TVPadNative"); web.destroy() }
@@ -123,14 +129,15 @@ class WebGameActivity : ComponentActivity() {
     }
 
     /** One pad button of player port+1: to the Gamepad API / tvpad, and for player 1 also as a key. */
-    private fun input(port: Int, down: Boolean, name: String) {
-        js("__tvpadIn('button',${port + 1},'$name',$down)")
+    private fun input(port: Int, down: Boolean, name: String, lat: Int = -1) {
+        js("__tvpadIn('button',${port + 1},'$name',$down,$lat)")
         if (port == 0) keyOf[name]?.let { web.dispatchKeyEvent(KeyEvent(if (down) KeyEvent.ACTION_DOWN else KeyEvent.ACTION_UP, it)) }
     }
 
     inner class Bridge {
         private fun ok() = pageOrigin == origin
         @JavascriptInterface fun players(): String = JSONArray(players).toString()
+        @JavascriptInterface fun ping(player: Int): Int = server.pingOf(player)
         @JavascriptInterface fun layout(player: Int, json: String) { if (ok()) server.setLayout(player, json) }
         @JavascriptInterface fun vibrate(player: Int, ms: Int) { if (ok()) server.vibrate(player, ms) }
         @JavascriptInterface fun say(player: Int, text: String) { if (ok()) server.say(player, text) }

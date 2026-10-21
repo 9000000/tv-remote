@@ -4,7 +4,10 @@ import android.content.Context
 import android.os.SystemClock
 import android.util.Base64
 import android.util.Log
+import android.view.InputDevice
+import android.view.KeyCharacterMap
 import android.view.KeyEvent
+import android.view.View
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.InputStream
@@ -29,6 +32,8 @@ class GameServer private constructor(private val ctx: Context) {
         var freedAt = 0L
         val held = HashSet<Int>()
         var dirs: Set<String> = emptySet()                 // the d-pad keys the virtual stick holds now (cores without analog)
+        @Volatile var ping = -1                            // the phone's own median round trip (ms), -1 = not measured yet
+        @Volatile var offset = Long.MIN_VALUE              // the TV's clock minus the phone's (ms), from the ping exchange
     }
 
     @Volatile var buttons: List<String> = listOf("A", "B", "START", "SELECT")   // the buttons the running system has: the page shows only those
@@ -38,8 +43,14 @@ class GameServer private constructor(private val ctx: Context) {
     @Volatile var system = "nes"; private set
     fun setSystem(id: String) { system = id; send(0, "{\"sys\":\"$id\"}") }
     @Volatile var webMode = false                          // a web game: any pad button is passed on (the game's layout decides which are shown)
-    @Volatile var inGame = false                           // the pad page offers "add game" only outside a game
+    /** The pad page offers "add game" only outside a game, and opens in navigate mode outside one (the phones are told when it changes). */
+    @Volatile var inGame = false
+        set(v) { val ch = field != v; field = v; if (ch) send(0, "{\"game\":$v}") }
     @Volatile var onKey: (port: Int, action: Int, keyCode: Int) -> Unit = { _, _, _ -> }
+    /** Like [onKey] for a phone's press, with the one-way delay the phone's time stamp gives (ms, -1 = unknown). Null = [onKey] alone. */
+    @Volatile var onKeyLat: ((port: Int, action: Int, keyCode: Int, latMs: Int) -> Unit)? = null
+    @Volatile var onPing: (player: Int, ms: Int) -> Unit = { _, _ -> }   // a phone's ping changed, player 1..4
+    fun pingOf(player: Int): Int = if (player in 1..MAX) slots[player - 1].ping else -1
     @Volatile var onPlayers: (List<Int>) -> Unit = {}      // slots (1..4) now in use, any thread
     @Volatile var onAdded: () -> Unit = {}                 // a game or a web link was added
     @Volatile var onText: (player: Int, text: String) -> Unit = { _, _ -> }   // a phone's text field (web games), player 1..4
@@ -55,12 +66,48 @@ class GameServer private constructor(private val ctx: Context) {
             try { server = ServerSocket(p).also { port = p }; break } catch (e: Exception) { }
         }
         val s = server ?: return Unit.also { Log.w(TAG, "no free port") }
+        (ctx as? android.app.Application)?.registerActivityLifecycleCallbacks(tracker)
         Log.i(TAG, "listening ${url()}")
         Thread({ while (!s.isClosed) try { val c = s.accept(); Thread({ serve(c) }, "pad-conn").apply { isDaemon = true }.start() } catch (e: Exception) { } }, "pad-accept")
             .apply { isDaemon = true }.start()
     }
 
+    /**
+     * Navigate mode: a phone's remote keys go to the TV Games screen in front. Android lets an app inject keys into itself only through the view tree
+     * (Instrumentation needs INJECT_EVENTS), so the key is dispatched to the resumed activity, and a D-pad key nobody used moves the focus like
+     * the system would (focusSearch).
+     */
+    @Volatile private var top: java.lang.ref.WeakReference<android.app.Activity>? = null
+    private val tracker = object : android.app.Application.ActivityLifecycleCallbacks {
+        override fun onActivityResumed(a: android.app.Activity) { top = java.lang.ref.WeakReference(a) }
+        override fun onActivityPaused(a: android.app.Activity) { if (top?.get() === a) top = null }
+        override fun onActivityCreated(a: android.app.Activity, b: android.os.Bundle?) {}
+        override fun onActivityStarted(a: android.app.Activity) {}
+        override fun onActivityStopped(a: android.app.Activity) {}
+        override fun onActivitySaveInstanceState(a: android.app.Activity, b: android.os.Bundle) {}
+        override fun onActivityDestroyed(a: android.app.Activity) {}
+    }
+
+    fun nav(name: String) {
+        if (name == "HOME") {
+            ctx.startActivity(android.content.Intent(ctx, LibraryActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP))
+            return
+        }
+        val code = NAV[name] ?: return
+        val a = top?.get() ?: return
+        a.runOnUiThread {
+            fun ev(act: Int) = SystemClock.uptimeMillis().let { KeyEvent(it, it, act, code, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0, 0, InputDevice.SOURCE_KEYBOARD) }
+            if (!a.dispatchKeyEvent(ev(KeyEvent.ACTION_DOWN)) && code in FOCUS) {
+                val dir = FOCUS.getValue(code)
+                val cur = a.currentFocus ?: a.window.decorView
+                (cur.focusSearch(dir) ?: cur).requestFocus(dir)
+            }
+            a.dispatchKeyEvent(ev(KeyEvent.ACTION_UP))
+        }
+    }
+
     fun stop() {
+        (ctx as? android.app.Application)?.unregisterActivityLifecycleCallbacks(tracker)
         try { server?.close() } catch (e: Exception) { }
         synchronized(slots) { slots.forEach { it.conn?.close() } }
     }
@@ -115,7 +162,7 @@ class GameServer private constructor(private val ctx: Context) {
             val s = slots[i]
             if (s.conn !== c) return                       // a reconnect already took the slot over
             s.held.toList().forEach { onKey(i, KeyEvent.ACTION_UP, it) }; s.held.clear()
-            s.conn = null; s.freedAt = SystemClock.uptimeMillis()
+            s.conn = null; s.freedAt = SystemClock.uptimeMillis(); s.ping = -1; s.offset = Long.MIN_VALUE
         }
         notifyPlayers()
     }
@@ -158,12 +205,20 @@ class GameServer private constructor(private val ctx: Context) {
         (now - before).forEach { key(i, true, it) }
     }
 
-    private fun key(i: Int, down: Boolean, name: String) {
+    /** The press's one-way delay: the TV's clock now minus the phone's time stamp moved onto the TV's clock. -1 = no stamp or no offset yet. */
+    private fun delay(i: Int, stamp: Long?): Int {
+        val off = slots[i].offset
+        if (stamp == null || off == Long.MIN_VALUE) return -1
+        return (System.currentTimeMillis() - (stamp + off)).coerceIn(0, 5000).toInt()
+    }
+
+    private fun key(i: Int, down: Boolean, name: String, stamp: Long? = null) {
         val code = KEYS[name] ?: return
         if (!webMode && name !in buttons && name !in DPAD && name !in CHOICE) return
         synchronized(slots) { if (down) slots[i].held.add(code) else slots[i].held.remove(code) }
         val t0 = System.nanoTime()
-        onKey(i, if (down) KeyEvent.ACTION_DOWN else KeyEvent.ACTION_UP, code)
+        val act = if (down) KeyEvent.ACTION_DOWN else KeyEvent.ACTION_UP
+        onKeyLat?.let { it(i, act, code, delay(i, stamp)) } ?: onKey(i, act, code)
         Log.d(TAG, "key p${i + 1} ${if (down) "d" else "u"} $name handled in ${(System.nanoTime() - t0) / 1000} us")
     }
 
@@ -291,10 +346,12 @@ class GameServer private constructor(private val ctx: Context) {
                                 c.text("{\"slot\":${i + 1},\"game\":$inGame,\"btns\":[${buttons.joinToString(",") { "\"$it\"" }}],\"sys\":\"$system\"}")
                                 (synchronized(slots) { layouts[i] ?: defaultLayout })?.let { c.text("{\"layout\":$it}") }
                             }
-                            msg.startsWith("p ") -> c.text(msg)
+                            msg.startsWith("p ") -> c.text(msg.trim() + " " + System.currentTimeMillis())          // the phone's stamp back + the TV's clock
+                            slot >= 0 && msg.startsWith("r ") -> msg.split(' ').let { if (it.size == 3) report(slot, it[1].toIntOrNull(), it[2].toLongOrNull()) }
+                            msg.startsWith("n ") -> nav(msg.substring(2).trim())
                             slot >= 0 && msg.startsWith("a ") -> msg.split(' ').let { if (it.size == 3) axis(slot, (it[1].toIntOrNull() ?: 0) / 100f, (it[2].toIntOrNull() ?: 0) / 100f) }
                             slot >= 0 && msg.startsWith("t ") -> onText(slot + 1, msg.substring(2).take(200))
-                            slot >= 0 && msg.length >= 3 && (msg[0] == 'd' || msg[0] == 'u') -> key(slot, msg[0] == 'd', msg.substring(2).trim())
+                            slot >= 0 && msg.length >= 3 && (msg[0] == 'd' || msg[0] == 'u') -> msg.substring(2).trim().split(' ').let { key(slot, msg[0] == 'd', it[0], it.getOrNull(1)?.toLongOrNull()) }
                         }
                     }
                 }
@@ -302,6 +359,13 @@ class GameServer private constructor(private val ctx: Context) {
         } catch (e: Exception) { }
         if (slot >= 0) drop(slot, c)
         c.close()
+    }
+
+    /** A phone's own measure: median round trip and clock offset. */
+    private fun report(i: Int, ping: Int?, offset: Long?) {
+        if (ping == null || ping !in 0..10_000) return
+        slots[i].ping = ping; if (offset != null) slots[i].offset = offset
+        onPing(i + 1, ping)
     }
 
     private fun readFully(i: InputStream, b: ByteArray) { var n = 0; while (n < b.size) { val r = i.read(b, n, b.size - n); if (r < 0) throw java.io.EOFException(); n += r } }
@@ -327,6 +391,10 @@ class GameServer private constructor(private val ctx: Context) {
             if (a > 22.5 && a < 157.5) r.add("DOWN"); if (a < -22.5 && a > -157.5) r.add("UP")
             return r
         }
+        private val NAV = mapOf("UP" to KeyEvent.KEYCODE_DPAD_UP, "DOWN" to KeyEvent.KEYCODE_DPAD_DOWN, "LEFT" to KeyEvent.KEYCODE_DPAD_LEFT,
+            "RIGHT" to KeyEvent.KEYCODE_DPAD_RIGHT, "OK" to KeyEvent.KEYCODE_DPAD_CENTER, "BACK" to KeyEvent.KEYCODE_BACK)
+        private val FOCUS = mapOf(KeyEvent.KEYCODE_DPAD_UP to View.FOCUS_UP, KeyEvent.KEYCODE_DPAD_DOWN to View.FOCUS_DOWN,
+            KeyEvent.KEYCODE_DPAD_LEFT to View.FOCUS_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT to View.FOCUS_RIGHT)
         private val CHOICE = setOf("C", "D", "L2", "R2")                   // answer buttons of web games (A and B are the pad's own)
         /** One token per app start: a link from an earlier start no longer works. */
         private val TOKEN: String = ByteArray(12).also { SecureRandom().nextBytes(it) }.joinToString("") { "%02x".format(it) }
