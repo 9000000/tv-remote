@@ -278,7 +278,7 @@ class HomeActivity : Activity() {
         val rowH = if (rows > 0) grid.getChildAt(0).height else 0
         if (noWidgets && rows > 0 && rowH == 0) return                  // new rows, not laid out yet: the next layout asks again
         val want = if (!noWidgets) dp(36) else if (rows < 2 || rowH == 0 || scroll.height == 0) dp(48)
-                   else maxOf(dp(48), scroll.height - rowH * 3 / 2 - head.bottom)
+                   else maxOf(dp(48), scroll.height - (rowH + dp(20) + rowH / 2) - head.bottom)   // row 1, the gap, half of row 2
         if (Math.abs(want - lp.topMargin) > 1) { lp.topMargin = want; grid.requestLayout() }
     }
 
@@ -436,7 +436,7 @@ class HomeActivity : Activity() {
         cells.forEachIndexed { i, v ->
             if (i % cols == 0) {
                 row = Flat(this).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false; clipToPadding = false }
-                grid.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(10) })
+                grid.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = gap })   // as far apart as the tiles are side by side
             }
             row!!.addView(v, LinearLayout.LayoutParams(-2, -2).apply { if (i % cols > 0) leftMargin = gap })
         }
@@ -813,14 +813,13 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
         name.apply {
             text = if (banner != null) label else ""                  // a tile without a banner already shows its name inside
             textSize = 13f; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER
-            alpha = 0f; setPadding(0, dp(9), 0, dp(4)); setShadowLayer(dp(4).toFloat(), 0f, 0f, 0x99000000.toInt())
+            alpha = 0f; setPadding(dp(8), dp(18), dp(8), dp(6)); setShadowLayer(dp(4).toFloat(), 0f, 0f, 0x99000000.toInt())
+            // on the picture's bottom edge over a soft shade: the name takes no room under the tile, so rows sit as far apart as tiles do
+            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x00000000, 0xB0000000.toInt()))
         }
-        addView(name, LayoutParams(w, -2))
+        if (banner != null) face.addView(name, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
         background = ColorDrawable(Color.TRANSPARENT)
     }
-
-    /** The name line's height under the card. */
-    fun nameHeight(): Int { name.measure(0, 0); return name.measuredHeight }
 
     /**
      * Focus lifts the card (a springy rise, a soft shadow, the picture a touch larger inside it, a shine passing over) and rings it;
