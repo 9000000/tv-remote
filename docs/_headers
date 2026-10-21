@@ -7,3 +7,15 @@
 
 /lib/*
   Cache-Control: public, max-age=2592000
+
+/home/*.jpg
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+/launchers/*.jpg
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+/games/img/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+/games/roms/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
