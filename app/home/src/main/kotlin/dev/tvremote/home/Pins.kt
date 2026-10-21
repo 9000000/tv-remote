@@ -42,6 +42,7 @@ object Pins {
     fun picture(c: Context, a: App) {
         val s = a.pin as ShortcutInfo
         val d = try { la(c)!!.getShortcutIconDrawable(s, c.resources.displayMetrics.densityDpi) } catch (e: Exception) { null }
+            ?: try { c.packageManager.getApplicationIcon(s.`package`) } catch (e: Exception) { null }   // the system lost its bitmap ("Icon file not found"): the app's own icon, not the hidden apps' eye
         if (d != null && wide(d.intrinsicWidth, d.intrinsicHeight) && d.intrinsicWidth > 0) a.banner = d else a.icon = d
     }
 
