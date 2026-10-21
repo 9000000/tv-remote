@@ -21,6 +21,7 @@ import org.json.JSONObject
  *   lang    TV Home's words: "" the TV's own language, or one of [LANGS] whatever the TV is set to
  *   anim    motion effects (a focused app lifts, rows glide, the screen fades in); off = instant, with a ring. TV Home also
  *           treats the system's "animator duration scale 0" as off
+ *   focus   how the focused app shows: "glass" (a pane gliding from tile to tile) or "ring" (a blue ring on the tile)
  *   widgets the cards between the clock and the favourites, in their order ([WIDGETS]): "system" (memory, storage, network,
  *           ADB), "usage" (the most used apps of the week and the day's app limits, asked of TV Setup: [USAGE]),
  *           "calendar" (the month, the lunar day under every solar day),
@@ -165,6 +166,7 @@ object HomeConfig {
             .put("lang", o.optString("lang").takeIf { it in LANGS } ?: "")
             .put("greet", o.optBoolean("greet", true))
             .put("anim", o.optBoolean("anim", true))
+            .put("focus", o.optString("focus").takeIf { it == "ring" } ?: "glass")
             .put("dream", o.optBoolean("dream", false))
             .put("note", o.optString("note").replace(Regex("\\s+"), " ").trim().take(NOTE_MAX))
             .put("place", o.optString("place").replace(Regex("\\s+"), " ").trim().take(PLACE_MAX))

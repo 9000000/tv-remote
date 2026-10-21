@@ -54,6 +54,8 @@ class HomeActivity : Activity() {
     private val bg = Executors.newSingleThreadExecutor()
     private lateinit var backdrop: Backdrop
     private lateinit var scroll: ScrollView
+    private lateinit var content: FrameLayout
+    private lateinit var glass: Glass
     private lateinit var clock: TextClock
     private lateinit var dateLine: TextView
     private lateinit var netPill: Pill
@@ -122,7 +124,12 @@ class HomeActivity : Activity() {
             orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false
             setPadding(dp(48), dp(34), dp(48), dp(48))
         }
-        scroll.addView(col, FrameLayout.LayoutParams(-1, -2))
+        content = FrameLayout(this).apply { clipChildren = false; clipToPadding = false }
+        content.addView(col, FrameLayout.LayoutParams(-1, -2))
+        glass = Glass(this, ::dp)                                     // over the tiles, in what scrolls: a scroll carries it with its tile
+        content.addView(glass, FrameLayout.LayoutParams(0, 0))
+        content.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> (currentFocus as? Tile)?.let { if (glass.placed) it.glassOn(false) } }
+        scroll.addView(content, FrameLayout.LayoutParams(-1, -2))
         root.addView(scroll, FrameLayout.LayoutParams(-1, -1))
 
         // the clock and the day on the left, the three buttons on the right
@@ -304,6 +311,9 @@ class HomeActivity : Activity() {
     }
 
     /** Scrolls to [y] gliding (one animation at a time, the last target wins); at once when motion is off. */
+    /** The glass onto this tile, when the focus is glass ([Motion.glass]); [glide] false: there at once. */
+    private fun Tile.glassOn(glide: Boolean) { if (Motion.glass) glass.to(content, pane, Tile.GROW, corner, glide && Motion.on) else glass.hide() }
+
     private fun scrollToY(y: Int) {
         scrollAnim?.cancel()
         if (!Motion.on) { scroll.scrollTo(0, y); return }
@@ -402,6 +412,7 @@ class HomeActivity : Activity() {
     private fun show() {
         val keep = (currentFocus as? Tile)?.app?.pkg
         Motion.read(this, conf)
+        if (!Motion.glass) glass.hide()
         wall()
         clockAndDay()
         widgetsRead()
@@ -518,12 +529,14 @@ class HomeActivity : Activity() {
 
     /** The D-pad, the menu key and the focus ring of a tile; the hidden apps' tile too, or focus on it showed nowhere. */
     private fun moves(t: Tile, inDock: Boolean, menu: (() -> Unit)?) = t.apply {
+        nudged = { x, y -> if (Motion.glass) glass.nudge(x, y) }
         setOnKeyListener { v, code, e ->
             if (code == KeyEvent.KEYCODE_MENU && menu != null) { if (e.action == KeyEvent.ACTION_UP) menu(); e.action == KeyEvent.ACTION_UP }
             else if (e.action == KeyEvent.ACTION_DOWN) step(v as Tile, code, inDock) else false
         }
         onFocusChangeListener = View.OnFocusChangeListener { v, f ->
             (v as Tile).focus(f)
+            if (f) v.glassOn(true) else v.post { if (currentFocus !is Tile) glass.hide() }   // to the buttons or a panel: the pane goes
             if (f) {
                 if (!stepping) wantCol = -1                           // focus came another way: the column to keep starts over here
                 gridFocus(!inDock)
@@ -761,12 +774,16 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
     private var shownMark: Badges.Mark? = null
     private val lift: Float
     private val across: Float
+    val pane: View get() = face                                     // where the glass goes
+    val corner: Float
+    var nudged: ((Float, Float) -> Unit)? = null                   // the glass leans with the card
 
     init {
         orientation = VERTICAL; isFocusable = true; isClickable = true; isLongClickable = true
         clipChildren = false; clipToPadding = false
         val h = w * 9 / 16
         val r = dp(10).toFloat()
+        corner = r
         lift = dp(14).toFloat(); across = w.toFloat()
         val banner = app?.banner
         face.background = GradientDrawable().apply { cornerRadius = r; setColor(if (banner != null) 0xFF1E2230.toInt() else shade(app?.pkg ?: "")) }
@@ -821,26 +838,29 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
         card.animate().cancel(); ring.animate().cancel(); name.animate().cancel(); content.animate().cancel(); shine.animate().cancel()
         if (!Motion.on) {
             card.scaleX = 1f; card.scaleY = 1f; card.translationZ = 0f; content.scaleX = 1f; content.scaleY = 1f
-            ring.alpha = if (on) 1f else 0f; name.alpha = if (on) 1f else 0f; name.translationY = 0f; shine.alpha = 0f
+            ring.alpha = if (on && !Motion.glass) 1f else 0f; name.alpha = if (on) 1f else 0f; name.translationY = 0f; shine.alpha = 0f
             return
         }
         // in on a spring, out on a plain glide a little slower: the next tile's rise leads, the last one sinks behind it
-        val s = if (on) 1.12f else 1f
+        val s = if (on) GROW else 1f
         val t = if (on) 520L else 300L
         val ip = if (on) Motion.spring else Motion.glide
         card.translationX = 0f; card.translationY = 0f
         card.animate().scaleX(s).scaleY(s).translationZ(if (on) lift else 0f).setDuration(t).setInterpolator(ip).withLayer().start()
         content.animate().scaleX(if (on) 1.05f else 1f).scaleY(if (on) 1.05f else 1f).setDuration(t).setInterpolator(ip).start()
-        ring.animate().alpha(if (on) 1f else 0f).setDuration(if (on) 200L else 160L).setInterpolator(Motion.glide).start()
+        ring.animate().alpha(if (on && !Motion.glass) 1f else 0f).setDuration(if (on) 200L else 160L).setInterpolator(Motion.glide).start()
         name.animate().alpha(if (on) 1f else 0f).translationY(if (on) 0f else -lift / 3).setDuration(if (on) 360L else 200L).setInterpolator(Motion.glide).start()
         // the gloss: light from above that settles on the card as it rises, rather than a sweep on every move (busy when stepping fast)
         shine.animate().alpha(if (on) 1f else 0f).translationY(if (on) 0f else -lift).setDuration(if (on) 420L else 200L).setInterpolator(Motion.glide).start()
     }
 
+    companion object { const val GROW = 1.12f }                      // a focused card's size
+
     /** Nothing that way: the card leans toward it and wobbles back, so the press was felt (Apple TV does the same). */
     fun nudge(dx: Int, dy: Int) {
         if (!Motion.on) return
         val px = across / 40f
+        nudged?.invoke(dx * px * GROW, dy * px * GROW)
         card.animate().cancel()
         card.animate().translationX(dx * px).translationY(dy * px).setDuration(80).setInterpolator(Motion.glide).withEndAction {
             card.animate().translationX(0f).translationY(0f).setDuration(460).setInterpolator(Motion.bounce).start()
@@ -938,6 +958,7 @@ class Spring(private val damping: Float) : android.animation.TimeInterpolator {
 /** The motion TV Home uses: on from its setting, off when the system's animator duration scale is 0 (Settings, "remove animations"). */
 object Motion {
     @JvmField var on = true
+    @JvmField var glass = true                                        // the focus is a pane of glass gliding between tiles ([Glass]); false: a blue ring on each
     val lift = PathInterpolator(0.34f, 1.35f, 0.64f, 1f)              // overshoots a little then settles: a spring
     val spring = Spring(0.62f)                                        // a real damped spring: rises fast, passes ~6 %, settles (Apple TV's focus)
     val bounce = Spring(0.35f)                                        // looser: the nudge at an edge wobbles back
@@ -946,6 +967,7 @@ object Motion {
     fun read(c: Context, conf: JSONObject) {
         val scale = try { Settings.Global.getFloat(c.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) } catch (e: Exception) { 1f }
         on = conf.optBoolean("anim", true) && scale > 0f
+        glass = conf.optString("focus", "glass") != "ring"
     }
 
     /** A button a little larger while focused. */
