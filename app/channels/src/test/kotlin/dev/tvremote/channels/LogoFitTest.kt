@@ -2,6 +2,7 @@ package dev.tvremote.channels
 
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -39,5 +40,20 @@ class LogoFitTest {
         assertEquals(sq.toDouble(), wide.toDouble(), sq * 0.25)
         assertTrue(LogoFit.scale(400, 100, box[0], box[1]) * 400 <= box[0])           // never past the box
         assertTrue(LogoFit.scale(10, 400, box[0], box[1]) * 400 <= box[1])
+    }
+
+    private fun logo(w: Int, h: Int, bg: Int, fill: Int) = img(w, h, bg, fill, 20, 20, w - 20, h - 20)
+
+    @Test fun lightLogos() {
+        assertTrue(LogoFit.isLight(logo(100, 60, 0, 0xFFFFFFFF.toInt()), 100, 60))             // white on transparent
+        assertTrue(LogoFit.isLight(logo(100, 60, 0, 0xFFE6E6E6.toInt()), 100, 60))
+    }
+
+    @Test fun darkAndColourfulLogosKeepTheLightTile() {
+        assertFalse(LogoFit.isLight(logo(100, 60, 0, 0xFF222222.toInt()), 100, 60))
+        assertFalse(LogoFit.isLight(logo(100, 60, 0, 0xFFCC0000.toInt()), 100, 60))
+        assertFalse(LogoFit.isLight(logo(100, 60, 0, 0xFF1E88E5.toInt()), 100, 60))
+        assertFalse(LogoFit.isLight(logo(100, 60, 0xFFFFFFFF.toInt(), 0xFF000000.toInt()), 100, 60))   // dark on its own white plate
+        assertFalse(LogoFit.isLight(logo(100, 60, 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt()), 100, 60))   // a plate with nothing: the plate shows
     }
 }

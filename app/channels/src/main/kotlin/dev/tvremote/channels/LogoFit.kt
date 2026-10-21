@@ -49,6 +49,25 @@ object LogoFit {
     }
 
     /**
+     * True for a light logo (white or pale lettering, drawn for a dark background): its opaque pixels weigh a mean luminance over
+     * 0.75, or most of them are near white. A logo on its own opaque plate (all four corners opaque) is never light: the plate shows.
+     */
+    fun isLight(px: IntArray, w: Int, h: Int): Boolean {
+        if (w < 2 || h < 2 || px.size < w * h) return false
+        if (listOf(px[0], px[w - 1], px[(h - 1) * w], px[h * w - 1]).all { (it ushr 24) >= 200 }) return false
+        var sum = 0.0; var wt = 0.0; var white = 0; var n = 0
+        for (p in px) {
+            val a = p ushr 24
+            if (a < 40) continue
+            val l = (0.2126 * ((p shr 16) and 255) + 0.7152 * ((p shr 8) and 255) + 0.0722 * (p and 255)) / 255
+            sum += l * a; wt += a; n++
+            if (l > 0.9) white++
+        }
+        if (n < 16) return false
+        return sum / wt > 0.75 || white > n * 0.6
+    }
+
+    /**
      * How much to scale a [bw] x [bh] logo inside a [boxW] x [boxH] box: as large as fits, but no more than [AREA] of the box's
      * area, so a wide wordmark (fills the width, little height) is not lighter than a square icon (fills the height).
      */

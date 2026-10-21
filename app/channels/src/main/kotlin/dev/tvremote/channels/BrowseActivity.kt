@@ -564,6 +564,8 @@ class BrowseActivity : Activity() {
                 typeface = android.graphics.Typeface.DEFAULT_BOLD
             }, FrameLayout.LayoutParams(-1, -1))
             tile.addView(LogoView(c).apply { tag = "logo" }, FrameLayout.LayoutParams(-1, -1))
+        private val lightTile by lazy { Ui.round(Ui.TILE, Ui.dp(this@BrowseActivity, 12)) }   // lazy: the activity has no resources yet while its fields are built
+        private val darkTile by lazy { Ui.round(0xFF3A4350.toInt(), Ui.dp(this@BrowseActivity, 12)) }   // lighter than the card, so its edge shows
             tile.addView(ImageView(c).apply { tag = "star"; setImageResource(R.drawable.ic_star); imageTintList = android.content.res.ColorStateList.valueOf(0xFFF9AB00.toInt()) },
                 FrameLayout.LayoutParams(d(18), d(18), Gravity.TOP or Gravity.END).apply { topMargin = d(6); rightMargin = d(6) })
             tile.addView(Ui.text(c, "", 9f, Color.WHITE, true).apply {                // a corner: logos sit in the middle
@@ -580,7 +582,11 @@ class BrowseActivity : Activity() {
             val ch = shown[i]; val c = ch.first()
             h.name.text = c.name
             h.letters.text = Ui.initials(c.name)
-            Logos.into(h.logo, c.logo, 280) { got -> h.letters.visibility = if (got) View.INVISIBLE else View.VISIBLE }
+            Logos.into(h.logo, c.logo, 280) { got ->
+                h.letters.visibility = if (got) View.INVISIBLE else View.VISIBLE
+                val dark = got && Logos.isLight(c.logo)                // pale lettering would vanish on the light tile
+                (h.logo.parent as View).background = if (dark) darkTile else lightTile
+            }
             line(h, ch)
             h.q.text = c.quality.removeSuffix("p").let { if (it.isEmpty()) "" else if (it.toIntOrNull()?.let { n -> n >= 720 } == true) if (it == "2160") "4K" else "HD" else "SD" }
             Ui.show(h.q, c.quality.isNotEmpty())

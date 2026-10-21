@@ -104,18 +104,27 @@ object Logos {
         }
     }
 
-    private const val VER = "v2_"                                     // v2: the border cut; older files (v1, no prefix) are deleted
-    private fun file(url: String) = File(dir, VER + Integer.toHexString(url.hashCode()) + "_" + url.length)
+    private const val VER = "v3_"                                     // v3: + light logos flagged (an "L" ends the name); older files are deleted
+    private val light = java.util.concurrent.ConcurrentHashMap<String, Boolean>()   // url -> a light logo: its tile is dark
+    private fun file(url: String, l: Boolean = false) = File(dir, VER + Integer.toHexString(url.hashCode()) + "_" + url.length + if (l) "L" else "")
+
+    /** Whether [url]'s logo is light (pale lettering): the card then shows it on a dark tile. Known once the logo is in. */
+    fun isLight(url: String) = light.containsKey(url)
 
     private fun fromDisk(url: String): Bitmap? {
-        val f = file(url).takeIf { it.exists() } ?: return null
+        val l = file(url, true).exists()
+        val f = file(url, l).takeIf { it.exists() } ?: return null
+        if (l) light[url] = true
         return BitmapFactory.decodeFile(f.path).also { if (it != null) f.setLastModified(System.currentTimeMillis()) else f.delete() }
     }
 
     private fun fromNet(url: String): Bitmap? {
         val b = load(url, SIDE) ?: return null
         val out = cut(b)
-        try { file(url).outputStream().use { out.compress(Bitmap.CompressFormat.PNG, 100, it) } } catch (e: Throwable) {}
+        val px = IntArray(out.width * out.height).also { out.getPixels(it, 0, out.width, 0, 0, out.width, out.height) }
+        val l = LogoFit.isLight(px, out.width, out.height)
+        if (l) light[url] = true
+        try { file(url, l).outputStream().use { out.compress(Bitmap.CompressFormat.PNG, 100, it) } } catch (e: Throwable) {}
         return out
     }
 
