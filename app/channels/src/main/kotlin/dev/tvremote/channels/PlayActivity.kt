@@ -59,6 +59,7 @@ class PlayActivity : Activity() {
     private var streams: List<Channel> = emptyList()                  // the channel on screen, its streams
     private var stream = 0
     private var asProgressive = false
+    private var retried = false
     private var before = -1
     private var typed = ""
     private var videoW = 16; private var videoH = 9; private var ratio = 1f
@@ -163,7 +164,7 @@ class PlayActivity : Activity() {
         if (n != at) before = at
         at = n
         streams = all[n].sortedBy { if (Store.alive(this, it.url) == false) 1 else 0 }   // known-dead streams last
-        stream = 0; asProgressive = false
+        stream = 0; asProgressive = false; retried = false
         Store.setLast(this, streams.first().id)
         showInfo()
         (sideList.adapter as SideList).notifyDataSetChanged()
@@ -210,13 +211,15 @@ class PlayActivity : Activity() {
             e.errorCode == PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED ||
             e.errorCode == PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED
         if (notHls && !asProgressive) { asProgressive = true; start(); return }     // a plain TS / MP4 behind a URL with no extension
+        val code = (e.cause as? HttpDataSource.InvalidResponseCodeException)?.responseCode
+        if (!retried && code != null && code != 403 && code != 451) { retried = true; start(); return }   // a redirect's fresh token can 404 once (HTV7 on a BRAVIA)
         next(e)
     }
 
     private fun next(e: PlaybackException?) {
         main.removeCallbacks(slow)
         streams.getOrNull(stream)?.let { Store.setAlive(this, it.url, false) }
-        stream++; asProgressive = false
+        stream++; asProgressive = false; retried = false
         if (stream < streams.size) { start(); return }
         player?.stop()
         spin.visibility = View.GONE
