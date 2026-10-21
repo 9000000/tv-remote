@@ -72,7 +72,7 @@ app/home/                TV Home, the launcher: plain Views, no :shared (it woul
                          into :shared, :desktop and :home; the clients' side is `core/ontv/Home.kt` + `/api/home` + `js/home.js`.
                          In the gallery it is kind "self": its APK is the latest release's `tv-home.apk`, pinned by SHA256SUMS
 app/channels/            TV Channels: BrowseActivity (countries, categories, favourites, groups, search), PlayActivity (ExoPlayer, the
-                         lineup, a dead stream falls to the next), Catalog (iptv-org's m3u, kept a day), Store (prefs), Find (a name -> a
+                         lineup, a dead stream falls to the next), ChannelsReceiver + Edit (favourites and groups edited from the clients over ADB: DUMP-protected, whole state by channel id, `Edit` cleans it; a country's channels go to a file the shell reads: `core/ontv/Channels.kt` `manage`, `/api/channels/manage`, `js/chan_manage.js`), Catalog (iptv-org's m3u, kept a day), Store (prefs), Find (a name -> a
                          channel), Pins (links and pinned shortcuts), Providers (more sources than iptv-org, e.g. VieON: each kind is
                          code here, their addresses / headers / on-off in `docs/channels/providers.json`, signed by `dev/sign_providers.py`
                          with the launcher list's key, read from the site, else GitHub, else the APK's packed copy; Ed25519 from

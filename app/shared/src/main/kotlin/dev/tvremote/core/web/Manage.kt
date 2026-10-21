@@ -108,6 +108,10 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "home/photo/drop" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Home.drop(link.get(), r.json().optString("id")))
                 "home/update" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Home.update(link.get(), dir, r.lang))
                 "channels" -> if (!post) return HttpServer.Response.json(dev.tvremote.core.ontv.Channels.state { sh(it) })   // TV Channels: on the TV, and a newer one
+                "channels/manage" -> {                                // favourites and groups (the page's dialog): read, or the whole state saved
+                    val c = dev.tvremote.core.ontv.Channels
+                    return HttpServer.Response.json(c.manage({ sh(it) }, if (post) r.json() else null, r.q("cc").ifEmpty { null }, r.q("fresh") == "1", r.q("countries") == "1"))
+                }
                 "channels/install" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Channels.install(link.get(), dir, r.lang))
                 "channels/open" -> if (post) {                        // a channel by its name; TV Channels finds it (or shows its search)
                     if (!dev.tvremote.core.ontv.Channels.open({ sh(it) }, r.json().optString("q"))) throw IOException("channels:missing")

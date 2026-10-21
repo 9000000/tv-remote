@@ -1,4 +1,5 @@
 package dev.tvremote.core.ontv
+import dev.tvremote.core.B64
 import dev.tvremote.core.adb.Adb
 import dev.tvremote.update.Release
 import org.json.JSONObject
@@ -50,6 +51,31 @@ object Channels {
         try { adb.shell("cmd package compile -m speed -f $PKG >/dev/null 2>&1", 120000) } catch (x: IOException) { }   // a cold start on a slow chip, as LauncherInstall
         checked = null
         return state(sh)
+    }
+
+    /**
+     * Favourites and groups, through a broadcast only the shell can send (ChannelsReceiver in app/channels), like [Home.call].
+     * [change]: the whole state by channel id ({favs: [id], groups: [{id, name, ch: [id]}]}), saved first; [cc]: that country's
+     * channels too (fresh: read again from the network); [countries]: the countries' names. The answer is the receiver's
+     * (favs, groups, country, list, countries) with `installed`; a TV Channels from before the receiver has `receiver: false`.
+     */
+    @Throws(IOException::class)
+    fun manage(sh: (String) -> String, change: JSONObject?, cc: String? = null, fresh: Boolean = false, countries: Boolean = false): JSONObject {
+        require(cc == null || cc.matches(Regex("[a-zA-Z]{2}"))) { "country" }
+        val arg = (if (change == null) "" else " --es set " + B64.encode(change.toString().toByteArray(Charsets.UTF_8))) +
+            (if (cc == null) "" else " --es list $cc" + if (fresh) " --ez fresh true" else "") + (if (countries) " --ez countries true" else "")
+        val out = sh("am broadcast --include-stopped-packages -n $PKG/.ChannelsReceiver$arg 2>&1")
+        val m = Regex("data=\"([A-Za-z0-9+/=]+)\"").find(out)
+            ?: return state(sh).put("receiver", false)                // not there, or from before the receiver
+        val r = JSONObject(String(B64.decode(m.groupValues[1]), Charsets.UTF_8))
+        if (r.has("error")) throw IOException(r.optString("error"))
+        r.put("installed", true).put("receiver", true)
+        r.optJSONObject("list")?.let { l ->                           // the channels came as a file (too big for the answer): read here, so the page gets one reply
+            val path = l.optString("path")
+            if (path.matches(Regex("/[A-Za-z0-9_./-]+\\.json"))) l.put("channels", org.json.JSONArray(sh("cat $path").trim().ifEmpty { "[]" })).remove("path")
+        }
+        latest(r.optString("version"))?.let { r.put("latest", it.version) }
+        return r
     }
 
     /** The link that opens [words] (a channel's name as said: "vtv1", "an giang 1") in TV Channels; empty words open its list. */

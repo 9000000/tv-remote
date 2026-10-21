@@ -35,5 +35,7 @@
                 <data android:scheme="tvchannels" android:host="find" />
             </intent-filter>
         </activity>
+        <!-- favourites and groups for a phone or computer over ADB (core/ontv/Channels.kt): only the shell holds DUMP -->
+        <receiver android:name=".ChannelsReceiver" android:exported="true" android:permission="android.permission.DUMP" />
     </application>
 </manifest>

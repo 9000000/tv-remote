@@ -153,6 +153,7 @@ Thêm 2 app cho TV, miễn phí, không quảng cáo. Cài và chỉnh từ app 
 - Kênh từ danh sách công khai của iptv-org theo nước, thể loại, cộng các kênh miễn phí của VieON, có lịch phát sóng (kênh VN).
 - Kênh yêu thích, nhóm tự tạo, ghim kênh ra màn hình chính. Kênh hỏng thì tự sang nguồn khác.
 - Mở kênh theo tên từ điện thoại: gõ hoặc nói "mở kênh VTV1".
+- Quản lý yêu thích và nhóm ngay từ điện thoại, máy tính hoặc trang web của TV (*Quản lý kênh*: tìm, ☆, nhóm, sắp xếp), không phải bấm D-pad.
 - Cài từ điện thoại / máy tính (tab TV → 📺 *Kênh TV* → Cài).
 
 | App | Mã Downloader | Tệp |

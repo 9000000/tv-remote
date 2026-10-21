@@ -49,6 +49,11 @@ object Store {
         l.forEach { g -> a.put(JSONObject().put("id", g.id).put("name", g.name).put("ch", JSONArray().apply { g.channels.forEach { put(write(it)) } })) }
         p(c).edit().putString("groups", a.toString()).apply()
     }
+    /** The favourites and the groups set at once (ChannelsReceiver: a phone or computer edited them). */
+    fun replace(c: Context, favs: List<Channel>, groups: List<Group>) {
+        p(c).edit().putString("favs", JSONArray().apply { favs.forEach { put(write(it)) } }.toString()).apply()
+        saveGroups(c, groups)
+    }
     fun group(c: Context, id: String): Group? = groups(c).firstOrNull { it.id == id }
 
     /** The channels of [gid]: the favourites or one of the groups. */
