@@ -117,3 +117,18 @@ body.lobby #pad,body.lobby #nav{padding-bottom:calc(max(12px,env(safe-area-inset
 #count{position:fixed;inset:0;z-index:7;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0b0d12d9;pointer-events:none}
 #countLbl{font-size:18px;color:#aab0c0}
 #countN{font-size:min(36vh,40vw);line-height:1;color:#fff;text-shadow:0 0 30px var(--glow)}
+
+/* pointer layout: a touchpad that moves a crosshair on the TV, Fire / Alt / Recenter beside it */
+#ptr{display:none;position:absolute;inset:0;padding:56px max(16px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));gap:12px;grid-template-columns:1fr minmax(150px,30vw);grid-template-rows:minmax(0,1fr)}
+body.ptr #ptr{display:grid}
+body.ptr #pad,body.ptr #stick,body.ptr #choices,body.ptr #textrow{display:none!important}
+#tpad{border-radius:20px;background:linear-gradient(135deg,#171c29,#10141d);border:2px solid #2a3142;display:flex;align-items:center;justify-content:center;touch-action:none}
+#tpad.on{border-color:var(--c);box-shadow:0 0 0 3px var(--glow) inset}
+#tpad span{color:#5b6579;font-size:15px;pointer-events:none}
+#pbtn{display:flex;flex-direction:column;gap:12px}
+.pb{flex:1;min-height:56px;border:0;border-radius:18px;background:var(--key);color:#dfe4f1;font:800 20px system-ui}
+#pF{flex:2.2;background:var(--c);color:#fff;font-size:26px}
+.pb.rc{flex:.7;font-size:15px;font-weight:700}
+.pb.on{background:#fff2;color:#fff;transform:scale(.96);box-shadow:0 0 0 3px var(--glow),0 0 18px var(--glow)}
+#pF.on{background:var(--c);filter:brightness(1.35)}
+@media (orientation:portrait){#ptr{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto;padding-top:60px}#pbtn{flex-direction:row;height:96px}#pF{flex:2.2}.pb.rc{flex:1}}

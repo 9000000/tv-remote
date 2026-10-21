@@ -45,6 +45,7 @@
       emit('button', { player: p, btn: a, down: !!b, lat: c >= 0 ? c : null, at: performance.now() });
     } else if (kind === 'axis') { const g = pads[p - 1]; if (g) { g.axes[0] = a; g.axes[1] = b; g.stick = a !== 0 || b !== 0; g.timestamp = performance.now(); }
       emit('axis', { player: p, x: a, y: b });
+    } else if (kind === 'pointer') { emit('pointer', a === 'c' ? { player: p, center: true } : { player: p, dx: a, dy: b });   // a pad with the pointer layout: relative moves, or its Recenter
     } else if (kind === 'text') emit('text', { player: p, text: a });
   };
 })();

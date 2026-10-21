@@ -51,6 +51,8 @@ class GameServer private constructor(private val ctx: Context) {
     @Volatile var onKey: (port: Int, action: Int, keyCode: Int) -> Unit = { _, _, _ -> }
     /** Like [onKey] for a phone's press, with the one-way delay the phone's time stamp gives (ms, -1 = unknown). Null = [onKey] alone. */
     @Volatile var onKeyLat: ((port: Int, action: Int, keyCode: Int, latMs: Int) -> Unit)? = null
+    /** A phone with the pointer layout: relative move of its crosshair (pad px, already speeded up), or [center] = its Recenter. Web games only; ignored in the lobby. */
+    @Volatile var onPointer: (player: Int, dx: Int, dy: Int, center: Boolean) -> Unit = { _, _, _, _ -> }
     @Volatile var onPing: (player: Int, ms: Int) -> Unit = { _, _ -> }   // a phone's ping changed, player 1..4
     fun pingOf(player: Int): Int = if (player in 1..MAX) slots[player - 1].ping else -1
     @Volatile var onPlayers: (List<Int>) -> Unit = {}      // slots (1..4) now in use, any thread
@@ -424,6 +426,8 @@ class GameServer private constructor(private val ctx: Context) {
                             }
                             msg.startsWith("p ") -> c.text(msg.trim() + " " + System.currentTimeMillis())          // the phone's stamp back + the TV's clock
                             slot >= 0 && msg.startsWith("r ") -> msg.split(' ').let { if (it.size == 3) report(slot, it[1].toIntOrNull(), it[2].toLongOrNull()) }
+                            slot >= 0 && !lobby && msg.startsWith("m ") -> msg.split(' ').let { if (it.size == 3) onPointer(slot + 1, (it[1].toIntOrNull() ?: 0).coerceIn(-400, 400), (it[2].toIntOrNull() ?: 0).coerceIn(-400, 400), false) }
+                            slot >= 0 && !lobby && msg == "pc" -> onPointer(slot + 1, 0, 0, true)
                             slot >= 0 && msg.startsWith("ready ") -> if (lobby) { slots[slot].ready = msg.trim().endsWith("1"); Log.i(TAG, "ready p${slot + 1} ${slots[slot].ready}"); onReady() }
                             slot >= 0 && msg.startsWith("name") -> rename(slot, msg.substring(4))
                             msg.startsWith("n ") -> nav(msg.substring(2).trim())

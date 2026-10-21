@@ -135,7 +135,7 @@ class WebGameActivity : ComponentActivity() {
     /** The picture the library tile has (same cache key), for the lobby. */
     private fun lobbyArt(link: String, url: String) = when (link) {
         "builtin:padtest" -> Thumbs.Src("w:$link", asset = "thumbs/padtest.jpg")
-        else -> if (link.startsWith("builtin:")) null else Thumbs.Src("w:$link", page = url)
+        else -> if (link.startsWith("builtin:")) null else Catalog.entryOf(this, null, link)?.optString("img")?.takeIf { it.isNotEmpty() }?.let { Thumbs.Src("w:$link", img = it) } ?: Thumbs.Src("w:$link", page = url)   // as the library tile
     }
 
     override fun onResume() {
@@ -149,6 +149,7 @@ class WebGameActivity : ComponentActivity() {
         server.onKeyLat = { port, action, code, lat -> runOnUiThread { input(port, action == KeyEvent.ACTION_DOWN, nameOf[code] ?: return@runOnUiThread, lat) } }
         server.onPing = { p, ms -> runOnUiThread { cards.setPing(p, ms); js("__tvpadIn('ping',$p,$ms)") } }   // the cards' labels and the page
         for (p in 1..4) server.pingOf(p).let { if (it >= 0) js("__tvpadIn('ping',$p,$it)") }
+        server.onPointer = { p, dx, dy, c -> runOnUiThread { js(if (c) "__tvpadIn('pointer',$p,'c')" else "__tvpadIn('pointer',$p,$dx,$dy)") } }   // the pad's pointer layout (touchpad)
         server.onText = { p, t -> runOnUiThread { js("__tvpadIn('text',$p,${JSONObject.quote(t)})") } }
         server.onPlayers = { l -> runOnUiThread { cards.setPlayers(l); diff(l) } }
         server.playersNow().let { cards.setPlayers(it); diff(it) }                         // phones that were in before this game started
