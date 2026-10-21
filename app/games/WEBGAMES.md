@@ -19,6 +19,7 @@ A web game is a page the TV's WebView loads full screen (`WebGameActivity`). Pho
    - `tvpad.joinUrl()` -> the link phones open to join (the QR's), `tvpad.qr(px)` -> that QR as a PNG data URL (no smoothing when scaled). Show it while `players()` is empty.
    - Phones keep their slot and name across reconnects and TV Games restarts (the link's code is saved; "Đổi mã kết nối" in Add game rotates it, old phones then ask to scan again). If the TV's IP changes, phones must scan again.
    - `tvpad.layout(player | 'all', {buttons:[..], choices:['A','B','C','D'], text:true, dpad:false})` sets what the phone shows (`null` resets).
+   - **Pointer (aiming).** `tvpad.layout(p, {pointer:true, buttons:['A']})` shows a touchpad + Fire (A) + optional Alt (B) + Recenter on the phone. A finger drag sends `tvpad.on('pointer', fn)` events `{player, dx, dy}` (relative pad pixels, already speeded up by finger speed; sent at most every 16 ms, summed) or `{player, center:true}` (Recenter). Keep the crosshair yourself and scale dx/dy (about x2.4 on a 1280 canvas); Fire arrives as a normal `button` A. The gyroscope is NOT used: browsers hide it on a plain-http page (`isSecureContext` is false on the LAN), so the touchpad is the one way. `docs/games/web/_lib/pointer.js` (`Ptr`) does all of this on top of Kit (crosshair per slot colour, mouse for player 1 off the TV).
    - `tvpad.vibrate(player, ms)`, `tvpad.say(player, text)` (a line on the phone).
 
 ## Lobby (before the game starts)
