@@ -1,0 +1,143 @@
+package dev.tvremote.games
+
+import android.os.Bundle
+import android.view.InputDevice
+import android.view.KeyEvent
+import android.view.MotionEvent
+import android.view.Gravity
+import android.view.View
+import android.widget.FrameLayout
+import android.widget.LinearLayout
+import androidx.activity.ComponentActivity
+import com.swordfish.libretrodroid.GLRetroView
+import com.swordfish.libretrodroid.GLRetroViewData
+import com.swordfish.libretrodroid.Variable
+import java.io.File
+
+// One console game: the TV remote is player 1's directions (OK = A, Enter = Start), phones come in through GameServer, physical pads
+// take the next free slot by device id. The cards (start, pause) are GameCards.
+class GameActivity : ComponentActivity() {
+    private lateinit var retro: GLRetroView
+    private lateinit var server: GameServer
+    private lateinit var cards: GameCards
+    private lateinit var sys: Systems.Sys
+    private lateinit var file: File
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        file = File(intent.getStringExtra("path") ?: return finish())
+        sys = Systems.byExt(this, file.extension) ?: return finish()
+        if (Cores.path(this, sys) == null) download() else start()
+    }
+
+    private var cancelled = false
+    private var downloading = false
+
+    /** The core is not here yet (the catalog has it): fetch it with a progress card, Back cancels. */
+    private fun download() {
+        downloading = true; cancelled = false
+        val title = label(getString(R.string.core_title, sys.label), 28f)
+        val pct = label("0 %", 44f)
+        val hint = label(getString(R.string.core_hint), 18f, 0xFFAAB0C0.toInt())
+        val bar = android.widget.ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply { max = 100 }
+        setContentView(LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setBackgroundColor(0xFF0B0D12.toInt())
+            addView(title); addView(pct); addView(bar, LinearLayout.LayoutParams(dp(520), dp(16)).apply { topMargin = dp(16); bottomMargin = dp(16) }); addView(hint)
+        })
+        Thread {
+            val err = Cores.fetch(this, sys, { p -> runOnUiThread { pct.text = "$p %"; bar.progress = p } }, { cancelled })
+            runOnUiThread {
+                if (isDestroyed) return@runOnUiThread
+                downloading = false
+                if (err == null) start() else failed(if (err.isEmpty()) getString(R.string.core_cancelled) else err)
+            }
+        }.start()
+    }
+
+    /** Every way the core can fail ends here: the reason and two buttons, Back goes to the library. */
+    private fun failed(reason: String) {
+        val retry = menuButton(getString(R.string.retry), 300, 56, 20f) { download() }
+        val back = menuButton(getString(R.string.back), 300, 56, 20f) { finish() }
+        setContentView(LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setBackgroundColor(0xFF0B0D12.toInt())
+            addView(label(getString(R.string.core_title, sys.label), 28f))
+            addView(label(reason, 22f, 0xFFFCA5A5.toInt()).apply { setPadding(dp(60), dp(12), dp(60), dp(20)) })
+            addView(retry); addView(back)
+        })
+        back.requestFocus()
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() { if (downloading) cancelled = true else super.onBackPressed() }
+
+    private fun start() {
+        val data = GLRetroViewData(this).apply {
+            coreFilePath = Cores.path(this@GameActivity, sys)!!
+            gameFilePath = file.path
+            systemDirectory = filesDir.path
+            savesDirectory = filesDir.path
+            // fceumm cannot tell a PAL-only homebrew from NTSC by itself: Region reads the ROM, never its name
+            if (sys.id == "nes") variables = arrayOf(Variable("fceumm_region", Region.of(this@GameActivity, file)))
+        }
+        retro = GLRetroView(this, data)
+        lifecycle.addObserver(retro)                                  // GLRetroView is a LifecycleObserver; it also needs onCreate
+        retro.onCreate(this)
+        val root = FrameLayout(this).apply { addView(retro) }
+        setContentView(root)
+        server = GameServer.acquire(this)
+        cards = GameCards(this, root, server, Systems.clean(file.name), null,
+            onPause = { retro.frameSpeed = if (it) 0 else 1 }, onSave = { quickSave() }, onLoad = { quickLoad() }, onQuit = { finish() })
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!::server.isInitialized) return
+        server.inGame = true
+        server.buttons = sys.buttons
+        server.clearLayouts(); server.webMode = false; server.setSystem(sys.pad); server.analog = sys.analog
+        server.onAxis = { port, x, y -> retro.sendMotionEvent(GLRetroView.MOTION_SOURCE_ANALOG_LEFT, x, y, port) }
+        server.onKey = { port, action, code -> retro.sendKeyEvent(action, code, port) }
+        server.onPlayers = { l -> runOnUiThread { cards.setPlayers(l) } }
+        server.onAdded = { }
+    }
+
+    override fun onDestroy() { cancelled = true; if (::server.isInitialized) GameServer.release(); super.onDestroy() }
+
+    private fun stateFile() = File(Systems.savesDir(this), file.nameWithoutExtension + ".state")
+    private fun quickSave(): String = try { stateFile().writeBytes(retro.serializeState()); getString(R.string.saved) } catch (e: Exception) { getString(R.string.cant_open) }
+    private fun quickLoad(): String? {
+        val f = stateFile()
+        if (!f.exists()) return getString(R.string.no_save)
+        return try { retro.unserializeState(f.readBytes()); null } catch (e: Exception) { getString(R.string.cant_open) }
+    }
+
+    private fun isPad(ev: KeyEvent) = ev.source and (InputDevice.SOURCE_GAMEPAD or InputDevice.SOURCE_JOYSTICK) != 0
+
+    override fun dispatchKeyEvent(ev: KeyEvent): Boolean {
+        if (!::cards.isInitialized) return super.dispatchKeyEvent(ev)   // still fetching the core
+        if (cards.key(ev)) return true
+        if (cards.paused) return super.dispatchKeyEvent(ev)          // the card's buttons take the D-pad and OK
+        if (ev.repeatCount > 0) return true
+        if (isPad(ev)) {                                              // a physical pad: its own slot
+            val port = server.padPort(ev.deviceId)
+            if (port >= 0) retro.sendKeyEvent(ev.action, ev.keyCode, port)
+            return true
+        }
+        val code = when (ev.keyCode) {                                // the TV remote is player 1
+            KeyEvent.KEYCODE_DPAD_CENTER -> KeyEvent.KEYCODE_BUTTON_A
+            KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> KeyEvent.KEYCODE_BUTTON_START
+            else -> ev.keyCode
+        }
+        retro.sendKeyEvent(ev.action, code, 0)
+        return true
+    }
+
+    override fun dispatchGenericMotionEvent(ev: MotionEvent): Boolean {
+        if (ev.source and InputDevice.SOURCE_JOYSTICK == 0 || cards.paused) return super.dispatchGenericMotionEvent(ev)
+        val port = server.padPort(ev.deviceId)
+        if (port < 0) return true
+        retro.sendMotionEvent(GLRetroView.MOTION_SOURCE_DPAD, ev.getAxisValue(MotionEvent.AXIS_HAT_X), ev.getAxisValue(MotionEvent.AXIS_HAT_Y), port)
+        retro.sendMotionEvent(GLRetroView.MOTION_SOURCE_ANALOG_LEFT, ev.getAxisValue(MotionEvent.AXIS_X), ev.getAxisValue(MotionEvent.AXIS_Y), port)
+        return true
+    }
+}

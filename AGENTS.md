@@ -16,6 +16,7 @@ names (README, code comments, the site; Vietnamese in brackets):
 | **TV web page** (Web của TV) | `app/tv` `RemoteService` | `tv` | the web UI the TV app serves on port 8765, for any browser (iPhone included), after a 6-digit pairing code |
 | **TV Home** | `app/home` | | the project's own launcher (`dev.tvremote.home`), first in the launcher gallery; set up from every client over ADB |
 | **TV Channels** | `app/channels` | | iptv-org's free channels on the TV (`dev.tvremote.channels`); knows nothing of the other apps: they reach it only by its links (`tvchannels://play/<id>`, `group/<id>`, `find/<name>`); installed and opened from every client over ADB (`core/ontv/Channels.kt`, `js/channels.js`) |
+| **TV Games** | `app/games` | | retro games (libretro cores, GPL-3: `app/games/LICENSE`) and web games on the TV, played with phones as pads (`dev.tvremote.games`): its own server on 8780 + a QR, no ADB and no TV Setup needed; not yet installed from the clients |
 
 What each can do, and diagrams of how they connect: README "Three apps and a web page" / README.vi "Ba app và một trang web".
 Keep that table true when a feature lands on only some of them.
@@ -77,6 +78,11 @@ app/channels/            TV Channels: BrowseActivity (countries, categories, fav
                          with the launcher list's key, read from the site, else GitHub, else the APK's packed copy; Ed25519 from
                          `app/shared/src/sign`), Guide + GuideList (the programme guide from the providers with a "guide": TV360 by
                          name, VieON by its id; now / next on the player and the cards, the day's list). AndroidX (Media3, RecyclerView) here only; no :shared
+app/games/               TV Games: LibraryActivity (the games, Suggestions from the catalog), GameActivity (LibretroDroid, save / load),
+                         WebGameActivity (a web game in a WebView: keys, the Gamepad API and `window.tvpad`, WEBGAMES.md), GameServer (8780:
+                         the pad page `assets/pad`, uploads, WebSocket slots 1-4), Systems (extension -> system -> core, pad layout), Catalog +
+                         Cores (`docs/games/games.json`, signed by `dev/sign_games.py` with the launcher list's key: cores downloaded by sha256 from
+                         the `cores-1` release made by `dev/cores.sh`, suggested web games, free homebrew; fceumm packed as the offline fallback)
 app/gradle/              the Gradle build of everything Kotlin (settings point at ../shared, ../android, ../tv, ../home, ../desktop); open it in Android Studio
 app/desktop/             the computer app on the shared Kotlin core (JVM, no adb/Python/ffmpeg), the "pc" core: Server.kt
                          (the routes only the computer has) + Manage.kt; Pass.kt (a key per start, in the link the window and browser open: tests pass `TVR_PASS` and `?k=`); Updater.kt (updates itself from releases, swapped in by a script once it quits); Window.kt shows the page in the system's web view
@@ -149,9 +155,10 @@ that into one question with an Update / Install TV Setup button (`needSetup()` i
 
 ## Versions and releases
 
-Five numbers, each bumped only when its part changes: `VERSION` (every release; the tag and the computer app), `app/android/VERSION`, `app/tv/VERSION`,
+Six numbers, each bumped only when its part changes: `VERSION` (every release; the tag and the computer app), `app/android/VERSION`, `app/tv/VERSION`,
 `app/home/VERSION` (TV Home: `app/home` or `app/shared/src/home` changed; its key `app/home/signing.jks`, backed up by `dev/keys.sh`),
-`app/channels/VERSION` (TV Channels: `app/channels` changed; `app/channels/signing.jks`, also in `dev/keys.sh`).
+`app/channels/VERSION` (TV Channels: `app/channels` changed; `app/channels/signing.jks`, also in `dev/keys.sh`),
+`app/games/VERSION` (TV Games: `app/games` or its packed `docs/games/games.json` changed; `app/games/signing.jks`, also in `dev/keys.sh`).
 
 The apps are an alpha: the numbers stay 0.x until the user calls a release 1.0.0. Patch (the default) for fixes and small changes,
 `BUMP=minor` for a release with new features, `BUMP=major` only when the user says so. The numbers restarted at 0.1.0 in October 2026

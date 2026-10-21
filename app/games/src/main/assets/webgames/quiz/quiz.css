@@ -1,0 +1,26 @@
+:root{--bg:#0b0d12;--card:#161b27;--ink:#f1f4fb;--dim:#9aa5bd;--p1:#3b82f6;--p2:#ef4444;--p3:#22c55e;--p4:#eab308;--a:#e5484d;--b:#2f6fe0;--c:#e0a100;--d:#2fa05a}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:600 2.2vw/1.25 system-ui,sans-serif;overflow:hidden;cursor:none}
+#stage{position:absolute;left:4vw;right:4vw;top:4vh;bottom:13vh;display:flex;flex-direction:column;justify-content:center}
+h1{font-size:6.5vw;margin:0 0 1.5vh;text-align:center}
+.sub{font-size:2.6vw;color:var(--dim);text-align:center;margin:.5vh 0}
+.who{display:flex;gap:2vw;justify-content:center;margin:2vh 0 1vh;flex-wrap:wrap;min-height:6vh}
+.chip{display:flex;align-items:center;gap:1vw;padding:1vh 2vw;border-radius:99px;background:var(--card);font-size:3vw}
+.dot{width:2.4vw;height:2.4vw;border-radius:50%;background:var(--pc);flex:none}
+.dot.off{background:transparent;border:.3vw solid var(--pc)}
+.q{font-size:4.2vw;line-height:1.15;text-align:center;margin:0 0 2.4vh}
+.num{font-size:2.2vw;color:var(--dim);text-align:center;margin-bottom:1vh}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:2vh 2vw}
+.opt{display:flex;align-items:center;gap:1.6vw;padding:1.6vh 1.8vw;border-radius:1.6vw;background:var(--card);font-size:3.4vw;min-height:11vh;border:.4vw solid transparent;transition:opacity .2s}
+.opt b{flex:none;width:5.2vw;height:5.2vw;border-radius:1.2vw;display:grid;place-items:center;color:#fff;font-size:3.4vw;background:var(--oc)}
+.opt[data-k=A]{--oc:var(--a)}.opt[data-k=B]{--oc:var(--b)}.opt[data-k=C]{--oc:var(--c)}.opt[data-k=D]{--oc:var(--d)}
+.opt.right{border-color:#fff;background:#1d3a28}.opt.wrong{opacity:.35}
+.opt .got{margin-left:auto;display:flex;gap:.5vw}
+.bar{height:1.6vh;border-radius:99px;background:#232a3b;margin:2.4vh 0 0;overflow:hidden}.bar i{display:block;height:100%;background:#f1f4fb;width:100%}
+.timer{position:absolute;right:0;top:0;font-size:4vw;color:var(--dim)}
+.rank{display:flex;flex-direction:column;gap:1.6vh;margin:3vh auto;width:60vw}
+.row{display:flex;align-items:center;gap:1.6vw;padding:1.6vh 2vw;border-radius:1.6vw;background:var(--card);font-size:3.4vw}
+.row.win{background:#3a2f0b;border:.4vw solid #eab308}.row span:last-child{margin-left:auto}
+#board{position:absolute;left:4vw;right:4vw;bottom:2.5vh;height:10vh;display:flex;gap:1.6vw;justify-content:center;align-items:center}
+#board .chip{font-size:2.6vw}
+.plus{color:#4ade80}.minus{color:#f87171}

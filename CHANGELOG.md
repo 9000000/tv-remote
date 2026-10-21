@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- App mới **TV Games** (`tv-games.apk`): chơi game retro (NES; SNES, GBA, PS1 tải core khi cần) và game web trên TV, **điện thoại là tay cầm**: quét QR trên TV bằng trình duyệt, tối đa 4 người, không cần ADB hay TV Setup. Tay cầm đổi theo hệ máy (D-pad hoặc cần xoay, X Y A B, △ ○ ✕ □, vai L/R), nút sáng + rung khi bấm, không zoom / cuộn. Thêm game từ điện thoại (file hoặc link game web), lưu nhanh / tải lại, game đố vui mẫu, tay cầm Bluetooth. Danh sách core, game gợi ý và game homebrew miễn phí đọc từ site (có chữ ký), cập nhật không cần ra app mới.
 - TV Home: thẻ **Đồng hồ kim** (mặt tròn, kim giây chạy mượt, vẽ chỉ khi đang hiện trên màn hình) với 4 kiểu mặt: Cổ điển, Sáng, Tối giản, La Mã. Mỗi thẻ có thể có nhiều kiểu: chọn bằng các nút dưới tên thẻ trong hộp TV Home (cài đặt `wstyle`).
 - TV Home dùng font riêng (Inter, đủ dấu tiếng Việt): TV nào cũng hiện chữ giống nhau, không theo font của hãng. Thẻ âm lịch ghi gọn "12 tháng 9" kèm tên năm, hình trăng đêm nay, và hai cột "3 ngày tới Rằm · 108 ngày tới Tết" (trước bị xuống dòng, trống bên phải).
 - TV Home: sửa âm lịch lệch một ngày ở khoảng 2% số tháng (vd. tháng 2 nhuận 2023 bắt đầu 22/3, tháng 7 năm 2026 bắt đầu 13/8): một dấu cộng/trừ sai trong công thức tính trăng non.
@@ -18,6 +19,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Bảo trì ban đêm: mỗi đêm 2-5 giờ sáng, khi TV ở chế độ chờ và không phát gì, app TV dọn cache của mọi app, biên dịch lại vài app dùng nhiều nhất (mở nhanh hơn buổi sáng) và tắt các tiến trình nền; màn hình bật lên là dừng ngay. Tab Sức khỏe có một dòng kết quả, vd. "Đêm qua: dọn 1,2 GB, tối ưu 6 app".
 
 **English**
+- New app **TV Games** (`tv-games.apk`): retro games (NES; SNES, GBA, PS1 cores fetched when needed) and web games on the TV, with **phones as pads**: scan the TV's QR in a browser, up to 4 players, no ADB or TV Setup needed. The pad follows the system (D-pad or stick, X Y A B, △ ○ ✕ □, L/R shoulders), buttons light up and buzz, nothing zooms or scrolls. Add games from the phone (files or a web game's link), quick save / load, a sample quiz, Bluetooth pads. The cores, suggested games and free homebrew come from a signed list on the site, updated without a new app.
 - TV Home: an **Analog clock** card (a round face, a smooth second hand, drawn only while on screen) with four looks: Classic, Light, Minimal, Roman. Cards can have several looks: pick one with the chips under the card's name in the TV Home dialog (setting `wstyle`).
 - TV Home has its own font (Inter, full Vietnamese): the same letters on every TV, not the brand's font. The lunar card reads short ("Lunar 12/9") with the year's name, tonight's moon, and two columns "3 days to full moon · 108 days to Tết" (the line wrapped and left the right empty).
 - TV Home: lunar dates were a day off in about 2% of months (e.g. the leap 2nd month of 2023 starts 22/3, the 7th month of 2026 on 13/8): a flipped sign in the new moon formula.

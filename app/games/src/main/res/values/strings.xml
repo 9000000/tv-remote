@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TV Games</string>
+    <string name="scan_play">Scan to play</string>
+    <string name="press_ok">Press OK to play alone</string>
+    <string name="player_n">Player %1$d ✓</string>
+    <string name="chip">📱 Scan to join</string>
+    <string name="paused">Paused</string>
+    <string name="resume">Resume</string>
+    <string name="quick_save">Quick save</string>
+    <string name="quick_load">Quick load</string>
+    <string name="quit">Quit</string>
+    <string name="saved">Saved</string>
+    <string name="loaded">Loaded</string>
+    <string name="no_save">No save yet</string>
+    <string name="lib_title">Games</string>
+    <string name="add_game">Add game</string>
+    <string name="scan_add">Scan to add games</string>
+    <string name="empty_hint">Or copy them with the Files tab of TV Remote, into Android/data/dev.tvremote.games/files/roms</string>
+    <string name="cant_open">Could not open this game</string>
+    <string name="quiz_name">Quiz</string>
+    <string name="runs">Game page: %1$s</string>
+    <string name="press_ok_web">Press OK to hide this</string>
+    <string name="core_none">No core for this device</string>
+    <string name="core_net">Could not download the core</string>
+    <string name="core_bad">The downloaded core did not match its checksum, not used</string>
+    <string name="core_title">Getting the %1$s core</string>
+    <string name="core_hint">Back to cancel</string>
+    <string name="suggest">Suggestions</string>
+    <string name="get_rom">Get %1$s</string>
+    <string name="getting">Downloading…</string>
+    <string name="rom_bad">Checksum mismatch, not saved</string>
+    <string name="hide_hint">Hold OK to hide</string>
+    <string name="retry">Retry</string>
+    <string name="back">Back</string>
+    <string name="core_cancelled">Cancelled</string>
+</resources>

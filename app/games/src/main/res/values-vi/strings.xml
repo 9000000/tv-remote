@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TV Games</string>
+    <string name="scan_play">Quét để chơi</string>
+    <string name="press_ok">Bấm OK để chơi một mình</string>
+    <string name="player_n">Người chơi %1$d ✓</string>
+    <string name="chip">📱 Quét để vào</string>
+    <string name="paused">Tạm dừng</string>
+    <string name="resume">Tiếp tục</string>
+    <string name="quick_save">Lưu nhanh</string>
+    <string name="quick_load">Tải lại</string>
+    <string name="quit">Thoát</string>
+    <string name="saved">Đã lưu</string>
+    <string name="loaded">Đã tải</string>
+    <string name="no_save">Chưa có bản lưu</string>
+    <string name="lib_title">Trò chơi</string>
+    <string name="add_game">Thêm game</string>
+    <string name="scan_add">Quét để thêm game</string>
+    <string name="empty_hint">Hoặc chép bằng tab Tệp của TV Remote vào Android/data/dev.tvremote.games/files/roms</string>
+    <string name="cant_open">Không mở được game này</string>
+    <string name="quiz_name">Đố vui</string>
+    <string name="runs">Trang game: %1$s</string>
+    <string name="press_ok_web">Nhấn OK để ẩn bảng này</string>
+    <string name="core_none">Không có core cho thiết bị này</string>
+    <string name="core_net">Không tải được core</string>
+    <string name="core_bad">Core tải về không khớp mã kiểm tra, không dùng</string>
+    <string name="core_title">Đang tải core %1$s</string>
+    <string name="core_hint">Bấm Back để hủy</string>
+    <string name="suggest">Gợi ý</string>
+    <string name="get_rom">Tải %1$s</string>
+    <string name="getting">Đang tải…</string>
+    <string name="rom_bad">Sai mã kiểm tra, không lưu</string>
+    <string name="hide_hint">Giữ OK để ẩn</string>
+    <string name="retry">Thử lại</string>
+    <string name="back">Quay lại</string>
+    <string name="core_cancelled">Đã hủy</string>
+</resources>

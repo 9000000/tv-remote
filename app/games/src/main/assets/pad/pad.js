@@ -1,0 +1,226 @@
+'use strict';
+const K = new URLSearchParams(location.search).get('k') || '';
+const VI = (navigator.language || '').toLowerCase().startsWith('vi');
+const W = VI
+  ? { p: 'Người chơi', c: 'Đang kết nối…', f: 'Hết chỗ chơi', h: 'Rung', a: 'Thêm game', s: 'Gửi', k: 'Cần xoay thay D-pad', t: 'Thêm vào Màn hình chính để chơi toàn màn hình' }
+  : { p: 'Player', c: 'Connecting…', f: 'Room is full', h: 'Haptics', a: 'Add game', s: 'Send', k: 'Stick instead of D-pad', t: 'Add to Home Screen to play fullscreen' };
+const COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#eab308'];
+const $ = (s) => document.querySelector(s);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+let cid = store.get('tvg-cid') || '';
+if (!cid) { cid = Math.random().toString(36).slice(2, 10) + Date.now().toString(36); store.set('tvg-cid', cid); }
+$('#lblHaptic').textContent = W.h; $('#lblAdd').textContent = W.a; $('#tipText').textContent = W.t;
+$('#send').textContent = W.s; $('#lblStick').textContent = W.k;
+$('#add').href = 'add?k=' + encodeURIComponent(K);
+
+// ---- haptics: vibrate() where there is one, the iOS 17.4+ checkbox-switch tick elsewhere
+let haptics = store.get('tvg-haptic') !== '0';
+const iosTick = !('vibrate' in navigator) && typeof CSS !== 'undefined' && CSS.supports && CSS.supports('-webkit-touch-callout', 'none');
+function buzz(ms) {
+  if (!haptics) return;
+  if ('vibrate' in navigator) navigator.vibrate(ms);
+  else if (iosTick) { try { $('#ios').click(); } catch (e) {} }
+}
+function setHaptic(on) { haptics = on; store.set('tvg-haptic', on ? '1' : '0'); $('#sw').classList.toggle('on', on); }
+setHaptic(haptics);
+
+// ---- connection
+let ws = null, retry = 400, layout = null, sysName = 'nes';
+
+// What the TV is running decides the pad: nes / snes / gba / ps (a system's `pad` in Systems.kt) or web (the look of ps).
+// A web game may then change it (tvpad.layout): {choices:[..]} four big answer buttons, {text:true} a field + Send,
+// {buttons:[..]} only these, {dpad:false} no D-pad / stick. null = the usual one.
+const SYS = {
+  nes:  { stick: false, face: 'pair',    sh: [[], []],                    mid: ['SELECT', 'START'] },
+  snes: { stick: false, face: 'diamond', sh: [['L'], ['R']],              mid: ['SELECT', 'START'] },
+  gba:  { stick: false, face: 'pair',    sh: [['L'], ['R']],              mid: ['SELECT', 'START'] },
+  ps:   { stick: true,  face: 'diamond', sh: [['L2', 'L'], ['R2', 'R']],  mid: ['SELECT', 'START'] },
+};
+SYS.web = SYS.ps;
+const FACE = { pair: ['B', 'A'], diamond: ['X', 'A', 'B', 'Y'] };
+const SKIN = {                                                // face colours, per look
+  snes: { X: '#3b6fe0', Y: '#2fa05a', A: '#e5484d', B: '#e0a100' },
+  ps: { X: '#2fa05a', Y: '#d65aa8', A: '#e5484d', B: '#3b6fe0' },
+};
+const GLYPH = { ps: { X: '△', Y: '□', A: '○', B: '✕', L: 'L1', R: 'R1' } };
+const look = () => (sysName === 'web' ? 'ps' : SYS[sysName] ? sysName : 'ps');
+let stickOn = false;
+const stickKey = () => 'tvg-stick-' + look();
+function wantStick() { const v = store.get(stickKey()); return v == null ? SYS[look()].stick : v === '1'; }
+function mkBtn(cls, b) {
+  const e = document.createElement('button'); e.className = cls; e.dataset.b = b;
+  e.textContent = (GLYPH[look()] && GLYPH[look()][b]) || { SELECT: 'Select', START: 'Start' }[b] || b;
+  const c = SKIN[look()] && SKIN[look()][b]; if (c && cls.includes('fb')) e.style.setProperty('--bc', c);
+  return e;
+}
+function relayout() {
+  const l = layout || {}, base = SYS[look()];
+  const ch = Array.isArray(l.choices) && l.choices.length ? l.choices.filter((x) => 'ABCD'.includes(x)) : null;
+  $('#choices').hidden = !ch; $('#textrow').hidden = !l.text;
+  $('#pad').classList.toggle('hid', !!ch); $('#pad').classList.toggle('txt', !!l.text);
+  document.querySelectorAll('#choices [data-b]').forEach((el) => { el.hidden = !ch || !ch.includes(el.dataset.b); });
+  const ok = (b) => !Array.isArray(l.buttons) || l.buttons.includes(b);
+  const fill = (sel, cls, names) => { const el = $(sel); el.replaceChildren(...names.filter(ok).map((b) => mkBtn(cls, b))); };
+  fill('#face', 'btn fb', FACE[base.face]); $('#face').className = base.face;
+  fill('#shl', 'btn sb', base.sh[0]); fill('#shr', 'btn sb', base.sh[1]); fill('#mid', 'btn pill', base.mid);
+  stickOn = wantStick() && l.dpad !== false;
+  $('#dpad').classList.toggle('off', stickOn || l.dpad === false);
+  $('#sw2').classList.toggle('on', wantStick());
+  placeStick(); releaseAll();
+}
+// ---- the floating stick: a ring that appears where the thumb lands (left half in landscape, upper half in portrait)
+const stk = $('#stick'), knob = stk.querySelector('.knob');
+let SR = 56, sRest = { x: 0, y: 0 }, sId = null, sOrg = null, lastA = '0 0', lastT = 0, pend = null;
+const portrait = () => matchMedia('(orientation:portrait)').matches;
+function placeStick() {
+  stk.hidden = !stickOn; if (!stickOn) return;
+  const r = $('#left').getBoundingClientRect(); SR = Math.max(40, Math.min(64, Math.round(r.width * 0.4)));
+  sRest = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  stk.style.width = stk.style.height = SR * 2 + 'px'; moveStick(sRest.x, sRest.y, 0, 0); stk.style.opacity = sId == null ? '.55' : '1';
+}
+function moveStick(cx, cy, dx, dy) {
+  stk.style.left = cx - SR + 'px'; stk.style.top = cy - SR + 'px';
+  knob.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+}
+function sendAxis(ix, iy, force) {
+  const v = ix + ' ' + iy; if (v === lastA) return;
+  const now = performance.now();
+  if (!force && now - lastT < 16) { clearTimeout(pend); pend = setTimeout(() => sendAxis(ix, iy, true), 16 - (now - lastT)); return; }
+  clearTimeout(pend); lastA = v; lastT = now; send('a ' + v);
+}
+function stickStart(t) { sId = t.identifier; sOrg = { x: t.clientX, y: t.clientY }; stk.classList.add('on'); stk.style.opacity = '1'; buzz(8); moveStick(sOrg.x, sOrg.y, 0, 0); }
+function stickMove(t) {
+  let dx = t.clientX - sOrg.x, dy = t.clientY - sOrg.y; const d = Math.hypot(dx, dy);
+  if (d > SR) { dx *= SR / d; dy *= SR / d; }
+  moveStick(sOrg.x, sOrg.y, dx, dy); sendAxis(Math.round(dx / SR * 100), Math.round(dy / SR * 100));
+}
+function stickEnd() { if (sId == null) return; sId = null; stk.classList.remove('on'); sendAxis(0, 0, true); placeStick(); }
+window.addEventListener('resize', () => setTimeout(placeStick, 50));
+function say(t) { const e = $('#say'); e.textContent = t; e.hidden = !t; clearTimeout(say.t); if (t) say.t = setTimeout(() => { e.hidden = true; }, 6000); }
+const held = new Set();
+function send(s) { if (ws && ws.readyState === 1) ws.send(s); }
+function show(slot) {
+  const who = $('#who');
+  if (slot > 0) {
+    who.textContent = W.p + ' ' + slot;
+    const r = document.documentElement.style; r.setProperty('--c', COLORS[slot - 1]); r.setProperty('--glow', COLORS[slot - 1] + '77');
+  } else who.textContent = slot === -1 ? W.f : W.c;
+}
+function connect() {
+  show(0);
+  ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?k=' + encodeURIComponent(K));
+  ws.onopen = () => { retry = 400; send('hello ' + cid); held.forEach((b) => send('d ' + b)); };
+  ws.onmessage = (e) => {
+    const t = String(e.data);
+    if (t[0] === 'p') { const ms = Date.now() - Number(t.slice(2)); window.__rtt = ms; $('#ms').textContent = ms + ' ms'; return; }
+    try {
+      const m = JSON.parse(t);
+      if (m.full) { show(-1); return; }
+      if ('sys' in m && !('slot' in m)) { sysName = m.sys; layout = null; relayout(); return; }
+      if ('layout' in m) { layout = m.layout; relayout(); return; }
+      if ('say' in m) { say(m.say); return; }
+      if ('vibrate' in m) { if ('vibrate' in navigator) navigator.vibrate(m.vibrate); else buzz(0); return; }
+      show(m.slot);
+      if (haptics && 'vibrate' in navigator) navigator.vibrate([30, 40, 30]); else buzz(0);   // a stronger one: the TV says the slot is yours
+      $('#add').hidden = !!m.game;
+      if (m.sys) sysName = m.sys; layout = null; relayout(); say('');
+    } catch (x) {}
+  };
+  ws.onclose = () => { show(0); setTimeout(connect, retry); retry = Math.min(retry * 1.6, 3000); };
+  ws.onerror = () => { try { ws.close(); } catch (x) {} };
+}
+setInterval(() => send('p ' + Date.now()), 2000);
+
+// ---- presses
+function press(b, on) {
+  if (on === held.has(b)) return;
+  if (on) { held.add(b); buzz(12); } else held.delete(b);
+  send((on ? 'd ' : 'u ') + b);
+  document.querySelectorAll('[data-b="' + b + '"]').forEach((el) => el.classList.toggle('on', on));
+  const arm = { UP: 'u', DOWN: 'd', LEFT: 'l', RIGHT: 'r' }[b];
+  if (arm && !dp.classList.contains('off')) $('.arm.' + arm).classList.toggle('on', on);
+}
+function releaseAll() { touches.clear(); stickEnd(); [...held].forEach((b) => press(b, false)); }
+
+// Every finger is followed by its identifier; on each move what it is over is looked up again, so a thumb can slide A -> B or
+// across the d-pad's arms without lifting. A d-pad finger near a corner holds two arms.
+const touches = new Map();           // identifier -> Set of button names
+const dp = $('#dpad');
+function under(x, y) {
+  const out = new Set();
+  const r = dp.getBoundingClientRect();
+  if (!dp.classList.contains('off') && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
+    const nx = (x - r.left - r.width / 2) / (r.width / 2), ny = (y - r.top - r.height / 2) / (r.height / 2);
+    if (Math.hypot(nx, ny) >= 0.2) {
+      if (nx < -0.34) out.add('LEFT'); else if (nx > 0.34) out.add('RIGHT');
+      if (ny < -0.34) out.add('UP'); else if (ny > 0.34) out.add('DOWN');
+    }
+    return out;
+  }
+  const el = document.elementFromPoint(x, y), b = el && el.closest && el.closest('[data-b]');
+  if (b && !b.hidden) out.add(b.dataset.b);
+  return out;
+}
+function apply() {
+  const all = new Set(); touches.forEach((s) => s.forEach((x) => all.add(x)));
+  ['UP', 'DOWN', 'LEFT', 'RIGHT', 'A', 'B', 'C', 'D', 'X', 'Y', 'L', 'R', 'L2', 'R2', 'START', 'SELECT'].forEach((b) => press(b, all.has(b)));
+}
+
+// ---- actions (gear, haptics, add, tip) run on touchstart, not on click
+const ACT = {
+  gear() { const m = $('#menu'); m.hidden = !m.hidden; },
+  haptic() { setHaptic(!haptics); buzz(12); },
+  add(el) { location.href = el.href; },
+  stick() { const on = !wantStick(); store.set(stickKey(), on ? '1' : '0'); relayout(); buzz(12); },
+  tipx() { $('#tip').hidden = true; store.set('tvg-tip', '1'); },
+};
+function act(el) { const a = el.closest('[data-act]'); if (a) { ACT[a.dataset.act](a); return true; } return false; }
+document.addEventListener('click', (e) => { const a = e.target.closest && e.target.closest('[data-act]'); if (a) { e.preventDefault(); if (!a.__t) ACT[a.dataset.act](a); a.__t = false; } });
+
+// ---- first tap: fullscreen, landscape, screen kept awake
+let first = true, lock = null;
+async function wake() { try { if (navigator.wakeLock && document.visibilityState === 'visible') lock = await navigator.wakeLock.request('screen'); } catch (e) {} }
+function firstTap() {
+  if (!first) return; first = false;
+  try { const d = document.documentElement; const p = d.requestFullscreen ? d.requestFullscreen({ navigationUI: 'hide' }) : null;
+    Promise.resolve(p).then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape')).catch(() => {}); } catch (e) {}
+  wake();
+}
+const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+if (ios && !navigator.standalone && !store.get('tvg-tip')) $('#tip').hidden = false;
+document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); else wake(); });
+
+// ---- touch: nothing may scroll, zoom or select, with any number of fingers
+function handle(e) {
+  if (e.target.closest && e.target.closest('#textrow')) return;      // the text field needs its own touches (keyboard, caret)
+  e.preventDefault();
+  if (e.type === 'touchstart') {
+    firstTap();
+    for (const t of e.changedTouches) {
+      const el = document.elementFromPoint(t.clientX, t.clientY);
+      if (el && act(el)) { const a = el.closest('[data-act]'); a.__t = true; continue; }
+      if (stickOn && sId == null && t.clientY > 60 && (portrait() ? t.clientY < innerHeight * 0.5 : t.clientX < innerWidth * 0.5) && !(el && el.closest('[data-b]'))) stickStart(t);
+    }
+    if (!$('#menu').hidden && !e.target.closest('#menu,#gear')) $('#menu').hidden = true;
+  }
+  for (const t of e.changedTouches) {
+    if (t.identifier === sId) { if (e.type === 'touchend' || e.type === 'touchcancel') stickEnd(); else stickMove(t); continue; }
+    if (e.type === 'touchend' || e.type === 'touchcancel') touches.delete(t.identifier);
+    else touches.set(t.identifier, under(t.clientX, t.clientY));
+  }
+  apply();
+}
+['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach((n) => document.addEventListener(n, handle, { passive: false }));
+['gesturestart', 'gesturechange', 'gestureend', 'contextmenu', 'dblclick', 'selectstart', 'dragstart'].forEach((n) => document.addEventListener(n, (e) => e.preventDefault(), { passive: false }));
+window.addEventListener('blur', releaseAll);
+$('#textrow').addEventListener('submit', (e) => { e.preventDefault(); const v = $('#txt').value.trim(); if (v) { send('t ' + v); $('#txt').value = ''; buzz(12); } });
+relayout();
+// the site's overrides of a look (buttons, face, sh, mid per system: docs/games/games.json "layouts"): a pad fix without an app release
+fetch('/layouts.json?k=' + encodeURIComponent(K)).then((r) => r.json()).then((o) => {
+  for (const k of Object.keys(o || {})) if (SYS[k] && o[k] && typeof o[k] === 'object') { const {face, sh, mid} = o[k]; Object.assign(SYS[k], JSON.parse(JSON.stringify({face, sh, mid}))); }
+  SYS.web = SYS.ps; relayout();
+}).catch(() => {});
+connect();

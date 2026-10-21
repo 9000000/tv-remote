@@ -23,6 +23,8 @@ Tools for people working on the code. Each script says more in its first lines.
 |---|---|
 | `release.sh` | the whole release: version numbers, CHANGELOG, tag, APKs, GitHub release, the computer apps through GitHub Actions, then `sums.sh` (AGENTS.md "Versions and releases") |
 | `sign_launchers.py` | signs `docs/launchers/launchers.json` (Ed25519, key `~/.tv-remote-release/launchers.key`, apart from the release key; its public half is `Launchers.KEYS`) and checks each APK's SHA-256 and each thumbnail. Run it after every edit of the list; `keys.sh backup` includes the key. |
+| `sign_games.py` | checks and signs `docs/games/games.json` (TV Games' cores, suggested web games, homebrew) with the launcher list's key; run after every edit, commit both files. |
+| `cores.sh` | downloads the libretro cores TV Games lists from the buildbot, prints their sha256 / size entries and the `gh release upload cores-1` command (run by hand). |
 | `sign_providers.py` | checks and signs `docs/channels/providers.json` (TV Channels' extra sources, e.g. VieON) with the launcher list's key; run after every edit, commit both files. |
 | `sums.sh <tag>` | `SHA256SUMS` of a release, signed, attached. Run again after replacing any file of a release by hand: the apps refuse a file the list does not match |
 | `churn.sh` | how often the `/api` still changes, week by week; `release.sh` prints it and says when 1.0 is near |

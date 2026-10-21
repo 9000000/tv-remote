@@ -3,7 +3,7 @@
 #   VERSION               the release itself (the tag) and the computer app: bump it for every release (the computer app
 #                         is only built again when app/desktop or app/shared changed; versions.json "web" says which it is)
 #   app/android/VERSION   the phone app            app/tv/VERSION   the TV app       app/home/VERSION   TV Home (the launcher)
-#   app/channels/VERSION   TV Channels (the iptv-org player)
+#   app/channels/VERSION   TV Channels (the iptv-org player)     app/games/VERSION   TV Games (retro + web games, phone pads)
 # Both APKs are attached to every release together with versions.json (the computer apps follow, from GitHub Actions); each app reads its own number from that file,
 # so an app that did not change is not offered a pointless update.
 #
@@ -24,7 +24,7 @@ cd "$(dirname "$0")/.."
 KEY=${RELEASE_KEY:-$HOME/.tv-remote-release/ed25519.pem}
 [ -f "$KEY" ] || { echo "release key missing ($KEY): without SHA256SUMS.sig no app takes the update"; exit 1; }
 grep -q "$(java dev/Sign.java pub "$KEY")" app/shared/src/main/kotlin/dev/tvremote/update/Release.kt || { echo "$KEY is not one of Release.KEYS"; exit 1; }
-[ -f app/android/signing.jks ] && [ -f app/tv/signing.jks ] && [ -f app/home/signing.jks ] && [ -f app/channels/signing.jks ] || { echo "signing.jks missing: an APK signed with a new key cannot update the installed apps"; exit 1; }
+[ -f app/android/signing.jks ] && [ -f app/tv/signing.jks ] && [ -f app/home/signing.jks ] && [ -f app/channels/signing.jks ] && [ -f app/games/signing.jks ] || { echo "signing.jks missing: an APK signed with a new key cannot update the installed apps"; exit 1; }
 [ -z "$(git status --porcelain)" ] || { echo "commit your changes first"; exit 1; }
 # the user guide: a topic whose app files changed since the release it was checked against may now be wrong
 if [ -z "$GUIDE_OK" ] && [ -n "$(dev/guide_stale.py -q)" ]; then
@@ -50,21 +50,25 @@ if [ -n "$LAST" ]; then
   if [ -z "$SKIP_CHECK" ] && [ -n "$old" ] && [ "$old" = "$(cat app/channels/VERSION)" ] && ! git diff --quiet "$LAST" -- app/channels docs/channels app/shared/src/sign ":(exclude)app/channels/*.apk"; then
     next "$old" > app/channels/VERSION
   fi
+  old=$(git show "$LAST:app/games/VERSION" 2>/dev/null || true)         # TV Games: its code, the packed games list and app/shared/src/sign
+  if [ -z "$SKIP_CHECK" ] && [ -n "$old" ] && [ "$old" = "$(cat app/games/VERSION)" ] && ! git diff --quiet "$LAST" -- app/games docs/games/games.json docs/games/games.json.sig app/shared/src/sign ":(exclude)app/games/*.apk"; then
+    next "$old" > app/games/VERSION
+  fi
 fi
 # Release.legacy() takes 1.3.0 … 2.x for the numbers before the restart: past 1.2 the new ones would look old
-for v in VERSION app/android/VERSION app/tv/VERSION app/home/VERSION app/channels/VERSION; do
+for v in VERSION app/android/VERSION app/tv/VERSION app/home/VERSION app/channels/VERSION app/games/VERSION; do
   if python3 -c 'import sys; a = [int(x) for x in open(sys.argv[1]).read().split(".")]; sys.exit(0 if a[0] >= 2 or (a[0] == 1 and a[1] >= 3) else 1)' "$v" &&
      grep -q "fun legacy" app/shared/src/main/kotlin/dev/tvremote/update/Release.kt; then
-    echo "$v reaches $(cat $v): first remove Release.legacy() (and its tests), the numbers from before the restart at 0.1.0"; git checkout -- VERSION app/android/VERSION app/tv/VERSION app/home/VERSION app/channels/VERSION; exit 1
+    echo "$v reaches $(cat $v): first remove Release.legacy() (and its tests), the numbers from before the restart at 0.1.0"; git checkout -- VERSION app/android/VERSION app/tv/VERSION app/home/VERSION app/channels/VERSION app/games/VERSION; exit 1
   fi
 done
 VER=$(cat VERSION)
 if ! grep -q "^## $VER " CHANGELOG.md; then
-  grep -q "^## Unreleased$" CHANGELOG.md || { echo "CHANGELOG.md: write this release's notes under a \"## Unreleased\" heading"; git checkout -- VERSION app/android/VERSION app/tv/VERSION app/home/VERSION app/channels/VERSION; exit 1; }
-  python3 - "$VER" "$(date +%F)" "$(cat app/android/VERSION)" "$(cat app/tv/VERSION)" "$(cat app/home/VERSION)" "$(cat app/channels/VERSION)" <<'PY'
+  grep -q "^## Unreleased$" CHANGELOG.md || { echo "CHANGELOG.md: write this release's notes under a \"## Unreleased\" heading"; git checkout -- VERSION app/android/VERSION app/tv/VERSION app/home/VERSION app/channels/VERSION app/games/VERSION; exit 1; }
+  python3 - "$VER" "$(date +%F)" "$(cat app/android/VERSION)" "$(cat app/tv/VERSION)" "$(cat app/home/VERSION)" "$(cat app/channels/VERSION)" "$(cat app/games/VERSION)" <<'PY'
 import sys
-v, day, phone, tv, home, channels = sys.argv[1:]
-s = open("CHANGELOG.md").read().replace("## Unreleased\n", f"## {v} - {day}\n\nWeb {v} · app điện thoại {phone} · app TV {tv} · TV Home {home} · TV Channels {channels}\n", 1)
+v, day, phone, tv, home, channels, games = sys.argv[1:]
+s = open("CHANGELOG.md").read().replace("## Unreleased\n", f"## {v} - {day}\n\nWeb {v} · app điện thoại {phone} · app TV {tv} · TV Home {home} · TV Channels {channels} · TV Games {games}\n", 1)
 open("CHANGELOG.md", "w").write(s)
 PY
 fi
@@ -91,8 +95,8 @@ if [ -n "$LAST" ]; then
   BUILT=$(gh release download "$LAST" -p versions.json -O - | python3 -c 'import json, sys; d = json.load(sys.stdin); print(d["web"])')
   if [ -n "$NO_DESKTOP" ] || git diff --quiet "v$BUILT" -- app/desktop app/shared ":(exclude)app/shared/tests"; then DESK=$BUILT; fi
 fi
-./app/android/build.sh && ./app/tv/build.sh && ./app/home/build.sh && ./app/channels/build.sh
-printf '{"android": "%s", "tv": "%s", "home": "%s", "channels": "%s", "web": "%s"}\n' "$(cat app/android/VERSION)" "$(cat app/tv/VERSION)" "$(cat app/home/VERSION)" "$(cat app/channels/VERSION)" "$DESK" > app/android/build/versions.json
+./app/android/build.sh && ./app/tv/build.sh && ./app/home/build.sh && ./app/channels/build.sh && ./app/games/build.sh
+printf '{"android": "%s", "tv": "%s", "home": "%s", "channels": "%s", "games": "%s", "web": "%s"}\n' "$(cat app/android/VERSION)" "$(cat app/tv/VERSION)" "$(cat app/home/VERSION)" "$(cat app/channels/VERSION)" "$(cat app/games/VERSION)" "$DESK" > app/android/build/versions.json
 D=https://github.com/HoangTran0410/tv-remote/releases/latest/download
 NOTES="$NOTES
 
@@ -104,11 +108,12 @@ NOTES="$NOTES
 | Android | [tv-remote.apk]($D/tv-remote.apk) · Downloader \`2973135\` |
 | TV Home (launcher) | [tv-home.apk]($D/tv-home.apk) · Downloader \`4356026\` |
 | TV Channels | [tv-channels.apk]($D/tv-channels.apk) · Downloader \`8135635\` |
+| TV Games | [tv-games.apk]($D/tv-games.apk) |
 | Mac (Apple Silicon + Intel) | [TV-Remote-mac.zip]($D/TV-Remote-mac.zip) |
 | Windows 10/11 | [TV-Remote-windows-x64.zip]($D/TV-Remote-windows-x64.zip) |
 | Linux x64 / arm64 | [TV-Remote-linux-x64.tar.gz]($D/TV-Remote-linux-x64.tar.gz) · [TV-Remote-linux-arm64.tar.gz]($D/TV-Remote-linux-arm64.tar.gz) |"
 # the APKs live only in releases, never in git
-gh release create "v$VER" app/android/build/tv-remote.apk app/tv/build/tv-setup.apk app/home/build/tv-home.apk app/channels/build/tv-channels.apk app/android/build/versions.json --title "v$VER" --notes "$NOTES" --latest   # by date: GitHub would still call 2.24.2 the latest
+gh release create "v$VER" app/android/build/tv-remote.apk app/tv/build/tv-setup.apk app/home/build/tv-home.apk app/channels/build/tv-channels.apk app/games/build/tv-games.apk app/android/build/versions.json --title "v$VER" --notes "$NOTES" --latest   # by date: GitHub would still call 2.24.2 the latest
 if [ "$DESK" != "$VER" ]; then
   echo "computer app not built: the $DESK archives attached again"
   T=$(mktemp -d); gh release download "$LAST" -p 'TV-Remote-*' -D "$T" && gh release upload "v$VER" "$T"/TV-Remote-*; rm -rf "$T"

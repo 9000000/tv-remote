@@ -1,0 +1,89 @@
+{
+  "v": 1,
+  "updated": "2026-10-21",
+  "cores": {
+    "snes": {
+      "name": "SNES (bsnes-mercury performance)",
+      "on": false,
+      "abi": {
+        "arm64-v8a": {
+          "url": "https://github.com/HoangTran0410/tv-remote/releases/download/cores-1/bsnes_mercury_performance_libretro_android-arm64-v8a.so.zip",
+          "sha256": "fd09231f78d250789e7690f681a88ab9d0c274a5a471fa5e2fa42f9b543d2f6b",
+          "size": 554310
+        },
+        "armeabi-v7a": {
+          "url": "https://github.com/HoangTran0410/tv-remote/releases/download/cores-1/bsnes_mercury_performance_libretro_android-armeabi-v7a.so.zip",
+          "sha256": "6b4fad021c703ce9031050becc576478900b913e1a7c4c7a29ed702e0fc673a1",
+          "size": 376513
+        }
+      },
+      "license": "GPL-3.0",
+      "exts": [
+        "sfc",
+        "smc"
+      ],
+      "layout": "snes",
+      "file": "bsnes_mercury_performance_libretro_android.so"
+    },
+    "gba": {
+      "name": "Game Boy Advance (mGBA)",
+      "on": false,
+      "abi": {
+        "arm64-v8a": {
+          "url": "https://github.com/HoangTran0410/tv-remote/releases/download/cores-1/mgba_libretro_android-arm64-v8a.so.zip",
+          "sha256": "290136be4ccbfc89092833a7ab8d440deb6dc5e508a11d2092732f774133030e",
+          "size": 419371
+        },
+        "armeabi-v7a": {
+          "url": "https://github.com/HoangTran0410/tv-remote/releases/download/cores-1/mgba_libretro_android-armeabi-v7a.so.zip",
+          "sha256": "ff7e98c952bb457913ae07a9414c4fb2a9b394b565483c2959ca4cb82e68ebee",
+          "size": 383098
+        }
+      },
+      "license": "MPL-2.0",
+      "exts": [
+        "gba"
+      ],
+      "layout": "gba",
+      "file": "mgba_libretro_android.so"
+    },
+    "psx": {
+      "name": "PlayStation (PCSX ReARMed)",
+      "on": false,
+      "abi": {
+        "arm64-v8a": {
+          "url": "https://github.com/HoangTran0410/tv-remote/releases/download/cores-1/pcsx_rearmed_libretro_android-arm64-v8a.so.zip",
+          "sha256": "64753a7f8656270cec1dc43aa4c74117493ddc415fa3ac1bf2591b6c25177b0a",
+          "size": 532593
+        },
+        "armeabi-v7a": {
+          "url": "https://github.com/HoangTran0410/tv-remote/releases/download/cores-1/pcsx_rearmed_libretro_android-armeabi-v7a.so.zip",
+          "sha256": "cfb14c9fb622d3c023a164756b6aa3ee6966b92727ccb41a5fdbdc5cc568c0fd",
+          "size": 517746
+        }
+      },
+      "license": "GPL-2.0",
+      "exts": [
+        "cue",
+        "chd",
+        "pbp"
+      ],
+      "layout": "ps",
+      "file": "pcsx_rearmed_libretro_android.so"
+    }
+  },
+  "web": [],
+  "homebrew": [
+    {
+      "id": "roborun",
+      "name": "Robo Run",
+      "system": "nes",
+      "url": "https://tvremote.pages.dev/games/roms/roborun.nes",
+      "sha256": "16a3c5d52d8f4d71322e2e24530c66292c015f5969d38ace826a9231eb5ea516",
+      "license": "GPL-3.0",
+      "source": "https://github.com/heaven-hm/roborun-nes",
+      "on": true
+    }
+  ],
+  "layouts": {}
+}

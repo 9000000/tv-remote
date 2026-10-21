@@ -3,10 +3,13 @@ pluginManagement {
 }
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories { google(); mavenCentral() }
+    repositories {
+        google(); mavenCentral()
+        maven("https://jitpack.io") { content { includeGroup("com.github.swordfish90") } }   // TV Games: LibretroDroid
+    }
 }
 rootProject.name = "tv-remote"
 // Only the build setup lives here, so that app/ shows the parts themselves: android, tv, home (TV Home), channels (TV Channels), shared, desktop (the computer
 // app, on the shared Kotlin core). Open this folder in Android Studio.
-include(":shared", ":android", ":tv", ":home", ":channels", ":desktop")
-for (name in listOf("shared", "android", "tv", "home", "channels", "desktop")) project(":$name").projectDir = file("../$name")
+include(":shared", ":android", ":tv", ":home", ":channels", ":games", ":desktop")
+for (name in listOf("shared", "android", "tv", "home", "channels", "games", "desktop")) project(":$name").projectDir = file("../$name")
