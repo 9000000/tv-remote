@@ -55,5 +55,5 @@ To show a newer UI: pick a release tag (a pushed commit also works), check
 and add to `mock.js` what the new UI asks for (run the page and watch the console: "demo: no mock for ..."). Old caches go
 when the new worker starts. A newer `REF` than the tag the UI was checked against can ask for routes `mock.js` lacks.
 
-**Trying it locally:** `python3 -m http.server -d docs 8000`, then http://localhost:8000 (the demo needs `localhost` or https
+**Trying it locally:** `dev/serve_docs.py` (like Cloudflare Pages: `/guide` is `guide.html`), then http://localhost:8000 (the demo needs `localhost` or https
 for its service worker; `127.0.0.1` also works outside restricted sandboxes).
