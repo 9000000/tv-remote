@@ -68,7 +68,7 @@ const SYS = {
   nes:  { stick: false, face: 'pair',    sh: [[], []],                    mid: ['SELECT', 'START'] },
   snes: { stick: false, face: 'diamond', sh: [['L'], ['R']],              mid: ['SELECT', 'START'] },
   gba:  { stick: false, face: 'pair',    sh: [['L'], ['R']],              mid: ['SELECT', 'START'] },
-  ps:   { stick: true,  face: 'diamond', sh: [['L2', 'L'], ['R2', 'R']],  mid: ['SELECT', 'START'] },
+  ps:   { stick: true,  face: 'diamond', sh: [['L2', 'L'], ['R', 'R2']],  mid: ['SELECT', 'START'] },
 };
 SYS.web = SYS.ps;
 const FACE = { pair: ['B', 'A'], diamond: ['X', 'A', 'B', 'Y'] };
