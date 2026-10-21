@@ -16,10 +16,22 @@
     g.fillStyle = '#0b0a26'; g.beginPath(); g.moveTo(0, H); for (let x = 0; x <= W; x += 40) g.lineTo(x, H - 50 - Math.abs(Math.sin(x * 0.011) * 40) - (x % 160 < 40 ? 24 : 0)); g.lineTo(W, H); g.fill();   // a city's edge
     return c;
   }
+  const cache = {};
+  function sprite(b) {
+    const key = b.kind + b.col + Math.round(b.r), hit = cache[key]; if (hit) return hit;
+    const r = Math.round(b.r), pad = b.kind === 'gold' ? Math.round(r * 1.2) : 4, w = (r + pad) * 2, h = w;
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const g = cv.getContext('2d'), x = w / 2, y = h / 2;
+    if (b.kind === 'gold') K.light(g, x, y, '#fde047', r * 2.2, 0.5);
+    g.fillStyle = b.col; g.beginPath(); g.ellipse(x, y, r * 0.86, r, 0, 0, 6.283); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.4)'; g.beginPath(); g.ellipse(x - r * 0.3, y - r * 0.35, r * 0.2, r * 0.32, -0.5, 0, 6.283); g.fill();
+    if (b.kind === 'bomb') K.text(g, '\u2620', x, y + 2, r * 0.9, '#f8fafc'); else if (b.kind === 'gold') K.text(g, '\u2605', x, y + 2, r * 0.9, '#a16207');
+    else { g.fillStyle = b.col; g.beginPath(); g.moveTo(x - 6, y + r + 6); g.lineTo(x + 6, y + r + 6); g.lineTo(x, y + r - 2); g.fill(); }
+    return (cache[key] = cv);
+  }
   function spawn() {
     if (B.length >= MAXB) return;
     const r = Math.random(), kind = r < 0.1 ? 'gold' : r < 0.2 ? 'bomb' : 'n';
-    const rad = kind === 'gold' ? 30 : kind === 'bomb' ? 40 : K.rnd(34, 62);
+    const rad = kind === 'gold' ? 30 : kind === 'bomb' ? 40 : Math.round(K.rnd(34, 62));
     B.push({ x: K.rnd(90, W - 90), y: H + rad + 10, r: rad, kind, col: kind === 'gold' ? '#fde047' : kind === 'bomb' ? '#1e293b' : K.pick(COL),
       vy: (kind === 'gold' ? -190 : kind === 'bomb' ? -K.rnd(160, 220) : -K.rnd(80, 150)) * (1 + (TIME - left) / TIME * 0.5), ph: K.rnd(0, 6.28), sw: K.rnd(10, 36) });
   }
@@ -69,14 +81,10 @@
     },
     draw(c) {
       K.shakeApply(c); c.drawImage(bg || (bg = makeBg()), 0, 0);
-      for (const b of B) {
-        c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 2; c.beginPath(); c.moveTo(b.x, b.y + b.r); c.quadraticCurveTo(b.x + Math.sin(K.t * 3 + b.ph) * 8, b.y + b.r + 30, b.x, b.y + b.r + 56); c.stroke();
-        if (b.kind === 'gold') K.light(c, b.x, b.y, '#fde047', b.r * 2.2, 0.5);
-        c.fillStyle = b.col; c.beginPath(); c.ellipse(b.x, b.y, b.r * 0.86, b.r, 0, 0, 6.283); c.fill();
-        c.fillStyle = 'rgba(255,255,255,.4)'; c.beginPath(); c.ellipse(b.x - b.r * 0.3, b.y - b.r * 0.35, b.r * 0.2, b.r * 0.32, -0.5, 0, 6.283); c.fill();
-        if (b.kind === 'bomb') { K.text(c, '☠', b.x, b.y + 2, b.r * 0.9, '#f8fafc'); } else if (b.kind === 'gold') K.text(c, '★', b.x, b.y + 2, b.r * 0.9, '#a16207');
-        else { c.fillStyle = b.col; c.beginPath(); c.moveTo(b.x - 6, b.y + b.r + 6); c.lineTo(b.x + 6, b.y + b.r + 6); c.lineTo(b.x, b.y + b.r - 2); c.fill(); }
-      }
+      c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 2; c.beginPath();                    // every string in one stroke
+      for (const b of B) { c.moveTo(b.x, b.y + b.r); c.quadraticCurveTo(b.x + Math.sin(K.t * 3 + b.ph) * 8, b.y + b.r + 30, b.x, b.y + b.r + 56); }
+      c.stroke();
+      for (const b of B) { const sp = sprite(b); c.drawImage(sp, b.x - sp.width / 2, b.y - sp.height / 2); }   // bodies are drawn once, then copied: the TV box's GPU is slow at gradients and paths
       K.drawParts(c);
       for (const t of txt) { c.globalAlpha = Math.min(1, t.t * 2); K.text(c, t.s, t.x, t.y, 44, t.c, 'center', 900); c.globalAlpha = 1; }
       K.slots.forEach((s) => { if (!s.human && s.pp) { const p = s.pp; c.globalAlpha = 0.55; c.strokeStyle = s.color; c.lineWidth = 4; c.beginPath(); c.arc(p.x, p.y, 20, 0, 6.283); c.stroke(); c.globalAlpha = 1; } });
