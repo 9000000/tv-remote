@@ -89,6 +89,7 @@ class Tv(
 
     companion object {
         private const val MOUSE_ID: Short = 1
+        private const val MOUSE_TICK_MS = 8                          // at most ~125 writes a second
         /** The boot mouse: 3 buttons, relative X / Y, wheel; the report is 4 bytes (buttons, dx, dy, wheel). */
         private val MOUSE_DESC = intArrayOf(0x05, 0x01, 0x09, 0x02, 0xA1, 0x01, 0x09, 0x01, 0xA1, 0x00, 0x05, 0x09, 0x19, 0x01, 0x29, 0x03, 0x15, 0x00, 0x25, 0x01,
             0x95, 0x03, 0x75, 0x01, 0x81, 0x02, 0x95, 0x01, 0x75, 0x05, 0x81, 0x01, 0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 0x09, 0x38,
@@ -557,16 +558,16 @@ class Tv(
     fun stopped(): Boolean = stopped
 
     // ---- input: scrcpy control messages (big-endian), see ControlMessageReader.java in scrcpy ----
-    private fun send(msg: ByteArray) {
+    private fun send(msg: ByteArray): java.util.concurrent.Future<*>? {
         val by = carrier
-        if (by != null && by.control != null && !by.stopped) { by.send(msg); return }   // its scrcpy-server takes it: ours may rest
-        if (resting) back() else if (control == null) return
-        if (io.isShutdown) return
+        if (by != null && by.control != null && !by.stopped) return by.send(msg)   // its scrcpy-server takes it: ours may rest
+        if (resting) back() else if (control == null) return null
+        if (io.isShutdown) return null
         ownUse = System.currentTimeMillis()
         try {
-            io.execute { val c = control ?: ownControl() ?: return@execute; try { c.write(msg) } catch (ignored: IOException) { } }
+            return io.submit { val c = control ?: ownControl() ?: return@submit; try { c.write(msg) } catch (ignored: IOException) { } }
         } catch (shuttingDown: RuntimeException) {
-            // session ended between the check and the call
+            return null                                               // session ended between the check and the call
         }
     }
 
@@ -615,16 +616,79 @@ class Tv(
             .put(name.size.toByte()).put(name).putShort(MOUSE_DESC.size.toShort()).put(MOUSE_DESC).array())
     }
 
-    /** One report: [dx], [dy] in HID counts (-127..127 each; the pointer's speed is the TV's), [buttons] bit 0 left, 1 right, 2 middle, [wheel] -127..127 (positive up). */
+    // The mouse is fed at the sensor's pace (200 Hz) but ADB takes one message per round trip (each WRTE waits for its OKAY), so
+    // one write per report backed up behind a slow Wi-Fi moment and the pointer lagged, then rushed. The reports wait here
+    // instead: moves between two ticks are summed, state changes (a button) kept in order, and a pump sends whatever is waiting
+    // as ONE write, at most every MOUSE_TICK ms and never before the last write is done. Nothing queues up, nothing is lost.
+    private val mouseLock = Object()
+    private val mouseOut = java.io.ByteArrayOutputStream()            // finished reports, oldest first
+    private var accDx = 0; private var accDy = 0; private var accWheel = 0; private var accBtn = 0
+    private var mousePump: Thread? = null
+    /** For a test or a measurement: told, once a second, the pump's numbers (reports in, writes out, write ms p50 / max, gap ms p95 / max). */
+    @Volatile var mouseStats: ((String) -> Unit)? = null
+
+    private fun reportsFor(dx: Int, dy: Int, wheel: Int, buttons: Int, out: java.io.ByteArrayOutputStream) {
+        var x = dx; var y = dy; var w = wheel
+        do {                                                          // a report holds -127..127: a longer move is several
+            val sx = x.coerceIn(-127, 127); val sy = y.coerceIn(-127, 127); val sw = w.coerceIn(-127, 127)
+            out.write(byteArrayOf(13, 0, MOUSE_ID.toByte(), 0, 4, buttons.toByte(), sx.toByte(), sy.toByte(), sw.toByte()))
+            x -= sx; y -= sy; w -= sw
+        } while (x != 0 || y != 0 || w != 0)
+    }
+
+    /** One report: [dx], [dy] in HID counts (the pointer's speed is the TV's), [buttons] bit 0 left, 1 right, 2 middle, [wheel] (positive up). */
     fun mouseMove(dx: Int, dy: Int, buttons: Int = 0, wheel: Int = 0) {
         if (!mouseOn) return
-        send(byteArrayOf(13, 0, MOUSE_ID.toByte(), 0, 4, buttons.toByte(), dx.coerceIn(-127, 127).toByte(), dy.coerceIn(-127, 127).toByte(), wheel.coerceIn(-127, 127).toByte()))
+        synchronized(mouseLock) {
+            if (buttons != accBtn) {                                  // a press / release lands between the moves before it and after it
+                if (accDx != 0 || accDy != 0 || accWheel != 0) { reportsFor(accDx, accDy, accWheel, accBtn, mouseOut); accDx = 0; accDy = 0; accWheel = 0 }
+                reportsFor(0, 0, 0, buttons, mouseOut)
+                accBtn = buttons
+            }
+            accDx += dx; accDy += dy; accWheel += wheel
+            if (mouseOut.size() > 9 * 400) { mouseOut.reset() }       // a stuck TV: drop what is old rather than send a minute of it later
+            if (mousePump == null) mousePump = Thread(::mousePumpLoop, "tv-mouse").apply { isDaemon = true; start() }
+            mouseLock.notifyAll()
+        }
+    }
+
+    private fun mousePumpLoop() {
+        val writes = ArrayList<Long>(); val gaps = ArrayList<Long>()
+        var reports = 0; var lastStart = 0L; var statAt = System.nanoTime()
+        while (mouseOn) {
+            val msg: ByteArray
+            synchronized(mouseLock) {
+                while (mouseOn && mouseOut.size() == 0 && accDx == 0 && accDy == 0 && accWheel == 0) mouseLock.wait(500)
+                if (!mouseOn) return
+                while (mouseOn) {                                     // let the next moves join this one (the ADB link is the slow part)
+                    val wait = lastStart + MOUSE_TICK_MS - System.currentTimeMillis()
+                    if (wait <= 0) break
+                    mouseLock.wait(wait)
+                }
+                if (!mouseOn) return
+                if (accDx != 0 || accDy != 0 || accWheel != 0) { reportsFor(accDx, accDy, accWheel, accBtn, mouseOut); accDx = 0; accDy = 0; accWheel = 0 }
+                msg = mouseOut.toByteArray(); mouseOut.reset()
+            }
+            if (msg.isEmpty()) continue
+            val t0 = System.nanoTime()
+            if (lastStart != 0L) gaps.add(System.currentTimeMillis() - lastStart)
+            lastStart = System.currentTimeMillis(); reports += msg.size / 9
+            try { send(msg)?.get(3, java.util.concurrent.TimeUnit.SECONDS) } catch (ignored: Exception) { }   // done = the TV acknowledged
+            writes.add((System.nanoTime() - t0) / 1_000_000)
+            val st = mouseStats
+            if (st != null && System.nanoTime() - statAt > 1_000_000_000L) {
+                writes.sort(); gaps.sort()
+                st("reports=$reports writes=${writes.size} write_ms p50=${writes[writes.size / 2]} p95=${writes[writes.size * 95 / 100]} max=${writes.last()} gap_ms p50=${gaps.getOrElse(gaps.size / 2) { 0 }} p95=${gaps.getOrElse(gaps.size * 95 / 100) { 0 }} max=${gaps.lastOrNull() ?: 0}")
+                writes.clear(); gaps.clear(); reports = 0; statAt = System.nanoTime()
+            } else if (st == null && writes.size > 2000) { writes.clear(); gaps.clear() }
+        }
     }
 
     /** Takes the mouse away again (and with it the pointer). */
     fun mouseClose() {
         if (!mouseOn) return
         mouseOn = false
+        synchronized(mouseLock) { mouseOut.reset(); accDx = 0; accDy = 0; accWheel = 0; accBtn = 0; mousePump = null; mouseLock.notifyAll() }
         send(byteArrayOf(14, 0, MOUSE_ID.toByte()))
     }
 

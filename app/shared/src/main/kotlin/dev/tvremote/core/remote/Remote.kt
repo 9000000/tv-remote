@@ -69,6 +69,8 @@ interface Remote : Closeable {
     /** A click at the pointer; [scroll] a wheel step (positive up). */
     fun pointerClick() {}
     fun pointerScroll(dy: Int) {}
+    /** The pointer's button held down ([on]) or let go: moves while it is held drag what is under it. */
+    fun pointerHold(on: Boolean) {}
     /** The keys this TV has, by Android code; null: all of them. */
     val keys: Set<Int>? get() = null
 

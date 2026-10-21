@@ -235,7 +235,9 @@ class Lg(private val dir: File, private val host: String, private val ports: Lis
     private fun pointerSend(m: String) = out.execute {
         try { pointer().send(m) } catch (e: IOException) { pointer?.close(); pointer = null }   // the next move opens a fresh one
     }
-    override fun pointer(dx: Int, dy: Int) { if (ready()) pointerSend("type:move\ndx:$dx\ndy:$dy\ndown:0\n\n") }
+    @Volatile private var pointerDown = 0
+    override fun pointer(dx: Int, dy: Int) { if (ready()) pointerSend("type:move\ndx:$dx\ndy:$dy\ndown:$pointerDown\n\n") }   // down:1 moves drag
+    override fun pointerHold(on: Boolean) { pointerDown = if (on) 1 else 0; pointer(0, 0) }
     override fun pointerClick() { if (ready()) pointerSend("type:click\n\n") }
     override fun pointerScroll(dy: Int) { if (ready()) pointerSend("type:scroll\ndx:0\ndy:${-dy}\n\n") }   // LG's dy grows downward
 
