@@ -24,6 +24,7 @@ body.offline #pad,body.offline #nav{opacity:.4}
 #away button:disabled{opacity:.5}#away button[hidden]{display:none}
 body.away #pad,body.away #nav{filter:grayscale(1);opacity:.35}
 #ms{font-size:12px;font-weight:700;min-width:44px;color:#8b93a7}
+#ms.tk{animation:tk .5s}@keyframes tk{from{opacity:.35}to{opacity:1}}
 #ms.good{color:#34d399}#ms.mid{color:#fbbf24}#ms.bad{color:#f87171}
 #fs,#mode{pointer-events:auto;width:40px;height:40px;border:0;border-radius:50%;background:var(--key);font-size:19px;padding:0;z-index:3}
 #pad{position:absolute;inset:0;display:grid;align-items:center;justify-items:center;padding:56px max(16px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));

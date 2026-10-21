@@ -27,9 +27,14 @@ $('#add').href = 'add?k=' + encodeURIComponent(K);
 // ---- haptics: vibrate() where there is one, the iOS 17.4+ checkbox-switch tick elsewhere
 let haptics = store.get('tvg-haptic') !== '0';
 const iosTick = !('vibrate' in navigator) && typeof CSS !== 'undefined' && CSS.supports && CSS.supports('-webkit-touch-callout', 'none');
+// Android Chrome: navigator.vibrate() needs a user gesture (every call here is inside a touchstart handler) and the phone's own "Touch
+// feedback" / "Vibration on touch" setting ON: with it off Chrome says true but the system drops the pulse (measured on a POCO, HyperOS:
+// vibrator_manager "ignored_for_settings"). A page cannot override that. iPhone has no vibrate(): the hidden switch is toggled with a
+// click() (iOS 17.4+ ticks for a switch), which Safari only honours inside a real tap's own event, so the ticks may be missed on a fast
+// multi-touch; nothing more can be done from a web page. Pulses are 15 ms: shorter ones are lost on many phones' motors.
 function buzz(ms) {
   if (!haptics) return;
-  if ('vibrate' in navigator) navigator.vibrate(ms);
+  if ('vibrate' in navigator) navigator.vibrate(ms ? Math.max(ms, 15) : 15);
   else if (iosTick) { try { $('#ios').click(); } catch (e) {} }
 }
 function setHaptic(on) { haptics = on; store.set('tvg-haptic', on ? '1' : '0'); $('#sw').classList.toggle('on', on); }
@@ -48,11 +53,6 @@ function editName(on) {
   $('#who').hidden = on; $('#nameform').hidden = !on; $('#top').classList.toggle('editing', on);
   if (on) { $('#nm').value = myName; try { $('#nm').focus(); $('#nm').select(); } catch (e) {} }
 }
-$('#nameform').addEventListener('submit', (e) => { e.preventDefault(); setName($('#nm').value, true); editName(false); buzz(12); });
-$('#nm').addEventListener('blur', () => { if (!$('#nameform').hidden) { setName($('#nm').value, true); editName(false); } });
-
-// ---- connection
-let away = false, canOpen = false, closed = false, first_hello = true, ws = null, retry = 400, layout = null, sysName = 'nes', mode = 'nav', lastPong = 0, gaveUp = false, downSince = 0;
 // Save / Cancel buttons (a keyboard's Done is missing on some phones): they act on touchstart, like the other actions, and keep the
 // field focused (no blur first); tapping anywhere else blurs the field, which saves, so a typed name is never lost. Escape cancels.
 function nameSave() { if ($('#nameform').hidden) return; setName($('#nm').value, true); editName(false); buzz(12); }
@@ -64,6 +64,11 @@ function nameCancel() { if ($('#nameform').hidden) return; editName(false); }
   b.addEventListener('click', (e) => { e.preventDefault(); fn(); });
 });
 $('#nm').addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.preventDefault(); nameCancel(); } });
+$('#nameform').addEventListener('submit', (e) => { e.preventDefault(); setName($('#nm').value, true); editName(false); buzz(12); });
+$('#nm').addEventListener('blur', () => { if (!$('#nameform').hidden) { setName($('#nm').value, true); editName(false); } });
+
+// ---- connection
+let away = false, canOpen = false, closed = false, first_hello = true, ws = null, retry = 400, layout = null, sysName = 'nes', mode = 'nav', lastPong = 0, gaveUp = false, downSince = 0;
 // Two modes: the pad (a game is running) and navigate (a remote for TV Games itself: library, start / pause cards). It follows
 // the TV (a game starts -> pad, back to the library -> navigate); the 🎮 / 🧭 button flips it by hand.
 function setMode(m) {
@@ -127,7 +132,13 @@ function moveStick(cx, cy, dx, dy) {
   stk.style.left = cx - SR + 'px'; stk.style.top = cy - SR + 'px';
   knob.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
 }
+let sDir = '';
+function stickTick(ix, iy) {                                  // one tick when the stick enters a new one of 8 directions (or the edge), not while it moves
+  const m = Math.hypot(ix, iy), d = m < 35 ? '' : ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE'][Math.round(Math.atan2(iy, ix) / (Math.PI / 4) + 8) % 8];
+  if (d !== sDir) { sDir = d; if (d) buzz(15); }
+}
 function sendAxis(ix, iy, force) {
+  stickTick(ix, iy); pingIfStale();
   const v = ix + ' ' + iy; if (v === lastA) return;
   const now = performance.now();
   if (!force && now - lastT < 16) { clearTimeout(pend); pend = setTimeout(() => sendAxis(ix, iy, true), 16 - (now - lastT)); return; }
@@ -139,7 +150,7 @@ function stickMove(t) {
   if (d > SR) { dx *= SR / d; dy *= SR / d; }
   moveStick(sOrg.x, sOrg.y, dx, dy); sendAxis(Math.round(dx / SR * 100), Math.round(dy / SR * 100));
 }
-function stickEnd() { if (sId == null) return; sId = null; stk.classList.remove('on'); sendAxis(0, 0, true); placeStick(); }
+function stickEnd() { if (sId == null) return; sId = null; sDir = ''; stk.classList.remove('on'); sendAxis(0, 0, true); placeStick(); }
 window.addEventListener('resize', () => setTimeout(placeStick, 50));
 // ---- the lobby (before a game starts): the TV shows the seats, the pad shows a big Ready toggle; buttons pressed here only light the seat on the TV
 let lobbyOn = false, iReady = false, lobbyMax = 4;
@@ -209,7 +220,7 @@ function connect() {
       if ('count' in m) { showCount(m.count); return; }
       if ('layout' in m) { layout = m.layout; relayout(); return; }
       if ('say' in m) { say(m.say); return; }
-      if ('vibrate' in m) { if ('vibrate' in navigator) navigator.vibrate(m.vibrate); else buzz(0); return; }
+      if ('vibrate' in m) { if (haptics && 'vibrate' in navigator) navigator.vibrate(m.vibrate); else buzz(0); return; }
       if (m.name && !myName) { myName = clean(m.name); store.set('tvg-name', myName); }      // the TV remembers a name this phone lost
       else if (myName && m.name !== myName) send('name ' + myName);
       closed = false; setAway(false, false);                       // a hello answer: the TV is back; an "away" message may follow at once
@@ -231,14 +242,17 @@ function pong(t) {
   if (!(Number(t0) > 0)) return;
   trk.add(Number(t0), now, tv == null ? null : Number(tv));
   const p = trk.ping(), el = $('#ms'); window.__rtt = p;
-  el.textContent = p + ' ms'; el.className = PingMath.level(p);
+  el.textContent = p + ' ms'; el.className = PingMath.level(p); el.classList.remove('tk'); void el.offsetWidth; el.classList.add('tk');   // tk: a small blink on each answer
   send('r ' + p + ' ' + (trk.offset() == null ? 0 : trk.offset()));
   window.__off = trk.offset();
 }
+let lastPing = 0;
+function pingNow() { lastPing = Date.now(); send('p ' + lastPing); }
+function pingIfStale() { if (Date.now() - lastPing > 700) pingNow(); }       // any input, the stick's 60 moves a second included, keeps the chip live
 setInterval(() => {
-  send('p ' + Date.now());
+  pingNow();
   if (ws && ws.readyState === 1 && Date.now() - lastPong > 5000) { const w = ws; w.onclose = null; try { w.close(); } catch (e) {} lost(); }     // a link that died without a close (Wi-Fi gone, TV off)
-}, 2000);
+}, 1000);
 // the phone woke up: do not wait for the next retry
 document.addEventListener('visibilitychange', () => { if (!document.hidden && !gaveUp && (!ws || ws.readyState > 1)) { retry = 400; connect(); } });
 
