@@ -12,7 +12,12 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebViewClient
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.webkit.WebViewCompat
@@ -35,6 +40,9 @@ class WebGameActivity : ComponentActivity() {
     private lateinit var cards: GameCards
     private var origin = ""
     @Volatile private var pageOrigin = ""
+    private var errorRetry: View? = null
+    private var errorCard: View? = null                         // our own card for a page that cannot load (offline, 404, too slow), over the lobby and the WebView
+    private val timeout = Runnable { if (!pageDone) failCard(R.string.web_fail_net) }
     private var pageDone = false                                   // the lobby freezes the page only once it has loaded, or it would never get to draw
     private var players = listOf<Int>()
     private var names = mapOf<Int, String>()
@@ -71,7 +79,11 @@ class WebGameActivity : ComponentActivity() {
                 override fun onConsoleMessage(m: ConsoleMessage): Boolean { Log.d(TAG, "console ${m.messageLevel()}: ${m.message()} (${m.sourceId().substringAfterLast('/')}:${m.lineNumber()})"); return true }
             }
             webViewClient = object : WebViewClient() {
-                override fun onPageFinished(v: WebView, u: String) { pageDone = true; if (::cards.isInitialized && cards.lobby) { v.onPause(); v.pauseTimers() } }
+                override fun onPageFinished(v: WebView, u: String) { if (errorCard != null) return; pageDone = true; web.removeCallbacks(timeout); if (::cards.isInitialized && cards.lobby) { v.onPause(); v.pauseTimers() } }
+                override fun onReceivedError(v: WebView, r: WebResourceRequest, e: WebResourceError) { if (r.isForMainFrame) failCard(R.string.web_fail_net) }
+                override fun onReceivedHttpError(v: WebView, r: WebResourceRequest, e: WebResourceResponse) {
+                    if (r.isForMainFrame) failCard(if (e.statusCode == 404 || e.statusCode == 410) R.string.web_fail_404 else R.string.web_fail_net)
+                }
                 override fun onPageStarted(v: WebView, u: String, f: Bitmap?) {
                     pageOrigin = originOf(u)
                     // no document-start support (old WebView): the shim goes in as the page starts, which is early enough for most pages
@@ -88,14 +100,40 @@ class WebGameActivity : ComponentActivity() {
             onPause = { p -> if (p) { if (pageDone) { web.onPause(); web.pauseTimers() } } else { web.onResume(); web.resumeTimers(); web.requestFocus() } },
             onSave = null, onLoad = null, onQuit = { finish() }, alone = false, quiet = link == "builtin:padtest",
             withLobby = Catalog.lobbyOn(this, link), art = lobbyArt(link, url), maxPlayers = counts.first, minPlayers = counts.second)
+        this.url = url; this.root = root
         web.loadUrl(url)
+        web.postDelayed(timeout, 10_000)                          // no page in ~10 s: the same card as offline
+    }
+
+    private var url = ""
+    private lateinit var root: FrameLayout
+
+    /** The page cannot be had: a card with the reason, Retry and Back (D-pad focus), instead of the WebView's own error page. */
+    private fun failCard(msg: Int) {
+        if (errorCard != null || isFinishing) return
+        web.removeCallbacks(timeout)
+        if (::cards.isInitialized) cards.close()                    // a lobby under the card must not start anything
+        web.stopLoading(); web.visibility = View.INVISIBLE
+        val retry = menuButton(getString(R.string.retry), 300, 58, 24f) { retryLoad() }
+        val col = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; gravity = android.view.Gravity.CENTER; setBackgroundColor(0xFF0B0D12.toInt()); isClickable = true
+            addView(label(getString(R.string.web_fail_title), 34f))
+            addView(label(getString(msg), 22f, 0xFFAAB0C0.toInt()).apply { setPadding(dp(60), dp(10), dp(60), dp(18)) })
+            addView(retry); addView(menuButton(getString(R.string.back), 300, 58, 24f) { finish() })
+        }
+        errorRetry = retry; errorCard = col; root.addView(col, FrameLayout.LayoutParams(-1, -1)); retry.requestFocus()
+    }
+
+    private fun retryLoad() {
+        errorCard?.let { root.removeView(it) }; errorCard = null
+        pageDone = false; web.visibility = View.VISIBLE; web.loadUrl(url)
+        web.removeCallbacks(timeout); web.postDelayed(timeout, 10_000)
     }
 
     private val counts by lazy { Catalog.players(this, null, intent.getStringExtra("url"), 4) }
 
     /** The picture the library tile has (same cache key), for the lobby. */
     private fun lobbyArt(link: String, url: String) = when (link) {
-        "builtin:quiz" -> Thumbs.Src("w:$link", asset = "thumbs/quiz.jpg")
         "builtin:padtest" -> Thumbs.Src("w:$link", asset = "thumbs/padtest.jpg")
         else -> if (link.startsWith("builtin:")) null else Thumbs.Src("w:$link", page = url)
     }
@@ -175,6 +213,11 @@ class WebGameActivity : ComponentActivity() {
     private fun isPad(ev: KeyEvent) = ev.source and (InputDevice.SOURCE_GAMEPAD or InputDevice.SOURCE_JOYSTICK) != 0
 
     override fun dispatchKeyEvent(ev: KeyEvent): Boolean {
+        if (errorCard != null) {                                           // the failure card: D-pad moves between Retry / Back, Back leaves
+            if (ev.keyCode == KeyEvent.KEYCODE_BACK) { if (ev.action == KeyEvent.ACTION_UP) finish(); return true }
+            if (errorCard?.findFocus() == null) { if (ev.action == KeyEvent.ACTION_DOWN) errorRetry?.requestFocus(); return true }   // first key after a tap / touch mode: focus Retry
+            return super.dispatchKeyEvent(ev)
+        }
         if (cards.key(ev)) return true
         if (cards.paused) return super.dispatchKeyEvent(ev)
         if (isPad(ev) && nameOf.containsKey(ev.keyCode)) {                 // a physical pad: its own slot, like a phone

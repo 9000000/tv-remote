@@ -20,7 +20,6 @@
     <string name="scan_add">Scan to add games</string>
     <string name="empty_hint">Or copy them with the Files tab of TV Remote, into Android/data/dev.tvremote.games/files/roms</string>
     <string name="cant_open">Could not open this game</string>
-    <string name="quiz_name">Quiz</string>
     <string name="padtest_name">Pad test</string>
     <string name="in_library">You are in the game list</string>
     <string name="runs">Game page: %1$s</string>
@@ -54,4 +53,7 @@
     <string name="pad_channel">Phone pads</string>
     <string name="pad_running">Phones are connected</string>
     <string name="allow_reopen">Let phones reopen TV Games</string>
+    <string name="web_fail_title">Could not open the game</string>
+    <string name="web_fail_net">This needs the internet: check the TV\'s network and try again.</string>
+    <string name="web_fail_404">This game is not on the site yet.</string>
 </resources>

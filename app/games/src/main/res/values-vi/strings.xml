@@ -20,7 +20,6 @@
     <string name="scan_add">Quét để thêm game</string>
     <string name="empty_hint">Hoặc chép bằng tab Tệp của TV Remote vào Android/data/dev.tvremote.games/files/roms</string>
     <string name="cant_open">Không mở được game này</string>
-    <string name="quiz_name">Đố vui</string>
     <string name="padtest_name">Kiểm tra tay cầm</string>
     <string name="in_library">Đang ở danh sách game</string>
     <string name="runs">Trang game: %1$s</string>
@@ -54,4 +53,7 @@
     <string name="pad_channel">Tay cầm điện thoại</string>
     <string name="pad_running">Điện thoại đang kết nối</string>
     <string name="allow_reopen">Cho phép điện thoại mở lại TV Games</string>
+    <string name="web_fail_title">Không mở được game</string>
+    <string name="web_fail_net">Cần mạng: kiểm tra mạng của TV rồi thử lại.</string>
+    <string name="web_fail_404">Game này chưa có trên trang.</string>
 </resources>
