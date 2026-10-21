@@ -359,6 +359,8 @@ Rồi trong tự động hóa: `action: rest_command.tv_key` với `data: { key:
 
 Nút **⚡ Tối ưu TV** ở tab Thiết lập của cả ba nơi (và ngay trong app TV Setup trên TV) mở hộp **chọn việc cần làm**; **Hoàn tác** trả lại như cũ. Chạy lại bao nhiêu lần cũng được. Không bắt buộc.
 
+Sau khi TV cập nhật firmware, TV Setup tự tắt lại những app đã tắt mà bản cập nhật bật lại (và đặt lại TV Home làm màn hình chính); Hoàn tác thì dừng.
+
 <details>
 <summary>Các lựa chọn</summary>
 

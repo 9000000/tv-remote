@@ -17,6 +17,11 @@ import org.json.JSONObject
  */
 class RulesReceiver : BroadcastReceiver() {
     override fun onReceive(c: Context, i: Intent) {
+        if (i.getStringExtra("get") == "reopt") {                  // look now instead of at the next day's turn (tests, a person over ADB)
+            resultCode = Activity.RESULT_OK
+            resultData = Base64.encodeToString(JSONObject().put("started", Reoptimize.now()).toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+            return
+        }
         if (i.getStringExtra("get") == "file") {
             resultCode = Activity.RESULT_OK
             resultData = try { file(c, i.getStringExtra("name") ?: "", i.getIntExtra("lines", 1000)) } catch (e: Exception) { null }

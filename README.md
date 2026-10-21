@@ -253,7 +253,7 @@ The TV must be on to be reached. A TV in **standby** wakes with one press, over 
 | The TV web page | Turn the web remote off in TV Setup |
 | The apps | Uninstall them like any app. The Computer app keeps its data in your user folder |
 
-Optimize TV is optional. It is on the Setup tab of all three, and in TV Setup on the TV.
+Optimize TV is optional. It is on the Setup tab of all three, and in TV Setup on the TV. After a firmware update TV Setup turns the apps it had switched off back off (and TV Home back on as Home); Undo stops that.
 
 ## Tested TVs
 
