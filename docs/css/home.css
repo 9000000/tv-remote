@@ -1,0 +1,72 @@
+/* The home page: a hero with a before / after picture, five showcases (a picture, a title, a line), a short setup. Tokens, nav,
+   buttons, footer come from site.css; the long animated tour (demo.css, stories.css) lives on tour.html. */
+.h-hero{padding:56px 0 40px;text-align:center}
+.h-hero .pill{margin-bottom:22px}
+.h-hero h1{font-size:clamp(40px,7vw,76px);font-weight:800;letter-spacing:-.03em}
+.h-hero .lead{margin:14px auto 0;font-size:clamp(18px,2.2vw,24px);max-width:680px;color:var(--text)}
+.h-cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:28px 0 10px}
+.h-trust{color:var(--dim);font-size:14px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:40px;text-align:left}
+.pair figure{position:relative}
+nav .navtools{margin-left:auto}
+.h-hero .lead,.sc-t h2,.sc-t p{text-wrap:balance}
+.hshot{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line2);background:var(--card);box-shadow:0 30px 60px -30px rgba(0,0,0,.8)}
+.hshot img{width:100%;height:auto}
+.htag{display:inline-block;margin-bottom:10px;padding:5px 14px;border-radius:999px;font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fff}
+.htag.bad{background:#b02a2a}.htag.good{background:#16804a}
+.pair figcaption{padding:12px 4px 0;color:var(--muted);font-size:15px}
+.pair figcaption b{color:var(--text)}
+
+.sc{padding:64px 0}
+.sc .wrap{display:grid;grid-template-columns:5fr 7fr;gap:48px;align-items:center}
+.sc.hflip .wrap{grid-template-columns:7fr 5fr}.sc.hflip .sc-t{order:2}
+.sc-t .eyebrow{margin-bottom:6px}
+.sc-t h2{font-size:clamp(28px,3.6vw,40px);margin:8px 0 12px}
+.sc-t p{color:var(--muted);font-size:clamp(16px,1.6vw,19px);max-width:440px}
+.sc-t .btn{margin-top:22px}
+.sc-p{position:relative;min-width:0}
+.sc-p.port{display:flex;justify-content:center;padding:28px;border-radius:22px;border:1px solid var(--line);background:radial-gradient(ellipse 70% 60% at 50% 40%,rgba(91,140,255,.22),transparent 70%),var(--card)}
+.sc-p.port .hshot{width:min(100%,260px);border-radius:26px}
+.sc-p .ins{position:absolute;right:-10px;bottom:-22px;width:24%;min-width:110px;border-radius:14px}
+.sc-p .ins img{width:100%;height:auto}
+
+.h-setup{padding:72px 0 40px}
+.h-setup h2{text-align:center}
+.h-setup .lead{margin:0 auto;text-align:center}
+.steps4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:36px;counter-reset:s;list-style:none}
+.steps4 li{counter-increment:s;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.steps4 li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--fill);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+.steps4 h3{font-size:17px}
+.steps4 p{color:var(--muted);font-size:14.5px;line-height:1.5}
+.steps4 .th{margin-top:auto;border-radius:10px;overflow:hidden;border:1px solid var(--line2);background:var(--bg2);display:flex;align-items:center;justify-content:center;height:120px}
+.steps4 .th img{height:100%;width:auto;max-width:100%;object-fit:contain}
+.steps4 .th.emo{font-size:44px}
+.hcode{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-weight:700;background:var(--card2);border:1px solid var(--line2);color:var(--text);border-radius:8px;padding:2px 8px;cursor:pointer;font-size:14px}
+.h-dl{margin-top:36px;text-align:center}
+.h-dl .hrow{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:16px}
+.h-dl .btn{padding:12px 18px;font-size:15px}
+.h-dl .btn.mine{border-color:var(--blue);color:var(--blue)}
+.h-dl small{display:block;color:var(--dim);font-size:14px;margin-top:14px}
+.h-dl small a,.h-note a{color:var(--blue)}
+.h-note{text-align:center;color:var(--dim);font-size:14px;margin-top:10px}
+.h-more{padding:28px 0 56px;text-align:center}
+.h-more a{color:var(--muted);font-size:15px;border-bottom:1px solid var(--line2)}
+.h-more a:hover{color:var(--text)}
+
+@media (max-width:980px){
+  .sc .wrap,.sc.hflip .wrap{grid-template-columns:1fr;gap:28px}.sc.hflip .sc-t{order:0}
+  .sc-t p{max-width:none}
+  .steps4{grid-template-columns:1fr 1fr}
+}
+@media (max-width:700px){
+  .pair{grid-template-columns:1fr;gap:16px}
+  .sc{padding:44px 0}
+  .sc-p .ins{display:none}
+}
+@media (max-width:560px){
+  .h-hero{padding-top:36px}
+  .h-cta .btn{flex:1 1 100%}
+  .steps4{grid-template-columns:1fr}
+  .steps4 .th{height:100px}
+}
+@media (max-width:560px){nav .navtools .btn-ghost[href="guide"]{display:none}}

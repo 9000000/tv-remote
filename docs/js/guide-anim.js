@@ -71,10 +71,10 @@
   });
 
   /* The install topics play the home page's own install stories (its .sst stage, by the id in data-from) over the
-     guide's steps, a step per part, so each stage is drawn and timed in one place: index.html and stories.js. */
+     guide's steps, a step per part, so each stage is drawn and timed in one place: tour.html and stories.js. */
   var gst = [].slice.call(document.querySelectorAll(".gst[data-from]"));
   if (!gst.length || !window.fetch) return;
-  fetch("./").then(function(r){ if (!r.ok) throw r.status; return r.text(); }).then(function(html){
+  fetch("tour.html").then(function(r){ if (!r.ok) throw r.status; return r.text(); }).then(function(html){
     var doc = new DOMParser().parseFromString(html, "text/html");
     gst.forEach(function(f){
       var src = doc.getElementById(f.dataset.from), st = src && src.querySelector(".sst");

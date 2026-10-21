@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="vi" data-lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TV Remote: điều khiển Android TV từ điện thoại, iPhone, máy tính</title>
+<meta name="description" content="Điều khiển Android TV / Google TV (và TV LG, Samsung, Roku, VIDAA) từ điện thoại, iPhone hay máy tính: xem và chạm lên màn hình TV, gõ chữ có dấu, hẹn giờ tắt, giới hạn app cho trẻ, quản lý app và tệp, điều khiển từ xa qua Tailscale. Miễn phí, mã nguồn mở, không máy chủ.">
+<meta name="theme-color" content="#0a0d14">
+<meta property="og:type" content="website">
+<meta property="og:title" content="TV Remote: điều khiển Android TV từ bất kỳ thiết bị nào">
+<meta property="og:description" content="Xem và chạm lên màn hình TV, gõ chữ có dấu, hẹn giờ tắt, giới hạn app cho trẻ, điều khiển từ xa. Miễn phí, mã nguồn mở, không máy chủ.">
+<meta property="og:image" content="https://tvremote.pages.dev/img/og-vi.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://tvremote.pages.dev/">
+<meta property="og:site_name" content="TV Remote">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="robots" content="noindex">
+<link rel="alternate" type="text/plain" title="llms.txt" href="llms.txt">
+<script>(function(){var l;try{l=localStorage.getItem("lang")}catch(e){}var q=new URLSearchParams(location.search).get("lang");l=q==="en"||q==="vi"?q:l||(/^vi\b/i.test(navigator.language||"")?"vi":"en");document.documentElement.dataset.lang=l;document.documentElement.lang=l})()</script>
+<link rel="icon" href="img/icon.png">
+<link rel="apple-touch-icon" href="img/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"></noscript>
+<link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/demo.css">
+<link rel="stylesheet" href="css/stories.css">
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="./"><img src="img/icon.png" width="32" height="32" alt="">TV Remote</a>
+    <div class="navlinks">
+      <a href="#features"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9Z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z"/></svg><span class="vi">Tính năng</span><span class="en">Features</span></a>
+      <a href="guide"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/><path d="M4 21.5V5.5M8 7h8"/></svg><span class="vi">Hướng dẫn</span><span class="en">Guide</span></a>
+      <a href="demo/"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5Z"/></svg><span class="vi">Dùng thử</span><span class="en">Live demo</span></a>
+      <a href="#faq"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17.5h.01"/></svg>FAQ</a>
+    </div>
+    <div class="navtools">
+      <a class="btn btn-primary btn-sm navcta" href="#install"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg><span class="vi">Cài đặt</span><span class="en">Install</span></a>
+      <div class="lang" role="group" aria-label="Language">
+        <button data-set="vi" aria-pressed="true">VI</button>
+        <button data-set="en" aria-pressed="false">EN</button>
+      </div>
+      <a class="btn btn-ghost btn-sm" href="https://github.com/HoangTran0410/tv-remote" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.62 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+        <span class="gh-label">GitHub</span>
+      </a>
+      <button class="menubtn" type="button" aria-expanded="false" aria-controls="navsheet" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path class="m1" d="M4 7h16"/><path class="m2" d="M4 12h16"/><path class="m3" d="M4 17h16"/></svg></button>
+    </div>
+  </div>
+  <div class="navsheet" id="navsheet" hidden><div class="wrap">
+    <a href="#why"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-4.4-9.3-9A5.2 5.2 0 0 1 12 6.6 5.2 5.2 0 0 1 21.3 12C19 16.6 12 21 12 21Z"/></svg><span class="vi">Vì sao</span><span class="en">Why</span></a>
+    <a href="#features"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9Z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z"/></svg><span class="vi">Tính năng</span><span class="en">Features</span></a>
+    <a href="#how"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6H15a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h6.5"/></svg><span class="vi">Cách hoạt động</span><span class="en">How it works</span></a>
+    <a href="#compare"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/></svg><span class="vi">So sánh</span><span class="en">Compare</span></a>
+    <a href="#install"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg><span class="vi">Cài đặt</span><span class="en">Install</span></a>
+    <a href="guide"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/><path d="M4 21.5V5.5M8 7h8"/></svg><span class="vi">Hướng dẫn</span><span class="en">Guide</span></a>
+    <a href="demo/"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5Z"/></svg><span class="vi">Dùng thử</span><span class="en">Live demo</span></a>
+    <a href="#faq"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17.5h.01"/></svg>FAQ</a>
+    </div></div>
+  <i class="navprog" aria-hidden="true"></i>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero" id="top">
+  <div class="wrap">
+    <div>
+      <a class="pill" href="https://github.com/HoangTran0410/tv-remote/releases/latest" target="_blank" rel="noopener">
+        <b id="ver">NEW</b>
+        <span class="vi">Miễn phí · mã nguồn mở · không quảng cáo</span>
+        <span class="en">Free · open source · no ads</span>
+      </a>
+      <h1>
+        <span class="vi">Remote <span class="grad nowrap">thông minh</span> cho Android TV.</span>
+        <span class="en">The <span class="grad nowrap">smart remote</span> for Android TV.</span>
+      </h1>
+      <p class="lead">
+        <span class="vi">Thấy và chạm màn hình TV, cài app, quản lý tệp, canh giờ cho con. Từ điện thoại, iPhone hay máy tính, ở nhà hay ở xa.</span>
+        <span class="en">See and touch the TV screen, install apps, manage files, set screen time. From a phone, iPhone or computer, at home or away.</span>
+      </p>
+      <div class="cta">
+        <a class="btn btn-primary" href="#install">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
+          <span class="vi">Cài trong 2 phút</span><span class="en">Set up in 2 minutes</span>
+        </a>
+        <a class="btn btn-ghost" href="demo/"><span class="vi">Dùng thử ngay</span><span class="en">Try the live demo</span></a>
+      </div>
+      <div class="trust">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg><span class="vi">Không tài khoản</span><span class="en">No account</span></span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg><span class="vi">Không đám mây</span><span class="en">No cloud</span></span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg><span class="vi">Chạy cả trên iPhone</span><span class="en">Works on iPhone too</span></span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg><span class="vi">Ở xa vẫn dùng được</span><span class="en">Works from away</span></span>
+      </div>
+      <div class="qr" data-qr="here"><div><b><span class="vi">📱 Đang xem trên máy tính?</span><span class="en">📱 Reading this on a computer?</span></b><small><span class="vi">Quét mã để mở trang này trên điện thoại và cài app ngay trên đó.</span><span class="en">Scan to open this page on your phone and install the app right there.</span></small></div></div>
+    </div>
+    <div class="stage">
+      <div class="tv">
+        <img src="img/tvapp-vi.webp" srcset="img/tvapp-vi-640.webp 640w, img/tvapp-vi-960.webp 960w, img/tvapp-vi.webp 1280w" sizes="(max-width:980px) min(calc((100vw - 32px)*.84 - 20px), 500px), 432px" data-lang-src="img/tvapp-LANG.webp" data-lang-srcset="img/tvapp-LANG-640.webp 640w, img/tvapp-LANG-960.webp 960w, img/tvapp-LANG.webp 1280w" width="1280" height="720" alt="TV Setup" fetchpriority="high">
+        <script>var i=document.currentScript.previousElementSibling;var L=document.documentElement.dataset.lang;i.srcset=i.dataset.langSrcset.replace(/LANG/g,L);i.src=i.dataset.langSrc.replace("LANG",L)</script>
+      </div>
+      <div class="signal" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="phone"><img src="img/phone-remote.webp" srcset="img/phone-remote-240.webp 240w, img/phone-remote-360.webp 360w, img/phone-remote.webp 480w" sizes="(max-width:980px) min(calc((100vw - 32px)*.24 - 10px), 140px), 120px" width="480" height="1040" alt="TV Remote phone app" fetchpriority="high"></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ PAIN POINTS ============ -->
+<section id="why">
+  <div class="wrap">
+    <div class="center reveal">
+      <span class="eyebrow"><span class="vi">Nghe quen không?</span><span class="en">Sound familiar?</span></span>
+      <h2><span class="vi">Server ở xa còn quản được, cái TV ngay phòng khách thì chịu?</span><span class="en">You can run a server across the world, but not the TV in your living room?</span></h2>
+      <p class="lead"><span class="vi">8 chuyện nhỏ mà phiền, và cách TV Remote xử lý.</span><span class="en">8 small, annoying things, and how TV Remote handles them.</span></p>
+    </div>
+    <div class="pains">
+      <div class="pain reveal"><div class="emo">🛋️</div><q class="vi">Remote lại mất, lại hết pin</q><q class="en">Remote lost, batteries dead</q><p><b>→</b> <span class="vi">Điện thoại thành remote, dùng được ngay.</span><span class="en">Your phone is the remote, right away.</span></p></div>
+      <div class="pain reveal"><div class="emo">⌨️</div><q class="vi">Gõ chữ bằng phím mũi tên</q><q class="en">Typing with arrow keys</q><p><b>→</b> <span class="vi">Gõ bằng bàn phím thật, có dấu tiếng Việt.</span><span class="en">Type on a real keyboard instead.</span></p></div>
+      <div class="pain reveal"><div class="emo">🌙</div><q class="vi">Con xem YouTube tới khuya</q><q class="en">Kids on YouTube till midnight</q><p><b>→</b> <span class="vi">Hẹn giờ tắt, giờ đi ngủ, giới hạn giờ xem. TV tự canh, khỏi phải nhắc.</span><span class="en">Sleep timer, bedtime, screen-time limits. The TV enforces them.</span></p></div>
+      <div class="pain reveal"><div class="emo">📞</div><q class="vi">Bác vào Cài đặt, kéo xuống…</q><q class="en">Go to Settings, scroll down…</q><p><b>→</b> <span class="vi">Thấy màn hình TV nhà bố mẹ và bấm giúp từ xa.</span><span class="en">See your parents’ TV screen and press the buttons for them.</span></p></div>
+      <div class="pain reveal"><div class="emo">🐢</div><q class="vi">TV chậm, đầy app rác</q><q class="en">Slow TV, full of bloat</q><p><b>→</b> <span class="vi">Tối ưu một nút, hoàn tác bất cứ lúc nào.</span><span class="en">One-tap Optimize, undo any time.</span></p></div>
+      <div class="pain reveal"><div class="emo">🍎</div><q class="vi">Nhà dùng iPhone</q><q class="en">You're on iPhone</q><p><b>→</b> <span class="vi">Mở Safari, nhập mã 6 số. Không cài gì.</span><span class="en">Open Safari, enter a 6-digit code. Nothing to install.</span></p></div>
+      <div class="pain reveal"><div class="emo">🔇</div><q class="vi">Xem khuya sợ ồn</q><q class="en">Late show, sleeping house</q><p><b>→</b> <span class="vi">Nghe tiếng TV qua tai nghe điện thoại.</span><span class="en">Hear the TV in your phone's headphones.</span></p></div>
+      <div class="pain reveal"><div class="emo">📦</div><q class="vi">Cài APK lên TV thì loay hoay</q><q class="en">Sideloading an APK is a chore</q><p><b>→</b> <span class="vi">Kéo thả từ máy tính, hoặc dán link là cài.</span><span class="en">Drag it from your computer, or paste a link.</span></p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FEATURES: the demo first, then each feature ============ -->
+<section id="features" style="padding-top:40px">
+  <div class="wrap">
+    <div class="center reveal">
+      <span class="eyebrow"><span class="vi">Tính năng</span><span class="en">Features</span></span>
+      <h2><span class="vi">Những việc remote thường bó tay.</span><span class="en">What an ordinary remote can't do.</span></h2>
+      <p class="lead"><span class="vi">Bốn chuyện thật, mỗi chuyện chưa tới 10 giây.</span><span class="en">Four real stories, under 10 seconds each.</span></p>
+    </div>
+    <!-- the demo's timeline is in demo.js (captions in the order of the .dcap <p>s below; data-still: the second of each
+         chapter that reduced motion shows), its look in demo.css -->
+    <div class="demo reveal" data-still="8.5,4.8,4,6.5">
+      <div class="dstage" aria-hidden="true">
+        <div class="dtvb">
+          <div class="tv dtv"><div class="dscr">
+            <div class="dv dcln"><div class="ck"><span class="t1">20:59</span><span class="t2">21:30</span></div><div class="lb"><span class="vi">Ứng dụng</span><span class="en">Apps</span></div><div class="drw"><span class="y"></span><span class="n">N</span><span class="s">♫</span><span class="p">prime</span><span>⚙</span></div><div class="lb l2"><span class="vi">Xem tiếp</span><span class="en">Continue watching</span></div><div class="rw2"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i></div></div>
+            <div class="dv dblt"><div class="hb"><b><span class="vi">Cho bạn</span><span class="en">For you</span></b><span class="vi">Phim</span><span class="en">Movies</span><span class="vi">Ứng dụng</span><span class="en">Apps</span></div>
+              <div class="ad"><em><span class="vi">Tài trợ</span><span class="en">Sponsored</span></em><i></i><i></i></div>
+              <div class="lb"><span class="vi">Đề xuất cho bạn</span><span class="en">Suggested for you</span></div>
+              <div class="sg"><i style="--a:#7a2d2d;--b:#e06a4a"></i><i style="--a:#2d4f7a;--b:#4ac0e0"></i><i style="--a:#5a2d7a;--b:#c04ae0"></i><i style="--a:#7a6a2d;--b:#e0c04a"></i><i style="--a:#2d7a5a;--b:#4ae0a0"></i><i style="--a:#7a2d5a;--b:#e04aa0"></i></div>
+              <div class="lb l2"><span class="vi">Ứng dụng</span><span class="en">Apps</span></div>
+              <div class="drw"><span class="y"></span><span class="n">N</span><span class="s">♫</span><span class="p">prime</span><span>⚙</span><span>＋</span></div>
+              <span class="dlag"></span></div>
+            <div class="dv dyt"><div class="lg">YouTube</div><div class="pl"></div><div class="ls"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i><i style="--a:#5a4a1f;--b:#e0b04a"></i></div></div>
+            <span class="dfoc"></span>
+            <svg class="ddraw" viewBox="0 0 100 56.25" preserveAspectRatio="none"><path class="c" pathLength="100" d="M21.5 25.6C15 23.6 4.5 24.6 3.2 31C2 37 8 40.6 14.5 40.4C22 40.2 25.6 36.4 25 31.6C24.6 28.6 22.6 26.6 19.4 25.9"/><path class="a" pathLength="100" d="M40 14.5Q33.5 17.5 26.6 23.6L26.9 19.8M26.6 23.6L30.4 23"/></svg>
+            <div class="dlim">⏳ YouTube <b><span class="cn"></span><span class="full">60:00</span></b></div>
+            <div class="dwarn w3"><b><span class="vi">⏳ Hết 60 phút YouTube hôm nay</span><span class="en">⏳ 60 minutes of YouTube today</span></b><small><span class="vi">YouTube sẽ đóng sau 1 phút</span><span class="en">YouTube closes in 1 minute</span></small><i></i></div>
+            <div class="dff">⏩ 21:30</div>
+            <div class="dwarn w4"><b><span class="vi">🌙 Đến giờ đi ngủ</span><span class="en">🌙 It's bedtime</span></b><small><span class="vi">TV sẽ tắt sau 1 phút</span><span class="en">The TV turns off in 1 minute</span></small><i></i></div>
+            <div class="doff"></div>
+          </div></div>
+          <div class="dwall">
+            <div class="mtv"><div><div class="ms"><div class="t"><i style="--c:#f00"></i><i style="--c:#222"></i><i style="--c:#1ed760"></i><i style="--c:#00a8e1"></i><i></i></div><span class="pg"></span><span class="ok">✓</span><span class="bo"></span></div></div><span class="vi">Phòng khách</span><span class="en">Living room</span></div>
+            <div class="mtv"><div><div class="ms"><div class="t"><i style="--c:#f00"></i><i style="--c:#222"></i><i style="--c:#1ed760"></i><i style="--c:#00a8e1"></i><i></i></div><span class="pg"></span><span class="ok">✓</span><span class="bo"></span></div></div><span class="vi">Phòng ngủ</span><span class="en">Bedroom</span></div>
+            <div class="mtv"><div><div class="ms"><div class="t"><i style="--c:#f00"></i><i style="--c:#222"></i><i style="--c:#1ed760"></i><i style="--c:#00a8e1"></i><i></i></div><span class="pg"></span><span class="ok">✓</span><span class="bo"></span></div></div><span class="vi">Quán · tầng 1</span><span class="en">Café · floor 1</span></div>
+            <div class="mtv"><div><div class="ms"><div class="t"><i style="--c:#f00"></i><i style="--c:#222"></i><i style="--c:#1ed760"></i><i style="--c:#00a8e1"></i><i></i></div><span class="pg"></span><span class="ok">✓</span><span class="bo"></span></div></div><span class="vi">Quán · tầng 2</span><span class="en">Café · floor 2</span></div>
+          </div>
+        </div>
+        <div class="dcap">
+          <p><span class="vi">🐢 TV chậm, đầy quảng cáo.</span><span class="en">🐢 A slow TV, full of ads.</span></p>
+          <p><span class="vi">⚡ Một nút: tắt app rác, đổi màn hình chính.</span><span class="en">⚡ One button: junk apps off, a light home screen.</span></p>
+          <p><span class="vi">✨ Nhẹ hẳn. Không xóa gì, Hoàn tác được.</span><span class="en">✨ Much lighter. Nothing deleted, one tap to undo.</span></p>
+          <p><span class="vi">📍 TV nhà bà ở Huế, cách bạn 900 km.</span><span class="en">📍 Grandma's TV, 900 km away.</span></p>
+          <p><span class="vi">✏️ Khoanh chỗ cần bấm: nét vẽ hiện trên TV của bà.</span><span class="en">✏️ Circle what to press: it shows up on her TV.</span></p>
+          <p><span class="vi">👵 Bà bấm theo. Xong.</span><span class="en">👵 She presses it. Done.</span></p>
+          <p><span class="vi">📴 Mẹ cài một lần, rồi tắt điện thoại.</span><span class="en">📴 Mom sets it once, then turns her phone off.</span></p>
+          <p><span class="vi">⏳ TV tự đếm: đủ 60 phút là đóng YouTube.</span><span class="en">⏳ The TV keeps count: 60 minutes, then YouTube closes.</span></p>
+          <p><span class="vi">🌙 Tới giờ ngủ, TV tự tắt.</span><span class="en">🌙 At bedtime, the TV turns itself off.</span></p>
+          <p><span class="vi">🏠 Phòng khách, phòng ngủ, quán: 4 TV.</span><span class="en">🏠 Living room, bedroom, café: 4 TVs.</span></p>
+          <p><span class="vi">📦 Chọn hết, cài app cho cả 4 cùng lúc.</span><span class="en">📦 Select all, install on all 4 at once.</span></p>
+          <p><span class="vi">🔄 Khởi động lại cả loạt, cũng một nút.</span><span class="en">🔄 Restart them all, one button too.</span></p>
+        </div>
+        <div class="dbeam"><i></i><i></i><i></i></div>
+        <div class="phone dph"><div class="dscr">
+          <div class="dst"><span>20:59</span><span>▾ ▮</span></div>
+          <div class="dL dq1 dp1"><div class="dhd">⚡ <span class="vi">Tối ưu TV</span><span class="en">Optimize TV</span></div>
+            <div class="dcard ram"><small><span class="vi">RAM trống</span><span class="en">Free RAM</span></small><b></b><em></em></div>
+            <div class="go"><span class="g1">⚡ <span class="vi">Tối ưu ngay</span><span class="en">Optimize now</span></span><span class="g2"><span class="vi">Đang tối ưu…</span><span class="en">Optimizing…</span></span><span class="g3">✓ <span class="vi">Xong</span><span class="en">Done</span></span></div>
+            <div class="cl c1"><i><u><s></s></u></i><span><span class="vi">Tắt hiệu ứng</span><span class="en">Animations off</span></span></div>
+            <div class="cl c2"><i><u><s></s></u></i><span><span class="vi">Tắt <b class="dn"></b> app đề xuất</span><span class="en"><b class="dn"></b> suggested apps off</span></span></div>
+            <div class="cl c3"><i><u><s></s></u></i><span><span class="vi">Màn hình chính nhẹ hơn</span><span class="en">A lighter home screen</span></span></div>
+            <div class="un">↶ <span class="vi">Hoàn tác</span><span class="en">Undo</span><small><span class="vi">App chỉ tạm tắt, không bị xóa</span><span class="en">Apps are only turned off, not deleted</span></small></div>
+            <span class="dfg"></span></div>
+          <div class="dL dq2 dp2"><div class="dhd">‹ <span class="vi">TV nhà bà</span><span class="en">Grandma's TV</span><span class="dot"></span></div>
+            <div class="ts">🛰️ Tailscale · 900 km</div>
+            <div class="mir"><div class="dv dcln"><div class="ck"><span class="t1">20:59</span><span class="t2">21:30</span></div><div class="lb"><span class="vi">Ứng dụng</span><span class="en">Apps</span></div><div class="drw"><span class="y"></span><span class="n">N</span><span class="s">♫</span><span class="p">prime</span><span>⚙</span></div><div class="lb l2"><span class="vi">Xem tiếp</span><span class="en">Continue watching</span></div><div class="rw2"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i></div></div>
+              <div class="dv dyt"><div class="lg">YouTube</div><div class="pl"></div><div class="ls"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i><i style="--a:#5a4a1f;--b:#e0b04a"></i></div></div>
+              <span class="dfoc"></span>
+              <svg class="ddraw" viewBox="0 0 100 56.25" preserveAspectRatio="none"><path class="c" pathLength="100" d="M21.5 25.6C15 23.6 4.5 24.6 3.2 31C2 37 8 40.6 14.5 40.4C22 40.2 25.6 36.4 25 31.6C24.6 28.6 22.6 26.6 19.4 25.9"/><path class="a" pathLength="100" d="M40 14.5Q33.5 17.5 26.6 23.6L26.9 19.8M26.6 23.6L30.4 23"/></svg></div>
+            <div class="tb"><span class="pen">✏️ <span class="vi">Vẽ</span><span class="en">Draw</span></span><i style="--c:#ffd23f"></i><i style="--c:#ff5c7a"></i><i style="--c:#5b8cff"></i><span class="x"><span class="vi">Xóa</span><span class="en">Clear</span></span></div>
+            <div class="btns"><i>⏻</i><i>⌂</i><i>‹</i><i>🔉</i><i>🔇</i><i>🔊</i></div>
+            <span class="dfg"></span></div>
+          <div class="dL dq3 dp3"><div class="dhd">⏰ <span class="vi">Tự động</span><span class="en">Automation</span></div>
+            <div class="dcard r1"><b>⏳ <span class="vi">Giới hạn YouTube</span><span class="en">YouTube limit</span></b><small><span class="vi">60 phút mỗi ngày</span><span class="en">60 minutes a day</span></small></div>
+            <div class="dcard r2"><b>🌙 <span class="vi">Giờ đi ngủ</span><span class="en">Bedtime</span></b><small>21:30 – 6:30</small></div>
+            <div class="lock"><b>20:59</b><small>🔒</small></div></div>
+          <div class="dL dq4 dp4"><div class="dhd">📺 <span class="vi">Các TV</span><span class="en">TVs</span><span class="all"><span class="vi">Chọn hết</span><span class="en">All</span></span></div>
+            <div class="fr f1"><i class="cb">✓</i><div><b><span class="vi">Phòng khách</span><span class="en">Living room</span></b><small><span class="sa"><span class="vi">Sẵn sàng</span><span class="en">Ready</span></span><span class="sb"><span class="vi">Đang cài…</span><span class="en">Installing…</span></span><span class="sc">✓ <span class="vi">Đã cài</span><span class="en">Installed</span></span><span class="se"><span class="vi">Khởi động lại…</span><span class="en">Restarting…</span></span><span class="sf">✓ <span class="vi">Sẵn sàng</span><span class="en">Ready</span></span></small></div><em></em></div>
+            <div class="fr f2"><i class="cb">✓</i><div><b><span class="vi">Phòng ngủ</span><span class="en">Bedroom</span></b><small><span class="sa"><span class="vi">Sẵn sàng</span><span class="en">Ready</span></span><span class="sb"><span class="vi">Đang cài…</span><span class="en">Installing…</span></span><span class="sc">✓ <span class="vi">Đã cài</span><span class="en">Installed</span></span><span class="se"><span class="vi">Khởi động lại…</span><span class="en">Restarting…</span></span><span class="sf">✓ <span class="vi">Sẵn sàng</span><span class="en">Ready</span></span></small></div><em></em></div>
+            <div class="fr f3"><i class="cb">✓</i><div><b><span class="vi">Quán · tầng 1</span><span class="en">Café · floor 1</span></b><small><span class="sa"><span class="vi">Sẵn sàng</span><span class="en">Ready</span></span><span class="sb"><span class="vi">Đang cài…</span><span class="en">Installing…</span></span><span class="sc">✓ <span class="vi">Đã cài</span><span class="en">Installed</span></span><span class="se"><span class="vi">Khởi động lại…</span><span class="en">Restarting…</span></span><span class="sf">✓ <span class="vi">Sẵn sàng</span><span class="en">Ready</span></span></small></div><em></em></div>
+            <div class="fr f4"><i class="cb">✓</i><div><b><span class="vi">Quán · tầng 2</span><span class="en">Café · floor 2</span></b><small><span class="sa"><span class="vi">Sẵn sàng</span><span class="en">Ready</span></span><span class="sb"><span class="vi">Đang cài…</span><span class="en">Installing…</span></span><span class="sc">✓ <span class="vi">Đã cài</span><span class="en">Installed</span></span><span class="se"><span class="vi">Khởi động lại…</span><span class="en">Restarting…</span></span><span class="sf">✓ <span class="vi">Sẵn sàng</span><span class="en">Ready</span></span></small></div><em></em></div>
+            <div class="act"><span class="in">📦 <span class="vi">Cài APK</span><span class="en">Install APK</span></span><span class="rb">↻ <span class="vi">Khởi động lại</span><span class="en">Restart</span></span></div>
+            <span class="dfg"></span></div>
+        </div></div>
+      </div>
+      <ol class="dchap">
+        <li><button type="button" data-ch="0"><i></i><b>1</b><span class="vi">Tối ưu TV</span><span class="en">Optimize TV</span></button></li>
+        <li><button type="button" data-ch="1"><i></i><b>2</b><span class="vi">Chỉ bà từ xa</span><span class="en">Help grandma</span></button></li>
+        <li><button type="button" data-ch="2"><i></i><b>3</b><span class="vi">TV tự canh con</span><span class="en">TV minds the kids</span></button></li>
+        <li><button type="button" data-ch="3"><i></i><b>4</b><span class="vi">Nhiều TV</span><span class="en">Many TVs</span></button></li>
+      </ol>
+    </div>
+
+    <div class="center reveal" style="margin-top:110px">
+      <h2><span class="vi">Không chỉ là nút bấm.</span><span class="en">Much more than buttons.</span></h2>
+      <p class="lead"><span class="vi">Một bộ công cụ đầy đủ để dùng, dọn dẹp và quản lý chiếc TV của bạn.</span><span class="en">A complete toolkit to use, look after and manage your TV.</span></p>
+    </div>
+
+    <div class="feat reveal">
+      <div>
+        <span class="eyebrow">01 · <span class="vi">Thấy và chạm</span><span class="en">See and touch</span></span>
+        <h3><span class="vi">Màn hình TV nằm ngay trong lòng bàn tay.</span><span class="en">The TV screen, in the palm of your hand.</span></h3>
+        <p class="lead"><span class="vi">Xem trực tiếp màn hình TV và chạm lên hình như chạm lên TV. Không cần nhìn lên TV để biết mình đang ở menu nào.</span><span class="en">Watch the TV screen live and tap on it as if you were tapping the TV. No more looking up to see which menu you're in.</span></p>
+        <ul>
+          <li class="vi"><span><b>Chạm, vuốt, cuộn</b> lên hình; trên máy tính dùng chuột và bàn phím.</span></li>
+          <li class="en"><span><b>Tap, swipe, scroll</b> on the picture; mouse and keyboard on a computer.</span></li>
+          <li class="vi"><span><b>Chất lượng 240p tới 960p</b>, tắt hình thì TV không tốn thêm CPU.</span></li>
+          <li class="en"><span><b>240p to 960p</b>; turn the picture off and the TV spends no extra CPU.</span></li>
+          <li class="vi"><span><b>Nói với TV:</b> “mở YouTube”, “tăng âm lượng 5”, “hẹn giờ tắt 30 phút”.</span></li>
+          <li class="vi"><span><b>Vẽ lên màn hình TV</b> để chỉ cho người đang xem: bấm vào đâu, chọn cái nào.</span></li>
+          <li class="en"><span><b>Draw on the TV screen</b> to show whoever is watching where to go.</span></li>
+          <li class="en"><span><b>Talk to it:</b> “open YouTube”, “volume up 5”, “sleep in 30 minutes”.</span></li>
+          <li class="vi"><span><b>Widget, ô Cài đặt nhanh, phím tắt</b> bật/tắt TV mà không cần mở app.</span></li>
+          <li class="en"><span><b>Widget, Quick Settings tiles, shortcuts</b> to control the TV without opening the app.</span></li>
+        </ul>
+      </div>
+      <div class="shot duo">
+        <div class="phone"><img src="img/phone-remote.webp" width="480" height="1040" alt="" loading="lazy" decoding="async">
+          <div class="anim" aria-hidden="true"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><path class="pen" d="M15 61 C 13 58, 4 58, 2 64 C 0 72, 6 79, 13 78 C 20 77, 21 66, 17 62 C 16 61, 14 60, 12 61"/></svg><span class="tap"></span></div></div>
+        <div class="phone small">
+          <img src="img/tvpage-remote-vi.webp" data-lang-src="img/tvpage-remote-LANG.webp" width="400" height="867" alt="" loading="lazy" decoding="async">
+        </div>
+      </div>
+    </div>
+
+    <div class="feat flip reveal">
+      <div>
+        <span class="eyebrow">02 · <span class="vi">Cho gia đình</span><span class="en">For families</span></span>
+        <h3><span class="vi">Cài một lần, TV tự canh giờ.</span><span class="en">Set it once, the TV keeps watch.</span></h3>
+        <p class="lead"><span class="vi">Hẹn giờ, giờ đi ngủ và giới hạn app do chính TV thực hiện. Điện thoại, máy tính tắt hết vẫn chạy, và cũng không ai “lỡ quên” được.</span><span class="en">Timers, bedtime and app limits run on the TV. No phone or computer has to stay on, and nobody gets to “forget”.</span></p>
+        <ul>
+          <li class="vi"><span><b>Hẹn giờ tắt</b> và <b>giờ đi ngủ</b>: TV bật lên trong khoảng giờ đó sẽ tự tắt, có báo trước.</span></li>
+          <li class="en"><span><b>Sleep timer</b> and <b>bedtime</b>: a TV switched on during bedtime turns itself off, with a warning first.</span></li>
+          <li class="vi"><span><b>Giới hạn phút mỗi ngày</b> cho từng app (YouTube, TikTok…).</span></li>
+          <li class="en"><span><b>Daily minutes</b> per app (YouTube, TikTok…).</span></li>
+          <li class="vi"><span><b>Cảnh</b>: một nút làm nhiều việc, ví dụ “Xem phim” = bật TV, mở Netflix, âm lượng 20.</span></li>
+          <li class="en"><span><b>Scenes</b>: one button, many steps. “Movie night” = TV on, open Netflix, volume 20.</span></li>
+          <li class="vi"><span><b>Lịch sử dùng TV</b> theo ngày, app nào dùng nhiều nhất.</span></li>
+          <li class="en"><span><b>Usage history</b> per day, and which apps get the most time.</span></li>
+        </ul>
+      </div>
+      <div class="shot">
+        <div class="tv">
+          <img src="img/tvapp-vi.webp" data-lang-src="img/tvapp-LANG.webp" width="1280" height="720" alt="" loading="lazy" decoding="async">
+          <div class="anim" aria-hidden="true"><div class="warn"><b><span class="vi">🌙 Đến giờ đi ngủ</span><span class="en">🌙 It's bedtime</span></b><small><span class="vi">TV sẽ tắt sau 1 phút</span><span class="en">The TV turns off in 1 minute</span></small><i></i></div><div class="off"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feat reveal">
+      <div>
+        <span class="eyebrow">03 · <span class="vi">Quản lý như dân chuyên</span><span class="en">Manage like a pro</span></span>
+        <h3><span class="vi">Quản chiếc TV như quản một server.</span><span class="en">Run your TV like a server.</span></h3>
+        <p class="lead"><span class="vi">Những việc trước đây phải cắm máy tính, gõ lệnh ADB, giờ chỉ là vài cú bấm.</span><span class="en">What used to take a laptop and ADB commands is now a few clicks.</span></p>
+        <ul>
+          <li class="vi"><span><b>Ứng dụng:</b> gỡ, tắt, sao lưu, xem log trực tiếp.</span></li>
+          <li class="en"><span><b>Apps:</b> remove, disable, back up, watch live logs.</span></li>
+          <li class="vi"><span><b>Một chạm:</b> khởi động lại, lọc DNS, đổi màn hình chính.</span></li>
+          <li class="en"><span><b>One tap:</b> reboot, DNS filter, swap the home screen.</span></li>
+          <li class="vi"><span><b>Tệp:</b> duyệt bộ nhớ và USB, kéo thả gửi tệp, cài APK từ máy hay từ link.</span></li>
+          <li class="en"><span><b>Files:</b> browse storage and USB, drag and drop, install APKs from disk or a link.</span></li>
+          <li class="vi"><span><b>Sức khỏe:</b> CPU, RAM, bộ nhớ, Wi-Fi, giải phóng RAM, biểu đồ theo thời gian.</span></li>
+          <li class="en"><span><b>Health:</b> CPU, RAM, storage, Wi-Fi, free up RAM, charts over time.</span></li>
+          <li class="vi"><span><b>Terminal · Lỗi app:</b> chạy lệnh shell, xem app nào vừa văng hay treo.</span></li>
+          <li class="en"><span><b>Terminal · App errors:</b> run shell commands, see which app just crashed or froze.</span></li>
+          <li class="vi"><span><b>Nhiều TV</b> trong một danh sách, chuyển qua lại một nút.</span></li>
+          <li class="en"><span><b>Many TVs</b> in one list, switch with a click.</span></li>
+        </ul>
+      </div>
+      <div class="shot">
+        <div class="browser">
+          <div class="bar"><i></i><i></i><i></i><span>127.0.0.1:8765</span></div>
+          <img src="img/web-remote-vi.webp" data-lang-src="img/web-remote-LANG.webp" width="1200" height="852" alt="" loading="lazy" decoding="async">
+        </div>
+        <div class="health" aria-hidden="true"><b><span class="vi">📊 Sức khỏe</span><span class="en">📊 Health</span></b>
+          <div><span>CPU</span><span>4 <span class="vi">nhân</span><span class="en">cores</span></span></div><i style="--w:38%"></i>
+          <div><span>RAM</span><span>1.4 / 2 GB</span></div><i style="--w:72%;--c:#ffb340;--d:-1.3s"></i>
+          <div><span>Wi-Fi</span><span>-52 dBm</span></div><i style="--w:84%;--c:#32d74b;--d:-2.6s"></i></div>
+      </div>
+    </div>
+
+    <div class="feat flip reveal">
+      <div>
+        <span class="eyebrow">04 · <span class="vi">Ở bất cứ đâu</span><span class="en">From anywhere</span></span>
+        <h3><span class="vi">Đi xa vẫn điều khiển được TV ở nhà.</span><span class="en">Control the TV at home from anywhere.</span></h3>
+        <p class="lead"><span class="vi">Một nút cài và đăng nhập Tailscale lên TV: tự tải bản chính thức, kiểm tra tệp tải về, tự bật lại mỗi khi TV khởi động. Bạn chỉ cần quét mã QR để đăng nhập.</span><span class="en">One button installs and signs in Tailscale on the TV: official build, checksum verified, restarts with the TV. You just scan a QR code to sign in.</span></p>
+        <ul>
+          <li class="vi"><span><b>Kết nối mã hóa riêng</b> giữa máy bạn và TV, không mở cổng nào ra Internet.</span></li>
+          <li class="en"><span><b>A private, encrypted link</b> between you and the TV, no ports opened to the Internet.</span></li>
+          <li class="vi"><span><b>Hỗ trợ người thân</b>: họ chỉ cần chụp mã QR trên TV gửi bạn.</span></li>
+          <li class="en"><span><b>Help family remotely</b>: they just send you a photo of the QR code on their TV.</span></li>
+          <li class="vi"><span><b>Khởi động lại từ xa</b>, TV tự quay về.</span></li>
+          <li class="en"><span><b>Reboot from afar</b>, it comes right back.</span></li>
+          <li class="vi"><span><b>Bật TV từ xa</b> khi đang ở chế độ chờ; Wake-on-LAN khi đã tắt hẳn.</span></li>
+          <li class="en"><span><b>Wake the TV remotely</b> from standby; Wake-on-LAN when fully off.</span></li>
+        </ul>
+        <div class="qr" data-qr="https://tailscale.com/download"><div><b><span class="vi">🛰️ Cài Tailscale lên điện thoại</span><span class="en">🛰️ Get Tailscale on your phone</span></b><small><span class="vi">Quét mã để tải (CH Play / App Store), rồi đăng nhập cùng tài khoản với TV.</span><span class="en">Scan to download it (Play Store / App Store), then sign in with the same account as the TV.</span></small></div></div>
+      </div>
+      <div class="shot" style="max-width:380px;margin:0 auto">
+        <div class="phone">
+          <img src="img/tailscale-vi.webp" data-lang-src="img/tailscale-LANG.webp" width="600" height="775" alt="" loading="lazy" decoding="async">
+        </div>
+      </div>
+    </div>
+
+    <div class="minis">
+      <div class="mini reveal"><div class="ic">🎧</div><h4><span class="vi">Nghe tiếng TV</span><span class="en">Listen to the TV</span></h4><p><span class="vi">Tiếng TV phát trên điện thoại hoặc trình duyệt, chỉ khoảng 8 KB/s. Nghe tiếp cả khi khóa màn hình.</span><span class="en">TV sound on your phone or browser at about 8 KB/s. Keeps playing with the screen locked.</span></p></div>
+      <div class="mini reveal"><div class="ic">⚡</div><h4><span class="vi">Tối ưu TV</span><span class="en">Optimize TV</span></h4><p><span class="vi">Tắt hiệu ứng, app đề xuất, đổi màn hình chính nhẹ hơn. App chỉ bị tạm tắt, không bị xóa: bấm Hoàn tác là trở lại như cũ.</span><span class="en">Fewer animations, no bloat, a lighter home screen. Disabled, never deleted; Undo puts it all back.</span></p></div>
+      <div class="mini reveal"><div class="ic">🔑</div><h4><span class="vi">Không cần ở cạnh TV</span><span class="en">No need to be at the TV</span></h4><p><span class="vi">Khi TV hỏi lại “Cho phép gỡ lỗi?”, TV Setup tự cho phép đúng máy của bạn, và chỉ máy của bạn.</span><span class="en">When the TV asks “Allow debugging?” again, TV Setup approves your own device, and only yours.</span></p></div>
+      <div class="mini reveal"><div class="ic">🧭</div><h4><span class="vi">Dẫn từng bước</span><span class="en">Guided all the way</span></h4><p><span class="vi">TV chưa bật ADB? App tự dẫn bạn tới chỗ bật, hoặc cài TV Setup giúp chỉ bằng nút remote.</span><span class="en">ADB not on yet? The app leads you there, or installs TV Setup for you using remote keys only.</span></p></div>
+      <div class="mini reveal"><div class="ic">🌐</div><h4><span class="vi">Song ngữ</span><span class="en">Bilingual</span></h4><p><span class="vi">Giao diện tiếng Việt và tiếng Anh, đổi một chạm.</span><span class="en">Vietnamese and English interface, one tap to switch.</span></p></div>
+      <div class="mini reveal"><div class="ic">🔄</div><h4><span class="vi">Tự cập nhật</span><span class="en">Self-updating</span></h4><p><span class="vi">Cả hai app tự báo và cài bản mới ngay trong app, không cần CH Play.</span><span class="en">Both apps find and install new versions in-app, no Play Store needed.</span></p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW ============ -->
+<section id="how" class="how">
+  <div class="wrap">
+    <div class="center reveal">
+      <span class="eyebrow"><span class="vi">Cách hoạt động</span><span class="en">How it works</span></span>
+      <h2><span class="vi">Máy của bạn kết nối thẳng tới TV.</span><span class="en">Your device talks straight to the TV.</span></h2>
+      <p class="lead"><span class="vi">Không có máy chủ trung gian, không có tài khoản, không có gì lọt ra ngoài. Dữ liệu chỉ đi trong mạng nhà bạn, hoặc qua kết nối Tailscale riêng của bạn.</span><span class="en">No middle server, no account, nothing to leak. Data stays on your home network, or inside your own Tailscale tunnel.</span></p>
+    </div>
+    <!-- the story's timeline is in stories.js (captions in the order of .hcap's <p>s), its look in stories.css -->
+    <div class="story st-h reveal" data-still="5.2,4.6,4.6,7.6">
+      <div class="hst" aria-hidden="true">
+        <div class="phone dph hph"><div class="dscr">
+          <div class="hsb"><span>20:59</span><span class="nw">Wi-Fi ▾ ▮</span><span class="n4">4G ▾ ▮</span></div>
+          <div class="pp hs1"><div class="ph1">TV Remote</div><div class="rad"></div><div class="pm"><span class="sp"></span> <span class="vi">Đang tìm TV…</span><span class="en">Looking for TVs…</span></div><div class="prow hr1">📺<div><b><span class="vi">Phòng khách</span><span class="en">Living room</span></b><small>192.168.1.20</small></div></div></div>
+          <div class="pp hrm"><div class="ph1">‹ <span class="vi">Phòng khách</span><span class="en">Living room</span><i class="dot"></i></div>
+            <div class="cks"><span class="ck c1">ADB</span><span class="ck c2">🎮 Android TV Remote</span><span class="ck c3">🔒 Tailscale</span><span class="ck c4">🌐 <span class="vi">Web của TV</span><span class="en">TV web page</span></span></div>
+            <div class="pmir"><div class="dv dcln"><div class="ck"><span class="t1">20:59</span><span class="t2">21:30</span></div><div class="lb"><span class="vi">Ứng dụng</span><span class="en">Apps</span></div><div class="drw"><span class="y"></span><span class="n">N</span><span class="s">♫</span><span class="p">prime</span><span>⚙</span></div><div class="lb l2"><span class="vi">Xem tiếp</span><span class="en">Continue watching</span></div><div class="rw2"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i></div></div><div class="dv dyt myt"><div class="lg">YouTube</div><div class="pl"></div><div class="ls"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i><i style="--a:#5a4a1f;--b:#e0b04a"></i></div></div><div class="mv mmv"></div><div class="moff">📵 <span class="vi">ADB đang tắt, không có hình</span><span class="en">ADB off: no picture</span></div></div>
+            <div class="pad"><i class="pu"></i><i class="pr"></i><i class="pd"></i><i class="pl"></i><b>OK</b></div><div class="vol"><i>＋</i><i>－</i></div><div class="nav"><i>‹</i><i>⌂</i><i>☰</i></div></div>
+          <div class="pp hsf"><div class="url">🔒 <span class="ty u1">192.168.1.20:8765</span></div><div class="pcode"><b><span class="vi">Nhập mã trên TV</span><span class="en">Enter the code on the TV</span></b><div class="bx"><i>4</i><i>8</i><i>2</i><i>9</i><i>1</i><i>3</i></div><div class="kp"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i><i></i><i>0</i><i>⌫</i></div></div></div>
+          <span class="dfg"></span>
+        </div></div>
+        <div class="hpath">
+          <div class="cloud"><span>☁️ <s><span class="vi">máy chủ</span><span class="en">server</span></s></span><i class="via"></i></div>
+          <div class="ln"><div class="lane up"><i></i><i></i><i></i></div><div class="lane dn"><i></i><i></i><i></i></div></div>
+          <div class="proto"><span class="p1">🔌 ADB</span><span class="p2">🎮 Android TV Remote</span><span class="p3">🔒 Tailscale</span><span class="p4">🌐 <span class="vi">Web của TV</span><span class="en">TV web page</span></span></div>
+          <div class="hub"><span class="h1">📶 <span class="vi">Wi-Fi nhà</span><span class="en">Home Wi-Fi</span></span><span class="h3">☕ 4G → 🏠 <span class="vi">nhà</span><span class="en">home</span></span></div>
+        </div>
+        <div class="tv htv"><div class="dscr">
+          <div class="dv dcln"><div class="ck"><span class="t1">20:59</span><span class="t2">21:30</span></div><div class="lb"><span class="vi">Ứng dụng</span><span class="en">Apps</span></div><div class="drw"><span class="y"></span><span class="n">N</span><span class="s">♫</span><span class="p">prime</span><span>⚙</span></div><div class="lb l2"><span class="vi">Xem tiếp</span><span class="en">Continue watching</span></div><div class="rw2"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i></div></div><div class="dv dyt tyt"><div class="lg">YouTube</div><div class="pl"></div><div class="ls"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i><i style="--a:#5a4a1f;--b:#e0b04a"></i></div></div><div class="mv tmv"></div>
+          <span class="dfoc z1"></span><span class="dfoc z2"></span><span class="dfoc z3"></span>
+          <div class="side"><b><span class="vi">Tùy chọn nhà phát triển</span><span class="en">Developer options</span></b><div class="tr"><span class="vi">Gỡ lỗi ADB</span><span class="en">ADB debugging</span><i class="tg is"></i></div><div class="tr"><span class="vi">Thang đo hoạt ảnh</span><span class="en">Animation scale</span><small>1x</small></div></div>
+          <div class="vbar">🔊 <i></i></div>
+          <div class="dlg pair"><div class="qrx"></div><div><small><span class="vi">Mã ghép với trình duyệt</span><span class="en">Pair a browser · code</span></small><div class="big mono">482 913</div></div></div>
+          <div class="sto o1">📱 <span class="vi">Điện thoại đã kết nối</span><span class="en">Phone connected</span></div>
+          <div class="sto o2">⚡ TV Setup: <span class="vi">đã bật lại Gỡ lỗi ADB</span><span class="en">ADB debugging back on</span></div>
+          <div class="sto o3">🌐 <span class="vi">iPhone đã kết nối</span><span class="en">iPhone connected</span></div>
+        </div></div>
+      </div>
+      <div class="hcap">
+        <p><span class="vi">📶 Điện thoại và TV dùng chung Wi-Fi nhà, app tự tìm thấy TV.</span><span class="en">📶 Phone and TV on the same Wi-Fi: the app finds the TV.</span></p><p><span class="vi">🔌 App kết nối thẳng với TV qua ADB, hình trên TV hiện lên điện thoại.</span><span class="en">🔌 Straight to the TV over ADB: its picture comes to the phone.</span></p><p><span class="vi">👆 Chạm vào hình trên điện thoại, TV làm theo ngay.</span><span class="en">👆 Tap the picture, the TV follows.</span></p><p><span class="vi">🚫 Lỡ tắt Gỡ lỗi ADB, điện thoại mất hình.</span><span class="en">🚫 ADB debugging switched off: no picture.</span></p><p><span class="vi">🎮 App tự chuyển sang Android TV Remote nên vẫn bấm phím được.</span><span class="en">🎮 The app switches to Android TV Remote: keys still work.</span></p><p><span class="vi">⚡ TV Setup tự bật lại ADB, hình hiện lại như cũ.</span><span class="en">⚡ TV Setup turns ADB back on, the picture returns.</span></p><p><span class="vi">☕ Bạn đang ở quán cà phê, điện thoại dùng 4G.</span><span class="en">☕ You're at a café, on 4G.</span></p><p><span class="vi">🔒 Tailscale nối thẳng về TV ở nhà và mã hóa đường truyền, không đi qua máy chủ nào.</span><span class="en">🔒 Tailscale links straight to the TV at home, encrypted. No server in between.</span></p><p><span class="vi">📺 Xem và điều khiển TV như đang ngồi ở nhà.</span><span class="en">📺 Watch and tap as if you were home.</span></p><p><span class="vi">🍎 Trên iPhone, mở Safari và gõ địa chỉ của TV.</span><span class="en">🍎 iPhone: open Safari, type the TV's address.</span></p><p><span class="vi">🔢 TV hiện mã 6 số, nhập mã là kết nối xong.</span><span class="en">🔢 The TV shows a 6-digit code; enter it and you're paired.</span></p><p><span class="vi">🎛️ Có ngay remote đầy đủ trong trình duyệt, không cần cài app.</span><span class="en">🎛️ A full remote in the browser, nothing installed.</span></p>
+      </div>
+      <ol class="dchap">
+        <li><button type="button" data-ch="0"><i></i><b>1</b><span class="vi">Ở nhà, qua Wi-Fi</span><span class="en">At home, on Wi-Fi</span></button></li>
+        <li><button type="button" data-ch="1"><i></i><b>2</b><span class="vi">Tắt ADB vẫn bấm được</span><span class="en">Keys with ADB off</span></button></li>
+        <li><button type="button" data-ch="2"><i></i><b>3</b><span class="vi">Đi xa, qua Tailscale</span><span class="en">Away, over Tailscale</span></button></li>
+        <li><button type="button" data-ch="3"><i></i><b>4</b><span class="vi">iPhone, không cài gì</span><span class="en">iPhone, nothing to install</span></button></li>
+      </ol>
+    </div>
+    <div class="facts reveal">
+      <div class="fact"><b class="cu" style="--hn:0;--from:12"></b><span><span class="vi">máy chủ trung gian</span><span class="en">servers in between</span></span></div>
+      <div class="fact"><b class="cu" style="--hn:3"></b><span><span class="vi">app và Web của TV, chung một giao diện</span><span class="en">apps and a TV web page, one interface</span></span></div>
+      <div class="fact"><b class="cu" style="--hn:8;--from:64;--pre:'~';--suf:' KB/s'"></b><span><span class="vi">để nghe tiếng TV</span><span class="en">to stream TV audio</span></span></div>
+      <div class="fact"><b class="cu" style="--hn:100;--suf:'%'"></b><span><span class="vi">mã nguồn mở trên GitHub</span><span class="en">open source on GitHub</span></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COMPARE ============ -->
+<section id="compare" style="padding-top:40px">
+  <div class="wrap">
+    <div class="center reveal">
+      <span class="eyebrow"><span class="vi">So sánh</span><span class="en">Compare</span></span>
+      <h2><span class="vi">Cái khó không phải là bấm nút.</span><span class="en">The hard part isn’t the buttons.</span></h2>
+      <p class="lead"><span class="vi">Remote thì nhiều app làm được. Cái làm người ta bỏ cuộc là đưa được app lên TV và bật được ADB. TV Remote lo phần đó.</span><span class="en">Plenty of apps press buttons. What makes people give up is getting an app onto the TV and turning ADB on. TV Remote handles that.</span></p>
+    </div>
+    <div class="hard reveal">
+      <div class="mini"><div class="ic">📦</div><b><span class="vi">TV không cài được APK lạ</span><span class="en">The TV won’t take an outside APK</span></b><p><span class="vi">Gõ mã <span class="mono">2397346</span> vào Downloader là có TV Setup. App điện thoại còn tự gửi lệnh mở Downloader qua giao thức remote của Google, nên cài được khi TV chưa bật ADB.</span><span class="en">Type <span class="mono">2397346</span> into Downloader and TV Setup arrives. The phone app can even open Downloader for you through Google’s remote protocol, so it installs before ADB is on.</span></p></div>
+      <div class="mini"><div class="ic">🔓</div><b><span class="vi">Bật ADB giấu trong menu</span><span class="en">ADB is buried in menus</span></b><p><span class="vi">TV Setup mở thẳng Tùy chọn nhà phát triển. App điện thoại và app máy tính có trợ lý “Bật ADB giúp tôi”, chỉ dùng nút remote.</span><span class="en">TV Setup opens Developer options directly. The phone app and the computer app have a “Help me turn on ADB” assistant that only uses remote keys.</span></p></div>
+      <div class="mini"><div class="ic">🛡️</div><b><span class="vi">“Cho phép gỡ lỗi USB?” lúc không ở nhà</span><span class="en">“Allow USB debugging?” while you’re away</span></b><p><span class="vi">TV hỏi lại khi quên máy bạn. TV Setup tự bấm cho phép, nhưng chỉ khi mã khóa trùng đúng máy đã ghép, và báo trên TV mỗi lần.</span><span class="en">The TV asks again when it forgets your device. TV Setup allows it for you, only when the key matches a paired device, with a notice on the TV every time.</span></p></div>
+    </div>
+    <div class="cmpwrap reveal">
+      <table class="cmp">
+        <thead><tr><th></th><th class="us">TV Remote</th><th><span class="vi">App Google TV</span><span class="en">Google TV app</span></th><th><span class="vi">App remote trên store</span><span class="en">Store remote apps</span></th><th>scrcpy + adb</th></tr></thead>
+        <tbody>
+          <tr><th><span class="vi">Bấm nút, gõ chữ, nói lệnh</span><span class="en">Keys, typing, voice</span></th><td class="y us"><span class="vi">Có</span><span class="en">Yes</span></td><td class="y"><span class="vi">Có</span><span class="en">Yes</span></td><td class="y"><span class="vi">Có</span><span class="en">Yes</span></td><td class="m"><span class="vi">Gõ phím, không có giọng nói</span><span class="en">Keyboard, no voice</span></td></tr>
+          <tr><th><span class="vi">Xem màn hình TV, chạm lên hình</span><span class="en">See the TV screen, touch it</span></th><td class="y us"><span class="vi">Có, trên cả điện thoại</span><span class="en">Yes, on a phone too</span></td><td class="n"><span class="vi">Không</span><span class="en">No</span></td><td class="m"><span class="vi">Một số app</span><span class="en">Some apps</span><small><span class="vi">thường phải bật ADB hoặc root</span><span class="en">often needs ADB or root</span></small></td><td class="y"><span class="vi">Có, trên máy tính</span><span class="en">Yes, on a computer</span></td></tr>
+          <tr><th><span class="vi">Nghe tiếng TV trên điện thoại</span><span class="en">TV sound on the phone</span></th><td class="y us"><span class="vi">Có</span><span class="en">Yes</span><small><span class="vi">tai nghe, loa TV im</span><span class="en">headphones, TV speakers quiet</span></small></td><td class="n"><span class="vi">Không</span><span class="en">No</span></td><td class="n"><span class="vi">Hiếm có</span><span class="en">Rare</span></td><td class="m"><span class="vi">Trên máy tính</span><span class="en">On a computer</span></td></tr>
+          <tr><th><span class="vi">Dùng từ iPhone</span><span class="en">From an iPhone</span></th><td class="y us"><span class="vi">Có, qua trình duyệt</span><span class="en">Yes, in the browser</span><small><span class="vi">không phải cài gì</span><span class="en">nothing to install</span></small></td><td class="y"><span class="vi">Cài app</span><span class="en">Install an app</span></td><td class="m"><span class="vi">Tùy app</span><span class="en">Depends</span></td><td class="n"><span class="vi">Không</span><span class="en">No</span></td></tr>
+          <tr><th><span class="vi">Quản lý app, tệp, cài APK</span><span class="en">Apps, files, install APKs</span></th><td class="y us"><span class="vi">Có</span><span class="en">Yes</span></td><td class="n"><span class="vi">Không</span><span class="en">No</span></td><td class="m"><span class="vi">Thường là tính năng trả phí</span><span class="en">Often a paid feature</span></td><td class="m"><span class="vi">Gõ lệnh adb</span><span class="en">adb commands</span></td></tr>
+          <tr><th><span class="vi">Hẹn giờ tắt, giờ đi ngủ, giới hạn từng app</span><span class="en">Sleep timer, bedtime, per-app limits</span></th><td class="y us"><span class="vi">Có, chạy ngay trên TV</span><span class="en">Yes, enforced on the TV</span></td><td class="n"><span class="vi">Không có trong app</span><span class="en">Not in the app</span><small><span class="vi">Google TV có hồ sơ trẻ em trên một số máy</span><span class="en">Google TV has kids profiles on some devices</span></small></td><td class="n"><span class="vi">Hiếm có</span><span class="en">Rare</span></td><td class="n"><span class="vi">Không</span><span class="en">No</span></td></tr>
+          <tr><th><span class="vi">Điều khiển khi không ở nhà</span><span class="en">Control from away</span></th><td class="y us"><span class="vi">Có, Tailscale cài bằng một nút</span><span class="en">Yes, Tailscale in one button</span></td><td class="n"><span class="vi">Không, phải cùng Wi-Fi</span><span class="en">No, same Wi-Fi only</span></td><td class="n"><span class="vi">Thường không</span><span class="en">Usually not</span></td><td class="m"><span class="vi">Tự dựng VPN</span><span class="en">Set up a VPN yourself</span></td></tr>
+          <tr><th><span class="vi">Bật ADB, cài lên TV</span><span class="en">Turning on ADB, installing on the TV</span></th><td class="y us"><span class="vi">Dẫn từng bước</span><span class="en">Guided step by step</span><small><span class="vi">cài được chỉ bằng nút remote</span><span class="en">installs with remote keys alone</span></small></td><td class="y"><span class="vi">Không cần</span><span class="en">Not needed</span></td><td class="m"><span class="vi">Tự làm</span><span class="en">Do it yourself</span></td><td class="m"><span class="vi">Tự làm, gõ lệnh</span><span class="en">Yourself, by command</span></td></tr>
+          <tr><th><span class="vi">Quảng cáo, mã nguồn</span><span class="en">Ads, source code</span></th><td class="y us"><span class="vi">Không quảng cáo, mã nguồn mở</span><span class="en">No ads, open source</span></td><td class="m"><span class="vi">Không quảng cáo, mã đóng</span><span class="en">No ads, closed source</span></td><td class="n"><span class="vi">Thường có quảng cáo</span><span class="en">Often has ads</span></td><td class="y"><span class="vi">Không quảng cáo, mã nguồn mở</span><span class="en">No ads, open source</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="cmpnote"><span class="vi">So với kiểu app thường gặp ở mỗi nhóm; từng app cụ thể có thể khác. Thấy chỗ nào sai, mở issue trên GitHub giúp mình.</span><span class="en">Compared with what is typical in each group; a given app may differ. Spot a mistake? Open an issue on GitHub.</span></p>
+  </div>
+</section>
+
+<!-- ============ INSTALL ============ -->
+<section id="install">
+  <div class="wrap">
+    <div class="center reveal">
+      <span class="eyebrow"><span class="vi">Cài đặt</span><span class="en">Install</span></span>
+      <h2><span class="vi">Chọn máy bạn sẽ dùng để điều khiển.</span><span class="en">Pick the device you'll control from.</span></h2>
+      <p class="lead"><span class="vi">Cả ba dùng chung một giao diện. Dùng một hay cả ba đều được.</span><span class="en">All three share the same interface. Use one, or all of them.</span></p>
+    </div>
+
+    <div class="choose reveal" role="tablist">
+      <button class="opt" role="tab" data-tab="browser" aria-selected="true">
+        <div class="big">📺→🌐</div>
+        <h3><span class="vi">Web của TV</span><span class="en">TV web page</span></h3>
+        <div class="who"><span class="vi">Mọi trình duyệt: iPhone, iPad, máy tính</span><span class="en">Any browser: iPhone, iPad, computer</span></div>
+        <p><span class="vi">Cài app <b>TV Setup</b> lên TV chỉ bằng remote của TV. Rồi máy nào có trình duyệt cũng điều khiển được.</span><span class="en">Install <b>TV Setup</b> on the TV using just the TV's remote. Then any device with a browser can control it.</span></p>
+        <div class="go"><span class="vi">Xem các bước</span><span class="en">See steps</span> →</div>
+      </button>
+      <button class="opt" role="tab" data-tab="android" aria-selected="false">
+        <div class="big">📱</div>
+        <h3><span class="vi">App điện thoại</span><span class="en">Phone app</span></h3>
+        <div class="who"><span class="vi">Android · đầy đủ nhất</span><span class="en">Android · the fullest</span></div>
+        <p><span class="vi">App <b>TV Remote</b> trên Android: nút âm lượng vật lý, widget, nghe tiếng TV, nói với TV, bấm phím cả khi chưa bật ADB.</span><span class="en">The <b>TV Remote</b> app: hardware volume keys, widgets, TV audio, voice, keys even before ADB is on.</span></p>
+        <div class="go"><span class="vi">Xem các bước</span><span class="en">See steps</span> →</div>
+      </button>
+      <button class="opt" role="tab" data-tab="computer" aria-selected="false">
+        <div class="big">💻</div>
+        <h3><span class="vi">App máy tính</span><span class="en">Computer app</span></h3>
+        <div class="who">Mac · Windows · Linux</div>
+        <p><span class="vi">Màn hình lớn, chuột và bàn phím thật, quản lý nhiều TV, kéo thả tệp lên TV.</span><span class="en">Big screen, real mouse and keyboard, many TVs, drag and drop files onto the TV.</span></p>
+        <div class="go"><span class="vi">Xem các bước</span><span class="en">See steps</span> →</div>
+      </button>
+    </div>
+
+    <!-- each panel below (and .prep) is a .story: its .sst stage acts out the steps, timed in stories.js (a part per
+         step, in the order of the .steps li) and styled in stories.css -->
+    <!-- browser / TV Setup -->
+    <div class="panel on story st-b" id="p-browser" role="tabpanel">
+      <div>
+        <h3><span class="vi">Cài TV Setup bằng mã Downloader</span><span class="en">Install TV Setup with a Downloader code</span></h3>
+        <p class="sub"><span class="vi">Chỉ cần remote của TV. Không cần máy tính, không cần cáp.</span><span class="en">All you need is the TV's remote. No computer, no cable.</span></p>
+        <ol class="steps">
+          <li><div class="vi">Trên TV mở <b>CH Play</b>, tìm và cài <b>Downloader</b> (của AFTVnews, biểu tượng màu cam).</div><div class="en">On the TV open <b>Google Play</b>, find and install <b>Downloader</b> (by AFTVnews, orange icon).</div></li>
+          <li><div class="vi">Mở Downloader, gõ mã <b class="mono">2397346</b> rồi chọn <b>Go</b>. Nó tải bản TV Setup mới nhất.</div><div class="en">Open Downloader, type <b class="mono">2397346</b> and choose <b>Go</b>. It fetches the latest TV Setup.</div></li>
+          <li><div class="vi">Chọn <b>Cài đặt</b>. TV báo chưa cho phép nguồn này thì bật cho Downloader, quay lại, cài tiếp.</div><div class="en">Choose <b>Install</b>. If the TV blocks unknown sources, allow Downloader, go back, install.</div></li>
+          <li><div class="vi">Mở <b>TV Setup</b>. Chưa bật Gỡ lỗi ADB thì app chỉ cách và mở thẳng chỗ bật.</div><div class="en">Open <b>TV Setup</b>. If ADB debugging is off, the app shows how and opens the right screen.</div></li>
+          <li><div class="vi">Quét <b>mã QR</b> trên TV bằng camera, nhập <b>mã 6 số</b> TV hiện ra. Xong.</div><div class="en">Scan the <b>QR code</b> on the TV with your camera, enter the <b>6-digit code</b>. Done.</div></li>
+        </ol>
+        <a class="more" href="guide#install-tv"><span class="vi">Xem từng bước chi tiết</span><span class="en">See every step</span> →</a>
+      </div>
+      <div class="side">
+        <div class="sst" aria-hidden="true">
+          <div class="tv stv"><div class="dscr">
+            <div class="dv dcln"><div class="ck"><span class="t1">20:59</span><span class="t2">21:30</span></div><div class="lb"><span class="vi">Ứng dụng</span><span class="en">Apps</span></div><div class="drw"><span class="y"></span><span class="n">N</span><span class="s">♫</span><span class="p">prime</span><span>⚙</span></div><div class="lb l2"><span class="vi">Xem tiếp</span><span class="en">Continue watching</span></div><div class="rw2"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i></div></div>
+            <div class="tp b1"><div class="srch">🔍 <span class="ty y1">downloader</span></div><div class="app tr q1"><i class="ico dl">⬇</i><div><b>Downloader</b><small>AFTVnews</small></div></div>
+              <span class="tb q2"><span class="i1"><span class="vi">Cài đặt</span><span class="en">Install</span></span><span class="i2"><span class="vi">Mở</span><span class="en">Open</span></span></span><div class="bar r1"></div></div>
+            <div class="tp or b2"><div class="ohd">Downloader</div><small><span class="vi">Nhập URL hoặc mã tìm kiếm</span><span class="en">Enter a URL or search term</span></small><div class="inp"><span class="ty y2">2397346</span><i class="car"></i></div>
+              <span class="tb q3">Go</span><div class="dlr" style="opacity:0"><small>tv-setup.apk</small><div class="bar r2"></div></div></div>
+            <div class="tp b3"><div class="app"><i class="ico ts">⚡</i><div><b>TV Setup</b><small><span class="vi">Bạn có muốn cài ứng dụng này?</span><span class="en">Do you want to install this app?</span></small></div></div>
+              <div class="tbs"><span class="tb"><span class="vi">Hủy</span><span class="en">Cancel</span></span><span class="tb q4"><span class="vi">Cài đặt</span><span class="en">Install</span></span></div><div class="bar r3"></div><div class="ok okc k3">✓ <span class="vi">Đã cài</span><span class="en">Installed</span></div>
+              <div class="tp ovl u3"><h5><span class="vi">Cài ứng dụng không rõ nguồn gốc</span><span class="en">Install unknown apps</span></h5><div class="tr q5"><span>⬇ Downloader</span><i class="tg g3"></i></div><small><span class="vi">Cho phép từ nguồn này</span><span class="en">Allow from this source</span></small></div></div>
+            <div class="tp b4"><h5>⚡ TV Setup</h5><div class="tr"><span><span class="vi">Gỡ lỗi ADB</span><span class="en">ADB debugging</span></span><small class="st1"><span class="vi">Đang tắt</span><span class="en">Off</span></small></div><span class="tb q6"><span class="vi">Mở chỗ bật ADB</span><span class="en">Open the switch</span></span>
+              <div class="tp ovl u4"><h5><span class="vi">Tùy chọn nhà phát triển</span><span class="en">Developer options</span></h5><div class="tr q7"><span><span class="vi">Gỡ lỗi ADB</span><span class="en">ADB debugging</span></span><i class="tg g4"></i></div><div class="tr"><span><span class="vi">Thang đo hoạt ảnh</span><span class="en">Animation scale</span></span><small>1x</small></div></div>
+              <div class="tp ovl u5"><h5>⚡ TV Setup <small class="okc st2">✓ <span class="vi">Sẵn sàng</span><span class="en">Ready</span></small></h5><div class="app"><div class="qrx" style="width:20cqw"></div><div><small><span class="vi">Quét bằng camera hoặc mở</span><span class="en">Scan with a camera, or open</span></small><b class="mono">192.168.1.20:8765</b><small><span class="vi">Mã ghép</span><span class="en">Pairing code</span></small><b class="mono" style="font-size:6cqw;letter-spacing:.08em">482 913</b></div></div></div></div>
+            <div class="sto o1">🌐 <span class="vi">iPhone đã kết nối</span><span class="en">iPhone connected</span></div>
+          </div></div>
+          <div class="rc"><i class="rd"></i><b class="rk"></b><i class="rb"></i><i class="rb"></i></div>
+          <div class="phone dph sph"><div class="dscr">
+            <div class="pp cam e1"><div class="qrx"></div><div class="pill"><span class="vi">Mở</span><span class="en">Open</span> 192.168.1.20</div></div>
+            <div class="pp e2"><div class="url">🔒 192.168.1.20:8765</div><div class="pcode" style="opacity:1"><b><span class="vi">Nhập mã trên TV</span><span class="en">Enter the code on the TV</span></b><div class="bx"><i>4</i><i>8</i><i>2</i><i>9</i><i>1</i><i>3</i></div><div class="kp"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i><i></i><i>0</i><i>⌫</i></div></div></div>
+            <div class="pp e3"><div class="ph1">‹ <span class="vi">Phòng khách</span><span class="en">Living room</span><i class="dot"></i></div><div class="pm" style="top:26cqw;color:#3ddc84">✓ <span class="vi">Đã ghép</span><span class="en">Paired</span></div><div class="pad"><i class="pu"></i><i class="pr"></i><i class="pd"></i><i class="pl"></i><b>OK</b></div><div class="vol"><i>＋</i><i>－</i></div><div class="nav"><i>‹</i><i>⌂</i><i>☰</i></div></div>
+            <span class="dfg"></span>
+          </div></div>
+        </div>
+        <div class="code">
+          <small><span class="vi">Mã Downloader · TV Setup</span><span class="en">Downloader code · TV Setup</span></small>
+          <div class="num">2397346</div>
+          <div class="row">
+            <button class="btn btn-ghost btn-sm" data-copy="2397346"><span class="vi">Chép mã</span><span class="en">Copy code</span></button>
+            <a class="btn btn-ghost btn-sm" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-setup.apk">tv-setup.apk</a>
+          </div>
+        </div>
+        <div class="alt"><span class="vi">💡 Trên iPhone: Safari → Chia sẻ → <b>Thêm vào MH chính</b> để có biểu tượng như một app. Không có Downloader thì mở</span><span class="en">💡 On iPhone: Safari → Share → <b>Add to Home Screen</b> for an app-like icon. No Downloader? Open</span> <a class="mono" href="https://go.aftvnews.com/2397346" target="_blank" rel="noopener">go.aftvnews.com/2397346</a>.</div>
+        <div class="alt"><span class="vi">➕ Thêm cho TV, cũng bằng Downloader: <b>TV Home</b> (màn hình chính không quảng cáo) mã <b class="mono">4356026</b> · <b>TV Channels</b> (kênh TV miễn phí) mã <b class="mono">8135635</b>.</span><span class="en">➕ More for the TV, also with Downloader: <b>TV Home</b> (a home screen without ads) code <b class="mono">4356026</b> · <b>TV Channels</b> (free TV channels) code <b class="mono">8135635</b>.</span></div>
+      </div>
+    </div>
+
+    <!-- android -->
+    <div class="panel story st-a" id="p-android" role="tabpanel">
+      <div>
+        <h3><span class="vi">Cài App điện thoại</span><span class="en">Install the Phone app</span></h3>
+        <p class="sub"><span class="vi">Android 7 trở lên. Điện thoại và TV cùng mạng Wi-Fi.</span><span class="en">Android 7 or newer. Phone and TV on the same Wi-Fi.</span></p>
+        <ol class="steps">
+          <li><div class="vi">Quét mã QR hoặc bấm <b>tv-remote.apk</b> để tải, rồi mở để cài. Android cảnh báo “ứng dụng không rõ nguồn” thì cho phép trình duyệt cài.</div><div class="en">Scan the QR code or tap <b>tv-remote.apk</b> to download it, then open it. If Android warns about unknown apps, allow your browser to install.</div></li>
+          <li><div class="vi">Mở app, bấm <b>Quét Wi-Fi</b> rồi chọn TV (hoặc gõ IP của TV).</div><div class="en">Open the app, tap <b>Scan Wi-Fi</b> and pick your TV (or type its IP).</div></li>
+          <li><div class="vi">TV hỏi <b>“Cho phép gỡ lỗi USB?”</b>: tích <b>Luôn cho phép</b> rồi OK. Chỉ một lần.</div><div class="en">The TV asks <b>“Allow USB debugging?”</b>: tick <b>Always allow</b>, then OK. Just once.</div></li>
+          <li><div class="vi">TV chưa bật ADB? Bạn vẫn bấm phím được ngay sau khi ghép mã, và app dẫn từng bước cho tới khi xong.</div><div class="en">ADB not on yet? Keys work right after pairing a code, and the app guides you step by step the rest of the way.</div></li>
+        </ol>
+        <a class="more" href="guide#install-phone"><span class="vi">Xem từng bước chi tiết</span><span class="en">See every step</span> →</a>
+      </div>
+      <div class="side">
+        <div class="sst" aria-hidden="true">
+          <div class="tv stv"><div class="dscr">
+            <div class="dv dcln"><div class="ck"><span class="t1">20:59</span><span class="t2">21:30</span></div><div class="lb"><span class="vi">Ứng dụng</span><span class="en">Apps</span></div><div class="drw"><span class="y"></span><span class="n">N</span><span class="s">♫</span><span class="p">prime</span><span>⚙</span></div><div class="lb l2"><span class="vi">Xem tiếp</span><span class="en">Continue watching</span></div><div class="rw2"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i></div></div><div class="dv dyt "><div class="lg">YouTube</div><div class="pl"></div><div class="ls"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i><i style="--a:#5a4a1f;--b:#e0b04a"></i></div></div><span class="dfoc"></span>
+            <div class="dlg usb"><b><span class="vi">Cho phép gỡ lỗi USB?</span><span class="en">Allow USB debugging?</span></b><small><span class="vi">Vân tay khóa RSA của máy tính:</span><span class="en">The computer's RSA key fingerprint:</span> 3F:9A:C2:…</small><div class="tr q1"><em>☑</em><span class="vi">Luôn cho phép từ máy này</span><span class="en">Always allow from this computer</span></div><div class="tbs"><span class="tb"><span class="vi">Hủy</span><span class="en">Cancel</span></span><span class="tb q2">OK</span></div></div>
+            <div class="sto o1">📱 <span class="vi">Điện thoại đã kết nối</span><span class="en">Phone connected</span></div>
+          </div></div>
+          <div class="phone dph sph"><div class="dscr">
+            <div class="pp a1"><div class="url">github.com/…/tv-remote.apk</div><div class="pm" style="top:30cqw;text-align:left;left:6cqw;right:6cqw">⬇ tv-remote.apk<div class="bar" style="margin-top:3cqw"></div></div>
+              <div class="pbtn open" style="left:25cqw;right:25cqw;top:55cqw"><span class="vi">Mở</span><span class="en">Open</span></div>
+              <div class="sheet"><b>📦 TV Remote</b><small style="color:#9aa4b8"><span class="vi">Bạn có muốn cài ứng dụng này?</span><span class="en">Do you want to install this app?</span></small><div class="bar"></div><div class="okc ok" style="opacity:0">✓ <span class="vi">Đã cài</span><span class="en">Installed</span></div>
+                <div style="display:flex;gap:3cqw"><div class="pbtn sec" style="flex:1"><span class="vi">Hủy</span><span class="en">Cancel</span></div><div class="pbtn tb2" style="flex:1"><span class="vi">Cài đặt</span><span class="en">Install</span></div></div></div></div>
+            <div class="pp a2"><div class="ph1">TV Remote</div><div class="pbtn scan" style="left:10cqw;right:10cqw;top:32cqw">📡 <span class="vi">Quét Wi-Fi</span><span class="en">Scan Wi-Fi</span></div><div class="rad" style="left:36cqw;top:56cqw;width:28cqw;height:28cqw"></div><div class="prow">📺<div><b><span class="vi">Phòng khách</span><span class="en">Living room</span></b><small>192.168.1.20</small></div></div></div>
+            <div class="pp a3"><div class="ph1">‹ <span class="vi">Phòng khách</span><span class="en">Living room</span></div><div class="pm w1" style="top:60cqw"><span class="sp"></span><br><span class="vi">Hãy chọn Cho phép trên TV</span><span class="en">On the TV, choose Allow</span></div><div class="pm w2 okc" style="top:64cqw">✓ <span class="vi">Đã cho phép</span><span class="en">Allowed</span></div></div>
+            <div class="pp a4"><div class="ph1">‹ <span class="vi">Phòng khách</span><span class="en">Living room</span><i class="dot"></i></div><div class="pmir"><div class="dv dcln"><div class="ck"><span class="t1">20:59</span><span class="t2">21:30</span></div><div class="lb"><span class="vi">Ứng dụng</span><span class="en">Apps</span></div><div class="drw"><span class="y"></span><span class="n">N</span><span class="s">♫</span><span class="p">prime</span><span>⚙</span></div><div class="lb l2"><span class="vi">Xem tiếp</span><span class="en">Continue watching</span></div><div class="rw2"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i></div></div><div class="dv dyt myt"><div class="lg">YouTube</div><div class="pl"></div><div class="ls"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i><i style="--a:#5a4a1f;--b:#e0b04a"></i></div></div></div><div class="pad"><i class="pu"></i><i class="pr"></i><i class="pd"></i><i class="pl"></i><b>OK</b></div><div class="vol"><i>＋</i><i>－</i></div><div class="nav"><i>‹</i><i>⌂</i><i>☰</i></div></div>
+            <span class="dfg"></span>
+          </div></div>
+        </div>
+        <div class="qr" data-qr="https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk"><div><b><span class="vi">📱 Quét để tải về điện thoại</span><span class="en">📱 Scan to get it on your phone</span></b><small><span class="vi">Mở camera điện thoại, quét mã rồi mở link: APK tải về ngay.</span><span class="en">Point the phone's camera here and open the link: the APK downloads right away.</span></small></div></div>
+        <div class="code">
+          <small><span class="vi">Mã Downloader · TV Remote</span><span class="en">Downloader code · TV Remote</span></small>
+          <div class="num">2973135</div>
+          <div class="row">
+            <button class="btn btn-ghost btn-sm" data-copy="2973135"><span class="vi">Chép mã</span><span class="en">Copy code</span></button>
+            <a class="btn btn-ghost btn-sm" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk">tv-remote.apk</a>
+          </div>
+        </div>
+        <div class="alt"><span class="vi">🛡️ Play Protect có thể cảnh báo vì app có quyền cài APK. Mã nguồn công khai ngay trên GitHub; chọn “Vẫn cài” nếu bạn tin.</span><span class="en">🛡️ Play Protect may warn because the app can install APKs. The source is public on GitHub; choose “Install anyway” if you trust it.</span></div>
+      </div>
+    </div>
+
+    <!-- computer -->
+    <div class="panel story st-c" id="p-computer" role="tabpanel">
+      <div>
+        <h3><span class="vi">Cài App máy tính</span><span class="en">Install the Computer app</span></h3>
+        <p class="sub"><span class="vi">Một app có cửa sổ riêng, khoảng 20 MB. Không cần cài Python, adb hay gì thêm.</span><span class="en">An app with its own window, about 20 MB. Nothing else to install: no Python, no adb.</span></p>
+        <ol class="steps">
+          <li><div class="vi">Bấm <b>Tải về</b> (đã chọn sẵn bản cho máy bạn) rồi giải nén.</div><div class="en">Press <b>Download</b> (the right file for your computer is picked) and unzip it.</div></li>
+          <li><div class="vi"><b>Mac:</b> kéo <b>TV Remote</b> vào Applications rồi mở. Mac báo “chưa xác minh nhà phát triển” thì vào Cài đặt hệ thống → Quyền riêng tư &amp; Bảo mật → <b>Vẫn mở</b> (chỉ lần đầu).</div><div class="en"><b>Mac:</b> drag <b>TV Remote</b> into Applications and open it. If the Mac says the developer is “unverified”: System Settings → Privacy &amp; Security → <b>Open Anyway</b> (first time only).</div></li>
+          <li><div class="vi"><b>Windows:</b> chạy <b class="mono">TV Remote.exe</b> trong thư mục vừa giải nén. Hiện “Windows đã bảo vệ PC của bạn” thì bấm <b>Thông tin bổ sung → Vẫn chạy</b>. <b>Linux:</b> chạy <b class="mono">tv-remote/bin/tv-remote</b>.</div><div class="en"><b>Windows:</b> run <b class="mono">TV Remote.exe</b> in the unzipped folder. If you see “Windows protected your PC”: <b>More info → Run anyway</b>. <b>Linux:</b> run <b class="mono">tv-remote/bin/tv-remote</b>.</div></li>
+          <li><div class="vi">App tự quét mạng tìm TV. Chọn TV; chưa sẵn sàng thì tab <b>Thiết lập</b> dẫn từng bước. TV chưa bật ADB thì bấm <b>🧭 Bật ADB giúp tôi</b>.</div><div class="en">The app scans for TVs. Pick yours; if it isn't ready, the <b>Setup</b> tab walks you through. ADB off? Press <b>🧭 Help me turn on ADB</b>.</div></li>
+        </ol>
+        <a class="more" href="guide#install-pc"><span class="vi">Xem từng bước chi tiết</span><span class="en">See every step</span> →</a>
+      </div>
+      <div class="side">
+        <div class="sst" aria-hidden="true">
+          <div class="tv stv"><div class="dscr">
+            <div class="dv dcln"><div class="ck"><span class="t1">20:59</span><span class="t2">21:30</span></div><div class="lb"><span class="vi">Ứng dụng</span><span class="en">Apps</span></div><div class="drw"><span class="y"></span><span class="n">N</span><span class="s">♫</span><span class="p">prime</span><span>⚙</span></div><div class="lb l2"><span class="vi">Xem tiếp</span><span class="en">Continue watching</span></div><div class="rw2"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i></div></div>
+            <div class="dlg usb"><b><span class="vi">Cho phép gỡ lỗi USB?</span><span class="en">Allow USB debugging?</span></b><small><span class="vi">Vân tay khóa RSA của máy tính:</span><span class="en">The computer's RSA key fingerprint:</span> 3F:9A:C2:…</small><div class="tr q1"><em>☑</em><span class="vi">Luôn cho phép từ máy này</span><span class="en">Always allow from this computer</span></div><div class="tbs"><span class="tb"><span class="vi">Hủy</span><span class="en">Cancel</span></span><span class="tb q2">OK</span></div></div>
+            <div class="sto o1">💻 <span class="vi">Máy tính đã kết nối</span><span class="en">Computer connected</span></div>
+          </div></div>
+          <div class="lap"><div class="lsc">
+            <div class="lw c1"><div class="ttl"><span class="vi">Tải về</span><span class="en">Downloads</span></div><div class="dli"><div class="app"><i class="ico ts">📦</i><div><b>TV-Remote-mac.zip</b><small>21 MB</small></div></div><div class="bar"></div><div class="ok okc">✓ <span class="vi">Đã tải và giải nén</span><span class="en">Downloaded, unzipped</span></div></div>
+              <div class="apic"><i class="ico ts">⚡</i>TV Remote</div></div>
+            <div class="lw c2"><div class="ttl">Finder</div><div class="drag"><i class="ico ts">⚡</i>TV Remote</div><div class="dst2"><i class="ico fold">📁</i>Applications</div>
+              <div class="dlg"><b><span class="vi">“TV Remote” chưa được xác minh</span><span class="en">“TV Remote” is not verified</span></b><small><span class="vi">Chỉ hỏi lần đầu.</span><span class="en">Asked the first time only.</span></small><div class="tbs"><span class="tb"><span class="vi">Xong</span><span class="en">Done</span></span><span class="tb go" style="background:#5b8cff;color:#06112b"><span class="vi">Vẫn mở</span><span class="en">Open Anyway</span></span></div></div></div>
+            <div class="lw ss c3"><b><span class="vi">Windows đã bảo vệ PC của bạn</span><span class="en">Windows protected your PC</span></b><p><span class="vi">Microsoft Defender SmartScreen đã ngăn một ứng dụng không xác định khởi động.</span><span class="en">Microsoft Defender SmartScreen stopped an unrecognized app.</span></p><span class="lnk"><span class="vi">Thông tin bổ sung</span><span class="en">More info</span></span>
+              <div class="btns"><span class="more go"><span class="vi">Vẫn chạy</span><span class="en">Run anyway</span></span><span><span class="vi">Không chạy</span><span class="en">Don't run</span></span></div></div>
+            <div class="lw c4"><div class="ttl">TV Remote</div><div class="sp1"><span class="sp"></span> <span class="vi">Đang tìm TV…</span><span class="en">Looking for TVs…</span></div><div class="prow">📺<div><b><span class="vi">Phòng khách</span><span class="en">Living room</span></b><small>192.168.1.20</small></div></div><div class="wait"><span class="sp"></span> <span class="vi">Hãy chọn Cho phép trên TV</span><span class="en">On the TV, choose Allow</span></div><div class="mirw"><div class="dv dcln"><div class="ck"><span class="t1">20:59</span><span class="t2">21:30</span></div><div class="lb"><span class="vi">Ứng dụng</span><span class="en">Apps</span></div><div class="drw"><span class="y"></span><span class="n">N</span><span class="s">♫</span><span class="p">prime</span><span>⚙</span></div><div class="lb l2"><span class="vi">Xem tiếp</span><span class="en">Continue watching</span></div><div class="rw2"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i></div></div></div></div>
+            <i class="cur"></i>
+          </div></div>
+        </div>
+        <a class="btn btn-primary" id="dl-pc" href="https://github.com/HoangTran0410/tv-remote/releases/latest">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
+          <span><span class="vi">Tải về</span><span class="en">Download</span><span id="dl-os"></span></span>
+        </a>
+        <div class="dl-all">
+          <a data-os="mac" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac.zip">Mac · <span class="vi">chip Apple và Intel</span><span class="en">Apple chip and Intel</span></a>
+          <a data-os="windows-x64" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-windows-x64.zip">Windows 10 / 11</a>
+          <a data-os="linux-x64" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-x64.tar.gz">Linux · x64</a>
+          <a data-os="linux-arm64" href="https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-arm64.tar.gz">Linux · arm64</a>
+        </div>
+        <div class="alt"><span class="vi">🔒 App chỉ nghe ở 127.0.0.1, máy khác trong mạng không vào được. Đóng cửa sổ là app dừng hẳn, không để lại gì chạy ngầm. Muốn sửa code thì xem <a href="https://github.com/HoangTran0410/tv-remote">mã nguồn</a>.</span><span class="en">🔒 It only listens on 127.0.0.1, nobody else on the network can reach it. Close the window and it is fully gone; nothing keeps running. Want to change the code? See the <a href="https://github.com/HoangTran0410/tv-remote">source</a>.</span></div>
+      </div>
+    </div>
+
+    <div class="prep reveal story st-p" id="p-prep">
+      <div>
+        <span class="eyebrow"><span class="vi">Nếu bị kẹt</span><span class="en">If you get stuck</span></span>
+        <h3><span class="vi">TV chưa bật ADB?</span><span class="en">ADB not on yet?</span></h3>
+        <p class="note"><span class="vi">Thường thì bạn không cần làm gì: TV Setup sẽ tự mở đúng màn hình. Tên các mục ở đây lấy theo TV Sony, TV hãng khác có thể gọi hơi khác.</span><span class="en">Usually nothing to do: TV Setup opens the right screen. Menu names are from Sony; others differ slightly.</span></p>
+        <ol class="steps">
+          <li><div class="vi"><b>Tự động:</b> TV Setup tự mở <span class="path">Tùy chọn nhà phát triển</span>, kể cả khi TV giấu mục Cài đặt. Bạn chỉ cần bật <b>Gỡ lỗi ADB</b> (một số TV gọi là “Gỡ lỗi USB”).</div><div class="en"><b>Automatic:</b> TV Setup opens <span class="path">Developer options</span> itself, even when the TV hides Settings. Just turn on <b>ADB debugging</b> (some TVs say “USB debugging”).</div></li>
+          <li><div class="vi"><b>Không thấy Tùy chọn nhà phát triển?</b> Vào <span class="path">Cài đặt → Tùy chọn thiết bị → Giới thiệu</span>, bấm OK 7 lần vào “Bản dựng”, rồi làm lại bước 1.</div><div class="en"><b>No Developer options?</b> Go to <span class="path">Settings → Device Preferences → About</span>, press OK 7 times on “Build”, then do step 1 again.</div></li>
+          <li><div class="vi"><b>Bấm “Bản dựng” mà TV đòi mật khẩu?</b> (thường gặp ở box của nhà mạng, như FPT Play): không cần mật khẩu, cứ cài TV Setup. Nó mở thẳng Tùy chọn nhà phát triển, bỏ qua bước này. Nếu vẫn không được, app điện thoại và app máy tính vẫn bấm phím được, chỉ là không xem được hình.</div><div class="en"><b>“Build” asks for a password?</b> (common on operator boxes such as FPT Play): you don’t need it, just install TV Setup. It opens Developer options directly and skips this step. If that still fails, the Phone and Computer apps can still send keys, just without the picture.</div></li>
+        </ol>
+        <a class="more" href="guide#prep-tv"><span class="vi">Xem từng bước chi tiết</span><span class="en">See every step</span> →</a>
+      </div>
+      <div class="sst" aria-hidden="true">
+        <div class="tv stv"><div class="dscr">
+          <div class="dv dcln"><div class="ck"><span class="t1">20:59</span><span class="t2">21:30</span></div><div class="lb"><span class="vi">Ứng dụng</span><span class="en">Apps</span></div><div class="drw"><span class="y"></span><span class="n">N</span><span class="s">♫</span><span class="p">prime</span><span>⚙</span></div><div class="lb l2"><span class="vi">Xem tiếp</span><span class="en">Continue watching</span></div><div class="rw2"><i style="--a:#2d5b7c;--b:#7aa6c2"></i><i style="--a:#5c2d4f;--b:#d36a8a"></i><i style="--a:#24543a;--b:#8bc77a"></i></div></div>
+          <div class="tp p0"><h5>⚡ TV Setup</h5><div class="tr"><span><span class="vi">Gỡ lỗi ADB</span><span class="en">ADB debugging</span></span><small style="color:#ff8a8a"><span class="vi">Đang tắt</span><span class="en">Off</span></small></div><small><span class="sp"></span> <span class="vi">Đang mở Tùy chọn nhà phát triển…</span><span class="en">Opening Developer options…</span></small></div>
+          <div class="tp p2"><h5><span class="vi">Tùy chọn nhà phát triển</span><span class="en">Developer options</span></h5><div class="tr"><span><span class="vi">Thang đo hoạt ảnh</span><span class="en">Animation scale</span></span><small>1x</small></div><div class="tr on adb"><span><span class="vi">Gỡ lỗi ADB</span><span class="en">ADB debugging</span></span><i class="tg"></i></div><div class="tr"><span><span class="vi">Ở chế độ thức</span><span class="en">Stay awake</span></span><i class="tg"></i></div>
+            <div class="dlg"><b><span class="vi">Cho phép gỡ lỗi?</span><span class="en">Allow debugging?</span></b><small><span class="vi">Gỡ lỗi USB chỉ dành cho mục đích phát triển.</span><span class="en">Debugging is meant for development.</span></small><div class="tbs"><span class="tb"><span class="vi">Hủy</span><span class="en">Cancel</span></span><span class="tb go" style="background:#5b8cff;color:#06112b">OK</span></div></div></div>
+          <div class="tp p1"><h5><span class="vi">Giới thiệu</span><span class="en">About</span></h5><div class="tr"><span><span class="vi">Tên thiết bị</span><span class="en">Device name</span></span><small>Sony</small></div><div class="tr"><span>Android TV OS</span><small>14</small></div><div class="tr on bld"><span><span class="vi">Bản dựng</span><span class="en">Build</span></span><small>UTT3.240625</small></div>
+            <div class="left"><span><span class="vi">Bạn chỉ còn cách 3 bước nữa là trở thành nhà phát triển.</span><span class="en">You are now 3 steps away from being a developer.</span></span><span><span class="vi">Bạn chỉ còn cách 2 bước nữa là trở thành nhà phát triển.</span><span class="en">You are now 2 steps away from being a developer.</span></span><span><span class="vi">Bạn chỉ còn cách 1 bước nữa là trở thành nhà phát triển.</span><span class="en">You are now 1 step away from being a developer.</span></span></div>
+            <div class="dev">🎉 <span class="vi">Bạn đã là nhà phát triển!</span><span class="en">You are now a developer!</span></div></div>
+          <div class="tp p3"><h5><span class="vi">Giới thiệu</span><span class="en">About</span></h5><div class="tr"><span><span class="vi">Tên thiết bị</span><span class="en">Device name</span></span><small>FPT Play Box</small></div><div class="tr on bld"><span><span class="vi">Bản dựng</span><span class="en">Build</span></span><small>FPT.S550</small></div>
+            <div class="dlg pw"><b>🔒 <span class="vi">Nhập mật khẩu ADB</span><span class="en">Enter the ADB password</span></b><div class="inp">••••<i class="car"></i></div><small><span class="vi">Liên hệ nhà cung cấp dịch vụ.</span><span class="en">Contact your service provider.</span></small></div></div>
+          <div class="sto o1">⚡ TV Setup: <span class="vi">đã kết nối ADB</span><span class="en">ADB connected</span></div>
+          <div class="sto o3">⚡ <span class="vi">Không cần mật khẩu: TV Setup mở thẳng</span><span class="en">No password: TV Setup goes straight there</span></div>
+          <span class="dfoc"></span>
+        </div></div>
+        <div class="rc"><i class="rd"></i><b class="rk"></b><i class="rb"></i><i class="rb"></i></div>
+      </div>
+    </div>
+
+    <div class="center reveal" style="margin-top:56px">
+      <h3><span class="vi">Mỗi cách làm được gì</span><span class="en">What each one does</span></h3>
+    </div>
+    <div class="cmpwrap reveal" style="margin-top:16px">
+      <table class="cmp ways">
+        <thead><tr><th></th><th>🌐 <span class="vi">Web của TV</span><span class="en">TV web page</span></th><th>📱 <span class="vi">App điện thoại</span><span class="en">Phone app</span></th><th>💻 <span class="vi">App máy tính</span><span class="en">Computer app</span></th></tr></thead>
+        <tbody><tr><th><span class="vi">Remote, xem và chạm hình TV, vẽ, đưa ảnh lên TV</span><span class="en">Remote, see and touch the TV picture, draw, put a picture on the TV</span></th><td class="y"></td><td class="y"></td><td class="y"></td></tr><tr><th><span class="vi">Nghe tiếng TV</span><span class="en">Listen to the TV</span></th><td class="y"><span class="vi">khi trang đang mở</span><span class="en">while the page is open</span></td><td class="y"><span class="vi">cả khi tắt màn hình</span><span class="en">screen off too</span></td><td class="y"><span class="vi">chất lượng cao</span><span class="en">high quality</span></td></tr><tr><th><span class="vi">Ứng dụng, tệp, sức khỏe, hẹn giờ, cài đặt</span><span class="en">Apps, files, health, timers, settings</span></th><td class="y"></td><td class="y"></td><td class="y"></td></tr><tr><th><span class="vi">Nhiều TV, đổi TV</span><span class="en">Several TVs</span></th><td class="m"><span class="vi">chỉ TV đó</span><span class="en">only that TV</span></td><td class="y"></td><td class="y"></td></tr><tr><th><span class="vi">Bật TV đã tắt hẳn (Wake-on-LAN)</span><span class="en">Turn on a fully-off TV (Wake-on-LAN)</span></th><td class="m"><span class="vi">TV tắt thì trang tắt</span><span class="en">off with the TV</span></td><td class="y"></td><td class="y"></td></tr><tr><th><span class="vi">Bấm phím khi chưa có ADB</span><span class="en">Keys before ADB</span></th><td class="n"></td><td class="y"></td><td class="y"></td></tr><tr><th><span class="vi">Widget, phím âm lượng của máy</span><span class="en">Widget, the phone's volume keys</span></th><td class="n"></td><td class="y"></td><td class="n"></td></tr><tr><th><span class="vi">Cài gì trên máy điều khiển</span><span class="en">Install on your device</span></th><td class="y"><span class="vi">không cần</span><span class="en">nothing</span></td><td class="m"><span class="vi">app</span><span class="en">the app</span></td><td class="m"><span class="vi">app</span><span class="en">the app</span></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COMPAT & SECURITY ============ -->
+<section style="padding-top:20px">
+  <div class="wrap">
+    <div class="two">
+      <div class="box reveal">
+        <h3>📺 <span class="vi">TV nào dùng được?</span><span class="en">Which TVs work?</span></h3>
+        <ul class="list">
+          <li><span class="m">✅</span><span class="vi"><b>Android TV và Google TV</b> có Gỡ lỗi ADB qua mạng (cổng 5555): Sony, TCL, Xiaomi, Philips, box Android…</span><span class="en"><b>Android TV and Google TV</b> with network ADB debugging (port 5555): Sony, TCL, Xiaomi, Philips, Android boxes…</span></li>
+          <li><span class="m">🧪</span><span class="vi">Đã dùng thực tế trên <b>Sony BRAVIA</b> (Android 9). Hãng khác chưa thử, nhưng cùng chạy Android TV nên cách làm giống nhau.</span><span class="en">Verified on a real <b>Sony BRAVIA</b> (Android 9). Other brands untested but use the same standard.</span></li>
+          <li><span class="m">⚠️</span><span class="vi">Vài Google TV đời mới chỉ có “Gỡ lỗi không dây” kiểu ghép mã: có thể chưa dùng được.</span><span class="en">Some newer Google TVs only offer pairing-code “Wireless debugging”: may not work yet.</span></li>
+          <li><span class="m">🧪</span><span class="vi"><b>LG, Samsung, Roku, VIDAA</b>: bấm phím, gõ chữ, mở app, bật TV, từ app điện thoại và máy tính. Đang thử nghiệm.</span><span class="en"><b>LG, Samsung, Roku, VIDAA</b>: keys, typing, apps, power on, from the phone and computer apps. In beta.</span></li>
+        </ul>
+      </div>
+      <div class="box reveal">
+        <h3>🔒 <span class="vi">An toàn ngay từ đầu</span><span class="en">Secure by design</span></h3>
+        <ul class="list">
+          <li><span class="m">🏠</span><span class="vi"><b>Không máy chủ, không tài khoản.</b> Không có gì của bạn rời khỏi mạng nhà.</span><span class="en"><b>No server, no account.</b> Nothing of yours leaves your home network.</span></li>
+          <li><span class="m">🔢</span><span class="vi"><b>Ghép mã 6 số</b> hiện trên màn hình TV: người lạ cùng Wi-Fi không vào được.</span><span class="en"><b>6-digit pairing</b> shown on the TV screen: strangers on your Wi-Fi can't get in.</span></li>
+          <li><span class="m">🔍</span><span class="vi">TV Setup chỉ bấm “Cho phép” khi <b>đúng là máy của bạn đang xin quyền</b>, và hiện thông báo trên TV mỗi lần.</span><span class="en">TV Setup only presses “Allow” when <b>the key matches your own device</b>, and shows a notice every time.</span></li>
+          <li><span class="m">🛰️</span><span class="vi">Ở ngoài nhà thì đi qua <b>Tailscale</b>, không mở cổng nào ra Internet.</span><span class="en">Away from home it goes over <b>Tailscale</b>, with no ports opened to the Internet.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section id="faq" style="padding-top:40px">
+  <div class="wrap">
+    <div class="center reveal">
+      <span class="eyebrow">FAQ</span>
+      <h2><span class="vi">Câu hỏi thường gặp</span><span class="en">Frequently asked questions</span></h2>
+    </div>
+    <div class="faq">
+      <details class="reveal"><summary><span class="vi">Có mất phí không?</span><span class="en">Does it cost anything?</span></summary>
+        <p class="vi">Không. Miễn phí hoàn toàn, không quảng cáo, không bản trả phí. Mã nguồn công khai trên GitHub.</p><p class="en">No. Completely free, no ads, no paid tier. The source is public on GitHub.</p></details>
+      <details class="reveal"><summary><span class="vi">“Gỡ lỗi ADB” là gì, bật lên có nguy hiểm không?</span><span class="en">What is “ADB debugging”, is it risky?</span></summary>
+        <p class="vi">ADB là cổng mà Android dùng để máy khác điều khiển nó, cũng là thứ cho phép xem màn hình, cài app, quản lý tệp. Máy nào muốn dùng đều phải được bạn bấm “Cho phép” ngay trên TV. Chỉ dùng trong mạng nhà bạn tin và qua Tailscale; muốn thu hồi thì vào Tùy chọn nhà phát triển → Thu hồi quyền gỡ lỗi USB.</p>
+        <p class="en">ADB is how Android lets another device control it; it's what makes screen viewing, app installs and file management possible. Every device must be approved by you, on the TV screen. Use it on a home network you trust and over Tailscale; revoke any time in Developer options → Revoke USB debugging authorizations.</p></details>
+      <details class="reveal"><summary><span class="vi">Có cần bật ADB mới dùng được không?</span><span class="en">Do I need ADB at all?</span></summary>
+        <p class="vi">Để bấm nút thì không: app điện thoại và app máy tính dùng giao thức Android TV Remote của Google, chỉ cần ghép mã. Xem màn hình, quản lý app, tệp, hẹn giờ thì cần ADB.</p>
+        <p class="en">Not for buttons: the phone app and the computer app use Google's Android TV Remote protocol, just pair a code. Screen view, apps, files and timers need ADB.</p></details>
+      <details class="reveal"><summary><span class="vi">Có dùng được trên iPhone không?</span><span class="en">Does it work on iPhone?</span></summary>
+        <p class="vi">Có. Cài TV Setup lên TV (mã Downloader 2397346), rồi mở trang TV hiện ra trên Safari. Thêm vào Màn hình chính để dùng như một app.</p>
+        <p class="en">Yes. Install TV Setup on the TV (Downloader code 2397346), then open the page it shows in Safari. Add it to your Home Screen to use it like an app.</p></details>
+      <details class="reveal"><summary><span class="vi">Netflix, phim có bản quyền hiện màu đen?</span><span class="en">Why are Netflix and other protected videos black?</span></summary>
+        <p class="vi">Đúng vậy, đó là bảo vệ bản quyền của Android, không ứng dụng nào vượt qua được. Nút bấm, âm lượng, nghe tiếng vẫn dùng bình thường.</p>
+        <p class="en">That's Android's copy protection; no app can capture it. Buttons, volume and audio still work normally.</p></details>
+      <details class="reveal"><summary><span class="vi">TV tắt hẳn rồi có bật lại từ xa được không?</span><span class="en">Can I turn on a TV that's fully off?</span></summary>
+        <p class="vi">Ở chế độ chờ thì một nút là bật, kể cả qua Tailscale. Tắt hẳn thì cần Wake-on-LAN, gửi từ trong mạng nhà: app điện thoại và app máy tính đều tự gửi khi đang cùng mạng với TV. Ở xa thì chỉ app máy tính bật được, bằng cách nhờ một máy ở nhà gửi qua SSH.</p>
+        <p class="en">From standby, one press wakes it, even over Tailscale. Fully off needs Wake-on-LAN, sent from inside the home network: the phone app and the computer app both send it when on the TV's network. From away, only the computer app can, by asking a machine at home to send it over SSH.</p></details>
+      <details class="reveal"><summary><span class="vi">Lọc DNS có chặn quảng cáo YouTube không?</span><span class="en">Does the DNS filter block YouTube ads?</span></summary>
+        <p class="vi">Không. Nó chặn quảng cáo và trang độc trong các app khác; YouTube phát quảng cáo từ chính máy chủ video của nó.</p>
+        <p class="en">No. It blocks ads and bad sites in other apps; YouTube serves its ads from the same servers as the videos.</p></details>
+      <details class="reveal"><summary><span class="vi">Android báo app “có hại” khi cài?</span><span class="en">Android says the app is “harmful”?</span></summary>
+        <p class="vi">Play Protect cảnh báo mọi app ngoài CH Play có quyền cài APK. Toàn bộ mã nguồn nằm trên <a href="https://github.com/HoangTran0410/tv-remote" target="_blank" rel="noopener">GitHub</a> để bạn tự kiểm tra; chọn “Vẫn cài” nếu bạn tin.</p>
+        <p class="en">Play Protect warns about any non-Play app that can install APKs. All the source is on <a href="https://github.com/HoangTran0410/tv-remote" target="_blank" rel="noopener">GitHub</a> for you to check; choose “Install anyway” if you trust it.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="final">
+  <div class="wrap">
+    <div class="card reveal">
+      <h2><span class="vi">Cất cái remote cũ vào ngăn kéo.</span><span class="en">Put the old remote in a drawer.</span></h2>
+      <p class="lead"><span class="vi">Hai phút cài đặt, dùng cả đời. Miễn phí, mã nguồn mở, không quảng cáo.</span><span class="en">Two minutes to set up, yours for good. Free, open source, no ads.</span></p>
+      <div class="cta">
+        <a class="btn btn-primary" href="#install"><span class="vi">Bắt đầu ngay</span><span class="en">Get started</span></a>
+        <a class="btn btn-ghost" href="https://github.com/HoangTran0410/tv-remote" target="_blank" rel="noopener">⭐ <span class="vi">Tặng sao trên GitHub</span><span class="en">Star on GitHub</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>© <span id="yr">2026</span> Hoang Tran · <a href="https://github.com/HoangTran0410/tv-remote">tv-remote</a></div>
+    <div>
+      <a href="guide"><span class="vi">Hướng dẫn</span><span class="en">Guide</span></a> ·
+      <a href="https://github.com/HoangTran0410/tv-remote/releases"><span class="vi">Các bản phát hành</span><span class="en">Releases</span></a> ·
+      <a href="https://github.com/HoangTran0410/tv-remote/blob/main/CHANGELOG.md"><span class="vi">Nhật ký thay đổi</span><span class="en">Changelog</span></a> ·
+      <a href="https://github.com/HoangTran0410/tv-remote/issues"><span class="vi">Báo lỗi</span><span class="en">Report a bug</span></a><span class="aio" hidden> · <a href="https://fbaio.org/#/desktop" target="_blank" rel="noopener">AIO Desktop</a></span>
+    </div>
+    <div><span class="vi">Dựa trên</span><span class="en">Built on</span> <a href="https://github.com/Genymobile/scrcpy">scrcpy</a>, <a href="https://github.com/samirkumardas/jmuxer">JMuxer</a>, <a href="https://github.com/tronikos/androidtvremote2">androidtvremote2</a></div>
+  </div>
+</footer>
+<script>if(window.self===window.top)document.querySelector("footer .aio").hidden=false</script>
+
+<div class="toast" id="toast"></div>
+<dialog id="qrbig"><div class="big"></div><button class="btn btn-ghost btn-sm" onclick="this.closest('dialog').close()"><span class="vi">Đóng</span><span class="en">Close</span></button></dialog>
+
+<script src="js/qr.js"></script>
+<script src="lib/gsap.min.js"></script>
+<script src="js/anim.js"></script>
+<script src="js/demo.js"></script>
+<script src="js/stories.js"></script>
+<script src="js/site.js"></script>
+</body>
+</html>

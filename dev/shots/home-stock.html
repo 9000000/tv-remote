@@ -1,0 +1,49 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+/* An illustration of a stock Google TV home: the promoted banner, "Sponsored" tiles and the crowd of apps a new TV
+   ships with. Made up (no brands, no logos): the real one needs a Google sign-in, so it cannot be captured on an emulator.
+   Used by docs/index.html as the "before" of TV Home. 1280x720. */
+*{box-sizing:border-box;margin:0}
+body{width:1280px;height:720px;overflow:hidden;background:#14161c;font-family:Roboto,-apple-system,"Helvetica Neue",sans-serif;color:#fff;position:relative}
+.top{position:absolute;top:18px;left:44px;right:44px;display:flex;gap:8px;align-items:center;font-size:16px;color:#c9ccd6}
+.top .c{padding:7px 16px;border-radius:18px}.top .c.on{background:#e8eaf0;color:#111;font-weight:600}
+.top .r{margin-left:auto;display:flex;gap:12px;align-items:center}.av{width:30px;height:30px;border-radius:50%;background:#e8a33d}
+.ban{position:absolute;top:62px;left:44px;right:44px;height:232px;border-radius:14px;overflow:hidden;
+ background:linear-gradient(100deg,#7a1020 0%,#c8321e 45%,#f2a33a 100%)}
+.ban .t{position:absolute;left:30px;top:28px;width:480px}
+.sp{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.08em;padding:3px 8px;border-radius:4px;background:rgba(0,0,0,.55);color:#fff}
+.ban h1{font-size:40px;line-height:1.05;margin:10px 0 8px;font-weight:800}
+.ban p{font-size:16px;color:#ffe9d0}.ban .b{display:inline-block;margin-top:14px;padding:9px 22px;border-radius:8px;background:#fff;color:#111;font-weight:700;font-size:15px}
+.ban .art{position:absolute;right:0;top:0;bottom:0;width:560px;background:radial-gradient(circle at 60% 40%,#fff2c2 0,#ffb54a 18%,transparent 40%),linear-gradient(120deg,transparent,rgba(0,0,0,.35))}
+.ban .dots{position:absolute;right:20px;bottom:12px;display:flex;gap:5px}.dots i{width:7px;height:7px;border-radius:4px;background:rgba(255,255,255,.5)}
+h4{font-size:15px;font-weight:600;color:#e3e5ec;margin:0 0 8px;display:flex;gap:10px;align-items:center}
+.row{position:absolute;left:44px;right:0}
+.tiles{display:flex;gap:12px}
+.t1{width:178px;height:100px;border-radius:10px;position:relative;flex:none;padding:10px;font-size:14px;font-weight:700;display:flex;align-items:flex-end;overflow:hidden}
+.t1 .sp{position:absolute;top:8px;left:8px;font-size:10px;padding:2px 6px}
+.t1 .x{position:absolute;right:8px;top:8px;font-size:11px;background:#ffd23a;color:#222;border-radius:3px;padding:1px 5px}
+.a{width:100px;height:64px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:none}
+.apps{top:312px}.picks{top:408px}.ads{top:552px}
+.badge{position:absolute;right:44px;top:306px;font-size:12px;color:#ffd23a}
+</style></head><body>
+<div class="top"><span>&#9906;</span><span class="c">For you</span><span class="c on">Home</span><span class="c">Movies</span><span class="c">Shows</span><span class="c">Apps</span><span class="c">Library</span>
+ <span class="r"><span>21:30</span><span class="av"></span></span></div>
+<div class="ban"><div class="art"></div><div class="t"><span class="sp">SPONSORED</span><h1>Mega Deal Week: 6 months free</h1><p>Watch the biggest hits. New members only. Terms apply.</p><span class="b">Start free trial</span></div><div class="dots"><i></i><i></i><i></i><i></i><i></i></div></div>
+<div class="row apps"><h4>Apps</h4><div class="tiles">
+ <div class="a" style="background:#c8102e">Stream+</div><div class="a" style="background:#1d6fe8">WatchNow</div><div class="a" style="background:#6a2cc7">Plex-ish</div><div class="a" style="background:#0e8a5f">MusicHub</div><div class="a" style="background:#e08a00">ShopTV</div><div class="a" style="background:#a31d6b">CasinoX</div><div class="a" style="background:#2a2f3c">Weather</div><div class="a" style="background:#c43c00">NewsNow</div><div class="a" style="background:#146c94">Fitness</div><div class="a" style="background:#444a5a">Partner app</div><div class="a" style="background:#7a5c00">Deals</div><div class="a" style="background:#2c7a2c">Games!</div></div></div>
+<div class="row picks"><h4>Top picks for you <span class="sp" style="font-size:10px">SPONSORED</span></h4><div class="tiles">
+ <div class="t1" style="background:linear-gradient(135deg,#a1233a,#401020)"><span class="sp">AD</span>Crime Story S3</div>
+ <div class="t1" style="background:linear-gradient(135deg,#1c6e9c,#0a2a46)"><span class="sp">AD</span>Ocean Kings</div>
+ <div class="t1" style="background:linear-gradient(135deg,#d3871a,#6a3200)"><span class="sp">AD</span>Fast Cars: Reload</div>
+ <div class="t1" style="background:linear-gradient(135deg,#6b3fa6,#24104a)">Late Night Live</div>
+ <div class="t1" style="background:linear-gradient(135deg,#2b8a5a,#0e3a24)"><span class="sp">AD</span>Chef Wars</div>
+ <div class="t1" style="background:linear-gradient(135deg,#8a2b6b,#35102a)">Moon Base</div>
+ <div class="t1" style="background:linear-gradient(135deg,#c4521e,#4a1c08)"><span class="sp">AD</span>Drama Club</div></div></div>
+<div class="row ads"><h4>Trending now <span class="sp" style="font-size:10px">SPONSORED</span></h4><div class="tiles">
+ <div class="t1" style="background:linear-gradient(135deg,#d6a32a,#6a4a00)"><span class="sp">AD</span><span class="x">-50%</span>Smart Cooker</div>
+ <div class="t1" style="background:linear-gradient(135deg,#2a5ec9,#0e1f52)"><span class="sp">AD</span>Bet Now: 100% bonus</div>
+ <div class="t1" style="background:linear-gradient(135deg,#a11d1d,#3a0a0a)"><span class="sp">AD</span>Insurance in 2 min</div>
+ <div class="t1" style="background:linear-gradient(135deg,#1f8f8f,#0a3535)"><span class="sp">AD</span>VPN 80% off</div>
+ <div class="t1" style="background:linear-gradient(135deg,#7a3fa6,#2a104a)"><span class="sp">AD</span>Download &amp; win</div>
+ <div class="t1" style="background:linear-gradient(135deg,#3a8a2a,#10300a)"><span class="sp">AD</span>Free credit</div>
+ <div class="t1" style="background:linear-gradient(135deg,#aa5a1a,#401c00)"><span class="sp">AD</span>Cleaner Pro</div></div></div>
+</body></html>

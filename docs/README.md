@@ -10,16 +10,18 @@ path is `docs/*` (Cloudflare's `*` spans folders; `docs/**` matches nothing and 
 
 | | |
 |---|---|
-| `index.html` | the page, with its JSON-LD for search engines |
-| `css/site.css`, `js/site.js` | its look and behaviour |
+| `index.html` | the home page, kept short on purpose: a before / after pair (`img/tv-before` = `dev/shots/home-stock.html`, a made-up stock Google TV home with ads, since the real one needs a Google sign-in; after = `tvhome-widgets-<lang>`), five showcases (a picture, a title, a line, a "Dùng thử" button to `/demo/#remote|home|channels|games`), a 4-step setup with the downloads and links to the guide's install topics. Only a fade-in on scroll. With its JSON-LD for search engines |
+| `css/home.css`, `js/home.js` | the home page's own look and script (language, the download for this device, the release number); tokens, nav, buttons and footer come from `css/site.css` |
+| `tour.html` | the long animated tour (the old home page: demo, why, features, how it works, comparison, install stories, FAQ), `noindex`, linked from the home page's last line and the guide; the guide's install figures read their stories from it |
+| `css/site.css`, `js/site.js` | the tour's look and behaviour (`site.css` also styles the home page) |
 | `guide.html`, `css/guide.css`, `js/guide.js` | the user guide (served at `/guide`): written once as Vietnamese + English spans, a menu, offline accent-insensitive search built from the page |
 | `dev/guide_stale.py` | which guide topics may be out of date: each topic's `data-v` (the release it was checked against, `next` = main, stamped by `release.sh`) and `data-src` (the app files it depends on); `release.sh` stops while any is listed |
 | `data/since.json` | the line under each guide topic's title, "Since 0.4.0 (date) · TV Setup ≥ 0.5.0": per topic id `since` (the release; `next` while unreleased, stamped with its date by `dev/stamp_since.py` from `release.sh`) and optional `setup` / `phone` / `pc` minimums (TV Setup: `SetupNeed.MIN`); `dates` maps a release to its day (CHANGELOG headings). A new topic needs an entry; `dev/guide_stale.py` warns about one without |
 | `js/guide-anim.js` | the guide's four animations (pairing, Allow USB debugging, game controller, Home Assistant), `.ga-*` markup in `guide.html`; the install topics' `.gst` figures take the home page's install stories (`data-from` = the panel's id in `index.html`) and play them over the topic's own steps, a step per part |
 | `js/qr.js` | a copy of `app/shared/web/js/qr.js`, kept the same by `app/shared/tests/page.test.js` |
 | `js/anim.js`, `lib/gsap.min.js` | the animation runtime and helpers; GSAP 3.13.0 as published |
-| `js/demo.js`, `css/demo.css` | the hero demo |
-| `js/stories.js`, `css/stories.css` | How it works and the install tabs |
+| `js/demo.js`, `css/demo.css` | the tour's hero demo |
+| `js/stories.js`, `css/stories.css` | the tour's How it works and install tabs |
 | `demo/` (`index.html`, `sw.js`, `mock.js`) | the live demo at `/demo/`, see below |
 | `llms.txt` | the app in plain words for AI agents: keep it true when features or download links change |
 | `robots.txt`, `sitemap.xml` | for search engines |
