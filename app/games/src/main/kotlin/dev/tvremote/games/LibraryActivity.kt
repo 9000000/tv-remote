@@ -136,7 +136,7 @@ class LibraryActivity : ComponentActivity() {
         for (h in brew) {
             val s = Systems.list(this).first { it.id == h.optString("system") }
             val t = tile(getString(R.string.get_rom, h.optString("name")), s.label, s.color,
-                Thumbs.Src("h:" + h.optString("id"), img = h.optString("img").takeIf { it.startsWith("https://") })) { }
+                Thumbs.Src("h:" + h.optString("id"), img = h.optString("img").takeIf { it.startsWith("https://") }), initialsOf = h.optString("name")) { }
             t.setOnClickListener { getRom(h, s, t) }
             t.setOnLongClickListener { hide("h:" + h.optString("id")); true }
             sugs += h.optString("name") to t
@@ -202,7 +202,7 @@ class LibraryActivity : ComponentActivity() {
      * A game's tile: its picture ([Thumbs]: box art, the page's picture, a snapshot of the last play) filling it, else a designed one
      * (the system's colour and the game's initials) until, or instead of, it; the name on a strip at the bottom. [src] null = the plain tile.
      */
-    private fun tile(name: String, badge: String, color: Int, src: Thumbs.Src? = null, plus: Boolean = false, click: () -> Unit): View = FrameLayout(this).apply {
+    private fun tile(name: String, badge: String, color: Int, src: Thumbs.Src? = null, plus: Boolean = false, initialsOf: String = name, click: () -> Unit): View = FrameLayout(this).apply {
         isFocusable = true; isClickable = true
         fun fill(c: Int) = GradientDrawable().apply { setColor(c); cornerRadius = dp(14).toFloat() }
         background = StateListDrawable().apply {
@@ -218,7 +218,7 @@ class LibraryActivity : ComponentActivity() {
         if (strip) {
             val dark = Color.rgb(Color.red(color) * 45 / 100, Color.green(color) * 45 / 100, Color.blue(color) * 45 / 100)
             val fb = TextView(context).apply {                           // the designed picture: gradient + initials
-                text = ThumbNames.initials(name.removePrefix("＋ ")); textSize = 38f; typeface = android.graphics.Typeface.DEFAULT_BOLD
+                text = ThumbNames.initials(initialsOf.removePrefix("＋ ")); textSize = 38f; typeface = android.graphics.Typeface.DEFAULT_BOLD
                 setTextColor(0xE6FFFFFF.toInt()); gravity = Gravity.CENTER; setPadding(0, 0, 0, dp(14))
                 background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(color, dark))
             }
