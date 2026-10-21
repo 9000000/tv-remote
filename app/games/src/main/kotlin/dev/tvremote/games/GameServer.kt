@@ -85,7 +85,7 @@ class GameServer private constructor(private val ctx: Context) {
 
     /** A new connection code: every phone that scanned the old one gets 403 and is told to scan again. */
     fun rotateToken() {
-        token = newToken(); prefs.edit().putString("padToken", token).apply()
+        token = newToken(); prefs.edit().putString("padToken", token).apply(); publish()
         val cs = synchronized(slots) { slots.mapNotNull { it.conn } }
         cs.forEach { it.text("{\"rescan\":true}"); it.close() }
     }
@@ -105,6 +105,9 @@ class GameServer private constructor(private val ctx: Context) {
         prefs.edit().putString("padSeats", a.toString()).apply()
     }
 
+    /** "port token" in a file the ADB shell can read: the Phone app (the gyroscope pointer) joins as a pad without scanning the QR. */
+    private fun publish() { try { java.io.File(ctx.getExternalFilesDir(null), "pad.txt").writeText("$port $token") } catch (e: Exception) { } }
+
     fun start() {
         val last = prefs.getInt("padPort", 0)                // the same port as last time, so a saved link stays valid
         for (p in listOf(last).filter { it in PORT until PORT + 20 } + (PORT until PORT + 20)) {
@@ -113,7 +116,7 @@ class GameServer private constructor(private val ctx: Context) {
         if (port > 0) prefs.edit().putInt("padPort", port).apply()
         val s = server ?: return Unit.also { Log.w(TAG, "no free port") }
         (ctx as? android.app.Application)?.registerActivityLifecycleCallbacks(tracker)
-        presence.attach(); PadService.start(ctx)
+        presence.attach(); PadService.start(ctx); publish()
         Log.i(TAG, "listening ${url()}")
         Thread({ while (!s.isClosed) try { val c = s.accept(); Thread({ serve(c) }, "pad-conn").apply { isDaemon = true }.start() } catch (e: Exception) { } }, "pad-accept")
             .apply { isDaemon = true }.start()

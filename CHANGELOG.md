@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Games: **ngắm bằng gyroscope của điện thoại** (Công cụ > Ngắm TV Games): app điện thoại vào cùng WebSocket như một tay cầm, gửi `m dx dy` từ gyroscope (gộp mỗi 8 ms ở luồng riêng), nút lớn = Bắn; TV Games ghi "cổng token" vào `files/pad.txt` để ADB đọc, không cần quét mã. Trình duyệt không làm được vì chặn cảm biến trên trang http (dùng touchpad)
 - Các app TV giống một họ (`dev/TV_STYLE.md`): TV Channels và TV Setup có cùng phần đầu (icon 44 dp bo 10 dp, tên 24 sp đậm), lề 48 / 27 dp, cùng màu nền và thẻ, và viền focus của TV Home (xanh 3 dp + trắng 1 dp).
 - TV Games: **phòng chờ mới** như game console: nền mờ theo ảnh game và màu nhấn lấy từ ảnh, ảnh game trong khung, thẻ QR, 1-4 ô người chơi (luôn vừa màn hình, 1080p và 720p), thanh phím, đếm 3-2-1; game web lấy ảnh từ danh mục như thẻ ở thư viện. Hộp "Thêm game": có nút Đóng, Back/B đóng hộp thay vì thoát thư viện.
 - TV Games thư viện: tải game gợi ý **hiện tiến độ ngay trên thẻ** ("Đang tải… 42%", OK/Back để hủy, lỗi thì "OK: thử lại"), tải xong tự nhảy tới game mới kèm thông báo; game đã có (theo tên, tên file hoặc SHA-256) không còn trong Gợi ý; mỗi thẻ có số người chơi tối đa (👤 1, 👥 2, 👥 1–4).
@@ -67,6 +68,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Sửa: mở TV Home / Hẹn giờ / Ứng dụng… ngay sau khi app vừa mở lại (điện thoại vừa thức, VPN vừa bật) báo **"Việc này cần ADB" dù ADB đang bật**, lát sau mới tải được: lúc ADB đang nối lại vẫn bị coi là "đã đóng". Nay báo "Đang kết nối ADB…" và chờ (tối đa 8 s), chỉ báo cần ADB khi nối thật sự không được.
 
 **English**
+- TV Games: **aim with the phone's gyroscope** (Tools > TV Games aim): the Phone app joins the same WebSocket as a pad and sends `m dx dy` from the gyroscope (summed every 8 ms on its own thread), the big button fires; TV Games writes "port token" to `files/pad.txt` for ADB to read, no code to scan. A browser cannot do it: it hides the sensor on an http page (the touchpad is used there)
 - TV apps look like one family (`dev/TV_STYLE.md`): TV Channels and TV Setup get the same header (44 dp icon with 10 dp corners, 24 sp bold name), 48 / 27 dp overscan margins, the same background and card colours, and TV Home's focus ring (blue 3 dp + white 1 dp).
 - TV Games: **new lobby** in a console style: a blurred backdrop and accent taken from the game's picture, the picture in a frame, a QR card, 1-4 player seats (always fit, 1080p and 720p), a key bar, a 3-2-1 count; web games take their picture from the catalog like the library tile. The "Add game" box now has a Close button, and Back/B closes the box instead of leaving the library.
 - TV Games library: a suggestion's download **shows its progress on the card** ("Downloading… 42%", OK/Back cancels, a failure says "OK: try again"), then jumps to the new game with a notice; games you already have (by name, file name or SHA-256) leave Suggestions; every tile shows how many can play (👤 1, 👥 2, 👥 1–4).

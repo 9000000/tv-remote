@@ -342,7 +342,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        if (managing.back() || irBack() || airBack()) return
+        if (managing.back() || irBack() || airBack() || gamesPointerBack()) return
         if (fullscreen) { setFullscreen(false); return }
         if (about.visibility == View.VISIBLE) about.visibility = View.GONE
         else if (settings.visibility == View.VISIBLE) settings.visibility = View.GONE
