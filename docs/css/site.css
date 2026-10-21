@@ -5,9 +5,11 @@
   --prog-a:var(--blue); --prog-b:var(--orange); --sheet-bg:rgba(14,18,27,.96);
   --r:18px; --max:1160px;
 }
+/* Arial stretched to Be Vietnam Pro's width (measured): the text keeps its lines when the web font arrives, so nothing moves */
+@font-face{font-family:"Be Vietnam Pro Fallback";src:local("Arial"),local("Arimo"),local("Helvetica Neue");size-adjust:108%;ascent-override:93%;descent-override:24%;line-gap-override:0%}
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-body{background:var(--bg);color:var(--text);font:16px/1.6 "Be Vietnam Pro",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:110%}
+body{background:var(--bg);color:var(--text);font:16px/1.6 "Be Vietnam Pro","Be Vietnam Pro Fallback",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 img{max-width:100%;height:auto;display:block}
 .hero .wrap>*,.feat>*,.panel>*,.prep>*,.flow>*{min-width:0}
 a{color:inherit;text-decoration:none}
@@ -178,7 +180,7 @@ nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
 .qr svg{flex:none;width:112px;height:112px;border-radius:10px}
 .qr b{display:block;font-size:15px;margin-bottom:4px}.qr small{display:block;color:var(--muted);font-size:13px;line-height:1.45}
 .hero .qr{max-width:440px;margin-top:22px}.feat .qr{max-width:440px;margin-top:20px}
-.qr{cursor:zoom-in}
+.qr{cursor:zoom-in;min-height:142px}  /* the code (112 px, drawn by site.js) has its room before it arrives: no jump */
 #qrbig{margin:auto;inset:0;border:0;border-radius:22px;padding:22px;background:var(--card);color:inherit;text-align:center;max-width:min(92vw,420px)}
 #qrbig::backdrop{background:rgba(4,6,12,.78);backdrop-filter:blur(4px)}
 #qrbig svg{width:min(78vw,340px);height:auto;border-radius:14px;display:block;margin:0 auto 14px}

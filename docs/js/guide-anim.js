@@ -74,7 +74,7 @@
      guide's steps, a step per part, so each stage is drawn and timed in one place: index.html and stories.js. */
   var gst = [].slice.call(document.querySelectorAll(".gst[data-from]"));
   if (!gst.length || !window.fetch) return;
-  fetch("index.html").then(function(r){ if (!r.ok) throw r.status; return r.text(); }).then(function(html){
+  fetch("./").then(function(r){ if (!r.ok) throw r.status; return r.text(); }).then(function(html){
     var doc = new DOMParser().parseFromString(html, "text/html");
     gst.forEach(function(f){
       var src = doc.getElementById(f.dataset.from), st = src && src.querySelector(".sst");
@@ -89,5 +89,5 @@
       b.addEventListener("click", function(){ var s = Anim.of(f); if (s) { s.held = false; s.tl.restart(); } });
     });
     var js = document.createElement("script"); js.src = "js/stories.js"; document.body.appendChild(js);
-  }).catch(function(){});                                          // the steps stay, without the stage
+  }).catch(function(){ gst.forEach(function(f){ f.classList.add("nost"); }); });   // the steps stay, without the stage (nost: its reserved room goes)
 })();

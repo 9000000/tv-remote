@@ -49,6 +49,10 @@ mark{background:rgba(255,163,26,.3);color:var(--text);border-radius:3px;padding:
 .gmain{min-width:0;min-height:calc(100vh - 65px);min-height:calc(100dvh - 65px);display:flex;flex-direction:column;padding-top:24px}
 .gmain>.gfoot{margin-top:auto}
 .ggroup,.topic{display:none}
+/* until guide.js has shown its topic the column is empty and the footer would jump when it arrives: keep it invisible (a layout shift of
+   something unseen is not counted); the animation shows it anyway after 2 s if the script never runs */
+html:not(.gr) .gmain{visibility:hidden;animation:gr 0s 2s forwards}
+@keyframes gr{to{visibility:visible}}
 .ggroup.cur{display:block}
 .gh{font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin:0 0 10px;color:var(--blue)}
 .topic{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:26px 28px;margin-bottom:18px;gap:16px;min-width:0;container-type:inline-size}
@@ -91,6 +95,7 @@ mark{background:rgba(255,163,26,.3);color:var(--text);border-radius:3px;padding:
   .gtab .ticks td:last-child{padding-bottom:0}
 }
 .gsince{display:flex;flex-wrap:wrap;gap:2px 0;margin-top:-8px;color:var(--muted);font-size:13px;line-height:1.5}
+.gsince:empty{min-height:20px}
 .gsince[hidden]{display:none}
 .gtry{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;border:1px solid var(--line2);font-size:14px;font-weight:600;color:var(--blue);white-space:nowrap;flex:none}
 .gtry:hover{background:var(--card2)}
@@ -118,11 +123,12 @@ mark{background:rgba(255,163,26,.3);color:var(--text);border-radius:3px;padding:
 .ga .steps li div{padding-top:4px;font-size:14.5px}
 .ga-replay{justify-self:start}
 .gst-box{border-radius:12px;background:#0b0f18;border:1px solid var(--line);padding:12px 12px 6px}
+.gst:not(.story):not(.nost)::before{content:"";display:block;box-sizing:content-box;aspect-ratio:16/12.4;padding:12px;border:1px solid var(--line);border-radius:12px;background:#0b0f18}  /* the stage's room, kept before it arrives (guide-anim.js), so the steps do not jump */
 .gst .sst{margin:0}
 .gst .steps li{margin:0}
 @container (min-width:600px){
   .ga{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);align-items:start;column-gap:16px}
-  .ga-box,.gst-box{grid-row:1 / span 2}
+  .ga-box,.gst-box,.gst:not(.story):not(.nost)::before{grid-row:1 / span 2}
   .ga .steps{align-self:start}
 }
 .ga-tvw{position:absolute;width:300px}

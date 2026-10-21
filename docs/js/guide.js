@@ -32,7 +32,7 @@
   function paintSince(t, lang){
     var el = t.querySelector(".gsince");
     if (!el){ el = document.createElement("div"); el.className = "gsince"; t.querySelector("h3").after(el); }
-    el.innerHTML = sinceHtml(t.id, lang); el.hidden = !el.innerHTML;
+    el.innerHTML = sinceHtml(t.id, lang); el.hidden = !!SINCE && !el.innerHTML; /* until since.json arrives the line keeps its room (no layout shift) */
   }
   fetch("data/since.json").then(function(r){ return r.json(); }).then(function(j){ SINCE = j; if (cur) show(cur); }).catch(function(){});
 
@@ -272,7 +272,7 @@
   })();
 
   document.getElementById("yr").textContent = new Date().getFullYear();
-  show(location.hash.slice(1));
+  show(location.hash.slice(1)); root.classList.add("gr");
   if (location.hash) addEventListener("load", function(){ setTimeout(function(){ if (scrollY < 200) scrollTo(0, 0); }, 50); });   // the browser jumps to #topic, under the bar
   setLang(root.dataset.lang);
 })();

@@ -23,6 +23,7 @@ path is `docs/*` (Cloudflare's `*` spans folders; `docs/**` matches nothing and 
 | `demo/` (`index.html`, `sw.js`, `mock.js`) | the live demo at `/demo/`, see below |
 | `llms.txt` | the app in plain words for AI agents: keep it true when features or download links change |
 | `robots.txt`, `sitemap.xml` | for search engines |
+| `_headers` | Cloudflare Pages response headers: images 1 week, GSAP 30 days (css/js keep the default: revalidated, as their names have no version) |
 | `img/` | screenshots (`dev/shots.py`) and the link previews `og-<lang>.jpg` (1200×630, from `tvapp-<lang>.webp`) |
 
 **Animations** are GSAP timelines written by hand. A timeline reads as a list of "at second t, this changes": `show`,
