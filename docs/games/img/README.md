@@ -15,6 +15,10 @@ on a dark 16:9 backdrop; the "Scan to join" chip painted out). The picture is th
 | filefixers.jpg | File Fixers (Wendel Scardua) | MIT | https://github.com/wendelscardua/file-fixers |
 | tabletennis.jpg | 8-Bit Table Tennis (Mike Michel) | MIT | https://github.com/mike42/8bit-table-tennis |
 | opennes-snake.jpg, opennes-breakout.jpg, opennes-pong.jpg | openNES Snake / Breakout / Pong (Sebastian Dine) | Zlib | https://github.com/sebastiandine/openNES-Snake (-Breakout, -Pong) |
+| croom.jpg, rhde.jpg, thwaite.jpg | Concentration Room, RHDE: Furniture Fight, Thwaite (Damian Yerrick) | GPL-3.0+ / GNU All-Permissive / GPL-3.0+ | https://github.com/pinobatch/croom-nes (rhde-nes, thwaite-nes) |
+| coco.jpg | Coco Battle Royale II (Rodrigo Dornelles) | GPL-3.0 | https://github.com/psywave-games/coco-battle-royale-2 |
+| runner.jpg | Runner (zorchenhimer) | MIT | https://github.com/zorchenhimer/nes-runner |
+| ghostsgraves.jpg | Ghosts and Graves (Anthony Bongers) | Unlicense | https://github.com/AnthonyBongers/GhostsAndGraves |
 | hockey.jpg, tanks.jpg, cycles.jpg, sumo.jpg | Air Hockey, Tank Arena, Light Cycles, Sumo Bump (our own, `docs/games/web/`) | same as the repo | in-game capture of each game running (CPU seats), no overlay |
 
 A new catalog game: run it, screencap its title screen, save it here as `<id>.jpg`, add `"img": "img/<id>.jpg"` to its entry and re-sign (`dev/sign_games.py`).

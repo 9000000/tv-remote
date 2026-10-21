@@ -28,6 +28,12 @@ Fetched by the user's OK from the author's own release (nothing is bundled), sha
 | File Fixers | Wendel Scardua | MIT | https://github.com/wendelscardua/file-fixers |
 | 8-Bit Table Tennis | Mike Michel | MIT | https://github.com/mike42/8bit-table-tennis |
 | Snake, Breakout, Pong | Sebastian Dine | Zlib | https://github.com/sebastiandine/openNES-Snake (-Breakout, -Pong) |
+| Concentration Room (2P) | Damian Yerrick | GPL-3.0+ | https://github.com/pinobatch/croom-nes |
+| RHDE: Furniture Fight (2P) | Damian Yerrick | GNU All-Permissive | https://github.com/pinobatch/rhde-nes |
+| Coco Battle Royale II (2P) | Rodrigo Dornelles | GPL-3.0 | https://github.com/psywave-games/coco-battle-royale-2 |
+| Thwaite | Damian Yerrick | GPL-3.0+ | https://github.com/pinobatch/thwaite-nes |
+| Runner | zorchenhimer | MIT | https://github.com/zorchenhimer/nes-runner |
+| Ghosts and Graves | Anthony Bongers | Unlicense | https://github.com/AnthonyBongers/GhostsAndGraves |
 
 Left out: Miroh (art and music all rights reserved), Falling (third-party music with no stated licence), Flappy Paratroopa (Nintendo characters), Galaxy Patrol (no release, a nesdev wiki tutorial copy), Super Tilt Bro (WTFPL, but no published ROM to link; add once one exists). GB / GBA / SNES homebrew not listed: those cores are still `"on": false` until the `cores-1` release exists.
 
