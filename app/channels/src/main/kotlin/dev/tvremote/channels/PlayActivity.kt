@@ -282,7 +282,7 @@ class PlayActivity : Activity() {
         val c = streams.firstOrNull() ?: return
         infoNum.text = "${at + 1}"
         infoName.text = c.name
-        infoSub.text = listOfNotNull(c.quality.ifEmpty { null }, c.group, Lineup.title.ifEmpty { null }).joinToString(" · ")
+        infoSub.text = listOfNotNull(c.quality.ifEmpty { null }, c.group.takeUnless { it.isEmpty() || it.equals("undefined", true) }?.let { BrowseActivity.groupName(it) }, Lineup.title.ifEmpty { null }).joinToString(" · ")
         Logos.into(infoLogo, c.logo, 200) {}
         info.visibility = View.VISIBLE
         main.removeCallbacks(hideInfo); main.postDelayed(hideInfo, 5000)

@@ -203,8 +203,6 @@ class BrowseActivity : Activity() {
 
     private fun say(s: String, again: Boolean) { note.text = s; Ui.show(note, s.isNotEmpty()); Ui.show(retry, again) }
 
-    /** iptv-org's group names in the app's language where we have them. */
-    private fun groupName(g: String) = if (java.util.Locale.getDefault().language == "vi") VI[g.lowercase()] ?: g else g
 
     fun play(ch: List<Channel>) {
         Lineup.set(shown, title.text.toString())
@@ -511,6 +509,9 @@ class BrowseActivity : Activity() {
         const val MINE = "\u0000g:"                                  // + a group's id: one of the person's groups on show
 
         fun fold(s: String) = Normalizer.normalize(s.lowercase().replace('đ', 'd'), Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "").trim()
+
+        /** iptv-org's group names in the app's language where we have them; its "Undefined" (no category given) is "Other". */
+        fun groupName(g: String) = if (java.util.Locale.getDefault().language == "vi") VI[g.lowercase()] ?: g else if (g.equals("undefined", true)) "Other" else g
 
         private val VI = mapOf(
             "general" to "Tổng hợp", "news" to "Tin tức", "entertainment" to "Giải trí", "movies" to "Phim", "series" to "Phim bộ",
