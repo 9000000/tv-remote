@@ -233,10 +233,13 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val locale = resources.configuration.locales[0]
         val h24 = Store.get(a).optBoolean("clock24", true)
         val timeF = SimpleDateFormat(if (h24) "HH:mm" else "h:mm", locale)
-        val dateF = SimpleDateFormat(android.text.format.DateFormat.getBestDateTimePattern(locale, "EEEEdMMM"), locale)
+        // the small form is one short line, never broken inside the date: "T4, 21/10", "Wed 21 Oct"
+        val dateF = SimpleDateFormat(if (mode != 0) android.text.format.DateFormat.getBestDateTimePattern(locale, "EEEEdMMM")
+            else if (locale.language == "vi") "d/M" else "EEE d MMM", locale)
+        val vi = mode == 0 && locale.language == "vi"
         val time = text("", if (mode == 2) 34f else 22f, Color.WHITE).apply { typeface = Font.medium }
-        val date = text("", if (mode == 2) 15f else 12f, DIM).apply { maxLines = 2; ellipsize = TextUtils.TruncateAt.END }
-        val face = ClockFace(a, style) { now -> time.text = timeF.format(now); date.text = dateF.format(now).replaceFirstChar { it.uppercase() } }
+        val date = text("", if (mode == 2) 15f else 12f, DIM).apply { maxLines = if (mode == 0) 1 else 2; ellipsize = TextUtils.TruncateAt.END }
+        val face = ClockFace(a, style) { now -> time.text = timeF.format(now); date.text = (if (vi) viDay(now) + ", " else "") + dateF.format(now).replaceFirstChar { it.uppercase() } }
         return LinearLayout(a).apply {
             Frost.on(this, dp(if (mode == 0) 18 else 22).toFloat(), dp(1))
             orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
@@ -253,6 +256,9 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             }, if (mode == 0) LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) } else LayoutParams(0, -2, 1f).apply { leftMargin = dp(16) })
         }
     }
+
+    /** "T4" / "CN": the short Vietnamese weekday. */
+    private fun viDay(d: Date) = Calendar.getInstance().apply { time = d }.get(Calendar.DAY_OF_WEEK).let { if (it == Calendar.SUNDAY) "CN" else "T$it" }
 
     /**
      * An analog face drawn by hand: ticks, numbers, hour and minute hands, a thin second hand that sweeps. It redraws itself about
@@ -300,7 +306,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
                 if (!dark && !hour) paint.color = 0x44000000
                 line(cv, cx, cy, i * 6f, edge - len, edge, paint)
             }
-            if (style != "minimal") {
+            if (style != "minimal" && r >= dp(34)) {                 // a face this small: ticks only, digits would be specks
                 paint.style = Paint.Style.FILL
                 paint.typeface = if (serif) Typeface.SERIF else Font.medium
                 paint.textAlign = Paint.Align.CENTER
