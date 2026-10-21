@@ -55,6 +55,9 @@
   .card:hover { border-color: var(--blue); transform: translateY(-2px); }
   .card:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
   .card .shot { aspect-ratio: 2 / 1; background: #0e1320; display: block; width: 100%; object-fit: cover; object-position: top; }
+  .card .shot { filter: grayscale(1) brightness(.6); transition: filter .2s; }   /* grey until pointed at: the app's name reads first */
+  .card:hover .shot, .card:focus-visible .shot, .card:active .shot { filter: none; }
+  @media (prefers-reduced-motion: reduce) { .card, .card .shot { transition: none; } }
   .card .shot.contain { object-fit: contain; object-position: center; padding: 10px 0; }
   .card .txt { display: grid; grid-template-columns: 64px 1fr; gap: 4px 16px; align-items: center; padding: 18px 20px 20px; }
   .card .txt img { width: 64px; height: 64px; border-radius: 15px; grid-row: 1 / 3; }
