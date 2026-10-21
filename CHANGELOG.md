@@ -11,9 +11,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Channels: tự gom kênh thành nhóm (Yêu thích cũng là một nhóm); ghim một kênh hay cả nhóm ra màn hình chính, bấm vào là mở đúng nhóm đó.
 - TV Home: app khác có thể ghim lối tắt vào Yêu thích (vd. một kênh của TV Channels); nhấn giữ để bỏ ghim.
 - TV Channels: thêm các kênh miễn phí của VieON (VTV, HTV, HTVC, đài tỉnh, radio VOH): VTV1 xem được cả khi nguồn iptv-org bị chặn; nguồn kênh nằm trong một danh sách ký trên web nên sửa / tắt được mà không cần bản mới.
+- TV Channels: lịch phát sóng kênh VN (từ TV360 và VieON): thẻ kênh hiện chương trình đang chiếu; khi xem, ▶ hiện chương trình đang chiếu / tiếp theo, ▶ lần nữa mở lịch cả ngày; giữ OK trên kênh → Lịch phát sóng.
 - Tab TV có thẻ 📺 Kênh TV: cài / cập nhật TV Channels lên TV, gõ tên kênh để mở; nói "mở kênh VTV1" cũng được.
 
 **English**
+- TV Channels: programme guide for Vietnamese channels (from TV360 and VieON): cards show what is on; while watching, ▶ shows now / next and ▶ again the day's guide; hold OK on a channel → Programme guide.
 - TV Channels: VieON's free channels added (VTV, HTV, HTVC, provinces, VOH radio): VTV1 plays even where iptv-org's source is blocked; the sources come from a signed list on the site, so they can be fixed or turned off without a new release.
 - TV Channels (new app): free TV channels from iptv-org's public lists, by country and category, with favourites, search, ▲▼ / number keys; channels that do not answer are dimmed.
 - TV Channels: your own groups of channels (Favourites is one of them); pin a channel or a whole group to the home screen, which opens that group.

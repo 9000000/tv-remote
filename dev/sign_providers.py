@@ -14,7 +14,7 @@ import json, os, subprocess, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LIST = os.path.join(ROOT, "docs", "channels", "providers.json")
 KEY = os.environ.get("LAUNCHERS_KEY", os.path.expanduser("~/.tv-remote-release/launchers.key"))
-KINDS = {"vieon": ["list", "play", "form"]}                         # what each kind's code reads (Providers.kt)
+KINDS = {"vieon": ["list", "play", "form"], "tv360": ["guide", "channels"]}                         # what each kind's code reads (Providers.kt)
 
 
 def fail(m):
@@ -39,8 +39,8 @@ def check():
         for k in KINDS[p["kind"]]:
             if not p.get(k):
                 fail("%s: no %s" % (p["id"], k))
-        for k in ("list", "play"):
-            if not p[k].startswith("https://"):
+        for k in ("list", "play", "guide"):
+            if k in p and not p[k].startswith("https://"):
                 fail("%s: %s is not https" % (p["id"], k))
     return d
 

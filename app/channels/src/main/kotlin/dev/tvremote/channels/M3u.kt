@@ -10,6 +10,7 @@ data class Channel(
     val id: String, val name: String, val logo: String, val group: String, val url: String,
     val quality: String = "", val geo: Boolean = false, val notAlways: Boolean = false,
     val referrer: String = "", val agent: String = "",
+    val guide: String = "",                                          // a provider's own id for its programme guide (Guide.kt)
 ) {
     /** The country an iptv-org id belongs to: "HTV7.vn@SD" -> "vn" (its playlist is countries/vn.m3u). */
     val country: String get() = Ids.country(id)

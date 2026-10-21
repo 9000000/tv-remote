@@ -227,6 +227,7 @@ class BrowseActivity : Activity() {
             dlg.dismiss(); Store.toggleFavourite(this, ch); buildRail(); filter()
         })
         box.addView(Ui.row(this, R.drawable.ic_folder, getString(R.string.to_group)) { dlg.dismiss(); groupsFor(ch) })
+        box.addView(Ui.row(this, R.drawable.ic_guide, getString(R.string.guide)) { dlg.dismiss(); guideOf(ch) })
         if (Pins.can(this)) box.addView(Ui.row(this, R.drawable.ic_home, getString(R.string.pin)) {
             dlg.dismiss()
             io.execute {
@@ -242,6 +243,23 @@ class BrowseActivity : Activity() {
             setPadding(Ui.dp(this@BrowseActivity, 12).toInt(), Ui.dp(this@BrowseActivity, 10).toInt(), 0, 0) })
         dlg.setContentView(box, ViewGroup.LayoutParams(Ui.dp(this, 380).toInt(), -2))
         dlg.show()
+    }
+
+    /** A channel's programme guide, the show on now focused. */
+    private fun guideOf(ch: List<Channel>) {
+        io.execute {
+            val shows = Guide.of(this, ch)
+            main.post {
+                if (isDestroyed) return@post
+                if (shows.isEmpty()) { Toast.makeText(this, R.string.guide_none, Toast.LENGTH_SHORT).show(); return@post }
+                val (dlg, box) = sheet(480)
+                heading(box, "${getString(R.string.guide)} · ${ch.first().name}")
+                val list = GuideList.view(this, shows)
+                box.addView(list, LinearLayout.LayoutParams(-1, Ui.dp(this, 440).toInt()))
+                dlg.show()
+                cards.notifyDataSetChanged()                          // the cards' "on now" lines, now known
+            }
+        }
     }
 
     /** A dialog box, the look all of them share. */
@@ -403,7 +421,23 @@ class BrowseActivity : Activity() {
 
     override fun onKeyLongPress(k: Int, e: KeyEvent) = onKeyDown(k, e)
 
-    override fun onDestroy() { io.shutdownNow(); super.onDestroy() }
+    private val guides = java.util.concurrent.Executors.newFixedThreadPool(2)
+    private val asking = HashSet<String>()
+
+    /** The card's "on now" line: asked for the cards drawn, two at a time, then the card is drawn again. */
+    private fun guideFor(ch: List<Channel>) {
+        val id = ch.first().id
+        if (!asking.add(id)) return
+        guides.execute {
+            val shows = Guide.of(this, ch)
+            main.post {
+                asking.remove(id)
+                if (!isDestroyed && Guide.now(shows) != null) shown.indexOfFirst { it.first().id == id }.takeIf { it >= 0 }?.let { cards.notifyItemChanged(it) }
+            }
+        }
+    }
+
+    override fun onDestroy() { io.shutdownNow(); guides.shutdownNow(); super.onDestroy() }
 
     /** Stable ids: a list drawn again (a favourite or a group changed) keeps the focus on the same channel, not on whatever card took its place. */
     private inner class Cards : RecyclerView.Adapter<Cards.H>() {
@@ -456,7 +490,9 @@ class BrowseActivity : Activity() {
             h.letters.visibility = View.INVISIBLE
             Logos.into(h.logo, c.logo, 280) { got -> h.letters.visibility = if (got) View.INVISIBLE else View.VISIBLE }
             val dead = ch.all { Store.alive(this@BrowseActivity, it.url) == false }
-            h.sub.text = groupName(c.group).let { if (dead) "● $it" else it }
+            val on = Guide.known(c.id)?.let { Guide.now(it) }
+            h.sub.text = (on?.title ?: groupName(c.group)).let { if (dead) "● $it" else it }
+            if (on == null && Guide.known(c.id) == null) guideFor(ch)
             h.q.text = c.quality.removeSuffix("p").let { if (it.isEmpty()) "" else if (it.toIntOrNull()?.let { n -> n >= 720 } == true) if (it == "2160") "4K" else "HD" else "SD" }
             Ui.show(h.q, c.quality.isNotEmpty())
             h.sub.setTextColor(if (dead) Ui.BAD else Ui.DIM)

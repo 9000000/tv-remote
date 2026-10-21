@@ -32,16 +32,24 @@ object Providers {
         val skip: Set<String> = o.optJSONArray("skip")?.let { a -> (0 until a.length()).map { a.optString(it) }.toSet() }.orEmpty()
         /** Its key -> the name iptv-org gives the same channel, where the two differ ("vie-channel-htv2-hd" -> "HTV2"). */
         val aliases: Map<String, String> = o.optJSONObject("aliases")?.let { h -> h.keys().asSequence().associateWith { h.optString(it) } }.orEmpty()
+        /** The provider's guide ids by channel name, for a provider that only gives the guide (TV360: "VTV3" -> "4"), by [key]. */
+        val guides: Map<String, String> = o.optJSONObject("channels")?.let { h -> h.keys().asSequence().associate { key(it) to h.optString(it) } }.orEmpty()
     }
 
-    /** One way of asking: [list] the free channels of a country, [play] the playable URL of one (null: not free / gone). */
+    /**
+     * One way of asking: [list] the free channels of a country, [play] the playable URL of one (null: not free / gone),
+     * [guide] what one shows on [day] ("2026-10-21") from its guide [id] (null: none, or not asked). A kind may do only some.
+     */
     interface Kind {
-        fun list(p: Provider, get: (String) -> String?): List<Channel>
-        fun play(p: Provider, key: String): Played?
+        fun list(p: Provider, get: (String) -> String?): List<Channel> = emptyList()
+        fun play(p: Provider, key: String): Played? = null
+        fun guide(p: Provider, id: String, day: String): List<Show>? = null
     }
     class Played(val url: String, val until: Long)
 
-    private val KINDS: Map<String, Kind> = mapOf("vieon" to Vieon)
+    private val KINDS: Map<String, Kind> = mapOf("vieon" to Vieon, "tv360" to Tv360)
+
+    fun kind(p: Provider): Kind? = KINDS[p.kind]
 
     fun verified(list: ByteArray, sig: String): Boolean {
         val raw = try { Base64.getDecoder().decode(sig.trim()) } catch (e: IllegalArgumentException) { return false }
@@ -82,7 +90,7 @@ object Providers {
 
     /** [iptv] (a country's playlist) with the providers' channels of that country merged in. */
     fun merge(c: Context, cc: String, iptv: List<Channel>, fresh: Boolean): List<Channel> {
-        val ps = all(c).filter { it.country == cc }
+        val ps = all(c).filter { it.country == cc && it.o.has("list") }
         if (ps.isEmpty()) return iptv
         val byName = iptv.groupBy { key(it.name) }
         val before = HashMap<String, MutableList<Channel>>()             // a provider's stream to put ahead of a channel's own
@@ -132,12 +140,12 @@ object Providers {
     private fun channelsJson(p: Provider): String? {
         val list = KINDS[p.kind]?.list(p) { u -> http(u, p.headers, null) } ?: return null
         if (list.isEmpty()) return null                                // a moved API: keep the last list rather than none
-        return JSONArray(list.map { JSONObject().put("id", it.id).put("name", it.name).put("logo", it.logo).put("group", it.group).put("url", it.url).put("q", it.quality) }).toString()
+        return JSONArray(list.map { JSONObject().put("id", it.id).put("name", it.name).put("logo", it.logo).put("group", it.group).put("url", it.url).put("q", it.quality).put("g", it.guide) }).toString()
     }
 
     private fun fromJson(s: String): List<Channel> = try {
         val a = JSONArray(s)
-        (0 until a.length()).map { a.getJSONObject(it) }.map { Channel(it.getString("id"), it.getString("name"), it.optString("logo"), it.optString("group"), it.getString("url"), it.optString("q")) }
+        (0 until a.length()).map { a.getJSONObject(it) }.map { Channel(it.getString("id"), it.getString("name"), it.optString("logo"), it.optString("group"), it.getString("url"), it.optString("q"), guide = it.optString("g")) }
     } catch (e: org.json.JSONException) { emptyList() }
 
     /** GET, or POST [form] when given; the body on 2xx, null otherwise. */
@@ -180,7 +188,7 @@ object Vieon : Providers.Kind {
             val name = HD.replace(title, "").trim().ifEmpty { title }    // "HTVC Phim HD": the card says HD by its badge
             val img = o.optJSONObject("images")
             val logo = img?.optString("livetv_logo_light")?.ifEmpty { null } ?: o.optString("image_link")
-            Channel("$slug.${p.country}@${p.id}", name, logo, guessGroup(name), "${p.id}:$slug", if (hd) "1080p" else "")
+            Channel("$slug.${p.country}@${p.id}", name, logo, guessGroup(name), "${p.id}:$slug", if (hd) "1080p" else "", guide = o.optString("id"))
         }
     } catch (e: org.json.JSONException) { null }
 
@@ -194,6 +202,20 @@ object Vieon : Providers.Kind {
         return parsePlay(text, p.o.optInt("free", 206), System.currentTimeMillis())
     }
 
+    /** Today only, whatever [day] says: its guide has no date to ask by. */
+    override fun guide(p: Providers.Provider, id: String, day: String): List<Show>? {
+        if (day != Guide.day(p)) return null
+        return Providers.http(p.o.optString("guide").ifEmpty { return null }.replace("{id}", id), p.headers, null)?.let { parseGuide(it) }
+    }
+
+    fun parseGuide(text: String): List<Show>? = try {
+        val a = org.json.JSONArray(text)
+        (0 until a.length()).mapNotNull { a.optJSONObject(it) }.mapNotNull { o ->
+            val t = o.optString("title").trim(); val s = o.optLong("time_start"); val e = o.optLong("time_end")
+            if (t.isEmpty() || s <= 0 || e <= s) null else Show(t, s * 1000, e * 1000)
+        }
+    } catch (e: org.json.JSONException) { null }
+
     fun parsePlay(text: String, free: Int, now: Long): Providers.Played? = try {
         val d = JSONObject(text)
         val links = d.optJSONObject("play_links")
@@ -203,6 +225,24 @@ object Vieon : Providers.Kind {
         if (d.optInt("permission") != free || url == null) null else {
             val expiry = Regex("/[0-9a-f]{32}/(\\d{13})/").find(url)?.groupValues?.get(1)?.toLong()
             Providers.Played(url, if (expiry == null) now + 3600_000L else maxOf(now, minOf(expiry - 3600_000L, now + 6 * 3600_000L)))
+        }
+    } catch (e: org.json.JSONException) { null }
+}
+
+/**
+ * TV360 (tv360.vn): only its programme guide, which it shows to anyone (its streams need a short-lived token from a browser).
+ * Its channel ids come from the list (`"channels": {"VTV3": "4"}`): its own list is a 1 MB web page, too much for a TV box.
+ * A day is asked by date, today or tomorrow.
+ */
+object Tv360 : Providers.Kind {
+    override fun guide(p: Providers.Provider, id: String, day: String): List<Show>? =
+        Providers.http(p.o.optString("guide").ifEmpty { return null }.replace("{id}", id).replace("{date}", day), p.headers, null)?.let { parseGuide(it) }
+
+    fun parseGuide(text: String): List<Show>? = try {
+        val a = JSONObject(text).optJSONObject("data")?.optJSONArray("schedules") ?: org.json.JSONArray()
+        (0 until a.length()).mapNotNull { a.optJSONObject(it) }.mapNotNull { o ->
+            val t = o.optString("name").trim(); val s = o.optLong("epochSt"); val e = o.optLong("epochEt")
+            if (t.isEmpty() || s <= 0 || e <= s) null else Show(t, s, e)
         }
     } catch (e: org.json.JSONException) { null }
 }

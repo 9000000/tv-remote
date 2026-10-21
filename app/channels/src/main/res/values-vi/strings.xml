@@ -36,4 +36,9 @@
     <string name="delete_ask">Xoá nhóm “%s”?</string>
     <string name="keep">Giữ lại</string>
     <string name="ok">OK</string>
+    <string name="guide">Lịch phát sóng</string>
+    <string name="guide_none">Kênh này chưa có lịch phát sóng.</string>
+    <string name="guide_next">Tiếp %1$s</string>
+    <string name="today">Hôm nay</string>
+    <string name="tomorrow">Ngày mai</string>
 </resources>

@@ -15,7 +15,7 @@ class ProvidersTest {
         val list = File(docs, "providers.json").readBytes()
         assertTrue(Providers.verified(list, File(docs, "providers.json.sig").readText()))
         assertFalse(Providers.verified(list + ' '.code.toByte(), File(docs, "providers.json.sig").readText()))   // one byte more: refused
-        assertEquals(listOf("vieon"), Providers.parse(String(list)).map { it.id })
+        assertEquals(listOf("tv360", "vieon"), Providers.parse(String(list)).map { it.id })
     }
 
     @Test fun offAndUnknownKindsAreLeftOut() {
@@ -40,7 +40,7 @@ class ProvidersTest {
         assertFalse(Providers.isLink("http://x/a.m3u8"))
     }
 
-    private val p = Providers.parse(String(File(docs, "providers.json").readBytes()))[0]
+    private val p = Providers.parse(String(File(docs, "providers.json").readBytes())).first { it.kind == "vieon" }
 
     @Test fun vieonList() {
         val l = Vieon.parseList("""{"items":[{"slug":"vtv1-hd","title":"VTV1 HD","is_premium":0,"images":{"livetv_logo_light":"https://l/1.png"}},
@@ -65,5 +65,26 @@ class ProvidersTest {
         assertEquals(now + 3600_000L, Vieon.parsePlay("""{"permission":206,"hls_link_play":"$soon"}""", 206, now)!!.until)   // an hour before it runs out
         assertNull(Vieon.parsePlay("""{"id":"x","permission":0,"link_play":""}""", 206, now))   // needs an account
         assertNull(Vieon.parsePlay("<html>", 206, now))
+    }
+
+    @Test fun guides() {
+        val shows = Tv360.parseGuide("""{"data":{"schedules":[{"name":"Thời sự","epochSt":1000,"epochEt":2000},{"name":"Phim","epochSt":2000,"epochEt":3000},{"name":"","epochSt":3000,"epochEt":4000}]}}""")!!
+        assertEquals(listOf("Thời sự", "Phim"), shows.map { it.title })
+        assertEquals("Thời sự", Guide.now(shows, 1500)!!.title)
+        assertEquals("Phim", Guide.after(shows, 1500)!!.title)
+        assertNull(Guide.now(shows, 5000))
+        assertEquals(emptyList<Show>(), Tv360.parseGuide("""{"data":{"info":[]}}"""))
+        val v = Vieon.parseGuide("""[{"title":"Phim truyện","time_start":1792515600,"time_end":1792517400}]""")!!
+        assertEquals(1792515600_000L, v[0].start)                       // seconds there, ms here
+        assertNull(Vieon.parseGuide("{}"))
+    }
+
+    @Test fun guideIdsFromTheSitesList() {
+        val ps = Providers.parse(File(docs, "providers.json").readText())
+        val tv360 = ps.first { it.kind == "tv360" }
+        assertEquals("4", tv360.guides[Providers.key("VTV3 HD")])        // iptv-org's name finds TV360's id
+        assertTrue(tv360.guides.size > 100)
+        assertTrue(ps.first { it.kind == "vieon" }.o.optString("guide").contains("{id}"))
+        assertTrue(Regex("\\d{4}-\\d{2}-\\d{2}").matches(Guide.day(tv360, 1)))
     }
 }

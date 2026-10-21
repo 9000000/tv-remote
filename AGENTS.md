@@ -74,7 +74,8 @@ app/channels/            TV Channels: BrowseActivity (countries, categories, fav
                          channel), Pins (links and pinned shortcuts), Providers (more sources than iptv-org, e.g. VieON: each kind is
                          code here, their addresses / headers / on-off in `docs/channels/providers.json`, signed by `dev/sign_providers.py`
                          with the launcher list's key, read from the site, else GitHub, else the APK's packed copy; Ed25519 from
-                         `app/shared/src/sign`). AndroidX (Media3, RecyclerView) here only; no :shared
+                         `app/shared/src/sign`), Guide + GuideList (the programme guide from the providers with a "guide": TV360 by
+                         name, VieON by its id; now / next on the player and the cards, the day's list). AndroidX (Media3, RecyclerView) here only; no :shared
 app/gradle/              the Gradle build of everything Kotlin (settings point at ../shared, ../android, ../tv, ../home, ../desktop); open it in Android Studio
 app/desktop/             the computer app on the shared Kotlin core (JVM, no adb/Python/ffmpeg), the "pc" core: Server.kt
                          (the routes only the computer has) + Manage.kt; Pass.kt (a key per start, in the link the window and browser open: tests pass `TVR_PASS` and `?k=`); Updater.kt (updates itself from releases, swapped in by a script once it quits); Window.kt shows the page in the system's web view

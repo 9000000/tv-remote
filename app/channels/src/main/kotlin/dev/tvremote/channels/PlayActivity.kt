@@ -17,6 +17,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.Toast
 import android.widget.TextView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
@@ -50,6 +51,11 @@ class PlayActivity : Activity() {
     private lateinit var infoName: TextView
     private lateinit var infoSub: TextView
     private lateinit var infoNum: TextView
+    private lateinit var infoNow: TextView
+    private lateinit var infoBar: ProgressBar
+    private lateinit var infoNext: TextView
+    private lateinit var guide: LinearLayout
+    private lateinit var guideList: RecyclerView
     private lateinit var problem: TextView
     private lateinit var digits: TextView
     private lateinit var side: LinearLayout
@@ -99,6 +105,13 @@ class PlayActivity : Activity() {
         infoName = Ui.text(this, "", 22f, bold = true).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
         infoSub = Ui.text(this, "", 14f, Ui.DIM).apply { maxLines = 1; setPadding(0, d(6), 0, 0) }
         words.addView(infoName); words.addView(infoSub)
+        infoNow = Ui.text(this, "", 16f).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(0, d(12), 0, 0) }
+        infoBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            max = 1000; progressTintList = android.content.res.ColorStateList.valueOf(Ui.ACCENT)
+            progressBackgroundTintList = android.content.res.ColorStateList.valueOf(0x33FFFFFF)
+        }
+        infoNext = Ui.text(this, "", 14f, Ui.DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
+        words.addView(infoNow); words.addView(infoBar, LinearLayout.LayoutParams(-1, d(4)).apply { topMargin = d(8); bottomMargin = d(8) }); words.addView(infoNext)
         info.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
         frame.addView(info, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM).apply { setMargins(d(48), 0, d(48), d(36)) })
 
@@ -110,6 +123,15 @@ class PlayActivity : Activity() {
         sideList = RecyclerView(this).apply { layoutManager = LinearLayoutManager(this@PlayActivity); adapter = SideList(); itemAnimator = null }
         side.addView(sideList, LinearLayout.LayoutParams(-1, 0, 1f))
         frame.addView(side, FrameLayout.LayoutParams(d(360), -1, Gravity.START))
+
+        guide = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; setPadding(d(12), d(20), d(12), d(20)); visibility = View.GONE
+            background = Ui.round(0xEB14171D.toInt(), 0f)
+        }
+        guide.addView(Ui.text(this, "", 16f, Ui.ACCENT, true).apply { tag = "title"; setPadding(d(12), 0, d(12), d(4)); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+        guideList = RecyclerView(this).apply { layoutManager = LinearLayoutManager(this@PlayActivity); adapter = GuideList(this@PlayActivity); itemAnimator = null }
+        guide.addView(guideList, LinearLayout.LayoutParams(-1, 0, 1f))
+        frame.addView(guide, FrameLayout.LayoutParams(d(400), -1, Gravity.END))
         setContentView(frame)
         open(intent)
     }
@@ -263,7 +285,40 @@ class PlayActivity : Activity() {
         infoSub.text = listOfNotNull(c.quality.ifEmpty { null }, c.group, Lineup.title.ifEmpty { null }).joinToString(" · ")
         Logos.into(infoLogo, c.logo, 200) {}
         info.visibility = View.VISIBLE
-        main.removeCallbacks(hideInfo); main.postDelayed(hideInfo, 4000)
+        main.removeCallbacks(hideInfo); main.postDelayed(hideInfo, 5000)
+        val ch = streams
+        val kept = Guide.known(c.id)
+        showNow(kept.orEmpty())
+        if (kept == null) io.execute { val got = Guide.of(this, ch); main.post { if (!isDestroyed && streams === ch) showNow(got) } }
+    }
+
+    /** The banner's programme lines: what is on, how far in, what comes next ("▶ guide" when there is one). */
+    private fun showNow(shows: List<Show>) {
+        val on = Guide.now(shows); val then = Guide.after(shows)
+        Ui.show(infoNow, on != null); Ui.show(infoBar, on != null); Ui.show(infoNext, then != null)
+        if (on != null) {
+            infoNow.text = "${Guide.hm(on.start)} – ${Guide.hm(on.end)}   ${on.title}"
+            infoBar.progress = ((System.currentTimeMillis() - on.start) * 1000 / (on.end - on.start)).toInt()
+        }
+        if (then != null) infoNext.text = getString(R.string.guide_next, "${Guide.hm(then.start)}  ${then.title}") + "    ▶ " + getString(R.string.guide)
+    }
+
+    /** The day's shows on the right; ◀ or Back closes it. */
+    private fun showGuide(on: Boolean) {
+        guide.visibility = if (on) View.VISIBLE else View.GONE
+        if (!on) return
+        info.visibility = View.GONE
+        val c = streams.firstOrNull() ?: return
+        guide.findViewWithTag<TextView>("title").text = "${getString(R.string.guide)} · ${c.name}"
+        val a = guideList.adapter as GuideList
+        val ch = streams
+        fun fill(shows: List<Show>) {
+            if (shows.isEmpty()) { guide.visibility = View.GONE; Toast.makeText(this, R.string.guide_none, Toast.LENGTH_SHORT).show(); return }
+            a.set(shows); GuideList.focusOn(guideList, a.onNow)
+        }
+        Guide.known(c.id)?.let { fill(it); return }
+        a.set(emptyList())
+        io.execute { val got = Guide.of(this, ch); main.post { if (!isDestroyed && streams === ch && guide.visibility == View.VISIBLE) fill(got) } }
     }
 
     private val hideInfo = Runnable { info.visibility = View.GONE }
@@ -282,6 +337,11 @@ class PlayActivity : Activity() {
     }
 
     override fun onKeyDown(k: Int, e: KeyEvent): Boolean {
+        if (guide.visibility == View.VISIBLE) {
+            if (k == KeyEvent.KEYCODE_BACK || k == KeyEvent.KEYCODE_DPAD_LEFT) { showGuide(false); return true }
+            if (k == KeyEvent.KEYCODE_DPAD_UP || k == KeyEvent.KEYCODE_DPAD_DOWN || k == KeyEvent.KEYCODE_DPAD_CENTER || k == KeyEvent.KEYCODE_ENTER) return super.onKeyDown(k, e)
+            showGuide(false)                                          // CH+ / numbers: back to watching, the key does its own
+        }
         if (side.visibility == View.VISIBLE) {
             if (k == KeyEvent.KEYCODE_BACK || k == KeyEvent.KEYCODE_DPAD_RIGHT) { showSide(false); return true }
             return super.onKeyDown(k, e)
@@ -291,7 +351,8 @@ class PlayActivity : Activity() {
             KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_CHANNEL_DOWN, KeyEvent.KEYCODE_PAGE_DOWN -> tune(at - 1)
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_GUIDE,
             KeyEvent.KEYCODE_MENU -> showSide(true)
-            KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_INFO -> showInfo()
+            KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_INFO -> if (info.visibility == View.VISIBLE) showGuide(true) else showInfo()
+            KeyEvent.KEYCODE_PROG_RED, KeyEvent.KEYCODE_TV_DATA_SERVICE -> showGuide(true)
             KeyEvent.KEYCODE_LAST_CHANNEL -> if (before >= 0) tune(before)
             KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_MEDIA_PAUSE, KeyEvent.KEYCODE_MEDIA_PLAY ->
                 player?.let { if (it.isPlaying && k != KeyEvent.KEYCODE_MEDIA_PLAY) it.pause() else { it.seekToDefaultPosition(); it.play() } }
