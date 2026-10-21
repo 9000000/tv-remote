@@ -90,10 +90,10 @@ object Catalog {
     fun layouts(c: Context): String = peek(c).optJSONObject("layouts")?.toString() ?: "{}"
 
     /** The entry a downloaded homebrew ROM came from (its file is the sanitised name + extension, see LibraryActivity.getRom), or a web game by its address. */
-    private fun entryOf(c: Context, rom: String?, url: String?): JSONObject? {
+    fun entryOf(c: Context, rom: String?, url: String?): JSONObject? {
         val cat = peek(c)
         if (rom != null) cat.optJSONArray("homebrew")?.let { a ->
-            for (i in 0 until a.length()) a.optJSONObject(i)?.let { if (it.optString("name").replace(Regex("[^A-Za-z0-9 ._-]"), "") == rom.substringBeforeLast('.')) return it }
+            for (i in 0 until a.length()) a.optJSONObject(i)?.let { if (it.optString("name").replace(Regex("[^A-Za-z0-9 ._-]"), "") == rom.substringBeforeLast('.').removeSuffix(" (homebrew)")) return it }
         }
         if (url != null) cat.optJSONArray("web")?.let { a ->
             for (i in 0 until a.length()) a.optJSONObject(i)?.let { if (it.optString("url") == url) return it }

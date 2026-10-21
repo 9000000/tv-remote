@@ -46,7 +46,7 @@ class LibraryActivity : ComponentActivity() {
 
     /** The site's list (a day old at most) in the background; the library is drawn again when it changed. */
     private fun refreshCatalog() {
-        Thread { if (Catalog.refresh(applicationContext, intent.hasExtra("cat_base"))) runOnUiThread { if (!isDestroyed && overlay == null) reload() } }.start()
+        Thread { if (Catalog.refresh(applicationContext, intent.hasExtra("cat_base"))) runOnUiThread { if (!isDestroyed && overlay == null && dl == null) reload() } }.start()
     }
 
     @Deprecated("Deprecated in Java")
@@ -67,7 +67,7 @@ class LibraryActivity : ComponentActivity() {
         server.inGame = false; server.webMode = false; server.clearLayouts(); server.setSystem("nes")
         server.onKey = { _, _, _ -> }
         server.onPlayers = { }
-        server.onAdded = { runOnUiThread { reload() } }
+        server.onAdded = { runOnUiThread { if (dl == null) reload() } }
         reload()
     }
 
@@ -78,6 +78,7 @@ class LibraryActivity : ComponentActivity() {
 
     /** The Add-game card answers Back / Escape / a pad's B itself (down and up both eaten), so none of them reaches the launcher. */
     override fun dispatchKeyEvent(ev: android.view.KeyEvent): Boolean {
+        if (dl != null && ev.keyCode == android.view.KeyEvent.KEYCODE_BACK) { if (ev.action == android.view.KeyEvent.ACTION_UP) cancelDl(); return true }
         if (overlay != null && (ev.keyCode == android.view.KeyEvent.KEYCODE_BACK || ev.keyCode == android.view.KeyEvent.KEYCODE_ESCAPE || ev.keyCode == android.view.KeyEvent.KEYCODE_BUTTON_B)) {
             if (ev.action == android.view.KeyEvent.ACTION_UP) closeOverlay()
             return true
@@ -96,11 +97,21 @@ class LibraryActivity : ComponentActivity() {
         val cat = Catalog.peek(this)
         val hidden = getSharedPreferences("games", MODE_PRIVATE).getStringSet("hidden", emptySet()) ?: emptySet()
         val have = games.map { it.name.lowercase() }.toSet()
+        val stems = games.map { it.file.nameWithoutExtension.removeSuffix(" (homebrew)").lowercase() }.toSet()
+        val got = getSharedPreferences("games", MODE_PRIVATE)
+        val shas = games.mapNotNull { shaOf(it.file) }.toSet()      // the same file under any name
+        fun installed(h: org.json.JSONObject): Boolean {            // by name, by the file name in its address, or by the file this app saved for its id
+            val nm = h.optString("name").replace(Regex("[^A-Za-z0-9 ._-]"), "").lowercase()
+            val fromUrl = h.optString("url").substringAfterLast('/').substringBeforeLast('.').lowercase()
+            val saved = got.getString("got:" + h.optString("id"), null)
+            val sha = h.optString("sha256").lowercase()
+            return (sha.isNotEmpty() && sha in shas) || nm in stems || h.optString("name").lowercase() in have || (fromUrl.isNotEmpty() && fromUrl in stems) || (saved != null && File(Systems.romsDir(this), saved).exists())
+        }
         val en = java.util.Locale.getDefault().language != "vi"
         val feat = (0 until (cat.optJSONArray("web")?.length() ?: 0)).mapNotNull { cat.optJSONArray("web")?.optJSONObject(it) }
             .filter { it.optBoolean("on", true) && it.optString("url").matches(Regex("https?://.+")) && "w:" + it.optString("id") !in hidden }
         val brew = (0 until (cat.optJSONArray("homebrew")?.length() ?: 0)).mapNotNull { cat.optJSONArray("homebrew")?.optJSONObject(it) }
-            .filter { it.optBoolean("on", true) && "h:" + it.optString("id") !in hidden && it.optString("name").lowercase() !in have
+            .filter { it.optBoolean("on", true) && "h:" + it.optString("id") !in hidden && !installed(it)
                 && Systems.list(this).any { s -> s.id == it.optString("system") } }
         if (games.isEmpty() && webs.isEmpty() && feat.isEmpty() && brew.isEmpty()) {
             root.addView(LinearLayout(this).apply {
@@ -117,13 +128,15 @@ class LibraryActivity : ComponentActivity() {
         val grid = GridLayout(this).apply { columnCount = 4; clipChildren = false; clipToPadding = false }
         val tiles = ArrayList<Pair<String, View>>()                    // one list by name, so the order never depends on the scan
         for (g in games) {
-            val t = tile(g.name, g.sys.label, g.sys.color, Thumbs.catalog(this, g.file.name) ?: Thumbs.src(this, g.sys, g.file.name)) {
+            val pc = Catalog.players(this, g.file.name, null, Systems.maxPlayers(g.sys.id))
+            val t = tile(g.name, g.sys.label, g.sys.color, Thumbs.catalog(this, g.file.name) ?: Thumbs.src(this, g.sys, g.file.name), chip = chipOf(pc.first, pc.second)) {
                 try { startActivity(Intent(this, GameActivity::class.java).putExtra("path", g.file.path)) } catch (e: Exception) { }
             }
             tiles += g.name to t
         }
         for (w in webs) {
-            val t = tile(w.name, "WEB", 0xFF0891B2.toInt(), webSrc(w.url, null)) {
+            val wc = if (w.url.startsWith("builtin:") || Catalog.entryOf(this, null, w.url) == null) null else Catalog.players(this, null, w.url, 4)
+            val t = tile(w.name, "WEB", 0xFF0891B2.toInt(), webSrc(w.url, null), chip = wc?.let { chipOf(it.first, it.second) }) {
                 try { startActivity(Intent(this, WebGameActivity::class.java).putExtra("name", w.name).putExtra("url", w.url)) } catch (e: Exception) { }
             }
             if (!w.url.startsWith("builtin:")) t.setOnLongClickListener { Systems.removeWeb(this, w.url); reload(); true }   // OK held on a link removes it
@@ -137,7 +150,7 @@ class LibraryActivity : ComponentActivity() {
         val sugs = ArrayList<Pair<String, View>>()
         for (w in feat) {
             val nm = w.optJSONObject("name")?.let { it.optString(if (en) "en" else "vi").ifEmpty { it.optString("en") } } ?: w.optString("id")
-            val t = tile(nm, "WEB", 0xFF0891B2.toInt(), webSrc(w.optString("url"), w.optString("img"))) {
+            val t = tile(nm, "WEB", 0xFF0891B2.toInt(), webSrc(w.optString("url"), w.optString("img")), chip = chipOf(w.optInt("players", 4).coerceIn(1, 4), w.optInt("min", 1))) {
                 try { startActivity(Intent(this, WebGameActivity::class.java).putExtra("name", nm).putExtra("url", w.optString("url")).putExtra("pad", w.optString("pad", "web"))) } catch (e: Exception) { }
             }
             t.setOnLongClickListener { hide("w:" + w.optString("id")); true }
@@ -146,7 +159,7 @@ class LibraryActivity : ComponentActivity() {
         for (h in brew) {
             val s = Systems.list(this).first { it.id == h.optString("system") }
             val t = tile(getString(R.string.get_rom, h.optString("name")), s.label, s.color,
-                Thumbs.Src("h:" + h.optString("id"), img = h.optString("img").takeIf { it.isNotEmpty() }), initialsOf = h.optString("name")) { }
+                Thumbs.Src("h:" + h.optString("id"), img = h.optString("img").takeIf { it.isNotEmpty() }), initialsOf = h.optString("name"), chip = chipOf(h.optInt("players", Systems.maxPlayers(s.id)).coerceIn(1, 4), h.optInt("min", 1))) { }
             t.setOnClickListener { getRom(h, s, t) }
             t.setOnLongClickListener { hide("h:" + h.optString("id")); true }
             sugs += h.optString("name") to t
@@ -176,8 +189,13 @@ class LibraryActivity : ComponentActivity() {
             override fun requestChildRectangleOnScreen(child: View, rectangle: android.graphics.Rect, immediate: Boolean) = false
         }.apply { addView(col); clipChildren = false; clipToPadding = false; isSmoothScrollingEnabled = false }
         root.addView(scroller, FrameLayout.LayoutParams(-1, -1))
-        first?.requestFocus()
+        val want = pendingFocus?.let { f -> games.firstOrNull { it.file.name == f }?.let { g -> tiles.firstOrNull { it.first == g.name }?.second } }
+        pendingFocus = null
+        (want ?: first)?.requestFocus()
     }
+
+    /** "👤 1", "👥 2" (needs two), "👥 1–4". */
+    private fun chipOf(max: Int, min: Int) = if (max <= 1) "👤 1" else if (min >= max) "👥 $max" else "👥 1–$max"
 
     /** A web game's picture: the packed one of Pad test, the catalog's "img" (https), else the page's own (og:image, icon). */
     private fun webSrc(url: String, img: String?): Thumbs.Src = when {
@@ -192,30 +210,98 @@ class LibraryActivity : ComponentActivity() {
         p.edit().putStringSet("hidden", HashSet(p.getStringSet("hidden", emptySet()) ?: emptySet()).apply { add(id) }).apply(); reload()
     }
 
-    /** One OK: the ROM from the catalog into files/roms, its sha256 checked first (a mismatch is thrown away). */
+    /** SHA-256 of a ROM (under 4 MB), kept by name + size + date so each file is read once. */
+    private fun shaOf(f: File): String? {
+        if (f.length() > (4 shl 20)) return null
+        val p = getSharedPreferences("shas", MODE_PRIVATE); val k = "${f.name}|${f.length()}|${f.lastModified()}"
+        p.getString(k, null)?.let { return it }
+        return try {
+            val v = java.security.MessageDigest.getInstance("SHA-256").digest(f.readBytes()).joinToString("") { "%02x".format(it) }
+            p.edit().putString(k, v).apply(); v
+        } catch (e: Exception) { null }
+    }
+
+    private class Dl(val tile: View) { @Volatile var cancelled = false }
+    private class Cover(val box: View, val text: TextView, val bar: android.widget.ProgressBar, val hint: TextView)
+    private var dl: Dl? = null
+    private val covers = java.util.WeakHashMap<View, Cover>()
+    private var pendingFocus: String? = null                          // the file just downloaded: the library focuses its tile once drawn
+
+    private fun coverOf(tile: View): Cover = covers.getOrPut(tile) {
+        val t = label("", 18f).apply { setTypeface(null, android.graphics.Typeface.BOLD); maxLines = 2; gravity = Gravity.CENTER }
+        val bar = android.widget.ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            max = 100; progressTintList = android.content.res.ColorStateList.valueOf(0xFF4ADE80.toInt()); progressBackgroundTintList = android.content.res.ColorStateList.valueOf(0x40FFFFFF)
+        }
+        val hint = label("", 14f, 0xFFD5DAE6.toInt())
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setBackgroundColor(0xFA0B0D12.toInt()); setPadding(dp(14), 0, dp(14), 0)
+            addView(t); addView(bar, LinearLayout.LayoutParams(-1, dp(8)).apply { topMargin = dp(8); bottomMargin = dp(6) }); addView(hint)
+        }
+        (tile as FrameLayout).addView(box, tile.childCount - 1, FrameLayout.LayoutParams(-1, -1))   // under the focus ring
+        Cover(box, t, bar, hint)
+    }
+
+    private fun uncover(tile: View) { covers.remove(tile)?.let { (tile as FrameLayout).removeView(it.box) } }
+
+    /** One OK on a suggestion: the ROM into files/roms, its sha256 checked first (a mismatch is thrown away). The card shows the percent
+     *  (bytes of Content-Length; a bar that just runs when the size is unknown); OK or Back on it cancels; a failure says so and OK retries. */
     private fun getRom(h: org.json.JSONObject, s: Systems.Sys, tile: View) {
-        val tv = tile.tag as TextView
-        tv.text = getString(R.string.getting); tile.isEnabled = false
+        dl?.let { if (it.tile === tile) cancelDl(); return }          // a second OK on the same card cancels; another card waits its turn
+        val d = Dl(tile); dl = d
+        val cv = coverOf(tile)
+        cv.bar.visibility = View.VISIBLE; cv.bar.isIndeterminate = true; cv.text.text = getString(R.string.getting); cv.hint.text = getString(R.string.dl_cancel)
         Thread {
-            var msg: String? = null
+            var msg: String? = null; var saved: String? = null
             try {
                 val c = java.net.URL(h.getString("url")).openConnection() as java.net.HttpURLConnection
                 c.connectTimeout = 8000; c.readTimeout = 15000
-                val bytes = c.inputStream.use { it.readBytes().take(64 shl 20).toByteArray() }
-                val sum = java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
-                val ext = h.getString("url").substringAfterLast('.').takeIf { it in s.exts } ?: s.exts.first()
-                if (sum != h.optString("sha256").lowercase()) msg = getString(R.string.rom_bad)
-                else File(Systems.romsDir(this), h.optString("name").replace(Regex("[^A-Za-z0-9 ._-]"), "") + ".$ext").writeBytes(bytes)
+                val total = c.contentLengthLong
+                val out = java.io.ByteArrayOutputStream(if (total in 1..(64L shl 20)) total.toInt() else 1 shl 16)
+                var last = -1; var lastAt = 0L
+                c.inputStream.use { i ->
+                    val buf = ByteArray(16384)
+                    while (!d.cancelled) {
+                        val n = i.read(buf); if (n < 0) break
+                        out.write(buf, 0, n)
+                        if (out.size() > (64 shl 20)) throw java.io.IOException("too big")
+                        val pc = if (total > 0) (out.size() * 100L / total).toInt() else -1
+                        val now = System.currentTimeMillis()
+                        if (pc != last && now - lastAt > 120) { last = pc; lastAt = now; runOnUiThread { if (dl === d) progress(cv, pc) } }
+                    }
+                }
+                if (!d.cancelled) {
+                    val bytes = out.toByteArray()
+                    val sum = java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+                    val ext = h.getString("url").substringAfterLast('.').takeIf { it in s.exts } ?: s.exts.first()
+                    if (sum != h.optString("sha256").lowercase()) msg = getString(R.string.rom_bad)
+                    else { saved = h.optString("name").replace(Regex("[^A-Za-z0-9 ._-]"), "") + ".$ext"; File(Systems.romsDir(this), saved).writeBytes(bytes) }
+                }
             } catch (e: Exception) { msg = getString(R.string.core_net) }
-            runOnUiThread { if (isDestroyed) return@runOnUiThread; if (msg != null) { tv.text = msg; tile.isEnabled = true } else reload() }
+            runOnUiThread {
+                if (isDestroyed || dl !== d) return@runOnUiThread
+                dl = null
+                if (d.cancelled) { uncover(tile); return@runOnUiThread }
+                if (msg != null) { cv.bar.visibility = View.GONE; cv.text.text = msg; cv.hint.text = getString(R.string.dl_retry); return@runOnUiThread }
+                getSharedPreferences("games", MODE_PRIVATE).edit().putString("got:" + h.optString("id"), saved).apply()
+                pendingFocus = saved
+                android.widget.Toast.makeText(this, getString(R.string.added, h.optString("name")), android.widget.Toast.LENGTH_LONG).show()
+                reload()
+            }
         }.start()
     }
+
+    private fun progress(cv: Cover, pc: Int) {
+        if (pc < 0) { cv.bar.isIndeterminate = true; return }
+        cv.bar.isIndeterminate = false; cv.bar.progress = pc; cv.text.text = getString(R.string.dl_progress, pc)
+    }
+
+    private fun cancelDl() { dl?.let { it.cancelled = true; uncover(it.tile); dl = null } }
 
     /**
      * A game's tile: its picture ([Thumbs]: box art, the page's picture, a snapshot of the last play) filling it, else a designed one
      * (the system's colour and the game's initials) until, or instead of, it; the name on a strip at the bottom. [src] null = the plain tile.
      */
-    private fun tile(name: String, badge: String, color: Int, src: Thumbs.Src? = null, plus: Boolean = false, initialsOf: String = name, click: () -> Unit): View = FrameLayout(this).apply {
+    private fun tile(name: String, badge: String, color: Int, src: Thumbs.Src? = null, plus: Boolean = false, initialsOf: String = name, chip: String? = null, click: () -> Unit): View = FrameLayout(this).apply {
         isFocusable = true; isClickable = true
         fun fill(c: Int) = GradientDrawable().apply { setColor(c); cornerRadius = dp(14).toFloat() }
         background = StateListDrawable().apply {
@@ -247,6 +333,11 @@ class LibraryActivity : ComponentActivity() {
             setPadding(dp(10), dp(3), dp(10), dp(3))
             background = GradientDrawable().apply { setColor(color); cornerRadius = dp(8).toFloat() }
         }, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.START).apply { setMargins(dp(12), dp(12), 0, 0) })
+        if (chip != null) addView(TextView(context).apply {                // how many can play, in the corner opposite the system badge
+            text = chip; textSize = 16f; setTextColor(Color.WHITE); typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setPadding(dp(9), dp(2), dp(9), dp(2))
+            background = GradientDrawable().apply { setColor(0xB30B0D12.toInt()); cornerRadius = dp(8).toFloat(); setStroke(dp(1), 0x40FFFFFF) }
+        }, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, dp(11), dp(10), 0) })
         if (plus) {                                                       // a big + and a small label, the pair centred
             val lab = label(name, 15f).apply { setTextColor(0xFFC9CFDD.toInt()) }
             addView(LinearLayout(context).apply {
@@ -323,7 +414,7 @@ class LibraryActivity : ComponentActivity() {
     private fun showOverlay() {
         var close: View? = null
         val v = FrameLayout(this).apply {
-            setBackgroundColor(0xE60B0D12.toInt()); isClickable = true
+            setBackgroundColor(0xFA0B0D12.toInt()); isClickable = true
             addView(LinearLayout(this@LibraryActivity).apply {
                 orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
                 addView(addPanel(server)); addView(rotateButton(server) { closeOverlay(); showOverlay() })

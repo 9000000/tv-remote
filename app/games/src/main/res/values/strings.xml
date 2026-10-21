@@ -31,6 +31,10 @@
     <string name="core_hint">Back to cancel</string>
     <string name="suggest">Suggestions</string>
     <string name="get_rom">Get %1$s</string>
+    <string name="dl_progress">Downloading… %1$d%%</string>
+    <string name="dl_cancel">OK or Back: cancel</string>
+    <string name="dl_retry">OK: try again</string>
+    <string name="added">Added %1$s · press OK to play</string>
     <string name="getting">Downloading…</string>
     <string name="rom_bad">Checksum mismatch, not saved</string>
     <string name="hide_hint">Hold OK to hide</string>

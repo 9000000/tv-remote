@@ -31,6 +31,10 @@
     <string name="core_hint">Bấm Back để hủy</string>
     <string name="suggest">Gợi ý</string>
     <string name="get_rom">Tải %1$s</string>
+    <string name="dl_progress">Đang tải… %1$d%%</string>
+    <string name="dl_cancel">OK hoặc Back: hủy</string>
+    <string name="dl_retry">OK: thử lại</string>
+    <string name="added">Đã thêm %1$s · bấm OK để chơi</string>
     <string name="getting">Đang tải…</string>
     <string name="rom_bad">Sai mã kiểm tra, không lưu</string>
     <string name="hide_hint">Giữ OK để ẩn</string>
