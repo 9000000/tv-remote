@@ -162,7 +162,11 @@ class LibraryActivity : ComponentActivity() {
                 addView(label(getString(R.string.hide_hint), 14f, 0xFF6B7385.toInt()).apply { gravity = Gravity.START; setPadding(dp(8), dp(6), 0, 0) })
             }
         }
-        root.addView(ScrollView(this).apply { addView(col); clipChildren = false; clipToPadding = false }, FrameLayout.LayoutParams(-1, -1))
+        scroller = object : ScrollView(this) {
+            // the default "scroll just enough to show it" would fight centreFocused(), which does the scrolling
+            override fun requestChildRectangleOnScreen(child: View, rectangle: android.graphics.Rect, immediate: Boolean) = false
+        }.apply { addView(col); clipChildren = false; clipToPadding = false; isSmoothScrollingEnabled = false }
+        root.addView(scroller, FrameLayout.LayoutParams(-1, -1))
         first?.requestFocus()
     }
 
@@ -268,7 +272,36 @@ class LibraryActivity : ComponentActivity() {
         val s = if (on) 1.1f else 1f
         v.animate().scaleX(s).scaleY(s).translationZ(if (on) dp(14).toFloat() else 0f).setDuration(200)
             .setInterpolator(android.view.animation.DecelerateInterpolator()).withLayer().start()
-        if (on) setBackdrop(v)
+        if (on) { setBackdrop(v); centreFocused(v) }
+    }
+
+    private var scroller: ScrollView? = null
+    private var scrollAnim: android.animation.ValueAnimator? = null
+
+    /** Scrolls so the focused tile's row sits in the middle of the screen (clamped: the header stays on top for the first row, the
+     *  last row stops at the content's end, so no empty band is added below it). A new key retargets the running animation. */
+    private fun centreFocused(v: View) {
+        val sv = scroller ?: return
+        val content = sv.getChildAt(0) ?: return
+        sv.post {
+            val r = android.graphics.Rect(0, 0, v.width, v.height)
+            try { sv.offsetDescendantRectToMyCoords(v, r) } catch (e: Exception) { return@post }
+            val inContent = r.centerY()      // already in the content's coordinates; its zoom is ignored
+            val max = (content.height - sv.height).coerceAtLeast(0)
+            val head = (content as? ViewGroup)?.getChildAt(0)?.bottom ?: 0
+            val want = (inContent - sv.height / 2).coerceIn(0, max)
+            val to = if (want < head) 0 else want                       // never half-hide the header: the first rows stay as they are
+            scrollAnim?.cancel()
+            val from = sv.scrollY
+            if (from == to) return@post
+            val off = android.provider.Settings.Global.getFloat(contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+            if (off) { sv.scrollTo(0, to); return@post }
+            scrollAnim = android.animation.ValueAnimator.ofInt(from, to).apply {
+                duration = 200; interpolator = android.view.animation.DecelerateInterpolator()
+                addUpdateListener { sv.scrollTo(0, it.animatedValue as Int) }
+                start()
+            }
+        }
     }
 
     private fun setBackdrop(v: View) {
