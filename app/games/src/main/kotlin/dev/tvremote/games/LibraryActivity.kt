@@ -319,7 +319,9 @@ class LibraryActivity : ComponentActivity() {
             row.addView(pill(l, selected = { fSystem == k }) { fSystem = if (fSystem == k) null else k; refresh() })
         }
         gap()
-        all.groupingBy { it.genre }.eachCount().entries.sortedWith(compareBy({ it.key == getString(R.string.genre_other) }, { -it.value }, { it.key })).forEach { (g, _) ->
+        val other = getString(R.string.genre_other)
+        val genres = all.groupingBy { it.genre }.eachCount().entries.filter { it.key != other || all.any { a -> a.genre != other } }     // only "Other" = no genre known yet: no chip
+        genres.sortedWith(compareBy({ it.key == other }, { -it.value }, { it.key })).forEach { (g, _) ->
             row.addView(pill(g, selected = { fGenre == g }) { fGenre = if (fGenre == g) null else g; refresh() })
         }
         gap()
@@ -633,9 +635,9 @@ class LibraryActivity : ComponentActivity() {
         ref.nameV.visibility = View.GONE                                     // shown once a picture covers the face: the face names itself until then
         i.src?.let { src ->
             Thumbs.load(this, src) { bmp, _ ->
-                val inner = trimSides(bmp)                                       // a 4:3 box art comes with dark side bars: its own blur fills them
+                val inner = trimSides(bmp)                                       // a 4:3 picture comes with side bars: its own edge colour fills them
                 if (inner != null) {
-                    ref.face.addView(android.widget.ImageView(this).apply { scaleType = android.widget.ImageView.ScaleType.FIT_XY; setImageBitmap(Bitmap.createScaledBitmap(inner, 24, 14, true)); setColorFilter(0xFF707070.toInt(), android.graphics.PorterDuff.Mode.MULTIPLY) }, 1, FrameLayout.LayoutParams(-1, -1))
+                    ref.face.addView(View(this).apply { setBackgroundColor(edgeColor(inner)) }, 1, FrameLayout.LayoutParams(-1, -1))
                     ref.face.addView(android.widget.ImageView(this).apply { scaleType = android.widget.ImageView.ScaleType.FIT_CENTER; setImageBitmap(inner) }, 2, FrameLayout.LayoutParams(-1, -1))
                 } else ref.face.addView(android.widget.ImageView(this).apply { scaleType = android.widget.ImageView.ScaleType.FIT_XY; setImageBitmap(bmp) }, 1, FrameLayout.LayoutParams(-1, -1))     // over the designed face, under the shine
                 (ref.content as View).visibility = View.GONE
@@ -652,11 +654,18 @@ class LibraryActivity : ComponentActivity() {
         return outer
     }
 
+    /** The average of the picture's left and right columns: white art gets white sides, dark art dark ones. */
+    private fun edgeColor(b: Bitmap): Int {
+        var r = 0; var g = 0; var bl = 0; var n = 0
+        for (x in intArrayOf(4, b.width - 5)) for (k in 1..15) { val p = b.getPixel(x, b.height * k / 16); r += Color.red(p); g += Color.green(p); bl += Color.blue(p); n++ }
+        return Color.rgb(r / n, g / n, bl / n)
+    }
+
     /** The picture without its dark side bars (Thumbs' backdrop colour), or null when it has none. */
     private fun trimSides(b: Bitmap): Bitmap? {
-        fun bar(x: Int): Boolean = (1..15).all { val p = b.getPixel(x, b.height * it / 16); Math.abs(Color.red(p) - 0x10) < 8 && Math.abs(Color.green(p) - 0x13) < 8 && Math.abs(Color.blue(p) - 0x1A) < 8 }
-        var l = 0; while (l < b.width / 3 && bar(l)) l++
-        var r = 0; while (r < b.width / 3 && bar(b.width - 1 - r)) r++
+        fun bar(x: Int): Boolean = (1..15).all { val p = b.getPixel(x, b.height * it / 16); Math.abs(Color.red(p) - 0x10) < 14 && Math.abs(Color.green(p) - 0x13) < 14 && Math.abs(Color.blue(p) - 0x1A) < 14 }
+        var l = 0; while (l < b.width / 3 && bar(l + 1)) l++      // from the 2nd column: the first can be a JPEG edge
+        var r = 0; while (r < b.width / 3 && bar(b.width - 2 - r)) r++
         if (l < b.width / 25 && r < b.width / 25) return null
         val m = minOf(l, r)
         return Bitmap.createBitmap(b, m, 0, b.width - 2 * m, b.height)
