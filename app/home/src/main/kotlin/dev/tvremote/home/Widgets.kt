@@ -513,10 +513,10 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             .firstOrNull { h.contains(it.first) }?.second ?: host.removePrefix("dns.")
     }
 
-    /** The fastest core's top speed, read once (the kernel's own file; some TVs hide it: null). */
+    /** The fastest core's top speed, read once (the kernel's own file; some TVs hide it, an emulator makes it up: null). */
     private fun maxGhz(): Float? = ghzMemo ?: try {
         (0 until Runtime.getRuntime().availableProcessors()).mapNotNull { java.io.File("/sys/devices/system/cpu/cpu$it/cpufreq/cpuinfo_max_freq").takeIf { f -> f.canRead() }?.readText()?.trim()?.toLongOrNull() }
-            .maxOrNull()?.let { it / 1_000_000f }?.also { ghzMemo = it }
+            .filter { it >= 200_000 }.maxOrNull()?.let { it / 1_000_000f }?.also { ghzMemo = it }   // kHz; an emulator says 2: unknown, not "0.0GHz"
     } catch (e: Exception) { null }
     private var ghzMemo: Float? = null
 

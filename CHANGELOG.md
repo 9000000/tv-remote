@@ -4,6 +4,18 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+
+- Sửa: thẻ Hệ thống của TV Home không còn ghi "0.00 GHz" khi TV báo sai tốc độ CPU (máy ảo báo 2 kHz)
+- Hướng dẫn: rà lại 36 mục theo bản 0.15.0, thêm ảnh TV Home và bảng Tùy chỉnh trên TV
+
+**English**
+
+- Fix: TV Home's System card no longer says "0.00 GHz" when the TV reports a bogus CPU speed (the emulator says 2 kHz)
+- Guide: 36 topics checked against 0.15.0, with pictures of TV Home and its Customize panel on the TV
+
 ## 0.15.0 - 2026-10-21
 
 Web 0.15.0 · app điện thoại 0.15.0 · app TV 0.15.0 · TV Home 0.2.0
