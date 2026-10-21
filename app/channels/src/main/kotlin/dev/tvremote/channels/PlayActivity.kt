@@ -308,7 +308,7 @@ class PlayActivity : Activity() {
             infoNow.text = "${Guide.hm(on.start)} – ${Guide.hm(on.end)}   ${on.title}"
             infoBar.progress = ((System.currentTimeMillis() - on.start) * 1000 / (on.end - on.start)).toInt()
         }
-        if (then != null) infoNext.text = getString(R.string.guide_next, "${Guide.hm(then.start)}  ${then.title}") + "    ▶ " + getString(R.string.guide)
+        if (then != null) infoNext.text = getString(R.string.guide_next, "${Guide.hm(then.start)}  ${Reminders.mark(this, streams.firstOrNull()?.id.orEmpty(), then.start)}${then.title}") + "    ▶ " + getString(R.string.guide)
     }
 
     /** The day's shows on the right; ◀ or Back closes it. */

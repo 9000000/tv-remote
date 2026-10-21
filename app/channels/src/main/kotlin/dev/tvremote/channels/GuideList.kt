@@ -55,9 +55,26 @@ class GuideList(private val c: Context) : RecyclerView.Adapter<RecyclerView.View
         val row = h.itemView as LinearLayout
         val on = i == onNow
         (row.getChildAt(0) as TextView).apply { text = Guide.hm(s.start); setTextColor(if (on) Ui.ACCENT else Ui.DIM) }
-        (row.getChildAt(1) as TextView).text = s.title
+        val bell = Reminders.mark(c, s.ch?.id.orEmpty(), s.start)
+        (row.getChildAt(1) as TextView).text = bell + s.title
+        row.setOnClickListener { remind(s, i) }                       // OK on a programme still to come: a reminder, OK again takes it away
         row.isActivated = on
         row.alpha = if (s.end <= System.currentTimeMillis()) 0.5f else 1f
+    }
+
+    private fun remind(s: Show, i: Int) {
+        val ch = s.ch ?: return
+        val msg = when (Reminders.toggle(c, ch, s)) {
+            true -> c.getString(R.string.remind_set, Guide.hm(Reminders.fireAt(s.start, System.currentTimeMillis())!!))
+            false -> c.getString(R.string.remind_off)
+            null -> if (s.start <= System.currentTimeMillis() && s.end > System.currentTimeMillis()) return else c.getString(R.string.remind_past)
+        }
+        android.widget.Toast.makeText(c, msg, android.widget.Toast.LENGTH_SHORT).show()
+        if (msg != c.getString(R.string.remind_off) && !ReminderNotice.canOverlay(c) && Store.raw(c, "overlay_hint") == null) {   // once: why a reminder may not show over other apps
+            Store.putRaw(c, "overlay_hint", "1")
+            android.widget.Toast.makeText(c, R.string.remind_nooverlay, android.widget.Toast.LENGTH_LONG).show()
+        }
+        notifyItemChanged(i)
     }
 
     companion object {

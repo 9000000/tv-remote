@@ -154,6 +154,7 @@ Thêm 2 app cho TV, miễn phí, không quảng cáo. Cài và chỉnh từ app 
 - Kênh yêu thích, nhóm tự tạo, ghim kênh ra màn hình chính. Kênh hỏng thì tự sang nguồn khác.
 - Mở kênh theo tên từ điện thoại: gõ hoặc nói "mở kênh VTV1".
 - Tìm kênh theo tên ở mọi nước (dòng đầu danh sách bên trái); kênh của nước đang chọn hiện trước.
+- Nhắc chương trình: OK trên chương trình sắp chiếu trong lịch phát sóng thì có 🔔; trước giờ chiếu 2 phút hiện thẻ nhắc (OK = xem, Back = bỏ qua) trong TV Channels và cả khi đang ở app khác; màn hình tắt thì không nhắc.
 - Ngôn ngữ riêng ở danh sách bên trái (*Ngôn ngữ*): theo TV, Tiếng Việt hoặc English.
 - Quản lý yêu thích và nhóm ngay từ điện thoại, máy tính hoặc trang web của TV (*Quản lý kênh*: tìm, ☆, nhóm, sắp xếp), không phải bấm D-pad.
 - Cài từ điện thoại / máy tính (tab TV → 📺 *Kênh TV* → Cài).

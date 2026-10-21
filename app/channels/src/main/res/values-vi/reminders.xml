@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="remind_set">Đã đặt nhắc lúc %1$s</string>
+    <string name="remind_off">Đã bỏ nhắc</string>
+    <string name="remind_past">Chương trình đã bắt đầu</string>
+    <string name="remind_title">%1$s · %2$s</string>
+    <string name="remind_head">Sắp phát</string>
+    <string name="remind_hint">OK để xem · Back để bỏ qua</string>
+    <string name="remind_channel">Nhắc lịch chương trình</string>
+    <string name="remind_nooverlay">Để thấy nhắc khi ở app khác, hãy cho TV Channels “Hiển thị trên ứng dụng khác”.</string>
+</resources>

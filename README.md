@@ -151,6 +151,7 @@ Two more apps for the TV, free and without ads. Both are set up from the phone o
 - Favourites, your own groups, channels pinned to the home screen. A dead stream falls to the next one.
 - Opened by name from the phone: type or say "open channel VTV1".
 - Search a channel by name in every country (first row of the side list); the chosen country's channels come first.
+- Programme reminders: OK on a coming programme in the guide sets a 🔔; 2 minutes before, a card (OK = watch, Back = dismiss) shows in TV Channels and over other apps; nothing when the screen is off.
 - Own language in the side list (*Language*): follow the TV, Tiếng Việt or English.
 - Favourites and groups managed from the phone, computer or the TV's web page (*Manage channels*: search, ☆, groups, reorder), not only with the D-pad.
 - Installed from the phone or computer (TV tab → 📺 card → *Install TV Channels*).

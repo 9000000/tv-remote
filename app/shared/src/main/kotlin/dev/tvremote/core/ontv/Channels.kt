@@ -16,6 +16,8 @@ import java.net.URLEncoder
 object Channels {
     const val PKG = "dev.tvremote.channels"
     const val APK = "tv-channels.apk"
+    /** A programme reminder shows over other apps only with "display over other apps", a Settings toggle most TVs do not have: granted here, with every use (like TV Games' pad). */
+    private const val ALLOW_OVERLAY = "appops set $PKG SYSTEM_ALERT_WINDOW allow >/dev/null 2>&1"
 
     @Throws(IOException::class)
     fun state(sh: (String) -> String): JSONObject {
@@ -47,6 +49,7 @@ object Channels {
             r.download(file, null)
             val out = Setup(adb, dir, lang) { }.install(file)
             if (!out.contains("Success")) throw IOException("launcher:install:" + out.trim().lines().lastOrNull().orEmpty().take(200))
+            sh(ALLOW_OVERLAY)
         } finally { file.delete() }
         try { adb.shell("cmd package compile -m speed -f $PKG >/dev/null 2>&1", 120000) } catch (x: IOException) { }   // a cold start on a slow chip, as LauncherInstall
         checked = null
@@ -66,7 +69,7 @@ object Channels {
         val arg = (if (change == null) "" else " --es set " + B64.encode(change.toString().toByteArray(Charsets.UTF_8))) +
             (if (cc == null) "" else " --es list $cc" + if (fresh) " --ez fresh true" else "") + (if (countries) " --ez countries true" else "") +
             (if (export) " --ez export true" else "") + (if (import == null) "" else " --es import " + packImport(import))
-        val out = sh("am broadcast --include-stopped-packages -n $PKG/.ChannelsReceiver$arg 2>&1")
+        val out = sh("$ALLOW_OVERLAY; am broadcast --include-stopped-packages -n $PKG/.ChannelsReceiver$arg 2>&1")
         val m = Regex("data=\"([A-Za-z0-9+/=]+)\"").find(out)
             ?: return state(sh).put("receiver", false)                // not there, or from before the receiver
         val r = JSONObject(String(B64.decode(m.groupValues[1]), Charsets.UTF_8))
@@ -101,7 +104,7 @@ object Channels {
     /** Opens [words] on the TV; false when TV Channels is not there (the link would open nothing, or a chooser). */
     @Throws(IOException::class)
     fun open(sh: (String) -> String, words: String): Boolean {
-        val out = sh("am start -a android.intent.action.VIEW -d '${link(words)}' $PKG 2>&1")   // URL-encoded: no quote can get in
+        val out = sh("$ALLOW_OVERLAY; am start -a android.intent.action.VIEW -d '${link(words)}' $PKG 2>&1")   // URL-encoded: no quote can get in
         return !out.contains("Error") && !out.contains("unable to resolve", true)
     }
 }

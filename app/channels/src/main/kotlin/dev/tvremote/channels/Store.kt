@@ -87,6 +87,10 @@ object Store {
     fun renameGroup(c: Context, id: String, name: String) = saveGroups(c, groups(c).map { if (it.id == id) Group(id, name.trim(), it.channels) else it })
     fun deleteGroup(c: Context, id: String) = saveGroups(c, groups(c).filter { it.id != id })
 
+    /** A small string of a feature that keeps its own format (Reminders). */
+    fun raw(c: Context, k: String): String? = p(c).getString(k, null)
+    fun putRaw(c: Context, k: String, v: String) = p(c).edit().putString(k, v).apply()
+
     fun last(c: Context): String? = p(c).getString("last", null)
     fun setLast(c: Context, id: String) = p(c).edit().putString("last", id).apply()
 

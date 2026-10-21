@@ -9,7 +9,9 @@ import java.util.Locale
 import java.util.TimeZone
 
 /** One programme: its title and when it runs (ms). */
-class Show(val title: String, val start: Long, val end: Long)
+class Show(val title: String, val start: Long, val end: Long) {
+    var ch: Channel? = null                                           // whose guide it is (set by Guide.of: OK on a future row sets a reminder)
+}
 
 /**
  * The programme guide: what a channel shows today (and tomorrow where the provider tells), from the providers with a "guide"
@@ -41,6 +43,7 @@ object Guide {
         val id = ch.first().id
         known(id)?.let { return it }
         val shows = source(c, ch)?.let { (p, ref) -> read(c, p, ref) }.orEmpty()
+        shows.forEach { it.ch = ch.first() }
         synchronized(mem) { mem[id] = System.currentTimeMillis() to shows }
         return shows
     }
