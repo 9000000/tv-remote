@@ -9,10 +9,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 - Tối ưu TV gặp TV Home cũ trên TV thì cập nhật lên bản mới nhất trước khi đổi màn hình chính (cập nhật lỗi thì dùng bản đang có).
 - App điện thoại / máy tính cũ hơn TV Home không còn làm mất widget mới của TV Home khi bật thêm hay đổi cỡ một widget.
+- TV Home: widget lịch tháng thiết kế lại, gọn kiểu Apple: hôm nay khoanh đỏ, chỉ ghi mùng 1 và rằm âm lịch, Chủ nhật không còn đỏ chói.
 
 **English**
 - Optimize TV updates an older TV Home on the TV to the latest before making it the home screen (a failed update keeps the one there).
 - A phone / computer app older than TV Home no longer drops TV Home's newer widgets when turning one on or resizing one.
+- TV Home: the month calendar widget redesigned, cleaner, Apple-like: today in a red circle, only the lunar 1st and 15th marked, Sundays no longer bright red.
 
 ## 0.16.0 - 2026-10-21
 
