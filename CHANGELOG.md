@@ -10,13 +10,13 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Sau khi TV cập nhật firmware, app TV tự tắt lại những app Tối ưu TV đã tắt mà bản cập nhật bật lại (lúc TV khởi động và mỗi ngày một lần), đặt lại TV Home làm màn hình chính nếu bị đổi, và báo một dòng trên màn hình. Chỉ đụng app trong danh sách của Tối ưu TV; app nào bị bật lại hai lần trong một ngày thì bỏ qua. Hoàn tác thì dừng hẳn.
 - Tối ưu TV gặp TV Home cũ trên TV thì cập nhật lên bản mới nhất trước khi đổi màn hình chính (cập nhật lỗi thì dùng bản đang có).
 - App điện thoại / máy tính cũ hơn TV Home không còn làm mất widget mới của TV Home khi bật thêm hay đổi cỡ một widget.
-- TV Home: widget lịch tháng thiết kế lại, gọn kiểu Apple: hôm nay tô đỏ ở giữa ô, ngày âm chữ nhỏ mờ dưới mỗi ngày (mùng 1 ghi kèm tháng), Chủ nhật không còn đỏ chói.
+- TV Home: widget lịch tháng thiết kế lại, gọn kiểu Apple: chỉ dương lịch, hôm nay khoanh đỏ đúng giữa số, Chủ nhật không còn đỏ chói (ngày âm xem ở widget Lịch âm).
 
 **English**
 - After a TV firmware update, TV Setup turns the apps Optimize TV had turned off, and the update turned back on, off again (at boot and once a day), puts TV Home back as the home screen if it was changed, and says so with a card on screen. It only touches apps on Optimize TV's own list; one that comes back twice in a day is given up on. Undo stops it.
 - Optimize TV updates an older TV Home on the TV to the latest before making it the home screen (a failed update keeps the one there).
 - A phone / computer app older than TV Home no longer drops TV Home's newer widgets when turning one on or resizing one.
-- TV Home: the month calendar widget redesigned, cleaner, Apple-like: today in red, centred, the lunar day small and dim under each day (the 1st with its month), Sundays no longer bright red.
+- TV Home: the month calendar widget redesigned, cleaner, Apple-like: solar days only, today circled in red right on the number, Sundays no longer bright red (the lunar date is the Lunar date widget's).
 
 ## 0.16.0 - 2026-10-21
 
