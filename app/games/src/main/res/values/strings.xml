@@ -41,9 +41,14 @@
     <string name="player_plain">Player %1$d</string>
     <string name="lobby_title">Lobby</string>
     <string name="lobby_waiting">Waiting…</string>
-    <string name="lobby_ready">Ready ✓</string>
-    <string name="lobby_notready">Not ready</string>
-    <string name="lobby_hint">Press OK on the remote to start · or everyone taps Ready</string>
+    <string name="lobby_joined">Joined</string>
+    <string name="lobby_ready">✓ Ready</string>
+    <string name="lobby_seats">%1$d / %2$d</string>
+    <string name="key_ok">OK</string>
+    <string name="key_back">Back</string>
+    <string name="hint_start">Start</string>
+    <string name="hint_exit">Exit</string>
+    <string name="hint_ready">or everyone taps Ready</string>
     <string name="lobby_count">Starting in</string>
     <string name="need_one">1 player</string>
     <string name="need_n">Needs %1$d players</string>

@@ -99,7 +99,7 @@ class WebGameActivity : ComponentActivity() {
         cards = GameCards(this, root, server, name, if (builtin) null else url,
             onPause = { p -> if (p) { if (pageDone) { web.onPause(); web.pauseTimers() } } else { web.onResume(); web.resumeTimers(); web.requestFocus() } },
             onSave = null, onLoad = null, onQuit = { finish() }, alone = false, quiet = link == "builtin:padtest",
-            withLobby = Catalog.lobbyOn(this, link), art = lobbyArt(link, url), maxPlayers = counts.first, minPlayers = counts.second)
+            withLobby = Catalog.lobbyOn(this, link), kind = "Web", art = lobbyArt(link, url), maxPlayers = counts.first, minPlayers = counts.second)
         this.url = url; this.root = root
         web.loadUrl(url)
         web.postDelayed(timeout, 10_000)                          // no page in ~10 s: the same card as offline

@@ -41,9 +41,14 @@
     <string name="player_plain">Người chơi %1$d</string>
     <string name="lobby_title">Phòng chờ</string>
     <string name="lobby_waiting">Đang chờ…</string>
-    <string name="lobby_ready">Sẵn sàng ✓</string>
-    <string name="lobby_notready">Chưa sẵn sàng</string>
-    <string name="lobby_hint">Bấm OK trên remote để bắt đầu · hoặc mọi người bấm Sẵn sàng</string>
+    <string name="lobby_joined">Đã vào</string>
+    <string name="lobby_ready">✓ Sẵn sàng</string>
+    <string name="lobby_seats">%1$d / %2$d</string>
+    <string name="key_ok">OK</string>
+    <string name="key_back">Back</string>
+    <string name="hint_start">Bắt đầu</string>
+    <string name="hint_exit">Thoát</string>
+    <string name="hint_ready">hoặc mọi người bấm Sẵn sàng</string>
     <string name="lobby_count">Bắt đầu sau</string>
     <string name="need_one">1 người chơi</string>
     <string name="need_n">Cần %1$d người chơi</string>

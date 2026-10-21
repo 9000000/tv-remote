@@ -21,6 +21,7 @@ class GameCards(
     private val quiet: Boolean = false,                   // a page that draws the join QR and the players itself (Pad test): no start card, no chip
     private val withLobby: Boolean = false,                // the lobby before the game: [art] its picture, [maxPlayers] / [minPlayers] what the game takes, [onGo] the game starts
     private val art: Thumbs.Src? = null, private val maxPlayers: Int = 2, private val minPlayers: Int = 1, private val onGo: () -> Unit = {},
+    private val kind: String? = null,                    // the lobby's "NES" / "Web" line
 ) {
     var paused = false; private set
     /** True from the moment the lobby opens until the game starts: the activities keep the pads' and the remote's input from the game meanwhile. */
@@ -88,7 +89,7 @@ class GameCards(
     // ---- the lobby: Ready on the pads or OK on the remote starts the game, a 3-2-1 first when everyone is ready
     private fun openLobby() {
         lobby = true; startShown = false; warned = false
-        lobbyView = LobbyView(act, server, title, art, maxPlayers, minPlayers).also { root.addView(it, FrameLayout.LayoutParams(-1, -1)) }
+        lobbyView = LobbyView(act, server, title, art, maxPlayers, minPlayers, kind).also { root.addView(it, FrameLayout.LayoutParams(-1, -1)) }
         server.onReady = { act.runOnUiThread { evaluate() } }
         server.onLobbyBtn = { p, b, d -> act.runOnUiThread { lobbyView?.press(p, b, d) } }
         server.lobbyMax = maxPlayers.coerceIn(1, 4); server.setLobby(true)
