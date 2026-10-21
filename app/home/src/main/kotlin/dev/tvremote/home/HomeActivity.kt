@@ -582,7 +582,7 @@ class HomeActivity : Activity() {
         val key = id + (Walls.file(this, id)?.let { it.name + it.lastModified() } ?: "") + conf.optLong("photo")   // a photo put over the old file, another day's Bing picture: a new one
         if (key == wallShown) return
         wallShown = key
-        window.decorView.background = null                            // the wallpaper is [backdrop]'s, painted once behind the window
+        if (Backdrop.FLAT) backdrop.flat = window.decorView else window.decorView.background = null                           // the wallpaper is [backdrop]'s, painted once behind the window
         if (trimmed) { picture = null; soft = null; return }          // away and short of memory: [untrim] brings it back
         loadWall(id)
     }

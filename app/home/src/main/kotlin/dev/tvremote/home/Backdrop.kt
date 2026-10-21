@@ -7,11 +7,13 @@ import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.BitmapDrawable
 import android.view.SurfaceHolder
+import android.view.View
 import android.view.SurfaceView
 
 /**
- * The wallpaper on a surface of its own behind the window, painted once (at the screen's full size, dithered) and then only
+ * The wallpaper painted once into a picture the window shows ([FLAT]), or on a surface of its own behind the window (at the screen's full size, dithered) and then only
  * composed by the system. As the window's background it was filled again on every frame focus moved: drawn live a gradient
  * cost an FPT Play box 60 → 40 frames a second, a small stretched picture of it showed bands ~20 px wide, a photo with its shade
  * 42 ms a frame. Here the window draws only what moves. Changing it (a new choice, the rotation) switches at once: a cross-fade
@@ -36,7 +38,23 @@ class Backdrop(c: Context) : SurfaceView(c), SurfaceHolder.Callback {
     /** [l] painted at once if the surface is up. */
     fun show(l: Look) {
         synchronized(lock) { look = l }
-        paint()
+        if (flat != null) flatPaint() else paint()
+    }
+
+    /** Where the picture goes in the flat way: the window's own background, one opaque layer (see [FLAT]). */
+    var flat: View? = null
+        set(v) { field = v; visibility = if (v != null) GONE else VISIBLE; if (v != null) flatPaint() }
+
+    private var flatPic: Bitmap? = null
+
+    private fun flatPaint() {
+        val v = flat ?: return
+        val dm = resources.displayMetrics
+        val w = dm.widthPixels; val h = dm.heightPixels
+        val b = flatPic?.takeIf { it.width == w && it.height == h } ?: Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).also { flatPic = it }
+        draw(Canvas(b), w, h, synchronized(lock) { look })            // one 8 MB picture painted over, not a new one per change
+        v.background = BitmapDrawable(resources, b).apply { setDither(true) }
+        v.invalidate()
     }
 
     private fun paint() {
@@ -73,6 +91,12 @@ class Backdrop(c: Context) : SurfaceView(c), SurfaceHolder.Callback {
     override fun surfaceDestroyed(h: SurfaceHolder) { ready = false }
 
     companion object {
+        /**
+         * The picture as the window's own background (one opaque layer) rather than on the surface. A BRAVIA (MT5891, Android 9)
+         * composed the surface and the window on its GPU at every frame: focus moving cost 45 ms a frame (91 % janky), flat 9.5 ms
+         * (22 %), as cleanyourtv's launcher (7 ms) which does the same. The surface is kept for a box where it measures better.
+         */
+        const val FLAT = true
         val SHADE = intArrayOf(0xB0000000.toInt(), 0x40000000, 0x90000000.toInt())
         /** [SHADE] at [k] of its strength (a drawn scene is made dark enough already, a photo is not). */
         fun shade(k: Float) = IntArray(SHADE.size) { (((SHADE[it] ushr 24) * k).toInt() shl 24) }
