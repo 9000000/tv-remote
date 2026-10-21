@@ -2,9 +2,9 @@
 const K = new URLSearchParams(location.search).get('k') || '';
 const VI = (navigator.language || '').toLowerCase().startsWith('vi');
 const W = VI
-  ? { p: 'Người chơi', c: 'Đang kết nối…', rc: 'Đang kết nối lại…', rch: 'Không thấy TV? Nếu TV đổi mạng hoặc địa chỉ, quét lại mã QR trên TV.', rs: 'Quét lại mã QR trên TV', rsh: 'Mã kết nối đã đổi. Quét mã mới để vào lại.', nm: 'Tên của bạn', sv: 'Lưu', cx: 'Huỷ', f: 'Hết chỗ chơi', h: 'Rung', a: 'Thêm game', s: 'Gửi', k: 'Cần xoay thay D-pad', b: 'Quay lại', g: 'TV Games', t: 'Thêm vào Màn hình chính để chơi toàn màn hình',
+  ? { p: 'Người chơi', c: 'Đang kết nối…', rc: 'Đang kết nối lại…', rch: 'Không thấy TV? Nếu TV đổi mạng hoặc địa chỉ, quét lại mã QR trên TV.', rs: 'Quét lại mã QR trên TV', rsh: 'Mã kết nối đã đổi. Quét mã mới để vào lại.', nm: 'Tên của bạn', rp: 'Tay cầm đang mở ở tab khác', rph: 'Chạm để dùng ở tab này.', sv: 'Lưu', cx: 'Huỷ', f: 'Hết chỗ chơi', h: 'Rung', a: 'Thêm game', s: 'Gửi', k: 'Cần xoay thay D-pad', b: 'Quay lại', g: 'TV Games', t: 'Thêm vào Màn hình chính để chơi toàn màn hình',
     s1: 'Bấm nút Chia sẻ của Safari (ô vuông có mũi tên lên)', s2: 'Chọn “Thêm vào Màn hình chính”', s3: 'Mở tay cầm từ biểu tượng mới: toàn màn hình', fs: 'Toàn màn hình', sp: 'Game này tối đa {n} người: bạn đang xem', rd: 'Sẵn sàng', rdOn: 'Đã sẵn sàng ✓', lb: 'Phòng chờ: thử các nút, rồi bấm Sẵn sàng', cl: 'Bắt đầu sau' }
-  : { p: 'Player', c: 'Connecting…', rc: 'Reconnecting…', rch: 'No TV in sight? If the TV changed network or address, scan its QR code again.', rs: 'Scan the QR code on the TV again', rsh: 'The connection code was changed. Scan the new one to join again.', nm: 'Your name', sv: 'Save', cx: 'Cancel', f: 'Room is full', h: 'Haptics', a: 'Add game', s: 'Send', k: 'Stick instead of D-pad', b: 'Back', g: 'TV Games', t: 'Add to Home Screen to play fullscreen',
+  : { p: 'Player', c: 'Connecting…', rc: 'Reconnecting…', rch: 'No TV in sight? If the TV changed network or address, scan its QR code again.', rs: 'Scan the QR code on the TV again', rsh: 'The connection code was changed. Scan the new one to join again.', nm: 'Your name', rp: 'The pad is open in another tab', rph: 'Tap to use it here.', sv: 'Save', cx: 'Cancel', f: 'Room is full', h: 'Haptics', a: 'Add game', s: 'Send', k: 'Stick instead of D-pad', b: 'Back', g: 'TV Games', t: 'Add to Home Screen to play fullscreen',
     s1: 'Tap Safari’s Share button (the square with an up arrow)', s2: 'Choose “Add to Home Screen”', s3: 'Open the pad from the new icon: fullscreen', fs: 'Fullscreen', sp: 'This game takes {n} players at most: you are watching', rd: 'Ready', rdOn: 'Ready ✓', lb: 'Lobby: try the buttons, then tap Ready', cl: 'Starting in' };
 // the TV left TV Games (Home) or closed it: the pad says so instead of looking healthy
 Object.assign(W, VI
@@ -68,7 +68,7 @@ $('#nameform').addEventListener('submit', (e) => { e.preventDefault(); setName($
 $('#nm').addEventListener('blur', () => { if (!$('#nameform').hidden) { setName($('#nm').value, true); editName(false); } });
 
 // ---- connection
-let away = false, canOpen = false, closed = false, first_hello = true, ws = null, retry = 400, layout = null, sysName = 'nes', mode = 'nav', lastPong = 0, gaveUp = false, downSince = 0;
+let away = false, canOpen = false, closed = false, first_hello = true, ws = null, retry = 400, layout = null, sysName = 'nes', mode = 'nav', lastPong = 0, gaveUp = false, downSince = 0, replaced = false, quick = [];
 // Two modes: the pad (a game is running) and navigate (a remote for TV Games itself: library, start / pause cards). It follows
 // the TV (a game starts -> pad, back to the library -> navigate); the 🎮 / 🧭 button flips it by hand.
 function setMode(m) {
@@ -188,10 +188,19 @@ function show(slot) {
   } else who.textContent = slot === -1 ? W.f : mySlot > 0 ? W.rc : W.c;
 }
 // the TV said "scan again" (new connection code): stop trying, show it
-function rescan() { gaveUp = true; $('#off').hidden = false; try { ws.close(); } catch (e) {} }
+// Two tabs (or two Chrome windows) of ONE phone share the player id, and the TV hands the seat to the newest, so each kick makes the other
+// reconnect and kick back: a loop of two sockets every half second (seen on a POCO with 3 pad tabs). The TV now says {replaced} to the
+// one it drops; this page then waits for a tap. Against an older TV the same loop is caught here: 3 links that lived under 3 s in a row.
+function replacedBy() {
+  replaced = true; $('#offTitle').textContent = W.rp; $('#offHint').textContent = W.rph; $('#off').dataset.act = 'take'; $('#off').hidden = false;
+  try { ws.onclose = null; ws.close(); } catch (e) {}
+}
+function rescan() { gaveUp = true; delete $('#off').dataset.act; $('#off').hidden = false; try { ws.close(); } catch (e) {} }
 // after a drop: ask the server with a plain request why: 403 = the code changed (rescan), anything else = just try again
 function lost() {
-  if (gaveUp) return;
+  if (gaveUp || replaced) return;
+  if (closed || away) quick = [];
+  else if (opened && Date.now() - opened < 3000) { quick.push(1); if (quick.length >= 3) { replacedBy(); return; } } else quick = [];
   if (away) setAway(false, false);                              // the link broke while the TV was away: now it is a plain reconnect
   $('#ms').textContent = '—'; $('#ms').className = '';
   show(0);
@@ -199,18 +208,21 @@ function lost() {
   if (downSince && Date.now() - downSince > 15000 && mySlot > 0) say(W.rch);
   fetch('/layouts.json?k=' + encodeURIComponent(K), { cache: 'no-store' }).then((r) => { if (r.status === 403) rescan(); else again(); }).catch(again);
 }
-function again() { if (gaveUp) return; setTimeout(connect, retry); retry = Math.min(retry * 1.6, 3000); }
+function again() { if (gaveUp || replaced) return; if (document.hidden) return;     // a background tab reconnects when it is shown again
+  setTimeout(connect, retry); retry = Math.min(retry * 1.6, closed ? 10000 : 3000); }   // TV Games closed: ask less often, 10 s at most
+let opened = 0;
 function connect() {
-  if (gaveUp) return;
+  if (gaveUp || replaced) return;
   show(0);
   ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?k=' + encodeURIComponent(K));
-  ws.onopen = () => { retry = 400; downSince = 0; lastPong = Date.now(); send('hello ' + cid + (myName ? ' ' + myName : '')); held.forEach((b) => send('d ' + b)); };
+  ws.onopen = () => { opened = Date.now(); retry = 400; downSince = 0; lastPong = Date.now(); send('hello ' + cid + (myName ? ' ' + myName : '')); held.forEach((b) => send('d ' + b)); };
   ws.onmessage = (e) => {
     const t = String(e.data);
     if (t[0] === 'p') { pong(t); return; }
     try {
       const m = JSON.parse(t);
       if (m.rescan) { rescan(); return; }
+      if (m.replaced) { replacedBy(); return; }
       if ('away' in m && !('slot' in m)) { setAway(m.away, m.open); return; }
       if (m.closed) { closed = true; setAway(false, false); return; }
       if (m.full) { show(-1); return; }
@@ -242,6 +254,7 @@ function pong(t) {
   if (!(Number(t0) > 0)) return;
   trk.add(Number(t0), now, tv == null ? null : Number(tv));
   const p = trk.ping(), el = $('#ms'); window.__rtt = p;
+  if (away || closed) return;                                  // the card says it; the chip stays "—" instead of flashing a number under it
   el.textContent = p + ' ms'; el.className = PingMath.level(p); el.classList.remove('tk'); void el.offsetWidth; el.classList.add('tk');   // tk: a small blink on each answer
   send('r ' + p + ' ' + (trk.offset() == null ? 0 : trk.offset()));
   window.__off = trk.offset();
@@ -254,7 +267,7 @@ setInterval(() => {
   if (ws && ws.readyState === 1 && Date.now() - lastPong > 5000) { const w = ws; w.onclose = null; try { w.close(); } catch (e) {} lost(); }     // a link that died without a close (Wi-Fi gone, TV off)
 }, 1000);
 // the phone woke up: do not wait for the next retry
-document.addEventListener('visibilitychange', () => { if (!document.hidden && !gaveUp && (!ws || ws.readyState > 1)) { retry = 400; connect(); } });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !gaveUp && !replaced && (!ws || ws.readyState > 1)) { retry = 400; connect(); } });
 
 // ---- presses
 function press(b, on) {
@@ -316,6 +329,7 @@ const ACT = {
   stick() { const on = !wantStick(); store.set(stickKey(), on ? '1' : '0'); relayout(); buzz(12); },
   ready() { if (!lobbyOn) return; iReady = !iReady; send('ready ' + (iReady ? 1 : 0)); syncReady(); buzz(iReady ? 20 : 10); },
   reopen() { send('open'); buzz(20); $('#reopen').disabled = true; setTimeout(() => { $('#reopen').disabled = false; }, 2000); },
+  take() { if (!replaced) return; replaced = false; quick = []; delete $('#off').dataset.act; $('#off').hidden = true; retry = 400; connect(); },
   tipx() { $('#tip').hidden = true; store.set('tvg-tip', '1'); },
 };
 function act(el) { const a = el.closest('[data-act]'); if (a) { ACT[a.dataset.act](a); return true; } return false; }

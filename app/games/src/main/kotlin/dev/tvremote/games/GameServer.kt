@@ -205,7 +205,7 @@ class GameServer private constructor(private val ctx: Context) {
             val i = PadNames.pick(slots.map { PadNames.S(it.cid, it.conn != null, it.dev >= 0, reserved(it, now)) }, cid)
             if (i < 0) return -1
             val s = slots[i]
-            if (s.cid == cid) s.conn?.takeIf { it !== c }?.close() else s.name = null    // a new phone in a seat: not the last one's name
+            if (s.cid == cid) s.conn?.takeIf { it !== c }?.let { it.text("{\"replaced\":true}"); it.close() } else s.name = null    // a new phone in a seat: not the last one's name
             Log.i(TAG, "assign slot ${i + 1}"); s.cid = cid; s.conn = c; s.ready = false
             if (name != null) s.name = name
             changed = i
