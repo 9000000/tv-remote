@@ -12,6 +12,37 @@ internal object IrEvents {
     private val ADD = Regex("""^add device \d+: (/dev/input/\S+)""")
     private val NAME = Regex("""^\s+name:\s+"(.*)"""")
     private val EVENT = Regex("""^(/dev/input/\S+): (EV_KEY\s+\S+\s+DOWN|EV_MSC\s+MSC_SCAN\s+\S+)""")
+    private val SCAN = Regex("""MSC_SCAN\s+([0-9a-fA-F]+)""")
+
+    /**
+     * The scancodes the TV's IR driver may report for [code]. The kernel decodes ANY frame of a protocol it knows (an LG NEC key too, on a box
+     * whose own remote is NEC) and reports its scancode even when no key is mapped to it: so "a scancode came" proves only that the protocol
+     * fits, not that this remote is the box's. The address and command must be in it. Null: no way to tell (RAW), any scancode counts.
+     */
+    fun scans(code: String): Set<Long>? {
+        val p = code.trim().split(Regex("\\s+"))
+        if (p.size < 3 || p[0] == "RAW") return null
+        val a = p[1].toLongOrNull(16) ?: return null
+        val c = p[2].toLongOrNull(16) ?: return null
+        val out = hashSetOf((a shl 8) or c, (a shl 16) or c)                       // rc-core: NEC, Samsung, Sony, RC5, RC6 (addr<<8|cmd)
+        val word = when (p[0]) {                                                    // the 32 bits as they are sent, for drivers that report the frame
+            "NEC" -> (a and 0xFF) or ((a.inv() and 0xFF) shl 8) or ((c and 0xFF) shl 16) or ((c.inv() and 0xFF) shl 24)
+            "NECext" -> (a and 0xFFFF) or ((c and 0xFFFF) shl 16)
+            "Samsung32" -> (a and 0xFF) or ((a and 0xFF) shl 8) or ((c and 0xFF) shl 16) or ((c.inv() and 0xFF) shl 24)
+            else -> null
+        }
+        if (word != null) {
+            val w = word and 0xFFFFFFFFL
+            out.add(w)
+            out.add(java.lang.Long.reverseBytes(w) ushr 32)                         // and the other way round
+            out.add(((a and 0xFF) shl 24) or (((a.inv()) and 0xFF) shl 16) or ((c and 0xFF) shl 8) or (c.inv() and 0xFF))   // rc-core's NEC32
+            if (p[0] == "NECext") out.add(((a and 0xFFFF) shl 16) or (c and 0xFFFF))
+        }
+        return out
+    }
+
+    /** The value of a `MSC_SCAN` line, null for any other line. */
+    fun scanOf(line: String): Long? = SCAN.find(line)?.groupValues?.get(1)?.toLongOrNull(16)
 
     /** Fed every line in order: true for a key pressed on a device of the TV's own. Not virtual-*: keys sent over the network
      *  (Android TV Remote service), never the IR eye. MSC_SCAN too: the IR decoder reports a code even for a key the TV maps to nothing. */
@@ -19,10 +50,15 @@ internal object IrEvents {
         private val names = HashMap<String, String>()
         private var adding: String? = null
 
+        /** Whether the last line [key] said true for was a mapped key (EV_KEY), as against a bare scancode. */
+        var mapped = false
+            private set
+
         fun key(line: String): Boolean {
             ADD.find(line)?.let { adding = it.groupValues[1]; return false }
             NAME.find(line)?.let { m -> adding?.let { names[it] = m.groupValues[1] }; adding = null; return false }
             val e = EVENT.find(line) ?: return false
+            mapped = e.groupValues[2].startsWith("EV_KEY")
             return !(names[e.groupValues[1]] ?: "").startsWith("virtual")
         }
     }
@@ -30,8 +66,20 @@ internal object IrEvents {
 
 /** The TV's keys as they come, while open. [last]: when the latest arrived (irNow), 0 for none yet. */
 internal class IrHear(adb: Adb) : Closeable {
-    @Volatile var last = 0L
+    /** The latest mapped key (the TV acted on it) and the latest bare scancode with its value. */
+    @Volatile var lastKey = 0L
         private set
+    @Volatile var lastScan = 0L
+        private set
+    @Volatile var scanValue = -1L
+        private set
+
+    /** When the TV last heard [code] (irNow), 0 for not yet: a mapped key of any kind, or a scancode that carries [code]'s address and command. */
+    fun heard(code: String): Long {
+        val want = IrEvents.scans(code)
+        val scan = if (want == null || scanValue in want) lastScan else 0L
+        return maxOf(lastKey, scan)
+    }
     @Volatile private var closed = false
     private val s = adb.open("shell:getevent -l")
 
@@ -47,7 +95,11 @@ internal class IrHear(adb: Adb) : Closeable {
                     for (i in 0 until n) {
                         val c = buf[i].toInt().toChar()
                         if (c != '\n') { line.append(c); continue }
-                        if (r.key(line.toString())) last = irNow()
+                        val text = line.toString()
+                        if (r.key(text)) {
+                            if (r.mapped) lastKey = irNow()
+                            else { scanValue = IrEvents.scanOf(text) ?: -1L; lastScan = irNow() }
+                        }
                         line.setLength(0)
                     }
                 }

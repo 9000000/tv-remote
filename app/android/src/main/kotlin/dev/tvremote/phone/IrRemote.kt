@@ -550,7 +550,8 @@ private fun MainActivity.irAutoRun() {
             if (adb == null) { show { irAuto(T("ir.auto_noadb", "name" to name), T("ir.auto_noadb_sub")) }; return@Thread }
             val ear = IrHear(adb).also { hear = it }
             Thread.sleep(600)                                        // getevent lists the devices first
-            val hit = irScan(steps, { it.first.keys.getValue(AUTO_KEY) }, { irSend(it, false) }, { ear.last }, { IrState.stop },
+            var sent = ""
+            val hit = irScan(steps, { it.first.keys.getValue(AUTO_KEY) }, { sent = it; irSend(it, false) }, { ear.heard(sent) }, { IrState.stop },
                 { i -> show { irAuto(T("ir.auto_trying", "n" to i + 1, "total" to steps.size), steps[i].first.title, running = true) } })
             if (IrState.stop) return@Thread
             if (hit == null) { show { irAuto(T("ir.auto_none"), T("ir.auto_none_sub")) }; return@Thread }
