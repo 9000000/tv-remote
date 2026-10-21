@@ -88,4 +88,31 @@ object Catalog {
     }
 
     fun layouts(c: Context): String = peek(c).optJSONObject("layouts")?.toString() ?: "{}"
+
+    /** The entry a downloaded homebrew ROM came from (its file is the sanitised name + extension, see LibraryActivity.getRom), or a web game by its address. */
+    private fun entryOf(c: Context, rom: String?, url: String?): JSONObject? {
+        val cat = peek(c)
+        if (rom != null) cat.optJSONArray("homebrew")?.let { a ->
+            for (i in 0 until a.length()) a.optJSONObject(i)?.let { if (it.optString("name").replace(Regex("[^A-Za-z0-9 ._-]"), "") == rom.substringBeforeLast('.')) return it }
+        }
+        if (url != null) cat.optJSONArray("web")?.let { a ->
+            for (i in 0 until a.length()) a.optJSONObject(i)?.let { if (it.optString("url") == url) return it }
+        }
+        return null
+    }
+
+    /** How many can play (max) and how many the game needs (min, default 1): the catalog's "players" / "min", else [dflt] for the system. */
+    fun players(c: Context, rom: String?, url: String?, dflt: Int): Pair<Int, Int> {
+        val e = entryOf(c, rom, url)
+        val mx = (e?.optInt("players", dflt) ?: dflt).coerceIn(1, 4)
+        return mx to (e?.optInt("min", 1) ?: 1).coerceIn(1, mx)
+    }
+
+    /** A web game's lobby switch: "lobby": false in its catalog entry, or in assets/webgames/<dir>/game.json for a built-in one. */
+    fun lobbyOn(c: Context, url: String): Boolean {
+        if (url.startsWith("builtin:")) return try {
+            !JSONObject(c.assets.open("webgames/${url.removePrefix("builtin:")}/game.json").use { String(it.readBytes()) }).let { it.has("lobby") && !it.getBoolean("lobby") }
+        } catch (e: Exception) { true }
+        return entryOf(c, null, url)?.optBoolean("lobby", true) ?: true
+    }
 }

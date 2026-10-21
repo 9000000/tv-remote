@@ -38,4 +38,7 @@
     <string name="retry">Thử lại</string>
     <string name="back">Quay lại</string>
     <string name="core_cancelled">Đã hủy</string>
+    <string name="pad_channel">Tay cầm điện thoại</string>
+    <string name="pad_running">Điện thoại đang kết nối</string>
+    <string name="allow_reopen">Cho phép điện thoại mở lại TV Games</string>
 </resources>

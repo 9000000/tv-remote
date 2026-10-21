@@ -26,6 +26,9 @@ A web game is a page the TV's WebView loads full screen (`WebGameActivity`). Pho
 ## Navigate mode (the phone's pad page, not a web game's API)
 Outside a game the pad shows a remote (D-pad, OK, Back, "TV Games" = back to the library) and the TV Games screen in front gets those keys (`GameServer.nav`: the key is dispatched to the resumed activity, an unused D-pad key moves the focus). In a game the pad shows the game's layout; the top bar's 🎮 / 🧭 button flips between the two (Back in navigate mode opens the pause card; its Resume / Quit are chosen with the same keys). The TV tells the phones when a game starts or ends (`{"game":bool}`) and the pad follows.
 
+## Away and closed (the pad's view of TV Games being in the background)
+`Presence.kt` watches the activities. No TV Games screen started for 0.8 s (Home) -> pads get `{"away":true,"open":bool}`: they grey out, show "—" for ping and a card; the button sends `open`, which tries `startActivity` from the server (works only with the "Display over other apps" permission: Android 10+ BAL, measured BAL_BLOCK without it, BAL_ALLOW_VISIBLE_WINDOW with it, on Android 14); a try that does not bring the screen in 1.5 s sets `open:false`. `PadService` (foreground, `specialUse`) keeps the process alive meanwhile. After `Presence.AWAY_MS` (10 min; `GRACE_MS` 30 s with no pad) the activities finish, the server stops and pads get `{"closed":true}` and retry until TV Games is back. Web games see nothing of this (`leave` fires only if a phone drops).
+
 ## Pad look
 The TV sends the system on join and when the game changes: `nes`, `snes`, `gba`, `ps` (table `SYS` in `assets/pad/pad.js`, keyed by `Sys.pad` in `Systems.kt`), `web` (= ps look unless `layout` says otherwise). The left side is a floating analog stick or a D-pad (menu switch, kept per look). Analog goes to libretro analog, to Gamepad axes 0/1 for web games, or to 8-way D-pad keys (dead zone 0.35) for cores without analog.
 

@@ -38,4 +38,7 @@
     <string name="retry">Retry</string>
     <string name="back">Back</string>
     <string name="core_cancelled">Cancelled</string>
+    <string name="pad_channel">Phone pads</string>
+    <string name="pad_running">Phones are connected</string>
+    <string name="allow_reopen">Let phones reopen TV Games</string>
 </resources>

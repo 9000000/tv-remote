@@ -6,6 +6,10 @@ const W = VI
     s1: 'Bấm nút Chia sẻ của Safari (ô vuông có mũi tên lên)', s2: 'Chọn “Thêm vào Màn hình chính”', s3: 'Mở tay cầm từ biểu tượng mới: toàn màn hình', fs: 'Toàn màn hình' }
   : { p: 'Player', c: 'Connecting…', rc: 'Reconnecting…', rch: 'No TV in sight? If the TV changed network or address, scan its QR code again.', rs: 'Scan the QR code on the TV again', rsh: 'The connection code was changed. Scan the new one to join again.', nm: 'Your name', f: 'Room is full', h: 'Haptics', a: 'Add game', s: 'Send', k: 'Stick instead of D-pad', b: 'Back', g: 'TV Games', t: 'Add to Home Screen to play fullscreen',
     s1: 'Tap Safari’s Share button (the square with an up arrow)', s2: 'Choose “Add to Home Screen”', s3: 'Open the pad from the new icon: fullscreen', fs: 'Fullscreen' };
+// the TV left TV Games (Home) or closed it: the pad says so instead of looking healthy
+Object.assign(W, VI
+  ? { aw: 'TV Games đang không mở trên TV', awh: 'Các nút chưa điều khiển được gì lúc này.', awo: 'Mở lại TV Games', awr: 'Mở TV Games bằng remote của TV', cs: 'TV Games đã đóng', csh: 'Mở lại TV Games trên TV, điện thoại sẽ tự vào lại.' }
+  : { aw: 'TV Games is not open on the TV', awh: 'The buttons do nothing right now.', awo: 'Open TV Games again', awr: 'Open TV Games with the TV remote', cs: 'TV Games was closed', csh: 'Open TV Games on the TV again; this phone joins back by itself.' });
 const COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#eab308'];
 const $ = (s) => document.querySelector(s);
 const store = {
@@ -17,6 +21,7 @@ if (!cid) { cid = Math.random().toString(36).slice(2, 10) + Date.now().toString(
 $('#lblHaptic').textContent = W.h; $('#lblAdd').textContent = W.a; $('#tipText').textContent = W.t;
 $('#lblBack').textContent = W.b; $('#lblHome').textContent = W.g; $('#shTitle').textContent = W.t; $('#sh1').textContent = W.s1; $('#sh2').textContent = W.s2; $('#sh3').textContent = W.s3; $('#fs').setAttribute('aria-label', W.fs); $('#send').textContent = W.s; $('#lblStick').textContent = W.k;
 $('#offTitle').textContent = W.rs; $('#offHint').textContent = W.rsh; $('#nm').placeholder = W.nm; $('#nm').maxLength = 40;
+$('#awayTitle').textContent = W.aw; $('#awayHint').textContent = W.awh; $('#reopen').textContent = W.awo;
 $('#add').href = 'add?k=' + encodeURIComponent(K);
 
 // ---- haptics: vibrate() where there is one, the iOS 17.4+ checkbox-switch tick elsewhere
@@ -47,7 +52,7 @@ $('#nameform').addEventListener('submit', (e) => { e.preventDefault(); setName($
 $('#nm').addEventListener('blur', () => { if (!$('#nameform').hidden) { setName($('#nm').value, true); editName(false); } });
 
 // ---- connection
-let first_hello = true, ws = null, retry = 400, layout = null, sysName = 'nes', mode = 'nav', lastPong = 0, gaveUp = false, downSince = 0;
+let away = false, canOpen = false, closed = false, first_hello = true, ws = null, retry = 400, layout = null, sysName = 'nes', mode = 'nav', lastPong = 0, gaveUp = false, downSince = 0;
 // Two modes: the pad (a game is running) and navigate (a remote for TV Games itself: library, start / pause cards). It follows
 // the TV (a game starts -> pad, back to the library -> navigate); the 🎮 / 🧭 button flips it by hand.
 function setMode(m) {
@@ -128,6 +133,17 @@ window.addEventListener('resize', () => setTimeout(placeStick, 50));
 function say(t) { const e = $('#say'); e.textContent = t; e.hidden = !t; clearTimeout(say.t); if (t) say.t = setTimeout(() => { e.hidden = true; }, 6000); }
 const held = new Set();
 function send(s) { if (ws && ws.readyState === 1) ws.send(s); }
+// away: the TV is on another screen (the process and this link live on, but no TV Games screen takes the presses); closed: TV Games quit
+function setAway(on, open) {
+  away = !!on; canOpen = !!open;
+  document.body.classList.toggle('away', away || closed);
+  $('#away').hidden = !(away || closed);
+  $('#awayTitle').textContent = closed ? W.cs : W.aw;
+  $('#awayHint').textContent = closed ? W.csh : W.awh;
+  $('#reopen').hidden = closed || !canOpen;
+  if (!closed && !canOpen) $('#awayHint').textContent = W.awr;
+  if (away || closed) { $('#ms').textContent = '—'; $('#ms').className = ''; for (const b of Array.from(held)) press(b, false); }
+}
 function show(slot) {
   const who = $('#who');
   mySlot = slot > 0 ? slot : mySlot;
@@ -143,6 +159,8 @@ function rescan() { gaveUp = true; $('#off').hidden = false; try { ws.close(); }
 // after a drop: ask the server with a plain request why: 403 = the code changed (rescan), anything else = just try again
 function lost() {
   if (gaveUp) return;
+  if (away) setAway(false, false);                              // the link broke while the TV was away: now it is a plain reconnect
+  $('#ms').textContent = '—'; $('#ms').className = '';
   show(0);
   if (!downSince) downSince = Date.now();
   if (downSince && Date.now() - downSince > 15000 && mySlot > 0) say(W.rch);
@@ -160,6 +178,8 @@ function connect() {
     try {
       const m = JSON.parse(t);
       if (m.rescan) { rescan(); return; }
+      if ('away' in m && !('slot' in m)) { setAway(m.away, m.open); return; }
+      if (m.closed) { closed = true; setAway(false, false); return; }
       if (m.full) { show(-1); return; }
       if ('sys' in m && !('slot' in m)) { sysName = m.sys; layout = null; relayout(); return; }
       if ('game' in m && !('slot' in m)) { setMode(m.game ? 'pad' : 'nav'); $('#add').hidden = !!m.game; return; }
@@ -168,6 +188,7 @@ function connect() {
       if ('vibrate' in m) { if ('vibrate' in navigator) navigator.vibrate(m.vibrate); else buzz(0); return; }
       if (m.name && !myName) { myName = clean(m.name); store.set('tvg-name', myName); }      // the TV remembers a name this phone lost
       else if (myName && m.name !== myName) send('name ' + myName);
+      closed = false; setAway(false, false);                       // a hello answer: the TV is back; an "away" message may follow at once
       show(m.slot);
       if (haptics && 'vibrate' in navigator) navigator.vibrate([30, 40, 30]); else buzz(0);   // a stronger one: the TV says the slot is yours
       $('#add').hidden = !!m.game;
@@ -192,7 +213,7 @@ function pong(t) {
 }
 setInterval(() => {
   send('p ' + Date.now());
-  if (ws && ws.readyState === 1 && Date.now() - lastPong > 7000) { const w = ws; w.onclose = null; try { w.close(); } catch (e) {} lost(); }     // a link that died without a close (Wi-Fi gone, TV off)
+  if (ws && ws.readyState === 1 && Date.now() - lastPong > 5000) { const w = ws; w.onclose = null; try { w.close(); } catch (e) {} lost(); }     // a link that died without a close (Wi-Fi gone, TV off)
 }, 2000);
 // the phone woke up: do not wait for the next retry
 document.addEventListener('visibilitychange', () => { if (!document.hidden && !gaveUp && (!ws || ws.readyState > 1)) { retry = 400; connect(); } });
@@ -255,6 +276,7 @@ const ACT = {
   haptic() { setHaptic(!haptics); buzz(12); },
   add(el) { location.href = el.href; },
   stick() { const on = !wantStick(); store.set(stickKey(), on ? '1' : '0'); relayout(); buzz(12); },
+  reopen() { send('open'); buzz(20); $('#reopen').disabled = true; setTimeout(() => { $('#reopen').disabled = false; }, 2000); },
   tipx() { $('#tip').hidden = true; store.set('tvg-tip', '1'); },
 };
 function act(el) { const a = el.closest('[data-act]'); if (a) { ACT[a.dataset.act](a); return true; } return false; }

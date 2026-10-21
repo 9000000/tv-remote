@@ -95,6 +95,7 @@ class GameServer private constructor(private val ctx: Context) {
         if (port > 0) prefs.edit().putInt("padPort", port).apply()
         val s = server ?: return Unit.also { Log.w(TAG, "no free port") }
         (ctx as? android.app.Application)?.registerActivityLifecycleCallbacks(tracker)
+        presence.attach(); PadService.start(ctx)
         Log.i(TAG, "listening ${url()}")
         Thread({ while (!s.isClosed) try { val c = s.accept(); Thread({ serve(c) }, "pad-conn").apply { isDaemon = true }.start() } catch (e: Exception) { } }, "pad-accept")
             .apply { isDaemon = true }.start()
@@ -140,8 +141,10 @@ class GameServer private constructor(private val ctx: Context) {
 
     fun stop() {
         (ctx as? android.app.Application)?.unregisterActivityLifecycleCallbacks(tracker)
+        presence.detach(); PadService.stop(ctx)
+        val cs = synchronized(slots) { slots.mapNotNull { it.conn } }
         try { server?.close() } catch (e: Exception) { }
-        synchronized(slots) { slots.forEach { it.conn?.close() } }
+        offMain { cs.forEach { it.text("{\"closed\":true}"); it.close() } }     // the pads say "closed" and retry quietly until TV Games is back
     }
 
     /** The link the QR holds: the TV's Wi-Fi address, the port and the token. */
@@ -161,9 +164,15 @@ class GameServer private constructor(private val ctx: Context) {
     fun clearLayouts() = setLayout(0, null)
     fun say(player: Int, text: String) = send(player, "{\"say\":${org.json.JSONObject.quote(text.take(200))}}")
     fun vibrate(player: Int, ms: Int) = send(player, "{\"vibrate\":${ms.coerceIn(0, 2000)}}")
+    /** A socket write on the main thread throws (NetworkOnMainThreadException) and [Conn.frame] would drop the phone: the activities set state there. */
+    private val sender = java.util.concurrent.Executors.newSingleThreadExecutor { Thread(it, "pad-send").apply { isDaemon = true } }
+    private fun offMain(f: () -> Unit) { if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) sender.execute(f) else f() }
+    fun broadcast(msg: String) = send(0, msg)
+    fun padCount(): Int = synchronized(slots) { slots.count { it.conn != null } }
+    private val presence = Presence(ctx as android.app.Application, this)
     private fun send(player: Int, msg: String) {
         val cs = synchronized(slots) { slots.filterIndexed { i, _ -> player == 0 || player == i + 1 }.mapNotNull { it.conn } }
-        cs.forEach { it.text(msg) }
+        offMain { cs.forEach { it.text(msg) } }
     }
 
     fun addUrl(): String = "http://${localIp()}:$port/add?k=$token"
@@ -205,7 +214,7 @@ class GameServer private constructor(private val ctx: Context) {
             s.held.toList().forEach { onKey(i, KeyEvent.ACTION_UP, it) }; s.held.clear()
             s.conn = null; s.freedAt = SystemClock.uptimeMillis(); s.ping = -1; s.offset = Long.MIN_VALUE
         }
-        notifyPlayers()
+        notifyPlayers(); presence.padsChanged()
     }
 
     /** The port of a physical pad (device id), given the first free slot the first time it is seen. -1 = none left. */
@@ -387,11 +396,14 @@ class GameServer private constructor(private val ctx: Context) {
                                 slot = i
                                 c.text("{\"slot\":${i + 1},\"game\":$inGame,\"btns\":[${buttons.joinToString(",") { "\"$it\"" }}],\"sys\":\"$system\",\"name\":${org.json.JSONObject.quote(nameOf(i + 1) ?: "")}}")
                                 (synchronized(slots) { layouts[i] ?: defaultLayout })?.let { c.text("{\"layout\":$it}") }
+                                if (presence.away) c.text(presence.state())
+                                presence.padsChanged()
                             }
                             msg.startsWith("p ") -> c.text(msg.trim() + " " + System.currentTimeMillis())          // the phone's stamp back + the TV's clock
                             slot >= 0 && msg.startsWith("r ") -> msg.split(' ').let { if (it.size == 3) report(slot, it[1].toIntOrNull(), it[2].toLongOrNull()) }
                             slot >= 0 && msg.startsWith("name") -> rename(slot, msg.substring(4))
                             msg.startsWith("n ") -> nav(msg.substring(2).trim())
+                            msg == "open" -> presence.open()
                             slot >= 0 && msg.startsWith("a ") -> msg.split(' ').let { if (it.size == 3) axis(slot, (it[1].toIntOrNull() ?: 0) / 100f, (it[2].toIntOrNull() ?: 0) / 100f) }
                             slot >= 0 && msg.startsWith("t ") -> onText(slot + 1, msg.substring(2).take(200))
                             slot >= 0 && msg.length >= 3 && (msg[0] == 'd' || msg[0] == 'u') -> msg.substring(2).trim().split(' ').let { key(slot, msg[0] == 'd', it[0], it.getOrNull(1)?.toLongOrNull()) }
@@ -454,6 +466,8 @@ class GameServer private constructor(private val ctx: Context) {
             val g = inst ?: GameServer(ctx.applicationContext).also { inst = it; it.start() }
             users++; return g
         }
+        /** Gives up now (away too long): the server and its service stop, whatever activities are left. */
+        @Synchronized fun shutdown() { inst?.stop(); inst = null; users = 0 }
         @Synchronized fun release() { if (--users <= 0) { inst?.stop(); inst = null; users = 0 } }
 
         fun localIp(): String {

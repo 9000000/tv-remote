@@ -1,6 +1,10 @@
 package dev.tvremote.games
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
@@ -61,6 +65,18 @@ fun Context.addPanel(server: GameServer): LinearLayout = LinearLayout(this).appl
     addView(label(getString(R.string.scan_add), 28f))
     addView(qrView(server.addUrl(), 150).apply { (layoutParams as LinearLayout.LayoutParams).setMargins(0, dp(14), 0, dp(10)) })
     addView(label(server.addUrl().substringBefore("/add"), 18f, 0xFFAAB0C0.toInt()))
+    overlayButton()?.let { addView(it) }
+}
+
+/**
+ * "Let phones reopen TV Games": the pad's "open again" after Home works only for an app allowed to draw over others (Android 10+ blocks
+ * every other start from the background; measured on Android 14). The TV's own settings page for it, offered while it is off.
+ */
+fun Context.overlayButton(): View? {
+    if (Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(this)) return null
+    val it = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    if (packageManager.resolveActivity(it, 0) == null) return null
+    return menuButton(getString(R.string.allow_reopen), 360, 52, 20f) { try { startActivity(it) } catch (e: Exception) { } }
 }
 
 /** "Reset connection code": a new code, every phone that had the old one must scan again. [again] redraws the QR. */
