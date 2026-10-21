@@ -27,7 +27,7 @@
             </intent-filter>
         </activity>
         <!-- tvchannels://play/<iptv-org id> or find/<name>: the public face of this app, for pinned shortcuts, phones, voice -->
-        <activity android:name=".PlayActivity" android:exported="true" android:launchMode="singleTask" android:screenOrientation="landscape"
+        <activity android:name=".PlayActivity" android:exported="true" android:launchMode="singleTask" android:screenOrientation="landscape" android:windowSoftInputMode="stateHidden"
             android:theme="@style/Player"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|locale|layoutDirection">
             <intent-filter>
