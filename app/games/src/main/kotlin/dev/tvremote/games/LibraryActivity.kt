@@ -108,7 +108,7 @@ class LibraryActivity : ComponentActivity() {
         val grid = GridLayout(this).apply { columnCount = 4; clipChildren = false; clipToPadding = false }
         val tiles = ArrayList<Pair<String, View>>()                    // one list by name, so the order never depends on the scan
         for (g in games) {
-            val t = tile(g.name, g.sys.label, g.sys.color, Thumbs.packed(this, g.file.name)?.let { Thumbs.Src("g:" + g.file.name, asset = it) } ?: Thumbs.src(this, g.sys, g.file.name)) {
+            val t = tile(g.name, g.sys.label, g.sys.color, Thumbs.catalog(this, g.file.name) ?: Thumbs.src(this, g.sys, g.file.name)) {
                 try { startActivity(Intent(this, GameActivity::class.java).putExtra("path", g.file.path)) } catch (e: Exception) { }
             }
             tiles += g.name to t
@@ -137,7 +137,7 @@ class LibraryActivity : ComponentActivity() {
         for (h in brew) {
             val s = Systems.list(this).first { it.id == h.optString("system") }
             val t = tile(getString(R.string.get_rom, h.optString("name")), s.label, s.color,
-                Thumbs.Src("h:" + h.optString("id"), asset = Thumbs.packed(this, h.optString("id")), img = h.optString("img").takeIf { it.startsWith("https://") }), initialsOf = h.optString("name")) { }
+                Thumbs.Src("h:" + h.optString("id"), img = h.optString("img").takeIf { it.isNotEmpty() }), initialsOf = h.optString("name")) { }
             t.setOnClickListener { getRom(h, s, t) }
             t.setOnLongClickListener { hide("h:" + h.optString("id")); true }
             sugs += h.optString("name") to t
@@ -175,7 +175,7 @@ class LibraryActivity : ComponentActivity() {
         url == "builtin:quiz" -> Thumbs.Src("w:$url", asset = "thumbs/quiz.jpg")
         url == "builtin:padtest" -> Thumbs.Src("w:$url", asset = "thumbs/padtest.jpg")
         url.startsWith("builtin:") -> Thumbs.Src("w:$url")
-        !img.isNullOrEmpty() && img.startsWith("https://") -> Thumbs.Src("w:$url", img = img)
+        !img.isNullOrEmpty() -> Thumbs.Src("w:$url", img = img)
         else -> Thumbs.Src("w:$url", page = url)
     }
 

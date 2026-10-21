@@ -77,6 +77,7 @@
     {
       "id": "roborun",
       "name": "Robo Run",
+      "img": "img/roborun.jpg",
       "system": "nes",
       "url": "https://tvremote.pages.dev/games/roms/roborun.nes",
       "sha256": "16a3c5d52d8f4d71322e2e24530c66292c015f5969d38ace826a9231eb5ea516",
@@ -87,6 +88,7 @@
     {
       "id": "nova",
       "name": "Nova the Squirrel",
+      "img": "img/nova.jpg",
       "system": "nes",
       "url": "https://github.com/NovaSquirrel/NovaTheSquirrel/releases/download/v1.0.6a/nova.nes",
       "sha256": "e4780e90b9d1587489bfb797d2ca395be21371ea9262fa9f87f99324ec6960ab",
@@ -97,6 +99,7 @@
     {
       "id": "witchnwiz",
       "name": "Witch n' Wiz",
+      "img": "img/witchnwiz.jpg",
       "system": "nes",
       "url": "https://github.com/mhughson/mbh-A53-witchnwiz/releases/download/v1.0.0-nesdevcompo/witchnwiz_2021_02_22_nes_dev_v_1_0_0.nes",
       "sha256": "5ff6c6c633683e43966c24205747a7526bbaa11f5bb0174ef7f33abc20411e16",
@@ -107,6 +110,7 @@
     {
       "id": "stallar",
       "name": "Stallar",
+      "img": "img/stallar.jpg",
       "system": "nes",
       "url": "https://github.com/wendelscardua/stallar/releases/download/0.1.0/stallar.nes",
       "sha256": "b5584e142db178fc356b70d635cb290f250a85569461b5915969617740c551f0",
@@ -117,6 +121,7 @@
     {
       "id": "filefixers",
       "name": "File Fixers",
+      "img": "img/filefixers.jpg",
       "system": "nes",
       "url": "https://github.com/wendelscardua/file-fixers/releases/download/0.1.0/file-fixers.nes",
       "sha256": "ba6c88a13bb63f180e5e542258c53e5676e3f1514898bfd16aba4da43c34cc34",
@@ -127,6 +132,7 @@
     {
       "id": "tabletennis",
       "name": "8-Bit Table Tennis",
+      "img": "img/tabletennis.jpg",
       "system": "nes",
       "url": "https://github.com/mike42/8bit-table-tennis/releases/download/v1.0/table_tennis_v1.0.nes",
       "sha256": "05122457672f95fcf2ee518c3f37e506617725c2d031100b1b1c8b7785068ea3",
@@ -137,6 +143,7 @@
     {
       "id": "opennes-snake",
       "name": "Snake",
+      "img": "img/opennes-snake.jpg",
       "system": "nes",
       "url": "https://github.com/sebastiandine/openNES-Snake/releases/download/v1.0.9/openNES-Snake-1.0.9.nes",
       "sha256": "71792a9b4e4db52fb60df4633400301fac8f244f802b88d336b58e079c75acc7",
@@ -147,6 +154,7 @@
     {
       "id": "opennes-breakout",
       "name": "Breakout",
+      "img": "img/opennes-breakout.jpg",
       "system": "nes",
       "url": "https://github.com/sebastiandine/openNES-Breakout/releases/download/v1.0.1/openNES-Breakout-1.0.1.nes",
       "sha256": "2dc69e3c852511fd064766becc164e29cfa0ef319906c992f83ea3be0b72eeaa",
@@ -157,6 +165,7 @@
     {
       "id": "opennes-pong",
       "name": "Pong",
+      "img": "img/opennes-pong.jpg",
       "system": "nes",
       "url": "https://github.com/sebastiandine/openNES-Pong/releases/download/v1.0.1/openNES-Pong-1.0.1.nes",
       "sha256": "86ab7ce4995b13975766978c1c05415bf8bda310f3583899d516825687197004",

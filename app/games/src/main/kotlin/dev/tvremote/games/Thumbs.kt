@@ -29,6 +29,7 @@ object Thumbs {
     class Src(val key: String, val boxes: List<String> = emptyList(), val img: String? = null, val page: String? = null, val asset: String? = null)
 
     private const val WEEK = 7 * 24 * 3600_000L
+    private const val HOURS6 = 6 * 3600_000L                           // a catalog picture not on the site yet (pushed after the list): asked again soon
     private const val MAX_BYTES = 4 shl 20
     private const val BACK = 0xFF10131A.toInt()
     private val REMOTE = listOf("box", "art", "icon")
@@ -53,22 +54,19 @@ object Thumbs {
     }
 
     /**
-     * The picture packed in the APK for a catalog game ("thumbs/h_<id>.jpg": the title screen, taken from the game itself), by its catalog id
-     * or by the file name it was downloaded under (the catalog name without odd characters, see LibraryActivity.getRom); null = none packed.
-     * Homebrew is in no libretro-thumbnails repo and its authors' images are not all free to ship, so the title screens are packed: offline, no 404s.
+     * A catalog game's picture ("img" of its homebrew entry: a path under the catalog's base, e.g. "img/nova.jpg", or an https address),
+     * for a ROM in the library by the file name it was downloaded under (the catalog name without odd characters, see LibraryActivity.getRom).
+     * Same key as the Suggestions tile ("h:<id>"), so the picture is fetched and kept once. null = no such entry or no picture.
      */
-    fun packed(c: Context, idOrFile: String): String? {
-        val brew = Catalog.peek(c).optJSONArray("homebrew")
-        var id = idOrFile
-        if (brew != null) {
-            val stem = idOrFile.substringBeforeLast('.').removeSuffix(" (homebrew)")
-            for (i in 0 until brew.length()) {
-                val h = brew.optJSONObject(i) ?: continue
-                if (stem.equals(h.optString("name").replace(Regex("[^A-Za-z0-9 ._-]"), ""), true)) { id = h.optString("id"); break }
-            }
+    fun catalog(c: Context, file: String): Src? {
+        val brew = Catalog.peek(c).optJSONArray("homebrew") ?: return null
+        val stem = file.substringBeforeLast('.').removeSuffix(" (homebrew)")
+        for (i in 0 until brew.length()) {
+            val h = brew.optJSONObject(i) ?: continue
+            val img = h.optString("img").takeIf { it.isNotEmpty() } ?: continue
+            if (stem.equals(h.optString("name").replace(Regex("[^A-Za-z0-9 ._-]"), ""), true)) return Src("h:" + h.optString("id"), img = img)
         }
-        val a = "thumbs/h_$id.jpg"
-        return try { c.assets.open(a).close(); a } catch (e: Exception) { null }
+        return null
     }
 
     /** Shows what is on disk at once (off the main thread), then asks the network once if there is no real picture yet. [show] runs on the main thread. */
@@ -87,7 +85,7 @@ object Thumbs {
                 }
                 if (have in REMOTE || (s.boxes.isEmpty() && s.img == null && s.page == null)) return@execute
                 val ms = miss(app, s.key)
-                if (ms.exists() && System.currentTimeMillis() - ms.lastModified() < WEEK) return@execute
+                if (ms.exists() && System.currentTimeMillis() - ms.lastModified() < (if (s.img != null) HOURS6 else WEEK)) return@execute
                 if (s.key in failed) return@execute
                 net.execute {
                     try {
@@ -105,7 +103,10 @@ object Thumbs {
     private fun fetch(c: Context, s: Src): Pair<Bitmap, String>? {
         val tries = ArrayList<Pair<String, String>>()                  // address to mode
         s.boxes.forEach { tries += it to "box" }
-        s.img?.takeIf { it.startsWith("https://") }?.let { tries += it to "art" }
+        s.img?.let { im ->                                             // https, or a path under the catalog's base (site first, then GitHub)
+            if (im.startsWith("https://")) tries += im to "art"
+            else if (!im.startsWith("/") && !im.contains("..")) Catalog.bases(c).forEach { tries += (it + im) to "art" }
+        }
         var pageErr: IOException? = null
         if (s.page != null) {
             try {
@@ -116,13 +117,15 @@ object Thumbs {
                 tries += URL(URL(s.page), "/favicon.ico").toString() to "icon"
             } catch (e: IOException) { pageErr = e }
         }
+        var netErr: IOException? = null
         for ((u, mode) in tries) {
-            val bytes = try { get(u, MAX_BYTES) } catch (e: IOException) { if (mode == "box") throw e else null } ?: continue
+            val bytes = try { get(u, MAX_BYTES) } catch (e: IOException) { if (mode == "box") throw e else { netErr = e; null } } ?: continue
             val b = compose(c, bytes, mode) ?: continue
             write(file(c, s.key, mode), b)
             return b to mode
         }
         if (pageErr != null) throw pageErr
+        if (netErr != null && s.img != null) throw netErr           // offline is not a 404: asked again later, not remembered a week
         return null
     }
 

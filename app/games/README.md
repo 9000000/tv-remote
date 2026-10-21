@@ -32,7 +32,7 @@ Fetched by the user's OK from the author's own release (nothing is bundled), sha
 Left out: Miroh (art and music all rights reserved), Falling (third-party music with no stated licence), Flappy Paratroopa (Nintendo characters), Galaxy Patrol (no release, a nesdev wiki tutorial copy), Super Tilt Bro (WTFPL, but no published ROM to link; add once one exists). GB / GBA / SNES homebrew not listed: those cores are still `"on": false` until the `cores-1` release exists.
 
 ## Tile pictures
-Order (`Thumbs.kt`): packed `assets/thumbs/h_<id>.jpg` (catalog homebrew, by id or by the downloaded file name; the title screen taken from the game on the TV emulator, 400x250, so Suggestions and the library show the same offline picture) -> libretro-thumbnails box art -> the page's / catalog's `img` -> snapshot of the last play -> initials. A new catalog game: run it, screencap its title screen, add `h_<id>.jpg`.
+Order (`Thumbs.kt`): libretro-thumbnails box art -> the entry's `img` (catalog homebrew: `docs/games/img/<id>.jpg`, a path under the catalog base, so the site first, then GitHub raw, like `games.json`; a web game's og:image) -> snapshot of the last play -> initials. Fetched once, kept in `files/thumbs`. A ROM downloaded from Suggestions keeps its catalog picture (matched by the downloaded file name, same cache key `h:<id>`). The pictures appear on a TV only once `docs/` is pushed. See `docs/games/img/README.md` for sources.
 
 ## Build
 `./build.sh` -> `build/tv-games.apk` (release, signed with `signing.jks`, created on first build and git-ignored; keep it to ship updates). Debug: `cd ../gradle && ./gradlew :games:assembleDebug`. Version: `VERSION`.

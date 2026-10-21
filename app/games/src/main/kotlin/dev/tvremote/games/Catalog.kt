@@ -28,6 +28,9 @@ object Catalog {
         return if (b.isEmpty()) null else b to (p.getString("cat_key", "") ?: "")
     }
 
+    /** Where the catalog and what it points to (pictures) are read from, in order: the site, then GitHub (a debug build's override alone). */
+    fun bases(c: Context): List<String> = dbg(c)?.let { listOf(it.first) } ?: BASES
+
     fun setDebug(c: Context, base: String?, key: String?) {
         if (c.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE == 0) return
         c.getSharedPreferences("games", Context.MODE_PRIVATE).edit().putString("cat_base", base ?: "").putString("cat_key", key ?: "").apply()
