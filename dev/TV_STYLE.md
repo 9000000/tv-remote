@@ -16,4 +16,4 @@ copied into each app as `res/values/tv_style.xml`. Change a value here and in ev
 
 Apps today: Channels and Setup follow it (BrowseActivity `buildRail`, `Ui.states`; Setup MainActivity header, `ring()`).
 TV Home has no logo header (clock and date at 48 dp, tiles radius 10, the ring above): it is the reference for the rest.
-TV Games (LibraryActivity, LobbyView, GameCards) is to be moved to it: header 48 dp icon / 30 sp name / 40 dp margin now.
+TV Games: LibraryActivity follows it (header, margins, ring, tile radius, `values/tv_style.xml`); LobbyView and GameCards still to do.

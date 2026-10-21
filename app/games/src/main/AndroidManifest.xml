@@ -10,12 +10,19 @@
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <application android:label="@string/app_name" android:icon="@drawable/icon" android:banner="@drawable/banner" android:allowBackup="false" android:usesCleartextTraffic="true" android:extractNativeLibs="true" android:requestLegacyExternalStorage="true"
         android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
-        <activity android:name=".LibraryActivity" android:exported="true" android:screenOrientation="landscape"
+        <activity android:name=".LibraryActivity" android:exported="true" android:launchMode="singleTop" android:screenOrientation="landscape"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tvgames" android:host="play" />
+                <data android:scheme="tvgames" android:host="folder" />
             </intent-filter>
         </activity>
         <activity android:name=".GameActivity" android:exported="true" android:screenOrientation="landscape"

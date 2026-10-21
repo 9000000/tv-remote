@@ -1,0 +1,87 @@
+package dev.tvremote.games
+
+import android.content.Context
+import android.content.Intent
+import android.content.pm.ShortcutInfo
+import android.content.pm.ShortcutManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.LinearGradient
+import android.graphics.Paint
+import android.graphics.RectF
+import android.graphics.Shader
+import android.graphics.Typeface
+import android.graphics.drawable.Icon
+import android.net.Uri
+import android.os.Build
+
+/**
+ * The app's public face: a game is the link tvgames://play/<id> (the library's id: "g:<file>" or "w:<url>"), a folder of the person's
+ * tvgames://folder/<id>. A pinned shortcut is that link put on the home screen through Android's own request (ShortcutManager), so any
+ * launcher that takes pins shows it (TV Home does) and none has to know this app. Not every launcher takes them (Google TV's does
+ * not): [can] says so and the menu entry is left out. Same shape as TV Channels' Pins.
+ */
+object Pins {
+    fun playLink(id: String): Uri = Uri.parse("tvgames://play/" + Uri.encode(id))
+    fun folderLink(id: String): Uri = Uri.parse("tvgames://folder/" + Uri.encode(id))
+    fun playId(u: Uri?): String? = idOf(u, "play")
+    fun folderId(u: Uri?): String? = idOf(u, "folder")
+    private fun idOf(u: Uri?, host: String): String? = u?.takeIf { it.scheme == "tvgames" && it.host == host }?.encodedPath?.trim('/')?.let { Uri.decode(it) }?.ifEmpty { null }
+
+    fun can(c: Context): Boolean =
+        Build.VERSION.SDK_INT >= 26 && c.getSystemService(ShortcutManager::class.java)?.isRequestPinShortcutSupported == true
+
+    /** [art] the game's picture as the library shows it (null: a card in the system's colour with its initials). */
+    fun pinGame(c: Context, id: String, name: String, art: Bitmap?, color: Int): Boolean =
+        pin(c, "g:$id", name, Intent(Intent.ACTION_VIEW, playLink(id)).setClass(c, LibraryActivity::class.java), card(c, name, color, listOfNotNull(art)))
+
+    /** A folder: its name, and up to four of its pictures on the card. Opens the library on that folder. */
+    fun pinFolder(c: Context, id: String, name: String, arts: List<Bitmap>): Boolean =
+        pin(c, "f:$id", name, Intent(Intent.ACTION_VIEW, folderLink(id)).setClass(c, LibraryActivity::class.java), card(c, name, 0xFF334155.toInt(), arts.take(4)))
+
+    private fun pin(c: Context, sid: String, name: String, intent: Intent, bmp: Bitmap): Boolean {
+        if (!can(c)) return false
+        val sm = c.getSystemService(ShortcutManager::class.java) ?: return false
+        val s = ShortcutInfo.Builder(c, sid).setShortLabel(name.take(24)).setLongLabel(name).setIcon(Icon.createWithBitmap(bmp)).setIntent(intent).build()
+        return try { sm.updateShortcuts(listOf(s)); sm.requestPinShortcut(s, null) } catch (e: Exception) { false }
+    }
+
+    /** A folder renamed: its pin (if any) takes the new name. Deleted: its pin is turned off and the home screen drops it. */
+    fun renamed(c: Context, id: String, name: String) {
+        if (Build.VERSION.SDK_INT < 26) return
+        val sm = c.getSystemService(ShortcutManager::class.java) ?: return
+        val old = try { sm.pinnedShortcuts.firstOrNull { it.id == "f:$id" } } catch (e: Exception) { null } ?: return
+        try { sm.updateShortcuts(listOf(ShortcutInfo.Builder(c, old.id).setShortLabel(name.take(24)).setLongLabel(name).build())) } catch (e: Exception) { }
+    }
+    fun deleted(c: Context, id: String) {
+        if (Build.VERSION.SDK_INT < 26) return
+        try { c.getSystemService(ShortcutManager::class.java)?.disableShortcuts(listOf("f:$id")) } catch (e: Exception) { }
+    }
+
+    /** One picture fills the 16:9 card; two to four go in a grid; none: the colour with the initials. Square corners: the launcher rounds them. */
+    private fun card(c: Context, name: String, color: Int, arts: List<Bitmap>): Bitmap {
+        val w = 320; val h = 180
+        val b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val cv = Canvas(b)
+        val p = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+        fun fill(bm: Bitmap, r: RectF) {                                // cropped to fill, centred
+            val k = maxOf(r.width() / bm.width, r.height() / bm.height)
+            val sw = r.width() / k; val sh = r.height() / k
+            val sx = (bm.width - sw) / 2; val sy = (bm.height - sh) / 2
+            cv.drawBitmap(bm, android.graphics.Rect(sx.toInt(), sy.toInt(), (sx + sw).toInt(), (sy + sh).toInt()), r, p)
+        }
+        if (arts.isEmpty()) {
+            val dark = Color.rgb(Color.red(color) * 45 / 100, Color.green(color) * 45 / 100, Color.blue(color) * 45 / 100)
+            p.shader = LinearGradient(0f, 0f, w.toFloat(), h.toFloat(), color, dark, Shader.TileMode.CLAMP); cv.drawRect(0f, 0f, w.toFloat(), h.toFloat(), p); p.shader = null
+            p.color = Color.WHITE; p.textSize = 72f; p.typeface = Typeface.DEFAULT_BOLD; p.textAlign = Paint.Align.CENTER
+            cv.drawText(ThumbNames.initials(name), w / 2f, h / 2f + 26f, p)
+        } else if (arts.size == 1) fill(arts[0], RectF(0f, 0f, w.toFloat(), h.toFloat()))
+        else {
+            cv.drawColor(0xFF10131A.toInt())
+            val cw = w / 2f; val ch = h / 2f
+            arts.forEachIndexed { i, bm -> val x = (i % 2) * cw; val y = (i / 2) * ch; fill(bm, RectF(x + 2, y + 2, x + cw - 2, y + ch - 2)) }
+        }
+        return b
+    }
+}

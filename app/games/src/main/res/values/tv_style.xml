@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The TV apps' family look. The same values are in every TV app's res/values/tv_style.xml: see dev/TV_STYLE.md -->
+<resources>
+    <dimen name="tv_margin_x">48dp</dimen>
+    <dimen name="tv_margin_y">27dp</dimen>
+    <dimen name="tv_head_icon">44dp</dimen>
+    <dimen name="tv_head_radius">10dp</dimen>
+    <dimen name="tv_head_gap">14dp</dimen>
+    <dimen name="tv_head_name">24sp</dimen>
+    <dimen name="tv_radius_card">16dp</dimen>
+    <dimen name="tv_radius_tile">10dp</dimen>
+    <dimen name="tv_ring">3dp</dimen>
+    <color name="tv_bg">#FF0E1116</color>
+    <color name="tv_card">#FF1B2028</color>
+    <color name="tv_ink">#FFE8EAED</color>
+    <color name="tv_dim">#FF9AA0A6</color>
+    <color name="tv_ring_accent">#FF2F7DF6</color>
+</resources>
