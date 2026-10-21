@@ -38,12 +38,13 @@ function remoteMenu(name, ctx = {}) {
 }
 
 // the groups an entry opens ("do": "menu", "arg": its name): their titles
-const REMOTE_GROUPS = { get: 'rkey.open_get', send: 'rkey.open_send', timerMore: 'rkey.timer_more', screen: 'rkey.timer_screen' };
+const REMOTE_GROUPS = { get: 'rkey.open_get', send: 'rkey.open_send', timerMore: 'rkey.timer_more', screen: 'rkey.timer_screen', tools: 'rkey.tools' };
 const REMOTE_DO = {
   shot: () => screenshot(),
   open: () => quickOpen(),
   apps: () => openInstalled(),
   menu: (m) => menuDlg(T(REMOTE_GROUPS[m]), -1, remoteMenu(m)),
+  key: (k) => { buzz(); api('/api/key', { key: k }).then((r) => { if (r && r.noop) toast(T('remote.key_no_reaction')); }); },   // a key from a menu (Tools)
   timer: () => timerMenu(),
   scenes: () => scenesMenu(),
   notify: () => notifyDialog(),

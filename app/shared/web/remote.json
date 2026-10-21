@@ -5,30 +5,23 @@
       [
         { "id": "open", "icon": "send", "t": "rkey.open", "do": "open" },
         { "id": "input", "icon": "input", "t": "rkey.input", "do": "inputs" },
-        { "id": "subtitles", "icon": "subtitle", "t": "rkey.subtitles", "key": "SUBTITLE" },
-        { "id": "timer", "icon": "timer", "t": "rkey.timer", "do": "timer", "needs": ["screen_off"] }
+        { "id": "timer", "icon": "timer", "t": "rkey.timer", "do": "timer", "needs": ["screen_off"] },
+        { "id": "scenes", "icon": "scene", "t": "rkey.scenes", "do": "scenes" }
       ],
       [
-        { "id": "settings", "icon": "settings", "t": "rkey.settings", "key": "SETTINGS" },
-        { "id": "scenes", "icon": "scene", "t": "rkey.scenes", "do": "scenes" },
         { "id": "screenshot", "icon": "camera", "t": "rkey.screenshot", "do": "shot", "needs": ["adb"] },
-        { "id": "share", "icon": "share", "t": "rkey.share", "do": "share", "needs": ["adb"] }
-      ],
-      [
-        { "id": "info", "icon": "info", "t": "rkey.info", "key": "INFO" },
-        { "id": "stop", "icon": "stop", "t": "rkey.stop", "key": "STOP" },
+        { "id": "share", "icon": "share", "t": "rkey.share", "do": "share", "needs": ["adb"] },
         { "id": "draw", "icon": "pen", "t": "rkey.draw", "do": "draw", "needs": ["adb"] },
         { "id": "notify", "icon": "bell", "t": "rkey.notify", "do": "notify", "needs": ["adb"] }
       ],
       [
-        { "id": "guide", "icon": "guide", "t": "rkey.guide", "key": "GUIDE" },
         { "id": "tv", "icon": "tv", "t": "rkey.tv", "key": "LIVE",
           "web": { "t": "rkey.tv_web" }, "why": "the web button is narrower: the bare word TV" },
         { "id": "ir", "icon": "pulse", "t": "rkey.ir", "do": "ir", "cores": ["phone"],
           "why": "the phone's own IR LED (IrRemote.kt), for this TV: a browser has none" },
         { "id": "air", "icon": "mouse", "t": "rkey.air", "do": "air", "cores": ["phone"], "needs": ["mouse"],
           "why": "the phone's gyroscope (AirMouse.kt): a browser's page has no such sensor on every phone, and the TV web page has no ADB" },
-        { "id": "homecustom", "icon": "sliders", "t": "rkey.home_custom", "do": "homeCustom", "needs": ["adb"] }
+        { "id": "tools", "icon": "apps", "t": "rkey.tools", "do": "menu", "arg": "tools" }
       ]
     ],
     "nav": [
@@ -55,6 +48,14 @@
     ]
   },
   "menus": {
+    "tools": [
+      { "id": "tools-subtitles", "icon": "subtitle", "t": "rkey.subtitles", "do": "key", "arg": "SUBTITLE" },
+      { "id": "tools-info", "icon": "info", "t": "rkey.info", "do": "key", "arg": "INFO" },
+      { "id": "tools-stop", "icon": "stop", "t": "rkey.stop", "do": "key", "arg": "STOP" },
+      { "id": "tools-guide", "icon": "guide", "t": "rkey.guide", "do": "key", "arg": "GUIDE" },
+      { "id": "tools-settings", "icon": "settings", "t": "rkey.settings", "do": "key", "arg": "SETTINGS" },
+      { "id": "tools-home", "icon": "sliders", "t": "rkey.home_custom", "do": "homeCustom", "needs": ["adb"] }
+    ],
     "open": [
       { "id": "open-apps", "icon": "apps", "t": "rkey.open_apps", "do": "apps", "sub": "rkey.open_apps_sub" },
       { "id": "open-get", "icon": "store", "t": "rkey.open_get", "do": "menu", "arg": "get", "needs": ["store"], "sub": "rkey.open_get_sub" },

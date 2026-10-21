@@ -24,13 +24,14 @@ private fun hook(f: MainActivity.(IconButton) -> Unit) = f
 
 /** What each "do" in remote.json does here; `it` is the entry's "arg". */
 /** The groups an entry opens ("do": "menu", "arg": its name): their titles (REMOTE_GROUPS on the page). */
-private val remoteGroups = mapOf("get" to "rkey.open_get", "send" to "rkey.open_send", "timerMore" to "rkey.timer_more", "screen" to "rkey.timer_screen")
+private val remoteGroups = mapOf("get" to "rkey.open_get", "send" to "rkey.open_send", "timerMore" to "rkey.timer_more", "screen" to "rkey.timer_screen", "tools" to "rkey.tools")
 
 internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "shot" to act { shot() },
     "open" to act { quickOpen() },
     "apps" to act { if (kind() != dev.tvremote.core.remote.Remote.Kind.ANDROID) openInstalled() else if (!needsAdb()) managing.open(host, "apps") },   // an Android TV's apps: the Apps tab, tiles with a search
     "menu" to act { m -> menu(T(remoteGroups[m] ?: return@act), -1, remoteMenu(m!!)) },
+    "key" to act { k -> val code = Scenes.KEYS[k] ?: return@act; if (code in Tv.OPENERS) opens(code) else press(code) },   // a key from a menu (Tools)
     "timer" to act { timerMenu() },
     "scenes" to act { scenesMenu() },
     "notify" to act { notifyDialog() },
