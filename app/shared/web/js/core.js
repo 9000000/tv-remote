@@ -241,6 +241,7 @@ const FRIENDLY = [
   [/launcher:install:(.*)/, (m) => T('core.fr_launcher_install', { msg: friendly(m[1]) })],
   [/home:missing/, T('core.fr_home_missing')],
   [/channels:missing/, T('core.fr_channels_missing')],
+  [/channels:file_big/, T('core.fr_channels_file_big')],
   [/channels:none/, T('core.fr_channels_none')],
   [/home:photos_full/, T('home.photos_full', { n: 10 })],   // before home:photo, which it starts with
   [/home:photo/, T('core.fr_home_photo')],

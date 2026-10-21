@@ -112,6 +112,18 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     val c = dev.tvremote.core.ontv.Channels
                     return HttpServer.Response.json(c.manage({ sh(it) }, if (post) r.json() else null, r.q("cc").ifEmpty { null }, r.q("fresh") == "1", r.q("countries") == "1"))
                 }
+                "channels/export" -> if (!post) {                      // the file to keep: a download, like the scenes backup
+                    val c = dev.tvremote.core.ontv.Channels
+                    val doc = c.manage({ sh(it) }, null, export = true).optJSONObject("export") ?: throw IOException("channels:missing")
+                    val out = HttpServer.Response.of("application/json; charset=utf-8", doc.toString(2).toByteArray())
+                    val name = "tvchannels-groups-" + doc.optString("date") + ".json"
+                    out.headers["Content-Disposition"] = "attachment; filename=\"$name\"; filename*=UTF-8''$name"
+                    return out
+                }
+                "channels/import" -> if (post) {                      // {mode: merge | replace, doc}: the TV checks the file and says what it did
+                    val c = dev.tvremote.core.ontv.Channels
+                    return HttpServer.Response.json(c.manage({ sh(it) }, null, import = r.json()))
+                }
                 "channels/install" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Channels.install(link.get(), dir, r.lang))
                 "channels/open" -> if (post) {                        // a channel by its name; TV Channels finds it (or shows its search)
                     if (!dev.tvremote.core.ontv.Channels.open({ sh(it) }, r.json().optString("q"))) throw IOException("channels:missing")

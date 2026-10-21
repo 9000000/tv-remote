@@ -60,10 +60,12 @@ object Channels {
      * (favs, groups, country, list, countries) with `installed`; a TV Channels from before the receiver has `receiver: false`.
      */
     @Throws(IOException::class)
-    fun manage(sh: (String) -> String, change: JSONObject?, cc: String? = null, fresh: Boolean = false, countries: Boolean = false): JSONObject {
+    fun manage(sh: (String) -> String, change: JSONObject?, cc: String? = null, fresh: Boolean = false, countries: Boolean = false,
+               import: JSONObject? = null, export: Boolean = false): JSONObject {
         require(cc == null || cc.matches(Regex("[a-zA-Z]{2}"))) { "country" }
         val arg = (if (change == null) "" else " --es set " + B64.encode(change.toString().toByteArray(Charsets.UTF_8))) +
-            (if (cc == null) "" else " --es list $cc" + if (fresh) " --ez fresh true" else "") + (if (countries) " --ez countries true" else "")
+            (if (cc == null) "" else " --es list $cc" + if (fresh) " --ez fresh true" else "") + (if (countries) " --ez countries true" else "") +
+            (if (export) " --ez export true" else "") + (if (import == null) "" else " --es import " + packImport(import))
         val out = sh("am broadcast --include-stopped-packages -n $PKG/.ChannelsReceiver$arg 2>&1")
         val m = Regex("data=\"([A-Za-z0-9+/=]+)\"").find(out)
             ?: return state(sh).put("receiver", false)                // not there, or from before the receiver
@@ -76,6 +78,20 @@ object Channels {
         }
         latest(r.optString("version"))?.let { r.put("latest", it.version) }
         return r
+    }
+
+    /** An import request as the broadcast takes it: one argument may be ~128 KB, so a big file loses its stream addresses first, then is refused. */
+    private fun packImport(req: JSONObject): String {
+        var b = B64.encode(req.toString().toByteArray(Charsets.UTF_8))
+        if (b.length > 100_000) {
+            val doc = JSONObject(req.toString()).getJSONObject("doc")
+            fun strip(a: org.json.JSONArray?) { if (a != null) for (i in 0 until a.length()) a.optJSONObject(i)?.remove("url") }
+            strip(doc.optJSONArray("favourites"))
+            doc.optJSONArray("groups")?.let { g -> for (i in 0 until g.length()) strip(g.optJSONObject(i)?.optJSONArray("channels")) }
+            b = B64.encode(JSONObject().put("mode", req.optString("mode")).put("doc", doc).toString().toByteArray(Charsets.UTF_8))
+        }
+        if (b.length > 100_000) throw IllegalArgumentException("channels:file_big")
+        return b
     }
 
     /** The link that opens [words] (a channel's name as said: "vtv1", "an giang 1") in TV Channels; empty words open its list. */

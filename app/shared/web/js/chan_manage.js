@@ -104,7 +104,7 @@ function chmDraw() {
     { label: T('chm.new_group_btn'), fn: async () => { const g = await chmNewGroup(null); if (g) { c.view = g.id; chmDraw(); } } },
   ]);
   const status = el('p', { className: 'note chmstate' + (c.status === 'failed' ? ' bad' : ''), textContent: T(c.status === 'saving' ? 'chm.saving' : c.status === 'failed' ? 'chm.failed' : c.status === 'saved' ? 'chm.saved' : 'chm.hint') });
-  c.body.replaceChildren(tabs, ...(c.view === 'find' ? chmFind() : chmMine()), status);
+  c.body.replaceChildren(tabs, ...(c.view === 'find' ? chmFind() : chmMine()), status, ...chmFile());
   const on = c.body.querySelector('.places .on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
 
@@ -165,6 +165,44 @@ function chmGroups(ch) {
     ...c.groups.map((g) => [(g.ch.some((x) => x.id === ch.id) ? '✓ ' : '') + g.name, '', () => chmToggle(g.id, ch)]),
     [T('chm.new_group_btn'), T('chm.new_group_sub'), () => chmNewGroup(ch)],
   ]);
+}
+
+// ---------- a file of the favourites and groups: "Export" is a download from the server (like the scenes backup); "Import" reads the
+// file here, asks merge or replace, and the TV checks it again (ids first, then names) and says what it found and what not
+function chmFile() {
+  const c = chm;
+  const pick = el('input', { type: 'file', accept: '.json,application/json', hidden: true, onchange: () => { const f = pick.files[0]; pick.value = ''; if (f) chmImport(f); } });
+  const out = [UI.actions(
+    UI.btn(T('chm.export'), async () => {
+      if (c.dirty) await chmSend(c, false);                         // the file is what the TV holds: save first
+      const a = el('a', { href: 'api/channels/export', download: '' }); document.body.append(a); a.click(); a.remove();
+    }, 'small'),
+    UI.btn(T('chm.import'), () => pick.click(), 'small'), pick)];
+  if (c.sum) out.push(UI.note(c.sum.text), ...(c.sum.missing ? [UI.note(c.sum.missing)] : []));
+  return out;
+}
+async function chmImport(f) {
+  const c = chm; if (!c) return;
+  let doc;
+  try { doc = JSON.parse(await f.text()); } catch (e) { doc = null; }
+  const n = doc && ((Array.isArray(doc.favourites) ? doc.favourites.length : 0) + (Array.isArray(doc.groups) ? doc.groups.length : 0));
+  if (!doc || typeof doc !== 'object' || Array.isArray(doc) || !n) { toast(T('chm.imp_bad')); return; }
+  menuDlg(T('chm.imp_title'), 0, [
+    [T('chm.imp_merge'), T('chm.imp_merge_sub'), () => chmRun(c, doc, 'merge')],
+    [T('chm.imp_replace'), T('chm.imp_replace_sub'), async () => { if (await ask(T('chm.imp_replace_q'), { ok: T('chm.imp_replace'), danger: true })) chmRun(c, doc, 'replace'); }],
+  ]);
+}
+async function chmRun(c, doc, mode) {
+  if (c.dirty) await chmSend(c, false);
+  c.sum = { text: T('chm.imp_working') }; chmDraw();
+  const r = await api('/api/channels/import', { mode, doc });
+  if (chm !== c) return;
+  const i = r && r.imported;
+  if (!r || !r.receiver || !i || !i.ok) { c.sum = r && r.imported ? { text: T('chm.imp_bad') } : null; if (!r || !r.receiver) toast(T('chm.failed')); chmDraw(); return; }
+  c.favs = r.favs; c.groups = r.groups; c.view = 'fav'; c.status = 'saved';
+  c.sum = { text: T('chm.imp_done', { g: i.groups, n: i.added }) + (i.skipped ? ' ' + T('chm.imp_skipped', { n: i.skipped }) : ''),
+    missing: i.missing_n ? T('chm.imp_missing', { n: i.missing_n, names: i.missing.join(', ') + (i.missing_n > i.missing.length ? '…' : '') }) : '' };
+  chmDraw();
 }
 
 $('#chanmanage').addEventListener('click', chanManage);
