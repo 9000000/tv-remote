@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TV Channels</string>
+    <string name="favourites">Favourites</string>
+    <string name="all">All</string>
+    <string name="search">Search channels</string>
+    <string name="country">Country</string>
+    <string name="refresh">Refresh list</string>
+    <string name="loading">Loading channels…</string>
+    <string name="offline">No internet. Check the TV\'s network, then try again.</string>
+    <string name="none_here">No channels for this country yet.</string>
+    <string name="no_favs">No favourites yet. Hold OK (or press Menu) on a channel to add one.</string>
+    <string name="no_match">No channel matches.</string>
+    <string name="retry">Try again</string>
+    <string name="add_fav">Add to favourites</string>
+    <string name="remove_fav">Remove from favourites</string>
+    <string name="pin">Pin to Home screen</string>
+    <string name="pinned">Pinned. It shows on the Home screen.</string>
+    <string name="pin_refused">This Home screen does not take pinned channels.</string>
+    <string name="play">Watch</string>
+    <string name="geo">May be blocked outside its country</string>
+    <string name="not_always">Not on air all day</string>
+    <string name="down">Did not answer lately</string>
+    <string name="cant_play">This channel does not play right now.</string>
+    <string name="cant_play_geo">This channel does not play here: it may be shown only in its own country.</string>
+    <string name="next_hint">▲▼ another channel · OK the list</string>
+    <string name="not_found">That channel is not in iptv-org\'s lists any more.</string>
+    <string name="channels_n">%d channels</string>
+    <string name="source">Channels from iptv-org (public streams); this app hosts none.</string>
+</resources>

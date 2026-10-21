@@ -11,6 +11,7 @@ SPEAKER = "M11 5 6 9H2v6h4l5 4V5z"
 ICONS = {
     "up": ["m18 15-6-6-6 6"], "down": ["m6 9 6 6 6-6"], "left": ["m15 18-6-6 6-6"], "right": ["m9 18 6-6-6-6"],
     "power": ["M12 2v10", "M18.4 6.6a9 9 0 1 1-12.77.04"],
+    "star": ["M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"],
     "home": ["M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8", "M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"],
     "back": ["M9 14 4 9l5-5", "M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"],
     "menu": ["M4 6h16", "M4 12h16", "M4 18h16"],
@@ -128,7 +129,7 @@ for page in (ROOT / "app/shared/web/index.html",):
         assert s2 != s or sprite in s, f"{page} has no <!-- icons:start --><!-- icons:end --> marker"
         page.write_text(s2)
 
-for app in ("android", "tv", "home"):
+for app in ("android", "tv", "home", "channels"):
     out = ROOT / "app" / app / "src/main/res/drawable"
     for n, paths in ICONS.items():
         body = "".join(f'\n    <path android:pathData="{d}" android:strokeColor="#FFFFFFFF" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" />' for d in paths)

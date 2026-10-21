@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="favourites">Yêu thích</string>
+    <string name="all">Tất cả</string>
+    <string name="search">Tìm kênh</string>
+    <string name="country">Quốc gia</string>
+    <string name="refresh">Tải lại danh sách</string>
+    <string name="loading">Đang tải kênh…</string>
+    <string name="offline">Không có mạng. Kiểm tra mạng của TV rồi thử lại.</string>
+    <string name="none_here">Nước này chưa có kênh nào.</string>
+    <string name="no_favs">Chưa có kênh yêu thích. Giữ OK (hoặc bấm Menu) trên một kênh để thêm.</string>
+    <string name="no_match">Không có kênh nào khớp.</string>
+    <string name="retry">Thử lại</string>
+    <string name="add_fav">Thêm vào yêu thích</string>
+    <string name="remove_fav">Bỏ khỏi yêu thích</string>
+    <string name="pin">Ghim lên màn hình chính</string>
+    <string name="pinned">Đã ghim. Kênh hiện ở màn hình chính.</string>
+    <string name="pin_refused">Màn hình chính này không nhận kênh ghim.</string>
+    <string name="play">Xem</string>
+    <string name="geo">Có thể bị chặn ngoài nước của kênh</string>
+    <string name="not_always">Không phát cả ngày</string>
+    <string name="down">Gần đây không phản hồi</string>
+    <string name="cant_play">Kênh này đang không phát được.</string>
+    <string name="cant_play_geo">Kênh này không phát được ở đây: có thể chỉ xem được trong nước của kênh.</string>
+    <string name="next_hint">▲▼ đổi kênh · OK danh sách</string>
+    <string name="not_found">Kênh này không còn trong danh sách của iptv-org.</string>
+    <string name="channels_n">%d kênh</string>
+    <string name="source">Kênh lấy từ iptv-org (luồng công khai); app không lưu trữ kênh nào.</string>
+</resources>

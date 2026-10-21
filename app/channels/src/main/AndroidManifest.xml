@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-feature android:name="android.software.leanback" android:required="false" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <application android:label="@string/app_name" android:icon="@drawable/icon" android:banner="@drawable/banner" android:allowBackup="false"
+        android:theme="@style/Channels" android:supportsRtl="false" android:usesCleartextTraffic="true">
+        <!-- the list; usesCleartextTraffic: many public streams are plain http -->
+        <activity android:name=".BrowseActivity" android:exported="true" android:launchMode="singleTask" android:screenOrientation="landscape"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|locale|layoutDirection">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+            <!-- tvchannels://country/vn: the list of a country (a phone or computer opens it over ADB) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tvchannels" android:host="country" />
+            </intent-filter>
+        </activity>
+        <!-- tvchannels://play/<iptv-org id>: the public face of this app, for pinned shortcuts, phones, voice -->
+        <activity android:name=".PlayActivity" android:exported="true" android:launchMode="singleTask" android:screenOrientation="landscape"
+            android:theme="@style/Player"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|locale|layoutDirection">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tvchannels" android:host="play" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

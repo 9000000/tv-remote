@@ -1,0 +1,358 @@
+package dev.tvremote.channels
+
+import android.app.Activity
+import android.app.Dialog
+import android.content.Intent
+import android.graphics.Color
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.Gravity
+import android.view.KeyEvent
+import android.view.View
+import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.widget.EditText
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
+import android.widget.Toast
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import java.text.Normalizer
+import java.util.concurrent.Executors
+
+/**
+ * The list: a side column (favourites, the country, its categories) and a grid of channel cards. OK plays; holding OK or Menu
+ * opens what can be done with a channel (favourite, pin to the Home screen). Everything is read from iptv-org in the background.
+ */
+class BrowseActivity : Activity() {
+    private val io = Executors.newSingleThreadExecutor()
+    private val main = Handler(Looper.getMainLooper())
+    private lateinit var rail: LinearLayout
+    private lateinit var grid: RecyclerView
+    private lateinit var title: TextView
+    private lateinit var note: TextView
+    private lateinit var retry: TextView
+    private lateinit var find: EditText
+    private val cards = Cards()
+
+    private var cc = ""
+    private var all: List<List<Channel>> = emptyList()
+    private var shown: List<List<Channel>> = emptyList()
+    private var group = ALL
+    private var failed = false
+    private var countryName = ""
+
+    override fun onCreate(b: Bundle?) {
+        super.onCreate(b)
+        val d = { v: Number -> Ui.dp(this, v).toInt() }
+        val root = LinearLayout(this).apply { setBackgroundColor(0xFF0E1116.toInt()) }
+
+        rail = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(d(16), d(24), d(12), d(24)) }
+        root.addView(ScrollView(this).apply { addView(rail); isVerticalScrollBarEnabled = false },
+            LinearLayout.LayoutParams(d(250), -1))
+
+        val right = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(d(8), d(24), d(24), 0) }
+        val head = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
+        title = Ui.text(this, "", 22f, bold = true)
+        head.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
+        find = EditText(this).apply {
+            hint = getString(R.string.search); setHintTextColor(Ui.DIM); setTextColor(Ui.TEXT); textSize = 15f; isSingleLine = true
+            imeOptions = EditorInfo.IME_ACTION_SEARCH or EditorInfo.IME_FLAG_NO_EXTRACT_UI
+            background = Ui.states(this@BrowseActivity, Ui.CARD, Ui.dp(this@BrowseActivity, 22))
+            setPadding(d(18), d(8), d(18), d(8))
+            setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_search, 0, 0, 0); compoundDrawablePadding = d(8)
+            addTextChangedListener(object : TextWatcher {
+                override fun afterTextChanged(s: Editable?) { filter() }
+                override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            })
+        }
+        head.addView(find, LinearLayout.LayoutParams(d(300), d(44)))
+        right.addView(head, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = d(12) })
+
+        val body = FrameLayout(this)
+        grid = RecyclerView(this).apply {
+            adapter = cards; clipToPadding = false; setPadding(d(6), d(10), d(6), d(40)); itemAnimator = null
+            layoutManager = GridLayoutManager(this@BrowseActivity, columns())
+            descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
+        }
+        body.addView(grid, FrameLayout.LayoutParams(-1, -1))
+        val empty = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER }
+        note = Ui.text(this, "", 17f, Ui.DIM).apply { gravity = Gravity.CENTER; setLineSpacing(0f, 1.2f) }
+        retry = Ui.text(this, getString(R.string.retry), 16f, bold = true).apply {
+            setPadding(d(24), d(10), d(24), d(10)); isFocusable = true; isClickable = true
+            background = Ui.states(this@BrowseActivity, Ui.CARD, Ui.dp(this@BrowseActivity, 22))
+            setOnClickListener { load(true) }
+        }
+        empty.addView(note, LinearLayout.LayoutParams(d(520), -2))
+        empty.addView(retry, LinearLayout.LayoutParams(-2, -2).apply { topMargin = d(16) })
+        body.addView(empty, FrameLayout.LayoutParams(-1, -1))
+        right.addView(body, LinearLayout.LayoutParams(-1, 0, 1f))
+        root.addView(right, LinearLayout.LayoutParams(0, -1, 1f))
+        setContentView(root)
+
+        cc = countryOf(intent) ?: Store.country(this)
+        load(false)
+    }
+
+    override fun onNewIntent(i: Intent) {
+        super.onNewIntent(i)
+        countryOf(i)?.takeIf { it != cc }?.let { cc = it; group = ALL; load(false) }
+    }
+
+    override fun onResume() { super.onResume(); cards.notifyDataSetChanged(); if (group == FAVS) filter() }
+
+    private fun countryOf(i: Intent?) = i?.data?.takeIf { it.scheme == "tvchannels" && it.host == "country" }
+        ?.pathSegments?.firstOrNull()?.lowercase()?.takeIf { it.length == 2 }
+
+    private fun columns() = (resources.displayMetrics.widthPixels / resources.displayMetrics.density - 280).let { (it / 130).toInt().coerceIn(2, 7) }
+
+    private fun load(fresh: Boolean) {
+        Store.setCountry(this, cc)
+        all = emptyList(); failed = false
+        say(getString(R.string.loading), false)
+        io.execute {
+            val list = Catalog.channels(this, cc, fresh)
+            val name = Catalog.countries(this).firstOrNull { it.code == cc }?.let { "${it.flag} ${it.name}" } ?: cc.uppercase()
+            val ok = list.isNotEmpty() || java.io.File(filesDir, "m3u-$cc.m3u").exists()
+            main.post {
+                if (isDestroyed) return@post
+                all = list.byChannel(); failed = !ok; countryName = name
+                if (group != FAVS && group != ALL && all.none { it.first().group == group }) group = ALL
+                buildRail(); filter()
+                if (!find.hasFocus()) grid.post { (grid.getChildAt(0) ?: rail.getChildAt(0))?.requestFocus() }
+            }
+        }
+    }
+
+    private fun buildRail() {
+        rail.removeAllViews()
+        rail.addView(Ui.text(this, getString(R.string.app_name), 20f, Ui.ACCENT, true).apply { setPadding(Ui.dp(this@BrowseActivity, 12).toInt(), 0, 0, Ui.dp(this@BrowseActivity, 18).toInt()) })
+        val favs = Store.favourites(this).byChannel().size
+        add(Ui.row(this, R.drawable.ic_star, getString(R.string.favourites), if (favs > 0) "$favs" else "") { pick(FAVS) }, group == FAVS)
+        add(Ui.row(this, R.drawable.ic_globe, countryName.ifEmpty { getString(R.string.country) }) { countries() }, false)
+        add(Ui.row(this, R.drawable.ic_refresh, getString(R.string.refresh)) { load(true) }, false)
+        rail.addView(View(this).apply { setBackgroundColor(0x22FFFFFF) }, LinearLayout.LayoutParams(-1, 1).apply {
+            val m = Ui.dp(this@BrowseActivity, 10).toInt(); topMargin = m; bottomMargin = m })
+        if (all.isEmpty()) return
+        add(Ui.row(this, R.drawable.ic_tv, getString(R.string.all), "${all.size}") { pick(ALL) }, group == ALL)
+        all.groupingBy { it.first().group }.eachCount().entries.sortedByDescending { it.value }.forEach { (g, n) ->
+            add(Ui.row(this, 0, groupName(g), "$n") { pick(g) }, group == g)
+        }
+    }
+
+    private fun add(v: View, on: Boolean) { v.isActivated = on; rail.addView(v, LinearLayout.LayoutParams(-1, -2)) }
+
+    private fun pick(g: String) {
+        group = g; buildRail(); filter()
+        grid.post { grid.getChildAt(0)?.requestFocus() }
+    }
+
+    private fun filter() {
+        val base = if (group == FAVS) Store.favourites(this).byChannel() else if (group == ALL) all else all.filter { it.first().group == group }
+        val q = fold(find.text.toString())
+        shown = if (q.isEmpty()) base else base.filter { fold(it.first().name).contains(q) }
+        cards.notifyDataSetChanged()
+        title.text = when (group) {
+            FAVS -> getString(R.string.favourites)
+            ALL -> countryName
+            else -> "$countryName · ${groupName(group)}"
+        }
+        when {
+            shown.isNotEmpty() -> say("", false)
+            failed && group != FAVS -> say(getString(R.string.offline), true)
+            all.isEmpty() && group != FAVS && note.text == getString(R.string.loading) -> {}
+            q.isNotEmpty() -> say(getString(R.string.no_match), false)
+            group == FAVS -> say(getString(R.string.no_favs), false)
+            else -> say(getString(R.string.none_here), true)
+        }
+    }
+
+    private fun say(s: String, again: Boolean) { note.text = s; Ui.show(note, s.isNotEmpty()); Ui.show(retry, again) }
+
+    /** iptv-org's group names in the app's language where we have them. */
+    private fun groupName(g: String) = if (java.util.Locale.getDefault().language == "vi") VI[g.lowercase()] ?: g else g
+
+    fun play(ch: List<Channel>) {
+        Lineup.set(shown, title.text.toString())
+        startActivity(Intent(Intent.ACTION_VIEW, Pins.link(ch.first().id)).setClass(this, PlayActivity::class.java))
+    }
+
+    /** What can be done with one channel: on a TV the Menu key or a long OK, on a phone a long press. */
+    fun actions(ch: List<Channel>) {
+        val c = ch.first()
+        val dlg = Dialog(this, R.style.Dialog)
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val p = Ui.dp(this@BrowseActivity, 14).toInt(); setPadding(p, p, p, p)
+            background = Ui.round(0xF21B2028.toInt(), Ui.dp(this@BrowseActivity, 20), 1, 0x40FFFFFF)
+        }
+        box.addView(Ui.text(this, c.name, 18f, bold = true).apply { setPadding(Ui.dp(this@BrowseActivity, 12).toInt(), 0, 0, Ui.dp(this@BrowseActivity, 10).toInt()) })
+        box.addView(Ui.row(this, R.drawable.ic_play, getString(R.string.play)) { dlg.dismiss(); play(ch) })
+        val fav = Store.isFavourite(this, c.id)
+        box.addView(Ui.row(this, R.drawable.ic_star, getString(if (fav) R.string.remove_fav else R.string.add_fav)) {
+            dlg.dismiss(); Store.toggleFavourite(this, ch); buildRail(); filter()
+        })
+        if (Pins.can(this)) box.addView(Ui.row(this, R.drawable.ic_home, getString(R.string.pin)) {
+            dlg.dismiss()
+            io.execute {
+                val logo = c.logo.takeIf { it.isNotEmpty() }?.let { try { Logos.load(it, 280) } catch (e: Throwable) { null } }
+                val ok = Pins.pin(this, c, logo)
+                main.post { if (!ok) Toast.makeText(this, R.string.pin_refused, Toast.LENGTH_LONG).show() }
+            }
+        })
+        val why = listOfNotNull(c.quality.takeIf { it.isNotEmpty() }, groupName(c.group),
+            getString(R.string.geo).takeIf { c.geo }, getString(R.string.not_always).takeIf { c.notAlways },
+            getString(R.string.down).takeIf { Store.alive(this, c.url) == false && ch.size == 1 })
+        box.addView(Ui.text(this, why.joinToString(" · "), 13f, Ui.DIM).apply {
+            setPadding(Ui.dp(this@BrowseActivity, 12).toInt(), Ui.dp(this@BrowseActivity, 10).toInt(), 0, 0) })
+        dlg.setContentView(box, ViewGroup.LayoutParams(Ui.dp(this, 380).toInt(), -2))
+        dlg.show()
+    }
+
+    private fun countries() {
+        val dlg = Dialog(this, R.style.Dialog)
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val p = Ui.dp(this@BrowseActivity, 14).toInt(); setPadding(p, p, p, p)
+            background = Ui.round(0xF21B2028.toInt(), Ui.dp(this@BrowseActivity, 20), 1, 0x40FFFFFF)
+        }
+        val q = EditText(this).apply {
+            hint = getString(R.string.country); setHintTextColor(Ui.DIM); setTextColor(Ui.TEXT); isSingleLine = true; textSize = 15f
+            imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI
+            background = Ui.states(this@BrowseActivity, 0x14FFFFFF, Ui.dp(this@BrowseActivity, 18))
+            val p = Ui.dp(this@BrowseActivity, 14).toInt(); setPadding(p, p / 2, p, p / 2)
+        }
+        box.addView(q, LinearLayout.LayoutParams(-1, Ui.dp(this, 42).toInt()).apply { bottomMargin = Ui.dp(this@BrowseActivity, 8).toInt() })
+        val list = RecyclerView(this).apply { layoutManager = LinearLayoutManager(this@BrowseActivity) }
+        box.addView(list, LinearLayout.LayoutParams(-1, (resources.displayMetrics.heightPixels * 0.62).toInt()))
+        dlg.setContentView(box, ViewGroup.LayoutParams(Ui.dp(this, 420).toInt(), -2))
+        io.execute {
+            val every = Catalog.countries(this)
+            main.post {
+                if (!dlg.isShowing) return@post
+                var now = every.sortedBy { it.code != cc }
+                val ad = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+                    override fun getItemCount() = now.size
+                    override fun onCreateViewHolder(p: ViewGroup, t: Int) = object : RecyclerView.ViewHolder(
+                        Ui.row(this@BrowseActivity, 0, "") {}.apply { layoutParams = RecyclerView.LayoutParams(-1, -2) }) {}
+                    override fun onBindViewHolder(h: RecyclerView.ViewHolder, i: Int) {
+                        val k = now[i]; val row = h.itemView as LinearLayout
+                        (row.getChildAt(0) as TextView).text = "${k.flag}  ${k.name}"
+                        row.isActivated = k.code == cc
+                        row.setOnClickListener { dlg.dismiss(); if (k.code != cc) { cc = k.code; group = ALL; find.setText(""); load(false) } }
+                    }
+                }
+                list.adapter = ad
+                q.addTextChangedListener(object : TextWatcher {
+                    override fun afterTextChanged(s: Editable?) {
+                        val f = fold(s.toString())
+                        now = if (f.isEmpty()) every.sortedBy { it.code != cc } else every.filter { fold(it.name).contains(f) || it.code == f }
+                        ad.notifyDataSetChanged()
+                    }
+                    override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                    override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                })
+                list.post { list.getChildAt(0)?.requestFocus() }
+            }
+        }
+        dlg.show()
+    }
+
+    override fun onKeyDown(k: Int, e: KeyEvent): Boolean {
+        if (k == KeyEvent.KEYCODE_MENU || (k == KeyEvent.KEYCODE_DPAD_CENTER || k == KeyEvent.KEYCODE_ENTER) && e.isLongPress) {
+            val v = currentFocus ?: return super.onKeyDown(k, e)
+            val at = grid.findContainingViewHolder(v)?.bindingAdapterPosition ?: -1
+            if (at in shown.indices) { actions(shown[at]); return true }
+        }
+        if (k == KeyEvent.KEYCODE_DPAD_CENTER || k == KeyEvent.KEYCODE_ENTER) e.startTracking()
+        return super.onKeyDown(k, e)
+    }
+
+    override fun onKeyLongPress(k: Int, e: KeyEvent) = onKeyDown(k, e)
+
+    override fun onDestroy() { io.shutdownNow(); super.onDestroy() }
+
+    private inner class Cards : RecyclerView.Adapter<Cards.H>() {
+        inner class H(v: View) : RecyclerView.ViewHolder(v) {
+            val logo = v.findViewWithTag<ImageView>("logo")
+            val letters = v.findViewWithTag<TextView>("letters")
+            val name = v.findViewWithTag<TextView>("name")
+            val sub = v.findViewWithTag<TextView>("sub")
+            val star = v.findViewWithTag<ImageView>("star")
+            val q = v.findViewWithTag<TextView>("q")
+        }
+
+        override fun getItemCount() = shown.size
+
+        override fun onCreateViewHolder(p: ViewGroup, t: Int): H {
+            val c = this@BrowseActivity
+            val d = { v: Number -> Ui.dp(c, v).toInt() }
+            val card = LinearLayout(c).apply {
+                orientation = LinearLayout.VERTICAL; isFocusable = true; isClickable = true; isLongClickable = true
+                setPadding(d(6), d(6), d(6), d(8))
+                background = Ui.states(c, Color.TRANSPARENT, Ui.dp(c, 16))
+                setOnFocusChangeListener { v, has -> v.animate().scaleX(if (has) 1.06f else 1f).scaleY(if (has) 1.06f else 1f).setDuration(120).start() }
+            }
+            val w = (p.width - p.paddingLeft - p.paddingRight) / columns() - d(12)
+            val tile = FrameLayout(c).apply { background = Ui.round(Ui.TILE, Ui.dp(c, 12)) }
+            tile.addView(TextView(c).apply {
+                tag = "letters"; gravity = Gravity.CENTER; textSize = 26f; setTextColor(0xFF5F6368.toInt())
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+            }, FrameLayout.LayoutParams(-1, -1))
+            tile.addView(ImageView(c).apply { tag = "logo"; scaleType = ImageView.ScaleType.FIT_CENTER },
+                FrameLayout.LayoutParams(-1, -1).apply { val m = d(14); setMargins(m, m, m, m) })
+            tile.addView(ImageView(c).apply { tag = "star"; setImageResource(R.drawable.ic_star); imageTintList = android.content.res.ColorStateList.valueOf(0xFFF9AB00.toInt()) },
+                FrameLayout.LayoutParams(d(18), d(18), Gravity.TOP or Gravity.END).apply { topMargin = d(6); rightMargin = d(6) })
+            tile.addView(Ui.text(c, "", 9f, Color.WHITE, true).apply {                // a corner: logos sit in the middle
+                tag = "q"; setPadding(d(4), d(1), d(4), d(1)); background = Ui.round(0x8C000000.toInt(), Ui.dp(c, 4))
+            }, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.START).apply { topMargin = d(5); leftMargin = d(5) })
+            card.addView(tile, LinearLayout.LayoutParams(-1, w * 9 / 16))
+            card.addView(Ui.text(c, "", 14f).apply { tag = "name"; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(d(4), d(8), d(4), 0) })
+            card.addView(Ui.text(c, "", 12f, Ui.DIM).apply { tag = "sub"; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(d(4), d(4), d(4), 0) })
+            card.layoutParams = RecyclerView.LayoutParams(-1, -2).apply { val m = d(6); setMargins(m, m, m, m) }
+            return H(card)
+        }
+
+        override fun onBindViewHolder(h: H, i: Int) {
+            val ch = shown[i]; val c = ch.first()
+            h.name.text = c.name
+            h.letters.text = Ui.initials(c.name)
+            h.letters.visibility = View.INVISIBLE
+            Logos.into(h.logo, c.logo, 280) { got -> h.letters.visibility = if (got) View.INVISIBLE else View.VISIBLE }
+            val dead = ch.all { Store.alive(this@BrowseActivity, it.url) == false }
+            h.sub.text = groupName(c.group).let { if (dead) "● $it" else it }
+            h.q.text = c.quality.removeSuffix("p").let { if (it.isEmpty()) "" else if (it.toIntOrNull()?.let { n -> n >= 720 } == true) if (it == "2160") "4K" else "HD" else "SD" }
+            Ui.show(h.q, c.quality.isNotEmpty())
+            h.sub.setTextColor(if (dead) Ui.BAD else Ui.DIM)
+            h.itemView.alpha = if (dead) 0.6f else 1f
+            Ui.show(h.star, group != FAVS && Store.isFavourite(this@BrowseActivity, c.id))
+            h.itemView.setOnClickListener { play(ch) }
+            h.itemView.setOnLongClickListener { actions(ch); true }
+            ch.forEach { s -> Probe.check(this@BrowseActivity, s) { val at = shown.indexOf(ch); if (at >= 0) notifyItemChanged(at) } }
+        }
+    }
+
+    companion object {
+        const val ALL = ""
+        const val FAVS = "\u0000favs"
+
+        fun fold(s: String) = Normalizer.normalize(s.lowercase().replace('đ', 'd'), Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "").trim()
+
+        private val VI = mapOf(
+            "general" to "Tổng hợp", "news" to "Tin tức", "entertainment" to "Giải trí", "movies" to "Phim", "series" to "Phim bộ",
+            "sports" to "Thể thao", "kids" to "Thiếu nhi", "music" to "Âm nhạc", "documentary" to "Tài liệu", "education" to "Giáo dục",
+            "culture" to "Văn hóa", "religious" to "Tôn giáo", "lifestyle" to "Đời sống", "cooking" to "Ẩm thực", "travel" to "Du lịch",
+            "business" to "Kinh tế", "comedy" to "Hài", "family" to "Gia đình", "legislative" to "Quốc hội", "outdoor" to "Ngoài trời",
+            "science" to "Khoa học", "shop" to "Mua sắm", "weather" to "Thời tiết", "auto" to "Xe", "animation" to "Hoạt hình",
+            "classic" to "Kinh điển", "relax" to "Thư giãn", "public" to "Công cộng", "undefined" to "Khác",
+        )
+    }
+}

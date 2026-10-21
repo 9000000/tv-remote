@@ -1,0 +1,296 @@
+package dev.tvremote.channels
+
+import android.app.Activity
+import android.content.Intent
+import android.graphics.Color
+import android.net.Uri
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.Gravity
+import android.view.KeyEvent
+import android.view.SurfaceView
+import android.view.View
+import android.view.ViewGroup
+import android.view.WindowManager
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.ProgressBar
+import android.widget.TextView
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.common.VideoSize
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.HttpDataSource
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.exoplayer.source.MediaSource
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import java.util.concurrent.Executors
+
+/**
+ * Full screen: one channel, opened by its link (tvchannels://play/<id>) from the list, a pinned shortcut, a phone or voice.
+ * ▲▼ and CH+/CH- step through [Lineup], numbers jump to a place in it, OK or ◀ shows it beside the picture, ⟲ (Last channel)
+ * goes back to the one before. A stream that does not play falls through to the channel's next stream, then says so.
+ */
+class PlayActivity : Activity() {
+    private val main = Handler(Looper.getMainLooper())
+    private val io = Executors.newSingleThreadExecutor()
+    private var player: ExoPlayer? = null
+    private lateinit var surface: SurfaceView
+    private lateinit var frame: FrameLayout
+    private lateinit var spin: ProgressBar
+    private lateinit var info: LinearLayout
+    private lateinit var infoLogo: ImageView
+    private lateinit var infoName: TextView
+    private lateinit var infoSub: TextView
+    private lateinit var infoNum: TextView
+    private lateinit var problem: TextView
+    private lateinit var digits: TextView
+    private lateinit var side: LinearLayout
+    private lateinit var sideList: RecyclerView
+
+    private var at = -1                                               // place in Lineup
+    private var streams: List<Channel> = emptyList()                  // the channel on screen, its streams
+    private var stream = 0
+    private var asProgressive = false
+    private var before = -1
+    private var typed = ""
+    private var videoW = 16; private var videoH = 9; private var ratio = 1f
+
+    override fun onCreate(b: Bundle?) {
+        super.onCreate(b)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        val d = { v: Number -> Ui.dp(this, v).toInt() }
+        frame = object : FrameLayout(this) {
+            override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, bt: Int) { super.onLayout(changed, l, t, r, bt); fit() }
+        }.apply { setBackgroundColor(Color.BLACK) }
+        surface = SurfaceView(this)
+        frame.addView(surface, FrameLayout.LayoutParams(-1, -1, Gravity.CENTER))
+        spin = ProgressBar(this).apply { isIndeterminate = true }
+        frame.addView(spin, FrameLayout.LayoutParams(d(56), d(56), Gravity.CENTER))
+        problem = Ui.text(this, "", 18f).apply {
+            gravity = Gravity.CENTER; setLineSpacing(0f, 1.25f); setPadding(d(28), d(20), d(28), d(20))
+            background = Ui.round(0xD91B2028.toInt(), Ui.dp(this@PlayActivity, 18)); visibility = View.GONE
+        }
+        frame.addView(problem, FrameLayout.LayoutParams(d(560), -2, Gravity.CENTER))
+        digits = Ui.text(this, "", 44f, bold = true).apply {
+            setPadding(d(22), d(10), d(22), d(10)); background = Ui.round(0xB3000000.toInt(), Ui.dp(this@PlayActivity, 16)); visibility = View.GONE
+        }
+        frame.addView(digits, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { topMargin = d(32); rightMargin = d(40) })
+
+        info = LinearLayout(this).apply {
+            gravity = Gravity.CENTER_VERTICAL; setPadding(d(20), d(16), d(28), d(16)); visibility = View.GONE
+            background = Ui.round(0xD91B2028.toInt(), Ui.dp(this@PlayActivity, 20), 1, 0x33FFFFFF)
+        }
+        infoNum = Ui.text(this, "", 30f, Ui.ACCENT, true).apply { minWidth = d(60) }
+        info.addView(infoNum)
+        val tile = FrameLayout(this).apply { background = Ui.round(Ui.TILE, Ui.dp(this@PlayActivity, 10)) }
+        infoLogo = ImageView(this).apply { scaleType = ImageView.ScaleType.FIT_CENTER }
+        tile.addView(infoLogo, FrameLayout.LayoutParams(-1, -1).apply { val m = d(8); setMargins(m, m, m, m) })
+        info.addView(tile, LinearLayout.LayoutParams(d(112), d(63)).apply { leftMargin = d(12); rightMargin = d(18) })
+        val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        infoName = Ui.text(this, "", 22f, bold = true).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
+        infoSub = Ui.text(this, "", 14f, Ui.DIM).apply { maxLines = 1; setPadding(0, d(6), 0, 0) }
+        words.addView(infoName); words.addView(infoSub)
+        info.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
+        frame.addView(info, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM).apply { setMargins(d(48), 0, d(48), d(36)) })
+
+        side = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; setPadding(d(12), d(20), d(12), d(20)); visibility = View.GONE
+            background = Ui.round(0xEB14171D.toInt(), 0f)
+        }
+        side.addView(Ui.text(this, "", 16f, Ui.ACCENT, true).apply { tag = "title"; setPadding(d(12), 0, 0, d(12)); maxLines = 1 })
+        sideList = RecyclerView(this).apply { layoutManager = LinearLayoutManager(this@PlayActivity); adapter = SideList(); itemAnimator = null }
+        side.addView(sideList, LinearLayout.LayoutParams(-1, 0, 1f))
+        frame.addView(side, FrameLayout.LayoutParams(d(360), -1, Gravity.START))
+        setContentView(frame)
+        open(intent)
+    }
+
+    override fun onNewIntent(i: Intent) { super.onNewIntent(i); setIntent(i); open(i) }
+
+    /** The channel a link names: in the lineup the list gave, else among the favourites, else in its country's list. */
+    private fun open(i: Intent?) {
+        val id = Pins.id(i?.data) ?: Store.last(this) ?: run { finish(); return }
+        Lineup.indexOf(id).takeIf { it >= 0 }?.let { tune(it); return }
+        spin.visibility = View.VISIBLE
+        io.execute {
+            val favs = Store.favourites(this).byChannel()
+            val country = Ids.country(id).takeIf { it.isNotEmpty() }?.let { Catalog.channels(this, it).byChannel() }.orEmpty()
+            main.post {
+                if (isDestroyed) return@post
+                when {
+                    country.any { it.first().id == id } -> Lineup.set(country, Ids.country(id).uppercase())
+                    favs.any { it.first().id == id } -> Lineup.set(favs, getString(R.string.favourites))
+                    else -> { spin.visibility = View.GONE; fail(getString(R.string.not_found)); return@post }
+                }
+                tune(Lineup.indexOf(id))
+            }
+        }
+    }
+
+    private fun tune(i: Int) {
+        val all = Lineup.channels
+        if (all.isEmpty()) return
+        val n = Math.floorMod(i, all.size)
+        if (n != at) before = at
+        at = n
+        streams = all[n].sortedBy { if (Store.alive(this, it.url) == false) 1 else 0 }   // known-dead streams last
+        stream = 0; asProgressive = false
+        Store.setLast(this, streams.first().id)
+        showInfo()
+        (sideList.adapter as SideList).notifyDataSetChanged()
+        start()
+    }
+
+    private fun start() {
+        val ch = streams.getOrNull(stream) ?: return
+        problem.visibility = View.GONE
+        spin.visibility = View.VISIBLE
+        val p = player ?: ExoPlayer.Builder(this).build().also { x ->
+            player = x
+            x.setVideoSurfaceView(surface)
+            x.addListener(object : Player.Listener {
+                override fun onPlaybackStateChanged(s: Int) {
+                    if (s == Player.STATE_READY) { spin.visibility = View.GONE; main.removeCallbacks(slow); streams.getOrNull(stream)?.let { Store.setAlive(this@PlayActivity, it.url, true) } }
+                    if (s == Player.STATE_BUFFERING) spin.visibility = View.VISIBLE
+                }
+                override fun onPlayerError(e: PlaybackException) = failed(e)
+                override fun onVideoSizeChanged(v: VideoSize) {
+                    if (v.width > 0 && v.height > 0) { videoW = v.width; videoH = v.height; ratio = v.pixelWidthHeightRatio; fit() }
+                }
+            })
+        }
+        val http = DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(true).setConnectTimeoutMs(8000).setReadTimeoutMs(12000)
+            .setUserAgent(ch.agent.ifEmpty { Catalog.BROWSER })
+        if (ch.referrer.isNotEmpty()) http.setDefaultRequestProperties(mapOf("Referer" to ch.referrer))
+        val hls = !asProgressive && !PROGRESSIVE.containsMatchIn(Uri.parse(ch.url).path.orEmpty())
+        val item = MediaItem.Builder().setUri(ch.url).apply { if (hls) setMimeType(MimeTypes.APPLICATION_M3U8) }.build()
+        val src: MediaSource = if (hls) HlsMediaSource.Factory(http).setAllowChunklessPreparation(true).createMediaSource(item)
+            else ProgressiveMediaSource.Factory(http).createMediaSource(item)
+        p.setMediaSource(src)
+        p.prepare()
+        p.playWhenReady = true
+        main.removeCallbacks(slow); main.postDelayed(slow, 20_000)
+    }
+
+    /** Nothing after 20 s: as good as dead, try the next stream. */
+    private val slow = Runnable { if (player?.playbackState != Player.STATE_READY) next(null) }
+
+    private fun failed(e: PlaybackException) {
+        if (e.errorCode == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) { player?.seekToDefaultPosition(); player?.prepare(); return }
+        val notHls = e.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED ||
+            e.errorCode == PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED ||
+            e.errorCode == PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED
+        if (notHls && !asProgressive) { asProgressive = true; start(); return }     // a plain TS / MP4 behind a URL with no extension
+        next(e)
+    }
+
+    private fun next(e: PlaybackException?) {
+        main.removeCallbacks(slow)
+        streams.getOrNull(stream)?.let { Store.setAlive(this, it.url, false) }
+        stream++; asProgressive = false
+        if (stream < streams.size) { start(); return }
+        player?.stop()
+        spin.visibility = View.GONE
+        val forbidden = (e?.cause as? HttpDataSource.InvalidResponseCodeException)?.responseCode.let { it == 403 || it == 451 }
+        fail(getString(if (streams.firstOrNull()?.geo == true || forbidden) R.string.cant_play_geo else R.string.cant_play) + "\n" + getString(R.string.next_hint))
+    }
+
+    private fun fail(s: String) { problem.text = s; problem.visibility = View.VISIBLE }
+
+    /** The picture at its own shape, as large as the screen allows (no stretching of a 4:3 channel). */
+    private fun fit() {
+        val w = frame.width; val h = frame.height
+        if (w == 0 || h == 0) return
+        val a = videoW * ratio / videoH
+        val lw: Int; val lh: Int
+        if (w.toFloat() / h > a) { lh = h; lw = (h * a).toInt() } else { lw = w; lh = (w / a).toInt() }
+        val lp = surface.layoutParams
+        if (lp.width != lw || lp.height != lh) { lp.width = lw; lp.height = lh; surface.layoutParams = lp }
+    }
+
+    private fun showInfo() {
+        val c = streams.firstOrNull() ?: return
+        infoNum.text = "${at + 1}"
+        infoName.text = c.name
+        infoSub.text = listOfNotNull(c.quality.ifEmpty { null }, c.group, Lineup.title.ifEmpty { null }).joinToString(" · ")
+        Logos.into(infoLogo, c.logo, 200) {}
+        info.visibility = View.VISIBLE
+        main.removeCallbacks(hideInfo); main.postDelayed(hideInfo, 4000)
+    }
+
+    private val hideInfo = Runnable { info.visibility = View.GONE }
+
+    private val jump = Runnable {
+        typed.toIntOrNull()?.let { n -> if (n in 1..Lineup.channels.size) tune(n - 1) }
+        typed = ""; digits.visibility = View.GONE
+    }
+
+    private fun showSide(on: Boolean) {
+        side.visibility = if (on) View.VISIBLE else View.GONE
+        if (!on) return
+        side.findViewWithTag<TextView>("title").text = Lineup.title
+        (sideList.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(at.coerceAtLeast(0), Ui.dp(this, 120).toInt())
+        sideList.post { sideList.findViewHolderForAdapterPosition(at)?.itemView?.requestFocus() ?: sideList.getChildAt(0)?.requestFocus() }
+    }
+
+    override fun onKeyDown(k: Int, e: KeyEvent): Boolean {
+        if (side.visibility == View.VISIBLE) {
+            if (k == KeyEvent.KEYCODE_BACK || k == KeyEvent.KEYCODE_DPAD_RIGHT) { showSide(false); return true }
+            return super.onKeyDown(k, e)
+        }
+        when (k) {
+            KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_CHANNEL_UP, KeyEvent.KEYCODE_PAGE_UP -> tune(at + 1)
+            KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_CHANNEL_DOWN, KeyEvent.KEYCODE_PAGE_DOWN -> tune(at - 1)
+            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_GUIDE,
+            KeyEvent.KEYCODE_MENU -> showSide(true)
+            KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_INFO -> showInfo()
+            KeyEvent.KEYCODE_LAST_CHANNEL -> if (before >= 0) tune(before)
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_MEDIA_PAUSE, KeyEvent.KEYCODE_MEDIA_PLAY ->
+                player?.let { if (it.isPlaying && k != KeyEvent.KEYCODE_MEDIA_PLAY) it.pause() else { it.seekToDefaultPosition(); it.play() } }
+            in KeyEvent.KEYCODE_0..KeyEvent.KEYCODE_9, in KeyEvent.KEYCODE_NUMPAD_0..KeyEvent.KEYCODE_NUMPAD_9 -> {
+                if (typed.length < 4) typed += if (k >= KeyEvent.KEYCODE_NUMPAD_0) k - KeyEvent.KEYCODE_NUMPAD_0 else k - KeyEvent.KEYCODE_0
+                digits.text = typed; digits.visibility = View.VISIBLE
+                main.removeCallbacks(jump); main.postDelayed(jump, 1500)
+            }
+            else -> return super.onKeyDown(k, e)
+        }
+        return true
+    }
+
+    override fun onStart() { super.onStart(); if (player == null && streams.isNotEmpty()) start() }
+
+    override fun onStop() {
+        super.onStop()
+        main.removeCallbacksAndMessages(null)
+        player?.release(); player = null                              // a TV has one or two video decoders: give them back
+    }
+
+    override fun onDestroy() { io.shutdownNow(); super.onDestroy() }
+
+    private inner class SideList : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+        override fun getItemCount() = Lineup.channels.size
+        override fun onCreateViewHolder(p: ViewGroup, t: Int) = object : RecyclerView.ViewHolder(
+            Ui.row(this@PlayActivity, 0, "", " ") {}.apply { layoutParams = RecyclerView.LayoutParams(-1, -2) }) {}
+        override fun onBindViewHolder(h: RecyclerView.ViewHolder, i: Int) {
+            val row = h.itemView as LinearLayout
+            val c = Lineup.channels[i].first()
+            (row.getChildAt(0) as TextView).text = "${(i + 1).toString().padStart(3, '\u2007')}   ${c.name}"   // figure spaces: the names line up
+            (row.getChildAt(1) as TextView).text = c.quality
+            row.isActivated = i == at
+            row.alpha = if (Lineup.channels[i].all { Store.alive(this@PlayActivity, it.url) == false }) 0.5f else 1f
+            row.setOnClickListener { showSide(false); if (i != at) tune(i) }
+        }
+    }
+
+    companion object {
+        private val PROGRESSIVE = Regex("""\.(mp4|ts|mkv|webm|mp3|aac|flv)$""", RegexOption.IGNORE_CASE)
+    }
+}
