@@ -37,7 +37,6 @@ class LibraryActivity : ComponentActivity() {
     private lateinit var server: GameServer
     private lateinit var root: FrameLayout
     private var overlay: View? = null
-    private lateinit var backdrop: android.widget.ImageView
     private val art = java.util.WeakHashMap<View, Bitmap>()           // a tile's picture, for the backdrop
     private val artById = HashMap<String, Bitmap>()                   // the pictures by game id, for the pins
 
@@ -233,9 +232,6 @@ class LibraryActivity : ComponentActivity() {
             }, FrameLayout.LayoutParams(-1, -1))
             return
         }
-        backdrop = android.widget.ImageView(this).apply { scaleType = android.widget.ImageView.ScaleType.FIT_XY; alpha = 0f }
-        root.addView(backdrop, FrameLayout.LayoutParams(-1, -1))      // the focused game's picture, 24 px wide stretched = a blur at no cost
-        root.addView(View(this).apply { setBackgroundColor(0xCC0B0D12.toInt()) }, FrameLayout.LayoutParams(-1, -1))
         val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
         sections = box
         val col = LinearLayout(this).apply {
@@ -295,6 +291,7 @@ class LibraryActivity : ComponentActivity() {
     private fun pill(text: String, sp: Float = 16f, selected: (() -> Boolean)? = null, onClick: () -> Unit): TextView = TextView(this).apply {
         this.text = text; textSize = sp; gravity = Gravity.CENTER; isFocusable = true; isClickable = true; maxLines = 1
         setPadding(dp(16), dp(7), dp(16), dp(7))
+        minWidth = Math.ceil(paint.measureText(text).toDouble()).toInt() + dp(36)     // wraps its words; the measure alone came a pixel short in a scroller
         fun d(c: Int) = GradientDrawable().apply { setColor(c); cornerRadius = dp(30).toFloat() }
         background = StateListDrawable().apply {
             addState(intArrayOf(android.R.attr.state_selected), d(0xF2FFFFFF.toInt()))
@@ -423,12 +420,18 @@ class LibraryActivity : ComponentActivity() {
 
     private fun pinGame(i: Item) {
         val ok = Pins.pinGame(this, i.id, i.name, artById[i.id], i.color)
-        android.widget.Toast.makeText(this, getString(if (ok) R.string.pin_sent else R.string.pin_no), android.widget.Toast.LENGTH_LONG).show()
+        pinSaid(ok) { Pins.gameRefused(this, i.id) }
     }
 
     private fun pinGroup(g: Shelf.Group, items: List<Item>) {
         val ok = Pins.pinFolder(this, g.id, g.name, items.mapNotNull { artById[it.id] })
-        android.widget.Toast.makeText(this, getString(if (ok) R.string.pin_sent else R.string.pin_no), android.widget.Toast.LENGTH_LONG).show()
+        pinSaid(ok) { Pins.folderRefused(this, g.id) }
+    }
+
+    /** The launcher cannot pin: say so. It can: look again after a moment, and when it took none (TV Home's dock is full) say that. */
+    private fun pinSaid(ok: Boolean, refused: () -> Boolean) {
+        if (!ok) { android.widget.Toast.makeText(this, getString(R.string.pin_no), android.widget.Toast.LENGTH_LONG).show(); return }
+        root.postDelayed({ if (!isDestroyed && refused()) android.widget.Toast.makeText(this, getString(R.string.pin_full), android.widget.Toast.LENGTH_LONG).show() }, 1800)
     }
 
     /** A card over the library: a title and buttons; Back / Close leaves it ([dispatchKeyEvent]). */
@@ -603,7 +606,7 @@ class LibraryActivity : ComponentActivity() {
         val below = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; alpha = 0f; addView(nameV, LinearLayout.LayoutParams(-1, -2)) }
         // under the scaled card, inside the row gap: it adds no height, so rows keep their rhythm
         outer.addView(below, FrameLayout.LayoutParams(w + dp(24), dp(60)).apply { leftMargin = -dp(12); topMargin = h + (h * (GROW - 1f) / 2f).toInt() + o + dp(3) })
-        outer.layoutParams = GridLayout.LayoutParams().apply { width = w; height = h; setMargins(dp(12), dp(8), dp(12), dp(66)) }
+        outer.layoutParams = GridLayout.LayoutParams().apply { width = w; height = h; setMargins(dp(12), dp(8), dp(12), dp(58)) }
         refs[outer] = Ref(card, face, ring, shine, content, below, nameV)
         outer.setOnFocusChangeListener { v, on -> focusTile(v, on) }
         return outer
@@ -630,12 +633,14 @@ class LibraryActivity : ComponentActivity() {
         ref.nameV.visibility = View.GONE                                     // shown once a picture covers the face: the face names itself until then
         i.src?.let { src ->
             Thumbs.load(this, src) { bmp, _ ->
-                val img = android.widget.ImageView(this).apply { scaleType = android.widget.ImageView.ScaleType.FIT_XY; setImageBitmap(bmp) }
-                ref.face.addView(img, 1, FrameLayout.LayoutParams(-1, -1))     // over the designed face, under the shine
+                val inner = trimSides(bmp)                                       // a 4:3 box art comes with dark side bars: its own blur fills them
+                if (inner != null) {
+                    ref.face.addView(android.widget.ImageView(this).apply { scaleType = android.widget.ImageView.ScaleType.FIT_XY; setImageBitmap(Bitmap.createScaledBitmap(inner, 24, 14, true)); setColorFilter(0xFF707070.toInt(), android.graphics.PorterDuff.Mode.MULTIPLY) }, 1, FrameLayout.LayoutParams(-1, -1))
+                    ref.face.addView(android.widget.ImageView(this).apply { scaleType = android.widget.ImageView.ScaleType.FIT_CENTER; setImageBitmap(inner) }, 2, FrameLayout.LayoutParams(-1, -1))
+                } else ref.face.addView(android.widget.ImageView(this).apply { scaleType = android.widget.ImageView.ScaleType.FIT_XY; setImageBitmap(bmp) }, 1, FrameLayout.LayoutParams(-1, -1))     // over the designed face, under the shine
                 (ref.content as View).visibility = View.GONE
                 ref.nameV.visibility = View.VISIBLE
                 art[outer] = bmp; artById[i.id] = bmp
-                if (outer.isFocused) setBackdrop(outer)
             }
         }
         val key = "$section|${i.id}"
@@ -645,6 +650,16 @@ class LibraryActivity : ComponentActivity() {
         else outer.setOnClickListener { i.play?.invoke() }
         outer.setOnLongClickListener { menu(i); true }
         return outer
+    }
+
+    /** The picture without its dark side bars (Thumbs' backdrop colour), or null when it has none. */
+    private fun trimSides(b: Bitmap): Bitmap? {
+        fun bar(x: Int): Boolean = (1..15).all { val p = b.getPixel(x, b.height * it / 16); Math.abs(Color.red(p) - 0x10) < 8 && Math.abs(Color.green(p) - 0x13) < 8 && Math.abs(Color.blue(p) - 0x1A) < 8 }
+        var l = 0; while (l < b.width / 3 && bar(l)) l++
+        var r = 0; while (r < b.width / 3 && bar(b.width - 1 - r)) r++
+        if (l < b.width / 25 && r < b.width / 25) return null
+        val m = minOf(l, r)
+        return Bitmap.createBitmap(b, m, 0, b.width - 2 * m, b.height)
     }
 
     /** "2 players · Sports · NES". */
@@ -671,7 +686,7 @@ class LibraryActivity : ComponentActivity() {
         val r = refs[v] ?: return
         val lift = dp(14).toFloat()
         r.card.animate().cancel(); r.ring.animate().cancel(); r.below.animate().cancel(); r.content.animate().cancel(); r.shine.animate().cancel()
-        if (on) { lastFocus = v; focusedKey = v.getTag(R.id.tile_key) as? String; setBackdrop(v); centreFocused(v) }
+        if (on) { lastFocus = v; focusedKey = v.getTag(R.id.tile_key) as? String; centreFocused(v) }
         if (!animOn) {
             r.card.scaleX = 1f; r.card.scaleY = 1f; r.card.translationZ = 0f; r.content.scaleX = 1f; r.content.scaleY = 1f
             r.ring.alpha = if (on) 1f else 0f; r.below.alpha = if (on) 1f else 0f; r.shine.alpha = 0f
@@ -719,14 +734,6 @@ class LibraryActivity : ComponentActivity() {
                 start()
             }
         }
-    }
-
-    private fun setBackdrop(v: View) {
-        if (!::backdrop.isInitialized) return
-        val b = art[v]
-        if (b == null) { backdrop.animate().alpha(0f).setDuration(250).start(); return }
-        backdrop.setImageBitmap(Bitmap.createScaledBitmap(b, 24, 14, true))
-        backdrop.animate().alpha(1f).setDuration(350).start()
     }
 
     private fun showOverlay() {

@@ -96,4 +96,5 @@
     <string name="yes_delete">Delete</string>
     <string name="ok">OK</string>
     <string name="meta_n">%1$d players</string>
+    <string name="pin_full">Dock is full (6): remove one item, then pin again</string>
 </resources>

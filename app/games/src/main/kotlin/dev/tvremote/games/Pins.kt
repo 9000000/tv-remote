@@ -40,6 +40,12 @@ object Pins {
     fun pinFolder(c: Context, id: String, name: String, arts: List<Bitmap>): Boolean =
         pin(c, "f:$id", name, Intent(Intent.ACTION_VIEW, folderLink(id)).setClass(c, LibraryActivity::class.java), card(c, name, 0xFF334155.toInt(), arts.take(4)))
 
+    /** TV Home takes a pin at once or refuses it (its dock is full); the system keeps only the accepted ones. True when [sid] is not pinned a moment after asking. */
+    fun gameRefused(c: Context, id: String) = !pinned(c, "g:$id")
+    fun folderRefused(c: Context, id: String) = !pinned(c, "f:$id")
+    private fun pinned(c: Context, sid: String): Boolean =
+        try { c.getSystemService(ShortcutManager::class.java)?.pinnedShortcuts?.any { it.id == sid } == true } catch (e: Exception) { true }
+
     private fun pin(c: Context, sid: String, name: String, intent: Intent, bmp: Bitmap): Boolean {
         if (!can(c)) return false
         val sm = c.getSystemService(ShortcutManager::class.java) ?: return false
