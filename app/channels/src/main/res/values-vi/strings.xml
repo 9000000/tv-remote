@@ -9,6 +9,7 @@
     <string name="offline">Không có mạng. Kiểm tra mạng của TV rồi thử lại.</string>
     <string name="none_here">Nước này chưa có kênh nào.</string>
     <string name="no_favs">Chưa có kênh yêu thích. Giữ OK (hoặc bấm Menu) trên một kênh để thêm.</string>
+    <string name="country_none">Không tìm thấy</string>
     <string name="no_match">Không có kênh nào khớp.</string>
     <string name="retry">Thử lại</string>
     <string name="add_fav">Thêm vào yêu thích</string>

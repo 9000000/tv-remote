@@ -10,6 +10,7 @@
     <string name="offline">No internet. Check the TV\'s network, then try again.</string>
     <string name="none_here">No channels for this country yet.</string>
     <string name="no_favs">No favourites yet. Hold OK (or press Menu) on a channel to add one.</string>
+    <string name="country_none">No country found</string>
     <string name="no_match">No channel matches.</string>
     <string name="retry">Try again</string>
     <string name="add_fav">Add to favourites</string>

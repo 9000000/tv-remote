@@ -435,15 +435,23 @@ class BrowseActivity : Activity() {
             val p = Ui.dp(this@BrowseActivity, 14).toInt(); setPadding(p, p, p, p)
             background = Ui.round(0xF21B2028.toInt(), Ui.dp(this@BrowseActivity, 20), 1, 0x40FFFFFF)
         }
-        val q = EditText(this).apply {
+        var preBack: () -> Boolean = { false }
+        var swallowUp = false                                      // the Back that left the field must not close the modal on its key-up
+        val q = object : EditText(this) {                         // Back while the keyboard is up goes to the keyboard first: caught here, before it
+            override fun onKeyPreIme(k: Int, e: KeyEvent) = if (k == KeyEvent.KEYCODE_BACK && e.action == KeyEvent.ACTION_DOWN && preBack()) true else super.onKeyPreIme(k, e)
+        }.apply {
             hint = getString(R.string.country); setHintTextColor(Ui.DIM); setTextColor(Ui.TEXT); isSingleLine = true; textSize = 15f
-            imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI
+            imeOptions = EditorInfo.IME_ACTION_SEARCH or EditorInfo.IME_FLAG_NO_EXTRACT_UI
             background = Ui.states(this@BrowseActivity, 0x14FFFFFF, Ui.dp(this@BrowseActivity, 18))
             val p = Ui.dp(this@BrowseActivity, 14).toInt(); setPadding(p, p / 2, p, p / 2)
         }
         box.addView(q, LinearLayout.LayoutParams(-1, Ui.dp(this, 42).toInt()).apply { bottomMargin = Ui.dp(this@BrowseActivity, 8).toInt() })
         val list = RecyclerView(this).apply { layoutManager = LinearLayoutManager(this@BrowseActivity) }
-        box.addView(list, LinearLayout.LayoutParams(-1, (resources.displayMetrics.heightPixels * 0.62).toInt()))
+        val none = Ui.text(this, getString(R.string.country_none), 17f, Ui.DIM).apply { gravity = Gravity.CENTER; visibility = View.GONE }
+        val lh = (resources.displayMetrics.heightPixels * 0.62).toInt()
+        box.addView(FrameLayout(this).apply {
+            addView(list, FrameLayout.LayoutParams(-1, -1)); addView(none, FrameLayout.LayoutParams(-1, -1))
+        }, LinearLayout.LayoutParams(-1, lh))
         dlg.setContentView(box, ViewGroup.LayoutParams(Ui.dp(this, 420).toInt(), -2))
         io.execute {
             val every = Catalog.countries(this)
@@ -462,11 +470,36 @@ class BrowseActivity : Activity() {
                     }
                 }
                 list.adapter = ad
+                // Back / the keyboard's action key leave the field for the results (the selected country, else the first); Down and Up cross between them
+                val imm = getSystemService(android.view.inputmethod.InputMethodManager::class.java)
+                val toList = fun(): Boolean {
+                    if (now.isEmpty()) return false
+                    val at = now.indexOfFirst { it.code == cc }.coerceAtLeast(0)
+                    list.scrollToPosition(at)
+                    list.post { (list.findViewHolderForAdapterPosition(at)?.itemView ?: list.getChildAt(0))?.requestFocus() }
+                    return true
+                }
+                q.setOnEditorActionListener { _, _, _ -> imm.hideSoftInputFromWindow(q.windowToken, 0); toList(); true }
+                preBack = { if (q.text.isNotEmpty() && now.isNotEmpty()) { swallowUp = true; imm.hideSoftInputFromWindow(q.windowToken, 0); toList() } else false }
+                dlg.setOnKeyListener { _, k, e ->
+                    val down = e.action == KeyEvent.ACTION_DOWN
+                    if (k == KeyEvent.KEYCODE_BACK && !down && swallowUp) { swallowUp = false; return@setOnKeyListener true }
+                    when {
+                        k == KeyEvent.KEYCODE_BACK && q.hasFocus() && q.text.isNotEmpty() && now.isNotEmpty() -> {
+                            if (down) { imm.hideSoftInputFromWindow(q.windowToken, 0); toList() }; true }
+                        k == KeyEvent.KEYCODE_DPAD_DOWN && q.hasFocus() && now.isNotEmpty() -> { if (down) toList(); true }
+                        k == KeyEvent.KEYCODE_DPAD_UP && down && list.hasFocus() &&
+                            (list.layoutManager as LinearLayoutManager).findFirstCompletelyVisibleItemPosition() <= 0 &&
+                            list.findContainingViewHolder(dlg.currentFocus ?: q)?.bindingAdapterPosition == 0 -> { q.requestFocus(); true }
+                        else -> false
+                    }
+                }
                 q.addTextChangedListener(object : TextWatcher {
                     override fun afterTextChanged(s: Editable?) {
                         val f = fold(s.toString())
                         now = if (f.isEmpty()) every.sortedBy { it.code != cc } else every.filter { fold(it.name).contains(f) || it.code == f }
                         ad.notifyDataSetChanged()
+                        none.visibility = if (now.isEmpty()) View.VISIBLE else View.GONE
                     }
                     override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
                     override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
