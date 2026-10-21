@@ -21,7 +21,7 @@ function notifyPrefs() {
 function notifySave(p) { try { localStorage.setItem('notify', JSON.stringify({ corner: p.corner, seconds: p.seconds })); } catch {} }
 
 async function notifyDialog() {
-  if (needAdb()) return;
+  if (await needAdbSoon()) return;
   if (!await setupFor('notify')) return;                              // TV Setup draws the card (SetupNeed "notify"): asked to update first
   const p = notifyPrefs();
   const title = el('input', { placeholder: T('notify.title_optional'), maxLength: 60, spellcheck: false, 'aria-label': T('notify.title') });

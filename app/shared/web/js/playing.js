@@ -58,14 +58,14 @@ plPoll();
 // The screen off while the sound, the picture and the keys go on (ScreenOff.kt); pressed again, or the TV's own remote, turns it on.
 async function screenOff() {
   if (NATIVE()) { if (await api('/api/screen/off', {})) toast(T('playing.screen_off_any')); return; }   // LG: by its remote link, any key turns it on
-  if (needAdb()) return;
+  if (await needAdbSoon()) return;
   const s = await api('/api/screen/state', null, true);
   if (s && s.off) { if (await api('/api/screen/on', {})) toast(T('playing.screen_on')); return; }
   if (await api('/api/screen/off', {})) toast(T('playing.screen_off'));
 }
 
 async function clipDialog() {
-  if (needAdb()) return;
+  if (await needAdbSoon()) return;
   const got = await api('/api/clip'); if (!got) return;
   const box = el('textarea', { value: got.text || '', placeholder: T('playing.clip_empty'), spellcheck: false });
   const send = async (paste) => {

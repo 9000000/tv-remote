@@ -4,7 +4,7 @@ const dimWords = () => ({ dark: T('dim.dark'), amber: T('dim.amber'), yellow: T(
 let dimSending = 0;
 
 async function dimOpen() {
-  if (needAdb() || !await setupFor('dim')) return;
+  if (await needAdbSoon() || !await setupFor('dim')) return;
   const now = await api('/api/dim', null, true); if (!now) return;
   let s = { on: now.on, color: now.color, pct: now.pct };
   const send = () => { clearTimeout(dimSending); dimSending = setTimeout(() => api('/api/dim', s, true), 120); };   // a slider moved: its last place

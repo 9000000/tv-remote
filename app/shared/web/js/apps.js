@@ -98,7 +98,7 @@ const lazyMeta = new IntersectionObserver((entries) => entries.forEach((e) => { 
 
 // Open on the TV → Open an installed app: the TV's apps as tiles, with a search
 async function openInstalled() {
-  if (!NATIVE() && needAdb()) return;                                 // an Android TV lists its apps over ADB; an LG / Samsung by its link
+  if (!NATIVE() && await needAdbSoon()) return;                       // an Android TV lists its apps over ADB; an LG / Samsung by its link
   if (!quickApps.length) { const r = await api('/api/apps'); if (!r) return; seedMeta(r.apps); quickApps = r.apps.map((a) => a.pkg); }
   const p = await chooseApp(T('rkey.open_apps'), quickApps);
   if (p) openOnTv(p, appName(p));

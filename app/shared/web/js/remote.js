@@ -51,6 +51,15 @@ async function openOnTv(link, label) {
 // ---------- "Thêm phím", third row: Mở trên TV, Hẹn giờ tắt, Cảnh, Vẽ lên TV; their menus' entries are in remote.json ----------
 // The same menus as the phone app's remote (RemoteScreen.kt, PhoneRemote.kt); the entries live in remote.json, what they do here in REMOTE_DO.
 const needAdb = () => { if (ADB.state === 'ready') return false; toast(NATIVE() ? kindWhy() : T('remote.this_needs_adb')); return true; };
+// a dialog opened from the remote right after the page (the phone's Manage screen) came up: ADB is often still connecting
+// ('unknown'), so wait for it (core.js polls fast while connecting) before saying it is off
+const needAdbSoon = async () => {
+  if (ADB.state === 'unknown' || !ADB.state) {
+    toast(T('core.adb_connecting'));
+    for (let i = 0; i < 40 && (ADB.state === 'unknown' || !ADB.state); i++) await new Promise((r) => setTimeout(r, 200));
+  }
+  return needAdb();
+};
 const storePage = (id) => openOnTv('https://play.google.com/store/apps/details?id=' + id, 'CH Play');
 // the TV's Play Store takes a search only as market://search (a play.google.com search link ends in a browser error)
 const storeSearch = (q) => openOnTv('market://search?c=apps&q=' + encodeURIComponent(q), 'CH Play');
@@ -82,7 +91,7 @@ async function timerCustom() {
 const quickOpen = () => menuDlg(T('remote.open_on_tv'), -1, remoteMenu('open'));
 async function timerMenu() {
   if (NATIVE()) { menuDlg(T('remote.tv_screen'), -1, remoteMenu('timer')); return; }   // LG: the screen off only; the timer lives in TV Setup
-  if (needAdb() || !await setupFor('rules')) return;                  // TV Setup runs the timer on the TV (SetupNeed "rules")
+  if (await needAdbSoon() || !await setupFor('rules')) return;                  // TV Setup runs the timer on the TV (SetupNeed "rules")
   const r = await loadRules(null, true); if (!r) return;
   const at = r.sleep_at || 0, hm = (m) => m < 60 ? T('remote.min_n', { n: m }) : m % 60 ? T('remote.h_min', { h: Math.floor(m / 60), m: m % 60 }) : T('remote.h_n', { n: m / 60 });
   const lengths = (ms) => ms.map((m) => [T('remote.off_in', { when: hm(m) }), '', () => setSleep(m)]);

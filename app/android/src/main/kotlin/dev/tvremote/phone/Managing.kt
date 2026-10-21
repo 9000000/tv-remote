@@ -209,7 +209,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
         webPage.serve(r.path)?.let { return it }
         if (r.path == "/api/state" || r.path == "/api/about")      // the page only needs to know it may show itself, and for which TV
             return HttpServer.Response.json(JSONObject().put("core", "phone").put("host", forHost ?: "").put("name", a.name(forHost ?: "")).put("connected", true).put("is_on", true).put("paired", true)
-                .put("adb", JSONObject().put("state", manage?.adbState() ?: "closed")).put("app_name", "TV Remote").put("version", a.version()).put("released", a.released()))
+                .put("adb", JSONObject().put("state", manage?.adbState() ?: "unknown")).put("app_name", "TV Remote").put("version", a.version()).put("released", a.released()))
         if (r.path == "/api/scenes") {                                 // this phone's scenes: the widget, tiles and shortcuts use them too
             if (r.method == "POST") SceneStore.save(a, r.json().optJSONArray("scenes") ?: JSONArray())
             if (r.query["download"] != null) return Scenes.backup(SceneStore.all(a))   // "Export": lands in the phone's Download folder

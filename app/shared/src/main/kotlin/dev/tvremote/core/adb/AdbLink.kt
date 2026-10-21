@@ -82,7 +82,9 @@ class AdbLink(val keyDir: File, val host: String) {
         // one dial at a time, and a TV that is off is asked again every 10 s, not on every poll of every open page
         if (d == null && (!failed || System.currentTimeMillis() - lastTry > 10000) && spawning.compareAndSet(false, true))
             Thread({ try { get() } catch (ignored: Exception) { } finally { spawning.set(false) } }, "adb-link").apply { isDaemon = true }.start()
-        return if (waiting) "unauthorized" else if (failed) "closed" else "unknown"
+        // a dial under way after a failure is "unknown", not "closed": the link dropped while the phone slept (or a VPN came up),
+        // and a page opened then said "needs ADB" a second before it was back
+        return if (waiting) "unauthorized" else if (failed && d == null && !spawning.get()) "closed" else "unknown"
     }
 
     /** "Try again": a fresh connection, whatever the old one thought of itself. */

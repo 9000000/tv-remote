@@ -95,7 +95,7 @@ async function homeUpdate() {
 }
 
 async function homeOpen() {
-  if (needAdb()) return;
+  if (await needAdbSoon()) return;
   let r = await api('/api/home?thumbs=1'); if (!r) return;
   const keepThumbs = (n) => { for (const [id, b] of Object.entries(n.thumbs || {})) { const p = (n.photos || []).find((x) => x.id === id); if (p) homeThumbs[id + ':' + p.v] = b; } };
   keepThumbs(r);
