@@ -278,7 +278,7 @@ class HomeActivity : Activity() {
         val rowH = if (rows > 0) grid.getChildAt(0).height else 0
         if (noWidgets && rows > 0 && rowH == 0) return                  // new rows, not laid out yet: the next layout asks again
         val want = if (!noWidgets) dp(36) else if (rows < 2 || rowH == 0 || scroll.height == 0) dp(48)
-                   else maxOf(dp(48), scroll.height - (rowH + dp(20) + rowH / 2) - head.bottom)   // row 1, the gap, half of row 2
+                   else maxOf(dp(48), scroll.height - (rowH + dp(GRID_GAP) + rowH / 2) - head.bottom)   // row 1, the gap, half of row 2
         if (Math.abs(want - lp.topMargin) > 1) { lp.topMargin = want; grid.requestLayout() }
     }
 
@@ -427,7 +427,7 @@ class HomeActivity : Activity() {
         grid.removeAllViews()
         val rest = apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }
         val cols = COLS
-        val gap = dp(20)
+        val gap = dp(GRID_GAP)
         val w = (width - (cols - 1) * gap) / cols                     // one size for every tile: the favourites are only the first ones
         val cells: MutableList<View> = (favs + rest).map { tile(it, w, made) }.toMutableList()
         val hiddenHere = apps.count { it.pkg in hidden }
@@ -813,11 +813,12 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
         name.apply {
             text = if (banner != null) label else ""                  // a tile without a banner already shows its name inside
             textSize = 13f; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER
-            alpha = 0f; setPadding(dp(8), dp(18), dp(8), dp(6)); setShadowLayer(dp(4).toFloat(), 0f, 0f, 0x99000000.toInt())
-            // on the picture's bottom edge over a soft shade: the name takes no room under the tile, so rows sit as far apart as tiles do
-            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x00000000, 0xB0000000.toInt()))
+            alpha = 0f; setPadding(0, 0, 0, 0); setShadowLayer(dp(5).toFloat(), 0f, dp(1).toFloat(), 0xCC000000.toInt())
         }
-        if (banner != null) face.addView(name, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
+        // under the scaled card, inside the gap between rows (the gap is sized for it): it adds no height to the row, so rows sit
+        // as far apart as tiles are side by side, and it never reaches the picture or the next row
+        val below = (h * (GROW - 1f) / 2f).toInt() + o + dp(3)
+        addView(name, LayoutParams(w, dp(18)).apply { topMargin = below; bottomMargin = -(below + dp(18)) })   // fixed height: the row stays the picture's
         background = ColorDrawable(Color.TRANSPARENT)
     }
 
@@ -894,6 +895,7 @@ private fun ringDrawable(r: Float, dp: (Number) -> Int): Drawable {
         setLayerInset(1, o + dp(1), o + dp(1), o + dp(1), o + dp(1))
     }
 }
+const val GRID_GAP = 32                                               // dp between tiles, across and down: room under a focused tile for its name
 const val RING_OUT = 3                                                // dp the ring reaches past the face
 const val RING_ACCENT = 0xFF2F7DF6.toInt()                          // 3.7:1 on white; with the dark edge it shows on any banner
 
