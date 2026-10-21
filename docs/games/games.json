@@ -137,6 +137,45 @@
       "genre": "quiz",
       "url": "https://tvremote.pages.dev/games/web/quiz/",
       "on": true
+    },
+    {
+      "id": "balloons",
+      "name": {
+        "vi": "Balloon Pop",
+        "en": "Balloon Pop"
+      },
+      "img": "img/balloons.jpg",
+      "pad": "web",
+      "players": 4,
+      "genre": "shooter",
+      "url": "https://tvremote.pages.dev/games/web/balloons/",
+      "on": true
+    },
+    {
+      "id": "slice",
+      "name": {
+        "vi": "Fruit Slice",
+        "en": "Fruit Slice"
+      },
+      "img": "img/slice.jpg",
+      "pad": "web",
+      "players": 4,
+      "genre": "arcade",
+      "url": "https://tvremote.pages.dev/games/web/slice/",
+      "on": true
+    },
+    {
+      "id": "moles",
+      "name": {
+        "vi": "Whack-a-Mole",
+        "en": "Whack-a-Mole"
+      },
+      "img": "img/moles.jpg",
+      "pad": "web",
+      "players": 4,
+      "genre": "arcade",
+      "url": "https://tvremote.pages.dev/games/web/moles/",
+      "on": true
     }
   ],
   "homebrew": [
