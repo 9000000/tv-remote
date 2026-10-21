@@ -173,6 +173,9 @@ class HomeActivity : Activity() {
         // ONE grid: the favourites are its first tiles, then every other app; no panel, the wallpaper stays whole
         grid = Flat(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
         col.addView(grid, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(40) })
+        // no widgets: the grid starts low, so the first row is whole and the second is cut by the screen's edge; the wallpaper above
+        grid.viewTreeObserver.addOnGlobalLayoutListener { peek() }  // after every layout: rows came or went, a card opened
+        scroll.addOnLayoutChangeListener { _, _, t, _, b, _, ot, _, ob -> if (b - t != ob - ot) peek() }
 
         setContentView(root)
         Store.onChange = { conf = Store.get(this); if (conf.optString("lang") != Lang.shown) relang() else { show(); wallTimer(); bingCheck() } }
@@ -266,12 +269,27 @@ class HomeActivity : Activity() {
 
     private var cpuAgain = false
 
+    private var noWidgets = false
+
+    /** Without widgets: the grid's top margin so that row 1 is whole and row 2 shows half (1.5 rows), from the real screen and tile heights. */
+    private fun peek() {
+        val lp = grid.layoutParams as LinearLayout.LayoutParams
+        val rows = grid.childCount
+        val rowH = if (rows > 0) grid.getChildAt(0).height else 0
+        if (noWidgets && rows > 0 && rowH == 0) return                  // new rows, not laid out yet: the next layout asks again
+        val want = if (!noWidgets) dp(36) else if (rows < 2 || rowH == 0 || scroll.height == 0) dp(48)
+                   else maxOf(dp(48), scroll.height - rowH * 3 / 2 - head.bottom)
+        if (Math.abs(want - lp.topMargin) > 1) { lp.topMargin = want; grid.requestLayout() }
+    }
+
     /** The cards' numbers, read off the main thread; none at all while they are off. */
     private fun widgetsRead() {
         val want = Store.list(this, "widgets")
         val conf = Store.get(this); val note = conf.optString("note"); val sizes = conf.optJSONObject("wsize") ?: JSONObject()
         val none = want.isEmpty() && note.isEmpty()
+        noWidgets = none
         (grid.layoutParams as LinearLayout.LayoutParams).topMargin = dp(if (none) 48 else 36)
+        if (none) peek()
         if (none) { widgets.visibility = View.GONE; return }
         bg.execute {
             val f = widgets.read(want)
