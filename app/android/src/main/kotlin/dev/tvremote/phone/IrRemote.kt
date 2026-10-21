@@ -24,6 +24,7 @@ import java.util.concurrent.Executors
 private const val TAG = "TvrIr"
 private const val PROFILE = "ir:profile"                           // the chosen profile's id; "ir:profile:<ip>" for a saved TV
 private const val TARGET = "ir:tv"                                  // the saved TV the codes are for, "" for none
+private const val CUSTOM = "ir:custom"                              // the sets learned from a box: [{"id", "name", "keys"}]
 private const val SAVED = "ir:saved"                                // the remotes kept by name: [{"name", "id"}], for the list (irList)
 private val REPEAT = setOf("UP", "DOWN", "LEFT", "RIGHT", "VOL_UP", "VOL_DOWN", "CH_UP", "CH_DOWN")   // held: the code goes on being sent
 
@@ -36,12 +37,34 @@ private object IrState {
     @Volatile var stop = false
     @Volatile var link: dev.tvremote.core.adb.AdbLink? = null
     var auto = ""                                                   // the TV Dò tự động listens on
+    var custom: List<IrProfile>? = null                             // the sets learned from a box (IrLearn.kt), kept in CUSTOM
+    @Volatile var skip = false                                      // Học phím: leave this key out
+    @Volatile var finish = false                                    // Học phím: enough keys, build the set
     val io = Executors.newSingleThreadExecutor { r -> Thread(r, "ir").apply { isDaemon = true } }
 }
 
-internal fun MainActivity.irCatalog(): List<IrProfile> = IrState.catalog ?: try {
+/** The learned sets first, so Dò tự động tries the box's own remote before the thousands of others. */
+internal fun MainActivity.irCatalog(): List<IrProfile> = irCustom() + (IrState.catalog ?: try {
     IrCodes.merge(IrCodes.parse(assets.open("ir/codes.json").bufferedReader().use { it.readText() }))
-} catch (e: Exception) { emptyList() }.also { IrState.catalog = it }
+} catch (e: Exception) { emptyList() }.also { IrState.catalog = it })
+
+private fun MainActivity.irCustom(): List<IrProfile> = IrState.custom ?: try {
+    val a = org.json.JSONArray(pref(CUSTOM).ifEmpty { "[]" })
+    (0 until a.length()).map { a.getJSONObject(it).let { o ->
+        val k = o.getJSONObject("keys")
+        IrProfile(o.getString("id"), o.getString("name"), o.getString("name"), k.keys().asSequence().associateWith { n -> k.getString(n) })
+    } }
+} catch (e: Exception) { emptyList() }.also { IrState.custom = it }
+
+/** Keeps a set learned from a box under [id] (one per TV: learning again replaces it). */
+private fun MainActivity.irCustomKeep(id: String, name: String, keys: Map<String, String>): IrProfile {
+    val all = irCustom().filter { it.id != id } + IrProfile(id, name, name, keys)
+    val a = org.json.JSONArray()
+    for (p in all) a.put(org.json.JSONObject().put("id", p.id).put("name", p.brand).put("keys", org.json.JSONObject(p.keys)))
+    prefs.edit().putString(CUSTOM, a.toString()).apply()
+    IrState.custom = all
+    return all.last()
+}
 
 private fun MainActivity.irManager(): ConsumerIrManager? = try { getSystemService(Context.CONSUMER_IR_SERVICE) as? ConsumerIrManager } catch (e: Exception) { null }
 
@@ -524,6 +547,13 @@ private fun MainActivity.irAuto(say: String = "", sub: String = "", found: IrPro
         hand.setInk(ACCENT_TEXT)
         hand.setOnClickListener { irStop(); irFind() }
         addView(hand, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(10) })
+        if (!running) {
+            val learn = button("@gamepad|" + T("ir.learn"), SOFT)
+            learn.setInk(ACCENT_TEXT)
+            learn.setOnClickListener { irLearnRun() }
+            addView(learn, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(10) })
+            addView(note(T("ir.learn_sub")), gap(6))
+        }
     }
 }
 
@@ -565,4 +595,93 @@ private fun MainActivity.irAutoRun() {
             IrState.link?.close(); IrState.link = null
         }
     }, "ir-auto").start()
+}
+
+// ---------------------------------------------------------------- Học phím: the box's own remote, read key by key through getevent (IrLearn.kt)
+
+/** [key] is the one asked for now (-1: none yet), [got] how many are in; [fail] a line when the last try gave nothing usable. */
+private fun MainActivity.irLearn(say: String, sub: String = "", got: Int = 0, busy: Boolean = true) {
+    IrState.onFind = true
+    IrState.page = "auto"
+    irPage(T("ir.find"), { irStop(); irAuto() }) {
+        val card = col()
+        card.background = box(CARD, 14)
+        card.setPadding(dp(16), dp(14), dp(16), dp(14))
+        val big = label(say, 20, TEXT)
+        big.typeface = Typeface.DEFAULT_BOLD
+        card.addView(big)
+        if (sub.isNotEmpty()) card.addView(label(sub, 14, MUTED), gap(4))
+        if (busy) card.addView(android.widget.ProgressBar(this@irLearn, null, android.R.attr.progressBarStyleHorizontal).apply {
+            isIndeterminate = true; progressTintList = android.content.res.ColorStateList.valueOf(ACCENT) }, gap(8))
+        addView(card, gap(14))
+        if (busy) {
+            addView(button(T("ir.learn_skip"), BTN).apply { setOnClickListener { IrState.skip = true } }, LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(4) })
+            if (got >= IrLearn.MIN) addView(button(T("ir.learn_done", "n" to got), ACCENT).apply { setOnClickListener { IrState.finish = true } },
+                LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(10) })
+        } else addView(button(T("ir.retry"), ACCENT).apply { setOnClickListener { irLearnRun() } }, LinearLayout.LayoutParams(-1, dp(56)).apply { topMargin = dp(4) })
+    }
+}
+
+private fun irKeyName(key: String) = when (key) {
+    "POWER" -> T("ir.key_power")
+    "HOME" -> T("ir.key_home")
+    "BACK" -> T("ir.key_back")
+    "UP" -> T("ir.key_up")
+    "DOWN" -> T("ir.key_down")
+    "LEFT" -> T("ir.key_left")
+    "RIGHT" -> T("ir.key_right")
+    "OK" -> T("ir.key_ok")
+    "MENU" -> T("ir.key_menu")
+    "VOL_UP" -> T("ir.key_vol_up")
+    "VOL_DOWN" -> T("ir.key_vol_down")
+    "MUTE" -> T("ir.key_mute")
+    else -> key
+}
+
+private fun MainActivity.irLearnRun() {
+    val ip = IrState.auto
+    val name = irTvName(ip)
+    IrState.stop = false; IrState.skip = false; IrState.finish = false
+    irLearn(T("ir.auto_connecting", "name" to name))
+    val show: (() -> Unit) -> Unit = { f -> ui.post { if (!isFinishing && IrState.page == "auto" && irHost.visibility == View.VISIBLE) f() } }
+    Thread({
+        var hear: IrHear? = null
+        try {
+            var adb: dev.tvremote.core.adb.Adb? = null
+            for (h in listOf(ip, pref("ts:$ip"), pref("lan:$ip")).filter { it.isNotEmpty() }.distinct()) {
+                if (IrState.stop) return@Thread
+                val l = dev.tvremote.core.adb.AdbLink(filesDir, h)
+                IrState.link = l
+                adb = try { l.get() } catch (e: Exception) { l.close(); null }
+                if (adb != null) break
+            }
+            if (IrState.stop) return@Thread
+            if (adb == null) { show { irLearn(T("ir.auto_noadb", "name" to name), T("ir.auto_noadb_sub"), busy = false) }; return@Thread }
+            val model = try { adb.shell("getprop ro.product.model").trim() } catch (e: Exception) { "" }.ifEmpty { name }
+            val ear = IrHear(adb).also { hear = it }
+            Thread.sleep(600)
+            val scans = LinkedHashMap<String, Long>()
+            for ((i, key) in IrLearn.KEYS.withIndex()) {
+                if (IrState.finish || IrState.stop) break
+                IrState.skip = false
+                show { irLearn(T("ir.learn_press", "key" to irKeyName(key)), T("ir.learn_step", "n" to i + 1, "total" to IrLearn.KEYS.size), scans.size) }
+                val t = irNow()
+                while (!IrState.skip && !IrState.finish && !IrState.stop && ear.lastScan <= t) Thread.sleep(40)
+                if (ear.lastScan > t && ear.scanValue >= 0) { scans[key] = ear.scanValue; Thread.sleep(500) }   // a held key repeats: let it go
+            }
+            if (IrState.stop) return@Thread
+            Log.i(TAG, "learned scancodes " + scans.entries.joinToString { it.key + "=" + java.lang.Long.toHexString(it.value) })
+            val keys = IrLearn.build(scans)
+            if (keys == null) { show { irLearn(T("ir.learn_bad"), T("ir.learn_bad_sub", "n" to IrLearn.MIN), busy = false) }; return@Thread }
+            val p = irCustomKeep("custom:$ip", model, keys)
+            irSave(p); prefs.edit().putString("$PROFILE:$ip", p.id).apply()
+            show { Toast.makeText(this, T("ir.found", "name" to p.title), Toast.LENGTH_LONG).show(); irRemote() }
+        } catch (e: Exception) {
+            Log.w(TAG, "learn", e)
+            if (!IrState.stop) show { irLearn(T("ir.auto_noadb", "name" to name), T("ir.auto_noadb_sub"), busy = false) }
+        } finally {
+            hear?.close()
+            IrState.link?.close(); IrState.link = null
+        }
+    }, "ir-learn").start()
 }
