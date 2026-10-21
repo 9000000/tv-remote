@@ -64,6 +64,11 @@ interface Remote : Closeable {
     fun switchInput(id: String): Boolean = false
     /** The screen off with the sound playing on; false when this kind cannot ("screen_off" in [Kind.caps]). */
     fun screenOff(): Boolean = false
+    /** A pointer on the TV moved by [dx], [dy] counts (Air Mouse); only the kinds with "mouse" in [Kind.caps] (LG's Magic Remote link; Android TVs use a virtual HID mouse over ADB, [dev.tvremote.core.picture.Tv.mouseOpen]). */
+    fun pointer(dx: Int, dy: Int) {}
+    /** A click at the pointer; [scroll] a wheel step (positive up). */
+    fun pointerClick() {}
+    fun pointerScroll(dy: Int) {}
     /** The keys this TV has, by Android code; null: all of them. */
     val keys: Set<Int>? get() = null
 
@@ -88,15 +93,15 @@ interface Remote : Closeable {
          * adb: everything that goes through ADB (the picture, touch, 🎧, drawing, now playing, the clipboard, the Apps / Files /
          * Health tabs, Optimize TV, TV Setup and its rules); pair_code: pairing with a code typed here; volume_set: a level, not
          * only steps; link: open a web link; store: the Play Store pages; screen_off: the screen off with the sound on; app_list:
-         * the TV's apps come from its remote link (Android TVs list them over ADB, on the Apps tab); inputs: the list of HDMI / AV
+         * the TV's apps come from its remote link (Android TVs list them over ADB, on the Apps tab); mouse: Air Mouse, the phone's motion as a pointer (LG by its link, Android TVs through ADB); inputs: the list of HDMI / AV
          * inputs and switching to one ([Inputs]; Android TVs over ADB, LG by its link; Samsung only has its source key).
          */
         fun caps(kind: String): Set<String> = when (kind) {
-            LG -> setOf("keys", "text", "apps", "app_list", "volume_set", "link", "screen_off", "wol", "scenes", "inputs")
+            LG -> setOf("keys", "text", "apps", "app_list", "volume_set", "link", "screen_off", "wol", "scenes", "inputs", "mouse")
             SAMSUNG -> setOf("keys", "text", "apps", "app_list", "wol", "scenes")
             ROKU -> setOf("keys", "text", "apps", "app_list", "wol", "scenes", "inputs")
             VIDAA -> setOf("keys", "text", "apps", "app_list", "volume_set", "wol", "scenes", "inputs", "pair_code")
-            else -> setOf("keys", "text", "apps", "volume_set", "link", "screen_off", "wol", "scenes", "adb", "pair_code", "store", "inputs")
+            else -> setOf("keys", "text", "apps", "volume_set", "link", "screen_off", "wol", "scenes", "adb", "pair_code", "store", "inputs", "mouse")
         }
 
         fun name(kind: String): String = when (kind) { LG -> "LG"; SAMSUNG -> "Samsung"; ROKU -> "Roku"; VIDAA -> "Hisense VIDAA"; else -> "Android TV" }

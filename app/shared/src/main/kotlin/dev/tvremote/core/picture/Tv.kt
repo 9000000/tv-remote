@@ -88,6 +88,11 @@ class Tv(
     }
 
     companion object {
+        private const val MOUSE_ID: Short = 1
+        /** The boot mouse: 3 buttons, relative X / Y, wheel; the report is 4 bytes (buttons, dx, dy, wheel). */
+        private val MOUSE_DESC = intArrayOf(0x05, 0x01, 0x09, 0x02, 0xA1, 0x01, 0x09, 0x01, 0xA1, 0x00, 0x05, 0x09, 0x19, 0x01, 0x29, 0x03, 0x15, 0x00, 0x25, 0x01,
+            0x95, 0x03, 0x75, 0x01, 0x81, 0x02, 0x95, 0x01, 0x75, 0x05, 0x81, 0x01, 0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 0x09, 0x38,
+            0x15, 0x81, 0x25, 0x7F, 0x75, 0x08, 0x95, 0x03, 0x81, 0x06, 0xC0, 0xC0).map { it.toByte() }.toByteArray()
         private const val VER = "5.0.1"
         private const val REMOTE = "/data/local/tmp/scrcpy-server.jar"
         /** TVs whose hardware encoder takes the picture and sends nothing back (a TCL's Realtek one): their software encoder */
@@ -594,6 +599,33 @@ class Tv(
         val v = Math.round(dy / 16 * 0x7FFF).coerceIn(-0x7FFF, 0x7FFF)
         send(ByteBuffer.allocate(21).put(3.toByte()).putInt(px).putInt(py).putShort(width.toShort()).putShort(height.toShort())
             .putShort(0).putShort(v.toShort()).putInt(0).array())
+    }
+
+    // ---- a virtual HID mouse (Air Mouse): Android draws its own pointer for it, which touch events never do ----
+    // Needs only the control socket (a keys-only session works, no picture). scrcpy v5 UHID_CREATE: type 12, id u16, vendor u16,
+    // product u16, name (u8 length), report descriptor (u16 length); UHID_INPUT: type 13, id u16, report (u16 length); UHID_DESTROY: 14, id.
+    @Volatile private var mouseOn = false
+
+    /** Makes the TV's mouse; a second call while it exists does nothing. */
+    fun mouseOpen() {
+        if (mouseOn) return
+        mouseOn = true
+        val name = "TV Remote Air Mouse".toByteArray()
+        send(ByteBuffer.allocate(10 + name.size + MOUSE_DESC.size).put(12.toByte()).putShort(MOUSE_ID).putShort(0x18d1.toShort()).putShort(0x4e42.toShort())
+            .put(name.size.toByte()).put(name).putShort(MOUSE_DESC.size.toShort()).put(MOUSE_DESC).array())
+    }
+
+    /** One report: [dx], [dy] in HID counts (-127..127 each; the pointer's speed is the TV's), [buttons] bit 0 left, 1 right, 2 middle, [wheel] -127..127 (positive up). */
+    fun mouseMove(dx: Int, dy: Int, buttons: Int = 0, wheel: Int = 0) {
+        if (!mouseOn) return
+        send(byteArrayOf(13, 0, MOUSE_ID.toByte(), 0, 4, buttons.toByte(), dx.coerceIn(-127, 127).toByte(), dy.coerceIn(-127, 127).toByte(), wheel.coerceIn(-127, 127).toByte()))
+    }
+
+    /** Takes the mouse away again (and with it the pointer). */
+    fun mouseClose() {
+        if (!mouseOn) return
+        mouseOn = false
+        send(byteArrayOf(14, 0, MOUSE_ID.toByte()))
     }
 
     // ---- the TV's clipboard ----

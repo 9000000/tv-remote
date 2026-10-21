@@ -1083,7 +1083,22 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         Sensors.gpu(live[8])?.let { o.put("gpu", it) }
         Sensors.netBytes(live[9])?.let { o.put("net", netRate(adb, it)) }
         Sensors.bluetooth(slow[4])?.let { o.put("bt", it) }
+        nightly(adb)?.let { o.put("nightly", it) }
         return o
+    }
+
+    private var nightlyAt = 0L
+    private var nightlyOf: Any? = null
+    private var nightlyIs: JSONObject? = null
+
+    /** TV Setup's last night maintenance ({day, freed, compiled, ...}, stats/nightly.json); null when there is none or this TV Setup is older. Read once in 10 minutes: it changes once a night. */
+    @Synchronized private fun nightly(adb: Adb): JSONObject? {
+        val now = System.currentTimeMillis()
+        if (nightlyOf !== adb || now - nightlyAt > 600_000) {
+            nightlyIs = try { SetupFiles.read({ adb.shell(it) }, "stats/nightly.json", 1).trim().takeIf { it.startsWith("{") }?.let { JSONObject(it) } } catch (e: Exception) { null }
+            nightlyOf = adb; nightlyAt = now
+        }
+        return nightlyIs
     }
 
     private var netLast: Triple<Any, Long, LongArray>? = null

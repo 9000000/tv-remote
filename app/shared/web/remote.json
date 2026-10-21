@@ -26,6 +26,8 @@
           "web": { "t": "rkey.tv_web" }, "why": "the web button is narrower: the bare word TV" },
         { "id": "ir", "icon": "pulse", "t": "rkey.ir", "do": "ir", "cores": ["phone"],
           "why": "the phone's own IR LED (IrRemote.kt), for this TV: a browser has none" },
+        { "id": "air", "icon": "mouse", "t": "rkey.air", "do": "air", "cores": ["phone"], "needs": ["mouse"],
+          "why": "the phone's gyroscope (AirMouse.kt): a browser's page has no such sensor on every phone, and the TV web page has no ADB" },
         { "id": "homecustom", "icon": "sliders", "t": "rkey.home_custom", "do": "homeCustom", "needs": ["adb"] }
       ]
     ],

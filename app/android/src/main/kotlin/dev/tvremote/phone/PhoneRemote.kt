@@ -54,6 +54,7 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "dim" to act { dimDialog() },
     "share" to act { shareDialog() },
     "inputs" to act { inputsMenu() },
+    "air" to act { airOpen() },
     "ir" to act { irOpen(entry ?: host) },
     "homeCustom" to act { if (!needsAdb()) managing.open(host, "tv", "homeOpen()") },   // the page's TV Home dialog: one place for it
 )

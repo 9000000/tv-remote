@@ -231,6 +231,14 @@ class Lg(private val dir: File, private val host: String, private val ports: Lis
         }
     }
 
+    // The Magic Remote's pointer on the same socket as the buttons. Sent off the caller's thread: a gyro callback must not wait on the network.
+    private fun pointerSend(m: String) = out.execute {
+        try { pointer().send(m) } catch (e: IOException) { pointer?.close(); pointer = null }   // the next move opens a fresh one
+    }
+    override fun pointer(dx: Int, dy: Int) { if (ready()) pointerSend("type:move\ndx:$dx\ndy:$dy\ndown:0\n\n") }
+    override fun pointerClick() { if (ready()) pointerSend("type:click\n\n") }
+    override fun pointerScroll(dy: Int) { if (ready()) pointerSend("type:scroll\ndx:0\ndy:${-dy}\n\n") }   // LG's dy grows downward
+
     /** LG has no held keys: a key held here is sent again every [REPEAT_MS] until let go. */
     override fun key(code: Int, direction: Int) {
         if (closed || !KEYS.containsKey(code)) return

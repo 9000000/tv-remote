@@ -186,6 +186,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     private var dnsWatch: DnsWatch? = null
     private var keepAdb: KeepAdb? = null
     private var reoptimize: Reoptimize? = null
+    private var nightly: Nightly? = null
     private var keyFix: KeyFixWatch? = null
     internal var keepAwake: KeepAwake? = null
     private var welcome: WelcomeWatch? = null
@@ -248,6 +249,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         dnsWatch = DnsWatch(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         keepAdb = KeepAdb(this).also { it.start() }
         reoptimize = Reoptimize(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
+        nightly = Nightly(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         keyFix = KeyFixWatch(this).also { it.start() }
         keepAwake = KeepAwake(this).also { it.start(); it.check() }
         welcome = WelcomeWatch(this).also { it.start() }
@@ -275,6 +277,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         dnsWatch?.stop()
         keepAdb?.stop()
         reoptimize?.stop()
+        nightly?.stop()
         keyFix?.stop()
         keepAwake?.stop()
         welcome?.stop()

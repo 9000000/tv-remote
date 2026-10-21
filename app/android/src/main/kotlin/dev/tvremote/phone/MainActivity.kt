@@ -342,7 +342,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        if (managing.back() || irBack()) return
+        if (managing.back() || irBack() || airBack()) return
         if (fullscreen) { setFullscreen(false); return }
         if (about.visibility == View.VISIBLE) about.visibility = View.GONE
         else if (settings.visibility == View.VISIBLE) settings.visibility = View.GONE
@@ -772,7 +772,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     override fun onResume() { super.onResume(); probe.run() }
 
-    override fun onPause() { ui.removeCallbacks(probe); statusPause(); super.onPause() }
+    override fun onPause() { airClose(); ui.removeCallbacks(probe); statusPause(); super.onPause() }
 
     // ---------------------------------------------------------------- managing the TV: apps, files, installs, health, terminal
     @Deprecated("Deprecated in Java")

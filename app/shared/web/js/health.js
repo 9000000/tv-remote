@@ -403,6 +403,12 @@ async function loadHealth() {
     [T('health.k_stream'), screenOn ? ($('#screenmode').value === 'snap' ? T('health.stream_snap') : T('health.stream_live', { fps: streamFps }) + ($('#screenmode').value === 'hd' ? ' · ' + T('health.stream_sharpest') : ' · ' + $('#screenmode').value + 'p')) : T('health.stream_none')],
     [T('health.k_uptime'), h.uptime != null ? fmtUptime(h.uptime) : ''],
   ]));
+  const nt = h.nightly, nd = nt && new Date(nt.day + 'T12:00:00'), ago = nd && Math.round((Date.now() - nd) / 864e5);
+  put('#hnight', 'hidden', !nt || nt.freed == null);
+  if (nt && nt.freed != null) {                                       // only what it did: "freed 0 B" said nothing
+    const did = [nt.freed > 0 && T('health.night_freed', { freed: fmtSize(nt.freed) }), nt.compiled > 0 && T('health.night_opt', { n: nt.compiled })].filter(Boolean);
+    put('#hnight', 'textContent', T(ago <= 1 ? 'health.night_last' : 'health.night_on', { date: nt.day }) + ': ' + (did.length ? did.join(', ') : T('health.night_none')));
+  }
   const load = [];
   if (h.cpu != null) load.push(meter(h.cores ? T('health.cpu_cores', { n: h.cores }) : 'CPU', h.cpu, h.cpu + '%'));
   if (h.gpu != null) load.push(meter('GPU', h.gpu, h.gpu + '%'));

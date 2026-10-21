@@ -7,6 +7,7 @@
   "web-iphone": {"since": "0.1.0"},
   "nokeys": {"since": "0.1.0"},
   "ir": {"since": "0.13.0", "phone": "0.13.0"},
+  "air": {"since": "next", "phone": "next"},
   "prep-tv": {"since": "0.1.0"},
   "wireless": {"since": "0.5.0"},
   "allow-usb": {"since": "0.1.0"},

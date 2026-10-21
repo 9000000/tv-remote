@@ -7,16 +7,24 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home dùng font riêng (Inter, đủ dấu tiếng Việt): TV nào cũng hiện chữ giống nhau, không theo font của hãng. Thẻ âm lịch ghi gọn "12 tháng 9" kèm tên năm, hình trăng đêm nay, và hai cột "3 ngày tới Rằm · 108 ngày tới Tết" (trước bị xuống dòng, trống bên phải).
+- TV Home: sửa âm lịch lệch một ngày ở khoảng 2% số tháng (vd. tháng 2 nhuận 2023 bắt đầu 22/3, tháng 7 năm 2026 bắt đầu 13/8): một dấu cộng/trừ sai trong công thức tính trăng non.
+- App điện thoại: **Chuột bay** (More keys): cầm điện thoại như điều khiển, con quay hồi chuyển di con trỏ chuột thật trên TV; chạm = nhấp, hai ngón kéo = cuộn, có Back / Home và Tạm dừng. TV Android dùng chuột HID ảo qua ADB (không cần hiện hình), TV LG dùng con trỏ Magic Remote.
 - Sau khi TV cập nhật firmware, app TV tự tắt lại những app Tối ưu TV đã tắt mà bản cập nhật bật lại (lúc TV khởi động và mỗi ngày một lần), đặt lại TV Home làm màn hình chính nếu bị đổi, và báo một dòng trên màn hình. Chỉ đụng app trong danh sách của Tối ưu TV; app nào bị bật lại hai lần trong một ngày thì bỏ qua. Hoàn tác thì dừng hẳn.
 - Tối ưu TV gặp TV Home cũ trên TV thì cập nhật lên bản mới nhất trước khi đổi màn hình chính (cập nhật lỗi thì dùng bản đang có).
 - App điện thoại / máy tính cũ hơn TV Home không còn làm mất widget mới của TV Home khi bật thêm hay đổi cỡ một widget.
 - TV Home: widget lịch tháng thiết kế lại, gọn kiểu Apple: chỉ dương lịch, hôm nay khoanh đỏ đúng giữa số, Chủ nhật không còn đỏ chói (ngày âm xem ở widget Lịch âm).
+- Bảo trì ban đêm: mỗi đêm 2-5 giờ sáng, khi TV ở chế độ chờ và không phát gì, app TV dọn cache của mọi app, biên dịch lại vài app dùng nhiều nhất (mở nhanh hơn buổi sáng) và tắt các tiến trình nền; màn hình bật lên là dừng ngay. Tab Sức khỏe có một dòng kết quả, vd. "Đêm qua: dọn 1,2 GB, tối ưu 6 app".
 
 **English**
+- TV Home has its own font (Inter, full Vietnamese): the same letters on every TV, not the brand's font. The lunar card reads short ("Lunar 12/9") with the year's name, tonight's moon, and two columns "3 days to full moon · 108 days to Tết" (the line wrapped and left the right empty).
+- TV Home: lunar dates were a day off in about 2% of months (e.g. the leap 2nd month of 2023 starts 22/3, the 7th month of 2026 on 13/8): a flipped sign in the new moon formula.
+- Phone app: **Air Mouse** (More keys): hold the phone like a remote and its gyroscope moves a real mouse pointer on the TV; tap = click, two-finger drag = scroll, with Back / Home and Pause. Android TVs get a virtual HID mouse over ADB (no picture needed), LG TVs the Magic Remote pointer.
 - After a TV firmware update, TV Setup turns the apps Optimize TV had turned off, and the update turned back on, off again (at boot and once a day), puts TV Home back as the home screen if it was changed, and says so with a card on screen. It only touches apps on Optimize TV's own list; one that comes back twice in a day is given up on. Undo stops it.
 - Optimize TV updates an older TV Home on the TV to the latest before making it the home screen (a failed update keeps the one there).
 - A phone / computer app older than TV Home no longer drops TV Home's newer widgets when turning one on or resizing one.
 - TV Home: the month calendar widget redesigned, cleaner, Apple-like: solar days only, today circled in red right on the number, Sundays no longer bright red (the lunar date is the Lunar date widget's).
+- Night maintenance: every night between 02:00 and 05:00, with the TV in standby and nothing playing, TV Setup trims every app's cache, recompiles the few most-used apps (faster to open in the morning) and kills background processes; switching the screen on stops it at once. The Health tab shows one line with the result, e.g. "Last night: freed 1.2 GB, optimised 6 apps".
 
 ## 0.16.0 - 2026-10-21
 

@@ -22,6 +22,11 @@ class RulesReceiver : BroadcastReceiver() {
             resultData = Base64.encodeToString(JSONObject().put("started", Reoptimize.now()).toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
             return
         }
+        if (i.getStringExtra("get") == "nightly") {                // the night's maintenance now, ignoring the hour and the screen (tests)
+            resultCode = Activity.RESULT_OK
+            resultData = Base64.encodeToString(JSONObject().put("started", Nightly.now()).toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+            return
+        }
         if (i.getStringExtra("get") == "file") {
             resultCode = Activity.RESULT_OK
             resultData = try { file(c, i.getStringExtra("name") ?: "", i.getIntExtra("lines", 1000)) } catch (e: Exception) { null }
