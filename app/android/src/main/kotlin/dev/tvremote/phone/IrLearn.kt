@@ -6,7 +6,7 @@ package dev.tvremote.phone
 
 internal object IrLearn {
     /** The keys asked for, in this order: what a box is driven with first. */
-    val KEYS = listOf("POWER", "HOME", "BACK", "UP", "DOWN", "LEFT", "RIGHT", "OK", "MENU", "VOL_UP", "VOL_DOWN", "MUTE")
+    val KEYS = listOf("HOME", "BACK", "UP", "DOWN", "LEFT", "RIGHT", "OK", "MENU", "VOL_UP", "VOL_DOWN", "MUTE", "POWER")   // Power last: it puts the box in standby (its IR eye still hears the rest, but people think it broke)
 
     /** Fewest keys worth keeping a set for. */
     const val MIN = 4

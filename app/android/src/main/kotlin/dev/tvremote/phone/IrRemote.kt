@@ -664,7 +664,7 @@ private fun MainActivity.irLearnRun() {
             for ((i, key) in IrLearn.KEYS.withIndex()) {
                 if (IrState.finish || IrState.stop) break
                 IrState.skip = false
-                show { irLearn(T("ir.learn_press", "key" to irKeyName(key)), T("ir.learn_step", "n" to i + 1, "total" to IrLearn.KEYS.size), scans.size) }
+                show { irLearn(T("ir.learn_press", "key" to irKeyName(key)), T("ir.learn_step", "n" to i + 1, "total" to IrLearn.KEYS.size) + (if (key == "POWER") " · " + T("ir.learn_power") else ""), scans.size) }
                 val t = irNow()
                 while (!IrState.skip && !IrState.finish && !IrState.stop && ear.lastScan <= t) Thread.sleep(40)
                 if (ear.lastScan > t && ear.scanValue >= 0) { scans[key] = ear.scanValue; Thread.sleep(500) }   // a held key repeats: let it go

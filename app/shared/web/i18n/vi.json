@@ -2576,6 +2576,7 @@
  "ir.learn_skip": "Bỏ qua phím này",
  "ir.learn_done": "Xong ({n} phím)",
  "ir.learn_bad": "Không đọc được mã remote",
+ "ir.learn_power": "box sẽ tắt màn hình, bấm lại để bật",
  "ir.learn_bad_sub": "Cần ít nhất {n} phím cùng một remote. Thử lại.",
  "ir.key_power": "Nguồn",
  "ir.key_home": "Home",

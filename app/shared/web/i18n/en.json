@@ -2663,6 +2663,7 @@
  "ir.learn_skip": "Skip this key",
  "ir.learn_done": "Done ({n} keys)",
  "ir.learn_bad": "Couldn't read the remote's codes",
+ "ir.learn_power": "the box will go to standby, press again to wake it",
  "ir.learn_bad_sub": "Needs at least {n} keys of one remote. Try again.",
  "ir.key_power": "Power",
  "ir.key_home": "Home",
