@@ -1567,6 +1567,7 @@
  "errors.roku_blocks_control_from": "Roku đang chặn điều khiển từ điện thoại, máy tính. Trên Roku: Settings → System → Advanced system settings → Control by mobile apps → chọn Enabled (hoặc Permissive).",
  "errors.hisense_tv_needs_certificate": "TV Hisense này cần chứng chỉ từ app “VIDAA Smart TV” của Hisense. Cài app đó một lần (không cần mở), rồi thử lại.",
  "errors.tv_needs_app_cannot": "TV cần app này, không gỡ được.",
+ "errors.factory_app": "App kiểm tra của nhà máy: mở ra có thể khoá TV ở chế độ nhà máy (mất nút Input, HDMI-CEC), nên không mở.",
  "core.fr_vpn_blocked": "Đang bật VPN nên không tới được TV trong nhà. TV có đang bật và cùng Wi-Fi không? Nếu có, trong app VPN bật cho phép mạng LAN (Local network / Bypass LAN), hoặc tắt VPN.",
  "core.fr_notify_no_overlay": "TV này không cho app hiện thông báo đè lên màn hình.",
  "core.fr_no_search": "TV này không có YouTube hay tìm kiếm của Google để tìm câu này.",

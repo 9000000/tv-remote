@@ -215,6 +215,7 @@ const FRIENDLY = [
   [/adb tls: this app cannot pair/i, T('core.fr_cannot_pair')],
   [/not a backup/i, T('core.fr_not_backup')],
   [/^protected: the TV needs this app/i, T('core.fr_protected_app')],
+  [/^factory app: not opened/i, T('errors.factory_app')],
   [/install blocked by this TV's firmware|disabled from pm/i, T('core.fr_install_blocked')],
   [/removed by the TV right after install/i, T('core.fr_removed_after_install')],
   // the check before installing (apk_fits / Manage.apkFits), then what pm says when it was not caught there

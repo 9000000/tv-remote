@@ -141,6 +141,13 @@ object Bloat {
      * Any *.partnercustomizer: the remote's keys and the stock home's Inputs icon (TCL, Realtek). Xiaomi tvmanager: XiaoAI opens apps
      * through it. Vestel, CVTE, XGIMI, SDMC, Skyworth / HiSilicon, Kalley (com.apps / com.mk): inputs, keys, pairing, settings, updates.
      */
+    /**
+     * Factory test apps, never opened: once was enough on a Haier (CVTE, com.cvte.tv.hkcfac) to switch on factory mode, the Input key
+     * and HDMI-CEC dead, and at the next boot Play services, Netflix and Cast turned off where the shell may not turn them back on
+     * (cleanyourtv #470). A part of the name that ends in "fac" or holds "factory".
+     */
+    val FACTORY = Regex("(?i)(.*\\.)?(\\w*fac|\\w*factory\\w*)(\\..*)?")
+
     val KEEP = Regex(
         "com\\.tcl\\.(tv|tvinput|tvpassthrough|sourcemananger|keycustomfunctionservice|keyhelp|framework\\.custom|settings|inputmethod\\.international|globalkeyoverlay|TFDS\\.service|xian\\.StartandroidService|showmode" +
             "|system\\.?server|systemserver|tcl_bt_rcu_service|autopair|suspension|providers\\.config|initsetup|factory\\.view|dashboard|eva|appstatecontroller|rc\\.ota|UpdatePeripheral|useragreement|copydatatotv|guard|cyberui)" +

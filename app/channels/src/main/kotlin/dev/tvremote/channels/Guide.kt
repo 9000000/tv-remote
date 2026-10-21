@@ -53,7 +53,7 @@ object Guide {
             val day = day(p, d)
             val f = File(dir, "${p.id}-${ref.filter { it.isLetterOrDigit() || it == '-' }}-$day.json")
             val kept = f.takeIf { it.exists() && System.currentTimeMillis() - it.lastModified() < KEEP }?.let { fromJson(it.readText()) }
-            val got = kept ?: try { kind.guide(p, ref, day) } catch (e: Exception) { null }?.also { if (it.isNotEmpty() || d == 0) f.writeText(toJson(it)) }   // tomorrow comes out later in the day
+            val got = kept ?: try { kind.guide(p, ref, day) } catch (e: Exception) { null }?.also { if (it.isNotEmpty()) f.writeText(toJson(it)) }   // none yet (tomorrow comes out later in the day): asked again
             out += got ?: if (d == 0) f.takeIf { it.exists() }?.let { fromJson(it.readText()) }.orEmpty() else emptyList()
         }
         return out.sortedBy { it.start }.distinctBy { it.start }

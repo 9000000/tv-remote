@@ -135,8 +135,11 @@ object Scenes {
     }
 
     /** Opens an app on its own TV screen, or its phone-style one: the launcher activity is looked up first, `monkey` is slow and noisy. */
+    const val FACTORY_APP = "factory app: not opened"
+
     fun launch(sh: (String) -> String, pkg: String) {
         if (!PKG.matcher(pkg).matches()) throw IllegalArgumentException("bad package name")
+        if (dev.tvremote.core.ontv.Bloat.FACTORY.matches(pkg)) throw IllegalArgumentException(FACTORY_APP)
         for (cat in arrayOf("LEANBACK_LAUNCHER", "LAUNCHER")) {               // a TV app's own screen first, then a phone-style one
             val lines = sh("cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.$cat $pkg 2>/dev/null").trim().split("\n")
             val component = lines[lines.size - 1].trim()

@@ -92,13 +92,13 @@ object Store {
     }
 
     private fun write(ch: Channel) = JSONObject().put("id", ch.id).put("name", ch.name).put("logo", ch.logo).put("group", ch.group)
-        .put("url", ch.url).put("q", ch.quality).put("geo", ch.geo).put("na", ch.notAlways).put("ref", ch.referrer).put("ua", ch.agent)
+        .put("url", ch.url).put("q", ch.quality).put("geo", ch.geo).put("na", ch.notAlways).put("ref", ch.referrer).put("ua", ch.agent).put("g", ch.guide)
 
     private fun read(o: JSONObject?): Channel? {
         o ?: return null
-        val url = o.optString("url").takeIf { it.startsWith("http") } ?: return null
+        val url = o.optString("url").takeIf { it.startsWith("http") || Providers.isLink(it) } ?: return null   // a provider's "vieon:<slug>" too
         return Channel(o.optString("id"), o.optString("name"), o.optString("logo"), o.optString("group"), url,
-            o.optString("q"), o.optBoolean("geo"), o.optBoolean("na"), o.optString("ref"), o.optString("ua"))
+            o.optString("q"), o.optBoolean("geo"), o.optBoolean("na"), o.optString("ref"), o.optString("ua"), o.optString("g"))
     }
 }
 

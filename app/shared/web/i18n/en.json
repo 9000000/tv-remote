@@ -1627,6 +1627,7 @@
  "errors.roku_blocks_control_from": "The Roku blocks control from phones and computers. On the Roku: Settings → System → Advanced system settings → Control by mobile apps → choose Enabled (or Permissive).",
  "errors.hisense_tv_needs_certificate": "This Hisense TV needs the certificate from Hisense’s “VIDAA Smart TV” app. Install that app once (no need to open it), then try again.",
  "errors.tv_needs_app_cannot": "The TV needs this app; it cannot be removed.",
+ "errors.factory_app": "A factory test app: opening it can lock the TV in factory mode (no Input key, no HDMI-CEC), so it is not opened.",
  "core.fr_vpn_blocked": "A VPN is on, so the TV at home is out of reach. Is the TV on and on the same Wi-Fi? If so, allow the local network in the VPN app (Local network / Bypass LAN), or turn the VPN off.",
  "core.fr_notify_no_overlay": "This TV does not let apps show a notification over its screen.",
  "core.fr_no_search": "This TV has neither YouTube nor Google search to look this up.",

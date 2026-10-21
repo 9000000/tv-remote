@@ -134,7 +134,9 @@ object KeyFix {
      * "disallowed by device admin policy", as on the FPT box): the shell lifts that for this app, once, while there is ADB.
      */
     fun prepare(c: Context, adb: dev.tvremote.core.adb.Adb) {
-        try { adb.shell("appops set ${c.packageName} ACCESS_RESTRICTED_SETTINGS allow 2>&1"); prepared = true } catch (e: Exception) { }
+        // APP_AUTO_START: a TCL's firmware kept the service from being bound (TclAppBoot isAllow = 'false') though the setting
+        // named it; an op the TV does not know is an error that changes nothing
+        try { adb.shell("appops set ${c.packageName} ACCESS_RESTRICTED_SETTINGS allow 2>&1; appops set ${c.packageName} APP_AUTO_START allow 2>&1"); prepared = true } catch (e: Exception) { }
     }
 
     private var wrote = 0L

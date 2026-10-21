@@ -156,7 +156,10 @@ private fun MainActivity.doVoice(c: Voice.Command) {
             val link = Voice.channelLink(c.name)
             val tv = tv
             // the TV app is named so the link cannot land in a browser; without ADB the remote protocol sends the link alone
-            if (tv != null && tv.ready()) Thread { try { tv.shell("am start -a android.intent.action.VIEW -d " + Adb.q(link) + " dev.tvremote.channels 2>&1") } catch (e: Exception) { ui.post { toast(e.message ?: "") } } }.start()
+            if (tv != null && tv.ready()) Thread {
+                try { if (!dev.tvremote.core.ontv.Channels.open({ tv.shell(it) }, c.name)) ui.post { toast(T("core.fr_channels_missing")) } }   // not installed
+                catch (e: Exception) { ui.post { toast(e.message ?: "") } }
+            }.start()
             else basic?.launch(link)
         }
         is Voice.Command.Key -> {

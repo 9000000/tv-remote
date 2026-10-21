@@ -11,10 +11,14 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Channels: tự gom kênh thành nhóm (Yêu thích cũng là một nhóm); ghim một kênh hay cả nhóm ra màn hình chính, bấm vào là mở đúng nhóm đó.
 - TV Home: app khác có thể ghim lối tắt vào Yêu thích (vd. một kênh của TV Channels); nhấn giữ để bỏ ghim.
 - TV Channels: thêm các kênh miễn phí của VieON (VTV, HTV, HTVC, đài tỉnh, radio VOH): VTV1 xem được cả khi nguồn iptv-org bị chặn; nguồn kênh nằm trong một danh sách ký trên web nên sửa / tắt được mà không cần bản mới.
+- Gỡ app an toàn hơn: không tắt / xoá dữ liệu / gỡ app đang giữ mạng Wi-Fi đã lưu (mất app là TV quên mạng, mất cả ADB); không mở app kiểm tra của nhà máy (một TV Haier mở một lần là kẹt chế độ nhà máy, mất nút Input). TV Setup xin thêm quyền tự chạy trên TCL để sửa nút remote chạy được.
+- TV Channels: kênh VieON trong Yêu thích / nhóm không còn mất khi mở lại app; lịch phát sóng không làm chậm lúc chuyển kênh; bấm Home lúc đang mở kênh không còn phát tiếng ngầm.
 - TV Channels: lịch phát sóng kênh VN (từ TV360 và VieON): thẻ kênh hiện chương trình đang chiếu; khi xem, ▶ hiện chương trình đang chiếu / tiếp theo, ▶ lần nữa mở lịch cả ngày; giữ OK trên kênh → Lịch phát sóng.
 - Tab TV có thẻ 📺 Kênh TV: cài / cập nhật TV Channels lên TV, gõ tên kênh để mở; nói "mở kênh VTV1" cũng được.
 
 **English**
+- Safer app removal: an app that owns a saved Wi-Fi network is never turned off, cleared or removed (the TV would forget the network, and ADB with it); factory test apps are never opened (one Haier went into factory mode, Input key dead). TV Setup asks TCLs to let it auto-start, so the remote key fix runs there.
+- TV Channels: VieON channels stay in favourites and groups after a restart; the programme guide no longer slows channel changes; Home while a channel loads no longer leaves sound playing.
 - TV Channels: programme guide for Vietnamese channels (from TV360 and VieON): cards show what is on; while watching, ▶ shows now / next and ▶ again the day's guide; hold OK on a channel → Programme guide.
 - TV Channels: VieON's free channels added (VTV, HTV, HTVC, provinces, VOH radio): VTV1 plays even where iptv-org's source is blocked; the sources come from a signed list on the site, so they can be fixed or turned off without a new release.
 - TV Channels (new app): free TV channels from iptv-org's public lists, by country and category, with favourites, search, ▲▼ / number keys; channels that do not answer are dimmed.

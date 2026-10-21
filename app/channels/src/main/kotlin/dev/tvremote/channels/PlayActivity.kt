@@ -42,6 +42,8 @@ import java.util.concurrent.Executors
 class PlayActivity : Activity() {
     private val main = Handler(Looper.getMainLooper())
     private val io = Executors.newSingleThreadExecutor()
+    private val guideIo = Executors.newSingleThreadExecutor()         // a slow guide never holds up a stream's address
+    private var started = false
     private var player: ExoPlayer? = null
     private lateinit var surface: SurfaceView
     private lateinit var frame: FrameLayout
@@ -141,6 +143,7 @@ class PlayActivity : Activity() {
     /** The channel a link names: in the lineup the list gave, else among the favourites, else in its country's list. */
     private fun open(i: Intent?) {
         Pins.findText(i?.data)?.let { find(it); return }
+        if (i?.data?.host == "find") { startActivity(Intent(this, BrowseActivity::class.java)); finish(); return }   // no words: the list
         val id = Pins.id(i?.data) ?: Store.last(this) ?: run { finish(); return }
         Lineup.indexOf(id).takeIf { it >= 0 }?.let { tune(it); return }
         spin.visibility = View.VISIBLE
@@ -213,6 +216,7 @@ class PlayActivity : Activity() {
     }
 
     private fun play(ch: Channel, url: String) {
+        if (!started) return                                          // an answer that came after Home: onStart plays it again
         val p = player ?: ExoPlayer.Builder(this).build().also { x ->
             player = x
             x.setVideoSurfaceView(surface)
@@ -289,7 +293,7 @@ class PlayActivity : Activity() {
         val ch = streams
         val kept = Guide.known(c.id)
         showNow(kept.orEmpty())
-        if (kept == null) io.execute { val got = Guide.of(this, ch); main.post { if (!isDestroyed && streams === ch) showNow(got) } }
+        if (kept == null) guideIo.execute { val got = Guide.of(this, ch); main.post { if (!isDestroyed && streams === ch) showNow(got) } }
     }
 
     /** The banner's programme lines: what is on, how far in, what comes next ("▶ guide" when there is one). */
@@ -318,7 +322,7 @@ class PlayActivity : Activity() {
         }
         Guide.known(c.id)?.let { fill(it); return }
         a.set(emptyList())
-        io.execute { val got = Guide.of(this, ch); main.post { if (!isDestroyed && streams === ch && guide.visibility == View.VISIBLE) fill(got) } }
+        guideIo.execute { val got = Guide.of(this, ch); main.post { if (!isDestroyed && streams === ch && guide.visibility == View.VISIBLE) fill(got) } }
     }
 
     private val hideInfo = Runnable { info.visibility = View.GONE }
@@ -366,15 +370,16 @@ class PlayActivity : Activity() {
         return true
     }
 
-    override fun onStart() { super.onStart(); if (player == null && streams.isNotEmpty()) start() }
+    override fun onStart() { super.onStart(); started = true; if (player == null && streams.isNotEmpty()) start() }
 
     override fun onStop() {
         super.onStop()
+        started = false
         main.removeCallbacksAndMessages(null)
         player?.release(); player = null                              // a TV has one or two video decoders: give them back
     }
 
-    override fun onDestroy() { io.shutdownNow(); super.onDestroy() }
+    override fun onDestroy() { io.shutdownNow(); guideIo.shutdownNow(); super.onDestroy() }
 
     private inner class SideList : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         override fun getItemCount() = Lineup.channels.size

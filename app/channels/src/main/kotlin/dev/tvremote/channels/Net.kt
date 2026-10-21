@@ -57,11 +57,12 @@ object Logos {
 object Probe {
     private val pool = Executors.newFixedThreadPool(4)
     private val main = Handler(Looper.getMainLooper())
-    private val asked = HashSet<String>()
+    private val asked = HashMap<String, Long>()                       // url -> when: asked again once its answer (6 hours) is old
 
     fun check(c: android.content.Context, ch: Channel, done: (Boolean) -> Unit) {
         if (Store.alive(c, ch.url) != null) return
-        if (!synchronized(asked) { asked.add(ch.url) }) return
+        val t = System.currentTimeMillis()
+        if (!synchronized(asked) { (asked[ch.url]?.let { t - it > 6 * 3600_000L } ?: true).also { if (it) asked[ch.url] = t } }) return
         pool.execute {
             val ok = try { answers(ch, Providers.resolve(c, ch.url)) } catch (e: Throwable) { false }
             Store.setAlive(c, ch.url, ok)

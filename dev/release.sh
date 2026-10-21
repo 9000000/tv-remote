@@ -46,8 +46,8 @@ if [ -n "$LAST" ]; then
   if [ -z "$SKIP_CHECK" ] && [ -n "$old" ] && [ "$old" = "$(cat app/home/VERSION)" ] && ! git diff --quiet "$LAST" -- app/home app/shared/src/home ":(exclude)app/home/*.apk"; then
     next "$old" > app/home/VERSION
   fi
-  old=$(git show "$LAST:app/channels/VERSION" 2>/dev/null || true)      # TV Channels: its own code only, it takes nothing from app/shared
-  if [ -z "$SKIP_CHECK" ] && [ -n "$old" ] && [ "$old" = "$(cat app/channels/VERSION)" ] && ! git diff --quiet "$LAST" -- app/channels ":(exclude)app/channels/*.apk"; then
+  old=$(git show "$LAST:app/channels/VERSION" 2>/dev/null || true)      # TV Channels: its code, the packed providers list and app/shared/src/sign
+  if [ -z "$SKIP_CHECK" ] && [ -n "$old" ] && [ "$old" = "$(cat app/channels/VERSION)" ] && ! git diff --quiet "$LAST" -- app/channels docs/channels app/shared/src/sign ":(exclude)app/channels/*.apk"; then
     next "$old" > app/channels/VERSION
   fi
 fi

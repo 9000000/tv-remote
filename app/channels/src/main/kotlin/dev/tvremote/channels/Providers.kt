@@ -72,11 +72,14 @@ object Providers {
     fun all(c: Context): List<Provider> {
         mem?.let { if (System.currentTimeMillis() - it.first < DAY) return it.second }
         val f = File(c.filesDir, "providers.json")
+        var fresh = true
         val text = if (f.exists() && System.currentTimeMillis() - f.lastModified() < DAY) f.readText() else
             fetchSigned()?.also { File(c.filesDir, "providers.json.tmp").apply { writeText(it); renameTo(f) } }
+                ?: run { fresh = false; null }
                 ?: f.takeIf { it.exists() }?.readText()
                 ?: try { c.assets.open("providers.json").bufferedReader().readText() } catch (e: IOException) { "" }
-        return parse(text).also { mem = System.currentTimeMillis() to it }
+        // not reached: the old or packed list for half an hour, then asked again (a provider switched off reaches TVs the same day)
+        return parse(text).also { mem = (System.currentTimeMillis() - if (fresh) 0 else DAY - 30 * 60_000L) to it }
     }
 
     private fun fetchSigned(): String? {

@@ -212,8 +212,8 @@ class LauncherTest {
     }
 
     @Test fun anAppHoldingTheTvsInputsIsNeverTurnedOff() {
-        assertTrue(Setup.holdsTvInput({ "1" }, "com.oem.tvservice"))
-        assertFalse(Setup.holdsTvInput({ "0" }, "com.oem.ads"))
-        assertFalse(Setup.holdsTvInput({ "" }, "com.oem.ads"))
+        assertTrue(Setup.inUse({ "1" }, "com.oem.tvservice"))
+        assertFalse(Setup.inUse({ "0\n0" }, "com.oem.ads"))
+        assertFalse(Setup.inUse({ "" }, "com.oem.ads"))
     }
 }

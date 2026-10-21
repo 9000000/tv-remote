@@ -58,6 +58,21 @@ class SetupTest {
     private val musts = arrayOf("android", "com.android.systemui", "com.android.tv.settings", "com.google.android.gms", "com.google.android.tvlauncher",
         "com.google.android.katniss", "dev.tvremote.setup", "com.tailscale.ipn")
 
+    /** `dumpsys package` counts TV_INPUT_HARDWARE, `dumpsys wifi` the networks the app made: either kept (HDMI, the network). */
+    @Test fun anAppHoldingTheInputsOrTheWifiIsInUse() {
+        assertTrue(Setup.inUse("0\n4\n"))
+        assertTrue(Setup.inUse("2\n0\n"))
+        assertFalse(Setup.inUse("0\n0\n"))
+        assertFalse(Setup.inUse(""))
+    }
+
+    @Test fun factoryTestAppsAreKnownByName() {
+        for (p in listOf("com.cvte.tv.hkcfac", "com.mediatek.factorymode", "com.tcl.factory", "com.xm.tvfac.ui", "com.hisense.FactoryTest"))
+            assertTrue(p, Bloat.FACTORY.matches(p))
+        for (p in listOf("com.facebook.katana", "com.netflix.ninja", "com.android.tv.settings", "com.google.android.surface"))
+            assertFalse(p, Bloat.FACTORY.matches(p))
+    }
+
     @Test fun whatKeepsTheTvWorkingIsNeverTurnedOff() {
         val tv = FakeTv(true, *(musts.toList() - Setup.TS_PKG).toTypedArray(), "com.foo.game")   // installed, Tailscale would be kept alive over ADB
         tv.setup().apply(Setup.Choice(anim = false, home = false, disable = musts.toList() + "com.foo.game"))

@@ -50,7 +50,8 @@ itsmeterrylin/fire-tv-cleanup +1, essremodel +1, codewithbalaji +1, 9000000 +1 (
 - **Google TV home**: launcherx answers HOME at priority 2, setupwraith's RecoveryActivity at 1, any installed app at 0,
   FallbackHome at -1000. launcherx off alone → Home lands on RecoveryActivity, system_server crash-loops (`FATAL EXCEPTION IN
   SYSTEM PROCESS: android.display`), Wi-Fi drops every minute, one Sony needed a factory reset (#62, #90). A single component
-  cannot be turned off by the shell, so the whole setupwraith package goes, and comes back with Undo (a factory reset needs it).
+  is turned off, not the whole setupwraith package (it holds Cast's CastInfoProvider, and on some TCLs the saved Wi-Fi); where the
+  shell may not (`Shell cannot change component state`) the swap rolls back, and it is put back by Undo (a factory reset needs it).
   `set-home-activity` is ignored while launcherx is on and forgotten whenever the set of homes changes: set it last. Fix: `pm
   enable --user 0 com.google.android.apps.tv.launcherx`.
 - Only turn off home screens that are on; Google TV ships tvlauncher off.
