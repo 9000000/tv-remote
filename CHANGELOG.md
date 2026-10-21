@@ -4,7 +4,9 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
-## Unreleased
+## 0.16.0 - 2026-10-21
+
+Web 0.16.0 · app điện thoại 0.16.0 · app TV 0.16.0 · TV Home 0.3.0 · TV Channels 0.1.0
 
 **Tiếng Việt**
 - Tối ưu TV dùng TV Home làm màn hình chính thay cho FLauncher: 0,2 MB thay vì 10 MB, lấy từ release của dự án (ký và kiểm SHA-256), chỉnh được từ điện thoại / máy tính.
