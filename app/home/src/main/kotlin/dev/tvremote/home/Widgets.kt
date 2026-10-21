@@ -896,6 +896,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         private val n = cal.grid.rows * 7
         private val inMonth = BooleanArray(n) { it >= cal.grid.offset && it < cal.grid.offset + cal.grid.days }
         private val solar = Array(n) { "" }; private val lunarText = Array(n) { "" }
+        private val ink = android.graphics.Rect(); private val pill = android.graphics.RectF()
         private var bigCap = 0f; private var smallCap = 0f              // the digits' real heights: the two lines are stacked by them, not by the row
         private fun caps() {
             val r = android.graphics.Rect()
@@ -908,7 +909,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             for (i in 0 until n) {
                 solar[i] = k.get(Calendar.DAY_OF_MONTH).toString()
                 val l = cal.lunDay[i]
-                lunarText[i] = if (!inMonth[i]) "" else if (l == 1) "1/" + Math.abs(cal.lunMonth[i]) else if (l == 15) "15" else ""
+                lunarText[i] = if (!inMonth[i]) "" else if (l == 1) "1/" + Math.abs(cal.lunMonth[i]) else l.toString()   // every day, as iOS's lunar calendar: tiny and dim, the 1st with its month
                 k.add(Calendar.DAY_OF_MONTH, 1)
             }
         }
@@ -929,17 +930,26 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
                 val col = i % 7; val row = i / 7
                 val cx = slot * col + slot / 2; val top = headH + rowH * row.toFloat()
                 val today = i == cal.today
-                val under = label && lunarText[i].isNotEmpty() && !today
+                val under = label && lunarText[i].isNotEmpty()
                 // every number stands at the same height: a lunar label under one does not move it
                 val stack = if (label) bigCap + gap + smallCap else bigCap
                 val y = top + (rowH - stack) / 2f + bigCap
-                if (today) cv.drawCircle(cx, y - bigCap / 2f, minOf(rowH / 2f - dp(1), slot / 2f - dp(2)), back)
+                if (today) {                                           // round the digits' own ink: "21" drawn centred leans right ("1" has room on its left)
+                    big.typeface = BOLD; big.getTextBounds(solar[i], 0, solar[i].length, ink)
+                    val x = cx - big.measureText(solar[i]) / 2 + ink.exactCenterX()   // the bounds are a left-aligned run's
+                    if (label && lunarText[i].isNotEmpty()) {                 // the lunar day under it too: a rounded square round both lines (a circle would cut it)
+                        val t = top + dp(1); val b = top + rowH - dp(1)
+                        val w = minOf(slot - dp(4), (b - t) * 1.1f).coerceAtLeast(ink.width() + dp(10).toFloat())
+                        pill.set(x - w / 2, t, x + w / 2, b); cv.drawRoundRect(pill, dp(8).toFloat(), dp(8).toFloat(), back)
+                    } else cv.drawCircle(x, y + ink.exactCenterY(), minOf(bigCap * 1.05f + dp(3), rowH / 2f - dp(1), slot / 2f - dp(2)), back)
+                }
                 big.color = if (today) Color.WHITE else if (inMonth[i]) 0xF2FFFFFF.toInt() else 0x30FFFFFF
                 big.typeface = if (today) BOLD else MEDIUM
                 cv.drawText(solar[i], cx, y, big)
                 if (under) {
                     val l = cal.lunDay[i]
-                    small.color = if (l == 1 && Math.abs(cal.lunMonth[i]) == 1) ROSE[0] else if (l == 1) 0xB3FFFFFF.toInt() else 0x80FFFFFF.toInt()
+                    small.color = if (today) 0xE6FFFFFF.toInt() else if (l == 1 && Math.abs(cal.lunMonth[i]) == 1) ROSE[0]
+                        else if (l == 1 || l == 15) 0xC0FFFFFF.toInt() else 0x59FFFFFF   // the 1st and full moon stand out a little, the rest stay out of the way
                     cv.drawText(lunarText[i], cx, y + gap + smallCap, small)
                 }
             }
