@@ -49,6 +49,7 @@
     <string name="need_n">Needs %1$d players</string>
     <string name="need_range">%1$d–%2$d players</string>
     <string name="lobby_watch">Watching: %1$d</string>
+    <string name="rom_gone">Game file not found, removed from the library</string>
     <string name="few_warn">Only %1$d of %2$d players. Press OK again to start anyway</string>
     <string name="pad_channel">Phone pads</string>
     <string name="pad_running">Phones are connected</string>

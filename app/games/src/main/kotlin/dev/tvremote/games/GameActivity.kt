@@ -27,6 +27,9 @@ class GameActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         file = File(intent.getStringExtra("path") ?: return finish())
         sys = Systems.byExt(this, file.extension) ?: return finish()
+        if (!file.isFile) {                                           // deleted since the library listed it: back to the (rescanned) library, no crash
+            android.widget.Toast.makeText(this, R.string.rom_gone, android.widget.Toast.LENGTH_LONG).show(); return finish()
+        }
         if (Cores.path(this, sys) == null) download() else start()
     }
 
