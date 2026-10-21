@@ -40,6 +40,16 @@ class BrowseActivity : Activity() {
     private lateinit var title: TextView
     private lateinit var note: TextView
     private lateinit var retry: TextView
+    private lateinit var content: View                                 // sidebar + grid: hidden while the one full-screen state (loading / error) shows
+    private lateinit var wait: View
+    private lateinit var spin: View
+    private val last = HashMap<String, Int>()                          // per group: the card that had focus, for OK on the group
+    private var loading = true
+    private lateinit var overlay: View
+    private lateinit var waitText: TextView
+    private lateinit var waitButtons: View
+    private val autoOpen = Runnable { pending?.let { if (it != group) select(it) } }
+    private var pending: String? = null
     private lateinit var find: EditText
     private val cards = Cards()
 
@@ -88,18 +98,37 @@ class BrowseActivity : Activity() {
         }
         body.addView(grid, FrameLayout.LayoutParams(-1, -1))
         val empty = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER }
-        note = Ui.text(this, "", 17f, Ui.DIM).apply { gravity = Gravity.CENTER; setLineSpacing(0f, 1.2f) }
-        retry = Ui.text(this, getString(R.string.retry), 16f, bold = true).apply {
+        note = Ui.text(this, "", 17f, Ui.DIM).apply { gravity = Gravity.CENTER; setLineSpacing(0f, 1.2f) }   // an empty group / no match, inside the grid's area
+        val say2 = Ui.text(this, "", 17f, Ui.DIM).apply { gravity = Gravity.CENTER; setLineSpacing(0f, 1.2f) }
+        val button = { label: String, go: () -> Unit -> Ui.text(this, label, 16f, bold = true).apply {
             setPadding(d(24), d(10), d(24), d(10)); isFocusable = true; isClickable = true
             background = Ui.states(this@BrowseActivity, Ui.CARD, Ui.dp(this@BrowseActivity, 22))
-            setOnClickListener { load(true) }
-        }
+            setOnClickListener { go() }
+        } }
         empty.addView(note, LinearLayout.LayoutParams(d(520), -2))
-        empty.addView(retry, LinearLayout.LayoutParams(-2, -2).apply { topMargin = d(16) })
         body.addView(empty, FrameLayout.LayoutParams(-1, -1))
         right.addView(body, LinearLayout.LayoutParams(-1, 0, 1f))
         root.addView(right, LinearLayout.LayoutParams(0, -1, 1f))
-        setContentView(root)
+        content = root
+
+        // the whole screen's own state, centred on the screen (not on the grid): loading, or no list and why
+        val screen = FrameLayout(this).apply { setBackgroundColor(0xFF0E1116.toInt()) }
+        wait = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER }
+        spin = android.widget.ProgressBar(this).apply { isIndeterminate = true; indeterminateTintList = android.content.res.ColorStateList.valueOf(Ui.ACCENT) }
+        retry = button(getString(R.string.retry)) { load(true) }
+        val pickCountry = button(getString(R.string.country)) { countries() }
+        (wait as LinearLayout).apply {
+            addView(spin, LinearLayout.LayoutParams(d(44), d(44)).apply { bottomMargin = d(16) })
+            addView(say2, LinearLayout.LayoutParams(d(520), -2))
+            addView(LinearLayout(this@BrowseActivity).apply {
+                gravity = Gravity.CENTER
+                addView(retry); addView(pickCountry, LinearLayout.LayoutParams(-2, -2).apply { marginStart = d(12) })
+            }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = d(16) })
+        }
+        waitText = say2; waitButtons = (wait as LinearLayout).getChildAt(2)
+        screen.addView(wait, FrameLayout.LayoutParams(-1, -1))
+        setContentView(FrameLayout(this).apply { addView(root, FrameLayout.LayoutParams(-1, -1)); addView(screen, FrameLayout.LayoutParams(-1, -1)) })
+        overlay = screen
 
         cc = countryOf(intent) ?: Store.country(this)
         groupOf(intent)?.let { group = it }
@@ -135,15 +164,15 @@ class BrowseActivity : Activity() {
 
     private fun load(fresh: Boolean) {
         Store.setCountry(this, cc)
-        all = emptyList(); failed = false
-        say(getString(R.string.loading), false)
+        all = emptyList(); failed = false; loading = true
+        chrome()
         io.execute {
             val list = Catalog.channels(this, cc, fresh)
             val name = Catalog.countries(this).firstOrNull { it.code == cc }?.let { "${it.flag} ${it.name}" } ?: cc.uppercase()
             val ok = list.isNotEmpty() || java.io.File(filesDir, "m3u-$cc.m3u").exists()
             main.post {
                 if (isDestroyed) return@post
-                all = list.byChannel(); failed = !ok; countryName = name
+                all = list.byChannel(); failed = !ok; countryName = name; loading = false
                 if (mine(group) == null && group != ALL && all.none { it.first().group == group }) group = ALL
                 buildRail(); filter()
                 if (!find.hasFocus()) grid.post { (grid.getChildAt(0) ?: rail.getChildAt(0))?.requestFocus() }
@@ -152,6 +181,9 @@ class BrowseActivity : Activity() {
     }
 
     private fun buildRail() {
+        val hadFocus = rail.hasFocus()
+        val at = (0 until rail.childCount).firstOrNull { rail.getChildAt(it).hasFocus() } ?: -1
+        main.removeCallbacks(autoOpen)
         rail.removeAllViews()
         val dp = { n: Int -> Ui.dp(this, n).toInt() }
         rail.addView(LinearLayout(this).apply {                       // the app's own tile beside its name
@@ -160,31 +192,59 @@ class BrowseActivity : Activity() {
             addView(Ui.text(this@BrowseActivity, getString(R.string.app_name), 20f, Ui.ACCENT, true))
         })
         val favs = Store.favourites(this).byChannel().size
-        add(Ui.row(this, R.drawable.ic_star, getString(R.string.favourites), if (favs > 0) "$favs" else "") { pick(FAVS) }.held(Store.FAV), group == FAVS)
+        add(Ui.row(this, R.drawable.ic_star, getString(R.string.favourites), if (favs > 0) "$favs" else "") { pick(FAVS) }.held(Store.FAV), group == FAVS, FAVS)
         for (g in Store.groups(this)) {
             val n = g.channels.byChannel().size
-            add(Ui.row(this, R.drawable.ic_folder, g.name, if (n > 0) "$n" else "") { pick(MINE + g.id) }.held(g.id), group == MINE + g.id)
+            add(Ui.row(this, R.drawable.ic_folder, g.name, if (n > 0) "$n" else "") { pick(MINE + g.id) }.held(g.id), group == MINE + g.id, MINE + g.id)
         }
         add(Ui.row(this, R.drawable.ic_plus, getString(R.string.new_group)) { ask(getString(R.string.new_group), "") { pick(MINE + Store.addGroup(this, it)) } }, false)
         add(Ui.row(this, R.drawable.ic_globe, countryName.ifEmpty { getString(R.string.country) }) { countries() }, false)
         add(Ui.row(this, R.drawable.ic_refresh, getString(R.string.refresh)) { load(true) }, false)
         rail.addView(View(this).apply { setBackgroundColor(0x22FFFFFF) }, LinearLayout.LayoutParams(-1, 1).apply {
             val m = Ui.dp(this@BrowseActivity, 10).toInt(); topMargin = m; bottomMargin = m })
-        if (all.isEmpty()) return
-        add(Ui.row(this, R.drawable.ic_tv, getString(R.string.all), "${all.size}") { pick(ALL) }, group == ALL)
+        if (all.isNotEmpty()) {
+        add(Ui.row(this, R.drawable.ic_tv, getString(R.string.all), "${all.size}") { pick(ALL) }, group == ALL, ALL)
         all.groupingBy { it.first().group }.eachCount().entries.sortedByDescending { it.value }.forEach { (g, n) ->
-            add(Ui.row(this, 0, groupName(g), "$n") { pick(g) }, group == g)
+            add(Ui.row(this, 0, groupName(g), "$n") { pick(g) }, group == g, g)
         }
+        }
+        if (hadFocus && at in 0 until rail.childCount) rail.getChildAt(at).requestFocus()   // a rebuilt list keeps the person's place
     }
 
     /** A row of one of the person's groups: Menu or a long press opens [groupMenu]. */
     private fun View.held(gid: String) = apply { tag = "grp:$gid"; isLongClickable = true; setOnLongClickListener { groupMenu(gid); true } }
 
-    private fun add(v: View, on: Boolean) { v.isActivated = on; rail.addView(v, LinearLayout.LayoutParams(-1, -2)) }
+    /** [g] set: a group or category, opened by moving onto it (after a pause); null: an action, only on OK. */
+    private fun add(v: View, on: Boolean, g: String? = null) {
+        v.isActivated = on
+        if (g != null) {
+            v.setTag(TAG_GROUP, g)
+            v.setOnFocusChangeListener { _, has ->
+                if (has) { pending = g; main.removeCallbacks(autoOpen); if (g != group) main.postDelayed(autoOpen, 250) }
+            }
+        }
+        rail.addView(v, LinearLayout.LayoutParams(-1, -2))
+    }
+
+    /** Opens [g] with the list's focus where it is: only the grid and the marked row change, nothing is rebuilt. */
+    private fun select(g: String) {
+        main.removeCallbacks(autoOpen)
+        group = g
+        for (i in 0 until rail.childCount) rail.getChildAt(i).let { v -> (v.getTag(TAG_GROUP) as? String)?.let { v.isActivated = it == g } }
+        filter(); grid.scrollToPosition(0)
+    }
 
     private fun pick(g: String) {
         group = g; buildRail(); filter()
-        grid.post { grid.getChildAt(0)?.requestFocus() }
+        main.removeCallbacks(autoOpen)
+        intoGrid()
+    }
+
+    /** Focus to the card this group had last, else the first. */
+    private fun intoGrid() {
+        val n = last[group]?.takeIf { it in shown.indices } ?: 0
+        (grid.layoutManager as GridLayoutManager).scrollToPositionWithOffset(n, grid.height / 3)
+        grid.post { (grid.findViewHolderForAdapterPosition(n)?.itemView ?: grid.getChildAt(0))?.requestFocus() }
     }
 
     private fun filter() {
@@ -197,10 +257,9 @@ class BrowseActivity : Activity() {
             ALL -> countryName
             else -> if (gid != null) mineName(gid) else "$countryName · ${groupName(group)}"
         }
+        chrome()
         when {
-            shown.isNotEmpty() -> say("", false)
-            failed && gid == null -> say(getString(R.string.offline), true)
-            all.isEmpty() && gid == null && note.text == getString(R.string.loading) -> {}
+            shown.isNotEmpty() || all.isEmpty() && gid == null -> say("", false)
             q.isNotEmpty() -> say(getString(R.string.no_match), false)
             gid == Store.FAV -> say(getString(R.string.no_favs), false)
             gid != null -> say(getString(R.string.no_in_group), false)
@@ -208,7 +267,17 @@ class BrowseActivity : Activity() {
         }
     }
 
-    private fun say(s: String, again: Boolean) { note.text = s; Ui.show(note, s.isNotEmpty()); Ui.show(retry, again) }
+    private fun say(s: String, again: Boolean) { note.text = s; Ui.show(note, s.isNotEmpty()) }
+
+    /** One state for the whole screen while there is no list to show: loading (a spinner), offline or empty (the words, Retry, Country). */
+    private fun chrome() {
+        val on = loading || all.isEmpty() && mine(group) == null
+        Ui.show(overlay, on); Ui.show(content, !on)
+        if (!on) return
+        Ui.show(spin, loading); Ui.show(waitButtons, !loading)
+        waitText.text = if (loading) getString(R.string.loading) else getString(if (failed) R.string.offline else R.string.none_here)
+        if (!loading && !overlay.hasFocus()) retry.post { retry.requestFocus() }
+    }
 
 
     fun play(ch: List<Channel>) {
@@ -409,6 +478,15 @@ class BrowseActivity : Activity() {
     }
 
     override fun onKeyDown(k: Int, e: KeyEvent): Boolean {
+        val v0 = currentFocus
+        if (k == KeyEvent.KEYCODE_BACK && e.repeatCount == 0 && v0 != null && content.visibility == View.VISIBLE && !rail.hasFocus()) {
+            if (find.text.isNotEmpty()) { find.setText(""); if (find.hasFocus()) grid.getChildAt(0)?.requestFocus(); return true }   // leave the search first
+            (0 until rail.childCount).map { rail.getChildAt(it) }.firstOrNull { it.isActivated }?.let { it.requestFocus(); return true }
+        }
+        if (k == KeyEvent.KEYCODE_DPAD_RIGHT && v0 != null && rail.hasFocus() && shown.isNotEmpty()) {   // into the grid, the open group made sure of
+            (v0.getTag(TAG_GROUP) as? String)?.let { if (it != group) select(it) }
+            intoGrid(); return true
+        }
         if (k == KeyEvent.KEYCODE_DPAD_LEFT) {                        // from the grid's first column: back to the list on show, not the nearest row
             val at = currentFocus?.let { grid.findContainingViewHolder(it) }?.bindingAdapterPosition ?: -1
             if (at >= 0 && at % (grid.layoutManager as GridLayoutManager).spanCount == 0)
@@ -444,7 +522,7 @@ class BrowseActivity : Activity() {
         }
     }
 
-    override fun onDestroy() { watching?.let { Store.unwatch(this, it) }; io.shutdownNow(); guides.shutdownNow(); super.onDestroy() }
+    override fun onDestroy() { main.removeCallbacks(autoOpen); watching?.let { Store.unwatch(this, it) }; io.shutdownNow(); guides.shutdownNow(); super.onDestroy() }
 
     /** Stable ids: a list drawn again (a favourite or a group changed) keeps the focus on the same channel, not on whatever card took its place. */
     private inner class Cards : RecyclerView.Adapter<Cards.H>() {
@@ -471,7 +549,9 @@ class BrowseActivity : Activity() {
                 orientation = LinearLayout.VERTICAL; isFocusable = true; isClickable = true; isLongClickable = true
                 setPadding(d(6), d(6), d(6), d(8))
                 background = Ui.states(c, Color.TRANSPARENT, Ui.dp(c, 16))
-                setOnFocusChangeListener { v, has -> v.animate().scaleX(if (has) 1.06f else 1f).scaleY(if (has) 1.06f else 1f).setDuration(120).start() }
+                setOnFocusChangeListener { v, has ->
+                    if (has) grid.getChildAdapterPosition(v).let { if (it >= 0) last[group] = it }
+                    v.animate().scaleX(if (has) 1.06f else 1f).scaleY(if (has) 1.06f else 1f).setDuration(120).start() }
             }
             val w = (p.width - p.paddingLeft - p.paddingRight) / columns() - d(12)
             val tile = FrameLayout(c).apply { background = Ui.round(Ui.TILE, Ui.dp(c, 12)) }
@@ -528,6 +608,7 @@ class BrowseActivity : Activity() {
     }
 
     companion object {
+        private const val TAG_GROUP = 0x7f0f0001                      // a rail row's group (any id: no layout uses it)
         const val QUERY = "query"                                    // text for the search box (a find link that matched nothing)
         const val ALL = ""
         const val FAVS = "\u0000favs"
