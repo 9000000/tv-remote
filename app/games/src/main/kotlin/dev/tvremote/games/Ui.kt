@@ -62,3 +62,8 @@ fun Context.addPanel(server: GameServer): LinearLayout = LinearLayout(this).appl
     addView(qrView(server.addUrl(), 150).apply { (layoutParams as LinearLayout.LayoutParams).setMargins(0, dp(14), 0, dp(10)) })
     addView(label(server.addUrl().substringBefore("/add"), 18f, 0xFFAAB0C0.toInt()))
 }
+
+/** "Reset connection code": a new code, every phone that had the old one must scan again. [again] redraws the QR. */
+fun Context.rotateButton(server: GameServer, again: () -> Unit) = menuButton(getString(R.string.new_code), 360, 52, 20f) {
+    server.rotateToken(); android.widget.Toast.makeText(this, getString(R.string.code_changed), android.widget.Toast.LENGTH_LONG).show(); again()
+}

@@ -26,9 +26,10 @@ const at = (e, x, y, w, h) => { e.style.cssText = `left:${x}%;top:${y / 0.56}%` 
 function key(box, cls, name, text, x, y, w, hh) {
   const e = h('div', 'k ' + cls, text); e.dataset.b = name; at(e, x, y, w, hh); box.append(e); return e;
 }
+const nameOf = (n) => { try { return pad.name(n) || T.p(n); } catch (e) { return T.p(n); } };
 function build(n) {
   const el = h('section', 'pl'); el.style.setProperty('--c', PCOL[n - 1]);
-  const hd = h('div', 'hd'); hd.append(h('b', '', T.p(n))); const ping = h('span', 'ping', '– ms'); hd.append(ping);
+  const hd = h('div', 'hd'); const title = h('b', '', nameOf(n)); hd.append(title); const ping = h('span', 'ping', '– ms'); hd.append(ping);
   const box = h('div', 'box'), keys = {};
   for (const b in SH) keys[b] = key(box, 'sh', b, SH[b][0], SH[b][1], 0, 13, 7);
   const ring = h('div', 'ring'); const knob = h('i', 'knob'); ring.append(knob); ring.style.cssText = `left:7%;top:${19 / 0.56}%;width:26%`;
@@ -37,34 +38,65 @@ function build(n) {
   box.append(ring);                                              // over the arms: the knob must not hide behind them
   keys.SELECT = key(box, 'pill', 'SELECT', 'Select', 36, 40, 13, 5); keys.START = key(box, 'pill', 'START', 'Start', 51, 40, 13, 5);
   for (const b in FACE) { const [g, c, dx, dy] = FACE[b]; const e = key(box, 'fb', b, g, 80 + dx - 5.5, 32 + dy - 5.5, 11, 11); e.style.setProperty('--bc', c); keys[b] = e; }
-  const stats = h('div', 'stats');
-  el.append(hd, box, stats);
+  const stats = h('div', 'stats'), body = h('div', 'body');
+  body.append(box, stats); el.append(hd, body);
   el.dataset.p = n; root.append(el);
   [...root.children].filter((c) => c.dataset.p).sort((a, b) => a.dataset.p - b.dataset.p).forEach((c) => root.append(c));   // by player number, not by who pressed first
-  P[n] = { el, keys, ping, knob, ring, stats, held: new Set(), lats: [], max: null, count: 0, last: null, ms: null };
+  P[n] = { el, keys, ping, title, hd, body, box, knob, ring, stats, held: new Set(), lats: [], max: null, count: 0, last: null, ms: null };
   layout(); stat(n); return P[n];
 }
+// The join QR: big in the middle while nobody is in, small in a corner from the first player on, gone once 4 are in.
+// Players: 1-2 side by side, 3-4 in a 2x2 grid (the free fourth cell holds the QR); sizes are worked out here so any TV size fits.
+let qrDone = false;
+function qrShow(mode) {
+  const q = $('#qr');
+  if (!qrDone) {
+    qrDone = true;
+    let url = '', src = '';
+    try { url = pad.joinUrl() || ''; src = pad.qr ? pad.qr(480) : ''; } catch (e) {}
+    if (src) $('#qrimg').src = src; else $('#qrimg').hidden = true;
+    $('#qrlink').textContent = url.replace(/^https?:\/\//, '').split('/')[0];
+    $('#qrtxt').textContent = T.join;
+  }
+  q.hidden = !mode; q.className = mode || '';
+}
 function layout() {
-  const n = Object.keys(P).length;
+  const ids = Object.keys(P).map(Number).sort(), n = ids.length;
   $('#hint').hidden = false;
-  document.querySelectorAll('.empty').forEach((e) => e.remove());
-  if (!n) { root.append(h('p', 'empty', T.join)); return; }
-  document.querySelectorAll('.box').forEach((b) => b.style.setProperty('--u', b.clientWidth / 100 + 'px'));   // text and glows scale with the box
+  qrShow(n === 0 ? 'mid' : n === 3 ? 'cell' : n >= 4 ? '' : 'corner');
+  if (!n) return;
+  const sw = $('#stage').clientWidth, sh = $('#stage').clientHeight, gap = innerWidth * 0.016, vh = innerHeight / 100;
+  const cols = n >= 3 ? 2 : n, rows = n >= 3 ? 2 : 1, cmp = n >= 3;
+  const cw = Math.min((sw - gap * (cols - 1)) / cols, cmp ? 88 * vh : 60 * vh), ch = (sh - gap * (rows - 1)) / rows;
+  ids.forEach((i) => {
+    const p = P[i];
+    p.el.classList.toggle('cmp', cmp);
+    p.el.style.width = cw + 'px'; p.el.style.height = cmp ? ch + 'px' : 'auto';
+    const padx = p.el.offsetWidth - p.el.clientWidth, inW = cw - 2 * 0.012 * innerWidth - 1 * vh;           // inside the border and padding
+    let bw = inW;
+    if (cmp) {
+      const inH = ch - p.hd.offsetHeight - 3.4 * vh - 1.6 * vh;
+      bw = Math.min(inW - 24 * vh - gap, inH * 100 / 56);
+    }
+    p.box.style.width = bw + 'px'; p.box.style.setProperty('--u', bw / 100 + 'px');                        // text and glows scale with the box
+  });
 }
 addEventListener('resize', layout);
 function stat(n) {
   const p = P[n], f = (v) => (v == null ? '–' : v + ' ms');
   p.stats.replaceChildren();
   const a = h('div', 'big'); a.append(`${T.last} `, h('b', '', f(p.last))); p.stats.append(a);
-  p.stats.append(h('div', '', `${T.med} ${f(PingMath.median(p.lats))} · ${T.max} ${f(p.max)} · ${T.n} ${p.count}`));
+  const l = h('div', ''); l.append(h('span', '', `${T.med} ${f(PingMath.median(p.lats))}`), h('span', 'sep', ' · '), h('span', '', `${T.max} ${f(p.max)}`), h('span', 'sep', ' · '), h('span', '', `${T.n} ${p.count}`));
+  p.stats.append(l);
 }
 function pingSet(n, ms) {
   const p = P[n] || build(n);
   if (ms == null || ms < 0) return;
   p.ms = ms; p.ping.textContent = ms + ' ms'; p.ping.className = 'ping ' + PingMath.level(ms);
 }
-pad.on('join', (e) => { const p = P[e.player] || build(e.player); pingSet(e.player, pad.ping(e.player)); });
+pad.on('join', (e) => { const p = P[e.player] || build(e.player); p.title.textContent = nameOf(e.player); pingSet(e.player, pad.ping(e.player)); });
 pad.on('leave', (e) => { const p = P[e.player]; if (p) { p.el.remove(); delete P[e.player]; layout(); } });
+pad.on('rename', (e) => { const p = P[e.player]; if (p) p.title.textContent = nameOf(e.player); });
 pad.on('ping', (e) => pingSet(e.player, e.ms));
 pad.on('button', (e) => {
   const p = P[e.player] || build(e.player), k = p.keys[e.btn];

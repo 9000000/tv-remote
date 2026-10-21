@@ -27,6 +27,7 @@ import java.security.SecureRandom
 class GameServer private constructor(private val ctx: Context) {
     private class Slot {
         var cid: String? = null
+        var name: String? = null                           // what the player typed on the phone (null = "Player N")
         var conn: Conn? = null
         var dev = -1                                       // a physical pad's device id
         var freedAt = 0L
@@ -59,12 +60,39 @@ class GameServer private constructor(private val ctx: Context) {
     private val slots = Array(MAX) { Slot() }
     private var server: ServerSocket? = null
     @Volatile var port = 0; private set
-    val token: String = TOKEN
+    private val prefs = ctx.getSharedPreferences("games", Context.MODE_PRIVATE)
+    /** Kept in the app's prefs (made once): a phone's link and the iPhone's Home Screen icon still work after TV Games was closed and opened again. */
+    @Volatile var token: String = prefs.getString("padToken", null) ?: newToken().also { prefs.edit().putString("padToken", it).apply() }
+        private set
+
+    /** A new connection code: every phone that scanned the old one gets 403 and is told to scan again. */
+    fun rotateToken() {
+        token = newToken(); prefs.edit().putString("padToken", token).apply()
+        val cs = synchronized(slots) { slots.mapNotNull { it.conn } }
+        cs.forEach { it.text("{\"rescan\":true}"); it.close() }
+    }
+
+    /** The name a player typed, null = the default. Player 1..4. */
+    fun nameOf(player: Int): String? = if (player in 1..MAX) synchronized(slots) { slots[player - 1].name } else null
+
+    init {                                                 // who sat where before, so a phone gets its seat back after a restart
+        try {
+            val a = org.json.JSONArray(prefs.getString("padSeats", "[]"))
+            for (i in 0 until minOf(a.length(), MAX)) { val o = a.optJSONObject(i) ?: continue; slots[i].cid = o.optString("c").ifEmpty { null }; slots[i].name = PadNames.clean(o.optString("n")); slots[i].freedAt = SystemClock.uptimeMillis() }
+        } catch (e: Exception) { }
+    }
+    private fun saveSeats() {
+        val a = org.json.JSONArray()
+        synchronized(slots) { slots.forEach { a.put(org.json.JSONObject().put("c", it.cid ?: "").put("n", it.name ?: "")) } }
+        prefs.edit().putString("padSeats", a.toString()).apply()
+    }
 
     fun start() {
-        for (p in PORT until PORT + 20) {
+        val last = prefs.getInt("padPort", 0)                // the same port as last time, so a saved link stays valid
+        for (p in listOf(last).filter { it in PORT until PORT + 20 } + (PORT until PORT + 20)) {
             try { server = ServerSocket(p).also { port = p }; break } catch (e: Exception) { }
         }
+        if (port > 0) prefs.edit().putInt("padPort", port).apply()
         val s = server ?: return Unit.also { Log.w(TAG, "no free port") }
         (ctx as? android.app.Application)?.registerActivityLifecycleCallbacks(tracker)
         Log.i(TAG, "listening ${url()}")
@@ -144,21 +172,30 @@ class GameServer private constructor(private val ctx: Context) {
 
     private fun reserved(s: Slot, now: Long) = s.conn == null && s.cid != null && now - s.freedAt < KEEP_MS
 
-    /** The slot for a phone: its own again, else the first free one, else one whose keeping time is running. -1 = full. */
-    private fun assign(cid: String, c: Conn): Int {
+    /** The slot for a phone: its own again, else the first free one, else one whose keeping time is running. -1 = full. [name]: null = keep what the slot has. */
+    private fun assign(cid: String, name: String?, c: Conn): Int {
         val changed: Int
         synchronized(slots) {
             val now = SystemClock.uptimeMillis()
-            var i = slots.indexOfFirst { it.cid == cid }
-            if (i >= 0) { slots[i].conn?.takeIf { it !== c }?.close() }
-            else i = slots.indexOfFirst { it.conn == null && it.dev < 0 && !reserved(it, now) }.takeIf { it >= 0 }
-                ?: slots.indexOfFirst { it.conn == null && it.dev < 0 }
+            val i = PadNames.pick(slots.map { PadNames.S(it.cid, it.conn != null, it.dev >= 0, reserved(it, now)) }, cid)
             if (i < 0) return -1
-            slots[i].cid = cid; slots[i].conn = c
+            val s = slots[i]
+            if (s.cid == cid) s.conn?.takeIf { it !== c }?.close() else s.name = null    // a new phone in a seat: not the last one's name
+            s.cid = cid; s.conn = c
+            if (name != null) s.name = name
             changed = i
         }
+        saveSeats()
         notifyPlayers()
         return changed
+    }
+
+    /** A phone typed its name (empty = back to "Player N"). */
+    private fun rename(i: Int, raw: String) {
+        val n = PadNames.clean(raw)
+        val same = synchronized(slots) { (slots[i].name == n).also { slots[i].name = n } }
+        if (same) return
+        saveSeats(); notifyPlayers()
     }
 
     private fun drop(i: Int, c: Conn) {
@@ -195,10 +232,10 @@ class GameServer private constructor(private val ctx: Context) {
         if (any) notifyPlayers()
     }
 
-    private fun notifyPlayers() {
-        val l = synchronized(slots) { slots.indices.filter { slots[it].conn != null || slots[it].dev >= 0 }.map { it + 1 } }
-        onPlayers(l)
-    }
+    /** The slots (1..4) in use right now: a screen that starts while phones are already in asks for it. */
+    fun playersNow(): List<Int> = synchronized(slots) { slots.indices.filter { slots[it].conn != null || slots[it].dev >= 0 }.map { it + 1 } }
+
+    private fun notifyPlayers() { onPlayers(playersNow()) }
 
     /** A phone's virtual stick, x / y -1..1 (y down). */
     private fun axis(i: Int, x: Float, y: Float) {
@@ -344,14 +381,16 @@ class GameServer private constructor(private val ctx: Context) {
                         val msg = String(data)
                         when {
                             msg.startsWith("hello ") -> {
-                                val i = assign(msg.substring(6).trim().take(40), c)
+                                val rest = msg.substring(6).trim()                 // "hello <client id> [name]"
+                                val i = assign(rest.substringBefore(' ').take(40), if (' ' in rest) PadNames.clean(rest.substringAfter(' ')) else null, c)
                                 if (i < 0) { c.text("{\"full\":true}"); break }
                                 slot = i
-                                c.text("{\"slot\":${i + 1},\"game\":$inGame,\"btns\":[${buttons.joinToString(",") { "\"$it\"" }}],\"sys\":\"$system\"}")
+                                c.text("{\"slot\":${i + 1},\"game\":$inGame,\"btns\":[${buttons.joinToString(",") { "\"$it\"" }}],\"sys\":\"$system\",\"name\":${org.json.JSONObject.quote(nameOf(i + 1) ?: "")}}")
                                 (synchronized(slots) { layouts[i] ?: defaultLayout })?.let { c.text("{\"layout\":$it}") }
                             }
                             msg.startsWith("p ") -> c.text(msg.trim() + " " + System.currentTimeMillis())          // the phone's stamp back + the TV's clock
                             slot >= 0 && msg.startsWith("r ") -> msg.split(' ').let { if (it.size == 3) report(slot, it[1].toIntOrNull(), it[2].toLongOrNull()) }
+                            slot >= 0 && msg.startsWith("name") -> rename(slot, msg.substring(4))
                             msg.startsWith("n ") -> nav(msg.substring(2).trim())
                             slot >= 0 && msg.startsWith("a ") -> msg.split(' ').let { if (it.size == 3) axis(slot, (it[1].toIntOrNull() ?: 0) / 100f, (it[2].toIntOrNull() ?: 0) / 100f) }
                             slot >= 0 && msg.startsWith("t ") -> onText(slot + 1, msg.substring(2).take(200))
@@ -400,8 +439,7 @@ class GameServer private constructor(private val ctx: Context) {
         private val FOCUS = mapOf(KeyEvent.KEYCODE_DPAD_UP to View.FOCUS_UP, KeyEvent.KEYCODE_DPAD_DOWN to View.FOCUS_DOWN,
             KeyEvent.KEYCODE_DPAD_LEFT to View.FOCUS_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT to View.FOCUS_RIGHT)
         private val CHOICE = setOf("C", "D", "L2", "R2")                   // answer buttons of web games (A and B are the pad's own)
-        /** One token per app start: a link from an earlier start no longer works. */
-        private val TOKEN: String = ByteArray(12).also { SecureRandom().nextBytes(it) }.joinToString("") { "%02x".format(it) }
+        private fun newToken(): String = ByteArray(12).also { SecureRandom().nextBytes(it) }.joinToString("") { "%02x".format(it) }
         val KEYS = mapOf(
             "UP" to KeyEvent.KEYCODE_DPAD_UP, "DOWN" to KeyEvent.KEYCODE_DPAD_DOWN, "LEFT" to KeyEvent.KEYCODE_DPAD_LEFT, "RIGHT" to KeyEvent.KEYCODE_DPAD_RIGHT,
             "A" to KeyEvent.KEYCODE_BUTTON_A, "B" to KeyEvent.KEYCODE_BUTTON_B, "X" to KeyEvent.KEYCODE_BUTTON_X, "Y" to KeyEvent.KEYCODE_BUTTON_Y,

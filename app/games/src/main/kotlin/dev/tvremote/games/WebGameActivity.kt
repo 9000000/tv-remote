@@ -17,6 +17,7 @@ import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
+import dev.tvremote.core.web.Qr
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -35,6 +36,7 @@ class WebGameActivity : ComponentActivity() {
     private var origin = ""
     @Volatile private var pageOrigin = ""
     private var players = listOf<Int>()
+    private var names = mapOf<Int, String>()
     private val nameOf = GameServer.KEYS.entries.associate { it.value to it.key }
     private val keyOf = mapOf(
         "UP" to KeyEvent.KEYCODE_DPAD_UP, "DOWN" to KeyEvent.KEYCODE_DPAD_DOWN, "LEFT" to KeyEvent.KEYCODE_DPAD_LEFT, "RIGHT" to KeyEvent.KEYCODE_DPAD_RIGHT,
@@ -82,7 +84,7 @@ class WebGameActivity : ComponentActivity() {
         setContentView(root)
         cards = GameCards(this, root, server, name, if (builtin) null else url,
             onPause = { p -> if (p) { web.onPause(); web.pauseTimers() } else { web.onResume(); web.resumeTimers(); web.requestFocus() } },
-            onSave = null, onLoad = null, onQuit = { finish() }, alone = false)
+            onSave = null, onLoad = null, onQuit = { finish() }, alone = false, quiet = link == "builtin:padtest")
         web.loadUrl(url)
     }
 
@@ -99,6 +101,7 @@ class WebGameActivity : ComponentActivity() {
         for (p in 1..4) server.pingOf(p).let { if (it >= 0) js("__tvpadIn('ping',$p,$it)") }
         server.onText = { p, t -> runOnUiThread { js("__tvpadIn('text',$p,${JSONObject.quote(t)})") } }
         server.onPlayers = { l -> runOnUiThread { cards.setPlayers(l); diff(l) } }
+        server.playersNow().let { cards.setPlayers(it); diff(it) }                         // phones that were in before this game started
         server.onAdded = { }
     }
 
@@ -113,9 +116,11 @@ class WebGameActivity : ComponentActivity() {
     private fun js(code: String) { if (pageOrigin == origin) web.evaluateJavascript("window.__tvpadIn&&$code", null) }
 
     private fun diff(now: List<Int>) {
-        (now - players.toSet()).forEach { js("__tvpadIn('join',$it)") }
+        val nn = now.associateWith { server.nameOf(it) ?: "" }
+        (now - players.toSet()).forEach { js("__tvpadIn('join',$it,${JSONObject.quote(nn[it])})") }
         (players - now.toSet()).forEach { js("__tvpadIn('leave',$it)") }
-        players = now
+        now.filter { it in players && nn[it] != names[it] }.forEach { js("__tvpadIn('rename',$it,${JSONObject.quote(nn[it])})") }
+        players = now; names = nn
     }
 
     private val held = HashMap<Int, Set<String>>()
@@ -138,10 +143,21 @@ class WebGameActivity : ComponentActivity() {
         private fun ok() = pageOrigin == origin
         @JavascriptInterface fun players(): String = JSONArray(players).toString()
         @JavascriptInterface fun ping(player: Int): Int = server.pingOf(player)
+        @JavascriptInterface fun name(player: Int): String = server.nameOf(player) ?: ""
+        @JavascriptInterface fun joinUrl(): String = if (ok()) server.url() else ""
+        @JavascriptInterface fun qr(px: Int): String = if (ok()) qrPng(server.url(), px.coerceIn(64, 1024)) else ""
         @JavascriptInterface fun layout(player: Int, json: String) { if (ok()) server.setLayout(player, json) }
         @JavascriptInterface fun vibrate(player: Int, ms: Int) { if (ok()) server.vibrate(player, ms) }
         @JavascriptInterface fun say(player: Int, text: String) { if (ok()) server.say(player, text) }
     }
+
+    /** The join QR as a data: URL (PNG, crisp squares), for a page that wants to draw it. */
+    private fun qrPng(url: String, px: Int): String = try {
+        val b = Qr.bitmap(url, 1) ?: return ""
+        val s = android.graphics.Bitmap.createScaledBitmap(b, px, px, false)    // no smoothing: modules stay sharp
+        val o = java.io.ByteArrayOutputStream(); s.compress(Bitmap.CompressFormat.PNG, 100, o)
+        "data:image/png;base64," + android.util.Base64.encodeToString(o.toByteArray(), android.util.Base64.NO_WRAP)
+    } catch (e: Exception) { "" }
 
     private fun isPad(ev: KeyEvent) = ev.source and (InputDevice.SOURCE_GAMEPAD or InputDevice.SOURCE_JOYSTICK) != 0
 

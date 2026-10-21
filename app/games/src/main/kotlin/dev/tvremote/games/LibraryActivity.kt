@@ -97,6 +97,7 @@ class LibraryActivity : ComponentActivity() {
             root.addView(LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
                 addView(addPanel(server))
+                addView(rotateButton(server) { reload() })
                 addView(label(getString(R.string.empty_hint), 16f, 0xFFAAB0C0.toInt()).apply { setPadding(dp(80), dp(18), dp(80), 0) })
             }, FrameLayout.LayoutParams(-1, -1))
             return
@@ -279,11 +280,16 @@ class LibraryActivity : ComponentActivity() {
     }
 
     private fun showOverlay() {
+        var b: View? = null
         val v = FrameLayout(this).apply {
             setBackgroundColor(0xE60B0D12.toInt()); isClickable = true
-            addView(addPanel(server), FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
+            addView(LinearLayout(this@LibraryActivity).apply {
+                orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
+                addView(addPanel(server)); addView(rotateButton(server) { closeOverlay(); showOverlay() }.also { b = it })
+            }, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
         }
         overlay = v
         root.addView(v, ViewGroup.LayoutParams(-1, -1))
+        b?.requestFocus()                                              // the D-pad starts on the button, not on the tile behind
     }
 }

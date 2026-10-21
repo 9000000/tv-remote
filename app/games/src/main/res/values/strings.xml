@@ -4,6 +4,8 @@
     <string name="scan_play">Scan to play</string>
     <string name="press_ok">Press OK to play alone</string>
     <string name="player_n">Player %1$d ✓</string>
+    <string name="new_code">Reset connection code</string>
+    <string name="code_changed">New code. Phones that scanned the old one must scan again.</string>
     <string name="chip">📱 Scan to join</string>
     <string name="paused">Paused</string>
     <string name="resume">Resume</string>

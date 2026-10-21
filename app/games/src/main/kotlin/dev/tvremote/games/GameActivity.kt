@@ -100,6 +100,7 @@ class GameActivity : ComponentActivity() {
         server.onAxis = { port, x, y -> retro.sendMotionEvent(GLRetroView.MOTION_SOURCE_ANALOG_LEFT, x, y, port) }
         server.onKey = { port, action, code -> retro.sendKeyEvent(action, code, port) }
         server.onPlayers = { l -> runOnUiThread { cards.setPlayers(l) } }
+        cards.setPlayers(server.playersNow())
         server.onAdded = { }
         server.onPing = { p, ms -> runOnUiThread { cards.setPing(p, ms) } }
         snapLoop.removeCallbacksAndMessages(null); snapLoop.postDelayed(snapTick, 5000)

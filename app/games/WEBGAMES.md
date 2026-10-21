@@ -14,6 +14,9 @@ A web game is a page the TV's WebView loads full screen (`WebGameActivity`). Pho
      `lat` = the press's delay phone -> TV in ms (the phone stamps each press with its clock, the TV moves it by the clock offset measured in the ping exchange; `null` while not known), `at` = `performance.now()` when the page got it.
    - `tvpad.ping(player)` -> the phone's round trip to the TV in ms (median of its last 5, measured every 2 s), -1 = not known yet.
    - `tvpad.players()` -> list of connected players.
+   - `tvpad.name(player)` -> the name the player typed on the phone (max 16 characters, emoji ok), `''` while it is the default: word "Player N" yourself. `join` events carry `name`; a `rename` event `{player, name}` fires when it changes (`''` = back to default).
+   - `tvpad.joinUrl()` -> the link phones open to join (the QR's), `tvpad.qr(px)` -> that QR as a PNG data URL (no smoothing when scaled). Show it while `players()` is empty.
+   - Phones keep their slot and name across reconnects and TV Games restarts (the link's code is saved; "Đổi mã kết nối" in Add game rotates it, old phones then ask to scan again). If the TV's IP changes, phones must scan again.
    - `tvpad.layout(player | 'all', {buttons:[..], choices:['A','B','C','D'], text:true, dpad:false})` sets what the phone shows (`null` resets).
    - `tvpad.vibrate(player, ms)`, `tvpad.say(player, text)` (a line on the phone).
 

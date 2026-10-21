@@ -18,6 +18,7 @@ class GameCards(
     private val title: String, private val runs: String?,
     private val onPause: (Boolean) -> Unit, private val onSave: (() -> String)?, private val onLoad: (() -> String?)?,
     private val onQuit: () -> Unit, private val alone: Boolean = true,
+    private val quiet: Boolean = false,                   // a page that draws the join QR and the players itself (Pad test): no start card, no chip
 ) {
     var paused = false; private set
     private var players: List<Int> = emptyList()
@@ -83,19 +84,22 @@ class GameCards(
     private fun pingLabel(p: Int, sp: Float) = act.label("", sp).apply { setPadding(act.dp(8), 0, act.dp(6), 0); pingViews.getOrPut(p) { ArrayList() }.add(this); paint(this, server.pingOf(p)) }
     fun setPing(p: Int, ms: Int) { pingViews[p]?.forEach { paint(it, ms) } }
 
+    /** "Player 2 ✓", or the name the player typed on the phone with the same tick. */
+    private fun who(p: Int) = server.nameOf(p)?.let { "$it ✓" } ?: act.getString(R.string.player_n, p)
+
     fun setPlayers(l: List<Int>) { val flash = l.size != players.size; players = l; refresh(flash) }
 
     // The start card goes when a player joins or OK is pressed; then the chip with the dots stays 5 s.
     private fun refresh(flash: Boolean = false) {
         if (startShown && players.isNotEmpty()) startShown = false
-        start.visibility = if (startShown && !paused) View.VISIBLE else View.GONE
+        start.visibility = if (startShown && !paused && !quiet) View.VISIBLE else View.GONE
         pauseCard.visibility = if (paused) View.VISIBLE else View.GONE
         startPlayers.removeAllViews(); chipDots.removeAllViews(); pingViews.clear()
         players.forEach { p ->
-            startPlayers.addView(LinearLayout(act).apply { gravity = Gravity.CENTER; addView(act.dot(p, 14)); addView(act.label(act.getString(R.string.player_n, p), 18f)); addView(pingLabel(p, 14f)) })
+            startPlayers.addView(LinearLayout(act).apply { gravity = Gravity.CENTER; addView(act.dot(p, 14)); addView(act.label(who(p), 18f).apply { maxLines = 1; maxWidth = act.dp(260); ellipsize = android.text.TextUtils.TruncateAt.END }); addView(pingLabel(p, 14f)) })
             chipDots.addView(act.dot(p, 12)); chipDots.addView(pingLabel(p, 12f))
         }
-        if (!startShown && !paused) { if (flash || chip.visibility != View.VISIBLE) flashChip() } else chip.visibility = View.GONE
+        if (!startShown && !paused && !quiet) { if (flash || chip.visibility != View.VISIBLE) flashChip() } else chip.visibility = View.GONE
     }
 
     private fun flashChip() {

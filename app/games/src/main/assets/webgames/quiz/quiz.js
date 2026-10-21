@@ -39,7 +39,8 @@ let timer = null;
 
 const h = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
 const col = (p) => PCOL[p - 1];
-function who(p, extra) { const e = h('div', 'chip'); e.style.setProperty('--pc', col(p)); e.append(h('span', 'dot'), h('span', '', T.p(p) + (extra || ''))); return e; }
+const pname = (p) => { try { return pad.name(p) || T.p(p); } catch (e) { return T.p(p); } };   // the name typed on the phone, else Player N
+function who(p, extra) { const e = h('div', 'chip'); e.style.setProperty('--pc', col(p)); e.append(h('span', 'dot'), h('span', '', pname(p) + (extra || ''))); return e; }
 function players() { return pad ? pad.players() : []; }
 
 function drawBoard() {
@@ -125,7 +126,7 @@ function finish() {
   const top = ps.length ? score[ps[0]] || 0 : 0, tied = ps.filter((p) => (score[p] || 0) === top).length > 1;
   const rank = h('div', 'rank');
   ps.forEach((p) => { const r = h('div', 'row' + ((score[p] || 0) === top && ps.length > 1 ? ' win' : '')); r.style.setProperty('--pc', col(p));
-    r.append(h('span', 'dot'), h('span', '', (score[p] === top && ps.length > 1 ? '🏆 ' : '') + T.p(p)), h('span', '', (score[p] || 0) + ' ' + T.pts)); rank.append(r); });
+    r.append(h('span', 'dot'), h('span', '', (score[p] === top && ps.length > 1 ? '🏆 ' : '') + pname(p)), h('span', '', (score[p] || 0) + ' ' + T.pts)); rank.append(r); });
   stage.replaceChildren(h('h1', '', ps.length > 1 ? (tied ? T.tie : T.win + ': ' + T.p(ps[0])) : T.title), rank, h('p', 'sub', T.again));
   if (pad) { pad.layout('all', { buttons: ['START'], dpad: false }); pad.say('all', ''); ps.forEach((p, k) => pad.vibrate(p, (score[p] || 0) === top ? 600 : 100)); }
   drawBoard();

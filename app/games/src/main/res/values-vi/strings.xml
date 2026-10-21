@@ -4,6 +4,8 @@
     <string name="scan_play">Quét để chơi</string>
     <string name="press_ok">Bấm OK để chơi một mình</string>
     <string name="player_n">Người chơi %1$d ✓</string>
+    <string name="new_code">Đổi mã kết nối</string>
+    <string name="code_changed">Đã đổi mã. Điện thoại đã quét mã cũ phải quét lại.</string>
     <string name="chip">📱 Quét để vào</string>
     <string name="paused">Tạm dừng</string>
     <string name="resume">Tiếp tục</string>

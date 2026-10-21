@@ -2,9 +2,9 @@
 const K = new URLSearchParams(location.search).get('k') || '';
 const VI = (navigator.language || '').toLowerCase().startsWith('vi');
 const W = VI
-  ? { p: 'Người chơi', c: 'Đang kết nối…', f: 'Hết chỗ chơi', h: 'Rung', a: 'Thêm game', s: 'Gửi', k: 'Cần xoay thay D-pad', b: 'Quay lại', g: 'TV Games', t: 'Thêm vào Màn hình chính để chơi toàn màn hình',
+  ? { p: 'Người chơi', c: 'Đang kết nối…', rc: 'Đang kết nối lại…', rch: 'Không thấy TV? Nếu TV đổi mạng hoặc địa chỉ, quét lại mã QR trên TV.', rs: 'Quét lại mã QR trên TV', rsh: 'Mã kết nối đã đổi. Quét mã mới để vào lại.', nm: 'Tên của bạn', f: 'Hết chỗ chơi', h: 'Rung', a: 'Thêm game', s: 'Gửi', k: 'Cần xoay thay D-pad', b: 'Quay lại', g: 'TV Games', t: 'Thêm vào Màn hình chính để chơi toàn màn hình',
     s1: 'Bấm nút Chia sẻ của Safari (ô vuông có mũi tên lên)', s2: 'Chọn “Thêm vào Màn hình chính”', s3: 'Mở tay cầm từ biểu tượng mới: toàn màn hình', fs: 'Toàn màn hình' }
-  : { p: 'Player', c: 'Connecting…', f: 'Room is full', h: 'Haptics', a: 'Add game', s: 'Send', k: 'Stick instead of D-pad', b: 'Back', g: 'TV Games', t: 'Add to Home Screen to play fullscreen',
+  : { p: 'Player', c: 'Connecting…', rc: 'Reconnecting…', rch: 'No TV in sight? If the TV changed network or address, scan its QR code again.', rs: 'Scan the QR code on the TV again', rsh: 'The connection code was changed. Scan the new one to join again.', nm: 'Your name', f: 'Room is full', h: 'Haptics', a: 'Add game', s: 'Send', k: 'Stick instead of D-pad', b: 'Back', g: 'TV Games', t: 'Add to Home Screen to play fullscreen',
     s1: 'Tap Safari’s Share button (the square with an up arrow)', s2: 'Choose “Add to Home Screen”', s3: 'Open the pad from the new icon: fullscreen', fs: 'Fullscreen' };
 const COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#eab308'];
 const $ = (s) => document.querySelector(s);
@@ -16,6 +16,7 @@ let cid = store.get('tvg-cid') || '';
 if (!cid) { cid = Math.random().toString(36).slice(2, 10) + Date.now().toString(36); store.set('tvg-cid', cid); }
 $('#lblHaptic').textContent = W.h; $('#lblAdd').textContent = W.a; $('#tipText').textContent = W.t;
 $('#lblBack').textContent = W.b; $('#lblHome').textContent = W.g; $('#shTitle').textContent = W.t; $('#sh1').textContent = W.s1; $('#sh2').textContent = W.s2; $('#sh3').textContent = W.s3; $('#fs').setAttribute('aria-label', W.fs); $('#send').textContent = W.s; $('#lblStick').textContent = W.k;
+$('#offTitle').textContent = W.rs; $('#offHint').textContent = W.rsh; $('#nm').placeholder = W.nm; $('#nm').maxLength = 40;
 $('#add').href = 'add?k=' + encodeURIComponent(K);
 
 // ---- haptics: vibrate() where there is one, the iOS 17.4+ checkbox-switch tick elsewhere
@@ -29,8 +30,24 @@ function buzz(ms) {
 function setHaptic(on) { haptics = on; store.set('tvg-haptic', on ? '1' : '0'); $('#sw').classList.toggle('on', on); }
 setHaptic(haptics);
 
+// ---- the player's name: kept here (localStorage) and sent with every hello, so the same phone is the same player after a reconnect
+// or after TV Games was closed and opened again; tapping the chip edits it. Empty = "Player N". Max 16 characters (emoji count one).
+let myName = store.get('tvg-name') || '', mySlot = 0;
+const clean = (v) => [...String(v || '').replace(/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g, ' ').replace(/\s+/g, ' ').trim()].slice(0, 16).join('').trim();
+function setName(v, tell) {
+  myName = clean(v); store.set('tvg-name', myName);
+  if (tell) send('name ' + myName);
+  show(mySlot);
+}
+function editName(on) {
+  $('#who').hidden = on; $('#nameform').hidden = !on;
+  if (on) { $('#nm').value = myName; try { $('#nm').focus(); $('#nm').select(); } catch (e) {} }
+}
+$('#nameform').addEventListener('submit', (e) => { e.preventDefault(); setName($('#nm').value, true); editName(false); buzz(12); });
+$('#nm').addEventListener('blur', () => { if (!$('#nameform').hidden) { setName($('#nm').value, true); editName(false); } });
+
 // ---- connection
-let first_hello = true, ws = null, retry = 400, layout = null, sysName = 'nes', mode = 'nav';
+let first_hello = true, ws = null, retry = 400, layout = null, sysName = 'nes', mode = 'nav', lastPong = 0, gaveUp = false, downSince = 0;
 // Two modes: the pad (a game is running) and navigate (a remote for TV Games itself: library, start / pause cards). It follows
 // the TV (a game starts -> pad, back to the library -> navigate); the 🎮 / 🧭 button flips it by hand.
 function setMode(m) {
@@ -113,26 +130,44 @@ const held = new Set();
 function send(s) { if (ws && ws.readyState === 1) ws.send(s); }
 function show(slot) {
   const who = $('#who');
+  mySlot = slot > 0 ? slot : mySlot;
+  document.body.classList.toggle('offline', slot === 0 && mySlot > 0);
+  who.classList.toggle('me', slot > 0);
   if (slot > 0) {
-    who.textContent = W.p + ' ' + slot;
+    who.textContent = myName || (W.p + ' ' + slot);
     const r = document.documentElement.style; r.setProperty('--c', COLORS[slot - 1]); r.setProperty('--glow', COLORS[slot - 1] + '77');
-  } else who.textContent = slot === -1 ? W.f : W.c;
+  } else who.textContent = slot === -1 ? W.f : mySlot > 0 ? W.rc : W.c;
 }
+// the TV said "scan again" (new connection code): stop trying, show it
+function rescan() { gaveUp = true; $('#off').hidden = false; try { ws.close(); } catch (e) {} }
+// after a drop: ask the server with a plain request why: 403 = the code changed (rescan), anything else = just try again
+function lost() {
+  if (gaveUp) return;
+  show(0);
+  if (!downSince) downSince = Date.now();
+  if (downSince && Date.now() - downSince > 15000 && mySlot > 0) say(W.rch);
+  fetch('/layouts.json?k=' + encodeURIComponent(K), { cache: 'no-store' }).then((r) => { if (r.status === 403) rescan(); else again(); }).catch(again);
+}
+function again() { if (gaveUp) return; setTimeout(connect, retry); retry = Math.min(retry * 1.6, 3000); }
 function connect() {
+  if (gaveUp) return;
   show(0);
   ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?k=' + encodeURIComponent(K));
-  ws.onopen = () => { retry = 400; send('hello ' + cid); held.forEach((b) => send('d ' + b)); };
+  ws.onopen = () => { retry = 400; downSince = 0; lastPong = Date.now(); send('hello ' + cid + (myName ? ' ' + myName : '')); held.forEach((b) => send('d ' + b)); };
   ws.onmessage = (e) => {
     const t = String(e.data);
     if (t[0] === 'p') { pong(t); return; }
     try {
       const m = JSON.parse(t);
+      if (m.rescan) { rescan(); return; }
       if (m.full) { show(-1); return; }
       if ('sys' in m && !('slot' in m)) { sysName = m.sys; layout = null; relayout(); return; }
       if ('game' in m && !('slot' in m)) { setMode(m.game ? 'pad' : 'nav'); $('#add').hidden = !!m.game; return; }
       if ('layout' in m) { layout = m.layout; relayout(); return; }
       if ('say' in m) { say(m.say); return; }
       if ('vibrate' in m) { if ('vibrate' in navigator) navigator.vibrate(m.vibrate); else buzz(0); return; }
+      if (m.name && !myName) { myName = clean(m.name); store.set('tvg-name', myName); }      // the TV remembers a name this phone lost
+      else if (myName && m.name !== myName) send('name ' + myName);
       show(m.slot);
       if (haptics && 'vibrate' in navigator) navigator.vibrate([30, 40, 30]); else buzz(0);   // a stronger one: the TV says the slot is yours
       $('#add').hidden = !!m.game;
@@ -141,13 +176,13 @@ function connect() {
       first_hello = false;
     } catch (x) {}
   };
-  ws.onclose = () => { show(0); setTimeout(connect, retry); retry = Math.min(retry * 1.6, 3000); };
+  ws.onclose = lost;
   ws.onerror = () => { try { ws.close(); } catch (x) {} };
 }
 // ---- ping: a stamp out, the TV's reply carries it back with the TV's clock; median of the last 5 (pingmath.js), shown small at the top
 const trk = new PingMath.Tracker(5);
 function pong(t) {
-  const [, t0, tv] = t.split(' '), now = Date.now();
+  const [, t0, tv] = t.split(' '), now = Date.now(); lastPong = now;
   if (!(Number(t0) > 0)) return;
   trk.add(Number(t0), now, tv == null ? null : Number(tv));
   const p = trk.ping(), el = $('#ms'); window.__rtt = p;
@@ -155,7 +190,12 @@ function pong(t) {
   send('r ' + p + ' ' + (trk.offset() == null ? 0 : trk.offset()));
   window.__off = trk.offset();
 }
-setInterval(() => send('p ' + Date.now()), 2000);
+setInterval(() => {
+  send('p ' + Date.now());
+  if (ws && ws.readyState === 1 && Date.now() - lastPong > 7000) { const w = ws; w.onclose = null; try { w.close(); } catch (e) {} lost(); }     // a link that died without a close (Wi-Fi gone, TV off)
+}, 2000);
+// the phone woke up: do not wait for the next retry
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !gaveUp && (!ws || ws.readyState > 1)) { retry = 400; connect(); } });
 
 // ---- presses
 function press(b, on) {
@@ -210,6 +250,7 @@ const ACT = {
   fs() { toggleFs(); buzz(12); },
   sheetx() { $('#sheet').hidden = true; },
   mode() { setMode(mode === 'nav' ? 'pad' : 'nav'); buzz(12); },
+  who() { if (mySlot > 0) editName(true); },
   gear() { const m = $('#menu'); m.hidden = !m.hidden; },
   haptic() { setHaptic(!haptics); buzz(12); },
   add(el) { location.href = el.href; },
@@ -264,7 +305,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) relea
 
 // ---- touch: nothing may scroll, zoom or select, with any number of fingers
 function handle(e) {
-  if (e.target.closest && e.target.closest('#textrow')) return;      // the text field needs its own touches (keyboard, caret)
+  if (e.target.closest && e.target.closest('#textrow,#nameform')) return;      // the text field needs its own touches (keyboard, caret)
   e.preventDefault();
   if (e.type === 'touchstart') {
     firstTap();

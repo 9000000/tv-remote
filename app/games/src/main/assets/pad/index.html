@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="pad.css?k=__K__">
 </head>
 <body>
-<div id="top"><span id="who">&nbsp;</span><span id="ms"></span><button id="fs" data-act="fs" aria-label="Fullscreen"></button><button id="mode" data-act="mode" aria-label="Mode">🧭</button><button id="gear" data-act="gear" aria-label="Settings">⚙</button></div>
+<div id="top"><span id="who" data-act="who">&nbsp;</span><form id="nameform" hidden autocomplete="off"><input id="nm" enterkeyhint="done" autocomplete="off" autocapitalize="words"></form><span id="ms"></span><button id="fs" data-act="fs" aria-label="Fullscreen"></button><button id="mode" data-act="mode" aria-label="Mode">🧭</button><button id="gear" data-act="gear" aria-label="Settings">⚙</button></div>
 <div id="menu" hidden>
   <div class="row" data-act="haptic"><span id="lblHaptic">Rung</span><span class="sw" id="sw"></span></div>
   <div class="row" data-act="stick"><span id="lblStick">Stick</span><span class="sw" id="sw2"></span></div>
@@ -24,6 +24,7 @@
 <div id="tip" hidden><span id="tipText"></span><b data-act="tipx">✕</b></div>
 <label id="ios" aria-hidden="true"><input type="checkbox" switch tabindex="-1"></label>
 <div id="say" hidden></div>
+<div id="off" hidden><b id="offTitle"></b><span id="offHint"></span></div>
 <div id="choices" hidden>
   <button class="ch" data-b="A">A</button><button class="ch" data-b="B">B</button><button class="ch" data-b="C">C</button><button class="ch" data-b="D">D</button>
 </div>
