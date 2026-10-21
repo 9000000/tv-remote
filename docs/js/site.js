@@ -6,7 +6,7 @@
   };
   function setLang(l){
     root.dataset.lang = l; root.lang = l; document.title = titles[l];
-    document.querySelectorAll("img[data-lang-src]").forEach(function(i){ i.src = i.dataset.langSrc.replace("LANG", l); });
+    document.querySelectorAll("img[data-lang-src]").forEach(function(i){ if (i.dataset.langSrcset) i.srcset = i.dataset.langSrcset.replace(/LANG/g, l); i.src = i.dataset.langSrc.replace("LANG", l); });
     document.querySelectorAll(".lang button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.set === l); });
     try { localStorage.setItem("lang", l); } catch(e){}
   }

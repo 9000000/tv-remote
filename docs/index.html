@@ -111,11 +111,11 @@
     </div>
     <div class="stage">
       <div class="tv">
-        <img src="img/tvapp-vi.webp" data-lang-src="img/tvapp-LANG.webp" width="1280" height="720" alt="TV Setup" fetchpriority="high">
-        <script>var i=document.currentScript.previousElementSibling;i.src=i.dataset.langSrc.replace("LANG",document.documentElement.dataset.lang)</script>
+        <img src="img/tvapp-vi.webp" srcset="img/tvapp-vi-640.webp 640w, img/tvapp-vi-960.webp 960w, img/tvapp-vi.webp 1280w" sizes="(max-width:980px) min(calc((100vw - 32px)*.84 - 20px), 500px), 432px" data-lang-src="img/tvapp-LANG.webp" data-lang-srcset="img/tvapp-LANG-640.webp 640w, img/tvapp-LANG-960.webp 960w, img/tvapp-LANG.webp 1280w" width="1280" height="720" alt="TV Setup" fetchpriority="high">
+        <script>var i=document.currentScript.previousElementSibling;var L=document.documentElement.dataset.lang;i.srcset=i.dataset.langSrcset.replace(/LANG/g,L);i.src=i.dataset.langSrc.replace("LANG",L)</script>
       </div>
       <div class="signal" aria-hidden="true"><i></i><i></i><i></i></div>
-      <div class="phone"><img src="img/phone-remote.webp" width="480" height="1040" alt="TV Remote phone app" fetchpriority="high"></div>
+      <div class="phone"><img src="img/phone-remote.webp" srcset="img/phone-remote-240.webp 240w, img/phone-remote-360.webp 360w, img/phone-remote.webp 480w" sizes="(max-width:980px) min(calc((100vw - 32px)*.24 - 10px), 140px), 120px" width="480" height="1040" alt="TV Remote phone app" fetchpriority="high"></div>
     </div>
   </div>
 </header>

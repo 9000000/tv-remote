@@ -122,11 +122,19 @@ def chrome_shot(url, js, w, h, dpr=1, cookie=None, wait=3):
     finally: c.close()
 
 
+SMALL = {"tvapp": (640, 960), "phone-remote": (240, 360)}   # widths of the hero's srcset (docs/index.html)
+
+
 def save_webp(img, name):
     png = os.path.join(TMP, name + ".png")
     img.convert("RGB").save(png)
     subprocess.run(["cwebp", "-quiet", "-q", "80", png, "-o", os.path.join(IMG, name + ".webp")], check=True)
     log("docs/img/" + name + ".webp", img.size)
+    for w in SMALL.get(name.rsplit("-", 1)[0] if name.startswith("tvapp") else name, ()):   # the hero's srcset: -<w> copies, never upscaled
+        small = img.resize((w, round(img.height * w / img.width)), Image.LANCZOS)
+        small.convert("RGB").save(png)
+        subprocess.run(["cwebp", "-quiet", "-q", "80", png, "-o", os.path.join(IMG, f"{name}-{w}.webp")], check=True)
+        log(f"docs/img/{name}-{w}.webp", small.size)
 
 
 # ---- the made-up TV picture --------------------------------------------------------------------------------------------
