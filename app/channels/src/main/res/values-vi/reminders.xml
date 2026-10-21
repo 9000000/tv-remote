@@ -8,4 +8,6 @@
     <string name="remind_hint">OK để xem · Back để bỏ qua</string>
     <string name="remind_channel">Nhắc lịch chương trình</string>
     <string name="remind_nooverlay">Để thấy nhắc khi ở app khác, hãy cho TV Channels “Hiển thị trên ứng dụng khác”.</string>
+    <string name="remind_list">Nhắc lịch</string>
+    <string name="remind_list_hint">OK để bỏ nhắc</string>
 </resources>

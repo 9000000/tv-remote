@@ -214,6 +214,8 @@ class BrowseActivity : Activity() {
         add(Ui.row(this, R.drawable.ic_search, getString(R.string.search)) { enterSearch() }, group == SEARCH)   // an action: OK only, moving onto it opens nothing
         val favs = Store.favourites(this).byChannel().size
         add(Ui.row(this, R.drawable.ic_star, getString(R.string.favourites), if (favs > 0) "$favs" else "") { pick(FAVS) }.held(Store.FAV), group == FAVS, FAVS)
+        val rem = Reminders.all(this).size
+        if (rem > 0) add(Ui.row(this, R.drawable.ic_bell, getString(R.string.remind_list), "$rem") { remindList() }, false)   // only while there are reminders
         for (g in Store.groups(this)) {
             val n = g.channels.byChannel().size
             add(Ui.row(this, R.drawable.ic_folder, g.name, if (n > 0) "$n" else "") { pick(MINE + g.id) }.held(g.id), group == MINE + g.id, MINE + g.id)
@@ -477,6 +479,20 @@ class BrowseActivity : Activity() {
             dlg.dismiss()
             ask(getString(R.string.new_group), "") { name -> Store.toggle(this, Store.addGroup(this, name), ch); buildRail(); filter() }
         })
+        dlg.show()
+        box.post { box.getChildAt(1)?.requestFocus() }
+    }
+
+    /** The reminders set: OK on one removes it. */
+    private fun remindList() {
+        val items = Reminders.all(this).sortedBy { it.start }
+        if (items.isEmpty()) { buildRail(); return }
+        val (dlg, box) = sheet(560)
+        heading(box, getString(R.string.remind_list))
+        for (r in items) box.addView(Ui.row(this, R.drawable.ic_close, "${Guide.hm(r.start)}  ${r.title} · ${r.name}") {
+            Reminders.remove(this, r); dlg.dismiss(); buildRail(); remindList()
+        })
+        box.addView(Ui.text(this, getString(R.string.remind_list_hint), 14f, Ui.DIM).apply { setPadding(Ui.dp(this@BrowseActivity, 12).toInt(), Ui.dp(this@BrowseActivity, 8).toInt(), 0, 0) })
         dlg.show()
         box.post { box.getChildAt(1)?.requestFocus() }
     }
