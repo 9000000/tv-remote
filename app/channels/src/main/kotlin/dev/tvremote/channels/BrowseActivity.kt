@@ -560,6 +560,8 @@ class BrowseActivity : Activity() {
     /** Stable ids: a list drawn again (a favourite or a group changed) keeps the focus on the same channel, not on whatever card took its place. */
     private inner class Cards : RecyclerView.Adapter<Cards.H>() {
         val LINE = "line"
+        private val lightTile by lazy { Ui.round(LogoFit.LIGHT_TILE, Ui.dp(this@BrowseActivity, 12)) }   // lazy: the activity has no resources yet while its fields are built
+        private val darkTile by lazy { Ui.round(LogoFit.DARK_TILE, Ui.dp(this@BrowseActivity, 12)) }   // lighter than the card, so its edge shows
         init { setHasStableIds(true) }
         override fun getItemId(i: Int) = shown[i].first().id.hashCode().toLong()   // one card per id ([byChannel])
         inner class H(v: View) : RecyclerView.ViewHolder(v) {
@@ -595,8 +597,6 @@ class BrowseActivity : Activity() {
             tile.addView(TextView(c).apply {
                 tag = "letters"; gravity = Gravity.CENTER; textSize = 26f; setTextColor(0xFF5F6368.toInt())
                 typeface = android.graphics.Typeface.DEFAULT_BOLD
-        private val lightTile by lazy { Ui.round(LogoFit.LIGHT_TILE, Ui.dp(this@BrowseActivity, 12)) }   // lazy: the activity has no resources yet while its fields are built
-        private val darkTile by lazy { Ui.round(LogoFit.DARK_TILE, Ui.dp(this@BrowseActivity, 12)) }   // lighter than the card, so its edge shows
             }, FrameLayout.LayoutParams(-1, -1))
             tile.addView(LogoView(c).apply { tag = "logo" }, FrameLayout.LayoutParams(-1, -1))
             tile.addView(ImageView(c).apply { tag = "star"; setImageResource(R.drawable.ic_star); imageTintList = android.content.res.ColorStateList.valueOf(0xFFF9AB00.toInt()) },
