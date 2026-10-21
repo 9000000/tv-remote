@@ -38,6 +38,17 @@
     <string name="retry">Thử lại</string>
     <string name="back">Quay lại</string>
     <string name="core_cancelled">Đã hủy</string>
+    <string name="player_plain">Người chơi %1$d</string>
+    <string name="lobby_title">Phòng chờ</string>
+    <string name="lobby_waiting">Đang chờ…</string>
+    <string name="lobby_ready">Sẵn sàng ✓</string>
+    <string name="lobby_notready">Chưa sẵn sàng</string>
+    <string name="lobby_hint">Bấm OK trên remote để bắt đầu · hoặc mọi người bấm Sẵn sàng</string>
+    <string name="lobby_count">Bắt đầu sau</string>
+    <string name="need_one">1 người chơi</string>
+    <string name="need_n">Cần %1$d người chơi</string>
+    <string name="need_range">%1$d–%2$d người chơi</string>
+    <string name="few_warn">Mới có %1$d/%2$d người chơi. Bấm OK lần nữa để vẫn bắt đầu</string>
     <string name="pad_channel">Tay cầm điện thoại</string>
     <string name="pad_running">Điện thoại đang kết nối</string>
     <string name="allow_reopen">Cho phép điện thoại mở lại TV Games</string>

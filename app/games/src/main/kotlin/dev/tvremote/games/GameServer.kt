@@ -35,6 +35,7 @@ class GameServer private constructor(private val ctx: Context) {
         var dirs: Set<String> = emptySet()                 // the d-pad keys the virtual stick holds now (cores without analog)
         @Volatile var ping = -1                            // the phone's own median round trip (ms), -1 = not measured yet
         @Volatile var offset = Long.MIN_VALUE              // the TV's clock minus the phone's (ms), from the ping exchange
+        @Volatile var ready = false                        // pressed "Sẵn sàng" in the lobby; cleared when the phone drops or a lobby opens
     }
 
     @Volatile var buttons: List<String> = listOf("A", "B", "START", "SELECT")   // the buttons the running system has: the page shows only those
@@ -53,6 +54,19 @@ class GameServer private constructor(private val ctx: Context) {
     @Volatile var onPing: (player: Int, ms: Int) -> Unit = { _, _ -> }   // a phone's ping changed, player 1..4
     fun pingOf(player: Int): Int = if (player in 1..MAX) slots[player - 1].ping else -1
     @Volatile var onPlayers: (List<Int>) -> Unit = {}      // slots (1..4) now in use, any thread
+    /** The lobby (before a game starts): pad presses go to [onLobbyBtn] instead of the game, "ready 0|1" fills [onReady]. Set by GameCards. */
+    @Volatile var lobby = false; private set
+    @Volatile var onReady: () -> Unit = {}                 // someone's Ready changed, any thread
+    @Volatile var onLobbyBtn: (player: Int, name: String, down: Boolean) -> Unit = { _, _, _ -> }   // a button tried in the lobby, player 1..4
+    fun setLobby(on: Boolean) {
+        if (on) synchronized(slots) { slots.forEach { it.ready = false; it.held.clear(); it.dirs = emptySet() } }
+        Log.i(TAG, "lobby $on"); lobby = on; send(0, "{\"lobby\":$on}")
+    }
+    fun countdown(n: Int) = send(0, "{\"count\":$n}")      // the lobby's 3-2-1 on the pads, 0 = cancelled
+    /** Who is in, for [LobbyRule]: a phone has its own Ready, a physical pad has no button for it and counts as ready. */
+    fun lobbyPlayers(): List<LobbyRule.P> = synchronized(slots) {
+        slots.mapIndexedNotNull { i, s -> if (s.conn != null) LobbyRule.P(i + 1, true, s.ready) else if (s.dev >= 0) LobbyRule.P(i + 1, false, true) else null }
+    }
     @Volatile var onAdded: () -> Unit = {}                 // a game or a web link was added
     @Volatile var onText: (player: Int, text: String) -> Unit = { _, _ -> }   // a phone's text field (web games), player 1..4
     private val layouts = arrayOfNulls<String>(MAX)        // per player: the pad layout a web game asked for (JSON), kept for a reconnect
@@ -190,7 +204,7 @@ class GameServer private constructor(private val ctx: Context) {
             if (i < 0) return -1
             val s = slots[i]
             if (s.cid == cid) s.conn?.takeIf { it !== c }?.close() else s.name = null    // a new phone in a seat: not the last one's name
-            s.cid = cid; s.conn = c
+            Log.i(TAG, "assign slot ${i + 1}"); s.cid = cid; s.conn = c; s.ready = false
             if (name != null) s.name = name
             changed = i
         }
@@ -212,7 +226,7 @@ class GameServer private constructor(private val ctx: Context) {
             val s = slots[i]
             if (s.conn !== c) return                       // a reconnect already took the slot over
             s.held.toList().forEach { onKey(i, KeyEvent.ACTION_UP, it) }; s.held.clear()
-            s.conn = null; s.freedAt = SystemClock.uptimeMillis(); s.ping = -1; s.offset = Long.MIN_VALUE
+            s.conn = null; s.freedAt = SystemClock.uptimeMillis(); s.ping = -1; s.offset = Long.MIN_VALUE; s.ready = false
         }
         notifyPlayers(); presence.padsChanged()
     }
@@ -248,6 +262,12 @@ class GameServer private constructor(private val ctx: Context) {
 
     /** A phone's virtual stick, x / y -1..1 (y down). */
     private fun axis(i: Int, x: Float, y: Float) {
+        if (lobby) {                                       // trying the stick in the lobby: the slot lights its direction, the game gets nothing
+            val now = dirs(x, y)
+            val before = synchronized(slots) { slots[i].dirs.also { slots[i].dirs = now } }
+            (before - now).forEach { onLobbyBtn(i + 1, it, false) }; (now - before).forEach { onLobbyBtn(i + 1, it, true) }
+            return
+        }
         if (analog) { onAxis(i, x.coerceIn(-1f, 1f), y.coerceIn(-1f, 1f)); return }
         val now = dirs(x, y)
         val before = synchronized(slots) { slots[i].dirs.also { slots[i].dirs = now } }
@@ -264,6 +284,7 @@ class GameServer private constructor(private val ctx: Context) {
 
     private fun key(i: Int, down: Boolean, name: String, stamp: Long? = null) {
         val code = KEYS[name] ?: return
+        if (lobby) { onLobbyBtn(i + 1, name, down); return }
         if (!webMode && name !in buttons && name !in DPAD && name !in CHOICE) return
         synchronized(slots) { if (down) slots[i].held.add(code) else slots[i].held.remove(code) }
         val t0 = System.nanoTime()
@@ -394,13 +415,14 @@ class GameServer private constructor(private val ctx: Context) {
                                 val i = assign(rest.substringBefore(' ').take(40), if (' ' in rest) PadNames.clean(rest.substringAfter(' ')) else null, c)
                                 if (i < 0) { c.text("{\"full\":true}"); break }
                                 slot = i
-                                c.text("{\"slot\":${i + 1},\"game\":$inGame,\"btns\":[${buttons.joinToString(",") { "\"$it\"" }}],\"sys\":\"$system\",\"name\":${org.json.JSONObject.quote(nameOf(i + 1) ?: "")}}")
+                                c.text("{\"slot\":${i + 1},\"game\":$inGame,\"btns\":[${buttons.joinToString(",") { "\"$it\"" }}],\"sys\":\"$system\",\"name\":${org.json.JSONObject.quote(nameOf(i + 1) ?: "")},\"lobby\":$lobby,\"ready\":false}")
                                 (synchronized(slots) { layouts[i] ?: defaultLayout })?.let { c.text("{\"layout\":$it}") }
                                 if (presence.away) c.text(presence.state())
                                 presence.padsChanged()
                             }
                             msg.startsWith("p ") -> c.text(msg.trim() + " " + System.currentTimeMillis())          // the phone's stamp back + the TV's clock
                             slot >= 0 && msg.startsWith("r ") -> msg.split(' ').let { if (it.size == 3) report(slot, it[1].toIntOrNull(), it[2].toLongOrNull()) }
+                            slot >= 0 && msg.startsWith("ready ") -> if (lobby) { slots[slot].ready = msg.trim().endsWith("1"); Log.i(TAG, "ready p${slot + 1} ${slots[slot].ready}"); onReady() }
                             slot >= 0 && msg.startsWith("name") -> rename(slot, msg.substring(4))
                             msg.startsWith("n ") -> nav(msg.substring(2).trim())
                             msg == "open" -> presence.open()
@@ -411,7 +433,7 @@ class GameServer private constructor(private val ctx: Context) {
                     }
                 }
             }
-        } catch (e: Exception) { }
+        } catch (e: Exception) { Log.w(TAG, "socket p${slot + 1} ended: $e") }
         if (slot >= 0) drop(slot, c)
         c.close()
     }

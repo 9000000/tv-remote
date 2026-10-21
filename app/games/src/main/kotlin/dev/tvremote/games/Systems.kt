@@ -34,6 +34,9 @@ object Systems {
         }
     }
 
+    /** The most players a system's games take (the core's controller ports): imported ROMs have no catalog entry to say more. */
+    fun maxPlayers(id: String) = when (id) { "gba" -> 1; else -> 2 }
+
     fun byExt(ctx: Context, ext: String): Sys? = list(ctx).firstOrNull { ext.lowercase() in it.exts }
     fun uploadExts(ctx: Context): Set<String> = list(ctx).flatMap { it.exts }.toSet()
 

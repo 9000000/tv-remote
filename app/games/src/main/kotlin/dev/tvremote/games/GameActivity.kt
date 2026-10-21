@@ -80,7 +80,7 @@ class GameActivity : ComponentActivity() {
             // fceumm cannot tell a PAL-only homebrew from NTSC by itself: Region reads the ROM, never its name
             if (sys.id == "nes") variables = arrayOf(Variable("fceumm_region", Region.of(this@GameActivity, file)))
         }
-        startedAt = System.currentTimeMillis()
+        startedAt = Long.MAX_VALUE                                    // set when the lobby hands over to the game (no picture of the lobby's frozen frame)
         retro = GLRetroView(this, data)
         lifecycle.addObserver(retro)                                  // GLRetroView is a LifecycleObserver; it also needs onCreate
         retro.onCreate(this)
@@ -88,12 +88,21 @@ class GameActivity : ComponentActivity() {
         setContentView(root)
         server = GameServer.acquire(this)
         cards = GameCards(this, root, server, Systems.clean(file.name), null,
-            onPause = { retro.frameSpeed = if (it) 0 else 1 }, onSave = { quickSave() }, onLoad = { quickLoad() }, onQuit = { finish() })
+            onPause = { retro.frameSpeed = if (it) 0 else 1 }, onSave = { quickSave() }, onLoad = { quickLoad() }, onQuit = { finish() },
+            withLobby = true, art = Thumbs.src(this, sys, file.name), maxPlayers = players.first, minPlayers = players.second,
+            onGo = { startedAt = System.currentTimeMillis(); snapLoop.removeCallbacksAndMessages(null); snapLoop.postDelayed(snapTick, 5000) })
+        if (lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) bind()   // the core was fetched after onResume already ran
     }
+
+    private val players by lazy { Catalog.players(this, file.name, null, Systems.maxPlayers(sys.id)) }
 
     override fun onResume() {
         super.onResume()
-        if (!::server.isInitialized) return
+        bind()
+    }
+
+    private fun bind() {
+        if (!::server.isInitialized || !::cards.isInitialized) return
         server.inGame = true
         server.buttons = sys.buttons
         server.clearLayouts(); server.webMode = false; server.setSystem(sys.pad); server.analog = sys.analog
@@ -111,7 +120,7 @@ class GameActivity : ComponentActivity() {
     private val snapTick = object : Runnable {
         override fun run() {
             if (!::retro.isInitialized || isDestroyed) return
-            if (!cards.paused) Thumbs.snapshot(this@GameActivity, retro, "g:" + file.name)
+            if (!cards.paused && !cards.lobby) Thumbs.snapshot(this@GameActivity, retro, "g:" + file.name)
             snapLoop.postDelayed(this, 40_000)
         }
     }
@@ -123,7 +132,7 @@ class GameActivity : ComponentActivity() {
         super.onPause()
     }
 
-    override fun onDestroy() { cancelled = true; if (::server.isInitialized) GameServer.release(); super.onDestroy() }
+    override fun onDestroy() { cancelled = true; if (::cards.isInitialized) cards.close(); if (::server.isInitialized) GameServer.release(); super.onDestroy() }
 
     private fun stateFile() = File(Systems.savesDir(this), file.nameWithoutExtension + ".state")
     private fun quickSave(): String = try { stateFile().writeBytes(retro.serializeState()); getString(R.string.saved) } catch (e: Exception) { getString(R.string.cant_open) }
@@ -155,7 +164,7 @@ class GameActivity : ComponentActivity() {
     }
 
     override fun dispatchGenericMotionEvent(ev: MotionEvent): Boolean {
-        if (ev.source and InputDevice.SOURCE_JOYSTICK == 0 || cards.paused) return super.dispatchGenericMotionEvent(ev)
+        if (ev.source and InputDevice.SOURCE_JOYSTICK == 0 || cards.paused || cards.lobby) return super.dispatchGenericMotionEvent(ev)
         val port = server.padPort(ev.deviceId)
         if (port < 0) return true
         retro.sendMotionEvent(GLRetroView.MOTION_SOURCE_DPAD, ev.getAxisValue(MotionEvent.AXIS_HAT_X), ev.getAxisValue(MotionEvent.AXIS_HAT_Y), port)

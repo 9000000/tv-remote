@@ -38,6 +38,17 @@
     <string name="retry">Retry</string>
     <string name="back">Back</string>
     <string name="core_cancelled">Cancelled</string>
+    <string name="player_plain">Player %1$d</string>
+    <string name="lobby_title">Lobby</string>
+    <string name="lobby_waiting">Waiting…</string>
+    <string name="lobby_ready">Ready ✓</string>
+    <string name="lobby_notready">Not ready</string>
+    <string name="lobby_hint">Press OK on the remote to start · or everyone taps Ready</string>
+    <string name="lobby_count">Starting in</string>
+    <string name="need_one">1 player</string>
+    <string name="need_n">Needs %1$d players</string>
+    <string name="need_range">%1$d–%2$d players</string>
+    <string name="few_warn">Only %1$d of %2$d players. Press OK again to start anyway</string>
     <string name="pad_channel">Phone pads</string>
     <string name="pad_running">Phones are connected</string>
     <string name="allow_reopen">Let phones reopen TV Games</string>

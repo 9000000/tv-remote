@@ -20,6 +20,13 @@ A web game is a page the TV's WebView loads full screen (`WebGameActivity`). Pho
    - `tvpad.layout(player | 'all', {buttons:[..], choices:['A','B','C','D'], text:true, dpad:false})` sets what the phone shows (`null` resets).
    - `tvpad.vibrate(player, ms)`, `tvpad.say(player, text)` (a line on the phone).
 
+## Lobby (before the game starts)
+Every game (NES and web) opens with a lobby on the TV: the game's picture and title, the join QR, 4 seats (name, colour, ping, Ready), "needs N players". It ends when OK is pressed on the TV remote (fewer players than `min`: the first OK only warns, the second starts) or when every connected phone (at least `min`) has pressed Ready: a 3-2-1 follows, cancelled if someone un-readies or a new phone joins. Back on the remote leaves to the library.
+- While the lobby is on, the page is loaded but frozen (timers paused) and **buttons / sticks are not sent to the game**: the phone's presses only light up the seat on the TV. `window.tvpad` has nothing new: your `join` / `button` events simply start after the lobby, and the players who were in the lobby are already in `players()`. A phone joining a running game goes straight in.
+- Players per game: `players` (max, 1-4) and `min` (needed, default 1) in the catalog entry (`docs/games/games.json`, checked by `dev/sign_games.py`); a link added by hand has no data (max 4, min 1). Imported ROMs: max from the system (NES / SNES / PS 2, GBA 1), min 1.
+- **Opt out** (a game that is its own lobby, like Pad test): `"lobby": false` in the catalog entry, or for a built-in game a `game.json` `{"lobby": false}` next to its `index.html` (`assets/webgames/padtest/game.json`).
+- Wire: TV -> pad `{"lobby":bool}`, `{"count":n}` (0 = cancelled); pad -> TV `ready 0|1`.
+
 ## Pad test
 `assets/webgames/padtest/` ("Pad test" / "Kiểm tra tay cầm" in the library) is the sample for the events above: it draws the phone's pad for every player, lights a button the moment its event arrives, and shows `lat` (last, median of 30, max, count) and the ping. Select + Start together reset the numbers.
 

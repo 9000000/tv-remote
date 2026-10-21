@@ -35,6 +35,7 @@ class WebGameActivity : ComponentActivity() {
     private lateinit var cards: GameCards
     private var origin = ""
     @Volatile private var pageOrigin = ""
+    private var pageDone = false                                   // the lobby freezes the page only once it has loaded, or it would never get to draw
     private var players = listOf<Int>()
     private var names = mapOf<Int, String>()
     private val nameOf = GameServer.KEYS.entries.associate { it.value to it.key }
@@ -70,6 +71,7 @@ class WebGameActivity : ComponentActivity() {
                 override fun onConsoleMessage(m: ConsoleMessage): Boolean { Log.d(TAG, "console ${m.messageLevel()}: ${m.message()} (${m.sourceId().substringAfterLast('/')}:${m.lineNumber()})"); return true }
             }
             webViewClient = object : WebViewClient() {
+                override fun onPageFinished(v: WebView, u: String) { pageDone = true; if (::cards.isInitialized && cards.lobby) { v.onPause(); v.pauseTimers() } }
                 override fun onPageStarted(v: WebView, u: String, f: Bitmap?) {
                     pageOrigin = originOf(u)
                     // no document-start support (old WebView): the shim goes in as the page starts, which is early enough for most pages
@@ -83,9 +85,19 @@ class WebGameActivity : ComponentActivity() {
         val root = FrameLayout(this).apply { setBackgroundColor(0xFF000000.toInt()); addView(web, FrameLayout.LayoutParams(-1, -1)) }
         setContentView(root)
         cards = GameCards(this, root, server, name, if (builtin) null else url,
-            onPause = { p -> if (p) { web.onPause(); web.pauseTimers() } else { web.onResume(); web.resumeTimers(); web.requestFocus() } },
-            onSave = null, onLoad = null, onQuit = { finish() }, alone = false, quiet = link == "builtin:padtest")
+            onPause = { p -> if (p) { if (pageDone) { web.onPause(); web.pauseTimers() } } else { web.onResume(); web.resumeTimers(); web.requestFocus() } },
+            onSave = null, onLoad = null, onQuit = { finish() }, alone = false, quiet = link == "builtin:padtest",
+            withLobby = Catalog.lobbyOn(this, link), art = lobbyArt(link, url), maxPlayers = counts.first, minPlayers = counts.second)
         web.loadUrl(url)
+    }
+
+    private val counts by lazy { Catalog.players(this, null, intent.getStringExtra("url"), 4) }
+
+    /** The picture the library tile has (same cache key), for the lobby. */
+    private fun lobbyArt(link: String, url: String) = when (link) {
+        "builtin:quiz" -> Thumbs.Src("w:$link", asset = "thumbs/quiz.jpg")
+        "builtin:padtest" -> Thumbs.Src("w:$link", asset = "thumbs/padtest.jpg")
+        else -> if (link.startsWith("builtin:")) null else Thumbs.Src("w:$link", page = url)
     }
 
     override fun onResume() {
@@ -108,6 +120,7 @@ class WebGameActivity : ComponentActivity() {
     override fun onPause() { if (::server.isInitialized) server.onKeyLat = null; super.onPause() }
 
     override fun onDestroy() {
+        if (::cards.isInitialized) cards.close()
         if (::web.isInitialized) { web.removeJavascriptInterface("TVPadNative"); web.destroy() }
         if (::server.isInitialized) { server.webMode = false; server.clearLayouts(); GameServer.release() }
         super.onDestroy()

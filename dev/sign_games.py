@@ -77,6 +77,13 @@ def check():
         for k in ("name", "license", "source"):
             if not h.get(k):
                 fail("homebrew.%s: no %s (only clearly redistributable ROMs: GPL / CC / public domain / permission)" % (h["id"], k))
+    for kind in ("web", "homebrew"):                                  # "players" (most that can play, 1-4), "min" (needed to start, default 1), web "lobby": false
+        for e in d.get(kind, []):
+            mx, mn = e.get("players", 4), e.get("min", 1)
+            if not (isinstance(mx, int) and isinstance(mn, int) and 1 <= mn <= mx <= 4):
+                fail("%s.%s: players / min must be integers with 1 <= min <= players <= 4" % (kind, e.get("id")))
+            if "lobby" in e and not isinstance(e["lobby"], bool):
+                fail("%s.%s: lobby must be true or false" % (kind, e.get("id")))
     for l, o in d.get("layouts", {}).items():
         if l not in LAYOUTS:
             fail("layouts.%s unknown" % l)
