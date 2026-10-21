@@ -314,9 +314,8 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             m.full in 1 until m.new || m.new < 0 -> a.getString(R.string.l_full_in, m.full)
             else -> a.getString(R.string.l_new_in, m.new)
         }
-        val keep = { w: String -> w.replace(' ', '\u00A0') }              // a narrow card breaks between the two, never inside one ("ngày" alone on a line)
         val tetNow = d.month == 1 && d.day <= 3 && !d.leap
-        val sub = if (m.tet > 0 && !tetNow) keep(near) + "\u00A0· " + keep(a.getString(R.string.l_tet_in, m.tet)) else near
+        val sub = if (m.tet > 0 && !tetNow) near + "\n" + a.getString(R.string.l_tet_in, m.tet) else near   // a line each: "·" was left hanging at a line's end
         // the whole card counts the days in columns instead: "3 ngày / tới Rằm", "108 ngày / tới Tết" (the line wrapped and left the right empty)
         val counts = ArrayList<Pair<Int, Int>>()
         val today = tetNow || m.full == 0 || m.new == 0
@@ -325,7 +324,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val t = text(d.day.toString(), 19f, Color.WHITE).apply { typeface = Font.medium; gravity = Gravity.CENTER }
         val (can, chi) = Lunar.canChi(d.year)
         val year = a.getString(R.string.lunar_year, r.getStringArray(R.array.lunar_can)[can], r.getStringArray(R.array.lunar_chi)[chi])
-        return pill(tile(ROSE, null, t), date, sub, 1).apply { tag = Night((d.day - 0.5f) / 29.53f, year, if (today) near else null, counts) }   // a whole card: the moon and the year fill its right
+        return pill(tile(ROSE, null, t), date, sub, 3).apply { tag = Night((d.day - 0.5f) / 29.53f, year, if (today) near else null, counts) }   // a whole card: the moon and the year fill its right
     }
 
     /** What a standing lunar card shows on the right of its day: tonight's moon and the year's name. */
@@ -615,6 +614,8 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val tempW = temp.paint.measureText(temp.text.toString())
         val beside = dp(44) + dp(10) + tempW + dp(10) + lines <= width - dp(40)   // with a smaller picture of the sky
         val icon = if (beside) 44 else 56
+        if (!beside && hiLo.paint.measureText(hiLo.text.toString()) > width - dp(40) - dp(icon + 12))   // a narrow card cut it to "Cao 32° · Th…"
+            hiLo.text = "↑${today.max}°  ↓${today.min}°"
         val nowW = (dp(icon) + dp(if (beside) 10 else 12) + (if (beside) tempW + dp(10) + lines else maxOf(tempW, lines))).toInt()
         now.addView(Sky(a, w.kind, w.night), LayoutParams(dp(icon), dp(icon)))
         val words = LinearLayout(a).apply { orientation = if (beside) HORIZONTAL else VERTICAL; gravity = Gravity.CENTER_VERTICAL }
