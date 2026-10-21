@@ -13,7 +13,6 @@ import android.graphics.PorterDuff
 import android.view.animation.PathInterpolator
 import android.graphics.Color
 import android.graphics.Rect
-import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
@@ -111,6 +110,7 @@ class HomeActivity : Activity() {
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
+        Font.load(this)
         if (android.os.Build.VERSION.SDK_INT >= 24 && getSystemService(android.os.UserManager::class.java)?.isUserUnlocked == false) {
             locked = true
             registerReceiver(unlocked, IntentFilter(Intent.ACTION_USER_UNLOCKED))
@@ -144,7 +144,7 @@ class HomeActivity : Activity() {
         head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.TOP; clipChildren = false; clipToPadding = false }  // a focused button grows past its row
         val left = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false }
         clock = TextClock(this).apply {
-            textSize = 60f; setTextColor(Color.WHITE); typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
+            textSize = 60f; setTextColor(Color.WHITE); typeface = Font.light
             includeFontPadding = false; shadow(this)
         }
         dateLine = text(18f, 0xD9FFFFFF.toInt()).apply { setPadding(dp(2), dp(4), 0, 0) }
@@ -796,7 +796,7 @@ class HomeActivity : Activity() {
 
     private fun toast(id: Int) = Toast.makeText(this, id, Toast.LENGTH_SHORT).show()
 
-    private fun text(size: Float, color: Int) = TextView(this).apply { textSize = size; setTextColor(color); shadow(this) }
+    private fun text(size: Float, color: Int) = Font.on(TextView(this)).apply { textSize = size; setTextColor(color); shadow(this) }
 
     private fun shadow(t: TextView) = t.setShadowLayer(dp(6).toFloat(), 0f, dp(1).toFloat(), 0x80000000.toInt())
 
@@ -837,7 +837,7 @@ class HomeActivity : Activity() {
             }
             val tint = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()), intArrayOf(0xFF111318.toInt(), Color.WHITE))
             addView(ImageView(c).apply { setImageResource(icon); imageTintList = tint; isDuplicateParentStateEnabled = true }, LayoutParams((20 * d).toInt(), (20 * d).toInt()))
-            word = TextView(c).apply { text = label; textSize = 15f; maxLines = 1; maxWidth = (200 * d).toInt(); ellipsize = TextUtils.TruncateAt.END; setTextColor(tint); isDuplicateParentStateEnabled = true; setPadding((8 * d).toInt(), 0, 0, 0) }
+            word = Font.on(TextView(c)).apply { text = label; textSize = 15f; maxLines = 1; maxWidth = (200 * d).toInt(); ellipsize = TextUtils.TruncateAt.END; setTextColor(tint); isDuplicateParentStateEnabled = true; setPadding((8 * d).toInt(), 0, 0, 0) }
             if (iconOnly) { word.visibility = View.GONE; contentDescription = label } else addView(word)
             setOnClickListener { onClick() }
         }
@@ -857,7 +857,7 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
     private val card = FrameLayout(c)                               // what grows: the face and, round it, the ring
     private val face = FrameLayout(c)                               // the picture, clipped to its rounded corners
     private val ring = View(c)
-    private val name = TextView(c)
+    private val name = Font.on(TextView(c))
     private val shine = View(c)
     private val content: View
     private var pic: ImageView? = null                              // the picture, so it can be let go and put back ([release])
@@ -888,7 +888,7 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
             inner.addView(ImageView(c).apply {
                 if (app?.icon != null) { setImageDrawable(app.icon); pic = this } else { setImageResource(R.drawable.ic_eye_off); imageTintList = ColorStateList.valueOf(Color.WHITE) }
             }, LayoutParams(h * 45 / 100, h * 45 / 100))
-            inner.addView(TextView(c).apply {
+            inner.addView(Font.on(TextView(c)).apply {
                 text = label; textSize = 12f; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER
                 setPadding(0, dp(4), 0, 0)
             }, LayoutParams(-1, -2))
@@ -1007,7 +1007,7 @@ const val RING_ACCENT = 0xFF2F7DF6.toInt()                          // 3.7:1 on 
 class BadgeView(c: Context, private val dp: (Number) -> Int) : View(c) {
     private val bgPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = 0xE6101420.toInt() }
     private val text = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE; textSize = dp(13).toFloat(); typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        color = Color.WHITE; textSize = dp(13).toFloat(); typeface = Font.medium
     }
     private val lock = c.getDrawable(R.drawable.ic_lock)!!.mutate().also { it.setTint(0xFFFF8A80.toInt()) }
     private val glass = c.getDrawable(R.drawable.ic_hourglass)!!.mutate().also { it.setTint(0xFFFFD27A.toInt()) }

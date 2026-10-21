@@ -7,7 +7,6 @@ import android.content.res.ColorStateList
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
 import android.view.Gravity
@@ -43,7 +42,7 @@ object Customize {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
 
         val col = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(28), dp(26), dp(28), dp(28)) }
-        fun label(t: String, size: Float, color: Int) = TextView(a).apply { text = t; textSize = size; setTextColor(color) }
+        fun label(t: String, size: Float, color: Int) = Font.on(TextView(a)).apply { text = t; textSize = size; setTextColor(color) }
         fun icon(res: Int, color: Int, size: Int) = ImageView(a).apply { setImageResource(res); imageTintList = ColorStateList.valueOf(color) }.let { it to size }
         fun section(t: String) = col.addView(label(t.uppercase(), 12f, DIM).apply { letterSpacing = 0.12f }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(22); bottomMargin = dp(10) })
         fun glass(radius: Int, fill: Int, stroke: Int) = GradientDrawable().apply { cornerRadius = dp(radius).toFloat(); setColor(fill); setStroke(dp(1), stroke) }
@@ -58,7 +57,7 @@ object Customize {
             }, LinearLayout.LayoutParams(dp(48), dp(48)))
             addView(LinearLayout(a).apply {
                 orientation = LinearLayout.VERTICAL
-                addView(label(a.getString(R.string.customize), 22f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) })
+                addView(label(a.getString(R.string.customize), 22f, Color.WHITE).apply { typeface = Font.medium })
                 addView(label(a.getString(R.string.c_sub), 13f, DIM))
             }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(14) })
         })
@@ -94,7 +93,7 @@ object Customize {
         var chipRow: LinearLayout? = null
         HomeConfig.EVERY.forEachIndexed { i, k ->
             if (i % 3 == 0) { chipRow = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }; col.addView(chipRow, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(8) }) }
-            val chip = TextView(a).apply {
+            val chip = Font.on(TextView(a)).apply {
                 text = a.getString(everyWords.getValue(k)); textSize = 14f; gravity = Gravity.CENTER; maxLines = 1
                 setTextColor(Color.WHITE); isFocusable = true; isClickable = true; setPadding(dp(8), dp(11), dp(8), dp(11))
                 background = StateListDrawable().apply {
@@ -250,9 +249,9 @@ object Customize {
         }
 
         col.addView(label(a.getString(R.string.more), 12f, 0x8CFFFFFF.toInt()), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(22) })
-        val done = TextView(a).apply {
+        val done = Font.on(TextView(a)).apply {
             text = a.getString(R.string.done); textSize = 16f; setTextColor(0xFF111318.toInt()); gravity = Gravity.CENTER
-            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+            typeface = Font.medium
             isFocusable = true; isClickable = true; setPadding(dp(28), dp(11), dp(28), dp(11))
             background = StateListDrawable().apply {
                 addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply { cornerRadius = dp(24).toFloat(); setColor(Color.WHITE) })

@@ -106,6 +106,7 @@
     <string-array name="lunar_chi"><item>Rat</item><item>Ox</item><item>Tiger</item><item>Cat</item><item>Dragon</item><item>Snake</item><item>Horse</item><item>Goat</item><item>Monkey</item><item>Rooster</item><item>Dog</item><item>Pig</item></string-array>
     <string name="lunar_day_early">%d</string>
     <string name="lunar_title">Lunar month %2$s, day %1$s</string>
+    <string name="lunar_short">Lunar %1$d/%2$d</string>
     <string name="lunar_leap"> (leap)</string>
     <string name="lunar_year">%2$s</string>
     <string name="l_full_today">Full moon today</string>
@@ -113,6 +114,10 @@
     <string name="l_full_in">Full moon in %d days</string>
     <string name="l_new_in">New month in %d days</string>
     <string name="l_tet_in">Tết in %d days</string>
+    <string name="l_to_full">to full moon</string>
+    <string name="l_to_new">to the new month</string>
+    <string name="l_to_tet">to Tết</string>
+    <plurals name="l_days"><item quantity="one">%d day</item><item quantity="other">%d days</item></plurals>
     <string name="l_tet_now">Happy Lunar New Year!</string>
     <string name="t_sleep">TV off at %s</string>
     <string name="t_bed_at">Bedtime at %s</string>

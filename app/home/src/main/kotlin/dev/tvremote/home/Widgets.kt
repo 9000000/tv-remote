@@ -10,7 +10,6 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Shader
-import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.net.ConnectivityManager
@@ -72,8 +71,8 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         private val ROSE = intArrayOf(0xFFFF7A7A.toInt(), 0xFFE0457B.toInt())
         private const val DIM = 0xA6FFFFFF.toInt()
         private const val ACCENT = 0xFFFF453A.toInt()                  // the calendar's red: the month's name and today
-        private val MEDIUM = Typeface.create("sans-serif-medium", Typeface.NORMAL)
-        private val BOLD = Typeface.create("sans-serif", Typeface.BOLD)
+        private val MEDIUM get() = Font.medium
+        private val BOLD get() = Font.bold
         private val BIG = setOf("system", "usage", "calendar", "weather")
         const val BIG_H = 180                                          // dp: the cards' height, fixed: the favourites stay on screen
         private const val FULL_MIN = 180                              // dp: a big card in a column narrower than this shows its small form (the row of three big cards gives 190 to 260)
@@ -237,7 +236,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         orientation = VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
         addView(FrameLayout(a).apply {
             addView(Ring(a, part, colors))
-            addView(text("${(part * 100).toInt()}%", 13f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL); gravity = Gravity.CENTER },
+            addView(text("${(part * 100).toInt()}%", 13f, Color.WHITE).apply { typeface = Font.medium; gravity = Gravity.CENTER },
                 FrameLayout.LayoutParams(-1, -1))
         }, LayoutParams(dp(50), dp(50)))
         addView(text(name, 11f, Color.WHITE).apply { gravity = Gravity.CENTER }, LayoutParams(-1, -2).apply { topMargin = dp(2) })
@@ -255,11 +254,11 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val (can, chi) = Lunar.canChi(d.year)
         val lunar = a.getString(R.string.lunar_title, dayWord, month) +   // the year's name only where it fits whole
             if (room < dp(240)) "" else " · " + a.getString(R.string.lunar_year, r.getStringArray(R.array.lunar_can)[can], r.getStringArray(R.array.lunar_chi)[chi])
-        val num =text(SimpleDateFormat("d", loc).format(now), 24f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL); gravity = Gravity.CENTER }
+        val num =text(SimpleDateFormat("d", loc).format(now), 24f, Color.WHITE).apply { typeface = Font.medium; gravity = Gravity.CENTER }
         val row = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         row.addView(tile(CYAN, null, num), LayoutParams(dp(52), dp(52)))
         val words = LinearLayout(a).apply { orientation = VERTICAL }
-        words.addView(text(SimpleDateFormat("EEEE", loc).format(now), 16f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) })
+        words.addView(text(SimpleDateFormat("EEEE", loc).format(now), 16f, Color.WHITE).apply { typeface = Font.medium })
         words.addView(text(SimpleDateFormat("d MMMM yyyy", loc).format(now), 12f, DIM))
         words.addView(text(lunar, 12f, DIM))
         row.addView(words, LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
@@ -275,9 +274,9 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val row = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val narrow = room < dp(240)                                    // no room for the picture beside the words: the words keep whole
         if (!narrow) row.addView(Sky(a, w.kind, w.night), LayoutParams(dp(52), dp(52)))
-        row.addView(text("${w.temp}°", 30f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) }, LayoutParams(-2, -2).apply { if (!narrow) leftMargin = dp(10) })
+        row.addView(text("${w.temp}°", 30f, Color.WHITE).apply { typeface = Font.medium }, LayoutParams(-2, -2).apply { if (!narrow) leftMargin = dp(10) })
         val words = LinearLayout(a).apply { orientation = VERTICAL }
-        words.addView(text(w.place.ifEmpty { a.getString(R.string.wx_near) }, 14f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL); if (narrow) maxLines = 2 })   // a long city wraps rather than cuts
+        words.addView(text(w.place.ifEmpty { a.getString(R.string.wx_near) }, 14f, Color.WHITE).apply { typeface = Font.medium; if (narrow) maxLines = 2 })   // a long city wraps rather than cuts
         words.addView(text(a.getString(kindWords(w.kind)), 12f, Color.WHITE))
         words.addView(text(a.getString(R.string.wx_hi_lo, w.days[0].max, w.days[0].min), 12f, DIM))
         row.addView(words, LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
@@ -307,12 +306,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
     private fun lunar(m: Moon): View {
         val r = a.resources
         val d = m.day
-        val month = r.getStringArray(R.array.lunar_month)[d.month - 1] + if (d.leap) a.getString(R.string.lunar_leap) else ""
-        val dayWord = if (d.day <= 10) a.getString(R.string.lunar_day_early, d.day) else d.day.toString()
-        val (can, chi) = Lunar.canChi(d.year)
-        val date = a.getString(R.string.lunar_title, dayWord, month)
-        val year = a.getString(R.string.lunar_year, r.getStringArray(R.array.lunar_can)[can], r.getStringArray(R.array.lunar_chi)[chi])
-        val title = if (date.length + year.length <= 26) "$date · $year" else date   // the year only where it fits: "Mùng 10 tháng Mười Một âm lịch" fills the line
+        val date = a.getString(R.string.lunar_short, d.day, d.month) + if (d.leap) a.getString(R.string.lunar_leap) else ""   // "12 tháng 9": the month's name and the year made it wrap
         val near = when {
             d.month == 1 && d.day <= 3 && !d.leap -> a.getString(R.string.l_tet_now)
             m.full == 0 -> a.getString(R.string.l_full_today)
@@ -320,10 +314,22 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             m.full in 1 until m.new || m.new < 0 -> a.getString(R.string.l_full_in, m.full)
             else -> a.getString(R.string.l_new_in, m.new)
         }
-        val sub = if (m.tet > 0 && !(d.month == 1 && d.day <= 3)) near + " · " + a.getString(R.string.l_tet_in, m.tet) else near
-        val t = text(d.day.toString(), 19f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL); gravity = Gravity.CENTER }
-        return pill(tile(ROSE, null, t), title, sub, 1)
+        val keep = { w: String -> w.replace(' ', '\u00A0') }              // a narrow card breaks between the two, never inside one ("ngày" alone on a line)
+        val tetNow = d.month == 1 && d.day <= 3 && !d.leap
+        val sub = if (m.tet > 0 && !tetNow) keep(near) + "\u00A0· " + keep(a.getString(R.string.l_tet_in, m.tet)) else near
+        // the whole card counts the days in columns instead: "3 ngày / tới Rằm", "108 ngày / tới Tết" (the line wrapped and left the right empty)
+        val counts = ArrayList<Pair<Int, Int>>()
+        val today = tetNow || m.full == 0 || m.new == 0
+        if (!today) counts += if (m.full in 1 until m.new || m.new < 0) m.full to R.string.l_to_full else m.new to R.string.l_to_new
+        if (m.tet > 0 && !tetNow) counts += m.tet to R.string.l_to_tet
+        val t = text(d.day.toString(), 19f, Color.WHITE).apply { typeface = Font.medium; gravity = Gravity.CENTER }
+        val (can, chi) = Lunar.canChi(d.year)
+        val year = a.getString(R.string.lunar_year, r.getStringArray(R.array.lunar_can)[can], r.getStringArray(R.array.lunar_chi)[chi])
+        return pill(tile(ROSE, null, t), date, sub, 1).apply { tag = Night((d.day - 0.5f) / 29.53f, year, if (today) near else null, counts) }   // a whole card: the moon and the year fill its right
     }
+
+    /** What a standing lunar card shows on the right of its day: tonight's moon and the year's name. */
+    private class Night(val phase: Float, val year: String, val line: String?, val counts: List<Pair<Int, Int>>)
 
     /** The sleep timer first (it acts sooner), else the bedtime; null when neither is set. Without an answer, TV Setup is too old. */
     private fun timer(o: JSONObject?): View? {
@@ -370,9 +376,38 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         square.layoutParams = LayoutParams(dp(56), dp(56))
         ((square as FrameLayout).getChildAt(0) as? TextView)?.textSize = 26f   // the lunar day's number
         (square.getChildAt(0) as? ImageView)?.layoutParams = FrameLayout.LayoutParams(dp(30), dp(30), Gravity.CENTER)
+        (p.tag as? Night)?.let { sky ->                                // the lunar card: its day, the date and the year, the moon on the right
+            p.removeView(square)
+            val title = words.getChildAt(0) as TextView
+            words.removeView(title)
+            p.addView(LinearLayout(a).apply {
+                orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+                addView(square, LayoutParams(dp(56), dp(56)))
+                addView(LinearLayout(a).apply {
+                    orientation = VERTICAL
+                    addView(title.apply { textSize = 18f; maxLines = 1 })
+                    addView(text(sky.year, 13f, DIM), LayoutParams(-2, -2).apply { topMargin = dp(2) })
+                }, LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
+                addView(MoonFace(a, sky.phase), LayoutParams(dp(44), dp(44)))
+            }, 0, LayoutParams(-1, -2))
+        }
         words.layoutParams = LayoutParams(-1, -2).apply { topMargin = dp(14) }
-        (words.getChildAt(0) as TextView).apply { textSize = 18f; maxLines = 4 }       // a narrow column wraps a long title, never cuts it
-        (words.getChildAt(1) as? TextView)?.apply { textSize = 14f; maxLines = 2; setPadding(0, dp(3), 0, 0) }
+        (p.tag as? Night)?.takeIf { it.counts.isNotEmpty() }?.let { n ->
+            val sub = words.getChildAt(0) as? TextView
+            if (n.line != null) sub?.text = n.line else sub?.let { words.removeView(it) }   // "Hôm nay rằm" stays a line; counts go in columns
+            words.addView(LinearLayout(a).apply {
+                orientation = HORIZONTAL
+                n.counts.forEach { (days, label) ->
+                    addView(LinearLayout(a).apply {
+                        orientation = VERTICAL
+                        addView(text(a.resources.getQuantityString(R.plurals.l_days, days, days), 17f, Color.WHITE).apply { typeface = Font.medium })
+                        addView(text(a.getString(label), 12f, DIM))
+                    }, LayoutParams(0, -2, 1f))
+                }
+            }, LayoutParams(-1, -2).apply { topMargin = dp(6) })
+        }
+        if (p.tag !is Night) (words.getChildAt(0) as TextView).apply { textSize = 18f; maxLines = 4 }       // a narrow column wraps a long title, never cuts it
+        (words.getChildAt(if (p.tag is Night) 0 else 1) as? TextView)?.apply { textSize = 14f; maxLines = 2; setPadding(0, dp(3), 0, 0) }
     }
 
     /** One of the small cards: a coloured square, a title, a line under it ([lines] of it). */
@@ -383,7 +418,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         addView(square, LayoutParams(dp(40), dp(40)))
         addView(LinearLayout(a).apply {
             orientation = VERTICAL
-            addView(text(title, 14f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL); maxLines = 2 })   // a narrow column wraps, never cuts
+            addView(text(title, 14f, Color.WHITE).apply { typeface = Font.medium; maxLines = 2 })   // a narrow column wraps, never cuts
             if (sub.isNotEmpty()) addView(text(sub, 12f, DIM).apply { maxLines = maxOf(lines, 2) })
         }, LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
     }
@@ -437,8 +472,8 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         }
         // each row shares its width on its own: alike when every figure fits its equal part (CPU, RAM, disk), else by what each
         // needs (an address is longer than "ON"); as many columns as fit once [Shrink] has taken the figures down to 15 sp
-        val big = Paint().apply { textSize = 19f * sp; typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) }
-        val small = Paint().apply { textSize = 10f * sp; letterSpacing = 0.08f }
+        val big = Paint().apply { textSize = 19f * sp; typeface = Font.medium }
+        val small = Paint().apply { typeface = Font.regular; textSize = 10f * sp; letterSpacing = 0.08f }
         val k0 = 15f / 19
         fun needs(row: List<Stat>, cols: Int) = FloatArray(cols) { k -> (row.getOrNull(k)?.let { maxOf(big.measureText(if (it.live) "↓ 999 KB/s" else it.value), small.measureText(it.label.uppercase())) * k0 } ?: 0f) + dp(29) }
         fun fits(rows: List<List<Stat>>, c: Int) = rows.all { needs(it, c).sum() + dp(10) * (c - 1) <= room }
@@ -474,7 +509,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         }, LayoutParams(dp(20), dp(20)).apply { topMargin = dp(3) })
         val col = LinearLayout(a).apply { orientation = VERTICAL }
         val v = Shrink(a, 19f, 13f).apply {
-            text = s.value; setTextColor(s.tint ?: Color.WHITE); maxLines = 1; typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+            text = s.value; setTextColor(s.tint ?: Color.WHITE); maxLines = 1; typeface = Font.medium
             setShadowLayer(dp(4).toFloat(), 0f, dp(1).toFloat(), 0x80000000.toInt())
         }
         col.addView(v)
@@ -487,6 +522,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
 
     /** A line that gets smaller (down to [least] sp) rather than cut: "192.168.100.154" whole in a narrow column. */
     private class Shrink(c: Context, private val most: Float, private val least: Float) : TextView(c) {
+        init { typeface = Font.regular }
         override fun onMeasure(w: Int, h: Int) {
             val room = MeasureSpec.getSize(w) - paddingLeft - paddingRight
             if (MeasureSpec.getMode(w) != MeasureSpec.UNSPECIFIED && room > 0) {
@@ -496,6 +532,26 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
                 ellipsize = TextUtils.TruncateAt.END                 // still too long at the least size: cut, as a last resort
             }
             super.onMeasure(w, h)
+        }
+    }
+
+    /** The moon at [phase] (0 new, 0.5 full, 1 new again), lit on the right while it grows: a half disc and the terminator's half ellipse. */
+    private class MoonFace(c: Context, private val phase: Float) : View(c) {
+        private val dark = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x26FFFFFF }
+        private val lit = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFF6E7C1.toInt() }
+        private val path = android.graphics.Path(); private val box = RectF()
+        override fun onDraw(cv: Canvas) {
+            val r = minOf(width, height) / 2f; val cx = width / 2f; val cy = height / 2f
+            cv.drawCircle(cx, cy, r, dark)
+            val p = phase.coerceIn(0f, 1f); val waxing = p <= 0.5f
+            val q = if (waxing) p else 1f - p                         // waning: the same shape, mirrored
+            val w = r * Math.cos(2 * Math.PI * q).toFloat()          // the terminator's half-width: r at new, 0 at the quarter, -r at full
+            path.reset()
+            box.set(cx - r, cy - r, cx + r, cy + r); path.arcTo(box, -90f, 180f)
+            box.set(cx - Math.abs(w), cy - r, cx + Math.abs(w), cy + r); path.arcTo(box, 90f, if (w > 0) -180f else 180f)
+            path.close()
+            cv.save(); if (!waxing) cv.scale(-1f, 1f, cx, cy)
+            cv.drawPath(path, lit); cv.restore()
         }
     }
 
@@ -549,7 +605,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         card.addView(head(w.place.ifEmpty { a.getString(R.string.wx_near) }, if (stale) hm(w.at) else ""))
         val body = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val now = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        val temp = text("${w.temp}°", if (fixed) 28f else 30f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) }
+        val temp = text("${w.temp}°", if (fixed) 28f else 30f, Color.WHITE).apply { typeface = Font.medium }
         val sky = text(a.getString(kindWords(w.kind)), 13f, Color.WHITE)
         val today = w.days[0]
         val hiLo = text(a.getString(R.string.wx_hi_lo, today.max, today.min), 12f, DIM)
@@ -632,7 +688,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val col = LinearLayout(a).apply { orientation = VERTICAL }
         val line = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         line.addView(text(name, 13f, Color.WHITE), LayoutParams(0, -2, 1f))
-        line.addView(text(span(sec * 1000), 13f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) })
+        line.addView(text(span(sec * 1000), 13f, Color.WHITE).apply { typeface = Font.medium })
         col.addView(line)
         col.addView(Bar(a, part, if (limit != null) AMBER else CYAN), LayoutParams(-1, dp(4)).apply { topMargin = dp(3) })
         if (limit != null) {                                          // under the bar, not beside the name: a narrow card cut the name to "…"
@@ -648,7 +704,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         orientation = VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
         addView(FrameLayout(a).apply {
             addView(Ring(a, part, colors))
-            addView(text("${(part * 100).toInt()}%", 15f, Color.WHITE).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL); gravity = Gravity.CENTER },
+            addView(text("${(part * 100).toInt()}%", 15f, Color.WHITE).apply { typeface = Font.medium; gravity = Gravity.CENTER },
                 FrameLayout.LayoutParams(-1, -1))
         }, LayoutParams(dp(62), dp(62)))
         addView(text(name, 12f, Color.WHITE).apply { gravity = Gravity.CENTER }, LayoutParams(dp(84), -2).apply { topMargin = dp(5) })
@@ -713,7 +769,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
 
     private fun note(t: String) = text(t, 13f, 0xB3FFFFFF.toInt()).apply { setPadding(0, dp(10), 0, 0); maxLines = 2 }
 
-    private fun text(t: String, size: Float, color: Int) = TextView(a).apply {
+    private fun text(t: String, size: Float, color: Int) = Font.on(TextView(a)).apply {
         text = t; textSize = size; setTextColor(color); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.START
         setShadowLayer(dp(4).toFloat(), 0f, dp(1).toFloat(), 0x80000000.toInt())
     }
@@ -779,7 +835,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
     /** A column per day, oldest first, today's in colour, the day's letter under each. */
     private inner class Columns(c: Context, val secs: List<Long>) : View(c) {
         private val p = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val t = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 11 * sp; textAlign = Paint.Align.CENTER; color = DIM }
+        private val t = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Font.regular; textSize = 11 * sp; textAlign = Paint.Align.CENTER; color = DIM }
         private val names = (6 downTo 0).map { d -> SimpleDateFormat("EEEEE", resources.configuration.locales[0]).format(Date(System.currentTimeMillis() - d * 86_400_000L)) }
         private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x1AFFFFFF }
         private val past = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x66FFFFFF }
@@ -880,7 +936,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         private val rowMax = dp(30)
         private var rowH = minOf(rowMax, ((maxH - headH) / cal.grid.rows).coerceAtLeast(dp(16)))   // a six-week month in the fixed-height slot: thinner rows
         val wanted = headH + rowH * cal.grid.rows
-        private val big = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = (if (tiny) 13f else 14f) * sp }   // left-aligned: each number is placed by its own ink
+        private val big = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Font.regular; textSize = (if (tiny) 13f else 14f) * sp }   // left-aligned: each number is placed by its own ink
         private val head = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; textSize = (if (tiny) 10f else 11f) * sp; color = 0x8CFFFFFF.toInt(); typeface = MEDIUM }
         private val back = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = ACCENT }
         private val dows = IntArray(7) { (first - 1 + it) % 7 }            // 0 = Sunday

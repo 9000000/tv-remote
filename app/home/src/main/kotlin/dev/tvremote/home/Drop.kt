@@ -54,14 +54,14 @@ object Drop {
                     addState(intArrayOf(), ColorDrawable(Color.TRANSPARENT))
                 }
                 addView(ImageView(a).apply { setImageResource(r.icon); imageTintList = tint; isDuplicateParentStateEnabled = true }, LinearLayout.LayoutParams(dp(22), dp(22)))
-                addView(TextView(a).apply {
+                addView(Font.on(TextView(a)).apply {
                     text = r.label; textSize = 16f; setTextColor(tint); isDuplicateParentStateEnabled = true
                     maxLines = 1; ellipsize = TextUtils.TruncateAt.END
                 }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
                 if (r.on != null) {
                     addView(View(a).apply { background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(0xFF34C759.toInt()) } },
                         LinearLayout.LayoutParams(dp(7), dp(7)).apply { leftMargin = dp(12) })
-                    addView(TextView(a).apply {
+                    addView(Font.on(TextView(a)).apply {
                         text = r.on; textSize = 12f; isDuplicateParentStateEnabled = true
                         setTextColor(ColorStateList(arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()), intArrayOf(0xFF5B5F6B.toInt(), DIM)))
                     }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(6) })

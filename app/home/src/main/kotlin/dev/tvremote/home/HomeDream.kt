@@ -5,7 +5,6 @@ import android.animation.ObjectAnimator
 import android.animation.TimeInterpolator
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.Typeface
 import android.service.dreams.DreamService
 import android.text.format.DateFormat
 import android.view.Gravity
@@ -42,6 +41,7 @@ class HomeDream : DreamService() {
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
+        Font.load(this)
         isInteractive = false; isFullscreen = true; isScreenBright = false
         Store.advance(this, false)                                   // a timed rotation that fell due while Home was not on screen
         val conf = Store.get(this)
@@ -64,7 +64,7 @@ class HomeDream : DreamService() {
         root.addView(View(this).apply { setBackgroundColor(0x70000000) }, FrameLayout.LayoutParams(-1, -1))   // dim: night, and words stay readable over a photo
 
         val clock = TextClock(this).apply {
-            textSize = 120f; setTextColor(0xE6FFFFFF.toInt()); typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
+            textSize = 120f; setTextColor(0xE6FFFFFF.toInt()); typeface = Font.light
             includeFontPadding = false; gravity = Gravity.CENTER
             format24Hour = if (conf.optBoolean("clock24", true)) "HH:mm" else "h:mm"
             format12Hour = format24Hour
@@ -88,7 +88,7 @@ class HomeDream : DreamService() {
 
     private fun dp(v: Number) = (v.toFloat() * resources.displayMetrics.density).toInt()
 
-    private fun line(size: Float, color: Int) = TextView(this).apply { textSize = size; setTextColor(color); gravity = Gravity.CENTER; setPadding(0, dp(6), 0, 0) }
+    private fun line(size: Float, color: Int) = Font.on(TextView(this)).apply { textSize = size; setTextColor(color); gravity = Gravity.CENTER; setPadding(0, dp(6), 0, 0) }
 
     /** The day and the lunar date: once a minute, which is when the day can change at all. */
     private fun refresh() {

@@ -9,6 +9,7 @@ class DreamSettings : Activity() {
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
+        Font.load(this)
         Customize.show(this).setOnDismissListener { finish() }
     }
 }
