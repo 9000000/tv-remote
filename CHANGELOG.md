@@ -10,11 +10,13 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 - Sửa: thẻ Hệ thống của TV Home không còn ghi "0.00 GHz" khi TV báo sai tốc độ CPU (máy ảo báo 2 kHz)
 - Hướng dẫn: rà lại 36 mục theo bản 0.15.0, thêm ảnh TV Home và bảng Tùy chỉnh trên TV
+- Tối ưu TV: thêm 29 gói quảng cáo / theo dõi / tự cài app (Hisense, Sharp, Vestel, CVTE, XGIMI, Fire TV…); giữ lại hơn 40 gói đã có người báo hỏng khi tắt (nút Nguồn vào, phím remote, cập nhật); Xiaomi TV Manager không còn bị đề xuất tắt (XiaoAI cần nó)
 
 **English**
 
 - Fix: TV Home's System card no longer says "0.00 GHz" when the TV reports a bogus CPU speed (the emulator says 2 kHz)
 - Guide: 36 topics checked against 0.15.0, with pictures of TV Home and its Customize panel on the TV
+- Optimize TV: 29 more ad / tracking / auto-install packages (Hisense, Sharp, Vestel, CVTE, XGIMI, Fire TV…); 40+ packages kept that owners lost something without (the Input button, remote keys, updates); Xiaomi TV Manager no longer suggested (XiaoAI needs it)
 
 ## 0.15.0 - 2026-10-21
 

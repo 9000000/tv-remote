@@ -3,8 +3,8 @@
 `app/shared/.../core/ontv/Bloat.kt` (suggested packages, the KEEP list) and the Google TV home swap in `Setup.kt` (setupwraith
 before launcherx, check Home, roll back) come from these. Read them again now and then and bring over what is new.
 
-Last read: **2026-10-20**, upstream `Gathin23/cleanyourtv` at `fd1ee0a94c` (2026-10-20 14:35 UTC), PRs up to ~#398, issues
-up to ~#376 (before that: 2026-10-19 at `7377a9be8c`, PRs up to #125, issues up to #120, 388 forks). The project is days old:
+Last read: **2026-10-21**, upstream `Gathin23/cleanyourtv` at `9071ec8d2f` (2026-10-21 04:13 UTC), PRs up to ~#573, issues
+up to ~#564 (before that: 2026-10-20 at `fd1ee0a94c`, PRs ~#398, issues ~#376; 2026-10-19 at `7377a9be8c`, PRs up to #125, issues up to #120, 388 forks). The project is days old:
 most reports are one TV, one day.
 
 ## Sources
@@ -63,7 +63,31 @@ itsmeterrylin/fire-tv-cleanup +1, essremodel +1, codewithbalaji +1, 9000000 +1 (
   `com.mediatek.tv.service` crash-loops after the next restart (#30 range); Sony `tvx`, `tvinput.*`, `braviasync*` (#92, #104);
   Fire TV `venezia` (app updates), `tv.settings.v2`, `whisperlink` / `whisperjoin` (casting), Fire OS 8 `aria` (Alexa).
 
+Third read (2026-10-21, 47 new or changed `examples/*/debloat.txt`):
+- SUGGEST: the Play Auto Install configs of Hisense, HKC, Sharp, SCBC, SDMC and Vestel; Sony `demomode`; Xiaomi `tvqs`,
+  `misightservice`, `cloudcontrol` (pushes apps); TCL `smartlink.core` (silent installer); Philips `sticker`, `frameworklogger`;
+  Fire TV `telemetry.emitter`, `democontent.provider`; the loggers / ad services of Vestel, CVTE, XGIMI, Verizon, HTC, Coocaa's demo.
+- KEEP: every `*.partnercustomizer` (TCL: the stock home's Inputs icon and remote keys; Realtek: the Inputs button);
+  Xiaomi `tvmanager` **moved out of SUGGEST** (XiaoAI's "open <app>" goes through it, xiaomi-mitv-mffu0), upgrade / tvplayer /
+  settings / smartpanel / PatchWall `com.mitv.tvhome` (the only home on some); TCL appstatecontroller, rc.ota, UpdatePeripheral,
+  useragreement, copydatatotv, guard (TCL China's only installer), cyberui (TCL China's only home); `WifiCountryService`; Philips
+  fastip (the SOURCES drawer), exoplayerservice, usbbreakin, dlna; Vestel `tv.*` / `overlay.*`; CVTE tvservice and settings;
+  XGIMI keystone / focus / keys; SDMC, Skyworth SDT / HiSilicon, Kalley `com.apps` / `com.mk` key services.
+
 ## Not taken (yet), and why
+
+- Google's mainline modules (`adservices`, `ondevicepersonalization`, `federatedcompute`, 4–6 lists): Android's own APEX parts,
+  pm often refuses them and they come back with Play system updates. Left to "Turn off other apps".
+- Upstream's TV-input guard: any package asking `TV_INPUT_HARDWARE` is never disabled (a OnePlus showed "No Signal" for good,
+  #321). Our suggestions never hold one; worth adding to the Apps tab's turn-off (one `dumpsys package` per app).
+- Home swap lessons not in our code yet: (1) a Kalley 43G200 (Google TV 14) turns setupwraith back on early at every boot, and
+  with launcherx off it boot-looped (USB reflash): TV Setup starts too late to help. (2) A Vision TV (CVTE, Android 13, no
+  FallbackHome) never finished booting with a Home that is not `directBootAware`: TV Home is not. (3) On a Google TV Streamer
+  (kirkwood) the HOME role named the new launcher while the Home key still went to setupwraith's RecoveryActivity: the truth is
+  `mFocusedApp` in `dumpsys activity activities` after pressing Home.
+- TCL `usercenter`: one Android 11 BeyondTV says keep it, 9 lists turn it off, and TCL's ttvs turns it back on at boot anyway.
+- Factory apps (CVTE `hkcfac`, `com.at.factory.*`): never `am start` an unknown package to look at it: opening hkcfac set
+  factory mode (Input key and CEC dead, gms / Netflix / mediashell turned off at the next boot, #470).
 
 - **Optional brand extras** with mixed reports, left for the person to pick in "Turn off other apps": Sony Discover
   (`com.sony.dtv.discovery`, ~22 MB), Sony recommendation services, Xiaomi PatchWall (`com.mitv.tvhome.atv`: a home screen on
@@ -73,7 +97,7 @@ itsmeterrylin/fire-tv-cleanup +1, essremodel +1, codewithbalaji +1, 9000000 +1 (
 - `com.google.android.apps.mediashell` (Chromecast built-in): a choice, not bloat.
 - `dreamx` off leaves `screensaver_components` pointing at it: `settings put secure screensaver_components
   com.android.dreams.basic/.Colors`. Not in our lists, so not needed yet.
-- TCL `APP_AUTO_START` (`appops set <pkg> APP_AUTO_START allow; cmd appops write-settings`): TclAppBoot blocks background
+- TCL `AUTO_START` (#526: `appops set <pkg> AUTO_START allow; cmd appops write-settings`): TclAppBoot blocks background
   services otherwise. Worth a look if TV Setup's services die on TCL.
 - Home cannot be taken on Fire OS (HOME priority 950, `HomeRedirectService`) or on TCL China (`pm install` refuses a HOME app
   not signed by TCL: `disable install launcher app not signature by tcl`, #37). Setup.kt rolls back there.
@@ -81,7 +105,7 @@ itsmeterrylin/fire-tv-cleanup +1, essremodel +1, codewithbalaji +1, 9000000 +1 (
   only; Input on a Chromecast remote sends `KEYCODE_TV`, handled only by the stock launcher. An accessibility service can map
   it (cleanyourtv's launcher has one).
 - Fire OS refuses ADB from the TV to itself (127.0.0.1:5555): TV Setup's own ADB link cannot work there.
-- A reboot right after `pm disable-user` lost the change on a Hisense: wait ~15 s.
+- A reboot right after `pm disable-user` lost the change on a Hisense: wait ~15 s (upstream now says ~30 s).
 - Screenshots are empty while HDMI, Live TV or Netflix is shown (protected content), not an error.
 
 ## Syncing again
