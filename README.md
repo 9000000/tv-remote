@@ -214,7 +214,7 @@ The TV must be on to be reached. A TV in **standby** wakes with one press, over 
 
 | What you changed | How to go back |
 |---|---|
-| **Optimize TV** (animations off, FLauncher home screen, apps turned off) | **Undo** in the same box. Nothing was uninstalled, apps were only paused. If the TV shows no home screen: Settings → Apps → System apps → **Android TV Home** → Enable |
+| **Optimize TV** (animations off, TV Home as the home screen, apps turned off) | **Undo** in the same box. Nothing was uninstalled, apps were only paused (never one holding a saved Wi-Fi network or the HDMI inputs). If the TV shows no home screen: Settings → Apps → System apps → **Android TV Home** → Enable |
 | Allowed devices | Developer options → **Revoke USB debugging authorizations**, or **Unpair all** in TV Setup |
 | The TV web page | Turn the web remote off in TV Setup |
 | The apps | Uninstall them like any app. The Computer app keeps its data in your user folder |

@@ -43,7 +43,8 @@ app/shared/src/.../core/ Kotlin shared by the apps, one package per kind of work
   picture/               Tv (scrcpy session, video/audio/control), Feeds, AudioOut (Opus playback), Downmix, SoundQueue
   web/                   Manage (the /api core for the web UI), HttpServer, WebPage, Invite, Qr, Transfer (Stop, no room), Hook
                          (Home Assistant / Shortcuts: `/api/hook`, its own token; TV Setup on 8765, the computer app on port+1 only while on)
-  ontv/                  things done on the TV over ADB: Setup (Optimize TV), SetupNeed / SetupUpdate, SetupFiles (reading TV Setup's
+  ontv/                  things done on the TV over ADB: Setup (Optimize TV; TV Home as the home screen; Bloat: brands' apps,
+                         plus `docs/optimize/bloat.json` from the site, signed by `dev/sign_bloat.py`, only adding to keep), SetupNeed / SetupUpdate, SetupFiles (reading TV Setup's
                          files: the shell, or TV Setup hands them over where the shell may not, a TCL on Android 11), RulesClient (TV Setup's
                          rules), Draw (strokes to TV Setup's layer), Notify, NowPlaying (through Playing), RemoteLabels (app
                          names, pictures and Caps, through Meta and Caps: Java in src/main/java, dexed into

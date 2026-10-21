@@ -139,7 +139,7 @@ object Scenes {
 
     fun launch(sh: (String) -> String, pkg: String) {
         if (!PKG.matcher(pkg).matches()) throw IllegalArgumentException("bad package name")
-        if (dev.tvremote.core.ontv.Bloat.FACTORY.matches(pkg)) throw IllegalArgumentException(FACTORY_APP)
+        if (dev.tvremote.core.ontv.Bloat.factory(pkg)) throw IllegalArgumentException(FACTORY_APP)
         for (cat in arrayOf("LEANBACK_LAUNCHER", "LAUNCHER")) {               // a TV app's own screen first, then a phone-style one
             val lines = sh("cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.$cat $pkg 2>/dev/null").trim().split("\n")
             val component = lines[lines.size - 1].trim()

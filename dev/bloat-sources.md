@@ -1,7 +1,9 @@
 # Where Optimize TV's brand knowledge comes from
 
 `app/shared/.../core/ontv/Bloat.kt` (suggested packages, the KEEP list) and the Google TV home swap in `Setup.kt` (setupwraith
-before launcherx, check Home, roll back) come from these. Read them again now and then and bring over what is new.
+before launcherx, check Home, roll back) come from these. Read them again now and then and bring over what is new: into `docs/optimize/bloat.json` (then
+`dev/sign_bloat.py`, commit, push: every app reads it from the site when Optimize TV opens, no release needed), and now and
+then fold that list into Bloat.kt and empty it. The site's list can add suggestions, drop them, and only add to keep / factory.
 
 Last read: **2026-10-21**, upstream `Gathin23/cleanyourtv` at `9071ec8d2f` (2026-10-21 04:13 UTC), PRs up to ~#573, issues
 up to ~#564 (before that: 2026-10-20 at `fd1ee0a94c`, PRs ~#398, issues ~#376; 2026-10-19 at `7377a9be8c`, PRs up to #125, issues up to #120, 388 forks). The project is days old:

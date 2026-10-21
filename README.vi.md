@@ -327,11 +327,11 @@ Nút **⚡ Tối ưu TV** ở tab Thiết lập của cả ba nơi (và ngay tro
 <summary>Các lựa chọn</summary>
 
 - **Tắt hiệu ứng chuyển cảnh** (tích sẵn).
-- **Dùng FLauncher làm màn hình chính** (tích sẵn): cài FLauncher và tắt màn hình chính "Android TV Home" của Google, vốn chiếm nhiều CPU. TV giao diện Google TV mới, box nhà mạng (vd FPT) và TV chỉ chạy app 64-bit thì màn hình chính được giữ nguyên.
+- **Dùng TV Home làm màn hình chính** (tích sẵn): cài TV Home (0,2 MB, từ release của dự án) và tắt màn hình chính "Android TV Home" của Google, vốn chiếm nhiều CPU. TV giao diện Google TV mới và box nhà mạng (vd FPT) thì màn hình chính được giữ nguyên.
 - **Tắt app đề xuất** (tích sẵn): app hệ thống không dùng, danh sách viết cho Sony BRAVIA và vài app Google; chỉ hiện những app TV đó có.
 - **Tắt thêm app khác** (không tích sẵn): mọi app có biểu tượng trên TV, có ô lọc theo tên. App quan trọng (Cài đặt, giao diện hệ thống, bàn phím, Google Play Services, TV Setup, Tailscale...) không bao giờ có trong danh sách.
 
-Tắt là tạm ngưng, không gỡ. **Hoàn tác** bật lại cả những app bạn tự chọn thêm (TV nhớ danh sách ở `/data/local/tmp/tvr-disabled.txt`).
+Tắt là tạm ngưng, không gỡ. App giữ mạng Wi-Fi đã lưu hoặc cổng HDMI không bao giờ bị tắt. **Hoàn tác** bật lại cả những app bạn tự chọn thêm (TV nhớ danh sách ở `/data/local/tmp/tvr-disabled.txt`).
 
 Nếu sau này TV không hiện màn hình chính: Cài đặt → Ứng dụng → Ứng dụng hệ thống → **Android TV Home** → Bật.
 </details>

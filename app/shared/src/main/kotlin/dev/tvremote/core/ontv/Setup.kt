@@ -19,12 +19,8 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
     private fun t(id: String, vararg a: Pair<String, Any?>) = Words.get(lang, id, *a)
 
     companion object {
-        const val FL_PKG = "me.efesser.flauncher"
-        const val FL_URL = "https://github.com/osrosal/flauncher/releases/download/v2025.07.001/flauncher-armeabi-v7a-release.apk"
-        const val FL_SHA = "467fd0befe6daa3993a8a34a3981a631858ace28b38d9836d691478af8b71e40"
-        /** For TVs that run 64-bit apps only (newer Google TV, the emulator): the 32-bit one does not install there. */
-        const val FL_URL64 = "https://github.com/osrosal/flauncher/releases/download/v2025.07.001/flauncher-arm64-v8a-release.apk"
-        const val FL_SHA64 = "6e366d960d1c42ff923bddf86a034a231800924c0d395aefa7c448b1c4e8896f"
+        /** The home screen Optimize TV gives: TV Home, this project's own (was FLauncher, a 10 MB download from someone else's releases). */
+        const val HOME_PKG = dev.tvremote.home.HomeConfig.PKG
         const val TS_PKG = "com.tailscale.ipn"
         val GOOGLE = arrayOf("com.google.android.play.games", "com.google.android.videos", "com.google.android.youtube.tvmusic")
         /** Only present on Sony BRAVIA sets; skipped elsewhere. */
@@ -61,7 +57,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
             "|com\\.google\\.android\\.(gms|gsf|packageinstaller|permissioncontroller|tvlauncher|tvrecommendations|leanbacklauncher.*|inputmethod.*|tv\\.remote\\.service|katniss|apps\\.tv\\.launcherx|tungsten\\.setupwraith)" +
             "|dev\\.tvremote\\..*|com\\.tailscale\\.ipn")
         /** What the Apps tab marks "must keep" and refuses to stop, clear, turn off or remove: [PROTECTED] and the brands' own [Bloat.KEEP]. */
-        fun mustKeep(p: String) = PROTECTED.matches(p) || Bloat.KEEP.matches(p)
+        fun mustKeep(p: String) = PROTECTED.matches(p) || Bloat.keep(p)
         /**
          * An app that asks for the TV's own input hardware (HDMI, AV, the tuner), whatever its name: turned off, a OnePlus showed "No
          * Signal" on every input, even once it was back on (cleanyourtv #321). Or one that owns a saved Wi-Fi network: Android forgets
@@ -134,6 +130,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
     @Throws(IOException::class)
     fun plan(label: (String) -> String?): org.json.JSONObject {
         tvOnly()
+        Bloat.fresh()
         val enabled = sh("pm list packages -e").split("\n").filter { it.startsWith("package:") }.map { it.substring(8).trim() }.toSet()
         val suggest = suggested().filter { it in enabled }
         val home = homeNow()
@@ -142,10 +139,10 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
             for (line in sh("cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.$cat 2>/dev/null").split("\n"))
                 if (line.contains('/')) shown.add(line.trim().substringBefore('/'))
         val others = shown.filter { it in enabled && it !in suggest && it != home && !kept(it) }.sortedBy { (label(it) ?: it).lowercase() }
-        fun item(p: String) = org.json.JSONObject().put("pkg", p).put("label", Bloat.SUGGEST[p] ?: label(p) ?: NAMES[p] ?: p.split('.').let { s -> if (s.last().length <= 3 && s.size > 1) s.takeLast(2).joinToString(".") else s.last() })
+        fun item(p: String) = org.json.JSONObject().put("pkg", p).put("label", Bloat.suggest()[p] ?: label(p) ?: NAMES[p] ?: p.split('.').let { s -> if (s.last().length <= 3 && s.size > 1) s.takeLast(2).joinToString(".") else s.last() })
         return org.json.JSONObject()
             .put("anim", sh("settings get global window_animation_scale").trim() != "0.0")
-            .put("flauncher", has(FL_PKG)).put("home", home)
+            .put("tvhome", has(HOME_PKG)).put("home", home)
             .put("suggest", org.json.JSONArray(suggest.map { item(it) }))
             .put("apps", org.json.JSONArray(others.map { item(it) }))
     }
@@ -167,8 +164,9 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
             log.line(t("optimize.transition_animations_off"))
         }
 
+        Bloat.fresh()
         val pick = c.disable ?: suggested()
-        val keep = setOf(homeNow(), keyboardNow().substringBefore('/'), if (c.home) FL_PKG else "")   // whatever the list says, the TV keeps a home and a keyboard
+        val keep = setOf(homeNow(), keyboardNow().substringBefore('/'), if (c.home) HOME_PKG else "")   // whatever the list says, the TV keeps a home and a keyboard
         var off = 0
         for (p in pick.distinct()) {
             if (!p.matches(Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")) || kept(p) || p in keep || !has(p) || inUse(sh, p)) continue
@@ -179,20 +177,21 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
         keyboard()
 
         if (!c.home) { log.line(t("optimize.done")); return }
-        if (!has(FL_PKG)) {
-            log.line(t("optimize.downloading_flauncher_10_mb"))
-            val abis = sh("getprop ro.product.cpu.abilist")
-            val only64 = "arm64-v8a" in abis && "armeabi-v7a" !in abis
-            val apk = if (only64) download(FL_URL64, "flauncher.apk", FL_SHA64) else download(FL_URL, "flauncher.apk", FL_SHA)
-            log.line(t("optimize.installing_flauncher"))
-            val out = install(apk)
-            apk.delete()
+        if (!has(HOME_PKG)) {
+            log.line(t("optimize.downloading_tvhome"))
+            val out = try {
+                val a = Launchers.self()                              // the latest release's tv-home.apk, pinned by its signed SHA256SUMS
+                val apk = download(a.url, Launchers.SELF_APK, a.sha256)
+                log.line(t("optimize.installing_tvhome"))
+                install(apk).also { apk.delete() }
+            } catch (e: IOException) { e.message ?: "" }
             if (!out.contains("Success")) {
-                val why = if (out.contains("NO_MATCHING_ABIS")) t("optimize.flauncher_has_no_build") else last(out)
-                log.line(t("optimize.flauncher_could_not_be", "why" to why))
+                log.line(t("optimize.tvhome_could_not_be", "why" to last(out)))
                 log.line(t("optimize.done"))
                 return
             }
+            // as the gallery does: its weather may ask where the TV is, and compiled now a cold start is ~4x faster (LauncherInstall)
+            try { adb?.shell(dev.tvremote.home.HomeConfig.GRANT_WIFI + "cmd package compile -m speed -f $HOME_PKG >/dev/null 2>&1", 120000) } catch (e: IOException) {}
         }
         if (takeHome()) {
             log.line(t("optimize.home_screen", "home" to last(sh(RESOLVE_HOME))))
@@ -203,7 +202,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
         }
     }
 
-    private fun suggested(): List<String> = (GOOGLE + SONY).toList() + Bloat.SUGGEST.keys
+    private fun suggested(): List<String> = (GOOGLE + SONY).filterNot { Bloat.dropped(it) } + Bloat.suggest().keys
 
     private fun kept(p: String) = mustKeep(p)
 
@@ -218,12 +217,12 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
     }
 
     /**
-     * FLauncher takes Home, by the same steps as any launcher of the gallery ([LauncherSwap]: the TV's own home screens off with the
+     * TV Home takes Home, by the same steps as any launcher of the gallery ([LauncherSwap]: the TV's own home screens off with the
      * wizard first, the new one made the home last, then Home is asked where it goes). Anywhere else (a brand's own home screen we do
      * not know, Fire OS, a TV that ignores the choice) and the home screens come back on: a Home button that lands on a setup wizard
      * or a picker is worse than the old home screen. Recorded on the TV, so the watchdog of TV Setup guards it too.
      */
-    private fun takeHome(): Boolean = LauncherSwap(sh).take(FL_PKG)
+    private fun takeHome(): Boolean = LauncherSwap(sh).take(HOME_PKG)
 
     private fun keyboardNow(): String = sh("settings get secure default_input_method").trim()
 
@@ -250,7 +249,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
         LauncherSwap(sh).forget()
         sh("for k in $ANIM; do settings put global \$k 1.0; done")
         log.line(t("optimize.re_enabled_apps_google", "n" to on))
-        log.line(t("optimize.flauncher_tailscale_settings_left"))
+        log.line(t("optimize.tvhome_tailscale_settings_left"))
     }
 
     /** Copies the APK to the TV through ADB and has the shell user install it there (an app may not install on its own). */

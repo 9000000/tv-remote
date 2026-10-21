@@ -766,12 +766,12 @@ class MainActivity : Activity() {
         fun add(v: View) = list.addView(v, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         fun header(s: String) = list.addView(section(s), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
 
-        val usingFl = plan.optString("home") == Setup.FL_PKG
+        val usingHome = plan.optString("home") == Setup.HOME_PKG
         header(T("tv_main.general"))
         add(row(T("setup.anim_off"),
             if (plan.optBoolean("anim", true)) T("tv_main.faster") else T("setup.anim_already"), true, null))
-        add(row(if (usingFl) T("setup.flauncher_in_use") else T("setup.flauncher_use"),
-            (if (plan.optBoolean("flauncher")) T("tv_main.light_no_ads") else T("tv_main.light_no_ads_download")), true, null))
+        add(row(if (usingHome) T("setup.tvhome_in_use") else T("setup.tvhome_use"),
+            (if (plan.optBoolean("tvhome")) T("tv_main.light_no_ads") else T("tv_main.light_no_ads_download")), true, null))
         val sug = plan.optJSONArray("suggest") ?: org.json.JSONArray()
         if (sug.length() > 0) header(T("tv_main.suggested_apps_to_turn"))
         for (i in 0 until sug.length()) { val a = sug.getJSONObject(i); add(row(a.optString("label"), a.optString("pkg"), true, a.optString("pkg"))) }

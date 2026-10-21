@@ -7,6 +7,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Tối ưu TV dùng TV Home làm màn hình chính thay cho FLauncher: 0,2 MB thay vì 10 MB, lấy từ release của dự án (ký và kiểm SHA-256), chỉnh được từ điện thoại / máy tính.
+- Tối ưu TV đọc thêm danh sách app gợi ý tắt / phải giữ từ trang web của dự án (`docs/optimize/bloat.json`, có chữ ký): TV mới được thêm vào mà không cần ra bản app mới. Danh sách này chỉ thêm được app phải giữ, không bớt được.
 - TV Channels (app mới): xem kênh truyền hình miễn phí từ danh sách công khai của iptv-org, theo quốc gia và thể loại, có yêu thích, tìm kiếm, đổi kênh bằng ▲▼ / số; kênh không phản hồi được làm mờ.
 - TV Channels: tự gom kênh thành nhóm (Yêu thích cũng là một nhóm); ghim một kênh hay cả nhóm ra màn hình chính, bấm vào là mở đúng nhóm đó.
 - TV Home: app khác có thể ghim lối tắt vào Yêu thích (vd. một kênh của TV Channels); nhấn giữ để bỏ ghim.
@@ -18,6 +20,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: thẻ widget có nền mờ của ảnh nền (như dải Yêu thích), chữ dễ đọc trên ảnh nhiều màu; ảnh mờ mịn hơn. Mức chuyển động (Tự động / Nhẹ / Đầy đủ; TV ít RAM tự dùng Nhẹ). Banner app nét hơn. Lên / xuống quay về đúng ô Yêu thích vừa rời; về Home thì đứng lại ở app vừa mở. Dải Yêu thích cân trên dưới (tên app chỉ hiện khi chọn).
 
 **English**
+- Optimize TV makes TV Home the home screen instead of FLauncher: 0.2 MB instead of 10 MB, from the project's release (signed, SHA-256 checked), set up from the phone / computer.
+- Optimize TV also reads which apps to suggest / always keep from the project's site (`docs/optimize/bloat.json`, signed): a new TV's apps are added without a new app. That list can only add apps to keep, never remove them.
 - Safer app removal: an app that owns a saved Wi-Fi network is never turned off, cleared or removed (the TV would forget the network, and ADB with it); factory test apps are never opened (one Haier went into factory mode, Input key dead). TV Setup asks TCLs to let it auto-start, so the remote key fix runs there.
 - TV Channels: VieON channels stay in favourites and groups after a restart; the programme guide no longer slows channel changes; Home while a channel loads no longer leaves sound playing.
 - TV Channels: programme guide for Vietnamese channels (from TV360 and VieON): cards show what is on; while watching, ▶ shows now / next and ▶ again the day's guide; hold OK on a channel → Programme guide.

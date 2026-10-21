@@ -1,0 +1,9 @@
+{
+  "v": 1,
+  "updated": "2026-10-21",
+  "about": "Optimize TV's additions to Bloat.kt, read from the site: suggest (package -> name, ticked by default), drop (no longer suggested), keep and factory (Java regexes, only added). Edit, run dev/sign_bloat.py, commit both files.",
+  "suggest": {},
+  "drop": [],
+  "keep": [],
+  "factory": []
+}

@@ -19,7 +19,7 @@ class SetupTest {
         val installed = apps.toMutableSet()
         val disabled = mutableSetOf<String>()
         /** Who answers HOME and how high (higher wins); a package of a brand's own may stay on top whatever we do. */
-        val homes = linkedMapOf(Setup.FL_PKG to 0, Setup.LAUNCHERX to 2, "com.google.android.tvlauncher" to 2,
+        val homes = linkedMapOf(Setup.HOME_PKG to 0, Setup.LAUNCHERX to 2, "com.google.android.tvlauncher" to 2,
             "com.google.android.tungsten.setupwraith" to 1, "com.android.tv.settings" to -1000)
         var keyboard = "com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME"
         val keyboards = mutableListOf("com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME")
@@ -57,6 +57,17 @@ class SetupTest {
 
     private val musts = arrayOf("android", "com.android.systemui", "com.android.tv.settings", "com.google.android.gms", "com.google.android.tvlauncher",
         "com.google.android.katniss", "dev.tvremote.setup", "com.tailscale.ipn")
+
+    /** The site's list adds and drops suggestions, and only adds to KEEP / FACTORY; a bad pattern leaves the whole list out. */
+    @Test fun theSitesBloatListOnlyAddsToWhatIsKept() {
+        val x = Bloat.parse("""{"v":1,"suggest":{"com.foo.ads":"Ads","bad name":"x"},"drop":["com.google.android.feedback"],"keep":["com\\.bar\\..*"],"factory":["com\\.qux\\.test"]}""".toByteArray())
+        assertEquals(setOf("com.foo.ads"), x.suggest.keys)
+        assertTrue("com.google.android.feedback" in x.drop)
+        assertTrue(x.keep.single().matches("com.bar.tv"))
+        assertTrue(x.factory.single().matches("com.qux.test"))
+        try { Bloat.parse("""{"v":1,"keep":["("]}""".toByteArray()); fail() } catch (e: java.io.IOException) {}
+        try { Bloat.parse("""{"v":2}""".toByteArray()); fail() } catch (e: java.io.IOException) {}
+    }
 
     /** `dumpsys package` counts TV_INPUT_HARDWARE, `dumpsys wifi` the networks the app made: either kept (HDMI, the network). */
     @Test fun anAppHoldingTheInputsOrTheWifiIsInUse() {
@@ -98,17 +109,17 @@ class SetupTest {
         val without = FakeTv(true, *Setup.LAUNCHER)
         without.setup().apply(Setup.Choice(anim = false, home = false, disable = emptyList()))
         assertTrue(without.disabled.isEmpty())                        // no home: the launcher stays
-        val with = FakeTv(true, *Setup.LAUNCHER, Setup.FL_PKG)
+        val with = FakeTv(true, *Setup.LAUNCHER, Setup.HOME_PKG)
         with.setup().apply(Setup.Choice(anim = false, home = true, disable = emptyList()))
         assertEquals(Setup.LAUNCHER.toSet(), with.disabled)
-        assertEquals(Setup.FL_PKG, with.home())
+        assertEquals(Setup.HOME_PKG, with.home())
     }
 
     @Test fun googleTvGivesHomeToFLauncherWithoutTheWizard() {         // launcherx alone off: the wizard took Home and the TV kept restarting
-        val tv = FakeTv(true, *Setup.LAUNCHER, *Setup.WIZARD, Setup.FL_PKG, "com.android.tv.settings")
+        val tv = FakeTv(true, *Setup.LAUNCHER, *Setup.WIZARD, Setup.HOME_PKG, "com.android.tv.settings")
         tv.disabled += "com.google.android.tvlauncher"                // off from the factory on Google TV
         tv.setup().apply(Setup.Choice(anim = false, home = true, disable = emptyList()))
-        assertEquals(Setup.FL_PKG, tv.home())
+        assertEquals(Setup.HOME_PKG, tv.home())
         assertTrue("${Setup.WIZARD[0]}/.Home" in tv.disabled)
         assertFalse(Setup.WIZARD[0] in tv.disabled)                    // its Home only: the whole app off cost an FPT box its saved Wi-Fi
         val off = tv.said.filter { it.startsWith("pm disable") }
@@ -119,7 +130,7 @@ class SetupTest {
     }
 
     @Test fun homeThatWillNotMoveGetsItsHomeScreensBack() {
-        val tv = FakeTv(true, *Setup.LAUNCHER, *Setup.WIZARD, Setup.FL_PKG, "com.brand.home")
+        val tv = FakeTv(true, *Setup.LAUNCHER, *Setup.WIZARD, Setup.HOME_PKG, "com.brand.home")
         tv.homes["com.brand.home"] = 5                                 // a brand's own home screen, not on our lists
         tv.setup().apply(Setup.Choice(anim = false, home = true, disable = emptyList()))
         assertTrue(tv.disabled.isEmpty())
@@ -133,7 +144,7 @@ class SetupTest {
     }
 
     @Test fun anAndroidTvOptimizedByAnOlderVersionGetsItsHomeBack() {   // older versions kept no record of the home screen
-        val tv = FakeTv(true, "com.google.android.tvlauncher", "com.google.android.tvrecommendations", Setup.FL_PKG)
+        val tv = FakeTv(true, "com.google.android.tvlauncher", "com.google.android.tvrecommendations", Setup.HOME_PKG)
         tv.disabled += listOf("com.google.android.tvlauncher", "com.google.android.tvrecommendations")
         assertTrue(tv.setup().optimized())
         tv.setup().undo()
@@ -158,7 +169,7 @@ class SetupTest {
     }
 
     @Test fun undoTurnsBackOnAllItTurnedOff() {
-        val tv = FakeTv(true, *Setup.GOOGLE, *Setup.LAUNCHER, Setup.FL_PKG, "com.foo.game", "com.bar.shop")
+        val tv = FakeTv(true, *Setup.GOOGLE, *Setup.LAUNCHER, Setup.HOME_PKG, "com.foo.game", "com.bar.shop")
         tv.setup().apply(Setup.Choice(anim = true, home = true, disable = Setup.GOOGLE.toList() + "com.foo.game" + "com.bar.shop"))
         assertEquals(Setup.GOOGLE.size + Setup.LAUNCHER.size + 2, tv.disabled.size)
         assertEquals("0", tv.anim)

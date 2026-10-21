@@ -5,7 +5,8 @@ package dev.tvremote.core.ontv
  * and its forks, issues and pull requests (October 2026, read again up to PR #573). [SUGGEST] is ticked by default, so it holds only what sends data,
  * shows ads or demos, or installs apps by itself: nothing a remote button, an input, the sound or a store needs. Each is
  * skipped on a TV that lacks it, and Undo turns it back on ([Setup.OFF_LIST]). The sources, what was left out and why, and how
- * to read them again: dev/bloat-sources.md.
+ * to read them again: dev/bloat-sources.md. What owners report later goes in docs/optimize/bloat.json, read from the site ([fresh]),
+ * so a new TV's list needs no new app; these lists are the floor that a list from the site cannot lower.
  */
 object Bloat {
     val SUGGEST: Map<String, String> = linkedMapOf(
@@ -174,4 +175,45 @@ object Bloat {
         "|com\\.google\\.android\\.tv\\.dfuservice|com\\.dolby\\.android\\.audio\\.service|com\\.gretzky\\.GlobalKey" +
         "|com\\.amazon\\.(venezia|tigris|vizzini|cardinal|logan|tv\\.(settings.*|oobe|quicksettings|livetv|launcher|ime)|whisperlink.*|whisperjoin.*|aria)" +
         "|com\\.mediatek\\..*|com\\.droidlogic(\\..*)?")
+
+    /**
+     * What the site adds: docs/optimize/bloat.json (dev/sign_bloat.py), signed with the launcher list's key. It may add to and drop
+     * from [SUGGEST] (a suggestion only: [keep] still wins), and only add to [KEEP] and [FACTORY], so a wrong list never frees what
+     * these hold. Read when Optimize TV opens and kept 6 hours; not reached, asked again after 30 minutes, these lists alone.
+     */
+    class Extra(val suggest: Map<String, String>, val drop: Set<String>, val keep: List<Regex>, val factory: List<Regex>)
+
+    var bases = listOf("https://tvremote.pages.dev/optimize/", "https://raw.githubusercontent.com/HoangTran0410/tv-remote/main/docs/optimize/")
+    /** A list to read instead of the site's (tests): TVR_BLOAT. Still signature-checked. */
+    @Volatile var testBase: String? = System.getenv("TVR_BLOAT")?.trim()?.takeIf { it.isNotEmpty() }?.let { if (it.endsWith("/")) it else "$it/" }
+    @Volatile var extra: Extra? = null; private set
+    @Volatile private var asked = 0L
+    private val PKG = Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")
+
+    @Throws(java.io.IOException::class)
+    fun parse(b: ByteArray): Extra = try {
+        val o = org.json.JSONObject(String(b, Charsets.UTF_8))
+        if (o.optInt("v") != 1) throw java.io.IOException("bloat list: unknown version")
+        fun strings(k: String) = o.optJSONArray(k)?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty()
+        val s = o.optJSONObject("suggest")
+        Extra(s?.keys()?.asSequence()?.filter { PKG.matches(it) }?.associateWith { s.getString(it) }.orEmpty(), strings("drop").toSet(),
+            strings("keep").map { Regex(it) }, strings("factory").map { Regex(it) })
+    } catch (e: Exception) { throw java.io.IOException("bloat list: " + e.message) }   // a bad pattern too: the whole list is left out
+
+    /** The site's list, asked when not kept: network, not on the main thread. Never throws: not reached, the built-in lists. */
+    fun fresh() {
+        val t = System.currentTimeMillis()
+        if (t - asked < if (extra != null) 6 * 3600_000L else 30 * 60_000L) return
+        asked = t
+        for (b in testBase?.let { listOf(it) } ?: bases) try {
+            val list = Launchers.get(b + "bloat.json")
+            if (!Launchers.signed(list, String(Launchers.get(b + "bloat.json.sig"), Charsets.UTF_8))) throw java.io.IOException(Launchers.UNSIGNED)
+            extra = parse(list); return
+        } catch (e: java.io.IOException) {}
+    }
+
+    fun suggest(): Map<String, String> = extra?.let { x -> SUGGEST.filterKeys { it !in x.drop } + x.suggest } ?: SUGGEST
+    fun dropped(p: String) = extra?.drop?.contains(p) == true
+    fun keep(p: String) = KEEP.matches(p) || extra?.keep?.any { it.matches(p) } == true
+    fun factory(p: String) = FACTORY.matches(p) || extra?.factory?.any { it.matches(p) } == true
 }

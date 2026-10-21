@@ -25,10 +25,10 @@ async function chooseOptimize() {
   put('#optgo', 'disabled', true); $('#optdlg').showModal();
   const p = await api('/api/setup/plan');
   if (!p) { body.replaceChildren(el('p', { textContent: T('setup.optimize_unreadable') })); return; }
-  const usingFl = p.home === 'me.efesser.flauncher';
+  const usingHome = p.home === 'dev.tvremote.home';
   const parts = [el('h3', { textContent: T('setup.general') }),
     optRow(T('setup.anim_off'), p.anim ? T('setup.anim_faster') : T('setup.anim_already'), true, { what: 'anim' }),
-    optRow(usingFl ? T('setup.flauncher_in_use') : T('setup.flauncher_use'), (p.flauncher ? T('setup.flauncher_note') : T('setup.flauncher_note_dl')), true, { what: 'home' })];
+    optRow(usingHome ? T('setup.tvhome_in_use') : T('setup.tvhome_use'), (p.tvhome ? T('setup.tvhome_note') : T('setup.tvhome_note_dl')), true, { what: 'home' })];
   if (p.suggest.length) parts.push(el('h3', { textContent: T('setup.turn_off_suggested') }), ...p.suggest.map((a) => optRow(a.label, a.pkg, true, { pkg: a.pkg })));
   if (p.apps.length) {
     const list = el('div', { className: 'optbox' }, ...p.apps.map((a) => optRow(a.label, a.pkg, false, { pkg: a.pkg })));
