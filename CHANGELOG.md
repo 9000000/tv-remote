@@ -4,6 +4,16 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- Tối ưu TV gặp TV Home cũ trên TV thì cập nhật lên bản mới nhất trước khi đổi màn hình chính (cập nhật lỗi thì dùng bản đang có).
+- App điện thoại / máy tính cũ hơn TV Home không còn làm mất widget mới của TV Home khi bật thêm hay đổi cỡ một widget.
+
+**English**
+- Optimize TV updates an older TV Home on the TV to the latest before making it the home screen (a failed update keeps the one there).
+- A phone / computer app older than TV Home no longer drops TV Home's newer widgets when turning one on or resizing one.
+
 ## 0.16.0 - 2026-10-21
 
 Web 0.16.0 · app điện thoại 0.16.0 · app TV 0.16.0 · TV Home 0.3.0 · TV Channels 0.1.0

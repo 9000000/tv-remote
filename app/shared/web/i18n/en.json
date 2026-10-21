@@ -2546,6 +2546,7 @@
  "home.w_weather": "Weather card: now and the next 3 days",
  "home.widgets": "Widgets on the screen",
  "home.w_off": "Turn this card off",
+ "home.w_newer": "{k} (a newer TV Home's card)",
  "home.w_waits": "Not shown: only the first {n}",
  "home.size": "Card size",
  "home.size_big": "Big",

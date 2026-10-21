@@ -202,4 +202,14 @@ class HomeConfigTest {
         assertFalse(HomeConfig.clean(JSONObject()).getBoolean("dream"))
         assertEquals(true, HomeConfig.merge(HomeConfig.clean(JSONObject()), JSONObject().put("dream", true)).getBoolean("dream"))
     }
+
+    /** An older client keeps a newer TV Home's cards it does not know, and their sizes; junk names still go. */
+    @Test fun aClientForwardsCardsItDoesNotKnow() {
+        val f = HomeConfig.forward(JSONObject().put("widgets", JSONArray(listOf("system", "radar", "BAD name", "system")))
+            .put("wsize", JSONObject().put("radar", "big").put("system", "huge")))
+        assertEquals(listOf("system", "radar"), (0 until f.getJSONArray("widgets").length()).map { f.getJSONArray("widgets").getString(it) })
+        assertEquals("big", f.getJSONObject("wsize").getString("radar"))
+        assertFalse(f.getJSONObject("wsize").has("system"))
+        assertEquals(listOf("system"), HomeConfig.clean(f).getJSONArray("widgets").let { a -> (0 until a.length()).map { a.getString(it) } })   // TV Home's own decides
+    }
 }

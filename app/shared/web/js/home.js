@@ -216,11 +216,11 @@ async function homeOpen() {
       : places ? (i >= slots ? T('home.w_waits', { n: slots }) : '')
       : HOME_LARGE.includes(k) && w.slice(0, i).filter((x) => HOME_LARGE.includes(x)).length >= HOME_ROW_CARDS ? T('home.w_waits_row', { n: HOME_ROW_CARDS }) : '';
     const wmove = (i, j) => { const n = w.slice(); [n[i], n[j]] = [n[j], n[i]]; send({ widgets: n }); };
-    const wsize = (k, v) => send({ wsize: Object.fromEntries(HOME_WIDGETS.map((x) => [x, x === k ? v : homeSize(c, x)])) });
+    const wsize = (k, v) => send({ wsize: Object.fromEntries([...new Set([...HOME_WIDGETS, ...(w || [])])].map((x) => [x, x === k ? v : homeSize(c, x)])) });   // a newer TV Home's cards keep theirs
     const sizeChips = (k) => el('span', { className: 'sizechips', role: 'group', 'aria-label': T('home.size') },
       ...['big', 'small'].map((v) => el('button', { type: 'button', className: 'small' + (homeSize(c, k) === v ? ' on' : ''), textContent: T(v === 'big' ? 'home.size_big' : 'home.size_small'), 'aria-pressed': String(homeSize(c, k) === v), onclick: () => wsize(k, v) })));
     wList.replaceChildren(...(w || []).map((k, i) => el('div', { className: 'item' },
-      el('div', { className: 'name' }, el('span', { textContent: T(HOME_WIDGET_WORDS[k]) }), ...(waits(k, i) ? [el('small', { textContent: waits(k, i) })] : [])),
+      el('div', { className: 'name' }, el('span', { textContent: HOME_WIDGET_WORDS[k] ? T(HOME_WIDGET_WORDS[k]) : T('home.w_newer', { k }) }), ...(waits(k, i) ? [el('small', { textContent: waits(k, i) })] : [])),
       el('div', { className: 'acts' },
         ...(sized ? [sizeChips(k)] : []),
         tool('↑', T('home.up'), () => wmove(i, i - 1), i === 0),

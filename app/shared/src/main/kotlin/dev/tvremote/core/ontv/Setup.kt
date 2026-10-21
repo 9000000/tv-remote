@@ -177,19 +177,23 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
         keyboard()
 
         if (!c.home) { log.line(t("optimize.done")); return }
-        if (!has(HOME_PKG)) {
+        // none on the TV, or an older one than the latest release's (its settings stay): put in first, so Home lands on today's
+        val had = if (has(HOME_PKG)) Regex("versionName=(\\S+)").find(sh("dumpsys package $HOME_PKG | grep -m1 versionName"))?.groupValues?.get(1) ?: "" else null
+        val newer = if (had == "") null                                // a version not read: the one there is kept
+            else try { dev.tvremote.update.Release.newer(had ?: "0", "home", Launchers.SELF_APK) } catch (e: Exception) { null }
+        if (had == null || newer != null) {
             log.line(t("optimize.downloading_tvhome"))
             val out = try {
-                val a = Launchers.self()                              // the latest release's tv-home.apk, pinned by its signed SHA256SUMS
+                val a = newer?.let { Launchers.Apk("any", it.url, it.sha256) } ?: Launchers.self()   // pinned by the release's signed SHA256SUMS
                 val apk = download(a.url, Launchers.SELF_APK, a.sha256)
                 log.line(t("optimize.installing_tvhome"))
                 install(apk).also { apk.delete() }
             } catch (e: IOException) { e.message ?: "" }
-            if (!out.contains("Success")) {
+            if (!out.contains("Success") && had == null) {
                 log.line(t("optimize.tvhome_could_not_be", "why" to last(out)))
                 log.line(t("optimize.done"))
                 return
-            }
+            }                                                         // an update that failed: the one on the TV still works
             // as the gallery does: its weather may ask where the TV is, and compiled now a cold start is ~4x faster (LauncherInstall)
             try { adb?.shell(dev.tvremote.home.HomeConfig.GRANT_WIFI + "cmd package compile -m speed -f $HOME_PKG >/dev/null 2>&1", 120000) } catch (e: IOException) {}
         }

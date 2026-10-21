@@ -178,6 +178,23 @@ object HomeConfig {
             .put("wsize", sizes(o, widgets))
     }
 
+    private val CARD = Regex("[a-z][a-z0-9_]{0,15}")
+
+    /**
+     * What a client sends: [clean], but the cards it does not know (a newer TV Home's, read back from it) kept in "widgets" and
+     * "wsize": an older phone or computer that turned one card on or resized one dropped the newer ones. TV Home's own [clean] decides.
+     */
+    fun forward(o: JSONObject): JSONObject {
+        val c = clean(o)
+        o.optJSONArray("widgets")?.let { a -> c.put("widgets", JSONArray((0 until a.length()).map { a.optString(it) }.filter { CARD.matches(it) }.distinct().take(16))) }
+        o.optJSONObject("wsize")?.let { g ->
+            val out = JSONObject()
+            for (k in g.keys()) if (CARD.matches(k)) g.optString(k).takeIf { it == "big" || it == "small" }?.let { out.put(k, it) }
+            c.put("wsize", out)
+        }
+        return c
+    }
+
     /** "wsize" kept for the known cards with a known size; with none yet, the old "wlayout" as the sizes that gave the same picture. */
     private fun sizes(o: JSONObject, widgets: List<String>): JSONObject {
         val out = JSONObject()

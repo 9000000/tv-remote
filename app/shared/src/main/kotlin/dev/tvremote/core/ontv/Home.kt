@@ -18,7 +18,7 @@ object Home {
     /** The settings and TV Home's view of the TV's apps; [change] (any fields of [HomeConfig]) is saved first. */
     @Throws(IOException::class)
     fun call(sh: (String) -> String, change: JSONObject?, extra: String = ""): JSONObject {   // [extra]: more receiver arguments (drop, thumbs)
-        val arg = " $extra" + if (change == null) "" else " --es set " + B64.encode(HomeConfig.clean(change).let { c ->
+        val arg = " $extra" + if (change == null) "" else " --es set " + B64.encode(HomeConfig.forward(change).let { c ->
             JSONObject().also { o -> for (k in change.keys()) if (c.has(k)) o.put(k, c.get(k)) } }.toString().toByteArray(Charsets.UTF_8))
         // the screensaver is a system setting: TV Home may write it once the shell has granted it that (only ADB can)
         val grant = if (change?.optBoolean("dream") == true) "pm grant ${HomeConfig.PKG} ${HomeConfig.WRITE_SECURE} 2>&1; " else ""
