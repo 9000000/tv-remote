@@ -51,13 +51,15 @@ object Lunar {
         val m = 359.2242 + 29.10535608 * k - 0.0000333 * t2 - 0.00000347 * t3
         val mpr = 306.0253 + 385.81691806 * k + 0.0107306 * t2 + 0.00001236 * t3
         val f = 21.2964 + 390.67050646 * k - 0.0016528 * t2 - 0.00000239 * t3
-        var c1 = (0.1734 - 0.000393 * t) * sin(m * dr) + 0.0021 * sin(2 * dr * m)
-        c1 -= 0.4068 * sin(mpr * dr) + 0.0161 * sin(dr * 2 * mpr)
-        c1 -= 0.0004 * sin(dr * 3 * mpr)
-        c1 += 0.0104 * sin(dr * 2 * f) - 0.0051 * sin(dr * (m + mpr))
-        c1 -= 0.0074 * sin(dr * (m - mpr)) + 0.0004 * sin(dr * (2 * f + m))
-        c1 -= 0.0004 * sin(dr * (2 * f - m)) - 0.0006 * sin(dr * (2 * f + mpr))
-        c1 += 0.0010 * sin(dr * (2 * f - mpr)) + 0.0005 * sin(dr * (2 * mpr + m))
+        // each term with its own sign, as Hồ Ngọc Đức's "C1 = C1 - a + b": "c1 -= a + b" turned b's sign and moved new moons
+        // by up to ~50 minutes, enough to put a month's first day a day early (22/3/2023, the leap 2nd month)
+        val c1 = (0.1734 - 0.000393 * t) * sin(m * dr) + 0.0021 * sin(2 * dr * m) -
+            0.4068 * sin(mpr * dr) + 0.0161 * sin(dr * 2 * mpr) -
+            0.0004 * sin(dr * 3 * mpr) +
+            0.0104 * sin(dr * 2 * f) - 0.0051 * sin(dr * (m + mpr)) -
+            0.0074 * sin(dr * (m - mpr)) + 0.0004 * sin(dr * (2 * f + m)) -
+            0.0004 * sin(dr * (2 * f - m)) - 0.0006 * sin(dr * (2 * f + mpr)) +
+            0.0010 * sin(dr * (2 * f - mpr)) + 0.0005 * sin(dr * (2 * mpr + m))
         val deltaT = if (t < -11) 0.001 + 0.000839 * t + 0.0002261 * t2 - 0.00000845 * t3 - 0.000000081 * t * t3
             else -0.000278 + 0.000265 * t + 0.000262 * t2
         return jd1 + c1 - deltaT

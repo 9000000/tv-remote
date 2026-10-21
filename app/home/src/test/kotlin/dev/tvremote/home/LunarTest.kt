@@ -23,6 +23,24 @@ class LunarTest {
         assertEquals(Lunar.Day(1, 7, 2025, false), Lunar.of(23, 8, 2025))
     }
 
+    @Test fun julianDayEveryDay() {                                    // the integer divisions are floor here: every term is positive after 4800 BC
+        var d = java.time.LocalDate.of(1800, 1, 1)
+        while (d.year < 2200) {
+            assertEquals(d.toString(), d.toEpochDay() + 2440588, Lunar.jd(d.dayOfMonth, d.monthValue, d.year).toLong())
+            d = d.plusDays(1)
+        }
+    }
+
+    @Test fun moreYears() {                                            // other decades, and 2007: Vietnam's Tết a day before China's (UTC+7 vs +8)
+        assertEquals(Lunar.Day(1, 1, 2007, false), Lunar.of(17, 2, 2007))
+        assertEquals(Lunar.Day(1, 1, 2000, false), Lunar.of(5, 2, 2000))
+        assertEquals(Lunar.Day(1, 1, 1990, false), Lunar.of(27, 1, 1990))
+        assertEquals(Lunar.Day(1, 1, 2020, false), Lunar.of(25, 1, 2020))
+        assertEquals(Lunar.Day(1, 2, 2023, true), Lunar.of(22, 3, 2023))     // nhuận tháng 2 năm Quý Mão
+        assertEquals(Lunar.Day(1, 4, 2020, true), Lunar.of(23, 5, 2020))     // nhuận tháng 4 năm Canh Tý
+        assertEquals(Lunar.Day(1, 7, 2026, false), Lunar.of(13, 8, 2026))    // with the sign slip: 12/8, a day early
+    }
+
     @Test fun yearName() {
         assertEquals(2 to 6, Lunar.canChi(2026))                       // Bính Ngọ
         assertEquals(1 to 5, Lunar.canChi(2025))                       // Ất Tỵ
