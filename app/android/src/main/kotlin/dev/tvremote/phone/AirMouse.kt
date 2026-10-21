@@ -150,7 +150,7 @@ private fun MainActivity.airView(): FrameLayout {
     val pad = FrameLayout(this)
     pad.background = box(CARD, 18)
     val hint = label(T("air.pad"), 15, MUTED)
-    hint.gravity = Gravity.CENTER
+    hint.gravity = Gravity.CENTER; hint.setPadding(dp(8), 0, dp(64), 0)   // clear of the scroll strip
     pad.addView(hint, FrameLayout.LayoutParams(-1, -1))
     var downAt = 0L; var sx = 0f; var sy = 0f; var moved = false; var scrollY = 0f; var scrollCarry = 0f
     var lastTapUp = 0L; var dtap = false; var lx = 0f; var ly = 0f; var lt = 0L; var drag = false; var longDone = false; val dragCarry = FloatArray(2)
@@ -191,6 +191,32 @@ private fun MainActivity.airView(): FrameLayout {
         }
         true
     }
+    // The scroll strip on the pad's right edge: a vertical drag on it is the wheel, so one finger can scroll. It is a child that takes
+    // its own touches, so the pad's one-finger moves elsewhere are untouched; two fingers on the pad still scroll.
+    val strip = FrameLayout(this)
+    strip.background = box(BG, 14)                                // a track darker than the pad: there, not loud
+    val up = label("\u25B2", 11, MUTED); up.gravity = Gravity.CENTER
+    val dn = label("\u25BC", 11, MUTED); dn.gravity = Gravity.CENTER
+    strip.addView(up, FrameLayout.LayoutParams(-1, -2, Gravity.TOP).apply { topMargin = dp(10) })
+    strip.addView(dn, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM).apply { bottomMargin = dp(10) })
+    var stripY = 0f; var stripT = 0L; var stripCarry = 0f
+    strip.setOnTouchListener { v, ev ->
+        when (ev.actionMasked) {
+            MotionEvent.ACTION_DOWN -> { v.parent.requestDisallowInterceptTouchEvent(true); stripY = ev.y; stripT = ev.eventTime; stripCarry = 0f; Air.touching = true; Air.padRest = false }
+            MotionEvent.ACTION_MOVE -> {
+                val dt = maxOf(1L, ev.eventTime - stripT)
+                val dy = (ev.y - stripY) / dp(1)                       // dp
+                val speed = abs(dy) / dt                               // dp per ms: a quicker drag scrolls further
+                stripCarry += dy / 10f * (1f + minOf(speed, 2f))       // one wheel notch per 10 dp at a slow drag; drag down = content up
+                stripY = ev.y; stripT = ev.eventTime
+                val n = stripCarry.toInt()
+                if (n != 0) { stripCarry -= n; airWheel(n) }
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { Air.touching = false; Air.padRest = false; v.performClick() }
+        }
+        true
+    }
+    pad.addView(strip, FrameLayout.LayoutParams(dp(48), -1, Gravity.END).apply { setMargins(0, dp(8), dp(8), dp(8)) })
     page.addView(pad, LinearLayout.LayoutParams(-1, 0, 1f).apply { topMargin = dp(12) })
 
     val hold = button("@lock|" + T("air.hold_move"), SOFT)           // the gyroscope moves the pointer only while a finger rests on the pad

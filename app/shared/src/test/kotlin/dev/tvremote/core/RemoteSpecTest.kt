@@ -55,8 +55,9 @@ class RemoteSpecTest {
 
     @Test fun eachSideShowsItsOwnWordsAndItsOwnEntries() {
         fun find(s: RemoteSpec.Spec, id: String) = all(s).single { it.id == id }
-        assertEquals("Live TV", Words.get("en", find(phone, "tv").t))
-        assertEquals("TV", Words.get("en", find(web, "tv").t))
+        assertEquals("Live TV", Words.get("en", find(phone, "tools-tv").t))
+        assertTrue(all(phone).any { it.id == "air" } && !all(web).any { it.id == "air" })   // Air mouse is the phone's; the web has TV Home in its slot
+        assertTrue(all(web).any { it.id == "home-web" } && !all(phone).any { it.id == "home-web" })
         assertTrue(all(phone).any { it.id == "open-cast" })
         assertFalse(all(web).any { it.id == "open-cast" })
     }

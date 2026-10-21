@@ -5,20 +5,22 @@
       [
         { "id": "open", "icon": "send", "t": "rkey.open", "do": "open" },
         { "id": "input", "icon": "input", "t": "rkey.input", "do": "inputs" },
-        { "id": "timer", "icon": "timer", "t": "rkey.timer", "do": "timer", "needs": ["screen_off"] },
-        { "id": "scenes", "icon": "scene", "t": "rkey.scenes", "do": "scenes" }
+        { "id": "air", "icon": "mouse", "t": "rkey.air", "do": "air", "cores": ["phone"], "needs": ["mouse"],
+          "why": "the phone's gyroscope (AirMouse.kt): a browser's page has no such sensor on every phone, and the TV web page has no ADB" },
+        { "id": "home-web", "icon": "sliders", "t": "rkey.home_custom", "do": "homeCustom", "needs": ["adb"], "cores": ["web"],
+          "why": "fills the slot Air mouse has on the phone so the web rows stay four wide; on the phone TV Home is under Tools" },
+        { "id": "timer", "icon": "timer", "t": "rkey.timer", "do": "timer", "needs": ["screen_off"] }
       ],
       [
         { "id": "screenshot", "icon": "camera", "t": "rkey.screenshot", "do": "shot", "needs": ["adb"] },
-        { "id": "share", "icon": "share", "t": "rkey.share", "do": "share", "needs": ["adb"] },
         { "id": "draw", "icon": "pen", "t": "rkey.draw", "do": "draw", "needs": ["adb"] },
+        { "id": "scenes", "icon": "scene", "t": "rkey.scenes", "do": "scenes" },
         { "id": "notify", "icon": "bell", "t": "rkey.notify", "do": "notify", "needs": ["adb"] }
       ],
       [
-        { "id": "tv", "icon": "tv", "t": "rkey.tv", "key": "LIVE",
-          "web": { "t": "rkey.tv_web" }, "why": "the web button is narrower: the bare word TV" },
         { "id": "settings", "icon": "settings", "t": "rkey.settings", "key": "SETTINGS" },
-        { "id": "guide", "icon": "guide", "t": "rkey.guide", "key": "GUIDE" },
+        { "id": "subtitles", "icon": "subtitle", "t": "rkey.subtitles", "key": "SUBTITLE" },
+        { "id": "info", "icon": "info", "t": "rkey.info", "key": "INFO" },
         { "id": "tools", "icon": "apps", "t": "rkey.tools", "do": "menu", "arg": "tools" }
       ]
     ],
@@ -47,14 +49,16 @@
   },
   "menus": {
     "tools": [
-      { "id": "tools-subtitles", "icon": "subtitle", "t": "rkey.subtitles", "do": "key", "arg": "SUBTITLE" },
-      { "id": "tools-info", "icon": "info", "t": "rkey.info", "do": "key", "arg": "INFO" },
+      { "id": "tools-tv", "icon": "tv", "t": "rkey.tv", "do": "key", "arg": "LIVE" },
+      { "id": "tools-guide", "icon": "guide", "t": "rkey.guide", "do": "key", "arg": "GUIDE" },
+      { "id": "tools-share", "icon": "share", "t": "rkey.share", "do": "share", "needs": ["adb"] },
       { "id": "tools-stop", "icon": "stop", "t": "rkey.stop", "do": "key", "arg": "STOP" },
-      { "id": "tools-home", "icon": "sliders", "t": "rkey.home_custom", "do": "homeCustom", "needs": ["adb"] },
-      { "id": "tools-air", "icon": "mouse", "t": "rkey.air", "do": "air", "cores": ["phone"], "needs": ["mouse"],
-        "why": "the phone's gyroscope (AirMouse.kt): a browser's page has no such sensor on every phone, and the TV web page has no ADB" },
+      { "id": "tools-home", "icon": "sliders", "t": "rkey.home_custom", "do": "homeCustom", "needs": ["adb"], "cores": ["phone"],
+        "why": "on the web TV Home has its own key in the grid" },
       { "id": "tools-ir", "icon": "pulse", "t": "rkey.ir", "do": "ir", "cores": ["phone"], "when": "ir",
-        "why": "the phone's own IR LED (IrRemote.kt), for this TV: a browser has none; 'when': only a phone that has one" }
+        "why": "the phone's own IR LED (IrRemote.kt), for this TV: a browser has none; 'when': only a phone that has one" },
+      { "id": "tools-gamespad", "icon": "gamepad", "t": "rkey.gamespad", "do": "gamespad", "needs": ["adb"], "cores": ["phone"],
+        "why": "the phone's gyroscope aims in TV Games (GamesPointer.kt); a browser hides the sensor on a plain-http page" }
     ],
     "open": [
       { "id": "open-apps", "icon": "apps", "t": "rkey.open_apps", "do": "apps", "sub": "rkey.open_apps_sub" },

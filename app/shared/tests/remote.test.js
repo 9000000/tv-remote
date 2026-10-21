@@ -107,7 +107,7 @@ test('a guest from a shared QR: "remote" opens apps but sends no files and share
   const open = p.remoteMenu('open').map((i) => i[0]);
   assert.ok(open.some((w) => w.startsWith('@link|')), 'opening a link is pressing a key: ' + open);
   assert.ok(!open.some((w) => /^@(image|music)\|/.test(w)), 'no files sent: ' + open);
-  const more = (spec.rows.more || []).flat().map(p.remoteEntry);
+  const more = [...(spec.rows.more || []).flat(), ...(spec.menus.tools || [])].map(p.remoteEntry);   // Share lives under Tools
   assert.ok(!p.remoteCan(more.find((e) => e.do === 'share')), 'only the owner shares');
   assert.ok(p.remoteCan(more.find((e) => e.do === 'shot')));
   p.can = guest('view');
