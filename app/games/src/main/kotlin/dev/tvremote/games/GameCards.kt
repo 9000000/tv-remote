@@ -91,7 +91,7 @@ class GameCards(
         lobbyView = LobbyView(act, server, title, art, maxPlayers, minPlayers).also { root.addView(it, FrameLayout.LayoutParams(-1, -1)) }
         server.onReady = { act.runOnUiThread { evaluate() } }
         server.onLobbyBtn = { p, b, d -> act.runOnUiThread { lobbyView?.press(p, b, d) } }
-        server.setLobby(true)
+        server.lobbyMax = maxPlayers.coerceIn(1, 4); server.setLobby(true)
         onPause(true)
         refresh(); evaluate()
     }
@@ -117,7 +117,7 @@ class GameCards(
         if (!lobby) return
         tick.removeCallbacksAndMessages(null); counting = false; lobby = false
         lobbyView?.let { root.removeView(it) }; lobbyView = null
-        server.countdown(0); server.setLobby(false)
+        server.countdown(0); server.setLobby(false); server.lobbyMax = 4
         onGo(); onPause(false); refresh(true)
     }
 
@@ -129,7 +129,7 @@ class GameCards(
     }
 
     /** The activity is going: leave the lobby state on the server, so the pads do not show it in the library. */
-    fun close() { tick.removeCallbacksAndMessages(null); if (lobby) { lobby = false; server.countdown(0); server.setLobby(false) } }
+    fun close() { tick.removeCallbacksAndMessages(null); if (lobby) { lobby = false; server.countdown(0); server.setLobby(false); server.lobbyMax = 4 } }
 
     // each player's ping (the phone measures it, GameServer hears it) next to the slot dot: green under 30 ms, amber under 80, red above
     private fun paint(v: TextView, ms: Int) {

@@ -27,6 +27,7 @@ class LobbyView(
     private val panel = FrameLayout(act)
     private val rows = ArrayList<Row>()
     private val held = Array(4) { LinkedHashSet<String>() }
+    private val watchTv = act.label("", 16f, 0xFF8892A6.toInt()).apply { setPadding(0, 0, 0, act.dp(6)) }
     private val warnTv = act.label("", 18f, 0xFFFBBF24.toInt())
     private val countBox = LinearLayout(act)
     private val countN = act.label("", 150f)
@@ -55,7 +56,10 @@ class LobbyView(
         val right = LinearLayout(act).apply {
             orientation = LinearLayout.VERTICAL
             addView(act.label(act.getString(R.string.lobby_title), 28f).apply { (layoutParams as LinearLayout.LayoutParams).apply { gravity = Gravity.START; bottomMargin = act.dp(10) } })
-            for (p in 1..4) {
+            val seats = max.coerceIn(1, 4)
+            val rowH = when (seats) { 1, 2 -> 112; 3 -> 84; else -> 62 }
+            val list = LinearLayout(act).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_VERTICAL }   // few seats: centred, taller
+            for (p in 1..seats) {
                 val dot = act.dot(p, 20)
                 val name = act.label("", 22f).apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER_VERTICAL or Gravity.START }
                 val lit = act.label("", 18f).apply { setPadding(act.dp(10), act.dp(2), act.dp(10), act.dp(2)); minWidth = act.dp(44); visibility = View.INVISIBLE }
@@ -65,9 +69,11 @@ class LobbyView(
                     gravity = Gravity.CENTER_VERTICAL; setPadding(act.dp(18), 0, act.dp(14), 0)
                     addView(dot); addView(name, LinearLayout.LayoutParams(0, -2, 1f)); addView(lit); addView(ping); addView(ready)
                 }
-                addView(box, LinearLayout.LayoutParams(-1, act.dp(62)).apply { bottomMargin = act.dp(10) })
+                list.addView(box, LinearLayout.LayoutParams(-1, act.dp(rowH)).apply { bottomMargin = act.dp(10) })
                 rows += Row(box, dot, name, lit, ping, ready)
             }
+            addView(list, LinearLayout.LayoutParams(-1, 0, 1f))
+            addView(watchTv)
         }
         val top = LinearLayout(act).apply {
             addView(col, LinearLayout.LayoutParams(act.dp(290), -1))
@@ -102,6 +108,7 @@ class LobbyView(
     /** Seats from the server: who is in, their names, pings and Ready. */
     fun render() {
         val ps = server.lobbyPlayers().associateBy { it.slot }
+        val w = server.watching(); watchTv.text = if (w > 0) act.getString(R.string.lobby_watch, w) else ""
         rows.forEachIndexed { i, r ->
             val p = ps[i + 1]
             if (p == null) {

@@ -56,16 +56,18 @@ class GameServer private constructor(private val ctx: Context) {
     @Volatile var onPlayers: (List<Int>) -> Unit = {}      // slots (1..4) now in use, any thread
     /** The lobby (before a game starts): pad presses go to [onLobbyBtn] instead of the game, "ready 0|1" fills [onReady]. Set by GameCards. */
     @Volatile var lobby = false; private set
+    @Volatile var lobbyMax = 4                             // seats the lobby's game has: phones beyond them only watch
     @Volatile var onReady: () -> Unit = {}                 // someone's Ready changed, any thread
     @Volatile var onLobbyBtn: (player: Int, name: String, down: Boolean) -> Unit = { _, _, _ -> }   // a button tried in the lobby, player 1..4
     fun setLobby(on: Boolean) {
         if (on) synchronized(slots) { slots.forEach { it.ready = false; it.held.clear(); it.dirs = emptySet() } }
-        Log.i(TAG, "lobby $on"); lobby = on; send(0, "{\"lobby\":$on}")
+        Log.i(TAG, "lobby $on"); lobby = on; send(0, "{\"lobby\":$on,\"max\":$lobbyMax}")
     }
+    fun watching(): Int = synchronized(slots) { slots.withIndex().count { (i, s) -> i >= lobbyMax && s.conn != null } }
     fun countdown(n: Int) = send(0, "{\"count\":$n}")      // the lobby's 3-2-1 on the pads, 0 = cancelled
     /** Who is in, for [LobbyRule]: a phone has its own Ready, a physical pad has no button for it and counts as ready. */
     fun lobbyPlayers(): List<LobbyRule.P> = synchronized(slots) {
-        slots.mapIndexedNotNull { i, s -> if (s.conn != null) LobbyRule.P(i + 1, true, s.ready) else if (s.dev >= 0) LobbyRule.P(i + 1, false, true) else null }
+        slots.mapIndexedNotNull { i, s -> if (i >= lobbyMax) null else if (s.conn != null) LobbyRule.P(i + 1, true, s.ready) else if (s.dev >= 0) LobbyRule.P(i + 1, false, true) else null }
     }
     @Volatile var onAdded: () -> Unit = {}                 // a game or a web link was added
     @Volatile var onText: (player: Int, text: String) -> Unit = { _, _ -> }   // a phone's text field (web games), player 1..4
@@ -415,7 +417,7 @@ class GameServer private constructor(private val ctx: Context) {
                                 val i = assign(rest.substringBefore(' ').take(40), if (' ' in rest) PadNames.clean(rest.substringAfter(' ')) else null, c)
                                 if (i < 0) { c.text("{\"full\":true}"); break }
                                 slot = i
-                                c.text("{\"slot\":${i + 1},\"game\":$inGame,\"btns\":[${buttons.joinToString(",") { "\"$it\"" }}],\"sys\":\"$system\",\"name\":${org.json.JSONObject.quote(nameOf(i + 1) ?: "")},\"lobby\":$lobby,\"ready\":false}")
+                                c.text("{\"slot\":${i + 1},\"game\":$inGame,\"btns\":[${buttons.joinToString(",") { "\"$it\"" }}],\"sys\":\"$system\",\"name\":${org.json.JSONObject.quote(nameOf(i + 1) ?: "")},\"lobby\":$lobby,\"max\":$lobbyMax,\"ready\":false}")
                                 (synchronized(slots) { layouts[i] ?: defaultLayout })?.let { c.text("{\"layout\":$it}") }
                                 if (presence.away) c.text(presence.state())
                                 presence.padsChanged()

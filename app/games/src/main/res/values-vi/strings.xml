@@ -48,6 +48,7 @@
     <string name="need_one">1 người chơi</string>
     <string name="need_n">Cần %1$d người chơi</string>
     <string name="need_range">%1$d–%2$d người chơi</string>
+    <string name="lobby_watch">Đang xem: %1$d</string>
     <string name="few_warn">Mới có %1$d/%2$d người chơi. Bấm OK lần nữa để vẫn bắt đầu</string>
     <string name="pad_channel">Tay cầm điện thoại</string>
     <string name="pad_running">Điện thoại đang kết nối</string>

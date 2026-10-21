@@ -3,9 +3,9 @@ const K = new URLSearchParams(location.search).get('k') || '';
 const VI = (navigator.language || '').toLowerCase().startsWith('vi');
 const W = VI
   ? { p: 'Người chơi', c: 'Đang kết nối…', rc: 'Đang kết nối lại…', rch: 'Không thấy TV? Nếu TV đổi mạng hoặc địa chỉ, quét lại mã QR trên TV.', rs: 'Quét lại mã QR trên TV', rsh: 'Mã kết nối đã đổi. Quét mã mới để vào lại.', nm: 'Tên của bạn', f: 'Hết chỗ chơi', h: 'Rung', a: 'Thêm game', s: 'Gửi', k: 'Cần xoay thay D-pad', b: 'Quay lại', g: 'TV Games', t: 'Thêm vào Màn hình chính để chơi toàn màn hình',
-    s1: 'Bấm nút Chia sẻ của Safari (ô vuông có mũi tên lên)', s2: 'Chọn “Thêm vào Màn hình chính”', s3: 'Mở tay cầm từ biểu tượng mới: toàn màn hình', fs: 'Toàn màn hình', rd: 'Sẵn sàng', rdOn: 'Đã sẵn sàng ✓', lb: 'Phòng chờ: thử các nút, rồi bấm Sẵn sàng', cl: 'Bắt đầu sau' }
+    s1: 'Bấm nút Chia sẻ của Safari (ô vuông có mũi tên lên)', s2: 'Chọn “Thêm vào Màn hình chính”', s3: 'Mở tay cầm từ biểu tượng mới: toàn màn hình', fs: 'Toàn màn hình', sp: 'Game này tối đa {n} người: bạn đang xem', rd: 'Sẵn sàng', rdOn: 'Đã sẵn sàng ✓', lb: 'Phòng chờ: thử các nút, rồi bấm Sẵn sàng', cl: 'Bắt đầu sau' }
   : { p: 'Player', c: 'Connecting…', rc: 'Reconnecting…', rch: 'No TV in sight? If the TV changed network or address, scan its QR code again.', rs: 'Scan the QR code on the TV again', rsh: 'The connection code was changed. Scan the new one to join again.', nm: 'Your name', f: 'Room is full', h: 'Haptics', a: 'Add game', s: 'Send', k: 'Stick instead of D-pad', b: 'Back', g: 'TV Games', t: 'Add to Home Screen to play fullscreen',
-    s1: 'Tap Safari’s Share button (the square with an up arrow)', s2: 'Choose “Add to Home Screen”', s3: 'Open the pad from the new icon: fullscreen', fs: 'Fullscreen', rd: 'Ready', rdOn: 'Ready ✓', lb: 'Lobby: try the buttons, then tap Ready', cl: 'Starting in' };
+    s1: 'Tap Safari’s Share button (the square with an up arrow)', s2: 'Choose “Add to Home Screen”', s3: 'Open the pad from the new icon: fullscreen', fs: 'Fullscreen', sp: 'This game takes {n} players at most: you are watching', rd: 'Ready', rdOn: 'Ready ✓', lb: 'Lobby: try the buttons, then tap Ready', cl: 'Starting in' };
 // the TV left TV Games (Home) or closed it: the pad says so instead of looking healthy
 Object.assign(W, VI
   ? { aw: 'TV Games đang không mở trên TV', awh: 'Các nút chưa điều khiển được gì lúc này.', awo: 'Mở lại TV Games', awr: 'Mở TV Games bằng remote của TV', cs: 'TV Games đã đóng', csh: 'Mở lại TV Games trên TV, điện thoại sẽ tự vào lại.' }
@@ -131,11 +131,13 @@ function stickMove(t) {
 function stickEnd() { if (sId == null) return; sId = null; stk.classList.remove('on'); sendAxis(0, 0, true); placeStick(); }
 window.addEventListener('resize', () => setTimeout(placeStick, 50));
 // ---- the lobby (before a game starts): the TV shows the seats, the pad shows a big Ready toggle; buttons pressed here only light the seat on the TV
-let lobbyOn = false, iReady = false;
+let lobbyOn = false, iReady = false, lobbyMax = 4;
 function syncReady() { const b = $('#ready'); b.textContent = iReady ? W.rdOn : W.rd; b.classList.toggle('on', iReady); }
-function setLobby(on, ready) {
-  lobbyOn = !!on; iReady = lobbyOn && !!ready;
+function setLobby(on, ready, max) {
+  lobbyOn = !!on; iReady = lobbyOn && !!ready; if (max) lobbyMax = max;
+  const spec = lobbyOn && mySlot > lobbyMax;                    // more phones than the game has seats: this one watches
   document.body.classList.toggle('lobby', lobbyOn); $('#lobbybar').hidden = !lobbyOn;
+  $('#ready').hidden = spec; $('#lobbyHint').textContent = spec ? W.sp.replace('{n}', lobbyMax) : W.lb;
   syncReady(); showCount(0);
 }
 function showCount(n) { $('#count').hidden = !n; $('#countN').textContent = n || ''; if (n) buzz(20); }
@@ -192,7 +194,7 @@ function connect() {
       if (m.full) { show(-1); return; }
       if ('sys' in m && !('slot' in m)) { sysName = m.sys; layout = null; relayout(); return; }
       if ('game' in m && !('slot' in m)) { setMode(m.game ? 'pad' : 'nav'); $('#add').hidden = !!m.game; if (!m.game) setLobby(false); return; }
-      if ('lobby' in m && !('slot' in m)) { setLobby(m.lobby, false); return; }
+      if ('lobby' in m && !('slot' in m)) { setLobby(m.lobby, false, m.max); return; }
       if ('count' in m) { showCount(m.count); return; }
       if ('layout' in m) { layout = m.layout; relayout(); return; }
       if ('say' in m) { say(m.say); return; }
@@ -200,7 +202,7 @@ function connect() {
       if (m.name && !myName) { myName = clean(m.name); store.set('tvg-name', myName); }      // the TV remembers a name this phone lost
       else if (myName && m.name !== myName) send('name ' + myName);
       closed = false; setAway(false, false);                       // a hello answer: the TV is back; an "away" message may follow at once
-      show(m.slot); setLobby(m.lobby, m.ready);
+      show(m.slot); setLobby(m.lobby, m.ready, m.max);
       if (haptics && 'vibrate' in navigator) navigator.vibrate([30, 40, 30]); else buzz(0);   // a stronger one: the TV says the slot is yours
       $('#add').hidden = !!m.game;
       if (m.sys) sysName = m.sys; layout = null; say('');
