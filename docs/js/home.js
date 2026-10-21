@@ -35,6 +35,27 @@
     rv.forEach(function(el){ io.observe(el); });
   } else rv.forEach(function(el){ el.classList.add("in"); });
 
+  // the row: buttons, arrow keys and the "3 / 8" read the same scroll position; nothing moves by itself
+  (function(){
+    var t = document.getElementById("car"); if (!t) return;
+    var cards = t.querySelectorAll(".fc"), n = document.getElementById("car-n"), pv = document.getElementById("car-prev"), nx = document.getElementById("car-next");
+    var calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    function step(){ return cards.length > 1 ? cards[1].offsetLeft - cards[0].offsetLeft : t.clientWidth; }
+    function upd(){
+      var i = Math.min(cards.length - 1, Math.round(t.scrollLeft / step()));
+      n.textContent = (i + 1) + " / " + cards.length;
+      pv.disabled = t.scrollLeft < 4; nx.disabled = t.scrollLeft > t.scrollWidth - t.clientWidth - 4;
+    }
+    function go(d){ t.scrollBy({left: d * step(), behavior: calm ? "auto" : "smooth"}); }
+    pv.addEventListener("click", function(){ go(-1); }); nx.addEventListener("click", function(){ go(1); });
+    t.addEventListener("keydown", function(e){
+      if (e.target !== t) return;
+      if (e.key === "ArrowRight"){ e.preventDefault(); go(1); } else if (e.key === "ArrowLeft"){ e.preventDefault(); go(-1); }
+    });
+    t.addEventListener("scroll", function(){ requestAnimationFrame(upd); }, {passive:true});
+    window.addEventListener("resize", upd); upd();
+  })();
+
   document.getElementById("yr").textContent = new Date().getFullYear();
 
   // the big button gets the file for this device; where there is none (iPhone, iPad) it goes to the steps

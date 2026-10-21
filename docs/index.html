@@ -87,7 +87,7 @@ function LI(i){var L=document.documentElement.dataset.lang;if(i.dataset.langSrcs
       </figure>
       <figure>
         <span class="htag good"><span class="vi">Sau</span><span class="en">After</span></span>
-        <div class="hshot"><img data-lang-src="img/tvhome-widgets-LANG-640.webp" data-lang-srcset="img/tvhome-widgets-LANG-640.webp 640w, img/tvhome-widgets-LANG.webp 1280w" sizes="(max-width:700px) 92vw, 540px" width="1280" height="720" alt="" fetchpriority="high"><script>LI(document.currentScript.previousElementSibling)</script></div>
+        <div class="hshot"><img data-lang-src="img/tvhome-clean-LANG-640.webp" data-lang-srcset="img/tvhome-clean-LANG-640.webp 640w, img/tvhome-clean-LANG.webp 1280w" sizes="(max-width:700px) 92vw, 540px" width="1280" height="720" alt="" fetchpriority="high"><script>LI(document.currentScript.previousElementSibling)</script></div>
         <figcaption><b><span class="vi">Với TV Home:</span><span class="en">With TV Home:</span></b> <span class="vi">chỉ app bạn dùng, không quảng cáo, mượt hơn.</span><span class="en">only your apps, no ads, smoother.</span></figcaption>
       </figure>
     </div>
@@ -162,6 +162,65 @@ function LI(i){var L=document.documentElement.dataset.lang;if(i.dataset.langSrcs
     <div class="sc-p">
       <div class="hshot"><img data-lang-src="img/tv-games-LANG-640.webp" data-lang-srcset="img/tv-games-LANG-640.webp 640w, img/tv-games-LANG.webp 1280w" sizes="(max-width:980px) 92vw, 640px" width="1280" height="720" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script></div>
     </div>
+  </div>
+</section>
+
+<!-- ============ AND MORE: every standout feature, a swipeable row (no autoplay) ============ -->
+<section class="h-more2" id="more">
+  <div class="wrap">
+    <div class="car-head">
+      <div>
+        <h2><span class="vi">Còn nữa</span><span class="en">And more</span></h2>
+        <p class="lead"><span class="vi">Vuốt để xem thêm. Bấm vào thẻ để đọc hướng dẫn.</span><span class="en">Swipe for more. Tap a card for its guide.</span></p>
+      </div>
+      <div class="car-ctl" aria-label="Carousel">
+        <span class="car-n" id="car-n" aria-live="polite">1 / 8</span>
+        <button type="button" class="car-b" id="car-prev" aria-label="Previous" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <button type="button" class="car-b" id="car-next" aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+  </div>
+  <div class="car-track" id="car" tabindex="0" role="region" aria-label="And more">
+        <a class="fc" href="guide#air" id="fc-air">
+          <img data-lang-src="img/feat-air-LANG.webp" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
+          <h3><span class="vi">Air Mouse</span><span class="en">Air Mouse</span></h3>
+          <p><span class="vi">Cầm điện thoại như remote, xoay cổ tay để di con trỏ.</span><span class="en">Hold the phone like a remote and turn your wrist to move the pointer.</span></p>
+        </a>
+        <a class="fc" href="guide#draw" id="fc-draw">
+          <img data-lang-src="img/feat-draw-LANG.webp" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
+          <h3><span class="vi">Vẽ lên TV</span><span class="en">Draw on the TV</span></h3>
+          <p><span class="vi">Khoanh hay viết thẳng lên màn hình TV cho cả nhà cùng xem.</span><span class="en">Circle or write right on the TV screen for the whole room.</span></p>
+        </a>
+        <a class="fc" href="guide#ir" id="fc-ir">
+          <img data-lang-src="img/feat-ir-LANG.webp" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
+          <h3><span class="vi">Remote hồng ngoại</span><span class="en">Infrared remote</span></h3>
+          <p><span class="vi">Dùng đèn hồng ngoại của điện thoại, học phím từ remote của box.</span><span class="en">Uses the phone's IR LED and learns keys from the box's own remote.</span></p>
+        </a>
+        <a class="fc" href="guide#listen" id="fc-listen">
+          <img data-lang-src="img/feat-listen-LANG.webp" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
+          <h3><span class="vi">Nghe TV trên điện thoại</span><span class="en">Hear the TV on your phone</span></h3>
+          <p><span class="vi">Tiếng TV vào tai nghe, không làm phiền ai.</span><span class="en">The TV's sound in your headphones, nobody disturbed.</span></p>
+        </a>
+        <a class="fc" href="guide#typing" id="fc-typing">
+          <img data-lang-src="img/feat-typing-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <h3><span class="vi">Gõ chữ, nói với TV</span><span class="en">Type or talk to the TV</span></h3>
+          <p><span class="vi">Gõ bằng bàn phím điện thoại, hoặc nói “mở YouTube”.</span><span class="en">Type with the phone keyboard, or say “open YouTube”.</span></p>
+        </a>
+        <a class="fc" href="guide#scenes" id="fc-scenes">
+          <img data-lang-src="img/feat-scenes-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <h3><span class="vi">Cảnh: một nút, nhiều việc</span><span class="en">Scenes: one tap, many steps</span></h3>
+          <p><span class="vi">Mở app, chỉnh tiếng, hẹn giờ chỉ bằng một lần bấm.</span><span class="en">Open an app, set the volume and a timer with a single tap.</span></p>
+        </a>
+        <a class="fc" href="guide#sleep" id="fc-sleep">
+          <img data-lang-src="img/feat-sleep-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <h3><span class="vi">Hẹn giờ tắt</span><span class="en">Sleep timer</span></h3>
+          <p><span class="vi">Chạy ngay trên TV, nên vẫn tắt khi mọi thiết bị khác đã tắt.</span><span class="en">Runs on the TV itself, so it works with every other device off.</span></p>
+        </a>
+        <a class="fc" href="guide#notify" id="fc-notify">
+          <img data-lang-src="img/feat-notify-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <h3><span class="vi">Gửi lời nhắn lên TV</span><span class="en">Message on the TV</span></h3>
+          <p><span class="vi">Hiện thẻ tin nhắn ở góc màn hình: “Ăn cơm!”.</span><span class="en">A message card in a corner of the screen: “Dinner is ready!”.</span></p>
+        </a>
   </div>
 </section>
 
