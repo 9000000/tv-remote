@@ -260,11 +260,11 @@ class GameServer private constructor(private val ctx: Context) {
             if (parts[0] == "POST") return when (path) { "/upload" -> upload(conn, inp, h, q); "/weblink" -> weblink(conn, q); else -> reply(conn, 404, "text/plain", "no".toByteArray()) }
             if (path.startsWith("/webgames/")) return webfile(conn, path.removePrefix("/webgames/"), q["k"] == token)
             if (path == "/ws" && h["upgrade"]?.lowercase() == "websocket") return socket(conn, inp, h["sec-websocket-key"] ?: return)
-            val name = when (path) { "/", "/index.html" -> "index.html"; "/pad.css" -> "pad.css"; "/pad.js" -> "pad.js"; "/add" -> "add.html"; "/layouts.json" -> "layouts.json"; else -> null }
+            val name = when (path) { "/", "/index.html" -> "index.html"; "/pad.css" -> "pad.css"; "/pad.js" -> "pad.js"; "/add" -> "add.html"; "/layouts.json" -> "layouts.json"; "/manifest.webmanifest" -> "manifest.webmanifest"; "/icon.png" -> "icon.png"; else -> null }
                 ?: return reply(conn, 404, "text/plain", "not found".toByteArray())
             var body = if (name == "layouts.json") Catalog.layouts(ctx).toByteArray() else ctx.assets.open("pad/$name").use { it.readBytes() }   // the catalog's pad overrides
-            if (name.endsWith(".html")) body = String(body).replace("__K__", token).toByteArray()
-            reply(conn, 200, when { name.endsWith(".css") -> "text/css"; name.endsWith(".js") -> "text/javascript"; name.endsWith(".json") -> "application/json"; else -> "text/html" } + "; charset=utf-8", body)
+            if (name.endsWith(".html") || name.endsWith(".webmanifest")) body = String(body).replace("__K__", token).toByteArray()
+            reply(conn, 200, when { name.endsWith(".css") -> "text/css"; name.endsWith(".js") -> "text/javascript"; name.endsWith(".json") -> "application/json"; name.endsWith(".webmanifest") -> "application/manifest+json"; name.endsWith(".png") -> "image/png"; else -> "text/html" } + "; charset=utf-8", body)
         } catch (e: Exception) {
         }
     }

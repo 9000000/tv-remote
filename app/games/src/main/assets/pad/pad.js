@@ -2,8 +2,10 @@
 const K = new URLSearchParams(location.search).get('k') || '';
 const VI = (navigator.language || '').toLowerCase().startsWith('vi');
 const W = VI
-  ? { p: 'Người chơi', c: 'Đang kết nối…', f: 'Hết chỗ chơi', h: 'Rung', a: 'Thêm game', s: 'Gửi', k: 'Cần xoay thay D-pad', b: 'Quay lại', g: 'TV Games', t: 'Thêm vào Màn hình chính để chơi toàn màn hình' }
-  : { p: 'Player', c: 'Connecting…', f: 'Room is full', h: 'Haptics', a: 'Add game', s: 'Send', k: 'Stick instead of D-pad', b: 'Back', g: 'TV Games', t: 'Add to Home Screen to play fullscreen' };
+  ? { p: 'Người chơi', c: 'Đang kết nối…', f: 'Hết chỗ chơi', h: 'Rung', a: 'Thêm game', s: 'Gửi', k: 'Cần xoay thay D-pad', b: 'Quay lại', g: 'TV Games', t: 'Thêm vào Màn hình chính để chơi toàn màn hình',
+    s1: 'Bấm nút Chia sẻ của Safari (ô vuông có mũi tên lên)', s2: 'Chọn “Thêm vào Màn hình chính”', s3: 'Mở tay cầm từ biểu tượng mới: toàn màn hình', fs: 'Toàn màn hình' }
+  : { p: 'Player', c: 'Connecting…', f: 'Room is full', h: 'Haptics', a: 'Add game', s: 'Send', k: 'Stick instead of D-pad', b: 'Back', g: 'TV Games', t: 'Add to Home Screen to play fullscreen',
+    s1: 'Tap Safari’s Share button (the square with an up arrow)', s2: 'Choose “Add to Home Screen”', s3: 'Open the pad from the new icon: fullscreen', fs: 'Fullscreen' };
 const COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#eab308'];
 const $ = (s) => document.querySelector(s);
 const store = {
@@ -13,7 +15,7 @@ const store = {
 let cid = store.get('tvg-cid') || '';
 if (!cid) { cid = Math.random().toString(36).slice(2, 10) + Date.now().toString(36); store.set('tvg-cid', cid); }
 $('#lblHaptic').textContent = W.h; $('#lblAdd').textContent = W.a; $('#tipText').textContent = W.t;
-$('#lblBack').textContent = W.b; $('#lblHome').textContent = W.g; $('#send').textContent = W.s; $('#lblStick').textContent = W.k;
+$('#lblBack').textContent = W.b; $('#lblHome').textContent = W.g; $('#shTitle').textContent = W.t; $('#sh1').textContent = W.s1; $('#sh2').textContent = W.s2; $('#sh3').textContent = W.s3; $('#fs').setAttribute('aria-label', W.fs); $('#send').textContent = W.s; $('#lblStick').textContent = W.k;
 $('#add').href = 'add?k=' + encodeURIComponent(K);
 
 // ---- haptics: vibrate() where there is one, the iOS 17.4+ checkbox-switch tick elsewhere
@@ -34,7 +36,7 @@ let first_hello = true, ws = null, retry = 400, layout = null, sysName = 'nes', 
 function setMode(m) {
   mode = m; document.body.classList.toggle('nav', m === 'nav');
   $('#mode').textContent = m === 'nav' ? '🎮' : '🧭';
-  releaseAll(); relayout();
+  releaseAll(); relayout(); lockLandscape();
 }
 
 // What the TV is running decides the pad: nes / snes / gba / ps (a system's `pad` in Systems.kt) or web (the look of ps).
@@ -205,6 +207,8 @@ function navUp(id) { const r = navT.get(id); if (!r) return; clearTimeout(r.time
 
 // ---- actions (gear, haptics, add, tip) run on touchstart, not on click
 const ACT = {
+  fs() { toggleFs(); buzz(12); },
+  sheetx() { $('#sheet').hidden = true; },
   mode() { setMode(mode === 'nav' ? 'pad' : 'nav'); buzz(12); },
   gear() { const m = $('#menu'); m.hidden = !m.hidden; },
   haptic() { setHaptic(!haptics); buzz(12); },
@@ -220,10 +224,40 @@ let first = true, lock = null;
 async function wake() { try { if (navigator.wakeLock && document.visibilityState === 'visible') lock = await navigator.wakeLock.request('screen'); } catch (e) {} }
 function firstTap() {
   if (!first) return; first = false;
-  try { const d = document.documentElement; const p = d.requestFullscreen ? d.requestFullscreen({ navigationUI: 'hide' }) : null;
-    Promise.resolve(p).then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape')).catch(() => {}); } catch (e) {}
+  if (canFs) { try { const p = enterFs(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
   wake();
 }
+// ---- fullscreen button: the Fullscreen API (webkit-prefixed on old Safari / iPad); iPhone Safari has none for pages, so there it shows
+// how to add the pad to the Home Screen (the manifest + apple-mobile-web-app-capable make that icon open fullscreen)
+const de = document.documentElement;
+const canFs = !!(de.requestFullscreen || de.webkitRequestFullscreen);
+const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+const enterFs = () => (de.requestFullscreen ? de.requestFullscreen({ navigationUI: 'hide' }) : de.webkitRequestFullscreen());
+const exitFs = () => (document.exitFullscreen ? document.exitFullscreen() : document.webkitExitFullscreen && document.webkitExitFullscreen());
+const IC = {
+  enter: '<svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+  exit: '<svg viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>',
+};
+function fsSync() {
+  const on = !!fsEl();
+  $('#fs').innerHTML = on ? IC.exit : IC.enter; $('#fs').dataset.state = on ? 'on' : 'off';
+  lockLandscape();
+}
+// landscape only while fullscreen and showing the game's pad (the remote reads fine upright); refusal is normal (iOS, desktop)
+function lockLandscape() {
+  try {
+    const o = screen.orientation; if (!o) return;
+    if (fsEl() && mode === 'pad') { const p = o.lock && o.lock('landscape'); if (p && p.catch) p.catch(() => {}); }
+    else if (o.unlock) o.unlock();
+  } catch (e) {}
+}
+function toggleFs() {
+  if (!canFs) { $('#sheet').hidden = false; return; }
+  try { const p = fsEl() ? exitFs() : enterFs(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+}
+['fullscreenchange', 'webkitfullscreenchange'].forEach((n) => document.addEventListener(n, fsSync));
+if (navigator.standalone || matchMedia('(display-mode: fullscreen)').matches || matchMedia('(display-mode: standalone)').matches) $('#fs').hidden = true;   // already opened from the Home Screen
+fsSync();
 const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 if (ios && !navigator.standalone && !store.get('tvg-tip')) $('#tip').hidden = false;
 document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); else wake(); });

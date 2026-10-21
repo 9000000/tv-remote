@@ -7,15 +7,20 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <title>TV Games</title>
+<meta name="apple-mobile-web-app-title" content="TV Games pad">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest?k=__K__">
+<link rel="apple-touch-icon" href="icon.png?k=__K__">
 <link rel="stylesheet" href="pad.css?k=__K__">
 </head>
 <body>
-<div id="top"><span id="who">&nbsp;</span><span id="ms"></span><button id="mode" data-act="mode" aria-label="Mode">🧭</button><button id="gear" data-act="gear" aria-label="Settings">⚙</button></div>
+<div id="top"><span id="who">&nbsp;</span><span id="ms"></span><button id="fs" data-act="fs" aria-label="Fullscreen"></button><button id="mode" data-act="mode" aria-label="Mode">🧭</button><button id="gear" data-act="gear" aria-label="Settings">⚙</button></div>
 <div id="menu" hidden>
   <div class="row" data-act="haptic"><span id="lblHaptic">Rung</span><span class="sw" id="sw"></span></div>
   <div class="row" data-act="stick"><span id="lblStick">Stick</span><span class="sw" id="sw2"></span></div>
   <a class="row" id="add" data-act="add" hidden>＋ <span id="lblAdd">Thêm game</span></a>
 </div>
+<div id="sheet" hidden><div class="card"><b id="shTitle"></b><ol><li id="sh1"></li><li id="sh2"></li><li id="sh3"></li></ol><button data-act="sheetx" id="shOk">OK</button></div></div>
 <div id="tip" hidden><span id="tipText"></span><b data-act="tipx">✕</b></div>
 <label id="ios" aria-hidden="true"><input type="checkbox" switch tabindex="-1"></label>
 <div id="say" hidden></div>
