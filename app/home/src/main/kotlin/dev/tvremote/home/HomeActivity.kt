@@ -46,7 +46,8 @@ import java.util.Locale
 import java.util.concurrent.Executors
 
 /**
- * The home screen: the clock, three buttons (inputs, network, settings), the favourites ("dock") and every other app below.
+ * The home screen: the clock, three round buttons in one capsule (inputs, network, settings), and ONE grid of apps: the favourites
+ * first, then every other app.
  * Plain views, built in code: it has to come up at once on the weakest TV chip. What it shows is set in [Store], from here
  * (hold OK on an app) or from the phone / computer (HomeReceiver).
  */
@@ -58,25 +59,18 @@ class HomeActivity : Activity() {
     private lateinit var glass: Glass
     private lateinit var clock: TextClock
     private lateinit var dateLine: TextView
-    private lateinit var netPill: Pill
-    private lateinit var inputsPill: Pill
-    private lateinit var settingsPill: Pill
-    private lateinit var pills: LinearLayout
-    private lateinit var dock: LinearLayout
-    private lateinit var dockEmpty: TextView
-    private lateinit var appsTitle: TextView
-    private lateinit var grid: LinearLayout
+    private lateinit var netPill: BarBtn
+    private lateinit var inputsPill: BarBtn
+    private lateinit var settingsPill: BarBtn
+    private lateinit var bar: TopBar
+    private lateinit var grid: LinearLayout                         // the favourites first, then every other app, then the hidden apps' tile: one grid
     private var apps: List<App> = emptyList()
     @Volatile private var pins: List<App> = emptyList()                // shortcuts other apps pinned here ([Pins])
     private var conf = JSONObject()
     private var wallShown = ""
     private lateinit var head: LinearLayout
-    private lateinit var bandWrap: FrameLayout
-    private lateinit var blurClip: FrameLayout
-    private lateinit var blurView: ImageView
     private var scrollAnim: ObjectAnimator? = null
     private val zoom by lazy { Zoom(this) }
-    private var gridOn = true                                         // focus is in the grid: it is lit and in place; else it waits a little lower, dimmer
     private var away = false                                        // really left (stopped), not just paused: only then does the screen come in again
     private var trimmed = false                                     // the pictures were let go for memory while away ([trim])
     private var shownKey = ""                                       // what the tiles were built from: the same again builds nothing
@@ -88,9 +82,9 @@ class HomeActivity : Activity() {
     private var lastOpened: String?                                 // kept in prefs: the home may be made again while the app is open
         get() = getSharedPreferences("nav", MODE_PRIVATE).getString("last", null)
         set(v) { getSharedPreferences("nav", MODE_PRIVATE).edit().putString("last", v).apply() }
-    private var dockAt = -1                                         // the favourite left by Up or Down: coming back to the dock lands on it
+    private var topAt: View? = null                                 // the tile left by Up: Down from the buttons lands on it
     private var stepping = false
-    private companion object { var reopen = false }                 // across recreate(): the panel was open when the language changed
+    private companion object { var reopen = false; const val COLS = 5 }                 // across recreate(): the panel was open when the language changed
     private var open: android.app.Dialog? = null                    // the panel or menu on top, closed by a Home press
     private lateinit var widgets: Widgets
     private val ui = android.os.Handler(android.os.Looper.getMainLooper())
@@ -128,7 +122,7 @@ class HomeActivity : Activity() {
         backdrop = Backdrop(window.decorView)
 
         Motion.read(this, conf)
-        scroll = Scroller(this) { blurAlign() }.apply { isVerticalScrollBarEnabled = false; isFillViewport = true; clipChildren = false }
+        scroll = Scroller(this) { Frost.moved() }.apply { isVerticalScrollBarEnabled = false; isFillViewport = true; clipChildren = false }
         val col = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false
             setPadding(dp(48), dp(34), dp(48), dp(48))
@@ -151,69 +145,34 @@ class HomeActivity : Activity() {
         dateLine = text(18f, 0xD9FFFFFF.toInt()).apply { setPadding(dp(2), dp(4), 0, 0) }
         left.addView(clock); left.addView(dateLine)
         head.addView(left, LinearLayout.LayoutParams(0, -2, 1f))
-        pills = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(10), 0, 0); clipChildren = false; clipToPadding = false }
-        inputsPill = Pill(this, R.drawable.ic_input, getString(R.string.inputs)) { inputs() }
-        pills.addView(inputsPill)
-        netPill = Pill(this, R.drawable.ic_wifi, getString(R.string.wifi)) { open(Settings.ACTION_WIFI_SETTINGS) }
-        pills.addView(netPill, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
+        bar = TopBar(this, ::dp)
+        inputsPill = BarBtn(this, R.drawable.ic_input, getString(R.string.inputs), ::dp) { inputs() }
+        netPill = BarBtn(this, R.drawable.ic_wifi, getString(R.string.wifi), ::dp) { open(Settings.ACTION_WIFI_SETTINGS) }
         // one button for both settings, the TV's and TV Home's: two buttons side by side read as the same thing
-        settingsPill = Pill(this, R.drawable.ic_settings, getString(R.string.settings)) {
-            open = Drop.show(this, settingsPill, listOf(
+        settingsPill = BarBtn(this, R.drawable.ic_settings, getString(R.string.settings), ::dp) {
+            open = Drop.show(this, bar, listOf(
                 Drop.Row(R.drawable.ic_settings, getString(R.string.tv_settings)) { open(Settings.ACTION_SETTINGS) }) +
                 listOf(Settings.ACTION_DISPLAY_SETTINGS to (R.drawable.ic_monitor to R.string.picture), Settings.ACTION_SOUND_SETTINGS to (R.drawable.ic_vol_up to R.string.sound))
                     .filter { Intent(it.first).resolveActivity(packageManager) != null }          // a TV without that screen shows no dead row
                     .map { (act, v) -> Drop.Row(v.first, getString(v.second)) { open(act) } } + listOf(
                 Drop.Row(R.drawable.ic_sliders, getString(R.string.customize)) { customize() }))
         }
-        pills.addView(settingsPill, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
-        for (i in 0 until pills.childCount) pills.getChildAt(i).setOnKeyListener { _, code, e ->
-            code == KeyEvent.KEYCODE_DPAD_DOWN && e.action == KeyEvent.ACTION_DOWN && dock.getChildAt(dockAt)?.let { go(it); true } == true
+        for (b in listOf(inputsPill, netPill, settingsPill)) bar.add(b)
+        for (b in bar.buttons) b.setOnKeyListener { _, code, e ->
+            code == KeyEvent.KEYCODE_DPAD_DOWN && e.action == KeyEvent.ACTION_DOWN && (topAt?.takeIf { it.isAttachedToWindow } ?: firstGridTile())?.let { go(it); true } == true
         }
         // the row's two ends stay put: Android's own search went from Inputs down-left onto a tile, and OK then opened its app
         inputsPill.nextFocusLeftId = View.generateViewId().also { inputsPill.id = it }
         settingsPill.nextFocusRightId = View.generateViewId().also { settingsPill.id = it }
-        for (i in 0 until pills.childCount) pills.getChildAt(i).onFocusChangeListener = View.OnFocusChangeListener { v, f ->
-            Motion.pop(v, f); if (f) { scrollToY(0); gridFocus(false) }
-        }
-        // a narrow screen (dp): the words go and only the icons stay, so the clock keeps its line
-        if (resources.displayMetrics.widthPixels < dp(820)) for (i in 0 until pills.childCount) (pills.getChildAt(i) as Pill).compact()
-        head.addView(pills)
+        bar.focusIn = { scrollToY(0) }
+        head.addView(bar)
         col.addView(head)
         widgets = Widgets(this, ::dp).apply { visibility = View.GONE; onWeather = { runOnUiThread { if (!isDestroyed) widgetsRead() } } }
         col.addView(widgets, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(28) })
 
-        // the favourites, in a band of their own
-        // frosted: a light fill with a hairline edge; over a photo the same photo, blurred, sits behind it (see [blurAlign])
-        val band = FrameLayout(this).apply {
-            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x2EFFFFFF, 0x14FFFFFF)).apply {
-                cornerRadius = dp(26).toFloat(); setStroke(dp(1), 0x33FFFFFF)
-            }
-            setPadding(dp(22), dp(32), dp(22), dp(32)); clipChildren = false; clipToPadding = false   // even: the focused tile's name hangs into the bottom one
-        }
-        blurView = ImageView(this).apply { scaleType = ImageView.ScaleType.CENTER_CROP; setColorFilter(0x70000000, PorterDuff.Mode.SRC_ATOP) }
-        blurClip = FrameLayout(this).apply {
-            val r = dp(26).toFloat()
-            outlineProvider = object : android.view.ViewOutlineProvider() {            // a fully transparent GradientDrawable gives no outline to clip by
-                override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, r) }
-            }
-            clipToOutline = true; visibility = View.GONE
-            addView(blurView, FrameLayout.LayoutParams(resources.displayMetrics.widthPixels, resources.displayMetrics.heightPixels))
-        }
-        bandWrap = Wrap(this).apply {
-            clipChildren = false; clipToPadding = false
-            addView(blurClip, FrameLayout.LayoutParams(-1, -1)); addView(band, FrameLayout.LayoutParams(-1, -2))
-            addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> blurAlign() }
-        }
-        dock = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_HORIZONTAL; clipChildren = false; clipToPadding = false }
-        dockEmpty = text(17f, 0xB3FFFFFF.toInt()).apply { text = getString(R.string.dock_empty); gravity = Gravity.CENTER; setPadding(0, dp(24), 0, dp(36)) }
-        band.addView(dock, FrameLayout.LayoutParams(-1, -2))
-        band.addView(dockEmpty, FrameLayout.LayoutParams(-1, -2))
-        col.addView(bandWrap, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(40) })
-
-        appsTitle = text(18f, 0xCCFFFFFF.toInt()).apply { text = getString(R.string.apps); setPadding(dp(4), 0, 0, 0) }
-        col.addView(appsTitle, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(34); bottomMargin = dp(14) })
+        // ONE grid: the favourites are its first tiles, then every other app; no panel, the wallpaper stays whole
         grid = Flat(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
-        col.addView(grid)
+        col.addView(grid, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(40) })
 
         setContentView(root)
         Store.onChange = { conf = Store.get(this); if (conf.optString("lang") != Lang.shown) relang() else { show(); wallTimer(); bingCheck() } }
@@ -296,7 +255,7 @@ class HomeActivity : Activity() {
         trimmed = false
         val dm = resources.displayMetrics
         if (Walls.isPicture(conf.optString("wall"))) loadWall(conf.optString("wall"))
-        for (t in tiles().filter { dock.indexOfChild(it) >= 0 }) { t.app?.load(this); t.restore() }   // the favourites at once, the rest from the side
+        for (t in tiles().take(2 * COLS)) { t.app?.load(this); t.restore() }   // the favourites at once, the rest from the side
         bg.execute {
             for (a in apps) if (a.banner == null && a.icon == null) a.load(this)
             runOnUiThread { if (!isDestroyed && !trimmed) for (t in tileCache.values) t.restore() }
@@ -312,7 +271,7 @@ class HomeActivity : Activity() {
         val want = Store.list(this, "widgets")
         val conf = Store.get(this); val note = conf.optString("note"); val sizes = conf.optJSONObject("wsize") ?: JSONObject()
         val none = want.isEmpty() && note.isEmpty()
-        (bandWrap.layoutParams as LinearLayout.LayoutParams).topMargin = dp(if (none) 40 else 24)
+        (grid.layoutParams as LinearLayout.LayoutParams).topMargin = dp(if (none) 48 else 36)
         if (none) { widgets.visibility = View.GONE; return }
         bg.execute {
             val f = widgets.read(want)
@@ -325,13 +284,13 @@ class HomeActivity : Activity() {
         }
     }
 
-    /** The screen comes in: the clock and the buttons ease down, the dock band rises (only a fade when coming back from an app). */
+    /** The screen comes in: the clock and the buttons ease down, the grid rises (only a fade when coming back from an app). */
     private fun enter(slide: Boolean) {
         val d = if (slide) dp(14).toFloat() else 0f
         head.alpha = 0f; head.translationY = -d
-        bandWrap.alpha = 0f; bandWrap.translationY = d
+        grid.alpha = 0f; grid.translationY = d
         head.animate().alpha(1f).translationY(0f).setDuration(if (slide) 420 else 240).setInterpolator(Motion.glide).withLayer().start()
-        bandWrap.animate().alpha(1f).translationY(0f).setStartDelay(if (slide) 70 else 0).setDuration(if (slide) 420 else 240).setInterpolator(Motion.glide).withLayer().start()
+        grid.animate().alpha(1f).translationY(0f).setStartDelay(if (slide) 70 else 0).setDuration(if (slide) 420 else 240).setInterpolator(Motion.glide).withLayer().start()
     }
 
     /** Scrolls to [y] gliding (one animation at a time, the last target wins); at once when motion is off. */
@@ -345,28 +304,7 @@ class HomeActivity : Activity() {
         scrollAnim = ObjectAnimator.ofInt(scroll, "scrollY", scroll.scrollY, y).apply { duration = 420; interpolator = Motion.glide; start() }
     }
 
-    /** The grid is lit and in place while focus is in it; from the dock or the buttons it waits a little lower and dimmer, then rises as focus comes down. */
-    private fun gridFocus(on: Boolean) {
-        if (on == gridOn) return
-        gridOn = on
-        val a = if (on) 1f else 0.6f
-        val ty = if (on) 0f else dp(12).toFloat()
-        for (v in arrayOf(appsTitle, grid)) {
-            v.animate().cancel()
-            if (!Motion.on) { v.alpha = a; v.translationY = ty }
-            else v.animate().alpha(a).translationY(ty).setDuration(if (on) 280 else 200).setInterpolator(Motion.glide).start()
-        }
-    }
-
-    /** The blurred photo behind the dock band is the wallpaper itself: it keeps the screen's place while the band scrolls. */
-    private fun blurAlign() {
-        Frost.moved()
-        if (blurClip.visibility != View.VISIBLE) return
-        blurView.translationX = -bandWrap.left.toFloat()
-        blurView.translationY = (scroll.scrollY - bandWrap.top).toFloat()
-    }
-
-    /** Home pressed while already home, or Back: to the top, on the first favourite. */
+    /** Home pressed while already home, or Back: to the top, on the first tile. */
     override fun onNewIntent(i: Intent) {
         super.onNewIntent(i)
         if (locked) return
@@ -383,7 +321,7 @@ class HomeActivity : Activity() {
     override fun onWindowFocusChanged(has: Boolean) { super.onWindowFocusChanged(has); if (has) back = SystemClock.uptimeMillis() }
 
     private fun toTop() {
-        val first = if (dock.childCount > 0) dock.getChildAt(0) else grid.findFocus() ?: firstGridTile()
+        val first = firstGridTile()
         if (first != null && first.isFocused && scroll.scrollY == 0) return    // already there: nothing to move, nothing to redraw
         scrollToY(0)
         first?.requestFocus()
@@ -422,7 +360,7 @@ class HomeActivity : Activity() {
         }
     }
 
-    /** The shortcuts other apps pinned here ([Pins]): the dock is built again only when they changed. */
+    /** The shortcuts other apps pinned here ([Pins]): the grid is built again only when they changed. */
     private fun pinsRead() {
         bg.execute {
             val now = Pins.list(this)
@@ -465,67 +403,53 @@ class HomeActivity : Activity() {
         shownKey = key
         val made = HashMap<String, Tile>()                            // the tiles kept for the next build: those of apps still here
         val width = resources.displayMetrics.widthPixels - dp(96)
-        dock.removeAllViews()
-        val inDock = dockPkgs.map { byPkg.getValue(it) } + pins     // the pins after the apps, under the same limit
-        val n = inDock.size
-        if (n > 0) {
-            val w = minOf(dp(176), (width - dp(44) - (n - 1) * dp(22)) / n)
-            inDock.forEachIndexed { i, a ->
-                val t = tile(a, w, true, made)
-                dock.addView(t, LinearLayout.LayoutParams(-2, -2).apply { if (i > 0) leftMargin = dp(22); bottomMargin = -t.nameHeight() })   // shown on focus only: no room kept for it
-            }
-        }
-        dock.visibility = if (n > 0) View.VISIBLE else View.GONE
-        dockEmpty.visibility = if (n > 0) View.GONE else View.VISIBLE
+        val favs = dockPkgs.map { byPkg.getValue(it) } + pins       // the pins after the apps, under the same limit
 
         for (r in 0 until grid.childCount) (grid.getChildAt(r) as ViewGroup).removeAllViews()   // the tiles leave their rows alive, to be put in new ones
         grid.removeAllViews()
         val rest = apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }
-        val cols = 6
-        val gap = dp(16)
-        val w = (width - (cols - 1) * gap) / cols
-        val cells: MutableList<View> = rest.map { tile(it, w, false, made) }.toMutableList()
+        val cols = COLS
+        val gap = dp(20)
+        val w = (width - (cols - 1) * gap) / cols                     // one size for every tile: the favourites are only the first ones
+        val cells: MutableList<View> = (favs + rest).map { tile(it, w, made) }.toMutableList()
         val hiddenHere = apps.count { it.pkg in hidden }
-        if (hiddenHere > 0) cells.add(moves(Tile(this, null, w, getString(R.string.hidden, hiddenHere), ::dp).apply { setOnClickListener { unhide() } }, false, null))
+        if (hiddenHere > 0) cells.add(moves(Tile(this, null, w, getString(R.string.hidden, hiddenHere), ::dp).apply { setOnClickListener { unhide() } }, null))
         var row: LinearLayout? = null
         cells.forEachIndexed { i, v ->
             if (i % cols == 0) {
                 row = Flat(this).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false; clipToPadding = false }
-                grid.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(8) })
+                grid.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(10) })
             }
             row!!.addView(v, LinearLayout.LayoutParams(-2, -2).apply { if (i % cols > 0) leftMargin = gap })
         }
-        appsTitle.visibility = if (cells.isEmpty()) View.GONE else View.VISIBLE
         tileCache = made
         badgeTiles()
 
         val again = (keep ?: lastOpened.takeIf { currentFocus == null })?.let { p -> tiles().firstOrNull { it.app?.pkg == p } }
-        if (again != null) again.requestFocus() else if (currentFocus == null || currentFocus !is Tile && currentFocus !is Pill) toTop()
+        if (again != null) again.requestFocus() else if (currentFocus == null || currentFocus !is Tile && currentFocus !is BarBtn) toTop()
     }
 
     private fun tiles(): List<Tile> {
         val out = ArrayList<Tile>()
-        for (i in 0 until dock.childCount) (dock.getChildAt(i) as? Tile)?.let { out.add(it) }
         for (r in 0 until grid.childCount) (grid.getChildAt(r) as ViewGroup).let { row -> for (i in 0 until row.childCount) (row.getChildAt(i) as? Tile)?.let { out.add(it) } }
         return out
     }
 
     /**
      * The D-pad on a tile, decided here, not by the nearest view ([Nav]): Right on a row's last tile goes to the next row's first,
-     * Left the other way, Up and Down keep the column they started in as far as the next row has it (else its last tile), the dock
-     * and the grid hand over to the tile nearest across; at the ends focus stays (the nearest view out there would be a header
-     * button). True = handled. Up from the dock goes to the buttons, Android's choice.
+     * Left the other way, Up and Down keep the column they started in as far as the next row has it (else its last tile); at the ends
+     * focus stays (the nearest view out there would be a header button). True = handled. Up from the first row goes to the buttons.
      */
     /** Up from the top row of tiles: the button on the head nearest above it. */
     private fun up(v: View) {
         val at = IntArray(2); v.getLocationOnScreen(at)
         val x = at[0] + v.width / 2
-        (0 until pills.childCount).map { pills.getChildAt(it) }.filter { it.isShown }.minByOrNull { p ->
+        bar.buttons.filter { it.isShown }.minByOrNull { p ->
             p.getLocationOnScreen(at); Math.abs(at[0] + p.width / 2 - x)
         }?.requestFocus()
     }
 
-    private fun step(v: Tile, code: Int, inDock: Boolean): Boolean {
+    private fun step(v: Tile, code: Int): Boolean {
         val dir = when (code) {
             KeyEvent.KEYCODE_DPAD_RIGHT -> Nav.Dir.RIGHT
             KeyEvent.KEYCODE_DPAD_LEFT -> Nav.Dir.LEFT
@@ -533,24 +457,12 @@ class HomeActivity : Activity() {
             KeyEvent.KEYCODE_DPAD_UP -> Nav.Dir.UP
             else -> return false
         }
-        if (inDock) {
-            val at = dock.indexOfChild(v)
-            if (at < 0) return false
-            when (dir) {
-                Nav.Dir.RIGHT -> dock.getChildAt(at + 1)?.let { go(it) } ?: v.nudge(1, 0)
-                Nav.Dir.LEFT -> dock.getChildAt(at - 1)?.let { go(it) } ?: v.nudge(-1, 0)
-                Nav.Dir.UP -> { dockAt = at; up(v) }          // Android 9 (a BRAVIA) found nothing above the favourites by itself
-                Nav.Dir.DOWN -> { dockAt = at; val row = grid.getChildAt(0) as? ViewGroup ?: return false; wantCol = -1; go(row.getChildAt(Nav.nearest(centres(row), centre(v)))) }
-            }
-            return true
-        }
         val rows = IntArray(grid.childCount) { (grid.getChildAt(it) as ViewGroup).childCount }
         val row = (0 until grid.childCount).firstOrNull { (grid.getChildAt(it) as ViewGroup).indexOfChild(v) >= 0 } ?: return false
         val col = (grid.getChildAt(row) as ViewGroup).indexOfChild(v)
         val to = Nav.grid(rows, row, col, wantCol, dir)
         if (to == null) {
-            if (dir == Nav.Dir.UP && dock.childCount > 0) go(dock.getChildAt(dockAt) ?: dock.getChildAt(Nav.nearest(centres(dock), centre(v))))
-            else if (dir == Nav.Dir.UP) up(v)
+            if (dir == Nav.Dir.UP) { topAt = v; up(v) }               // Android 9 (a BRAVIA) found nothing above the first row by itself
             else v.nudge(if (dir == Nav.Dir.RIGHT) 1 else if (dir == Nav.Dir.LEFT) -1 else 0, if (dir == Nav.Dir.DOWN) 1 else 0)
             return true
         }
@@ -565,37 +477,36 @@ class HomeActivity : Activity() {
     private fun centre(v: View): Int { val xy = IntArray(2); v.getLocationInWindow(xy); return xy[0] + v.width / 2 }
     private fun centres(p: ViewGroup) = IntArray(p.childCount) { centre(p.getChildAt(it)) }
 
-    private fun tile(a: App, w: Int, inDock: Boolean, made: HashMap<String, Tile>): Tile {
-        val k = "${a.pkg}|$w|$inDock"
-        val t = tileCache[k]?.takeIf { it.app === a } ?: makeTile(a, w, inDock)
+    private fun tile(a: App, w: Int, made: HashMap<String, Tile>): Tile {
+        val k = "${a.pkg}|$w"
+        val t = tileCache[k]?.takeIf { it.app === a } ?: makeTile(a, w)
         made[k] = t
         return t
     }
 
-    private fun makeTile(a: App, w: Int, inDock: Boolean) = Tile(this, a, w, a.label, ::dp).apply {
+    private fun makeTile(a: App, w: Int) = Tile(this, a, w, a.label, ::dp).apply {
         setOnClickListener {
             lastOpened = a.pkg
             fun go(o: Bundle?) { if (!(if (a.pin != null) Pins.open(this@HomeActivity, a, o) else Apps.launch(this@HomeActivity, a.pkg, o))) { zoom.end(); toast(R.string.no_open) } }
             if (!zoom.open(this, ::go)) go(null)
         }
         setOnLongClickListener { menu(a); true }
-        moves(this, inDock) { menu(a) }
+        moves(this) { menu(a) }
     }
 
     /** The D-pad, the menu key and the focus ring of a tile; the hidden apps' tile too, or focus on it showed nowhere. */
-    private fun moves(t: Tile, inDock: Boolean, menu: (() -> Unit)?) = t.apply {
+    private fun moves(t: Tile, menu: (() -> Unit)?) = t.apply {
         nudged = { x, y -> if (Motion.glass) glass.nudge(x, y) }
         setOnKeyListener { v, code, e ->
             if (code == KeyEvent.KEYCODE_MENU && menu != null) { if (e.action == KeyEvent.ACTION_UP) menu(); e.action == KeyEvent.ACTION_UP }
-            else if (e.action == KeyEvent.ACTION_DOWN) step(v as Tile, code, inDock) else false
+            else if (e.action == KeyEvent.ACTION_DOWN) step(v as Tile, code) else false
         }
         onFocusChangeListener = View.OnFocusChangeListener { v, f ->
             (v as Tile).focus(f)
             if (f) v.glassOn(true) else v.post { if (currentFocus !is Tile) glass.hide() }   // to the buttons or a panel: the pane goes
             if (f) {
                 if (!stepping) wantCol = -1                           // focus came another way: the column to keep starts over here
-                gridFocus(!inDock)
-                if (inDock) scrollToY(0)
+                if (grid.indexOfChild(v.parent as? View) <= 0) scrollToY(0)   // the first row: the page up, the clock and the widgets with it
                 else {                                                // a row that is cut off comes to the upper third; one in full view stays put
                     var y = 0; var p: View? = v
                     while (p != null && p !== scroll) { y += p.top; p = p.parent as? View }
@@ -628,7 +539,7 @@ class HomeActivity : Activity() {
         val key = wallShown
         if (!Walls.isPicture(id) && !WallArt.has(id)) {
             picture = null; soft = null
-            blurClip.visibility = View.GONE; Frost.show(null, dm.widthPixels, dm.heightPixels)
+            Frost.show(null, dm.widthPixels, dm.heightPixels)
             val look = Backdrop.Look(colors)
             backdrop.show(look)
             return
@@ -643,8 +554,7 @@ class HomeActivity : Activity() {
                 picture = big; soft = small
                 val look = if (big != null) Backdrop.Look(colors, big) else Backdrop.Look(colors, null, id)
                 backdrop.show(look)
-                blurView.setImageBitmap(small); blurClip.visibility = if (small != null) View.VISIBLE else View.GONE
-                Frost.show(small, dm.widthPixels, dm.heightPixels); blurAlign()
+                Frost.show(small, dm.widthPixels, dm.heightPixels)
             }
         }
     }
@@ -693,7 +603,9 @@ class HomeActivity : Activity() {
             net.type == ConnectivityManager.TYPE_ETHERNET -> getString(R.string.cable) to false
             else -> (ssid() ?: getString(R.string.wifi)) to false
         }
-        netPill.set(label, if (off) 0.5f else 1f, if (net?.type == ConnectivityManager.TYPE_ETHERNET) R.drawable.ic_globe else R.drawable.ic_wifi)
+        netPill.label = label; netPill.contentDescription = label; netPill.alpha = if (off) 0.5f else 1f
+        netPill.setImageResource(if (net?.type == ConnectivityManager.TYPE_ETHERNET) R.drawable.ic_globe else R.drawable.ic_wifi)
+        bar.relabel(netPill)
     }
 
     // ---- what the buttons and the menu do ----
@@ -779,7 +691,7 @@ class HomeActivity : Activity() {
         }.sortedWith(compareBy<Drop.Row> { it.group }.thenBy(Nat) { it.label })
         if (rows.isEmpty()) { toast(R.string.no_inputs); open(Settings.ACTION_SETTINGS); return }
         open?.dismiss()
-        open = Drop.show(this, inputsPill, rows)
+        open = Drop.show(this, bar, rows)
     }
 
     /** "HDMI 2" before "HDMI 10". */
@@ -812,47 +724,9 @@ class HomeActivity : Activity() {
         override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) { super.onScrollChanged(l, t, oldl, oldt); moved() }
     }
 
-    /** The band's size alone: the screen-sized blurred photo inside its clip must not stretch it. */
-    private class Wrap(c: Context) : FrameLayout(c) {
-        override fun onMeasure(ws: Int, hs: Int) {
-            val w = MeasureSpec.getSize(ws)
-            val band = getChildAt(1)
-            band.measure(MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED))
-            getChildAt(0).measure(MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(band.measuredHeight, MeasureSpec.EXACTLY))
-            setMeasuredDimension(w, band.measuredHeight)
-        }
-    }
-
     /** A column whose alpha is applied to each child, not through a layer the size of the whole grid. */
     private class Flat(c: Context) : LinearLayout(c) { override fun hasOverlappingRendering() = false }
 
-    /** A round-ended button with an icon and a word; white when focused. */
-    private class Pill(c: Activity, icon: Int, label: String, iconOnly: Boolean = false, onClick: () -> Unit) : LinearLayout(c) {
-        private val word: TextView
-        init {
-            val d = c.resources.displayMetrics.density
-            orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-            isFocusable = true; isClickable = true
-            setPadding(((if (iconOnly) 12 else 16) * d).toInt(), 0, ((if (iconOnly) 12 else 20) * d).toInt(), 0)
-            minimumHeight = (44 * d).toInt()
-            background = StateListDrawable().apply {
-                addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply { cornerRadius = 22 * d; setColor(Color.WHITE) })
-                addState(intArrayOf(), GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x2EFFFFFF, 0x14FFFFFF)).apply {
-                    cornerRadius = 22 * d; setStroke(d.toInt().coerceAtLeast(1), 0x33FFFFFF)                 // the cards' glass, so the head matches them
-                })
-            }
-            val tint = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()), intArrayOf(0xFF111318.toInt(), Color.WHITE))
-            addView(ImageView(c).apply { setImageResource(icon); imageTintList = tint; isDuplicateParentStateEnabled = true }, LayoutParams((20 * d).toInt(), (20 * d).toInt()))
-            word = Font.on(TextView(c)).apply { text = label; textSize = 15f; maxLines = 1; maxWidth = (200 * d).toInt(); ellipsize = TextUtils.TruncateAt.END; setTextColor(tint); isDuplicateParentStateEnabled = true; setPadding((8 * d).toInt(), 0, 0, 0) }
-            if (iconOnly) { word.visibility = View.GONE; contentDescription = label } else addView(word)
-            setOnClickListener { onClick() }
-        }
-        fun compact() {
-            word.visibility = View.GONE; contentDescription = word.text
-            setPadding(paddingRight, 0, paddingRight, 0)
-        }
-        fun set(label: String, a: Float, icon: Int) { word.text = label; if (word.visibility == View.GONE) contentDescription = label; (getChildAt(0) as ImageView).apply { setImageResource(icon); alpha = a } }
-    }
 }
 
 /**

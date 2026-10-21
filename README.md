@@ -137,7 +137,7 @@ Two more apps for the TV, free and without ads. Both are set up from the phone o
 
 **🏠 TV Home** is a home screen instead of Google TV's: no ads, no suggested rows, 0.2 MB.
 
-- A clock, your favourite apps in a dock, then every other app. Hide the ones the kids should not see.
+- A clock, three round icons (inputs, network, settings) in one glass capsule, then one grid of apps with your favourites first. Hide the ones the kids should not see.
 - Widgets if you want them: system (memory, storage, IP), weather, lunar calendar, month calendar, most used apps and limits, sleep timer, a note.
 - Your own wallpaper or photo, 12/24-hour clock, how much it moves.
 - Arranged from the phone or computer (TV tab → 🏠 → *Customize TV Home*) or on the TV with its remote.

@@ -70,7 +70,7 @@ object Drop {
             }, LinearLayout.LayoutParams(-1, -2))
         }
         dialog.setContentView(col)
-        // under the button, its left edge on the button's, kept inside the screen (Settings sits near the right edge)
+        // under the button, its left edge on the button's (a button in the right half: its right edge), kept inside the screen (Settings sits near the right edge)
         val at = IntArray(2).also { anchor.getLocationOnScreen(it) }
         val sw = a.resources.displayMetrics.widthPixels
         val w = maxOf(anchor.width, dp(300))
@@ -79,7 +79,7 @@ object Drop {
             setGravity(Gravity.TOP or Gravity.START)
             setDimAmount(0.15f)
             attributes = attributes.apply {
-                x = minOf(at[0], sw - w - dp(32)).coerceAtLeast(dp(16)); y = at[1] + anchor.height + dp(8)
+                x = (if (at[0] > sw / 2) at[0] + anchor.width - w else minOf(at[0], sw - w - dp(32))).coerceIn(dp(16), sw - w - dp(16)); y = at[1] + anchor.height + dp(8)
                 width = w; height = WindowManager.LayoutParams.WRAP_CONTENT
             }
         }
