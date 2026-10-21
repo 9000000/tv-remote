@@ -48,23 +48,31 @@ object LogoFit {
         return intArrayOf(r, g, b)
     }
 
+    const val LIGHT_TILE = 0xFFF2F4F7.toInt()                         // the card's tiles: what a logo is drawn on
+    const val DARK_TILE = 0xFF3A4350.toInt()
+
+    private fun lin(c: Int): Double = (c / 255.0).let { if (it <= 0.03928) it / 12.92 else Math.pow((it + 0.055) / 1.055, 2.4) }
+    private fun wcag(r: Double, g: Double, b: Double) = 0.2126 * lin(r.toInt()) + 0.7152 * lin(g.toInt()) + 0.0722 * lin(b.toInt())
+    private fun contrast(a: Double, b: Double) = (maxOf(a, b) + 0.05) / (minOf(a, b) + 0.05)
+
     /**
-     * True for a light logo (white or pale lettering, drawn for a dark background): its opaque pixels weigh a mean luminance over
-     * 0.75, or most of them are near white. A logo on its own opaque plate (all four corners opaque) is never light: the plate shows.
+     * True when the logo reads better on the dark tile: the WCAG contrast of its alpha-weighted mean colour against the dark tile
+     * beats the one against the light tile (so pale yellow / pink lettering counts, not only white). A logo on its own opaque plate
+     * (all four corners opaque) is never light: the plate shows.
      */
     fun isLight(px: IntArray, w: Int, h: Int): Boolean {
         if (w < 2 || h < 2 || px.size < w * h) return false
         if (listOf(px[0], px[w - 1], px[(h - 1) * w], px[h * w - 1]).all { (it ushr 24) >= 200 }) return false
-        var sum = 0.0; var wt = 0.0; var white = 0; var n = 0
+        var r = 0.0; var g = 0.0; var b = 0.0; var wt = 0.0; var n = 0
         for (p in px) {
             val a = p ushr 24
             if (a < 40) continue
-            val l = (0.2126 * ((p shr 16) and 255) + 0.7152 * ((p shr 8) and 255) + 0.0722 * (p and 255)) / 255
-            sum += l * a; wt += a; n++
-            if (l > 0.9) white++
+            r += ((p shr 16) and 255) * a; g += ((p shr 8) and 255) * a; b += (p and 255) * a; wt += a; n++
         }
         if (n < 16) return false
-        return sum / wt > 0.75 || white > n * 0.6
+        val l = wcag(r / wt, g / wt, b / wt)
+        fun tile(c: Int) = wcag(((c shr 16) and 255).toDouble(), ((c shr 8) and 255).toDouble(), (c and 255).toDouble())
+        return contrast(l, tile(DARK_TILE)) > contrast(l, tile(LIGHT_TILE))
     }
 
     /**

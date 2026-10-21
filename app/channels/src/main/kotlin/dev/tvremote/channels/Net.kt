@@ -104,7 +104,7 @@ object Logos {
         }
     }
 
-    private const val VER = "v3_"                                     // v3: + light logos flagged (an "L" ends the name); older files are deleted
+    private const val VER = "v4_"                                     // v4: light logos flagged by contrast (an "L" ends the name); older files are deleted
     private val light = java.util.concurrent.ConcurrentHashMap<String, Boolean>()   // url -> a light logo: its tile is dark
     private fun file(url: String, l: Boolean = false) = File(dir, VER + Integer.toHexString(url.hashCode()) + "_" + url.length + if (l) "L" else "")
 

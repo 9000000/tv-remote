@@ -50,6 +50,7 @@ class PlayActivity : Activity() {
     private lateinit var spin: ProgressBar
     private lateinit var info: LinearLayout
     private lateinit var infoLogo: ImageView
+    private lateinit var infoTile: View                              // light, or dark under a pale logo ([LogoFit.isLight])
     private lateinit var infoName: TextView
     private lateinit var infoSub: TextView
     private lateinit var infoNum: TextView
@@ -100,6 +101,7 @@ class PlayActivity : Activity() {
         infoNum = Ui.text(this, "", 30f, Ui.ACCENT, true).apply { minWidth = d(60) }
         info.addView(infoNum)
         val tile = FrameLayout(this).apply { background = Ui.round(Ui.TILE, Ui.dp(this@PlayActivity, 10)) }
+        infoTile = tile
         infoLogo = ImageView(this).apply { scaleType = ImageView.ScaleType.FIT_CENTER }
         tile.addView(infoLogo, FrameLayout.LayoutParams(-1, -1).apply { val m = d(8); setMargins(m, m, m, m) })
         info.addView(tile, LinearLayout.LayoutParams(d(112), d(63)).apply { leftMargin = d(12); rightMargin = d(18) })
@@ -287,7 +289,7 @@ class PlayActivity : Activity() {
         infoNum.text = "${at + 1}"
         infoName.text = c.name
         infoSub.text = listOfNotNull(c.quality.ifEmpty { null }, c.group.takeUnless { it.isEmpty() || it.equals("undefined", true) }?.let { BrowseActivity.groupName(it) }, Lineup.title.ifEmpty { null }).joinToString(" · ")
-        Logos.into(infoLogo, c.logo, 200) {}
+        Logos.into(infoLogo, c.logo, 200) { got -> infoTile.background = Ui.round(if (got && Logos.isLight(c.logo)) LogoFit.DARK_TILE else LogoFit.LIGHT_TILE, Ui.dp(this, 10)) }
         info.visibility = View.VISIBLE
         main.removeCallbacks(hideInfo); main.postDelayed(hideInfo, 5000)
         val ch = streams

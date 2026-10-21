@@ -562,10 +562,10 @@ class BrowseActivity : Activity() {
             tile.addView(TextView(c).apply {
                 tag = "letters"; gravity = Gravity.CENTER; textSize = 26f; setTextColor(0xFF5F6368.toInt())
                 typeface = android.graphics.Typeface.DEFAULT_BOLD
+        private val lightTile by lazy { Ui.round(LogoFit.LIGHT_TILE, Ui.dp(this@BrowseActivity, 12)) }   // lazy: the activity has no resources yet while its fields are built
+        private val darkTile by lazy { Ui.round(LogoFit.DARK_TILE, Ui.dp(this@BrowseActivity, 12)) }   // lighter than the card, so its edge shows
             }, FrameLayout.LayoutParams(-1, -1))
             tile.addView(LogoView(c).apply { tag = "logo" }, FrameLayout.LayoutParams(-1, -1))
-        private val lightTile by lazy { Ui.round(Ui.TILE, Ui.dp(this@BrowseActivity, 12)) }   // lazy: the activity has no resources yet while its fields are built
-        private val darkTile by lazy { Ui.round(0xFF3A4350.toInt(), Ui.dp(this@BrowseActivity, 12)) }   // lighter than the card, so its edge shows
             tile.addView(ImageView(c).apply { tag = "star"; setImageResource(R.drawable.ic_star); imageTintList = android.content.res.ColorStateList.valueOf(0xFFF9AB00.toInt()) },
                 FrameLayout.LayoutParams(d(18), d(18), Gravity.TOP or Gravity.END).apply { topMargin = d(6); rightMargin = d(6) })
             tile.addView(Ui.text(c, "", 9f, Color.WHITE, true).apply {                // a corner: logos sit in the middle

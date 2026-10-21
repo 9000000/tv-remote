@@ -56,4 +56,11 @@ class LogoFitTest {
         assertFalse(LogoFit.isLight(logo(100, 60, 0xFFFFFFFF.toInt(), 0xFF000000.toInt()), 100, 60))   // dark on its own white plate
         assertFalse(LogoFit.isLight(logo(100, 60, 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt()), 100, 60))   // a plate with nothing: the plate shows
     }
+
+    @Test fun paleColourLogoGetsTheDarkTile() {                       // Bondi Rescue (pluto): 58% white + a red, mean colour (229, 170, 164), mean luminance 0.71
+        val px = IntArray(100 * 60)
+        for (i in px.indices) { val k = i % 100; px[i] = if (k < 20 || k >= 80) 0 else if (k < 20 + 35) 0xFFFFFFFF.toInt() else 0xFFC13426.toInt() }
+        assertTrue(LogoFit.isLight(px, 100, 60))
+        assertFalse(LogoFit.isLight(IntArray(100 * 60) { if (it % 100 in 20..79) 0xFFC13426.toInt() else 0 }, 100, 60))   // the red alone: light tile
+    }
 }
