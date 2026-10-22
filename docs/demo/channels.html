@@ -125,11 +125,15 @@
   function cinfo() { return COUNTRIES.filter(function (c) { return c.id === S.cc; })[0]; }
   function logo(c, cls) { return '<div class="' + cls + (c.dk ? ' dk' : '') + '">' + (c.logo ? '<img src="' + c.logo + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement(\'span\'),{className:\'ltr\',textContent:this.dataset.l}))" data-l="' + c.name.slice(0, 2) + '">' : '<span class="ltr">' + c.name.slice(0, 2) + '</span>') + '</div>'; }
 
+  function setHtml(e, h) { if (e._h !== h) { e.innerHTML = h; e._h = h; } }
+  function focusOn(box, i) { box.querySelectorAll('[data-i]').forEach(function (e) { e.classList.toggle('f', +e.dataset.i === i); }); }
   function draw() {
     // side
     var it = sideItems(), cats0 = it.sep;
-    $('#side').innerHTML = '<div id="brand"><img src="img/icon-channels.png" alt="">TV Channels</div>' + it.slice(0, cats0).map(row).join('') + '<hr><div id="cats">' + it.slice(cats0).map(function (x, j) { return row(x, cats0 + j); }).join('') + '</div>';
-    function row(x, i) { if (i == null) i = it.indexOf(x); return '<div class="si' + (x.sel ? ' sel' : '') + (S.f.z === 'side' && S.f.i === i ? ' f' : '') + '" data-z="side" data-i="' + i + '">' + (x.ic || '<svg viewBox="0 0 24 24"></svg>') + '<span>' + x.t + '</span>' + (x.n != null ? '<span class="n">' + x.n + '</span>' : '') + '</div>'; }
+    // a key that only moves the focus must not build the cards again: every logo would load and flash
+    setHtml($('#side'), '<div id="brand"><img src="img/icon-channels.png" alt="">TV Channels</div>' + it.slice(0, cats0).map(row).join('') + '<hr><div id="cats">' + it.slice(cats0).map(function (x, j) { return row(x, cats0 + j); }).join('') + '</div>');
+    focusOn($('#side'), S.f.z === 'side' ? S.f.i : -1);
+    function row(x, i) { if (i == null) i = it.indexOf(x); return '<div class="si' + (x.sel ? ' sel' : '') + '" data-z="side" data-i="' + i + '">' + (x.ic || '<svg viewBox="0 0 24 24"></svg>') + '<span>' + x.t + '</span>' + (x.n != null ? '<span class="n">' + x.n + '</span>' : '') + '</div>'; }
     S.sideN = it.length; S.sideIt = it;
     // head
     var title = S.mode === 'fav' ? '★ ' + T('Yêu thích', 'Favourites') : S.mode === 'search' ? '' : cinfo().f + ' ' + cinfo().n;
@@ -142,15 +146,16 @@
     if (searchOn && !S.q.trim()) html += '<div class="empty">' + T('Gõ tên kênh để tìm ở mọi nước, hoặc chọn thử:', 'Type a name to search every country, or try:') + '<div id="sugg" class="on" style="margin:18px 0 0">' + ['news', 'music', 'kids', 'weather', 'sport'].map(function (s) { return '<button type="button" data-q="' + s + '">' + s + '</button>'; }).join('') + '</div></div>';
     else if (!r.length) html += '<div class="empty">' + (S.mode === 'fav' ? T('Chưa có kênh yêu thích. Giữ OK trên một kênh để thêm.', 'No favourites yet. Hold OK on a channel to add one.') : T('Không có kênh nào khớp.', 'No channel matches.')) + '</div>';
     r.forEach(function (c, i) { html += card(c, i); });
-    g.innerHTML = html; S.r = r;
+    setHtml(g, html); S.r = r;
     if (S.f.z === 'grid' && S.f.i >= r.length) S.f.i = Math.max(0, r.length - 1);
+    focusOn(g, S.f.z === 'grid' ? S.f.i : -1);
     var f = g.querySelector('.f'); var gv = $('#gridv'), y = 0;
     if (f) { var bottom = f.offsetTop + f.offsetHeight + 36; y = Math.max(0, bottom - gv.clientHeight); }
     g.style.transform = 'translateY(' + (-y) + 'px)';
     var sc = $('#cats'), fs = $('#side .si.f'); if (fs && sc && sc.contains(fs)) { var ty = Math.max(0, fs.offsetTop + 54 - sc.clientHeight); sc.firstElementChild && (sc.style.transform = ''); sc.scrollTop = ty; } else if (sc) sc.scrollTop = 0;
     document.querySelectorAll('#cchips .chip').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.cc === S.cc); });
   }
-  function card(c, i) { return '<div class="c' + (S.f.z === 'grid' && S.f.i === i ? ' f' : '') + (S.fav.indexOf(c.i) >= 0 ? ' fav' : '') + '" data-z="grid" data-i="' + i + '"><div class="tile' + (c.dk ? ' dk' : '') + '">' + (c.logo ? '<img src="' + c.logo + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-l="' + c.name.slice(0, 2) + '">' : '<span class="ltr">' + c.name.slice(0, 2) + '</span>') + (c.play ? '<i class="st" title="live"></i>' : '') + '</div><div class="nm">' + c.name + '</div><div class="sb">' + cname(c) + '</div></div>'; }
+  function card(c, i) { return '<div class="c' + (S.fav.indexOf(c.i) >= 0 ? ' fav' : '') + '" data-z="grid" data-i="' + i + '"><div class="tile' + (c.dk ? ' dk' : '') + '">' + (c.logo ? '<img src="' + c.logo + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-l="' + c.name.slice(0, 2) + '">' : '<span class="ltr">' + c.name.slice(0, 2) + '</span>') + (c.play ? '<i class="st" title="live"></i>' : '') + '</div><div class="nm">' + c.name + '</div><div class="sb">' + cname(c) + '</div></div>'; }
   // a logo that does not load (a third party's address) falls to the first letters, as in the app
   document.addEventListener('error', function (e) { var im = e.target; if (im.tagName === 'IMG' && im.dataset.l) { var s = document.createElement('span'); s.className = 'ltr'; s.textContent = im.dataset.l; im.replaceWith(s); } }, true);
 

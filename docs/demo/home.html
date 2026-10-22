@@ -175,14 +175,18 @@
     var c = $('#bg'), id = WALLS[S.wall].id; if (c.dataset.id === id) return;
     c.dataset.id = id; wallPaint(c.getContext('2d'), 1280, 720, id);
   }
+  function setHtml(e, h) { if (e._h !== h) { e.innerHTML = h; e._h = h; } }
+  function focusOn(box, i) { box.querySelectorAll('[data-i]').forEach(function (e) { e.classList.toggle('f', +e.dataset.i === i); }); }
   function draw() {
     clock(); widgets(); wallpaper();
+    // a key that only moves the focus must not build the tiles again: their pictures would load and flash
     $('#flow').className = S.widgets ? 'w' : '';
-    $('#pills').innerHTML = TOP.map(function (k, i) {
+    setHtml($('#pills'), TOP.map(function (k, i) {
       var lab = k === 'inputs' ? T('Nguồn vào', 'Inputs') : k === 'net' ? T('Mạng', 'Network') : T('Cài đặt', 'Settings');
-      return '<div class="pill' + (S.f.z === 'top' && S.f.i === i ? ' f' : '') + '" data-z="top" data-i="' + i + '" title="' + lab + '">' + svg(ICON[k === 'settings' ? 'gear' : k]) + '</div>';
-    }).join('');
-    $('#grid').innerHTML = grid().map(function (id, i) { return tile(BY[id], 'grid', i, S.f.z === 'grid' && S.f.i === i); }).join('');
+      return '<div class="pill" data-z="top" data-i="' + i + '" title="' + lab + '">' + svg(ICON[k === 'settings' ? 'gear' : k]) + '</div>';
+    }).join(''));
+    setHtml($('#grid'), grid().map(function (id, i) { return tile(BY[id], 'grid', i, false); }).join(''));
+    focusOn($('#pills'), S.f.z === 'top' ? S.f.i : -1); focusOn($('#grid'), S.f.z === 'grid' ? S.f.i : -1);
     $('#stock').hidden = !S.before; $('#bBefore').setAttribute('aria-pressed', S.before); $('#bAfter').setAttribute('aria-pressed', !S.before);
     $('#bWidgets').setAttribute('aria-pressed', S.widgets);
     document.querySelectorAll('#walls .swatch').forEach(function (b, i) { b.setAttribute('aria-pressed', i === S.wall); });

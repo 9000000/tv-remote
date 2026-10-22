@@ -75,7 +75,9 @@ nav .navtools{margin-left:auto}
   .steps4{grid-template-columns:1fr}
   .steps4 .th{height:100px}
 }
+@media (max-width:760px){nav .navtools .btn-ghost[href="tour.html"]{display:none}}
 @media (max-width:560px){nav .navtools .btn-ghost[href="guide"]{display:none}}
+@media (max-width:460px){nav .navtools .navdemo .ni{display:none}}   /* the demo stays on a phone, as words only */
 
 /* ---- And more: a scroll-snap row, native swipe, no autoplay ---- */
 .h-more2{padding:56px 0 24px;overflow-x:clip}
