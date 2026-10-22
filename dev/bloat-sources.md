@@ -5,8 +5,8 @@ before launcherx, check Home, roll back) come from these. Read them again now an
 `dev/sign_bloat.py`, commit, push: every app reads it from the site when Optimize TV opens, no release needed), and now and
 then fold that list into Bloat.kt and empty it. The site's list can add suggestions, drop them, and only add to keep / factory.
 
-Last read: **2026-10-21**, upstream `Gathin23/cleanyourtv` at `9071ec8d2f` (2026-10-21 04:13 UTC), PRs up to ~#573, issues
-up to ~#564 (before that: 2026-10-20 at `fd1ee0a94c`, PRs ~#398, issues ~#376; 2026-10-19 at `7377a9be8c`, PRs up to #125, issues up to #120, 388 forks). The project is days old:
+Last read: **2026-10-22**, upstream `Gathin23/cleanyourtv` at `0bb7f7edbf` (2026-10-22 01:54 UTC), PRs up to ~#811, issues
+up to ~#833 (before that: 2026-10-21 at `9071ec8d2f`, PRs ~#573, issues ~#564; 2026-10-20 at `fd1ee0a94c`, PRs ~#398, issues ~#376; 2026-10-19 at `7377a9be8c`, PRs up to #125, issues up to #120, 388 forks). The project is days old:
 most reports are one TV, one day.
 
 ## Sources
@@ -77,6 +77,26 @@ Third read (2026-10-21, 47 new or changed `examples/*/debloat.txt`):
   fastip (the SOURCES drawer), exoplayerservice, usbbreakin, dlna; Vestel `tv.*` / `overlay.*`; CVTE tvservice and settings;
   XGIMI keystone / focus / keys; SDMC, Skyworth SDT / HiSilicon, Kalley `com.apps` / `com.mk` key services.
 
+Fourth read (2026-10-22, 483 commits; 83 new or changed `examples/*/debloat.txt`, 626 distinct packages: 70 already suggested,
+42 already in KEEP, 2 factory, 512 new). Went to `docs/optimize/bloat.json` (35 suggested, 3 keep patterns), not Bloat.kt:
+- SUGGEST: Play Auto Install configs of Askey, Hisense huangshan, Homwee, Realtek, R+, Xiaomi mibox3; Fire TV tutorials,
+  `media.recommendations`, `developer.dataservice`, `earlyaccess`; Smartdevice `acr.recommendation` / `recommendation` /
+  `recordactivation`; Sony `demosupport`, `multiscreendemo`; TCL `usagestats`; Samba `tv.samba.ssm`, Alphonso EULA (ACR);
+  Xiaomi `tvpush`, `debug`, `shop`, `shoplugin`, `videodaily`; retail demos (`com.demo`, `realtek.retailmode`); Skyworth /
+  Coocaa `tianci.ad`, `tianci.push`, `tianci.autoinstaller` (verified safe across a reboot, #692), `coocaa.demonow`, `sysreport`;
+  Zeasn `whaletrackservice`; `nes.bugreportsender` / `tvbugtracker`; Nebula `logservice`.
+- KEEP (#692: disabling them made "About this TV" crash, so ADB could never be switched on again: two factory resets):
+  `com.tianci.(de|movieplatform|localmedia|setting|system)`, `com.coocaa.(sky.ccapi|tvmanager)`, `com.skyworth.tv`.
+- Left out: ~470 packages that are streaming / user apps (Netflix, YouTube, Disney, Prime, Spotify...: a choice, "Turn off other
+  apps"), AOSP apps (printspooler, gallery3d, health connect, camera), Google core (katniss, tvlauncher, tvrecommendations,
+  backdrop, setupwraith, onetimeinitializer, play.games, tts, talkback, `remotecontrol.logging`), mainline (adservices,
+  federatedcompute, ondevicepersonalization), home / launcher parts (`mitv.tvhome.atv`, `cvte.tv.launcher.*`, `whaletv.launcher`,
+  `smartdevice.leanbacklauncher.customizer`, `smartdevice.setupwraith`), TCL's `exhibit`, `messagebox`, `waterfall`, `ttvs`, `usercenter`,
+  `channelplus`, `overseasappshow` (mixed), Sony `sonyselect`, `usercontext`, `b2b.*` (hotel / pro), Philips `nettvrecommender`,
+  `recommendation`, `consentcmpapp`, Hisense `fte`, `hotelmode`, `alexa`, factory / product-test apps (`com.oem.qa`, `sdt.producttest`,
+  `oemservice`: never opened, #470), `nes.tr069`, Xiaomi account / pay / `csi`. #795 (COOP, stuck after 17 packages, cause not named) and
+  #832/#805 are launcher issues, nothing for the lists.
+
 ## Not taken (yet), and why
 
 - Google's mainline modules (`adservices`, `ondevicepersonalization`, `federatedcompute`, 4–6 lists): Android's own APEX parts,
@@ -117,8 +137,8 @@ Third read (2026-10-21, 47 new or changed `examples/*/debloat.txt`):
 ## Syncing again
 
 ```
-gh api repos/Gathin23/cleanyourtv/commits/main --jq '.sha[0:10]+" "+.commit.committer.date'   # changed since 7377a9be8c?
-gh api repos/Gathin23/cleanyourtv/compare/7377a9be8c...main --jq '.files[].filename'           # new examples/*/debloat.txt, README
+gh api repos/Gathin23/cleanyourtv/commits/main --jq '.sha[0:10]+" "+.commit.committer.date'   # changed since 0bb7f7edbf?
+gh api repos/Gathin23/cleanyourtv/compare/0bb7f7edbf...main --jq '.files[].filename'           # capped at 300 files: for a big gap diff git/trees/<sha>?recursive=1 blob shas under examples/ instead
 gh pr list -R Gathin23/cleanyourtv --state all -L 200 --search "created:>2026-10-19"
 gh issue list -R Gathin23/cleanyourtv --state all -L 200 --search "created:>2026-10-19"
 gh api repos/Gathin23/cleanyourtv/forks --paginate --jq '.[] | select(.pushed_at > "2026-10-19T12:00:00Z") | .full_name'
