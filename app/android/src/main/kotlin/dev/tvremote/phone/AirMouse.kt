@@ -225,6 +225,11 @@ internal fun MainActivity.airPad(): FrameLayout {
         true
     }
     pad.addView(strip, FrameLayout.LayoutParams(dp(48), -1, Gravity.END).apply { setMargins(0, dp(8), dp(8), dp(8)) })
+    val off = android.widget.ImageView(this)                          // a way out when the pad fills the screen and the chooser is off it
+    off.setImageResource(R.drawable.ic_close); off.setColorFilter(TEXT); off.alpha = 0.35f
+    off.setPadding(dp(10), dp(10), dp(10), dp(10)); off.contentDescription = T("common.close")
+    off.setOnClickListener { airPick("mouse") }                       // the mode in use again: back to the arrows
+    pad.addView(off, FrameLayout.LayoutParams(dp(40), dp(40), Gravity.START or Gravity.TOP).apply { setMargins(dp(4), dp(4), 0, 0) })
     return pad
 }
 
