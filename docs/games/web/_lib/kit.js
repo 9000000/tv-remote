@@ -116,6 +116,7 @@
   const kb = (e, down) => {
     const m = KB[e.key.length === 1 ? e.key.toLowerCase() : e.key]; if (!m) return;
     const s = st(m[0]); if (DIRS.includes(m[1])) s.kb[m[1]] = down; else { s.kb[m[1]] = down; if (down && !e.repeat) s.hit[m[1]] = true; }
+    if (e.key === 'Enter') { s.kb.A = down; if (down && !e.repeat) s.hit.A = true; }               // the TV remote's OK: Start on the title, the action button in play
     if (down) audio(); e.preventDefault();
   };
   addEventListener('keydown', (e) => kb(e, true)); addEventListener('keyup', (e) => kb(e, false));
