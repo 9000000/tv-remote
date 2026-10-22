@@ -1977,6 +1977,8 @@
  "keyfix.inputs": "Input",
  "tv_main.open_developer_options": "Open Developer options",
  "tv_main.about_press_ok_7": "About (press OK 7 times on “Build”)",
+ "tv_main.dev_off_opened": "Developer options are still off on this TV. Opened: {name}, until the TV says you are a developer, then come back here and choose Open Developer options again.",
+ "tv_main.dev_locked": "✗ This TV locks Developer options for this user (a second profile, or locked by the provider). Switch to the main profile and try again; if it stays locked, the phone and computer apps still send keys without ADB.",
  "tv_main.this_tv_does_not": "✗ This TV does not let apps open its Settings.",
  "tv_main.looking_at_what_this": "Looking at what this TV has...",
  "tv_main.turning_an_app_off": "Turning an app off only pauses it; Undo turns all back on.",

@@ -656,8 +656,18 @@ class MainActivity : Activity() {
 
     private fun devOptions() {
         retryOnResume = true
+        // Android TV's own Developer options page only says "not available for this user" when they are still off, on a second
+        // profile, or locked (a box seen from FPT): say which, and when they are only off open About for the 7 presses first.
+        val um = getSystemService(android.os.UserManager::class.java)
+        if (um != null && (um.hasUserRestriction(android.os.UserManager.DISALLOW_DEBUGGING_FEATURES) || !um.isSystemUser)) {
+            log(T("tv_main.dev_locked")); return
+        }
+        val off = android.os.Build.TYPE == "user" &&
+            android.provider.Settings.Global.getInt(contentResolver, android.provider.Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) != 1
         val dev = T("tv_main.developer_options")
-        val tries = listOf(
+        val tries = if (off) listOf(
+            T("tv_main.about_press_ok_7") to android.content.Intent(android.provider.Settings.ACTION_DEVICE_INFO_SETTINGS),
+            T("page.settings") to android.content.Intent(android.provider.Settings.ACTION_SETTINGS)) else listOf(
             dev to android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS),
             dev to android.content.Intent().setClassName("com.android.tv.settings", "com.android.tv.settings.system.development.DevelopmentActivity"),
             dev to android.content.Intent().setClassName("com.android.settings", "com.android.settings.DevelopmentSettings"),
@@ -675,7 +685,7 @@ class MainActivity : Activity() {
             // a screen that is not allowed to open closes itself at once and leaves us in front: then try the next one
             window.decorView.postDelayed({
                 if (hasWindowFocus()) attempt(i + 1)
-                else log(T("tv_main.opened_turn_on", "name" to name))
+                else log(if (off) T("tv_main.dev_off_opened", "name" to name) else T("tv_main.opened_turn_on", "name" to name))
             }, 1200)
         }
         attempt(0)

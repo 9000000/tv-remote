@@ -1908,6 +1908,8 @@
  "keyfix.inputs": "Nguồn vào",
  "tv_main.open_developer_options": "Mở Tùy chọn nhà phát triển",
  "tv_main.about_press_ok_7": "Giới thiệu (bấm OK 7 lần vào “Bản dựng”)",
+ "tv_main.dev_off_opened": "Tùy chọn nhà phát triển trên TV này chưa bật. Đã mở: {name}, đến khi TV báo bạn đã là nhà phát triển, rồi quay lại đây chọn lại Mở Tùy chọn nhà phát triển.",
+ "tv_main.dev_locked": "✗ TV này khóa Tùy chọn nhà phát triển cho người dùng này (đang ở hồ sơ phụ, hoặc nhà cung cấp đã khóa). Chuyển sang hồ sơ chính rồi thử lại; nếu vẫn khóa, app điện thoại và app máy tính vẫn bấm phím được, không cần ADB.",
  "tv_main.this_tv_does_not": "✗ TV này không cho mở Cài đặt từ app.",
  "tv_main.looking_at_what_this": "Đang xem TV có gì để tối ưu...",
  "tv_main.turning_an_app_off": "Tắt app chỉ là tạm ngưng; Hoàn tác bật lại hết.",
