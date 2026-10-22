@@ -99,6 +99,8 @@ nav .navtools{margin-left:auto}
 .fc{flex:0 0 360px;scroll-snap-align:start;display:flex;flex-direction:column;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 10px 18px;color:var(--text);transition:border-color .15s,transform .15s}
 .fc:hover{border-color:var(--line2);transform:translateY(-2px)}
 .fc img{width:100%;height:auto;aspect-ratio:3/2;border-radius:12px;display:block;background:var(--bg2)}
+.fc-grid{box-sizing:border-box;width:100%;aspect-ratio:3/2;grid-template-rows:repeat(3,1fr);border-radius:12px;background:var(--bg2);display:grid;grid-template-columns:repeat(4,1fr);align-items:center;justify-items:center;padding:10px;font-size:32px;line-height:1}
+.fc-grid i{font-style:normal}
 .fc h3{font-size:19px;margin:10px 8px 0;line-height:1.25}
 .fc p{color:var(--muted);font-size:15px;line-height:1.5;margin:0 8px}
 @media (max-width:560px){.fc{flex-basis:85%}.car-head{align-items:center}.car-head .lead{display:none}}
