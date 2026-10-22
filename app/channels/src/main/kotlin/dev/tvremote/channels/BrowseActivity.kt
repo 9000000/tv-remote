@@ -72,7 +72,7 @@ class BrowseActivity : Activity() {
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
         val d = { v: Number -> Ui.dp(this, v).toInt() }
-        val mx = resources.getDimension(R.dimen.tv_margin_x).toInt(); val my = resources.getDimension(R.dimen.tv_margin_y).toInt()   // dev/TV_STYLE.md
+        val mx = resources.getDimension(R.dimen.tv_margin_x).toInt(); val my = resources.getDimension(R.dimen.tv_margin_y).toInt()   // app/DESIGN-TV.md
         val root = LinearLayout(this).apply { setBackgroundColor(getColor(R.color.tv_bg)) }
 
         rail = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(mx, my, d(12), my) }

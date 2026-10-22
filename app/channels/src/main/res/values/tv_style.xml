@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The TV apps' family look. The same values are in every TV app's res/values/tv_style.xml: see dev/TV_STYLE.md -->
+<!-- The TV apps' family look. The same values are in every TV app's res/values/tv_style.xml: see app/DESIGN-TV.md -->
 <resources>
     <dimen name="tv_margin_x">48dp</dimen>
     <dimen name="tv_margin_y">27dp</dimen>

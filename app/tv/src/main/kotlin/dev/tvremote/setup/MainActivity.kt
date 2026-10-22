@@ -59,7 +59,7 @@ class MainActivity : Activity() {
     private var busy = false
     private var focusedOnce = false
 
-    private val BG = Color.rgb(14, 17, 22)    // tv_bg (dev/TV_STYLE.md)
+    private val BG = Color.rgb(14, 17, 22)    // tv_bg (app/DESIGN-TV.md)
     private val CARD = Color.rgb(27, 32, 40)    // tv_card
     private val TILE = Color.rgb(34, 39, 47)
     private val INK = Color.rgb(232, 234, 237)   // tv_ink
@@ -142,7 +142,7 @@ class MainActivity : Activity() {
             page.orientation = LinearLayout.VERTICAL
             page.setPadding(dp(16), dp(20), dp(16), dp(24))
         } else page.setPadding(resources.getDimension(R.dimen.tv_margin_x).toInt(), resources.getDimension(R.dimen.tv_margin_y).toInt(),
-            resources.getDimension(R.dimen.tv_margin_x).toInt(), resources.getDimension(R.dimen.tv_margin_y).toInt())   // dev/TV_STYLE.md
+            resources.getDimension(R.dimen.tv_margin_x).toInt(), resources.getDimension(R.dimen.tv_margin_y).toInt())   // app/DESIGN-TV.md
 
         // ---- left: header, status, actions, activity
         val left = LinearLayout(this)
@@ -1040,7 +1040,7 @@ class MainActivity : Activity() {
 
     private fun margins(top: Int) = LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(top) }
 
-    /** TV Home's focus ring (dev/TV_STYLE.md): 3 dp of accent blue outside, 1 dp of white inside. */
+    /** TV Home's focus ring (app/DESIGN-TV.md): 3 dp of accent blue outside, 1 dp of white inside. */
     private fun ring(fill: Int, radius: Int): android.graphics.drawable.Drawable {
         val o = resources.getDimension(R.dimen.tv_ring).toInt(); val w = dp(1)
         fun band(c: Int, r: Float, stroke: Int, edge: Int) = GradientDrawable().apply { cornerRadius = r; setColor(c); setStroke(stroke, edge) }

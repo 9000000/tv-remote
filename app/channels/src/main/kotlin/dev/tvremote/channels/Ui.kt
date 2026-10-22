@@ -25,7 +25,7 @@ object Ui {
     fun round(color: Int, r: Float, stroke: Int = 0, strokeColor: Int = 0) =
         GradientDrawable().apply { setColor(color); cornerRadius = r; if (stroke > 0) setStroke(stroke, strokeColor) }
 
-    /** TV Home's focus ring (dev/TV_STYLE.md): [c]'s `tv_ring` of accent blue, then 1 dp of white inside it. */
+    /** TV Home's focus ring (app/DESIGN-TV.md): [c]'s `tv_ring` of accent blue, then 1 dp of white inside it. */
     fun ring(c: Context, fill: Int, r: Float): android.graphics.drawable.Drawable {
         val o = c.resources.getDimension(R.dimen.tv_ring).toInt(); val w = dp(c, 1).toInt()
         val blue = c.getColor(R.color.tv_ring_accent)

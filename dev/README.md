@@ -11,7 +11,7 @@ Run them from the repo root (`dev/test/emu.sh`, `python3 dev/gen/gen_icons.py`);
 | `sign/` | the signed lists on the site (`docs/**.json` + `.sig`) |
 | `release/` | releases, update keys and their backup (only when the maintainer says so) |
 
-Notes beside them: `DECISIONS.md` (why some code looks odd), `TV_STYLE.md` (the TV apps' shared look),
+Notes beside them: `DECISIONS.md` (why some code looks odd), `../app/DESIGN-TV.md` (the TV apps' shared look),
 `bloat-sources.md` (where Optimize TV's lists come from). Playwright for the Node scripts: `npm install --prefix dev playwright`.
 
 ## test/

@@ -50,7 +50,7 @@ fun Context.label(text: String, sp: Float, color: Int = Color.WHITE) = TextView(
     layoutParams = LinearLayout.LayoutParams(-2, -2)
 }
 
-/** The TV apps' panel (dev/TV_STYLE.md): `tv_card`, radius 16 dp; every card, popup and menu of TV Games is one. */
+/** The TV apps' panel (app/DESIGN-TV.md): `tv_card`, radius 16 dp; every card, popup and menu of TV Games is one. */
 fun Context.panelBg() = GradientDrawable().apply { setColor(getColor(R.color.tv_card)); cornerRadius = resources.getDimension(R.dimen.tv_radius_card) }
 
 /** A panel's padding and column; [title] on top when given. */

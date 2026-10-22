@@ -1,6 +1,7 @@
 # Web games (dev notes)
 
 A web game is a page the TV's WebView loads full screen (`WebGameActivity`). Phones join through the same QR as for NES games.
+Its look (tokens, layout pieces, the pad's layouts, the checklist): [docs/games/web/DESIGN.md](../../docs/games/web/DESIGN.md).
 
 ## Add a link
 - Phone/computer page `/add` -> "Thêm link game" (name + URL), or `POST /weblink?k=<token>&name=..&url=..` (https, or http on the LAN). Kept in `files/web.json`; long-press a WEB tile to remove it.
