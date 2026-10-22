@@ -1,6 +1,7 @@
 'use strict';
 // Whack-a-Mole: moles pop out of 12 holes, aim and Fire to whack them (golden = 3, quick). A grey rabbit is not a target: -2.
-// First hit counts. 45 seconds; it gets faster. Alone you play against CPU whackers.
+// First hit counts. 45 seconds; it gets faster. Alone you play against CPU whackers. With the TV remote alone (no phone 1): arrows jump the
+// crosshair from hole to hole, OK whacks.
 (function () {
   const K = window.Kit, Ptr = window.Ptr, W = 1280, H = 720, TIME = 45, COLS = 4, ROWS = 3;
   const holes = []; for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) holes.push({ x: 190 + c * 300 + (r % 2 ? 40 : -10), y: 250 + r * 160, m: null, hit: 0 });
@@ -38,14 +39,24 @@
     if (!s.tg || !s.tg.m || s.tg.m.hit) { s.tg = null; if (s.wait <= 0) { const c = holes.filter((h) => h.m && !h.m.hit && h.m.kind !== 'bad' && h.m.t > 0.3 + s.i * 0.05); s.tg = c[0] || null; if (s.tg) s.wait = K.rnd(0.2, 0.5); } }
     if (s.tg) { Ptr.steer(p, s.tg.x, s.tg.y - 40, dt, 1500); if (Math.hypot(p.x - s.tg.x, p.y - s.tg.y + 40) < 40) { whack(s.i, p.x, p.y); s.tg = null; s.wait = K.rnd(0.35, 0.8); } }
   }
+  let cur = 5;                                                       // the hole the remote's crosshair sits on (row 1, column 1)
+  const remote = () => !(window.tvpad && window.tvpad.players().some((x) => (typeof x === 'object' ? x.player : x) === 1));
+  function park() { const h = holes[cur], p = Ptr.get(1); p.x = h.x; p.y = h.y - 40; }
+  const ARR = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+  window.addEventListener('keydown', (e) => {
+    if (K.mode !== 'play' || over || !remote() || !K.slots.some((s) => s.human && s.pad === 1)) return;
+    const d = ARR[e.key];
+    if (d) { const c = K.clamp(cur % COLS + d[0], 0, COLS - 1), r = K.clamp((cur / COLS | 0) + d[1], 0, ROWS - 1); cur = r * COLS + c; park(); K.sfx.ui(); e.preventDefault(); }
+    else if (e.key === 'Enter' && !e.repeat) { const p = Ptr.get(1); p.fire = 0; whack(K.slots.findIndex((s) => s.human && s.pad === 1), p.x, p.y); }
+  });
   Ptr.onFire((n) => { const si = K.slots.findIndex((s) => s.human && s.pad === n); if (si >= 0) { const p = Ptr.get(n); whack(si, p.x, p.y); } });
   Ptr.use({ buttons: ['A'] });
   const G = {
     id: 'moles', title: { vi: 'Đập chuột chũi', en: 'Whack-a-Mole' },
     tag: { vi: 'Ngắm bằng touchpad, bấm Bắn để đập chuột — ai nhanh tay hơn', en: 'Aim with the touchpad, tap Fire to whack — fastest hand wins' },
-    help: { vi: ['Chuột vàng 3 điểm, nhanh', 'Thỏ xám không phải mục tiêu: trừ 2'], en: ['Golden mole = 3, and quick', 'The grey rabbit is not a target: -2'] },
+    help: { vi: ['Chuột vàng 3 điểm, nhanh', 'Thỏ xám không phải mục tiêu: trừ 2', 'Chỉ có remote: mũi tên chọn lỗ, OK để đập'], en: ['Golden mole = 3, and quick', 'The grey rabbit is not a target: -2'] },
     total: [1, 4], buttons: ['A'],
-    start(slots) { holes.forEach((h) => { h.m = null; h.hit = 0; }); txt.length = 0; left = TIME; spawnT = 0.5; over = false; bg = bg || makeBg(); slots.forEach((s) => { s.tg = null; if (s.human) Ptr.get(s.pad); }); Ptr.reset(); },
+    start(slots) { holes.forEach((h) => { h.m = null; h.hit = 0; }); txt.length = 0; left = TIME; spawnT = 0.5; over = false; bg = bg || makeBg(); slots.forEach((s) => { s.tg = null; if (s.human) Ptr.get(s.pad); }); Ptr.reset(); cur = 5; if (remote()) park(); },
     update(dt) {
       Ptr.update(dt); if (K.mode === 'over') return;
       left -= dt; spawnT -= dt;

@@ -5,12 +5,12 @@
 const VI = (navigator.language || '').toLowerCase().startsWith('vi');
 const T = VI ? {
   title: 'Đố vui', join: 'Quét mã QR để vào chơi, 1–4 người', start: 'Nhấn Start trên điện thoại (hoặc OK) để bắt đầu', solo: 'Chơi một mình cũng được',
-  q: (i, n) => `Câu ${i} / ${n}`, win: 'Người thắng', again: 'Nhấn Start để chơi lại', all: 'Tất cả', cat: 'Chủ đề', loading: 'Đang tải câu hỏi…', fail: 'Không tải được câu hỏi. Kiểm tra mạng của TV rồi thử lại.', p: (n) => `Người chơi ${n}`, nobody: 'Không ai đúng',
+  q: (i, n) => `Câu ${i} / ${n}`, win: 'Người thắng', again: 'Nhấn Start trên điện thoại hoặc OK để chơi lại', all: 'Tất cả', cat: 'Chủ đề', loading: 'Đang tải câu hỏi…', fail: 'Không tải được câu hỏi. Kiểm tra mạng của TV rồi thử lại.', p: (n) => `Người chơi ${n}`, nobody: 'Không ai đúng',
   right: 'Đúng! +', wrong: 'Sai', late: 'Hết giờ', wait: 'Chờ người khác…', tie: 'Hòa!',
   you: 'Bạn', okSolo: 'Hoặc nhấn OK trên remote để chơi một mình', keys: '▲ ▼ ◀ ▶ chọn · OK trả lời', best: 'Điểm cao', newBest: 'Kỷ lục mới!', score: (n) => `${n} điểm`, okAgain: 'Nhấn OK để chơi lại',
 } : {
   title: 'Quiz', join: 'Scan the QR code to join, 1-4 players', start: 'Press Start on a phone (or OK) to begin', solo: 'Playing alone is fine too',
-  q: (i, n) => `Question ${i} / ${n}`, win: 'Winner', again: 'Press Start to play again', all: 'All', cat: 'Topic', loading: 'Loading questions…', fail: 'Could not load the questions. Check the TV\'s network and try again.', p: (n) => `Player ${n}`, nobody: 'Nobody got it',
+  q: (i, n) => `Question ${i} / ${n}`, win: 'Winner', again: 'Press Start on a phone or OK to play again', all: 'All', cat: 'Topic', loading: 'Loading questions…', fail: 'Could not load the questions. Check the TV\'s network and try again.', p: (n) => `Player ${n}`, nobody: 'Nobody got it',
   right: 'Right! +', wrong: 'Wrong', late: 'Time up', wait: 'Waiting for the others…', tie: 'A tie!',
   you: 'You', okSolo: 'Or press OK on the remote to play alone', keys: '▲ ▼ ◀ ▶ pick · OK answers', best: 'High scores', newBest: 'New record!', score: (n) => `${n} pts`, okAgain: 'Press OK to play again',
 };

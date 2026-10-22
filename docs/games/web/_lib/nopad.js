@@ -4,6 +4,7 @@
 // tvpad before this runs (an old WebView as the page starts: hence the wait), so they never see it. An arcade page (Kit) can still be tried with the keyboard: the card can close.
 // Needs ../_lib/qr.js first.   <script src="../_lib/qr.js"></script><script src="../_lib/nopad.js"></script>
 (function () {
+  if (typeof Element === 'function' && !Element.prototype.replaceChildren) Element.prototype.replaceChildren = function () { while (this.firstChild) this.removeChild(this.firstChild); this.append.apply(this, arguments); };   // Chrome < 86 (an old TV WebView): every page draws with it
   const HOME = 'https://tvremote.pages.dev/#games';
   const VI = (navigator.language || '').toLowerCase().startsWith('vi');
   const W = VI ? { t: 'Game này chơi trên TV', s: 'Mở bằng app TV Games trên Android TV, điện thoại làm tay cầm. Quét mã hoặc mở link để cài:', go: 'Mở tvremote.pages.dev', kb: 'Chơi thử bằng bàn phím' }

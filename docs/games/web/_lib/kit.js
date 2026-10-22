@@ -13,8 +13,8 @@
   const FONT = 'system-ui, Roboto, "Helvetica Neue", Arial, sans-serif';
   const pad = window.tvpad;
   const words = {
-    vi: { cpu: 'Máy', p: 'Người chơi', play: 'Chơi', rematch: 'Chơi lại', menu: 'Về menu', win: 'Thắng!', draw: 'Hòa!', cpuSeats: 'Máy chơi cùng', scan: 'Quét để vào', startHint: 'Nhấn nút bắn / Start để bắt đầu', arrows: 'Trái / phải: đổi số máy', ready: 'Sẵn sàng', go: 'BẮT ĐẦU!' },
-    en: { cpu: 'CPU', p: 'Player', play: 'Play', rematch: 'Rematch', menu: 'Menu', win: 'wins!', draw: 'Draw!', cpuSeats: 'CPU players', scan: 'Scan to join', startHint: 'Press the action button / Start to begin', arrows: 'Left / right: number of CPUs', ready: 'Ready', go: 'GO!' },
+    vi: { cpu: 'Máy', p: 'Người chơi', play: 'Chơi', rematch: 'Chơi lại', menu: 'Về menu', win: 'Thắng!', draw: 'Hòa!', cpuSeats: 'Máy chơi cùng', scan: 'Quét để vào', startHint: 'Nhấn OK / nút bắn để bắt đầu', arrows: 'Trái / phải: đổi số máy', ready: 'Sẵn sàng', go: 'BẮT ĐẦU!' },
+    en: { cpu: 'CPU', p: 'Player', play: 'Play', rematch: 'Rematch', menu: 'Menu', win: 'wins!', draw: 'Draw!', cpuSeats: 'CPU players', scan: 'Scan to join', startHint: 'Press OK / the action button to begin', arrows: 'Left / right: number of CPUs', ready: 'Ready', go: 'GO!' },
   }[VI ? 'vi' : 'en'];
 
   const K = { W, H, VI, DT, words, PCOL, mode: 'title', slots: [], t: 0, shakeAmt: 0, fps: 60, scale: 1 };
@@ -119,7 +119,7 @@
     w: [2, 'UP'], s: [2, 'DOWN'], a: [2, 'LEFT'], d: [2, 'RIGHT'], f: [2, 'A'], g: [2, 'B'], i: [3, 'UP'], k: [3, 'DOWN'], j: [3, 'LEFT'], l: [3, 'RIGHT'], h: [3, 'A'], ',': [4, 'UP'], '.': [4, 'DOWN'], ';': [4, 'A'] };
   const kb = (e, down) => {
     const m = KB[e.key.length === 1 ? e.key.toLowerCase() : e.key]; if (!m) return;
-    const s = st(m[0]); if (DIRS.includes(m[1])) s.kb[m[1]] = down; else { s.kb[m[1]] = down; if (down && !e.repeat) s.hit[m[1]] = true; }
+    const s = st(m[0]); if (DIRS.includes(m[1])) { s.kb[m[1]] = down; if (down && !e.repeat) s.hit[m[1]] = true; } else { s.kb[m[1]] = down; if (down && !e.repeat) s.hit[m[1]] = true; }
     if (e.key === 'Enter') { s.kb.A = down; if (down && !e.repeat) s.hit.A = true; }               // the TV remote's OK: Start on the title, the action button in play
     if (down) audio(); e.preventDefault();
   };
@@ -143,7 +143,7 @@
       s.act = !!(s.held.A || s.held.B || s.kb.A || s.kb.B || s.gp.A || s.gp.B || s.held.X || s.held.Y);        // the action button, any of the face buttons
       s.pulse = !!(s.hit.A || s.hit.B || s.hit.X || s.hit.Y);                                                    // pressed since the last step
       s.start = !!(s.hit.START);
-      s.edgeL = false; s.edgeR = false;
+      s.edgeL = !!s.hit.LEFT; s.edgeR = !!s.hit.RIGHT;                                                     // a key tap shorter than a frame still counts
       const sx = s.x > 0.6 ? 1 : s.x < -0.6 ? -1 : 0; if (sx !== s.lastSx) { if (sx < 0) s.edgeL = true; if (sx > 0) s.edgeR = true; s.lastSx = sx; }
     }
   }
@@ -224,12 +224,18 @@
     K.text(c, w ? K.fit(c, w.name, W - 160, 100, 900) : words.draw, W / 2, 190, 100, w ? w.color : '#fff', 'center', 900);
     if (w) K.text(c, words.win, W / 2, 270, 50, '#fff');
     (overInfo.lines || []).forEach((l, i) => K.text(c, l, W / 2, 350 + i * 40, 28, '#cbd5e1', 'center', 600));
-    const a = 0.6 + 0.4 * Math.sin(titleT * 4);
-    c.globalAlpha = a; K.text(c, 'OK: ' + words.rematch + '     Start: ' + words.menu, W / 2, 600, 34, '#fff'); c.globalAlpha = 1;
+    [words.rematch, words.menu].forEach((l, i) => {                                       // two choices: Left / Right move, OK takes the lit one
+      const on = overInfo.sel === i, x = W / 2 + (i ? 20 : -340), y = 570;
+      c.save(); if (on) { c.shadowColor = '#fff'; c.shadowBlur = 24; }
+      c.fillStyle = on ? '#2563eb' : 'rgba(255,255,255,.1)'; K.rr(c, x, y, 320, 78, 20); c.fill(); c.restore();
+      c.lineWidth = on ? 5 : 2; c.strokeStyle = on ? '#fff' : 'rgba(255,255,255,.25)'; K.rr(c, x, y, 320, 78, 20); c.stroke();
+      K.text(c, K.fit(c, l, 280, 34), x + 160, y + 40, 34, on ? '#fff' : '#cbd5e1', 'center', 800);
+    });
+    K.text(c, '◀  ▶  ·  OK', W / 2, 676, 22, '#9fb4d8', 'center', 600);
   }
   K.over = (win, lines) => {
     if (K.mode !== 'play') return;
-    K.mode = 'over'; overInfo = { win, lines, t: 0 }; K.sfx.win(); K.layout();
+    K.mode = 'over'; overInfo = { win, lines, t: 0, sel: 0 }; K.sfx.win(); K.layout();
     if (+Q.get('auto')) setTimeout(() => begin(), 3500);
   };
   function begin() {
@@ -248,7 +254,8 @@
       if (go || +Q.get('auto')) { begin(); }
     } else if (K.mode === 'over') {
       overInfo.t += DT; G.update(DT);
-      if (overInfo.t > 1.2) K.humans().forEach((n) => { const s = st(n); if (s.pulse) { K.sfx.ok(); begin(); } else if (s.start) { K.sfx.ui(); toTitle(); } });   // OK (A, and Enter) = rematch; a phone's Start = menu
+      K.humans().forEach((n) => { const s = st(n); if (s.edgeL && overInfo.sel) { overInfo.sel = 0; K.sfx.ui(); } if (s.edgeR && !overInfo.sel) { overInfo.sel = 1; K.sfx.ui(); } });
+      if (overInfo.t > 1.2) K.humans().forEach((n) => { const s = st(n); if (s.pulse) { K.sfx.ok(); if (overInfo.sel) toTitle(); else begin(); } else if (s.start) { K.sfx.ui(); toTitle(); } });   // OK (A, and Enter) takes the lit choice (rematch first), Left / Right switch; a phone's Start = menu
     } else G.update(DT);
   }
   function render() {

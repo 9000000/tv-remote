@@ -135,7 +135,7 @@
 #rmt .hand{display:flex;justify-content:center;padding-top:calc(var(--u)*4.4);min-height:calc(var(--u)*19)}
 #rmt .hand:empty{display:none}
 #rmt .cd{position:relative;flex:0 0 calc(var(--u)*12.4);height:calc(var(--u)*17.4);border-radius:calc(var(--u)*1.2);background:#f7f7f2;color:#1b1e27;overflow:hidden;
-  box-shadow:0 .3vh .8vh #0008;transition:transform .12s,opacity .12s}
+  box-shadow:0 .3vh .8vh #0008;transition:transform .12s,filter .12s}
 #rmt .cd.red{color:#d7263d}
 #rmt .cd b{position:absolute;left:calc(var(--u)*1);top:calc(var(--u)*.6);font:800 calc(var(--u)*5)/1 system-ui}
 #rmt .cd i{position:absolute;left:calc(var(--u)*1.2);top:calc(var(--u)*5.8);font:calc(var(--u)*3.8)/1 system-ui;font-style:normal}
@@ -149,7 +149,7 @@
 #rmt .cd.deed em{display:block;margin-top:calc(var(--u)*.8);font-style:normal;font-size:calc(var(--u)*2.2);color:#475569}
 #rmt .cd+.cd{margin-left:calc(var(--u)*var(--ov,.8))}
 #rmt .cd.own .co{position:absolute;left:calc(var(--u)*.8);top:calc(var(--u)*.5);font:800 calc(var(--u)*3.6)/1 system-ui;text-shadow:0 .2vh .5vh #000a}
-#rmt .cd.off{opacity:.42}
+#rmt .cd.off{filter:brightness(.45) saturate(.6)}   /* darker, not see-through: overlapped cards must not show through */
 #rmt .cd.sel{transform:translateY(calc(var(--u)*-2.4));box-shadow:0 0 0 calc(var(--u)*.5) #38bdf8,0 .3vh .8vh #0008}
 #rmt .cd.focus{z-index:3;outline:calc(var(--u)*.7) solid #fff;outline-offset:calc(var(--u)*.2);transform:translateY(calc(var(--u)*-3.6)) scale(1.08)}
 #rmt .cd.sel.focus{transform:translateY(calc(var(--u)*-4.6)) scale(1.08)}
