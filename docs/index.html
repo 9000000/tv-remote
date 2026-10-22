@@ -174,13 +174,33 @@ function LI(i){var L=document.documentElement.dataset.lang;if(i.dataset.langSrcs
         <p class="lead"><span class="vi">Vuốt để xem thêm. Bấm vào thẻ để đọc hướng dẫn.</span><span class="en">Swipe for more. Tap a card for its guide.</span></p>
       </div>
       <div class="car-ctl" aria-label="Carousel">
-        <span class="car-n" id="car-n" aria-live="polite">1 / 8</span>
+        <span class="car-n" id="car-n" aria-live="polite">1 / 17</span>
         <button type="button" class="car-b" id="car-prev" aria-label="Previous" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
         <button type="button" class="car-b" id="car-next" aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
       </div>
     </div>
   </div>
   <div class="car-track" id="car" tabindex="0" role="region" aria-label="And more">
+        <a class="fc" href="guide#home" id="fc-widgets">
+          <img data-lang-src="img/feat-widgets-LANG.webp" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
+          <h3><span class="vi">Widget trên TV Home</span><span class="en">TV Home widgets</span></h3>
+          <p><span class="vi">Giờ, thời tiết, âm lịch, bộ nhớ ngay trên màn hình chính.</span><span class="en">Clock, weather, lunar date and memory on the home screen.</span></p>
+        </a>
+        <a class="fc" href="guide#apps" id="fc-apps">
+          <img data-lang-src="img/feat-apps-LANG.webp" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
+          <h3><span class="vi">Cài và gỡ app từ xa</span><span class="en">Install and remove apps remotely</span></h3>
+          <p><span class="vi">Tắt, gỡ, cài app trên TV ngay từ điện thoại.</span><span class="en">Turn off, remove or install apps on the TV from your phone.</span></p>
+        </a>
+        <a class="fc" href="guide#screen-dim" id="fc-dim">
+          <img data-lang-src="img/feat-dim-LANG.webp" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
+          <h3><span class="vi">Giảm sáng, dịu mắt</span><span class="en">Dim the screen, easy on the eyes</span></h3>
+          <p><span class="vi">Phủ lớp tối hoặc lọc xanh lên mọi app, ban đêm đỡ chói.</span><span class="en">A dark or blue-light-filter layer over every app, gentle at night.</span></p>
+        </a>
+        <a class="fc" href="guide#photo" id="fc-photo">
+          <img data-lang-src="img/feat-photo-LANG.webp" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
+          <h3><span class="vi">Chiếu ảnh lên TV</span><span class="en">Show a photo on the TV</span></h3>
+          <p><span class="vi">Chọn ảnh hay video trên điện thoại, đưa lên TV một chạm.</span><span class="en">Pick a photo or video on the phone and put it on the TV in one tap.</span></p>
+        </a>
         <a class="fc" href="guide#air" id="fc-air">
           <img data-lang-src="img/feat-air-LANG.webp" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Air Mouse</span><span class="en">Air Mouse</span></h3>
@@ -220,6 +240,31 @@ function LI(i){var L=document.documentElement.dataset.lang;if(i.dataset.langSrcs
           <img data-lang-src="img/feat-notify-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Gửi lời nhắn lên TV</span><span class="en">Message on the TV</span></h3>
           <p><span class="vi">Hiện thẻ tin nhắn ở góc màn hình: “Ăn cơm!”.</span><span class="en">A message card in a corner of the screen: “Dinner is ready!”.</span></p>
+        </a>
+        <a class="fc" href="guide#limits" id="fc-limits">
+          <img data-lang-src="img/feat-limits-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <h3><span class="vi">Giới hạn app, khóa bằng PIN</span><span class="en">App limits and PIN lock</span></h3>
+          <p><span class="vi">Trẻ chỉ xem trong giờ cho phép; app khóa cần PIN trên TV.</span><span class="en">Kids get only the allowed time; locked apps ask for a PIN on the TV.</span></p>
+        </a>
+        <a class="fc" href="guide#launchers" id="fc-launchers">
+          <img data-lang-src="img/feat-launchers-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <h3><span class="vi">Thư viện màn hình chính</span><span class="en">A library of home screens</span></h3>
+          <p><span class="vi">Thử TV Home hay launcher khác, cài một chạm.</span><span class="en">Try TV Home or another launcher, installed in one tap.</span></p>
+        </a>
+        <a class="fc" href="guide#optimize" id="fc-optimize">
+          <img data-lang-src="img/feat-optimize-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <h3><span class="vi">Tối ưu TV</span><span class="en">Optimize the TV</span></h3>
+          <p><span class="vi">Tắt app thừa và hiệu ứng để TV chạy nhanh hơn, hoàn tác được.</span><span class="en">Turn off bloat and animations so the TV runs faster, undoable.</span></p>
+        </a>
+        <a class="fc" href="guide#files" id="fc-files">
+          <img data-lang-src="img/feat-files-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <h3><span class="vi">Duyệt file trên TV</span><span class="en">Browse the TV's files</span></h3>
+          <p><span class="vi">Xem, gửi và tải file ngay từ điện thoại.</span><span class="en">See, send and fetch files straight from the phone.</span></p>
+        </a>
+        <a class="fc" href="guide#home" id="fc-wallpaper">
+          <img data-lang-src="img/feat-wallpaper-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <h3><span class="vi">Hình nền TV Home</span><span class="en">TV Home wallpapers</span></h3>
+          <p><span class="vi">Đổi hình nền, hẹn giờ đổi, chỉnh ngay từ điện thoại.</span><span class="en">Change the wallpaper, rotate it on a timer, set from the phone.</span></p>
         </a>
   </div>
 </section>
