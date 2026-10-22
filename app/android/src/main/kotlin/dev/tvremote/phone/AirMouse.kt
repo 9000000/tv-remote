@@ -164,6 +164,7 @@ internal fun MainActivity.airPad(): FrameLayout {
     pad.setOnTouchListener { v, ev ->
         when (ev.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                v.parent.requestDisallowInterceptTouchEvent(true)          // the page must not scroll under the finger
                 if (!airCan()) { val now = SystemClock.uptimeMillis(); if (now - Air.saidAt > 4000) { Air.saidAt = now; say(T("air.needs_adb"), true) } }
                 fx.touch(ev.x, ev.y); downAt = ev.eventTime; sx = ev.x; sy = ev.y; lx = ev.x; ly = ev.y; lt = ev.eventTime; moved = false; drag = false; scrollY = 0f; Air.touching = true; dtap = ev.eventTime - lastTapUp < 300; v.postDelayed(holdDown, HOLD_MS)   // a second touch soon after a tap: a drag if it moves
             }
