@@ -28,6 +28,8 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import java.io.File
+import dev.tvremote.update.Release
+import dev.tvremote.update.SelfUpdate
 
 /**
  * The launcher screen, Apple TV style: clean pictures in rows (favourites, the person's folders, all games, suggestions), the focused one
@@ -142,6 +144,7 @@ class LibraryActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        upd.check({ askUpdate(it) }, { updating(it) })
         server.inGame = false; server.webMode = false; server.clearLayouts(); server.setSystem("nes")
         server.onKey = { _, _, _ -> }
         server.onPlayers = { }
@@ -297,7 +300,7 @@ class LibraryActivity : ComponentActivity() {
 
     /** The app's mark and name, the search field on the right. */
     private fun header(): View = LinearLayout(this).apply {
-        gravity = Gravity.CENTER_VERTICAL; setPadding(dp(10), 0, dp(8), dp(8))
+        gravity = Gravity.CENTER_VERTICAL; setPadding(dp(8), 0, dp(8), dp(12))
         addView(android.widget.ImageView(context).apply {
             setImageResource(R.drawable.icon); scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
             outlineProvider = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, resources.getDimension(R.dimen.tv_head_radius)) } }
@@ -348,7 +351,7 @@ class LibraryActivity : ComponentActivity() {
     /** A pill: a choice you can switch on and off; selected = white, focused = lighter, like the segmented controls on Apple TV. */
     private fun pill(text: String, sp: Float = 16f, selected: (() -> Boolean)? = null, lead: Int? = null, trail: Int? = null, onClick: () -> Unit): TextView = TextView(this).apply {
         this.text = text; textSize = sp; gravity = Gravity.CENTER; isFocusable = true; isClickable = true; maxLines = 1
-        setPadding(dp(16), dp(7), dp(16), dp(7))
+        setPadding(dp(16), 0, dp(16), 0)
         minWidth = Math.ceil(paint.measureText(text).toDouble()).toInt() + dp(36)     // wraps its words; the measure alone came a pixel short in a scroller
         fun d(c: Int) = GradientDrawable().apply { setColor(c); cornerRadius = dp(30).toFloat() }
         background = StateListDrawable().apply {
@@ -361,12 +364,12 @@ class LibraryActivity : ComponentActivity() {
         if (lead != null || trail != null) {
             fun ic(r: Int?) = r?.let { getDrawable(it)!!.mutate().also { d -> d.setBounds(0, 0, dp((sp + 3).toInt()), dp((sp + 3).toInt())); d.setTintList(ink) } }
             setCompoundDrawablesRelative(ic(lead), null, ic(trail), null); compoundDrawablePadding = dp(8)
-            setPadding(dp(if (lead != null) 14 else 16), dp(7), dp(if (trail != null) 12 else 16), dp(7))
+            setPadding(dp(if (lead != null) 14 else 16), 0, dp(if (trail != null) 12 else 16), 0)
         }
         minWidth = Math.ceil(paint.measureText(text).toDouble()).toInt() + dp(36) + compoundDrawables.sumOf { (it?.bounds?.width() ?: 0) + (if (it != null) dp(8) else 0) }
         setOnFocusChangeListener { v, on -> v.animate().scaleX(if (on) 1.05f else 1f).scaleY(if (on) 1.05f else 1f).setDuration(if (animOn) 200 else 0).withLayer().start(); if (on) centreFocused(v) }
         setOnClickListener { onClick() }
-        layoutParams = LinearLayout.LayoutParams(-2, -2).apply { marginEnd = dp(16) }
+        layoutParams = LinearLayout.LayoutParams(-2, dp(40)).apply { marginEnd = dp(12) }   // one height and gap for every pill, the header's too
         if (selected != null) { isSelected = selected(); pills += selected to this }
     }
 
@@ -375,7 +378,7 @@ class LibraryActivity : ComponentActivity() {
     /** Players, system, genre: one dropdown button each, showing the chosen value; a kind with one value only is left out; "Clear" while any is on. */
     private fun filterRow(): View {
         val all = lib + sugs
-        val row = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(8), dp(6), dp(8), dp(6)) }
+        val row = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(8), dp(6), dp(8), dp(4)) }
         val allW = getString(R.string.f_all)
         val other = getString(R.string.genre_other)
         class Kind(val icon: Int, val label: String, val values: List<Pair<String, String>>, val get: () -> String?, val set: (String?) -> Unit, val icons: ((String?) -> Int?)? = null)
@@ -499,15 +502,15 @@ class LibraryActivity : ComponentActivity() {
             addView(label(title, 22f, 0xFFAAB0C0.toInt()).apply { gravity = Gravity.START; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; maxWidth = dp(560) })
             if (add) {
                 addView(View(context), LinearLayout.LayoutParams(dp(16), 1))
-                addView(pill(getString(R.string.grp_new_pill), 14f) { newGroup() })
+                addView(pill(getString(R.string.grp_new_pill), 15f) { newGroup() })
             }
             if (group != null) {
                 val sp = { View(context).also { v -> v.layoutParams = LinearLayout.LayoutParams(dp(16), 1) } }
                 addView(sp())
-                val rn = pill(getString(R.string.grp_rename), 14f, lead = R.drawable.ic_pen) { askName(getString(R.string.grp_rename), group.name) { n -> Shelf.change(context) { it.rename(group.id, n) }; Pins.renamed(context, group.id, n); renderSections() } }
+                val rn = pill(getString(R.string.grp_rename), 15f, lead = R.drawable.ic_pen) { askName(getString(R.string.grp_rename), group.name) { n -> Shelf.change(context) { it.rename(group.id, n) }; Pins.renamed(context, group.id, n); renderSections() } }
                 addView(rn)
-                addView(pill(getString(R.string.grp_delete), 14f, lead = R.drawable.ic_trash) { confirm(getString(R.string.grp_delete_q, group.name)) { Shelf.change(context) { it.delete(group.id) }; Pins.deleted(context, group.id); renderSections() } })
-                if (Pins.can(context)) addView(pill(getString(R.string.m_pin), 14f, lead = R.drawable.ic_pin) { pinGroup(group, items) })
+                addView(pill(getString(R.string.grp_delete), 15f, lead = R.drawable.ic_trash) { confirm(getString(R.string.grp_delete_q, group.name)) { Shelf.change(context) { it.delete(group.id) }; Pins.deleted(context, group.id); renderSections() } })
+                if (Pins.can(context)) addView(pill(getString(R.string.m_pin), 15f, lead = R.drawable.ic_pin) { pinGroup(group, items) })
                 groupHeads[key] = rn
             }
         })
@@ -582,18 +585,47 @@ class LibraryActivity : ComponentActivity() {
     }
 
     /** A card over the library: a title and buttons; Back / Close leaves it ([dispatchKeyEvent]). */
-    private fun popup(title: String, entries: List<Pair<String, () -> Unit>>, replace: Boolean = false, extra: ((LinearLayout) -> Unit)? = null, focusIndex: Int = 0, icons: List<Int> = emptyList()) {
+    private fun popup(title: String, entries: List<Pair<String, () -> Unit>>, replace: Boolean = false, extra: ((LinearLayout) -> Unit)? = null, focusIndex: Int = 0, icons: List<Int> = emptyList(), close: Boolean = true) {
         if (replace) { overlay?.let { root.removeView(it) }; overlay = null } else lastFocus = currentFocus
         var first: View? = null
         val v = scrim(panel(title).apply {
                 extra?.invoke(this)
                 entries.forEachIndexed { n, (t, f) -> addView(menuButton(t, 420, 52, 20f) { f() }.also { b -> if (n == focusIndex) first = b; b.withIcon(icons.getOrNull(n)) }) }
-                addView(menuButton(getString(R.string.close), 420, 52, 20f) { closeOverlay() }.also { if (first == null) first = it; it.withIcon(R.drawable.ic_close) })
+                if (close) addView(menuButton(getString(R.string.close), 420, 52, 20f) { closeOverlay() }.also { if (first == null) first = it; it.withIcon(R.drawable.ic_close) })
             })
         overlay = v
         scroller?.descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
         root.addView(v, ViewGroup.LayoutParams(-1, -1))
         first?.requestFocus()
+    }
+
+    private val upd by lazy { SelfUpdate(this, "games", "tv-games.apk") }
+
+    /** A newer TV Games in the latest release (SelfUpdate): Update now / Later / Skip this version; Back is a later too. */
+    private fun askUpdate(r: Release) {
+        if (overlay != null || dl != null) return                     // busy with something else: asked again next time
+        popup(getString(R.string.upd_title, r.version), listOf(
+            getString(R.string.upd_now) to { updating(r) },
+            getString(R.string.upd_later) to { upd.later(); closeOverlay() },
+            getString(R.string.upd_skip) to { upd.skip(r); closeOverlay() },
+        ), icons = listOf(R.drawable.ic_download, R.drawable.ic_clock, R.drawable.ic_eye_off), close = false,
+            extra = { it.addView(label(getString(R.string.upd_note, upd.version()), 18f, getColor(R.color.tv_dim)).apply { setPadding(0, 0, 0, dp(10)) }) })
+    }
+
+    /** Its download, with Cancel; at 100 % Android's installer takes over with its own question. */
+    private fun updating(r: Release) {
+        lateinit var line: android.widget.TextView
+        popup(getString(R.string.upd_title, r.version), listOf(getString(R.string.upd_cancel) to { closeOverlay() }), replace = true, close = false,
+            icons = listOf(R.drawable.ic_close), extra = { line = label(getString(R.string.upd_loading, 0), 20f).also { v -> it.addView(v) } })
+        onOverlayClose = { upd.cancel() }
+        val started = upd.install(r, { pct ->
+            if (overlay != null && line.isAttachedToWindow) line.text = getString(R.string.upd_loading, pct)
+            if (pct >= 100) { onOverlayClose = null; if (line.isAttachedToWindow) closeOverlay() }
+        }, { m ->
+            if (line.isAttachedToWindow) closeOverlay()
+            popup(getString(R.string.upd_title, r.version), emptyList(), extra = { it.addView(label(getString(R.string.upd_failed, m), 18f, getColor(R.color.tv_dim))) })
+        })
+        if (!started) { onOverlayClose = null; closeOverlay() }               // Android's "install unknown apps" first: back from it, onResume goes on
     }
 
     private fun confirm(q: String, yes: () -> Unit) = popup(q, listOf(getString(R.string.yes_delete) to { closeOverlay(); yes() }), focusIndex = 1, icons = listOf(R.drawable.ic_trash))

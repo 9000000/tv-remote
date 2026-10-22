@@ -37,7 +37,7 @@ android {
     }
     packaging { jniLibs { useLegacyPackaging = true } }                // the core must be a real file: LibretroDroid dlopen()s a path
     lint { checkReleaseBuilds = false }
-    sourceSets["main"].java.srcDirs(layout.buildDirectory.dir("generated/qr"), "../shared/src/sign/kotlin")   // Ed25519: games.json is signed
+    sourceSets["main"].java.srcDirs(layout.buildDirectory.dir("generated/qr"), "../shared/src/sign/kotlin", "../shared/src/selfupdate/kotlin")   // Ed25519: games.json is signed; Release + SelfUpdate: its own updates
     sourceSets["main"].assets.srcDirs("../../docs/games")             // games.json + .sig: the copy used until the site's is read
     androidResources { ignoreAssetsPattern = "!roms" }                // the site's docs/games/roms are not packed
     compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11 }

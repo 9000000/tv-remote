@@ -44,6 +44,8 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
+import dev.tvremote.update.Release
+import dev.tvremote.update.SelfUpdate
 
 /**
  * The home screen: the clock, three round buttons in one capsule (inputs, network, settings), and ONE grid of apps: the favourites
@@ -228,6 +230,32 @@ class HomeActivity : Activity() {
         if (!Store.advance(this, false)) wallTimer()                  // on a change the new look sets the timer itself ([Store.onChange])
         bingCheck()
         ui.postDelayed({ if (!isDestroyed) bg.execute { Customize.warm(this) } }, 3000)   // the panel's pictures made while nothing else goes on
+        upd.check({ r -> ui.postDelayed({ if (!isDestroyed && !away && open == null) askUpdate(r) }, 2500) }, { updating(it) })   // asked once the home has settled
+    }
+
+    private val upd by lazy { SelfUpdate(this, "home", "tv-home.apk") }
+
+    /** A newer TV Home in the latest release (SelfUpdate): Update now / Later / Skip this version; Back is a later too. */
+    private fun askUpdate(r: Release) {
+        val acts = listOf<Pair<Int, () -> Unit>>(R.string.upd_now to { updating(r) }, R.string.upd_later to { upd.later() }, R.string.upd_skip to { upd.skip(r) })
+        open = AlertDialog.Builder(this, R.style.Menu).setTitle(getString(R.string.upd_title, r.version) + "\n" + getString(R.string.upd_note, upd.version()))
+            .setItems(acts.map { getString(it.first) }.toTypedArray()) { _, i -> acts[i].second() }.show()
+    }
+
+    /** Its download, with Cancel (and Back, Home); at 100 % Android's installer takes over with its own question. */
+    private fun updating(r: Release) {
+        val d = AlertDialog.Builder(this, R.style.Menu).setTitle(getString(R.string.upd_title, r.version)).setMessage(getString(R.string.upd_loading, 0))
+            .setNegativeButton(R.string.upd_cancel, null).setOnDismissListener { upd.cancel() }.show()
+        open = d
+        val started = upd.install(r, { pct ->
+            d.setMessage(getString(R.string.upd_loading, pct))
+            if (pct >= 100) { d.setOnDismissListener(null); d.dismiss() }
+        }, { m ->
+            d.setOnDismissListener(null); d.dismiss()
+            open = AlertDialog.Builder(this, R.style.Menu).setTitle(getString(R.string.upd_title, r.version)).setMessage(getString(R.string.upd_failed, m))
+                .setPositiveButton(android.R.string.ok, null).show()
+        })
+        if (!started) { d.setOnDismissListener(null); d.dismiss() }      // Android's "install unknown apps" first: back from it, onResume goes on
     }
 
     override fun onStart() {

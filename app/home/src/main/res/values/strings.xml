@@ -173,4 +173,13 @@
     <string name="c_lang_tv">Same as the TV</string>
     <string name="w_offline">offline</string>
     <string name="pinned_here">Added to favourites: %s</string>
+    <!-- its own update (SelfUpdate) -->
+    <string name="upd_title">Version %1$s is out</string>
+    <string name="upd_note">You have %1$s. Nothing you saved is lost.</string>
+    <string name="upd_now">Update now</string>
+    <string name="upd_later">Later</string>
+    <string name="upd_skip">Skip this version</string>
+    <string name="upd_loading">Downloading… %1$d%%</string>
+    <string name="upd_cancel">Cancel</string>
+    <string name="upd_failed">Could not update (%1$s). The TV Remote app on a phone can update it too.</string>
 </resources>

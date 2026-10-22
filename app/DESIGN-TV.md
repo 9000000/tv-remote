@@ -82,6 +82,7 @@ Use the steps already in use: **4 · 6 · 8 · 10 · 12 · 14 · 16 · 20 · 24 
 |---|---|
 | Screen margin | 48 × 27 (`tv_margin_x/y`); TV Home 48 / 34 / 48 / 48 (`HomeActivity.kt:130`) |
 | Header | icon 44 (`tv_head_icon`), gap 14 (`tv_head_gap`), name 24 sp bold `tv_ink`, 18 below (`BrowseActivity.kt:211`) |
+| Pill row (Games `pill`) | 40 high, 12 apart, 15 sp; header, pills and section titles start 8 in; 18 between the header, the pills and the first title |
 | Grid gap between tiles | 32 (`GRID_GAP` `HomeActivity.kt:1011`): room under a grown tile for its name |
 | List row padding | 12 × 10, icon 20 + 12 gap (`channels/Ui.kt:55-62`) |
 | Dialog sheet padding | 14 (`BrowseActivity.kt:461`); its title 12 left, 10 below |
@@ -148,6 +149,7 @@ Durations go through `Motion.ms(t)` (Home) / `ms(t)` (Games) so *calm* shortens 
 | **Text field** | `EditText` with `Ui.states(c, CARD or 0x14FFFFFF, 22 / 18)`, `isSingleLine`, `IME_FLAG_NO_EXTRACT_UI` + `IME_ACTION_SEARCH` / `DONE` | Channels | see the Back pattern below |
 | **Toast** | `Toast.makeText(...)`: one-line results only (`pin_refused`, `guide_none`, Home `toast()` `:836`) | all | never the only way to report an error the person must act on |
 | **Notice over other apps** | `NotifyLayer` (corner card, `#F2202124` r20, 22 sp) ; `WarnActivity` (scrim + card + countdown + buttons) | Setup | corner / seconds clamped in shared `Notify.kt` |
+| **Update question** | `SelfUpdate` (`app/shared/src/selfupdate`): `check { askUpdate(it) }` on open, then the app's own popup with Update now / Later / Skip this version (`upd_*` words), the download with Cancel, Android's installer last | Home, Channels, Games | at most every 12 h; Later = a day; Back = later; never over a game or a dialog already open |
 | **Loading / empty / error** | Channels `chrome()` (`BrowseActivity.kt:373`): one full-screen state (spinner tinted accent, then the words + Retry, Retry focused); in-grid note `say()` (`:370`); Setup `Tile.work()`; Games download bar (Back cancels) (`LibraryActivity.kt:696`) | | words say what to do next (`offline`, `none_here`, `no_match`); a long wait shows progress and can be cancelled |
 
 **Text field + keyboard + Back** (`BrowseActivity.kt:562-620`, `countries()`): the keyboard eats Back, so

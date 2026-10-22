@@ -21,7 +21,7 @@ android {
         resValue("string", "released", LocalDate.now().toString())
         versionCode = appVersion.split(".").map { it.toInt() }.let { 100000 + it[0] * 10000 + it[1] * 100 + it[2] }
     }
-    sourceSets["main"].java.srcDirs("../shared/src/home/kotlin")
+    sourceSets["main"].java.srcDirs("../shared/src/home/kotlin", "../shared/src/sign/kotlin", "../shared/src/selfupdate/kotlin")   // Release + SelfUpdate: its own updates
     signingConfigs {
         create("release") {
             storeFile = keystore

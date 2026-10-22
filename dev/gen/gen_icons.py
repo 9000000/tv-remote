@@ -151,7 +151,7 @@ for page in (ROOT / "app/shared/web/index.html",):
         assert s2 != s or sprite in s, f"{page} has no <!-- icons:start --><!-- icons:end --> marker"
         page.write_text(s2)
 
-GAMES = {"play", "save", "undo", "keyboard", "users", "gamepad", "tag", "down", "close", "search", "refresh", "folder_plus", "pen", "trash", "pin", "upload", "user", "star", "folder", "eye_off", "check", "zap", "help", "music", "compass"}
+GAMES = {"download", "clock", "play", "save", "undo", "keyboard", "users", "gamepad", "tag", "down", "close", "search", "refresh", "folder_plus", "pen", "trash", "pin", "upload", "user", "star", "folder", "eye_off", "check", "zap", "help", "music", "compass"}
 for app in ("android", "tv", "home", "channels", "games"):
     out = ROOT / "app" / app / "src/main/res/drawable"
     for n, paths in (ICONS | GAME_ICONS if app == "games" else ICONS).items():

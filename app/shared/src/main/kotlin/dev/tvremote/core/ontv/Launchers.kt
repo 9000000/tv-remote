@@ -9,7 +9,7 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
-import java.util.Base64
+import dev.tvremote.core.B64
 
 /**
  * The launcher gallery: the list of home screens a TV can be given (docs/launchers/launchers.json in this repository, published
@@ -117,7 +117,7 @@ object Launchers {
 
     /** True when [sig] (base64) is a signature of exactly [list] by one of [KEYS]. */
     fun signed(list: ByteArray, sig: String): Boolean {
-        val raw = try { Base64.getDecoder().decode(sig.trim()) } catch (e: IllegalArgumentException) { return false }
+        val raw = try { B64.decode(sig.trim()) } catch (e: IllegalArgumentException) { return false }
         return (KEYS + testKeys).any { k -> Ed25519.verify(ByteArray(32) { k.substring(it * 2, it * 2 + 2).toInt(16).toByte() }, list, raw) }
     }
 

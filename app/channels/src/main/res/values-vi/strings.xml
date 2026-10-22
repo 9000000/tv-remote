@@ -49,4 +49,13 @@
     <string name="searching_all">Đang tìm ở mọi nước…</string>
     <string name="other_countries">Ở nước khác</string>
     <string name="other_offline">Không tìm được ở nước khác: không có mạng.</string>
+    <!-- its own update (SelfUpdate) -->
+    <string name="upd_title">Đã có phiên bản %1$s</string>
+    <string name="upd_note">Bạn đang dùng %1$s. Không mất gì đã lưu.</string>
+    <string name="upd_now">Cập nhật ngay</string>
+    <string name="upd_later">Để sau</string>
+    <string name="upd_skip">Bỏ qua bản này</string>
+    <string name="upd_loading">Đang tải… %1$d%%</string>
+    <string name="upd_cancel">Hủy</string>
+    <string name="upd_failed">Không cập nhật được (%1$s). App TV Remote trên điện thoại cũng cập nhật được.</string>
 </resources>

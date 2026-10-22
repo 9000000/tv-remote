@@ -27,6 +27,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.text.Normalizer
 import java.util.concurrent.Executors
+import dev.tvremote.update.Release
+import dev.tvremote.update.SelfUpdate
 
 /**
  * The list: a side column (favourites and the person's own groups, the country, its categories) and a grid of channel cards.
@@ -169,7 +171,10 @@ class BrowseActivity : Activity() {
         i.getStringExtra(QUERY)?.let { group = SEARCH; others = emptyList(); otherState = IDLE; find.setText(it); buildRail(); filter() }
     }
 
-    override fun onResume() { super.onResume(); cards.notifyDataSetChanged(); if (mine(group) != null) { buildRail(); filter() } }
+    override fun onResume() {
+        super.onResume(); cards.notifyDataSetChanged(); if (mine(group) != null) { buildRail(); filter() }
+        upd.check({ askUpdate(it) }, { updating(it) })
+    }
 
     /** A group link (a pin on the home screen): the favourites or one of the groups, when it still exists. */
     private fun groupOf(i: Intent?) = Pins.groupId(i?.data)?.let { if (it == Store.FAV) FAVS else if (Store.group(this, it) != null) MINE + it else null }
@@ -453,6 +458,43 @@ class BrowseActivity : Activity() {
         box.post { box.getChildAt(1 + Lang.CHOICES.indexOf(now))?.requestFocus() }
     }
 
+    private val upd by lazy { SelfUpdate(this, "channels", "tv-channels.apk") }
+
+    /** A newer TV Channels in the latest release (SelfUpdate): Update now / Later / Skip this version; Back is a later too. */
+    private fun askUpdate(r: Release) {
+        val (dlg, box) = sheet(420)
+        heading(box, getString(R.string.upd_title, r.version))
+        sheetNote(box, getString(R.string.upd_note, upd.version()))
+        box.addView(Ui.row(this, R.drawable.ic_download, getString(R.string.upd_now)) { dlg.dismiss(); updating(r) })
+        box.addView(Ui.row(this, R.drawable.ic_clock, getString(R.string.upd_later)) { upd.later(); dlg.dismiss() })
+        box.addView(Ui.row(this, R.drawable.ic_eye_off, getString(R.string.upd_skip)) { upd.skip(r); dlg.dismiss() })
+        dlg.show()
+        box.post { box.getChildAt(2)?.requestFocus() }
+    }
+
+    /** Its download, with Cancel (and Back); at 100 % Android's installer takes over with its own question. */
+    private fun updating(r: Release) {
+        val (dlg, box) = sheet(420)
+        heading(box, getString(R.string.upd_title, r.version))
+        val line = sheetNote(box, getString(R.string.upd_loading, 0))
+        box.addView(Ui.row(this, R.drawable.ic_close, getString(R.string.upd_cancel)) { dlg.dismiss() })
+        dlg.setOnDismissListener { upd.cancel() }
+        dlg.show()
+        box.post { box.getChildAt(2)?.requestFocus() }
+        val started = upd.install(r, { pct ->
+            line.text = getString(R.string.upd_loading, pct)
+            if (pct >= 100) { dlg.setOnDismissListener(null); dlg.dismiss() }
+        }, { m ->
+            dlg.setOnDismissListener(null); dlg.dismiss()
+            val (d2, b2) = sheet(420)
+            heading(b2, getString(R.string.upd_title, r.version))
+            sheetNote(b2, getString(R.string.upd_failed, m))
+            b2.addView(Ui.row(this, R.drawable.ic_check, getString(R.string.ok)) { d2.dismiss() })
+            d2.show(); b2.post { b2.getChildAt(2)?.requestFocus() }
+        })
+        if (!started) { dlg.setOnDismissListener(null); dlg.dismiss() }  // Android's "install unknown apps" first: back from it, onResume goes on
+    }
+
     /** A dialog box, the look all of them share. */
     private fun sheet(w: Int = 380): Pair<Dialog, LinearLayout> {
         val dlg = Dialog(this, R.style.Dialog)
@@ -464,6 +506,9 @@ class BrowseActivity : Activity() {
         dlg.setContentView(box, ViewGroup.LayoutParams(Ui.dp(this, w).toInt(), -2))
         return dlg to box
     }
+
+    /** A line under a sheet's title, in line with it. */
+    private fun sheetNote(box: LinearLayout, s: String) = Ui.text(this, s, 15f, Ui.DIM).apply { setPadding(Ui.dp(this@BrowseActivity, 12).toInt(), 0, 0, Ui.dp(this@BrowseActivity, 10).toInt()) }.also { box.addView(it) }
 
     private fun heading(box: LinearLayout, s: String) =
         box.addView(Ui.text(this, s, 18f, bold = true).apply { setPadding(Ui.dp(this@BrowseActivity, 12).toInt(), 0, 0, Ui.dp(this@BrowseActivity, 10).toInt()) })

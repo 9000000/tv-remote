@@ -10,11 +10,12 @@ import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
-import java.util.Base64
+import dev.tvremote.core.B64
 
 /**
- * Update check shared by the phone app and the TV app: asks GitHub for the latest release of this project and, if it is
- * newer than the running app, gives the download link of this app's APK. Nothing else is sent anywhere.
+ * Update check shared by every app (here in src/sign, beside Ed25519, so TV Home, TV Channels and TV Games have it without
+ * :shared; SelfUpdate is theirs): asks GitHub for the latest release of this project and, if it is newer than the running
+ * app, gives the download link of this app's APK. Nothing else is sent anywhere. B64, not java.util.Base64 (Android 8+).
  *
  * A release lists the SHA-256 of each of its files in SHA256SUMS, signed (SHA256SUMS.sig, Ed25519) by a key that never goes
  * to GitHub (dev/release/Sign.java, dev/release/release.sh): a file that does not match is deleted, not installed, so neither a broken
@@ -114,7 +115,7 @@ class Release private constructor(val version: String, val url: String, val note
 
         /** [sig] (base64) is one of [KEYS]' signature of [list]. */
         fun signed(list: ByteArray, sig: String): Boolean {
-            val raw = try { Base64.getDecoder().decode(sig.trim()) } catch (e: IllegalArgumentException) { return false }
+            val raw = try { B64.decode(sig.trim()) } catch (e: IllegalArgumentException) { return false }
             return (KEYS + testKeys).any { k -> Ed25519.verify(ByteArray(32) { k.substring(it * 2, it * 2 + 2).toInt(16).toByte() }, list, raw) }
         }
 
