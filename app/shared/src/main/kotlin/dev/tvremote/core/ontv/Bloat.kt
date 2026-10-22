@@ -55,7 +55,6 @@ object Bloat {
         // Xiaomi
         "com.miui.tv.analytics" to "Xiaomi analytics",
         "com.xiaomi.statistic" to "Xiaomi statistics",
-        "com.xiaomi.tvqs.overseas.y24" to "Xiaomi quality stats",
         "com.xm.webcontent" to "Xiaomi web content",
         "com.mitv.tvhome.oemtab" to "Mi Home tab",
         "com.mitv.tvhome.michannel" to "Mi Channel",
@@ -71,6 +70,7 @@ object Bloat {
         "com.tcl.esticker" to "TCL e-sticker (shop demo)",
         "com.tcl.bootadservice" to "TCL start-up ads",
         "com.tcl.smartlink.core" to "TCL silent app installer",
+        "com.tcl.tv.tclhome_passive" to "TCL home-screen promotions",
         // Hisense
         "com.hisense.app.logreport" to "Hisense log reports",
         "android.autoinstalls.config.hisense.laohushan" to "Hisense app installer",

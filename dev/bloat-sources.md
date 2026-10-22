@@ -100,6 +100,13 @@ Fourth read (2026-10-22, 483 commits; 83 new or changed `examples/*/debloat.txt`
   `oemservice`: never opened, #470), `nes.tr069`, Xiaomi account / pay / `csi`. #795 (COOP, stuck after 17 packages, cause not named) and
   #832/#805 are launcher issues, nothing for the lists.
 
+Fourth read (2026-10-23):
+- SUGGEST: TCL `tv.tclhome_passive` (pushes TCL content onto the stock home at boot; 33 lists, turned off before launcherx
+  on a G07 in Brazil, #729, nothing lost).
+- **Moved out of SUGGEST**: Xiaomi `tvqs.overseas.y24`: besides the quality stats it is the quick settings panel on newer
+  sets (xiaomi-mitv-afmu1, "quality-stats uploader and quick panel"; ayfr0 keeps `tvqs.overseas` for the panel). `com.xiaomi.tvqs`
+  (older / China, reporting only) stays.
+
 ## Not taken (yet), and why
 
 - Google's mainline modules (`adservices`, `ondevicepersonalization`, `federatedcompute`, 4–6 lists): Android's own APEX parts,
