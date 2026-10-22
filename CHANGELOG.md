@@ -4,7 +4,9 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
-## Unreleased
+## 0.17.0 - 2026-10-22
+
+Web 0.17.0 · app điện thoại 0.17.0 · app TV 0.17.0 · TV Home 0.4.0 · TV Channels 0.2.0 · TV Games 0.1.0
 
 **Tiếng Việt**
 - **Kiểm tra quyền riêng tư** (Sức khỏe → Riêng tư, cả 3 app): quét nền trên TV (một luồng ADB, ưu tiên thấp, mỗi lần một app), app hiện dần: micro / camera / vị trí dùng gần đây, trợ năng, đọc thông báo, quản trị thiết bị, vẽ đè, ACR / theo dõi / quảng cáo đã biết. Chỉ nói điều đã thấy. Có **Thu hồi quyền** (cấp lại được) và **Tắt app** (hoàn tác chung với Tối ưu TV), nút Dừng.
