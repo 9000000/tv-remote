@@ -62,6 +62,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     var canPair = false
     private val promptLock = Any()
 
+    private val privacy = dev.tvremote.core.ontv.Privacy.Job(link)   // Privacy check: one scan at a time, its rows kept for the page
     private val playing = helper?.let { NowPlaying({ link.get() }, it) }      // the now playing bar: null where tvr-helper.jar is not at hand
     private val draw = Draw { link.get() }                           // strokes for TV Setup to draw over the screen
     private val jobs: MutableMap<String, JSONObject> = Collections.synchronizedMap(LinkedHashMap<String, JSONObject>())
@@ -100,6 +101,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             when (what) {
                 "apps" -> return HttpServer.Response.json(apps(r.q("system") == "1"))
                 "apps/report" -> return HttpServer.Response.json(appsReport())
+                "privacy" -> if (!post) return HttpServer.Response.json(privacy.snapshot(r.q("since").toIntOrNull() ?: 0, r.q("id").toIntOrNull() ?: -1))   // the scan under way or the last one (Privacy.kt); a route nobody but the owner may use (Scope allows none of it)
                 "recents" -> if (!post) return HttpServer.Response.json(recents())
                 "screen/state" -> if (!post) return HttpServer.Response.json(JSONObject().put("off", ScreenOff.isOff { sh(it) }))
                 "dim" -> return HttpServer.Response.json(dev.tvremote.core.ontv.Dim.call({ sh(it) }, if (post) r.json() else null))
@@ -207,6 +209,10 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             if (!post) return null
             return when (what) {
                 "app" -> { open(r.json().optString("link")); HttpServer.Response.json(JSONObject().put("ok", true).put("via", "adb")) }
+                "privacy/scan" -> HttpServer.Response.json(privacy.start())
+                "privacy/stop" -> HttpServer.Response.json(privacy.stop())
+                "privacy/revoke", "privacy/grant" -> HttpServer.Response.json(privacyPerms(r.json().optString("pkg"), what.endsWith("revoke")))
+                "privacy/off", "privacy/on" -> HttpServer.Response.json(privacyOff(r.json().optString("pkg"), what.endsWith("off")))
                 "app/launch", "app/stop", "app/uninstall", "app/disable", "app/enable", "app/clear" -> app(r.json().optString("pkg"), what.substring(4))
                 "clean" -> text(TvShell.CLEAN, 90000)
                 "recents" -> {                                        // close one open app, those picked, or all but the one on screen
@@ -431,6 +437,38 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             }
             else -> throw IllegalArgumentException("unknown action")
         }
+    }
+
+    // ---------------------------------------------------------------- privacy check
+    /** Revoke (or give back) the permissions the scan saw an app hold; the TV keeps what was revoked, so Give back works after a restart. */
+    private fun privacyPerms(pkg: String, revoke: Boolean): JSONObject {
+        val P = dev.tvremote.core.ontv.Privacy
+        if (!PKG.matcher(pkg).matches()) throw IllegalArgumentException("bad package name")
+        if (Setup.mustKeep(pkg)) throw IllegalArgumentException("protected: the TV needs this app")
+        val row = privacy.row(pkg) ?: throw IllegalArgumentException("scan again")
+        val list = (row.optJSONArray(if (revoke) "perms" else "revoked") ?: JSONArray()).let { a -> (0 until a.length()).map { a.getString(it) } }
+        val out = sh(if (revoke) P.revokeCmd(pkg, list) else P.grantCmd(pkg, list))
+        val ok = out.lines().mapNotNull { it.trim().takeIf { l -> l.startsWith("ok:") }?.substring(3) }
+        if (ok.isEmpty() && list.isNotEmpty()) throw IllegalArgumentException("locked: the system holds these permissions")
+        val f = P.REVOKED_FILE
+        for (p in ok) sh(if (revoke) "grep -qx '$pkg $p' $f 2>/dev/null || echo '$pkg $p' >> $f" else "grep -vx '$pkg $p' $f > $f.new 2>/dev/null; mv $f.new $f")
+        fun names(a: JSONArray?) = (0 until (a?.length() ?: 0)).map { a!!.getString(it) }
+        val now = privacy.change(pkg) { o ->
+            val held = if (revoke) names(o.optJSONArray("perms")) - ok.toSet() else names(o.optJSONArray("perms")) + ok
+            val gone = if (revoke) names(o.optJSONArray("revoked")) + ok else names(o.optJSONArray("revoked")) - ok.toSet()
+            o.put("perms", JSONArray(held)).put("revoked", JSONArray(gone))
+            val heldTags = held.mapNotNull { P.PERM_TAG[it] }.toSet(); val goneTags = gone.mapNotNull { P.PERM_TAG[it] }.toSet()
+            val tags = names(o.optJSONArray("tags")).filter { t -> t !in goneTags || t in heldTags } + heldTags.filter { t -> names(o.optJSONArray("tags")).none { it == t } }
+            o.put("tags", JSONArray(P.ORDER.filter { it in tags })).put("gone", JSONArray(P.ORDER.filter { it in goneTags - heldTags }))
+        }
+        return JSONObject().put("ok", true).put("done", ok.size).put("failed", list.size - ok.size).put("row", now ?: JSONObject.NULL)
+    }
+
+    /** Turn an app off (Optimize TV's way: `pm disable-user`, written to its Undo list) or back on. Refuses what the TV needs. */
+    private fun privacyOff(pkg: String, off: Boolean): JSONObject {
+        app(pkg, if (off) "disable" else "enable")
+        if (off) sh("grep -qx '$pkg' ${Setup.OFF_LIST} 2>/dev/null || echo '$pkg' >> ${Setup.OFF_LIST}")
+        return JSONObject().put("ok", true).put("row", privacy.change(pkg) { it.put("off", off) } ?: JSONObject.NULL)
     }
 
     // ---------------------------------------------------------------- terminal

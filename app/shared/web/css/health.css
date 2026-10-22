@@ -58,3 +58,9 @@ i.sl-ts { background:var(--bad); }
 :is(#hsleep, #hcaps) > .waiting { display:block; }
 .health.ready #hwait, .health:not(.ready) #hnow > section { display:none !important; }   /* over the columns' inline-flex */
 .crash .crashcopy { margin:0 0 12px; }
+/* Health › Privacy (js/privacy.js): a row's tags, coloured by how much they say; a revoked permission is struck out */
+.ptags { display:flex; flex-wrap:wrap; gap:4px; margin:3px 0 2px; }
+.tag.p-hi { --c:var(--bad); }
+.tag.p-md { --c:var(--warn); }
+.tag.p-lo, .tag.p-gone { --c:var(--muted); }
+.tag.p-gone { text-decoration:line-through; }

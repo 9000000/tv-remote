@@ -267,11 +267,12 @@
   <div class="panel" data-panel="health" hidden>
     <div data-adb-banner></div>
     <div class="health" data-adb-gated>
-      <div id="hmode" class="seg" role="tablist"><button type="button" class="on" data-m="now" data-i18n="health.now">Hiện tại</button><button type="button" data-m="hist" data-i18n="health.history">Lịch sử</button><button type="button" data-m="sleep" data-i18n="health.sleep">Giấc ngủ</button><button type="button" data-m="caps" data-i18n="health.capabilities">Khả năng</button></div>
+      <div id="hmode" class="seg" role="tablist"><button type="button" class="on" data-m="now" data-i18n="health.now">Hiện tại</button><button type="button" data-m="hist" data-i18n="health.history">Lịch sử</button><button type="button" data-m="sleep" data-i18n="health.sleep">Giấc ngủ</button><button type="button" data-m="caps" data-i18n="health.capabilities">Khả năng</button><button type="button" data-m="priv" data-i18n="health.privacy">Riêng tư</button></div>
       <div id="hhist" hidden></div>
       <div id="herr" hidden></div>
       <div id="hsleep" hidden></div>
       <div id="hcaps" hidden></div>
+      <div id="hpriv" class="stack" hidden></div>
       <div id="hnow">
       <div class="muted" id="hwait" data-i18n="health.reading_from_the_tv">Đang đọc từ TV...</div>
       <section class="card"><div class="card-head"><h2 data-i18n="health.overview">📊 Tổng quan</h2><span class="muted" id="hwhen"></span></div><div class="kv" id="hsum"></div><p class="note" id="hnight" hidden></p></section>
@@ -536,6 +537,7 @@
 <script src="js/files.js"></script>
 <script src="stats.js"></script>
 <script src="js/health.js"></script>
+<script src="js/privacy.js"></script>
 <script src="js/speed.js"></script>
 <script src="js/dim.js"></script>
 <script src="js/terminal.js"></script>

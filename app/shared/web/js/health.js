@@ -43,8 +43,8 @@ async function loadHist(days) {
 document.querySelectorAll('#hmode button').forEach((b) => b.addEventListener('click', () => {
   hmode = b.dataset.m; document.querySelectorAll('#hmode button').forEach((x) => x.classList.toggle('on', x === b));
   put('#hhist', 'hidden', hmode !== 'hist'); put('#hnow', 'hidden', hmode !== 'now'); put('#herr', 'hidden', hmode !== 'hist'); put('#hcaps', 'hidden', hmode !== 'caps');
-  put('#hsleep', 'hidden', hmode !== 'sleep');
-  if (hmode === 'hist') { loadHist(); loadErrors(); } else if (hmode === 'sleep') loadSleep(true); else if (hmode === 'caps') loadCaps(); else loadHealth();
+  put('#hsleep', 'hidden', hmode !== 'sleep'); put('#hpriv', 'hidden', hmode !== 'priv');
+  if (hmode === 'priv') privOpen(); else if (hmode === 'hist') { loadHist(); loadErrors(); } else if (hmode === 'sleep') loadSleep(true); else if (hmode === 'caps') loadCaps(); else loadHealth();
 }));
 
 // Sleep: how the TV sleeps and wakes (Power.kt), whether Tailscale and TV Setup outlive it, and the screen's last 7 days from
