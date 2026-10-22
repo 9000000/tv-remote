@@ -52,6 +52,33 @@
       if (e.target !== t) return;
       if (e.key === "ArrowRight"){ e.preventDefault(); go(1); } else if (e.key === "ArrowLeft"){ e.preventDefault(); go(-1); }
     });
+    // a mouse drags the row like a finger (touch already swipes it): snap and smooth off while held, a flick carries on to the
+    // card it points at; a drag is never also a click on the card under it
+    var drag = null, moved = false;
+    t.addEventListener("pointerdown", function(e){
+      if (e.pointerType !== "mouse" || e.button !== 0) return;
+      drag = {x: e.clientX, left: t.scrollLeft, id: e.pointerId, lx: e.clientX, lt: e.timeStamp, v: 0}; moved = false;
+    });
+    t.addEventListener("pointermove", function(e){
+      if (!drag || e.pointerId !== drag.id) return;
+      var dx = e.clientX - drag.x;
+      if (!moved){ if (Math.abs(dx) < 6) return; moved = true; t.classList.add("drag"); t.setPointerCapture(drag.id); }
+      t.scrollLeft = drag.left - dx;
+      var dt = e.timeStamp - drag.lt; if (dt > 0) drag.v = (e.clientX - drag.lx) / dt;   // px per ms, for the flick
+      drag.lx = e.clientX; drag.lt = e.timeStamp;
+    });
+    function let_go(e){
+      if (!drag) return;
+      var v = e.timeStamp - drag.lt > 120 ? 0 : drag.v; drag = null;   // held still before letting go: no flick
+      if (!moved) return;
+      t.classList.remove("drag");
+      var s = step(), at = t.scrollLeft / s;
+      var i = Math.abs(v) > 0.3 ? (v < 0 ? Math.ceil(at) : Math.floor(at)) : Math.round(at);   // a flick goes on to the next card in its way, never two
+      t.scrollTo({left: Math.max(0, i) * s, behavior: calm ? "auto" : "smooth"});
+    }
+    t.addEventListener("pointerup", let_go); t.addEventListener("pointercancel", let_go);
+    t.addEventListener("click", function(e){ if (moved){ e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
+    t.addEventListener("dragstart", function(e){ e.preventDefault(); });   // the pictures and links would start a native drag instead
     t.addEventListener("scroll", function(){ requestAnimationFrame(upd); }, {passive:true});
     window.addEventListener("resize", upd); upd();
   })();
