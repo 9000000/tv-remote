@@ -262,8 +262,10 @@ dialog.ask .acts.wrap { flex-wrap:wrap; }
 /* launcher gallery (js/launchers.js): cards, each its home screen big, the name, tags, the next step and ⋯ */
 #launchdlg .card, #infodlg .card:has(.lgrid) { width:min(900px, 94vw); }
 .lgrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:12px; }
-.lcard { display:flex; flex-direction:column; border-radius:12px; overflow:hidden; background:var(--bg); box-shadow:inset 0 0 0 1px var(--line); }
-.lcard.on { box-shadow:inset 0 0 0 2px var(--accent); }
+.lcard { position:relative; display:flex; flex-direction:column; border-radius:12px; overflow:hidden; background:var(--bg); }
+/* the edge drawn over the card: an inset shadow on .lcard itself lies under the picture, which hid its top half */
+.lcard::after { content:""; position:absolute; inset:0; border-radius:inherit; box-shadow:inset 0 0 0 1px var(--line); pointer-events:none; }
+.lcard.on::after { box-shadow:inset 0 0 0 2px var(--accent); }
 .lshot { display:block; padding:0; border:0; border-radius:0; height:auto; aspect-ratio:16/9; background:#111; cursor:zoom-in; overflow:hidden; }
 .lshot img { display:block; width:100%; height:100%; object-fit:cover; }
 .lshot img.none { visibility:hidden; }
