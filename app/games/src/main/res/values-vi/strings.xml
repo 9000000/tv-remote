@@ -6,7 +6,7 @@
     <string name="player_n">Người chơi %1$d ✓</string>
     <string name="new_code">Đổi mã kết nối</string>
     <string name="code_changed">Đã đổi mã. Điện thoại đã quét mã cũ phải quét lại.</string>
-    <string name="chip">📱 Quét để vào</string>
+    <string name="chip">📱</string>
     <string name="paused">Tạm dừng</string>
     <string name="resume">Tiếp tục</string>
     <string name="quick_save">Lưu nhanh</string>
@@ -52,6 +52,8 @@
     <string name="key_back">Back</string>
     <string name="hint_start">Bắt đầu</string>
     <string name="hint_remote">Chơi bằng remote</string>
+    <string name="press_start">Bấm Start</string>
+    <string name="remote_hint">Remote: OK = A · Start = nút ⏯, hoặc Back → Bấm Start</string>
     <string name="hint_exit">Thoát</string>
     <string name="hint_ready">hoặc mọi người bấm Sẵn sàng</string>
     <string name="lobby_count">Bắt đầu sau</string>

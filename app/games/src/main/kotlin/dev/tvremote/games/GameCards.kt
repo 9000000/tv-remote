@@ -22,6 +22,7 @@ class GameCards(
     private val withLobby: Boolean = false,                // the lobby before the game: [art] its picture, [maxPlayers] / [minPlayers] what the game takes, [onGo] the game starts
     private val art: Thumbs.Src? = null, private val maxPlayers: Int = 2, private val minPlayers: Int = 1, private val onGo: () -> Unit = {},
     private val kind: String? = null,                    // the lobby's "NES" / "Web" line
+    private val onStart: (() -> Unit)? = null,            // a console's Start pressed for player 1: the TV remote has no Start key
 ) {
     var paused = false; private set
     /** True from the moment the lobby opens until the game starts: the activities keep the pads' and the remote's input from the game meanwhile. */
@@ -67,6 +68,7 @@ class GameCards(
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
             addView(act.label(s(R.string.paused), 32f).apply { setPadding(0, 0, 0, act.dp(6)) })
             addView(resumeBtn)
+            if (onStart != null) addView(act.menuButton(s(R.string.press_start), 300, 58, 24f) { resume(); onStart.invoke() })
             if (onSave != null) addView(act.menuButton(s(R.string.quick_save), 300, 58, 24f) { pauseNote.text = onSave.invoke() })
             if (onLoad != null) addView(act.menuButton(s(R.string.quick_load), 300, 58, 24f) { val m = onLoad.invoke(); if (m == null) resume() else pauseNote.text = m })
             addView(act.menuButton(s(R.string.quit), 300, 58, 24f) { onQuit() })
@@ -145,7 +147,8 @@ class GameCards(
 
     fun setPlayers(l: List<Int>) { val flash = l.size != players.size; players = l; refresh(flash); evaluate() }
 
-    // The start card goes when a player joins or OK is pressed; then the chip with the dots stays 5 s.
+    // The start card goes when a player joins or OK is pressed. The chip (who is in, with pings) shows 5 s when a phone joins or
+    // leaves mid-game; never with nobody in: there is no QR on screen then, it is on the pause card.
     private fun refresh(flash: Boolean = false) {
         if (startShown && players.isNotEmpty()) startShown = false
         start.visibility = if (startShown && !paused && !quiet) View.VISIBLE else View.GONE
@@ -155,7 +158,7 @@ class GameCards(
             startPlayers.addView(LinearLayout(act).apply { gravity = Gravity.CENTER; addView(act.dot(p, 14)); addView(act.label(who(p), 18f).apply { maxLines = 1; maxWidth = act.dp(260); ellipsize = android.text.TextUtils.TruncateAt.END }); addView(pingLabel(p, 14f)) })
             chipDots.addView(act.dot(p, 12)); chipDots.addView(pingLabel(p, 12f))
         }
-        if (!startShown && !paused && !quiet && !lobby) { if (flash || chip.visibility != View.VISIBLE) flashChip() } else chip.visibility = View.GONE
+        if (!startShown && !paused && !quiet && !lobby && players.isNotEmpty()) { if (flash) flashChip() } else chip.visibility = View.GONE
     }
 
     private fun flashChip() {

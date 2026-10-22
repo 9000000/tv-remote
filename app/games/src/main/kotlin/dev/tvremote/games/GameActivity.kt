@@ -93,8 +93,16 @@ class GameActivity : ComponentActivity() {
         cards = GameCards(this, root, server, Systems.clean(file.name), null,
             onPause = { retro.frameSpeed = if (it) 0 else 1 }, onSave = { quickSave() }, onLoad = { quickLoad() }, onQuit = { finish() },
             withLobby = true, kind = sys.label, art = Thumbs.catalog(this, file.name) ?: Thumbs.src(this, sys, file.name), maxPlayers = players.first, minPlayers = players.second,
-            onGo = { startedAt = System.currentTimeMillis(); snapLoop.removeCallbacksAndMessages(null); snapLoop.postDelayed(snapTick, 5000) })
+            onStart = { tapStart() },
+            onGo = { if (server.lobbyPlayers().isEmpty()) android.widget.Toast.makeText(this, R.string.remote_hint, android.widget.Toast.LENGTH_LONG).show()
+                startedAt = System.currentTimeMillis(); snapLoop.removeCallbacksAndMessages(null); snapLoop.postDelayed(snapTick, 5000) })
         if (lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) bind()   // the core was fetched after onResume already ran
+    }
+
+    /** Start down, then up a moment later: a core reads the pad once a frame, so a press within one frame is missed. */
+    private fun tapStart() {
+        retro.sendKeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BUTTON_START, 0)
+        retro.postDelayed({ retro.sendKeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BUTTON_START, 0) }, 120)
     }
 
     private val players by lazy { Catalog.players(this, file.name, null, Systems.maxPlayers(sys.id)) }
@@ -160,6 +168,7 @@ class GameActivity : ComponentActivity() {
         val code = when (ev.keyCode) {                                // the TV remote is player 1
             KeyEvent.KEYCODE_DPAD_CENTER -> KeyEvent.KEYCODE_BUTTON_A
             KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> KeyEvent.KEYCODE_BUTTON_START
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_MEDIA_PLAY -> { if (ev.action == KeyEvent.ACTION_DOWN) tapStart(); return true }   // remotes send ⏯ down and up at once
             else -> ev.keyCode
         }
         retro.sendKeyEvent(ev.action, code, 0)

@@ -6,7 +6,7 @@
     <string name="player_n">Player %1$d ✓</string>
     <string name="new_code">Reset connection code</string>
     <string name="code_changed">New code. Phones that scanned the old one must scan again.</string>
-    <string name="chip">📱 Scan to join</string>
+    <string name="chip">📱</string>
     <string name="paused">Paused</string>
     <string name="resume">Resume</string>
     <string name="quick_save">Quick save</string>
@@ -52,6 +52,8 @@
     <string name="key_back">Back</string>
     <string name="hint_start">Start</string>
     <string name="hint_remote">Play with the remote</string>
+    <string name="press_start">Press Start</string>
+    <string name="remote_hint">Remote: OK = A · Start = ⏯ key, or Back → Press Start</string>
     <string name="hint_exit">Exit</string>
     <string name="hint_ready">or everyone taps Ready</string>
     <string name="lobby_count">Starting in</string>
