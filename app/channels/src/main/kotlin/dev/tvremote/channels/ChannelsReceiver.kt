@@ -59,9 +59,14 @@ class ChannelsReceiver : BroadcastReceiver() {
         val have = HashMap<String, List<Channel>>()
         (haveFavs + haveGroups.flatMap { it.channels }).groupBy { it.id }.forEach { (id, l) -> have[id] = l.distinctBy { it.url } }
         val cache = HashMap<String, List<Channel>>()                  // a country's list, read once for this edit
+        // a feed's id ends in its own country ("DaVinciAsia.de@Vietnam") while it is listed under another (vn): so after the id's
+        // country, the lists the page picked from ("from"), then the TV's own
+        val from = req.optJSONArray("from")?.let { a -> (0 until a.length()).map { a.optString(it).lowercase() }.filter { it.matches(Regex("[a-z]{2}")) } }.orEmpty()
         val resolve = { id: String ->
-            val cc = Ids.country(id).ifEmpty { Store.country(c) }
-            cache.getOrPut(cc) { Catalog.channels(c, cc) }.filter { it.id == id }
+            val tries = listOf(Ids.country(id)) + from + Store.country(c)
+            tries.filter { it.isNotEmpty() }.distinct().firstNotNullOfOrNull { cc ->
+                cache.getOrPut(cc) { Catalog.channels(c, cc) }.filter { it.id == id }.takeIf { it.isNotEmpty() }
+            }.orEmpty()
         }
         val favs = if (favIds == null) haveFavs else Edit.channels(favIds, have, resolve)
         val groups = if (groupPlans == null) haveGroups else groupPlans.map { Store.Group(it.id, it.name, Edit.channels(it.ids, have, resolve)) }

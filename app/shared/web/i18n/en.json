@@ -2743,6 +2743,7 @@
  "chm.loading": "Loading the channel list from the TV…",
  "chm.empty": "The TV could not load this country's channels yet (it needs the internet).",
  "chm.reload": "↻ Reload",
+ "chm.lost": "{n} channels were not saved because the TV found no stream for them: {names}",
  "chm.changes": "{n} changes",
  "chm.save": "Save",
  "chm.discard": "Discard",

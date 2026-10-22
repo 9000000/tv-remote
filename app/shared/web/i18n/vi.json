@@ -2656,6 +2656,7 @@
  "chm.loading": "Đang tải danh sách kênh từ TV…",
  "chm.empty": "TV chưa tải được danh sách kênh của nước này (cần mạng).",
  "chm.reload": "↻ Tải lại",
+ "chm.lost": "{n} kênh chưa lưu được vì TV không tìm thấy luồng của chúng: {names}",
  "chm.changes": "{n} thay đổi",
  "chm.save": "Lưu",
  "chm.discard": "Huỷ",

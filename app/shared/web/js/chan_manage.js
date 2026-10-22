@@ -129,10 +129,15 @@ function chmDiscard(c) {
 async function chmSave(c) {                         // true once the TV holds it; what it answers (it leaves out a channel it cannot find) becomes the state
   if (c.saving) return false;
   c.saving = true; c.failed = false; chmBar();
-  const r = await api('/api/channels/manage', { favs: c.favs.map((x) => x.id), groups: c.groups.map((g) => ({ id: g.id, name: g.name, ch: g.ch.map((x) => x.id) })) });
+  const sent = [...c.favs, ...c.groups.flatMap((g) => g.ch)];
+  // "from": the countries the channels were picked from (a feed's id can name another country than the list it is in)
+  const r = await api('/api/channels/manage', { favs: c.favs.map((x) => x.id), groups: c.groups.map((g) => ({ id: g.id, name: g.name, ch: g.ch.map((x) => x.id) })), from: Object.keys(c.lists) });
   c.saving = false;
   if (!r || !r.receiver) { c.failed = true; chmBar(); return false; }   // the error is shown already (friendly()); the edits stay
   c.favs = r.favs; c.groups = r.groups; c.base = chmCopy(c);
+  const kept = new Set([...c.favs, ...c.groups.flatMap((g) => g.ch)].map((x) => x.id));   // what the TV could not find is said, not lost silently
+  const lost = [...new Map(sent.filter((x) => !kept.has(x.id)).map((x) => [x.id, x.n])).values()];
+  c.sum = lost.length ? { text: T('chm.lost', { n: lost.length, names: lost.slice(0, 5).join(', ') + (lost.length > 5 ? '…' : '') }) } : null;
   if (c.view !== 'find' && c.view !== 'fav' && !chmGroup(c.view)) c.view = 'fav';
   if (chm === c) { toast(T('chm.saved')); chmDraw(); }
   return true;
