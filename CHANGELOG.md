@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home: **phím Input của remote chạy khi đang ở app khác** (TV Home trả lời `VIEW_INPUTS`, hiện menu đầu vào); mở một đầu vào ghim vào app TV của hệ thống thay vì để app lạ nhận. Không còn chọn nhầm màn hình test của hãng (`factorytest`) làm Home khi hoàn tác / giữ lại. Chép file sang TV ghi ra `.part`, kiểm tra kích thước (và md5) rồi mới đổi tên, và cấp quyền đọc cho file app đọc (Android 14).
 - Optimize TV: **thêm 35 gói gợi ý từ 83 danh sách TV mới của cleanyourtv** (trình cài app tự động, ACR Samba / Alphonso, quảng cáo / push / demo của Skyworth, Xiaomi, Sony, Fire TV…) và giữ lại họ gói `com.tianci.*` / `com.coocaa.*` mà tắt đi là mất công tắc ADB (Skyworth 8R40); danh sách ký đọc từ site, không cần bản mới.
 - TV Home: **số cột lưới app chỉnh được, 4 đến 8** (mặc định 5), trong hộp TV Home của trang web / app điện thoại và ngay trên bảng Tuỳ chỉnh của TV; chỉ hiện với TV Home có hỗ trợ.
 - **TV Games cài / mở / cập nhật từ mọi app** (tab TV → thẻ Game trên TV), giống TV Channels; bản phát hành chưa có `tv-games.apk` thì thẻ báo "có trong bản phát hành tới" thay vì lỗi. Phần cài chung của TV Channels và TV Games gom về một chỗ (`OwnApp`).
@@ -78,6 +79,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Sửa: mở TV Home / Hẹn giờ / Ứng dụng… ngay sau khi app vừa mở lại (điện thoại vừa thức, VPN vừa bật) báo **"Việc này cần ADB" dù ADB đang bật**, lát sau mới tải được: lúc ADB đang nối lại vẫn bị coi là "đã đóng". Nay báo "Đang kết nối ADB…" và chờ (tối đa 8 s), chỉ báo cần ADB khi nối thật sự không được.
 
 **English**
+- TV Home: **the remote's Input key works while another app is in front** (TV Home answers `VIEW_INPUTS` and shows its inputs menu); opening an input is pinned to the system's TV app so no stray app takes it. A maker's factory-test screen (`factorytest`) is never picked as Home when undoing / putting Home back. Files copied to the TV are written to `.part`, checked by size (and md5), then renamed, and made readable for the files apps read (Android 14).
 - Optimize TV: **35 more suggested packages from cleanyourtv's 83 new TV lists** (auto app installers, Samba / Alphonso ACR, Skyworth / Xiaomi / Sony / Fire TV ads, push and demos) and a keep list for the `com.tianci.*` / `com.coocaa.*` packages whose loss removes the ADB switch (Skyworth 8R40); the signed list is read from the site, no new app needed.
 - TV Home: **the app grid's columns are a setting, 4 to 8** (default 5), in the TV Home dialog of the web page / phone app and on the TV's own Customize panel; offered only to a TV Home that has it.
 - **TV Games is installed / opened / updated from every client** (TV tab → TV games card), like TV Channels; a release without `tv-games.apk` makes the card say "in the next release" instead of failing. The install shared by TV Channels and TV Games is one piece of code now (`OwnApp`).

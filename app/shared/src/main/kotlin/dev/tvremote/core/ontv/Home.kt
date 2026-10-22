@@ -69,12 +69,12 @@ object Home {
         if (!now.optBoolean("installed")) throw IOException("home:missing")   // also makes TV Home's folder, where the shell may write
         val conf = now.optJSONObject("config") ?: JSONObject()
         if (!conf.optBoolean("wrotate")) {
-            if (!adb.put(HomeConfig.PHOTO, jpeg)) throw IOException("home:photo")
+            if (!adb.put(HomeConfig.PHOTO, jpeg, true)) throw IOException("home:photo")
             return call(sh, JSONObject().put("wall", "photo").put("photo", System.currentTimeMillis()))
         }
         val used = now.optJSONArray("photos")?.let { a -> (0 until a.length()).map { a.getJSONObject(it).optString("id") } } ?: emptyList()
         val id = HomeConfig.PHOTOS.firstOrNull { it !in used } ?: throw IOException("home:photos_full")
-        if (!adb.put(HomeConfig.photoPath(id), jpeg)) throw IOException("home:photo")
+        if (!adb.put(HomeConfig.photoPath(id), jpeg, true)) throw IOException("home:photo")
         val set = conf.optJSONArray("walls")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList()
         val walls = if (conf.optString("wevery", "off") == "off") listOf(id) else set + id
         return call(sh, JSONObject().put("walls", org.json.JSONArray(walls)).put("wall", id).put("photo", System.currentTimeMillis()))

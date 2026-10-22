@@ -461,26 +461,39 @@ class Adb(private val dir: File) : Closeable {
     }
 
     @Throws(IOException::class)
-    fun put(path: String, size: Long, feed: (Stream) -> Unit): Boolean {
-        val s = writeTo(path)
+    fun put(path: String, size: Long, readable: Boolean = false, md5: String? = null, feed: (Stream) -> Unit): Boolean {
+        val tmp = "$path.part"                                        // written aside and moved in whole: a cut transfer never leaves a half file under the real name
+        val s = writeTo(tmp)
+        var ok = false
         try {
             feed(s)
             var got = ""
             var still = 0                                             // checks in a row without the file growing
             while (still < 40) {                                      // 8 s without growing: it will not finish
-                val now = shell("stat -c %s " + q(path) + " 2>/dev/null").trim()
-                if (now == size.toString()) return true
+                val now = shell("stat -c %s " + q(tmp) + " 2>/dev/null").trim()
+                if (now == size.toString()) { ok = true; break }
                 still = if (now == got) still + 1 else 0
                 got = now
                 try { Thread.sleep(200) } catch (e: InterruptedException) { throw IOException("interrupted") }
             }
-            return false
+            if (ok && md5 != null) {                                  // where the TV has md5sum (toybox since Android 6; some boxes only busybox's)
+                val sum = shell("(md5sum " + q(tmp) + " || toybox md5sum " + q(tmp) + ") 2>/dev/null").trim().substringBefore(' ').lowercase()
+                if (sum.length == 32 && sum != md5.lowercase()) ok = false
+            }
+            if (ok) {
+                // chmod: a file copied by the shell can be unreadable to the apps (Android 14: EACCES); only for what an app reads
+                val r = shell("mv -f " + q(tmp) + " " + q(path) + (if (readable) " && chmod a+r " + q(path) else "") + " && echo ok").trim()
+                ok = r.endsWith("ok")
+            }
+            return ok
         } finally {
             s.close()
+            if (!ok) try { shell("rm -f " + q(tmp)) } catch (e: IOException) { }
         }
     }
 
-    fun put(path: String, data: ByteArray): Boolean = put(path, data.size.toLong()) { it.write(data) }
+    fun put(path: String, data: ByteArray, readable: Boolean = false): Boolean =
+        put(path, data.size.toLong(), readable, java.security.MessageDigest.getInstance("MD5").digest(data).joinToString("") { "%02x".format(it) }) { it.write(data) }
 
     /**
      * Runs a command in the TV's shell (as the `shell` user) and returns everything it printed. Throws when it prints nothing

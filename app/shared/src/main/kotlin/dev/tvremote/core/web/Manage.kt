@@ -597,7 +597,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 }
                 if (length >= 0 && done < length) throw IOException("upload cut short")
             }
-            if (length >= 0) adb.put(dest, length, feed)                  // the size known: the stream stays open until it is all there
+            if (length >= 0) adb.put(dest, length, true, null, feed)                  // the size known: the stream stays open until it is all there
             else adb.writeTo(dest).use(feed)
             val want = if (length >= 0) length.toString() else null       // cat finishes writing shortly after the stream closes
             for (i in 0 until 40) {

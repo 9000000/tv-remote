@@ -105,7 +105,9 @@ class HomeActivity : Activity() {
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
+        wantInputs = intent?.action == InputOpen.INPUTS
         Font.load(this)
+        InputOpen.sync(this)
         if (android.os.Build.VERSION.SDK_INT >= 24 && getSystemService(android.os.UserManager::class.java)?.isUserUnlocked == false) {
             locked = true
             registerReceiver(unlocked, IntentFilter(Intent.ACTION_USER_UNLOCKED))
@@ -213,6 +215,7 @@ class HomeActivity : Activity() {
     override fun onResume() {
         super.onResume()
         if (locked) return
+        if (wantInputs) { wantInputs = false; bar.post { inputs() } }   // started by the Input key: the menu once the home is up
         Motion.read(this, conf)                                       // the system's "remove animations" may have changed while away
         zoom.back()                                                   // the plate that grew over the opened app shrinks into its tile
         clockAndDay()
@@ -327,6 +330,7 @@ class HomeActivity : Activity() {
     override fun onNewIntent(i: Intent) {
         super.onNewIntent(i)
         if (locked) return
+        if (i.action == InputOpen.INPUTS) { inputs(); return }                  // the remote's Input key while another app is in front
         if (open?.isShowing == true) { open?.dismiss(); open = null; return }                          // a panel or menu is open: this press closes it
         val last = if (away) lastOpened?.let { p -> tiles().firstOrNull { it.app?.pkg == p } } else null
         if (last != null) last.requestFocus() else toTop()            // back from an app: on its tile; Home on the home screen: to the top
@@ -337,6 +341,7 @@ class HomeActivity : Activity() {
 
     // Android 13+ hands the Back that closed a menu or the panel to the home too: it must not also move the focus to the dock
     private var back = 0L
+    private var wantInputs = false
     override fun onWindowFocusChanged(has: Boolean) { super.onWindowFocusChanged(has); if (has) back = SystemClock.uptimeMillis() }
 
     private fun toTop() {
@@ -705,7 +710,7 @@ class HomeActivity : Activity() {
             Drop.Row(if (group == 2) R.drawable.ic_tv else if (hdmi) R.drawable.ic_input else R.drawable.ic_plug,
                 if (dev != null) "$base · $dev" else base, if (connected && group < 2) getString(R.string.connected) else null, group) {
                 val uri = if (i.isPassthroughInput) TvContract.buildChannelUriForPassthroughInput(i.id) else TvContract.buildChannelsUriForInput(i.id)
-                try { startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e: Exception) { toast(R.string.no_open) }
+                try { startActivity(InputOpen.intent(this, uri)) } catch (e: Exception) { toast(R.string.no_open) }
             }
         }.sortedWith(compareBy<Drop.Row> { it.group }.thenBy(Nat) { it.label })
         if (rows.isEmpty()) { toast(R.string.no_inputs); open(Settings.ACTION_SETTINGS); return }

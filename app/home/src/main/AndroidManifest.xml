@@ -12,6 +12,9 @@
         <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent>
         <intent><action android:name="android.settings.DISPLAY_SETTINGS" /></intent>   <!-- the Picture and Sound rows show only where the TV has those screens -->
         <intent><action android:name="android.settings.SOUND_SETTINGS" /></intent>
+        <intent><action android:name="com.android.tv.action.VIEW_INPUTS" /></intent>   <!-- InputOpen.sync: does anything else answer it -->
+        <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="content" android:mimeType="vnd.android.cursor.item/channel" /></intent>
+        <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="content" android:mimeType="vnd.android.cursor.dir/channel" /></intent>
     </queries>
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
@@ -28,6 +31,16 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- The remote's Input key while another app is in front: the system sends VIEW_INPUTS to whoever answers it. Off from the start and
+             turned on by InputOpen.sync only when nothing else answers (the stock launcher turned off by Optimize TV / the swap; TV Setup
+             declares no filter: its InputsActivity is started by name, by KeyFixService, after this intent finds nobody). Where the TV has
+             an answer of its own two would make Android ask which on every press, and a priority cannot outbid it (non-system apps get 0). -->
+        <activity-alias android:name=".InputsEntry" android:targetActivity=".HomeActivity" android:exported="true" android:enabled="false">
+            <intent-filter>
+                <action android:name="com.android.tv.action.VIEW_INPUTS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
         <!-- the screensaver: the clock, the date and the wallpaper; chosen in the TV's settings, or by the "screensaver" switch (Dream.kt) -->
         <service android:name=".HomeDream" android:exported="true" android:label="@string/app_name" android:icon="@drawable/icon"
             android:permission="android.permission.BIND_DREAM_SERVICE">

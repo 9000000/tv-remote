@@ -47,8 +47,12 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
         /** Home landing on something that is not a launcher a person can use: Android's picker, the setup wizard, the fallback. */
         fun badHome(comp: String): Boolean {
             val pkg = comp.substringBefore('/')
-            return pkg.isEmpty() || pkg == "android" || pkg in Setup.WIZARD || "FallbackHome" in comp
+            return pkg.isEmpty() || pkg == "android" || pkg in Setup.WIZARD || "FallbackHome" in comp || factory(comp)
         }
+
+        private val FACTORY = Regex("factorytest|factory_test|factorymode", RegexOption.IGNORE_CASE)
+        /** A maker's factory-test screen that also answers Home (cleanyourtv skips them): never a home to go back to. */
+        fun factory(comp: String): Boolean = FACTORY.containsMatchIn(comp)
     }
 
     /** What is kept on the TV: [state] swapping / pending (waiting for Keep) / kept / rolledback; times are the TV's own clock (seconds). */
@@ -76,7 +80,7 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
     private fun enabled(): Set<String> =
         sh("pm list packages -e").split("\n").map { it.removePrefix("package:").trim() }.filter { it.isNotEmpty() }.toSet()
 
-    private fun homes(): List<String> = sh(HOMES).split("\n").map { it.trim() }.filter { it.contains('/') && !it.startsWith("priority") }
+    private fun homes(): List<String> = sh(HOMES).split("\n").map { it.trim() }.filter { it.contains('/') && !it.startsWith("priority") && !factory(it) }
 
     fun homeNow(): String = last(sh(RESOLVE_HOME))
 

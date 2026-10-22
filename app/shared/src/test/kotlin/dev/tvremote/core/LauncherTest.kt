@@ -170,6 +170,13 @@ class LauncherTest {
         assertFalse(LauncherWatch.looping(listOf(1760000000L, 1760000400L), 0))  // more than five minutes apart
     }
 
+    @Test fun factoryHomes() {
+        assertTrue(LauncherSwap.factory("com.mtk.factorytest/.Home"))
+        assertTrue(LauncherSwap.badHome("com.oem.FactoryMode/.Main"))
+        assertTrue(LauncherSwap.badHome("com.x/.factory_test.Home"))
+        assertFalse(LauncherSwap.badHome("com.google.android.tvlauncher/.MainActivity"))
+    }
+
     @Test fun badHomes() {
         assertTrue(LauncherSwap.badHome("android/com.android.internal.app.ResolverActivity"))
         assertTrue(LauncherSwap.badHome("com.google.android.tungsten.setupwraith/.RecoveryActivity"))
