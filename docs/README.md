@@ -15,9 +15,9 @@ path is `docs/*` (Cloudflare's `*` spans folders; `docs/**` matches nothing and 
 | `tour.html` | the long animated tour (the old home page: demo, why, features, how it works, comparison, install stories, FAQ), `noindex`, linked from the home page's last line and the guide; the guide's install figures read their stories from it |
 | `css/site.css`, `js/site.js` | the tour's look and behaviour (`site.css` also styles the home page) |
 | `guide.html`, `css/guide.css`, `js/guide.js` | the user guide (served at `/guide`): written once as Vietnamese + English spans, a menu, offline accent-insensitive search built from the page |
-| `dev/guide_stale.py` | which guide topics may be out of date: each topic's `data-v` (the release it was checked against, `next` = main, stamped by `release.sh`) and `data-src` (the app files it depends on); `release.sh` stops while any is listed |
-| `data/since.json` | the line under each guide topic's title, "Since 0.4.0 (date) · TV Setup ≥ 0.5.0": per topic id `since` (the release; `next` while unreleased, stamped with its date by `dev/stamp_since.py` from `release.sh`) and optional `setup` / `phone` / `pc` minimums (TV Setup: `SetupNeed.MIN`); `dates` maps a release to its day (CHANGELOG headings). A new topic needs an entry; `dev/guide_stale.py` warns about one without |
-| `data/downloader.json` (+ `.sig`) | the Downloader (AFTVnews) short codes of the APKs, listed once and signed (`dev/sign_downloader.py`, the launcher list's key): the apps read it from the site (`core/Downloader.kt`; else GitHub raw, else a packed copy) and use it only when the signature checks. The codes written as text in these pages and the READMEs are copies of it: change them together |
+| `dev/release/guide_stale.py` | which guide topics may be out of date: each topic's `data-v` (the release it was checked against, `next` = main, stamped by `release.sh`) and `data-src` (the app files it depends on); `release.sh` stops while any is listed |
+| `data/since.json` | the line under each guide topic's title, "Since 0.4.0 (date) · TV Setup ≥ 0.5.0": per topic id `since` (the release; `next` while unreleased, stamped with its date by `dev/release/stamp_since.py` from `release.sh`) and optional `setup` / `phone` / `pc` minimums (TV Setup: `SetupNeed.MIN`); `dates` maps a release to its day (CHANGELOG headings). A new topic needs an entry; `dev/release/guide_stale.py` warns about one without |
+| `data/downloader.json` (+ `.sig`) | the Downloader (AFTVnews) short codes of the APKs, listed once and signed (`dev/sign/sign_downloader.py`, the launcher list's key): the apps read it from the site (`core/Downloader.kt`; else GitHub raw, else a packed copy) and use it only when the signature checks. The codes written as text in these pages and the READMEs are copies of it: change them together |
 | `js/guide-anim.js` | the guide's four animations (pairing, Allow USB debugging, game controller, Home Assistant), `.ga-*` markup in `guide.html`; the install topics' `.gst` figures take the home page's install stories (`data-from` = the panel's id in `index.html`) and play them over the topic's own steps, a step per part |
 | `js/qr.js` | a copy of `app/shared/web/js/qr.js`, kept the same by `app/shared/tests/page.test.js` |
 | `js/anim.js`, `lib/gsap.min.js` | the animation runtime and helpers; GSAP 3.13.0 as published |
@@ -27,7 +27,7 @@ path is `docs/*` (Cloudflare's `*` spans folders; `docs/**` matches nothing and 
 | `llms.txt` | the app in plain words for AI agents: keep it true when features or download links change |
 | `robots.txt`, `sitemap.xml` | for search engines |
 | `_headers` | Cloudflare Pages response headers: images 1 week, GSAP 30 days (css/js keep the default: revalidated, as their names have no version) |
-| `img/` | screenshots (`dev/shots.py`) and the link previews `og-<lang>.jpg` (1200×630, from `tvapp-<lang>.webp`) |
+| `img/` | screenshots (`dev/shots/shots.py`) and the link previews `og-<lang>.jpg` (1200×630, from `tvapp-<lang>.webp`) |
 
 **Animations** are GSAP timelines written by hand. A timeline reads as a list of "at second t, this changes": `show`,
 `press`, `fill`, `type`, `toggle`, `focus`, `pointer`, `steps`, or `track` for anything else. To look at one moment, in the
@@ -36,11 +36,11 @@ browser console: `storySeek(document.querySelector(".st-b"), 6.05)`.
 **Screenshots** (`img/`: the computer app, the Tailscale box, the TV web page, the phone app, TV Setup, the og previews):
 
 ```
-dev/shots.py                      # all of them
-dev/shots.py web ts tv phone tvapp   # or some
+dev/shots/shots.py                      # all of them
+dev/shots/shots.py web ts tv phone tvapp   # or some
 ```
 
-It needs the computer app built and, for `tv`, `phone` and `tvapp`, both emulators running (`dev/emu.sh`). The TV's picture
+It needs the computer app built and, for `tv`, `phone` and `tvapp`, both emulators running (`dev/test/emu.sh`). The TV's picture
 is the made-up home screen `dev/shots/home-<lang>.html`; the TV is named "TV phòng khách" / "Living room TV". Then check each
 `<img>`'s width and height in `index.html`.
 
@@ -76,5 +76,5 @@ To show a newer UI: pick a release tag (a pushed commit also works), check
 and add to `mock.js` what the new UI asks for (run the page and watch the console: "demo: no mock for ..."). Old caches go
 when the new worker starts. A newer `REF` than the tag the UI was checked against can ask for routes `mock.js` lacks.
 
-**Trying it locally:** `dev/serve_docs.py` (like Cloudflare Pages: `/guide` is `guide.html`), then http://localhost:8000 (the demo needs `localhost` or https
+**Trying it locally:** `dev/test/serve_docs.py` (like Cloudflare Pages: `/guide` is `guide.html`), then http://localhost:8000 (the demo needs `localhost` or https
 for its service worker; `127.0.0.1` also works outside restricted sandboxes).

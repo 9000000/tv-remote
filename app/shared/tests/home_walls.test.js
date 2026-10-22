@@ -18,7 +18,7 @@ const ktSpec = JSON.parse(kt.match(/"""([\s\S]*?)"""/)[1]);
 const cfg = fs.readFileSync(path.join(__dirname, '../src/home/kotlin/dev/tvremote/home/HomeConfig.kt'), 'utf8');
 const ids = cfg.match(/val ART = listOf\(([^)]*)\)/)[1].match(/"(\w+)"/g).map((x) => x.replace(/"/g, ''));
 
-test('the page and the TV hold the same recipes (python3 dev/gen_wallspec.py when this fails)', () => {
+test('the page and the TV hold the same recipes (python3 dev/gen/gen_wallspec.py when this fails)', () => {
   assert.deepEqual(ktSpec, art);
 });
 

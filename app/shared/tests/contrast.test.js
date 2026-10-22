@@ -1,4 +1,4 @@
-// WCAG contrast of the colour tokens in css/base.css, both themes (the runtime check on real rendering is dev/contrast.py).
+// WCAG contrast of the colour tokens in css/base.css, both themes (the runtime check on real rendering is dev/test/contrast.py).
 const test = require('node:test'), assert = require('node:assert');
 const fs = require('fs'), path = require('path');
 const { css } = require('./styles.js');

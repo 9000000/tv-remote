@@ -2,7 +2,7 @@ package dev.tvremote.phone
 
 import org.json.JSONObject
 
-// The infrared code sets (assets/ir/codes.json, made by dev/ir_codes.py from Flipper-IRDB): one profile per remote, its keys named
+// The infrared code sets (assets/ir/codes.json, made by dev/gen/ir_codes.py from Flipper-IRDB): one profile per remote, its keys named
 // as in Scenes.KEYS. Plain Kotlin + org.json, so IrCodesTest reads the real file.
 
 /** [kind]: its number among the brand's different remotes (IrCodes.merge), 0 when the brand has one. [models]: the models it stands for,

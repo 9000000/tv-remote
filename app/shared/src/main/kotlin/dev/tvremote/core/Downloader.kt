@@ -6,7 +6,7 @@ import java.io.IOException
 
 /**
  * The Downloader (AFTVnews) short codes of this project's APKs: docs/data/downloader.json on the site, signed by the launcher list's
- * key (dev/sign_downloader.py). A code makes a TV install whatever it points at, so a list is used only when its signature
+ * key (dev/sign/sign_downloader.py). A code makes a TV install whatever it points at, so a list is used only when its signature
  * checks; otherwise the last good copy kept in the app's folder, otherwise [PACKED] (the same file, checked equal by a test).
  * Read from the site, else GitHub, at most once a day, off the caller's thread ([codes] never waits on the network).
  */

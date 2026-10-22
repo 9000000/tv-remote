@@ -56,7 +56,7 @@ const UI = {
 };
 
 // ---------- icons: the page is written with emoji (short, and i18n.js keys on them), drawn as line icons from the sprite
-// (dev/gen_icons.py) in titles, tabs and buttons, where an emoji looks different on every system and an old TV has some
+// (dev/gen/gen_icons.py) in titles, tabs and buttons, where an emoji looks different on every system and an old TV has some
 // missing. A title's icon takes its own colour (--h, a hue), a button's the button's. Emoji not listed here stay emoji;
 // so do the remote's keys, app tiles, scene icons and running text.
 const ICON = {

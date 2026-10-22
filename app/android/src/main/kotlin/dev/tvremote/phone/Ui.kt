@@ -148,7 +148,7 @@ internal fun Context.note(s: String): TextView {
 /** A fill that takes white words and icons in both themes (the blue and the green are dark enough for it; BTN and CARD are not). */
 internal fun onFill(color: Int): Boolean = color == ACCENT || color == GREEN
 
-/** [s] as a button's or row's words; "@name|Words" puts the line icon ic_name (dev/gen_icons.py, the one js/ui.js ICON gives that
+/** [s] as a button's or row's words; "@name|Words" puts the line icon ic_name (dev/gen/gen_icons.py, the one js/ui.js ICON gives that
  *  emoji) in front, in the text's colour. Anything else is plain text, and an icon left from before is dropped. */
 internal fun TextView.setLabel(s: String) {
     val art = if (s.startsWith("@") && '|' in s) s.substring(1, s.indexOf('|')) else null
@@ -238,7 +238,7 @@ internal fun Context.button(s: String, color: Int): Button {
     return b
 }
 
-/** A button that shows only an icon; the words go to screen readers. "@name" = res/drawable/ic_name (dev/gen_icons.py), anything else is text. */
+/** A button that shows only an icon; the words go to screen readers. "@name" = res/drawable/ic_name (dev/gen/gen_icons.py), anything else is text. */
 /** One line that slides to its end and back when it has no room, instead of ending in "…" (the page's runFit); with
  *  "Remove animations" on, the plain "…". A marquee runs only on a selected view. */
 internal fun TextView.runs() {

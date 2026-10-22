@@ -1,9 +1,9 @@
 # The computer app (app/desktop) on each system it is made for: jpackage only builds for the system it runs on. Each job
 # builds the app, opens it (its window included: Linux under a virtual screen), checks that the server answers and that the
-# window came up, quits it through the page's /api/shutdown, and keeps the archive people download. A release (dev/release.sh)
+# window came up, quits it through the page's /api/shutdown, and keeps the archive people download. A release (dev/release/release.sh)
 # gets the archives attached, under names without a version so releases/latest/download/<name> always works. The two Mac
 # builds are joined into one app for both chips (job mac, universal.sh), tried on each, and only that one is attached.
-# Started only by dev/release.sh (with the release's tag, and only when the computer app changed) or by hand to try a build
+# Started only by dev/release/release.sh (with the release's tag, and only when the computer app changed) or by hand to try a build
 # (no tag: the archives are kept as the run's artifacts), never on push: runs are kept few.
 name: desktop
 on:
@@ -59,8 +59,8 @@ jobs:
           pkg="$PWD/app/desktop/build/package"; a=$(cd "$pkg" && ls TV-Remote-*); n=$a; [ "$RUNNER_OS" = macOS ] && n=TV-Remote-mac.zip; v=$(cat VERSION); top="${{ matrix.app }}"; top="${top%%/*}"
           srv=upd/serve; mkdir -p $srv/repos/HoangTran0410/tv-remote/releases upd/apps
           cp "$pkg/$a" "$srv/$n"                                       # under the name Updater.kt asks for
-          key=$(java dev/Sign.java new upd/test.pem)                   # a throwaway key: the real ones never come to GitHub
-          (cd $srv && { sha256sum "$n" 2>/dev/null || shasum -a 256 "$n"; } > SHA256SUMS) && java dev/Sign.java sign upd/test.pem $srv/SHA256SUMS
+          key=$(java dev/release/Sign.java new upd/test.pem)                   # a throwaway key: the real ones never come to GitHub
+          (cd $srv && { sha256sum "$n" 2>/dev/null || shasum -a 256 "$n"; } > SHA256SUMS) && java dev/release/Sign.java sign upd/test.pem $srv/SHA256SUMS
           echo "{\"web\": \"$v\"}" > $srv/versions.json
           echo "{\"tag_name\": \"v$v\", \"body\": \"\", \"assets\": [{\"name\": \"$n\", \"browser_download_url\": \"http://127.0.0.1:8099/$n\"},
             {\"name\": \"versions.json\", \"browser_download_url\": \"http://127.0.0.1:8099/versions.json\"},

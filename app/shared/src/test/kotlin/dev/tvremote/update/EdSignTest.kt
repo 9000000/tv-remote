@@ -8,7 +8,7 @@ import org.junit.Test
 import java.security.KeyPairGenerator
 import java.security.Signature
 
-/** Ed25519.kt against RFC 8032's own example and the JDK's Ed25519 (what dev/Sign.java signs with); SHA256SUMS read back. */
+/** Ed25519.kt against RFC 8032's own example and the JDK's Ed25519 (what dev/release/Sign.java signs with); SHA256SUMS read back. */
 class EdSignTest {
     private fun hex(s: String) = ByteArray(s.length / 2) { s.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
 

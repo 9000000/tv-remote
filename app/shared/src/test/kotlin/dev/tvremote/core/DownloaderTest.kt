@@ -16,7 +16,7 @@ class DownloaderTest {
 
     @Test fun theShippedFileIsSignedAndEqualsThePackedCopy() {
         val site = Downloader.accept(list, sig)
-        assertTrue("docs/data/downloader.json must verify (dev/sign_downloader.py)", site != null)
+        assertTrue("docs/data/downloader.json must verify (dev/sign/sign_downloader.py)", site != null)
         assertEquals(Downloader.parse(Downloader.PACKED), site)
         assertEquals("2397346", site!!["setup"])
     }

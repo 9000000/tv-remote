@@ -6,7 +6,7 @@ import android.graphics.drawable.Drawable
 import android.widget.Button
 import kotlin.math.roundToInt
 
-/** A button that draws an icon in its middle. "@name" = res/drawable/ic_name (dev/gen_icons.py), anything else is shown as text. */
+/** A button that draws an icon in its middle. "@name" = res/drawable/ic_name (dev/gen/gen_icons.py), anything else is shown as text. */
 internal class IconButton(c: Context) : Button(c) {
     private var art: Drawable? = null
     var size = 24f                                                    // dp

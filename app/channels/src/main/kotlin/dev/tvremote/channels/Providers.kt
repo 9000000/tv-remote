@@ -13,7 +13,7 @@ import java.text.Normalizer
 import java.util.Base64
 
 /**
- * Channels from other places than iptv-org, by a list the site keeps: docs/channels/providers.json (dev/sign_providers.py).
+ * Channels from other places than iptv-org, by a list the site keeps: docs/channels/providers.json (dev/sign/sign_providers.py).
  * How to ask a provider is code here, one [Kind] per kind; where to ask it (addresses, headers) and whether to ask at all ("on")
  * is the list, so a provider that moves or turns the app away is fixed or switched off without a new APK. The list is signed
  * with the launcher list's key: whoever takes over the site still cannot point the TVs at streams of their own.

@@ -6,7 +6,7 @@ import java.io.IOException
 import java.security.MessageDigest
 
 /**
- * TV Home's wallpaper gallery: docs/home/wallpapers.json on the site (made by dev/wallpapers.py), signed like the launcher list
+ * TV Home's wallpaper gallery: docs/home/wallpapers.json on the site (made by dev/gen/wallpapers.py), signed like the launcher list
  * (the same key, so the checks are [Launchers.signed] and [Launchers.KEYS]). Each entry: a 1920x1080 JPEG and a 320x180 thumbnail,
  * both pinned by SHA-256, with credit, source and licence. The client downloads the one chosen and sends it as TV Home's photo
  * ([Home.photo]): the TV never reaches the Internet for it, and nothing comes from a place the signed list does not name.

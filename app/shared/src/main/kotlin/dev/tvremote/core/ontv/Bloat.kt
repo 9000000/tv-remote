@@ -177,7 +177,7 @@ object Bloat {
         "|com\\.mediatek\\..*|com\\.droidlogic(\\..*)?")
 
     /**
-     * What the site adds: docs/optimize/bloat.json (dev/sign_bloat.py), signed with the launcher list's key. It may add to and drop
+     * What the site adds: docs/optimize/bloat.json (dev/sign/sign_bloat.py), signed with the launcher list's key. It may add to and drop
      * from [SUGGEST] (a suggestion only: [keep] still wins), and only add to [KEEP] and [FACTORY], so a wrong list never frees what
      * these hold. Read when Optimize TV opens and kept 6 hours; not reached, asked again after 30 minutes, these lists alone.
      */

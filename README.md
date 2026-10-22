@@ -347,7 +347,7 @@ Code names, layout, tests and releases: [AGENTS.md](AGENTS.md). Short version:
 node --test app/shared/tests/                                         # web tests
 cd app/gradle && ./gradlew :shared:testDebugUnitTest                  # Kotlin tests
 cd app/gradle && ./gradlew :desktop:installDist                       # build the Computer app
-dev/emu.sh                                                            # emulators + build + install
+dev/test/emu.sh                                                            # emulators + build + install
 ```
 
 Needs JDK 17, the Android SDK, Node.js and Python 3. Why some code looks odd: [dev/DECISIONS.md](dev/DECISIONS.md).

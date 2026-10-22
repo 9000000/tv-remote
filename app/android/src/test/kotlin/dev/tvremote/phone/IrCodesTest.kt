@@ -7,7 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/** assets/ir/codes.json (dev/ir_codes.py): every profile parses, every key is one of ours, every code can be sent. */
+/** assets/ir/codes.json (dev/gen/ir_codes.py): every profile parses, every key is one of ours, every code can be sent. */
 class IrCodesTest {
     private val text = File("src/main/assets/ir/codes.json").readText()
     private val all = IrCodes.parse(text)

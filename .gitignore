@@ -28,7 +28,7 @@ app/channels/*.apk
 app/games/*.apk
 *.tvrkeys
 
-# dev/layout.js: Playwright, installed with npm install --prefix dev playwright
+# dev/test/layout.js: Playwright, installed with npm install --prefix dev playwright
 dev/node_modules/
 dev/package.json
 dev/package-lock.json

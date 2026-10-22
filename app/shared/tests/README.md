@@ -10,7 +10,7 @@ Each `*.test.js` says on its first line what it keeps true: `ui.test.js` the UI 
 of control), `remote.test.js` the remote screen's `remote.json` on both sides, `page.test.js` no name declared twice across
 the page's scripts, `contrast.test.js` the WCAG ratios of the colour tokens, `css.test.js` no property set twice for one selector, no
 unused class, `guide.test.js` the user guide short (40 words a block, 250 of prose a topic), and so on. What the page keeps doing by itself once it runs (a write that changes nothing, a loop) is
-`dev/layout.js`'s, in real browsers.
+`dev/test/layout.js`'s, in real browsers.
 
 **The case tables** are read by both languages, so the page and the Kotlin core cannot drift apart:
 

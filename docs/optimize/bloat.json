@@ -1,7 +1,7 @@
 {
   "v": 1,
   "updated": "2026-10-22",
-  "about": "Optimize TV's additions to Bloat.kt, read from the site: suggest (package -> name, ticked by default), drop (no longer suggested), keep and factory (Java regexes, only added). Edit, run dev/sign_bloat.py, commit both files.",
+  "about": "Optimize TV's additions to Bloat.kt, read from the site: suggest (package -> name, ticked by default), drop (no longer suggested), keep and factory (Java regexes, only added). Edit, run dev/sign/sign_bloat.py, commit both files.",
   "suggest": {
     "android.autoinstalls.config.askey.tvbox": "Askey app installer",
     "android.autoinstalls.config.hisense.huangshan": "Hisense app installer",

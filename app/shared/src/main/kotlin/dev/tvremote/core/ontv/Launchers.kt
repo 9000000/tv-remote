@@ -14,7 +14,7 @@ import java.util.Base64
 /**
  * The launcher gallery: the list of home screens a TV can be given (docs/launchers/launchers.json in this repository, published
  * with the intro site), read, checked and matched to a TV. The list is signed (launchers.json.sig, Ed25519) by a key kept apart
- * from the release key ([KEYS]; dev/sign_launchers.py), so whoever takes over the site or the repository still cannot put an
+ * from the release key ([KEYS]; dev/sign/sign_launchers.py), so whoever takes over the site or the repository still cannot put an
  * APK on anyone's TV: an unsigned or altered list is refused, and so is an APK whose SHA-256 differs from the one the list pins.
  * Nothing but links is hosted here: each APK stays on its author's release page.
  */
@@ -39,7 +39,7 @@ object Launchers {
     class Entry(val id: String, val pkg: String, val name: String, val desc: Map<String, String>, val thumb: String, val thumbSha: String,
                 val source: String, val license: String, val kind: String, val version: String, val files: List<Apk>, val playUrl: String,
                 val atv: Boolean, val gtv: Boolean, val minSdk: Int, val fire: Boolean, val notes: Map<String, String>,
-                val langs: List<String> = emptyList(),                  // the languages of its screens (dev/sign_launchers.py reads them); empty: not known
+                val langs: List<String> = emptyList(),                  // the languages of its screens (dev/sign/sign_launchers.py reads them); empty: not known
                 val fallback: String = "") {                            // what it shows in a language it lacks
         fun desc(lang: String) = desc[lang] ?: desc["en"] ?: ""
         fun notes(lang: String) = notes[lang] ?: notes["en"] ?: ""

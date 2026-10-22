@@ -10,7 +10,7 @@ import java.net.URL
 import java.util.Base64
 
 /**
- * What the site tells the app without a release: docs/games/games.json (dev/sign_games.py), the same way TV Channels reads its
+ * What the site tells the app without a release: docs/games/games.json (dev/sign/sign_games.py), the same way TV Channels reads its
  * providers: the site, else GitHub, else the last good copy in files/, else the copy packed in assets. Signed (Ed25519, the
  * launcher list's key): a bad signature is ignored. Kept a day. "cores" (downloaded on first use, [Cores]), "web" (featured
  * games), "homebrew" (free ROMs), "layouts" (pad overrides, served to the phones at /layouts.json).

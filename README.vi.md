@@ -499,15 +499,15 @@ Sửa `app/shared/web` thì chỉ cần tải lại trang (app đọc thẳng t�
 
 - `app/android/build.sh`, `app/tv/build.sh` → `app/*/build/*.apk`. Giao diện web được đóng vào cả hai APK.
 
-**Máy ảo** (`dev/emu.sh help` có đủ lệnh)
+**Máy ảo** (`dev/test/emu.sh help` có đủ lệnh)
 
 | Việc | Lệnh |
 |---|---|
-| Tạo một máy ảo Google TV và một máy ảo điện thoại (Android 14), một lần | `dev/emu.sh create` |
-| Bật cả hai (TV trước), build và cài TV Setup lên TV, TV Remote lên điện thoại | `dev/emu.sh` |
-| Chỉ build và cài lại (máy ảo đang chạy) | `dev/emu.sh install` |
-| Đưa danh sách TV của app điện thoại về `10.0.2.2` | `dev/emu.sh reset` |
-| Tắt | `dev/emu.sh stop` |
+| Tạo một máy ảo Google TV và một máy ảo điện thoại (Android 14), một lần | `dev/test/emu.sh create` |
+| Bật cả hai (TV trước), build và cài TV Setup lên TV, TV Remote lên điện thoại | `dev/test/emu.sh` |
+| Chỉ build và cài lại (máy ảo đang chạy) | `dev/test/emu.sh install` |
+| Đưa danh sách TV của app điện thoại về `10.0.2.2` | `dev/test/emu.sh reset` |
+| Tắt | `dev/test/emu.sh stop` |
 
 Địa chỉ của TV ảo: từ app điện thoại (máy ảo) là **`10.0.2.2`**, từ app máy tính là **`127.0.0.1`**. Địa chỉ `10.0.2.15` hiện trên TV ảo chỉ có nghĩa bên trong chính nó. Lần đầu nối, chọn Cho phép ở câu "Allow USB debugging?" trên cửa sổ TV ảo. Máy ảo chỉ mở cổng ADB, nên phần ghép remote của Android TV (không ADB) không thử được trên máy ảo.
 
@@ -517,12 +517,12 @@ Sửa `app/shared/web` thì chỉ cần tải lại trang (app đọc thẳng t�
 |---|---|
 | Test giao diện web | `node --test app/shared/tests/` |
 | Test Kotlin | `cd app/gradle && ./gradlew :shared:testDebugUnitTest :android:testDebugUnitTest :tv:testDebugUnitTest` |
-| Độ tương phản màu trên trang thật | `dev/contrast.py` |
-| Ảnh chụp cho trang giới thiệu | `dev/shots.py` |
+| Độ tương phản màu trên trang thật | `dev/test/contrast.py` |
+| Ảnh chụp cho trang giới thiệu | `dev/shots/shots.py` |
 
 **Khác**
 
-- **Phiên bản:** ba số, mỗi số chỉ tăng khi phần của nó đổi: `VERSION` (bản phát hành và app máy tính), `app/android/VERSION`, `app/tv/VERSION`. `dev/release.sh` tự tăng số của phần đã đổi, build APK và tạo GitHub release; ghi chú bản mới để dưới `## Unreleased` trong `CHANGELOG.md`.
+- **Phiên bản:** ba số, mỗi số chỉ tăng khi phần của nó đổi: `VERSION` (bản phát hành và app máy tính), `app/android/VERSION`, `app/tv/VERSION`. `dev/release/release.sh` tự tăng số của phần đã đổi, build APK và tạo GitHub release; ghi chú bản mới để dưới `## Unreleased` trong `CHANGELOG.md`.
 - **Giữ ba nơi đồng bộ:** sửa hay thêm gì ở phần điều khiển thì làm ở cả App điện thoại, Web của TV và App máy tính. Các phím của màn remote nằm một chỗ: `app/shared/web/remote.json`. Tên gọi và sơ đồ: [Ba app và một trang web](#ba-app-và-một-trang-web).
 - **Ghi công:** [scrcpy](https://github.com/Genymobile/scrcpy) v5.0.1 (Apache-2.0), [JMuxer](https://github.com/samirkumardas/jmuxer) 2.1.0 (MIT), [webview](https://github.com/webview/webview) 0.12.0 (MIT), [JNA](https://github.com/java-native-access/jna) (Apache-2.0).
 </details>

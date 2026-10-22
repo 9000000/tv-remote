@@ -57,7 +57,7 @@ test('a title or a tab starting with an emoji has an icon for it', () => {
   const lead = /^\s*([\p{Extended_Pictographic}←-⇿✀-➿][️]?)/u;
   const bad = [...html.matchAll(/<(h2|h3|summary)\b[^>]*>([^<]*)|<span class="ico">([^<]*)/g)]
     .map((m) => (m[2] ?? m[3] ?? '').match(lead)?.[1]).filter((e) => e && !known.has(e) && !known.has(e.replace('️', '')));
-  assert.deepEqual([...new Set(bad)], [], 'add it to ICON in js/ui.js (and its path to dev/gen_icons.py)');
+  assert.deepEqual([...new Set(bad)], [], 'add it to ICON in js/ui.js (and its path to dev/gen/gen_icons.py)');
 });
 
 test('the chart legend keeps its small keys', () => {

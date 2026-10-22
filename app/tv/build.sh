@@ -11,7 +11,7 @@ if [ ! -f signing.jks ]; then                                       # said out l
   printf '\033[1;33m%s\033[0m\n' >&2 \
     "WARNING: app/tv/signing.jks was missing, a NEW signing key was made." \
     "  An APK signed with it cannot update the app already installed on phones and TVs (Android refuses another key)." \
-    "  Fine for a first build or tests. For a release: rm app/tv/signing.jks and get the old key back: dev/keys.sh restore <file>"
+    "  Fine for a first build or tests. For a release: rm app/tv/signing.jks and get the old key back: dev/release/keys.sh restore <file>"
 fi
 ../gradle/gradlew -q -p ../gradle :tv:assembleRelease
 cp build/outputs/apk/release/tv-release.apk build/tv-setup.apk

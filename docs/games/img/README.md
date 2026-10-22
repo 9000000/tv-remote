@@ -21,4 +21,4 @@ on a dark 16:9 backdrop; the "Scan to join" chip painted out). The picture is th
 | ghostsgraves.jpg | Ghosts and Graves (Anthony Bongers) | Unlicense | https://github.com/AnthonyBongers/GhostsAndGraves |
 | hockey.jpg, tanks.jpg, cycles.jpg, sumo.jpg | Air Hockey, Tank Arena, Light Cycles, Sumo Bump (our own, `docs/games/web/`) | same as the repo | in-game capture of each game running (CPU seats), no overlay |
 
-A new catalog game: run it, screencap its title screen, save it here as `<id>.jpg`, add `"img": "img/<id>.jpg"` to its entry and re-sign (`dev/sign_games.py`).
+A new catalog game: run it, screencap its title screen, save it here as `<id>.jpg`, add `"img": "img/<id>.jpg"` to its entry and re-sign (`dev/sign/sign_games.py`).

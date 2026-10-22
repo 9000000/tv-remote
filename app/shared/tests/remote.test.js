@@ -48,7 +48,7 @@ test('remote.json: unique ids, a key or an action or a list on each entry, both 
 test('remote.json: every icon is in the shared set, on the page and in the phone app', () => {
   const sprite = new Set([...read('shared/web/index.html').matchAll(/<symbol id="i-(\w+)"/g)].map((m) => m[1]));
   for (const e of entries.filter((x) => x.icon)) {
-    assert.ok(sprite.has(e.icon), e.id + ': icon ' + e.icon + ' is not in the page\'s sprite (dev/gen_icons.py)');
+    assert.ok(sprite.has(e.icon), e.id + ': icon ' + e.icon + ' is not in the page\'s sprite (dev/gen/gen_icons.py)');
     assert.ok(fs.existsSync(path.join(root, 'android/src/main/res/drawable/ic_' + e.icon + '.xml')), e.id + ': no drawable ic_' + e.icon + ' in the phone app');
   }
 });

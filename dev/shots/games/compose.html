@@ -1,0 +1,27 @@
+<!doctype html><meta charset="utf-8">
+<!-- The home page's TV Games picture (1280x720): the TV playing, the library in a corner, two phones as pads.
+     compose.js opens it as compose.html?lang=vi|en. The phones sit on a lit patch and have a light rim: a dark bezel on
+     the dark backdrop made them disappear. -->
+<style>
+html,body{margin:0;background:#0a0c14}
+#c{position:relative;width:1280px;height:720px;overflow:hidden;font-family:system-ui;
+  background:radial-gradient(560px 300px at 74% 86%,#34407a 0%,rgba(52,64,122,0) 72%),
+             radial-gradient(900px 600px at 20% 10%,#2a1d5a 0%,#0e1020 60%),#0a0c14}
+.tv{position:absolute;left:36px;top:30px;width:860px;height:484px;border-radius:14px;border:10px solid #1b1e2b;box-shadow:0 30px 60px #000a,0 0 0 2px #333a4d;overflow:hidden;background:#000}
+.tv img{width:100%;height:100%;object-fit:contain;display:block}
+.lib{position:absolute;right:34px;top:60px;width:340px;height:191px;border-radius:10px;border:7px solid #1b1e2b;box-shadow:0 20px 40px #000a,0 0 0 2px #333a4d;overflow:hidden}
+.lib img{width:100%;display:block}
+.ph{position:absolute;border-radius:36px;padding:14px 26px;
+  background:linear-gradient(160deg,#4a5270 0%,#2a3046 45%,#1c2133 100%);
+  box-shadow:0 0 0 1.5px #8a94b8,inset 0 1px 0 rgba(255,255,255,.35),inset 0 0 0 3px #12151f,0 0 70px rgba(110,130,255,.35),0 26px 50px #000c}
+.ph img{display:block;width:100%;border-radius:14px;box-shadow:0 0 0 1px #000}
+.p1{left:470px;top:440px;width:450px;transform:rotate(-2deg)}
+.p2{left:890px;top:420px;width:350px;transform:rotate(3deg)}
+.ph:before{content:"";position:absolute;left:9px;top:50%;width:5px;height:42px;margin-top:-21px;border-radius:3px;background:#0d1018}
+</style><div id=c>
+<div class=tv><img src="tv.png"></div>
+<div class=lib><img id=lib></div>
+<div class="ph p2"><img src="pad2.png"></div>
+<div class="ph p1"><img src="pad1.png"></div>
+</div>
+<script>document.getElementById('lib').src = 'lib-' + (new URLSearchParams(location.search).get('lang') || 'vi') + '.png'</script>

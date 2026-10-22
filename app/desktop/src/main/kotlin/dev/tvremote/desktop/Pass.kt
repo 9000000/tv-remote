@@ -11,7 +11,7 @@ import java.security.SecureRandom
  * A key made at each start that every request must carry. 127.0.0.1 is reachable by every program and every other user of
  * this computer, and the TVs' keys are behind this server. The window and the browser are opened with it in the link
  * (?k=), and the server swaps it for a cookie at once, so nobody types anything. A second start (Windows, Linux: the app
- * opened twice) reads it from [file] to open one more window. TVR_PASS fixes it, for test servers and dev/shots.py.
+ * opened twice) reads it from [file] to open one more window. TVR_PASS fixes it, for test servers and dev/shots/shots.py.
  */
 class Pass(private val file: File) {
     val key: String = System.getenv("TVR_PASS")?.takeIf { it.length >= 8 }

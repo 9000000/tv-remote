@@ -17,9 +17,9 @@ import java.util.Base64
  * newer than the running app, gives the download link of this app's APK. Nothing else is sent anywhere.
  *
  * A release lists the SHA-256 of each of its files in SHA256SUMS, signed (SHA256SUMS.sig, Ed25519) by a key that never goes
- * to GitHub (dev/Sign.java, dev/release.sh): a file that does not match is deleted, not installed, so neither a broken
+ * to GitHub (dev/release/Sign.java, dev/release/release.sh): a file that does not match is deleted, not installed, so neither a broken
  * download nor someone who took over the repository or a GitHub token can put an update on anyone's device. A release
- * without them is not offered yet (dev/release.sh adds them last, once the computer apps are attached).
+ * without them is not offered yet (dev/release/release.sh adds them last, once the computer apps are attached).
  */
 class Release private constructor(val version: String, val url: String, val notes: String, val sha256: String) {
     fun interface Progress { fun at(percent: Int) }
@@ -152,7 +152,7 @@ class Release private constructor(val version: String, val url: String, val note
 
         /**
          * The numbers before they restarted at 0.1.0 (October 2026: 1.3.0 up to 2.24.2) are older than every later one, so a TV
-         * or computer still on them is offered the update. dev/release.sh refuses to reach 1.3.0 while this is here: drop it then.
+         * or computer still on them is offered the update. dev/release/release.sh refuses to reach 1.3.0 while this is here: drop it then.
          */
         fun legacy(v: String): Boolean {
             val p = v.trim().split(".")
