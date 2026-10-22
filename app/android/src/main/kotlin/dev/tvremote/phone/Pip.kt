@@ -15,6 +15,7 @@ import android.os.Build
 import android.util.Rational
 import android.view.Gravity
 import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
@@ -159,14 +160,21 @@ internal fun MainActivity.pipChanged(on: Boolean) {
 }
 
 /**
- * The small player over Manage, Settings and About: about 40% of the width, bottom right, dragged anywhere and let go it snaps
- * to the nearest corner. A tap anywhere but ✕ brings the remote back. In PiP the same view fills the window, bare.
+ * The small player over Manage, Settings and About: 60% of the width at first, bottom right, left wherever it is dragged (kept on
+ * the screen; corners only got in the way); two fingers make it bigger or smaller (35% to the whole width), the size kept for next time. A tap anywhere but ✕ brings the remote back. In PiP the same view fills the window, bare.
  */
 internal class MiniPlayer(private val a: MainActivity) : FrameLayout(a) {
     private val m = a.dp(12)
     private val slop = ViewConfiguration.get(a).scaledTouchSlop
     private var dx = 0f; private var dy = 0f; private var drag = false
     private var pip = false
+    private var share = a.prefs.getFloat("mini_w", 0.6f).coerceIn(MIN, 1f)   // its width as a share of the screen's
+    private var scaling = false                                       // a pinch: no drag, no tap until every finger is up
+    private val pinch = ScaleGestureDetector(a, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+        override fun onScaleBegin(d: ScaleGestureDetector): Boolean { scaling = true; drag = false; return true }
+        override fun onScale(d: ScaleGestureDetector): Boolean { share = (share * d.scaleFactor).coerceIn(MIN, 1f); size(); return true }
+        override fun onScaleEnd(d: ScaleGestureDetector) { a.prefs.edit().putFloat("mini_w", share).apply() }
+    })
     private val closeBtn = a.icon("@close", T("float.close_mini"), 0xAA000000.toInt())
 
     init {
@@ -191,13 +199,22 @@ internal class MiniPlayer(private val a: MainActivity) : FrameLayout(a) {
             // the frame fills it, exact height: the picture centred at the TV's aspect
             for (i in 0 until childCount) if (getChildAt(i) is VideoFrame) getChildAt(i).layoutParams = LayoutParams(-1, -1)
         } else {
-            val w = ((p?.width ?: a.resources.displayMetrics.widthPixels) * 0.4f).toInt()
-            layoutParams = FrameLayout.LayoutParams(w, -2, Gravity.BOTTOM or Gravity.END).apply { setMargins(m, m, m, m) }
+            layoutParams = FrameLayout.LayoutParams(width(p), -2, Gravity.BOTTOM or Gravity.END).apply { setMargins(m, m, m, m) }
             for (i in 0 until childCount) if (getChildAt(i) is VideoFrame) getChildAt(i).layoutParams = LayoutParams(-1, -2)
             elevation = a.dp(10).toFloat()
-            snap(1, 1, false)
+            post { keepIn(false) }
         }
         invalidateOutline()
+    }
+
+    private fun width(p: View?) = ((p?.width?.takeIf { it > 0 } ?: a.resources.displayMetrics.widthPixels) - 2 * m).let { (it * share).toInt() }
+
+    /** Live while pinching: it grows about its centre (laid out from the bottom right, so the translation follows), kept on the screen. */
+    private fun size() {
+        val p = parent as? View ?: return
+        val w0 = width; val h0 = height
+        (layoutParams as FrameLayout.LayoutParams).width = width(p); requestLayout()
+        post { translationX += (width - w0) / 2f; translationY += (height - h0) / 2f; keepIn(false) }
     }
 
     private fun inClose(e: MotionEvent): Boolean {
@@ -211,34 +228,33 @@ internal class MiniPlayer(private val a: MainActivity) : FrameLayout(a) {
 
     override fun onTouchEvent(e: MotionEvent): Boolean {
         if (pip) return false
+        pinch.onTouchEvent(e)
         when (e.actionMasked) {
-            MotionEvent.ACTION_DOWN -> { dx = e.rawX; dy = e.rawY; drag = false; downAt = System.currentTimeMillis(); animate().cancel(); return true }
+            MotionEvent.ACTION_DOWN -> { dx = e.rawX; dy = e.rawY; drag = false; scaling = false; downAt = System.currentTimeMillis(); animate().cancel(); return true }
+            MotionEvent.ACTION_POINTER_DOWN -> { scaling = true; drag = false }
             MotionEvent.ACTION_MOVE -> {
+                if (scaling) return true
                 val mx = e.rawX - dx; val my = e.rawY - dy
                 if (!drag && Math.hypot(mx.toDouble(), my.toDouble()) > slop) drag = true
                 if (drag) { translationX += mx; translationY += my; dx = e.rawX; dy = e.rawY }
             }
             MotionEvent.ACTION_UP -> {
-                if (!drag) a.unfloat() else snapNearest()
+                if (scaling) keepIn(true) else if (!drag) a.unfloat() else keepIn(true)
             }
-            MotionEvent.ACTION_CANCEL -> if (drag) snapNearest()
+            MotionEvent.ACTION_CANCEL -> if (drag || scaling) keepIn(true)
         }
         return true
     }
 
-    /** Translation that puts the card in a corner: [right] / [bottom] 1 = where it was laid out (bottom right). */
-    private fun snap(right: Int, bottom: Int, animate: Boolean) {
+    /** Back inside the screen if a drag or a pinch left part of it outside (translation 0 = its laid-out place, bottom right). */
+    private fun keepIn(animate: Boolean) {
         val p = parent as? View ?: return
-        val tx = if (right == 1) 0f else -(p.width - width - 2 * m).toFloat()
-        val ty = if (bottom == 1) 0f else -(p.height - height - 2 * m).toFloat()
-        if (animate) animate().translationX(tx).translationY(ty).setDuration(180).start() else { translationX = tx; translationY = ty }
-    }
-
-    private fun snapNearest() {
-        val p = parent as? View ?: return
-        val cx = left + translationX + width / 2f; val cy = top + translationY + height / 2f
-        snap(if (cx > p.width / 2f) 1 else 0, if (cy > p.height / 2f) 1 else 0, true)
+        val tx = translationX.coerceIn(-(p.width - width - 2 * m).toFloat().coerceAtLeast(0f), 0f)
+        val ty = translationY.coerceIn(-(p.height - height - 2 * m).toFloat().coerceAtLeast(0f), 0f)
+        if (animate) animate().translationX(tx).translationY(ty).setDuration(160).start() else { translationX = tx; translationY = ty }
     }
 
     init { closeBtn.setOnClickListener { a.closeMini() } }
+
+    private companion object { const val MIN = 0.35f }
 }
