@@ -41,9 +41,9 @@ class OwnApp(val pkg: String, val apk: String, private val versionKey: String, p
 
     fun latest(version: String): Release? = look(version).release
 
-    /** Installs it, or puts the newer one over it (its own data stays). */
+    /** Installs it, or puts the newer one over it (its own data stays). [go] false once downloaded: not now (it was opened meanwhile). */
     @Throws(IOException::class)
-    fun install(adb: Adb, dir: File?, lang: String): JSONObject {
+    fun install(adb: Adb, dir: File?, lang: String, go: () -> Boolean = { true }): JSONObject {
         val sh: (String) -> String = { adb.shell(it) }
         seen = null
         val now = state(sh)
@@ -51,6 +51,7 @@ class OwnApp(val pkg: String, val apk: String, private val versionKey: String, p
         val file = File(dir ?: File(System.getProperty("java.io.tmpdir")), apk.removeSuffix(".apk") + "-${r.version}.apk")
         try {
             r.download(file, null)
+            if (!go()) return now
             val out = Setup(adb, dir, lang) { }.install(file)
             if (!out.contains("Success")) throw IOException("launcher:install:" + out.trim().lines().lastOrNull().orEmpty().take(200))
             if (afterInstall.isNotEmpty()) sh(afterInstall)

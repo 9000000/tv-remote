@@ -21,7 +21,7 @@ object Games {
     fun state(sh: (String) -> String): JSONObject = app.state(sh)
 
     @Throws(IOException::class)
-    fun install(adb: Adb, dir: File?, lang: String): JSONObject = app.install(adb, dir, lang)
+    fun install(adb: Adb, dir: File?, lang: String, go: () -> Boolean = { true }): JSONObject = app.install(adb, dir, lang, go)
 
     /** Opens its library on the TV; false when TV Games is not there. */
     @Throws(IOException::class)

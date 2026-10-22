@@ -3,8 +3,13 @@ package dev.tvremote.setup
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import dev.tvremote.core.Words
 import dev.tvremote.core.adb.Adb
+import dev.tvremote.core.ontv.Channels
+import dev.tvremote.core.ontv.Games
+import dev.tvremote.core.ontv.Home
 import dev.tvremote.core.ontv.SetupUpdate
+import dev.tvremote.home.HomeConfig
 import dev.tvremote.update.Release
 import java.io.File
 
@@ -15,6 +20,8 @@ import java.io.File
  * The install is [SetupUpdate]'s: a new version that does not start well is replaced by the old one, data and all, and never
  * tried again. Android 9 and older cannot put the old one back: there a version that fails is only noted, and the phone or
  * computer app, which sees TV Setup missing or broken, offers to install the next one (SetupBanner).
+ * It also updates TV Home, TV Channels and TV Games when they are on the TV ([ownApps]): those ask for themselves only since
+ * they carry SelfUpdate, and a copy from before that never would.
  */
 internal class AutoUpdate(private val c: Context, private val version: String, private val adb: () -> Adb?, private val busy: () -> String?) {
     companion object {
@@ -28,6 +35,7 @@ internal class AutoUpdate(private val c: Context, private val version: String, p
     @Volatile private var stopped = false
     private var found: Release? = null
     private var checkedAt = 0L
+    private var appsAt = 0L
     private var apk: File? = null
     private val dir by lazy { c.getExternalFilesDir("update") }       // shared storage: the shell, which installs it, can read it
 
@@ -53,6 +61,7 @@ internal class AutoUpdate(private val c: Context, private val version: String, p
     private fun step(): Long {
         if (!on(c)) return 60 * MIN
         val now = System.currentTimeMillis()
+        if (now - appsAt >= 6 * 60 * MIN) adb()?.let { a -> appsAt = if (ownApps(a)) now else now - 5 * 60 * MIN }   // one had to wait: again in an hour
         if (found == null && now - checkedAt < 6 * 60 * MIN) return 60 * MIN
         if (now - checkedAt >= 6 * 60 * MIN) {
             checkedAt = now
@@ -79,5 +88,28 @@ internal class AutoUpdate(private val c: Context, private val version: String, p
         if (a.shell("ps -A -o ARGS 2>/dev/null | grep -c '[c]om.genymobile.scrcpy.Server'").trim().let { it != "" && it != "0" }) return 10 * MIN
         SetupUpdate.start(a, file.absolutePath, r.version)
         return 30 * MIN                                               // the install closes this app; this is for a failed one
+    }
+
+    /**
+     * TV Home, TV Channels and TV Games put up to date when installed and a newer one is out (each checked against the signed
+     * SHA256SUMS, their data kept). An install closes the app, so only one that is not on the screen, or with the TV in standby,
+     * asked again once downloaded (opened meanwhile: the file is dropped, next time). TV Home on the home screen waits for an app
+     * to be opened or the TV to sleep. False when one had to wait.
+     */
+    private fun ownApps(a: Adb): Boolean {
+        val sh: (String) -> String = { a.shell(it) }
+        var waited = false
+        fun free(pkg: String): Boolean {
+            if (!sh("dumpsys power | grep -m1 mWakefulness=").contains("Awake")) return true
+            val top = sh("dumpsys activity activities | grep -m1 -E 'topResumedActivity|mResumedActivity'")
+            return (!top.contains("$pkg/")).also { if (!it) waited = true }
+        }
+        for ((pkg, state, install) in listOf(
+            Triple(Channels.PKG, { Channels.state(sh) }, { Channels.install(a, dir, Words.lang) { free(Channels.PKG) } }),
+            Triple(Games.PKG, { Games.state(sh) }, { Games.install(a, dir, Words.lang) { free(Games.PKG) } }))) {
+            try { val s = state(); if (s.optBoolean("installed") && s.has("latest") && free(pkg)) install() } catch (e: Exception) { }   // next time
+        }
+        try { if (free(HomeConfig.PKG)) Home.update(a, dir, Words.lang) { free(HomeConfig.PKG) } } catch (e: Exception) { }   // not on this TV ("home:missing"), offline: next time
+        return !waited
     }
 }

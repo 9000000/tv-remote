@@ -43,7 +43,7 @@ object Home {
 
     /** The newer TV Home put over the one on the TV (its settings stay): checked against the release's signed SHA256SUMS first. */
     @Throws(IOException::class)
-    fun update(adb: Adb, dir: File?, lang: String): JSONObject {
+    fun update(adb: Adb, dir: File?, lang: String, go: () -> Boolean = { true }): JSONObject {     // go: as OwnApp.install
         val sh: (String) -> String = { adb.shell(it) }
         val now = call(sh, null)
         if (!now.optBoolean("installed")) throw IOException("home:missing")
@@ -52,6 +52,7 @@ object Home {
         val file = File(dir ?: File(System.getProperty("java.io.tmpdir")), "tv-home-${r.version}.apk")
         try {
             r.download(file, null)
+            if (!go()) return now
             val out = Setup(adb, dir, lang) { }.install(file)
             if (!out.contains("Success")) throw IOException("launcher:install:" + out.trim().lines().lastOrNull().orEmpty().take(200))
         } finally { file.delete() }

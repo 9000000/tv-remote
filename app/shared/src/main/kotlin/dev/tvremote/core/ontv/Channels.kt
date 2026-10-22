@@ -25,7 +25,7 @@ object Channels {
 
     /** Installs it, or puts the newer one over it (favourites and groups stay): checked against the release's signed SHA256SUMS. */
     @Throws(IOException::class)
-    fun install(adb: Adb, dir: File?, lang: String): JSONObject = app.install(adb, dir, lang)
+    fun install(adb: Adb, dir: File?, lang: String, go: () -> Boolean = { true }): JSONObject = app.install(adb, dir, lang, go)
 
     /**
      * Favourites and groups, through a broadcast only the shell can send (ChannelsReceiver in app/channels), like [Home.call].
