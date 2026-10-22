@@ -80,6 +80,9 @@
     <string name="web_fail_title">Không mở được game</string>
     <string name="web_fail_net">Cần mạng: kiểm tra mạng của TV rồi thử lại.</string>
     <string name="web_fail_404">Game này chưa có trên trang.</string>
+    <string name="web_fail_gone">TV thiếu bộ nhớ nên game bị đóng. Thử lại, hoặc tắt bớt app khác.</string>
+    <string name="loading_game">Đang tải game… %1$d%%</string>
+    <string name="loading_slow">Vẫn đang tải (mạng chậm)… %1$d%%</string>
     <string name="search_hint">Tìm game</string>
     <string name="f_players_1">1 người</string>
     <string name="f_players_2">2 người</string>

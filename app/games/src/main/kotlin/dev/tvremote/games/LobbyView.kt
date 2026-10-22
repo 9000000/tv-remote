@@ -35,6 +35,12 @@ class LobbyView(
     private val held = Array(4) { LinkedHashSet<String>() }
     private val watchTv = act.label("", 20f, 0xFF9AA3B8.toInt())
     private val warnTv = act.label("", 20f, 0xFFFBBF24.toInt())
+    private val loadTv = act.label("", 20f).apply { setTextColor(watchTv.currentTextColor) }
+    private val loadRow = LinearLayout(act).apply {                  // a spinner and the page's progress while it loads behind the lobby
+        gravity = Gravity.CENTER_VERTICAL; visibility = View.GONE
+        addView(android.widget.ProgressBar(act).apply { isIndeterminate = true }, LinearLayout.LayoutParams(act.dp(24), act.dp(24)).apply { marginEnd = act.dp(10) })
+        addView(loadTv)
+    }
     private val countBox = FrameLayout(act)
     private val countN = act.label("", 150f).apply { setTypeface(null, Typeface.BOLD) }
     private val countRing = FrameLayout(act)
@@ -86,6 +92,7 @@ class LobbyView(
                 (layoutParams as LinearLayout.LayoutParams).apply { topMargin = act.dp(16) }
             })
             addView(act.label(metaLine, 22f, 0xFFD5DAE6.toInt()).apply { gravity = Gravity.START; (layoutParams as LinearLayout.LayoutParams).topMargin = act.dp(4) })
+            addView(loadRow, LinearLayout.LayoutParams(-2, -2).apply { topMargin = act.dp(10) })
         }
 
         // ---- right: QR card, the seats
@@ -257,6 +264,8 @@ class LobbyView(
 
     /** The one-line warning ("1 of 2 players") or "" to clear it. */
     fun warn(text: String) { warnTv.text = text }
+    /** How the game's page is coming ("" once it is in): the lobby is up while it loads behind. */
+    fun loading(text: String) { loadTv.text = text; loadRow.visibility = if (text.isEmpty()) View.GONE else View.VISIBLE }
 
     companion object { const val DW = 900; const val DH = 520; const val FOOT = 84; const val HERO_W = 394; const val HERO_H = 222; private const val EMPTY = "empty" }
 }

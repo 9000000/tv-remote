@@ -42,7 +42,15 @@ class WebGameActivity : ComponentActivity() {
     @Volatile private var pageOrigin = ""
     private var errorRetry: View? = null
     private var errorCard: View? = null                         // our own card for a page that cannot load (offline, 404, too slow), over the lobby and the WebView
-    private val timeout = Runnable { if (!pageDone) failCard(R.string.web_fail_net) }
+    private val timeout = Runnable { if (!pageDone) { Log.w(TAG, "no page in ${LOAD_MS / 1000} s"); failCard(R.string.web_fail_net) } }
+    private lateinit var loader: LinearLayout                      // a spinner and "Loading the game… n %" over the page until it is in
+    private lateinit var loadTv: TextView
+    private var loadPct = 0
+    private var loadAt = 0L
+    private var gone = false                                       // the WebView's renderer was killed (low memory): Retry starts over
+    private val LOADER_BG = 0xFF0B0D12.toInt()
+    private val loadTick = object : Runnable { override fun run() { if (!pageDone && errorCard == null) { showLoading(); web.postDelayed(this, 1000) } } }
+    private val pageIn = Runnable { if (!pageDone) loaded() }      // shown but a picture or script still coming: let it be played
     private var pageDone = false                                   // the lobby freezes the page only once it has loaded, or it would never get to draw
     private var players = listOf<Int>()
     private var names = mapOf<Int, String>()
@@ -76,12 +84,21 @@ class WebGameActivity : ComponentActivity() {
             }
             addJavascriptInterface(Bridge(), "TVPadNative")
             webChromeClient = object : WebChromeClient() {
+                override fun onProgressChanged(v: WebView, p: Int) { if (!pageDone && errorCard == null) { loadPct = p; showLoading() } }
                 override fun onConsoleMessage(m: ConsoleMessage): Boolean { Log.d(TAG, "console ${m.messageLevel()}: ${m.message()} (${m.sourceId().substringAfterLast('/')}:${m.lineNumber()})"); return true }
             }
             webViewClient = object : WebViewClient() {
-                override fun onPageFinished(v: WebView, u: String) { if (errorCard != null) return; pageDone = true; web.removeCallbacks(timeout); if (::cards.isInitialized && cards.lobby) { v.onPause(); v.pauseTimers() } }
-                override fun onReceivedError(v: WebView, r: WebResourceRequest, e: WebResourceError) { if (r.isForMainFrame) failCard(R.string.web_fail_net) }
+                override fun onPageFinished(v: WebView, u: String) { if (errorCard != null) return; loaded(); web.removeCallbacks(timeout) }
+                override fun onPageCommitVisible(v: WebView, u: String) { web.removeCallbacks(timeout); web.postDelayed(pageIn, 5000) }   // the page answered: a slow picture or script is no network failure
+                override fun onRenderProcessGone(v: WebView, d: android.webkit.RenderProcessGoneDetail): Boolean {   // low memory killed it: a card, not the app closing
+                    Log.w(TAG, "renderer gone, crash=${d.didCrash()}")
+                    failCard(R.string.web_fail_gone); gone = true
+                    root.removeView(web); web.destroy()
+                    return true
+                }
+                override fun onReceivedError(v: WebView, r: WebResourceRequest, e: WebResourceError) { if (r.isForMainFrame) { Log.w(TAG, "page error ${e.errorCode} ${e.description} ${r.url}"); failCard(R.string.web_fail_net) } }
                 override fun onReceivedHttpError(v: WebView, r: WebResourceRequest, e: WebResourceResponse) {
+                    if (r.isForMainFrame) Log.w(TAG, "page http ${e.statusCode} ${r.url}")
                     if (r.isForMainFrame) failCard(if (e.statusCode == 404 || e.statusCode == 410) R.string.web_fail_404 else R.string.web_fail_net)
                 }
                 override fun onPageStarted(v: WebView, u: String, f: Bitmap?) {
@@ -94,15 +111,22 @@ class WebGameActivity : ComponentActivity() {
             if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) WebViewCompat.addDocumentStartJavaScript(this, shim, setOf(origin))
             isFocusable = true; isFocusableInTouchMode = true
         }
-        val root = FrameLayout(this).apply { setBackgroundColor(0xFF000000.toInt()); addView(web, FrameLayout.LayoutParams(-1, -1)) }
+        loadTv = label("", 26f)
+        loader = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; gravity = android.view.Gravity.CENTER; setBackgroundColor(LOADER_BG); isClickable = true
+            addView(android.widget.ProgressBar(this@WebGameActivity, null, android.R.attr.progressBarStyleLarge), LinearLayout.LayoutParams(dp(64), dp(64)).apply { bottomMargin = dp(20) })
+            addView(label(name, 34f))
+            addView(loadTv)
+        }
+        val root = FrameLayout(this).apply { setBackgroundColor(0xFF000000.toInt()); addView(web, FrameLayout.LayoutParams(-1, -1)); addView(loader, FrameLayout.LayoutParams(-1, -1)) }
         setContentView(root)
         cards = GameCards(this, root, server, name, if (builtin) null else url,
             onPause = { p -> if (p) { if (pageDone) { web.onPause(); web.pauseTimers() } } else { web.onResume(); web.resumeTimers(); web.requestFocus() } },
             onSave = null, onLoad = null, onQuit = { finish() }, alone = false, quiet = link == "builtin:padtest",
             withLobby = Catalog.lobbyOn(this, link), kind = "Web", art = lobbyArt(link, url), maxPlayers = counts.first, minPlayers = counts.second)
         this.url = url; this.root = root
-        web.loadUrl(url)
-        web.postDelayed(timeout, 10_000)                          // no page in ~10 s: the same card as offline
+        web.loadUrl(url); loading()
+        web.postDelayed(timeout, LOAD_MS)                         // no page at all in time: the same card as offline
     }
 
     private var url = ""
@@ -111,7 +135,8 @@ class WebGameActivity : ComponentActivity() {
     /** The page cannot be had: a card with the reason, Retry and Back (D-pad focus), instead of the WebView's own error page. */
     private fun failCard(msg: Int) {
         if (errorCard != null || isFinishing) return
-        web.removeCallbacks(timeout)
+        web.removeCallbacks(timeout); web.removeCallbacks(loadTick); web.removeCallbacks(pageIn)
+        loader.visibility = View.GONE; if (::cards.isInitialized) cards.loading("")
         if (::cards.isInitialized) cards.close()                    // a lobby under the card must not start anything
         web.stopLoading(); web.visibility = View.INVISIBLE
         val retry = menuButton(getString(R.string.retry), 300, 58, 24f) { retryLoad() }
@@ -125,9 +150,23 @@ class WebGameActivity : ComponentActivity() {
     }
 
     private fun retryLoad() {
+        if (gone) { recreate(); return }                              // a new WebView: the old one is dead
         errorCard?.let { root.removeView(it) }; errorCard = null
-        pageDone = false; web.visibility = View.VISIBLE; web.loadUrl(url)
-        web.removeCallbacks(timeout); web.postDelayed(timeout, 10_000)
+        pageDone = false; web.visibility = View.VISIBLE; web.loadUrl(url); loading()
+        web.removeCallbacks(timeout); web.postDelayed(timeout, LOAD_MS)
+        if (::cards.isInitialized) cards.reopen()                       // the failure closed the lobby: OK there must start the game again
+    }
+
+    private fun loading() { loadPct = 0; loadAt = System.currentTimeMillis(); loader.visibility = View.VISIBLE; web.removeCallbacks(loadTick); web.post(loadTick) }
+    private fun showLoading() {
+        val slow = System.currentTimeMillis() - loadAt > 8000            // past 8 s say why it takes long, so it does not look stuck
+        val t = getString(if (slow) R.string.loading_slow else R.string.loading_game, loadPct)
+        loadTv.text = t; if (::cards.isInitialized) cards.loading(t)
+    }
+    private fun loaded() {
+        pageDone = true; web.removeCallbacks(loadTick); web.removeCallbacks(pageIn)
+        loader.visibility = View.GONE; if (::cards.isInitialized) cards.loading("")
+        if (::cards.isInitialized && cards.lobby) { web.onPause(); web.pauseTimers() }   // the lobby keeps it frozen until the game starts
     }
 
     private val counts by lazy { Catalog.players(this, null, intent.getStringExtra("url"), 4) }
@@ -160,7 +199,7 @@ class WebGameActivity : ComponentActivity() {
 
     override fun onDestroy() {
         if (::cards.isInitialized) cards.close()
-        if (::web.isInitialized) { web.removeJavascriptInterface("TVPadNative"); web.destroy() }
+        if (::web.isInitialized && !gone) { web.removeJavascriptInterface("TVPadNative"); web.destroy() }
         if (::server.isInitialized) { server.webMode = false; server.clearLayouts(); GameServer.release() }
         super.onDestroy()
     }
@@ -229,5 +268,8 @@ class WebGameActivity : ComponentActivity() {
         return super.dispatchKeyEvent(ev)                                    // the TV remote goes to the page as it is
     }
 
-    companion object { private const val TAG = "WebGame" }
+    companion object {
+        private const val TAG = "WebGame"
+        private const val LOAD_MS = 20_000L                        // a weak box (FPT Play, 2 GB) took over 10 s to start the WebView and answer
+    }
 }

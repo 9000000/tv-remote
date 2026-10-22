@@ -32,6 +32,7 @@ class GameCards(
     private var counting = false
     private var warned = false
     private val tick = android.os.Handler(android.os.Looper.getMainLooper())
+    private var loadText = ""                                     // before init: the lobby opens there and reads it
     private var players: List<Int> = emptyList()
     private var startShown = true
     private val startPlayers = LinearLayout(act).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; minimumHeight = act.dp(26) }
@@ -93,7 +94,7 @@ class GameCards(
     // ---- the lobby: Ready on the pads or OK on the remote starts the game, a 3-2-1 first when everyone is ready
     private fun openLobby() {
         lobby = true; startShown = false; warned = false
-        lobbyView = LobbyView(act, server, title, art, maxPlayers, minPlayers, kind).also { root.addView(it, FrameLayout.LayoutParams(-1, -1)) }
+        lobbyView = LobbyView(act, server, title, art, maxPlayers, minPlayers, kind).also { root.addView(it, FrameLayout.LayoutParams(-1, -1)); it.loading(loadText) }
         server.onReady = { act.runOnUiThread { evaluate() } }
         server.onLobbyBtn = { p, b, d -> act.runOnUiThread { lobbyView?.press(p, b, d) } }
         server.lobbyMax = maxPlayers.coerceIn(1, 4); server.setLobby(true)
@@ -134,7 +135,17 @@ class GameCards(
     }
 
     /** The activity is going: leave the lobby state on the server, so the pads do not show it in the library. */
-    fun close() { tick.removeCallbacksAndMessages(null); if (lobby) { lobby = false; server.countdown(0); server.setLobby(false); server.lobbyMax = 4 } }
+    fun close() {
+        tick.removeCallbacksAndMessages(null); counting = false
+        if (lobby) { lobby = false; server.countdown(0); server.setLobby(false); server.lobbyMax = 4 }
+        lobbyView?.let { root.removeView(it) }; lobbyView = null           // a closed lobby left on screen took every key and did nothing
+    }
+
+    /** The game's page loading, shown in the lobby ("" when loaded). */
+    fun loading(text: String) { loadText = text; lobbyView?.loading(text) }
+
+    /** The page is back after its failure card: the lobby again, as at the start. */
+    fun reopen() { if (withLobby && !quiet && !lobby) openLobby() }
 
     // each player's ping (the phone measures it, GameServer hears it) next to the slot dot: green under 30 ms, amber under 80, red above
     private fun paint(v: TextView, ms: Int) {

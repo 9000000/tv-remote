@@ -192,7 +192,24 @@ class LibraryActivity : ComponentActivity() {
             if (ev.action == android.view.KeyEvent.ACTION_UP) currentFocus?.takeIf { it.isLongClickable }?.performLongClick()
             return true
         }
+        if (overlay == null && ev.action == android.view.KeyEvent.ACTION_DOWN && wrap(ev.keyCode)) return true
         return super.dispatchKeyEvent(ev)
+    }
+
+    /** Left on a row's first tile goes to the last of the row above, Right on a row's last to the first of the next, as on TV Home. */
+    private fun wrap(code: Int): Boolean {
+        val left = code == android.view.KeyEvent.KEYCODE_DPAD_LEFT
+        if (!left && code != android.view.KeyEvent.KEYCODE_DPAD_RIGHT) return false
+        var tile: View = currentFocus ?: return false
+        while (tile.parent !is GridLayout) tile = tile.parent as? View ?: return false
+        val grid = tile.parent as GridLayout
+        val i = grid.indexOfChild(tile); val col = i % grid.columnCount
+        if (left && col != 0 || !left && col != grid.columnCount - 1 && i != grid.childCount - 1) return false
+        val tiles = ArrayList<View>()                                // every tile of every row, in the page's order
+        fun walk(v: View) { if (v is GridLayout) (0 until v.childCount).mapTo(tiles) { v.getChildAt(it) } else if (v is android.view.ViewGroup) for (k in 0 until v.childCount) walk(v.getChildAt(k)) }
+        walk(window.decorView)
+        val to = tiles.getOrNull(tiles.indexOf(tile) + if (left) -1 else 1)?.takeIf { it.isShown && it.isFocusable } ?: return false
+        return to.requestFocus()
     }
 
     private var onOverlayClose: (() -> Unit)? = null                  // the download card: closing it cancels the download

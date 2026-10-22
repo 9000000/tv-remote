@@ -80,6 +80,9 @@
     <string name="web_fail_title">Could not open the game</string>
     <string name="web_fail_net">This needs the internet: check the TV\'s network and try again.</string>
     <string name="web_fail_404">This game is not on the site yet.</string>
+    <string name="web_fail_gone">The TV ran short of memory and closed the game. Retry, or close other apps first.</string>
+    <string name="loading_game">Loading the game… %1$d%%</string>
+    <string name="loading_slow">Still loading (slow network)… %1$d%%</string>
     <string name="search_hint">Search games</string>
     <string name="f_players_1">1 player</string>
     <string name="f_players_2">2 players</string>

@@ -14,6 +14,13 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
   - TV Games: phím Menu trên game mở menu; ROM hỏng báo lỗi thay vì màn đen; tải core có nút Hủy.
   - Game web: thắng rồi OK không bỏ qua màn kết thúc, OK chơi lại; caro chơi được bằng remote; tên dài không tràn.
 - Đố vui **chơi một mình bằng remote**: không có điện thoại thì nhấn OK, mũi tên chọn đáp án, OK trả lời (OK lúc xem đáp án là qua câu luôn). **Bảng điểm cao** (10 lượt cao nhất, lưu trên TV) hiện ở màn đầu và màn kết thúc, ghi cả điểm người chơi điện thoại; phá kỷ lục thì báo "Kỷ lục mới!".
+- TV Games, game web:
+  - Có màn chờ tải (vòng xoay + phần trăm); mạng chậm thì báo đang chậm. Chờ tới 20 giây mới báo lỗi (box yếu như FPT cần hơn 10 giây).
+  - Bấm Thử lại sau khi lỗi mạng không còn kẹt ở phòng chờ: OK bắt đầu lại được, Back thoát được.
+  - TV thiếu bộ nhớ làm game bị đóng thì hiện thẻ báo và Thử lại, không văng app.
+  - Thư viện: phải ở cuối hàng thì xuống đầu hàng sau, trái ở đầu hàng thì lên cuối hàng trước (như TV Home).
+  - Đập chuột chơi được bằng remote (mũi tên + OK). Hết game Kit có 2 nút Chơi lại / Về menu chọn bằng remote, không còn bảo bấm Start.
+  - Bài màu, Tiến lên, Mèo nổ…: lá không đánh được tối đi chứ không trong suốt.
 
 **English**
 - UI fixes from an audit:
@@ -23,6 +30,13 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
   - TV Games: Menu on a game opens its menu; a bad ROM shows an error, not black; the core download can be cancelled.
   - Web games: OK on a win no longer skips the end screen, OK plays again; caro plays with the remote; long names fit.
 - Quiz **plays alone with the remote**: with no phone press OK, the arrows pick an answer, OK answers (OK on the reveal goes straight on). **High scores** (the best 10, kept on the TV) on the start and end screens, phone players' too; a record says "New record!".
+- TV Games, web games:
+  - A loading screen (spinner + percent), saying when the network is slow; the error waits 20 s (weak boxes like FPT need over 10 s).
+  - Retry after a network error no longer leaves the lobby stuck: OK starts again, Back leaves.
+  - The TV running out of memory shows a card with Retry instead of closing the app.
+  - Library: Right on a row's last game goes to the next row's first, Left on the first to the row above's last (as TV Home).
+  - Whack-a-Mole plays with the remote (arrows + OK). Kit games' end screen has Play again / Menu buttons for the remote, no more "press Start".
+  - Color cards, Tiến lên, Exploding cats…: cards you cannot play are darker, not see-through.
 
 ## 0.18.0 - 2026-10-22
 
