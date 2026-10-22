@@ -61,7 +61,11 @@ object Catalog {
     }
 
     /** Asks the site when the kept copy is over a day old (or [force]); true when the list changed. Off the main thread. */
+    /** True when the last [refresh] heard from a site (the list may still be the same), false when none answered. */
+    @Volatile var reached = false
+
     fun refresh(c: Context, force: Boolean = false): Boolean {
+        reached = false
         val f = File(c.filesDir, "games.json")
         if (!force && f.exists() && System.currentTimeMillis() - f.lastModified() < DAY && dbg(c) == null) return false
         val bases = dbg(c)?.let { listOf(it.first) } ?: BASES
@@ -73,7 +77,7 @@ object Catalog {
             val o = parse(list) ?: continue
             val changed = mem?.toString() != o.toString()
             File(c.filesDir, "games.json.sig").writeText(sig); File(c.filesDir, "games.json.tmp").apply { writeText(list); renameTo(f) }
-            mem = o
+            mem = o; reached = true
             return changed
         } catch (e: Exception) { }
         return false

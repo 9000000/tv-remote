@@ -100,9 +100,27 @@ class LibraryActivity : ComponentActivity() {
         Pins.folderId(u)?.let { id -> wantFolder = id; clearFilters(false); renderSections() }
     }
 
-    /** The site's list (a day old at most) in the background; the library is drawn again when it changed. */
+    /** The site's list in the background every time the library opens (11 KB; a changed one is kept and drawn, an unchanged one costs nothing); the library is drawn again when it changed. */
+    /** The "Refresh" pill: ask the site now (the day-old rule ignored), say what came of it. */
+    private fun refreshNow(b: TextView) {
+        if (refreshing) return
+        refreshing = true; val was = b.text; b.text = getString(R.string.refreshing)
+        Thread {
+            val app = applicationContext
+            val changed = Catalog.refresh(app, true); val ok = Catalog.reached
+            runOnUiThread {
+                refreshing = false; b.text = was
+                if (isDestroyed) return@runOnUiThread
+                val cat = Catalog.peek(app); val n = (cat.optJSONArray("web")?.length() ?: 0) + (cat.optJSONArray("homebrew")?.length() ?: 0)
+                android.widget.Toast.makeText(this, getString(if (ok) R.string.refresh_ok else R.string.refresh_fail, n), android.widget.Toast.LENGTH_SHORT).show()
+                if (changed && overlay == null && dl == null) reload()
+            }
+        }.start()
+    }
+    @Volatile private var refreshing = false
+
     private fun refreshCatalog() {
-        Thread { if (Catalog.refresh(applicationContext, intent.hasExtra("cat_base"))) runOnUiThread { if (!isDestroyed && overlay == null && dl == null && searchBox?.hasFocus() != true) reload() } }.start()
+        Thread { if (Catalog.refresh(applicationContext, true)) runOnUiThread { if (!isDestroyed && overlay == null && dl == null && searchBox?.hasFocus() != true) reload() } }.start()
     }
 
     @Deprecated("Deprecated in Java")
@@ -277,6 +295,9 @@ class LibraryActivity : ComponentActivity() {
             }
         }
         searchBox = f
+        var rb: TextView? = null
+        rb = pill(getString(R.string.refresh_pill), 16f) { rb?.let { refreshNow(it) } }.apply { setPadding(dp(18), dp(10), dp(18), dp(10)) }
+        addView(rb, LinearLayout.LayoutParams(-2, dp(46)).apply { marginEnd = dp(12) })
         addView(f, LinearLayout.LayoutParams(dp(300), dp(46)))
     }
 
@@ -307,27 +328,43 @@ class LibraryActivity : ComponentActivity() {
 
     /** Players, system, genre: one row of pills, each group single-choice (the same pill again clears it); a folder button at the end. */
     private fun filterRow(): View {
-        val row = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(8), dp(6), dp(40), dp(6)) }
-        fun gap() = row.addView(View(this), LinearLayout.LayoutParams(dp(12), 1))
+        val row = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(8), dp(6), dp(48), dp(6)) }
+        fun bar() = row.addView(View(this).apply { setBackgroundColor(0x33FFFFFF) }, LinearLayout.LayoutParams(dp(2), dp(22)).apply { marginStart = dp(6); marginEnd = dp(14) })
         fun refresh() { pills.forEach { it.second.isSelected = it.first() }; renderSections() }
         val all = lib + sugs
-        listOf(1 to R.string.f_players_1, 2 to R.string.f_players_2, 3 to R.string.f_players_34).forEach { (code, id) ->
-            if (all.any { Browse.playersOk(code, it.max, it.min) }) row.addView(pill(getString(id), selected = { fPlayers == code }) { fPlayers = if (fPlayers == code) null else code; refresh() })
-        }
-        gap()
-        all.map { it.sysKey to it.sysLabel }.distinct().sortedBy { it.second }.forEach { (k, l) ->
-            row.addView(pill(l, selected = { fSystem == k }) { fSystem = if (fSystem == k) null else k; refresh() })
-        }
-        gap()
+        var first = true
+        fun seg() { if (!first) bar(); first = false }
+        val ps = listOf(1 to R.string.f_players_1, 2 to R.string.f_players_2, 3 to R.string.f_players_34).filter { (code, _) -> all.any { Browse.playersOk(code, it.max, it.min) } }
+        if (ps.isNotEmpty()) seg()
+        ps.forEach { (code, id) -> row.addView(pill(getString(id), selected = { fPlayers == code }) { fPlayers = if (fPlayers == code) null else code; refresh() }) }
+        val sys = all.map { it.sysKey to it.sysLabel }.distinct().sortedBy { it.second }
+        if (sys.isNotEmpty()) seg()
+        sys.forEach { (k, l) -> row.addView(pill(l, selected = { fSystem == k }) { fSystem = if (fSystem == k) null else k; refresh() }) }
         val other = getString(R.string.genre_other)
         val genres = all.groupingBy { it.genre }.eachCount().entries.filter { it.key != other || all.any { a -> a.genre != other } }     // only "Other" = no genre known yet: no chip
+        if (genres.isNotEmpty()) seg()
         genres.sortedWith(compareBy({ it.key == other }, { -it.value }, { it.key })).forEach { (g, _) ->
             row.addView(pill(g, selected = { fGenre == g }) { fGenre = if (fGenre == g) null else g; refresh() })
         }
-        gap()
-        row.addView(pill(getString(R.string.grp_new_pill)) { askName(getString(R.string.grp_new), Shelf.get(this).freeName(getString(R.string.grp_default))) { n -> val g = Shelf.newGroup(this, n); wantFolder = g.id; renderSections() } })
-        return HorizontalScrollView(this).apply { addView(row); isHorizontalScrollBarEnabled = false; clipChildren = false; clipToPadding = false; overScrollMode = View.OVER_SCROLL_NEVER }
+        // one line that scrolls with the focus, however many there are; a fade at each edge where more is hidden
+        val hs = HorizontalScrollView(this).apply { addView(row); isHorizontalScrollBarEnabled = false; clipChildren = false; clipToPadding = false; overScrollMode = View.OVER_SCROLL_NEVER }
+        val bg = getColor(R.color.tv_bg)
+        fun fade(left: Boolean) = View(this).apply {
+            background = GradientDrawable(if (left) GradientDrawable.Orientation.LEFT_RIGHT else GradientDrawable.Orientation.RIGHT_LEFT, intArrayOf(bg, bg and 0xFFFFFF))
+            visibility = View.GONE; isFocusable = false
+        }
+        val fl = fade(true); val fr = fade(false)
+        fun edges() { val max = row.width - hs.width; fl.visibility = if (hs.scrollX > 4) View.VISIBLE else View.GONE; fr.visibility = if (max > 8 && hs.scrollX < max - 4) View.VISIBLE else View.GONE }
+        hs.setOnScrollChangeListener { _, _, _, _, _ -> edges() }
+        hs.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> edges() }
+        return FrameLayout(this).apply {
+            addView(hs, FrameLayout.LayoutParams(-1, -2))
+            addView(fl, FrameLayout.LayoutParams(dp(56), -1, Gravity.START))
+            addView(fr, FrameLayout.LayoutParams(dp(56), -1, Gravity.END))
+        }
     }
+
+    private fun newGroup() = askName(getString(R.string.grp_new), Shelf.get(this).freeName(getString(R.string.grp_default))) { n -> val g = Shelf.newGroup(this, n); wantFolder = g.id; renderSections() }
 
     private fun matches(i: Item) = Browse.nameMatches(i.name, query) && Browse.playersOk(fPlayers, i.max, i.min) && (fSystem == null || i.sysKey == fSystem) && (fGenre == null || i.genre == fGenre)
 
@@ -366,7 +403,11 @@ class LibraryActivity : ComponentActivity() {
         orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false
         addView(LinearLayout(context).apply {
             gravity = Gravity.CENTER_VERTICAL; setPadding(dp(8), dp(14), 0, dp(8)); clipChildren = false
-            addView(label(title, 22f, 0xFFAAB0C0.toInt()).apply { gravity = Gravity.START })
+            addView(label(title, 22f, 0xFFAAB0C0.toInt()).apply { gravity = Gravity.START; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; maxWidth = dp(560) })
+            if (add) {
+                addView(View(context), LinearLayout.LayoutParams(dp(16), 1))
+                addView(pill(getString(R.string.grp_new_pill), 14f) { newGroup() })
+            }
             if (group != null) {
                 val sp = { View(context).also { v -> v.layoutParams = LinearLayout.LayoutParams(dp(16), 1) } }
                 addView(sp())
