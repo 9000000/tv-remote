@@ -30,7 +30,7 @@ const gname = (gr) => (gr === 0 ? W.solids : W.stripes);
 
 // ---------------------------------------------------------------------------------------------- the table
 const table = Table({
-  seats: 2, turnSecs: TURN, botMs: [900, 1500],
+  seats: 2, turnSecs: TURN, botMs: [900, 1500], remote: true,   // no phone in seat 1: the TV remote (arrows + OK) plays it
   deal(t) {
     S.g = BD.create(); S.g.turn = t.lastWinner >= 0 ? t.lastWinner : 0; t.turn = S.g.turn;       // the last winner breaks
     S.level = [0, 1, 1, 2][Math.floor(Math.random() * 4)]; S.bot = null; S.charging = false; S.chg = 0; S.shotId++;

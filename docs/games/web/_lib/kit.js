@@ -34,6 +34,10 @@
   // ---------------- drawing helpers
   K.rr = (c, x, y, w, h, r) => { r = Math.min(r, w / 2, h / 2); c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); };
   K.text = (c, s, x, y, size, color, align, weight) => { c.font = (weight || 800) + ' ' + size + 'px ' + FONT; c.textAlign = align || 'center'; c.textBaseline = 'middle'; c.fillStyle = color || '#fff'; c.fillText(s, x, y); };
+  K.fit = (c, s, maxw, size, weight) => {                                     // s cut with … to fit maxw px at this font
+    c.font = (weight || 800) + ' ' + size + 'px ' + FONT; if (c.measureText(s).width <= maxw) return s;
+    let n = s.length; while (n > 1 && c.measureText(s.slice(0, n) + '…').width > maxw) n--; return s.slice(0, n) + '…';
+  };
   const glows = {};
   K.glow = (color, r) => {                                                    // a soft round light, drawn with 'lighter'
     const k = color + r; if (glows[k]) return glows[k];
@@ -187,7 +191,7 @@
       c.fillStyle = 'rgba(255,255,255,.07)'; K.rr(c, x, y, cw, 84, 18); c.fill();
       c.fillStyle = s.color; K.rr(c, x, y, 10, 84, 5); c.fill();
       c.beginPath(); c.arc(x + 48, y + 42, 20, 0, 6.283); c.fill();
-      K.text(c, s.name.length > 12 ? s.name.slice(0, 11) + '…' : s.name, x + 82, y + 30, 24, '#fff', 'left');
+      K.text(c, K.fit(c, s.name, cw - 94, 24), x + 82, y + 30, 24, '#fff', 'left');
       K.text(c, s.human ? 'P' + s.pad : 'CPU', x + 82, y + 59, 19, '#94a3b8', 'left', 600);
     });
     if (G.total[1] > sc.hs.length) K.text(c, '◀  ' + words.cpuSeats + ': ' + sc.nc + '  ▶', W / 2, 580, 24, '#9fb4d8', 'center', 600);
@@ -204,7 +208,7 @@
       const x = gx + i * (cw + 14), y = 14, dim = extra && extra(s) === 'out';
       c.globalAlpha = dim ? 0.45 : 1; c.fillStyle = 'rgba(8,12,28,.72)'; K.rr(c, x, y, cw, 54, 14); c.fill();
       c.fillStyle = s.color; K.rr(c, x, y, 8, 54, 4); c.fill();
-      K.text(c, s.name.length > 9 ? s.name.slice(0, 8) + '…' : s.name, x + 22, y + 27, 22, '#e8eefc', 'left');
+      K.text(c, K.fit(c, s.name, cw - 110, 22), x + 22, y + 27, 22, '#e8eefc', 'left');
       K.text(c, String(s.score), x + cw - 20, y + 28, 38, s.color, 'right', 900);
       c.globalAlpha = 1;
     });
@@ -217,11 +221,11 @@
     c.fillStyle = 'rgba(4,8,20,.74)'; c.fillRect(0, 0, W, H);
     frameBg(c, titleT);
     const w = overInfo.win >= 0 ? K.slots[overInfo.win] : null;
-    K.text(c, w ? w.name : words.draw, W / 2, 190, 100, w ? w.color : '#fff', 'center', 900);
+    K.text(c, w ? K.fit(c, w.name, W - 160, 100, 900) : words.draw, W / 2, 190, 100, w ? w.color : '#fff', 'center', 900);
     if (w) K.text(c, words.win, W / 2, 270, 50, '#fff');
     (overInfo.lines || []).forEach((l, i) => K.text(c, l, W / 2, 350 + i * 40, 28, '#cbd5e1', 'center', 600));
     const a = 0.6 + 0.4 * Math.sin(titleT * 4);
-    c.globalAlpha = a; K.text(c, '● ' + words.rematch + '     Start: ' + words.menu, W / 2, 600, 34, '#fff'); c.globalAlpha = 1;
+    c.globalAlpha = a; K.text(c, 'OK: ' + words.rematch + '     Start: ' + words.menu, W / 2, 600, 34, '#fff'); c.globalAlpha = 1;
   }
   K.over = (win, lines) => {
     if (K.mode !== 'play') return;
@@ -244,7 +248,7 @@
       if (go || +Q.get('auto')) { begin(); }
     } else if (K.mode === 'over') {
       overInfo.t += DT; G.update(DT);
-      if (overInfo.t > 1.2) K.humans().forEach((n) => { const s = st(n); if (s.start) { K.sfx.ui(); toTitle(); } else if (s.pulse) { K.sfx.ok(); begin(); } });
+      if (overInfo.t > 1.2) K.humans().forEach((n) => { const s = st(n); if (s.pulse) { K.sfx.ok(); begin(); } else if (s.start) { K.sfx.ui(); toTitle(); } });   // OK (A, and Enter) = rematch; a phone's Start = menu
     } else G.update(DT);
   }
   function render() {

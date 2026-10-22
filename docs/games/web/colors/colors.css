@@ -50,4 +50,4 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:600 1.
 #over .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #over .pt{color:var(--dim)}#over .tt{text-align:right}
 
-body.rmt-on #table{bottom:39vh}body.rmt-on .seat.s{display:none}   /* the TV remote's panel (_lib/table.js) takes the bottom */
+body.rmt-on #table{bottom:39vh}body.rmt-on .seat.s{display:none}body.rmt-on #mid{top:55%}body.rmt-on #what{bottom:2%}   /* the TV remote's panel (_lib/table.js) takes the bottom */

@@ -4,11 +4,11 @@
 // _lib/table.js; rules and bots: rules.js. 30 rounds, then the richest wins.
 const W = Object.assign({}, Table.W, Table.VI ? {
   title: 'CỜ TỶ PHÚ', round: (n, m) => `Vòng ${n}/${m}`, cash: 'Tiền', worth: 'Tài sản', tilesn: (n) => `${n} ô`, free: 'Chưa có chủ', owner: 'Chủ', rentw: 'Thuê',
-  roll: 'Gieo xúc xắc', buy: 'Mua', skip: 'Bỏ qua', build: 'Xây nhà', sell: 'Bán nhà', mort: 'Thế chấp / Chuộc', end: 'Kết thúc lượt',
+  roll: 'Gieo xúc xắc', buy: 'Mua', skip: 'Bỏ qua', build: 'Xây nhà', sell: 'Bán nhà', mort: 'Thế chấp', end: 'Xong lượt',
   sh: { roll: 'Gieo', buy: 'Mua', skip: 'Bỏ qua', build: 'Xây', sell: 'Bán', mort: 'Thế chấp', end: 'Hết lượt', jailpay: 'Nộp phạt', jailcard: 'Thẻ tù' },
-  jailpay: (n) => `Nộp ${n} ra tù`, jailcard: 'Dùng thẻ ra tù', hotel: 'Khách sạn', houses: (n) => `${n} nhà`, mortgaged: 'thế chấp', rentl: (n) => `thuê ${n}`,
+  jailpay: (n) => `Ra tù ${n}`, jailcard: 'Thẻ ra tù', hotel: 'Khách sạn', houses: (n) => `${n} nhà`, mortgaged: 'thế chấp', rentl: (n) => `thuê ${n}`,
   note_roll: 'Gieo xúc xắc đi!', note_jail: 'Đang ở tù: đổ đôi, nộp phạt hoặc dùng thẻ', note_buy: (nm, p) => `Mua ${nm} giá ${p}?`,
-  note_act: 'Xây nhà, thế chấp hoặc kết thúc lượt', note_pick: 'chọn ô của bạn rồi bấm nút', note_out: 'Bạn đã phá sản', note_wait: (n) => `Chờ ${n}…`,
+  note_act: 'Xây nhà, thế chấp hoặc kết thúc lượt', note_pick: 'chọn ô rồi bấm nút', note_out: 'Bạn đã phá sản', note_wait: (n) => `Chờ ${n}…`,
   err: { phase: 'Chưa làm được lúc này', notowner: 'Ô này không phải của bạn', set: 'Cần đủ bộ màu mới xây được', even: 'Phải xây / bán đều các ô', money: 'Không đủ tiền',
     max: 'Đã có khách sạn', mortgaged: 'Bộ này có ô đang thế chấp', houses: 'Bán hết nhà của bộ màu trước', nohouse: 'Ô này chưa có nhà', act: 'Không hiểu lệnh', over: 'Ván đã hết' },
   pickone: 'Chọn một ô trước', jailtxt: 'Tù', brk: 'Phá sản', rounds: (n) => `Hết ${n} vòng: ai giàu nhất thắng`, last: 'Mọi người khác đã phá sản',
@@ -24,11 +24,11 @@ const W = Object.assign({}, Table.W, Table.VI ? {
   },
 } : {
   title: 'TYCOON', round: (n, m) => `Round ${n}/${m}`, cash: 'Cash', worth: 'Worth', tilesn: (n) => `${n} tile${n === 1 ? '' : 's'}`, free: 'For sale', owner: 'Owner', rentw: 'Rent',
-  roll: 'Roll dice', buy: 'Buy', skip: 'Skip', build: 'Build house', sell: 'Sell house', mort: 'Mortgage / Redeem', end: 'End turn',
+  roll: 'Roll dice', buy: 'Buy', skip: 'Skip', build: 'Build house', sell: 'Sell house', mort: 'Mortgage', end: 'End turn',
   sh: { roll: 'Roll', buy: 'Buy', skip: 'Skip', build: 'Build', sell: 'Sell', mort: 'Mortgage', end: 'End turn', jailpay: 'Pay fine', jailcard: 'Jail card' },
-  jailpay: (n) => `Pay ${n} to leave`, jailcard: 'Use jail card', hotel: 'Hotel', houses: (n) => `${n} house${n > 1 ? 's' : ''}`, mortgaged: 'mortgaged', rentl: (n) => `rent ${n}`,
+  jailpay: (n) => `Pay ${n}`, jailcard: 'Jail card', hotel: 'Hotel', houses: (n) => `${n} house${n > 1 ? 's' : ''}`, mortgaged: 'mortgaged', rentl: (n) => `rent ${n}`,
   note_roll: 'Roll the dice!', note_jail: 'In jail: roll doubles, pay the fine or use a card', note_buy: (nm, p) => `Buy ${nm} for ${p}?`,
-  note_act: 'Build, mortgage or end your turn', note_pick: 'pick one of your tiles, then a button', note_out: 'You are bankrupt', note_wait: (n) => `Waiting for ${n}…`,
+  note_act: 'Build, mortgage or end your turn', note_pick: 'pick a tile, then a button', note_out: 'You are bankrupt', note_wait: (n) => `Waiting for ${n}…`,
   err: { phase: 'Not possible right now', notowner: 'That tile is not yours', set: 'You need the whole colour set to build', even: 'Build / sell evenly across the set', money: 'Not enough cash',
     max: 'Already a hotel', mortgaged: 'A tile in this set is mortgaged', houses: 'Sell the set\'s houses first', nohouse: 'No house on this tile', act: 'Unknown command', over: 'The game is over' },
   pickone: 'Pick a tile first', jailtxt: 'Jail', brk: 'Bankrupt', rounds: (n) => `${n} rounds are up: the richest wins`, last: 'Everyone else went bankrupt',
@@ -123,8 +123,9 @@ function view(t, s) {
       acts = [{ id: 'roll', t: W.roll, main: true }];
       if (jailed) { acts.push({ id: 'jailpay', t: W.jailpay(m(TY.FINE)), off: G.money[s] < TY.FINE }); if (G.card[s] > 0) acts.push({ id: 'jailcard', t: W.jailcard }); }
     } else { note = `${cash} · ${W.note_act}`; acts = [{ id: 'end', t: W.end, main: true }]; }
-    if (mine.length) { acts.push(...mg); note += ' (' + W.note_pick + ')'; hand = mine; } else hand = [];
+    if (mine.length) { acts.push(...mg); if (G.round <= 2) note += ' · ' + W.note_pick; hand = mine; } else hand = [];
   }
+  acts.sort((a, b) => (a.main ? 1 : 0) - (b.main ? 1 : 0));          // the main act last, under the thumb
   return { cards: { hand, note, turn: true, acts: acts.slice(0, 6).map((a) => (W.sh[a.id] ? Object.assign({ s: W.sh[a.id] }, a) : a)) } };
 }
 

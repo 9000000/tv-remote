@@ -8,6 +8,7 @@ h1{font-size:4.6vw;margin:0}
 .seat{display:flex;align-items:center;gap:1.4vw;padding:1.8vh 1.6vw;border-radius:1.6vw;background:var(--card);border:.4vw solid transparent;font-size:2.6vw}
 .seat.turn{border-color:var(--pc)}
 .seat .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seat .first{flex:none;font-size:.6em;font-weight:600;opacity:.7;white-space:nowrap}
 .seat .sc{font-size:3.4vw}
 .mk{flex:none;width:4.6vw;height:4.6vw;border-radius:1vw;display:grid;place-items:center;font-size:3.2vw;color:#fff}
 .mk.x{background:var(--x)}.mk.o{background:var(--o)}
@@ -15,3 +16,5 @@ h1{font-size:4.6vw;margin:0}
 .msg{font-size:3vw;min-height:7vh}
 .msg.win{color:#facc15}
 .qr{width:16vw;height:16vw;image-rendering:pixelated;border-radius:1vw;background:#fff}
+.qr.sm{width:14vh;height:14vh;border-radius:1vh}
+@media (max-aspect-ratio:3/2){#cv{width:60vw;height:60vw}#side{left:calc(60vw + 5vh)}}   /* 4:3: leave the side room for names */

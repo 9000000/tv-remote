@@ -20,10 +20,10 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:600 1.
 .tile.mort{filter:grayscale(.8) brightness(.8)}
 .tile.mort::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,#0000 0 .6vh,#0004 .6vh 1.2vh)}
 .tile .in{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:.3vh;gap:.15vh;min-width:0}
-.tile .nm{font-size:1.5vh;line-height:1.05;font-weight:800;overflow-wrap:anywhere}
-.tile .pr{font-size:1.45vh;color:#475569;font-weight:700}
+.tile .nm{font-size:1.8vh;line-height:1.05;font-weight:800;overflow-wrap:anywhere}
+.tile .pr{font-size:1.8vh;color:#475569;font-weight:700}
 .tile .ic{font-size:2.6vh;text-decoration:none;line-height:1}
-.tile .band{flex:none;background:var(--g);display:flex;align-items:center;justify-content:center;font-size:1.3vh;font-style:normal;line-height:1;overflow:hidden;color:#fff}
+.tile .band{flex:none;background:var(--g);display:flex;align-items:center;justify-content:center;font-size:1.8vh;font-style:normal;line-height:1;overflow:hidden;color:#fff}
 .sb,.st{flex-direction:column}.st{flex-direction:column-reverse}
 .sb .band,.st .band{height:2.6vh;width:100%}
 .sl{flex-direction:row-reverse}.sr{flex-direction:row}
@@ -32,7 +32,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:600 1.
 .k-go{background:#bbf7d0}.k-jail{background:#fed7aa}.k-gojail{background:#fecaca}.k-park{background:#bfdbfe}
 .k-chance{background:#fde68a}.k-chest{background:#c7d2fe}.k-tax{background:#e5e7eb}
 .tk{position:absolute;left:0;right:0;bottom:.3vh;display:flex;justify-content:center;gap:.2vh;flex-wrap:wrap;pointer-events:none}
-.token{display:inline-flex;align-items:center;justify-content:center;width:2.6vh;height:2.6vh;border-radius:50%;border:.25vh solid #fff;color:#fff;font-size:1.5vh;font-weight:800;box-shadow:0 .2vh .6vh #000a;flex:none}
+.token{display:inline-flex;align-items:center;justify-content:center;width:2.6vh;height:2.6vh;border-radius:50%;border:.25vh solid #fff;color:#fff;font-size:1.8vh;font-weight:800;box-shadow:0 .2vh .6vh #000a;flex:none}
 .side{position:absolute;top:2vh;bottom:2vh;width:calc((100vw - var(--B)) / 2 - 2vh);display:flex;flex-direction:column;gap:2vh;justify-content:center}
 #left{left:1vh}#right{right:1vh}
 .pl{position:relative;background:var(--card);border-radius:1.4vh;padding:1.4vh 1.4vh 1.8vh;border:.4vh solid transparent;display:flex;flex-direction:column;gap:.8vh;min-height:0}
@@ -43,9 +43,9 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:600 1.
 .pl .nm{font-size:2.5vh;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;flex:1;min-width:0}
 .pl .st{font-size:1.8vh;padding:.1vh .8vh;border-radius:99px;background:#334155}
 .pl .mon{font-size:4.2vh;font-weight:800;color:#fde68a}
-.pl .sub{font-size:1.7vh;color:var(--dim)}
+.pl .sub{font-size:1.8vh;color:var(--dim)}
 .chips{display:flex;flex-wrap:wrap;gap:.35vh;min-height:2.4vh}
-.chips i{width:2.1vh;height:2.1vh;border-radius:.4vh;font-style:normal;font-size:1.3vh;line-height:2.1vh;text-align:center;color:#fff;font-weight:800;text-shadow:0 0 .3vh #000}
+.chips i{width:2.1vh;height:2.1vh;border-radius:.4vh;font-style:normal;font-size:1.8vh;line-height:2.1vh;text-align:center;color:#fff;font-weight:800;text-shadow:0 0 .3vh #000}
 .chips i.mort{opacity:.35}
 .timer{position:absolute;left:1.4vh;right:1.4vh;bottom:.5vh;height:.6vh;border-radius:99px;background:#fff2;overflow:hidden}
 .timer i{display:block;height:100%;background:var(--pc);transition:width 1s linear}
@@ -72,3 +72,4 @@ body #rmt .cd.deed{margin:0;flex:0 0 calc(50% - .4vh);min-width:0;height:9.4vh}b
 body #rmt .cd.deed s{height:3vh;font-size:1.8vh}body #rmt .cd.deed span{margin-top:.5vh;font-size:1.9vh}body #rmt .cd.deed em{margin-top:.2vh;font-size:1.7vh}
 body #rmt .acts{flex-wrap:wrap;gap:.8vh;margin-top:auto}
 body #rmt .ac{flex:1 1 calc(50% - .4vh);min-width:0;justify-content:center;height:5.6vh;padding:0 .6vh;font-size:2.3vh;white-space:normal;text-align:center;line-height:1.1}
+@media (max-aspect-ratio:3/2){:root{--B:70vw}.pl .mon{font-size:3.4vh}.pl .nm{flex:1 0 100%;font-size:2.1vh}#gh24{right:auto;left:36vw}}   /* 4:3: a smaller board so the players' cards fit; the credit tag sits in the free strip under the board */

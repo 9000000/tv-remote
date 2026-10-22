@@ -130,6 +130,7 @@ function armNope(t) {
 }
 
 // ---- the phones
+const cut = (n, k) => (n.length > k ? n.slice(0, k - 1) + '…' : n);   // a button holds ~12 chars
 function view(t, s) {
   const G = g.G, me = MK.actor(G) === s && !t.done, who = nm(t, G.turn);
   const own = () => G.hands[s].map(phoneCard);
@@ -144,7 +145,7 @@ function view(t, s) {
       return { cards: { hand: own(), note: can ? W.nopeNote(who, played) : W.hold(who, played), turn: can, acts: can ? [{ id: 'nope', t: W.nopeBtn, main: true }] : [] } };
     }
     case 'target':
-      return me ? { cards: { hand: [], note: W.pickT, turn: true, acts: MK.victims(G, s).map((x) => ({ id: 't' + x, t: `${nm(t, x)} (${G.hands[x].length})` })) } }
+      return me ? { cards: { hand: [], note: W.pickT, turn: true, acts: MK.victims(G, s).map((x) => ({ id: 't' + x, t: `${cut(nm(t, x), 9)} (${G.hands[x].length})` })) } }
         : { cards: { hand: own(), note: W.wTarget(who), turn: false, acts: [] } };
     case 'name':
       return me ? { cards: { hand: [], note: W.pickN, turn: true, acts: MK.NAMEABLE.map((k) => ({ id: 'n:' + k, t: `${KD[k].e} ${W.kn[k]}` })) } }

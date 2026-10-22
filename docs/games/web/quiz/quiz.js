@@ -137,7 +137,7 @@ function finish() {
   const rank = h('div', 'rank');
   ps.forEach((p) => { const r = h('div', 'row' + ((score[p] || 0) === top && ps.length > 1 ? ' win' : '')); r.style.setProperty('--pc', col(p));
     r.append(h('span', 'dot'), h('span', '', (score[p] === top && ps.length > 1 ? '🏆 ' : '') + pname(p)), h('span', '', (score[p] || 0) + ' ' + T.pts)); rank.append(r); });
-  stage.replaceChildren(h('h1', '', ps.length > 1 ? (tied ? T.tie : T.win + ': ' + T.p(ps[0])) : T.title), rank, h('p', 'sub', T.again));
+  stage.replaceChildren(h('h1', '', ps.length > 1 ? (tied ? T.tie : T.win + ': ' + pname(ps[0])) : T.title), rank, h('p', 'sub', T.again));
   if (pad) { pad.layout('all', { buttons: ['START'], dpad: false }); pad.say('all', ''); ps.forEach((p, k) => pad.vibrate(p, (score[p] || 0) === top ? 600 : 100)); }
   drawBoard();
 }

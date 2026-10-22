@@ -200,6 +200,7 @@
       rdraw();
     }
     function rkey(e) {
+      R.pre = t.done;                                   // was the game already over before this key? (the win's own OK must not also start the next one)
       if (!t.remote || t.done || !R.el || R.el.hidden) return;
       const k = e.key, row = R.zone === 'hand' ? R.hand : R.acts;
       if (k === 'ArrowLeft' || k === 'ArrowRight') {
@@ -248,7 +249,7 @@
       const moved = () => { seat(); changed(); wake(); };   // a phone took a bot's seat or gave it back
       pad.on('join', moved); pad.on('leave', moved);
       pad.on('button', ({ btn, down }) => { if (down && btn === 'START' && t.done) go(); });
-      if (typeof document === 'object') document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && t.done) go(); });
+      if (typeof document === 'object') document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && t.done && R.pre !== false && !e.repeat) go(); });
     }
     return t;
   }

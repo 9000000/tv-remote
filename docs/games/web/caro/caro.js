@@ -5,11 +5,11 @@ const VI = (navigator.language || '').toLowerCase().startsWith('vi');
 const T = VI ? {
   title: 'Cờ caro', rule: 'Đủ 5 quân liền nhau là thắng', join: 'Quét mã QR để vào chơi', p: (n) => `Người chơi ${n}`, bot: 'Máy',
   turn: (n) => `Lượt của ${n}`, yours: 'Đến lượt bạn', think: 'Máy đang nghĩ…', win: (n) => `${n} thắng!`, draw: 'Hòa!',
-  again: 'Nhấn Start trên điện thoại (hoặc Enter) để chơi ván mới', watch: 'Hai người đang chơi, bạn xem nhé', watching: (n) => `${n} người đang xem`, first: 'đi trước',
+  again: 'Nhấn Start trên điện thoại (hoặc OK) để chơi ván mới', watch: 'Hai người đang chơi, bạn xem nhé', watching: (n) => `${n} người đang xem`, first: 'đi trước',
 } : {
   title: 'Gomoku', rule: 'Five in a row wins', join: 'Scan the QR code to join', p: (n) => `Player ${n}`, bot: 'Computer',
   turn: (n) => `${n}'s turn`, yours: 'Your turn', think: 'Thinking…', win: (n) => `${n} wins!`, draw: 'A draw!',
-  again: 'Press Start on a phone (or Enter) for a new game', watch: 'Two players are playing, enjoy watching', watching: (n) => `${n} watching`, first: 'goes first',
+  again: 'Press Start on a phone (or OK) for a new game', watch: 'Two players are playing, enjoy watching', watching: (n) => `${n} watching`, first: 'goes first',
 };
 const N = Caro.N, BOT_MS = 500, HOLD_FIRST = 280, HOLD_EVERY = 90;
 const CUR = ['#0e9f4a', '#7c3aed'], XC = '#2563eb', OC = '#dc2626';       // cursors read on the tan board and next to both stones
@@ -41,8 +41,8 @@ function newGame() {
   clearTimeout(botTimer);
   if (g.over) g.starter ^= 1;             // the other one starts the next game (flipped here, so the marks on screen stay until then)
   const ps = players();
-  g.seat = pad ? [ps[0] || 0, ps[1] || 0] : [1, 0];
-  g.wait = !!pad && !ps.length;
+  g.seat = pad && ps.length ? [ps[0] || 0, ps[1] || 0] : [1, 0];   // no phone: seat 1 is the TV remote (Enter / arrows), against the computer
+  g.wait = false;
   g.b = Caro.create(); g.last = -1; g.wl = null; g.over = false; g.draw = false; g.ts = g.starter;
   g.cur.forEach((c) => { c.x = 7; c.y = 7; });
   layouts(); tell(); render(); maybeBot();
@@ -92,7 +92,7 @@ function press(s, btn, down) {
 if (pad) {
   pad.on('button', ({ player, btn, down }) => { const s = g.seat.indexOf(player); if (s >= 0) press(s, btn, down); else if (btn === 'START' && down && g.over) newGame(); });
   pad.on('join', ({ player }) => {
-    if (g.wait) { newGame(); return; }
+    if (g.wait || (g.seat[0] === 1 && players().length === 1 && g.seat[1] === 0 && !g.b.some((v) => v))) { newGame(); return; }   // the first phone starts clean
     const s = g.seat.indexOf(0);          // a phone takes over the computer's seat; the game goes on
     if (s >= 0 && !g.seat.includes(player)) { g.seat[s] = player; clearTimeout(botTimer); }
     layouts(); tell(); render(); maybeBot();
@@ -100,7 +100,7 @@ if (pad) {
   pad.on('leave', ({ player }) => {
     const s = g.seat.indexOf(player);
     if (s >= 0) { g.seat[s] = 0; Object.keys(holds).filter((k) => k[0] === String(s)).forEach((k) => hold(s, k.slice(1), false)); }
-    if (!g.seat[0] && !g.seat[1]) g.wait = true;
+    if (!g.seat[0] && !g.seat[1]) { if (players().length) g.wait = true; else g.seat[0] = 1; }   // the remote takes seat 1 back
     tell(); render(); maybeBot();
   });
   pad.on('rename', () => render());
@@ -155,14 +155,17 @@ function drawBoard() {
 
 function drawSide() {
   const kids = [h('h1', '', T.title), h('p', 'sub', T.rule)];
-  if (g.wait) {
-    kids.push(h('p', 'msg', T.join));
-    try { const q = pad.qr && pad.qr(400); if (q) { const im = h('img', 'qr'); im.src = q; kids.push(im); } } catch (e) { }
-  } else {
+  const joinQr = (small) => {
+    kids.push(h('p', small ? 'sub' : 'msg', T.join));
+    try { const q = pad.qr && pad.qr(400); if (q) { const im = h('img', small ? 'qr sm' : 'qr'); im.src = q; kids.push(im); } } catch (e) { }
+  };
+  if (g.wait) joinQr(false);
+  else {
     for (let s = 0; s < 2; s++) {
       const m = markOf(s), e = h('div', 'seat' + (!g.over && g.ts === s ? ' turn' : ''));
       e.style.setProperty('--pc', CUR[s]);
-      e.append(h('span', 'mk ' + (m === 1 ? 'x' : 'o'), m === 1 ? '✕' : '○'), h('span', 'nm', sname(s) + (s === g.starter && !g.over && !g.b.some((v) => v) ? ' · ' + T.first : '')));
+      e.append(h('span', 'mk ' + (m === 1 ? 'x' : 'o'), m === 1 ? '✕' : '○'), h('span', 'nm', sname(s)));
+      if (s === g.starter && !g.over && !g.b.some((v) => v)) e.append(h('span', 'first', T.first));   // its own tag: a long name is cut, never this
       if (g.seat[s]) { const d = h('span', 'cur'); e.append(d); }
       e.append(h('span', 'sc', String(g.wins[s])));
       kids.push(e);
@@ -173,6 +176,7 @@ function drawSide() {
     if (g.over) kids.push(h('p', 'sub', T.again));
     const w = players().filter((p) => !g.seat.includes(p)).length;
     if (w) kids.push(h('p', 'sub', T.watching(w)));
+    if (pad && !players().length) joinQr(true);
   }
   side.replaceChildren(...kids);
 }
