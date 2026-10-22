@@ -37,13 +37,20 @@
     "com.zeasn.whaletrackservice": "Zeasn tracking",
     "com.nes.bugreportsender": "Bug report sender",
     "com.nes.tvbugtracker": "Bug tracker",
-    "com.zhixin.logservice.nebula": "Nebula log service"
+    "com.zhixin.logservice.nebula": "Nebula log service",
+    "com.sony.dtv.notificationcenter": "Sony notification centre (app promos)",
+    "com.sony.dtv.smarthelp": "Sony help guide"
   },
-  "drop": [],
+  "drop": [
+    "com.xm.webcontent"
+  ],
   "keep": [
     "com\\.tianci\\.(de|movieplatform|localmedia|setting|system)",
     "com\\.coocaa\\.(sky\\.ccapi|tvmanager)",
-    "com\\.skyworth\\.tv"
+    "com\\.skyworth\\.tv",
+    "com\\.google\\.android\\.tv",
+    "com\\.google\\.android\\.tv\\.axel",
+    "com\\.(google\\.)?android\\.tv\\.frameworkpackagestubs"
   ],
   "factory": []
 }

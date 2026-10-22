@@ -9,6 +9,8 @@ Last read: **2026-10-22**, upstream `Gathin23/cleanyourtv` at `0bb7f7edbf` (2026
 up to ~#833 (before that: 2026-10-21 at `9071ec8d2f`, PRs ~#573, issues ~#564; 2026-10-20 at `fd1ee0a94c`, PRs ~#398, issues ~#376; 2026-10-19 at `7377a9be8c`, PRs up to #125, issues up to #120, 388 forks). The project is days old:
 most reports are one TV, one day.
 
+UAD read 2026-10-22 (UAD-NG main): of our 142 suggestions 12 are in its list, one marked Expert: `com.xm.webcontent` ("app installing" messages and WebView), dropped in `bloat.json`. Its Unsafe / Expert TV packages that nothing kept yet went to keep: `com.google.android.tv` (Live Channels, the tuner), `tv.axel` (the IR service, volume setup), the `frameworkpackagestubs`. Taken as suggest: Sony `notificationcenter` (nags to use Sony's apps), `smarthelp`. Its TCL entries are phones (camera, compass, SOS): not taken.
+
 ## Sources
 
 | Repo | What is in it |
@@ -17,6 +19,7 @@ most reports are one TV, one day.
 | [pulgagr/tv-vibehack-firetv](https://github.com/pulgagr/tv-vibehack-firetv) | Fire OS: what can and cannot be turned off, why Home cannot be taken |
 | [itsmeterrylin/fire-tv-cleanup](https://github.com/itsmeterrylin/fire-tv-cleanup), FreedomFleming/tv-vibehack | Fire OS 8 |
 | [SuryAdelia/tv-vibehack-coocaa](https://github.com/SuryAdelia/tv-vibehack-coocaa) | Coocaa / Skyworth Google TV (not compared yet) |
+| [Universal-Debloater-Alliance/universal-android-debloater-next-generation](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) (fork of 0x192/universal-android-debloater, which stopped in 2024; GPL-3) | `resources/assets/uad_lists.json`: ~5400 packages, each Recommended / Advanced / Expert / Unsafe. Mostly phones; ~90 TV ones (Google TV, Sony `dtv`, Xiaomi `mitv`). GPL-3 against our MIT: take package names and its warnings, never its descriptions |
 | [OmkarK97/webos-vibehack](https://github.com/OmkarK97/webos-vibehack) | LG webOS port (launcher only) |
 | [mclhm8182/tvhome-zh](https://github.com/mclhm8182/tvhome-zh) | Chinese version |
 | kadeemj, skuhns (Hisense Google TV), tv7 (TCL C6K), EndLess728/MiTV-Debloat, manhashed, nikhilbadyal (Xiaomi), maydings/vibe-launcher, manojm321/jain-tv-launcher, Musicality59 (Sony), codewithbalaji (OnePlus), picajoso (Onn 4K Plus), thefirstparth (`LESSONS.md`) | forks with their own `debloat.txt` or notes |
