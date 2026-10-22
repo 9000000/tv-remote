@@ -1,5 +1,5 @@
 /* The home page: a hero with a before / after picture, five showcases (a picture, a title, a line), a short setup. Tokens, nav,
-   buttons, footer come from site.css; the long animated tour (demo.css, stories.css) lives on tour.html. */
+   buttons, footer come from site.css; tour.html (no longer linked) is only where guide-anim.js takes its stages from. */
 .h-hero{padding:56px 0 40px;text-align:center}
 .h-hero .pill{margin-bottom:22px}
 .h-hero h1{font-size:clamp(40px,7vw,76px);font-weight:800;letter-spacing:-.03em}
@@ -55,9 +55,6 @@ nav .navtools{margin-left:auto}
 .h-guides{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:28px}
 .h-guides .btn{min-height:48px;padding:12px 20px;font-size:16px;text-align:center}
 .h-note{text-align:center;color:var(--dim);font-size:14px;margin-top:10px}
-.h-more{padding:28px 0 56px;text-align:center}
-.h-more a{color:var(--muted);font-size:15px;border-bottom:1px solid var(--line2)}
-.h-more a:hover{color:var(--text)}
 
 @media (max-width:980px){
   .sc .wrap,.sc.hflip .wrap{grid-template-columns:1fr;gap:28px}.sc.hflip .sc-t{order:0}
@@ -75,8 +72,8 @@ nav .navtools{margin-left:auto}
   .steps4{grid-template-columns:1fr}
   .steps4 .th{height:100px}
 }
-@media (max-width:560px){nav .navtools .btn-ghost[href="guide"]{display:none}}
-@media (max-width:460px){nav .navtools .navdemo .ni{display:none}}   /* the demo stays on a phone, as words only */
+@media (min-width:561px){nav .menubtn{display:none}}                /* Live demo and Guide fit as buttons up to here */
+@media (max-width:560px){nav .navtools .navdemo,nav .navtools .btn-ghost[href="guide"]{display:none}}  /* in the menu */
 
 /* ---- And more: a scroll-snap row, native swipe, no autoplay ---- */
 .h-more2{padding:56px 0 24px;overflow-x:clip}

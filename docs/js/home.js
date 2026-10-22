@@ -14,6 +14,20 @@
   setLang(root.dataset.lang);
   document.querySelectorAll(".lang button").forEach(function(b){ b.onclick = function(){ setLang(b.dataset.set); }; });
 
+  // the narrow screens' menu, as on the guide: closes on a tap on a link, outside, or Escape
+  (function(){
+    var btn = document.querySelector(".menubtn"), sheet = document.getElementById("navsheet");
+    function set(open, back){
+      sheet.hidden = !open; btn.setAttribute("aria-expanded", open);
+      if (!open && back) btn.focus();
+    }
+    btn.onclick = function(){ set(sheet.hidden); if (!sheet.hidden) sheet.querySelector("a").focus({preventScroll:true}); };
+    sheet.addEventListener("click", function(e){ if (e.target.closest("a")) set(false); });
+    document.addEventListener("click", function(e){ if (!sheet.hidden && !e.target.closest("nav")) set(false); });
+    document.addEventListener("keydown", function(e){ if (e.key === "Escape" && !sheet.hidden) set(false, true); });
+    matchMedia("(min-width:561px)").addEventListener("change", function(m){ if (m.matches) set(false); });
+  })();
+
   // copy the Downloader code
   var toast = document.getElementById("toast"), tt;
   function say(s){ toast.textContent = s; toast.classList.add("show"); clearTimeout(tt); tt = setTimeout(function(){ toast.classList.remove("show"); }, 1800); }
