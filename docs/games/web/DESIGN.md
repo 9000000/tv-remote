@@ -164,7 +164,7 @@ List the game in `docs/games/games.json` "web" (`players`, `min`, `genre`, `img`
 - No `alert()`, `confirm()`, `prompt()`, no own pause or join screen (TV Games has them), no own Back handling.
 - Never trust a phone: check every act; never show one player's hand on the TV.
 - No words in code outside the `W` object; no third language branch (vi / en only, en is the fallback).
-- No `localStorage` for game state (only a cache of data, wrapped in try/catch, `quiz.js:15`).
+- No `localStorage` for game state: only a cache of data and the TV's high scores (quiz `quiz.best`, top 10), wrapped in try/catch (`quiz.js:15`).
 - Don't change `_lib` behaviour for one game: add an option (as `remote: {mount, quick}`), keep the header comment true.
 
 ## 7. Checklist before done

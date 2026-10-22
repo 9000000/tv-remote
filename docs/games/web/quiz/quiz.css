@@ -27,3 +27,17 @@ h1{font-size:6.5vw;margin:0 0 1.5vh;text-align:center}
 .cats{display:flex;align-items:center;justify-content:center;gap:2vw;margin:2.4vh 0 1vh;font-size:3.4vw}
 .cats .cat{padding:1vh 3vw;border-radius:99px;background:var(--card);border:.3vw solid var(--b)}
 .cats .arr{color:var(--dim)}
+.opt.f{border-color:#fff;transform:scale(1.03);transition:transform .12s}
+.opt.mine{border-color:var(--dim)}.opt.right.mine{border-color:#4ade80}
+.rec{text-align:center;font-size:3.2vw;color:#facc15;margin:0 0 1vh}
+.end{display:flex;gap:3vw;justify-content:center;align-items:flex-start}
+.end .rank{margin:1vh 0;width:44vw}
+.best{background:var(--card);border-radius:1.6vw;padding:1.6vh 2vw;min-width:40vw;margin:1vh auto 0;font-size:2.3vw}
+.end .best{margin:1vh 0 0}
+.best .bh{color:var(--dim);font-size:2vw;margin-bottom:.8vh}
+.br{display:flex;align-items:center;gap:1.4vw;padding:.5vh .6vw;border-radius:.8vw}
+.br.me{background:#3a2f0b;color:#facc15}
+.br .bn{width:2.4vw;color:var(--dim);text-align:right}.br .bw{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.br .bc{color:var(--dim);font-size:1.8vw;max-width:14vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.br .bs{min-width:6vw;text-align:right}
+h1.one{font-size:5vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row span:nth-child(2){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.row span:last-child{white-space:nowrap}

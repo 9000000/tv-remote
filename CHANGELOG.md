@@ -13,6 +13,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
   - TV Channels: hết luồng thì OK thử lại; ngôn ngữ giữ như đã chọn.
   - TV Games: phím Menu trên game mở menu; ROM hỏng báo lỗi thay vì màn đen; tải core có nút Hủy.
   - Game web: thắng rồi OK không bỏ qua màn kết thúc, OK chơi lại; caro chơi được bằng remote; tên dài không tràn.
+- Đố vui **chơi một mình bằng remote**: không có điện thoại thì nhấn OK, mũi tên chọn đáp án, OK trả lời (OK lúc xem đáp án là qua câu luôn). **Bảng điểm cao** (10 lượt cao nhất, lưu trên TV) hiện ở màn đầu và màn kết thúc, ghi cả điểm người chơi điện thoại; phá kỷ lục thì báo "Kỷ lục mới!".
 
 **English**
 - UI fixes from an audit:
@@ -21,6 +22,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
   - TV Channels: every stream failed, OK tries again; the language stays as chosen.
   - TV Games: Menu on a game opens its menu; a bad ROM shows an error, not black; the core download can be cancelled.
   - Web games: OK on a win no longer skips the end screen, OK plays again; caro plays with the remote; long names fit.
+- Quiz **plays alone with the remote**: with no phone press OK, the arrows pick an answer, OK answers (OK on the reveal goes straight on). **High scores** (the best 10, kept on the TV) on the start and end screens, phone players' too; a record says "New record!".
 
 ## 0.18.0 - 2026-10-22
 
