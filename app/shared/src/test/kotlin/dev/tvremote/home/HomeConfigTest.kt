@@ -114,6 +114,12 @@ class HomeConfigTest {
         assertEquals(listOf("c.d"), hidden(c))
     }
 
+    @Test fun theGridOrderIsKeptWithoutRepeatsOrJunk() {
+        val c = HomeConfig.clean(JSONObject().put("order", JSONArray(listOf("a.b", "../x", "c.d", "a.b"))))
+        assertEquals(listOf("a.b", "c.d"), List(c.getJSONArray("order").length()) { c.getJSONArray("order").getString(it) })
+        assertEquals(0, HomeConfig.clean(JSONObject()).getJSONArray("order").length())
+    }
+
     @Test fun anUnknownWallOrFieldIsDropped() {
         val c = HomeConfig.clean(JSONObject().put("wall", "../../etc").put("evil", 1).put("photo", -5))
         assertEquals("night", c.getString("wall"))

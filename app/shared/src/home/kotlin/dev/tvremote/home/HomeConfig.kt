@@ -8,6 +8,8 @@ import org.json.JSONObject
  * the computer change them over ADB (core/ontv/Home.kt → HomeReceiver). Compiled into both sides, so they never disagree.
  *   dock    favourite apps in their order, at most [DOCK_MAX]
  *   hidden  apps left off the grid
+ *   order   the grid's own order, set by moving apps on the TV; an app it does not list goes after those that it does (A-Z), an app
+ *           that is gone is ignored
  *   wall    the background on now: a gradient ([PLAIN]), a drawn scene ([ART]), "bing" (the day's Bing picture, kept by TV Home), or one
  *           of the person's photos ([PHOTOS]: "photo" is wall.jpg, "photo2" wall2.jpg ... in TV Home's external files folder, sent by
  *           the client; at most [PHOTO_MAX])
@@ -57,6 +59,7 @@ object HomeConfig {
     const val DOCK_MAX = 6
     const val COLS_MIN = 4; const val COLS_MAX = 8; const val COLS_DEFAULT = 5
     private const val HIDDEN_MAX = 300
+    private const val ORDER_MAX = 800
     /** Plain gradients (HomeActivity.wallColors). */
     val PLAIN = listOf("night", "ocean", "dusk", "forest", "aurora", "black", "sunset", "ember", "plum", "midnight", "teal", "slate", "graphite", "navy", "wine", "moss")
     /** Scenes TV Home draws itself, no picture file (WallSpec; app/home WallArt.kt). */
@@ -170,6 +173,7 @@ object HomeConfig {
         return JSONObject()
             .put("dock", JSONArray(dock))
             .put("hidden", JSONArray(pkgs(o.optJSONArray("hidden"), HIDDEN_MAX).filter { it !in dock }))
+            .put("order", JSONArray(pkgs(o.optJSONArray("order"), ORDER_MAX)))
             .put("wall", if (wall in walls) wall else walls[0])           // what shows is always one of the set
             .put("walls", JSONArray(walls))
             .put("wevery", o.optString("wevery").takeIf { it in EVERY } ?: "off")

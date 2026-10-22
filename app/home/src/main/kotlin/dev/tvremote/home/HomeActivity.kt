@@ -413,7 +413,7 @@ class HomeActivity : Activity() {
     // ---- what is shown ----
 
     private fun show() {
-        moving?.carry(false); moving = null                           // anything that rebuilds the tiles ends a move that was not confirmed: the saved order wins
+        moving?.let { it.carry(false); it.arrows(false, false, false, false); hint(false); for (o in tiles()) { o.animate().cancel(); o.alpha = 1f } }; moving = null                           // anything that rebuilds the tiles ends a move that was not confirmed: the saved order wins
         val keep = (currentFocus as? Tile)?.app?.pkg
         Motion.read(this, conf)
         if (!Motion.glass) glass.hide()
@@ -423,7 +423,7 @@ class HomeActivity : Activity() {
         val byPkg = apps.associateBy { it.pkg }
         val dockPkgs = Store.list(this, "dock").filter { it in byPkg }
         val hidden = Store.list(this, "hidden").toSet()
-        val key = (dockPkgs + pins.map { it.pkg }).joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.joinToString(",") { it.pkg } + "|" + apps.count { it.pkg in hidden } + "|" + conf.optInt("cols")
+        val key = (dockPkgs + pins.map { it.pkg }).joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.joinToString(",") { it.pkg } + "|" + apps.count { it.pkg in hidden } + "|" + conf.optInt("cols") + "|" + conf.optJSONArray("order")
         if (key == shownKey) return                                   // nothing that decides the tiles changed: not one view is rebuilt
         shownKey = key
         val made = HashMap<String, Tile>()                            // the tiles kept for the next build: those of apps still here
@@ -432,7 +432,8 @@ class HomeActivity : Activity() {
 
         for (r in 0 until grid.childCount) (grid.getChildAt(r) as ViewGroup).removeAllViews()   // the tiles leave their rows alive, to be put in new ones
         grid.removeAllViews()
-        val rest = apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }
+        val place = Store.list(this, "order").withIndex().associate { it.value to it.index }   // the grid's own order; an app it does not know goes last, A-Z
+        val rest = apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.sortedBy { place[it.pkg] ?: Int.MAX_VALUE }
         val cols = conf.optInt("cols", HomeConfig.COLS_DEFAULT)
         val gap = dp(GRID_GAP)
         val w = (width - (cols - 1) * gap) / cols                     // one size for every tile: the favourites are only the first ones
@@ -461,12 +462,40 @@ class HomeActivity : Activity() {
     // ---- move mode: a dock app is carried through the favourites with the D-pad, OK saves, Back / Home cancels ----
 
     private var moving: Tile? = null
+    private val hintView: TextView by lazy {
+        Font.on(TextView(this)).apply {                                // a pill at the top centre, over no tile (the clock is left, the buttons right)
+            text = getString(R.string.move_hint); textSize = 17f; setTextColor(Color.WHITE); gravity = Gravity.CENTER
+            setPadding(dp(22), dp(10), dp(22), dp(10)); visibility = View.GONE; alpha = 0f
+            background = GradientDrawable().apply { cornerRadius = dp(30).toFloat(); setColor(0xE6101420.toInt()); setStroke(dp(1), 0x33FFFFFF) }
+            (window.decorView as ViewGroup).let { (it.findViewById<ViewGroup>(android.R.id.content)).addView(this, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply { topMargin = dp(40) }) }
+        }
+    }
 
     private fun startMove(pkg: String) {
         val t = tiles().firstOrNull { it.app?.pkg == pkg && it.app.pin == null } ?: return
         moving = t
         t.requestFocus(); t.carry(true)
-        Toast.makeText(this, R.string.move_hint, Toast.LENGTH_LONG).show()
+        for (o in tiles()) if (o !== t) o.animate().cancel().also { o.animate().alpha(DIM).setDuration(if (Motion.on) 150L else 0L).start() }   // the rest steps back
+        hint(true)
+        carryArrows(t)
+    }
+
+    private fun hint(on: Boolean) {
+        hintView.animate().cancel()
+        if (on) { hintView.visibility = View.VISIBLE; hintView.animate().alpha(1f).setDuration(if (Motion.on) 150L else 0L).start() }
+        else hintView.animate().alpha(0f).setDuration(if (Motion.on) 150L else 0L).withEndAction { hintView.visibility = View.GONE }.start()
+    }
+
+    /** Where the tile may still go: its own list (the favourites, or the grid); the chevrons beside it show the ways that are open. */
+    private fun moveRange(t: Tile): IntRange {
+        val all = tiles(); val at = all.indexOf(t)
+        val favs = dockCount(); val end = favs + pins.size
+        return if (at < favs) 0 until favs else end until all.indexOfLast { it.app != null } + 1
+    }
+
+    private fun carryArrows(t: Tile) {
+        val r = moveRange(t); val at = tiles().indexOf(t); val cols = conf.optInt("cols", HomeConfig.COLS_DEFAULT)
+        t.arrows(at - 1 in r, at + 1 in r, at - cols in r, at + cols in r)
     }
 
     /** The favourites are the first tiles, as many as the saved dock holds (pins and the rest follow). */
@@ -485,14 +514,14 @@ class HomeActivity : Activity() {
         }
         val all = tiles().toMutableList()
         val at = all.indexOf(t); val to = at + d
-        if (to < 0 || to >= dockCount()) { t.nudge(if (d == 1) 1 else if (d == -1) -1 else 0, if (d == cols) 1 else 0); return true }
+        if (to !in moveRange(t)) { t.nudge(if (d == 1) 1 else if (d == -1) -1 else 0, if (d == cols) 1 else 0); return true }
         val before = all.associateWith { val xy = IntArray(2); it.getLocationOnScreen(xy); xy }
         all.add(to, all.removeAt(at))
         for (r in 0 until grid.childCount) (grid.getChildAt(r) as ViewGroup).removeAllViews()
         grid.removeAllViews()
         fill(all, cols, dp(GRID_GAP))
         stepping = true; try { t.requestFocus() } finally { stepping = false }
-        t.carry(true)
+        t.carry(true); carryArrows(t)
         grid.viewTreeObserver.addOnPreDrawListener(object : android.view.ViewTreeObserver.OnPreDrawListener {
             override fun onPreDraw(): Boolean {
                 grid.viewTreeObserver.removeOnPreDrawListener(this)
@@ -515,11 +544,15 @@ class HomeActivity : Activity() {
     private fun endMove(save: Boolean) {
         val t = moving ?: return
         moving = null
-        t.carry(false)
-        if (save) {
+        t.carry(false); t.arrows(false, false, false, false)
+        hint(false)
+        for (o in tiles()) o.animate().cancel().also { o.animate().alpha(1f).setDuration(if (Motion.on) 150L else 0L).start() }
+        if (save && moveRange(t).first == 0) {
             val order = tiles().take(dockCount()).mapNotNull { it.app?.pkg }
             val old = Store.list(this, "dock")
             Store.putList(this, "dock", order + old.filter { it !in order })   // an app no longer installed keeps its place at the end
+        } else if (save) {
+            Store.putList(this, "order", tiles().drop(moveRange(t).first).takeWhile { it.app != null }.mapNotNull { it.app?.pkg })   // the grid's order; apps that leave drop out of it by not being listed
         } else { shownKey = ""; show() }                              // the saved order, tile by tile as it was
     }
 
@@ -728,6 +761,7 @@ class HomeActivity : Activity() {
             if (dockList.size > 1) acts.add(R.string.move to { ui.post { startMove(a.pkg) } })
             acts.add(R.string.unpin to { dockList.removeAt(at); Store.putList(this, "dock", dockList) })
         } else {
+            acts.add(R.string.move to { ui.post { startMove(a.pkg) } })
             acts.add(R.string.pin to {
                 if (dockList.size + pins.size >= HomeConfig.DOCK_MAX) Toast.makeText(this, getString(R.string.dock_full, HomeConfig.DOCK_MAX), Toast.LENGTH_LONG).show()
                 else { dockList.add(a.pkg); Store.putList(this, "dock", dockList) }
@@ -913,10 +947,29 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
      */
     /** Being carried (move mode): the card a step larger than a focused one, on top of the others; [focus] puts it back. */
     fun carry(on: Boolean) {
-        val s = if (on) GROW + 0.06f else GROW
+        val s = if (on) GROW + 0.10f else GROW
         card.animate().cancel()
-        if (!Motion.on) { card.scaleX = s; card.scaleY = s; return }
-        card.animate().scaleX(s).scaleY(s).setDuration(150).setInterpolator(Motion.glide).start()
+        if (on) { ring.animate().cancel(); ring.alpha = 1f }          // the accent ring even where the focus is the glass
+        if (!Motion.on) { card.scaleX = s; card.scaleY = s; card.translationZ = if (on) lift * 1.5f else 0f; return }
+        card.animate().scaleX(s).scaleY(s).translationZ(if (on) lift * 1.5f else 0f).setDuration(150).setInterpolator(Motion.glide).start()
+    }
+
+    /** The ways a carried tile can still go, as small chevrons on its edges. */
+    fun arrows(l: Boolean, r: Boolean, u: Boolean, d: Boolean) {
+        val on = booleanArrayOf(l, r, u, d)
+        for (i in 0 until 4) chevrons[i].visibility = if (on[i]) VISIBLE else GONE
+    }
+    private val chevrons: Array<ImageView> by lazy {
+        val ids = intArrayOf(R.drawable.ic_left, R.drawable.ic_right, R.drawable.ic_up, R.drawable.ic_down)
+        val gr = intArrayOf(Gravity.START or Gravity.CENTER_VERTICAL, Gravity.END or Gravity.CENTER_VERTICAL, Gravity.TOP or Gravity.CENTER_HORIZONTAL, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL)
+        val sz = (across / 11).toInt().coerceAtLeast(20); val m = sz / 2
+        Array(4) { i ->
+            ImageView(context).apply {
+                setImageResource(ids[i]); setPadding(sz / 6, sz / 6, sz / 6, sz / 6); visibility = GONE
+                background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(0xCC101420.toInt()); setStroke(2, RING_ACCENT) }
+                face.addView(this, FrameLayout.LayoutParams(sz, sz, gr[i]).apply { setMargins(m, m, m, m) })
+            }
+        }
     }
 
     fun focus(on: Boolean) {
@@ -988,6 +1041,7 @@ private fun ringDrawable(r: Float, dp: (Number) -> Int): Drawable {
         setLayerInset(1, o + dp(1), o + dp(1), o + dp(1), o + dp(1))
     }
 }
+const val DIM = 0.35f                                                 // the tiles that are not being moved
 const val GRID_GAP = 32                                               // dp between tiles, across and down: room under a focused tile for its name
 const val RING_OUT = 3                                                // dp the ring reaches past the face
 const val RING_ACCENT = 0xFF2F7DF6.toInt()                          // 3.7:1 on white; with the dark edge it shows on any banner
