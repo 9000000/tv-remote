@@ -64,6 +64,7 @@ class GameServer private constructor(private val ctx: Context) {
     fun setLobby(on: Boolean) {
         if (on) synchronized(slots) { slots.forEach { it.ready = false; it.held.clear(); it.dirs = emptySet() } }
         Log.i(TAG, "lobby $on"); lobby = on; send(0, "{\"lobby\":$on,\"max\":$lobbyMax}")
+        if (!on) synchronized(slots) { layouts.toList() }.forEachIndexed { i, l -> if (l != null) send(i + 1, "{\"layout\":$l}") }   // held in the lobby
     }
     fun watching(): Int = synchronized(slots) { slots.withIndex().count { (i, s) -> i >= lobbyMax && s.conn != null } }
     fun countdown(n: Int) = send(0, "{\"count\":$n}")      // the lobby's 3-2-1 on the pads, 0 = cancelled
@@ -180,6 +181,7 @@ class GameServer private constructor(private val ctx: Context) {
         synchronized(slots) {
             if (player == 0) { defaultLayout = j; layouts.fill(null) } else if (player in 1..MAX) layouts[player - 1] = j
         }
+        if (lobby && player != 0) return                   // one phone's own layout (a dealt hand) waits until the game starts: the lobby only tries buttons
         send(player, "{\"layout\":${j ?: "null"}}")
     }
     fun clearLayouts() = setLayout(0, null)
@@ -423,7 +425,7 @@ class GameServer private constructor(private val ctx: Context) {
                                 if (i < 0) { c.text("{\"full\":true}"); break }
                                 slot = i
                                 c.text("{\"slot\":${i + 1},\"game\":$inGame,\"btns\":[${buttons.joinToString(",") { "\"$it\"" }}],\"sys\":\"$system\",\"name\":${org.json.JSONObject.quote(nameOf(i + 1) ?: "")},\"lobby\":$lobby,\"max\":$lobbyMax,\"ready\":false}")
-                                (synchronized(slots) { layouts[i] ?: defaultLayout })?.let { c.text("{\"layout\":$it}") }
+                                (synchronized(slots) { (if (lobby) null else layouts[i]) ?: defaultLayout })?.let { c.text("{\"layout\":$it}") }
                                 if (presence.away) c.text(presence.state())
                                 presence.padsChanged()
                             }
