@@ -4,6 +4,24 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- Sửa giao diện sau một vòng rà soát:
+  - Trang web: hộp tạo cảnh chọn phím / ngõ vào bằng danh sách; báo khi TV không có ngõ vào.
+  - TV Setup: ô nhật ký cuộn lại được bằng D-pad; Back khi đang cài launcher thì dừng việc cài.
+  - TV Channels: hết luồng thì OK thử lại; ngôn ngữ giữ như đã chọn.
+  - TV Games: phím Menu trên game mở menu; ROM hỏng báo lỗi thay vì màn đen; tải core có nút Hủy.
+  - Game web: thắng rồi OK không bỏ qua màn kết thúc, OK chơi lại; caro chơi được bằng remote; tên dài không tràn.
+
+**English**
+- UI fixes from an audit:
+  - Web page: a scene's key or input is picked from a list; a TV with no inputs says so.
+  - TV Setup: the log scrolls back with the D-pad; Back while installing a launcher stops it.
+  - TV Channels: every stream failed, OK tries again; the language stays as chosen.
+  - TV Games: Menu on a game opens its menu; a bad ROM shows an error, not black; the core download can be cancelled.
+  - Web games: OK on a win no longer skips the end screen, OK plays again; caro plays with the remote; long names fit.
+
 ## 0.18.0 - 2026-10-22
 
 Web 0.18.0 · app điện thoại 0.18.0 · app TV 0.18.0 · TV Home 0.5.0 · TV Channels 0.3.0 · TV Games 0.2.0
