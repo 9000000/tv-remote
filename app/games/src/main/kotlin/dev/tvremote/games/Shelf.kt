@@ -67,7 +67,7 @@ object Browse {
     private val GENRES = mapOf(
         "action" to ("Hành động" to "Action"), "sports" to ("Thể thao" to "Sports"), "sport" to ("Thể thao" to "Sports"),
         "quiz" to ("Đố vui" to "Quiz"), "racing" to ("Đua xe" to "Racing"), "shooter" to ("Bắn súng" to "Shooter"),
-        "puzzle" to ("Giải đố" to "Puzzle"), "platformer" to ("Platformer" to "Platformer"), "party" to ("Party" to "Party"),
+        "puzzle" to ("Giải đố" to "Puzzle"), "platformer" to ("Đi cảnh" to "Platformer"), "party" to ("Chơi nhóm" to "Party"),
         "arcade" to ("Arcade" to "Arcade"), "adventure" to ("Phiêu lưu" to "Adventure"), "rpg" to ("Nhập vai" to "RPG"),
         "strategy" to ("Chiến thuật" to "Strategy"), "fighting" to ("Đối kháng" to "Fighting"), "music" to ("Âm nhạc" to "Music"),
     )
