@@ -33,25 +33,26 @@ if [ -z "$GUIDE_OK" ] && [ -n "$(dev/release/guide_stale.py -q)" ]; then
 fi
 LAST=$(git describe --tags --abbrev=0 2>/dev/null || true)
 next() { python3 -c 'import sys; a = [int(x) for x in sys.argv[1].split(".")]; i = {"major": 0, "minor": 1}.get(sys.argv[2], 2); a[i] += 1; a[i + 1:] = [0] * (2 - i); print(".".join(map(str, a)))' "$1" "${BUMP:-patch}"; }
+# "changed": dev/release/code_changed.py, code beyond comments (a path renamed in comments is no update)
 if [ -n "$LAST" ]; then
   [ "$(cat VERSION)" = "${LAST#v}" ] && next "$(cat VERSION)" > VERSION
   for a in android tv; do                                             # changed code must come with a new number, or nobody gets it
     [ -z "$SKIP_CHECK" ] || continue
     old=$(git show "$LAST:app/$a/VERSION" 2>/dev/null || true)
-    if [ -n "$old" ] && [ "$old" = "$(cat app/$a/VERSION)" ] && ! git diff --quiet "$LAST" -- "app/$a" app/shared ":(exclude)app/$a/*.apk" ":(exclude)app/shared/tests"; then
+    if [ -n "$old" ] && [ "$old" = "$(cat app/$a/VERSION)" ] && dev/release/code_changed.py "$LAST" "app/$a" app/shared ":(exclude)app/$a/*.apk" ":(exclude)app/shared/tests"; then
       next "$old" > "app/$a/VERSION"
     fi
   done
   old=$(git show "$LAST:app/home/VERSION" 2>/dev/null || true)          # TV Home: its own code and the settings' shape, not the rest of app/shared
-  if [ -z "$SKIP_CHECK" ] && [ -n "$old" ] && [ "$old" = "$(cat app/home/VERSION)" ] && ! git diff --quiet "$LAST" -- app/home app/shared/src/home ":(exclude)app/home/*.apk"; then
+  if [ -z "$SKIP_CHECK" ] && [ -n "$old" ] && [ "$old" = "$(cat app/home/VERSION)" ] && dev/release/code_changed.py "$LAST" app/home app/shared/src/home ":(exclude)app/home/*.apk"; then
     next "$old" > app/home/VERSION
   fi
   old=$(git show "$LAST:app/channels/VERSION" 2>/dev/null || true)      # TV Channels: its code, the packed providers list and app/shared/src/sign
-  if [ -z "$SKIP_CHECK" ] && [ -n "$old" ] && [ "$old" = "$(cat app/channels/VERSION)" ] && ! git diff --quiet "$LAST" -- app/channels docs/channels app/shared/src/sign ":(exclude)app/channels/*.apk"; then
+  if [ -z "$SKIP_CHECK" ] && [ -n "$old" ] && [ "$old" = "$(cat app/channels/VERSION)" ] && dev/release/code_changed.py "$LAST" app/channels docs/channels app/shared/src/sign ":(exclude)app/channels/*.apk"; then
     next "$old" > app/channels/VERSION
   fi
   old=$(git show "$LAST:app/games/VERSION" 2>/dev/null || true)         # TV Games: its code, the packed games list and app/shared/src/sign
-  if [ -z "$SKIP_CHECK" ] && [ -n "$old" ] && [ "$old" = "$(cat app/games/VERSION)" ] && ! git diff --quiet "$LAST" -- app/games docs/games/games.json docs/games/games.json.sig app/shared/src/sign ":(exclude)app/games/*.apk"; then
+  if [ -z "$SKIP_CHECK" ] && [ -n "$old" ] && [ "$old" = "$(cat app/games/VERSION)" ] && dev/release/code_changed.py "$LAST" app/games docs/games/games.json docs/games/games.json.sig app/shared/src/sign ":(exclude)app/games/*.apk"; then
     next "$old" > app/games/VERSION
   fi
 fi
@@ -93,7 +94,7 @@ git push -q origin HEAD                                               # the rele
 DESK=$VER
 if [ -n "$LAST" ]; then
   BUILT=$(gh release download "$LAST" -p versions.json -O - | python3 -c 'import json, sys; d = json.load(sys.stdin); print(d["web"])')
-  if [ -n "$NO_DESKTOP" ] || git diff --quiet "v$BUILT" -- app/desktop app/shared ":(exclude)app/shared/tests"; then DESK=$BUILT; fi
+  if [ -n "$NO_DESKTOP" ] || ! dev/release/code_changed.py "v$BUILT" app/desktop app/shared ":(exclude)app/shared/tests" >/dev/null; then DESK=$BUILT; fi
 fi
 ./app/android/build.sh && ./app/tv/build.sh && ./app/home/build.sh && ./app/channels/build.sh && ./app/games/build.sh
 printf '{"android": "%s", "tv": "%s", "home": "%s", "channels": "%s", "games": "%s", "web": "%s"}\n' "$(cat app/android/VERSION)" "$(cat app/tv/VERSION)" "$(cat app/home/VERSION)" "$(cat app/channels/VERSION)" "$(cat app/games/VERSION)" "$DESK" > app/android/build/versions.json

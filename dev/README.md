@@ -66,6 +66,7 @@ release key; its public half is `Launchers.KEYS`). Run after every edit of the l
 |---|---|
 | `release.sh` | the whole release: version numbers, CHANGELOG, tag, APKs, GitHub release, the computer apps through GitHub Actions, then `sums.sh` (AGENTS.md "Versions and releases") |
 | `sums.sh <tag>` | `SHA256SUMS` of a release, signed, attached. Run again after replacing any file of a release by hand: the apps refuse a file the list does not match |
+| `code_changed.py <tag> <paths>` | did an app's code change since a tag, beyond comments, `.md`, `build.sh`, tests: `release.sh` bumps an app's number only then |
 | `guide_stale.py` | the guide's topics whose app files changed since their `data-v`; `release.sh` stops on them |
 | `stamp_since.py` | `docs/data/since.json`: "next" becomes the version and its date |
 | `churn.sh` | how often the `/api` still changes, week by week; `release.sh` prints it and says when 1.0 is near |
