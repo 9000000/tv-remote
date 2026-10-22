@@ -13,6 +13,11 @@ class Pages(http.server.SimpleHTTPRequestHandler):
             return p + ".html"
         return p
 
+    def end_headers(self):
+        # no Cache-Control lets a browser keep a changed js/css by its own guess: an edit then looked like it did nothing
+        self.send_header("Cache-Control", "no-cache")
+        super().end_headers()
+
 
 port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
 print(f"http://localhost:{port}/")
