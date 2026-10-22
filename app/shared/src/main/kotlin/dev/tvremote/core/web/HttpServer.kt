@@ -154,6 +154,9 @@ class HttpServer(private val handler: Handler) {
                 val out = if (r == null) Response.error(400, "bad request") else try {
                     handler.handle(r)
                 } catch (e: Exception) {
+                    // a bug, not a TV or a person saying no: where it happened goes in the log (About -> Send the log), the message alone said nothing
+                    if (e is RuntimeException && e !is IllegalArgumentException && e !is IllegalStateException)
+                        WireLog.all.add("·", "bug $e at " + e.stackTrace.take(4).joinToString(" < ") { "${it.fileName}:${it.lineNumber}" })
                     Response.error(500, e.message ?: e.javaClass.simpleName)
                 }
                 if (out.status >= 400 && r != null) WireLog.all.add("·", "api " + r.method + " " + r.path + " " + out.status + " " + String(out.body.take(300).toByteArray(), Charsets.UTF_8))

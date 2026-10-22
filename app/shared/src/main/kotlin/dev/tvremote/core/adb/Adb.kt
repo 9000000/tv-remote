@@ -146,6 +146,7 @@ class Adb(private val dir: File) : Closeable {
     private var nextId = 1
     private var maxData = 4096
     @Volatile private var dead = false
+    @Volatile private var heard = System.nanoTime()                   // the last packet from the TV, whatever its stream
 
     init {
         // one key per app, made once: on the first start TV Setup's screen, its service and its Manage process (another
@@ -397,7 +398,12 @@ class Adb(private val dir: File) : Closeable {
         try {
             while (true) {
                 val m = read()
-                val s = streams[m.arg1] ?: continue
+                heard = System.nanoTime()
+                val s = streams[m.arg1]
+                if (s == null) {                                      // a late yes to an open given up on: the TV's side is let go
+                    if (m.cmd == OKAY && m.arg0 != 0) try { send(CLSE, m.arg1, m.arg0, ByteArray(0)) } catch (ignored: IOException) { }
+                    continue
+                }
                 when (m.cmd) {
                     OKAY -> if (s.remote == 0) { s.remote = m.arg0; s.opened.release() } else s.acked.release()
                     WRTE -> s.incoming.add(m.data)                    // acknowledged when read, so a slow reader slows the TV down instead of filling memory
@@ -419,8 +425,15 @@ class Adb(private val dir: File) : Closeable {
         streams[s.local] = s
         send(OPEN, s.local, 0, (service + "\u0000").toByteArray())
         try {
-            // no answer at all: the connection died quietly (the phone slept, Wi-Fi or VPN changed); drop it so the next call dials again
-            if (!s.opened.tryAcquire(answerMs, TimeUnit.MILLISECONDS)) { s.end(); close(); throw IOException("no answer from the TV") }
+            // no answer at all: the connection died quietly (the phone slept, Wi-Fi or VPN changed); drop it so the next call dials
+            // again. A TV still sending on other streams is only slow: a weak box writing two APKs at once took over 10 s to open a
+            // shell, and closing then cut both copies halfway ("lost the TV midway", again on every retry). That one call fails alone.
+            val t0 = System.nanoTime()
+            while (!s.opened.tryAcquire(1000, TimeUnit.MILLISECONDS)) {
+                val now = System.nanoTime()
+                if ((now - heard) / 1_000_000 >= answerMs && (now - t0) / 1_000_000 >= answerMs) { s.end(); close(); throw IOException("no answer from the TV") }
+                if ((now - t0) / 1_000_000 >= maxOf(answerMs, BUSY_OPEN_MS)) { s.end(); throw IOException("the TV is busy") }
+            }
         } catch (e: InterruptedException) {
             throw IOException("interrupted")
         }
@@ -577,6 +590,7 @@ class Adb(private val dir: File) : Closeable {
 
         /** Seconds a write may wait for the TV to take it. */
         private const val WRITE_WAIT = 30
+        private const val BUSY_OPEN_MS = 60_000L                      // open() on a TV that answers other streams meanwhile
         /** How far a file upload may run ahead of the TV's disk, and how often that is checked (see [writeTo]). */
         private const val AHEAD = 8L shl 20
         private const val PACE_STEP = 2L shl 20

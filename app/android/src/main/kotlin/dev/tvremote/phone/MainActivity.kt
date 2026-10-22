@@ -592,7 +592,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             if (what.isNotEmpty()) {
                 workWhat = what
                 val i = Intent(this, WorkService::class.java).putExtra(WorkService.WHAT, what)
-                if (!workOn) { askNotifications(); if (Build.VERSION.SDK_INT >= 26) startForegroundService(i) else startService(i); ui.postDelayed(workTick, 1000) }
+                if (!workOn) { askNotifications(); askBackground(); if (Build.VERSION.SDK_INT >= 26) startForegroundService(i) else startService(i); ui.postDelayed(workTick, 1000) }
                 else WorkService.show(this, what, managing.progress())
                 workOn = true
             } else if (workOn) { workOn = false; workPct = -2; ui.removeCallbacks(workTick); stopService(Intent(this, WorkService::class.java)) }
@@ -612,6 +612,15 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal fun askNotifications() {
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
             requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 7)
+    }
+
+    /** A copy in the background needs more than its notification on some phones: a POCO (MIUI) cut the app's network and its
+     *  wake lock a few seconds after it left the screen, and the TV's ADB dropped halfway. Android's own question, asked once. */
+    private fun askBackground() {
+        if (Build.VERSION.SDK_INT < 23 || pref("bgAsked").isNotEmpty()) return
+        if ((getSystemService(POWER_SERVICE) as android.os.PowerManager).isIgnoringBatteryOptimizations(packageName)) return
+        prefs.edit().putString("bgAsked", "1").apply()
+        try { startActivity(Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, android.net.Uri.parse("package:$packageName"))) } catch (e: Exception) { }
     }
 
     /** Leaving the TV by choice: asks first when something is under way there, which leaving would cut off. */

@@ -108,7 +108,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "home" -> return HttpServer.Response.json(dev.tvremote.core.ontv.Home.call({ sh(it) }, if (post) r.json() else null,
                     if (!post && r.q("thumbs") == "1") "--ez thumbs true" else ""))   // TV Home's settings (thumbs: the photos' small pictures too)
                 "home/photo/drop" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Home.drop(link.get(), r.json().optString("id")))
-                "home/update" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Home.update(link.get(), dir, r.lang))
+                "home/update" -> if (post) return HttpServer.Response.json(at("install") { dev.tvremote.core.ontv.Home.update(link.get(), dir, r.lang) })
                 "channels" -> if (!post) return HttpServer.Response.json(dev.tvremote.core.ontv.Channels.state { sh(it) })   // TV Channels: on the TV, and a newer one
                 "channels/manage" -> {                                // favourites and groups (the page's dialog): read, or the whole state saved
                     val c = dev.tvremote.core.ontv.Channels
@@ -126,13 +126,13 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     val c = dev.tvremote.core.ontv.Channels
                     return HttpServer.Response.json(c.manage({ sh(it) }, null, import = r.json()))
                 }
-                "channels/install" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Channels.install(link.get(), dir, r.lang))
+                "channels/install" -> if (post) return HttpServer.Response.json(at("install") { dev.tvremote.core.ontv.Channels.install(link.get(), dir, r.lang) })   // at(): the phone keeps going in the background, with its notification
                 "channels/open" -> if (post) {                        // a channel by its name; TV Channels finds it (or shows its search)
                     if (!dev.tvremote.core.ontv.Channels.open({ sh(it) }, r.json().optString("q"))) throw IOException("channels:missing")
                     return HttpServer.Response.ok()
                 }
                 "games" -> if (!post) return HttpServer.Response.json(dev.tvremote.core.ontv.Games.state { sh(it) })   // TV Games: on the TV, a newer one, or "soon"
-                "games/install" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Games.install(link.get(), dir, r.lang))
+                "games/install" -> if (post) return HttpServer.Response.json(at("install") { dev.tvremote.core.ontv.Games.install(link.get(), dir, r.lang) })
                 "games/open" -> if (post) {
                     if (!dev.tvremote.core.ontv.Games.open { sh(it) }) throw IOException("games:missing")
                     return HttpServer.Response.ok()
@@ -203,7 +203,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "space" -> return HttpServer.Response.json(space(r.q("path"), r.q("size").toLongOrNull() ?: 0L, r.q("apk") == "1"))
                 "job" -> {
                     val j = jobs[r.q("id")]
-                    return if (j == null) HttpServer.Response.error(404, "no such job") else HttpServer.Response.json(JSONObject(j.toString()))
+                    return if (j == null) HttpServer.Response.error(404, "no such job") else HttpServer.Response.json(snapshot(j))
                 }
             }
             if (!post) return null
@@ -758,7 +758,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 stops.remove(j.getString("id"))
             }
         }, "job").apply { isDaemon = true }.start()
-        return JSONObject(j.toString())
+        return snapshot(j)
     }
 
     @Throws(IOException::class)
@@ -1176,6 +1176,18 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     }
 
     companion object {
+        /**
+         * A copy of a job while its thread is still putting into it. A key added meanwhile breaks the walk through it: Android's
+         * org.json throws, the JVM's returns null from toString(), and `JSONObject(null)` was a 500 to a job that ran fine.
+         */
+        fun snapshot(j: JSONObject): JSONObject {
+            repeat(20) {
+                try { j.toString()?.let { return JSONObject(it) } } catch (e: ConcurrentModificationException) { }
+                Thread.sleep(5)
+            }
+            return JSONObject().put("id", j.optString("id")).put("status", "running").put("pct", 0).put("msg", "")
+        }
+
         /**
          * `/api/diagnose?ip=&kind=&name=&err=&lang=`: the quick self-check after a failed connect, answered as one conclusion with
          * what to do. It needs no ADB and no session, so the computer app answers it itself too (Server.kt). [link] is this app's

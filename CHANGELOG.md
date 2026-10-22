@@ -8,9 +8,13 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - Thư viện launcher: viền xanh của launcher đang dùng chạy đủ quanh thẻ (ảnh xem trước từng che mất nửa trên).
+- Cập nhật TV Setup cùng lúc với cài / cập nhật TV Channels, TV Games, TV Home trên TV yếu (box FPT Play): không còn "Mất kết nối với TV giữa chừng" làm hỏng cả hai. TV bận ghi file trả lời chậm thì chỉ lệnh đó chờ, kết nối ADB giữ nguyên.
+- App điện thoại: cài / cập nhật TV Channels, TV Games, TV Home cũng chạy nền với thông báo (trước chỉ chép file và TV Setup), và lần đầu hỏi cho chạy nền không giới hạn pin (MIUI / POCO cắt mạng của app khi chuyển sang app khác).
 
 **English**
 - Launcher gallery: the blue edge of the launcher in use runs all around its card (the preview picture hid its top half).
+- Updating TV Setup while TV Channels, TV Games or TV Home installs, on a weak TV (an FPT Play box): no more "Lost the TV midway" breaking both. A TV slow to answer while it writes a file makes only that command wait; the ADB connection stays.
+- Phone app: installing or updating TV Channels, TV Games and TV Home also goes on in the background with its notification (before: only copies and TV Setup), and the first time it asks to run without battery limits (MIUI / POCO cut the app's network once you switched apps).
 
 ## 0.17.0 - 2026-10-22
 
