@@ -150,6 +150,9 @@ class LibraryActivity : ComponentActivity() {
         } catch (e: Exception) { }
     }
 
+    private var tidy = false                                         // a downloaded game opened over the download card: put the library right behind it
+    override fun onStop() { super.onStop(); if (tidy) { tidy = false; closeOverlay(); reload() } }
+
     override fun onResume() {
         super.onResume()
         upd.check({ askUpdate(it) }, { updating(it) })
@@ -741,8 +744,8 @@ class LibraryActivity : ComponentActivity() {
                 if (msg != null) { popup(msg, listOf(getString(R.string.retry) to { getRom(h, s, tile) }), replace = true, icons = listOf(R.drawable.ic_refresh)); return@runOnUiThread }
                 getSharedPreferences("games", MODE_PRIVATE).edit().putString("got:" + h.optString("id"), saved).apply()
                 pendingFocus = "g:" + saved                                   // back from the game: on its tile in the library
-                closeOverlay(); reload()
-                try { startActivity(Intent(this, GameActivity::class.java).putExtra("path", File(Systems.romsDir(this), saved!!).path)) } catch (e: Exception) { }
+                try { startActivity(Intent(this, GameActivity::class.java).putExtra("path", File(Systems.romsDir(this), saved!!).path)); tidy = true }
+                catch (e: Exception) { closeOverlay(); reload() }                // the card closed and the new tile drawn once the game hides them (onStop): no flash
             }
         }.start()
     }

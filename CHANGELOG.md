@@ -8,9 +8,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - TV Games: remote của một số box (FPT) tự nhận là tay cầm, bấm một phím là chiếm ghế 1 nên game bài mất bài của bạn trên màn hình. Giờ chỉ tay cầm thật (có cần analog hoặc nút A/B…) mới được tính là tay cầm.
+- TV Games: phòng chờ hết đứng ở "Đang tải 100%" vài giây; dòng tải ẩn đi thì tên game không bị nhảy. Game NES tải lần đầu mở thẳng vào game, danh sách không còn nhảy, nháy trước khi mở. Ảnh Mèo nổ và Đố vui chụp lúc đang chơi (trước là màn kết thúc / dấu ?); TV tải lại ảnh khi danh mục đổi ảnh.
 
 **English**
 - TV Games: some boxes' remotes (FPT) say they are a game pad, so one key took seat 1 and a card game lost your hand from the screen. Only a real pad (sticks, or A/B… buttons) counts as one now.
+- TV Games: the lobby no longer sits on "Loading 100%" for seconds; the title stays put when the loading line goes. A NES game downloaded on first open goes straight into the game, no jump or flash of the library first. Boom Cats' and Quiz's pictures show the game being played (were the end screen / a "?"); the TV fetches a picture again when the catalog changes it.
 
 ## 0.18.1 - 2026-10-22
 

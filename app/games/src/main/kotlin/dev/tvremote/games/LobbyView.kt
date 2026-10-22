@@ -265,7 +265,10 @@ class LobbyView(
     /** The one-line warning ("1 of 2 players") or "" to clear it. */
     fun warn(text: String) { warnTv.text = text }
     /** How the game's page is coming ("" once it is in): the lobby is up while it loads behind. */
-    fun loading(text: String) { loadTv.text = text; loadRow.visibility = if (text.isEmpty()) View.GONE else View.VISIBLE }
+    fun loading(text: String) {                                       // once shown its room is kept, so the title does not jump when it goes
+        loadTv.text = text
+        loadRow.visibility = if (text.isNotEmpty()) View.VISIBLE else if (loadRow.visibility == View.GONE) View.GONE else View.INVISIBLE
+    }
 
     companion object { const val DW = 900; const val DH = 520; const val FOOT = 84; const val HERO_W = 394; const val HERO_H = 222; private const val EMPTY = "empty" }
 }

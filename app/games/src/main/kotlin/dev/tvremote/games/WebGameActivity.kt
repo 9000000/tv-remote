@@ -83,7 +83,11 @@ class WebGameActivity : ComponentActivity() {
             }
             addJavascriptInterface(Bridge(), "TVPadNative")
             webChromeClient = object : WebChromeClient() {
-                override fun onProgressChanged(v: WebView, p: Int) { if (!pageDone && errorCard == null) { loadPct = p; showLoading() } }
+                override fun onProgressChanged(v: WebView, p: Int) {
+                    if (pageDone || errorCard != null) return
+                    if (p >= 100) { loaded(); web.removeCallbacks(timeout); return }   // onPageFinished came 3-4 s after 100 % on a box: the page is there
+                    loadPct = p; showLoading()
+                }
                 override fun onConsoleMessage(m: ConsoleMessage): Boolean { Log.d(TAG, "console ${m.messageLevel()}: ${m.message()} (${m.sourceId().substringAfterLast('/')}:${m.lineNumber()})"); return true }
             }
             webViewClient = object : WebViewClient() {

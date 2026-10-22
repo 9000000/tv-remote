@@ -131,7 +131,7 @@
         "vi": "Đố vui",
         "en": "Quiz"
       },
-      "img": "img/quiz.jpg",
+      "img": "img/quiz2.jpg",
       "pad": "web",
       "players": 4,
       "genre": "quiz",
@@ -274,7 +274,7 @@
         "vi": "Mèo nổ",
         "en": "Boom Cats"
       },
-      "img": "img/meono.jpg",
+      "img": "img/meono2.jpg",
       "pad": "web",
       "players": 4,
       "genre": "party",

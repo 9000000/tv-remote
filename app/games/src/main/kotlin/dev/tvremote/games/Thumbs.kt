@@ -26,7 +26,10 @@ import java.util.concurrent.TimeUnit
  */
 object Thumbs {
     /** key: what the tile is ("g:<file name>", "w:<url>", "h:<id>"); the rest says where its picture may come from. */
-    class Src(val key: String, val boxes: List<String> = emptyList(), val img: String? = null, val page: String? = null, val asset: String? = null)
+    class Src(val key: String, val boxes: List<String> = emptyList(), val img: String? = null, val page: String? = null, val asset: String? = null) {
+        /** What a fetched picture is kept under: with the catalog's img, so a new picture (a new file name) is fetched again. */
+        val store get() = if (img != null) "$key@$img" else key
+    }
 
     private const val WEEK = 7 * 24 * 3600_000L
     private const val MIN30 = 30 * 60_000L                             // a catalog picture not on the site yet (pushed after the list): asked again soon
@@ -80,11 +83,11 @@ object Thumbs {
                 }
                 var have: String? = null
                 for (m in REMOTE + "snap") {
-                    val f = file(app, s.key, m)
+                    val f = file(app, if (m == "snap") s.key else s.store, m)
                     if (f.exists()) { decode(f)?.let { b -> have = m; main.post { show(b, m) } }; if (have != null) break }
                 }
                 if (have in REMOTE || (s.boxes.isEmpty() && s.img == null && s.page == null)) return@execute
-                val ms = miss(app, s.key)
+                val ms = miss(app, s.store)
                 if (ms.exists() && System.currentTimeMillis() - ms.lastModified() < (if (s.img != null) MIN30 else WEEK)) return@execute
                 if (s.key in failed) return@execute
                 net.execute {
@@ -121,7 +124,7 @@ object Thumbs {
         for ((u, mode) in tries) {
             val bytes = try { get(u, MAX_BYTES) } catch (e: IOException) { if (mode == "box") throw e else { netErr = e; null } } ?: continue
             val b = compose(c, bytes, mode) ?: continue
-            write(file(c, s.key, mode), b)
+            write(file(c, s.store, mode), b)
             return b to mode
         }
         if (pageErr != null) throw pageErr
