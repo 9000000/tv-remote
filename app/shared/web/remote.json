@@ -57,6 +57,9 @@
         "why": "on the web TV Home has its own key in the grid" },
       { "id": "tools-ir", "icon": "pulse", "t": "rkey.ir", "do": "ir", "cores": ["phone"], "when": "ir",
         "why": "the phone's own IR LED (IrRemote.kt), for this TV: a browser has none; 'when': only a phone that has one" },
+      { "id": "tools-pad-start", "icon": "gamepad", "t": "rkey.pad_start", "sub": "rkey.pad_sub", "do": "key", "arg": "PAD_START" },
+      { "id": "tools-pad-select", "icon": "gamepad", "t": "rkey.pad_select", "sub": "rkey.pad_sub", "do": "key", "arg": "PAD_SELECT" },
+      { "id": "tools-pad-b", "icon": "gamepad", "t": "rkey.pad_b", "sub": "rkey.pad_sub", "do": "key", "arg": "PAD_B" },
       { "id": "tools-gamespad", "icon": "gamepad", "t": "rkey.gamespad", "do": "gamespad", "needs": ["adb"], "cores": ["phone"],
         "why": "the phone's gyroscope aims in TV Games (GamesPointer.kt); a browser hides the sensor on a plain-http page" }
     ],

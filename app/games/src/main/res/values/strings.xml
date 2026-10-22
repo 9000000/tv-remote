@@ -52,8 +52,15 @@
     <string name="key_back">Back</string>
     <string name="hint_start">Start</string>
     <string name="hint_remote">Play with the remote</string>
+    <string name="map_title">Map remote keys</string>
+    <string name="map_press">Press the key for %1$s</string>
+    <string name="map_now">Now: %1$s</string>
+    <string name="map_skip">Back: skip, keep it</string>
+    <string name="map_start">Start</string>
+    <string name="map_select">Select</string>
+    <string name="map_b">B</string>
     <string name="press_start">Press Start</string>
-    <string name="remote_hint">Remote: OK = A · Start = ⏯ key, or Back → Press Start</string>
+    <string name="remote_hint">Remote: OK = A · Start = ⏯ · Back → Map remote keys</string>
     <string name="hint_exit">Exit</string>
     <string name="hint_ready">or everyone taps Ready</string>
     <string name="lobby_count">Starting in</string>

@@ -90,19 +90,27 @@ class GameActivity : ComponentActivity() {
         val root = FrameLayout(this).apply { addView(retro) }
         setContentView(root)
         server = GameServer.acquire(this)
+        keys = RemoteMap(this, root) { retro.frameSpeed = if (it) 0 else 1 }
         cards = GameCards(this, root, server, Systems.clean(file.name), null,
             onPause = { retro.frameSpeed = if (it) 0 else 1 }, onSave = { quickSave() }, onLoad = { quickLoad() }, onQuit = { finish() },
             withLobby = true, kind = sys.label, art = Thumbs.catalog(this, file.name) ?: Thumbs.src(this, sys, file.name), maxPlayers = players.first, minPlayers = players.second,
-            onStart = { tapStart() },
+            onStart = { tapStart() }, onMap = { keys.learn() },
             onGo = { if (server.lobbyPlayers().isEmpty()) android.widget.Toast.makeText(this, R.string.remote_hint, android.widget.Toast.LENGTH_LONG).show()
                 startedAt = System.currentTimeMillis(); snapLoop.removeCallbacksAndMessages(null); snapLoop.postDelayed(snapTick, 5000) })
         if (lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) bind()   // the core was fetched after onResume already ran
     }
 
     /** Start down, then up a moment later: a core reads the pad once a frame, so a press within one frame is missed. */
-    private fun tapStart() {
-        retro.sendKeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BUTTON_START, 0)
-        retro.postDelayed({ retro.sendKeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BUTTON_START, 0) }, 120)
+    private fun tapStart() { press(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BUTTON_START); press(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BUTTON_START) }
+
+    private lateinit var keys: RemoteMap
+    private val downAt = HashMap<Int, Long>()
+    /** Player 1's button, held at least 120 ms: a core reads the pad once a frame, and ⏯, colour keys or the phone's remote
+     *  (ADB `input keyevent`) send down and up at once, a press the game would never see. */
+    private fun press(action: Int, code: Int) {
+        if (action == KeyEvent.ACTION_DOWN) { downAt[code] = android.os.SystemClock.uptimeMillis(); retro.sendKeyEvent(action, code, 0); return }
+        val wait = 120 - (android.os.SystemClock.uptimeMillis() - (downAt.remove(code) ?: 0L))
+        if (wait > 0) retro.postDelayed({ retro.sendKeyEvent(action, code, 0) }, wait) else retro.sendKeyEvent(action, code, 0)
     }
 
     private val players by lazy { Catalog.players(this, file.name, null, Systems.maxPlayers(sys.id)) }
@@ -157,7 +165,7 @@ class GameActivity : ComponentActivity() {
 
     override fun dispatchKeyEvent(ev: KeyEvent): Boolean {
         if (!::cards.isInitialized) return super.dispatchKeyEvent(ev)   // still fetching the core
-        if (cards.key(ev)) return true
+        if (keys.key(ev) || cards.key(ev)) return true
         if (cards.paused) return super.dispatchKeyEvent(ev)          // the card's buttons take the D-pad and OK
         if (ev.repeatCount > 0) return true
         if (isPad(ev)) {                                              // a physical pad: its own slot
@@ -168,10 +176,9 @@ class GameActivity : ComponentActivity() {
         val code = when (ev.keyCode) {                                // the TV remote is player 1
             KeyEvent.KEYCODE_DPAD_CENTER -> KeyEvent.KEYCODE_BUTTON_A
             KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> KeyEvent.KEYCODE_BUTTON_START
-            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_MEDIA_PLAY -> { if (ev.action == KeyEvent.ACTION_DOWN) tapStart(); return true }   // remotes send ⏯ down and up at once
-            else -> ev.keyCode
+            else -> keys.button(ev.keyCode) ?: ev.keyCode
         }
-        retro.sendKeyEvent(ev.action, code, 0)
+        press(ev.action, code)
         return true
     }
 

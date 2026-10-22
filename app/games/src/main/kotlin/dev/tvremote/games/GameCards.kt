@@ -23,6 +23,7 @@ class GameCards(
     private val art: Thumbs.Src? = null, private val maxPlayers: Int = 2, private val minPlayers: Int = 1, private val onGo: () -> Unit = {},
     private val kind: String? = null,                    // the lobby's "NES" / "Web" line
     private val onStart: (() -> Unit)? = null,            // a console's Start pressed for player 1: the TV remote has no Start key
+    private val onMap: (() -> Unit)? = null,              // learn which remote keys are Start / Select / B (RemoteMap)
 ) {
     var paused = false; private set
     /** True from the moment the lobby opens until the game starts: the activities keep the pads' and the remote's input from the game meanwhile. */
@@ -35,14 +36,14 @@ class GameCards(
     private var startShown = true
     private val startPlayers = LinearLayout(act).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; minimumHeight = act.dp(26) }
     private val chipDots = LinearLayout(act).apply { gravity = Gravity.CENTER_VERTICAL }
-    private val pauseNote = act.label("", 18f, 0xFFAAB0C0.toInt()).apply { setPadding(0, act.dp(10), 0, 0) }
+    private val pauseNote = act.label("", 18f, act.getColor(R.color.tv_dim)).apply { setPadding(0, act.dp(10), 0, 0) }
     private val pingViews = HashMap<Int, MutableList<TextView>>()
     private lateinit var start: LinearLayout
     private lateinit var chip: LinearLayout
-    private lateinit var pauseCard: LinearLayout
+    private lateinit var pauseCard: View
     private lateinit var resumeBtn: View
 
-    private fun card() = GradientDrawable().apply { setColor(0xFF0B0D12.toInt()); cornerRadius = act.dp(18).toFloat() }
+    private fun card() = act.panelBg()
     private fun s(id: Int) = act.getString(id)
 
     init {
@@ -50,9 +51,9 @@ class GameCards(
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
             setPadding(act.dp(32), act.dp(22), act.dp(32), act.dp(22)); background = card(); minimumWidth = act.dp(400)
             addView(act.label(title, 26f).apply { maxLines = 2 })
-            addView(act.label(s(R.string.scan_play), 18f, 0xFFAAB0C0.toInt()).apply { setPadding(0, act.dp(4), 0, act.dp(10)) })
+            addView(act.label(s(R.string.scan_play), 18f, act.getColor(R.color.tv_dim)).apply { setPadding(0, act.dp(4), 0, act.dp(10)) })
             addView(act.qrView(server.url(), 150))
-            addView(act.label(server.url().substringAfter("//").substringBefore('/'), 16f, 0xFFAAB0C0.toInt()).apply { setPadding(0, act.dp(8), 0, act.dp(4)) })
+            addView(act.label(server.url().substringAfter("//").substringBefore('/'), 16f, act.getColor(R.color.tv_dim)).apply { setPadding(0, act.dp(8), 0, act.dp(4)) })
             if (runs != null) addView(act.label(act.getString(R.string.runs, runs), 14f, 0xFF8892A6.toInt()).apply { maxLines = 1; maxWidth = act.dp(380); ellipsize = android.text.TextUtils.TruncateAt.MIDDLE })
             addView(act.label(s(if (alone) R.string.press_ok else R.string.press_ok_web), 20f).apply { setPadding(0, act.dp(8), 0, act.dp(8)) })
             addView(startPlayers)
@@ -63,27 +64,28 @@ class GameCards(
             addView(act.label(s(R.string.chip), 15f).apply { setPadding(0, 0, act.dp(10), 0) }); addView(chipDots)
         }
         root.addView(chip, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(act.dp(24), act.dp(20), act.dp(24), act.dp(20)) })
-        resumeBtn = act.menuButton(s(R.string.resume), 300, 58, 24f) { resume() }
+        resumeBtn = act.menuButton(s(R.string.resume), 340, 56, 22f) { resume() }.withIcon(R.drawable.ic_play)
         val col = LinearLayout(act).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
-            addView(act.label(s(R.string.paused), 32f).apply { setPadding(0, 0, 0, act.dp(6)) })
+            addView(act.heading(s(R.string.paused)))
             addView(resumeBtn)
-            if (onStart != null) addView(act.menuButton(s(R.string.press_start), 300, 58, 24f) { resume(); onStart.invoke() })
-            if (onSave != null) addView(act.menuButton(s(R.string.quick_save), 300, 58, 24f) { pauseNote.text = onSave.invoke() })
-            if (onLoad != null) addView(act.menuButton(s(R.string.quick_load), 300, 58, 24f) { val m = onLoad.invoke(); if (m == null) resume() else pauseNote.text = m })
-            addView(act.menuButton(s(R.string.quit), 300, 58, 24f) { onQuit() })
+            if (onStart != null) addView(act.menuButton(s(R.string.press_start), 340, 56, 22f) { resume(); onStart.invoke() }.withIcon(R.drawable.ic_gamepad))
+            if (onMap != null) addView(act.menuButton(s(R.string.map_title), 340, 56, 22f) { resume(); onMap.invoke() }.withIcon(R.drawable.ic_keyboard))
+            if (onSave != null) addView(act.menuButton(s(R.string.quick_save), 340, 56, 22f) { pauseNote.text = onSave.invoke() }.withIcon(R.drawable.ic_save))
+            if (onLoad != null) addView(act.menuButton(s(R.string.quick_load), 340, 56, 22f) { val m = onLoad.invoke(); if (m == null) resume() else pauseNote.text = m }.withIcon(R.drawable.ic_undo))
+            addView(act.menuButton(s(R.string.quit), 340, 56, 22f) { onQuit() }.withIcon(R.drawable.ic_close))
             addView(pauseNote)
         }
         val side = LinearLayout(act).apply {
-            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(0, 0, act.dp(28), 0)
-            addView(act.qrView(server.url(), 110))
-            addView(act.label(s(R.string.scan_play), 15f, 0xFFAAB0C0.toInt()).apply { setPadding(0, act.dp(6), 0, 0) })
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(0, 0, act.dp(36), 0)
+            addView(act.qrView(server.url(), 200))
+            addView(act.label(s(R.string.scan_play), 18f, act.getColor(R.color.tv_dim)).apply { setPadding(0, act.dp(10), 0, 0) })
         }
-        pauseCard = LinearLayout(act).apply {
-            gravity = Gravity.CENTER_VERTICAL; setPadding(act.dp(36), act.dp(26), act.dp(36), act.dp(26)); background = card(); visibility = View.GONE
+        pauseCard = act.scrim(LinearLayout(act).apply {
+            gravity = Gravity.CENTER_VERTICAL; setPadding(act.dp(36), act.dp(26), act.dp(36), act.dp(26)); background = card()
             addView(side); addView(col)
-        }
-        root.addView(pauseCard, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
+        }).apply { visibility = View.GONE }
+        root.addView(pauseCard, FrameLayout.LayoutParams(-1, -1))
         refresh()
         if (withLobby && !quiet) openLobby()
     }

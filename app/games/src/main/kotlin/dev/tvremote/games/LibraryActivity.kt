@@ -585,23 +585,11 @@ class LibraryActivity : ComponentActivity() {
     private fun popup(title: String, entries: List<Pair<String, () -> Unit>>, replace: Boolean = false, extra: ((LinearLayout) -> Unit)? = null, focusIndex: Int = 0, icons: List<Int> = emptyList()) {
         if (replace) { overlay?.let { root.removeView(it) }; overlay = null } else lastFocus = currentFocus
         var first: View? = null
-        val v = FrameLayout(this).apply {
-            setBackgroundColor(0xF20B0D12.toInt()); isClickable = true
-            addView(LinearLayout(this@LibraryActivity).apply {
-                orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
-                addView(label(title, 28f).apply { typeface = android.graphics.Typeface.DEFAULT_BOLD; maxLines = 2; setPadding(dp(20), 0, dp(20), dp(10)) })
+        val v = scrim(panel(title).apply {
                 extra?.invoke(this)
-                // a list row: icon and word together on the left (a blank slot keeps rows without an icon in line)
-                fun row(b: TextView, r: Int?) {
-                    val ink = b.textColors
-                    val d = if (r != null) getDrawable(r)!!.mutate().also { it.setTintList(ink) } else android.graphics.drawable.ColorDrawable(0)
-                    d.setBounds(0, 0, dp(22), dp(22)); b.setCompoundDrawablesRelative(d, null, null, null)
-                    b.compoundDrawablePadding = dp(14); b.gravity = Gravity.START or Gravity.CENTER_VERTICAL; b.setPadding(dp(24), 0, dp(20), 0)
-                }
-                entries.forEachIndexed { n, (t, f) -> addView(menuButton(t, 420, 52, 20f) { f() }.also { b -> if (n == focusIndex) first = b; row(b, icons.getOrNull(n)) }) }
-                addView(menuButton(getString(R.string.close), 420, 52, 20f) { closeOverlay() }.also { if (first == null) first = it; row(it, R.drawable.ic_close) })
-            }, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
-        }
+                entries.forEachIndexed { n, (t, f) -> addView(menuButton(t, 420, 52, 20f) { f() }.also { b -> if (n == focusIndex) first = b; b.withIcon(icons.getOrNull(n)) }) }
+                addView(menuButton(getString(R.string.close), 420, 52, 20f) { closeOverlay() }.also { if (first == null) first = it; it.withIcon(R.drawable.ic_close) })
+            })
         overlay = v
         scroller?.descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
         root.addView(v, ViewGroup.LayoutParams(-1, -1))

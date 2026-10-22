@@ -11,6 +11,7 @@ import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
 import android.view.Gravity
 import android.view.View
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -49,6 +50,26 @@ fun Context.label(text: String, sp: Float, color: Int = Color.WHITE) = TextView(
     layoutParams = LinearLayout.LayoutParams(-2, -2)
 }
 
+/** The TV apps' panel (dev/TV_STYLE.md): `tv_card`, radius 16 dp; every card, popup and menu of TV Games is one. */
+fun Context.panelBg() = GradientDrawable().apply { setColor(getColor(R.color.tv_card)); cornerRadius = resources.getDimension(R.dimen.tv_radius_card) }
+
+/** A panel's padding and column; [title] on top when given. */
+fun Context.panel(title: String? = null) = LinearLayout(this).apply {
+    orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; background = panelBg()
+    setPadding(dp(36), dp(26), dp(36), dp(28))
+    if (title != null) addView(heading(title))
+}
+
+fun Context.heading(text: String) = label(text, 28f, getColor(R.color.tv_ink)).apply {
+    typeface = android.graphics.Typeface.DEFAULT_BOLD; maxLines = 2; setPadding(dp(20), 0, dp(20), dp(10))
+}
+
+/** The screen under a panel: dimmed, the game or the library still seen behind (a dark game hid a dark card on no scrim). */
+fun Context.scrim(child: View) = FrameLayout(this).apply {
+    setBackgroundColor(0xD90E1116.toInt()); isClickable = true
+    addView(child, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
+}
+
 /** A big focusable menu button: dark, white edge + light fill under focus. */
 fun Context.menuButton(text: String, w: Int, h: Int, sp: Float, onClick: () -> Unit) = TextView(this).apply {
     this.text = text; textSize = sp; gravity = Gravity.CENTER
@@ -59,12 +80,20 @@ fun Context.menuButton(text: String, w: Int, h: Int, sp: Float, onClick: () -> U
     setOnClickListener { onClick() }
 }
 
+/** A menu row: its line icon and words together on the left, the icon in the words' colour (dark under focus); a blank slot
+ *  keeps rows without an icon in line. */
+fun TextView.withIcon(r: Int?): TextView = apply {
+    val d = if (r != null) context.getDrawable(r)!!.mutate().also { it.setTintList(textColors) } else android.graphics.drawable.ColorDrawable(0)
+    val s = context.dp(22); d.setBounds(0, 0, s, s); setCompoundDrawablesRelative(d, null, null, null)
+    compoundDrawablePadding = context.dp(14); gravity = Gravity.START or Gravity.CENTER_VERTICAL; setPadding(context.dp(24), 0, context.dp(20), 0)
+}
+
 /** The "scan to add games" block: a big QR, the link under it and where else to put files. */
 fun Context.addPanel(server: GameServer): LinearLayout = LinearLayout(this).apply {
     orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
     addView(label(getString(R.string.scan_add), 28f))
     addView(qrView(server.addUrl(), 150).apply { (layoutParams as LinearLayout.LayoutParams).setMargins(0, dp(14), 0, dp(10)) })
-    addView(label(server.addUrl().substringBefore("/add"), 18f, 0xFFAAB0C0.toInt()))
+    addView(label(server.addUrl().substringBefore("/add"), 18f, getColor(R.color.tv_dim)))
     overlayButton()?.let { addView(it) }
 }
 
