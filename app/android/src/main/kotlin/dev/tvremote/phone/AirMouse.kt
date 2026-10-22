@@ -46,7 +46,6 @@ private object Air {
 
 private const val GAIN = 700f             // HID counts per radian turned: about a screen width for a wrist's sweep
 private const val DEAD = 0.025f           // rad/s below which the hand's tremor is ignored
-private const val TICK_DP = 26f      // finger travel per haptic tick
 private const val TICK_GAP_MS = 40L   // at least this between ticks: 25 a second at most
 private const val TOUCH_GAIN = 1.3f   // HID counts per dp of finger travel at walking speed
 private const val TOUCH_BOOST = 0.9f  // extra per dp/ms, like a laptop touchpad's curve
@@ -166,13 +165,12 @@ private fun MainActivity.airView(): FrameLayout {
     val noAnim = try { android.provider.Settings.Global.getFloat(contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f } catch (e: Exception) { false }   // "Remove animations": no trail or ripple, haptics stay
     val fx = AirFx(this, noAnim, dp(1).toFloat())                     // the finger, its trail, the click ripple and the held tint, all drawn in this one view
     pad.addView(fx, FrameLayout.LayoutParams(-1, -1))
-    var tickTravel = 0f
     var downAt = 0L; var sx = 0f; var sy = 0f; var moved = false; var scrollY = 0f; var scrollCarry = 0f
     var lastTapUp = 0L; var dtap = false; var lx = 0f; var ly = 0f; var lt = 0L; var drag = false; var longDone = false; val dragCarry = FloatArray(2)
     val slop = dp(8)
     pad.setOnTouchListener { v, ev ->
         when (ev.actionMasked) {
-            MotionEvent.ACTION_DOWN -> { fx.touch(ev.x, ev.y); tickTravel = 0f; downAt = ev.eventTime; sx = ev.x; sy = ev.y; lx = ev.x; ly = ev.y; lt = ev.eventTime; moved = false; drag = false; scrollY = 0f; Air.touching = true; Air.padRest = true; dtap = ev.eventTime - lastTapUp < 300 }   // a second touch soon after a tap: a drag if it moves
+            MotionEvent.ACTION_DOWN -> { fx.touch(ev.x, ev.y); downAt = ev.eventTime; sx = ev.x; sy = ev.y; lx = ev.x; ly = ev.y; lt = ev.eventTime; moved = false; drag = false; scrollY = 0f; Air.touching = true; Air.padRest = true; dtap = ev.eventTime - lastTapUp < 300 }   // a second touch soon after a tap: a drag if it moves
             MotionEvent.ACTION_POINTER_DOWN -> { moved = true; scrollY = (ev.getY(0) + ev.getY(1)) / 2 }   // two fingers: a wheel, never a click
             MotionEvent.ACTION_POINTER_UP -> { val i = if (ev.actionIndex == 0) 1 else 0; lx = ev.getX(i); ly = ev.getY(i); lt = ev.eventTime }   // one finger left: carry on from where it is, no jump
             MotionEvent.ACTION_MOVE -> {
@@ -190,8 +188,6 @@ private fun MainActivity.airView(): FrameLayout {
                         val speed = kotlin.math.hypot(ddx, ddy) / dt     // dp per ms
                         val k = TOUCH_GAIN * (1f + minOf(speed, 3f) * TOUCH_BOOST)
                         airMove(ddx * k, ddy * k, dragCarry)
-                        tickTravel += kotlin.math.hypot(ddx, ddy)
-                        if (tickTravel >= TICK_DP) { tickTravel %= TICK_DP; v.airTick() }   // a tick per 26 dp of finger travel, never more than 25 a second
                     }
                     lx = ev.x; ly = ev.y; lt = ev.eventTime
                     fx.touch(ev.x, ev.y)
@@ -369,15 +365,16 @@ private class AirFx(ctx: Context, private val still: Boolean, private val d: Flo
     private companion object { const val TRAIL_MS = 320L; const val RIPPLE_MS = 340L }
 }
 
-/** The scroll strip's face: an arrow at each end (the one in the scrolled direction flashes) and a thumb that follows the finger. */
+/** The scroll strip's face: grip ridges like a mouse wheel's along the whole strip, turning with the finger (offset = travel mod spacing, so it
+ *  is direct feedback and moves even with "Remove animations"), brighter while touched; an arrow at each end flashes in the scrolled direction. */
 private class StripFx(ctx: Context, private val still: Boolean, private val d: Float) : View(ctx) {
-    private var y = 0f; private var on = false; private var upAt = 0L
+    private var y = 0f; private var phase = 0f; private var on = false; private var upAt = 0L
     private var dir = 0; private var flashAt = 0L
     private val p = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val thumb = RectF(); private val tri = Path()
+    private val tri = Path()
     init { isClickable = false; isFocusable = false }
     fun down(py: Float) { on = true; y = py; invalidate() }
-    fun move(py: Float) { y = py; invalidate() }
+    fun move(py: Float) { phase = (phase + (py - y)) % (GAP * d); y = py; invalidate() }
     fun up() { on = false; upAt = SystemClock.uptimeMillis(); invalidate() }
     fun flash(dd: Int) { dir = dd; flashAt = SystemClock.uptimeMillis() }
     private fun arrow(c: Canvas, cx: Float, cy: Float, pointUp: Boolean, lit: Boolean) {
@@ -387,18 +384,19 @@ private class StripFx(ctx: Context, private val still: Boolean, private val d: F
     }
     override fun onDraw(c: Canvas) {
         val now = SystemClock.uptimeMillis(); var again = false
-        val w = width.toFloat(); val h = height.toFloat()
-        val fade = if (on) 1f else 1f - (now - upAt) / 260f
-        if (fade > 0f) {                                              // the thumb: lit while the finger is on it, fading out after
-            val th = 44 * d; val cy = y.coerceIn(th / 2, h - th / 2)
-            thumb.set(4 * d, cy - th / 2, w - 4 * d, cy + th / 2)
-            p.style = Paint.Style.FILL; p.color = accent((if (on) 170 else 90) * 1 * (if (on) 100 else (fade * 100).toInt()) / 100); c.drawRoundRect(thumb, 10 * d, 10 * d, p)
-            if (!on && !still) again = true
-        }
-        val lit = if (still) false else now - flashAt < 180
+        val w = width.toFloat(); val h = height.toFloat(); val gap = GAP * d
+        val fade = if (on) 1f else maxOf(0f, 1f - (now - upAt) / 400f)          // bright while touched, back to rest after
+        if (fade > 0f && !on && !still) again = true
+        p.style = Paint.Style.STROKE; p.strokeWidth = 2 * d; p.strokeCap = Paint.Cap.ROUND
+        p.color = (MUTED and 0xFFFFFF) or ((50 + (110 * fade).toInt()) shl 24)
+        var ly = (if (phase < 0) phase + gap else phase) + 26 * d                // between the two arrows
+        val x0 = 11 * d; val x1 = w - 11 * d
+        while (ly < h - 26 * d) { c.drawLine(x0, ly, x1, ly, p); ly += gap }
+        val lit = !still && now - flashAt < 180
         arrow(c, w / 2, 14 * d, true, lit && dir < 0)
         arrow(c, w / 2, h - 14 * d, false, lit && dir > 0)
         if (lit) again = true
         if (again) postInvalidateOnAnimation()
     }
+    private companion object { const val GAP = 9f }
 }
