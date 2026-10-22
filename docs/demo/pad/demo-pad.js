@@ -25,7 +25,7 @@
 
   // mouse -> touch (not when a real touch just happened: the browser sends both)
   var lastTouch = 0, down = false;
-  addEventListener('touchstart', function () { lastTouch = Date.now(); }, true);
+  addEventListener('touchstart', function (e) { if (e.isTrusted) lastTouch = Date.now(); }, true);   // only a real finger: the fake ones below made every click within 0.8 s of the last one vanish
   function fake(type, e) {
     var ev = new Event(type, { bubbles: true, cancelable: true });
     ev.changedTouches = [{ identifier: 1, clientX: e.clientX, clientY: e.clientY, target: e.target }];

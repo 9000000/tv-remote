@@ -91,14 +91,16 @@
   var COLOR = { NES: '#e11d48', WEB: '#0891b2' };
 
   function tileHtml(g) {
-    var f = g.i === S.i ? ' f' : '';
+    var f = '';                                    // the focus is set by focusOn(): a moved focus must not rebuild the art
     if (g.plus) return '<div class="g plus' + f + '" data-i="' + g.i + '"><b>+</b><span>' + name(g) + '</span><i class="ring"></i></div>';
     var c = COLOR[g.b];
     return '<div class="g' + f + '" data-i="' + g.i + '"><div class="art" style="background-image:url(' + g.img + ')"></div><span class="bg" style="background:' + c + '">' + g.b + '</span><div class="nm"><span>' + name(g) + '</span></div><i class="ring"></i></div>';
   }
+  function setHtml(e, h) { if (e._h !== h) { e.innerHTML = h; e._h = h; } }
   function draw() {
-    $('#lib').innerHTML = LIB.map(tileHtml).join('');
-    $('#sugw').innerHTML = '<div class="sug">' + T('Gợi ý', 'Suggestions') + '</div><div class="grid">' + SUG.map(tileHtml).join('') + '</div><div class="hint2">' + T('Giữ OK để ẩn', 'Hold OK to hide') + '</div>';
+    setHtml($('#lib'), LIB.map(tileHtml).join(''));
+    setHtml($('#sugw'), '<div class="sug">' + T('Gợi ý', 'Suggestions') + '</div><div class="grid">' + SUG.map(tileHtml).join('') + '</div><div class="hint2">' + T('Giữ OK để ẩn', 'Hold OK to hide') + '</div>');
+    document.querySelectorAll('#col .g[data-i]').forEach(function (e) { e.classList.toggle('f', +e.dataset.i === S.i); });
     var fe = $('#col .g.f'), col = $('#col'), y = 0, head = $('#hd').offsetTop + $('#hd').offsetHeight;
     if (fe) {
       var r = fe, top = 0; while (r && r !== col) { top += r.offsetTop; r = r.offsetParent; }   // offsetParent chain up to the column
