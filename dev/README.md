@@ -24,6 +24,8 @@ Notes beside them: `DECISIONS.md` (why some code looks odd), `TV_STYLE.md` (the 
 | `audit.js` | the whole page pressed through by a script (every tab, dialog, menu and chip, down to `--depth`), no TV: `/api` is the live demo's made-up TV. Each screen checked for layout, contrast, the UI rules, words, touch size, script errors; report with boxed screenshots in `/tmp/tvr-audit/index.html` (~20 min; `--only=apps`, `--budget=` s per tab) |
 | `contrast.py [URL]` | colour contrast on the rendered page, both themes × 1100 / 400 px × every tab; exit 1 under 4.5:1 (needs Chrome) |
 | `check_quiz.py` | the TV Games quiz bank (`docs/games/web/quiz/bank.json`) |
+| `fakegh.sh <tv-home.apk> <version>` | a fake GitHub release on 127.0.0.1:8099 (signed with a throwaway key in `.cache/fakegh`) for trying updates and the launcher gallery end to end; prints how to start the computer app against it |
+| `faketv.py <ip> <ports> <cert> <key>` | a fake TV with only Wireless debugging (mDNS + adbd's TLS start, then "not paired"), for the pairing flow without such a TV |
 | `serve_docs.py [port]` | the site (`docs/`) on localhost:8000 as Cloudflare Pages serves it (`/guide` is `guide.html`), never cached |
 
 ## gen/

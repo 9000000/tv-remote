@@ -648,7 +648,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         addView(col, LayoutParams(0, -2, 1f).apply { leftMargin = dp(9) })
     }
 
-    /** A line that gets smaller (down to [least] sp) rather than cut: "192.168.100.154" whole in a narrow column. */
+    /** A line that gets smaller (down to [least] sp) rather than cut: "192.168.100.200" whole in a narrow column. */
     private class Shrink(c: Context, private val most: Float, private val least: Float) : TextView(c) {
         init { typeface = Font.regular }
         override fun onMeasure(w: Int, h: Int) {
