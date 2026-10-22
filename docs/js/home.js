@@ -46,7 +46,22 @@
       n.textContent = (i + 1) + " / " + cards.length;
       pv.disabled = t.scrollLeft < 4; nx.disabled = t.scrollLeft > t.scrollWidth - t.clientWidth - 4;
     }
-    function go(d){ t.scrollBy({left: d * step(), behavior: calm ? "auto" : "smooth"}); }
+    // our own glide, not scrollBy smooth: that one fought the mandatory snap (a stutter at the end) and a second press started
+    // from wherever the first had got to, landing between cards; reduced motion still slides, only shorter (a jump lost people)
+    var glide = null;
+    function max(){ return t.scrollWidth - t.clientWidth; }
+    function to(i){
+      var s = step(), last = Math.ceil(max() / s - 0.01); i = Math.max(0, Math.min(i, last));
+      var from = t.scrollLeft, end = Math.min(i * s, max()), ms = calm ? 220 : 420, t0 = performance.now();
+      if (glide) cancelAnimationFrame(glide.raf);
+      glide = {i: i}; t.classList.add("glide");
+      (function f(now){
+        var k = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - k, 3);   // ease-out cubic
+        t.scrollLeft = from + (end - from) * e;
+        if (k < 1) glide.raf = requestAnimationFrame(f); else { glide = null; t.classList.remove("glide"); }
+      })(t0);
+    }
+    function go(d){ to((glide ? glide.i : Math.round(t.scrollLeft / step())) + d); }
     pv.addEventListener("click", function(){ go(-1); }); nx.addEventListener("click", function(){ go(1); });
     t.addEventListener("keydown", function(e){
       if (e.target !== t) return;
@@ -57,6 +72,7 @@
     var drag = null, moved = false;
     t.addEventListener("pointerdown", function(e){
       if (e.pointerType !== "mouse" || e.button !== 0) return;
+      if (glide){ cancelAnimationFrame(glide.raf); glide = null; t.classList.remove("glide"); }
       drag = {x: e.clientX, left: t.scrollLeft, id: e.pointerId, lx: e.clientX, lt: e.timeStamp, v: 0}; moved = false;
     });
     t.addEventListener("pointermove", function(e){
@@ -74,7 +90,7 @@
       t.classList.remove("drag");
       var s = step(), at = t.scrollLeft / s;
       var i = Math.abs(v) > 0.3 ? (v < 0 ? Math.ceil(at) : Math.floor(at)) : Math.round(at);   // a flick goes on to the next card in its way, never two
-      t.scrollTo({left: Math.max(0, i) * s, behavior: calm ? "auto" : "smooth"});
+      to(i);
     }
     t.addEventListener("pointerup", let_go); t.addEventListener("pointercancel", let_go);
     t.addEventListener("click", function(e){ if (moved){ e.preventDefault(); e.stopPropagation(); moved = false; } }, true);

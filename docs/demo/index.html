@@ -35,6 +35,10 @@
   .sw a img { width: 26px; height: 26px; border-radius: 7px; display: block; }
   .sw a:hover { background: #0e121b; }
   .sw a[aria-current="page"] { background: var(--sel); border-color: var(--blue); }
+  /* the site's name top left, as on every page of the site; it is the way home */
+  .brand { display: inline-flex; align-items: center; gap: 9px; font-weight: 800; font-size: 17px; text-decoration: none; color: var(--text); white-space: nowrap; margin-right: 6px; }
+  .brand img { width: 28px; height: 28px; border-radius: 8px; display: block; }
+  .bar > .pk { padding-left: 12px; border-left: 1px solid var(--line); }
   .tools { margin-left: auto; display: flex; align-items: center; gap: 8px; }
   .lang { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
   .lang button { border: 0; background: transparent; padding: 6px 10px; min-height: 34px; color: var(--muted); font-weight: 600; cursor: pointer; }
@@ -64,19 +68,20 @@
   .card .txt b { font-size: 26px; line-height: 1.15; }
   .card .txt span { color: var(--muted); font-size: 15px; }
   @media (max-width: 700px) { .cards { grid-template-columns: minmax(0, 1fr); gap: 14px; } #picker { padding: 18px 12px 32px; } #picker h1 { font-size: 24px; } .card .txt b { font-size: 22px; } .card .txt { padding: 14px 16px 16px; grid-template-columns: 56px 1fr; } .card .txt img { width: 56px; height: 56px; } }
-  @media (max-width: 760px) { .bar { padding: 6px 12px; } #dl .t, .bar .home span { display: none; } .bar .back span.l { display: inline; } }
+  @media (max-width: 760px) { .bar { padding: 6px 12px; } #dl .t { display: none; } #demobar .brand { font-size: 0; gap: 0; margin-right: 0; } .bar .back span.l { display: inline; } }
 </style>
 </head>
 <body class="pick">
 <div id="top">
   <div class="bar" id="pickbar">
+    <a class="brand" href="../"><img src="../img/icon.png" width="28" height="28" alt="">TV Remote</a>
     <span class="pk"><span class="vi">Dùng thử</span><span class="en">Live demo</span></span>
     <div class="tools">
       <span class="lang" role="group" aria-label="Language"><button type="button" data-l="vi">VI</button><button type="button" data-l="en">EN</button></span>
-      <a class="btn home" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1Z"/></svg><span class="vi">Trang chủ</span><span class="en">Home</span></a>
     </div>
   </div>
   <div class="bar" id="demobar">
+    <a class="brand" href="../"><img src="../img/icon.png" width="28" height="28" alt="">TV Remote</a>
     <a class="btn back" id="back" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m6-6l-6 6 6 6"/></svg><span class="l"><span class="vi">Tất cả app</span><span class="en">All apps</span></span></a>
     <nav class="sw" id="sw" aria-label="Apps"></nav>
     <div class="tools">

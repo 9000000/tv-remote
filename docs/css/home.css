@@ -96,6 +96,7 @@ nav .navtools{margin-left:auto}
 @media (pointer:fine){.car-track{cursor:grab}}
 .car-track.drag{cursor:grabbing;scroll-snap-type:none;scroll-behavior:auto;user-select:none}
 .car-track.drag .fc{pointer-events:none}
+.car-track.glide{scroll-snap-type:none;scroll-behavior:auto}   /* home.js slides it: the snap would pull against the glide */
 @media (prefers-reduced-motion:no-preference){.car-track{scroll-behavior:smooth}}
 .fc{flex:0 0 360px;scroll-snap-align:start;display:flex;flex-direction:column;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 10px 18px;color:var(--text);transition:border-color .15s,transform .15s}
 .fc:hover{border-color:var(--line2);transform:translateY(-2px)}
