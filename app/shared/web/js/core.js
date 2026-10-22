@@ -69,8 +69,8 @@ async function askTime(text, minutes, max = 1440) {
 // the one in use now (drawn on, css/kit.css), or -1. The menu closes first, then fn runs, so fn can ask the next question.
 // A menu opened from a choice of another (now, or once its list came in) has Back to it, and Esc goes there too.
 let menuFrom = null;
-function menuDlg(title, primary, items, current = -1) {
-  const from = menuFrom && menuFrom.title !== title && Date.now() - menuFrom.at < 8000 ? menuFrom.open : null;
+function menuDlg(title, primary, items, current = -1, alone = false) {   // alone: a question of its own, never a Back to the last menu
+  const from = !alone && menuFrom && menuFrom.title !== title && Date.now() - menuFrom.at < 8000 ? menuFrom.open : null;
   menuFrom = null;
   const icon = (name) => el('span', { className: 'mi', innerHTML: '<svg class="ic" aria-hidden="true"><use href="#i-' + name + '"/></svg>' });
   const back = () => { d.close(); from(); };

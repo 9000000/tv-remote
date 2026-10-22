@@ -1,11 +1,22 @@
 // 📺 Manage TV Channels: favourites and groups edited here, not with the D-pad on the TV (/api/channels/manage → TV Channels'
-// ChannelsReceiver over ADB, core/ontv/Channels.kt). The page holds the whole state by channel id and sends all of it after
-// each change (debounced): the TV keeps the streams of what it has and finds the streams of what is new. The channels to pick
+// ChannelsReceiver over ADB, core/ontv/Channels.kt). The page holds the whole state by channel id; edits are local (buttons
+// toggle in place, nothing redrawn, the list keeps its scroll), counted in a bar, and Save sends ALL of it in one call: the TV
+// keeps the streams of what it has and finds the streams of what is new. The channels to pick
 // from are one country's list at a time (a big one is ~200 KB: shown 200 at a time, the search narrows it).
-let chm = null;                                     // the open dialog: { favs, groups, view, cc, countries, lists, q, cat, saving, dirty }
+let chm = null;                                     // the open dialog: { favs, groups, base (as last saved), view, cc, countries, lists, q, cat, saving }
 onTvChange(() => { chm = null; });
 
 const CHM_SHOW = 200;                               // rows drawn at once: a country can have 2 000 channels
+// iptv-org's categories, in the page's language (an unknown one stays as it came)
+const CHM_CATS = { animation: 'chm.cat_animation', auto: 'chm.cat_auto', business: 'chm.cat_business', classic: 'chm.cat_classic',
+  comedy: 'chm.cat_comedy', cooking: 'chm.cat_cooking', culture: 'chm.cat_culture', documentary: 'chm.cat_documentary',
+  education: 'chm.cat_education', entertainment: 'chm.cat_entertainment', family: 'chm.cat_family', general: 'chm.cat_general',
+  interactive: 'chm.cat_interactive', kids: 'chm.cat_kids', legislative: 'chm.cat_legislative', lifestyle: 'chm.cat_lifestyle',
+  movies: 'chm.cat_movies', music: 'chm.cat_music', news: 'chm.cat_news', outdoor: 'chm.cat_outdoor', public: 'chm.cat_public',
+  relax: 'chm.cat_relax', religious: 'chm.cat_religious', science: 'chm.cat_science', series: 'chm.cat_series', shop: 'chm.cat_shop',
+  sports: 'chm.cat_sports', travel: 'chm.cat_travel', undefined: 'chm.cat_undefined', weather: 'chm.cat_weather', xxx: 'chm.cat_xxx' };
+const chmCat = (g) => String(g || '').split(/\s*[;,]\s*/).filter(Boolean).map((k) => CHM_CATS[k.toLowerCase()] ? T(CHM_CATS[k.toLowerCase()]) : k).join(', ');
+const chmCopy = (c) => JSON.parse(JSON.stringify({ favs: c.favs, groups: c.groups }));
 const chmFold = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[đĐ]/g, 'd').toLowerCase();
 
 async function chanManage() {
@@ -16,7 +27,8 @@ async function chanManage() {
     else if (!r.latest) toast(T('chm.old_none'));
     return;
   }
-  chm = { favs: r.favs, groups: r.groups, view: 'find', cc: r.country, countries: r.countries || [], lists: {}, q: '', cat: '', status: '', dirty: 0, T: null, dlg: null };
+  chm = { favs: r.favs, groups: r.groups, view: 'find', cc: r.country, countries: r.countries || [], lists: {}, q: '', cat: '', saving: false, dlg: null, sync: null };
+  chm.base = chmCopy(chm);
   chmDialog();
   chmLoad(chm.cc, false);
 }
@@ -35,12 +47,19 @@ async function chmLoad(cc, fresh) {
 
 function chmDialog() {
   const body = el('div', { className: 'chm' });
-  const d = el('dialog', { className: 'ask chmask' }, el('div', { className: 'card' },
+  const c = chm;
+  const msg = el('span', { className: 'chmn' });
+  const cancel = el('button', { type: 'button', className: 'small', textContent: T('chm.discard'), onclick: () => chmDiscard(c) });
+  const save = el('button', { type: 'button', className: 'small primary', textContent: T('chm.save'), onclick: () => chmSave(c) });
+  const bar = el('div', { className: 'chmbar', hidden: true }, msg, el('div', { className: 'tools' }, cancel, save));
+  const card = el('div', { className: 'card' },
     el('div', { className: 'card-head' }, el('h2', { textContent: T('chm.title') }),
-      el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
-    body));
-  d.addEventListener('close', () => { const c = chm; d.remove(); if (c && c.dirty) chmSend(c, true); chanCard(); });
-  chm.dlg = d; chm.body = body;
+      el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => chmClose(c) })),
+    body, bar);
+  const d = el('dialog', { className: 'ask chmask' }, card);
+  d.addEventListener('cancel', (e) => { e.preventDefault(); chmClose(c); });
+  d.addEventListener('close', () => { d.remove(); if (chm === c) chm = null; chanCard(); });
+  Object.assign(c, { dlg: d, body, card, bar, msg, cancel, save });
   document.body.append(d); d.showModal();
 }
 
@@ -76,36 +95,84 @@ async function chmDelete(g) {
   chm.groups = chm.groups.filter((x) => x !== g); chm.view = 'fav'; chmChanged();
 }
 
-// saved at once, in one go after a short pause; what the TV answers (it leaves out a channel it cannot find) becomes the state
-// again, unless the person changed something meanwhile
-function chmChanged() {
-  const c = chm; c.dirty++; c.status = 'saving'; chmDraw();
-  clearTimeout(c.T); c.T = setTimeout(() => chmSend(c, false), 600);
+// ---------- unsaved edits: counted against what the TV holds, saved in one call
+const chmSet = (a, b) => a.filter((x) => !b.includes(x)).length + b.filter((x) => !a.includes(x)).length;
+const chmIds = (l) => l.map((x) => x.id);
+function chmListDiff(a, b) {                       // channels put in or taken out; the same ones in another order count as one
+  const x = chmIds(a), y = chmIds(b), n = chmSet(x, y);
+  return n || x.some((id, i) => id !== y[i]) ? Math.max(n, 1) : 0;
 }
-async function chmSend(c, closing) {
-  clearTimeout(c.T);
-  const n = c.dirty; c.dirty = 0;
-  const r = await api('/api/channels/manage', { favs: c.favs.map((x) => x.id), groups: c.groups.map((g) => ({ id: g.id, name: g.name, ch: g.ch.map((x) => x.id) })) });
-  if (closing) return;
-  if (chm !== c) return;
-  if (!r || !r.receiver) { c.dirty += n; c.status = 'failed'; chmDraw(); return; }
-  if (!c.dirty) { c.favs = r.favs; c.groups = r.groups; if (c.view !== 'find' && c.view !== 'fav' && !chmGroup(c.view)) c.view = 'fav'; }
-  c.status = c.dirty ? 'saving' : 'saved';
+function chmPending() {
+  const c = chm, b = c.base;
+  let n = chmListDiff(b.favs, c.favs);
+  for (const g of c.groups) {
+    const o = b.groups.find((x) => x.id === g.id);
+    n += o ? chmListDiff(o.ch, g.ch) + (o.name !== g.name ? 1 : 0) : 1 + g.ch.length;
+  }
+  return n + b.groups.filter((o) => !c.groups.some((g) => g.id === o.id)).length;
+}
+function chmChanged() { if (chm.view === 'find') chmRefresh(); else chmDraw(); }
+function chmBar() {
+  const c = chm, n = chmPending();
+  c.bar.hidden = !n && !c.saving;
+  put(c.msg, 'textContent', c.saving ? T('chm.saving') : c.failed ? T('chm.failed') : T('chm.changes', { n }));
+  c.bar.classList.toggle('bad', !!c.failed && !c.saving);
+  c.cancel.disabled = c.save.disabled = c.saving;
+  c.body.inert = c.saving;
+}
+function chmDiscard(c) {
+  const b = JSON.parse(JSON.stringify(c.base));
+  c.favs = b.favs; c.groups = b.groups; c.failed = false;
+  if (c.view !== 'find' && c.view !== 'fav' && !chmGroup(c.view)) c.view = 'fav';
   chmDraw();
+}
+async function chmSave(c) {                         // true once the TV holds it; what it answers (it leaves out a channel it cannot find) becomes the state
+  if (c.saving) return false;
+  c.saving = true; c.failed = false; chmBar();
+  const r = await api('/api/channels/manage', { favs: c.favs.map((x) => x.id), groups: c.groups.map((g) => ({ id: g.id, name: g.name, ch: g.ch.map((x) => x.id) })) });
+  c.saving = false;
+  if (!r || !r.receiver) { c.failed = true; chmBar(); return false; }   // the error is shown already (friendly()); the edits stay
+  c.favs = r.favs; c.groups = r.groups; c.base = chmCopy(c);
+  if (c.view !== 'find' && c.view !== 'fav' && !chmGroup(c.view)) c.view = 'fav';
+  if (chm === c) { toast(T('chm.saved')); chmDraw(); }
+  return true;
+}
+function chmClose(c) {
+  if (c.saving) return;
+  if (!chmPending()) { c.dlg.close(); return; }
+  menuDlg(T('chm.keep_q'), 0, [
+    [T('chm.keep_save'), '', async () => { if (await chmSave(c)) c.dlg.close(); }],
+    [T('chm.keep_drop'), '', () => c.dlg.close()],
+    [T('chm.keep_stay'), '', () => {}],
+  ], -1, true);                                     // a question of its own, not a step after a menu: no Back
 }
 
 // ---------- drawing
-function chmDraw() {
-  const c = chm; if (!c || !c.body) return;
-  const tabs = UI.chips([
+function chmTabs() {
+  const c = chm;
+  return UI.chips([
     { label: T('chm.find'), on: c.view === 'find', fn: () => { c.view = 'find'; chmDraw(); } },
-    { label: '⭐ ' + c.favs.length, on: c.view === 'fav', title: T('chm.favourites'), fn: () => { c.view = 'fav'; chmDraw(); } },
-    ...c.groups.map((g) => ({ label: g.name + ' ' + g.ch.length, on: c.view === g.id, fn: () => { c.view = g.id; chmDraw(); } })),
+    { label: T('chm.fav_chip', { n: c.favs.length }), on: c.view === 'fav', title: T('chm.favourites'), fn: () => { c.view = 'fav'; chmDraw(); } },
+    ...c.groups.map((g) => ({ label: g.name + ' (' + g.ch.length + ')', on: c.view === g.id, fn: () => { c.view = g.id; chmDraw(); } })),
     { label: T('chm.new_group_btn'), fn: async () => { const g = await chmNewGroup(null); if (g) { c.view = g.id; chmDraw(); } } },
   ]);
-  const status = el('p', { className: 'note chmstate' + (c.status === 'failed' ? ' bad' : ''), textContent: T(c.status === 'saving' ? 'chm.saving' : c.status === 'failed' ? 'chm.failed' : c.status === 'saved' ? 'chm.saved' : 'chm.hint') });
-  c.body.replaceChildren(tabs, ...(c.view === 'find' ? chmFind() : chmMine()), status, ...chmFile());
+}
+// after an edit in the search list: only the tabs' counts, the bar and the buttons change; the list is not drawn again
+function chmRefresh() {
+  const c = chm; if (!c.tabs) return chmDraw();
+  const t = chmTabs(); c.tabs.replaceWith(t); c.tabs = t;
+  if (c.sync) c.sync();
+  chmBar();
+}
+function chmDraw() {
+  const c = chm; if (!c || !c.body) return;
+  const top = c.card.scrollTop, moved = c.shown !== c.view; c.shown = c.view;
+  c.sync = null;
+  c.tabs = chmTabs();
+  c.body.replaceChildren(c.tabs, ...(c.view === 'find' ? chmFind() : chmMine()), ...chmFile());
   const on = c.body.querySelector('.places .on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  c.card.scrollTop = moved ? 0 : top;
+  chmBar();
 }
 
 const chmLogo = (ch) => el('span', { className: 'chlogo' }, ch.l ? el('img', { src: ch.l, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer', onerror: (e) => e.target.remove() }) : null);
@@ -124,7 +191,7 @@ function chmMine() {
       el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('chm.remove'), 'aria-label': T('chm.remove'), onclick: () => chmToggle(c.view, ch) })] }));
   return [head, UI.list(rows, T(fav ? 'chm.no_favs' : 'chm.no_group'))];
 }
-const chmSub = (ch) => [ch.g && ch.g !== 'Undefined' ? ch.g : '', (ch.id.split('@')[0].split('.').pop() || '').length === 2 ? ch.id.split('@')[0].split('.').pop().toUpperCase() : ''].filter(Boolean).join(' · ');
+const chmSub = (ch) => [ch.g && ch.g.toLowerCase() !== 'undefined' ? chmCat(ch.g) : '', (ch.id.split('@')[0].split('.').pop() || '').length === 2 ? ch.id.split('@')[0].split('.').pop().toUpperCase() : ''].filter(Boolean).join(' · ');
 
 // all channels of a country: search, a category, ★ to favour, ＋ to put in a group
 function chmFind() {
@@ -137,16 +204,23 @@ function chmFind() {
   const all = list ? list.channels : [];
   const kinds = [...all.reduce((m, ch) => m.set(ch.g, (m.get(ch.g) || 0) + 1), new Map())].sort((a, b) => b[1] - a[1]);
   const drawCats = () => cats.replaceChildren(...[['', all.length], ...kinds].map(([k, n]) => el('button', { type: 'button', className: c.cat === k ? 'on' : '',
-    onclick: () => { c.cat = k; drawCats(); drawRows(); } }, k || T('chm.all'), el('b', { textContent: String(n) }))));
+    onclick: () => { c.cat = k; drawCats(); drawRows(); } }, k ? chmCat(k) : T('chm.all'), el('b', { textContent: '(' + n + ')' }))));
+  let live = [];                                    // the rows on screen: their buttons follow the state without drawing again
+  const mark = (r) => {
+    const fav = chmIsFav(r.ch.id), ing = c.groups.some((g) => g.ch.some((x) => x.id === r.ch.id));
+    r.fav.textContent = fav ? '★' : '☆'; r.fav.classList.toggle('on', fav); r.fav.setAttribute('aria-pressed', String(fav));
+    r.grp.classList.toggle('on', ing);
+  };
+  c.sync = () => live.forEach(mark);
   function drawRows() {
     const w = chmFold(c.q).split(/\s+/).filter(Boolean);
     const hit = all.filter((ch) => (!c.cat || ch.g === c.cat) && (!w.length || w.every((x) => (ch.f || (ch.f = chmFold(ch.n))).includes(x))));
+    live = [];
     const rows = hit.slice(0, CHM_SHOW).map((ch) => {
-      const fav = chmIsFav(ch.id), ing = c.groups.filter((g) => g.ch.some((x) => x.id === ch.id)).length;
-      return UI.item({ icon: chmLogo(ch), name: ch.n, sub: ch.g && ch.g !== 'Undefined' ? ch.g : '',
-        acts: [el('button', { type: 'button', className: 'small iconbtn' + (fav ? ' on' : ''), textContent: fav ? '★' : '☆', title: T('chm.favourite'), 'aria-label': T('chm.favourite'), 'aria-pressed': String(fav),
-            onclick: (e) => { chmToggle('fav', ch); } }),
-          el('button', { type: 'button', className: 'small iconbtn' + (ing ? ' on' : ''), textContent: '＋', title: T('chm.to_group'), 'aria-label': T('chm.to_group'), onclick: () => chmGroups(ch) })] });
+      const fav = el('button', { type: 'button', className: 'small iconbtn', title: T('chm.favourite'), 'aria-label': T('chm.favourite'), onclick: () => chmToggle('fav', ch) });
+      const grp = el('button', { type: 'button', className: 'small iconbtn', textContent: '＋', title: T('chm.to_group'), 'aria-label': T('chm.to_group'), onclick: () => chmGroups(ch) });
+      const r = { ch, fav, grp }; mark(r); live.push(r);
+      return UI.item({ icon: chmLogo(ch), name: ch.n, sub: ch.g && ch.g.toLowerCase() !== 'undefined' ? chmCat(ch.g) : '', acts: [fav, grp] });
     });
     results.replaceChildren(UI.list(rows, T('chm.none')));
     put(note, 'textContent', hit.length > CHM_SHOW ? T('chm.more', { shown: CHM_SHOW, n: hit.length }) : '');
@@ -174,7 +248,7 @@ function chmFile() {
   const pick = el('input', { type: 'file', accept: '.json,application/json', hidden: true, onchange: () => { const f = pick.files[0]; pick.value = ''; if (f) chmImport(f); } });
   const out = [UI.actions(
     UI.btn(T('chm.export'), async () => {
-      if (c.dirty) await chmSend(c, false);                         // the file is what the TV holds: save first
+      if (chmPending() && !await chmSave(c)) return;                // the file is what the TV holds: save first
       const a = el('a', { href: 'api/channels/export', download: '' }); document.body.append(a); a.click(); a.remove();
     }, 'small'),
     UI.btn(T('chm.import'), () => pick.click(), 'small'), pick)];
@@ -193,13 +267,13 @@ async function chmImport(f) {
   ]);
 }
 async function chmRun(c, doc, mode) {
-  if (c.dirty) await chmSend(c, false);
+  if (chmPending() && !await chmSave(c)) return;
   c.sum = { text: T('chm.imp_working') }; chmDraw();
   const r = await api('/api/channels/import', { mode, doc });
   if (chm !== c) return;
   const i = r && r.imported;
   if (!r || !r.receiver || !i || !i.ok) { c.sum = r && r.imported ? { text: T('chm.imp_bad') } : null; if (!r || !r.receiver) toast(T('chm.failed')); chmDraw(); return; }
-  c.favs = r.favs; c.groups = r.groups; c.view = 'fav'; c.status = 'saved';
+  c.favs = r.favs; c.groups = r.groups; c.base = chmCopy(c); c.view = 'fav';
   c.sum = { text: T('chm.imp_done', { g: i.groups, n: i.added }) + (i.skipped ? ' ' + T('chm.imp_skipped', { n: i.skipped }) : ''),
     missing: i.missing_n ? T('chm.imp_missing', { n: i.missing_n, names: i.missing.join(', ') + (i.missing_n > i.missing.length ? '…' : '') }) : '' };
   chmDraw();

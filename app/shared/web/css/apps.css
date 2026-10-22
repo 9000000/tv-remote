@@ -73,3 +73,8 @@ button.appchoice span { overflow:hidden; text-overflow:ellipsis; white-space:now
 .chm .item .acts button { min-width:0; padding:0; }
 .chm .item .acts .iconbtn { width:38px; }
 .chm > .places { flex-wrap:wrap; overflow:visible; margin:0; padding:0; }   /* groups can be many and names long: wrap, never clip the last chip */
+.chm .item .acts .iconbtn.on { color:var(--accent-text); }
+.chmbar { position:sticky; bottom:0; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 0 2px; background:var(--card); border-top:1px solid var(--line); z-index:2; }
+.chmbar[hidden] { display:none; }
+.chmbar .chmn { font-weight:600; font-size:14px; }
+.chmbar.bad .chmn { color:var(--bad); }
