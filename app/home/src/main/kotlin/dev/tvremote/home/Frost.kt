@@ -1,12 +1,14 @@
 package dev.tvremote.home
 
 import android.graphics.Bitmap
+import android.graphics.BitmapShader
 import android.graphics.Canvas
 import android.graphics.ColorFilter
+import android.graphics.Matrix
 import android.graphics.Paint
-import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.RectF
+import android.graphics.Shader
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.view.View
@@ -21,25 +23,29 @@ class Frost(private val radius: Float, stroke: Int) : Drawable() {
     private val glass = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x2EFFFFFF, 0x14FFFFFF)).apply {
         cornerRadius = radius; setStroke(stroke, 0x33FFFFFF)
     }
-    private val clip = Path()
     private val at = IntArray(2)
-    private val to = RectF()
+    private val box = RectF()
+    private val place = Matrix()
+    private val copy = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+    private var shaded: Bitmap? = null
 
     override fun onBoundsChange(b: android.graphics.Rect) {
         glass.bounds = b
-        clip.reset(); clip.addRoundRect(RectF(b), radius, radius, Path.Direction.CW)
+        box.set(b)
     }
 
     override fun draw(c: Canvas) {
         val soft = Frost.soft
         val v = callback as? View
         if (soft != null && v != null) {
+            // the copy as a shader filling the rounded box, not drawn through clipPath: on a BRAVIA (MT5891, Android 9) the path's
+            // stencil took each widget's redraw while the home scrolled to 73 ms frames (42 ms without the copy)
+            if (shaded !== soft) { copy.shader = BitmapShader(soft, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP); shaded = soft }
             v.getLocationInWindow(at)
-            c.save(); c.clipPath(clip)
-            to.set(-at[0].toFloat(), -at[1].toFloat(), -at[0] + screenW, -at[1] + screenH)
-            c.drawBitmap(soft, null, to, PAINT)
-            c.drawColor(0x70000000)                                   // as dark as the band's copy: white words stay white
-            c.restore()
+            place.setScale(screenW / soft.width, screenH / soft.height); place.postTranslate(-at[0].toFloat(), -at[1].toFloat())
+            copy.shader.setLocalMatrix(place)
+            c.drawRoundRect(box, radius, radius, copy)
+            c.drawRoundRect(box, radius, radius, DARK)                // as dark as the band's copy: white words stay white
         }
         glass.draw(c)
     }
@@ -49,7 +55,7 @@ class Frost(private val radius: Float, stroke: Int) : Drawable() {
     @Deprecated("Deprecated in Java") override fun getOpacity() = PixelFormat.TRANSLUCENT
 
     companion object {
-        private val PAINT = Paint(Paint.FILTER_BITMAP_FLAG)
+        private val DARK = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x70000000 }
         private val views = WeakHashMap<View, Boolean>()
         @JvmStatic var soft: Bitmap? = null; private set
         private var screenW = 0f

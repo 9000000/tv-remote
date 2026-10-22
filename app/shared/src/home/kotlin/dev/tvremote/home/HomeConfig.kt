@@ -28,6 +28,9 @@ import org.json.JSONObject
  *   focus   how the focused app shows: "glass" (a pane gliding from tile to tile) or "ring" (a blue ring on the tile)
  *   cols    how many app tiles in a row of the grid, [COLS_MIN]..[COLS_MAX] (default [COLS_DEFAULT]). A TV Home that has this reports
  *           "colsOk": true (the page offers the choice only to one that does)
+ *   rows    how many rows of apps the first screen shows under the clock or the cards, tenths allowed (1.2: row 1 and a fifth of
+ *           row 2), 1..[ROWS_MAX]; 0 = by itself (1.2 without cards, right under them with). More than fit stops where the grid
+ *           meets the cards or the clock (TV Home reports that as "rowsMax", and "rowsOk": true)
  *   widgets the cards between the clock and the favourites, in their order ([WIDGETS]): "system" (memory, storage, network,
  *           ADB), "usage" (the most used apps of the week and the day's app limits, asked of TV Setup: [USAGE]),
  *           "calendar" (the month, the lunar day under every solar day),
@@ -52,12 +55,14 @@ import org.json.JSONObject
 object HomeConfig {
     const val PKG = "dev.tvremote.home"
     const val RECEIVER = "$PKG/.HomeReceiver"
+    const val PHOTO_QR = "$PKG.PHOTO"                                  // HomeActivity's action: its QR screen for a photo from a phone (TV Setup's page on the TV has no photos)
     const val DREAM = "$PKG/.HomeDream"                               // the screensaver's component, as `screensaver_components` writes it
     const val WRITE_SECURE = "android.permission.WRITE_SECURE_SETTINGS"
     /** The Wi-Fi's name is location to Android (8.1+): granted over ADB when TV Home is installed or set up, never asked on the TV. */
     const val GRANT_WIFI = "pm grant $PKG android.permission.ACCESS_FINE_LOCATION >/dev/null 2>&1; "
     const val DOCK_MAX = 6
     const val COLS_MIN = 4; const val COLS_MAX = 8; const val COLS_DEFAULT = 5
+    const val ROWS_MAX = 10.0
     private const val HIDDEN_MAX = 300
     private const val ORDER_MAX = 800
     /** Plain gradients (HomeActivity.wallColors). */
@@ -185,6 +190,7 @@ object HomeConfig {
             .put("motion", o.optString("motion").takeIf { it in MOTIONS } ?: "")
             .put("focus", o.optString("focus").takeIf { it == "ring" } ?: "glass")
             .put("cols", o.optInt("cols", COLS_DEFAULT).coerceIn(COLS_MIN, COLS_MAX))
+            .put("rows", rows(o.optDouble("rows", 0.0)))
             .put("dream", o.optBoolean("dream", false))
             .put("note", o.optString("note").replace(Regex("\\s+"), " ").trim().take(NOTE_MAX))
             .put("place", o.optString("place").replace(Regex("\\s+"), " ").trim().take(PLACE_MAX))
@@ -195,6 +201,9 @@ object HomeConfig {
                 if (g != null) for ((k, v) in STYLES) g.optString(k).takeIf { it in v }?.let { out.put(k, it) }
             })
     }
+
+    /** [r] to tenths, 1..[ROWS_MAX]; anything under 1 (or not a number) is 0, by itself. */
+    fun rows(r: Double): Double = if (r.isNaN() || r < 1) 0.0 else Math.round(minOf(r, ROWS_MAX) * 10) / 10.0
 
     private val CARD = Regex("[a-z][a-z0-9_]{0,15}")
 

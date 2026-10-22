@@ -45,16 +45,6 @@ class HomeReceiver : BroadcastReceiver() {
         resultData = Base64.encodeToString(answer.toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
     }
 
-    /** A photo deleted: its file, its place in the set, and the background if it was showing (the next of the set, or Night). */
-    private fun drop(c: Context, id: String) {
-        Walls.file(c, id)?.delete()
-        val conf = Store.get(c)
-        val a = conf.getJSONArray("walls")
-        val walls = List(a.length()) { a.getString(it) }.filter { it != id }
-        val wall = if (conf.optString("wall") != id) conf.optString("wall") else walls.firstOrNull { Walls.usable(c, it) } ?: "night"
-        Store.change(c, JSONObject().put("walls", JSONArray(walls.ifEmpty { listOf(wall) })).put("wall", wall).put("photo", System.currentTimeMillis()))
-    }
-
     /** 96x54 JPEG of a photo as base64 (the page's chips show it), kept in the cache by the photo's time stamp. */
     private fun thumb(c: Context, id: String): String? {
         val f = Walls.file(c, id) ?: return null
@@ -67,5 +57,17 @@ class HomeReceiver : BroadcastReceiver() {
             out.toByteArray().also { cache.writeBytes(it) }
         }
         return Base64.encodeToString(bytes, Base64.NO_WRAP)
+    }
+
+    companion object {
+        /** A photo deleted: its file, its place in the set, and the background if it was showing (the next of the set, or Night). */
+        fun drop(c: Context, id: String) {
+            Walls.file(c, id)?.delete()
+            val conf = Store.get(c)
+            val a = conf.getJSONArray("walls")
+            val walls = List(a.length()) { a.getString(it) }.filter { it != id }
+            val wall = if (conf.optString("wall") != id) conf.optString("wall") else walls.firstOrNull { Walls.usable(c, it) } ?: "night"
+            Store.change(c, JSONObject().put("walls", JSONArray(walls.ifEmpty { listOf(wall) })).put("wall", wall).put("photo", System.currentTimeMillis()))
+        }
     }
 }

@@ -108,6 +108,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "dim" -> return HttpServer.Response.json(dev.tvremote.core.ontv.Dim.call({ sh(it) }, if (post) r.json() else null))
                 "home" -> return HttpServer.Response.json(dev.tvremote.core.ontv.Home.call({ sh(it) }, if (post) r.json() else null,
                     if (!post && r.q("thumbs") == "1") "--ez thumbs true" else ""))   // TV Home's settings (thumbs: the photos' small pictures too)
+                "home/photo/qr" -> if (post) { dev.tvremote.core.ontv.Home.photoQr { sh(it) }; return HttpServer.Response.json(JSONObject().put("ok", true)) }
                 "home/photo/drop" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Home.drop(link.get(), r.json().optString("id")))
                 "home/update" -> if (post) return HttpServer.Response.json(at("install") { dev.tvremote.core.ontv.Home.update(link.get(), dir, r.lang) })
                 "channels" -> if (!post) return HttpServer.Response.json(dev.tvremote.core.ontv.Channels.state { sh(it) })   // TV Channels: on the TV, and a newer one

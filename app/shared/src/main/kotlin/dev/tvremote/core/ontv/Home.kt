@@ -53,8 +53,12 @@ object Home {
         try {
             r.download(file, null)
             if (!go()) return now
+            val shown = sh("dumpsys activity activities | grep -m1 -E 'topResumedActivity|mResumedActivity'").contains(HomeConfig.PKG + "/")
             val out = Setup(adb, dir, lang) { }.install(file)
             if (!out.contains("Success")) throw IOException("launcher:install:" + out.trim().lines().lastOrNull().orEmpty().take(200))
+            // the install kills the home on screen and Android does not start it again: the last app used came up in its place
+            // (an FPT box showed TV Channels, nothing pressed). Also in standby (AutoUpdate's time), where it waited for the wake-up
+            if (shown) sh("am start -a android.intent.action.MAIN -c android.intent.category.HOME >/dev/null 2>&1")
         } finally { file.delete() }
         try { adb.shell(HomeConfig.GRANT_WIFI + "cmd package compile -m speed -f ${HomeConfig.PKG} >/dev/null 2>&1", 120000) } catch (x: IOException) { }   // as LauncherInstall
         checked = null
@@ -79,6 +83,12 @@ object Home {
         val set = conf.optJSONArray("walls")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList()
         val walls = if (conf.optString("wevery", "off") == "off") listOf(id) else set + id
         return call(sh, JSONObject().put("walls", org.json.JSONArray(walls)).put("wall", id).put("photo", System.currentTimeMillis()))
+    }
+
+    /** TV Home's QR screen for a photo from a phone, over its home screen: the page on the TV itself has no photos to pick. */
+    @Throws(IOException::class)
+    fun photoQr(sh: (String) -> String) {
+        if (!sh("am start -a ${HomeConfig.PHOTO_QR} -n ${HomeConfig.PKG}/.HomeActivity 2>&1").contains("Starting")) throw IOException("home:photo")
     }
 
     /** A photo taken out: TV Home deletes the file and its place in the set (it owns them). */

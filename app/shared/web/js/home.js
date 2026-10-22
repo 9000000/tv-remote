@@ -106,7 +106,23 @@ async function homeOpen() {
     if (n && n.installed) { r = n; homeNow = n; draw(); }
   };
   const after = async (n) => { r = n; homeNow = n; draw(); const t = await api('/api/home?thumbs=1'); if (t && t.installed) { keepThumbs(t); r = t; homeNow = t; draw(); } };   // a photo came or went: its small picture
-  const dropPhoto = async (id) => { const n = await api('/api/home/photo/drop', { id }); if (n && n.installed) after(n); };
+  const dropPhoto = async (id) => { const n = await api('/api/home/photo/drop', { id }); if (n && n.installed) await after(n); };
+  // on the TV itself (TV Setup's page) there is no ✕ to aim at with the D-pad: OK held on a photo asks, then deletes, as on TV Home
+  const holdDrop = (b, id) => {
+    let t = 0, held = false;
+    b.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      if (e.repeat || held) { e.preventDefault(); return; }
+      t = setTimeout(async () => { held = true; if (!await ask(T('home.photo_del_q'), { ok: T('home.photo_remove'), danger: true })) return;
+        const at = [...walls.children].findIndex((c) => c.contains(b));
+        await dropPhoto(id);
+        const near = walls.children[at] || walls.children[at - 1];      // its neighbour, not the top of the dialog
+        if (near) (near.querySelector('button') || near).focus();
+      }, 600);
+    });
+    b.addEventListener('keyup', (e) => { if (e.key === 'Enter') clearTimeout(t); });
+    b.addEventListener('click', (e) => { if (held) { held = false; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+  };
 
   const row = (pkg, acts) => {
     const icon = appIcon(pkg), name = el('span', { textContent: appLabel(pkg) });
@@ -125,9 +141,10 @@ async function homeOpen() {
     const p = await chooseApp(T('home.pick_hide'), apps().filter((x) => !r.config.hidden.includes(x) && !r.config.dock.includes(x)));
     if (p) send({ hidden: [...r.config.hidden, p] });
   } });
-  const walls = el('div', { className: 'fchips homewalls' });
-  // in the head, not a tile among thirty: people did not find it there
-  const upload = el('button', { type: 'button', className: 'small', textContent: T('home.upload'), onclick: () => file.click() });
+  const walls = el('div', { className: 'fchips homewalls' }), holdNote = el('p', { className: 'note', textContent: T('home.photo_hold'), hidden: true });
+  // right over the pictures, filled: a tile among thirty went unseen, and in the head over "Change automatically" nobody
+  // looked back up for it (eyes go down to the pictures)
+  const upload = el('button', { type: 'button', className: 'primary', textContent: T('home.upload'), onclick: () => window.ONTV ? api('/api/home/photo/qr', {}) : file.click() });   // on the TV: TV Home's QR, a photo comes from a phone
   const everyHead = el('h3', { textContent: T('home.rotate') }), every = el('div', { className: 'fchips homeevery' }), everyNote = el('p', { className: 'note' });
   const file = el('input', { type: 'file', accept: 'image/*', multiple: true, hidden: true, onchange: async () => {
     // one at a time (the TV takes a photo per ADB push); a TV Home without rotation has room for one only
@@ -164,6 +181,12 @@ async function homeOpen() {
   const focusHead = el('h3', { textContent: T('home.focus') }), focus = el('div', { className: 'fchips' });
   // app tiles per row (HomeConfig "cols", 4..8); only a TV Home that reports "colsOk"
   const colsHead = el('h3', { textContent: T('home.cols') }), cols = el('div', { className: 'fchips' });
+  // rows of apps on the first screen (HomeConfig "rows", tenths, 0 = by itself), up to "rowsMax" the TV measured; a TV Home that reports "rowsOk"
+  const rowsIn = el('input', { type: 'number', min: '1', step: '0.1', inputMode: 'decimal', 'aria-label': T('home.rows') });
+  const rowsSet = el('button', { type: 'button', className: 'primary', textContent: T('home.rows_set'), onclick: () => { const v = parseFloat(String(rowsIn.value).replace(',', '.')); if (v >= 1) send({ rows: Math.round(v * 10) / 10 }); } });
+  const rowsAuto = el('button', { type: 'button', textContent: T('home.rows_auto'), onclick: () => { rowsIn.value = ''; send({ rows: 0 }); } });
+  rowsIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') rowsSet.click(); });
+  const rowsHead = el('h3', { textContent: T('home.rows') }), rowsLine = UI.line(rowsIn, rowsSet, rowsAuto), rowsNote = el('p', { className: 'note' });
   // how much moves (HomeConfig "motion"): "" calm on a TV with little memory; absent from a TV Home older than the levels
   const motionHead = el('h3', { textContent: T('home.motion') }), motion = el('div', { className: 'fchips' });
   const packHead = el('h3', { textContent: T('home.pack') }), packBox = el('div', { className: 'packwrap' }), packNote = el('p', { className: 'note', textContent: T('home.pack_note') });
@@ -210,6 +233,10 @@ async function homeOpen() {
     colsHead.hidden = cols.hidden = !c.colsOk;
     cols.replaceChildren(...[4, 5, 6, 7, 8].map((n) =>
       el('button', { type: 'button', className: (c.cols || 5) === n ? 'on' : '', 'aria-pressed': String((c.cols || 5) === n), onclick: () => send({ cols: n }) }, String(n))));
+    rowsHead.hidden = rowsLine.hidden = rowsNote.hidden = !c.rowsOk;
+    if (document.activeElement !== rowsIn) rowsIn.value = c.rows >= 1 ? String(c.rows) : '';
+    rowsIn.placeholder = T('home.rows_auto'); if (c.rowsMax >= 1) rowsIn.max = String(c.rowsMax);
+    rowsNote.textContent = c.rowsMax >= 1 ? T('home.rows_note', { n: c.rowsMax }) : T('home.rows_note0');
     motionHead.hidden = motion.hidden = c.motion === undefined || c.anim === false;
     motion.replaceChildren(...[['', 'home.motion_auto'], ['calm', 'home.motion_calm'], ['full', 'home.motion_full']].map(([k, id]) =>
       el('button', { type: 'button', className: (c.motion || '') === k ? 'on' : '', onclick: () => send({ motion: k }) }, T(id))));
@@ -287,8 +314,11 @@ async function homeOpen() {
     const photos = (r.photos || []).map((p, i) => {
       const t = homeThumbs[p.id + ':' + p.v], face = el('i', {}, t ? el('img', { src: 'data:image/jpeg;base64,' + t, alt: '' }) : '🖼️');
       const del = el('button', { type: 'button', className: 'small iconbtn wallx', textContent: '✕', title: T('home.photo_remove'), 'aria-label': T('home.photo_remove'), onclick: () => dropPhoto(p.id) });
-      return tile(p.id, face, T('home.wall_photo_n', { n: i + 1 }), del);
+      const cell = tile(p.id, face, T('home.wall_photo_n', { n: i + 1 }), del);
+      if (window.ONTV) { del.hidden = true; holdDrop(cell.firstChild, p.id); }
+      return cell;
     });
+    holdNote.hidden = !(window.ONTV && photos.length);
     walls.replaceChildren(...photos, ...art, bing, ...plain);         // the person's own first
     every.replaceChildren(...Object.keys(HOME_EVERY).map((e) => el('button', { type: 'button', className: c.wevery === e ? 'on' : '', 'aria-pressed': String(c.wevery === e), textContent: T(HOME_EVERY[e]), onclick: () => send({ wevery: e }) })));
     put(everyNote, 'textContent', multi ? T(set.length < 2 && set[0] !== 'bing' ? 'home.rotate_pick' : 'home.rotate_set') : '');   // Bing alone turns through its last 8 days
@@ -298,9 +328,9 @@ async function homeOpen() {
   const d = el('dialog', { className: 'ask homeask' }, el('div', { className: 'card' },
     el('div', { className: 'card-head' }, el('h2', { textContent: T('home.title') }), el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
     el('div', { className: 'card-head' }, el('h3', { textContent: T('home.dock') }), addDock), dock,
-    el('div', { className: 'card-head' }, el('h3', { textContent: T('home.wall') }), upload), everyHead, every, everyNote, walls, file,
+    el('h3', { textContent: T('home.wall') }), everyHead, every, everyNote, el('div', { className: 'actions' }, upload), walls, holdNote, file,
     galHead, gal, credit,
-    langHead, langs, focusHead, focus, colsHead, cols, motionHead, motion,
+    langHead, langs, focusHead, focus, colsHead, cols, rowsHead, rowsLine, rowsNote, motionHead, motion,
     el('label', { className: 'check' }, clock, el('span', { textContent: T('home.clock24') })),
     el('label', { className: 'check' }, greet, el('span', { textContent: T('home.greet') })),
     el('label', { className: 'check' }, anim, el('span', { textContent: T('home.anim') })),
@@ -336,21 +366,37 @@ async function homeGallery(box, credit, head, done) {
 }
 
 // A photo as the background: made the TV's size here (a phone's 12 MP photo would take a while over ADB and fill the
-// TV's memory), cropped to fill the screen, then sent
+// TV's memory), shown in the TV's frame first so the crop can be moved (photofit.js, the same as TV Home's own phone page), then sent
 async function homePhoto(f, done) {
-  toast(T('home.sending_photo'));
   try {
-    const img = await createImageBitmap(f);
-    const W = 1920, H = 1080, s = Math.max(W / img.width, H / img.height);
-    const c = el('canvas', { width: W, height: H });
-    c.getContext('2d').drawImage(img, (W - img.width * s) / 2, (H - img.height * s) / 2, img.width * s, img.height * s);
-    const blob = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.85));
+    const img = await photoOpen(f);
+    const W = 1920, H = 1080;
+    const view = await homeCropAsk(img, W, H);
+    if (!view) return false;                                          // cancelled: nothing sent, nothing said
+    toast(T('home.sending_photo'));
+    const blob = await photoBlob(img, W, H, view, 0.85);
     const x = await fetch('/api/home/photo', { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: blob });
     const n = await x.json().catch(() => ({}));
     if (!x.ok) throw new Error(n.error || x.statusText);
     done(n); toast(T('home.photo_done'));
     return true;
   } catch (e) { toast(T('common.error_msg', { msg: friendly(e.message) })); return false; }
+}
+
+// The photo in the TV's shape, to move and widen before it is sent; resolves with the crop's view, or null when cancelled.
+function homeCropAsk(img, W, H) {
+  return new Promise((ok) => {
+    let view = null;
+    const cv = el('canvas', { className: 'photocrop', width: 640, height: Math.round(640 * H / W) });
+    const d = el('dialog', { className: 'ask' }, el('div', { className: 'card' },
+      el('h2', { textContent: T('home.crop_title') }), cv, el('p', { className: 'note', textContent: T('home.crop_hint') }),
+      el('div', { className: 'actions' },
+        el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => d.close() }),
+        el('button', { type: 'button', className: 'primary', textContent: T('home.crop_send'), onclick: () => { view = pv; d.close(); } }))));
+    d.addEventListener('close', () => { d.remove(); ok(view); });
+    document.body.append(d); d.showModal();
+    const pv = photoCrop(cv, img);
+  });
 }
 
 $('#homeopen').addEventListener('click', homeOpen);

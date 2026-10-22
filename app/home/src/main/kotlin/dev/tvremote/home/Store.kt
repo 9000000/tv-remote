@@ -21,7 +21,7 @@ object Store {
     private fun effective(c: Context, conf: JSONObject): JSONObject {
         // on until someone turns it off: older builds saved "off" for 2 GB boxes nobody had asked (it costs no memory, only frames)
         if (!prefs(c).getBoolean("anim_chosen", false)) conf.put("anim", true)
-        return conf.put("dream", Dream.isOn(c)).put("wsizes", true).put("colsOk", true)   // an older TV Home has none: the page offers it the old layout chips
+        return conf.put("dream", Dream.isOn(c)).put("wsizes", true).put("colsOk", true).put("rowsOk", true).put("rowsMax", rowsFit)   // an older TV Home has none: the page offers it the old layout chips
             .put("wstyles", HomeConfig.styles())                  // the looks of the cards that have some (an older one has none)
             .put("wrotate", true)                                 // the background can turn through a set (an older one has one choice)
     }

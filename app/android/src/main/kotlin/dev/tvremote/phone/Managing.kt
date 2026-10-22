@@ -1,6 +1,7 @@
 package dev.tvremote.phone
 
 import dev.tvremote.core.T
+import android.app.Activity
 import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Typeface
@@ -200,8 +201,17 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
 
     fun picked(result: Int, data: Intent?) {
         val cb = picking ?: return
-        cb.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(result, data))
+        cb.onReceiveValue(pickedUris(result, data))
         picking = null
+    }
+
+    // parseResult reads only getData(): a picker that answers a multiple pick with ClipData alone (a POCO's gallery) gave the
+    // page null, and the page heard nothing, not even an error
+    private fun pickedUris(result: Int, data: Intent?): Array<Uri>? {
+        if (result != Activity.RESULT_OK || data == null) return null
+        val clip = data.clipData
+        if (clip != null && clip.itemCount > 0) return Array(clip.itemCount) { clip.getItemAt(it).uri }
+        return WebChromeClient.FileChooserParams.parseResult(result, data)
     }
 
     override fun handle(r: HttpServer.Request): HttpServer.Response {

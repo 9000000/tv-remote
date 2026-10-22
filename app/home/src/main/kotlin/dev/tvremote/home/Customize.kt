@@ -29,7 +29,67 @@ import org.json.JSONObject
  */
 object Customize {
     private const val ACCENT = 0xFF8AB4F8.toInt()
+    private const val STEP_FILL = 0xF0161A24.toInt()                   // the rows stepper: nearly opaque, its number read over any background
     private const val DIM = 0xA6FFFFFF.toInt()
+    private const val GLASS_FOCUS = 0x2EFFFFFF                          // a row of the panel: focused, at rest, its edge
+    private const val GLASS_FILL = 0x12FFFFFF
+    private const val GLASS_EDGE = 0x1FFFFFFF
+
+    private fun rowsWord(a: Context, v: Double) = if (v < 1) a.getString(R.string.c_rows_auto) else String.format(java.util.Locale.ROOT, "%.1f", v)
+
+    /**
+     * "rows" or "cols" with the remote: rows ◀ ▶ a tenth, ▲ ▼ a whole row; columns ◀ ▶ ▲ ▼ one. OK or Back done. The panel steps
+     * aside ([panel] hidden) and the number sits in the clock's corner with no dim, so each step shows on the home screen at once
+     * (saved a moment after the last press: holding a key does not rebuild it every repeat). Then the panel is back as it was.
+     * Rows below 1 are "by itself"; the most is what fits under the clock or the cards ([rowsFit]).
+     */
+    private fun stepper(a: Activity, panel: Dialog, key: String, done: () -> Unit) {
+        val d = a.resources.displayMetrics.density
+        fun dp(v: Number) = (v.toFloat() * d).toInt()
+        val rows = key == "rows"
+        var v = if (rows) Store.get(a).optDouble("rows", 0.0) else Store.get(a).optInt("cols", HomeConfig.COLS_DEFAULT).toDouble()
+        val most = if (!rows) HomeConfig.COLS_MAX.toDouble() else if (rowsFit >= 1) rowsFit else HomeConfig.ROWS_MAX
+        val dialog = Dialog(a, R.style.Menu)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        val num = Font.on(TextView(a)).apply { textSize = 44f; setTextColor(Color.WHITE); gravity = Gravity.CENTER; typeface = Font.light }
+        val note = Font.on(TextView(a)).apply { textSize = 13f; setTextColor(DIM); gravity = Gravity.CENTER }
+        fun say() {
+            num.text = if (rows) rowsWord(a, v) else v.toInt().toString()
+            note.text = a.getString(if (rows && v >= 1 && v >= most - 0.05) R.string.c_rows_most else if (rows) R.string.c_rows_keys else R.string.c_cols_keys)
+        }
+        val save = Runnable { Store.change(a, JSONObject().put(key, if (rows) v else v.toInt())) }
+        val box = LinearLayout(a).apply {
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; isFocusable = true; isFocusableInTouchMode = true   // opened by a touch (a mouse, adb), it still takes the keys
+            setPadding(dp(28), dp(18), dp(28), dp(18))
+            background = GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setColor(STEP_FILL); setStroke(dp(1), ACCENT) }
+            addView(Font.on(TextView(a)).apply { text = a.getString(if (rows) R.string.c_rows else R.string.c_cols); textSize = 15f; setTextColor(DIM); gravity = Gravity.CENTER })
+            addView(num, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) })
+            addView(note, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) })
+        }
+        box.setOnKeyListener { _, code, e ->
+            if (e.action != android.view.KeyEvent.ACTION_DOWN) return@setOnKeyListener false
+            val step = when (code) {
+                android.view.KeyEvent.KEYCODE_DPAD_LEFT -> if (rows) -0.1 else -1.0; android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> if (rows) 0.1 else 1.0
+                android.view.KeyEvent.KEYCODE_DPAD_UP -> 1.0; android.view.KeyEvent.KEYCODE_DPAD_DOWN -> -1.0
+                android.view.KeyEvent.KEYCODE_DPAD_CENTER, android.view.KeyEvent.KEYCODE_ENTER -> { dialog.dismiss(); return@setOnKeyListener true }
+                else -> return@setOnKeyListener false
+            }
+            v = if (!rows) (v + step).coerceIn(HomeConfig.COLS_MIN.toDouble(), most)
+                else if (v < 1) (if (step > 0) 1.0 else 0.0) else (v + step).let { if (it < 0.95) 0.0 else HomeConfig.rows(minOf(it, most)) }
+            say(); box.removeCallbacks(save); box.postDelayed(save, 200); true
+        }
+        say()
+        dialog.setContentView(box)
+        dialog.window?.apply {
+            setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)); setDimAmount(0f)
+            setLayout(dp(300), ViewGroup.LayoutParams.WRAP_CONTENT)
+            attributes = attributes.apply { gravity = Gravity.TOP or Gravity.START; x = dp(48); y = dp(40) }
+        }
+        dialog.setOnDismissListener { box.removeCallbacks(save); save.run(); panel.show(); done() }
+        // the panel out of sight only once the number has the window focus: hidden first, the focus fell to the home screen behind
+        dialog.setOnShowListener { box.requestFocus(); panel.hide(); box.post { box.requestFocus() } }
+        dialog.show()
+    }
 
     fun show(a: Activity): Dialog {
         val d = a.resources.displayMetrics.density
@@ -156,6 +216,23 @@ object Customize {
                     }
                     markAll()
                 }
+                // a photo sent from a phone: hold OK to delete it, after a question (the same as the phone's ✕: HomeReceiver.drop)
+                if (HomeConfig.isPhoto(k)) setOnLongClickListener {
+                    android.app.AlertDialog.Builder(a, R.style.Menu).setTitle(R.string.photo_del_q).setMessage(R.string.photo_del_note)
+                        .setPositiveButton(R.string.photo_del) { _, _ ->
+                            HomeReceiver.drop(a, k)
+                            thumbs.keys.removeAll { it.startsWith("$k:") }
+                            // the focus to its neighbour: the hidden tile's focus fell to the panel's first control, far up
+                            val at = tiles.indexOfFirst { it.first == k }
+                            val near = tiles.getOrNull(at + 1)?.second ?: tiles.getOrNull(at - 1)?.second
+                            (parent as? View)?.visibility = View.GONE
+                            tiles.removeAll { it.first == k }
+                            markAll()
+                            near?.requestFocus()
+                        }
+                        .setNegativeButton(android.R.string.cancel, null).show()
+                    true
+                }
             }
             tiles.add(k to t)
             cell.addView(t, LinearLayout.LayoutParams(w, w * 9 / 16))
@@ -164,6 +241,25 @@ object Customize {
             row!!.addView(cell, LinearLayout.LayoutParams(w, -2).apply { if (i % cols > 0) leftMargin = gap })
         }
         markAll(); markEvery()
+        if (keys.any { HomeConfig.isPhoto(it) }) col.addView(label(a.getString(R.string.photo_del_hint), 12f, DIM), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
+
+        // a photo from a phone on the same Wi-Fi: a QR screen, no ADB and no TV Setup; when it was used the panel closes to show the new background
+        col.addView(LinearLayout(a).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            background = StateListDrawable().apply {
+                addState(intArrayOf(android.R.attr.state_focused), glass(16, GLASS_FOCUS, Color.WHITE))
+                addState(intArrayOf(), glass(16, GLASS_FILL, GLASS_EDGE))
+            }
+            addView(ImageView(a).apply { setImageResource(R.drawable.ic_cast); imageTintList = ColorStateList.valueOf(ACCENT) }, LinearLayout.LayoutParams(dp(26), dp(26)))
+            addView(LinearLayout(a).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(label(a.getString(R.string.wall_phone), 15f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+                addView(label(a.getString(R.string.wall_phone_sub), 12f, DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+            }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
+            onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+            setOnClickListener { PhotoScreen.show(a) { dialog.dismiss() } }
+        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
 
         // switches as tiles, two to a row: an icon, a name, a line under it; on = a blue tint with a blue edge, as everywhere in the app
         var pair: LinearLayout? = null
@@ -175,7 +271,7 @@ object Customize {
                 col.addView(pair, LinearLayout.LayoutParams(-1, -2).apply { if (inRow == 2) topMargin = gap }); inRow = 0
             }
             var pick = choices?.indexOfFirst { it.first == conf.optString(key) }?.coerceAtLeast(0) ?: 0
-            var on = if (choices != null) pick > 0 || key == "cols" else conf.optBoolean(key, true)
+            var on = if (choices != null || key == "rows") pick > 0 || key == "cols" || key == "rows" else conf.optBoolean(key, true)
             val ic = ImageView(a).apply { setImageResource(res) }
             val state = label("", 12f, DIM)
             val t = LinearLayout(a).apply {
@@ -195,12 +291,16 @@ object Customize {
                 }
                 ic.imageTintList = ColorStateList.valueOf(if (on) ACCENT else DIM)
                 val word = a.getString(if (on) R.string.w_on else R.string.w_off).replaceFirstChar { it.uppercase() }
-                state.text = choices?.get(pick)?.second ?: if (sub != null) "$word · $sub" else word
+                state.text = if (key == "rows") rowsWord(a, Store.get(a).optDouble("rows", 0.0)) else choices?.get(pick)?.second ?: if (sub != null) "$word · $sub" else word
                 state.setTextColor(if (on) ACCENT else DIM)
             }
             paint()
             t.onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
             t.setOnClickListener {
+                if (key == "rows" || key == "cols") {
+                    stepper(a, dialog, key) { pick = choices?.indexOfFirst { it.first == Store.get(a).optString(key) }?.coerceAtLeast(0) ?: 0; paint() }
+                    return@setOnClickListener
+                }
                 if (choices != null) {                                 // a new language builds the screen again (HomeActivity), this panel with it
                     pick = (pick + 1) % choices.size; on = pick > 0 || key == "cols"; paint()
                     Store.change(a, JSONObject().put(key, choices[pick].first)); return@setOnClickListener
@@ -218,9 +318,10 @@ object Customize {
         tile(R.drawable.ic_sparkle, a.getString(R.string.motion), null, "anim")
         tile(R.drawable.ic_sparkle, a.getString(R.string.c_motion), null, "motion",
             listOf("" to a.getString(R.string.c_motion_auto), "calm" to a.getString(R.string.c_motion_calm), "full" to a.getString(R.string.c_motion_full)))
-        tile(R.drawable.ic_expand, a.getString(R.string.c_focus), null, "focus",
+        tile(R.drawable.ic_eye, a.getString(R.string.c_focus), null, "focus",
             listOf("ring" to a.getString(R.string.c_focus_ring), "glass" to a.getString(R.string.c_focus_glass)))
-        tile(R.drawable.ic_expand, a.getString(R.string.c_cols), null, "cols", (HomeConfig.COLS_MIN..HomeConfig.COLS_MAX).map { "$it" to "$it" })
+        tile(R.drawable.ic_apps, a.getString(R.string.c_cols), null, "cols", (HomeConfig.COLS_MIN..HomeConfig.COLS_MAX).map { "$it" to "$it" })
+        tile(R.drawable.ic_updown, a.getString(R.string.c_rows), null, "rows")
         tile(R.drawable.ic_moon, a.getString(R.string.dream), a.getString(R.string.dream_sub), "dream")
         tile(R.drawable.ic_globe, a.getString(R.string.c_lang), null, "lang",
             listOf("" to a.getString(R.string.c_lang_tv), "vi" to "Tiếng Việt", "en" to "English"))

@@ -1,12 +1,17 @@
 package dev.tvremote.home
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
 import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Shader
+import android.graphics.SweepGradient
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -19,9 +24,18 @@ import android.widget.FrameLayout
  * In a FrameLayout over the tiles inside the scrolled content, so a scroll carries it along with its tile.
  */
 class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
-    private val pad = dp(8)                                          // room for the glow round the pane
-    private val rim = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = dp(2).toFloat(); color = 0xE6FFFFFF.toInt() }
-    private val glow = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+    // the pane is white light only; what changes is how much of it shows
+    private fun white(a: Int) = (a shl 24) or 0xFFFFFF
+    private fun whites(vararg a: Int) = IntArray(a.size) { white(a[it]) }
+    private val pad = dp(14)                                         // room for the glow round the pane
+    private val rim = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = dp(2).toFloat() }
+    private val inner = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = dp(1).toFloat() }
+    private val glow = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE; strokeWidth = dp(3).toFloat(); color = white(0x38)
+        maskFilter = BlurMaskFilter(dp(6).toFloat(), BlurMaskFilter.Blur.NORMAL)
+    }
+    private val pic = Paint(Paint.FILTER_BITMAP_FLAG or Paint.DITHER_FLAG)
+    private var halo: Bitmap? = null                                 // the glow, blurred once in software for this size
     private val sheen = Paint(Paint.ANTI_ALIAS_FLAG)
     private val box = RectF()
     private val at = Rect()
@@ -38,22 +52,34 @@ class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
 
     override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
         super.onSizeChanged(w, h, ow, oh)
-        sheen.shader = LinearGradient(0f, pad.toFloat(), 0f, pad + (h - 2 * pad) * 0.5f, 0x47FFFFFF, 0x00FFFFFF, Shader.TileMode.CLAMP)
+        // the rim lit from the top left as iOS's glass is: bright where the light meets the corners (top left, bottom right),
+        // dim along the sides; the hairline inside it, the other way round, is the far edge of the glass seen through it
+        val cx = w / 2f; val cy = h / 2f
+        val a = Math.toDegrees(Math.atan2((h - 2.0 * pad), (w - 2.0 * pad))).toFloat() / 360f   // a corner's angle on the sweep
+        rim.shader = SweepGradient(cx, cy, whites(0x8C, 0xFF, 0x59, 0x59, 0xFF, 0xA6, 0x8C),
+            floatArrayOf(0f, a, 0.25f + a / 2, 0.5f, 0.5f + a, 0.75f, 1f))
+        inner.shader = SweepGradient(cx, cy, whites(0x14, 0x0A, 0x40, 0x14, 0x0A, 0x40, 0x14),
+            floatArrayOf(0f, a, 0.25f, 0.5f, 0.5f + a, 0.75f, 1f))
+        sheen.shader = LinearGradient(0f, pad.toFloat(), 0f, pad + (h - 2 * pad) * 0.5f, white(0x47), white(0), Shader.TileMode.CLAMP)
     }
 
     override fun onDraw(canvas: Canvas) {
+        if (width <= 0 || height <= 0) return                         // drawn once before its first layout: no bitmap of 0 px
         box.set(pad.toFloat(), pad.toFloat(), (width - pad).toFloat(), (height - pad).toFloat())
-        for (i in 1..3) {                                             // the glow: three widening, fading rings
-            val o = i * dp(1.5f).toFloat()
-            glow.strokeWidth = dp(2).toFloat() * i
-            glow.color = ((0x2E / i) shl 24) or 0xFFFFFF
-            canvas.drawRoundRect(box.left - o, box.top - o, box.right + o, box.bottom + o, radius + o, radius + o, glow)
+        // the glow: one ring blurred (a real Gaussian), not three fading rings, whose steps showed as separate bands. Blurred
+        // on a software canvas once per size (BlurMaskFilter is not drawn by the GPU before Android 9), then only pasted
+        val h = halo?.takeIf { it.width == width && it.height == height } ?: Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also {
+            halo?.recycle(); halo = it
+            Canvas(it).apply { drawRoundRect(box, radius, radius, glow); drawRoundRect(box, radius, radius, CUT) }   // outward only: inside, it hazed the banner's edge
         }
+        canvas.drawBitmap(h, 0f, 0f, pic)
         canvas.save()
         canvas.clipRect(box.left, box.top, box.right, box.top + box.height() * 0.5f)   // clipRect stays on the GPU; clipPath did not
         canvas.drawRoundRect(box, radius, radius, sheen)
         canvas.restore()
         canvas.drawRoundRect(box, radius, radius, rim)
+        val i = dp(2.5f).toFloat()
+        canvas.drawRoundRect(box.left + i, box.top + i, box.right - i, box.bottom - i, radius - i, radius - i, inner)
     }
 
     /**
@@ -66,7 +92,7 @@ class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
         content.offsetDescendantRectToMyCoords(face, at)
         val tw = face.width * grow
         if (face.width > baseW || r != radius) {                      // a larger tile than any so far: a new texture, drawn once
-            baseW = maxOf(baseW, face.width); radius = r
+            baseW = maxOf(baseW, face.width); radius = r; halo = null
             layoutParams = FrameLayout.LayoutParams(baseW + 2 * pad, baseW * 9 / 16 + 2 * pad)
             invalidate()
         }
@@ -102,4 +128,6 @@ class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
     }
 
     val placed get() = shown
+
+    private companion object { val CUT = Paint(Paint.ANTI_ALIAS_FLAG).apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR) } }
 }

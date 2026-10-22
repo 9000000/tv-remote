@@ -307,7 +307,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
 
     @Throws(Exception::class)
     fun download(url: String, name: String, sha256: String?, progress: ((Int) -> Unit)? = null): File {
-        val f = File(dir, name)
+        val f = File(dir ?: File(System.getProperty("java.io.tmpdir")), name)   // no dir (SetupTest): File(null, …) wrote it into the working directory, and app/shared/tv-home.apk got committed
         val c = URL(url).openConnection() as HttpURLConnection
         c.connectTimeout = 20000
         c.readTimeout = 60000

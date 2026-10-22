@@ -23,6 +23,7 @@ import android.media.tv.TvInputManager
 import android.net.ConnectivityManager
 import android.net.wifi.WifiManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.provider.Settings
@@ -110,6 +111,7 @@ class HomeActivity : Activity() {
         wantInputs = intent?.action == InputOpen.INPUTS
         Font.load(this)
         InputOpen.sync(this)
+        if (intent?.action == HomeConfig.PHOTO_QR) window.decorView.post { if (!locked) PhotoScreen.show(this) {} }
         if (android.os.Build.VERSION.SDK_INT >= 24 && getSystemService(android.os.UserManager::class.java)?.isUserUnlocked == false) {
             locked = true
             registerReceiver(unlocked, IntentFilter(Intent.ACTION_USER_UNLOCKED))
@@ -179,10 +181,11 @@ class HomeActivity : Activity() {
         col.addView(grid, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(40) })
         // no widgets: the grid starts low, so the first row is whole and the second is cut by the screen's edge; the wallpaper above
         grid.viewTreeObserver.addOnGlobalLayoutListener { peek() }  // after every layout: rows came or went, a card opened
+        scroll.viewTreeObserver.addOnGlobalFocusChangeListener { _, _ -> veil() }
         scroll.addOnLayoutChangeListener { _, _, t, _, b, _, ot, _, ob -> if (b - t != ob - ot) peek() }
 
         setContentView(root)
-        Store.onChange = { conf = Store.get(this); if (conf.optString("lang") != Lang.shown) relang() else { show(); wallTimer(); bingCheck() } }
+        Store.onChange = { conf = Store.get(this); if (conf.optString("lang") != Lang.shown) relang() else { show(); wallTimer(); bingCheck(); peek() } }
         val pkgs = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED); addAction(Intent.ACTION_PACKAGE_REMOVED); addAction(Intent.ACTION_PACKAGE_CHANGED)
             addDataScheme("package")
@@ -223,6 +226,8 @@ class HomeActivity : Activity() {
         clockAndDay()
         if (away && Motion.on) enter(false)                           // Home pressed on the home screen pauses and resumes it without stopping: nothing may flicker then
         away = false
+        if (trimmed && !locked) untrim()                              // a trim queued while away landed between onStart and here (away still true): blurred wallpaper, no banners, until Home was left again (a Coocaa)
+        appsSince()
         badgesRead()
         pinsRead()                                                    // a pin is confirmed in its own screen, then the home comes back here
         ui.removeCallbacks(widgetTick); ui.post(widgetTick)
@@ -265,12 +270,15 @@ class HomeActivity : Activity() {
         if (trimmed) untrim()
     }
 
-    override fun onStop() { away = true; super.onStop() }
+    override fun onStop() { away = true; PhotoServer.stop(); super.onStop() }   // the phone-photo page lives only while its QR screen is in front
 
     /** Memory is short and the screen is hidden: the wallpaper's big bitmap and every banner go, the next [onStart] brings them back. */
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
-        if (!locked && level >= android.content.ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN && away) trim()
+        if (locked) return
+        val low = level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW
+        if (away && low) trim()                                       // RUNNING_LOW..CRITICAL also count: a game in front can starve the system before UI_HIDDEN's later levels
+        else if (low) Customize.forget()                              // shown: the tiles' logos and the wallpaper stay (a Coocaa lost both), only the panel's thumbnails go, made again when it opens
     }
 
     private fun trim() {
@@ -280,16 +288,19 @@ class HomeActivity : Activity() {
         val id = conf.optString("wall")
         if (WallArt.has(id)) backdrop.show(wallColors(id), null, id)      // a drawn scene costs nothing to keep: only the picture is repainted
         else backdrop.show(wallColors(id), soft)                          // the blurred copy stands in, so the return is not a blank
-        for (t in tileCache.values) t.release()
-        for (a in apps) a.release()
+        val keep = firstRows()                                        // the logos seen first on return stay (~10 x 230 KB): a home without them is worse than the memory
+        for (t in tileCache.values) if (t.app !in keep) t.release()
+        for (a in apps) if (a !in keep) a.release()
         Customize.forget()
     }
+
+    private fun firstRows() = tiles().take(2 * conf.optInt("cols", HomeConfig.COLS_DEFAULT)).mapNotNull { it.app }.toSet()
 
     private fun untrim() {
         trimmed = false
         val dm = resources.displayMetrics
         if (Walls.isPicture(conf.optString("wall"))) loadWall(conf.optString("wall"))
-        for (t in tiles().take(2 * conf.optInt("cols", HomeConfig.COLS_DEFAULT))) { t.app?.load(this); t.restore() }   // the favourites at once, the rest from the side
+        for (t in tiles().take(2 * conf.optInt("cols", HomeConfig.COLS_DEFAULT))) { t.app?.let { if (it.banner == null && it.icon == null) it.load(this) }; t.restore() }   // the favourites at once (kept by [trim] unless the list moved), the rest from the side
         bg.execute {
             for (a in apps) if (a.banner == null && a.icon == null) a.load(this)
             runOnUiThread { if (!isDestroyed && !trimmed) for (t in tileCache.values) t.restore() }
@@ -302,16 +313,55 @@ class HomeActivity : Activity() {
 
     private var noWidgets = false
 
-    /** Without widgets: the grid's top margin so that row 1 is whole and row 2 only peeks (a fifth of it: a clean screen that still says there is more), from the real screen and tile heights. */
+    /**
+     * The grid's top margin, so the first screen shows "rows" rows of apps (1.2: row 1 whole and a fifth of row 2), at most up to the
+     * clock or the cards. By itself: without widgets 1.2 (a clean screen that still says there is more), with them right under them.
+     * From the real screen and tile heights.
+     */
     private fun peek() {
         val lp = grid.layoutParams as LinearLayout.LayoutParams
         val rows = grid.childCount
         val rowH = if (rows > 0) grid.getChildAt(0).height else 0
-        if (noWidgets && rows > 0 && rowH == 0) return                  // new rows, not laid out yet: the next layout asks again
+        val want = conf.optDouble("rows", 0.0).let { if (it >= 1) it else if (noWidgets) 1.2 else 0.0 }
+        if (want > 0 && rows > 0 && rowH == 0) return                   // new rows, not laid out yet: the next layout asks again
+        val above = if (noWidgets) head.bottom else widgets.bottom
+        val least = dp(if (noWidgets) 48 else 36); val gap = dp(GRID_GAP)
+        if (rowH > 0 && scroll.height > 0) {
+            val room = scroll.height - above - least
+            val n = maxOf(0, (room + gap) / (rowH + gap)); val f = (room - n * (rowH + gap)).toDouble() / rowH
+            rowsFit = maxOf(1.0, if (f >= 1) n + 1.0 else n + Math.floor(f * 10) / 10)
+        }
         // one row sits where row 1 of many would (more columns put few apps in one row: it rose to the clock)
-        val want = if (!noWidgets) dp(36) else if (rows == 0 || rowH == 0 || scroll.height == 0) dp(48)
-                   else maxOf(dp(48), scroll.height - (rowH + dp(GRID_GAP) + rowH / 5) - head.bottom)   // row 1, the gap, a fifth of row 2
-        if (Math.abs(want - lp.topMargin) > 1) { lp.topMargin = want; grid.requestLayout() }
+        val m = if (want == 0.0 || rows == 0 || rowH == 0 || scroll.height == 0) least else {
+            val n = Math.floor(want + 1e-6).toInt(); val f = want - n
+            // whole rows keep half a row clear under them (the rows below, hidden there until the focus goes down: [veil])
+            val tall = if (f < 0.05) n * (rowH + gap) + rowH / 2 else n * (rowH + gap) + (f * rowH).toInt()
+            maxOf(least, scroll.height - tall - above)
+        }
+        if (Math.abs(m - lp.topMargin) > 1) {
+            // a new number of rows glides there: the grid moved at once and drawn from where it was (no layout per frame)
+            val from = lp.topMargin
+            lp.topMargin = m; grid.requestLayout()
+            if (Motion.on && grid.isLaidOut && grid.alpha == 1f && grid.animation == null) {
+                grid.animate().cancel()
+                grid.translationY = grid.translationY + from - m
+                grid.animate().translationY(0f).setDuration(320).setInterpolator(Motion.glide).withLayer().start()
+            }
+        }
+        veil()
+    }
+
+    /** "rows" a whole number: the rows under them stay hidden in the half row left clear until the focus goes down into them. */
+    private fun veil(glide: Boolean = true) {
+        val r = conf.optDouble("rows", 0.0)
+        val n = if (r >= 1 && r - Math.floor(r) < 0.05) Math.floor(r).toInt() else Int.MAX_VALUE
+        var v: View? = currentFocus
+        while (v != null && v.parent !== grid) v = v.parent as? View
+        val down = v != null && grid.indexOfChild(v) >= n
+        for (i in 0 until grid.childCount) {
+            val row = grid.getChildAt(i); val want = if (i < n || down) 1f else 0f
+            if (row.alpha != want) { row.animate().cancel(); if (glide && Motion.on) row.animate().alpha(want).setDuration(220).start() else row.alpha = want }
+        }
     }
 
     /** The cards' numbers, read off the main thread; none at all while they are off. */
@@ -320,8 +370,7 @@ class HomeActivity : Activity() {
         val conf = Store.get(this); val note = conf.optString("note"); val sizes = conf.optJSONObject("wsize") ?: JSONObject()
         val none = want.isEmpty() && note.isEmpty()
         noWidgets = none
-        (grid.layoutParams as LinearLayout.LayoutParams).topMargin = dp(if (none) 48 else 36)
-        if (none) peek()
+        peek()                                                        // the grid's margin is peek()'s alone: set here too, every minute's read made it jump
         if (none) { widgets.visibility = View.GONE; return }
         bg.execute {
             val f = widgets.read(want)
@@ -358,7 +407,8 @@ class HomeActivity : Activity() {
     override fun onNewIntent(i: Intent) {
         super.onNewIntent(i)
         if (locked) return
-        if (i.action == InputOpen.INPUTS) { inputs(); return }                  // the remote's Input key while another app is in front
+        if (i.action == InputOpen.INPUTS) { inputs(); return }
+        if (i.action == HomeConfig.PHOTO_QR) { open?.dismiss(); PhotoScreen.show(this) {}; return }                  // the remote's Input key while another app is in front
         if (open?.isShowing == true) { open?.dismiss(); open = null; return }                          // a panel or menu is open: this press closes it
         val last = if (away) lastOpened?.let { p -> tiles().firstOrNull { it.app?.pkg == p } } else null
         if (last != null) last.requestFocus() else toTop()            // back from an app: on its tile; Home on the home screen: to the top
@@ -404,7 +454,21 @@ class HomeActivity : Activity() {
     }
     private val tick = object : BroadcastReceiver() { override fun onReceive(c: Context, i: Intent) { clockAndDay(); bingCheck() } }   // Bing: a new day's picture seen while Home stays on
 
+    private var seq = 0                                               // PackageManager's change counter at the last full list; 0 = everything since boot
+
+    /** Back on screen: the list is read again only if the system says a package changed meanwhile (API 26+); a missed broadcast shows up here. */
+    private fun appsSince() {
+        if (Build.VERSION.SDK_INT < 26) return                        // no counter: the broadcasts are all there is, as before
+        val ch = try { packageManager.getChangedPackages(seq) } catch (e: Exception) { null } ?: return   // null = nothing changed
+        val names = ch.packageNames.filter { it != packageName }
+        if (names.isEmpty()) { seq = ch.sequenceNumber; return }
+        if (names.size > 3) { loadApps(); return }                    // many at once (an update of everything): one pass beats a tile each
+        seq = ch.sequenceNumber
+        for (n in names) packageChanged(n, false)                     // skips by itself a part that turned on or off with the same name and entry
+    }
+
     private fun loadApps() {
+        if (Build.VERSION.SDK_INT >= 26) try { packageManager.getChangedPackages(seq)?.let { seq = it.sequenceNumber } } catch (e: Exception) { }   // before the list, so a change during it is seen on the next return
         bg.execute {
             val list = Apps.list(this)
             list.forEach { it.load(this) }                            // the pictures off the main thread: dozens of apps on a slow chip
@@ -431,6 +495,9 @@ class HomeActivity : Activity() {
                 if (isDestroyed) return@runOnUiThread
                 val was = apps.firstOrNull { it.pkg == pkg }
                 if (one == null && was == null) return@runOnUiThread    // not an app this screen lists (a service, a library)
+                // a part of it turned on or off with its name and entry the same: some boxes' apps do it every 15 s, and each rebuilt the grid
+                if (one != null && was != null && one.label == was.label && one.info?.name == was.info?.name
+                    && one.info?.iconResource == was.info?.iconResource && one.info?.bannerResource == was.info?.bannerResource) return@runOnUiThread
                 apps = (apps.filter { it.pkg != pkg } + listOfNotNull(one)).sortedBy { it.label.lowercase() }
                 shownKey = ""; show()
                 pinsRead()                                            // an app's pins leave with it
@@ -485,6 +552,7 @@ class HomeActivity : Activity() {
             }
             row!!.addView(v, LinearLayout.LayoutParams(-2, -2).apply { if (i % cols > 0) leftMargin = gap })
         }
+        veil(false)                                                   // new rows come shown: the hidden ones at once, not seen fading out
     }
 
     // ---- move mode: an app is carried through every row with the D-pad, OK saves, Back / Home cancels ----
@@ -968,8 +1036,10 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
 
     fun focus(on: Boolean) {
         card.animate().cancel(); ring.animate().cancel(); name.animate().cancel(); content.animate().cancel(); shine.animate().cancel()
-        if (!Motion.on) {
-            card.scaleX = 1f; card.scaleY = 1f; card.translationZ = 0f; content.scaleX = 1f; content.scaleY = 1f
+        if (!Motion.on) {                                             // the end state at once, grown too: at 1x the glass (sized for GROW) stood round a small tile and nothing told which was chosen
+            val s = if (on) GROW else 1f
+            card.translationX = 0f; card.translationY = 0f
+            card.scaleX = s; card.scaleY = s; card.translationZ = if (on) lift else 0f; content.scaleX = if (on) 1.05f else 1f; content.scaleY = content.scaleX
             ring.alpha = if (on && !Motion.glass) 1f else 0f; name.alpha = if (on) 1f else 0f; name.translationY = 0f; shine.alpha = 0f
             return
         }
@@ -984,7 +1054,10 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
             card.animate().scaleX(s).scaleY(s).setDuration(t).setInterpolator(ip).withLayer().start()
             return
         }
-        card.animate().scaleX(s).scaleY(s).translationZ(if (on) lift else 0f).setDuration(t).setInterpolator(ip).withLayer().start()
+        // the shadow at once, only the size glides: animating translationZ re-made the shadow every frame, on a BRAVIA (MT5891,
+        // Android 9) 41% of the frames over 16.7 ms while focus moved sideways, 12% this way (no shadow at all: the same 12%)
+        card.translationZ = if (on) lift else 0f
+        card.animate().scaleX(s).scaleY(s).setDuration(t).setInterpolator(ip).withLayer().start()
         content.animate().scaleX(if (on) 1.05f else 1f).scaleY(if (on) 1.05f else 1f).setDuration(t).setInterpolator(ip).start()
         ring.animate().alpha(if (on && !Motion.glass) 1f else 0f).setDuration(if (on) 200L else 160L).setInterpolator(Motion.glide).start()
         name.animate().alpha(if (on) 1f else 0f).translationY(if (on) 0f else -lift / 3).setDuration(if (on) 360L else 200L).setInterpolator(Motion.glide).start()
@@ -1036,6 +1109,9 @@ private fun ringDrawable(r: Float, dp: (Number) -> Int): Drawable {
     }
 }
 const val DIM = 0.35f                                                 // the tiles that are not being moved
+/** The most rows of apps the first screen can show (to tenths), as the last layout measured; 0 = not measured yet. */
+@Volatile var rowsFit = 0.0
+
 const val GRID_GAP = 32                                               // dp between tiles, across and down: room under a focused tile for its name
 const val RING_OUT = 3                                                // dp the ring reaches past the face
 const val RING_ACCENT = 0xFF2F7DF6.toInt()                          // 3.7:1 on white; with the dark edge it shows on any banner

@@ -21,11 +21,7 @@ app/gradle/build/
 app/gradle/local.properties
 .idea/
 # APKs are attached to releases, never committed
-app/android/*.apk
-app/tv/*.apk
-app/home/*.apk
-app/channels/*.apk
-app/games/*.apk
+*.apk                                                     # anywhere: a test once left app/shared/tv-home.apk in git
 *.tvrkeys
 
 # dev/test/layout.js: Playwright, installed with npm install --prefix dev playwright

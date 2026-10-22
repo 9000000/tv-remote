@@ -57,7 +57,7 @@ button.appchoice .appicon.wide { width:50px; border-radius:6px; }
 button.appchoice span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
 /* Manage channels (js/chan_manage.js) */
-.chmask .card { width:min(640px, 94vw); max-height:90vh; overflow:auto; }
+.chmask .card { width:min(640px, 94vw); }   /* the dialog scrolls, as every other: a card scrolling itself left a gap over its sticky head */
 .chm { display:flex; flex-direction:column; gap:12px; min-width:0; }
 .chm .item { flex-wrap:nowrap; }
 .chm .item .name { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -87,3 +87,5 @@ button.appchoice span { overflow:hidden; text-overflow:ellipsis; white-space:now
 .chmbar[hidden] { display:none; }
 .chmbar .chmn { font-weight:600; font-size:14px; }
 .chmbar.bad .chmn { color:var(--bad); }
+/* the photo-crop frame (js/photofit.js): the TV's shape, dragged with a finger, so the page must not scroll under it */
+canvas.photocrop { width:100%; height:auto; aspect-ratio:16/9; border-radius:12px; touch-action:none; cursor:grab; background:#000; }
