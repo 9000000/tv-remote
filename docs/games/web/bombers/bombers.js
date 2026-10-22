@@ -160,3 +160,4 @@
   }
   K.run(G);
 })();
+Credit.key = () => Kit.mode !== 'play';   // Down plays while a game is on

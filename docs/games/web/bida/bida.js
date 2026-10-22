@@ -353,3 +353,4 @@ function frame(now) {
 window.__bida = { S, table, BD };
 if (table.ok) table.go();
 requestAnimationFrame(frame);
+Credit.key = () => table.done;   // Down plays while a game is on

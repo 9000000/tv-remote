@@ -175,6 +175,7 @@ Plays retro and web games on the TV, with phones as pads.
 
 - Retro games (libretro cores) and web games; free homebrew suggested in the app.
 - Up to 4 phones as pads: scan the QR on the TV, no ADB and no TV Setup needed.
+- Card and board games (Tiến lên, Color Cards, Tycoon, Ludo…) ported from [gamehub24](https://gamehub24.pages.dev): each player's hand on their own phone.
 - Installed, opened and updated from the phone or computer app: **TV** tab → **TV games** card (needs ADB for the install only; says so when the latest release has no `tv-games.apk` yet).
 
 ## Quick start
@@ -359,7 +360,7 @@ dev/test/emu.sh                                                            # emu
 
 Needs JDK 17, the Android SDK, Node.js and Python 3. Why some code looks odd: [dev/DECISIONS.md](dev/DECISIONS.md).
 
-Credits: [scrcpy](https://github.com/Genymobile/scrcpy) (Apache-2.0), [JMuxer](https://github.com/samirkumardas/jmuxer) (MIT), [webview](https://github.com/webview/webview) (MIT), [JNA](https://github.com/java-native-access/jna) (Apache-2.0).
+Credits: [scrcpy](https://github.com/Genymobile/scrcpy) (Apache-2.0), [JMuxer](https://github.com/samirkumardas/jmuxer) (MIT), [webview](https://github.com/webview/webview) (MIT), [JNA](https://github.com/java-native-access/jna) (Apache-2.0); the table games follow [gamehub24](https://gamehub24.pages.dev).
 
 ## License
 

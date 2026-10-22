@@ -52,7 +52,7 @@ function after(t) {
   const st = g.st, l = st.last;
   if (l && l.ev === 'win') { g.msg = ''; t.over(UL.order(st)); return; }
   g.msg = !l ? '' : st.pend >= 0 ? t.name(st.pend) + ' · ' + W.pick : l.ev === 'took' ? W.ev.took(t.name(l.seat)) : l.ev === 'pass' ? W.ev.pass(t.name(l.seat))
-    : l.ev ? W.ev[l.ev](t.name(l.seat), t.name(l.victim), l.n) + (l.card.c === UL.WILD ? ' · ' + W.col[l.color] : '')
+    : l.ev ? W.ev[l.ev](t.name(l.seat), t.name(l.victim), l.n) + (l.card.c === UL.WILD ? ' · ' + W.color[l.color] : '')
       : l.card && l.card.c === UL.WILD ? W.col(t.name(l.seat), W.color[l.color]) : '';
   if (l && l.ev === 'draw' && t.human(l.victim)) t.buzz(l.victim, 250);
   t.turnTo(st.pend >= 0 ? st.pend : st.turn);

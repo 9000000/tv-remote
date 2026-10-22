@@ -177,6 +177,7 @@ Chơi game retro và game web trên TV, dùng điện thoại làm tay cầm.
 
 - Game retro (libretro core) và game web; app gợi ý sẵn game homebrew miễn phí.
 - Tối đa 4 điện thoại làm tay cầm: quét QR trên TV, không cần ADB hay TV Setup.
+- Game bài và cờ (Tiến lên, Bài màu, Cờ tỷ phú, Cờ cá ngựa…) phỏng theo [gamehub24](https://gamehub24.pages.dev): bài của ai nằm trên điện thoại người đó.
 - Cài, mở và cập nhật từ app điện thoại / máy tính: tab **TV** → thẻ **Game trên TV** (chỉ cần ADB để cài; báo rõ khi bản phát hành mới nhất chưa có `tv-games.apk`).
 
 ## Chuẩn bị TV
@@ -531,7 +532,7 @@ Sửa `app/shared/web` thì chỉ cần tải lại trang (app đọc thẳng t�
 
 - **Phiên bản:** ba số, mỗi số chỉ tăng khi phần của nó đổi: `VERSION` (bản phát hành và app máy tính), `app/android/VERSION`, `app/tv/VERSION`. `dev/release/release.sh` tự tăng số của phần đã đổi, build APK và tạo GitHub release; ghi chú bản mới để dưới `## Unreleased` trong `CHANGELOG.md`.
 - **Giữ ba nơi đồng bộ:** sửa hay thêm gì ở phần điều khiển thì làm ở cả App điện thoại, Web của TV và App máy tính. Các phím của màn remote nằm một chỗ: `app/shared/web/remote.json`. Tên gọi và sơ đồ: [Ba app và một trang web](#ba-app-và-một-trang-web).
-- **Ghi công:** [scrcpy](https://github.com/Genymobile/scrcpy) v5.0.1 (Apache-2.0), [JMuxer](https://github.com/samirkumardas/jmuxer) 2.1.0 (MIT), [webview](https://github.com/webview/webview) 0.12.0 (MIT), [JNA](https://github.com/java-native-access/jna) (Apache-2.0).
+- **Ghi công:** [scrcpy](https://github.com/Genymobile/scrcpy) v5.0.1 (Apache-2.0), [JMuxer](https://github.com/samirkumardas/jmuxer) 2.1.0 (MIT), [webview](https://github.com/webview/webview) 0.12.0 (MIT), [JNA](https://github.com/java-native-access/jna) (Apache-2.0); các game bài và cờ phỏng theo [gamehub24](https://gamehub24.pages.dev).
 </details>
 
 Thay đổi từng bản: [CHANGELOG.md](CHANGELOG.md).

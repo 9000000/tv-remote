@@ -179,3 +179,4 @@ function drawSide() {
 
 window.addEventListener('resize', render);
 newGame();
+Credit.key = () => g.over;   // Down plays while a game is on
