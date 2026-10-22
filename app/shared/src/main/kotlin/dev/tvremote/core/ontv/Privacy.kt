@@ -165,12 +165,24 @@ echo '#done'
             for (t in listOf("a11y", "notif", "admin", "overlay", "usage", "assist", "boot")) if (t in tags) ev.add(JSONObject().put("id", t))
             if (k != null) ev.add(JSONObject().put("id", k.first).put("name", k.second))
             for (t in listOf("mic", "cam", "loc")) if (t in tags && t !in seen) ev.add(JSONObject().put("id", "${t}_idle"))
-            val grade = grade(tags, used.filterKeys { it in seen }, running, system, disabled, k?.first)
+            // this project's own apps hold accessibility, drawing over apps and usage for what they do (keys, the drawing, the
+            // notice, the limits): a group of their own with why, not "worth a close look" at the top
+            val own = pkg.startsWith("dev.tvremote.")
+            val grade = if (own) "own" else grade(tags, used.filterKeys { it in seen }, running, system, disabled, k?.first)
             val allow = held.filter { PERM_TAG.containsKey(it) }
-            return JSONObject().put("pkg", pkg).put("grade", grade).put("sys", system).put("keep", Setup.mustKeep(pkg)).put("off", disabled)
+            return JSONObject().put("pkg", pkg).put("grade", grade).put("sys", system).put("keep", Setup.mustKeep(pkg)).put("off", disabled).put("own", own)
                 .put("tags", JSONArray(ORDER.filter { it in tags })).put("gone", JSONArray(ORDER.filter { it in gone && it !in tags }))
                 .put("ev", JSONArray(ev)).put("perms", JSONArray(allow)).put("revoked", JSONArray(revoked[pkg].orEmpty().toList()))
         }
+    }
+
+    /** Takes [pkg]'s services out of the accessibility list; the list as it is after, and the switch off when it is empty. */
+    fun a11yOffCmd(pkg: String): String {
+        require(PKG.matches(pkg)) { "bad package name" }
+        val p = pkg.replace(".", "\\.")
+        return "L=$(settings get secure enabled_accessibility_services | tr ':' '\\n' | grep -v '^$p/' | grep -v '^null$' | tr '\\n' ':' | sed 's/:$//'); " +
+            "if [ -z \"${'$'}L\" ]; then settings delete secure enabled_accessibility_services >/dev/null; settings put secure accessibility_enabled 0; " +
+            "else settings put secure enabled_accessibility_services \"${'$'}L\"; fi; settings get secure enabled_accessibility_services"
     }
 
     private val PERM = Regex("^ +android\\.permission\\.(\\w+): granted=true")

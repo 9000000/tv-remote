@@ -126,13 +126,19 @@ async function homeOpen() {
     if (p) send({ hidden: [...r.config.hidden, p] });
   } });
   const walls = el('div', { className: 'fchips homewalls' });
+  // in the head, not a tile among thirty: people did not find it there
+  const upload = el('button', { type: 'button', className: 'small', textContent: T('home.upload'), onclick: () => file.click() });
   const everyHead = el('h3', { textContent: T('home.rotate') }), every = el('div', { className: 'fchips homeevery' }), everyNote = el('p', { className: 'note' });
   const file = el('input', { type: 'file', accept: 'image/*', multiple: true, hidden: true, onchange: async () => {
     // one at a time (the TV takes a photo per ADB push); a TV Home without rotation has room for one only
     const room = r.config.wrotate ? HOME_PHOTO_MAX - (r.photos || []).length : 1;
     const picked = [...file.files]; file.value = '';
     if (picked.length > room) toast(T('home.photos_full', { n: HOME_PHOTO_MAX }));
-    for (const f of picked.slice(0, Math.max(room, 0))) await homePhoto(f, (n) => { r = n; homeNow = n; });
+    const go = picked.slice(0, Math.max(room, 0));
+    for (let i = 0; i < go.length; i++) {                             // the button turns and says which one goes, the TV's push takes seconds
+      const back = UI.busy(upload, go.length > 1 ? T('home.sending_n', { i: i + 1, n: go.length }) : T('home.sending_photo'));
+      try { await homePhoto(go[i], (n) => { r = n; homeNow = n; }); } finally { back(); }
+    }
     if (picked.length) after(r);
   } });
   const clock = el('input', { type: 'checkbox', onchange: () => send({ clock24: clock.checked }) });
@@ -189,11 +195,12 @@ async function homeOpen() {
     addDock.disabled = d.length >= HOME_DOCK_MAX;
     hidden.replaceChildren(...c.hidden.map((p) => row(p, [el('button', { type: 'button', className: 'small', textContent: T('home.show'), onclick: () => send({ hidden: c.hidden.filter((x) => x !== p) }) })])));
     if (!c.hidden.length) hidden.append(el('p', { className: 'empty', textContent: T('home.none_hidden') }));
-    if (c.wrotate) drawRotation(c); else walls.replaceChildren(...Object.keys(HOME_WALLS).map((w) => {
+    upload.disabled = !!c.wrotate && (r.photos || []).length >= HOME_PHOTO_MAX;
+    if (c.wrotate) drawRotation(c); else walls.replaceChildren(...(r.photo ? [el('button', { type: 'button', className: c.wall === 'photo' ? 'on' : '', onclick: () => send({ wall: 'photo' }) }, el('i', { className: 'add', textContent: '🖼️' }), el('span', { textContent: T('home.wall_photo') }))] : []),
+    ...Object.keys(HOME_WALLS).map((w) => {
       const dot = el('i'); dot.style.setProperty('--c', 'linear-gradient(135deg,' + HOME_WALLS[w] + ')');
       return el('button', { type: 'button', className: c.wall === w ? 'on' : '', onclick: () => send({ wall: w }) }, dot, el('span', { textContent: T(HOME_WALL_WORDS[w]) }));
-    }), ...(r.photo ? [el('button', { type: 'button', className: c.wall === 'photo' ? 'on' : '', onclick: () => send({ wall: 'photo' }) }, el('i', { className: 'add', textContent: '🖼️' }), el('span', { textContent: T('home.wall_photo') }))] : []),
-    el('button', { type: 'button', onclick: () => file.click() }, el('i', { className: 'add', textContent: '＋' }), el('span', { textContent: T('home.upload') })));
+    }));
     langHead.hidden = langs.hidden = c.lang === undefined;
     langs.replaceChildren(...[['', 'home.lang_tv'], ['vi', 'home.lang_vi'], ['en', 'home.lang_en']].map(([k, id]) =>
       el('button', { type: 'button', className: (c.lang || '') === k ? 'on' : '', onclick: () => send({ lang: k }) }, T(id))));
@@ -282,8 +289,7 @@ async function homeOpen() {
       const del = el('button', { type: 'button', className: 'small iconbtn wallx', textContent: '✕', title: T('home.photo_remove'), 'aria-label': T('home.photo_remove'), onclick: () => dropPhoto(p.id) });
       return tile(p.id, face, T('home.wall_photo_n', { n: i + 1 }), del);
     });
-    const add = el('button', { type: 'button', disabled: photos.length >= HOME_PHOTO_MAX, onclick: () => file.click() }, el('i', { className: 'add', textContent: '＋' }), el('span', { textContent: T('home.upload') }));
-    walls.replaceChildren(...art, bing, ...photos, add, ...plain);
+    walls.replaceChildren(...photos, ...art, bing, ...plain);         // the person's own first
     every.replaceChildren(...Object.keys(HOME_EVERY).map((e) => el('button', { type: 'button', className: c.wevery === e ? 'on' : '', 'aria-pressed': String(c.wevery === e), textContent: T(HOME_EVERY[e]), onclick: () => send({ wevery: e }) })));
     put(everyNote, 'textContent', multi ? T(set.length < 2 && set[0] !== 'bing' ? 'home.rotate_pick' : 'home.rotate_set') : '');   // Bing alone turns through its last 8 days
     everyNote.hidden = !multi;
@@ -292,7 +298,7 @@ async function homeOpen() {
   const d = el('dialog', { className: 'ask homeask' }, el('div', { className: 'card' },
     el('div', { className: 'card-head' }, el('h2', { textContent: T('home.title') }), el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
     el('div', { className: 'card-head' }, el('h3', { textContent: T('home.dock') }), addDock), dock,
-    el('h3', { textContent: T('home.wall') }), everyHead, every, everyNote, walls, file,
+    el('div', { className: 'card-head' }, el('h3', { textContent: T('home.wall') }), upload), everyHead, every, everyNote, walls, file,
     galHead, gal, credit,
     langHead, langs, focusHead, focus, colsHead, cols, motionHead, motion,
     el('label', { className: 'check' }, clock, el('span', { textContent: T('home.clock24') })),

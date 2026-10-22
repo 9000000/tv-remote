@@ -212,6 +212,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "privacy/scan" -> HttpServer.Response.json(privacy.start())
                 "privacy/stop" -> HttpServer.Response.json(privacy.stop())
                 "privacy/revoke", "privacy/grant" -> HttpServer.Response.json(privacyPerms(r.json().optString("pkg"), what.endsWith("revoke")))
+                "privacy/a11y-off" -> HttpServer.Response.json(privacyA11yOff(r.json().optString("pkg")))
                 "privacy/off", "privacy/on" -> HttpServer.Response.json(privacyOff(r.json().optString("pkg"), what.endsWith("off")))
                 "app/launch", "app/stop", "app/uninstall", "app/disable", "app/enable", "app/clear" -> app(r.json().optString("pkg"), what.substring(4))
                 "clean" -> text(TvShell.CLEAN, 90000)
@@ -465,6 +466,18 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     }
 
     /** Turn an app off (Optimize TV's way: `pm disable-user`, written to its Undo list) or back on. Refuses what the TV needs. */
+    /** Its accessibility service off: what reads the screen and can press keys stops, the app stays. Turned on again in the TV's Settings. */
+    private fun privacyA11yOff(pkg: String): JSONObject {
+        if (!PKG.matcher(pkg).matches()) throw IllegalArgumentException("bad package name")
+        if (Setup.mustKeep(pkg)) throw IllegalArgumentException("protected: the TV needs this app")
+        val left = sh(dev.tvremote.core.ontv.Privacy.a11yOffCmd(pkg))
+        if (left.split(':').any { it.trim().startsWith("$pkg/") }) throw IllegalArgumentException("locked: the system holds these permissions")
+        return JSONObject().put("ok", true).put("row", privacy.change(pkg) { o ->
+            fun drop(key: String, keep: (Any) -> Boolean) { val a = o.optJSONArray(key) ?: return; o.put(key, JSONArray((0 until a.length()).map { a.get(it) }.filter(keep))) }
+            drop("tags") { it != "a11y" }; drop("ev") { (it as? JSONObject)?.optString("id") != "a11y" }
+        } ?: JSONObject.NULL)
+    }
+
     private fun privacyOff(pkg: String, off: Boolean): JSONObject {
         app(pkg, if (off) "disable" else "enable")
         if (off) sh("grep -qx '$pkg' ${Setup.OFF_LIST} 2>/dev/null || echo '$pkg' >> ${Setup.OFF_LIST}")

@@ -10,11 +10,15 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Thư viện launcher: viền xanh của launcher đang dùng chạy đủ quanh thẻ (ảnh xem trước từng che mất nửa trên).
 - Cập nhật TV Setup cùng lúc với cài / cập nhật TV Channels, TV Games, TV Home trên TV yếu (box FPT Play): không còn "Mất kết nối với TV giữa chừng" làm hỏng cả hai. TV bận ghi file trả lời chậm thì chỉ lệnh đó chờ, kết nối ADB giữ nguyên.
 - App điện thoại: cài / cập nhật TV Channels, TV Games, TV Home cũng chạy nền với thông báo (trước chỉ chép file và TV Setup), và lần đầu hỏi cho chạy nền không giới hạn pin (MIUI / POCO cắt mạng của app khi chuyển sang app khác).
+- Sức khỏe → Riêng tư: app của TV Remote (TV Setup, TV Home, Channels, Games) không còn đứng đầu "Đáng xem kỹ" mà nằm nhóm riêng, gập lại, có câu nói vì sao chúng cần các quyền đó. App có trợ năng được nút **Tắt trợ năng**; app người dùng cài được nút **Gỡ**.
+- Tùy chỉnh TV Home → Hình nền: nút **Tải ảnh của bạn** lên đầu mục (trước nằm lẫn giữa các ô), ảnh đã tải đứng đầu; đang gửi ảnh thì nút quay và ghi "Đang gửi ảnh 1/3 lên TV…".
 
 **English**
 - Launcher gallery: the blue edge of the launcher in use runs all around its card (the preview picture hid its top half).
 - Updating TV Setup while TV Channels, TV Games or TV Home installs, on a weak TV (an FPT Play box): no more "Lost the TV midway" breaking both. A TV slow to answer while it writes a file makes only that command wait; the ADB connection stays.
 - Phone app: installing or updating TV Channels, TV Games and TV Home also goes on in the background with its notification (before: only copies and TV Setup), and the first time it asks to run without battery limits (MIUI / POCO cut the app's network once you switched apps).
+- Health → Privacy: TV Remote's own apps (TV Setup, TV Home, Channels, Games) no longer top "Worth a close look": they have their own folded group saying why they hold those permissions. An app with accessibility gets **Turn off accessibility**; an app the user installed gets **Remove**.
+- Customize TV Home → Background: **Upload your photo** sits in the section's head (it was a tile lost among the others), uploaded photos come first; while sending, the button spins and says "Sending photo 1/3 to the TV…".
 
 ## 0.17.0 - 2026-10-22
 

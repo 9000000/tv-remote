@@ -44,6 +44,7 @@ async function privStopScan() { await api('/api/privacy/stop', {}); privPoll(); 
 
 // what the scan found, in one line: the things worth knowing first
 function privSummary(rows) {
+  rows = rows.filter((r) => !r.own);                                    // this project's apps are not news
   const has = (r, id) => r.ev.some((e) => e.id === id), recent = (r, t) => r.ev.some((e) => e.id === t + '_now' || (e.id === t + '_used' && e.n <= 86400));
   const n = (f) => rows.filter(f).length;
   const parts = [[n((r) => recent(r, 'mic')), 'priv.sum_mic'], [n((r) => recent(r, 'cam')), 'priv.sum_cam'], [n((r) => has(r, 'acr')), 'priv.sum_acr'],
@@ -52,7 +53,8 @@ function privSummary(rows) {
 }
 
 function privItem(r) {
-  const keep = !!r.keep, hint = privHintWords(), word = privTagWords();
+  const keep = !!r.keep || !!r.own,                          // own: what it holds is its work (the group's note says what)
+    hint = privHintWords(), word = privTagWords();
   const tags = [...r.tags.map((t) => el('span', { className: 'tag ' + (PRIV_LOUD.has(t) ? 'p-hi' : PRIV_MID.has(t) ? 'p-md' : 'p-lo'), title: hint[t], textContent: PRIV_ICON[t] + ' ' + word[t] })),
     ...r.gone.map((t) => el('span', { className: 'tag p-gone', title: T('priv.revoked_chip'), textContent: PRIV_ICON[t] + ' ' + word[t] })),
     r.off ? el('span', { className: 'tag off', textContent: T('priv.off_chip') }) : null].filter(Boolean);
@@ -63,13 +65,24 @@ function privItem(r) {
     onclick: () => act('/api/privacy/revoke', (x) => x.failed ? T('priv.revoked_some', { n: x.done, name }) : T('priv.revoked', { n: x.done, name })) }));
   if (!keep && r.revoked.length) acts.push(el('button', { className: 'small', textContent: T('priv.regrant'),
     onclick: () => act('/api/privacy/grant', (x) => T('priv.regranted', { name })) }));
+  if (!keep && r.tags.includes('a11y')) acts.push(el('button', { className: 'small', textContent: T('priv.a11y_off'), title: T('priv.a11y_off_tip'),
+    onclick: async () => {
+      if (!await ask(T('priv.a11y_off_ask', { name }), { ok: T('priv.a11y_off') })) return;
+      act('/api/privacy/a11y-off', () => T('priv.a11y_done', { name }));
+    } }));
+  if (!keep && !r.sys) acts.push(el('button', { className: 'small', textContent: T('apps.remove'),
+    onclick: async () => {
+      if (!await ask(T('apps.uninstall_ask', { name }), { ok: T('apps.remove') })) return;
+      if (!await api('/api/app/uninstall', { pkg: r.pkg })) return;
+      priv.rows.delete(r.pkg); toast(T('apps.what_name', { what: T('apps.remove'), name })); privDraw();
+    } }));
   if (!keep) acts.push(el('button', { className: 'small', textContent: T(r.off ? 'apps.turn_on' : 'apps.disable_app'),
     onclick: async () => {
       if (!r.off && !await ask(T('apps.disable_ask', { name }), { ok: T('apps.disable_app') })) return;
       act(r.off ? '/api/privacy/on' : '/api/privacy/off', () => T('apps.what_name', { what: T(r.off ? 'apps.turn_on' : 'apps.disable_app'), name }));
     } }));
   const lines = r.ev.filter((e) => e.id !== 'boot').map(privSay);
-  if (keep) lines.push(T('priv.keep'));
+  if (keep && !r.own) lines.push(T('priv.keep'));
   return UI.item({ icon: privIcons.get(r.pkg), name, sub: lines.join(' · '), extra: [el('div', { className: 'ptags' }, ...tags)], acts });
 }
 
@@ -92,12 +105,13 @@ function privDraw() {
   const head = UI.card(T('priv.title'), { tools: [stopBtn, scanBtn].filter(Boolean) }, UI.note(T('priv.note')), status,
     rows.length || (priv && priv.state === 'done') ? UI.state(privSummary(rows)) : null);
   const by = (g) => rows.filter((r) => r.grade === g).sort((a, b) => a.sys - b.sys || appName(a.pkg).localeCompare(appName(b.pkg)));
-  const hi = by('high'), md = by('med'), lo = by('low');
-  const group = (title, list, fold) => {
+  const hi = by('high'), md = by('med'), lo = by('low'), own = by('own');
+  const group = (title, list, fold, note) => {
     if (!list.length) return null;
-    const c = UI.card(title + ' · ' + list.length, { fold }, UI.list(list.map(privItem), ''));
+    const c = UI.card(title + ' · ' + list.length, { fold }, note ? UI.note(note) : null, UI.list(list.map(privItem), ''));
     if (fold) { c.open = privLowOpen; c.addEventListener('toggle', () => { privLowOpen = c.open; }); }
     return c;
   };
-  box.replaceChildren(...[head, group(T('priv.g_high'), hi), group(T('priv.g_med'), md), group(T('priv.g_low'), lo, true)].filter(Boolean));
+  box.replaceChildren(...[head, group(T('priv.g_high'), hi), group(T('priv.g_med'), md), group(T('priv.g_low'), lo, true),
+    group(T('priv.g_own'), own, true, T('priv.own_note'))].filter(Boolean));
 }

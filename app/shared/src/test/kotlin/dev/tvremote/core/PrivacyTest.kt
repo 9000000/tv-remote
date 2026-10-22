@@ -94,8 +94,9 @@ A 6 dev.tvremote.setup
         val r = rows()
         assertEquals("high", r.getValue("com.amazon.tv.acr").getString("grade"))
         assertEquals(listOf("acr"), tags(r.getValue("com.amazon.tv.acr")))
-        val s = r.getValue("dev.tvremote.setup")
-        assertEquals("high", s.getString("grade"))
+        val s = r.getValue("dev.tvremote.setup")                         // this project's own: a group of its own, never "high"
+        assertEquals("own", s.getString("grade"))
+        assertTrue(s.getBoolean("own"))
         assertEquals(listOf("a11y", "overlay", "usage", "boot"), tags(s))
     }
 
@@ -110,10 +111,10 @@ A 6 dev.tvremote.setup
     }
 
     @Test fun locationUsedHalfADayAgoIsMediumNotHigh() {
-        val h = rows().getValue("dev.tvremote.home")
-        assertEquals("med", h.getString("grade"))
+        val h = rows().getValue("dev.tvremote.home")                     // own app: its tags still read, the grade by the rule itself below
         assertEquals(listOf("loc"), tags(h))
         assertTrue(evs(h).contains("loc_used"))
+        assertEquals("med", Privacy.grade(setOf("loc"), mapOf("loc" to 12 * 3600L), emptySet(), false, false, null))
     }
 
     @Test fun gradeRules() {
