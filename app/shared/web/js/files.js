@@ -15,7 +15,7 @@ async function loadFiles(path) {
   if (!r) { if (!filesLoaded && path !== '/sdcard') loadFiles('/sdcard'); return; }
   filesLoaded = true; cwd = r.path; fileItems = r.items; volumes = r.volumes || [];
   if (path !== cwd || $('#filesq').dataset.dir !== cwd) { $('#filesq').value = ''; $('#filesq').dataset.dir = cwd; }
-  put('#space', 'textContent', r.space ? T('files.free_of_items', { free: fmtSize(r.space.free), total: fmtSize(r.space.total), n: r.items.length }) : T('files.items_n', { n: r.items.length }));
+  put('#space', 'textContent', r.space && r.items.length ? T('files.free_of_items', { free: fmtSize(r.space.free), total: fmtSize(r.space.total), n: r.items.length }) : r.items.length ? T('files.items_n', { n: r.items.length }) : '');
   renderPlaces(); renderFiles();
 }
 function renderPlaces() {

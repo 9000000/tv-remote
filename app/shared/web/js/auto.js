@@ -43,7 +43,7 @@ function renderRules() {
   const left = r.sleep_at ? Math.max(0, Math.round((r.sleep_at - r.now) / 60000)) : 0;
   put('#sleepstate', 'textContent', r.sleep_at ? T('auto.sleep_at', { at: clock(r.sleep_at), left: mins(left) }) : T('auto.no_timer_set'));
   $('#sleepstate').classList.toggle('on', !!r.sleep_at);
-  $('#sleepbtns').replaceChildren(...[15, 30, 45, 60, 90, 120].map((m) => el('button', { className: 'small', textContent: mins(m), onclick: () => setSleep(m) })));
+  $('#sleepbtns').replaceChildren(...[15, 30, 45, 60, 90, 120].map((m) => el('button', { type: 'button', textContent: mins(m), onclick: () => setSleep(m) })));
   $('#sleepacts').replaceChildren(...(r.sleep_at ? [act(T('auto.plus_15'), async () => { await loadRules({ do: 'sleep_add', minutes: 15 }); }), act(T('auto.cancel_timer'), async () => setSleep(0), 'danger')] : []));
   // bedtime
   const b = r.bedtime || {}, beds = bedRanges();
@@ -307,7 +307,7 @@ async function updateSetup() {
 
 // ---------- scenes ----------
 let SCENES = [];
-const STEP_KEYS = [['MUTE', T('auto.key_mute')], ['PLAY_PAUSE', T('remote.play_pause')], ['HOME', 'Home'], ['BACK', T('auto.key_back')], ['VOL_UP', T('remote.volume_up')], ['VOL_DOWN', T('remote.volume_down')],
+const STEP_KEYS = [['MUTE', T('auto.key_mute')], ['PLAY_PAUSE', T('remote.play_pause')], ['HOME', T('rkey.home')], ['BACK', T('auto.key_back')], ['VOL_UP', T('remote.volume_up')], ['VOL_DOWN', T('remote.volume_down')],
   ['OK', 'OK'], ['UP', T('remote.up')], ['DOWN', T('remote.down')], ['LEFT', T('remote.left')], ['RIGHT', T('remote.right')], ['INPUT', T('auto.key_input')], ['SUBTITLE', T('auto.key_subtitle')], ['CH_UP', T('remote.ch')], ['CH_DOWN', T('remote.ch_3')]];
 function stepText(s) {
   switch (s.do) {
@@ -381,24 +381,33 @@ function drawSteps() {
     el('button', { className: 'small iconbtn danger', textContent: '✕', title: T('auto.drop_step'), onclick: () => { draft.splice(i, 1); drawSteps(); } })))
     : [UI.empty(T('auto.no_steps'))]));
 }
+// a choice of a few dozen, as a button that opens a list (not a <select>: the phone's WebView draws a system list); .value is the pick
+function stepPick(list, now, title) {
+  const b = el('button', { type: 'button', className: 'appchoice', id: 'steparg', onclick: () => menuDlg(title, -1, list.map((c) => [c.name, '', () => set(c.value)]), list.findIndex((c) => c.value === b.value), true) });
+  const set = (v) => { b.value = v; b.replaceChildren(el('span', { textContent: (list.find((c) => c.value === v) || list[0]).name })); };
+  set(now); return b;
+}
 // what the chosen kind of step needs: an app, a key, a number, a link
 function stepArgs() {
-  const k = $('#stepkind').value, box = $('#stepargs');
+  const k = $('#stepkind').value, box = $('#stepargs'); put('#stepadd', 'disabled', false);
   const num = (v, min, max, unit) => el('label', { className: 'num' }, el('input', { type: 'number', value: v, min, max, id: 'steparg' }), unit ? ' ' + unit : '');
   if (k === 'app') {
     const b = el('button', { type: 'button', className: 'appchoice', id: 'steparg', onclick: async () => { const p = await chooseApp(T('scenedlg.open_an_app'), pickApps, b.value); if (p) appChoice(b, p); } });
     appChoice(b, ''); box.replaceChildren(b);
   }
-  else if (k === 'key') box.replaceChildren(el('select', { id: 'steparg' }, ...STEP_KEYS.map(([v, t]) => el('option', { value: v, textContent: t }))));
+  else if (k === 'key') box.replaceChildren(stepPick(STEP_KEYS.map(([value, name]) => ({ value, name })), STEP_KEYS[0][0], T('scenedlg.press_a_key')));
   else if (k === 'volume') box.replaceChildren(num(10, 0, 100, ''));
   else if (k === 'wait') box.replaceChildren(num(2, 0, 30, T('auto.unit_sec')));
   else if (k === 'timer') box.replaceChildren(num(30, 0, 720, T('auto.unit_min')));
   else if (k === 'input') {                                          // the TV's own list, read now
-    const sel = el('select', { id: 'steparg' }, el('option', { value: '', textContent: T('auto.reading_inputs') })); box.replaceChildren(sel);
+    const wait = el('span', { className: 'muted', textContent: T('auto.reading_inputs') }); box.replaceChildren(wait);
+    put('#stepadd', 'disabled', true);                                // nothing to add until the list is in
     api('/api/inputs', null, true).then((r) => {
-      if (box.firstChild !== sel) return;
+      if (box.firstChild !== wait) return;
       const list = (r && r.inputs) || [];
-      sel.replaceChildren(...(list.length ? list.map((i) => el('option', { value: i.id, textContent: i.label })) : [el('option', { value: '', textContent: T(r ? 'auto.no_inputs' : 'auto.inputs_failed') })]));
+      if (!list.length) { wait.className = 'warnline'; put(wait, 'textContent', T(r ? 'auto.no_inputs' : 'auto.inputs_failed')); return; }
+      box.replaceChildren(stepPick(list.map((i) => ({ value: i.id, name: i.label })), list[0].id, T('scenedlg.switch_input')));
+      put('#stepadd', 'disabled', false);
     });
   }
   else if (k === 'link') box.replaceChildren(el('input', { id: 'steparg', placeholder: 'https://youtu.be/...', inputMode: 'url' }));

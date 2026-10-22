@@ -100,8 +100,8 @@ function drawTvset(t) {
     rows.push(row(T('tvset.home_title'), homes, t.launchers.length < 2 ? T('tvset.home_one') : T('tvset.home_many')));
   }
   // the remote's Màn hình TV menu (remote.json "screen") again here, where Manage is used without the remote
-  rows.push(row(T('tvset.screen_title'), [el('button', { textContent: T('rkey.screen_off'), onclick: () => screenOff() }),
-    el('button', { textContent: T('rkey.dim'), onclick: () => dimOpen() })]));
+  rows.push(el('div', { className: 'setrow' }, el('b', { textContent: T('tvset.screen_title') }),
+    UI.actions(UI.btn(T('rkey.screen_off'), () => screenOff()), UI.btn(T('rkey.dim'), () => dimOpen()))));
   $('#tvset').replaceChildren(...rows);
 }
 

@@ -234,7 +234,7 @@ function chmFind() {
   if (c.loading === c.cc || !list) return [UI.line(sel), UI.state(T('chm.loading'))];
   if (list.empty) return [UI.line(sel), UI.warn(T('chm.empty')), UI.actions(UI.btn(T('chm.reload'), () => chmLoad(c.cc, true), 'primary'))];
   drawCats(); drawRows();
-  return [UI.line(sel, UI.btn('↻', () => chmLoad(c.cc, true), 'small iconbtn')), q, cats, results, note];
+  return [UI.line(sel, Object.assign(UI.btn('↻', () => chmLoad(c.cc, true), 'small iconbtn'), { title: T('chm.reload').replace(/^\S+\s*/, ''), 'aria-label': T('chm.reload').replace(/^\S+\s*/, '') })), q, cats, results, note];
 }
 
 // the country now, as a button that opens the picker (a <select> of 250 had no search)

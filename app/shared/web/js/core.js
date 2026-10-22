@@ -340,7 +340,7 @@ async function refresh() {
   if (s.version) put($('#ver'), 'textContent', (s.app_name || 'TV Remote') + ' ' + s.version + (s.released ? ' · ' + s.released : ''));
   put(document, 'title', tvName && !picking ? tvName + ' · Remote' : 'TV Remote');
   put($('#name'), 'textContent', picking ? 'TV Remote' : tvName);
-  put($('#info'), 'textContent', picking ? T('core.choose_tv') : [CORE === 'pc' ? s.host : '', s.asking ? T('core.look_choose_allow') : s.paired === false ? T('core.remote_not_paired') : s.error ? T('core.remote_not_connected') : '',
+  put($('#info'), 'textContent', picking ? T('core.choose_tv') : [CORE === 'pc' ? s.host : '', s.asking ? T('core.look_choose_allow') : s.paired === false ? T('core.remote_not_paired') : s.error && !adbUp ? T('core.remote_not_connected') : '',
     s.scope === 'view' ? T('core.view_only') : s.scope === 'remote' ? T('core.remote_only') : ''].filter(Boolean).join(' · ') || T('core.connected'));   // a guest knows what it was given
   showNowApp(picking ? '' : s.app || '', s.app_label);
   if (justPicked && s.host === justPicked) {                          // straight to the remote when the TV is ready, to the first-time steps when it is not

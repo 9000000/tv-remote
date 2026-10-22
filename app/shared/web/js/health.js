@@ -241,7 +241,8 @@ function drawSettings() {
   const counts = { all: all.length, edit: all.filter((r) => r.edit).length }; counts.view = counts.all - counts.edit;
   document.querySelectorAll('#setfilter button').forEach((b) => { const f = b.dataset.f; b.classList.toggle('on', f === setFilter); b.dataset.n = counts[f]; });
   const rows = all.filter((r) => setFilter === 'all' || (setFilter === 'edit') === r.edit);
-  const row = ({ s, i, locked }) => el('div', { className: 'setrow', title: s.table + ' ' + s.name + '=' + s.value,
+  const row = ({ s, i, locked }) => el('div', { className: 'setrow', title: s.table + ' ' + s.name + '=' + s.value, tabIndex: 0,   // tabIndex: keyboard and D-pad reach a cut-off value
+    onkeydown: (e) => { if (e.key === 'Enter' && e.target === e.currentTarget) e.currentTarget.click(); },
     onclick: (e) => { e.currentTarget.classList.toggle('full'); if (locked) toast(T('health.locked_toast')); } },   // a long value opens in full on a tap
     el('div', { className: 'setname' }, el('span', { textContent: i.title }), el('small', { className: 'mono', textContent: s.name })),
     setControl(s, i));

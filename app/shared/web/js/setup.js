@@ -504,7 +504,7 @@ async function loadSteps() {
   else {
     const name = el('input', { placeholder: T('setup.ph_name'), value: (s.saved && s.saved.name) || s.model || '' });
     out.push(step(4, 'todo', move ? T('setup.save_move') : T('setup.save_tv'), move ? T('setup.save_move_note', { ip: s.tailscale_ip }) : T('setup.save_note'),
-      name, act(T('scenedlg.save'), async () => { const x = await api('/api/tv/save', { name: name.value }); if (x) { toast(x.moved ? T('setup.saved_moved', { host: x.tv.host }) : T('setup.saved')); await refresh(); await loadSteps(); } }, 'primary')));
+      UI.line(name, act(T('scenedlg.save'), async () => { const x = await api('/api/tv/save', { name: name.value }); if (x) { toast(x.moved ? T('setup.saved_moved', { host: x.tv.host }) : T('setup.saved')); await refresh(); await loadSteps(); } }, 'primary'))));
   }
   showSteps(out);
 }
