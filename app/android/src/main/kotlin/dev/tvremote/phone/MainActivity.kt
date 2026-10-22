@@ -132,7 +132,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal var vidH = 9
     /** Something laid over the remote hides the picture and the now playing / now open lines: nothing to ask the TV for. */
     internal fun covered() = (::managing.isInitialized && managing.shown) || (::settings.isInitialized && settings.visibility == View.VISIBLE) ||
-        (::about.isInitialized && about.visibility == View.VISIBLE)                                      // the picture's first frame came
+        (::about.isInitialized && about.visibility == View.VISIBLE) || airShown()                                    // the picture's first frame came
     internal lateinit var topBar: LinearLayout                         // the TV's name and state, with the buttons beside or under it
     internal lateinit var basicBar: Button
 

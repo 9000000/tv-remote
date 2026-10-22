@@ -67,8 +67,8 @@ internal fun MainActivity.airOpen() {
     if (androidOk) { t!!.mouseOpen(); t.mouseStats = { android.util.Log.i("airstat", it) } }
     airSynth()
     val view = airView()
-    (findViewById<ViewGroup>(android.R.id.content)).addView(view, FrameLayout.LayoutParams(-1, -1))
-    Air.host = view
+    Air.host = view                                                   // before addView: the layout pass it starts reads covered()
+    (mini.parent as ViewGroup).let { it.addView(view, it.indexOfChild(mini), FrameLayout.LayoutParams(-1, -1)) }   // under the small player: the picture floats over the pad
     (gyro ?: rot)?.let { airListen(sm, it) }                          // no sensor: the pad alone still drives the pointer
 }
 
@@ -88,6 +88,8 @@ internal fun MainActivity.airClose(): Boolean {
 }
 
 internal fun MainActivity.airBack(): Boolean = airClose()
+
+internal fun airShown() = Air.host != null
 
 private fun MainActivity.airMove(dx: Float, dy: Float, carry: FloatArray) {
     carry[0] += dx; carry[1] += dy                                   // the fractions a count cannot carry add up to the next one

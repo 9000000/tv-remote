@@ -13,6 +13,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Sức khỏe → Riêng tư: app của TV Remote (TV Setup, TV Home, Channels, Games) không còn đứng đầu "Đáng xem kỹ" mà nằm nhóm riêng, gập lại, có câu nói vì sao chúng cần các quyền đó. App có trợ năng được nút **Tắt trợ năng**; app người dùng cài được nút **Gỡ**.
 - Tùy chỉnh TV Home → Hình nền: nút **Tải ảnh của bạn** lên đầu mục (trước nằm lẫn giữa các ô), ảnh đã tải đứng đầu; đang gửi ảnh thì nút quay và ghi "Đang gửi ảnh 1/3 lên TV…".
 - Tối ưu TV: không bao giờ tắt launcher gốc của TV CVTE (`com.cvte.tv.launcher.*`: một TV JVC kẹt ở logo khởi động, mất ADB, cleanyourtv #741) và hai dịch vụ TCL mà phím Nguồn vào cần (`com.tcl.interactive`, `com.tcl.ttvs`). Hướng dẫn TV Home: trang Tài khoản và hồ sơ của Google TV trống khi dùng TV Home, cách đổi hồ sơ.
+- App điện thoại: mở Air Mouse khi đang xem hình TV thì hình chuyển sang player nhỏ nổi trên bàn di (như khi mở Quản lý / Cài đặt), trước đó bị màn Air Mouse che mất.
 
 **English**
 - Launcher gallery: the blue edge of the launcher in use runs all around its card (the preview picture hid its top half).
@@ -21,6 +22,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Health → Privacy: TV Remote's own apps (TV Setup, TV Home, Channels, Games) no longer top "Worth a close look": they have their own folded group saying why they hold those permissions. An app with accessibility gets **Turn off accessibility**; an app the user installed gets **Remove**.
 - Customize TV Home → Background: **Upload your photo** sits in the section's head (it was a tile lost among the others), uploaded photos come first; while sending, the button spins and says "Sending photo 1/3 to the TV…".
 - Optimize TV: never turns off a CVTE TV's own home (`com.cvte.tv.launcher.*`: a JVC hung on its boot logo with ADB gone, cleanyourtv #741) or the two TCL services the Source key needs (`com.tcl.interactive`, `com.tcl.ttvs`). TV Home guide: Google TV's Accounts & profiles page is empty while TV Home is in use, and how to switch profile.
+- Phone app: opening Air Mouse while the TV's picture shows moves it to the small player over the pad (as Manage / Settings do); the Air Mouse screen used to hide it.
 
 ## 0.17.0 - 2026-10-22
 

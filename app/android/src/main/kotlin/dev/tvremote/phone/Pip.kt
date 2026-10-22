@@ -22,7 +22,7 @@ import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.widget.FrameLayout
 
-// The TV's picture can float: the PiP button beside full screen (or Manage / Settings / About opening over the remote) puts it
+// The TV's picture can float: the PiP button beside full screen (or Manage / Settings / About / Air Mouse opening over the remote) puts it
 // in a small player over every screen of the app, so the rest of the app stays usable. Only while it floats does leaving the
 // app (Home, recents) go on in Android's Picture-in-Picture; coming back finds the small player again. One stream throughout: the picture's VideoFrame (with its SurfaceView) is moved between the remote's stage and [MiniPlayer]; the surface goes
 // and comes back, which the decoder already survives (Tv.pauseScreen / resumeScreen).
