@@ -217,6 +217,10 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
         }
         if (r.path == "/api/scene/run" && r.method == "POST")
             return Scenes.runRequest(r.json(), { id -> SceneStore.find(a, id) }, "adb: not connected") { link?.let { l -> Scenes.Shell({ l.get().shell(it) }) } }
+        if (r.path == "/api/watchers") {                               // the TV's own count: this phone's remote screen and PiP too
+            val c = try { link?.get()?.shell(dev.tvremote.core.picture.Watchers.CMD)?.let { dev.tvremote.core.picture.Watchers.parse(it) } } catch (e: Exception) { null }
+            return HttpServer.Response.json(if (c == null) JSONObject() else JSONObject().put("watch", c.watch).put("listen", c.listen))
+        }
         if (r.path == "/api/app/icon") {
             val png = labels?.icon(r.query["pkg"].toString()) ?: return HttpServer.Response.error(404, "no icon")
             val icon = HttpServer.Response.of("image/png", png)

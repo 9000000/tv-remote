@@ -918,6 +918,7 @@
  "health.stream_live": "trực tiếp · {fps} khung/giây",
  "health.stream_sharpest": "nét nhất",
  "health.stream_none": "đang không xem",
+ "health.stream_other": "đang xem · {n} thiết bị",
  "health.night_last": "Đêm qua",
  "health.night_on": "Đêm {date}",
  "health.night_freed": "dọn {freed}",

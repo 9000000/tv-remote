@@ -389,7 +389,8 @@ async function loadHealth() {
   if (hmode !== 'now') return;
   if (healthBusy || ADB.state !== 'ready') return;
   healthBusy = true;
-  const t0 = performance.now(), h = await api('/api/health', null, true);
+  // a picture shown outside this page (the phone app's own remote screen, its PiP, another device): the TV's own count
+  const t0 = performance.now(), [h, seen] = await Promise.all([api('/api/health', null, true), screenOn ? {} : watchersNow()]);
   healthBusy = false;
   if (!h || currentTab !== 'health') return;
   if (!$('.health').classList.contains('ready')) $('.health').classList.add('ready');
@@ -401,7 +402,7 @@ async function loadHealth() {
     [T('health.k_app'), r.app ? ((typeof appName === 'function' && appName(r.app)) || r.app) : ''],
     [T('health.k_volume'), vol.max ? vol.level + ' / ' + vol.max + (vol.muted ? ' · ' + T('health.muted') : '') : ''],
     [T('health.k_latency'), h.ping_ms + ' ms'],
-    [T('health.k_stream'), screenOn ? ($('#screenmode').value === 'snap' ? T('health.stream_snap') : T('health.stream_live', { fps: streamFps }) + ($('#screenmode').value === 'hd' ? ' · ' + T('health.stream_sharpest') : ' · ' + $('#screenmode').value + 'p')) : T('health.stream_none')],
+    [T('health.k_stream'), screenOn ? ($('#screenmode').value === 'snap' ? T('health.stream_snap') : T('health.stream_live', { fps: streamFps }) + ($('#screenmode').value === 'hd' ? ' · ' + T('health.stream_sharpest') : ' · ' + $('#screenmode').value + 'p')) : seen.watch > 0 ? T('health.stream_other', { n: seen.watch }) : T('health.stream_none')],
     [T('health.k_uptime'), h.uptime != null ? fmtUptime(h.uptime) : ''],
   ]));
   const nt = h.nightly, nd = nt && new Date(nt.day + 'T12:00:00'), ago = nd && Math.round((Date.now() - nd) / 864e5);

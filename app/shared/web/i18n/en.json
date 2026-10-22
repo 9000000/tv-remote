@@ -966,6 +966,10 @@
  "health.stream_live": "live · {fps} fps",
  "health.stream_sharpest": "sharpest",
  "health.stream_none": "not viewing",
+ "health.stream_other": {
+  "one": "watching · {n} device",
+  "other": "watching · {n} devices"
+ },
  "health.night_last": "Last night",
  "health.night_on": "Night of {date}",
  "health.night_freed": "freed {freed}",
