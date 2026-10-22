@@ -274,7 +274,7 @@ class HomeActivity : Activity() {
 
     private var noWidgets = false
 
-    /** Without widgets: the grid's top margin so that row 1 is whole and row 2 shows half (1.5 rows), from the real screen and tile heights. */
+    /** Without widgets: the grid's top margin so that row 1 is whole and row 2 only peeks (a fifth of it: a clean screen that still says there is more), from the real screen and tile heights. */
     private fun peek() {
         val lp = grid.layoutParams as LinearLayout.LayoutParams
         val rows = grid.childCount
@@ -282,7 +282,7 @@ class HomeActivity : Activity() {
         if (noWidgets && rows > 0 && rowH == 0) return                  // new rows, not laid out yet: the next layout asks again
         // one row sits where row 1 of many would (more columns put few apps in one row: it rose to the clock)
         val want = if (!noWidgets) dp(36) else if (rows == 0 || rowH == 0 || scroll.height == 0) dp(48)
-                   else maxOf(dp(48), scroll.height - (rowH + dp(GRID_GAP) + rowH / 2) - head.bottom)   // row 1, the gap, half of row 2
+                   else maxOf(dp(48), scroll.height - (rowH + dp(GRID_GAP) + rowH / 5) - head.bottom)   // row 1, the gap, a fifth of row 2
         if (Math.abs(want - lp.topMargin) > 1) { lp.topMargin = want; grid.requestLayout() }
     }
 
@@ -459,7 +459,7 @@ class HomeActivity : Activity() {
         }
     }
 
-    // ---- move mode: a dock app is carried through the favourites with the D-pad, OK saves, Back / Home cancels ----
+    // ---- move mode: an app is carried through every row with the D-pad, OK saves, Back / Home cancels ----
 
     private var moving: Tile? = null
     private val hintView: TextView by lazy {
@@ -473,7 +473,7 @@ class HomeActivity : Activity() {
 
     private fun startMove(pkg: String) {
         val t = tiles().firstOrNull { it.app?.pkg == pkg && it.app.pin == null } ?: return
-        moving = t
+        moving = t; movingFavs = dockCount()
         t.requestFocus(); t.carry(true); glass.hide()                 // the glass's edge inside the ring read as two borders
         for (o in tiles()) if (o !== t) o.animate().cancel().also { o.animate().alpha(DIM).setDuration(if (Motion.on) 150L else 0L).start() }   // the rest steps back
         hint(true)
@@ -485,12 +485,9 @@ class HomeActivity : Activity() {
         else hintView.animate().alpha(0f).setDuration(if (Motion.on) 150L else 0L).withEndAction { hintView.visibility = View.GONE }.start()
     }
 
-    /** Where the tile may still go: its own list (the favourites, or the grid) */
-    private fun moveRange(t: Tile): IntRange {
-        val all = tiles(); val at = all.indexOf(t)
-        val favs = dockCount(); val end = favs + pins.size
-        return if (at < favs) 0 until favs else end until all.indexOfLast { it.app != null } + 1
-    }
+    /** The tiles an app can be carried through: every app's, across the rows (the favourites are only the first [movingFavs]); a pinned shortcut keeps its place after them. */
+    private fun movable(): List<Tile> = tiles().filter { it.app != null && it.app.pin == null }
+    private var movingFavs = 0
 
     /** The favourites are the first tiles, as many as the saved dock holds (pins and the rest follow). */
     private fun dockCount(): Int { val by = apps.map { it.pkg }.toSet(); return Store.list(this, "dock").count { it in by } }
@@ -506,11 +503,14 @@ class HomeActivity : Activity() {
             KeyEvent.KEYCODE_DPAD_UP -> -cols; KeyEvent.KEYCODE_DPAD_DOWN -> cols
             else -> return false
         }
-        val all = tiles().toMutableList()
-        val at = all.indexOf(t); val to = at + d
-        if (to !in moveRange(t)) { t.nudge(if (d == 1) 1 else if (d == -1) -1 else 0, if (d == cols) 1 else 0); return true }
-        val before = all.associateWith { val xy = IntArray(2); it.getLocationOnScreen(xy); xy }
-        all.add(to, all.removeAt(at))
+        val shown = tiles()
+        val m = movable().toMutableList()
+        val at = m.indexOf(t); val to = at + d
+        if (to !in m.indices) { t.nudge(if (d == 1) 1 else if (d == -1) -1 else 0, if (d == cols) 1 else 0); return true }
+        val before = shown.associateWith { val xy = IntArray(2); it.getLocationOnScreen(xy); xy }
+        m.add(to, m.removeAt(at))
+        val k = movingFavs.coerceAtMost(m.size)
+        val all: List<View> = m.take(k) + shown.filter { it.app?.pin != null } + m.drop(k) + shown.filter { it.app == null }
         for (r in 0 until grid.childCount) (grid.getChildAt(r) as ViewGroup).removeAllViews()
         grid.removeAllViews()
         fill(all, cols, dp(GRID_GAP))
@@ -541,12 +541,12 @@ class HomeActivity : Activity() {
         t.carry(false); t.glassOn(false)
         hint(false)
         for (o in tiles()) o.animate().cancel().also { o.animate().alpha(1f).setDuration(if (Motion.on) 150L else 0L).start() }
-        if (save && moveRange(t).first == 0) {
-            val order = tiles().take(dockCount()).mapNotNull { it.app?.pkg }
-            val old = Store.list(this, "dock")
-            Store.putList(this, "dock", order + old.filter { it !in order })   // an app no longer installed keeps its place at the end
-        } else if (save) {
-            Store.putList(this, "order", tiles().drop(moveRange(t).first).takeWhile { it.app != null }.mapNotNull { it.app?.pkg })   // the grid's order; apps that leave drop out of it by not being listed
+        if (save) {                                                   // the first places are the favourites, as many as before: an app carried in pushes the last one down
+            val m = movable().mapNotNull { it.app?.pkg }; val k = movingFavs.coerceAtMost(m.size)
+            val here = apps.map { it.pkg }.toSet()
+            Store.change(this, JSONObject()                           // one write: one rebuild
+                .put("dock", org.json.JSONArray(m.take(k) + Store.list(this, "dock").filter { it !in here }))   // an app no longer installed keeps its place at the end
+                .put("order", org.json.JSONArray(m.drop(k))))           // the grid's order; apps that leave drop out of it by not being listed
         } else { shownKey = ""; show() }                              // the saved order, tile by tile as it was
     }
 
@@ -748,20 +748,10 @@ class HomeActivity : Activity() {
                 .setItems(acts.map { getString(it.first) }.toTypedArray()) { _, i -> acts[i].second() }.show().also { open = it }
             return
         }
-        val dockList = Store.list(this, "dock")
-        val at = dockList.indexOf(a.pkg)
-        val acts = ArrayList<Pair<Int, () -> Unit>>()
-        if (at >= 0) {
-            if (dockList.size > 1) acts.add(R.string.move to { ui.post { startMove(a.pkg) } })
-            acts.add(R.string.unpin to { dockList.removeAt(at); Store.putList(this, "dock", dockList) })
-        } else {
-            acts.add(R.string.move to { ui.post { startMove(a.pkg) } })
-            acts.add(R.string.pin to {
-                if (dockList.size + pins.size >= HomeConfig.DOCK_MAX) Toast.makeText(this, getString(R.string.dock_full, HomeConfig.DOCK_MAX), Toast.LENGTH_LONG).show()
-                else { dockList.add(a.pkg); Store.putList(this, "dock", dockList) }
-            })
-            acts.add(R.string.hide to { Store.putList(this, "hidden", Store.list(this, "hidden") + a.pkg) })
-        }
+        val acts = ArrayList<Pair<Int, () -> Unit>>()                // no "add to / take from the favourites": they are only the first places, and Move puts an app there
+        acts.add(R.string.move to { ui.post { startMove(a.pkg) } })
+        acts.add(R.string.hide to { Store.change(this, JSONObject().put("hidden", org.json.JSONArray(Store.list(this, "hidden") + a.pkg))
+            .put("dock", org.json.JSONArray(Store.list(this, "dock") - a.pkg))) })
         acts.add(0, R.string.customize to { customize() })
         acts.add((if (Motion.on) R.string.anim_off else R.string.anim_on) to { Store.change(this, JSONObject().put("anim", !conf.optBoolean("anim", true))) })
         acts.add(R.string.info to {

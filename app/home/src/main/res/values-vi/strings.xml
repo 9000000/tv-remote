@@ -10,8 +10,7 @@
     <string name="offline">Mất mạng</string>
     <string name="apps">Ứng dụng</string>
     <string name="dock_empty">Giữ OK trên một app để ghim vào đây</string>
-    <string name="pin">Ghim vào yêu thích</string>
-    <string name="unpin">Bỏ khỏi yêu thích</string>
+    <string name="unpin">Gỡ khỏi màn hình chính</string>
     <string name="move">Di chuyển</string>
     <string name="move_hint">Mũi tên: di chuyển · OK: lưu · Back: hủy</string>
     <string name="hide">Ẩn</string>

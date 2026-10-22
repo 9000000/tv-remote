@@ -12,8 +12,7 @@
     <string name="offline">Offline</string>
     <string name="apps">Apps</string>
     <string name="dock_empty">Hold OK on an app to pin it here</string>
-    <string name="pin">Pin to favourites</string>
-    <string name="unpin">Remove from favourites</string>
+    <string name="unpin">Remove from Home</string>
     <string name="move">Move</string>
     <string name="move_hint">Arrows: move · OK: save · Back: cancel</string>
     <string name="hide">Hide</string>
