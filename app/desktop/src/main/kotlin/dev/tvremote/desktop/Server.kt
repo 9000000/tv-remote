@@ -178,6 +178,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             "/api/about" -> return about(s)
             "/api/wirelog" -> return Response.of("text/plain; charset=utf-8", WireLog.all.report(s.atv?.takeIf { native(s) }).toByteArray())
             "/api/update" -> return Response.json(updater.json())
+            "/api/downloader" -> return Response.json(dev.tvremote.core.Downloader.json())   // needs no TV: the help for installing TV Setup types it
             "/api/tvs" -> return Response.json(JSONObject().put("current", s.host).put("tvs", saved.tvs))
             "/api/discover" -> return Response.json(Discover.poll(r.query.containsKey("new")))
             "/api/diagnose" -> return dev.tvremote.core.web.Manage.diagnose(r, s.link)   // no session needed: a TV that never connected has none (Diagnose.kt)

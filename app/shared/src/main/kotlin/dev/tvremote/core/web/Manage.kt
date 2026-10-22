@@ -129,6 +129,12 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     if (!dev.tvremote.core.ontv.Channels.open({ sh(it) }, r.json().optString("q"))) throw IOException("channels:missing")
                     return HttpServer.Response.ok()
                 }
+                "games" -> if (!post) return HttpServer.Response.json(dev.tvremote.core.ontv.Games.state { sh(it) })   // TV Games: on the TV, a newer one, or "soon"
+                "games/install" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Games.install(link.get(), dir, r.lang))
+                "games/open" -> if (post) {
+                    if (!dev.tvremote.core.ontv.Games.open { sh(it) }) throw IOException("games:missing")
+                    return HttpServer.Response.ok()
+                }
                 "home/photo" -> if (post) {                           // its background: a JPEG the page already made the screen's size
                     if (r.length !in 1..6_000_000) throw IllegalArgumentException("photo too large")
                     val b = ByteArray(r.length.toInt()); var off = 0
@@ -179,6 +185,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "tailscale" -> { val t = Tailscale(link.get(), dir); return HttpServer.Response.json(JSONObject().put("installed", t.installed()).put("ip", t.ip())) }
                 "setup/version" -> return HttpServer.Response.json(setupVersion())
                 "setup/need" -> { SetupNeed.check(link.get(), r.q("f")); return HttpServer.Response.json(JSONObject().put("ok", true)) }
+                "downloader" -> return HttpServer.Response.json(dev.tvremote.core.Downloader.json())   // the Downloader codes the page tells people to type
                 "launchers" -> return HttpServer.Response.json(launcherApi.list())
                 "launcher/thumb" -> return launcherApi.thumb(r.q("id"))
                 "launcher/install" -> return HttpServer.Response.json(launcherApi.install(r.json().optString("id"), r.lang))

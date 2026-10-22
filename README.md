@@ -163,7 +163,7 @@ Two more apps for the TV, free and without ads. Both are set up from the phone o
 
 - Retro games (libretro cores) and web games; free homebrew suggested in the app.
 - Up to 4 phones as pads: scan the QR on the TV, no ADB and no TV Setup needed.
-- Not yet installed from the phone or computer app.
+- Installed, opened and updated from the phone or computer app: **TV** tab → **TV games** card (needs ADB for the install only; says so when the latest release has no `tv-games.apk` yet).
 
 | App | Downloader code | File |
 |---|---|---|

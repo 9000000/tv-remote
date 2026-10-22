@@ -166,7 +166,7 @@ class Assist(private val cur: () -> Session) {
         val HOME = Regex("launcher|\\.home\\b|tvhome", RegexOption.IGNORE_CASE)   // the TV's home screens (Google TV, Android TV, makers')
         const val DOWNLOADER = "com.esaba.downloader"
         const val SETUP_APK = "https://github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"
-        const val SETUP_CODE = "downloader://2397346"                 // Downloader's own link for the AFTVnews code of SETUP_APK: opens Downloader alone, no "Open with"
+        val SETUP_CODE: String get() = "downloader://" + dev.tvremote.core.Downloader.code("setup").orEmpty()   // Downloader's own link for the AFTVnews code of SETUP_APK (docs/data/downloader.json): opens Downloader alone, no "Open with"
         val PKG = dev.tvremote.core.adb.Pkg.RE
     }
 }

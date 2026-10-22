@@ -243,6 +243,8 @@ const FRIENDLY = [
   [/channels:missing/, T('core.fr_channels_missing')],
   [/channels:file_big/, T('core.fr_channels_file_big')],
   [/channels:none/, T('core.fr_channels_none')],
+  [/games:missing/, T('core.fr_games_missing')],
+  [/games:none/, T('core.fr_games_none')],
   [/home:photos_full/, T('home.photos_full', { n: 10 })],   // before home:photo, which it starts with
   [/home:photo/, T('core.fr_home_photo')],
   [/launcher list not signed/i, T('core.fr_launcher_list')],

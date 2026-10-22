@@ -1,0 +1,31 @@
+// 🎮 TV Games (app/games) from here (Games.kt): put on the TV or updated from the latest release, and opened. Playing needs no ADB
+// (the app serves its own pad page, a QR on the TV); ADB is only for installing it from here. A release without tv-games.apk yet
+// answers `soon`, said plainly instead of failing.
+let gameNow = null;
+onTvChange(() => { gameNow = null; gameCard(); });
+
+async function gameCard() {
+  const line = $('#gamestate'), soon = $('#gamesoon'), open = $('#gameopen'), inst = $('#gameinst');
+  if (!line) return;
+  const r = ADB.state === 'ready' ? await api('/api/games', null, true) : null;
+  gameNow = r;
+  line.hidden = open.hidden = !(r && r.installed);
+  soon.hidden = !(r && r.soon);
+  if (r && r.installed) put(line, 'textContent', T('games.state', { v: r.version }));
+  inst.hidden = !r || !r.latest;                                       // nothing to install: no release carries it yet, or it is up to date
+  if (!inst.hidden) put(inst, 'textContent', r.installed ? T('games.update', { v: r.latest }) : T('games.install'));
+}
+
+async function gameInstall() {
+  toast(T('games.installing'));
+  const n = await api('/api/games/install', {});
+  if (n && n.installed) toast(T('games.installed', { v: n.version }));
+  gameCard();
+}
+
+async function gameOpen() {
+  if (await api('/api/games/open', {})) { toast(T('games.opening')); setTimeout(refresh, 1500); }
+}
+
+$('#gameinst').addEventListener('click', gameInstall);
+$('#gameopen').addEventListener('click', gameOpen);

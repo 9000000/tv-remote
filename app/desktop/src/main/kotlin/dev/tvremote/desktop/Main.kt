@@ -43,6 +43,7 @@ fun main(args: Array<String>) {
     val first = opt["tv"]?.trim()?.also { if (!Server.IP.matches(it)) { System.err.println("--tv: not an IPv4 address: $it"); kotlin.system.exitProcess(2) } }
     val done = CountDownLatch(1)
     val pass = Pass(passFile)
+    dev.tvremote.core.Downloader.dir = File(data, if (packaged) "cache" else ".cache/desktop")   // the signed Downloader codes are kept here
     val server = Server(repo, keys, pass, File(data, if (packaged) "cache" else ".cache/desktop").also { it.mkdirs() }, saved, first, port + 1) { done.countDown() }
     val http = HttpServer(server)
     val bound = try { http.start(port, true) } catch (e: java.io.IOException) {

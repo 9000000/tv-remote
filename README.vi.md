@@ -165,7 +165,7 @@ Thêm 2 app cho TV, miễn phí, không quảng cáo. Cài và chỉnh từ app 
 
 - Game retro (libretro core) và game web; app gợi ý sẵn game homebrew miễn phí.
 - Tối đa 4 điện thoại làm tay cầm: quét QR trên TV, không cần ADB hay TV Setup.
-- Chưa cài được từ app điện thoại / máy tính.
+- Cài, mở và cập nhật từ app điện thoại / máy tính: tab **TV** → thẻ **Game trên TV** (chỉ cần ADB để cài; báo rõ khi bản phát hành mới nhất chưa có `tv-games.apk`).
 
 | App | Mã Downloader | Tệp |
 |---|---|---|

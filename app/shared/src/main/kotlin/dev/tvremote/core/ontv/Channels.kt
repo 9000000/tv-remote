@@ -1,7 +1,6 @@
 package dev.tvremote.core.ontv
 import dev.tvremote.core.B64
 import dev.tvremote.core.adb.Adb
-import dev.tvremote.update.Release
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
@@ -19,42 +18,14 @@ object Channels {
     /** A programme reminder shows over other apps only with "display over other apps", a Settings toggle most TVs do not have: granted here, with every use (like TV Games' pad). */
     private const val ALLOW_OVERLAY = "appops set $PKG SYSTEM_ALERT_WINDOW allow >/dev/null 2>&1"
 
-    @Throws(IOException::class)
-    fun state(sh: (String) -> String): JSONObject {
-        val v = Regex("versionName=(\\S+)").find(sh("dumpsys package $PKG | grep -m1 versionName"))?.groupValues?.get(1)
-        val o = JSONObject().put("installed", v != null)
-        v?.let { o.put("version", it) }
-        latest(v ?: "0")?.let { o.put("latest", it.version) }
-        return o
-    }
+    private val app = OwnApp(PKG, APK, "channels", "channels:none", ALLOW_OVERLAY)
 
-    @Volatile private var checked: Triple<Long, String, Release?>? = null
-    /** The latest release's TV Channels when newer than [version] ("0": none on the TV), asked of GitHub at most every 6 hours. */
-    private fun latest(version: String): Release? {
-        checked?.let { (at, v, r) -> if (v == version && System.currentTimeMillis() - at < 6 * 3600_000L) return r }
-        val r = try { Release.newer(version, "channels", APK) } catch (e: Exception) { return null }
-        checked = Triple(System.currentTimeMillis(), version, r)
-        return r
-    }
+    @Throws(IOException::class)
+    fun state(sh: (String) -> String): JSONObject = app.state(sh)
 
     /** Installs it, or puts the newer one over it (favourites and groups stay): checked against the release's signed SHA256SUMS. */
     @Throws(IOException::class)
-    fun install(adb: Adb, dir: File?, lang: String): JSONObject {
-        val sh: (String) -> String = { adb.shell(it) }
-        checked = null
-        val now = state(sh)
-        val r = (if (now.has("latest")) checked?.third else null) ?: return now.also { if (!it.optBoolean("installed")) throw IOException("channels:none") }
-        val file = File(dir ?: File(System.getProperty("java.io.tmpdir")), "tv-channels-${r.version}.apk")
-        try {
-            r.download(file, null)
-            val out = Setup(adb, dir, lang) { }.install(file)
-            if (!out.contains("Success")) throw IOException("launcher:install:" + out.trim().lines().lastOrNull().orEmpty().take(200))
-            sh(ALLOW_OVERLAY)
-        } finally { file.delete() }
-        try { adb.shell("cmd package compile -m speed -f $PKG >/dev/null 2>&1", 120000) } catch (x: IOException) { }   // a cold start on a slow chip, as LauncherInstall
-        checked = null
-        return state(sh)
-    }
+    fun install(adb: Adb, dir: File?, lang: String): JSONObject = app.install(adb, dir, lang)
 
     /**
      * Favourites and groups, through a broadcast only the shell can send (ChannelsReceiver in app/channels), like [Home.call].
@@ -79,7 +50,7 @@ object Channels {
             val path = l.optString("path")
             if (path.matches(Regex("/[A-Za-z0-9_./-]+\\.json"))) l.put("channels", org.json.JSONArray(sh("cat $path").trim().ifEmpty { "[]" })).remove("path")
         }
-        latest(r.optString("version"))?.let { r.put("latest", it.version) }
+        app.latest(r.optString("version"))?.let { r.put("latest", it.version) }
         return r
     }
 

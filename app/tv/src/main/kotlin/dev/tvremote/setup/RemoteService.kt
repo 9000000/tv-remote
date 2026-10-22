@@ -216,6 +216,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         catch (e: Exception) { }                                   // refused (vendor block, Android 12+ background): it still serves as a plain service
         val server = HttpServer(this)
         http = server
+        dev.tvremote.core.Downloader.dir = filesDir                   // the signed Downloader codes are kept here
         val l = AdbLink(filesDir, "127.0.0.1")
         link = l
         manage = Manage(l, object : Manage.Labels {

@@ -22,7 +22,7 @@ import kotlin.math.roundToInt
 // The palette: dark or light, set by [loadLang] before any view is built (Settings -> Appearance, or the phone's own mode).
 internal var LIGHT = false
 internal var BG = Palette.dark.bg
-internal const val DL_CODE = "2397346"                         // AFTVnews short code for releases/latest/download/tv-setup.apk: Downloader takes it as downloader://<code> or in its address field
+internal val DL_CODE: String get() = dev.tvremote.core.Downloader.code("setup").orEmpty()   // AFTVnews short code of tv-setup.apk (docs/data/downloader.json, signed): Downloader takes it as downloader://<code> or in its address field
 internal var CARD = Palette.dark.card
 internal var BTN = Palette.dark.btn
 internal var ACCENT = Palette.dark.accent                      // fills, with white on top (Palette.kt)

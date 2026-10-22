@@ -298,11 +298,14 @@ const assist = (do_, extra) => api('/api/assist', { do: do_, ...extra });
 $('#assistclose').addEventListener('click', () => $('#assist').close());
 $('#assist').addEventListener('close', () => { assistGen++; api('/api/assist', { do: 'stop' }, true); });   // closed any way (button, Esc): nothing keeps running unseen
 
-function adbHelp() {
+let dlCodes = null;                                                   // the Downloader codes (/api/downloader: signed on the site, else packed)
+async function dlTip() { dlCodes = dlCodes || await api('/api/downloader', null, true) || {}; return T('setup.dl_tip', { code: dlCodes.setup || '' }); }
+async function adbHelp() {
+  const tip = await dlTip();
   if (!STATE.connected) {                                             // everything here goes through the remote buttons
     assistShow(T('setup.turn_on_adb'), say(STATE.paired === false ? T('setup.pair_first')
       : T('setup.remote_unreachable')),
-      row(act(T('setup.go_pair'), async () => { $('#assist').close(); showTab('tv'); }, 'primary')), say(T('setup.or_by_hand')), say(ADB_STEPS), say(DL_TIP),
+      row(act(T('setup.go_pair'), async () => { $('#assist').close(); showTab('tv'); }, 'primary')), say(T('setup.or_by_hand')), say(ADB_STEPS), say(tip),
       CORE !== 'tv' ? choice(T('setup.wireless_choice'), '', wirelessPair) : null);
     return;
   }
@@ -314,7 +317,7 @@ function adbHelp() {
     choice(T('setup.open_play'), '', () => assist('open', { what: 'https://play.google.com/store/apps' })),
     choice(T('setup.open_pkg'), T('setup.open_pkg_note'), async () => { const p = await ask(T('setup.pkg_ask'), { value: 'com.example.app' }); if (p && p.trim()) assist('open', { what: p.trim() }); }),
     choice(T('setup.direct_link'), T('setup.direct_link_note'), installDirect),
-    say(DL_TIP),
+    say(tip),
     say(T('setup.adb_done_note')));
 }
 const WIRELESS_STEPS = T('setup.wireless_steps');
@@ -342,7 +345,6 @@ async function wirelessPair() {
   const p = f && (f.pairing || []).find((s) => s.ip === f.host) || f && (f.pairing || [])[0];
   if (p && !addr.value) addr.value = p.ip + ':' + p.port;
 }
-const DL_TIP = T('setup.dl_tip');
 const ADB_STEPS = T('setup.adb_steps') + '\n\n' + T('setup.tcl_hidden_adb');
 function adbSteps() {
   assistShow(T('setup.steps_title'), say(T('setup.steps_use_keys')), say(ADB_STEPS),
@@ -382,7 +384,7 @@ async function installDirect() {
     const s = await api('/api/assist', null, true); if (shown !== assistGen) return;
     if (s && /installer/.test(s.front || '')) continue;               // the TV's installer is up: the person is busy there
     return assistShow(T('setup.tv_failed_title'), say(T('setup.tv_failed_body')),
-      row(act(T('setup.via_downloader'), async () => installSetup(), 'primary'), act(T('setup.other_ways'), async () => adbHelp())), say(DL_TIP));
+      row(act(T('setup.via_downloader'), async () => installSetup(), 'primary'), act(T('setup.other_ways'), async () => adbHelp())), say(tip));
   }
 }
 async function installSetup() {

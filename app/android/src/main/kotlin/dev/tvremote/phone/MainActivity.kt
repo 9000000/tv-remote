@@ -192,6 +192,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         applyPalette(this)                                        // before the theme and every view: they read the colours
         setTheme(if (LIGHT) R.style.AppLight else R.style.AppDark)   // dialogs and the keyboard's look follow
         super.onCreate(b)
+        dev.tvremote.core.Downloader.dir = filesDir                   // the signed Downloader codes are kept here (core/Downloader.kt)
         prefs = getSharedPreferences("tvs", MODE_PRIVATE)
         soundPace()                                               // Listen.kt
         reachAroundVpn()                                          // a TV at home stays reachable with a VPN on
