@@ -126,7 +126,7 @@ function stopDie() { clearInterval(dieT); $('#die').classList.remove('roll'); fa
 // ---- the flow of a turn: roll -> (pick a horse) -> walk -> maybe kick -> same seat again on a 6, else the next seat
 const nm = (t, s) => t.name(s);
 const table = Table({
-  seats: 4, turnSecs: TURN, botMs: [600, 1100], cards: true,
+  seats: 4, turnSecs: TURN, botMs: [600, 1100], cards: true, remote: { mount: '#side' },
   deal(t) {
     g.gen++; g.pos = LU.fresh(); g.shown = LU.fresh(); g.phase = 'roll'; g.dice = 0; g.moves = []; g.busy = false; g.rolling = false; g.walking = null;
     clearInterval(dieT); t.turn = t.lastWinner >= 0 ? t.lastWinner : 0; g.msg = '';

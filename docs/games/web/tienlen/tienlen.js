@@ -21,7 +21,7 @@ const nextSeat = (s, ok) => { for (let k = 1; k <= 4; k++) { const x = (s + k) %
 const near = (s) => g.hands.some((hd, o) => o !== s && active(o) && hd.length > 0 && hd.length <= 3);
 
 const table = Table({
-  seats: 4, turnSecs: TURN, botMs: [900, 1500], cards: true,
+  seats: 4, turnSecs: TURN, botMs: [900, 1500], cards: true, remote: true,
   deal(t) {
     g.hands = TL.deal(4); g.last = null; g.passed = new Set(); g.out = [];
     g.persona = t.seats.map(() => PERSONA[Math.floor(Math.random() * PERSONA.length)]);

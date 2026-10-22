@@ -57,7 +57,7 @@ const phoneCard = (c) => ({ id: c.id, i: KD[c.k].e, k: KD[c.k].e, t: W.kn[c.k], 
 const lastName = (L) => W.cardN(W.kn[L.base], L.kind === 'pair' ? 2 : L.kind === 'three' ? 3 : 1);
 
 const table = Table({
-  seats: 4, turnSecs: TURN, botMs: [900, 1500], cards: true,
+  seats: 4, turnSecs: TURN, botMs: [900, 1500], cards: true, remote: true,
   deal(t) {
     g.G = MK.create(4); g.hold = false; g.seen = 0; g.evt = ''; g.shown = null; clearTimers();
     if (t.lastWinner >= 0) g.G.turn = t.lastWinner;               // the last winner starts the next game

@@ -18,7 +18,8 @@ const h = (t, c, x) => { const e = document.createElement(t); if (c) e.className
 const g = { st: UL.newGame(4), msg: '' };
 
 const table = Table({
-  seats: 4, turnSecs: TURN, botMs: [900, 1500], cards: true,
+  seats: 4, turnSecs: TURN, botMs: [900, 1500], cards: true, remote: { quick: true },   // OK on a card plays it (one card per move)
+ 
   deal(t) {
     g.st = UL.newGame(4);
     const l = g.st.last;

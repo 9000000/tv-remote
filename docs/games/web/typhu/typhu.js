@@ -51,7 +51,7 @@ const DIE = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 let G = null; const afk = [];
 
 const table = Table({
-  seats: 4, turnSecs: TURN, botMs: [800, 1300], cards: true,
+  seats: 4, turnSecs: TURN, botMs: [800, 1300], cards: true, remote: true,
   deal(t) { G = TY.newGame(4); t.turn = 0; afk.length = 0; },
   bot(t, s) {
     let why = TY.apply(G, TY.bot(G));

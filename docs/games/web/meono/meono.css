@@ -64,3 +64,6 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:600 1.
 #over .row.win{background:#3a2f0b;border:.3vw solid #eab308}
 #over .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #over .pt{color:var(--dim)}#over .tt{text-align:right}
+
+body.rmt-on #table{bottom:39vh}body.rmt-on .seat.s{display:none}   /* the TV remote's panel (_lib/table.js) takes the bottom */
+body.rmt-on #msg{top:9%}body.rmt-on #what{top:19%}body.rmt-on #disc{top:58%;scale:.8}body.rmt-on #deck{scale:.85}body.rmt-on #nope{top:12%}
