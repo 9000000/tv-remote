@@ -3,7 +3,7 @@
 
     dev/shots/shots.py                  every picture
     dev/shots/shots.py web ts           only some: web (computer app's remote), ts (Tailscale box), tv (TV web page),
-                                  phone (phone app's remote), tvapp (TV Setup's screen, + the og link previews)
+                                  phone (phone app's remote), tvapp (TV Setup's screen), og (the link previews, from TV Home's picture)
 
 Needs: python3 with Pillow, Google Chrome, cwebp, the computer app built (./gradlew :desktop:installDist) and, for tv / phone /
 tvapp, the two emulators running with the apps installed (dev/test/emu.sh). The picture on the TV is a made-up home screen
@@ -305,7 +305,7 @@ def shot_phone():
 
 
 def shot_tvapp():
-    """tvapp-<lang>: TV Setup's screen on the TV emulator in each language, and from it the link previews og-<lang>.jpg."""
+    """tvapp-<lang>: TV Setup's screen on the TV emulator in each language."""
     app = "dev.tvremote.setup"
     try:
         for lang, loc in (("vi", "vi-VN"), ("en", "en-US")):
@@ -317,18 +317,25 @@ def shot_tvapp():
             words(img, (158, 266, 790, 302), (25, 29, 35), (162, 267), NAME[lang] + ", Android 14", 26, 400, (140, 150, 163))
             img = img.resize((1280, 720), Image.LANCZOS)
             save_webp(img, f"tvapp-{lang}")
-            img.resize((1200, 675), Image.LANCZOS).crop((0, 23, 1200, 653)).save(os.path.join(IMG, f"og-{lang}.jpg"), quality=85)
-            log(f"docs/img/og-{lang}.jpg")
     finally:
         adb(TV, "shell", "cmd", "locale", "set-app-locales", app, "--locales", "")
+
+
+def shot_og():
+    """og-<lang>.jpg, the link previews (X, Facebook, chats): TV Home with its cards, the 1200x630 middle of tvhome-widgets-<lang>.webp,
+    which ends under the first row of apps. TV Setup's screen was there before: a settings panel said nothing of what the apps do."""
+    for lang in ("vi", "en"):
+        Image.open(os.path.join(IMG, f"tvhome-widgets-{lang}.webp")).convert("RGB").crop((40, 0, 1240, 630)) \
+            .save(os.path.join(IMG, f"og-{lang}.jpg"), quality=88)
+        log(f"docs/img/og-{lang}.jpg")
 
 
 # ---- all of it ----------------------------------------------------------------------------------------------------------
 
 def main():
-    want = sys.argv[1:] or ["web", "ts", "tv", "phone", "tvapp"]
+    want = sys.argv[1:] or ["web", "ts", "tv", "phone", "tvapp", "og"]
     for w in want:
-        if w not in ("web", "ts", "tv", "phone", "tvapp"): sys.exit(__doc__)
+        if w not in ("web", "ts", "tv", "phone", "tvapp", "og"): sys.exit(__doc__)
     if not CHROME: sys.exit("Google Chrome not found (set CHROME=…)")
     if not shutil.which("cwebp"): sys.exit("cwebp not found (brew install webp)")
     os.makedirs(CACHE, exist_ok=True)
