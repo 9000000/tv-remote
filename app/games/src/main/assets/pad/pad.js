@@ -194,9 +194,9 @@ function show(slot) {
 // Two tabs (or two Chrome windows) of ONE phone share the player id, and the TV hands the seat to the newest, so each kick makes the other
 // reconnect and kick back: a loop of two sockets every half second (seen on a POCO with 3 pad tabs). The TV now says {replaced} to the
 // one it drops; this page then waits for a tap. Against an older TV the same loop is caught here: 3 links that lived under 3 s in a row.
-function replacedBy() {
+function replacedBy(w = ws) {                                  // w: the socket the TV dropped, not a newer one of this page
   replaced = true; $('#offTitle').textContent = W.rp; $('#offHint').textContent = W.rph; $('#off').dataset.act = 'take'; $('#off').hidden = false;
-  try { ws.onclose = null; ws.close(); } catch (e) {}
+  try { w.onclose = null; w.close(); } catch (e) {}
 }
 function rescan() { gaveUp = true; delete $('#off').dataset.act; $('#off').hidden = false; try { ws.close(); } catch (e) {} }
 // after a drop: ask the server with a plain request why: 403 = the code changed (rescan), anything else = just try again
@@ -216,6 +216,7 @@ function again() { if (gaveUp || replaced) return; if (document.hidden) return; 
 let opened = 0;
 function connect() {
   if (gaveUp || replaced) return;
+  if (ws && ws.readyState <= 1) return;                       // shown again while a reconnect was on its way: two sockets for one phone kicked each other
   show(0);
   ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?k=' + encodeURIComponent(K));
   ws.onopen = () => { opened = Date.now(); retry = 400; downSince = 0; lastPong = Date.now(); send('hello ' + cid + (myName ? ' ' + myName : '')); held.forEach((b) => send('d ' + b)); };
@@ -225,7 +226,7 @@ function connect() {
     try {
       const m = JSON.parse(t);
       if (m.rescan) { rescan(); return; }
-      if (m.replaced) { replacedBy(); return; }
+      if (m.replaced) { if (e.target === ws) replacedBy(e.target); else { e.target.onclose = null; e.target.close(); } return; }   // an older socket of this page: just closed
       if ('away' in m && !('slot' in m)) { setAway(m.away, m.open); return; }
       if (m.closed) { closed = true; setAway(false, false); return; }
       if (m.full) { show(-1); return; }
@@ -506,7 +507,7 @@ function handle(e) {
 ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach((n) => document.addEventListener(n, handle, { passive: false }));
 ['gesturestart', 'gesturechange', 'gestureend', 'contextmenu', 'dblclick', 'selectstart', 'dragstart'].forEach((n) => document.addEventListener(n, (e) => e.preventDefault(), { passive: false }));
 window.addEventListener('blur', releaseAll);
-$('#textrow').addEventListener('submit', (e) => { e.preventDefault(); const v = $('#txt').value.trim(); if (v) { send('t ' + v); $('#txt').value = ''; buzz(12); } });
+$('#textrow').addEventListener('submit', (e) => { e.preventDefault(); const v = $('#txt').value.trim().slice(0, 200); if (v) { send('t ' + v); $('#txt').value = ''; buzz(12); } });
 setMode('nav');
 // the site's overrides of a look (buttons, face, sh, mid per system: docs/games/games.json "layouts"): a pad fix without an app release
 fetch('/layouts.json?k=' + encodeURIComponent(K)).then((r) => r.json()).then((o) => {

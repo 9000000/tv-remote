@@ -32,7 +32,7 @@ class OwnApp(val pkg: String, val apk: String, private val versionKey: String, p
 
     /** The latest release's app when newer than [version] ("0": none on the TV), asked of GitHub at most every 6 hours. */
     private fun look(version: String): Seen {
-        seen?.let { if (it.version == version && System.currentTimeMillis() - it.at < 6 * 3600_000L) return it }
+        seen?.let { if (it.version == version && System.currentTimeMillis() - it.at < (if (it.ok) 6 * 3600_000L else 60_000L)) return it }   // offline: asked again in a minute, not hidden for 6 hours
         val s = try { Seen(System.currentTimeMillis(), version, Release.newer(version, versionKey, apk), true) }
                 catch (e: Exception) { Seen(System.currentTimeMillis(), version, null, false) }   // offline: not "soon", just unknown
         seen = s

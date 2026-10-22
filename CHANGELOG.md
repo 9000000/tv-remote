@@ -14,6 +14,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Games: vào phòng chờ bằng điện thoại thì chưa thấy bài; bài hiện khi game bắt đầu.
 - TV Setup: khi Tùy chọn nhà phát triển chưa bật (TV chỉ báo “không khả dụng cho người dùng này”), mở thẳng Giới thiệu để bấm 7 lần vào “Bản dựng”; nếu TV khóa hẳn thì nói rõ là khóa.
 - Sức khỏe: dòng "Luồng hình" báo "đang xem · N thiết bị" khi hình đang mở ở nơi khác (màn remote, PiP của app điện thoại, máy khác), không còn báo "đang không xem".
+- TV Games, sửa lỗi ngầm: điện thoại rớt mạng hay vào lại thì phím đang giữ được nhả ra (trước nhân vật cứ chạy một hướng); trang tay cầm không mở hai kết nối cùng lúc; kết nối im lặng bị đóng (15 giây với HTTP, 75 giây với tay cầm) thay vì giữ mãi; ROM hỏng: Thử lại và Back trên màn báo lỗi bấm được bằng remote (trước OK lại vào phòng chờ); lưu nhanh và tải ROM ghi file tạm rồi mới đổi tên (mất điện giữa chừng không làm hỏng file cũ); xóa game chỉ xóa file lưu của nó; ảnh bìa không còn chồng lên nhau.
+- TV Games / TV Channels: thông báo "đã cài" chỉ hiện khi phiên bản thật sự đổi; dò app trên TV lỗi thì 1 phút sau thử lại (trước nhớ lỗi 6 giờ).
 
 **English**
 - Home screen (Setup tab): on Google TV, picking TV Home or another launcher now also turns the Google TV launcher off, so the remote's Home key opens the one picked (before, only the default changed and the Google TV launcher still took the Home key, seen on a Coocaa TV). Picking Google TV again puts everything back.
@@ -23,6 +25,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Games: a phone in the lobby no longer sees its cards; they show once the game starts.
 - TV Setup: when Developer options are still off (the TV only says “not available for this user”), it opens About for the 7 presses on “Build”; when the TV locks them, it says so.
 - Health: "Picture stream" says "watching · N devices" when the picture is open elsewhere (the phone app's remote screen or PiP, another device) instead of "not viewing".
+- TV Games, hidden faults fixed: a phone that drops or rejoins has its held keys released (before, a character kept running one way); the pad page never opens two connections at once; a silent connection is closed (15 s for HTTP, 75 s for a pad) instead of kept forever; a broken ROM: Retry and Back on the error card work with the remote (before, OK went back to the lobby); quick save and ROM downloads write a temporary file then rename it (a power cut no longer spoils the old file); deleting a game deletes only its own saves; cover pictures no longer stack.
+- TV Games / TV Channels: the "installed" message shows only when the version really changed; a failed look-up of the app on the TV is tried again after a minute (it was remembered for 6 hours).
 
 ## 0.18.1 - 2026-10-22
 

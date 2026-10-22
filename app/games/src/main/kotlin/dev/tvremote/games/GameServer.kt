@@ -62,7 +62,7 @@ class GameServer private constructor(private val ctx: Context) {
     @Volatile var onReady: () -> Unit = {}                 // someone's Ready changed, any thread
     @Volatile var onLobbyBtn: (player: Int, name: String, down: Boolean) -> Unit = { _, _, _ -> }   // a button tried in the lobby, player 1..4
     fun setLobby(on: Boolean) {
-        if (on) synchronized(slots) { slots.forEach { it.ready = false; it.held.clear(); it.dirs = emptySet() } }
+        if (on) synchronized(slots) { slots.forEachIndexed { i, s -> s.ready = false; release(i) } }   // a key held as the lobby opens went up in the game, not stuck down
         Log.i(TAG, "lobby $on"); lobby = on; send(0, "{\"lobby\":$on,\"max\":$lobbyMax}")
         if (!on) synchronized(slots) { layouts.toList() }.forEachIndexed { i, l -> if (l != null) send(i + 1, "{\"layout\":$l}") }   // held in the lobby
     }
@@ -213,6 +213,7 @@ class GameServer private constructor(private val ctx: Context) {
             if (i < 0) return -1
             val s = slots[i]
             if (s.cid == cid) s.conn?.takeIf { it !== c }?.let { it.text("{\"replaced\":true}"); it.close() } else s.name = null    // a new phone in a seat: not the last one's name
+            if (s.conn !== c) release(i)                   // a reconnect before the old socket was seen dead: what it held went up (the phone sends what it still holds)
             Log.i(TAG, "assign slot ${i + 1}"); s.cid = cid; s.conn = c; s.ready = false
             if (name != null) s.name = name
             changed = i
@@ -234,10 +235,18 @@ class GameServer private constructor(private val ctx: Context) {
         synchronized(slots) {
             val s = slots[i]
             if (s.conn !== c) return                       // a reconnect already took the slot over
-            s.held.toList().forEach { onKey(i, KeyEvent.ACTION_UP, it) }; s.held.clear()
+            release(i)
             s.conn = null; s.freedAt = SystemClock.uptimeMillis(); s.ping = -1; s.offset = Long.MIN_VALUE; s.ready = false
         }
         notifyPlayers(); presence.padsChanged()
+    }
+
+    /** Everything slot [i] holds goes up: keys, the stick's D-pad keys, an analog stick back to the middle. Under the slots lock. */
+    private fun release(i: Int) {
+        val s = slots[i]
+        s.held.toList().forEach { onKey(i, KeyEvent.ACTION_UP, it) }; s.held.clear()
+        s.dirs = emptySet()
+        if (analog && !lobby) onAxis(i, 0f, 0f)
     }
 
     /** The port of a physical pad (device id), given the first free slot the first time it is seen. -1 = none left. */
@@ -322,10 +331,11 @@ class GameServer private constructor(private val ctx: Context) {
         val conn = Conn(sock)
         try {
             sock.tcpNoDelay = true
+            sock.soTimeout = 15_000                                   // a connection that never says anything (a scanner, Wi-Fi gone) does not keep a thread
             val inp = BufferedInputStream(sock.getInputStream())
             val first = line(inp) ?: return
             val h = HashMap<String, String>()
-            while (true) { val l = line(inp) ?: return; if (l.isEmpty()) break; val c = l.indexOf(':'); if (c > 0) h[l.substring(0, c).trim().lowercase()] = l.substring(c + 1).trim() }
+            while (true) { val l = line(inp) ?: return; if (l.isEmpty()) break; if (h.size > 100) return; val c = l.indexOf(':'); if (c > 0) h[l.substring(0, c).trim().lowercase()] = l.substring(c + 1).trim() }
             val parts = first.split(' ')
             if (parts.size < 2 || (parts[0] != "GET" && parts[0] != "POST")) return reply(conn, 405, "text/plain", "no".toByteArray())
             val path = parts[1].substringBefore('?')
@@ -342,7 +352,7 @@ class GameServer private constructor(private val ctx: Context) {
             if (name.endsWith(".html") || name.endsWith(".webmanifest")) body = String(body).replace("__K__", token).toByteArray()
             reply(conn, 200, when { name.endsWith(".css") -> "text/css"; name.endsWith(".js") -> "text/javascript"; name.endsWith(".json") -> "application/json"; name.endsWith(".webmanifest") -> "application/manifest+json"; name.endsWith(".png") -> "image/png"; else -> "text/html" } + "; charset=utf-8", body)
         } catch (e: Exception) {
-        }
+        } finally { conn.close() }                                    // the early returns too (no websocket key, a header cut off)
     }
 
     private fun webfile(c: Conn, rel0: String, setCookie: Boolean) {
@@ -399,7 +409,7 @@ class GameServer private constructor(private val ctx: Context) {
     private fun socket(c: Conn, inp: InputStream, key: String) {
         val acc = Base64.encodeToString(MessageDigest.getInstance("SHA-1").digest((key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").toByteArray()), Base64.NO_WRAP)
         c.out.write("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: $acc\r\n\r\n".toByteArray()); c.out.flush()
-        c.sock.soTimeout = 0
+        c.sock.soTimeout = 75_000; c.sock.keepAlive = true           // a phone gone (battery, Wi-Fi) frees its seat: it pings every second, a hidden tab once a minute
         var slot = -1
         try {
             while (true) {

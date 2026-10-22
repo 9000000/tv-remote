@@ -587,7 +587,7 @@ class LibraryActivity : ComponentActivity() {
     private fun deleteRom(i: Item, f: java.io.File) {
         val base = f.nameWithoutExtension + "."
         f.delete()
-        for (d in listOf(Systems.savesDir(this), filesDir)) d.listFiles()?.filter { it.isFile && it.name.startsWith(base) }?.forEach { it.delete() }
+        for (d in listOf(Systems.savesDir(this), filesDir)) d.listFiles()?.filter { it.isFile && it.name.startsWith(base) && it.name.removePrefix(base) in SAVES }?.forEach { it.delete() }   // only saves: a ROM named "games" took games.json with it
         Shelf.change(this) { it.forget(i.id) }
         Pins.gameDeleted(this, i.id)
         reload()
@@ -732,7 +732,7 @@ class LibraryActivity : ComponentActivity() {
                     val sum = java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
                     val ext = h.getString("url").substringAfterLast('.').takeIf { it in s.exts } ?: s.exts.first()
                     if (sum != h.optString("sha256").lowercase()) msg = getString(R.string.rom_bad)
-                    else { saved = h.optString("name").replace(Regex("[^A-Za-z0-9 ._-]"), "") + ".$ext"; File(Systems.romsDir(this), saved).writeBytes(bytes) }
+                    else { saved = h.optString("name").replace(Regex("[^A-Za-z0-9 ._-]"), "") + ".$ext"; writeWhole(File(Systems.romsDir(this), saved), bytes) }
                 }
             } catch (e: java.io.IOException) { msg = getString(if (e.message == "too big") R.string.rom_big else R.string.rom_net) }
             catch (e: Exception) { msg = getString(R.string.rom_net) }
@@ -844,11 +844,13 @@ class LibraryActivity : ComponentActivity() {
         ref.nameV.visibility = View.GONE                                     // shown once a picture covers the face: the face names itself until then
         i.src?.let { src ->
             Thumbs.load(this, src) { bmp, _ ->
+                if (isDestroyed) return@load
+                (0 until ref.face.childCount).map { ref.face.getChildAt(it) }.filter { it.tag == ART }.forEach { ref.face.removeView(it) }   // a snapshot first, the cover after: one picture, not two stacked
                 val inner = trimSides(bmp)                                       // a 4:3 picture comes with side bars: its own edge colour fills them
                 if (inner != null) {
-                    ref.face.addView(View(this).apply { setBackgroundColor(edgeColor(inner)) }, 1, FrameLayout.LayoutParams(-1, -1))
-                    ref.face.addView(android.widget.ImageView(this).apply { scaleType = android.widget.ImageView.ScaleType.FIT_CENTER; setImageBitmap(inner) }, 2, FrameLayout.LayoutParams(-1, -1))
-                } else ref.face.addView(android.widget.ImageView(this).apply { scaleType = android.widget.ImageView.ScaleType.FIT_XY; setImageBitmap(bmp) }, 1, FrameLayout.LayoutParams(-1, -1))     // over the designed face, under the shine
+                    ref.face.addView(View(this).apply { tag = ART; setBackgroundColor(edgeColor(inner)) }, 1, FrameLayout.LayoutParams(-1, -1))
+                    ref.face.addView(android.widget.ImageView(this).apply { tag = ART; scaleType = android.widget.ImageView.ScaleType.FIT_CENTER; setImageBitmap(inner) }, 2, FrameLayout.LayoutParams(-1, -1))
+                } else ref.face.addView(android.widget.ImageView(this).apply { tag = ART; scaleType = android.widget.ImageView.ScaleType.FIT_XY; setImageBitmap(bmp) }, 1, FrameLayout.LayoutParams(-1, -1))     // over the designed face, under the shine
                 (ref.content as View).visibility = View.GONE
                 ref.nameV.visibility = View.VISIBLE
                 art[outer] = bmp; artById[i.id] = bmp
@@ -980,7 +982,17 @@ class LibraryActivity : ComponentActivity() {
         close?.requestFocus()                                          // the D-pad starts on Close, not on the tile behind
     }
 
-    companion object { const val GROW = 1.12f }                      // a focused card's size (TV Home's)
+    /** A download kept only once whole: a full disk leaves no half ROM listed as downloaded. */
+    private fun writeWhole(f: File, bytes: ByteArray) {
+        val tmp = File(f.path + ".tmp")
+        try { tmp.writeBytes(bytes); if (!tmp.renameTo(f)) throw java.io.IOException("rename") } catch (e: java.io.IOException) { tmp.delete(); throw e }
+    }
+
+    companion object {
+        const val GROW = 1.12f                                       // a focused card's size (TV Home's)
+        private val SAVES = setOf("srm", "state", "state.tmp", "rtc")
+        private const val ART = "art"                                // the views a cover adds to a card's face, taken off before the next
+    }
 }
 
 /** A real damped spring: rises fast, passes ~6 %, settles (TV Home's `Spring`, Apple TV's focus). */

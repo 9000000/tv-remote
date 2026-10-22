@@ -39,6 +39,7 @@ class GameActivity : ComponentActivity() {
     private var cancelled = false
     private var startedAt = Long.MAX_VALUE
     private var downloading = false
+    private var broken = false                                       // the error card is up: its buttons take the D-pad, not the game
 
     /** The core is not here yet (the catalog has it): fetch it with a progress card, Back cancels. */
     private fun download() {
@@ -64,7 +65,9 @@ class GameActivity : ComponentActivity() {
 
     /** Every way the core can fail ends here: the reason and two buttons, Back goes to the library. */
     private fun failed(reason: String, title: String = getString(R.string.core_title, sys.label)) {
-        val retry = menuButton(getString(R.string.retry), 300, 56, 20f) { download() }
+        if (::cards.isInitialized) cards.close()                      // its lobby took every key: OK on Retry / Back started the game instead
+        broken = true
+        val retry = menuButton(getString(R.string.retry), 300, 56, 20f) { if (Cores.path(this, sys) != null) start() else download() }
         val back = menuButton(getString(R.string.back), 300, 56, 20f) { finish() }
         setContentView(LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setBackgroundColor(0xFF0B0D12.toInt())
@@ -88,13 +91,15 @@ class GameActivity : ComponentActivity() {
             if (sys.id == "nes") variables = arrayOf(Variable("fceumm_region", Region.of(this@GameActivity, file)))
         }
         startedAt = Long.MAX_VALUE                                    // set when the lobby hands over to the game (no picture of the lobby's frozen frame)
+        if (::retro.isInitialized) lifecycle.removeObserver(retro)    // Retry after a broken start: the first view goes
+        broken = false
         retro = GLRetroView(this, data)
         lifecycle.addObserver(retro)                                  // GLRetroView is a LifecycleObserver; it also needs onCreate
         retro.onCreate(this)
         lifecycleScope.launch { retro.getGLRetroErrors().collect { if (!isDestroyed) failed(getString(R.string.cant_open), Systems.clean(file.name)) } }   // a broken ROM or core: the reason and Back, not a black screen
         val root = FrameLayout(this).apply { addView(retro) }
         setContentView(root)
-        server = GameServer.acquire(this)
+        if (!::server.isInitialized) server = GameServer.acquire(this)   // once: onDestroy releases it once
         keys = RemoteMap(this, root) { retro.frameSpeed = if (it) 0 else 1 }
         cards = GameCards(this, root, server, Systems.clean(file.name), null,
             onPause = { retro.frameSpeed = if (it) 0 else 1 }, onSave = { quickSave() }, onLoad = { quickLoad() }, onQuit = { finish() },
@@ -159,7 +164,12 @@ class GameActivity : ComponentActivity() {
     override fun onDestroy() { cancelled = true; if (::cards.isInitialized) cards.close(); if (::server.isInitialized) GameServer.release(); super.onDestroy() }
 
     private fun stateFile() = File(Systems.savesDir(this), file.nameWithoutExtension + ".state")
-    private fun quickSave(): String = try { stateFile().writeBytes(retro.serializeState()); getString(R.string.saved) } catch (e: Exception) { getString(R.string.cant_open) }
+    private fun quickSave(): String = try {
+        val f = stateFile(); val tmp = File(f.path + ".tmp")          // the one save is never cut in half (killed, disk full): the old stays until the new is whole
+        tmp.writeBytes(retro.serializeState())
+        if (!tmp.renameTo(f)) { tmp.delete(); throw java.io.IOException("rename") }
+        getString(R.string.saved)
+    } catch (e: Exception) { getString(R.string.cant_open) }
     private fun quickLoad(): String? {
         val f = stateFile()
         if (!f.exists()) return getString(R.string.no_save)
@@ -167,7 +177,7 @@ class GameActivity : ComponentActivity() {
     }
 
     override fun dispatchKeyEvent(ev: KeyEvent): Boolean {
-        if (!::cards.isInitialized) return super.dispatchKeyEvent(ev)   // still fetching the core
+        if (!::cards.isInitialized || broken) return super.dispatchKeyEvent(ev)   // still fetching the core, or the error card
         if (keys.key(ev) || cards.key(ev)) return true
         if (cards.paused) return super.dispatchKeyEvent(ev)          // the card's buttons take the D-pad and OK
         if (ev.repeatCount > 0) return true
