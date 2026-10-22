@@ -71,4 +71,4 @@ body #rmt .hand{flex-wrap:wrap;padding:0;min-height:0;gap:.8vh}
 body #rmt .cd.deed{flex:0 0 calc(50% - .4vh);min-width:0;height:9.4vh}body #rmt .cd.deed.focus{flex-basis:calc(50% - .4vh);transform:scale(1.04)}body #rmt .cd.deed.sel{transform:none}
 body #rmt .cd.deed s{height:3vh;font-size:1.8vh}body #rmt .cd.deed span{margin-top:.5vh;font-size:1.9vh}body #rmt .cd.deed em{margin-top:.2vh;font-size:1.7vh}
 body #rmt .acts{flex-wrap:wrap;gap:.8vh;margin-top:auto}
-body #rmt .ac{flex:1 1 calc(50% - .4vh);justify-content:center;height:5.6vh;padding:0 .6vh;font-size:2.3vh;white-space:normal;text-align:center;line-height:1.1}
+body #rmt .ac{flex:1 1 calc(50% - .4vh);min-width:0;justify-content:center;height:5.6vh;padding:0 .6vh;font-size:2.3vh;white-space:normal;text-align:center;line-height:1.1}
