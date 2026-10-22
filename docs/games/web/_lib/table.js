@@ -98,6 +98,7 @@
     const R = { sel: new Set(), zone: 'hand', i: 0, hand: [], acts: [], turn: false, flash: '', fk: 0, fT: 0, el: null, key: '' };
     const RM = typeof g.remote === 'object' ? g.remote : {};
     const mk = (tag, c, x) => { const e = document.createElement(tag); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+    const ICON = { play: '🃏', pass: '⏭️', skip: '⏭️', hint: '💡', draw: '📥', roll: '🎲', buy: '🛒', build: '🏠', sell: '💸', mort: '🏦', end: '🏁', ok: '✅', nope: '🚫', give: '🎁', jailpay: '💰', jailcard: '🎫' };   // as the pad's
     const SU = { s: '♠', c: '♣', d: '♦', h: '♥' };
     function rcard(c) {
       const id = String(c.id), e = mk('div', 'cd' + (R.sel.has(id) ? ' sel' : '') + (c.off ? ' off' : ''));
@@ -110,7 +111,8 @@
         e.append(band, mk('span', '', String(c.t).slice(0, 16)), mk('em', '', String(c.sub || '')));
       } else {                                                     // a card of the game's own: colour, big sign, name
         e.classList.add('own'); if (/^#[0-9a-f]{3,8}$/i.test(c.bg || '')) e.style.setProperty('--bg', c.bg);
-        e.append(mk('b', '', String(c.k != null ? c.k : c.i != null && c.look !== 'deed' ? c.i : '').slice(0, 4)), mk('span', '', String(c.t).slice(0, 16)));
+        const k = String(c.k != null ? c.k : c.i != null && c.look !== 'deed' ? c.i : '').slice(0, 4);
+        e.append(mk('b', '', k), mk('span', '', String(c.t).slice(0, 16)), mk('i', 'co', k));   // co: the corner a fanned card shows
       }
       return e;
     }
@@ -130,9 +132,9 @@
 #rmt .nm{flex:none;font-size:calc(var(--u)*3.4)}#rmt .tt{flex:none;color:#9aa5bd;font-size:calc(var(--u)*2.8)}
 #rmt .note{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#9aa5bd}#rmt .note.turn{color:#fff}#rmt .note.bad{color:#fdba74}
 #rmt .tm{flex:none;width:12vw;height:calc(var(--u)*.9);border-radius:99px;background:#fff2;overflow:hidden}#rmt .tm i{display:block;height:100%;background:var(--pc);transition:width 1s linear}
-#rmt .hand{display:flex;justify-content:center;gap:calc(var(--u)*.8);padding-top:calc(var(--u)*2.4);min-height:calc(var(--u)*17)}
+#rmt .hand{display:flex;justify-content:center;padding-top:calc(var(--u)*4.4);min-height:calc(var(--u)*19)}
 #rmt .hand:empty{display:none}
-#rmt .cd{position:relative;flex:0 1 calc(var(--u)*12.4);min-width:calc(var(--u)*4.6);height:calc(var(--u)*17.4);border-radius:calc(var(--u)*1.2);background:#f7f7f2;color:#1b1e27;overflow:hidden;
+#rmt .cd{position:relative;flex:0 0 calc(var(--u)*12.4);height:calc(var(--u)*17.4);border-radius:calc(var(--u)*1.2);background:#f7f7f2;color:#1b1e27;overflow:hidden;
   box-shadow:0 .3vh .8vh #0008;transition:transform .12s,opacity .12s}
 #rmt .cd.red{color:#d7263d}
 #rmt .cd b{position:absolute;left:calc(var(--u)*1);top:calc(var(--u)*.6);font:800 calc(var(--u)*5)/1 system-ui}
@@ -145,11 +147,12 @@
 #rmt .cd.deed s{display:flex;align-items:center;justify-content:center;height:calc(var(--u)*4.6);font-size:calc(var(--u)*2.4);text-decoration:none;color:#fff;background:#64748b}
 #rmt .cd.deed span{display:block;margin-top:calc(var(--u)*1.2);font-size:calc(var(--u)*2.5);line-height:1.1;white-space:normal;text-shadow:none}
 #rmt .cd.deed em{display:block;margin-top:calc(var(--u)*.8);font-style:normal;font-size:calc(var(--u)*2.2);color:#475569}
+#rmt .cd+.cd{margin-left:calc(var(--u)*var(--ov,.8))}
+#rmt .cd.own .co{position:absolute;left:calc(var(--u)*.8);top:calc(var(--u)*.5);font:800 calc(var(--u)*3.6)/1 system-ui;text-shadow:0 .2vh .5vh #000a}
 #rmt .cd.off{opacity:.42}
-#rmt .cd.sel{transform:translateY(calc(var(--u)*-2.2));box-shadow:0 0 0 calc(var(--u)*.5) #38bdf8,0 .3vh .8vh #0008}
-#rmt .cd.focus{flex-basis:calc(var(--u)*12.4);flex-shrink:0;z-index:3;outline:calc(var(--u)*.7) solid #fff;outline-offset:calc(var(--u)*.3);transform:translateY(calc(var(--u)*-1)) scale(1.06)}
-#rmt .cd.own.focus{flex-basis:calc(var(--u)*13.6)}
-#rmt .cd.sel.focus{transform:translateY(calc(var(--u)*-2.8)) scale(1.06)}
+#rmt .cd.sel{transform:translateY(calc(var(--u)*-2.4));box-shadow:0 0 0 calc(var(--u)*.5) #38bdf8,0 .3vh .8vh #0008}
+#rmt .cd.focus{z-index:3;outline:calc(var(--u)*.7) solid #fff;outline-offset:calc(var(--u)*.2);transform:translateY(calc(var(--u)*-3.6)) scale(1.08)}
+#rmt .cd.sel.focus{transform:translateY(calc(var(--u)*-4.6)) scale(1.08)}
 #rmt .acts{display:flex;justify-content:center;gap:calc(var(--u)*1.6);flex-wrap:nowrap}
 #rmt .ac{flex:0 1 auto;min-width:0;height:calc(var(--u)*7.4);padding:0 calc(var(--u)*3);border-radius:calc(var(--u)*1.2);background:#243044;color:#e2e8f0;display:flex;align-items:center;white-space:nowrap;
   border:calc(var(--u)*.4) solid transparent;transition:transform .12s}
@@ -172,13 +175,18 @@
       R.i = Math.max(0, Math.min(R.i, (R.zone === 'hand' ? cs : acts).length - 1));
       R.el.hidden = false; R.el.style.setProperty('--pc', t.COLORS[0]);
       const foc = R.zone === 'hand' ? cs[R.i] : null;
-      const top = mk('div', 'top'), tm = mk('div', 'tm'), note = mk('div', 'note' + (R.flash ? ' bad' : isTurn ? ' turn' : ''), R.flash || (foc && foc.sub) || c.note || '');
+      const top = mk('div', 'top'), tm = mk('div', 'tm'), note = mk('div', 'note' + (R.flash ? ' bad' : isTurn ? ' turn' : ''), R.flash || (foc && foc.t != null && foc.look !== 'deed' ? foc.t + (foc.sub ? ' · ' + foc.sub : '') : foc && foc.sub) || c.note || '');
       tm.append(mk('i')); tm.hidden = !isTurn || !g.turnSecs;
       top.append(mk('span', 'dot'), mk('b', 'nm', t.name(0)), mk('span', 'tt', W.total + ' ' + (t.scores[0] > 0 ? '+' : '') + t.scores[0]), note, tm);
       const hand = mk('div', 'hand'), bar = mk('div', 'acts');
+      if (cs.length && cs[0].look !== 'deed') {                    // a fanned hand: each card shows about half of itself (more when few), never wider than the screen
+        const w = cs[0].t == null ? 12.4 : 13.6, n = cs.length, full = n <= 4 ? .85 : n <= 7 ? .65 : .5, room = (RM.width || 165) - w;
+        hand.style.setProperty('--ov', String(-(w - Math.max(w * .25, Math.min(w * full, n > 1 ? room / (n - 1) : w)))));
+      }
       cs.forEach((x, k) => { const e = rcard(x); if (R.zone === 'hand' && k === R.i) e.classList.add('focus'); hand.append(e); });
       acts.forEach((a, k) => {
-        const e = mk('div', 'ac' + (a.main ? ' main' : '') + (a.off ? ' off' : '') + (R.zone === 'acts' && k === R.i ? ' focus' : ''), (a.i ? a.i + ' ' : '') + a.t);
+        const w = String(a.s || a.t), ic = a.i != null ? a.i : /^[^\x00-\x7f]/.test(w) ? '' : ICON[a.id] || '';   // a short word (s) and an icon: the panel's buttons are small
+        const e = mk('div', 'ac' + (a.main ? ' main' : '') + (a.off ? ' off' : '') + (R.zone === 'acts' && k === R.i ? ' focus' : ''), (ic ? ic + ' ' : '') + w);
         bar.append(e);
       });
       R.el.replaceChildren(top, hand, bar); rtimer();

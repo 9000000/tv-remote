@@ -3,13 +3,13 @@
 // empty hand: just big named buttons). Seats, bots, phones joining, the clock and scores: _lib/table.js; rules and bot: rules.js.
 // The TV is the one authority: it rolls, it checks every button, a phone only asks.
 const W = Object.assign({}, Table.W, Table.VI ? {
-  roll: 'Gieo xúc xắc', pass: 'Bỏ lượt', horse: (n) => `Ngựa ${n}`, bad: 'Chưa làm được lúc này', cant: 'Ngựa này chưa đi được',
+  roll: 'Gieo xúc xắc', rs: 'Gieo', pass: 'Bỏ lượt', horse: (n) => `Ngựa ${n}`, bad: 'Chưa làm được lúc này', cant: 'Ngựa này chưa đi được',
   yourRoll: 'Tới lượt bạn: gieo xúc xắc', pick: (d) => `Bạn gieo được ${d}: chọn ngựa`, nomove: (d) => `Gieo được ${d}: không có ngựa nào đi được`,
   rolling: 'Đang gieo…', going: 'Ngựa đang đi…', rollsOf: (n) => `${n} gieo xúc xắc`, got: (n, d) => `${n} gieo được ${d}`,
   nomoveTv: (n, d) => `${n} gieo ${d}: không đi được`, six: (n) => `${n} được gieo tiếp`, kick: (n, o) => `${n} đá ngựa của ${o}!`, out: (n) => `${n} ra quân`,
   home: (n) => `${n} đưa một ngựa về đích`, skipped: 'Bỏ lượt', homeOf: 'về đích', your: 'Bạn', won: (n) => `${n} đưa cả 4 ngựa về đích`,
 } : {
-  roll: 'Roll the dice', pass: 'Pass', horse: (n) => `Horse ${n}`, bad: 'Not possible right now', cant: 'That horse cannot move',
+  roll: 'Roll the dice', rs: 'Roll', pass: 'Pass', horse: (n) => `Horse ${n}`, bad: 'Not possible right now', cant: 'That horse cannot move',
   yourRoll: 'Your turn: roll the dice', pick: (d) => `You rolled ${d}: pick a horse`, nomove: (d) => `Rolled ${d}: no horse can move`,
   rolling: 'Rolling…', going: 'Horse on the move…', rollsOf: (n) => `${n} rolls`, got: (n, d) => `${n} rolled ${d}`,
   nomoveTv: (n, d) => `${n} rolled ${d}: no move`, six: (n) => `${n} rolls again`, kick: (n, o) => `${n} kicks ${o}'s horse!`, out: (n) => `${n} brings a horse out`,
@@ -214,9 +214,9 @@ function view(t, s) {
   const me = s === t.turn && !t.done;
   if (t.done) return { cards: { hand: [], note: t.order.indexOf(s) >= 0 ? W.place[t.order.indexOf(s)] : '', turn: false, acts: [{ id: 'again', t: W.again, main: true }] } };
   let note, acts;
-  if (!me) { note = W.wait(nm(t, t.turn)); acts = [{ id: 'roll', t: W.roll, off: true }]; }
-  else if (g.phase === 'roll') { note = W.yourRoll; acts = [{ id: 'roll', t: W.roll, main: true, off: g.busy }]; }
-  else if (g.rolling) { note = W.rolling; acts = [{ id: 'roll', t: W.roll, off: true }]; }
+  if (!me) { note = W.wait(nm(t, t.turn)); acts = [{ id: 'roll', t: W.roll, s: W.rs, off: true }]; }
+  else if (g.phase === 'roll') { note = W.yourRoll; acts = [{ id: 'roll', t: W.roll, s: W.rs, main: true, off: g.busy }]; }
+  else if (g.rolling) { note = W.rolling; acts = [{ id: 'roll', t: W.roll, s: W.rs, off: true }]; }
   else if (!g.moves.length && !g.busy) { note = W.nomove(g.dice); acts = [{ id: 'pass', t: W.pass, main: true }]; }
   else { note = g.busy ? W.going : W.pick(g.dice); acts = [0, 1, 2, 3].map((k) => ({ id: 'm' + k, t: W.horse(k + 1), i: '🐴', main: !g.busy && g.moves.includes(k), off: g.busy || !g.moves.includes(k) })); }
   return { cards: { hand: [], note, turn: me && !g.busy, acts } };

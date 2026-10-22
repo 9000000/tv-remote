@@ -5,6 +5,7 @@
 const W = Object.assign({}, Table.W, Table.VI ? {
   title: 'CỜ TỶ PHÚ', round: (n, m) => `Vòng ${n}/${m}`, cash: 'Tiền', worth: 'Tài sản', tilesn: (n) => `${n} ô`, free: 'Chưa có chủ', owner: 'Chủ', rentw: 'Thuê',
   roll: 'Gieo xúc xắc', buy: 'Mua', skip: 'Bỏ qua', build: 'Xây nhà', sell: 'Bán nhà', mort: 'Thế chấp / Chuộc', end: 'Kết thúc lượt',
+  sh: { roll: 'Gieo', buy: 'Mua', skip: 'Bỏ qua', build: 'Xây', sell: 'Bán', mort: 'Thế chấp', end: 'Hết lượt', jailpay: 'Nộp phạt', jailcard: 'Thẻ tù' },
   jailpay: (n) => `Nộp ${n} ra tù`, jailcard: 'Dùng thẻ ra tù', hotel: 'Khách sạn', houses: (n) => `${n} nhà`, mortgaged: 'thế chấp', rentl: (n) => `thuê ${n}`,
   note_roll: 'Gieo xúc xắc đi!', note_jail: 'Đang ở tù: đổ đôi, nộp phạt hoặc dùng thẻ', note_buy: (nm, p) => `Mua ${nm} giá ${p}?`,
   note_act: 'Xây nhà, thế chấp hoặc kết thúc lượt', note_pick: 'chọn ô của bạn rồi bấm nút', note_out: 'Bạn đã phá sản', note_wait: (n) => `Chờ ${n}…`,
@@ -24,6 +25,7 @@ const W = Object.assign({}, Table.W, Table.VI ? {
 } : {
   title: 'TYCOON', round: (n, m) => `Round ${n}/${m}`, cash: 'Cash', worth: 'Worth', tilesn: (n) => `${n} tile${n === 1 ? '' : 's'}`, free: 'For sale', owner: 'Owner', rentw: 'Rent',
   roll: 'Roll dice', buy: 'Buy', skip: 'Skip', build: 'Build house', sell: 'Sell house', mort: 'Mortgage / Redeem', end: 'End turn',
+  sh: { roll: 'Roll', buy: 'Buy', skip: 'Skip', build: 'Build', sell: 'Sell', mort: 'Mortgage', end: 'End turn', jailpay: 'Pay fine', jailcard: 'Jail card' },
   jailpay: (n) => `Pay ${n} to leave`, jailcard: 'Use jail card', hotel: 'Hotel', houses: (n) => `${n} house${n > 1 ? 's' : ''}`, mortgaged: 'mortgaged', rentl: (n) => `rent ${n}`,
   note_roll: 'Roll the dice!', note_jail: 'In jail: roll doubles, pay the fine or use a card', note_buy: (nm, p) => `Buy ${nm} for ${p}?`,
   note_act: 'Build, mortgage or end your turn', note_pick: 'pick one of your tiles, then a button', note_out: 'You are bankrupt', note_wait: (n) => `Waiting for ${n}…`,
@@ -123,7 +125,7 @@ function view(t, s) {
     } else { note = `${cash} · ${W.note_act}`; acts = [{ id: 'end', t: W.end, main: true }]; }
     if (mine.length) { acts.push(...mg); note += ' (' + W.note_pick + ')'; hand = mine; } else hand = [];
   }
-  return { cards: { hand, note, turn: true, acts: acts.slice(0, 6) } };
+  return { cards: { hand, note, turn: true, acts: acts.slice(0, 6).map((a) => (W.sh[a.id] ? Object.assign({ s: W.sh[a.id] }, a) : a)) } };
 }
 
 // ---- the TV: the board is built once, then only what changed is touched
