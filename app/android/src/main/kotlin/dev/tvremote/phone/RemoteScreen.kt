@@ -43,7 +43,7 @@ internal fun MainActivity.layoutRemote() {
     topBar.visibility = if (full) View.GONE else View.VISIBLE
     stage.layoutParams = if (full) LinearLayout.LayoutParams(-1, 0, 1f) else LinearLayout.LayoutParams(-1, -2)   // weight: room for the drawing tools under it
     if (!video && drawing) stopDrawing()                              // nothing to draw on
-    frame.layoutParams = FrameLayout.LayoutParams(-1, if (full) -1 else -2)
+    if (floatMode == FLOAT_NONE) frame.layoutParams = FrameLayout.LayoutParams(-1, if (full) -1 else -2)   // floating: its player sizes it
     stage.visibility = if (video) View.VISIBLE else View.GONE
     listenBtn.visibility = if (basic == null) View.VISIBLE else View.GONE   // hearing the TV needs ADB too
     listenBtn.setOn(listen, 16)
@@ -53,6 +53,8 @@ internal fun MainActivity.layoutRemote() {
     soundBar.visibility = if (listen && basic == null && !full) View.VISIBLE else View.GONE
     qualBtn.visibility = if (video) View.VISIBLE else View.GONE
     fullBtn.visibility = qualBtn.visibility
+    pipBtn.visibility = if (qualBtn.visibility == View.VISIBLE && Build.VERSION.SDK_INT >= 26 && packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)) View.VISIBLE else View.GONE
+    pipBtn.alpha = if (picLive()) 1f else 0.4f                          // only a live picture can float
     listenChip.visibility = if (listen) View.VISIBLE else View.GONE  // the sound's own settings, only while it plays
     val share = prefs.getBoolean("listenShare", false)
     listenChip.text = (if (share) T("listen.both") else T("remote_screen.phone")) + " ▾"
@@ -74,6 +76,7 @@ internal fun MainActivity.layoutRemote() {
     videoBtn.setIcon(if (video) "@eye_off" else "@eye", TEXT)
     videoBtn.setOn(video, 16)                                         // on while the picture shows, like every on/off button
     videoBtn.contentDescription = if (video) T("remote_screen.hide_the_tv_picture") else T("remote_screen.show_the_tv_picture")
+    pipUpdate()                                                       // the sound action of the PiP window follows 🎧
 }
 
 /** Where the sound plays, drawn: the phone alone, or the TV and the phone. */
@@ -244,6 +247,9 @@ internal fun MainActivity.buildRemote() {
     picBar.addView(qualBtn, LinearLayout.LayoutParams(-2, dp(34)).apply { leftMargin = dp(8) })
     fullBtn = icon("@expand", T("remote.full_screen"), BTN)
     fullBtn.setOnClickListener { setFullscreen(true) }
+    pipBtn = icon("@pip", T("float.pip"), BTN)                        // Pip.kt: the picture in a small window over other apps
+    pipBtn.setOnClickListener { pipEnter() }
+    picBar.addView(pipBtn, LinearLayout.LayoutParams(dp(44), dp(34)).apply { leftMargin = dp(8) })
     picBar.addView(fullBtn, LinearLayout.LayoutParams(dp(44), dp(34)).apply { leftMargin = dp(8) })
     controls.addView(soundBar, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
     controls.addView(picBar, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })

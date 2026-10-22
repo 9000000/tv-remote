@@ -115,12 +115,20 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal lateinit var soundBar: LinearLayout
     internal lateinit var qualBtn: android.widget.TextView
     internal lateinit var fullBtn: IconButton
+    internal lateinit var pipBtn: IconButton
     internal lateinit var listenChip: android.widget.TextView
     internal lateinit var hqBtn: android.widget.TextView
     internal lateinit var evenBtn: android.widget.TextView
     internal lateinit var boostBtn: android.widget.TextView
-    private var picShown = false
-    private var wasCovered = false
+    internal var picShown = false
+    internal var wasCovered = false
+    internal lateinit var mini: MiniPlayer                             // Pip.kt: the picture floating over Manage / Settings, or filling the PiP window
+    internal var floatMode = FLOAT_NONE
+    internal fun miniReady() = ::mini.isInitialized
+    internal var wasPip = false                                        // in Picture-in-Picture since the app was last on screen: if it stops now, it was closed
+    internal var pipRx: android.content.BroadcastReceiver? = null
+    internal var vidW = 16
+    internal var vidH = 9
     /** Something laid over the remote hides the picture and the now playing / now open lines: nothing to ask the TV for. */
     internal fun covered() = (::managing.isInitialized && managing.shown) || (::settings.isInitialized && settings.visibility == View.VISIBLE) ||
         (::about.isInitialized && about.visibility == View.VISIBLE)                                      // the picture's first frame came
@@ -215,10 +223,12 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         waiting = buildWaiting()
         root.addView(waiting, FrameLayout.LayoutParams(-1, -1))
         root.viewTreeObserver.addOnGlobalLayoutListener {              // Manage, Settings or About laid over the remote: the TV need not encode a picture nobody sees
+            if (floatMode == FLOAT_PIP) return@addOnGlobalLayoutListener   // the other views are hidden on purpose
             val c = covered()
             if (c == wasCovered) return@addOnGlobalLayoutListener
             wasCovered = c
-            if (c) stopPicture() else { picTries = 0; startPicture() }
+            if (c) { if (picLive()) setFloat(FLOAT_MINI) else stopPicture() }
+            else { setFloat(FLOAT_NONE); picTries = 0; startPicture() }
         }
         settings = buildSettings()
         root.addView(settings, FrameLayout.LayoutParams(-1, -1))
@@ -227,6 +237,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         irHost = buildIr()
         root.addView(irHost, FrameLayout.LayoutParams(-1, -1))
         managing = Managing(this, root)
+        mini = MiniPlayer(this)
+        root.addView(mini, FrameLayout.LayoutParams(-2, -2))           // last: over Manage's page
         setContentView(root)
         show(false)
         if (b != null) { host = b.getString("host"); entry = b.getString("entry"); keysAway = b.getBoolean("keys"); wasLive = host != null }   // Android ended the app while away
@@ -251,6 +263,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     override fun onStart() {
         super.onStart()
         foreground = true
+        wasPip = false
         ui.removeCallbacks(idleStop); ui.removeCallbacks(picAway)
         refreshSaved()
         bgListen = false                                              // back on screen: the picture again (the sound plays on: its own session)
@@ -268,6 +281,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     override fun onStop() {
         super.onStop()
         foreground = false
+        if (wasPip) stopPicture()                                     // the PiP window was dismissed: no one watches, the TV stops encoding
         ui.removeCallbacks(retry)                                     // tried again on return instead
         ui.removeCallbacks(picRetry)
         if (listen) {                                                 // listening goes on with the phone's screen off, without the picture
@@ -283,6 +297,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     private val picAway = Runnable { stopPicture() }
 
     override fun onDestroy() {
+        pipRx?.let { try { unregisterReceiver(it) } catch (e: Exception) { } }
         managing.destroy()
         Popup.closeAll(this)                                           // or the window leaks, in the old colours
         if (::nowApp.isInitialized) nowApp.close()
@@ -417,7 +432,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
      *  scrcpy places a finger by the size of the picture it sends. */
     internal fun startPicture() {
         val h = host ?: return
-        if (covered()) return
+        if (covered() && floatMode != FLOAT_MINI) return
         if (pic != null || tv == null || !video || bgListen || !surfaceReady) return
         val dm = resources.displayMetrics
         pic = Tv(this, h, surface.holder.surface, prefs.getInt("quality", 1), maxOf(dm.widthPixels, dm.heightPixels), false, picListener,
@@ -434,10 +449,12 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     }
 
     internal fun stopPicture() {
+        if (floatMode == FLOAT_MINI) setFloat(FLOAT_NONE)             // ✕ on the mini player, or the stream gave up
         ui.removeCallbacks(picRetry); ui.removeCallbacks(countWatchers); picWatchers = 0
         if (pic != null) tv?.carry(null)                              // the keys' own session back before the next key
         pic?.stop()
         pic = null
+        pipUpdate()                                                   // nothing to float any more
     }
 
     internal fun stopSession() {
@@ -475,6 +492,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
                     "rate" -> status.text = title(entry ?: h) + " · " + (if (listen) "🎧 " else "") + detail + " KB/s" + others()
                     "live" -> {
                         picTries = 0; picShown = true
+                        pipUpdate()
                         tv?.carry(from)                               // keys go by the picture's session: the keys' own can rest
                         ui.removeCallbacks(countWatchers); ui.postDelayed(countWatchers, 3000)
                         waiting.visibility = View.GONE
@@ -748,7 +766,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     }
 
     override fun onVideoSize(w: Int, h: Int) {
-        ui.post { frame.setAspect(w, h) }
+        ui.post { vidW = w; vidH = h; frame.setAspect(w, h); pipUpdate() }
     }
 
     override fun wantsPass(): Boolean = (entry ?: host)?.let { pref("tvs:$it").isEmpty() } ?: false
@@ -771,7 +789,12 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         installResult(i)
     }
 
-    override fun onResume() { super.onResume(); probe.run() }
+    override fun onResume() { super.onResume(); wasPip = false; probe.run() }
+
+    override fun onPictureInPictureModeChanged(inPip: Boolean, c: Configuration) {
+        super.onPictureInPictureModeChanged(inPip, c)
+        pipChanged(inPip)
+    }
 
     override fun onPause() { airClose(); ui.removeCallbacks(probe); statusPause(); super.onPause() }
 

@@ -2809,5 +2809,10 @@
  "gpad.joined": "You are player {n}",
  "gpad.off": "TV Games is not open on the TV, or it is an old version",
  "gpad.full": "TV Games is full (4 players)",
- "gpad.replaced": "This phone joined from another screen"
+ "gpad.replaced": "This phone joined from another screen",
+ "float.hear": "Hear the TV",
+ "float.mute": "Mute",
+ "float.close": "Close picture",
+ "float.close_mini": "Stop the TV picture",
+ "float.pip": "Picture in picture"
 }
