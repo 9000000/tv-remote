@@ -166,14 +166,12 @@ class GameActivity : ComponentActivity() {
         return try { retro.unserializeState(f.readBytes()); null } catch (e: Exception) { getString(R.string.cant_open) }
     }
 
-    private fun isPad(ev: KeyEvent) = ev.source and (InputDevice.SOURCE_GAMEPAD or InputDevice.SOURCE_JOYSTICK) != 0
-
     override fun dispatchKeyEvent(ev: KeyEvent): Boolean {
         if (!::cards.isInitialized) return super.dispatchKeyEvent(ev)   // still fetching the core
         if (keys.key(ev) || cards.key(ev)) return true
         if (cards.paused) return super.dispatchKeyEvent(ev)          // the card's buttons take the D-pad and OK
         if (ev.repeatCount > 0) return true
-        if (isPad(ev)) {                                              // a physical pad: its own slot
+        if (GameServer.isPad(ev)) {                                   // a physical pad: its own slot
             val port = server.padPort(ev.deviceId)
             if (port >= 0) retro.sendKeyEvent(ev.action, ev.keyCode, port)
             return true

@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.Log
-import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.View
 import android.webkit.ConsoleMessage
@@ -250,8 +249,6 @@ class WebGameActivity : ComponentActivity() {
         "data:image/png;base64," + android.util.Base64.encodeToString(o.toByteArray(), android.util.Base64.NO_WRAP)
     } catch (e: Exception) { "" }
 
-    private fun isPad(ev: KeyEvent) = ev.source and (InputDevice.SOURCE_GAMEPAD or InputDevice.SOURCE_JOYSTICK) != 0
-
     override fun dispatchKeyEvent(ev: KeyEvent): Boolean {
         if (errorCard != null) {                                           // the failure card: D-pad moves between Retry / Back, Back leaves
             if (ev.keyCode == KeyEvent.KEYCODE_BACK) { if (ev.action == KeyEvent.ACTION_UP) finish(); return true }
@@ -260,7 +257,7 @@ class WebGameActivity : ComponentActivity() {
         }
         if (cards.key(ev)) return true
         if (cards.paused) return super.dispatchKeyEvent(ev)
-        if (isPad(ev) && nameOf.containsKey(ev.keyCode)) {                 // a physical pad: its own slot, like a phone
+        if (GameServer.isPad(ev) && nameOf.containsKey(ev.keyCode)) {      // a physical pad: its own slot, like a phone
             if (ev.repeatCount == 0) { val port = server.padPort(ev.deviceId); if (port >= 0) input(port, ev.action == KeyEvent.ACTION_DOWN, nameOf[ev.keyCode]!!) }
             return true
         }

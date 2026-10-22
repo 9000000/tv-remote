@@ -468,6 +468,16 @@ class GameServer private constructor(private val ctx: Context) {
         private const val MAX_UPLOAD = 64L * 1024 * 1024
         private const val KEEP_MS = 30_000L
         private val DPAD = setOf("UP", "DOWN", "LEFT", "RIGHT")
+
+        /**
+         * A game pad of its own, not the TV remote: some boxes' remotes say GAMEPAD too (FPT's IR remote rtk-ir-hw), and taken
+         * as a pad one key gave it seat 1, so a card game moved the hand off the screen. A pad has sticks or presses pad buttons.
+         */
+        fun isPad(ev: KeyEvent): Boolean {
+            val d = ev.device ?: return false
+            return d.sources and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK ||
+                (ev.source and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD && KeyEvent.isGamepadButton(ev.keyCode))
+        }
         /** A stick as D-pad directions: 8-way, dead zone .35. */
         fun dirs(x: Float, y: Float): Set<String> {
             val r = HashSet<String>()

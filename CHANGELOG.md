@@ -4,6 +4,14 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- TV Games: remote của một số box (FPT) tự nhận là tay cầm, bấm một phím là chiếm ghế 1 nên game bài mất bài của bạn trên màn hình. Giờ chỉ tay cầm thật (có cần analog hoặc nút A/B…) mới được tính là tay cầm.
+
+**English**
+- TV Games: some boxes' remotes (FPT) say they are a game pad, so one key took seat 1 and a card game lost your hand from the screen. Only a real pad (sticks, or A/B… buttons) counts as one now.
+
 ## 0.18.1 - 2026-10-22
 
 Web 0.18.1 · app điện thoại 0.18.1 · app TV 0.18.1 · TV Home 0.5.1 · TV Channels 0.3.1 · TV Games 0.2.1
