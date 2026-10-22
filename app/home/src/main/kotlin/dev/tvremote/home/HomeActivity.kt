@@ -316,8 +316,8 @@ class HomeActivity : Activity() {
     }
 
     /** Scrolls to [y] gliding (one animation at a time, the last target wins); at once when motion is off. */
-    /** The glass onto this tile, when the focus is glass ([Motion.glass]); [glide] false: there at once. */
-    private fun Tile.glassOn(glide: Boolean) { if (Motion.glass) glass.to(content, pane, Tile.GROW, corner, glide && Motion.on) else glass.hide() }
+    /** The glass onto this tile, when the focus is glass ([Motion.glass]); [glide] false: there at once. A tile being moved has the ring alone. */
+    private fun Tile.glassOn(glide: Boolean) { if (Motion.glass && moving == null) glass.to(content, pane, Tile.GROW, corner, glide && Motion.on) else glass.hide() }
 
     private fun scrollToY(y: Int) {
         scrollAnim?.cancel()
@@ -474,7 +474,7 @@ class HomeActivity : Activity() {
     private fun startMove(pkg: String) {
         val t = tiles().firstOrNull { it.app?.pkg == pkg && it.app.pin == null } ?: return
         moving = t
-        t.requestFocus(); t.carry(true)
+        t.requestFocus(); t.carry(true); glass.hide()                 // the glass's edge inside the ring read as two borders
         for (o in tiles()) if (o !== t) o.animate().cancel().also { o.animate().alpha(DIM).setDuration(if (Motion.on) 150L else 0L).start() }   // the rest steps back
         hint(true)
     }
@@ -538,7 +538,7 @@ class HomeActivity : Activity() {
     private fun endMove(save: Boolean) {
         val t = moving ?: return
         moving = null
-        t.carry(false)
+        t.carry(false); t.glassOn(false)
         hint(false)
         for (o in tiles()) o.animate().cancel().also { o.animate().alpha(1f).setDuration(if (Motion.on) 150L else 0L).start() }
         if (save && moveRange(t).first == 0) {
@@ -943,7 +943,7 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
     fun carry(on: Boolean) {
         val s = if (on) GROW + 0.10f else GROW
         card.animate().cancel()
-        if (on) { ring.animate().cancel(); ring.alpha = 1f }          // the accent ring even where the focus is the glass
+        ring.animate().cancel(); ring.alpha = if (on || !Motion.glass) 1f else 0f   // the accent ring even where the focus is the glass; back to the glass after
         if (!Motion.on) { card.scaleX = s; card.scaleY = s; card.translationZ = if (on) lift * 1.5f else 0f; return }
         card.animate().scaleX(s).scaleY(s).translationZ(if (on) lift * 1.5f else 0f).setDuration(150).setInterpolator(Motion.glide).start()
     }
