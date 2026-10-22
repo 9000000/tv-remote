@@ -65,7 +65,9 @@ class Frost(private val radius: Float, stroke: Int) : Drawable() {
         fun on(v: View, radius: Float, stroke: Int) { v.background = Frost(radius, stroke); views[v] = true }
 
         /** The wallpaper's blurred copy (null: none), for a screen of [w] x [h]. */
-        fun show(b: Bitmap?, w: Int, h: Int) { soft = b; screenW = w.toFloat(); screenH = h.toFloat(); moved() }
+        // every card redrawn, also when the copy goes (a gradient now): through moved() a card that never redraws by itself (the
+        // top right capsule) kept the last photo's colours
+        fun show(b: Bitmap?, w: Int, h: Int) { soft = b; screenW = w.toFloat(); screenH = h.toFloat(); for (v in views.keys.toList()) v.invalidate() }
 
         /** The cards moved on the screen (a scroll): each draws its part of the copy again. */
         fun moved() { if (soft != null) for (v in views.keys.toList()) v.invalidate() }

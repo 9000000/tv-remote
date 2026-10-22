@@ -36,6 +36,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Tối ưu TV: không tắt sẵn `com.xiaomi.tvqs.overseas.y24` nữa (trên Xiaomi đời mới nó cũng là bảng cài đặt nhanh); thêm TCL `tclhome_passive` (đẩy nội dung quảng cáo lên màn hình chính lúc khởi động).
 - TV Home: về màn hình chính thì hỏi Android có app nào đổi không (Android 8+), bắt cả thay đổi lỡ mất khi đang ẩn; thiếu RAM thì dọn ảnh xem trước của bảng tùy chỉnh, khi đang ẩn thì cả hình nền và logo, quay lại dựng lại.
 - Cập nhật TV Home (nút Cập nhật, hay TV Setup tự cập nhật khi TV đang chờ): TV Home đang hiện thì sau khi cài nó hiện lại; trước đó Android mở app dùng gần nhất vào chỗ nó (một box FPT tự hiện TV Channels dù không ai bấm).
+- TV Home: đổi từ ảnh sang nền màu chuyển thì viên 3 nút góc trên phải đổi theo; trước nó giữ màu của ảnh cũ.
 
 **English**
 - TV Home: on TVs short of memory (a Coocaa), coming back from YouTube could leave the wallpaper blurred and every app logo gone until Home was left and opened again; it comes back in full now. With motion off, the chosen app tile still grows (only the glass showed, round a small logo); TV Games too.
@@ -67,6 +68,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Optimize TV: `com.xiaomi.tvqs.overseas.y24` is no longer ticked (on newer Xiaomi sets it is also the quick settings panel); TCL `tclhome_passive` added (pushes promoted content onto the home screen at boot).
 - TV Home: on return it asks Android which apps changed (Android 8+), catching changes missed while hidden; low on memory it frees the customize panel's thumbnails, and while hidden the wallpaper and logos, rebuilt on return.
 - Updating TV Home (the Update button, or TV Setup's own update while the TV sleeps): when TV Home was on screen it comes back after the install; Android used to bring up the last app used in its place (an FPT box showed TV Channels with nothing pressed).
+- TV Home: switching from a photo to a gradient background now updates the three-button capsule at the top right; it kept the old photo's colours.
 
 ## 0.18.1 - 2026-10-22
 
