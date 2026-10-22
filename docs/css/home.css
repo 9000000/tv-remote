@@ -104,3 +104,4 @@ nav .navtools{margin-left:auto}
 .fc h3{font-size:19px;margin:10px 8px 0;line-height:1.25}
 .fc p{color:var(--muted);font-size:15px;line-height:1.5;margin:0 8px}
 @media (max-width:560px){.fc{flex-basis:85%}.car-head{align-items:center}.car-head .lead{display:none}}
+.sc-t p .ln{display:inline-block}                                  /* a line breaks between sentences first, not mid-phrase */
