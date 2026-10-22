@@ -1,5 +1,5 @@
 'use strict';
-// Tiến lên miền Nam: the rules and the bots, no screen (node tests load this file too: app/shared/tests/tienlen.test.js).
+// Tiến lên miền Nam: the rules and the bots, no screen (node tests load this file too: app/games/tests/tienlen.test.js).
 // Ported from gamehub24's Thirteen.ts (the same author): a card is rank * 10 + suit, ranks 3..15 (15 = the 2, "heo"),
 // suits 0..3 spades < clubs < diamonds < hearts, so a bigger number is a bigger card. The bots' finders are rewritten to
 // look at every way a hand can make a combination (gamehub's took only runs of neighbouring cards, missing 4-5-5-6-7).

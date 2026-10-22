@@ -4,6 +4,7 @@
 // {player, center} for its Recenter button); the Fire button is tvpad's 'A'. Without a phone: the mouse is player 1's crosshair and a
 // click fires (desktop, tests); touch drags move player 1 too. A CPU seat steers its crosshair with Ptr.steer().
 //   Ptr.use({ buttons:['A'] })   the games call it once: sets the phones' layout to the pointer pad while playing, the plain one on the menus
+//                                (+ side: (slot index) => 'left' | 'right': that player's touchpad on that half of the phone)
 //   Ptr.get(n)                   { x, y, vx, vy, sp (px/s, smoothed), px, py (last frame), fire (seconds since the last fire press) }
 //   Ptr.onFire(fn(n))            a fire press (phone A, mouse click, Space / Z for player 1)
 //   Ptr.update(dt)               call once per game step: speed, previous position
@@ -38,7 +39,11 @@
     const buttons = (o && o.buttons) || ['A'];
     K.layout = () => {
       if (!pad || !K.G) return;
-      try { pad.layout('all', K.mode === 'play' ? { pointer: true, buttons } : { buttons: ['A', 'START'] }); } catch (e) { }
+      try {
+        const aspect = o && o.aspect;                                    // w/h of what the pointer steers: the touchpad takes that shape
+        pad.layout('all', K.mode === 'play' ? { pointer: true, buttons, aspect } : { buttons: ['A', 'START'] });
+        if (K.mode === 'play' && o && o.side) K.slots.forEach((s, i) => { if (s.human) pad.layout(s.pad, { pointer: true, buttons, aspect, side: o.side(i) }); });   // each player's touchpad on their side
+      } catch (e) { }
     };
   };
   Ptr.update = (dt) => {

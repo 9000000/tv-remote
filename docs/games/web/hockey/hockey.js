@@ -1,13 +1,16 @@
 'use strict';
-// Air Hockey: two mallets, one puck, first to 7. The stick moves your mallet; alone you play the CPU.
+// Air Hockey: two mallets, one puck, first to 7. The phone's touchpad drags your mallet (Ptr: it chases the aim point, as a hand
+// would); a pad's stick or D-pad still moves it; alone you play the CPU.
 (function () {
   const K = window.Kit, R = { l: 100, r: 1180, t: 110, b: 680 }, MID = 640, GY = 395, GH = 100, MR = 46, PR = 24, WIN = 7, MAXV = 700;
   let puck, mal, phase, ptimer, last = -1, trail = [], flash = 0, over = false, side0 = 0;
 
   const mk = (i) => ({ x: i ? R.r - 170 : R.l + 170, y: GY, vx: 0, vy: 0, px: 0, py: 0, tx: 0, ty: 0 });
+  const aim = (i) => Ptr.get(K.slots[i].pad);                                 // where the touchpad wants slot i's mallet
   function serve(to) {
     puck = { x: MID, y: GY, vx: 0, vy: 0 }; phase = 'serve'; ptimer = 1.1; trail = []; side0 = to;
     mal = [mk(0), mk(1)];
+    for (let i = 0; i < 2; i++) if (K.slots[i].human) { const a = aim(i); a.x = a.px = mal[i].x; a.y = a.py = mal[i].y; }   // each serve: the aim back on the mallet
   }
   function ai(i, m, dt) {                                                       // the CPU's mallet: defend, then drive the puck at the goal
     const dir = i ? -1 : 1, mine = i ? puck.x > MID : puck.x < MID, home = i ? R.r - 150 : R.l + 150;
@@ -22,14 +25,22 @@
     return d > 3 ? [dx / d * v / MAXV, dy / d * v / MAXV] : [0, 0];
   }
   function moveMallet(i, m, dt) {
-    const s = K.slots[i]; let ix = 0, iy = 0;
-    if (s.human) { const p = K.pad(s.pad); ix = p.x; iy = p.y; } else { [ix, iy] = ai(i, m, dt); }
-    const f = Math.min(1, dt * 16);
+    const s = K.slots[i]; let ix = 0, iy = 0, a = null, top = MAXV;
+    if (s.human) {
+      const p = K.pad(s.pad); ix = p.x; iy = p.y;
+      if (Math.hypot(ix, iy) < 0.15) {                                          // no stick: chase the touchpad's aim, faster than a stick (a flick is a shot)
+        a = aim(i); top = MAXV * 1.5;
+        const dx = a.x - m.x, dy = a.y - m.y, d = Math.hypot(dx, dy), v = Math.min(top, d * 14);
+        [ix, iy] = d > 2 ? [dx / d * v / MAXV, dy / d * v / MAXV] : [0, 0];
+      }
+    } else { [ix, iy] = ai(i, m, dt); }
+    const f = Math.min(1, dt * (a ? 22 : 16));
     m.vx += (ix * MAXV - m.vx) * f; m.vy += (iy * MAXV - m.vy) * f;
     m.px = m.x; m.py = m.y;
     m.x += m.vx * dt; m.y += m.vy * dt;
     const lo = i ? MID + MR : R.l + MR, hi = i ? R.r - MR : MID - MR;
     m.x = K.clamp(m.x, lo, hi); m.y = K.clamp(m.y, R.t + MR, R.b - MR);
+    if (s.human) { const p = aim(i); if (a) { p.x = K.clamp(p.x, lo, hi); p.y = K.clamp(p.y, R.t + MR, R.b - MR); } else { p.x = m.x; p.y = m.y; } }   // the aim stays in my half (a swipe past the line is not banked), and follows a stick
     m.rvx = (m.x - m.px) / dt; m.rvy = (m.y - m.py) / dt;
   }
   function goal(i) {                                                            // i scored
@@ -65,11 +76,11 @@
   }
   G = {
     id: 'hockey', title: { vi: 'Air Hockey', en: 'Air Hockey' }, tag: { vi: 'Đẩy puck vào khung thành đối thủ — ai ghi 7 bàn trước thắng', en: 'Slam the puck into their goal — first to 7 wins' },
-    help: { vi: ['Cần analog / D-pad: di chuyển cây vợt', 'Chơi một mình sẽ đấu với máy'], en: ['Stick / D-pad: move your mallet', 'On your own you play the CPU'] },
+    help: { vi: ['Rê ngón tay trên bàn di của điện thoại để kéo cây vợt', 'Tay cầm thật: cần analog / D-pad', 'Chơi một mình sẽ đấu với máy'], en: ['Drag on the phone\'s touchpad to move your mallet', 'A real pad: stick / D-pad', 'On your own you play the CPU'] },
     total: [2, 2], buttons: [],
     start() { over = false; last = -1; serve(Math.random() < 0.5 ? 0 : 1); },
     update(dt) {
-      K.updateParts(dt); flash *= 0.92;
+      K.updateParts(dt); flash *= 0.92; Ptr.update(dt);
       if (over) return;
       for (let i = 0; i < 2; i++) moveMallet(i, mal[i], dt);
       if (phase === 'serve') { ptimer -= dt; if (ptimer <= 0) { phase = 'play'; puck.vx = (side0 ? -1 : 1) * 260; puck.vy = K.rnd(-120, 120); K.sfx.tick(); } return; }
@@ -118,5 +129,7 @@
     },
   };
   var G;
+  Ptr.use({ buttons: [], side: (i) => (i ? 'right' : 'left'), aspect: (MID - R.l) / (R.b - R.t) });   // the touchpad while playing, on the side of your mallet and
+                                                                       // shaped like your half; no Fire: the mallet itself hits
   K.run(G);
 })();

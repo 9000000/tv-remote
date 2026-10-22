@@ -106,6 +106,7 @@ class WebGameActivity : ComponentActivity() {
                 }
                 override fun onPageStarted(v: WebView, u: String, f: Bitmap?) {
                     pageOrigin = originOf(u)
+                    padKeys = true                                         // a new page: keys again until it says it reads the pads
                     // no document-start support (old WebView): the shim goes in as the page starts, which is early enough for most pages
                     if (pageOrigin == origin && !WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) v.evaluateJavascript(shim, null)
                 }
@@ -223,14 +224,19 @@ class WebGameActivity : ComponentActivity() {
         js("__tvpadIn('axis',${port + 1},$x,$y)")
         if (port != 0) return
         val now = GameServer.dirs(x, y); val before = held[0] ?: emptySet(); held[0] = now
+        if (!padKeys) return
         (before - now).forEach { keyOf[it]?.let { c -> web.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, c)) } }
         (now - before).forEach { keyOf[it]?.let { c -> web.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, c)) } }
     }
 
+    // Player 1's buttons are also keys (arrows, Enter) for a page that only knows the keyboard. A page that reads the pads
+    // itself says so (tvpad.ownKeys()) and gets each press once: both moved caro's cursor two cells per press
+    @Volatile private var padKeys = true
+
     /** One pad button of player port+1: to the Gamepad API / tvpad, and for player 1 also as a key. */
     private fun input(port: Int, down: Boolean, name: String, lat: Int = -1) {
         js("__tvpadIn('button',${port + 1},'$name',$down,$lat)")
-        if (port == 0) keyOf[name]?.let { web.dispatchKeyEvent(KeyEvent(if (down) KeyEvent.ACTION_DOWN else KeyEvent.ACTION_UP, it)) }
+        if (port == 0 && padKeys) keyOf[name]?.let { web.dispatchKeyEvent(KeyEvent(if (down) KeyEvent.ACTION_DOWN else KeyEvent.ACTION_UP, it)) }
     }
 
     inner class Bridge {
@@ -243,6 +249,7 @@ class WebGameActivity : ComponentActivity() {
         @JavascriptInterface fun layout(player: Int, json: String) { if (ok()) server.setLayout(player, json) }
         @JavascriptInterface fun vibrate(player: Int, ms: Int) { if (ok()) server.vibrate(player, ms) }
         @JavascriptInterface fun say(player: Int, text: String) { if (ok()) server.say(player, text) }
+        @JavascriptInterface fun ownKeys() { if (ok()) padKeys = false }
     }
 
     /** The join QR as a data: URL (PNG, crisp squares), for a page that wants to draw it. */

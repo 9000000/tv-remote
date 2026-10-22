@@ -352,7 +352,7 @@ Code names, layout, tests and releases: [AGENTS.md](AGENTS.md). Short version:
 | `dev/`, `docs/` | Dev tools ([dev/README.md](dev/README.md)); the site ([docs/README.md](docs/README.md)) |
 
 ```bash
-node --test app/shared/tests/                                         # web tests
+node --test app/shared/tests/ app/games/tests/                        # web tests (page, web games)
 cd app/gradle && ./gradlew :shared:testDebugUnitTest                  # Kotlin tests
 cd app/gradle && ./gradlew :desktop:installDist                       # build the Computer app
 dev/test/emu.sh                                                            # emulators + build + install

@@ -1,5 +1,5 @@
 'use strict';
-// Bombers' rules and bots, no screen (node tests load this file too: app/shared/tests/bombers.test.js).
+// Bombers' rules and bots, no screen (node tests load this file too: app/games/tests/bombers.test.js).
 // Cells are indexed r * COLS + c; a player's x / y are in tiles (cell c covers x in [c, c+1)). Everything the hot loop touches is a
 // typed array or a pooled object made once, so a match allocates nothing per frame.
 (function (root) {

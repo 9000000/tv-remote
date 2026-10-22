@@ -40,7 +40,13 @@ class LibraryActivity : ComponentActivity() {
     private lateinit var server: GameServer
     private lateinit var root: FrameLayout
     private var overlay: View? = null
+    val bare get() = overlay == null && dl == null                    // nothing open over the library: a pad's Back there would leave TV Games
     private val art = java.util.WeakHashMap<View, Bitmap>()           // a tile's picture, for the backdrop
+    private val tints = java.util.WeakHashMap<Bitmap, Int>()           // a picture's room colour, worked out once (a 48 x 27 copy)
+    private var tintTo = 0
+    private var tintShown = 0
+    private var tintAnim: android.animation.ValueAnimator? = null
+    private val tintGo = Runnable { tint(tintTo) }
     private val artById = HashMap<String, Bitmap>()                   // the pictures by game id, for the pins
 
     /** One game as the library sees it: what it is, what it takes, and what OK does. */
@@ -854,6 +860,7 @@ class LibraryActivity : ComponentActivity() {
                 (ref.content as View).visibility = View.GONE
                 ref.nameV.visibility = View.VISIBLE
                 art[outer] = bmp; artById[i.id] = bmp
+                if (outer.hasFocus()) tintFor(outer)                             // the picture came after the focus
             }
         }
         val key = "$section|${i.id}"
@@ -910,13 +917,43 @@ class LibraryActivity : ComponentActivity() {
     }
 
     /** TV Home's focus, copied: a spring rise (1.12x, a soft shadow, the picture a touch larger inside), the ring fading in, the lines under it, a shine settling. */
+    /**
+     * The room takes the focused game's colour, the way a console's home does: a dark shade of the picture's own hue
+     * ([LobbyTheme.accent]) at the top left, into the plain room colour. Only once the focus rests: a D-pad run does not flash
+     * through every game. A colour, not the picture blurred (tried and dropped, fe6b177e: busy behind the tiles). A grey picture
+     * or none: the plain room.
+     */
+    private fun tintFor(v: View) {
+        val bg = getColor(R.color.tv_bg)
+        val c = art[v]?.let { b -> tints.getOrPut(b) { LobbyTheme.accent(b).let { a -> if (a == LobbyTheme.DEFAULT) bg else room(a) } } } ?: bg
+        root.removeCallbacks(tintGo); tintTo = c; root.postDelayed(tintGo, 250)
+    }
+
+    private fun room(a: Int): Int { val hsv = FloatArray(3); android.graphics.Color.colorToHSV(a, hsv); hsv[1] = 0.6f; hsv[2] = 0.3f; return android.graphics.Color.HSVToColor(hsv) }
+
+    private fun tint(c: Int) {
+        val bg = getColor(R.color.tv_bg)
+        val from = if (tintShown == 0) bg else tintShown
+        tintAnim?.cancel()
+        if (c == from) return
+        val d = (root.background as? GradientDrawable) ?: GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(bg, bg)).also { root.background = it }
+        fun paint(x: Int) { tintShown = x; d.colors = intArrayOf(x, bg) }
+        if (!animOn) { paint(c); return }
+        tintAnim = android.animation.ValueAnimator.ofObject(android.animation.ArgbEvaluator(), from, c).apply {
+            duration = ms(420); addUpdateListener { paint(it.animatedValue as Int) }; start()
+        }
+    }
+
     private fun focusTile(v: View, on: Boolean) {
         val r = refs[v] ?: return
+        if (on) tintFor(v)
         val lift = dp(14).toFloat()
         r.card.animate().cancel(); r.ring.animate().cancel(); r.below.animate().cancel(); r.content.animate().cancel(); r.shine.animate().cancel()
         if (on) { lastFocus = v; focusedKey = v.getTag(R.id.tile_key) as? String; centreFocused(v) }
-        if (!animOn) {
-            r.card.scaleX = 1f; r.card.scaleY = 1f; r.card.translationZ = 0f; r.content.scaleX = 1f; r.content.scaleY = 1f
+        if (!animOn) {                                                // the end state at once, grown too (TV Home's Tile.focus): at 1x only the ring told which was chosen
+            val g = if (on) GROW else 1f
+            r.card.translationX = 0f; r.card.translationY = 0f
+            r.card.scaleX = g; r.card.scaleY = g; r.card.translationZ = if (on) lift else 0f; r.content.scaleX = if (on) 1.05f else 1f; r.content.scaleY = r.content.scaleX
             r.ring.alpha = if (on) 1f else 0f; r.below.alpha = if (on) 1f else 0f; r.shine.alpha = 0f
             return
         }

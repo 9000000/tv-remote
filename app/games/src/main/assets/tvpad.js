@@ -29,6 +29,7 @@
     layout(p, spec) { N.layout(call(p), spec ? JSON.stringify(spec) : 'null'); },
     vibrate(p, ms) { N.vibrate(call(p), ms | 0); },
     say(p, text) { N.say(call(p), String(text)); },
+    ownKeys() { if (N.ownKeys) N.ownKeys(); },                         // the page reads every pad's buttons and stick itself: no stand-in arrow keys for player 1
     has(f) { return ['cards'].indexOf(f) >= 0; },                      // what this TV Games' pad can show beyond buttons (WEBGAMES.md); older ones lack has()
   };
   window.addEventListener('load', () => pads.forEach((g) => g && fire('gamepadconnected', g)));

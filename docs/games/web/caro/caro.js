@@ -73,24 +73,42 @@ function move(s, dx, dy) {
   const c = g.cur[s]; c.x = Math.max(0, Math.min(N - 1, c.x + dx)); c.y = Math.max(0, Math.min(N - 1, c.y + dy)); render();
 }
 const DIR = { LEFT: [-1, 0], RIGHT: [1, 0], UP: [0, -1], DOWN: [0, 1] };
-function hold(s, btn, down) {              // a held D-pad repeats
+function hold(s, btn, down, noStep) {      // a held D-pad repeats; noStep: the key already took the first step
   const k = s + btn;
   if (holds[k]) { clearTimeout(holds[k].t); clearInterval(holds[k].i); } delete holds[k];
   if (!down) return;
-  move(s, ...DIR[btn]);
+  if (!noStep) move(s, ...DIR[btn]);
   const o = holds[k] = {};
   o.t = setTimeout(() => { o.i = setInterval(() => move(s, ...DIR[btn]), HOLD_EVERY); }, HOLD_FIRST);
 }
-function press(s, btn, down) {
+function press(s, btn, down, noStep) {
   if (btn === 'START') { if (down && g.over) newGame(); return; }
-  if (DIR[btn]) { hold(s, btn, down); return; }
+  if (DIR[btn]) { hold(s, btn, down, noStep); return; }
   if (btn !== 'A' || !down || g.over || g.wait || g.ts !== s || !g.seat[s]) return;
   const c = g.cur[s], i = c.y * N + c.x;
   if (g.b[i]) buzz(g.seat[s], 40); else place(i);
 }
 
 if (pad) {
-  pad.on('button', ({ player, btn, down }) => { const s = g.seat.indexOf(player); if (s >= 0) press(s, btn, down); else if (btn === 'START' && down && g.over) newGame(); });
+  pad.on('button', ({ player, btn, down }) => {
+    const dup = player === 1 && down && !!DIR[btn] && twice('pad', btn);   // still held: it repeats from here
+    const s = g.seat.indexOf(player); if (s >= 0) press(s, btn, down, dup); else if (btn === 'START' && down && g.over) newGame();
+  });
+  // the stick: 8 ways like the D-pad (GameServer.dirs: dead zone 0.35, 45° each), held = repeats
+  const stick = {};
+  pad.on('axis', ({ player, x, y }) => {
+    const now = new Set();
+    if (Math.hypot(x, y) >= 0.35) {
+      const a = Math.atan2(y, x) * 180 / Math.PI;
+      if (a > -67.5 && a < 67.5) now.add('RIGHT'); if (a > 112.5 || a < -112.5) now.add('LEFT');
+      if (a > 22.5 && a < 157.5) now.add('DOWN'); if (a < -22.5 && a > -157.5) now.add('UP');
+    }
+    const was = stick[player] || new Set(); stick[player] = now;
+    const s = g.seat.indexOf(player); if (s < 0) return;
+    was.forEach((d) => { if (!now.has(d)) press(s, d, false); });
+    now.forEach((d) => { if (!was.has(d)) press(s, d, true, player === 1 && twice('pad', d)); });
+  });
+  if (pad.ownKeys) pad.ownKeys();       // every phone is read here: player 1's presses must not come back as arrow keys too
   pad.on('join', ({ player }) => {
     if (g.wait || (g.seat[0] === 1 && players().length === 1 && g.seat[1] === 0 && !g.b.some((v) => v))) { newGame(); return; }   // the first phone starts clean
     const s = g.seat.indexOf(0);          // a phone takes over the computer's seat; the game goes on
@@ -106,11 +124,24 @@ if (pad) {
   pad.on('rename', () => render());
 }
 const KEY = { ArrowLeft: 'LEFT', ArrowRight: 'RIGHT', ArrowUp: 'UP', ArrowDown: 'DOWN' };
+// The remote steps once per press and repeats on the system's own key repeat, not hold()'s timer: an IR remote (FPT Play's) sends
+// the key up only some 300 ms after a short press, past HOLD_FIRST, so one press moved two cells
+let keyAt = 0;
+// A TV Games build before ownKeys (tvpad.js) also turns player 1's phone presses into arrow keys: the press comes twice, from
+// the pad and as a key, in either order. The second within 150 ms is dropped
+const lastDir = {};
+function twice(src, dir) {
+  const now = performance.now(), o = lastDir[dir]; lastDir[dir] = { src, t: now };
+  return !!o && o.src !== src && now - o.t < 150;
+}
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { if (g.over) newGame(); else press(0, 'A', true); }
-  else if (KEY[e.key] && !e.repeat) { e.preventDefault(); hold(0, KEY[e.key], true); }
+  else if (KEY[e.key]) {
+    e.preventDefault();
+    if (e.repeat ? e.timeStamp - keyAt < HOLD_EVERY : twice('key', KEY[e.key])) return;
+    keyAt = e.timeStamp; move(0, ...DIR[KEY[e.key]]);
+  }
 });
-document.addEventListener('keyup', (e) => { if (KEY[e.key]) hold(0, KEY[e.key], false); });
 
 // ---- drawing
 function render() { drawBoard(); drawSide(); }

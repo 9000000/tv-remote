@@ -144,9 +144,14 @@ class GameServer private constructor(private val ctx: Context) {
             ctx.startActivity(android.content.Intent(ctx, LibraryActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP))
             return
         }
+        if (name == "HOLD") {                                              // the pad's OK held: what a long press does there (a tile's menu), else a plain OK
+            val a = top?.get() ?: return
+            a.runOnUiThread { if (a.currentFocus?.takeIf { it.isLongClickable }?.performLongClick() != true) nav("OK") }
+            return
+        }
         val code = NAV[name] ?: return
         val a = top?.get() ?: return
-        if (name == "BACK" && a is LibraryActivity) {                      // Back here would leave TV Games and strand the pad (the TV's own remote still can)
+        if (name == "BACK" && a is LibraryActivity && a.bare) {            // Back here would leave TV Games and strand the pad (the TV's own remote still can); a menu open over it: Back closes that
             a.runOnUiThread { android.widget.Toast.makeText(a, a.getString(R.string.in_library), android.widget.Toast.LENGTH_SHORT).show() }
             return
         }

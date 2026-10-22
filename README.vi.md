@@ -523,7 +523,7 @@ Sửa `app/shared/web` thì chỉ cần tải lại trang (app đọc thẳng t�
 
 | Việc | Lệnh |
 |---|---|
-| Test giao diện web | `node --test app/shared/tests/` |
+| Test giao diện web | `node --test app/shared/tests/ app/games/tests/` |
 | Test Kotlin | `cd app/gradle && ./gradlew :shared:testDebugUnitTest :android:testDebugUnitTest :tv:testDebugUnitTest` |
 | Độ tương phản màu trên trang thật | `dev/test/contrast.py` |
 | Ảnh chụp cho trang giới thiệu | `dev/shots/shots.py` |

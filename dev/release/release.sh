@@ -39,7 +39,7 @@ if [ -n "$LAST" ]; then
   for a in android tv; do                                             # changed code must come with a new number, or nobody gets it
     [ -z "$SKIP_CHECK" ] || continue
     old=$(git show "$LAST:app/$a/VERSION" 2>/dev/null || true)
-    if [ -n "$old" ] && [ "$old" = "$(cat app/$a/VERSION)" ] && dev/release/code_changed.py "$LAST" "app/$a" app/shared ":(exclude)app/$a/*.apk" ":(exclude)app/shared/tests"; then
+    if [ -n "$old" ] && [ "$old" = "$(cat app/$a/VERSION)" ] && dev/release/code_changed.py "$LAST" "app/$a" app/shared ":(exclude)app/$a/*.apk" ":(exclude)app/$a/tests" ":(exclude)app/shared/tests"; then
       next "$old" > "app/$a/VERSION"
     fi
   done

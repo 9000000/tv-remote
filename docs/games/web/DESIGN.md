@@ -99,6 +99,7 @@ the player's colour as `--c` (`pad.css:1`, `pad.js:190`). Landscape and portrait
 | `{choices:['A','B','C','D']}` | four big coloured answers | quiz (`quiz.js:76`) |
 | `{text:true}` | a field + Send -> `on('text')` | |
 | `{pointer:true, buttons:['A']}` | touchpad + Fire / Alt / Recenter | `pointer.js:37-43` |
+| `{pointer:true, side:'left'\|'right', aspect: w/h}` | the touchpad on that side, shaped like what it steers | `hockey.js` (`Ptr.use({side, aspect})`) |
 | `{cards:{hand, note, turn, sel?, acts}}` | private hand + up to 6 act buttons | every Table game (`tienlen.js:88-96`) |
 
 **Cards layout** (`pad.js:388-440`, `pad.css:135-188`):
@@ -169,7 +170,7 @@ List the game in `docs/games/games.json` "web" (`players`, `min`, `genre`, `img`
 
 ## 7. Checklist before done
 
-- [ ] `node --test app/shared/tests/` (`games_design.test.js` checks ES2017, no `translate:`/`scale:` properties, no other hosts, cursor hidden, qr.js then nopad.js, one set of seat colours); `node --check` every JS file; `rules.js` exercised in node (no DOM) for a few hundred random games.
+- [ ] `node --test app/games/tests/` (`games_design.test.js` checks ES2017, no `translate:`/`scale:` properties, no other hosts, cursor hidden, qr.js then nopad.js, one set of seat colours); `node --check` every JS file; `rules.js` exercised in node (no DOM) for a few hundred random games.
 - [ ] Serve the site: `dev/test/serve_docs.py` (http://localhost:8000/games/web/<id>/).
 - [ ] Playwright (`npm install --prefix dev playwright`), Chromium at **1280x720** and **1920x1080**, with a fake `tvpad`
       added by `page.addInitScript` before the page runs; copy the shim of the site's demo (`docs/demo/games.html:150-153`):

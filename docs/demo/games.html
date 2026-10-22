@@ -8,9 +8,9 @@
 <link rel="stylesheet" href="tvkit.css">
 <style>
   /* TV Games at 1280 x 720: the library (the catalog's real pictures) and the real quiz (docs/games/web/quiz) in a frame */
-    #bd { position: absolute; inset: -40px; background: center / 100% 100% no-repeat; filter: blur(34px); opacity: 0; transition: opacity .35s; }
-  #bd.on { opacity: 1; }
-  #veil { position: absolute; inset: 0; background: rgba(11,13,18,.7); }
+  /* the room takes the focused game's colour, as the app does (LibraryActivity tintFor): a dark shade of its picture's hue */
+  #bd { position: absolute; inset: 0; background: var(--bg); transition: background-color .42s; }
+  #veil { position: absolute; inset: 0; background: linear-gradient(135deg, transparent, var(--bg) 85%); }
   #col { position: absolute; left: 0; top: 0; width: 1280px; padding: 37px 53px 43px; transition: transform .2s ease-out; }
   #hd { display: flex; align-items: center; padding: 0 0 13px 13px; }
   #hd img { width: 64px; height: 64px; border-radius: 13px; margin-right: 19px; display: block; }
@@ -76,7 +76,7 @@
   var LIB = [
     { id: 'tabletennis', n: ['8-Bit Table Tennis'], b: 'NES', pl: 2 },
     { id: 'padtest', n: ['Thử tay cầm', 'Pad test'], b: 'WEB', img: 'img/padtest.jpg', pad: 1 },
-    { id: 'quiz', n: ['Đố vui', 'Quiz'], b: 'WEB', web: 1, pl: 4 },
+    { id: 'quiz', n: ['Đố vui', 'Quiz'], b: 'WEB', img: '../games/img/quiz2.jpg', web: 1, pl: 4 },   // games.json's picture (there is no quiz.jpg)
     { id: 'roborun', n: ['Robo Run'], b: 'NES', pl: 1 },
     { id: 'stallar', n: ['Stallar'], b: 'NES', pl: 1 },
     { plus: 1, n: ['Thêm game', 'Add game'] }
@@ -97,6 +97,33 @@
     return '<div class="g' + f + '" data-i="' + g.i + '"><div class="art" style="background-image:url(' + g.img + ')"></div><span class="bg" style="background:' + c + '">' + g.b + '</span><div class="nm"><span>' + name(g) + '</span></div><i class="ring"></i></div>';
   }
   function setHtml(e, h) { if (e._h !== h) { e.innerHTML = h; e._h = h; } }
+  // LobbyTheme.accent: the most vivid hue (24 buckets weighted by saturation x value, greys and near-black skipped), then dark
+  var tintT, tintWant, tints = {};
+  function tint(src) {
+    var bd = $('#bd'); tintWant = src;
+    if (!src) { bd.style.backgroundColor = ''; return; }
+    if (tints[src] !== undefined) { bd.style.backgroundColor = tints[src]; return; }
+    var im = new Image();
+    im.onerror = function () { tints[src] = ''; if (tintWant === src) bd.style.backgroundColor = ''; };   // no picture (a game without one): the plain room
+    im.onload = function () {
+      var c = document.createElement('canvas'); c.width = 48; c.height = 27;
+      var x = c.getContext('2d'); x.drawImage(im, 0, 0, 48, 27);
+      var px; try { px = x.getImageData(0, 0, 48, 27).data; } catch (e) { return; }   // a picture from elsewhere: the plain room
+      var wt = [], sh = [], k, best = -1, top = 0;
+      for (k = 0; k < 24; k++) { wt[k] = 0; sh[k] = 0; }
+      for (var i = 0; i < px.length; i += 4) {
+        var r = px[i] / 255, g = px[i + 1] / 255, b = px[i + 2] / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+        var s = mx ? d / mx : 0; if (s < .25 || mx < .25) continue;
+        var h = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60;
+        k = Math.min(23, Math.floor(h / 15)); wt[k] += s * mx; sh[k] += h * s * mx;
+      }
+      for (k = 0; k < 24; k++) { var w3 = wt[k] + .5 * (wt[(k + 1) % 24] + wt[(k + 23) % 24]); if (w3 > top) { top = w3; best = k; } }
+      tints[src] = best < 0 || top < 2 ? '' : 'hsl(' + Math.round(sh[best] / wt[best]) + ' 43% 21%)';   // the app's HSV 0.6 / 0.3
+      if (tintWant === src) bd.style.backgroundColor = tints[src];   // the focus may have moved on while it loaded
+    };
+    im.src = src;
+  }
+
   function draw() {
     setHtml($('#lib'), LIB.map(tileHtml).join(''));
     setHtml($('#sugw'), '<div class="sug">' + T('Gợi ý', 'Suggestions') + '</div><div class="grid">' + SUG.map(tileHtml).join('') + '</div><div class="hint2">' + T('Giữ OK để ẩn', 'Hold OK to hide') + '</div>');
@@ -105,7 +132,7 @@
     if (fe) {
       var r = fe, top = 0; while (r && r !== col) { top += r.offsetTop; r = r.offsetParent; }   // offsetParent chain up to the column
       var want = Math.min(Math.max(0, top + fe.offsetHeight / 2 - 360), Math.max(0, col.offsetHeight - 720)); y = want < head ? 0 : want;
-      var bd = $('#bd'), a = fe.querySelector('.art'); if (a) { bd.style.backgroundImage = a.style.backgroundImage; bd.classList.add('on'); } else bd.classList.remove('on');
+      var a = fe.querySelector('.art'); clearTimeout(tintT); tintT = setTimeout(function () { tint(a ? a.style.backgroundImage.slice(5, -2) : ''); }, 250);   // once the focus rests
     }
     col.style.transform = 'translateY(' + (-y) + 'px)';
     var sh = $('#sheet'), g = G[S.i];
@@ -135,7 +162,7 @@
     if (w[0] === 'hello') join(sl, w.slice(2).join(' '));
     else if (w[0] === 'p') raw(sl, 'p ' + w[1] + ' ' + Date.now());
     else if (w[0] === 'd' || w[0] === 'u') emit('button', { player: sl, btn: w[1], down: w[0] === 'd', lat: null, at: performance.now() });
-    else if (w[0] === 'n') { var k = { UP: 'up', DOWN: 'down', LEFT: 'left', RIGHT: 'right', OK: 'ok', BACK: 'back', HOME: 'home' }[w[1]]; if (k) TVKit.handler(k); }
+    else if (w[0] === 'n') { var k = { UP: 'up', DOWN: 'down', LEFT: 'left', RIGHT: 'right', OK: 'ok', HOLD: 'ok', BACK: 'back', HOME: 'home' }[w[1]];   // HOLD: the demo's library has no tile menu if (k) TVKit.handler(k); }
     else if (w[0] === 'name') { if (P[sl]) { P[sl].name = w.slice(1).join(' '); emit('rename', { player: sl, name: P[sl].name }); } }
   });
   // what the quiz asks of window.tvpad lands here (see the shim in startQuiz)

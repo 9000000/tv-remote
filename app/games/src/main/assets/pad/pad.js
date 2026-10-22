@@ -79,7 +79,8 @@ function setMode(m) {
 
 // What the TV is running decides the pad: nes / snes / gba / ps (a system's `pad` in Systems.kt) or web (the look of ps).
 // A web game may then change it (tvpad.layout): {choices:[..]} four big answer buttons, {text:true} a field + Send,
-// {buttons:[..]} only these, {dpad:false} no D-pad / stick, {cards:{..}} a hand of cards (renderCards). null = the usual one.
+// {buttons:[..]} only these, {dpad:false} no D-pad / stick, {cards:{..}} a hand of cards (renderCards), {pointer:true} the touchpad
+// (+ side). null = the usual one.
 const SYS = {
   nes:  { stick: false, face: 'pair',    sh: [[], []],                    mid: ['SELECT', 'START'] },
   snes: { stick: false, face: 'diamond', sh: [['L'], ['R']],              mid: ['SELECT', 'START'] },
@@ -103,10 +104,25 @@ function mkBtn(cls, b) {
   const c = SKIN[look()] && SKIN[look()][b]; if (c && cls.includes('fb')) e.style.setProperty('--bc', c);
   return e;
 }
+// {pointer, aspect: w/h}: the touchpad takes the shape of what it steers (air hockey: the player's half, near square), else a long
+// strip on a phone held sideways makes a finger's path look unlike the mallet's
+let tpAspect = 0;
+function fitTpad() {
+  const el = $('#tpad'); el.style.width = el.style.height = el.style.alignSelf = el.style.justifySelf = '';
+  if (!tpAspect || !document.body.classList.contains('ptr')) return;
+  const r = el.getBoundingClientRect(); if (!r.width || !r.height) return;   // the grid cell it would fill
+  const w = Math.min(r.width, r.height * tpAspect);
+  el.style.width = w + 'px'; el.style.height = w / tpAspect + 'px'; el.style.alignSelf = el.style.justifySelf = 'center';
+}
+window.addEventListener('resize', () => setTimeout(fitTpad, 60));
 function relayout() {
   const l = layout || {}, base = SYS[look()];
   const ch = Array.isArray(l.choices) && l.choices.length ? l.choices.filter((x) => 'ABCD'.includes(x)) : null;
   document.body.classList.toggle('ptr', !!l.pointer && mode === 'pad'); $('#pS').hidden = Array.isArray(l.buttons) && !l.buttons.includes('B'); if (!l.pointer) tpId = null;
+  // {pointer, side:'left'|'right'}: the touchpad on that half, the side the player's own piece is on the TV (air hockey); no A nor B: no buttons
+  $('#pF').hidden = Array.isArray(l.buttons) && !l.buttons.includes('A'); $('#pbtn').hidden = $('#pF').hidden && $('#pS').hidden;
+  $('#ptr').dataset.side = l.side === 'left' || l.side === 'right' ? l.side : '';
+  tpAspect = l.pointer && +l.aspect > 0.2 && +l.aspect < 5 ? +l.aspect : 0; fitTpad();
   $('#choices').hidden = !ch; $('#textrow').hidden = !l.text;
   const cd = l.cards && Array.isArray(l.cards.hand) ? l.cards : null;
   document.body.classList.toggle('cards', !!cd && mode === 'pad'); if (cd) renderCards(cd);
@@ -282,7 +298,7 @@ function press(b, on) {
   const arm = { UP: 'u', DOWN: 'd', LEFT: 'l', RIGHT: 'r' }[b];
   if (arm && !dp.classList.contains('off')) $('.arm.' + arm).classList.toggle('on', on);
 }
-function releaseAll() { [...navT.keys()].forEach(navUp); touches.clear(); stickEnd(); [...held].forEach((b) => press(b, false)); }
+function releaseAll() { [...navT.keys()].forEach((id) => navUp(id, true)); touches.clear(); stickEnd(); [...held].forEach((b) => press(b, false)); }
 
 // Every finger is followed by its identifier; on each move what it is over is looked up again, so a thumb can slide A -> B or
 // across the d-pad's arms without lifting. A d-pad finger near a corner holds two arms.
@@ -311,15 +327,21 @@ function apply() {
 // ---- navigate mode: a tap sends "n NAME" (the TV presses that key in TV Games); an arrow held repeats like a remote's
 const navT = new Map();      // touch id -> { el, timer }
 function navSend(el) { send('n ' + el.dataset.n); }
+// OK goes on release: held 500 ms it is "hold OK" instead (a tile's menu: hide, remove…), as on the TV's own remote; a buzz says it took
 function navDown(id, el) {
-  el.classList.add('on'); buzz(12); navSend(el);
-  const rec = { el, timer: null };
+  el.classList.add('on'); buzz(12);
+  const rec = { el, timer: null, ok: el.dataset.n === 'OK', held: false };
+  if (rec.ok) rec.timer = setTimeout(() => { rec.held = true; buzz(40); send('n HOLD'); }, 500);
+  else navSend(el);
   if (['UP', 'DOWN', 'LEFT', 'RIGHT'].includes(el.dataset.n)) {
     rec.timer = setTimeout(() => { rec.timer = setInterval(() => navSend(el), 120); }, 380);
   }
   navT.set(id, rec);
 }
-function navUp(id) { const r = navT.get(id); if (!r) return; clearTimeout(r.timer); clearInterval(r.timer); r.el.classList.remove('on'); navT.delete(id); }
+function navUp(id, cancel) {
+  const r = navT.get(id); if (!r) return; clearTimeout(r.timer); clearInterval(r.timer); r.el.classList.remove('on'); navT.delete(id);
+  if (r.ok && !r.held && !cancel) navSend(r.el);   // a cancelled touch (a call, the page hidden) presses nothing
+}
 
 // ---- actions (gear, haptics, add, tip) run on touchstart, not on click
 const ACT = {
@@ -497,7 +519,7 @@ function handle(e) {
       if (t.identifier === tpId) { tpTouch(t, e.type); continue; }
     }
     if (e.type === 'touchstart') { const el = document.elementFromPoint(t.clientX, t.clientY), nb = el && el.closest && el.closest('[data-n]'); if (nb && mode === 'nav') { navDown(t.identifier, nb); continue; } }
-    if (navT.has(t.identifier)) { if (e.type === 'touchend' || e.type === 'touchcancel') navUp(t.identifier); continue; }
+    if (navT.has(t.identifier)) { if (e.type === 'touchend' || e.type === 'touchcancel') navUp(t.identifier, e.type === 'touchcancel'); continue; }
     if (t.identifier === sId) { if (e.type === 'touchend' || e.type === 'touchcancel') stickEnd(); else stickMove(t); continue; }
     if (e.type === 'touchend' || e.type === 'touchcancel') touches.delete(t.identifier);
     else touches.set(t.identifier, under(t.clientX, t.clientY));
