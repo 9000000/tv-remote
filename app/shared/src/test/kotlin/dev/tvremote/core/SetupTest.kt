@@ -90,6 +90,11 @@ class SetupTest {
         assertEquals(setOf("com.foo.game"), tv.disabled)
     }
 
+    @Test fun cvtesOwnHomeStaysOn() {                                   // a JVC hung on its boot animation without it (cleanyourtv #741)
+        assertTrue(Setup.mustKeep("com.cvte.tv.launcher.space"))
+        assertFalse(Setup.mustKeep("com.cvte.tv.pictorial"))                // its screensaver ads are still suggested
+    }
+
     @Test fun aNameThatWouldRunAnotherCommandIsSkipped() {
         val bad = listOf("com.foo; reboot", "com.foo'x", "com.foo && rm -rf /sdcard", "\$(reboot)", "foo")
         val tv = FakeTv(true, *bad.toTypedArray())

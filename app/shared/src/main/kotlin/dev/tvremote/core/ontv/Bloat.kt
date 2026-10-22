@@ -141,6 +141,8 @@ object Bloat {
      * the TV after the next restart. MTC: fusion.android.tv.demo looks like a retail demo and is the Input button.
      * Any *.partnercustomizer: the remote's keys and the stock home's Inputs icon (TCL, Realtek). Xiaomi tvmanager: XiaoAI opens apps
      * through it. Vestel, CVTE, XGIMI, SDMC, Skyworth / HiSilicon, Kalley (com.apps / com.mk): inputs, keys, pairing, settings, updates.
+     * CVTE's own home (com.cvte.tv.launcher.*): a JVC (TP.SK706S.PC822, Android 11) hung on its boot animation, ADB gone, after it
+     * went off with a key helper on before one reboot (cleanyourtv #741); a home swap leaves it on and only sets the home.
      */
     /**
      * Factory test apps, never opened: once was enough on a Haier (CVTE, com.cvte.tv.hkcfac) to switch on factory mode, the Input key
@@ -151,7 +153,7 @@ object Bloat {
 
     val KEEP = Regex(
         "com\\.tcl\\.(tv|tvinput|tvpassthrough|sourcemananger|keycustomfunctionservice|keyhelp|framework\\.custom|settings|inputmethod\\.international|globalkeyoverlay|TFDS\\.service|xian\\.StartandroidService|showmode" +
-            "|system\\.?server|systemserver|tcl_bt_rcu_service|autopair|suspension|providers\\.config|initsetup|factory\\.view|dashboard|eva|appstatecontroller|rc\\.ota|UpdatePeripheral|useragreement|copydatatotv|guard|cyberui)" +
+            "|system\\.?server|systemserver|tcl_bt_rcu_service|autopair|suspension|interactive|ttvs|providers\\.config|initsetup|factory\\.view|dashboard|eva|appstatecontroller|rc\\.ota|UpdatePeripheral|useragreement|copydatatotv|guard|cyberui)" +
         "|.*\\.partnercustomizer|com\\.android\\.WifiCountryService|com\\.tvos|com\\.sohu\\.inputmethod\\.sogou\\.tv" +
         "|com\\.mitv\\.livetv|mitv\\.service|com\\.mitv\\.overseaservice|com\\.mi\\.bluetooth|com\\.xiaomi\\.android\\.tvsetup\\.partnercustomizer|com\\.xiaomi\\.mitv\\.(res|tvmanager|upgrade|tvplayer|settings|smartpanel)|com\\.mitv\\.(tvhome|codec\\.update)" +
         "|com\\.sony\\.dtv\\.(tvx|tvinput\\..*|braviasync.*|remotepairing|uinputservice|imeproxy|dialservice|tvapi|sonysystemservice|rcpowerkey|settingsprovider|smartui|tvlin|tvplayer.*|remotecontrolsettings|systemupdate|update|youview|irblaster|irbservice)" +
@@ -165,7 +167,7 @@ object Bloat {
             "|contentexplorer|eum|aurora|fastip|exoplayerservice|usbbreakin|dlna)|com\\.easy\\.oad|com\\.vewd\\.core\\.browserui|com\\.tpv_soem\\..*" +
         "|com\\.realtek\\.(dtv|tv|tv\\.atv|tv\\.passthrough|systemservice|menu|netflix\\.setting)|com\\.realtek\\.keyinterceptserver|com\\.apps\\.(ota|authota|smartkey|tvmanager|globalkeyhandler|bluetoothremote|virtualkey)|com\\.mk\\.(service\\.tvmidware|tv\\.fivekey)|com\\.realsil\\.ota" +
         "|com\\.homwee\\.(dmt\\.upgrade|factory|synckey|dynamicbacklight)|com\\.gdch\\.android\\.tv\\.inputplayer" +
-        "|com\\.haier\\.(tv\\.hmagicboard|hkcfac|appmanager\\.dispatcher|bt_pair_tips)|com\\.cvte\\.tv\\.(hkcfac|at|fac\\..*|androidsetting|api\\.impl|setting|globalui|systemupgrade)|com\\.cvte\\.(tvservice|hotkey\\.dispatcher)|com\\.at\\.factory\\..*|com\\.example\\.bt_pair_tips|com\\.telink\\.lt\\.ota" +
+        "|com\\.haier\\.(tv\\.hmagicboard|hkcfac|appmanager\\.dispatcher|bt_pair_tips)|com\\.cvte\\.tv\\.(hkcfac|at|fac\\..*|androidsetting|api\\.impl|setting|globalui|systemupgrade)|com\\.cvte\\.(tvservice|hotkey\\.dispatcher|tv\\.launcher\\..*)|com\\.at\\.factory\\..*|com\\.example\\.bt_pair_tips|com\\.telink\\.lt\\.ota" +
         "|fusion\\.android\\.tv\\.demo" +
         "|com\\.smartdevice\\.(livetv|global\\.service|factory|duplebluetooth|dailyshortcut)|com\\.cltv\\.(hybrid|mal)|com\\.coocaa\\.factory" +
         "|net\\.oqee\\.androidtv|org\\.dtvkit\\.inputsource|fr\\.freebox\\..*|com\\.nes\\.(dtvkitdatabackup|blerc|tvglobalkeyhandler|freeboxburnkey)" +

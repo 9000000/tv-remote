@@ -5,8 +5,8 @@ before launcherx, check Home, roll back) come from these. Read them again now an
 `dev/sign/sign_bloat.py`, commit, push: every app reads it from the site when Optimize TV opens, no release needed), and now and
 then fold that list into Bloat.kt and empty it. The site's list can add suggestions, drop them, and only add to keep / factory.
 
-Last read: **2026-10-22**, upstream `Gathin23/cleanyourtv` at `0bb7f7edbf` (2026-10-22 01:54 UTC), PRs up to ~#811, issues
-up to ~#833 (before that: 2026-10-21 at `9071ec8d2f`, PRs ~#573, issues ~#564; 2026-10-20 at `fd1ee0a94c`, PRs ~#398, issues ~#376; 2026-10-19 at `7377a9be8c`, PRs up to #125, issues up to #120, 388 forks). The project is days old:
+Last read: **2026-10-22**, upstream `Gathin23/cleanyourtv` at `0ed6c5bccc` (2026-10-22 07:27 UTC; no list changed since `0bb7f7edbf`,
+only the CVTE home rule #741, kept in KEEP, and the Accounts page #304, in the guide's TV Home topic), PRs up to ~#883 (before that: 2026-10-22 at `0bb7f7edbf`, PRs ~#811, issues ~#833; 2026-10-21 at `9071ec8d2f`, PRs ~#573, issues ~#564; 2026-10-20 at `fd1ee0a94c`, PRs ~#398, issues ~#376; 2026-10-19 at `7377a9be8c`, PRs up to #125, issues up to #120, 388 forks). The project is days old:
 most reports are one TV, one day.
 
 UAD read 2026-10-22 (UAD-NG main): of our 142 suggestions 12 are in its list, one marked Expert: `com.xm.webcontent` ("app installing" messages and WebView), dropped in `bloat.json`. Its Unsafe / Expert TV packages that nothing kept yet went to keep: `com.google.android.tv` (Live Channels, the tuner), `tv.axel` (the IR service, volume setup), the `frameworkpackagestubs`. Taken as suggest: Sony `notificationcenter` (nags to use Sony's apps), `smarthelp`. Its TCL entries are phones (camera, compass, SOS): not taken.
@@ -140,8 +140,8 @@ Fourth read (2026-10-22, 483 commits; 83 new or changed `examples/*/debloat.txt`
 ## Syncing again
 
 ```
-gh api repos/Gathin23/cleanyourtv/commits/main --jq '.sha[0:10]+" "+.commit.committer.date'   # changed since 0bb7f7edbf?
-gh api repos/Gathin23/cleanyourtv/compare/0bb7f7edbf...main --jq '.files[].filename'           # capped at 300 files: for a big gap diff git/trees/<sha>?recursive=1 blob shas under examples/ instead
+gh api repos/Gathin23/cleanyourtv/commits/main --jq '.sha[0:10]+" "+.commit.committer.date'   # changed since 0ed6c5bccc?
+gh api repos/Gathin23/cleanyourtv/compare/0ed6c5bccc...main --jq '.files[].filename'           # capped at 300 files: for a big gap diff git/trees/<sha>?recursive=1 blob shas under examples/ instead
 gh pr list -R Gathin23/cleanyourtv --state all -L 200 --search "created:>2026-10-19"
 gh issue list -R Gathin23/cleanyourtv --state all -L 200 --search "created:>2026-10-19"
 gh api repos/Gathin23/cleanyourtv/forks --paginate --jq '.[] | select(.pushed_at > "2026-10-19T12:00:00Z") | .full_name'
