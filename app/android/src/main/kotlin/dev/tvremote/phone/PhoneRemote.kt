@@ -65,6 +65,7 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
 internal val phoneButtonHooks: Map<String, MainActivity.(IconButton) -> Unit> = mapOf(
     "draw" to hook { drawBtn = it; drawLit() },
     "shot" to hook { shotBtn = it },
+    "air" to hook { airBtn = it; it.setOn(airMode() == "mouse", 16) },
 )
 
 internal fun MainActivity.storePage(id: String) = openLink("https://play.google.com/store/apps/details?id=$id")

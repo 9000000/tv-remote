@@ -332,20 +332,26 @@ internal fun MainActivity.buildRemote() {
     val modes = listOf("arrows" to "@move|" + T("remote_screen.mid_arrows"), "touch" to "@hand|" + T("remote_screen.mid_touch"), "mouse" to "@mouse|" + T("rkey.air"))
     val mode = button(modes[0].second, BTN)                       // the one in use, with its icon
     mode.textSize = 13f; mode.setPadding(dp(12), 0, dp(12), 0); mode.minHeight = 0; mode.minimumHeight = 0
-    val pick = { m: String ->
+    val pick = { m: String, asked: Boolean ->
         arrows.visibility = if (m == "arrows") View.VISIBLE else View.GONE
         tpad.visibility = if (m == "touch") View.VISIBLE else View.GONE
         mpad.visibility = if (m == "mouse") View.VISIBLE else View.GONE
         mode.setLabel(modes.first { it.first == m }.second + "  ▾")
+        airBtn?.setOn(m == "mouse", 16)
         prefs.edit().putString("mid", m).apply()
         airStart(m)                                                   // the gyroscope only while the mouse pad is shown
+        val pad = if (m == "mouse") mpad else if (m == "touch") tpad else null
+        if (asked && pad != null) pad.post {                         // just switched on: the whole pad in sight, its chooser under it too
+            val sv = pad.parent?.parent as? ScrollView ?: return@post
+            sv.smoothScrollTo(0, pad.top - maxOf(0, (sv.height - pad.height - dp(60)) / 2))
+        }
     }
-    airPick = { m -> pick(if (m == airMode()) "arrows" else m) }
-    pick(prefs.getString("mid", null) ?: if (prefs.getBoolean("pad", false)) "touch" else "arrows")   // "pad": the old touchpad switch
+    airPick = { m -> pick(if (m == airMode()) "arrows" else m, true) }
+    pick(prefs.getString("mid", null) ?: if (prefs.getBoolean("pad", false)) "touch" else "arrows", false)   // "pad": the old touchpad switch
     mode.setOnClickListener {
         val subs = listOf(T("remote_screen.mid_arrows_sub"), T("remote_screen.mid_touch_sub"), T("remote_screen.mid_mouse_sub"))
         menu(T("remote_screen.mid_title"), modes.indexOfFirst { it.first == airMode() }, modes.mapIndexed { i, (m, t) ->
-            Triple(t, subs[i]) { if (m == "mouse" && !airCan()) say(T("air.needs_adb"), true); pick(m) }
+            Triple(t, subs[i]) { if (m == "mouse" && !airCan()) say(T("air.needs_adb"), true); pick(m, true) }
         })
     }
     controls.addView(arrows, gap(16))

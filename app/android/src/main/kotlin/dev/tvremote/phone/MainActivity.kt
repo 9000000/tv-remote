@@ -141,6 +141,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal var drawing = false
     internal var shotBtn: IconButton? = null                          // 📷 among the keys: turns while the picture comes
     internal var drawBtn: IconButton? = null                          // ✏️ among the keys: lit while drawing
+    internal var airBtn: IconButton? = null                           // More → Air Mouse: lit while the mouse pad is the middle
     internal lateinit var drawBar: LinearLayout
     internal lateinit var drawView: DrawView
     internal val drawer = dev.tvremote.core.ontv.Draw { tv?.link() ?: throw java.io.IOException("no TV") }
