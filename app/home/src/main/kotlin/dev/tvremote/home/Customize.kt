@@ -123,7 +123,10 @@ object Customize {
                     addView(pv, FrameLayout.LayoutParams(-1, -1))
                     val drawn = thumbs[thumbKey(a, k, w)]                    // made beforehand ([warm]) or on an earlier opening: there as it slides in
                     if (drawn != null) pv.setImageBitmap(drawn)
-                    else shots.execute { val b = thumb(a, k, w); a.runOnUiThread { if (b != null) put(pv, b) } }
+                    else shots.execute { val b = thumb(a, k, w); a.runOnUiThread {
+                        if (b != null) put(pv, b)
+                        else if (HomeConfig.isPhoto(k)) { val (iv, sz) = icon(R.drawable.ic_image, DIM, dp(22)); addView(iv, FrameLayout.LayoutParams(sz, sz, Gravity.CENTER)) }   // a photo that cannot be read: a mark, not a blank grey
+                    } }
                 }
                 foreground = StateListDrawable().apply {
                     addState(intArrayOf(android.R.attr.state_focused), ring(d, 3, Color.WHITE))
@@ -301,9 +304,12 @@ object Customize {
 
     /** The screensaver switch cannot write the setting (no WRITE_SECURE_SETTINGS yet; a phone or computer grants it): the system's own screen for it instead. */
     private fun systemDream(a: Activity) {
-        android.widget.Toast.makeText(a, R.string.dream_system, android.widget.Toast.LENGTH_LONG).show()
-        try { a.startActivity(android.content.Intent(android.provider.Settings.ACTION_DREAM_SETTINGS)) }
-        catch (e: Exception) { try { a.startActivity(android.content.Intent(android.provider.Settings.ACTION_SETTINGS)) } catch (e2: Exception) { } }
+        val go = {
+            try { a.startActivity(android.content.Intent(android.provider.Settings.ACTION_DREAM_SETTINGS)) }
+            catch (e: Exception) { try { a.startActivity(android.content.Intent(android.provider.Settings.ACTION_SETTINGS)) } catch (e2: Exception) { } }
+        }
+        // a Toast was hidden by the settings screen opened at once; a question the person reads, then goes on
+        android.app.AlertDialog.Builder(a, R.style.Menu).setMessage(R.string.dream_system).setPositiveButton(R.string.ok) { _, _ -> go() }.show()
     }
 
     private val WIDGET_ROWS = listOf(                                  // key, icon, name, line under it

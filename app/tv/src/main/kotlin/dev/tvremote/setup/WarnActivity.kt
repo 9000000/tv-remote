@@ -76,7 +76,7 @@ class WarnActivity : Activity() {
                 finish()
             })
             buttons.add(button(T("warn.skip")) { finish() })
-        } else buttons.add(button("OK") { finish() })
+        } else buttons.add(button(T("common.ok")) { finish() })
         buttons.forEachIndexed { i, b -> row.addView(b, LinearLayout.LayoutParams(-2, dp(52)).apply { if (i > 0) leftMargin = dp(12) }) }
         card.addView(row, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(22) })
         page.addView(card, LinearLayout.LayoutParams(-2, -2))

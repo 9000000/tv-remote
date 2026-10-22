@@ -9,6 +9,9 @@ import android.view.View
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import androidx.activity.ComponentActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import com.swordfish.libretrodroid.GLRetroView
 import com.swordfish.libretrodroid.GLRetroViewData
 import com.swordfish.libretrodroid.Variable
@@ -47,6 +50,7 @@ class GameActivity : ComponentActivity() {
         setContentView(LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setBackgroundColor(0xFF0B0D12.toInt())
             addView(title); addView(pct); addView(bar, LinearLayout.LayoutParams(dp(520), dp(16)).apply { topMargin = dp(16); bottomMargin = dp(16) }); addView(hint)
+            addView(menuButton(getString(R.string.cancel), 300, 56, 20f) { onBackPressed() }.also { it.requestFocus() })
         })
         Thread {
             val err = Cores.fetch(this, sys, { p -> runOnUiThread { pct.text = "$p %"; bar.progress = p } }, { cancelled })
@@ -59,12 +63,12 @@ class GameActivity : ComponentActivity() {
     }
 
     /** Every way the core can fail ends here: the reason and two buttons, Back goes to the library. */
-    private fun failed(reason: String) {
+    private fun failed(reason: String, title: String = getString(R.string.core_title, sys.label)) {
         val retry = menuButton(getString(R.string.retry), 300, 56, 20f) { download() }
         val back = menuButton(getString(R.string.back), 300, 56, 20f) { finish() }
         setContentView(LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setBackgroundColor(0xFF0B0D12.toInt())
-            addView(label(getString(R.string.core_title, sys.label), 28f))
+            addView(label(title, 28f))
             addView(label(reason, 22f, 0xFFFCA5A5.toInt()).apply { setPadding(dp(60), dp(12), dp(60), dp(20)) })
             addView(retry); addView(back)
         })
@@ -87,6 +91,7 @@ class GameActivity : ComponentActivity() {
         retro = GLRetroView(this, data)
         lifecycle.addObserver(retro)                                  // GLRetroView is a LifecycleObserver; it also needs onCreate
         retro.onCreate(this)
+        lifecycleScope.launch { retro.getGLRetroErrors().collect { if (!isDestroyed) failed(getString(R.string.cant_open), Systems.clean(file.name)) } }   // a broken ROM or core: the reason and Back, not a black screen
         val root = FrameLayout(this).apply { addView(retro) }
         setContentView(root)
         server = GameServer.acquire(this)

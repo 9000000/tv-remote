@@ -17,6 +17,7 @@
     <string name="info">Thông tin app</string>
     <string name="hidden">App đã ẩn (%d)</string>
     <string name="show">Hiện lại</string>
+    <string name="ok">OK</string>
     <string name="dock_full">Yêu thích đã đủ %d mục</string>
     <string name="no_inputs">Không thấy nguồn vào nào</string>
     <string name="no_open">Không mở được app này</string>

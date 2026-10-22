@@ -121,23 +121,24 @@ class PlayActivity : Activity() {
         info.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
         frame.addView(info, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM).apply { setMargins(d(48), 0, d(48), d(36)) })
 
+        val mx = resources.getDimensionPixelSize(R.dimen.tv_margin_x); val my = resources.getDimensionPixelSize(R.dimen.tv_margin_y)
         side = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; setPadding(d(12), d(20), d(12), d(20)); visibility = View.GONE
+            orientation = LinearLayout.VERTICAL; setPadding(mx, my, d(12), my); visibility = View.GONE           // text inside the overscan margins; the panel itself runs to the edge
             background = Ui.round(0xEB14171D.toInt(), 0f)
         }
         side.addView(Ui.text(this, "", 16f, Ui.ACCENT, true).apply { tag = "title"; setPadding(d(12), 0, 0, d(12)); maxLines = 1 })
         sideList = RecyclerView(this).apply { layoutManager = LinearLayoutManager(this@PlayActivity); adapter = SideList(); itemAnimator = null }
         side.addView(sideList, LinearLayout.LayoutParams(-1, 0, 1f))
-        frame.addView(side, FrameLayout.LayoutParams(d(442), -1, Gravity.START))
+        frame.addView(side, FrameLayout.LayoutParams(d(442) + mx - d(12), -1, Gravity.START))
 
         guide = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; setPadding(d(12), d(20), d(12), d(20)); visibility = View.GONE
+            orientation = LinearLayout.VERTICAL; setPadding(d(12), my, mx, my); visibility = View.GONE
             background = Ui.round(0xEB14171D.toInt(), 0f)
         }
         guide.addView(Ui.text(this, "", 16f, Ui.ACCENT, true).apply { tag = "title"; setPadding(d(12), 0, d(12), d(4)); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
         guideList = RecyclerView(this).apply { layoutManager = LinearLayoutManager(this@PlayActivity); adapter = GuideList(this@PlayActivity); itemAnimator = null }
         guide.addView(guideList, LinearLayout.LayoutParams(-1, 0, 1f))
-        frame.addView(guide, FrameLayout.LayoutParams(d(400), -1, Gravity.END))
+        frame.addView(guide, FrameLayout.LayoutParams(d(400) + mx - d(12), -1, Gravity.END))
         setContentView(frame)
         open(intent)
     }
@@ -270,7 +271,14 @@ class PlayActivity : Activity() {
         player?.stop()
         spin.visibility = View.GONE
         val forbidden = (e?.cause as? HttpDataSource.InvalidResponseCodeException)?.responseCode.let { it == 403 || it == 451 }
-        fail(getString(if (streams.firstOrNull()?.geo == true || forbidden) R.string.cant_play_geo else R.string.cant_play) + "\n" + getString(R.string.next_hint))
+        fail(getString(if (streams.firstOrNull()?.geo == true || forbidden) R.string.cant_play_geo else R.string.cant_play) + "\n" + getString(R.string.fail_hint))
+    }
+
+    /** Every stream of this channel failed: OK on the message tries them all again from the first. */
+    private fun retryAll() {
+        problem.visibility = View.GONE; spin.visibility = View.VISIBLE
+        stream = 0; asProgressive = false; retried = false
+        start()
     }
 
     private fun fail(s: String) { problem.text = s; problem.visibility = View.VISIBLE }
@@ -317,15 +325,17 @@ class PlayActivity : Activity() {
         if (!on) return
         info.visibility = View.GONE
         val c = streams.firstOrNull() ?: return
-        guide.findViewWithTag<TextView>("title").text = "${getString(R.string.guide)} · ${c.name}"
+        val title = guide.findViewWithTag<TextView>("title"); val titleText = "${getString(R.string.guide)} · ${c.name}"
+        title.text = titleText
         val a = guideList.adapter as GuideList
         val ch = streams
         fun fill(shows: List<Show>) {
+            title.text = titleText
             if (shows.isEmpty()) { guide.visibility = View.GONE; Toast.makeText(this, R.string.guide_none, Toast.LENGTH_SHORT).show(); return }
             a.set(shows); GuideList.focusOn(guideList, a.onNow)
         }
         Guide.known(c.id)?.let { fill(it); return }
-        a.set(emptyList())
+        a.set(emptyList()); title.text = getString(R.string.guide_loading)
         guideIo.execute { val got = Guide.of(this, ch); main.post { if (!isDestroyed && streams === ch && guide.visibility == View.VISIBLE) fill(got) } }
     }
 
@@ -360,7 +370,7 @@ class PlayActivity : Activity() {
         when (k) {
             KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_CHANNEL_UP, KeyEvent.KEYCODE_PAGE_UP -> tune(at + 1)
             KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_CHANNEL_DOWN, KeyEvent.KEYCODE_PAGE_DOWN -> tune(at - 1)
-            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> if (infoShown()) { closeInfo(); showSide(true) } else showInfo()
+            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> if (problem.visibility == View.VISIBLE) retryAll() else if (infoShown()) { closeInfo(); showSide(true) } else showInfo()
             KeyEvent.KEYCODE_BACK -> if (infoShown()) closeInfo() else return super.onKeyDown(k, e)
             KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_GUIDE, KeyEvent.KEYCODE_MENU -> showSide(true)
             KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_INFO -> if (info.visibility == View.VISIBLE) showGuide(true) else showInfo()

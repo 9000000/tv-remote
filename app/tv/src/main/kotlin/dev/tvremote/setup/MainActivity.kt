@@ -104,7 +104,7 @@ class MainActivity : Activity() {
             subView.ellipsize = TextUtils.TruncateAt.END
             words.addView(subView)
             view.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
-            view.setOnClickListener { if (!busy) run() }
+            view.setOnClickListener { if (!busy) run() else log(T("tv_main.busy")) }
             view.setOnFocusChangeListener { v, f ->
                 v.background = if (f) ring(TILE, 14) else box(TILE, 14, 0)
                 badge.background = box(if (f) Color.argb(60, 255, 255, 255) else CARD, 10, 0)
@@ -220,12 +220,13 @@ class MainActivity : Activity() {
         spinner.visibility = View.INVISIBLE
         actHead.addView(spinner, LinearLayout.LayoutParams(dp(16), dp(16)).apply { leftMargin = dp(10) })
         left.addView(actHead, margins(top = 18))
-        logView = text("", 14, INK, false)
+        logView = text(T("tv_main.activity_empty"), 14, MUTED, false)   // until the first line
         logView.setLineSpacing(dp(3).toFloat(), 1f)
         scroll = ScrollView(this)
         scroll.background = box(CARD, 14, 0)
         scroll.setPadding(dp(16), dp(10), dp(16), dp(10))
-        scroll.isFocusable = false
+        scroll.isFocusable = true                                     // D-pad can scroll back to an error that went by
+        scroll.onFocusChangeListener = View.OnFocusChangeListener { v, on -> v.background = if (on) ring(CARD, 14) else box(CARD, 14, 0) }
         scroll.addView(logView)
         // ---- right: taking over from a phone or a computer
         webCol = LinearLayout(this)
@@ -428,6 +429,7 @@ class MainActivity : Activity() {
         rows.orientation = LinearLayout.VERTICAL
         rows.setPadding(dp(24), dp(4), dp(24), dp(4))
         var dlg: android.app.AlertDialog? = null
+        var firstUnpair: View? = null                                  // the dialog opens with the focus on a button, not on the scroll view
         val list = Paired.list(this)
         for (d in list) {
             val days = ((now - d.seen) / (24 * 3600_000L)).toInt()
@@ -442,8 +444,9 @@ class MainActivity : Activity() {
             words.addView(text(listOf(if (d.created > 0) T("tv_main.paired_at", "at" to fmt.format(java.util.Date(d.created))) else "", T("tv_main.used_when", "when" to seen), d.ip)
                 .filter { it.isNotEmpty() }.joinToString("   ·   "), 12, MUTED, false))
             row.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
-            row.addView(smallButton(T("setup.unpair")) { confirmForget(name) { Paired.forget(this, d.id); dlg?.dismiss(); pairedMenu() } },
-                LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
+            val un = smallButton(T("setup.unpair")) { confirmForget(name) { Paired.forget(this, d.id); dlg?.dismiss(); pairedMenu() } }
+            if (firstUnpair == null) firstUnpair = un
+            row.addView(un, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
             rows.addView(row)
         }
         if (list.isEmpty()) rows.addView(text(T("tv_main.no_device_yet"), 14, MUTED, false))
@@ -455,6 +458,7 @@ class MainActivity : Activity() {
             .setNegativeButton(T("common.close"), null)
         if (list.size > 1) b.setNeutralButton(T("tv_main.unpair_all")) { _, _ -> confirmForget(T("tv_main.every_device")) { RemoteService.forgetAll(this) } }
         dlg = b.show()
+        (firstUnpair ?: dlg?.getButton(android.app.AlertDialog.BUTTON_NEGATIVE))?.requestFocus()
     }
 
     private fun confirmForget(what: String, forget: () -> Unit) {
@@ -943,6 +947,7 @@ class MainActivity : Activity() {
         card.addView(foot)
         root.addView(card, android.widget.FrameLayout.LayoutParams(dp(820), -2, Gravity.CENTER))
         d.setContentView(root)
+        d.setOnDismissListener { stopped = true }                      // Back while installing stops it, same as Close
         d.show()
         list.getChildAt(0)?.requestFocus()
     }
@@ -1015,9 +1020,11 @@ class MainActivity : Activity() {
         }
     }
 
+    private var logUsed = false
     private fun log(line: String) {
         val at = java.text.SimpleDateFormat("HH:mm:ss", Locale.US).format(java.util.Date())   // when it happened, not when it is drawn
         ui {
+            if (!logUsed) { logUsed = true; logView.text = ""; logView.setTextColor(INK) }
             logView.append("$at  $line\n")
             if (logView.lineCount > 300) logView.text = logView.text.toString().lines().takeLast(200).joinToString("\n")
             scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }

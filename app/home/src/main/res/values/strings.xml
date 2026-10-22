@@ -19,6 +19,7 @@
     <string name="info">App info</string>
     <string name="hidden">Hidden apps (%d)</string>
     <string name="show">Show again</string>
+    <string name="ok">OK</string>
     <string name="dock_full">Favourites are full (%d)</string>
     <string name="no_inputs">No inputs found</string>
     <string name="no_open">This app could not be opened</string>

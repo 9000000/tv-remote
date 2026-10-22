@@ -10,6 +10,8 @@
     <string name="offline">No internet. Check the TV\'s network, then try again.</string>
     <string name="none_here">No channels for this country yet.</string>
     <string name="no_favs">No favourites yet. Hold OK (or press Menu) on a channel to add one.</string>
+    <string name="country_loading">Loading countries…</string>
+    <string name="guide_loading">Loading the guide…</string>
     <string name="country_none">No country found</string>
     <string name="no_match">No channel matches.</string>
     <string name="retry">Try again</string>
@@ -24,6 +26,7 @@
     <string name="down">Did not answer lately</string>
     <string name="cant_play">This channel does not play right now.</string>
     <string name="cant_play_geo">This channel does not play here: it may be shown only in its own country.</string>
+    <string name="fail_hint">▲▼ another channel · OK try again · ◀ the list</string>
     <string name="next_hint">▲▼ another channel · OK the list</string>
     <string name="not_found">That channel is not in iptv-org\'s lists any more.</string>
     <string name="channels_n">%d channels</string>

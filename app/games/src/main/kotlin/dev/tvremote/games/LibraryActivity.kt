@@ -126,8 +126,16 @@ class LibraryActivity : ComponentActivity() {
     @Volatile private var refreshing = false
 
     private fun refreshCatalog() {
-        Thread { if (Catalog.refresh(applicationContext, true)) runOnUiThread { if (!isDestroyed && overlay == null && dl == null && searchBox?.hasFocus() != true) reload() } }.start()
+        Thread {
+            val changed = Catalog.refresh(applicationContext, true); val off = !Catalog.reached
+            runOnUiThread {
+                if (isDestroyed) return@runOnUiThread
+                val was = catOffline; catOffline = off
+                if ((changed || was != off) && overlay == null && dl == null && searchBox?.hasFocus() != true) reload()
+            }
+        }.start()
     }
+    @Volatile private var catOffline = false                           // no site answered: the Suggestions row is missing, say why
 
     @Deprecated("Deprecated in Java")
     override fun onRequestPermissionsResult(code: Int, p: Array<String>, r: IntArray) { super.onRequestPermissionsResult(code, p, r); reload() }
@@ -178,6 +186,10 @@ class LibraryActivity : ComponentActivity() {
         if (dl != null && ev.keyCode == android.view.KeyEvent.KEYCODE_BACK) { if (ev.action == android.view.KeyEvent.ACTION_UP) cancelDl(); return true }
         if (overlay != null && (ev.keyCode == android.view.KeyEvent.KEYCODE_BACK || ev.keyCode == android.view.KeyEvent.KEYCODE_ESCAPE || ev.keyCode == android.view.KeyEvent.KEYCODE_BUTTON_B)) {
             if (ev.action == android.view.KeyEvent.ACTION_UP) closeOverlay()
+            return true
+        }
+        if (overlay == null && ev.keyCode == android.view.KeyEvent.KEYCODE_MENU) {          // Menu = hold OK: the focused tile's menu
+            if (ev.action == android.view.KeyEvent.ACTION_UP) currentFocus?.takeIf { it.isLongClickable }?.performLongClick()
             return true
         }
         return super.dispatchKeyEvent(ev)
@@ -483,6 +495,7 @@ class LibraryActivity : ComponentActivity() {
             for (g in shelf.groups) box.addView(section("g" + g.id, g.name, g.items.mapNotNull { byId[it] }, group = g))
             box.addView(section("all", getString(R.string.sec_all), lib, add = true))
             if (sugs.isNotEmpty()) box.addView(section("sug", getString(R.string.suggest), sugs))
+            else if (catOffline) box.addView(label(getString(R.string.sug_offline), 16f, getColor(R.color.tv_dim)).apply { setPadding(dp(8), dp(18), 0, 0) })
         }
         val pend = pendingFocus; pendingFocus = null
         val f = wantFolder; wantFolder = null
@@ -701,7 +714,8 @@ class LibraryActivity : ComponentActivity() {
                     if (sum != h.optString("sha256").lowercase()) msg = getString(R.string.rom_bad)
                     else { saved = h.optString("name").replace(Regex("[^A-Za-z0-9 ._-]"), "") + ".$ext"; File(Systems.romsDir(this), saved).writeBytes(bytes) }
                 }
-            } catch (e: Exception) { msg = getString(R.string.core_net) }
+            } catch (e: java.io.IOException) { msg = getString(if (e.message == "too big") R.string.rom_big else R.string.rom_net) }
+            catch (e: Exception) { msg = getString(R.string.rom_net) }
             runOnUiThread {
                 if (isDestroyed || dl !== d) return@runOnUiThread
                 dl = null

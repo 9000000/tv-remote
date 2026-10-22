@@ -36,9 +36,13 @@
     <string name="dl_retry">OK: try again</string>
     <string name="added">Added %1$s · press OK to play</string>
     <string name="getting">Downloading…</string>
+    <string name="rom_net">Could not download this game</string>
+    <string name="rom_big">This game is over 64 MB, too big to download</string>
+    <string name="sug_offline">No internet: game suggestions could not load</string>
     <string name="rom_bad">Checksum mismatch, not saved</string>
     <string name="hide_hint">Hold OK to hide</string>
     <string name="retry">Retry</string>
+    <string name="cancel">Cancel</string>
     <string name="close">Close</string>
     <string name="back">Back</string>
     <string name="core_cancelled">Cancelled</string>

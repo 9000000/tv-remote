@@ -129,7 +129,7 @@ class GameCards(
     /** OK on the remote: start now; with fewer players than the game needs the first OK only says so. */
     private fun ok() {
         val ps = server.lobbyPlayers()
-        if (LobbyRule.tooFew(ps, minPlayers) && !warned) { warned = true; lobbyView?.warn(s(R.string.few_warn).format(ps.size, minPlayers)); return }
+        if (LobbyRule.tooFew(ps, minPlayers) && !warned) { warned = true; lobbyView?.warn(s(R.string.few_warn).format(maxOf(ps.size, 1), minPlayers)); return }
         go()
     }
 

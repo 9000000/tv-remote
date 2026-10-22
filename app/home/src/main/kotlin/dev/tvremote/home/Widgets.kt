@@ -368,7 +368,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             addView(text("${(part * 100).toInt()}%", 13f, Color.WHITE).apply { typeface = Font.medium; gravity = Gravity.CENTER },
                 FrameLayout.LayoutParams(-1, -1))
         }, LayoutParams(dp(50), dp(50)))
-        addView(text(name, 11f, Color.WHITE).apply { gravity = Gravity.CENTER }, LayoutParams(-1, -2).apply { topMargin = dp(2) })
+        addView(text(name, 12f, Color.WHITE).apply { gravity = Gravity.CENTER }, LayoutParams(-1, -2).apply { topMargin = dp(2) })
     }
 
     /** Today as a date: the day in a square, the weekday and date, the lunar date under it (the month grid needs the large slot). */
@@ -601,7 +601,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         // each row shares its width on its own: alike when every figure fits its equal part (CPU, RAM, disk), else by what each
         // needs (an address is longer than "ON"); as many columns as fit once [Shrink] has taken the figures down to 15 sp
         val big = Paint().apply { textSize = 19f * sp; typeface = Font.medium }
-        val small = Paint().apply { typeface = Font.regular; textSize = 10f * sp; letterSpacing = 0.08f }
+        val small = Paint().apply { typeface = Font.regular; textSize = 12f * sp; letterSpacing = 0.08f }
         val k0 = 15f / 19
         fun needs(row: List<Stat>, cols: Int) = FloatArray(cols) { k -> (row.getOrNull(k)?.let { maxOf(big.measureText(if (it.live) "↓ 999 KB/s" else it.value), small.measureText(it.label.uppercase())) * k0 } ?: 0f) + dp(29) }
         fun fits(rows: List<List<Stat>>, c: Int) = rows.all { needs(it, c).sum() + dp(10) * (c - 1) <= room }
@@ -641,7 +641,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             setShadowLayer(dp(4).toFloat(), 0f, dp(1).toFloat(), 0x80000000.toInt())
         }
         col.addView(v)
-        val l = Shrink(a, 10f, 8f).apply { text = s.label.uppercase(); setTextColor(DIM); maxLines = 1; letterSpacing = 0.08f }
+        val l = Shrink(a, 12f, 12f).apply { text = s.label.uppercase(); setTextColor(DIM); maxLines = 1; letterSpacing = 0.08f }
         col.addView(l)
         if (s.live) { speed = v; speedUp = l.apply { letterSpacing = 0f } }
         s.bar?.let { col.addView(Bar(a, it, CYAN), LayoutParams(-1, dp(3)).apply { topMargin = dp(6); rightMargin = dp(8) }) }
@@ -823,7 +823,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         col.addView(Bar(a, part, if (limit != null) AMBER else CYAN), LayoutParams(-1, dp(4)).apply { topMargin = dp(3) })
         if (limit != null) {                                          // under the bar, not beside the name: a narrow card cut the name to "…"
             val left = (limit.optLong("min") * 60 - limit.optLong("used")).coerceAtLeast(0)
-            col.addView(text(if (left <= 0) a.getString(R.string.w_used_up) else a.getString(R.string.w_left, span(left * 1000)), 11f, AMBER[0]),
+            col.addView(text(if (left <= 0) a.getString(R.string.w_used_up) else a.getString(R.string.w_left, span(left * 1000)), 12f, AMBER[0]),
                 LayoutParams(-2, -2).apply { topMargin = dp(2) })
         }
         addView(col, LayoutParams(0, -2, 1f).apply { leftMargin = dp(10) })
@@ -838,7 +838,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
                 FrameLayout.LayoutParams(-1, -1))
         }, LayoutParams(dp(62), dp(62)))
         addView(text(name, 12f, Color.WHITE).apply { gravity = Gravity.CENTER }, LayoutParams(dp(84), -2).apply { topMargin = dp(5) })
-        addView(text(detail, 11f, DIM).apply { gravity = Gravity.CENTER }, LayoutParams(dp(84), -2))
+        addView(text(detail, 12f, DIM).apply { gravity = Gravity.CENTER }, LayoutParams(dp(84), -2))
     }
 
     private fun chips(items: List<Pair<String, Int>>) = Fit(a).apply {
@@ -893,7 +893,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
 
     private fun head(left: String, right: String) = LinearLayout(a).apply {
         orientation = HORIZONTAL
-        addView(text(left.uppercase(), 11f, 0xB3FFFFFF.toInt()).apply { letterSpacing = 0.12f }, LayoutParams(0, -2, 1f))
+        addView(text(left.uppercase(), 12f, 0xB3FFFFFF.toInt()).apply { letterSpacing = 0.12f }, LayoutParams(0, -2, 1f))
         if (right.isNotEmpty()) addView(text(right, 12f, 0xB3FFFFFF.toInt()))
     }
 
@@ -1067,7 +1067,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         private var rowH = minOf(rowMax, ((maxH - headH) / cal.grid.rows).coerceAtLeast(dp(16)))   // a six-week month in the fixed-height slot: thinner rows
         val wanted = headH + rowH * cal.grid.rows
         private val big = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Font.regular; textSize = (if (tiny) 13f else 14f) * sp }   // left-aligned: each number is placed by its own ink
-        private val head = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; textSize = (if (tiny) 10f else 11f) * sp; color = 0x8CFFFFFF.toInt(); typeface = MEDIUM }
+        private val head = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; textSize = (if (tiny) 11f else 12f) * sp; color = 0x8CFFFFFF.toInt(); typeface = MEDIUM }
         private val back = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = ACCENT }
         private val dows = IntArray(7) { (first - 1 + it) % 7 }            // 0 = Sunday
         private val names = a.resources.getStringArray(R.array.cal_dow_short)

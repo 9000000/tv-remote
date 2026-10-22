@@ -9,6 +9,8 @@
     <string name="offline">Không có mạng. Kiểm tra mạng của TV rồi thử lại.</string>
     <string name="none_here">Nước này chưa có kênh nào.</string>
     <string name="no_favs">Chưa có kênh yêu thích. Giữ OK (hoặc bấm Menu) trên một kênh để thêm.</string>
+    <string name="country_loading">Đang tải danh sách nước…</string>
+    <string name="guide_loading">Đang tải lịch phát sóng…</string>
     <string name="country_none">Không tìm thấy</string>
     <string name="no_match">Không có kênh nào khớp.</string>
     <string name="retry">Thử lại</string>
@@ -23,6 +25,7 @@
     <string name="down">Gần đây không phản hồi</string>
     <string name="cant_play">Kênh này đang không phát được.</string>
     <string name="cant_play_geo">Kênh này không phát được ở đây: có thể chỉ xem được trong nước của kênh.</string>
+    <string name="fail_hint">▲▼ kênh khác · OK thử lại · ◀ danh sách</string>
     <string name="next_hint">▲▼ đổi kênh · OK danh sách</string>
     <string name="not_found">Kênh này không còn trong danh sách của iptv-org.</string>
     <string name="channels_n">%d kênh</string>

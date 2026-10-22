@@ -541,9 +541,18 @@ class BrowseActivity : Activity() {
         if (items.isEmpty()) { buildRail(); return }
         val (dlg, box) = sheet(560)
         heading(box, getString(R.string.remind_list))
-        for (r in items) box.addView(Ui.row(this, R.drawable.ic_close, "${Guide.hm(r.start)}  ${r.title} · ${r.name}") {
-            Reminders.remove(this, r); dlg.dismiss(); buildRail(); remindList()
-        })
+        var left = items.size
+        for (r in items) {
+            lateinit var row: View
+            row = Ui.row(this, R.drawable.ic_close, "${Guide.hm(r.start)}  ${r.title} · ${r.name}") {
+                Reminders.remove(this, r); buildRail()
+                val at = box.indexOfChild(row)                        // only this row goes; the focus moves to its neighbour, not back to the top
+                val to = box.getChildAt(at + 1)?.takeIf { it.isFocusable } ?: box.getChildAt(at - 1)?.takeIf { it.isFocusable }
+                box.removeView(row)
+                if (--left == 0) dlg.dismiss() else to?.requestFocus()
+            }
+            box.addView(row)
+        }
         box.addView(Ui.text(this, getString(R.string.remind_list_hint), 14f, Ui.DIM).apply { setPadding(Ui.dp(this@BrowseActivity, 12).toInt(), Ui.dp(this@BrowseActivity, 8).toInt(), 0, 0) })
         dlg.show()
         box.post { box.getChildAt(1)?.requestFocus() }
@@ -623,7 +632,7 @@ class BrowseActivity : Activity() {
         }
         box.addView(q, LinearLayout.LayoutParams(-1, Ui.dp(this, 42).toInt()).apply { bottomMargin = Ui.dp(this@BrowseActivity, 8).toInt() })
         val list = RecyclerView(this).apply { layoutManager = LinearLayoutManager(this@BrowseActivity) }
-        val none = Ui.text(this, getString(R.string.country_none), 17f, Ui.DIM).apply { gravity = Gravity.CENTER; visibility = View.GONE }
+        val none = Ui.text(this, getString(R.string.country_loading), 17f, Ui.DIM).apply { gravity = Gravity.CENTER }   // until the list comes
         val lh = (resources.displayMetrics.heightPixels * 0.62).toInt()
         box.addView(FrameLayout(this).apply {
             addView(list, FrameLayout.LayoutParams(-1, -1)); addView(none, FrameLayout.LayoutParams(-1, -1))
@@ -633,6 +642,8 @@ class BrowseActivity : Activity() {
             val every = Catalog.countries(this)
             main.post {
                 if (!dlg.isShowing) return@post
+                none.text = getString(if (every.isEmpty()) R.string.offline else R.string.country_none)       // nothing came: the network, not "no country"
+                none.visibility = if (every.isEmpty()) View.VISIBLE else View.GONE
                 var now = every.sortedBy { it.code != cc }
                 val ad = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                     override fun getItemCount() = now.size
@@ -783,7 +794,7 @@ class BrowseActivity : Activity() {
             tile.addView(LogoView(c).apply { tag = "logo" }, FrameLayout.LayoutParams(-1, -1))
             tile.addView(ImageView(c).apply { tag = "star"; setImageResource(R.drawable.ic_star); imageTintList = android.content.res.ColorStateList.valueOf(0xFFF9AB00.toInt()) },
                 FrameLayout.LayoutParams(d(18), d(18), Gravity.TOP or Gravity.END).apply { topMargin = d(6); rightMargin = d(6) })
-            tile.addView(Ui.text(c, "", 9f, Color.WHITE, true).apply {                // a corner: logos sit in the middle
+            tile.addView(Ui.text(c, "", 12f, Color.WHITE, true).apply {                // a corner: logos sit in the middle
                 tag = "q"; setPadding(d(4), d(1), d(4), d(1)); background = Ui.round(0x8C000000.toInt(), Ui.dp(c, 4))
             }, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.START).apply { topMargin = d(5); leftMargin = d(5) })
             card.addView(tile, LinearLayout.LayoutParams(-1, -2))

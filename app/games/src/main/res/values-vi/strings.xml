@@ -36,9 +36,13 @@
     <string name="dl_retry">OK: thử lại</string>
     <string name="added">Đã thêm %1$s · bấm OK để chơi</string>
     <string name="getting">Đang tải…</string>
+    <string name="rom_net">Không tải được game này</string>
+    <string name="rom_big">Game quá 64 MB, không tải được</string>
+    <string name="sug_offline">Không có mạng: chưa tải được gợi ý game</string>
     <string name="rom_bad">Sai mã kiểm tra, không lưu</string>
     <string name="hide_hint">Giữ OK để ẩn</string>
     <string name="retry">Thử lại</string>
+    <string name="cancel">Huỷ</string>
     <string name="close">Đóng</string>
     <string name="back">Quay lại</string>
     <string name="core_cancelled">Đã hủy</string>

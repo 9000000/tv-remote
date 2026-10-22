@@ -27,7 +27,7 @@ object Catalog {
     fun countries(c: Context): List<Country> {
         val text = cached(c, "countries.json", "$BASE/api/countries.json", false) ?: return emptyList()
         val a = org.json.JSONArray(text)
-        val lang = Locale.getDefault()
+        val lang = Lang.locale()
         return (0 until a.length()).map { a.getJSONObject(it) }.map { o ->
             val code = o.optString("code")
             val local = Locale("", code).getDisplayCountry(lang).takeIf { it.isNotEmpty() && it != code }
