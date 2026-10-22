@@ -21,9 +21,9 @@ import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.widget.FrameLayout
 
-// The TV's picture stays in sight when the remote screen is left. Out of the app (the PiP button beside full screen): Android's
-// Picture-in-Picture. Inside it (Manage, Settings, About): a small floating player, the same live picture. One stream either
-// way: the picture's VideoFrame (with its SurfaceView) is moved between the remote's stage and [MiniPlayer]; the surface goes
+// The TV's picture can float: the PiP button beside full screen (or Manage / Settings / About opening over the remote) puts it
+// in a small player over every screen of the app, so the rest of the app stays usable. Only while it floats does leaving the
+// app (Home, recents) go on in Android's Picture-in-Picture; coming back finds the small player again. One stream throughout: the picture's VideoFrame (with its SurfaceView) is moved between the remote's stage and [MiniPlayer]; the surface goes
 // and comes back, which the decoder already survives (Tv.pauseScreen / resumeScreen).
 
 internal const val FLOAT_NONE = 0
@@ -34,7 +34,7 @@ private const val PIP_ACTION = "dev.tvremote.phone.PIP"
 /** A picture is showing right now: the only time there is something to float. */
 internal fun MainActivity.picLive() = video && basic == null && host != null && pic != null && picShown
 
-internal fun MainActivity.canPip() = Build.VERSION.SDK_INT >= 26 && picLive() && !isFinishing &&
+internal fun MainActivity.canPip() = Build.VERSION.SDK_INT >= 26 && floating && picLive() && !isFinishing &&
     packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)
 
 /** The picture moves to where it floats ([FLOAT_MINI], [FLOAT_PIP]) or back to the remote's stage ([FLOAT_NONE]). */
@@ -42,6 +42,7 @@ internal fun MainActivity.setFloat(mode: Int) {
     if (mode == floatMode) return
     floatMode = mode
     if (mode == FLOAT_NONE) {
+        floating = false
         mini.visibility = View.GONE
         (frame.parent as? ViewGroup)?.removeView(frame)
         stage.addView(frame, 0, FrameLayout.LayoutParams(-1, -2))
@@ -57,15 +58,32 @@ internal fun MainActivity.setFloat(mode: Int) {
     pipUpdate()
 }
 
-/** Tap on the mini player: the screen laid over the remote goes, the remote's picture is back. */
-internal fun MainActivity.expandMini() {
+/** The PiP button: the picture goes to the small player at once (the stage folds away, the keys get the room), or comes back. */
+internal fun MainActivity.toggleFloat() {
+    if (floating) { unfloat(); return }
+    if (!picLive()) return
+    floating = true
+    setFloat(FLOAT_MINI)
+    layoutRemote()
+}
+
+/** The picture back in the remote's stage; whatever was laid over the remote closes, or the stage would be out of sight. */
+internal fun MainActivity.unfloat() {
+    floating = false
     managing.back()
     settings.visibility = View.GONE
     about.visibility = View.GONE
+    if (floatMode == FLOAT_MINI) setFloat(FLOAT_NONE)
+    layoutRemote()
 }
 
-/** ✕ on the mini player: the TV encodes nothing more; the remote asks for the picture again when it is back on screen. */
-internal fun MainActivity.closeMini() = stopPicture()                 // stopPicture brings the frame home
+/** ✕ on the small player: the TV encodes nothing more. On the remote screen that is the eye button's "off"; over Manage the
+ *  remote asks for the picture again when it is back on screen. */
+internal fun MainActivity.closeMini() {
+    val over = covered()
+    stopPicture()                                                     // brings the frame home too
+    if (!over && video) toggleVideo()
+}
 
 internal fun MainActivity.pipParams(): PictureInPictureParams? {
     if (Build.VERSION.SDK_INT < 26) return null
@@ -88,6 +106,7 @@ internal fun MainActivity.pipParams(): PictureInPictureParams? {
     acts.add(RemoteAction(Icon.createWithResource(this, resources.getIdentifier("ic_close", "drawable", packageName)), c, c, pipIntent(2)))
     b.setActions(acts)
     if (Build.VERSION.SDK_INT >= 31) {
+        b.setAutoEnterEnabled(canPip())                               // Home enters it, but only while the picture floats
         b.setSeamlessResizeEnabled(false)                             // video resizes by cross-fade, not by stretching
     }
     return b.build()
@@ -97,16 +116,16 @@ private fun MainActivity.pipIntent(n: Int): PendingIntent =
     PendingIntent.getBroadcast(this, n, Intent(PIP_ACTION).setPackage(packageName).putExtra("a", n), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
 /** Tells Android the size and the actions the PiP window will have. */
-internal fun MainActivity.pipUpdate() {
-    if (Build.VERSION.SDK_INT < 26 || !miniReady()) return
-    pipBtn.alpha = if (picLive()) 1f else 0.4f
-    try { pipParams()?.let { setPictureInPictureParams(it) } } catch (e: Exception) { }
+/** Home / recents with the picture floating: PiP (before Android 12 by hand, from onUserLeaveHint). */
+internal fun MainActivity.pipLeaveHint() {
+    if (!canPip() || isInPictureInPictureMode) return
+    try { pipParams()?.let { enterPictureInPictureMode(it) } } catch (e: Exception) { }
 }
 
-/** The PiP button beside full screen. */
-internal fun MainActivity.pipEnter() {
-    if (!canPip() || isInPictureInPictureMode) return
-    try { pipParams()?.let { enterPictureInPictureMode(it) } } catch (e: Exception) { }   // a phone with PiP switched off in its settings refuses
+internal fun MainActivity.pipUpdate() {
+    if (Build.VERSION.SDK_INT < 26 || !miniReady()) return
+    pipBtn.alpha = if (picLive() || floating) 1f else 0.4f
+    try { pipParams()?.let { setPictureInPictureParams(it) } } catch (e: Exception) { }
 }
 
 private val hidden = ArrayList<Pair<View, Int>>()
@@ -133,8 +152,8 @@ internal fun MainActivity.pipChanged(on: Boolean) {
         pipRx = null
         for ((v, vis) in hidden) v.visibility = vis
         hidden.clear()
-        if (pic == null) { setFloat(FLOAT_NONE); return }
-        setFloat(if (covered()) FLOAT_MINI else FLOAT_NONE)
+        if (pic == null || !floating) { floating = false; setFloat(FLOAT_NONE); layoutRemote(); return }
+        setFloat(FLOAT_MINI)                                          // back from PiP: the small player again, not the stage
         wasCovered = covered()
     }
 }
@@ -200,7 +219,7 @@ internal class MiniPlayer(private val a: MainActivity) : FrameLayout(a) {
                 if (drag) { translationX += mx; translationY += my; dx = e.rawX; dy = e.rawY }
             }
             MotionEvent.ACTION_UP -> {
-                if (!drag) a.expandMini() else snapNearest()
+                if (!drag) a.unfloat() else snapNearest()
             }
             MotionEvent.ACTION_CANCEL -> if (drag) snapNearest()
         }

@@ -37,14 +37,14 @@ internal fun MainActivity.layoutRemote() {
     videoBtn.visibility = if (basic == null) View.VISIBLE else View.GONE
     basicBar.visibility = if (basic == null || kind() != dev.tvremote.core.remote.Remote.Kind.ANDROID) View.GONE else View.VISIBLE   // LG / Samsung have no ADB to turn on
     greyRows()
-    val full = video && host != null && (fullscreen || resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)   // landscape: the picture fills the screen
+    val full = video && host != null && !floating && (fullscreen || resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)   // landscape: the picture fills the screen
     (controls.parent as View).visibility = if (full) View.GONE else View.VISIBLE
     if (full) controls.findFocus()?.let { it.clearFocus(); (getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).hideSoftInputFromWindow(it.windowToken, 0) }   // its box gone, so its keyboard
     topBar.visibility = if (full) View.GONE else View.VISIBLE
     stage.layoutParams = if (full) LinearLayout.LayoutParams(-1, 0, 1f) else LinearLayout.LayoutParams(-1, -2)   // weight: room for the drawing tools under it
-    if (!video && drawing) stopDrawing()                              // nothing to draw on
+    if ((!video || floating) && drawing) stopDrawing()                              // nothing to draw on
     if (floatMode == FLOAT_NONE) frame.layoutParams = FrameLayout.LayoutParams(-1, if (full) -1 else -2)   // floating: its player sizes it
-    stage.visibility = if (video) View.VISIBLE else View.GONE
+    stage.visibility = if (video && !floating) View.VISIBLE else View.GONE   // floating: the picture is in the small player, the keys get the room
     listenBtn.visibility = if (basic == null) View.VISIBLE else View.GONE   // hearing the TV needs ADB too
     listenBtn.setOn(listen, 16)
     listenBtn.contentDescription = if (listen) T("remote_screen.stop_listening_on_the") else T("remote_screen.hear_the_tv_on")
@@ -54,7 +54,8 @@ internal fun MainActivity.layoutRemote() {
     qualBtn.visibility = if (video) View.VISIBLE else View.GONE
     fullBtn.visibility = qualBtn.visibility
     pipBtn.visibility = if (qualBtn.visibility == View.VISIBLE && Build.VERSION.SDK_INT >= 26 && packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)) View.VISIBLE else View.GONE
-    pipBtn.alpha = if (picLive()) 1f else 0.4f                          // only a live picture can float
+    pipBtn.setOn(floating, 10)                                        // on while the picture floats
+    pipBtn.alpha = if (picLive() || floating) 1f else 0.4f             // only a live picture can float
     listenChip.visibility = if (listen) View.VISIBLE else View.GONE  // the sound's own settings, only while it plays
     val share = prefs.getBoolean("listenShare", false)
     listenChip.text = (if (share) T("listen.both") else T("remote_screen.phone")) + " ▾"
@@ -248,7 +249,7 @@ internal fun MainActivity.buildRemote() {
     fullBtn = icon("@expand", T("remote.full_screen"), BTN)
     fullBtn.setOnClickListener { setFullscreen(true) }
     pipBtn = icon("@pip", T("float.pip"), BTN)                        // Pip.kt: the picture in a small window over other apps
-    pipBtn.setOnClickListener { pipEnter() }
+    pipBtn.setOnClickListener { toggleFloat() }
     picBar.addView(pipBtn, LinearLayout.LayoutParams(dp(44), dp(34)).apply { leftMargin = dp(8) })
     picBar.addView(fullBtn, LinearLayout.LayoutParams(dp(44), dp(34)).apply { leftMargin = dp(8) })
     controls.addView(soundBar, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })

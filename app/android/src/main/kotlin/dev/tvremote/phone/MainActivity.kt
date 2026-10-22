@@ -124,6 +124,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal var wasCovered = false
     internal lateinit var mini: MiniPlayer                             // Pip.kt: the picture floating over Manage / Settings, or filling the PiP window
     internal var floatMode = FLOAT_NONE
+    internal var floating = false                                      // the picture was put in the small player (the PiP button, or ✕-less over Manage)
     internal fun miniReady() = ::mini.isInitialized
     internal var wasPip = false                                        // in Picture-in-Picture since the app was last on screen: if it stops now, it was closed
     internal var pipRx: android.content.BroadcastReceiver? = null
@@ -227,8 +228,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             val c = covered()
             if (c == wasCovered) return@addOnGlobalLayoutListener
             wasCovered = c
-            if (c) { if (picLive()) setFloat(FLOAT_MINI) else stopPicture() }
-            else { setFloat(FLOAT_NONE); picTries = 0; startPicture() }
+            if (c) { if (picLive()) setFloat(FLOAT_MINI) else if (!floating) stopPicture() }
+            else { if (!floating) setFloat(FLOAT_NONE); picTries = 0; startPicture() }
         }
         settings = buildSettings()
         root.addView(settings, FrameLayout.LayoutParams(-1, -1))
@@ -329,6 +330,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     override fun onConfigurationChanged(c: Configuration) {
         super.onConfigurationChanged(c)
         layoutRemote()
+        if (floatMode == FLOAT_MINI) mini.post { mini.mode(false) }    // 40% of the new width
     }
 
     internal var fullscreen = false                                   // only the picture, sideways, with a faint button to leave
@@ -336,6 +338,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     /** Full screen turns the phone's screen sideways and hides everything but the picture; leaving it goes back upright. */
     internal fun setFullscreen(on: Boolean) {
+        if (on && floating) unfloat()                                 // the picture needs its stage
         fullscreen = on
         requestedOrientation = if (on) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         layoutRemote()
@@ -449,6 +452,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     }
 
     internal fun stopPicture() {
+        floating = false
         if (floatMode == FLOAT_MINI) setFloat(FLOAT_NONE)             // ✕ on the mini player, or the stream gave up
         ui.removeCallbacks(picRetry); ui.removeCallbacks(countWatchers); picWatchers = 0
         if (pic != null) tv?.carry(null)                              // the keys' own session back before the next key
@@ -788,6 +792,9 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         if (i.action == ListenService.STOP) { stopListen(null); return }   // "Stop" in the listening notification
         installResult(i)
     }
+
+    /** Home or recents: with the picture floating it goes on in Android's PiP (Pip.kt). */
+    override fun onUserLeaveHint() { super.onUserLeaveHint(); pipLeaveHint() }
 
     override fun onResume() { super.onResume(); wasPip = false; probe.run() }
 
