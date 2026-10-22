@@ -330,7 +330,15 @@ internal fun Context.input(hint: String): EditText {
 /** [v] as a dialog's body: room around it, and a field a box lighter than the dialog, which is CARD itself (a column of
  *  fields and words keeps the dialog's own colour: its fields have their boxes). */
 internal fun Context.inDialog(v: View): FrameLayout {
-    if (v !is android.view.ViewGroup) v.background = box(BTN, 12)
+    // every field, not only a lone one: a column's fields kept CARD on the CARD dialog, no edge, no fill (Notify the TV)
+    fun lift(x: View) {
+        if (x is EditText) x.background = android.graphics.drawable.StateListDrawable().apply {
+            addState(intArrayOf(android.R.attr.state_focused), box(BTN, 12).apply { setStroke(dp(1.5f), ACCENT) })
+            addState(intArrayOf(), box(BTN, 12).apply { setStroke(dp(1), (MUTED and 0xFFFFFF) or 0x55000000) })
+        } else if (x is android.view.ViewGroup) for (i in 0 until x.childCount) lift(x.getChildAt(i))
+    }
+    lift(v)
+    if (v !is android.view.ViewGroup && v !is EditText) v.background = box(BTN, 12)
     val wrap = FrameLayout(this)
     wrap.setPadding(dp(24), dp(12), dp(24), dp(4))
     wrap.addView(v, FrameLayout.LayoutParams(-1, -2))
