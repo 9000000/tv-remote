@@ -1484,6 +1484,7 @@
  "tvset.home_many": "The screen shown when you press Home.",
  "tvset.sleep_after_ask": "Sleep after how long idle?",
  "tvset.home_unchanged": "The TV did not change the home screen: {why}",
+ "tvset.home_refused": "the TV still opened its own home screen on Home, so it was put back",
  "tvset.no_reason": "reason unknown",
  "tvset.error_msg": "Error: {msg}",
  "tvset.dns_trying": "The TV is trying {host}, up to 30 seconds...",

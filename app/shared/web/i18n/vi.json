@@ -1421,6 +1421,7 @@
  "tvset.home_many": "Màn hình hiện ra khi bấm nút Home.",
  "tvset.sleep_after_ask": "Tự tắt sau bao lâu không dùng?",
  "tvset.home_unchanged": "TV không đổi màn hình chính: {why}",
+ "tvset.home_refused": "TV vẫn mở màn hình chính cũ khi bấm Home, nên đã để lại như trước",
  "tvset.no_reason": "không rõ lý do",
  "tvset.error_msg": "Lỗi: {msg}",
  "tvset.dns_trying": "TV đang thử {host}, tối đa 30 giây...",

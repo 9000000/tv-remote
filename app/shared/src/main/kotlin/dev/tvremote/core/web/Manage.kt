@@ -34,6 +34,7 @@ import dev.tvremote.core.ontv.RulesClient
 import dev.tvremote.core.scenes.Scenes
 import dev.tvremote.core.ontv.ScreenOff
 import dev.tvremote.core.ontv.Sensors
+import dev.tvremote.core.ontv.LauncherSwap
 import dev.tvremote.core.ontv.Setup
 import dev.tvremote.core.ontv.SetupFiles
 import dev.tvremote.core.ontv.SetupNeed
@@ -171,7 +172,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     val b64 = Welcome.call({ sh(it) }, JSONObject().put("do", "thumb")).optString("thumb")
                     return if (b64.isEmpty()) HttpServer.Response.error(404, "no picture") else HttpServer.Response.of("image/jpeg", B64.decode(b64))
                 }
-                "tvset" -> if (!post) return text(TvShell.TVSET_READ, 60000)
+                "tvset" -> if (!post) return tvsetRead()
                 "log" -> return text(TvShell.log(r.q("pkg"), r.q("since")), 20000)
                 "diagnose" -> return diagnose(r, link)                // why the TV does not answer: one conclusion (Diagnose.kt)
                 "wirelog" -> {
@@ -237,7 +238,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     if (Setup.PROTECTED.matches(pkg)) throw IllegalArgumentException("protected: the TV needs this app")
                     text(TvShell.perm(pkg, d.optString("perm"), d.optBoolean("on")), 20000)
                 }
-                "tvset" -> { val d = r.json(); text(TvShell.tvset(d.optString("key"), d.optString("value")), 60000) }
+                "tvset" -> { val d = r.json(); val k = d.optString("key"); val v = d.optString("value")
+                    if (k == "home") homeSet(v, r.lang) else text(TvShell.tvset(k, v), 60000) }
                 "settings" -> { val d = r.json(); val vol = TvShell.VOLUME[d.optString("name")]
                     if (vol != null && d.optString("table") == "system") {
                         val v = d.optString("value").toIntOrNull()?.takeIf { it in 0..100 } ?: throw IllegalArgumentException("bad value")
@@ -581,6 +583,36 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         }
         if (out.trim().isNotEmpty()) throw IllegalArgumentException(out.trim())
         return HttpServer.Response.ok()
+    }
+
+    /** The TV's settings for the page; a stock launcher a swap turned off is listed still: picking it is the way back ([homeSet]). */
+    private fun tvsetRead(): HttpServer.Response {
+        var out = link.get().shell(TvShell.TVSET_READ, 60000).replace("\r\n", "\n")
+        val rec = try { LauncherSwap({ sh(it) }).state() } catch (e: IOException) { null }
+        if (rec?.active == true) for (p in rec.off) if (p in Setup.LAUNCHER && !out.contains("$p/")) out += "\nlauncher $p/"
+        return HttpServer.Response.json(JSONObject().put("text", out))
+    }
+
+    /**
+     * The Home key's screen. While Google TV's launcherx is on, the Home key opens it whatever the HOME role names (a Coocaa, and the
+     * Google TV emulator: role TV Home, Home -> launcherx), so another launcher there takes the whole swap (launcherx and the wizard's
+     * Home off, Home checked, the record and TV Setup's watch); the TV's own launcher picked again undoes it. Elsewhere the role is enough.
+     */
+    private fun homeSet(value: String, lang: String): HttpServer.Response {
+        val pkg = value.substringBefore('/')
+        val swap = LauncherSwap({ sh(it) })
+        val swapped = swap.state()?.active == true
+        if (value != "$pkg/" || pkg !in Setup.LAUNCHER) TvShell.tvset("home", value)   // checks the name before it reaches a shell; "pkg/": a stock one turned off (tvsetRead)
+        if (pkg in Setup.LAUNCHER && swapped) {
+            swap.rollback("user")
+            if (swap.homeNow().substringBefore('/') != pkg)            // rollback chose the one before, not the one picked
+                sh("c=\$(cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME | grep -m1 '$pkg/'); " +
+                    "[ -n \"\$c\" ] && cmd package set-home-activity \$c >/dev/null 2>&1")
+        } else if (pkg !in Setup.LAUNCHER && (swapped || Setup.LAUNCHERX in sh("pm list packages -e ${Setup.LAUNCHERX}"))) {
+            if (!swap.take(pkg)) return HttpServer.Response.json(JSONObject().put("text", "home " + Words.get(lang, "tvset.home_refused")))
+        } else return text(TvShell.tvset("home", value), 60000)
+        val now = swap.homeNow()
+        return HttpServer.Response.json(JSONObject().put("text", "home " + if (now.substringBefore('/') == pkg) value else now))
     }
 
     /** What a [TvShell] recipe printed, for the page to read. */
