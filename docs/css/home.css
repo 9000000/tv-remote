@@ -107,3 +107,6 @@ nav .navtools{margin-left:auto}
 .fc p{color:var(--muted);font-size:15px;line-height:1.5;margin:0 8px}
 @media (max-width:560px){.fc{flex-basis:85%}.car-head{align-items:center}.car-head .lead{display:none}}
 .sc-t p .ln{display:inline-block}                                  /* a line breaks between sentences first, not mid-phrase */
+
+#dl-all .btn{gap:8px}
+#dl-all .osi{width:18px;height:18px;flex:none}   /* each system's own mark (simple-icons, CC0; Windows drawn) */

@@ -107,7 +107,7 @@
     var a = os && document.querySelector('#dl-all a[data-os="' + os + '"]'); if (!a) return;
     document.querySelectorAll("#dl-all a").forEach(function(x){ x.classList.toggle("mine", x === a); });
     document.getElementById("dl-main").href = a.href;
-    document.getElementById("dl-main-os").innerHTML = ' <span class="vi">cho</span><span class="en">for</span> ' + a.textContent.replace("📱 ", "");
+    document.getElementById("dl-main-os").innerHTML = ' <span class="vi">cho</span><span class="en">for</span> ' + a.textContent.trim();
   })();
 
   // latest release tag in the pill; the page reads fine if GitHub is unreachable
