@@ -132,7 +132,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal var vidH = 9
     /** Something laid over the remote hides the picture and the now playing / now open lines: nothing to ask the TV for. */
     internal fun covered() = (::managing.isInitialized && managing.shown) || (::settings.isInitialized && settings.visibility == View.VISIBLE) ||
-        (::about.isInitialized && about.visibility == View.VISIBLE) || airShown()                                    // the picture's first frame came
+        (::about.isInitialized && about.visibility == View.VISIBLE)
     internal lateinit var topBar: LinearLayout                         // the TV's name and state, with the buttons beside or under it
     internal lateinit var basicBar: Button
 
@@ -361,7 +361,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        if (managing.back() || irBack() || airBack() || gamesPointerBack()) return
+        if (managing.back() || irBack() || gamesPointerBack()) return
         if (fullscreen) { setFullscreen(false); return }
         if (about.visibility == View.VISIBLE) about.visibility = View.GONE
         else if (settings.visibility == View.VISIBLE) settings.visibility = View.GONE
@@ -659,6 +659,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     internal fun show(remoteScreen: Boolean) {
         remote.visibility = if (remoteScreen) View.VISIBLE else View.GONE
+        if (remoteScreen) airResume() else airStop()                  // no gyroscope behind the list of TVs
         // the focus leaving the picker's address field would land on the text box below the keys, and the remote would open
         // scrolled down to it (Android 8 and older): the screen itself takes it first
         if (remoteScreen) { remote.isFocusableInTouchMode = true; remote.requestFocus() }
@@ -805,14 +806,14 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     /** Home or recents: with the picture floating it goes on in Android's PiP (Pip.kt). */
     override fun onUserLeaveHint() { super.onUserLeaveHint(); pipLeaveHint() }
 
-    override fun onResume() { super.onResume(); wasPip = false; probe.run() }
+    override fun onResume() { super.onResume(); wasPip = false; airResume(); probe.run() }
 
     override fun onPictureInPictureModeChanged(inPip: Boolean, c: Configuration) {
         super.onPictureInPictureModeChanged(inPip, c)
         pipChanged(inPip)
     }
 
-    override fun onPause() { airClose(); ui.removeCallbacks(probe); statusPause(); super.onPause() }
+    override fun onPause() { airStop(); ui.removeCallbacks(probe); statusPause(); super.onPause() }
 
     // ---------------------------------------------------------------- managing the TV: apps, files, installs, health, terminal
     @Deprecated("Deprecated in Java")

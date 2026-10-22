@@ -55,7 +55,7 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "dim" to act { dimDialog() },
     "share" to act { shareDialog() },
     "inputs" to act { inputsMenu() },
-    "air" to act { airOpen() },
+    "air" to act { if (airMode() != "mouse" && !airCan()) say(T("air.needs_adb"), true); airPick("mouse") },
     "gamespad" to act { if (!needsAdb()) gamesPointerOpen() },
     "ir" to act { irOpen(entry ?: host) },
     "homeCustom" to act { if (!needsAdb()) managing.open(host, "tv", "homeOpen()") },   // the page's TV Home dialog: one place for it

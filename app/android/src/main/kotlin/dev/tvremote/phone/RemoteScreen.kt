@@ -323,36 +323,30 @@ internal fun MainActivity.buildRemote() {
     }
     controls.addView(more)
     controls.addView(kbd)
-    // The arrows, or a touchpad in their place: swipes become arrow keys, a tap is OK. Handy where the TV shows a pointer
-    // that follows the arrows (a browser, Downloader), and for long lists.
+    // The remote's middle, one of three: the arrows; a touchpad of keys (swipes become arrow keys, a tap is OK: lists, a pointer
+    // that follows the arrows); the mouse pad (Air Mouse: a real pointer moved by the phone or the finger, for a browser, selecting
+    // text, dragging). Two switches under it, each on while its mode is; off goes back to the arrows.
     val arrows = dpad()
     val tpad = touchpad()
-    val swap = button("", BTN)
-    swap.textSize = 13f
-    swap.setPadding(dp(12), 0, dp(12), 0)
-    swap.minHeight = 0
-    swap.minimumHeight = 0
-    val usePad = { on: Boolean ->
-        arrows.visibility = if (on) View.GONE else View.VISIBLE
-        tpad.visibility = if (on) View.VISIBLE else View.GONE
-        swap.text = if (on) T("remote_screen.use_the_arrows") else T("remote_screen.use_the_touchpad")
-        swap.setOn(on)                                                // on while the touchpad is
+    val mpad = airPad()
+    val swap = button(T("remote_screen.use_the_touchpad"), BTN)
+    val air = button("@mouse|" + T("rkey.air"), BTN)
+    for (c in listOf(swap, air)) { c.textSize = 13f; c.setPadding(dp(12), 0, dp(12), 0); c.minHeight = 0; c.minimumHeight = 0 }
+    val pick = { m: String ->
+        arrows.visibility = if (m == "arrows") View.VISIBLE else View.GONE
+        tpad.visibility = if (m == "touch") View.VISIBLE else View.GONE
+        mpad.visibility = if (m == "mouse") View.VISIBLE else View.GONE
+        swap.setOn(m == "touch"); air.setOn(m == "mouse")
+        prefs.edit().putString("mid", m).apply()
+        airStart(m)                                                   // the gyroscope only while the mouse pad is shown
     }
-    usePad(prefs.getBoolean("pad", false))
-    swap.setOnClickListener {
-        val on = tpad.visibility != View.VISIBLE
-        prefs.edit().putBoolean("pad", on).apply()
-        usePad(on)
-    }
+    airPick = { m -> pick(if (m == airMode()) "arrows" else m) }
+    pick(prefs.getString("mid", null) ?: if (prefs.getBoolean("pad", false)) "touch" else "arrows")   // "pad": the old touchpad switch
+    swap.setOnClickListener { airPick("touch") }
+    air.setOnClickListener { if (airMode() != "mouse" && !airCan()) say(T("air.needs_adb"), true); airPick("mouse") }
     controls.addView(arrows, gap(16))
     controls.addView(tpad, LinearLayout.LayoutParams(-1, dp(250)).also { it.topMargin = dp(16) })
-    // Air Mouse beside it, one tap away (also under More): a real pointer for a browser, selecting text, dragging
-    val air = button("@mouse|" + T("rkey.air"), BTN)
-    air.textSize = 13f
-    air.setPadding(dp(12), 0, dp(12), 0)
-    air.minHeight = 0
-    air.minimumHeight = 0
-    air.setOnClickListener { airOpen() }
+    controls.addView(mpad, LinearLayout.LayoutParams(-1, dp(280)).also { it.topMargin = dp(16) })
     val chips = LinearLayout(this)
     chips.addView(swap, LinearLayout.LayoutParams(-2, dp(36)))
     chips.addView(air, LinearLayout.LayoutParams(-2, dp(36)).apply { marginStart = dp(8) })

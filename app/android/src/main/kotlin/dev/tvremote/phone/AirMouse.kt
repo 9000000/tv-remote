@@ -16,23 +16,21 @@ import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
-import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.LinearLayout
 import dev.tvremote.core.remote.Remote
+import dev.tvremote.core.picture.Tv
 import kotlin.math.abs
-import kotlin.math.roundToInt
 
-// Air Mouse: the phone held like a pointer, its gyroscope moves a real mouse pointer on the TV. Android TVs get a virtual HID mouse
-// through the scrcpy control socket (Tv.mouseOpen, no picture needed), LG its Magic Remote pointer (Remote.pointer).
+// Air Mouse: the remote's middle as a mouse pad (one of its three modes, beside the arrows and the touchpad of keys), and the phone
+// held like a pointer, its gyroscope moving a real mouse pointer on the TV. Android TVs get a virtual HID mouse through the scrcpy
+// control socket (Tv.mouseOpen, opened on first use for each session, no picture needed), LG its Magic Remote pointer (Remote.pointer).
 
 private object Air {
-    var host: FrameLayout? = null
+    var mode = "arrows"                                              // the remote's middle: arrows, touch (keys) or mouse (this)
     var sensors: SensorManager? = null
     var listener: SensorEventListener? = null
-    var paused = false
+    var mouseTv: Tv? = null                                          // the session the HID mouse was opened on
     var buttons = 0                                                  // 1 while the pointer's button is held (a drag)
-    var clickHeld = false                                            // the big Click button is down
     var padHeld = false                                              // a finger held still on the pad pressed the button: the phone drags too
     var freezeUntil = 0L                                             // a click lands where it was aimed: no motion ~80 ms around press / release
     var touching = false                                             // a finger on the pad: the gyroscope waits, so the two never fight
@@ -40,7 +38,7 @@ private object Air {
     var synth: Thread? = null
     var fxLog = false                                                // a marker file (air_fxlog) makes every haptic call a log line, so a test can count them
     var tickLast = 0L                                                // when the last tick went out: a fast swipe must not buzz continuously
-    var sub = false                                                  // true when the game rotation vector stands in for a missing gyroscope
+    var saidAt = 0L                                                  // the "needs ADB" line, at most every few seconds
 }
 
 private const val GAIN = 700f             // HID counts per radian turned: about a screen width for a wrist's sweep
@@ -51,53 +49,57 @@ private const val TOUCH_GAIN = 1.3f   // HID counts per dp of finger travel at w
 private const val TOUCH_BOOST = 0.9f  // extra per dp/ms, like a laptop touchpad's curve
 private const val BOOST = 0.45f           // extra speed per rad/s, so slow moves stay fine and fast ones reach the corner
 
-internal fun MainActivity.airOpen() {
-    val t = tv
-    val b = basic
-    val androidOk = t != null && t.ready()
-    if (!androidOk && (b == null || !b.ready() || "mouse" !in Remote.Kind.caps(b.kind))) { say(T("air.needs_adb"), true); return }
-    val sm = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    val gyro = sm.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
-    val rot = if (gyro == null) sm.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR) else null
-    airClose()
-    Air.paused = false; Air.touching = false; Air.buttons = 0; Air.clickHeld = false; Air.padHeld = false
-    Air.sub = gyro == null
-    Air.fxLog = try { java.io.File(getExternalFilesDir(null), "air_fxlog").exists() } catch (e: Exception) { false }
-    Air.sensors = sm
-    if (androidOk) { t!!.mouseOpen(); t.mouseStats = { android.util.Log.i("airstat", it) } }
-    airSynth()
-    val view = airView()
-    Air.host = view                                                   // before addView: the layout pass it starts reads covered()
-    (mini.parent as ViewGroup).let { it.addView(view, it.indexOfChild(mini), FrameLayout.LayoutParams(-1, -1)) }   // under the small player: the picture floats over the pad
-    (gyro ?: rot)?.let { airListen(sm, it) }                          // no sensor: the pad alone still drives the pointer
+/** This TV can show a pointer: ADB (the HID mouse) or a remote link with "mouse" (LG). */
+internal fun MainActivity.airCan(): Boolean {
+    val t = tv; val b = basic
+    return (t != null && t.ready()) || (b != null && b.ready() && "mouse" in Remote.Kind.caps(b.kind))
 }
 
-/** Leaves the screen: sensor off, the TV's mouse (and its pointer) gone. True when it was open (the Back button). */
-internal fun MainActivity.airClose(): Boolean {
-    val view = Air.host ?: return false
+/** The remote's middle became the mouse pad (or the app came back to it): the gyroscope on. The pad works without one. */
+internal fun MainActivity.airStart(mode: String = "mouse") {
+    Air.mode = mode
+    if (mode != "mouse" || Air.listener != null) { if (mode != "mouse") airStop(); return }
+    Air.touching = false; Air.buttons = 0; Air.padHeld = false
+    Air.fxLog = try { java.io.File(getExternalFilesDir(null), "air_fxlog").exists() } catch (e: Exception) { false }
+    val sm = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    Air.sensors = sm
+    airSynth()
+    (sm.getDefaultSensor(Sensor.TYPE_GYROSCOPE) ?: sm.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR))?.let { airListen(sm, it) }
+}
+
+/** Another mode, or the app left: the sensor off, a held button let go, the TV's mouse (and its pointer) gone. The mode is kept. */
+internal fun MainActivity.airStop() {
     if (Air.buttons != 0) airButton(false)
+    Air.padHeld = false
     Air.listener?.let { Air.sensors?.unregisterListener(it) }
     Air.listener = null
     Air.thread?.quitSafely(); Air.thread = null
     Air.synth?.interrupt(); Air.synth = null
-    tv?.mouseStats = null
-    (view.parent as? ViewGroup)?.removeView(view)
-    Air.host = null
-    tv?.mouseClose()
-    return true
+    Air.mouseTv?.let { it.mouseStats = null; it.mouseClose() }
+    Air.mouseTv = null
 }
 
-internal fun MainActivity.airBack(): Boolean = airClose()
+/** The remote's middle: "touch" or "mouse" turns that mode on, or off again when it is the one shown (More's Air Mouse). */
+internal var airPick: (String) -> Unit = {}
+internal fun airMode() = Air.mode
 
-internal fun airShown() = Air.host != null
+internal fun MainActivity.airResume() { if (Air.mode == "mouse") airStart() }
+
+/** The session's HID mouse, opened the first time it is used on that session. */
+private fun MainActivity.airTv(): Tv? {
+    val t = tv
+    if (t == null || !t.ready()) return null
+    if (Air.mouseTv !== t) { Air.mouseTv = t; t.mouseOpen(); t.mouseStats = { android.util.Log.i("airstat", it) } }
+    return t
+}
 
 private fun MainActivity.airMove(dx: Float, dy: Float, carry: FloatArray) {
     carry[0] += dx; carry[1] += dy                                   // the fractions a count cannot carry add up to the next one
     val ix = carry[0].toInt(); val iy = carry[1].toInt()
     if (ix == 0 && iy == 0) return
     carry[0] -= ix; carry[1] -= iy
-    val t = tv
-    if (t != null && t.ready()) t.mouseMove(ix, iy, Air.buttons) else basic?.pointer(ix, iy)   // the held button rides along: that is the drag
+    val t = airTv()
+    if (t != null) t.mouseMove(ix, iy, Air.buttons) else basic?.pointer(ix, iy)   // the held button rides along: that is the drag
 }
 
 private fun MainActivity.airListen(sm: SensorManager, sensor: Sensor) {
@@ -108,8 +110,8 @@ private fun MainActivity.airListen(sm: SensorManager, sensor: Sensor) {
     val l = object : SensorEventListener {
         override fun onAccuracyChanged(s: Sensor?, a: Int) {}
         override fun onSensorChanged(e: SensorEvent) {
-            val live = Air.clickHeld || Air.padHeld || !Air.touching
-            if (Air.paused || !live || System.currentTimeMillis() < Air.freezeUntil) { last = 0; have = false; return }
+            val live = Air.padHeld || !Air.touching
+            if (!live || covered() || System.currentTimeMillis() < Air.freezeUntil) { last = 0; have = false; return }   // Manage or Settings over the remote: the pointer stays
             var wz: Float; var wx: Float
             if (e.sensor.type == Sensor.TYPE_GYROSCOPE) {
                 if (last == 0L) { last = e.timestamp; return }
@@ -141,28 +143,14 @@ private fun MainActivity.airListen(sm: SensorManager, sensor: Sensor) {
     sm.registerListener(l, sensor, 5_000, android.os.Handler(th.looper))   // 200 Hz asked, off the main thread; the system gives what it can
 }
 
+/** The mouse pad, in the remote's middle where the arrows are: drag = move, tap = click, a finger held still = the button held
+ *  (then the phone or the finger selects text or drags), two fingers or the strip on the right = the wheel. */
 @SuppressLint("ClickableViewAccessibility")
-private fun MainActivity.airView(): FrameLayout {
-    val root = FrameLayout(this)
-    root.setBackgroundColor(BG)
-    root.isClickable = true                                          // touches do not fall through to the remote below
-    val page = col()
-    page.setPadding(dp(16), dp(20), dp(16), dp(20))
-    val head = label(T("air.title"), 24, TEXT)
-    head.typeface = android.graphics.Typeface.DEFAULT_BOLD
-    val top = LinearLayout(this)
-    top.gravity = Gravity.CENTER_VERTICAL
-    top.addView(head, LinearLayout.LayoutParams(0, -2, 1f))
-    val done = icon("@check", T("drawing.done"), ACCENT)
-    done.setOnClickListener { airClose() }
-    top.addView(done, LinearLayout.LayoutParams(dp(52), dp(44)))
-    page.addView(top)
-    page.addView(note(T("air.hint")), gap(6))
-
+internal fun MainActivity.airPad(): FrameLayout {
     val pad = FrameLayout(this)
     pad.background = box(CARD, 18)
-    val hint = label(T("air.pad"), 15, MUTED)
-    hint.gravity = Gravity.CENTER; hint.setPadding(dp(8), 0, dp(64), 0)   // clear of the scroll strip
+    val hint = label(T("air.pad"), 14, MUTED)
+    hint.gravity = Gravity.CENTER; hint.setPadding(dp(16), 0, dp(68), 0)   // clear of the scroll strip
     pad.addView(hint, FrameLayout.LayoutParams(-1, -1))
     val noAnim = try { android.provider.Settings.Global.getFloat(contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f } catch (e: Exception) { false }   // "Remove animations": no trail or ripple, haptics stay
     val fx = AirFx(this, noAnim, dp(1).toFloat())                     // the finger, its trail, the click ripple and the held tint, all drawn in this one view
@@ -175,7 +163,10 @@ private fun MainActivity.airView(): FrameLayout {
     val holdDown = Runnable { if (Air.touching && !moved && Air.buttons == 0) { Air.padHeld = true; airButton(true); pad.airHaptic(HapticFeedbackConstants.LONG_PRESS); fx.setHeld(true) } }
     pad.setOnTouchListener { v, ev ->
         when (ev.actionMasked) {
-            MotionEvent.ACTION_DOWN -> { fx.touch(ev.x, ev.y); downAt = ev.eventTime; sx = ev.x; sy = ev.y; lx = ev.x; ly = ev.y; lt = ev.eventTime; moved = false; drag = false; scrollY = 0f; Air.touching = true; dtap = ev.eventTime - lastTapUp < 300; v.postDelayed(holdDown, HOLD_MS) }   // a second touch soon after a tap: a drag if it moves
+            MotionEvent.ACTION_DOWN -> {
+                if (!airCan()) { val now = SystemClock.uptimeMillis(); if (now - Air.saidAt > 4000) { Air.saidAt = now; say(T("air.needs_adb"), true) } }
+                fx.touch(ev.x, ev.y); downAt = ev.eventTime; sx = ev.x; sy = ev.y; lx = ev.x; ly = ev.y; lt = ev.eventTime; moved = false; drag = false; scrollY = 0f; Air.touching = true; dtap = ev.eventTime - lastTapUp < 300; v.postDelayed(holdDown, HOLD_MS)   // a second touch soon after a tap: a drag if it moves
+            }
             MotionEvent.ACTION_POINTER_DOWN -> { if (!Air.padHeld) { moved = true; v.removeCallbacks(holdDown) }; scrollY = (ev.getY(0) + ev.getY(1)) / 2 }   // two fingers: a wheel, never a click
             MotionEvent.ACTION_POINTER_UP -> { val i = if (ev.actionIndex == 0) 1 else 0; lx = ev.getX(i); ly = ev.getY(i); lt = ev.eventTime }   // one finger left: carry on from where it is, no jump
             MotionEvent.ACTION_MOVE -> {
@@ -200,7 +191,7 @@ private fun MainActivity.airView(): FrameLayout {
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 Air.touching = false; fx.lift(); v.removeCallbacks(holdDown)
-                if (Air.buttons != 0 && !Air.clickHeld) { airButton(false); fx.setHeld(false) }           // the hold or the double-tap drag lets go
+                if (Air.buttons != 0) { airButton(false); fx.setHeld(false) }           // the hold or the double-tap drag lets go
                 val wasHeld = Air.padHeld; Air.padHeld = false
                 if (ev.actionMasked == MotionEvent.ACTION_UP && !moved && !wasHeld && ev.eventTime - downAt < HOLD_MS) { airClick(); v.airConfirm(); fx.ripple(ev.x, ev.y); lastTapUp = ev.eventTime }
                 v.performClick()
@@ -233,56 +224,26 @@ private fun MainActivity.airView(): FrameLayout {
         true
     }
     pad.addView(strip, FrameLayout.LayoutParams(dp(48), -1, Gravity.END).apply { setMargins(0, dp(8), dp(8), dp(8)) })
-    page.addView(pad, LinearLayout.LayoutParams(-1, 0, 1f).apply { topMargin = dp(12) })
-
-    val click = button("@mouse|" + T("air.click"), ACCENT)             // the thumb's: tap = click, hold = button down while the phone moves
-    click.textSize = 18f; click.maxLines = 1
-    val holdBuzz = Runnable { if (Air.clickHeld) click.airHaptic(HapticFeedbackConstants.LONG_PRESS) }   // still down after a moment: it is a drag-hold, a heavier beat
-    click.setOnTouchListener { v, ev ->
-        when (ev.actionMasked) {
-            MotionEvent.ACTION_DOWN -> { Air.clickHeld = true; airButton(true); v.airConfirm(); fx.setHeld(true); v.isPressed = true; v.postDelayed(holdBuzz, 350) }
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { Air.clickHeld = false; airButton(false); fx.setHeld(false); v.removeCallbacks(holdBuzz); v.isPressed = false; if (ev.actionMasked == MotionEvent.ACTION_UP) v.performClick() }
-        }
-        true
-    }
-    page.addView(click, LinearLayout.LayoutParams(-1, dp(76)).apply { topMargin = dp(10) })
-    val row = LinearLayout(this)
-    val back = button("@back|" + T("rkey.back"), BTN)
-    back.setOnClickListener { press(4) }
-    val home = button("@home|" + T("rkey.home"), BTN)
-    home.setOnClickListener { press(3) }
-    val pause = button("@pause|" + T("air.pause"), SOFT)
-    pause.setOnClickListener {
-        Air.paused = !Air.paused
-        pause.setLabel(if (Air.paused) "@play|" + T("air.resume") else "@pause|" + T("air.pause"))
-        pause.setOn(Air.paused, 14)
-    }
-    for ((i, b) in listOf(back, home, pause).withIndex()) {
-        b.textSize = 14f; b.maxLines = 1; b.setPadding(dp(8), 0, dp(8), 0)   // "Tạm dừng" wrapped and was cut in a third of the row
-        row.addView(b, LinearLayout.LayoutParams(0, dp(52), 1f).apply { if (i > 0) leftMargin = dp(8) })
-    }
-    page.addView(row, gap(12))
-    root.addView(page, FrameLayout.LayoutParams(-1, -1))
-    return root
+    return pad
 }
 
 /** Holds the pointer's button down or lets it go; the gyroscope and the finger both drag while it is down. */
 private fun MainActivity.airButton(down: Boolean) {
     Air.freezeUntil = System.currentTimeMillis() + 80
     Air.buttons = if (down) 1 else 0
-    val t = tv
-    if (t != null && t.ready()) t.mouseMove(0, 0, Air.buttons) else basic?.pointerHold(down)
+    val t = airTv()
+    if (t != null) t.mouseMove(0, 0, Air.buttons) else basic?.pointerHold(down)
 }
 
 private fun MainActivity.airClick() {
     Air.freezeUntil = System.currentTimeMillis() + 80
-    val t = tv
-    if (t != null && t.ready()) { t.mouseMove(0, 0, 1); t.mouseMove(0, 0, 0) } else basic?.pointerClick()   // down, then up
+    val t = airTv()
+    if (t != null) { t.mouseMove(0, 0, 1); t.mouseMove(0, 0, 0) } else basic?.pointerClick()   // down, then up
 }
 
 private fun MainActivity.airWheel(n: Int) {
-    val t = tv
-    if (t != null && t.ready()) t.mouseMove(0, 0, 0, n.coerceIn(-127, 127)) else basic?.pointerScroll(n)
+    val t = airTv()
+    if (t != null) t.mouseMove(0, 0, 0, n.coerceIn(-127, 127)) else basic?.pointerScroll(n)
 }
 
 /** A test feed: when the file exists (adb shell touch /sdcard/Android/data/dev.tvremote.phone/files/air_synth) a thread sends a

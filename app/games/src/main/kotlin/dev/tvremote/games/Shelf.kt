@@ -72,6 +72,9 @@ object Browse {
         "strategy" to ("Chiến thuật" to "Strategy"), "fighting" to ("Đối kháng" to "Fighting"), "music" to ("Âm nhạc" to "Music"),
     )
 
+    /** A genre's id ("sports") from the words [genre] gave, in either language; null for one the catalog made up. */
+    fun genreId(words: String): String? = GENRES.entries.firstOrNull { (_, w) -> words.equals(w.first, true) || words.equals(w.second, true) }?.key
+
     /** The catalog's "genre": a word (an id like "sports" or the words themselves), {"vi":..,"en":..}, or a list of either (the first). null = none. */
     fun genre(v: Any?, en: Boolean): String? {
         val raw = when (v) {

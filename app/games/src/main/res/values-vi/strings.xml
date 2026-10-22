@@ -98,6 +98,7 @@
     <string name="meta_n">%1$d người chơi</string>
     <string name="pin_full">Dock TV Home đã đầy (6) — bỏ bớt một mục rồi ghim lại</string>
     <string name="refresh_pill">Làm mới</string>
+    <string name="cols_pill">%d cột</string>
     <string name="refreshing">Đang cập nhật…</string>
     <string name="refresh_ok">Đã cập nhật · %1$d game</string>
     <string name="refresh_fail">Không kết nối được (giữ %1$d game)</string>

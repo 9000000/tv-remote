@@ -14,6 +14,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.PathInterpolator
@@ -144,8 +145,15 @@ class LibraryActivity : ComponentActivity() {
         server.onKey = { _, _, _ -> }
         server.onPlayers = { }
         server.onAdded = { runOnUiThread { if (dl == null && overlay == null) reload() } }
-        if (overlay == null && searchBox?.hasFocus() != true) reload()
+        if (overlay == null && searchBox?.hasFocus() != true) {
+            // back from a game: the same list stays as it was (its scroll, the tile in focus); only a changed list is built again
+            val was = shown(); if (scroller != null && was.isNotEmpty()) { buildItems(); if (shown() == was) return }
+            reload()
+        }
     }
+
+    /** What the list shows, to tell whether it changed while a game was open. */
+    private fun shown() = (lib + sugs).joinToString("\n") { it.id + "|" + it.name + "|" + it.genre + "|" + it.max + "|" + it.min + "|" + it.sysKey }
 
     override fun onDestroy() { GameServer.release(); super.onDestroy() }
 
@@ -241,6 +249,8 @@ class LibraryActivity : ComponentActivity() {
     private fun reload() {
         if (!::root.isInitialized) return
         overlay = null
+        val keepY = scroller?.scrollY ?: 0                            // built again: it opens where it was, not at the top scrolling down
+        jump = true
         root.removeAllViews(); pills.clear(); tileKeys.clear()
         buildItems()
         if (lib.isEmpty() && sugs.isEmpty()) {
@@ -266,8 +276,11 @@ class LibraryActivity : ComponentActivity() {
             override fun requestChildRectangleOnScreen(child: View, rectangle: android.graphics.Rect, immediate: Boolean) = false
         }.apply { addView(col); clipChildren = false; clipToPadding = false; isSmoothScrollingEnabled = false }
         root.addView(scroller, FrameLayout.LayoutParams(-1, -1))
+        scroller?.let { sv -> sv.post { if (jump) sv.scrollTo(0, keepY) }; sv.postDelayed({ jump = false }, 400) }
         renderSections()
     }
+
+    private var jump = false                                          // the next centring jumps instead of gliding (a rebuilt list)
 
     /** A mouse wheel (the Air Mouse's scroll strip) scrolls the page wherever the pointer rests. Android hands the wheel only to the view
      *  under the pointer, and a tile there takes it (it is clickable) without scrolling: the strip worked only over the gaps between tiles. */
@@ -310,6 +323,14 @@ class LibraryActivity : ComponentActivity() {
         var rb: TextView? = null
         rb = pill(getString(R.string.refresh_pill), 16f, lead = R.drawable.ic_refresh) { rb?.let { refreshNow(it) } }.apply { setPadding(dp(16), dp(10), dp(18), dp(10)) }
         addView(rb, LinearLayout.LayoutParams(-2, dp(46)).apply { marginEnd = dp(12) })
+        var cb: TextView? = null                                      // 4, 5 or 6 games a row: smaller tiles, more of them on the screen
+        cb = pill(getString(R.string.cols_pill, cols), 16f, lead = R.drawable.ic_grid) {
+            cols = if (cols >= 6) 4 else cols + 1
+            getSharedPreferences("games", MODE_PRIVATE).edit().putInt("cols", cols).apply()
+            cb?.let { setPill(it, getString(R.string.cols_pill, cols)); it.post { it.requestFocus() } }
+            renderSections()
+        }.apply { setPadding(dp(16), dp(10), dp(18), dp(10)) }
+        addView(cb, LinearLayout.LayoutParams(-2, dp(46)).apply { marginEnd = dp(12) })
         addView(f, LinearLayout.LayoutParams(dp(300), dp(46)))
     }
 
@@ -353,7 +374,7 @@ class LibraryActivity : ComponentActivity() {
         val row = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(8), dp(6), dp(8), dp(6)) }
         val allW = getString(R.string.f_all)
         val other = getString(R.string.genre_other)
-        class Kind(val icon: Int, val label: String, val values: List<Pair<String, String>>, val get: () -> String?, val set: (String?) -> Unit)
+        class Kind(val icon: Int, val label: String, val values: List<Pair<String, String>>, val get: () -> String?, val set: (String?) -> Unit, val icons: ((String?) -> Int?)? = null)
         val ps = listOf(1 to R.string.f_players_1, 2 to R.string.f_players_2, 3 to R.string.f_players_34).filter { (c, _) -> all.any { Browse.playersOk(c, it.max, it.min) } }.map { it.first.toString() to getString(it.second) }
         val sys = all.map { it.sysKey to it.sysLabel }.distinctBy { it.first }.sortedBy { it.second }
         val genres = all.groupingBy { it.genre }.eachCount().entries.filter { it.key != other || all.any { a -> a.genre != other } }
@@ -361,7 +382,7 @@ class LibraryActivity : ComponentActivity() {
         val kinds = listOf(
             Kind(R.drawable.ic_users, getString(R.string.f_k_players), ps, { fPlayers?.toString() }, { fPlayers = it?.toInt() }),
             Kind(R.drawable.ic_gamepad, getString(R.string.f_k_system), sys, { fSystem }, { fSystem = it }),
-            Kind(R.drawable.ic_tag, getString(R.string.f_k_genre), genres, { fGenre }, { fGenre = it }),
+            Kind(R.drawable.ic_tag, getString(R.string.f_k_genre), genres, { fGenre }, { fGenre = it }, { g -> if (g == null) R.drawable.ic_gamepad else genreIcon(g) }),
         ).filter { it.values.size > 1 || (it.values.size == 1 && it.get() != null) }
         val buttons = ArrayList<Pair<Kind, TextView>>()
         var clear: TextView? = null
@@ -371,7 +392,7 @@ class LibraryActivity : ComponentActivity() {
         }
         kinds.forEach { k ->
             var b: TextView? = null
-            b = pill(k.label, 16f, lead = k.icon, trail = R.drawable.ic_down) { b?.let { anchor -> dropdown(anchor, k.label, listOf<Pair<String?, String>>(null to allW) + k.values, k.get()) { v -> k.set(v); upd(); renderSections(); anchor.post { anchor.requestFocus() } } } }
+            b = pill(k.label, 16f, lead = k.icon, trail = R.drawable.ic_down) { b?.let { anchor -> dropdown(anchor, k.label, listOf<Pair<String?, String>>(null to allW) + k.values, k.get(), k.icons) { v -> k.set(v); upd(); renderSections(); anchor.post { anchor.requestFocus() } } } }
             buttons += k to b; row.addView(b)
         }
         clear = pill(getString(R.string.f_clear), 16f, lead = R.drawable.ic_close) { fPlayers = null; fSystem = null; fGenre = null; buttons.firstOrNull()?.second?.requestFocus(); upd(); renderSections() }       // the pill goes away: focus moves to the first dropdown
@@ -383,7 +404,7 @@ class LibraryActivity : ComponentActivity() {
     }
 
     /** A small list under [anchor]: "All" first, the current value ticked; OK picks and closes, Back closes. */
-    private fun dropdown(anchor: View, title: String, options: List<Pair<String?, String>>, cur: String?, pick: (String?) -> Unit) {
+    private fun dropdown(anchor: View, title: String, options: List<Pair<String?, String>>, cur: String?, icons: ((String?) -> Int?)? = null, pick: (String?) -> Unit) {
         lastFocus = anchor
         val loc = IntArray(2); anchor.getLocationInWindow(loc); val rl = IntArray(2); root.getLocationInWindow(rl)
         val x = loc[0] - rl[0]; val y = loc[1] - rl[1] + anchor.height + dp(6)
@@ -392,13 +413,14 @@ class LibraryActivity : ComponentActivity() {
         options.forEach { (v, t) ->
             val on = v == cur
             val r = TextView(this).apply {
-                text = (if (on) "\u2713  " else "     ") + t; textSize = 18f; setTextColor(getColor(R.color.tv_ink)); gravity = Gravity.CENTER_VERTICAL; maxLines = 1
+                text = if (icons != null) t + (if (on) "  \u2713" else "") else (if (on) "\u2713  " else "     ") + t; textSize = 18f; setTextColor(getColor(R.color.tv_ink)); gravity = Gravity.CENTER_VERTICAL; maxLines = 1
                 setPadding(dp(16), 0, dp(24), 0); isFocusable = true; isClickable = true; minWidth = maxOf(anchor.width, dp(240))
                 background = StateListDrawable().apply {
                     addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply { setColor(0x40FFFFFF); cornerRadius = dp(10).toFloat(); setStroke(dp(2), 0xCCFFFFFF.toInt()) })
                     addState(intArrayOf(), GradientDrawable().apply { setColor(0); cornerRadius = dp(10).toFloat() })
                 }
                 setOnClickListener { closeOverlay(); pick(v) }
+                icons?.invoke(v)?.let { r -> val d = getDrawable(r)!!.mutate(); d.setTintList(textColors); d.setBounds(0, 0, dp(22), dp(22)); setCompoundDrawablesRelative(d, null, null, null); compoundDrawablePadding = dp(12) }
             }
             if (on || (cur == null && v == null)) sel = r
             list.addView(r, LinearLayout.LayoutParams(-2, dp(46)))
@@ -420,6 +442,14 @@ class LibraryActivity : ComponentActivity() {
         scroller?.descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
         root.addView(v, ViewGroup.LayoutParams(-1, -1))
         sel?.requestFocus()
+    }
+
+    /** A genre's line icon in the dropdown; one the catalog made up gets the tag. */
+    private fun genreIcon(words: String): Int = when (Browse.genreId(words)) {
+        "action" -> R.drawable.ic_zap; "sports", "sport" -> R.drawable.ic_trophy; "quiz" -> R.drawable.ic_help; "racing" -> R.drawable.ic_flag
+        "shooter" -> R.drawable.ic_crosshair; "puzzle" -> R.drawable.ic_puzzle; "platformer" -> R.drawable.ic_mountain; "party" -> R.drawable.ic_users
+        "arcade" -> R.drawable.ic_joystick; "adventure" -> R.drawable.ic_compass; "rpg" -> R.drawable.ic_sword; "strategy" -> R.drawable.ic_crown
+        "fighting" -> R.drawable.ic_swords; "music" -> R.drawable.ic_music; else -> R.drawable.ic_tag
     }
 
     private fun newGroup() = askName(getString(R.string.grp_new), Shelf.get(this).freeName(getString(R.string.grp_default))) { n -> val g = Shelf.newGroup(this, n); wantFolder = g.id; renderSections() }
@@ -479,7 +509,7 @@ class LibraryActivity : ComponentActivity() {
         })
         if (items.isEmpty() && !add) addView(label(getString(R.string.grp_empty), 16f, 0xFF6B7385.toInt()).apply { gravity = Gravity.START; setPadding(dp(8), 0, 0, dp(18)) })
         else addView(GridLayout(context).apply {
-            columnCount = 4; clipChildren = false; clipToPadding = false
+            columnCount = cols; clipChildren = false; clipToPadding = false
             items.forEach { i -> addView(gameTile(i, key)) }
             if (add) addView(addTile())
         })
@@ -569,17 +599,21 @@ class LibraryActivity : ComponentActivity() {
     private fun askName(title: String, initial: String, ok: (String) -> Unit) {
         lateinit var f: EditText
         val save = { val n = f.text.toString().trim(); if (n.isNotEmpty()) { closeOverlay(); ok(n.take(40)) } }
-        popup(title, listOf(getString(R.string.ok) to { save() }), extra = { col ->
+        popup(title, listOf(getString(R.string.ok) to { save() }), icons = listOf(R.drawable.ic_check), extra = { col ->
             f = EditText(this).apply {
                 setText(initial); setSelection(initial.length); setSingleLine(true); textSize = 22f; setTextColor(Color.WHITE); gravity = Gravity.CENTER
                 imeOptions = EditorInfo.IME_ACTION_DONE; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
                 background = focusBg(10, 0xFF2A3042.toInt(), 0xFF3B4460.toInt())
-                setOnEditorActionListener { v, _, _ -> (getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).hideSoftInputFromWindow(v.windowToken, 0); true }
+                setOnEditorActionListener { v, _, _ -> (getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).hideSoftInputFromWindow(v.windowToken, 0); below(col, v)?.requestFocus(); true }
+                // a one-line field keeps Up / Down for its cursor: Down goes on to OK and Close, Up stays
+                setOnKeyListener { v, k, e -> if (k == KeyEvent.KEYCODE_DPAD_DOWN) { if (e.action == KeyEvent.ACTION_DOWN) below(col, v)?.requestFocus(); true } else k == KeyEvent.KEYCODE_DPAD_UP }
             }
             col.addView(f, LinearLayout.LayoutParams(dp(420), dp(56)).apply { topMargin = dp(8) })
         })
         f.requestFocus()
     }
+
+    private fun below(col: ViewGroup, v: View): View? = col.getChildAt(col.indexOfChild(v) + 1)
 
     /** SHA-256 of a ROM (under 4 MB), kept by name + size + date so each file is read once. */
     private fun shaOf(f: File): String? {
@@ -672,8 +706,10 @@ class LibraryActivity : ComponentActivity() {
 
     // ---- a tile: TV Home's, one for one (same ring, rise, spring and shine; its code is app/home HomeActivity.Tile)
 
-    private val tileW get() = dp(196)
-    private val tileH get() = dp(123)
+    private var cols = 0
+        get() { if (field == 0) field = getSharedPreferences("games", MODE_PRIVATE).getInt("cols", 4).coerceIn(4, 6); return field }
+    private val tileW get() = dp(880 / cols - 24)                     // a row stays 880 dp wide (196 dp tiles at 4) with its 24 dp gaps
+    private val tileH get() = tileW * 123 / 196
     private val ringOut get() = dp(3)
     private val animOn: Boolean get() = android.provider.Settings.Global.getFloat(contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
     private val calm: Boolean by lazy {                               // little memory (TCL's 1 GB boxes): only the card grows, shorter
@@ -727,10 +763,10 @@ class LibraryActivity : ComponentActivity() {
             val dark = Color.rgb(Color.red(i.color) * 45 / 100, Color.green(i.color) * 45 / 100, Color.blue(i.color) * 45 / 100)
             val fb = FrameLayout(this).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(i.color, dark)) }
             fb.addView(TextView(this).apply {                                // the designed picture: initials, and the name, until (or without) the real one
-                text = ThumbNames.initials(i.name); textSize = 36f; typeface = android.graphics.Typeface.DEFAULT_BOLD; setTextColor(0xE6FFFFFF.toInt()); gravity = Gravity.CENTER; setPadding(0, 0, 0, dp(16))
+                text = ThumbNames.initials(i.name); textSize = 144f / cols; typeface = android.graphics.Typeface.DEFAULT_BOLD; setTextColor(0xE6FFFFFF.toInt()); gravity = Gravity.CENTER; setPadding(0, 0, 0, dp(16))
             }, FrameLayout.LayoutParams(-1, -1))
             fb.addView(TextView(this).apply {
-                text = if (dl) getString(R.string.get_rom, i.name) else i.name; textSize = 14f; setTextColor(Color.WHITE); maxLines = 2; gravity = Gravity.CENTER; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(dp(8), 0, dp(8), dp(8)); setShadowLayer(4f, 0f, 1f, Color.BLACK)
+                text = if (dl) getString(R.string.get_rom, i.name) else i.name; textSize = if (cols > 5) 12f else 14f; setTextColor(Color.WHITE); maxLines = 2; gravity = Gravity.CENTER; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(dp(8), 0, dp(8), dp(8)); setShadowLayer(4f, 0f, 1f, Color.BLACK)
             }, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
             face.addView(fb, FrameLayout.LayoutParams(-1, -1))
             fb
@@ -796,8 +832,8 @@ class LibraryActivity : ComponentActivity() {
         val outer = shell(0xFF1A1F2B.toInt()) { face ->
             val c = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-                addView(TextView(context).apply { text = "+"; textSize = 52f; setTextColor(Color.WHITE); includeFontPadding = false; gravity = Gravity.CENTER; typeface = android.graphics.Typeface.create("sans-serif-light", android.graphics.Typeface.NORMAL) })
-                addView(label(getString(R.string.add_game), 15f).apply { setTextColor(0xFFC9CFDD.toInt()) })
+                addView(TextView(context).apply { text = "+"; textSize = 208f / cols; setTextColor(Color.WHITE); includeFontPadding = false; gravity = Gravity.CENTER; typeface = android.graphics.Typeface.create("sans-serif-light", android.graphics.Typeface.NORMAL) })
+                addView(label(getString(R.string.add_game), if (cols > 5) 13f else 15f).apply { setTextColor(0xFFC9CFDD.toInt()) })
             }
             face.addView(c, FrameLayout.LayoutParams(-1, -1)); c
         }
@@ -850,8 +886,9 @@ class LibraryActivity : ComponentActivity() {
             val to = if (want < head) 0 else want                       // never half-hide the header: the first rows stay as they are
             scrollAnim?.cancel()
             val from = sv.scrollY
+            val jumped = jump; jump = false
             if (from == to) return@post
-            if (!animOn) { sv.scrollTo(0, to); return@post }
+            if (!animOn || jumped) { sv.scrollTo(0, to); return@post }
             scrollAnim = android.animation.ValueAnimator.ofInt(from, to).apply {
                 duration = 200; interpolator = android.view.animation.DecelerateInterpolator()
                 addUpdateListener { sv.scrollTo(0, it.animatedValue as Int) }
