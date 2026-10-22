@@ -413,7 +413,7 @@ class HomeActivity : Activity() {
     // ---- what is shown ----
 
     private fun show() {
-        moving?.let { it.carry(false); it.arrows(false, false, false, false); hint(false); for (o in tiles()) { o.animate().cancel(); o.alpha = 1f } }; moving = null                           // anything that rebuilds the tiles ends a move that was not confirmed: the saved order wins
+        moving?.let { it.carry(false); hint(false); for (o in tiles()) { o.animate().cancel(); o.alpha = 1f } }; moving = null                           // anything that rebuilds the tiles ends a move that was not confirmed: the saved order wins
         val keep = (currentFocus as? Tile)?.app?.pkg
         Motion.read(this, conf)
         if (!Motion.glass) glass.hide()
@@ -477,7 +477,6 @@ class HomeActivity : Activity() {
         t.requestFocus(); t.carry(true)
         for (o in tiles()) if (o !== t) o.animate().cancel().also { o.animate().alpha(DIM).setDuration(if (Motion.on) 150L else 0L).start() }   // the rest steps back
         hint(true)
-        carryArrows(t)
     }
 
     private fun hint(on: Boolean) {
@@ -486,16 +485,11 @@ class HomeActivity : Activity() {
         else hintView.animate().alpha(0f).setDuration(if (Motion.on) 150L else 0L).withEndAction { hintView.visibility = View.GONE }.start()
     }
 
-    /** Where the tile may still go: its own list (the favourites, or the grid); the chevrons beside it show the ways that are open. */
+    /** Where the tile may still go: its own list (the favourites, or the grid) */
     private fun moveRange(t: Tile): IntRange {
         val all = tiles(); val at = all.indexOf(t)
         val favs = dockCount(); val end = favs + pins.size
         return if (at < favs) 0 until favs else end until all.indexOfLast { it.app != null } + 1
-    }
-
-    private fun carryArrows(t: Tile) {
-        val r = moveRange(t); val at = tiles().indexOf(t); val cols = conf.optInt("cols", HomeConfig.COLS_DEFAULT)
-        t.arrows(at - 1 in r, at + 1 in r, at - cols in r, at + cols in r)
     }
 
     /** The favourites are the first tiles, as many as the saved dock holds (pins and the rest follow). */
@@ -521,7 +515,7 @@ class HomeActivity : Activity() {
         grid.removeAllViews()
         fill(all, cols, dp(GRID_GAP))
         stepping = true; try { t.requestFocus() } finally { stepping = false }
-        t.carry(true); carryArrows(t)
+        t.carry(true)
         grid.viewTreeObserver.addOnPreDrawListener(object : android.view.ViewTreeObserver.OnPreDrawListener {
             override fun onPreDraw(): Boolean {
                 grid.viewTreeObserver.removeOnPreDrawListener(this)
@@ -544,7 +538,7 @@ class HomeActivity : Activity() {
     private fun endMove(save: Boolean) {
         val t = moving ?: return
         moving = null
-        t.carry(false); t.arrows(false, false, false, false)
+        t.carry(false)
         hint(false)
         for (o in tiles()) o.animate().cancel().also { o.animate().alpha(1f).setDuration(if (Motion.on) 150L else 0L).start() }
         if (save && moveRange(t).first == 0) {
@@ -952,24 +946,6 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
         if (on) { ring.animate().cancel(); ring.alpha = 1f }          // the accent ring even where the focus is the glass
         if (!Motion.on) { card.scaleX = s; card.scaleY = s; card.translationZ = if (on) lift * 1.5f else 0f; return }
         card.animate().scaleX(s).scaleY(s).translationZ(if (on) lift * 1.5f else 0f).setDuration(150).setInterpolator(Motion.glide).start()
-    }
-
-    /** The ways a carried tile can still go, as small chevrons on its edges. */
-    fun arrows(l: Boolean, r: Boolean, u: Boolean, d: Boolean) {
-        val on = booleanArrayOf(l, r, u, d)
-        for (i in 0 until 4) chevrons[i].visibility = if (on[i]) VISIBLE else GONE
-    }
-    private val chevrons: Array<ImageView> by lazy {
-        val ids = intArrayOf(R.drawable.ic_left, R.drawable.ic_right, R.drawable.ic_up, R.drawable.ic_down)
-        val gr = intArrayOf(Gravity.START or Gravity.CENTER_VERTICAL, Gravity.END or Gravity.CENTER_VERTICAL, Gravity.TOP or Gravity.CENTER_HORIZONTAL, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL)
-        val sz = (across / 11).toInt().coerceAtLeast(20); val m = sz / 2
-        Array(4) { i ->
-            ImageView(context).apply {
-                setImageResource(ids[i]); setPadding(sz / 6, sz / 6, sz / 6, sz / 6); visibility = GONE
-                background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(0xCC101420.toInt()); setStroke(2, RING_ACCENT) }
-                face.addView(this, FrameLayout.LayoutParams(sz, sz, gr[i]).apply { setMargins(m, m, m, m) })
-            }
-        }
     }
 
     fun focus(on: Boolean) {
