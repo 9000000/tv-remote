@@ -107,12 +107,12 @@ class LibraryActivity : ComponentActivity() {
     private fun refreshNow(b: TextView) {
         if (refreshing) return
         refreshing = true
-        val was = b.text; setPill(b, getString(R.string.refreshing))
+        val spin = android.animation.ObjectAnimator.ofFloat(b, View.ROTATION, 0f, 360f).apply { duration = 900; repeatCount = android.animation.ValueAnimator.INFINITE; interpolator = android.view.animation.LinearInterpolator(); start() }
         Thread {
             val app = applicationContext
             val changed = Catalog.refresh(app, true); val ok = Catalog.reached
             runOnUiThread {
-                refreshing = false; setPill(b, was.toString())
+                refreshing = false; spin.cancel(); b.rotation = 0f
                 if (isDestroyed) return@runOnUiThread
                 val cat = Catalog.peek(app); val n = (cat.optJSONArray("web")?.length() ?: 0) + (cat.optJSONArray("homebrew")?.length() ?: 0)
                 android.widget.Toast.makeText(this, getString(if (ok) R.string.refresh_ok else R.string.refresh_fail, n), android.widget.Toast.LENGTH_SHORT).show()
@@ -293,7 +293,7 @@ class LibraryActivity : ComponentActivity() {
 
     /** The app's mark and name, the search field on the right. */
     private fun header(): View = LinearLayout(this).apply {
-        gravity = Gravity.CENTER_VERTICAL; setPadding(dp(10), 0, dp(8), dp(12))
+        gravity = Gravity.CENTER_VERTICAL; setPadding(dp(10), 0, dp(8), dp(8))
         addView(android.widget.ImageView(context).apply {
             setImageResource(R.drawable.icon); scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
             outlineProvider = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, resources.getDimension(R.dimen.tv_head_radius)) } }
@@ -301,7 +301,7 @@ class LibraryActivity : ComponentActivity() {
         }, LinearLayout.LayoutParams(resources.getDimensionPixelSize(R.dimen.tv_head_icon), resources.getDimensionPixelSize(R.dimen.tv_head_icon)).apply { marginEnd = resources.getDimensionPixelSize(R.dimen.tv_head_gap) })
         addView(label(getString(R.string.app_name), 24f, getColor(R.color.tv_ink)).apply { gravity = Gravity.START or Gravity.CENTER_VERTICAL; typeface = android.graphics.Typeface.DEFAULT_BOLD }, LinearLayout.LayoutParams(0, -2, 1f))
         val f = EditText(context).apply {
-            hint = getString(R.string.search_hint); setHintTextColor(0x99FFFFFF.toInt()); setTextColor(Color.WHITE); textSize = 18f
+            hint = getString(R.string.search_hint); setHintTextColor(0x99FFFFFF.toInt()); setTextColor(Color.WHITE); textSize = 16f
             setText(query); setSingleLine(true); imeOptions = EditorInfo.IME_ACTION_SEARCH; inputType = android.text.InputType.TYPE_CLASS_TEXT
             setPadding(dp(18), 0, dp(20), 0); gravity = Gravity.CENTER_VERTICAL
             setCompoundDrawablesRelative(getDrawable(R.drawable.ic_search)!!.mutate().also { d -> d.setBounds(0, 0, dp(22), dp(22)); d.setTint(0x99FFFFFF.toInt()) }, null, null, null); compoundDrawablePadding = dp(12)
@@ -320,18 +320,18 @@ class LibraryActivity : ComponentActivity() {
             }
         }
         searchBox = f
-        var rb: TextView? = null
-        rb = pill(getString(R.string.refresh_pill), 16f, lead = R.drawable.ic_refresh) { rb?.let { refreshNow(it) } }.apply { setPadding(dp(16), dp(10), dp(18), dp(10)) }
-        addView(rb, LinearLayout.LayoutParams(-2, dp(46)).apply { marginEnd = dp(12) })
+        var rb: TextView? = null                                      // an icon alone: it turns while the site is asked
+        rb = pill("", 15f, lead = R.drawable.ic_refresh) { rb?.let { refreshNow(it) } }.apply { contentDescription = getString(R.string.refresh_pill); setPadding(dp(11), 0, 0, 0); minWidth = 0; compoundDrawablePadding = 0 }
+        addView(rb, LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginEnd = dp(12) })
         var cb: TextView? = null                                      // 4, 5 or 6 games a row: smaller tiles, more of them on the screen
-        cb = pill(getString(R.string.cols_pill, cols), 16f, lead = R.drawable.ic_grid) {
+        cb = pill(cols.toString(), 15f, lead = R.drawable.ic_grid) {
             cols = if (cols >= 6) 4 else cols + 1
             getSharedPreferences("games", MODE_PRIVATE).edit().putInt("cols", cols).apply()
-            cb?.let { setPill(it, getString(R.string.cols_pill, cols)); it.post { it.requestFocus() } }
+            cb?.let { setPill(it, cols.toString()); it.post { it.requestFocus() } }
             renderSections()
-        }.apply { setPadding(dp(16), dp(10), dp(18), dp(10)) }
-        addView(cb, LinearLayout.LayoutParams(-2, dp(46)).apply { marginEnd = dp(12) })
-        addView(f, LinearLayout.LayoutParams(dp(300), dp(46)))
+        }.apply { contentDescription = getString(R.string.cols_pill, cols) }
+        addView(cb, LinearLayout.LayoutParams(-2, dp(40)).apply { marginEnd = dp(12) })
+        addView(f, LinearLayout.LayoutParams(dp(280), dp(40)))
     }
 
     private fun firstTile(): View? { val b = sections ?: return null; return findTile(b) }
@@ -387,15 +387,15 @@ class LibraryActivity : ComponentActivity() {
         val buttons = ArrayList<Pair<Kind, TextView>>()
         var clear: TextView? = null
         fun upd() {
-            buttons.forEach { (k, b) -> val v = k.get(); setPill(b, k.label + ": " + (k.values.firstOrNull { it.first == v }?.second ?: allW)); b.isSelected = v != null }
+            buttons.forEach { (k, b) -> val v = k.get(); setPill(b, k.values.firstOrNull { it.first == v }?.second ?: k.label); b.isSelected = v != null }
             clear?.visibility = if (fPlayers != null || fSystem != null || fGenre != null) View.VISIBLE else View.GONE
         }
         kinds.forEach { k ->
             var b: TextView? = null
-            b = pill(k.label, 16f, lead = k.icon, trail = R.drawable.ic_down) { b?.let { anchor -> dropdown(anchor, k.label, listOf<Pair<String?, String>>(null to allW) + k.values, k.get(), k.icons) { v -> k.set(v); upd(); renderSections(); anchor.post { anchor.requestFocus() } } } }
+            b = pill(k.label, 15f, lead = k.icon, trail = R.drawable.ic_down) { b?.let { anchor -> dropdown(anchor, k.label, listOf<Pair<String?, String>>(null to allW) + k.values, k.get(), k.icons) { v -> k.set(v); upd(); renderSections(); anchor.post { anchor.requestFocus() } } } }
             buttons += k to b; row.addView(b)
         }
-        clear = pill(getString(R.string.f_clear), 16f, lead = R.drawable.ic_close) { fPlayers = null; fSystem = null; fGenre = null; buttons.firstOrNull()?.second?.requestFocus(); upd(); renderSections() }       // the pill goes away: focus moves to the first dropdown
+        clear = pill(getString(R.string.f_clear), 15f, lead = R.drawable.ic_close) { fPlayers = null; fSystem = null; fGenre = null; buttons.firstOrNull()?.second?.requestFocus(); upd(); renderSections() }       // the pill goes away: focus moves to the first dropdown
         row.addView(clear)
         pills.clear()
         updFilters = { upd() }
