@@ -165,6 +165,7 @@
     <string name="c_motion_auto">Tự động</string>
     <string name="c_motion_calm">Nhẹ</string>
     <string name="c_motion_full">Đầy đủ</string>
+    <string name="c_cols">Số cột</string>
     <string name="c_focus">Ô đang chọn</string>
     <string name="c_focus_glass">Kính</string>
     <string name="c_focus_ring">Viền xanh</string>

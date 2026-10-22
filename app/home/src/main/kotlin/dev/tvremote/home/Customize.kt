@@ -172,7 +172,7 @@ object Customize {
                 col.addView(pair, LinearLayout.LayoutParams(-1, -2).apply { if (inRow == 2) topMargin = gap }); inRow = 0
             }
             var pick = choices?.indexOfFirst { it.first == conf.optString(key) }?.coerceAtLeast(0) ?: 0
-            var on = if (choices != null) pick > 0 else conf.optBoolean(key, true)
+            var on = if (choices != null) pick > 0 || key == "cols" else conf.optBoolean(key, true)
             val ic = ImageView(a).apply { setImageResource(res) }
             val state = label("", 12f, DIM)
             val t = LinearLayout(a).apply {
@@ -199,7 +199,7 @@ object Customize {
             t.onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
             t.setOnClickListener {
                 if (choices != null) {                                 // a new language builds the screen again (HomeActivity), this panel with it
-                    pick = (pick + 1) % choices.size; on = pick > 0; paint()
+                    pick = (pick + 1) % choices.size; on = pick > 0 || key == "cols"; paint()
                     Store.change(a, JSONObject().put(key, choices[pick].first)); return@setOnClickListener
                 }
                 on = !on
@@ -217,6 +217,7 @@ object Customize {
             listOf("" to a.getString(R.string.c_motion_auto), "calm" to a.getString(R.string.c_motion_calm), "full" to a.getString(R.string.c_motion_full)))
         tile(R.drawable.ic_expand, a.getString(R.string.c_focus), null, "focus",
             listOf("ring" to a.getString(R.string.c_focus_ring), "glass" to a.getString(R.string.c_focus_glass)))
+        tile(R.drawable.ic_expand, a.getString(R.string.c_cols), null, "cols", (HomeConfig.COLS_MIN..HomeConfig.COLS_MAX).map { "$it" to "$it" })
         tile(R.drawable.ic_moon, a.getString(R.string.dream), a.getString(R.string.dream_sub), "dream")
         tile(R.drawable.ic_globe, a.getString(R.string.c_lang), null, "lang",
             listOf("" to a.getString(R.string.c_lang_tv), "vi" to "Tiếng Việt", "en" to "English"))

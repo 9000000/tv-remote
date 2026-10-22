@@ -11,6 +11,15 @@ class HomeConfigTest {
     private fun dock(c: JSONObject) = c.getJSONArray("dock").let { a -> List(a.length()) { a.getString(it) } }
     private fun hidden(c: JSONObject) = c.getJSONArray("hidden").let { a -> List(a.length()) { a.getString(it) } }
 
+    @Test fun colsDefaultToFiveAndStayInRange() {
+        assertEquals(5, HomeConfig.clean(JSONObject()).getInt("cols"))
+        assertEquals(4, HomeConfig.clean(JSONObject().put("cols", 2)).getInt("cols"))
+        assertEquals(8, HomeConfig.clean(JSONObject().put("cols", 99)).getInt("cols"))
+        assertEquals(6, HomeConfig.clean(JSONObject().put("cols", "6")).getInt("cols"))
+        assertEquals(7, HomeConfig.merge(JSONObject(), JSONObject().put("cols", 7)).getInt("cols"))
+        assertEquals(7, HomeConfig.clean(HomeConfig.clean(JSONObject().put("cols", 7))).getInt("cols"))
+    }
+
     @Test fun emptyGivesTheDefaults() {
         val c = HomeConfig.clean(JSONObject())
         assertEquals(emptyList<String>(), dock(c))

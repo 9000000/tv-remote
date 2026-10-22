@@ -24,6 +24,8 @@ import org.json.JSONObject
  *   motion  how much moves while [anim] is on: "" this TV's choice (calm on one with little memory, 1.5 GB or less, or that Android
  *           calls low on RAM), "calm" (no overshoot, shorter, only the card grows: fewer frames on a weak chip), "full"
  *   focus   how the focused app shows: "glass" (a pane gliding from tile to tile) or "ring" (a blue ring on the tile)
+ *   cols    how many app tiles in a row of the grid, [COLS_MIN]..[COLS_MAX] (default [COLS_DEFAULT]). A TV Home that has this reports
+ *           "colsOk": true (the page offers the choice only to one that does)
  *   widgets the cards between the clock and the favourites, in their order ([WIDGETS]): "system" (memory, storage, network,
  *           ADB), "usage" (the most used apps of the week and the day's app limits, asked of TV Setup: [USAGE]),
  *           "calendar" (the month, the lunar day under every solar day),
@@ -53,6 +55,7 @@ object HomeConfig {
     /** The Wi-Fi's name is location to Android (8.1+): granted over ADB when TV Home is installed or set up, never asked on the TV. */
     const val GRANT_WIFI = "pm grant $PKG android.permission.ACCESS_FINE_LOCATION >/dev/null 2>&1; "
     const val DOCK_MAX = 6
+    const val COLS_MIN = 4; const val COLS_MAX = 8; const val COLS_DEFAULT = 5
     private const val HIDDEN_MAX = 300
     /** Plain gradients (HomeActivity.wallColors). */
     val PLAIN = listOf("night", "ocean", "dusk", "forest", "aurora", "black", "sunset", "ember", "plum", "midnight", "teal", "slate", "graphite", "navy", "wine", "moss")
@@ -177,6 +180,7 @@ object HomeConfig {
             .put("anim", o.optBoolean("anim", true))
             .put("motion", o.optString("motion").takeIf { it in MOTIONS } ?: "")
             .put("focus", o.optString("focus").takeIf { it == "ring" } ?: "glass")
+            .put("cols", o.optInt("cols", COLS_DEFAULT).coerceIn(COLS_MIN, COLS_MAX))
             .put("dream", o.optBoolean("dream", false))
             .put("note", o.optString("note").replace(Regex("\\s+"), " ").trim().take(NOTE_MAX))
             .put("place", o.optString("place").replace(Regex("\\s+"), " ").trim().take(PLACE_MAX))

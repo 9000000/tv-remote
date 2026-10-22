@@ -84,7 +84,7 @@ class HomeActivity : Activity() {
         set(v) { getSharedPreferences("nav", MODE_PRIVATE).edit().putString("last", v).apply() }
     private var topAt: View? = null                                 // the tile left by Up: Down from the buttons lands on it
     private var stepping = false
-    private companion object { var reopen = false; const val COLS = 5 }                 // across recreate(): the panel was open when the language changed
+    private companion object { var reopen = false }                 // across recreate(): the panel was open when the language changed
     private var open: android.app.Dialog? = null                    // the panel or menu on top, closed by a Home press
     private lateinit var widgets: Widgets
     private val ui = android.os.Handler(android.os.Looper.getMainLooper())
@@ -258,7 +258,7 @@ class HomeActivity : Activity() {
         trimmed = false
         val dm = resources.displayMetrics
         if (Walls.isPicture(conf.optString("wall"))) loadWall(conf.optString("wall"))
-        for (t in tiles().take(2 * COLS)) { t.app?.load(this); t.restore() }   // the favourites at once, the rest from the side
+        for (t in tiles().take(2 * conf.optInt("cols", HomeConfig.COLS_DEFAULT))) { t.app?.load(this); t.restore() }   // the favourites at once, the rest from the side
         bg.execute {
             for (a in apps) if (a.banner == null && a.icon == null) a.load(this)
             runOnUiThread { if (!isDestroyed && !trimmed) for (t in tileCache.values) t.restore() }
@@ -416,7 +416,7 @@ class HomeActivity : Activity() {
         val byPkg = apps.associateBy { it.pkg }
         val dockPkgs = Store.list(this, "dock").filter { it in byPkg }
         val hidden = Store.list(this, "hidden").toSet()
-        val key = (dockPkgs + pins.map { it.pkg }).joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.joinToString(",") { it.pkg } + "|" + apps.count { it.pkg in hidden }
+        val key = (dockPkgs + pins.map { it.pkg }).joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.joinToString(",") { it.pkg } + "|" + apps.count { it.pkg in hidden } + "|" + conf.optInt("cols")
         if (key == shownKey) return                                   // nothing that decides the tiles changed: not one view is rebuilt
         shownKey = key
         val made = HashMap<String, Tile>()                            // the tiles kept for the next build: those of apps still here
@@ -426,7 +426,7 @@ class HomeActivity : Activity() {
         for (r in 0 until grid.childCount) (grid.getChildAt(r) as ViewGroup).removeAllViews()   // the tiles leave their rows alive, to be put in new ones
         grid.removeAllViews()
         val rest = apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }
-        val cols = COLS
+        val cols = conf.optInt("cols", HomeConfig.COLS_DEFAULT)
         val gap = dp(GRID_GAP)
         val w = (width - (cols - 1) * gap) / cols                     // one size for every tile: the favourites are only the first ones
         val cells: MutableList<View> = (favs + rest).map { tile(it, w, made) }.toMutableList()

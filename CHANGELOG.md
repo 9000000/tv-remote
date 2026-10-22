@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home: **số cột lưới app chỉnh được, 4 đến 8** (mặc định 5), trong hộp TV Home của trang web / app điện thoại và ngay trên bảng Tuỳ chỉnh của TV; chỉ hiện với TV Home có hỗ trợ.
 - **TV Games cài / mở / cập nhật từ mọi app** (tab TV → thẻ Game trên TV), giống TV Channels; bản phát hành chưa có `tv-games.apk` thì thẻ báo "có trong bản phát hành tới" thay vì lỗi. Phần cài chung của TV Channels và TV Games gom về một chỗ (`OwnApp`).
 - **Mã Downloader nằm trong `docs/data/downloader.json` trên site, có chữ ký** (cùng khoá với danh sách launcher): app đọc từ site, rồi GitHub, rồi bản đã lưu, rồi bản đóng sẵn; danh sách không có chữ ký bị bỏ qua. Chữ trong app nhận `{code}` thay vì chứa mã.
 - TV Games: **cuộn chuột (thanh cuộn của Air Mouse) cuộn thư viện ở mọi chỗ con trỏ đứng**, trước đây chỉ cuộn khi con trỏ nằm giữa các thẻ, đứng trên thẻ là không cuộn (nên "một lúc sau thanh cuộn hết tác dụng" khi con trỏ trôi theo gyroscope). Air Mouse: vạch trên thanh cuộn thưa ra (18 dp).
@@ -76,6 +77,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Sửa: mở TV Home / Hẹn giờ / Ứng dụng… ngay sau khi app vừa mở lại (điện thoại vừa thức, VPN vừa bật) báo **"Việc này cần ADB" dù ADB đang bật**, lát sau mới tải được: lúc ADB đang nối lại vẫn bị coi là "đã đóng". Nay báo "Đang kết nối ADB…" và chờ (tối đa 8 s), chỉ báo cần ADB khi nối thật sự không được.
 
 **English**
+- TV Home: **the app grid's columns are a setting, 4 to 8** (default 5), in the TV Home dialog of the web page / phone app and on the TV's own Customize panel; offered only to a TV Home that has it.
 - **TV Games is installed / opened / updated from every client** (TV tab → TV games card), like TV Channels; a release without `tv-games.apk` makes the card say "in the next release" instead of failing. The install shared by TV Channels and TV Games is one piece of code now (`OwnApp`).
 - **The Downloader codes live in `docs/data/downloader.json` on the site, signed** (same key as the launcher list): the apps read it from the site, then GitHub, then the copy kept, then the packed one; an unsigned list is ignored. The apps' words take `{code}` instead of containing it.
 - TV Games: **the mouse wheel (the Air Mouse scroll strip) scrolls the library wherever the pointer rests**; before, it only scrolled with the pointer between tiles and went dead over one (so the strip "stopped after a while" as the gyroscope drifted the pointer). Air Mouse: the ridges on the scroll strip are spaced out (18 dp).

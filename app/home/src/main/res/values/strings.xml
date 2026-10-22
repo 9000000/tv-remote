@@ -167,6 +167,7 @@
     <string name="c_motion_auto">Auto</string>
     <string name="c_motion_calm">Calm</string>
     <string name="c_motion_full">Full</string>
+    <string name="c_cols">Columns</string>
     <string name="c_focus">Focus</string>
     <string name="c_focus_glass">Glass</string>
     <string name="c_focus_ring">Blue ring</string>
