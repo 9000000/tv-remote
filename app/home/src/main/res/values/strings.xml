@@ -14,8 +14,8 @@
     <string name="dock_empty">Hold OK on an app to pin it here</string>
     <string name="pin">Pin to favourites</string>
     <string name="unpin">Remove from favourites</string>
-    <string name="left">Move left</string>
-    <string name="right">Move right</string>
+    <string name="move">Move</string>
+    <string name="move_hint">Arrows: move · OK: save · Back: cancel</string>
     <string name="hide">Hide</string>
     <string name="info">App info</string>
     <string name="hidden">Hidden apps (%d)</string>

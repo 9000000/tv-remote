@@ -12,8 +12,8 @@
     <string name="dock_empty">Giữ OK trên một app để ghim vào đây</string>
     <string name="pin">Ghim vào yêu thích</string>
     <string name="unpin">Bỏ khỏi yêu thích</string>
-    <string name="left">Sang trái</string>
-    <string name="right">Sang phải</string>
+    <string name="move">Di chuyển</string>
+    <string name="move_hint">Mũi tên: di chuyển · OK: lưu · Back: hủy</string>
     <string name="hide">Ẩn</string>
     <string name="info">Thông tin app</string>
     <string name="hidden">App đã ẩn (%d)</string>

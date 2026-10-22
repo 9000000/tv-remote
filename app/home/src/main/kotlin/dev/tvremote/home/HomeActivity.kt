@@ -268,7 +268,7 @@ class HomeActivity : Activity() {
         }
     }
 
-    override fun onPause() { zoom.paused(); ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick); super.onPause() }
+    override fun onPause() { if (moving != null) endMove(false); zoom.paused(); ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick); super.onPause() }
 
     private var cpuAgain = false
 
@@ -413,6 +413,7 @@ class HomeActivity : Activity() {
     // ---- what is shown ----
 
     private fun show() {
+        moving?.carry(false); moving = null                           // anything that rebuilds the tiles ends a move that was not confirmed: the saved order wins
         val keep = (currentFocus as? Tile)?.app?.pkg
         Motion.read(this, conf)
         if (!Motion.glass) glass.hide()
@@ -438,6 +439,15 @@ class HomeActivity : Activity() {
         val cells: MutableList<View> = (favs + rest).map { tile(it, w, made) }.toMutableList()
         val hiddenHere = apps.count { it.pkg in hidden }
         if (hiddenHere > 0) cells.add(moves(Tile(this, null, w, getString(R.string.hidden, hiddenHere), ::dp).apply { setOnClickListener { unhide() } }, null))
+        fill(cells, cols, gap)
+        tileCache = made
+        badgeTiles()
+
+        val again = (keep ?: lastOpened.takeIf { currentFocus == null })?.let { p -> tiles().firstOrNull { it.app?.pkg == p } }
+        if (again != null) again.requestFocus() else if (currentFocus == null || currentFocus !is Tile && currentFocus !is BarBtn) toTop()
+    }
+
+    private fun fill(cells: List<View>, cols: Int, gap: Int) {
         var row: LinearLayout? = null
         cells.forEachIndexed { i, v ->
             if (i % cols == 0) {
@@ -446,12 +456,82 @@ class HomeActivity : Activity() {
             }
             row!!.addView(v, LinearLayout.LayoutParams(-2, -2).apply { if (i % cols > 0) leftMargin = gap })
         }
-        tileCache = made
-        badgeTiles()
-
-        val again = (keep ?: lastOpened.takeIf { currentFocus == null })?.let { p -> tiles().firstOrNull { it.app?.pkg == p } }
-        if (again != null) again.requestFocus() else if (currentFocus == null || currentFocus !is Tile && currentFocus !is BarBtn) toTop()
     }
+
+    // ---- move mode: a dock app is carried through the favourites with the D-pad, OK saves, Back / Home cancels ----
+
+    private var moving: Tile? = null
+
+    private fun startMove(pkg: String) {
+        val t = tiles().firstOrNull { it.app?.pkg == pkg && it.app.pin == null } ?: return
+        moving = t
+        t.requestFocus(); t.carry(true)
+        Toast.makeText(this, R.string.move_hint, Toast.LENGTH_LONG).show()
+    }
+
+    /** The favourites are the first tiles, as many as the saved dock holds (pins and the rest follow). */
+    private fun dockCount(): Int { val by = apps.map { it.pkg }.toSet(); return Store.list(this, "dock").count { it in by } }
+
+    private fun moveKey(t: Tile, code: Int): Boolean {
+        when (code) {
+            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> { endMove(true); return true }
+            KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_ESCAPE -> { endMove(false); return true }
+        }
+        val cols = conf.optInt("cols", HomeConfig.COLS_DEFAULT)
+        val d = when (code) {
+            KeyEvent.KEYCODE_DPAD_LEFT -> -1; KeyEvent.KEYCODE_DPAD_RIGHT -> 1
+            KeyEvent.KEYCODE_DPAD_UP -> -cols; KeyEvent.KEYCODE_DPAD_DOWN -> cols
+            else -> return false
+        }
+        val all = tiles().toMutableList()
+        val at = all.indexOf(t); val to = at + d
+        if (to < 0 || to >= dockCount()) { t.nudge(if (d == 1) 1 else if (d == -1) -1 else 0, if (d == cols) 1 else 0); return true }
+        val before = all.associateWith { val xy = IntArray(2); it.getLocationOnScreen(xy); xy }
+        all.add(to, all.removeAt(at))
+        for (r in 0 until grid.childCount) (grid.getChildAt(r) as ViewGroup).removeAllViews()
+        grid.removeAllViews()
+        fill(all, cols, dp(GRID_GAP))
+        stepping = true; try { t.requestFocus() } finally { stepping = false }
+        t.carry(true)
+        grid.viewTreeObserver.addOnPreDrawListener(object : android.view.ViewTreeObserver.OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
+                grid.viewTreeObserver.removeOnPreDrawListener(this)
+                val now = IntArray(2)
+                for ((v, o) in before) {                              // the others slide from where they stood
+                    v.getLocationOnScreen(now)
+                    val dx = (o[0] - now[0]).toFloat(); val dy = (o[1] - now[1]).toFloat()
+                    if (dx == 0f && dy == 0f) continue
+                    v.animate().cancel()
+                    if (!Motion.on) { v.translationX = 0f; v.translationY = 0f; continue }
+                    v.translationX = dx; v.translationY = dy
+                    v.animate().translationX(0f).translationY(0f).setDuration(150).setInterpolator(Motion.glide).start()
+                }
+                return true
+            }
+        })
+        return true
+    }
+
+    private fun endMove(save: Boolean) {
+        val t = moving ?: return
+        moving = null
+        t.carry(false)
+        if (save) {
+            val order = tiles().take(dockCount()).mapNotNull { it.app?.pkg }
+            val old = Store.list(this, "dock")
+            Store.putList(this, "dock", order + old.filter { it !in order })   // an app no longer installed keeps its place at the end
+        } else { shownKey = ""; show() }                              // the saved order, tile by tile as it was
+    }
+
+    override fun dispatchKeyEvent(e: KeyEvent): Boolean {
+        val t = moving
+        if (t != null && !locked) {
+            if (e.action == KeyEvent.ACTION_DOWN) { if (e.repeatCount == 0 || e.keyCode != KeyEvent.KEYCODE_DPAD_CENTER) moveKey(t, e.keyCode).let { if (it) return true } }
+            else if (moveKeys.contains(e.keyCode)) return true        // the key-up of what was taken
+        }
+        return super.dispatchKeyEvent(e)
+    }
+    private val moveKeys = setOf(KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN)
 
     private fun tiles(): List<Tile> {
         val out = ArrayList<Tile>()
@@ -645,8 +725,7 @@ class HomeActivity : Activity() {
         val at = dockList.indexOf(a.pkg)
         val acts = ArrayList<Pair<Int, () -> Unit>>()
         if (at >= 0) {
-            if (at > 0) acts.add(R.string.left to { dockList.add(at - 1, dockList.removeAt(at)); Store.putList(this, "dock", dockList) })
-            if (at < dockList.size - 1) acts.add(R.string.right to { dockList.add(at + 1, dockList.removeAt(at)); Store.putList(this, "dock", dockList) })
+            if (dockList.size > 1) acts.add(R.string.move to { ui.post { startMove(a.pkg) } })
             acts.add(R.string.unpin to { dockList.removeAt(at); Store.putList(this, "dock", dockList) })
         } else {
             acts.add(R.string.pin to {
@@ -832,6 +911,14 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
      * Focus lifts the card (a springy rise, a soft shadow, the picture a touch larger inside it, a shine passing over) and rings it;
      * with motion off only the ring and the name change, at once. Hardware layers only while it moves.
      */
+    /** Being carried (move mode): the card a step larger than a focused one, on top of the others; [focus] puts it back. */
+    fun carry(on: Boolean) {
+        val s = if (on) GROW + 0.06f else GROW
+        card.animate().cancel()
+        if (!Motion.on) { card.scaleX = s; card.scaleY = s; return }
+        card.animate().scaleX(s).scaleY(s).setDuration(150).setInterpolator(Motion.glide).start()
+    }
+
     fun focus(on: Boolean) {
         card.animate().cancel(); ring.animate().cancel(); name.animate().cancel(); content.animate().cancel(); shine.animate().cancel()
         if (!Motion.on) {
