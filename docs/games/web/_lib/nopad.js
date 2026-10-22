@@ -12,14 +12,14 @@
     if (window.tvpad) return;
     const css = document.createElement('style');
     css.textContent = `
-#nopad{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;background:#0b0f1af2;
+#nopad{position:fixed;inset:0;z-index:100;cursor:default;display:flex;align-items:center;justify-content:center;padding:16px;background:#0b0f1af2;
   font:500 16px/1.45 system-ui,-apple-system,sans-serif;color:#e2e8f0}
 #nopad>div{display:flex;gap:28px;align-items:center;max-width:720px;padding:28px;border-radius:18px;background:#1b2028;box-shadow:0 16px 48px #000a}
 #nopad svg{flex:none;width:200px;height:200px;border-radius:10px;background:#fff}
 #nopad b{display:block;font-size:26px;line-height:1.2;margin-bottom:8px;color:#fff}
 #nopad p{margin:0 0 16px;color:#9aa0a6}
 #nopad a,#nopad button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:10px;border:0;
-  font:600 16px system-ui,sans-serif;cursor:pointer;text-decoration:none;margin:0 8px 8px 0}
+  font:600 16px system-ui,sans-serif;cursor:pointer !important;text-decoration:none;margin:0 8px 8px 0}
 #nopad a{background:#2f7df6;color:#fff}#nopad button{background:#2a3042;color:#e2e8f0}
 @media (max-width:600px){#nopad>div{flex-direction:column;text-align:center;padding:22px}#nopad svg{width:180px;height:180px}}`;
     const box = document.createElement('div'); box.id = 'nopad';
@@ -28,8 +28,11 @@
     if (q) card.append(q);
     const go = Object.assign(document.createElement('a'), { href: HOME, textContent: W.go });
     txt.append(Object.assign(document.createElement('b'), { textContent: W.t }), Object.assign(document.createElement('p'), { textContent: W.s }), go);
-    if (window.Kit) txt.append(Object.assign(document.createElement('button'), { textContent: W.kb, onclick: () => box.remove() }));
+    if (window.Kit) txt.append(Object.assign(document.createElement('button'), { textContent: W.kb, onclick: () => { box.remove(); els.forEach((e) => e.style.removeProperty('cursor')); } }));
     card.append(txt); box.append(card);
+    // the games hide the pointer (a TV has none); a browser's user needs it for the link
+    const els = [document.documentElement, document.body];
+    els.forEach((e) => e.style.setProperty('cursor', 'auto', 'important'));
     document.head.append(css); document.body.append(box);
   };
   // a moment's grace: an old WebView puts tvpad in as the page starts, not before it
