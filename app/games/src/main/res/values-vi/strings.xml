@@ -101,4 +101,9 @@
     <string name="refreshing">Đang cập nhật…</string>
     <string name="refresh_ok">Đã cập nhật · %1$d game</string>
     <string name="refresh_fail">Không kết nối được (giữ %1$d game)</string>
+    <string name="f_k_players">Người chơi</string>
+    <string name="f_k_system">Hệ máy</string>
+    <string name="f_k_genre">Thể loại</string>
+    <string name="f_all">Tất cả</string>
+    <string name="f_clear">Xoá lọc</string>
 </resources>

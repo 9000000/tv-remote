@@ -60,6 +60,7 @@ class LibraryActivity : ComponentActivity() {
     private var fGenre: String? = null
     private var sections: LinearLayout? = null
     private var searchBox: EditText? = null
+    private var updFilters: (() -> Unit)? = null
     private val pills = ArrayList<Pair<() -> Boolean, TextView>>()
     private val tileKeys = HashMap<String, View>()                    // "<section>|<id>" -> its tile
     private var focusedKey: String? = null
@@ -155,7 +156,7 @@ class LibraryActivity : ComponentActivity() {
 
     private fun clearFilters(render: Boolean) {
         query = ""; fPlayers = null; fSystem = null; fGenre = null
-        searchBox?.setText(""); pills.forEach { it.second.isSelected = it.first() }
+        searchBox?.setText(""); updFilters?.invoke()
         if (render) renderSections()
     }
 
@@ -326,42 +327,81 @@ class LibraryActivity : ComponentActivity() {
         if (selected != null) { isSelected = selected(); pills += selected to this }
     }
 
-    /** Players, system, genre: one row of pills, each group single-choice (the same pill again clears it); a folder button at the end. */
+    private fun setPill(p: TextView, t: String) { p.text = t; p.minWidth = Math.ceil(p.paint.measureText(t).toDouble()).toInt() + dp(36) }
+
+    /** Players, system, genre: one dropdown button each, showing the chosen value; a kind with one value only is left out; "Clear" while any is on. */
     private fun filterRow(): View {
-        val row = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(8), dp(6), dp(48), dp(6)) }
-        fun bar() = row.addView(View(this).apply { setBackgroundColor(0x33FFFFFF) }, LinearLayout.LayoutParams(dp(2), dp(22)).apply { marginStart = dp(6); marginEnd = dp(14) })
-        fun refresh() { pills.forEach { it.second.isSelected = it.first() }; renderSections() }
         val all = lib + sugs
-        var first = true
-        fun seg() { if (!first) bar(); first = false }
-        val ps = listOf(1 to R.string.f_players_1, 2 to R.string.f_players_2, 3 to R.string.f_players_34).filter { (code, _) -> all.any { Browse.playersOk(code, it.max, it.min) } }
-        if (ps.isNotEmpty()) seg()
-        ps.forEach { (code, id) -> row.addView(pill(getString(id), selected = { fPlayers == code }) { fPlayers = if (fPlayers == code) null else code; refresh() }) }
-        val sys = all.map { it.sysKey to it.sysLabel }.distinct().sortedBy { it.second }
-        if (sys.isNotEmpty()) seg()
-        sys.forEach { (k, l) -> row.addView(pill(l, selected = { fSystem == k }) { fSystem = if (fSystem == k) null else k; refresh() }) }
+        val row = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(8), dp(6), dp(8), dp(6)) }
+        val allW = getString(R.string.f_all)
         val other = getString(R.string.genre_other)
-        val genres = all.groupingBy { it.genre }.eachCount().entries.filter { it.key != other || all.any { a -> a.genre != other } }     // only "Other" = no genre known yet: no chip
-        if (genres.isNotEmpty()) seg()
-        genres.sortedWith(compareBy({ it.key == other }, { -it.value }, { it.key })).forEach { (g, _) ->
-            row.addView(pill(g, selected = { fGenre == g }) { fGenre = if (fGenre == g) null else g; refresh() })
+        class Kind(val label: String, val values: List<Pair<String, String>>, val get: () -> String?, val set: (String?) -> Unit)
+        val ps = listOf(1 to R.string.f_players_1, 2 to R.string.f_players_2, 3 to R.string.f_players_34).filter { (c, _) -> all.any { Browse.playersOk(c, it.max, it.min) } }.map { it.first.toString() to getString(it.second) }
+        val sys = all.map { it.sysKey to it.sysLabel }.distinctBy { it.first }.sortedBy { it.second }
+        val genres = all.groupingBy { it.genre }.eachCount().entries.filter { it.key != other || all.any { a -> a.genre != other } }
+            .sortedWith(compareBy({ it.key == other }, { -it.value }, { it.key })).map { it.key to it.key }
+        val kinds = listOf(
+            Kind(getString(R.string.f_k_players), ps, { fPlayers?.toString() }, { fPlayers = it?.toInt() }),
+            Kind(getString(R.string.f_k_system), sys, { fSystem }, { fSystem = it }),
+            Kind(getString(R.string.f_k_genre), genres, { fGenre }, { fGenre = it }),
+        ).filter { it.values.size > 1 || (it.values.size == 1 && it.get() != null) }
+        val buttons = ArrayList<Pair<Kind, TextView>>()
+        var clear: TextView? = null
+        fun upd() {
+            buttons.forEach { (k, b) -> val v = k.get(); setPill(b, k.label + ": " + (k.values.firstOrNull { it.first == v }?.second ?: allW) + " \u25BE"); b.isSelected = v != null }
+            clear?.visibility = if (fPlayers != null || fSystem != null || fGenre != null) View.VISIBLE else View.GONE
         }
-        // one line that scrolls with the focus, however many there are; a fade at each edge where more is hidden
-        val hs = HorizontalScrollView(this).apply { addView(row); isHorizontalScrollBarEnabled = false; clipChildren = false; clipToPadding = false; overScrollMode = View.OVER_SCROLL_NEVER }
-        val bg = getColor(R.color.tv_bg)
-        fun fade(left: Boolean) = View(this).apply {
-            background = GradientDrawable(if (left) GradientDrawable.Orientation.LEFT_RIGHT else GradientDrawable.Orientation.RIGHT_LEFT, intArrayOf(bg, bg and 0xFFFFFF))
-            visibility = View.GONE; isFocusable = false
+        kinds.forEach { k ->
+            var b: TextView? = null
+            b = pill(k.label, 16f) { b?.let { anchor -> dropdown(anchor, k.label, listOf<Pair<String?, String>>(null to allW) + k.values, k.get()) { v -> k.set(v); upd(); renderSections(); anchor.post { anchor.requestFocus() } } } }
+            buttons += k to b; row.addView(b)
         }
-        val fl = fade(true); val fr = fade(false)
-        fun edges() { val max = row.width - hs.width; fl.visibility = if (hs.scrollX > 4) View.VISIBLE else View.GONE; fr.visibility = if (max > 8 && hs.scrollX < max - 4) View.VISIBLE else View.GONE }
-        hs.setOnScrollChangeListener { _, _, _, _, _ -> edges() }
-        hs.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> edges() }
-        return FrameLayout(this).apply {
-            addView(hs, FrameLayout.LayoutParams(-1, -2))
-            addView(fl, FrameLayout.LayoutParams(dp(56), -1, Gravity.START))
-            addView(fr, FrameLayout.LayoutParams(dp(56), -1, Gravity.END))
+        clear = pill(getString(R.string.f_clear), 16f) { fPlayers = null; fSystem = null; fGenre = null; buttons.firstOrNull()?.second?.requestFocus(); upd(); renderSections() }       // the pill goes away: focus moves to the first dropdown
+        row.addView(clear)
+        pills.clear()
+        updFilters = { upd() }
+        upd()
+        return row
+    }
+
+    /** A small list under [anchor]: "All" first, the current value ticked; OK picks and closes, Back closes. */
+    private fun dropdown(anchor: View, title: String, options: List<Pair<String?, String>>, cur: String?, pick: (String?) -> Unit) {
+        lastFocus = anchor
+        val loc = IntArray(2); anchor.getLocationInWindow(loc); val rl = IntArray(2); root.getLocationInWindow(rl)
+        val x = loc[0] - rl[0]; val y = loc[1] - rl[1] + anchor.height + dp(6)
+        var sel: View? = null
+        val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(8), dp(8), dp(8), dp(8)) }
+        options.forEach { (v, t) ->
+            val on = v == cur
+            val r = TextView(this).apply {
+                text = (if (on) "\u2713  " else "     ") + t; textSize = 18f; setTextColor(getColor(R.color.tv_ink)); gravity = Gravity.CENTER_VERTICAL; maxLines = 1
+                setPadding(dp(16), 0, dp(24), 0); isFocusable = true; isClickable = true; minWidth = maxOf(anchor.width, dp(240))
+                background = StateListDrawable().apply {
+                    addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply { setColor(0x40FFFFFF); cornerRadius = dp(10).toFloat(); setStroke(dp(2), 0xCCFFFFFF.toInt()) })
+                    addState(intArrayOf(), GradientDrawable().apply { setColor(0); cornerRadius = dp(10).toFloat() })
+                }
+                setOnClickListener { closeOverlay(); pick(v) }
+            }
+            if (on || (cur == null && v == null)) sel = r
+            list.addView(r, LinearLayout.LayoutParams(-2, dp(46)))
         }
+        val maxH = root.height - y - dp(16)
+        val card = ScrollView(this).apply {
+            addView(list); isVerticalScrollBarEnabled = false
+            background = GradientDrawable().apply { setColor(getColor(R.color.tv_card)); cornerRadius = resources.getDimension(R.dimen.tv_radius_card) }
+            clipToOutline = true
+        }
+        val v = FrameLayout(this).apply {
+            setBackgroundColor(0x66000000); isClickable = true
+            addView(card, FrameLayout.LayoutParams(-2, -2).apply { leftMargin = x; topMargin = y })
+        }
+        card.viewTreeObserver.addOnGlobalLayoutListener(object : android.view.ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() { card.viewTreeObserver.removeOnGlobalLayoutListener(this); if (card.height > maxH && maxH > dp(120)) card.layoutParams = (card.layoutParams as FrameLayout.LayoutParams).also { it.height = maxH } }
+        })
+        overlay = v
+        scroller?.descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
+        root.addView(v, ViewGroup.LayoutParams(-1, -1))
+        sel?.requestFocus()
     }
 
     private fun newGroup() = askName(getString(R.string.grp_new), Shelf.get(this).freeName(getString(R.string.grp_default))) { n -> val g = Shelf.newGroup(this, n); wantFolder = g.id; renderSections() }
@@ -373,6 +413,7 @@ class LibraryActivity : ComponentActivity() {
         val box = sections ?: return
         val keepKey = focusedKey; val keepId = keepKey?.substringAfter('|')
         val hadFocus = box.hasFocus()
+        val elsewhere = currentFocus?.let { c -> generateSequence(c.parent) { it.parent }.none { it === box } } == true       // a filter button has it: leave it there
         val typing = searchBox?.hasFocus() == true                      // the keyboard is open on the search field: it keeps the focus
         box.removeAllViews(); tileKeys.clear()
         if (filtering()) {
@@ -392,8 +433,8 @@ class LibraryActivity : ComponentActivity() {
         val f = wantFolder; wantFolder = null
         val target = pend?.let { p -> tileKeys.entries.firstOrNull { it.key.endsWith("|$p") }?.value }
             ?: f?.let { id -> tileKeys.entries.firstOrNull { it.key.startsWith("g$id|") }?.value ?: groupHeads["g$id"] }
-            ?: if (hadFocus || keepKey != null) (keepKey?.let { tileKeys[it] } ?: keepId?.let { id -> tileKeys.entries.firstOrNull { it.key.endsWith("|$id") }?.value }) else null
-        if (!typing) (target ?: if (!hadFocus && lastFocus == null) firstTile() else null)?.requestFocus()
+            ?: if ((hadFocus || keepKey != null) && !elsewhere) (keepKey?.let { tileKeys[it] } ?: keepId?.let { id -> tileKeys.entries.firstOrNull { it.key.endsWith("|$id") }?.value }) else null
+        if (!typing && !(elsewhere && target == null)) (target ?: if (!hadFocus && lastFocus == null) firstTile() else null)?.requestFocus()
     }
 
     private val groupHeads = HashMap<String, View>()

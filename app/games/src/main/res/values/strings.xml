@@ -101,4 +101,9 @@
     <string name="refreshing">Updating…</string>
     <string name="refresh_ok">Updated · %1$d games</string>
     <string name="refresh_fail">Could not reach the site (%1$d games kept)</string>
+    <string name="f_k_players">Players</string>
+    <string name="f_k_system">System</string>
+    <string name="f_k_genre">Genre</string>
+    <string name="f_all">All</string>
+    <string name="f_clear">Clear filters</string>
 </resources>
