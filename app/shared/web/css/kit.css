@@ -41,6 +41,22 @@ form.line button { padding:0 16px; }
 .term { background:#0b0d10; color:#d7e0ea; border-radius:12px; padding:12px; font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; white-space:pre-wrap; overflow-wrap:anywhere; height:min(52vh, 460px); overflow:auto; margin:0 0 10px; }
 .term .cmd { color:#7fb0ff; }
 .term .err { color:#ff8a80; }
+/* the Files tab's terminal: a block per command, its command and its output each with a copy button */
+#termout { white-space:normal; padding:8px; }
+.tblk + .tblk { margin-top:10px; }
+.tcmd { display:flex; align-items:flex-start; gap:6px; color:#7fb0ff; }
+.tcmd > span { flex:1 1 auto; min-width:0; white-space:pre-wrap; overflow-wrap:anywhere; padding:5px 4px 0; }
+.tout { position:relative; margin-top:4px; padding:6px 44px 6px 8px; min-height:calc(var(--ctl-sm) + 6px); border-radius:8px; background:rgba(255,255,255,.04); white-space:pre-wrap; overflow-wrap:anywhere; }
+.tout.err { color:#ff8a80; }
+.tout.wait, .tout.none { color:#8a96a3; }
+.tout > .tcopy { position:absolute; top:3px; right:3px; }
+.term .tcopy { background:transparent; color:#9fb0c3; box-shadow:none; border:0; }
+.term .tcopy:hover { background:rgba(255,255,255,.08); color:#fff; }
+.termrows { max-height:min(56vh, 520px); overflow-y:auto; margin:0 -4px; padding:2px 4px; }
+.termrows .item.pick { flex:none; display:flex; align-items:center; width:100%; min-height:0; padding:10px 12px; border:0; border-radius:10px; background:none; color:var(--ink); text-align:start; cursor:pointer; }
+.termrows .item.pick:hover { background:var(--btn); }
+.termrows .item.pick[hidden] { display:none; }
+.termrows .item.pick > span { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .mono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:14px; }
 .minispin { display:inline-block; width:14px; height:14px; margin-right:8px; vertical-align:-2px; border-radius:50%; border:2px solid var(--muted); border-top-color:var(--accent); animation:spin .9s linear infinite; }
 button .minispin { border-color:currentColor; border-right-color:transparent; }   /* UI.busy: in the button's own colour, seen on the blue fill too */

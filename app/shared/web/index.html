@@ -255,9 +255,13 @@
         <!-- Terminal: for people who know shell commands, so folded away -->
         <details class="card" id="termcard">
           <summary>⌨️ Terminal</summary>
-          <pre class="term" id="termout"></pre>
-          <select id="termhist" hidden></select>
+          <div class="term" id="termout"></div>
           <form class="line" id="termf"><input id="termin" class="mono" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ls /sdcard"><button class="primary" title="Chạy lệnh" data-i18n-title="files.run">↵</button></form>
+          <div class="actions">
+            <button class="small" id="termhistbtn" hidden data-i18n="terminal.history">📜 Lệnh đã chạy</button>
+            <button class="small" id="termcopy" data-i18n="terminal.copy_all">📋 Chép tất cả</button>
+            <button class="small" id="termclear" data-i18n="terminal.clear">🧽 Xóa</button>
+          </div>
           <p class="note" data-i18n="files.like_adb_shell_up">Như adb shell, mỗi lệnh tối đa 30 giây. ↑ ↓ gọi lại lệnh cũ.</p>
         </details>
       </div>

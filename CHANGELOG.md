@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Terminal (tab Tệp): mỗi lệnh và kết quả có nút chép riêng, thêm nút Chép tất cả và Xóa; danh sách lệnh đã chạy mở trong một popup có ô tìm, lệnh dài nằm gọn một dòng (trước là ô chọn, lệnh dài xuống dòng khó đọc).
 - TV Games: remote của một số box (FPT) tự nhận là tay cầm, bấm một phím là chiếm ghế 1 nên game bài mất bài của bạn trên màn hình. Giờ chỉ tay cầm thật (có cần analog hoặc nút A/B…) mới được tính là tay cầm.
 - TV Games: phòng chờ hết đứng ở "Đang tải 100%" vài giây; dòng tải ẩn đi thì tên game không bị nhảy. Game NES tải lần đầu mở thẳng vào game, danh sách không còn nhảy, nháy trước khi mở. Ảnh Mèo nổ và Đố vui chụp lúc đang chơi (trước là màn kết thúc / dấu ?); TV tải lại ảnh khi danh mục đổi ảnh.
 - TV Games: vào phòng chờ bằng điện thoại thì chưa thấy bài; bài hiện khi game bắt đầu.
@@ -14,6 +15,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Sức khỏe: dòng "Luồng hình" báo "đang xem · N thiết bị" khi hình đang mở ở nơi khác (màn remote, PiP của app điện thoại, máy khác), không còn báo "đang không xem".
 
 **English**
+- Terminal (Files tab): each command and its output have their own copy button, plus Copy all and Clear; earlier commands open in a popup with a search box, a long command kept to one line (the old drop-down wrapped long ones).
 - TV Games: some boxes' remotes (FPT) say they are a game pad, so one key took seat 1 and a card game lost your hand from the screen. Only a real pad (sticks, or A/B… buttons) counts as one now.
 - TV Games: the lobby no longer sits on "Loading 100%" for seconds; the title stays put when the loading line goes. A NES game downloaded on first open goes straight into the game, no jump or flash of the library first. Boom Cats' and Quiz's pictures show the game being played (were the end screen / a "?"); the TV fetches a picture again when the catalog changes it.
 - TV Games: a phone in the lobby no longer sees its cards; they show once the game starts.
