@@ -7,7 +7,13 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.RectF
+import android.os.SystemClock
 import android.view.Gravity
+import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
@@ -33,11 +39,15 @@ private object Air {
     var touching = false                                             // a finger on the pad: the gyroscope waits, so the two never fight
     var thread: android.os.HandlerThread? = null                     // the sensor's callbacks run here, not on the screen's thread
     var synth: Thread? = null
+    var fxLog = false                                                // a marker file (air_fxlog) makes every haptic call a log line, so a test can count them
+    var tickLast = 0L                                                // when the last tick went out: a fast swipe must not buzz continuously
     var sub = false                                                  // true when the game rotation vector stands in for a missing gyroscope
 }
 
 private const val GAIN = 700f             // HID counts per radian turned: about a screen width for a wrist's sweep
 private const val DEAD = 0.025f           // rad/s below which the hand's tremor is ignored
+private const val TICK_DP = 26f      // finger travel per haptic tick
+private const val TICK_GAP_MS = 40L   // at least this between ticks: 25 a second at most
 private const val TOUCH_GAIN = 1.3f   // HID counts per dp of finger travel at walking speed
 private const val TOUCH_BOOST = 0.9f  // extra per dp/ms, like a laptop touchpad's curve
 private const val BOOST = 0.45f           // extra speed per rad/s, so slow moves stay fine and fast ones reach the corner
@@ -53,6 +63,7 @@ internal fun MainActivity.airOpen() {
     airClose()
     Air.paused = false; Air.touching = false; Air.buttons = 0; Air.clickHeld = false; Air.padRest = false
     Air.sub = gyro == null
+    Air.fxLog = try { java.io.File(getExternalFilesDir(null), "air_fxlog").exists() } catch (e: Exception) { false }
     Air.sensors = sm
     if (androidOk) { t!!.mouseOpen(); t.mouseStats = { android.util.Log.i("airstat", it) } }
     airSynth()
@@ -152,12 +163,16 @@ private fun MainActivity.airView(): FrameLayout {
     val hint = label(T("air.pad"), 15, MUTED)
     hint.gravity = Gravity.CENTER; hint.setPadding(dp(8), 0, dp(64), 0)   // clear of the scroll strip
     pad.addView(hint, FrameLayout.LayoutParams(-1, -1))
+    val noAnim = try { android.provider.Settings.Global.getFloat(contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f } catch (e: Exception) { false }   // "Remove animations": no trail or ripple, haptics stay
+    val fx = AirFx(this, noAnim, dp(1).toFloat())                     // the finger, its trail, the click ripple and the held tint, all drawn in this one view
+    pad.addView(fx, FrameLayout.LayoutParams(-1, -1))
+    var tickTravel = 0f
     var downAt = 0L; var sx = 0f; var sy = 0f; var moved = false; var scrollY = 0f; var scrollCarry = 0f
     var lastTapUp = 0L; var dtap = false; var lx = 0f; var ly = 0f; var lt = 0L; var drag = false; var longDone = false; val dragCarry = FloatArray(2)
     val slop = dp(8)
     pad.setOnTouchListener { v, ev ->
         when (ev.actionMasked) {
-            MotionEvent.ACTION_DOWN -> { downAt = ev.eventTime; sx = ev.x; sy = ev.y; lx = ev.x; ly = ev.y; lt = ev.eventTime; moved = false; drag = false; scrollY = 0f; Air.touching = true; Air.padRest = true; dtap = ev.eventTime - lastTapUp < 300 }   // a second touch soon after a tap: a drag if it moves
+            MotionEvent.ACTION_DOWN -> { fx.touch(ev.x, ev.y); tickTravel = 0f; downAt = ev.eventTime; sx = ev.x; sy = ev.y; lx = ev.x; ly = ev.y; lt = ev.eventTime; moved = false; drag = false; scrollY = 0f; Air.touching = true; Air.padRest = true; dtap = ev.eventTime - lastTapUp < 300 }   // a second touch soon after a tap: a drag if it moves
             MotionEvent.ACTION_POINTER_DOWN -> { moved = true; scrollY = (ev.getY(0) + ev.getY(1)) / 2 }   // two fingers: a wheel, never a click
             MotionEvent.ACTION_POINTER_UP -> { val i = if (ev.actionIndex == 0) 1 else 0; lx = ev.getX(i); ly = ev.getY(i); lt = ev.eventTime }   // one finger left: carry on from where it is, no jump
             MotionEvent.ACTION_MOVE -> {
@@ -166,25 +181,28 @@ private fun MainActivity.airView(): FrameLayout {
                     scrollCarry += (y - scrollY) / dp(14)            // one wheel notch per 14 dp dragged; drag down = content up, like a touch screen
                     scrollY = y
                     val n = scrollCarry.toInt()
-                    if (n != 0) { scrollCarry -= n; airWheel(n) }
+                    if (n != 0) { scrollCarry -= n; airWheel(n); v.airTick() }
                 } else {
-                    if (!drag && (abs(ev.x - sx) > slop || abs(ev.y - sy) > slop)) { moved = true; drag = true; Air.padRest = false; if (dtap) { airButton(true); buzz() } }
+                    if (!drag && (abs(ev.x - sx) > slop || abs(ev.y - sy) > slop)) { moved = true; drag = true; Air.padRest = false; if (dtap) { airButton(true); v.airHaptic(HapticFeedbackConstants.LONG_PRESS); fx.setHeld(true) } }
                     if (drag) {                                      // a touchpad: relative moves, faster fingers go further
                         val dt = maxOf(1L, ev.eventTime - lt)
                         val ddx = (ev.x - lx) / dp(1); val ddy = (ev.y - ly) / dp(1)   // dp, so every screen feels the same
                         val speed = kotlin.math.hypot(ddx, ddy) / dt     // dp per ms
                         val k = TOUCH_GAIN * (1f + minOf(speed, 3f) * TOUCH_BOOST)
                         airMove(ddx * k, ddy * k, dragCarry)
+                        tickTravel += kotlin.math.hypot(ddx, ddy)
+                        if (tickTravel >= TICK_DP) { tickTravel %= TICK_DP; v.airTick() }   // a tick per 26 dp of finger travel, never more than 25 a second
                     }
                     lx = ev.x; ly = ev.y; lt = ev.eventTime
+                    fx.touch(ev.x, ev.y)
                 }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                Air.touching = false; Air.padRest = false
-                if (Air.buttons != 0 && !Air.clickHeld) airButton(false)           // the double-tap drag lets go
+                Air.touching = false; Air.padRest = false; fx.lift()
+                if (Air.buttons != 0 && !Air.clickHeld) { airButton(false); fx.setHeld(false) }           // the double-tap drag lets go
                 if (ev.actionMasked == MotionEvent.ACTION_UP && !moved) {
                     val held = ev.eventTime - downAt
-                    if (held < 350) { airClick(); buzz(); lastTapUp = ev.eventTime } else if (held > 600) { press(4); buzz() }   // a long press is Back
+                    if (held < 350) { airClick(); v.airConfirm(); fx.ripple(ev.x, ev.y); lastTapUp = ev.eventTime } else if (held > 600) { press(4); v.airHaptic(HapticFeedbackConstants.LONG_PRESS) }   // a long press is Back
                 }
                 v.performClick()
             }
@@ -195,14 +213,12 @@ private fun MainActivity.airView(): FrameLayout {
     // its own touches, so the pad's one-finger moves elsewhere are untouched; two fingers on the pad still scroll.
     val strip = FrameLayout(this)
     strip.background = box(BG, 14)                                // a track darker than the pad: there, not loud
-    val up = label("\u25B2", 11, MUTED); up.gravity = Gravity.CENTER
-    val dn = label("\u25BC", 11, MUTED); dn.gravity = Gravity.CENTER
-    strip.addView(up, FrameLayout.LayoutParams(-1, -2, Gravity.TOP).apply { topMargin = dp(10) })
-    strip.addView(dn, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM).apply { bottomMargin = dp(10) })
+    val sfx = StripFx(this, noAnim, dp(1).toFloat())                  // the two arrows, the thumb under the finger
+    strip.addView(sfx, FrameLayout.LayoutParams(-1, -1))
     var stripY = 0f; var stripT = 0L; var stripCarry = 0f
     strip.setOnTouchListener { v, ev ->
         when (ev.actionMasked) {
-            MotionEvent.ACTION_DOWN -> { v.parent.requestDisallowInterceptTouchEvent(true); stripY = ev.y; stripT = ev.eventTime; stripCarry = 0f; Air.touching = true; Air.padRest = false }
+            MotionEvent.ACTION_DOWN -> { v.parent.requestDisallowInterceptTouchEvent(true); sfx.down(ev.y); stripY = ev.y; stripT = ev.eventTime; stripCarry = 0f; Air.touching = true; Air.padRest = false }
             MotionEvent.ACTION_MOVE -> {
                 val dt = maxOf(1L, ev.eventTime - stripT)
                 val dy = (ev.y - stripY) / dp(1)                       // dp
@@ -210,9 +226,10 @@ private fun MainActivity.airView(): FrameLayout {
                 stripCarry += dy / 10f * (1f + minOf(speed, 2f))       // one wheel notch per 10 dp at a slow drag; drag down = content up
                 stripY = ev.y; stripT = ev.eventTime
                 val n = stripCarry.toInt()
-                if (n != 0) { stripCarry -= n; airWheel(n) }
+                sfx.move(ev.y)
+                if (n != 0) { stripCarry -= n; airWheel(n); v.airTick(); sfx.flash(if (n > 0) 1 else -1) }   // a detent per wheel step sent
             }
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { Air.touching = false; Air.padRest = false; v.performClick() }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { Air.touching = false; Air.padRest = false; sfx.up(); v.performClick() }
         }
         true
     }
@@ -225,10 +242,11 @@ private fun MainActivity.airView(): FrameLayout {
     page.addView(hold, LinearLayout.LayoutParams(-1, dp(44)).apply { topMargin = dp(10) })
     val click = button("@mouse|" + T("air.click"), ACCENT)             // the thumb's: tap = click, hold = button down while the phone moves
     click.textSize = 18f; click.maxLines = 1
+    val holdBuzz = Runnable { if (Air.clickHeld) click.airHaptic(HapticFeedbackConstants.LONG_PRESS) }   // still down after a moment: it is a drag-hold, a heavier beat
     click.setOnTouchListener { v, ev ->
         when (ev.actionMasked) {
-            MotionEvent.ACTION_DOWN -> { Air.clickHeld = true; airButton(true); buzz(); v.isPressed = true }
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { Air.clickHeld = false; airButton(false); v.isPressed = false; if (ev.actionMasked == MotionEvent.ACTION_UP) v.performClick() }
+            MotionEvent.ACTION_DOWN -> { Air.clickHeld = true; airButton(true); v.airConfirm(); fx.setHeld(true); v.isPressed = true; v.postDelayed(holdBuzz, 350) }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { Air.clickHeld = false; airButton(false); fx.setHeld(false); v.removeCallbacks(holdBuzz); v.isPressed = false; if (ev.actionMasked == MotionEvent.ACTION_UP) v.performClick() }
         }
         true
     }
@@ -291,4 +309,96 @@ private fun MainActivity.airSynth() {
         } catch (e: InterruptedException) { }
     }
     th.isDaemon = true; th.start(); Air.synth = th
+}
+
+/** Feedback goes through View.performHapticFeedback, so the system's touch-feedback switch decides (the remote's own keys use buzz()). */
+private fun View.airHaptic(kind: Int) {
+    performHapticFeedback(kind)
+    if (Air.fxLog) android.util.Log.d("airfx", "h$kind")
+}
+private fun View.airTick() {
+    val now = SystemClock.uptimeMillis()
+    if (now - Air.tickLast < TICK_GAP_MS) return
+    Air.tickLast = now
+    airHaptic(HapticFeedbackConstants.CLOCK_TICK)
+}
+private fun View.airConfirm() = airHaptic(if (android.os.Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY)
+
+private fun accent(alpha: Int) = (ACCENT and 0xFFFFFF) or (alpha shl 24)
+
+/** Over the touch area: a soft circle under the finger with a fading trail, a ripple on a click, a tint while the button is held.
+ *  Fixed arrays and paints: nothing is allocated per touch event or per frame. With "Remove animations" there is no trail or ripple. */
+private class AirFx(ctx: Context, private val still: Boolean, private val d: Float) : View(ctx) {
+    private val n = 12
+    private val xs = FloatArray(n); private val ys = FloatArray(n); private val ts = LongArray(n)
+    private var head = 0; private var count = 0
+    private var on = false; private var held = false
+    private var rx = 0f; private var ry = 0f; private var rt = 0L
+    private val p = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val box = RectF()
+    init { isClickable = false; isFocusable = false }
+    fun touch(x: Float, y: Float) {
+        on = true
+        if (!still) { head = (head + 1) % n; xs[head] = x; ys[head] = y; ts[head] = SystemClock.uptimeMillis(); if (count < n) count++ } else { xs[0] = x; ys[0] = y }
+        invalidate()
+    }
+    fun lift() { on = false; invalidate() }
+    fun ripple(x: Float, y: Float) { if (still) return; rx = x; ry = y; rt = SystemClock.uptimeMillis(); invalidate() }
+    fun setHeld(b: Boolean) { held = b; invalidate() }
+    override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) { box.set(0f, 0f, w.toFloat(), h.toFloat()) }
+    override fun onDraw(c: Canvas) {
+        val now = SystemClock.uptimeMillis(); var again = false
+        if (held) { p.style = Paint.Style.FILL; p.color = accent(34); c.drawRoundRect(box, 18 * d, 18 * d, p) }
+        p.style = Paint.Style.FILL
+        if (!still) for (i in 1 until count) {                        // the trail: older points are smaller and fainter
+            val k = (head - i + n) % n; val age = now - ts[k]
+            if (age < TRAIL_MS) { val f = 1f - age / TRAIL_MS.toFloat(); p.color = accent((80 * f).toInt()); c.drawCircle(xs[k], ys[k], d * (4 + 12 * f), p); again = true }
+        }
+        if (on) {
+            val x = xs[if (still) 0 else head]; val y = ys[if (still) 0 else head]
+            p.style = Paint.Style.FILL; p.color = accent(if (held) 120 else 72); c.drawCircle(x, y, d * 28, p)
+            p.style = Paint.Style.STROKE; p.strokeWidth = 2 * d; p.color = accent(170); c.drawCircle(x, y, d * 28, p)
+        }
+        val ra = now - rt
+        if (!still && ra < RIPPLE_MS) {
+            val f = ra / RIPPLE_MS.toFloat()
+            p.style = Paint.Style.STROKE; p.strokeWidth = 3 * d; p.color = accent((190 * (1f - f)).toInt()); c.drawCircle(rx, ry, d * (16 + 46 * f), p); again = true
+        }
+        if (again) postInvalidateOnAnimation()
+    }
+    private companion object { const val TRAIL_MS = 320L; const val RIPPLE_MS = 340L }
+}
+
+/** The scroll strip's face: an arrow at each end (the one in the scrolled direction flashes) and a thumb that follows the finger. */
+private class StripFx(ctx: Context, private val still: Boolean, private val d: Float) : View(ctx) {
+    private var y = 0f; private var on = false; private var upAt = 0L
+    private var dir = 0; private var flashAt = 0L
+    private val p = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val thumb = RectF(); private val tri = Path()
+    init { isClickable = false; isFocusable = false }
+    fun down(py: Float) { on = true; y = py; invalidate() }
+    fun move(py: Float) { y = py; invalidate() }
+    fun up() { on = false; upAt = SystemClock.uptimeMillis(); invalidate() }
+    fun flash(dd: Int) { dir = dd; flashAt = SystemClock.uptimeMillis() }
+    private fun arrow(c: Canvas, cx: Float, cy: Float, pointUp: Boolean, lit: Boolean) {
+        val s = 5 * d; val e = if (pointUp) -s else s
+        tri.rewind(); tri.moveTo(cx, cy + e); tri.lineTo(cx - s * 1.2f, cy - e); tri.lineTo(cx + s * 1.2f, cy - e); tri.close()
+        p.style = Paint.Style.FILL; p.color = if (lit) ACCENT_TEXT else MUTED; c.drawPath(tri, p)
+    }
+    override fun onDraw(c: Canvas) {
+        val now = SystemClock.uptimeMillis(); var again = false
+        val w = width.toFloat(); val h = height.toFloat()
+        val fade = if (on) 1f else 1f - (now - upAt) / 260f
+        if (fade > 0f) {                                              // the thumb: lit while the finger is on it, fading out after
+            val th = 44 * d; val cy = y.coerceIn(th / 2, h - th / 2)
+            thumb.set(4 * d, cy - th / 2, w - 4 * d, cy + th / 2)
+            p.style = Paint.Style.FILL; p.color = accent((if (on) 170 else 90) * 1 * (if (on) 100 else (fade * 100).toInt()) / 100); c.drawRoundRect(thumb, 10 * d, 10 * d, p)
+            if (!on && !still) again = true
+        }
+        val lit = if (still) false else now - flashAt < 180
+        arrow(c, w / 2, 14 * d, true, lit && dir < 0)
+        arrow(c, w / 2, h - 14 * d, false, lit && dir > 0)
+        if (lit) again = true
+        if (again) postInvalidateOnAnimation()
+    }
 }
