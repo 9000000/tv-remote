@@ -44,6 +44,7 @@ Tested for real on a Sony BRAVIA (Android 9). Other brands are untested; LG, Sam
 - **Scenes** (several steps in one tap), widget and Quick Settings tiles, game controller, Home Assistant and Siri Shortcuts.
 - **TV Home**, a home screen without ads, set up from your phone or computer: favourite apps, hidden apps, your own background, widgets (system stats, most used apps and limits, month calendar with lunar days, lunar calendar, sleep timer, weather, a pinned note) (the background, clock and motion can also be changed on the TV itself). Or pick another launcher from the gallery.
 - **TV Channels**, free TV channels on the TV from iptv-org's public lists and VieON's free channels, with the programme guide (VN): by country and category, favourites and your own groups, pinned to the home screen, opened by name from the phone ("open channel VTV1").
+- **TV Games**, retro and web games on the TV with phones as pads (the QR on the TV, no ADB needed).
 - **Optional extras on the TV** ("Optimize TV"): faster, lighter, and fully undoable.
 
 Every feature, with screenshots: [tvremote.pages.dev](https://tvremote.pages.dev/?lang=en).
@@ -155,6 +156,14 @@ Two more apps for the TV, free and without ads. Both are set up from the phone o
 - Own language in the side list (*Language*): follow the TV, Tiếng Việt or English.
 - Favourites and groups managed from the phone, computer or the TV's web page (*Manage channels*: search, ☆, groups, reorder), not only with the D-pad.
 - Installed from the phone or computer (TV tab → 📺 card → *Install TV Channels*).
+
+<p align="center"><img src="docs/img/tv-games-en.webp" width="720" alt="TV Games: retro and web games on the TV"><br><sub>TV Games</sub></p>
+
+**🎮 TV Games** plays retro and web games on the TV, with phones as pads.
+
+- Retro games (libretro cores) and web games; free homebrew suggested in the app.
+- Up to 4 phones as pads: scan the QR on the TV, no ADB and no TV Setup needed.
+- Not yet installed from the phone or computer app.
 
 | App | Downloader code | File |
 |---|---|---|

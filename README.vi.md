@@ -159,6 +159,14 @@ Thêm 2 app cho TV, miễn phí, không quảng cáo. Cài và chỉnh từ app 
 - Quản lý yêu thích và nhóm ngay từ điện thoại, máy tính hoặc trang web của TV (*Quản lý kênh*: tìm, ☆, nhóm, sắp xếp), không phải bấm D-pad.
 - Cài từ điện thoại / máy tính (tab TV → 📺 *Kênh TV* → Cài).
 
+<p align="center"><img src="docs/img/tv-games-vi.webp" width="720" alt="TV Games: game retro và game web trên TV"><br><sub>TV Games</sub></p>
+
+**🎮 TV Games** chơi game retro và game web trên TV, dùng điện thoại làm tay cầm.
+
+- Game retro (libretro core) và game web; app gợi ý sẵn game homebrew miễn phí.
+- Tối đa 4 điện thoại làm tay cầm: quét QR trên TV, không cần ADB hay TV Setup.
+- Chưa cài được từ app điện thoại / máy tính.
+
 | App | Mã Downloader | Tệp |
 |---|---|---|
 | TV Home | **`4356026`** | [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk) |
