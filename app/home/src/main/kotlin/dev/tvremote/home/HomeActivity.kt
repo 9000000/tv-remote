@@ -277,7 +277,8 @@ class HomeActivity : Activity() {
         val rows = grid.childCount
         val rowH = if (rows > 0) grid.getChildAt(0).height else 0
         if (noWidgets && rows > 0 && rowH == 0) return                  // new rows, not laid out yet: the next layout asks again
-        val want = if (!noWidgets) dp(36) else if (rows < 2 || rowH == 0 || scroll.height == 0) dp(48)
+        // one row sits where row 1 of many would (more columns put few apps in one row: it rose to the clock)
+        val want = if (!noWidgets) dp(36) else if (rows == 0 || rowH == 0 || scroll.height == 0) dp(48)
                    else maxOf(dp(48), scroll.height - (rowH + dp(GRID_GAP) + rowH / 2) - head.bottom)   // row 1, the gap, half of row 2
         if (Math.abs(want - lp.topMargin) > 1) { lp.topMargin = want; grid.requestLayout() }
     }
