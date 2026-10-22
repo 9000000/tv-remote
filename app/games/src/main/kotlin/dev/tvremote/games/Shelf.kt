@@ -20,6 +20,7 @@ object Shelf {
         fun toggleIn(gid: String, item: String) = Data(fav, groups.map {
             if (it.id != gid) it else Group(it.id, it.name, if (item in it.items) it.items - item else it.items + item)
         })
+        fun forget(item: String) = Data(fav - item, groups.map { Group(it.id, it.name, it.items - item) })   // the game deleted, not just missing
         fun inGroup(gid: String, item: String) = groups.firstOrNull { it.id == gid }?.items?.contains(item) == true
         /** "Nhóm 1", "Nhóm 2"...: the first number not taken by a group of that name. */
         fun freeName(base: String): String { var n = groups.size + 1; while (groups.any { it.name == "$base $n" }) n++; return "$base $n" }

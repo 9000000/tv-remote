@@ -60,6 +60,11 @@ object Pins {
         val old = try { sm.pinnedShortcuts.firstOrNull { it.id == "f:$id" } } catch (e: Exception) { null } ?: return
         try { sm.updateShortcuts(listOf(ShortcutInfo.Builder(c, old.id).setShortLabel(name.take(24)).setLongLabel(name).build())) } catch (e: Exception) { }
     }
+    fun gameDeleted(c: Context, id: String) {
+        if (Build.VERSION.SDK_INT < 26) return
+        try { c.getSystemService(ShortcutManager::class.java)?.disableShortcuts(listOf("g:$id")) } catch (e: Exception) { }
+    }
+
     fun deleted(c: Context, id: String) {
         if (Build.VERSION.SDK_INT < 26) return
         try { c.getSystemService(ShortcutManager::class.java)?.disableShortcuts(listOf("f:$id")) } catch (e: Exception) { }

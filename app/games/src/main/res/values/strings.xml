@@ -89,6 +89,8 @@
     <string name="m_group">Add to folder…</string>
     <string name="m_pin">Pin to home screen</string>
     <string name="m_remove">Remove link</string>
+    <string name="m_delete">Delete from the TV</string>
+    <string name="m_delete_q">Delete \"%1$s\" from the TV? Its saves go too.</string>
     <string name="m_hide">Hide suggestion</string>
     <string name="pin_sent">Confirm on the home screen</string>
     <string name="pin_no">This launcher cannot pin</string>

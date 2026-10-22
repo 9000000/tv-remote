@@ -50,6 +50,7 @@ class LibraryActivity : ComponentActivity() {
         val play: (() -> Unit)? = null,                               // null: a suggestion to download
         val rom: Pair<org.json.JSONObject, Systems.Sys>? = null,
         val web: String? = null,                                      // a link the person added: the menu can remove it
+        val file: java.io.File? = null,                               // a ROM on the TV: the menu can delete it
         val hideId: String? = null,                                   // a suggestion: the menu can hide it
     )
 
@@ -211,7 +212,7 @@ class LibraryActivity : ComponentActivity() {
             val pc = Catalog.players(this, g.file.name, null, Systems.maxPlayers(g.sys.id))
             l += Item("g:" + g.file.name, g.name, g.sys.label, g.sys.id, g.sys.color, Thumbs.catalog(this, g.file.name) ?: Thumbs.src(this, g.sys, g.file.name),
                 pc.first, pc.second, genreOf(Catalog.entryOf(this, g.file.name, null), other), true,
-                play = { try { startActivity(Intent(this, GameActivity::class.java).putExtra("path", g.file.path)) } catch (e: Exception) { } })
+                play = { try { startActivity(Intent(this, GameActivity::class.java).putExtra("path", g.file.path)) } catch (e: Exception) { } }, file = g.file)
         }
         for (w in webs) {
             val e = if (w.url.startsWith("builtin:")) null else Catalog.entryOf(this, null, w.url)
@@ -538,8 +539,19 @@ class LibraryActivity : ComponentActivity() {
             if (Pins.can(this)) { e += getString(R.string.m_pin) to { closeOverlay(); pinGame(i) }; ic += R.drawable.ic_pin }
         }
         i.web?.let { u -> e += getString(R.string.m_remove) to { closeOverlay(); Systems.removeWeb(this, u); reload() }; ic += R.drawable.ic_trash }
+        i.file?.let { f -> e += getString(R.string.m_delete) to { popup(getString(R.string.m_delete_q, i.name), listOf(getString(R.string.yes_delete) to { closeOverlay(); deleteRom(i, f) }), replace = true, focusIndex = 1, icons = listOf(R.drawable.ic_trash)) }; ic += R.drawable.ic_trash }
         i.hideId?.let { h -> e += getString(R.string.m_hide) to { closeOverlay(); hide(h) }; ic += R.drawable.ic_eye_off }
         if (e.isNotEmpty()) popup(i.name, e, icons = ic)
+    }
+
+    /** The ROM, its saves (states in saves/, the core's .srm beside the app's files), its place in favourites and folders, its shortcut. */
+    private fun deleteRom(i: Item, f: java.io.File) {
+        val base = f.nameWithoutExtension + "."
+        f.delete()
+        for (d in listOf(Systems.savesDir(this), filesDir)) d.listFiles()?.filter { it.isFile && it.name.startsWith(base) }?.forEach { it.delete() }
+        Shelf.change(this) { it.forget(i.id) }
+        Pins.gameDeleted(this, i.id)
+        reload()
     }
 
     private fun groupPicker(i: Item) {
@@ -593,7 +605,7 @@ class LibraryActivity : ComponentActivity() {
         first?.requestFocus()
     }
 
-    private fun confirm(q: String, yes: () -> Unit) = popup(q, listOf(getString(R.string.yes_delete) to { closeOverlay(); yes() }), focusIndex = 1)
+    private fun confirm(q: String, yes: () -> Unit) = popup(q, listOf(getString(R.string.yes_delete) to { closeOverlay(); yes() }), focusIndex = 1, icons = listOf(R.drawable.ic_trash))
 
     /** A name to type (the TV keyboard opens on OK); OK saves a non-empty one. */
     private fun askName(title: String, initial: String, ok: (String) -> Unit) {
