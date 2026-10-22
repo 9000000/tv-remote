@@ -33,8 +33,7 @@ private object Air {
     var paused = false
     var buttons = 0                                                  // 1 while the pointer's button is held (a drag)
     var clickHeld = false                                            // the big Click button is down
-    var padRest = false                                              // a finger rests on the pad without moving it
-    var holdToMove = false                                           // the gyroscope moves the pointer only while a finger rests on the pad
+    var padHeld = false                                              // a finger held still on the pad pressed the button: the phone drags too
     var freezeUntil = 0L                                             // a click lands where it was aimed: no motion ~80 ms around press / release
     var touching = false                                             // a finger on the pad: the gyroscope waits, so the two never fight
     var thread: android.os.HandlerThread? = null                     // the sensor's callbacks run here, not on the screen's thread
@@ -46,6 +45,7 @@ private object Air {
 
 private const val GAIN = 700f             // HID counts per radian turned: about a screen width for a wrist's sweep
 private const val DEAD = 0.025f           // rad/s below which the hand's tremor is ignored
+private const val HOLD_MS = 400L          // a finger still this long on the pad presses the mouse button (a tap is shorter)
 private const val TICK_GAP_MS = 40L   // at least this between ticks: 25 a second at most
 private const val TOUCH_GAIN = 1.3f   // HID counts per dp of finger travel at walking speed
 private const val TOUCH_BOOST = 0.9f  // extra per dp/ms, like a laptop touchpad's curve
@@ -60,7 +60,7 @@ internal fun MainActivity.airOpen() {
     val gyro = sm.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
     val rot = if (gyro == null) sm.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR) else null
     airClose()
-    Air.paused = false; Air.touching = false; Air.buttons = 0; Air.clickHeld = false; Air.padRest = false
+    Air.paused = false; Air.touching = false; Air.buttons = 0; Air.clickHeld = false; Air.padHeld = false
     Air.sub = gyro == null
     Air.fxLog = try { java.io.File(getExternalFilesDir(null), "air_fxlog").exists() } catch (e: Exception) { false }
     Air.sensors = sm
@@ -108,7 +108,7 @@ private fun MainActivity.airListen(sm: SensorManager, sensor: Sensor) {
     val l = object : SensorEventListener {
         override fun onAccuracyChanged(s: Sensor?, a: Int) {}
         override fun onSensorChanged(e: SensorEvent) {
-            val live = Air.clickHeld || (if (Air.holdToMove) Air.padRest else !Air.touching)
+            val live = Air.clickHeld || Air.padHeld || !Air.touching
             if (Air.paused || !live || System.currentTimeMillis() < Air.freezeUntil) { last = 0; have = false; return }
             var wz: Float; var wx: Float
             if (e.sensor.type == Sensor.TYPE_GYROSCOPE) {
@@ -168,12 +168,15 @@ private fun MainActivity.airView(): FrameLayout {
     val fx = AirFx(this, noAnim, dp(1).toFloat())                     // the finger, its trail, the click ripple and the held tint, all drawn in this one view
     pad.addView(fx, FrameLayout.LayoutParams(-1, -1))
     var downAt = 0L; var sx = 0f; var sy = 0f; var moved = false; var scrollY = 0f; var scrollCarry = 0f
-    var lastTapUp = 0L; var dtap = false; var lx = 0f; var ly = 0f; var lt = 0L; var drag = false; var longDone = false; val dragCarry = FloatArray(2)
+    var lastTapUp = 0L; var dtap = false; var lx = 0f; var ly = 0f; var lt = 0L; var drag = false; val dragCarry = FloatArray(2)
     val slop = dp(8)
+    // A finger held still on the pad is the mouse button held down, where the pointer is: then moving the phone or the finger selects
+    // text or drags what was under it, as the TV's app decides; lifting the finger lets go.
+    val holdDown = Runnable { if (Air.touching && !moved && Air.buttons == 0) { Air.padHeld = true; airButton(true); pad.airHaptic(HapticFeedbackConstants.LONG_PRESS); fx.setHeld(true) } }
     pad.setOnTouchListener { v, ev ->
         when (ev.actionMasked) {
-            MotionEvent.ACTION_DOWN -> { fx.touch(ev.x, ev.y); downAt = ev.eventTime; sx = ev.x; sy = ev.y; lx = ev.x; ly = ev.y; lt = ev.eventTime; moved = false; drag = false; scrollY = 0f; Air.touching = true; Air.padRest = true; dtap = ev.eventTime - lastTapUp < 300 }   // a second touch soon after a tap: a drag if it moves
-            MotionEvent.ACTION_POINTER_DOWN -> { moved = true; scrollY = (ev.getY(0) + ev.getY(1)) / 2 }   // two fingers: a wheel, never a click
+            MotionEvent.ACTION_DOWN -> { fx.touch(ev.x, ev.y); downAt = ev.eventTime; sx = ev.x; sy = ev.y; lx = ev.x; ly = ev.y; lt = ev.eventTime; moved = false; drag = false; scrollY = 0f; Air.touching = true; dtap = ev.eventTime - lastTapUp < 300; v.postDelayed(holdDown, HOLD_MS) }   // a second touch soon after a tap: a drag if it moves
+            MotionEvent.ACTION_POINTER_DOWN -> { if (!Air.padHeld) { moved = true; v.removeCallbacks(holdDown) }; scrollY = (ev.getY(0) + ev.getY(1)) / 2 }   // two fingers: a wheel, never a click
             MotionEvent.ACTION_POINTER_UP -> { val i = if (ev.actionIndex == 0) 1 else 0; lx = ev.getX(i); ly = ev.getY(i); lt = ev.eventTime }   // one finger left: carry on from where it is, no jump
             MotionEvent.ACTION_MOVE -> {
                 if (ev.pointerCount >= 2) {
@@ -183,7 +186,7 @@ private fun MainActivity.airView(): FrameLayout {
                     val n = scrollCarry.toInt()
                     if (n != 0) { scrollCarry -= n; airWheel(n); v.airTick() }
                 } else {
-                    if (!drag && (abs(ev.x - sx) > slop || abs(ev.y - sy) > slop)) { moved = true; drag = true; Air.padRest = false; if (dtap) { airButton(true); v.airHaptic(HapticFeedbackConstants.LONG_PRESS); fx.setHeld(true) } }
+                    if (!drag && (abs(ev.x - sx) > slop || abs(ev.y - sy) > slop)) { moved = true; drag = true; v.removeCallbacks(holdDown); if (dtap) { airButton(true); v.airHaptic(HapticFeedbackConstants.LONG_PRESS); fx.setHeld(true) } }
                     if (drag) {                                      // a touchpad: relative moves, faster fingers go further
                         val dt = maxOf(1L, ev.eventTime - lt)
                         val ddx = (ev.x - lx) / dp(1); val ddy = (ev.y - ly) / dp(1)   // dp, so every screen feels the same
@@ -196,12 +199,10 @@ private fun MainActivity.airView(): FrameLayout {
                 }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                Air.touching = false; Air.padRest = false; fx.lift()
-                if (Air.buttons != 0 && !Air.clickHeld) { airButton(false); fx.setHeld(false) }           // the double-tap drag lets go
-                if (ev.actionMasked == MotionEvent.ACTION_UP && !moved) {
-                    val held = ev.eventTime - downAt
-                    if (held < 350) { airClick(); v.airConfirm(); fx.ripple(ev.x, ev.y); lastTapUp = ev.eventTime } else if (held > 600) { press(4); v.airHaptic(HapticFeedbackConstants.LONG_PRESS) }   // a long press is Back
-                }
+                Air.touching = false; fx.lift(); v.removeCallbacks(holdDown)
+                if (Air.buttons != 0 && !Air.clickHeld) { airButton(false); fx.setHeld(false) }           // the hold or the double-tap drag lets go
+                val wasHeld = Air.padHeld; Air.padHeld = false
+                if (ev.actionMasked == MotionEvent.ACTION_UP && !moved && !wasHeld && ev.eventTime - downAt < HOLD_MS) { airClick(); v.airConfirm(); fx.ripple(ev.x, ev.y); lastTapUp = ev.eventTime }
                 v.performClick()
             }
         }
@@ -216,7 +217,7 @@ private fun MainActivity.airView(): FrameLayout {
     var stripY = 0f; var stripT = 0L; var stripCarry = 0f
     strip.setOnTouchListener { v, ev ->
         when (ev.actionMasked) {
-            MotionEvent.ACTION_DOWN -> { v.parent.requestDisallowInterceptTouchEvent(true); sfx.down(ev.y); stripY = ev.y; stripT = ev.eventTime; stripCarry = 0f; Air.touching = true; Air.padRest = false }
+            MotionEvent.ACTION_DOWN -> { v.parent.requestDisallowInterceptTouchEvent(true); sfx.down(ev.y); stripY = ev.y; stripT = ev.eventTime; stripCarry = 0f; Air.touching = true }
             MotionEvent.ACTION_MOVE -> {
                 val dt = maxOf(1L, ev.eventTime - stripT)
                 val dy = (ev.y - stripY) / dp(1)                       // dp
@@ -227,17 +228,13 @@ private fun MainActivity.airView(): FrameLayout {
                 sfx.move(ev.y)
                 if (n != 0) { stripCarry -= n; airWheel(n); v.airTick(); sfx.flash(if (n > 0) 1 else -1) }   // a detent per wheel step sent
             }
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { Air.touching = false; Air.padRest = false; sfx.up(); v.performClick() }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { Air.touching = false; sfx.up(); v.performClick() }
         }
         true
     }
     pad.addView(strip, FrameLayout.LayoutParams(dp(48), -1, Gravity.END).apply { setMargins(0, dp(8), dp(8), dp(8)) })
     page.addView(pad, LinearLayout.LayoutParams(-1, 0, 1f).apply { topMargin = dp(12) })
 
-    val hold = button("@lock|" + T("air.hold_move"), SOFT)           // the gyroscope moves the pointer only while a finger rests on the pad
-    hold.textSize = 14f; hold.maxLines = 1
-    hold.setOnClickListener { Air.holdToMove = !Air.holdToMove; hold.setOn(Air.holdToMove, 14) }
-    page.addView(hold, LinearLayout.LayoutParams(-1, dp(44)).apply { topMargin = dp(10) })
     val click = button("@mouse|" + T("air.click"), ACCENT)             // the thumb's: tap = click, hold = button down while the phone moves
     click.textSize = 18f; click.maxLines = 1
     val holdBuzz = Runnable { if (Air.clickHeld) click.airHaptic(HapticFeedbackConstants.LONG_PRESS) }   // still down after a moment: it is a drag-hold, a heavier beat

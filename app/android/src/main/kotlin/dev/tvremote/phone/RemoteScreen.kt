@@ -346,10 +346,20 @@ internal fun MainActivity.buildRemote() {
     }
     controls.addView(arrows, gap(16))
     controls.addView(tpad, LinearLayout.LayoutParams(-1, dp(250)).also { it.topMargin = dp(16) })
-    val sp2 = LinearLayout.LayoutParams(-2, dp(36))
+    // Air Mouse beside it, one tap away (also under More): a real pointer for a browser, selecting text, dragging
+    val air = button("@mouse|" + T("rkey.air"), BTN)
+    air.textSize = 13f
+    air.setPadding(dp(12), 0, dp(12), 0)
+    air.minHeight = 0
+    air.minimumHeight = 0
+    air.setOnClickListener { airOpen() }
+    val chips = LinearLayout(this)
+    chips.addView(swap, LinearLayout.LayoutParams(-2, dp(36)))
+    chips.addView(air, LinearLayout.LayoutParams(-2, dp(36)).apply { marginStart = dp(8) })
+    val sp2 = LinearLayout.LayoutParams(-2, -2)
     sp2.gravity = Gravity.CENTER_HORIZONTAL
     sp2.topMargin = dp(8)
-    controls.addView(swap, sp2)
+    controls.addView(chips, sp2)
     controls.addView(remoteRow("nav", 0, 58, 0), gap(16))                    // Back, Home, Menu across the width
     // the same rows, in the same order, as the two web remotes: remote.json
     // Volume on the left, channels on the right, each one tall bar for the thumb; the media keys between them.

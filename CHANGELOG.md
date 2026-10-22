@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- App điện thoại, Air Mouse: giữ yên ngón trên ô (rung) là nhấn giữ chuột, rồi xoay điện thoại hoặc kéo ngón để bôi đen chữ hay kéo thả. Bỏ nút "Giữ để di chuyển" và thao tác giữ lâu để Back (đã có nút Back). Nút Air Mouse nằm ngay cạnh "Dùng touchpad" trên màn điều khiển, không phải vào Thêm.
 - Thư viện launcher: viền xanh của launcher đang dùng chạy đủ quanh thẻ (ảnh xem trước từng che mất nửa trên).
 - Cập nhật TV Setup cùng lúc với cài / cập nhật TV Channels, TV Games, TV Home trên TV yếu (box FPT Play): không còn "Mất kết nối với TV giữa chừng" làm hỏng cả hai. TV bận ghi file trả lời chậm thì chỉ lệnh đó chờ, kết nối ADB giữ nguyên.
 - App điện thoại: cài / cập nhật TV Channels, TV Games, TV Home cũng chạy nền với thông báo (trước chỉ chép file và TV Setup), và lần đầu hỏi cho chạy nền không giới hạn pin (MIUI / POCO cắt mạng của app khi chuyển sang app khác).
@@ -17,6 +18,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Games: game bài và cờ nhiều người trên TV, mỗi người cầm bài trên điện thoại của mình (tay cầm có kiểu "bài": chạm hoặc vuốt để chọn lá, nút Đánh / Bỏ lượt / Gợi ý). Máy chơi thay ghế trống, điện thoại vào giữa ván thì nhận ghế đó. Có Tiến lên miền Nam, Cờ caro, Bài màu (kiểu Uno), Mèo nổ, Cờ cá ngựa, Cờ tỷ phú, Bi-da, Đặt bom. Lá bài trên điện thoại vẽ như bài thật (mặt oval, chữ ở hai góc, lá không đánh được thì mờ đi), nút có biểu tượng. Các game này phỏng theo gamehub24: góc dưới màn hình ghi nguồn, bấm ↓ trên remote hiện mã QR mở gamehub24.pages.dev trên điện thoại. Cần TV Games mới.
 
 **English**
+- Phone app, Air Mouse: a finger held still on the pad (a buzz) holds the mouse button, then moving the phone or the finger selects text or drags. The "Hold to move" switch and long press = Back are gone (Back has its button). An Air Mouse button sits next to "Use the touchpad" on the remote, no trip to More.
 - Launcher gallery: the blue edge of the launcher in use runs all around its card (the preview picture hid its top half).
 - Updating TV Setup while TV Channels, TV Games or TV Home installs, on a weak TV (an FPT Play box): no more "Lost the TV midway" breaking both. A TV slow to answer while it writes a file makes only that command wait; the ADB connection stays.
 - Phone app: installing or updating TV Channels, TV Games and TV Home also goes on in the background with its notification (before: only copies and TV Setup), and the first time it asks to run without battery limits (MIUI / POCO cut the app's network once you switched apps).
