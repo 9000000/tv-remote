@@ -19,7 +19,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:600 1.
 .card{position:relative;flex:none;width:var(--cw);aspect-ratio:5/7;border-radius:calc(var(--cw) * .1);background:var(--b);color:#fff;border:calc(var(--cw) * .05) solid #f7f7f2;box-shadow:-.3vw .2vw .8vw #0007;overflow:hidden}
 .card.wild{background:linear-gradient(150deg,#ffffff20,#0000 50%,#0005),#111827}
 .card{background:linear-gradient(150deg,#ffffff30,#fff0 45%,#0000 60%,#0004),var(--b)}
-.card s{position:absolute;left:50%;top:50%;width:94%;height:50%;translate:-50% -50%;rotate:-32deg;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 calc(var(--cw) * .015) #0002}
+.card s{position:absolute;left:50%;top:50%;width:94%;height:50%;transform:translate(-50%,-50%) rotate(-32deg);border-radius:50%;background:#fff;box-shadow:inset 0 0 0 calc(var(--cw) * .015) #0002}
 .card.wild s{background:conic-gradient(#dc2626 0 25%,#eab308 0 50%,#16a34a 0 75%,#2563eb 0)}
 .card b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:900 calc(var(--cw) * .42)/1 system-ui;color:var(--b);text-shadow:.15vh .15vh 0 #0003}
 .card.wild b{color:#fff;text-shadow:0 .2vh .6vh #000a}

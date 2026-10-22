@@ -9,7 +9,7 @@
   const Q = new URLSearchParams(location.search);
   const VI = (navigator.language || '').toLowerCase().startsWith('vi');
   const W = 1280, H = 720, DT = 1 / 60;
-  const PCOL = ['#38bdf8', '#fb7185', '#4ade80', '#facc15'];
+  const PCOL = ['#3b82f6', '#ef4444', '#22c55e', '#eab308'];   // the pad's own colour per slot (pad.js COLORS): a phone matches its seat
   const FONT = 'system-ui, Roboto, "Helvetica Neue", Arial, sans-serif';
   const pad = window.tvpad;
   const words = {

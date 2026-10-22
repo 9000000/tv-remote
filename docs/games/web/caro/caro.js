@@ -75,7 +75,7 @@ function move(s, dx, dy) {
 const DIR = { LEFT: [-1, 0], RIGHT: [1, 0], UP: [0, -1], DOWN: [0, 1] };
 function hold(s, btn, down) {              // a held D-pad repeats
   const k = s + btn;
-  clearTimeout(holds[k]?.t); clearInterval(holds[k]?.i); delete holds[k];
+  if (holds[k]) { clearTimeout(holds[k].t); clearInterval(holds[k].i); } delete holds[k];
   if (!down) return;
   move(s, ...DIR[btn]);
   const o = holds[k] = {};

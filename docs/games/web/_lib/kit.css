@@ -1,4 +1,4 @@
-html, body { margin: 0; height: 100%; overflow: hidden; background: #070b1a; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #070b1a; cursor: none; }   /* a TV has no pointer (nopad.js gives it back in a plain browser) */
 body {
   background:
     radial-gradient(ellipse at 50% 0%, #1b2a5c 0%, rgba(27, 42, 92, 0) 60%),

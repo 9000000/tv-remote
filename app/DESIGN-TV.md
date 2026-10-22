@@ -188,10 +188,12 @@ Durations go through `Motion.ms(t)` (Home) / `ms(t)` (Games) so *calm* shortens 
 3. **Both languages**: Vietnamese and English (Channels: its Language row; the others: the TV's language). Long Vietnamese words still fit.
 4. **Motion off** (`settings put global animator_duration_scale 0`): the end states are right with no animation.
 5. Text fields: open the keyboard, press Back, check the focus lands on the results and the dialog stays.
-6. Unit tests of the app (`./gradlew :<app>:testDebugUnitTest`); TV Setup words: `node --test app/shared/tests/` (`i18n.test.js`).
+6. `node --test app/shared/tests/` (`tv_design.test.js`: no new raw colour outside a named constant, one `tv_style.xml`, words in both languages, generated icons); unit tests of the app (`./gradlew :<app>:testDebugUnitTest`); TV Setup words: `node --test app/shared/tests/` (`i18n.test.js`).
 7. Report what was checked where, and what was not (a real 1 GB box, a real remote's long press, overscan on a real panel).
 
 ## 7. Known drift (documented, not fixed: don't copy it, don't add more)
+
+Raw colours are counted per file in `app/shared/tests/tv_design.test.js` (`RAW`): a count may only go down.
 
 | # | What | Where |
 |---|---|---|

@@ -15,7 +15,7 @@ References: **table / card / board games** -> `tienlen/` (+ `_lib/table.js`); **
 | Screen | A TV, 3 m away, 1280x720 up to 4K. Size everything from the viewport (`vh`), or draw on a fixed 1280x720 stage that is scaled (Kit canvas, cangua `#stage`). Never fixed `px` on a page that is not scaled. | `_lib/credit.js:16-26` (vh), `_lib/kit.css:10`, `cangua/cangua.js:227` |
 | Inputs | The TV remote (arrows, Enter = OK, Back belongs to TV Games), phones through `window.tvpad`, Bluetooth pads (Gamepad API), the keyboard for player 1 off the TV. Every screen is usable with arrows + OK alone. | `_lib/kit.js:99-145`, `_lib/table.js:202-230` |
 | No pointer | A TV has no mouse: `cursor:none` on `html,body`; no hover states, no click-only controls. A click may exist only as an extra (desktop tests, `pointer.js` mouse = player 1). | `tienlen/tienlen.css:3`, `_lib/pointer.js:30-35` |
-| Old WebView | TV Games runs from Android 5 (`app/games/build.gradle.kts:15`). Plain ES2017 JS (no `?.`, `??`, `catch {}`), `'use strict'`, no modules, no build step. CSS no newer than what `_lib` uses (custom properties, `inset`, `aspect-ratio`, flex/grid). | `_lib/*.js` |
+| Old WebView | TV Games runs from Android 5 (`app/games/build.gradle.kts:15`). Plain ES2017 JS (no `?.`, `??`, `catch {}`; `games_design.test.js`), `'use strict'`, no modules, no build step. CSS no newer than what `_lib` uses (custom properties, `inset`, `aspect-ratio`, flex/grid). | `_lib/*.js` |
 | Plain browser | Without `tvpad` the page says what it is for (`nopad.js`, after an 800 ms grace for an old WebView), and a Kit game can still be tried with the keyboard. | `_lib/nopad.js:38-40` |
 | Language | vi / en by `navigator.language` (`startsWith('vi')`), nothing else. Every word comes from one words object. | `_lib/table.js:32-43`, `_lib/kit.js:10,15-18` |
 | Offline-ish | Each game is its own folder of plain files, served by the site; no CDN, no web font, no network call other than a data file next to the page (quiz `bank.json`, last good copy in `localStorage`). | `quiz/quiz.js:14-15` |
@@ -169,7 +169,7 @@ List the game in `docs/games/games.json` "web" (`players`, `min`, `genre`, `img`
 
 ## 7. Checklist before done
 
-- [ ] `node --check` every JS file; `rules.js` exercised in node (no DOM) for a few hundred random games.
+- [ ] `node --test app/shared/tests/` (`games_design.test.js` checks ES2017, no `translate:`/`scale:` properties, no other hosts, cursor hidden, qr.js then nopad.js, one set of seat colours); `node --check` every JS file; `rules.js` exercised in node (no DOM) for a few hundred random games.
 - [ ] Serve the site: `dev/test/serve_docs.py` (http://localhost:8000/games/web/<id>/).
 - [ ] Playwright (`npm install --prefix dev playwright`), Chromium at **1280x720** and **1920x1080**, with a fake `tvpad`
       added by `page.addInitScript` before the page runs; copy the shim of the site's demo (`docs/demo/games.html:150-153`):
@@ -190,14 +190,11 @@ List the game in `docs/games/games.json` "web" (`players`, `min`, `genre`, `img`
 
 | # | Drift | Where |
 |---|---|---|
-| 1 | Kit's seat colours are lighter (`#38bdf8 #fb7185 #4ade80 #facc15`) than the pad's / Table's, so the phone's colour does not match its seat on arcade games | `_lib/kit.js:12` vs `_lib/table.js:45`, `pad.js:13` |
 | 2 | Units: tienlen / colors / meono / quiz in `vw`; typhu in `vh`; cangua in `px` on a scaled 1280x720 stage; caro mixes `vh` board + `vw` text | each `*.css:1-3` |
 | 3 | Body size: `1.8vw` (tienlen, colors, meono), `2.2vw` (quiz, caro), `1.8vh` (typhu), `24px` (cangua) | `*.css:3` |
-| 4 | `kit.css` has no `cursor:none` and its own background (`#070b1a` + grid) instead of `--bg` | `_lib/kit.css:1-9` |
 | 5 | Words: quiz and caro keep their own `T` object; Kit games write inline `K.VI ? … : …` | `quiz.js:5`, `caro.js:5`, `bombers.js:7,123-125`, `hockey.js:116` |
 | 6 | The remote panel's icon map lacks `again` (🔄 on the phone) | `table.js:101` vs `pad.js:395` |
 | 7 | Main action: `#2563eb` on the TV panel, the player's colour on the phone | `table.js:159`, `pad.css:157` |
-| 8 | Newer syntax than the baseline: `?.` in caro; individual `translate:` / `rotate:` / `scale:` in colors and meono (Chrome 104+) | `caro.js:78`, `colors.css:22`, `meono.css:69` |
 | 9 | Game-over overlay: scrim `e8` / `ea` / `ee`, z-index none / 20 / 6 / 5, title `4.4vw` / `56px` / `6vh`, typhu's columns differ | `tienlen.css:38-45`, `cangua.css:46-54`, `meono.css:59-66`, `typhu.css:54-62` |
 | 10 | `#msg` placement: top 9% (tienlen, colors), 5% (meono), 40vh (typhu), beside the die (cangua) | the same files |
 | 11 | Own palettes beside the tokens: meono `--bg #0d0a18 --ink #f5f3ff --dim #a99fcb --card #1a1530`; caro X/O `#3b82f6 / #ef4444` and cursors `#0e9f4a / #7c3aed` | `meono.css:1`, `caro.js:15` |
