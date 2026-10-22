@@ -64,7 +64,8 @@ const NOW = '<script>(function(f){var R=/^\\/api\\/(key|app|app\\/launch|volume|
 async function mock(e, u) {
   const body = e.request.method === 'POST' ? await e.request.text() : '';
   const pages = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });   // the demo page may not be controlled yet on a first visit
-  const home = pages.find((c) => new URL(c.url).pathname === '/demo/remote.html');   // the hub (/demo/) holds the tabs; this page holds the made-up TV
+  // the hub (/demo/) holds the tabs; this page holds the made-up TV. Cloudflare Pages drops .html (a 308 to /demo/remote)
+  const home = pages.find((c) => /^\/demo\/remote(\.html)?$/.test(new URL(c.url).pathname));
   if (!home) return json(503, { error: 'open the demo from /demo/#remote' });
   const reply = await new Promise((done) => {
     const ch = new MessageChannel();
