@@ -23,7 +23,7 @@ set -e
 cd "$(dirname "$0")/../.."
 KEY=${RELEASE_KEY:-$HOME/.tv-remote-release/ed25519.pem}
 [ -f "$KEY" ] || { echo "release key missing ($KEY): without SHA256SUMS.sig no app takes the update"; exit 1; }
-grep -q "$(java dev/release/Sign.java pub "$KEY")" app/shared/src/main/kotlin/dev/tvremote/update/Release.kt || { echo "$KEY is not one of Release.KEYS"; exit 1; }
+grep -q "$(java dev/release/Sign.java pub "$KEY")" app/shared/src/sign/kotlin/dev/tvremote/update/Release.kt || { echo "$KEY is not one of Release.KEYS"; exit 1; }
 [ -f app/android/signing.jks ] && [ -f app/tv/signing.jks ] && [ -f app/home/signing.jks ] && [ -f app/channels/signing.jks ] && [ -f app/games/signing.jks ] || { echo "signing.jks missing: an APK signed with a new key cannot update the installed apps"; exit 1; }
 [ -z "$(git status --porcelain)" ] || { echo "commit your changes first"; exit 1; }
 # the user guide: a topic whose app files changed since the release it was checked against may now be wrong
@@ -59,7 +59,7 @@ fi
 # Release.legacy() takes 1.3.0 … 2.x for the numbers before the restart: past 1.2 the new ones would look old
 for v in VERSION app/android/VERSION app/tv/VERSION app/home/VERSION app/channels/VERSION app/games/VERSION; do
   if python3 -c 'import sys; a = [int(x) for x in open(sys.argv[1]).read().split(".")]; sys.exit(0 if a[0] >= 2 or (a[0] == 1 and a[1] >= 3) else 1)' "$v" &&
-     grep -q "fun legacy" app/shared/src/main/kotlin/dev/tvremote/update/Release.kt; then
+     grep -q "fun legacy" app/shared/src/sign/kotlin/dev/tvremote/update/Release.kt; then
     echo "$v reaches $(cat $v): first remove Release.legacy() (and its tests), the numbers from before the restart at 0.1.0"; git checkout -- VERSION app/android/VERSION app/tv/VERSION app/home/VERSION app/channels/VERSION app/games/VERSION; exit 1
   fi
 done
