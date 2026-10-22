@@ -537,11 +537,15 @@ class LibraryActivity : ComponentActivity() {
                 orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
                 addView(label(title, 28f).apply { typeface = android.graphics.Typeface.DEFAULT_BOLD; maxLines = 2; setPadding(dp(20), 0, dp(20), dp(10)) })
                 extra?.invoke(this)
-                entries.forEachIndexed { n, (t, f) -> addView(menuButton(t, 420, 52, 20f) { f() }.also { b ->
-                    if (n == focusIndex) first = b
-                    icons.getOrNull(n)?.let { r -> val ink = b.textColors; b.setCompoundDrawablesRelative(getDrawable(r)!!.mutate().also { d -> d.setBounds(0, 0, dp(22), dp(22)); d.setTintList(ink) }, null, null, null); b.compoundDrawablePadding = dp(12); b.setPadding(dp(120), 0, dp(120), 0) }
-                }) }
-                addView(menuButton(getString(R.string.close), 420, 52, 20f) { closeOverlay() }.also { if (first == null) first = it })
+                // a list row: icon and word together on the left (a blank slot keeps rows without an icon in line)
+                fun row(b: TextView, r: Int?) {
+                    val ink = b.textColors
+                    val d = if (r != null) getDrawable(r)!!.mutate().also { it.setTintList(ink) } else android.graphics.drawable.ColorDrawable(0)
+                    d.setBounds(0, 0, dp(22), dp(22)); b.setCompoundDrawablesRelative(d, null, null, null)
+                    b.compoundDrawablePadding = dp(14); b.gravity = Gravity.START or Gravity.CENTER_VERTICAL; b.setPadding(dp(24), 0, dp(20), 0)
+                }
+                entries.forEachIndexed { n, (t, f) -> addView(menuButton(t, 420, 52, 20f) { f() }.also { b -> if (n == focusIndex) first = b; row(b, icons.getOrNull(n)) }) }
+                addView(menuButton(getString(R.string.close), 420, 52, 20f) { closeOverlay() }.also { if (first == null) first = it; row(it, R.drawable.ic_close) })
             }, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
         }
         overlay = v
