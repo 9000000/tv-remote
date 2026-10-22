@@ -606,11 +606,24 @@ class Tv(
     // Needs only the control socket (a keys-only session works, no picture). scrcpy v5 UHID_CREATE: type 12, id u16, vendor u16,
     // product u16, name (u8 length), report descriptor (u16 length); UHID_INPUT: type 13, id u16, report (u16 length); UHID_DESTROY: 14, id.
     @Volatile private var mouseOn = false
+    // The mouse lives in the scrcpy-server that made it and dies with it. Which server takes our messages changes when the
+    // picture comes or goes (carry) or this session rests: the mouse was gone until the next Air Mouse, its reports sent to a
+    // server that had none (the "it works, then not" of the Manage screen). Made again in whichever server takes them now.
+    @Volatile private var mouseAt: Adb.Stream? = null
 
     /** Makes the TV's mouse; a second call while it exists does nothing. */
     fun mouseOpen() {
         if (mouseOn) return
         mouseOn = true
+        mouseAt = null
+        mouseHere()
+    }
+
+    private fun mouseHere() {
+        val by = carrier
+        val at = (if (by != null && by.control != null && !by.stopped) by.control else control) ?: return   // resting: send() wakes it, the next report makes it
+        if (at === mouseAt) return
+        mouseAt = at
         val name = "TV Remote Air Mouse".toByteArray()
         send(ByteBuffer.allocate(10 + name.size + MOUSE_DESC.size).put(12.toByte()).putShort(MOUSE_ID).putShort(0x18d1.toShort()).putShort(0x4e42.toShort())
             .put(name.size.toByte()).put(name).putShort(MOUSE_DESC.size.toShort()).put(MOUSE_DESC).array())
@@ -670,6 +683,7 @@ class Tv(
                 msg = mouseOut.toByteArray(); mouseOut.reset()
             }
             if (msg.isEmpty()) continue
+            mouseHere()
             val t0 = System.nanoTime()
             if (lastStart != 0L) gaps.add(System.currentTimeMillis() - lastStart)
             lastStart = System.currentTimeMillis(); reports += msg.size / 9
@@ -688,6 +702,7 @@ class Tv(
     fun mouseClose() {
         if (!mouseOn) return
         mouseOn = false
+        mouseAt = null
         synchronized(mouseLock) { mouseOut.reset(); accDx = 0; accDy = 0; accWheel = 0; accBtn = 0; mousePump = null; mouseLock.notifyAll() }
         send(byteArrayOf(14, 0, MOUSE_ID.toByte()))
     }

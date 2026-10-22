@@ -9,7 +9,9 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.InputDevice
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.webkit.CookieManager
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -91,8 +93,39 @@ class ManageActivity : Activity() {
 
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(req: Int, res: Int, data: Intent?) {
-        picked?.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(res, data))
+        // parseResult reads only getData(): a picker answering a multiple pick with ClipData alone gave the page nothing
+        val clip = data?.clipData
+        picked?.onReceiveValue(if (res == RESULT_OK && clip != null && clip.itemCount > 0) Array(clip.itemCount) { clip.getItemAt(it).uri }
+            else WebChromeClient.FileChooserParams.parseResult(res, data))
         picked = null
+    }
+
+    // A mouse (Air Mouse's, a USB one): this WebView drops mouse clicks and wheel right of x = 1080 px, the screen's height,
+    // as if it were standing (Google TV emulator WebView 113, an FPT box 155: the page got no event at all). Touches reach
+    // the whole page, so a click goes in as a touch, and a wheel it did not take scrolls the box under the pointer itself.
+    override fun dispatchTouchEvent(e: MotionEvent): Boolean {
+        if (!e.isFromSource(InputDevice.SOURCE_MOUSE) || e.pointerCount != 1) return super.dispatchTouchEvent(e)
+        val p = MotionEvent.PointerProperties().also { e.getPointerProperties(0, it); it.toolType = MotionEvent.TOOL_TYPE_FINGER }
+        val c = MotionEvent.PointerCoords().also { e.getPointerCoords(0, it) }
+        val t = MotionEvent.obtain(e.downTime, e.eventTime, e.action, 1, arrayOf(p), arrayOf(c), e.metaState, 0,
+            e.xPrecision, e.yPrecision, e.deviceId, e.edgeFlags, InputDevice.SOURCE_TOUCHSCREEN, e.flags)
+        try { return super.dispatchTouchEvent(t) } finally { t.recycle() }
+    }
+
+    override fun dispatchGenericMotionEvent(e: MotionEvent): Boolean {
+        val a = e.actionMasked
+        if (!e.isFromSource(InputDevice.SOURCE_MOUSE)) return super.dispatchGenericMotionEvent(e)
+        if (a == MotionEvent.ACTION_BUTTON_PRESS || a == MotionEvent.ACTION_BUTTON_RELEASE) return true   // the touch above is the click
+        if (super.dispatchGenericMotionEvent(e) || a != MotionEvent.ACTION_SCROLL || !::web.isInitialized) return true
+        val d = e.getAxisValue(MotionEvent.AXIS_VSCROLL)
+        if (d == 0f) return true
+        val step = if (android.os.Build.VERSION.SDK_INT >= 26) android.view.ViewConfiguration.get(this).scaledVerticalScrollFactor   // the notch WebView scrolls itself, in px
+            else 64 * resources.displayMetrics.density
+        web.evaluateJavascript("(function(x,y,d){x/=devicePixelRatio;y/=devicePixelRatio;let b=document.elementFromPoint(x,y);" +
+            "for(;b&&b!==document.body&&b!==document.documentElement;b=b.parentElement){const o=getComputedStyle(b).overflowY;" +
+            "if((o=='auto'||o=='scroll')&&b.scrollHeight>b.clientHeight)break}" +
+            "(b&&b!==document.body&&b!==document.documentElement?b:document.scrollingElement).scrollBy(0,d/devicePixelRatio)})(${e.x},${e.y},${-d * step})", null)
+        return true
     }
 
     // Back: the page closes what is open (a dialog, a menu) first; only with nothing open does it leave
