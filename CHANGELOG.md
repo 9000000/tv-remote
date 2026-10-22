@@ -4,7 +4,9 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
-## Unreleased
+## 0.18.0 - 2026-10-22
+
+Web 0.18.0 · app điện thoại 0.18.0 · app TV 0.18.0 · TV Home 0.5.0 · TV Channels 0.3.0 · TV Games 0.2.0
 
 **Tiếng Việt**
 - TV Home, TV Channels, TV Games **tự báo khi có bản mới**: mở app (tối đa 12 giờ một lần) mà có bản mới thì hỏi **Cập nhật ngay / Để sau** (một ngày) **/ Bỏ qua bản này**. Cập nhật thì tải ngay trên TV (có %, Hủy được), file được kiểm chữ ký như mọi bản phát hành; lần đầu Android bắt bật "Cài ứng dụng không rõ nguồn" cho app: mở thẳng công tắc đó, bật xong quay lại là tự cài tiếp. Không mất gì đã lưu. Bản cài trước đó (chưa biết tự hỏi) được TV Setup cập nhật ngầm, chỉ lúc app đó không mở trên màn hình (TV Home: lúc mở app khác hoặc TV ngủ).
