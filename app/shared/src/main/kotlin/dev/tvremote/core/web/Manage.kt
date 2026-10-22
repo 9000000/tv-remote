@@ -114,6 +114,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     val c = dev.tvremote.core.ontv.Channels
                     return HttpServer.Response.json(c.manage({ sh(it) }, if (post) r.json() else null, r.q("cc").ifEmpty { null }, r.q("fresh") == "1", r.q("countries") == "1"))
                 }
+                "channels/counts" -> if (!post) return HttpServer.Response.json(JSONObject().put("counts", JSONObject(dev.tvremote.core.ontv.Channels.counts() ?: emptyMap<String, Int>())))   // the country picker's numbers (from iptv-org, not the TV)
                 "channels/export" -> if (!post) {                      // the file to keep: a download, like the scenes backup
                     val c = dev.tvremote.core.ontv.Channels
                     val doc = c.manage({ sh(it) }, null, export = true).optJSONObject("export") ?: throw IOException("channels:missing")

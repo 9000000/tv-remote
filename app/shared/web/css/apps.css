@@ -65,8 +65,17 @@ button.appchoice span { overflow:hidden; text-overflow:ellipsis; white-space:now
 .chm .chlogo { flex:none; width:40px; height:30px; display:grid; place-items:center; border-radius:6px; background:var(--card2, rgba(127,127,127,.14)); overflow:hidden; }
 .chm .chlogo img { max-width:100%; max-height:100%; object-fit:contain; }
 .chm .chmcats { margin:-6px; }
-.chm select { min-width:0; width:100%; }
-.chm .line select { flex:1 1 auto; }
+.chm .chmcc { flex:1 1 auto; min-width:0; display:flex; align-items:center; justify-content:flex-start; gap:10px; padding:0 14px; }
+.chm .chmcc span { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:start; }
+.chm .chmcc b, .chmccs .item b { flex:none; font-weight:600; color:var(--muted); font-variant-numeric:tabular-nums; }
+.chm .chmcc i { flex:none; font-style:normal; color:var(--muted); }
+.chmccs { max-height:min(56vh, 520px); overflow-y:auto; margin:0 -4px; padding:2px 4px; }
+.chmccs .item.pick { flex:none; display:flex; align-items:center; gap:10px; flex-wrap:nowrap; width:100%; padding:8px 10px; border:0; border-radius:10px; background:none; color:var(--ink); text-align:start; cursor:pointer; min-height:0; }
+.chmccs .item.pick:hover:not(.on) { background:var(--btn); }
+.chmccs .item.pick[hidden] { display:none; }
+.chmccs .item .name { flex:1 1 auto; min-width:0; }
+.chmccs .item .name span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.chmccs .flag { flex:none; width:28px; font-size:22px; line-height:1; text-align:center; }
 .chm .state.bad { color:var(--bad); }
 .chm .card-head { gap:8px; flex-wrap:wrap; }
 .chm .item .acts { gap:6px; }

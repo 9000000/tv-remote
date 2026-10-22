@@ -24,4 +24,19 @@ class ChannelsManageTest {
     }
 
     @Test(expected = IllegalArgumentException::class) fun aCountryIsTwoLetters() { Channels.manage({ "" }, null, "v n; rm") }
+
+    @Test fun countsEachCountrysChannelsOnce() {
+        val m3u = """#EXTM3U
+#EXTINF:-1 tvg-id="VTV1.vn@SD" group-title="Vietnam",VTV1
+http://a
+#EXTINF:-1 tvg-id="VTV1.vn@HD" group-title="Vietnam",VTV1 HD
+http://b
+#EXTINF:-1 tvg-id="" group-title="Vietnam",Local
+http://c
+#EXTINF:-1 tvg-id="CNN.us" group-title="United States",CNN
+http://d
+#EXTINF:-1 tvg-id="X.int" group-title="International",X
+http://e""".lineSequence()
+        assertEquals(mapOf("vn" to 2, "us" to 1), Channels.count(m3u, mapOf("Vietnam" to "vn", "United States" to "us")))
+    }
 }

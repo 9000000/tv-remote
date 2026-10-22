@@ -54,6 +54,41 @@ object Channels {
         return r
     }
 
+    /**
+     * How many channels each country's list holds (cc -> n), for the page's country picker. Counted here from iptv-org's
+     * index.country.m3u (~3 MB, read as it streams, never held whole) by its group-title, a country's name as in countries.json:
+     * the same sections as countries/<cc>.m3u, which TV Channels shows. Not on the TV: a weak box need not fetch 3 MB for a
+     * number. Kept a day; the last count (or null) when the network fails. A channel counts once, however many streams.
+     */
+    fun counts(): Map<String, Int>? {
+        counted?.let { (at, m) -> if (System.currentTimeMillis() - at < 24 * 3600_000L) return m }
+        return try {
+            val names = org.json.JSONArray(String(fetch("$IPTV/api/countries.json").use { it.readBytes() }, Charsets.UTF_8)).let { a ->
+                (0 until a.length()).mapNotNull { a.optJSONObject(it) }.associate { it.optString("name") to it.optString("code").lowercase() } }
+            fetch("$IPTV/iptv/index.country.m3u").bufferedReader().useLines { count(it, names) }.also { counted = System.currentTimeMillis() to it }
+        } catch (e: Exception) { counted?.second }
+    }
+    @Volatile private var counted: Pair<Long, Map<String, Int>>? = null
+    private const val IPTV = "https://iptv-org.github.io"
+
+    private fun fetch(url: String): java.io.InputStream = (java.net.URL(url).openConnection() as java.net.HttpURLConnection).run {
+        connectTimeout = 10000; readTimeout = 30000; setRequestProperty("User-Agent", "tv-remote")
+        if (responseCode != 200) throw IOException("HTTP $responseCode"); inputStream
+    }
+
+    /** [names]: a country's name -> its code. A section not named after one (International) is left out. */
+    internal fun count(m3u: Sequence<String>, names: Map<String, String>): Map<String, Int> {
+        val seen = HashMap<String, HashSet<String>>()
+        val group = Regex("group-title=\"([^\"]*)\""); val id = Regex("tvg-id=\"([^\"@]*)")
+        for (l in m3u) {
+            if (!l.startsWith("#EXTINF")) continue
+            val cc = names[group.find(l)?.groupValues?.get(1) ?: continue] ?: continue
+            val who = id.find(l)?.groupValues?.get(1)?.ifEmpty { null } ?: l.substringAfterLast(',').trim()
+            seen.getOrPut(cc) { HashSet() }.add(who)
+        }
+        return seen.mapValues { it.value.size }
+    }
+
     /** An import request as the broadcast takes it: one argument may be ~128 KB, so a big file loses its stream addresses first, then is refused. */
     private fun packImport(req: JSONObject): String {
         var b = B64.encode(req.toString().toByteArray(Charsets.UTF_8))

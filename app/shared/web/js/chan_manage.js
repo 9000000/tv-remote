@@ -31,6 +31,7 @@ async function chanManage() {
   chm.base = chmCopy(chm);
   chmDialog();
   chmLoad(chm.cc, false);
+  chmCounts(chm);
 }
 
 // the country's channels (kept for the dialog's life); fresh: read from the network again
@@ -201,8 +202,7 @@ const chmSub = (ch) => [ch.g && ch.g.toLowerCase() !== 'undefined' ? chmCat(ch.g
 // all channels of a country: search, a category, ★ to favour, ＋ to put in a group
 function chmFind() {
   const c = chm, list = c.lists[c.cc];
-  const sel = el('select', { 'aria-label': T('chm.country'), onchange: () => { c.cc = sel.value; c.cat = ''; chmLoad(c.cc, false); } },
-    ...(c.countries.length ? c.countries : [{ cc: c.cc, name: c.cc.toUpperCase(), flag: '' }]).map((k) => el('option', { value: k.cc, textContent: (k.flag ? k.flag + ' ' : '') + k.name, selected: k.cc === c.cc })));
+  const sel = chmCountryBtn(c);
   const q = el('input', { type: 'search', value: c.q, autocomplete: 'off', spellcheck: false, placeholder: T('chm.search'), oninput: () => { c.q = q.value; drawRows(); } });
   const cats = el('div', { className: 'fchips chmcats' });
   const results = el('div', {}), note = el('p', { className: 'note' });
@@ -235,6 +235,72 @@ function chmFind() {
   if (list.empty) return [UI.line(sel), UI.warn(T('chm.empty')), UI.actions(UI.btn(T('chm.reload'), () => chmLoad(c.cc, true), 'primary'))];
   drawCats(); drawRows();
   return [UI.line(sel, UI.btn('↻', () => chmLoad(c.cc, true), 'small iconbtn')), q, cats, results, note];
+}
+
+// the country now, as a button that opens the picker (a <select> of 250 had no search)
+function chmCountryBtn(c) {
+  const k = c.countries.find((x) => x.cc === c.cc) || { cc: c.cc, name: c.cc.toUpperCase(), flag: '' };
+  const n = chmN(c, k.cc);
+  return c.ccBtn = el('button', { type: 'button', className: 'chmcc', title: T('chm.country'), 'aria-label': T('chm.country'),
+    onclick: async () => { const cc = await chmCountry(c); if (cc && cc !== c.cc && chm === c) { c.cc = cc; c.cat = ''; chmLoad(cc, false); } } },
+    el('span', { textContent: (k.flag ? k.flag + ' ' : '') + k.name }), n ? el('b', { textContent: String(n) }) : null, el('i', { textContent: '▾' }));
+}
+
+// a country's number: its list once loaded (with the providers' channels too, e.g. VieON's for Vietnam), else iptv-org's count
+const chmN = (c, cc) => (c.lists[cc] && !c.lists[cc].empty ? c.lists[cc].channels.length : c.counts && c.counts[cc]) || 0;
+
+// the channels per country, asked once a dialog: the button gets its number in place (the list below keeps its scroll)
+function chmCounts(c) {
+  return c.counting || (c.counting = api('/api/channels/counts', null, true).then((r) => {
+    if (!r || !r.counts || !Object.keys(r.counts).length) { c.counting = null; return; }
+    c.counts = r.counts;
+    if (c.ccBtn && c.ccBtn.isConnected) c.ccBtn.replaceWith(chmCountryBtn(c));
+  }));
+}
+
+// every country, searched by name or code, sorted by name or by how many channels it has (counted from iptv-org's list by the
+// server: /api/channels/counts; the numbers come in a moment after the list, and a country without one goes last)
+function chmCountry(c) {
+  return new Promise((done) => {
+    let picked = null;
+    const q = el('input', { type: 'search', placeholder: T('chm.find_country'), spellcheck: false, autocomplete: 'off' });
+    const none = el('p', { className: 'empty', textContent: T('chm.no_country'), hidden: true });
+    const box = el('div', { className: 'list chmccs' });
+    const rows = (c.countries.length ? c.countries : [{ cc: c.cc, name: c.cc.toUpperCase(), flag: '' }]).map((k) => {
+      const n = el('b');
+      const r = el('button', { type: 'button', className: 'item pick' + (k.cc === c.cc ? ' on' : ''), onclick: () => { picked = k.cc; d.close(); } },
+        el('span', { className: 'flag', textContent: k.flag || '' }), el('div', { className: 'name' }, el('span', { textContent: k.name }), el('small', { textContent: k.cc.toUpperCase() })), n);
+      r.k = k; r.f = chmFold(k.name) + ' ' + k.cc; r.n = n;
+      return r;
+    });
+    const sorts = el('div', { className: 'fchips' });
+    const draw = () => {
+      const by = c.ccSort === 'n' && c.counts ? 'n' : 'a';
+      sorts.replaceChildren(...[['a', T('chm.sort_name')], ['n', T('chm.sort_count')]].map(([v, w]) => el('button', { type: 'button', className: by === v ? 'on' : '',
+        'aria-pressed': String(by === v), disabled: v === 'n' && !c.counts, onclick: () => { c.ccSort = v; draw(); } }, w)));
+      rows.forEach((r) => { const n = chmN(c, r.k.cc); put(r.n, 'textContent', n ? String(n) : ''); });
+      const cnt = (r) => chmN(c, r.k.cc) || 0;
+      rows.sort(by === 'n' ? (x, y) => cnt(y) - cnt(x) || x.k.name.localeCompare(y.k.name) : (x, y) => x.k.name.localeCompare(y.k.name));
+      box.replaceChildren(...rows);
+      filter();
+    };
+    const filter = () => {
+      const w = chmFold(q.value.trim()).split(/\s+/).filter(Boolean); let n = 0;
+      rows.forEach((r) => { r.hidden = !w.every((x) => r.f.includes(x)); if (!r.hidden) n++; });
+      none.hidden = n > 0;
+    };
+    q.addEventListener('input', filter);
+    q.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); const r = rows.find((x) => !x.hidden); if (r) r.click(); } });   // the first one left
+    const d = el('dialog', { className: 'ask chmask chmpick' }, el('div', { className: 'card' },
+      UI.head(T('chm.pick_country'), el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
+      q, sorts, box, none));
+    d.addEventListener('close', () => { d.remove(); done(picked); });
+    draw();
+    document.body.append(d); d.showModal();
+    const on = rows.find((r) => r.k.cc === c.cc); if (on) on.scrollIntoView({ block: 'center' });
+    if (matchMedia('(pointer: fine)').matches) q.focus(); else (on || q).focus();   // a phone: no keyboard over half the list
+    if (!c.counts) chmCounts(c).then(() => { if (d.open) draw(); });
+  });
 }
 
 // the groups a channel is in: a tap puts it in or takes it out; a new group starts with it
