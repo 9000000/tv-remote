@@ -398,5 +398,5 @@ private class StripFx(ctx: Context, private val still: Boolean, private val d: F
         if (lit) again = true
         if (again) postInvalidateOnAnimation()
     }
-    private companion object { const val GAP = 9f }
+    private companion object { const val GAP = 18f }
 }

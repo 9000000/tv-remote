@@ -269,6 +269,15 @@ class LibraryActivity : ComponentActivity() {
         renderSections()
     }
 
+    /** A mouse wheel (the Air Mouse's scroll strip) scrolls the page wherever the pointer rests. Android hands the wheel only to the view
+     *  under the pointer, and a tile there takes it (it is clickable) without scrolling: the strip worked only over the gaps between tiles. */
+    override fun dispatchGenericMotionEvent(ev: android.view.MotionEvent): Boolean {
+        if (super.dispatchGenericMotionEvent(ev)) return true
+        if (ev.actionMasked != android.view.MotionEvent.ACTION_SCROLL || !ev.isFromSource(android.view.InputDevice.SOURCE_CLASS_POINTER)) return false
+        scrollAnim?.cancel()                                           // a wheel step wins over the centring that was running
+        return scroller?.onGenericMotionEvent(ev) ?: false
+    }
+
     /** The app's mark and name, the search field on the right. */
     private fun header(): View = LinearLayout(this).apply {
         gravity = Gravity.CENTER_VERTICAL; setPadding(dp(10), 0, dp(8), dp(12))
