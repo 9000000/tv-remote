@@ -51,6 +51,7 @@
     <string name="key_ok">OK</string>
     <string name="key_back">Back</string>
     <string name="hint_start">Bắt đầu</string>
+    <string name="hint_remote">Chơi bằng remote</string>
     <string name="hint_exit">Thoát</string>
     <string name="hint_ready">hoặc mọi người bấm Sẵn sàng</string>
     <string name="lobby_count">Bắt đầu sau</string>

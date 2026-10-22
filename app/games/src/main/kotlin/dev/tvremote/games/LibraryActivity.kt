@@ -180,8 +180,11 @@ class LibraryActivity : ComponentActivity() {
         return super.dispatchKeyEvent(ev)
     }
 
+    private var onOverlayClose: (() -> Unit)? = null                  // the download card: closing it cancels the download
+
     private fun closeOverlay() {
         overlay?.let { root.removeView(it) }; overlay = null
+        onOverlayClose?.let { onOverlayClose = null; it() }
         scroller?.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
         lastFocus?.takeIf { it.isAttachedToWindow }?.requestFocus()
     }
@@ -641,32 +644,17 @@ class LibraryActivity : ComponentActivity() {
     private class Dl(val tile: View) { @Volatile var cancelled = false }
     private class Cover(val box: View, val text: TextView, val bar: android.widget.ProgressBar, val hint: TextView)
     private var dl: Dl? = null
-    private val covers = java.util.WeakHashMap<View, Cover>()
     private var pendingFocus: String? = null                          // the file just downloaded: the library focuses its tile once drawn
 
-    private fun coverOf(tile: View): Cover = covers.getOrPut(tile) {
-        val t = label("", 18f).apply { setTypeface(null, android.graphics.Typeface.BOLD); maxLines = 2; gravity = Gravity.CENTER }
-        val bar = android.widget.ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
-            max = 100; progressTintList = android.content.res.ColorStateList.valueOf(0xFF4ADE80.toInt()); progressBackgroundTintList = android.content.res.ColorStateList.valueOf(0x40FFFFFF)
-        }
-        val hint = label("", 14f, 0xFFD5DAE6.toInt())
-        val box = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setBackgroundColor(0xFA0B0D12.toInt()); setPadding(dp(14), 0, dp(14), 0)
-            addView(t); addView(bar, LinearLayout.LayoutParams(-1, dp(8)).apply { topMargin = dp(8); bottomMargin = dp(6) }); addView(hint)
-        }
-        (tile as FrameLayout).addView(box, tile.childCount - 1, FrameLayout.LayoutParams(-1, -1))   // under the focus ring
-        Cover(box, t, bar, hint)
-    }
-
-    private fun uncover(tile: View) { covers.remove(tile)?.let { (tile as FrameLayout).removeView(it.box) } }
-
-    /** One OK on a suggestion: the ROM into files/roms, its sha256 checked first (a mismatch is thrown away). The card shows the percent
-     *  (bytes of Content-Length; a bar that just runs when the size is unknown); OK or Back on it cancels; a failure says so and OK retries. */
+    /** One OK on a suggestion: the ROM into files/roms, its sha256 checked first (a mismatch is thrown away), then the game opens. A card over
+     *  the library shows the percent (bytes of Content-Length; a bar that just runs when the size is unknown); Close or Back cancels; a
+     *  failure says so with Retry. */
     private fun getRom(h: org.json.JSONObject, s: Systems.Sys, tile: View) {
         dl?.let { if (it.tile === tile) cancelDl(); return }          // a second OK on the same card cancels; another card waits its turn
         val d = Dl(tile); dl = d
-        val cv = coverOf(tile)
-        cv.bar.visibility = View.VISIBLE; cv.bar.isIndeterminate = true; cv.text.text = getString(R.string.getting); cv.hint.text = getString(R.string.dl_cancel)
+        val cv = dlCard(h.optString("name"))
+        onOverlayClose = { if (dl === d) cancelDl() }
+        cv.bar.visibility = View.VISIBLE; cv.bar.isIndeterminate = true; cv.text.text = getString(R.string.getting)
         Thread {
             var msg: String? = null; var saved: String? = null
             try {
@@ -697,12 +685,13 @@ class LibraryActivity : ComponentActivity() {
             runOnUiThread {
                 if (isDestroyed || dl !== d) return@runOnUiThread
                 dl = null
-                if (d.cancelled) { uncover(tile); return@runOnUiThread }
-                if (msg != null) { cv.bar.visibility = View.GONE; cv.text.text = msg; cv.hint.text = getString(R.string.dl_retry); return@runOnUiThread }
+                if (d.cancelled) return@runOnUiThread
+                onOverlayClose = null
+                if (msg != null) { popup(msg, listOf(getString(R.string.retry) to { getRom(h, s, tile) }), replace = true, icons = listOf(R.drawable.ic_refresh)); return@runOnUiThread }
                 getSharedPreferences("games", MODE_PRIVATE).edit().putString("got:" + h.optString("id"), saved).apply()
-                pendingFocus = "g:" + saved
-                android.widget.Toast.makeText(this, getString(R.string.added, h.optString("name")), android.widget.Toast.LENGTH_LONG).show()
-                reload()
+                pendingFocus = "g:" + saved                                   // back from the game: on its tile in the library
+                closeOverlay(); reload()
+                try { startActivity(Intent(this, GameActivity::class.java).putExtra("path", File(Systems.romsDir(this), saved!!).path)) } catch (e: Exception) { }
             }
         }.start()
     }
@@ -712,7 +701,18 @@ class LibraryActivity : ComponentActivity() {
         cv.bar.isIndeterminate = false; cv.bar.progress = pc; cv.text.text = getString(R.string.dl_progress, pc)
     }
 
-    private fun cancelDl() { dl?.let { it.cancelled = true; uncover(it.tile); dl = null } }
+    private fun cancelDl() { dl?.let { it.cancelled = true; dl = null; onOverlayClose = null; closeOverlay() } }
+
+    /** The download's card: the game's name, the words and the bar; its Close cancels. */
+    private fun dlCard(name: String): Cover {
+        val t = label("", 20f, 0xFFD5DAE6.toInt()).apply { gravity = Gravity.CENTER }
+        val bar = android.widget.ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            max = 100; progressTintList = android.content.res.ColorStateList.valueOf(0xFF4ADE80.toInt()); progressBackgroundTintList = android.content.res.ColorStateList.valueOf(0x40FFFFFF)
+        }
+        val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; addView(t); addView(bar, LinearLayout.LayoutParams(-1, dp(10)).apply { topMargin = dp(12); bottomMargin = dp(18) }) }
+        popup(name, emptyList(), replace = overlay != null, extra = { it.addView(box, LinearLayout.LayoutParams(dp(420), -2)) })
+        return Cover(box, t, bar, t)
+    }
 
 
 

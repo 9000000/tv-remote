@@ -26,4 +26,9 @@ class LobbyRuleTest {
         assertTrue(LobbyRule.allReady(listOf(P(1, true, true), P(2, true, true)), 2))
         assertTrue(LobbyRule.tooFew(listOf(P(1, true, false)), 2))
     }
+
+    @Test fun theRemoteIsPlayerOneWhenNobodyIsIn() {
+        assertFalse(LobbyRule.tooFew(emptyList(), 1))
+        assertTrue(LobbyRule.tooFew(emptyList(), 2))
+    }
 }

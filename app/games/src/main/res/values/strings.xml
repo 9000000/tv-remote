@@ -51,6 +51,7 @@
     <string name="key_ok">OK</string>
     <string name="key_back">Back</string>
     <string name="hint_start">Start</string>
+    <string name="hint_remote">Play with the remote</string>
     <string name="hint_exit">Exit</string>
     <string name="hint_ready">or everyone taps Ready</string>
     <string name="lobby_count">Starting in</string>

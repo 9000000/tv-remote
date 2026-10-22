@@ -7,6 +7,6 @@ object LobbyRule {
 
     fun allReady(ps: List<P>, min: Int = 1): Boolean = ps.filter { it.phone }.let { ph -> ph.isNotEmpty() && ph.all { it.ready } && ps.size >= min }
 
-    /** OK on the remote with too few players asks once before it starts anyway. */
-    fun tooFew(ps: List<P>, min: Int): Boolean = ps.size < min
+    /** OK on the remote with too few players asks once before it starts anyway. With nobody in, the remote is player 1. */
+    fun tooFew(ps: List<P>, min: Int): Boolean = maxOf(ps.size, 1) < min
 }

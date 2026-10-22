@@ -92,7 +92,7 @@ class GameActivity : ComponentActivity() {
         server = GameServer.acquire(this)
         cards = GameCards(this, root, server, Systems.clean(file.name), null,
             onPause = { retro.frameSpeed = if (it) 0 else 1 }, onSave = { quickSave() }, onLoad = { quickLoad() }, onQuit = { finish() },
-            withLobby = true, kind = sys.label, art = Thumbs.src(this, sys, file.name), maxPlayers = players.first, minPlayers = players.second,
+            withLobby = true, kind = sys.label, art = Thumbs.catalog(this, file.name) ?: Thumbs.src(this, sys, file.name), maxPlayers = players.first, minPlayers = players.second,
             onGo = { startedAt = System.currentTimeMillis(); snapLoop.removeCallbacksAndMessages(null); snapLoop.postDelayed(snapTick, 5000) })
         if (lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) bind()   // the core was fetched after onResume already ran
     }

@@ -140,7 +140,7 @@ class LobbyView(
             addView(LinearLayout(act).apply {
                 gravity = Gravity.CENTER_VERTICAL; setPadding(act.dp(24), act.dp(8), act.dp(24), act.dp(8))
                 background = round(0xB3080A10.toInt(), 30, 1, 0x33FFFFFF)
-                addView(keyCap(act.getString(R.string.key_ok))); addView(hintText(R.string.hint_start))
+                addView(keyCap(act.getString(R.string.key_ok))); addView(hintText(R.string.hint_remote).also { startTv = it })
                 addView(keyCap(act.getString(R.string.key_back))); addView(hintText(R.string.hint_exit))
                 addView(act.label("|", 24f, 0x55FFFFFF).apply { setPadding(act.dp(14), 0, act.dp(14), 0) })
                 addView(hintText(R.string.hint_ready))
@@ -169,6 +169,8 @@ class LobbyView(
         setPadding(act.dp(14), act.dp(4), act.dp(14), act.dp(4)); background = round(0x40FFFFFF, 8, 2, 0x80FFFFFF.toInt())
         (layoutParams as LinearLayout.LayoutParams).apply { marginEnd = act.dp(10) }
     }
+    private var startTv: TextView? = null
+
     private fun hintText(id: Int) = act.label(act.getString(id), 22f, 0xFFE5E9F2.toInt()).apply { (layoutParams as LinearLayout.LayoutParams).marginEnd = act.dp(22); maxLines = 1 }
 
     private fun need() = when { max == 1 -> act.getString(R.string.need_one); min >= max -> act.getString(R.string.need_n, min); else -> act.getString(R.string.need_range, min, max) }
@@ -200,6 +202,7 @@ class LobbyView(
     /** Seats from the server: who is in, their names, pings and Ready. */
     fun render() {
         val ps = server.lobbyPlayers().associateBy { it.slot }
+        startTv?.text = act.getString(if (ps.isEmpty()) R.string.hint_remote else R.string.hint_start)   // nobody in: OK plays with the remote, no QR needed
         val w = server.watching(); watchTv.text = if (w > 0) act.getString(R.string.lobby_watch, w) else ""
         seatsTv.text = act.getString(R.string.lobby_seats, ps.size.coerceAtMost(rows.size), rows.size)
         rows.forEachIndexed { i, r ->
