@@ -22,7 +22,7 @@
 
 - [Chọn cách dùng](#chọn-cách-dùng)
 - [Ba app và một trang web](#ba-app-và-một-trang-web): tên gọi, so sánh, sơ đồ
-- [TV Home và TV Channels](#tv-home-và-tv-channels)
+- [Thêm app cho TV](#thêm-app-cho-tv)
 - [Chuẩn bị TV](#chuẩn-bị-tv)
 - [Cài TV Setup bằng mã Downloader](#cài-tv-setup-bằng-mã-downloader)
 - Cài và dùng từng cách:
@@ -127,9 +127,17 @@ flowchart TB
     UI --> PH & PC & TVA
 ```
 
-## TV Home và TV Channels
+## Thêm app cho TV
 
-Thêm 2 app cho TV, miễn phí, không quảng cáo. Cài và chỉnh từ app điện thoại / máy tính, hoặc bằng Downloader.
+Miễn phí, không quảng cáo, app nào riêng app đó: chỉ cài app bạn cần, từ app điện thoại / máy tính (tab TV) hoặc bằng Downloader. Sau này có thể thêm app khác.
+
+| App | Mã Downloader | Tệp |
+|---|---|---|
+| TV Home | **`4356026`** | [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk) |
+| TV Channels | **`8135635`** | [tv-channels.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-channels.apk) |
+| TV Games | chưa có | [tv-games.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-games.apk) |
+
+### 🏠 TV Home
 
 <table>
 <tr>
@@ -138,7 +146,7 @@ Thêm 2 app cho TV, miễn phí, không quảng cáo. Cài và chỉnh từ app 
 </tr>
 </table>
 
-**🏠 TV Home** là màn hình chính thay cho Google TV: không quảng cáo, không hàng gợi ý, 0,2 MB.
+Là màn hình chính thay cho Google TV: không quảng cáo, không hàng gợi ý, 0,2 MB.
 
 - Đồng hồ, dãy app yêu thích, rồi tới mọi app khác. Ẩn app không muốn trẻ con thấy.
 - Widget tùy chọn: hệ thống (RAM, bộ nhớ, IP), thời tiết, lịch âm, lịch tháng, app dùng nhiều và giới hạn, hẹn giờ tắt, ghi chú.
@@ -146,9 +154,11 @@ Thêm 2 app cho TV, miễn phí, không quảng cáo. Cài và chỉnh từ app 
 - Chỉnh từ điện thoại / máy tính (tab TV → 🏠 → *Tùy chỉnh TV Home*) hoặc ngay trên TV bằng remote.
 - *Tối ưu TV* tự đặt nó làm màn hình chính; *Về launcher của TV* là trả lại như cũ.
 
+### 📺 TV Channels
+
 <p align="center"><img src="docs/img/tvchannels.webp" width="720" alt="TV Channels: các kênh miễn phí của Việt Nam"><br><sub>TV Channels</sub></p>
 
-**📺 TV Channels** xem kênh truyền hình miễn phí trên TV.
+Xem kênh truyền hình miễn phí trên TV.
 
 - Kênh từ danh sách công khai của iptv-org theo nước, thể loại, cộng các kênh miễn phí của VieON, có lịch phát sóng (kênh VN).
 - Kênh yêu thích, nhóm tự tạo, ghim kênh ra màn hình chính. Kênh hỏng thì tự sang nguồn khác.
@@ -159,18 +169,15 @@ Thêm 2 app cho TV, miễn phí, không quảng cáo. Cài và chỉnh từ app 
 - Quản lý yêu thích và nhóm ngay từ điện thoại, máy tính hoặc trang web của TV (*Quản lý kênh*: tìm, ☆, nhóm, sắp xếp), không phải bấm D-pad.
 - Cài từ điện thoại / máy tính (tab TV → 📺 *Kênh TV* → Cài).
 
+### 🎮 TV Games
+
 <p align="center"><img src="docs/img/tv-games-vi.webp" width="720" alt="TV Games: game retro và game web trên TV"><br><sub>TV Games</sub></p>
 
-**🎮 TV Games** chơi game retro và game web trên TV, dùng điện thoại làm tay cầm.
+Chơi game retro và game web trên TV, dùng điện thoại làm tay cầm.
 
 - Game retro (libretro core) và game web; app gợi ý sẵn game homebrew miễn phí.
 - Tối đa 4 điện thoại làm tay cầm: quét QR trên TV, không cần ADB hay TV Setup.
 - Cài, mở và cập nhật từ app điện thoại / máy tính: tab **TV** → thẻ **Game trên TV** (chỉ cần ADB để cài; báo rõ khi bản phát hành mới nhất chưa có `tv-games.apk`).
-
-| App | Mã Downloader | Tệp |
-|---|---|---|
-| TV Home | **`4356026`** | [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk) |
-| TV Channels | **`8135635`** | [tv-channels.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-channels.apk) |
 
 ## Chuẩn bị TV
 

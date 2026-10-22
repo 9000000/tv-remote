@@ -22,7 +22,7 @@ Tested for real on a Sony BRAVIA (Android 9). Other brands are untested; LG, Sam
 
 - [What you get](#what-you-get)
 - [Three apps and a web page](#three-apps-and-a-web-page)
-- [TV Home and TV Channels](#tv-home-and-tv-channels)
+- [More apps for the TV](#more-apps-for-the-tv)
 - [Quick start](#quick-start)
 - [Away from home](#away-from-home)
 - [Undo](#undo)
@@ -125,9 +125,17 @@ flowchart LR
 ADB is Android's own debug bridge. The apps speak it themselves and push `scrcpy-server` to the TV for H.264 video, sound, touch and keys. Before ADB is on, the Phone app and the Computer app can still send keys through the Android TV Remote protocol (ports 6466/6467).
 </details>
 
-## TV Home and TV Channels
+## More apps for the TV
 
-Two more apps for the TV, free and without ads. Both are set up from the phone or computer app, or with Downloader.
+Free, no ads, each on its own: install only the ones you want, from the phone or computer app (TV tab) or with Downloader. More may come.
+
+| App | Downloader code | File |
+|---|---|---|
+| TV Home | **`4356026`** | [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk) |
+| TV Channels | **`8135635`** | [tv-channels.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-channels.apk) |
+| TV Games | none yet | [tv-games.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-games.apk) |
+
+### 🏠 TV Home
 
 <table>
 <tr>
@@ -136,7 +144,7 @@ Two more apps for the TV, free and without ads. Both are set up from the phone o
 </tr>
 </table>
 
-**🏠 TV Home** is a home screen instead of Google TV's: no ads, no suggested rows, 0.2 MB.
+A home screen instead of Google TV's: no ads, no suggested rows, 0.2 MB.
 
 - A clock, three round icons (inputs, network, settings) in one glass capsule, then one grid of apps with your favourites first. Hide the ones the kids should not see.
 - Widgets if you want them: system (memory, storage, IP), weather, lunar calendar, month calendar, most used apps and limits, sleep timer, a note.
@@ -144,9 +152,11 @@ Two more apps for the TV, free and without ads. Both are set up from the phone o
 - Arranged from the phone or computer (TV tab → 🏠 → *Customize TV Home*) or on the TV with its remote.
 - *Optimize TV* makes it the home screen for you; *Back to the TV's own* undoes it.
 
+### 📺 TV Channels
+
 <p align="center"><img src="docs/img/tvchannels.webp" width="720" alt="TV Channels: Vietnam's free channels"><br><sub>TV Channels</sub></p>
 
-**📺 TV Channels** plays free TV channels on the TV.
+Plays free TV channels on the TV.
 
 - Channels from iptv-org's public lists, by country and category, plus VieON's free channels with the programme guide (Vietnam).
 - Favourites, your own groups, channels pinned to the home screen. A dead stream falls to the next one.
@@ -157,18 +167,15 @@ Two more apps for the TV, free and without ads. Both are set up from the phone o
 - Favourites and groups managed from the phone, computer or the TV's web page (*Manage channels*: search, ☆, groups, reorder), not only with the D-pad.
 - Installed from the phone or computer (TV tab → 📺 card → *Install TV Channels*).
 
+### 🎮 TV Games
+
 <p align="center"><img src="docs/img/tv-games-en.webp" width="720" alt="TV Games: retro and web games on the TV"><br><sub>TV Games</sub></p>
 
-**🎮 TV Games** plays retro and web games on the TV, with phones as pads.
+Plays retro and web games on the TV, with phones as pads.
 
 - Retro games (libretro cores) and web games; free homebrew suggested in the app.
 - Up to 4 phones as pads: scan the QR on the TV, no ADB and no TV Setup needed.
 - Installed, opened and updated from the phone or computer app: **TV** tab → **TV games** card (needs ADB for the install only; says so when the latest release has no `tv-games.apk` yet).
-
-| App | Downloader code | File |
-|---|---|---|
-| TV Home | **`4356026`** | [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk) |
-| TV Channels | **`8135635`** | [tv-channels.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-channels.apk) |
 
 ## Quick start
 
