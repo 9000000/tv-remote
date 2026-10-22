@@ -37,7 +37,7 @@ private fun MainActivity.showShare(r: JSONObject, ask: (String, (JSONObject) -> 
     // two tabs: the TV (a pass, with what the guest may do) and the app (only its download); the TV first, it is why one shares
     val tvPane = col()
     val appPane = col()
-    val tabs = LinearLayout(this)
+    val tabs = LinearLayout(this).apply { isBaselineAligned = false }   // a tab whose words took two lines sat lower than the other
     val tabTv = button("@tv|" + T("share.share_the_tv"), BTN)
     val tabApp = button("@phone|" + T("share.share_the_app"), BTN)
     val pick = { onTv: Boolean ->
