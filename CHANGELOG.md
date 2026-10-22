@@ -14,6 +14,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Tùy chỉnh TV Home → Hình nền: nút **Tải ảnh của bạn** lên đầu mục (trước nằm lẫn giữa các ô), ảnh đã tải đứng đầu; đang gửi ảnh thì nút quay và ghi "Đang gửi ảnh 1/3 lên TV…".
 - Tối ưu TV: không bao giờ tắt launcher gốc của TV CVTE (`com.cvte.tv.launcher.*`: một TV JVC kẹt ở logo khởi động, mất ADB, cleanyourtv #741) và hai dịch vụ TCL mà phím Nguồn vào cần (`com.tcl.interactive`, `com.tcl.ttvs`). Hướng dẫn TV Home: trang Tài khoản và hồ sơ của Google TV trống khi dùng TV Home, cách đổi hồ sơ.
 - App điện thoại: mở Air Mouse khi đang xem hình TV thì hình chuyển sang player nhỏ nổi trên bàn di (như khi mở Quản lý / Cài đặt), trước đó bị màn Air Mouse che mất.
+- TV Games: game bài và cờ nhiều người trên TV, mỗi người cầm bài trên điện thoại của mình (tay cầm có kiểu "bài": chạm hoặc vuốt để chọn lá, nút Đánh / Bỏ lượt / Gợi ý). Máy chơi thay ghế trống, điện thoại vào giữa ván thì nhận ghế đó. Có Tiến lên miền Nam, Cờ caro, Bài màu (kiểu Uno), Mèo nổ, Cờ cá ngựa, Cờ tỷ phú, Bi-da, Đặt bom. Lá bài trên điện thoại vẽ như bài thật (mặt oval, chữ ở hai góc, lá không đánh được thì mờ đi), nút có biểu tượng. Cần TV Games mới.
 
 **English**
 - Launcher gallery: the blue edge of the launcher in use runs all around its card (the preview picture hid its top half).
@@ -23,6 +24,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Customize TV Home → Background: **Upload your photo** sits in the section's head (it was a tile lost among the others), uploaded photos come first; while sending, the button spins and says "Sending photo 1/3 to the TV…".
 - Optimize TV: never turns off a CVTE TV's own home (`com.cvte.tv.launcher.*`: a JVC hung on its boot logo with ADB gone, cleanyourtv #741) or the two TCL services the Source key needs (`com.tcl.interactive`, `com.tcl.ttvs`). TV Home guide: Google TV's Accounts & profiles page is empty while TV Home is in use, and how to switch profile.
 - Phone app: opening Air Mouse while the TV's picture shows moves it to the small player over the pad (as Manage / Settings do); the Air Mouse screen used to hide it.
+- TV Games: card and board games for several players on the TV, each holding their hand on their own phone (the pad's "cards" layout: tap or swipe to pick, Play / Pass / Hint). Bots fill empty seats and a phone joining mid-game takes one over. Tiến lên (Vietnamese poker), Gomoku, Color Cards (Uno-like), Boom Cats, Ludo, Tycoon, Pool and Bombers. Cards on the phone are drawn like real ones (an oval face, the mark in two corners, cards that cannot be played now dimmed), and buttons have icons. Needs the new TV Games.
 
 ## 0.17.0 - 2026-10-22
 

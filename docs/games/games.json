@@ -176,6 +176,110 @@
       "genre": "arcade",
       "url": "https://tvremote.pages.dev/games/web/moles/",
       "on": true
+    },
+    {
+      "id": "tienlen",
+      "name": {
+        "vi": "Tiến lên",
+        "en": "Tiến lên"
+      },
+      "img": "img/tienlen.jpg",
+      "pad": "web",
+      "players": 4,
+      "genre": "party",
+      "url": "https://tvremote.pages.dev/games/web/tienlen/",
+      "on": true
+    },
+    {
+      "id": "caro",
+      "name": {
+        "vi": "Cờ caro",
+        "en": "Gomoku"
+      },
+      "img": "img/caro.jpg",
+      "pad": "web",
+      "players": 4,
+      "genre": "puzzle",
+      "url": "https://tvremote.pages.dev/games/web/caro/",
+      "on": true
+    },
+    {
+      "id": "bombers",
+      "name": {
+        "vi": "Đặt bom",
+        "en": "Bombers"
+      },
+      "img": "img/bombers.jpg",
+      "pad": "web",
+      "players": 4,
+      "genre": "party",
+      "url": "https://tvremote.pages.dev/games/web/bombers/",
+      "on": true
+    },
+    {
+      "id": "colors",
+      "name": {
+        "vi": "Bài màu",
+        "en": "Color Cards"
+      },
+      "img": "img/colors.jpg",
+      "pad": "web",
+      "players": 4,
+      "genre": "party",
+      "url": "https://tvremote.pages.dev/games/web/colors/",
+      "on": true
+    },
+    {
+      "id": "cangua",
+      "name": {
+        "vi": "Cờ cá ngựa",
+        "en": "Ludo"
+      },
+      "img": "img/cangua.jpg",
+      "pad": "web",
+      "players": 4,
+      "genre": "party",
+      "url": "https://tvremote.pages.dev/games/web/cangua/",
+      "on": true
+    },
+    {
+      "id": "typhu",
+      "name": {
+        "vi": "Cờ tỷ phú",
+        "en": "Tycoon"
+      },
+      "img": "img/typhu.jpg",
+      "pad": "web",
+      "players": 4,
+      "genre": "party",
+      "url": "https://tvremote.pages.dev/games/web/typhu/",
+      "on": true
+    },
+    {
+      "id": "bida",
+      "name": {
+        "vi": "Bi-da",
+        "en": "Pool"
+      },
+      "img": "img/bida.jpg",
+      "pad": "web",
+      "players": 4,
+      "genre": "sports",
+      "url": "https://tvremote.pages.dev/games/web/bida/",
+      "on": true
+    },
+    {
+      "id": "meono",
+      "name": {
+        "vi": "Mèo nổ",
+        "en": "Boom Cats"
+      },
+      "img": "img/meono.jpg",
+      "pad": "web",
+      "players": 4,
+      "genre": "party",
+      "url": "https://tvremote.pages.dev/games/web/meono/",
+      "on": true
     }
   ],
   "homebrew": [

@@ -79,7 +79,7 @@ function setMode(m) {
 
 // What the TV is running decides the pad: nes / snes / gba / ps (a system's `pad` in Systems.kt) or web (the look of ps).
 // A web game may then change it (tvpad.layout): {choices:[..]} four big answer buttons, {text:true} a field + Send,
-// {buttons:[..]} only these, {dpad:false} no D-pad / stick. null = the usual one.
+// {buttons:[..]} only these, {dpad:false} no D-pad / stick, {cards:{..}} a hand of cards (renderCards). null = the usual one.
 const SYS = {
   nes:  { stick: false, face: 'pair',    sh: [[], []],                    mid: ['SELECT', 'START'] },
   snes: { stick: false, face: 'diamond', sh: [['L'], ['R']],              mid: ['SELECT', 'START'] },
@@ -108,6 +108,8 @@ function relayout() {
   const ch = Array.isArray(l.choices) && l.choices.length ? l.choices.filter((x) => 'ABCD'.includes(x)) : null;
   document.body.classList.toggle('ptr', !!l.pointer && mode === 'pad'); $('#pS').hidden = Array.isArray(l.buttons) && !l.buttons.includes('B'); if (!l.pointer) tpId = null;
   $('#choices').hidden = !ch; $('#textrow').hidden = !l.text;
+  const cd = l.cards && Array.isArray(l.cards.hand) ? l.cards : null;
+  document.body.classList.toggle('cards', !!cd && mode === 'pad'); if (cd) renderCards(cd);
   $('#pad').classList.toggle('hid', !!ch); $('#pad').classList.toggle('txt', !!l.text);
   document.querySelectorAll('#choices [data-b]').forEach((el) => { el.hidden = !ch || !ch.includes(el.dataset.b); });
   const ok = (b) => !Array.isArray(l.buttons) || l.buttons.includes(b);
@@ -383,6 +385,81 @@ if (ios && !navigator.standalone && !store.get('tvg-tip')) $('#tip').hidden = fa
 document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); else wake(); });
 
 // ---- touch: nothing may scroll, zoom or select, with any number of fingers
+// ---- cards layout (a card game: Tiến lên ...): the hand is private, so it is drawn here and not on the TV. The game sends
+// {cards:{hand:['3s','10h','Qd','2c'], note, sel?, acts:[{id, t, main?, off?}]}} again whenever it changes (a reconnect gets
+// the last one); a card may be the game's own {id, t, sub?, bg?, k? corner mark, i? icon, look? 'oval' | 'deed', off? dimmed} (Uno, Boom Cats), an empty hand leaves the acts
+// as named buttons (a board game's choices); a tap or a swipe across the cards picks them, an act button answers through the text channel:
+// t {"act":id,"cards":[picked]}. Cards are rank (2-10, J, Q, K, A) + suit (s c d h); the game checks what is played.
+const SUIT = { s: '♠', c: '♣', d: '♦', h: '♥' };
+// a button's icon: the game's own (i), else one for the usual names of acts
+const ACT_ICON = { play: '🃏', pass: '⏭️', skip: '⏭️', hint: '💡', draw: '📥', again: '🔄', roll: '🎲', buy: '🛒', build: '🏠', sell: '💸',
+  mort: '🏦', end: '🏁', ok: '✅', nope: '🚫', give: '🎁', jailpay: '💰', jailcard: '🎫' };
+let cHand = [], cSel = new Set(), cPaint = null, cId = null, cLast = null, cLay = null;
+window.addEventListener('resize', () => setTimeout(() => { if (cLay && document.body.classList.contains('cards')) renderCards(Object.assign({}, cLay, { sel: [...cSel] })); }, 60));
+function renderCards(cd) {
+  const same = cHand.join() === cd.hand.join();
+  const items = cd.hand.slice(0, 40).map((c) => (c && typeof c === 'object' ? c : { id: String(c) }));   // {id, t, sub, bg}: a card of the game's own (Uno, ...)
+  cHand = items.map((c) => String(c.id));
+  if (Array.isArray(cd.sel)) cSel = new Set(cd.sel.map(String)); else if (!same) cSel = new Set([...cSel].filter((c) => cHand.includes(c)));
+  $('#cnote').textContent = cd.note || ''; $('#cnote').classList.toggle('turn', !!cd.turn);
+  const hand = $('#hand'), two = portrait() && cHand.length > 7, cut = two ? Math.ceil(cHand.length / 2) : cHand.length;
+  hand.style.setProperty('--n', Math.max(cut, 1)); cLay = cd;          // upright: two rows, so the cards stay big enough to read
+  hand.style.setProperty('--ov', items.some((it) => it.t != null) && cut <= 8 && !portrait() ? .04 : .3);   // a few of a game's own cards side by side; more overlap, read by their corners
+  const els = items.map((it) => {
+    const c = String(it.id), e = document.createElement('div');
+    e.dataset.c = c;
+    if (it.t != null) {                                                  // the game's own card: big words, a line under, a colour
+      e.className = 'cd own' + (cSel.has(c) ? ' sel' : '') + (it.off ? ' off' : '');   // off: cannot be played now (still pickable)
+      if (/^#[0-9a-f]{3,8}$/i.test(it.bg || '')) e.style.setProperty('--bg', it.bg);
+      const k = String(it.k != null ? it.k : it.i != null && it.look !== 'deed' ? it.i : '').slice(0, 4), t = String(it.t).slice(0, 16), sub = String(it.sub || '').slice(0, 28);
+      const add = (tag, x) => { const n = document.createElement(tag); n.textContent = x; e.append(n); return n; };
+      if (it.look === 'oval') { e.classList.add('oval'); add('b', ''); add('s', t); }           // Uno's face: the value in a white oval
+      else if (it.look === 'deed') { e.classList.add('deed'); add('s', t); if (sub) add('small', sub); if (it.i != null) add('q', String(it.i).slice(0, 10)); }   // a title deed: the name on its colour band
+      else { if (it.i != null) add('q', String(it.i).slice(0, 4)); add('s', t); if (sub) add('small', sub); }
+      if (k) { add('em', k); add('em', k); }                            // both corners, as on a real card
+      return e;
+    }
+    const su = c.slice(-1), rk = c.slice(0, -1);
+    e.className = 'cd' + (su === 'h' || su === 'd' ? ' red' : '') + (cSel.has(c) ? ' sel' : '');
+    e.innerHTML = '<b></b><i></i><u></u>'; e.children[0].textContent = rk; e.children[1].textContent = SUIT[su] || su; e.children[2].textContent = SUIT[su] || su;
+    return e;
+  });
+  hand.replaceChildren(...[els.slice(0, cut), els.slice(cut)].filter((r) => r.length).map((r) => { const e = document.createElement('div'); e.className = 'hrow'; e.append(...r); return e; }));
+  $('#cacts').replaceChildren(...(Array.isArray(cd.acts) ? cd.acts : []).slice(0, 6).map((a) => {
+    const b = document.createElement('button'); b.className = 'ca' + (a.main ? ' main' : ''); b.disabled = !!a.off; b.dataset.ca = a.id;
+    const ic = a.i != null ? String(a.i).slice(0, 4) : ACT_ICON[a.id];
+    if (ic) { const i = document.createElement('i'); i.textContent = ic; b.append(i); }
+    const w = document.createElement('span'); w.textContent = a.t || a.id; b.append(w); return b;
+  }));
+}
+function cardPick(el) {
+  const c = el.dataset.c; if (cPaint == null) cPaint = !cSel.has(c);
+  if (cPaint === cSel.has(c)) return;
+  if (cPaint) cSel.add(c); else cSel.delete(c);
+  el.classList.toggle('sel', cPaint); buzz(8);
+}
+function cardsTouch(e) {
+  for (const t of e.changedTouches) {
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    if (e.type === 'touchstart') {
+      firstTap();
+      if (el && el.closest('[data-act]')) return false;                 // the top bar: the usual handling
+      const cd = el && el.closest('.cd'), ca = el && el.closest('.ca');
+      if (cd && cId == null) { cId = t.identifier; cPaint = null; cLast = cd; cardPick(cd); }
+      else if (ca && !ca.disabled) { ca.classList.add('on'); buzz(15); send('t ' + JSON.stringify({ act: ca.dataset.ca, cards: cHand.filter((c) => cSel.has(c)) })); setTimeout(() => ca.classList.remove('on'), 150); }
+    } else if (t.identifier === cId) {
+      if (e.type === 'touchmove') { const cd = el && el.closest('.cd'); if (cd && cd !== cLast) { cLast = cd; cardPick(cd); } }
+      else { cId = null; cPaint = null; cLast = null; }
+    }
+  }
+  return true;
+}
+document.addEventListener('click', (e) => {                            // a mouse (tests, a tablet with one): the same as a tap
+  if (!document.body.classList.contains('cards')) return;
+  const cd = e.target.closest && e.target.closest('.cd'), ca = e.target.closest && e.target.closest('.ca');
+  if (cd) { cPaint = null; cardPick(cd); cPaint = null; }
+  else if (ca && !ca.disabled) send('t ' + JSON.stringify({ act: ca.dataset.ca, cards: cHand.filter((c) => cSel.has(c)) }));
+});
 // ---- pointer layout (a game that aims: air hockey, shooting gallery ...): the big pad moves a crosshair on the TV by RELATIVE moves, speeded up
 // when the finger is fast (like a laptop's touchpad), sent as "m dx dy" at most every 16 ms with the moves added up in between.
 // A phone browser on a plain http page gets no gyroscope (DeviceOrientation / Gyroscope are not defined there: measured on a POCO,
@@ -403,6 +480,7 @@ function tpTouch(t, type) {
 function handle(e) {
   if (e.target.closest && e.target.closest('#textrow,#nameform')) return;      // the text field needs its own touches (keyboard, caret)
   e.preventDefault();
+  if (document.body.classList.contains('cards') && cardsTouch(e)) return;
   if (e.type === 'touchstart') {
     firstTap();
     for (const t of e.changedTouches) {

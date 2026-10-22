@@ -19,6 +19,6 @@ on a dark 16:9 backdrop; the "Scan to join" chip painted out). The picture is th
 | coco.jpg | Coco Battle Royale II (Rodrigo Dornelles) | GPL-3.0 | https://github.com/psywave-games/coco-battle-royale-2 |
 | runner.jpg | Runner (zorchenhimer) | MIT | https://github.com/zorchenhimer/nes-runner |
 | ghostsgraves.jpg | Ghosts and Graves (Anthony Bongers) | Unlicense | https://github.com/AnthonyBongers/GhostsAndGraves |
-| hockey.jpg, tanks.jpg, cycles.jpg, sumo.jpg | Air Hockey, Tank Arena, Light Cycles, Sumo Bump (our own, `docs/games/web/`) | same as the repo | in-game capture of each game running (CPU seats), no overlay |
+| hockey.jpg, tanks.jpg, cycles.jpg, sumo.jpg, tienlen.jpg, caro.jpg, bombers.jpg, colors.jpg, cangua.jpg, typhu.jpg, bida.jpg, meono.jpg | Air Hockey, Tank Arena, Light Cycles, Sumo Bump, Tiến lên, Gomoku, Bombers, Color Cards, Ludo, Tycoon, Pool, Boom Cats (our own, `docs/games/web/`) | same as the repo | in-game capture of each game running (CPU seats), no overlay |
 
 A new catalog game: run it, screencap its title screen, save it here as `<id>.jpg`, add `"img": "img/<id>.jpg"` to its entry and re-sign (`dev/sign/sign_games.py`).

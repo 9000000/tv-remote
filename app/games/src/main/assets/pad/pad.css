@@ -80,7 +80,7 @@ body.away #pad,body.away #nav{filter:grayscale(1);opacity:.35}
 /* navigate mode: a remote for TV Games itself */
 #nav{display:none;position:absolute;inset:0;padding:56px max(16px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));align-items:center;justify-items:center;grid-template-columns:1fr 1fr;gap:12px}
 body.nav #nav{display:grid}
-body.nav #pad,body.nav #choices,body.nav #textrow,body.nav #stick{display:none!important}
+body.nav #pad,body.nav #choices,body.nav #textrow,body.nav #stick,body.nav #cardsui{display:none!important}
 #cross{display:grid;grid-template-areas:". u ." "l c r" ". d .";grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:8px;width:var(--N);aspect-ratio:1;--N:min(70vh,44vw)}
 .nb{border:0;border-radius:16px;background:var(--key);color:#dfe4f1;font:700 26px system-ui;padding:0;min-width:0}
 .nb[data-n=UP]{grid-area:u}.nb[data-n=LEFT]{grid-area:l}.nb[data-n=OK]{grid-area:c}.nb[data-n=RIGHT]{grid-area:r}.nb[data-n=DOWN]{grid-area:d}
@@ -132,3 +132,57 @@ body.ptr #pad,body.ptr #stick,body.ptr #choices,body.ptr #textrow{display:none!i
 .pb.on{background:#fff2;color:#fff;transform:scale(.96);box-shadow:0 0 0 3px var(--glow),0 0 18px var(--glow)}
 #pF.on{background:var(--c);filter:brightness(1.35)}
 @media (orientation:portrait){#ptr{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto;padding-top:60px}#pbtn{flex-direction:row;height:96px}#pF{flex:2.2}.pb.rc{flex:1}}
+/* cards layout: the hand fans out across the width, a picked card rises; the act buttons under it */
+#cardsui{display:none}
+body.cards #pad,body.cards #stick,body.cards #choices,body.cards #textrow,body.cards #ptr{display:none!important}
+body.cards #cardsui{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;padding:54px max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+#cnote{min-height:22px;text-align:center;color:#aab2c5;font:700 16px system-ui}
+#cnote.turn{color:#fff;text-shadow:0 0 12px var(--glow)}
+#hand{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:34px;padding-top:26px;--ov:.38;--cw:min(calc((100vw - 40px) / (var(--n) * (1 - var(--ov)) + var(--ov))),24vh,110px)}
+.hrow{display:flex;justify-content:center}
+@media (orientation:portrait){#hand{justify-content:center;--cw:min(calc((100vw - 40px) / (var(--n) * (1 - var(--ov)) + var(--ov))),20vh,110px)}}
+.cd{position:relative;flex:none;width:var(--cw);aspect-ratio:5/7;margin-left:calc(var(--cw) * var(--ov) * -1);border-radius:calc(var(--cw) * .1);background:linear-gradient(160deg,#fff,#f3f1e8 60%,#e6e3d6);color:#1b1e27;box-shadow:inset 0 0 0 1px #0002,-2px 0 6px #0006;transition:transform .12s;touch-action:none}
+.hrow .cd:first-child{margin-left:0}
+.cd.red{color:#d7263d}
+.cd.sel{transform:translateY(-24px);box-shadow:0 0 0 3px var(--c),0 6px 16px #000a}
+.cd b{position:absolute;left:8%;top:4%;font:800 calc(var(--cw) * .3)/1 system-ui}
+.cd i{position:absolute;left:9%;top:calc(4% + var(--cw) * .32);font:calc(var(--cw) * .24)/1 system-ui;font-style:normal}
+.cd u{position:absolute;right:8%;bottom:6%;font:calc(var(--cw) * .5)/1 system-ui;text-decoration:none}
+#cacts{display:flex;gap:10px;justify-content:center}
+.ca{flex:1 1 auto;min-width:min(100px,100%);max-width:220px;padding:0 14px;white-space:nowrap;height:min(16vh,60px);border:0;border-radius:16px;background:var(--key);color:#dfe4f1;font:800 18px system-ui}
+.ca{display:flex;align-items:center;justify-content:center;gap:8px}
+.ca i{font-style:normal;font-size:1.15em;line-height:1}
+#hand:empty+#cacts .ca{flex-direction:column;gap:4px}
+#hand:empty+#cacts .ca i{font-size:1.5em}
+.ca.main{background:var(--c);color:#fff}
+.ca:disabled{opacity:.35}
+.ca.on{transform:scale(.95);filter:brightness(1.3)}
+/* a game's own card (Uno, Boom Cats, a deed): its colour lit from the top left, a white inner edge, a mark in two corners
+   (read under the next card), and in the middle an icon + name, a tilted white oval (look "oval"), or the name alone */
+.cd.own{background:linear-gradient(150deg,#ffffff38,#fff0 42%,#0000 58%,#00000052),var(--bg,#2b3350);color:#fff;
+  box-shadow:inset 0 0 0 calc(var(--cw) * .035) #ffffff40,-2px 0 6px #0007;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:calc(var(--cw) * .03);padding:calc(var(--cw) * .2) calc(var(--cw) * .08);text-align:center;text-shadow:0 1px 2px #0008;overflow:hidden}
+.cd.own.sel{box-shadow:inset 0 0 0 calc(var(--cw) * .035) #ffffff40,0 0 0 3px var(--c),0 6px 16px #000a}
+.cd.own em{position:absolute;left:7%;top:4%;font:900 calc(var(--cw) * .2)/1 system-ui;font-style:normal;white-space:nowrap}
+.cd.own em+em{left:auto;top:auto;right:7%;bottom:4%;transform:rotate(180deg)}
+.cd.own q{font:calc(var(--cw) * .4)/1 system-ui;filter:drop-shadow(0 2px 3px #0006)}
+.cd.own q::before,.cd.own q::after{content:none}
+.cd.own s{text-decoration:none;font:800 calc(var(--cw) * .17)/1.05 system-ui;overflow-wrap:break-word;max-width:100%}
+.cd.own s:first-child{font-size:calc(var(--cw) * .24)}
+.cd.own small{font:600 calc(var(--cw) * .1)/1.15 system-ui;opacity:.92;overflow-wrap:break-word;max-width:100%}
+.cd.own.oval{padding:0}
+.cd.own.deed{background:#f7f5ee;color:#1b1e27;text-shadow:none;justify-content:flex-start;padding:calc(var(--cw) * .07);gap:calc(var(--cw) * .06);
+  box-shadow:inset 0 0 0 1px #0002,-2px 0 6px #0007}
+.cd.own.deed s{order:-1;width:100%;padding:calc(var(--cw) * .08) calc(var(--cw) * .04);border-radius:calc(var(--cw) * .05);background:var(--bg,#2b3350);
+  color:#fff;font-size:calc(var(--cw) * .15);text-shadow:0 1px 2px #000a;text-align:left}   /* left: read under the next card */
+.cd.own.deed q{order:1;font-size:calc(var(--cw) * .13);letter-spacing:-.1em}
+.cd.own.deed small,.cd.own.deed q{align-self:flex-start}
+.cd.own.deed small{font-size:calc(var(--cw) * .12);font-weight:800;opacity:.85}
+.cd.own.off{filter:brightness(.6) saturate(.6)}
+.cd.own.oval b{position:absolute;left:50%;top:50%;width:96%;height:50%;translate:-50% -50%;rotate:-32deg;border-radius:50%;background:#fff;
+  box-shadow:0 0 0 calc(var(--cw) * .02) #0002 inset}
+.cd.own.oval s{position:relative;color:var(--bg,#2b3350);font:900 calc(var(--cw) * .38)/1 system-ui;text-shadow:2px 2px 0 #0002}
+#cacts{flex-wrap:wrap}
+#hand:empty{display:none}
+#hand:empty+#cacts{flex:1;align-content:center}
+#hand:empty+#cacts .ca{height:min(26vh,110px);font-size:22px}
