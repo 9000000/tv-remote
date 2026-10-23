@@ -10,6 +10,7 @@ import android.widget.FrameLayout
 import android.widget.Toast
 import dev.tvremote.core.adb.Adb
 import dev.tvremote.core.adb.AdbLink
+import dev.tvremote.core.ontv.Channels
 import dev.tvremote.core.web.Manage
 
 // Things sent to the TV: links, shared links and files from other apps, photos / videos / songs from this phone, the Play Store.
@@ -19,7 +20,19 @@ internal fun MainActivity.openLink(link: String) {
     val b = basic
     val tv = tv
     if (b != null) b.launch(link)
-    else if (tv != null && tv.ready()) Thread { try { tv.shell("am start -a android.intent.action.VIEW -d " + Adb.q(link)) } catch (ignored: Exception) { } }.start()
+    else if (tv != null && tv.ready()) Thread {
+        try {
+            // a stream (.m3u8, .mp4 ...) plays in TV Channels' player: most TVs have nothing that opens it. Without TV Channels it
+            // goes as any link, and the person hears that TV Channels would play it
+            if (Channels.isStream(link)) {
+                val r = Channels.playResult({ tv.shell(it) }, link)
+                if (r == Channels.Play.OK) return@Thread
+                // too old is not missing: the fix is the update, in the Manage screen's TV Channels card
+                ui.post { say(T(if (r == Channels.Play.OLD) "core.fr_channels_old" else "remote.stream_needs_channels"), false) }
+            }
+            tv.shell("am start -a android.intent.action.VIEW -d " + Adb.q(link))
+        } catch (ignored: Exception) { }
+    }.start()
 }
 
 // ---------------------------------------------------------------- "Share → TV Remote" from other apps, and playing a file on the TV

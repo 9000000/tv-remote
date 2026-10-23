@@ -141,6 +141,7 @@ async function call(path, data, quiet) {
     if (!r.ok) {
       let e = r.statusText; try { e = (await r.json()).error || e; } catch {}
       if (!quiet && needSetup(e)) return null;                         // asked as a question with its button, not a toast
+      if (!quiet && /channels:old/.test(e)) { chanOld(); return null; }   // TV Channels is there but too old for the link: Update, not "missing"
       if (r.status === 403 && e === 'scope') { refresh(); if (!quiet) toast(scopeWhy()); return null; }   // the owner may have just changed it
       if (r.status === 404 && CORE === 'pc') e = STALE;
       if (adbWords(r.status, e) !== e) { e = adbWords(r.status, e); setTimeout(refresh, 300); }
@@ -174,7 +175,7 @@ addEventListener('resize', closePop);
 // meets one (its error says "setup:old|missing:<feature>:<min>:<have>") asks to update or install TV Setup, with the button.
 // A page that knows before starting asks setupFor(feature). The same names as SetupNeed.name.
 // ids of i18n/*.json: the words of each feature, said in the question below
-const SETUP_NEEDS = { rules: 'core.need_rules', draw: 'core.need_draw', invite: 'core.need_invite', ram: 'core.need_ram', pic: 'core.need_pic', volume: 'core.need_volume', bedtimes: 'core.need_bedtimes', notify: 'core.need_notify', awake: 'core.need_awake', files: 'core.need_files', welcome: 'core.need_welcome', launcher: 'core.need_launcher', lock: 'core.need_lock', dim: 'core.need_dim', unextra: 'core.need_unextra', home_usage: 'core.need_home_usage' };
+const SETUP_NEEDS = { rules: 'core.need_rules', draw: 'core.need_draw', invite: 'core.need_invite', ram: 'core.need_ram', pic: 'core.need_pic', volume: 'core.need_volume', bedtimes: 'core.need_bedtimes', notify: 'core.need_notify', awake: 'core.need_awake', files: 'core.need_files', welcome: 'core.need_welcome', launcher: 'core.need_launcher', lock: 'core.need_lock', dim: 'core.need_dim', unextra: 'core.need_unextra', home_usage: 'core.need_home_usage', heavy: 'core.need_heavy' };
 const SETUP_RE = /setup:(old|missing):(\w+):([0-9.]*):([0-9.]*)/;
 const setupSay = (m) => { const what = SETUP_NEEDS[m[2]] ? T(SETUP_NEEDS[m[2]]) : m[2];
   return m[1] === 'missing' ? T('core.setup_missing', { what }) : T('core.setup_old', { what, min: m[3], have: m[4] }); };
@@ -252,7 +253,9 @@ const FRIENDLY = [
   [/launcher:install:(.*)/, (m) => T('core.fr_launcher_install', { msg: friendly(m[1]) })],
   [/home:missing/, T('core.fr_home_missing')],
   [/channels:missing/, T('core.fr_channels_missing')],
+  [/channels:old/, T('core.fr_channels_old')],
   [/channels:file_big/, T('core.fr_channels_file_big')],
+  [/channels:bad_link/, T('core.fr_channels_bad_link')],
   [/channels:none/, T('core.fr_channels_none')],
   [/games:missing/, T('core.fr_games_missing')],
   [/games:none/, T('core.fr_games_none')],
@@ -307,6 +310,12 @@ const ADB_TEXT = {
 function put(e, k, v) {
   if (typeof e === 'string') e = $(e);
   if (e && e[k] !== v) e[k] = v;
+}
+// Where an install / update button would be when GitHub could not be asked (the core says `offline`): one small line that is also the
+// retry, so a missing button never reads as "nothing to update". [btn] the button, [off] whether to show it, [retry] asks again.
+function lookOffline(btn, off, retry) {
+  if (!btn.lookOff) { btn.lookOff = el('button', { type: 'button', className: 'small', onclick: () => retry(), textContent: T('page.look_offline') }); btn.before(btn.lookOff); }
+  put(btn.lookOff, 'hidden', !off);
 }
 function setChip(id, cls, text, long) { const c = $(id); put(c, 'className', 'chip ' + cls); put(c.lastElementChild, 'textContent', text); put(c, 'title', long || text); }
 

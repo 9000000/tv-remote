@@ -50,7 +50,8 @@ internal class Nightly(private val c: Context, private val adb: () -> Adb?) {
             df.lines().map { it.trim().split(Regex("\\s+")) }.firstOrNull { it.size > 3 && it[1].all(Char::isDigit) && it[3].all(Char::isDigit) }?.get(3)?.toLong()?.times(1024)
 
         /** Whether `dumpsys media_session` shows a session in the playing state (3), or buffering (6). Pure. */
-        fun playing(media: String): Boolean = Regex("PlaybackState \\{state=(3|6)[,(]").containsMatchIn(media)
+        // Android 9 writes `state=3`, Android 10+ `state=PLAYING(3)`: read only `state=3` missed every newer TV's playback
+        fun playing(media: String): Boolean = Regex("PlaybackState \\{state=(?:[A-Z_]+\\()?(3|6)[,()]").containsMatchIn(media)
     }
 
     private val ui = Handler(Looper.getMainLooper())

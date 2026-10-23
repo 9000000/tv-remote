@@ -135,6 +135,14 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     if (!dev.tvremote.core.ontv.Channels.open({ sh(it) }, r.json().optString("q"))) throw IOException("channels:missing")
                     return HttpServer.Response.ok()
                 }
+                "channels/play" -> if (post) {                        // {url}: one stream address, played by TV Channels
+                    when (dev.tvremote.core.ontv.Channels.playResult({ sh(it) }, r.json().optString("url"))) {
+                        dev.tvremote.core.ontv.Channels.Play.OLD -> throw IOException("channels:old")   // there, but from before the link: update it
+                        dev.tvremote.core.ontv.Channels.Play.MISSING -> throw IOException("channels:missing")
+                        else -> {}
+                    }
+                    return HttpServer.Response.ok()
+                }
                 "games" -> if (!post) return HttpServer.Response.json(dev.tvremote.core.ontv.Games.state { sh(it) })   // TV Games: on the TV, a newer one, or "soon"
                 "games/install" -> if (post) return HttpServer.Response.json(at("install") { dev.tvremote.core.ontv.Games.install(link.get(), dir, r.lang) })
                 "games/open" -> if (post) {
@@ -224,6 +232,12 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "privacy/off", "privacy/on" -> HttpServer.Response.json(privacyOff(r.json().optString("pkg"), what.endsWith("off")))
                 "app/launch", "app/stop", "app/uninstall", "app/disable", "app/enable", "app/clear" -> app(r.json().optString("pkg"), what.substring(4))
                 "clean" -> text(TvShell.CLEAN, 90000)
+                "rescue" -> {                                         // TV frozen: stop the app on screen, go Home
+                    val o = dev.tvremote.core.ontv.Rescue.run({ sh(it) })
+                    val pkg = o.optString("stopped")
+                    if (pkg.isNotEmpty()) o.put("label", try { labels?.label(pkg) } catch (e: Exception) { null } ?: pkg)
+                    HttpServer.Response.json(o)
+                }
                 "recents" -> {                                        // close one open app, those picked, or all but the one on screen
                     val d = r.json()
                     val list = d.optJSONArray("pkgs")

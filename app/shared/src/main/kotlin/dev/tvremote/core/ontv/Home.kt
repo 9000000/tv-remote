@@ -29,14 +29,17 @@ object Home {
         if (r.has("error")) throw IOException(r.optString("error"))
         r.put("installed", true).put("home", out.substringAfter("#~#").contains(HomeConfig.PKG + "/"))
         latest(r.optString("version"))?.let { r.put("latest", it.version) }
+        if (unasked) r.put("offline", true)                           // as OwnApp.state
         return r
     }
 
+    @Volatile private var unasked = false                              // the last [latest] could not reach GitHub
     @Volatile private var checked: Triple<Long, String, Release?>? = null
     /** A newer TV Home than [version], asked of GitHub at most every 6 hours; null when none, or GitHub cannot be asked. */
     private fun latest(version: String): Release? {
+        unasked = false
         checked?.let { (at, v, r) -> if (v == version && System.currentTimeMillis() - at < 6 * 3600_000L) return r }
-        val r = try { Release.newer(version, "home", Launchers.SELF_APK) } catch (e: Exception) { return null }
+        val r = try { Release.newer(version, "home", Launchers.SELF_APK) } catch (e: Exception) { unasked = true; return null }
         checked = Triple(System.currentTimeMillis(), version, r)
         return r
     }

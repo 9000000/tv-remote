@@ -66,6 +66,7 @@ class PlayActivity : Activity() {
     private lateinit var side: LinearLayout
     private lateinit var sideList: RecyclerView
 
+    private var single = false                                        // a bare address ([openStream]), not a channel of the lineup
     private var at = -1                                               // place in Lineup
     private var streams: List<Channel> = emptyList()                  // the channel on screen, its streams
     private var stream = 0
@@ -147,6 +148,8 @@ class PlayActivity : Activity() {
 
     /** The channel a link names: in the lineup the list gave, else among the favourites, else in its country's list. */
     private fun open(i: Intent?) {
+        single = Pins.isStreamLink(i?.data)
+        if (single) { openStream(Pins.streamUrl(i?.data)); return }
         Pins.findText(i?.data)?.let { find(it); return }
         if (i?.data?.host == "find") { startActivity(Intent(this, BrowseActivity::class.java)); finish(); return }   // no words: the list
         val id = Pins.id(i?.data) ?: Store.last(this) ?: run { finish(); return }
@@ -165,6 +168,15 @@ class PlayActivity : Activity() {
                 tune(Lineup.indexOf(id))
             }
         }
+    }
+
+    /** tvchannels://url?u=...: one address, no lineup (so no channel keys, banner or side list); Back leaves to whatever was on the TV before. */
+    private fun openStream(url: String?) {
+        closeInfo(); showSide(false); showGuide(false); problem.visibility = View.GONE
+        if (url == null) { spin.visibility = View.GONE; fail(getString(R.string.bad_link)); return }
+        val host = try { java.net.URI(url).host.orEmpty() } catch (e: Exception) { "" }
+        streams = listOf(Channel("url:$host", host, "", "", url)); stream = 0; asProgressive = false; retried = false
+        start()
     }
 
     /** tvchannels://find/<text>: the best match in the country on show plays as a play link would; none opens the list searching for it. */
@@ -227,7 +239,7 @@ class PlayActivity : Activity() {
             x.setVideoSurfaceView(surface)
             x.addListener(object : Player.Listener {
                 override fun onPlaybackStateChanged(s: Int) {
-                    if (s == Player.STATE_READY) { spin.visibility = View.GONE; main.removeCallbacks(slow); streams.getOrNull(stream)?.let { Store.setAlive(this@PlayActivity, it.url, true) } }
+                    if (s == Player.STATE_READY) { spin.visibility = View.GONE; main.removeCallbacks(slow); if (!single) streams.getOrNull(stream)?.let { Store.setAlive(this@PlayActivity, it.url, true) } }   // a bare address may hold a token: not kept
                     if (s == Player.STATE_BUFFERING) spin.visibility = View.VISIBLE
                 }
                 override fun onPlayerError(e: PlaybackException) = failed(e)
@@ -265,7 +277,7 @@ class PlayActivity : Activity() {
 
     private fun next(e: PlaybackException?) {
         main.removeCallbacks(slow)
-        streams.getOrNull(stream)?.let { Store.setAlive(this, it.url, false) }
+        if (!single) streams.getOrNull(stream)?.let { Store.setAlive(this, it.url, false) }
         stream++; asProgressive = false; retried = false
         if (stream < streams.size) { start(); return }
         player?.stop()
@@ -367,10 +379,11 @@ class PlayActivity : Activity() {
             if (k == KeyEvent.KEYCODE_BACK || k == KeyEvent.KEYCODE_DPAD_RIGHT) { showSide(false); return true }
             return super.onKeyDown(k, e)
         }
+        if (single && k != KeyEvent.KEYCODE_BACK && k != KeyEvent.KEYCODE_DPAD_CENTER && k != KeyEvent.KEYCODE_ENTER && !isMediaKey(k)) return super.onKeyDown(k, e)
         when (k) {
             KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_CHANNEL_UP, KeyEvent.KEYCODE_PAGE_UP -> tune(at + 1)
             KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_CHANNEL_DOWN, KeyEvent.KEYCODE_PAGE_DOWN -> tune(at - 1)
-            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> if (problem.visibility == View.VISIBLE) retryAll() else if (infoShown()) { closeInfo(); showSide(true) } else showInfo()
+            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> if (problem.visibility == View.VISIBLE) retryAll() else if (single) togglePause() else if (infoShown()) { closeInfo(); showSide(true) } else showInfo()
             KeyEvent.KEYCODE_BACK -> if (infoShown()) closeInfo() else return super.onKeyDown(k, e)
             KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_GUIDE, KeyEvent.KEYCODE_MENU -> showSide(true)
             KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_INFO -> if (info.visibility == View.VISIBLE) showGuide(true) else showInfo()
@@ -387,6 +400,9 @@ class PlayActivity : Activity() {
         }
         return true
     }
+
+    private fun isMediaKey(k: Int) = k == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || k == KeyEvent.KEYCODE_MEDIA_PAUSE || k == KeyEvent.KEYCODE_MEDIA_PLAY
+    private fun togglePause() { player?.let { if (it.isPlaying) it.pause() else it.play() } }
 
     override fun onStart() { super.onStart(); started = true; if (player == null && streams.isNotEmpty()) start() }
 

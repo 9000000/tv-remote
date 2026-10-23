@@ -17,11 +17,12 @@ import java.util.Locale
  *   app limits    minutes per day for an app; when they are used up the app is closed (more can be granted for today)
  *   volume        times of day with a highest volume each (22:00–06:00 at most 30%): louder is turned down, with a word on screen
  *   memory        a notice over whatever is on when the TV's memory stays fuller than a set share, to free it or not
+ *   one heavy app a video app left for another is closed after 15 s, for TVs with little RAM ([Heavy]); off until turned on
  *   app locks     a PIN asked over an app before it can be used, again each time another app was opened ([PinActivity])
  *
  * Stored as one JSON object: { sleep_at, bedtime: {on, ranges: [{from, to}], from, to (the first range, for
  * remotes older than ranges)}, snooze_until, limits: {pkg: minutes}, extra: {day: {pkg: minutes}},
- * volume: [{from, to, max (percent)}], ram: {on, pct (used, percent)}, lock: {apps: [pkg], salt, hash (of the PIN), len (its digits)} }.
+ * volume: [{from, to, max (percent)}], ram: {on, pct (used, percent)}, heavy: {on, keep: [pkg], log: [{pkg, label, at}]}, lock: {apps: [pkg], salt, hash (of the PIN), len (its digits)} }.
  * The remotes reach it through [RulesReceiver] (phone, computer: over ADB) or RemoteService (the TV's own page).
  */
 internal object Rules {
@@ -43,8 +44,10 @@ internal object Rules {
         return o.optLong("sleep_at") > System.currentTimeMillis() || o.optJSONObject("bedtime")?.optBoolean("on") == true || (o.optJSONObject("limits")?.length() ?: 0) > 0
             || (o.optJSONArray("volume")?.length() ?: 0) > 0 || ram(o).optBoolean("on")
             || locked(o).isNotEmpty()
+            || Heavy.on(o)                                             // HeavyMode is fed by Guard
             || o.optBoolean("awake")                                   // KeepAwake lives in the service
             || WelcomeState.active(c)                                  // so does hearing the TV turned on (WelcomeWatch)
+            || HomeKeys.active(c)                                      // and TV Home's keys / app on power-on (KeyFixWatch, AutoOpenWatch)
     }
 
     fun day(t: Long): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(t))
@@ -53,7 +56,7 @@ internal object Rules {
      * One action from a remote, then the state they show. Actions ("do"): sleep {minutes} (0 cancels), sleep_add {minutes},
      * bedtime {on, ranges: [{from, to}] ("22:00"), or from, to for one}, snooze {minutes} (bedtime paused, 0 resumes), limit {pkg, minutes} (0 removes),
      * extra {pkg, minutes} (more for today only), volume {ranges: [{from, to, max}]} (the whole list),
-     * ram {on, pct} (the memory notice, at pct% used), pin {pin} (4 to 8 digits), lock {pkg, on} (a PIN must be set first).
+     * ram {on, pct} (the memory notice, at pct% used), heavy {on}, heavy_keep {pkg, on}, heavy_clear (the list of closes), pin {pin} (4 to 8 digits), lock {pkg, on} (a PIN must be set first).
      * An empty "do" only reads.
      */
     @Synchronized
@@ -80,6 +83,15 @@ internal object Rules {
             }
             "volume" -> o.put("volume", ranges(d.optJSONArray("ranges") ?: JSONArray(), true))
             "ram" -> o.put("ram", JSONObject().put("on", d.optBoolean("on")).put("pct", d.optInt("pct", ram(o).optInt("pct")).coerceIn(RAM_MIN, RAM_MAX)))
+            "heavy" -> o.put("heavy", (o.optJSONObject("heavy") ?: JSONObject()).put("on", d.optBoolean("on")))   // one heavy app at a time (Heavy)
+            "heavy_keep" -> {                                          // an app Heavy never closes
+                val pkg = d.optString("pkg")
+                if (!PKG.matches(pkg)) throw IllegalArgumentException("bad package name")
+                val h = o.optJSONObject("heavy") ?: JSONObject()
+                val keep = Heavy.keep(o).toMutableList().apply { remove(pkg); if (d.optBoolean("on") && size < 50) add(pkg) }
+                o.put("heavy", h.put("keep", JSONArray(keep)))
+            }
+            "heavy_clear" -> o.put("heavy", (o.optJSONObject("heavy") ?: JSONObject()).put("log", JSONArray()))
             "awake" -> o.put("awake", d.optBoolean("on"))                   // KeepAwake: the chip kept up while the TV is "off"
             "pin" -> {
                 val pin = d.optString("pin")
@@ -127,6 +139,31 @@ internal object Rules {
             list.put(one)
         }
         return list
+    }
+
+    /** HeavyMode closed [pkg]: the newest [Heavy.LOG_MAX] closes are kept, for the page's list. Not a rules change: Guard is not poked. */
+    @Synchronized
+    fun heavyLog(c: Context, pkg: String, label: String, at: Long) {
+        val o = load(c)
+        val h = o.optJSONObject("heavy") ?: JSONObject()
+        val old = h.optJSONArray("log") ?: JSONArray()
+        val log = JSONArray().put(JSONObject().put("pkg", pkg).put("label", label).put("at", at))
+        for (i in 0 until minOf(old.length(), Heavy.LOG_MAX - 1)) log.put(old.get(i))
+        save(c, o.put("heavy", h.put("log", log)))
+    }
+
+    /** What the pages show of the mode: on, the kept apps, the heavy apps installed here, the closes (newest first), the TV's RAM in MB. */
+    private fun heavy(c: Context, o: JSONObject): JSONObject {
+        val h = o.optJSONObject("heavy")
+        val keep = Heavy.keep(o)
+        val apps = JSONArray()
+        for ((pkg, name) in Heavy.LIST) {
+            if (pkg in Heavy.MUSIC) continue
+            try { c.packageManager.getPackageInfo(pkg, 0) } catch (e: PackageManager.NameNotFoundException) { continue }
+            apps.put(JSONObject().put("pkg", pkg).put("label", name).put("keep", pkg in keep))
+        }
+        return JSONObject().put("on", h?.optBoolean("on") == true).put("apps", apps).put("log", h?.optJSONArray("log") ?: JSONArray())
+            .put("mem_mb", Guard.memory().first).put("wait", Heavy.WAIT_MS / 1000)
     }
 
     /** The sleep timer has gone off (unless it was set again meanwhile). */
@@ -223,7 +260,7 @@ internal object Rules {
             .put("in_bedtime", inBedtime(o, now)).put("snooze_until", o.optLong("snooze_until").let { if (it > now) it else 0L })
             .put("limits", limits).put("volume", o.optJSONArray("volume") ?: JSONArray()).put("volume_now", volumeCap(o, now) ?: JSONObject.NULL)
             .put("ram", ram(o)).put("volume_fixed", Guard.volumeFixed(c)).put("running", RemoteService.isRunning()).put("wanted", active(c))
-            .put("adb", RemoteService.adbState()).put("awake", o.optBoolean("awake"))
+            .put("adb", RemoteService.adbState()).put("awake", o.optBoolean("awake")).put("heavy", heavy(c, o))
             .put("lock", JSONObject().put("pin", o.optJSONObject("lock")?.has("hash") == true)
                 .put("apps", JSONArray(locked(o).map { JSONObject().put("pkg", it).put("label", label(c, it)) })))
     }

@@ -27,6 +27,7 @@ class HomeConfigTest {
         assertEquals(true, c.getBoolean("clock24"))
         assertEquals(true, c.getBoolean("greet"))
         assertEquals(true, c.getBoolean("anim"))
+        assertEquals(true, c.getBoolean("power"))                   // the bar's power button is on until switched off
     }
 
     @Test fun theDockKeepsRealPackagesOnceAndAtMostSix() {
@@ -133,6 +134,11 @@ class HomeConfigTest {
         assertEquals(listOf("a.b"), dock(n))
         assertEquals("ocean", n.getString("wall"))
         assertFalse(n.getBoolean("clock24"))
+    }
+
+    @Test fun powerButtonDefaultsOnAndMergesOff() {
+        assertFalse(HomeConfig.merge(HomeConfig.clean(JSONObject()), JSONObject().put("power", false)).getBoolean("power"))
+        assertEquals(true, HomeConfig.clean(JSONObject().put("power", "no")).getBoolean("power"))
     }
 
     @Test fun animIsABooleanAndMerges() {
@@ -282,5 +288,21 @@ class HomeConfigTest {
         assertEquals("big", f.getJSONObject("wsize").getString("radar"))
         assertFalse(f.getJSONObject("wsize").has("system"))
         assertEquals(listOf("system"), HomeConfig.clean(f).getJSONArray("widgets").let { a -> (0 until a.length()).map { a.getString(it) } })   // TV Home's own decides
+    }
+    @Test fun keysAndPowerOnAppAreOffByDefaultAndKeepOnlyFreeKeys() {
+        val c = HomeConfig.clean(JSONObject())
+        assertFalse(c.getBoolean("keyon")); assertFalse(c.getBoolean("autoon")); assertEquals("", c.getString("autoapp")); assertEquals(0, c.getJSONObject("keyapps").length())
+        val m = HomeConfig.clean(JSONObject().put("keyon", true).put("autoon", true).put("autoapp", "a.b")
+            .put("keyapps", JSONObject().put("183", "x.y").put("7", "x.z").put("170", "p.q").put("24", "no.vol").put("183x", "bad.one").put("184", "not a pkg")))
+        assertEquals(mapOf(183 to "x.y", 7 to "x.z", 170 to "p.q"), HomeConfig.keyApps(m.getJSONObject("keyapps")))   // volume up (24), a bad name, a bad package: dropped
+        assertEquals("a.b", m.getString("autoapp"))
+        assertEquals("", HomeConfig.clean(JSONObject().put("autoapp", "x; rm -rf /")).getString("autoapp"))
+    }
+
+    @Test fun keysSurviveTheForwardAndTheMerge() {
+        val f = HomeConfig.forward(JSONObject().put("keyon", true).put("keyapps", JSONObject().put("185", "a.b")))
+        assertEquals("a.b", f.getJSONObject("keyapps").getString("185"))
+        val n = HomeConfig.merge(f, JSONObject().put("autoon", true))
+        assertEquals(true, n.getBoolean("keyon")); assertEquals(true, n.getBoolean("autoon")); assertEquals("a.b", n.getJSONObject("keyapps").getString("185"))
     }
 }

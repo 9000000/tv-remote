@@ -27,6 +27,7 @@
     <string name="cant_play_geo">Kênh này không phát được ở đây: có thể chỉ xem được trong nước của kênh.</string>
     <string name="fail_hint">▲▼ kênh khác · OK thử lại · ◀ danh sách</string>
     <string name="next_hint">▲▼ đổi kênh · OK danh sách</string>
+    <string name="bad_link">Đây không phải link phát được (chỉ http hoặc https).</string>
     <string name="not_found">Kênh này không còn trong danh sách của iptv-org.</string>
     <string name="channels_n">%d kênh</string>
     <string name="source">Kênh lấy từ iptv-org (luồng công khai); app không lưu trữ kênh nào.</string>

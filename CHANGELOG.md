@@ -19,6 +19,18 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Xem màn hình TV: chọn "Trực tiếp" hoặc "Ảnh chụp". Ảnh chụp tự chụp lại sau mỗi phím bấm, chụp tiếp tới khi màn hình đứng yên (hết hiệu ứng, app mở xong), và mỗi 10 giây; có nút ↻ chụp ngay. Nhẹ cho Wi-Fi yếu và iPhone.
 - TV Channels: lướt danh sách bên trái chỉ di chuyển focus, không còn mở từng nhóm (hết giật khi lướt nhanh); bấm OK hoặc ▶ mới mở nhóm. Nhóm đang mở có chữ màu xanh ngọc, dòng đang focus có nền sáng.
 
+- TV Home: nút nguồn ảo cạnh nút cài đặt, cho remote hỏng nút nguồn: Tắt màn hình (vẫn có tiếng), Standby, Tắt nguồn hẳn (hỏi lại). Cần TV Setup; chưa có thì nút chỉ cách cài. Tắt được trong Tùy chỉnh → Hệ thống.
+- TV Home: Tùy chỉnh mở ra là danh sách nhóm có icon (Hình nền, Giao diện, Bố cục, Widget, Hệ thống, Ngôn ngữ) kèm tóm tắt; OK mới vào chi tiết từng nhóm.
+- Remote → Thêm phím → Tiện ích: "Cứu TV treo" đóng app đang đứng màn hình rồi về Home, không phải rút điện.
+- Mở trên TV: dán link luồng (.m3u8, .mp4…) thì TV Channels phát luôn; link thường mở như cũ.
+- TV RAM dưới 1,5 GB: xem màn hình TV tự giữ ở 720p, 20 hình/giây cho TV khỏi giật; chọn chất lượng bằng tay thì theo bạn.
+- Health: "Chế độ 1 app nặng" (tắt sẵn, gợi ý khi TV ít RAM): app video bị bỏ lại 15 giây thì tự đóng để giải phóng RAM; không đụng app nhạc, app đang phát tiếng và app bạn giữ lại.
+- TV Setup và TV Home được giữ chạy khi TV thiếu RAM, hẹn giờ và khóa không bị mất.
+- Dọn dẹp ban đêm không còn chạy khi TV Android 10+ đang phát.
+- Trang giới thiệu: trang "Các app" vẽ các app kết nối với nhau thế nào và mỗi app cài bằng đường nào.
+- TV Channels bản cũ không phát được link thì báo "Cập nhật TV Channels" kèm nút, thay vì báo chưa cài. Không kiểm tra được bản mới (mất mạng) thì hiện "Thử lại" thay vì giấu nút cài.
+- TV Home → Tùy chỉnh → Phím & khởi động: gán phím màu, phím remote đang chết, hoặc phím 0-9 (ở TV Home) để mở một app; phím màu và phím chết chạy cả trong app khác nhờ TV Setup.
+- TV Home: tự mở một app khi bật TV (khởi động hoặc dậy từ chế độ chờ), mỗi lần bật một lần; không mở khi TV dậy vào app khác, bấm Home thì ở lại TV Home.
 **English**
 - Phone app: on the first update Android asks to allow "Install unknown apps"; after allowing it and coming back, the app said "Update cancelled" though nobody cancelled, and had to be tapped again. The app now asks for it before the download (Open settings), and the update goes on by itself on return.
 - Phone app: when an update cannot be installed, a "Download in browser" button gets the file to install by hand; on a Samsung it also says how to turn off Auto Blocker (it refuses any app from outside the Play Store and Galaxy Store).
@@ -31,6 +43,18 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Channels: add your own m3u links (up to 5) in the "Your links" tab of Manage channels; the TV fetches them each day and shows them under "Your lists", a row per link.
 - Seeing the TV's screen: choose "Live" or "Screenshots". Screenshots refresh after each key press, again until the screen stops changing (an animation, an app opening), and every 10 s; a ↻ button shoots now. Light on weak Wi-Fi and iPhones.
 - TV Channels: moving through the side list only moves the focus, no longer opening each group on the way (no lag on a fast scroll); OK or ▶ opens one. The open group has its words in teal, the focused row a light fill.
+- TV Home: a power button beside the settings button, for remotes whose own is broken: Screen off (sound stays on), Standby, Power off (asks again). Needs TV Setup; without it the button says how to install it. Can be hidden in Customize → System.
+- TV Home: Customize opens on a list of groups with icons (Background, Look, Layout, Widgets, System, Language) and a summary each; OK opens a group's settings.
+- Remote → More keys → Tools: "Unfreeze TV" closes the app stuck on screen and goes Home, no unplugging.
+- Open on TV: a stream link (.m3u8, .mp4 …) plays in TV Channels; other links open as before.
+- TVs with under 1.5 GB of RAM: seeing the TV's screen holds at 720p, 20 frames a second so the TV does not stutter; a quality you pick by hand wins.
+- Health: "One heavy app" mode (off by default, suggested on low-RAM TVs): a video app left for 15 s is closed to free memory; music apps, apps playing sound and apps you keep are never touched.
+- TV Setup and TV Home are kept running when the TV runs low on memory, so timers and locks hold.
+- The nightly clean-up no longer runs while an Android 10+ TV is playing.
+- Intro site: an "Apps" page shows how the apps fit together and how each one is installed.
+- An old TV Channels that cannot play a link now says "Update TV Channels" with a button, instead of "not installed". When the latest version cannot be checked (offline), a "Try again" line shows instead of the install button vanishing.
+- TV Home → Customize → Keys & startup: set a colour key, a dead remote button or 0-9 (on TV Home) to open an app; colour and dead keys work inside other apps too, through TV Setup.
+- TV Home: open an app when the TV turns on (after a start or waking from standby), once each time; not when the TV wakes into another app, and Home stays on TV Home.
 
 ## 0.19.0 - 2026-10-23
 

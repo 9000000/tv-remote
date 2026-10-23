@@ -27,6 +27,8 @@ import org.json.JSONObject
  *           runs in between. A TV Home that does this reports "wrotate": true (the page keeps its one-choice list for one that
  *           does not)
  *   clock24 24-hour clock; greet: the greeting under the clock
+ *   power   the round power button in the top bar (screen off / standby / power off, for a remote whose own button is broken); on by
+ *           default. A TV Home that has this reports "power" in what it sends back, so the page offers the switch only to one that does
  *   lang    TV Home's words: "" the TV's own language, or one of [LANGS] whatever the TV is set to
  *   anim    motion effects (a focused app lifts, rows glide, the screen fades in); off = instant, with a ring. TV Home also
  *           treats the system's "animator duration scale 0" as off
@@ -58,6 +60,11 @@ import org.json.JSONObject
  *           launcher sets `screensaver_components` itself (it holds WRITE_SECURE_SETTINGS once a client has granted it over
  *           ADB) and puts the previous screensaver back when this is switched off
  *   note    a line from the family, pinned on the home screen until it is emptied ([NOTE_MAX] characters, one line)
+ *   keyon   remote keys that open an app (default off); keyapps: {"183": "package"} the key code to its app, only keys [keyFree]
+ *           allows. TV Home answers them on its own screen; TV Setup's key filter answers them everywhere (HomeInfo "keys").
+ *           A TV Home that has this reports "keysOk": true, "keysSetup" (TV Setup took the map) and "keysDead" (the keys it found dead)
+ *   autoon  open [autoapp] once each time the TV is turned on (boot or wake from standby); default off. TV Setup does it
+ *           (TV Home is not running in standby), so it needs TV Setup, said in the setting ("keysSetup")
  */
 object HomeConfig {
     const val PKG = "dev.tvremote.home"
@@ -177,6 +184,22 @@ object HomeConfig {
         val s = conf.optJSONObject("wsize")
         return WIDGETS.filter { (s?.optString(it)?.takeIf { v -> v == "big" || v == "small" } ?: defaultSize(it)) == "big" }.toSet()
     }
+    /** Remote keys a person may give an app. Colour keys: no app answers them in general. Numbers: only on TV Home's own screen. */
+    val KEY_COLOURS = listOf(183, 184, 185, 186)                        // PROG_RED, GREEN, YELLOW, BLUE
+    val KEY_NUMBERS = (7..16).toList()                                  // KEYCODE_0 .. KEYCODE_9
+    /** The keys the stock launcher answered (app/tv KeyFix.RULES; a test there holds the two lists equal): free only once their handler is gone. */
+    val KEY_DEAD = listOf(170, 178, 190, 191, 195, 192, 284, 176)
+    fun keyAllowed(code: Int) = code in KEY_COLOURS || code in KEY_NUMBERS || code in KEY_DEAD
+    /** "keyapps" as code to package, the codes allowed and the packages real names. */
+    fun keyApps(o: JSONObject?): Map<Int, String> {
+        val out = LinkedHashMap<Int, String>()
+        if (o != null) for (k in o.keys()) {
+            val code = k.toIntOrNull() ?: continue
+            val p = o.optString(k)
+            if (keyAllowed(code) && p.length <= 200 && PKG_NAME.matches(p)) out[code] = p
+        }
+        return out
+    }
     const val NOTE_MAX = 140
     const val PLACE_MAX = 60
     /** TV Setup's answer to TV Home about app use (its HomeInfo provider): `call(USAGE, "usage")` → Bundle "json". */
@@ -212,6 +235,7 @@ object HomeConfig {
             .put("clock24", o.optBoolean("clock24", true))
             .put("lang", o.optString("lang").takeIf { it in LANGS } ?: "")
             .put("greet", o.optBoolean("greet", true))
+            .put("power", o.optBoolean("power", true))
             .put("anim", o.optBoolean("anim", true))
             .put("motion", o.optString("motion").takeIf { it in MOTIONS } ?: "")
             .put("focus", o.optString("focus").takeIf { it == "ring" } ?: "glass")
@@ -220,6 +244,10 @@ object HomeConfig {
             .put("dream", o.optBoolean("dream", false))
             .put("note", o.optString("note").replace(Regex("\\s+"), " ").trim().take(NOTE_MAX))
             .put("place", o.optString("place").replace(Regex("\\s+"), " ").trim().take(PLACE_MAX))
+            .put("keyon", o.optBoolean("keyon", false))
+            .put("keyapps", JSONObject().also { m -> keyApps(o.optJSONObject("keyapps")).toSortedMap().forEach { (k, v) -> m.put(k.toString(), v) } })
+            .put("autoon", o.optBoolean("autoon", false))
+            .put("autoapp", o.optString("autoapp").takeIf { it.length <= 200 && PKG_NAME.matches(it) } ?: "")
             .put("widgets", JSONArray(widgets))
             .put("wsize", sizes(o, widgets))
             .put("wstyle", JSONObject().also { out ->

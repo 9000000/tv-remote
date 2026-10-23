@@ -1,6 +1,7 @@
 package dev.tvremote.home
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Context
 import android.content.res.ColorStateList
@@ -34,6 +35,55 @@ object Customize {
     private const val GLASS_FOCUS = 0x2EFFFFFF                          // a row of the panel: focused, at rest, its edge
     private const val GLASS_FILL = 0x12FFFFFF
     private const val GLASS_EDGE = 0x1FFFFFFF
+    private const val TINT_BG = 0xFF6F8DFF.toInt()                      // each group's chip hue on the first level: its icon in full, the chip a fifth of it
+    private const val TINT_LOOK = 0xFFB48CFF.toInt()
+    private const val TINT_LAYOUT = 0xFF5EEAD4.toInt()
+    private const val TINT_WIDGETS = 0xFFFFB86B.toInt()
+    private const val TINT_SYSTEM = 0xFFFF7A8A.toInt()
+    private const val TINT_LANG = 0xFF7BE0A0.toInt()
+    private const val TINT_KEYS = 0xFFFFD27A.toInt()
+    private const val CHIP_ALPHA = 0x33000000                           // OR-ed into a tint
+
+    /** One group of settings: a row on the first level and a page of controls behind it. [last] is where the focus was when it was left. */
+    private class Group(c: Context, val key: String, val name: Int, val icon: Int, val tint: Int) {
+        val col = LinearLayout(c).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
+        val scroll = ScrollView(c).apply { isVerticalScrollBarEnabled = false; clipChildren = false; addView(col) }
+        val page = LinearLayout(c).apply { orientation = LinearLayout.VERTICAL; visibility = View.GONE }
+        var row: View? = null; var head: View? = null; var sum: TextView? = null; var last: View? = null
+        var start: (() -> View?)? = null                                 // where a first visit lands (the background in use), else the first control
+    }
+
+    private val EVERY_WORDS = mapOf("off" to R.string.rot_off, "30m" to R.string.rot_30m, "1h" to R.string.rot_1h, "6h" to R.string.rot_6h, "day" to R.string.rot_day, "show" to R.string.rot_show)
+
+    /** The line under a group's name on the first level, from the config as it is now. */
+    private fun summary(a: Context, key: String): String {
+        val c = Store.get(a)
+        fun on(k: String) = a.getString(if (c.optBoolean(k, true)) R.string.w_on else R.string.w_off)
+        return when (key) {
+            "bg" -> {
+                val set = c.optString("wevery") != "off"
+                val what = if (set) a.getString(R.string.g_bg_set, c.getJSONArray("walls").length(), a.getString(EVERY_WORDS.getValue(c.optString("wevery"))).lowercase()) else wallName(a, c.optString("wall"))
+                what + " · " + a.getString(R.string.g_shade_n, c.optInt("shade", HomeConfig.SHADE_DEFAULT))
+            }
+            "look" -> a.getString(R.string.g_look_sum, a.getString(if (c.optString("focus", "glass") == "ring") R.string.c_focus_ring else R.string.c_focus_glass),
+                if (!c.optBoolean("anim", true)) a.getString(R.string.w_off) else a.getString(when (c.optString("motion")) { "calm" -> R.string.c_motion_calm; "full" -> R.string.c_motion_full; else -> R.string.c_motion_auto }).lowercase())
+            "layout" -> a.getString(R.string.g_cols_n, c.optInt("cols", HomeConfig.COLS_DEFAULT)) + " · " +
+                (c.optDouble("rows", 0.0).let { if (it < 1) a.getString(R.string.g_rows_auto) else a.getString(R.string.g_rows_n, rowsWord(a, it)) })
+            "widgets" -> a.getString(R.string.g_widgets_n, Store.list(a, "widgets").size)
+            "system" -> a.getString(R.string.g_power) + ": " + on("power") + " · " + a.getString(R.string.g_dream) + ": " + on("dream")
+            "keys" -> a.getString(R.string.g_keys_sum, HomeConfig.keyApps(c.optJSONObject("keyapps")).size.takeIf { c.optBoolean("keyon") } ?: 0,
+                a.getString(if (c.optBoolean("autoon")) R.string.w_on else R.string.w_off))
+            else -> when (c.optString("lang")) { "vi" -> "Tiếng Việt"; "en" -> "English"; else -> a.getString(R.string.c_lang_tv) }
+        }
+    }
+
+    /** The first view that can take the focus in [v], top to bottom (a hidden one is passed over). */
+    private fun firstFocusable(v: View): View? {
+        if (v.visibility != View.VISIBLE) return null
+        if (v.isFocusable) return v
+        if (v is ViewGroup) for (i in 0 until v.childCount) firstFocusable(v.getChildAt(i))?.let { return it }
+        return null
+    }
 
     private fun rowsWord(a: Context, v: Double) = if (v < 1) a.getString(R.string.c_rows_auto) else String.format(java.util.Locale.ROOT, "%.1f", v)
 
@@ -106,39 +156,33 @@ object Customize {
         val edge = dp(24)
         val panelW = minOf(dm.widthPixels - dp(64), dp(600))
         val inner = panelW - dp(56)
-        val dialog = Dialog(a, R.style.Menu)
+        var stepBack: () -> Boolean = { false }                        // Back on a page goes up a level (set below); on the first level it closes the panel
+        val dialog = object : Dialog(a, R.style.Menu) {
+            @Suppress("OVERRIDE_DEPRECATION") override fun onBackPressed() { if (!stepBack()) super.onBackPressed() }
+        }
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
 
-        val col = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(28), dp(26), dp(28), dp(28)) }
+        val groups = listOf(
+            Group(a, "bg", R.string.bg, R.drawable.ic_image, TINT_BG), Group(a, "look", R.string.g_look, R.drawable.ic_sparkle, TINT_LOOK),
+            Group(a, "layout", R.string.g_layout, R.drawable.ic_apps, TINT_LAYOUT), Group(a, "widgets", R.string.w_widgets, R.drawable.ic_gauge, TINT_WIDGETS),
+            Group(a, "system", R.string.g_system, R.drawable.ic_power, TINT_SYSTEM), Group(a, "keys", R.string.g_keys, R.drawable.ic_keyboard, TINT_KEYS),
+            Group(a, "lang", R.string.c_lang, R.drawable.ic_globe, TINT_LANG))
+        for (g in groups) g.col.setPadding(dp(28), dp(8), dp(28), dp(28))
+        val top = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(28), dp(26), dp(28), dp(28)) }
+        var col = groups[0].col                                        // the page being filled; each page's controls go into its own column
         fun label(t: String, size: Float, color: Int) = Font.on(TextView(a)).apply { text = t; textSize = size; setTextColor(color) }
         fun icon(res: Int, color: Int, size: Int) = ImageView(a).apply { setImageResource(res); imageTintList = ColorStateList.valueOf(color) }.let { it to size }
         fun section(t: String) = col.addView(label(t.uppercase(), 12f, DIM).apply { letterSpacing = 0.12f }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(22); bottomMargin = dp(10) })
         fun glass(radius: Int, fill: Int, stroke: Int) = GradientDrawable().apply { cornerRadius = dp(radius).toFloat(); setColor(fill); setStroke(dp(1), stroke) }
 
-        // the head: the sliders in a tinted tile, the title, what it is for
-        col.addView(LinearLayout(a).apply {
-            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-            addView(FrameLayout(a).apply {
-                background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(0xFF6F8DFF.toInt(), 0xFF9B6BFF.toInt())).apply { cornerRadius = dp(14).toFloat() }
-                val (iv, s) = icon(R.drawable.ic_sliders, Color.WHITE, dp(24))
-                addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER))
-            }, LinearLayout.LayoutParams(dp(48), dp(48)))
-            addView(LinearLayout(a).apply {
-                orientation = LinearLayout.VERTICAL
-                addView(label(a.getString(R.string.customize), 22f, Color.WHITE).apply { typeface = Font.medium })
-                addView(label(a.getString(R.string.c_sub), 13f, DIM))
-            }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(14) })
-        })
-
         // backgrounds, five to a row, a ✓ on the one in use (rotation off) or on each of the set it turns through (rotation on)
-        section(a.getString(R.string.bg))
         val conf = Store.get(a)
         val have = Walls.photos(a)
         val keys = HomeConfig.WALLS.filter { !HomeConfig.isPhoto(it) || it in have }
         val tiles = ArrayList<Pair<String, View>>()
         val cols = 5; val gap = dp(10); val w = tileW(a)
         val shots = java.util.concurrent.Executors.newSingleThreadExecutor()    // the scenes drawn and the photos read small, off the main thread
-        dialog.setOnDismissListener { shots.shutdownNow() }
+        dialog.setOnDismissListener { shots.shutdownNow(); Keys.onState = null }
         // the pictures are put in together once the panel has slid in: one by one during the slide each drew the whole panel again
         val waiting = ArrayList<Pair<ImageView, Bitmap>>()
         var slid = !Motion.on
@@ -154,7 +198,7 @@ object Customize {
             rotNote.text = a.getString(if (c.getJSONArray("walls").length() < 2) R.string.rot_pick else R.string.rot_set)
         }
         // how often it moves on: two rows of three chips, the one in use tinted like the switches below
-        val everyWords = mapOf("off" to R.string.rot_off, "30m" to R.string.rot_30m, "1h" to R.string.rot_1h, "6h" to R.string.rot_6h, "day" to R.string.rot_day, "show" to R.string.rot_show)
+        val everyWords = EVERY_WORDS
         val chips = ArrayList<Pair<String, TextView>>()
         fun markEvery() { val e = Store.get(a).optString("wevery"); for ((k, v) in chips) v.isSelected = k == e }
         col.addView(label(a.getString(R.string.rot), 13f, Color.WHITE), LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = dp(8) })
@@ -325,10 +369,11 @@ object Customize {
             pair!!.addView(t, LinearLayout.LayoutParams(0, -2, 1f).apply { if (inRow == 1) leftMargin = gap })
             inRow++
         }
+        fun endRow() { if (inRow == 1) pair!!.addView(View(a), LinearLayout.LayoutParams(0, 0, 1f).apply { leftMargin = gap }); pair = null; inRow = 0 }   // a lone tile keeps half the width
         // the veil over a photo, a scene or the page: a busy one fights the clock and the names (HomeConfig "shade")
         tile(R.drawable.ic_contrast, a.getString(R.string.c_shade), null, "shade")
-        pair = null                                                    // the next section starts its own row
-        section(a.getString(R.string.c_look))
+        endRow()
+        col = groups[1].col
         tile(R.drawable.ic_timer, a.getString(R.string.clock24), null, "clock24")
         tile(R.drawable.ic_message, a.getString(R.string.greet), null, "greet")
         tile(R.drawable.ic_sparkle, a.getString(R.string.motion), null, "anim")
@@ -336,14 +381,12 @@ object Customize {
             listOf("" to a.getString(R.string.c_motion_auto), "calm" to a.getString(R.string.c_motion_calm), "full" to a.getString(R.string.c_motion_full)))
         tile(R.drawable.ic_eye, a.getString(R.string.c_focus), null, "focus",
             listOf("ring" to a.getString(R.string.c_focus_ring), "glass" to a.getString(R.string.c_focus_glass)))
+        endRow()
+        col = groups[2].col
         tile(R.drawable.ic_apps, a.getString(R.string.c_cols), null, "cols", (HomeConfig.COLS_MIN..HomeConfig.COLS_MAX).map { "$it" to "$it" })
         tile(R.drawable.ic_updown, a.getString(R.string.c_rows), null, "rows")
-        tile(R.drawable.ic_moon, a.getString(R.string.dream), a.getString(R.string.dream_sub), "dream")
-        tile(R.drawable.ic_globe, a.getString(R.string.c_lang), null, "lang",
-            listOf("" to a.getString(R.string.c_lang_tv), "vi" to "Tiếng Việt", "en" to "English"))
-        if (inRow == 1) pair!!.addView(View(a), LinearLayout.LayoutParams(0, 0, 1f).apply { leftMargin = gap })   // a lone tile keeps half the width
-        pair = null
-        section(a.getString(R.string.w_widgets))
+        endRow()
+        col = groups[3].col
         val preview = PackGlyph(a)
         widgetRows(a, col, gap, ::glass, ::label, preview)
         section(a.getString(R.string.w_layout))
@@ -368,8 +411,118 @@ object Customize {
                 setOnClickListener { Store.change(a, JSONObject().put("note", "")); sub.text = a.getString(R.string.c_note_gone); alpha = 0.6f }
             }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
         }
+        col = groups[4].col
+        tile(R.drawable.ic_power, a.getString(R.string.c_power), null, "power")   // the bar's power button (HomeConfig "power")
+        tile(R.drawable.ic_moon, a.getString(R.string.dream), a.getString(R.string.dream_sub), "dream")
+        endRow()
+        col = groups[5].col
+        keysPage(a, col, { r, t, k -> tile(r, t, null, k) }, ::endRow, ::glass, ::label, gap)
+        col = groups[6].col
+        tile(R.drawable.ic_globe, a.getString(R.string.c_lang), null, "lang",
+            listOf("" to a.getString(R.string.c_lang_tv), "vi" to "Tiếng Việt", "en" to "English"))
+        endRow()
+        groups[0].start = { tiles.firstOrNull { it.second.isSelected }?.second ?: tiles.firstOrNull()?.second }
 
-        col.addView(label(a.getString(R.string.more), 12f, 0x8CFFFFFF.toInt()), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(22) })
+        // the first level: a row per group (its icon in a tinted chip, the name, what it is set to now) and the way out
+        top.addView(LinearLayout(a).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+            addView(FrameLayout(a).apply {
+                background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(TINT_BG, 0xFF9B6BFF.toInt())).apply { cornerRadius = dp(14).toFloat() }
+                val (iv, s) = icon(R.drawable.ic_sliders, Color.WHITE, dp(24))
+                addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER))
+            }, LinearLayout.LayoutParams(dp(48), dp(48)))
+            addView(LinearLayout(a).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(label(a.getString(R.string.customize), 22f, Color.WHITE).apply { typeface = Font.medium })
+                addView(label(a.getString(R.string.c_sub), 13f, DIM))
+            }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(14) })
+        })
+        val topScroll = ScrollView(a).apply { isVerticalScrollBarEnabled = false; clipChildren = false; addView(top) }
+        val stack = FrameLayout(a).apply { clipChildren = false }
+        stack.addView(topScroll, FrameLayout.LayoutParams(-1, -1))
+        var cur: Group? = null                                         // the page open, null on the first level
+        var gen = 0                                                    // a slide that was cut short by the next one does not finish its hiding
+        val shift = panelW / 6f
+        fun slides() = Motion.on && !Motion.calm                       // calm and off: the page is simply there
+        fun refresh() { for (g in groups) g.sum?.text = summary(a, g.key) }
+        fun enter(g: Group) {
+            cur = g; val n = ++gen
+            topScroll.animate().cancel(); g.page.animate().cancel()
+            topScroll.descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS   // while it fades the keys already belong to the page
+            g.page.visibility = View.VISIBLE
+            (g.last?.takeIf { it.isShown } ?: g.start?.invoke() ?: firstFocusable(g.col))?.requestFocus()
+            if (slides()) {
+                g.page.translationX = shift; g.page.alpha = 0f
+                g.page.animate().translationX(0f).alpha(1f).setDuration(Motion.ms(220)).setInterpolator(Motion.glide).withLayer().start()
+                topScroll.animate().translationX(-shift / 2).alpha(0f).setDuration(Motion.ms(220)).setInterpolator(Motion.glide).withLayer()
+                    .withEndAction { if (n == gen) topScroll.visibility = View.GONE }.start()
+            } else { g.page.translationX = 0f; g.page.alpha = 1f; topScroll.visibility = View.GONE }
+        }
+        fun leave(): Boolean {
+            val g = cur ?: return false
+            cur = null; val n = ++gen
+            g.last = g.page.findFocus()
+            topScroll.animate().cancel(); g.page.animate().cancel()
+            topScroll.visibility = View.VISIBLE; topScroll.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
+            refresh()
+            g.row?.requestFocus()                                      // back on the group just left
+            if (slides()) {
+                topScroll.translationX = -shift / 2; topScroll.alpha = 0f
+                topScroll.animate().translationX(0f).alpha(1f).setDuration(Motion.ms(220)).setInterpolator(Motion.glide).withLayer().start()
+                g.page.animate().translationX(shift).alpha(0f).setDuration(Motion.ms(220)).setInterpolator(Motion.glide).withLayer()
+                    .withEndAction { if (n == gen) g.page.visibility = View.GONE }.start()
+            } else { topScroll.translationX = 0f; topScroll.alpha = 1f; g.page.visibility = View.GONE }
+            return true
+        }
+        stepBack = ::leave
+        for (g in groups) {
+            val chip = FrameLayout(a).apply {
+                background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor((g.tint and 0x00FFFFFF) or CHIP_ALPHA) }
+                val (iv, s) = icon(g.icon, g.tint, dp(24))
+                addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER))
+            }
+            val chevron = ImageView(a).apply { setImageResource(R.drawable.ic_right); imageTintList = ColorStateList.valueOf(DIM) }
+            g.sum = label("", 13f, DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
+            val row = LinearLayout(a).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
+                setPadding(dp(10), dp(8), dp(14), dp(8))
+                background = StateListDrawable().apply {
+                    addState(intArrayOf(android.R.attr.state_focused), glass(18, GLASS_FOCUS, Color.WHITE))
+                    addState(intArrayOf(), glass(18, GLASS_FILL, GLASS_EDGE))
+                }
+                addView(chip, LinearLayout.LayoutParams(dp(42), dp(42)))
+                addView(LinearLayout(a).apply {
+                    orientation = LinearLayout.VERTICAL
+                    addView(label(a.getString(g.name), 16f, Color.WHITE).apply { maxLines = 1; typeface = Font.medium })
+                    addView(g.sum!!)
+                }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
+                addView(chevron, LinearLayout.LayoutParams(dp(22), dp(22)))
+                onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f); chevron.imageTintList = ColorStateList.valueOf(if (f) Color.WHITE else DIM) }
+                setOnClickListener { enter(g) }
+                setOnKeyListener { _, code, e -> if (code == android.view.KeyEvent.KEYCODE_DPAD_RIGHT && e.action == android.view.KeyEvent.ACTION_DOWN) { enter(g); true } else false }
+            }
+            g.row = row
+            top.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = if (g === groups[0]) dp(16) else dp(8) })
+            // the page: a way back as its head ("‹ name"), then the controls
+            g.head = LinearLayout(a).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
+                contentDescription = a.getString(R.string.g_back)
+                setPadding(dp(10), dp(8), dp(16), dp(8))
+                background = StateListDrawable().apply {
+                    addState(intArrayOf(android.R.attr.state_focused), glass(16, GLASS_FOCUS, Color.WHITE))
+                    addState(intArrayOf(), GradientDrawable().apply { setColor(Color.TRANSPARENT) })
+                }
+                addView(ImageView(a).apply { setImageResource(R.drawable.ic_left); imageTintList = ColorStateList.valueOf(g.tint) }, LinearLayout.LayoutParams(dp(24), dp(24)))
+                addView(label(a.getString(g.name), 20f, Color.WHITE).apply { typeface = Font.medium }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(8) })
+                onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                setOnClickListener { leave() }
+            }
+            g.page.addView(g.head, LinearLayout.LayoutParams(-2, -2).apply { setMargins(dp(18), dp(20), 0, dp(4)) })
+            g.page.addView(g.scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+            stack.addView(g.page, FrameLayout.LayoutParams(-1, -1))
+        }
+        refresh()
+        top.addView(label(a.getString(R.string.more), 12f, 0x8CFFFFFF.toInt()), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(22) })
         val done = Font.on(TextView(a)).apply {
             text = a.getString(R.string.done); textSize = 16f; setTextColor(0xFF111318.toInt()); gravity = Gravity.CENTER
             typeface = Font.medium
@@ -381,17 +534,29 @@ object Customize {
             onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
             setOnClickListener { dialog.dismiss() }
         }
-        col.addView(done, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16) })
+        top.addView(done, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16) })
 
-        val scroll = ScrollView(a).apply { isVerticalScrollBarEnabled = false; clipChildren = false; addView(col) }
-        val panel = FrameLayout(a).apply {
+        val panel = object : FrameLayout(a) {
+            // Left from a control with nothing to its left, on a page: back to the first level (a held key does it once)
+            override fun dispatchKeyEvent(e: android.view.KeyEvent): Boolean {
+                if (cur != null && e.keyCode == android.view.KeyEvent.KEYCODE_DPAD_LEFT) {
+                    val f = findFocus()
+                    if (f == null) { if (e.action == android.view.KeyEvent.ACTION_DOWN) cur?.let { g -> (firstFocusable(g.col) ?: g.page)?.requestFocus() }; return true }
+                    val west = f.focusSearch(View.FOCUS_LEFT)
+                    if (west == null || west === cur?.head) {                  // the head sits up-left of the first control: the way back, not a neighbour
+                        if (e.action == android.view.KeyEvent.ACTION_DOWN && e.repeatCount == 0) leave(); return true
+                    }
+                }
+                return super.dispatchKeyEvent(e)
+            }
+        }.apply {
             // solid: the home screen's text must not show through
             background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xFF161B2B.toInt(), 0xFF0C1020.toInt())).apply {
                 cornerRadius = dp(28).toFloat(); setStroke(dp(1), 0x33FFFFFF)
             }
             // no clip and no fading edge: clipped to its corners it cost the FPT box ~10 ms a frame, the ScrollView's fading edge drew
             // the whole list into a layer every frame (55 ms a frame while a tile grew); the list stops 1 dp inside the border instead
-            addView(scroll, FrameLayout.LayoutParams(-1, -1).apply { setMargins(dp(1), dp(1), dp(1), dp(1)) })
+            addView(stack, FrameLayout.LayoutParams(-1, -1).apply { setMargins(dp(1), dp(1), dp(1), dp(1)) })
         }
         val height = dm.heightPixels - 2 * edge
         dialog.setContentView(panel, ViewGroup.LayoutParams(panelW, height))
@@ -404,7 +569,7 @@ object Customize {
             setWindowAnimations(0)                                     // its own slide below, or none when motion is off
         }
         dialog.setOnShowListener {
-            (tiles.firstOrNull { it.second.isSelected } ?: tiles.firstOrNull())?.second?.let {
+            groups[0].row?.let {
                 it.requestFocus()
                 it.animate().cancel(); if (Motion.on) { it.scaleX = 1.06f; it.scaleY = 1.06f }   // already large as it slides in: its spring re-drew the whole panel for 400 ms
             }
@@ -417,6 +582,69 @@ object Customize {
         if (Motion.on) { panel.translationX = panelW / 3f; panel.alpha = 0f }   // before show: set in the show listener, the first frame had shown it in place
         dialog.show()
         return dialog
+    }
+
+    /**
+     * "Keys & startup": remote keys that open an app, and the app that opens when the TV is turned on (HomeConfig keyon / keyapps /
+     * autoon / autoapp, both default off). A key row picks its app from a list; the lines under the switches say what needs TV Setup
+     * (everywhere but TV Home's own screen, and the power-on app), kept current by [Keys.onState] when TV Setup answers.
+     */
+    private fun keysPage(a: Activity, col: LinearLayout, tile: (Int, String, String) -> Unit, endRow: () -> Unit,
+                         glass: (Int, Int, Int) -> GradientDrawable, label: (String, Float, Int) -> TextView, gap: Int) {
+        val d = a.resources.displayMetrics.density
+        fun dp(v: Number) = (v.toFloat() * d).toInt()
+        val apps = Apps.list(a)
+        fun name(pkg: String) = apps.firstOrNull { it.pkg == pkg }?.label ?: if (pkg.isEmpty()) "—" else pkg
+        val none = a.getString(R.string.k_none)
+        val subs = ArrayList<() -> Unit>()                             // each row's second line, painted again after a choice
+        fun pick(title: String, now: String, done: (String) -> Unit) {
+            val list = apps.sortedBy { it.label.lowercase() }
+            val items = arrayOf(none) + list.map { it.label }
+            AlertDialog.Builder(a, R.style.Menu).setTitle(title).setItems(items) { _, i -> done(if (i == 0) "" else list[i - 1].pkg); subs.forEach { it() } }.show()
+        }
+        fun row(title: String, value: () -> String, onPick: () -> Unit) {
+            val sub = label("", 12f, ACCENT).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
+            subs.add { sub.text = value() }; sub.text = value()
+            col.addView(LinearLayout(a).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
+                setPadding(dp(14), dp(10), dp(14), dp(10))
+                background = StateListDrawable().apply {
+                    addState(intArrayOf(android.R.attr.state_focused), glass(16, GLASS_FOCUS, Color.WHITE))
+                    addState(intArrayOf(), glass(16, GLASS_FILL, GLASS_EDGE))
+                }
+                addView(label(title, 15f, Color.WHITE).apply { maxLines = 1 }, LinearLayout.LayoutParams(0, -2, 1f))
+                addView(sub, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
+                onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                setOnClickListener { onPick() }
+            }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
+        }
+        fun hint(text: () -> String) {
+            val t = label("", 12f, DIM)
+            subs.add { t.text = text() }; t.text = text()
+            col.addView(t, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap; leftMargin = dp(6) })
+        }
+        fun keys() = HomeConfig.keyApps(Store.get(a).optJSONObject("keyapps"))
+
+        tile(R.drawable.ic_keyboard, a.getString(R.string.c_keyapps), "keyon")
+        endRow()
+        hint { a.getString(if (!Keys.setup(a)) R.string.k_need_setup else if (!Keys.can(a)) R.string.k_need_adb else R.string.k_everywhere) }
+        val codes = HomeConfig.KEY_COLOURS + Keys.dead(a).filter { it in HomeConfig.KEY_DEAD } + HomeConfig.KEY_NUMBERS
+        for (code in codes) row(Keys.name(a, code), { keys()[code]?.let { name(it) } ?: none }) {
+            pick(Keys.name(a, code), keys()[code].orEmpty()) { pkg ->
+                val m = JSONObject(); for ((k, v) in keys()) if (k != code) m.put(k.toString(), v)
+                if (pkg.isNotEmpty()) m.put(code.toString(), pkg)
+                Store.change(a, JSONObject().put("keyapps", m))
+            }
+        }
+        col.addView(View(a), LinearLayout.LayoutParams(-1, dp(14)))
+        tile(R.drawable.ic_power, a.getString(R.string.c_autoopen), "autoon")
+        endRow()
+        row(a.getString(R.string.c_autoapp), { name(Store.get(a).optString("autoapp")) }) {
+            pick(a.getString(R.string.c_autoapp), Store.get(a).optString("autoapp")) { pkg -> Store.change(a, JSONObject().put("autoapp", pkg)) }
+        }
+        hint { a.getString(if (!Keys.setup(a)) R.string.k_auto_need_setup else R.string.k_auto_note) }
+        Keys.onState = { subs.forEach { it() } }
+        Keys.push(a)                                                  // asks TV Setup again, so the lines above are true when it answers
     }
 
     /** The screensaver switch cannot write the setting (no WRITE_SECURE_SETTINGS yet; a phone or computer grants it): the system's own screen for it instead. */

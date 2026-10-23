@@ -1,0 +1,131 @@
+package dev.tvremote.setup
+
+import android.app.usage.UsageEvents
+import android.app.usage.UsageStatsManager
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
+import android.provider.Settings
+import android.util.Log
+import dev.tvremote.home.HomeConfig
+import org.json.JSONObject
+
+/**
+ * What TV Home asks of TV Setup through [HomeInfo] ("keys"): remote keys that open an app, and one app that opens each time the
+ * TV is turned on. TV Home has no ADB, no key filter and is not running in standby; this app has all three. Kept here (prefs) so
+ * it works after a reboot with TV Home not yet up. TV Home pushes the whole setting on every change and on every start.
+ */
+internal object HomeKeys {
+    private const val PREFS = "homekeys"
+
+    @Synchronized
+    fun save(c: Context, raw: String): Boolean = try {
+        val o = HomeConfig.clean(JSONObject(raw))                     // the same limits as on the TV Home side: one file, HomeConfig
+        c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("conf", o.toString()).commit()
+    } catch (e: Exception) { false }
+
+    private fun load(c: Context): JSONObject = try {
+        JSONObject(c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("conf", "{}") ?: "{}")
+    } catch (e: Exception) { JSONObject() }
+
+    /** The key → app map the person wants; empty while the switch is off. */
+    fun keys(c: Context): Map<Int, String> = load(c).let { if (it.optBoolean("keyon")) HomeConfig.keyApps(it.optJSONObject("keyapps")) else emptyMap() }
+
+    fun auto(c: Context): Pair<Boolean, String> = load(c).let { it.optBoolean("autoon") to it.optString("autoapp") }
+
+    /** The service has to run for these: the key filter's list is kept by [KeyFixWatch], waking is heard by [AutoOpenWatch]. */
+    fun active(c: Context): Boolean = keys(c).isNotEmpty() || auto(c).let { it.first && it.second.isNotEmpty() }
+}
+
+/**
+ * "Open an app when the TV is turned on". Fires once per power-on: after the boot ([BootReceiver]) and after waking from standby
+ * ([AutoOpenWatch]). What it never does is in [decide], with no Android type so a test can run it. Pressing Home later does nothing
+ * special: this runs on a power-on event only, so TV Home comes back and nothing starts the app again.
+ */
+internal object AutoOpen {
+    private const val PREFS = "autoopen"
+    private const val TAG = "AutoOpen"
+    /** Two events inside this are one power-on (the screen comes on right after the boot, and a TV flickers its screen as it wakes). */
+    const val GUARD_MS = 120_000L
+
+    enum class Why { OPEN, OFF, MISSING, REPEAT, BUSY, SAME }
+
+    /**
+     * Whether to open [pkg] now. [front] is the app on screen when we look (empty: none known), [homes] the launchers, [ignore] screens
+     * that are not an app a person chose (the system's bars, this app); [sinceLast] how long ago we last opened one in this run of the TV.
+     * A TV that woke into another app (an HDMI-CEC input, a cast, the app it was left in) keeps it.
+     */
+    fun decide(on: Boolean, pkg: String, launchable: Boolean, front: String, homes: Set<String>, ignore: Set<String>, sinceLast: Long?): Why = when {
+        !on || pkg.isEmpty() -> Why.OFF
+        !launchable -> Why.MISSING                                    // uninstalled since it was chosen: nothing, and no message at the wrong time
+        sinceLast != null && sinceLast in 0 until GUARD_MS -> Why.REPEAT
+        front == pkg -> Why.SAME
+        front.isNotEmpty() && front !in homes && front !in ignore -> Why.BUSY
+        else -> Why.OPEN
+    }
+
+    private val ui by lazy { Handler(Looper.getMainLooper()) }       // lazy: a unit test of [decide] has no Android
+    private var lastBoot = -1
+    private var lastAt = 0L
+
+    private fun bootCount(c: Context): Int = try { Settings.Global.getInt(c.contentResolver, Settings.Global.BOOT_COUNT) } catch (e: Exception) { 0 }
+
+    /** The TV started ("boot") or came out of standby ("wake"): a little later (the home screen must be up, and a welcome screen ends first) it looks and may open the app. */
+    fun trigger(c: Context, event: String) {
+        if (!HomeKeys.auto(c).first) return
+        val welcome = if (WelcomeState.active(c)) WelcomeState.settings(c).optInt("seconds", 0) * 1000L + 2500 else 0L
+        ui.postDelayed({ try { run(c.applicationContext, event) } catch (e: Exception) { Log.w(TAG, "no open: $e") } }, (if (event == "boot") 7000L else 1800L) + welcome)
+    }
+
+    @Synchronized
+    private fun run(c: Context, event: String) {
+        val (on, pkg) = HomeKeys.auto(c)
+        val pm = c.packageManager
+        val now = SystemClock.elapsedRealtime()
+        val p = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val boot = bootCount(c)
+        if (lastBoot < 0) { lastBoot = p.getInt("last_boot", -1); lastAt = p.getLong("last_at", 0L) }
+        val ago = if (lastBoot == boot) now - lastAt else null        // elapsedRealtime restarts with the TV: a new run has no "last"
+        val homes = homes(c)
+        val intent = pm.getLeanbackLaunchIntentForPackage(pkg) ?: pm.getLaunchIntentForPackage(pkg)
+        val front = front(c)
+        val verdict = decide(on, pkg, intent != null, front, homes, setOf("com.android.systemui", c.packageName), ago)
+        Log.i(TAG, "$event: $verdict ($pkg, on screen: '$front')")                         // adb logcat -s AutoOpen
+        if (verdict != Why.OPEN || intent == null) return
+        c.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        lastBoot = boot; lastAt = now
+        p.edit().putInt("last_boot", boot).putLong("last_at", now).apply()
+    }
+
+    private fun homes(c: Context): Set<String> = try {
+        c.packageManager.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0).map { it.activityInfo.packageName }.toSet()
+    } catch (e: Exception) { emptySet() }
+
+    /** The app on screen from the last quarter hour of usage events (usage access is TV Setup's, granted over ADB); "" when none or not known. */
+    private fun front(c: Context): String = try {
+        val now = System.currentTimeMillis()
+        val ev = (c.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager).queryEvents(now - 15 * 60_000L, now)
+        val e = UsageEvents.Event()
+        var front = ""
+        while (ev.hasNextEvent()) {
+            ev.getNextEvent(e)
+            if (e.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) front = e.packageName ?: ""
+            else if (e.eventType == UsageEvents.Event.MOVE_TO_BACKGROUND && front == e.packageName) front = ""
+        }
+        front
+    } catch (e: Exception) { "" }
+}
+
+/** Hears the screen come on (from [RemoteService], as [WelcomeWatch] does: a manifest receiver cannot hear it). The boot is [BootReceiver]'s. */
+internal class AutoOpenWatch(private val c: Context) {
+    private val screen = object : BroadcastReceiver() {
+        override fun onReceive(ctx: Context, i: Intent) { AutoOpen.trigger(c, "wake") }
+    }
+
+    fun start() { try { c.registerReceiver(screen, IntentFilter(Intent.ACTION_SCREEN_ON)) } catch (e: Exception) { } }
+    fun stop() { try { c.unregisterReceiver(screen) } catch (e: Exception) { } }
+}

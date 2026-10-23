@@ -53,6 +53,7 @@
       { "id": "tools-guide", "icon": "guide", "t": "rkey.guide", "do": "key", "arg": "GUIDE" },
       { "id": "tools-share", "icon": "share", "t": "rkey.share", "do": "share", "needs": ["adb"] },
       { "id": "tools-stop", "icon": "stop", "t": "rkey.stop", "do": "key", "arg": "STOP" },
+      { "id": "tools-rescue", "icon": "alert", "t": "rkey.rescue", "sub": "rkey.rescue_sub", "do": "rescue", "needs": ["adb"] },
       { "id": "tools-home", "icon": "sliders", "t": "rkey.home_custom", "do": "homeCustom", "needs": ["adb"], "cores": ["phone"],
         "why": "on the web TV Home has its own key in the grid" },
       { "id": "tools-ir", "icon": "pulse", "t": "rkey.ir", "do": "ir", "cores": ["phone"], "when": "ir",

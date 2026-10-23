@@ -125,6 +125,45 @@ flowchart LR
 ADB is Android's own debug bridge. The apps speak it themselves and push `scrcpy-server` to the TV for H.264 video, sound, touch and keys. Before ADB is on, the Phone app and the Computer app can still send keys through the Android TV Remote protocol (ports 6466/6467).
 </details>
 
+## How the apps fit together
+
+Each arrow is a link between two apps: what one needs from the other, and how. Solid: the app tells you what is missing; dashed: only partly; thick: it stays quiet. The same map with the logos, a table of every link and how each app is installed: [tvremote.pages.dev/apps](https://tvremote.pages.dev/apps).
+
+<!-- apps-map:start -->
+```mermaid
+flowchart LR
+  subgraph clients["Outside the TV"]
+    phone["Phone app<br/><small>Android · iPhone</small>"]
+    web["Web page<br/><small>opens in a browser</small>"]
+    desktop["Computer app<br/><small>Mac · Windows · Linux</small>"]
+  end
+  subgraph tv["On the TV"]
+    adb["The TV's ADB<br/><small>port 5555</small>"]
+    helper["Screen-off tool<br/><small>inside TV Setup</small>"]
+    setup["TV Setup<br/><small>runs in the background</small>"]
+    home["TV Home<br/><small>home screen</small>"]
+    channels["TV Channels<br/><small>channel player</small>"]
+    games["TV Games<br/><small>installed over ADB</small>"]
+  end
+  subgraph ext["Outside services"]
+    github["GitHub"]
+    downloader["Downloader"]
+    tailscale["Tailscale"]
+  end
+  clients -->|"1 ADB"| adb
+  clients -->|"2 command"| setup
+  clients -.->|"3 command"| home
+  clients -.->|"4 play link"| channels
+  clients -->|"5 install"| games
+  home ==>|"6 data"| setup
+  setup -.->|"7 ADB"| adb
+  setup -->|"8 helper"| helper
+  clients ==>|"9 APK"| github
+  phone -->|"10 install link"| downloader
+  clients -.->|"11 remote"| tailscale
+```
+<!-- apps-map:end -->
+
 ## More apps for the TV
 
 Free, no ads, each on its own: install only the ones you want, from the phone or computer app (TV tab) or with Downloader. More may come.

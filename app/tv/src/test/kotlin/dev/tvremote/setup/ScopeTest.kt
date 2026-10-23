@@ -36,7 +36,7 @@ class ScopeTest {
     @Test fun remoteSleepTimerOnly() {
         assertTrue(may(Scope.REMOTE, "/api/rules", true, body = JSONObject().put("do", "sleep").put("minutes", 30)))
         assertTrue(may(Scope.REMOTE, "/api/rules", true, body = JSONObject().put("do", "sleep_add").put("minutes", 15)))
-        for (d in listOf("bedtime", "limit", "extra", "volume", "ram", "snooze")) assertFalse(d, may(Scope.REMOTE, "/api/rules", true, body = JSONObject().put("do", d)))
+        for (d in listOf("bedtime", "limit", "extra", "volume", "ram", "snooze", "heavy", "heavy_keep", "heavy_clear")) assertFalse(d, may(Scope.REMOTE, "/api/rules", true, body = JSONObject().put("do", d)))
     }
 
     @Test fun remoteRunsSavedScenesOnly() {

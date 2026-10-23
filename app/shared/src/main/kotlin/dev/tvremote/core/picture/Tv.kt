@@ -10,6 +10,7 @@ import dev.tvremote.core.adb.Adb
 import dev.tvremote.core.adb.AdbPrompt
 import dev.tvremote.core.adb.TvShell
 import dev.tvremote.core.WireLog
+import dev.tvremote.core.ontv.Meminfo
 
 /**
  * One session with a TV: ADB over the network, scrcpy-server started on the TV for the picture (H.264, shown by a [Screen]
@@ -27,7 +28,7 @@ class Tv(
     /** index into QUALITY */
     private val quality: Int,
     /** longest side of the phone screen, there is no point sending more pixels than it shows */
-    maxSide: Int,
+    private val maxSide: Int,
     /** turn the screen on first (the TV answered but is in standby) */
     private val wake: Boolean,
     private val listener: Listener,
@@ -52,9 +53,11 @@ class Tv(
     private val audioBitRate: Int = 64000,
     /** the person's own frames per second and bit rate (Advanced picture), 0: the level's */
     private val fps: Int = 0,
-    bitRate: Int = 0,
+    private val bitRate: Int = 0,
     /** "auto": the hardware encoder, the software one if it sends nothing ([watchFirstFrame]); "hw" or "sw": that one only */
     private val encoder: String = "auto",
+    /** true: the person picked the level (or frames, rate) themselves: a TV with little memory ([LOW_RAM_KB]) is then not held to [LOW_SIDE] */
+    private val hand: Boolean = false,
 ) {
     /** One H.264 packet as scrcpy sends it (Annex B). config: SPS/PPS, needed before the first frame; key: a key frame. */
     fun interface Sink { fun video(config: Boolean, key: Boolean, data: ByteArray) }
@@ -153,14 +156,37 @@ class Tv(
         const val SOFT_FPS = 10
 
         /** The frames a second asked of scrcpy: the person's own, else the level's, held to [SOFT_FPS] on a software encoder. */
-        fun fpsFor(level: Int, asked: Int, soft: Boolean): Int =
-            if (asked > 0) asked.coerceIn(1, 60) else QUALITY[level.coerceIn(0, QUALITY.size - 1)][2].let { if (soft) minOf(it, SOFT_FPS) else it }
+        fun fpsFor(level: Int, asked: Int, soft: Boolean, capped: Boolean = false): Int =
+            if (asked > 0) asked.coerceIn(1, 60) else QUALITY[level.coerceIn(0, QUALITY.size - 1)][2].let { if (soft) minOf(it, SOFT_FPS) else if (capped) minOf(it, LOW_FPS) else it }
+
+        /** A TV with less than 1.5 GB (MemTotal, kB) runs the picture's encoder and the apps out of the same few hundred MB: see [videoOpts]. */
+        const val LOW_RAM_KB = 1_572_864L
+        const val LOW_SIDE = 720                                      // longest side, pixels
+        const val LOW_RATE = 1_000_000                                // bits per second
+        const val LOW_FPS = 20
+
+        fun lowRam(memKb: Long?) = memKb != null && memKb in 1 until LOW_RAM_KB
+
+        /**
+         * scrcpy's size and bit rate for a level. [capped] (a low-memory TV, the level not picked by hand): never above
+         * [LOW_SIDE] px and, unless the person set a rate in Advanced, [LOW_RATE]; lower levels stay as they are.
+         * (scrcpy 5 would also take `video_codec_options=i-frame-interval:int=2`; not sent: more key frames cost bits at 1 Mbit/s.)
+         */
+        fun videoOpts(level: Int, maxSide: Int, bitRate: Int, capped: Boolean): String {
+            val q = QUALITY[level.coerceIn(0, QUALITY.size - 1)]
+            var side = minOf(q[0], maxSide)
+            var rate = if (bitRate > 0) bitRate.coerceIn(100_000, 20_000_000) else q[1]
+            if (capped) { side = minOf(side, LOW_SIDE); if (bitRate <= 0) rate = minOf(rate, LOW_RATE) }
+            return "video_bit_rate=$rate max_size=" + maxOf(160, side / 32 * 32)
+            // a multiple of 32, not of 8: some hardware encoders (TCL's Realtek) shear the picture into streaks at 720 or 240 wide
+        }
 
         /** The levels from lightest to sharpest, as indexes into QUALITY. */
         val LEVELS = intArrayOf(4, 3, 0, 1, 2)
     }
 
-    private val video: String                                         // scrcpy video options
+    @Volatile private var video: String                               // scrcpy video options
+    @Volatile private var capped = false                              // held to the low-memory level for this session
     @Volatile private var io = Executors.newSingleThreadExecutor()
     @Volatile private var stopped = false
     @Volatile private var stalled = false                             // the encoder sent no picture: once more with the software one
@@ -180,9 +206,7 @@ class Tv(
     private val wantVideo = screen != null || sink != null
 
     init {
-        val q = QUALITY[quality.coerceIn(0, QUALITY.size - 1)]
-        video = "video_bit_rate=" + (if (bitRate > 0) bitRate.coerceIn(100_000, 20_000_000) else q[1]) + " max_size=" + maxOf(160, minOf(q[0], maxSide) / 32 * 32)
-        // a multiple of 32, not of 8: some hardware encoders (TCL's Realtek) shear the picture into streaks at 720 or 240 wide
+        video = videoOpts(quality, maxSide, bitRate, false)
         Thread({ run() }, "tv-session").apply { isDaemon = true }.start()
     }
 
@@ -215,6 +239,7 @@ class Tv(
             val facts = startFacts(a, jar())
             if (Trace.on) Trace.log("s.facts")
             status("starting", facts.model)
+            if (!hand && wantVideo && lowRam(facts.memKb)) { capped = true; video = videoOpts(quality, maxSide, bitRate, true); status("lowram", "${facts.memKb!! / 1024} MB") }
             if (listener.wantsNetwork()) reportNetwork(facts.ipAddr)
             if (listener.wantsPass()) try { AdbPrompt.token(a, "phone")?.let { listener.onPass(it) } } catch (ignored: IOException) { }
             pushServer(a, facts.jarOk)
@@ -235,7 +260,7 @@ class Tv(
                 val scid = String.format("%08x", Random().nextInt(0x7fffffff))
                 val log = a.open("shell:CLASSPATH=" + REMOTE + " app_process / com.genymobile.scrcpy.Server " + VER + " scid=" + scid
                         + " tunnel_forward=true cleanup=false control=$wantControl send_dummy_byte=true send_device_meta=false clipboard_autosync=false "   // autosync on, GET_CLIPBOARD answers nothing
-                        + (if (wantVideo) "video=true $video max_fps=" + fpsFor(quality, fps, soft != null) + (soft?.let { " video_encoder=$it" } ?: "") else "video=false")
+                        + (if (wantVideo) "video=true $video max_fps=" + fpsFor(quality, fps, soft != null, capped) + (soft?.let { " video_encoder=$it" } ?: "") else "video=false")
                         + (if (hearing == null) " audio=false" else " audio=true audio_codec=$hearing" + (if (hearing == "opus") " audio_bit_rate=$audioBitRate" else "") + (if (sdk >= 33) " audio_source=playback" else "") + (if (share) " audio_dup=true" else ""))
                         // scrcpy-server does not always notice that we left (a still picture sends nothing), and a leftover one keeps
                         // loading the TV. So a shell loop on the TV waits for our heartbeat and kills the server when it stops; 60 s,
@@ -348,7 +373,7 @@ class Tv(
     }
 
     /** What the first shell call brings back. [jarOk]: the jar on the TV is the one we hold. */
-    private class Facts(val model: String, val sdk: Int, val ipAddr: String, val jarOk: Boolean)
+    private class Facts(val model: String, val sdk: Int, val ipAddr: String, val jarOk: Boolean, val memKb: Long? = null)
 
     /**
      * One shell round trip for everything the start needs to know (each costs ~40 ms over Wi-Fi): wake, the model, the Android
@@ -358,13 +383,13 @@ class Tv(
     private fun startFacts(a: Adb, jar: ByteArray): Facts {
         val cmd = (if (wake) "input keyevent KEYCODE_WAKEUP; " else "") +
             "getprop ro.product.model; echo '$SEP'; getprop ro.build.version.sdk; echo '$SEP'; " +
-            "if [ -f $REMOTE ]; then wc -c < $REMOTE; md5sum $REMOTE 2>/dev/null; else echo 0; fi; echo '$SEP'" +
+            "if [ -f $REMOTE ]; then wc -c < $REMOTE; md5sum $REMOTE 2>/dev/null; else echo 0; fi; echo '$SEP'; grep MemTotal /proc/meminfo; echo '$SEP'" +
             (if (listener.wantsNetwork()) "; ip addr show" else "")
-        val parts = a.shell(cmd).split(SEP, limit = 4).map { it.trim() }
+        val parts = a.shell(cmd).split(SEP, limit = 5).map { it.trim() }
         val jarLines = parts.getOrElse(2) { "" }.lines()
         val md5 = jarLines.getOrNull(1)?.trim()?.substringBefore(' ')?.takeIf { it.length == 32 }
         val ok = if (md5 != null) md5.equals(md5Of(jar), true) else jarLines.firstOrNull()?.trim() == jar.size.toString()
-        return Facts(parts.getOrElse(0) { "" }, parts.getOrElse(1) { "" }.toIntOrNull() ?: 0, parts.getOrElse(3) { "" }, ok)
+        return Facts(parts.getOrElse(0) { "" }, parts.getOrElse(1) { "" }.toIntOrNull() ?: 0, parts.getOrElse(4) { "" }, ok, Meminfo.kb(parts.getOrElse(3) { "" }, "MemTotal"))
     }
 
     private fun md5Of(b: ByteArray) = java.security.MessageDigest.getInstance("MD5").digest(b).joinToString("") { "%02x".format(it) }

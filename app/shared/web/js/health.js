@@ -31,6 +31,47 @@ $('#freeram').addEventListener('click', async () => {
   const b = $('#freeram'); b.disabled = true; const r = await api('/api/free', {}); b.disabled = false;
   if (r) { toast(T('health.ram_freed', { freed: r.freed, after: r.after })); loadHealth(); recentsNow(true); }
 });
+// One heavy app mode (Heavy.kt in TV Setup): the switch, the apps it never closes, and what it closed. Read with the rules, at
+// most every 20 s while Health is open; an older TV Setup answers without "heavy" and is asked to update when a switch is used.
+let heavyAt = 0, heavyBusy = false, heavySeen = '', heavyGen = 0;
+function heavyReset() { heavyGen++; heavyAt = 0; heavySeen = ''; $('#hheavy').replaceChildren(); }
+onTvChange(heavyReset);
+async function loadHeavy(now) {
+  if (heavyBusy || (!now && Date.now() - heavyAt < 20000)) return;
+  const box = $('#hheavy'), gen = heavyGen;
+  if (!now && box.contains(document.activeElement) && document.activeElement !== document.body) return;   // not under a D-pad's focus
+  heavyBusy = true; heavyAt = Date.now();
+  const r = await api('/api/rules', null, true);
+  heavyBusy = false;
+  if (gen !== heavyGen || !r || hmode !== 'now') return;
+  const old = r.heavy === undefined, h = r.heavy || { on: false, apps: [], log: [], mem_mb: 0, wait: 15 };
+  const seen = JSON.stringify(h) + window.LANG;
+  if (seen === heavySeen) return;                                      // nothing new: keep what is on screen
+  heavySeen = seen;
+  const skew = r.now ? Math.round((Date.now() - r.now) / 1000) : 0, at = (t) => t / 1000 + (Math.abs(skew) > 120 ? skew : 0);
+  const send = async (body, ok) => {
+    if (old && !await setupFor('heavy')) return false;
+    const x = await api('/api/rules', body);
+    if (x) { heavyAt = 0; heavySeen = ''; if (ok) toast(ok); loadHeavy(true); }
+    return !!x;
+  };
+  const sw = el('label', { className: 'check' }, el('input', { type: 'checkbox', checked: !!h.on, onchange: async (e) => {
+    const box = e.currentTarget, on = box.checked; box.disabled = true;
+    const ok = await send({ do: 'heavy', on }, on ? T('health.heavy_enabled', { n: h.wait || 15 }) : T('health.heavy_disabled'));
+    box.disabled = false; if (!ok) box.checked = !on;
+  } }), ' ' + T('health.heavy_on'));
+  const hint = !h.on && h.mem_mb && h.mem_mb < 1536 ? UI.note(T('health.heavy_hint', { gb: (h.mem_mb / 1024).toFixed(1) })) : null;
+  const keep = UI.group(T('health.heavy_keep_title'), h.apps.length ? UI.chips(h.apps.map((a) => ({ label: (a.keep ? '✓ ' : '') + a.label, on: a.keep,
+    title: T('health.heavy_keep_tip'), fn: () => send({ do: 'heavy_keep', pkg: a.pkg, on: !a.keep }) }))) : UI.empty(T('health.heavy_no_apps')));
+  const rows = h.log.slice(0, 8).map((e) => {
+    const kept = h.apps.some((a) => a.pkg === e.pkg && a.keep), app = e.label || e.pkg;
+    return UI.item({ name: T('health.heavy_closed', { app, time: slWhen(at(e.at)) }), acts: kept ? [] :
+      [UI.btn(T('health.heavy_keep_it'), () => send({ do: 'heavy_keep', pkg: e.pkg, on: true }, T('health.heavy_kept', { app })), 'small')] });
+  });
+  const log = UI.group(T('health.heavy_log_title'), UI.list(rows, T('health.heavy_none')),
+    rows.length ? UI.actions(UI.btn(T('health.heavy_clear'), () => send({ do: 'heavy_clear' }), 'small')) : null);
+  box.replaceChildren(UI.card(T('health.heavy_title'), {}, hint, sw, UI.note(T('health.heavy_note', { n: h.wait || 15 })), keep, log));
+}
 // The task manager: the apps holding memory, what each is doing, and Stop where stopping cannot hurt the TV (the server
 // decides which: Manage.keepWhy). dumpsys meminfo is slow on a TV, so at most every 45 s while the tab is open.
 
@@ -417,6 +458,7 @@ async function loadHealth() {
   if (h.mem_total) { const used = h.mem_total - h.mem_free; load.push(meter('RAM', used * 100 / h.mem_total, T('health.used_of', { used: fmtSize(used), total: fmtSize(h.mem_total) }))); }
   if (h.disk_total) { const used = h.disk_total - h.disk_free; load.push(meter(T('health.internal_storage'), used * 100 / h.disk_total, T('health.used_of', { used: fmtSize(used), total: fmtSize(h.disk_total) }))); }
   $('#hload').replaceChildren(...load);
+  loadHeavy();
   const cell = (cls, text) => el('div', { className: cls, textContent: text });   // CPU and RAM said once, as column heads
   $('#htop').replaceChildren(...(h.top.length ? [cell('h', T('health.k_process')), cell('h n', 'CPU'), cell('h n', 'RAM')] : []),
     ...h.top.flatMap((p) => [cell('k', (typeof appName === 'function' && META.has(p.name) && appName(p.name)) || p.name), cell('v n', p.cpu + '%'), cell('v n', p.mem + '%')]));

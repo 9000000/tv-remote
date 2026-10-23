@@ -13,6 +13,11 @@ const HOME_WALL_WORDS = { night: 'home.wall_night', ocean: 'home.wall_ocean', du
 Object.assign(HOME_WALL_WORDS, { dawn: 'home.wall_dawn', peaks: 'home.wall_peaks', dunes: 'home.wall_dunes', waves: 'home.wall_waves', candy: 'home.wall_candy', peach: 'home.wall_peach', meadow: 'home.wall_meadow', mist: 'home.wall_mist', bokeh: 'home.wall_bokeh', canyon: 'home.wall_canyon', bing: 'home.wall_bing' });
 const HOME_WEBMODE = { live: 'home.web_mode_live', snap: 'home.web_mode_snap' };   // HomeConfig.WMODES, with its words
 const HOME_EVERY = { 'off': 'home.every_off', '30m': 'home.every_30m', '1h': 'home.every_1h', '6h': 'home.every_6h', 'day': 'home.every_day', 'show': 'home.every_show' };   // HomeConfig.EVERY, with its words
+// Remote keys that can open an app (HomeConfig.KEY_COLOURS / KEY_DEAD / KEY_NUMBERS), with their words; a dead key is listed only
+// when TV Setup found it dead on this TV (config.keysDead)
+const HOME_KEY_WORDS = { 183: 'home.key_red', 184: 'home.key_green', 185: 'home.key_yellow', 186: 'home.key_blue', 170: 'home.key_tv', 178: 'home.key_input',
+  190: 'home.key_btn3', 191: 'home.key_btn4', 195: 'home.key_btn8', 192: 'home.key_btn5', 284: 'home.key_allapps', 176: 'home.key_settings' };
+const homeKeyName = (code) => HOME_KEY_WORDS[code] ? T(HOME_KEY_WORDS[code]) : String(code - 7);   // KEYCODE_0 is 7
 const HOME_PHOTO_MAX = 10;                                            // HomeConfig.PHOTO_MAX
 const homeThumbs = {};                                                // a photo's small picture by id + its stamp: asked of the TV once
 const HOME_DOCK_MAX = 6;                                             // HomeConfig.DOCK_MAX
@@ -86,6 +91,7 @@ async function homeCard() {
   const upd = $('#homeupd');
   upd.hidden = !(homeNow && homeNow.latest);
   if (!upd.hidden) put(upd, 'textContent', T('home.update', { v: homeNow.latest }));
+  lookOffline(upd, !!(homeNow && homeNow.offline), homeCard);
 }
 
 // a newer TV Home from the latest release, put over the one on the TV: its settings stay
@@ -161,8 +167,21 @@ async function homeOpen() {
   } });
   const clock = el('input', { type: 'checkbox', onchange: () => send({ clock24: clock.checked }) });
   const greet = el('input', { type: 'checkbox', onchange: () => send({ greet: greet.checked }) });
+  const power = el('input', { type: 'checkbox', onchange: () => send({ power: power.checked }) });
   const anim = el('input', { type: 'checkbox', onchange: () => send({ anim: anim.checked }) });
   const dream = el('input', { type: 'checkbox', onchange: () => send({ dream: dream.checked }) });
+  // remote keys that open an app, and the app that opens each time the TV turns on (HomeConfig keyon / keyapps / autoon / autoapp).
+  // Both default off. TV Home answers a key on its own screen; TV Setup does it everywhere and the power-on app: said under each
+  const keyOn = el('input', { type: 'checkbox', onchange: () => send({ keyon: keyOn.checked }) });
+  const autoOn = el('input', { type: 'checkbox', onchange: () => send({ autoon: autoOn.checked }) });
+  const keysHead = el('h3', { textContent: T('home.keys') }), keysNote = el('p', { className: 'note' }), keysList = el('div', { className: 'list' });
+  const keysOld = el('button', { type: 'button', className: 'small', onclick: homeUpdate, textContent: T('home.keys_old') });   // a TV Home from before them
+  const autoRow = el('div', { className: 'list' }), autoNote = el('p', { className: 'note' });
+  const pickKey = async (title, now, set) => {
+    const p = await chooseApp(title, apps(), now);
+    if (p) set(p);
+  };
+  const powerOld = el('button', { type: 'button', className: 'small', onclick: homeUpdate, textContent: T('home.power_old') });   // a TV Home from before the button: the switch stays, with how to get it
   // the cards over the favourites, in the order they have on the TV (the first on the left); usage and timer read TV Setup, so a
   // TV Setup too old for them is offered first. Chosen: a list to reorder; the others: a switch each, which adds one at the end
   const wTurnOn = async (w) => {
@@ -272,7 +291,26 @@ async function homeOpen() {
     everyHead.hidden = every.hidden = !c.wrotate; if (!c.wrotate) everyNote.hidden = true;
     clock.checked = c.clock24; greet.checked = c.greet; anim.checked = c.anim !== false;
     dream.checked = !!c.dream;
+    power.checked = c.power !== false;
+    const noPower = c.power === undefined;                           // a TV Home older than the power button: shown off, with its update
+    power.disabled = noPower; powerOld.hidden = !noPower;
+    if (noPower) power.checked = false;
     dream.closest('label').hidden = c.dream === undefined;           // a TV Home older than the screensaver
+    const ka = c.keyapps || {}, kOk = !!c.keysOk;                     // an older TV Home has neither: shown, with its update
+    keyOn.checked = !!c.keyon; autoOn.checked = !!c.autoon;
+    keyOn.disabled = autoOn.disabled = !kOk; keysOld.hidden = kOk;
+    keysNote.textContent = kOk ? T(!c.keysSetup ? 'home.keys_need_setup' : 'home.keys_everywhere') : '';
+    autoNote.textContent = kOk ? T(!c.keysSetup ? 'home.auto_need_setup' : 'home.auto_note') : '';
+    const appRow = (name, pkg, pick, clear) => el('div', { className: 'item' }, el('div', { className: 'name' }, el('span', { textContent: name })),
+      el('div', { className: 'acts' }, el('button', { type: 'button', className: 'small', textContent: pkg ? appLabel(pkg) : T('home.key_pick'), onclick: pick }),
+        ...(pkg ? [tool('✕', T('home.remove'), clear)] : [])));
+    const codes = [183, 184, 185, 186, ...(c.keysDead || []).filter((k) => HOME_KEY_WORDS[k]), 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+    keysList.hidden = !kOk;
+    keysList.replaceChildren(...codes.map((code) => appRow(homeKeyName(code), ka[code],
+      () => pickKey(homeKeyName(code), ka[code], (p) => send({ keyapps: { ...ka, [code]: p } })),
+      () => { const n = { ...ka }; delete n[code]; send({ keyapps: n }); })));
+    autoRow.hidden = !kOk;
+    autoRow.replaceChildren(appRow(T('home.auto_app'), c.autoapp, () => pickKey(T('home.auto_app'), c.autoapp, (p) => send({ autoapp: p })), () => send({ autoapp: '' })));
     const w = c.widgets;                                              // absent: a TV Home older than the cards
     const has = (k) => !!w && w.includes(k);
     wLines.forEach((l, i) => { l.hidden = !w || has(HOME_WIDGETS[i]) || (HOME_WIDGETS[i] === 'weather' && c.place === undefined); });   // weather: a TV Home older than it has no card
@@ -376,7 +414,10 @@ async function homeOpen() {
     el('label', { className: 'check' }, clock, el('span', { textContent: T('home.clock24') })),
     el('label', { className: 'check' }, greet, el('span', { textContent: T('home.greet') })),
     el('label', { className: 'check' }, anim, el('span', { textContent: T('home.anim') })),
+    el('label', { className: 'check' }, power, el('span', { textContent: T('home.power') })), powerOld,
     el('label', { className: 'check' }, dream, el('span', { textContent: T('home.dream') })),
+    keysHead, keysOld, el('label', { className: 'check' }, keyOn, el('span', { textContent: T('home.keys_on') })), keysNote, keysList,
+    el('label', { className: 'check' }, autoOn, el('span', { textContent: T('home.auto_on') })), autoRow, autoNote,
     wHead, wList, ...wLines, packHead, packBox, packNote, layHead, lay, layNote, placeHead, placeLine,
     noteHead, noteLine,
     el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden));

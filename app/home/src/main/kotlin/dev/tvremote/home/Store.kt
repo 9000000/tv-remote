@@ -26,6 +26,7 @@ object Store {
             .put("wweb", true)                                    // the background can be a web page (an older one would clean it away)
             .put("wrotate", true)                                 // the background can turn through a set (an older one has one choice)
             .put("shadeOk", true)                                 // the veil's strength can be chosen (an older one has one)
+            .let { Keys.report(c, it) }                           // keys that open apps: "keysOk", and whether TV Setup took them
     }
 
     /** The first start: a dock of the well-known apps this TV has, so the screen is not empty before anyone sets it up. */
@@ -47,6 +48,7 @@ object Store {
         if (change.has("anim")) e.putBoolean("anim_chosen", true)  // from now on the choice is theirs
         if (change.has("wall") || change.has("walls") || change.has("wevery")) e.putLong("wlast", System.currentTimeMillis())   // a new choice gets its whole turn
         e.apply()
+        if (listOf("keyon", "keyapps", "autoon", "autoapp").any { change.has(it) }) Keys.push(c)   // TV Setup does the keys everywhere and the power-on app
         val out = effective(c, JSONObject(n.toString()))
         onChange?.invoke()
         return out

@@ -50,7 +50,7 @@ object KeyFix {
      * [alive] says is gone, and, for an app key, with its app [launchable] (the key then does nothing, as before, when it is not).
      * Returns the rule with the package that will open.
      */
-    fun plan(mapped: Map<Int, String>, alive: (String) -> Boolean, launchable: (String) -> Boolean): Map<Int, Rule> {
+    fun plan(mapped: Map<Int, String>, alive: (String) -> Boolean, launchable: (String) -> Boolean, user: Map<Int, String> = emptyMap()): Map<Int, Rule> {
         val out = HashMap<Int, Rule>()
         for ((code, rule) in RULES) {
             val to = mapped[code] ?: continue                         // not a global key here: the focused app gets it, nothing to fix
@@ -60,8 +60,21 @@ object KeyFix {
                 out[code] = Rule(APP, listOf(pkg))
             } else out[code] = rule
         }
+        // the person's own key → app (TV Home's "keyapps"): over a dead key's old job, never over a key that works
+        val free = free(mapped, alive)
+        for ((code, pkg) in user) if (code in COLOUR || code in free) if (launchable(pkg)) out[code] = Rule(APP, listOf(pkg))
         return out
     }
+
+    /** Colour keys: no app answers them in every app, so they are the person's to give. Numbers are TV Home's alone (it gets them, nobody else filters them). */
+    val COLOUR = setOf(183, 184, 185, 186)                            // PROG_RED, GREEN, YELLOW, BLUE
+
+    /** The keys of [RULES] whose global handler is gone (or none of the two, when [mapped] does not name it): the dead ones. */
+    fun free(mapped: Map<Int, String>, alive: (String) -> Boolean): Set<Int> =
+        RULES.keys.filter { c -> mapped[c]?.let { !alive(it) } == true }.toSet()
+
+    /** What a person may give an app through TV Setup: the colour keys and the dead ones; every other key keeps its own way. */
+    fun allowed(mapped: Map<Int, String>, alive: (String) -> Boolean): Set<Int> = COLOUR + free(mapped, alive)
 
     /** global_keys.xml's `<key keyCode="KEYCODE_X" component="pkg/cls" />` lines → code to component, for the names of [NAMES] (and plain numbers). */
     fun parse(p: XmlPullParser): Map<Int, String> {
@@ -103,7 +116,7 @@ object KeyFix {
     fun launchable(c: Context, pkg: String): Boolean = c.packageManager.getLeanbackLaunchIntentForPackage(pkg) != null
         || c.packageManager.getLaunchIntentForPackage(pkg) != null
 
-    fun current(c: Context): Map<Int, Rule> = plan(systemMap(), { alive(c, it) }, { launchable(c, it) })
+    fun current(c: Context): Map<Int, Rule> = plan(systemMap(), { alive(c, it) }, { launchable(c, it) }, HomeKeys.keys(c))
 
     // ---- on or off -------------------------------------------------------------------------------------------------
 
@@ -149,7 +162,7 @@ object KeyFix {
             val was = Settings.Secure.getString(r, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
             val has = has(was)
             val map = systemMap()
-            val now0 = plan(map, { alive(c, it) }, { launchable(c, it) })
+            val now0 = plan(map, { alive(c, it) }, { launchable(c, it) }, HomeKeys.keys(c))
             android.util.Log.i("KeyFix", "global keys ${map.size}, to bring back ${now0.keys}, service on=$has")   // adb logcat -s KeyFix
             val need = wanted(c) && now0.isNotEmpty()
             if (need == has) return

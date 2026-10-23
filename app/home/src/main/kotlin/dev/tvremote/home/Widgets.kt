@@ -52,10 +52,12 @@ import java.util.Locale
  *   note    the family's note (HomeConfig "note"), while there is one
  */
 class Widgets(private val a: Activity, private val dp: (Number) -> Int) : LinearLayout(a) {
+    private var cpuMiss = 0
+
     /** What a card needs, gathered on a background thread. */
     class Facts(val ram: Pair<Long, Long>, val disk: Pair<Long, Long>, val ip: String, val eth: Boolean, val rssi: Int?, val up: Long,
                 val adb: Boolean, val usage: JSONObject?, val icons: Map<String, Drawable>, val timer: JSONObject?, val moon: Moon?, val cpu: Float?, val cores: Int, val cal: Cal? = null, val wx: Weather.Forecast? = null,
-                val link: Int? = null, val dns: String? = null, val adbPort: Int = 0)
+                val link: Int? = null, val dns: String? = null, val adbPort: Int = 0, val cpuWhy: Int = 0)
 
     /** Today in the lunar calendar and the days until the next full moon (15th), new month (1st) and Tết. */
     class Moon(val day: Lunar.Day, val full: Int, val new: Int, val tet: Int)
@@ -162,13 +164,17 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val cal = if ("calendar" in want) month(Calendar.getInstance(), Calendar.getInstance(resources.configuration.locales[0]).firstDayOfWeek) else null
         // the CPU: apps may read neither /proc/stat nor loadavg, so TV Setup's shell measures it (null without TV Setup 0.14.1 or its ADB)
         val cpu = if ("system" in want) ask("cpu") else null
+        // no CPU: TV Setup does not answer at all (missing or old), or it does but has no ADB to measure with; the first miss is only
+        // the measure not being ready yet (HomeActivity asks again), so "no ADB" is said from the second on
+        cpuMiss = if (cpu == null && "system" in want) cpuMiss + 1 else 0
+        val cpuWhy = if (cpuMiss == 0) 0 else if (ask("badges") == null) R.string.w_cpu_need_setup else if (cpuMiss >= 2) R.string.w_cpu_need_adb else 0
         val typed = Store.get(a).optString("place")
         val wx = if ("weather" in want) {
             if (Weather.due(a, typed)) Weather.refresh(a, typed, resources.configuration.locales[0].language) { onWeather?.invoke() }
             Weather.cached(a)
         } else null
         return Facts((mem.totalMem - mem.availMem) to mem.totalMem, disk, ip, eth, rssi, SystemClock.elapsedRealtime(), adb, usage, icons, timer, moon,
-            cpu?.optDouble("busy", -1.0)?.takeIf { it >= 0 }?.toFloat(), cpu?.optInt("cores") ?: 0, cal, wx, link, dns, adbPort)
+            cpu?.optDouble("busy", -1.0)?.takeIf { it >= 0 }?.toFloat(), cpu?.optInt("cores") ?: 0, cal, wx, link, dns, adbPort, cpuWhy)
     }
 
     /**
@@ -358,6 +364,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         all.take((room / dp(78)).coerceAtLeast(1)).forEach { row.addView(it, LayoutParams(0, -2, 1f)) }
         card.gravity = Gravity.CENTER_VERTICAL
         card.addView(row, LayoutParams(-1, -2))
+        if (f.cpu == null && f.cpuWhy != 0) card.addView(note(a.getString(f.cpuWhy)).apply { gravity = Gravity.CENTER; setPadding(0, dp(4), 0, 0) })   // the missing ring, said where it would be
     }
 
     /** A small ring with its percent inside and its name under it. */
@@ -586,7 +593,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val cores = f.cores.takeIf { it > 0 } ?: Runtime.getRuntime().availableProcessors()
         val ghz = maxGhz()
         val cpu = Stat(R.drawable.ic_cpu, f.cpu?.let(::pct) ?: ghz?.let { "%.2f GHz".format(it) } ?: "—",
-            a.getString(R.string.w_cpu) + " · " + a.getString(R.string.w_cpu_cores, cores), f.cpu)
+            a.getString(R.string.w_cpu) + " · " + if (f.cpu == null && f.cpuWhy != 0) a.getString(f.cpuWhy) else a.getString(R.string.w_cpu_cores, cores), f.cpu)
         val ram = Stat(R.drawable.ic_memory, pct(part(f.ram)), "%s %.1f/%.1fG".format(a.getString(R.string.w_ram), f.ram.first / gb, f.ram.second / gb), part(f.ram))
         val disk = Stat(R.drawable.ic_drive, pct(part(f.disk)), "%s %.0f/%.0fG".format(a.getString(R.string.w_disk), f.disk.first / gb, f.disk.second / gb), part(f.disk))
         val up = Stat(R.drawable.ic_clock, span(f.up), a.getString(R.string.w_up))

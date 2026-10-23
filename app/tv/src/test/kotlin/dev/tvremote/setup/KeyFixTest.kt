@@ -53,4 +53,33 @@ class KeyFixTest {
         assertEquals("a/b:$s", KeyFix.list("a/b:dev.tvremote.setup/.KeyFixService", true))
         assertEquals("dev.tvremote.setup/dev.tvremote.setup.KeyCatch", KeyFix.list("dev.tvremote.setup/dev.tvremote.setup.KeyCatch:$s", false))
     }
+    // ---- TV Home's own key → app map -------------------------------------------------------------------------------
+
+    @Test fun colourKeysAreAlwaysFreeAndDeadOnesOnlyWhileDead() {
+        assertEquals(setOf(183, 184, 185, 186), KeyFix.allowed(emptyMap(), { true }))
+        assertEquals(setOf(183, 184, 185, 186, 170, 178, 190), KeyFix.allowed(mapped, { false }))   // the three dead ones join
+        assertEquals(KeyFix.COLOUR, KeyFix.allowed(mapped, { true }))                                  // a key that works is never offered
+        assertFalse((7..16).any { it in KeyFix.allowed(mapped, { false }) })                           // numbers are TV Home's alone
+    }
+
+    @Test fun anAppOnAColourKeyIsTakenWithNoDeadKey() {
+        val p = KeyFix.plan(emptyMap(), { true }, { it == "a.b" }, mapOf(183 to "a.b", 184 to "gone.app"))
+        assertEquals(setOf(183), p.keys); assertEquals(listOf("a.b"), p[183]?.pkgs)   // 184's app is not installed: the key keeps its way
+    }
+
+    @Test fun aWorkingKeyIsNeverTakenForAnApp() {
+        // 170 still has its handler, 7 is a number: both named by the person, neither taken
+        val p = KeyFix.plan(mapped, { true }, { true }, mapOf(170 to "a.b", 7 to "a.b", 999 to "a.b"))
+        assertTrue(p.isEmpty())
+    }
+
+    @Test fun aDeadKeyGivesWayToThePersonsApp() {
+        val p = KeyFix.plan(mapped, { false }, { true }, mapOf(190 to "my.app"))
+        assertEquals(listOf("my.app"), p[190]?.pkgs); assertEquals(KeyFix.INPUT, p[178]?.act)         // 190 was YouTube; the others stay as before
+    }
+
+    @Test fun homeConfigKnowsTheSameDeadKeys() {
+        assertEquals(KeyFix.RULES.keys, dev.tvremote.home.HomeConfig.KEY_DEAD.toSet())
+        assertEquals(KeyFix.COLOUR, dev.tvremote.home.HomeConfig.KEY_COLOURS.toSet())
+    }
 }

@@ -92,3 +92,39 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
 - **Sound and picture stay two sessions.** scrcpy fixes `audio=` when it starts; adding sound to an open picture means a
   second app_process or restarting the picture. Capturing sound by default would silence the TV's speakers. A joined session
   would only help when the page asks for both in the same moment (after waking), which needs both fetches to name each other.
+
+## Reading the TV's state over ADB
+
+- **Is someone about to type on the TV** (`core/adb/TvKeyboard.kt`): `dumpsys input_method --proto` is ~450 B and 0.13 s on
+  the FPT box (Android 14); the text dump is ~545 KB and 2.4 s there (Gboard dumps its own state into it), which made the phone's
+  typing box open 3-4 s late. Android 9 (Bravia) has no proto: the first try costs ~4.5 s, then the reader keeps the grep'd text
+  dump (0.86 s) for good. Signal: a focused field is the last `inputType=0x.. … fieldId=` line (the system's StartInput history;
+  Gboard's own lines have no fieldId), not only `mInputShown`: a TvField does not raise the keyboard on focus.
+- **Injected keys and taps do not reach "Allow USB debugging?"**: the person at the TV must press Allow. A test client
+  connected to a real TV pops that dialog there unannounced, so ask the owner first.
+
+## The apps leaning on each other
+
+- **TV Home has no ADB**: its power button (screen off, standby, power off) asks TV Setup through the `HomeInfo` provider
+  (signature-checked) with one of three fixed words, never a command line (`setup/HomePower.kt`). When TV Setup's service
+  is not running, HomePower opens a link of its own on the same key and closes it after; the screen-off helper is
+  `nohup setsid`, so it outlives that link.
+- **A feature that needs another app stays visible and says how to get it** (Downloader code or "install from the phone"),
+  at the point of use only: no banners. Hiding it reads as a bug. The map of who needs whom: `docs/` apps page.
+- **"Open on TV" sends a media link (.m3u8, .mp4 … by the path's extension, `Channels.isStream` = `js/remote.js isStream`)
+  to TV Channels' player**: most TVs have nothing that opens a bare stream. Without TV Channels it goes as any link, with a hint.
+- **Heavy-app auto stop is opt-in** and never touches music / background audio apps or the keep list: people listen with the
+  screen off. `sharedUserId` to share one process between our apps was rejected: adding it to shipped apps breaks updates.
+- **Key shortcuts and "open an app at power-on" (TV Home settings, default off) are done by TV Setup, pushed by TV Home.** TV Home has no
+  ADB, no key filter, and does not run in standby, so it sends the whole setting (`keyon/keyapps/autoon/autoapp`) through the
+  signature-checked HomeInfo provider (method "keys") on every change and start; TV Setup keeps it (`HomeKeys`, prefs) and works after a
+  reboot with TV Home not up. The DUMP-protected Rules broadcast was not used: apps cannot call it. Without TV Setup the keys work on
+  TV Home's own screen only, and the setting says so.
+- **Only free keys can be given an app:** colour keys, keys whose global component is dead (`KeyFix.plan`, same list in `HomeConfig.KEY_DEAD`,
+  a test keeps them equal) and, on TV Home's screen only, 0-9. A working key is never taken. `input keyevent` over ADB is injected after
+  the accessibility filter, so the service cannot be tested with it; on the TV emulator `adb emu event send EV_KEY:KEY_RED` also does not
+  reach it (the emulator has no such key in its layout path), so the service path was checked by its logged plan only.
+- **Power-on app fires once per power-on, by a 120 s guard** keyed on (boot count, elapsedRealtime): the boot and the screen coming on right
+  after it are one power-on. It looks at the app on screen (UsageStats) and keeps it when the TV woke into another app (HDMI-CEC, cast).
+  Home pressed later never re-fires: the trigger is a power event only. No `SetupNeed.MIN` entry: the setting asks TV Setup itself and
+  says "install TV Setup" when it gets no answer; the first TV Setup with "keys" is the next one.

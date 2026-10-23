@@ -127,6 +127,45 @@ flowchart TB
     UI --> PH & PC & TVA
 ```
 
+## Các app kết nối với nhau thế nào
+
+Mỗi mũi tên là một đường nối giữa hai app: app này cần gì ở app kia và đi bằng đường nào. Nét liền: app báo khi thiếu; nét đứt: báo một phần; nét đậm: không báo. Cùng sơ đồ có logo, bảng từng đường nối và cách cài mỗi app: [tvremote.pages.dev/apps](https://tvremote.pages.dev/apps).
+
+<!-- apps-map:start -->
+```mermaid
+flowchart LR
+  subgraph clients["Ngoài TV"]
+    phone["App điện thoại<br/><small>Android · iPhone</small>"]
+    web["Trang web<br/><small>mở từ trình duyệt</small>"]
+    desktop["App máy tính<br/><small>Mac · Windows · Linux</small>"]
+  end
+  subgraph tv["Trên TV"]
+    adb["ADB của TV<br/><small>cổng 5555</small>"]
+    helper["Tắt màn hình<br/><small>nằm trong TV Setup</small>"]
+    setup["TV Setup<br/><small>chạy ngầm trên TV</small>"]
+    home["TV Home<br/><small>màn hình chính</small>"]
+    channels["TV Channels<br/><small>trình phát kênh</small>"]
+    games["TV Games<br/><small>cài qua ADB</small>"]
+  end
+  subgraph ext["Bên ngoài"]
+    github["GitHub"]
+    downloader["Downloader"]
+    tailscale["Tailscale"]
+  end
+  clients -->|"1 ADB"| adb
+  clients -->|"2 lệnh"| setup
+  clients -.->|"3 lệnh"| home
+  clients -.->|"4 phát link"| channels
+  clients -->|"5 cài"| games
+  home ==>|"6 dữ liệu"| setup
+  setup -.->|"7 ADB"| adb
+  setup -->|"8 helper"| helper
+  clients ==>|"9 APK"| github
+  phone -->|"10 link cài"| downloader
+  clients -.->|"11 từ xa"| tailscale
+```
+<!-- apps-map:end -->
+
 ## Thêm app cho TV
 
 Miễn phí, không quảng cáo, app nào riêng app đó: chỉ cài app bạn cần, từ app điện thoại / máy tính (tab TV) hoặc bằng Downloader. Sau này có thể thêm app khác.

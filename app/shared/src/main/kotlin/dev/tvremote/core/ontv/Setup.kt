@@ -153,6 +153,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
     @Throws(Exception::class)
     fun apply(c: Choice = Choice()) {
         tvOnly()
+        sh(RulesClient.KEEP_ALIVE)                                    // TV Setup and TV Home stay alive on a low-RAM TV
         if (has(TS_PKG)) {                                            // the Tailscale button does this too; here for a Tailscale installed by hand
             Tailscale(adb!!, dir).keepAlive()
             log.line(t("optimize.tailscale_starts_again_by"))

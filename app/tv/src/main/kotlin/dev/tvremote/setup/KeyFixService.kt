@@ -35,6 +35,7 @@ class KeyFixService : AccessibilityService() {
 
     override fun onServiceConnected() {
         power = getSystemService(Context.POWER_SERVICE) as? PowerManager
+        running = this
         refresh()
         if (!watching) try {
             registerReceiver(packages, IntentFilter().apply {         // a launcher turned off or back on, an app installed: the plan follows
@@ -43,6 +44,12 @@ class KeyFixService : AccessibilityService() {
             })
             watching = true
         } catch (e: Exception) { }
+    }
+
+    companion object {
+        @Volatile private var running: KeyFixService? = null
+        /** The map of TV Home's keys changed: the plan is made again at once (a service that is not on yet reads it when it connects). */
+        fun poke() { running?.refresh() }
     }
 
     private fun refresh() {
@@ -85,6 +92,7 @@ class KeyFixService : AccessibilityService() {
 
     override fun onUnbind(i: Intent?): Boolean {
         plan = SparseArray()
+        if (running === this) running = null
         if (watching) try { unregisterReceiver(packages) } catch (e: Exception) { }
         watching = false
         return super.onUnbind(i)

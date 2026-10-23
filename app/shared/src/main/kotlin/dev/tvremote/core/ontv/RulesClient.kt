@@ -12,11 +12,21 @@ object RulesClient {
     const val SETUP = "dev.tvremote.setup"
 
     /**
+     * What Tailscale.keepAlive does, for TV Setup and TV Home (when installed): Doze, standby buckets and "background restricted" are
+     * how a low-RAM TV lets go of them. Each command is on its own line of defence (`2>/dev/null`): Android 8 / 9 lack `cmd appops` /
+     * `set-standby-bucket` and must not break what follows. Repeating it changes nothing.
+     */
+    const val KEEP_ALIVE = "for p in $SETUP dev.tvremote.home; do pm path \$p >/dev/null 2>&1 || continue; " +
+        "dumpsys deviceidle whitelist +\$p >/dev/null 2>&1; am set-standby-bucket \$p active >/dev/null 2>&1; " +
+        "cmd appops set \$p RUN_ANY_IN_BACKGROUND allow >/dev/null 2>&1; done; "
+
+    /**
      * Starts TV Setup's service from the shell. On Doze's allow list a plain start is let through with no deadline; a foreground
      * start must become a foreground service within 10 s, and a TCL (Android 11) refuses that: the whole app was killed each
      * time a page read the rules. The allow list also keeps such a TV from killing the service later. Foreground only as a last try.
      */
-    const val START = "cmd deviceidle whitelist +$SETUP >/dev/null 2>&1; " +
+    const val START = KEEP_ALIVE +
+        "cmd deviceidle whitelist +$SETUP >/dev/null 2>&1; " +
         "am startservice -n $SETUP/.RemoteService 2>&1 | grep -q Error && am start-foreground-service -n $SETUP/.RemoteService >/dev/null 2>&1"
 
     /**

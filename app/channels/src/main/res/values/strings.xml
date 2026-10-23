@@ -28,6 +28,7 @@
     <string name="cant_play_geo">This channel does not play here: it may be shown only in its own country.</string>
     <string name="fail_hint">▲▼ another channel · OK try again · ◀ the list</string>
     <string name="next_hint">▲▼ another channel · OK the list</string>
+    <string name="bad_link">That is not a link this app can play (http or https only).</string>
     <string name="not_found">That channel is not in iptv-org\'s lists any more.</string>
     <string name="channels_n">%d channels</string>
     <string name="source">Channels from iptv-org (public streams); this app hosts none.</string>

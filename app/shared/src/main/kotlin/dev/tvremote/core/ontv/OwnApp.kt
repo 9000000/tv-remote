@@ -27,6 +27,7 @@ class OwnApp(val pkg: String, val apk: String, private val versionKey: String, p
         val s = look(v ?: "0")
         s.release?.let { o.put("latest", it.version) }
         if (v == null && s.ok && s.release == null) o.put("soon", true)
+        if (!s.ok) o.put("offline", true)                              // GitHub could not be asked: the page says so and offers a retry, not a button that is just missing
         return o
     }
 

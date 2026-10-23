@@ -66,7 +66,20 @@ const storeSearch = (q) => openOnTv('market://search?c=apps&q=' + encodeURICompo
 const castPick = (accept) => { if (needAdb()) return; const f = $('#castfile'); f.accept = accept; f.click(); };   // the picker must open within the tap
 async function askStoreSearch() { const v = await ask(T('remote.search_play_store'), { value: '', ok: T('remote.search') }); if (v && v.trim()) storeSearch(v.trim()); }
 async function askStorePage() { const v = await ask(T('remote.package_id'), { value: 'org.videolan.vlc', ok: T('remote.open') }); if (v && v.trim()) storePage(v.trim()); }
-async function askLink() { const v = await ask(T('remote.link'), { value: 'https://youtu.be/', ok: T('remote.open') }); const l = v && normalizeLink(v); if (l) openOnTv(l, 'link'); }
+// a link to the media itself (core Channels.isStream: the same list) plays in TV Channels' player, most TVs having nothing that opens
+// it; a page opens as before. Without ADB or TV Channels it goes as any link, and the person hears that TV Channels would play it
+const isStream = (l) => { try { const u = new URL(l); return /^https?:$/.test(u.protocol) && /\.(m3u8|m3u|mpd|mp4|m4v|mkv|webm|ts|mov|mp3|aac|m4a|flac|ogg)$/i.test(u.pathname); } catch (e) { return false; } };
+async function askLink() {
+  const v = await ask(T('remote.link'), { value: 'https://youtu.be/', ok: T('remote.open') });
+  const l = v && normalizeLink(v);
+  if (!l) return;
+  if (isStream(l) && ADB.state === 'ready') {
+    const c = await api('/api/channels', null, true);
+    if (c && c.installed) return chanPlay(l);
+    toast(T('remote.stream_needs_channels'));
+  }
+  openOnTv(l, 'link');
+}
 // The picture takes a few seconds on the TV: its key turns until the file is saved, or the tap looks lost. A browser gets it
 // here; the computer app's window saves downloads itself (Window.kt tvrSave) and calls shotDone() once the file is written.
 async function screenshot() {

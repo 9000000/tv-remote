@@ -29,6 +29,7 @@ object SetupNeed {
         "lock" to "0.12.1",                                            // 🔒 an app opened only with a PIN (the release after 0.12.0)
         "dim" to "0.12.1",                                             // 🔅 a tint over the whole screen (DimLayer)
         "unextra" to "0.12.1",                                         // ↺ taking back the minutes granted to an app today
+        "heavy" to "0.19.1",                                           // 🧠 one heavy app at a time: a video app left behind is closed (Heavy)
         "home_usage" to "0.14.1",                                      // 📊 TV Home's card of app use and limits (HomeInfo)
     )
 
@@ -57,6 +58,7 @@ object SetupNeed {
             "dim" -> t("core.need_dim")
             "unextra" -> t("core.need_unextra")
             "home_usage" -> t("core.need_home_usage")
+            "heavy" -> t("core.need_heavy")
             else -> feature
         }
     }

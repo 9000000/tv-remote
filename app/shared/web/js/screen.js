@@ -250,6 +250,8 @@ function picDialog() {
   d.addEventListener('close', () => d.remove());
   document.body.append(d); d.showModal();
 }
+// the level is the person's own pick (frames and bit rate go as they are): a TV with under 1.5 GB holds it to 720 px / 20 fps / 1 Mbit/s otherwise (Tv.kt)
+function picHand() { try { return !!localStorage.getItem('quality'); } catch { return false; } }
 function picLevelSay() { put('#screennow', 'hidden', $('#screenmode').value !== 'snap'); const o = $('#screenmode').selectedOptions[0]; $('#screenmodebtn').replaceChildren(el('span', { textContent: o ? o.textContent : '' }), ' ▾'); }
 function loadScript(src) { return new Promise((ok, no) => document.head.append(el('script', { src, onload: ok, onerror: no }))); }
 async function h264Loop(gen) {
@@ -266,7 +268,7 @@ async function h264Loop(gen) {
   streamCtl = new AbortController();
   let why = T('screen.tv_stopped_sending');
   try {
-    const r = await fetch('/api/video?q=' + (H264_Q[size] ?? 1) + (tune.fps ? '&fps=' + tune.fps : '') + (tune.rate ? '&rate=' + tune.rate * 1000000 : '') + (tune.enc ? '&enc=' + tune.enc : ''), { signal: streamCtl.signal }); if (!r.ok) throw new Error('http');
+    const r = await fetch('/api/video?q=' + (H264_Q[size] ?? 1) + (tune.fps ? '&fps=' + tune.fps : '') + (tune.rate ? '&rate=' + tune.rate * 1000000 : '') + (tune.enc ? '&enc=' + tune.enc : '') + (picHand() ? '&hand=1' : ''), { signal: streamCtl.signal }); if (!r.ok) throw new Error('http');
     const rd = r.body.getReader(); let buf = new Uint8Array(0), off = 0;   // off: where the next packet starts in buf (no copy per packet)
     for (;;) {
       const { done, value } = await rd.read(); if (done || gen !== screenGen) break;

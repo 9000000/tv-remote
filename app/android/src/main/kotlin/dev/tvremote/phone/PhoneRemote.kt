@@ -59,6 +59,7 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "gamespad" to act { if (!needsAdb()) gamesPointerOpen() },
     "ir" to act { irOpen(entry ?: host) },
     "homeCustom" to act { if (!needsAdb()) managing.open(host, "tv", "homeOpen()") },   // the page's TV Home dialog: one place for it
+    "rescue" to act { rescueTv() },
 )
 
 /** Things an action's button needs to know about itself once drawn (the ✏️ is lit while drawing). */

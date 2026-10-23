@@ -37,6 +37,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="tvchannels" android:host="play" />
                 <data android:scheme="tvchannels" android:host="find" />
+                <data android:scheme="tvchannels" android:host="url" />   <!-- ?u=<http(s) stream address>: one stream, no lineup -->
             </intent-filter>
         </activity>
         <!-- programme reminders: the alarm (ours only) and the re-arming after boot / update -->

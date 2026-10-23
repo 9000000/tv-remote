@@ -1,0 +1,74 @@
+package dev.tvremote.home
+
+import android.app.Activity
+import android.content.Context
+import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import android.view.KeyEvent
+import org.json.JSONArray
+import org.json.JSONObject
+
+/**
+ * Remote keys that open an app ("keyapps") and the app that opens when the TV is turned on ("autoapp"), both default off.
+ * TV Home answers a key itself only on its own screen (colour keys and 0-9: [onKey]); anywhere else, and the power-on app, are
+ * TV Setup's (its key filter, its wake-up hearing: TV Home is not running in standby), so the whole setting goes to it through the
+ * HomeInfo provider ("keys", signed by this app's key) on every change and every start. What TV Setup says back (it is there,
+ * which keys are dead on this TV) is kept for the setting's words and for the clients' page.
+ */
+object Keys {
+    private val ui = Handler(Looper.getMainLooper())
+    var onState: (() -> Unit)? = null                                  // the settings panel, while it is open: the hint under the switch
+
+    private fun prefs(c: Context) = c.getSharedPreferences("home_keys", Context.MODE_PRIVATE)
+
+    /** Tells TV Setup the setting as it is now and keeps its answer; on a thread of its own (a binder call to another app). */
+    fun push(c: Context) {
+        val app = c.applicationContext
+        val conf = Store.get(app)
+        val arg = JSONObject().also { o -> for (k in listOf("keyon", "keyapps", "autoon", "autoapp")) o.put(k, conf.get(k)) }.toString()
+        Thread({
+            val said = try { app.contentResolver.call(Uri.parse(HomeConfig.USAGE), "keys", arg, null)?.getString("json")?.let { JSONObject(it) } } catch (e: Exception) { null }
+            // null: no TV Setup, or one from before this (it answers nothing to a word it does not know)
+            prefs(app).edit().putBoolean("setup", said != null).putString("free", (said?.optJSONArray("free") ?: JSONArray()).toString())
+                .putBoolean("can", said?.optBoolean("can") ?: false).apply()
+            ui.post { onState?.invoke() }
+        }, "home-keys").apply { isDaemon = true }.start()
+    }
+
+    /** What the last answer said, for the config the clients read: {keysOk, keysSetup, keysDead [codes]}. */
+    fun report(c: Context, conf: JSONObject): JSONObject {
+        val p = prefs(c)
+        return conf.put("keysOk", true).put("keysSetup", p.getBoolean("setup", false))
+            .put("keysDead", try { JSONArray(p.getString("free", "[]")) } catch (e: Exception) { JSONArray() })
+    }
+
+    fun setup(c: Context) = prefs(c).getBoolean("setup", false)
+    /** TV Setup may run its key filter (the grant over ADB): without it the keys work on TV Home's screen only. */
+    fun can(c: Context) = prefs(c).getBoolean("can", false)
+
+    /** The dead keys TV Setup found on this TV, which a person may give an app. */
+    fun dead(c: Context): List<Int> = try { JSONArray(prefs(c).getString("free", "[]")).let { a -> List(a.length()) { a.getInt(it) } } } catch (e: Exception) { emptyList() }
+
+    /** A key pressed on TV Home's own screen: opens its app when one is chosen and installed. True = handled. Numbers and colours only. */
+    fun onKey(a: Activity, e: KeyEvent): Boolean {
+        val code = e.keyCode
+        if (code !in HomeConfig.KEY_COLOURS && code !in HomeConfig.KEY_NUMBERS) return false
+        val conf = Store.get(a)
+        if (!conf.optBoolean("keyon")) return false
+        val pkg = HomeConfig.keyApps(conf.optJSONObject("keyapps"))[code] ?: return false
+        if (e.repeatCount > 0) return true                             // a held key opens it once
+        return Apps.launch(a, pkg)
+    }
+
+    /** The key's words in the setting: "Red", "Green"... a number as itself, others by what the stock remote called them. */
+    fun name(a: Context, code: Int): String {
+        val id = when (code) {
+            183 -> R.string.k_red; 184 -> R.string.k_green; 185 -> R.string.k_yellow; 186 -> R.string.k_blue
+            170 -> R.string.k_tv; 178 -> R.string.k_input; 190 -> R.string.k_btn3; 191 -> R.string.k_btn4; 195 -> R.string.k_btn8
+            192 -> R.string.k_btn5; 284 -> R.string.k_allapps; 176 -> R.string.k_settings
+            else -> return (code - KeyEvent.KEYCODE_0).toString()
+        }
+        return a.getString(id)
+    }
+}

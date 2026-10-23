@@ -65,4 +65,9 @@ const REMOTE_DO = {
   share: () => shareDialog(),
   inputs: () => inputsMenu(),
   homeCustom: () => homeOpen(),
+  rescue: async () => {               // a frozen TV: the app on screen is stopped (never a launcher / TV Setup), then Home
+    if (await needAdbSoon()) return;
+    const r = await api('/api/rescue', {});
+    if (r) toast(r.stopped ? T('rescue.closed', { name: r.label || r.stopped }) : T('rescue.home'));
+  },
 };

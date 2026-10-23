@@ -486,7 +486,8 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         val level = if (q == "hd") HD else q.toIntOrNull() ?: 1
         val fps = r.q("fps").toIntOrNull() ?: 0; val rate = r.q("rate").toIntOrNull() ?: 0   // Advanced picture
         val enc = r.q("enc").takeIf { it == "hw" || it == "sw" } ?: "auto"
-        return s.feeds.video("$level/$fps/$rate/$enc") { l, sink -> Tv(keys, jar, s.host, null, level, 4096, false, l, sink, fps = fps, bitRate = rate, encoder = enc) }
+        val hand = r.q("hand") == "1"                                 // the level was picked by the person: no low-memory cap
+        return s.feeds.video("$level/$fps/$rate/$enc/$hand") { l, sink -> Tv(keys, jar, s.host, null, level, 4096, false, l, sink, fps = fps, bitRate = rate, encoder = enc, hand = hand) }
     }
 
     private fun audio(s: Session, r: HttpServer.Request): Response {

@@ -13,6 +13,7 @@ async function chanCard() {
   if (r && r.installed) put(line, 'textContent', T('channels.state', { v: r.version }));
   inst.hidden = !r || (r.installed && !r.latest) || (!r.installed && !r.latest);   // nothing to install: no release carries it yet
   if (!inst.hidden) put(inst, 'textContent', r.installed ? T('channels.update', { v: r.latest }) : T('channels.install'));
+  lookOffline(inst, !!(r && r.offline), chanCard);
 }
 
 async function chanInstall() {
@@ -26,6 +27,17 @@ async function chanInstall() {
 async function chanOpen(name) {
   if (ADB.state !== 'ready') return openOnTv(channelLink(name), name);
   if (await api('/api/channels/open', { q: name })) { toast(T('channels.opening', { name })); setTimeout(refresh, 1500); }
+}
+
+// a stream address (.m3u8, .mp4 ...) played by TV Channels (tvchannels://url?u=...), from "Open on TV" (remote.js askLink); the core checks it is a plain http(s) link
+async function chanPlay(url) {
+  if (!url) return;
+  if (await api('/api/channels/play', { url })) { toast(T('channels.playing')); setTimeout(refresh, 1500); }
+}
+
+// TV Channels is on the TV but from before the stream link (core says channels:old): one question with the update, then it plays again
+async function chanOld(url) {
+  if (await ask(T('core.fr_channels_old'), { ok: T('page.update') })) { await chanInstall(); if (url) chanPlay(url); }
 }
 
 $('#chaninst').addEventListener('click', chanInstall);

@@ -103,6 +103,7 @@ dev/                     test/ (emu.sh, smoke.py, layout.js, audit.js), gen/ (ic
 
 - **Every change reaches the Phone app, the TV web page and the Computer app.** UI changes go in `app/shared/web` once. A new `/api` endpoint used by the page goes in `Manage.kt` (all three cores), or where only some cores have it: `app/desktop` `Server.kt`, `RemoteService`, the Phone app's Manage screen. The Phone app's native remote screen is separate code: mirror the change there by hand, or say clearly why it cannot be.
 - **The remote screen is drawn from one file.** The keys and menu entries (More keys, the arrows row, the media rows, the Open on the TV / sleep timer / Scenes menus) live ONCE in `app/shared/web/remote.json`: id, icon, `t` (the id of its words in `i18n/<lang>.json`, `rkey.*`; `sub` the id of the line under it), a `key` (name in `Scenes.KEYS`) or a `do` action, optional `sub`, `cores` (`phone` / `web` only) and per-side `web` / `phone` overrides, each with a `why`. It is served at `/remote.json` on every core and packed into the Phone app. The web reads it in `js/remote_spec.js` + `js/remote.js` (handlers: `REMOTE_DO`); the Phone app in `RemoteSpec.kt` (shared) + `PhoneRemote.kt` (handlers: `phoneActions`). Add, move or reword an entry in the JSON only (icons: `dev/gen/gen_icons.py`; its words go in `i18n/vi.json` and `en.json`); a new `do` action needs a handler in both maps. Hand-laid on each side, outside the file: the top row, the D-pad, the number keys, the volume / channel pills and the 🎧 menu (`listen.js`). Checks: `node --test app/shared/tests/` (`remote.test.js`: schema, icons, key names, handlers on the page and in `PhoneRemote.kt`) and `RemoteSpecTest` in `:shared` and `:android` (`./gradlew :shared:testDebugUnitTest :android:testDebugUnitTest`).
+- **The apps map** (which app needs which, the arrows, the install paths) lives ONCE in `docs/data/apps-map.json`: `docs/apps.html` draws it (`docs/js/apps.js`), and the mermaid block between `<!-- apps-map:start -->` / `<!-- apps-map:end -->` in README.md and README.vi.md is generated from it: edit the JSON, then run `node dev/gen/apps_map.js` (`tests/apps_map.test.js` fails when a README differs, an edge names a missing node or a logo file is missing).
 - **The tabs are made of a few shapes** (`js/ui.js` lists them, `css/kit.css`): a card opens with its title (`h2`, or a
   `.card-head` with tools on the right; folded: `details.card` > `summary`) and spaces its own children, so nothing in it needs a
   margin; `h3` a group's title, `p.note` a line of explanation, `p.state` what is on now, `p.empty` an empty list, `.warnline`
@@ -183,6 +184,9 @@ so Android installs over the old APKs, and `release.sh` stops before 1.3.0 until
   so `releases/latest/download/TV-Remote-<os>-<arch>.zip` always works), and waits for it; otherwise it attaches the last
   release's archives again, and `versions.json` "web" (the number the computer app's Updater.kt reads) keeps theirs.
 - Release only when the user says so, and keep GitHub Actions runs few: the workflow never runs on push; try things locally.
+- `docs/` changes: commit, let the owner try the site locally (`python3 -m http.server 8899 -d docs`), push only on their ok
+  (a push deploys the site at once).
+- Pull requests, issues and comments on other people's repos (cleanyourtv …): no "Generated with" line or session link.
 - Both apps update themselves from GitHub releases (`update/Release.kt`). Every app installs only a file listed in the
   release's `SHA256SUMS` with its SHA-256, signed (`SHA256SUMS.sig`, Ed25519) by a key in `Release.KEYS`; a release without
   them is not offered. `release.sh` runs `dev/release/sums.sh <tag>` last (after the computer apps are attached); run it again after
@@ -196,6 +200,7 @@ screens (phone emulator), the Computer app's page (Chrome, 1100 and 400 px), the
 (TV emulator). Logic: the action really happens on the TV, plus its errors, Stop, and an old TV Setup. UI: a screenshot
 of each new or changed screen, looked at: no label cut or overflowing, no row wrapping, chips on one line, nothing
 clipped. Unit tests alone do not count. Report what was tested where, and what could not be (e.g. HDMI needs a real TV).
+A UI fault seen while testing (a cut label, wrapping chips, misalignment) is fixed in the same change, not asked about.
 
 Test on emulators, not on real TVs. Two AVDs are used: `tvremote_gtv` (Google TV, Android 14) and `tvremote_test` (phone, Android 14).
 `dev/test/emu.sh` does the setup below; use it rather than doing it by hand:

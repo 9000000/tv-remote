@@ -190,13 +190,24 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
     private var pinAt = 0L
     private val usage by lazy { c.getSystemService(Context.USAGE_STATS_SERVICE) as android.app.usage.UsageStatsManager }
 
-    /** One look for a locked app on screen; returns how long until the next. */
+    private var heavyMode: HeavyMode? = null
+    private val heavy: HeavyMode get() = heavyMode ?: HeavyMode(c, adb).also { heavyMode = it }
+
+    /** One look at the app on screen, for the locked apps and for [HeavyMode]; returns how long until the next. */
     private fun lockCheck(): Long {
-        val apps = Rules.locked(Rules.load(c))
-        if (apps.isEmpty()) { eventsTo = 0; return 3_000 }
-        if (!(c.getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive) { unlocked = ""; return 2_000 }
+        val o = Rules.load(c)
+        val apps = Rules.locked(o)
+        val heavyOn = Heavy.on(o)
+        if (apps.isEmpty() && !heavyOn) { eventsTo = 0; heavyMode?.look("", 0, true, o); return 3_000 }   // off: forgets the apps it followed
         val now = System.currentTimeMillis()
+        if (!(c.getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive) {
+            unlocked = ""
+            if (heavyOn) heavy.look("", now, false, o)                // standby: the waits start over when the screen is on
+            return 2_000
+        }
         val app = frontApp(now)
+        if (heavyOn) heavy.look(app, now, true, o)                    // the same events as the locks: no second poller
+        if (apps.isEmpty()) return 3_000                              // a heavy app is left for 15 s: a look every 3 s is plenty
         if (app.isNotEmpty() && app != unlocked && app != c.packageName) unlocked = ""
         if (app in apps && app != unlocked && PinActivity.showing == null && now - pinAt > 2_000) {
             askPin(app, now - pinAt < 5_000)                          // asked a moment ago and not shown: Android kept it back

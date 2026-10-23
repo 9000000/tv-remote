@@ -24,13 +24,22 @@ import java.util.Locale
  * the marks on the tiles ("badges"): {limits: [{pkg, min, used}] as above, locked: [pkg] behind a PIN, bed: bedtime is on now}, TV Home needs none of it,
  * its "timer" card: {sleep_at, bedtime: {on, ranges}, in_bedtime, snooze_until} (Rules.state's),
  * and the system card's CPU ring, "cpu": {busy (0..1 over one second), cores}; Android 8+ keeps /proc/stat from apps, the shell reads it.
+ * and "power" (HomePower: screen off, standby, power off; `arg` the action, "result" ok / noadb / failed).
  * Which apps a family watches is nobody else's business: only TV Home, signed by this project's key (or by this app's own,
  * a build signed with one key for both), gets an answer.
  */
 class HomeInfo : ContentProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         val c = context ?: return null
-        if (method !in setOf("usage", "timer", "cpu", "badges") || !trusted(c, Binder.getCallingUid())) return null
+        if (method !in setOf("usage", "timer", "cpu", "badges", "power", "keys")) return null
+        // TV Home's package name signed by another key (built elsewhere, a fork): said as such, nothing else given, so the
+        // button tells the person to install both from one place instead of "update TV Setup", which would not help
+        if (!trusted(c, Binder.getCallingUid())) return if (fromHome(c, Binder.getCallingUid())) Bundle().apply { putString("result", "untrusted") } else null
+        if (method == "power") {                                       // the power button: `arg` is one of HomePower's three words, nothing else is run
+            val token = Binder.clearCallingIdentity()
+            try { return Bundle().apply { putString("result", HomePower.run(c, arg.orEmpty())) } } finally { Binder.restoreCallingIdentity(token) }
+        }
+        if (method == "keys") return keys(c, arg)
         val now = System.currentTimeMillis()
         if (method == "cpu") {                                         // the last measure at once, the next one started: a binder call never waits on ADB
             measure()
@@ -86,6 +95,22 @@ class HomeInfo : ContentProvider() {
         } finally { Binder.restoreCallingIdentity(token) }
     }
 
+    /**
+     * TV Home's keys and power-on app ([HomeKeys]): `arg` is its config (HomeConfig, cleaned again here); empty only asks. The answer
+     * {free: the dead keys TV Home may offer, can: this app may run its key filter, wanted: it is not switched off here}.
+     * The work runs on a thread: switching the filter on writes secure settings and a binder call must not wait on that.
+     */
+    private fun keys(c: Context, arg: String?): Bundle {
+        if (!arg.isNullOrEmpty() && HomeKeys.save(c, arg)) {
+            Thread({
+                KeyFix.sync(c); KeyFixService.poke()
+                if (HomeKeys.active(c) && !RemoteService.isRunning()) try { RemoteService.start(c, true) } catch (e: Exception) { }   // the wake-up hearing lives there
+            }, "home-keys").apply { isDaemon = true }.start()
+        }
+        val free = KeyFix.free(KeyFix.systemMap()) { KeyFix.alive(c, it) }
+        return Bundle().apply { putString("json", JSONObject().put("free", JSONArray(free.sorted())).put("can", KeyFix.can(c)).put("wanted", KeyFix.wanted(c)).toString()) }
+    }
+
     /** One second of /proc/stat through the shell, on its own thread, never two at once (a dial may wait minutes for the TV's question). */
     private fun measure() {
         if (!measuring.compareAndSet(false, true)) return
@@ -100,9 +125,11 @@ class HomeInfo : ContentProvider() {
         }, "home-cpu").apply { isDaemon = true }.start()
     }
 
+    private fun fromHome(c: Context, uid: Int) = c.packageManager.getPackagesForUid(uid)?.contains(HOME) == true
+
     private fun trusted(c: Context, uid: Int): Boolean {
         val pm = c.packageManager
-        if (pm.getPackagesForUid(uid)?.contains(HOME) != true) return false
+        if (!fromHome(c, uid)) return false
         val mine = certs(pm, c.packageName)
         return certs(pm, HOME).any { it == HOME_CERT || it in mine }
     }

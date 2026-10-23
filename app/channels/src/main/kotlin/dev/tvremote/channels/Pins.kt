@@ -28,6 +28,10 @@ object Pins {
     /** The text in tvchannels://find/<text>: a channel by the name a person says, for phones and voice. */
     fun findText(u: Uri?): String? = u?.takeIf { it.scheme == "tvchannels" && it.host == "find" }?.encodedPath?.trim('/')?.let { Uri.decode(it) }?.trim()?.ifEmpty { null }
 
+    /** tvchannels://url?u=<percent-encoded http(s) link>: one stream by its address (a phone or computer over ADB); null when absent or not a plain link. */
+    fun streamUrl(u: Uri?): String? = u?.takeIf { it.scheme == "tvchannels" && it.host == "url" }?.getQueryParameter("u")?.trim()?.takeIf { Edit.validUrl(it) }
+    fun isStreamLink(u: Uri?) = u?.scheme == "tvchannels" && u.host == "url"
+
     fun groupLink(id: String): Uri = Uri.parse("tvchannels://group/" + Uri.encode(id))
     fun groupId(u: Uri?): String? = u?.takeIf { it.scheme == "tvchannels" && it.host == "group" }?.encodedPath?.trim('/')?.let { Uri.decode(it) }?.ifEmpty { null }
 

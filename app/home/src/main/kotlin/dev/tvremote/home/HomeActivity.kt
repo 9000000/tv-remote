@@ -66,6 +66,7 @@ class HomeActivity : Activity() {
     private lateinit var netPill: BarBtn
     private lateinit var inputsPill: BarBtn
     private lateinit var settingsPill: BarBtn
+    private lateinit var powerPill: BarBtn
     private lateinit var bar: TopBar
     private lateinit var grid: LinearLayout                         // the favourites first, then every other app, then the hidden apps' tile: one grid
     private var apps: List<App> = emptyList()
@@ -93,7 +94,10 @@ class HomeActivity : Activity() {
         set(v) { getSharedPreferences("nav", MODE_PRIVATE).edit().putString("last", v).apply() }
     private var topAt: View? = null                                 // the tile left by Up: Down from the buttons lands on it
     private var stepping = false
-    private companion object { var reopen = false }                 // across recreate(): the panel was open when the language changed
+    private companion object {
+        var reopen = false                                            // across recreate(): the panel was open when the language changed
+        const val SETUP_CODE = "2397346"                              // TV Setup's Downloader code (README, the site)
+    }
     private var open: android.app.Dialog? = null                    // the panel or menu on top, closed by a Home press
     private lateinit var widgets: Widgets
     private val ui = android.os.Handler(android.os.Looper.getMainLooper())
@@ -174,13 +178,26 @@ class HomeActivity : Activity() {
                     .map { (act, v) -> Drop.Row(v.first, getString(v.second)) { open(act) } } + listOf(
                 Drop.Row(R.drawable.ic_sliders, getString(R.string.customize)) { customize() }))
         }
-        for (b in listOf(inputsPill, netPill, settingsPill)) bar.add(b)
+        // for a remote whose own power button is broken: three named actions TV Setup runs (Power.kt), the hard one asks again
+        powerPill = BarBtn(this, R.drawable.ic_power, getString(R.string.power), ::dp) {
+            if (!setupThere()) { open = Drop.show(this, bar, needSetup()); return@BarBtn }
+            open = Drop.show(this, bar, listOf(
+                Drop.Row(R.drawable.ic_eye_off, getString(R.string.power_screen_off)) { Power.run(this, Power.SCREEN_OFF) },
+                Drop.Row(R.drawable.ic_moon, getString(R.string.power_standby)) { Power.run(this, Power.STANDBY) },
+                Drop.Row(R.drawable.ic_power, getString(R.string.power_off)) {
+                    open = Drop.show(this, bar, listOf(                // Cancel first: the focus lands on the safe choice
+                        Drop.Row(R.drawable.ic_close, getString(R.string.power_keep)) { },
+                        Drop.Row(R.drawable.ic_power, getString(R.string.power_off_now)) { Power.run(this, Power.POWER_OFF) }))
+                }))
+        }
+        for (b in listOf(inputsPill, netPill, settingsPill, powerPill)) bar.add(b)
         for (b in bar.buttons) b.setOnKeyListener { _, code, e ->
             code == KeyEvent.KEYCODE_DPAD_DOWN && e.action == KeyEvent.ACTION_DOWN && (topAt?.takeIf { it.isAttachedToWindow } ?: firstGridTile())?.let { go(it); true } == true
         }
         // the row's two ends stay put: Android's own search went from Inputs down-left onto a tile, and OK then opened its app
         inputsPill.nextFocusLeftId = View.generateViewId().also { inputsPill.id = it }
-        settingsPill.nextFocusRightId = View.generateViewId().also { settingsPill.id = it }
+        settingsPill.id = View.generateViewId(); powerPill.id = View.generateViewId()
+        powerPill.nextFocusRightId = powerPill.id
         bar.focusIn = { scrollToY(0) }
         head.addView(bar)
         col.addView(head)
@@ -240,6 +257,7 @@ class HomeActivity : Activity() {
         away = false
         if (trimmed && !locked) untrim()                              // a trim queued while away landed between onStart and here (away still true): blurred wallpaper, no banners, until Home was left again (a Coocaa)
         appsSince()
+        Keys.push(this)                                               // TV Setup keeps the keys and the power-on app: told again, so a TV Setup installed later has them
         badgesRead()
         pinsRead()                                                    // a pin is confirmed in its own screen, then the home comes back here
         ui.removeCallbacks(widgetTick); ui.post(widgetTick)
@@ -528,6 +546,7 @@ class HomeActivity : Activity() {
         if (!Motion.glass) glass.hide()
         wall()
         clockAndDay()
+        powerBar()
         widgetsRead()
         val byPkg = apps.associateBy { it.pkg }
         val dockPkgs = Store.list(this, "dock").filter { it in byPkg }
@@ -668,6 +687,9 @@ class HomeActivity : Activity() {
         }
         return super.dispatchKeyEvent(e)
     }
+    /** Colour keys and 0-9 given an app in the settings (Keys): answered here on TV Home's own screen; elsewhere TV Setup's key filter does. */
+    override fun onKeyDown(keyCode: Int, e: KeyEvent): Boolean = (!locked && moving == null && Keys.onKey(this, e)) || super.onKeyDown(keyCode, e)
+
     private val moveKeys = setOf(KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN)
 
     private fun tiles(): List<Tile> {
@@ -884,6 +906,28 @@ class HomeActivity : Activity() {
         @Suppress("DEPRECATION") (applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager).connectionInfo?.ssid
             ?.removeSurrounding("\"")?.takeIf { it.isNotBlank() && it != "<unknown ssid>" }
     } catch (e: Exception) { null }
+
+    private fun setupThere() = try { packageManager.getPackageInfo("dev.tvremote.setup", 0); true } catch (e: Exception) { false }
+
+    /**
+     * Without TV Setup (it runs the power actions: TV Home has no ADB) the button stays and says how to get it: a button that
+     * vanished read as a bug. Downloader opens when the TV has it; the code is the one the site gives for TV Setup.
+     */
+    private fun needSetup(): List<Drop.Row> {
+        val dl = packageManager.getLaunchIntentForPackage("com.esaba.downloader")
+        return listOf(
+            Drop.Row(R.drawable.ic_info, getString(R.string.power_needs_setup)) { },
+            Drop.Row(R.drawable.ic_download, getString(R.string.power_setup_code, SETUP_CODE)) { if (dl != null) try { startActivity(dl) } catch (e: Exception) { } },
+            Drop.Row(R.drawable.ic_phone, getString(R.string.power_setup_phone)) { })
+    }
+
+    /** The power button shows unless Customize switched it off; the settings button is then the row's right end again. */
+    private fun powerBar() {
+        val on = conf.optBoolean("power", true)
+        powerPill.visibility = if (on) View.VISIBLE else View.GONE
+        settingsPill.nextFocusRightId = if (on) powerPill.id else settingsPill.id
+        bar.requestLayout()
+    }
 
     private fun clockAndDay() {
         val h24 = conf.optBoolean("clock24", true)

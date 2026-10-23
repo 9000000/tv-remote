@@ -113,4 +113,44 @@ object Channels {
         val out = sh("$ALLOW_OVERLAY; am start -a android.intent.action.VIEW -d '${link(words)}' $PKG 2>&1")   // URL-encoded: no quote can get in
         return !out.contains("Error") && !out.contains("unable to resolve", true)
     }
+
+    /** The link that plays one stream address in TV Channels: percent-encoded, so only [A-Za-z0-9.*_%-] can reach the shell. */
+    fun streamLink(url: String): String = "tvchannels://url?u=" + URLEncoder.encode(url, "UTF-8").replace("+", "%20")
+
+    /**
+     * A link to the media itself (a playlist or a file), not a page: "Open on TV" sends these to TV Channels' player, others
+     * open as before. By the path's extension, the query left out; js/remote.js isStream is the same list.
+     */
+    fun isStream(u: String): Boolean {
+        if (!validStream(u.trim())) return false
+        val path = try { java.net.URI(u.trim()).path ?: "" } catch (e: Exception) { return false }
+        return STREAM.containsMatchIn(path)
+    }
+    private val STREAM = Regex("\\.(m3u8|m3u|mpd|mp4|m4v|mkv|webm|ts|mov|mp3|aac|m4a|flac|ogg)$", RegexOption.IGNORE_CASE)
+
+    /** One http(s) address, no spaces or control characters, a host, at most 500 characters (as TV Channels' own Edit.validUrl asks). */
+    fun validStream(u: String): Boolean {
+        if (u.length > 500 || u.any { it.isWhitespace() || it.isISOControl() }) return false
+        if (!u.startsWith("http://", true) && !u.startsWith("https://", true)) return false
+        return try { !java.net.URI(u).host.isNullOrEmpty() } catch (e: Exception) { false }
+    }
+
+    /** What came of asking TV Channels to play a link: it did, it is on the TV but too old for the link (no `tvchannels://url`), or it is not there. */
+    enum class Play { OK, OLD, MISSING }
+
+    /** The three-way answer from the shell's words: "unable to resolve" is both an app that is gone and one that does not know the link, so [installed] tells them apart. */
+    fun verdict(out: String, installed: () -> Boolean): Play =
+        if (!out.contains("Error") && !out.contains("unable to resolve", true)) Play.OK else if (installed()) Play.OLD else Play.MISSING
+
+    /** Plays [url] on the TV. An address that is not a plain http(s) link is refused before any shell. */
+    @Throws(IOException::class)
+    fun playResult(sh: (String) -> String, url: String): Play {
+        require(validStream(url.trim())) { "channels:bad_link" }
+        val out = sh("am start -a android.intent.action.VIEW -d '${streamLink(url.trim())}' $PKG 2>&1")   // encoded: no quote can get in
+        return verdict(out) { sh("pm path $PKG").contains("package:") }
+    }
+
+    /** [playResult] as a yes or no: false when TV Channels is not there or too old. */
+    @Throws(IOException::class)
+    fun play(sh: (String) -> String, url: String): Boolean = playResult(sh, url) == Play.OK
 }

@@ -103,6 +103,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         fun adbState(): String = adbState
         /** A command in the TV's shell over our own ADB link (null without one): what apps may not read, like /proc/stat. */
         fun shell(cmd: String): String? = try { running?.link?.get()?.shell(cmd) } catch (e: Exception) { null }
+        /** The ADB session itself (null without the service or a link): HomePower runs its fixed actions on it. */
+        fun adb(): dev.tvremote.core.adb.Adb? = try { running?.link?.get() } catch (e: Exception) { null }
 
         fun enabled(c: Context): Boolean = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean("on", true)
 
@@ -190,6 +192,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     private var keyFix: KeyFixWatch? = null
     internal var keepAwake: KeepAwake? = null
     private var welcome: WelcomeWatch? = null
+    private var autoOpen: AutoOpenWatch? = null
     private var updates: AutoUpdate? = null
     private var serving = true                                        // the web server started, when it is wanted
     @Volatile private var saidAlive = false
@@ -254,6 +257,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         keyFix = KeyFixWatch(this).also { it.start() }
         keepAwake = KeepAwake(this).also { it.start(); it.check() }
         welcome = WelcomeWatch(this).also { it.start() }
+        autoOpen = AutoOpenWatch(this).also { it.start() }
         updates = AutoUpdate(this, version, { try { link?.get() } catch (e: Exception) { null } }) { busyWhy() }.also { it.start() }
         ui.postDelayed(rest, 30000)
         ui.postDelayed(diary, 20000)
@@ -282,6 +286,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         keyFix?.stop()
         keepAwake?.stop()
         welcome?.stop()
+        autoOpen?.stop()
         updates?.stop()
         stats.stopNet()
         stats.stopPower()
@@ -418,8 +423,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
 
     // ---------------------------------------------------------------- the picture, one session for every browser
     /** The picture for the page, from a second session made only while a browser watches: see Feeds. */
-    private fun video(quality: Int, fps: Int, rate: Int, enc: String): HttpServer.Response =
-        feeds.video("$quality/$fps/$rate/$enc") { l, sink -> Tv(this, "127.0.0.1", null, quality, 1280, false, l, sink, fps = fps, bitRate = rate, encoder = enc) }
+    private fun video(quality: Int, fps: Int, rate: Int, enc: String, hand: Boolean): HttpServer.Response =
+        feeds.video("$quality/$fps/$rate/$enc/$hand") { l, sink -> Tv(this, "127.0.0.1", null, quality, 1280, false, l, sink, fps = fps, bitRate = rate, encoder = enc, hand = hand) }
 
     private fun scenes(): JSONArray = try { JSONArray(prefs.getString("scenes", "[]")) } catch (e: Exception) { JSONArray() }
 
@@ -488,7 +493,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 shot.headers["Cache-Control"] = "no-store"
                 return shot
             }
-            "/api/video" -> return video(r.q("q").toIntOrNull() ?: 1, r.q("fps").toIntOrNull() ?: 0, r.q("rate").toIntOrNull() ?: 0, r.q("enc").takeIf { it == "hw" || it == "sw" } ?: "auto")
+            "/api/video" -> return video(r.q("q").toIntOrNull() ?: 1, r.q("fps").toIntOrNull() ?: 0, r.q("rate").toIntOrNull() ?: 0, r.q("enc").takeIf { it == "hw" || it == "sw" } ?: "auto", r.q("hand") == "1")
             "/api/audio" -> return sound(r.query["share"] == "1", r.query["hq"] == "1")
             "/api/watchers" -> return HttpServer.Response.json(feeds.count(try { link?.takeIf { adbState == "ready" }?.get()?.shell(Watchers.CMD) ?: "" } catch (e: Exception) { "" }))
             "/api/rules" -> return try {

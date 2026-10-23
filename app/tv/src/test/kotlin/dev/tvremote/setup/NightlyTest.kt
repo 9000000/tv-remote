@@ -39,5 +39,9 @@ class NightlyTest {
         assertTrue(Nightly.playing("PlaybackState {state=6, position=0"))
         assertFalse(Nightly.playing("PlaybackState {state=2, position=10"))
         assertFalse(Nightly.playing("Sessions Stack - have 0 sessions:"))
+        assertTrue(Nightly.playing("state=PlaybackState {state=PLAYING(3), position=0"))         // Android 10+
+        assertTrue(Nightly.playing("state=PlaybackState {state=BUFFERING(6), position=0"))
+        assertFalse(Nightly.playing("state=PlaybackState {state=ERROR(7), position=0"))
+        assertFalse(Nightly.playing("state=PlaybackState {state=PAUSED(2), position=0"))
     }
 }

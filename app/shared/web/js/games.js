@@ -14,6 +14,7 @@ async function gameCard() {
   if (r && r.installed) put(line, 'textContent', T('games.state', { v: r.version }));
   inst.hidden = !r || !r.latest;                                       // nothing to install: no release carries it yet, or it is up to date
   if (!inst.hidden) put(inst, 'textContent', r.installed ? T('games.update', { v: r.latest }) : T('games.install'));
+  lookOffline(inst, !!(r && r.offline), gameCard);
 }
 
 async function gameInstall() {

@@ -393,7 +393,7 @@ internal fun Activity.menu(title: String, primary: Int, items: List<Triple<Strin
         texts.addView(head)
         if (what.isNotEmpty()) texts.addView(label(what, 13, if (i == primary) 0xffe3ebff.toInt() else MUTED))
         row.addView(texts, LinearLayout.LayoutParams(0, -2, 1f))
-        row.addView(label("›", 24, if (i == primary) Color.WHITE else MUTED))
+        row.addView(label("›", 24, if (i == primary) Color.WHITE else MUTED), LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(10) })
         row.isClickable = true
         row.isFocusable = true
         row.contentDescription = name
