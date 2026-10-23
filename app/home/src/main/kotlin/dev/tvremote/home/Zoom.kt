@@ -22,14 +22,20 @@ import android.widget.FrameLayout
 
 /**
  * Opening an app: a plate grows from the tile to the whole screen (corners going square, darkening so no light frame shows) while
- * the tile's picture glides, at its own size, to the middle; the app starts part way through and fades in over it, Home held still.
- * Until the app draws, the picture pulses: a slow app (a cold start, the first one after an update) shows it is loading, not a
- * black screen. Back on Home the plate shrinks into the tile and the picture glides back into it.
- * Shape after ledat100398/owntv Zoom.java, MIT (own code: one plain view).
- * Motion off: no plate. Calm: shorter, the pulse only fades, and the way back is a short fade, not a shrink.
+ * the tile's picture glides, at its own size, to the middle; the app starts early in the growth and fades in over it, Home held
+ * still. Until the app draws, the picture pulses: a slow app (a cold start, the first one after an update) shows it is loading.
+ * The pulse only changes the picture view's alpha and scale, drawn once: nothing is painted again while the app starts (on a
+ * weak TV, repainting the whole screen 60 times a second slowed the app it waited for).
+ * Back on Home the plate is simply gone and the system's own crossfade brings Home in: it runs outside Home's thread, so it
+ * stays smooth while Home is busy redrawing (a shrink drawn here lost all its frames on a 32-bit FPT box). Android 14 ignores a
+ * launcher's windowAnimationStyle for this (tried: a 1.5x scale never showed), and the app's own picture cannot shrink into
+ * the tile: no app but the system's launcher may take another app's window.
+ * Shape after ledat100398/owntv Zoom.java, MIT (own code: plain views).
+ * Motion off: no plate. Calm: shorter, and the pulse only fades.
  */
 class Zoom(private val a: Activity) {
     private val plate = Plate(a)
+    private val pic = Pic(a)
     private val ui = Handler(Looper.getMainLooper())
     private var anim: ValueAnimator? = null
     private var tile: Tile? = null
@@ -37,7 +43,7 @@ class Zoom(private val a: Activity) {
     private var left = false                                         // Home went to the background since the plate filled the screen
     private var launch: Runnable? = null
     private var guard: Runnable? = null
-    private var pulse: ValueAnimator? = null
+    private var pulse: Animator? = null
 
     val busy get() = anim != null && !held
 
@@ -46,58 +52,64 @@ class Zoom(private val a: Activity) {
         if (!Motion.on || busy || held || !t.isAttachedToWindow || t.pane.width == 0) return false
         end(false)
         tile = t
-        plate.take(t)
+        val snap = plate.take(t)
         val ms = Motion.ms(GROW_MS)
         val content = a.findViewById<ViewGroup>(android.R.id.content)
         if (plate.parent == null) content.addView(plate, FrameLayout.LayoutParams(-1, -1))
-        plate.visibility = View.VISIBLE
-        plate.set(0f, 1f)
+        val from = plate.from
+        if (pic.parent == null) content.addView(pic, FrameLayout.LayoutParams(1, 1))
+        pic.take(snap, from.width().toInt(), from.height().toInt(), plate.corner)
+        plate.visibility = View.VISIBLE; plate.alpha = 1f
+        plate.set(0f)
+        val endX = (content.width - from.width()) / 2f; val endY = (content.height - from.height()) / 2f
+        pic.translationX = from.left; pic.translationY = from.top
         t.alpha = 0f                                                  // same frame as the plate's first draw
         left = false                                                  // before the launch: Home pauses during the growth, and a reset after it made a slow app look failed
         launch = Runnable { launch = null; go(options()) }
         ui.postDelayed(launch!!, (ms * START).toLong())               // not at the end: a slow app must not wait for the plate
-        run(ms) { f -> plate.set(GROW.getInterpolation(f), 1f) } .also { onEnd = { held = true; breathe(); arm() } }
+        run(ms) { f ->
+            val g = GROW.getInterpolation(f)
+            plate.set(g)
+            pic.translationX = from.left + (endX - from.left) * g; pic.translationY = from.top + (endY - from.top) * g
+        }.also { onEnd = { held = true; breathe(); arm() } }
         return true
     }
 
     private var onEnd: (() -> Unit)? = null
 
     private fun options(): Bundle {
-        val o = ActivityOptions.makeCustomAnimation(a, R.anim.zoom_in, R.anim.zoom_hold)
-        // Android 13+: an app's own starting window is often plain black (TV Games, most TV apps); its icon on it instead
-        if (android.os.Build.VERSION.SDK_INT >= 33) o.setSplashScreenStyle(android.window.SplashScreen.SPLASH_SCREEN_STYLE_ICON)
-        return o.toBundle()
+        return ActivityOptions.makeCustomAnimation(a, R.anim.zoom_in, R.anim.zoom_hold).toBundle()
     }
 
-    /** The picture in the middle fades (and, not calm, shrinks a little) in and out until the app covers it or Home is back. */
+    /** The picture in the middle fades (and, not calm, shrinks a little) in and out until the app covers it or Home is back;
+     *  not at once: an app that draws within [PULSE_WAIT] never shows it. */
     private fun breathe() {
         stopBreath()
-        pulse = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = PULSE_MS; repeatCount = ValueAnimator.INFINITE; repeatMode = ValueAnimator.REVERSE
+        val small = if (Motion.calm) 1f else 0.94f
+        pulse = android.animation.ObjectAnimator.ofPropertyValuesHolder(pic,
+            android.animation.PropertyValuesHolder.ofFloat(View.ALPHA, 1f, 0.45f),
+            android.animation.PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, small),
+            android.animation.PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, small)).apply {
+            duration = PULSE_MS; startDelay = PULSE_WAIT; repeatCount = ValueAnimator.INFINITE; repeatMode = ValueAnimator.REVERSE
             interpolator = EASE
-            addUpdateListener { plate.breath(it.animatedValue as Float, !Motion.calm) }
             start()
         }
     }
 
-    private fun stopBreath() { pulse?.let { pulse = null; it.cancel() }; plate.breath(0f, false) }
+    private fun stopBreath() { pulse?.let { pulse = null; it.cancel() }; pic.alpha = 1f; pic.scaleX = 1f; pic.scaleY = 1f }
 
     /** Home's window is gone (the app covers it): nothing to pulse for. */
     fun hidden() = stopBreath()
 
-    /** Home is back (or never left): shrinks into the tile, or fades when it is gone or motion is calm. */
+    /** Home is back: the plate goes before Home's first frame, the window animation does the rest. Home never left (the app
+     *  failed, or only a dialog came): Home is idle, the plate fades out here. */
     fun back() {
-        if (!held) return
-        held = false; guard?.let { ui.removeCallbacks(it) }
+        if (!held && anim == null) return                             // also mid-growth: a quick Back must not leave the plate up
+        guard?.let { ui.removeCallbacks(it) }
+        if (left) { end(true); return }
+        held = false
         stopBreath()
-        val t = tile?.takeIf { it.isAttachedToWindow && it.pane.width > 0 }
-        if (t == null || Motion.calm) {
-            run(if (Motion.calm) 120L else 180L) { f -> plate.alpha = 1f - f }.also { onEnd = { end(true) } }
-            return
-        }
-        plate.take(t, false)
-        val ms = Motion.ms(SHRINK_MS)
-        run(ms) { f -> plate.set(1f - SHRINK.getInterpolation(f), 1f) }.also { onEnd = { end(true) } }
+        run(if (Motion.calm) 120L else 180L) { f -> plate.alpha = 1f - f; pic.alpha = 1f - f }.also { onEnd = { end(true) } }
     }
 
     fun paused() { left = true }
@@ -117,6 +129,7 @@ class Zoom(private val a: Activity) {
         stopBreath()
         held = false
         plate.visibility = View.GONE; plate.alpha = 1f
+        pic.visibility = View.GONE; pic.setLayerType(View.LAYER_TYPE_NONE, null); pic.snap = null
         if (restore) tile?.alpha = 1f
     }
 
@@ -135,37 +148,31 @@ class Zoom(private val a: Activity) {
         anim = v; v.start()
     }
 
-    /** The one view that draws the plate: a round rect from the tile's rect to the screen, in the tile's colour going near black. */
+    /** The plate: a round rect from the tile's rect to the screen, in the tile's colour going near black. Still once grown. */
     private class Plate(c: Context) : View(c) {
-        private val from = RectF(); private val rect = RectF(); private val at = RectF()
+        val from = RectF(); private val rect = RectF()
         private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val pic = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
-        private var snap: Bitmap? = null
-        private var edge = 0xFF1E2230.toInt(); private var corner = 0f
-        private var grow = 0f; private var logo = 1f
-        private var dim = 0f; private var shrink = 0f                 // the pulse: 0 = still
-        private val clip = android.graphics.Path()
+        private var edge = 0xFF1E2230.toInt(); var corner = 0f
+        private var grow = 0f
 
         init { visibility = GONE }
 
-        fun take(t: Tile, picture: Boolean = true) {
+        /** The tile's place, corner and colour; its picture (null: none could be drawn). */
+        fun take(t: Tile): Bitmap? {
             val p = t.pane
             val s = (p.parent as? View)?.scaleX ?: 1f
             val xy = IntArray(2); p.getLocationInWindow(xy)
             from.set(xy[0].toFloat(), xy[1].toFloat(), xy[0] + p.width * s, xy[1] + p.height * s)
             corner = t.corner * s
-            if (!picture) return
-            snap = null
-            try {
+            return try {
                 val b = Bitmap.createBitmap(p.width, p.height, Bitmap.Config.ARGB_8888)
-                p.draw(Canvas(b)); snap = b
-                val one = Bitmap.createScaledBitmap(b, 1, 1, true)
-                edge = one.getPixel(0, 0) or 0xFF000000.toInt()
-            } catch (e: RuntimeException) { edge = 0xFF1E2230.toInt() }  // a banner held as a hardware bitmap cannot be drawn in software: the plain colour stands in
+                p.draw(Canvas(b))
+                edge = Bitmap.createScaledBitmap(b, 1, 1, true).getPixel(0, 0) or 0xFF000000.toInt()
+                b
+            } catch (e: RuntimeException) { edge = 0xFF1E2230.toInt(); null }  // a banner held as a hardware bitmap cannot be drawn in software: the plain colour stands in
         }
 
-        fun set(g: Float, picture: Float) { grow = g; logo = picture.coerceIn(0f, 1f); invalidate() }
-        fun breath(f: Float, scale: Boolean) { dim = f * 0.55f; shrink = if (scale) f * 0.06f else 0f; invalidate() }
+        fun set(g: Float) { grow = g; invalidate() }
 
         override fun onDraw(c: Canvas) {
             val g = grow
@@ -174,17 +181,6 @@ class Zoom(private val a: Activity) {
             val x = 1f - (g / 0.75f).coerceIn(0f, 1f)                 // darkens ahead of its growth: a light tile never becomes a bright screen
             fill.color = mix(edge, DEEP, 1f - x * x)
             c.drawRoundRect(rect, r, r, fill)
-            val b = snap ?: return
-            // the picture keeps the tile's size and glides from the tile to the middle (a stretched logo would blur and look broken)
-            val w = from.width() * (1f - shrink); val h = from.height() * (1f - shrink)
-            val cx = lerp(from.centerX(), width / 2f, g); val cy = lerp(from.centerY(), height / 2f, g)
-            at.set(cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2)
-            pic.alpha = (255 * logo * (1f - dim)).toInt()
-            val save = c.save()
-            clip.rewind(); clip.addRoundRect(at, corner, corner, android.graphics.Path.Direction.CW)
-            c.clipPath(clip)
-            c.drawBitmap(b, null, at, pic)
-            c.restoreToCount(save)
         }
 
         private fun lerp(a: Float, b: Float, t: Float) = a + (b - a) * t
@@ -194,12 +190,38 @@ class Zoom(private val a: Activity) {
         }
     }
 
+    /** The tile's picture at the tile's size (a stretched logo would blur and look broken), in a layer with the tile's round
+     *  corners as its outline: moving, fading and the pulse are the layer's properties, no new drawing. */
+    private class Pic(c: Context) : android.widget.ImageView(c) {
+        var snap: Bitmap? = null
+            set(b) { field = b; setImageBitmap(b) }
+        private var corner = 0f
+
+        init {
+            visibility = GONE; scaleType = ScaleType.FIT_XY
+            outlineProvider = object : android.view.ViewOutlineProvider() {
+                override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, corner) }
+            }
+            clipToOutline = true
+        }
+
+        fun take(b: Bitmap?, w: Int, h: Int, r: Float) {
+            snap = b; corner = r
+            layoutParams = (layoutParams as FrameLayout.LayoutParams).also { it.width = w; it.height = h }
+            pivotX = w / 2f; pivotY = h / 2f
+            alpha = 1f; scaleX = 1f; scaleY = 1f
+            visibility = if (b == null) GONE else VISIBLE
+            setLayerType(LAYER_TYPE_HARDWARE, null)
+            invalidateOutline()
+        }
+    }
+
     companion object {
-        const val GROW_MS = 380L; const val SHRINK_MS = 340L; const val PULSE_MS = 650L   // one way: a breath of 1.3 s
-        const val START = 0.6f
+        const val GROW_MS = 380L; const val PULSE_MS = 650L        // one way: a breath of 1.3 s
+        const val PULSE_WAIT = 350L
+        const val START = 0.25f                                      // the app's start is most of the wait: begin it early
         private const val DEEP = 0xFF07080C.toInt()
         private val GROW = PathInterpolator(0.2f, 0.8f, 0.2f, 1f)
-        private val SHRINK = PathInterpolator(0.3f, 0f, 0.1f, 1f)
         private val EASE = PathInterpolator(0.25f, 0.1f, 0.25f, 1f)
     }
 }

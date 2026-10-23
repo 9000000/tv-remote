@@ -257,6 +257,15 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
 - TV Games closed under the person a moment after opening: TV Setup's AutoUpdate checked that it was not on the screen,
   then pushed and installed for several seconds; opened in between, the install closed it. TV Channels and TV Games are
   now updated by it only while the TV is in standby (their own SelfUpdate still asks in the app).
+- **On a weak TV (FPT Play box: 4 cores, 32-bit, 1.8 GB, ~170 MB free; logcat 2026-10-23):** TV Games cold start 2.66 s,
+  TV Setup 2.13 s, TV Channels 0.89 s, Stremio 5.56 s; Home back from an app skipped 68 frames. So: (1) the pulse repainted the
+  whole plate (bitmap + clipPath) 60 times a second while the app it waited for was starting; now the picture is an ImageView in
+  a layer, clipped by its outline, and the pulse only changes its alpha / scale (no drawing), after 350 ms. (2) The app is
+  started at 25 % of the growth, not 60 % (~140 ms sooner). (3) The shrink on the way back ran on Home's thread just while Home
+  redrew itself, and lost all its frames ("no zoom out"): gone. The plate disappears before Home's first frame and the system's
+  own crossfade brings Home in. A launcher's `windowAnimationStyle` is ignored for this on Android 14 (a test 1.5x scale over
+  1.5 s never showed on the Google TV emulator), and shrinking the app's own picture is not possible: only the system's launcher
+  may take another app's window. `SPLASH_SCREEN_STYLE_ICON` was dropped: it changed nothing.
 
 ## The stock launcher wins over the HOME choice (BRAVIA, Android 9)
 
