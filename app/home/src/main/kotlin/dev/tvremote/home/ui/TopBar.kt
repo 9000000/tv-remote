@@ -67,6 +67,9 @@ class TopBar(c: Context, private val dp: (Number) -> Int) : LinearLayout(c) {
         }
     }
 
+    /** A Drop menu hangs under the capsule, over the word line: the word hid behind its 92% glass as a ghost half-line (smoke, "Settin" under the menu's top edge). */
+    fun holdWord(on: Boolean) { word.animate().cancel(); word.alpha = if (on) 0f else if (buttons.any { it.isFocused }) 1f else 0f }
+
     /** Text under the capsule follows a change of the focused button's word (the network name arrives late). */
     fun relabel(b: BarBtn) { if (b.isFocused) word.text = b.label }
 

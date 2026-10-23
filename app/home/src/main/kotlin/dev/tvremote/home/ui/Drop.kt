@@ -89,6 +89,9 @@ object Drop {
                 width = w; height = WindowManager.LayoutParams.WRAP_CONTENT
             }
         }
+        val bar = anchor.parent as? TopBar
+        bar?.holdWord(true)
+        dialog.setOnDismissListener { bar?.holdWord(false) }
         dialog.show()
         return dialog
     }

@@ -186,7 +186,8 @@ object Picker {
             }
         }
 
-        fun heading(t: String) = Font.on(TextView(a)).apply { text = t.uppercase(); textSize = 12f; setTextColor(PK_DIM); letterSpacing = 0.12f; setPadding(0, dp(18), 0, dp(14)) }
+        // 30 dp above, not 18: the focused tile's name hangs 6-24 dp under its row (TvTile) and drew over the next section's heading (smoke, "Live TV" over "LIVE TILES")
+        fun heading(t: String) = Font.on(TextView(a)).apply { text = t.uppercase(); textSize = 12f; setTextColor(PK_DIM); letterSpacing = 0.12f; setPadding(0, dp(30), 0, dp(14)) }
         fun redraw(limit: Int = Int.MAX_VALUE) {                     // [limit] tiles at most: the first screen, the rest a frame later
             val q = fold(search.text.toString().trim())
             list.removeAllViews()
