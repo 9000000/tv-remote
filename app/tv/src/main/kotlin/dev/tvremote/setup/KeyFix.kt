@@ -55,7 +55,7 @@ object KeyFix {
         val out = HashMap<Int, Rule>()
         for ((code, rule) in RULES) {
             val to = mapped[code] ?: continue                         // not a global key here: the focused app gets it, nothing to fix
-            if (alive(to)) continue                                   // still has its handler: not ours to take
+            if (to != NOBODY && alive(to)) continue                   // still has its handler: not ours to take
             if (rule.act == APP) {
                 val pkg = rule.pkgs.firstOrNull(launchable) ?: continue
                 out[code] = Rule(APP, listOf(pkg))
@@ -95,7 +95,7 @@ object KeyFix {
 
     /** The keys of [RULES] whose global handler is gone (or none of the two, when [mapped] does not name it): the dead ones. */
     fun free(mapped: Map<Int, String>, alive: (String) -> Boolean): Set<Int> =
-        RULES.keys.filter { c -> mapped[c]?.let { !alive(it) } == true }.toSet()
+        RULES.keys.filter { c -> mapped[c]?.let { it == NOBODY || !alive(it) } == true }.toSet()
 
     /** What a person may give an app through TV Setup: the colour keys and the dead ones; every other key keeps its own way. */
     fun allowed(mapped: Map<Int, String>, alive: (String) -> Boolean): Set<Int> = COLOUR + free(mapped, alive)
@@ -121,6 +121,19 @@ object KeyFix {
         return out
     }
 
+    /**
+     * KEYCODE_ALL_APPS where it is no global key (a BRAVIA on Android 9): the window manager sends it to the apps view of the system's
+     * own launcher, so with that launcher off (Optimize TV, a swap) nobody answers ACTION_ALL_APPS and the key does nothing. [NOBODY]
+     * stands for that answer in the map: dead, whatever [alive] says.
+     */
+    const val NOBODY = "-"
+    fun withAllApps(mapped: Map<Int, String>, answered: Boolean): Map<Int, String> =
+        if (284 in mapped || answered) mapped else mapped + (284 to NOBODY)
+
+    /** [systemMap] with the Apps key added where it is dead outside the table: what [plan] and [free] are given on the TV. */
+    fun keyMap(c: Context): Map<Int, String> = withAllApps(systemMap(),
+        try { c.packageManager.queryIntentActivities(Intent(Intent.ACTION_ALL_APPS), 0).isNotEmpty() } catch (e: Exception) { true })
+
     /** The system's own table (overlays of the maker included, as far as the framework shows them to an app). Empty when it cannot be read. */
     fun systemMap(): Map<Int, String> = try {
         val r = Resources.getSystem()
@@ -140,7 +153,7 @@ object KeyFix {
     fun launchable(c: Context, pkg: String): Boolean = c.packageManager.getLeanbackLaunchIntentForPackage(pkg) != null
         || c.packageManager.getLaunchIntentForPackage(pkg) != null
 
-    fun current(c: Context): Map<Int, Rule> = plan(systemMap(), { alive(c, it) }, { launchable(c, it) }, HomeKeys.keys(c))
+    fun current(c: Context): Map<Int, Rule> = plan(keyMap(c), { alive(c, it) }, { launchable(c, it) }, HomeKeys.keys(c))
 
     // ---- on or off -------------------------------------------------------------------------------------------------
 
@@ -195,7 +208,7 @@ object KeyFix {
             val was = Settings.Secure.getString(r, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
             val has = has(was)
             val old = hasStale(was)                                   // updated from a TV Setup that had the services inside: move the entry
-            val map = systemMap()
+            val map = keyMap(c)
             val now0 = plan(map, { alive(c, it) }, { launchable(c, it) }, HomeKeys.keys(c))
             android.util.Log.i("KeyFix", "global keys ${map.size}, to bring back ${now0.keys}, service on=$has")   // adb logcat -s KeyFix
             val need = (wanted(c) && now0.isNotEmpty()) || HoldKeys.on(c)   // a dead key to bring back, or "hold to use Input" (HoldKeys)

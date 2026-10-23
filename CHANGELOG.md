@@ -65,6 +65,9 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Màn hình chào: ảnh dọc chụp bằng iPhone (và nhiều điện thoại khác) không còn nằm ngang trên TV; ảnh được xoay theo thẻ EXIF, cả ảnh xem trước trên trang. Vẽ lên màn hình trên app điện thoại cũng vậy.
 - Gửi nhật ký: app chép nhật ký vào clipboard rồi mở trang tvremote.pages.dev/log để dán vào, gửi qua GitHub issue hoặc nhắn Facebook cho tác giả (không cần tài khoản GitHub).
 - Giới thiệu và các link tải trong app trỏ về trang chủ ngắn tvremote.pages.dev (tải app: tvremote.pages.dev/dl/…), không còn link GitHub dài.
+- Phím Apps (tất cả app) trên TV mà không còn app nào nhận (BRAVIA Android 9 sau khi tắt tvlauncher) giờ mở TV Home thay vì không làm gì; khi launcher gốc còn bật thì phím vẫn như cũ. TV Home → Tùy chỉnh → Phím nhanh cũng cho gắn app vào phím này.
+- TV Home → Tùy chỉnh → Hệ thống có mục "Màn hình chính": mở thẳng màn chọn launcher của TV Setup (chưa có TV Setup thì ghi cách cài bằng mã Downloader). Màn chọn launcher liệt kê thêm các launcher đã cài sẵn trên TV, chọn được ngay bằng remote.
+- Màn chọn launcher của TV Setup hiện ngay với vòng xoay "Đang tải danh sách…" và nút Đóng, không còn đứng im vài giây trước khi mở.
 
 **English**
 - Xiaomi (PatchWall) and older Android TVs (leanback launcher): switching to TV Home or another launcher now turns the stock launcher off, so Home no longer goes back to PatchWall. TV Setup still watches and turns it back on if something breaks; Undo never turns on a PatchWall you turned off yourself.
@@ -124,6 +127,9 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Welcome screen: a portrait photo taken on an iPhone (and many other phones) no longer lies on its side on the TV; it is turned by its EXIF tag, the page's preview too. So is a picture drawn on the screen from the Phone app.
 - Send the log: the app copies its log and opens tvremote.pages.dev/log to paste it, then send it as a GitHub issue or a Facebook message to the author (no GitHub account needed).
 - About and the apps' download links point at the short home page tvremote.pages.dev (downloads: tvremote.pages.dev/dl/…), not long GitHub links.
+- The Apps (all apps) key, when nothing on the TV answers it any more (a BRAVIA on Android 9 with tvlauncher off), now opens TV Home instead of doing nothing; with the stock launcher on it keeps its job. TV Home → Customize → Quick keys can also put an app on it.
+- TV Home → Customize → System has a "Home screen" entry: it opens TV Setup's launcher picker directly (without TV Setup it says how to install it with its Downloader code). The picker also lists launchers already installed on the TV, picked with the remote like the others.
+- TV Setup's launcher picker opens at once with a "Loading the list…" wheel and a Close button, instead of nothing happening for a few seconds.
 
 ## 0.19.0 - 2026-10-23
 

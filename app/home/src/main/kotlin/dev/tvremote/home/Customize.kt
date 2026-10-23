@@ -414,6 +414,28 @@ object Customize {
         tile(R.drawable.ic_power, a.getString(R.string.c_power), null, "power")   // the bar's power button (HomeConfig "power")
         tile(R.drawable.ic_moon, a.getString(R.string.dream), a.getString(R.string.dream_sub), "dream")
         endRow()
+        // another launcher as the home screen: TV Home has no ADB to turn the TV's own one off (without that Home goes on landing on it,
+        // a BRAVIA on Android 9), so TV Setup's picker does it, opened on that screen; without TV Setup the row says how to get it
+        val setup = a.packageManager.getLaunchIntentForPackage("dev.tvremote.setup")?.putExtra("open", "launchers")
+        col.addView(LinearLayout(a).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            background = StateListDrawable().apply {
+                addState(intArrayOf(android.R.attr.state_focused), glass(16, DOOR_FOCUS, Color.WHITE))
+                addState(intArrayOf(), glass(16, DOOR_REST, DOOR_EDGE))
+            }
+            addView(ImageView(a).apply { setImageResource(R.drawable.ic_home); imageTintList = ColorStateList.valueOf(TINT_SYSTEM) }, LinearLayout.LayoutParams(dp(26), dp(26)))
+            addView(LinearLayout(a).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(label(a.getString(R.string.c_home_screen), 15f, Color.WHITE))
+                addView(label(if (setup != null) a.getString(R.string.c_home_screen_sub) else a.getString(R.string.c_home_screen_need, HomeActivity.SETUP_CODE), 12f, DIM))
+            }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
+            onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+            setOnClickListener {
+                val go = setup ?: a.packageManager.getLaunchIntentForPackage("com.esaba.downloader") ?: return@setOnClickListener
+                try { a.startActivity(go.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)); dialog.dismiss() } catch (e: Exception) { }
+            }
+        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
         col = groups[5].col
         launchPage(a, col, ::glass, ::label, gap)
         col = groups[6].col

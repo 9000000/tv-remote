@@ -50,6 +50,13 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
             return pkg.isEmpty() || pkg == "android" || pkg in Setup.WIZARD || "FallbackHome" in comp || factory(comp)
         }
 
+        /**
+         * The packages of [comps] (HOME activities, "pkg/cls") a person could pick as the home screen beside the gallery's [known]: never
+         * the TV's own launchers (picking one is the way back), the wizard, the fallbacks or a factory screen.
+         */
+        fun pickable(comps: List<String>, known: Set<String>): List<String> =
+            comps.filter { !badHome(it) }.map { it.substringBefore('/') }.filter { it !in known && it !in Setup.LAUNCHER }.distinct()
+
         private val FACTORY = Regex("factorytest|factory_test|factorymode", RegexOption.IGNORE_CASE)
         /** A maker's factory-test screen that also answers Home (cleanyourtv skips them): never a home to go back to. */
         fun factory(comp: String): Boolean = FACTORY.containsMatchIn(comp)

@@ -98,7 +98,7 @@ class HomeActivity : Activity() {
         set(v) { getSharedPreferences("nav", MODE_PRIVATE).edit().putString("last", v).apply() }
     private var topAt: View? = null                                 // the tile left by Up: Down from the buttons lands on it
     private var stepping = false
-    private companion object {
+    internal companion object {
         var reopen = false                                            // across recreate(): the panel was open when the language changed
         const val SETUP_CODE = "2397346"                              // TV Setup's Downloader code (README, the site)
     }

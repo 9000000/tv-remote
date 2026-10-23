@@ -84,6 +84,14 @@ class KeyFixTest {
         val gradle = java.io.File("build.gradle.kts").readText()
         assertTrue(gradle.contains("../tvkeys/src/protocol/kotlin") && gradle.contains("packKeys"))
     }
+    @Test fun theAppsKeyOutsideTheTableIsDeadOnlyWhenNobodyAnswersIt() {   // a BRAVIA on Android 9 with tvlauncher off
+        val sony = KeyFix.withAllApps(emptyMap(), answered = false)
+        assertEquals(KeyFix.HOME, KeyFix.plan(sony, { true }, { true })[284]?.act)
+        assertTrue(284 in KeyFix.free(sony) { true })
+        assertTrue(KeyFix.plan(KeyFix.withAllApps(emptyMap(), answered = true), { true }, { true }).isEmpty())   // tvlauncher on: its apps view
+        assertEquals(mapOf(284 to "a/b"), KeyFix.withAllApps(mapOf(284 to "a/b"), answered = false))   // in the table: the table decides
+    }
+
     // ---- TV Home's own key → app map -------------------------------------------------------------------------------
 
     @Test fun colourKeysAreAlwaysFreeAndDeadOnesOnlyWhileDead() {

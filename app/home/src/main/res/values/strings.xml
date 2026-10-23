@@ -239,6 +239,9 @@
     <string name="power_off_now">Power off now</string>
     <string name="power_keep">Keep it on</string>
     <string name="power_missing">Needs the latest TV Setup on this TV</string>
+    <string name="c_home_screen">Home screen</string>
+    <string name="c_home_screen_sub">Use another launcher: TV Setup turns the TV\'s own one off and watches the switch</string>
+    <string name="c_home_screen_need">Needs the TV Setup app · Downloader code %1$s</string>
     <string name="power_needs_setup">The power button needs the TV Setup app</string>
     <string name="power_setup_code">Install with Downloader: code %1$s</string>
     <string name="power_setup_phone">Or install it from the TV Remote phone app</string>

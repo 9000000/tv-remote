@@ -56,6 +56,8 @@ class MainActivity : Activity() {
     private var lanIp = ""
     private var tsIp = ""
     private var adb: Adb? = null
+    /** Opened by TV Home's "Home screen" (extra open=launchers): the launcher picker as soon as ADB is up. */
+    private var openLaunchers = false
     private var setup: Setup? = null
     private var busy = false
     private var focusedOnce = false
@@ -134,6 +136,7 @@ class MainActivity : Activity() {
 
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
+        openLaunchers = intent?.getStringExtra("open") == "launchers"
         dev.tvremote.core.adb.Adb.holdFirstAsk(10000)                       // a phone turning ADB on asks first, then allows us too (AdbPrompt.helpSetup)
         val page = LinearLayout(this)
         page.setBackgroundColor(TvUi.BG)
@@ -562,7 +565,7 @@ class MainActivity : Activity() {
                 try { lastUpdate(a) } catch (ignored: Exception) { }
                 showStatus(s)
                 connecting = false
-                ui { setEnabled(true) }
+                ui { setEnabled(true); if (openLaunchers) { openLaunchers = false; chooseLauncher() } }
             } catch (e: Exception) {
                 adb = null; setup = null
                 connecting = false
@@ -845,20 +848,66 @@ class MainActivity : Activity() {
         val a = adb ?: return
         if (busy) return
         log(T("launcher.loading"))
+        val wait = launcherWait()                                      // the list and its pictures take seconds: the popup is there at once
         Thread {
+            val g0: dev.tvremote.core.ontv.Launchers.Gallery
             val g: dev.tvremote.core.ontv.Launchers.Gallery
             val facts: dev.tvremote.core.ontv.Launchers.Facts
             val have: Set<String>
             val home: String
             try {
-                g = dev.tvremote.core.ontv.Launchers.fetch()
+                g0 = dev.tvremote.core.ontv.Launchers.fetch()
                 facts = dev.tvremote.core.ontv.Launchers.facts { a.shell(it) }
                 have = a.shell("pm list packages").split("\n").map { it.removePrefix("package:").trim() }.toSet()
                 home = dev.tvremote.core.ontv.LauncherSwap({ a.shell(it) }).homeNow().substringBefore('/')
-            } catch (e: Exception) { ui { log("✗ " + reason(e)) }; return@Thread }
+            } catch (e: Exception) { ui { log("✗ " + reason(e)); wait.second.text = "✗ " + reason(e); wait.third.visibility = View.GONE }; return@Thread }
+            g = dev.tvremote.core.ontv.Launchers.Gallery(g0.updated, g0.entries + installedLaunchers(g0), g0.base)
             val pics = g.entries.associate { e -> e.id to try { dev.tvremote.core.ontv.Launchers.thumb(g, e).let { android.graphics.BitmapFactory.decodeByteArray(it, 0, it.size) } } catch (x: Exception) { null } }
-            ui { showLaunchers(a, g, facts, have, home, pics) }
+            ui { if (wait.first.isShowing) { showLaunchers(a, g, facts, have, home, pics); wait.first.dismiss() } }   // closed while loading: nothing opens
         }.start()
+    }
+
+    /** The launcher popup's frame while its list loads: the same card, a wheel and Close; the list opens over it, then it goes. */
+    private fun launcherWait(): Triple<android.app.Dialog, TextView, ProgressBar> {
+        val d = android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen)
+        val root = android.widget.FrameLayout(this)
+        root.setBackgroundColor(Color.argb(215, 5, 7, 10))
+        val card = LinearLayout(this)
+        card.orientation = LinearLayout.VERTICAL
+        card.background = box(TvUi.CARD, 22, 0)
+        card.setPadding(dp(32), dp(26), dp(32), dp(22))
+        card.addView(text(T("launcher.title"), 22, TvUi.TEXT, true))
+        val row = LinearLayout(this)
+        row.gravity = Gravity.CENTER_VERTICAL
+        row.setPadding(0, dp(28), 0, dp(28))
+        val wheel = ProgressBar(this)
+        row.addView(wheel, LinearLayout.LayoutParams(dp(32), dp(32)))
+        val say = text(T("launcher.loading"), 15, MUTED, false)
+        row.addView(say, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(14) })
+        card.addView(row)
+        val close = smallButton(T("common.close")) { d.dismiss() }
+        card.addView(close, LinearLayout.LayoutParams(-2, -2))
+        root.addView(card, android.widget.FrameLayout.LayoutParams(dp(820), -2, Gravity.CENTER))
+        d.setContentView(root)
+        d.show()
+        close.requestFocus()
+        return Triple(d, say, wheel)
+    }
+
+    /**
+     * The launchers already on the TV that the list does not have (one put on by hand, a brand's spare): picked like the others, through
+     * the same safe swap ([LauncherInstall] finds them installed). The TV's own ones are the way back, not a choice here.
+     */
+    private fun installedLaunchers(g: dev.tvremote.core.ontv.Launchers.Gallery): List<dev.tvremote.core.ontv.Launchers.Entry> {
+        val comps = try {
+            packageManager.queryIntentActivities(android.content.Intent(android.content.Intent.ACTION_MAIN).addCategory(android.content.Intent.CATEGORY_HOME), 0)
+                .map { it.activityInfo.packageName + "/" + it.activityInfo.name }
+        } catch (e: Exception) { emptyList() }
+        return dev.tvremote.core.ontv.LauncherSwap.pickable(comps, g.entries.map { it.pkg }.toSet()).map { pkg ->
+            val name = try { packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString() } catch (e: Exception) { pkg }
+            dev.tvremote.core.ontv.Launchers.Entry(pkg, pkg, name, mapOf(Words.lang to T("launcher.installed")), "", "", "", "", "installed", "",
+                emptyList(), "", true, true, 0, true, emptyMap())
+        }
     }
 
     private fun showLaunchers(a: Adb, g: dev.tvremote.core.ontv.Launchers.Gallery, facts: dev.tvremote.core.ontv.Launchers.Facts, have: Set<String>, home: String,
@@ -913,7 +962,10 @@ class MainActivity : Activity() {
             r.isClickable = true
             val pic = ImageView(this)
             pic.scaleType = ImageView.ScaleType.CENTER_CROP
-            pics[e.id]?.let { pic.setImageBitmap(it) }
+            pics[e.id]?.let { pic.setImageBitmap(it) } ?: try {          // one already on the TV: its own banner or icon
+                pic.scaleType = ImageView.ScaleType.FIT_CENTER
+                pic.setImageDrawable(packageManager.getApplicationBanner(e.pkg) ?: packageManager.getApplicationIcon(e.pkg))
+            } catch (x: Exception) { }
             r.addView(pic, LinearLayout.LayoutParams(dp(128), dp(72)))
             val w = LinearLayout(this)
             w.orientation = LinearLayout.VERTICAL

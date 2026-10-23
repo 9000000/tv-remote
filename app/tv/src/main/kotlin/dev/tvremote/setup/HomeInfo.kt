@@ -118,7 +118,7 @@ class HomeInfo : ContentProvider() {
                 if (HomeKeys.active(c) && !RemoteService.isRunning()) try { RemoteService.start(c, true) } catch (e: Exception) { }   // the wake-up hearing lives there
             }, "home-keys").apply { isDaemon = true }.start()
         }
-        val free = KeyFix.free(KeyFix.systemMap()) { KeyFix.alive(c, it) }
+        val free = KeyFix.free(KeyFix.keyMap(c)) { KeyFix.alive(c, it) }
         return Bundle().apply { putString("json", JSONObject().put("free", JSONArray(free.sorted())).put("can", KeyFix.can(c)).put("wanted", KeyFix.wanted(c)).toString()) }
     }
 

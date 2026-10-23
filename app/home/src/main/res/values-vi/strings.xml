@@ -237,6 +237,9 @@
     <string name="power_off_now">Tắt hẳn ngay</string>
     <string name="power_keep">Thôi, giữ bật</string>
     <string name="power_missing">Cần TV Setup mới nhất trên TV này</string>
+    <string name="c_home_screen">Màn hình chính</string>
+    <string name="c_home_screen_sub">Dùng launcher khác: TV Setup tắt launcher gốc và canh chừng việc đổi</string>
+    <string name="c_home_screen_need">Cần app TV Setup · Downloader mã %1$s</string>
     <string name="power_needs_setup">Nút nguồn cần app TV Setup trên TV</string>
     <string name="power_setup_code">Cài bằng Downloader: mã %1$s</string>
     <string name="power_setup_phone">Hoặc cài từ app TV Remote trên điện thoại</string>

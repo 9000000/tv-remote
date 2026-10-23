@@ -2504,6 +2504,7 @@
  "launcher.nofit": "Not for this TV",
  "launcher.in_use": "In use",
  "launcher.install": "Install and use",
+ "launcher.installed": "Already on this TV",
  "launcher.use": "Use",
  "launcher.play": "Open in Google Play",
  "launcher.badge_play": "Google Play",

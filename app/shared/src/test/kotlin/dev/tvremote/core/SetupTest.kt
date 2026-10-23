@@ -165,6 +165,12 @@ class SetupTest {
         assertTrue(tv.disabled.isEmpty())
     }
 
+    @Test fun thePickerOffersInstalledLaunchersButNotTheTvsOwn() {
+        val comps = listOf("com.my.launcher/.Main", "com.my.launcher/.Other", "com.google.android.tvlauncher/.MainActivity", "com.mitv.tvhome/.Home",
+            "com.android.tv.settings/.FallbackHome", "${Setup.WIZARD[0]}/.RecoveryActivity", "com.brand/.FactoryTestHome", Setup.HOME_PKG + "/.HomeActivity")
+        assertEquals(listOf("com.my.launcher"), dev.tvremote.core.ontv.LauncherSwap.pickable(comps, setOf(Setup.HOME_PKG)))
+    }
+
     @Test fun undoNeverTurnsOnAPatchWallItDidNotTurnOff() {
         val tv = FakeTv(true, "com.mitv.tvhome", "com.google.android.tvlauncher", Setup.HOME_PKG)
         tv.disabled += listOf("com.mitv.tvhome", "com.google.android.tvlauncher")   // an older version's tvlauncher; PatchWall the person's
