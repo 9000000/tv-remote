@@ -337,7 +337,7 @@ class HomeActivity : Activity() {
         WebWall.wake(web); snapper?.resume()                          // a page keeps running only while Home is on screen: it is a slideshow, not a service
     }
 
-    override fun onStop() { away = true; zoom.hidden(); ManageServer.stop(); WebWall.sleep(web); snapper?.pause(); super.onStop() }   // the phone-photo page lives only while its QR screen is in front
+    override fun onStop() { away = true; zoom.hidden(); ManageServer.release(); WebWall.sleep(web); snapper?.pause(); super.onStop() }   // the QR stops opening the page; a phone already on it goes on until idle
 
     /** Memory is short and the screen is hidden: the wallpaper's big bitmap and every banner go, the next [onStart] brings them back. */
     override fun onTrimMemory(level: Int) {

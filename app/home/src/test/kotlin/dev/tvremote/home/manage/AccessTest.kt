@@ -92,6 +92,17 @@ class AccessTest {
         now = 6000; assertEquals(0, a.connected())
     }
 
+    @Test fun closedKeyKeepsSessions() {
+        val a = access(idle = 10_000, session = 100_000); val k = a.issue(); val s = a.redeem(k)
+        a.closeKey()
+        assertNull("the QR left the screen: its key opens nothing", a.redeem(k))
+        assertTrue("the phone already in keeps configuring", a.check(s))
+        assertEquals(1, a.connected())
+        val k2 = a.issue(keep = true)
+        assertTrue("the QR opened again: the phone stays", a.check(s)); assertNotNull(a.redeem(k2)); assertEquals(2, a.connected())
+        now = 10_000; assertFalse("idle still ends it", a.check(s))
+    }
+
     @Test fun realKeysAreLongAndDifferent() {
         val a = Access()
         val k1 = a.issue(); val k2 = a.issue()

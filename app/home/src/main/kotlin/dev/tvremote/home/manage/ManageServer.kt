@@ -59,16 +59,17 @@ object ManageServer {
     private val main = Handler(Looper.getMainLooper())
     private val stopper = Runnable { stop(); listener?.stopped() }
 
-    /** Starts it if it is not running, with a new key either way (so an old QR dies); null when there is no LAN address to be reached on. */
+    /** Starts it if it is not running, with a new key either way (so an old QR dies, not the phones in); null when there is no LAN address to be reached on. */
     @Synchronized fun start(c: Context): Session? {
         val ip = lan(c) ?: return null
-        if (sock == null) {
+        val fresh = sock == null
+        if (fresh) {
             val s = try { ServerSocket(PORT) } catch (e: Exception) { try { ServerSocket(0) } catch (e2: Exception) { return null } }
             sock = s; pool = Executors.newCachedThreadPool(); access = Access()
             val app = c.applicationContext; val a = access
             pool.execute { accept(app, s, a) }
         }
-        val key = access.issue()
+        val key = access.issue(keep = !fresh)                            // a phone still on the page from the last QR stays ([release])
         touch()
         val shown = "$ip:${sock!!.localPort}"
         return Session("http://$shown/?k=$key", shown)
@@ -79,6 +80,15 @@ object ManageServer {
         try { sock?.close() } catch (e: Exception) { }
         sock = null
         pool.shutdownNow()
+    }
+
+    /**
+     * The QR screen closed (or Home went away): with a phone on the page the server stays for it, only the key dies, so the owner can
+     * close the QR to look at Home while the phone still changes it; it stops after [Access.IDLE_MS] idle or the session's hour.
+     * With nobody on it, it stops now.
+     */
+    @Synchronized fun release() {
+        if (sock != null && access.connected() > 0) access.closeKey() else stop()
     }
 
     fun running() = sock != null
@@ -122,6 +132,7 @@ object ManageServer {
                     if (b == null) reply(out, 404, "text/plain", "not found") else reply(out, 200, type(req.path), b)
                 }
                 !post && req.path == "/h/config" -> json(out, onMain { HomeApi.snapshot(c, null, null, req.query["thumbs"] == "1") })
+                !post && req.path == "/h/web/check" -> json(out, dev.tvremote.home.WebCheck.check(req.query["u"] ?: ""))   // the background page, tried from the TV itself (this thread, not main)
                 post && req.path == "/h/config" -> {
                     val change = JSONObject(String(read(req, MAX_JSON), Charsets.UTF_8))
                     val f = HomeConfig.forward(change)

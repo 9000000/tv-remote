@@ -24,7 +24,7 @@ import dev.tvremote.home.R
 
 /**
  * The QR screen of "Manage from phone" (and of the web-page background): the code, the short address for a phone that cannot scan, and what to do. The server
- * ([ManageServer]) lives exactly as long as this dialog (and at most 10 minutes); [onSet] runs when this screen closes after a photo became the background (the settings panel behind it closes too, to show it).
+ * ([ManageServer]) lives as long as this dialog, or after it while a phone that came in is still on the page (at most 10 minutes idle: [ManageServer.release]); [onSet] runs when this screen closes after a photo became the background (the settings panel behind it closes too, to show it).
  */
 object PhotoScreen {
     private val SOFT = 0xFFB8C7E6.toInt()
@@ -113,8 +113,8 @@ object PhotoScreen {
         }
         dialog.setContentView(panel, ViewGroup.LayoutParams(w, ViewGroup.LayoutParams.WRAP_CONTENT))
         dialog.window?.apply { setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)); setLayout(w, ViewGroup.LayoutParams.WRAP_CONTENT); setDimAmount(0.6f) }
-        // closing this screen (OK, Back, or the activity going away) is what stops the server
-        dialog.setOnDismissListener { ManageServer.listener = null; ManageServer.stop(); if (changed) onSet() }
+        // closing this screen (OK, Back, or the activity going away) ends the QR; a phone already on the page keeps it ([ManageServer.release])
+        dialog.setOnDismissListener { ManageServer.listener = null; ManageServer.release(); if (changed) onSet() }
         dialog.setOnShowListener { (field ?: firstChip ?: close).requestFocus() }
         // the field takes the focus but the keyboard waits for OK: a phone's remote types into it without one
         dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN or android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)

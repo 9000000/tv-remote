@@ -370,3 +370,12 @@ file is kept (`Providers.warm`, fresh categories) nothing waits and it is one sh
 is known (`Accept-Encoding: identity` on that GET: with gzip the bytes counted would pass the length); otherwise the spinner stays.
 Throttling the emulator (`adb emu network speed`) delays the handshake, not the body, so the bar was seen by sleeping 250 ms per chunk
 once (not kept); screenshot: the bar at 3 % of the 326 KB United States list.
+
+## TV Home's settings page: groups, one save for the order, a session that outlives its QR (`js/home.js`, `js/home_order.js`, `Access.kt`, `WebCheck.kt`)
+
+- **Groups as on the TV** (`GROUPS` in home.js = `Customize.kt`'s seven): everything on one page was a long scroll, and the person setting it up already knows the TV's groups. Each row shows a summary (`sums()`) so most questions are answered without opening it.
+- **The app order is saved once.** A write per move made TV Home rebuild its grid at every step and the page wait for each answer. The grid is now a preview (`homeGridOrder` = HomeActivity.show's order: old dock first, then `order`, the rest A-Z); Save sends `{dock: [], order: all}`.
+- **Drag listens on the window, not with pointer capture.** Moving the dragged node in the DOM (`before`/`after`) drops its pointer capture: in Chrome the drag stopped after one step and the pointerup went elsewhere (tile stuck "lifted"). Measured on the FPT's page in Chrome 2026-10-24. The app pictures are `<img>`: `dragstart` is cancelled and the img gets `pointer-events:none`, or the browser's own image drag takes the pointer.
+- **Closing the QR keeps phones that came in** (`ManageServer.release`, `Access.closeKey`): the person closes the QR to look at the TV while still setting it up. The key stops working (a new QR = a new key, `issue(keep = true)` keeps the sessions); idle 10 min still ends it.
+- **The web background is tried where it will be shown** (`WebCheck`): TV Home's own page asks the TV (`/h/web/check`), so a server on the home network that the phone cannot see is judged by the TV; host pages ask from the host (`/api/home/web/check`). FPT measured: dns 173 ms, refused 36 ms, 404 / 200 + title 0.4-0.8 s. A failed check still allows "Use anyway" (a page needing a login on the TV).
+

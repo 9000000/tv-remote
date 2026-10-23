@@ -23,7 +23,6 @@ const HOME_KEY_WORDS = { 183: 'home.key_red', 184: 'home.key_green', 185: 'home.
 const homeKeyName = (code) => HOME_KEY_WORDS[code] ? T(HOME_KEY_WORDS[code]) : String(code - 7);   // KEYCODE_0 is 7
 const HOME_PHOTO_MAX = 10;                                            // HomeConfig.PHOTO_MAX
 const homeThumbs = {};                                                // a photo's small picture by id + its stamp: asked of the TV once
-const HOME_DOCK_MAX = 6;                                             // HomeConfig.DOCK_MAX
 const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer', 'weather', 'clock'];          // HomeConfig.WIDGETS, in the order drawn
 // A TV Home with "wsizes" sizes each card (big / small) and packs them (homePack); one older than that has only the preset layouts below
 const HOME_BIG_KINDS = ['system', 'usage', 'calendar', 'weather', 'qr1', 'qr2', 'qr3', 'qr4'];     // HomeConfig.defaultSize: these are big until chosen otherwise
@@ -145,13 +144,13 @@ async function homeOpen() {
 
   // live tiles (HomeConfig "tiles"): what TV Setup offers, each on or off the app grid; only a TV Home that reports "tilesOk"
   const tilesHead = el('h3', { textContent: T('home.tiles_head') }), tilesNote = el('p', { className: 'note' }), tilesList = el('div', { className: 'list' });
-  const dock = el('div', { className: 'list' }), hidden = el('div', { className: 'list' });
-  const addDock = el('button', { type: 'button', className: 'small', textContent: T('home.add'), onclick: async () => {
-    const p = await chooseApp(T('home.pick_dock'), apps().filter((x) => !r.config.dock.includes(x)));
-    if (p) send({ dock: [...r.config.dock, p] });
-  } });
+  // no favourites any more: TV Home is one grid, and its order is edited as that grid (home_order.js), saved in one go
+  const hidden = el('div', { className: 'list' });
+  const orderHead = el('h3', { textContent: T('home.order') }), orderBox = el('div', { className: 'group' });
+  const orderFace = (k) => { if (Target.kind(k) !== 'app') return qkLogo(r.config, k); const i = appIcon(k); onMeta(k, (m) => i.fill(m)); return i; };
+  const orderDraw = homeOrderBox(orderBox, orderFace, (k) => appLabel(k), (change) => send(change));
   const addHidden = el('button', { type: 'button', className: 'small', textContent: T('home.hide'), onclick: async () => {
-    const p = await chooseApp(T('home.pick_hide'), apps().filter((x) => !r.config.hidden.includes(x) && !r.config.dock.includes(x)));
+    const p = await chooseApp(T('home.pick_hide'), apps().filter((x) => !r.config.hidden.includes(x)));
     if (p) send({ hidden: [...r.config.hidden, p] });
   } });
   const walls = el('div', { className: 'fchips homewalls' }), holdNote = el('p', { className: 'note', textContent: T('home.photo_hold'), hidden: true });
@@ -231,16 +230,12 @@ async function homeOpen() {
     if (card) send({ qrs: { ...r.config.qrs, [k]: card }, widgets: [...r.config.widgets, k] });
   } });
   const qrHead = el('div', { className: 'card-head' }, el('h3', { textContent: T('home.qr') }), qrAdd), qrList = el('div', { className: 'list' }), qrNote = el('p', { className: 'note', textContent: T('home.qr_note') });
-  // a web page as the background and the screensaver (HomeConfig.wurl, http or https); the TV shows it, so a typo costs nothing but the gradient
-  const web = el('input', { type: 'url', maxLength: 500, placeholder: T('home.web_ph'), 'aria-label': T('home.web') });
-  const webSet = el('button', { type: 'button', className: 'primary', textContent: T('home.web_set'), onclick: () => {
-    const u = web.value.trim();
-    if (u && !/^https?:\/\/[^\s/?#]+\S*$/i.test(u)) return toast(T('home.web_bad'));
-    send(u ? { wurl: u, wall: 'web' } : { wurl: '' });
-  } });
-  const webOff = el('button', { type: 'button', textContent: T('home.web_clear'), onclick: () => { web.value = ''; send({ wurl: '' }); } });
-  web.addEventListener('keydown', (e) => { if (e.key === 'Enter') webSet.click(); });
-  const webHead = el('h3', { textContent: T('home.web') }), webLine = UI.line(web, webSet, webOff), webNote = el('p', { className: 'note', textContent: T('home.web_note') });
+  // a web page as the background and the screensaver (HomeConfig.wurl, http or https): asked in its own box when its tile is pressed
+  // (a field at the end of thirty tiles went unseen), tried first (homeWebAsk); while it shows, its address and a way to change it
+  const webAsk = async () => { const u = await homeWebAsk(r.config.wurl || ''); if (u) send({ wurl: u, wall: 'web' }); };
+  const webNow = el('span'), webEdit = el('button', { type: 'button', className: 'small', textContent: T('home.web_change'), onclick: webAsk });
+  const webOff = el('button', { type: 'button', className: 'small', textContent: T('home.web_clear'), onclick: () => send({ wurl: '' }) });
+  const webHead = el('h3', { textContent: T('home.web') }), webLine = el('div', { className: 'item' }, el('div', { className: 'name' }, webNow), el('div', { className: 'acts' }, webEdit, webOff));
   // how the page updates (HomeConfig wmode / wsnap / wkeep): live behind Home, or a picture taken every few minutes (frost and dim as on a photo)
   const webModeHead = el('h3', { textContent: T('home.web_mode') }), webMode = el('div', { className: 'fchips' });
   const webEveryHead = el('h3', { textContent: T('home.web_every') }), webEvery = el('div', { className: 'fchips' });
@@ -281,16 +276,10 @@ async function homeOpen() {
     tilesList.replaceChildren(...have.map((k) => row(k, [tool('✕', T('home.tile_remove'), () => send({ tiles: have.filter((x) => x !== k) }))])));   // a tile whose provider is away stays, to take off
   }
   function draw() {
-    const c = r.config, d = c.dock;
+    const c = r.config;
     drawTiles(c);
-    const move = (i, j) => { const n = d.slice(); [n[i], n[j]] = [n[j], n[i]]; send({ dock: n }); };
-    dock.replaceChildren(...d.map((p, i) => row(p, [
-      tool('↑', T('home.up'), () => move(i, i - 1), i === 0),
-      tool('↓', T('home.down'), () => move(i, i + 1), i === d.length - 1),
-      tool('✕', T('home.remove'), () => send({ dock: d.filter((x) => x !== p) })),
-    ])));
-    if (!d.length) dock.append(el('p', { className: 'empty', textContent: T('home.none_dock') }));
-    addDock.disabled = d.length >= HOME_DOCK_MAX;
+    orderHead.hidden = orderBox.hidden = c.order === undefined;      // a TV Home older than its own order
+    if (c.order !== undefined) orderDraw(c, r.apps);
     hidden.replaceChildren(...c.hidden.map((p) => row(p, [el('button', { type: 'button', className: 'small', textContent: T('home.show'), onclick: () => send({ hidden: c.hidden.filter((x) => x !== p) }) })])));
     if (!c.hidden.length) hidden.append(el('p', { className: 'empty', textContent: T('home.none_hidden') }));
     upload.disabled = !!c.wrotate && (r.photos || []).length >= HOME_PHOTO_MAX;
@@ -369,7 +358,7 @@ async function homeOpen() {
     put(layNote, 'textContent', T('home.layout_note', { n: places }));
     lay.replaceChildren(...Object.keys(HOME_LAYOUTS).filter((k) => (c.wlayouts || HOME_OLD_LAYOUTS).includes(k)).map((k) => el('button', { type: 'button', className: c.wlayout === k ? 'on' : '', onclick: () => send({ wlayout: k }) },
       layGlyph(k), el('span', { textContent: T(HOME_LAYOUTS[k]) }))));
-    webHead.hidden = webLine.hidden = webNote.hidden = !(c.wrotate && c.wweb);   // a TV Home older than the web page
+    webHead.hidden = webLine.hidden = !(c.wrotate && c.wweb && c.wurl);   // a TV Home older than the web page; none set yet: its tile asks
     const onWeb = c.wall === 'web' && c.wmode !== undefined, snap = c.wmode === 'snap';   // a TV Home older than the modes has none
     webModeHead.hidden = webMode.hidden = webModeNote.hidden = !onWeb;
     webEveryHead.hidden = webEvery.hidden = webKeep.hidden = !(onWeb && snap);
@@ -377,8 +366,7 @@ async function homeOpen() {
     webEvery.replaceChildren(...[1, 5, 15, 30, 60].map((n) => el('button', { type: 'button', className: c.wsnap === n ? 'on' : '', 'aria-pressed': String(c.wsnap === n), textContent: T('home.web_every_n', { n }), onclick: () => send({ wsnap: n }) })));   // HomeConfig.WSNAPS
     webKeepBox.checked = !!c.wkeep;
     webModeNote.textContent = T(!snap ? 'home.web_mode_note_live' : c.wkeep ? 'home.web_mode_note_keep' : 'home.web_mode_note_snap');
-    if (document.activeElement !== web) web.value = c.wurl || '';
-    webOff.disabled = !c.wurl;
+    put(webNow, 'textContent', c.wurl || '');
     placeHead.hidden = placeLine.hidden = c.place === undefined || !has('weather');   // a TV Home older than the weather; and only while the card is on
     if (document.activeElement !== place) place.value = c.place || '';
     placeAuto.disabled = !c.place;
@@ -395,6 +383,7 @@ async function homeOpen() {
     noteHead.hidden = noteLine.hidden = c.note === undefined;     // a TV Home older than the note
     if (document.activeElement !== note) note.value = c.note || '';
     unpin.disabled = !c.note;
+    sums(c);
   }
 
   // A TV Home that rotates (config.wrotate): the scenes drawn here by the same recipe the TV uses, the colours, Bing's picture
@@ -403,7 +392,7 @@ async function homeOpen() {
     const multi = c.wevery !== 'off', set = c.walls || [c.wall];
     const isOn = (k) => multi ? set.includes(k) : c.wall === k;
     const pick = (k) => {
-      if (k === 'web') return c.wurl ? send({ wall: 'web', wurl: c.wurl }) : web.focus();   // the page is never in a set; the address goes along because the client cleans a change alone (web without one is Night); none yet: ask for it
+      if (k === 'web') return webAsk();                               // always the box with the address (the one in use filled in, checked again): a line for it under the pictures was out of sight
       if (set.includes('web')) return send({ wall: k });                // leaving the page: the set starts again from this one
       if (!multi) return send({ wall: k });
       const n = set.includes(k) ? set.filter((x) => x !== k) : [...set, k];
@@ -437,29 +426,124 @@ async function homeOpen() {
     everyNote.hidden = !multi;
   }
 
-  // TV Home's own page (home.html) has nothing else to show: the settings are the page itself, not a box over an empty one
+  // TV Home's own page (home.html) has nothing else to show: the settings are the page itself, not a box over an empty one.
+  // Seven groups as on the TV (Customize.kt): a row each with what is set now under its name, a page of controls behind it. All
+  // at once was a page of forty controls nobody found anything in. On TV Home's own page the phone's Back goes back to the list.
   const page = homeLink.direct;
+  const check = (box, words) => el('label', { className: 'check' }, box, el('span', { textContent: T(words) }));
+  const GROUPS = [
+    ['bg', 'image', 330, 'home.wall', [everyHead, every, everyNote, el('div', { className: 'actions' }, upload), walls, holdNote, webHead, webLine, webModeHead, webMode, webEveryHead, webEvery, webKeep, webModeNote, shadeHead, shade, shadeNote, file, galHead, gal, credit]],
+    ['look', 'sparkle', 180, 'home.g_look', [focusHead, focus, motionHead, motion, check(anim, 'home.anim'), check(clock, 'home.clock24'), check(greet, 'home.greet')]],
+    ['layout', 'apps', 265, 'home.g_layout', [colsHead, cols, rowsHead, rowsLine, rowsNote, orderHead, orderBox, tilesHead, tilesNote, addHome, tilesList,
+      el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden]],
+    ['widgets', 'chart', 210, 'home.g_widgets', [wHead, wList, ...wLines, packHead, packBox, packNote, layHead, lay, layNote, placeHead, placeLine, noteHead, noteLine, qrHead, qrList, qrNote]],
+    ['system', 'power', 260, 'home.g_system', [check(power, 'home.power'), powerOld, check(dream, 'home.dream')]],
+    ['keys', 'keyboard', 230, 'home.keys', [keysOld, check(keyOn, 'home.keys_on'), keysNote, keysList, check(autoOn, 'home.auto_on'), autoNote]],
+    ['lang', 'globe', 200, 'home.lang', [langs]],
+  ];
+  keysHead.hidden = langHead.hidden = true;                           // the page's own title says it
+  const title = el('h2', { textContent: T('home.title') });
+  const backBtn = el('button', { type: 'button', className: 'small', textContent: T('common.back'), hidden: true, onclick: () => page ? history.back() : go(null) });
+  const subs = {}, rows = {}, pages = {};
+  const menu = el('div', { className: 'homemenu' }, ...GROUPS.map(([k, icon, hue, words]) => {
+    subs[k] = el('small');
+    return (rows[k] = el('button', { type: 'button', className: 'mitem', onclick: () => go(k) },
+      el('span', { className: 'mi' }, UI.icon(icon, hue)), el('span', { className: 'mt' }, el('b', { textContent: T(words) }), subs[k]), el('span', { className: 'mgo', textContent: '›' })));
+  }));
+  const body = el('div', { className: 'homepages' }, menu, ...GROUPS.map(([k, , , , kids]) => (pages[k] = el('div', { className: 'homepage', hidden: true }, ...kids))));
+  let at = null;
+  function go(k, push = true) {
+    const from = at; at = k;
+    menu.hidden = !!k; for (const [g, v] of Object.entries(pages)) v.hidden = g !== k;
+    put(title, 'textContent', k ? T(GROUPS.find((g) => g[0] === k)[3]) : T('home.title'));
+    backBtn.hidden = !k;
+    if (page && push && k) history.pushState({ homeGroup: k }, '');
+    (page ? document.scrollingElement : d).scrollTop = 0;
+    const first = k ? pages[k].querySelector('button:not([hidden]):not(:disabled), input:not(:disabled)') : rows[from];
+    if (first && (window.ONTV || !k)) first.focus({ preventScroll: true });   // back on the list: on the row it came from; a phone gets no keyboard popping up
+  }
+  const onPop = () => { if (at) go(null, false); };
+  if (page) addEventListener('popstate', onPop);
+  const onOff = (v) => T(v ? 'home.sum_on' : 'home.sum_off');
+  const wallWord = (c) => c.wall === 'web' ? T('home.wall_web') : /^photo\d*$/.test(c.wall) ? T('home.wall_photo_n', { n: (+c.wall.slice(5) || 1) })
+    : c.wall === 'bing' ? T('home.wall_bing') : HOME_WALL_WORDS[c.wall] ? T(HOME_WALL_WORDS[c.wall]) : c.wall;
+  // the line under each group's name, as the TV's Customize writes it (summary())
+  function sums(c) {
+    const set = c.wrotate && c.wevery && c.wevery !== 'off' && c.wall !== 'web';
+    put(subs.bg, 'textContent', [set ? T('home.sum_bg_set', { n: (c.walls || []).length }) : wallWord(c), c.shadeOk ? T('home.sum_shade', { n: c.shade ?? 50 }) : ''].filter(Boolean).join(' · '));
+    put(subs.look, 'textContent', [c.focus !== undefined ? T(c.focus === 'ring' ? 'home.focus_ring' : 'home.focus_glass') : '',
+      c.anim === false ? T('home.sum_still') : c.motion !== undefined ? T(c.motion === 'calm' ? 'home.motion_calm' : c.motion === 'full' ? 'home.motion_full' : 'home.motion_auto') : '',
+      c.clock24 ? '24h' : '12h'].filter(Boolean).join(' · '));
+    put(subs.layout, 'textContent', [c.colsOk ? T('home.sum_cols', { n: c.cols || 5 }) : '', c.rowsOk ? (c.rows >= 1 ? T('home.sum_rows', { n: c.rows }) : T('home.sum_rows_auto')) : '',
+      c.hidden.length ? T('home.sum_hidden', { n: c.hidden.length }) : ''].filter(Boolean).join(' · '));
+    put(subs.widgets, 'textContent', c.widgets ? T('home.sum_widgets', { n: c.widgets.length }) : '');
+    put(subs.system, 'textContent', T('home.sum_system', { power: onOff(c.power !== false), dream: onOff(!!c.dream) }));
+    put(subs.keys, 'textContent', T('home.sum_keys', { keys: onOff(!!c.keyon), auto: onOff(!!c.autoon) }));
+    put(subs.lang, 'textContent', T(c.lang === 'vi' ? 'home.lang_vi' : c.lang === 'en' ? 'home.lang_en' : 'home.lang_tv'));
+    rows.lang.hidden = c.lang === undefined;                        // a TV Home older than the choice
+    rows.widgets.hidden = !c.widgets;
+  }
   const d = el('dialog', { className: 'ask homeask' + (page ? ' page' : '') }, el('div', { className: 'card' },
-    el('div', { className: 'card-head' }, el('h2', { textContent: T('home.title') }), page ? null : el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
-    el('div', { className: 'card-head' }, el('h3', { textContent: T('home.dock') }), addDock), dock,
-    el('h3', { textContent: T('home.wall') }), everyHead, every, everyNote, el('div', { className: 'actions' }, upload), walls, holdNote, webHead, webLine, webNote, webModeHead, webMode, webEveryHead, webEvery, webKeep, webModeNote, shadeHead, shade, shadeNote, file,
-    galHead, gal, credit,
-    langHead, langs, focusHead, focus, colsHead, cols, rowsHead, rowsLine, rowsNote, motionHead, motion,
-    el('label', { className: 'check' }, clock, el('span', { textContent: T('home.clock24') })),
-    el('label', { className: 'check' }, greet, el('span', { textContent: T('home.greet') })),
-    el('label', { className: 'check' }, anim, el('span', { textContent: T('home.anim') })),
-    el('label', { className: 'check' }, power, el('span', { textContent: T('home.power') })), powerOld,
-    el('label', { className: 'check' }, dream, el('span', { textContent: T('home.dream') })),
-    keysHead, keysOld, el('label', { className: 'check' }, keyOn, el('span', { textContent: T('home.keys_on') })), keysNote, keysList,
-    el('label', { className: 'check' }, autoOn, el('span', { textContent: T('home.auto_on') })), autoNote,
-    tilesHead, tilesNote, addHome, tilesList,
-    wHead, wList, ...wLines, packHead, packBox, packNote, layHead, lay, layNote, placeHead, placeLine,
-    noteHead, noteLine, qrHead, qrList, qrNote,
-    el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden));
-  d.addEventListener('close', () => { d.remove(); if (page) put('main', 'hidden', false); homeCard(); });
+    el('div', { className: 'card-head' }, title, el('div', { className: 'tools' }, backBtn,
+      page ? null : el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() }))),
+    body));
+  d.addEventListener('cancel', (e) => { if (at && !page) { e.preventDefault(); go(null); } });   // Esc, or the TV's Back: to the list first
+  d.addEventListener('close', () => { d.remove(); if (page) { put('main', 'hidden', false); removeEventListener('popstate', onPop); } homeCard(); });
   draw();
   document.body.append(d);
   if (page) { put('main', 'hidden', true); d.show(); } else d.showModal();
+  if (!window.ONTV) document.activeElement?.blur();                   // opening focuses the first row: ringed, it read as picked; the D-pad needs it
+}
+
+// The web page for the background, in a box of its own: the address, then the TV (or, on a host's page, this device) tries it
+// (WebCheck.kt) and says what it found, the page's title when it opened. Use is pressed once: it tries first, and a page that
+// failed asks to be used anyway once the reason shows (a page that needs the TV's own login, a host not on the TV's Wi-Fi).
+// The address, or null.
+const HOME_WEB_WHY = { bad: 'home.web_why_bad', dns: 'home.web_why_dns', refused: 'home.web_why_refused', timeout: 'home.web_why_timeout', ssl: 'home.web_why_ssl',
+  cleartext: 'home.web_why_cleartext', status: 'home.web_why_status', loop: 'home.web_why_loop', type: 'home.web_why_type', net: 'home.web_why_net' };   // WebCheck.kt's "why"
+function homeWebAsk(now) {
+  return new Promise((done) => {
+    let tried = '', good = false;
+    const input = el('input', { type: 'url', inputMode: 'url', maxLength: 500, value: now, placeholder: T('home.web_ph'), 'aria-label': T('home.web'), autocomplete: 'off' });
+    const state = el('p', { className: 'state', hidden: true }), warn = el('p', { className: 'warnline', hidden: true });
+    const tryBtn = el('button', { type: 'button', textContent: T('home.web_try') });
+    const use = el('button', { type: 'button', className: 'primary', textContent: T('home.web_set') });
+    const cancel = el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => d.close() });
+    const d = el('dialog', { className: 'ask homeweb' }, el('div', { className: 'card' },
+      el('h2', { textContent: T('home.web') }),
+      el('p', { className: 'note', textContent: T('home.web_note') }),
+      UI.line(input, tryBtn), state, warn,
+      el('p', { className: 'note', textContent: T(homeLink.direct ? 'home.web_from_tv' : 'home.web_from_here') }),
+      el('div', { className: 'actions' }, cancel, use)));
+    let answer = null;
+    const clean = () => input.value.trim();
+    const shown = (ok, words) => { state.hidden = !ok; warn.hidden = ok; put(ok ? state : warn, 'textContent', words); };
+    const test = async () => {
+      const u = clean();
+      if (!/^https?:\/\/[^\s/?#]+\S*$/i.test(u)) { shown(false, T('home.web_bad')); input.focus(); return false; }
+      const back = UI.busy(tryBtn, T('home.web_trying')); use.disabled = true;
+      let a;
+      try { a = await homeLink.check(u); } finally { back(); use.disabled = false; }
+      tried = u; good = !!(a && a.ok);
+      if (!a) shown(false, T('home.web_why_net'));
+      else if (a.ok) shown(true, a.title ? T('home.web_ok_title', { title: a.title }) : T('home.web_ok'));
+      else shown(false, T(HOME_WEB_WHY[a.why] || 'home.web_why_net', { code: a.code || '', type: a.type || '' }));
+      put(use, 'textContent', T(good ? 'home.web_set' : 'home.web_anyway'));
+      return good;
+    };
+    tryBtn.onclick = test;
+    use.onclick = async () => {
+      const u = clean();
+      if (u !== tried && !await test()) return;                       // failed just now: the reason shows, and the button is Use anyway
+      answer = u; d.close();
+    };
+    input.addEventListener('input', () => { if (clean() !== tried) { state.hidden = warn.hidden = true; put(use, 'textContent', T('home.web_set')); } });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); use.click(); } });
+    d.addEventListener('close', () => { d.remove(); done(answer); });
+    document.body.append(d); d.showModal();
+    if (!window.ONTV) input.focus();
+    if (now) test();                                                  // the page in use: is it still there
+  });
 }
 
 // The wallpaper gallery (docs/home/wallpapers.json, signed): small pictures to choose from; the one chosen is downloaded here,

@@ -6,9 +6,10 @@ import java.security.SecureRandom
 /**
  * Who may use [ManageServer]: the key in the QR's address, then a session. Plain JVM (a clock and a source of randomness are
  * handed in), so the rules are tested without a TV.
- *  - [issue] makes a key and cuts every session of the last one.
+ *  - [issue] makes a key and cuts every session of the last one (or keeps them).
  *  - [redeem] takes the key: a new session id for the cookie each time, or null (wrong, no key, or voided by too many wrong guesses).
  *  - [check] says whether a cookie is a live session: not past [sessionMs] since it was made, and the server not idle for [idleMs].
+ *  - [closeKey]: the QR is gone, nobody new gets in; those in stay until their session or the idle time ends.
  *  - [idle] is true when nothing authorised came for [idleMs]: the server stops itself then.
  * Time is the monotonic clock, as every wait in the project: the TV setting its clock from the network must not end or extend a session.
  */
@@ -23,10 +24,13 @@ class Access(
     private var last = clock()
     private var wrong = 0
 
-    /** A new key (the old one and all sessions stop working); the idle time starts again. */
-    @Synchronized fun issue(): String {
+    /**
+     * A new key (the old one stops working); the idle time starts again. The sessions go too, unless [keep]: the owner opened the QR
+     * again while a phone was still configuring (for a second phone, or to see the address), and it must not be thrown out.
+     */
+    @Synchronized fun issue(keep: Boolean = false): String {
         val k = random(KEY_LEN)
-        key = k; sessions.clear(); wrong = 0; last = clock()
+        key = k; if (!keep) sessions.clear(); wrong = 0; last = clock()
         return k
     }
 
@@ -63,6 +67,9 @@ class Access(
     @Synchronized fun connected(): Int { val now = clock(); sessions.values.removeAll { now - it >= sessionMs }; return sessions.size }
 
     @Synchronized fun keyOpen() = key != null
+
+    /** The QR left the screen: its key stops opening the page, the phones already in keep their sessions (they are configuring). */
+    @Synchronized fun closeKey() { key = null }
 
     companion object {
         const val IDLE_MS = 10 * 60 * 1000L                             // no request for 10 minutes: the server stops

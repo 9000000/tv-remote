@@ -21,7 +21,7 @@ async function api(path, data, quiet) {
       return null;
     }
     return await r.json();
-  } catch { homeGone(); return null; }                                // no answer: the TV closed its QR screen, which stops the page's server
+  } catch { homeGone(); return null; }                                // no answer: the page's server stopped (idle, or TV Home restarted)
 }
 
 function homeGone() {
