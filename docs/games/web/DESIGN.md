@@ -19,7 +19,7 @@ References: **table / card / board games** -> `tienlen/` (+ `_lib/table.js`); **
 | Plain browser | Without `tvpad` the page says what it is for (`nopad.js`, after an 800 ms grace for an old WebView), and a Kit game can still be tried with the keyboard. | `_lib/nopad.js:38-40` |
 | Language | vi / en by `navigator.language` (`startsWith('vi')`), nothing else. Every word comes from one words object. | `_lib/table.js:32-43`, `_lib/kit.js:10,15-18` |
 | Offline-ish | Each game is its own folder of plain files, served by the site; no CDN, no web font, no network call other than a data file next to the page (quiz `bank.json`, last good copy in `localStorage`). | `quiz/quiz.js:14-15` |
-| Lobby and pause are not yours | TV Games draws the lobby (QR, seats, Ready, 3-2-1) and the pause card, and freezes the page meanwhile. Time things with game ticks / `requestAnimationFrame` so a frozen page really stops. | `WEBGAMES.md` "Lobby", `quiz/quiz.js:3` |
+| Lobby and pause are not yours | TV Games draws the lobby (QR, seats, Ready, 3-2-1) and the pause card, and freezes the page meanwhile; a page's own title screen is `_lib/lobby.js`, never a new design. Time things with game ticks / `requestAnimationFrame` so a frozen page really stops. | `WEBGAMES.md` "Lobby", `quiz/quiz.js:3` |
 | The TV is the authority | Phones show only their own seat and send presses; the page checks every move. | `_lib/table.js:71-82` |
 
 ## 2. Tokens
@@ -85,7 +85,7 @@ QR modal closes itself after 30 s (`credit.js:41`); bots think 0.9-1.5 s (`table
 | QR modal | `credit.js`: tag bottom-right + `#gh24q` | The only modal pattern: centered card, QR 30vh on white, title / text / link / "press any key to close"; any key closes and is eaten (`credit.js:46-51`). Copy it for any other info card. |
 | Key hints | text with arrows, or `<kbd>` styled as in `credit.js:18` (inherits font, `#94a3b8`) | e.g. `◀  CPU players: 2  ▶` (`kit.js:193`), `↓ QR code` (`credit.js:10-11`). Show a hint only while the key does that (`credit.js:52`). |
 | Toasts / events | no shared toast | Private (a refusal) -> `t.say(seat, words)` + vibrate 250 ms on that phone (`table.js:246`); the pad shows it 6 s (`pad.js:169`). Public -> the `#msg` line, or a dim event line (meono `#evt`, typhu `#log`). Never `alert()`. |
-| Join QR | TV Games' lobby shows it | A page shows its own only when it is its own lobby: `tvpad.qr(px)`, white plate, pixelated (`kit.js:196-198`). |
+| Lobby (own screen) | `_lib/lobby.js`: `Lobby.set({title, tag, chips, min, go, extra, hints})` / `Lobby.hide()`; used by the Kit title, quiz and caro | **Spec** (matches TV Games' native `LobbyView`): QR on the left 40% (drawn once from `qrModules`, whole pixels per module, 4-module white quiet zone, about 590 px at 1080p) with "Scan to play" 4.4vh + the short link 2.4vh under it; right: title 9vh, tag 3vh, players as chips (colour badge `P1`, name; a CPU is a dashed ghost; a joining phone pops in `.28s` + `ui` tick), ONE pill: "OK Start" (blue, glow) when `have >= min`, else amber "Needs N more"; hints in one dim 2.1vh line at the bottom (stops before the credit tag). DOM only, no animation but the pop: the Kit loop polls at 20 Hz and draws no canvas while it shows, so an idle lobby has ~0 rAF. Inside TV Games (`window.TVPadNative`) the native lobby has just shown the QR, so the page leaves it out (layout centres; `?lobbyqr` forces it, tests / plain hosts). Table games start at once and have no lobby of their own. |
 
 ### Sound
 
@@ -166,7 +166,7 @@ List the game in `docs/games/games.json` "web" (`players`, `min`, `genre`, `img`
 - No control that needs a pointer, hover or a long press; no text field on the TV (use `{text:true}` on a phone).
 - No text under 1.8vh, no fixed `px` on an unscaled page, no layout that only fits one aspect ratio without letterboxing.
 - No colours outside the tokens; seat colours only from `Table.COLORS` (or the same four values); never colour a seat by anything else.
-- No `alert()`, `confirm()`, `prompt()`, no own pause or join screen (TV Games has them), no own Back handling.
+- No `alert()`, `confirm()`, `prompt()`, no own pause screen and no join screen of your own design (TV Games has them; a title screen uses `_lib/lobby.js`), no own Back handling.
 - Never trust a phone: check every act; never show one player's hand on the TV.
 - No words in code outside the `W` object; no third language branch (vi / en only, en is the fallback).
 - No `localStorage` for game state: only a cache of data and the TV's high scores (quiz `quiz.best`, top 10), wrapped in try/catch (`quiz.js:15`).
@@ -203,4 +203,4 @@ List the game in `docs/games/games.json` "web" (`players`, `min`, `genre`, `img`
 | 9 | Game-over overlay: scrim `e8` / `ea` / `ee`, z-index none / 20 / 6 / 5, title `4.4vw` / `56px` / `6vh`, typhu's columns differ | `tienlen.css:38-45`, `cangua.css:46-54`, `meono.css:59-66`, `typhu.css:54-62` |
 | 10 | `#msg` placement: top 9% (tienlen, colors), 5% (meono), 40vh (typhu), beside the die (cangua) | the same files |
 | 11 | Own palettes beside the tokens: meono `--bg #0d0a18 --ink #f5f3ff --dim #a99fcb --card #1a1530`; caro X/O `#3b82f6 / #ef4444` and cursors `#0e9f4a / #7c3aed` | `meono.css:1`, `caro.js:15` |
-| 12 | Kit games draw a join QR on their title screen, from before TV Games had a lobby | `kit.js:196-198` |
+| 12 | (fixed) Kit / quiz / caro title screens now share `_lib/lobby.js`; table games still start without one | `lobby.js` |

@@ -4,12 +4,12 @@
 // Words come in vi / en by the language of the TV (navigator.language); times count ticks, so the Pause card really pauses it.
 const VI = (navigator.language || '').toLowerCase().startsWith('vi');
 const T = VI ? {
-  title: 'Đố vui', join: 'Quét mã QR để vào chơi, 1–4 người', start: 'Nhấn Start trên điện thoại (hoặc OK) để bắt đầu', solo: 'Chơi một mình cũng được',
+  title: 'Đố vui', join: '1–4 người chơi, mỗi người một điện thoại', start: 'Nhấn Start trên điện thoại (hoặc OK) để bắt đầu', solo: 'Chơi một mình cũng được',
   q: (i, n) => `Câu ${i} / ${n}`, win: 'Người thắng', again: 'Nhấn Start trên điện thoại hoặc OK để chơi lại', all: 'Tất cả', cat: 'Chủ đề', loading: 'Đang tải câu hỏi…', fail: 'Không tải được câu hỏi. Kiểm tra mạng của TV rồi thử lại.', p: (n) => `Người chơi ${n}`, nobody: 'Không ai đúng',
   right: 'Đúng! +', wrong: 'Sai', late: 'Hết giờ', wait: 'Chờ người khác…', tie: 'Hòa!',
   you: 'Bạn', okSolo: 'Hoặc nhấn OK trên remote để chơi một mình', keys: '▲ ▼ ◀ ▶ chọn · OK trả lời', best: 'Điểm cao', newBest: 'Kỷ lục mới!', score: (n) => `${n} điểm`, okAgain: 'Nhấn OK để chơi lại',
 } : {
-  title: 'Quiz', join: 'Scan the QR code to join, 1-4 players', start: 'Press Start on a phone (or OK) to begin', solo: 'Playing alone is fine too',
+  title: 'Quiz', join: '1-4 players, one phone each', start: 'Press Start on a phone (or OK) to begin', solo: 'Playing alone is fine too',
   q: (i, n) => `Question ${i} / ${n}`, win: 'Winner', again: 'Press Start on a phone or OK to play again', all: 'All', cat: 'Topic', loading: 'Loading questions…', fail: 'Could not load the questions. Check the TV\'s network and try again.', p: (n) => `Player ${n}`, nobody: 'Nobody got it',
   right: 'Right! +', wrong: 'Wrong', late: 'Time up', wait: 'Waiting for the others…', tie: 'A tie!',
   you: 'You', okSolo: 'Or press OK on the remote to play alone', keys: '▲ ▼ ◀ ▶ pick · OK answers', best: 'High scores', newBest: 'New record!', score: (n) => `${n} pts`, okAgain: 'Press OK to play again',
@@ -77,20 +77,22 @@ function drawBoard() {
 function lobby() {
   st.mode = 'lobby'; st.solo = false; clearInterval(timer);
   if (pad) pad.layout('all', { buttons: BANK ? ['L', 'START', 'R'] : ['START'], dpad: false });
-  const ps = players();
-  const kids = [h('h1', '', T.title), h('p', 'sub', T.join)];
-  const w = h('div', 'who'); ps.forEach((p) => w.append(who(p))); kids.push(w);
-  if (!BANK) kids.push(h('p', 'sub', loading ? T.loading : T.fail));
-  else { const c = h('div', 'cats'); c.append(h('span', 'arr', '◀'), h('span', 'cat', T.cat + ': ' + catName()), h('span', 'arr', '▶')); kids.push(c); }
-  if (BANK) kids.push(h('p', 'sub', ps.length ? T.start : T.okSolo));
-  const b = bestList(); if (b.length && BANK) kids.push(bestBox(b, [], 3));
-  stage.replaceChildren(...kids); drawBoard();
+  stage.replaceChildren();                                       // the lobby (_lib/lobby.js) is the screen; it redraws only when something changed
+  const ps = players(), extra = document.createElement('div');
+  if (BANK) {
+    const c = h('div', 'cats'); c.append(h('span', 'arr', '◀'), h('span', 'cat', T.cat + ': ' + catName()), h('span', 'arr', '▶')); extra.append(c);
+    const b = bestList(); if (b.length) extra.append(bestBox(b, [], 3));
+  }
+  Lobby.set({ title: T.title, tag: BANK ? T.join : loading ? T.loading : T.fail, min: 0, go: BANK ? undefined : false, chips: ps.map((p) => ({ id: 'p' + p, name: pname(p), color: col(p), label: 'P' + p })),
+    extra, hints: BANK ? [ps.length ? T.start : T.okSolo, T.solo] : [] });
+  drawBoard();
 }
 
 function begin(remote) {
   if (!BANK) return;
   st.solo = !players().length;
   if (st.solo && !remote) return;                                  // alone only from the remote's OK
+  Lobby.hide();
   seats().forEach((p) => { score[p] = 0; });
   st.qs = pick(ROUNDS); st.i = 0;
   if (pad) pad.layout('all', { choices: KEYS });

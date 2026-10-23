@@ -3,11 +3,11 @@
 // Rules and the bot are in ai.js (node-tested); this file is the screen, the pads and the turns.
 const VI = (navigator.language || '').toLowerCase().startsWith('vi');
 const T = VI ? {
-  title: 'Cờ caro', rule: 'Đủ 5 quân liền nhau là thắng', join: 'Quét mã QR để vào chơi', p: (n) => `Người chơi ${n}`, bot: 'Máy',
+  title: 'Cờ caro', rule: 'Đủ 5 quân liền nhau là thắng', lobbyHint: 'Hoặc nhấn OK để chơi với máy', p: (n) => `Người chơi ${n}`, bot: 'Máy',
   turn: (n) => `Lượt của ${n}`, yours: 'Đến lượt bạn', think: 'Máy đang nghĩ…', win: (n) => `${n} thắng!`, draw: 'Hòa!',
   again: 'Nhấn A hoặc Start trên điện thoại (hoặc OK) để chơi ván mới', watch: 'Hai người đang chơi, bạn xem nhé', watching: (n) => `${n} người đang xem`, first: 'đi trước',
 } : {
-  title: 'Gomoku', rule: 'Five in a row wins', join: 'Scan the QR code to join', p: (n) => `Player ${n}`, bot: 'Computer',
+  title: 'Gomoku', rule: 'Five in a row wins', lobbyHint: 'Or press OK to play the computer', p: (n) => `Player ${n}`, bot: 'Computer',
   turn: (n) => `${n}'s turn`, yours: 'Your turn', think: 'Thinking…', win: (n) => `${n} wins!`, draw: 'A draw!',
   again: 'Press A or Start on a phone (or OK) for a new game', watch: 'Two players are playing, enjoy watching', watching: (n) => `${n} watching`, first: 'goes first',
 };
@@ -16,7 +16,7 @@ const CUR = ['#0e9f4a', '#7c3aed'], XC = '#2563eb', OC = '#dc2626';       // cur
 const pad = window.tvpad;
 const cv = document.getElementById('cv'), side = document.getElementById('side'), ctx = cv.getContext('2d');
 const g = { b: Caro.create(), seat: [1, 0], cur: [{ x: 7, y: 7 }, { x: 7, y: 7 }], starter: 0, ts: 0, last: -1, wl: null, over: false, wait: false, wins: [0, 0], draw: false };
-let botTimer = 0, endAt = 0, qrUrl = '';
+let botTimer = 0, endAt = 0, lobbyDone = false;   // lobbyDone: nobody on a phone and OK was pressed: the remote plays the computer
 const holds = {};
 const h = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
 const players = () => (pad ? pad.players() : [1]);
@@ -138,6 +138,7 @@ function twice(src, dir) {
   return !!o && o.src !== src && now - o.t < 150;
 }
 document.addEventListener('keydown', (e) => {
+  if (lobbyOn()) { e.preventDefault(); if (e.key === 'Enter' && !e.repeat && !g.wait) { lobbyDone = true; render(); } return; }   // the lobby takes the keys: OK starts against the computer
   if (e.key === 'Enter') { if (g.over) { if (performance.now() - endAt > 1200) newGame(); } else press(0, 'A', true); }
   else if (KEY[e.key]) {
     e.preventDefault();
@@ -188,14 +189,14 @@ function drawBoard() {
   }
 }
 
+// the lobby shows before the first stone with no phone on (the remote would play the computer), or while phones wait for a seat
+const lobbyOn = () => !!pad && (g.wait || (!lobbyDone && !players().length && !g.b.some((v) => v) && !g.over));
 function drawSide() {
   const kids = [h('h1', '', T.title), h('p', 'sub', T.rule)];
-  const joinQr = (small) => {
-    kids.push(h('p', small ? 'sub' : 'msg', T.join));
-    try { const q = qrUrl || (qrUrl = pad.qr && pad.qr(400)); if (q) { const im = h('img', small ? 'qr sm' : 'qr'); im.src = q; kids.push(im); } } catch (e) { }
-  };
-  if (g.wait) joinQr(false);
-  else {
+  if (lobbyOn()) { side.replaceChildren(); Lobby.set({ title: T.title, tag: T.rule, min: 0, go: g.wait ? false : undefined, hints: [T.lobbyHint],
+    chips: players().map((p) => ({ id: 'p' + p, name: pname(p), color: CUR[Math.min(1, p - 1)], label: 'P' + p })) }); return; }
+  Lobby.hide();
+  {
     for (let s = 0; s < 2; s++) {
       const m = markOf(s), e = h('div', 'seat' + (!g.over && g.ts === s ? ' turn' : ''));
       e.style.setProperty('--pc', CUR[s]);
@@ -211,7 +212,6 @@ function drawSide() {
     if (g.over) kids.push(h('p', 'sub', T.again));
     const w = players().filter((p) => !g.seat.includes(p)).length;
     if (w) kids.push(h('p', 'sub', T.watching(w)));
-    if (pad && !players().length) joinQr(true);
   }
   side.replaceChildren(...kids);
 }

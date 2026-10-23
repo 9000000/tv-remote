@@ -1,7 +1,7 @@
 'use strict';
 // Kit: what the TV Games arcade pages (hockey, tanks, cycles, sumo) share: input from the phones (window.tvpad), Bluetooth pads (Gamepad API)
 // and the keyboard; a fixed 60 Hz step with a 1280x720 canvas that lowers its own resolution on a slow TV box; generated sound (WebAudio,
-// no files); the title screen (players, CPU seats, QR), the score bar, the result screen and a rematch. A game gives Kit.run() its rules:
+// no files); the title screen (the shared _lib/lobby.js: QR, players, CPU seats), the score bar, the result screen and a rematch. A game gives Kit.run() its rules:
 //   { id, title:{vi,en}, tag:{vi,en}, help:{vi:[..],en:[..]}, total:[min,max] seats, buttons:['A'], start(slots), update(dt), draw(ctx) }
 // and calls Kit.over(winnerSlotIndex | -1, scoreLines) when the match is decided. ?auto=N plays N CPUs against each other (tests, fps),
 // ?p=2 gives the keyboard a second player, ?fps=1 shows the frame rate, ?mute silences it.
@@ -168,34 +168,18 @@
   K.layout = () => { if (pad && G) { try { pad.layout('all', { buttons: K.mode !== 'play' ? ['A', 'START'] : G.buttons || ['A'] }); } catch (e) { } } };
 
   // ---------------- screens
-  let qrImg = null, titleT = 0, overInfo = null, countdown = 0, lastNum = 0;
+  let titleT = 0, overInfo = null, countdown = 0, lastNum = 0;
   function frameBg(c, t) {                                                               // drifting orbs, only on title / result
     for (let i = 0; i < 5; i++) { const a = t * 0.15 + i * 1.3; K.light(c, W / 2 + Math.cos(a * 1.1 + i) * 520, H / 2 + Math.sin(a * 0.9 + i * 2) * 260, PCOL[i % 4], 260, 0.16); }
   }
-  function drawTitle(c) {
-    frameBg(c, titleT);
-    const sc = seats(), pulse = 1 + Math.sin(titleT * 3) * 0.02;
-    c.save(); c.translate(W / 2, 150); c.scale(pulse, pulse);
-    K.text(c, K.tr(G.title), 4, 5, 104, 'rgba(0,0,0,.5)'); K.text(c, K.tr(G.title), 0, 0, 104, '#fff'); c.restore();
-    K.text(c, K.fit(c, K.tr(G.tag), W - 80, 30, 600), W / 2, 236, 30, '#b6c4dc', 'center', 600);
-    const help = (G.help && G.help[VI ? 'vi' : 'en']) || [];
-    help.forEach((l, i) => K.text(c, K.fit(c, l, W - 100, 26, 500), W / 2, 296 + i * 36, 26, '#d7e2f5', 'center', 500));
-    const n = sc.out.length, cw = 250, gx = W / 2 - (n * cw + (n - 1) * 20) / 2;
-    sc.out.forEach((s, i) => {
-      const x = gx + i * (cw + 20), y = 450;
-      c.fillStyle = 'rgba(255,255,255,.07)'; K.rr(c, x, y, cw, 84, 18); c.fill();
-      c.fillStyle = s.color; K.rr(c, x, y, 10, 84, 5); c.fill();
-      c.beginPath(); c.arc(x + 48, y + 42, 20, 0, 6.283); c.fill();
-      K.text(c, K.fit(c, s.name, cw - 94, 24), x + 82, y + 30, 24, '#fff', 'left');
-      K.text(c, s.human ? 'P' + s.pad : 'CPU', x + 82, y + 59, 22, '#b6c4dc', 'left', 600);
-    });
-    if (G.total[1] > sc.hs.length) K.text(c, '◀  ' + words.cpuSeats + ': ' + sc.nc + '  ▶', W / 2, 580, 26, '#b6c4dc', 'center', 600);
-    const a = 0.55 + 0.45 * Math.sin(titleT * 4);
-    c.globalAlpha = a; K.text(c, words.startHint, W / 2, 640, 32, '#fff'); c.globalAlpha = 1;
-    if (qrImg && qrImg.complete && qrImg.naturalWidth) {
-      c.imageSmoothingEnabled = false; c.fillStyle = '#fff'; K.rr(c, W - 196, H - 214, 172, 172, 12); c.fill(); c.drawImage(qrImg, W - 188, H - 206, 156, 156);
-      c.imageSmoothingEnabled = true; K.text(c, words.scan, W - 110, H - 24, 22, '#b6c4dc', 'center', 600);
-    }
+  // The title screen is the shared lobby (_lib/lobby.js): QR hero, player chips, one OK pill. It is DOM, so the loop below stops drawing
+  // the canvas and polls input at 20 Hz while it shows (no rAF: an idle lobby costs ~nothing on a weak TV box).
+  function lobbyShow() {
+    const sc = seats(), tx = (o) => (o && (VI ? o.vi : o.en)) || '', help = (G.help && G.help[VI ? 'vi' : 'en']) || [];
+    let extra = null;
+    if (G.total[1] > sc.hs.length) { extra = document.createElement('div'); extra.textContent = '\u25C0  ' + words.cpuSeats + ': ' + sc.nc + '  \u25B6'; extra.style.cssText = 'font-size:2.8vh;color:#b6c4dc'; }
+    Lobby.set({ title: tx(G.title), tag: tx(G.tag), min: 0, extra, hints: help.concat(extra ? [words.arrows] : []),
+      chips: sc.out.map((s, i) => (s.human ? { id: 'p' + s.pad, name: s.name, color: s.color, label: 'P' + s.pad } : { id: 'c' + i, name: s.name, color: s.color, label: 'C', cpu: true })) });
   }
   K.hud = (c, slots, extra) => {                                                         // the score bar across the top
     const n = slots.length, cw = Math.min(290, (W - 60) / n - 14), gx = W / 2 - (n * cw + (n - 1) * 14) / 2;
@@ -235,7 +219,7 @@
     if (+Q.get('auto')) setTimeout(() => begin(), 3500);
   };
   function begin() {
-    const sc = seats(); K.slots = sc.out; K.mode = 'play'; K.t = 0; K.layout(); G.start(K.slots); K.sfx.go();
+    Lobby.hide(); const sc = seats(); K.slots = sc.out; K.mode = 'play'; K.t = 0; K.layout(); G.start(K.slots); K.sfx.go();
   }
   function toTitle() { K.mode = 'title'; cpuWant = null; K.layout(); }
 
@@ -244,7 +228,7 @@
   function step() {
     K.t += DT; titleT += DT; K.shakeAmt *= 0.9; partsDone = false;
     if (K.mode === 'title') {
-      const hs = K.humans(); let go = false, dl = 0;
+      lobbyShow(); const hs = K.humans(); let go = false, dl = 0;
       hs.forEach((n) => { const s = st(n); if (s.pulse || s.start) go = true; if (s.edgeL) dl--; if (s.edgeR) dl++; });
       if (dl) { const sc = seats(); cpuWant = sc.nc + dl; const sc2 = seats(); if (sc2.nc !== sc.nc) K.sfx.ui(); cpuWant = sc2.nc; }
       if (go || +Q.get('auto')) { begin(); }
@@ -257,13 +241,15 @@
   }
   function render() {
     ctx.setTransform(K.scale, 0, 0, K.scale, 0, 0); ctx.clearRect(0, 0, W, H);
-    if (K.mode === 'title') drawTitle(ctx);
+    if (K.mode === 'title') return;                                                       // the lobby overlay is the screen
     else { ctx.save(); G.draw(ctx); ctx.restore(); if (K.mode === 'over') drawOver(ctx); }
   }
   let skip = false;
   document.addEventListener('visibilitychange', () => { last = performance.now(); acc = 0; });   // no catch-up burst after the page was hidden
   function frame(now) {
-    requestAnimationFrame(frame);
+    try { tick(now); } finally { if (K.mode === 'title') setTimeout(() => frame(performance.now()), 50); else requestAnimationFrame(frame); }   // a finally: a throw must not end the loop
+  }
+  function tick(now) {
     let d = (now - last) / 1000; last = now; if (d > 0.1) d = 0.1;
     acc += d; poll();
     let n = 0;
@@ -281,7 +267,6 @@
   }
   K.run = (game) => {
     G = game; K.G = game; document.title = K.tr(game.title);
-    if (pad && pad.qr) { try { qrImg = new Image(); qrImg.src = pad.qr(156); } catch (e) { qrImg = null; } }
     K.layout(); requestAnimationFrame(frame);
   };
 })();
